@@ -101,6 +101,9 @@ function buildLoadScenario() {
       duration: config.loadDuration || "3m",
       preAllocatedVUs: config.preAllocatedVUs || 50,
       maxVUs: config.maxVUs || 200,
+      // Default is 30s. Keep it small so total wall time = loadDuration +
+      // cooldown without an extra grace period blowing up the math.
+      gracefulStop: "1s",
       exec: "runEndpoint",
     };
   }
@@ -108,15 +111,18 @@ function buildLoadScenario() {
     executor: "ramping-vus",
     stages: k6Stages,
     gracefulRampDown: "30s",
+    gracefulStop: "1s",
     exec: "runEndpoint",
   };
 }
 
-// Estimate the total active-load duration so the memory sampler runs at
-// least that long. Caller can also set config.duration explicitly.
+// The sampler scenario runs for exactly the load duration. The cooldown
+// sample is captured separately in teardown(). Note: don't read
+// config.duration — that field was a buffer field in the ecs-content
+// original ("loadDuration + sampler padding") and would now double-count.
 function estimateLoadDurationS() {
-  if (config.duration) return parseDurationS(config.duration);
-  if (config.executor === "constant-arrival-rate") return parseDurationS(config.loadDuration || "3m");
+  if (config.executor === "constant-arrival-rate")
+    return parseDurationS(config.loadDuration || "3m");
   return stages.reduce((sum, s) => sum + parseDurationS(s.duration), 0);
 }
 
@@ -129,7 +135,7 @@ function parseDurationS(s) {
   return total;
 }
 
-const samplerDuration = `${Math.ceil(estimateLoadDurationS() + 5)}s`;
+const samplerDuration = `${Math.max(1, Math.ceil(estimateLoadDurationS()))}s`;
 
 const scenarios = { load_test: buildLoadScenario() };
 if (memorySamplingEnabled) {
@@ -137,6 +143,7 @@ if (memorySamplingEnabled) {
     executor: "constant-vus",
     vus: 1,
     duration: samplerDuration,
+    gracefulStop: "1s",
     exec: "sampleMemory",
   };
 }

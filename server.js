@@ -28,6 +28,7 @@ app.get("/buckets", sendPage("buckets.html"));
 app.get("/bucket/:name", sendPage("bucket.html"));
 app.get("/runs", sendPage("runs.html"));
 app.get("/run/:bucket/:configDir/:id", sendPage("run.html"));
+app.get("/compare/:bucket/:configDir", sendPage("compare.html"));
 
 function safeName(name) {
   return (

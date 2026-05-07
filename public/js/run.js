@@ -1,5 +1,5 @@
 import { mount, setBreadcrumbs } from "./shell.js";
-import { api, escapeHtml, fmtRelTime, fmtSeconds, totalDurationSec, reportUrl } from "./api.js";
+import { api, escapeHtml, fmtRelTime, fmtSeconds, totalDurationSec } from "./api.js";
 import { icon } from "./icons.js";
 import { makeLineChart, setAxisMax } from "./charts.js";
 
@@ -22,6 +22,8 @@ let ws = null;
 let isLive = false;
 const series = makeSeries();
 const memSeries = makeMemSeries();
+// Detail snapshot (summary + summaryTxt) — used by Export and inline report.
+let lastDetail = { summary: null, summaryTxt: null, ticks: null, meta: null };
 
 mount(async (page) => {
   setBreadcrumbs([
@@ -76,9 +78,19 @@ function template() {
         </div>
         <div class="flex items-center gap-2 shrink-0">
           <span id="runStatus" class="tag bg-stone-500/10 text-stone-500">…</span>
-          <a id="reportLink" href="#" target="_blank" rel="noopener" class="hidden text-[12px] px-3 py-2 rounded border border-stone-200 dark:border-ink-800 hover:border-indigo-400 transition-colors flex items-center gap-2">
-            ${icon("external", { size: 13 })}<span>Full report</span>
-          </a>
+          <button id="compareBtn" class="hidden text-[12px] px-3 py-2 rounded border border-stone-200 dark:border-ink-800 hover:border-indigo-400 transition-colors flex items-center gap-2">
+            ${icon("runs", { size: 13 })}<span>Compare</span>
+          </button>
+          <div class="relative">
+            <button id="exportBtn" class="hidden text-[12px] px-3 py-2 rounded border border-stone-200 dark:border-ink-800 hover:border-indigo-400 transition-colors flex items-center gap-2">
+              ${icon("download", { size: 13 })}<span>Export</span>${icon("chevron", { size: 11, className: "opacity-70" })}
+            </button>
+            <div id="exportMenu" class="hidden absolute right-0 top-full mt-1 z-10 min-w-[160px] rounded border border-stone-200 dark:border-ink-700 bg-white dark:bg-ink-900 shadow-lg overflow-hidden text-[12px]">
+              <button data-export="txt" class="w-full text-left px-3 py-2 hover:bg-stone-100 dark:hover:bg-ink-800 transition-colors flex items-center gap-2">${icon("file", { size: 12, className: "text-stone-400" })}<span>Report (.txt)</span></button>
+              <button data-export="json" class="w-full text-left px-3 py-2 hover:bg-stone-100 dark:hover:bg-ink-800 transition-colors flex items-center gap-2">${icon("file", { size: 12, className: "text-stone-400" })}<span>Summary (.json)</span></button>
+              <button data-export="csv" class="w-full text-left px-3 py-2 hover:bg-stone-100 dark:hover:bg-ink-800 transition-colors flex items-center gap-2">${icon("file", { size: 12, className: "text-stone-400" })}<span>Metrics (.csv)</span></button>
+            </div>
+          </div>
           <button id="stopBtn" class="hidden text-[12px] px-3 py-2 rounded border border-rose-500 bg-rose-500 text-white hover:bg-rose-600 transition-colors flex items-center gap-2">
             ${icon("square", { size: 12 })}<span>Stop</span>
           </button>
@@ -135,6 +147,16 @@ function template() {
         </div>
       </section>
 
+      <section id="reportSection" class="border border-stone-200 dark:border-ink-800 rounded-md bg-white dark:bg-ink-900 mb-5" hidden>
+        <header class="px-5 h-11 flex items-center justify-between border-b border-stone-100 dark:border-ink-800">
+          <h2 class="text-[12px] uppercase tracking-wider text-stone-500 dark:text-stone-400 font-semibold">Performance report</h2>
+          <button id="reportToggle" class="text-[11px] text-stone-500 hover:text-ink-950 dark:hover:text-stone-100 flex items-center gap-1">
+            <span id="reportToggleLabel">collapse</span> ${icon("chevron", { size: 11 })}
+          </button>
+        </header>
+        <div id="reportBody" class="px-5 py-4 overflow-x-auto"></div>
+      </section>
+
       <section class="border border-stone-200 dark:border-ink-800 rounded-md bg-white dark:bg-ink-900">
         <header class="px-5 h-11 flex items-center justify-between border-b border-stone-100 dark:border-ink-800">
           <h2 class="text-[12px] uppercase tracking-wider text-stone-500 dark:text-stone-400 font-semibold">Logs</h2>
@@ -142,6 +164,16 @@ function template() {
         </header>
         <pre id="logs" class="logs px-5 py-3 max-h-[280px] overflow-y-auto"></pre>
       </section>
+
+      <div id="compareModal" class="hidden fixed inset-0 cmdk-mask z-50 items-start justify-center pt-[14vh]">
+        <div class="cmdk-shell w-[640px] max-w-[92vw] bg-white dark:bg-ink-900 border border-stone-200 dark:border-ink-700 rounded-lg overflow-hidden">
+          <div class="px-4 h-12 flex items-center justify-between border-b border-stone-200 dark:border-ink-800">
+            <div class="text-[13px] font-medium">Compare with another run</div>
+            <button id="compareCancel" class="text-[11px] text-stone-500 hover:text-ink-950 dark:hover:text-stone-100">esc</button>
+          </div>
+          <div id="compareList" class="max-h-[50vh] overflow-y-auto py-1"></div>
+        </div>
+      </div>
     </div>`;
 }
 
@@ -156,6 +188,44 @@ function bindActions() {
   });
   document.getElementById("clearLogs").addEventListener("click", () => {
     document.getElementById("logs").textContent = "";
+  });
+
+  // Export menu
+  const exportBtn = document.getElementById("exportBtn");
+  const exportMenu = document.getElementById("exportMenu");
+  exportBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    exportMenu.classList.toggle("hidden");
+  });
+  document.addEventListener("click", () => exportMenu.classList.add("hidden"));
+  exportMenu.querySelectorAll("[data-export]").forEach((b) =>
+    b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      exportMenu.classList.add("hidden");
+      doExport(b.dataset.export);
+    }),
+  );
+
+  // Compare modal
+  const compareBtn = document.getElementById("compareBtn");
+  const modal = document.getElementById("compareModal");
+  compareBtn.addEventListener("click", openCompare);
+  document.getElementById("compareCancel").addEventListener("click", closeCompare);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeCompare();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeCompare();
+  });
+
+  // Report panel collapse toggle
+  const toggle = document.getElementById("reportToggle");
+  toggle.addEventListener("click", () => {
+    const body = document.getElementById("reportBody");
+    const label = document.getElementById("reportToggleLabel");
+    const collapsed = body.style.display === "none";
+    body.style.display = collapsed ? "" : "none";
+    label.textContent = collapsed ? "collapse" : "expand";
   });
 }
 
@@ -173,6 +243,8 @@ async function initLive(live) {
     runDurationSec = totalDurationSec(cfg) || null;
   } catch {}
 
+  // Compare button is meaningful even while live (against past runs of same config).
+  document.getElementById("compareBtn").classList.remove("hidden");
   initCharts();
   attachWS(runId);
 }
@@ -194,12 +266,9 @@ async function initReplay() {
     `${meta.target ? ` · target ${escapeHtml(meta.target)}` : ""}` +
     `${meta.error ? `<br><span class="text-rose-500">${escapeHtml(meta.error)}</span>` : ""}`;
 
-  if (detail.summaryTxt) {
-    const link = document.getElementById("reportLink");
-    link.href = reportUrl(bucket, configDir, runId);
-    link.classList.remove("hidden");
-    link.classList.add("flex");
-  }
+  lastDetail = detail;
+  reflectExportableState();
+  renderInlineReport(detail.summaryTxt);
 
   // Stats
   renderStats(detail);
@@ -269,15 +338,12 @@ async function onStatus(s) {
   if (s.status === "completed" || s.status === "failed" || s.status === "stopped") {
     document.getElementById("stopBtn").classList.add("hidden");
     isLive = false;
-    // Pull fresh detail (with summary + report link) once it's done.
+    // Pull fresh detail (with summary + rendered report) once it's done.
     try {
       const detail = await api.runDetail(bucket, configDir, runId);
-      if (detail.summaryTxt) {
-        const link = document.getElementById("reportLink");
-        link.href = reportUrl(bucket, configDir, runId);
-        link.classList.remove("hidden");
-        link.classList.add("flex");
-      }
+      lastDetail = detail;
+      reflectExportableState();
+      renderInlineReport(detail.summaryTxt);
       renderStats(detail);
     } catch {}
   }
@@ -422,4 +488,186 @@ function setStatusTag(status) {
   const el = document.getElementById("runStatus");
   el.className = `tag ${bg} ${fg}`;
   el.textContent = status;
+}
+
+// ---------- Inline report ----------
+function renderInlineReport(text) {
+  const section = document.getElementById("reportSection");
+  const body = document.getElementById("reportBody");
+  if (!text) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+  body.innerHTML = highlightReport(text);
+}
+
+// Lightweight syntax pass: section headers, rules, verdict pills.
+function highlightReport(text) {
+  const lines = text.split(/\r?\n/);
+  const out = [];
+  for (const raw of lines) {
+    const l = raw;
+    let cls = "text-stone-700 dark:text-stone-300";
+    let content = escapeHtml(l);
+    if (/^=+$/.test(l.trim())) {
+      cls = "text-stone-300 dark:text-ink-700";
+    } else if (/^-+$/.test(l.trim())) {
+      cls = "text-stone-300 dark:text-ink-700";
+    } else if (/^\s*\[.+\]\s*$/.test(l)) {
+      cls = "text-indigo-600 dark:text-indigo-400 font-semibold";
+    } else if (/\bNODE\.JS PERFORMANCE ANALYSIS REPORT\b/.test(l)) {
+      cls = "text-ink-950 dark:text-stone-50 font-bold";
+    } else if (/\[OK\]/.test(l)) {
+      cls = "text-emerald-600 dark:text-emerald-400";
+    } else if (/\[!\]/.test(l)) {
+      cls = "text-rose-600 dark:text-rose-400";
+    } else if (/\[~\]/.test(l)) {
+      cls = "text-amber-600 dark:text-amber-400";
+    } else if (/\[i\]/.test(l)) {
+      cls = "text-sky-600 dark:text-sky-400";
+    } else if (/^\s+✓/.test(l)) {
+      cls = "text-emerald-600 dark:text-emerald-400";
+    } else if (/^\s+✗/.test(l)) {
+      cls = "text-rose-600 dark:text-rose-400";
+    }
+    out.push(`<span class="block whitespace-pre ${cls}">${content || "&nbsp;"}</span>`);
+  }
+  return `<div class="font-mono text-[12px] leading-[1.55]">${out.join("")}</div>`;
+}
+
+function reflectExportableState() {
+  document.getElementById("exportBtn").classList.remove("hidden");
+  document.getElementById("compareBtn").classList.remove("hidden");
+}
+
+// ---------- Export ----------
+function doExport(kind) {
+  if (kind === "txt") {
+    const txt = lastDetail?.summaryTxt;
+    if (!txt) {
+      alert("No text report yet (run still in progress, or memory sampling was disabled).");
+      return;
+    }
+    download(`${runId}.txt`, txt, "text/plain");
+  } else if (kind === "json") {
+    const obj = lastDetail?.summary;
+    if (!obj) {
+      alert("No summary JSON yet (run still in progress).");
+      return;
+    }
+    download(`${runId}.summary.json`, JSON.stringify(obj, null, 2), "application/json");
+  } else if (kind === "csv") {
+    const ticks = lastDetail?.ticks || [];
+    if (!ticks.length) {
+      alert("No tick data to export.");
+      return;
+    }
+    download(`${runId}.metrics.csv`, ticksToCsv(ticks), "text/csv");
+  }
+}
+
+function ticksToCsv(ticks) {
+  const headers = [
+    "elapsed_s",
+    "rps",
+    "p50_ms",
+    "p95_ms",
+    "p99_ms",
+    "errors",
+    "vus",
+    "heap_mb",
+    "rss_mb",
+    "cpu_pct",
+    "eld_mean_ms",
+    "eld_p99_ms",
+    "handles",
+  ];
+  const t0 = ticks[0].t;
+  const rows = [headers.join(",")];
+  for (const t of ticks) {
+    const m = t.memory || {};
+    rows.push(
+      [
+        ((t.t - t0) / 1000).toFixed(1),
+        t.rps,
+        t.p50?.toFixed(2) ?? "",
+        t.p95?.toFixed(2) ?? "",
+        t.p99?.toFixed(2) ?? "",
+        t.errors,
+        t.vus,
+        m.heapMB?.toFixed(2) ?? "",
+        m.rssMB?.toFixed(2) ?? "",
+        m.cpuPercent?.toFixed(1) ?? "",
+        m.eldMean?.toFixed(2) ?? "",
+        m.eldP99?.toFixed(2) ?? "",
+        m.handles ?? "",
+      ].join(","),
+    );
+  }
+  return rows.join("\n");
+}
+
+function download(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 200);
+}
+
+// ---------- Compare modal ----------
+async function openCompare() {
+  const modal = document.getElementById("compareModal");
+  const list = document.getElementById("compareList");
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  list.innerHTML = `<div class="px-4 py-6 text-center text-stone-500 text-[12px]">Loading other runs…</div>`;
+  let runs = [];
+  try {
+    const all = await api.history(bucket);
+    runs = all.filter((r) => r.configDir === configDir && r.id !== runId);
+  } catch {}
+  if (runs.length === 0) {
+    list.innerHTML = `<div class="px-4 py-6 text-center text-stone-500 text-[12px]">No other runs of this config yet.</div>`;
+    return;
+  }
+  list.innerHTML = runs
+    .slice(0, 30)
+    .map((r) => {
+      const stats = r.stats || {};
+      const dur =
+        r.startedAt && r.endedAt ? fmtSeconds((r.endedAt - r.startedAt) / 1000) : "—";
+      const href = `/compare/${encodeURIComponent(bucket)}/${encodeURIComponent(configDir)}?a=${encodeURIComponent(runId)}&b=${encodeURIComponent(r.id)}`;
+      return `<a href="${href}" class="w-full text-left px-4 py-2.5 hover:bg-stone-50 dark:hover:bg-ink-800 transition-colors flex items-center gap-3 border-b border-stone-100 dark:border-ink-800">
+        <span class="status-square ${statusColor(r.status)}"></span>
+        <div class="flex-1 min-w-0">
+          <div class="text-[12px] num">${escapeHtml(new Date(r.startedAt).toLocaleString())}</div>
+          <div class="text-[11px] text-stone-500 dark:text-stone-400 num">${dur} · ${stats.requests ?? "—"} req · p95 ${stats.p95 ? stats.p95.toFixed(1) + "ms" : "—"}</div>
+        </div>
+        <span class="text-[11px] text-indigo-500">Compare →</span>
+      </a>`;
+    })
+    .join("");
+}
+
+function closeCompare() {
+  const modal = document.getElementById("compareModal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+
+function statusColor(status) {
+  return (
+    {
+      completed: "text-emerald-500",
+      failed: "text-rose-500",
+      stopped: "text-amber-500",
+      running: "text-indigo-500",
+    }[status] || "text-stone-400"
+  );
 }
