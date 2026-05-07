@@ -1,0 +1,5 @@
+node_modules/
+runs/
+configs/*.json
+!configs/.gitkeep
+.DS_Store

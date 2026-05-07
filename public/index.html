@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>k6-studio</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>k6-studio</h1>
+      <div class="header-status">
+        <span id="run-status" class="badge badge-idle">idle</span>
+        <span id="run-id" class="muted"></span>
+      </div>
+    </header>
+
+    <main>
+      <aside class="sidebar">
+        <section>
+          <div class="section-head">
+            <h2>Configs</h2>
+            <label class="upload-btn" title="Upload a config JSON">
+              + Upload
+              <input id="upload-input" type="file" accept=".json,application/json" hidden />
+            </label>
+          </div>
+          <ul id="config-list" class="config-list"></ul>
+          <div id="config-empty" class="muted small">No configs yet. Upload a JSON to start.</div>
+        </section>
+
+        <section>
+          <h2>Run</h2>
+          <label class="field">
+            <span>Target URL</span>
+            <input id="target-input" placeholder="http://localhost:8080" />
+          </label>
+          <button id="run-btn" class="primary" disabled>Start</button>
+          <button id="stop-btn" class="danger" disabled>Stop</button>
+        </section>
+      </aside>
+
+      <section class="content">
+        <div id="config-preview" class="panel">
+          <div class="panel-head"><h2>Config preview</h2><span id="preview-name" class="muted"></span></div>
+          <div id="preview-body" class="muted">Pick a config on the left.</div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Live metrics</h2></div>
+          <div class="charts-grid">
+            <div class="chart-card"><div class="chart-title">Requests / sec</div><canvas id="chart-rps"></canvas></div>
+            <div class="chart-card"><div class="chart-title">Latency (ms)</div><canvas id="chart-latency"></canvas></div>
+            <div class="chart-card"><div class="chart-title">Errors / sec</div><canvas id="chart-errors"></canvas></div>
+            <div class="chart-card"><div class="chart-title">Active VUs</div><canvas id="chart-vus"></canvas></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Logs</h2>
+            <button id="clear-logs" class="link">clear</button>
+          </div>
+          <pre id="logs" class="logs"></pre>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
