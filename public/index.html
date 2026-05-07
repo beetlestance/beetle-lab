@@ -1,102 +1,42 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>k6-studio</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <title>k6-studio · Dashboard</title>
+    <script>
+      // Apply theme before first paint to avoid FOUC. Default = dark.
+      try {
+        if (localStorage.getItem("k6studio.theme") === "light")
+          document.documentElement.classList.remove("dark");
+      } catch {}
+    </script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+              mono: ["JetBrains Mono", "ui-monospace", "Menlo", "monospace"],
+            },
+            colors: {
+              ink: { 950: "#0a0c10", 900: "#11141a", 800: "#181c24", 700: "#232934", 600: "#2c333f" },
+              warm: { 500: "#f97316", 600: "#ea580c", 400: "#fb923c" },
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="stylesheet" href="/css/main.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
   </head>
-  <body>
-    <header>
-      <h1>k6-studio</h1>
-      <nav class="tabs">
-        <button class="tab active" data-tab="run">Run</button>
-        <button class="tab" data-tab="runs">Runs</button>
-      </nav>
-      <div class="header-status">
-        <span id="run-status" class="badge badge-idle">idle</span>
-        <span id="run-id" class="muted"></span>
-      </div>
-    </header>
-
-    <main>
-      <aside class="sidebar">
-        <section>
-          <div class="section-head">
-            <h2>Folders</h2>
-            <button id="new-folder-btn" class="upload-btn" title="Create a new folder">+ New</button>
-          </div>
-          <div id="folders" class="folders"></div>
-          <div id="folders-empty" class="muted small">Create a folder, then upload configs and payloads into it.</div>
-        </section>
-
-        <section>
-          <h2>Run</h2>
-          <label class="field">
-            <span>Target URL</span>
-            <input id="target-input" placeholder="http://localhost:8080" />
-          </label>
-          <button id="run-btn" class="primary" disabled>Start</button>
-          <button id="stop-btn" class="danger" disabled>Stop</button>
-        </section>
-      </aside>
-
-      <section class="content" id="view-run">
-        <div id="config-preview" class="panel">
-          <div class="panel-head"><h2>Config preview</h2><span id="preview-name" class="muted"></span></div>
-          <div id="preview-body" class="muted">Pick a config on the left.</div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-head"><h2>Live metrics</h2></div>
-          <div class="charts-grid">
-            <div class="chart-card"><div class="chart-title">Requests / sec</div><canvas id="chart-rps"></canvas></div>
-            <div class="chart-card"><div class="chart-title">Latency (ms)</div><canvas id="chart-latency"></canvas></div>
-            <div class="chart-card"><div class="chart-title">Errors / sec</div><canvas id="chart-errors"></canvas></div>
-            <div class="chart-card"><div class="chart-title">Active VUs</div><canvas id="chart-vus"></canvas></div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-head">
-            <h2>Logs</h2>
-            <button id="clear-logs" class="link">clear</button>
-          </div>
-          <pre id="logs" class="logs"></pre>
-        </div>
-      </section>
-
-      <section class="content" id="view-runs" hidden>
-        <div class="panel">
-          <div class="panel-head">
-            <h2>Runs</h2>
-            <div class="runs-toolbar">
-              <select id="runs-filter" class="select-input"><option value="">All buckets</option></select>
-              <button id="runs-refresh" class="link">refresh</button>
-            </div>
-          </div>
-          <div id="runs-table-wrap"><table id="runs-table" class="runs-table"></table></div>
-          <div id="runs-empty" class="muted small" hidden>No runs yet.</div>
-        </div>
-
-        <div id="run-detail" class="panel" hidden>
-          <div class="panel-head">
-            <h2>Run detail</h2>
-            <span id="detail-name" class="muted"></span>
-            <button id="detail-close" class="link">close</button>
-          </div>
-          <div id="detail-summary" class="detail-summary"></div>
-          <div class="charts-grid">
-            <div class="chart-card"><div class="chart-title">Requests / sec</div><canvas id="rchart-rps"></canvas></div>
-            <div class="chart-card"><div class="chart-title">Latency (ms)</div><canvas id="rchart-latency"></canvas></div>
-            <div class="chart-card"><div class="chart-title">Errors / sec</div><canvas id="rchart-errors"></canvas></div>
-            <div class="chart-card"><div class="chart-title">Active VUs</div><canvas id="rchart-vus"></canvas></div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <script src="/app.js" type="module"></script>
+  <body class="font-sans text-ink-900 dark:text-stone-50 bg-stone-50 dark:bg-ink-950">
+    <!-- shell.js renders the layout chrome and moves the #page-content node into <section id="page"> -->
+    <div id="page-content"></div>
+    <script type="module" src="/js/dashboard.js"></script>
   </body>
 </html>

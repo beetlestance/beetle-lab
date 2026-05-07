@@ -13,11 +13,21 @@ const RUNS_SUBDIR = "runs"; // each bucket has its own runs/ subdirectory
 
 await fs.mkdir(FOLDERS_DIR, { recursive: true });
 await migrateLooseConfigs();
+await markOrphanedRunsAsFailed();
 
 const runner = new Runner();
 const app = express();
 app.use(express.json({ limit: "50mb" }));
 app.use(express.static(path.join(__dirname, "public")));
+
+// Page routes — each serves a real HTML file with shared shell injected by JS.
+const PUBLIC = path.join(__dirname, "public");
+const sendPage = (file) => (_req, res) => res.sendFile(path.join(PUBLIC, file));
+app.get("/", sendPage("index.html"));
+app.get("/buckets", sendPage("buckets.html"));
+app.get("/bucket/:name", sendPage("bucket.html"));
+app.get("/runs", sendPage("runs.html"));
+app.get("/run/:bucket/:configDir/:id", sendPage("run.html"));
 
 function safeName(name) {
   return (
@@ -100,6 +110,56 @@ async function scanFolder(dir) {
   await walk(dir, "");
   configs.sort((a, b) => a.path.localeCompare(b.path));
   return { configs, fileCount };
+}
+
+// Any meta.json reporting status="running" at boot is orphaned — the server
+// (and therefore its child k6 process) terminated before the run finished.
+// Rewrite as failed so the UI doesn't show a stale "running" badge forever.
+async function markOrphanedRunsAsFailed() {
+  let buckets;
+  try {
+    buckets = await fs.readdir(FOLDERS_DIR, { withFileTypes: true });
+  } catch {
+    return;
+  }
+  for (const b of buckets) {
+    if (!b.isDirectory()) continue;
+    const runsRoot = path.join(FOLDERS_DIR, b.name, RUNS_SUBDIR);
+    let configDirs;
+    try {
+      configDirs = await fs.readdir(runsRoot, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const c of configDirs) {
+      if (!c.isDirectory()) continue;
+      const cdir = path.join(runsRoot, c.name);
+      let runs;
+      try {
+        runs = await fs.readdir(cdir, { withFileTypes: true });
+      } catch {
+        continue;
+      }
+      for (const r of runs) {
+        if (!r.isDirectory()) continue;
+        const metaPath = path.join(cdir, r.name, "meta.json");
+        let meta;
+        try {
+          meta = JSON.parse(await fs.readFile(metaPath, "utf8"));
+        } catch {
+          continue;
+        }
+        if (meta.status !== "running") continue;
+        meta.status = "failed";
+        meta.error = "server stopped before run finished";
+        meta.endedAt = meta.endedAt || Date.now();
+        try {
+          await fs.writeFile(metaPath, JSON.stringify(meta, null, 2));
+          console.log(`marked orphaned run as failed: ${b.name}/${c.name}/${r.name}`);
+        } catch {}
+      }
+    }
+  }
 }
 
 async function migrateLooseConfigs() {
@@ -302,19 +362,70 @@ app.get("/api/folders/:bucket/runs/:configDir/:id", async (req, res) => {
   const runDir = path.join(FOLDERS_DIR, bucket, RUNS_SUBDIR, cdir, id);
   let meta = null;
   let summary = null;
+  let summaryTxt = null;
   try {
     meta = JSON.parse(await fs.readFile(path.join(runDir, "meta.json"), "utf8"));
   } catch {}
   try {
     summary = JSON.parse(await fs.readFile(path.join(runDir, "summary.json"), "utf8"));
   } catch {}
+  try {
+    summaryTxt = await fs.readFile(path.join(runDir, "summary.txt"), "utf8");
+  } catch {}
   if (!meta && !summary) return res.status(404).json({ error: "run not found" });
   const ticks = await aggregateMetricsFile(path.join(runDir, "metrics.jsonl"));
+  const hasMemory = ticks.some((t) => t.memory && t.memory.heapMB !== undefined);
   let log = "";
   try {
     log = await fs.readFile(path.join(runDir, "log.txt"), "utf8");
   } catch {}
-  res.json({ meta, summary, ticks, log });
+  res.json({ meta, summary, summaryTxt, ticks, log, hasMemory });
+});
+
+// Standalone report page: full TXT report rendered as a static HTML page.
+app.get("/report/:bucket/:configDir/:id", async (req, res) => {
+  const bucket = safeName(req.params.bucket);
+  const cdir = safeName(req.params.configDir);
+  const id = safeName(req.params.id);
+  const runDir = path.join(FOLDERS_DIR, bucket, RUNS_SUBDIR, cdir, id);
+  let meta = null;
+  let txt = "";
+  try {
+    meta = JSON.parse(await fs.readFile(path.join(runDir, "meta.json"), "utf8"));
+  } catch {}
+  try {
+    txt = await fs.readFile(path.join(runDir, "summary.txt"), "utf8");
+  } catch {
+    txt = "(summary.txt not found — run may have not finished, or memory sampling was disabled and no text report was emitted)";
+  }
+  const title = meta
+    ? `${meta.bucket || bucket} / ${meta.configRel || cdir} · ${id}`
+    : `${bucket} / ${cdir} · ${id}`;
+  const escape = (s) =>
+    String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+  const html = `<!doctype html>
+<html><head>
+<meta charset="utf-8">
+<title>Report — ${escape(title)}</title>
+<style>
+  body { background:#0e1116; color:#e6edf3; font-family: ui-monospace, "JetBrains Mono", Menlo, monospace; margin:0; padding:24px; }
+  header { display:flex; gap:14px; align-items:baseline; padding-bottom:14px; border-bottom:1px solid #2a313c; margin-bottom:18px; }
+  h1 { font-size:14px; margin:0; font-family:-apple-system,BlinkMacSystemFont,sans-serif; }
+  .links a { color:#4f8cff; text-decoration:none; margin-right:14px; font-size:12px; font-family:-apple-system,sans-serif; }
+  .links a:hover { text-decoration:underline; }
+  pre { white-space:pre-wrap; line-height:1.55; font-size:13px; }
+</style>
+</head><body>
+<header>
+  <h1>${escape(title)}</h1>
+  <div class="links">
+    <a href="/api/folders/${encodeURIComponent(bucket)}/runs/${encodeURIComponent(cdir)}/${encodeURIComponent(id)}">JSON detail</a>
+    <a href="/">&larr; back</a>
+  </div>
+</header>
+<pre>${escape(txt)}</pre>
+</body></html>`;
+  res.type("html").send(html);
 });
 
 app.delete("/api/folders/:bucket/runs/:configDir/:id", async (req, res) => {

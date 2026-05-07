@@ -14,6 +14,43 @@ function percentile(sorted, p) {
   return sorted[idx];
 }
 
+// Map k6 metric names emitted by the memory sampler -> tick.memory keys.
+// Bytes are converted to MB at consumption time.
+const MEMORY_FIELD = {
+  heap_inuse_bytes: "heapBytes",
+  rss_bytes: "rssBytes",
+  external_bytes: "externalBytes",
+  active_handles: "handles",
+  active_requests: "activeRequests",
+  cpu_percent: "cpuPercent",
+  system_cpu_percent: "systemCpu",
+  event_loop_delay_mean_ms: "eldMean",
+  event_loop_delay_p90_ms: "eldP90",
+  event_loop_delay_p99_ms: "eldP99",
+  event_loop_delay_max_ms: "eldMax",
+  heap_total_size_mb: "heapTotalMB",
+  heap_size_limit_mb: "heapLimitMB",
+};
+
+function normalizeMemory(m) {
+  if (!m || Object.keys(m).length === 0) return null;
+  const out = {};
+  if (m.heapBytes !== undefined) out.heapMB = m.heapBytes / 1048576;
+  if (m.rssBytes !== undefined) out.rssMB = m.rssBytes / 1048576;
+  if (m.externalBytes !== undefined) out.externalMB = m.externalBytes / 1048576;
+  if (m.handles !== undefined) out.handles = m.handles;
+  if (m.activeRequests !== undefined) out.activeRequests = m.activeRequests;
+  if (m.cpuPercent !== undefined) out.cpuPercent = m.cpuPercent;
+  if (m.systemCpu !== undefined) out.systemCpu = m.systemCpu;
+  if (m.eldMean !== undefined) out.eldMean = m.eldMean;
+  if (m.eldP90 !== undefined) out.eldP90 = m.eldP90;
+  if (m.eldP99 !== undefined) out.eldP99 = m.eldP99;
+  if (m.eldMax !== undefined) out.eldMax = m.eldMax;
+  if (m.heapTotalMB !== undefined) out.heapTotalMB = m.heapTotalMB;
+  if (m.heapLimitMB !== undefined) out.heapLimitMB = m.heapLimitMB;
+  return Object.keys(out).length ? out : null;
+}
+
 class Run extends EventEmitter {
   constructor({ id, configPath, target, runsDir, bucket, configRel, k6Bin = "k6" }) {
     super();
@@ -23,10 +60,14 @@ class Run extends EventEmitter {
     this.target = target;
     this.bucketName = bucket || null;
     this.configRel = configRel || null;
+    // The runs/ subdir name used for this run's output — needed by clients to
+    // construct /run/:bucket/:configDir/:id URLs without re-deriving it.
+    this.configDir = runsDir ? path.basename(runsDir) : null;
     this.k6Bin = k6Bin;
     this.dir = path.join(runsDir, id);
     this.metricsPath = path.join(this.dir, "metrics.jsonl");
     this.summaryPath = path.join(this.dir, "summary.json");
+    this.summaryTxtPath = path.join(this.dir, "summary.txt");
     this.logPath = path.join(this.dir, "log.txt");
     this.metaPath = path.join(this.dir, "meta.json");
     this.status = "pending";
@@ -55,6 +96,7 @@ class Run extends EventEmitter {
       CONFIG: this.configPath,
       CONFIG_DIR: path.dirname(this.configPath),
       SUMMARY_PATH: this.summaryPath,
+      SUMMARY_TXT_PATH: this.summaryTxtPath,
     };
     if (this.target) env.TARGET = this.target;
 
@@ -120,12 +162,22 @@ class Run extends EventEmitter {
   }
 
   stop() {
-    if (this.proc && this.status === "running") {
-      this.stopRequested = true;
-      try {
-        this.proc.kill("SIGINT");
-      } catch {}
-    }
+    if (!this.proc || this.status !== "running") return;
+    this.stopRequested = true;
+    // First SIGINT: stops scenarios but k6 still runs teardown (cooldown).
+    // Second SIGINT shortly after: per k6 docs, skips teardown.
+    // SIGKILL fallback: belt-and-suspenders if k6 is wedged.
+    try { this.proc.kill("SIGINT"); } catch {}
+    setTimeout(() => {
+      if (this.proc && this.proc.exitCode === null) {
+        try { this.proc.kill("SIGINT"); } catch {}
+      }
+    }, 250);
+    setTimeout(() => {
+      if (this.proc && this.proc.exitCode === null) {
+        try { this.proc.kill("SIGKILL"); } catch {}
+      }
+    }, 5000);
   }
 
   _handleLog(chunk) {
@@ -222,6 +274,7 @@ class Run extends EventEmitter {
       iterations: 0,
       errors: 0,
       endpointLatencies: {},
+      memory: {},
     };
   }
 
@@ -238,6 +291,9 @@ class Run extends EventEmitter {
       const ep = name.slice(3, -"_latency".length);
       if (!b.endpointLatencies[ep]) b.endpointLatencies[ep] = [];
       b.endpointLatencies[ep].push(value);
+    } else if (name in MEMORY_FIELD) {
+      // Latest-value-wins per second is the right shape for memory gauges.
+      b.memory[MEMORY_FIELD[name]] = value;
     }
   }
 
@@ -271,6 +327,7 @@ class Run extends EventEmitter {
           return [k, { count: vs.length, p95: percentile(sorted, 95) }];
         }),
       ),
+      memory: normalizeMemory(b.memory),
     };
     this.tickHistory.push(tick);
     if (this.tickHistory.length > 1800) this.tickHistory.shift();
@@ -294,6 +351,7 @@ class Run extends EventEmitter {
       configPath: this.configPath,
       bucket: this.bucketName,
       configRel: this.configRel,
+      configDir: this.configDir,
     };
   }
 
@@ -328,6 +386,7 @@ export async function aggregateMetricsFile(metricsPath) {
       iterations: 0,
       errors: 0,
       endpointLatencies: {},
+      memory: {},
     };
   };
   const flush = (b) => {
@@ -349,6 +408,7 @@ export async function aggregateMetricsFile(metricsPath) {
           return [k, { count: vs.length, p95: percentile(sorted, 95) }];
         }),
       ),
+      memory: normalizeMemory(b.memory),
     });
   };
   for (const line of text.split("\n")) {
@@ -379,6 +439,8 @@ export async function aggregateMetricsFile(metricsPath) {
       const ep = name.slice(3, -"_latency".length);
       if (!bucket.endpointLatencies[ep]) bucket.endpointLatencies[ep] = [];
       bucket.endpointLatencies[ep].push(value);
+    } else if (name in MEMORY_FIELD) {
+      bucket.memory[MEMORY_FIELD[name]] = value;
     }
   }
   if (bucket) flush(bucket);
