@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { EventEmitter } from "node:events";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
@@ -70,6 +71,8 @@ class Run extends EventEmitter {
     this.summaryTxtPath = path.join(this.dir, "summary.txt");
     this.logPath = path.join(this.dir, "log.txt");
     this.metaPath = path.join(this.dir, "meta.json");
+    this.configSnapshotPath = path.join(this.dir, "config.snapshot.json");
+    this.configHash = null;
     this.status = "pending";
     this.startedAt = null;
     this.endedAt = null;
@@ -110,6 +113,7 @@ class Run extends EventEmitter {
 
     this.status = "running";
     this.startedAt = Date.now();
+    await this._snapshotConfig();
     await this._writeMeta();
     this.emit("status", { status: this.status, startedAt: this.startedAt });
 
@@ -352,6 +356,7 @@ class Run extends EventEmitter {
       bucket: this.bucketName,
       configRel: this.configRel,
       configDir: this.configDir,
+      configHash: this.configHash,
     };
   }
 
@@ -359,6 +364,19 @@ class Run extends EventEmitter {
     try {
       await fsp.writeFile(this.metaPath, JSON.stringify(this.snapshot(), null, 2));
     } catch {}
+  }
+
+  // Capture the config that's about to run so historical comparisons can tell
+  // whether two runs ran the same inputs. We store both the raw bytes (for
+  // diffing) and a SHA-256 hash (for fast equality checks).
+  async _snapshotConfig() {
+    try {
+      const txt = await fsp.readFile(this.configPath, "utf8");
+      this.configHash = createHash("sha256").update(txt).digest("hex");
+      await fsp.writeFile(this.configSnapshotPath, txt);
+    } catch {
+      // Non-fatal: the run can still proceed even if snapshotting fails.
+    }
   }
 }
 

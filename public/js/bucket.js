@@ -8,7 +8,10 @@ const bucket = decodeURIComponent(location.pathname.replace(/^\/bucket\//, ""));
 let folders = [];
 let folder = null;
 let history = [];
-let activeTab = "configs";
+// Initial tab from URL hash (#runs / #configs / #files), default to configs.
+const HASH_TABS = new Set(["configs", "files", "runs"]);
+const initialHash = (location.hash || "").replace(/^#/, "");
+let activeTab = HASH_TABS.has(initialHash) ? initialHash : "configs";
 
 mount(async (page) => {
   setBreadcrumbs([
@@ -96,6 +99,10 @@ function bindActions() {
 
 function setActiveTab(tab) {
   activeTab = tab;
+  // Reflect into URL so deep links and back-button respect the chosen tab.
+  if (location.hash !== "#" + tab) {
+    window.history.replaceState({}, "", `${location.pathname}${location.search}#${tab}`);
+  }
   // Highlight active tab + slide indicator.
   const bar = document.getElementById("tabsBar");
   const buttons = bar.querySelectorAll("[data-tab]");

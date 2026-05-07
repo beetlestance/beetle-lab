@@ -380,7 +380,15 @@ app.get("/api/folders/:bucket/runs/:configDir/:id", async (req, res) => {
   try {
     log = await fs.readFile(path.join(runDir, "log.txt"), "utf8");
   } catch {}
-  res.json({ meta, summary, summaryTxt, ticks, log, hasMemory });
+  // Snapshot of the config used at run time. Older runs predating snapshots
+  // may not have one — clients should treat configSnapshot as optional.
+  let configSnapshot = null;
+  try {
+    configSnapshot = JSON.parse(
+      await fs.readFile(path.join(runDir, "config.snapshot.json"), "utf8"),
+    );
+  } catch {}
+  res.json({ meta, summary, summaryTxt, ticks, log, hasMemory, configSnapshot });
 });
 
 // Standalone report page: full TXT report rendered as a static HTML page.

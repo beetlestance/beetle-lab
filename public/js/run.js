@@ -147,14 +147,35 @@ function template() {
         </div>
       </section>
 
+      <section id="configSection" class="border border-stone-200 dark:border-ink-800 rounded-md bg-white dark:bg-ink-900 mb-5" hidden>
+        <button id="configToggle" class="w-full px-5 h-11 flex items-center justify-between border-b border-stone-100 dark:border-ink-800 text-left">
+          <div class="flex items-center gap-3">
+            <span data-arrow class="inline-block transition-transform duration-200" style="transform:rotate(0deg)">${icon("chevron", { size: 12, className: "text-stone-400" })}</span>
+            <h2 class="text-[12px] uppercase tracking-wider text-stone-500 dark:text-stone-400 font-semibold">Config used at run time</h2>
+            <span id="configHashTag" class="tag bg-stone-500/10 text-stone-500 num"></span>
+          </div>
+          <span class="text-[11px] text-stone-500" data-label>expand</span>
+        </button>
+        <div id="configWrap" class="expand">
+          <div class="expand-inner">
+            <div id="configBody" class="px-5 py-4 overflow-x-auto"></div>
+          </div>
+        </div>
+      </section>
+
       <section id="reportSection" class="border border-stone-200 dark:border-ink-800 rounded-md bg-white dark:bg-ink-900 mb-5" hidden>
-        <header class="px-5 h-11 flex items-center justify-between border-b border-stone-100 dark:border-ink-800">
-          <h2 class="text-[12px] uppercase tracking-wider text-stone-500 dark:text-stone-400 font-semibold">Performance report</h2>
-          <button id="reportToggle" class="text-[11px] text-stone-500 hover:text-ink-950 dark:hover:text-stone-100 flex items-center gap-1">
-            <span id="reportToggleLabel">collapse</span> ${icon("chevron", { size: 11 })}
-          </button>
-        </header>
-        <div id="reportBody" class="px-5 py-4 overflow-x-auto"></div>
+        <button id="reportToggle" class="w-full px-5 h-11 flex items-center justify-between border-b border-stone-100 dark:border-ink-800 text-left">
+          <div class="flex items-center gap-3">
+            <span data-arrow class="inline-block transition-transform duration-200" style="transform:rotate(90deg)">${icon("chevron", { size: 12, className: "text-stone-400" })}</span>
+            <h2 class="text-[12px] uppercase tracking-wider text-stone-500 dark:text-stone-400 font-semibold">Performance report</h2>
+          </div>
+          <span class="text-[11px] text-stone-500" data-label>collapse</span>
+        </button>
+        <div id="reportWrap" class="expand open">
+          <div class="expand-inner">
+            <div id="reportBody" class="px-5 py-4 overflow-x-auto"></div>
+          </div>
+        </div>
       </section>
 
       <section class="border border-stone-200 dark:border-ink-800 rounded-md bg-white dark:bg-ink-900">
@@ -218,14 +239,23 @@ function bindActions() {
     if (e.key === "Escape") closeCompare();
   });
 
-  // Report panel collapse toggle
-  const toggle = document.getElementById("reportToggle");
-  toggle.addEventListener("click", () => {
-    const body = document.getElementById("reportBody");
-    const label = document.getElementById("reportToggleLabel");
-    const collapsed = body.style.display === "none";
-    body.style.display = collapsed ? "" : "none";
-    label.textContent = collapsed ? "collapse" : "expand";
+  // Smooth collapse/expand pattern: toggle .open on a .expand wrapper that
+  // animates grid-template-rows 0fr -> 1fr (defined in main.css).
+  bindAccordion("reportToggle", "reportWrap");
+  bindAccordion("configToggle", "configWrap");
+}
+
+function bindAccordion(toggleId, wrapId) {
+  const btn = document.getElementById(toggleId);
+  const wrap = document.getElementById(wrapId);
+  if (!btn || !wrap) return;
+  btn.addEventListener("click", () => {
+    const willOpen = !wrap.classList.contains("open");
+    wrap.classList.toggle("open", willOpen);
+    const label = btn.querySelector("[data-label]");
+    if (label) label.textContent = willOpen ? "collapse" : "expand";
+    const arrow = btn.querySelector("[data-arrow]");
+    if (arrow) arrow.style.transform = willOpen ? "rotate(90deg)" : "rotate(0deg)";
   });
 }
 
@@ -269,6 +299,7 @@ async function initReplay() {
   lastDetail = detail;
   reflectExportableState();
   renderInlineReport(detail.summaryTxt);
+  renderConfigSnapshot(detail);
 
   // Stats
   renderStats(detail);
@@ -344,6 +375,7 @@ async function onStatus(s) {
       lastDetail = detail;
       reflectExportableState();
       renderInlineReport(detail.summaryTxt);
+      renderConfigSnapshot(detail);
       renderStats(detail);
     } catch {}
   }
@@ -670,4 +702,22 @@ function statusColor(status) {
       running: "text-indigo-500",
     }[status] || "text-stone-400"
   );
+}
+
+// ---------- Config snapshot ----------
+function renderConfigSnapshot(detail) {
+  const section = document.getElementById("configSection");
+  const body = document.getElementById("configBody");
+  const tag = document.getElementById("configHashTag");
+  const cfg = detail.configSnapshot;
+  if (!cfg) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+  const hash = detail.meta?.configHash;
+  if (hash) tag.textContent = "sha256 " + hash.slice(0, 12);
+  // Pretty-print the config so users can audit what actually ran.
+  const txt = JSON.stringify(cfg, null, 2);
+  body.innerHTML = `<pre class="font-mono text-[12px] leading-[1.55] m-0 whitespace-pre">${escapeHtml(txt)}</pre>`;
 }
