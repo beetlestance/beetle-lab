@@ -42,8 +42,8 @@ function template() {
             ${icon("upload", { size: 13 })}<span>Upload folder</span>
             <input id="uploadFolder" type="file" webkitdirectory directory multiple hidden />
           </label>
-          <button id="deleteBucket" title="Delete bucket" class="text-[12px] px-3 py-2 rounded border border-stone-200 dark:border-ink-800 hover:border-rose-400 hover:text-rose-500 transition-colors">
-            ${icon("trash", { size: 13 })}
+          <button id="deleteBucket" title="Remove this bucket and everything in it (configs, payloads, runs)" class="text-[12px] px-3 py-2 rounded border border-stone-200 dark:border-ink-800 hover:border-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600 dark:hover:text-rose-400 transition-colors flex items-center gap-2">
+            ${icon("trash", { size: 13 })}<span>Remove bucket</span>
           </button>
         </div>
       </div>
@@ -88,9 +88,23 @@ function bindActions() {
   document.getElementById("uploadFiles").addEventListener("change", (e) => onUpload(e, false));
   document.getElementById("uploadFolder").addEventListener("change", (e) => onUpload(e, true));
   document.getElementById("deleteBucket").addEventListener("click", async () => {
-    if (!confirm(`Delete bucket "${bucket}" and all its files and runs?`)) return;
-    await api.deleteFolder(bucket);
-    location.href = "/buckets";
+    const cfgs = (folder?.configs || []).length;
+    const files = folder?.fileCount ?? 0;
+    const runs = history.length;
+    const summary =
+      `Remove bucket "${bucket}"?\n\n` +
+      `This will permanently delete:\n` +
+      `  • ${cfgs} config${cfgs === 1 ? "" : "s"}\n` +
+      `  • ${files} file${files === 1 ? "" : "s"} (configs + payloads)\n` +
+      `  • ${runs} run${runs === 1 ? "" : "s"} of history\n\n` +
+      `This cannot be undone.`;
+    if (!confirm(summary)) return;
+    try {
+      await api.deleteFolder(bucket);
+      location.href = "/buckets";
+    } catch (e) {
+      alert(`Could not remove bucket: ${e.message}`);
+    }
   });
   document.querySelectorAll("#tabsBar [data-tab]").forEach((b) =>
     b.addEventListener("click", () => setActiveTab(b.dataset.tab)),
