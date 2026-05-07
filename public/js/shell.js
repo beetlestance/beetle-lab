@@ -13,13 +13,20 @@ const NAV = [
   { href: "/", label: "Dashboard", iconName: "home" },
   { href: "/buckets", label: "Buckets", iconName: "buckets" },
   { href: "/runs", label: "Runs", iconName: "runs" },
+  { divider: true },
+  { href: "/docs", label: "Docs", iconName: "book" },
+  { href: "/integrations", label: "Integrations", iconName: "code" },
 ];
 
 function currentPathPrefix() {
   const p = location.pathname;
   if (p === "/") return "/";
+  if (p.startsWith("/compare")) return "/runs";
+  if (p.startsWith("/run/")) return "/runs";
+  if (p.startsWith("/runs")) return "/runs";
   if (p.startsWith("/bucket")) return "/buckets";
-  if (p.startsWith("/run")) return "/runs";
+  if (p.startsWith("/docs")) return "/docs";
+  if (p.startsWith("/integrations")) return "/integrations";
   return p;
 }
 
@@ -39,18 +46,27 @@ function buildShell() {
         <div class="font-semibold text-[13px] tracking-wide">k6-studio</div>
       </a>
       <nav id="sideNav" class="flex-1 px-2 py-3 space-y-0.5">
-        ${NAV.map(
-          (n) => `<a href="${n.href}" data-nav="${n.href}" class="nav-item flex items-center gap-2.5 px-2.5 py-2 text-[13px] rounded-sm transition-colors text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-ink-900 hover:text-ink-950 dark:hover:text-stone-100">
+        ${NAV.map((n) => {
+          if (n.divider) {
+            return '<div class="my-2 border-t border-stone-200 dark:border-ink-800/60"></div>';
+          }
+          return `<a href="${n.href}" data-nav="${n.href}" class="nav-item flex items-center gap-2.5 px-2.5 py-2 text-[13px] rounded-sm transition-colors text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-ink-900 hover:text-ink-950 dark:hover:text-stone-100">
             ${icon(n.iconName, { size: 16 })}
             <span>${n.label}</span>
-          </a>`,
-        ).join("")}
+          </a>`;
+        }).join("")}
       </nav>
-      <div class="px-3 py-3 border-t border-stone-200 dark:border-ink-800 text-[11px] text-stone-500 dark:text-stone-500 flex items-center justify-between">
-        <span>v0.1</span>
-        <button id="cmdkOpen" class="flex items-center gap-1 px-1.5 py-0.5 rounded-sm border border-stone-300 dark:border-ink-700 hover:bg-stone-100 dark:hover:bg-ink-900" title="Search (⌘K)">
-          ${icon("command", { size: 11 })}<span class="font-mono">K</span>
-        </button>
+      <div class="border-t border-stone-200 dark:border-ink-800">
+        <div class="px-3 pt-3 pb-1.5 flex items-center justify-between">
+          <span class="text-[11px] font-mono text-stone-500 dark:text-stone-500">v1.0</span>
+          <button id="cmdkOpen" class="flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[11px] text-stone-500 dark:text-stone-500 border border-stone-300 dark:border-ink-700 hover:bg-stone-100 dark:hover:bg-ink-900" title="Search (⌘K)">
+            ${icon("command", { size: 11 })}<span class="font-mono">K</span>
+          </button>
+        </div>
+        <div class="px-3 pb-3 text-[10px] text-stone-400 dark:text-stone-500 flex items-center gap-1">
+          <span>powered by</span>
+          <span class="font-semibold tracking-wide text-stone-600 dark:text-stone-300">Beetlestance</span>
+        </div>
       </div>
     </aside>
     <main class="flex-1 min-w-0 flex flex-col bg-white dark:bg-ink-950">
@@ -152,6 +168,17 @@ function setupSpaNav() {
     if (url.host !== location.host) return;
     // Skip the report endpoint — it's a server-rendered standalone page.
     if (url.pathname.startsWith("/report/")) return;
+    // Hash-only links on the same page: smooth-scroll to the anchor instead
+    // of refetching the page.
+    if (url.pathname === location.pathname && url.search === location.search) {
+      if (url.hash && url.hash !== location.hash) {
+        e.preventDefault();
+        const target = document.getElementById(url.hash.slice(1));
+        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+        window.history.pushState({}, "", url.hash);
+      }
+      return;
+    }
     e.preventDefault();
     navigateTo(url.pathname + url.search + url.hash);
   });

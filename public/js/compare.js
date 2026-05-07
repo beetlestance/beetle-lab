@@ -173,10 +173,19 @@ mount(async (page) => {
   }
 
   await refresh();
-  window.addEventListener("popstate", refresh);
+
+  // popstate handler — only react if we're still on a compare URL. When the
+  // user clicks Back to leave the compare page, shell.js owns that navigation
+  // and re-imports the destination module; we'd otherwise briefly render
+  // "empty vs empty" against the previous URL before the swap completes.
+  const onPopState = () => {
+    if (!location.pathname.startsWith("/compare/")) return;
+    refresh();
+  };
+  window.addEventListener("popstate", onPopState);
 
   return () => {
-    window.removeEventListener("popstate", refresh);
+    window.removeEventListener("popstate", onPopState);
     for (const c of Object.values(charts)) {
       try { c.destroy(); } catch {}
     }
@@ -195,9 +204,9 @@ function template() {
           <h1 class="text-[22px] font-semibold tracking-tight mt-1">Compare runs</h1>
           <p class="text-[12px] text-stone-500 dark:text-stone-400 mt-1">Pick up to 4 runs of this config to overlay charts and diff stats.</p>
         </div>
-        <a href="/bucket/${encodeURIComponent(bucket)}#runs" class="text-[12px] px-3 py-2 rounded border border-stone-200 dark:border-ink-800 hover:border-indigo-400 transition-colors flex items-center gap-2">
-          ${icon("back", { size: 13 })}<span>Back to bucket</span>
-        </a>
+        <button id="backBtn" class="text-[12px] px-3 py-2 rounded border border-stone-200 dark:border-ink-800 hover:border-indigo-400 transition-colors flex items-center gap-2">
+          ${icon("back", { size: 13 })}<span>Back</span>
+        </button>
       </div>
 
       <section id="slots" class="mb-5"></section>
@@ -218,6 +227,16 @@ function template() {
 }
 
 function bindActions() {
+  document.getElementById("backBtn")?.addEventListener("click", () => {
+    // Use the browser's back stack so the user lands wherever they came from
+    // (a run detail page, the runs list, the bucket detail, etc.).
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      // Direct page load with no history — fall back to the bucket's runs tab.
+      location.href = `/bucket/${encodeURIComponent(bucket)}#runs`;
+    }
+  });
   document.getElementById("diffClose")?.addEventListener("click", closeDiff);
   document.getElementById("diffModal")?.addEventListener("click", (e) => {
     if (e.target.id === "diffModal") closeDiff();
@@ -479,6 +498,12 @@ function sectionCard(section, details, i) {
     .map((row) => statRowHtml(row, details))
     .filter(Boolean)
     .join("");
+  // Fixed column layout: metric label is constant-width (260px) and each
+  // run column shares the remaining space equally. table-layout: fixed
+  // forces these widths to apply, which keeps A/B/C/D vertically aligned
+  // across every section card on the page.
+  const dataColPct = (100 / details.length).toFixed(4);
+  const dataCols = details.map(() => `<col style="width:${dataColPct}%">`).join("");
   return `
     <div data-section="${section.id}" class="border border-stone-200 dark:border-ink-800 rounded-md bg-white dark:bg-ink-900 overflow-hidden" style="animation-delay:${i * 18}ms">
       <button data-toggle class="w-full px-4 h-11 flex items-center justify-between border-b border-stone-100 dark:border-ink-800 text-left hover:bg-stone-50 dark:hover:bg-ink-800/40 transition-colors">
@@ -490,7 +515,11 @@ function sectionCard(section, details, i) {
       </button>
       <div data-expand class="expand${open ? " open" : ""}">
         <div class="expand-inner">
-          <table class="w-full text-[12px]">
+          <table class="w-full text-[12px]" style="table-layout:fixed">
+            <colgroup>
+              <col style="width:260px">
+              ${dataCols}
+            </colgroup>
             <thead>
               <tr class="text-[10px] uppercase tracking-wider text-stone-500 dark:text-stone-400 border-b border-stone-100 dark:border-ink-800">
                 <th class="text-left px-4 py-2 font-medium">Metric</th>

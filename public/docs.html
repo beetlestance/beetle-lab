@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>k6-studio · Docs</title>
+    <script>
+      try { if (localStorage.getItem("k6studio.theme") === "light") document.documentElement.classList.remove("dark"); } catch {}
+    </script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: { extend: {
+          fontFamily: { sans: ["Inter","ui-sans-serif","system-ui","sans-serif"], mono: ["JetBrains Mono","ui-monospace","Menlo","monospace"] },
+          colors: { ink: { 950: "#0a0c10", 900: "#11141a", 800: "#181c24", 700: "#232934", 600: "#2c333f" }, warm: { 500: "#f97316", 600: "#ea580c", 400: "#fb923c" } },
+        }},
+      };
+    </script>
+    <link rel="stylesheet" href="/css/main.css" />
+  </head>
+  <body class="font-sans text-ink-900 dark:text-stone-50 bg-stone-50 dark:bg-ink-950">
+    <div id="page-content"></div>
+    <script type="module" src="/js/docs.js"></script>
+  </body>
+</html>

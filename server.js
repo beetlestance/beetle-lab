@@ -29,6 +29,192 @@ app.get("/bucket/:name", sendPage("bucket.html"));
 app.get("/runs", sendPage("runs.html"));
 app.get("/run/:bucket/:configDir/:id", sendPage("run.html"));
 app.get("/compare/:bucket/:configDir", sendPage("compare.html"));
+app.get("/docs", sendPage("docs.html"));
+app.get("/integrations", sendPage("integrations.html"));
+
+// AI skill — a Claude/agent-friendly markdown spec describing every k6-studio
+// HTTP endpoint and the WebSocket protocol so an LLM can drive the tool.
+app.get("/integrations/k6-studio.skill.md", (_req, res) => {
+  res.type("text/markdown").send(buildAiSkill());
+});
+
+function buildAiSkill() {
+  return `# k6-studio — agent skill
+
+You are operating against a local k6-studio instance over plain HTTP and a
+WebSocket. Use this skill when the user asks you to start, inspect, compare,
+export, or manage HTTP load tests, especially against Node.js services where
+memory / CPU / event-loop / GC profiling is needed.
+
+## Base URL
+
+Default: \`http://localhost:4567\`. Ask the user if they're running on a
+different port. All API endpoints below are relative to this base.
+
+## Concepts
+
+- **Bucket**: A named workspace holding configs, payload files, and run
+  history for a project. On disk: \`configs/<bucket>/\`.
+- **Config**: A JSON file inside a bucket whose top-level has a non-empty
+  \`endpoints[]\` array. Multiple configs can live in the same bucket and
+  share payload files.
+- **Run**: A single k6 execution of a config. Output goes to
+  \`configs/<bucket>/runs/<configDir>/<runId>/\`. \`configDir\` is the config's
+  relative path with \`/\` → \`__\` and \`.json\` stripped.
+
+## REST endpoints
+
+### Buckets
+
+- \`GET /api/folders\` → list buckets, each with \`name\`, \`mtime\`,
+  \`fileCount\`, \`configs[]\` (path + mtime).
+- \`POST /api/folders\` body \`{ "name": "bucket-name" }\` → create bucket.
+- \`DELETE /api/folders/:name\` → delete bucket and ALL its runs.
+
+### Files
+
+- \`POST /api/folders/:name/files\` body \`{ "files": [{ "path": "...", "content": "..." }] }\`
+  Merge-uploads files into the bucket. Existing files at the same path are overwritten.
+  \`runs/...\` paths are reserved and silently skipped.
+- \`GET /api/folders/:name/files/<rel>\` → read a file (returned as JSON if it parses, else text).
+- \`DELETE /api/folders/:name/files/<rel>\` → delete a file.
+
+### Runs
+
+- \`POST /api/runs\` body \`{ "folder": "<bucket>", "config": "<config-rel-path>", "target": "http://..." }\`
+  → starts a new run. Returns the run snapshot \`{ id, status, bucket, configRel, configDir, target, startedAt }\`.
+- \`POST /api/runs/:id/stop\` → stop a running run (skips cooldown).
+- \`GET /api/runs\` → list **active** in-memory runs (current process). Status is
+  \`running\` for in-flight runs.
+- \`GET /api/runs/:id\` → live snapshot + \`tickHistory\` + \`logs\`.
+- \`GET /api/runs-history?folder=<bucket>\` → past runs from disk. Each row
+  carries \`bucket\`, \`configDir\`, \`configRel\`, \`status\`, \`startedAt\`,
+  \`endedAt\`, \`stats\` (requests, rps, p50/p95/p99, errors, failedRate).
+- \`GET /api/folders/:bucket/runs/:configDir/:id\` → full detail:
+  \`{ meta, summary, summaryTxt, ticks[], log, hasMemory, configSnapshot }\`.
+  - \`meta.configHash\` is the SHA-256 of the config JSON at run time.
+  - \`configSnapshot\` is the parsed config copied at run start.
+  - \`summary\` is the raw k6 \`handleSummary\` payload.
+  - \`summaryTxt\` is the rendered Node.js performance report.
+  - \`ticks[]\` is per-second aggregated metrics: \`{ t, rps, p50, p95, p99, errors, vus, memory: {...} }\`.
+- \`DELETE /api/folders/:bucket/runs/:configDir/:id\` → delete one run.
+
+### Reports
+
+- \`GET /report/:bucket/:configDir/:id\` → standalone HTML report page.
+
+## WebSocket /ws?run=<id>
+
+Connect after starting a run to stream live data. Messages:
+
+- \`{ "type": "hello", "run": {...snapshot...} }\` — sent immediately on connect, then
+  any \`tickHistory\` and recent log lines are replayed.
+- \`{ "type": "tick", "t": <ms>, "rps": ..., "p50": ..., "p95": ..., "p99": ..., "errors": ..., "vus": ..., "memory": {...} }\`
+  every second.
+- \`{ "type": "log", "t": <ms>, "line": "..." }\` for each log line.
+- \`{ "type": "status", "status": "running" | "completed" | "failed" | "stopped", ... }\`.
+- \`{ "type": "summary", "data": {...} }\` after the run finishes.
+
+## Config JSON shape
+
+\`\`\`jsonc
+{
+  "executor": "constant-arrival-rate",   // or "ramping-vus"
+  "rate": 30, "timeUnit": "1s", "loadDuration": "3m",
+  "preAllocatedVUs": 15, "maxVUs": 60,
+  // OR for ramping-vus:
+  // "stages": [{ "duration": "30s", "vus": 50 }, ...]
+
+  "target": "http://localhost:8080",     // optional — overridable per run
+  "healthPath": "/health",                // optional — wait for 200 before load
+  "tokens": ["..."],                      // optional — substituted into headers
+
+  "memorySampling": {
+    "enabled": true,
+    "intervalSeconds": 2,
+    "endpoint": "/debug/procstats",       // returns Node.js runtime stats
+    "cooldownSeconds": 180                // optional — wait this long after load
+                                          //   to detect memory leaks
+  },
+
+  "thresholds": { ... },                  // optional k6 thresholds
+
+  "endpoints": [
+    {
+      "name": "get_user",
+      "method": "GET",
+      "path": "/v1/users/123",
+      "weight": 10,
+      "params": { "include": "profile" },
+      "headers": { "Authorization": "Bearer \${token}" },
+      "checks": { "status": 200, "bodyContains": "id" }
+    },
+    {
+      "name": "post_event",
+      "method": "POST",
+      "path": "/v1/events",
+      "weight": 1,
+      "body": { "type": "click" },
+      // or "bodyFile": "./payload/big-event.json" (resolved against the config's dir)
+      "checks": { "status2xx": true }
+    }
+  ]
+}
+\`\`\`
+
+## Workflows
+
+### Start a run and wait for it to finish
+
+\`\`\`text
+1. POST /api/runs { folder, config, target } -> { id, configDir }
+2. Open WS /ws?run=<id>
+3. Read ticks until { type: "status", status: "completed" | "failed" | "stopped" }
+4. Optionally GET /api/folders/<bucket>/runs/<configDir>/<id> for the summaryTxt + summary
+\`\`\`
+
+### Compare two runs of the same config
+
+\`\`\`text
+1. GET /api/runs-history?folder=<bucket> — filter by configDir to get same-config runs
+2. Pick two run ids
+3. For each, GET /api/folders/<bucket>/runs/<configDir>/<id> for full detail
+4. Compare summary.metrics directly, or open
+   /compare/<bucket>/<configDir>?a=<idA>&b=<idB> in a browser
+\`\`\`
+
+### Export a report
+
+- TXT report:    \`GET /api/folders/<bucket>/runs/<configDir>/<id>\` → \`summaryTxt\`
+- JSON summary:  same response → \`summary\`
+- CSV metrics:   same response → \`ticks\` (build a CSV client-side)
+- Standalone:    \`GET /report/<bucket>/<configDir>/<id>\` (returns HTML)
+
+## Metric meanings (Node.js services)
+
+- \`http_reqs.count\` / \`.rate\` — total requests / per-second throughput.
+- \`http_req_duration.p(95)\` — p95 latency in ms. Watch trend across runs.
+- \`http_req_failed.rate\` — fraction of failed requests.
+- \`heap_inuse_bytes\` — V8 heap currently used; rising monotonically across
+  runs is a leak indicator. Compare to \`baseline_heap_mb\` and
+  \`cooldown_heap_mb\`.
+- \`peak_heap_mb\` / \`peak_rss_mb\` / \`peak_cpu_percent\` — high-water marks.
+- \`event_loop_delay_p99_ms\` — JS thread blocking. >100ms is bad.
+- \`gc_max_ms\` — longest GC pause. >100ms causes user-perceptible lag.
+- \`active_handles\` — libuv handles open. Monotonic growth across runs →
+  unclosed connections / timers.
+- \`cooldown_*\` — sampled after \`memorySampling.cooldownSeconds\` of idle.
+  If close to baseline, no leak. If close to peak, suspect a leak.
+
+## Conventions
+
+- Always quote \`bucket\`, \`configDir\`, and \`runId\` in URLs (they may contain
+  characters needing escape).
+- Don't \`rm -rf configs/\` — that's user data. Use the API to delete.
+- A "run" exists on disk as soon as it starts, even before completion.
+  meta.json is written first; summary.json + summary.txt only after exit.
+`;
+}
 
 function safeName(name) {
   return (
