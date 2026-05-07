@@ -3,17 +3,18 @@ import { check, sleep } from "k6";
 import { Counter, Trend } from "k6/metrics";
 
 // CONFIG points to an absolute path to a JSON config file.
+// CONFIG_DIR is its directory (used to resolve bodyFile references).
 // TARGET overrides config.target.
 // SUMMARY_PATH (optional) is where handleSummary writes summary.json.
 const CONFIG_FILE = __ENV.CONFIG;
 if (!CONFIG_FILE) throw new Error("CONFIG env var is required");
+const CONFIG_DIR = __ENV.CONFIG_DIR || ".";
 const config = JSON.parse(open(CONFIG_FILE));
 
-// Resolve bodyFile references — paths relative to the config file's directory
-// when uploaded as a bundle, or absolute paths.
 config.endpoints.forEach((ep) => {
   if (ep.bodyFile) {
-    ep.body = JSON.parse(open(ep.bodyFile));
+    const p = ep.bodyFile.startsWith("/") ? ep.bodyFile : `${CONFIG_DIR}/${ep.bodyFile}`;
+    ep.body = JSON.parse(open(p));
   }
 });
 

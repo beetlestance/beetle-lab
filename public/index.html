@@ -21,13 +21,19 @@
         <section>
           <div class="section-head">
             <h2>Configs</h2>
-            <label class="upload-btn" title="Upload a config JSON">
-              + Upload
-              <input id="upload-input" type="file" accept=".json,application/json" hidden />
-            </label>
+            <div class="upload-actions">
+              <label class="upload-btn" title="Upload a single config JSON">
+                + File
+                <input id="upload-input" type="file" accept=".json,application/json" hidden />
+              </label>
+              <label class="upload-btn" title="Upload a folder (config + payloads)">
+                + Folder
+                <input id="upload-folder" type="file" webkitdirectory directory multiple hidden />
+              </label>
+            </div>
           </div>
           <ul id="config-list" class="config-list"></ul>
-          <div id="config-empty" class="muted small">No configs yet. Upload a JSON to start.</div>
+          <div id="config-empty" class="muted small">Upload a JSON config or a folder containing config + payload files.</div>
         </section>
 
         <section>

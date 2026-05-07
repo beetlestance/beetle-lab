@@ -2,6 +2,7 @@ const els = {
   configList: document.getElementById("config-list"),
   configEmpty: document.getElementById("config-empty"),
   uploadInput: document.getElementById("upload-input"),
+  uploadFolder: document.getElementById("upload-folder"),
   targetInput: document.getElementById("target-input"),
   runBtn: document.getElementById("run-btn"),
   stopBtn: document.getElementById("stop-btn"),
@@ -52,7 +53,7 @@ function renderConfigs() {
     const li = document.createElement("li");
     li.className = c.name === selectedConfig ? "active" : "";
     const name = document.createElement("span");
-    name.textContent = c.name.replace(/\.json$/, "");
+    name.textContent = c.fileCount > 1 ? `${c.name} (${c.fileCount} files)` : c.name;
     name.style.cursor = "pointer";
     name.style.flex = "1";
     name.style.overflow = "hidden";
@@ -163,6 +164,23 @@ function escapeHtml(s) {
   })[c]);
 }
 
+async function postUpload(body, inputEl) {
+  const res = await fetch("/api/configs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    alert(`Upload failed: ${e.error || res.statusText}`);
+    return;
+  }
+  if (inputEl) inputEl.value = "";
+  await loadConfigs();
+  const data = await res.json();
+  selectConfig(data.name);
+}
+
 els.uploadInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -173,20 +191,40 @@ els.uploadInput.addEventListener("change", async (e) => {
     alert(`Invalid JSON: ${err.message}`);
     return;
   }
-  const res = await fetch("/api/configs", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name: file.name, content: text }),
-  });
-  if (!res.ok) {
-    const e = await res.json().catch(() => ({}));
-    alert(`Upload failed: ${e.error || res.statusText}`);
+  const name = file.name.replace(/\.json$/, "");
+  await postUpload({ name, content: text }, els.uploadInput);
+});
+
+els.uploadFolder.addEventListener("change", async (e) => {
+  const fileList = Array.from(e.target.files || []);
+  if (fileList.length === 0) return;
+  // Top-level folder name = first segment of webkitRelativePath of any file.
+  const firstRel = fileList[0].webkitRelativePath || fileList[0].name;
+  const topDir = firstRel.split("/")[0];
+  const stripTop = (rel) => {
+    const parts = rel.split("/");
+    if (parts[0] === topDir) parts.shift();
+    return parts.join("/");
+  };
+  const files = [];
+  for (const f of fileList) {
+    const rel = stripTop(f.webkitRelativePath || f.name);
+    if (!rel) continue;
+    // Skip macOS junk and big binaries we don't need
+    if (rel.includes(".DS_Store") || rel.startsWith("__MACOSX/")) continue;
+    if (f.size > 30 * 1024 * 1024) {
+      alert(`Skipping ${rel}: file is over 30MB`);
+      continue;
+    }
+    const content = await f.text();
+    files.push({ path: rel, content });
+  }
+  if (files.length === 0) {
+    alert("No usable files found in folder.");
+    els.uploadFolder.value = "";
     return;
   }
-  els.uploadInput.value = "";
-  await loadConfigs();
-  const data = await res.json();
-  selectConfig(data.name);
+  await postUpload({ name: topDir, files }, els.uploadFolder);
 });
 
 els.runBtn.addEventListener("click", async () => {
@@ -273,7 +311,7 @@ function onLog(l) {
 
 function onStatus(s) {
   if (s.status) setStatus(s.status);
-  if (s.status === "completed" || s.status === "failed") {
+  if (s.status === "completed" || s.status === "failed" || s.status === "stopped") {
     els.stopBtn.disabled = true;
     activeRunId = null;
     els.runBtn.disabled = !selectedConfig;

@@ -31,6 +31,7 @@ class Run extends EventEmitter {
     this.endedAt = null;
     this.exitCode = null;
     this.error = null;
+    this.stopRequested = false;
     this.proc = null;
     this.logLines = [];
     this.tickHistory = [];
@@ -49,6 +50,7 @@ class Run extends EventEmitter {
     const env = {
       ...process.env,
       CONFIG: this.configPath,
+      CONFIG_DIR: path.dirname(this.configPath),
       SUMMARY_PATH: this.summaryPath,
     };
     if (this.target) env.TARGET = this.target;
@@ -88,11 +90,16 @@ class Run extends EventEmitter {
           summary = JSON.parse(await fsp.readFile(this.summaryPath, "utf8"));
         } catch {}
         this.endedAt = Date.now();
-        // Exit 99 = thresholds crossed; the test still ran successfully.
-        const ranOk = code === 0 || code === 99;
-        this.status = ranOk ? "completed" : "failed";
-        if (!ranOk && !this.error) this.error = `k6 exited with code ${code}`;
-        if (code === 99) this.thresholdFailed = true;
+        if (this.stopRequested) {
+          this.status = "stopped";
+        } else if (code === 0 || code === 99) {
+          // 99 = thresholds crossed; the test still ran.
+          this.status = "completed";
+          if (code === 99) this.thresholdFailed = true;
+        } else {
+          this.status = "failed";
+          if (!this.error) this.error = `k6 exited with code ${code}`;
+        }
         this.emit("summary", summary);
         this.emit("status", {
           status: this.status,
@@ -109,6 +116,7 @@ class Run extends EventEmitter {
 
   stop() {
     if (this.proc && this.status === "running") {
+      this.stopRequested = true;
       try {
         this.proc.kill("SIGINT");
       } catch {}
