@@ -1,0 +1,19 @@
+# Don't ship developer artifacts or per-machine state into the image.
+.git
+.gitignore
+.gitattributes
+node_modules
+runs
+configs/*
+!configs/.gitkeep
+.DS_Store
+.env*
+*.log
+.idea
+.vscode
+.vscode-test
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml
+*.tgz
