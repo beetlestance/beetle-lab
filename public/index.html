@@ -10,6 +10,10 @@
   <body>
     <header>
       <h1>k6-studio</h1>
+      <nav class="tabs">
+        <button class="tab active" data-tab="run">Run</button>
+        <button class="tab" data-tab="runs">Runs</button>
+      </nav>
       <div class="header-status">
         <span id="run-status" class="badge badge-idle">idle</span>
         <span id="run-id" class="muted"></span>
@@ -38,7 +42,7 @@
         </section>
       </aside>
 
-      <section class="content">
+      <section class="content" id="view-run">
         <div id="config-preview" class="panel">
           <div class="panel-head"><h2>Config preview</h2><span id="preview-name" class="muted"></span></div>
           <div id="preview-body" class="muted">Pick a config on the left.</div>
@@ -60,6 +64,35 @@
             <button id="clear-logs" class="link">clear</button>
           </div>
           <pre id="logs" class="logs"></pre>
+        </div>
+      </section>
+
+      <section class="content" id="view-runs" hidden>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Runs</h2>
+            <div class="runs-toolbar">
+              <select id="runs-filter" class="select-input"><option value="">All buckets</option></select>
+              <button id="runs-refresh" class="link">refresh</button>
+            </div>
+          </div>
+          <div id="runs-table-wrap"><table id="runs-table" class="runs-table"></table></div>
+          <div id="runs-empty" class="muted small" hidden>No runs yet.</div>
+        </div>
+
+        <div id="run-detail" class="panel" hidden>
+          <div class="panel-head">
+            <h2>Run detail</h2>
+            <span id="detail-name" class="muted"></span>
+            <button id="detail-close" class="link">close</button>
+          </div>
+          <div id="detail-summary" class="detail-summary"></div>
+          <div class="charts-grid">
+            <div class="chart-card"><div class="chart-title">Requests / sec</div><canvas id="rchart-rps"></canvas></div>
+            <div class="chart-card"><div class="chart-title">Latency (ms)</div><canvas id="rchart-latency"></canvas></div>
+            <div class="chart-card"><div class="chart-title">Errors / sec</div><canvas id="rchart-errors"></canvas></div>
+            <div class="chart-card"><div class="chart-title">Active VUs</div><canvas id="rchart-vus"></canvas></div>
+          </div>
         </div>
       </section>
     </main>

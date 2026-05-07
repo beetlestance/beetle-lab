@@ -15,17 +15,20 @@ function percentile(sorted, p) {
 }
 
 class Run extends EventEmitter {
-  constructor({ id, configPath, target, runsDir, k6Bin = "k6" }) {
+  constructor({ id, configPath, target, runsDir, bucket, configRel, k6Bin = "k6" }) {
     super();
     if (!runsDir) throw new Error("runsDir is required");
     this.id = id;
     this.configPath = configPath;
     this.target = target;
+    this.bucketName = bucket || null;
+    this.configRel = configRel || null;
     this.k6Bin = k6Bin;
     this.dir = path.join(runsDir, id);
     this.metricsPath = path.join(this.dir, "metrics.jsonl");
     this.summaryPath = path.join(this.dir, "summary.json");
     this.logPath = path.join(this.dir, "log.txt");
+    this.metaPath = path.join(this.dir, "meta.json");
     this.status = "pending";
     this.startedAt = null;
     this.endedAt = null;
@@ -65,6 +68,7 @@ class Run extends EventEmitter {
 
     this.status = "running";
     this.startedAt = Date.now();
+    await this._writeMeta();
     this.emit("status", { status: this.status, startedAt: this.startedAt });
 
     this.proc = spawn(this.k6Bin, args, { env, cwd: __dirname });
@@ -100,6 +104,7 @@ class Run extends EventEmitter {
           this.status = "failed";
           if (!this.error) this.error = `k6 exited with code ${code}`;
         }
+        await this._writeMeta();
         this.emit("summary", summary);
         this.emit("status", {
           status: this.status,
@@ -287,8 +292,97 @@ class Run extends EventEmitter {
       error: this.error,
       target: this.target,
       configPath: this.configPath,
+      bucket: this.bucketName,
+      configRel: this.configRel,
     };
   }
+
+  async _writeMeta() {
+    try {
+      await fsp.writeFile(this.metaPath, JSON.stringify(this.snapshot(), null, 2));
+    } catch {}
+  }
+}
+
+// Re-aggregate a saved metrics.jsonl into per-second tick buckets — used by
+// the server when serving historical runs (the live aggregator's tick state
+// only lives in memory).
+export async function aggregateMetricsFile(metricsPath) {
+  let text;
+  try {
+    text = await fsp.readFile(metricsPath, "utf8");
+  } catch {
+    return [];
+  }
+  const ticks = [];
+  let bucket = null;
+  const openBucket = (time) => {
+    const start = Math.floor(time / 1000) * 1000;
+    return {
+      windowStart: start,
+      windowEnd: start + 1000,
+      reqs: 0,
+      durations: [],
+      failed: 0,
+      vus: 0,
+      iterations: 0,
+      errors: 0,
+      endpointLatencies: {},
+    };
+  };
+  const flush = (b) => {
+    const durations = b.durations.slice().sort((a, b) => a - b);
+    ticks.push({
+      t: b.windowStart,
+      rps: b.reqs,
+      p50: percentile(durations, 50),
+      p95: percentile(durations, 95),
+      p99: percentile(durations, 99),
+      avg: durations.length ? durations.reduce((s, v) => s + v, 0) / durations.length : 0,
+      failed: b.failed,
+      errors: b.errors,
+      vus: b.vus,
+      iterations: b.iterations,
+      endpoints: Object.fromEntries(
+        Object.entries(b.endpointLatencies).map(([k, vs]) => {
+          const sorted = vs.slice().sort((a, b) => a - b);
+          return [k, { count: vs.length, p95: percentile(sorted, 95) }];
+        }),
+      ),
+    });
+  };
+  for (const line of text.split("\n")) {
+    if (!line) continue;
+    let evt;
+    try {
+      evt = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (evt.type !== "Point") continue;
+    const time = new Date(evt.data.time).getTime();
+    const value = evt.data.value;
+    const name = evt.metric;
+    if (!bucket) bucket = openBucket(time);
+    if (time >= bucket.windowEnd) {
+      flush(bucket);
+      bucket = openBucket(time);
+    }
+    if (name === "http_reqs") bucket.reqs += value;
+    else if (name === "http_req_duration") bucket.durations.push(value);
+    else if (name === "http_req_failed") {
+      if (value > 0) bucket.failed += 1;
+    } else if (name === "vus") bucket.vus = Math.max(bucket.vus, value);
+    else if (name === "iterations") bucket.iterations += value;
+    else if (name === "errors") bucket.errors += value;
+    else if (name.startsWith("ep_") && name.endsWith("_latency")) {
+      const ep = name.slice(3, -"_latency".length);
+      if (!bucket.endpointLatencies[ep]) bucket.endpointLatencies[ep] = [];
+      bucket.endpointLatencies[ep].push(value);
+    }
+  }
+  if (bucket) flush(bucket);
+  return ticks;
 }
 
 export class Runner {
@@ -304,9 +398,9 @@ export class Runner {
     return this.runs.get(id);
   }
 
-  async create({ configPath, target, runsDir }) {
+  async create({ configPath, target, runsDir, bucket, configRel }) {
     const id = `${new Date().toISOString().replace(/[:.]/g, "-")}-${Math.random().toString(36).slice(2, 6)}`;
-    const run = new Run({ id, configPath, target, runsDir });
+    const run = new Run({ id, configPath, target, runsDir, bucket, configRel });
     this.runs.set(id, run);
     await run.start();
     return run;

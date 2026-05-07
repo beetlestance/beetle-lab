@@ -4,7 +4,7 @@ import http from "node:http";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Runner } from "./runner.js";
+import { Runner, aggregateMetricsFile } from "./runner.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 4567);
@@ -38,6 +38,16 @@ function safeRelPath(p) {
 
 function folderDir(name) {
   return path.join(FOLDERS_DIR, safeName(name));
+}
+
+// Map a config's relative path inside a bucket to the run-history subdir
+// name. Slashes are encoded so loadtest/config-constant.json and
+// foo/config-constant.json don't collide.
+function configDirName(rel) {
+  return String(rel || "")
+    .replace(/\.json$/i, "")
+    .replace(/[\\/]/g, "__")
+    .replace(/[^a-zA-Z0-9_.-]/g, "_") || "config";
 }
 
 async function listFolders() {
@@ -192,6 +202,134 @@ app.get("/api/runs", (_req, res) => {
   res.json(runner.list());
 });
 
+// History (persisted on disk). Use /api/runs-history?folder=<bucket> to filter.
+app.get("/api/runs-history", async (req, res) => {
+  const filter = req.query.folder ? safeName(req.query.folder) : null;
+  const out = [];
+  let buckets;
+  try {
+    buckets = await fs.readdir(FOLDERS_DIR, { withFileTypes: true });
+  } catch {
+    return res.json([]);
+  }
+  for (const b of buckets) {
+    if (!b.isDirectory()) continue;
+    if (filter && b.name !== filter) continue;
+    const rows = await readRunsForBucket(b.name);
+    out.push(...rows);
+  }
+  out.sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
+  res.json(out);
+});
+
+async function readRunsForBucket(bucket) {
+  const runsRoot = path.join(FOLDERS_DIR, bucket, RUNS_SUBDIR);
+  let configDirs;
+  try {
+    configDirs = await fs.readdir(runsRoot, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const rows = [];
+  for (const c of configDirs) {
+    if (!c.isDirectory()) continue;
+    const cdir = path.join(runsRoot, c.name);
+    let runs;
+    try {
+      runs = await fs.readdir(cdir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const r of runs) {
+      if (!r.isDirectory()) continue;
+      const runDir = path.join(cdir, r.name);
+      const row = await readRunRow(bucket, c.name, r.name, runDir);
+      if (row) rows.push(row);
+    }
+  }
+  return rows;
+}
+
+async function readRunRow(bucket, configDir, id, runDir) {
+  let meta = null;
+  try {
+    meta = JSON.parse(await fs.readFile(path.join(runDir, "meta.json"), "utf8"));
+  } catch {}
+  let stats = null;
+  try {
+    const summary = JSON.parse(await fs.readFile(path.join(runDir, "summary.json"), "utf8"));
+    stats = extractRunStats(summary);
+  } catch {}
+  if (!meta && !stats) return null;
+  return {
+    id,
+    bucket,
+    configDir,
+    configRel: meta?.configRel || configDir,
+    status: meta?.status || (stats ? "completed" : "unknown"),
+    exitCode: meta?.exitCode ?? null,
+    error: meta?.error || null,
+    target: meta?.target || null,
+    startedAt: meta?.startedAt || null,
+    endedAt: meta?.endedAt || null,
+    stats,
+  };
+}
+
+function extractRunStats(summary) {
+  const m = summary?.metrics || {};
+  const reqs = m.http_reqs?.values || {};
+  const dur = m.http_req_duration?.values || {};
+  const errs = m.errors?.values || {};
+  const failed = m.http_req_failed?.values || {};
+  return {
+    requests: reqs.count || 0,
+    rps: reqs.rate || 0,
+    avg: dur.avg || 0,
+    p50: dur.med || 0,
+    p95: dur["p(95)"] || 0,
+    p99: dur["p(99)"] || 0,
+    errors: errs.count || 0,
+    failedRate: failed.rate || 0,
+  };
+}
+
+// Read a single historical run: meta + summary + replayed per-second ticks.
+app.get("/api/folders/:bucket/runs/:configDir/:id", async (req, res) => {
+  const bucket = safeName(req.params.bucket);
+  const cdir = safeName(req.params.configDir);
+  const id = safeName(req.params.id);
+  const runDir = path.join(FOLDERS_DIR, bucket, RUNS_SUBDIR, cdir, id);
+  let meta = null;
+  let summary = null;
+  try {
+    meta = JSON.parse(await fs.readFile(path.join(runDir, "meta.json"), "utf8"));
+  } catch {}
+  try {
+    summary = JSON.parse(await fs.readFile(path.join(runDir, "summary.json"), "utf8"));
+  } catch {}
+  if (!meta && !summary) return res.status(404).json({ error: "run not found" });
+  const ticks = await aggregateMetricsFile(path.join(runDir, "metrics.jsonl"));
+  let log = "";
+  try {
+    log = await fs.readFile(path.join(runDir, "log.txt"), "utf8");
+  } catch {}
+  res.json({ meta, summary, ticks, log });
+});
+
+app.delete("/api/folders/:bucket/runs/:configDir/:id", async (req, res) => {
+  const bucket = safeName(req.params.bucket);
+  const cdir = safeName(req.params.configDir);
+  const id = safeName(req.params.id);
+  const runDir = path.join(FOLDERS_DIR, bucket, RUNS_SUBDIR, cdir, id);
+  try {
+    await fs.rm(runDir, { recursive: true, force: true });
+    res.json({ ok: true });
+  } catch {
+    res.status(404).json({ error: "not found" });
+  }
+});
+
 app.get("/api/runs/:id", (req, res) => {
   const run = runner.get(req.params.id);
   if (!run) return res.status(404).json({ error: "not found" });
@@ -219,8 +357,14 @@ app.post("/api/runs", async (req, res) => {
   } catch {
     return res.status(404).json({ error: "config not found" });
   }
-  const runsDir = path.join(dir, RUNS_SUBDIR);
-  const run = await runner.create({ configPath, target, runsDir });
+  const runsDir = path.join(dir, RUNS_SUBDIR, configDirName(rel));
+  const run = await runner.create({
+    configPath,
+    target,
+    runsDir,
+    bucket: safeName(folder),
+    configRel: rel,
+  });
   res.json(run.snapshot());
 });
 

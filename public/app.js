@@ -11,10 +11,23 @@ const els = {
   previewBody: document.getElementById("preview-body"),
   logs: document.getElementById("logs"),
   clearLogs: document.getElementById("clear-logs"),
+
+  tabs: document.querySelectorAll(".tab"),
+  viewRun: document.getElementById("view-run"),
+  viewRuns: document.getElementById("view-runs"),
+  runsFilter: document.getElementById("runs-filter"),
+  runsRefresh: document.getElementById("runs-refresh"),
+  runsTable: document.getElementById("runs-table"),
+  runsEmpty: document.getElementById("runs-empty"),
+  runDetail: document.getElementById("run-detail"),
+  detailName: document.getElementById("detail-name"),
+  detailSummary: document.getElementById("detail-summary"),
+  detailClose: document.getElementById("detail-close"),
 };
 
 let folders = [];
 const expanded = new Set();
+const bucketRecentRuns = {}; // bucket -> [...rows] | "loading" | undefined
 let selectedFolder = null;
 let selectedConfig = null;
 let currentCfg = null;
@@ -47,6 +60,35 @@ function totalDurationSec(cfg) {
   if (!cfg) return 0;
   if (cfg.executor === "constant-arrival-rate") return parseDuration(cfg.loadDuration);
   return (cfg.stages || []).reduce((sum, s) => sum + parseDuration(s.duration), 0);
+}
+
+function fmtRelTime(ms) {
+  if (!ms) return "—";
+  const diff = Math.max(0, (Date.now() - ms) / 1000);
+  if (diff < 60) return `${Math.round(diff)}s ago`;
+  if (diff < 3600) return `${Math.round(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.round(diff / 3600)}h ago`;
+  return `${Math.round(diff / 86400)}d ago`;
+}
+
+async function ensureRecentRuns(bucket) {
+  if (bucketRecentRuns[bucket] !== undefined) return;
+  bucketRecentRuns[bucket] = "loading";
+  try {
+    const res = await fetch(`/api/runs-history?folder=${encodeURIComponent(bucket)}`);
+    const all = res.ok ? await res.json() : [];
+    bucketRecentRuns[bucket] = all.slice(0, 5);
+  } catch {
+    bucketRecentRuns[bucket] = [];
+  }
+  renderFolders();
+}
+
+function invalidateRecentRuns(bucket) {
+  if (bucket) {
+    delete bucketRecentRuns[bucket];
+    if (expanded.has(bucket)) ensureRecentRuns(bucket);
+  }
 }
 
 function fmtSeconds(s) {
@@ -146,6 +188,35 @@ function renderFolderCard(f) {
         list.appendChild(li);
       }
       body.appendChild(list);
+    }
+
+    // Recent runs peek (lazy-loaded).
+    const recent = bucketRecentRuns[f.name];
+    if (recent === undefined) {
+      ensureRecentRuns(f.name);
+    } else if (recent !== "loading" && recent.length > 0) {
+      const wrap = document.createElement("div");
+      wrap.className = "bucket-runs";
+      const head = document.createElement("div");
+      head.className = "br-head";
+      head.textContent = `Recent runs (${recent.length})`;
+      wrap.appendChild(head);
+      for (const r of recent) {
+        const row = document.createElement("div");
+        row.className = "br-row";
+        const time = r.startedAt ? new Date(r.startedAt).toLocaleString() : "—";
+        row.innerHTML =
+          `<span class="br-status ${escapeHtml(r.status || "")}"></span>` +
+          `<span class="br-time">${escapeHtml(fmtRelTime(r.startedAt))}</span>` +
+          `<span class="br-config" title="${escapeHtml(time)}">${escapeHtml(r.configRel || r.configDir)}</span>`;
+        row.onclick = (e) => {
+          e.stopPropagation();
+          switchTab("runs");
+          openRunDetail(r);
+        };
+        wrap.appendChild(row);
+      }
+      body.appendChild(wrap);
     }
 
     const actions = document.createElement("div");
@@ -391,6 +462,8 @@ function onLog(l) {
 function onStatus(s) {
   if (s.status) setStatus(s.status);
   if (s.status === "completed" || s.status === "failed" || s.status === "stopped") {
+    invalidateRecentRuns(selectedFolder);
+    if (activeTab === "runs") loadRunsHistory();
     els.stopBtn.disabled = true;
     activeRunId = null;
     updateRunButton();
@@ -476,5 +549,254 @@ function updateCharts() {
   charts.vus.update("none");
 }
 
+// ---------- Tabs ----------
+let activeTab = "run";
+function switchTab(name) {
+  if (name === activeTab) return;
+  activeTab = name;
+  els.tabs.forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
+  els.viewRun.hidden = name !== "run";
+  els.viewRuns.hidden = name !== "runs";
+  if (name === "runs") {
+    loadRunsHistory();
+    loadRunsFilterOptions();
+  }
+}
+els.tabs.forEach((t) =>
+  t.addEventListener("click", () => switchTab(t.dataset.tab)),
+);
+
+// ---------- Runs page ----------
+let runsHistory = [];
+let runsFilterFolder = "";
+let openDetail = null; // { bucket, configDir, id }
+const replayCharts = {};
+let replayChartsInited = false;
+
+els.runsFilter.addEventListener("change", () => {
+  runsFilterFolder = els.runsFilter.value;
+  loadRunsHistory();
+});
+els.runsRefresh.addEventListener("click", () => loadRunsHistory());
+els.detailClose.addEventListener("click", () => {
+  els.runDetail.hidden = true;
+  openDetail = null;
+  renderRunsTable();
+});
+
+async function loadRunsFilterOptions() {
+  const cur = els.runsFilter.value;
+  els.runsFilter.innerHTML = '<option value="">All buckets</option>';
+  for (const f of folders) {
+    const opt = document.createElement("option");
+    opt.value = f.name;
+    opt.textContent = f.name;
+    if (f.name === cur) opt.selected = true;
+    els.runsFilter.appendChild(opt);
+  }
+}
+
+async function loadRunsHistory() {
+  const url = runsFilterFolder
+    ? `/api/runs-history?folder=${encodeURIComponent(runsFilterFolder)}`
+    : "/api/runs-history";
+  const res = await fetch(url);
+  runsHistory = res.ok ? await res.json() : [];
+  renderRunsTable();
+}
+
+function renderRunsTable() {
+  els.runsEmpty.hidden = runsHistory.length > 0;
+  if (runsHistory.length === 0) {
+    els.runsTable.innerHTML = "";
+    return;
+  }
+  els.runsTable.innerHTML =
+    "<thead><tr>" +
+    "<th>Started</th><th>Bucket</th><th>Config</th><th>Status</th>" +
+    "<th>Duration</th><th>Reqs</th><th>RPS</th><th>p95 (ms)</th><th>Errors</th><th></th>" +
+    "</tr></thead>";
+  const tbody = document.createElement("tbody");
+  for (const r of runsHistory) {
+    const tr = document.createElement("tr");
+    if (
+      openDetail &&
+      openDetail.bucket === r.bucket &&
+      openDetail.configDir === r.configDir &&
+      openDetail.id === r.id
+    ) tr.classList.add("active");
+    const started = r.startedAt ? new Date(r.startedAt).toLocaleString() : "—";
+    const ended = r.endedAt ? new Date(r.endedAt).toLocaleString() : "—";
+    const durSec = r.startedAt && r.endedAt ? (r.endedAt - r.startedAt) / 1000 : 0;
+    const stats = r.stats || {};
+    tr.innerHTML =
+      `<td title="ended ${escapeHtml(ended)}">${escapeHtml(started)}</td>` +
+      `<td>${escapeHtml(r.bucket)}</td>` +
+      `<td class="config-cell"><span class="config-name">${escapeHtml(r.configRel || r.configDir)}</span></td>` +
+      `<td><span class="run-status ${escapeHtml(r.status || "")}">${escapeHtml(r.status || "?")}</span></td>` +
+      `<td class="num">${durSec ? fmtSeconds(durSec) : "—"}</td>` +
+      `<td class="num">${stats.requests ?? "—"}</td>` +
+      `<td class="num">${stats.rps ? stats.rps.toFixed(1) : "—"}</td>` +
+      `<td class="num">${stats.p95 ? stats.p95.toFixed(1) : "—"}</td>` +
+      `<td class="num">${stats.errors ?? "—"}</td>` +
+      `<td><button class="run-del" title="Delete this run">×</button></td>`;
+    tr.querySelector(".run-del").onclick = async (e) => {
+      e.stopPropagation();
+      if (!confirm("Delete this run?")) return;
+      await fetch(
+        `/api/folders/${encodeURIComponent(r.bucket)}/runs/${encodeURIComponent(r.configDir)}/${encodeURIComponent(r.id)}`,
+        { method: "DELETE" },
+      );
+      if (openDetail && openDetail.id === r.id) els.detailClose.click();
+      loadRunsHistory();
+    };
+    tr.onclick = () => openRunDetail(r);
+    tbody.appendChild(tr);
+  }
+  els.runsTable.appendChild(tbody);
+}
+
+async function openRunDetail(r) {
+  openDetail = { bucket: r.bucket, configDir: r.configDir, id: r.id };
+  renderRunsTable();
+  const res = await fetch(
+    `/api/folders/${encodeURIComponent(r.bucket)}/runs/${encodeURIComponent(r.configDir)}/${encodeURIComponent(r.id)}`,
+  );
+  if (!res.ok) {
+    alert("Could not load run.");
+    return;
+  }
+  const detail = await res.json();
+  showRunDetail(r, detail);
+}
+
+function showRunDetail(row, detail) {
+  els.runDetail.hidden = false;
+  els.detailName.textContent = `${row.bucket} / ${row.configRel || row.configDir} · ${row.id}`;
+  // Stats grid
+  const stats = row.stats || {};
+  const meta = detail.meta || {};
+  const durSec =
+    meta.startedAt && meta.endedAt ? (meta.endedAt - meta.startedAt) / 1000 : 0;
+  const cells = [
+    ["Status", row.status || "?"],
+    ["Duration", durSec ? fmtSeconds(durSec) : "—"],
+    ["Requests", stats.requests ?? "—"],
+    ["RPS", stats.rps ? stats.rps.toFixed(2) : "—"],
+    ["Errors", stats.errors ?? "—"],
+    ["p50 (ms)", stats.p50 ? stats.p50.toFixed(1) : "—"],
+    ["p95 (ms)", stats.p95 ? stats.p95.toFixed(1) : "—"],
+    ["p99 (ms)", stats.p99 ? stats.p99.toFixed(1) : "—"],
+    ["Avg (ms)", stats.avg ? stats.avg.toFixed(1) : "—"],
+    ["Target", meta.target || "—"],
+  ];
+  els.detailSummary.innerHTML = cells
+    .map(
+      ([k, v]) =>
+        `<div class="stat"><div class="label">${escapeHtml(k)}</div><div class="value">${escapeHtml(String(v))}</div></div>`,
+    )
+    .join("");
+
+  if (!replayChartsInited) initReplayCharts();
+  renderReplayCharts(detail.ticks || []);
+  els.runDetail.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function initReplayCharts() {
+  replayChartsInited = true;
+  replayCharts.rps = makeReplayChart("rchart-rps", [
+    { label: "rps", data: [], borderColor: "#4f8cff", backgroundColor: "rgba(79,140,255,0.15)", fill: true },
+  ]);
+  replayCharts.latency = makeReplayChart("rchart-latency", [
+    { label: "p50", data: [], borderColor: "#2ea043" },
+    { label: "p95", data: [], borderColor: "#d29922" },
+    { label: "p99", data: [], borderColor: "#f85149" },
+  ]);
+  replayCharts.errors = makeReplayChart("rchart-errors", [
+    { label: "errors/s", data: [], borderColor: "#f85149", backgroundColor: "rgba(248,81,73,0.15)", fill: true },
+  ]);
+  replayCharts.vus = makeReplayChart("rchart-vus", [
+    { label: "vus", data: [], borderColor: "#c678dd", backgroundColor: "rgba(198,120,221,0.15)", fill: true },
+  ]);
+}
+
+function makeReplayChart(canvasId, datasets) {
+  const ctx = document.getElementById(canvasId).getContext("2d");
+  return new Chart(ctx, {
+    type: "line",
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      parsing: false,
+      plugins: { legend: { display: datasets.length > 1, labels: { color: "#8a93a3", font: { size: 10 } } } },
+      scales: {
+        x: {
+          type: "linear",
+          min: 0,
+          ticks: { color: "#8a93a3", maxTicksLimit: 8, font: { size: 10 }, callback: (v) => fmtSeconds(v) },
+          grid: { color: "#2a313c" },
+        },
+        y: { ticks: { color: "#8a93a3", font: { size: 10 } }, grid: { color: "#2a313c" }, beginAtZero: true },
+      },
+      elements: { point: { radius: 0 }, line: { borderWidth: 2, tension: 0.25 } },
+    },
+  });
+}
+
+function renderReplayCharts(ticks) {
+  const t0 = ticks.length ? ticks[0].t : 0;
+  const tN = ticks.length ? ticks[ticks.length - 1].t : 0;
+  const xMax = ticks.length ? Math.ceil((tN - t0) / 1000) + 1 : undefined;
+  const series = { rps: [], p50: [], p95: [], p99: [], errors: [], vus: [] };
+  for (const tk of ticks) {
+    const x = (tk.t - t0) / 1000;
+    series.rps.push({ x, y: tk.rps });
+    series.p50.push({ x, y: Math.round(tk.p50) });
+    series.p95.push({ x, y: Math.round(tk.p95) });
+    series.p99.push({ x, y: Math.round(tk.p99) });
+    series.errors.push({ x, y: tk.errors });
+    series.vus.push({ x, y: tk.vus });
+  }
+  for (const c of Object.values(replayCharts)) {
+    c.options.scales.x.max = xMax;
+  }
+  replayCharts.rps.data.datasets[0].data = series.rps;
+  replayCharts.latency.data.datasets[0].data = series.p50;
+  replayCharts.latency.data.datasets[1].data = series.p95;
+  replayCharts.latency.data.datasets[2].data = series.p99;
+  replayCharts.errors.data.datasets[0].data = series.errors;
+  replayCharts.vus.data.datasets[0].data = series.vus;
+  for (const c of Object.values(replayCharts)) c.update("none");
+}
+
+async function recoverActiveRun() {
+  let runs = [];
+  try {
+    const res = await fetch("/api/runs");
+    if (res.ok) runs = await res.json();
+  } catch {
+    return;
+  }
+  const live = runs
+    .filter((r) => r.status === "running")
+    .sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0))[0];
+  if (!live) return;
+  // Restore selection so the preview + duration axis match what's running.
+  if (live.bucket && live.configRel) {
+    expanded.add(live.bucket);
+    try {
+      await selectConfig(live.bucket, live.configRel);
+    } catch {}
+  }
+  if (live.target) els.targetInput.value = live.target;
+  runDurationSec = totalDurationSec(currentCfg) || null;
+  runStartT = null;
+  resetCharts();
+  els.logs.textContent = "";
+  attachToRun(live.id);
+}
+
 initCharts();
-loadFolders();
+loadFolders().then(recoverActiveRun);
