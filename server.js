@@ -8,11 +8,10 @@ import { Runner } from "./runner.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 4567);
-const CONFIGS_DIR = path.join(__dirname, "configs");
-const RUNS_DIR = path.join(__dirname, "runs");
+const FOLDERS_DIR = path.join(__dirname, "configs");
+const RUNS_SUBDIR = "runs"; // each bucket has its own runs/ subdirectory
 
-await fs.mkdir(CONFIGS_DIR, { recursive: true });
-await fs.mkdir(RUNS_DIR, { recursive: true });
+await fs.mkdir(FOLDERS_DIR, { recursive: true });
 await migrateLooseConfigs();
 
 const runner = new Runner();
@@ -21,139 +20,168 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
 function safeName(name) {
-  return name.replace(/[^a-zA-Z0-9_.-]/g, "_").replace(/^[._]+/, "").slice(0, 100) || "config";
+  return (
+    String(name || "")
+      .replace(/[^a-zA-Z0-9_.-]/g, "_")
+      .replace(/^[._]+/, "")
+      .slice(0, 100) || "folder"
+  );
 }
 
 function safeRelPath(p) {
-  return p
+  return String(p || "")
     .split(/[\\/]/)
     .filter((s) => s && s !== "." && s !== "..")
     .map((s) => s.replace(/[^a-zA-Z0-9_.-]/g, "_"))
     .join("/");
 }
 
-async function findConfigFile(dir) {
-  let entries;
-  try {
-    entries = await fs.readdir(dir);
-  } catch {
-    return null;
+function folderDir(name) {
+  return path.join(FOLDERS_DIR, safeName(name));
+}
+
+async function listFolders() {
+  const entries = await fs.readdir(FOLDERS_DIR, { withFileTypes: true });
+  const out = [];
+  for (const e of entries) {
+    if (!e.isDirectory()) continue;
+    const dir = path.join(FOLDERS_DIR, e.name);
+    const stat = await fs.stat(dir);
+    const { configs, fileCount } = await scanFolder(dir);
+    out.push({ name: e.name, mtime: stat.mtimeMs, fileCount, configs });
   }
-  // Prefer config.json; fall back to any *.json containing an endpoints array.
-  const candidates = [];
-  if (entries.includes("config.json")) candidates.push("config.json");
-  for (const f of entries) {
-    if (f !== "config.json" && f.endsWith(".json")) candidates.push(f);
-  }
-  for (const c of candidates) {
+  out.sort((a, b) => b.mtime - a.mtime);
+  return out;
+}
+
+async function scanFolder(dir) {
+  const configs = [];
+  let fileCount = 0;
+  async function walk(current, rel) {
+    let entries;
     try {
-      const txt = await fs.readFile(path.join(dir, c), "utf8");
-      const json = JSON.parse(txt);
-      if (Array.isArray(json.endpoints)) return path.join(dir, c);
-    } catch {}
+      entries = await fs.readdir(current, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      // The runs/ subtree at the bucket root is reserved for run output;
+      // it shouldn't show up in file counts or config detection.
+      if (rel === "" && e.name === RUNS_SUBDIR) continue;
+      const full = path.join(current, e.name);
+      const childRel = rel ? `${rel}/${e.name}` : e.name;
+      if (e.isDirectory()) {
+        await walk(full, childRel);
+      } else if (e.isFile()) {
+        fileCount += 1;
+        if (e.name.endsWith(".json")) {
+          try {
+            const txt = await fs.readFile(full, "utf8");
+            const json = JSON.parse(txt);
+            if (Array.isArray(json.endpoints) && json.endpoints.length > 0) {
+              const stat = await fs.stat(full);
+              configs.push({ path: childRel, mtime: stat.mtimeMs });
+            }
+          } catch {}
+        }
+      }
+    }
   }
-  return null;
+  await walk(dir, "");
+  configs.sort((a, b) => a.path.localeCompare(b.path));
+  return { configs, fileCount };
 }
 
 async function migrateLooseConfigs() {
-  const entries = await fs.readdir(CONFIGS_DIR, { withFileTypes: true });
+  const entries = await fs.readdir(FOLDERS_DIR, { withFileTypes: true });
   for (const e of entries) {
     if (!e.isFile() || !e.name.endsWith(".json")) continue;
     const baseName = safeName(e.name.replace(/\.json$/, ""));
-    const targetDir = path.join(CONFIGS_DIR, baseName);
+    const targetDir = path.join(FOLDERS_DIR, baseName);
     try {
       await fs.access(targetDir);
-      // Target already exists; leave the loose file alone.
       continue;
     } catch {}
     await fs.mkdir(targetDir, { recursive: true });
-    await fs.rename(
-      path.join(CONFIGS_DIR, e.name),
-      path.join(targetDir, "config.json"),
-    );
+    await fs.rename(path.join(FOLDERS_DIR, e.name), path.join(targetDir, "config.json"));
     console.log(`migrated ${e.name} -> ${baseName}/config.json`);
   }
 }
 
-app.get("/api/configs", async (_req, res) => {
-  const entries = await fs.readdir(CONFIGS_DIR, { withFileTypes: true });
-  const out = [];
-  for (const e of entries) {
-    if (!e.isDirectory()) continue;
-    const dir = path.join(CONFIGS_DIR, e.name);
-    const configFile = await findConfigFile(dir);
-    if (!configFile) continue;
-    const stat = await fs.stat(configFile);
-    const all = await fs.readdir(dir, { recursive: true, withFileTypes: true }).catch(() => []);
-    const fileCount = all.filter((f) => f.isFile()).length;
-    out.push({ name: e.name, mtime: stat.mtimeMs, size: stat.size, fileCount });
-  }
-  out.sort((a, b) => b.mtime - a.mtime);
-  res.json(out);
+app.get("/api/folders", async (_req, res) => {
+  res.json(await listFolders());
 });
 
-app.get("/api/configs/:name", async (req, res) => {
-  const name = safeName(req.params.name);
-  const dir = path.join(CONFIGS_DIR, name);
-  const configFile = await findConfigFile(dir);
-  if (!configFile) return res.status(404).json({ error: "not found" });
-  const content = await fs.readFile(configFile, "utf8");
-  res.type("application/json").send(content);
-});
-
-app.post("/api/configs", async (req, res) => {
-  const { name, content, files } = req.body || {};
+app.post("/api/folders", async (req, res) => {
+  const { name } = req.body || {};
   if (!name) return res.status(400).json({ error: "name required" });
-
-  const dirName = safeName(name.replace(/\.json$/, ""));
-  const targetDir = path.join(CONFIGS_DIR, dirName);
-
-  if (Array.isArray(files) && files.length > 0) {
-    // Bundle upload: many files preserving relative paths.
-    await fs.rm(targetDir, { recursive: true, force: true });
-    await fs.mkdir(targetDir, { recursive: true });
-    for (const f of files) {
-      if (typeof f.path !== "string" || typeof f.content !== "string") continue;
-      const rel = safeRelPath(f.path);
-      if (!rel) continue;
-      const dest = path.join(targetDir, rel);
-      await fs.mkdir(path.dirname(dest), { recursive: true });
-      await fs.writeFile(dest, f.content);
-    }
-    const cf = await findConfigFile(targetDir);
-    if (!cf) {
-      await fs.rm(targetDir, { recursive: true, force: true });
-      return res
-        .status(400)
-        .json({ error: "no JSON file with an 'endpoints' array found in bundle" });
-    }
-    return res.json({ name: dirName });
-  }
-
-  if (typeof content === "string" || (content && typeof content === "object")) {
-    let parsed;
-    try {
-      parsed = typeof content === "string" ? JSON.parse(content) : content;
-    } catch (e) {
-      return res.status(400).json({ error: `invalid JSON: ${e.message}` });
-    }
-    if (!Array.isArray(parsed.endpoints) || parsed.endpoints.length === 0) {
-      return res.status(400).json({ error: "config must have a non-empty endpoints array" });
-    }
-    await fs.rm(targetDir, { recursive: true, force: true });
-    await fs.mkdir(targetDir, { recursive: true });
-    await fs.writeFile(path.join(targetDir, "config.json"), JSON.stringify(parsed, null, 2));
-    return res.json({ name: dirName });
-  }
-
-  return res.status(400).json({ error: "either content or files[] required" });
+  const dirName = safeName(name);
+  const dir = path.join(FOLDERS_DIR, dirName);
+  try {
+    await fs.access(dir);
+    return res.status(409).json({ error: "folder already exists" });
+  } catch {}
+  await fs.mkdir(dir, { recursive: true });
+  res.json({ name: dirName });
 });
 
-app.delete("/api/configs/:name", async (req, res) => {
-  const name = safeName(req.params.name);
-  const dir = path.join(CONFIGS_DIR, name);
+app.delete("/api/folders/:name", async (req, res) => {
+  const dir = folderDir(req.params.name);
   try {
     await fs.rm(dir, { recursive: true, force: true });
+    res.json({ ok: true });
+  } catch {
+    res.status(404).json({ error: "not found" });
+  }
+});
+
+app.post("/api/folders/:name/files", async (req, res) => {
+  const dir = folderDir(req.params.name);
+  try {
+    await fs.access(dir);
+  } catch {
+    return res.status(404).json({ error: "folder not found" });
+  }
+  const { files } = req.body || {};
+  if (!Array.isArray(files) || files.length === 0) {
+    return res.status(400).json({ error: "files[] required" });
+  }
+  let added = 0;
+  let skipped = 0;
+  for (const f of files) {
+    if (typeof f.path !== "string" || typeof f.content !== "string") continue;
+    const rel = safeRelPath(f.path);
+    if (!rel) continue;
+    if (rel === RUNS_SUBDIR || rel.startsWith(`${RUNS_SUBDIR}/`)) {
+      skipped += 1;
+      continue;
+    }
+    const dest = path.join(dir, rel);
+    await fs.mkdir(path.dirname(dest), { recursive: true });
+    await fs.writeFile(dest, f.content);
+    added += 1;
+  }
+  res.json({ added, skipped });
+});
+
+app.get("/api/folders/:name/files/*", async (req, res) => {
+  const dir = folderDir(req.params.name);
+  const rel = safeRelPath(req.params[0]);
+  if (!rel) return res.status(400).json({ error: "path required" });
+  try {
+    const content = await fs.readFile(path.join(dir, rel), "utf8");
+    res.type("application/json").send(content);
+  } catch {
+    res.status(404).json({ error: "not found" });
+  }
+});
+
+app.delete("/api/folders/:name/files/*", async (req, res) => {
+  const dir = folderDir(req.params.name);
+  const rel = safeRelPath(req.params[0]);
+  if (!rel) return res.status(400).json({ error: "path required" });
+  try {
+    await fs.unlink(path.join(dir, rel));
     res.json({ ok: true });
   } catch {
     res.status(404).json({ error: "not found" });
@@ -175,12 +203,24 @@ app.get("/api/runs/:id", (req, res) => {
 });
 
 app.post("/api/runs", async (req, res) => {
-  const { config: configName, target } = req.body || {};
-  if (!configName) return res.status(400).json({ error: "config required" });
-  const dir = path.join(CONFIGS_DIR, safeName(configName));
-  const configFile = await findConfigFile(dir);
-  if (!configFile) return res.status(404).json({ error: "config not found" });
-  const run = await runner.create({ configPath: configFile, target });
+  const { folder, config, target } = req.body || {};
+  if (!folder || !config) {
+    return res.status(400).json({ error: "folder and config required" });
+  }
+  const dir = folderDir(folder);
+  const rel = safeRelPath(config);
+  const configPath = path.join(dir, rel);
+  try {
+    const txt = await fs.readFile(configPath, "utf8");
+    const parsed = JSON.parse(txt);
+    if (!Array.isArray(parsed.endpoints)) {
+      return res.status(400).json({ error: "config has no endpoints[]" });
+    }
+  } catch {
+    return res.status(404).json({ error: "config not found" });
+  }
+  const runsDir = path.join(dir, RUNS_SUBDIR);
+  const run = await runner.create({ configPath, target, runsDir });
   res.json(run.snapshot());
 });
 
@@ -212,7 +252,6 @@ wss.on("connection", (ws, req) => {
     ws.send(JSON.stringify({ type, ...payload }));
   };
 
-  // Replay history
   send("hello", { run: run.snapshot() });
   for (const t of run.tickHistory) send("tick", t);
   for (const l of run.logLines.slice(-200)) send("log", l);

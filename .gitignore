@@ -1,5 +1,5 @@
 node_modules/
-runs/
-configs/*.json
+# Buckets and their contents (configs, payloads, run history) are per-machine.
+configs/*
 !configs/.gitkeep
 .DS_Store

@@ -1,8 +1,7 @@
 const els = {
-  configList: document.getElementById("config-list"),
-  configEmpty: document.getElementById("config-empty"),
-  uploadInput: document.getElementById("upload-input"),
-  uploadFolder: document.getElementById("upload-folder"),
+  foldersEl: document.getElementById("folders"),
+  foldersEmpty: document.getElementById("folders-empty"),
+  newFolderBtn: document.getElementById("new-folder-btn"),
   targetInput: document.getElementById("target-input"),
   runBtn: document.getElementById("run-btn"),
   stopBtn: document.getElementById("stop-btn"),
@@ -14,25 +13,51 @@ const els = {
   clearLogs: document.getElementById("clear-logs"),
 };
 
-let configs = [];
+let folders = [];
+const expanded = new Set();
+let selectedFolder = null;
 let selectedConfig = null;
+let currentCfg = null;
 let activeRunId = null;
 let ws = null;
+
 const charts = {};
-const series = {
-  rps: [],
-  p50: [],
-  p95: [],
-  p99: [],
-  errors: [],
-  vus: [],
-  labels: [],
-};
-const MAX_POINTS = 120;
+// Each series stores {x, y} where x = elapsed seconds since runStartT.
+const series = { rps: [], p50: [], p95: [], p99: [], errors: [], vus: [] };
+let runStartT = null;
+let runDurationSec = null;
 
 function fmtTime(ms) {
-  const d = new Date(ms);
-  return d.toLocaleTimeString();
+  return new Date(ms).toLocaleTimeString();
+}
+
+function parseDuration(s) {
+  if (!s) return 0;
+  const re = /(\d+(?:\.\d+)?)([smhd])/g;
+  const factors = { s: 1, m: 60, h: 3600, d: 86400 };
+  let total = 0;
+  let m;
+  while ((m = re.exec(String(s))) !== null) {
+    total += parseFloat(m[1]) * factors[m[2]];
+  }
+  return total;
+}
+
+function totalDurationSec(cfg) {
+  if (!cfg) return 0;
+  if (cfg.executor === "constant-arrival-rate") return parseDuration(cfg.loadDuration);
+  return (cfg.stages || []).reduce((sum, s) => sum + parseDuration(s.duration), 0);
+}
+
+function fmtSeconds(s) {
+  s = Math.max(0, Math.round(s));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  if (m < 60) return r ? `${m}m${r}s` : `${m}m`;
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  return mm ? `${h}h${mm}m` : `${h}h`;
 }
 
 function setStatus(status) {
@@ -40,59 +65,137 @@ function setStatus(status) {
   els.runStatus.textContent = status;
 }
 
-async function loadConfigs() {
-  const res = await fetch("/api/configs");
-  configs = await res.json();
-  renderConfigs();
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[c]);
 }
 
-function renderConfigs() {
-  els.configList.innerHTML = "";
-  els.configEmpty.style.display = configs.length === 0 ? "" : "none";
-  for (const c of configs) {
-    const li = document.createElement("li");
-    li.className = c.name === selectedConfig ? "active" : "";
-    const name = document.createElement("span");
-    name.textContent = c.fileCount > 1 ? `${c.name} (${c.fileCount} files)` : c.name;
-    name.style.cursor = "pointer";
-    name.style.flex = "1";
-    name.style.overflow = "hidden";
-    name.style.textOverflow = "ellipsis";
-    name.style.whiteSpace = "nowrap";
-    const del = document.createElement("button");
-    del.className = "del";
-    del.textContent = "×";
-    del.title = "Delete";
-    del.onclick = async (e) => {
-      e.stopPropagation();
-      if (!confirm(`Delete ${c.name}?`)) return;
-      await fetch(`/api/configs/${encodeURIComponent(c.name)}`, { method: "DELETE" });
-      if (selectedConfig === c.name) {
-        selectedConfig = null;
-        renderPreview(null);
-      }
-      loadConfigs();
-    };
-    li.appendChild(name);
-    li.appendChild(del);
-    li.onclick = () => selectConfig(c.name);
-    els.configList.appendChild(li);
+async function loadFolders() {
+  const res = await fetch("/api/folders");
+  folders = await res.json();
+  // If a previously-selected folder no longer exists, clear it.
+  if (selectedFolder && !folders.find((f) => f.name === selectedFolder)) {
+    selectedFolder = null;
+    selectedConfig = null;
+    renderPreview(null);
   }
-  els.runBtn.disabled = !selectedConfig || activeRunId !== null;
+  renderFolders();
+  updateRunButton();
 }
 
-async function selectConfig(name) {
-  selectedConfig = name;
-  renderConfigs();
-  const res = await fetch(`/api/configs/${encodeURIComponent(name)}`);
-  const cfg = await res.json();
-  renderPreview(cfg, name);
+function renderFolders() {
+  els.foldersEl.innerHTML = "";
+  els.foldersEmpty.style.display = folders.length === 0 ? "" : "none";
+  for (const f of folders) {
+    els.foldersEl.appendChild(renderFolderCard(f));
+  }
+}
+
+function renderFolderCard(f) {
+  const card = document.createElement("div");
+  const isExpanded = expanded.has(f.name);
+  card.className = `folder${isExpanded ? " expanded" : ""}`;
+
+  const head = document.createElement("div");
+  head.className = "folder-head";
+  head.innerHTML =
+    `<span class="folder-caret">${isExpanded ? "▾" : "▸"}</span>` +
+    `<span class="folder-name">${escapeHtml(f.name)}</span>` +
+    `<span class="folder-meta">${f.configs.length} cfg · ${f.fileCount} file${f.fileCount === 1 ? "" : "s"}</span>` +
+    `<button class="folder-del" title="Delete folder">×</button>`;
+  head.querySelector(".folder-del").onclick = async (e) => {
+    e.stopPropagation();
+    if (!confirm(`Delete folder "${f.name}" and all its files?`)) return;
+    await fetch(`/api/folders/${encodeURIComponent(f.name)}`, { method: "DELETE" });
+    expanded.delete(f.name);
+    if (selectedFolder === f.name) {
+      selectedFolder = null;
+      selectedConfig = null;
+      renderPreview(null);
+    }
+    loadFolders();
+  };
+  head.onclick = () => {
+    if (isExpanded) expanded.delete(f.name);
+    else expanded.add(f.name);
+    renderFolders();
+  };
+  card.appendChild(head);
+
+  if (isExpanded) {
+    const body = document.createElement("div");
+    body.className = "folder-body";
+
+    const list = document.createElement("ul");
+    list.className = "config-list";
+    if (f.configs.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "config-empty";
+      empty.textContent = "No configs yet — upload a JSON with endpoints[].";
+      body.appendChild(empty);
+    } else {
+      for (const c of f.configs) {
+        const li = document.createElement("li");
+        if (selectedFolder === f.name && selectedConfig === c.path) li.classList.add("active");
+        li.textContent = c.path;
+        li.onclick = (e) => {
+          e.stopPropagation();
+          selectConfig(f.name, c.path);
+        };
+        list.appendChild(li);
+      }
+      body.appendChild(list);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "folder-actions";
+    actions.innerHTML = `
+      <label class="upload-btn" title="Upload one or more files">
+        + File
+        <input type="file" accept=".json,application/json" multiple hidden />
+      </label>
+      <label class="upload-btn" title="Upload a folder of files (merged in)">
+        + Folder
+        <input type="file" webkitdirectory directory multiple hidden />
+      </label>`;
+    actions.querySelectorAll("input").forEach((input, i) => {
+      input.addEventListener("change", (e) => onMergeUpload(f.name, e.target, i === 1));
+    });
+    body.appendChild(actions);
+    card.appendChild(body);
+  }
+
+  return card;
+}
+
+async function selectConfig(folder, configPath) {
+  selectedFolder = folder;
+  selectedConfig = configPath;
+  expanded.add(folder);
+  renderFolders();
+  updateRunButton();
+  const res = await fetch(
+    `/api/folders/${encodeURIComponent(folder)}/files/${encodeURIComponent(configPath)
+      .replace(/%2F/g, "/")}`,
+  );
+  if (!res.ok) {
+    currentCfg = null;
+    renderPreview(null);
+    return;
+  }
+  currentCfg = await res.json();
+  renderPreview(currentCfg, `${folder} / ${configPath}`);
+}
+
+function updateRunButton() {
+  els.runBtn.disabled = !(selectedFolder && selectedConfig) || activeRunId !== null;
 }
 
 function renderPreview(cfg, name) {
   if (!cfg) {
     els.previewName.textContent = "";
-    els.previewBody.innerHTML = '<span class="muted">Pick a config on the left.</span>';
+    els.previewBody.innerHTML = '<span class="muted">Pick a config in a folder.</span>';
     return;
   }
   els.previewName.textContent = name || "";
@@ -105,15 +208,11 @@ function renderPreview(cfg, name) {
   } else {
     const stages = cfg.stages || [];
     summary.push({ k: "stages", v: stages.length });
-    summary.push({
-      k: "peak VUs",
-      v: Math.max(0, ...stages.map((s) => s.vus || s.target || 0)),
-    });
-    summary.push({
-      k: "duration",
-      v: stages.map((s) => s.duration).join(" → "),
-    });
+    summary.push({ k: "peak VUs", v: Math.max(0, ...stages.map((s) => s.vus || s.target || 0)) });
+    summary.push({ k: "duration", v: stages.map((s) => s.duration).join(" → ") });
   }
+  const totalSec = totalDurationSec(cfg);
+  if (totalSec > 0) summary.push({ k: "total", v: fmtSeconds(totalSec) });
   summary.push({ k: "endpoints", v: (cfg.endpoints || []).length });
   if (cfg.target) summary.push({ k: "target", v: cfg.target });
 
@@ -122,7 +221,7 @@ function renderPreview(cfg, name) {
   for (const { k, v } of summary) {
     const kv = document.createElement("div");
     kv.className = "kv";
-    kv.innerHTML = `<span class="k">${k}</span><span class="v">${escapeHtml(String(v))}</span>`;
+    kv.innerHTML = `<span class="k">${escapeHtml(k)}</span><span class="v">${escapeHtml(String(v))}</span>`;
     summaryEl.appendChild(kv);
   }
 
@@ -135,9 +234,7 @@ function renderPreview(cfg, name) {
     const tr = document.createElement("tr");
     const method = (ep.method || "GET").toUpperCase();
     const params = ep.params
-      ? Object.entries(ep.params)
-          .map(([k, v]) => `${k}=${v}`)
-          .join("&")
+      ? Object.entries(ep.params).map(([k, v]) => `${k}=${v}`).join("&")
       : "";
     tr.innerHTML =
       `<td>${escapeHtml(ep.name)}</td>` +
@@ -153,65 +250,20 @@ function renderPreview(cfg, name) {
   els.previewBody.appendChild(summaryEl);
   els.previewBody.appendChild(table);
 
-  if (cfg.target && !els.targetInput.value) {
-    els.targetInput.value = cfg.target;
-  }
+  if (cfg.target && !els.targetInput.value) els.targetInput.value = cfg.target;
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  })[c]);
-}
-
-async function postUpload(body, inputEl) {
-  const res = await fetch("/api/configs", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const e = await res.json().catch(() => ({}));
-    alert(`Upload failed: ${e.error || res.statusText}`);
-    return;
-  }
-  if (inputEl) inputEl.value = "";
-  await loadConfigs();
-  const data = await res.json();
-  selectConfig(data.name);
-}
-
-els.uploadInput.addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const text = await file.text();
-  try {
-    JSON.parse(text);
-  } catch (err) {
-    alert(`Invalid JSON: ${err.message}`);
-    return;
-  }
-  const name = file.name.replace(/\.json$/, "");
-  await postUpload({ name, content: text }, els.uploadInput);
-});
-
-els.uploadFolder.addEventListener("change", async (e) => {
-  const fileList = Array.from(e.target.files || []);
+async function onMergeUpload(folderName, inputEl, isFolder) {
+  const fileList = Array.from(inputEl.files || []);
   if (fileList.length === 0) return;
-  // Top-level folder name = first segment of webkitRelativePath of any file.
-  const firstRel = fileList[0].webkitRelativePath || fileList[0].name;
-  const topDir = firstRel.split("/")[0];
-  const stripTop = (rel) => {
-    const parts = rel.split("/");
-    if (parts[0] === topDir) parts.shift();
-    return parts.join("/");
-  };
+
+  // Folder pick: keep the picked folder's name as a subdirectory inside the
+  // bucket (so uploading "loadtest/" lands at <bucket>/loadtest/...).
+  // File pick: use the file's name as-is at the bucket root.
   const files = [];
   for (const f of fileList) {
-    const rel = stripTop(f.webkitRelativePath || f.name);
-    if (!rel) continue;
-    // Skip macOS junk and big binaries we don't need
-    if (rel.includes(".DS_Store") || rel.startsWith("__MACOSX/")) continue;
+    const rel = isFolder ? (f.webkitRelativePath || f.name) : f.name;
+    if (!rel || rel.includes(".DS_Store") || rel.startsWith("__MACOSX/")) continue;
     if (f.size > 30 * 1024 * 1024) {
       alert(`Skipping ${rel}: file is over 30MB`);
       continue;
@@ -220,22 +272,53 @@ els.uploadFolder.addEventListener("change", async (e) => {
     files.push({ path: rel, content });
   }
   if (files.length === 0) {
-    alert("No usable files found in folder.");
-    els.uploadFolder.value = "";
+    alert("No usable files found.");
+    inputEl.value = "";
     return;
   }
-  await postUpload({ name: topDir, files }, els.uploadFolder);
+  const res = await fetch(`/api/folders/${encodeURIComponent(folderName)}/files`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ files }),
+  });
+  inputEl.value = "";
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    alert(`Upload failed: ${e.error || res.statusText}`);
+    return;
+  }
+  await loadFolders();
+}
+
+els.newFolderBtn.addEventListener("click", async () => {
+  const name = prompt("Folder name");
+  if (!name || !name.trim()) return;
+  const res = await fetch("/api/folders", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: name.trim() }),
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    alert(`Could not create folder: ${e.error || res.statusText}`);
+    return;
+  }
+  const data = await res.json();
+  expanded.add(data.name);
+  await loadFolders();
 });
 
 els.runBtn.addEventListener("click", async () => {
-  if (!selectedConfig) return;
+  if (!selectedFolder || !selectedConfig) return;
+  runDurationSec = totalDurationSec(currentCfg) || null;
+  runStartT = null;
   resetCharts();
   els.logs.textContent = "";
   const target = els.targetInput.value.trim() || undefined;
   const res = await fetch("/api/runs", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ config: selectedConfig, target }),
+    body: JSON.stringify({ folder: selectedFolder, config: selectedConfig, target }),
   });
   if (!res.ok) {
     const e = await res.json().catch(() => ({}));
@@ -276,27 +359,24 @@ function attachToRun(id) {
 }
 
 function onHello(msg) {
-  if (msg.run?.status && msg.run.status !== "running") {
-    setStatus(msg.run.status);
-  }
+  if (msg.run?.status && msg.run.status !== "running") setStatus(msg.run.status);
 }
 
 function onTick(t) {
-  series.labels.push(fmtTime(t.t));
-  series.rps.push(t.rps);
-  series.p50.push(Math.round(t.p50));
-  series.p95.push(Math.round(t.p95));
-  series.p99.push(Math.round(t.p99));
-  series.errors.push(t.errors);
-  series.vus.push(t.vus);
-  trim(series, MAX_POINTS);
-  updateCharts();
-}
-
-function trim(s, max) {
-  for (const k of Object.keys(s)) {
-    while (s[k].length > max) s[k].shift();
+  if (runStartT === null) runStartT = t.t;
+  const x = (t.t - runStartT) / 1000;
+  series.rps.push({ x, y: t.rps });
+  series.p50.push({ x, y: Math.round(t.p50) });
+  series.p95.push({ x, y: Math.round(t.p95) });
+  series.p99.push({ x, y: Math.round(t.p99) });
+  series.errors.push({ x, y: t.errors });
+  series.vus.push({ x, y: t.vus });
+  // Outgrew the predicted duration? Grow the axis just enough to keep up.
+  if (runDurationSec && x > runDurationSec) {
+    runDurationSec = Math.ceil(x) + 1;
+    applyAxisRange();
   }
+  updateCharts();
 }
 
 function onLog(l) {
@@ -304,7 +384,6 @@ function onLog(l) {
   const div = document.createElement("div");
   div.innerHTML = `<span class="log-time">${ts}</span>${escapeHtml(l.line)}`;
   els.logs.appendChild(div);
-  // cap
   while (els.logs.childNodes.length > 500) els.logs.removeChild(els.logs.firstChild);
   els.logs.scrollTop = els.logs.scrollHeight;
 }
@@ -314,34 +393,49 @@ function onStatus(s) {
   if (s.status === "completed" || s.status === "failed" || s.status === "stopped") {
     els.stopBtn.disabled = true;
     activeRunId = null;
-    els.runBtn.disabled = !selectedConfig;
+    updateRunButton();
   }
-  if (s.error) {
-    onLog({ t: Date.now(), line: `[error] ${s.error}` });
-  }
+  if (s.error) onLog({ t: Date.now(), line: `[error] ${s.error}` });
 }
 
-function onSummary() {
-  // could render summary later; for now keep it logged.
-}
+function onSummary() {}
 
 function resetCharts() {
   for (const k of Object.keys(series)) series[k].length = 0;
+  applyAxisRange();
   updateCharts();
+}
+
+function applyAxisRange() {
+  for (const c of Object.values(charts)) {
+    c.options.scales.x.min = 0;
+    c.options.scales.x.max = runDurationSec || undefined;
+  }
 }
 
 function makeChart(canvasId, datasets) {
   const ctx = document.getElementById(canvasId).getContext("2d");
   return new Chart(ctx, {
     type: "line",
-    data: { labels: [], datasets },
+    data: { datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
+      parsing: false,
       plugins: { legend: { display: datasets.length > 1, labels: { color: "#8a93a3", font: { size: 10 } } } },
       scales: {
-        x: { ticks: { color: "#8a93a3", maxTicksLimit: 6, font: { size: 10 } }, grid: { color: "#2a313c" } },
+        x: {
+          type: "linear",
+          min: 0,
+          ticks: {
+            color: "#8a93a3",
+            maxTicksLimit: 8,
+            font: { size: 10 },
+            callback: (v) => fmtSeconds(v),
+          },
+          grid: { color: "#2a313c" },
+        },
         y: { ticks: { color: "#8a93a3", font: { size: 10 } }, grid: { color: "#2a313c" }, beginAtZero: true },
       },
       elements: { point: { radius: 0 }, line: { borderWidth: 2, tension: 0.25 } },
@@ -367,24 +461,20 @@ function initCharts() {
 }
 
 function updateCharts() {
-  charts.rps.data.labels = series.labels;
   charts.rps.data.datasets[0].data = series.rps;
   charts.rps.update("none");
 
-  charts.latency.data.labels = series.labels;
   charts.latency.data.datasets[0].data = series.p50;
   charts.latency.data.datasets[1].data = series.p95;
   charts.latency.data.datasets[2].data = series.p99;
   charts.latency.update("none");
 
-  charts.errors.data.labels = series.labels;
   charts.errors.data.datasets[0].data = series.errors;
   charts.errors.update("none");
 
-  charts.vus.data.labels = series.labels;
   charts.vus.data.datasets[0].data = series.vus;
   charts.vus.update("none");
 }
 
 initCharts();
-loadConfigs();
+loadFolders();

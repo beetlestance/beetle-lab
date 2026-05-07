@@ -7,7 +7,6 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOADTEST_SCRIPT = path.join(__dirname, "loadtest.js");
-const RUNS_DIR = path.join(__dirname, "runs");
 
 function percentile(sorted, p) {
   if (sorted.length === 0) return 0;
@@ -16,13 +15,14 @@ function percentile(sorted, p) {
 }
 
 class Run extends EventEmitter {
-  constructor({ id, configPath, target, k6Bin = "k6" }) {
+  constructor({ id, configPath, target, runsDir, k6Bin = "k6" }) {
     super();
+    if (!runsDir) throw new Error("runsDir is required");
     this.id = id;
     this.configPath = configPath;
     this.target = target;
     this.k6Bin = k6Bin;
-    this.dir = path.join(RUNS_DIR, id);
+    this.dir = path.join(runsDir, id);
     this.metricsPath = path.join(this.dir, "metrics.jsonl");
     this.summaryPath = path.join(this.dir, "summary.json");
     this.logPath = path.join(this.dir, "log.txt");
@@ -304,9 +304,9 @@ export class Runner {
     return this.runs.get(id);
   }
 
-  async create({ configPath, target }) {
+  async create({ configPath, target, runsDir }) {
     const id = `${new Date().toISOString().replace(/[:.]/g, "-")}-${Math.random().toString(36).slice(2, 6)}`;
-    const run = new Run({ id, configPath, target });
+    const run = new Run({ id, configPath, target, runsDir });
     this.runs.set(id, run);
     await run.start();
     return run;

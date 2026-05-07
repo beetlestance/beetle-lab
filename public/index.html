@@ -20,20 +20,11 @@
       <aside class="sidebar">
         <section>
           <div class="section-head">
-            <h2>Configs</h2>
-            <div class="upload-actions">
-              <label class="upload-btn" title="Upload a single config JSON">
-                + File
-                <input id="upload-input" type="file" accept=".json,application/json" hidden />
-              </label>
-              <label class="upload-btn" title="Upload a folder (config + payloads)">
-                + Folder
-                <input id="upload-folder" type="file" webkitdirectory directory multiple hidden />
-              </label>
-            </div>
+            <h2>Folders</h2>
+            <button id="new-folder-btn" class="upload-btn" title="Create a new folder">+ New</button>
           </div>
-          <ul id="config-list" class="config-list"></ul>
-          <div id="config-empty" class="muted small">Upload a JSON config or a folder containing config + payload files.</div>
+          <div id="folders" class="folders"></div>
+          <div id="folders-empty" class="muted small">Create a folder, then upload configs and payloads into it.</div>
         </section>
 
         <section>

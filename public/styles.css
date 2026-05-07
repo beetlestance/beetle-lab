@@ -66,37 +66,77 @@ main {
 .section-head { display: flex; align-items: center; justify-content: space-between; }
 .sidebar h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin: 0; }
 
-.upload-actions { display: flex; gap: 10px; }
 .upload-btn {
   font-size: 12px;
   color: var(--accent);
   cursor: pointer;
   user-select: none;
+  background: none;
+  border: 0;
+  padding: 0;
 }
 .upload-btn:hover { color: #6ea1ff; }
 
-.config-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
-.config-list li {
-  padding: 7px 10px;
+.folders { display: flex; flex-direction: column; gap: 8px; }
+.folder {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border: 1px solid transparent;
+  overflow: hidden;
 }
-.config-list li:hover { background: var(--bg-3); }
-.config-list li.active { background: var(--bg-3); border-color: var(--accent); }
-.config-list .del {
+.folder.expanded { border-color: #3a4250; }
+.folder-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.folder-head:hover { background: rgba(255,255,255,0.02); }
+.folder-caret { font-size: 10px; color: var(--muted); width: 10px; }
+.folder-name { font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.folder-meta { font-size: 10px; color: var(--muted); }
+.folder-del {
   visibility: hidden;
-  color: var(--muted);
   background: none;
   border: 0;
+  color: var(--muted);
   cursor: pointer;
   padding: 0 4px;
+  font-size: 14px;
 }
-.config-list li:hover .del { visibility: visible; }
-.config-list .del:hover { color: var(--red); }
+.folder-head:hover .folder-del { visibility: visible; }
+.folder-del:hover { color: var(--red); }
+.folder-body { padding: 4px 8px 8px; border-top: 1px solid var(--border); }
+.folder-actions {
+  display: flex;
+  gap: 10px;
+  padding: 6px 4px 4px;
+  font-size: 11px;
+}
+
+.config-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.config-list li {
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  border: 1px solid transparent;
+}
+.config-list li:hover { background: rgba(255,255,255,0.04); }
+.config-list li.active { background: rgba(79,140,255,0.12); border-color: var(--accent); }
+.config-list li::before { content: "▸"; color: var(--muted); font-size: 9px; }
+.config-list li.active::before { color: var(--accent); }
+.config-empty {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 6px 8px;
+  font-style: italic;
+}
 
 .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
 .field input {
