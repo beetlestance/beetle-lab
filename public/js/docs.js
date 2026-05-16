@@ -329,6 +329,30 @@ function configRef() {
       `<p class="text-[13px] leading-[1.7] mt-3"><code>\${source.mode().field}</code> picks a record (objects from CSV / JSON-of-objects) and reads a field. <code>\${source.mode()}</code> returns the raw value (for scalar arrays / ranges).</p>`,
       { open: false })}
     ${card("Memory sampling", "Node.js services with a /debug/procstats endpoint", rowsTable(memRows), { open: false })}
+    ${card("Hooks · external tool integration", "Run shell commands at preStart / onStart / onStop — disabled by default, gated by env vars",
+      `<p class="text-[13px] leading-[1.7] mb-2">Wire any external tool (tracer, profiler, log collector, docker cp) into the run lifecycle. Output of each hook is captured to <code>hook.&lt;stage&gt;.log</code> in the run dir.</p>` +
+      rowsTable({
+        headers: ["Stage", "Blocking?", "When it fires"],
+        body: [
+          ["preStart", "Yes (awaited)", "Before k6 launches. Use for state reset (clear tracer, rotate logs, warm caches)."],
+          ["onStart",  "No (fire & forget)", "Right after k6 launches. Use for starting background telemetry."],
+          ["onStop",   "Yes (awaited)", "After k6 exits and the run dir is fully populated. Use for collecting artifacts into <code>&lt;rundir&gt;</code>."],
+        ],
+      }) +
+      `<p class="text-[13px] leading-[1.7] mt-3 mb-2"><strong>Placeholders</strong> available inside commands:</p>` +
+      `<ul class="list-disc pl-5 text-[13px] leading-[1.7]"><li><code>&lt;runid&gt;</code> — the run's id</li><li><code>&lt;rundir&gt;</code> — absolute path to the run output dir</li><li><code>&lt;bucket&gt;</code> — bucket name</li><li><code>&lt;configrel&gt;</code> — config path inside the bucket</li><li><code>&lt;configdir&gt;</code> — the configDir slug used in URLs</li></ul>` +
+      `<p class="text-[13px] leading-[1.7] mt-3 mb-1"><strong>Enabling hooks</strong> (intentionally inconvenient — running shell commands from configs is risky):</p>` +
+      pre(`# both env vars must be set on the k6-studio container/process
+K6_STUDIO_HOOKS_ENABLED=1
+K6_STUDIO_HOOKS_ALLOWED_BINARIES=docker,curl,kubectl
+# only commands whose first word is in this list are allowed`) +
+      pre(`{
+  "hooks": {
+    "preStart": "docker exec my-svc sh -c 'node /tmp/trace.js --clear'",
+    "onStart":  "docker exec -d my-svc sh -c 'node /tmp/trace.js > /tmp/trace.log &'",
+    "onStop":   "docker cp my-svc:/tmp/slow.jsonl <rundir>/slow.jsonl"
+  }
+}`), { open: false })}
     ${card("Example: constant-arrival-rate with memory sampling", null, pre(`{
   "executor": "constant-arrival-rate",
   "rate": 30, "timeUnit": "1s", "loadDuration": "3m",

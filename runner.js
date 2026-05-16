@@ -131,9 +131,16 @@ class Run extends EventEmitter {
       env.CONFIG = this.configSnapshotPath;
     }
     await this._writeMeta();
+    // preStart runs synchronously so the target is in the desired state
+    // (e.g. tracer cleared, log file rotated) before k6 starts firing load.
+    await this._runHook("preStart");
     this.emit("status", { status: this.status, startedAt: this.startedAt });
 
     this.proc = spawn(this.k6Bin, args, { env, cwd: __dirname });
+
+    // onStart runs in the background just after k6 has launched. Useful for
+    // starting a tracer / profiler in the target service.
+    this._runHook("onStart", { detach: true });
 
     this.proc.stdout.on("data", (chunk) => this._handleLog(chunk));
     this.proc.stderr.on("data", (chunk) => this._handleLog(chunk));
@@ -180,6 +187,9 @@ class Run extends EventEmitter {
           if (!this.error) this.error = `k6 exited with code ${code}`;
         }
         await this._writeMeta();
+        // onStop runs after the run dir is fully populated, so the hook can
+        // e.g. copy a trace file into <rundir> for posterity.
+        await this._runHook("onStop");
         this.emit("summary", summary);
         this.emit("status", {
           status: this.status,
@@ -414,9 +424,84 @@ class Run extends EventEmitter {
       const resolved = substituteEnvVars(raw, env);
       this.configHash = createHash("sha256").update(resolved).digest("hex");
       await fsp.writeFile(this.configSnapshotPath, resolved);
+      // Cache resolved.hooks for the lifecycle methods so we don't re-read /
+      // re-parse the snapshot at each hook point.
+      try {
+        const parsed = JSON.parse(resolved);
+        this.hooks = parsed.hooks && typeof parsed.hooks === "object" ? parsed.hooks : null;
+      } catch {}
     } catch {
       // Non-fatal: the run can still proceed even if snapshotting fails.
     }
+  }
+
+  // ---- External-tool hooks (preStart / onStart / onStop) -------------------
+  // Disabled by default. To enable: set K6_STUDIO_HOOKS_ENABLED=1 and an
+  // allow-list K6_STUDIO_HOOKS_ALLOWED_BINARIES=docker,curl (first word of
+  // the command must be in the list). Output goes to hook.<stage>.log in the
+  // run dir.
+  _hooksEnabled() {
+    return process.env.K6_STUDIO_HOOKS_ENABLED === "1";
+  }
+
+  _hookAllowed(cmd) {
+    const list = (process.env.K6_STUDIO_HOOKS_ALLOWED_BINARIES || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (list.length === 0) return false;
+    const first = String(cmd || "").trim().split(/\s+/)[0] || "";
+    return list.includes(first);
+  }
+
+  _resolveHookPlaceholders(cmd) {
+    return String(cmd || "")
+      .replace(/<runid>/g, this.id)
+      .replace(/<rundir>/g, this.dir)
+      .replace(/<bucket>/g, this.bucketName || "")
+      .replace(/<configrel>/g, this.configRel || "")
+      .replace(/<configdir>/g, this.configDir || "");
+  }
+
+  async _runHook(stage, { detach = false } = {}) {
+    const cmd = this.hooks?.[stage];
+    if (!cmd) return;
+    if (!this._hooksEnabled()) {
+      this._handleLog(Buffer.from(`[hooks] ${stage}: skipped — K6_STUDIO_HOOKS_ENABLED not set\n`));
+      return;
+    }
+    if (!this._hookAllowed(cmd)) {
+      this._handleLog(
+        Buffer.from(`[hooks] ${stage}: blocked — first token not in K6_STUDIO_HOOKS_ALLOWED_BINARIES\n`),
+      );
+      return;
+    }
+    const resolved = this._resolveHookPlaceholders(cmd);
+    this._handleLog(Buffer.from(`[hooks] ${stage}: ${resolved}\n`));
+    const logPath = path.join(this.dir, `hook.${stage}.log`);
+    const out = fs.createWriteStream(logPath, { flags: "a" });
+    return new Promise((resolve) => {
+      const proc = spawn("/bin/sh", ["-c", resolved], { env: process.env, detached: detach });
+      proc.stdout.pipe(out);
+      proc.stderr.pipe(out);
+      proc.on("error", (err) => {
+        this._handleLog(Buffer.from(`[hooks] ${stage}: error ${err.message}\n`));
+        try { out.end(); } catch {}
+        resolve(-1);
+      });
+      proc.on("close", (code) => {
+        if (code !== 0) {
+          this._handleLog(Buffer.from(`[hooks] ${stage}: exited ${code}\n`));
+        }
+        try { out.end(); } catch {}
+        resolve(code);
+      });
+      if (detach) {
+        // Don't keep the parent waiting — onStart should not block the run.
+        proc.unref();
+        resolve(0);
+      }
+    });
   }
 
   // Parse <bucket>/.env (simple KEY=value lines, # comments, optional quotes)
