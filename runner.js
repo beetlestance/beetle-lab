@@ -297,6 +297,7 @@ class Run extends EventEmitter {
       vus: 0,
       iterations: 0,
       errors: 0,
+      dropped: 0,
       endpointLatencies: {},
       memory: {},
     };
@@ -311,6 +312,7 @@ class Run extends EventEmitter {
     } else if (name === "vus") b.vus = Math.max(b.vus, value);
     else if (name === "iterations") b.iterations += value;
     else if (name === "errors") b.errors += value;
+    else if (name === "dropped_iterations") b.dropped += value;
     else if (name.startsWith("ep_") && name.endsWith("_latency")) {
       const ep = name.slice(3, -"_latency".length);
       if (!b.endpointLatencies[ep]) b.endpointLatencies[ep] = [];
@@ -345,6 +347,7 @@ class Run extends EventEmitter {
       errors: b.errors,
       vus: b.vus,
       iterations: b.iterations,
+      dropped: b.dropped,
       endpoints: Object.fromEntries(
         Object.entries(b.endpointLatencies).map(([k, vs]) => {
           const sorted = vs.slice().sort((a, b) => a - b);

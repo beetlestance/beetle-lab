@@ -20,6 +20,7 @@ let runStartT = null;
 let runDurationSec = null;
 let ws = null;
 let isLive = false;
+let droppedTotal = 0;
 const series = makeSeries();
 const memSeries = makeMemSeries();
 // Detail snapshot (summary + summaryTxt) — used by Export and inline report.
@@ -98,6 +99,7 @@ function template() {
       </div>
 
       <div id="runBanner" hidden></div>
+      <div id="droppedBanner" hidden></div>
 
       <div id="stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-6"></div>
 
@@ -316,12 +318,18 @@ async function initReplay() {
   setAxisMax(charts, runDurationSec);
   setAxisMax(memCharts, runDurationSec);
   let hasMemory = false;
+  let dropped = 0;
   for (const tk of ticks) {
     const x = (tk.t - t0) / 1000;
     pushSeries(x, tk);
     if (tk.memory) hasMemory = true;
+    if (tk.dropped) dropped += tk.dropped;
   }
   if (hasMemory) document.getElementById("memSection").hidden = false;
+  if (dropped > 0) {
+    droppedTotal = dropped;
+    renderDroppedBanner(dropped);
+  }
   applyChartData();
 
   // Logs (capped to last ~500 lines for perf)
@@ -354,7 +362,31 @@ function onTick(t) {
   if (t.memory && document.getElementById("memSection").hidden) {
     if (Object.keys(t.memory).length) document.getElementById("memSection").hidden = false;
   }
+  if (t.dropped) {
+    droppedTotal += t.dropped;
+    renderDroppedBanner(droppedTotal);
+  }
   applyChartData();
+}
+
+// dropped_iterations is k6's signal that the configured arrival rate is
+// outrunning the VU pool — iterations get scheduled but no VU is free to
+// execute them. The end-of-run summary surfaces this, but by then the user
+// has lost a minute or more of mis-shaped traffic. Banner it live the moment
+// the first drop arrives so they can stop, bump preAllocatedVUs/maxVUs, and
+// rerun.
+function renderDroppedBanner(total) {
+  const el = document.getElementById("droppedBanner");
+  if (!el || total <= 0) return;
+  el.hidden = false;
+  el.innerHTML = `
+    <div class="mb-4 border border-rose-300/60 dark:border-rose-800/40 bg-rose-50/50 dark:bg-rose-900/15 rounded-md p-3 flex items-start gap-3 pop-in">
+      ${icon("zap", { size: 16, className: "text-rose-600 dark:text-rose-400 mt-0.5" })}
+      <div class="text-[12.5px] leading-[1.55] text-rose-800 dark:text-rose-200 flex-1">
+        <div class="font-semibold mb-0.5"><span class="num">${total.toLocaleString()}</span> dropped iteration${total === 1 ? "" : "s"} — VU pool too small.</div>
+        <div>k6 wanted to fire more requests than the pre-allocated VUs could handle. The actual request rate is lower than the target. Stop the run and bump <code class="font-mono">preAllocatedVUs</code> / <code class="font-mono">maxVUs</code> in the config.</div>
+      </div>
+    </div>`;
 }
 
 function onLog(l) {
