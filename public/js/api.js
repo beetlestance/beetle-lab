@@ -134,6 +134,14 @@ function scenarioDurationSec(s) {
     return start + parseDurationS(s.loadDuration || s.duration);
   if (exec === "ramping-arrival-rate" || exec === "ramping-vus")
     return start + (s.stages || []).reduce((a, x) => a + parseDurationS(x.duration), 0);
+  if (exec === "ramp-until") {
+    const startRate = s.startRate ?? 50;
+    const maxRate = s.maxRate ?? 10000;
+    const stepRate = s.stepRate ?? Math.max(1, Math.floor((maxRate - startRate) / 20));
+    const stepDur = parseDurationS(s.stepDuration || "30s");
+    const steps = Math.max(1, Math.ceil((maxRate - startRate) / stepRate));
+    return start + steps * stepDur;
+  }
   if (exec === "shared-iterations" || exec === "per-vu-iterations")
     return start + parseDurationS(s.maxDuration || "10m");
   if (exec === "constant-vus")

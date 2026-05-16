@@ -193,6 +193,41 @@ function parseDurationS(s) {
 // either the legacy top-level form (config.executor + flat fields) or one
 // element of config.scenarios[]. Every supported k6 executor maps to a small
 // set of well-known fields so the JSON config stays readable.
+function buildRampUntilStages(s) {
+  const startRate = s.startRate ?? 50;
+  const maxRate = s.maxRate ?? 10000;
+  const stepRate = s.stepRate ?? Math.max(1, Math.floor((maxRate - startRate) / 20));
+  const stepDuration = s.stepDuration || "30s";
+  const stages = [];
+  let r = startRate + stepRate;
+  while (r <= maxRate) {
+    stages.push({ duration: stepDuration, target: r });
+    r += stepRate;
+  }
+  if (stages.length === 0)
+    stages.push({ duration: stepDuration, target: maxRate });
+  return { startRate, stages };
+}
+
+// Translate "<metric>{<stat>} <op> <value>" -> k6 threshold + abortOnFail.
+// Inverts the operator because k6 thresholds PASS when the expression is
+// true; stopCondition is phrased as "stop when this becomes true".
+//   "http_req_duration{p99} > 1000"
+//      ->  http_req_duration: [{ threshold: "p(99)<1000", abortOnFail: true }]
+export function buildAbortThreshold(stopCondition) {
+  const m = /^(\w+)\{(\w+)\}\s*(>=?|<=?)\s*(\d+(?:\.\d+)?)\s*$/.exec(
+    String(stopCondition || "").trim(),
+  );
+  if (!m) return null;
+  const [, metric, stat, op, val] = m;
+  const inv = { ">": "<", "<": ">", ">=": "<=", "<=": ">=" }[op];
+  const k6Stat = /^p\d+$/.test(stat) ? `p(${stat.slice(1)})` : stat;
+  return {
+    metric,
+    threshold: { threshold: `${k6Stat}${inv}${val}`, abortOnFail: true },
+  };
+}
+
 function buildScenarioFromSpec(s, fallbackStages) {
   const exec = s.exec || "runEndpoint";
   const gracefulStop = s.gracefulStop || "1s";
@@ -219,6 +254,21 @@ function buildScenarioFromSpec(s, fallbackStages) {
         preAllocatedVUs: s.preAllocatedVUs || 50,
         maxVUs: s.maxVUs || 200,
       };
+    case "ramp-until": {
+      // Saturation discovery: step the arrival rate up until a threshold
+      // trips (the abort-on-fail threshold added below), then stop. The
+      // last completed stage is roughly the service's saturation point.
+      const { startRate, stages } = buildRampUntilStages(s);
+      return {
+        ...base,
+        executor: "ramping-arrival-rate",
+        startRate,
+        timeUnit: s.timeUnit || "1s",
+        stages,
+        preAllocatedVUs: s.preAllocatedVUs || 50,
+        maxVUs: s.maxVUs || 2000,
+      };
+    }
     case "shared-iterations":
       return {
         ...base,
@@ -280,6 +330,10 @@ function scenarioDurationS(s) {
     case "ramping-arrival-rate":
     case "ramping-vus":
       return start + (s.stages || []).reduce((a, x) => a + parseDurationS(x.duration), 0);
+    case "ramp-until": {
+      const { stages } = buildRampUntilStages(s);
+      return start + stages.reduce((a, x) => a + parseDurationS(x.duration), 0);
+    }
     case "shared-iterations":
     case "per-vu-iterations":
       return start + parseDurationS(s.maxDuration || "10m");
@@ -337,9 +391,25 @@ if (memorySamplingEnabled) {
   };
 }
 
+// ramp-until injects an abort-on-fail threshold derived from stopCondition,
+// merged with any user-defined thresholds so both fire.
+const mergedThresholds = { ...(config.thresholds || {}) };
+for (const { spec } of scenarioSpecs) {
+  if (spec.executor !== "ramp-until" || !spec.stopCondition) continue;
+  const built = buildAbortThreshold(spec.stopCondition);
+  if (!built) {
+    console.log(`[ramp-until] could not parse stopCondition: ${spec.stopCondition}`);
+    continue;
+  }
+  mergedThresholds[built.metric] = [
+    ...(mergedThresholds[built.metric] || []),
+    built.threshold,
+  ];
+}
+
 export const options = {
   scenarios,
-  thresholds: config.thresholds || {},
+  thresholds: mergedThresholds,
   summaryTrendStats: ["avg", "min", "med", "max", "p(90)", "p(95)", "p(99)"],
   // Allow generous teardown: cooldownSeconds + buffer.
   teardownTimeout: `${Math.max(60, cooldownSeconds + 30)}s`,

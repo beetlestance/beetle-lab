@@ -765,6 +765,19 @@ function buildScenario(s) {
         startRate: s.startRate ?? 0, timeUnit: s.timeUnit || "1s",
         stages: (s.stages || []).map((x) => ({ duration: x.duration, target: x.rate ?? x.target ?? 0 })),
         preAllocatedVUs: s.preAllocatedVUs || 50, maxVUs: s.maxVUs || 200 };
+    case "ramp-until": {
+      const startRate = s.startRate ?? 50;
+      const maxRate = s.maxRate ?? 10000;
+      const stepRate = s.stepRate ?? Math.max(1, Math.floor((maxRate - startRate) / 20));
+      const stepDuration = s.stepDuration || "30s";
+      const stages = [];
+      let r = startRate + stepRate;
+      while (r <= maxRate) { stages.push({ duration: stepDuration, target: r }); r += stepRate; }
+      if (stages.length === 0) stages.push({ duration: stepDuration, target: maxRate });
+      return { ...base, executor: "ramping-arrival-rate",
+        startRate, timeUnit: s.timeUnit || "1s", stages,
+        preAllocatedVUs: s.preAllocatedVUs || 50, maxVUs: s.maxVUs || 2000 };
+    }
     case "shared-iterations":
       return { ...base, executor: "shared-iterations",
         iterations: s.iterations || 100, vus: s.vus || 10, maxDuration: s.maxDuration || "10m" };

@@ -241,6 +241,28 @@ function configRef() {
         ],
       }), { open: false })}
     ${card("Executor: ramping-vus", "Stage-based VU ramp; throughput depends on server speed", rowsTable(rampRows), { open: false })}
+    ${card("Executor: ramp-until", "Saturation discovery — ramp rate until a threshold trips, then stop",
+      `<p class="text-[13px] leading-[1.7] mb-2">Use this when you want to find the rate at which the service starts misbehaving (high latency, high error rate, etc.). Auto-generates stages from <code>startRate</code> to <code>maxRate</code> in <code>stepRate</code> increments held for <code>stepDuration</code> each, then attaches an <em>abort-on-fail</em> threshold derived from <code>stopCondition</code>. k6 will stop the run as soon as the threshold trips; the last completed stage is roughly the saturation rate.</p>` +
+      rowsTable({
+        headers: ["Field", "Type", "Default", "Notes"],
+        body: [
+          ["startRate", "number", "50", "Initial rate before first step."],
+          ["stepRate", "number", "<em>(maxRate − startRate)/20</em>", "Increment per step."],
+          ["stepDuration", "duration", '"30s"', "How long each step holds."],
+          ["maxRate", "number", "10000", "Upper bound; stages stop here."],
+          ["stopCondition", "string", "<em>required</em>", `Trip condition. Format: <code>"&lt;metric&gt;{&lt;stat&gt;} &lt;op&gt; &lt;value&gt;"</code> — e.g. <code>"http_req_duration{p99} > 1000"</code>, <code>"http_req_failed{rate} > 0.01"</code>.`],
+          ["timeUnit", "duration", '"1s"', "Time window for rate."],
+          ["preAllocatedVUs", "number", "50", "VU pool."],
+          ["maxVUs", "number", "2000", "Upper limit if k6 needs more."],
+        ],
+      }) +
+      pre(`{
+  "executor": "ramp-until",
+  "stopCondition": "http_req_duration{p99} > 1000",
+  "startRate": 50, "stepRate": 100, "stepDuration": "20s",
+  "maxRate": 10000,
+  "preAllocatedVUs": 200, "maxVUs": 2000
+}`), { open: false })}
     ${card("Executor: shared-iterations / per-vu-iterations", "Fire N requests and exit — useful for warmup, smoke, fixed-budget probes",
       rowsTable({
         headers: ["Field", "Type", "Default", "Notes"],
