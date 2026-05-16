@@ -275,6 +275,37 @@ function configRef() {
   "endpoints": [/* all endpoints are shared across scenarios */]
 }`), { open: false })}
     ${card("Endpoint definition", null, rowsTable(epRows))}
+    ${card("Per-VU data parameterization", "Named data sources — usable in params, headers, body",
+      `<p class="text-[13px] leading-[1.7] mb-2">Declare data sources under <code>config.data</code>. Each source is loaded once and shared across VUs (memory-efficient via k6's SharedArray). Reference values in <code>params</code>, <code>headers</code>, <code>path</code>, or <code>body</code> using the template syntax.</p>` +
+      pre(`{
+  "data": {
+    "users": { "file": "./users.csv", "key": "userId" },
+    "refs":  { "range": [2000000, 2999999] },
+    "tags":  { "values": ["foo", "bar", "baz"] }
+  },
+  "endpoints": [{
+    "name": "get_user",
+    "method": "GET",
+    "path": "/v1/users/\${users.byVu().userId}",
+    "params":  { "referenceId": "\${refs.random()}" },
+    "headers": { "X-Tag": "\${tags.random()}" },
+    "body":    { "actorId": "\${users.byVu().userId}" }
+  }]
+}`) +
+      `<p class="text-[13px] leading-[1.7] mt-3 mb-1"><strong>Source shapes:</strong></p>` +
+      rowsTable({
+        headers: ["Shape", "Example", "Notes"],
+        body: [
+          ["<code>values</code>", `{ "values": ["a","b","c"] }`, "Inline array."],
+          ["<code>file</code> (JSON)", `{ "file": "./users.json" }`, "JSON array, resolved relative to the config dir."],
+          ["<code>file</code> (CSV)", `{ "file": "./users.csv" }`, "First row is headers; each row becomes an object keyed by header name."],
+          ["<code>range</code>", `{ "range": [1, 1000] }`, "Inclusive integer range."],
+        ],
+      }) +
+      `<p class="text-[13px] leading-[1.7] mt-3 mb-1"><strong>Modes:</strong></p>` +
+      `<ul class="text-[13px] leading-[1.7] list-disc pl-5"><li><code>random()</code> — pick uniformly per request.</li><li><code>byVu()</code> — pick deterministically by VU id; that VU keeps the same value across all its iterations. Useful for "user N stays user N for the run".</li></ul>` +
+      `<p class="text-[13px] leading-[1.7] mt-3"><code>\${source.mode().field}</code> picks a record (objects from CSV / JSON-of-objects) and reads a field. <code>\${source.mode()}</code> returns the raw value (for scalar arrays / ranges).</p>`,
+      { open: false })}
     ${card("Memory sampling", "Node.js services with a /debug/procstats endpoint", rowsTable(memRows), { open: false })}
     ${card("Example: constant-arrival-rate with memory sampling", null, pre(`{
   "executor": "constant-arrival-rate",

@@ -670,6 +670,8 @@ const EJECT_SCRIPT_TEMPLATE = String.raw`
 import http from "k6/http";
 import { check, sleep } from "k6";
 import { Counter, Trend } from "k6/metrics";
+import { SharedArray } from "k6/data";
+import exec from "k6/execution";
 import { textSummary } from "https://jslib.k6.io/k6-summary/0.1.0/index.js";
 
 const TARGET = __ENV.TARGET || CONFIG.target || "http://localhost:8080";
@@ -679,6 +681,66 @@ const endpointLatency = {};
 config.endpoints.forEach((ep) => {
   endpointLatency[ep.name] = new Trend("ep_" + ep.name + "_latency");
 });
+
+// ---- Data sources (per-VU parameterization) ----
+const dataSources = {};
+for (const [name, def] of Object.entries(config.data || {})) {
+  dataSources[name] = new SharedArray(name, () => {
+    if (Array.isArray(def.values)) return def.values;
+    if (def.range && Array.isArray(def.range)) {
+      const out = [];
+      for (let i = def.range[0]; i <= def.range[1]; i++) out.push(i);
+      return out;
+    }
+    if (def.file) {
+      const txt = open(def.file);
+      if (def.file.endsWith(".csv")) {
+        const lines = txt.split(/\r?\n/).filter((l) => l.length > 0);
+        if (lines.length === 0) return [];
+        const headers = lines[0].split(",").map((h) => h.trim());
+        return lines.slice(1).map((line) => {
+          const cells = line.split(",");
+          const row = {};
+          for (let i = 0; i < headers.length; i++) row[headers[i]] = (cells[i] || "").trim();
+          return row;
+        });
+      }
+      return JSON.parse(txt);
+    }
+    return [];
+  });
+}
+const DATA_REF_RE = /\$\{([a-z][a-zA-Z0-9_]*)\.([a-zA-Z]+)\(\)(?:\.([a-zA-Z0-9_]+))?\}/g;
+function expandTemplate(s, vu) {
+  if (typeof s !== "string") return s;
+  let out = s;
+  if (out.includes("\${token}")) {
+    const t = getRandomToken();
+    out = out.split("\${token}").join(t || "");
+  }
+  out = out.replace(DATA_REF_RE, (m, name, mode, field) => {
+    const src = dataSources[name];
+    if (!src || src.length === 0) return m;
+    let idx;
+    if (mode === "random") idx = Math.floor(Math.random() * src.length);
+    else if (mode === "byVu") idx = (vu - 1) % src.length;
+    else return m;
+    const v = src[idx];
+    if (field !== undefined) return v && typeof v === "object" ? String(v[field] ?? "") : "";
+    return String(v);
+  });
+  return out;
+}
+function expandValue(v, vu) {
+  if (typeof v === "string") return expandTemplate(v, vu);
+  if (Array.isArray(v)) return v.map((x) => expandValue(x, vu));
+  if (v && typeof v === "object") {
+    const out = {};
+    for (const [k, val] of Object.entries(v)) out[k] = expandValue(val, vu);
+    return out;
+  }
+  return v;
+}
 
 function parseDurationS(s) {
   const re = /(\d+(?:\.\d+)?)([smhd])/g;
@@ -758,20 +820,19 @@ function selectEndpoint() {
   const last = active[active.length - 1]; iterationCounts[last.name]++; return last;
 }
 
-function buildUrl(ep) {
-  let url = TARGET + ep.path;
+function buildUrl(ep, vu) {
+  let url = TARGET + expandTemplate(ep.path, vu);
   if (ep.params && Object.keys(ep.params).length > 0) {
     const parts = [];
-    for (const [k, v] of Object.entries(ep.params)) parts.push(encodeURIComponent(k) + "=" + encodeURIComponent(v));
+    for (const [k, v] of Object.entries(ep.params)) parts.push(encodeURIComponent(k) + "=" + encodeURIComponent(expandTemplate(String(v), vu)));
     url += "?" + parts.join("&");
   }
   return url;
 }
-function buildHeaders(ep) {
+function buildHeaders(ep, vu) {
   const headers = {};
   if (ep.headers) {
-    const token = getRandomToken();
-    for (const [k, v] of Object.entries(ep.headers)) headers[k] = String(v).replace("\${token}", token || "");
+    for (const [k, v] of Object.entries(ep.headers)) headers[k] = expandTemplate(String(v), vu);
   }
   return headers;
 }
@@ -788,18 +849,21 @@ function runChecks(ep, response) {
 export function runEndpoint() {
   const ep = selectEndpoint();
   if (!ep) { sleep(0.1); return; }
-  const url = buildUrl(ep);
-  const headers = buildHeaders(ep);
+  const vu = exec.vu.idInTest;
+  const url = buildUrl(ep, vu);
+  const headers = buildHeaders(ep, vu);
   const method = (ep.method || "GET").toUpperCase();
+  const bodyValue = ep.body !== undefined ? expandValue(ep.body, vu) : undefined;
+  const bodyText = bodyValue !== undefined ? JSON.stringify(bodyValue) : null;
   let response;
   switch (method) {
-    case "POST": if (ep.body) headers["Content-Type"] = "application/json";
-      response = http.post(url, ep.body ? JSON.stringify(ep.body) : null, { headers }); break;
-    case "PUT": if (ep.body) headers["Content-Type"] = "application/json";
-      response = http.put(url, ep.body ? JSON.stringify(ep.body) : null, { headers }); break;
+    case "POST": if (bodyText) headers["Content-Type"] = "application/json";
+      response = http.post(url, bodyText, { headers }); break;
+    case "PUT": if (bodyText) headers["Content-Type"] = "application/json";
+      response = http.put(url, bodyText, { headers }); break;
     case "DELETE": response = http.del(url, null, { headers }); break;
-    case "PATCH": if (ep.body) headers["Content-Type"] = "application/json";
-      response = http.patch(url, ep.body ? JSON.stringify(ep.body) : null, { headers }); break;
+    case "PATCH": if (bodyText) headers["Content-Type"] = "application/json";
+      response = http.patch(url, bodyText, { headers }); break;
     default: response = http.get(url, { headers });
   }
   endpointLatency[ep.name].add(response.timings.duration);
