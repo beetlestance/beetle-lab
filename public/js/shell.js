@@ -58,7 +58,7 @@ function buildShell() {
       </nav>
       <div class="border-t border-stone-200 dark:border-ink-800">
         <div class="px-3 pt-3 pb-1.5 flex items-center justify-between">
-          <span class="text-[11px] font-mono text-stone-500 dark:text-stone-500">v1.0</span>
+          <span class="text-[11px] font-mono text-stone-500 dark:text-stone-500">v1.1</span>
           <button id="cmdkOpen" class="flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[11px] text-stone-500 dark:text-stone-500 border border-stone-300 dark:border-ink-700 hover:bg-stone-100 dark:hover:bg-ink-900" title="Search (⌘K)">
             ${icon("command", { size: 11 })}<span class="font-mono">K</span>
           </button>

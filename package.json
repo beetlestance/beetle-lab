@@ -1,6 +1,6 @@
 {
   "name": "k6-studio",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "description": "Local web UI for k6-based HTTP load testing. Upload a config JSON, run, watch live charts and logs.",
   "private": true,
   "type": "module",

@@ -13,7 +13,7 @@ services:
       args:
         K6_VERSION: "1.5.0"
         NODE_VERSION: "20"
-    image: k6-studio:1.0
+    image: k6-studio:1.1
     container_name: k6-studio
     ports:
       - "4567:4567"

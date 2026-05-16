@@ -6,19 +6,19 @@
 # survives image upgrades.
 #
 # Build (your host arch):
-#   docker build -t k6-studio:1.0 .
+#   docker build -t k6-studio:1.1 .
 #
 # Build for a specific target platform (e.g. amd64 colleagues from an M-series Mac):
-#   docker buildx build --platform linux/amd64 -t k6-studio:1.0 --load .
+#   docker buildx build --platform linux/amd64 -t k6-studio:1.1 --load .
 #
 # Run:
-#   docker run --rm -p 4567:4567 -v $PWD/configs:/app/configs k6-studio:1.0
+#   docker run --rm -p 4567:4567 -v $PWD/configs:/app/configs k6-studio:1.1
 #   open http://localhost:4567
 #
 # Share offline (no registry):
-#   docker save k6-studio:1.0 | gzip > k6-studio-1.0.tgz
+#   docker save k6-studio:1.1 | gzip > k6-studio-1.1.tgz
 #   # recipient:
-#   gunzip -c k6-studio-1.0.tgz | docker load
+#   gunzip -c k6-studio-1.1.tgz | docker load
 #
 
 ARG K6_VERSION=1.5.0
