@@ -338,7 +338,9 @@ async function markOrphanedRunsAsFailed() {
         }
         if (meta.status !== "running") continue;
         meta.status = "failed";
-        meta.error = "server stopped before run finished";
+        meta.error =
+          "server stopped before run finished — k6-studio was restarted mid-run; the target may have continued receiving load until the k6 child also exited.";
+        meta.orphaned = true;
         meta.endedAt = meta.endedAt || Date.now();
         try {
           await fs.writeFile(metaPath, JSON.stringify(meta, null, 2));

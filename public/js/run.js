@@ -97,6 +97,8 @@ function template() {
         </div>
       </div>
 
+      <div id="runBanner" hidden></div>
+
       <div id="stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6"></div>
 
       <section class="border border-stone-200 dark:border-ink-800 rounded-md bg-white dark:bg-ink-900 mb-5">
@@ -300,6 +302,7 @@ async function initReplay() {
   reflectExportableState();
   renderInlineReport(detail.summaryTxt);
   renderConfigSnapshot(detail);
+  renderBanner(meta);
 
   // Stats
   renderStats(detail);
@@ -708,6 +711,33 @@ function statusColor(status) {
 }
 
 // ---------- Config snapshot ----------
+// ---------- Run banner ----------
+// Surface meta-level conditions that aren't obvious from the stats grid
+// (orphaned runs, threshold failures, etc.) right at the top of the page.
+function renderBanner(meta) {
+  const el = document.getElementById("runBanner");
+  if (!el) return;
+  if (!meta) {
+    el.hidden = true;
+    el.innerHTML = "";
+    return;
+  }
+  if (meta.orphaned) {
+    el.hidden = false;
+    el.innerHTML = `
+      <div class="mb-5 border border-amber-300/60 dark:border-amber-800/40 bg-amber-50/60 dark:bg-amber-900/15 rounded-md p-3 flex items-start gap-3">
+        ${icon("info", { size: 16, className: "text-amber-600 dark:text-amber-400 mt-0.5" })}
+        <div class="text-[12.5px] leading-[1.55] text-amber-800 dark:text-amber-200">
+          <div class="font-semibold mb-0.5">This run was marked failed because k6-studio restarted mid-run.</div>
+          <div>The k6 child process likely exited soon after, but the target service may have continued receiving load until then. Check the target's own logs and resource graphs around <span class="font-mono">${escapeHtml(meta.endedAt ? new Date(meta.endedAt).toLocaleString() : "—")}</span> to gauge actual impact. Charts and the report below reflect only what was captured before the restart.</div>
+        </div>
+      </div>`;
+    return;
+  }
+  el.hidden = true;
+  el.innerHTML = "";
+}
+
 function renderConfigSnapshot(detail) {
   const section = document.getElementById("configSection");
   const body = document.getElementById("configBody");
