@@ -121,6 +121,15 @@ class Run extends EventEmitter {
     this.status = "running";
     this.startedAt = Date.now();
     await this._snapshotConfig();
+    // k6 reads the resolved snapshot, not the raw template, so env-var
+    // substitution actually applies to the run. CONFIG_DIR still points at
+    // the source dir so relative bodyFile paths resolve against the bucket.
+    if (await fsp
+      .access(this.configSnapshotPath)
+      .then(() => true)
+      .catch(() => false)) {
+      env.CONFIG = this.configSnapshotPath;
+    }
     await this._writeMeta();
     this.emit("status", { status: this.status, startedAt: this.startedAt });
 
@@ -395,17 +404,63 @@ class Run extends EventEmitter {
   }
 
   // Capture the config that's about to run so historical comparisons can tell
-  // whether two runs ran the same inputs. We store both the raw bytes (for
-  // diffing) and a SHA-256 hash (for fast equality checks).
+  // whether two runs ran the same inputs. We store the *resolved* form (after
+  // <bucket>/.env substitution) plus its SHA-256 hash so two runs with the
+  // same template but different env values correctly compare as different.
   async _snapshotConfig() {
     try {
-      const txt = await fsp.readFile(this.configPath, "utf8");
-      this.configHash = createHash("sha256").update(txt).digest("hex");
-      await fsp.writeFile(this.configSnapshotPath, txt);
+      const raw = await fsp.readFile(this.configPath, "utf8");
+      const env = await this._loadBucketEnv();
+      const resolved = substituteEnvVars(raw, env);
+      this.configHash = createHash("sha256").update(resolved).digest("hex");
+      await fsp.writeFile(this.configSnapshotPath, resolved);
     } catch {
       // Non-fatal: the run can still proceed even if snapshotting fails.
     }
   }
+
+  // Parse <bucket>/.env (simple KEY=value lines, # comments, optional quotes)
+  // and merge with process.env so bucket-local overrides win.
+  async _loadBucketEnv() {
+    const envPath = path.join(path.dirname(this.configPath), ".env");
+    const map = {};
+    try {
+      const txt = await fsp.readFile(envPath, "utf8");
+      for (const line of txt.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith("#")) continue;
+        const eq = trimmed.indexOf("=");
+        if (eq === -1) continue;
+        const key = trimmed.slice(0, eq).trim();
+        let val = trimmed.slice(eq + 1).trim();
+        if (
+          (val.startsWith('"') && val.endsWith('"')) ||
+          (val.startsWith("'") && val.endsWith("'"))
+        ) {
+          val = val.slice(1, -1);
+        }
+        if (key) map[key] = val;
+      }
+    } catch {
+      // .env is optional; absence is fine.
+    }
+    return { ...process.env, ...map };
+  }
+}
+
+// Substitute ${UPPER_SNAKE} env-style references in a JSON text. Values are
+// JSON-escaped on the way in so a value containing a quote or backslash can't
+// break the surrounding JSON. Lowercase / dotted refs (like ${token} or
+// ${refs.random()}) are left alone so the existing token + future data-source
+// templating remain orthogonal.
+function substituteEnvVars(text, env) {
+  return text.replace(/\$\{([A-Z_][A-Z0-9_]*)\}/g, (m, name) => {
+    if (Object.prototype.hasOwnProperty.call(env, name)) {
+      const raw = String(env[name]);
+      return JSON.stringify(raw).slice(1, -1);
+    }
+    return m;
+  });
 }
 
 // Load the per-second tick array for a historical run.
