@@ -90,6 +90,8 @@ function template() {
               <button data-export="txt" class="w-full text-left px-3 py-2 hover:bg-stone-100 dark:hover:bg-ink-800 transition-colors flex items-center gap-2">${icon("file", { size: 12, className: "text-stone-400" })}<span>Report (.txt)</span></button>
               <button data-export="json" class="w-full text-left px-3 py-2 hover:bg-stone-100 dark:hover:bg-ink-800 transition-colors flex items-center gap-2">${icon("file", { size: 12, className: "text-stone-400" })}<span>Summary (.json)</span></button>
               <button data-export="csv" class="w-full text-left px-3 py-2 hover:bg-stone-100 dark:hover:bg-ink-800 transition-colors flex items-center gap-2">${icon("file", { size: 12, className: "text-stone-400" })}<span>Metrics (.csv)</span></button>
+              <div class="border-t border-stone-100 dark:border-ink-800"></div>
+              <button data-export="eject" class="w-full text-left px-3 py-2 hover:bg-stone-100 dark:hover:bg-ink-800 transition-colors flex items-center gap-2" title="Self-contained k6 script with config + payloads inlined">${icon("code", { size: 12, className: "text-stone-400" })}<span>Eject to k6 script (.js)</span></button>
             </div>
           </div>
           <button id="stopBtn" class="hidden text-[12px] px-3 py-2 rounded border border-rose-500 bg-rose-500 text-white hover:bg-rose-600 transition-colors flex items-center gap-2">
@@ -655,6 +657,16 @@ function doExport(kind) {
       return;
     }
     download(`${runId}.metrics.csv`, ticksToCsv(ticks), "text/csv");
+  } else if (kind === "eject") {
+    // Server has both the config snapshot and the bodyFile payloads — let it
+    // assemble the self-contained k6 script and stream it as a download.
+    const url = `/api/folders/${encodeURIComponent(bucket)}/runs/${encodeURIComponent(configDir)}/${encodeURIComponent(runId)}/eject.js`;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${bucket}-${configDir}-${runId}.k6.js`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 }
 

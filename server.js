@@ -607,6 +607,212 @@ app.get("/api/folders/:bucket/runs/:configDir/:id", async (req, res) => {
 });
 
 // Standalone report page: full TXT report rendered as a static HTML page.
+// Eject a run's config + payloads into a self-contained k6 script. The user
+// downloads it, edits it freely, and runs `k6 run <file>` outside the tool
+// when the JSON config no longer fits their use case. Bridges the casual /
+// power-user gap without forcing them to rewrite from scratch.
+app.get("/api/folders/:bucket/runs/:configDir/:id/eject.js", async (req, res) => {
+  const bucket = safeName(req.params.bucket);
+  const cdir = safeName(req.params.configDir);
+  const id = safeName(req.params.id);
+  const runDir = path.join(FOLDERS_DIR, bucket, RUNS_SUBDIR, cdir, id);
+  let cfg;
+  try {
+    cfg = JSON.parse(
+      await fs.readFile(path.join(runDir, "config.snapshot.json"), "utf8"),
+    );
+  } catch {
+    return res.status(404).type("text/plain").send("config.snapshot.json not found");
+  }
+  // Resolve bodyFile refs against the *bucket dir* (where payloads live).
+  const bucketDir = path.join(FOLDERS_DIR, bucket);
+  for (const ep of cfg.endpoints || []) {
+    if (ep.bodyFile) {
+      try {
+        const abs = ep.bodyFile.startsWith("/")
+          ? ep.bodyFile
+          : path.join(bucketDir, ep.bodyFile);
+        const txt = await fs.readFile(abs, "utf8");
+        ep.body = JSON.parse(txt);
+        delete ep.bodyFile;
+      } catch {
+        // leave bodyFile reference if we can't read it
+      }
+    }
+  }
+  res
+    .type("application/javascript")
+    .set(
+      "Content-Disposition",
+      `attachment; filename="${bucket}-${cdir}-${id}.k6.js"`,
+    )
+    .send(renderEjectScript(cfg, { bucket, configDir: cdir, id }));
+});
+
+function renderEjectScript(cfg, meta) {
+  return `// k6-studio eject — self-contained k6 script for ${meta.bucket} / ${meta.configDir} / ${meta.id}.
+// Run with:  k6 run ${meta.bucket}-${meta.configDir}-${meta.id}.k6.js
+//   Override target:  k6 run --env TARGET=http://localhost:9000 ${meta.bucket}-${meta.configDir}-${meta.id}.k6.js
+//
+// Generated from config.snapshot.json with payloads inlined. Edit freely — this
+// file is yours.
+
+const CONFIG = ${JSON.stringify(cfg, null, 2)};
+
+${EJECT_SCRIPT_TEMPLATE}
+`;
+}
+
+// The bulk of loadtest.js, parameterized over CONFIG instead of __ENV.CONFIG.
+// Kept inline as a string so the ejected file is single-file portable. When
+// loadtest.js changes shape this string must be re-derived from it.
+const EJECT_SCRIPT_TEMPLATE = String.raw`
+import http from "k6/http";
+import { check, sleep } from "k6";
+import { Counter, Trend } from "k6/metrics";
+import { textSummary } from "https://jslib.k6.io/k6-summary/0.1.0/index.js";
+
+const TARGET = __ENV.TARGET || CONFIG.target || "http://localhost:8080";
+const config = CONFIG;
+const errors = new Counter("errors");
+const endpointLatency = {};
+config.endpoints.forEach((ep) => {
+  endpointLatency[ep.name] = new Trend("ep_" + ep.name + "_latency");
+});
+
+function parseDurationS(s) {
+  const re = /(\d+(?:\.\d+)?)([smhd])/g;
+  const factors = { s: 1, m: 60, h: 3600, d: 86400 };
+  let total = 0, m;
+  while ((m = re.exec(String(s))) !== null) total += parseFloat(m[1]) * factors[m[2]];
+  return total;
+}
+
+function buildScenario(s) {
+  const exec = s.exec || "runEndpoint";
+  const base = { exec, gracefulStop: s.gracefulStop || "1s" };
+  if (s.startTime) base.startTime = s.startTime;
+  switch (s.executor) {
+    case "constant-arrival-rate":
+      return { ...base, executor: "constant-arrival-rate",
+        rate: s.rate || 20, timeUnit: s.timeUnit || "1s",
+        duration: s.loadDuration || s.duration || "3m",
+        preAllocatedVUs: s.preAllocatedVUs || 50, maxVUs: s.maxVUs || 200 };
+    case "ramping-arrival-rate":
+      return { ...base, executor: "ramping-arrival-rate",
+        startRate: s.startRate ?? 0, timeUnit: s.timeUnit || "1s",
+        stages: (s.stages || []).map((x) => ({ duration: x.duration, target: x.rate ?? x.target ?? 0 })),
+        preAllocatedVUs: s.preAllocatedVUs || 50, maxVUs: s.maxVUs || 200 };
+    case "shared-iterations":
+      return { ...base, executor: "shared-iterations",
+        iterations: s.iterations || 100, vus: s.vus || 10, maxDuration: s.maxDuration || "10m" };
+    case "per-vu-iterations":
+      return { ...base, executor: "per-vu-iterations",
+        iterations: s.iterations || 10, vus: s.vus || 10, maxDuration: s.maxDuration || "10m" };
+    case "constant-vus":
+      return { ...base, executor: "constant-vus",
+        vus: s.vus || 10, duration: s.duration || s.loadDuration || "3m" };
+    case "ramping-vus":
+    default:
+      return { ...base, executor: "ramping-vus",
+        startVUs: s.startVUs ?? 0,
+        stages: (s.stages || []).map((x) => ({ duration: x.duration, target: x.vus ?? x.target ?? 0 })),
+        gracefulRampDown: s.gracefulRampDown || "30s" };
+  }
+}
+
+const specs = Array.isArray(config.scenarios) && config.scenarios.length > 0
+  ? config.scenarios.map((s, i) => ({ name: s.name || ("scenario" + i), spec: s }))
+  : [{ name: "load_test", spec: {
+      executor: config.executor || "ramping-vus",
+      rate: config.rate, timeUnit: config.timeUnit,
+      loadDuration: config.loadDuration, duration: config.duration,
+      startRate: config.startRate, startVUs: config.startVUs,
+      stages: config.stages, preAllocatedVUs: config.preAllocatedVUs, maxVUs: config.maxVUs,
+      iterations: config.iterations, vus: config.vus, maxDuration: config.maxDuration,
+      gracefulRampDown: config.gracefulRampDown,
+    } }];
+const scenarios = {};
+for (const { name, spec } of specs) scenarios[name] = buildScenario(spec);
+
+export const options = {
+  scenarios,
+  thresholds: config.thresholds || {},
+  summaryTrendStats: ["avg", "min", "med", "max", "p(90)", "p(95)", "p(99)"],
+};
+
+const iterationCounts = {};
+config.endpoints.forEach((ep) => { iterationCounts[ep.name] = 0; });
+
+function getRandomToken() {
+  if (!config.tokens || config.tokens.length === 0) return null;
+  return config.tokens[Math.floor(Math.random() * config.tokens.length)];
+}
+
+function selectEndpoint() {
+  const active = config.endpoints.filter((ep) => !ep.maxIterations || iterationCounts[ep.name] < ep.maxIterations);
+  if (active.length === 0) return null;
+  const total = active.reduce((s, e) => s + (e.weight || 1), 0);
+  let r = Math.random() * total, cum = 0;
+  for (const ep of active) { cum += ep.weight || 1; if (r < cum) { iterationCounts[ep.name]++; return ep; } }
+  const last = active[active.length - 1]; iterationCounts[last.name]++; return last;
+}
+
+function buildUrl(ep) {
+  let url = TARGET + ep.path;
+  if (ep.params && Object.keys(ep.params).length > 0) {
+    const parts = [];
+    for (const [k, v] of Object.entries(ep.params)) parts.push(encodeURIComponent(k) + "=" + encodeURIComponent(v));
+    url += "?" + parts.join("&");
+  }
+  return url;
+}
+function buildHeaders(ep) {
+  const headers = {};
+  if (ep.headers) {
+    const token = getRandomToken();
+    for (const [k, v] of Object.entries(ep.headers)) headers[k] = String(v).replace("\${token}", token || "");
+  }
+  return headers;
+}
+function runChecks(ep, response) {
+  const c = ep.checks || {}, out = {};
+  if (c.status !== undefined) out[ep.name + " status is " + c.status] = response.status === c.status;
+  if (c.statusNot5xx) out[ep.name + " status not 5xx"] = response.status < 500;
+  if (c.status2xx) out[ep.name + " status is 2xx"] = response.status >= 200 && response.status < 300;
+  if (c.bodyContains) out[ep.name + " body contains"] = response.body && response.body.includes(c.bodyContains);
+  if (Object.keys(out).length === 0) out[ep.name + " responded"] = response.status > 0;
+  return check(response, out);
+}
+
+export function runEndpoint() {
+  const ep = selectEndpoint();
+  if (!ep) { sleep(0.1); return; }
+  const url = buildUrl(ep);
+  const headers = buildHeaders(ep);
+  const method = (ep.method || "GET").toUpperCase();
+  let response;
+  switch (method) {
+    case "POST": if (ep.body) headers["Content-Type"] = "application/json";
+      response = http.post(url, ep.body ? JSON.stringify(ep.body) : null, { headers }); break;
+    case "PUT": if (ep.body) headers["Content-Type"] = "application/json";
+      response = http.put(url, ep.body ? JSON.stringify(ep.body) : null, { headers }); break;
+    case "DELETE": response = http.del(url, null, { headers }); break;
+    case "PATCH": if (ep.body) headers["Content-Type"] = "application/json";
+      response = http.patch(url, ep.body ? JSON.stringify(ep.body) : null, { headers }); break;
+    default: response = http.get(url, { headers });
+  }
+  endpointLatency[ep.name].add(response.timings.duration);
+  if (!runChecks(ep, response)) errors.add(1);
+  if (ep.waitMs) sleep((ep.waitMs.min + Math.random() * (ep.waitMs.max - ep.waitMs.min)) / 1000);
+  else sleep(0.02);
+}
+
+export function handleSummary(data) {
+  return { stdout: "\n" + textSummary(data, { indent: " ", enableColors: true }) };
+}
+`;
+
 app.get("/report/:bucket/:configDir/:id", async (req, res) => {
   const bucket = safeName(req.params.bucket);
   const cdir = safeName(req.params.configDir);
