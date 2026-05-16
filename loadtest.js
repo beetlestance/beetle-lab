@@ -76,10 +76,6 @@ const stages = config.stages || [
   { duration: "1m", target: 25 },
   { duration: "30s", target: 0 },
 ];
-const k6Stages = stages.map((s) => ({
-  duration: s.duration,
-  target: s.vus || s.target || 0,
-}));
 
 const iterationCounts = {};
 config.endpoints.forEach((ep) => {
@@ -91,41 +87,6 @@ const memorySamplerInterval = config.memorySampling?.intervalSeconds || 2;
 const memorySamplerEndpoint = config.memorySampling?.endpoint || "/debug/procstats";
 const cooldownSeconds = Math.max(0, config.memorySampling?.cooldownSeconds || 0);
 
-function buildLoadScenario() {
-  const executorType = config.executor || "ramping-vus";
-  if (executorType === "constant-arrival-rate") {
-    return {
-      executor: "constant-arrival-rate",
-      rate: config.rate || 20,
-      timeUnit: config.timeUnit || "1s",
-      duration: config.loadDuration || "3m",
-      preAllocatedVUs: config.preAllocatedVUs || 50,
-      maxVUs: config.maxVUs || 200,
-      // Default is 30s. Keep it small so total wall time = loadDuration +
-      // cooldown without an extra grace period blowing up the math.
-      gracefulStop: "1s",
-      exec: "runEndpoint",
-    };
-  }
-  return {
-    executor: "ramping-vus",
-    stages: k6Stages,
-    gracefulRampDown: "30s",
-    gracefulStop: "1s",
-    exec: "runEndpoint",
-  };
-}
-
-// The sampler scenario runs for exactly the load duration. The cooldown
-// sample is captured separately in teardown(). Note: don't read
-// config.duration — that field was a buffer field in the ecs-content
-// original ("loadDuration + sampler padding") and would now double-count.
-function estimateLoadDurationS() {
-  if (config.executor === "constant-arrival-rate")
-    return parseDurationS(config.loadDuration || "3m");
-  return stages.reduce((sum, s) => sum + parseDurationS(s.duration), 0);
-}
-
 function parseDurationS(s) {
   const re = /(\d+(?:\.\d+)?)([smhd])/g;
   const factors = { s: 1, m: 60, h: 3600, d: 86400 };
@@ -135,9 +96,144 @@ function parseDurationS(s) {
   return total;
 }
 
+// Build a k6 scenario object from a (loosely-typed) scenario spec. Spec may be
+// either the legacy top-level form (config.executor + flat fields) or one
+// element of config.scenarios[]. Every supported k6 executor maps to a small
+// set of well-known fields so the JSON config stays readable.
+function buildScenarioFromSpec(s, fallbackStages) {
+  const exec = s.exec || "runEndpoint";
+  const gracefulStop = s.gracefulStop || "1s";
+  const base = { exec, gracefulStop };
+  if (s.startTime) base.startTime = s.startTime;
+  switch (s.executor) {
+    case "constant-arrival-rate":
+      return {
+        ...base,
+        executor: "constant-arrival-rate",
+        rate: s.rate || 20,
+        timeUnit: s.timeUnit || "1s",
+        duration: s.loadDuration || s.duration || "3m",
+        preAllocatedVUs: s.preAllocatedVUs || 50,
+        maxVUs: s.maxVUs || 200,
+      };
+    case "ramping-arrival-rate":
+      return {
+        ...base,
+        executor: "ramping-arrival-rate",
+        startRate: s.startRate ?? 0,
+        timeUnit: s.timeUnit || "1s",
+        stages: normalizeRateStages(s.stages || fallbackStages || []),
+        preAllocatedVUs: s.preAllocatedVUs || 50,
+        maxVUs: s.maxVUs || 200,
+      };
+    case "shared-iterations":
+      return {
+        ...base,
+        executor: "shared-iterations",
+        iterations: s.iterations || 100,
+        vus: s.vus || 10,
+        maxDuration: s.maxDuration || "10m",
+      };
+    case "per-vu-iterations":
+      return {
+        ...base,
+        executor: "per-vu-iterations",
+        iterations: s.iterations || 10,
+        vus: s.vus || 10,
+        maxDuration: s.maxDuration || "10m",
+      };
+    case "constant-vus":
+      return {
+        ...base,
+        executor: "constant-vus",
+        vus: s.vus || 10,
+        duration: s.duration || s.loadDuration || "3m",
+      };
+    case "ramping-vus":
+    default:
+      return {
+        ...base,
+        executor: "ramping-vus",
+        startVUs: s.startVUs ?? 0,
+        stages: normalizeVuStages(s.stages || fallbackStages || []),
+        gracefulRampDown: s.gracefulRampDown || "30s",
+      };
+  }
+}
+
+// VU stages accept `vus` or `target` (k6 uses `target`).
+function normalizeVuStages(arr) {
+  return (arr || []).map((s) => ({
+    duration: s.duration,
+    target: s.vus ?? s.target ?? 0,
+  }));
+}
+
+// Rate stages accept `rate` or `target`.
+function normalizeRateStages(arr) {
+  return (arr || []).map((s) => ({
+    duration: s.duration,
+    target: s.rate ?? s.target ?? 0,
+  }));
+}
+
+// Effective wall-clock length of a scenario, used to size the memory sampler
+// and surface a "total" estimate to the UI.
+function scenarioDurationS(s) {
+  const start = parseDurationS(s.startTime || "0s");
+  switch (s.executor) {
+    case "constant-arrival-rate":
+      return start + parseDurationS(s.loadDuration || s.duration || "3m");
+    case "ramping-arrival-rate":
+    case "ramping-vus":
+      return start + (s.stages || []).reduce((a, x) => a + parseDurationS(x.duration), 0);
+    case "shared-iterations":
+    case "per-vu-iterations":
+      return start + parseDurationS(s.maxDuration || "10m");
+    case "constant-vus":
+      return start + parseDurationS(s.duration || s.loadDuration || "3m");
+    default:
+      return start + (s.stages || []).reduce((a, x) => a + parseDurationS(x.duration), 0);
+  }
+}
+
+// Legacy top-level form: { executor, rate/stages/..., ... }. Wrap into a
+// single-scenario spec so the new builder handles it uniformly.
+function legacySpecFromTopLevel() {
+  return {
+    executor: config.executor || "ramping-vus",
+    rate: config.rate,
+    timeUnit: config.timeUnit,
+    loadDuration: config.loadDuration,
+    duration: config.duration,
+    startRate: config.startRate,
+    startVUs: config.startVUs,
+    stages: config.stages,
+    preAllocatedVUs: config.preAllocatedVUs,
+    maxVUs: config.maxVUs,
+    iterations: config.iterations,
+    vus: config.vus,
+    maxDuration: config.maxDuration,
+    gracefulRampDown: config.gracefulRampDown,
+  };
+}
+
+// New form: config.scenarios = [{ name, executor, ... }, ...]. Each runs in
+// parallel (or staggered, via startTime). Names default to scenario0/1/...
+const scenarioSpecs = Array.isArray(config.scenarios) && config.scenarios.length > 0
+  ? config.scenarios.map((s, i) => ({ name: s.name || `scenario${i}`, spec: s }))
+  : [{ name: "load_test", spec: legacySpecFromTopLevel() }];
+
+function estimateLoadDurationS() {
+  return Math.max(0, ...scenarioSpecs.map(({ spec }) => scenarioDurationS(spec)));
+}
+
 const samplerDuration = `${Math.max(1, Math.ceil(estimateLoadDurationS()))}s`;
 
-const scenarios = { load_test: buildLoadScenario() };
+const scenarios = {};
+for (const { name, spec } of scenarioSpecs) {
+  scenarios[name] = buildScenarioFromSpec(spec, stages);
+}
 if (memorySamplingEnabled) {
   scenarios.memory_sampler = {
     executor: "constant-vus",

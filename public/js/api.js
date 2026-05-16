@@ -124,12 +124,39 @@ export function parseDurationS(s) {
   return total;
 }
 
+// Effective wall-clock duration of one scenario spec (legacy top-level form
+// OR an entry from config.scenarios[]).
+function scenarioDurationSec(s) {
+  if (!s) return 0;
+  const start = parseDurationS(s.startTime || "0s");
+  const exec = s.executor || "ramping-vus";
+  if (exec === "constant-arrival-rate")
+    return start + parseDurationS(s.loadDuration || s.duration);
+  if (exec === "ramping-arrival-rate" || exec === "ramping-vus")
+    return start + (s.stages || []).reduce((a, x) => a + parseDurationS(x.duration), 0);
+  if (exec === "shared-iterations" || exec === "per-vu-iterations")
+    return start + parseDurationS(s.maxDuration || "10m");
+  if (exec === "constant-vus")
+    return start + parseDurationS(s.duration || s.loadDuration);
+  return start + (s.stages || []).reduce((a, x) => a + parseDurationS(x.duration), 0);
+}
+
 export function totalDurationSec(cfg) {
   if (!cfg) return 0;
-  const load =
-    cfg.executor === "constant-arrival-rate"
-      ? parseDurationS(cfg.loadDuration)
-      : (cfg.stages || []).reduce((sum, s) => sum + parseDurationS(s.duration), 0);
+  let load;
+  if (Array.isArray(cfg.scenarios) && cfg.scenarios.length > 0) {
+    // Scenarios run in parallel — total wall time is the longest one.
+    load = Math.max(0, ...cfg.scenarios.map(scenarioDurationSec));
+  } else {
+    load = scenarioDurationSec({
+      executor: cfg.executor,
+      loadDuration: cfg.loadDuration,
+      duration: cfg.duration,
+      stages: cfg.stages,
+      maxDuration: cfg.maxDuration,
+      startTime: cfg.startTime,
+    });
+  }
   const cooldown = cfg.memorySampling?.enabled
     ? cfg.memorySampling.cooldownSeconds || 0
     : 0;

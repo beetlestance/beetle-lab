@@ -229,7 +229,51 @@ function configRef() {
     `
     ${card("Top-level fields", null, rowsTable(topRows))}
     ${card("Executor: constant-arrival-rate", "Fixed throughput regardless of server speed", rowsTable(constantRows), { open: false })}
+    ${card("Executor: ramping-arrival-rate", "Stage-based request-rate ramp — drive the arrival rate up/down regardless of server speed",
+      rowsTable({
+        headers: ["Field", "Type", "Default", "Notes"],
+        body: [
+          ["stages", "{duration, rate}[]", "<em>required</em>", "Each stage ramps to the given <code>rate</code> over <code>duration</code>."],
+          ["startRate", "number", "0", "Starting request rate before the first stage."],
+          ["timeUnit", "duration", '"1s"', "Time window for <code>rate</code> / <code>startRate</code>."],
+          ["preAllocatedVUs", "number", "50", "Pre-allocated VU pool."],
+          ["maxVUs", "number", "200", "Upper limit if k6 needs more."],
+        ],
+      }), { open: false })}
     ${card("Executor: ramping-vus", "Stage-based VU ramp; throughput depends on server speed", rowsTable(rampRows), { open: false })}
+    ${card("Executor: shared-iterations / per-vu-iterations", "Fire N requests and exit — useful for warmup, smoke, fixed-budget probes",
+      rowsTable({
+        headers: ["Field", "Type", "Default", "Notes"],
+        body: [
+          ["iterations", "number", "100 (shared) / 10 (per-vu)", "Total (shared) or per-VU (per-vu) iterations."],
+          ["vus", "number", "10", "VU pool size."],
+          ["maxDuration", "duration", '"10m"', "Hard cap regardless of iteration count."],
+        ],
+      }), { open: false })}
+    ${card("scenarios[]", "Stack multiple scenarios in one config — useful for background traffic + sharp bursts",
+      `<p class="text-[13px] leading-[1.7] mb-2">When <code class="font-mono">scenarios[]</code> is present at the top level, it replaces the single-scenario fields. Each entry has its own <code>executor</code>, fields, and optional <code>startTime</code> (offset from run start). Scenarios run in parallel.</p>` +
+      pre(`{
+  "scenarios": [
+    {
+      "name":  "baseline",
+      "executor": "constant-arrival-rate",
+      "rate": 30, "timeUnit": "1s", "loadDuration": "5m",
+      "preAllocatedVUs": 30, "maxVUs": 100
+    },
+    {
+      "name":  "burst",
+      "executor": "ramping-arrival-rate",
+      "startTime": "1m",
+      "preAllocatedVUs": 200, "maxVUs": 800,
+      "stages": [
+        { "duration": "10s", "rate": 1000 },
+        { "duration": "30s", "rate": 1000 },
+        { "duration": "10s", "rate": 0 }
+      ]
+    }
+  ],
+  "endpoints": [/* all endpoints are shared across scenarios */]
+}`), { open: false })}
     ${card("Endpoint definition", null, rowsTable(epRows))}
     ${card("Memory sampling", "Node.js services with a /debug/procstats endpoint", rowsTable(memRows), { open: false })}
     ${card("Example: constant-arrival-rate with memory sampling", null, pre(`{
