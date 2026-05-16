@@ -381,14 +381,24 @@ function renderDroppedBanner(total) {
   const el = document.getElementById("droppedBanner");
   if (!el || total <= 0) return;
   el.hidden = false;
-  el.innerHTML = `
-    <div class="mb-4 border border-rose-300/60 dark:border-rose-800/40 bg-rose-50/50 dark:bg-rose-900/15 rounded-md p-3 flex items-start gap-3 pop-in">
-      ${icon("zap", { size: 16, className: "text-rose-600 dark:text-rose-400 mt-0.5" })}
-      <div class="text-[12.5px] leading-[1.55] text-rose-800 dark:text-rose-200 flex-1">
-        <div class="font-semibold mb-0.5"><span class="num">${total.toLocaleString()}</span> dropped iteration${total === 1 ? "" : "s"} — VU pool too small.</div>
-        <div>k6 wanted to fire more requests than the pre-allocated VUs could handle. The actual request rate is lower than the target. Stop the run and bump <code class="font-mono">preAllocatedVUs</code> / <code class="font-mono">maxVUs</code> in the config.</div>
-      </div>
-    </div>`;
+  // Build the banner DOM once. Subsequent calls only swap the count and the
+  // "iteration"/"iterations" pluralization so the pop-in animation doesn't
+  // re-fire on every tick and the surrounding layout doesn't reflow.
+  let count = el.querySelector("[data-dropped-count]");
+  if (!count) {
+    el.innerHTML = `
+      <div class="mb-4 border border-rose-300/60 dark:border-rose-800/40 bg-rose-50/50 dark:bg-rose-900/15 rounded-md p-3 flex items-start gap-3 pop-in">
+        ${icon("zap", { size: 16, className: "text-rose-600 dark:text-rose-400 mt-0.5" })}
+        <div class="text-[12.5px] leading-[1.55] text-rose-800 dark:text-rose-200 flex-1">
+          <div class="font-semibold mb-0.5"><span class="num" data-dropped-count>0</span> dropped iteration<span data-dropped-plural>s</span> — VU pool too small.</div>
+          <div>k6 wanted to fire more requests than the pre-allocated VUs could handle. The actual request rate is lower than the target. Stop the run and bump <code class="font-mono">preAllocatedVUs</code> / <code class="font-mono">maxVUs</code> in the config.</div>
+        </div>
+      </div>`;
+    count = el.querySelector("[data-dropped-count]");
+  }
+  count.textContent = total.toLocaleString();
+  const plural = el.querySelector("[data-dropped-plural]");
+  if (plural) plural.textContent = total === 1 ? "" : "s";
 }
 
 function onLog(l) {
