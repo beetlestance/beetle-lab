@@ -43,8 +43,8 @@ function buildAiSkill() {
 
 You are operating against a local k6-studio instance over plain HTTP and a
 WebSocket. Use this skill when the user asks you to start, inspect, compare,
-export, or manage HTTP load tests, especially against Node.js services where
-memory / CPU / event-loop / GC profiling is needed.
+export, or manage HTTP load tests — especially against Node.js services
+where memory / CPU / event-loop / GC profiling matters.
 
 ## Base URL
 
@@ -53,8 +53,8 @@ different port. All API endpoints below are relative to this base.
 
 ## Concepts
 
-- **Bucket**: A named workspace holding configs, payload files, and run
-  history for a project. On disk: \`configs/<bucket>/\`.
+- **Bucket**: A named workspace holding configs, payload files, run history,
+  and an optional per-bucket \`.env\`. On disk: \`configs/<bucket>/\`.
 - **Config**: A JSON file inside a bucket whose top-level has a non-empty
   \`endpoints[]\` array. Multiple configs can live in the same bucket and
   share payload files.
@@ -76,27 +76,38 @@ different port. All API endpoints below are relative to this base.
 - \`POST /api/folders/:name/files\` body \`{ "files": [{ "path": "...", "content": "..." }] }\`
   Merge-uploads files into the bucket. Existing files at the same path are overwritten.
   \`runs/...\` paths are reserved and silently skipped.
+  Place a \`.env\` at \`configs/<bucket>/.env\` (KEY=value lines) to make
+  \`\${UPPER_SNAKE}\` placeholders in the config resolve at run-start time.
 - \`GET /api/folders/:name/files/<rel>\` → read a file (returned as JSON if it parses, else text).
 - \`DELETE /api/folders/:name/files/<rel>\` → delete a file.
 
 ### Runs
 
 - \`POST /api/runs\` body \`{ "folder": "<bucket>", "config": "<config-rel-path>", "target": "http://..." }\`
-  → starts a new run. Returns the run snapshot \`{ id, status, bucket, configRel, configDir, target, startedAt }\`.
-- \`POST /api/runs/:id/stop\` → stop a running run (skips cooldown).
-- \`GET /api/runs\` → list **active** in-memory runs (current process). Status is
-  \`running\` for in-flight runs.
-- \`GET /api/runs/:id\` → live snapshot + \`tickHistory\` + \`logs\`.
-- \`GET /api/runs-history?folder=<bucket>\` → past runs from disk. Each row
-  carries \`bucket\`, \`configDir\`, \`configRel\`, \`status\`, \`startedAt\`,
-  \`endedAt\`, \`stats\` (requests, rps, p50/p95/p99, errors, failedRate).
+  → starts a new run. Returns the snapshot
+  \`{ id, status, bucket, configRel, configDir, target, startedAt, configHash }\`.
+- \`POST /api/runs/:id/stop\` → stop a running run (skips k6 teardown / cooldown
+  via two SIGINTs, SIGKILL fallback at 5s).
+- \`GET /api/runs\` → list **active** in-memory runs (current process).
+- \`GET /api/runs/:id\` → live snapshot + \`tickHistory\` + recent logs.
+- \`GET /api/runs-history?folder=<bucket>\` → past runs from disk. Each row:
+  \`bucket\`, \`configDir\`, \`configRel\`, \`status\`, \`startedAt\`, \`endedAt\`,
+  \`stats\` (requests, rps, p50/p95/p99, errors, failedRate), \`sizeBytes\`.
 - \`GET /api/folders/:bucket/runs/:configDir/:id\` → full detail:
   \`{ meta, summary, summaryTxt, ticks[], log, hasMemory, configSnapshot }\`.
-  - \`meta.configHash\` is the SHA-256 of the config JSON at run time.
-  - \`configSnapshot\` is the parsed config copied at run start.
-  - \`summary\` is the raw k6 \`handleSummary\` payload.
-  - \`summaryTxt\` is the rendered Node.js performance report.
-  - \`ticks[]\` is per-second aggregated metrics: \`{ t, rps, p50, p95, p99, errors, vus, memory: {...} }\`.
+  - \`meta.configHash\` — SHA-256 of the **resolved** config (after \`.env\`
+    substitution). Two runs with matching hashes are apples-to-apples.
+  - \`meta.orphaned\` — \`true\` if the run was reaped on server boot (k6-studio
+    crashed mid-run). Treat results as a prefix of what really happened.
+  - \`configSnapshot\` — the resolved config that actually ran (env-vars
+    substituted in).
+  - \`summary\` — raw k6 \`handleSummary\` payload.
+  - \`summaryTxt\` — rendered Node.js performance report (verdicts + sections).
+  - \`ticks[]\` — per-second buckets:
+    \`{ t, rps, p50, p95, p99, errors, vus, dropped, memory: {...} }\`.
+- \`GET /api/folders/:bucket/runs/:configDir/:id/eject.js\` → self-contained k6
+  script with the config + payloads inlined. Run with \`k6 run <file>\` outside
+  the tool when the JSON shape can't represent your case.
 - \`DELETE /api/folders/:bucket/runs/:configDir/:id\` → delete one run.
 
 ### Reports
@@ -105,58 +116,123 @@ different port. All API endpoints below are relative to this base.
 
 ## WebSocket /ws?run=<id>
 
-Connect after starting a run to stream live data. Messages:
+Connect after starting a run. The server replays history on connect, then
+streams live events. Message types:
 
-- \`{ "type": "hello", "run": {...snapshot...} }\` — sent immediately on connect, then
-  any \`tickHistory\` and recent log lines are replayed.
-- \`{ "type": "tick", "t": <ms>, "rps": ..., "p50": ..., "p95": ..., "p99": ..., "errors": ..., "vus": ..., "memory": {...} }\`
-  every second.
-- \`{ "type": "log", "t": <ms>, "line": "..." }\` for each log line.
+- \`{ "type": "hello", "run": {...snapshot...} }\` — first.
+- \`{ "type": "tick", "t": <ms>, "rps", "p50", "p95", "p99", "errors", "vus",
+    "dropped", "memory": { "heapMB", "rssMB", "cpuPercent",
+                            "eldMean", "eldP99", "eldMax", "handles", ... } }\`
+  every second. \`dropped > 0\` means the configured arrival rate exceeded
+  the VU pool — bump \`preAllocatedVUs\` / \`maxVUs\`.
+- \`{ "type": "log", "t": <ms>, "line": "..." }\`.
 - \`{ "type": "status", "status": "running" | "completed" | "failed" | "stopped", ... }\`.
-- \`{ "type": "summary", "data": {...} }\` after the run finishes.
+- \`{ "type": "summary", "data": {...} }\` after exit.
 
 ## Config JSON shape
 
 \`\`\`jsonc
 {
-  "executor": "constant-arrival-rate",   // or "ramping-vus"
+  // ---- Load shape: pick ONE of these ----
+  //
+  // (a) Legacy single-scenario top-level form:
+  "executor": "constant-arrival-rate",
   "rate": 30, "timeUnit": "1s", "loadDuration": "3m",
   "preAllocatedVUs": 15, "maxVUs": 60,
-  // OR for ramping-vus:
-  // "stages": [{ "duration": "30s", "vus": 50 }, ...]
+  //
+  // (b) Multi-scenario form (replaces top-level executor fields):
+  // "scenarios": [
+  //   { "name": "baseline", "executor": "constant-arrival-rate",
+  //     "rate": 30, "loadDuration": "5m",
+  //     "preAllocatedVUs": 30, "maxVUs": 100 },
+  //   { "name": "burst", "executor": "ramping-arrival-rate",
+  //     "startTime": "1m",
+  //     "stages": [{ "duration": "10s", "rate": 1000 },
+  //                { "duration": "30s", "rate": 1000 },
+  //                { "duration": "10s", "rate": 0 }],
+  //     "preAllocatedVUs": 200, "maxVUs": 800 }
+  // ]
+  //
+  // Supported executors:
+  //   constant-arrival-rate   fixed RPS for loadDuration
+  //   ramping-arrival-rate    stage-based RPS targets
+  //   ramping-vus             stage-based VU targets (throughput depends on server)
+  //   shared-iterations       fire N total iterations and exit
+  //   per-vu-iterations       fire N iterations per VU and exit
+  //   constant-vus            steady VUs for duration
+  //   ramp-until              SATURATION: ramp RPS up until stopCondition trips, then abort
+  //     { "executor": "ramp-until",
+  //       "stopCondition": "http_req_duration{p99} > 1000",
+  //       "startRate": 50, "stepRate": 100, "stepDuration": "20s", "maxRate": 10000 }
 
-  "target": "http://localhost:8080",     // optional — overridable per run
-  "healthPath": "/health",                // optional — wait for 200 before load
-  "tokens": ["..."],                      // optional — substituted into headers
+  "target": "http://localhost:8080",      // overridable per run
+  "healthPath": "/health",                // optional setup() probe
+
+  // ---- Per-VU data parameterization ----
+  // Use \${name.random()} or \${name.byVu()} in params/headers/path/body.
+  // Append .field after the call for objects (CSV rows, JSON-of-objects).
+  "data": {
+    "users": { "file": "./users.csv" },              // CSV → array of {col: val}
+    "events": { "file": "./events.json" },           // JSON array
+    "refs":  { "range": [1000, 9999] },              // inclusive ints
+    "tags":  { "values": ["foo", "bar", "baz"] }     // inline
+  },
+
+  // ---- .env vars ----
+  // Place configs/<bucket>/.env with KEY=value lines. \${UPPER_SNAKE}
+  // refs anywhere in this JSON are substituted at run-start. The
+  // resolved version is what gets snapshotted + hashed.
+  // .env wins over process.env.
+
+  "tokens": ["..."],                      // \${token} (lowercase) -> random pick
 
   "memorySampling": {
     "enabled": true,
     "intervalSeconds": 2,
-    "endpoint": "/debug/procstats",       // returns Node.js runtime stats
-    "cooldownSeconds": 180                // optional — wait this long after load
-                                          //   to detect memory leaks
+    "endpoint": "/debug/procstats",
+    "cooldownSeconds": 180                // 0 = no cooldown sample
   },
 
-  "thresholds": { ... },                  // optional k6 thresholds
+  "thresholds": { "http_req_duration": ["p(95)<500"] },
+
+  // ---- External-tool hooks (off by default) ----
+  // Disabled unless server has K6_STUDIO_HOOKS_ENABLED=1 AND the first
+  // token of each command is in K6_STUDIO_HOOKS_ALLOWED_BINARIES.
+  // Placeholders: <runid> <rundir> <bucket> <configrel> <configdir>.
+  "hooks": {
+    "preStart": "docker exec my-svc node /tmp/trace.js --clear",
+    "onStart":  "docker exec -d my-svc sh -c 'node /tmp/trace.js > /tmp/trace.log &'",
+    "onStop":   "docker cp my-svc:/tmp/slow.jsonl <rundir>/slow.jsonl"
+  },
 
   "endpoints": [
     {
-      "name": "get_user",
+      "name":   "get_user",
       "method": "GET",
-      "path": "/v1/users/123",
+      "path":   "/v1/users/\${users.byVu().userId}",
       "weight": 10,
-      "params": { "include": "profile" },
-      "headers": { "Authorization": "Bearer \${token}" },
-      "checks": { "status": 200, "bodyContains": "id" }
+      "params":  { "ref": "\${refs.random()}", "tag": "\${tags.random()}" },
+      "headers": { "Authorization": "Bearer \${token}",
+                   "X-Trace-Id":   "\${TRACE_PREFIX}-\${users.byVu().userId}" },
+      // Rich checks: status family + body + headers + JSONPath
+      "checks": {
+        "status2xx": true,
+        "headers":  { "x-cache-status": "HIT" },
+        "jsonPath": {
+          "$.id":       { "exists": true },
+          "$.total":    { ">=": 10 },
+          "$.status":   "ok",
+          "$.tags[0]":  { "matches": "^foo" }
+        }
+      }
     },
     {
-      "name": "post_event",
-      "method": "POST",
-      "path": "/v1/events",
-      "weight": 1,
-      "body": { "type": "click" },
-      // or "bodyFile": "./payload/big-event.json" (resolved against the config's dir)
-      "checks": { "status2xx": true }
+      "name":    "post_event",
+      "method":  "POST",
+      "path":    "/v1/events",
+      "body":    { "actorId": "\${users.byVu().userId}", "type": "click" },
+      // OR "bodyFile": "./payload/big-event.json"
+      "checks":  { "status2xx": true }
     }
   ]
 }
@@ -167,52 +243,85 @@ Connect after starting a run to stream live data. Messages:
 ### Start a run and wait for it to finish
 
 \`\`\`text
-1. POST /api/runs { folder, config, target } -> { id, configDir }
+1. POST /api/runs { folder, config, target } -> { id, configDir, configHash }
 2. Open WS /ws?run=<id>
-3. Read ticks until { type: "status", status: "completed" | "failed" | "stopped" }
-4. Optionally GET /api/folders/<bucket>/runs/<configDir>/<id> for the summaryTxt + summary
+3. Read ticks. Bail early if tick.dropped > 0 — config is mis-shaped.
+4. Stop on { type:"status", status:"completed"|"failed"|"stopped" }.
+5. GET /api/folders/<bucket>/runs/<configDir>/<id> for summaryTxt + summary.
 \`\`\`
 
 ### Compare two runs of the same config
 
 \`\`\`text
-1. GET /api/runs-history?folder=<bucket> — filter by configDir to get same-config runs
-2. Pick two run ids
-3. For each, GET /api/folders/<bucket>/runs/<configDir>/<id> for full detail
-4. Compare summary.metrics directly, or open
-   /compare/<bucket>/<configDir>?a=<idA>&b=<idB> in a browser
+1. GET /api/runs-history?folder=<bucket>; filter rows by configDir.
+2. Compare meta.configHash on the candidates — if they differ, the
+   configs themselves changed, so the comparison is not apples-to-apples;
+   warn the user.
+3. For each, GET /api/folders/<bucket>/runs/<configDir>/<id> for detail.
+4. Diff summary.metrics directly, or point the user at
+   /compare/<bucket>/<configDir>?a=<idA>&b=<idB> in a browser.
 \`\`\`
 
-### Export a report
+### Find the saturation rate
 
-- TXT report:    \`GET /api/folders/<bucket>/runs/<configDir>/<id>\` → \`summaryTxt\`
-- JSON summary:  same response → \`summary\`
-- CSV metrics:   same response → \`ticks\` (build a CSV client-side)
-- Standalone:    \`GET /report/<bucket>/<configDir>/<id>\` (returns HTML)
+\`\`\`text
+Use the "ramp-until" executor:
+{
+  "executor": "ramp-until",
+  "stopCondition": "http_req_duration{p99} > 1000",
+  "startRate": 50, "stepRate": 100, "stepDuration": "20s",
+  "maxRate": 10000, "preAllocatedVUs": 200, "maxVUs": 2000,
+  "endpoints": [...]
+}
+k6 aborts when the condition trips. The last completed stage in the run's
+tick stream is roughly the saturation rate.
+\`\`\`
+
+### Extend beyond the JSON config
+
+When the JSON shape doesn't fit, eject the run:
+
+\`\`\`text
+GET /api/folders/<bucket>/runs/<configDir>/<id>/eject.js
+\`\`\`
+
+Returns a single-file k6 script with config + payloads inlined. The user
+edits and runs with \`k6 run <file>\`. Useful escape hatch.
 
 ## Metric meanings (Node.js services)
 
 - \`http_reqs.count\` / \`.rate\` — total requests / per-second throughput.
-- \`http_req_duration.p(95)\` — p95 latency in ms. Watch trend across runs.
-- \`http_req_failed.rate\` — fraction of failed requests.
-- \`heap_inuse_bytes\` — V8 heap currently used; rising monotonically across
-  runs is a leak indicator. Compare to \`baseline_heap_mb\` and
-  \`cooldown_heap_mb\`.
+- \`http_req_duration.p(95)\` — p95 latency in ms.
+- \`http_req_failed.rate\` — fraction of HTTP-layer failures (5xx / network).
+- \`errors.count\` — failed *checks* (validation-layer; config assertions).
+  These are intentionally separate: a 200 with the wrong body shape only
+  shows up in \`errors\`, while a 500 only in \`http_req_failed\`.
+- \`dropped_iterations\` — arrival rate exceeded the VU pool. Non-zero is a
+  **config bug**, not a service bug.
+- \`heap_inuse_bytes\` — V8 heap currently used. Rising across runs = leak.
+  Compare to \`baseline_heap_mb\` and \`cooldown_heap_mb\`.
 - \`peak_heap_mb\` / \`peak_rss_mb\` / \`peak_cpu_percent\` — high-water marks.
-- \`event_loop_delay_p99_ms\` — JS thread blocking. >100ms is bad.
-- \`gc_max_ms\` — longest GC pause. >100ms causes user-perceptible lag.
-- \`active_handles\` — libuv handles open. Monotonic growth across runs →
-  unclosed connections / timers.
+- \`event_loop_delay_p99_ms\` / \`event_loop_delay_max_ms\` — JS thread
+  blocking. >100ms p99 is bad. Many target services emit cumulative
+  percentiles so max is the more reliable spike indicator.
+- \`gc_max_ms\` — longest GC pause. >100ms is user-perceptible lag.
+- \`active_handles\` — libuv handles open. Monotonic growth = unclosed
+  connections / timers.
 - \`cooldown_*\` — sampled after \`memorySampling.cooldownSeconds\` of idle.
-  If close to baseline, no leak. If close to peak, suspect a leak.
+  Close to baseline = no leak. Close to peak = suspect a leak.
 
 ## Conventions
 
-- Always quote \`bucket\`, \`configDir\`, and \`runId\` in URLs (they may contain
-  characters needing escape).
-- Don't \`rm -rf configs/\` — that's user data. Use the API to delete.
-- A "run" exists on disk as soon as it starts, even before completion.
-  meta.json is written first; summary.json + summary.txt only after exit.
+- URL-encode \`bucket\`, \`configDir\`, and \`runId\`.
+- Don't \`rm -rf configs/\` — that's user data. Use the API.
+- A run exists on disk the moment it starts; \`meta.json\` is written first,
+  \`summary.json\` / \`summary.txt\` / \`ticks.jsonl\` only after exit.
+- If a run shows \`meta.orphaned: true\`, the server (not the test) was
+  killed mid-run. Treat results as truncated; the target may have kept
+  receiving load briefly after.
+- When a config references \`\${KEY}\` and the value isn't in
+  \`<bucket>/.env\` or \`process.env\`, the literal token is left in place
+  (intentional — easier to spot a missing override).
 `;
 }
 

@@ -170,16 +170,29 @@ function apiCards() {
     endpointBlock({ verb: "POST", path: "/api/runs/:id/stop", notes: "Stops a running run; sends two SIGINTs (250ms apart) to skip k6 teardown / cooldown, then SIGKILL after 5s if needed." }),
     endpointBlock({ verb: "GET", path: "/api/runs", response: `[ { "id": "...", "status": "running", "bucket": "...", "configRel": "...", "configDir": "...", "target": "..." } ]`, notes: "List of <em>active</em> in-memory runs (resets on server restart)." }),
     endpointBlock({ verb: "GET", path: "/api/runs/:id", response: `{ ...snapshot, "ticks": [...], "logs": [...] }`, notes: "Live snapshot for in-memory runs (charts + recent logs)." }),
-    endpointBlock({ verb: "GET", path: "/api/runs-history", notes: "Past runs (from disk). Optional <code>?folder=&lt;bucket&gt;</code> filter. Each row carries <code>{ bucket, configDir, configRel, status, startedAt, endedAt, stats }</code>." }),
+    endpointBlock({ verb: "GET", path: "/api/runs-history", notes: "Past runs (from disk). Optional <code>?folder=&lt;bucket&gt;</code> filter. Each row carries <code>{ bucket, configDir, configRel, status, startedAt, endedAt, stats, sizeBytes }</code>." }),
     endpointBlock({ verb: "GET", path: "/api/folders/:bucket/runs/:configDir/:id", response: `{
-  "meta":           { "configHash": "...", "status": "completed", ... },
+  "meta": {
+    "id": "...",  "status": "completed | failed | stopped",
+    "startedAt": ...,  "endedAt": ...,
+    "exitCode": ...,  "error": ...,
+    "target": "...",  "bucket": "...",
+    "configRel":  "config.json",
+    "configDir":  "config",
+    "configHash": "sha256...",         // hash of the resolved config snapshot
+    "orphaned":   true                  // present only when the run was
+                                        // reaped at server boot (mid-run crash)
+  },
   "summary":        { ...raw k6 summary... },
   "summaryTxt":     "...rendered text report...",
-  "ticks":          [ { "t": ..., "rps": ..., "p50": ..., "memory": {...} } ],
+  "ticks":          [ { "t": ..., "rps": ..., "p50": ..., "p95": ..., "p99": ...,
+                         "errors": ..., "vus": ..., "dropped": ...,
+                         "memory": { "heapMB", "rssMB", "cpuPercent", "eldP99", "eldMax", "handles", ... } } ],
   "log":            "...",
   "hasMemory":      true,
-  "configSnapshot": { ...config used at run time... }
-}`, notes: "Full historical detail. <code>ticks</code> is re-aggregated from <code>metrics.jsonl</code>." }),
+  "configSnapshot": { ...resolved config (with .env substituted)... }
+}`, notes: "Full historical detail. Reads <code>ticks.jsonl</code> from the run dir." }),
+    endpointBlock({ verb: "GET", path: "/api/folders/:bucket/runs/:configDir/:id/eject.js", notes: "Self-contained k6 script with config + payloads inlined. Run with <code>k6 run &lt;file&gt;</code> outside the tool." }),
     endpointBlock({ verb: "DELETE", path: "/api/folders/:bucket/runs/:configDir/:id", notes: "Deletes a single run's directory." }),
   ];
   const reports = [
@@ -202,12 +215,14 @@ function wsCard() {
         On connect, the server replays prior tick history and recent log lines, then streams live events.
       </p>
       <div class="text-[10px] uppercase tracking-wider text-stone-400 mt-1 mb-1">Message types</div>
-      ${pre(`{ "type": "hello",   "run":  { ...snapshot... } }            // sent first
+      ${pre(`{ "type": "hello",   "run":  { ...snapshot... } }              // sent first
 { "type": "tick",    "t": <ms>, "rps": ..., "p50": ..., "p95": ..., "p99": ..., "errors": ..., "vus": ...,
-                    "memory": { "heapMB", "rssMB", "cpuPercent", "eldP99", "handles", ... } }
+                     "dropped": ...,    // dropped_iterations this second; non-zero => VU pool undersized
+                     "memory":  { "heapMB", "rssMB", "cpuPercent", "eldMean", "eldP99", "eldMax", "handles", ... } }
 { "type": "log",     "t": <ms>, "line": "..." }
-{ "type": "status",  "status": "running" | "completed" | "failed" | "stopped", "endedAt": ..., "exitCode": ..., "error": ... }
-{ "type": "summary", "data":   { ...raw k6 summary... } }                 // emitted once after the run ends`)}
+{ "type": "status",  "status": "running" | "completed" | "failed" | "stopped",
+                     "endedAt": ..., "exitCode": ..., "error": ... }
+{ "type": "summary", "data":   { ...raw k6 summary... } }                   // emitted once after the run ends`)}
     </div>`;
 }
 

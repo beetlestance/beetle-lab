@@ -173,10 +173,13 @@ function configRef() {
   const topRows = {
     headers: ["Field", "Type", "Default", "Notes"],
     body: [
-      ["executor", '<code>"constant-arrival-rate"</code> | <code>"ramping-vus"</code>', '"ramping-vus"', "Picks the k6 executor."],
+      ["executor", '<code>constant-arrival-rate</code> | <code>ramping-arrival-rate</code> | <code>ramping-vus</code> | <code>shared-iterations</code> | <code>per-vu-iterations</code> | <code>ramp-until</code>', '"ramping-vus"', "Picks the k6 executor. Ignored if <code>scenarios[]</code> is present."],
+      ["scenarios", "Scenario[]", "<em>none</em>", "Multiple scenarios in one run (with optional <code>startTime</code>). See its own card below. If present, the single-scenario top-level fields are ignored."],
       ["target", "string (URL)", "<code>http://localhost:8080</code>", "Default target. Overridable per run."],
       ["healthPath", "string (path)", "<em>none</em>", "If set, setup() polls until 200 before load."],
-      ["tokens", "string[]", "[]", "Random token used to fill <code>${'{token}'}</code> in headers."],
+      ["tokens", "string[]", "[]", "Random token used to fill <code>${'{token}'}</code> in headers / params / body."],
+      ["data", "{ name: source }", "<em>none</em>", "Named per-VU data sources usable in templates. See <em>Per-VU data parameterization</em> card."],
+      ["hooks", "{ preStart, onStart, onStop }", "<em>none</em>", "Shell commands run at lifecycle points. Off by default; gated by env vars. See <em>Hooks</em> card."],
       ["thresholds", "k6 thresholds object", "{}", "Optional. Without thresholds, exit code reflects only whether the test ran."],
       ["endpoints", "Endpoint[]", "<em>required</em>", "Non-empty list — see below."],
       ["memorySampling", "object", "<em>off</em>", "Enables Node.js runtime sampling — see below."],
@@ -329,6 +332,20 @@ function configRef() {
       `<p class="text-[13px] leading-[1.7] mt-3"><code>\${source.mode().field}</code> picks a record (objects from CSV / JSON-of-objects) and reads a field. <code>\${source.mode()}</code> returns the raw value (for scalar arrays / ranges).</p>`,
       { open: false })}
     ${card("Memory sampling", "Node.js services with a /debug/procstats endpoint", rowsTable(memRows), { open: false })}
+    ${card("Per-bucket .env variables", "Substitute ${UPPER_SNAKE} placeholders into the config at run start",
+      `<p class="text-[13px] leading-[1.7] mb-2">Place a <code>.env</code> file at the root of a bucket (<code>configs/&lt;bucket&gt;/.env</code>). Each <code>KEY=value</code> line becomes a substitutable variable. Run-start time resolves <code>\${KEY}</code> references in the config; the resolved version is what k6 reads and what gets snapshotted (so two runs with different <code>.env</code> values correctly compare as different).</p>` +
+      `<p class="text-[13px] leading-[1.7] mb-2 mt-3"><strong>Lookup order:</strong> bucket <code>.env</code> wins over <code>process.env</code>, so CI / one-off overrides via <code>docker run -e KEY=...</code> are valid fallbacks.</p>` +
+      `<p class="text-[13px] leading-[1.7] mb-1 mt-3"><strong>Naming:</strong> only <code>UPPER_SNAKE</code> identifiers are substituted. <code>\${token}</code> (lowercase, the random-token pick) and <code>\${source.mode()}</code> (data sources) live in separate namespaces.</p>` +
+      pre(`# configs/library/.env
+HOST=http://localhost:3000
+SLA_P95_MS=250
+USER_TOKEN=abc123`) +
+      pre(`{
+  "target": "\${HOST}",
+  "tokens": ["\${USER_TOKEN}"],
+  "thresholds": { "http_req_duration": ["p(95)<\${SLA_P95_MS}"] },
+  "endpoints": [{ "name": "root", "method": "GET", "path": "/health" }]
+}`), { open: false })}
     ${card("Hooks · external tool integration", "Run shell commands at preStart / onStart / onStop — disabled by default, gated by env vars",
       `<p class="text-[13px] leading-[1.7] mb-2">Wire any external tool (tracer, profiler, log collector, docker cp) into the run lifecycle. Output of each hook is captured to <code>hook.&lt;stage&gt;.log</code> in the run dir.</p>` +
       rowsTable({
@@ -386,6 +403,7 @@ function metricsRef() {
     body: [
       ["http_reqs", "Total requests sent. Has <code>count</code> and <code>rate</code> (per-second).", "Compare across runs to verify the load was actually applied."],
       ["iterations", "Total iterations executed.", "Should track <code>http_reqs</code> closely (one request per iteration in this script)."],
+      ["dropped_iterations", "k6 wanted to schedule an iteration but no VU was free.", "<strong>Non-zero is a config bug, not a service bug.</strong> Bump <code>preAllocatedVUs</code> / <code>maxVUs</code>. The run-detail page raises a live banner when this becomes positive."],
       ["http_req_duration", "End-to-end request time (ms): <code>avg / med / p(90) / p(95) / p(99) / min / max</code>.", "p95/p99 are the canonical SLO indicators. Spikes in max often hide real problems behind a healthy average."],
       ["http_req_waiting", "Time spent waiting for the first byte (TTFB).", "If p95 grows but <code>http_req_receiving</code> doesn't, server is slow to start responding."],
       ["http_req_connecting / blocked / sending / receiving", "Phase breakdown.", "Usually noise. Spikes in <em>connecting</em> point at network or DNS."],
@@ -506,8 +524,24 @@ function faq() {
       "Because the server was killed mid-run. On boot the server scans for runs with status='running' (impossible if it really were running, since it wasn't there) and marks them failed with the message <em>server stopped before run finished</em>.",
     ],
     [
-      "What's the difference between 'http_req_failed' and 'errors'?",
-      "<code>http_req_failed</code> is k6's built-in: any non-2xx counts. <code>errors</code> is custom: it's incremented when any of your endpoint's <code>checks</code> fails. A 200 with the wrong body shape would only count toward <code>errors</code>.",
+      "What's the difference between 'Transport' and 'Validation' on the run page?",
+      "The run-detail stats grid splits the two error families: <strong>Transport</strong> = k6's <code>http_req_failed</code> (non-2xx + network failures + timeouts — service-side errors). <strong>Validation</strong> = our custom <code>errors</code> counter, incremented when any endpoint <code>check</code> returns false (status / status2xx / bodyContains / jsonPath / headers — your config's assertions about the response). A 200 with the wrong body shape only counts as Validation; a 500 only counts as Transport.",
+    ],
+    [
+      "Can I parameterize requests with per-VU data (different users / IDs per request)?",
+      "Yes. Declare a named data source under <code>config.data</code> (inline array, JSON file, CSV file, or numeric range), then reference it in any <code>params</code>, <code>headers</code>, <code>path</code>, or <code>body</code> string with <code>\${name.random()}</code> (uniform per request) or <code>\${name.byVu()}</code> (sticky per VU). See the <em>Per-VU data parameterization</em> card in the Config reference.",
+    ],
+    [
+      "How do I find the rate at which my service starts to fall over?",
+      `Use the <code>ramp-until</code> executor. Set <code>startRate</code>, <code>stepRate</code>, <code>stepDuration</code>, <code>maxRate</code>, and a <code>stopCondition</code> like <code>"http_req_duration{p99} > 1000"</code>. k6 ramps the arrival rate up in steps, and the moment the condition trips, the run aborts — the last completed stage is roughly the saturation rate.`,
+    ],
+    [
+      "Can I keep the config target / SLO threshold out of the repo and inject it at deploy time?",
+      "Place a <code>configs/&lt;bucket&gt;/.env</code> with <code>KEY=value</code> lines, then reference <code>\${KEY}</code> in the config. The resolver runs at run-start and bakes the values into the snapshot, so the comparator stays accurate. <code>.env</code> wins over <code>process.env</code>; both work.",
+    ],
+    [
+      "I need to do something the JSON config can't express. How do I extend?",
+      "Two paths. <strong>Hooks</strong>: add <code>preStart</code> / <code>onStart</code> / <code>onStop</code> shell commands to the config (enabled via two env vars on the server). Good for tracer / docker cp / log rotation. <strong>Eject</strong>: from the run detail's Export menu, download a self-contained k6 script (<em>Eject to k6 script (.js)</em>) with config + payloads inlined. Edit freely and run with <code>k6 run</code> — your escape hatch when the JSON shape can't represent your case.",
     ],
     [
       "Can I share a run with a colleague?",
