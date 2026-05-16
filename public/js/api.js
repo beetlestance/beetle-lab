@@ -85,6 +85,23 @@ export function fmtRelTime(ms) {
   return `${Math.round(diff / 86400)}d ago`;
 }
 
+export function fmtBytes(n) {
+  if (n === null || n === undefined || !isFinite(n)) return "—";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+
+// Pick a Tailwind text color class given a byte count — used to highlight
+// run rows that are using a lot of disk. amber > 100 MB, rose > 1 GB.
+export function sizeTextClass(n) {
+  if (!n) return "";
+  if (n >= 1024 * 1024 * 1024) return "text-rose-600 dark:text-rose-400 font-medium";
+  if (n >= 100 * 1024 * 1024) return "text-amber-600 dark:text-amber-400";
+  return "";
+}
+
 export function fmtSeconds(s) {
   s = Math.max(0, Math.round(s));
   if (s < 60) return `${s}s`;

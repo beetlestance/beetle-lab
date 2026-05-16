@@ -4,7 +4,7 @@ import http from "node:http";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Runner, aggregateMetricsFile } from "./runner.js";
+import { Runner, loadTicks } from "./runner.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 4567);
@@ -508,6 +508,7 @@ async function readRunRow(bucket, configDir, id, runDir) {
     stats = extractRunStats(summary);
   } catch {}
   if (!meta && !stats) return null;
+  const sizeBytes = await dirSize(runDir);
   return {
     id,
     bucket,
@@ -520,7 +521,33 @@ async function readRunRow(bucket, configDir, id, runDir) {
     startedAt: meta?.startedAt || null,
     endedAt: meta?.endedAt || null,
     stats,
+    sizeBytes,
   };
+}
+
+// Recursive directory size. Used by run history rows so the UI can surface
+// disk usage per run — important because k6's raw metrics.jsonl can balloon
+// to multi-GB on long high-RPS runs.
+async function dirSize(dir) {
+  let total = 0;
+  let entries;
+  try {
+    entries = await fs.readdir(dir, { withFileTypes: true });
+  } catch {
+    return 0;
+  }
+  for (const e of entries) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) {
+      total += await dirSize(p);
+    } else if (e.isFile()) {
+      try {
+        const st = await fs.stat(p);
+        total += st.size;
+      } catch {}
+    }
+  }
+  return total;
 }
 
 function extractRunStats(summary) {
@@ -560,7 +587,7 @@ app.get("/api/folders/:bucket/runs/:configDir/:id", async (req, res) => {
     summaryTxt = await fs.readFile(path.join(runDir, "summary.txt"), "utf8");
   } catch {}
   if (!meta && !summary) return res.status(404).json({ error: "run not found" });
-  const ticks = await aggregateMetricsFile(path.join(runDir, "metrics.jsonl"));
+  const ticks = await loadTicks(runDir);
   const hasMemory = ticks.some((t) => t.memory && t.memory.heapMB !== undefined);
   let log = "";
   try {

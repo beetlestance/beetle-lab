@@ -1,5 +1,5 @@
 import { mount, setBreadcrumbs } from "./shell.js";
-import { api, escapeHtml, fmtRelTime, fmtSeconds } from "./api.js";
+import { api, escapeHtml, fmtRelTime, fmtSeconds, fmtBytes, sizeTextClass } from "./api.js";
 import { icon } from "./icons.js";
 
 let history = [];
@@ -111,6 +111,7 @@ function render() {
           <th class="px-5 py-2.5 font-medium num text-right">RPS</th>
           <th class="px-5 py-2.5 font-medium num text-right">p95</th>
           <th class="px-5 py-2.5 font-medium num text-right">Errors</th>
+          <th class="px-5 py-2.5 font-medium num text-right">Size</th>
           <th class="px-5 py-2.5 font-medium"></th>
         </tr>
       </thead>
@@ -148,6 +149,7 @@ function row(r) {
       <td class="px-5 py-3 num text-right">${stats.rps ? stats.rps.toFixed(1) : "—"}</td>
       <td class="px-5 py-3 num text-right">${stats.p95 ? stats.p95.toFixed(1) : "—"}</td>
       <td class="px-5 py-3 num text-right ${stats.errors ? "text-rose-500" : ""}">${stats.errors ?? "—"}</td>
+      <td class="px-5 py-3 num text-right ${sizeTextClass(r.sizeBytes)}" title="${escapeHtml(r.sizeBytes ? r.sizeBytes.toLocaleString() + " bytes" : "")}">${fmtBytes(r.sizeBytes)}</td>
       <td class="px-5 py-3 text-right">
         <button data-del data-bucket="${escapeHtml(r.bucket)}" data-configdir="${escapeHtml(r.configDir)}" data-id="${escapeHtml(r.id)}" class="text-stone-300 dark:text-ink-700 hover:text-rose-500 transition-colors" title="Delete run">
           ${icon("trash", { size: 13 })}

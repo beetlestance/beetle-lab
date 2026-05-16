@@ -3,6 +3,7 @@ import { EventEmitter } from "node:events";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
+import readline from "node:readline";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -67,6 +68,7 @@ class Run extends EventEmitter {
     this.k6Bin = k6Bin;
     this.dir = path.join(runsDir, id);
     this.metricsPath = path.join(this.dir, "metrics.jsonl");
+    this.ticksPath = path.join(this.dir, "ticks.jsonl");
     this.summaryPath = path.join(this.dir, "summary.json");
     this.summaryTxtPath = path.join(this.dir, "summary.txt");
     this.logPath = path.join(this.dir, "log.txt");
@@ -93,6 +95,11 @@ class Run extends EventEmitter {
     await fsp.mkdir(this.dir, { recursive: true });
     fs.writeFileSync(this.metricsPath, "");
     this.logStream = fs.createWriteStream(this.logPath, { flags: "a" });
+    // ticks.jsonl is the long-lived per-second aggregation cache. It's tiny
+    // (~300 bytes/sec) and lets the detail endpoint load instantly. The raw
+    // k6 metrics.jsonl is deleted at run-end since we've already extracted
+    // everything we need into ticks.
+    this.ticksStream = fs.createWriteStream(this.ticksPath, { flags: "a" });
 
     const env = {
       ...process.env,
@@ -135,9 +142,22 @@ class Run extends EventEmitter {
       setTimeout(async () => {
         await this._drainTail();
         this._flushBucket(true);
+        // Close the ticks stream so all flushed buckets land on disk.
+        try {
+          await new Promise((resolve) => {
+            if (!this.ticksStream) return resolve();
+            this.ticksStream.end(resolve);
+          });
+        } catch {}
         let summary = null;
         try {
           summary = JSON.parse(await fsp.readFile(this.summaryPath, "utf8"));
+        } catch {}
+        // Drop the raw k6 metrics file — everything the detail endpoint /
+        // charts / report needs lives in ticks.jsonl + summary.json. Saves
+        // 1–10 GB per long high-RPS run.
+        try {
+          await fsp.unlink(this.metricsPath);
         } catch {}
         this.endedAt = Date.now();
         if (this.stopRequested) {
@@ -336,6 +356,11 @@ class Run extends EventEmitter {
     this.tickHistory.push(tick);
     if (this.tickHistory.length > 1800) this.tickHistory.shift();
     this.emit("tick", tick);
+    // Persist the tick for later replay. Detail endpoint reads ticks.jsonl
+    // directly rather than re-aggregating the (much larger) metrics.jsonl.
+    try {
+      this.ticksStream?.write(JSON.stringify(tick) + "\n");
+    } catch {}
     if (final) {
       this.bucket = null;
     } else {
@@ -380,89 +405,40 @@ class Run extends EventEmitter {
   }
 }
 
-// Re-aggregate a saved metrics.jsonl into per-second tick buckets — used by
-// the server when serving historical runs (the live aggregator's tick state
-// only lives in memory).
-export async function aggregateMetricsFile(metricsPath) {
-  let text;
+// Load the per-second tick array for a historical run.
+// Each run writes ticks.jsonl (one JSON tick per line) as it goes, so this
+// is just a small streaming read with no aggregation work. Runs without the
+// file (e.g. legacy ones) return an empty array.
+export async function loadTicks(runDir) {
+  const ticksPath = path.join(runDir, "ticks.jsonl");
+  if (await fileExists(ticksPath)) {
+    return await readJsonlStream(ticksPath);
+  }
+  return [];
+}
+
+async function fileExists(p) {
   try {
-    text = await fsp.readFile(metricsPath, "utf8");
+    await fsp.access(p);
+    return true;
   } catch {
-    return [];
+    return false;
   }
-  const ticks = [];
-  let bucket = null;
-  const openBucket = (time) => {
-    const start = Math.floor(time / 1000) * 1000;
-    return {
-      windowStart: start,
-      windowEnd: start + 1000,
-      reqs: 0,
-      durations: [],
-      failed: 0,
-      vus: 0,
-      iterations: 0,
-      errors: 0,
-      endpointLatencies: {},
-      memory: {},
-    };
-  };
-  const flush = (b) => {
-    const durations = b.durations.slice().sort((a, b) => a - b);
-    ticks.push({
-      t: b.windowStart,
-      rps: b.reqs,
-      p50: percentile(durations, 50),
-      p95: percentile(durations, 95),
-      p99: percentile(durations, 99),
-      avg: durations.length ? durations.reduce((s, v) => s + v, 0) / durations.length : 0,
-      failed: b.failed,
-      errors: b.errors,
-      vus: b.vus,
-      iterations: b.iterations,
-      endpoints: Object.fromEntries(
-        Object.entries(b.endpointLatencies).map(([k, vs]) => {
-          const sorted = vs.slice().sort((a, b) => a - b);
-          return [k, { count: vs.length, p95: percentile(sorted, 95) }];
-        }),
-      ),
-      memory: normalizeMemory(b.memory),
-    });
-  };
-  for (const line of text.split("\n")) {
+}
+
+async function readJsonlStream(p) {
+  const out = [];
+  const rl = readline.createInterface({
+    input: fs.createReadStream(p),
+    crlfDelay: Infinity,
+  });
+  for await (const line of rl) {
     if (!line) continue;
-    let evt;
     try {
-      evt = JSON.parse(line);
-    } catch {
-      continue;
-    }
-    if (evt.type !== "Point") continue;
-    const time = new Date(evt.data.time).getTime();
-    const value = evt.data.value;
-    const name = evt.metric;
-    if (!bucket) bucket = openBucket(time);
-    if (time >= bucket.windowEnd) {
-      flush(bucket);
-      bucket = openBucket(time);
-    }
-    if (name === "http_reqs") bucket.reqs += value;
-    else if (name === "http_req_duration") bucket.durations.push(value);
-    else if (name === "http_req_failed") {
-      if (value > 0) bucket.failed += 1;
-    } else if (name === "vus") bucket.vus = Math.max(bucket.vus, value);
-    else if (name === "iterations") bucket.iterations += value;
-    else if (name === "errors") bucket.errors += value;
-    else if (name.startsWith("ep_") && name.endsWith("_latency")) {
-      const ep = name.slice(3, -"_latency".length);
-      if (!bucket.endpointLatencies[ep]) bucket.endpointLatencies[ep] = [];
-      bucket.endpointLatencies[ep].push(value);
-    } else if (name in MEMORY_FIELD) {
-      bucket.memory[MEMORY_FIELD[name]] = value;
-    }
+      out.push(JSON.parse(line));
+    } catch {}
   }
-  if (bucket) flush(bucket);
-  return ticks;
+  return out;
 }
 
 export class Runner {

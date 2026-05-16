@@ -1,5 +1,5 @@
 import { mount, setBreadcrumbs } from "./shell.js";
-import { api, escapeHtml, fmtRelTime, fmtSeconds, totalDurationSec } from "./api.js";
+import { api, escapeHtml, fmtRelTime, fmtSeconds, fmtBytes, sizeTextClass, totalDurationSec } from "./api.js";
 import { icon } from "./icons.js";
 import { sparkline } from "./sparkline.js";
 
@@ -302,6 +302,7 @@ async function renderRunsTab() {
             <th class="px-5 py-2.5 font-medium num text-right">RPS</th>
             <th class="px-5 py-2.5 font-medium num text-right">p95</th>
             <th class="px-5 py-2.5 font-medium num text-right">Errors</th>
+            <th class="px-5 py-2.5 font-medium num text-right">Size</th>
           </tr>
         </thead>
         <tbody>
@@ -322,6 +323,7 @@ function runRow(r) {
       <td class="px-5 py-3 num text-right">${stats.rps ? stats.rps.toFixed(1) : "—"}</td>
       <td class="px-5 py-3 num text-right">${stats.p95 ? stats.p95.toFixed(1) : "—"}</td>
       <td class="px-5 py-3 num text-right ${stats.errors ? "text-rose-500" : ""}">${stats.errors ?? "—"}</td>
+      <td class="px-5 py-3 num text-right ${sizeTextClass(r.sizeBytes)}" title="${escapeHtml(r.sizeBytes ? r.sizeBytes.toLocaleString() + " bytes" : "")}">${fmtBytes(r.sizeBytes)}</td>
     </tr>`;
 }
 

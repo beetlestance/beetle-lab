@@ -456,7 +456,8 @@ function initCharts() {
   ]);
   memCharts.eld = makeLineChart("cEld", [
     { label: "mean", data: [], borderColor: "#10b981" },
-    { label: "p99", data: [], borderColor: "#ef4444" },
+    { label: "p99", data: [], borderColor: "#f59e0b" },
+    { label: "max", data: [], borderColor: "#ef4444" },
   ]);
   memCharts.hnd = makeLineChart("cHnd", [
     { label: "handles", data: [], borderColor: "#a855f7", backgroundColor: "rgba(168,85,247,0.16)", fill: true },
@@ -469,7 +470,7 @@ function makeSeries() {
   return { rps: [], p50: [], p95: [], p99: [], errors: [], vus: [] };
 }
 function makeMemSeries() {
-  return { heap: [], rss: [], cpu: [], sysCpu: [], eldMean: [], eldP99: [], handles: [] };
+  return { heap: [], rss: [], cpu: [], sysCpu: [], eldMean: [], eldP99: [], eldMax: [], handles: [] };
 }
 
 function pushSeries(x, t) {
@@ -486,6 +487,7 @@ function pushSeries(x, t) {
     if (t.memory.systemCpu !== undefined) memSeries.sysCpu.push({ x, y: +t.memory.systemCpu.toFixed(1) });
     if (t.memory.eldMean !== undefined) memSeries.eldMean.push({ x, y: +t.memory.eldMean.toFixed(2) });
     if (t.memory.eldP99 !== undefined) memSeries.eldP99.push({ x, y: +t.memory.eldP99.toFixed(2) });
+    if (t.memory.eldMax !== undefined) memSeries.eldMax.push({ x, y: +t.memory.eldMax.toFixed(2) });
     if (t.memory.handles !== undefined) memSeries.handles.push({ x, y: t.memory.handles });
   }
 }
@@ -505,6 +507,7 @@ function applyChartData() {
   memCharts.cpu.data.datasets[1].data = memSeries.sysCpu;
   memCharts.eld.data.datasets[0].data = memSeries.eldMean;
   memCharts.eld.data.datasets[1].data = memSeries.eldP99;
+  memCharts.eld.data.datasets[2].data = memSeries.eldMax;
   memCharts.hnd.data.datasets[0].data = memSeries.handles;
   for (const c of Object.values(memCharts)) c.update("none");
 }
