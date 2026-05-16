@@ -99,7 +99,7 @@ function template() {
 
       <div id="runBanner" hidden></div>
 
-      <div id="stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6"></div>
+      <div id="stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-6"></div>
 
       <section class="border border-stone-200 dark:border-ink-800 rounded-md bg-white dark:bg-ink-900 mb-5">
         <header class="px-5 h-11 flex items-center border-b border-stone-100 dark:border-ink-800">
@@ -399,18 +399,36 @@ function renderStats(detail) {
     meta.startedAt && meta.endedAt
       ? fmtSeconds((meta.endedAt - meta.startedAt) / 1000)
       : "—";
+  // Transport failures (HTTP 5xx, timeouts, network) live in http_req_failed
+  // as "passes" (k6's quirk). Validation failures live in our custom errors
+  // counter, incremented when a per-endpoint check (status / status2xx /
+  // bodyContains) returns false. They tell different stories and conflating
+  // them hides real problems — split them into separate tiles.
+  const transport = stats?.transportFails ?? 0;
+  const validation = stats?.errors ?? 0;
   const cells = [
-    ["Duration", dur, "stone"],
-    ["Requests", stats?.requests?.toLocaleString() ?? "—", "indigo"],
-    ["RPS", stats ? stats.rps.toFixed(1) : "—", "indigo"],
-    ["p95 (ms)", stats ? stats.p95.toFixed(1) : "—", "warm"],
-    ["p99 (ms)", stats ? stats.p99.toFixed(1) : "—", "warm"],
-    ["Errors", stats?.errors ?? 0, stats?.errors ? "rose" : "stone"],
+    ["Duration", dur, "stone", null],
+    ["Requests", stats?.requests?.toLocaleString() ?? "—", "indigo", null],
+    ["RPS", stats ? stats.rps.toFixed(1) : "—", "indigo", null],
+    ["p95 (ms)", stats ? stats.p95.toFixed(1) : "—", "warm", null],
+    ["p99 (ms)", stats ? stats.p99.toFixed(1) : "—", "warm", null],
+    [
+      "Transport",
+      transport.toLocaleString(),
+      transport ? "rose" : "stone",
+      "Non-2xx responses + network failures (k6 http_req_failed). Watch this for service errors and timeouts.",
+    ],
+    [
+      "Validation",
+      validation.toLocaleString(),
+      validation ? "rose" : "stone",
+      "Failed per-endpoint checks (status / status2xx / bodyContains). The HTTP layer succeeded but the response didn't match what the config asserted.",
+    ],
   ];
   document.getElementById("stats").innerHTML = cells
     .map(
-      ([label, value, accent]) => `
-      <div class="border border-stone-200 dark:border-ink-800 rounded-md bg-white dark:bg-ink-900 p-3.5 relative overflow-hidden pop-in">
+      ([label, value, accent, tip]) => `
+      <div class="border border-stone-200 dark:border-ink-800 rounded-md bg-white dark:bg-ink-900 p-3.5 relative overflow-hidden pop-in"${tip ? ` title="${escapeHtml(tip)}"` : ""}>
         <div class="absolute inset-y-0 left-0 w-[2px] bg-${accent}-500"></div>
         <div class="text-[10px] uppercase tracking-wider text-stone-500 dark:text-stone-400 font-medium">${escapeHtml(label)}</div>
         <div class="num text-[18px] font-semibold mt-1 tracking-tight">${escapeHtml(String(value))}</div>
@@ -428,6 +446,9 @@ function extractStats(summary) {
     p95: m.http_req_duration?.values?.["p(95)"] || 0,
     p99: m.http_req_duration?.values?.["p(99)"] || 0,
     errors: m.errors?.values?.count || 0,
+    // k6 reports "passes" as the count of FAILED requests for http_req_failed
+    // (the rate variant flips it). Use passes for absolute numbers.
+    transportFails: m.http_req_failed?.values?.passes || 0,
   };
 }
 
