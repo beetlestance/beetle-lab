@@ -842,8 +842,54 @@ function runChecks(ep, response) {
   if (c.statusNot5xx) out[ep.name + " status not 5xx"] = response.status < 500;
   if (c.status2xx) out[ep.name + " status is 2xx"] = response.status >= 200 && response.status < 300;
   if (c.bodyContains) out[ep.name + " body contains"] = response.body && response.body.includes(c.bodyContains);
+  if (c.headers && typeof c.headers === "object") {
+    const hs = response.headers || {};
+    for (const [k, expected] of Object.entries(c.headers)) {
+      const actual = hs[k] ?? hs[k.toLowerCase()] ?? hs[k.toUpperCase()];
+      out[ep.name + " header " + k + "=" + expected] = String(actual) === String(expected);
+    }
+  }
+  if (c.jsonPath && typeof c.jsonPath === "object") {
+    let parsed = null;
+    try { parsed = JSON.parse(response.body); } catch {}
+    for (const [path, expected] of Object.entries(c.jsonPath)) {
+      out[ep.name + " " + path] = matchExpectation(readJsonPath(parsed, path), expected);
+    }
+  }
   if (Object.keys(out).length === 0) out[ep.name + " responded"] = response.status > 0;
   return check(response, out);
+}
+function readJsonPath(root, path) {
+  if (typeof path !== "string" || !path.startsWith("$")) return undefined;
+  let cur = root, i = 1;
+  while (i < path.length && cur !== undefined && cur !== null) {
+    const ch = path[i];
+    if (ch === ".") {
+      i++;
+      let end = i;
+      while (end < path.length && /[a-zA-Z0-9_]/.test(path[end])) end++;
+      cur = cur[path.slice(i, end)]; i = end;
+    } else if (ch === "[") {
+      const close = path.indexOf("]", i);
+      if (close === -1) return undefined;
+      const idx = parseInt(path.slice(i + 1, close), 10);
+      cur = Array.isArray(cur) ? cur[idx] : undefined; i = close + 1;
+    } else { i++; }
+  }
+  return cur;
+}
+function matchExpectation(value, expected) {
+  if (expected === null) return value === null;
+  if (typeof expected !== "object") return value === expected || String(value) === String(expected);
+  if ("exists" in expected) return expected.exists ? value !== undefined : value === undefined;
+  if ("equals" in expected) return value === expected.equals || String(value) === String(expected.equals);
+  if ("contains" in expected) return typeof value === "string" && value.includes(expected.contains);
+  if ("matches" in expected) return typeof value === "string" && new RegExp(expected.matches).test(value);
+  if (">=" in expected) return Number(value) >= Number(expected[">="]);
+  if ("<=" in expected) return Number(value) <= Number(expected["<="]);
+  if (">" in expected) return Number(value) > Number(expected[">"]);
+  if ("<" in expected) return Number(value) < Number(expected["<"]);
+  return false;
 }
 
 export function runEndpoint() {

@@ -209,7 +209,7 @@ function configRef() {
       ["headers", "object", "HTTP headers. <code>${'{token}'}</code> is replaced with a random token from <code>tokens</code>."],
       ["body", "object", "Inline request body (POST/PUT/PATCH). Sent as JSON."],
       ["bodyFile", "string (path)", "Alternative to <code>body</code> — load from a file. Path is resolved against the config's directory."],
-      ["checks", "object", "Validation: <code>{ status, statusNot5xx, status2xx, bodyContains }</code>."],
+      ["checks", "object", "Validation. Status: <code>{ status, statusNot5xx, status2xx }</code>. Body: <code>{ bodyContains }</code>. Headers: <code>{ headers: { 'x-cache-status': 'HIT' } }</code>. JSONPath: <code>{ jsonPath: { '$.id': { exists: true }, '$.total': { '>=': 10 } } }</code>. Each JSONPath value can be a literal (equality) or an object: <code>{ exists }</code>, <code>{ equals }</code>, <code>{ contains }</code>, <code>{ matches }</code> (regex), <code>{ '>=', '<=', '>', '<' }</code>."],
       ["waitMs", "{min, max}", "Optional random think-time between iterations of this endpoint."],
       ["maxIterations", "number", "Optional cap. Once reached, the endpoint drops out of the weighted pool."],
     ],

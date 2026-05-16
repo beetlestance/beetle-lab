@@ -415,10 +415,76 @@ function runChecks(endpoint, response) {
     out[`${endpoint.name} body contains ${checks.bodyContains}`] =
       response.body && response.body.includes(checks.bodyContains);
   }
+  // Header equality checks: { "x-cache-status": "HIT", "x-version": "v2" }
+  if (checks.headers && typeof checks.headers === "object") {
+    const hs = response.headers || {};
+    for (const [k, expected] of Object.entries(checks.headers)) {
+      const actual = hs[k] ?? hs[k.toLowerCase()] ?? hs[k.toUpperCase()];
+      out[`${endpoint.name} header ${k}=${expected}`] = String(actual) === String(expected);
+    }
+  }
+  // JSONPath checks: each value can be a literal (equality) or an object
+  // { exists, equals, contains, matches, ">=", "<=", ">", "<" }
+  if (checks.jsonPath && typeof checks.jsonPath === "object") {
+    let parsed = null;
+    try {
+      parsed = JSON.parse(response.body);
+    } catch {}
+    for (const [path, expected] of Object.entries(checks.jsonPath)) {
+      const value = readJsonPath(parsed, path);
+      out[`${endpoint.name} ${path}`] = matchExpectation(value, expected);
+    }
+  }
   if (Object.keys(out).length === 0) {
     out[`${endpoint.name} responded`] = response.status > 0;
   }
   return check(response, out);
+}
+
+// Minimal JSONPath reader: supports $, .field, [N]. No wildcards or filters.
+// Returns undefined for any segment that doesn't resolve.
+function readJsonPath(root, path) {
+  if (typeof path !== "string" || !path.startsWith("$")) return undefined;
+  let cur = root;
+  let i = 1;
+  while (i < path.length && cur !== undefined && cur !== null) {
+    const ch = path[i];
+    if (ch === ".") {
+      i++;
+      let end = i;
+      while (end < path.length && /[a-zA-Z0-9_]/.test(path[end])) end++;
+      cur = cur[path.slice(i, end)];
+      i = end;
+    } else if (ch === "[") {
+      const close = path.indexOf("]", i);
+      if (close === -1) return undefined;
+      const idx = parseInt(path.slice(i + 1, close), 10);
+      cur = Array.isArray(cur) ? cur[idx] : undefined;
+      i = close + 1;
+    } else {
+      i++;
+    }
+  }
+  return cur;
+}
+
+function matchExpectation(value, expected) {
+  if (expected === null) return value === null;
+  if (typeof expected !== "object") {
+    return value === expected || String(value) === String(expected);
+  }
+  if ("exists" in expected) {
+    return expected.exists ? value !== undefined : value === undefined;
+  }
+  if ("equals" in expected) return value === expected.equals || String(value) === String(expected.equals);
+  if ("contains" in expected) return typeof value === "string" && value.includes(expected.contains);
+  if ("matches" in expected)
+    return typeof value === "string" && new RegExp(expected.matches).test(value);
+  if (">=" in expected) return Number(value) >= Number(expected[">="]);
+  if ("<=" in expected) return Number(value) <= Number(expected["<="]);
+  if (">" in expected) return Number(value) > Number(expected[">"]);
+  if ("<" in expected) return Number(value) < Number(expected["<"]);
+  return false;
 }
 
 export function setup() {
