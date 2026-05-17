@@ -21,6 +21,10 @@ let runDurationSec = null;
 let ws = null;
 let isLive = false;
 let droppedTotal = 0;
+// Distinct k6 warnings seen in the log stream, in arrival order. Surfaced as
+// a yellow banner above the stats grid so the QA user doesn't have to scan
+// log.txt to find "Insufficient VUs", high-cardinality, etc.
+const warningsSeen = new Map(); // message -> { count, firstAt, msg, hint }
 const series = makeSeries();
 const memSeries = makeMemSeries();
 // Detail snapshot (summary + summaryTxt) — used by Export and inline report.
@@ -102,6 +106,7 @@ function template() {
 
       <div id="runBanner" hidden></div>
       <div id="droppedBanner" hidden></div>
+      <div id="warningsBanner" hidden></div>
 
       <div id="stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-6"></div>
 
@@ -334,9 +339,11 @@ async function initReplay() {
   }
   applyChartData();
 
-  // Logs (capped to last ~500 lines for perf)
-  const lines = (detail.log || "").split(/\r?\n/).slice(-500).filter(Boolean);
-  document.getElementById("logs").textContent = lines.join("\n");
+  // Logs (capped to last ~500 lines for perf). Walk the full log first to
+  // pick up any warnings/errors for the banner; only the tail is shown.
+  const allLines = (detail.log || "").split(/\r?\n/).filter(Boolean);
+  for (const line of allLines) noteWarningFromLine(line, meta.startedAt);
+  document.getElementById("logs").textContent = allLines.slice(-500).join("\n");
 }
 
 // ---------- WS for live ----------
@@ -408,6 +415,77 @@ function onLog(l) {
   log.appendChild(document.createTextNode(`${ts}  ${l.line}\n`));
   while (log.childNodes.length > 800) log.removeChild(log.firstChild);
   if (wasAtBottom) log.scrollTop = log.scrollHeight;
+  noteWarningFromLine(l.line, l.t);
+}
+
+// k6 logs warnings as `level=warning msg="..."`. Pull the message out and
+// surface it once in the warnings banner with a one-line hint. We also catch
+// `level=error msg="..."` since fatal errors are worth flagging the same way.
+function noteWarningFromLine(line, t) {
+  if (!line || (line.indexOf("level=warning") === -1 && line.indexOf("level=error") === -1))
+    return;
+  const isErr = line.indexOf("level=error") !== -1;
+  const msgMatch = line.match(/msg="([^"]+)"/) || line.match(/msg=([^\s]+)/);
+  if (!msgMatch) return;
+  const msg = msgMatch[1];
+  if (warningsSeen.has(msg)) {
+    const w = warningsSeen.get(msg);
+    w.count += 1;
+    renderWarningsBanner();
+    return;
+  }
+  warningsSeen.set(msg, {
+    count: 1,
+    firstAt: t,
+    msg,
+    level: isErr ? "error" : "warning",
+    hint: hintForWarning(msg),
+  });
+  renderWarningsBanner();
+}
+
+// Map common k6 warnings to a one-line "this is what you do about it" hint.
+function hintForWarning(msg) {
+  if (/Insufficient VUs/i.test(msg))
+    return "Bump preAllocatedVUs / maxVUs in the config. Drops from this point are not real load — they're scheduling deficits.";
+  if (/unique time series/i.test(msg) || /high-cardinality/i.test(msg))
+    return "URL-based metric tags hit k6's 100k limit. Already mitigated: requests are tagged with the endpoint name. If you still see this, an old run before v1.1 of k6-studio is the culprit.";
+  if (/cannot initialize more/i.test(msg))
+    return "k6 wanted more VUs than maxVUs allowed. Increase maxVUs.";
+  if (/dropped/i.test(msg))
+    return "See the dropped-iterations banner above.";
+  return null;
+}
+
+function renderWarningsBanner() {
+  const el = document.getElementById("warningsBanner");
+  if (!el) return;
+  if (warningsSeen.size === 0) {
+    el.hidden = true;
+    el.innerHTML = "";
+    return;
+  }
+  el.hidden = false;
+  const items = [...warningsSeen.values()]
+    .map(
+      (w) =>
+        `<li class="flex items-start gap-2 py-1">
+          <span class="inline-block w-1 h-1 mt-2 shrink-0 rounded-full ${w.level === "error" ? "bg-rose-500" : "bg-amber-500"}"></span>
+          <div class="min-w-0">
+            <div class="font-mono text-[11.5px] break-words">${escapeHtml(w.msg)}${w.count > 1 ? ` <span class="text-amber-700/60 dark:text-amber-300/60 num">×${w.count}</span>` : ""}</div>
+            ${w.hint ? `<div class="text-[11px] text-amber-800/80 dark:text-amber-200/80 mt-0.5">${escapeHtml(w.hint)}</div>` : ""}
+          </div>
+        </li>`,
+    )
+    .join("");
+  el.innerHTML = `
+    <div class="mb-4 border border-amber-300/60 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/15 rounded-md p-3 flex items-start gap-3">
+      ${icon("zap", { size: 16, className: "text-amber-600 dark:text-amber-400 mt-0.5" })}
+      <div class="text-[12.5px] leading-[1.55] text-amber-800 dark:text-amber-200 flex-1 min-w-0">
+        <div class="font-semibold mb-1">k6 raised ${warningsSeen.size} ${warningsSeen.size === 1 ? "warning" : "warnings"}</div>
+        <ul class="list-none m-0 p-0">${items}</ul>
+      </div>
+    </div>`;
 }
 
 async function onStatus(s) {

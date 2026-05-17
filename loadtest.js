@@ -42,15 +42,17 @@ for (const [name, def] of Object.entries(config.data || {})) {
 }
 
 function loadDataSource(name, def) {
-  // SharedArray dedupes the data across all VUs so memory stays bounded.
+  // Ranges are lazy. Materializing a [a, b] interval as a JS array would OOM
+  // for large namespaces (e.g. 500 M Snowflake-style IDs ≈ 4 GB of memory).
+  // random() / byVu() only need the bounds — compute the value on demand.
+  if (def.range && Array.isArray(def.range)) {
+    const [a, b] = def.range;
+    return { __range: true, a, b, length: b - a + 1 };
+  }
+  // Materialized sources (inline values, JSON file, CSV file) ride
+  // k6's SharedArray so the data is loaded once and shared across all VUs.
   return new SharedArray(name, () => {
     if (Array.isArray(def.values)) return def.values;
-    if (def.range && Array.isArray(def.range)) {
-      const [a, b] = def.range;
-      const out = [];
-      for (let i = a; i <= b; i++) out.push(i);
-      return out;
-    }
     if (def.file) {
       const p = def.file.startsWith("/") ? def.file : `${CONFIG_DIR}/${def.file}`;
       const txt = open(p);
@@ -59,6 +61,24 @@ function loadDataSource(name, def) {
     }
     return [];
   });
+}
+
+// Pull a single value out of a data source given the pick mode + current VU.
+function pickFromSource(src, mode, vu) {
+  if (src && src.__range) {
+    if (src.length <= 0) return undefined;
+    let n;
+    if (mode === "random") n = src.a + Math.floor(Math.random() * src.length);
+    else if (mode === "byVu") n = src.a + ((vu - 1) % src.length);
+    else return undefined;
+    return n;
+  }
+  if (!src || src.length === 0) return undefined;
+  let idx;
+  if (mode === "random") idx = Math.floor(Math.random() * src.length);
+  else if (mode === "byVu") idx = (vu - 1) % src.length;
+  else return undefined;
+  return src[idx];
 }
 
 function parseCsv(text) {
@@ -89,13 +109,8 @@ function expandTemplate(s, vu) {
     out = out.split("${token}").join(t || "");
   }
   out = out.replace(DATA_REF_RE, (m, name, mode, field) => {
-    const src = dataSources[name];
-    if (!src || src.length === 0) return m;
-    let idx;
-    if (mode === "random") idx = Math.floor(Math.random() * src.length);
-    else if (mode === "byVu") idx = (vu - 1) % src.length;
-    else return m;
-    const v = src[idx];
+    const v = pickFromSource(dataSources[name], mode, vu);
+    if (v === undefined) return m;
     if (field !== undefined) return v && typeof v === "object" ? String(v[field] ?? "") : "";
     return String(v);
   });
@@ -590,26 +605,31 @@ export function runEndpoint() {
   // Expand any ${...} refs inside the body too (per-request, deep).
   const bodyValue = endpoint.body !== undefined ? expandValue(endpoint.body, vu) : undefined;
   const bodyText = bodyValue !== undefined ? JSON.stringify(bodyValue) : null;
+  // Set the k6 `name` tag explicitly so http_req_* metrics are grouped by the
+  // endpoint's logical name instead of its full URL. Without this, every
+  // unique URL (e.g. ?referenceId=<random>) becomes its own time series and
+  // k6 hits its 100k-cardinality soft limit fast.
+  const params = { headers, tags: { name: endpoint.name } };
 
   let response;
   switch (method) {
     case "POST":
       if (bodyText) headers["Content-Type"] = "application/json";
-      response = http.post(url, bodyText, { headers });
+      response = http.post(url, bodyText, params);
       break;
     case "PUT":
       if (bodyText) headers["Content-Type"] = "application/json";
-      response = http.put(url, bodyText, { headers });
+      response = http.put(url, bodyText, params);
       break;
     case "DELETE":
-      response = http.del(url, null, { headers });
+      response = http.del(url, null, params);
       break;
     case "PATCH":
       if (bodyText) headers["Content-Type"] = "application/json";
-      response = http.patch(url, bodyText, { headers });
+      response = http.patch(url, bodyText, params);
       break;
     default:
-      response = http.get(url, { headers });
+      response = http.get(url, params);
   }
 
   endpointLatency[endpoint.name].add(response.timings.duration);

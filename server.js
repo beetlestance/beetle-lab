@@ -792,15 +792,17 @@ config.endpoints.forEach((ep) => {
 });
 
 // ---- Data sources (per-VU parameterization) ----
+// Ranges are lazy — never materialized — so namespaces of hundreds of
+// millions of IDs don't OOM the VU at init.
 const dataSources = {};
 for (const [name, def] of Object.entries(config.data || {})) {
+  if (def.range && Array.isArray(def.range)) {
+    const [a, b] = def.range;
+    dataSources[name] = { __range: true, a, b, length: b - a + 1 };
+    continue;
+  }
   dataSources[name] = new SharedArray(name, () => {
     if (Array.isArray(def.values)) return def.values;
-    if (def.range && Array.isArray(def.range)) {
-      const out = [];
-      for (let i = def.range[0]; i <= def.range[1]; i++) out.push(i);
-      return out;
-    }
     if (def.file) {
       const txt = open(def.file);
       if (def.file.endsWith(".csv")) {
@@ -819,6 +821,22 @@ for (const [name, def] of Object.entries(config.data || {})) {
     return [];
   });
 }
+function pickFromSource(src, mode, vu) {
+  if (src && src.__range) {
+    if (src.length <= 0) return undefined;
+    let n;
+    if (mode === "random") n = src.a + Math.floor(Math.random() * src.length);
+    else if (mode === "byVu") n = src.a + ((vu - 1) % src.length);
+    else return undefined;
+    return n;
+  }
+  if (!src || src.length === 0) return undefined;
+  let idx;
+  if (mode === "random") idx = Math.floor(Math.random() * src.length);
+  else if (mode === "byVu") idx = (vu - 1) % src.length;
+  else return undefined;
+  return src[idx];
+}
 const DATA_REF_RE = /\$\{([a-z][a-zA-Z0-9_]*)\.([a-zA-Z]+)\(\)(?:\.([a-zA-Z0-9_]+))?\}/g;
 function expandTemplate(s, vu) {
   if (typeof s !== "string") return s;
@@ -828,13 +846,8 @@ function expandTemplate(s, vu) {
     out = out.split("\${token}").join(t || "");
   }
   out = out.replace(DATA_REF_RE, (m, name, mode, field) => {
-    const src = dataSources[name];
-    if (!src || src.length === 0) return m;
-    let idx;
-    if (mode === "random") idx = Math.floor(Math.random() * src.length);
-    else if (mode === "byVu") idx = (vu - 1) % src.length;
-    else return m;
-    const v = src[idx];
+    const v = pickFromSource(dataSources[name], mode, vu);
+    if (v === undefined) return m;
     if (field !== undefined) return v && typeof v === "object" ? String(v[field] ?? "") : "";
     return String(v);
   });
@@ -1023,16 +1036,17 @@ export function runEndpoint() {
   const method = (ep.method || "GET").toUpperCase();
   const bodyValue = ep.body !== undefined ? expandValue(ep.body, vu) : undefined;
   const bodyText = bodyValue !== undefined ? JSON.stringify(bodyValue) : null;
+  const params = { headers, tags: { name: ep.name } };
   let response;
   switch (method) {
     case "POST": if (bodyText) headers["Content-Type"] = "application/json";
-      response = http.post(url, bodyText, { headers }); break;
+      response = http.post(url, bodyText, params); break;
     case "PUT": if (bodyText) headers["Content-Type"] = "application/json";
-      response = http.put(url, bodyText, { headers }); break;
-    case "DELETE": response = http.del(url, null, { headers }); break;
+      response = http.put(url, bodyText, params); break;
+    case "DELETE": response = http.del(url, null, params); break;
     case "PATCH": if (bodyText) headers["Content-Type"] = "application/json";
-      response = http.patch(url, bodyText, { headers }); break;
-    default: response = http.get(url, { headers });
+      response = http.patch(url, bodyText, params); break;
+    default: response = http.get(url, params);
   }
   endpointLatency[ep.name].add(response.timings.duration);
   if (!runChecks(ep, response)) errors.add(1);
