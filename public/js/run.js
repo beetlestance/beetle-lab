@@ -25,6 +25,13 @@ let droppedTotal = 0;
 // a yellow banner above the stats grid so the QA user doesn't have to scan
 // log.txt to find "Insufficient VUs", high-cardinality, etc.
 const warningsSeen = new Map(); // message -> { count, firstAt, msg, hint }
+// Latest observed latency stats — used to compute concrete VU recommendations
+// when a VU-exhaustion warning fires. Filled by onTick / replay walk.
+let latestStats = { p50: 0, p95: 0, p99: 0 };
+// The config that's actually running (post-env-substitution snapshot for
+// historical runs, live-fetched for active runs). Used to read rate / maxVUs
+// when computing recommendations.
+let runConfig = null;
 const series = makeSeries();
 const memSeries = makeMemSeries();
 // Detail snapshot (summary + summaryTxt) — used by Export and inline report.
@@ -281,6 +288,7 @@ async function initLive(live) {
   // Try to derive duration from the config so the chart axis is stable.
   try {
     const cfg = await api.readFile(bucket, live.configRel);
+    runConfig = cfg;
     runDurationSec = totalDurationSec(cfg) || null;
   } catch {}
 
@@ -308,6 +316,7 @@ async function initReplay() {
     `${meta.error ? `<br><span class="text-rose-500">${escapeHtml(meta.error)}</span>` : ""}`;
 
   lastDetail = detail;
+  runConfig = detail.configSnapshot || null;
   reflectExportableState();
   renderInlineReport(detail.summaryTxt);
   renderConfigSnapshot(detail);
@@ -388,9 +397,9 @@ function renderDroppedBanner(total) {
   const el = document.getElementById("droppedBanner");
   if (!el || total <= 0) return;
   el.hidden = false;
-  // Build the banner DOM once. Subsequent calls only swap the count and the
-  // "iteration"/"iterations" pluralization so the pop-in animation doesn't
-  // re-fire on every tick and the surrounding layout doesn't reflow.
+  // Build the banner DOM once. Subsequent calls only swap the count + the
+  // concrete recommendation text so the pop-in animation doesn't re-fire and
+  // the surrounding layout doesn't reflow.
   let count = el.querySelector("[data-dropped-count]");
   if (!count) {
     el.innerHTML = `
@@ -398,7 +407,8 @@ function renderDroppedBanner(total) {
         ${icon("zap", { size: 16, className: "text-rose-600 dark:text-rose-400 mt-0.5" })}
         <div class="text-[12.5px] leading-[1.55] text-rose-800 dark:text-rose-200 flex-1">
           <div class="font-semibold mb-0.5"><span class="num" data-dropped-count>0</span> dropped iteration<span data-dropped-plural>s</span> — VU pool too small.</div>
-          <div>k6 wanted to fire more requests than the pre-allocated VUs could handle. The actual request rate is lower than the target. Stop the run and bump <code class="font-mono">preAllocatedVUs</code> / <code class="font-mono">maxVUs</code> in the config.</div>
+          <div>k6 wanted to fire more requests than the pre-allocated VUs could handle. The actual request rate is lower than the target.</div>
+          <div class="mt-1" data-dropped-hint></div>
         </div>
       </div>`;
     count = el.querySelector("[data-dropped-count]");
@@ -406,6 +416,8 @@ function renderDroppedBanner(total) {
   count.textContent = total.toLocaleString();
   const plural = el.querySelector("[data-dropped-plural]");
   if (plural) plural.textContent = total === 1 ? "" : "s";
+  const hint = el.querySelector("[data-dropped-hint]");
+  if (hint) hint.textContent = vuRecommendationHint();
 }
 
 function onLog(l) {
@@ -444,14 +456,83 @@ function noteWarningFromLine(line, t) {
   renderWarningsBanner();
 }
 
+// Find the headline arrival rate + VU bounds from runConfig. For
+// scenarios[] configs, pick the busiest arrival-rate scenario as the
+// representative one (that's the scenario most likely to exhaust VUs).
+function getConfigContext() {
+  if (!runConfig) return null;
+  if (Array.isArray(runConfig.scenarios) && runConfig.scenarios.length > 0) {
+    const arrival = runConfig.scenarios.filter((s) =>
+      s.executor === "constant-arrival-rate" || s.executor === "ramping-arrival-rate" || s.executor === "ramp-until",
+    );
+    if (arrival.length === 0) return null;
+    const top = arrival
+      .map((s) => ({
+        rate:
+          s.rate ||
+          (s.stages ? Math.max(0, ...s.stages.map((x) => x.rate ?? x.target ?? 0)) : 0) ||
+          s.maxRate ||
+          0,
+        preAllocatedVUs: s.preAllocatedVUs,
+        maxVUs: s.maxVUs,
+      }))
+      .sort((a, b) => b.rate - a.rate)[0];
+    return top.rate > 0 ? top : null;
+  }
+  const rate =
+    runConfig.rate ||
+    (runConfig.stages
+      ? Math.max(0, ...runConfig.stages.map((x) => x.rate ?? x.target ?? 0))
+      : 0) ||
+    runConfig.maxRate ||
+    0;
+  if (rate <= 0) return null;
+  return {
+    rate,
+    preAllocatedVUs: runConfig.preAllocatedVUs,
+    maxVUs: runConfig.maxVUs,
+  };
+}
+
+// Compute "you need ~N VUs" given the active rate and observed p95 latency.
+// Uses p95 (not avg) so the recommendation covers the realistic tail; adds
+// 1.5× headroom so a small further slowdown doesn't push back into drops.
+function recommendVus() {
+  const cfg = getConfigContext();
+  const lat = latestStats.p95 || latestStats.p99 || latestStats.p50;
+  if (!cfg || !cfg.rate || !lat) return null;
+  const steady = Math.ceil((cfg.rate * lat) / 1000);
+  const recommended = Math.max(steady + 1, Math.ceil(steady * 1.5));
+  const preAlloc = Math.max(Math.ceil(recommended / 2), Math.ceil(steady * 0.75));
+  return {
+    rate: cfg.rate,
+    p95Ms: lat,
+    steady,
+    recommended,
+    preAlloc,
+    currentMaxVUs: cfg.maxVUs,
+    currentPreAllocatedVUs: cfg.preAllocatedVUs,
+  };
+}
+
+function vuRecommendationHint() {
+  const r = recommendVus();
+  if (!r) {
+    return "Bump preAllocatedVUs / maxVUs in the config. Drops from this point are scheduling deficits, not real load.";
+  }
+  const cur =
+    r.currentMaxVUs !== undefined
+      ? ` (current maxVUs = ${r.currentMaxVUs.toLocaleString()})`
+      : "";
+  return `${r.rate.toLocaleString()} req/s × p95 ≈ ${Math.round(r.p95Ms)} ms / 1000 ≈ ${r.steady.toLocaleString()} VUs steady-state. With 1.5× headroom for tail latency: ~${r.recommended.toLocaleString()} VUs${cur}. Try preAllocatedVUs: ${r.preAlloc.toLocaleString()}, maxVUs: ${r.recommended.toLocaleString()}.`;
+}
+
 // Map common k6 warnings to a one-line "this is what you do about it" hint.
 function hintForWarning(msg) {
-  if (/Insufficient VUs/i.test(msg))
-    return "Bump preAllocatedVUs / maxVUs in the config. Drops from this point are not real load — they're scheduling deficits.";
+  if (/Insufficient VUs/i.test(msg) || /cannot initialize more/i.test(msg))
+    return vuRecommendationHint();
   if (/unique time series/i.test(msg) || /high-cardinality/i.test(msg))
     return "URL-based metric tags hit k6's 100k limit. Already mitigated: requests are tagged with the endpoint name. If you still see this, an old run before v1.1 of k6-studio is the culprit.";
-  if (/cannot initialize more/i.test(msg))
-    return "k6 wanted more VUs than maxVUs allowed. Increase maxVUs.";
   if (/dropped/i.test(msg))
     return "See the dropped-iterations banner above.";
   return null;
@@ -626,6 +707,11 @@ function pushSeries(x, t) {
   series.p99.push({ x, y: Math.round(t.p99) });
   series.errors.push({ x, y: t.errors });
   series.vus.push({ x, y: t.vus });
+  // Keep the latest observed latency around so banners can compute concrete
+  // VU recommendations the moment a warning fires.
+  if (t.p50 || t.p95 || t.p99) {
+    latestStats = { p50: t.p50, p95: t.p95, p99: t.p99 };
+  }
   if (t.memory) {
     if (t.memory.heapMB !== undefined) memSeries.heap.push({ x, y: +t.memory.heapMB.toFixed(2) });
     if (t.memory.rssMB !== undefined) memSeries.rss.push({ x, y: +t.memory.rssMB.toFixed(2) });
