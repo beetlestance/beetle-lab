@@ -356,16 +356,35 @@ function configDirName(rel) {
     .replace(/[^a-zA-Z0-9_.-]/g, "_") || "config";
 }
 
+// configs/ is a host-mounted volume. On Docker Desktop (macOS/Windows) every
+// fs syscall crosses the VM boundary at ~4-5ms vs ~0.2ms on a native layer, so
+// a sequential `for (…) await` walk over a few hundred files costs seconds.
+// Fanning the same calls out concurrently hides that latency; the bound keeps
+// us clear of EMFILE on buckets with thousands of run artifacts.
+const FS_CONCURRENCY = 64;
+
+async function mapLimit(items, limit, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  const workers = new Array(Math.min(limit, items.length)).fill(0).map(async () => {
+    while (true) {
+      const i = next++;
+      if (i >= items.length) return;
+      out[i] = await fn(items[i], i);
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
 async function listFolders() {
   const entries = await fs.readdir(FOLDERS_DIR, { withFileTypes: true });
-  const out = [];
-  for (const e of entries) {
-    if (!e.isDirectory()) continue;
+  const dirs = entries.filter((e) => e.isDirectory());
+  const out = await mapLimit(dirs, FS_CONCURRENCY, async (e) => {
     const dir = path.join(FOLDERS_DIR, e.name);
-    const stat = await fs.stat(dir);
-    const { configs, fileCount } = await scanFolder(dir);
-    out.push({ name: e.name, mtime: stat.mtimeMs, fileCount, configs });
-  }
+    const [stat, scan] = await Promise.all([fs.stat(dir), scanFolder(dir)]);
+    return { name: e.name, mtime: stat.mtimeMs, fileCount: scan.fileCount, configs: scan.configs };
+  });
   out.sort((a, b) => b.mtime - a.mtime);
   return out;
 }
@@ -380,10 +399,10 @@ async function scanFolder(dir) {
     } catch {
       return;
     }
-    for (const e of entries) {
+    await mapLimit(entries, FS_CONCURRENCY, async (e) => {
       // The runs/ subtree at the bucket root is reserved for run output;
       // it shouldn't show up in file counts or config detection.
-      if (rel === "" && e.name === RUNS_SUBDIR) continue;
+      if (rel === "" && e.name === RUNS_SUBDIR) return;
       const full = path.join(current, e.name);
       const childRel = rel ? `${rel}/${e.name}` : e.name;
       if (e.isDirectory()) {
@@ -392,16 +411,15 @@ async function scanFolder(dir) {
         fileCount += 1;
         if (e.name.endsWith(".json")) {
           try {
-            const txt = await fs.readFile(full, "utf8");
+            const [txt, stat] = await Promise.all([fs.readFile(full, "utf8"), fs.stat(full)]);
             const json = JSON.parse(txt);
             if (Array.isArray(json.endpoints) && json.endpoints.length > 0) {
-              const stat = await fs.stat(full);
               configs.push({ path: childRel, mtime: stat.mtimeMs });
             }
           } catch {}
         }
       }
-    }
+    });
   }
   await walk(dir, "");
   configs.sort((a, b) => a.path.localeCompare(b.path));
@@ -570,15 +588,31 @@ app.get("/api/runs-history", async (req, res) => {
   } catch {
     return res.json([]);
   }
-  for (const b of buckets) {
-    if (!b.isDirectory()) continue;
-    if (filter && b.name !== filter) continue;
-    const rows = await readRunsForBucket(b.name);
-    out.push(...rows);
-  }
+  const wanted = buckets.filter((b) => b.isDirectory() && (!filter || b.name === filter));
+  const perBucket = await mapLimit(wanted, FS_CONCURRENCY, (b) => readRunsForBucket(b.name));
+  for (const rows of perBucket) out.push(...rows);
   out.sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
   res.json(out);
 });
+
+// A finished run directory is immutable, so its row (including the recursive
+// size walk) only has to be computed once. Keyed by run dir; validated against
+// the mtimes of meta.json and the run dir itself — two stats instead of a full
+// subtree walk. The run dir mtime matters because the onStop hook can drop
+// extra files in after meta.json is written.
+const runRowCache = new Map();
+const TERMINAL_STATUSES = new Set(["completed", "failed", "stopped"]);
+// Don't freeze a row the instant it finishes; give onStop hooks time to land
+// their files, otherwise we could cache a size taken mid-copy.
+const RUN_CACHE_GRACE_MS = 30_000;
+
+async function runDirValidator(runDir) {
+  const [metaStat, dirStat] = await Promise.all([
+    fs.stat(path.join(runDir, "meta.json")).catch(() => null),
+    fs.stat(runDir).catch(() => null),
+  ]);
+  return `${metaStat?.mtimeMs ?? 0}:${metaStat?.size ?? 0}:${dirStat?.mtimeMs ?? 0}`;
+}
 
 async function readRunsForBucket(bucket) {
   const runsRoot = path.join(FOLDERS_DIR, bucket, RUNS_SUBDIR);
@@ -588,27 +622,29 @@ async function readRunsForBucket(bucket) {
   } catch {
     return [];
   }
-  const rows = [];
-  for (const c of configDirs) {
-    if (!c.isDirectory()) continue;
+  const dirs = configDirs.filter((c) => c.isDirectory());
+  const perConfig = await mapLimit(dirs, FS_CONCURRENCY, async (c) => {
     const cdir = path.join(runsRoot, c.name);
     let runs;
     try {
       runs = await fs.readdir(cdir, { withFileTypes: true });
     } catch {
-      continue;
+      return [];
     }
-    for (const r of runs) {
-      if (!r.isDirectory()) continue;
-      const runDir = path.join(cdir, r.name);
-      const row = await readRunRow(bucket, c.name, r.name, runDir);
-      if (row) rows.push(row);
-    }
-  }
-  return rows;
+    const runDirs = runs.filter((r) => r.isDirectory());
+    const rows = await mapLimit(runDirs, FS_CONCURRENCY, (r) =>
+      readRunRow(bucket, c.name, r.name, path.join(cdir, r.name)),
+    );
+    return rows.filter(Boolean);
+  });
+  return perConfig.flat();
 }
 
 async function readRunRow(bucket, configDir, id, runDir) {
+  const validator = await runDirValidator(runDir);
+  const hit = runRowCache.get(runDir);
+  if (hit && hit.validator === validator) return hit.row;
+
   let meta = null;
   try {
     meta = JSON.parse(await fs.readFile(path.join(runDir, "meta.json"), "utf8"));
@@ -618,8 +654,23 @@ async function readRunRow(bucket, configDir, id, runDir) {
     const summary = JSON.parse(await fs.readFile(path.join(runDir, "summary.json"), "utf8"));
     stats = extractRunStats(summary);
   } catch {}
-  if (!meta && !stats) return null;
+  if (!meta && !stats) {
+    runRowCache.delete(runDir);
+    return null;
+  }
   const sizeBytes = await dirSize(runDir);
+  const row = buildRunRow({ bucket, configDir, id, meta, stats, sizeBytes });
+
+  const settled =
+    TERMINAL_STATUSES.has(row.status) &&
+    row.endedAt &&
+    Date.now() - row.endedAt > RUN_CACHE_GRACE_MS;
+  if (settled) runRowCache.set(runDir, { validator, row });
+  else runRowCache.delete(runDir);
+  return row;
+}
+
+function buildRunRow({ bucket, configDir, id, meta, stats, sizeBytes }) {
   return {
     id,
     bucket,
@@ -640,25 +691,24 @@ async function readRunRow(bucket, configDir, id, runDir) {
 // disk usage per run — important because k6's raw metrics.jsonl can balloon
 // to multi-GB on long high-RPS runs.
 async function dirSize(dir) {
-  let total = 0;
   let entries;
   try {
     entries = await fs.readdir(dir, { withFileTypes: true });
   } catch {
     return 0;
   }
-  for (const e of entries) {
+  const sizes = await mapLimit(entries, FS_CONCURRENCY, async (e) => {
     const p = path.join(dir, e.name);
-    if (e.isDirectory()) {
-      total += await dirSize(p);
-    } else if (e.isFile()) {
-      try {
-        const st = await fs.stat(p);
-        total += st.size;
-      } catch {}
+    if (e.isDirectory()) return dirSize(p);
+    if (!e.isFile()) return 0;
+    try {
+      const st = await fs.stat(p);
+      return st.size;
+    } catch {
+      return 0;
     }
-  }
-  return total;
+  });
+  return sizes.reduce((a, b) => a + b, 0);
 }
 
 function extractRunStats(summary) {
@@ -1111,6 +1161,7 @@ app.delete("/api/folders/:bucket/runs/:configDir/:id", async (req, res) => {
   const runDir = path.join(FOLDERS_DIR, bucket, RUNS_SUBDIR, cdir, id);
   try {
     await fs.rm(runDir, { recursive: true, force: true });
+    runRowCache.delete(runDir);
     res.json({ ok: true });
   } catch {
     res.status(404).json({ error: "not found" });
