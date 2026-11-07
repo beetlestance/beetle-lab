@@ -14,6 +14,7 @@ import type { schema as EngineResultSchema } from './engine-result.inference.js'
 import type { schema as ProtocolErrorSchema } from './error.inference.js';
 import type { schema as EventBatchSchema } from './event-batch.inference.js';
 import type { schema as OfferSchema } from './offer.inference.js';
+import type { schema as StagedAttemptSchema } from './staged-attempt.inference.js';
 export type Uuid = FromSchema<typeof CommonSchema.$defs.uuid, { references: [...typeof schemas] }>;
 export type Timestamp = FromSchema<typeof CommonSchema.$defs.timestamp, { references: [...typeof schemas] }>;
 export type Sha256 = FromSchema<typeof CommonSchema.$defs.sha256, { references: [...typeof schemas] }>;
@@ -40,6 +41,7 @@ export type EngineResult = FromSchema<typeof EngineResultSchema, { references: [
 export type ProtocolError = FromSchema<typeof ProtocolErrorSchema, { references: [...typeof schemas] }>;
 export type EventBatch = FromSchema<typeof EventBatchSchema, { references: [...typeof schemas] }>;
 export type Offer = FromSchema<typeof OfferSchema, { references: [...typeof schemas] }>;
+export type StagedAttempt = FromSchema<typeof StagedAttemptSchema, { references: [...typeof schemas] }>;
 export interface ProtocolTypes {
   AckReceipt: AckReceipt;
   Ack: Ack;
@@ -53,4 +55,5 @@ export interface ProtocolTypes {
   ProtocolError: ProtocolError;
   EventBatch: EventBatch;
   Offer: Offer;
+  StagedAttempt: StagedAttempt;
 }

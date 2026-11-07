@@ -72,6 +72,19 @@ shared/multi-agent ownership is outside the single-agent profile.
 
 ## Engine manifest and wrapper
 
+Private staged input uses the shipped `StagedAttempt` schema in `staging.json`.
+The input root contains `offer.json`, `manifest.json`, `staging.json` and numbered
+`input-NNN.bin` files; secrets are separate files under the secret mount. Metadata
+pins scoped generation, intent/spec identities, exact offer/manifest hashes,
+admission-derived absolute wall deadline and staging-policy version. Input mappings
+must be a bijection with Offer inputs, in Offer order using zero-padded indices;
+secret names must match declared references. Readers verify hashes/byte lengths,
+ownership and cross-file identities before executing. Schema validity alone does
+not establish these semantic bindings, an authenticated producer or resource controls.
+No resolved secret value or digest appears in the staging metadata. The stager
+requires the matching charged reservation before writing and enforces the
+[versioned staging allowances](../../decisions/006-agent-staging.md).
+
 A manifest owns ID/version, protocol range, image digest, config/result schemas,
 capabilities, default/minimum budget, supported backends and execution network
 requirements. Installing/updating a manifest is an explicit trusted local action.

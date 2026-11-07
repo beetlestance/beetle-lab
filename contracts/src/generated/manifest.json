@@ -17,6 +17,7 @@
     "runner/v1/offer.schema.json": "64f1f19dee0a530b590fcf0de46794f8ef1e1bd4a029918051828bfb9e5fce7b",
     "runner/v1/result-evidence.schema.json": "c71bcce9bb9a3fe480c85012d9e4d4f9797b5152f65c6d6dbacbdd46cf9c2783",
     "runner/v1/result-execution.schema.json": "7afacbde6ec0e8ecd77ccc556d5819bd02bffb825002a25b265ee02241a245b3",
+    "runner/v1/staged-attempt.schema.json": "afc39fae4b830fa76b5016e86e666dc82d3289b602a1787e8ea7e388ce03fbbe",
     "runner/v1/supervisor-events.schema.json": "9065408c049290a99372a4e9a3d22eb617c25b710bc84c080626acec8e735974",
     "runner/v1/wrapper-events.schema.json": "b14590f134d092d5e926f24492222d8eb27d437226fa670564ff83bb27665f1f"
   },
@@ -54,6 +55,8 @@
     "result-evidence.ts",
     "result-execution.ts",
     "schemas.ts",
+    "staged-attempt.inference.ts",
+    "staged-attempt.ts",
     "supervisor-events.ts",
     "types.ts",
     "wrapper-events.ts"
