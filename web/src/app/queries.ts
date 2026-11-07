@@ -2,6 +2,10 @@ import { QueryClient } from '@tanstack/react-query';
 
 const root = ['namespace'] as const;
 export const queryKeys = {
+  settings: ['settings'] as const,
+  installationSettings: ['settings', 'installation'] as const,
+  organizationSettings: (id: string) => ['settings', 'organization', id.toLowerCase()] as const,
+  workspaceSettings: (org: string, id: string) => ['settings', 'organization', org.toLowerCase(), 'workspace', id.toLowerCase()] as const,
   organizations: [...root, 'organizations'] as const,
   organization: (id: string) => [...root, 'organization', id.toLowerCase()] as const,
   workspaces: (id: string) => [...root, 'organization', id.toLowerCase(), 'workspaces'] as const,

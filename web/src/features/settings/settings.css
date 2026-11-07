@@ -1,0 +1,14 @@
+.settings-page section { margin-block: var(--space-8); border-top: var(--border-width) solid var(--border); padding-top: var(--space-4); }
+.settings-page h2 { font-size: 1.125rem; }
+.settings-table-wrap { overflow-x: auto; }
+.settings-page table { width: 100%; border-collapse: collapse; text-align: left; }
+.settings-page caption { text-align: left; color: var(--muted); margin-block: var(--space-3); }
+.settings-page th, .settings-page td { padding: var(--space-3); border-bottom: var(--border-width) solid var(--border); vertical-align: top; }
+.settings-page td button { display: block; margin-bottom: var(--space-2); }
+.settings-group { padding-block: var(--space-3); }
+.settings-group dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-4); }
+.settings-group dt { color: var(--muted); }
+.settings-group dd { margin: var(--space-1) 0; font-family: var(--mono); }
+.settings-page + .editor select, .editor select { color: var(--ink); background: var(--surface); border: var(--border-width) solid var(--border-strong); padding: var(--space-2); font: inherit; max-width: 100%; }
+@media (max-width: 600px) { .settings-page th, .settings-page td { padding: var(--space-2); } }
+@media (prefers-reduced-motion: reduce) { .settings-page *, .editor select { animation: none; transition: none; } }

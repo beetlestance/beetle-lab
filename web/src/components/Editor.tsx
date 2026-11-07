@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import type { ApiClientFailure, ApiClientResult } from '@beetle/contracts/api';
 import { errorMessage, unknownOutcome } from '../app/api.js';
 
-export interface EditorField { name: string; label: string; value: string; pattern?: string; help?: string }
+export interface EditorField { name: string; label: string; value: string; pattern?: string; help?: string; required?: boolean; options?: readonly string[] }
 export interface EditorIntent {
   title: string;
   path: string;
@@ -63,10 +63,14 @@ function Editor({ intent, close }: { intent: EditorIntent; close: () => void }) 
         <legend className="sr-only">{intent.title}</legend>
         {intent.fields.map((field, index) => <div className="field" key={field.name}>
           <label htmlFor={`${id}-${field.name}`}>{field.label}</label>
-          <input id={`${id}-${field.name}`} name={field.name} value={values[field.name] ?? ''}
-            autoFocus={index === 0} required maxLength={128} pattern={field.pattern}
+          {field.options ? <select id={`${id}-${field.name}`} name={field.name} value={values[field.name] ?? ''}
+            autoFocus={index === 0} required={field.required ?? true}
+            onChange={event => { setValues({ ...values, [field.name]: event.target.value }); setFailure(null); setAttempt(null); }}>
+            {field.options.map(option => <option key={option} value={option}>{option}</option>)}
+          </select> : <input id={`${id}-${field.name}`} name={field.name} value={values[field.name] ?? ''}
+            autoFocus={index === 0} required={field.required ?? true} maxLength={128} pattern={field.pattern}
             aria-describedby={field.help ? `${id}-${field.name}-help` : undefined}
-            onChange={event => { setValues({ ...values, [field.name]: event.target.value }); setFailure(null); setAttempt(null); }} />
+            onChange={event => { setValues({ ...values, [field.name]: event.target.value }); setFailure(null); setAttempt(null); }} />}
           {field.help && <small id={`${id}-${field.name}-help`}>{field.help}</small>}
         </div>)}
         <div className="actions">

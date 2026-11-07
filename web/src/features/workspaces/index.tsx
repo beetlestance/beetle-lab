@@ -23,6 +23,7 @@ export function OrganizationScope({ organizationId, workspaceId }: { organizatio
       <Link to={routes.organizations}>Organizations</Link><span aria-hidden="true">/</span>
       <Link to={routes.organization(organizationId)}>{organization.name}</Link>
     </nav>
+    <Link to={routes.organizationSettings(organizationId)}>Organization settings</Link>
     <div className="scope-label">Organization <span className="number">{organization.slug}</span></div>
     {workspaceId ? <WorkspaceScope key={workspaceId} organizationId={organizationId} workspaceId={workspaceId} />
       : <WorkspaceList organizationId={organizationId} />}
@@ -38,6 +39,7 @@ function WorkspaceScope({ organizationId, workspaceId }: { organizationId: strin
     client.removeQueries({ queryKey: queryKeys.workspace(organizationId, workspaceId) });
   }, [client, organizationId, workspaceId]);
   return <QueryState query={workspace}>{data => <>
+    <Link to={routes.workspaceSettings(organizationId, workspaceId)}>Workspace settings</Link>
     <p className="workspace-label">Workspace <strong>{data.name}</strong></p><FolderList workspace={data} />
   </>}</QueryState>;
 }
