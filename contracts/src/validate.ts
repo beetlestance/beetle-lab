@@ -3,7 +3,7 @@ import addFormatsModule from 'ajv-formats';
 import type { ErrorObject, ValidateFunction } from 'ajv';
 import { messageSchemas, schemas } from './generated/schemas.js';
 import { schema as common } from './generated/common.js';
-import type { Uuid, Cursor, ProtocolTypes } from './generated/types.js';
+import type { Uuid, Cursor, ProtocolTypes, SecretReference } from './generated/types.js';
 
 export type ProtocolName = keyof ProtocolTypes;
 export interface StructuralIssue { readonly path: string; readonly code: string }
@@ -23,8 +23,8 @@ const validators = Object.fromEntries(Object.entries(messageSchemas).map(([name,
   return [name, validator];
 })) as Record<ProtocolName, ValidateFunction>;
 
-interface PrimitiveTypes { uuid: Uuid; cursor: Cursor }
-const primitives = Object.fromEntries(['uuid', 'cursor'].map(name => {
+interface PrimitiveTypes { uuid: Uuid; cursor: Cursor; secretReference: SecretReference }
+const primitives = Object.fromEntries(['uuid', 'cursor', 'secretReference'].map(name => {
   const validator = ajv.getSchema(`${common.$id}#/$defs/${name}`);
   if (!validator) throw new Error(`Missing shipped primitive: ${name}`);
   return [name, validator];

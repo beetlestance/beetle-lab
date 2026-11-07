@@ -28,7 +28,7 @@
     },
     "secretNames": {
       "type": "array", "maxItems": 64, "uniqueItems": true,
-      "items": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/token" }
+      "items": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/secretToken" }
     }
   },
   "required": ["protocolVersion", "organizationId", "workspaceId", "attemptId", "generation",

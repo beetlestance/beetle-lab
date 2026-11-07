@@ -24,6 +24,22 @@
       "type": "string",
       "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$"
     },
+    "secretToken": {
+      "description": "Opaque secret name/reference alias; leading underscore is valid, paths and resolved values are not aliases.",
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127}$"
+    },
+    "secretReference": {
+      "type": "object",
+      "properties": {
+        "name": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/secretToken" },
+        "provider": { "enum": ["env", "mounted"] },
+        "reference": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/secretToken" },
+        "version": { "type": "string", "minLength": 1, "maxLength": 256 }
+      },
+      "required": ["name", "provider", "reference"],
+      "additionalProperties": false
+    },
     "budget": {
       "type": "object",
       "properties": {

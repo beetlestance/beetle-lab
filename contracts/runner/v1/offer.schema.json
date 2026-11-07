@@ -99,32 +99,7 @@
     "secretReferences": {
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/token"
-          },
-          "provider": {
-            "enum": [
-              "env",
-              "mounted"
-            ]
-          },
-          "reference": {
-            "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/token"
-          },
-          "version": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128
-          }
-        },
-        "required": [
-          "name",
-          "provider",
-          "reference"
-        ],
-        "additionalProperties": false
+        "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/secretReference"
       },
       "maxItems": 64
     },

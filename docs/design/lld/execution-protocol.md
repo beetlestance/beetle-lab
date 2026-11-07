@@ -84,6 +84,10 @@ not establish these semantic bindings, an authenticated producer or resource con
 No resolved secret value or digest appears in the staging metadata. The stager
 requires the matching charged reservation before writing and enforces the
 [versioned staging allowances](../../decisions/006-agent-staging.md).
+Secret aliases have their own grammar, including leading underscores. The k6
+bridge maps locator to an opaque env/mounted reference; raw paths/other providers
+are unsupported. Optional declared versions (up to 256 characters) are compared,
+never invented or derived from resolved secret values.
 
 A manifest owns ID/version, protocol range, image digest, config/result schemas,
 capabilities, default/minimum budget, supported backends and execution network
