@@ -41,6 +41,23 @@ describe('native API delegation', () => {
     nativeIteration(createNativeRuntime(suite, attempt), suite, 0, { deadlineMs: 50_000 });
     expect(vi.mocked(http.request).mock.calls[0]![3].timeout).toBe(12_000);
   });
+  it('delegates global native VU identity100001 across two concurrently accepted scenarios', () => {
+    vi.stubGlobal('open', () => 'synthetic'); vi.spyOn(Date, 'now').mockReturnValue(1000);
+    execution.scenario.startTime = 1000;
+    const config = configFor('POST'); const scenario = config.loadPlan.scenarios[0]!;
+    if (scenario.executor !== 'per-vu-iterations') throw new Error('fixture');
+    scenario.vus = 100_000;
+    config.loadPlan.scenarios.push({ ...scenario, id: 'other', name: 'other', vus: 1 });
+    config.selections.push({ ...config.selections[0]!, scenarioId: 'other' });
+    const suite = compiled(config); const runtime = createNativeRuntime(suite, attempt);
+    vi.mocked(http.request).mockReturnValue({ status: 200, error_code: 0, body: null, headers: {} });
+    const previousVu = execution.vu.idInTest; execution.vu.idInTest = 100_001;
+    try {
+      for (const index of [0, 1]) nativeIteration(runtime, suite, index, { deadlineMs: 50_000 });
+      expect(execution.test.abort).not.toHaveBeenCalled();
+      expect(http.request).toHaveBeenCalledTimes(2);
+    } finally { execution.vu.idInTest = previousVu; }
+  });
   it('clamps every scenario to one setup deadline and fails delayed work closed', () => {
     vi.stubGlobal('open', () => 'synthetic');
     let now = 1000; vi.spyOn(Date, 'now').mockImplementation(() => now);

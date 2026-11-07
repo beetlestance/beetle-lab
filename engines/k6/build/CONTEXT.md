@@ -12,6 +12,11 @@ Only the four used k6 API modules remain external. No compiler validators, Node
 modules or duplicated runtime strings enter the output. Temporary build files
 are removed on success/failure. Generated entrypoints match the compiled metadata.
 
+Serializer depth104 derives from public JSON depth32: each object body level
+adds at most3 IR edges (`entries`/index/`value`); the suite-to-body path adds4
+and a template leaf adds4 (`template`/`tokens`/index/`value`). Public JSON depth,
+serializer node and byte limits remain separate admission bounds.
+
 The required private attempt has explicit managed/standalone mode (see runtime
 context). Reusable standalone metadata has a timeout and no epoch deadline; setup
 returns only its numeric deadline. Managed launches require an absolute deadline.

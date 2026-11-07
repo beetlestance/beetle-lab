@@ -1,6 +1,9 @@
 import { open } from 'node:fs/promises';
 
 const maxDataBytes = 24 * 1_048_576;
+// Public JSON depth32 expands by at most3 (entries/index/value) per object level.
+// Root -> requests/index/body/value adds4; template/tokens/index/value adds4.
+const maxDataDepth = 32 * 3 + 8;
 interface Budget { nodes: number; ancestors: Set<object> }
 function scalar(value: unknown): string {
   if (typeof value === 'string') {
@@ -29,7 +32,7 @@ function* collection(value: object, budget: Budget, depth: number): Generator<st
   yield '}';
 }
 function* tokens(value: unknown, budget: Budget, depth = 0): Generator<string> {
-  if (++budget.nodes > 2_000_000 || depth > 64) throw new Error('script_limit');
+  if (++budget.nodes > 2_000_000 || depth > maxDataDepth) throw new Error('script_limit');
   if (value === null || typeof value !== 'object') { yield scalar(value); return; }
   if (budget.ancestors.has(value)) throw new Error('script_data');
   budget.ancestors.add(value);

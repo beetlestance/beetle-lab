@@ -10,7 +10,8 @@ function sample(random: Random): number {
   return value;
 }
 function validPosition(vu: number, iteration: number): void {
-  if (!Number.isSafeInteger(vu) || vu < 1 || vu > 100_000
+  // Native VU IDs are global identities; scenario concurrency does not bound them.
+  if (!Number.isSafeInteger(vu) || vu < 1
     || !Number.isSafeInteger(iteration) || iteration < 0 || iteration > 1_000_000_000) fail('selection');
 }
 export function initialSelectionState(plan: DeepReadonly<SelectionPlan>, vu: number): Result<SelectionState> {
