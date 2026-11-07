@@ -31,9 +31,10 @@ function array(state: EncoderState, value: unknown[], depth: number): void {
   if (value.length > 4096) throw new Error('request_limit');
   append(state, '[');
   for (let index = 0; index < value.length; index++) {
-    if (!Object.hasOwn(value, index)) throw new Error('invalid_json');
+    const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
+    if (!descriptor || !('value' in descriptor)) throw new Error('invalid_json');
     if (index) append(state, ',');
-    visit(state, value[index], depth + 1);
+    visit(state, descriptor.value, depth + 1);
   }
   append(state, ']');
 }
@@ -49,12 +50,29 @@ function visit(state: EncoderState, value: unknown, depth: number): void {
 
 /** Bounds bytes, depth, node count and each collection; rejects non-JSON values. */
 export function encodeJson(input: unknown, maximumBytes: number): string {
+  if (!Number.isSafeInteger(maximumBytes) || maximumBytes < 1 || maximumBytes > 16_777_216) throw new Error('invalid_limit');
   const state: EncoderState = { bytes: 0, nodes: 0, maximum: maximumBytes, parts: [], ancestors: new Set() };
   visit(state, input, 0);
   return state.parts.join('');
 }
 
-export async function readJson(response: Response, maximumBytes: number): Promise<unknown> {
+type ChunkResult = Awaited<ReturnType<ReadableStreamDefaultReader<Uint8Array>['read']>>;
+function readChunk(reader: ReadableStreamDefaultReader<Uint8Array>, signal?: AbortSignal): Promise<ChunkResult> {
+  if (!signal) return reader.read();
+  if (signal.aborted) return Promise.reject(new Error('aborted'));
+  return new Promise((resolve, reject) => {
+    const abort = () => { signal.removeEventListener('abort', abort); reject(new Error('aborted')); };
+    signal.addEventListener('abort', abort, { once: true });
+    void reader.read().then(chunk => {
+      signal.removeEventListener('abort', abort); resolve(chunk);
+    }, error => {
+      signal.removeEventListener('abort', abort); reject(error);
+    });
+    if (signal.aborted) abort();
+  });
+}
+
+export async function readJson(response: Response, maximumBytes: number, signal?: AbortSignal): Promise<unknown> {
   if (!response.body) throw new Error('missing_body');
   const reader = response.body.getReader();
   const body = new Uint8Array(maximumBytes);
@@ -62,14 +80,15 @@ export async function readJson(response: Response, maximumBytes: number): Promis
   let fragments = 0;
   try {
     while (true) {
-      const chunk = await reader.read();
+      const chunk = await readChunk(reader, signal);
       if (chunk.done) break;
       if (++fragments > 4096 || size + chunk.value.byteLength > maximumBytes) throw new Error('response_limit');
       body.set(chunk.value, size); size += chunk.value.byteLength;
     }
     return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(body.subarray(0, size))) as unknown;
   } catch (error) {
-    await reader.cancel().catch(() => undefined);
+    // Cancellation is best-effort cleanup: a broken source must not hold the caller.
+    void reader.cancel().catch(() => undefined);
     throw error;
   } finally { reader.releaseLock(); }
 }

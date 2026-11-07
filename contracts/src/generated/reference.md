@@ -14,4 +14,4 @@ Source: `contracts/runner/v1`; regenerate with `node --import tsx contracts/scri
 All error replies use ProtocolError. Events accept the `after` cursor query.
 GET sealed artifact streams/ranges belong to the artifact transport owner.
 
-Shipped schemas: AckReceipt, Ack, AgentEvent, AttemptSnapshot, Cancellation, Capabilities, Common, ControlEvent, EngineManifest, EngineResult, ProtocolError, EventBatch, Offer.
+Shipped schemas: AckReceipt, Ack, AgentEvent, AttemptSnapshot, Cancellation, Capabilities, Common, ControlEvent, EngineManifest, EngineResult, ProtocolError, EventBatch, EventEnvelope, Offer, ResultEvidence, ResultExecution, SupervisorEvents, WrapperEvents.

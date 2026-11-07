@@ -30,10 +30,12 @@ interface ResolvedOptions {
 
 function requestBody(call: JsonCall<ProtocolName>, maximum: number): ClientResult<string | undefined> {
   if (!call.request) return { ok: true, value: undefined };
-  const checked = validate(call.request, call.body);
-  if (!checked.ok) return { ok: false, error: { kind: 'request', issues: checked.issues } };
-  try { return { ok: true, value: encodeJson(checked.value, maximum) }; }
-  catch { return { ok: false, error: { kind: 'request' } }; }
+  try {
+    const body = encodeJson(call.body, maximum);
+    const checked = validate(call.request, JSON.parse(body) as unknown);
+    if (!checked.ok) return { ok: false, error: { kind: 'request', issues: checked.issues } };
+    return { ok: true, value: body };
+  } catch { return { ok: false, error: { kind: 'request' } }; }
 }
 function reply<N extends ProtocolName>(response: Response, input: unknown, call: JsonCall<N>): ClientResult<ProtocolTypes[N]> {
   if (!response.ok) {
@@ -72,7 +74,7 @@ async function send<N extends ProtocolName>(options: ResolvedOptions, call: Json
     });
   } catch { return { ok: false, error: { kind: interrupted(signal, call.signal, 'transport') } }; }
   let input: unknown;
-  try { input = await readJson(response, options.maximumBytes); }
+  try { input = await readJson(response, options.maximumBytes, signal); }
   catch { return { ok: false, error: { kind: interrupted(signal, call.signal, 'response'), status: response.status } }; }
   return reply(response, input, call);
 }

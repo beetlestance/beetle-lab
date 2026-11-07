@@ -9,6 +9,7 @@ async function valid<N extends ProtocolName>(name: N, path: string): Promise<Pro
   return checked.value;
 }
 const baseUrl = 'http://w01.synthetic.invalid';
+const attemptId = (await valid('AttemptSnapshot', 'snapshot')).attemptId;
 function client(fetcher: typeof fetch, options: { maximumBytes?: number; timeoutMs?: number } = {}) {
   return createRunnerClient(createHttpTransport({ baseUrl, fetch: fetcher, ...options }));
 }
@@ -58,10 +59,10 @@ it('validates typed error replies and never returns untrusted error bodies', asy
   const error = await fixture('valid/cursor-expired.json');
   const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(Response.json(error, { status: 409 }))
     .mockResolvedValueOnce(Response.json({ message: 'synthetic-secret-canary' }, { status: 500 }));
-  const first = await client(fetcher).events('attempt', 0);
+  const first = await client(fetcher).events(attemptId, 0);
   expect(first.ok).toBe(false);
   if (!first.ok) expect(first.error.kind).toBe('protocol');
-  const second = await client(fetcher).events('attempt', 0);
+  const second = await client(fetcher).events(attemptId, 0);
   expect(second.ok).toBe(false);
   expect(JSON.stringify(second)).not.toContain('canary');
 });
@@ -69,8 +70,8 @@ it('validates typed error replies and never returns untrusted error bodies', asy
 it('rejects malformed successful replies and bounded response overflow', async () => {
   const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(Response.json({ exitCode: 0 }))
     .mockResolvedValueOnce(new Response('x'.repeat(100)));
-  expect((await client(fetcher).snapshot('attempt')).ok).toBe(false);
-  expect(await client(fetcher, { maximumBytes: 32 }).snapshot('attempt')).toEqual({
+  expect((await client(fetcher).snapshot(attemptId)).ok).toBe(false);
+  expect(await client(fetcher, { maximumBytes: 32 }).snapshot(attemptId)).toEqual({
     ok: false, error: { kind: 'response', status: 200 },
   });
 });

@@ -5,3 +5,4 @@ export { createRunnerClient } from './generated/client.js';
 export { createHttpTransport } from './http.js';
 export type { RunnerTransport, HttpOptions, ClientResult, ClientFailure } from './http.js';
 export { schemas as runnerSchemas, messageSchemas as runnerMessageSchemas } from './generated/schemas.js';
+export { encodeJson } from './json.js';

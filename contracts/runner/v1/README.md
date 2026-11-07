@@ -57,3 +57,12 @@ agent owner, with a repeated call returning the existing terminal snapshot after
 closure. ACK confirms an application-durable cursor and never establishes test
 success. The JSON client does not retry. Typed retry categories refer only to
 transport/setup; a new execution always needs explicit new intent.
+
+Shared definition modules separate the event envelope, wrapper/supervisor tagged
+payloads, terminal evidence and execution observations. Public roots close these
+compositions with `unevaluatedProperties`; each handwritten schema remains readable
+and <=400 lines. The generator produces separate reference-expanded inference
+projections, recorded with all owning source hashes in its manifest. These are
+actual generated artifacts, used for type inference only; runtime validators and
+HTTP consumers register the original frozen catalogue. Conformance vectors are
+checked against both forms, and generated discriminants have static type checks.

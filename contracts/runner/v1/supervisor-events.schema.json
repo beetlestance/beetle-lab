@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/runner/v1/supervisor-events",
+  "title": "SupervisorEvents",
+  "$defs": {
+    "admitted": {
+      "type": "object",
+      "properties": {
+        "budget": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/budget"
+        }
+      },
+      "required": [
+        "budget"
+      ],
+      "additionalProperties": false
+    },
+    "runtime_started": {
+      "type": "object",
+      "properties": {
+        "runtimeId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "runtimeId"
+      ],
+      "additionalProperties": false
+    },
+    "resource_summary": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "const": "container"
+        },
+        "cpuMillis": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "peakMemoryBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "peakPids": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "outputBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "enforcedControls": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "cpu",
+              "memory",
+              "pids",
+              "timeout",
+              "output"
+            ]
+          },
+          "maxItems": 5
+        }
+      },
+      "required": [
+        "scope",
+        "cpuMillis",
+        "peakMemoryBytes",
+        "peakPids",
+        "outputBytes",
+        "enforcedControls"
+      ],
+      "additionalProperties": false
+    },
+    "cancellation_requested": {
+      "type": "object",
+      "properties": {
+        "requestedAt": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/timestamp"
+        }
+      },
+      "required": [
+        "requestedAt"
+      ],
+      "additionalProperties": false
+    },
+    "runtime_exited": {
+      "type": "object",
+      "properties": {
+        "exitCode": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "oomKilled": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "reason": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/reason"
+        },
+        "observedAt": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/timestamp"
+        }
+      },
+      "required": [
+        "exitCode",
+        "oomKilled",
+        "observedAt"
+      ],
+      "additionalProperties": false
+    },
+    "execution_lost": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "const": "execution_lost"
+        },
+        "lastObservedAt": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/timestamp"
+        }
+      },
+      "required": [
+        "reason",
+        "lastObservedAt"
+      ],
+      "additionalProperties": false
+    },
+    "tagged": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "admitted"
+            },
+            "payload": {
+              "$ref": "https://beetle-lab.dev/contracts/runner/v1/supervisor-events#/$defs/admitted"
+            }
+          },
+          "required": [
+            "kind",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "runtime.started"
+            },
+            "payload": {
+              "$ref": "https://beetle-lab.dev/contracts/runner/v1/supervisor-events#/$defs/runtime_started"
+            }
+          },
+          "required": [
+            "kind",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "resource.summary"
+            },
+            "payload": {
+              "$ref": "https://beetle-lab.dev/contracts/runner/v1/supervisor-events#/$defs/resource_summary"
+            }
+          },
+          "required": [
+            "kind",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "cancellation.requested"
+            },
+            "payload": {
+              "$ref": "https://beetle-lab.dev/contracts/runner/v1/supervisor-events#/$defs/cancellation_requested"
+            }
+          },
+          "required": [
+            "kind",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "runtime.exited"
+            },
+            "payload": {
+              "$ref": "https://beetle-lab.dev/contracts/runner/v1/supervisor-events#/$defs/runtime_exited"
+            }
+          },
+          "required": [
+            "kind",
+            "payload"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "execution.lost"
+            },
+            "payload": {
+              "$ref": "https://beetle-lab.dev/contracts/runner/v1/supervisor-events#/$defs/execution_lost"
+            }
+          },
+          "required": [
+            "kind",
+            "payload"
+          ]
+        }
+      ]
+    }
+  }
+}

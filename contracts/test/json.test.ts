@@ -61,3 +61,13 @@ it('rejects malformed JSON/UTF-8 and reads a bounded valid document', async () =
   await expect(readJson(new Response(new Uint8Array([0xff])), 100)).rejects.toThrow();
   await expect(readJson(new Response('{"a":1}'), 100)).resolves.toEqual({ a: 1 });
 });
+
+
+it('rejects invalid public serialization budgets before observing input', () => {
+  const getter = vi.fn(() => 'synthetic');
+  const input = Object.defineProperty({}, 'value', { enumerable: true, get: getter });
+  for (const maximum of [0, -1, NaN, Infinity, 0.5, 16_777_217]) {
+    expect(() => encodeJson(input, maximum)).toThrow('invalid_limit');
+  }
+  expect(getter).not.toHaveBeenCalled();
+});

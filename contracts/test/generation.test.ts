@@ -1,9 +1,14 @@
-import { cp, mkdtemp, readFile, rm, writeFile, unlink } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm, writeFile, unlink, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { expect, it } from 'vitest';
+import { Ajv2020 } from 'ajv/dist/2020.js';
+import addFormatsModule from 'ajv-formats';
+import { inferenceSchema } from '../scripts/inference.js';
+import { runnerSchemas, runnerMessageSchemas } from '../src/index.js';
+import { fixture, vectors } from './fixtures.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 it('reproduces outputs and detects changed and missing generated files', async () => {
@@ -29,4 +34,24 @@ it('reproduces outputs and detects changed and missing generated files', async (
     await writeFile(source, (await readFile(source, 'utf8')).replace('"title": "Offer"', '"title": "OfferChanged"'));
     expect(() => run(true)).toThrow();
   } finally { await rm(owned, { recursive: true, force: true }); }
+});
+
+
+it('keeps every readable handwritten schema source within 400 physical lines', async () => {
+  for (const file of (await readdir(join(root, 'runner/v1'))).filter(name => name.endsWith('.schema.json'))) {
+    const source = await readFile(join(root, 'runner/v1', file), 'utf8');
+    expect(source.trimEnd().split('\n').length, file).toBeLessThanOrEqual(400);
+  }
+});
+
+it('preserves conformance semantics in the generated reference-expanded inference projection', async () => {
+  const ajv = new Ajv2020({ strict: true });
+  const addFormats = addFormatsModule as unknown as (instance: Ajv2020) => void;
+  addFormats(ajv);
+  const catalogue = new Map(runnerSchemas.map(schema => [schema.$id, schema]));
+  const validators = new Map(Object.entries(runnerMessageSchemas).map(([name, schema]) =>
+    [name, ajv.compile(inferenceSchema(schema, catalogue) as object)]));
+  for (const vector of await vectors()) {
+    expect(validators.get(vector.schema)?.(await fixture(vector.path)), vector.path).toBe(vector.valid);
+  }
 });

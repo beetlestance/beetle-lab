@@ -2,7 +2,8 @@ import { Ajv2020 } from 'ajv/dist/2020.js';
 import addFormatsModule from 'ajv-formats';
 import type { ErrorObject, ValidateFunction } from 'ajv';
 import { messageSchemas, schemas } from './generated/schemas.js';
-import type { ProtocolTypes } from './generated/types.js';
+import { schema as common } from './generated/common.js';
+import type { Uuid, Cursor, ProtocolTypes } from './generated/types.js';
 
 export type ProtocolName = keyof ProtocolTypes;
 export interface StructuralIssue { readonly path: string; readonly code: string }
@@ -21,6 +22,19 @@ const validators = Object.fromEntries(Object.entries(messageSchemas).map(([name,
   if (!validator) throw new Error(`Missing shipped schema: ${name}`);
   return [name, validator];
 })) as Record<ProtocolName, ValidateFunction>;
+
+interface PrimitiveTypes { uuid: Uuid; cursor: Cursor }
+const primitives = Object.fromEntries(['uuid', 'cursor'].map(name => {
+  const validator = ajv.getSchema(`${common.$id}#/$defs/${name}`);
+  if (!validator) throw new Error(`Missing shipped primitive: ${name}`);
+  return [name, validator];
+})) as Record<keyof PrimitiveTypes, ValidateFunction>;
+
+export function validatePrimitive<N extends keyof PrimitiveTypes>(name: N, input: unknown): ValidationResult<PrimitiveTypes[N]> {
+  const validator = primitives[name];
+  if (!validator(input)) return { ok: false, issues: safeIssues(validator.errors) };
+  return { ok: true, value: input as PrimitiveTypes[N] };
+}
 
 function safeIssues(errors: ErrorObject[] | null | undefined): readonly StructuralIssue[] {
   return Object.freeze((errors ?? []).slice(0, 16).map(error => Object.freeze({
