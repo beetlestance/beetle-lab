@@ -3,7 +3,8 @@
 Public entry: `createNativeProcess` in `index.ts`; trusted local composition only.
 Construction snapshots a managed runtime AttemptBudget and fixed installed paths,
 transport limits, sink and clock callbacks. `run` returns the same one-shot promise;
-no failed/late/unknown invocation is retried. `close` fences future launch.
+no failed/late/unknown invocation is retried. `close` fences future launch. Callback
+returns recheck cancellation; issued work is published before reentrant hooks.
 
 Before launch, canonical absolute non-symlink regular files are checked: executable,
 <=16-byte empty JSON config, <=64MiB owned `suite.js`, private output directory,
@@ -17,7 +18,7 @@ local monotonic ceiling and repeated final clock samples fail closed on expiry,
 rollback, invalid values or callback errors. Cancellation/stream failure interrupts
 delivery independently, sends TERM once, then KILL after the first fixed 5 seconds.
 Only the PID from this child's spawn notification authorizes group signals.
-Group absence, parent exit and stdio closure are separate observations. The trusted
+Confirmed group absence retires its PID forever; exit/stdio closure remain separate. The trusted
 native workload must keep descendants in its group; escaped sessions are outside
 this POSIX group boundary. Container init/subreaper and OS cleanup need qualification.
 

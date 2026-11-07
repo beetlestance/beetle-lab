@@ -57,12 +57,16 @@ export class ProcessActor implements NativeProcess {
     this.input.signal?.addEventListener('abort', this.cancel, { once: true });
     if (this.input.signal?.aborted) { this.stop('cancelled'); return this.result; }
     if (!this.permitted()) return this.result;
-    this.watch();
+    if (!this.watch()) return this.result;
     this.profilePending = true;
-    this.work = this.prepare();
+    // Publish ownership before validation can synchronously reenter close/cancellation.
+    let adopt!: (work: Promise<void>) => void;
+    this.work = new Promise(resolve => { adopt = resolve; });
+    adopt(this.prepare());
     return this.result;
   }
   private async prepare(): Promise<void> {
+    if (this.denied()) { this.profilePending = false; this.check(); return; }
     try {
       await this.ports.validate(this.input);
       this.profilePending = false;
@@ -71,7 +75,7 @@ export class ProcessActor implements NativeProcess {
     finally { this.check(); }
   }
   private launch(): void {
-    // This decision and the spawn call are synchronous: cancellation cannot interleave here.
+    // Clock callbacks may reenter cancellation; their returned sample cannot override that fence.
     if (!this.permitted()) return;
     this.spawnPending = true; this.issuingSpawn = true;
     try {
@@ -113,18 +117,23 @@ export class ProcessActor implements NativeProcess {
     this.check();
   }
   private permitted(): boolean {
-    if (this.cause || this.closed || this.settled) return false;
-    try { this.deadline.remaining(); return true; }
+    if (this.denied()) return false;
+    try { this.deadline.remaining(); return !this.denied(); }
     catch (error) {
       this.stop(error instanceof ProcessBoundaryError ? error.code : 'clock'); return false;
     }
   }
-  private watch(): void {
-    if (!this.permitted()) return;
+  private denied(): boolean { return this.cause !== null || this.closed || this.settled; }
+  private watch(): boolean {
+    if (!this.permitted()) return false;
     let remaining: number;
     try { remaining = this.deadline.remaining(); }
-    catch (error) { this.stop(error instanceof ProcessBoundaryError ? error.code : 'clock'); return; }
-    this.wallTimer = setTimeout(() => { this.wallTimer = undefined; this.watch(); }, Math.min(remaining, 50));
+    catch (error) { this.stop(error instanceof ProcessBoundaryError ? error.code : 'clock'); return false; }
+    if (this.denied()) return false;
+    const timer = setTimeout(() => { this.wallTimer = undefined; this.watch(); }, Math.min(remaining, 50));
+    if (this.denied()) { clearTimeout(timer); return false; }
+    this.wallTimer = timer;
+    return true;
   }
   private stop(cause: ProcessCause): void {
     this.cause ??= cause;
@@ -152,7 +161,9 @@ export class ProcessActor implements NativeProcess {
     if (this.ports.group(this.pid, signal) === 'absent') this.groupAbsent = true;
   }
   private probe(): void {
-    if (this.pid !== undefined) this.groupAbsent = this.ports.group(this.pid, 0) === 'absent';
+    if (this.pid === undefined || this.groupAbsent) return;
+    // ESRCH permanently retires this ownership; a later numeric PID can belong to someone else.
+    if (this.ports.group(this.pid, 0) === 'absent') this.groupAbsent = true;
   }
   private poll(): void {
     if (this.pollTimer || this.cleanupExpired) return;
@@ -196,10 +207,8 @@ export class ProcessActor implements NativeProcess {
   private finish(): void {
     if (this.settled || this.issuingSpawn) return;
     // Final eligibility is sampled separately; an exit callback cannot manufacture an on-time completion.
-    if (!this.cause) {
-      try { this.deadline.remaining(); }
-      catch (error) { this.cause = error instanceof ProcessBoundaryError ? error.code : 'clock'; }
-    }
+    this.finalCause();
+    if (this.settled) return;
     this.settled = true;
     this.metrics.stop();
     this.input.signal?.removeEventListener('abort', this.cancel);
@@ -208,6 +217,11 @@ export class ProcessActor implements NativeProcess {
     this.resolve(this.observation(noChild));
     if (noChild) this.childResolve();
     // Unknown observations retain late-spawn handlers. close() awaits their actual closure.
+  }
+  private finalCause(): void {
+    if (this.cause) return;
+    try { this.deadline.remaining(); }
+    catch (error) { this.cause ??= error instanceof ProcessBoundaryError ? error.code : 'clock'; }
   }
   private collectionComplete(): boolean {
     return !this.cause && this.isStopped() && this.metrics.ended && !this.metrics.pending;
@@ -231,8 +245,8 @@ export class ProcessActor implements NativeProcess {
   close(): Promise<void> {
     if (this.closing) return this.closing;
     this.closed = true;
+    this.closing = Promise.resolve().then(() => this.awaitClose());
     this.stop('closed');
-    this.closing = this.awaitClose();
     return this.closing;
   }
   private async awaitClose(): Promise<void> {
