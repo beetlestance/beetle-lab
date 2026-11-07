@@ -34,6 +34,7 @@ export class LaunchActor {
   private createKnown = false;
   private startSent = false;
   private startKnown = false;
+  private pendingStart: { view: InspectEvidence; observedAt: number; cause: LaunchState['cancellation'] } | undefined;
   private disposition: LaunchState['launch'] = 'unclaimed';
 
   constructor(readonly input: LaunchInput, private readonly journal: JournalPort,
@@ -100,13 +101,15 @@ export class LaunchActor {
   }
   private async gate(): Promise<boolean> {
     await this.sample();
-    if (this.time.expired() && this.cause === 'none') this.cause = 'timeout';
+    const permission = this.time.dispatch();
+    if (!permission.allowed) this.cause = permission.reason;
     if (this.cause === 'timeout' || this.cause === 'clock_integrity') await this.persistCancellation();
-    return !this.closed && !this.localCancel && !this.time.fenced() && !this.time.expired();
+    return !this.closed && !this.localCancel && permission.allowed;
   }
   private async step(launch: boolean): Promise<LaunchState> {
     await this.load();
     const allowed = await this.gate();
+    await this.persistStart();
     if (launch && allowed) await this.createAndStart();
     else if (this.current!.createToken) await this.recover();
     // Backend latency consumes execution time even when no new action follows.
@@ -124,9 +127,9 @@ export class LaunchActor {
     this.current = granted.reservation; this.disposition = this.current.launchSettlement?.disposition ?? 'unknown';
     if (!granted.dispatchAllowed) { await this.recover(); return; }
     if (!await this.gate()) return;
-    // No await between the final local fence and consuming the one-shot capability.
-    if (this.localCancel || this.closed) return;
-    const created = await this.mutate(() => this.backend.ensureCreated(this.input.plan, this.time.operation(true)));
+    const operation = this.dispatchOperation();
+    if (!operation) { await this.gate(); return; }
+    const created = await this.mutate(() => this.backend.ensureCreated(this.input.plan, operation));
     this.createKnown = created.outcome === 'known';
     if (created.outcome !== 'known') { await this.recover(); return; }
     await this.bind(created.value);
@@ -139,15 +142,33 @@ export class LaunchActor {
     const start = claim(await this.journal.admission({ kind: 'claimStart', ...this.binding(), now: this.time.wall() }));
     this.current = start.reservation;
     if (!start.dispatchAllowed) { await this.recover(); return; }
-    if (this.localCancel || this.closed || this.time.fenced() || this.time.expired()) {
+    const operation = this.dispatchOperation();
+    if (!operation) {
       await this.gate(); await this.settle(); return;
     }
     this.startSent = true;
-    const started = await this.mutate(() => this.backend.dispatchStartOnce(this.input.plan, this.time.operation(true)));
-    this.startKnown = started.outcome === 'known';
-    if (started.outcome === 'known') await this.record(started.value);
-    else await this.recover();
+    const started = await this.mutate(() => this.backend.dispatchStartOnce(this.input.plan, operation));
+    if (started.outcome === 'known') {
+      this.pendingStart = { view: { ...started.value }, observedAt: this.time.wall(), cause: this.cause };
+      await this.persistStart();
+    } else await this.recover();
     await this.settle();
+  }
+  private dispatchOperation() {
+    if (this.closed || this.localCancel) return undefined;
+    const permission = this.time.dispatch();
+    if (!permission.allowed) { this.cause = permission.reason; return undefined; }
+    if (this.closed || this.localCancel) return undefined;
+    return permission.operation;
+  }
+  private async persistStart(): Promise<void> {
+    const pending = this.pendingStart;
+    if (!pending) return;
+    if (this.current!.runtimeId !== pending.view.id) throw new SupervisorError('conflict');
+    await this.evidence.observe(pending.view, pending.observedAt, pending.cause);
+    this.observation = pending.view;
+    this.startKnown = pending.view.state === 'running' || pending.view.state === 'exited';
+    this.pendingStart = undefined;
   }
   private async mutate(action: () => Promise<MutationResult<InspectEvidence>>): Promise<MutationResult<InspectEvidence>> {
     try { return await action(); }

@@ -1,5 +1,6 @@
 import type { Reservation } from '../admission/index.js';
 import type { SupervisionState } from '../journal/index.js';
+import type { Operation } from '../backends/docker/index.js';
 import type { Clock } from './types.js';
 
 /** Durable wall high-water plus local monotonic ceilings; neither deadline can grow. */
@@ -46,10 +47,17 @@ export class AttemptTime {
     this.deadline = Math.min(this.deadline, mono + Math.max(0, absolute - state.clockHighWater));
   }
   fenced(): boolean { this.monotonic(); this.wall(); return this.broken; }
-  expired(): boolean { return this.monotonic() >= this.deadline || this.wall() >= this.absolute; }
   graceElapsed(): boolean { return this.monotonic() >= this.grace; }
   graceDeadline(): number { return this.grace; }
-  operation(execution = false): { deadline: number } {
-    return { deadline: Math.min(this.monotonic() + 30_000, execution ? this.deadline : Infinity) };
+  /** One sample owns both permission and its operation; no later clock read can revive it. */
+  dispatch(): { allowed: true; operation: Operation } | { allowed: false; reason: 'clock_integrity' | 'timeout' } {
+    const now = this.capture();
+    if (this.broken) return { allowed: false, reason: 'clock_integrity' };
+    const deadline = Math.min(now.monotonic + 30_000, this.deadline);
+    if (!Number.isFinite(deadline)) { this.broken = true; return { allowed: false, reason: 'clock_integrity' }; }
+    if (now.monotonic >= deadline || now.wall >= this.absolute) return { allowed: false, reason: 'timeout' };
+    return { allowed: true, operation: { deadline } };
   }
+  /** Recovery/termination is best effort even with a fenced wall clock. Never grants launch. */
+  operation(): Operation { return { deadline: this.monotonic() + 30_000 }; }
 }

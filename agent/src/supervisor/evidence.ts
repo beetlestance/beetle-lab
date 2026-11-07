@@ -8,22 +8,38 @@ type Draft = SupervisorInput['event'];
 export class RuntimeEvidence {
   private lastObservation = '';
   private cancellationWritten = false;
+  private pending: { event: Draft; sourceOrdinal?: number; signature?: string } | undefined;
   constructor(private readonly journal: JournalPort, private readonly key: Scope) {}
-  private async append(event: Draft): Promise<void> {
-    const cursor = await this.journal.sourceCursors(this.key);
-    await this.journal.appendSupervisor({ sourceOrdinal: cursor.supervisorOrdinal + 1, event });
+  private async append(event: Draft, signature?: string): Promise<void> {
+    await this.flush();
+    this.pending = { event, ...(signature === undefined ? {} : { signature }) };
+    await this.flush();
+  }
+  private async flush(): Promise<void> {
+    const pending = this.pending;
+    if (!pending) return;
+    if (pending.sourceOrdinal === undefined) {
+      const cursor = await this.journal.sourceCursors(this.key);
+      pending.sourceOrdinal = cursor.supervisorOrdinal + 1;
+    }
+    await this.journal.appendSupervisor({ sourceOrdinal: pending.sourceOrdinal, event: pending.event });
+    if (pending.signature !== undefined) this.lastObservation = pending.signature;
+    if (pending.event.kind === 'cancellation.requested') this.cancellationWritten = true;
+    this.pending = undefined;
   }
   async cancelled(requestedAt: number, now: number): Promise<void> {
+    await this.flush();
     if (this.cancellationWritten) return;
     await this.append({ ...this.base(now), kind: 'cancellation.requested',
       payload: { requestedAt: new Date(requestedAt).toISOString() } });
     this.cancellationWritten = true;
   }
   async observe(observation: Observation, now: number, cause: LaunchState['cancellation']): Promise<void> {
+    await this.flush();
     const signature = JSON.stringify(observation);
     if (signature === this.lastObservation) return;
     const event = this.event(observation, now, cause);
-    if (event) await this.append(event);
+    if (event) await this.append(event, signature);
     this.lastObservation = signature;
   }
   private base(now: number) {
