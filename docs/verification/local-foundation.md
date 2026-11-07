@@ -59,7 +59,8 @@ stream response rejection. The API server factory contains pre-router URL and
 parameter errors plus fixed exception mapping. Namespace create/read/update/list
 and six settings GET/PATCH routes exercise actual SQLite use cases and scope checks.
 Identity-only settings lookup permits receipt replay after capacity expires. Tests
-inject a synthetic guard; actual sessions, Host/Origin and CSRF remain unwired.
+inject a synthetic guard at the full-gate baseline. Later session composition
+evidence is recorded below; startup/listener/proxy wiring remains incomplete.
 
 React tests use the real typed client with synthetic fetch replies. They cover
 scope switches/cancellation, bounded pagination, namespace editing and unknown
@@ -111,9 +112,22 @@ were not rerun for that correction. These are not HTTP-target or Linux evidence.
 Retained native response bodies buffer before JS caps; see [exception E02](../engineering-exceptions.md).
 
 Session contracts in `66ea8d3` add three typed browser operations and fixed 429
-errors. Independent review caught and cleared a namespace-client scope assumption;
-actual typed-client pair/read/logout probes pass. Backend guard and browser handshake
-are assigned but not integrated. No authentication behavior is claimed from schemas.
+errors. Independent review caught and cleared a namespace-client scope assumption.
+Later session adapter `f8ae4e4`, backend composition `5b91285` and browser gate
+`09f951d` were independently approved. The session adapter has 21 focused Fastify
+tests. Backend composition exercises actual SQLite, authorization, restart and
+unknown capacity; the browser gate has 24 new DOM tests. A later combined run
+passed 94 tests in ten files: four composition tests and 90 web tests, with all
+type/lint/architecture/docs checks. The fourth composition test uses the shipped
+typed client through pairing, CSRF mutation and logout. Its cookie jar and request
+headers are synthetic, not actual browser/proxy evidence. Pre-router/not-found
+errors now carry no-store; independent probes covered 400/404/429 failures.
+
+Metric decoder `f433125` plus correction `8d6ff89` has 18 focused tests and
+independent approval. Corrections prevent iterator-based allocation bypass,
+impossible calendar timestamps and a cancelled concurrent push poisoning its owner.
+Only numeric points and approved labels leave the bounded decoder. Aggregation,
+native stream wiring and outcome finalization are not established by those tests.
 
 ## Missing release evidence
 
