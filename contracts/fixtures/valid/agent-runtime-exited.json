@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "organizationId": "00000000-0000-4000-8000-000000000001",
+  "workspaceId": "00000000-0000-4000-8000-000000000002",
+  "attemptId": "00000000-0000-4000-8000-000000000003",
+  "generation": 1,
+  "seq": 11,
+  "kind": "runtime.exited",
+  "phase": "execute",
+  "observedAt": "2026-01-01T00:00:00Z",
+  "payload": {
+    "exitCode": 0,
+    "oomKilled": null,
+    "observedAt": "2026-01-01T00:00:00Z"
+  },
+  "source": "agent"
+}

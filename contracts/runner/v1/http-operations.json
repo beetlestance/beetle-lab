@@ -1,0 +1,48 @@
+[
+  {
+    "name": "capabilities",
+    "method": "GET",
+    "path": "/runner/v1/capabilities",
+    "response": "Capabilities",
+    "successStatus": 200
+  },
+  {
+    "name": "offer",
+    "method": "PUT",
+    "path": "/runner/v1/attempts/{attemptId}",
+    "request": "Offer",
+    "response": "AttemptSnapshot",
+    "successStatus": 202
+  },
+  {
+    "name": "snapshot",
+    "method": "GET",
+    "path": "/runner/v1/attempts/{attemptId}",
+    "response": "AttemptSnapshot",
+    "successStatus": 200
+  },
+  {
+    "name": "cancel",
+    "method": "POST",
+    "path": "/runner/v1/attempts/{attemptId}/cancel",
+    "request": "Cancellation",
+    "response": "AttemptSnapshot",
+    "successStatus": 200
+  },
+  {
+    "name": "events",
+    "method": "GET",
+    "path": "/runner/v1/attempts/{attemptId}/events",
+    "response": "EventBatch",
+    "cursor": true,
+    "successStatus": 200
+  },
+  {
+    "name": "ack",
+    "method": "POST",
+    "path": "/runner/v1/attempts/{attemptId}/ack",
+    "request": "Ack",
+    "response": "AckReceipt",
+    "successStatus": 200
+  }
+]

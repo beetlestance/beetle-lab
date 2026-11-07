@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "organizationId": "00000000-0000-4000-8000-000000000001",
+  "workspaceId": "00000000-0000-4000-8000-000000000002",
+  "attemptId": "00000000-0000-4000-8000-000000000003",
+  "generation": 1,
+  "seq": 6,
+  "kind": "phase.finished",
+  "phase": "execute",
+  "observedAt": "2026-01-01T00:00:00Z",
+  "payload": {
+    "completedUnits": 10,
+    "outputBytes": 32
+  },
+  "source": "wrapper",
+  "wrapperSeq": 6
+}

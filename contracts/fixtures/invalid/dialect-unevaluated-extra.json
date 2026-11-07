@@ -1,0 +1,277 @@
+{
+  "protocolVersion": "1.0",
+  "organizationId": "00000000-0000-4000-8000-000000000001",
+  "workspaceId": "00000000-0000-4000-8000-000000000002",
+  "attemptId": "00000000-0000-4000-8000-000000000003",
+  "generation": 1,
+  "events": [
+    {
+      "version": "1.0",
+      "organizationId": "00000000-0000-4000-8000-000000000001",
+      "workspaceId": "00000000-0000-4000-8000-000000000002",
+      "attemptId": "00000000-0000-4000-8000-000000000003",
+      "generation": 1,
+      "seq": 1,
+      "kind": "phase.started",
+      "phase": "execute",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "payload": {
+        "budget": {
+          "phase": "execute",
+          "timeoutMs": 1000,
+          "workUnits": 100,
+          "outputBytes": 1024
+        }
+      },
+      "source": "wrapper",
+      "wrapperSeq": 1
+    },
+    {
+      "version": "1.0",
+      "organizationId": "00000000-0000-4000-8000-000000000001",
+      "workspaceId": "00000000-0000-4000-8000-000000000002",
+      "attemptId": "00000000-0000-4000-8000-000000000003",
+      "generation": 1,
+      "seq": 2,
+      "kind": "progress",
+      "phase": "execute",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "payload": {
+        "completedUnits": 2,
+        "totalUnits": 10,
+        "heartbeat": true,
+        "usefulProgress": false
+      },
+      "source": "wrapper",
+      "wrapperSeq": 2
+    },
+    {
+      "version": "1.0",
+      "organizationId": "00000000-0000-4000-8000-000000000001",
+      "workspaceId": "00000000-0000-4000-8000-000000000002",
+      "attemptId": "00000000-0000-4000-8000-000000000003",
+      "generation": 1,
+      "seq": 3,
+      "kind": "case.result",
+      "phase": "execute",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "payload": {
+        "caseKey": "case-1",
+        "outcome": "passed",
+        "durationMs": 3.5,
+        "required": true,
+        "artifactIds": [
+          "00000000-0000-4000-8000-000000000004"
+        ]
+      },
+      "source": "wrapper",
+      "wrapperSeq": 3
+    },
+    {
+      "version": "1.0",
+      "organizationId": "00000000-0000-4000-8000-000000000001",
+      "workspaceId": "00000000-0000-4000-8000-000000000002",
+      "attemptId": "00000000-0000-4000-8000-000000000003",
+      "generation": 1,
+      "seq": 4,
+      "kind": "artifact.sealed",
+      "phase": "execute",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "payload": {
+        "artifactId": "00000000-0000-4000-8000-000000000004",
+        "kind": "report",
+        "relativePath": "reports/result.json",
+        "bytes": 32,
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "sealedAt": "2026-01-01T00:00:00Z"
+      },
+      "source": "wrapper",
+      "wrapperSeq": 4
+    },
+    {
+      "version": "1.0",
+      "organizationId": "00000000-0000-4000-8000-000000000001",
+      "workspaceId": "00000000-0000-4000-8000-000000000002",
+      "attemptId": "00000000-0000-4000-8000-000000000003",
+      "generation": 1,
+      "seq": 5,
+      "kind": "engine.result",
+      "phase": "execute",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "payload": {
+        "protocolVersion": "1.0",
+        "organizationId": "00000000-0000-4000-8000-000000000001",
+        "workspaceId": "00000000-0000-4000-8000-000000000002",
+        "attemptId": "00000000-0000-4000-8000-000000000003",
+        "generation": 1,
+        "schemaId": "https://beetle-lab.dev/contracts/runner/v1/engine-result",
+        "engineId": "k6",
+        "mode": "ordinary",
+        "execution": {
+          "status": "completed",
+          "exitCode": 0,
+          "stoppedAt": "2026-01-01T00:00:00Z"
+        },
+        "outcome": "passed",
+        "requiredAssertions": {
+          "required": 2,
+          "passed": 2,
+          "failed": 0,
+          "unknown": 0
+        },
+        "thresholds": [
+          {
+            "id": "latency",
+            "purpose": "slo",
+            "passed": true
+          }
+        ],
+        "completeness": "complete",
+        "artifacts": [
+          {
+            "artifactId": "00000000-0000-4000-8000-000000000004",
+            "kind": "report",
+            "relativePath": "reports/result.json",
+            "bytes": 32,
+            "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sealedAt": "2026-01-01T00:00:00Z"
+          }
+        ],
+        "seal": {
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sealedAt": "2026-01-01T00:00:00Z"
+        }
+      },
+      "source": "wrapper",
+      "wrapperSeq": 5
+    },
+    {
+      "version": "1.0",
+      "organizationId": "00000000-0000-4000-8000-000000000001",
+      "workspaceId": "00000000-0000-4000-8000-000000000002",
+      "attemptId": "00000000-0000-4000-8000-000000000003",
+      "generation": 1,
+      "seq": 6,
+      "kind": "phase.finished",
+      "phase": "execute",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "payload": {
+        "completedUnits": 10,
+        "outputBytes": 32
+      },
+      "source": "wrapper",
+      "wrapperSeq": 6
+    },
+    {
+      "version": "1.0",
+      "organizationId": "00000000-0000-4000-8000-000000000001",
+      "workspaceId": "00000000-0000-4000-8000-000000000002",
+      "attemptId": "00000000-0000-4000-8000-000000000003",
+      "generation": 1,
+      "seq": 7,
+      "kind": "admitted",
+      "phase": "execute",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "payload": {
+        "budget": {
+          "cpuMillis": 1000,
+          "memoryBytes": 536870912,
+          "pids": 128,
+          "timeoutMs": 600000,
+          "outputBytes": 1073741824
+        }
+      },
+      "source": "agent"
+    },
+    {
+      "version": "1.0",
+      "organizationId": "00000000-0000-4000-8000-000000000001",
+      "workspaceId": "00000000-0000-4000-8000-000000000002",
+      "attemptId": "00000000-0000-4000-8000-000000000003",
+      "generation": 1,
+      "seq": 8,
+      "kind": "runtime.started",
+      "phase": "execute",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "payload": {
+        "runtimeId": "synthetic-runtime"
+      },
+      "source": "agent"
+    },
+    {
+      "version": "1.0",
+      "organizationId": "00000000-0000-4000-8000-000000000001",
+      "workspaceId": "00000000-0000-4000-8000-000000000002",
+      "attemptId": "00000000-0000-4000-8000-000000000003",
+      "generation": 1,
+      "seq": 9,
+      "kind": "resource.summary",
+      "phase": "execute",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "payload": {
+        "scope": "container",
+        "cpuMillis": 42,
+        "peakMemoryBytes": 1000,
+        "peakPids": 1,
+        "outputBytes": 32,
+        "enforcedControls": [
+          "cpu",
+          "memory",
+          "pids"
+        ]
+      },
+      "source": "agent"
+    },
+    {
+      "version": "1.0",
+      "organizationId": "00000000-0000-4000-8000-000000000001",
+      "workspaceId": "00000000-0000-4000-8000-000000000002",
+      "attemptId": "00000000-0000-4000-8000-000000000003",
+      "generation": 1,
+      "seq": 10,
+      "kind": "cancellation.requested",
+      "phase": "execute",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "payload": {
+        "requestedAt": "2026-01-01T00:00:00Z"
+      },
+      "source": "agent"
+    },
+    {
+      "version": "1.0",
+      "organizationId": "00000000-0000-4000-8000-000000000001",
+      "workspaceId": "00000000-0000-4000-8000-000000000002",
+      "attemptId": "00000000-0000-4000-8000-000000000003",
+      "generation": 1,
+      "seq": 11,
+      "kind": "runtime.exited",
+      "phase": "execute",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "payload": {
+        "exitCode": 0,
+        "oomKilled": null,
+        "observedAt": "2026-01-01T00:00:00Z"
+      },
+      "source": "agent"
+    },
+    {
+      "version": "1.0",
+      "organizationId": "00000000-0000-4000-8000-000000000001",
+      "workspaceId": "00000000-0000-4000-8000-000000000002",
+      "attemptId": "00000000-0000-4000-8000-000000000003",
+      "generation": 1,
+      "seq": 12,
+      "kind": "execution.lost",
+      "phase": "execute",
+      "observedAt": "2026-01-01T00:00:00Z",
+      "payload": {
+        "reason": "execution_lost",
+        "lastObservedAt": "2026-01-01T00:00:00Z"
+      },
+      "source": "agent"
+    }
+  ],
+  "nextCursor": 12,
+  "retainedStartSeq": 1,
+  "extra": "synthetic-secret-canary"
+}

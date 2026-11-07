@@ -1,0 +1,30 @@
+{
+  "protocolVersion": "1.0",
+  "protocolVersions": [
+    "1.0"
+  ],
+  "capacity": {
+    "cpuMillis": 1000,
+    "memoryBytes": 536870912,
+    "pids": 128,
+    "timeoutMs": 600000,
+    "outputBytes": 1073741824
+  },
+  "supportedControls": [
+    "cpu",
+    "memory",
+    "pids",
+    "timeout",
+    "output"
+  ],
+  "engines": [
+    {
+      "id": "k6",
+      "version": "1.0.0",
+      "imageDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "capabilities": [
+        "http"
+      ]
+    }
+  ]
+}

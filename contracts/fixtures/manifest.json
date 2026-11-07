@@ -1,0 +1,402 @@
+[
+  {
+    "path": "valid/offer.json",
+    "schema": "Offer",
+    "valid": true
+  },
+  {
+    "path": "valid/passed-result.json",
+    "schema": "EngineResult",
+    "valid": true
+  },
+  {
+    "path": "valid/discovery-expected-abort.json",
+    "schema": "EngineResult",
+    "valid": true
+  },
+  {
+    "path": "valid/failed-result.json",
+    "schema": "EngineResult",
+    "valid": true
+  },
+  {
+    "path": "valid/inconclusive-result.json",
+    "schema": "EngineResult",
+    "valid": true
+  },
+  {
+    "path": "valid/capabilities.json",
+    "schema": "Capabilities",
+    "valid": true
+  },
+  {
+    "path": "valid/manifest.json",
+    "schema": "EngineManifest",
+    "valid": true
+  },
+  {
+    "path": "valid/snapshot.json",
+    "schema": "AttemptSnapshot",
+    "valid": true
+  },
+  {
+    "path": "valid/cancel.json",
+    "schema": "Cancellation",
+    "valid": true
+  },
+  {
+    "path": "valid/ack.json",
+    "schema": "Ack",
+    "valid": true
+  },
+  {
+    "path": "valid/ack-receipt.json",
+    "schema": "AckReceipt",
+    "valid": true
+  },
+  {
+    "path": "valid/cursor-expired.json",
+    "schema": "ProtocolError",
+    "valid": true
+  },
+  {
+    "path": "valid/wrapper-phase-started.json",
+    "schema": "ControlEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/agent-phase-started.json",
+    "schema": "AgentEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/wrapper-progress.json",
+    "schema": "ControlEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/agent-progress.json",
+    "schema": "AgentEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/wrapper-case-result.json",
+    "schema": "ControlEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/agent-case-result.json",
+    "schema": "AgentEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/wrapper-artifact-sealed.json",
+    "schema": "ControlEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/agent-artifact-sealed.json",
+    "schema": "AgentEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/wrapper-engine-result.json",
+    "schema": "ControlEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/agent-engine-result.json",
+    "schema": "AgentEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/wrapper-phase-finished.json",
+    "schema": "ControlEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/agent-phase-finished.json",
+    "schema": "AgentEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/agent-admitted.json",
+    "schema": "AgentEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/agent-runtime-started.json",
+    "schema": "AgentEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/agent-resource-summary.json",
+    "schema": "AgentEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/agent-cancellation-requested.json",
+    "schema": "AgentEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/agent-runtime-exited.json",
+    "schema": "AgentEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/agent-execution-lost.json",
+    "schema": "AgentEvent",
+    "valid": true
+  },
+  {
+    "path": "valid/events.json",
+    "schema": "EventBatch",
+    "valid": true
+  },
+  {
+    "path": "invalid/major-version.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/minor-version.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/invalid-scope-id.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/missing-workspace.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/negative-budget.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/zero-budget.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/fractional-budget.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/unsafe-integer-budget.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/coercible-budget.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/docker-flags.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/host-path.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/shell-command.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/entrypoint-in-offer.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/environment-map.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/secret-value.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/invalid-image-digest.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/oversized-capability-list.json",
+    "schema": "Offer",
+    "valid": false
+  },
+  {
+    "path": "invalid/unsupported-backend.json",
+    "schema": "EngineManifest",
+    "valid": false
+  },
+  {
+    "path": "invalid/missing-required-phase.json",
+    "schema": "EngineManifest",
+    "valid": false
+  },
+  {
+    "path": "invalid/manifest-shell-string.json",
+    "schema": "EngineManifest",
+    "valid": false
+  },
+  {
+    "path": "invalid/exit-zero-alone.json",
+    "schema": "EngineResult",
+    "valid": false
+  },
+  {
+    "path": "invalid/missing-seal.json",
+    "schema": "EngineResult",
+    "valid": false
+  },
+  {
+    "path": "invalid/partial-pass.json",
+    "schema": "EngineResult",
+    "valid": false
+  },
+  {
+    "path": "invalid/error-pass.json",
+    "schema": "EngineResult",
+    "valid": false
+  },
+  {
+    "path": "invalid/failed-required-assertion-pass.json",
+    "schema": "EngineResult",
+    "valid": false
+  },
+  {
+    "path": "invalid/unknown-required-assertion-pass.json",
+    "schema": "EngineResult",
+    "valid": false
+  },
+  {
+    "path": "invalid/failed-slo-pass.json",
+    "schema": "EngineResult",
+    "valid": false
+  },
+  {
+    "path": "invalid/discovery-unrelated-failure.json",
+    "schema": "EngineResult",
+    "valid": false
+  },
+  {
+    "path": "invalid/discovery-rule-not-reached.json",
+    "schema": "EngineResult",
+    "valid": false
+  },
+  {
+    "path": "invalid/traversal-artifact.json",
+    "schema": "EngineResult",
+    "valid": false
+  },
+  {
+    "path": "invalid/absolute-artifact.json",
+    "schema": "EngineResult",
+    "valid": false
+  },
+  {
+    "path": "invalid/backslash-artifact.json",
+    "schema": "EngineResult",
+    "valid": false
+  },
+  {
+    "path": "invalid/encoded-traversal-artifact.json",
+    "schema": "EngineResult",
+    "valid": false
+  },
+  {
+    "path": "invalid/malformed-artifact-id.json",
+    "schema": "EngineResult",
+    "valid": false
+  },
+  {
+    "path": "invalid/unsealed-artifact.json",
+    "schema": "EngineResult",
+    "valid": false
+  },
+  {
+    "path": "invalid/malformed-observation-time.json",
+    "schema": "AgentEvent",
+    "valid": false
+  },
+  {
+    "path": "invalid/missing-generation.json",
+    "schema": "ControlEvent",
+    "valid": false
+  },
+  {
+    "path": "invalid/zero-generation.json",
+    "schema": "ControlEvent",
+    "valid": false
+  },
+  {
+    "path": "invalid/string-generation.json",
+    "schema": "ControlEvent",
+    "valid": false
+  },
+  {
+    "path": "invalid/missing-wrapper-sequence.json",
+    "schema": "AgentEvent",
+    "valid": false
+  },
+  {
+    "path": "invalid/forged-wrapper-source.json",
+    "schema": "AgentEvent",
+    "valid": false
+  },
+  {
+    "path": "invalid/unknown-payload-field.json",
+    "schema": "ControlEvent",
+    "valid": false
+  },
+  {
+    "path": "invalid/bad-event-payload.json",
+    "schema": "ControlEvent",
+    "valid": false
+  },
+  {
+    "path": "invalid/wrapper-supervisor-kind.json",
+    "schema": "ControlEvent",
+    "valid": false
+  },
+  {
+    "path": "invalid/zero-sequence.json",
+    "schema": "AgentEvent",
+    "valid": false
+  },
+  {
+    "path": "invalid/negative-cursor.json",
+    "schema": "Ack",
+    "valid": false
+  },
+  {
+    "path": "invalid/dialect-unevaluated-extra.json",
+    "schema": "EventBatch",
+    "valid": false
+  },
+  {
+    "path": "invalid/unknown-exit-pass.json",
+    "schema": "EngineResult",
+    "valid": false
+  },
+  {
+    "path": "invalid/execution-error-reason-pass.json",
+    "schema": "EngineResult",
+    "valid": false
+  }
+]

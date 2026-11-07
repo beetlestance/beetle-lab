@@ -1,0 +1,45 @@
+{
+  "protocolVersion": "1.0",
+  "organizationId": "00000000-0000-4000-8000-000000000001",
+  "workspaceId": "00000000-0000-4000-8000-000000000002",
+  "attemptId": "00000000-0000-4000-8000-000000000003",
+  "intentDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "engine": {
+    "id": "k6",
+    "imageDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "configVersion": 1
+  },
+  "inputs": [
+    {
+      "id": "00000000-0000-4000-8000-000000000005",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 1024
+    }
+  ],
+  "budget": {
+    "cpuMillis": 1000,
+    "memoryBytes": 536870912,
+    "pids": 128,
+    "timeoutMs": 600000,
+    "outputBytes": 1073741824
+  },
+  "executionPolicy": {
+    "mode": "parallel",
+    "preferIdle": true
+  },
+  "requiredCapabilities": [
+    "http"
+  ],
+  "secretReferences": [
+    {
+      "name": "api-token",
+      "provider": "mounted",
+      "reference": "token-ref",
+      "version": "v1"
+    }
+  ],
+  "config": {
+    "synthetic": true
+  },
+  "command": "echo synthetic"
+}

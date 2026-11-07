@@ -1,0 +1,39 @@
+{
+  "generator": "contracts/scripts/generate.ts",
+  "sources": {
+    "runner/v1/ack-receipt.schema.json": "2c0c3d0b0ea747b45715f243d02e6f4d8bb21560dd99d4b77ac62f25c054f4a2",
+    "runner/v1/ack.schema.json": "8240195b820336b47e272e09717a766649732f17b385ff1804b17ec0c6be2d7f",
+    "runner/v1/agent-event.schema.json": "5ed3b34975ca26a89e769b9f139de54fb8832e7f1fa9c7fbf1bedb8ac4b70d90",
+    "runner/v1/attempt-snapshot.schema.json": "576b10fb96fc4c4d9a76ed4f6c647ac3cf7d59a3445de5a426d0de5a702229f2",
+    "runner/v1/cancellation.schema.json": "4eb66b6d93f50ab262db4f145f9c312660659a9e960b43593c1642ee81fd872d",
+    "runner/v1/capabilities.schema.json": "e5c5a7e187d5af60dc7670f02a05d97b6da4a00605869461413fb48bdf64f2f6",
+    "runner/v1/common.schema.json": "d7cecc5fbc49ebd4c10d1472ca620bafcaa33fb3d740c16fd920f5d78a235825",
+    "runner/v1/control-event.schema.json": "001c23d95240dd1d918198b423259354d9dd55a1c844230eda845c9a30390f00",
+    "runner/v1/engine-manifest.schema.json": "8b6029867ad4beec694d552edc769a662b9a3091bf7d463c5c9976baf56f7b46",
+    "runner/v1/engine-result.schema.json": "7ee3aeb86ff6c8a997805c27cc71135aea3a72c38a8108fe2cdaa622229016a8",
+    "runner/v1/error.schema.json": "5bf752a86e80d07f55bef080dda67069eae000379c5b3800ef940152c7d569ce",
+    "runner/v1/event-batch.schema.json": "3fc09204174d2c291bb9fb141b6e8872c03725ffacecd7834fe794ac2a28cce8",
+    "runner/v1/offer.schema.json": "64f1f19dee0a530b590fcf0de46794f8ef1e1bd4a029918051828bfb9e5fce7b"
+  },
+  "operationsSha256": "416e0f09e93463cf0a1f8108a0cd2614792e93f036a6a63024e15cb0298c23e0",
+  "outputs": [
+    "ack-receipt.ts",
+    "ack.ts",
+    "agent-event.ts",
+    "attempt-snapshot.ts",
+    "cancellation.ts",
+    "capabilities.ts",
+    "client.ts",
+    "common.ts",
+    "control-event.ts",
+    "engine-manifest.ts",
+    "engine-result.ts",
+    "error.ts",
+    "event-batch.ts",
+    "manifest.json",
+    "offer.ts",
+    "reference.md",
+    "schemas.ts",
+    "types.ts"
+  ]
+}

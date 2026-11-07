@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/runner/v1/common",
+  "title": "Common",
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "maxLength": 40
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "imageDigest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "token": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$"
+    },
+    "budget": {
+      "type": "object",
+      "properties": {
+        "cpuMillis": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "memoryBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "pids": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "outputBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "cpuMillis",
+        "memoryBytes",
+        "pids",
+        "timeoutMs",
+        "outputBytes"
+      ],
+      "additionalProperties": false
+    },
+    "reason": {
+      "enum": [
+        "invalid_config",
+        "unsupported_capability",
+        "budget_unavailable",
+        "setup_failed",
+        "engine_crash",
+        "memory_limit",
+        "timeout",
+        "output_limit",
+        "cancelled",
+        "execution_lost",
+        "artifact_incomplete",
+        "cursor_expired",
+        "conflicting_digest",
+        "invalid_protocol"
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "properties": {
+        "artifactId": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+        },
+        "kind": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/token"
+        },
+        "relativePath": {
+          "type": "string",
+          "maxLength": 512,
+          "pattern": "^[A-Za-z0-9_-][A-Za-z0-9_.-]*(/[A-Za-z0-9_-][A-Za-z0-9_.-]*)*$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "sha256": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+        },
+        "sealedAt": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/timestamp"
+        }
+      },
+      "required": [
+        "artifactId",
+        "kind",
+        "relativePath",
+        "bytes",
+        "sha256",
+        "sealedAt"
+      ],
+      "additionalProperties": false
+    },
+    "runState": {
+      "enum": [
+        "queued",
+        "dispatching",
+        "active",
+        "finalizing",
+        "finished",
+        "cancelled",
+        "errored"
+      ]
+    },
+    "attemptState": {
+      "enum": [
+        "offered",
+        "admitted",
+        "preparing",
+        "running",
+        "stopping",
+        "collecting",
+        "exited",
+        "lost"
+      ]
+    },
+    "outcome": {
+      "enum": [
+        "pending",
+        "passed",
+        "failed",
+        "inconclusive"
+      ]
+    },
+    "phase": {
+      "enum": [
+        "validate",
+        "prepare",
+        "execute",
+        "collect",
+        "seal"
+      ]
+    },
+    "completeness": {
+      "enum": [
+        "complete",
+        "partial",
+        "missing"
+      ]
+    }
+  }
+}
