@@ -6,6 +6,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import { gzipSync } from "node:zlib";
+import WebSocket from "ws";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 test("HTTP API manages isolated configs and serves the renamed skill", { timeout: 20000 }, async (t) => {
@@ -60,4 +62,23 @@ test("HTTP API manages isolated configs and serves the renamed skill", { timeout
   assert.match(await (await request("/")).text(), /beetle-lab · Dashboard/);
   assert.equal((await request("/api/folders/smoke", "DELETE")).status, 200);
   assert.deepEqual(await (await request("/api/folders")).json(), []);
+  await t.test("updated HTTP parser handles compressed data without crashing the server", async () => {
+    const headers = { "Content-Type": "application/json", "Content-Encoding": "gzip" };
+    const body = gzipSync(JSON.stringify({ name: "compressed" }));
+    assert.equal((await fetch(url + "/api/folders", { method: "POST", headers, body })).status, 200);
+    const malformed = Buffer.concat([body, Buffer.from([0xff])]);
+    assert.equal((await fetch(url + "/api/folders", { method: "POST", headers, body: malformed })).status, 400);
+    assert.equal((await request("/api/folders")).status, 200);
+    assert.equal((await request("/api/folders/compressed", "DELETE")).status, 200);
+  });
+  await t.test("updated WebSocket implementation preserves the missing-run policy close", async () => {
+    const socket = new WebSocket(`ws://127.0.0.1:${port}/ws`, { handshakeTimeout: 2000 });
+    try {
+      const closed = once(socket, "close");
+      await once(socket, "open");
+      const [code, reason] = await closed;
+      assert.equal(code, 1008);
+      assert.equal(reason.toString(), "run query param required");
+    } finally { socket.terminate(); }
+  });
 });

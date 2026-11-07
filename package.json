@@ -21,8 +21,8 @@
     "node": ">=24.0.0"
   },
   "dependencies": {
-    "express": "^4.21.2",
-    "ws": "^8.18.0"
+    "express": "4.22.3",
+    "ws": "8.21.0"
   },
   "license": "MIT",
   "repository": {
@@ -48,5 +48,16 @@
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.1",
     "vitest": "5.1.0"
+  },
+  "overrides": {
+    "eslint@10.14.0": {
+      "minimatch": "11.0.1"
+    },
+    "@eslint/config-array@0.23.5": {
+      "minimatch": "11.0.1"
+    },
+    "@typescript-eslint/typescript-estree@8.72.1": {
+      "minimatch": "11.0.1"
+    }
   }
 }
