@@ -75,6 +75,13 @@ for comparison; do not present its review/tests as current. Unrelated integratio
 changes do not invalidate independent work automatically. The integration gate
 still rechecks its seams after landing.
 
+A reviewed submission needing correction is not an accepted dependency. The
+coordinator may approve the exact hash of a correction packet bound to that frozen
+submission, worktree and hashed review. Only that packet can edit from the submitted
+baseline; its contract/dependency commits must still be accepted. Revocation and
+ownership checks still apply. Record approval in the session ledger's
+`correctionPackets`, never in `acceptedCommits`. No generic bypass is provided.
+
 ## Worker outputs and verification
 
 Submit commits/diff, packet hash, actual command/cwd/exit, input/source identity,

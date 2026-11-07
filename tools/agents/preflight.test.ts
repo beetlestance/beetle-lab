@@ -44,6 +44,17 @@ describe('task packet boundary', () => {
     await symlink(join(outside, 'rules.md'), join(root, 'AGENTS.md'));
     await expect(preflight(packet, root, state)).rejects.toThrow('escapes');
   });
+  it('permits only the exact coordinator-approved correction packet without accepting its baseline as a dependency', async () => {
+    const { root, packet, state } = await fixture();
+    packet.baseCommit = 'b'.repeat(40); packet.packetHash = packetDigest(packet);
+    const correction = { ...state, head: packet.baseCommit, correctionPackets: new Set([packet.packetHash]) };
+    await expect(preflight(packet, root, { ...correction, correctionPackets: new Set() })).rejects.toThrow('Unaccepted');
+    await expect(preflight(packet, root, correction)).resolves.toEqual(packet);
+    const tampered = { ...packet, allowedWrites: ['agent/**'] }; tampered.packetHash = packetDigest(tampered);
+    await expect(preflight(tampered, root, correction)).rejects.toThrow('Unaccepted');
+    packet.dependencyCommits.push(packet.baseCommit); packet.packetHash = packetDigest(packet);
+    await expect(preflight(packet, root, { ...correction, correctionPackets: new Set([packet.packetHash]) })).rejects.toThrow('Unaccepted dependency');
+  });
   it.each(['../foreign/**', '/tmp/**', '.git/**', '**/*', 'configs/**', '.env'])('rejects unsafe scope %s', async path => {
     const { root, packet, state } = await fixture(); packet.allowedWrites = [path]; packet.packetHash = packetDigest(packet);
     await expect(preflight(packet, root, state)).rejects.toThrow('Unsafe write');

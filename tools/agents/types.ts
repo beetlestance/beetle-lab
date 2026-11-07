@@ -25,4 +25,6 @@ export interface DispatchState {
   acceptedCommits: ReadonlySet<string>;
   availableModels: readonly string[];
   dirtyPaths: readonly string[];
+  /** Exact coordinator-approved review correction packets; never dependency acceptance. */
+  correctionPackets?: ReadonlySet<string>;
 }

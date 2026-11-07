@@ -9,6 +9,7 @@ const execute = promisify(execFile);
 export interface DispatchLedger {
   acceptedCommits: string[];
   revokedHashes: string[];
+  correctionPackets?: string[];
   active: { taskId: string; worktree: string; branch: string; locks: string[]; allowedWrites: string[] }[];
 }
 export interface DispatchEnvironment {
@@ -44,7 +45,8 @@ export async function prepareDispatch(input: unknown, directory: string, ledger:
   ]);
   if (root !== await realpath(top)) throw new Error('Directory is not a worktree root');
   const packet = await preflight(input, root, { head, branch, dirtyPaths: status ? [status] : [],
-    acceptedCommits: new Set(ledger.acceptedCommits), availableModels: environment.availableModels });
+    acceptedCommits: new Set(ledger.acceptedCommits), correctionPackets: new Set(ledger.correctionPackets),
+    availableModels: environment.availableModels });
   checkClaims(packet, ledger, environment);
   await checkWritePaths(root, packet.allowedWrites.map(path => path.replace(/\/\*\*$/, '')));
   for (const commit of new Set([packet.contractCommit, ...packet.dependencyCommits])) {

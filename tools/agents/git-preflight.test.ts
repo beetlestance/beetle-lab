@@ -36,5 +36,9 @@ it('uses real worktree state and refuses branch/base spoofing or missing design 
     await git('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'Unaccepted fixture');
     packet.baseCommit = await git('rev-parse', 'HEAD'); packet.packetHash = packetDigest(packet);
     await expect(prepareDispatch(packet, root, ledger, environment)).rejects.toThrow('Unaccepted dependency');
+    const correctionLedger = { ...ledger, correctionPackets: [packet.packetHash] };
+    await expect(prepareDispatch(packet, root, correctionLedger, environment)).resolves.toEqual(packet);
+    await expect(prepareDispatch(packet, root, { ...correctionLedger, revokedHashes: [packet.packetHash] }, environment))
+      .rejects.toThrow('Revoked');
   } finally { await rm(root, { recursive: true, force: true }); }
 });
