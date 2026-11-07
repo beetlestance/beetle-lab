@@ -26,9 +26,9 @@ UnixDockerTransport: explicit Unix socket/API1.47; 64 KiB request/1 MiB reply,
 All composed steps share the caller's monotonic performance.now() deadline, clamped
 once to 30s. Finish rechecks it even if timers stall; abort/deadline destroys streams.
 ensureCreated never starts. <=64 non-evicted lifetime entries retain exact adopted
-runtime ID, terminal/removal/disappearance history and uncertain create/start claims.
+runtime ID, history and claims. Each 404 binds to its issue-time ID, rechecked before return/use.
 No same-attempt recreation after observing a runtime; dispatchStartOnce is created-only,
-one dispatch; terminal/removal history wins over late replies; start rechecks live fences.
+one dispatch; old pre-discovery 404 returns unknown; terminal/removal history wins over late replies.
 Persist durable start intent BEFORE calling. Recreating the adapter loses these fences;
 one exclusive supervisor/journal owns durable recovery, reservations and finalization.
 No durable execution-idempotence claim. stop retains the first absolute graceDeadline,

@@ -8,6 +8,10 @@ interface Entry {
   readonly digest: string; busy: boolean; createClaimed: boolean; startClaimed: boolean;
   runtimeId: string | undefined; terminal: boolean; removed: boolean; graceDeadline: number | undefined;
 }
+interface Inspection {
+  readonly observation: Observation;
+  readonly runtimeIdAtIssue: string | undefined;
+}
 const rejected = <T>(reason: FailureReason): MutationResult<T> => ({ outcome: 'rejected', reason });
 const uncertain = <T>(reason: FailureReason): MutationResult<T> => ({ outcome: 'unknown', reason });
 const known = <T>(value: T): MutationResult<T> => ({ outcome: 'known', value });
@@ -157,18 +161,23 @@ export class DockerBackend {
     if (!supportedDaemon(info.body) || record(info.body)?.DefaultRuntime !== runtime) return 'unsupported';
     return undefined;
   }
-  private async observe(plan: RuntimePlan, context: Operation): Promise<Observation> {
-    const reply = await this.request({ ...context, method: 'GET', path: `/v1.47/containers/${plan.name}/json` });
-    if (!reply.ok) return { state: 'unknown', reason: reply.reason };
+  private async observe(plan: RuntimePlan, context: Operation): Promise<Inspection> {
     const entry = this.entries.get(plan.name);
-    if (reply.status === 404) {
-      if (entry?.runtimeId) { entry.createClaimed = true; entry.startClaimed = true; entry.terminal = true; }
-      return { state: 'missing' };
-    }
-    if (reply.status !== 200) return { state: 'unknown', reason: 'unavailable' };
+    const runtimeIdAtIssue = entry?.runtimeId;
+    const view = (observation: Observation): Inspection => ({ observation, runtimeIdAtIssue });
+    const reply = await this.request({ ...context, method: 'GET', path: `/v1.47/containers/${plan.name}/json` });
+    if (!reply.ok) return view({ state: 'unknown', reason: reply.reason });
+    if (reply.status === 404) return view(this.absent(entry, runtimeIdAtIssue));
+    if (reply.status !== 200) return view({ state: 'unknown', reason: 'unavailable' });
     const checked = inspectEvidence(reply.body, plan);
-    if (!checked.ok) return { state: 'unknown', reason: checked.reason };
-    return entry ? this.remember(entry, checked.value) : { state: 'unknown', reason: 'overflow' };
+    if (!checked.ok) return view({ state: 'unknown', reason: checked.reason });
+    return view(entry ? this.remember(entry, checked.value) : { state: 'unknown', reason: 'overflow' });
+  }
+  private absent(entry: Entry | undefined, runtimeIdAtIssue: string | undefined): Observation {
+    if (!entry) return { state: 'unknown', reason: 'overflow' };
+    if (entry.runtimeId !== runtimeIdAtIssue) return { state: 'unknown', reason: 'unsafe_state' };
+    if (runtimeIdAtIssue !== undefined) { entry.createClaimed = true; entry.startClaimed = true; entry.terminal = true; }
+    return { state: 'missing' };
   }
   private remember(entry: Entry, evidence: InspectEvidence): Observation {
     if (!this.retainIdentity(entry, evidence.id)) return { state: 'unknown', reason: 'conflict' };
@@ -189,7 +198,9 @@ export class DockerBackend {
   private regressive(entry: Entry, evidence: InspectEvidence): boolean {
     return entry.terminal && evidence.state !== 'exited' || entry.startClaimed && evidence.state === 'created';
   }
-  private current(entry: Entry, observation: Observation): Observation {
+  private current(entry: Entry, view: Inspection): Observation {
+    const { observation, runtimeIdAtIssue } = view;
+    if (observation.state === 'missing' && entry.runtimeId !== runtimeIdAtIssue) return { state: 'unknown', reason: 'unsafe_state' };
     if (!('id' in observation)) return observation;
     if (entry.removed || entry.runtimeId !== observation.id) return { state: 'unknown', reason: 'conflict' };
     return this.regressive(entry, observation) ? { state: 'unknown', reason: 'unsafe_state' } : observation;
