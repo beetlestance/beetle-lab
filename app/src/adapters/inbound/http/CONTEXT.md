@@ -16,5 +16,5 @@ enforce JSON route send policy and test that bypass; artifact byte routes need
 their explicit transfer budgets. Do not claim complete response enforcement yet.
 
 Focused test: `npm run test:v2 -- app/src/adapters/inbound/http`.
-The initial fixture proves compiler semantics only. Product routes, authentication
-and the production shared-encoder binding remain pending their owning tasks.
+Synthetic and runner-catalogue fixtures prove compiler semantics and shared-encoder
+binding. Product routes, authentication and send policy remain W10 responsibilities.

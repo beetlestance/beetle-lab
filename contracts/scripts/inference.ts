@@ -29,7 +29,10 @@ function expand(input: unknown, catalogue: Catalogue, references: string[]): unk
   if (typeof schema.$ref !== 'string') return siblings;
   if (references.includes(schema.$ref)) throw new Error(`Recursive inference schema: ${schema.$ref}`);
   const resolved = expand(resolveReference(schema.$ref, catalogue), catalogue, [...references, schema.$ref]);
-  return Object.keys(siblings).length ? { allOf: [resolved, siblings] } : resolved;
+  if (!Object.keys(siblings).length) return resolved;
+  // Closure keywords must remain beside all evaluated reference properties.
+  const branches = Array.isArray(siblings.allOf) ? siblings.allOf : [];
+  return { ...siblings, allOf: [resolved, ...branches] };
 }
 
 /** Exact reference expansion reduces inference depth; wire sources remain authoritative. */
