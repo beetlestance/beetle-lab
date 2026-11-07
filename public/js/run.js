@@ -532,7 +532,7 @@ function hintForWarning(msg) {
   if (/Insufficient VUs/i.test(msg) || /cannot initialize more/i.test(msg))
     return vuRecommendationHint();
   if (/unique time series/i.test(msg) || /high-cardinality/i.test(msg))
-    return "URL-based metric tags hit k6's 100k limit. Already mitigated: requests are tagged with the endpoint name. If you still see this, an old run before v1.1 of k6-studio is the culprit.";
+    return "URL-based metric tags hit k6's 100k limit. Already mitigated: requests are tagged with the endpoint name. If you still see this, an old run before v1.1 of beetle-lab is the culprit.";
   if (/dropped/i.test(msg))
     return "See the dropped-iterations banner above.";
   return null;
@@ -967,7 +967,7 @@ function renderBanner(meta) {
       <div class="mb-5 border border-amber-300/60 dark:border-amber-800/40 bg-amber-50/60 dark:bg-amber-900/15 rounded-md p-3 flex items-start gap-3">
         ${icon("info", { size: 16, className: "text-amber-600 dark:text-amber-400 mt-0.5" })}
         <div class="text-[12.5px] leading-[1.55] text-amber-800 dark:text-amber-200">
-          <div class="font-semibold mb-0.5">This run was marked failed because k6-studio restarted mid-run.</div>
+          <div class="font-semibold mb-0.5">This run was marked failed because beetle-lab restarted mid-run.</div>
           <div>The k6 child process likely exited soon after, but the target service may have continued receiving load until then. Check the target's own logs and resource graphs around <span class="font-mono">${escapeHtml(meta.endedAt ? new Date(meta.endedAt).toLocaleString() : "—")}</span> to gauge actual impact. Charts and the report below reflect only what was captured before the restart.</div>
         </div>
       </div>`;

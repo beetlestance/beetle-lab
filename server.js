@@ -32,16 +32,17 @@ app.get("/compare/:bucket/:configDir", sendPage("compare.html"));
 app.get("/docs", sendPage("docs.html"));
 app.get("/integrations", sendPage("integrations.html"));
 
-// AI skill — a Claude/agent-friendly markdown spec describing every k6-studio
+// AI skill — a Claude/agent-friendly markdown spec describing every beetle-lab
 // HTTP endpoint and the WebSocket protocol so an LLM can drive the tool.
-app.get("/integrations/k6-studio.skill.md", (_req, res) => {
+// Keep the original URL working for existing agent integrations.
+app.get(["/integrations/beetle-lab.skill.md", "/integrations/k6-studio.skill.md"], (_req, res) => {
   res.type("text/markdown").send(buildAiSkill());
 });
 
 function buildAiSkill() {
-  return `# k6-studio — agent skill
+  return `# beetle-lab — agent skill
 
-You are operating against a local k6-studio instance over plain HTTP and a
+You are operating against a local beetle-lab instance over plain HTTP and a
 WebSocket. Use this skill when the user asks you to start, inspect, compare,
 export, or manage HTTP load tests — especially against Node.js services
 where memory / CPU / event-loop / GC profiling matters.
@@ -97,7 +98,7 @@ different port. All API endpoints below are relative to this base.
   \`{ meta, summary, summaryTxt, ticks[], log, hasMemory, configSnapshot }\`.
   - \`meta.configHash\` — SHA-256 of the **resolved** config (after \`.env\`
     substitution). Two runs with matching hashes are apples-to-apples.
-  - \`meta.orphaned\` — \`true\` if the run was reaped on server boot (k6-studio
+  - \`meta.orphaned\` — \`true\` if the run was reaped on server boot (beetle-lab
     crashed mid-run). Treat results as a prefix of what really happened.
   - \`configSnapshot\` — the resolved config that actually ran (env-vars
     substituted in).
@@ -466,7 +467,7 @@ async function markOrphanedRunsAsFailed() {
         if (meta.status !== "running") continue;
         meta.status = "failed";
         meta.error =
-          "server stopped before run finished — k6-studio was restarted mid-run; the target may have continued receiving load until the k6 child also exited.";
+          "server stopped before run finished — beetle-lab was restarted mid-run; the target may have continued receiving load until the k6 child also exited.";
         meta.orphaned = true;
         meta.endedAt = meta.endedAt || Date.now();
         try {
@@ -809,7 +810,7 @@ app.get("/api/folders/:bucket/runs/:configDir/:id/eject.js", async (req, res) =>
 });
 
 function renderEjectScript(cfg, meta) {
-  return `// k6-studio eject — self-contained k6 script for ${meta.bucket} / ${meta.configDir} / ${meta.id}.
+  return `// beetle-lab eject — self-contained k6 script for ${meta.bucket} / ${meta.configDir} / ${meta.id}.
 // Run with:  k6 run ${meta.bucket}-${meta.configDir}-${meta.id}.k6.js
 //   Override target:  k6 run --env TARGET=http://localhost:9000 ${meta.bucket}-${meta.configDir}-${meta.id}.k6.js
 //
@@ -1258,5 +1259,5 @@ wss.on("connection", (ws, req) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`k6-studio running at http://localhost:${PORT}`);
+  console.log(`beetle-lab running at http://localhost:${server.address().port}`);
 });

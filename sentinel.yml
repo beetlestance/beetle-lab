@@ -1,0 +1,13 @@
+org: beetlestance
+repo: beetle-lab
+visibility: public
+description: "A testing workbench for HTTP performance testing, powered by k6."
+branches:
+  - main
+  - develop
+default_branch: develop
+delete_branch_on_merge: true
+license: mit
+rulesets:
+  - ./rulesets/protect-main.json
+  - ./rulesets/protect-develop.json

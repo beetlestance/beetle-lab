@@ -43,7 +43,7 @@ function buildShell() {
         <div class="w-6 h-6 grid place-items-center bg-indigo-500 text-white" style="clip-path:polygon(0 0,100% 0,85% 100%,0% 100%)">
           ${icon("zap", { size: 14 })}
         </div>
-        <div class="font-semibold text-[13px] tracking-wide">k6-studio</div>
+        <div class="font-semibold text-[13px] tracking-wide">beetle-lab</div>
       </a>
       <nav id="sideNav" class="flex-1 px-2 py-3 space-y-0.5">
         ${NAV.map((n) => {

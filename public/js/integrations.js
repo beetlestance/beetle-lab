@@ -16,7 +16,7 @@ function template() {
       <div class="flex items-end justify-between gap-6 mb-6 flex-wrap">
         <div>
           <h1 class="text-[22px] font-semibold tracking-tight">Integrations</h1>
-          <p class="text-stone-500 dark:text-stone-400 text-[13px] mt-0.5">Drive k6-studio from scripts, CI, or AI agents. Everything is over plain HTTP and one WebSocket.</p>
+          <p class="text-stone-500 dark:text-stone-400 text-[13px] mt-0.5">Drive beetle-lab from scripts, CI, or AI agents. Everything is over plain HTTP and one WebSocket.</p>
         </div>
       </div>
 
@@ -60,13 +60,13 @@ function aiPanel() {
         <div class="flex-1 min-w-0">
           <h3 class="text-[15px] font-semibold mb-1">AI agents · MCP / Claude</h3>
           <p class="text-[13px] text-stone-700 dark:text-stone-300 leading-relaxed mb-3">
-            k6-studio ships a <strong>skill spec</strong> — a structured markdown document that tells an AI agent (Claude, Cursor, Continue, any MCP client) what every endpoint does, what the config shape is, and how to start, watch, and compare runs. Drop it into your agent's tool / skill folder and the agent can drive k6-studio for you.
+            beetle-lab ships a <strong>skill spec</strong> — a structured markdown document that tells an AI agent (Claude, Cursor, Continue, any MCP client) what every endpoint does, what the config shape is, and how to start, watch, and compare runs. Drop it into your agent's tool / skill folder and the agent can drive beetle-lab for you.
           </p>
           <div class="flex flex-wrap items-center gap-2 mb-4">
-            <a href="/integrations/k6-studio.skill.md" target="_blank" rel="noopener" download class="text-[12px] px-3 py-2 rounded border border-indigo-500 bg-indigo-500 text-white hover:bg-indigo-600 transition-colors flex items-center gap-2">
+            <a href="/integrations/beetle-lab.skill.md" target="_blank" rel="noopener" download class="text-[12px] px-3 py-2 rounded border border-indigo-500 bg-indigo-500 text-white hover:bg-indigo-600 transition-colors flex items-center gap-2">
               ${icon("download", { size: 13 })}<span>Download skill (.md)</span>
             </a>
-            <a href="/integrations/k6-studio.skill.md" target="_blank" rel="noopener" class="text-[12px] px-3 py-2 rounded border border-stone-200 dark:border-ink-800 hover:border-indigo-400 transition-colors flex items-center gap-2">
+            <a href="/integrations/beetle-lab.skill.md" target="_blank" rel="noopener" class="text-[12px] px-3 py-2 rounded border border-stone-200 dark:border-ink-800 hover:border-indigo-400 transition-colors flex items-center gap-2">
               ${icon("external", { size: 13 })}<span>View raw</span>
             </a>
             <button id="copySkill" class="text-[12px] px-3 py-2 rounded border border-stone-200 dark:border-ink-800 hover:border-indigo-400 transition-colors flex items-center gap-2">
@@ -76,7 +76,7 @@ function aiPanel() {
           <div class="text-[12px] text-stone-600 dark:text-stone-400 leading-relaxed">
             <p class="mb-2"><strong>Drop-in suggestions:</strong></p>
             <ul class="list-disc pl-5 space-y-1">
-              <li>Save as <code class="font-mono">~/.claude/skills/k6-studio.md</code> for Claude Code agents.</li>
+              <li>Save as <code class="font-mono">~/.claude/skills/beetle-lab.md</code> for Claude Code agents.</li>
               <li>Use the markdown directly as a system prompt for any tool-using LLM agent.</li>
               <li>Wrap the REST API in a thin MCP server (one tool per endpoint) and let the agent call it.</li>
             </ul>
@@ -197,7 +197,7 @@ function apiCards() {
   ];
   const reports = [
     endpointBlock({ verb: "GET", path: "/report/:bucket/:configDir/:id", notes: "Standalone HTML page with the full text report — shareable link." }),
-    endpointBlock({ verb: "GET", path: "/integrations/k6-studio.skill.md", notes: "The AI agent skill spec (linked at the top of this page)." }),
+    endpointBlock({ verb: "GET", path: "/integrations/beetle-lab.skill.md", notes: "The AI agent skill spec (linked at the top of this page)." }),
   ];
   return `
     ${card("Buckets", "create / list / delete projects", buckets.join(""), { open: true })}
@@ -295,7 +295,7 @@ function bindCopySkill() {
   btn.addEventListener("click", async () => {
     const label = btn.querySelector("[data-label]");
     try {
-      const res = await fetch("/integrations/k6-studio.skill.md");
+      const res = await fetch("/integrations/beetle-lab.skill.md");
       const txt = await res.text();
       await navigator.clipboard.writeText(txt);
       const old = label.textContent;
