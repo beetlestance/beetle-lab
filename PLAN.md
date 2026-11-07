@@ -32,10 +32,10 @@ model assignments, agent packets, concurrency and independent review.
 
 | Area | Integrated | Still required |
 | --- | --- | --- |
-| Foundation/contracts | Workspace gates; strict runner and namespace/settings schemas/clients; Fastify compiler and JSON route adapter | Full suite/run/result API and route wiring |
-| Agent | Durable offers/events/cancellation, global admission and launch claims, bounded Docker adapter | Trusted runtime supervision, wrapper guards, telemetry and actual Linux qualification |
-| k6 | Shared scenario/request/data/assertion/readiness compiler, native runtime and bounded script builder | Wrapper, sample aggregation, target sampler, report and export API wiring |
-| Product | Namespace rules, SQLite metadata, settings resolution, namespace HTTP routes and React shell | Files adapter, sessions, remaining API/UI, reports and automation client |
+| Foundation/contracts | Workspace gates; strict runner/staged-input and namespace/settings schemas/clients; Fastify JSON adapter | Full suite/run/result API and route wiring |
+| Agent | Durable offers/events, global admission, launch/cancel supervisor, Docker adapter and charged input staging | Wrapper guards, telemetry, collection/release wiring and actual Linux qualification |
+| k6 | Shared suite compiler, native runtime/script builder and durable wrapper control journal | Input-loader/secret binding, native child, aggregation, target sampler, report and export wiring |
+| Product | Namespace/settings rules and SQLite/API, React namespace browser and scoped settings screens | Artifact store, sessions, suite/run API/UI, reports and automation client |
 | Qualification | Local contract/unit/SQLite journal checks | Complete execution path, containers, scans, backup/soak and native architecture matrix |
 
 Worker submissions remain unaccepted until independent review and integration
