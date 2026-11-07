@@ -38,7 +38,7 @@ excluded only through an explicit generator manifest with reproducible output an
 source maps/provenance; never mark handwritten code generated to bypass a gate.
 
 Exceptions name exact symbol, reason, owner, review date and removal condition in
-a small exception registry. No blanket exclusions or baseline inherited from v1.
+the [exception registry](engineering-exceptions.md). No blanket exclusions or baseline inherited from v1.
 Prefer changing the design before accepting an exception; never lower a threshold
 just to pass. The first rewrite release starts with no unreviewed exceptions.
 

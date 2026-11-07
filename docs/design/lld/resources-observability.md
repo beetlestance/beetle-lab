@@ -86,6 +86,9 @@ not be followed by an unbounded serializer, final drain or export accumulator.
 Streaming is an end-to-end invariant: read -> parse -> aggregate -> write -> serve.
 Use mergeable histogram/sketch distributions; never average p95s into a new p95.
 The histogram precision/range and overflow behavior are part of the result schema.
+Native k6 body assertions have a [specific buffering limitation](../../decisions/005-native-k6-response-memory.md):
+processing caps begin after native buffering; supported execution requires engine
+RAM containment and OOM qualification. Do not label that a per-response download cap.
 
 ## Observation scopes
 
