@@ -1,5 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 import { Failure, transaction } from './sql.js';
+import { migration003 } from './migration003.js';
 
 // Rebuild only the foundation's fixed sequence constraint. Copy immutable JSON and
 // row IDs verbatim, including original UUID spellings and durable cancel intent.
@@ -55,11 +56,13 @@ export function initialize(path: string): DatabaseSync {
   try {
     db.exec('PRAGMA busy_timeout=100; PRAGMA cache_size=-2048; PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; COMMIT;');
     const version = db.prepare('PRAGMA user_version').get()?.user_version;
-    if (typeof version !== 'number' || version > 2) throw new Failure('schema_newer');
+    if (typeof version !== 'number' || version > 3) throw new Failure('schema_newer');
     db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;');
-    if (version < 2) transaction(db, () => {
+    if (version < 3) transaction(db, () => {
       if (version === 0) db.exec(migration001);
-      db.exec(migration002);
+      if (version < 2) db.exec(migration002);
+      db.exec(migration003);
+      if (db.prepare('PRAGMA foreign_key_check').get()) throw new Failure('unavailable');
     });
     return db;
   } catch (error) { db.close(); throw error; }

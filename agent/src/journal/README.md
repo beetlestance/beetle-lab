@@ -6,7 +6,9 @@ Tests compile with pinned tsup into task-owned temporary directories.
 `immutableOffer(unknown)` bounds/validates/copies Offer JSON (1 MiB), preserving
 original identity text and canonical duplicate equality. Scoped get/read/cancel
 and listOpen (100 snapshots) retain offered state; cancel only persists intent.
-No admission, runtime, lifecycle transition or result interpretation occurs here.
+`admission(command)` is the trusted production admission/ownership entrypoint;
+see [admission contract](../admission/CONTEXT.md). Compatibility `immutableOffer`
+does not validate installed engine semantics or reserve resources.
 
 `appendWrapper(ControlEvent)` retains wrapper seq as wrapperSeq; `appendSupervisor`
 accepts `{sourceOrdinal,event}` where event is a source:'agent' draft without seq.
@@ -31,8 +33,10 @@ per-source expiry watermarks. cursor_expired includes a valid snapshot in the
 JournalError.recovery property; missing history must remain incomplete.
 
 Single worker/connection owns EXCLUSIVE SQLite locking, WAL/FULL, foreign keys,
-100ms busy timeout and 2 MiB cache. Transactional migration002 preserves v1 offers,
-IDs and cancel; future versions refuse open. Startup/commands remain 5 seconds;
+100ms busy timeout and 2 MiB cache. Transactional migrations002/003 preserve
+offers, IDs, cancel, events, ACK and pruned-source markers; migration003 rebuilds
+parent/child tables with foreign keys enabled and adds private admission metadata.
+Future versions refuse open. Startup/commands remain 5 seconds;
 queue includes in-flight (default 32/max 64) plus close slot. Unknown commit outcome
 requires reconcile after reopen. close awaits exit; abort terminates pending work.
 Scoped checks (NODE_OPTIONS=--max-old-space-size=1024):

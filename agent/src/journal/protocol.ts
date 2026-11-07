@@ -1,4 +1,5 @@
 import type { Ack, AckReceipt, AgentEvent, AttemptSnapshot, EventBatch, Offer } from '@beetle/contracts';
+import type { AdmissionCommand, AdmissionValue } from '../admission/index.js';
 
 export type ErrorCode = 'invalid_input' | 'conflict' | 'not_found' | 'queue_full' |
   'closed' | 'unavailable' | 'owned' | 'schema_newer' | 'stale_generation' |
@@ -15,6 +16,7 @@ export interface EventInput {
   key: GenerationKey; source: 'wrapper' | 'agent'; sourceKey: number; json: string; canonical: string;
 }
 export type Operation =
+  | { kind: 'admission'; request: AdmissionCommand }
   | { kind: 'offer'; json: string; canonical: string }
   | { kind: 'get' | 'cancel' | 'read'; key: AttemptKey }
   | { kind: 'list'; page: PageRequest }
@@ -24,7 +26,7 @@ export type Operation =
   | { kind: 'prune' | 'sources'; key: GenerationKey }
   | { kind: 'close' };
 export type Command = Operation & { id: number };
-export type Value = AttemptSnapshot | SnapshotPage | Offer | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | null;
+export type Value = AttemptSnapshot | SnapshotPage | Offer | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | null;
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; id: number; ok: true; value: Value } |
   { kind: 'result'; id: number; ok: false; code: ErrorCode; recovery?: AttemptSnapshot };

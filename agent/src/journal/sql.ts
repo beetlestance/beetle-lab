@@ -4,7 +4,7 @@ import type { AttemptKey, ErrorCode } from './protocol.js';
 
 export interface Row {
   id: number; attempt_id: string; organization_id: string; workspace_id: string;
-  intent_digest: string; generation: number; state: 'offered'; last_seq: number;
+  intent_digest: string; generation: number; state: AttemptSnapshot['state']; last_seq: number;
   cancel_requested: number; retained_start_seq: number; acknowledged_seq: number;
   spool_bytes: number; spool_rows: number; quota_bytes: number;
   wrapper_high: number; supervisor_high: number;

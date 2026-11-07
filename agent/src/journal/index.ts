@@ -2,8 +2,11 @@ import { Worker } from 'node:worker_threads';
 import type { Ack, AckReceipt, AgentEvent, AttemptSnapshot, ControlEvent, EventBatch, Offer } from '@beetle/contracts';
 import { ackInput, cursorInput, DEFAULT_QUOTA_BYTES, eventInput, generationKey } from './event-input.js';
 import { attemptKey, offerInput, pageInput } from './input.js';
+import type { AdmissionCommand, AdmissionValue } from '../admission/index.js';
+import { admissionInput } from './admission-input.js';
 import type { AttemptKey, ErrorCode, GenerationKey, Operation, PageRequest, PruneReceipt, Reply, SnapshotPage, SourceCursors, SupervisorInput, Value } from './protocol.js';
 export type { AttemptKey, ErrorCode, GenerationKey, PageRequest, PruneReceipt, SnapshotPage, SourceCursors, SupervisorInput } from './protocol.js';
+export { configDigest } from './admission-input.js';
 
 export class JournalError extends Error {
   constructor(readonly code: ErrorCode, readonly recovery?: AttemptSnapshot) { super(`Journal ${code}`); this.name = 'JournalError'; }
@@ -67,6 +70,10 @@ export class Journal {
 
   immutableOffer(input: unknown): Promise<AttemptSnapshot> {
     return this.prepare(() => ({ kind: 'offer', ...offerInput(input) })) as Promise<AttemptSnapshot>;
+  }
+  /** Trusted supervisor/composition boundary; never expose as a wrapper or browser API. */
+  admission(input: AdmissionCommand): Promise<AdmissionValue> {
+    return this.prepare(() => ({ kind: 'admission', request: admissionInput(input) })) as Promise<AdmissionValue>;
   }
   get(key: AttemptKey): Promise<AttemptSnapshot> {
     return this.prepare(() => ({ kind: 'get', key: attemptKey(key) })) as Promise<AttemptSnapshot>;

@@ -1,7 +1,8 @@
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { AttemptSnapshot, Offer } from '@beetle/contracts';
 import { DEFAULT_QUOTA_BYTES } from './event-input.js';
-import { offerInput } from './input.js';
+import { offerAtomic } from './offers.js';
+import { AdmissionStore } from './admission-store.js';
 import type { AttemptKey, Command, Value } from './protocol.js';
 import { acknowledge, prune, readEvents } from './replay.js';
 import { append } from './spool.js';
@@ -9,35 +10,19 @@ import { columns, Failure, owner, snapshot, transaction } from './sql.js';
 import type { Row } from './sql.js';
 
 export class Store {
-  private readonly byAttempt: StatementSync;
-  private readonly insert: StatementSync;
+  private readonly admission: AdmissionStore;
   private readonly cancel: StatementSync;
   private readonly read: StatementSync;
   private readonly list: StatementSync;
   constructor(private readonly db: DatabaseSync, private readonly quota = DEFAULT_QUOTA_BYTES) {
-    this.byAttempt = db.prepare(`SELECT ${columns}, canonical_json FROM accepted_attempts WHERE attempt_id=?`);
-    this.insert = db.prepare(`INSERT INTO accepted_attempts
-      (attempt_id,organization_id,workspace_id,intent_digest,generation,state,last_seq,offer_json,canonical_json,quota_bytes)
-      VALUES (?,?,?,?,1,'offered',0,?,?,?)`);
+    this.admission = new AdmissionStore(db, quota);
     this.cancel = db.prepare('UPDATE accepted_attempts SET cancel_requested=1 WHERE id=?');
     this.read = db.prepare(`SELECT CASE WHEN length(CAST(offer_json AS BLOB))<=1048576
       THEN offer_json ELSE NULL END AS offer_json FROM accepted_attempts WHERE id=?`);
     this.list = db.prepare(`SELECT ${columns} FROM accepted_attempts WHERE id>? ORDER BY id LIMIT ?`);
   }
   private offer(command: Extract<Command, { kind: 'offer' }>): AttemptSnapshot {
-    const offer = JSON.parse(command.json) as Offer;
-    const checked = offerInput(offer);
-    if (checked.canonical !== command.canonical) throw new Failure('invalid_input');
-    return transaction(this.db, () => {
-      const existing = this.byAttempt.get(offer.attemptId) as unknown as (Row & { canonical_json: string }) | undefined;
-      if (existing) {
-        if (existing.canonical_json !== command.canonical) throw new Failure('conflict');
-        return snapshot(existing);
-      }
-      this.insert.run(offer.attemptId, offer.organizationId, offer.workspaceId, offer.intentDigest,
-        command.json, command.canonical, this.quota);
-      return snapshot(owner(this.db, offer));
-    });
+    return transaction(this.db, () => offerAtomic(this.db, command, this.quota));
   }
   private readOffer(key: AttemptKey): Offer {
     const row = owner(this.db, key);
@@ -66,6 +51,7 @@ export class Store {
     }
   }
   execute(command: Command): Value {
+    if (command.kind === 'admission') return this.admission.execute(command.request);
     if (['append', 'events', 'ack', 'prune', 'sources'].includes(command.kind)) return this.eventCommand(command);
     switch (command.kind) {
       case 'offer': return this.offer(command);

@@ -12,7 +12,7 @@ export function append(db: DatabaseSync, input: EventInput): AgentEvent {
   if (checked.canonical !== input.canonical || checked.sourceKey !== input.sourceKey) throw new Failure('invalid_input');
   return transaction(db, () => appendAtomic(db, checked));
 }
-function appendAtomic(db: DatabaseSync, input: EventInput): AgentEvent {
+export function appendAtomic(db: DatabaseSync, input: EventInput): AgentEvent {
   const row = owner(db, input.key);
   const { expired, high, counter } = sourceCounters(row, input.source);
   if (input.sourceKey <= expired) throw new Failure('expired_key');
