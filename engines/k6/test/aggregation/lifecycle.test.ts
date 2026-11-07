@@ -52,3 +52,10 @@ it('denies already aborted input without any sink callback', async () => {
   const point = vi.fn(async () => undefined); const stream = setup(point); const controller = new AbortController(); controller.abort();
   await expect(stream.push(chunk, controller.signal)).rejects.toMatchObject({ code: 'cancelled' }); expect(point).not.toHaveBeenCalled();
 });
+it('refuses a pre-aborted concurrent push as busy without poisoning its owner', async () => {
+  const called = deferred(); const gate = deferred(); const stream = setup(async () => { called.resolve(); await gate.promise; });
+  const first = stream.push(chunk, new AbortController().signal); await called.promise;
+  const cancelled = new AbortController(); cancelled.abort();
+  await expect(stream.push(chunk, cancelled.signal)).rejects.toMatchObject({ code: 'busy' });
+  gate.resolve(); await first; expect(stream.finish().records).toBe(2);
+});

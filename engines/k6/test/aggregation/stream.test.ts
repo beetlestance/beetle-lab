@@ -98,3 +98,30 @@ it('snapshots mutable profile and chunk before asynchronous consumption', async 
   const pending = stream.push(chunk, signal()); chunk.fill(0);
   await pending; expect(points).toHaveLength(1); stream.finish();
 });
+
+it('copies actual typed-array bytes without invoking overridable iteration or length hooks', async () => {
+  const bytes = Buffer.concat([line(declaration()), line(sample())]);
+  const input = Uint8Array.from(bytes);
+  const iterator = vi.fn(function* () { yield* new Uint8Array(2_000_000); });
+  Object.defineProperty(input, Symbol.iterator, { value: iterator });
+  Object.defineProperty(input, 'byteLength', { get: () => { throw new Error('PRIVATE_SENTINEL'); } });
+  const { stream, points } = setup();
+  await stream.push(input, signal());
+  expect(iterator).not.toHaveBeenCalled(); expect(points).toHaveLength(1); stream.finish();
+  const oversized = Uint8Array.from(bytes);
+  Object.defineProperty(oversized, 'byteLength', { value: 1 });
+  await expect(setup({ maximumBytes: 1 }).stream.push(oversized, signal())).rejects.toMatchObject({ code: 'stream_limit' });
+});
+it('rejects impossible calendar/time/offset dates instead of normalizing them', async () => {
+  for (const time of ['2026-02-30T12:00:00Z', '2025-02-29T12:00:00Z', '2026-04-31T12:00:00Z',
+    '2026-01-00T12:00:00Z', '2026-13-01T12:00:00Z', '2026-11-07T24:00:00Z', '2026-11-07T12:60:00Z',
+    '2026-11-07T12:00:60Z', '2026-11-07T12:00:00+24:00', '2026-11-07T12:00:00+01:60']) {
+    const { stream, point } = setup(); const value = sample(); value.data.time = time;
+    await expect(stream.push(Buffer.concat([line(declaration()), line(value)]), signal())).rejects.toMatchObject({ code: 'invalid_record' });
+    expect(point).not.toHaveBeenCalled();
+  }
+  for (const time of ['2024-02-29T12:00:00.123456789Z', '2026-11-07T12:00:00.1+05:30']) {
+    const { stream, points } = setup(); const value = sample(); value.data.time = time;
+    await stream.push(Buffer.concat([line(declaration()), line(value)]), signal()); expect(points).toHaveLength(1); stream.finish();
+  }
+});

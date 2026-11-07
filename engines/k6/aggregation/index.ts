@@ -5,7 +5,15 @@ export { MetricStreamError } from './types.js';
 export type { MetricDefinition, MetricKind, MetricPoint, MetricStreamOptions } from './types.js';
 const lineBytes = 65_536;
 const chunkBytes = 1_048_576;
+const intrinsicByteLength = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(Uint8Array.prototype) as object, 'byteLength')!.get!;
 function positive(value: number): boolean { return Number.isSafeInteger(value) && value >= 1; }
+function snapshot(input: Uint8Array, remaining: number): Uint8Array {
+  if (!(input instanceof Uint8Array)) throw new MetricStreamError('stream_limit');
+  const size: unknown = intrinsicByteLength.call(input);
+  if (typeof size !== 'number' || size > chunkBytes || size > remaining) throw new MetricStreamError('stream_limit');
+  // TypedArray-to-TypedArray construction uses internal slots, not iteration or species.
+  return new Uint8Array(input);
+}
 
 /** One bounded NDJSON frame and one snapshotted chunk; callback backpressure is
  * serialized. This decoder does not infer test outcomes or native completeness.
@@ -34,11 +42,10 @@ export class MetricStream {
   }
   push(input: Uint8Array, signal: AbortSignal): Promise<void> {
     try {
-      this.permitted(signal);
+      this.permitted();
       if (this.flight) throw new MetricStreamError('busy');
-      if (!(input instanceof Uint8Array) || input.byteLength > chunkBytes) throw new MetricStreamError('stream_limit');
-      if (input.byteLength > this.options.maximumBytes - this.bytes) throw new MetricStreamError('stream_limit');
-      const chunk = Uint8Array.from(input);
+      this.permitted(signal);
+      const chunk = snapshot(input, this.options.maximumBytes - this.bytes);
       this.bytes += chunk.byteLength;
       // Publish the flight before invoking any injected callback.
       const work = Promise.resolve().then(() => this.consume(chunk, signal));
@@ -48,8 +55,9 @@ export class MetricStream {
       }).finally(() => { this.flight = undefined; });
       return this.flight;
     } catch (error) {
-      if (error instanceof MetricStreamError && error.code !== 'busy') this.poisoned ??= error.code;
-      return Promise.reject(error);
+      const failure = error instanceof MetricStreamError ? error : new MetricStreamError('invalid_record');
+      if (failure.code !== 'busy') this.poisoned ??= failure.code;
+      return Promise.reject(failure);
     }
   }
   private async consume(chunk: Uint8Array, signal: AbortSignal): Promise<void> {

@@ -15,9 +15,25 @@ function numeric(value: unknown, kind: MetricKind): number {
 function timestamp(value: unknown): number {
   if (typeof value !== 'string' || value.length > 40
     || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return fail('invalid_record');
+  calendar(value);
   const result = Date.parse(value);
   if (!Number.isSafeInteger(result) || result < 0) return fail('invalid_record');
   return result;
+}
+function calendar(value: string): void {
+  const year = Number(value.slice(0, 4)); const month = Number(value.slice(5, 7));
+  const day = Number(value.slice(8, 10));
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (month < 1 || month > 12 || day < 1 || day > days[month - 1]!) fail('invalid_record');
+  clockParts(value);
+}
+function clockParts(value: string): void {
+  if (Number(value.slice(11, 13)) > 23 || Number(value.slice(14, 16)) > 59 || Number(value.slice(17, 19)) > 59) fail('invalid_record');
+  if (!value.endsWith('Z')) {
+    const offset = value.slice(-6);
+    if (Number(offset.slice(1, 3)) > 23 || Number(offset.slice(4, 6)) > 59) fail('invalid_record');
+  }
 }
 function envelope(line: Uint8Array): Record<string, unknown> {
   let raw: unknown;
