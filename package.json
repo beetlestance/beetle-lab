@@ -15,11 +15,13 @@
     "lint": "node --import tsx tools/lint.ts",
     "check:architecture": "node --import tsx tools/check-architecture.ts",
     "check:docs": "node --import tsx tools/check-docs.ts",
-    "verify:v2": "npm run check:contracts && npm run check:api && npm run typecheck && npm run lint && npm run check:architecture && npm run check:docs && npm run test:v2",
+    "verify:v2": "npm run check:contracts && npm run check:api && npm run check:k6 && npm run typecheck && npm run lint && npm run check:architecture && npm run check:docs && npm run test:v2",
     "generate:contracts": "node --import tsx contracts/scripts/generate.ts",
     "check:contracts": "node --import tsx contracts/scripts/generate.ts --check",
     "generate:api": "node --import tsx contracts/scripts/generate-api.ts",
-    "check:api": "node --import tsx contracts/scripts/generate-api.ts --check"
+    "check:api": "node --import tsx contracts/scripts/generate-api.ts --check",
+    "generate:k6": "node --import tsx engines/k6/compiler/generate.ts",
+    "check:k6": "node --import tsx engines/k6/compiler/generate.ts --check"
   },
   "engines": {
     "node": ">=24.0.0"
