@@ -13,7 +13,7 @@
     "test": "npm run test:legacy && npm run test:v2",
     "test:legacy": "node --test test/api.test.js",
     "test:v2": "vitest run",
-    "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p web/tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p web/tsconfig.json --noEmit && tsc -p engines/k6/tsconfig.runtime.json --noEmit",
     "lint": "node --import tsx tools/lint.ts",
     "check:architecture": "node --import tsx tools/check-architecture.ts",
     "check:docs": "node --import tsx tools/check-docs.ts",
