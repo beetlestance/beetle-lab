@@ -68,7 +68,7 @@ function response(code: Code): { status: number; body: ApiError } {
 }
 function sendFailure(error: unknown, reply: FastifyReply, classify: ApiErrorOptions['classify']): FastifyReply {
   const result = response(codeFor(error, classify));
-  return reply.code(result.status).type('application/json').send(result.body);
+  return reply.header('Cache-Control', 'no-store').code(result.status).type('application/json').send(result.body);
 }
 
 export interface ApiServerOptions extends ApiErrorOptions { bodyLimit?: number }
@@ -99,6 +99,6 @@ export function configureApiErrors(server: FastifyInstance, options: ApiErrorOpt
   });
   server.setNotFoundHandler((_request, reply) => {
     const result = response('not_found');
-    return reply.code(result.status).type('application/json').send(result.body);
+    return reply.header('Cache-Control', 'no-store').code(result.status).type('application/json').send(result.body);
   });
 }

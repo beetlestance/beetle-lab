@@ -36,9 +36,22 @@ it.each([
   app.get('/failure', async () => { throw new ApiFault(code); });
   const result = await app.inject({ url: '/failure', headers: { 'x-request-id': canary } });
   expect(result.statusCode).toBe(status);
+  expect(result.headers['cache-control']).toBe('no-store');
   const value = check(result.statusCode, result.body, code);
   const again = await app.inject('/failure');
   expect(again.json().requestId).not.toBe(value.requestId);
+});
+
+it('prevents caching failures that occur before auth route hooks can run', async () => {
+  const app = server();
+  for (const [method, url, status] of [
+    ['OPTIONS', '/api/v2/auth/pair', 404], ['GET', '/api/v2/auth/%ZZ', 400],
+  ] as const) {
+    const result = await app.inject({ method, url });
+    expect(result.statusCode).toBe(status);
+    expect(result.headers['cache-control']).toBe('no-store');
+    expect(validateApi('ApiError', result.json()).ok).toBe(true);
+  }
 });
 
 it('contains handler exceptions and maps concrete errors only through trusted composition', async () => {
