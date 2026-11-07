@@ -10,11 +10,14 @@ also checks returned bytes. Schema failures expose fixed errors without values.
 Request byte limits remain Fastify bootstrap's responsibility. Artifact streams
 use their own authenticated range/transfer owner, not this JSON serializer.
 
-Fastify bypasses its serializer for strings, buffers and streams, including raw
-JSON text. This compiler alone does not enforce a global response budget. W10 must
-enforce JSON route send policy and test that bypass; artifact byte routes need
-their explicit transfer budgets. Do not claim complete response enforcement yet.
+`api-route.ts` binds shipped operations with `registerApiOperation(server,name,handler)`.
+It validates canonical page queries before AJV, derives route schemas/status from
+the catalogue and gives handlers DTOs rather than a reply. It snapshots bounded
+JSON objects before sending, rejecting Fastify's string/buffer/stream bypasses.
+Configure compilers and authentication first. This policy applies only to these
+registered operations; artifact/SSE byte routes need explicit transfer budgets.
 
 Focused test: `npm run test:v2 -- app/src/adapters/inbound/http`.
 Synthetic and runner-catalogue fixtures prove compiler semantics and shared-encoder
-binding. Product routes, authentication and send policy remain W10 responsibilities.
+binding. Actual use-case wiring, authentication and safe global error mapping remain
+W10 responsibilities. The registration helper is not an authorization boundary.
