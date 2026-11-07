@@ -1,4 +1,5 @@
 import { compileLoadPlan } from '../index.js';
+import { metricLayout } from '../../plan/index.js';
 import { freezeSchema } from '../schema-freeze.js';
 import type { ValidatedLoadPlan } from '../types.js';
 import { compileDatasets } from './datasets.js';
@@ -52,6 +53,7 @@ export function compileSuite(config: ValidatedSuiteConfig, options: CompileOptio
       } };
     const readiness = compileReadiness(config, scope);
     if (readiness) result.readiness = readiness;
+    metricLayout(result);
     result.identity.digest = checkedDigest(options.digest, canonical({ compilerVersion: result.compilerVersion,
       schemaVersion: result.schemaVersion, config, target, engine: options.input.engine, inputs: loaded.refs }));
     return freezeSchema(result);
