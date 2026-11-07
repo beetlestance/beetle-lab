@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import { performance } from 'node:perf_hooks';
 import { PassThrough } from 'node:stream';
 import type { ClientRequest, IncomingMessage, RequestOptions } from 'node:http';
 import { describe, expect, it, vi } from 'vitest';
@@ -33,6 +34,17 @@ function call(extra: Partial<DockerRequest> = {}): DockerRequest {
 }
 
 describe('bounded Unix HTTP transport', () => {
+  it.each([{ deadline: 5, completedAt: 20 }, { deadline: 120_000, completedAt: 30_001 }])('rejects late success when timer callback is delayed ($deadline ms requested)', async timing => {
+    let now = 0; const clock = vi.spyOn(performance, 'now').mockImplementation(() => now);
+    try {
+      const { transport, requests } = harness(request => {
+        const response = request.respond(); now = timing.completedAt;
+        response.emit('data', Buffer.from('{}')); response.emit('end');
+      });
+      expect(await transport.request(call({ deadline: timing.deadline }))).toEqual({ ok: false, reason: 'deadline', dispatched: true });
+      expect(requests[0]?.destroyed).toBe(true); expect(requests[0]?.response?.destroyed).toBe(true);
+    } finally { clock.mockRestore(); }
+  });
   it('uses only explicit Unix socket and returns bounded parsed JSON', async () => {
     const { transport, requests } = harness(request => request.respond().end('{"ApiVersion":"1.47"}'));
     expect(await transport.request(call())).toEqual({ ok: true, status: 200, body: { ApiVersion: '1.47' } });

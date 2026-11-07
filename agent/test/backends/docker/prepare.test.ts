@@ -7,7 +7,7 @@ describe('approved Docker specification', () => {
     const input = makeInput();
     const plan = makePlan(input);
     expect(plan.spec.Image).toBe(input.manifest.imageDigest);
-    expect(plan.spec).toMatchObject({ User: '10001:10001', Entrypoint: ['beetle-wrapper'], Cmd: [], Env: [],
+    expect(plan.spec).toMatchObject({ User: '10001:10001', Entrypoint: ['beetle-wrapper'], Cmd: [], Env: input.profile.effectiveImage.environment,
       WorkingDir: '/beetle/input', NetworkDisabled: false,
       HostConfig: { NanoCpus: 1_000_000_000, Memory: 536_870_912, MemorySwap: 536_870_912, PidsLimit: 128,
         ReadonlyRootfs: true, Privileged: false, CapDrop: ['ALL'], CapAdd: [], SecurityOpt: ['no-new-privileges:true'],

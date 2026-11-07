@@ -3,6 +3,7 @@ import { isAbsolute, join, normalize } from 'node:path';
 import { encodeJson, validate, validatePrimitive } from '@beetle/contracts';
 import type { EngineManifest, Offer } from '@beetle/contracts';
 import { failure } from './types.js';
+import { validImageBaseline } from './image-baseline.js';
 import type { CreateSpec, DockerMount, InstallationProfile, PrepareInput, Result, StagedRoots } from './types.js';
 
 const budgetKeys = ['cpuMillis', 'memoryBytes', 'pids', 'timeoutMs', 'outputBytes'] as const;
@@ -26,7 +27,8 @@ function validProfile(profile: InstallationProfile): boolean {
   if (!validatePrimitive('uuid', profile.installationId).ok || !validRoot(profile.stagingRoot)) return false;
   if (!/^[1-9][0-9]{0,8}:[1-9][0-9]{0,8}$/u.test(profile.user)) return false;
   if (!Number.isSafeInteger(profile.tmpfsBytes) || profile.tmpfsBytes < 4096 || profile.tmpfsBytes > 67_108_864) return false;
-  return budgetKeys.every(key => Number.isSafeInteger(profile.maximumBudget[key]) && profile.maximumBudget[key] > 0);
+  return validImageBaseline(profile)
+    && budgetKeys.every(key => Number.isSafeInteger(profile.maximumBudget[key]) && profile.maximumBudget[key] > 0);
 }
 function approved(offer: Offer, manifest: EngineManifest, profile: InstallationProfile): boolean {
   if (offer.engine.id !== manifest.engineId || offer.engine.imageDigest !== manifest.imageDigest) return false;
@@ -60,7 +62,8 @@ function mounts(roots: StagedRoots, profile: InstallationProfile, name: string):
     if (key === 'secrets' && source === undefined) continue;
     if (source !== join(taskRoot, key) || !validRoot(source)) return undefined;
     result.push({ Type: 'bind', Source: source, Target: `/beetle/${key}`,
-      ReadOnly: key !== 'output', BindOptions: { Propagation: 'rprivate' } });
+      ReadOnly: key !== 'output', BindOptions: { Propagation: 'rprivate', NonRecursive: false,
+        CreateMountpoint: false, ReadOnlyNonRecursive: false, ReadOnlyForceRecursive: key !== 'output' } });
   }
   return result;
 }
@@ -119,7 +122,8 @@ function createSpec(input: { offer: Offer; profile: InstallationProfile; generat
   const { offer, profile } = input;
   return {
     Image: profile.imageDigest, User: profile.user,
-    Entrypoint: [profile.entrypoint.executable], Cmd: [...profile.entrypoint.arguments], Env: [],
+    Entrypoint: [profile.entrypoint.executable], Cmd: [...profile.entrypoint.arguments],
+    Env: [...profile.effectiveImage.environment], Healthcheck: { Test: ['NONE'] }, StopSignal: 'SIGTERM',
     WorkingDir: '/beetle/input', NetworkDisabled: input.network === 'none',
     Labels: { 'dev.beetle.installation': normalizeIdentity(profile.installationId),
       'dev.beetle.organization': normalizeIdentity(offer.organizationId),
@@ -128,6 +132,8 @@ function createSpec(input: { offer: Offer; profile: InstallationProfile; generat
       'dev.beetle.generation': String(input.generation), 'dev.beetle.intent': offer.intentDigest },
     HostConfig: { NanoCpus: input.nanoCpus, Memory: offer.budget.memoryBytes, MemorySwap: offer.budget.memoryBytes,
       PidsLimit: offer.budget.pids, ReadonlyRootfs: true, Privileged: false, CapDrop: ['ALL'], CapAdd: [],
+      Runtime: profile.effectiveImage.defaultRuntime, OomKillDisable: false, Init: false,
+      ShmSize: profile.tmpfsBytes,
       SecurityOpt: ['no-new-privileges:true'], NetworkMode: input.network,
       PidMode: '', IpcMode: 'private', UTSMode: '', CgroupnsMode: 'private',
       UsernsMode: '', GroupAdd: [], DeviceCgroupRules: [], Links: [], ExtraHosts: [], Dns: [], DnsOptions: [], DnsSearch: [],

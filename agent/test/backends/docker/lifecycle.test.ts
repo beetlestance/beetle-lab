@@ -195,7 +195,7 @@ describe('stop, kill and cleanup evidence', () => {
     const context = operation();
     const result = action === 'stop' ? await backend.stop(plan, context, performance.now() + 500) : await backend.kill(plan, context);
     expect(result).toMatchObject({ outcome: 'known', value: { state: 'exited', oomKilled: false, exitCode: 0 } });
-    expect(docker.mutations()[0]?.path).toContain(action === 'stop' ? '/stop?t=0' : '/kill?signal=SIGKILL');
+    expect(docker.mutations()[0]?.path).toContain(action === 'stop' ? '/stop?t=1' : '/kill?signal=SIGKILL');
     const data = payload(plan, 'exited'); const state = data.State as Record<string, unknown>; state.ExitCode = 137;
     docker.state = data;
     expect(await backend.inspect(plan, operation())).toMatchObject({ exitCode: 137, oomKilled: false });

@@ -4,7 +4,10 @@ import { compatibleVersion, containerId, inspectEvidence, record, supportedDaemo
 import type { CleanupEvidence, DockerReply, DockerRequest, DockerTransport, FailureReason,
   InspectEvidence, MutationResult, Observation, Operation } from './types.js';
 
-interface Entry { readonly digest: string; busy: boolean; createClaimed: boolean; startClaimed: boolean }
+interface Entry {
+  readonly digest: string; busy: boolean; createClaimed: boolean; startClaimed: boolean;
+  runtimeId: string | undefined; terminal: boolean; removed: boolean; graceDeadline: number | undefined;
+}
 const rejected = <T>(reason: FailureReason): MutationResult<T> => ({ outcome: 'rejected', reason });
 const uncertain = <T>(reason: FailureReason): MutationResult<T> => ({ outcome: 'unknown', reason });
 const known = <T>(value: T): MutationResult<T> => ({ outcome: 'known', value });
@@ -19,9 +22,11 @@ export class DockerBackend {
     const context = this.context(operation);
     if (!context || !(plan instanceof RuntimePlan)) return { state: 'unknown', reason: 'invalid_input' };
     if (this.active >= 64) return { state: 'unknown', reason: 'overflow' };
+    const entry = this.entry(plan);
+    if (typeof entry === 'string') return { state: 'unknown', reason: entry };
     this.active++;
     try {
-      const reason = await this.qualify(context);
+      const reason = await this.qualify(context, plan.spec.HostConfig.Runtime);
       return reason ? { state: 'unknown', reason } : await this.observe(plan, context);
     } finally { this.active--; }
   }
@@ -39,6 +44,7 @@ export class DockerBackend {
       if (created.status !== 201) return this.statusFailure(created.status);
       const id = record(created.body)?.Id;
       if (!containerId(id)) return uncertain('malformed');
+      entry.runtimeId = id;
       const after = await this.observe(plan, context);
       if (!('id' in after) || after.id !== id) return uncertain('conflict');
       return known(after);
@@ -47,9 +53,9 @@ export class DockerBackend {
 
   async dispatchStartOnce(plan: RuntimePlan, operation: Operation): Promise<MutationResult<InspectEvidence>> {
     return this.run(plan, operation, async (entry, context) => {
-      if (entry.startClaimed) return rejected('start_fenced');
+      if (this.startFenced(entry)) return rejected('start_fenced');
       const before = await this.observe(plan, context);
-      if (before.state === 'unknown') return uncertain('reason' in before ? before.reason : 'unsafe_state');
+      if (before.state === 'unknown') return this.existing(before);
       if (before.state !== 'created') return rejected('unsafe_state');
       // Set before dispatch; even an uncertain response must never permit another start.
       entry.startClaimed = true;
@@ -64,10 +70,13 @@ export class DockerBackend {
   }
 
   async stop(plan: RuntimePlan, operation: Operation, graceDeadline: number): Promise<MutationResult<InspectEvidence>> {
-    if (!Number.isFinite(graceDeadline)) return rejected('invalid_input');
-    return this.terminate(plan, operation, context => {
-      const seconds = Math.max(0, Math.floor((Math.min(context.deadline, graceDeadline) - performance.now()) / 1000));
-      return `stop?t=${seconds}`;
+    if (!Number.isFinite(graceDeadline) || !(plan instanceof RuntimePlan)) return rejected('invalid_input');
+    const entry = this.entry(plan);
+    if (typeof entry === 'string') return rejected(entry);
+    entry.graceDeadline ??= graceDeadline;
+    return this.terminate(plan, operation, entry => {
+      const seconds = Math.max(0, Math.ceil(((entry.graceDeadline ?? graceDeadline) - performance.now()) / 1000));
+      return Number.isSafeInteger(seconds) && seconds <= 2_147_483_647 ? `stop?t=${seconds}` : undefined;
     });
   }
 
@@ -77,27 +86,30 @@ export class DockerBackend {
 
   async remove(plan: RuntimePlan, operation: Operation, evidence: CleanupEvidence): Promise<MutationResult<'removed'>> {
     if (evidence?.sealed !== true || evidence.applicationAcknowledged !== true) return rejected('cleanup_guard');
-    return this.run(plan, operation, async (_entry, context) => {
+    return this.run(plan, operation, async (entry, context) => {
       const before = await this.observe(plan, context);
       if (!this.stopped(before)) return rejected('cleanup_guard');
       const reply = await this.request({ ...context, method: 'DELETE',
         path: `/v1.47/containers/${before.id}?force=false&v=false` });
       if (!reply.ok) return this.failedMutation(reply);
       if (reply.status !== 204) return this.statusFailure(reply.status);
+      entry.removed = true; entry.terminal = true;
       const after = await this.observe(plan, context);
       return after.state === 'missing' ? known('removed') : uncertain('unavailable');
     });
   }
 
   private terminate(plan: RuntimePlan, operation: Operation,
-    action: (context: Operation) => string): Promise<MutationResult<InspectEvidence>> {
-    return this.run(plan, operation, async (_entry, context) => {
+    action: (entry: Entry) => string | undefined): Promise<MutationResult<InspectEvidence>> {
+    return this.run(plan, operation, async (entry, context) => {
       const before = await this.observe(plan, context);
       if (this.stopped(before)) return known(before);
-      if (before.state === 'unknown') return uncertain('reason' in before ? before.reason : 'unsafe_state');
+      if (before.state === 'unknown') return this.existing(before);
       if (before.state !== 'running' && before.state !== 'restarting') return rejected('unsafe_state');
+      const suffix = action(entry);
+      if (!suffix) return rejected('unsupported');
       const reply = await this.request({ ...context, method: 'POST',
-        path: `/v1.47/containers/${before.id}/${action(context)}` });
+        path: `/v1.47/containers/${before.id}/${suffix}` });
       if (!reply.ok) return this.failedMutation(reply);
       if (![204, 304, 409].includes(reply.status)) return this.statusFailure(reply.status);
       const after = await this.observe(plan, context);
@@ -120,7 +132,7 @@ export class DockerBackend {
     if (entry.busy) return rejected('start_fenced');
     entry.busy = true; this.active++;
     try {
-      const reason = await this.qualify(context);
+      const reason = await this.qualify(context, plan.spec.HostConfig.Runtime);
       return reason ? rejected(reason) : await execute(entry, context);
     } finally { entry.busy = false; this.active--; }
   }
@@ -128,11 +140,12 @@ export class DockerBackend {
     const existing = this.entries.get(plan.name);
     if (existing) return existing.digest === plan.specDigest ? existing : 'conflict';
     if (this.entries.size >= 64) return 'overflow';
-    const entry = { digest: plan.specDigest, busy: false, createClaimed: false, startClaimed: false };
+    const entry: Entry = { digest: plan.specDigest, busy: false, createClaimed: false, startClaimed: false,
+      runtimeId: undefined, terminal: false, removed: false, graceDeadline: undefined };
     this.entries.set(plan.name, entry);
     return entry;
   }
-  private async qualify(context: Operation): Promise<FailureReason | undefined> {
+  private async qualify(context: Operation, runtime: string): Promise<FailureReason | undefined> {
     const version = await this.request({ ...context, method: 'GET', path: '/version' });
     if (!version.ok) return version.reason;
     if (version.status !== 200) return 'unavailable';
@@ -140,16 +153,28 @@ export class DockerBackend {
     const info = await this.request({ ...context, method: 'GET', path: '/v1.47/info' });
     if (!info.ok) return info.reason;
     if (info.status !== 200) return 'unavailable';
-    if (!supportedDaemon(info.body)) return 'unsupported';
+    if (!supportedDaemon(info.body) || record(info.body)?.DefaultRuntime !== runtime) return 'unsupported';
     return undefined;
   }
   private async observe(plan: RuntimePlan, context: Operation): Promise<Observation> {
     const reply = await this.request({ ...context, method: 'GET', path: `/v1.47/containers/${plan.name}/json` });
     if (!reply.ok) return { state: 'unknown', reason: reply.reason };
-    if (reply.status === 404) return { state: 'missing' };
+    const entry = this.entries.get(plan.name);
+    if (reply.status === 404) {
+      if (entry?.runtimeId) { entry.createClaimed = true; entry.startClaimed = true; entry.terminal = true; }
+      return { state: 'missing' };
+    }
     if (reply.status !== 200) return { state: 'unknown', reason: 'unavailable' };
     const checked = inspectEvidence(reply.body, plan);
-    return checked.ok ? checked.value : { state: 'unknown', reason: checked.reason };
+    if (!checked.ok) return { state: 'unknown', reason: checked.reason };
+    return entry ? this.remember(entry, checked.value) : { state: 'unknown', reason: 'overflow' };
+  }
+  private remember(entry: Entry, evidence: InspectEvidence): Observation {
+    if (entry.removed || entry.runtimeId && entry.runtimeId !== evidence.id) return { state: 'unknown', reason: 'conflict' };
+    entry.runtimeId = evidence.id; entry.createClaimed = true;
+    if (evidence.state !== 'created') entry.startClaimed = true;
+    if (evidence.state === 'exited') entry.terminal = true;
+    return evidence;
   }
   private async request(input: DockerRequest): Promise<DockerReply> {
     if (input.signal?.aborted) return { ok: false, reason: 'aborted', dispatched: false };
@@ -165,6 +190,7 @@ export class DockerBackend {
   private stopped(observation: Observation): observation is InspectEvidence & { state: 'created' | 'exited' } {
     return observation.state === 'created' || observation.state === 'exited';
   }
+  private startFenced(entry: Entry): boolean { return entry.startClaimed || entry.terminal || entry.removed; }
   private existing(observation: Observation): MutationResult<InspectEvidence> {
     if (observation.state === 'unknown') return uncertain('reason' in observation ? observation.reason : 'unsafe_state');
     return 'id' in observation ? known(observation) : uncertain('conflict');

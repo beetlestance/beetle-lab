@@ -29,15 +29,16 @@ export class UnixDockerTransport implements DockerTransport {
     if (!validRequest(input)) return { ok: false, reason: 'invalid_input', dispatched: false };
     if (this.active >= TRANSPORT_LIMITS.concurrent) return { ok: false, reason: 'overflow', dispatched: false };
     if (input.signal?.aborted) return { ok: false, reason: 'aborted', dispatched: false };
-    const remaining = Math.min(input.deadline - performance.now(), TRANSPORT_LIMITS.timeoutMs);
+    const deadline = Math.min(input.deadline, performance.now() + TRANSPORT_LIMITS.timeoutMs);
+    const remaining = deadline - performance.now();
     if (remaining <= 0) return { ok: false, reason: 'deadline', dispatched: false };
     let body: string;
     try { body = input.body === undefined ? '' : encodeJson(input.body, TRANSPORT_LIMITS.requestBytes); }
     catch { return { ok: false, reason: 'request_limit', dispatched: false }; }
-    const dispatchBudget = Math.min(input.deadline - performance.now(), remaining);
+    const dispatchBudget = Math.min(deadline - performance.now(), remaining);
     if (dispatchBudget <= 0) return { ok: false, reason: 'deadline', dispatched: false };
     this.active++;
-    try { return await this.exchange(input, body, dispatchBudget); }
+    try { return await this.exchange({ ...input, deadline }, body, dispatchBudget); }
     finally { this.active--; }
   }
   private exchange(input: DockerRequest, body: string, remaining: number): Promise<DockerReply> {
@@ -48,6 +49,8 @@ export class UnixDockerTransport implements DockerTransport {
       let settled = false;
       const finish = (reply: DockerReply) => {
         if (settled) return;
+        if (performance.now() >= input.deadline) reply = { ok: false, reason: 'deadline', dispatched };
+        else if (input.signal?.aborted) reply = { ok: false, reason: 'aborted', dispatched };
         settled = true; clearTimeout(timer); input.signal?.removeEventListener('abort', abort);
         response?.destroy(); request?.destroy(); resolve(reply);
       };
