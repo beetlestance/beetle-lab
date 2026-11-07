@@ -7,6 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "dev:web": "vite --config web/vite.config.ts --host 127.0.0.1",
+    "build:web": "vite build --config web/vite.config.ts",
     "check": "node scripts/check.mjs",
     "test": "npm run test:legacy && npm run test:v2",
     "test:legacy": "node --test test/api.test.js",
@@ -15,7 +17,7 @@
     "lint": "node --import tsx tools/lint.ts",
     "check:architecture": "node --import tsx tools/check-architecture.ts",
     "check:docs": "node --import tsx tools/check-docs.ts",
-    "verify:v2": "npm run check:contracts && npm run check:api && npm run check:k6 && npm run typecheck && npm run lint && npm run check:architecture && npm run check:docs && npm run test:v2",
+    "verify:v2": "npm run check:contracts && npm run check:api && npm run check:k6 && npm run typecheck && npm run lint && npm run check:architecture && npm run check:docs && npm run build:web && npm run test:v2",
     "generate:contracts": "node --import tsx contracts/scripts/generate.ts",
     "check:contracts": "node --import tsx contracts/scripts/generate.ts --check",
     "generate:api": "node --import tsx contracts/scripts/generate-api.ts",

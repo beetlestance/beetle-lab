@@ -35,7 +35,7 @@ model assignments, agent packets, concurrency and independent review.
 | Foundation/contracts | Workspace gates; strict runner and namespace/settings schemas/clients; Fastify compiler and JSON route adapter | Full suite/run/result API and route wiring |
 | Agent | Durable offer identity, cancellation intent, bounded event append/replay/ACK/prune | Admission, runtime supervision, Docker controls and telemetry |
 | k6 | Pure seven-executor load-plan and threshold/discovery compiler | Requests/data/assertions, runtime, aggregation, target sampler and export |
-| Product | Namespace mutation rules, atomic-store ports, settings resolution | SQLite/files adapters, authenticated API, frontend, reports and automation client |
+| Product | Namespace rules/store ports, settings resolution, React namespace shell | SQLite/files adapters, authenticated API, remaining feature UI, reports and automation client |
 | Qualification | Local contract/unit/SQLite journal checks | Complete execution path, containers, scans, backup/soak and native architecture matrix |
 
 Worker submissions remain unaccepted until independent review and integration
