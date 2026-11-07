@@ -83,8 +83,18 @@ separately from the full gate above. Independent review cleared the original-clo
 quiescence correction. Actual temp files/SQLite plus synthetic daemon replies cover
 charged authority before writes, size/hash/mode checks, restricted secrets, two active
 slots and late I/O. Failed close retains unknown quiescence. This is not proof of
-Docker/Desktop mount visibility. A known secret-name grammar mismatch between runner
-and k6 contracts remains to fix before the real input-loader path.
+Docker/Desktop mount visibility. Later source `dd88b7c` aligns runner/k6 secret
+names and opaque provider/reference/version identities. Its 15 focused tests and
+296 broader seam tests pass; independent probes cleared alias/version/set/freeze
+checks. This pure bridge never resolves secret values; staged-loader integration
+remains pending.
+
+Later native child source `7020ae7` passed 49 integrated tests in six files and
+all three TypeScript projects. Independent review verified irreversible process-group
+retirement and cancellation during synchronous watch, validation and final-clock
+callbacks. Fixed native invocation, streamed metric backpressure and bounded
+diagnostics have synthetic-port and owned Node-child fixtures. No native k6,
+Linux/container, orphan-reaping or native buffering qualification is implied.
 
 The wrapper control journal has 55 integrated filesystem/fault tests. Independent
 probes verified poison-before-reentry, close-before-notification handoff and both
@@ -102,7 +112,7 @@ Retained native response bodies buffer before JS caps; see [exception E02](../en
 ## Missing release evidence
 
 The complete new submit/execute/observe/finalize/replay path is not implemented.
-Application artifact storage, wrapper/native child coordination, aggregation, remaining
+Application artifact storage, staged-input loading, wrapper/native child coordination, aggregation, remaining
 frontend features, reports/comparison/export and packaging remain incomplete or
 under review. The integrated frontend makes real API requests and shows errors;
 it does not contain a demo backend or claim a functioning full application.
