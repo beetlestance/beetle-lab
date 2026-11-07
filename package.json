@@ -8,10 +8,17 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "check": "node scripts/check.mjs",
-    "test": "node --test"
+    "test": "npm run test:legacy && npm run test:v2",
+    "test:legacy": "node --test test/api.test.js",
+    "test:v2": "vitest run",
+    "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p web/tsconfig.json --noEmit",
+    "lint": "node --import tsx tools/lint.ts",
+    "check:architecture": "node --import tsx tools/check-architecture.ts",
+    "check:docs": "node --import tsx tools/check-docs.ts",
+    "verify:v2": "npm run typecheck && npm run lint && npm run check:architecture && npm run check:docs && npm run test:v2"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=24.0.0"
   },
   "dependencies": {
     "express": "^4.21.2",
@@ -21,5 +28,25 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/beetlestance/beetle-lab.git"
+  },
+  "workspaces": [
+    "app",
+    "agent",
+    "contracts",
+    "web",
+    "engines/k6"
+  ],
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "10.14.0",
+    "jsdom": "31.0.0",
+    "tsup": "9.0.0",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.1.0"
   }
 }

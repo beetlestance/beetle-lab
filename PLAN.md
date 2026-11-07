@@ -60,7 +60,7 @@ distribution, amd64/arm64, no legacy migration. Fastify replaces Express for bot
 backend and private agent HTTP adapters. JSON Schema contracts and SSE reads remain
 proposed protocol choices. Frontend selection is delegated: choose React/Vite,
 React Router and TanStack Query with accessible motion/reduced-motion behavior.
-Asset terms and SDK scope remain in the
+Asset terms remain in the
 [detailed frontend discussion](docs/design/frontend-decisions.md).
 
 Release scope is confirmed: current k6 capabilities plus organisations/settings
@@ -69,8 +69,10 @@ organisation namespaces do not introduce member roles. Hosted IAM is deferred.
 Parallel execution follows user request, configured limits and available capacity.
 Optional idle/thermal conditions must identify what the runtime can measure.
 Measure stack overhead and let users allocate execution/storage budgets; do not
-impose an arbitrary minimum machine or fixed storage allocation. Before R0, settle
-asset terms; SDK scope and authoring/secrets/hooks remain open. Before R4, qualify
+impose an arbitrary minimum machine or fixed storage allocation. Authoring uses
+form and JSON editors; secrets come from environment/mounted files; explicit tool
+steps replace raw shell hooks; ship a reference engine template without an SDK.
+Use neutral independently authored UI assets until asset terms are settled. Before R4, qualify
 architectures and report actual overhead plus enforced controls. Agentless/native-process execution, cron, arbitrary workflow DAGs and a
 plugin marketplace are outside R0-R4. The user's second new feature is deferred
 until after the rewrite; no scope is inferred for it.
@@ -83,5 +85,6 @@ a settled decision in a small decision file; do not append transcripts or
 implementation journals to this plan. Mark planned/local/CI/release evidence
 accurately. See [the rewrite decision](docs/decisions/001-clean-rewrite.md).
 
-This task creates design documents only. Application code, dependencies, runtime
-services, published branches and released images are not changed by these files.
+Implementation is authorized on the separate rewrite integration branch. Preserve
+the existing application until the new path qualifies. Push, protection changes,
+publication and deployment require separate explicit authorization.

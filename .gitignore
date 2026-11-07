@@ -8,3 +8,9 @@ configs/*
 *.log
 .DS_Store
 coverage/
+
+# Rewrite build output and task-owned orchestration state.
+**/dist/
+.agent-work/
+.agent-output/
+*.tsbuildinfo

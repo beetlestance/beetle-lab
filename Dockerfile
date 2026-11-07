@@ -22,7 +22,7 @@
 #
 
 ARG K6_VERSION=1.5.0
-ARG NODE_VERSION=22
+ARG NODE_VERSION=24
 
 FROM grafana/k6:${K6_VERSION} AS k6
 
@@ -41,7 +41,7 @@ WORKDIR /app
 
 # Install production dependencies first so they cache across source changes.
 COPY package.json package-lock.json LICENSE ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev --workspaces=false && npm cache clean --force
 
 # App source. Listing files explicitly avoids dragging in dev artifacts even
 # if .dockerignore is misconfigured.

@@ -1,6 +1,7 @@
 # Multi-agent rewrite execution plan
 
-Status: planning only. No implementation agent is dispatched by this document.
+Status: implementation started in an isolated integration worktree. This document
+defines execution policy; the session dispatch board owns live assignments.
 Scope: R0-R4 in [PLAN](../../PLAN.md); other engines and hosted mode remain later.
 
 ## Read by role
@@ -56,11 +57,11 @@ wave; report scope reductions openly. A prototype does not settle full rewrite e
 Bootstrap exception: coordinator alone starts W00 using a manually checked, narrow
 packet with inherited instructions and known scope; the missing preflight tool
 cannot validate itself before it exists. After W00, W01 freezes schemas. Only then
-start normal builders with a reviewed baseline, implemented gates and tested packets. Current PLAN/docs are uncommitted, so naming the current HEAD
-alone does not supply that context to a fresh worktree. No packet is ready until
+start normal builders with a reviewed baseline, implemented gates and tested packets.
+PLAN/docs are committed in the design snapshot. No packet is ready until
 its read inputs are actually materialized and hash-checked in the target worktree.
 
-Unresolved authoring, secrets, hooks and asset-distribution decisions block only
+Unresolved asset-distribution decisions block only
 their dependent packets. They must not be invented by a worker. Coordinator may
 advance independent contracts/fake-engine work without pretending those choices
 are settled. Existing approval/cost/network rules continue to apply.

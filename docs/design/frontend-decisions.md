@@ -94,8 +94,7 @@ and engine independently; pin installed images by digest and update explicitly.
 2. Beetle-lab MIT licensing is [settled](../decisions/002-mit-license.md). Settle
    asset/media/brand distribution separately; AI-generated media does not change
    the existing CSS/JS declaration. This plan does not relicense the asset repository.
-3. Confirm whether a reference engine template is enough initially or an immediate
-   external engine author requires a published SDK package.
+3. Settled: ship a reference engine template initially; defer SDK publication.
 
 Sources: [React](https://react.dev/learn/build-a-react-app-from-scratch),
 [Vue](https://vuejs.org/guide/introduction.html),

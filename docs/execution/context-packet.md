@@ -1,6 +1,6 @@
 # Agent context packet and preload protocol
 
-Status: proposed dispatch format; its preflight tool is a W00 deliverable.
+Status: dispatch format; W00 implements the source/ownership preflight subset below.
 A prompt alone is not a sandbox. [Schedule](schedule.md) owns locks/tool boundaries.
 
 ## Immutable packet contents
@@ -87,6 +87,21 @@ namespace ownership before review. Explicitly check for hidden caches/full reads
 shared mutable globals, ignored errors and unsupported measurement claims; all
 models can produce these defects. Reviewer reads diff+contract+tests independently,
 not just the author's narrative.
+
+## Implemented preflight boundary
+
+`tools/agents/dispatch.ts` reads actual Git branch/HEAD/dirt, binds the canonical
+worktree, verifies read hashes, accepted dependency ancestry, model/tool availability,
+revocations, capacity and conflicting locks/write ownership. The coordinator invokes
+it serially and records an active claim before spawning. This is a session-owned
+queue, not a concurrent daemon or operating-system sandbox.
+
+The typed packet contains these machine-checked fields. The remaining table fields
+(commands, budgets, decisions, fixtures and instruction constraints) live in a short
+required-read assignment file whose hash is included. Coordinator manually reviews
+that file, secret canaries, tool authorization and result artifacts before dispatch
+and acceptance. An author's claim cannot enter the accepted-commit ledger by itself.
+Automated tests cover mechanical checks; manual checks must have separate evidence.
 
 ## Preflight tests to implement in W00
 

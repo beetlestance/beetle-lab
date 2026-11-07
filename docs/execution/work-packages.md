@@ -102,15 +102,14 @@ public interfaces require coordinator sequencing, not last-writer-wins merging.
 
 ## Decisions that affect packet readiness
 
-- Authoring form versus JSON-only scope: gate the W12 suite-editor packet.
-- Secret sources versus UI-managed credential persistence: gate relevant W03/W10
-  storage/UI packets, not unrelated metadata work.
-- Safe lifecycle tool integration: gate F34-related W08/W09 scope. Do not silently
-  preserve shell strings or remove a promised integration.
+- Authoring is settled: form plus JSON editing, both using the same config schema.
+- Secrets are supplied by environment or mounted files; metadata stores references
+  only. No UI-managed plaintext credential persistence in this release.
+- Raw shell hooks are retired in favour of explicit capability-controlled tool
+  steps. F34 requires a documented approved-tool contract and typed failure evidence.
 - Shared asset terms: use independent neutral placeholders for structural UI
   fixtures; distribution/branding packets remain blocked until terms are settled.
-- SDK publication: reference protocol/template work can proceed; no npm publication
-  or multi-language SDK promise is inferred from it.
+- Reference engine template only; no published SDK for the first release.
 
 ## Task-sizing rule
 
