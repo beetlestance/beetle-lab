@@ -29,5 +29,6 @@ export function compileBody(body: DeepReadonly<RequestConfig['body']>, inputs: R
   reserveExpansion(budget, body.input.bytes);
   const text = inputs.get(body.input.id)!;
   if (body.format === 'text') return { kind: 'input', format: 'text', input: { ...body.input }, value: compileTemplate(text, 'text', scope) };
-  return { kind: 'input', format: 'json', input: { ...body.input }, value: bodyNode(parseInputJson(text), { budget, scope }, 0) };
+  const value = parseInputJson(text, suiteLimits.jsonNodes - budget.bodyNodes);
+  return { kind: 'input', format: 'json', input: { ...body.input }, value: bodyNode(value, { budget, scope }, 0) };
 }

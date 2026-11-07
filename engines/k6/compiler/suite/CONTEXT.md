@@ -6,7 +6,6 @@ IR for both runtime and export. No I/O, ambient time/randomness, environment or
 secret values. `digest(string)` is a trusted injected synchronous SHA-256 function;
 encoding is validated but its implementation is trusted. Node-only `validation.ts`
 exports validation, real SHA-256 and `validateAndCompileSuite(unknown,unknown)`.
-
 Input manifest refs contain UUID, SHA-256 and actual UTF-8 bytes. Inject text,
 never host paths; the adapter checks bytes/hash before parsing. Bodies explicitly
 use inline JSON, JSON input or text input; text is never silently parsed as JSON.
@@ -30,7 +29,8 @@ Readiness is GET, permits secret but no iteration dataset substitutions, and fai
 preparation on exhaustion. Bound = attempts*timeout +(attempts-1)*interval <=budget.
 Bounds: config 1MiB/shared JSON limits (inline arrays <=4096); 64 requests/datasets/
 columns, 10000 external rows/dataset, 250000 materialized cells; 8MiB/input and
-32MiB loaded/expanded uses (repeated refs count again), aggregate body nodes65536;
+32MiB loaded/expanded uses (repeated refs count again), body value nodes65536 (roots
+included, keys excluded); external JSON preflight admits against remaining nodes;
 cells/templates <=4096 chars, <=128 tokens; JSON depth32. Request serialization
 limits: URL/header64KiB, body8MiB; runtime must enforce before allocation.
 Secret refs contain name/provider/locator/optional opaque version; no value/hash.

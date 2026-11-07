@@ -2,7 +2,7 @@ import { fail } from './failure.js';
 import { suiteLimits, unsafeNames } from './limits.js';
 interface Scanner {
   nodes: number; quoted: boolean; escaped: boolean; stringChars: number; cells: number;
-  datasetCells: number | undefined; collections: { kind: string; separators: number }[];
+  expectValue: boolean; datasetCells: number | undefined; collections: { kind: string; separators: number }[];
 }
 function quoted(state: Scanner, char: string): void {
   if (++state.stringChars > suiteLimits.cellChars * 6 + 2) fail('input_limit');
@@ -27,18 +27,28 @@ function separator(state: Scanner, char: string): void {
 }
 function structural(state: Scanner, char: string): void {
   switch (char) {
-    case '"': state.quoted = true; state.stringChars = 0; state.nodes++; break;
-    case '[': case '{': state.collections.push({ kind: char, separators: 0 }); state.nodes++; break;
-    case ']': case '}': state.collections.pop(); break;
-    case ',': case ':': separator(state, char); state.nodes++; break;
+    case '"': state.quoted = true; state.stringChars = 0; break;
+    case '[': case '{':
+      state.collections.push({ kind: char, separators: 0 }); state.expectValue = char === '['; break;
+    case ']': case '}': state.collections.pop(); state.expectValue = false; break;
+    case ',': case ':':
+      separator(state, char); state.expectValue = char === ':' || state.collections.at(-1)?.kind === '['; break;
   }
 }
-/** Linear preflight caps nesting, collection sizes, cells, strings and tokens before JSON.parse. */
+function scan(state: Scanner, char: string): void {
+  if (state.quoted) { quoted(state, char); return; }
+  // A value begins at its first non-whitespace character, including container roots.
+  // Object keys never set expectValue; primitive continuations and separators add no nodes.
+  if (state.expectValue && !/[\s,\]}:]/.test(char)) { state.nodes++; state.expectValue = false; }
+  structural(state, char);
+}
+/** Linear preflight caps nesting, collections, cells, strings and JSON value nodes before parsing. */
 export function parseInputJson(text: string, maximumNodes: number = suiteLimits.jsonNodes, datasetCells?: number): unknown {
-  const state: Scanner = { nodes: 0, quoted: false, escaped: false, stringChars: 0, cells: 0, datasetCells, collections: [] };
+  if (!Number.isSafeInteger(maximumNodes) || maximumNodes < 1) fail('input_limit');
+  const state: Scanner = { nodes: 0, quoted: false, escaped: false, stringChars: 0, cells: 0,
+    expectValue: true, datasetCells, collections: [] };
   for (const char of text) {
-    if (state.quoted) quoted(state, char);
-    else structural(state, char);
+    scan(state, char);
     if (state.collections.length > suiteLimits.jsonDepth || state.nodes > maximumNodes) fail('input_limit');
   }
   try { return JSON.parse(text.replace(/^\uFEFF/, '')) as unknown; }
