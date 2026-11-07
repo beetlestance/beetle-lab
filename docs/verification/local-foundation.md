@@ -1,21 +1,22 @@
 # Local foundation evidence
 
-Full-gate source: `db639d7` on `rewrite/integration`.
+Full-gate source: `66ea8d3` on `rewrite/integration`.
 Date: 2026-11-07. Verification ran with a clean worktree at this source;
-later integrated settings UI/staging have the separate scoped evidence below.
+this includes settings UI, staging, the secret bridge, native child and session contracts.
+Later metric projection remains a candidate with separate scoped checks.
 This report covers foundations; it does not qualify the rewritten product.
 
 ## Executed checks
 
 `npm run verify:v2` exited 0:
 
-- Runner/API/k6 generation checks: 37/21/6 outputs matched their sources.
+- Runner/API/k6 generation checks: 37/23/6 outputs matched their sources.
 - TypeScript node/browser/native-k6 checks and ESLint passed.
-- Import boundaries, cycles and size checks covered 394 source files.
-- Documentation check covered 59 files.
-- Frontend production build passed; the main bundle was 602.06 kB / 176.13 kB gzip.
+- Import boundaries, cycles and size checks covered 440 source files.
+- Documentation check covered 65 files.
+- Frontend production build passed; the main bundle was 606.23 kB / 176.89 kB gzip.
   Vite's large-chunk warning remains; no browser performance claim is made.
-- Vitest: 1,159 tests passed in 97 files, with at most two workers.
+- Vitest: 1,332 tests passed in 117 files, with at most two workers.
 
 Environment: Node v26.7.0 on macOS arm64. Compilation targets Node24, but
 compilation alone does not prove Node24 runtime behavior.
@@ -63,7 +64,7 @@ inject a synthetic guard; actual sessions, Host/Origin and CSRF remain unwired.
 React tests use the real typed client with synthetic fetch replies. They cover
 scope switches/cancellation, bounded pagination, namespace editing and unknown
 mutation outcome replay. Later settings UI source `eb8b27d` passed 66 integrated
-frontend tests and all typechecks, separately from the full gate above. Review
+frontend tests and all typechecks, now included in the full gate above. Review
 covered scoped overrides/null inheritance, integer/retention forms, parent
 invalidation, late replies, exact replay and conflicts. Its author build passed
 (main 603.74 kB warning retained). Visual/mobile browser checks remain unverified.
@@ -79,7 +80,7 @@ stale absence and late-response races. No container was launched for this eviden
 Staging ownership/host-path mapping and actual Linux controls remain unqualified.
 
 Later file-staging source `4dc4405` passed 70 integrated tests and all typechecks,
-separately from the full gate above. Independent review cleared the original-close
+now included in the full gate above. Independent review cleared the original-close
 quiescence correction. Actual temp files/SQLite plus synthetic daemon replies cover
 charged authority before writes, size/hash/mode checks, restricted secrets, two active
 slots and late I/O. Failed close retains unknown quiescence. This is not proof of
@@ -108,6 +109,11 @@ for pass and 99 for required-assertion failure without a user SLO. Corrective
 source `2b41a66` passed independent in-memory depth/global-VU probes; native fixtures
 were not rerun for that correction. These are not HTTP-target or Linux evidence.
 Retained native response bodies buffer before JS caps; see [exception E02](../engineering-exceptions.md).
+
+Session contracts in `66ea8d3` add three typed browser operations and fixed 429
+errors. Independent review caught and cleared a namespace-client scope assumption;
+actual typed-client pair/read/logout probes pass. Backend guard and browser handshake
+are assigned but not integrated. No authentication behavior is claimed from schemas.
 
 ## Missing release evidence
 
