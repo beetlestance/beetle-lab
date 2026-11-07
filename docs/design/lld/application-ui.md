@@ -21,7 +21,7 @@ raw exception/config/environment values. Read lists use opaque cursor + limit.
 | GET/POST /workspaces/:id/folders; PATCH/DELETE /folders/:id | Nested grouping; same-workspace parent and bounded acyclic moves |
 | GET/PATCH /workspaces/:id/settings; POST /settings/retention-preview | Effective values, overrides and deletion preview |
 | GET/POST /workspaces/:id/suites; GET/PATCH/DELETE /suites/:id | Suite index and metadata; revisions immutable |
-| POST /suites/:id/revisions; GET /revisions/:id | Validate/create revision; schema/config errors returned before enqueue |
+| POST /suites/:id/revisions; GET /revisions/:id | Create schema-preflighted revision; pin scoped input metadata |
 | POST /inputs; PUT /inputs/:id/chunks; POST /inputs/:id/seal | Bounded input staging, hashing and publication |
 | GET /inputs/:id; DELETE /inputs/:id | Scoped metadata/streaming access; pinned inputs cannot be deleted |
 | GET /engines; GET /engines/:id/schema | Installed plugin capabilities/config schema; no arbitrary image launch |
@@ -46,7 +46,11 @@ JSON Schema 2020-12 request and response behavior through the chosen compiler br
 Status meanings: 400 malformed, 401 unpaired, 403 denied capability/origin,
 404 absent, 409 stale version/conflicting intent, 413 body limit, 422 invalid
 suite/capability, 429 capacity/rate deferred, 503 storage/agent unavailable.
-Queueing a valid run returns 202 even if execution must wait; show queue reason.
+Queueing a preflighted run returns 202 pending engine validation; show queue reason.
+Expose `validationStatus: pending | passed | failed` for its pinned inputs. Full
+semantic checks run under admission before target interaction; rejection becomes
+durable `invalid_config`/errored/inconclusive, not a retroactive HTTP 422. See the
+[validation decision](../../decisions/007-admitted-validation.md).
 
 ## Local authorization
 

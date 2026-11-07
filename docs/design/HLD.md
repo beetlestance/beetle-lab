@@ -93,11 +93,12 @@ small composition roots rather than importing application storage.
 
 ## Execution flow
 
-1. Validate a suite revision, resolve safe input identities and enqueue a run.
+1. Preflight a suite revision/input identities; enqueue pending engine validation.
 2. A dispatcher offers one immutable attempt to the agent with an idempotency ID.
 3. The agent reserves aggregate capacity atomically or returns a queue reason.
 4. The agent stages bounded inputs, starts one wrapper/container and journals it.
-5. The wrapper emits phases/results; the agent measures resources independently.
+5. The wrapper validates/compiles before target interaction, emits phases/results;
+   the agent measures resources independently.
 6. The application ingests acknowledged event batches and serves bounded live reads.
 7. The wrapper seals artifacts/result. The supervisor records stop/exit evidence.
 8. The application finalizes outcome after validating the result and artifact seal.
@@ -105,6 +106,8 @@ small composition roots rather than importing application storage.
 Network timeout means unknown submission status, not permission to create another
 attempt. Reconcile by immutable ID. Cancel and finalization use persisted state
 transitions. Never retry test side effects automatically after uncertain execution.
+The [validation boundary](../decisions/007-admitted-validation.md) separates cheap
+preflight from heavy semantic work inside the admitted engine.
 
 ## Resource and observability principles
 

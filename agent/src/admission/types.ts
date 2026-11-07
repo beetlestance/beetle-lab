@@ -21,6 +21,7 @@ export interface RuntimeObservation {
   idle?: { source: string; observedAt: number; value: boolean | null };
   thermal?: { source: string; observedAt: number; celsius: number | null };
 }
+/** Trusted installed-schema/metadata preflight identity, not full engine compilation evidence. */
 export interface ValidationIdentity {
   manifestId: string; profileId: string; schemaDigest: string; catalogVersion: number; configDigest: string;
 }

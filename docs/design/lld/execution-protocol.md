@@ -96,6 +96,10 @@ Image acquisition/verification occurs before timed execution and within a bounde
 setup budget; no background image pull during performance measurements.
 
 The wrapper implements validate -> prepare -> execute -> collect -> seal.
+Control-plane preflight covers installed schema/identities/capabilities and scoped
+input metadata. Full staged-input semantic compilation is admitted validate work,
+completed before readiness or target load; validation OOM/timeout is an execution
+failure. See [the validation boundary](../../decisions/007-admitted-validation.md).
 Each phase has one owner and deadline. k6 config compilation, metric aggregation,
 report rendering and script export are separate modules sharing one pure compiler.
 An engine can use JS, Rust, Python or another language; the wrapper may launch its
@@ -123,7 +127,7 @@ independent heavy operation becomes another admitted task with a parent run ID.
 
 | Step | Invariant |
 | --- | --- |
-| Offer | Input/config schemas and requested capabilities validated before capacity is held |
+| Offer | Installed schema/identities, scoped reference metadata and capabilities preflighted |
 | Admit | CPU/RAM/PID/output reservations checked and journaled atomically |
 | Prepare | Inputs staged and hash-verified; credentials resolved transiently; setup bounded |
 | Start | Resource controls applied; runtime ID persisted; measure-start emitted only after readiness |
