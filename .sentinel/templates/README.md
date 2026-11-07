@@ -73,6 +73,8 @@ git-sentinel enforce --dry-run --config sentinel.yml
 
 Git-sentinel 3.0.2 regenerates repository files during enforcement. The versioned `.sentinel/templates/` preserves our README, license, contribution guide, and data exclusions. Keep those templates in sync when editing their root copies. Run enforcement only through an approved maintenance workflow; it writes commits directly, while both branches require PRs. The `configs/` exclusions must remain in place.
 
+Git-sentinel 3.0.2 may still report a ruleset difference because GitHub returns the read-only `current_user_can_bypass` field, which that version does not exclude from comparison. Verify the actual rule fields before changing policy; this alone does not mean protection is missing.
+
 ## Scope
 
 Browser E2E, test generation, mutation testing, a dedicated CI CLI, and TypeScript migration are future work; the current execution engine is k6.
