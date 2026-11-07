@@ -8,9 +8,11 @@ const port = parentPort;
 if (!port) throw new Error('Storage worker required');
 function start(): void {
   let store: Store;
+  let runtimeTtlMs: number;
   try {
     const data = workerData as { path: string; bootstrap: Bootstrap };
     const bootstrap = checkedBootstrap(data.bootstrap);
+    runtimeTtlMs = bootstrap.runtimeTtlMs ?? 5000;
     const db = initialize(data.path);
     try { store = new Store(db, bootstrap); } catch (error) { db.close(); throw error; }
   } catch (error) {
@@ -19,7 +21,7 @@ function start(): void {
   }
   port?.on('message', (message: Command) => {
     try {
-      const operation = checkedOperation(message);
+      const operation = checkedOperation(message, runtimeTtlMs);
       const value = boundedCopy(store.execute(operation), 1048576);
       port.postMessage({ kind: 'result', messageId: message.messageId, ok: true, value } satisfies Reply);
       if (operation.kind === 'close') port.close();

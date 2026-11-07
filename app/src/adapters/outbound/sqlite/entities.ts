@@ -57,14 +57,26 @@ export class Entities {
     }
   }
   subtreeHeight(scope: WorkspaceScope, id: string): number {
-    const row = this.db.prepare(`WITH RECURSIVE subtree(id,depth) AS (
-      SELECT id,0 FROM folders WHERE organization_id=? AND workspace_id=? AND id=?
-      UNION ALL SELECT f.id,s.depth+1 FROM subtree s JOIN folders f ON f.parent_id=s.id
-      WHERE f.organization_id=? AND f.workspace_id=? AND s.depth<8 LIMIT 10001)
-      SELECT max(depth) AS height,count(*) AS size FROM subtree`)
-      .get(lower(scope.organizationId), lower(scope.workspaceId), lower(id),
-        lower(scope.organizationId), lower(scope.workspaceId));
-    requireRule(typeof row?.size === 'number' && row.size <= 10000 && typeof row.height === 'number' && row.height < 8);
-    return row.height;
+    const root = this.folderRow(scope, id);
+    const queue = [{ id: root.id, depth: 0 }];
+    const seen = new Set([root.id]);
+    const children = this.db.prepare(`SELECT id FROM folders INDEXED BY folders_children
+      WHERE organization_id=? AND workspace_id=? AND parent_id=? ORDER BY id LIMIT ?`);
+    let height = 0;
+    for (let head = 0; head < queue.length; head++) {
+      const node = queue[head]!;
+      const remaining = 10000 - seen.size;
+      // Indexed enumeration stops before an oversized child batch can enter the frontier.
+      // Previous children + remaining + one overflow sentinel total at most 10,000.
+      const rows = children.all(lower(scope.organizationId), lower(scope.workspaceId), node.id,
+        remaining + 1) as unknown as { id: string }[];
+      requireRule(rows.length <= remaining);
+      for (const child of rows) {
+        const depth = node.depth + 1;
+        requireRule(depth < 8 && !seen.has(child.id));
+        seen.add(child.id); queue.push({ id: child.id, depth }); height = Math.max(height, depth);
+      }
+    }
+    return height;
   }
 }

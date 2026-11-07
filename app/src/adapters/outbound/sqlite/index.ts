@@ -34,6 +34,7 @@ export class Metadata {
   private readonly worker: Worker;
   private readonly pending = new Map<number, Pending>();
   private readonly limit: number;
+  private readonly runtimeTtlMs: number;
   private nextId = 0;
   private closing = false;
   private failed = false;
@@ -49,6 +50,7 @@ export class Metadata {
 
   private constructor(options: MetadataOptions, bootstrap: Bootstrap) {
     this.limit = options.queueLimit ?? 32;
+    this.runtimeTtlMs = bootstrap.runtimeTtlMs ?? 5000;
     this.ready = new Promise((resolve, reject) => { this.readyResolve = resolve; this.readyReject = reject; });
     this.worker = new Worker(options.workerUrl, { workerData: { path: options.path, bootstrap },
       resourceLimits: { maxOldGenerationSizeMb: 128 } });
@@ -87,7 +89,7 @@ export class Metadata {
     if (this.closing) return Promise.reject(new StorageError('closed'));
     if (this.failed) return Promise.reject(new StorageError('unavailable'));
     if (this.pending.size >= this.limit) return Promise.reject(new StorageError('queue_full'));
-    try { return this.send(checkedOperation(operation)); }
+    try { return this.send(checkedOperation(operation, this.runtimeTtlMs)); }
     catch { return Promise.reject(new StorageError('invalid_input')); }
   }
   private send(operation: Operation): Promise<Value> {

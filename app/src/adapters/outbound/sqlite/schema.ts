@@ -23,6 +23,9 @@ CREATE UNIQUE INDEX folders_one_root ON folders(organization_id,workspace_id) WH
 CREATE INDEX folders_children ON folders(organization_id,workspace_id,parent_id,id);
 CREATE INDEX folders_page ON folders(organization_id,workspace_id,id);
 CREATE INDEX workspaces_page ON workspaces(organization_id,id);
+CREATE TRIGGER workspaces_root_immutable BEFORE UPDATE OF root_folder_id ON workspaces
+WHEN NEW.root_folder_id IS NOT OLD.root_folder_id BEGIN
+ SELECT RAISE(ABORT,'root identity immutable'); END;
 CREATE TRIGGER folders_root_insert BEFORE INSERT ON folders BEGIN
  SELECT CASE WHEN ((NEW.parent_id IS NULL) !=
  (NEW.id=(SELECT root_folder_id FROM workspaces WHERE id=NEW.workspace_id AND organization_id=NEW.organization_id)))

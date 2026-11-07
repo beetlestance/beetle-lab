@@ -11,7 +11,7 @@ describe('bounded source observation freshness', () => {
       const runtime = new RuntimeCapacity({ installation: settingsFixture().chain.installation, runtime: source, runtimeTtlMs: 100 });
       expect(runtime.snapshot()).toEqual(source.ceilings);
       clock.mockReturnValue(10001); expect(runtime.snapshot()).toBeNull();
-      runtime.update(source); expect(runtime.snapshot()).toBeNull();
+      expect(() => runtime.update(source)).toThrow(); expect(runtime.snapshot()).toBeNull();
       runtime.update(observation(source.ceilings, 10001)); expect(runtime.snapshot()).toEqual(source.ceilings);
       runtime.update(null); expect(runtime.snapshot()).toBeNull();
     } finally { clock.mockRestore(); }
@@ -28,16 +28,18 @@ describe('bounded source observation freshness', () => {
       runtime.update(observation(settingsFixture().runtime, 10101)); expect(runtime.snapshot()).not.toBeNull();
     } finally { clock.mockRestore(); }
   });
-  it('treats stale bootstrap and stale updates as unknown for reads/decisions, and preserves valid replay', async () => {
-    const metadata = await fixture.open(undefined, { runtime: observation(settingsFixture().runtime, Date.now() - 60001) });
-    await seed(metadata);
-    await expect(metadata.getSettings(scope)).rejects.toMatchObject({ code: 'capacity_unavailable' });
-    await metadata.updateRuntime(observation());
+  it('rejects stale bootstrap/updates, preserves current state and replays results while capacity is unknown', async () => {
+    await expect(fixture.open(undefined, { runtime: observation(settingsFixture().runtime, Date.now() - 60001) }))
+      .rejects.toMatchObject({ code: 'invalid_input' });
+    const metadata = await fixture.open(); await seed(metadata);
     const settings = await metadata.getSettings(scope);
     const change = settingsCommand(settings.id, { schemaVersion: 2, scope, requestId: requestId(), expectedVersion: 1,
       patch: { retention: { mode: 'manual' } } });
     const original = await metadata.settings.execute(change);
-    await metadata.updateRuntime(observation(settingsFixture().runtime, Date.now() - 60001));
+    await expect(metadata.updateRuntime(observation(settingsFixture().runtime, Date.now() - 60001)))
+      .rejects.toMatchObject({ code: 'invalid_input' });
+    expect((await metadata.getSettings(scope)).version).toBe(2);
+    await metadata.updateRuntime(null);
     await expect(metadata.getSettings(scope)).rejects.toMatchObject({ code: 'capacity_unavailable' });
     await expect(metadata.settings.execute(settingsCommand(settings.id, { ...change.request, expectedVersion: 2,
       requestId: requestId() }))).rejects.toMatchObject({ code: 'capacity_unavailable' });

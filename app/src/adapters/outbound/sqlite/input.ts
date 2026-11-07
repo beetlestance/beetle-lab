@@ -26,10 +26,14 @@ export function boundedCopy<T>(input: T, limit = MAX_MESSAGE_BYTES): T {
 export function checkedScope(scope: SettingsScope): void {
   requireRule(validateApi('SettingsScope', scope).ok);
 }
-export function checkedRuntime(observation: RuntimeObservation | null): void {
-  if (observation === null) return;
+function checkedObservationTime(observation: RuntimeObservation, ttl: number): void {
+  const now = Date.now();
   requireRule(observation !== undefined && Number.isSafeInteger(observation.observedAtMs) &&
-    observation.observedAtMs >= 0 && observation.observedAtMs <= Date.now());
+    observation.observedAtMs >= 0 && observation.observedAtMs <= now && now - observation.observedAtMs <= ttl);
+}
+export function checkedRuntime(observation: RuntimeObservation | null, ttl = 5000): void {
+  if (observation === null) return;
+  checkedObservationTime(observation, ttl);
   const runtime = observation.ceilings;
   requireRule(runtime !== undefined && validateApi('PoolCapacity', runtime.pool).ok && validateApi('Budget', runtime.perRun).ok);
   requireRule(Array.isArray(runtime.supportedProfiles) && runtime.supportedProfiles.length >= 1 &&
@@ -41,9 +45,9 @@ export function checkedBootstrap(input: Bootstrap): Bootstrap {
   const record = copy.installation;
   uuid(record.id); requireRule(record.version === 1 && record.schemaVersion === 2);
   requireRule(validateApi('InstallationScope', record.scope).ok && validateApi('InstallationValues', record.values).ok);
-  checkedRuntime(copy.runtime);
   const ttl = copy.runtimeTtlMs ?? 5000;
   requireRule(Number.isSafeInteger(ttl) && ttl >= 1 && ttl <= 60000);
+  checkedRuntime(copy.runtime, ttl);
   return copy;
 }
 function checkedKey(key: EntityKey): void {
@@ -75,7 +79,7 @@ function checkedSettings(operation: Extract<Operation, { kind: 'settings' }>): v
   requireRule(validateApi(names[command.request.scope.kind], command.request).ok);
   requireRule(prepareSettingsCommand({ ...command, digest: sha256 }).intentDigest === command.intentDigest);
 }
-export function checkedOperation(input: Operation): Operation {
+export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operation {
   const operation = boundedCopy(input);
   switch (operation.kind) {
     case 'namespace': checkedNamespace(operation); break;
@@ -83,7 +87,7 @@ export function checkedOperation(input: Operation): Operation {
     case 'get': checkedKey(operation.key); break;
     case 'list': checkedList(operation.query); break;
     case 'getSettings': checkedScope(operation.scope); break;
-    case 'runtime': checkedRuntime(operation.runtime); break;
+    case 'runtime': checkedRuntime(operation.runtime, runtimeTtlMs); break;
     case 'close': break;
     default: throw new StorageError('invalid_input');
   }
