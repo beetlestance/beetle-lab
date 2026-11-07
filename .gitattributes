@@ -1,0 +1,19 @@
+# Auto-detect text files and normalize line endings
+* text=auto eol=lf
+
+# Force these as text
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+
+# Force these as binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.gif binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
