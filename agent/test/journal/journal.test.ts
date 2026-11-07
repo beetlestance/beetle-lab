@@ -80,6 +80,28 @@ describe('durable immutable offer identity', () => {
     expect(cancelled).not.toHaveProperty('result');
   });
 
+  it.each(['plain', 'uppercase', 'urn', 'urn-uppercase'])('roundtrips schema-valid %s identities through scoped operations after restart', async form => {
+    const path = dbPath(); let journal = await open(path); const value = offer();
+    for (const field of ['attemptId', 'organizationId', 'workspaceId'] as const) {
+      const base = `abcdefab${value[field].slice(8)}`;
+      const id = form.includes('uppercase') ? base.toUpperCase() : base;
+      const prefix = form.includes('uppercase') ? 'URN:UUID:' : 'urn:uuid:';
+      value[field] = form.startsWith('urn') ? `${prefix}${id}` : id;
+    }
+    expect(validate('Offer', value).ok).toBe(true);
+    const initial = await journal.immutableOffer(value); await close(journal); journal = await open(path);
+    expect(await journal.get(key(value))).toEqual(initial);
+    expect(await journal.readOffer(key(value))).toEqual(value);
+    const cancelled = await journal.durableCancel(key(value));
+    expect(validate('AttemptSnapshot', cancelled).ok).toBe(true);
+    expect(cancelled).toMatchObject({ ...key(value), cancelRequested: true });
+    await close(journal); journal = await open(path);
+    expect(await journal.get(key(value))).toEqual(cancelled);
+    expect(await journal.readOffer(key(value))).toEqual(value);
+    expect(await journal.durableCancel(key(value))).toEqual(cancelled);
+    expect(await journal.immutableOffer(value)).toEqual(cancelled);
+  });
+
   it('bounds cursor pages to snapshots and persists continuation across restart', async () => {
     const path = dbPath(); let journal = await open(path);
     for (let i = 1; i <= 103; i++) {
@@ -152,6 +174,30 @@ describe('real SQLite ownership and worker lifecycle', () => {
     const next = await open(path); expect((await next.get(key(original))).generation).toBe(1);
   });
 
+  it.each(['close', 'get'])('awaits real journal worker exit before rejecting close after %s fails during native SQLite work', async kind => {
+    const path = dbPath(); const entry = join(root, 'failing-close-worker.mjs');
+    await writeFile(entry, `import {parentPort} from 'node:worker_threads';
+      import {DatabaseSync} from 'node:sqlite';
+      const nativeDelay = new DatabaseSync(':memory:');
+      parentPort.on('message',command=>{
+        if(command.kind!==${JSON.stringify(kind)}) return;
+        parentPort.postMessage({kind:'result',id:command.id,ok:false,code:'unavailable'});
+        nativeDelay.exec('WITH RECURSIVE delay(x) AS (VALUES(0) UNION ALL SELECT x+1 FROM delay WHERE x<5000000) SELECT sum(x) FROM delay');
+      });
+      await import(${JSON.stringify(workerUrl.href)});`);
+    const journal = await openJournal({ path, workerUrl: pathToFileURL(entry) }); handles.add(journal);
+    await journal.immutableOffer(offer());
+    if (kind === 'get') await expect(journal.get(key(original))).rejects.toMatchObject({ code: 'unavailable' });
+    const closing = journal.close();
+    await expect(closing).rejects.toMatchObject({ code: 'unavailable', message: 'Journal unavailable' });
+    // No abort, delay or retry may mask a lock left behind by awaited close.
+    const probe = new DatabaseSync(path, { timeout: 0 });
+    try { expect(() => probe.exec('PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; COMMIT;')).not.toThrow(); }
+    finally { probe.close(); }
+    expect(journal.close()).toBe(closing); handles.delete(journal);
+    const successor = await open(path); expect((await successor.get(key(original))).generation).toBe(1);
+  });
+
   it('explicitly fails queued work on abort, with no acceptance claim under unknown commit outcome', async () => {
     const journal = await open();
     const pending = journal.immutableOffer(offer());
@@ -173,7 +219,7 @@ describe('real SQLite ownership and worker lifecycle', () => {
       expect(result.reason).toBeInstanceOf(JournalError);
       expect(result.reason).toMatchObject({ code: 'unavailable', message: 'Journal unavailable' });
     }
-    await journal.abort(); handles.delete(journal);
+    await expect(journal.close()).rejects.toMatchObject({ code: 'unavailable' }); handles.delete(journal);
     const successor = await open(path);
     expect((await successor.get(key(original))).generation).toBe(1);
   });
@@ -183,7 +229,7 @@ describe('real SQLite ownership and worker lifecycle', () => {
     await writeFile(entry, "import {parentPort} from 'node:worker_threads'; parentPort.on('message',()=>{}); parentPort.postMessage({kind:'ready'});");
     const journal = await openJournal({ path: dbPath(), workerUrl: pathToFileURL(entry) }); handles.add(journal);
     await expect(journal.immutableOffer(offer())).rejects.toMatchObject({ code: 'unavailable' });
-    await journal.abort(); handles.delete(journal);
+    await expect(journal.close()).rejects.toMatchObject({ code: 'unavailable' }); handles.delete(journal);
   });
 });
 

@@ -1,9 +1,8 @@
-import { encodeJson, validate } from '@beetle/contracts';
+import { encodeJson, validate, validatePrimitive } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import type { AttemptKey, PageRequest } from './protocol.js';
 
 export const MAX_OFFER_BYTES = 1_048_576;
-const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function canonical(value: unknown): string {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -23,7 +22,7 @@ export function offerInput(input: unknown): { json: string; canonical: string } 
 export function attemptKey(input: AttemptKey): AttemptKey {
   const copy = JSON.parse(encodeJson(input, 512)) as AttemptKey;
   const fields = [copy.attemptId, copy.organizationId, copy.workspaceId];
-  if (fields.some(value => typeof value !== 'string' || !uuid.test(value))) throw new Error('invalid_input');
+  if (fields.some(value => !validatePrimitive('uuid', value).ok)) throw new Error('invalid_input');
   return { attemptId: copy.attemptId, organizationId: copy.organizationId, workspaceId: copy.workspaceId };
 }
 

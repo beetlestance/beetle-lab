@@ -31,6 +31,7 @@ export class Journal {
   private closing = false;
   private failed = false;
   private closePromise: Promise<void> | undefined;
+  private terminationPromise: Promise<number> | undefined;
   private readyResolve: () => void = () => undefined;
   private readyReject: (error: JournalError) => void = () => undefined;
   private readonly ready: Promise<void>;
@@ -52,7 +53,7 @@ export class Journal {
     try { journal = new Journal(options); } catch { throw new JournalError('unavailable'); }
     const timer = setTimeout(() => journal.fail('unavailable'), 5000);
     try { await journal.ready; return journal; }
-    catch (error) { await journal.worker.terminate(); throw error; }
+    catch (error) { await journal.terminate(); throw error; }
     finally { clearTimeout(timer); }
   }
 
@@ -76,12 +77,12 @@ export class Journal {
     if (this.closePromise) return this.closePromise;
     this.closing = true;
     // Worker FIFO drains previously posted commands; close uses one reserved slot.
-    this.closePromise = this.send({ kind: 'close' }).then(async () => { await this.worker.terminate(); });
+    this.closePromise = this.send({ kind: 'close' }).then(() => undefined).finally(() => this.terminate());
     return this.closePromise;
   }
 
   /** Immediate shutdown: pending writes have unknown commit outcome. */
-  async abort(): Promise<void> { this.closing = true; this.fail('unavailable'); await this.worker.terminate(); }
+  async abort(): Promise<void> { this.closing = true; this.fail('unavailable'); await this.terminate(); }
 
   private prepare(operation: () => Operation): Promise<Value> {
     if (this.closing) return Promise.reject(new JournalError('closed'));
@@ -119,7 +120,12 @@ export class Journal {
     this.readyReject(new JournalError(code));
     for (const pending of this.pending.values()) { clearTimeout(pending.timer); pending.reject(new JournalError(code)); }
     this.pending.clear();
-    void this.worker.terminate();
+    void this.terminate();
+  }
+
+  private terminate(): Promise<number> {
+    this.terminationPromise ??= this.worker.terminate();
+    return this.terminationPromise;
   }
 }
 

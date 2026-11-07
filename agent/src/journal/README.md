@@ -11,6 +11,7 @@ duplicates, including scope and digest. No reference resolution or secret hashin
 This records identity; it neither admits capacity nor launches execution.
 
 `get`, `readOffer` and `durableCancel` require all three scope/attempt UUIDs.
+Keys use the public UUID validator, preserving accepted URN/case representations.
 Cancel persists intent, without advancing lifecycle or inventing exit evidence.
 `listOpen({limit,cursor?})` returns at most 100 snapshots and a numeric next cursor;
 all rows in this foundation are offered/open. Lists never read config columns.
@@ -25,7 +26,8 @@ The queue includes in-flight work (default 32, maximum 64), plus a close slot.
 Commands time out after 5 seconds: pending callers fail with typed availability,
 and the worker terminates. Such a mutation has unknown commit outcome; reconcile
 the same immutable intent after reopen. Public errors contain only fixed codes.
-`close()` drains FIFO commands and releases handles; `abort()` explicitly fails
+`close()` awaits worker exit on success/failure before preserving its typed result;
+it drains FIFO commands; `abort()` explicitly fails
 pending work and terminates. No cancellation signal is delivered to any engine.
 
 Scoped checks (heap 1024 MiB, max 2 test workers):
