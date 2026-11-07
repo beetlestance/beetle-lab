@@ -1,28 +1,28 @@
 # syntax=docker/dockerfile:1.6
 #
-# k6-studio container image.
+# beetle-lab container image.
 # Pull the k6 binary from the official multi-arch image, then run the Express
 # server on slim Node.js. Bucket data lives in a volume at /app/configs so it
 # survives image upgrades.
 #
 # Build (your host arch):
-#   docker build -t k6-studio:1.1 .
+#   docker build -t beetle-lab:1.1 .
 #
 # Build for a specific target platform (e.g. amd64 colleagues from an M-series Mac):
-#   docker buildx build --platform linux/amd64 -t k6-studio:1.1 --load .
+#   docker buildx build --platform linux/amd64 -t beetle-lab:1.1 --load .
 #
 # Run:
-#   docker run --rm -p 4567:4567 -v $PWD/configs:/app/configs k6-studio:1.1
+#   docker run --rm -p 4567:4567 -v $PWD/configs:/app/configs beetle-lab:1.1
 #   open http://localhost:4567
 #
 # Share offline (no registry):
-#   docker save k6-studio:1.1 | gzip > k6-studio-1.1.tgz
+#   docker save beetle-lab:1.1 | gzip > beetle-lab-1.1.tgz
 #   # recipient:
-#   gunzip -c k6-studio-1.1.tgz | docker load
+#   gunzip -c beetle-lab-1.1.tgz | docker load
 #
 
 ARG K6_VERSION=1.5.0
-ARG NODE_VERSION=20
+ARG NODE_VERSION=22
 
 FROM grafana/k6:${K6_VERSION} AS k6
 
@@ -34,10 +34,13 @@ COPY --from=k6 /usr/bin/k6 /usr/local/bin/k6
 # tini gives us a proper PID 1 so SIGINT / SIGTERM propagate to k6 children.
 RUN apk add --no-cache tini
 
+LABEL org.opencontainers.image.source="https://github.com/beetlestance/beetle-lab" \
+      org.opencontainers.image.licenses="MIT"
+
 WORKDIR /app
 
 # Install production dependencies first so they cache across source changes.
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json LICENSE ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 # App source. Listing files explicitly avoids dragging in dev artifacts even

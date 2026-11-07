@@ -7,16 +7,16 @@
 #
 
 services:
-  k6-studio:
+  beetle-lab:
     build:
       context: .
       args:
         K6_VERSION: "1.5.0"
-        NODE_VERSION: "20"
-    image: k6-studio:1.1
-    container_name: k6-studio
+        NODE_VERSION: "22"
+    image: ghcr.io/beetlestance/beetle-lab:latest
+    container_name: beetle-lab
     ports:
-      - "4567:4567"
+      - "127.0.0.1:4567:4567"
     volumes:
       # Buckets, configs, payloads, runs — host-mounted so they survive the
       # container, and so users can edit configs from the host filesystem.

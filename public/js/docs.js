@@ -359,7 +359,7 @@ USER_TOKEN=abc123`) +
       `<p class="text-[13px] leading-[1.7] mt-3 mb-2"><strong>Placeholders</strong> available inside commands:</p>` +
       `<ul class="list-disc pl-5 text-[13px] leading-[1.7]"><li><code>&lt;runid&gt;</code> — the run's id</li><li><code>&lt;rundir&gt;</code> — absolute path to the run output dir</li><li><code>&lt;bucket&gt;</code> — bucket name</li><li><code>&lt;configrel&gt;</code> — config path inside the bucket</li><li><code>&lt;configdir&gt;</code> — the configDir slug used in URLs</li></ul>` +
       `<p class="text-[13px] leading-[1.7] mt-3 mb-1"><strong>Enabling hooks</strong> (intentionally inconvenient — running shell commands from configs is risky):</p>` +
-      pre(`# both env vars must be set on the k6-studio container/process
+      pre(`# both env vars must be set on the beetle-lab container/process
 K6_STUDIO_HOOKS_ENABLED=1
 K6_STUDIO_HOOKS_ALLOWED_BINARIES=docker,curl,kubectl
 # only commands whose first word is in this list are allowed`) +

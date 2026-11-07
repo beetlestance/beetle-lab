@@ -1,5 +1,10 @@
 node_modules/
-# Buckets and their contents (configs, payloads, run history) are per-machine.
+# Machine-local configs, payloads, secrets, and run history.
 configs/*
 !configs/.gitkeep
+.env
+.env.*
+!.env.example
+*.log
 .DS_Store
+coverage/
