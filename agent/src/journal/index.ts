@@ -1,11 +1,12 @@
 import { Worker } from 'node:worker_threads';
-import type { AttemptSnapshot, Offer } from '@beetle/contracts';
+import type { Ack, AckReceipt, AgentEvent, AttemptSnapshot, ControlEvent, EventBatch, Offer } from '@beetle/contracts';
+import { ackInput, cursorInput, DEFAULT_QUOTA_BYTES, eventInput, generationKey } from './event-input.js';
 import { attemptKey, offerInput, pageInput } from './input.js';
-import type { AttemptKey, ErrorCode, Operation, PageRequest, Reply, SnapshotPage, Value } from './protocol.js';
-export type { AttemptKey, ErrorCode, PageRequest, SnapshotPage } from './protocol.js';
+import type { AttemptKey, ErrorCode, GenerationKey, Operation, PageRequest, PruneReceipt, Reply, SnapshotPage, SourceCursors, SupervisorInput, Value } from './protocol.js';
+export type { AttemptKey, ErrorCode, GenerationKey, PageRequest, PruneReceipt, SnapshotPage, SourceCursors, SupervisorInput } from './protocol.js';
 
 export class JournalError extends Error {
-  constructor(readonly code: ErrorCode) { super(`Journal ${code}`); this.name = 'JournalError'; }
+  constructor(readonly code: ErrorCode, readonly recovery?: AttemptSnapshot) { super(`Journal ${code}`); this.name = 'JournalError'; }
 }
 export interface JournalOptions {
   path: string;
@@ -13,12 +14,19 @@ export interface JournalOptions {
   workerUrl?: URL;
   /** Includes the in-flight command; hard maximum 64. */
   queueLimit?: number;
+  /** Per-attempt durable charge limit for new offers, 1024..64 MiB. */
+  spoolQuotaBytes?: number;
 }
 interface Pending { resolve(value: Value): void; reject(error: JournalError): void; timer: NodeJS.Timeout }
 
+function validateQuota(quota: number): void {
+  if (!Number.isSafeInteger(quota) || quota < 1024 || quota > DEFAULT_QUOTA_BYTES) throw new JournalError('invalid_input');
+}
 function validateOptions(options: JournalOptions): void {
   const limit = options.queueLimit ?? 32;
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 64) throw new JournalError('invalid_input');
+  const quota = options.spoolQuotaBytes ?? DEFAULT_QUOTA_BYTES;
+  validateQuota(quota);
   const path = options.path;
   if (typeof path !== 'string' || !path || path === ':memory:' || path.length > 4096) throw new JournalError('invalid_input');
 }
@@ -40,7 +48,7 @@ export class Journal {
     this.limit = options.queueLimit ?? 32;
     this.ready = new Promise((resolve, reject) => { this.readyResolve = resolve; this.readyReject = reject; });
     this.worker = new Worker(options.workerUrl ?? new URL('./worker.js', import.meta.url), {
-      workerData: { path: options.path }, resourceLimits: { maxOldGenerationSizeMb: 128 },
+      workerData: { path: options.path, spoolQuotaBytes: options.spoolQuotaBytes ?? DEFAULT_QUOTA_BYTES }, resourceLimits: { maxOldGenerationSizeMb: 128 },
     });
     this.worker.on('message', (reply: Reply) => this.receive(reply));
     this.worker.on('error', () => this.fail('unavailable'));
@@ -71,6 +79,27 @@ export class Journal {
   }
   listOpen(page: PageRequest): Promise<SnapshotPage> {
     return this.prepare(() => ({ kind: 'list', page: pageInput(page) })) as Promise<SnapshotPage>;
+  }
+
+  appendWrapper(input: ControlEvent): Promise<AgentEvent> {
+    return this.prepare(() => ({ kind: 'append', event: eventInput(input, 'wrapper') })) as Promise<AgentEvent>;
+  }
+  /** One supervisor-owned ordinal stream per attempt/generation, durable across restart. */
+  appendSupervisor(input: SupervisorInput): Promise<AgentEvent> {
+    return this.prepare(() => ({ kind: 'append', event: eventInput(input, 'agent') })) as Promise<AgentEvent>;
+  }
+  readEvents(key: GenerationKey, after: number): Promise<EventBatch> {
+    return this.prepare(() => ({ kind: 'events', key: generationKey(key), after: cursorInput(after) })) as Promise<EventBatch>;
+  }
+  /** Application-durable control storage only; no lifecycle/finalization effects. */
+  acknowledge(input: Ack): Promise<AckReceipt> {
+    return this.prepare(() => ({ kind: 'ack', ack: ackInput(input) })) as Promise<AckReceipt>;
+  }
+  sourceCursors(key: GenerationKey): Promise<SourceCursors> {
+    return this.prepare(() => ({ kind: 'sources', key: generationKey(key) })) as Promise<SourceCursors>;
+  }
+  prune(key: GenerationKey): Promise<PruneReceipt> {
+    return this.prepare(() => ({ kind: 'prune', key: generationKey(key) })) as Promise<PruneReceipt>;
   }
 
   close(): Promise<void> {
@@ -109,7 +138,7 @@ export class Journal {
     this.pending.delete(reply.id); clearTimeout(pending.timer);
     if (reply.ok) pending.resolve(reply.value);
     else {
-      pending.reject(new JournalError(reply.code));
+      pending.reject(new JournalError(reply.code, reply.recovery));
       if (reply.code === 'unavailable') this.fail('unavailable');
     }
   }
