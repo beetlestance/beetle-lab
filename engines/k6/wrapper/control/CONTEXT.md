@@ -9,14 +9,15 @@ file and parent, and refuses any existing path, including failed initialization.
 `append` accepts a draft without seq, snapshots and validates it, assigns contiguous
 seq 1–65536, completes short writes and syncs before returning a frozen event
 eligible for notification. Frames include LF in the 64 KiB limit and quota.
-One append may be issued at once; there is no queue. Uncertain I/O poisons the
-writer. Validation/quota failures before I/O do not consume a sequence.
+One append claims admission before I/O and holds it through the public success or
+failure decision; quiescence alone never releases it. Uncertain I/O synchronously
+poisons before settlement. Validation/quota failures do not consume a sequence.
 
 Each create/append/replay requires an explicit performance.now() deadline at most
 60 seconds ahead and optional AbortSignal. A timer bounds caller waiting; checks
 after I/O stop late replies from returning events or issuing further work. The
-caller must stop the attempt after append failure. `close` is idempotent, rejects
-new work, suppresses in-flight notification eligibility and quiesces issued I/O
+caller must stop the attempt after append failure. The final public handoff checks
+closing again. `close` is idempotent, rejects new work and quiesces issued I/O
 before closing. An unresponsive kernel operation may delay cleanup; timeout does
 not cancel a kernel write. There are no background retries or implicit handlers.
 
@@ -34,5 +35,6 @@ directory/path replacement. Ancestor identity, mount trust and access control ar
 staging responsibilities. File checks do not authenticate arbitrary cross-process
 writers. Durability assumes the host filesystem correctly implements file and
 directory fsync; power-loss and platform guarantees require separate qualification.
+Initialization independently attempts both descriptor cleanups even on failures.
 
 Check: `NODE_OPTIONS=--max-old-space-size=1024 npx vitest run engines/k6/test/wrapper-control --maxWorkers=2`.

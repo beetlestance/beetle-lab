@@ -17,12 +17,22 @@ export interface ControlWriter {
   close(): Promise<void>;
 }
 
+interface AppendFlight {
+  readonly quiesced: Promise<void>;
+  readonly finish: () => void;
+}
+function createFlight(): AppendFlight {
+  let finish!: () => void;
+  const quiesced = new Promise<void>(resolve => { finish = resolve; });
+  return { quiesced, finish };
+}
+
 class Writer implements ControlWriter {
   private seq = 0;
   private bytes = 0;
   private poisoned = false;
   private closing = false;
-  private inFlight: Promise<ControlEvent> | undefined;
+  private inFlight: AppendFlight | undefined;
   private closePromise: Promise<void> | undefined;
   constructor(private readonly file: JournalFile, private readonly scope: JournalScope,
     private readonly quota: number) {}
@@ -36,29 +46,41 @@ class Writer implements ControlWriter {
     const prepared = frame(draft, this.seq + 1, this.scope);
     if (this.bytes + prepared.bytes.length > this.quota) throw new JournalError('quota_limit');
     operation.check();
-    const work = this.persist(prepared, operation);
-    this.inFlight = work;
-    void work.finally(() => { this.inFlight = undefined; }).catch(() => undefined);
-    try { return await operation.wait(work); }
+    // Claim admission before issuing I/O; quiescence never releases admission.
+    const flight = createFlight(); this.inFlight = flight;
+    try {
+      const event = await operation.wait(this.persist(prepared, operation, flight));
+      operation.check();
+      if (this.closing) throw new JournalError('closed');
+      this.bytes += prepared.bytes.length; this.seq++;
+      // No await separates the public success decision and admission release.
+      this.inFlight = undefined;
+      return event;
+    }
     catch (error) { this.poisoned = true; throw safeError(error); }
   }
 
-  private async persist(prepared: ReturnType<typeof frame>, operation: Operation): Promise<ControlEvent> {
-    let offset = 0;
-    while (offset < prepared.bytes.length) {
-      operation.check();
-      const { bytesWritten } = await this.file.write(prepared.bytes, offset,
-        prepared.bytes.length - offset, this.bytes + offset);
-      operation.check();
-      if (!Number.isInteger(bytesWritten) || bytesWritten < 1 || bytesWritten > prepared.bytes.length - offset) {
-        throw new JournalError('io_failure');
+  private async persist(prepared: ReturnType<typeof frame>, operation: Operation,
+    flight: AppendFlight): Promise<ControlEvent> {
+    try {
+      let offset = 0;
+      while (offset < prepared.bytes.length) {
+        operation.check();
+        const { bytesWritten } = await this.file.write(prepared.bytes, offset,
+          prepared.bytes.length - offset, this.bytes + offset);
+        operation.check();
+        if (!Number.isInteger(bytesWritten) || bytesWritten < 1 || bytesWritten > prepared.bytes.length - offset) {
+          throw new JournalError('io_failure');
+        }
+        offset += bytesWritten;
       }
-      offset += bytesWritten;
-    }
-    await this.file.sync(); operation.check();
-    if (this.closing) throw new JournalError('closed');
-    this.bytes += prepared.bytes.length; this.seq++;
-    return prepared.event;
+      await this.file.sync(); operation.check();
+      if (this.closing) throw new JournalError('closed');
+      return prepared.event;
+    } catch (error) {
+      // Poison before persistence rejects or quiescence wakes another caller.
+      this.poisoned = true; throw safeError(error);
+    } finally { flight.finish(); }
   }
 
   close(): Promise<void> {
@@ -68,7 +90,7 @@ class Writer implements ControlWriter {
   }
   private async finishClose(): Promise<void> {
     // Append callers receive the failure. Cleanup still waits for the issued I/O.
-    await this.inFlight?.catch(() => undefined);
+    await this.inFlight?.quiesced;
     try { await this.file.close(); } catch { throw new JournalError('io_failure'); }
   }
 }
@@ -94,8 +116,8 @@ async function initialize(options: WriterOptions, scope: JournalScope, operation
     ready = true;
     return new Writer(file, scope, options.quotaBytes);
   } finally {
-    if (parent) await parent.close();
-    if (file && !ready) await file.close();
+    try { if (parent) await parent.close(); }
+    finally { if (file && !ready) await file.close(); }
   }
 }
 
