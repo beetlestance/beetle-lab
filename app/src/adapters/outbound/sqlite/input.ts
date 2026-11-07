@@ -86,7 +86,7 @@ export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operati
     case 'settings': checkedSettings(operation); break;
     case 'get': checkedKey(operation.key); break;
     case 'list': checkedList(operation.query); break;
-    case 'getSettings': checkedScope(operation.scope); break;
+    case 'getSettings': case 'getSettingsIdentity': checkedScope(operation.scope); break;
     case 'runtime': checkedRuntime(operation.runtime, runtimeTtlMs); break;
     case 'close': break;
     default: throw new StorageError('invalid_input');

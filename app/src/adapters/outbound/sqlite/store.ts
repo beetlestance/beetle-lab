@@ -54,6 +54,7 @@ export class Store {
       case 'get': return this.entities.get(operation.key);
       case 'list': return this.reads.list(operation.query);
       case 'getSettings': return this.settings.get(operation.scope);
+      case 'getSettingsIdentity': return this.settings.identity(operation.scope);
       case 'runtime': return this.settings.updateRuntime(operation.runtime);
       case 'close': this.db.close(); return null;
     }

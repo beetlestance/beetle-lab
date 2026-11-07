@@ -3,6 +3,7 @@ import type { SettingsScope } from '@beetle/contracts/api';
 import type { NamespaceStore } from '../../../ports/namespaces.js';
 import type { NamespaceEntity } from '../../../ports/namespaces.js';
 import type { SettingsStore } from '../../../ports/settings.js';
+import type { SettingsIdentity } from '../../../ports/settings-reader.js';
 import { checkedBootstrap, checkedOperation } from './input.js';
 import { StorageError } from './protocol.js';
 import type { Bootstrap, EntityKey, EntityPage, ErrorCode, ListQuery, Operation, Reply, RuntimeObservation, SettingsView, Value } from './protocol.js';
@@ -73,6 +74,10 @@ export class Metadata {
   list(query: ListQuery): Promise<EntityPage> { return this.call({ kind: 'list', query }) as Promise<EntityPage>; }
   getSettings(scope: SettingsScope): Promise<SettingsView> {
     return this.call({ kind: 'getSettings', scope }) as Promise<SettingsView>;
+  }
+  /** Internal identity seam: does not resolve defaults or inspect runtime capacity. */
+  getSettingsIdentity(scope: SettingsScope): Promise<SettingsIdentity> {
+    return this.call({ kind: 'getSettingsIdentity', scope }) as Promise<SettingsIdentity>;
   }
   updateRuntime(runtime: RuntimeObservation | null): Promise<null> {
     return this.call({ kind: 'runtime', runtime }) as Promise<null>;

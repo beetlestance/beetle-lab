@@ -4,6 +4,7 @@ import type { NamespaceCommand } from '../../../ports/namespaces.js';
 import type { EntityKey, ListQuery, EntityPage } from '../../../ports/namespace-reader.js';
 export type { EntityKind, EntityKey, ListQuery, EntityPage } from '../../../ports/namespace-reader.js';
 import type { SettingsCommand, SettingsChange } from '../../../ports/settings.js';
+import type { SettingsIdentity } from '../../../ports/settings-reader.js';
 import type { InstallationRecord, RuntimeCeilings } from '../../../domain/settings/index.js';
 
 export type ErrorCode = 'invalid_input' | 'invalid_value' | 'not_found' | 'conflict' |
@@ -19,9 +20,10 @@ export type Operation =
   | { kind: 'get'; key: EntityKey }
   | { kind: 'list'; query: ListQuery }
   | { kind: 'getSettings'; scope: SettingsScope }
+  | { kind: 'getSettingsIdentity'; scope: SettingsScope }
   | { kind: 'runtime'; runtime: RuntimeObservation | null }
   | { kind: 'close' };
-export type Value = Organization | Workspace | Folder | SettingsChange | SettingsView | EntityPage | null;
+export type Value = Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
 export type Command = Operation & { messageId: number };
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; messageId: number; ok: true; value: Value } |

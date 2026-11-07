@@ -6,6 +6,7 @@ import type { InstallationRecord, OrganizationRecord, WorkspaceRecord, SettingsR
   SettingsChain } from '../../../domain/settings/index.js';
 import { requireRule } from '../../../domain/namespaces/index.js';
 import type { SettingsCommand, SettingsChange } from '../../../ports/settings.js';
+import type { SettingsIdentity } from '../../../ports/settings-reader.js';
 import { lower, scopeKey, boundedCopy } from './input.js';
 import type { Bootstrap, RuntimeObservation, SettingsView } from './protocol.js';
 import { RuntimeCapacity } from './runtime.js';
@@ -59,6 +60,17 @@ export class Settings {
     if (scope.kind === 'organization') return { installation, organization };
     const workspace = this.record(scope) as WorkspaceRecord;
     return { installation, organization, workspace };
+  }
+  identity(scope: SettingsScope): SettingsIdentity {
+    const row = this.db.prepare('SELECT id,kind,organization_id,workspace_id FROM settings WHERE scope_key=?')
+      .get(scopeKey(scope)) as unknown as Omit<Row, 'version' | 'value_json'> | undefined;
+    requireRule(row !== undefined, 'not_found');
+    if (row.kind === 'installation') return { id: row.id, scope: { kind: 'installation' } };
+    requireRule(row.organization_id !== null);
+    if (row.kind === 'organization') return { id: row.id,
+      scope: { kind: 'organization', organizationId: row.organization_id } };
+    requireRule(row.workspace_id !== null);
+    return { id: row.id, scope: { kind: 'workspace', organizationId: row.organization_id, workspaceId: row.workspace_id } };
   }
   get(scope: SettingsScope): SettingsView {
     const chain = this.chain(scope);

@@ -9,6 +9,8 @@ calls the domain decision and writes result/receipt in one immediate transaction
 Fresh create allocations never replace original replay IDs or workspace root.
 `get({kind,scope,id})`, `list({kind,scope,limit,cursor?,parentFolderId?})` and
 `getSettings(scope)` expose API-derived namespace/settings values.
+Internal `getSettingsIdentity(scope)` reads only persisted UUID/scope, without
+effective/runtime resolution; PATCH can replay receipts after capacity expires.
 Scope must match entity kind; folder lists page the whole workspace by default;
 optional parentFolderId selects only that parent's children, with distinct cursors.
 Lists sort canonical lowercase IDs; <=100 items and query-bound opaque cursors.
