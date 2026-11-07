@@ -5,6 +5,10 @@
   "$defs": {
     "identifier": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_-]{0,63}$", "maxLength": 64 },
     "duration": { "type": "string", "pattern": "^(0|[1-9][0-9]{0,8})(ms|s|m|h)$", "maxLength": 12 },
+    "executionDuration": {
+      "description": "Constant executor duration and iteration executor maxDuration must be at least one second. Stage durations retain millisecond precision.",
+      "type": "string", "pattern": "^([1-9][0-9]{3,8}ms|[1-9][0-9]{0,8}(s|m|h))$", "maxLength": 12
+    },
     "rate": { "type": "integer", "minimum": 1, "maximum": 1000000 },
     "vus": { "type": "integer", "minimum": 1, "maximum": 100000 },
     "vuTarget": { "type": "integer", "minimum": 0, "maximum": 100000 },

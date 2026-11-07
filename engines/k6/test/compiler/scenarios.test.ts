@@ -31,12 +31,12 @@ describe('pure k6 load-plan component', () => {
 
   it('takes the maximum independent offset, workload and grace bound', () => {
     const output = compiled(planWith([
-      { ...arrival, startTime: '30s', duration: '1ms', gracefulStop: '7ms' },
+      { ...arrival, startTime: '30001ms', duration: '1s', gracefulStop: '7ms' },
       { ...discovery, startTime: '0s', gracefulStop: '0s' },
     ]));
-    expect(output.execution.upperBoundMs).toBe(30_008);
-    expect(output.options.scenarios.arrival).toMatchObject({ startTime: '30s', duration: '1ms', gracefulStop: '7ms' });
-    expect(output.execution.scenarios[0]).toMatchObject({ startOffsetMs: 30_000, activeDurationMs: 1, gracefulStopMs: 7 });
+    expect(output.execution.upperBoundMs).toBe(31_008);
+    expect(output.options.scenarios.arrival).toMatchObject({ startTime: '30001ms', duration: '1s', gracefulStop: '7ms' });
+    expect(output.execution.scenarios[0]).toMatchObject({ startOffsetMs: 30_001, activeDurationMs: 1000, gracefulStopMs: 7 });
   });
 
   it('bounds ramp expansion at 128, includes a nondivisible ceiling and supports a single plateau', () => {

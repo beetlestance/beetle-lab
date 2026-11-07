@@ -14,7 +14,7 @@
         "executor": {"const": "constant-arrival-rate"},
         "rate": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/rate"},
         "timeUnit": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
-        "duration": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "duration": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/executionDuration"},
         "preAllocatedVUs": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vus"},
         "maxVUs": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vus"}
       }
@@ -59,7 +59,7 @@
         "gracefulStop": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
         "executor": {"const": "constant-vus"},
         "vus": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vus"},
-        "duration": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"}
+        "duration": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/executionDuration"}
       }
     },
     {
@@ -73,7 +73,7 @@
         "executor": {"const": "shared-iterations"},
         "iterations": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/iterations"},
         "vus": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vus"},
-        "maxDuration": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"}
+        "maxDuration": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/executionDuration"}
       }
     },
     {
@@ -87,7 +87,7 @@
         "executor": {"const": "per-vu-iterations"},
         "iterations": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/iterations"},
         "vus": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vus"},
-        "maxDuration": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"}
+        "maxDuration": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/executionDuration"}
       }
     },
     {

@@ -9,7 +9,11 @@ export function compileLoadPlan(plan: ValidatedLoadPlan): Checked<CompiledLoadPl
   const analysis = analyzeLoadPlan(plan);
   if (!analysis.ok) return analysis;
   const scenarios: Record<string, K6Scenario> = Object.create(null) as Record<string, K6Scenario>;
-  plan.scenarios.forEach((scenario, index) => { scenarios[scenario.name] = compileScenario(scenario, index); });
+  for (const [index, scenario] of plan.scenarios.entries()) {
+    const result = compileScenario(scenario, index);
+    if (!result.ok) return result;
+    scenarios[scenario.name] = result.value;
+  }
   const thresholds = compileThresholds(plan);
   return { ok: true, value: { component: 'k6-load-plan', version: plan.version,
     options: { scenarios, thresholds: thresholds.options },

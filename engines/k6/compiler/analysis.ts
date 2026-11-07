@@ -1,13 +1,13 @@
 import type { Checked, ReadonlyLoadPlan, ReadonlyScenario, ScenarioExecution, ValidationIssue } from './types.js';
 
-export const limits = Object.freeze({ durationMs: 86_400_000, graceMs: 3_600_000,
-  executionMs: 172_800_000, rampStages: 128, inputBytes: 1_048_576 });
+import { limits } from './limits.js';
+import { checkedRampStageCount } from './ramp.js';
 const units: Readonly<Record<string, number>> = { ms: 1, s: 1000, m: 60_000, h: 3_600_000 };
 
-function duration(value: string, path: string, issues: ValidationIssue[], zero = false): number {
+function duration(value: string, path: string, issues: ValidationIssue[], minimum = 1): number {
   const match = /^(0|[1-9][0-9]{0,8})(ms|s|m|h)$/.exec(value);
   const amount = match ? Number(match[1]) * (units[match[2] ?? ''] ?? 0) : NaN;
-  if (!Number.isSafeInteger(amount) || amount < (zero ? 0 : 1)) {
+  if (!Number.isSafeInteger(amount) || amount < minimum) {
     issues.push({ path, code: 'invalid_duration' });
     return 0;
   }
@@ -15,28 +15,44 @@ function duration(value: string, path: string, issues: ValidationIssue[], zero =
   return amount;
 }
 
-export function rampStageCount(scenario: Extract<ReadonlyScenario, { executor: 'ramp-until' }>): number {
-  return Math.max(1, Math.ceil((scenario.maxRate - scenario.startRate) / scenario.stepRate));
+function stageDuration(scenario: Extract<ReadonlyScenario, { stages: unknown }>, path: string, issues: ValidationIssue[]): number {
+  return scenario.stages.reduce((sum, stage, index) =>
+    sum + duration(stage.duration, `${path}/stages/${index}/duration`, issues), 0);
+}
+
+function rampingVuDuration(scenario: Extract<ReadonlyScenario, { executor: 'ramping-vus' }>, path: string, issues: ValidationIssue[]): number {
+  if (scenario.startVUs === 0 && scenario.stages.every(stage => stage.target === 0)) {
+    issues.push({ path: path + '/stages', code: 'capacity' });
+  }
+  return stageDuration(scenario, path, issues);
+}
+
+function discoveryDuration(scenario: Extract<ReadonlyScenario, { executor: 'ramp-until' }>, path: string, issues: ValidationIssue[]): number {
+  const count = checkedRampStageCount(scenario, path);
+  if (!count.ok) {
+    issues.push(...count.issues);
+    return 0;
+  }
+  return count.value * duration(scenario.stepDuration, path + '/stepDuration', issues);
 }
 
 function activeDuration(scenario: ReadonlyScenario, path: string, issues: ValidationIssue[]): number {
-  if ('duration' in scenario) return duration(scenario.duration, path + '/duration', issues);
-  if ('maxDuration' in scenario) return duration(scenario.maxDuration, path + '/maxDuration', issues);
-  if ('stages' in scenario) return scenario.stages.reduce((sum, stage, index) =>
-    sum + duration(stage.duration, `${path}/stages/${index}/duration`, issues), 0);
-  const rates = [scenario.startRate, scenario.maxRate, scenario.stepRate];
-  if (rates.some(rate => !Number.isSafeInteger(rate) || rate < 1 || rate > 1_000_000)) {
-    issues.push({ path, code: 'ramp_range' });
-    return 0;
+  switch (scenario.executor) {
+    case 'constant-arrival-rate':
+    case 'constant-vus': return duration(scenario.duration, path + '/duration', issues, 1000);
+    case 'shared-iterations':
+    case 'per-vu-iterations': return duration(scenario.maxDuration, path + '/maxDuration', issues, 1000);
+    case 'ramping-arrival-rate': return stageDuration(scenario, path, issues);
+    case 'ramping-vus': return rampingVuDuration(scenario, path, issues);
+    case 'ramp-until': return discoveryDuration(scenario, path, issues);
   }
-  const count = rampStageCount(scenario);
-  if (scenario.maxRate < scenario.startRate) issues.push({ path, code: 'ramp_range' });
-  if (count > limits.rampStages) issues.push({ path, code: 'ramp_limit' });
-  return count * duration(scenario.stepDuration, path + '/stepDuration', issues);
 }
 
-function iterationMetadata(scenario: ReadonlyScenario): ScenarioExecution['iterations'] {
-  if (scenario.executor === 'shared-iterations') return { mode: 'shared', total: scenario.iterations };
+function iterationMetadata(scenario: ReadonlyScenario, path: string, issues: ValidationIssue[]): ScenarioExecution['iterations'] {
+  if (scenario.executor === 'shared-iterations') {
+    if (scenario.iterations < scenario.vus) issues.push({ path: path + '/iterations', code: 'capacity' });
+    return { mode: 'shared', total: scenario.iterations };
+  }
   if (scenario.executor === 'per-vu-iterations') return {
     mode: 'per-vu', perVu: scenario.iterations, total: scenario.iterations * scenario.vus };
   return undefined;
@@ -44,10 +60,10 @@ function iterationMetadata(scenario: ReadonlyScenario): ScenarioExecution['itera
 
 function scenarioTiming(scenario: ReadonlyScenario, index: number, issues: ValidationIssue[]): ScenarioExecution {
   const path = `/scenarios/${index}`;
-  const startOffsetMs = duration(scenario.startTime, path + '/startTime', issues, true);
-  const gracefulStopMs = duration(scenario.gracefulStop, path + '/gracefulStop', issues, true);
+  const startOffsetMs = duration(scenario.startTime, path + '/startTime', issues, 0);
+  const gracefulStopMs = duration(scenario.gracefulStop, path + '/gracefulStop', issues, 0);
   const gracefulRampDownMs = scenario.executor === 'ramping-vus'
-    ? duration(scenario.gracefulRampDown, path + '/gracefulRampDown', issues, true) : 0;
+    ? duration(scenario.gracefulRampDown, path + '/gracefulRampDown', issues, 0) : 0;
   if (gracefulStopMs > limits.graceMs || gracefulRampDownMs > limits.graceMs) {
     issues.push({ path, code: 'duration_limit' });
   }
@@ -59,7 +75,7 @@ function scenarioTiming(scenario: ReadonlyScenario, index: number, issues: Valid
   if (upperBoundMs > limits.executionMs) issues.push({ path, code: 'duration_limit' });
   const result: ScenarioExecution = { id: scenario.id, name: scenario.name, entrypoint: `loadScenario${index}`,
     executor: scenario.executor, startOffsetMs, activeDurationMs, gracefulStopMs, gracefulRampDownMs, upperBoundMs };
-  const iterations = iterationMetadata(scenario);
+  const iterations = iterationMetadata(scenario, path, issues);
   if (iterations) result.iterations = iterations;
   return result;
 }

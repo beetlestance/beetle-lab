@@ -24,10 +24,12 @@ metadata lists affected IDs. Exhaustion is inconclusive; a later result mapper
 needs actual abort evidence and ordinary SLO results to decide the final outcome.
 
 Integer durations use ms/s/m/h, workload/offset <=24h, grace <=1h, execution <=48h.
+Constant duration and iteration maxDuration >=1s; stages/offsets/grace allow ms.
 The conservative wall bound adds offset + workload + both applicable grace windows.
 VU counts <=100,000; positive integer rates/steps <=1,000,000; iterations <=1e9.
 A ramp has <=128 steps, reaches its maxRate exactly, and keeps one maxRate plateau
 when startRate=maxRate. Per-VU total iterations are iterations*VUs, never shared.
+Shared iterations >=VUs; ramping VUs require a positive starting or stage allocation.
 JSON input <=1MiB plus shared encoder depth/node/collection limits; issues <=16.
 Unknown fields, JS entrypoints, shell hooks, host paths and legacy aliases fail.
 

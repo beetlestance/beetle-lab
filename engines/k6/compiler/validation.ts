@@ -2,7 +2,7 @@ import { Ajv2020 } from 'ajv/dist/2020.js';
 import { encodeJson } from '@beetle/contracts';
 import { schemas } from './generated/schemas.js';
 import { compileLoadPlan } from './index.js';
-import { limits } from './analysis.js';
+import { limits } from './limits.js';
 import { freezeSchema } from './schema-freeze.js';
 import type { Checked, CompiledLoadPlan, LoadPlan, ValidatedLoadPlan } from './types.js';
 
