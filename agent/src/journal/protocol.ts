@@ -6,6 +6,14 @@ export type ErrorCode = 'invalid_input' | 'conflict' | 'not_found' | 'queue_full
   'quota_exceeded' | 'cursor_expired' | 'expired_key';
 export interface AttemptKey { attemptId: string; organizationId: string; workspaceId: string }
 export interface GenerationKey extends AttemptKey { generation: number }
+/** Private supervisor input. now is trusted wall-clock milliseconds, never job data. */
+export interface SupervisionCommand { key: GenerationKey; now: number; cancel?: true }
+export interface SupervisionState {
+  clockHighWater: number;
+  clockFenced: boolean;
+  cancelRequestedAt: number | null;
+  cancelRequested: boolean;
+}
 type WithoutSeq<T> = T extends unknown ? Omit<T, 'seq'> : never;
 export interface SupervisorInput { sourceOrdinal: number; event: WithoutSeq<Extract<AgentEvent, { source: 'agent' }>> }
 export interface SourceCursors { wrapperSeq: number; supervisorOrdinal: number }
@@ -16,6 +24,7 @@ export interface EventInput {
   key: GenerationKey; source: 'wrapper' | 'agent'; sourceKey: number; json: string; canonical: string;
 }
 export type Operation =
+  | { kind: 'supervision'; request: SupervisionCommand }
   | { kind: 'admission'; request: AdmissionCommand }
   | { kind: 'offer'; json: string; canonical: string }
   | { kind: 'get' | 'cancel' | 'read'; key: AttemptKey }
@@ -26,7 +35,7 @@ export type Operation =
   | { kind: 'prune' | 'sources'; key: GenerationKey }
   | { kind: 'close' };
 export type Command = Operation & { id: number };
-export type Value = AttemptSnapshot | SnapshotPage | Offer | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | null;
+export type Value = AttemptSnapshot | SnapshotPage | Offer | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | null;
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; id: number; ok: true; value: Value } |
   { kind: 'result'; id: number; ok: false; code: ErrorCode; recovery?: AttemptSnapshot };

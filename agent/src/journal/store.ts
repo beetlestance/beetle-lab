@@ -8,15 +8,14 @@ import { acknowledge, prune, readEvents } from './replay.js';
 import { append } from './spool.js';
 import { columns, Failure, owner, snapshot, transaction } from './sql.js';
 import type { Row } from './sql.js';
+import { supervise } from './supervision.js';
 
 export class Store {
   private readonly admission: AdmissionStore;
-  private readonly cancel: StatementSync;
   private readonly read: StatementSync;
   private readonly list: StatementSync;
   constructor(private readonly db: DatabaseSync, private readonly quota = DEFAULT_QUOTA_BYTES) {
     this.admission = new AdmissionStore(db, quota);
-    this.cancel = db.prepare('UPDATE accepted_attempts SET cancel_requested=1 WHERE id=?');
     this.read = db.prepare(`SELECT CASE WHEN length(CAST(offer_json AS BLOB))<=1048576
       THEN offer_json ELSE NULL END AS offer_json FROM accepted_attempts WHERE id=?`);
     this.list = db.prepare(`SELECT ${columns} FROM accepted_attempts WHERE id>? ORDER BY id LIMIT ?`);
@@ -51,17 +50,17 @@ export class Store {
     }
   }
   execute(command: Command): Value {
+    if (command.kind === 'supervision') return supervise(this.db, command.request);
     if (command.kind === 'admission') return this.admission.execute(command.request);
     if (['append', 'events', 'ack', 'prune', 'sources'].includes(command.kind)) return this.eventCommand(command);
     switch (command.kind) {
       case 'offer': return this.offer(command);
       case 'get': return snapshot(owner(this.db, command.key));
-      case 'cancel': return transaction(this.db, () => {
-        this.cancel.run(owner(this.db, command.key).id);
-        this.db.prepare('UPDATE admission_queue SET pending=0,decision_json=? WHERE attempt_id=? AND pending=1')
-          .run('{"kind":"reject","reason":"cancelled"}', command.key.attemptId);
+      case 'cancel': {
+        const row = owner(this.db, command.key);
+        supervise(this.db, { key: { ...command.key, generation: row.generation }, now: Date.now(), cancel: true });
         return snapshot(owner(this.db, command.key));
-      });
+      }
       case 'read': return this.readOffer(command.key);
       case 'list': return this.listOpen(command.page);
       case 'close': this.db.close(); return null;

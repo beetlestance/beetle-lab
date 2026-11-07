@@ -4,6 +4,9 @@ import { ackInput, cursorInput, DEFAULT_QUOTA_BYTES, eventInput, generationKey }
 import { attemptKey, offerInput, pageInput } from './input.js';
 import type { AdmissionCommand, AdmissionValue } from '../admission/index.js';
 import { admissionInput } from './admission-input.js';
+import { checkedSupervision } from './supervision.js';
+import type { SupervisionCommand, SupervisionState } from './protocol.js';
+export type { SupervisionCommand, SupervisionState } from './protocol.js';
 import type { AttemptKey, ErrorCode, GenerationKey, Operation, PageRequest, PruneReceipt, Reply, SnapshotPage, SourceCursors, SupervisorInput, Value } from './protocol.js';
 export type { AttemptKey, ErrorCode, GenerationKey, PageRequest, PruneReceipt, SnapshotPage, SourceCursors, SupervisorInput } from './protocol.js';
 export { configDigest } from './admission-input.js';
@@ -74,6 +77,15 @@ export class Journal {
   /** Trusted supervisor/composition boundary; never expose as a wrapper or browser API. */
   admission(input: AdmissionCommand): Promise<AdmissionValue> {
     return this.prepare(() => ({ kind: 'admission', request: admissionInput(input) })) as Promise<AdmissionValue>;
+  }
+  /** Private trusted supervisor clock/cancel transaction; never a wrapper/browser API. */
+  supervision(input: SupervisionCommand): Promise<SupervisionState> {
+    return this.prepare(() => {
+      const request = { key: generationKey(input.key), now: input.now,
+        ...(input.cancel !== undefined ? { cancel: input.cancel } : {}) };
+      checkedSupervision(request);
+      return { kind: 'supervision', request };
+    }) as Promise<SupervisionState>;
   }
   get(key: AttemptKey): Promise<AttemptSnapshot> {
     return this.prepare(() => ({ kind: 'get', key: attemptKey(key) })) as Promise<AttemptSnapshot>;

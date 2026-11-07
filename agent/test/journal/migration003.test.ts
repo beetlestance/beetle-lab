@@ -48,7 +48,7 @@ describe('transactional migration003 with foreign keys enabled', () => {
     await f.close(journal); expect(rows(path)).toEqual(original);
     const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
     try {
-      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(3);
+      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(4);
       expect(db.prepare('PRAGMA foreign_keys').get()?.foreign_keys).toBe(1);
       expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
       db.prepare("UPDATE accepted_attempts SET state='admitted' WHERE id=7").run();

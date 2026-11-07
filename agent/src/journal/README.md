@@ -36,6 +36,18 @@ Single worker/connection owns EXCLUSIVE SQLite locking, WAL/FULL, foreign keys,
 100ms busy timeout and 2 MiB cache. Transactional migrations002/003 preserve
 offers, IDs, cancel, events, ACK and pruned-source markers; migration003 rebuilds
 parent/child tables with foreign keys enabled and adds private admission metadata.
+Migration004 adds a per-attempt supervision clock without changing wire snapshots.
+`supervision({key,now,cancel?})` is private trusted-supervisor input: scoped generation,
+integer wall milliseconds, optional true cancel. It atomically stores clock high-water,
+sticky rollback fencing, first cancellation time and cancellation/queue retirement.
+Public durableCancel anchors its first time in the worker's transaction too. A
+pre-v4 cancellation has unknown origin (null timestamp), fences supervision and
+never earns a new grace period. Clock high-water is at least the persisted admission
+clock; observing one attempt does not advance unrelated admission/attempt clocks.
+These records survive pruning/ACK/restart and do not release capacity or certify
+runtime quiescence. Actors must combine absolute deadlines with local monotonic time;
+fenced clocks forbid new dispatch. On clock-integrity failure, emergency termination
+is distinct from normal five-second cancellation grace; never claim normal timing.
 Future versions refuse open. Startup/commands remain 5 seconds;
 queue includes in-flight (default 32/max 64) plus close slot. Unknown commit outcome
 requires reconcile after reopen. close awaits exit; abort terminates pending work.
