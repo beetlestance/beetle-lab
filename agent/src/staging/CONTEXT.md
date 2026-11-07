@@ -21,7 +21,10 @@ Prepare returns result plus quiesced. Cancellation/deadline can resolve failure
 while an issued operation remains unknown; its active slot and close boundary
 remain pending until it settles and every descriptor closes. At most two active
 preparations exist process-wide and there is no waiting queue. A close error keeps
-quiescence unknown. Caller must await quiesced before considering reservation work
+quiescence unknown. Each descriptor retains its original close promise/outcome;
+close is attempted once, including abort followed by late close rejection. Cleanup
+attempts all owned descriptor closes even when another close/iterator fails.
+Caller must await quiesced before considering reservation work
 settled. Durable cancel is reread at write boundaries/publication; caller signal
 bounds stalled operations. Same-UID malicious concurrent path replacement remains
 outside this trusted single-agent profile; checks detect observed replacements.

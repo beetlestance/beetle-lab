@@ -9,7 +9,7 @@ import { StagingError } from './types.js';
 
 /** Owns at most one descriptor, with late opens retained for quiescent close. */
 export class Files {
-  private readonly handles = new Set<FileHandle>();
+  private readonly handles = new Map<FileHandle, { closing?: Promise<void> }>();
   private iterator: AsyncIterator<Uint8Array> | undefined;
   private readonly directories = new Map<string, { ino: number; dev: number }>();
   constructor(readonly root: RootIdentity, readonly boundary: Boundary, readonly check: () => Promise<void>) {}
@@ -31,7 +31,7 @@ export class Files {
     }
   }
   private async descriptor(path: string, flags: number): Promise<FileHandle> {
-    return this.boundary.wait(() => open(path, flags, 0o400).then(handle => { this.handles.add(handle); return handle; }));
+    return this.boundary.wait(() => open(path, flags, 0o400).then(handle => { this.handles.set(handle, {}); return handle; }));
   }
   private async regular(handle: FileHandle, size: number): Promise<void> {
     const stat = await this.boundary.wait(() => handle.stat());
@@ -56,7 +56,7 @@ export class Files {
     await this.parents(); await this.regular(handle, size);
     await this.boundary.wait(() => handle.sync());
     await this.regular(handle, size);
-    await this.boundary.wait(() => handle.close()); this.handles.delete(handle);
+    await this.boundary.wait(() => this.closeDescriptor(handle));
     return size;
   }
   async syncDirectories(): Promise<void> {
@@ -64,14 +64,27 @@ export class Files {
     for (const path of [...this.directories.keys()].reverse().concat(this.root.configuration.stagingRoot)) {
       const handle = await this.descriptor(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_DIRECTORY);
       await this.boundary.wait(() => handle.sync());
-      await this.boundary.wait(() => handle.close()); this.handles.delete(handle);
+      await this.boundary.wait(() => this.closeDescriptor(handle));
     }
   }
-  async close(): Promise<void> {
+  private closeDescriptor(handle: FileHandle): Promise<void> {
+    const owned = this.handles.get(handle);
+    if (!owned) throw new StagingError('io');
+    // Node retires the fd before native close settles; a second close can resolve falsely.
+    owned.closing ??= Promise.resolve().then(() => handle.close()).then(() => { this.handles.delete(handle); });
+    return owned.closing;
+  }
+  private async returnIterator(): Promise<void> {
     if (this.iterator?.return) await this.iterator.return();
     this.iterator = undefined;
-    for (const handle of this.handles) { await handle.close(); this.handles.delete(handle); }
   }
+  async close(): Promise<void> {
+    const outcomes = await Promise.allSettled([
+      this.returnIterator(), ...Array.from(this.handles.keys(), handle => this.closeDescriptor(handle)),
+    ]);
+    for (const outcome of outcomes) if (outcome.status === 'rejected') throw outcome.reason;
+  }
+
 }
 /** A <=4 MiB source chunk plus its private copy bounds the retained write window to 8 MiB. */
 export function boundedChunk(raw: unknown, remaining: number): Uint8Array {
