@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle.test/contracts/engines/k6/v1/scenarios",
+  "title": "K6LoadScenario",
+  "oneOf": [
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "startTime", "gracefulStop", "executor", "rate", "timeUnit", "duration", "preAllocatedVUs", "maxVUs"],
+      "properties": {
+        "id": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"},
+        "name": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"},
+        "startTime": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "gracefulStop": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "executor": {"const": "constant-arrival-rate"},
+        "rate": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/rate"},
+        "timeUnit": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "duration": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "preAllocatedVUs": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vus"},
+        "maxVUs": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vus"}
+      }
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "startTime", "gracefulStop", "executor", "startRate", "timeUnit", "stages", "preAllocatedVUs", "maxVUs"],
+      "properties": {
+        "id": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"},
+        "name": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"},
+        "startTime": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "gracefulStop": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "executor": {"const": "ramping-arrival-rate"},
+        "startRate": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/rate"},
+        "timeUnit": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "stages": {"type": "array", "minItems": 1, "maxItems": 128, "items": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/rateStage"}},
+        "preAllocatedVUs": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vus"},
+        "maxVUs": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vus"}
+      }
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "startTime", "gracefulStop", "executor", "startVUs", "stages", "gracefulRampDown"],
+      "properties": {
+        "id": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"},
+        "name": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"},
+        "startTime": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "gracefulStop": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "executor": {"const": "ramping-vus"},
+        "startVUs": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vuTarget"},
+        "stages": {"type": "array", "minItems": 1, "maxItems": 128, "items": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vuStage"}},
+        "gracefulRampDown": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"}
+      }
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "startTime", "gracefulStop", "executor", "vus", "duration"],
+      "properties": {
+        "id": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"},
+        "name": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"},
+        "startTime": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "gracefulStop": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "executor": {"const": "constant-vus"},
+        "vus": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vus"},
+        "duration": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"}
+      }
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "startTime", "gracefulStop", "executor", "iterations", "vus", "maxDuration"],
+      "properties": {
+        "id": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"},
+        "name": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"},
+        "startTime": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "gracefulStop": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "executor": {"const": "shared-iterations"},
+        "iterations": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/iterations"},
+        "vus": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vus"},
+        "maxDuration": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"}
+      }
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "startTime", "gracefulStop", "executor", "iterations", "vus", "maxDuration"],
+      "properties": {
+        "id": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"},
+        "name": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"},
+        "startTime": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "gracefulStop": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "executor": {"const": "per-vu-iterations"},
+        "iterations": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/iterations"},
+        "vus": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vus"},
+        "maxDuration": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"}
+      }
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "name", "startTime", "gracefulStop", "executor", "startRate", "maxRate", "stepRate", "stepDuration", "timeUnit", "preAllocatedVUs", "maxVUs", "stopRule"],
+      "properties": {
+        "id": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"},
+        "name": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"},
+        "startTime": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "gracefulStop": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "executor": {"const": "ramp-until", "description": "The stopRule aborts the entire k6 invocation, including companion scenarios. Exhaustion is inconclusive."},
+        "startRate": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/rate"},
+        "maxRate": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/rate"},
+        "stepRate": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/rate"},
+        "stepDuration": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "timeUnit": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration"},
+        "preAllocatedVUs": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vus"},
+        "maxVUs": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vus"},
+        "stopRule": {"$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/rule"}
+      }
+    }
+  ]
+}

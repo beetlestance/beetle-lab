@@ -1,0 +1,14 @@
+{
+  "generator": "engines/k6/compiler/generate.ts",
+  "sources": {
+    "contracts/engines/k6/v1/common.schema.json": "49067406f1c68a121a6c797fdd2e653f719224917abc6b35b3624e54e7a44260",
+    "contracts/engines/k6/v1/load-plan.schema.json": "97617af91d26d3613d3882a26d408d8e4d1345cc81e1d0b31aa9c9173bc71d13",
+    "contracts/engines/k6/v1/scenarios.schema.json": "6c9ebab1d25c0a9d47c350e9dab9769f677d828f7c7f7e6e21bbec458ba7fb99"
+  },
+  "outputs": [
+    "load-plan.ts",
+    "manifest.json",
+    "schemas.ts",
+    "types.ts"
+  ]
+}

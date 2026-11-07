@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle.test/contracts/engines/k6/v1/common",
+  "title": "K6LoadCommon",
+  "$defs": {
+    "identifier": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_-]{0,63}$", "maxLength": 64 },
+    "duration": { "type": "string", "pattern": "^(0|[1-9][0-9]{0,8})(ms|s|m|h)$", "maxLength": 12 },
+    "rate": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+    "vus": { "type": "integer", "minimum": 1, "maximum": 100000 },
+    "vuTarget": { "type": "integer", "minimum": 0, "maximum": 100000 },
+    "iterations": { "type": "integer", "minimum": 1, "maximum": 1000000000 },
+    "rateStage": {
+      "type": "object", "additionalProperties": false, "required": ["duration", "target"],
+      "properties": {
+        "duration": { "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration" },
+        "target": { "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/rate" }
+      }
+    },
+    "vuStage": {
+      "type": "object", "additionalProperties": false, "required": ["duration", "target"],
+      "properties": {
+        "duration": { "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/duration" },
+        "target": { "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/vuTarget" }
+      }
+    },
+    "rule": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "metric", "stat", "operator", "value"],
+      "properties": {
+        "id": { "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier" },
+        "metric": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$", "maxLength": 64 },
+        "stat": { "enum": ["avg", "min", "max", "med", "p50", "p90", "p95", "p99", "count", "rate", "value"] },
+        "operator": { "enum": [">", ">=", "<", "<="] },
+        "value": { "type": "number", "minimum": 0, "maximum": 1000000000000 }
+      }
+    }
+  }
+}
