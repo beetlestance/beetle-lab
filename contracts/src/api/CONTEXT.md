@@ -4,7 +4,7 @@ Entrypoint: `index.ts`; JSON Schema 2020-12 sources: `../../api/v2`.
 `apiSchemas` is a deeply frozen complete closure: API modules and runner common once.
 `apiMessageSchemas` maps public names to references; `ApiTypes` is schema-derived.
 `apiOperations` describes routes, UUID parameter objects, queries and status/schema names.
-These descriptors implement no routes, repository, HTTP client, authentication or cleanup.
+`createApiClient`/`createApiHttpTransport` bind descriptors; see `client/CONTEXT.md` for effects/limits.
 `validateApi` validates already-parsed JSON without coercion, defaults or field removal;
 success preserves the reference. Failure exposes <=16 frozen structural path/code issues.
 HTTP owners bound parsing/serialization, reject accessors and apply strict response validation.
