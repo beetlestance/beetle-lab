@@ -10,26 +10,12 @@ const nodeModules = new Set(builtinModules.flatMap(name => [name, `node:${name}`
 function isModuleCall(expression: ts.LeftHandSideExpression): boolean {
   return expression.kind === ts.SyntaxKind.ImportKeyword || (ts.isIdentifier(expression) && expression.text === 'require');
 }
-function exportIsTypeOnly(statement: ts.ExportDeclaration): boolean {
-  if (statement.isTypeOnly) return true;
-  const clause = statement.exportClause;
-  return clause !== undefined && ts.isNamedExports(clause)
-    && clause.elements.length > 0 && clause.elements.every(item => item.isTypeOnly);
-}
-function importIsTypeOnly(statement: ts.ImportDeclaration): boolean {
-  const clause = statement.importClause;
-  if (!clause) return false;
-  if (clause.isTypeOnly) return true;
-  const bindings = clause.namedBindings;
-  return clause.name === undefined && bindings !== undefined && ts.isNamedImports(bindings)
-    && bindings.elements.length > 0 && bindings.elements.every(item => item.isTypeOnly);
-}
 function declarationEdge(statement: ts.Node): ImportEdge | undefined {
   if (!ts.isImportDeclaration(statement) && !ts.isExportDeclaration(statement)) return undefined;
   const target = statement.moduleSpecifier;
   if (!target || !ts.isStringLiteral(target)) return undefined;
   return { target: target.text, typeOnly: ts.isImportDeclaration(statement)
-    ? importIsTypeOnly(statement) : exportIsTypeOnly(statement) };
+    ? statement.importClause?.isTypeOnly === true : statement.isTypeOnly };
 }
 function typeEdge(statement: ts.Node): ImportEdge | undefined {
   if (!ts.isImportTypeNode(statement) || !ts.isLiteralTypeNode(statement.argument)) return undefined;
@@ -41,11 +27,16 @@ function callEdge(statement: ts.Node): ImportEdge | undefined {
   const argument = statement.arguments[0];
   return { target: argument && ts.isStringLiteral(argument) ? argument.text : '<unresolved-runtime-import>', typeOnly: false };
 }
+function equalsEdge(statement: ts.Node): ImportEdge | undefined {
+  if (!ts.isImportEqualsDeclaration(statement) || !ts.isExternalModuleReference(statement.moduleReference)) return undefined;
+  const expression = statement.moduleReference.expression;
+  return { target: ts.isStringLiteral(expression) ? expression.text : '<unresolved-runtime-import>', typeOnly: statement.isTypeOnly };
+}
 export function importEdges(source: string): ImportEdge[] {
   const node = ts.createSourceFile('source.ts', source, ts.ScriptTarget.Latest, true);
   const targets: ImportEdge[] = [];
   function visit(statement: ts.Node): void {
-    const edge = declarationEdge(statement) ?? typeEdge(statement) ?? callEdge(statement);
+    const edge = declarationEdge(statement) ?? typeEdge(statement) ?? callEdge(statement) ?? equalsEdge(statement);
     if (edge) targets.push(edge);
     ts.forEachChild(statement, visit);
   }
@@ -67,7 +58,6 @@ function approvedPlanImport(source: 'runtime' | 'plan', edge: ImportEdge, resolv
   return edge.typeOnly && /^engines\/k6\/compiler\/generated\/types\.[jt]s$/.test(resolved);
 }
 function approvedK6Package(source: 'runtime' | 'plan', edge: ImportEdge): boolean {
-  if (edge.typeOnly && edge.target === 'json-schema-to-ts') return true;
   return source === 'runtime' && (edge.target === 'k6' || edge.target.startsWith('k6/'));
 }
 function k6Boundary(file: string, edge: ImportEdge, resolved: string): string | undefined {

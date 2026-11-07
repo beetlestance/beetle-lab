@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import ts from 'typescript';
 import { importEdges, importTargets, boundaryIssues, findCycle } from './architecture.js';
 describe('architecture gate negative fixtures', () => {
   it('detects framework and outbound imports in core', () => {
@@ -28,21 +29,29 @@ describe('architecture gate negative fixtures', () => {
   });
   it.each([
     'import type { SuiteConfig } from "../compiler/generated/types.js";',
-    'import { type SuiteConfig } from "../compiler/generated/types.js";',
     'export type { SuiteConfig } from "../compiler/generated/types.js";',
-    'export { type SuiteConfig } from "../compiler/generated/types.js";',
     'type S = import("../compiler/generated/types.js").SuiteConfig;',
   ])('permits erased schema-derived plan types: %s', source => {
     expect(boundaryIssues('engines/k6/plan/types.ts', importEdges(source))).toEqual([]);
+    const emitted = ts.transpileModule(source, { compilerOptions: {
+      module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2023, verbatimModuleSyntax: true,
+    } }).outputText;
+    expect(importTargets(emitted)).toEqual([]);
   });
   it.each([
     'import { SuiteConfig } from "../compiler/generated/types.js";',
+    'import { type SuiteConfig } from "../compiler/generated/types.js";',
+    'export { type SuiteConfig } from "../compiler/generated/types.js";',
     'import { type SuiteConfig, schemas } from "../compiler/generated/types.js";',
     'export * from "../compiler/generated/types.js";',
     'import("../compiler/generated/types.js");',
     'import type { Compiler } from "../compiler/suite/index.js";',
     'import type { Stats } from "node:fs";',
     'import Fastify from "fastify";',
+    'import type { FromSchema } from "json-schema-to-ts";',
+    'import { type FromSchema } from "json-schema-to-ts";',
+    'import type fs = require("node:fs"); export type X = fs.Stats;',
+    'import fs = require("node:fs");',
   ])('rejects compiler values, Node and unapproved dependencies: %s', source => {
     expect(boundaryIssues('engines/k6/plan/types.ts', importEdges(source))).toHaveLength(1);
   });

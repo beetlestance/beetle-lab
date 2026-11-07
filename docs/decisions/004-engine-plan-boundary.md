@@ -19,6 +19,10 @@ type module, preserving the JSON Schema source of configuration vocabulary. Thos
 imports erase under verbatim-module TypeScript compilation. Values, mixed imports,
 dynamic imports and Node type imports remain rejected. The gate also examines
 type-import expressions and type reexports; it does not infer erasure from usage.
+Only declaration-level `import type`/`export type` and type-import expressions
+qualify. Named `import { type X }`/`export { type X }` retain empty module imports
+under verbatim-module compilation, so they do not qualify. Import-equals syntax
+is inspected too. Direct third-party types are not part of this exception.
 No handwritten duplicate DTOs or second schema generator are introduced.
 
 Native modules may import k6 APIs and the plan/runtime modules. A build must still
