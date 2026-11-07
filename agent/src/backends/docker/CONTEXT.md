@@ -11,7 +11,7 @@ environment (<=64 unique KEY=value entries, <=4096 chars each, <=16 KiB UTF-8 to
 The install owner obtains this complete baseline from the approved image/daemon;
 never derive it from Offer.config, browser environment or resolved secrets. PATH may
 be inherited and must match. Create pins Env/Runtime, disables Healthcheck with NONE,
-uses SIGTERM and rejects unapproved effective inspect values/host options.
+uses SIGTERM; exact NONE allows known nonnegative safe-integer timing/retry metadata.
 StagedRoots are trusted resolved task-owned directories exactly
 <stagingRoot>/<runtimeName>/{input,output,secrets}, mounted at /beetle/{input,output,secrets}.
 Staging owner verifies realpath, symlinks and task ownership; no staging occurs here.
@@ -20,7 +20,7 @@ Kernel >=5.12 and daemon defaultRuntime/control evidence are required; no RO dow
 Job config belongs in staged input; resolved secret values only in restricted secrets.
 Inspect normalizes only known API1.47 omissions: NetworkDisabled false, disabled
 network's empty/null attachment map, zero/false bind options and empty omitted map options.
-Unknown host/mount overrides fail; actual resource/security/mount/network values match.
+Unknown host/mount overrides fail; nonempty daemon default-ulimits are unsupported.
 UnixDockerTransport: explicit Unix socket/API1.47; 64 KiB request/1 MiB reply,
 4096 fragments, 16 KiB headers, 64 active requests; no URLs/retries/pulls/subprocesses/logs.
 All composed steps share the caller's monotonic performance.now() deadline, clamped
@@ -28,7 +28,7 @@ once to 30s. Finish rechecks it even if timers stall; abort/deadline destroys st
 ensureCreated never starts. <=64 non-evicted lifetime entries retain exact adopted
 runtime ID, terminal/removal/disappearance history and uncertain create/start claims.
 No same-attempt recreation after observing a runtime; dispatchStartOnce is created-only,
-one dispatch, never exited/restarting/unknown or previously observed running/terminal.
+one dispatch; terminal/removal history wins over late replies; start rechecks live fences.
 Persist durable start intent BEFORE calling. Recreating the adapter loses these fences;
 one exclusive supervisor/journal owns durable recovery, reservations and finalization.
 No durable execution-idempotence claim. stop retains the first absolute graceDeadline,

@@ -27,25 +27,25 @@ export class DockerBackend {
     this.active++;
     try {
       const reason = await this.qualify(context, plan.spec.HostConfig.Runtime);
-      return reason ? { state: 'unknown', reason } : await this.observe(plan, context);
+      return reason ? { state: 'unknown', reason } : this.current(entry, await this.observe(plan, context));
     } finally { this.active--; }
   }
 
   async ensureCreated(plan: RuntimePlan, operation: Operation): Promise<MutationResult<InspectEvidence>> {
     return this.run(plan, operation, async (entry, context) => {
-      const before = await this.observe(plan, context);
+      const before = this.current(entry, await this.observe(plan, context));
       if (before.state !== 'missing') return this.existing(before);
       if (entry.createClaimed) return uncertain('unavailable');
       entry.createClaimed = true;
       const created = await this.request({ ...context, method: 'POST',
         path: `/v1.47/containers/create?name=${plan.name}`, body: plan.spec });
       if (!created.ok) return this.failedMutation(created);
-      if (created.status === 409) return this.existing(await this.observe(plan, context));
+      if (created.status === 409) return this.existing(this.current(entry, await this.observe(plan, context)));
       if (created.status !== 201) return this.statusFailure(created.status);
-      const id = record(created.body)?.Id;
-      if (!containerId(id)) return uncertain('malformed');
-      entry.runtimeId = id;
-      const after = await this.observe(plan, context);
+      const id = this.createdId(created.body);
+      if (!id) return uncertain('malformed');
+      if (!this.retainIdentity(entry, id)) return uncertain('conflict');
+      const after = this.current(entry, await this.observe(plan, context));
       if (!('id' in after) || after.id !== id) return uncertain('conflict');
       return known(after);
     });
@@ -54,15 +54,16 @@ export class DockerBackend {
   async dispatchStartOnce(plan: RuntimePlan, operation: Operation): Promise<MutationResult<InspectEvidence>> {
     return this.run(plan, operation, async (entry, context) => {
       if (this.startFenced(entry)) return rejected('start_fenced');
-      const before = await this.observe(plan, context);
+      const before = this.current(entry, await this.observe(plan, context));
       if (before.state === 'unknown') return this.existing(before);
       if (before.state !== 'created') return rejected('unsafe_state');
+      if (this.startFenced(entry)) return rejected('start_fenced');
       // Set before dispatch; even an uncertain response must never permit another start.
       entry.startClaimed = true;
       const reply = await this.request({ ...context, method: 'POST', path: `/v1.47/containers/${before.id}/start` });
       if (!reply.ok) return this.failedMutation(reply);
       if (![204, 304].includes(reply.status)) return this.statusFailure(reply.status);
-      const after = await this.observe(plan, context);
+      const after = this.current(entry, await this.observe(plan, context));
       if (!('id' in after) || after.id !== before.id) return uncertain('unavailable');
       if (!['running', 'exited'].includes(after.state)) return uncertain('unsafe_state');
       return known(after);
@@ -87,14 +88,14 @@ export class DockerBackend {
   async remove(plan: RuntimePlan, operation: Operation, evidence: CleanupEvidence): Promise<MutationResult<'removed'>> {
     if (evidence?.sealed !== true || evidence.applicationAcknowledged !== true) return rejected('cleanup_guard');
     return this.run(plan, operation, async (entry, context) => {
-      const before = await this.observe(plan, context);
+      const before = this.current(entry, await this.observe(plan, context));
       if (!this.stopped(before)) return rejected('cleanup_guard');
       const reply = await this.request({ ...context, method: 'DELETE',
         path: `/v1.47/containers/${before.id}?force=false&v=false` });
       if (!reply.ok) return this.failedMutation(reply);
       if (reply.status !== 204) return this.statusFailure(reply.status);
       entry.removed = true; entry.terminal = true;
-      const after = await this.observe(plan, context);
+      const after = this.current(entry, await this.observe(plan, context));
       return after.state === 'missing' ? known('removed') : uncertain('unavailable');
     });
   }
@@ -102,7 +103,7 @@ export class DockerBackend {
   private terminate(plan: RuntimePlan, operation: Operation,
     action: (entry: Entry) => string | undefined): Promise<MutationResult<InspectEvidence>> {
     return this.run(plan, operation, async (entry, context) => {
-      const before = await this.observe(plan, context);
+      const before = this.current(entry, await this.observe(plan, context));
       if (this.stopped(before)) return known(before);
       if (before.state === 'unknown') return this.existing(before);
       if (before.state !== 'running' && before.state !== 'restarting') return rejected('unsafe_state');
@@ -112,7 +113,7 @@ export class DockerBackend {
         path: `/v1.47/containers/${before.id}/${suffix}` });
       if (!reply.ok) return this.failedMutation(reply);
       if (![204, 304, 409].includes(reply.status)) return this.statusFailure(reply.status);
-      const after = await this.observe(plan, context);
+      const after = this.current(entry, await this.observe(plan, context));
       return this.stopped(after) && after.id === before.id ? known(after) : uncertain('unsafe_state');
     });
   }
@@ -170,11 +171,28 @@ export class DockerBackend {
     return entry ? this.remember(entry, checked.value) : { state: 'unknown', reason: 'overflow' };
   }
   private remember(entry: Entry, evidence: InspectEvidence): Observation {
-    if (entry.removed || entry.runtimeId && entry.runtimeId !== evidence.id) return { state: 'unknown', reason: 'conflict' };
-    entry.runtimeId = evidence.id; entry.createClaimed = true;
+    if (!this.retainIdentity(entry, evidence.id)) return { state: 'unknown', reason: 'conflict' };
+    if (this.regressive(entry, evidence)) return { state: 'unknown', reason: 'unsafe_state' };
     if (evidence.state !== 'created') entry.startClaimed = true;
     if (evidence.state === 'exited') entry.terminal = true;
     return evidence;
+  }
+  private retainIdentity(entry: Entry, id: string): boolean {
+    if (entry.removed || entry.runtimeId && entry.runtimeId !== id) return false;
+    entry.runtimeId ??= id; entry.createClaimed = true;
+    return true;
+  }
+  private createdId(body: unknown): string | undefined {
+    const id = record(body)?.Id;
+    return containerId(id) ? id : undefined;
+  }
+  private regressive(entry: Entry, evidence: InspectEvidence): boolean {
+    return entry.terminal && evidence.state !== 'exited' || entry.startClaimed && evidence.state === 'created';
+  }
+  private current(entry: Entry, observation: Observation): Observation {
+    if (!('id' in observation)) return observation;
+    if (entry.removed || entry.runtimeId !== observation.id) return { state: 'unknown', reason: 'conflict' };
+    return this.regressive(entry, observation) ? { state: 'unknown', reason: 'unsafe_state' } : observation;
   }
   private async request(input: DockerRequest): Promise<DockerReply> {
     if (input.signal?.aborted) return { ok: false, reason: 'aborted', dispatched: false };

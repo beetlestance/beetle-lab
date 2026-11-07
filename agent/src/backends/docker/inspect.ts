@@ -102,8 +102,9 @@ function mountEvidence(value: unknown, spec: CreateSpec): boolean {
 function disabledHealthcheck(input: unknown): boolean {
   const healthcheck = record(input);
   if (!healthcheck || !same(healthcheck.Test, ['NONE'])) return false;
-  const zeroDefaults = ['Interval', 'Timeout', 'StartPeriod', 'StartInterval', 'Retries'];
-  return Object.entries(healthcheck).every(([key, value]) => key === 'Test' || zeroDefaults.includes(key) && value === 0);
+  const metadata = ['Interval', 'Timeout', 'StartPeriod', 'StartInterval', 'Retries'];
+  return Object.entries(healthcheck).every(([key, value]) => key === 'Test'
+    || metadata.includes(key) && typeof value === 'number' && Number.isSafeInteger(value) && value >= 0);
 }
 function configuration(config: Record<string, unknown>, plan: RuntimePlan): boolean {
   const expected = plan.spec;
