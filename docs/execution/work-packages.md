@@ -1,6 +1,7 @@
 # Work packages, dependencies and effort
 
-Status: proposed queue. All packages are planned, not ready or running.
+Status: implementation queue; [PLAN](../../PLAN.md) records integrated progress.
+This graph defines dependencies and estimates, not acceptance evidence.
 Read [schedule](schedule.md) for capacity/locks and [packets](context-packet.md)
 for the actual dispatch contract. Split a package into 1-3-hour behavior packets
 where useful; keep its acceptance and single owner intact.

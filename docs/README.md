@@ -14,6 +14,7 @@ released application until the rewrite is qualified.
 | Find an implementation owner | [Module map](design/lld/module-map.md) | Source/build layout and public boundaries |
 | Change a module | [Engineering rules](engineering.md) | Structure and contribution limits |
 | Prove a slice works | [Verification](verification.md) | Test IDs and evidence scope |
+| Inspect local foundation evidence | [Local report](verification/local-foundation.md) | Exact source, commands and outstanding qualification |
 | Understand a settled choice | [Rewrite](decisions/001-clean-rewrite.md), [MIT license](decisions/002-mit-license.md) | Reason, scope and rejected alternative |
 
 ## Working set

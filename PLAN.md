@@ -1,7 +1,8 @@
 # beetle-lab full rewrite
 
-Status: design for review; implementation has not started.
-Branch: `plan/typescript-engine-architecture`
+Status: implementation in progress; the released application is preserved.
+Branch: `rewrite/integration`
+Local evidence: [foundation verification](docs/verification/local-foundation.md).
 
 ## Direction
 
@@ -26,6 +27,19 @@ acceptance; ordinary rollback applies only to future v2 image/schema versions.
 The [documentation map](docs/README.md) identifies the minimum reading for each task.
 [Execution plan](docs/execution/README.md) owns effort ranges, the dependency graph,
 model assignments, agent packets, concurrency and independent review.
+
+## Current implementation
+
+| Area | Integrated | Still required |
+| --- | --- | --- |
+| Foundation/contracts | Workspace gates; strict runner and namespace/settings schemas/clients; Fastify compiler and JSON route adapter | Full suite/run/result API and route wiring |
+| Agent | Durable offer identity, cancellation intent, bounded event append/replay/ACK/prune | Admission, runtime supervision, Docker controls and telemetry |
+| k6 | Pure seven-executor load-plan and threshold/discovery compiler | Requests/data/assertions, runtime, aggregation, target sampler and export |
+| Product | Namespace mutation rules, atomic-store ports, settings resolution | SQLite/files adapters, authenticated API, frontend, reports and automation client |
+| Qualification | Local contract/unit/SQLite journal checks | Complete execution path, containers, scans, backup/soak and native architecture matrix |
+
+Worker submissions remain unaccepted until independent review and integration
+checks pass. No complete R0-R4 release slice is claimed by this inventory.
 
 ## Delivery order
 

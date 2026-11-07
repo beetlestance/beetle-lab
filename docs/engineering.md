@@ -1,6 +1,7 @@
 # Engineering rules for the rewrite
 
-Status: proposed gates to implement in R0. They are not enforced by the current CI.
+Status: structural gates are implemented in `verify:v2` and configured in CI.
+Local evidence does not establish a hosted CI run or release qualification.
 Purpose: keep responsibilities narrow, runtime behavior bounded and task context small.
 
 ## Module ownership
