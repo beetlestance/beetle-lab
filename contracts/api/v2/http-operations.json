@@ -227,5 +227,31 @@
     "error": "ApiError",
     "request": "DeleteFolderRequest",
     "params": "FolderParams"
+  },
+  {
+    "name": "pairBrowserSession",
+    "method": "POST",
+    "path": "/api/v2/auth/pair",
+    "request": "PairBrowserRequest",
+    "response": "BrowserSession",
+    "successStatus": 200,
+    "error": "ApiError"
+  },
+  {
+    "name": "getBrowserSession",
+    "method": "GET",
+    "path": "/api/v2/auth/session",
+    "response": "BrowserSession",
+    "successStatus": 200,
+    "error": "ApiError"
+  },
+  {
+    "name": "logoutBrowserSession",
+    "method": "POST",
+    "path": "/api/v2/auth/logout",
+    "request": "LogoutBrowserRequest",
+    "response": "LogoutBrowserReceipt",
+    "successStatus": 200,
+    "error": "ApiError"
   }
 ]

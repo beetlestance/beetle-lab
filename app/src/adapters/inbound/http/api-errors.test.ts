@@ -30,7 +30,7 @@ function check(status: number, body: string, expected: ApiError['code']): ApiErr
 it.each([
   ['malformed_request', 400], ['unpaired', 401], ['forbidden', 403], ['not_found', 404],
   ['conflict', 409], ['body_limit', 413], ['invalid_value', 422], ['capacity_unavailable', 503],
-  ['storage_unavailable', 503], ['cursor_expired', 409], ['protected_dependency', 409], ['internal_error', 500],
+  ['storage_unavailable', 503], ['cursor_expired', 409], ['protected_dependency', 409], ['internal_error', 500], ['rate_limited', 429],
 ] as const)('maps %s to a fixed contract reply and fresh correlation ID', async (code, status) => {
   const app = server();
   app.get('/failure', async () => { throw new ApiFault(code); });

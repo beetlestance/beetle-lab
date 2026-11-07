@@ -29,6 +29,9 @@ Schema catalogue is complete, including runner common exactly once. These are ro
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/folders | WorkspaceParams | none | CreateFolderRequest | 201 | Folder |
 | PATCH | /api/v2/organizations/{organizationId}/folders/{id} | FolderParams | none | PatchFolderRequest | 200 | Folder |
 | DELETE | /api/v2/organizations/{organizationId}/folders/{id} | FolderParams | none | DeleteFolderRequest | 200 | DeletionReceipt |
+| POST | /api/v2/auth/pair | none | none | PairBrowserRequest | 200 | BrowserSession |
+| GET | /api/v2/auth/session | none | none | none | 200 | BrowserSession |
+| POST | /api/v2/auth/logout | none | none | LogoutBrowserRequest | 200 | LogoutBrowserReceipt |
 
 All errors use ApiError. UUID path parameters are validated before URL encoding.
 List queries require an integer limit 1–100 and optional opaque string cursor; HTTP query parsing belongs to the transport adapter.

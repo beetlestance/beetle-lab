@@ -378,5 +378,25 @@
     "path": "invalid/unsafe-error-extra.json",
     "schema": "ApiError",
     "valid": false
+  },
+  {
+    "path": "valid/pair-browser-request.json",
+    "schema": "PairBrowserRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/browser-session.json",
+    "schema": "BrowserSession",
+    "valid": true
+  },
+  {
+    "path": "valid/logout-browser-request.json",
+    "schema": "LogoutBrowserRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/logout-browser-receipt.json",
+    "schema": "LogoutBrowserReceipt",
+    "valid": true
   }
 ]

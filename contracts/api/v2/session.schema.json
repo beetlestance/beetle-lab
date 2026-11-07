@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/api/v2/session",
+  "title": "ApiSession",
+  "$defs": {
+    "PairBrowserRequest": {
+      "type": "object",
+      "properties": {
+        "bootstrapToken": {
+          "type": "string",
+          "minLength": 43,
+          "maxLength": 43,
+          "pattern": "^[A-Za-z0-9_-]{43}$"
+        }
+      },
+      "required": [
+        "bootstrapToken"
+      ],
+      "additionalProperties": false
+    },
+    "BrowserSession": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "const": "local-admin"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "minLength": 24,
+          "maxLength": 24,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+        },
+        "csrfToken": {
+          "type": "string",
+          "minLength": 43,
+          "maxLength": 43,
+          "pattern": "^[A-Za-z0-9_-]{43}$"
+        }
+      },
+      "required": [
+        "scope",
+        "expiresAt",
+        "csrfToken"
+      ],
+      "additionalProperties": false
+    },
+    "LogoutBrowserRequest": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "LogoutBrowserReceipt": {
+      "type": "object",
+      "properties": {
+        "loggedOut": {
+          "const": true
+        }
+      },
+      "required": [
+        "loggedOut"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

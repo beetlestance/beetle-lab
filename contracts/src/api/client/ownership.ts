@@ -23,8 +23,16 @@ function routeOwner(input: PreparedInput): SettingsScope {
 function retention(operation: ApiOperation): boolean {
   return 'request' in operation && ['RetentionPreviewRequest', 'RetentionApplyRequest'].includes(operation.request);
 }
+/** These installation-wide session DTOs have no namespace SettingsScope.
+ * Their exact local-admin scope and shapes are enforced by shipped schemas.
+ */
+function session(operation: ApiOperation): boolean {
+  return operation.name === 'pairBrowserSession' || operation.name === 'getBrowserSession'
+    || operation.name === 'logoutBrowserSession';
+}
 
 export function requestOwnership(operation: ApiOperation, input: PreparedInput): boolean {
+  if (session(operation)) return true;
   if (!input.body) return true;
   const scope = input.body.scope as SettingsScope;
   const route = routeOwner(input);
@@ -80,6 +88,7 @@ function sourceAncestry(scope: SettingsScope, effective: EffectiveSettings): boo
 
 /** Structural validation precedes this route/body/result binding. Backend SQL authorization is independent. */
 export function responseOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
+  if (session(operation)) return true;
   const reply = value as OwnedReply;
   if (!equal(expectedOwner(operation, input), reply.scope) || !identityMatches(operation, input, reply)) return false;
   if (reply.items && !reply.items.every(item => equal(reply.scope, item.scope))) return false;

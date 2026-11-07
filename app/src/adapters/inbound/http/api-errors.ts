@@ -18,6 +18,7 @@ const errors = {
   cursor_expired: [409, 'Cursor expired', false],
   protected_dependency: [409, 'Protected dependency', false],
   internal_error: [500, 'Internal error', false],
+  rate_limited: [429, 'Too many requests', true],
 } as const satisfies Record<Code, readonly [number, ApiError['message'], boolean]>;
 
 /** Transport owners may select only fixed public codes; raw messages are ignored. */

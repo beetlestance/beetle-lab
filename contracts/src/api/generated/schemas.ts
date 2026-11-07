@@ -6,11 +6,12 @@ import { schema as ApiNamespaceRequests } from './namespace-requests.js';
 import { schema as ApiNamespace } from './namespace.js';
 import { schema as ApiParameters } from './parameters.js';
 import { schema as ApiRetention } from './retention.js';
+import { schema as ApiSession } from './session.js';
 import { schema as ApiSettingsOverrides } from './settings-overrides.js';
 import { schema as ApiSettingsValues } from './settings-values.js';
 import { schema as ApiSettings } from './settings.js';
 /** Complete reference closure, including runner common exactly once. */
-export const apiSchemas = freezeSchema([Common, ApiCommon, ApiNamespaceRequests, ApiNamespace, ApiParameters, ApiRetention, ApiSettingsOverrides, ApiSettingsValues, ApiSettings] as const);
+export const apiSchemas = freezeSchema([Common, ApiCommon, ApiNamespaceRequests, ApiNamespace, ApiParameters, ApiRetention, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -50,6 +51,10 @@ export const apiMessageSchemas = freezeSchema({
   RetentionPreview: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionPreview' },
   RetentionApplyRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionApplyRequest' },
   RetentionApplyReceipt: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionApplyReceipt' },
+  PairBrowserRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/session#/$defs/PairBrowserRequest' },
+  BrowserSession: { $ref: 'https://beetle-lab.dev/contracts/api/v2/session#/$defs/BrowserSession' },
+  LogoutBrowserRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/session#/$defs/LogoutBrowserRequest' },
+  LogoutBrowserReceipt: { $ref: 'https://beetle-lab.dev/contracts/api/v2/session#/$defs/LogoutBrowserReceipt' },
   BudgetOverrides: { $ref: 'https://beetle-lab.dev/contracts/api/v2/settings-overrides#/$defs/BudgetOverrides' },
   BudgetOverridePatch: { $ref: 'https://beetle-lab.dev/contracts/api/v2/settings-overrides#/$defs/BudgetOverridePatch' },
   RunDefaultOverrides: { $ref: 'https://beetle-lab.dev/contracts/api/v2/settings-overrides#/$defs/RunDefaultOverrides' },
