@@ -1,0 +1,10 @@
+.session-page { min-height: 100dvh; display: grid; align-content: center; padding: var(--space-6); }
+.session-panel { width: 100%; max-width: 560px; margin: auto; padding: var(--space-8); background: var(--surface); border: var(--border-width) solid var(--border); display: grid; gap: var(--space-6); }
+.session-panel header p { color: var(--muted); margin-bottom: var(--space-3); }
+.session-form { display: grid; gap: var(--space-3); }
+.session-form label { font-weight: 600; }
+.session-form input { min-width: 0; width: 100%; min-height: 44px; padding: var(--space-3); background: var(--canvas); border: var(--border-width) solid var(--border-strong); }
+.session-form small { color: var(--muted); }
+.session-panel .theme-picker select { background: var(--surface); color: var(--ink); border-color: var(--border-strong); }
+.session-toolbar { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: var(--space-4); padding: var(--space-3) var(--space-6); background: var(--surface); border-bottom: var(--border-width) solid var(--border); color: var(--muted); font-size: var(--text-small); }
+@media (max-width: 760px) { .session-panel { padding: var(--space-6); } .session-toolbar { justify-content: space-between; } }
