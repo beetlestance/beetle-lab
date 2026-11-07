@@ -2,11 +2,15 @@ import type { ApiOperation } from '../generated/operations.js';
 import type { EffectiveSettings, SettingsScope } from '../generated/types.js';
 import type { PreparedInput } from './input.js';
 
+function sameUuid(left: unknown, right: unknown): boolean {
+  return typeof left === 'string' && typeof right === 'string' && left.toLowerCase() === right.toLowerCase();
+}
+
 /** True when child is at parent or below it; settings sources use the reverse direction. */
 function contains(parent: SettingsScope, child: SettingsScope): boolean {
   if (parent.kind === 'installation') return true;
-  if (child.kind === 'installation' || parent.organizationId !== child.organizationId) return false;
-  return parent.kind === 'organization' || (child.kind === 'workspace' && parent.workspaceId === child.workspaceId);
+  if (child.kind === 'installation' || !sameUuid(parent.organizationId, child.organizationId)) return false;
+  return parent.kind === 'organization' || (child.kind === 'workspace' && sameUuid(parent.workspaceId, child.workspaceId));
 }
 function equal(left: SettingsScope, right: SettingsScope): boolean {
   return left.kind === right.kind && contains(left, right);
@@ -58,15 +62,15 @@ function identityMatches(operation: ApiOperation, input: PreparedInput, reply: O
     Organization: params.organizationId, Workspace: params.workspaceId, Folder: params.id,
   };
   if (operation.response === 'DeletionReceipt') {
-    return reply.id === (params.id ?? params.workspaceId ?? params.organizationId) && reply.requestId === input.body?.requestId;
+    return sameUuid(reply.id, params.id ?? params.workspaceId ?? params.organizationId) && sameUuid(reply.requestId, input.body?.requestId);
   }
   const expected = identities[operation.response];
-  return expected === undefined || reply.id === expected;
+  return expected === undefined || sameUuid(reply.id, expected);
 }
 function retentionMatches(input: PreparedInput, reply: OwnedReply): boolean {
   const body = input.body!;
-  if (reply.requestId !== body.requestId || reply.settingsId !== body.settingsId || reply.settingsVersion !== body.expectedVersion) return false;
-  if ('snapshotId' in body && (reply.snapshotId !== body.snapshotId || reply.snapshotVersion !== body.snapshotVersion)) return false;
+  if (!sameUuid(reply.requestId, body.requestId) || !sameUuid(reply.settingsId, body.settingsId) || reply.settingsVersion !== body.expectedVersion) return false;
+  if ('snapshotId' in body && (!sameUuid(reply.snapshotId, body.snapshotId) || reply.snapshotVersion !== body.snapshotVersion)) return false;
   return (reply.candidates ?? []).every(candidate => contains(reply.scope, candidate.scope));
 }
 function sourceAncestry(scope: SettingsScope, effective: EffectiveSettings): boolean {

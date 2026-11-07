@@ -11,6 +11,8 @@ are omitted by that shared encoder. Observed accessors fail without invoking get
 Unknown own method fields and schema extras fail as safe `request` results.
 Params/body/response ownership, entity route IDs, every page item, retention candidates,
 intent/settings/snapshot identities and effective source ancestry are compared.
+UUID identity comparisons ignore letter case without rewriting payloads or aliasing
+URN-prefixed and unprefixed forms; names, cursors and protocol data retain their case.
 Organisation entities are installation-owned; settings record IDs are separate IDs.
 These guards supplement backend SQL scope/authorization checks; they establish neither
 authentication nor cursor signatures, hierarchy transactions, retention policy or cleanup.
