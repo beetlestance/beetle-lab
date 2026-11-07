@@ -1,0 +1,38 @@
+{
+  "generator": "contracts/scripts/generate-api.ts",
+  "sources": {
+    "runner/v1/common.schema.json": "239d0a1b2bb985a060b585486895b3458ca6c6166329bcc2f660652c473591ef",
+    "api/v2/common.schema.json": "5c712a9799720410b2ae266797ea8eea14f514211729efd0286c4ce23d56e53e",
+    "api/v2/namespace-requests.schema.json": "6cfaab7c5382d77bffe35ccd7dcfb9173ec89f184f4f0bc4090758294d8e44c2",
+    "api/v2/namespace.schema.json": "3df14df2770cabaf1b04c70a44d453dad6ab1e7b0afe5699d6cae375ab2bec3f",
+    "api/v2/parameters.schema.json": "781a430bd00b69872bbf6a8553730e435c73e0237b6bae8347823bcd78a2ff6b",
+    "api/v2/retention.schema.json": "d6544985c54e4c6606ffcaf7753b3508c978a483b461be3415d5861f509fbc70",
+    "api/v2/settings-overrides.schema.json": "f4e1dae52fd4aa5b184d58aa02d5768459a9054c16bd03d5ea49a317b2660963",
+    "api/v2/settings-values.schema.json": "2b5365e7ea50b421e7c6afe165874add2241294b78e59648c66f5ef8f774e2bc",
+    "api/v2/settings.schema.json": "aaf9c415020b25b04bce515956e2077bb74f15614a04c137d6211a345c1ec2f8"
+  },
+  "operationsSha256": "f8da600c981281e12984b58139800dc6cd87754386e46aa1b6a54f0e66eb0b9c",
+  "outputs": [
+    "common.inference.ts",
+    "common.ts",
+    "manifest.json",
+    "namespace-requests.inference.ts",
+    "namespace-requests.ts",
+    "namespace.inference.ts",
+    "namespace.ts",
+    "operations.ts",
+    "parameters.inference.ts",
+    "parameters.ts",
+    "reference.md",
+    "retention.inference.ts",
+    "retention.ts",
+    "schemas.ts",
+    "settings-overrides.inference.ts",
+    "settings-overrides.ts",
+    "settings-values.inference.ts",
+    "settings-values.ts",
+    "settings.inference.ts",
+    "settings.ts",
+    "types.ts"
+  ]
+}

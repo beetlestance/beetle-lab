@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/api/v2/settings-overrides",
+  "title": "ApiSettingsOverrides",
+  "$defs": {
+    "BudgetOverrides": {
+      "description": "Omitted leaves have no override. Null is allowed only in patch schemas, never persisted overrides.",
+      "type": "object",
+      "properties": {
+        "cpuMillis": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/budget/properties/cpuMillis" },
+        "memoryBytes": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/budget/properties/memoryBytes" },
+        "pids": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/budget/properties/pids" },
+        "timeoutMs": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/budget/properties/timeoutMs" },
+        "outputBytes": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/budget/properties/outputBytes" }
+      },
+      "additionalProperties": false
+    },
+    "BudgetOverridePatch": {
+      "type": "object", "minProperties": 1,
+      "properties": {
+        "cpuMillis": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-overrides#/$defs/BudgetOverrides/properties/cpuMillis" }, { "type": "null" }] },
+        "memoryBytes": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-overrides#/$defs/BudgetOverrides/properties/memoryBytes" }, { "type": "null" }] },
+        "pids": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-overrides#/$defs/BudgetOverrides/properties/pids" }, { "type": "null" }] },
+        "timeoutMs": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-overrides#/$defs/BudgetOverrides/properties/timeoutMs" }, { "type": "null" }] },
+        "outputBytes": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-overrides#/$defs/BudgetOverrides/properties/outputBytes" }, { "type": "null" }] }
+      },
+      "additionalProperties": false
+    },
+    "RunDefaultOverrides": {
+      "type": "object",
+      "properties": {
+        "engineProfile": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/EngineProfile" },
+        "budget": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-overrides#/$defs/BudgetOverrides" }
+      },
+      "additionalProperties": false
+    },
+    "RunDefaultOverridePatch": {
+      "type": "object", "minProperties": 1,
+      "properties": {
+        "engineProfile": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/EngineProfile" }, { "type": "null" }] },
+        "budget": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-overrides#/$defs/BudgetOverridePatch" }, { "type": "null" }] }
+      },
+      "additionalProperties": false
+    },
+    "ScopedOverrides": {
+      "type": "object",
+      "properties": {
+        "runDefaults": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-overrides#/$defs/RunDefaultOverrides" },
+        "retention": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/RetentionPolicy" }
+      },
+      "additionalProperties": false
+    },
+    "ScopedOverridePatch": {
+      "description": "Omitted means unchanged; null leaf or group removes the corresponding override and inherits. Retention policy is an atomic leaf.",
+      "type": "object", "minProperties": 1,
+      "properties": {
+        "runDefaults": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-overrides#/$defs/RunDefaultOverridePatch" }, { "type": "null" }] },
+        "retention": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/RetentionPolicy" }, { "type": "null" }] }
+      },
+      "additionalProperties": false
+    },
+    "InstallationPatch": {
+      "description": "No inheritance at installation scope. Supplied top-level groups replace their complete validated value; omitted groups are unchanged.",
+      "type": "object", "minProperties": 1,
+      "properties": {
+        "pool": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/PoolCapacity" },
+        "perRunCeilings": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget" },
+        "supportedProfiles": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/InstallationValues/properties/supportedProfiles" },
+        "runDefaults": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/RunDefaults" },
+        "retention": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/RetentionPolicy" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

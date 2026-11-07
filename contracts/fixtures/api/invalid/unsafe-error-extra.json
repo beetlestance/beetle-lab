@@ -1,0 +1,13 @@
+{
+  "code": "invalid_value",
+  "message": "Invalid value",
+  "retryable": false,
+  "requestId": "00000000-0000-4000-8000-000000000010",
+  "fields": [
+    {
+      "path": "/patch/runDefaults/budget/cpuMillis",
+      "code": "range"
+    }
+  ],
+  "exception": "synthetic-secret-canary"
+}

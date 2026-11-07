@@ -1,0 +1,10 @@
+{
+  "requestId": "00000000-0000-4000-8000-000000000010",
+  "expectedVersion": 1,
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "name": "Renamed"
+}

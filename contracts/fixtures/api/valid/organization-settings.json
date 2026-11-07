@@ -1,0 +1,83 @@
+{
+  "id": "00000000-0000-4000-8000-000000000020",
+  "version": 1,
+  "schemaVersion": 2,
+  "scope": {
+    "kind": "organization",
+    "organizationId": "00000000-0000-4000-8000-000000000001"
+  },
+  "effective": {
+    "runDefaults": {
+      "engineProfile": {
+        "value": "k6-local",
+        "source": {
+          "kind": "installation"
+        },
+        "allowedValues": [
+          "k6-local"
+        ]
+      },
+      "budget": {
+        "cpuMillis": {
+          "value": 1000,
+          "source": {
+            "kind": "installation"
+          },
+          "allowedRange": {
+            "minimum": 1,
+            "maximum": 2000
+          }
+        },
+        "memoryBytes": {
+          "value": 104857600,
+          "source": {
+            "kind": "installation"
+          },
+          "allowedRange": {
+            "minimum": 1,
+            "maximum": 209715200
+          }
+        },
+        "pids": {
+          "value": 64,
+          "source": {
+            "kind": "installation"
+          },
+          "allowedRange": {
+            "minimum": 1,
+            "maximum": 128
+          }
+        },
+        "timeoutMs": {
+          "value": 30000,
+          "source": {
+            "kind": "installation"
+          },
+          "allowedRange": {
+            "minimum": 1,
+            "maximum": 60000
+          }
+        },
+        "outputBytes": {
+          "value": 1048576,
+          "source": {
+            "kind": "installation"
+          },
+          "allowedRange": {
+            "minimum": 1,
+            "maximum": 2097152
+          }
+        }
+      }
+    },
+    "retention": {
+      "value": {
+        "mode": "manual"
+      },
+      "source": {
+        "kind": "installation"
+      }
+    }
+  },
+  "overrides": {}
+}

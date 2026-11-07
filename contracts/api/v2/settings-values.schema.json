@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/api/v2/settings-values",
+  "title": "ApiSettingsValues",
+  "$defs": {
+    "EngineProfile": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/token" },
+    "RunDefaults": {
+      "type": "object",
+      "properties": {
+        "engineProfile": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/EngineProfile" },
+        "budget": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget" }
+      },
+      "required": ["engineProfile", "budget"], "additionalProperties": false
+    },
+    "PoolCapacity": {
+      "description": "Installation-wide admission accounting; hard enforcement depends on advertised runtime capabilities. CPU in millicores, RAM/output/storage/reserve in bytes, pids/concurrency in counts.",
+      "type": "object",
+      "properties": {
+        "cpuMillis": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/PositiveInteger" },
+        "memoryBytes": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/PositiveInteger" },
+        "pids": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/PositiveInteger" },
+        "outputBytes": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/PositiveInteger" },
+        "concurrency": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/PositiveInteger" },
+        "storageBytes": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/PositiveInteger" },
+        "freeSpaceReserveBytes": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count" }
+      },
+      "required": ["cpuMillis", "memoryBytes", "pids", "outputBytes", "concurrency", "storageBytes", "freeSpaceReserveBytes"],
+      "additionalProperties": false
+    },
+    "RetentionPolicy": {
+      "oneOf": [
+        {
+          "type": "object", "properties": { "mode": { "const": "manual" } },
+          "required": ["mode"], "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "mode": { "const": "enabled" },
+            "ageDays": { "type": "integer", "minimum": 1, "maximum": 365000 },
+            "completedRunCount": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/PositiveInteger" },
+            "storageBytes": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/PositiveInteger" }
+          },
+          "required": ["mode"], "minProperties": 2,
+          "additionalProperties": false
+        }
+      ]
+    },
+    "InstallationValues": {
+      "type": "object",
+      "properties": {
+        "pool": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/PoolCapacity" },
+        "perRunCeilings": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget" },
+        "supportedProfiles": { "type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true, "items": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/EngineProfile" } },
+        "runDefaults": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/RunDefaults" },
+        "retention": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/RetentionPolicy" }
+      },
+      "required": ["pool", "perRunCeilings", "supportedProfiles", "runDefaults", "retention"], "additionalProperties": false
+    },
+    "NumericEffectiveLeaf": {
+      "type": "object",
+      "properties": {
+        "value": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/PositiveInteger" },
+        "source": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/SettingsScope" },
+        "allowedRange": {
+          "type": "object",
+          "properties": {
+            "minimum": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/PositiveInteger" },
+            "maximum": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/PositiveInteger" }
+          },
+          "required": ["minimum", "maximum"], "additionalProperties": false
+        }
+      },
+      "required": ["value", "source", "allowedRange"], "additionalProperties": false
+    },
+    "EffectiveBudget": {
+      "type": "object",
+      "properties": {
+        "cpuMillis": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/NumericEffectiveLeaf" },
+        "memoryBytes": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/NumericEffectiveLeaf" },
+        "pids": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/NumericEffectiveLeaf" },
+        "timeoutMs": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/NumericEffectiveLeaf" },
+        "outputBytes": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/NumericEffectiveLeaf" }
+      },
+      "required": ["cpuMillis", "memoryBytes", "pids", "timeoutMs", "outputBytes"], "additionalProperties": false
+    },
+    "EffectiveSettings": {
+      "type": "object",
+      "properties": {
+        "runDefaults": {
+          "type": "object",
+          "properties": {
+            "engineProfile": {
+              "type": "object",
+              "properties": {
+                "value": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/EngineProfile" },
+                "source": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/SettingsScope" },
+                "allowedValues": { "type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true, "items": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/EngineProfile" } }
+              },
+              "required": ["value", "source", "allowedValues"], "additionalProperties": false
+            },
+            "budget": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/EffectiveBudget" }
+          },
+          "required": ["engineProfile", "budget"], "additionalProperties": false
+        },
+        "retention": {
+          "description": "Retention is one atomic policy leaf; each enabled rule shares this source.",
+          "type": "object",
+          "properties": {
+            "value": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/RetentionPolicy" },
+            "source": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/SettingsScope" }
+          },
+          "required": ["value", "source"], "additionalProperties": false
+        }
+      },
+      "required": ["runDefaults", "retention"], "additionalProperties": false
+    }
+  }
+}

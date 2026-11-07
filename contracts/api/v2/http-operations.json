@@ -1,0 +1,231 @@
+[
+  {
+    "name": "listOrganizations",
+    "method": "GET",
+    "path": "/api/v2/organizations",
+    "response": "OrganizationPage",
+    "successStatus": 200,
+    "error": "ApiError",
+    "query": "PageQuery"
+  },
+  {
+    "name": "createOrganization",
+    "method": "POST",
+    "path": "/api/v2/organizations",
+    "response": "Organization",
+    "successStatus": 201,
+    "error": "ApiError",
+    "request": "CreateOrganizationRequest"
+  },
+  {
+    "name": "getOrganization",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}",
+    "response": "Organization",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "OrganizationParams"
+  },
+  {
+    "name": "patchOrganization",
+    "method": "PATCH",
+    "path": "/api/v2/organizations/{organizationId}",
+    "response": "Organization",
+    "successStatus": 200,
+    "error": "ApiError",
+    "request": "PatchOrganizationRequest",
+    "params": "OrganizationParams"
+  },
+  {
+    "name": "deleteOrganization",
+    "method": "DELETE",
+    "path": "/api/v2/organizations/{organizationId}",
+    "response": "DeletionReceipt",
+    "successStatus": 200,
+    "error": "ApiError",
+    "request": "DeleteOrganizationRequest",
+    "params": "OrganizationParams"
+  },
+  {
+    "name": "getInstallationSettings",
+    "method": "GET",
+    "path": "/api/v2/settings",
+    "response": "InstallationSettings",
+    "successStatus": 200,
+    "error": "ApiError"
+  },
+  {
+    "name": "patchInstallationSettings",
+    "method": "PATCH",
+    "path": "/api/v2/settings",
+    "response": "InstallationSettings",
+    "successStatus": 200,
+    "error": "ApiError",
+    "request": "PatchInstallationSettingsRequest"
+  },
+  {
+    "name": "getOrganizationSettings",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/settings",
+    "response": "OrganizationSettings",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "OrganizationParams"
+  },
+  {
+    "name": "patchOrganizationSettings",
+    "method": "PATCH",
+    "path": "/api/v2/organizations/{organizationId}/settings",
+    "response": "OrganizationSettings",
+    "successStatus": 200,
+    "error": "ApiError",
+    "request": "PatchOrganizationSettingsRequest",
+    "params": "OrganizationParams"
+  },
+  {
+    "name": "getWorkspaceSettings",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/settings",
+    "response": "WorkspaceSettings",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "WorkspaceParams"
+  },
+  {
+    "name": "patchWorkspaceSettings",
+    "method": "PATCH",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/settings",
+    "response": "WorkspaceSettings",
+    "successStatus": 200,
+    "error": "ApiError",
+    "request": "PatchWorkspaceSettingsRequest",
+    "params": "WorkspaceParams"
+  },
+  {
+    "name": "previewInstallationRetention",
+    "method": "POST",
+    "path": "/api/v2/settings/retention-preview",
+    "response": "RetentionPreview",
+    "successStatus": 200,
+    "error": "ApiError",
+    "request": "RetentionPreviewRequest"
+  },
+  {
+    "name": "applyInstallationRetention",
+    "method": "POST",
+    "path": "/api/v2/settings/retention-apply",
+    "response": "RetentionApplyReceipt",
+    "successStatus": 202,
+    "error": "ApiError",
+    "request": "RetentionApplyRequest"
+  },
+  {
+    "name": "previewOrganizationRetention",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/settings/retention-preview",
+    "response": "RetentionPreview",
+    "successStatus": 200,
+    "error": "ApiError",
+    "request": "RetentionPreviewRequest",
+    "params": "OrganizationParams"
+  },
+  {
+    "name": "applyOrganizationRetention",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/settings/retention-apply",
+    "response": "RetentionApplyReceipt",
+    "successStatus": 202,
+    "error": "ApiError",
+    "request": "RetentionApplyRequest",
+    "params": "OrganizationParams"
+  },
+  {
+    "name": "listWorkspaces",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces",
+    "response": "WorkspacePage",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "OrganizationParams",
+    "query": "PageQuery"
+  },
+  {
+    "name": "createWorkspace",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces",
+    "response": "Workspace",
+    "successStatus": 201,
+    "error": "ApiError",
+    "request": "CreateWorkspaceRequest",
+    "params": "OrganizationParams"
+  },
+  {
+    "name": "getWorkspace",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}",
+    "response": "Workspace",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "WorkspaceParams"
+  },
+  {
+    "name": "patchWorkspace",
+    "method": "PATCH",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}",
+    "response": "Workspace",
+    "successStatus": 200,
+    "error": "ApiError",
+    "request": "PatchWorkspaceRequest",
+    "params": "WorkspaceParams"
+  },
+  {
+    "name": "deleteWorkspace",
+    "method": "DELETE",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}",
+    "response": "DeletionReceipt",
+    "successStatus": 200,
+    "error": "ApiError",
+    "request": "DeleteWorkspaceRequest",
+    "params": "WorkspaceParams"
+  },
+  {
+    "name": "listFolders",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/folders",
+    "response": "FolderPage",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "WorkspaceParams",
+    "query": "PageQuery"
+  },
+  {
+    "name": "createFolder",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/folders",
+    "response": "Folder",
+    "successStatus": 201,
+    "error": "ApiError",
+    "request": "CreateFolderRequest",
+    "params": "WorkspaceParams"
+  },
+  {
+    "name": "patchFolder",
+    "method": "PATCH",
+    "path": "/api/v2/organizations/{organizationId}/folders/{id}",
+    "response": "Folder",
+    "successStatus": 200,
+    "error": "ApiError",
+    "request": "PatchFolderRequest",
+    "params": "FolderParams"
+  },
+  {
+    "name": "deleteFolder",
+    "method": "DELETE",
+    "path": "/api/v2/organizations/{organizationId}/folders/{id}",
+    "response": "DeletionReceipt",
+    "successStatus": 200,
+    "error": "ApiError",
+    "request": "DeleteFolderRequest",
+    "params": "FolderParams"
+  }
+]

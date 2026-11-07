@@ -1,0 +1,37 @@
+{
+  "snapshotId": "00000000-0000-4000-8000-000000000021",
+  "version": 1,
+  "scope": {
+    "kind": "organization",
+    "organizationId": "00000000-0000-4000-8000-000000000001"
+  },
+  "requestId": "00000000-0000-4000-8000-000000000010",
+  "settingsId": "00000000-0000-4000-8000-000000000020",
+  "settingsVersion": 1,
+  "policy": {
+    "mode": "enabled",
+    "ageDays": 30
+  },
+  "candidates": [
+    {
+      "id": "00000000-0000-4000-8000-000000000030",
+      "version": 2,
+      "scope": {
+        "kind": "workspace",
+        "organizationId": "00000000-0000-4000-8000-000000000001",
+        "workspaceId": "00000000-0000-4000-8000-000000000002"
+      },
+      "estimatedBytes": 1024,
+      "reason": "age"
+    }
+  ],
+  "estimatedBytes": 1024,
+  "protectedExclusions": [
+    {
+      "reason": "pinned",
+      "count": 1,
+      "estimatedBytes": 2048
+    }
+  ],
+  "nextCursor": null
+}

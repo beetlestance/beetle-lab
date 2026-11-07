@@ -1,0 +1,382 @@
+[
+  {
+    "path": "valid/organization.json",
+    "schema": "Organization",
+    "valid": true
+  },
+  {
+    "path": "valid/workspace.json",
+    "schema": "Workspace",
+    "valid": true
+  },
+  {
+    "path": "valid/folder.json",
+    "schema": "Folder",
+    "valid": true
+  },
+  {
+    "path": "valid/root-folder.json",
+    "schema": "Folder",
+    "valid": true
+  },
+  {
+    "path": "valid/organization-page.json",
+    "schema": "OrganizationPage",
+    "valid": true
+  },
+  {
+    "path": "valid/workspace-page.json",
+    "schema": "WorkspacePage",
+    "valid": true
+  },
+  {
+    "path": "valid/folder-page.json",
+    "schema": "FolderPage",
+    "valid": true
+  },
+  {
+    "path": "valid/organization-params.json",
+    "schema": "OrganizationParams",
+    "valid": true
+  },
+  {
+    "path": "valid/workspace-params.json",
+    "schema": "WorkspaceParams",
+    "valid": true
+  },
+  {
+    "path": "valid/folder-params.json",
+    "schema": "FolderParams",
+    "valid": true
+  },
+  {
+    "path": "valid/page-query.json",
+    "schema": "PageQuery",
+    "valid": true
+  },
+  {
+    "path": "valid/create-organization.json",
+    "schema": "CreateOrganizationRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/patch-organization.json",
+    "schema": "PatchOrganizationRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/delete-organization.json",
+    "schema": "DeleteOrganizationRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/create-workspace.json",
+    "schema": "CreateWorkspaceRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/patch-workspace.json",
+    "schema": "PatchWorkspaceRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/delete-workspace.json",
+    "schema": "DeleteWorkspaceRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/create-folder.json",
+    "schema": "CreateFolderRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/patch-folder.json",
+    "schema": "PatchFolderRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/delete-folder.json",
+    "schema": "DeleteFolderRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/folder-move.json",
+    "schema": "PatchFolderRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/deletion-receipt.json",
+    "schema": "DeletionReceipt",
+    "valid": true
+  },
+  {
+    "path": "valid/installation-settings.json",
+    "schema": "InstallationSettings",
+    "valid": true
+  },
+  {
+    "path": "valid/patch-installation-settings.json",
+    "schema": "PatchInstallationSettingsRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/organization-settings.json",
+    "schema": "OrganizationSettings",
+    "valid": true
+  },
+  {
+    "path": "valid/patch-organization-settings.json",
+    "schema": "PatchOrganizationSettingsRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/workspace-settings.json",
+    "schema": "WorkspaceSettings",
+    "valid": true
+  },
+  {
+    "path": "valid/patch-workspace-settings.json",
+    "schema": "PatchWorkspaceSettingsRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/clear-settings-group.json",
+    "schema": "PatchWorkspaceSettingsRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/retention-preview-request.json",
+    "schema": "RetentionPreviewRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/retention-preview.json",
+    "schema": "RetentionPreview",
+    "valid": true
+  },
+  {
+    "path": "valid/manual-retention-preview.json",
+    "schema": "RetentionPreview",
+    "valid": true
+  },
+  {
+    "path": "valid/retention-apply-request.json",
+    "schema": "RetentionApplyRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/retention-apply-receipt.json",
+    "schema": "RetentionApplyReceipt",
+    "valid": true
+  },
+  {
+    "path": "valid/safe-error.json",
+    "schema": "ApiError",
+    "valid": true
+  },
+  {
+    "path": "invalid/uuid-empty.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/uuid-invalid.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/version-zero.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/unsafe-version.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/root-folder-null.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/scope-missing.json",
+    "schema": "Folder",
+    "valid": false
+  },
+  {
+    "path": "invalid/scope-wrong-kind.json",
+    "schema": "Folder",
+    "valid": false
+  },
+  {
+    "path": "invalid/scope-extra.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/unknown-secret-field.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/long-name.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/empty-name.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/control-name.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/delete-no-version.json",
+    "schema": "DeleteFolderRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/create-no-request-id.json",
+    "schema": "CreateWorkspaceRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/patch-no-change.json",
+    "schema": "PatchOrganizationRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/scope-null.json",
+    "schema": "CreateWorkspaceRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/numeric-api-cursor.json",
+    "schema": "PageQuery",
+    "valid": false
+  },
+  {
+    "path": "invalid/empty-api-cursor.json",
+    "schema": "PageQuery",
+    "valid": false
+  },
+  {
+    "path": "invalid/oversized-page.json",
+    "schema": "PageQuery",
+    "valid": false
+  },
+  {
+    "path": "invalid/string-limit.json",
+    "schema": "PageQuery",
+    "valid": false
+  },
+  {
+    "path": "invalid/zero-limit.json",
+    "schema": "PageQuery",
+    "valid": false
+  },
+  {
+    "path": "invalid/default-less-page.json",
+    "schema": "PageQuery",
+    "valid": false
+  },
+  {
+    "path": "invalid/empty-retention-rules.json",
+    "schema": "RetentionPolicy",
+    "valid": false
+  },
+  {
+    "path": "invalid/manual-retention-rule.json",
+    "schema": "RetentionPolicy",
+    "valid": false
+  },
+  {
+    "path": "invalid/disabled-auto-retention.json",
+    "schema": "RetentionPolicy",
+    "valid": false
+  },
+  {
+    "path": "invalid/unsafe-budget.json",
+    "schema": "Budget",
+    "valid": false
+  },
+  {
+    "path": "invalid/budget-string.json",
+    "schema": "Budget",
+    "valid": false
+  },
+  {
+    "path": "invalid/budget-secret.json",
+    "schema": "Budget",
+    "valid": false
+  },
+  {
+    "path": "invalid/pool-override.json",
+    "schema": "PatchWorkspaceSettingsRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/empty-settings-patch.json",
+    "schema": "PatchWorkspaceSettingsRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/secret-settings.json",
+    "schema": "PatchWorkspaceSettingsRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/installation-inherit.json",
+    "schema": "PatchInstallationSettingsRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/persisted-null-override.json",
+    "schema": "ScopedOverrides",
+    "valid": false
+  },
+  {
+    "path": "invalid/preview-unsafe-bytes.json",
+    "schema": "RetentionPreview",
+    "valid": false
+  },
+  {
+    "path": "invalid/preview-freed-bytes.json",
+    "schema": "RetentionPreview",
+    "valid": false
+  },
+  {
+    "path": "invalid/apply-unbounded-ids.json",
+    "schema": "RetentionApplyRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/apply-no-snapshot.json",
+    "schema": "RetentionApplyRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/apply-stale-invalid-version.json",
+    "schema": "RetentionApplyRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/unsafe-error-message.json",
+    "schema": "ApiError",
+    "valid": false
+  },
+  {
+    "path": "invalid/unsafe-error-path.json",
+    "schema": "ApiError",
+    "valid": false
+  },
+  {
+    "path": "invalid/unsafe-error-extra.json",
+    "schema": "ApiError",
+    "valid": false
+  }
+]

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/api/v2/parameters",
+  "title": "ApiParameters",
+  "$defs": {
+    "OrganizationParams": {
+      "type": "object",
+      "properties": { "organizationId": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" } },
+      "required": ["organizationId"], "additionalProperties": false
+    },
+    "WorkspaceParams": {
+      "type": "object",
+      "properties": {
+        "organizationId": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" },
+        "workspaceId": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" }
+      },
+      "required": ["organizationId", "workspaceId"], "additionalProperties": false
+    },
+    "FolderParams": {
+      "type": "object",
+      "properties": {
+        "organizationId": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" },
+        "id": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" }
+      },
+      "required": ["organizationId", "id"], "additionalProperties": false
+    }
+  }
+}

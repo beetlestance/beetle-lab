@@ -1,0 +1,8 @@
+{
+  "requestId": "00000000-0000-4000-8000-000000000010",
+  "expectedVersion": 1,
+  "scope": {
+    "kind": "installation"
+  },
+  "name": "Renamed"
+}
