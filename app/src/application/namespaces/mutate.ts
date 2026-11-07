@@ -5,6 +5,11 @@ import type {
 
 /** Synchronous digest injection: caller supplies SHA-256, never ambient crypto/IDs. */
 export type IntentDigest = (canonicalIntent: string) => string;
+type OperationResult<O extends NamespaceOperation> = O extends { kind: 'createOrganization' | 'patchOrganization' }
+  ? Extract<NamespaceEntity, { slug: string }>
+  : O extends { kind: 'createWorkspace' | 'patchWorkspace' }
+    ? Extract<NamespaceEntity, { rootFolderId: string }>
+    : Extract<NamespaceEntity, { parentFolderId: string | null }>;
 
 function canonical(value: unknown): string {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -34,14 +39,14 @@ function expectedEntityKind(operation: NamespaceOperation, result: NamespaceEnti
   }
 }
 
-export async function mutateNamespace(input: {
-  operation: NamespaceOperation; store: NamespaceStore; digest: IntentDigest;
-}): Promise<NamespaceEntity> {
+export async function mutateNamespace<O extends NamespaceOperation>(input: {
+  operation: O; store: NamespaceStore; digest: IntentDigest;
+}): Promise<OperationResult<O>> {
   const command = prepareNamespaceCommand(input.operation, input.digest);
   const result = await input.store.execute(command);
   requireRule(sameScope(result.scope, command.request.scope) && expectedEntityKind(command, result), 'not_found');
   const intent = projectNamespaceIntent(command);
   // A CREATE receipt carries the original allocation; PATCH always binds the route ID.
   requireRule(!('id' in intent) || sameUuid(result.id, intent.id), 'not_found');
-  return immutableSnapshot(result);
+  return immutableSnapshot(result) as OperationResult<O>;
 }

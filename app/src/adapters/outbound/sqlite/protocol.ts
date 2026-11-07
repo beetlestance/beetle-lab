@@ -1,6 +1,8 @@
 import type { SettingsScope, Organization, Workspace, Folder, InstallationSettings,
   OrganizationSettings, WorkspaceSettings } from '@beetle/contracts/api';
-import type { NamespaceCommand, NamespaceEntity } from '../../../ports/namespaces.js';
+import type { NamespaceCommand } from '../../../ports/namespaces.js';
+import type { EntityKey, ListQuery, EntityPage } from '../../../ports/namespace-reader.js';
+export type { EntityKind, EntityKey, ListQuery, EntityPage } from '../../../ports/namespace-reader.js';
 import type { SettingsCommand, SettingsChange } from '../../../ports/settings.js';
 import type { InstallationRecord, RuntimeCeilings } from '../../../domain/settings/index.js';
 
@@ -9,11 +11,6 @@ export type ErrorCode = 'invalid_input' | 'invalid_value' | 'not_found' | 'confl
 export class StorageError extends Error {
   constructor(readonly code: ErrorCode) { super(`Storage ${code}`); this.name = 'StorageError'; }
 }
-export type EntityKind = 'organization' | 'workspace' | 'folder';
-export interface EntityKey { kind: EntityKind; scope: SettingsScope; id: string }
-export interface ListQuery { kind: EntityKind; scope: SettingsScope; parentFolderId?: string;
-  limit: number; cursor?: string }
-export interface EntityPage { items: NamespaceEntity[]; nextCursor: string | null }
 export interface RuntimeObservation { ceilings: RuntimeCeilings; observedAtMs: number }
 export type SettingsView = InstallationSettings | OrganizationSettings | WorkspaceSettings;
 export type Operation =
