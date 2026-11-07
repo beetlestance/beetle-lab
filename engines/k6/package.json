@@ -5,6 +5,9 @@
   "type": "module",
   "license": "MIT",
   "dependencies": {
-    "@beetle/contracts": "*"
+    "@beetle/contracts": "*",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "json-schema-to-ts": "3.1.1"
   }
 }

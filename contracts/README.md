@@ -8,6 +8,9 @@ Only shipped schemas are compiled; manifest schema URIs are identifiers, not fet
 `runnerSchemas` and `runnerMessageSchemas` expose deeply frozen shipped trees and
 containers for consumers' HTTP compilers. No arbitrary-schema compiler is exported.
 
+Workspace build tooling may import `@beetle/contracts/tooling/inference` to expand
+trusted schema references. It is a generation helper, not an engine runtime API.
+
 Generate: `node --import tsx contracts/scripts/generate.ts`.
 Check: `node --import tsx contracts/scripts/generate.ts --check`.
 Test: `npx --no-install vitest run contracts` (configured maximum two workers).

@@ -41,7 +41,7 @@ contracts/
   api/v2/                    # Public API schemas and OpenAPI source
   engines/k6/v1/             # k6 configuration/result schemas
   fixtures/                  # Valid and invalid interoperability cases
-  generated/                 # Reproducible types/validators/reference output
+  src/generated/             # Reproducible runner types/schemas/reference output
 test/conformance/            # Fake engines and cross-boundary failures
 tools/                       # Small checks/build orchestration only
 docs/

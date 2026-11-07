@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "exports": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tooling/inference": "./scripts/inference.ts"
+  },
   "dependencies": {
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
