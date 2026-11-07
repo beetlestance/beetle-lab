@@ -64,3 +64,48 @@ it('rejects malformed and accessor-bearing adapter output without reading access
   await expect(getNamespace({ kind: 'workspace', id: workspace.id, scope: workspace.scope }, store))
     .rejects.toThrow('Invalid namespace repository response');
 });
+
+it('retains immutable scope authority when a reader mutates its supplied key/query', async () => {
+  const foreign = { ...workspace, scope: { kind: 'organization' as const, organizationId: uuid(99) } };
+  const store: NamespaceReader = {
+    get: async key => { Reflect.set(key.scope, 'organizationId', foreign.scope.organizationId); return foreign; },
+    list: async query => { Reflect.set(query.scope, 'organizationId', foreign.scope.organizationId); return { items: [foreign], nextCursor: null }; },
+  };
+  await expect(getNamespace({ kind: 'workspace', id: workspace.id, scope: { ...workspace.scope } }, store))
+    .rejects.toMatchObject({ code: 'not_found' });
+  await expect(listNamespaces({ kind: 'workspace', scope: { ...workspace.scope }, limit: 1 }, store))
+    .rejects.toMatchObject({ code: 'not_found' });
+});
+
+it('does not let a reader widen the caller requested page limit', async () => {
+  const store = reader();
+  store.list = async query => {
+    Reflect.set(query, 'limit', 100);
+    return { items: [workspace, { ...workspace, id: uuid(99) }], nextCursor: null };
+  };
+  await expect(listNamespaces({ kind: 'workspace', scope: { ...workspace.scope }, limit: 1 }, store))
+    .rejects.toThrow('Invalid namespace repository response');
+});
+
+it('does not freeze caller input and ignores its mutations while a read is pending', async () => {
+  let resolve: (value: NamespaceEntity) => void = () => undefined;
+  const pending = new Promise<NamespaceEntity>(done => { resolve = done; });
+  const store = reader(); store.get = async () => pending;
+  const key = { kind: 'workspace' as const, id: workspace.id, scope: { ...workspace.scope } };
+  const result = getNamespace(key, store);
+  key.scope.organizationId = uuid(99);
+  resolve(workspace);
+  await expect(result).resolves.toEqual(workspace);
+  expect(key.scope.organizationId).toBe(uuid(99));
+});
+
+it('retains the original limit when caller input changes during pagination I/O', async () => {
+  let resolve: (value: Awaited<ReturnType<NamespaceReader['list']>>) => void = () => undefined;
+  const pending = new Promise<Awaited<ReturnType<NamespaceReader['list']>>>(done => { resolve = done; });
+  const store = reader(); store.list = async () => pending;
+  const query = { kind: 'workspace' as const, scope: { ...workspace.scope }, limit: 1 };
+  const result = listNamespaces(query, store);
+  query.limit = 100;
+  resolve({ items: [workspace, { ...workspace, id: uuid(99) }], nextCursor: null });
+  await expect(result).rejects.toThrow('Invalid namespace repository response');
+});

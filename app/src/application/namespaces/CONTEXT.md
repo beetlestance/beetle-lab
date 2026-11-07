@@ -5,6 +5,8 @@ checks returned entity kind/scope/route identity. CREATE allocation IDs are excl
 from intent; PATCH binds route ID/version. No automatic mutation retry.
 
 `getNamespace`/`listNamespaces` require explicit kind/scope and a reader port.
+Authority is independently snapshotted before I/O; the reader receives a separate
+frozen request. Neither reader nor pending caller mutation can widen scope/limit.
 Bounded JSON snapshots (1 MiB) plus shipped API schemas check adapter results.
 Wrong owner/identity returns not_found; malformed, duplicate or oversized adapter
 results are internal contract failures. Pages cannot exceed the requested limit.

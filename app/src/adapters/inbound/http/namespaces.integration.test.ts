@@ -8,12 +8,13 @@ import { configureSchemaCompilers } from './schema-compilers.js';
 import { registerNamespaceRoutes } from './namespaces/index.js';
 import { classifyMetadataError } from '../../../bootstrap/metadata-errors.js';
 import { storageFixture, digest, requestId, uuid } from '../../../../test/storage/fixture.js';
+import type { NamespaceReader } from '../../../ports/namespace-reader.js';
 
 const fixture = storageFixture();
 const servers: FastifyInstance[] = [];
 afterEach(async () => { await Promise.all(servers.splice(0).map(server => server.close())); });
 const auth = { authorization: 'SYNTHETIC_PAIRED_SESSION' };
-async function setup(newId?: () => string) {
+async function setup(newId?: () => string, readerOverride?: NamespaceReader) {
   const metadata = await fixture.open();
   let allocation = 40_000;
   const server = createApiServer({ classify: classifyMetadataError }); servers.push(server);
@@ -21,7 +22,7 @@ async function setup(newId?: () => string) {
   const authorize = vi.fn(async (request: FastifyRequest) => {
     if (request.headers.authorization !== auth.authorization) throw new ApiFault('unpaired');
   });
-  registerNamespaceRoutes(server, { store: metadata.namespaces, reader: metadata, digest,
+  registerNamespaceRoutes(server, { store: metadata.namespaces, reader: readerOverride ?? metadata, digest,
     newId: newId ?? (() => uuid(++allocation)), authorize });
   async function org(name: string, slug: string): Promise<Organization> {
     const response = await server.inject({ method: 'POST', url: '/api/v2/organizations', headers: auth,
@@ -111,4 +112,19 @@ it('serves schema-valid URN identities through encoded routes without bare alias
   expect(response.statusCode).toBe(200); expect(response.json()).toEqual(owner);
   const bare = await server.inject({ url: `/api/v2/organizations/${id.slice(9)}`, headers: auth });
   expect(bare.statusCode).toBe(404);
+});
+
+it('never publishes another scope when a broken reader mutates request authority', async () => {
+  const foreign: Workspace = { id: uuid(200), version: 1, rootFolderId: uuid(201),
+    name: 'SYNTHETIC_FOREIGN_WORKSPACE_CANARY', scope: { kind: 'organization', organizationId: uuid(99) } };
+  const reader: NamespaceReader = {
+    get: async key => { Reflect.set(key.scope, 'organizationId', foreign.scope.organizationId); return foreign; },
+    list: async query => { Reflect.set(query.scope, 'organizationId', foreign.scope.organizationId); return { items: [foreign], nextCursor: null }; },
+  };
+  const { server } = await setup(undefined, reader);
+  for (const url of [`/api/v2/organizations/${uuid(1)}/workspaces/${foreign.id}`,
+    `/api/v2/organizations/${uuid(1)}/workspaces?limit=1`]) {
+    const response = await server.inject({ url, headers: auth });
+    expect(response.statusCode).toBe(404); expect(response.body).not.toContain(foreign.name);
+  }
 });

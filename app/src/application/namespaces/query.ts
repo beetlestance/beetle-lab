@@ -11,6 +11,11 @@ const entitySchema = { organization: 'Organization', workspace: 'Workspace', fol
 const pageSchema = { organization: 'OrganizationPage', workspace: 'WorkspacePage', folder: 'FolderPage' } as const;
 const ownerKind = { organization: 'installation', workspace: 'organization', folder: 'workspace' } as const;
 
+function authority<T>(input: T): T {
+  try { return immutableSnapshot(JSON.parse(encodeJson(input, 2048)) as T); }
+  catch { throw new Error('Invalid namespace query'); }
+}
+
 /** A broken effect adapter is an internal failure, not missing user data. */
 function checked<N extends keyof ApiTypes>(name: N, input: unknown, scope?: SettingsScope): ApiTypes[N] {
   try {
@@ -27,21 +32,23 @@ function checked<N extends keyof ApiTypes>(name: N, input: unknown, scope?: Sett
 }
 
 export async function getNamespace<K extends EntityKind>(key: EntityKey<K>, reader: NamespaceReader): Promise<Entities[K]> {
-  requireRule(key.scope.kind === ownerKind[key.kind], 'not_found');
-  const value = checked(entitySchema[key.kind], await reader.get(key));
-  requireRule(sameScope(value.scope, key.scope) && sameUuid(value.id, key.id), 'not_found');
+  const expected = authority(key);
+  requireRule(expected.scope.kind === ownerKind[expected.kind], 'not_found');
+  const value = checked(entitySchema[expected.kind], await reader.get(authority(expected)));
+  requireRule(sameScope(value.scope, expected.scope) && sameUuid(value.id, expected.id), 'not_found');
   // The constant schema map establishes this conditional result, including exact DTO fields.
   return immutableSnapshot(value) as Entities[K];
 }
 
 export async function listNamespaces<K extends EntityKind>(query: ListQuery<K>, reader: NamespaceReader): Promise<Pages[K]> {
-  requireRule(query.scope.kind === ownerKind[query.kind], 'not_found');
-  const result = await reader.list(query);
-  const value = checked(pageSchema[query.kind], result, query.scope);
-  if (value.items.length > query.limit) throw new Error('Invalid namespace repository response');
+  const expected = authority(query);
+  requireRule(expected.scope.kind === ownerKind[expected.kind], 'not_found');
+  const result = await reader.list(authority(expected));
+  const value = checked(pageSchema[expected.kind], result, expected.scope);
+  if (value.items.length > expected.limit) throw new Error('Invalid namespace repository response');
   const ids = new Set<string>();
   for (const item of value.items) {
-    requireRule(sameScope(item.scope, query.scope), 'not_found');
+    requireRule(sameScope(item.scope, expected.scope), 'not_found');
     const id = item.id.toLowerCase();
     if (ids.has(id)) throw new Error('Invalid namespace repository response');
     ids.add(id);
