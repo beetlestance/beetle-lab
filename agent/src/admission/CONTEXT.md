@@ -13,17 +13,17 @@ Explicit config owns pool, per-run/time ceilings, manifest minimum including tim
 reserve/headroom, approved identities and finite observation TTL. Timeout never sums
 across attempts. Lower pools drain without changing accepted jobs. Physical free disk
 must cover charged output+staging plus reserve/headroom; release never proves deletion.
+`estimateStaging` pins complete setup charges/policy per reservation before I/O;
+unknown policy rejects new admission. See ../../../../docs/decisions/006-agent-staging.md.
 Profiles require cpu/memory/pids/timeout/output. Docker cannot supply timeout/output:
 fresh supervisor guard assertions are mandatory. Output is a bounded-writer/stop
 guard, not a filesystem quota; required `hard-output-quota` is unsupported.
 No host capacities or sensor readings are inferred; unknown/stale stays unknown.
-
 Trusted composition runs the installed semantic config validator BEFORE private
 offer, pinning canonical config SHA256 plus approved schema/catalog identity.
-Hashes prove identity, not semantic validation. `immutableOffer` is compatibility
-only. Private observation/ownership/evidence commands must never reach wrapper or
-browser/public transports. Authority/source strings are provenance, NOT authentication
-or proof; journal stores trusted-supervisor assertions, not Docker observations.
+Hashes are identity, not validation; `immutableOffer` is compatibility only.
+Private evidence/ownership commands never reach browser/wrapper transports.
+Source strings are provenance, not authentication or proof of Docker observations.
 
 Claim create BEFORE backend create; bind exact token/spec/runtime; claim start(now)
 BEFORE backend start. Sole start claim persists epoch1/token/time; replay never grants.

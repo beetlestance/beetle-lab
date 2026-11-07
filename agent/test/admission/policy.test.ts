@@ -103,10 +103,10 @@ describe('bounded FIFO bypass and durable promotion', () => {
   }, 15_000);
   it('caps charged reservations at 64 and paginates retained reservations', async () => {
     const journal = await f.configured(); const config = configuration();
-    config.pool = { cpuMillis: 100_000, memoryBytes: 100_000, pids: 1000, outputBytes: 100_000, stagingBytes: 100_000 };
+    config.pool = { cpuMillis: 100_000, memoryBytes: 100_000, pids: 1000, outputBytes: 100_000, stagingBytes: 16_000_000 };
     config.perRun = config.pool; config.maxConcurrent = 64;
     await journal.admission({ kind: 'configure', configuration: config });
-    await journal.admission({ kind: 'observe', observation: { ...observation(now + 1), capacity: config.pool, freeDiskBytes: 1_000_000 } });
+    await journal.admission({ kind: 'observe', observation: { ...observation(now + 1), capacity: config.pool, freeDiskBytes: 32_000_000 } });
     for (let id = 1; id <= 65; id++) {
       const offer = f.job(id, 100); offer.budget.memoryBytes = 100; offer.budget.pids = 1;
       await f.enqueue(journal, offer, now + 1);

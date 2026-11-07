@@ -1,4 +1,5 @@
 import type { Offer } from '@beetle/contracts';
+import type { StagingEstimate } from './staging.js';
 
 export const resourceNames = ['cpuMillis', 'memoryBytes', 'pids', 'outputBytes', 'stagingBytes'] as const;
 export type Resources = Record<typeof resourceNames[number], number>;
@@ -24,6 +25,7 @@ export interface ValidationIdentity {
   manifestId: string; profileId: string; schemaDigest: string; catalogVersion: number; configDigest: string;
 }
 export interface Candidate extends Scope {
+  staging: Readonly<StagingEstimate>;
   resources: Resources; budget: Offer['budget']; mode: 'parallel' | 'isolated'; preferIdle: boolean;
   requiredCapabilities: string[]; engine: Offer['engine']; validation: ValidationIdentity;
   queuedAt: number | null; order: number;

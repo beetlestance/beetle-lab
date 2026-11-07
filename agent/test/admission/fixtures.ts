@@ -6,7 +6,8 @@ import { journalFixture } from '../journal/fixtures.js';
 
 export const now = 100_000;
 export const digest = 'b'.repeat(64);
-export const vector = (cpuMillis = 4000): Resources => ({ cpuMillis, memoryBytes: 4000, pids: 40, outputBytes: 4000, stagingBytes: 10_000 });
+// Disk includes the prescribed bounded offer/manifest/metadata staging for every attempt.
+export const vector = (cpuMillis = 4000): Resources => ({ cpuMillis, memoryBytes: 4000, pids: 40, outputBytes: 4000, stagingBytes: 10_000_000 });
 export function configuration(): PoolConfiguration {
   return { pool: vector(), perRun: vector(), controlReserve: { cpuMillis: 100, memoryBytes: 100, pids: 1, outputBytes: 0, stagingBytes: 0 },
     headroom: { cpuMillis: 100, memoryBytes: 100, pids: 1, outputBytes: 0, stagingBytes: 0 },
@@ -19,7 +20,7 @@ export function configuration(): PoolConfiguration {
 }
 export function observation(at = now): RuntimeObservation {
   return { source: 'synthetic-runtime', observedAt: at, status: 'known', capacity: { ...vector(5000), memoryBytes: 5000, pids: 50 },
-    freeDiskBytes: 20_000, controls: ['cpu', 'memory', 'pids'],
+    freeDiskBytes: 20_000_000, controls: ['cpu', 'memory', 'pids'],
     guards: { source: 'supervisor', observedAt: at, controls: ['timeout', 'output'] },
     idle: { source: 'synthetic-idle', observedAt: at, value: true } };
 }

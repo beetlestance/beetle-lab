@@ -1,5 +1,6 @@
 import type { AdmissionSnapshot, ApprovedProfile, Candidate, Decision, Resources, RuntimeObservation } from './types.js';
 import { addResources, effectivePool, fits, zeroResources } from './resources.js';
+import { supportedStaging } from './staging.js';
 
 export const PROMOTION_MS = 30_000;
 export const MAX_SCAN = 100;
@@ -10,6 +11,7 @@ export function approvedProfile(candidate: Candidate, profiles: ApprovedProfile[
     profile.imageDigest === candidate.engine.imageDigest && profile.configVersion === candidate.engine.configVersion);
 }
 export function validateCandidate(candidate: Candidate, snapshot: AdmissionSnapshot): Decision {
+  if (!supportedStaging(candidate.staging, candidate.resources.stagingBytes)) return { kind: 'reject', reason: 'staging_policy' };
   if (candidate.requiredCapabilities.includes('hard-output-quota')) return { kind: 'reject', reason: 'unsupported_capability' };
   const profile = approvedProfile(candidate, snapshot.configuration.profiles);
   if (!profile) return { kind: 'reject', reason: 'unapproved_profile' };
