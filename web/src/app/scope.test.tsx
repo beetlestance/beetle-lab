@@ -4,8 +4,41 @@ import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react
 import { afterEach, describe, expect, it } from 'vitest';
 import { deferred, folder, ids, json, mount, org, readNamespace, testClient, workspace } from './test-fixtures.js';
 import { routes } from './routes.js';
+import { createQueryClient, queryKeys } from './queries.js';
 
 afterEach(cleanup);
+describe('cache UUID identity and cleanup', () => {
+  it('folds organization/workspace UUID case while retaining URN identity', () => {
+    expect(queryKeys.organization(ids.a.toUpperCase())).toEqual(queryKeys.organization(ids.a));
+    expect(queryKeys.workspaces(ids.a.toUpperCase())).toEqual(queryKeys.workspaces(ids.a));
+    expect(queryKeys.workspace(ids.a.toUpperCase(), ids.workspace.toUpperCase())).toEqual(queryKeys.workspace(ids.a, ids.workspace));
+    expect(queryKeys.folders(ids.a.toUpperCase(), ids.workspace.toUpperCase())).toEqual(queryKeys.folders(ids.a, ids.workspace));
+    expect(queryKeys.folders(`URN:UUID:${ids.a.toUpperCase()}`, `URN:UUID:${ids.workspace.toUpperCase()}`))
+      .toEqual(queryKeys.folders(`urn:uuid:${ids.a}`, `urn:uuid:${ids.workspace}`));
+    expect(queryKeys.organization(`urn:uuid:${ids.a}`)).not.toEqual(queryKeys.organization(ids.a));
+  });
+  it('cancels and removes lowercase-response folder queries through uppercase-route prefixes', async () => {
+    const client = createQueryClient();
+    const reply = deferred<ReturnType<typeof folder>>();
+    let signal: AbortSignal | undefined;
+    const pending = client.fetchQuery({ queryKey: [...queryKeys.folders(ids.a, ids.workspace), ''],
+      queryFn: context => { signal = context.signal; return reply.promise; } });
+    // Observe rejection before cancellation: a cancelled read must not leak a rejection.
+    const outcome = pending.then(() => 'resolved', () => 'cancelled');
+    const urnKey = queryKeys.folders(`urn:uuid:${ids.a}`, `urn:uuid:${ids.workspace}`);
+    client.setQueryData(urnKey, { retained: true });
+    await client.cancelQueries({ queryKey: queryKeys.workspace(ids.a.toUpperCase(), ids.workspace.toUpperCase()) });
+    client.removeQueries({ queryKey: queryKeys.organization(ids.a.toUpperCase()) });
+    expect(signal?.aborted).toBe(true);
+    expect(await outcome).toBe('cancelled');
+    expect(client.getQueryCache().findAll({ queryKey: queryKeys.organization(ids.a) })).toHaveLength(0);
+    expect(client.getQueryData(urnKey)).toEqual({ retained: true });
+    reply.resolve(folder());
+    await Promise.resolve();
+    expect(client.getQueryCache().findAll({ queryKey: queryKeys.organization(ids.a) })).toHaveLength(0);
+    client.clear();
+  });
+});
 describe('URL scope and cancellation', () => {
   it.each(['not-a-uuid', 'urn:uuid:not-a-uuid', 'urn:uuid:' + ids.a + '/extra', ids.a + '%2Fextra'])('rejects malformed route UUIDs before any API call: %s', async invalid => {
     const api = testClient(readNamespace);

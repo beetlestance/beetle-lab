@@ -19,6 +19,71 @@ async function openCreateOrganization() {
 }
 
 describe('mutation identity and draft ownership', () => {
+  it.each([
+    { status: 500, code: 'internal_error' as const, operation: 'create' },
+    { status: 503, code: 'storage_unavailable' as const, operation: 'create' },
+    { status: 500, code: 'internal_error' as const, operation: 'patch' },
+    { status: 503, code: 'storage_unavailable' as const, operation: 'patch' },
+  ])('replays committed $operation after protocol $status without another effect', async ({ status, code, operation }) => {
+    const committed = new Map<string, ReturnType<typeof org> | ReturnType<typeof workspace>>();
+    let effects = 0;
+    const api = testClient(request => {
+      if (request.method === 'GET') return readNamespace(request);
+      const requestId = String(request.body?.requestId);
+      const previous = committed.get(requestId);
+      if (previous) return json(previous, operation === 'create' ? 201 : 200);
+      effects++;
+      const entity = operation === 'create'
+        ? { ...org(), name: 'New organization', slug: 'new-organization' }
+        : { ...workspace(), name: 'Updated workspace', version: 4 };
+      committed.set(requestId, entity);
+      return json(apiError(code), status);
+    });
+    mount(api.client, operation === 'create' ? '/' : routes.organization(ids.a));
+    if (operation === 'create') await openCreateOrganization();
+    else {
+      fireEvent.click(await screen.findByRole('button', { name: 'Rename Same workspace' }));
+      field('Workspace name', 'Updated workspace');
+    }
+    save();
+    expect(await screen.findByText(/The outcome is unknown/)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    expect(effects).toBe(1);
+    expect(mutations(api.records)).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Retry identical request' }));
+    expect(await screen.findByText('Changes saved.')).toBeVisible();
+    const writes = mutations(api.records);
+    expect(writes).toHaveLength(2);
+    expect(writes[1]?.body).toEqual(writes[0]?.body);
+    if (operation === 'patch') expect(writes[1]?.body?.expectedVersion).toBe(3);
+    expect(effects).toBe(1);
+    expect(committed.size).toBe(1);
+  });
+  it.each([
+    { status: 500, code: 'internal_error' as const },
+    { status: 503, code: 'storage_unavailable' as const },
+  ])('editing after committed protocol $status explicitly starts a new intent', async ({ status, code }) => {
+    const committed = new Set<string>();
+    const api = testClient(request => {
+      if (request.method === 'GET') return readNamespace(request);
+      committed.add(String(request.body?.requestId));
+      if (committed.size === 1) return json(apiError(code), status);
+      return json({ ...org(), name: 'Explicitly edited organization', slug: 'new-organization' }, 201);
+    });
+    mount(api.client);
+    await openCreateOrganization();
+    save();
+    await screen.findByRole('button', { name: 'Retry identical request' });
+    field('Organization name', 'Explicitly edited organization');
+    expect(screen.queryByRole('button', { name: 'Retry identical request' })).not.toBeInTheDocument();
+    save();
+    expect(await screen.findByText('Changes saved.')).toBeVisible();
+    const writes = mutations(api.records);
+    expect(writes).toHaveLength(2);
+    expect(writes[1]?.body?.requestId).not.toEqual(writes[0]?.body?.requestId);
+    expect(writes[1]?.body?.name).toBe('Explicitly edited organization');
+    expect(committed.size).toBe(2);
+  });
   it('replays an unknown create with an identical request ID and payload', async () => {
     let attempts = 0;
     const api = testClient(request => {

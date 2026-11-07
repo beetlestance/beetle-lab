@@ -16,6 +16,9 @@ export async function readResult<T>(result: Promise<ApiClientResult<T>>): Promis
   return reply.value;
 }
 export function unknownOutcome(failure: ApiClientFailure) {
+  const status = failure.status ?? 0;
+  // A structured server error can follow a committed write; retryable is not a receipt.
+  if (failure.kind === 'protocol') return status >= 500 && status < 600;
   return ['transport', 'timeout', 'cancelled', 'response'].includes(failure.kind);
 }
 export function errorMessage(failure: ApiClientFailure): string {
