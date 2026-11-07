@@ -1,4 +1,4 @@
-import { immutableSnapshot, requireRule, sameScope, sameUuid } from '../../domain/namespaces/index.js';
+import { immutableSnapshot, projectNamespaceIntent, requireRule, sameScope, sameUuid } from '../../domain/namespaces/index.js';
 import type {
   NamespaceCommand, NamespaceEntity, NamespaceOperation, NamespaceStore,
 } from '../../ports/namespaces.js';
@@ -19,11 +19,19 @@ export function digestMutationIntent(operation: unknown, digest: IntentDigest): 
   return result;
 }
 
-/** Includes operation, route ID, requested ID/root and full request, including scope/version. */
+/** CREATE excludes server allocation IDs; PATCH binds route ID and full versioned request. */
 export function prepareNamespaceCommand(operation: NamespaceOperation, digest: IntentDigest): NamespaceCommand {
   const copy = immutableSnapshot(operation);
-  const intentDigest = digestMutationIntent(copy, digest);
+  const intentDigest = digestMutationIntent(projectNamespaceIntent(copy), digest);
   return immutableSnapshot({ ...copy, intentDigest });
+}
+
+function expectedEntityKind(operation: NamespaceOperation, result: NamespaceEntity): boolean {
+  switch (operation.kind) {
+    case 'createOrganization': case 'patchOrganization': return 'slug' in result;
+    case 'createWorkspace': case 'patchWorkspace': return 'rootFolderId' in result;
+    case 'createFolder': case 'patchFolder': return 'parentFolderId' in result;
+  }
 }
 
 export async function mutateNamespace(input: {
@@ -31,6 +39,9 @@ export async function mutateNamespace(input: {
 }): Promise<NamespaceEntity> {
   const command = prepareNamespaceCommand(input.operation, input.digest);
   const result = await input.store.execute(command);
-  requireRule(sameUuid(result.id, command.id) && sameScope(result.scope, command.request.scope), 'not_found');
+  requireRule(sameScope(result.scope, command.request.scope) && expectedEntityKind(command, result), 'not_found');
+  const intent = projectNamespaceIntent(command);
+  // A CREATE receipt carries the original allocation; PATCH always binds the route ID.
+  requireRule(!('id' in intent) || sameUuid(result.id, intent.id), 'not_found');
   return immutableSnapshot(result);
 }

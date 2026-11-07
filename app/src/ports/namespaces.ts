@@ -6,6 +6,13 @@ export type { NamespaceCommand, NamespaceEntity, NamespaceOperation, NamespaceEv
  * One short future metadata transaction owns read/decide/check/write/receipt.
  * Before decision: look up (scope, requestId). Same digest returns the
  * original result without rerunning the decision; different digest throws conflict.
+ * Intent is projectNamespaceIntent(command): CREATE = {kind, request};
+ * PATCH = {kind, id, request}. Full client request includes scope/requestId and
+ * PATCH expectedVersion. Generated CREATE id/rootFolderId and intentDigest itself
+ * are excluded. Preparation hashes its canonical sorted-key JSON with injected SHA-256.
+ * On CREATE replay return the original entity (and workspace rootFolderId), even
+ * when command allocation IDs differ. Ignore fresh allocations; create no new root.
+ * For a new write use command allocations. Never derive IDs from requestId/digest.
  * Resolve all IDs by exact owner scope; wrong owner yields not_found. Re-read current
  * UUID equality/uniqueness is case-insensitive; persist canonical lowercase UUIDs.
  * version, workspace/root identity, complete <=8 parent chain and exact subtree

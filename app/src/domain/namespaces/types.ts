@@ -12,6 +12,9 @@ export type NamespaceOperation =
   | { kind: 'createFolder'; id: string; request: CreateFolderRequest }
   | { kind: 'patchFolder'; id: string; request: PatchFolderRequest };
 
+/** CREATE id/rootFolderId are fresh server allocations, not client intent fields.
+ * The full command retains them for a new write; matching receipts retain original IDs.
+ */
 export type NamespaceCommand = NamespaceOperation & { intentDigest: string };
 export type NamespaceEntity = Organization | Workspace | Folder;
 export interface NamespaceEvidence {

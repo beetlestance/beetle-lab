@@ -3,4 +3,5 @@ export { SemanticError, requireRule, sameScope, sameUuid, nextVersion, normalize
 export { MAX_FOLDER_DEPTH, checkedParentChain, validateFolderPlacement } from './folders.js';
 export type { FolderEvidence } from './folders.js';
 export { decideNamespaceChange } from './transition.js';
+export { projectNamespaceIntent } from './intent.js';
 export type { NamespaceOperation, NamespaceCommand, NamespaceEntity, NamespaceEvidence, NamespaceChange } from './types.js';
