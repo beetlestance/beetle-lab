@@ -1,4 +1,5 @@
 import { afterEach, expect, it } from 'vitest';
+import { createApiClient } from '@beetle/contracts/api';
 import { openApplication } from './api.js';
 import type { Application } from './api.js';
 import { storageFixture, settingsFixture, observation, requestId } from '../../test/storage/fixture.js';
@@ -59,4 +60,28 @@ it('reports unknown capacity rather than inventing host resources, and accepts t
   expect((await application.server.inject({ url: '/api/v2/settings', headers })).statusCode).toBe(503);
   await application.updateRuntime(observation(settingsFixture().runtime));
   expect((await application.server.inject({ url: '/api/v2/settings', headers })).statusCode).toBe(200);
+});
+it('uses the shipped typed client through pairing, CSRF mutations and logout against the composed server', async () => {
+  const application = await open();
+  let cookie = '';
+  const fetcher: typeof fetch = async (input, init) => {
+    const headers = new Headers(init?.headers);
+    headers.set('host', 'localhost:4310'); headers.set('origin', externalOrigin);
+    if (cookie) headers.set('cookie', cookie);
+    const response = await application.server.inject({ method: init?.method as 'GET' | 'POST',
+      url: new URL(String(input)).pathname + new URL(String(input)).search,
+      headers: Object.fromEntries(headers), ...(typeof init?.body === 'string' ? { payload: init.body } : {}) });
+    if (response.headers['set-cookie']) cookie = String(response.headers['set-cookie']).split(';')[0]!;
+    return new Response(response.body, { status: response.statusCode, headers: { 'content-type': 'application/json' } });
+  };
+  const unpaired = createApiClient({ baseUrl: externalOrigin, fetch: fetcher, headers: { 'X-Beetle-Pair': '1' } });
+  const grant = await unpaired.pairBrowserSession({ body: { bootstrapToken: application.bootstrapToken } });
+  expect(grant.ok).toBe(true); if (!grant.ok) throw new Error('Pairing failed');
+  const client = createApiClient({ baseUrl: externalOrigin, fetch: fetcher, headers: { 'X-Beetle-CSRF': grant.value.csrfToken } });
+  const team = await client.createOrganization({ body: { scope: { kind: 'installation' },
+    requestId: requestId(), name: 'Typed client team', slug: 'typed-client-team' } });
+  expect(team.ok).toBe(true);
+  expect((await client.listOrganizations({ query: { limit: 100 } })).ok).toBe(true);
+  expect(await client.logoutBrowserSession({ body: {} })).toEqual({ ok: true, value: { loggedOut: true } });
+  expect(await client.getBrowserSession()).toMatchObject({ ok: false, error: { status: 401 } });
 });
