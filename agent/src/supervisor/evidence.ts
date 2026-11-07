@@ -3,44 +3,39 @@ import type { Scope } from '../admission/index.js';
 import type { SupervisorInput } from '../journal/index.js';
 import type { JournalPort, LaunchState } from './types.js';
 
-type Draft = SupervisorInput['event'];
-/** One serialized source stream. No wrapper events or outcome inference. */
+type LifecycleKind = 'runtime.started' | 'cancellation.requested' | 'runtime.exited' | 'execution.lost';
+type Draft = Extract<SupervisorInput['event'], { kind: LifecycleKind }>;
+/** Capture never awaits delivery. One immutable first observation per lifecycle kind. */
 export class RuntimeEvidence {
-  private lastObservation = '';
-  private cancellationWritten = false;
-  private pending: { event: Draft; sourceOrdinal?: number; signature?: string } | undefined;
+  // At most four entries, even if delivery fails indefinitely. Repeated inspections
+  // coalesce to the first captured event; this generation can never restart.
+  private readonly captured = new Set<LifecycleKind>();
+  private readonly pending: { event: Draft; sourceOrdinal?: number }[] = [];
   constructor(private readonly journal: JournalPort, private readonly key: Scope) {}
-  private async append(event: Draft, signature?: string): Promise<void> {
-    await this.flush();
-    this.pending = { event, ...(signature === undefined ? {} : { signature }) };
-    await this.flush();
+  get hasPending(): boolean { return this.pending.length > 0; }
+  private capture(event: Draft): void {
+    if (this.captured.has(event.kind)) return;
+    this.captured.add(event.kind);
+    this.pending.push({ event });
   }
-  private async flush(): Promise<void> {
-    const pending = this.pending;
-    if (!pending) return;
-    if (pending.sourceOrdinal === undefined) {
-      const cursor = await this.journal.sourceCursors(this.key);
-      pending.sourceOrdinal = cursor.supervisorOrdinal + 1;
+  async flush(): Promise<void> {
+    while (this.pending.length) {
+      const pending = this.pending[0]!;
+      if (pending.sourceOrdinal === undefined) {
+        const cursor = await this.journal.sourceCursors(this.key);
+        pending.sourceOrdinal = cursor.supervisorOrdinal + 1;
+      }
+      await this.journal.appendSupervisor({ sourceOrdinal: pending.sourceOrdinal, event: pending.event });
+      this.pending.shift();
     }
-    await this.journal.appendSupervisor({ sourceOrdinal: pending.sourceOrdinal, event: pending.event });
-    if (pending.signature !== undefined) this.lastObservation = pending.signature;
-    if (pending.event.kind === 'cancellation.requested') this.cancellationWritten = true;
-    this.pending = undefined;
   }
-  async cancelled(requestedAt: number, now: number): Promise<void> {
-    await this.flush();
-    if (this.cancellationWritten) return;
-    await this.append({ ...this.base(now), kind: 'cancellation.requested',
+  cancelled(requestedAt: number, now: number): void {
+    this.capture({ ...this.base(now), kind: 'cancellation.requested',
       payload: { requestedAt: new Date(requestedAt).toISOString() } });
-    this.cancellationWritten = true;
   }
-  async observe(observation: Observation, now: number, cause: LaunchState['cancellation']): Promise<void> {
-    await this.flush();
-    const signature = JSON.stringify(observation);
-    if (signature === this.lastObservation) return;
+  observe(observation: Observation, now: number, cause: LaunchState['cancellation']): void {
     const event = this.event(observation, now, cause);
-    if (event) await this.append(event, signature);
-    this.lastObservation = signature;
+    if (event) this.capture(event);
   }
   private base(now: number) {
     return { version: '1.0' as const, ...this.key, source: 'agent' as const,

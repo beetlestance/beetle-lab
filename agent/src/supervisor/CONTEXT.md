@@ -3,9 +3,8 @@
 `index.ts` exposes Supervisor and actor launch/reconcile/tick/cancel steps plus
 fixed SupervisorError codes. One trusted composition owns the exclusively locked
 Journal, installation identity, staged/validated genuine RuntimePlan and manager.
-Runner wire contracts are unchanged. Narrow ports retain Journal/Docker signatures.
-Each actor gets a fresh DockerBackend from backendFactory; <=64 live actors,
-coalesced operations, no work queue. Retirement refuses every outstanding lane and
+Wire contracts and Journal/Docker signatures are unchanged. Fresh backend per actor;
+<=64 live actors, coalesced operations, no queue. Retirement refuses pending work and
 fences old handles. Durable claims remain authoritative after manager eviction.
 Journal UUID spelling stays exact; normalized manager collisions reject changed
 spelling/spec rather than sharing distinct journal ownership.
@@ -25,13 +24,14 @@ separately and may kill after durable cancellation. Fenced inherited clocks neve
 enter normal timing/date arithmetic. Invalid monotonic time can prevent requests;
 unknown remains charged for reconciliation. No guard capability is advertised.
 
-Runtime events use the supervisor ordinal stream before settlement. A known create
-binds its ID durably. completed also requires the actual captured known start
-observation durably recorded and all local dispatch capabilities consumed. Failed
-evidence retains one exact event/ordinal plus the captured start for bounded retry;
-unknown/latest inspector data cannot replace that proof. retired means local start
-never sent after a known create. Uncertain actions/recovery remain unknown despite
-later stopped/absent observations. Exit0/137 and OOM never establish test outcome.
+Runtime evidence captures synchronously, then flushes before settlement. At most
+four pending first observations (started, cancellation, exited, lost) retain their
+original order, timestamps, payloads and assigned ordinals; repeats coalesce by kind.
+Delivery failure durably cancels and reports journal_unavailable; the next cancel/
+tick signals before retrying delivery. Pending evidence blocks retirement/settlement.
+completed requires known local create/start and durable evidence; recovered actors
+cannot infer that proof. retired means known create without a sent start. Unknown
+stays charged. Exit0/137 and OOM never establish test outcome; no release is inferred.
 
 Composition must call tick every100ms while active, including after step failures.
 Backend calls cap at30s; launch also uses remaining execution budget. These bounded

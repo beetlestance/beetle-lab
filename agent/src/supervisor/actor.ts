@@ -34,7 +34,6 @@ export class LaunchActor {
   private createKnown = false;
   private startSent = false;
   private startKnown = false;
-  private pendingStart: { view: InspectEvidence; observedAt: number; cause: LaunchState['cancellation'] } | undefined;
   private disposition: LaunchState['launch'] = 'unclaimed';
 
   constructor(readonly input: LaunchInput, private readonly journal: JournalPort,
@@ -48,14 +47,15 @@ export class LaunchActor {
   cancel(): Promise<LaunchState> {
     this.localCancel = true;
     this.cancellation ??= this.persistCancellation().then(async () => {
-      await this.inFlight;
+      // Launch failure must not discard a separately committed cancellation.
+      await this.inFlight?.catch(() => undefined);
       return this.run(false);
     }).finally(() => { this.cancellation = undefined; });
     return this.cancellation;
   }
   /** Synchronous retirement refuses every outstanding lane; old handles are fenced. */
   retire(): void {
-    if (this.inFlight || this.cancellationWrite || this.cancellation) throw new SupervisorError('conflict');
+    if (this.inFlight || this.cancellationWrite || this.cancellation || this.evidence.hasPending) throw new SupervisorError('conflict');
     this.closed = true;
   }
   private state(): LaunchState {
@@ -109,13 +109,25 @@ export class LaunchActor {
   private async step(launch: boolean): Promise<LaunchState> {
     await this.load();
     const allowed = await this.gate();
-    await this.persistStart();
-    if (launch && allowed) await this.createAndStart();
-    else if (this.current!.createToken) await this.recover();
+    if (!this.localCancel) {
+      if (launch && allowed) await this.createAndStart();
+      else if (this.current!.createToken) await this.recover();
+    }
     // Backend latency consumes execution time even when no new action follows.
     await this.gate();
     if (this.localCancel) await this.stopCancelled();
+    await this.deliver();
+    await this.settle();
     return this.state();
+  }
+  private async deliver(): Promise<void> {
+    try { await this.evidence.flush(); }
+    catch {
+      // Fence immediately; the next bounded cancel/tick step signals before retrying
+      // delivery. A failed append can never authorize more execution or settlement.
+      await this.persistCancellation();
+      throw new SupervisorError('journal_unavailable');
+    }
   }
   private binding() {
     const value = this.current!;
@@ -133,9 +145,9 @@ export class LaunchActor {
     this.createKnown = created.outcome === 'known';
     if (created.outcome !== 'known') { await this.recover(); return; }
     await this.bind(created.value);
-    await this.record(created.value);
-    if (!await this.gate()) { await this.settle(); return; }
-    if (created.value.state !== 'created') { await this.settle(); return; }
+    this.record(created.value);
+    if (!await this.gate()) return;
+    if (created.value.state !== 'created') return;
     await this.startCreated();
   }
   private async startCreated(): Promise<void> {
@@ -144,15 +156,14 @@ export class LaunchActor {
     if (!start.dispatchAllowed) { await this.recover(); return; }
     const operation = this.dispatchOperation();
     if (!operation) {
-      await this.gate(); await this.settle(); return;
+      await this.gate(); return;
     }
     this.startSent = true;
     const started = await this.mutate(() => this.backend.dispatchStartOnce(this.input.plan, operation));
     if (started.outcome === 'known') {
-      this.pendingStart = { view: { ...started.value }, observedAt: this.time.wall(), cause: this.cause };
-      await this.persistStart();
+      this.record(started.value);
+      this.startKnown = started.value.state === 'running' || started.value.state === 'exited';
     } else await this.recover();
-    await this.settle();
   }
   private dispatchOperation() {
     if (this.closed || this.localCancel) return undefined;
@@ -160,15 +171,6 @@ export class LaunchActor {
     if (!permission.allowed) { this.cause = permission.reason; return undefined; }
     if (this.closed || this.localCancel) return undefined;
     return permission.operation;
-  }
-  private async persistStart(): Promise<void> {
-    const pending = this.pendingStart;
-    if (!pending) return;
-    if (this.current!.runtimeId !== pending.view.id) throw new SupervisorError('conflict');
-    await this.evidence.observe(pending.view, pending.observedAt, pending.cause);
-    this.observation = pending.view;
-    this.startKnown = pending.view.state === 'running' || pending.view.state === 'exited';
-    this.pendingStart = undefined;
   }
   private async mutate(action: () => Promise<MutationResult<InspectEvidence>>): Promise<MutationResult<InspectEvidence>> {
     try { return await action(); }
@@ -186,19 +188,18 @@ export class LaunchActor {
     try { view = await this.backend.inspect(this.input.plan, this.time.operation()); }
     catch { throw new SupervisorError('backend_unavailable'); }
     if ('id' in view) await this.bind(view);
-    await this.record(view);
+    this.record(view);
     // Inspection never upgrades uncertainty from a previous process or request.
   }
-  private async record(view: Observation): Promise<void> {
+  private record(view: Observation): void {
     if ('id' in view && this.current!.runtimeId !== view.id) throw new SupervisorError('conflict');
-    await this.evidence.observe(view, this.time.wall(), this.cause);
-    this.observation = view;
+    this.evidence.observe(view, this.time.wall(), this.cause);
+    this.observation = { ...view };
   }
   private async settle(): Promise<void> {
     const value = this.current!;
-    if (!value.runtimeId || value.launchSettlement || this.time.fenced()) return;
-    const disposition = this.createKnown && this.startSent && this.startKnown ? 'completed'
-      : this.createKnown && !this.startSent ? 'retired' : 'unknown';
+    if (!this.createKnown || !value.runtimeId || value.launchSettlement || this.time.fenced() || this.evidence.hasPending) return;
+    const disposition = !this.startSent ? 'retired' : this.startKnown ? 'completed' : 'unknown';
     this.current = reservation(await this.journal.admission({ kind: 'settleLaunch', settlement: {
       authority: 'supervisor', ...this.binding(), epoch: value.launchEpoch, startToken: value.startToken,
       disposition, settledAt: this.time.wall(), evidenceId: randomUUID(),
@@ -209,7 +210,7 @@ export class LaunchActor {
     await this.persistCancellation();
     if (!this.durable?.cancelRequested) throw new SupervisorError('journal_unavailable');
     const origin = this.durable.cancelRequestedAt;
-    if (origin !== null && origin <= 8_640_000_000_000_000) await this.evidence.cancelled(origin, this.time.wall());
+    if (origin !== null && origin <= 8_640_000_000_000_000) this.evidence.cancelled(origin, this.time.wall());
     if (!this.current!.createToken) return;
     // Launch has resolved before this lane executes; no in-flight start can escape stop.
     await this.sample();
@@ -218,8 +219,7 @@ export class LaunchActor {
     const result = await this.mutate(() => kill
       ? this.backend.kill(this.input.plan, this.time.operation())
       : this.backend.stop(this.input.plan, this.time.operation(), this.time.graceDeadline()));
-    if (result.outcome === 'known') { await this.bind(result.value); await this.record(result.value); }
+    if (result.outcome === 'known') { await this.bind(result.value); this.record(result.value); }
     else await this.recover();
-    await this.settle();
   }
 }

@@ -17,7 +17,8 @@ export function deferred<T>() {
   return { promise, resolve };
 }
 export function clock() {
-  let wall = now; let mono = performance.now();
+  // Integer fake milliseconds make split advances exact for grace identity checks.
+  let wall = now; let mono = Math.ceil(performance.now());
   return { wall: () => wall, monotonic: () => mono,
     advance(ms: number) { wall += ms; mono += ms; }, wallOnly(value: number) { wall = value; },
     monoOnly(value: number) { mono = value; } };
@@ -25,8 +26,8 @@ export function clock() {
 export function supervisorFixture() {
   const f = admissionFixture();
   return { ...f,
-    async setup(path?: string, jobId = 1, mutate?: (offer: Offer) => void) {
-      const journal = await f.configured(path);
+    async setup(path?: string, jobId = 1, mutate?: (offer: Offer) => void, quota?: number) {
+      const journal = await f.configured(path, quota);
       const offer = f.job(jobId); mutate?.(offer);
       await f.enqueue(journal, offer); await f.admit(journal, offer);
       const input = makeInput(); input.offer = offer;
