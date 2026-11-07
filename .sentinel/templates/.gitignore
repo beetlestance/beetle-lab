@@ -1,0 +1,10 @@
+node_modules/
+# Machine-local configs, payloads, secrets, and run history.
+configs/*
+!configs/.gitkeep
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+coverage/

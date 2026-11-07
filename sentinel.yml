@@ -11,3 +11,5 @@ license: mit
 rulesets:
   - ./rulesets/protect-main.json
   - ./rulesets/protect-develop.json
+templates:
+  - ./.sentinel/templates

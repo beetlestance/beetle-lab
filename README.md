@@ -71,7 +71,7 @@ git-sentinel diff --config sentinel.yml
 git-sentinel enforce --dry-run --config sentinel.yml
 ```
 
-Git-sentinel 3.0.2 regenerates repository files during enforcement. Review its plan and preserve the custom README, LICENSE, and `.gitignore` through template injection before applying it. The `configs/` exclusions must remain in place.
+Git-sentinel 3.0.2 regenerates repository files during enforcement. The versioned `.sentinel/templates/` preserves our README, license, contribution guide, and data exclusions. Keep those templates in sync when editing their root copies. Run enforcement only through an approved maintenance workflow; it writes commits directly, while both branches require PRs. The `configs/` exclusions must remain in place.
 
 ## Scope
 
