@@ -19,7 +19,11 @@ registered operations; artifact/SSE byte routes need explicit transfer budgets.
 
 Focused test: `npm run test:v2 -- app/src/adapters/inbound/http`.
 Synthetic and runner-catalogue fixtures prove compiler semantics and shared-encoder
-binding. `api-errors.ts` maps framework/domain/explicit API faults to fixed ApiError
+binding. `api-errors.ts` exports `createApiServer` for product bootstrap: constructor
+frameworkErrors handles bad URLs/oversized parameters before normal route hooks.
+The factory creates no listener; compilers/authentication still need configuration.
+`configureApiErrors` alone cannot intercept those pre-router errors.
+The mapper converts framework/domain/explicit API faults to fixed ApiError
 replies with generated correlation IDs. Bootstrap may inject concrete adapter-error
 classification; exception values/URLs/client IDs never become response text.
 5xx can follow an unknown commit: mutation retries must retain original intent.

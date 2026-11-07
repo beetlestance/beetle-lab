@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import type { FastifyInstance } from 'fastify';
+import Fastify from 'fastify';
+import type { FastifyInstance, FastifyReply } from 'fastify';
 import type { ApiError } from '@beetle/contracts/api';
 import { SemanticError } from '../../../domain/namespaces/index.js';
 
@@ -46,6 +47,9 @@ const frameworkCodes = new Map<string, Code>([
   ['FST_ERR_CTP_INVALID_JSON_BODY', 'malformed_request'],
   ['FST_ERR_CTP_EMPTY_JSON_BODY', 'malformed_request'],
   ['FST_ERR_CTP_INVALID_MEDIA_TYPE', 'malformed_request'],
+  ['FST_ERR_CTP_INVALID_CONTENT_LENGTH', 'malformed_request'],
+  ['FST_ERR_BAD_URL', 'malformed_request'],
+  ['FST_ERR_MAX_PARAM_LENGTH', 'malformed_request'],
 ]);
 function codeFor(error: unknown, classify: ApiErrorOptions['classify']): Code {
   try {
@@ -61,6 +65,27 @@ function response(code: Code): { status: number; body: ApiError } {
   const [status, message, retryable] = errors[code];
   return { status, body: { code, message, retryable, requestId: randomUUID(), fields: [] } };
 }
+function sendFailure(error: unknown, reply: FastifyReply, classify: ApiErrorOptions['classify']): FastifyReply {
+  const result = response(codeFor(error, classify));
+  return reply.code(result.status).type('application/json').send(result.body);
+}
+
+export interface ApiServerOptions extends ApiErrorOptions { bodyLimit?: number }
+/** Constructor-level routing errors bypass setErrorHandler. Product bootstrap must
+ * use this factory, then configure compilers/authentication before registering routes.
+ * It creates no listener; binding/proxy/session policy remains bootstrap-owned.
+ */
+export function createApiServer(options: ApiServerOptions = {}): FastifyInstance {
+  const bodyLimit = options.bodyLimit ?? 1_048_576;
+  if (!Number.isSafeInteger(bodyLimit) || bodyLimit < 1 || bodyLimit > 1_048_576) {
+    throw new RangeError('Invalid API body limit');
+  }
+  const classify = options.classify;
+  const server = Fastify({ logger: false, bodyLimit, routerOptions: { maxParamLength: 128 },
+    frameworkErrors: (error, _request, reply) => sendFailure(error, reply, classify) });
+  configureApiErrors(server, options);
+  return server;
+}
 
 /** Register before resource routes. No exception values, request IDs or URLs echo.
  * A 5xx reply may follow a committed mutation: clients must replay its original
@@ -69,8 +94,7 @@ function response(code: Code): { status: number; body: ApiError } {
 export function configureApiErrors(server: FastifyInstance, options: ApiErrorOptions = {}): void {
   const classify = options.classify;
   server.setErrorHandler((error, _request, reply) => {
-    const result = response(codeFor(error, classify));
-    return reply.code(result.status).type('application/json').send(result.body);
+    return sendFailure(error, reply, classify);
   });
   server.setNotFoundHandler((_request, reply) => {
     const result = response('not_found');

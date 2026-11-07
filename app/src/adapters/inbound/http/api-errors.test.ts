@@ -1,4 +1,3 @@
-import Fastify from 'fastify';
 import type { FastifyInstance } from 'fastify';
 import { afterEach, expect, it } from 'vitest';
 import { encodeJson } from '@beetle/contracts';
@@ -7,7 +6,7 @@ import type { ApiError } from '@beetle/contracts/api';
 import { SemanticError } from '../../../domain/namespaces/index.js';
 import { configureSchemaCompilers } from './schema-compilers.js';
 import { registerApiOperation } from './api-route.js';
-import { ApiFault, configureApiErrors } from './api-errors.js';
+import { ApiFault, createApiServer } from './api-errors.js';
 import type { ApiErrorOptions } from './api-errors.js';
 
 const canary = 'SYNTHETIC_PRIVATE_EXCEPTION_CANARY';
@@ -15,9 +14,8 @@ const uuid = '00000000-0000-4000-8000-000000000001';
 const servers: FastifyInstance[] = [];
 afterEach(async () => { await Promise.all(servers.splice(0).map(server => server.close())); });
 function server(options: ApiErrorOptions = {}): FastifyInstance {
-  const app = Fastify({ logger: false, bodyLimit: 1024 }); servers.push(app);
+  const app = createApiServer({ ...options, bodyLimit: 1024 }); servers.push(app);
   configureSchemaCompilers(app, { schemas: apiSchemas, encodeJson });
-  configureApiErrors(app, options);
   return app;
 }
 function check(status: number, body: string, expected: ApiError['code']): ApiError {
@@ -85,4 +83,27 @@ it('contains request/query/schema/body-size/parser/not-found and serializer fail
   const malformed = await app.inject({ method: 'POST', url: '/api/v2/organizations',
     payload: `{"${canary}":`, headers: { 'content-type': 'application/json' } });
   expect(malformed.statusCode).toBe(400); check(malformed.statusCode, malformed.body, 'malformed_request');
+});
+
+it.each([`/items/${canary}%ZZ`, `/items/${canary}${'x'.repeat(200)}`])(
+  'contains pre-router URL errors without echoing %s', async url => {
+    const app = server();
+    app.get('/items/:id', async () => ({ ok: true }));
+    const result = await app.inject(url);
+    expect(result.statusCode).toBe(400);
+    check(result.statusCode, result.body, 'malformed_request');
+  },
+);
+
+it('maps a content-length mismatch to malformed request', async () => {
+  const app = server();
+  app.post('/body', async () => ({ ok: true }));
+  const result = await app.inject({ method: 'POST', url: '/body', payload: '{}',
+    headers: { 'content-type': 'application/json', 'content-length': '10' } });
+  expect(result.statusCode).toBe(400);
+  check(result.statusCode, result.body, 'malformed_request');
+});
+
+it.each([0, -1, 1.5, Infinity, 1_048_577])('rejects invalid constructor body limit %s', bodyLimit => {
+  expect(() => createApiServer({ bodyLimit })).toThrow('Invalid API body limit');
 });
