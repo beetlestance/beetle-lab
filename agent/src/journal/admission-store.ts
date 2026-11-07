@@ -1,8 +1,9 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeJson } from '@beetle/contracts';
 import type { AdmissionCommand, AdmissionValue, Candidate, Decision, Reservation, RuntimeObservation } from '../admission/index.js';
-import { addResources, decideAdmission, validateCandidate, zeroResources } from '../admission/index.js';
+import { decideAdmission, validateCandidate } from '../admission/index.js';
 import { admissionInput } from './admission-input.js';
+import { projectCandidate } from './admission-candidate.js';
 import { candidate, findReservation, settings } from './admission-data.js';
 import { ownershipCommand } from './ownership.js';
 import { canonical, offerInput } from './input.js';
@@ -55,17 +56,10 @@ export class AdmissionStore {
     const old = this.db.prepare('SELECT candidate_json,decision_json FROM admission_queue WHERE attempt_id=?').get(offer.attemptId);
     if (old) return this.replayOffer(request, old);
     const snapshot = settings(this.db, request.now);
-    let resources = { ...zeroResources(), cpuMillis: offer.budget.cpuMillis, memoryBytes: offer.budget.memoryBytes,
-      pids: offer.budget.pids, outputBytes: offer.budget.outputBytes };
-    for (const input of offer.inputs) {
-      try { resources = { ...resources, ...addResources(resources, { ...zeroResources(), stagingBytes: input.bytes }) }; }
-      catch { return { kind: 'reject', reason: 'impossible_request' }; }
-    }
-    const legacy = this.db.prepare('SELECT id FROM accepted_attempts WHERE attempt_id=?').get(offer.attemptId);
-    const metadata: Candidate = { attemptId: offer.attemptId, organizationId: offer.organizationId,
-      workspaceId: offer.workspaceId, generation: 1, resources, budget: offer.budget, mode: offer.executionPolicy.mode,
-      preferIdle: offer.executionPolicy.preferIdle, requiredCapabilities: offer.requiredCapabilities,
-      engine: offer.engine, validation: request.validation, queuedAt: legacy || request.now < snapshot.lastClock ? null : request.now, order: 0 };
+    const legacy = this.legacyOffer(request);
+    if (legacy.cancelled) return { kind: 'reject', reason: 'cancelled' };
+    const metadata = projectCandidate(request, legacy.exists, snapshot.lastClock);
+    if (!metadata) return { kind: 'reject', reason: 'impossible_request' };
     const validation = validateCandidate(metadata, snapshot);
     if (validation.kind !== 'admit') return validation;
     const current = decideAdmission(metadata, snapshot);
@@ -78,6 +72,11 @@ export class AdmissionStore {
     this.db.prepare('UPDATE admission_settings SET last_clock=MAX(last_clock,?) WHERE id=1').run(request.now);
     return { kind: 'defer', reason: 'queued' };
   }
+  private legacyOffer(request: Extract<AdmissionCommand, { kind: 'offer' }>): { exists: boolean; cancelled: boolean } {
+    const row = this.db.prepare('SELECT id,cancel_requested FROM accepted_attempts WHERE attempt_id=?').get(request.offer.attemptId);
+    if (row) offerAtomic(this.db, offerInput(request.offer), this.quota);
+    return { exists: Boolean(row), cancelled: row?.cancel_requested === 1 };
+  }
   private replayOffer(request: Extract<AdmissionCommand, { kind: 'offer' }>, row: { candidate_json?: unknown; decision_json?: unknown }): AdmissionValue {
     offerAtomic(this.db, offerInput(request.offer), this.quota);
     const old = JSON.parse(row.candidate_json as string) as Candidate;
@@ -89,16 +88,17 @@ export class AdmissionStore {
   private admit(request: Extract<AdmissionCommand, { kind: 'admit' }>): AdmissionValue {
     const existing = findReservation(this.db, request.key);
     if (existing) return existing;
+    if (owner(this.db, request.key).cancel_requested) return { kind: 'reject', reason: 'cancelled' };
     const item = candidate(this.db, request.key);
     const snapshot = settings(this.db, request.now);
-    if (owner(this.db, request.key).cancel_requested) return this.reject(item, { kind: 'reject', reason: 'cancelled' });
     if (snapshot.queue.length === 100 && item.order > (snapshot.queue[99]?.order ?? 0)) return { kind: 'defer', reason: 'scan_window' };
     const decision = decideAdmission(item, snapshot);
     this.db.prepare('UPDATE admission_settings SET last_clock=MAX(last_clock,?) WHERE id=1').run(request.now);
     if (decision.kind === 'reject') return this.reject(item, decision);
     if (decision.kind !== 'admit') return decision;
     const reservation: Reservation = { ...item, status: 'charged', admittedAt: request.now, createToken: null,
-      specDigest: null, runtimeId: null, startToken: null, aborted: false, releaseEvidence: null };
+      specDigest: null, runtimeId: null, startToken: null, launchEpoch: 0, startClaimedAt: null,
+      launchClosed: false, launchSettlement: null, aborted: false, releaseEvidence: null };
     this.db.prepare('INSERT INTO reservations(attempt_id,reservation_json,charged) VALUES (?,?,1)')
       .run(item.attemptId, encodeJson(reservation, 32_768));
     appendAtomic(this.db, eventInput({ sourceOrdinal: request.sourceOrdinal, event: {

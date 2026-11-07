@@ -13,7 +13,7 @@ export function validateCandidate(candidate: Candidate, snapshot: AdmissionSnaps
   if (candidate.requiredCapabilities.includes('hard-output-quota')) return { kind: 'reject', reason: 'unsupported_capability' };
   const profile = approvedProfile(candidate, snapshot.configuration.profiles);
   if (!profile) return { kind: 'reject', reason: 'unapproved_profile' };
-  if (!fits(profile.minimum, candidate.resources)) return { kind: 'reject', reason: 'below_manifest_minimum' };
+  if (belowMinimum(candidate, profile)) return { kind: 'reject', reason: 'below_manifest_minimum' };
   if (!fits(candidate.resources, snapshot.configuration.perRun)) return { kind: 'reject', reason: 'per_run_ceiling' };
   if (candidate.budget.timeoutMs > snapshot.configuration.maxTimeoutMs) return { kind: 'reject', reason: 'timeout_ceiling' };
   if (!fits(candidate.resources, snapshot.configuration.pool)) return { kind: 'reject', reason: 'impossible_request' };
@@ -21,6 +21,10 @@ export function validateCandidate(candidate: Candidate, snapshot: AdmissionSnaps
     return { kind: 'reject', reason: 'unsupported_capability' };
   }
   return { kind: 'admit' };
+}
+function belowMinimum(candidate: Candidate, profile: ApprovedProfile): boolean {
+  return !Number.isSafeInteger(profile.minimum.timeoutMs) || profile.minimum.timeoutMs <= 0 ||
+    !fits(profile.minimum, candidate.resources) || candidate.budget.timeoutMs < profile.minimum.timeoutMs;
 }
 function fresh(timestamp: number, snapshot: AdmissionSnapshot): boolean {
   return timestamp <= snapshot.now && snapshot.now - timestamp <= snapshot.configuration.observationTtlMs;

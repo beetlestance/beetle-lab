@@ -12,7 +12,10 @@ async function runtime(journal: Journal, offer = f.job()): Promise<ReleaseEviden
   const create = claim(await journal.admission({ kind: 'claimCreate', key: scope(offer), specDigest: digest }));
   const binding = { key: scope(offer), specDigest: digest, createToken: create.token, runtimeId: 'synthetic-runtime' };
   await journal.admission({ kind: 'bindRuntime', ...binding });
+  await journal.admission({ kind: 'settleLaunch', settlement: { authority: 'supervisor', ...binding,
+    epoch: 0, startToken: null, disposition: 'retired', settledAt: now, evidenceId: 'never-started' } });
   return { authority: 'supervisor', ...binding,
+    launch: { epoch: 0, startToken: null, settlementId: 'never-started' },
     runtime: { state: 'stopped', source: 'supervisor', observedAt: now + 1, evidenceId: 'stopped-1' },
     collection: { state: 'finished', observedAt: now + 1, evidenceId: 'collection-1' } };
 }
@@ -27,9 +30,9 @@ describe('durable runtime ownership dispatch fences', () => {
     await expect(journal.admission({ kind: 'abortUnstarted', key: scope(a) })).rejects.toMatchObject({ code: 'conflict' });
     const binding = { key: scope(a), specDigest: digest, createToken: create.token, runtimeId: 'runtime-1' };
     await journal.admission({ kind: 'bindRuntime', ...binding });
-    const first = claim(await journal.admission({ kind: 'claimStart', ...binding })); expect(first.dispatchAllowed).toBe(true);
+    const first = claim(await journal.admission({ kind: 'claimStart', ...binding, now: now + 1 })); expect(first.dispatchAllowed).toBe(true);
     await f.close(journal); journal = await f.open(path);
-    expect(claim(await journal.admission({ kind: 'claimStart', ...binding }))).toMatchObject({ token: first.token, dispatchAllowed: false });
+    expect(claim(await journal.admission({ kind: 'claimStart', ...binding, now: now + 1 }))).toMatchObject({ token: first.token, dispatchAllowed: false });
     expect(reserved(await journal.admission({ kind: 'reservation', key: scope(a) })).status).toBe('charged');
     await expect(journal.admission({ ...command, specDigest: 'c'.repeat(64) })).rejects.toMatchObject({ code: 'conflict' });
     await expect(journal.admission({ kind: 'bindRuntime', ...binding, runtimeId: 'runtime-2' })).rejects.toMatchObject({ code: 'conflict' });
@@ -48,7 +51,7 @@ describe('durable runtime ownership dispatch fences', () => {
     const input = { key: scope(a), specDigest: digest, createToken: 'unknown', runtimeId: 'runtime' };
     await expect(journal.admission({ kind: 'bindRuntime', ...input })).rejects.toMatchObject({ code: 'conflict' });
     const create = claim(await journal.admission({ kind: 'claimCreate', key: scope(a), specDigest: digest }));
-    await expect(journal.admission({ kind: 'claimStart', ...input, createToken: create.token })).rejects.toMatchObject({ code: 'conflict' });
+    await expect(journal.admission({ kind: 'claimStart', ...input, createToken: create.token, now })).rejects.toMatchObject({ code: 'conflict' });
     await expect(journal.admission({ kind: 'claimCreate', key: { ...scope(a), generation: 2 }, specDigest: digest })).rejects.toMatchObject({ code: 'stale_generation' });
     await expect(journal.admission({ kind: 'reservation', key: { ...scope(a), organizationId: f.job(2).organizationId } })).rejects.toMatchObject({ code: 'not_found' });
   });

@@ -58,6 +58,8 @@ export class Store {
       case 'get': return snapshot(owner(this.db, command.key));
       case 'cancel': return transaction(this.db, () => {
         this.cancel.run(owner(this.db, command.key).id);
+        this.db.prepare('UPDATE admission_queue SET pending=0,decision_json=? WHERE attempt_id=? AND pending=1')
+          .run('{"kind":"reject","reason":"cancelled"}', command.key.attemptId);
         return snapshot(owner(this.db, command.key));
       });
       case 'read': return this.readOffer(command.key);

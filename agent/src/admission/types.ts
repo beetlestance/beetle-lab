@@ -5,7 +5,7 @@ export type Resources = Record<typeof resourceNames[number], number>;
 export interface Scope { attemptId: string; organizationId: string; workspaceId: string; generation: number }
 export interface ApprovedProfile {
   manifestId: string; profileId: string; engineId: string; imageDigest: string; configVersion: number;
-  schemaDigest: string; catalogVersion: number; minimum: Resources; capabilities: string[]; controls: string[];
+  schemaDigest: string; catalogVersion: number; minimum: Resources & { timeoutMs: number }; capabilities: string[]; controls: string[];
 }
 export interface PoolConfiguration {
   pool: Resources; perRun: Resources; controlReserve: Resources; headroom: Resources;
@@ -31,12 +31,19 @@ export interface Candidate extends Scope {
 export interface Reservation extends Candidate {
   status: 'charged' | 'released'; admittedAt: number; createToken: string | null;
   specDigest: string | null; runtimeId: string | null; startToken: string | null;
+  launchEpoch: 0 | 1; startClaimedAt: number | null; launchClosed: boolean; launchSettlement: LaunchSettlement | null;
   aborted: boolean; releaseEvidence: ReleaseEvidence | null;
+}
+export interface LaunchSettlement {
+  authority: 'supervisor'; key: Scope; createToken: string; specDigest: string; runtimeId: string;
+  epoch: 0 | 1; startToken: string | null; disposition: 'completed' | 'retired' | 'unknown';
+  settledAt: number; evidenceId: string;
 }
 export interface ReleaseEvidence {
   authority: 'supervisor'; key: Scope; createToken: string; specDigest: string; runtimeId: string;
   runtime: { state: 'stopped' | 'absent'; source: 'supervisor'; observedAt: number; evidenceId: string };
   collection: { state: 'finished' | 'failed'; observedAt: number; evidenceId: string };
+  launch: { epoch: 0 | 1; startToken: string | null; settlementId: string };
 }
 export type Decision = { kind: 'admit' } | { kind: 'defer' | 'reject'; reason: string };
 export interface AdmissionSnapshot {
@@ -52,7 +59,8 @@ export type AdmissionCommand =
   | { kind: 'reservation'; key: Scope }
   | { kind: 'claimCreate'; key: Scope; specDigest: string }
   | { kind: 'bindRuntime'; key: Scope; createToken: string; specDigest: string; runtimeId: string }
-  | { kind: 'claimStart'; key: Scope; createToken: string; specDigest: string; runtimeId: string }
+  | { kind: 'claimStart'; key: Scope; createToken: string; specDigest: string; runtimeId: string; now: number }
+  | { kind: 'settleLaunch'; settlement: LaunchSettlement }
   | { kind: 'release'; evidence: ReleaseEvidence }
   | { kind: 'abortUnstarted'; key: Scope };
 export type AdmissionValue = Decision | Reservation | { reservation: Reservation; dispatchAllowed: boolean; token: string } |

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { encodeJson, validatePrimitive } from '@beetle/contracts';
-import type { AdmissionCommand, ApprovedProfile, PoolConfiguration, Resources, RuntimeObservation, Scope, ValidationIdentity } from '../admission/index.js';
-import { addResources, validResources } from '../admission/index.js';
+import type { AdmissionCommand, ApprovedProfile, LaunchSettlement, PoolConfiguration, Resources, RuntimeObservation, Scope, ValidationIdentity } from '../admission/index.js';
+import { addResources, resourceNames, validResources } from '../admission/index.js';
 import { canonical, offerInput } from './input.js';
 
 function requireValid(condition: unknown): asserts condition { if (!condition) throw new Error('invalid_input'); }
@@ -13,7 +13,7 @@ function digest(value: string): boolean { return typeof value === 'string' && /^
 function strings(value: string[]): boolean { return Array.isArray(value) && value.length <= 64 && value.every(text); }
 function resources(value: Resources): void {
   requireValid(value && validResources(value));
-  requireValid(Object.values(value).every(item => integer(item, Math.floor(Number.MAX_SAFE_INTEGER / 256))));
+  requireValid(resourceNames.every(name => integer(value[name], Math.floor(Number.MAX_SAFE_INTEGER / 256))));
 }
 function scope(key: Scope): void {
   requireValid(key && [key.attemptId, key.organizationId, key.workspaceId].every(value => validatePrimitive('uuid', value).ok));
@@ -27,8 +27,12 @@ function profile(value: ApprovedProfile): void {
   requireValid(value && text(value.manifestId) && text(value.profileId) && text(value.engineId));
   requireValid(typeof value.imageDigest === 'string' && /^sha256:[a-f0-9]{64}$/.test(value.imageDigest) && digest(value.schemaDigest));
   requireValid(integer(value.configVersion) && value.configVersion > 0 && integer(value.catalogVersion) && value.catalogVersion > 0);
-  resources(value.minimum); requireValid(strings(value.capabilities) && strings(value.controls));
+  profileMinimum(value); requireValid(strings(value.capabilities) && strings(value.controls));
   requireValid(['cpu', 'memory', 'pids', 'timeout', 'output'].every(control => value.controls.includes(control)));
+}
+function profileMinimum(value: ApprovedProfile): void {
+  resources(value.minimum);
+  requireValid(integer(value.minimum.timeoutMs) && value.minimum.timeoutMs > 0);
 }
 function configuration(value: PoolConfiguration): void {
   requireValid(value);
@@ -79,17 +83,34 @@ function release(input: Extract<AdmissionCommand, { kind: 'release' }>): void {
   requireValid(value.runtime.source === 'supervisor' && integer(value.runtime.observedAt) && text(value.runtime.evidenceId));
   requireValid(value.collection && ['finished', 'failed'].includes(value.collection.state));
   requireValid(integer(value.collection.observedAt) && text(value.collection.evidenceId));
+  requireValid(value.launch); launchIdentity(value.launch);
+  requireValid(text(value.launch.settlementId));
+}
+function launchIdentity(value: { epoch: number; startToken: string | null }): void {
+  requireValid(value.epoch === 0 || value.epoch === 1);
+  requireValid(value.epoch === 0 ? value.startToken === null : text(value.startToken as string));
+}
+function settlement(value: LaunchSettlement): void {
+  requireValid(value && value.authority === 'supervisor'); scope(value.key);
+  requireValid(text(value.createToken) && digest(value.specDigest) && text(value.runtimeId));
+  launchIdentity(value); requireValid(['completed', 'retired', 'unknown'].includes(value.disposition));
+  requireValid(integer(value.settledAt, 8_640_000_000_000_000) && text(value.evidenceId));
+  if (value.epoch === 0) requireValid(value.disposition !== 'completed');
 }
 function ownership(input: AdmissionCommand): void {
   if ('key' in input) scope(input.key);
   switch (input.kind) {
     case 'admit': admitInput(input); return;
     case 'claimCreate': requireValid(digest(input.specDigest)); return;
-    case 'bindRuntime': case 'claimStart':
-      requireValid(text(input.createToken) && digest(input.specDigest) && text(input.runtimeId)); return;
+    case 'claimStart': requireValid(integer(input.now, 8_640_000_000_000_000)); bindingInput(input); return;
+    case 'bindRuntime':
+      bindingInput(input); return;
     case 'reservation': case 'abortUnstarted': return;
     default: throw new Error('invalid_input');
   }
+}
+function bindingInput(input: { createToken: string; specDigest: string; runtimeId: string }): void {
+  requireValid(text(input.createToken) && digest(input.specDigest) && text(input.runtimeId));
 }
 function admitInput(input: Extract<AdmissionCommand, { kind: 'admit' }>): void {
   requireValid(integer(input.now, 8_640_000_000_000_000));
@@ -110,12 +131,15 @@ export function admissionInput(input: AdmissionCommand): AdmissionCommand {
       identity(copy.validation); requireValid(integer(copy.now));
       requireValid(configDigest(offer.config) === copy.validation.configDigest); break;
     }
-    case 'reservations':
-      requireValid(integer(copy.limit, 100) && copy.limit > 0);
-      if (copy.cursor !== undefined) requireValid(integer(copy.cursor)); break;
+    case 'reservations': admissionPage(copy); break;
     case 'release': release(copy); break;
+    case 'settleLaunch': settlement(copy.settlement); break;
     default: ownership(copy);
   }
   if (copy.kind !== 'offer') encodeJson(copy, 65_536);
   return copy;
+}
+function admissionPage(value: { limit: number; cursor?: number }): void {
+  requireValid(integer(value.limit, 100) && value.limit > 0);
+  if (value.cursor !== undefined) requireValid(integer(value.cursor));
 }

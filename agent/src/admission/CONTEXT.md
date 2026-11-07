@@ -1,40 +1,40 @@
 # Admission contract
 
 `index.ts` exposes policy/types; `Journal.admission` owns production persistence.
-One worker transaction re-reads settings, observations, 100 pending candidates and
-64 charged reservations across organisations; reservation, admitted event and state
-commit atomically using supervisor sourceOrdinal. Quota/ordinal/SQL faults roll back.
+One worker transaction re-reads settings/observations, 100 projected candidates and
+64 charged reservations globally; reservation/event/state commit atomically using
+supervisor sourceOrdinal. Quota/ordinal/SQL faults roll back; pending=1024, pages=100.
+FIFO permits small-job bypass for 30s, then drains for the oldest feasible job;
+unknown legacy age promotes immediately after revalidation. Cancel atomically
+retires pending metadata and blocks first create/start grants; existing replay is
+dispatchAllowed:false. Binding already-created ownership remains possible after cancel.
 
-Explicit configuration owns pool, per-run/time ceilings, reserve/headroom,
-concurrency, approved manifest/profile/schema/catalog identities and observation TTL.
-No capacities, controls or sensor readings are inferred. Physical free disk must
-cover charged output+staging plus disk reserve/headroom; release does not prove
-physical deletion. Lower pools drain without changing accepted jobs.
-Pending cap=1024; charged cap=64; candidate scan=100; pages=100.
-FIFO allows small jobs past blocked predecessors for 30s, then drains for the oldest
-feasible predecessor. Unknown legacy age promotes immediately after revalidation.
-Rejected/cancelled candidates leave pending durably. Profiles require cpu/memory/
-pids/timeout/output; Docker controls cannot supply timeout/output. Those require
-fresh trusted supervisor guard assertions; missing/stale guards reject admission.
-Output means a bounded-writer/stop guard, not a filesystem quota; required
-`hard-output-quota` is unsupported. Observation/guard commands stay private.
+Explicit config owns pool, per-run/time ceilings, manifest minimum including timeout,
+reserve/headroom, approved identities and finite observation TTL. Timeout never sums
+across attempts. Lower pools drain without changing accepted jobs. Physical free disk
+must cover charged output+staging plus reserve/headroom; release never proves deletion.
+Profiles require cpu/memory/pids/timeout/output. Docker cannot supply timeout/output:
+fresh supervisor guard assertions are mandatory. Output is a bounded-writer/stop
+guard, not a filesystem quota; required `hard-output-quota` is unsupported.
+No host capacities or sensor readings are inferred; unknown/stale stays unknown.
 
-Trusted composition must run the installed config validator BEFORE the private
-offer command, pinning canonical config SHA256 and approved schema/catalog identity.
-Matching hashes establish identity, not semantic validation. Journal checks them
-against the current approved catalog. `immutableOffer` remains an identity
-compatibility API; production acceptance must use the admission offer command.
+Trusted composition runs the installed semantic config validator BEFORE private
+offer, pinning canonical config SHA256 plus approved schema/catalog identity.
+Hashes prove identity, not semantic validation. `immutableOffer` is compatibility
+only. Private observation/ownership/evidence commands must never reach wrapper or
+browser/public transports. Authority/source strings are provenance, NOT authentication
+or proof; journal stores trusted-supervisor assertions, not Docker observations.
 
-Only trusted supervisor composition may call ownership/evidence commands; never
-expose them to wrapper/browser transports. Source strings cannot authenticate
-callers. Stored evidence is a supervisor assertion, not a Docker observation.
-Claim create BEFORE backend create, bind exact token/spec/runtime, then claim start
-BEFORE backend start. Only the first claim returns dispatchAllowed=true; replay
-after unknown outcomes/restart returns false. Never retry test execution.
-Unstarted abort releases and permanently fences dispatch only BEFORE create claim.
-A missing ID after uncertain create cannot release; reconcile exact runtime first.
-Unknown runtimes stay charged. Release needs matching ownership, supervisor
-stopped/absent evidence AND finished/explicit failed collection. ACK, wrapper
-events and timeout alone never release; no artifacts are deleted here.
-
-Checks: `npx --no-install vitest run agent/test/admission agent/test/journal --maxWorkers=2`.
+Claim create BEFORE backend create; bind exact token/spec/runtime; claim start(now)
+BEFORE backend start. Sole start claim persists epoch1/token/time; replay never grants.
+`settleLaunch` binds current epoch/token and exact ownership. Known completed means
+definitive backend dispatch finished; retired means dispatch was never sent. Both
+assert ALL current create/start actions quiesced and dispatch capability irrevocably
+retired; trusted composition must establish this, not infer it from stopped samples.
+Unknown remains charged and may advance to a strictly later definitive settlement.
+Known settlement is immutable/idempotent; late unknown/stale identity cannot replace it.
+Settlement closes future start claims, including epoch0 before any start. Release
+references the persisted definitive settlement and requires stopped/absent runtime
+AND finished/failed collection samples strictly AFTER settlement (ties reject).
+Missing ID/uncertain action, ACK, wrapper events or timeout never authorize release.
+Abort before any create claim releases and permanently fences dispatch. No deletion.

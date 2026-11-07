@@ -13,7 +13,7 @@ export function configuration(): PoolConfiguration {
     maxConcurrent: 4, maxTimeoutMs: 1000, observationTtlMs: 1000, requiredSensors: [], profiles: [{
       manifestId: 'k6-v1', profileId: 'locked', engineId: 'k6', imageDigest: `sha256:${'a'.repeat(64)}`,
       configVersion: 1, schemaDigest: digest, catalogVersion: 1,
-      minimum: { cpuMillis: 100, memoryBytes: 100, pids: 1, outputBytes: 1, stagingBytes: 0 },
+      minimum: { cpuMillis: 100, memoryBytes: 100, pids: 1, outputBytes: 1, stagingBytes: 0, timeoutMs: 1 },
       capabilities: ['http'], controls: ['cpu', 'memory', 'pids', 'timeout', 'output'],
     }] };
 }
