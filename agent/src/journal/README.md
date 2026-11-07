@@ -44,6 +44,9 @@ Public durableCancel anchors its first time in the worker's transaction too. A
 pre-v4 cancellation has unknown origin (null timestamp), fences supervision and
 never earns a new grace period. Clock high-water is at least the persisted admission
 clock; observing one attempt does not advance unrelated admission/attempt clocks.
+Storage retains the existing admission safe-integer clock domain, even above Date's
+range; actual trusted supervision time remains within Date's range. Such inherited
+clocks fence timing but must not prevent durable cancellation/queue retirement.
 These records survive pruning/ACK/restart and do not release capacity or certify
 runtime quiescence. Actors must combine absolute deadlines with local monotonic time;
 fenced clocks forbid new dispatch. On clock-integrity failure, emergency termination

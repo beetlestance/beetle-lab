@@ -69,6 +69,17 @@ it('blocks create/start claims after supervised cancellation without releasing c
   expect(reserved(await journal.admission({ kind: 'reservation', key: scope(offer) })).status).toBe('charged');
 });
 
+it.each([8_640_000_000_000_001, Number.MAX_SAFE_INTEGER])('preserves cancel intent for prior admitted clock %s beyond Date range', async high => {
+  const path = a.path(); let journal = await a.configured(path); const offer = a.job();
+  expect(await a.enqueue(journal, offer, high)).toMatchObject({ kind: 'defer', reason: 'queued' });
+  await journal.durableCancel(scope(offer));
+  expect((await journal.get(scope(offer))).cancelRequested).toBe(true);
+  await a.close(journal); journal = await a.open(path);
+  expect(await journal.supervision({ key: scope(offer), now: Date.now() })).toEqual({
+    clockHighWater: high, clockFenced: true, cancelRequested: true, cancelRequestedAt: high });
+  expect(await a.admit(journal, offer, Date.now())).toMatchObject({ kind: 'reject', reason: 'cancelled' });
+});
+
 it('rolls back cancel and queued-work retirement when the final clock write fails', async () => {
   const path = a.path(); let journal = await a.configured(path); const offer = a.job(); await a.enqueue(journal, offer);
   await a.close(journal);

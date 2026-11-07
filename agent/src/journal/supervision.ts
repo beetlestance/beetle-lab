@@ -5,7 +5,7 @@ import { Failure, owner, transaction } from './sql.js';
 export const migration004 = `
   CREATE TABLE supervision_clock (
     attempt_id TEXT PRIMARY KEY REFERENCES accepted_attempts(attempt_id),
-    high_water INTEGER NOT NULL CHECK(high_water BETWEEN 0 AND 8640000000000000),
+    high_water INTEGER NOT NULL CHECK(high_water BETWEEN 0 AND 9007199254740991),
     fenced INTEGER NOT NULL CHECK(fenced IN (0,1)),
     cancel_at INTEGER CHECK(cancel_at BETWEEN 0 AND high_water)
   );
