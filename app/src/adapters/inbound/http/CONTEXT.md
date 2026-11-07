@@ -19,5 +19,9 @@ registered operations; artifact/SSE byte routes need explicit transfer budgets.
 
 Focused test: `npm run test:v2 -- app/src/adapters/inbound/http`.
 Synthetic and runner-catalogue fixtures prove compiler semantics and shared-encoder
-binding. Actual use-case wiring, authentication and safe global error mapping remain
-W10 responsibilities. The registration helper is not an authorization boundary.
+binding. `api-errors.ts` maps framework/domain/explicit API faults to fixed ApiError
+replies with generated correlation IDs. Bootstrap may inject concrete adapter-error
+classification; exception values/URLs/client IDs never become response text.
+5xx can follow an unknown commit: mutation retries must retain original intent.
+Actual use-case wiring and authentication remain W10 responsibilities. Neither
+registration nor safe error mapping is an authorization boundary.

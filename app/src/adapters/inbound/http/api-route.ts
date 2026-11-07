@@ -4,12 +4,9 @@ import { apiMessageSchemas, apiOperations } from '@beetle/contracts/api';
 import type { ApiOperation, ApiOperationInput, ApiTypes } from '@beetle/contracts/api';
 import { decodePageQuery } from './page-query.js';
 import { ResponseContractError } from './schema-compilers.js';
+import { ApiFault } from './api-errors.js';
 
 type NamedOperation<N extends ApiOperation['name']> = Extract<ApiOperation, { name: N }>;
-class InvalidPageQuery extends Error {
-  readonly statusCode = 400;
-  constructor() { super('Malformed request'); }
-}
 export type ApiHandler<N extends ApiOperation['name']> = (
   input: ApiOperationInput<NamedOperation<N>>,
 ) => Promise<ApiTypes[NamedOperation<N>['response']]>;
@@ -51,7 +48,7 @@ export function registerApiOperation<N extends ApiOperation['name']>(
     preValidation: async request => {
       if ('query' in operation) {
         const decoded = decodePageQuery(request.query);
-        if (!decoded.ok) throw new InvalidPageQuery();
+        if (!decoded.ok) throw new ApiFault('malformed_request');
         request.query = decoded.value;
       }
     },
