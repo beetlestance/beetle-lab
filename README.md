@@ -67,3 +67,15 @@ Browser E2E, test generation, mutation testing, a dedicated CI CLI, and TypeScri
 ## License
 
 [MIT](LICENSE). Bundled runtime dependencies retain their own licenses.
+
+
+## Attribution
+
+Originally developed by Beetlestance as beetle-lab.
+
+If you build a fork or derivative, a README credit is appreciated:
+
+> Based on [beetle-lab](https://github.com/beetlestance/beetle-lab) by Beetlestance.
+
+This README credit is optional. The copyright and license notice requirements
+in the [MIT License](LICENSE) apply.
