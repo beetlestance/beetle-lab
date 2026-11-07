@@ -33,9 +33,9 @@ model assignments, agent packets, concurrency and independent review.
 | Area | Integrated | Still required |
 | --- | --- | --- |
 | Foundation/contracts | Workspace gates; strict runner and namespace/settings schemas/clients; Fastify compiler and JSON route adapter | Full suite/run/result API and route wiring |
-| Agent | Durable offer identity, cancellation intent, bounded event append/replay/ACK/prune | Admission, runtime supervision, Docker controls and telemetry |
-| k6 | Shared scenario/request/data/assertion/readiness compiler | Native runtime, aggregation, target sampler, report and export wiring |
-| Product | Namespace rules, SQLite metadata, settings resolution, React namespace shell | Files adapter, authenticated API, remaining feature UI, reports and automation client |
+| Agent | Durable offers/events/cancellation, global admission and launch claims, bounded Docker adapter | Trusted runtime supervision, wrapper guards, telemetry and actual Linux qualification |
+| k6 | Shared scenario/request/data/assertion/readiness compiler, native runtime and bounded script builder | Wrapper, sample aggregation, target sampler, report and export API wiring |
+| Product | Namespace rules, SQLite metadata, settings resolution, namespace HTTP routes and React shell | Files adapter, sessions, remaining API/UI, reports and automation client |
 | Qualification | Local contract/unit/SQLite journal checks | Complete execution path, containers, scans, backup/soak and native architecture matrix |
 
 Worker submissions remain unaccepted until independent review and integration
