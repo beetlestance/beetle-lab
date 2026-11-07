@@ -14,6 +14,10 @@ async function outputs(): Promise<Map<string, string>> {
     return { file, schema: JSON.parse(raw) as Record<string, unknown>, hash: createHash('sha256').update(raw).digest('hex') };
   }));
   const catalogue = new Map(sources.map(item => [String(item.schema.$id), item.schema]));
+  if (catalogue.size !== sources.length || sources.some(item => item.schema.$id !==
+    'https://beetle.test/contracts/engines/k6/v1/' + item.file.replace('.schema.json', ''))) {
+    throw new Error('Invalid compiler schema identity');
+  }
   const load = sources.find(item => item.file === 'load-plan.schema.json');
   if (!load) throw new Error('Missing load-plan source');
   const result = new Map<string, string>();
@@ -21,12 +25,24 @@ async function outputs(): Promise<Map<string, string>> {
     + 'export const schemas = freezeSchema(' + JSON.stringify(sources.map(item => item.schema)) + ' as const);\n');
   result.set('load-plan.ts', banner + 'export const loadPlanSchema = '
     + JSON.stringify(inferenceSchema(load.schema, catalogue)) + ' as const;\n');
+  for (const [file, symbol] of [['suite', 'suiteSchema'], ['compile-input', 'compileInputSchema']] as const) {
+    const item = sources.find(item => item.file === file + '.schema.json');
+    if (!item) throw new Error('Missing compiler source: ' + file);
+    result.set(file + '.ts', banner + 'export const ' + symbol + ' = '
+      + JSON.stringify(inferenceSchema(item.schema, catalogue)) + ' as const;\n');
+  }
   result.set('types.ts', banner + "import type { FromSchema } from 'json-schema-to-ts';\n"
     + "import type { loadPlanSchema } from './load-plan.js';\n"
+    + "import type { suiteSchema } from './suite.js';\n"
+    + "import type { compileInputSchema } from './compile-input.js';\n"
+    + 'export type SuiteConfig = FromSchema<typeof suiteSchema>;\n'
+    + 'export type CompileInput = FromSchema<typeof compileInputSchema>;\n'
     + 'export type LoadPlan = FromSchema<typeof loadPlanSchema>;\n'
     + "export type Scenario = LoadPlan['scenarios'][number];\n"
     + "export type ThresholdRule = LoadPlan['slos'][number];\n");
-  result.set('manifest.json', JSON.stringify({ generator: 'engines/k6/compiler/generate.ts',
+  const generatorHash = createHash('sha256').update(await readFile(new URL('./generate.ts', import.meta.url))).digest('hex');
+  const outputSha256 = Object.fromEntries([...result].map(([name, content]) => [name, createHash('sha256').update(content).digest('hex')]));
+  result.set('manifest.json', JSON.stringify({ generator: 'engines/k6/compiler/generate.ts', generatorSha256: generatorHash, outputSha256,
     sources: Object.fromEntries(sources.map(item => ['contracts/engines/k6/v1/' + item.file, item.hash])),
     outputs: [...result.keys(), 'manifest.json'].sort() }, null, 2) + '\n');
   return result;

@@ -1,14 +1,30 @@
 {
   "generator": "engines/k6/compiler/generate.ts",
+  "generatorSha256": "0d3e9dae08b6d0c6bd956451a029baed3d75e65e7cbf48b084df775ddffaacca",
+  "outputSha256": {
+    "schemas.ts": "7f45efc3574631d59a15be8b7402e8445a3cfc395b5476ceea3a7a9a56db3be3",
+    "load-plan.ts": "3cdacd7495ff6891947644f5c8571a0dee4d63f97c36d31a0ea0b43e658cd51e",
+    "suite.ts": "b461106a8e8d9d9238a5cc295c2eac99b4fdc23dfa4d12f6b256100bce46c33a",
+    "compile-input.ts": "24769f7e1f08f0f0a5712a439341beb2307132e3ace2251b7e5d49ac62a43bc9",
+    "types.ts": "411c710aa25847ece0ffa8c9ea5030e4b9eeab41d04f0d9d211741a64104b8f4"
+  },
   "sources": {
+    "contracts/engines/k6/v1/assertions.schema.json": "17f408a3eda035ec2adbee696cfc03ace7425378c41d15954caa424df836d903",
     "contracts/engines/k6/v1/common.schema.json": "274482325ad8dd8f585db1ed07deb152d419b71a445197ffafc65eff0e2f9691",
+    "contracts/engines/k6/v1/compile-input.schema.json": "d68844d18b13846f75e89bd6fe89333b038aee1a9676334d16b5860f4ad7e67d",
+    "contracts/engines/k6/v1/datasets.schema.json": "ecee52552d6b656def92acc1b44d03608343c5a7ee539d1ef4a7ea8baa6ce116",
     "contracts/engines/k6/v1/load-plan.schema.json": "97617af91d26d3613d3882a26d408d8e4d1345cc81e1d0b31aa9c9173bc71d13",
-    "contracts/engines/k6/v1/scenarios.schema.json": "ac666053c0ee9413c1477900e93d758416afaf4e60aff801050d5abbc87ef5a2"
+    "contracts/engines/k6/v1/requests.schema.json": "b68caf3c6617f33c70e43e5d855d99920274a8f3604bbfb9dfd15f17f8ca2a4b",
+    "contracts/engines/k6/v1/scenarios.schema.json": "ac666053c0ee9413c1477900e93d758416afaf4e60aff801050d5abbc87ef5a2",
+    "contracts/engines/k6/v1/suite-common.schema.json": "87c8a7ca3e6a85b6d9dfecb9dea1c8a268cc46984cb663ff9dbb68adfdc159bd",
+    "contracts/engines/k6/v1/suite.schema.json": "2f4a4b66afce1479cd64020c66a9077e482653366e0482acf44904c8c54f041e"
   },
   "outputs": [
+    "compile-input.ts",
     "load-plan.ts",
     "manifest.json",
     "schemas.ts",
+    "suite.ts",
     "types.ts"
   ]
 }

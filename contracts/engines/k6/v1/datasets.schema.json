@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle.test/contracts/engines/k6/v1/datasets",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "selection",
+        "kind",
+        "rows"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"
+        },
+        "selection": {
+          "enum": [
+            "random",
+            "byVu"
+          ]
+        },
+        "kind": {
+          "const": "inline"
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "minProperties": 1,
+            "maxProperties": 64,
+            "propertyNames": {
+              "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"
+            },
+            "additionalProperties": {
+              "$ref": "https://beetle.test/contracts/engines/k6/v1/suite-common#/$defs/scalar"
+            }
+          },
+          "minItems": 1,
+          "maxItems": 10000
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "selection",
+        "kind",
+        "input"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"
+        },
+        "selection": {
+          "enum": [
+            "random",
+            "byVu"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "json",
+            "csv"
+          ]
+        },
+        "input": {
+          "$ref": "https://beetle.test/contracts/engines/k6/v1/suite-common#/$defs/input"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "selection",
+        "kind",
+        "column",
+        "start",
+        "end",
+        "step"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"
+        },
+        "selection": {
+          "enum": [
+            "random",
+            "byVu"
+          ]
+        },
+        "kind": {
+          "const": "range"
+        },
+        "column": {
+          "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"
+        },
+        "start": {
+          "type": "integer",
+          "minimum": -1000000000,
+          "maximum": 1000000000
+        },
+        "end": {
+          "type": "integer",
+          "minimum": -1000000000,
+          "maximum": 1000000000
+        },
+        "step": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000
+        }
+      }
+    }
+  ]
+}
