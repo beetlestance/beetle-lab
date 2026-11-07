@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { importTargets, boundaryIssues, findCycle } from './architecture.js';
+import { importEdges, importTargets, boundaryIssues, findCycle } from './architecture.js';
 describe('architecture gate negative fixtures', () => {
   it('detects framework and outbound imports in core', () => {
     expect(boundaryIssues('app/src/domain/run.ts', ['fastify'])).toHaveLength(1);
@@ -25,5 +25,31 @@ describe('architecture gate negative fixtures', () => {
     expect(importTargets('async function f() { return import("fastify"); }')).toEqual(['fastify']);
     expect(importTargets('const x = require("node:fs");')).toEqual(['node:fs']);
     expect(boundaryIssues('agent/src/main.ts', importTargets('import(name)'))).toHaveLength(1);
+  });
+  it.each([
+    'import type { SuiteConfig } from "../compiler/generated/types.js";',
+    'import { type SuiteConfig } from "../compiler/generated/types.js";',
+    'export type { SuiteConfig } from "../compiler/generated/types.js";',
+    'export { type SuiteConfig } from "../compiler/generated/types.js";',
+    'type S = import("../compiler/generated/types.js").SuiteConfig;',
+  ])('permits erased schema-derived plan types: %s', source => {
+    expect(boundaryIssues('engines/k6/plan/types.ts', importEdges(source))).toEqual([]);
+  });
+  it.each([
+    'import { SuiteConfig } from "../compiler/generated/types.js";',
+    'import { type SuiteConfig, schemas } from "../compiler/generated/types.js";',
+    'export * from "../compiler/generated/types.js";',
+    'import("../compiler/generated/types.js");',
+    'import type { Compiler } from "../compiler/suite/index.js";',
+    'import type { Stats } from "node:fs";',
+    'import Fastify from "fastify";',
+  ])('rejects compiler values, Node and unapproved dependencies: %s', source => {
+    expect(boundaryIssues('engines/k6/plan/types.ts', importEdges(source))).toHaveLength(1);
+  });
+  it('keeps the plan independent of native runtime and runtime independent of Node', () => {
+    expect(boundaryIssues('engines/k6/plan/select.ts', ['../runtime/http.js'])).toHaveLength(1);
+    expect(boundaryIssues('engines/k6/plan/select.ts', ['k6/http'])).toHaveLength(1);
+    expect(boundaryIssues('engines/k6/runtime/http.ts', ['k6/http', '../plan/index.js'])).toEqual([]);
+    expect(boundaryIssues('engines/k6/runtime/http.ts', ['fastify'])).toHaveLength(1);
   });
 });

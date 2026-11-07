@@ -2,6 +2,7 @@ import { builtinModules } from 'node:module';
 import { dirname, resolve, relative } from 'node:path';
 import ts from 'typescript';
 export interface ArchitectureIssue { file: string; reason: string }
+export interface ImportEdge { target: string; typeOnly: boolean }
 const workspaceOwners: Record<string, string> = {
   '@beetle/backend': 'app', '@beetle/agent': 'agent', '@beetle/frontend': 'web', '@beetle/engine-k6': 'engines'
 };
@@ -9,31 +10,79 @@ const nodeModules = new Set(builtinModules.flatMap(name => [name, `node:${name}`
 function isModuleCall(expression: ts.LeftHandSideExpression): boolean {
   return expression.kind === ts.SyntaxKind.ImportKeyword || (ts.isIdentifier(expression) && expression.text === 'require');
 }
-export function importTargets(source: string): string[] {
+function exportIsTypeOnly(statement: ts.ExportDeclaration): boolean {
+  if (statement.isTypeOnly) return true;
+  const clause = statement.exportClause;
+  return clause !== undefined && ts.isNamedExports(clause)
+    && clause.elements.length > 0 && clause.elements.every(item => item.isTypeOnly);
+}
+function importIsTypeOnly(statement: ts.ImportDeclaration): boolean {
+  const clause = statement.importClause;
+  if (!clause) return false;
+  if (clause.isTypeOnly) return true;
+  const bindings = clause.namedBindings;
+  return clause.name === undefined && bindings !== undefined && ts.isNamedImports(bindings)
+    && bindings.elements.length > 0 && bindings.elements.every(item => item.isTypeOnly);
+}
+function declarationEdge(statement: ts.Node): ImportEdge | undefined {
+  if (!ts.isImportDeclaration(statement) && !ts.isExportDeclaration(statement)) return undefined;
+  const target = statement.moduleSpecifier;
+  if (!target || !ts.isStringLiteral(target)) return undefined;
+  return { target: target.text, typeOnly: ts.isImportDeclaration(statement)
+    ? importIsTypeOnly(statement) : exportIsTypeOnly(statement) };
+}
+function typeEdge(statement: ts.Node): ImportEdge | undefined {
+  if (!ts.isImportTypeNode(statement) || !ts.isLiteralTypeNode(statement.argument)) return undefined;
+  return ts.isStringLiteral(statement.argument.literal)
+    ? { target: statement.argument.literal.text, typeOnly: true } : undefined;
+}
+function callEdge(statement: ts.Node): ImportEdge | undefined {
+  if (!ts.isCallExpression(statement) || !isModuleCall(statement.expression)) return undefined;
+  const argument = statement.arguments[0];
+  return { target: argument && ts.isStringLiteral(argument) ? argument.text : '<unresolved-runtime-import>', typeOnly: false };
+}
+export function importEdges(source: string): ImportEdge[] {
   const node = ts.createSourceFile('source.ts', source, ts.ScriptTarget.Latest, true);
-  const targets: string[] = [];
+  const targets: ImportEdge[] = [];
   function visit(statement: ts.Node): void {
-    if ((ts.isImportDeclaration(statement) || ts.isExportDeclaration(statement))
-      && statement.moduleSpecifier && ts.isStringLiteral(statement.moduleSpecifier)) targets.push(statement.moduleSpecifier.text);
-    if (ts.isCallExpression(statement) && isModuleCall(statement.expression)) {
-      const argument = statement.arguments[0];
-      if (argument && ts.isStringLiteral(argument)) targets.push(argument.text);
-      else targets.push('<unresolved-runtime-import>');
-    }
+    const edge = declarationEdge(statement) ?? typeEdge(statement) ?? callEdge(statement);
+    if (edge) targets.push(edge);
     ts.forEachChild(statement, visit);
   }
   visit(node);
   return targets;
 }
+export function importTargets(source: string): string[] { return importEdges(source).map(edge => edge.target); }
 function serviceOwner(target: string): string | undefined {
   return Object.entries(workspaceOwners).find(([name]) => target === name || target.startsWith(`${name}/`))?.[1];
 }
-function environmentIssue(file: string, target: string, resolved: string): string | undefined {
-  const nonNode = file.startsWith('web/src/') || file.startsWith('engines/k6/runtime/');
-  if (nonNode && nodeModules.has(target)) return `Node API in non-Node runtime: ${target}`;
-  if (file.startsWith('engines/k6/runtime/') && resolved.startsWith('engines/k6/')
-    && !resolved.startsWith('engines/k6/runtime/')) return `k6 runtime imports Node-owned engine module: ${target}`;
+function k6Owner(file: string): 'runtime' | 'plan' | undefined {
+  if (file.startsWith('engines/k6/runtime/')) return 'runtime';
+  if (file.startsWith('engines/k6/plan/')) return 'plan';
   return undefined;
+}
+function approvedPlanImport(source: 'runtime' | 'plan', edge: ImportEdge, resolved: string): boolean {
+  if (resolved.startsWith('engines/k6/plan/')) return true;
+  if (source === 'runtime' && resolved.startsWith('engines/k6/runtime/')) return true;
+  return edge.typeOnly && /^engines\/k6\/compiler\/generated\/types\.[jt]s$/.test(resolved);
+}
+function approvedK6Package(source: 'runtime' | 'plan', edge: ImportEdge): boolean {
+  if (edge.typeOnly && edge.target === 'json-schema-to-ts') return true;
+  return source === 'runtime' && (edge.target === 'k6' || edge.target.startsWith('k6/'));
+}
+function k6Boundary(file: string, edge: ImportEdge, resolved: string): string | undefined {
+  const source = k6Owner(file);
+  if (!source) return undefined;
+  if (edge.target.startsWith('.')) return approvedPlanImport(source, edge, resolved)
+    ? undefined : `k6 ${source} imports outside its pure boundary: ${edge.target}`;
+  if (approvedK6Package(source, edge)) return undefined;
+  return `Unsupported dependency in k6 ${source}: ${edge.target}`;
+}
+function environmentIssue(file: string, edge: ImportEdge, resolved: string): string | undefined {
+  const target = edge.target;
+  const nonNode = file.startsWith('web/src/') || file.startsWith('engines/k6/runtime/') || file.startsWith('engines/k6/plan/');
+  if (nonNode && nodeModules.has(target)) return `Node API in non-Node runtime: ${target}`;
+  return k6Boundary(file, edge, resolved);
 }
 function runtimeIssue(file: string, target: string, resolved: string): string | undefined {
   if (target === '<unresolved-runtime-import>') return 'Computed module import requires explicit architecture review';
@@ -55,10 +104,12 @@ function layerIssue(file: string, target: string, resolved: string): string | un
   }
   return undefined;
 }
-export function boundaryIssues(file: string, targets: readonly string[]): ArchitectureIssue[] {
-  return targets.flatMap(target => {
+export function boundaryIssues(file: string, targets: readonly (string | ImportEdge)[]): ArchitectureIssue[] {
+  return targets.flatMap(input => {
+    const edge = typeof input === 'string' ? { target: input, typeOnly: false } : input;
+    const target = edge.target;
     const resolved = target.startsWith('.') ? relative(process.cwd(), resolve(dirname(file), target)) : target;
-    const reason = environmentIssue(file, target, resolved) ?? runtimeIssue(file, target, resolved) ?? layerIssue(file, target, resolved);
+    const reason = environmentIssue(file, edge, resolved) ?? runtimeIssue(file, target, resolved) ?? layerIssue(file, target, resolved);
     return reason ? [{ file, reason }] : [];
   });
 }
