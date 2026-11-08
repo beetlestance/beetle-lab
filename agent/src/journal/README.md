@@ -8,6 +8,13 @@ original identity text and canonical duplicate equality. Scoped get/read/cancel
 and listOpen (100 lightweight snapshots) return current projected state. Listing
 omits result payloads; scoped get owns the full-result read. Terminal rows remain
 listed until collection/release/retention authority exists. Cancel persists intent.
+Private `scanRunnable({lane:'charged'|'queued',limit,cursor?})` returns <=100 scoped
+generation keys using charged/pending indexes before joining identity metadata.
+It excludes released reservations, retired queue rows and compatibility-only offers;
+cancelled charged attempts remain discoverable. No config/result/event payload is read.
+Cursors belong to each lane's row IDs. Pages are current observations, not a frozen
+snapshot: startup scans charged first, and subsequent passes restart each lane at0.
+Discovery confers no dispatch/release authority; the controller rechecks durable state.
 `admission(command)` is the trusted production admission/ownership entrypoint;
 see [admission contract](../admission/CONTEXT.md). Compatibility `immutableOffer`
 does not validate installed engine semantics or reserve resources.

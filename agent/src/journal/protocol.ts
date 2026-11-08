@@ -20,6 +20,9 @@ export interface SupervisorInput { sourceOrdinal: number; event: WithoutSeq<Extr
 export interface SourceCursors { wrapperSeq: number; supervisorOrdinal: number }
 export interface PageRequest { limit: number; cursor?: number }
 export interface SnapshotPage { snapshots: AttemptSnapshot[]; cursor?: number }
+/** Private scheduler discovery. Cursors belong to their lane, not accepted-attempt IDs. */
+export interface RunnableRequest extends PageRequest { lane: 'charged' | 'queued' }
+export interface RunnablePage { attempts: GenerationKey[]; cursor?: number }
 export interface PruneReceipt { pruned: number; snapshot: AttemptSnapshot }
 export interface EventInput {
   key: GenerationKey; source: 'wrapper' | 'agent'; sourceKey: number; json: string; canonical: string;
@@ -32,13 +35,14 @@ export type Operation =
   | { kind: 'offer'; json: string; canonical: string }
   | { kind: 'get' | 'cancel' | 'read'; key: AttemptKey }
   | { kind: 'list'; page: PageRequest }
+  | { kind: 'runnable'; page: RunnableRequest }
   | { kind: 'append'; event: EventInput }
   | { kind: 'events'; key: GenerationKey; after: number }
   | { kind: 'ack'; ack: Ack }
   | { kind: 'prune' | 'sources'; key: GenerationKey }
   | { kind: 'close' };
 export type Command = Operation & { id: number };
-export type Value = AttemptSnapshot | SnapshotPage | Offer | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | null;
+export type Value = AttemptSnapshot | SnapshotPage | RunnablePage | Offer | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | null;
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; id: number; ok: true; value: Value } |
   { kind: 'result'; id: number; ok: false; code: ErrorCode; recovery?: AttemptSnapshot };

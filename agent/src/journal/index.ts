@@ -4,7 +4,9 @@ export type { WrapperBatch, WrapperCheckpoint, WrapperCursor } from '../control-
 import { Worker } from 'node:worker_threads';
 import type { Ack, AckReceipt, AgentEvent, AttemptSnapshot, ControlEvent, EventBatch, Offer } from '@beetle/contracts';
 import { ackInput, cursorInput, DEFAULT_QUOTA_BYTES, eventInput, generationKey } from './event-input.js';
-import { attemptKey, offerInput, pageInput } from './input.js';
+import { attemptKey, offerInput, pageInput, runnableInput } from './input.js';
+import type { RunnablePage, RunnableRequest } from './protocol.js';
+export type { RunnablePage, RunnableRequest } from './protocol.js';
 import type { AdmissionCommand, AdmissionValue } from '../admission/index.js';
 import { admissionInput } from './admission-input.js';
 import { checkedSupervision } from './supervision.js';
@@ -101,6 +103,10 @@ export class Journal {
   }
   listOpen(page: PageRequest): Promise<SnapshotPage> {
     return this.prepare(() => ({ kind: 'list', page: pageInput(page) })) as Promise<SnapshotPage>;
+  }
+  /** Private scheduler discovery; no offer/result payloads or historical rows. */
+  scanRunnable(page: RunnableRequest): Promise<RunnablePage> {
+    return this.prepare(() => ({ kind: 'runnable', page: runnableInput(page) })) as Promise<RunnablePage>;
   }
 
   readWrapperCheckpoint(key: GenerationKey): Promise<Readonly<WrapperCheckpoint> | null> {

@@ -1,6 +1,6 @@
 import { encodeJson, validate, validatePrimitive } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
-import type { AttemptKey, PageRequest } from './protocol.js';
+import type { AttemptKey, PageRequest, RunnableRequest } from './protocol.js';
 
 export const MAX_OFFER_BYTES = 1_048_576;
 
@@ -31,4 +31,11 @@ export function pageInput(input: PageRequest): PageRequest {
   if (!Number.isSafeInteger(copy.limit) || copy.limit < 1 || copy.limit > 100) throw new Error('invalid_input');
   if (copy.cursor !== undefined && (!Number.isSafeInteger(copy.cursor) || copy.cursor < 0)) throw new Error('invalid_input');
   return copy.cursor === undefined ? { limit: copy.limit } : { limit: copy.limit, cursor: copy.cursor };
+}
+
+export function runnableInput(input: RunnableRequest): RunnableRequest {
+  const copy = JSON.parse(encodeJson(input, 192)) as RunnableRequest;
+  if (copy.lane !== 'charged' && copy.lane !== 'queued') throw new Error('invalid_input');
+  if (Object.keys(copy).some(key => !['lane', 'limit', 'cursor'].includes(key))) throw new Error('invalid_input');
+  return { ...pageInput({ limit: copy.limit, ...(copy.cursor === undefined ? {} : { cursor: copy.cursor }) }), lane: copy.lane };
 }

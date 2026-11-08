@@ -10,13 +10,16 @@ import { commitWrapperBatch, readWrapperCheckpoint } from './checkpoint.js';
 import { metadataColumns, Failure, owner, snapshot, transaction } from './sql.js';
 import type { Row } from './sql.js';
 import { supervise } from './supervision.js';
+import { RunnableScan } from './runnable.js';
 
 export class Store {
   private readonly admission: AdmissionStore;
   private readonly read: StatementSync;
   private readonly list: StatementSync;
+  private readonly runnable: RunnableScan;
   constructor(private readonly db: DatabaseSync, private readonly quota = DEFAULT_QUOTA_BYTES) {
     this.admission = new AdmissionStore(db, quota);
+    this.runnable = new RunnableScan(db);
     this.read = db.prepare(`SELECT CASE WHEN length(CAST(offer_json AS BLOB))<=1048576
       THEN offer_json ELSE NULL END AS offer_json FROM accepted_attempts WHERE id=?`);
     this.list = db.prepare(`SELECT ${metadataColumns}, NULL AS result_json, NULL AS exit_facts_json, NULL AS wrapper_checkpoint_json
@@ -53,20 +56,27 @@ export class Store {
       default: throw new Failure('invalid_input');
     }
   }
+  private readCommand(command: Command): Value {
+    switch (command.kind) {
+      case 'get': return snapshot(owner(this.db, command.key));
+      case 'read': return this.readOffer(command.key);
+      case 'list': return this.listOpen(command.page);
+      case 'runnable': return this.runnable.read(command.page);
+      default: throw new Failure('invalid_input');
+    }
+  }
   execute(command: Command): Value {
     if (command.kind === 'supervision') return supervise(this.db, command.request);
     if (command.kind === 'admission') return this.admission.execute(command.request);
     if (['append', 'events', 'ack', 'prune', 'sources', 'checkpoint', 'wrapperBatch'].includes(command.kind)) return this.eventCommand(command);
+    if (['get', 'read', 'list', 'runnable'].includes(command.kind)) return this.readCommand(command);
     switch (command.kind) {
       case 'offer': return this.offer(command);
-      case 'get': return snapshot(owner(this.db, command.key));
       case 'cancel': {
         const row = owner(this.db, command.key);
         supervise(this.db, { key: { ...command.key, generation: row.generation }, now: Date.now(), cancel: true });
         return snapshot(owner(this.db, command.key));
       }
-      case 'read': return this.readOffer(command.key);
-      case 'list': return this.listOpen(command.page);
       case 'close': this.db.close(); return null;
       default: throw new Failure('invalid_input');
     }

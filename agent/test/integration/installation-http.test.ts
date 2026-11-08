@@ -1,13 +1,14 @@
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { sealEngineResult } from '@beetle/contracts';
 import type { Capabilities, ControlEvent, EngineResult } from '@beetle/contracts';
 import { createK6ConfigSchema } from '@beetle/contracts/engine-config/k6';
 import { createEngineCatalog } from '../../src/catalog/index.js';
 import { createInstallationController } from '../../src/installation/index.js';
 import { createAgentServer } from '../../src/transport/index.js';
+import { createScheduler } from '../../src/scheduler/index.js';
 import { runtimeName } from '../../src/backends/docker/index.js';
 import { fixture, operation } from '../staging/fixtures.js';
 import { controlled, clock, scope } from '../supervisor/fixtures.js';
@@ -15,7 +16,7 @@ import { configuration } from '../admission/fixtures.js';
 
 const f = fixture();
 const digest = (value: string) => createHash('sha256').update(value).digest('hex');
-it('composes authenticated offer through actual catalogue staging journal output verification and release', async () => {
+it.each(['manual', 'scheduled'] as const)('composes authenticated offer through staging verification and release (%s)', async mode => {
   const e = await f.environment(false); const time = clock(); const runtime = controlled(e.owner, time);
   const schema = createK6ConfigSchema(digest); e.offer.inputs = []; e.offer.budget.outputBytes = 4000;
   e.offer.config = { version: 1, target: 'https://synthetic.invalid', datasets: [], secrets: [],
@@ -34,6 +35,7 @@ it('composes authenticated offer through actual catalogue staging journal output
   const stager = e.create({ manifest, profile, validation, wallNow: time.wall });
   const installation = createInstallationController({ journal: e.owner, supervisor: runtime.manager, catalog,
     stagerFor: () => stager, wallNow: time.wall });
+  const scheduler = createScheduler({ journal: e.owner, installation, intervalMs: 50 });
   const capabilities = JSON.parse(await readFile('contracts/fixtures/valid/capabilities.json', 'utf8')) as Capabilities;
   const server = createAgentServer({ credential: 'I'.repeat(64), installation, journal: e.owner, capabilities: async () => capabilities });
   const key = scope(e.offer); const path = `/runner/v1/attempts/${key.attemptId}`;
@@ -42,7 +44,11 @@ it('composes authenticated offer through actual catalogue staging journal output
   try {
     const accepted = await server.inject({ method: 'PUT', url: path, headers, payload: e.offer });
     expect(accepted.statusCode).toBe(202); expect(accepted.json()).toMatchObject({ state: 'offered', generation: 1 });
-    expect(await installation.drive(key, operation())).toMatchObject({ kind: 'runtime' });
+    if (mode === 'manual') expect(await installation.drive(key, operation())).toMatchObject({ kind: 'runtime' });
+    else {
+      scheduler.start();
+      await vi.waitFor(() => { expect(runtime.backend.starts).toBe(1); }, { timeout: 5000, interval: 25 });
+    }
     expect(runtime.backend.creates).toBe(1); expect(runtime.backend.starts).toBe(1);
     const original = JSON.parse(await readFile('contracts/fixtures/valid/passed-result.json', 'utf8')) as EngineResult;
     const { seal: _seal, ...body } = original; void _seal;
@@ -55,14 +61,21 @@ it('composes authenticated offer through actual catalogue staging journal output
     await writeFile(join(directory, 'engine-result.json'), JSON.stringify(sealed.value), { mode: 0o600 });
     await writeFile(join(directory, 'control.ndjson'), JSON.stringify(event) + '\n', { mode: 0o600 });
     runtime.backend.observation = runtime.backend.known('exited').value; time.advance(1);
-    expect(await installation.drive(key, operation())).toEqual({ kind: 'control', events: 1 });
-    expect(await installation.drive(key, operation())).toEqual({ kind: 'awaiting_release', collection: 'finished' });
-    expect(await installation.drive(key, operation())).toEqual({ kind: 'released', collection: 'finished' });
+    if (mode === 'manual') {
+      expect(await installation.drive(key, operation())).toEqual({ kind: 'control', events: 1 });
+      expect(await installation.drive(key, operation())).toEqual({ kind: 'awaiting_release', collection: 'finished' });
+      expect(await installation.drive(key, operation())).toEqual({ kind: 'released', collection: 'finished' });
+    } else {
+      await vi.waitFor(async () => {
+        expect((await installation.inspect(key)).allocation).toMatchObject({ status: 'released' });
+      }, { timeout: 5000, interval: 25 });
+      expect(scheduler.status().lastError).toBeNull();
+    }
     const snapshot = await server.inject({ url: path, headers });
     expect(snapshot.statusCode).toBe(200); expect(snapshot.json()).toMatchObject({ state: 'exited', result: sealed.value });
     const observed = await installation.inspect(key);
     expect(observed.allocation).toMatchObject({ status: 'released', releaseEvidence: { collection: { state: 'finished' } } });
     expect((await server.inject({ url: `${path}/events?after=0`, headers })).json().events).toHaveLength(4);
     expect(runtime.backend.starts).toBe(1);
-  } finally { await server.close(); await installation.close(); }
+  } finally { await server.close(); await scheduler.close(); await installation.close(); }
 });
