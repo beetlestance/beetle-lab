@@ -1,6 +1,7 @@
 # Full resource and guard observation publisher
 
-Status: frozen implementation contract; not yet integrated or qualified.
+Status: implemented and independently reviewed component;
+[local evidence](../../verification/observation-publisher.md). Native qualification remains.
 Public entrypoint: `agent/src/observation/index.ts`.
 
 One publisher per journal composes the actual ResourceObserver, OutputGuard and
