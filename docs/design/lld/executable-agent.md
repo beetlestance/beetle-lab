@@ -1,6 +1,7 @@
 # Agent executable and installation configuration
 
-Status: implementation in progress; image and native qualification pending.
+Status: implemented and reviewed; bundled Linux arm64 fixture smoke passed.
+Real engine execution, Compose and architecture qualification remain pending.
 The entrypoint is `agent/src/bootstrap/main.ts`; build ships main.js and worker.js
 together. The released application's entrypoint remains separate.
 
@@ -20,8 +21,9 @@ the runtime composition remains engine-independent and extensible through instal
 catalogue registrations. No image tag or newer pin is silently selected on restart.
 Startup qualifies the actual local engine image IDs/environment/platform/runtime
 through read-only inspection before advertising that catalogue. Profiles pin local
-image IDs after pulling/building the required platform; registry index digests are
-not substituted for the daemon's image ID. Images declaring volumes are rejected.
+image IDs returned by the pinned Docker API1.47 after pulling/building the required
+platform. Do not infer that ID from registry metadata or build-log config hashes;
+the daemon must resolve and return the pinned ID. Images declaring volumes reject.
 
 The existing private canonical journalDirectory must belong to the process UID
 and have mode0700. Journal filename is journal.sqlite. Mounted credential bytes
@@ -55,3 +57,4 @@ real private config/provider files, authenticated capabilities, abort/listen-fai
 and SIGTERM cleanup; image inspection and actual agent-controlled engine execution
 are separate native qualification. Both architectures, overhead, Compose and the
 complete application dispatch/finalization path remain required work.
+See [executable evidence](../../verification/agent-executable.md) for exact checks.

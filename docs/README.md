@@ -25,6 +25,7 @@ released application until the rewrite is qualified.
 | Inspect resource observations | [Resource observer](verification/resource-observation.md) | Measured/configured provenance, readiness revocation, original-call ownership and runtime limits |
 | Inspect full admission evidence | [Observation publisher](verification/observation-publisher.md) | Actual resource/guard composition, independent revocation and draining writes |
 | Inspect installed runtime composition | [Agent runtime](verification/agent-runtime.md) | Verified startup, actual services, capability limits and retained shutdown ownership |
+| Inspect executable/provider packaging | [Agent executable](verification/agent-executable.md) | Private file intake, reviewed entrypoint, full gate and Linux arm64 fixture smoke |
 | Inspect system stop handling | [Durable stop](verification/durable-stop.md) | First-cause attribution, urgent escalation, restart and original-write ownership |
 | Inspect output monitoring | [Output guard](verification/output-guard.md) | Real filesystem sampling, freshness, launch fences and remaining native qualification |
 | Inspect deadline monitoring | [Timeout guard](verification/timeout-guard.md) | Original admission budget, independent polling, clock fencing and shutdown review |

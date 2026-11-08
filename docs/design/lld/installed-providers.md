@@ -1,6 +1,7 @@
 # Installed input, secret and private-file intake
 
-Status: frozen implementation contract; executable integration pending.
+Status: implemented, independently reviewed and integrated with the actual Stager
+and executable loader. See [evidence](../../verification/agent-executable.md).
 Public entrypoint: `agent/src/providers/index.ts`. The executable owns this service
 outside the runtime composition and closes it alongside runtime shutdown.
 
