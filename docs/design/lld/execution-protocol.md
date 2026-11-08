@@ -141,8 +141,8 @@ The [measurement boundary decision](../../decisions/008-measurement-boundary.md)
 defines the native marker and retrospective wrapper observation; buffered receipt
 does not establish a durable pre-load handshake.
 Result content hashing follows the [seal decision](../../decisions/009-result-seal.md).
-Readiness sample isolation follows the [scope correction](../../decisions/010-readiness-metric-isolation.md);
-the latter is still required before complete measurement claims.
+Readiness sample isolation follows the [scope correction](../../decisions/010-readiness-metric-isolation.md).
+Native compatibility evidence does not qualify container execution or complete runs.
 
 Cancellation is durable before signal delivery. Wrapper gets a 5-second graceful
 stop window; then agent kills the container and verifies exit. Configurable engine

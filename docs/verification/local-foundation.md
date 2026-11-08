@@ -148,9 +148,15 @@ probes. Result-seal codec `c681d7d` passed four normative/mutation/error tests a
 independent review; it proves content identity, not outcome or artifact eligibility.
 All are included in the full gate.
 
-Readiness currently contaminates native global metrics and unfiltered accumulation.
-The [required scope correction](../decisions/010-readiness-metric-isolation.md) is
-selected but not implemented; native rate/discovery and gauge scope must remain honest.
+Phase isolation `5937af9` and correction `f08454d` now separate preparation from
+measured native summaries and accumulation. Independent review caught invalid
+Trend observer thresholds; corrected `avg>=0` observers passed re-review and 81
+focused tests. A real owned-loopback k6 v2.2.0 Darwin arm64 probe then passed:
+one readiness request plus one workload request produced measured HTTP count one,
+one source marker, 48 accepted NDJSON records and strict v2 summary evidence.
+Native counter rate matched its declared whole-engine duration denominator.
+See [the reproducible compatibility check](native-k6.md). This does not establish
+Linux controls, Docker execution or complete wrapper/application coordination.
 
 ## Missing release evidence
 

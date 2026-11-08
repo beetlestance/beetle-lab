@@ -11,7 +11,7 @@ Before launch, canonical absolute non-symlink regular files are checked: executa
 and absent `beetle-evidence.json`. The root/image and output must be trusted against
 concurrent same-UID replacement. No staged secret or summary content is read.
 Launch is detached POSIX, shell:false, fixed argv and three fixed environment keys.
-Production target is Linux; Darwin supports synthetic owned Node fixtures only.
+Production target is Linux; Darwin is used only by owned compatibility fixtures.
 
 The admitted absolute wall deadline consumes earlier setup time. A nonextending
 local monotonic ceiling and repeated final clock samples fail closed on expiry,
