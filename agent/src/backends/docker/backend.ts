@@ -1,5 +1,6 @@
 import { performance } from 'node:perf_hooks';
-import { RuntimePlan } from './prepare.js';
+import { isRuntimePlan } from './prepare.js';
+import type { RuntimePlan } from './prepare.js';
 import { compatibleVersion, containerId, inspectEvidence, record, supportedDaemon } from './inspect.js';
 import type { CleanupEvidence, DockerReply, DockerRequest, DockerTransport, FailureReason,
   InspectEvidence, MutationResult, Observation, Operation } from './types.js';
@@ -24,7 +25,7 @@ export class DockerBackend {
 
   async inspect(plan: RuntimePlan, operation: Operation): Promise<Observation> {
     const context = this.context(operation);
-    if (!context || !(plan instanceof RuntimePlan)) return { state: 'unknown', reason: 'invalid_input' };
+    if (!context || !isRuntimePlan(plan)) return { state: 'unknown', reason: 'invalid_input' };
     if (this.active >= 64) return { state: 'unknown', reason: 'overflow' };
     const entry = this.entry(plan);
     if (typeof entry === 'string') return { state: 'unknown', reason: entry };
@@ -75,7 +76,7 @@ export class DockerBackend {
   }
 
   async stop(plan: RuntimePlan, operation: Operation, graceDeadline: number): Promise<MutationResult<InspectEvidence>> {
-    if (!Number.isFinite(graceDeadline) || !(plan instanceof RuntimePlan)) return rejected('invalid_input');
+    if (!Number.isFinite(graceDeadline) || !isRuntimePlan(plan)) return rejected('invalid_input');
     const entry = this.entry(plan);
     if (typeof entry === 'string') return rejected(entry);
     entry.graceDeadline ??= graceDeadline;
@@ -130,7 +131,7 @@ export class DockerBackend {
   private async run<T>(plan: RuntimePlan, operation: Operation,
     execute: (entry: Entry, context: Operation) => Promise<MutationResult<T>>): Promise<MutationResult<T>> {
     const context = this.context(operation);
-    if (!context || !(plan instanceof RuntimePlan)) return rejected('invalid_input');
+    if (!context || !isRuntimePlan(plan)) return rejected('invalid_input');
     if (this.active >= 64) return rejected('overflow');
     const entry = this.entry(plan);
     if (typeof entry === 'string') return rejected(entry);

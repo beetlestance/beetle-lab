@@ -2,7 +2,7 @@ import { performance } from 'node:perf_hooks';
 import type { Offer } from '@beetle/contracts';
 import type { StopReason } from '../journal/index.js';
 import type { Reservation } from '../admission/index.js';
-import { RuntimePlan } from '../backends/docker/index.js';
+import { isRuntimePlan } from '../backends/docker/index.js';
 import type { ControlReader, ControlReadValue } from '../collection/control/index.js';
 import { CONTROL_READ_MAX_MS } from '../collection/control/index.js';
 import type { OutputCollection } from '../collection/output/index.js';
@@ -43,7 +43,7 @@ export class AttemptController {
   private readonly ownerMap: Map<string, AttemptController>;
   constructor(options: ControllerPorts) {
     const key = copyControlScope(options.input.key);
-    if (!(options.input.plan instanceof RuntimePlan)) throw new ControllerError('invalid_input');
+    if (!isRuntimePlan(options.input.plan)) throw new ControllerError('invalid_input');
     this.options = Object.freeze({ ...options, input: Object.freeze({ key, plan: options.input.plan }) });
     this.ownerKey = [key.organizationId, key.workspaceId, key.attemptId, key.generation].join('/').toLowerCase();
     this.ownerMap = owners.get(options.journal) ?? new Map();

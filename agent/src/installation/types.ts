@@ -6,11 +6,13 @@ import type { AttemptProgress } from '../controller/index.js';
 import type { Journal } from '../journal/index.js';
 import type { Stager } from '../staging/index.js';
 import type { Supervisor } from '../supervisor/index.js';
+import type { OutputGuard } from '../guard/index.js';
 
 export interface InstallationOptions {
   readonly journal: Journal;
   readonly catalog: Catalog;
   readonly supervisor: Supervisor;
+  readonly guard: Pick<OutputGuard, 'watch'>;
   /** Trusted lookup of preconfigured, verified Stager services; never job-supplied paths/providers. */
   stagerFor(engine: Readonly<InstalledEngine>): Pick<Stager, 'prepare'>;
   readonly wallNow?: () => number;

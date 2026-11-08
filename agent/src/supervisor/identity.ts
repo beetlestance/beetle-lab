@@ -1,6 +1,7 @@
 import { validatePrimitive } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
-import { RuntimePlan, runtimeName } from '../backends/docker/index.js';
+import { isRuntimePlan, runtimeName } from '../backends/docker/index.js';
+import type { RuntimePlan } from '../backends/docker/index.js';
 import type { Reservation, Scope } from '../admission/index.js';
 import type { LaunchInput } from './types.js';
 import { SupervisorError } from './types.js';
@@ -15,7 +16,7 @@ export function sameScope(left: Scope, right: Scope): boolean {
 export function validateInput(input: LaunchInput, installationId: string): void {
   const { key, plan } = input;
   if (![key.organizationId, key.workspaceId, key.attemptId, installationId].every(value => validatePrimitive('uuid', value).ok)
-    || !Number.isSafeInteger(key.generation) || key.generation < 1 || !(plan instanceof RuntimePlan)) {
+    || !Number.isSafeInteger(key.generation) || key.generation < 1 || !isRuntimePlan(plan)) {
     throw new SupervisorError('invalid_input');
   }
   const labels = plan.spec.Labels;

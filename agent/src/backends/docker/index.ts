@@ -1,5 +1,5 @@
 export { DockerBackend } from './backend.js';
-export { prepareRuntime, runtimeName, RuntimePlan } from './prepare.js';
+export { prepareRuntime, runtimeName, RuntimePlan, isRuntimePlan } from './prepare.js';
 export { UnixDockerTransport, TRANSPORT_LIMITS } from './transport.js';
 export { daemonResources } from './capacity.js';
 export type { DaemonResources } from './capacity.js';

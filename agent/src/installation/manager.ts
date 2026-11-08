@@ -78,6 +78,7 @@ export class Manager implements InstallationController {
   }
   private signal(entry: Entry, reason: StopReason = 'cancelled'): Promise<void> {
     entry.cancelled = true; entry.abort.abort();
+    if (entry.fresh && !entry.controller) this.closeWatch(entry);
     if (!entry.controller) return Promise.resolve();
     const urgent = reason === 'output_limit' || reason === 'artifact_incomplete';
     if (entry.cancellation && (!urgent || entry.urgentStop)) return entry.cancellation;
@@ -103,17 +104,25 @@ export class Manager implements InstallationController {
       const key = scopeCopy(input); this.open(); const entry = this.entry(key);
       entry.users++; entry.version++;
       try {
-        entry.cancelled = true; entry.abort.abort();
-        const now = this.now(); this.open();
-        await this.options.journal.supervision({ key, now, cancel: true, reason });
-        // Durable intent is observable while original runtime signalling drains.
-        this.signal(entry, reason);
+        await this.requestIntent(entry, reason);
         return await this.options.journal.get(key);
       } finally {
         entry.users--;
         await releaseProvisional(this.options.journal, this.entries, entry);
       }
     });
+  }
+  stopGuard(entry: Entry): Promise<void> { return this.requestIntent(entry, 'artifact_incomplete'); }
+  private async requestIntent(entry: Entry, reason: StopReason): Promise<void> {
+    entry.cancelled = true; entry.abort.abort();
+    const now = this.now(); this.open();
+    await this.options.journal.supervision({ key: entry.key, now, cancel: true, reason });
+    this.signal(entry, reason);
+  }
+  private closeWatch(entry: Entry): void {
+    if (!entry.watch) return;
+    entry.watchClosing ??= entry.watch.close();
+    void entry.watchClosing?.catch(() => { entry.cleanupFailed = true; });
   }
   inspect(input: Scope): Promise<InstallationAttempt> {
     return this.run(async () => {
@@ -124,14 +133,16 @@ export class Manager implements InstallationController {
   }
   async retire(entry: Entry): Promise<void> {
     if (entry.cleanupFailed) throw new InstallationError('cleanup');
+    this.closeWatch(entry);
     if (entry.controller) {
       entry.closing ??= entry.controller.close();
-      try { await entry.closing; } catch { entry.cleanupFailed = true; throw new InstallationError('cleanup'); }
     }
+    const outcomes = await Promise.allSettled([entry.watchClosing, entry.closing]);
+    if (outcomes.some(result => result.status === 'rejected')) { entry.cleanupFailed = true; throw new InstallationError('cleanup'); }
     this.entries.delete(identity(entry.key));
   }
   private async drain(entry: Entry): Promise<void> {
-    const outcomes = await Promise.allSettled([entry.preparation?.result, entry.preparation?.quiesced, entry.cancellation]);
+    const outcomes = await Promise.allSettled([entry.preparation?.result, entry.preparation?.quiesced, entry.cancellation, entry.watchClosing]);
     await entry.active?.catch(() => undefined);
     if (entry.cleanupFailed || outcomes.some(value => value.status === 'rejected')) throw new InstallationError('cleanup');
     if (entry.controller) { await this.retire(entry); return; }
@@ -157,6 +168,7 @@ export class Manager implements InstallationController {
     this.closing = Promise.resolve().then(async () => {
       const entries = [...this.entries.values()];
       for (const entry of entries) {
+        this.closeWatch(entry);
         this.signal(entry);
         if (entry.controller) {
           entry.closing ??= entry.controller.close();

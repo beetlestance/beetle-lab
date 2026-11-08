@@ -28,6 +28,12 @@ export function fixture() {
     } };
     const stager = env.create({ wallNow: owner.time.wall });
     const options: InstallationOptions = { journal: env.owner, catalog, supervisor: owner.manager,
+      guard: { watch: () => {
+        let closed = false;
+        return { initial: Promise.resolve({ ready: true }),
+          status: () => ({ ready: !closed, closed, stopRequested: false, lastKnownAt: 0 }),
+          close: async () => { closed = true; } };
+      } },
       stagerFor: () => stager, wallNow: owner.time.wall };
     const create = (overrides: Partial<InstallationOptions> = {}) => {
       const manager = createInstallationController({ ...options, ...overrides }); managers.push(manager); return manager;

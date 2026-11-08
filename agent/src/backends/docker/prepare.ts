@@ -76,22 +76,29 @@ export function runtimeName(input: { installationId: string; organizationId: str
 }
 
 /** Immutable private handle. Config and secret values are deliberately absent from the Docker specification. */
+const planToken = Symbol('runtime-plan');
+const plans = new WeakSet<object>();
+export function isRuntimePlan(value: unknown): value is RuntimePlan {
+  return value !== null && typeof value === 'object' && plans.has(value);
+}
 export class RuntimePlan {
-  private constructor(readonly name: string, readonly specDigest: string, readonly spec: CreateSpec) {
+  private constructor(readonly name: string, readonly specDigest: string, readonly spec: CreateSpec, token: symbol) {
+    if (token !== planToken) throw new Error('invalid_runtime_plan');
+    plans.add(this);
     freeze(this);
   }
   static prepare(input: PrepareInput): Result<RuntimePlan> {
     try {
       const snapshot = prepareSnapshot(input);
       if (!snapshot.ok) return snapshot;
-      return { ok: true, value: RuntimePlan.create(snapshot.value.name, snapshot.value.spec) };
+      return { ok: true, value: RuntimePlan.#create(snapshot.value.name, snapshot.value.spec) };
     }
     catch { return failure('invalid_input'); }
   }
-  private static create(name: string, spec: CreateSpec): RuntimePlan {
+  static #create(name: string, spec: CreateSpec): RuntimePlan {
     const digest = hash(spec);
     const labelled = { ...spec, Labels: { ...spec.Labels, 'dev.beetle.spec': digest } };
-    return new RuntimePlan(name, digest, labelled);
+    return new RuntimePlan(name, digest, labelled, planToken);
   }
 }
 

@@ -45,6 +45,17 @@ Private `stop(key, output_limit|artifact_incomplete)` uses the same bounded owne
 with a [durable system reason and escalation](agent-stop.md). It persists intent
 before signalling; its response is not a claim that termination has completed.
 
+The required guard service attaches a watch after quiesced staging or exact plan
+reconstruction, before launch. Initial/current readiness gates fresh execution;
+failed fresh setup aborts without a container. Claimed recovery attaches before
+tick; missing/failed monitoring persists an owned system stop and reconciles without
+restaging. The drive owns that fallback even if a separate guard stop callback
+was rejected by a saturated intake. No readiness observation overrides durable intent.
+Cancellation before fresh launch fences the watch. Retirement/shutdown close it
+and drain original scans/stop requests independently of controller cleanup; failures
+retain their local owner and refuse clean shutdown. Read-only guard work cannot
+authorize runtime release or artifact deletion.
+
 `close` is cached, fences new offers/drives, cancels owned preparations/controllers,
 and waits for every original operation and close outcome independently. Uncertain
 runtime/cleanup rejects or remains pending; it cannot be reported as clean shutdown.

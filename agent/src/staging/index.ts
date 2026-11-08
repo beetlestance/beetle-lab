@@ -11,6 +11,7 @@ export type { VerifiedRoot } from './root.js';
 export { readRootSpace } from './space.js';
 export type { RootSpace } from './space.js';
 export type { OutputScanRequest, OutputScanResult, OutputScanReason } from './output-types.js';
+export { scanOutput } from './output-scan.js';
 export { StagingError } from './types.js';
 export type { Authority, Providers, InputRequest, SecretRequest, InstallationConfiguration, VerifyInput,
   StagerOptions, Preparation, PrepareRequest, StagingReason, StagingResult } from './types.js';
