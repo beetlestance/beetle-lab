@@ -12,15 +12,15 @@ The install owner obtains this complete baseline from the approved image/daemon;
 never derive it from Offer.config, browser environment or resolved secrets. PATH may
 be inherited and must match. Create pins Env/Runtime, disables Healthcheck with NONE,
 uses SIGTERM; exact NONE allows known nonnegative safe-integer timing/retry metadata.
-StagedRoots are trusted resolved task-owned directories exactly
-<stagingRoot>/<runtimeName>/{input,output,secrets}, mounted at /beetle/{input,output,secrets}.
+StagedRoots: <stagingRoot>/<runtimeName>/{input,output,secrets} -> /beetle/{input,output,secrets}.
 Staging owner verifies realpath, symlinks and task ownership; no staging occurs here.
 Input/secrets require forced recursive read-only, rprivate binds; output is writable.
 Kernel >=5.12 and daemon defaultRuntime/control evidence are required; no RO downgrade.
 Job config belongs in staged input; resolved secret values only in restricted secrets.
 Inspect normalizes only known API1.47 omissions: NetworkDisabled false, disabled
 network's empty/null attachment map, zero/false bind options and empty omitted map options.
-Unknown host/mount overrides fail; nonempty daemon default-ulimits are unsupported.
+OomKillDisable null means the default enabled OOM killer; true/missing/nonboolean reject.
+Unknown overrides and nonempty daemon default-ulimits fail.
 UnixDockerTransport: explicit Unix socket/API1.47; 64 KiB request/1 MiB reply,
 4096 fragments, 16 KiB headers, 64 active requests; no URLs/retries/pulls/subprocesses/logs.
 All composed steps share the caller's monotonic performance.now() deadline, clamped

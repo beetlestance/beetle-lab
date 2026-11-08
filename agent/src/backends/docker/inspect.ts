@@ -52,7 +52,9 @@ function controls(host: Record<string, unknown>, spec: CreateSpec): boolean {
   const objects = ['PortBindings', 'Sysctls', 'StorageOpt'];
   const excluded = ['Mounts', ...arrays, ...objects];
   const fixed = Object.fromEntries(Object.entries(spec.HostConfig).filter(([key]) => !excluded.includes(key)));
-  if (!exactFields(host, fixed)) return false;
+  // Moby clears this nullable pointer when the kernel cannot disable the OOM killer.
+  const actual = host.OomKillDisable === null ? { ...host, OomKillDisable: false } : host;
+  if (!exactFields(actual, fixed)) return false;
   if (!arrays.every(key => empty(host[key]))) return false;
   return objects.every(key => optionalEmptyObject(host[key])) && additionalHostDefaults(host, spec);
 }

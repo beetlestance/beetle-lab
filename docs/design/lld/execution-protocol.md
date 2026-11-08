@@ -31,6 +31,10 @@ Minor extensions are additive only; unknown required capabilities fail validatio
 No shell command, host path, mount option, arbitrary environment map or Docker
 flag comes from the browser/job payload. The installed engine manifest owns the
 entrypoint, allowed configuration and approved runtime profile.
+Inspection accepts OomKillDisable false or null, meaning the OOM killer remains
+enabled. Missing, true and nonboolean encodings reject. Moby clears that nullable
+pointer when disabling OOM killing is unsupported; see its
+[resource adaptation](https://github.com/moby/moby/blob/v28.2.2/daemon/daemon_unix.go).
 
 ## Agent endpoints
 
@@ -86,7 +90,7 @@ creates private0600 files while writing, then sets and verifies0400 through the
 original descriptor before fsync/close and publication. Writable creation avoids
 Desktop bind filesystems adding owner-write to a requested0400 writable open.
 Permission changes during writing reject; the final read-only contract is unchanged.
-requires the matching charged reservation before writing and enforces the
+The stager requires the matching charged reservation before writing and enforces the
 [versioned staging allowances](../../decisions/006-agent-staging.md).
 Secret aliases have their own grammar, including leading underscores. The k6
 bridge maps locator to an opaque env/mounted reference; raw paths/other providers

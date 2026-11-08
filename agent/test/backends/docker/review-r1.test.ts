@@ -19,6 +19,19 @@ function imagePayload(plan: ReturnType<typeof makePlan>, state = 'created') {
 }
 
 describe('review corrections: Docker effective defaults and controls', () => {
+  it.each([false, null])('accepts OOM killing enabled with daemon encoding %s', async value => {
+    const plan = makePlan(baselineInput()); const docker = new FakeDocker(plan);
+    docker.state = imagePayload(plan); (docker.state.HostConfig as Record<string, unknown>).OomKillDisable = value;
+    expect(await new DockerBackend(docker).ensureCreated(plan, operation())).toMatchObject({ outcome: 'known' });
+    expect(docker.mutations()).toHaveLength(0);
+  });
+  it.each([true, undefined, 0, 'false'])('rejects unsafe or malformed OOM encoding %s', async value => {
+    const plan = makePlan(baselineInput()); const docker = new FakeDocker(plan);
+    docker.state = imagePayload(plan); (docker.state.HostConfig as Record<string, unknown>).OomKillDisable = value;
+    if (value === undefined) delete (docker.state.HostConfig as Record<string, unknown>).OomKillDisable;
+    expect(await new DockerBackend(docker).ensureCreated(plan, operation())).toEqual({ outcome: 'unknown', reason: 'conflict' });
+    expect(docker.mutations()).toHaveLength(0);
+  });
   it.each(['target-egress', 'none', 'none-null'] as const)('accepts normal %s network encoding and inherited PATH', async network => {
     let input = baselineInput();
     if (network !== 'target-egress') {
