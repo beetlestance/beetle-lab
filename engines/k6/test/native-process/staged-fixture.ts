@@ -4,12 +4,12 @@ import type { SuiteConfig } from '../../compiler/suite/index.js';
 import { fixture } from '../staged-input/fixtures.js';
 
 /** Private synthetic installation layout; no credentials or image capability claim. */
-export async function stagedFixture(target: string) {
+export async function stagedFixture(target: string, timeoutMs = 15_000) {
   const base = await fixture();
   base.offer.inputs = []; base.offer.secretReferences = [];
   base.staging.inputFiles = []; base.staging.secretNames = [];
-  base.staging.deadlineMs = Date.now() + 15_000;
-  base.offer.budget.timeoutMs = 15_000; base.offer.budget.outputBytes = 8_388_608;
+  base.staging.deadlineMs = Date.now() + timeoutMs;
+  base.offer.budget.timeoutMs = timeoutMs; base.offer.budget.outputBytes = 8_388_608;
   base.manifest.engineVersion = '2.2.0';
   base.manifest.defaultBudget = { ...base.offer.budget };
   base.manifest.minimumBudget.outputBytes = 1;
