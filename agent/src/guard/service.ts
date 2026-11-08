@@ -17,6 +17,7 @@ export class OutputGuardService implements OutputGuard {
   private active = 0;
   private cursor = 0;
   private pumping = false;
+  private accepting = false;
   private scanTimer?: ReturnType<typeof setTimeout>;
   private watchdog?: ReturnType<typeof setInterval>;
   private closing?: Promise<void>;
@@ -33,6 +34,13 @@ export class OutputGuardService implements OutputGuard {
     this.pump();
   }
   watch(input: OutputWatchRequest): OutputWatch {
+    if (this.closed) throw new GuardError('closed');
+    if (this.accepting) throw new GuardError('capacity');
+    this.accepting = true;
+    try { return this.admit(input); }
+    finally { this.accepting = false; }
+  }
+  private admit(input: OutputWatchRequest): OutputWatch {
     if (this.closed) throw new GuardError('closed');
     const request = requestCopy(input);
     if (this.closed) throw new GuardError('closed');

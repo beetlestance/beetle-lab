@@ -4,12 +4,12 @@ import type { OutputScanResult } from '../staging/index.js';
 import { GuardError } from './types.js';
 import type { OutputGuardOptions, OutputWatchRequest } from './types.js';
 
-export function fields(input: unknown): Record<string, unknown> {
+function fields(input: unknown, keys: readonly string[]): Record<string, unknown> {
   if (!input || typeof input !== 'object') throw new GuardError('invalid_input');
-  const descriptors = Object.getOwnPropertyDescriptors(input);
-  if (Reflect.ownKeys(descriptors).length > 16) throw new GuardError('invalid_input');
   const result: Record<string, unknown> = {};
-  for (const [key, descriptor] of Object.entries(descriptors)) {
+  for (const key of keys) {
+    const descriptor = Object.getOwnPropertyDescriptor(input, key);
+    if (!descriptor) continue;
     if (!('value' in descriptor)) throw new GuardError('invalid_input');
     result[key] = descriptor.value as unknown;
   }
@@ -22,7 +22,7 @@ export function integer(value: unknown, minimum = 0, maximum = Number.MAX_SAFE_I
   return value;
 }
 export function optionsCopy(input: OutputGuardOptions): Required<OutputGuardOptions> {
-  const value = fields(input);
+  const value = fields(input, ['root', 'minimumFreeBytes', 'intervalMs', 'ttlMs', 'sampleTimeoutMs', 'monotonicNow', 'stop']);
   const intervalMs = integer(value.intervalMs ?? 250, 50, 5000);
   const ttlMs = integer(value.ttlMs ?? 2000, 100, 300000);
   const sampleTimeoutMs = integer(value.sampleTimeoutMs ?? 1000, 100, 30000);
@@ -33,13 +33,13 @@ export function optionsCopy(input: OutputGuardOptions): Required<OutputGuardOpti
     monotonicNow: (value.monotonicNow ?? (() => performance.now())) as () => number });
 }
 export function requestCopy(input: OutputWatchRequest): OutputWatchRequest {
-  const value = fields(input);
-  const key = copyControlScope(value.key);
+  const value = fields(input, ['key', 'plan', 'outputBytes']);
+  const key = copyControlScope(fields(value.key, ['organizationId', 'workspaceId', 'attemptId', 'generation']));
   if (!(value.plan instanceof RuntimePlan) || !Object.isFrozen(value.plan)) throw new GuardError('invalid_input');
   return Object.freeze({ key, plan: value.plan, outputBytes: integer(value.outputBytes, 1) });
 }
 export function resultCopy(input: OutputScanResult): OutputScanResult {
-  const value = fields(input);
+  const value = fields(input, ['kind', 'reason', 'startedAt', 'logicalBytes', 'allocatedBytes', 'chargedBytes', 'freeBytes']);
   if (value.kind === 'unknown') {
     const reasons = ['invalid_input', 'busy', 'cancelled', 'deadline', 'io', 'custody', 'bounds', 'cleanup'];
     if (!reasons.includes(value.reason as string)) throw new GuardError('invalid_input');
