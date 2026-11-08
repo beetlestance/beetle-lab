@@ -3,6 +3,8 @@
 Date: 2026-11-09. Integrated source: `b1f999c`; initial candidate `e1de9d3`.
 Environment: Node26.7.0/macOS arm64, real temporary filesystem and SQLite.
 Daemon responses and engine-result production remain controlled.
+Later [native agent/k6 evidence](native-agent-k6.md) covers actual container execution;
+the limits on this page describe the earlier runtime-composition fixture.
 
 ## Implemented composition
 

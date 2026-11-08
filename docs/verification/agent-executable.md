@@ -3,6 +3,8 @@
 Date: 2026-11-09. Integrated source: `91ec376`.
 Host checks: Node26.7.0/macOS arm64. Image checks: Node24.22.2/Linux arm64.
 No hosted CI, publication or deployment is claimed.
+Later [native agent/k6 evidence](native-agent-k6.md) records real Docker execution
+and the two integration corrections; the fixture-only limits below describe91ec376.
 
 ## Implemented boundary
 

@@ -1,7 +1,8 @@
 # Agent executable and installation configuration
 
 Status: implemented and reviewed; bundled Linux arm64 fixture smoke passed.
-Real engine execution, Compose and architecture qualification remain pending.
+Baseline agent-controlled k6 execution passed on Linux arm64; Compose and the full
+architecture/fault matrix remain pending. See [native evidence](../../verification/native-agent-k6.md).
 The entrypoint is `agent/src/bootstrap/main.ts`; build ships main.js and worker.js
 together. The released application's entrypoint remains separate.
 

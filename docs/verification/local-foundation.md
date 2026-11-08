@@ -163,7 +163,7 @@ Linux controls, Docker execution or complete wrapper/application coordination.
 ## Missing release evidence
 
 The complete new submit/execute/observe/finalize/replay path is not implemented.
-Application artifact storage, agent collection/recovery, quantile aggregation, remaining
+Application artifact storage, irreversible recovery, quantile aggregation, remaining
 frontend features, reports/comparison/export and packaging remain incomplete or
 under review. Reviewed native coordination and result-file publication are implemented;
 see the [outcome report](k6-outcomes.md) and [staged check](staged-k6.md) for real-native evidence. The integrated frontend makes real API requests and shows errors;
@@ -171,8 +171,8 @@ it does not contain a demo backend or claim a functioning full application.
 
 The separate k6 image passes the [Linux/arm64 exercise](engine-image.md); it remains local.
 Docker Desktop 4.98.0/Engine29.9.2 was previously checked; no hosted CI run is claimed.
-Agent control composition, native amd64 operation and release installation remain unqualified.
-Application/agent Node24 runtime, image scans, backup/restore, bounded soak, overhead,
+The [native agent exercise](native-agent-k6.md) verifies arm64 pass/fail and reservation release.
+Native amd64 operation, release installation, application Node24 runtime, scans, backup/restore, soak, overhead,
 browser visual checks and the native amd64/arm64 matrix remain required.
 
 See [verification](../verification.md) for the full acceptance and failure matrix.
