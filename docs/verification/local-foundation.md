@@ -1,6 +1,6 @@
 # Local foundation evidence
 
-Full-gate source: `fe66003` on `rewrite/integration`.
+Full-gate source: `b519bc6` on `rewrite/integration`.
 Date: 2026-11-08. Verification started at this clean source. It includes the
 reviewed staged loader, decoder/accumulator, summary collector, result-seal codec,
 backend/session/startup composition and browser gate. HTTP smoke has separate evidence below.
@@ -12,11 +12,11 @@ This report covers foundations; it does not qualify the rewritten product.
 
 - Runner/API/k6 generation checks: 37/23/6 outputs matched their sources.
 - TypeScript node/browser/native-k6 checks and ESLint passed.
-- Import boundaries, cycles and size checks covered 569 source files.
-- Documentation check covered 81 files.
+- Import boundaries, cycles and size checks covered 572 source files.
+- Documentation check covered 82 files.
 - Frontend production build passed; the main bundle was 611.56 kB / 178.59 kB gzip.
   Vite's large-chunk warning remains; no browser performance claim is made.
-- Vitest: 2,011 tests passed in 166 files, with at most two workers.
+- Vitest: 2,031 tests passed in 167 files, with at most two workers.
 
 Environment: Node v26.7.0 on macOS arm64. Compilation targets Node24, but
 compilation alone does not prove Node24 runtime behavior.
@@ -74,6 +74,7 @@ Real metadata SQLite tests cover scoped identities/FKs, fresh-ID receipt replay,
 opposing folder moves, bounded traversal, settings inheritance and runtime
 observation expiry/rollback. The worker has queue/deadline/close/crash checks.
 This is not backup/restore or Node24 runtime proof.
+[Agent snapshot evidence](agent-snapshots.md) covers durable lifecycle projection and retained charges.
 
 Docker adapter tests are synthetic (124 cases): bounded Unix transport, ownership
 and effective-control inspection, one-start fences, cancellation grace rounding,
