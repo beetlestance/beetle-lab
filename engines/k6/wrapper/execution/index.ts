@@ -3,7 +3,7 @@ import { snapshot } from './profile.js';
 import { productionPorts } from './ports.js';
 import type { ExecutionOperation, ExecutionOptions, ExecutionReceipt } from './types.js';
 export { ExecutionError } from './types.js';
-export type { ExecutionOptions, ExecutionLimits, ExecutionClock, MeasurementReceipt, CollectionReceipt, ExecutionCode,
+export type { ExecutionOptions, ExecutionLimits, ExecutionClock, BuildUsage, MeasurementReceipt, CollectionReceipt, ExecutionCode,
   MetricFailure, ExecutionEvidence, ExecutionReceipt, ExecutionOperation } from './types.js';
 
 /** One admitted invocation. Default native adapter remains Linux-only; no process-mode installation. */

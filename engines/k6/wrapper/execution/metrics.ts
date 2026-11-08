@@ -3,7 +3,7 @@ import { createK6MetricProfile, MetricAccumulator, MetricAccumulatorError, Metri
 import type { MetricPoint, MetricSnapshot, MetricWindow } from '../../aggregation/index.js';
 import type { Fence } from './fence.js';
 import type { AcceptedOptions } from './profile.js';
-import type { MetricFailure } from './types.js';
+import type { BuildUsage, MetricFailure } from './types.js';
 import { ExecutionError } from './types.js';
 
 /** Numeric composition only. Neither callbacks nor source records acquire outcome authority. */
@@ -12,7 +12,7 @@ export class Metrics {
   private readonly decoder: MetricStream;
   private failed: MetricFailure | null = null;
   private closing: Promise<void> | undefined;
-  constructor(private readonly input: AcceptedOptions, private readonly fence: Fence) {
+  constructor(private readonly input: AcceptedOptions, private readonly fence: Fence, private readonly build: BuildUsage) {
     const profile = createK6MetricProfile(input.compiled.suite);
     this.accumulator = new MetricAccumulator({ profile, window: (window, signal) => this.window(window, signal) });
     this.decoder = new MetricStream({ ...profile, maximumBytes: input.limits.maximumMetricBytes,
@@ -35,7 +35,7 @@ export class Metrics {
     }
     this.fence.check();
     if (point.metric !== measureStartedMetric) return;
-    const receipt = Object.freeze({ sourceTimeMs: point.timeMs, observedAt: new Date(this.fence.check().wall).toISOString() });
+    const receipt = Object.freeze({ sourceTimeMs: point.timeMs, observedAt: new Date(this.fence.check().wall).toISOString(), build: this.build });
     try { await this.input.measureStarted(receipt, signal); }
     catch (error) { this.fail({ source: 'callback', code: 'sink_failed' }); throw error; }
     this.fence.check();

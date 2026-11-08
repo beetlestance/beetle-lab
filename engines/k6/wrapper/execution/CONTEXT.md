@@ -23,7 +23,8 @@ numeric totals. Complete parser/native byte counts must agree before numeric fin
 allowed post-stop summary evidence retains source partial status.
 Optional collectStarted is captured and awaited once after confirmed stop, before
 numeric finish/summary IO. It lets the caller journal the real phase transition;
-receipt and terminal UTC times remain distinct. Failure is typed summary error.
+receipt and terminal UTC times remain distinct. Both receipts include immutable
+build retained/peak bytes, never an installed path. Observer failure is summary error.
 
 `result` may fail while original work remains outstanding; late build cannot launch.
 Unknown native receipt does not wait on stalled close. `quiesced`/cached close
@@ -36,5 +37,4 @@ Complete publication still waits cleanup and the final reentry fence. First fenc
 Build/uncooperative callbacks cannot be preempted. Native termination is independent
 of blocked delivery; agent/Docker own hard RAM/PID and whole-container termination.
 Synthetic fixtures do not qualify native/container controls.
-
 Check: `vitest run engines/k6/test/execution --maxWorkers=2` and all TypeScript projects.

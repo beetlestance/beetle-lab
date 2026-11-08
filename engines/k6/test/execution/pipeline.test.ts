@@ -7,7 +7,7 @@ it('composes exact numeric profiles, excludes preparation and collects without i
   const receipt = await operation.result; await operation.quiesced;
   expect(receipt).toMatchObject({ ok: true, terminalObservedAt: '1970-01-01T00:00:02.000Z',
     process: { state: 'stopped', collection: 'complete' }, build: { bytes: 100, peakBytes: 200 }, metricFailure: null });
-  expect(f.markers).toEqual([{ sourceTimeMs: 1000, observedAt: '1970-01-01T00:00:02.000Z' }]);
+  expect(f.markers).toEqual([{ sourceTimeMs: 1000, observedAt: '1970-01-01T00:00:02.000Z', build: { bytes: 100, peakBytes: 200 } }]);
   expect(receipt.metrics!.totals).toHaveLength(1);
   expect(receipt.metrics!.totals[0]).toMatchObject({ metric: 'http_reqs', total: { kind: 'counter', sum: 1 }, scope: 'execute' });
   expect(receipt.metrics!.windowCoverage.complete).toBe(true);

@@ -8,7 +8,7 @@ import { Metrics } from './metrics.js';
 import type { ExecutionPorts } from './ports.js';
 import type { AcceptedOptions } from './profile.js';
 import { ExecutionError } from './types.js';
-import type { ExecutionCode, ExecutionOperation, ExecutionReceipt } from './types.js';
+import type { BuildUsage, ExecutionCode, ExecutionOperation, ExecutionReceipt } from './types.js';
 
 function terminal(observation: ProcessObservation): boolean {
   if (!observation.spawned) return observation.state === 'not_started' && observation.quiescent;
@@ -90,7 +90,7 @@ export class Execution implements ExecutionOperation {
   }
   private async execute(): Promise<void> {
     this.phase = 'native'; this.fence.check();
-    this.numbers = new Metrics(this.input, this.fence);
+    this.numbers = new Metrics(this.input, this.fence, this.buildUsage());
     this.fence.check();
     const native = this.ports.native({ binary: this.input.binary, emptyConfig: this.input.emptyConfig,
       directory: this.input.outputDirectory, script: this.build!.scriptPath, attempt: this.input.compiled.attempt,
@@ -124,9 +124,13 @@ export class Execution implements ExecutionOperation {
     if (!callback) return;
     if (this.terminalObservedAt === null) throw new ExecutionError('clock');
     const observedAt = new Date(this.fence.check().wall).toISOString();
-    try { await callback(Object.freeze({ observedAt, terminalObservedAt: this.terminalObservedAt }), this.fence.controller.signal); }
+    try { await callback(Object.freeze({ observedAt, terminalObservedAt: this.terminalObservedAt, build: this.buildUsage() }), this.fence.controller.signal); }
     catch { this.fence.check(); throw new ExecutionError('summary'); }
     this.fence.check();
+  }
+  private buildUsage(): BuildUsage {
+    if (!this.build) throw new ExecutionError('build');
+    return Object.freeze({ bytes: this.build.bytes, peakBytes: this.build.peakBytes });
   }
   private collectionCode(numericComplete: boolean): ExecutionCode | undefined {
     if (this.numbers!.failure) return 'metrics';

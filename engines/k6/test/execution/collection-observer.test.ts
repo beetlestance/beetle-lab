@@ -10,7 +10,9 @@ it('notifies after actual stop and before final numeric drain or summary I/O', a
   const operation = launch({ ...f.options, window: async () => { steps.push('window'); },
     collectStarted: async receipt => {
       steps.push('collect'); expect(Object.isFrozen(receipt)).toBe(true);
-      expect(receipt).toEqual({ observedAt: '1970-01-01T00:00:02.000Z', terminalObservedAt: '1970-01-01T00:00:02.000Z' });
+      expect(Object.isFrozen(receipt.build)).toBe(true);
+      expect(receipt).toEqual({ observedAt: '1970-01-01T00:00:02.000Z', terminalObservedAt: '1970-01-01T00:00:02.000Z',
+        build: { bytes: 100, peakBytes: 200 } });
     } }, { ...f.ports, native: input => {
     const child = native(input); return { ...child, run: async () => { const result = await child.run(); steps.push('stopped'); return result; } };
   }, summary: input => { steps.push('summary'); return summary(input); } });
@@ -66,11 +68,24 @@ it('captures the observer before caller mutation', async () => {
 
 it('notifies collection for confirmed stopped partial sources without upgrading completeness', async () => {
   const f = setup(); let called = 0;
-  const operation = launch({ ...f.options, collectStarted: async () => { called++; } }, { ...f.ports,
+  const operation = launch({ ...f.options, collectStarted: async receipt => {
+    called++; expect(receipt.build).toEqual({ bytes: 100, peakBytes: 200 });
+  } }, { ...f.ports,
     native: () => ({ run: async () => observation({ collection: 'partial', cause: 'stream' }), close: async () => {} }) });
   expect(await operation.final).toMatchObject({ ok: false, code: 'native', metrics: null,
     summary: { ok: true, evidence: { nativeCollection: 'partial' } } });
   await operation.quiesced; expect(called).toBe(1);
+});
+
+it('projects actual retained and peak build bytes without exposing an installed path', async () => {
+  const f = setup(); const receipts: unknown[] = [];
+  const operation = launch({ ...f.options, measureStarted: async receipt => {
+    expect(Object.isFrozen(receipt.build)).toBe(true); receipts.push(receipt.build);
+  }, collectStarted: async receipt => { receipts.push(receipt.build); } }, { ...f.ports,
+    build: async input => ({ scriptPath: input.outputDirectory + '/suite.js', bytes: 500, peakBytes: 700 }) });
+  expect((await operation.final).ok).toBe(true); await operation.quiesced;
+  expect(receipts).toEqual([{ bytes: 500, peakBytes: 700 }, { bytes: 500, peakBytes: 700 }]);
+  expect(JSON.stringify(receipts)).not.toContain('scriptPath');
 });
 
 it.each([false, true])('does not notify for unconfirmed stop or never-started work (%s)', async neverStarted => {

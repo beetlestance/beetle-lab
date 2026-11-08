@@ -14,8 +14,9 @@ export interface ExecutionLimits {
   readonly collectionTimeoutMs: number;
 }
 export interface ExecutionClock { readonly wall: () => number; readonly monotonic: () => number }
-export interface MeasurementReceipt { readonly sourceTimeMs: number; readonly observedAt: string }
-export interface CollectionReceipt { readonly observedAt: string; readonly terminalObservedAt: string }
+export type BuildUsage = Readonly<Pick<BuildOutput, 'bytes' | 'peakBytes'>>;
+export interface MeasurementReceipt { readonly sourceTimeMs: number; readonly observedAt: string; readonly build: BuildUsage }
+export interface CollectionReceipt { readonly observedAt: string; readonly terminalObservedAt: string; readonly build: BuildUsage }
 export interface ExecutionOptions {
   readonly compiled: CompiledInput;
   readonly binary: string;
