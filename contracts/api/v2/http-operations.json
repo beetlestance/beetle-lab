@@ -253,5 +253,73 @@
     "response": "LogoutBrowserReceipt",
     "successStatus": 200,
     "error": "ApiError"
+  },
+  {
+    "name": "listSuites",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites",
+    "response": "SuitePage",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "WorkspaceParams",
+    "query": "PageQuery"
+  },
+  {
+    "name": "createSuite",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites",
+    "response": "Suite",
+    "successStatus": 201,
+    "error": "ApiError",
+    "params": "WorkspaceParams",
+    "request": "CreateSuiteRequest"
+  },
+  {
+    "name": "getSuite",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites/{suiteId}",
+    "response": "Suite",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "SuiteParams"
+  },
+  {
+    "name": "patchSuite",
+    "method": "PATCH",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites/{suiteId}",
+    "response": "Suite",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "SuiteParams",
+    "request": "PatchSuiteRequest"
+  },
+  {
+    "name": "listSuiteRevisions",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites/{suiteId}/revisions",
+    "response": "SuiteRevisionPage",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "SuiteParams",
+    "query": "PageQuery"
+  },
+  {
+    "name": "createSuiteRevision",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites/{suiteId}/revisions",
+    "response": "SuiteRevision",
+    "successStatus": 201,
+    "error": "ApiError",
+    "params": "SuiteParams",
+    "request": "CreateSuiteRevisionRequest"
+  },
+  {
+    "name": "getSuiteRevision",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/revisions/{revisionId}",
+    "response": "SuiteRevision",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "SuiteRevisionParams"
   }
 ]

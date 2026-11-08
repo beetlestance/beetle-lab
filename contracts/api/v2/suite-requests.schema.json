@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/api/v2/suite-requests",
+  "title": "ApiSuiteRequests",
+  "$defs": {
+    "CreateSuiteRequest": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+        },
+        "requestId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "name": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name"
+        },
+        "folderId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "scope",
+        "requestId",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "PatchSuiteRequest": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+        },
+        "requestId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "expectedVersion": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Version"
+        },
+        "name": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name"
+        },
+        "folderId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "scope",
+        "requestId",
+        "expectedVersion"
+      ],
+      "additionalProperties": false,
+      "minProperties": 4
+    },
+    "CreateSuiteRevisionRequest": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+        },
+        "requestId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "expectedVersion": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Version"
+        },
+        "engineId": {
+          "const": "k6"
+        },
+        "configVersion": {
+          "const": 1
+        },
+        "config": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "scope",
+        "requestId",
+        "expectedVersion",
+        "engineId",
+        "configVersion",
+        "config"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

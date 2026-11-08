@@ -398,5 +398,55 @@
     "path": "valid/logout-browser-receipt.json",
     "schema": "LogoutBrowserReceipt",
     "valid": true
+  },
+  {
+    "path": "valid/suite.json",
+    "schema": "Suite",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-revision-summary.json",
+    "schema": "SuiteRevisionSummary",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-revision.json",
+    "schema": "SuiteRevision",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-page.json",
+    "schema": "SuitePage",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-revision-page.json",
+    "schema": "SuiteRevisionPage",
+    "valid": true
+  },
+  {
+    "path": "valid/create-suite.json",
+    "schema": "CreateSuiteRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/patch-suite.json",
+    "schema": "PatchSuiteRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/create-suite-revision.json",
+    "schema": "CreateSuiteRevisionRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-params.json",
+    "schema": "SuiteParams",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-revision-params.json",
+    "schema": "SuiteRevisionParams",
+    "valid": true
   }
 ]

@@ -3,5 +3,6 @@ export { apiSchemas, apiMessageSchemas } from './generated/schemas.js';
 export { apiOperations } from './generated/operations.js';
 export type { ApiOperation } from './generated/operations.js';
 export { validateApi } from './validate.js';
+export { API_MAXIMUM_JSON_BYTES, SUITE_MAXIMUM_CONFIG_BYTES } from './limits.js';
 export { createApiClient, createApiHttpTransport } from './client/index.js';
 export type { ApiClient, ApiClientFailure, ApiClientResult, ApiHttpOptions, ApiOperationInput, ApiTransport } from './client/index.js';

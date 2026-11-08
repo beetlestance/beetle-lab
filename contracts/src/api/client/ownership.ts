@@ -54,7 +54,8 @@ interface OwnedReply {
   settingsVersion?: number;
   snapshotId?: string;
   snapshotVersion?: number;
-  items?: { scope: SettingsScope }[];
+  suiteId?: string;
+  items?: { scope: SettingsScope; suiteId?: string }[];
   candidates?: { scope: SettingsScope }[];
   effective?: EffectiveSettings;
 }
@@ -68,6 +69,7 @@ function identityMatches(operation: ApiOperation, input: PreparedInput, reply: O
   const params = input.params;
   const identities: Partial<Record<ApiOperation['response'], string | undefined>> = {
     Organization: params.organizationId, Workspace: params.workspaceId, Folder: params.id,
+    Suite: params.suiteId, SuiteRevision: params.revisionId,
   };
   if (operation.response === 'DeletionReceipt') {
     return sameUuid(reply.id, params.id ?? params.workspaceId ?? params.organizationId) && sameUuid(reply.requestId, input.body?.requestId);
@@ -92,6 +94,13 @@ export function responseOwnership(operation: ApiOperation, input: PreparedInput,
   const reply = value as OwnedReply;
   if (!equal(expectedOwner(operation, input), reply.scope) || !identityMatches(operation, input, reply)) return false;
   if (reply.items && !reply.items.every(item => equal(reply.scope, item.scope))) return false;
+  if (!revisionOwnership(operation, input, reply)) return false;
   if (retention(operation) && !retentionMatches(input, reply)) return false;
   return !reply.effective || sourceAncestry(reply.scope, reply.effective);
+}
+
+function revisionOwnership(operation: ApiOperation, input: PreparedInput, reply: OwnedReply): boolean {
+  if (!input.params.suiteId || !['SuiteRevision', 'SuiteRevisionPage'].includes(operation.response)) return true;
+  if (!sameUuid(reply.suiteId, input.params.suiteId)) return false;
+  return !reply.items || reply.items.every(item => sameUuid(item.suiteId, input.params.suiteId));
 }

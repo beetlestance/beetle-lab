@@ -32,6 +32,13 @@ Schema catalogue is complete, including runner common exactly once. These are ro
 | POST | /api/v2/auth/pair | none | none | PairBrowserRequest | 200 | BrowserSession |
 | GET | /api/v2/auth/session | none | none | none | 200 | BrowserSession |
 | POST | /api/v2/auth/logout | none | none | LogoutBrowserRequest | 200 | LogoutBrowserReceipt |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites | WorkspaceParams | PageQuery | none | 200 | SuitePage |
+| POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites | WorkspaceParams | none | CreateSuiteRequest | 201 | Suite |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites/{suiteId} | SuiteParams | none | none | 200 | Suite |
+| PATCH | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites/{suiteId} | SuiteParams | none | PatchSuiteRequest | 200 | Suite |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites/{suiteId}/revisions | SuiteParams | PageQuery | none | 200 | SuiteRevisionPage |
+| POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites/{suiteId}/revisions | SuiteParams | none | CreateSuiteRevisionRequest | 201 | SuiteRevision |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/revisions/{revisionId} | SuiteRevisionParams | none | none | 200 | SuiteRevision |
 
 All errors use ApiError. UUID path parameters are validated before URL encoding.
 List queries require an integer limit 1–100 and optional opaque string cursor; HTTP query parsing belongs to the transport adapter.

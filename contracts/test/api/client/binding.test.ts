@@ -5,6 +5,8 @@ import { fixture } from '../fixtures.js';
 import { baseUrl, load, organizationId, params, reply } from './helpers.js';
 
 const files: Partial<Record<keyof ApiTypes, string>> = {
+  Suite: 'suite', SuiteRevision: 'suite-revision', SuitePage: 'suite-page', SuiteRevisionPage: 'suite-revision-page',
+  CreateSuiteRequest: 'create-suite', PatchSuiteRequest: 'patch-suite', CreateSuiteRevisionRequest: 'create-suite-revision',
   PairBrowserRequest: 'pair-browser-request', BrowserSession: 'browser-session',
   LogoutBrowserRequest: 'logout-browser-request', LogoutBrowserReceipt: 'logout-browser-receipt',
   Organization: 'organization', Workspace: 'workspace', Folder: 'folder', DeletionReceipt: 'deletion-receipt',
@@ -19,7 +21,8 @@ const files: Partial<Record<keyof ApiTypes, string>> = {
 };
 async function exchange(operation: ApiOperation) {
   const input: Record<string, unknown> = {};
-  const parameterFiles = { OrganizationParams: 'organization', WorkspaceParams: 'workspace', FolderParams: 'folder' };
+  const parameterFiles = { OrganizationParams: 'organization', WorkspaceParams: 'workspace', FolderParams: 'folder',
+    SuiteParams: 'suite', SuiteRevisionParams: 'suite-revision' };
   if ('params' in operation) input.params = await fixture(`valid/${parameterFiles[operation.params]}-params.json`);
   if ('query' in operation) input.query = await load('page-query', 'PageQuery');
   const body = 'request' in operation ? await fixture(`valid/${files[operation.request]}.json`) as Record<string, unknown> : undefined;

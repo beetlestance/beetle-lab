@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { encodeJson } from '@beetle/contracts';
-import { apiMessageSchemas, apiOperations } from '@beetle/contracts/api';
+import { API_MAXIMUM_JSON_BYTES, apiMessageSchemas, apiOperations } from '@beetle/contracts/api';
 import type { ApiOperation, ApiOperationInput, ApiTypes } from '@beetle/contracts/api';
 import { decodePageQuery } from './page-query.js';
 import { ResponseContractError } from './schema-compilers.js';
@@ -23,7 +23,7 @@ function input<N extends ApiOperation['name']>(operation: NamedOperation<N>, req
 function jsonObject(value: unknown): object {
   try {
     if (value === null || typeof value !== 'object' || Array.isArray(value)) throw new ResponseContractError();
-    return JSON.parse(encodeJson(value, 1_048_576)) as object;
+    return JSON.parse(encodeJson(value, API_MAXIMUM_JSON_BYTES)) as object;
   } catch { throw new ResponseContractError(); }
 }
 
@@ -39,6 +39,7 @@ export function registerApiOperation<N extends ApiOperation['name']>(
   server.route({
     method: operation.method,
     url: operation.path.replace(/\{([A-Za-z]+)\}/g, ':$1'),
+    ...(operation.name === 'createSuiteRevision' ? { bodyLimit: API_MAXIMUM_JSON_BYTES } : {}),
     schema: {
       ...('params' in operation ? { params: apiMessageSchemas[operation.params] } : {}),
       ...('query' in operation ? { querystring: apiMessageSchemas[operation.query] } : {}),

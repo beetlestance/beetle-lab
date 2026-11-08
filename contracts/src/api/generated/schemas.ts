@@ -10,8 +10,10 @@ import { schema as ApiSession } from './session.js';
 import { schema as ApiSettingsOverrides } from './settings-overrides.js';
 import { schema as ApiSettingsValues } from './settings-values.js';
 import { schema as ApiSettings } from './settings.js';
+import { schema as ApiSuiteRequests } from './suite-requests.js';
+import { schema as ApiSuite } from './suite.js';
 /** Complete reference closure, including runner common exactly once. */
-export const apiSchemas = freezeSchema([Common, ApiCommon, ApiNamespaceRequests, ApiNamespace, ApiParameters, ApiRetention, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings] as const);
+export const apiSchemas = freezeSchema([Common, ApiCommon, ApiNamespaceRequests, ApiNamespace, ApiParameters, ApiRetention, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -45,6 +47,8 @@ export const apiMessageSchemas = freezeSchema({
   OrganizationParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/OrganizationParams' },
   WorkspaceParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/WorkspaceParams' },
   FolderParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/FolderParams' },
+  SuiteParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/SuiteParams' },
+  SuiteRevisionParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/SuiteRevisionParams' },
   RetentionPreviewRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionPreviewRequest' },
   RetentionCandidate: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionCandidate' },
   ProtectedExclusion: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/ProtectedExclusion' },
@@ -76,4 +80,12 @@ export const apiMessageSchemas = freezeSchema({
   PatchInstallationSettingsRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/settings#/$defs/PatchInstallationSettingsRequest' },
   PatchOrganizationSettingsRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/settings#/$defs/PatchOrganizationSettingsRequest' },
   PatchWorkspaceSettingsRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/settings#/$defs/PatchWorkspaceSettingsRequest' },
+  CreateSuiteRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite-requests#/$defs/CreateSuiteRequest' },
+  PatchSuiteRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite-requests#/$defs/PatchSuiteRequest' },
+  CreateSuiteRevisionRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite-requests#/$defs/CreateSuiteRevisionRequest' },
+  Suite: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/Suite' },
+  SuiteRevisionSummary: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteRevisionSummary' },
+  SuiteRevision: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteRevision' },
+  SuitePage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuitePage' },
+  SuiteRevisionPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteRevisionPage' },
 } as const);

@@ -1,0 +1,12 @@
+{
+  "id": "00000000-0000-4000-8000-000000000003",
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "version": 1,
+  "name": "Example suite",
+  "folderId": "00000000-0000-4000-8000-000000000004",
+  "currentRevisionId": null
+}

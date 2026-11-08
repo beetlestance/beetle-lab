@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { encodeJson } from '@beetle/contracts';
-import { apiSchemas } from '@beetle/contracts/api';
+import { API_MAXIMUM_JSON_BYTES, apiSchemas } from '@beetle/contracts/api';
 import type { FastifyInstance } from 'fastify';
 import { createApiServer } from '../adapters/inbound/http/api-errors.js';
 import { configureSchemaCompilers } from '../adapters/inbound/http/schema-compilers.js';
@@ -32,7 +32,7 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
   const server = createApiServer({ classify: classifyMetadataError });
   let metadata: Metadata | undefined;
   try {
-    configureSchemaCompilers(server, { schemas: apiSchemas, encodeJson });
+    configureSchemaCompilers(server, { schemas: apiSchemas, encodeJson, maximumResponseBytes: API_MAXIMUM_JSON_BYTES });
     metadata = await openMetadata(options.metadata);
     const store = metadata;
     session.registerRoutes(server);

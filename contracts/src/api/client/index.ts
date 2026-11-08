@@ -5,6 +5,7 @@ import { createApiHttpTransport } from './http.js';
 import type { ApiHttpOptions, ApiTransport } from './http.js';
 import { operationPath, prepareInput } from './input.js';
 import { requestOwnership, responseOwnership } from './ownership.js';
+import { API_MAXIMUM_JSON_BYTES } from '../limits.js';
 import type { ApiClient, ApiClientResult } from './types.js';
 
 export { createApiHttpTransport } from './http.js';
@@ -24,7 +25,7 @@ async function invoke(operation: ApiOperation, raw: unknown, transport: ApiTrans
 /** Descriptor-built methods snapshot inputs before fetch; mutation outcomes are never retried. */
 export function createApiClient(options: ApiHttpOptions): ApiClient {
   const transport = createApiHttpTransport(options);
-  const maximum = options.maximumBytes ?? 1_048_576;
+  const maximum = options.maximumBytes ?? API_MAXIMUM_JSON_BYTES;
   return Object.freeze(Object.fromEntries(apiOperations.map(operation => [operation.name,
     (input: unknown) => invoke(operation, input, transport, maximum)]))) as ApiClient;
 }
