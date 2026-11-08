@@ -14,15 +14,11 @@ export function fixture() {
   const f = stagingFixture(); const managers: InstallationController[] = [];
   afterEach(async () => { await Promise.allSettled(managers.splice(0).map(manager => manager.close())); });
   return { ...f, async setup() {
-    const env = await f.environment(false);
     // Nominal lifecycle setup is real filesystem I/O, not a one-second latency SLA.
     // Explicit staging deadline tests retain the shared fixture's short budgets.
-    env.offer.budget.timeoutMs = 10_000;
-    env.options.manifest.minimumBudget.timeoutMs = env.offer.budget.timeoutMs;
-    await env.owner.admission({ kind: 'configure', configuration: { ...configuration(), maxTimeoutMs: env.offer.budget.timeoutMs } });
+    const env = await f.environment(false, 10_000);
     const owner = controlled(env.owner); owner.time.advance(1);
-    const engine: InstalledEngine = { manifest: env.options.manifest,
-      profile: { ...env.options.profile, maximumBudget: { ...env.options.profile.maximumBudget, timeoutMs: env.offer.budget.timeoutMs } },
+    const engine: InstalledEngine = { manifest: env.options.manifest, profile: env.options.profile,
       configVersion: 1, validation: env.options.validation, approved: configuration().profiles[0]!,
       configSchema: createConfigSchema({ schemas: [{ $id: 'synthetic', type: 'object' }], schemaId: 'synthetic', digest: value => createHash('sha256').update(value).digest('hex') }) };
     const catalog: Catalog = { engines: [engine], preflight(input: unknown) {
@@ -32,7 +28,7 @@ export function fixture() {
       if (identity.schemaDigest !== engine.validation.schemaDigest) throw new Error('synthetic missing pin');
       return engine;
     } };
-    const stager = env.create({ profile: engine.profile, wallNow: owner.time.wall });
+    const stager = env.create({ wallNow: owner.time.wall });
     const options: InstallationOptions = { journal: env.owner, catalog, supervisor: owner.manager,
       timeout: { watch: () => {
         let closed = false;

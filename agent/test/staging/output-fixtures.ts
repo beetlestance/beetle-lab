@@ -7,7 +7,8 @@ export { operation };
 export function outputFixture() {
   const f = fixture();
   return { ...f, async prepared() {
-    const e = await f.environment(); const staged = e.prepare(e.create());
+    // Preparing the scan subject is not a one-second filesystem performance test.
+    const e = await f.environment(true, 10_000); const staged = e.prepare(e.create());
     const result = await staged.result; await staged.quiesced;
     if (!result.ok) throw new Error(result.reason);
     const request: OutputScanRequest = { key: scope(e.offer), plan: result.value,

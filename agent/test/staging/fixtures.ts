@@ -8,7 +8,7 @@ import type { Offer } from '@beetle/contracts';
 import type { DockerRequest, DockerReply, DockerTransport } from '../../src/backends/docker/index.js';
 import { Stager, verifyInstallation } from '../../src/staging/index.js';
 import type { InstallationConfiguration, StagerOptions } from '../../src/staging/index.js';
-import { admissionFixture, now, scope, validation } from '../admission/fixtures.js';
+import { admissionFixture, configuration as admissionConfiguration, now, scope, validation } from '../admission/fixtures.js';
 import { makeInput } from '../backends/docker/fixtures.js';
 
 export const data = Buffer.from('🪲 café');
@@ -39,9 +39,10 @@ export function fixture() {
   });
   return {
     ...journal,
-    async environment(enqueue = true) {
+    async environment(enqueue = true, timeoutMs = 1000) {
       const rootPath = await realpath(await mkdtemp(join(tmpdir(), 'beetle-staging-'))); paths.push(rootPath);
       const input = makeInput(); const offer = journal.job(); offer.secretReferences = [];
+      offer.budget.timeoutMs = timeoutMs;
       offer.inputs = [{ id: offer.inputs[0]!.id, bytes: data.byteLength, sha256: hash(data) }];
       offer.config.note = '🪲 café';
       const manifest = input.manifest; manifest.minimumBudget = { ...offer.budget };
@@ -53,6 +54,8 @@ export function fixture() {
       const verified = await verifyInstallation({ configuration, transport, operation: operation() });
       if (!verified.ok) throw new Error(verified.reason);
       const journalPath = journal.path(); const owner = await journal.configured(journalPath);
+      if (timeoutMs !== 1000) await owner.admission({ kind: 'configure',
+        configuration: { ...admissionConfiguration(), maxTimeoutMs: timeoutMs } });
       const options: StagerOptions = { root: verified.value, profile, manifest, journal: owner,
         validation: { manifestId: validation(offer).manifestId, profileId: 'locked', schemaDigest: 'b'.repeat(64), catalogVersion: 1 },
         providers: { input: async () => stream(), secret: async () => Buffer.from('SYNTHETIC_SENTINEL') }, wallNow: () => now + 1 };
