@@ -121,7 +121,7 @@ export class AttemptController {
     }
     if (value.kind === 'batch') return { kind: 'control', events: value.request.events.length };
     if (value.kind === 'verifying') return value;
-    if (stopped && value.cursor === null) {
+    if (stopped && value.cursor === null && value.tail === 'none') {
       await this.closeReader(); this.collection = { state: 'failed', observedAt: this.now() };
       return { kind: 'awaiting_release', collection: 'failed' };
     }

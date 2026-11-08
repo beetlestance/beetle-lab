@@ -5,6 +5,9 @@ import { expect, it } from 'vitest';
 import type { ControlEvent, EngineResult } from '@beetle/contracts';
 import { sealEngineResult } from '@beetle/contracts';
 import { createAttemptController } from '../../src/controller/index.js';
+import { AttemptController } from '../../src/controller/attempt.js';
+import { Reader } from '../../src/collection/control/reader.js';
+import { tracking } from '../collection-control/fixture.js';
 import { fixture, operation } from '../staging/fixtures.js';
 import { controlled, clock, scope } from '../supervisor/fixtures.js';
 
@@ -62,4 +65,31 @@ it('fails an actually empty stopped control file and releases without manufactur
     expect(await controller.tick(operation())).toEqual({ kind: 'released', collection: 'failed' });
     expect(await e.owner.readWrapperCheckpoint(key)).toBeNull();
   } finally { await controller.close(); }
+});
+it('defers a valid first stopped frame fragmented across the eight-read budget without closing or failing it', async () => {
+  const e = await f.environment(false); e.offer.budget.outputBytes = 4000;
+  await f.enqueue(e.owner, e.offer); await f.admit(e.owner, e.offer);
+  const prepared = e.prepare(e.create({ profile: { ...e.options.profile,
+    maximumBudget: { ...e.options.profile.maximumBudget, outputBytes: 4000 } } }));
+  const plan = await prepared.result; await prepared.quiesced;
+  if (!plan.ok) throw new Error(plan.reason);
+  const time = clock(); time.advance(2); const owner = controlled(e.owner, time); const key = scope(e.offer);
+  const event = { ...f.wrapper(), ...key };
+  await writeFile(join(e.rootPath, plan.value.name, 'output', 'control.ndjson'), JSON.stringify(event) + '\n', { mode: 0o600 });
+  const observed = tracking(1);
+  const controller = new AttemptController({ journal: e.owner, supervisor: owner.manager,
+    input: { key, plan: plan.value }, wallNow: time.wall,
+    createReader: options => new Reader(options, observed.ports),
+    collectOutputs: () => { throw new Error('partial frame cannot authorize outputs'); } });
+  try {
+    expect(await controller.launch(operation())).toMatchObject({ kind: 'runtime' });
+    owner.backend.observation = owner.backend.known('exited').value; time.advance(1);
+    expect(await controller.tick(operation())).toMatchObject({ kind: 'runtime' });
+    expect(observed.reads).toHaveLength(16);
+    expect(observed.reads.every(read => read.bytes === 1)).toBe(true);
+    expect(observed.closes()).toBe(0);
+    expect(await e.owner.readWrapperCheckpoint(key)).toBeNull();
+    expect(await e.owner.admission({ kind: 'reservation', key })).toMatchObject({ status: 'charged' });
+  } finally { await controller.close(); }
+  expect(observed.closes()).toBe(2);
 });
