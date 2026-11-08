@@ -25,6 +25,7 @@ export type OutputCollectionResult =
   | { readonly ok: true; readonly value: Readonly<EngineResult>; readonly verifiedBytes: number }
   | { readonly ok: false; readonly reason: OutputCollectionReason };
 export interface OutputCollection {
+  /** Success is published only after all original closes succeed and the final budget fence. */
   readonly result: Promise<OutputCollectionResult>;
   /** Every issued original filesystem operation and descriptor close has settled. */
   readonly quiesced: Promise<void>;

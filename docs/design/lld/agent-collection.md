@@ -45,7 +45,10 @@ filesystem quota; the execution output guard owns that separate responsibility.
 Collection uses the remaining attempt deadline (one call at most five minutes),
 at most two active operations per agent process, and no hidden retry. Cancellation
 may return before original IO settles; quiescence and cached close retain every
-issued original and close failure. Success establishes content/custody observations,
+issued original and close failure. Reserve an active slot before external validation
+callbacks and retain it until all originals and descriptor closes settle. Success
+requires every original close to succeed and a final cancellation/deadline fence.
+Success establishes content/custody observations,
 not authentication, application finalization or reservation release. The controller
 must retain charges until originals settle and it records later stopped/collection
 evidence; application acknowledgement remains separately required before deletion.
