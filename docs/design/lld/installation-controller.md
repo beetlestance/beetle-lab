@@ -1,6 +1,6 @@
 # Installation execution controller
 
-Status: frozen interface for implementation. This component composes existing
+Status: implemented and independently reviewed component. This component composes existing
 admission, staging and [attempt controllers](agent-controller.md). It introduces
 no second reservation store, test state machine or execution retry policy.
 

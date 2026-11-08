@@ -1,6 +1,6 @@
 # Private runner HTTP adapter
 
-Status: implementation under independent review. The adapter constructs Fastify;
+Status: implemented and independently reviewed component. The adapter constructs Fastify;
 installation bootstrap owns listening, private networking, scheduling and shutdown.
 It implements the six existing generated runner operations. Artifact streaming and
 explicit application finalization acknowledgements remain separate work.
