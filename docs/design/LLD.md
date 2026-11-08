@@ -1,6 +1,6 @@
 # Low-level design map
 
-Status: proposed v2 contracts. Schemas and code do not exist yet.
+Status: v2 design with partially implemented contracts and components; [PLAN](../../PLAN.md) records current coverage.
 The owning document below must be updated before its implementation changes.
 
 | Implementing | Read | Includes |
