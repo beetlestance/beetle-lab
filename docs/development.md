@@ -1,7 +1,7 @@
 # Rewrite development startup
 
 The released app still uses `npm start`. These commands run the new namespace and
-settings surface; suite/run execution and Docker installation are not complete.
+settings and suite-authoring surface; run execution and Docker installation are not complete.
 Use Node 24 and install the locked development dependencies with `npm ci`.
 
 ## Create a private development installation once
@@ -53,7 +53,8 @@ Config must be regular, single-linked, 32 KiB or smaller and not group/other wri
 ## Check the built entrypoint
 
 After building, `npm run smoke:api` starts an owned backend on a temporary loopback
-port with disposable synthetic storage. It checks pairing, namespace access, logout
+port with disposable synthetic storage. It checks pairing, namespace access, full-size
+suite revision save/read/replay, metadata edits, logout
 and SIGTERM cleanup; it never starts k6 or contacts a target. It requires permission
 to bind that loopback port. CI runs build and smoke after the main verification gate.
 This does not qualify browser cookies, container controls or either Linux architecture.

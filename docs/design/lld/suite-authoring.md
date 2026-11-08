@@ -42,7 +42,8 @@ declared version; do not resolve, substitute or hash environment/mounted bytes.
 Config JSON retains the existing1MiB allowance, including non-ASCII byte accounting.
 Canonical config serialization and shared schema validation precede persistence.
 API revision mutation/detail and worker envelopes allow2MiB for config plus identity,
-pins and receipts; other metadata commands retain64KiB. List pages contain at most
+pins and receipts; other command inputs retain64KiB. Existing nonrevision replies
+retain their separate1MiB budget. List pages contain at most
 100 suite/revision summaries; revision lists omit config/inputManifest. Full revision
 reads are individual. Byte/depth/property and safe integer checks remain enforced
 by the existing bounded JSON encoder; no raw JSON.stringify before intake bounds.
@@ -56,8 +57,10 @@ Migration002 adds suites, suite_revisions and input_blobs. Composite ownership F
 bind suites to workspace/folder, revisions to suite/workspace and current pointer
 back to that exact suite revision (deferred for the atomic append). Unique suite
 ordinal and immutable revision rows prevent replacement; enforce immutability at
-SQL level. Index scoped suite/revision pages. Config column bytes<=1MiB, input pin
-manifest<=64KiB. input_blobs records scoped id/hash/bytes and staging/published state
+SQL level. Index scoped suite/revision pages. Config bytes<=1MiB; input manifest<=64KiB.
+Replacement guards must cover INSERT OR REPLACE, including when recursive triggers
+are disabled; UPDATE/DELETE triggers alone are insufficient.
+The input_blobs table records scoped id/hash/bytes and staging/published state
 for future byte-publication ownership; no generic metadata-register writer is exposed.
 Rebuild the existing receipts table with result_json<=2MiB, preserving its rows
 and shared(scope_key,request_id) identity; namespace/settings commands remain64KiB.

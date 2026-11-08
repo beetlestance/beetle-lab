@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { once } from 'node:events';
 import { settingsFixture } from '../domain/fixtures.js';
+import { authorSuites } from './suite-authoring.js';
 type Child = ChildProcessByStdio<null, Readable, Readable>;
 type Exit = { code: number | null; signal: NodeJS.Signals | null };
 async function ownedPort(): Promise<number> {
@@ -44,6 +45,7 @@ async function exchange(origin: string, token: string): Promise<void> {
   const page = await fetch(origin + '/api/v2/organizations?limit=100', { headers: { cookie }, signal: AbortSignal.timeout(3000) });
   if (page.status !== 200) throw new Error('Namespace status');
   await page.body?.cancel();
+  await authorSuites(origin, cookie, view.csrfToken);
   const logout = await fetch(origin + '/api/v2/auth/logout', { method: 'POST',
     headers: { ...headers, cookie, 'x-beetle-csrf': view.csrfToken }, body: '{}', signal: AbortSignal.timeout(3000) });
   if (logout.status !== 200) throw new Error('Logout status');
@@ -59,12 +61,12 @@ async function run(root: string, port: number): Promise<void> {
   }, stdio: ['ignore', 'pipe', 'pipe'] });
   let closed = false;
   const termination = new Promise<Exit>(resolve => child.once('close', (code, signal) => { closed = true; resolve({ code, signal }); }));
-  const timer = setTimeout(() => { if (!closed) child.kill('SIGKILL'); }, 15_000);
+  const timer = setTimeout(() => { if (!closed) child.kill('SIGKILL'); }, 30_000);
   try {
     await exchange(origin, await startup(child, termination));
     child.kill('SIGTERM'); const exit = await termination;
     if (exit.code !== 0 || exit.signal !== null) throw new Error('Backend shutdown failed');
-    process.stdout.write('Backend smoke passed: startup, pairing, namespace read, logout, clean SIGTERM.\n');
+    process.stdout.write('Backend smoke passed: pairing, namespace access, full-size suite save/read/replay, logout, clean SIGTERM.\n');
   } finally {
     clearTimeout(timer);
     if (!closed) { child.kill('SIGKILL'); await termination; }

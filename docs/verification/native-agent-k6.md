@@ -75,7 +75,13 @@ The existing frontend611.56kB/178.59kB gzip main-chunk warning remains.
 
 ## Limits
 
-The local harness is provisional and has not become a shipped qualification command.
+The checked-in `smoke:agent:docker` command (`4cd5670`) now reproduces these cases;
+see [developer instructions](../development.md). Coordinator ran both200/500 cases
+on its final source with the existing images above; both checked clean agent exit,
+durable release and current owned-resource absence. Independent review matched
+14 frozen reads, passed Node types/lint and six synthetic helper probes, with no
+blocking finding. No delayed daemon-create-after-CLI-timeout fence was qualified;
+cleanup inventory queries alone cannot establish future absence after unknown work.
 This covers two normal workloads without datasets or secrets. Native amd64, Compose,
 restart/power loss and irreversible fencing, full-pool stop latency, resource abuse,
 stack overhead, scans, backup/restore, soak and application upload/dispatch/artifact
