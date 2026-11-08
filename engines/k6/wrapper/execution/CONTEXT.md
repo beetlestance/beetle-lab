@@ -24,12 +24,13 @@ Native exit codes remain observations. Partial native output never yields comple
 numeric totals. Complete parser/native byte counts must agree before numeric finish;
 allowed post-stop summary evidence retains source partial status.
 
-`result` may fail while original build/native/IO/sinks remain outstanding. Late
-build completion cannot launch a child. Unknown native receipt does not wait on a
-stalled close. `quiesced`/cached close retain all original issued work and close
-failures; failed close cannot later become successful. Complete pipeline publication
-waits for original cleanup and a final fence after quiesced observers. First fence
-reason wins; every factual observation already available remains in the receipt.
+`result` may fail while original work remains outstanding; late build cannot launch.
+Unknown native receipt does not wait on stalled close. `quiesced`/cached close
+retain original work and close failures. `final` waits for all original cleanup
+attempts to settle, then exposes latest actual facts with the first result outcome.
+It cannot upgrade failure, downgrade published success, infer stop from close, or
+certify overall quiescence after failed close; callers check quiesced separately.
+Complete publication still waits cleanup and the final reentry fence. First fence wins.
 
 In-process build and uncooperative callbacks cannot be preempted here. Native
 owner termination remains independent of blocked delivery; hard memory/PID and

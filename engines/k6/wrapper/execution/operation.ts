@@ -19,6 +19,7 @@ function collectible(observation: ProcessObservation): boolean { return observat
 /** Owns one invocation and all original issued work; policy/outcome mapping lives elsewhere. */
 export class Execution implements ExecutionOperation {
   readonly result: Promise<ExecutionReceipt>;
+  readonly final: Promise<ExecutionReceipt>;
   readonly quiesced: Promise<void>;
   private readonly fence: Fence;
   private readonly ports: ExecutionPorts;
@@ -49,6 +50,7 @@ export class Execution implements ExecutionOperation {
     });
     this.result = this.fence.race(eligible).then(receipt => this.publish(receipt),
       error => this.publish(this.receipt(error instanceof ExecutionError ? error.code : 'cleanup')));
+    this.final = this.quiesced.then(() => this.finalSnapshot(), () => this.finalSnapshot());
   }
   private receipt(code?: ExecutionCode): ExecutionReceipt {
     const evidence = { build: this.build, process: this.process, terminalObservedAt: this.terminalObservedAt,
@@ -59,6 +61,11 @@ export class Execution implements ExecutionOperation {
     try { this.fence.check(); }
     catch (error) { receipt = this.receipt(error instanceof ExecutionError ? error.code : 'clock'); }
     this.fence.dispose(); return receipt;
+  }
+  private async finalSnapshot(): Promise<ExecutionReceipt> {
+    const first = await this.result;
+    // Observations only: no new IO, timing permission, or inference from a void close.
+    return this.receipt(first.ok ? undefined : first.code);
   }
   private async perform(): Promise<ExecutionReceipt> {
     try {

@@ -47,6 +47,8 @@ export type ExecutionReceipt = ExecutionEvidence & ({ readonly ok: true }
   | { readonly ok: false; readonly code: ExecutionCode });
 export interface ExecutionOperation {
   readonly result: Promise<ExecutionReceipt>;
+  /** Latest actual facts after original cleanup settles; preserves the first result outcome. */
+  readonly final: Promise<ExecutionReceipt>;
   /** Retains every original issued operation and close, including late failures. */
   readonly quiesced: Promise<void>;
   close(): Promise<void>;
