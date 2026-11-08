@@ -4,19 +4,24 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { runtimeName, RuntimePlan } from '../../src/backends/docker/index.js';
 import { serializeStagedOffer, estimateStaging } from '../../src/admission/index.js';
-import { scope } from '../admission/fixtures.js';
+import { scope, configuration } from '../admission/fixtures.js';
 import { data, fixture, hash, operation, stream } from './fixtures.js';
 
 const f = fixture();
 it('stages exact bytes, restrictive modes, hashes and shipped semantic metadata before a genuine plan', async () => {
   const e = await f.environment(false);
+  e.offer.budget.timeoutMs = 10_000;
+  await e.owner.admission({ kind: 'configure', configuration: { ...configuration(), maxTimeoutMs: 10_000 } });
   e.offer.secretReferences = [{ name: 'TOKEN', provider: 'mounted', reference: 'opaque-ref' }];
   e.offer.inputs.push({ id: '00000000-0000-4000-8000-000000000099', bytes: 0, sha256: hash(Buffer.alloc(0)) });
   await f.enqueue(e.owner, e.offer); await f.admit(e.owner, e.offer);
-  const stager = e.create({ providers: { input: async request => stream(request.input.bytes ? data : Buffer.alloc(0)),
-    secret: async () => Buffer.from('SYNTHETIC_SENTINEL') } });
-  const task = e.prepare(stager); const result = await task.result; await task.quiesced;
-  expect(result.ok).toBe(true); if (!result.ok) throw new Error(result.reason);
+  const stager = e.create({ profile: { ...e.options.profile,
+    maximumBudget: { ...e.options.profile.maximumBudget, timeoutMs: 10_000 } }, providers: { input: async request => {
+    if (request.input.bytes) await new Promise(resolve => setTimeout(resolve, 1100));
+    return stream(request.input.bytes ? data : Buffer.alloc(0));
+  }, secret: async () => Buffer.from('SYNTHETIC_SENTINEL') } });
+  const task = e.prepare(stager, e.offer, 10_000); const result = await task.result; await task.quiesced;
+  if (!result.ok) throw new Error(`Staging rejected: ${result.reason}`);
   expect(result.value).toBeInstanceOf(RuntimePlan);
   const root = join(e.rootPath, result.value.name);
   expect(await readdir(root)).toEqual(['input', 'output', 'secrets']);
@@ -29,7 +34,7 @@ it('stages exact bytes, restrictive modes, hashes and shipped semantic metadata 
   const metadataText = await readFile(join(root, 'input/staging.json'), 'utf8');
   expect(metadataText).not.toContain('SYNTHETIC_SENTINEL');
   expect(JSON.parse(metadataText)).toMatchObject({ generation: 1, offerSha256: hash(offered), manifestSha256: hash(manifest),
-    specDigest: result.value.specDigest, deadlineMs: 101000, stagingPolicyVersion: 1,
+    specDigest: result.value.specDigest, deadlineMs: 110000, stagingPolicyVersion: 1,
     inputFiles: e.offer.inputs.map((input, index) => ({ inputId: input.id, fileName: `input-${String(index).padStart(3, '0')}.bin` })), secretNames: ['TOKEN'] });
   for (const name of await readdir(join(root, 'input'))) {
     const stat = await lstat(join(root, 'input', name)); expect(stat.mode & 0o777).toBe(0o400); expect(stat.nlink).toBe(1);
@@ -37,6 +42,16 @@ it('stages exact bytes, restrictive modes, hashes and shipped semantic metadata 
   expect(await readFile(join(root, 'secrets/TOKEN'), 'utf8')).toBe('SYNTHETIC_SENTINEL');
   expect((await lstat(join(root, 'secrets/TOKEN'))).mode & 0o777).toBe(0o400);
   expect(await e.owner.admission({ kind: 'reservation', key: scope(e.offer) })).toMatchObject({ status: 'charged', createToken: null, staging: estimateStaging(e.offer) });
+});
+it('retains the one-second admitted deadline while a slow input provider quiesces', async () => {
+  const e = await f.environment();
+  const stager = e.create({ providers: { ...e.options.providers, input: async () => {
+    await new Promise(resolve => setTimeout(resolve, 1100)); return stream();
+  } } });
+  const task = e.prepare(stager);
+  expect(await task.result).toEqual({ ok: false, reason: 'deadline' }); await task.quiesced;
+  const name = runtimeName({ ...scope(e.offer), installationId: e.options.profile.installationId });
+  expect(await readdir(join(e.rootPath, name, 'input'))).toEqual([]);
 });
 it('checks reservation before first task write and rejects wrong scope/generation/profile/config', async () => {
   const e = await f.environment(false); const stager = e.create();
