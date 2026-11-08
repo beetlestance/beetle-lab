@@ -46,7 +46,7 @@ trusted composition; raw launch tokens never become browser or engine data.
 and waits for every original operation and close outcome independently. Uncertain
 runtime/cleanup rejects or remains pending; it cannot be reported as clean shutdown.
 The journal closes only after its owning bootstrap has handled that outcome.
-A bounded external scheduling loop scans journal pages and invokes drive; this
+A bounded external [scheduling loop](agent-scheduler.md) scans active journal pages and invokes drive; this
 component creates no hidden timers, unbounded work queue or fake resource samples.
 
 This layer does not finalize application results, grant artifact deletion, apply

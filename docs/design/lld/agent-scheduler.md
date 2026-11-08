@@ -1,6 +1,7 @@
 # Installation scheduling loop
 
-Status: component implementation in progress; actual bootstrap qualification remains.
+Status: implemented and independently reviewed component;
+[local evidence](../../verification/agent-scheduler.md). Actual bootstrap qualification remains.
 
 The scheduler owns discovery and bounded original drive calls. The installation
 controller owns admission, preparation, execution and release. Scheduling an identity
