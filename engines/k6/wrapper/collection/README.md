@@ -6,6 +6,15 @@ Only spawned, stopped, group-absent, closed-stdio, quiescent observations allow 
 It returns `result`, `quiesced` and idempotent `close()`. Cancellation/deadline may
 settle result before IO finishes; quiescence waits for issued work and original
 descriptor close, rejecting on close failure. Callers retain that evidence.
+Final budget checks run in result-publication continuations, including after
+quiescence callbacks, for both successful and failed summaries.
+Original close failures remain explicit; cancellation takes precedence.
+
+Options and process observation are captured synchronously before external clocks
+or IO callbacks. The compiled suite is a trusted immutable reference. Capturing
+admission evidence prevents later replacement from admitting an unknown process
+or upgrading partial collection; it does not authenticate process ownership or
+prove resource controls.
 
 Only `beetle-evidence.json` is read, with no writes or removals. Directory custody
 must remain immutable after process stop; same-UID hostile replacement is outside

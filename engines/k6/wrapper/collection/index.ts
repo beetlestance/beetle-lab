@@ -1,13 +1,15 @@
 import { Budget } from './budget.js';
 import { parseSummary } from './json.js';
 import { Reader } from './reader.js';
+import { snapshotOptions } from './profile.js';
 import { SummaryError } from './types.js';
 import type { SummaryCollection, SummaryOptions, SummaryResult } from './types.js';
 import { validateSummary } from './validation.js';
 export type { SummaryCollection, SummaryOptions, SummaryResult, SummaryEvidence, MetricEvidence, SummaryCode } from './types.js';
 
 /** Trusted private post-stop custody; no execution outcome or reservation release authority. */
-export function readK6Summary(options: SummaryOptions): SummaryCollection {
+export function readK6Summary(input: SummaryOptions): SummaryCollection {
+  const options = snapshotOptions(input);
   const budget = new Budget(options);
   const reader = new Reader(options, budget);
   let resolveQuiet!: () => void;
@@ -26,14 +28,17 @@ export function readK6Summary(options: SummaryOptions): SummaryCollection {
     } catch (error) { outcome = failure(error, false); }
     try { await reader.close(); resolveQuiet(); }
     catch (error) { closeFailed = true; rejectQuiet(new SummaryError('filesystem')); outcome = failure(error, true); }
-    // Both validation failures and successful evidence must survive the final clock fence.
-    try { budget.check(); } catch (error) { outcome = failure(error, closeFailed); }
+    return outcome;
+  });
+  const publish = (outcome: SummaryResult): SummaryResult => {
+    // Fence the Promise.race continuation, after quiesced observers have run.
+    try { budget.check(); }
+    catch (error) {
+      if (!closeFailed || error instanceof SummaryError && error.code === 'cancelled') outcome = failure(error, closeFailed);
+    }
     budget.dispose(); return Object.freeze(outcome);
-  });
-  const result = budget.race(task).catch(error => {
-    try { budget.check(); } catch (fence) { error = fence; }
-    return Object.freeze(failure(error, closeFailed));
-  });
+  };
+  const result = budget.race(task).then(publish, error => publish(failure(error, closeFailed)));
   let closing: Promise<void> | undefined;
   return Object.freeze({ result, quiesced, close: () => {
     // Publish ownership before any externally injected clock or IO completion.

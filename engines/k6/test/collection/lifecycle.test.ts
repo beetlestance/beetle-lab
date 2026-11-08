@@ -118,4 +118,29 @@ describe('post-stop custody and lifecycle', () => {
       expect(await op.result).toMatchObject({ ok: false, code: 'integrity' }); await op.quiesced;
     } finally { hooks.read = undefined; await f.dispose(); }
   });
+  it.each(['deadline', 'rollback', 'cancelled'])('preserves original close failure with final %s callback', async kind => {
+    const f = await fixture(); let now = 100; const controller = new AbortController();
+    hooks.close = async () => { throw new Error('private-original-close'); };
+    try {
+      const op = readK6Summary({ ...f.options, deadlineMs: 1000, wallNow: () => now, signal: controller.signal });
+      void op.quiesced.catch(() => {
+        if (kind === 'cancelled') controller.abort();
+        else now = kind === 'deadline' ? 1000 : 99;
+      });
+      expect(await op.result).toEqual({ ok: false, code: kind === 'cancelled' ? 'cancelled' : 'filesystem', closeFailed: true });
+      await expect(op.quiesced).rejects.toThrow('filesystem'); await expect(op.close()).rejects.toThrow('filesystem');
+    } finally { hooks.close = undefined; await f.dispose(); }
+  });
+  it('retains captured references when read callbacks replace live options', async () => {
+    const f = await fixture();
+    const options = { ...f.options };
+    hooks.read = async () => {
+      options.process = Object.freeze({ ...f.options.process, collection: 'complete' });
+      options.outputDirectory += '/missing'; options.uid++; options.deadlineMs = 1;
+    };
+    try {
+      const op = readK6Summary(options);
+      expect(await op.result).toMatchObject({ ok: true, evidence: { nativeCollection: 'partial' } }); await op.quiesced;
+    } finally { hooks.read = undefined; await f.dispose(); }
+  });
 });
