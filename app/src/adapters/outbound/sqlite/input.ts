@@ -1,3 +1,4 @@
+import { prepareSuiteCommand } from '../../../application/suites/index.js';
 import { createHash } from 'node:crypto';
 import { encodeJson, validatePrimitive } from '@beetle/contracts';
 import { validateApi } from '@beetle/contracts/api';
@@ -79,17 +80,64 @@ function checkedSettings(operation: Extract<Operation, { kind: 'settings' }>): v
   requireRule(validateApi(names[command.request.scope.kind], command.request).ok);
   requireRule(prepareSettingsCommand({ ...command, digest: sha256 }).intentDigest === command.intentDigest);
 }
+function checkedSuiteList(operation: Extract<Operation, { kind: 'listSuites' | 'listRevisions' }>): void {
+  const query = operation.query;
+  requireRule(validateApi('WorkspaceScope', query.scope).ok);
+  requireRule(Number.isSafeInteger(query.limit) && query.limit >= 1 && query.limit <= 100);
+  if (query.cursor !== undefined) requireRule(typeof query.cursor === 'string' && query.cursor.length <= 1024);
+  if (operation.kind === 'listRevisions') uuid(operation.query.suiteId);
+}
+function checkedSuiteOperation(operation: Operation): void {
+  switch (operation.kind) {
+    case 'suite': {
+      uuid(operation.command.id);
+      if (operation.command.kind === 'createSuiteRevision') uuid(operation.command.suiteId);
+      requireRule(prepareSuiteCommand(operation.command, sha256).intentDigest === operation.command.intentDigest);
+      break;
+    }
+    case 'getSuite': case 'getRevision':
+      requireRule(validateApi('WorkspaceScope', operation.key.scope).ok); uuid(operation.key.id); break;
+    case 'listSuites': case 'listRevisions': checkedSuiteList(operation); break;
+    default: throw new StorageError('invalid_input');
+  }
+}
+function settingsRead(operation: Operation): boolean {
+  if (operation.kind !== 'getSettings' && operation.kind !== 'getSettingsIdentity') return false;
+  checkedScope(operation.scope); return true;
+}
+function checkedExtendedOperation(operation: Operation): boolean {
+  if (suiteOperation(operation)) { checkedSuiteOperation(operation); return true; }
+  return settingsRead(operation);
+}
 export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operation {
-  const operation = boundedCopy(input);
+  const operation = boundedCopy(input, operationMessageLimit(input));
+  if (checkedExtendedOperation(operation)) return operation;
   switch (operation.kind) {
     case 'namespace': checkedNamespace(operation); break;
     case 'settings': checkedSettings(operation); break;
     case 'get': checkedKey(operation.key); break;
     case 'list': checkedList(operation.query); break;
-    case 'getSettings': case 'getSettingsIdentity': checkedScope(operation.scope); break;
+
     case 'runtime': checkedRuntime(operation.runtime, runtimeTtlMs); break;
     case 'close': break;
     default: throw new StorageError('invalid_input');
   }
   return operation;
+}
+
+export function suiteOperation(operation: Operation): boolean {
+  const descriptor = Object.getOwnPropertyDescriptor(operation, 'kind');
+  return !!descriptor && 'value' in descriptor && ['suite', 'getSuite', 'getRevision', 'listSuites', 'listRevisions'].includes(descriptor.value as string);
+}
+
+/** Inspect data descriptors only: boundedCopy rejects accessors without invoking them. */
+function dataProperty(value: unknown, key: string): unknown {
+  if (typeof value !== 'object' || value === null) return undefined;
+  const descriptor = Object.getOwnPropertyDescriptor(value, key);
+  return descriptor && 'value' in descriptor ? descriptor.value : undefined;
+}
+export function operationMessageLimit(operation: Operation): number {
+  if (dataProperty(operation, 'kind') !== 'suite') return MAX_MESSAGE_BYTES;
+  const command = dataProperty(operation, 'command');
+  return dataProperty(command, 'kind') === 'createSuiteRevision' ? 2097152 : MAX_MESSAGE_BYTES;
 }

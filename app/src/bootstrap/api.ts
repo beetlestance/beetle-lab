@@ -1,3 +1,4 @@
+import { registerSuiteRoutes } from '../adapters/inbound/http/suites/index.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { encodeJson } from '@beetle/contracts';
 import { API_MAXIMUM_JSON_BYTES, apiSchemas } from '@beetle/contracts/api';
@@ -24,9 +25,7 @@ export interface Application {
 }
 const digest = (value: string): string => createHash('sha256').update(value, 'utf8').digest('hex');
 
-/** Real namespace/settings composition. This does not install a fake engine,
- * invent capacity, or claim the still-incomplete suite/run execution surface.
- */
+/** Real local session, namespace, settings and suite authoring composition. */
 export async function openApplication(options: ApplicationOptions): Promise<Application> {
   const session = createLocalSession({ externalOrigin: options.externalOrigin });
   const server = createApiServer({ classify: classifyMetadataError });
@@ -38,6 +37,7 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     session.registerRoutes(server);
     registerNamespaceRoutes(server, { store: store.namespaces, reader: store, newId: randomUUID,
       digest, authorize: session.authorize });
+    registerSuiteRoutes(server, { store: store.suites, reader: store.suites, newId: randomUUID, digest, authorize: session.authorize });
     registerSettingsRoutes(server, { store: store.settings, reader: store, digest, authorize: session.authorize });
     server.addHook('onClose', async () => { session.close(); await store.close(); });
     let closing: Promise<void> | undefined;

@@ -1,5 +1,5 @@
 import { parentPort, workerData } from 'node:worker_threads';
-import { checkedBootstrap, checkedOperation, boundedCopy } from './input.js';
+import { checkedBootstrap, checkedOperation, boundedCopy, operationMessageLimit } from './input.js';
 import { initialize } from './schema.js';
 import { Store, safeCode } from './store.js';
 import type { Bootstrap, Command, Reply } from './protocol.js';
@@ -22,7 +22,7 @@ function start(): void {
   port?.on('message', (message: Command) => {
     try {
       const operation = checkedOperation(message, runtimeTtlMs);
-      const value = boundedCopy(store.execute(operation), 1048576);
+      const value = boundedCopy(store.execute(operation), operation.kind === 'getRevision' ? 2097152 : operationMessageLimit(operation));
       port.postMessage({ kind: 'result', messageId: message.messageId, ok: true, value } satisfies Reply);
       if (operation.kind === 'close') port.close();
     } catch (error) {

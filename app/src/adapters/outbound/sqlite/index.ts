@@ -1,10 +1,11 @@
+import type { SuiteStore, SuiteReader } from '../../../ports/suites.js';
 import { Worker } from 'node:worker_threads';
 import type { SettingsScope } from '@beetle/contracts/api';
 import type { NamespaceStore } from '../../../ports/namespaces.js';
 import type { NamespaceEntity } from '../../../ports/namespaces.js';
 import type { SettingsStore } from '../../../ports/settings.js';
 import type { SettingsIdentity } from '../../../ports/settings-reader.js';
-import { checkedBootstrap, checkedOperation } from './input.js';
+import { checkedBootstrap, checkedOperation, suiteOperation } from './input.js';
 import { StorageError } from './protocol.js';
 import type { Bootstrap, EntityKey, EntityPage, ErrorCode, ListQuery, Operation, Reply, RuntimeObservation, SettingsView, Value } from './protocol.js';
 export { StorageError } from './protocol.js';
@@ -17,7 +18,7 @@ export interface MetadataOptions extends Bootstrap {
   /** Includes in-flight work; maximum 64. Close has one reserved slot. */
   queueLimit?: number;
 }
-interface Pending { resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout }
+interface Pending { resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout; suite: boolean }
 function validateLocation(options: MetadataOptions): void {
   if (typeof options.path !== 'string' || !options.path || options.path === ':memory:' || options.path.length > 4096 ||
     !(options.workerUrl instanceof URL) || options.workerUrl.protocol !== 'file:') throw new StorageError('invalid_input');
@@ -44,6 +45,13 @@ export class Metadata {
   private readyResolve: () => void = () => undefined;
   private readyReject: (error: StorageError) => void = () => undefined;
   private readonly ready: Promise<void>;
+  readonly suites: SuiteStore & SuiteReader = {
+    execute: command => this.call({ kind: 'suite', command }) as ReturnType<SuiteStore['execute']>,
+    getSuite: key => this.call({ kind: 'getSuite', key }) as ReturnType<SuiteReader['getSuite']>,
+    getRevision: key => this.call({ kind: 'getRevision', key }) as ReturnType<SuiteReader['getRevision']>,
+    listSuites: query => this.call({ kind: 'listSuites', query }) as ReturnType<SuiteReader['listSuites']>,
+    listRevisions: query => this.call({ kind: 'listRevisions', query }) as ReturnType<SuiteReader['listRevisions']>,
+  };
   readonly namespaces: NamespaceStore = { execute: command => this.call({ kind: 'namespace', command }) as
     ReturnType<NamespaceStore['execute']> };
   readonly settings: SettingsStore = { execute: command => this.call({ kind: 'settings', command }) as
@@ -94,6 +102,7 @@ export class Metadata {
     if (this.closing) return Promise.reject(new StorageError('closed'));
     if (this.failed) return Promise.reject(new StorageError('unavailable'));
     if (this.pending.size >= this.limit) return Promise.reject(new StorageError('queue_full'));
+    if (suiteOperation(operation) && [...this.pending.values()].filter(value => value.suite).length >= 2) return Promise.reject(new StorageError('queue_full'));
     try { return this.send(checkedOperation(operation, this.runtimeTtlMs)); }
     catch { return Promise.reject(new StorageError('invalid_input')); }
   }
@@ -102,7 +111,7 @@ export class Metadata {
     const messageId = ++this.nextId;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => this.fail('unavailable'), 5000);
-      this.pending.set(messageId, { resolve, reject, timer });
+      this.pending.set(messageId, { resolve, reject, timer, suite: suiteOperation(operation) });
       try { this.worker.postMessage({ ...operation, messageId }); } catch { this.fail('unavailable'); }
     });
   }

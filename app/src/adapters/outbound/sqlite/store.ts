@@ -1,3 +1,5 @@
+import { Suites } from './suites.js';
+import { SuiteReads } from './suite-reads.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { SemanticError } from '../../../domain/namespaces/index.js';
 import { Entities } from './entities.js';
@@ -5,7 +7,7 @@ import { Namespaces } from './namespaces.js';
 import { Reads } from './reads.js';
 import { Settings } from './settings.js';
 import { transaction } from './schema.js';
-import { boundedCopy, lower, scopeKey } from './input.js';
+import { boundedCopy, lower, scopeKey, suiteOperation, operationMessageLimit } from './input.js';
 import { StorageError } from './protocol.js';
 import type { Bootstrap, ErrorCode, Operation, Value } from './protocol.js';
 
@@ -18,17 +20,21 @@ export function safeCode(error: unknown): ErrorCode {
   return 'unavailable';
 }
 export class Store {
+  private readonly suites: Suites;
+  private readonly suiteReads: SuiteReads;
   private readonly entities: Entities;
   private readonly namespaces: Namespaces;
   private readonly settings: Settings;
   private readonly reads: Reads;
   constructor(private readonly db: DatabaseSync, bootstrap: Bootstrap) {
     this.entities = new Entities(db);
+    this.suites = new Suites(db, this.entities);
+    this.suiteReads = new SuiteReads(db, this.suites);
     this.settings = transaction(db, () => new Settings(db, bootstrap));
     this.namespaces = new Namespaces(db, this.entities, this.settings);
     this.reads = new Reads(db, this.entities);
   }
-  private mutation(operation: Extract<Operation, { kind: 'namespace' | 'settings' }>): Value {
+  private mutation(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' }>): Value {
     const command = operation.command;
     return transaction(this.db, () => {
       const scope = scopeKey(command.request.scope);
@@ -40,15 +46,25 @@ export class Store {
         if (typeof receipt.result_json !== 'string') throw new StorageError('unavailable');
         return JSON.parse(receipt.result_json) as Value;
       }
-      const value = operation.kind === 'namespace' ? this.namespaces.change(operation.command) :
+      const value = operation.kind === 'suite' ? this.suites.change(operation.command) : operation.kind === 'namespace' ? this.namespaces.change(operation.command) :
         this.settings.change(operation.command);
-      const copy = boundedCopy(value);
+      const copy = boundedCopy(value, operationMessageLimit(operation));
       this.db.prepare('INSERT INTO receipts(scope_key,request_id,digest,result_json) VALUES (?,?,?,?)')
         .run(scope, requestId, command.intentDigest, JSON.stringify(copy));
       return copy;
     });
   }
+  private suiteOperation(operation: Operation): Value {
+    switch (operation.kind) {
+      case 'suite': return this.mutation(operation);
+      case 'getSuite': return this.suites.getSuite(operation.key);
+      case 'getRevision': return this.suites.getRevision(operation.key);
+      case 'listSuites': case 'listRevisions': return this.suiteReads.list(operation.query) as Value;
+      default: throw new StorageError('invalid_input');
+    }
+  }
   execute(operation: Operation): Value {
+    if (suiteOperation(operation)) return this.suiteOperation(operation);
     switch (operation.kind) {
       case 'namespace': case 'settings': return this.mutation(operation);
       case 'get': return this.entities.get(operation.key);
@@ -57,6 +73,7 @@ export class Store {
       case 'getSettingsIdentity': return this.settings.identity(operation.scope);
       case 'runtime': return this.settings.updateRuntime(operation.runtime);
       case 'close': this.db.close(); return null;
+      default: throw new StorageError('invalid_input');
     }
   }
 }
