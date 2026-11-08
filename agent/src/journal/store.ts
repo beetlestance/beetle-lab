@@ -18,7 +18,8 @@ export class Store {
     this.admission = new AdmissionStore(db, quota);
     this.read = db.prepare(`SELECT CASE WHEN length(CAST(offer_json AS BLOB))<=1048576
       THEN offer_json ELSE NULL END AS offer_json FROM accepted_attempts WHERE id=?`);
-    this.list = db.prepare(`SELECT ${metadataColumns}, NULL AS result_json FROM accepted_attempts WHERE id>? ORDER BY id LIMIT ?`);
+    this.list = db.prepare(`SELECT ${metadataColumns}, NULL AS result_json, NULL AS exit_facts_json
+      FROM accepted_attempts WHERE id>? ORDER BY id LIMIT ?`);
   }
   private offer(command: Extract<Command, { kind: 'offer' }>): AttemptSnapshot {
     return transaction(this.db, () => offerAtomic(this.db, command, this.quota));

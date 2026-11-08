@@ -32,7 +32,7 @@ function inspect<T>(path: string, work: (db: DatabaseSync) => T): T {
 }
 function dropProjection(db: DatabaseSync, keepResult = false): void {
   db.exec('ALTER TABLE accepted_attempts DROP COLUMN snapshot_bytes; ALTER TABLE accepted_attempts DROP COLUMN phase; '
-    + 'ALTER TABLE accepted_attempts DROP COLUMN exit_json;');
+    + 'ALTER TABLE accepted_attempts DROP COLUMN exit_json; ALTER TABLE accepted_attempts DROP COLUMN exit_facts_json;');
   if (!keepResult) db.exec('ALTER TABLE accepted_attempts DROP COLUMN result_json;');
   db.exec("UPDATE accepted_attempts SET state='admitted'; PRAGMA user_version=4;");
 }
@@ -91,6 +91,29 @@ describe('durable lifecycle projection', () => {
     Object.assign(changed.event.payload, { [field]: field === 'exitCode' ? 1 : field === 'oomKilled' ? true : 'cancelled' });
     await expect(journal.appendSupervisor(changed)).rejects.toMatchObject({ code: 'conflict' });
     expect(await journal.get(f.key())).toEqual(before); expect((await journal.sourceCursors(f.key())).supervisorOrdinal).toBe(1);
+  });
+  it.each(['exitCode', 'oomKilled', 'reason'] as const)('remembers refined known %s across unknowns and restart', async field => {
+    const path = f.path(); let journal = await f.open(path); await journal.immutableOffer(f.offer());
+    const unknown = exited(1);
+    if (unknown.event.kind !== 'runtime.exited') throw new Error('fixture');
+    unknown.event.payload.exitCode = null; unknown.event.payload.oomKilled = null;
+    await journal.appendSupervisor(unknown);
+    const confirmed = exited(2);
+    if (confirmed.event.kind !== 'runtime.exited') throw new Error('fixture'); confirmed.event.payload.reason = 'timeout';
+    await journal.appendSupervisor(confirmed); await journal.appendSupervisor({ ...unknown, sourceOrdinal: 3 });
+    await f.close(journal); journal = await f.open(path);
+    const changed = structuredClone(confirmed); changed.sourceOrdinal = 4;
+    Object.assign(changed.event.payload, { [field]: field === 'exitCode' ? 1 : field === 'oomKilled' ? true : 'cancelled' });
+    await expect(journal.appendSupervisor(changed)).rejects.toMatchObject({ code: 'conflict' });
+    expect(await journal.get(f.key())).toMatchObject({ lastSeq: 3, exitEvidence: unknown.event.payload });
+    expect((await journal.sourceCursors(f.key())).supervisorOrdinal).toBe(3);
+    await f.close(journal);
+    inspect(path, db => {
+      const row = db.prepare('SELECT phase,exit_json,exit_facts_json,result_json,snapshot_bytes FROM accepted_attempts').get()!;
+      expect(JSON.parse(String(row.exit_facts_json))).toEqual({ exitCode: 0, oomKilled: false, reason: 'timeout' });
+      const charged = ['phase', 'exit_json', 'exit_facts_json', 'result_json'].reduce((sum, key) => sum + Buffer.byteLength(String(row[key] ?? '')), 0);
+      expect(row.snapshot_bytes).toBe(charged);
+    });
   });
   it('accepts later unknown-fact refinements without rewriting the first exit witness', async () => {
     const journal = await f.open(); await journal.immutableOffer(f.offer()); const first = exited(1);
@@ -195,7 +218,7 @@ describe('additive unpublished journal migration', () => {
       expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(4);
       expect(db.prepare('SELECT result_json FROM accepted_attempts').get()?.result_json).toBe(original);
       const names = db.prepare('PRAGMA table_info(accepted_attempts)').all().map(row => row.name);
-      expect(names).not.toContain('phase'); expect(names).not.toContain('exit_json');
+      expect(names).not.toContain('phase'); expect(names).not.toContain('exit_json'); expect(names).not.toContain('exit_facts_json');
     });
   });
 });

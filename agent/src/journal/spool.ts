@@ -37,9 +37,9 @@ export function appendAtomic(db: DatabaseSync, input: EventInput): AgentEvent {
     VALUES (?,?,?,?,?,?,?,?,?)`).run(row.attempt_id, row.generation, event.seq,
     input.source, input.sourceKey, input.canonical, json, bytes, charge);
   db.prepare(`UPDATE accepted_attempts SET last_seq=?, spool_bytes=spool_bytes+?,
-    spool_rows=spool_rows+1, ${counter}=?, state=?, phase=?, exit_json=?, result_json=?, snapshot_bytes=? WHERE id=?`)
+    spool_rows=spool_rows+1, ${counter}=?, state=?, phase=?, exit_json=?, exit_facts_json=?, result_json=?, snapshot_bytes=? WHERE id=?`)
     .run(event.seq, charge, input.sourceKey, projection.state, projection.phase,
-      projection.exit_json, projection.result_json, projection.snapshot_bytes, row.id);
+      projection.exit_json, projection.exit_facts_json, projection.result_json, projection.snapshot_bytes, row.id);
   return event as AgentEvent;
 }
 

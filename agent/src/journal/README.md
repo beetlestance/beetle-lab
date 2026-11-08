@@ -26,7 +26,9 @@ phase is not measurement evidence. A result cannot prove container exit, seal
 authenticity, artifact custody, application finalization or reservation release.
 Lost/exited resist delayed nonterminal events; actual exit can resolve lost.
 Repeated exits accept newer timestamps/unknown refinements but retain the first
-witness; contradictory known exit facts conflict. Cancellation events require
+witness. A separate private known-facts frontier (<=1KiB) durably remembers every
+confirmed field across later unknowns and restart; known contradictions conflict.
+Cancellation events require
 already-durable intent and never reset cancellation time.
 
 Envelopes max 64 KiB; readEvents(key,after) yields <=100 records and <=256 KiB,
@@ -34,7 +36,7 @@ including batch envelope. Lengths are selected before bounded payload loading.
 Default quota 64 MiB per attempt (override 1024..67108864 bytes for new offers only),
 charging encoded event + canonical source JSON +256-byte row/index allowance;
 max 65536 retained rows. This is accounting, not a physical SQLite disk bound.
-UTF-8 phase/exit/result projection bytes also remain charged as snapshot_bytes.
+UTF-8 phase/first-exit/known-exit-facts/result projection bytes also remain charged as snapshot_bytes.
 Admission checks spool_bytes + new_snapshot_bytes + event_charge <= quota;
 SQLite enforces the combined bound. Pruning refunds event charges only. Overflow
 returns quota_exceeded without event, cursor or projection growth.
