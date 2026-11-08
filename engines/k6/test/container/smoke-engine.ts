@@ -44,6 +44,9 @@ function check(evidence: Evidence, status: number, scope: Pick<EngineResult, 'or
   assert.deepEqual(events.map(event => event.seq), events.map((_, index) => index + 1));
   assert.deepEqual(events.filter(event => event.kind === 'phase.started').map(event => event.phase),
     ['validate', 'prepare', 'execute', 'collect', 'seal']);
+  assert.deepEqual(events.filter(event => event.kind === 'phase.finished').map(event => event.phase),
+    ['validate', 'prepare', 'execute', 'collect', 'seal']);
+  assert.equal(events.at(-1)?.kind, 'phase.finished'); assert.equal(events.at(-1)?.phase, 'seal');
   const terminal = events.find(event => event.kind === 'engine.result'); assert(terminal?.kind === 'engine.result');
   assert.deepEqual(terminal.payload, result.value);
 }
