@@ -18,6 +18,10 @@ Discovery confers no dispatch/release authority; the controller rechecks durable
 `admission(command)` is the trusted production admission/ownership entrypoint;
 see [admission contract](../admission/CONTEXT.md). Compatibility `immutableOffer`
 does not validate installed engine semantics or reserve resources.
+Admission revalidates stored observations, including required provenance; invalid
+samples are unknown. Journal reopen clears observations and guard readiness while
+preserving clocks/configuration/queue/charged reservations. Full observation updates
+revoke omitted guards; the producer cannot inherit an old process's readiness.
 
 `appendWrapper(ControlEvent)` retains wrapper seq as wrapperSeq; `appendSupervisor`
 accepts `{sourceOrdinal,event}` where event is a source:'agent' draft without seq.

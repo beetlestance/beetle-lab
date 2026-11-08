@@ -17,6 +17,27 @@ must not exceed configured capacity bounded by runtime-reported capacity. Includ
 staging/output disk. Use Docker VM capacity on Desktop; separately warn that other
 host work/targets can still contend. Declared headroom is policy, not OS isolation.
 
+Admission observations carry explicit per-resource provenance: Docker daemon/VM
+CPU and RAM totals, configured aggregate PID/output/staging ceilings, and statfs
+available bytes. Physical aggregate PID capacity stays unknown. Configured-only
+ceilings include reserve/headroom so effectivePool subtracts them exactly once.
+Source labels describe evidence provenance, not authentication or proof by themselves.
+Missing/invalid stored provenance yields unknown capacity until refreshed. Journal
+reopen clears observations without changing queued or charged ownership; process
+restart cannot inherit guard readiness. One full observation composer supplies
+guards: omission revokes them rather than carrying previous controls forward.
+Identical equal-millisecond replay is ignored. Conflicting equal-time samples
+invalidate readiness conservatively; only a strictly newer sample may restore it.
+Actual Docker support covers CPU/memory/PID controls only. Timeout/output readiness
+must come from a live guard owner; a capacity producer never invents those flags.
+The resource observer reads a verified staging root through readRootSpace (pinned
+identity before/after bigint statfs), then read-only Docker version/info. It owns
+one original sample, has no waiting queue, and checks monotonic cancellation/deadline
+before/after issued calls. Failure produces unknown; close aborts and waits for the
+original sample, including late filesystem/transport promises. It neither closes
+the shared transport nor owns its underlying socket cleanup. Sample timestamps are
+captured before reads; invalid/rollback wall time cannot create fresh known facts.
+
 Reject jobs whose minimum exceeds the entire pool instead of leaving them queued
 forever. Defer temporarily blocked jobs with a typed reason and retry time without
 holding an execution slot. FIFO within a class; bounded scanning may admit smaller

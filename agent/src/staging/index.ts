@@ -8,6 +8,8 @@ import { StagingError } from './types.js';
 import type { StagerOptions, Preparation, PrepareRequest, StagingResult } from './types.js';
 export { verifyInstallation } from './root.js';
 export type { VerifiedRoot } from './root.js';
+export { readRootSpace } from './space.js';
+export type { RootSpace } from './space.js';
 export { StagingError } from './types.js';
 export type { Authority, Providers, InputRequest, SecretRequest, InstallationConfiguration, VerifyInput,
   StagerOptions, Preparation, PrepareRequest, StagingReason, StagingResult } from './types.js';

@@ -20,6 +20,8 @@ export function configuration(): PoolConfiguration {
 }
 export function observation(at = now): RuntimeObservation {
   return { source: 'synthetic-runtime', observedAt: at, status: 'known', capacity: { ...vector(5000), memoryBytes: 5000, pids: 50 },
+    capacityProvenance: { cpuMillis: 'synthetic', memoryBytes: 'synthetic', pids: 'synthetic', outputBytes: 'synthetic', stagingBytes: 'synthetic' },
+    diskSource: 'synthetic', daemonId: 'synthetic-daemon', physicalPidCapacity: null,
     freeDiskBytes: 20_000_000, controls: ['cpu', 'memory', 'pids'],
     guards: { source: 'supervisor', observedAt: at, controls: ['timeout', 'output'] },
     idle: { source: 'synthetic-idle', observedAt: at, value: true } };

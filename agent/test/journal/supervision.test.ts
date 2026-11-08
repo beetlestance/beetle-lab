@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
 import { journalFixture } from './fixtures.js';
-import { admissionFixture, now, reserved, scope } from '../admission/fixtures.js';
+import { admissionFixture, now, observation, reserved, scope } from '../admission/fixtures.js';
 
 const f = journalFixture();
 const a = admissionFixture();
@@ -88,6 +88,7 @@ it('rolls back cancel and queued-work retirement when the final clock write fail
   await expect(journal.supervision({ key: scope(offer), now: now + 1, cancel: true })).rejects.toMatchObject({ code: 'unavailable' });
   await journal.abort(); edit(path, 'DROP TRIGGER fail_clock'); journal = await a.open(path);
   expect((await journal.get(scope(offer))).cancelRequested).toBe(false);
+  await journal.admission({ kind: 'observe', observation: observation(now + 2) });
   expect(await a.admit(journal, offer, now + 2)).toMatchObject({ status: 'charged', admittedAt: now + 2 });
 });
 

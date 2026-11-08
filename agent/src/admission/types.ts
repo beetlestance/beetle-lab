@@ -17,6 +17,14 @@ export interface PoolConfiguration {
 }
 export interface RuntimeObservation {
   source: string; observedAt: number; status: 'known' | 'unknown'; capacity: Resources;
+  capacityProvenance: {
+    cpuMillis: 'docker-info' | 'synthetic' | 'unavailable'; memoryBytes: 'docker-info' | 'synthetic' | 'unavailable';
+    pids: 'configured-policy' | 'synthetic'; outputBytes: 'configured-policy' | 'synthetic'; stagingBytes: 'configured-policy' | 'synthetic';
+  };
+  diskSource: 'statfs' | 'synthetic' | 'unavailable';
+  daemonId: string | null;
+  /** Docker reports per-container PID enforcement support, not aggregate physical PID capacity. */
+  physicalPidCapacity: null;
   freeDiskBytes: number; controls: string[];
   guards?: { source: 'supervisor'; observedAt: number; controls: ('timeout' | 'output')[] };
   idle?: { source: string; observedAt: number; value: boolean | null };

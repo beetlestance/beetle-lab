@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { encodeJson, validatePrimitive } from '@beetle/contracts';
 import type { AdmissionCommand, ApprovedProfile, LaunchSettlement, PoolConfiguration, Resources, RuntimeObservation, Scope, ValidationIdentity } from '../admission/index.js';
-import { addResources, resourceNames, validResources, MAX_ENGINE_PROFILES } from '../admission/index.js';
+import { addResources, resourceNames, validResources, MAX_ENGINE_PROFILES, MAX_RESOURCE_VALUE } from '../admission/index.js';
 import { canonical, offerInput } from './input.js';
 
 function requireValid(condition: unknown): asserts condition { if (!condition) throw new Error('invalid_input'); }
@@ -13,7 +13,7 @@ function digest(value: string): boolean { return typeof value === 'string' && /^
 function strings(value: string[]): boolean { return Array.isArray(value) && value.length <= 64 && value.every(text); }
 function resources(value: Resources): void {
   requireValid(value && validResources(value));
-  requireValid(resourceNames.every(name => integer(value[name], Math.floor(Number.MAX_SAFE_INTEGER / 256))));
+  requireValid(resourceNames.every(name => integer(value[name], MAX_RESOURCE_VALUE)));
 }
 function scope(key: Scope): void {
   requireValid(key && [key.attemptId, key.organizationId, key.workspaceId].every(value => validatePrimitive('uuid', value).ok));
@@ -56,7 +56,20 @@ function observation(value: RuntimeObservation): void {
   requireValid(value && text(value.source) && integer(value.observedAt));
   requireValid(value.status === 'known' || value.status === 'unknown');
   resources(value.capacity); requireValid(integer(value.freeDiskBytes) && strings(value.controls));
+  provenance(value);
   idleObservation(value); thermalObservation(value); guardObservation(value);
+}
+function provenance(value: RuntimeObservation): void {
+  const sources = value.capacityProvenance;
+  requireValid(sources && typeof sources === 'object');
+  requireValid(['cpuMillis', 'memoryBytes'].every(key => ['docker-info', 'synthetic', 'unavailable'].includes(sources[key as 'cpuMillis'])));
+  requireValid(['pids', 'outputBytes', 'stagingBytes'].every(key => ['configured-policy', 'synthetic'].includes(sources[key as 'pids'])));
+  requireValid(['statfs', 'synthetic', 'unavailable'].includes(value.diskSource) && value.physicalPidCapacity === null);
+  requireValid(value.daemonId === null || typeof value.daemonId === 'string' && /^[A-Za-z0-9:._-]{1,128}$/u.test(value.daemonId));
+  if (value.status === 'known') {
+    requireValid(value.daemonId !== null && value.diskSource !== 'unavailable');
+    requireValid(sources.cpuMillis !== 'unavailable' && sources.memoryBytes !== 'unavailable');
+  }
 }
 function guardObservation(value: RuntimeObservation): void {
   if (!value.guards) return;

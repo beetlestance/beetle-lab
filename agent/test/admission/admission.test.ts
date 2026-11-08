@@ -109,7 +109,9 @@ describe('validation and physical capacity', () => {
   it('rolls back a later SQL failure without partially admitting', async () => {
     const path = f.path(); let journal = await f.configured(path); const a = f.job(); await f.enqueue(journal, a); await f.close(journal);
     const db = new DatabaseSync(path); db.exec("CREATE TRIGGER failure BEFORE UPDATE OF state ON accepted_attempts BEGIN SELECT RAISE(ABORT,'synthetic'); END"); db.close();
-    journal = await f.open(path); await expect(f.admit(journal, a)).rejects.toMatchObject({ code: 'unavailable' }); await journal.abort();
+    journal = await f.open(path);
+    await journal.admission({ kind: 'observe', observation: observation() });
+    await expect(f.admit(journal, a)).rejects.toMatchObject({ code: 'unavailable' }); await journal.abort();
     const inspect = new DatabaseSync(path);
     try {
       expect(inspect.prepare('SELECT state,last_seq,spool_rows,supervisor_high FROM accepted_attempts').get()).toMatchObject({ state: 'offered', last_seq: 0, spool_rows: 0, supervisor_high: 0 });

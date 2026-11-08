@@ -1,5 +1,6 @@
 import type { Resources } from './types.js';
 import { resourceNames } from './types.js';
+export const MAX_RESOURCE_VALUE = Math.floor(Number.MAX_SAFE_INTEGER / 256);
 
 export const zeroResources = (): Resources => ({ cpuMillis: 0, memoryBytes: 0, pids: 0, outputBytes: 0, stagingBytes: 0 });
 export function validResources(value: Resources): boolean {

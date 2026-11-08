@@ -19,11 +19,11 @@ Profiles require cpu/memory/pids/timeout/output. Docker cannot supply timeout/ou
 fresh supervisor guard assertions are mandatory. Output is a bounded-writer/stop
 guard, not a filesystem quota; required `hard-output-quota` is unsupported.
 No host capacities or sensor readings are inferred; unknown/stale stays unknown.
-Trusted composition runs bounded installed-schema/metadata preflight BEFORE offer,
-pinning config SHA256/schema/catalog; engine semantic checks run after admission.
+Trusted preflight pins config SHA256/schema/catalog before offer; full semantics run after admission.
 Hashes are identity, not validation; `immutableOffer` is compatibility only.
 Private evidence/ownership commands never reach browser/wrapper transports.
-Source strings are provenance, not authentication or proof of Docker observations.
+Required CPU/RAM, policy/disk source labels are provenance, not authentication; physical PID capacity stays null.
+Reopen clears samples, not ownership. One full composer owns guards; omission revokes readiness.
 
 Claim create BEFORE backend create; bind exact token/spec/runtime; claim start(now)
 BEFORE backend start. Sole start claim persists epoch1/token/time; replay never grants.

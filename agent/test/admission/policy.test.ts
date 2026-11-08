@@ -56,6 +56,8 @@ describe('freshness and honest optional sensors', () => {
     const path = f.path(); let journal = await f.configured(path); const a = f.job(); await f.enqueue(journal, a, now + 100);
     await f.close(journal); journal = await f.open(path);
     expect(await f.admit(journal, a, now + 99)).toEqual({ kind: 'defer', reason: 'clock_rollback' });
+    expect(await f.admit(journal, a, now + 100)).toEqual({ kind: 'defer', reason: 'capacity_unknown' });
+    await journal.admission({ kind: 'observe', observation: observation(now + 100) });
     expect(await f.admit(journal, a, now + 100)).toMatchObject({ status: 'charged' });
   });
   it('subtracts explicit control reserve and headroom from fresh runtime capacity', async () => {

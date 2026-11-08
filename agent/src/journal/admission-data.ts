@@ -2,6 +2,15 @@ import type { DatabaseSync } from 'node:sqlite';
 import { encodeJson } from '@beetle/contracts';
 import type { AdmissionSnapshot, Candidate, PoolConfiguration, Reservation, RuntimeObservation, Scope } from '../admission/index.js';
 import { Failure, owner } from './sql.js';
+import { admissionInput } from './admission-input.js';
+
+export function storedObservation(raw: unknown): RuntimeObservation | null {
+  if (typeof raw !== 'string') return null;
+  try {
+    const request = admissionInput({ kind: 'observe', observation: JSON.parse(raw) as RuntimeObservation });
+    return request.kind === 'observe' ? request.observation : null;
+  } catch { return null; }
+}
 
 export function settings(db: DatabaseSync, now: number): AdmissionSnapshot {
   const row = db.prepare('SELECT * FROM admission_settings WHERE id=1').get();
@@ -10,7 +19,7 @@ export function settings(db: DatabaseSync, now: number): AdmissionSnapshot {
   if (reservations.length > 64) throw new Failure('unavailable');
   const queue = db.prepare('SELECT id,candidate_json FROM admission_queue WHERE pending=1 ORDER BY id LIMIT 100').all();
   return { configuration: JSON.parse(row.configuration_json) as PoolConfiguration,
-    observation: typeof row.observation_json === 'string' ? JSON.parse(row.observation_json) as RuntimeObservation : null,
+    observation: storedObservation(row.observation_json),
     now, lastClock: Number(row.last_clock),
     reservations: reservations.map(item => JSON.parse(item.reservation_json as string) as Reservation),
     queue: queue.map(item => ({ ...JSON.parse(item.candidate_json as string) as Candidate, order: Number(item.id) })) };

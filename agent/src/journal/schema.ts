@@ -70,6 +70,9 @@ export function initialize(path: string): DatabaseSync {
       db.exec(migration006);
       if (db.prepare('PRAGMA foreign_key_check').get()) throw new Failure('unavailable');
     });
+    // Samples and process-owned guard readiness are not valid startup authority.
+    // Preserve configurations, clocks, queue and charged ownership; require refresh.
+    db.prepare('UPDATE admission_settings SET observation_json=NULL WHERE id=1').run();
     return db;
   } catch (error) { db.close(); throw error; }
 }

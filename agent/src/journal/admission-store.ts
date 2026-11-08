@@ -4,7 +4,7 @@ import type { AdmissionCommand, AdmissionValue, Candidate, Decision, Reservation
 import { decideAdmission, validateCandidate } from '../admission/index.js';
 import { admissionInput } from './admission-input.js';
 import { projectCandidate } from './admission-candidate.js';
-import { candidate, findReservation, settings } from './admission-data.js';
+import { candidate, findReservation, settings, storedObservation } from './admission-data.js';
 import { ownershipCommand } from './ownership.js';
 import { canonical, offerInput } from './input.js';
 import { offerAtomic } from './offers.js';
@@ -14,7 +14,7 @@ import { Failure, owner, transaction } from './sql.js';
 
 function mergeSensors(incoming: RuntimeObservation, old: RuntimeObservation | null): RuntimeObservation {
   if (!old) return incoming;
-  return { ...incoming, ...olderIdle(incoming, old), ...olderThermal(incoming, old), ...olderGuards(incoming, old) };
+  return { ...incoming, ...olderIdle(incoming, old), ...olderThermal(incoming, old) };
 }
 function olderIdle(incoming: RuntimeObservation, old: RuntimeObservation): Partial<RuntimeObservation> {
   return old.idle && (!incoming.idle || incoming.idle.observedAt < old.idle.observedAt) ? { idle: old.idle } : {};
@@ -22,8 +22,11 @@ function olderIdle(incoming: RuntimeObservation, old: RuntimeObservation): Parti
 function olderThermal(incoming: RuntimeObservation, old: RuntimeObservation): Partial<RuntimeObservation> {
   return old.thermal && (!incoming.thermal || incoming.thermal.observedAt < old.thermal.observedAt) ? { thermal: old.thermal } : {};
 }
-function olderGuards(incoming: RuntimeObservation, old: RuntimeObservation): Partial<RuntimeObservation> {
-  return old.guards && (!incoming.guards || incoming.guards.observedAt < old.guards.observedAt) ? { guards: old.guards } : {};
+function equalObservation(incoming: RuntimeObservation, old: RuntimeObservation): RuntimeObservation | null {
+  if (canonical(incoming) === canonical(old)) return null;
+  const { guards: _guards, ...retained } = old; void _guards;
+  // Coarse timestamps cannot order conflicting facts. Never retain readiness or upgrade.
+  return { ...retained, status: 'unknown' };
 }
 export class AdmissionStore {
   constructor(private readonly db: DatabaseSync, private readonly quota: number) {}
@@ -46,10 +49,13 @@ export class AdmissionStore {
   }
   private observe(request: Extract<AdmissionCommand, { kind: 'observe' }>): AdmissionValue {
     const row = this.db.prepare('SELECT observation_json FROM admission_settings WHERE id=1').get();
-    const old = typeof row?.observation_json === 'string' ? JSON.parse(row.observation_json) as RuntimeObservation : null;
-    if (old && old.observedAt >= request.observation.observedAt) return { stored: false };
+    const old = storedObservation(row?.observation_json);
+    if (old && old.observedAt > request.observation.observedAt) return { stored: false };
+    const next = old?.observedAt === request.observation.observedAt
+      ? equalObservation(request.observation, old) : mergeSensors(request.observation, old);
+    if (!next) return { stored: false };
     this.db.prepare('UPDATE admission_settings SET observation_json=? WHERE id=1')
-      .run(encodeJson(mergeSensors(request.observation, old), 65_536)); return { stored: true };
+      .run(encodeJson(next, 65_536)); return { stored: true };
   }
   private offer(request: Extract<AdmissionCommand, { kind: 'offer' }>): AdmissionValue {
     const offer = request.offer;
