@@ -31,3 +31,8 @@ it generated unsupported `count` thresholds for native Trends. Independent revie
 identified that error. Corrected observers use `avg>=0`; the actual native path
 then passed. See [phase semantics](../decisions/010-readiness-metric-isolation.md)
 and [local evidence](local-foundation.md).
+
+Executed at committed source `f92c551` on Node26.7.0/macOS arm64: exit 0, k6
+v2.2.0, one readiness plus one workload request, 48 records/9,036 bytes, complete
+windows, no diagnostics, native duration 109.802 ms and measured HTTP count one.
+The strict collector accepted the result and observed the owned child group absent.

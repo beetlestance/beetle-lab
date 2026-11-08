@@ -141,6 +141,8 @@ The [measurement boundary decision](../../decisions/008-measurement-boundary.md)
 defines the native marker and retrospective wrapper observation; buffered receipt
 does not establish a durable pre-load handshake.
 Result content hashing follows the [seal decision](../../decisions/009-result-seal.md).
+The [k6 outcome decision](../../decisions/011-k6-outcome-evidence.md) defines assertion
+counting, native exit identity, discovery witnesses and decision completeness.
 Readiness sample isolation follows the [scope correction](../../decisions/010-readiness-metric-isolation.md).
 Native compatibility evidence does not qualify container execution or complete runs.
 
