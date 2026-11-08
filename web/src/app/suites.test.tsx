@@ -191,7 +191,7 @@ it('retains invalid Requests JSON while editing request controls', async () => {
 it('blocks save when a JSON part overflows the complete config', async () => {
   const fixture = testClient(read); mount(fixture.client, path);
   const editor = await openJson();
-  const config = { ...parseDraft(starter()), padding: 'x'.repeat(1047800) };
+  const config: Record<string, unknown> = { ...parseDraft(starter()), padding: 'x'.repeat(1047800) };
   fireEvent.change(editor, { target: { value: draftText(config) } });
   fireEvent.click(screen.getByRole('button', { name: 'Form editor' }));
   const requests = screen.getByRole('textbox', { name: 'Requests JSON' });
