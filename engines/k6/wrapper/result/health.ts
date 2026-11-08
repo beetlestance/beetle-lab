@@ -11,12 +11,16 @@ function guard(input: K6ResultInput, metric: string): { count: number | null; kn
 export function healthEvidence(input: K6ResultInput, assertions: AssertionEvidence): HealthEvidence {
   const required = guard(input, 'beetle_required_failures');
   const execution = guard(input, 'beetle_execution_failures');
-  const mismatch = required.count !== null && assertions.failureEvaluations !== null
-    && required.count !== assertions.failureEvaluations;
+  const mismatch = failureMismatch(required.count, assertions);
   return { required: required.count, execution: execution.count,
     requiredFailure: required.known && required.count !== null && required.count > 0 && !required.contradictory,
     complete: required.known && execution.known,
     contradictory: required.contradictory || execution.contradictory || mismatch };
+}
+function failureMismatch(required: number | null, assertions: AssertionEvidence): boolean {
+  if (required === null) return false;
+  if (assertions.knownFailureEvaluations > required) return true;
+  return assertions.failureEvaluations !== null && required !== assertions.failureEvaluations;
 }
 export function measurementComplete(input: K6ResultInput): boolean {
   const snapshot = input.metrics;

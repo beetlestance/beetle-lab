@@ -1,11 +1,12 @@
 import type { EngineResult } from '@beetle/contracts';
 import type { AssertionEvidence, HealthEvidence, K6ResultInput, ThresholdEvidence } from './types.js';
+import { orchestrationExecution } from './orchestration.js';
 type Execution = EngineResult['execution'];
 type Reason = Extract<Execution, { status: 'error' }>['reason'];
 
 export function sealable(input: K6ResultInput): boolean {
   const source = input.process;
-  if (!source.quiescent) return false;
+  if (!input.orchestrationQuiescent || !source.quiescent) return false;
   if (!source.spawned) return source.state === 'not_started';
   return source.state === 'stopped' && source.groupAbsent && source.stdioClosed;
 }
@@ -22,6 +23,8 @@ function causeReason(input: K6ResultInput): Reason | null {
 }
 export function execution(input: K6ResultInput, health: HealthEvidence, contradictory: boolean,
   thresholds: ThresholdEvidence): Execution {
+  const orchestration = orchestrationExecution(input);
+  if (orchestration) return orchestration;
   const observation = { exitCode: input.process.exitCode, stoppedAt: input.terminalObservedAt };
   if (input.process.cause === 'cancelled') return { ...observation, status: 'cancelled', reason: 'cancelled' };
   const reason = errorReason(input, health, contradictory, thresholds);

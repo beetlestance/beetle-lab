@@ -6,7 +6,8 @@ interface Check { attempts: number | null; evaluations: number | null; failures:
 function contradicts(check: Check): boolean {
   const { attempts, evaluations, failures } = check;
   return (evaluations !== null && attempts !== null && evaluations > attempts)
-    || (failures !== null && evaluations !== null && failures > evaluations);
+    || (failures !== null && evaluations !== null && failures > evaluations)
+    || (failures !== null && attempts !== null && failures > attempts);
 }
 function classification(check: Check): 'passed' | 'failed' | 'unknown' {
   if (check.failures !== null && check.failures > 0) return 'failed';
@@ -16,7 +17,8 @@ function classification(check: Check): 'passed' | 'failed' | 'unknown' {
 export function assertionEvidence(input: K6ResultInput): AssertionEvidence {
   const layout = metricLayout(input.suite);
   const counts = { required: 0, passed: 0, failed: 0, unknown: 0 };
-  let failureEvaluations: number | null = 0;
+  let allFailuresKnown = true;
+  let knownFailureEvaluations = 0;
   let contradictory = false;
   for (const [index, request] of input.suite.requests.entries()) {
     const labels = layout.requests[index]!;
@@ -28,8 +30,9 @@ export function assertionEvidence(input: K6ResultInput): AssertionEvidence {
         failures: counter(input.summary, nativeMetricKey('beetle_assertion_failures', tags)) };
       contradictory ||= contradicts(check);
       counts.required++; counts[classification(check)]++;
-      failureEvaluations = check.failures === null || failureEvaluations === null ? null : sum(failureEvaluations, check.failures);
+      if (check.failures === null) allFailuresKnown = false;
+      else knownFailureEvaluations = sum(knownFailureEvaluations, check.failures);
     }
   }
-  return { counts, failureEvaluations, contradictory };
+  return { counts, failureEvaluations: allFailuresKnown ? knownFailureEvaluations : null, knownFailureEvaluations, contradictory };
 }

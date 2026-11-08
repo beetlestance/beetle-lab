@@ -23,6 +23,7 @@ export function fixture(config = configFor()): Mutable<K6ResultInput> {
     attemptId: '00000000-0000-4000-8000-000000000003', generation: 1 },
   process: { spawned: true, exitCode: 0, signal: null, cause: null, metricBytes: 1000, diagnosticBytes: 0,
     collection: 'complete', state: 'stopped', stdioClosed: true, groupAbsent: true, quiescent: true },
+  orchestrationFailure: null, orchestrationQuiescent: true,
   terminalObservedAt: '2026-01-01T00:00:00Z',
   summary: { version: 2, metrics, timing: { testRunDurationMs: 2000 }, rawBytes: 1000, sha256: '1'.repeat(64), nativeCollection: 'complete' },
   metrics: { totals: [], totalsComplete: true, measurement: { complete: true, sourceTimeMs: 1000 },

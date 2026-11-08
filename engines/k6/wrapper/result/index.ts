@@ -3,8 +3,9 @@ import { assertionEvidence } from './assertions.js';
 import { execution, outcome, sealable } from './decision.js';
 import { healthEvidence, measurementComplete } from './health.js';
 import { thresholdEvidence } from './thresholds.js';
+import { validOrchestration } from './orchestration.js';
 import type { AssertionEvidence, HealthEvidence, K6ResultBody, K6ResultInput, K6ResultMapping, ThresholdEvidence } from './types.js';
-export type { K6ResultBody, K6ResultInput, K6ResultMapping } from './types.js';
+export type { K6ResultBody, K6ResultInput, K6ResultMapping, OrchestrationFailure } from './types.js';
 
 function freeze(value: unknown): void {
   if (value === null || typeof value !== 'object') return;
@@ -15,9 +16,11 @@ function snapshot(input: K6ResultInput): K6ResultInput {
   // The accepted compiler IR can contain expanded datasets; it is already frozen.
   const { suite, ...evidence } = input;
   const copy = JSON.parse(encodeJson(evidence, 4_194_304)) as Omit<K6ResultInput, 'suite'>;
+  const result = { ...copy, suite };
+  if (!validOrchestration(result)) throw new Error('invalid_input');
   const expected = ['organizationId', 'workspaceId', 'attemptId', 'generation'];
   if (Object.keys(copy.scope).length !== expected.length || Object.keys(copy.scope).some(key => !expected.includes(key))) throw new Error('invalid_input');
-  return { ...copy, suite };
+  return result;
 }
 function map(input: K6ResultInput): K6ResultMapping {
   if (!sealable(input)) return Object.freeze({ ok: false, code: 'not_quiescent' });
@@ -36,7 +39,7 @@ function map(input: K6ResultInput): K6ResultMapping {
 }
 function decisionComplete(input: K6ResultInput, evidence: { assertions: AssertionEvidence; thresholds: ThresholdEvidence;
   health: HealthEvidence; contradictory: boolean }): boolean {
-  return !evidence.contradictory && evidence.assertions.counts.unknown === 0 && evidence.thresholds.complete && evidence.health.complete
+  return input.orchestrationFailure === null && !evidence.contradictory && evidence.assertions.counts.unknown === 0 && evidence.thresholds.complete && evidence.health.complete
     && measurementComplete(input) && input.process.collection === 'complete' && input.summary?.nativeCollection === 'complete';
 }
 function checked(body: unknown, input: K6ResultInput): K6ResultMapping {
