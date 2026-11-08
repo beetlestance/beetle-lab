@@ -36,6 +36,10 @@ For confirmed normal completion, known required assertion or ordinary SLO failur
 is failed. Ordinary pass requires exit zero and complete passing decision evidence.
 Native exit 99 requires a known failing threshold/guard explanation; other
 unexplained exits are execution errors. No outcome follows from an exit alone.
+Configured SLO/discovery verdicts also require their referenced native statistic:
+Trends need positive count, Rates need positive passes+fails, Counters need known
+count (zero is valid), Gauges need known value. Missing support is unknown even
+with a native boolean: k6 may skip empty sinks. Never numerically reevaluate rules.
 
 Preserve ordinary SLO verdicts and native inverse discovery verdicts. A discovery
 threshold with `ok=false` is an observed stop-comparison witness. Choose the first
