@@ -36,10 +36,13 @@ export function snapshot(input: ExecutionOptions): AcceptedOptions {
   if (attempt.mode !== 'managed' || attempt.deadlineMs > 8_640_000_000_000_000
     || attempt.deadlineMs - attempt.timeoutMs < 0) throw new ExecutionError('profile');
   validateOwner(input);
+  const collectStarted = input.collectStarted;
+  if (collectStarted !== undefined && typeof collectStarted !== 'function') throw new ExecutionError('profile');
   const clock = input.clock ? { wall: input.clock.wall.bind(input.clock), monotonic: input.clock.monotonic.bind(input.clock) }
     : { wall: Date.now, monotonic: performance.now.bind(performance) };
   return Object.freeze({ compiled: Object.freeze({ suite: input.compiled.suite, attempt: Object.freeze(attempt) }),
     binary: path(input.binary), emptyConfig: path(input.emptyConfig), outputDirectory: path(input.outputDirectory),
     uid: input.uid, limits: limits(input.limits), window: input.window, measureStarted: input.measureStarted,
+    ...(collectStarted ? { collectStarted } : {}),
     ...(input.signal ? { signal: input.signal } : {}), clock: Object.freeze(clock) });
 }

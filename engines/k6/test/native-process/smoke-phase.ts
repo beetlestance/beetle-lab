@@ -5,14 +5,15 @@ import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { mkdtemp, writeFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
-import { buildRuntimeScript } from '../../build/index.js';
 import { compiled, dependencies } from '../suite/fixtures.js';
 import { configFor } from '../runtime/fixtures.js';
 import { ProcessActor } from '../../wrapper/process/actor.js';
 import { nodeSpawn, ownedGroup } from '../../wrapper/process/ports.js';
 import { validateProfile } from '../../wrapper/process/profile.js';
-import { MetricStream, MetricAccumulator, createK6MetricProfile } from '../../aggregation/index.js';
-import { readK6Summary } from '../../wrapper/collection/index.js';
+import { Execution } from '../../wrapper/execution/operation.js';
+import { snapshot as executionProfile } from '../../wrapper/execution/profile.js';
+import { productionPorts } from '../../wrapper/execution/ports.js';
+import type { ExecutionReceipt } from '../../wrapper/execution/index.js';
 import { recordResult } from './smoke-result.js';
 
 const binary = process.argv[2];
@@ -20,6 +21,7 @@ if (!binary || !isAbsolute(binary)) throw new Error('Provide the installed absol
 const version = execFileSync(binary, ['version'], { encoding: 'utf8', timeout: 5000,
   maxBuffer: 4096, env: { K6_NO_USAGE_REPORT: 'true' } }).trim();
 assert.match(version, /^k6 v2\.2\.0\b/);
+process.umask(0o077);
 for (const workloadStatus of [200, 500]) {
   const directory = await mkdtemp('/private/tmp/beetle-native-phase-');
   const counts = { ready: 0, work: 0 };
@@ -33,9 +35,10 @@ for (const workloadStatus of [200, 500]) {
   });
   await new Promise<void>((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
   const address = server.address(); assert(address && typeof address !== 'string');
-  let actor: ProcessActor | undefined;
+  let execution: Execution | undefined;
   const cancel = new AbortController();
   const timer = setTimeout(() => cancel.abort(), 15_000);
+  let failure: { error: unknown } | undefined;
   try {
     const config = configFor();
     config.target = `http://127.0.0.1:${address.port}`;
@@ -50,29 +53,37 @@ for (const workloadStatus of [200, 500]) {
     const pins = dependencies(); pins.engine.version = '2.2.0';
     const suite = compiled(config, pins);
     const attempt = { mode: 'managed' as const, timeoutMs: 10_000, deadlineMs: Date.now() + 10_000 };
-    const build = await buildRuntimeScript({ suite, outputDirectory: directory, attempt, maximumBuildBytes: 2_097_152 });
     const emptyConfig = join(directory, 'empty-config.json');
     await writeFile(emptyConfig, '{}\n', { mode: 0o600, flag: 'wx' });
-    const profile = createK6MetricProfile(suite);
-    const accumulator = new MetricAccumulator({ profile, window: async () => {} });
-    const decoder = new MetricStream({ ...profile, maximumBytes: 1_048_576, maximumRecords: 10_000,
-      point: (point, signal) => accumulator.point(point, signal) });
-    // Private compatibility seam only: product entrypoint deliberately permits Linux alone.
-    actor = new ProcessActor({ binary: await realpath(binary), emptyConfig, directory,
-      script: build.scriptPath, attempt, maxMetricStreamBytes: 1_048_576, maxDiagnosticBytes: 65_536,
-      drainTimeoutMs: 1000, signal: cancel.signal, sink: (bytes, delivery) => decoder.push(bytes, delivery.signal) },
-    { spawn: nodeSpawn, group: ownedGroup, validate: validateProfile });
-    const observation = await actor.run();
-    const terminalObservedAt = new Date().toISOString();
+    let markerTime: number | null = null; let collectionTime: string | null = null; let windows = 0;
+    // Only the native factory uses the private Darwin seam; all coordination is production code.
+    execution = new Execution(executionProfile({ compiled: { suite, attempt }, binary: await realpath(binary),
+      emptyConfig, outputDirectory: directory, uid: process.getuid!(), signal: cancel.signal,
+      limits: { maximumBuildBytes: 2_097_152, reservedOutputBytes: 3_145_728, maximumMetricBytes: 1_048_576,
+        maximumMetricRecords: 10_000, maximumDiagnosticBytes: 65_536, drainTimeoutMs: 1000, collectionTimeoutMs: 2000 },
+      window: async () => { windows++; }, measureStarted: async receipt => {
+        assert.equal(markerTime, null); markerTime = receipt.sourceTimeMs;
+      }, collectStarted: async receipt => {
+        assert.notEqual(markerTime, null); assert.equal(collectionTime, null);
+        assert(Date.parse(receipt.observedAt) >= Date.parse(receipt.terminalObservedAt));
+        collectionTime = receipt.terminalObservedAt;
+      } }), { ...productionPorts, native: input => new ProcessActor(input,
+      { spawn: nodeSpawn, group: ownedGroup, validate: validateProfile }) });
+    const first: ExecutionReceipt = await execution.result;
+    const final: ExecutionReceipt = await execution.final; await execution.quiesced;
+    assert(first.ok, JSON.stringify('code' in first ? first.code : null));
+    assert(final.ok, JSON.stringify('code' in final ? final.code : null)); assert.deepEqual(final, first);
+    const observation: ExecutionReceipt['process'] = final.process;
+    const snapshot: ExecutionReceipt['metrics'] = final.metrics;
+    const summary: ExecutionReceipt['summary'] = final.summary;
+    const stream: ExecutionReceipt['stream'] = final.stream;
+    const terminalObservedAt: ExecutionReceipt['terminalObservedAt'] = final.terminalObservedAt;
+    assert(observation && snapshot && summary?.ok && stream && terminalObservedAt);
+    assert.equal(collectionTime, terminalObservedAt);
     console.log(JSON.stringify({ directory, version, counts, observation }));
     assert.equal(observation.exitCode, workloadStatus === 200 ? 0 : 99); assert.equal(observation.collection, 'complete');
-    const stream = decoder.finish();
-    const snapshot = await accumulator.finish(cancel.signal);
+    assert(windows > 0); assert.equal(markerTime, snapshot.measurement.sourceTimeMs);
     assert.deepEqual(snapshot.windowCoverage, { complete: true, latePoints: 0, markerDelayDroppedBuckets: 0 });
-    const collection = readK6Summary({ compiledSuite: suite, outputDirectory: directory, uid: process.getuid!(),
-      process: observation, deadlineMs: attempt.deadlineMs, timeoutMs: 2000 });
-    const summary = await collection.result; await collection.quiesced;
-    assert(summary.ok, JSON.stringify(summary));
     assert.deepEqual(counts, { ready: 1, work: 1 });
     assert.equal(summary.evidence.metrics.http_reqs!.values.count, 1);
     assert.equal(summary.evidence.metrics.http_req_duration!.values.count, 1);
@@ -84,7 +95,7 @@ for (const workloadStatus of [200, 500]) {
     const duration = summary.evidence.timing.testRunDurationMs;
     assert(duration !== null && duration > 0);
     assert(Math.abs(summary.evidence.metrics.http_reqs!.values.rate! - 1000 / duration) < 1e-9);
-    await actor.close(); await decoder.close(); await accumulator.close(); await collection.close();
+    await execution.close();
     const result = await recordResult({ directory, deadlineMs: attempt.deadlineMs, signal: cancel.signal,
       expected: workloadStatus === 200 ? 'passed' : 'failed', evidence: { suite, process: observation,
         terminalObservedAt, summary: summary.evidence, metrics: snapshot, artifacts: [],
@@ -92,8 +103,14 @@ for (const workloadStatus of [200, 500]) {
           workspaceId: randomUUID(), attemptId: randomUUID(), generation: 1 } } });
     console.log(JSON.stringify({ stream, measurement: snapshot.measurement, coverage: snapshot.windowCoverage,
       timing: summary.evidence.timing, requests: summary.evidence.metrics.http_reqs, result }));
-  } finally {
-    clearTimeout(timer); cancel.abort(); await actor?.close();
-    await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+  } catch (error) { failure = { error }; }
+  finally {
+    clearTimeout(timer); cancel.abort();
+    const cleanup = await Promise.allSettled([Promise.resolve().then(() => execution?.close()),
+      new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()))]);
+    const failed = cleanup.filter((result): result is PromiseRejectedResult => result.status === 'rejected');
+    if (failed.length) failure = { error: new AggregateError([...(failure ? [failure.error] : []),
+      ...failed.map(result => result.reason)], 'Owned smoke cleanup failed') };
   }
+  if (failure) throw failure.error;
 }

@@ -105,6 +105,7 @@ export class Execution implements ExecutionOperation {
   }
   private async collect(): Promise<ExecutionReceipt> {
     if (!this.process || !collectible(this.process)) return this.receipt('native');
+    this.phase = 'summary'; await this.notifyCollection();
     const numericComplete = this.process.collection === 'complete' && !this.numbers!.failure && await this.completeNumbers();
     const code = this.collectionCode(numericComplete);
     this.phase = 'summary'; this.fence.check();
@@ -117,6 +118,15 @@ export class Execution implements ExecutionOperation {
     if (!this.summary.ok) return this.receipt(code ?? 'summary');
     await this.collection.quiesced; this.fence.check();
     return this.receipt(code);
+  }
+  private async notifyCollection(): Promise<void> {
+    const callback = this.input.collectStarted;
+    if (!callback) return;
+    if (this.terminalObservedAt === null) throw new ExecutionError('clock');
+    const observedAt = new Date(this.fence.check().wall).toISOString();
+    try { await callback(Object.freeze({ observedAt, terminalObservedAt: this.terminalObservedAt }), this.fence.controller.signal); }
+    catch { this.fence.check(); throw new ExecutionError('summary'); }
+    this.fence.check();
   }
   private collectionCode(numericComplete: boolean): ExecutionCode | undefined {
     if (this.numbers!.failure) return 'metrics';

@@ -15,6 +15,7 @@ export interface ExecutionLimits {
 }
 export interface ExecutionClock { readonly wall: () => number; readonly monotonic: () => number }
 export interface MeasurementReceipt { readonly sourceTimeMs: number; readonly observedAt: string }
+export interface CollectionReceipt { readonly observedAt: string; readonly terminalObservedAt: string }
 export interface ExecutionOptions {
   readonly compiled: CompiledInput;
   readonly binary: string;
@@ -24,6 +25,8 @@ export interface ExecutionOptions {
   readonly limits: ExecutionLimits;
   readonly window: (window: MetricWindow, signal: AbortSignal) => Promise<void>;
   readonly measureStarted: (receipt: MeasurementReceipt, signal: AbortSignal) => Promise<void>;
+  /** Optional lifecycle sink, after confirmed native stop and before numeric/summary collection. */
+  readonly collectStarted?: (receipt: CollectionReceipt, signal: AbortSignal) => Promise<void>;
   readonly signal?: AbortSignal;
   readonly clock?: ExecutionClock;
 }
