@@ -68,7 +68,7 @@ function eventsCopy(input: unknown, key: Readonly<ControlScope>, after: number):
 }
 function transition(expected: Readonly<WrapperCheckpoint> | null, next: Readonly<WrapperCursor>, count: number): void {
   const before = expected ?? { offset: 0, wrapperSeq: 0, dev: next.dev, ino: next.ino };
-  if (next.wrapperSeq !== before.wrapperSeq + count || next.offset <= before.offset) throw new ControlProtocolError();
+  if (next.wrapperSeq !== before.wrapperSeq + count || next.offset - before.offset < count) throw new ControlProtocolError();
   if (next.dev !== before.dev || next.ino !== before.ino) throw new ControlProtocolError();
 }
 /** Defensive JSON snapshot: no getters, unknown fields, shared caller objects or oversized worker messages. */

@@ -56,3 +56,10 @@ it('rejects nested result identity mismatch before worker effects', async () => 
   const event = { ...input.events[0], kind: 'engine.result', payload: result };
   expect(() => copyWrapperBatch({ ...input, events: [event] })).toThrow();
 });
+
+it('requires at least one new LF byte per new frame after a sizeable checkpoint', () => {
+  const first = batch(); const expected = { ...first.next, lastBatchDigest: 'a'.repeat(64) };
+  const events = [2, 3].map(seq => ({ ...structuredClone(first.events[0]!), seq }));
+  expect(() => copyWrapperBatch({ ...first, expected, events,
+    next: { ...first.next, wrapperSeq: 3, offset: first.next.offset + 1 } })).toThrow();
+});

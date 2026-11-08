@@ -113,3 +113,14 @@ it('rejects a control frame one byte over its LF-inclusive limit and oversized b
   await expect(journal.commitWrapperBatch(batch(four))).rejects.toMatchObject({ code: 'invalid_input' });
   expect(await journal.readWrapperCheckpoint(f.key())).toBeNull(); expect((await journal.get(f.key())).lastSeq).toBe(0);
 });
+
+it('rejects multiple new frames with a one-byte cursor advance before any worker effects', async () => {
+  const journal = await f.open(); await journal.immutableOffer(f.offer()); const first = batch([f.wrapper()]);
+  const checkpoint = await journal.commitWrapperBatch(first);
+  const next = batch([f.wrapper(2), f.wrapper(3)], checkpoint, raw(first.events));
+  const impossible = { ...next, next: { ...next.next, offset: checkpoint.offset + 1 } };
+  await expect(journal.commitWrapperBatch(impossible)).rejects.toMatchObject({ code: 'invalid_input' });
+  expect(await journal.readWrapperCheckpoint(f.key())).toEqual(checkpoint);
+  expect(await journal.sourceCursors(f.key())).toEqual({ wrapperSeq: 1, supervisorOrdinal: 0 });
+  expect((await journal.get(f.key())).lastSeq).toBe(1);
+});
