@@ -40,6 +40,7 @@ function WorkspaceScope({ organizationId, workspaceId }: { organizationId: strin
   }, [client, organizationId, workspaceId]);
   return <QueryState query={workspace}>{data => <>
     <Link to={routes.workspaceSettings(organizationId, workspaceId)}>Workspace settings</Link>
+    <Link to={routes.suites(organizationId, workspaceId)}>Suites</Link>
     <p className="workspace-label">Workspace <strong>{data.name}</strong></p><FolderList workspace={data} />
   </>}</QueryState>;
 }

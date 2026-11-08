@@ -11,6 +11,7 @@ import { ThemePicker } from '../components/ThemePicker.js';
 const Organizations = lazy(() => import('../features/organizations/index.js').then(module => ({ default: module.Organizations })));
 const OrganizationScope = lazy(() => import('../features/workspaces/index.js').then(module => ({ default: module.OrganizationScope })));
 
+const Suites = lazy(() => import('../features/suites/index.js').then(module => ({ default: module.Suites })));
 const Settings = lazy(() => import('../features/settings/index.js').then(module => ({ default: module.Settings })));
 
 /** Router is supplied by the host: BrowserRouter in production, MemoryRouter in tests. */
@@ -26,6 +27,8 @@ export function App({ apiClient }: { apiClient: ApiClient }) {
       <main id="main" tabIndex={-1}><div className="topbar"><span>Namespace browser</span><span>Beetle Lab</span></div>
         <EditorProvider><div className="page-content"><Suspense fallback={<p role="status">Loading view…</p>}>
           <Routes>
+            <Route path={routes.suitesPattern} element={<SuitesRoute />} />
+            <Route path={routes.suitePattern} element={<SuitesRoute />} />
             <Route path={routes.settings} element={<Settings scope={{ kind: 'installation' }} />} />
             <Route path={routes.organizationSettingsPattern} element={<SettingsRoute />} />
             <Route path={routes.workspaceSettingsPattern} element={<SettingsRoute />} />
@@ -54,4 +57,10 @@ function SettingsRoute() {
   const scope = workspaceId ? { kind: 'workspace' as const, organizationId, workspaceId }
     : { kind: 'organization' as const, organizationId };
   return <Settings key={JSON.stringify(scope)} scope={scope} />;
+}
+
+function SuitesRoute() {
+  const { organizationId, workspaceId, suiteId } = useParams();
+  if (!validId(organizationId) || !validId(workspaceId) || (suiteId !== undefined && !validId(suiteId))) return <InvalidRoute />;
+  return <Suites key={`${organizationId}/${workspaceId}/${suiteId ?? ''}`} organizationId={organizationId} workspaceId={workspaceId} {...(suiteId ? { suiteId } : {})} />;
 }
