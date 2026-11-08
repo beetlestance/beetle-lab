@@ -87,15 +87,17 @@ class Collection implements OutputIO {
   }
   private async execute(snapshotError: unknown): Promise<void> {
     let outcome: OutputCollectionResult; let cleanup: ReturnType<Collection['setup']> | undefined;
+    let files: OutputFiles | undefined;
     try {
       this.guard(); if (snapshotError) throw snapshotError;
       cleanup = this.setup();
-      const files = new OutputFiles(this.options!, this.ports, this);
+      files = new OutputFiles(this.options!, this.ports, this);
       outcome = { ok: true, ...await verifyOutputs(this.options!, files, this) };
     } catch (error) { outcome = failure(error); }
     let closeFailure = false;
     try { await this.closeHandles([...this.handles]); } catch { closeFailure = true; outcome = { ok: false, reason: 'io' }; }
-    try { if (outcome.ok) this.check(); } catch (error) { outcome = failure(error); }
+    try { if (outcome.ok) { await files!.namedCheck(); this.check(); } }
+    catch (error) { outcome = failure(error); }
     try { if (cleanup) { clearTimeout(cleanup.timer); cleanup.remove(); } }
     catch { outcome = { ok: false, reason: 'io' }; }
     if (closeFailure) this.closeBad(new OutputFailure('io')); else this.closeGood();

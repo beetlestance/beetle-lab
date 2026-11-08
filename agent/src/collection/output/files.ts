@@ -83,11 +83,14 @@ export class OutputFiles {
   async closeOutput(output: OpenOutput): Promise<void> {
     await this.io.closeHandles([...output.chain.slice(1).map(entry => entry.handle), output.file.handle]);
   }
-  async finalCheck(): Promise<void> {
+  async namedCheck(): Promise<void> {
     for (const entry of this.entries.values()) {
       const actual = await this.named(entry.path, entry.directory);
       if (signature(actual) !== signature(entry.stat)) throw new OutputFailure('custody');
     }
+  }
+  async finalCheck(): Promise<void> {
+    await this.namedCheck();
     if (this.root) await this.checkEntry(this.root);
   }
 }

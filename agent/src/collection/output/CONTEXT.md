@@ -16,7 +16,9 @@ case/path aliases and ancestor/descendant conflicts reject before file admission
 Canonical realpaths, 0700 directories/0600 regular single-link files, owner UID,
 exact bigint identities and stable size/mtime/ctime are checked against named
 paths and descriptors. Nested ancestors remain pinned while each file is read.
-All previously observed paths receive a final metadata/canonical-path check.
+All previously observed paths receive a final metadata/canonical-path check,
+then another owned named-path check after every original descriptor close settles.
+The latter retains identity snapshots and never reopens or stats closed descriptors.
 No directory scans, engine-specific interpretation or artifact-body history.
 
 One artifact uses <=64KiB read windows. Only bounded metadata and the <=1MiB
