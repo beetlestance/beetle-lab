@@ -7,15 +7,18 @@ import type { Journal } from '../journal/index.js';
 import type { Stager } from '../staging/index.js';
 import type { Supervisor } from '../supervisor/index.js';
 import type { OutputGuard } from '../guard/index.js';
+import type { TimeoutGuard, TimeoutReason } from '../timeout/index.js';
 
 export interface InstallationOptions {
   readonly journal: Journal;
   readonly catalog: Catalog;
   readonly supervisor: Supervisor;
   readonly guard: Pick<OutputGuard, 'watch'>;
+  readonly timeout: Pick<TimeoutGuard, 'watch'>;
   /** Trusted lookup of preconfigured, verified Stager services; never job-supplied paths/providers. */
   stagerFor(engine: Readonly<InstalledEngine>): Pick<Stager, 'prepare'>;
   readonly wallNow?: () => number;
+  readonly monotonicNow?: () => number;
 }
 export type OfferAcceptance = { readonly accepted: true; readonly snapshot: AttemptSnapshot }
   | { readonly accepted: false; readonly decision: Exclude<Decision, { kind: 'admit' }> };
@@ -31,7 +34,7 @@ export interface InstallationController {
   /** Persist intent and fence owned work; signalling/draining may remain outstanding. */
   cancel(key: Scope): Promise<AttemptSnapshot>;
   /** Private output guard stop; not a runner HTTP operation or a user cancellation. */
-  stop(key: Scope, reason: 'output_limit' | 'artifact_incomplete'): Promise<AttemptSnapshot>;
+  stop(key: Scope, reason: 'output_limit' | 'artifact_incomplete' | TimeoutReason): Promise<AttemptSnapshot>;
   inspect(key: Scope): Promise<InstallationAttempt>;
   /** Original preparation/driver/controller work is retained through shutdown. Journal ownership is external. */
   close(): Promise<void>;

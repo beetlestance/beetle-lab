@@ -3,6 +3,7 @@ import type { AttemptController } from '../controller/index.js';
 import type { Preparation } from '../staging/index.js';
 import type { RuntimePlan } from '../backends/docker/index.js';
 import type { OutputWatch } from '../guard/index.js';
+import type { TimeoutWatch } from '../timeout/index.js';
 import { copyControlScope } from '../control-protocol/index.js';
 import { InstallationError } from './types.js';
 import type { DriveProgress } from './types.js';
@@ -17,6 +18,8 @@ export interface Entry {
   plan?: RuntimePlan;
   watch?: OutputWatch;
   watchClosing?: Promise<void>;
+  timeout?: TimeoutWatch;
+  timeoutClosing?: Promise<void>;
   closing?: Promise<void>;
   users: number;
   version: number;

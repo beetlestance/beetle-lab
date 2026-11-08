@@ -1,7 +1,7 @@
 # Installation execution composition
 
 `createInstallationController` accepts trusted Journal, Catalog, Supervisor and
-preconfigured Stager services. Admission, lifecycle and output evidence remain
+preconfigured Stager, output and timeout services. Admission, lifecycle and output evidence remain
 owned by those public modules. No timers, scheduler or container deletion lives here.
 
 One installation controller owns each journal and at most 64 generation entries;

@@ -7,6 +7,7 @@ import type { Capabilities, ControlEvent, EngineResult } from '@beetle/contracts
 import { createK6ConfigSchema } from '@beetle/contracts/engine-config/k6';
 import { createEngineCatalog } from '../../src/catalog/index.js';
 import { createInstallationController } from '../../src/installation/index.js';
+import { createTimeoutGuard } from '../../src/timeout/index.js';
 import { createAgentServer } from '../../src/transport/index.js';
 import { createScheduler } from '../../src/scheduler/index.js';
 import { createOutputGuard } from '../../src/guard/index.js';
@@ -40,8 +41,10 @@ it.each(['manual', 'scheduled', 'output_limit'] as const)('composes authenticate
   const stager = e.create({ manifest, profile, validation, wallNow: time.wall });
   const guard = createOutputGuard({ root: e.options.root, minimumFreeBytes: 0, intervalMs: 50, ttlMs: 5000,
     stop: (key, reason) => installation.stop(key, reason) });
-  const installation: InstallationController = createInstallationController({ journal: e.owner, supervisor: runtime.manager, catalog, guard,
+  const timeout = createTimeoutGuard({ wallNow: time.wall, stop: (key, reason) => installation.stop(key, reason) });
+  const installation: InstallationController = createInstallationController({ journal: e.owner, supervisor: runtime.manager, catalog, guard, timeout,
     stagerFor: () => stager, wallNow: time.wall });
+  timeout.start();
   guard.start();
   const scheduler = createScheduler({ journal: e.owner, installation, intervalMs: 50 });
   const capabilities = JSON.parse(await readFile('contracts/fixtures/valid/capabilities.json', 'utf8')) as Capabilities;
@@ -96,5 +99,5 @@ it.each(['manual', 'scheduled', 'output_limit'] as const)('composes authenticate
     expect(final.allocation).toMatchObject({ status: 'released', releaseEvidence: { collection: { state: 'finished' } } });
     expect((await server.inject({ url: `${path}/events?after=0`, headers })).json().events).toHaveLength(4);
     expect(runtime.backend.starts).toBe(1);
-  } finally { await server.close(); await scheduler.close(); await installation.close(); await guard.close(); }
+  } finally { await server.close(); await scheduler.close(); await installation.close(); await guard.close(); await timeout.close(); }
 });

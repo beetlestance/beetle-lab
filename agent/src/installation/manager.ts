@@ -2,6 +2,7 @@ import type { AttemptSnapshot } from '@beetle/contracts';
 import type { Scope } from '../admission/index.js';
 import type { Operation } from '../backends/docker/index.js';
 import type { StopReason } from '../journal/index.js';
+import type { TimeoutReason } from '../timeout/index.js';
 import { allocation } from './recovery.js';
 import { releaseProvisional } from './ownership.js';
 import { budgetCopy, checkBudget } from './budget.js';
@@ -80,7 +81,7 @@ export class Manager implements InstallationController {
     entry.cancelled = true; entry.abort.abort();
     if (entry.fresh && !entry.controller) this.closeWatch(entry);
     if (!entry.controller) return Promise.resolve();
-    const urgent = reason === 'output_limit' || reason === 'artifact_incomplete';
+    const urgent = ['output_limit', 'artifact_incomplete', 'clock_integrity'].includes(reason);
     if (entry.cancellation && (!urgent || entry.urgentStop)) return entry.cancellation;
     entry.urgentStop ||= urgent;
     const previous = entry.cancellation;
@@ -95,8 +96,8 @@ export class Manager implements InstallationController {
   cancel(input: Scope): Promise<AttemptSnapshot> {
     return this.requestStop(input, 'cancelled');
   }
-  stop(input: Scope, reason: 'output_limit' | 'artifact_incomplete'): Promise<AttemptSnapshot> {
-    if (reason !== 'output_limit' && reason !== 'artifact_incomplete') return Promise.reject(new InstallationError('invalid_input'));
+  stop(input: Scope, reason: 'output_limit' | 'artifact_incomplete' | TimeoutReason): Promise<AttemptSnapshot> {
+    if (!['output_limit', 'artifact_incomplete', 'timeout', 'clock_integrity'].includes(reason)) return Promise.reject(new InstallationError('invalid_input'));
     return this.requestStop(input, reason);
   }
   private requestStop(input: Scope, reason: StopReason): Promise<AttemptSnapshot> {
@@ -113,13 +114,18 @@ export class Manager implements InstallationController {
     });
   }
   stopGuard(entry: Entry): Promise<void> { return this.requestIntent(entry, 'artifact_incomplete'); }
+  stopTimeout(entry: Entry, reason: TimeoutReason | 'artifact_incomplete'): Promise<void> { return this.requestIntent(entry, reason); }
   private async requestIntent(entry: Entry, reason: StopReason): Promise<void> {
     entry.cancelled = true; entry.abort.abort();
-    const now = this.now(); this.open();
+    const now = reason === 'clock_integrity' ? 0 : this.now(); this.open();
     await this.options.journal.supervision({ key: entry.key, now, cancel: true, reason });
     this.signal(entry, reason);
   }
   private closeWatch(entry: Entry): void {
+    if (entry.timeout) {
+      entry.timeoutClosing ??= entry.timeout.close();
+      void entry.timeoutClosing.catch(() => { entry.cleanupFailed = true; });
+    }
     if (!entry.watch) return;
     entry.watchClosing ??= entry.watch.close();
     void entry.watchClosing?.catch(() => { entry.cleanupFailed = true; });
@@ -137,12 +143,13 @@ export class Manager implements InstallationController {
     if (entry.controller) {
       entry.closing ??= entry.controller.close();
     }
-    const outcomes = await Promise.allSettled([entry.watchClosing, entry.closing]);
+    const outcomes = await Promise.allSettled([entry.watchClosing, entry.timeoutClosing, entry.closing]);
     if (outcomes.some(result => result.status === 'rejected')) { entry.cleanupFailed = true; throw new InstallationError('cleanup'); }
     this.entries.delete(identity(entry.key));
   }
   private async drain(entry: Entry): Promise<void> {
-    const outcomes = await Promise.allSettled([entry.preparation?.result, entry.preparation?.quiesced, entry.cancellation, entry.watchClosing]);
+    const outcomes = await Promise.allSettled([entry.preparation?.result, entry.preparation?.quiesced,
+      entry.cancellation, entry.watchClosing, entry.timeoutClosing]);
     await entry.active?.catch(() => undefined);
     if (entry.cleanupFailed || outcomes.some(value => value.status === 'rejected')) throw new InstallationError('cleanup');
     if (entry.controller) { await this.retire(entry); return; }

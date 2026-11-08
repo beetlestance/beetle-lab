@@ -28,6 +28,11 @@ export function fixture() {
     } };
     const stager = env.create({ wallNow: owner.time.wall });
     const options: InstallationOptions = { journal: env.owner, catalog, supervisor: owner.manager,
+      timeout: { watch: () => {
+        let closed = false;
+        return { status: () => ({ ready: !closed, closed, stopRequested: false, reason: null }),
+          close: async () => { closed = true; } };
+      } },
       guard: { watch: () => {
         let closed = false;
         return { initial: Promise.resolve({ ready: true }),

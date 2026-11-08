@@ -15,7 +15,7 @@ Cached cancellation/write lanes retain and persist that one bounded escalation.
 The existing cancelRequested flag fences all termination requests, including system
 stops. It means stop requested, not proof of user cancellation. Public runner cancel
 still supplies only user cancellation. Internal InstallationController.stop accepts
-output_limit or artifact_incomplete and is never exposed through runner HTTP.
+output_limit, artifact_incomplete, timeout or clock_integrity and is never exposed through runner HTTP.
 Attempt control-intake/checkpoint failures request artifact_incomplete; their
 fail-closed termination is a system failure rather than user cancellation.
 

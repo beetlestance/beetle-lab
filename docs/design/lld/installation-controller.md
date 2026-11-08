@@ -41,9 +41,16 @@ A released/aborted reservation reports durable status without another launch.
 waiting for the active drive lane to finish. The installation retains any original
 cancel/drain promise. `inspect` returns scoped journal/allocation observations for
 trusted composition; raw launch tokens never become browser or engine data.
-Private `stop(key, output_limit|artifact_incomplete)` uses the same bounded ownership
+Private `stop(key, output_limit|artifact_incomplete|timeout|clock_integrity)` uses the same bounded ownership
 with a [durable system reason and escalation](agent-stop.md). It persists intent
 before signalling; its response is not a claim that termination has completed.
+
+The required [timeout watchdog](timeout-guard.md) attaches immediately after
+admission/recovery, before staging. A local monotonic sample precedes the original
+durable supervision read; waiting for that read consumes the original budget.
+Unready fresh work aborts safely without execution. Claimed work persists an owned
+stop fallback and reconciles. Installation closes and drains the timeout watch
+alongside output monitoring; no timer or parallel lifecycle loop lives here.
 
 The required guard service attaches a watch after quiesced staging or exact plan
 reconstruction, before launch. Initial/current readiness gates fresh execution;

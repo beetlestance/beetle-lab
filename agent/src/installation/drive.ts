@@ -6,6 +6,8 @@ import { collectOutputs } from '../collection/output/index.js';
 import { allocation, recover } from './recovery.js';
 import { checkBudget } from './budget.js';
 import { ensureOutputWatch } from './guard.js';
+import { ensureTimeoutWatch } from './timeout.js';
+import type { TimeoutReason } from '../timeout/index.js';
 import type { Entry } from './entry.js';
 import { InstallationError } from './types.js';
 import type { DriveProgress, InstallationOptions } from './types.js';
@@ -17,6 +19,7 @@ export interface DriveContext {
   releaseStage(): void;
   retire(entry: Entry): Promise<void>;
   stopGuard(entry: Entry): Promise<void>;
+  stopTimeout(entry: Entry, reason: TimeoutReason | 'artifact_incomplete'): Promise<void>;
 }
 const failed: DriveProgress = { kind: 'released', collection: 'failed' };
 async function abort(context: DriveContext, entry: Entry): Promise<DriveProgress> {
@@ -82,13 +85,18 @@ function controllerFor(context: DriveContext, entry: Entry, plan: RuntimePlan) {
   return createAttemptController({ journal: context.options.journal, supervisor: context.options.supervisor,
     input: { key: entry.key, plan }, collectOutputs, ...(context.options.wallNow ? { wallNow: context.options.wallNow } : {}) });
 }
+function unstartedWithoutWatch(entry: Entry, current: Reservation, ready: boolean): boolean {
+  return !ready && !current.createToken && !entry.controller;
+}
 async function controllerStep(context: DriveContext, entry: Entry, offer: Offer, current: Reservation,
   budget: Operation): Promise<DriveProgress> {
   let launch = false;
+  const timely = await ensureTimeoutWatch(context, entry, current, budget);
+  if (unstartedWithoutWatch(entry, current, timely)) return abort(context, entry);
   const plan = await planFor(context, entry, offer, current, budget);
   if ('kind' in plan) return plan;
   const ready = await ensureOutputWatch(context, entry, current, budget);
-  if (!ready && !current.createToken && !entry.controller) return abort(context, entry);
+  if (unstartedWithoutWatch(entry, current, ready)) return abort(context, entry);
   if (!entry.controller) {
     context.guard(entry, budget);
     entry.controller = controllerFor(context, entry, plan);

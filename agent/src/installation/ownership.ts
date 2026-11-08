@@ -5,7 +5,7 @@ import type { Entry } from './entry.js';
 
 function provisional(entry: Entry): boolean {
   return entry.users === 0 && !entry.active && !entry.controller && !entry.preparation
-    && !entry.cancellation && !entry.closing && !entry.cleanupFailed;
+    && !entry.cancellation && !entry.closing && !entry.cleanupFailed && !entry.timeout && !entry.watch;
 }
 /** Original public operations retain this probe; uncertain journal observations keep ownership. */
 export async function releaseProvisional(journal: Journal, entries: Map<string, Entry>, entry: Entry): Promise<void> {
