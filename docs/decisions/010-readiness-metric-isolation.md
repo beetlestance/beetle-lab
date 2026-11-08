@@ -1,8 +1,8 @@
 # Readiness and measurement metric scope
 
-Status: selected first-release correction; implementation pending. Current global
-native summaries and accumulators can include preparation traffic. ADR008's marker
-establishes readiness completion, but alone does not filter those metrics.
+Status: implemented private correction; native/Linux qualification pending. The
+shared evidence layout isolates preparation from measured summaries/accumulators.
+ADR008's marker alone cannot filter preparation metrics.
 
 ## Native scope
 
@@ -49,6 +49,17 @@ current 4600-series claim. Use an exact per-metric allowed-series catalogue with
 that ceiling; reject impossible combinations. Do not silently widen the limit.
 Update decoder, accumulator, runtime, threshold/projection mapping and summary
 reader together, including source times, native key and denominator provenance.
+
+Private summary v2 closes timing to `{testRunDurationMs:number|null}` and every
+metric to nativeKey/scope/provenance/values/thresholds; v1 has no fallback. Public
+wire schemas are unchanged. Counter provenance says engine-duration; native Rate
+provenance says samples. Preparation diagnostics are validated then discarded.
+Delayed marker delivery retains exact execute totals and at most three pending
+source-second buckets without publication. Aged-out buckets explicitly increment
+markerDelayDroppedBuckets, separate from source lateness. Source execute samples
+preceding the marker fail measurement; source time is still correlation only.
+Pre-marker gauges retain engine totals; only actual post-marker samples enter
+windows. No carry-forward or synthetic zero is produced.
 
 Require fixture coverage with slow/failing/retried readiness and native phase-tag
 checks, plus existing discovery/rate/gauge regressions. Source research does not

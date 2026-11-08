@@ -1,3 +1,4 @@
+import type { MetricScope } from '../plan/index.js';
 import type { MetricKind, MetricPoint } from './types.js';
 
 export type AccumulatorCode = 'invalid_profile' | 'invalid_point' | 'series_limit' | 'overflow'
@@ -14,6 +15,7 @@ export interface SeriesTotal {
   readonly kind: MetricKind;
   readonly tags: MetricPoint['tags'];
   readonly total: NumericTotal;
+  readonly scope: MetricScope;
 }
 export interface MetricWindow {
   readonly startTimeMs: number;
@@ -24,7 +26,7 @@ export interface MetricSnapshot {
   readonly totals: readonly SeriesTotal[];
   readonly totalsComplete: true;
   readonly measurement: Readonly<{ complete: true; sourceTimeMs: number }>;
-  readonly windowCoverage: Readonly<{ complete: boolean; latePoints: number }>;
+  readonly windowCoverage: Readonly<{ complete: boolean; latePoints: number; markerDelayDroppedBuckets: number }>;
   readonly quantiles: 'unknown';
 }
 export function seriesSnapshot(series: ReadonlyMap<string, SeriesTotal>): readonly SeriesTotal[] {

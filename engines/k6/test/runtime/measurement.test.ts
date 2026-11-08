@@ -62,7 +62,7 @@ it('reserves the marker from user threshold rules and keeps its missing evidence
     .toEqual([{ threshold: 'count>=0', abortOnFail: false }]);
   expect(nativeThresholds(suite)).toEqual(nativeOptions(suite, { mode: 'standalone', timeoutMs: 1000 }).thresholds);
   expect(JSON.parse(summaryProjection(suite, { metrics: {} })).metrics[measureStartedMetric])
-    .toEqual({ values: {}, thresholds: [{ expression: 'count>=0', ok: null }] });
+    .toMatchObject({ nativeKey: measureStartedMetric, scope: 'control', values: {}, thresholds: [{ expression: 'count>=0', ok: null }] });
 });
 it('shares an immutable unique metric catalogue between summary and wrapper admission', () => {
   expect(Object.isFrozen(metricDefinitions)).toBe(true);

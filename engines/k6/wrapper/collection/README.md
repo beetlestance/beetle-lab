@@ -22,7 +22,10 @@ this adapter's guarantee. File reads use no-follow/nonblocking open, regular-fil
 owner, permissions, single-link, identity, size, timestamp and repeated-hash checks.
 Raw input is <=1MiB, <=64 reads, 64KiB windows; JSON is depth64/nodes65536 and each
 collection <=4096. Typed output contains approved numeric stats and exact native
-threshold expressions only. Missing values and null verdicts remain unknown.
+threshold expressions only. Strict v2 validates shared native keys, scope and
+denominator provenance and closed nullable native engine duration; v1 is rejected.
+Missing values and null verdicts remain unknown. Execute counter rates retain
+the native whole-engine duration; gauge/health roots remain engine-scoped.
 
 SHA256 binds raw bytes only. Partial native collection remains partial. This API
 does not authenticate an attempt, classify outcomes, seal results, publish

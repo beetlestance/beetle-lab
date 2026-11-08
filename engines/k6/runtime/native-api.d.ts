@@ -9,7 +9,7 @@ declare module 'k6/http' {
   export default http;
 }
 declare module 'k6/execution' {
-  const execution: { vu: { idInTest: number; iterationInScenario: number };
+  const execution: { vu: { idInTest: number; iterationInScenario: number; metrics: { tags: Record<string, string> } };
     scenario: { startTime: number }; test: { abort(reason: string): never } };
   export default execution;
 }

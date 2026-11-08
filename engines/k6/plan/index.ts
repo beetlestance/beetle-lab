@@ -3,3 +3,4 @@ export type * from './suite.js';
 export * from './selection.js';
 export * from './failure.js';
 export * from './metrics.js';
+export * from './metric-evidence.js';

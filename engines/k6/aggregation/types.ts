@@ -1,4 +1,4 @@
-import type { MetricKind, NativeMetricDefinition } from '../plan/index.js';
+import type { AllowedMetricSeries, MetricTags, MetricKind, NativeMetricDefinition } from '../plan/index.js';
 export type { MetricKind } from '../plan/index.js';
 export type MetricDefinition = NativeMetricDefinition;
 export interface MetricPoint {
@@ -6,7 +6,7 @@ export interface MetricPoint {
   readonly kind: MetricKind;
   readonly value: number;
   readonly timeMs: number;
-  readonly tags: Readonly<{ request?: string; assertion?: string }>;
+  readonly tags: MetricTags;
 }
 export type MetricStreamCode = 'invalid_profile' | 'invalid_record' | 'unknown_metric' | 'invalid_labels'
   | 'stream_limit' | 'record_limit' | 'line_limit' | 'torn_record' | 'cancelled' | 'closed' | 'busy' | 'sink_failed';
@@ -15,6 +15,7 @@ export class MetricStreamError extends Error {
 }
 export interface MetricStreamOptions {
   readonly metrics: readonly MetricDefinition[];
+  readonly allowedSeries?: readonly AllowedMetricSeries[];
   readonly requestLabels: readonly string[];
   readonly assertionLabels: readonly string[];
   /** Total parser work, distinct from persisted artifact quota. */

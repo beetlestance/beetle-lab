@@ -1,4 +1,4 @@
-import type { CompiledSuite, DeepReadonly, MetricKind } from '../../plan/index.js';
+import type { CompiledSuite, DeepReadonly, MetricKind, MetricScope, MetricProvenance } from '../../plan/index.js';
 import type { ProcessObservation } from '../process/index.js';
 
 export interface SummaryOptions {
@@ -13,12 +13,16 @@ export interface SummaryOptions {
 }
 export interface MetricEvidence {
   readonly kind: MetricKind;
+  readonly nativeKey: string;
+  readonly scope: MetricScope;
+  readonly provenance: MetricProvenance;
   readonly values: Readonly<Record<string, number>>;
   readonly missingStats: readonly string[];
   readonly thresholds: readonly { readonly expression: string; readonly ok: boolean | null }[];
 }
 export interface SummaryEvidence {
-  readonly version: 1;
+  readonly version: 2;
+  readonly timing: Readonly<{ testRunDurationMs: number | null }>;
   readonly metrics: Readonly<Record<string, MetricEvidence>>;
   readonly rawBytes: number;
   readonly sha256: string;

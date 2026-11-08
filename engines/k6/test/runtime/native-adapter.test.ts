@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import '../../runtime/native-api.d.ts';
 vi.mock('k6', () => ({ sleep: vi.fn() }));
-vi.mock('k6/execution', () => ({ default: { test: { abort: vi.fn() }, vu: { idInTest: 1, iterationInScenario: 0 }, scenario: { startTime: 0 } } }));
+vi.mock('k6/execution', () => ({ default: { test: { abort: vi.fn() }, vu: { idInTest: 1, iterationInScenario: 0, metrics: { tags: {} } }, scenario: { startTime: 0 } } }));
 vi.mock('k6/http', () => ({ default: { request: vi.fn() } }));
 vi.mock('k6/metrics', () => ({ Counter: class { add = vi.fn(); } }));
 import http from 'k6/http';

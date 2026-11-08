@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { MetricAccumulator, createK6MetricProfile } from '../../../aggregation/index.js';
-import { metricDefinitions, metricLayout } from '../../../plan/index.js';
+import { metricEvidenceLayout } from '../../../plan/index.js';
 import { compiled } from '../../suite/fixtures.js';
 import { marker, point, setup, signal } from './fixtures.js';
 
@@ -42,14 +42,14 @@ it('uses rounded decoder source timestamps, exact bucket edges, bounded lateness
     [1_000_000_000, { kind: 'counter', sum: 64 }],
   ]);
   expect(result.totals[0]!.total).toEqual({ kind: 'counter', sum: 127 });
-  expect(result.windowCoverage).toEqual({ complete: false, latePoints: 1 });
+  expect(result.windowCoverage).toEqual({ complete: false, latePoints: 1, markerDelayDroppedBuckets: 0 });
 });
 
 it('snapshots compiler provenance and deeply freezes profiles and outputs', async () => {
   const suite = structuredClone(compiled()); const profile = createK6MetricProfile(suite);
   const id = profile.requests[0]!.id; suite.requests[0]!.id = 'changed';
   expect(profile.requests[0]!.id).toBe(id);
-  expect(profile.maximumSeries).toBe(metricDefinitions.length * metricLayout(compiled()).labelSets);
+  expect(profile.maximumSeries).toBe(metricEvidenceLayout(compiled()).series.length);
   expect(Reflect.set(profile.requestLabels, '0', 'r999')).toBe(false);
   expect(Object.isFrozen(profile.metrics[0])).toBe(true);
   expect(Object.isFrozen(profile.assertions[0])).toBe(true);
@@ -71,30 +71,31 @@ it('enforces exactly 2000ms lateness even inside the oldest still-open bucket', 
   await feed(point('beetle_requests', 4, 1998));
   const result = await accumulator.finish(signal());
   expect(result.totals[0]!.total).toEqual({ kind: 'counter', sum: 7 });
-  expect(result.windowCoverage).toEqual({ complete: false, latePoints: 1 });
+  expect(result.windowCoverage).toEqual({ complete: false, latePoints: 1, markerDelayDroppedBuckets: 0 });
   expect(windows.map(window => [window.startTimeMs, window.series[0]!.total])).toEqual([
     [1000, { kind: 'counter', sum: 2 }], [3000, { kind: 'counter', sum: 1 }],
   ]);
 });
 
-it('admits all 4600 theoretical profile combinations without an arbitrary smaller cap', async () => {
+it('admits every exact native series at the unchanged200-label boundary and rejects impossible combinations', async () => {
   const suite = structuredClone(compiled()); const request = suite.requests[0]!;
   suite.requests = Array.from({ length: 199 }, (_, index) => ({ ...request, id: `req${index}`, assertions: [] }));
   delete suite.readiness;
   const profile = createK6MetricProfile(suite);
-  expect(profile.maximumSeries).toBe(4600);
+  expect(profile.maximumSeries).toBe(profile.allowedSeries.length);
+  expect(profile.maximumSeries).toBeLessThanOrEqual(4600);
   const accumulator = new MetricAccumulator({ profile, window: async () => {} });
   await accumulator.point(marker(), signal());
-  const tags = [{}, ...profile.requestLabels.map(request => ({ request }))];
-  for (const metric of profile.metrics) {
-    if (metric.name === 'beetle_measure_started') continue;
-    for (const labels of tags) await accumulator.point({ metric: metric.name, kind: metric.kind,
-      value: 1, timeMs: 1000, tags: labels }, signal());
+  for (const entry of profile.allowedSeries) {
+    if (entry.metric === 'beetle_measure_started') continue;
+    await accumulator.point({ metric: entry.metric, kind: entry.kind, value: 1, timeMs: 1000, tags: entry.tags }, signal());
   }
-  expect((await accumulator.finish(signal())).totals).toHaveLength(4400);
+  expect((await accumulator.finish(signal())).totals).toHaveLength(profile.allowedSeries.filter(item => item.scope !== 'prepare' && item.scope !== 'control').length);
   const bad = setup().accumulator;
   await expect(bad.point(point('beetle_requests', 1, 1000, { request: 'r999' }), signal()))
     .rejects.toMatchObject({ code: 'invalid_point' });
+  suite.requests.push({ ...request, id: 'overflow', assertions: [] });
+  expect(() => createK6MetricProfile(suite)).toThrow('metric_limit');
 });
 
 it('bounds retained buckets and series across a long decoder-fed stream without storing history', async () => {
@@ -103,7 +104,7 @@ it('bounds retained buckets and series across a long decoder-fed stream without 
     expect(window.series).toHaveLength(1); emitted++;
   });
   await feed(marker());
-  for (let index = 0; index < 10_000; index++) await feed(point('beetle_requests', 1, index * 1000));
+  for (let index = 0; index < 10_000; index++) await feed(point('beetle_requests', 1, (index + 1) * 1000));
   // Inspect owned state to verify the bound, independently of the output count.
   const state = accumulator as unknown as { totals: Map<unknown, unknown>;
     windows: { buckets: Map<number, Map<unknown, unknown>> } };

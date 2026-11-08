@@ -7,6 +7,7 @@ import type { CompiledSuite, CounterName, DeepReadonly } from '../plan/index.js'
 import { utf8Bytes } from './bounds.js';
 import { attemptDeadline, setupDeadline, validateAttempt } from './attempt.js';
 import type { AttemptBudget } from './attempt.js';
+import { nativeMetric, nativePhase } from './phase.js';
 import { stop } from './failure.js';
 import { createRuntime } from './index.js';
 import type { HttpRequest, HttpResponse, Runtime, RuntimeAdapters } from './types.js';
@@ -44,15 +45,17 @@ export function createNativeRuntime(suite: DeepReadonly<CompiledSuite>, attempt:
   const counters = nativeCounters();
   const adapters: RuntimeAdapters = { now: () => Date.now(), random: () => Math.random(),
     sleep: milliseconds => sleep(milliseconds / 1000), http: nativeHttp,
-    metric: (name, value, tags) => counters.get(name)!.add(value, tags) };
+    metric: (name, value, tags) => nativeMetric(counters.get(name)!, name, value, tags) };
   return createRuntime({ suite, adapters, resolveSecret: stagedSecrets(suite) });
 }
 export function nativeSetup(runtime: Runtime, attempt: AttemptBudget): { deadlineMs: number } {
+  nativePhase('prepare');
   const deadlineMs = attemptDeadline(attempt, Date.now());
   runtime.prepare(deadlineMs);
   return { deadlineMs };
 }
 export function nativeIteration(runtime: Runtime, suite: DeepReadonly<CompiledSuite>, index: number, data: unknown): void {
+  nativePhase('execute');
   const scenario = suite.loadPlan.execution.scenarios[index];
   if (!scenario) execution.test.abort('selection');
   const deadlineMs = Math.min(setupDeadline(data), execution.scenario.startTime + scenario.upperBoundMs - scenario.startOffsetMs);

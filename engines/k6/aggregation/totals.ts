@@ -1,3 +1,4 @@
+import { metricSeriesKey } from '../plan/index.js';
 import { MetricAccumulatorError } from './snapshot.js';
 import type { NumericTotal, SeriesTotal } from './snapshot.js';
 import type { MetricPoint } from './types.js';
@@ -8,7 +9,7 @@ export function checkedSum(left: number, right: number, integer = false): number
   return result;
 }
 export function seriesKey(point: MetricPoint): string {
-  return `${point.metric}:${point.tags.request ?? ''}:${point.tags.assertion ?? ''}`;
+  return metricSeriesKey(point.metric, point.tags);
 }
 function total(point: MetricPoint, previous?: NumericTotal): NumericTotal {
   switch (point.kind) {
@@ -45,5 +46,6 @@ export function accumulate(series: Map<string, SeriesTotal>, point: MetricPoint,
   const key = seriesKey(point);
   const previous = series.get(key);
   if (!previous && series.size >= maximum) throw new MetricAccumulatorError('series_limit');
-  series.set(key, { metric: point.metric, kind: point.kind, tags: point.tags, total: total(point, previous?.total) });
+  series.set(key, { metric: point.metric, kind: point.kind, tags: point.tags, scope: point.tags.phase === 'prepare' ? 'prepare'
+    : ['vus', 'vus_max', 'beetle_required_failures', 'beetle_execution_failures'].includes(point.metric) ? 'engine' : 'execute', total: total(point, previous?.total) });
 }

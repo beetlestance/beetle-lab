@@ -22,8 +22,8 @@ export function readK6Summary(input: SummaryOptions): SummaryCollection {
     try {
       budget.start(); requireStopped(options);
       const raw = await reader.read();
-      const metrics = validateSummary(parseSummary(raw.bytes), options.compiledSuite);
-      outcome = { ok: true, evidence: Object.freeze({ version: 1, metrics, rawBytes: raw.bytes.byteLength,
+      const summary = validateSummary(parseSummary(raw.bytes), options.compiledSuite);
+      outcome = { ok: true, evidence: Object.freeze({ version: 2, ...summary, rawBytes: raw.bytes.byteLength,
         sha256: raw.sha256, nativeCollection: options.process.collection }) };
     } catch (error) { outcome = failure(error, false); }
     try { await reader.close(); resolveQuiet(); }

@@ -4,7 +4,8 @@ import { compiled } from '../../suite/fixtures.js';
 export const signal = () => new AbortController().signal;
 export const point = (metric = 'beetle_requests', value = 1, timeMs = 1000, tags: MetricPoint['tags'] = {}): MetricPoint => {
   const profile = createK6MetricProfile(compiled());
-  return { metric, kind: profile.metrics.find(item => item.name === metric)!.kind, value, timeMs, tags };
+  const entry = profile.allowedSeries.find(item => item.metric === metric && item.scope !== 'prepare')!;
+  return { metric, kind: entry.kind, value, timeMs, tags: { ...entry.tags, ...tags } };
 };
 export const marker = () => point('beetle_measure_started');
 export function setup(sink?: MetricAccumulatorOptions['window']) {

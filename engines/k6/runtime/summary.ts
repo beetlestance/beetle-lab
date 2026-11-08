@@ -1,7 +1,6 @@
 import type { CompiledSuite, DeepReadonly } from '../plan/index.js';
-import { metricDefinitions } from '../plan/index.js';
+import { metricEvidenceLayout } from '../plan/index.js';
 import { BoundedText, quoted } from './bounds.js';
-import { nativeThresholds } from './options.js';
 
 const stats = ['count', 'rate', 'value', 'avg', 'min', 'max', 'med', 'p(50)', 'p(90)', 'p(95)', 'p(99)', 'passes', 'fails'];
 function property(value: unknown, key: string): unknown {
@@ -33,16 +32,19 @@ function thresholdEvidence(output: BoundedText, metric: unknown, expressions: re
 /** Numeric evidence only; never serialize the native root, groups, errors or arbitrary tags. */
 export function summaryProjection(suite: DeepReadonly<CompiledSuite>, data: unknown): string {
   const output = new BoundedText(1_048_576);
-  const thresholds = nativeThresholds(suite);
-  const names = new Set([...metricDefinitions.map(metric => metric.name), ...Object.keys(thresholds)]);
+  const layout = metricEvidenceLayout(suite);
+  const duration = property(property(data, 'state'), 'testRunDurationMs');
+  const timing = typeof duration === 'number' && Number.isFinite(duration) && duration >= 0 ? duration : null;
   const metrics = property(data, 'metrics');
-  output.append('{"version":1,"metrics":{');
+  output.append('{"version":2,"timing":{"testRunDurationMs":' + String(timing) + '},"metrics":{');
   let separator = '';
-  for (const name of names) {
-    const metric = property(metrics, name);
-    output.append(separator); quoted(output, name); output.append(':{"values":');
+  for (const entry of layout.metrics) {
+    const metric = property(metrics, entry.nativeKey);
+    output.append(separator); quoted(output, entry.key); output.append(':{"nativeKey":');
+    quoted(output, entry.nativeKey); output.append(',"scope":'); quoted(output, entry.scope);
+    output.append(',"provenance":' + JSON.stringify(entry.provenance) + ',"values":');
     values(output, metric); output.append(',"thresholds":');
-    thresholdEvidence(output, metric, (thresholds[name] ?? []).map(rule => rule.threshold));
+    thresholdEvidence(output, metric, entry.thresholds.map(rule => rule.threshold));
     output.append('}'); separator = ',';
   }
   output.append('}}\n');

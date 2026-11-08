@@ -32,7 +32,7 @@ function supported(metric: string, stat: string): boolean {
   if (rates.has(metric)) return stat === 'rate';
   return gauges.has(metric) && stat === 'value';
 }
-/** Exact distinct tag maps: aggregate {}, one per request, one per assertion. */
+/** Compiler label budget: aggregate plus assigned request/assertion maps; phase never multiplies it. */
 export function metricLayout(suite: DeepReadonly<CompiledSuite>): MetricLayout {
   let assertion = 0;
   const assertions = (items: readonly { readonly id: string }[]): { id: string; label: string }[] =>

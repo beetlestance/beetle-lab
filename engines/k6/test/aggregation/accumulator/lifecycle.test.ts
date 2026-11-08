@@ -28,13 +28,13 @@ it('snapshots caller points and leaves callback mutation unable to corrupt activ
     expect(Reflect.set(window.series[0]!.total, 'sum', 999)).toBe(false);
     expect(Reflect.set(window.series[0]!.tags, 'request', 'r1')).toBe(false);
   });
-  const input = { ...point('beetle_requests', 2, 4000), tags: { request: 'r0' } };
+  const input = { ...point('beetle_requests', 2, 4000), tags: { phase: 'execute' as const, request: 'r1' } };
   const pending = accumulator.point(input, signal());
-  input.value = 999; input.tags.request = 'r1';
+  input.value = 999; input.tags.request = 'r2';
   await pending;
   const result = await accumulator.finish(signal());
   expect(result.totals.map(item => [item.tags, item.total])).toEqual([
-    [{}, { kind: 'counter', sum: 1 }], [{ request: 'r0' }, { kind: 'counter', sum: 2 }],
+    [{ phase: 'execute', request: 'r0' }, { kind: 'counter', sum: 1 }], [{ phase: 'execute', request: 'r1' }, { kind: 'counter', sum: 2 }],
   ]);
 });
 

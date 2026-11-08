@@ -2,7 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { readK6Summary } from '../../wrapper/collection/index.js';
-import { nativeThresholds } from '../../runtime/index.js';
+import { metricEvidenceLayout } from '../../plan/index.js';
 import { encodeJson } from '../../../../contracts/src/index.js';
 import { fixture } from './fixtures.js';
 
@@ -17,9 +17,9 @@ describe('native projection collection', () => {
       expect(result.evidence.nativeCollection).toBe('partial');
       expect(result.evidence.metrics.vus!.values).toEqual({});
       expect(result.evidence.metrics.vus!.missingStats).toContain('value');
-      const rules = nativeThresholds(f.options.compiledSuite);
-      for (const [name, expected] of Object.entries(rules)) {
-        expect(result.evidence.metrics[name]!.thresholds.map(rule => rule.expression)).toEqual(expected.map(rule => rule.threshold));
+      const rules = metricEvidenceLayout(f.options.compiledSuite);
+      for (const entry of rules.metrics) {
+        expect(result.evidence.metrics[entry.key]!.thresholds.map(rule => rule.expression)).toEqual(entry.thresholds.map(rule => rule.threshold));
       }
       expect(result.evidence.metrics.beetle_required_failures!.thresholds).toEqual([
         { expression: 'count>=0', ok: null }, { expression: 'count==0', ok: true }]);
@@ -45,7 +45,7 @@ describe('native projection collection', () => {
       if (kind === 'order') metric.values.min = 6;
       if (kind === 'threshold') f.json.metrics.beetle_required_failures!.thresholds.reverse();
       if (kind === 'null') metric.values.avg = null;
-      const raw = kind === 'duplicate' ? f.raw.replace('"version":1', '"version":1,"version":1') : JSON.stringify(f.json);
+      const raw = kind === 'duplicate' ? f.raw.replace('"version":2', '"version":2,"version":2') : JSON.stringify(f.json);
       await writeFile(f.path, raw);
       const operation = readK6Summary(f.options);
       expect(await operation.result).toMatchObject({ ok: false, code: 'invalid' }); await operation.quiesced;

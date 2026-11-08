@@ -14,7 +14,7 @@ export async function fixture() {
   ];
   const suite = compiled(config);
   const raw = summaryProjection(suite, { metrics: {
-    http_req_duration: { values: { avg: 3, min: 1, max: 5, count: 2 } },
+    'http_req_duration{phase:execute}': { values: { avg: 3, min: 1, max: 5, count: 2 } },
     beetle_required_failures: { values: { count: 0 }, thresholds: { 'count==0': { ok: true } } },
   } });
   const path = join(outputDirectory, 'beetle-evidence.json');

@@ -9,7 +9,6 @@ Setup consumes prepare once. After successful readiness and a final deadline che
 it emits untagged `beetle_measure_started=1`, including readiness-disabled runs.
 The native metric timestamp is source correlation; buffered receipt is retrospective,
 not a durable pre-load handshake. Missing/duplicate markers are not complete evidence.
-
 Private attempts are managed `{timeoutMs,deadlineMs}` or standalone `{timeoutMs}`,
 with explicit mode and timeout1ms..48h. Managed absolute deadlines include earlier
 prepare/init elapsed; setup also clamps to the accepted timeout. Standalone starts
@@ -22,17 +21,20 @@ trusted staging must cap files before native `open` buffers them. Limits: 64KiB
 per secret, 1MiB total. Values stay in private closures and request use.
 `options.ts` registers required/execution failure thresholds and bounded evidence
 submetrics. Native system tags are disabled; deterministic rN/aN labels admit at
-most 200 distinct tag maps, including the aggregate. HTTP status failures retain
+most 200 assigned label maps, including the aggregate. HTTP status failures retain
 native http_req_failed semantics; assertion and transport classifications differ.
 Redirects are disabled in v1. `throw:true` prevents native request-warning logs;
 the runtime catches and replaces transport errors with fixed classifications.
-
 Bodies default to responseType none. Body/JSON assertions opt into retained text.
 Stock k6 buffers retained bodies before JS. The default 1MiB/max8MiB processing
 cap, plus 65536 JSON nodes/depth32, applies after native buffering; it is NOT a
 download cap. Product execution requires a hard engine RAM limit: oversized native
 buffering may OOM that engine and cannot establish success. No native heap/HTTP
 limit or Docker qualification is claimed by these unit/native compatibility checks.
-Summary projection admits only known numeric metrics and threshold booleans.
+Native setup/default set VU phase prepare/execute; only marker addition clears
+phase, restoring prepare even on failure and before setup I/O emission. Shared
+layout filters measured native summaries; guards/gauges remain engine-scoped.
+Strict private v2 includes native key/scope/denominators and nullable native
+engine duration. Native counter rates include setup; failure rates count samples.
 
 Checks: TypeScript `-p engines/k6/tsconfig.runtime.json`; runtime Vitest tests.

@@ -1,9 +1,9 @@
-import { measureStartedMetric } from '../plan/index.js';
+import { measureStartedMetric, metricSeriesKey } from '../plan/index.js';
 import { isK6MetricProfile } from './profile.js';
 import type { K6MetricProfile } from './profile.js';
 import { MetricAccumulatorError, seriesSnapshot } from './snapshot.js';
 import type { AccumulatorCode, MetricSnapshot, MetricWindow, SeriesTotal } from './snapshot.js';
-import { accumulate } from './totals.js';
+import { accumulate, checkedSum } from './totals.js';
 import { Windows } from './windows.js';
 import type { MetricPoint } from './types.js';
 
@@ -21,9 +21,13 @@ export class MetricAccumulator {
   private closed = false;
   private poisoned: AccumulatorCode | undefined;
   private markerTime: number | undefined;
+  private firstExecuteTime = Infinity;
+  private markerDelayDroppedBuckets = 0;
+  private readonly allowed: ReadonlySet<string>;
   constructor(options: MetricAccumulatorOptions) {
     if (!isK6MetricProfile(options.profile) || typeof options.window !== 'function') throw new MetricAccumulatorError('invalid_profile');
     this.profile = options.profile; this.sink = options.window;
+    this.allowed = new Set(this.profile.allowedSeries.map(item => metricSeriesKey(item.metric, item.tags)));
     this.windows = new Windows(this.profile.maximumSeries);
   }
   private permitted(signal?: AbortSignal): void {
@@ -52,10 +56,23 @@ export class MetricAccumulator {
     return this.issue(signal, async () => {
       this.validate(input);
       if (input.metric === measureStartedMetric) { this.marker(input); return; }
+      if (input.tags.phase === 'prepare') return;
       accumulate(this.totals, input, this.profile.maximumSeries);
-      await this.drain(this.windows.advance(input.timeMs), signal);
+      if (!this.windowEligible(input)) return;
+      const cutoff = this.windows.advance(input.timeMs);
+      if (this.markerTime === undefined) {
+        while (this.windows.takeBefore(cutoff)) this.markerDelayDroppedBuckets = checkedSum(this.markerDelayDroppedBuckets, 1, true);
+      } else await this.drain(cutoff, signal);
       this.permitted(signal); this.windows.add(input);
     });
+  }
+  private windowEligible(input: MetricPoint): boolean {
+    if (input.tags.phase === 'execute' || input.metric === 'dropped_iterations') {
+      this.firstExecuteTime = Math.min(this.firstExecuteTime, input.timeMs);
+      if (this.markerTime !== undefined && input.timeMs < this.markerTime) throw new MetricAccumulatorError('measurement');
+      return true;
+    }
+    return this.markerTime !== undefined && input.timeMs >= this.markerTime;
   }
   private validate(point: MetricPoint): void {
     this.validateMarker(point);
@@ -74,14 +91,13 @@ export class MetricAccumulator {
     if (point.kind === 'rate' && point.value !== 0 && point.value !== 1) throw new MetricAccumulatorError('invalid_point');
   }
   private validateTags(point: MetricPoint): void {
-    const keys = Object.keys(point.tags);
-    if (keys.length === 0) return;
-    const request = keys[0] === 'request' && this.profile.requestLabels.includes(point.tags.request!);
-    const assertion = keys[0] === 'assertion' && this.profile.assertionLabels.includes(point.tags.assertion!);
-    if (keys.length !== 1 || (!request && !assertion)) throw new MetricAccumulatorError('invalid_point');
+    if (!this.allowed.has(metricSeriesKey(point.metric, point.tags))
+      || Object.entries(point.tags).some(([key, value]) => !['phase', 'request', 'assertion'].includes(key) || typeof value !== 'string')) {
+      throw new MetricAccumulatorError('invalid_point');
+    }
   }
   private marker(point: MetricPoint): void {
-    if (this.markerTime !== undefined) throw new MetricAccumulatorError('measurement');
+    if (this.markerTime !== undefined || this.firstExecuteTime < point.timeMs) throw new MetricAccumulatorError('measurement');
     this.markerTime = point.timeMs;
   }
   private async drain(cutoff: number, signal: AbortSignal): Promise<void> {
@@ -99,7 +115,8 @@ export class MetricAccumulator {
       await this.drain(Infinity, signal); this.permitted(signal);
       const result: MetricSnapshot = Object.freeze({ totals: seriesSnapshot(this.totals), totalsComplete: true,
         measurement: Object.freeze({ complete: true, sourceTimeMs: this.markerTime }),
-        windowCoverage: Object.freeze({ complete: this.windows.latePoints === 0, latePoints: this.windows.latePoints }),
+        windowCoverage: Object.freeze({ complete: this.windows.latePoints === 0 && this.markerDelayDroppedBuckets === 0,
+          latePoints: this.windows.latePoints, markerDelayDroppedBuckets: this.markerDelayDroppedBuckets }),
         quantiles: 'unknown' });
       this.closed = true; return result;
     });

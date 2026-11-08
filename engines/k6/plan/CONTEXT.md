@@ -14,3 +14,8 @@ tag maps before execution; requests and assertions use deterministic rN/aN label
 `measureStartedMetric` is reserved control evidence; user SLO/discovery rules cannot
 override it. It shares the aggregate tag map and adds no request/assertion labels.
 Checks: scoped engine Vitest tests and the runtime TypeScript project.
+
+`metricEvidenceLayout` is the pure owner of exact allowed native series and final
+projection keys, native phase-first submetric spelling, scope, threshold rules
+and denominator provenance. The original 200 label budget is unchanged; exact
+per-metric series remain <=4600 without Cartesian expansion.

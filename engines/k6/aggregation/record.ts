@@ -1,3 +1,4 @@
+import { measureStartedMetric, metricSeriesKey } from '../plan/index.js';
 import { MetricStreamError } from './types.js';
 import type { MetricDefinition, MetricKind, MetricPoint, MetricStreamOptions } from './types.js';
 const kinds = new Set<MetricKind>(['counter', 'gauge', 'rate', 'trend']);
@@ -50,24 +51,46 @@ function labels(values: readonly string[], prefix: string): Set<string> {
   if (result.size !== values.length) return fail('invalid_profile');
   return result;
 }
+function exactSeries(options: MetricStreamOptions, required: boolean): ReadonlySet<string> | undefined {
+  const catalogue = options.allowedSeries;
+  if (!catalogue) { if (required) fail('invalid_profile'); return undefined; }
+  if (!Array.isArray(catalogue) || !catalogue.length || catalogue.length > 4600) fail('invalid_profile');
+  const allowed = new Set(catalogue.map(item => metricSeriesKey(item.metric, item.tags)));
+  if (allowed.size !== catalogue.length) fail('invalid_profile');
+  return allowed;
+}
+function exactTags(input: unknown, metric: string, allowed: ReadonlySet<string>): MetricPoint['tags'] {
+  const tags = input === null ? {} : object(input);
+  if (Object.keys(tags).some(key => !['phase', 'request', 'assertion'].includes(key))) return fail('invalid_labels');
+  for (const [key, value] of Object.entries(tags)) {
+    if (typeof value !== 'string') return fail('invalid_labels');
+    if (key === 'phase' && value !== 'prepare' && value !== 'execute') return fail('invalid_labels');
+  }
+  const projected = tags as MetricPoint['tags'];
+  if (!allowed.has(metricSeriesKey(metric, projected))) return fail('invalid_labels');
+  return Object.freeze({ ...projected });
+}
 /** Trusted owned-runtime profile is snapshotted; no sample can add a series. */
 export class Records {
   private readonly metrics = new Map<string, MetricKind>();
   private readonly declared = new Set<string>();
   private readonly requests: Set<string>;
   private readonly assertions: Set<string>;
+  private readonly allowed: ReadonlySet<string> | undefined;
   constructor(options: MetricStreamOptions) {
     if (!Array.isArray(options.metrics) || options.metrics.length < 1 || options.metrics.length > 64) fail('invalid_profile');
     for (const definition of options.metrics) this.definition(definition);
     this.requests = labels(options.requestLabels, 'r'); this.assertions = labels(options.assertionLabels, 'a');
     if (1 + this.requests.size + this.assertions.size > 200) fail('invalid_profile');
+    this.allowed = exactSeries(options, this.metrics.has(measureStartedMetric));
   }
   private definition(definition: MetricDefinition): void {
     if (!definition || typeof definition.name !== 'string' || !/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(definition.name)
       || !kinds.has(definition.kind) || this.metrics.has(definition.name)) fail('invalid_profile');
     this.metrics.set(definition.name, definition.kind);
   }
-  private tags(input: unknown): MetricPoint['tags'] {
+  private tags(input: unknown, metric: string): MetricPoint['tags'] {
+    if (this.allowed) return exactTags(input, metric, this.allowed);
     if (input === null) return Object.freeze({});
     const tags = object(input);
     const entries = Object.entries(tags);
@@ -91,7 +114,7 @@ export class Records {
     if (record.type !== 'Point' || !this.declared.has(name)) return fail('invalid_record');
     const value = numeric(data.value, kind);
     const timeMs = timestamp(data.time);
-    return Object.freeze({ metric: name, kind, value, timeMs, tags: this.tags(data.tags) });
+    return Object.freeze({ metric: name, kind, value, timeMs, tags: this.tags(data.tags, name) });
   }
   private declare(name: string, kind: MetricKind, data: Record<string, unknown>): void {
     if (data.type !== kind || (data.name !== undefined && data.name !== name) || this.declared.has(name)) fail('invalid_record');

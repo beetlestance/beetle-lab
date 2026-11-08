@@ -1,6 +1,5 @@
-import { metricDefinitions, metricLayout } from '../../plan/index.js';
+import { metricEvidenceLayout } from '../../plan/index.js';
 import type { MetricKind } from '../../plan/index.js';
-import { nativeThresholds } from '../../runtime/index.js';
 import { SummaryError } from './types.js';
 import type { MetricEvidence, SummaryOptions } from './types.js';
 
@@ -60,24 +59,34 @@ function verdicts(input: unknown, expressions: readonly string[]): MetricEvidenc
     return Object.freeze({ expression, ok: item.ok });
   }));
 }
-export function validateSummary(input: unknown, suite: SummaryOptions['compiledSuite']): Readonly<Record<string, MetricEvidence>> {
-  // Public layout validates the compiled label profile used by nativeThresholds.
-  metricLayout(suite);
-  const thresholds = nativeThresholds(suite);
-  const definitions = new Map(metricDefinitions.map(item => [item.name, item.kind]));
-  const names = [...new Set([...definitions.keys(), ...Object.keys(thresholds)])];
-  const root = object(input); keys(root, ['version', 'metrics']);
-  if (root.version !== 1) invalid();
-  const metrics = object(root.metrics); keys(metrics, names);
+function timing(input: unknown): Readonly<{ testRunDurationMs: number | null }> {
+  const raw = object(input); keys(raw, ['testRunDurationMs']);
+  const duration = raw.testRunDurationMs;
+  if (duration !== null && (typeof duration !== 'number' || !Number.isFinite(duration) || duration < 0)) invalid();
+  return Object.freeze({ testRunDurationMs: duration as number | null });
+}
+export function validateSummary(input: unknown, suite: SummaryOptions['compiledSuite']): {
+  readonly metrics: Readonly<Record<string, MetricEvidence>>;
+  readonly timing: Readonly<{ testRunDurationMs: number | null }>;
+} {
+  const layout = metricEvidenceLayout(suite);
+  const root = object(input); keys(root, ['version', 'timing', 'metrics']);
+  if (root.version !== 2) invalid();
+  const nativeTiming = timing(root.timing);
+  const metrics = object(root.metrics); keys(metrics, layout.metrics.map(item => item.key));
   const result: Record<string, MetricEvidence> = Object.create(null) as Record<string, MetricEvidence>;
-  for (const name of names) {
-    const kind = definitions.get(name) ?? definitions.get(name.split('{')[0]!);
-    if (!kind) invalid();
-    const metric = object(metrics[name]); keys(metric, ['values', 'thresholds']);
-    const numeric = values(metric.values, kind);
-    result[name] = Object.freeze({ kind, values: numeric,
-      missingStats: Object.freeze(stats[kind].filter(stat => numeric[stat] === undefined)),
-      thresholds: verdicts(metric.thresholds, (thresholds[name] ?? []).map(rule => rule.threshold)) });
+  for (const entry of layout.metrics) {
+    const metric = object(metrics[entry.key]); keys(metric, ['nativeKey', 'scope', 'provenance', 'values', 'thresholds']);
+    if (metric.nativeKey !== entry.nativeKey || metric.scope !== entry.scope) invalid();
+    const provenance = object(metric.provenance); keys(provenance, ['source', 'counterRateDenominator', 'rateDenominator']);
+    for (const key of Object.keys(provenance)) {
+      if (provenance[key] !== entry.provenance[key as keyof typeof entry.provenance]) invalid();
+    }
+    const numeric = values(metric.values, entry.kind);
+    result[entry.key] = Object.freeze({ kind: entry.kind, nativeKey: entry.nativeKey,
+      scope: entry.scope, provenance: entry.provenance, values: numeric,
+      missingStats: Object.freeze(stats[entry.kind].filter(stat => numeric[stat] === undefined)),
+      thresholds: verdicts(metric.thresholds, entry.thresholds.map(rule => rule.threshold)) });
   }
-  return Object.freeze(result);
+  return Object.freeze({ metrics: Object.freeze(result), timing: nativeTiming });
 }
