@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import type { ControlEvent, EngineResult } from '@beetle/contracts';
 import { sealEngineResult } from '@beetle/contracts';
+import { collectOutputs } from '../../src/collection/output/index.js';
 import { createAttemptController } from '../../src/controller/index.js';
 import { AttemptController } from '../../src/controller/attempt.js';
 import { Reader } from '../../src/collection/control/reader.js';
@@ -29,13 +30,13 @@ it('wires actual stager, control filesystem, journal checkpoint and supervisor w
   if (!sealed.ok) throw new Error(sealed.code);
   const event: ControlEvent = { version: '1.0', ...key, seq: 1, phase: 'seal', kind: 'engine.result',
     observedAt: '2026-01-01T00:00:00Z', payload: sealed.value };
+  await writeFile(join(e.rootPath, plan.value.name, 'output', 'engine-result.json'), JSON.stringify(sealed.value), { mode: 0o600 });
   const path = join(e.rootPath, plan.value.name, 'output', 'control.ndjson');
   await writeFile(path, JSON.stringify(event) + '\n', { mode: 0o600 });
   const controller = createAttemptController({ journal: e.owner, supervisor: owner.manager,
     input: { key, plan: plan.value }, wallNow: time.wall, collectOutputs: options => {
       collections++;
-      return { result: Promise.resolve({ ok: true, value: options.reportedResult, verifiedBytes: options.controlBytes }),
-        quiesced: Promise.resolve(), close: () => Promise.resolve() };
+      return collectOutputs(options);
     } });
   try {
     expect(await controller.launch(operation())).toEqual({ kind: 'control', events: 1 });
