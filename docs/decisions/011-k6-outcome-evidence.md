@@ -1,6 +1,6 @@
 # k6 outcome evidence
 
-Status: selected for wrapper implementation; mapper and finalization pending.
+Status: pure mapper implemented; wrapper publication and finalization pending.
 The generic result schema describes structure. This decision defines k6 evidence
 semantics without changing that wire format.
 

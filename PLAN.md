@@ -34,7 +34,7 @@ model assignments, agent packets, concurrency and independent review.
 | --- | --- | --- |
 | Foundation/contracts | Workspace gates; strict runner/staged-input and namespace/settings schemas/clients; Fastify JSON adapter | Full suite/run/result API and route wiring |
 | Agent | Durable offers/events, global admission, launch/cancel supervisor, Docker adapter and charged input staging | Wrapper guards, telemetry, collection/release wiring and actual Linux qualification |
-| k6 | Suite compiler/runtime/builder, phase-isolated metrics, control journal, staged loader, child runner, numeric windows, summary collector and seal codec | Wrapper coordination, live quantiles, target sampler, reports/export |
+| k6 | Suite compiler/runtime/builder, phase-isolated metrics, control journal, staged loader, child runner, numeric windows, summary collector, outcome mapper and seal codec | Wrapper coordination, live quantiles, target sampler, reports/export |
 | Product | Namespace/settings SQLite/API composition, sessions, paired React screens, backend startup and dev proxy | Docker frontend proxy, artifact store, suite/run API/UI, reports and automation client |
 | Qualification | Local contract/unit/SQLite journal checks | Complete execution path, containers, scans, backup/soak and native architecture matrix |
 

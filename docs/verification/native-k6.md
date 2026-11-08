@@ -7,7 +7,8 @@ node --import tsx engines/k6/test/native-process/smoke-phase.ts /absolute/path/t
 ```
 
 The check owns an ephemeral loopback HTTP server and private temporary directory.
-It builds the production runtime, sends one slow readiness request and one workload
+It runs passing HTTP200 and required-assertion-failing HTTP500 cases sequentially.
+Each builds the production runtime, sends one slow readiness request and one workload
 request with one VU/iteration, then streams native NDJSON through the production
 decoder/accumulator and reads the summary through the strict post-stop collector.
 It uses a ten-second native deadline, bounded transport and a fifteen-second
@@ -17,13 +18,18 @@ printed temporary directory for inspection.
 
 Assertions cover preparation exclusion, one untagged marker, complete window
 coverage, exact measured request counts, native Trend summary count, zero required
-failures, source quiescence and the native whole-engine counter-rate denominator.
-The version is checked before execution. A native nonzero exit is never converted
-to a successful test outcome.
+failures in the passing case, source quiescence and the native whole-engine counter-rate denominator.
+The version is checked before execution. The failing ordinary case must retain
+its failure through sealing and replay.
+
+The pure mapper must produce exact assertion-definition counts and complete
+decision evidence for each case: passed/native0 and failed/native99. The shared
+codec content-seals each result, the real control writer syncs and closes it, then
+read-only journal replay and seal verification must recover the same result.
 
 On macOS this deliberately uses the private process test seam. The public product
 entrypoint still requires Linux; this check adds no host-process installation mode.
-It does not establish Docker isolation, memory containment, restart/replay,
+It does not establish Docker isolation, memory containment, agent restart/replay,
 application finalization, either container architecture or release readiness.
 
 The initial phase-isolation candidate exited 104 before issuing requests because
