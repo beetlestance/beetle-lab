@@ -1,5 +1,5 @@
 import { afterEach, beforeEach } from 'vitest';
-import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -59,7 +59,7 @@ export function fixture() {
   let directory = ''; let event: ControlEvent;
   const readers: ControlReader[] = [];
   beforeEach(async () => {
-    directory = await mkdtemp(join(tmpdir(), 'beetle-control-reader-')); await chmod(directory, 0o700);
+    directory = await realpath(await mkdtemp(join(tmpdir(), 'beetle-control-reader-'))); await chmod(directory, 0o700);
     event = JSON.parse(await readFile('contracts/fixtures/valid/wrapper-progress.json', 'utf8')) as ControlEvent;
   });
   afterEach(async () => {

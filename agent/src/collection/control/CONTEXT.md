@@ -4,6 +4,8 @@ Public `createControlReader` accepts a trusted canonical absolute directory,
 expected numeric owner UID, scoped generation, and optional durable checkpoint.
 Construction snapshots validated options without IO. Production uses Node FS and
 the monotonic performance clock; the private constructor/ports support fault tests.
+Read reserves ownership before synchronously snapshotting budget data properties;
+accessors are rejected without invocation. Clock/signal setup cannot displace it.
 
 Reads own one original operation until `quiesced`; public cancellation/deadline
 can settle first. Each pass issues <=8 reads and consumes <=256KiB actual bytes.
@@ -11,6 +13,7 @@ Retained input is one partial frame (<64KiB) plus one <=64KiB window. Exactly on
 immutable <=100-event/256KiB normalized request may await journal acknowledgement.
 Shared control-protocol copies own schema/scope/sequence/serialization admission.
 
+Canonical realpath equality precedes admission and accompanies parent postchecks.
 Directory/file custody checks enforce 0700/0600, expected owner, regular file,
 single link, exact bigint identity, no-follow/nonblocking open, and no shrink.
 Live missing files are provisional only without a checkpoint. Live incomplete

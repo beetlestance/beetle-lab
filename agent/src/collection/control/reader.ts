@@ -6,7 +6,7 @@ import { CONTROL_READ_BYTES, CONTROL_READ_CALLS, ControlReadError } from './type
 import type { ControlReadBudget, ControlReadOperation, ControlReader, ControlReaderOptions, ControlReadValue } from './types.js';
 import { nodePorts } from './ports.js';
 import type { ReaderPorts } from './ports.js';
-import { immediate, Operation, snapshotBudget } from './operation.js';
+import { immediate, Operation } from './operation.js';
 import { Custody, signature } from './custody.js';
 import { Frames } from './frames.js';
 import { Verification } from './verification.js';
@@ -47,11 +47,9 @@ export class Reader implements ControlReader {
   read(input: ControlReadBudget): ControlReadOperation {
     if (this.closed) return immediate('closed');
     if (this.active) return immediate('busy');
-    const budget = snapshotBudget(input, this.ports.now());
-    if (!budget) return immediate('invalid_options');
-    const op = new Operation(budget, this.ports);
-    const operation = op.run(() => this.work(op), () => { this.active = undefined; });
+    const op = new Operation(this.ports); const operation = op.operation;
     this.active = { op, quiesced: operation.quiesced };
+    op.run(input, () => this.work(op), () => { this.active = undefined; });
     return operation;
   }
   private async work(op: Operation): Promise<ControlReadValue> {

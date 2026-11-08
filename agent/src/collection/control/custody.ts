@@ -27,8 +27,13 @@ export class Custody {
   private fileStat: BigIntStats | undefined;
   private highSize = 0n;
   constructor(private readonly directory: string, private readonly uid: number, private readonly ports: ReaderPorts) {}
+  private async canonical(op: Operation): Promise<void> {
+    const canonical = await op.io(() => this.ports.realpath(this.directory));
+    if (canonical !== this.directory) throw new ControlReadError('custody');
+  }
   private async openParent(op: Operation): Promise<void> {
     if (this.parent) return;
+    await this.canonical(op);
     const named = await op.io(() => this.ports.lstat(this.directory, { bigint: true }));
     assertMetadata(named, this.uid, true);
     await op.io(() => this.ports.open(this.directory, constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW)
@@ -57,6 +62,7 @@ export class Custody {
     return this.check(op);
   }
   private async parentCheck(op: Operation): Promise<void> {
+    await this.canonical(op);
     const named = await op.io(() => this.ports.lstat(this.directory, { bigint: true }));
     const actual = await op.io(() => this.parent!.stat({ bigint: true }));
     assertMetadata(named, this.uid, true); assertMetadata(actual, this.uid, true);
