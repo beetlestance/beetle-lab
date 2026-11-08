@@ -13,6 +13,7 @@ The owning document below must be updated before its implementation changes.
 | Attempt orchestration | [Agent controller](lld/agent-controller.md) | Prepared-plan handoff, supervision/control/collection wiring and release ownership |
 | Installed engine preflight | [Engine catalogue](lld/engine-catalog.md) | Trusted schema bundles, manifest/profile pins and recovery identity |
 | Installation execution | [Installation controller](lld/installation-controller.md) | Queue/admit/stage/drive ownership, cancellation and restart |
+| Private runner HTTP | [Agent HTTP](lld/agent-http.md) | Credential/scope fences, bounded runner DTOs and request ownership |
 | Scheduler or instrumentation | [Resources/observability](lld/resources-observability.md) | Admission, budgets, CPU/RAM, phases, telemetry limits |
 | HTTP, CLI or browser | [Application/UI](lld/application-ui.md) | API routes, errors, events, queries, export, frontend |
 

@@ -1,0 +1,20 @@
+import type { Capabilities, ProtocolError } from '@beetle/contracts';
+import type { InstallationController } from '../installation/index.js';
+import type { Journal } from '../journal/index.js';
+
+export interface AgentHttpOptions {
+  /** Trusted mounted installation credential, never returned to the browser or engine. */
+  readonly credential: string;
+  readonly installation: Pick<InstallationController, 'enqueue' | 'cancel'>;
+  readonly journal: Pick<Journal, 'get' | 'readEvents' | 'acknowledge'>;
+  capabilities(): Promise<Capabilities>;
+}
+export interface HttpScope {
+  readonly organizationId: string; readonly workspaceId: string; readonly generation: number;
+}
+export class AgentHttpError extends Error {
+  constructor(readonly status: number, readonly reason: ProtocolError['reason'],
+    readonly retry: ProtocolError['retry'] = 'never') { super('Agent request rejected'); }
+}
+export const HTTP_LIMITS = Object.freeze({ bytes: 1_048_576, operations: 32, sockets: 64,
+  requestMs: 30_000, headers: 128, headerBytes: 16_384 });
