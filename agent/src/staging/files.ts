@@ -30,18 +30,18 @@ export class Files {
         || stat.uid !== this.root.uid || stat.gid !== this.root.gid || (stat.mode & 0o777) !== 0o700) throw new StagingError('io');
     }
   }
-  private async descriptor(path: string, flags: number): Promise<FileHandle> {
-    return this.boundary.wait(() => open(path, flags, 0o400).then(handle => { this.handles.set(handle, {}); return handle; }));
+  private async descriptor(path: string, flags: number, mode = 0o400): Promise<FileHandle> {
+    return this.boundary.wait(() => open(path, flags, mode).then(handle => { this.handles.set(handle, {}); return handle; }));
   }
-  private async regular(handle: FileHandle, size: number): Promise<void> {
+  private async regular(handle: FileHandle, size: number, mode = 0o600): Promise<void> {
     const stat = await this.boundary.wait(() => handle.stat());
     if (!stat.isFile() || stat.nlink !== 1 || stat.uid !== this.root.uid || stat.gid !== this.root.gid
-      || stat.size !== size || (stat.mode & 0o777) !== 0o400) throw new StagingError('io');
+      || stat.size !== size || (stat.mode & 0o777) !== mode) throw new StagingError('io');
   }
   async file(directory: string, name: string, chunks: AsyncIterable<Uint8Array>, limit: number,
     consume?: (chunk: Uint8Array) => void): Promise<number> {
     await this.parents();
-    const handle = await this.descriptor(join(directory, name), constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW | constants.O_WRONLY);
+    const handle = await this.descriptor(join(directory, name), constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW | constants.O_WRONLY, 0o600);
     let size = 0;
     const iterator = chunks[Symbol.asyncIterator](); this.iterator = iterator;
     while (true) {
@@ -54,8 +54,11 @@ export class Files {
       size += chunk.byteLength; consume?.(chunk);
     }
     await this.parents(); await this.regular(handle, size);
+    // Publish read-only only after writes: Desktop may add owner-write on O_WRONLY creation.
+    await this.boundary.wait(() => handle.chmod(0o400));
+    await this.regular(handle, size, 0o400);
     await this.boundary.wait(() => handle.sync());
-    await this.regular(handle, size);
+    await this.regular(handle, size, 0o400);
     await this.boundary.wait(() => this.closeDescriptor(handle));
     return size;
   }

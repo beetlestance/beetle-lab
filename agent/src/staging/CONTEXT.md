@@ -13,8 +13,9 @@ Inputs stream sequentially, <=4 MiB chunks with <=8 MiB retained write windows,
 with exact size/SHA256.
 Secret providers receive frozen scoped authority and declared references only;
 values are <=64 KiB each and <=1 MiB aggregate, never hashed into metadata/errors.
-Files use exclusive/no-follow opens,0400 mode, ownership/single-link checks and
-fsync. Fresh0700 task/input/output/secrets directories refuse reuse. Failure
+Files use exclusive/no-follow opens and checked0600 mode while writing; chmod0400
+and verify before fsync/close/publication. Ownership/single-link checks remain.
+Fresh0700 task/input/output/secrets directories refuse reuse. Failure
 preserves evidence; no release, deletion, dispatch, retry or event append occurs.
 
 Prepare returns result plus quiesced. Cancellation/deadline can resolve failure

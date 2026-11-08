@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { link, lstat, mkdir, readdir, readFile, symlink, writeFile } from 'node:fs/promises';
+import { chmod, link, lstat, mkdir, readdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { runtimeName, RuntimePlan } from '../../src/backends/docker/index.js';
@@ -134,6 +134,7 @@ it('hashes a backpressured multichunk stream and refuses reuse of completed evid
   async function* segmented() {
     for (let offset = 0; offset < data.length; offset += 3) {
       expect((await lstat(path)).size).toBe(offset);
+      expect((await lstat(path)).mode & 0o777).toBe(0o600);
       yield data.subarray(offset, Math.min(offset + 3, data.length));
     }
   }
@@ -143,4 +144,15 @@ it('hashes a backpressured multichunk stream and refuses reuse of completed evid
   const metadata = await readFile(join(e.rootPath, name, 'input/staging.json'));
   const repeat = e.prepare(stager); expect((await repeat.result).ok).toBe(false); await repeat.quiesced;
   expect(await readFile(join(e.rootPath, name, 'input/staging.json'))).toEqual(metadata);
+});
+
+it.each([0o644, 0o400])('rejects changed writable-stage mode %s before writing input bytes', async mode => {
+  const e = await f.environment();
+  const name = runtimeName({ ...scope(e.offer), installationId: e.options.profile.installationId });
+  const path = join(e.rootPath, name, 'input/input-000.bin');
+  async function* changed() { await chmod(path, mode); yield data; }
+  const task = e.prepare(e.create({ providers: { ...e.options.providers, input: async () => changed() } }));
+  expect(await task.result).toEqual({ ok: false, reason: 'io' }); await task.quiesced;
+  expect((await lstat(path)).size).toBe(0);
+  expect(await readdir(join(e.rootPath, name, 'input'))).not.toContain('staging.json');
 });

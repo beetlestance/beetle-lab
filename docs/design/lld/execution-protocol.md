@@ -82,6 +82,10 @@ secret names must match declared references. Readers verify hashes/byte lengths,
 ownership and cross-file identities before executing. Schema validity alone does
 not establish these semantic bindings, an authenticated producer or resource controls.
 No resolved secret value or digest appears in the staging metadata. The stager
+creates private0600 files while writing, then sets and verifies0400 through the
+original descriptor before fsync/close and publication. Writable creation avoids
+Desktop bind filesystems adding owner-write to a requested0400 writable open.
+Permission changes during writing reject; the final read-only contract is unchanged.
 requires the matching charged reservation before writing and enforces the
 [versioned staging allowances](../../decisions/006-agent-staging.md).
 Secret aliases have their own grammar, including leading underscores. The k6
