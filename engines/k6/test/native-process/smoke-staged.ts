@@ -63,7 +63,7 @@ async function run(status: number): Promise<void> {
     const disk = JSON.parse(await readFile(join(owned.outputRoot, 'engine-result.json'), 'utf8')) as unknown;
     const verified = verifyEngineResultSeal(disk, sha256); assert(verified.ok); assert.deepEqual(verified.value, receipt.result);
     for (const artifact of receipt.result.artifacts) {
-      const bytes = await readFile(join(owned.outputRoot, artifact.relativePath));
+      const bytes: Buffer = await readFile(join(owned.outputRoot, artifact.relativePath));
       assert.equal(bytes.length, artifact.bytes); assert.equal(sha256(bytes), artifact.sha256);
     }
     const replay = await replayControl({ directory: owned.outputRoot, scope: receipt.scope, quotaBytes: 262_144, after: 0 },
