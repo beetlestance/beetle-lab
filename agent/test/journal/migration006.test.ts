@@ -20,7 +20,9 @@ function v5(db: DatabaseSync): void {
       PRIMARY KEY(attempt_id,generation,seq), UNIQUE(attempt_id,generation,source,source_key)
     );
     INSERT INTO event_spool_v5 SELECT * FROM event_spool; DROP TABLE event_spool;
-    ALTER TABLE event_spool_v5 RENAME TO event_spool; PRAGMA user_version=5;`);
+    ALTER TABLE event_spool_v5 RENAME TO event_spool;
+    ALTER TABLE supervision_clock DROP COLUMN cancel_reason;
+    ALTER TABLE supervision_clock DROP COLUMN stop_immediate; PRAGMA user_version=5;`);
 }
 it('preserves complete v5 retained rows, snapshots, clocks, ACK and source counters while widening only enrichment storage', async () => {
   const path = f.path(); let journal = await f.open(path); await journal.immutableOffer(f.offer());
@@ -33,7 +35,7 @@ it('preserves complete v5 retained rows, snapshots, clocks, ACK and source count
   expect(await journal.get(f.key())).toMatchObject({ state: 'running', phase: 'execute', lastSeq: 2 });
   await f.close(journal);
   edit(path, db => {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(6);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(7);
     expect(db.prepare('SELECT * FROM accepted_attempts').get()).toMatchObject({ ...before.row, wrapper_checkpoint_json: null, checkpoint_bytes: 0 });
     expect(db.prepare('SELECT * FROM event_spool ORDER BY seq').all()).toEqual(before.events);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);

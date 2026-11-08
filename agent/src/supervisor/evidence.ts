@@ -53,7 +53,7 @@ export class RuntimeEvidence {
       ...(observation.oomKilled ? { reason: 'memory_limit' as const } : this.exitCause(cause)) } };
   }
   private exitCause(cause: LaunchState['cancellation']) {
-    if (cause === 'cancelled' || cause === 'timeout') return { reason: cause };
+    if (cause === 'cancelled' || cause === 'timeout' || cause === 'output_limit' || cause === 'artifact_incomplete') return { reason: cause };
     // The wire has no clock_integrity reason. The actor reports it separately.
     return {};
   }

@@ -1,5 +1,5 @@
 import type { DockerBackend, Observation, RuntimePlan } from '../backends/docker/index.js';
-import type { Journal } from '../journal/index.js';
+import type { Journal, StopReason } from '../journal/index.js';
 import type { Scope } from '../admission/index.js';
 
 export type JournalPort = Pick<Journal, 'admission' | 'readOffer' | 'supervision' | 'sourceCursors' | 'appendSupervisor'>;
@@ -12,7 +12,7 @@ export interface LaunchInput { key: Scope; plan: RuntimePlan }
 export interface LaunchState {
   observation: Observation | null;
   launch: 'unclaimed' | 'unknown' | 'completed' | 'retired';
-  cancellation: 'none' | 'cancelled' | 'timeout' | 'clock_integrity';
+  cancellation: 'none' | StopReason;
 }
 export type SupervisorErrorCode = 'invalid_input' | 'conflict' | 'capacity' | 'journal_unavailable' | 'backend_unavailable' | 'closed';
 export class SupervisorError extends Error {

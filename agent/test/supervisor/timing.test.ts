@@ -63,7 +63,7 @@ describe('supervision timing integrity across delayed callbacks', () => {
     const c = controlled({ ...base, supervision: async input => {
       await base.supervision(input);
       return { clockHighWater: Number.MAX_SAFE_INTEGER, clockFenced: true,
-        cancelRequestedAt: Number.MAX_SAFE_INTEGER, cancelRequested: true };
+        cancelRequestedAt: Number.MAX_SAFE_INTEGER, cancelRequested: true, cancelReason: 'cancelled', immediateStop: false };
     } }, s.time);
     const result = await c.manager.actor(s.input).launch();
     expect(result.cancellation).toBe('clock_integrity'); expect(c.backend.creates).toBe(0);

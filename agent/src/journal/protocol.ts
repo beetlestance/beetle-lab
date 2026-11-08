@@ -8,12 +8,15 @@ export type ErrorCode = 'invalid_input' | 'conflict' | 'not_found' | 'queue_full
 export interface AttemptKey { attemptId: string; organizationId: string; workspaceId: string }
 export interface GenerationKey extends AttemptKey { generation: number }
 /** Private supervisor input. now is trusted wall-clock milliseconds, never job data. */
-export interface SupervisionCommand { key: GenerationKey; now: number; cancel?: true }
+export type StopReason = 'cancelled' | 'timeout' | 'output_limit' | 'artifact_incomplete' | 'clock_integrity';
+export interface SupervisionCommand { key: GenerationKey; now: number; cancel?: true; reason?: StopReason }
 export interface SupervisionState {
   clockHighWater: number;
   clockFenced: boolean;
   cancelRequestedAt: number | null;
   cancelRequested: boolean;
+  cancelReason: StopReason | null;
+  immediateStop: boolean;
 }
 type WithoutSeq<T> = T extends unknown ? Omit<T, 'seq'> : never;
 export interface SupervisorInput { sourceOrdinal: number; event: WithoutSeq<Extract<AgentEvent, { source: 'agent' }>> }

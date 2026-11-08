@@ -35,7 +35,7 @@ function dropProjection(db: DatabaseSync, keepResult = false): void {
     + 'ALTER TABLE accepted_attempts DROP COLUMN snapshot_bytes; ALTER TABLE accepted_attempts DROP COLUMN phase; '
     + 'ALTER TABLE accepted_attempts DROP COLUMN exit_json; ALTER TABLE accepted_attempts DROP COLUMN exit_facts_json;');
   if (!keepResult) db.exec('ALTER TABLE accepted_attempts DROP COLUMN result_json;');
-  db.exec("UPDATE accepted_attempts SET state='admitted'; PRAGMA user_version=4;");
+  db.exec("ALTER TABLE supervision_clock DROP COLUMN cancel_reason; ALTER TABLE supervision_clock DROP COLUMN stop_immediate; UPDATE accepted_attempts SET state='admitted'; PRAGMA user_version=4;");
 }
 
 describe('durable lifecycle projection', () => {
@@ -205,7 +205,7 @@ describe('additive unpublished journal migration', () => {
     expect((await journal.readEvents(f.key(), 0)).events[0]?.kind).toBe('engine.result');
     await f.close(journal);
     inspect(path, db => {
-      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(6);
+      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(7);
       expect(db.prepare('SELECT last_seq,acknowledged_seq,spool_bytes FROM accepted_attempts').get()).toEqual(before);
       expect(db.prepare('SELECT snapshot_bytes FROM accepted_attempts').get()?.snapshot_bytes).toBe(0);
     });

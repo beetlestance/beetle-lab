@@ -28,6 +28,8 @@ export interface InstallationController {
   drive(key: Scope, operation: Operation): Promise<DriveProgress>;
   /** Persist intent and fence owned work; signalling/draining may remain outstanding. */
   cancel(key: Scope): Promise<AttemptSnapshot>;
+  /** Private output guard stop; not a runner HTTP operation or a user cancellation. */
+  stop(key: Scope, reason: 'output_limit' | 'artifact_incomplete'): Promise<AttemptSnapshot>;
   inspect(key: Scope): Promise<InstallationAttempt>;
   /** Original preparation/driver/controller work is retained through shutdown. Journal ownership is external. */
   close(): Promise<void>;

@@ -11,7 +11,7 @@ import type { AdmissionCommand, AdmissionValue } from '../admission/index.js';
 import { admissionInput } from './admission-input.js';
 import { checkedSupervision } from './supervision.js';
 import type { SupervisionCommand, SupervisionState } from './protocol.js';
-export type { SupervisionCommand, SupervisionState } from './protocol.js';
+export type { StopReason, SupervisionCommand, SupervisionState } from './protocol.js';
 import type { AttemptKey, ErrorCode, GenerationKey, Operation, PageRequest, PruneReceipt, Reply, SnapshotPage, SourceCursors, SupervisorInput, Value } from './protocol.js';
 export type { AttemptKey, ErrorCode, GenerationKey, PageRequest, PruneReceipt, SnapshotPage, SourceCursors, SupervisorInput } from './protocol.js';
 export { configDigest } from './admission-input.js';
@@ -87,7 +87,8 @@ export class Journal {
   supervision(input: SupervisionCommand): Promise<SupervisionState> {
     return this.prepare(() => {
       const request = { key: generationKey(input.key), now: input.now,
-        ...(input.cancel !== undefined ? { cancel: input.cancel } : {}) };
+        ...(input.cancel !== undefined ? { cancel: input.cancel } : {}),
+        ...(input.reason !== undefined ? { reason: input.reason } : {}) };
       checkedSupervision(request);
       return { kind: 'supervision', request };
     }) as Promise<SupervisionState>;

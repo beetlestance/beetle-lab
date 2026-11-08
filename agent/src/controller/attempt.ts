@@ -1,5 +1,6 @@
 import { performance } from 'node:perf_hooks';
 import type { Offer } from '@beetle/contracts';
+import type { StopReason } from '../journal/index.js';
 import type { Reservation } from '../admission/index.js';
 import { RuntimePlan } from '../backends/docker/index.js';
 import type { ControlReader, ControlReadValue } from '../collection/control/index.js';
@@ -31,6 +32,8 @@ export class AttemptController {
   private closing: Promise<void> | undefined;
   private closed = false;
   private cancelRequested = false;
+  private cancelReason: StopReason = 'cancelled';
+  private urgentStop = false;
   private cleanupFailed = false;
   private released = false;
   private wallHigh = 0;
@@ -78,7 +81,7 @@ export class AttemptController {
   private async state(launch: boolean): Promise<LaunchState> {
     this.actor ??= this.options.supervisor.actor(this.options.input);
     try {
-      if (this.cancelRequested) return await this.actor.cancel();
+      if (this.cancelRequested) return await this.actor.cancel(this.cancelReason);
       return await (launch ? this.actor.launch() : this.actor.tick());
     } catch { throw new ControllerError('supervisor'); }
   }
@@ -116,7 +119,7 @@ export class AttemptController {
     const stopped = this.stopped(state);
     const value = await this.control(stopped, budget); this.guard(budget);
     if (!value) {
-      if (!stopped) await this.cancel();
+      if (!stopped) await this.cancel('artifact_incomplete');
       return { kind: 'runtime', state };
     }
     if (value.kind === 'batch') return { kind: 'control', events: value.request.events.length };
@@ -173,7 +176,7 @@ export class AttemptController {
     try { return await this.options.journal.commitWrapperBatch(request); }
     catch {
       // Preserve the pending immutable batch for ambiguous replay, but fence further execution.
-      await this.cancel().catch(() => undefined);
+      await this.cancel('artifact_incomplete').catch(() => undefined);
       throw new ControllerError('journal');
     }
   }
@@ -233,26 +236,35 @@ export class AttemptController {
     if (current.status === 'released') { this.released = true; return; }
     if (!current.createToken) { await this.abortUnstarted(); return; }
     this.actor ??= this.options.supervisor.actor(this.options.input);
-    await this.actor.cancel();
+    await this.actor.cancel(this.cancelReason);
     if (!this.stopped(await this.actor.tick())) throw new ControllerError('cleanup');
   }
-  cancel(): Promise<void> {
+  cancel(reason: StopReason = 'cancelled'): Promise<void> {
     if (this.released) return Promise.resolve();
+    if (!this.cancelRequested) this.cancelReason = reason;
     this.cancelRequested = true;
-    if (this.cancellation) return this.cancellation;
+    const urgent = reason === 'output_limit' || reason === 'artifact_incomplete' || reason === 'clock_integrity';
+    const escalation = urgent && !this.urgentStop;
+    this.urgentStop ||= urgent;
+    if (this.cancellation && !escalation) return this.cancellation;
+    const previous = this.cancellation;
     let resolve!: () => void; let reject!: (error: unknown) => void;
     const result = new Promise<void>((yes, no) => { resolve = yes; reject = no; });
     this.cancellation = result;
-    let operation: Promise<unknown>;
-    try {
-      // Fence the actor synchronously, before any already-queued continuation can dispatch.
-      operation = this.actor ? this.actor.cancel() : Promise.resolve().then(() =>
-        this.options.journal.supervision({ key: this.options.input.key, now: this.now(), cancel: true }));
-    } catch (error) { operation = Promise.reject(error); }
-    void operation.then(() => { this.cancellation = undefined; resolve(); }, error => {
-      this.cancellation = undefined; reject(error);
+    const operation = this.cancelOperation(reason);
+    void Promise.allSettled([previous, operation]).then(outcomes => {
+      if (this.cancellation === result) this.cancellation = undefined;
+      const failed = outcomes.find(value => value.status === 'rejected');
+      if (failed?.status === 'rejected') reject(failed.reason); else resolve();
     });
     return result;
+  }
+  private cancelOperation(reason: StopReason): Promise<unknown> {
+    try {
+      // Fence the actor synchronously, before any already-queued continuation can dispatch.
+      return this.actor ? this.actor.cancel(reason) : Promise.resolve().then(() =>
+        this.options.journal.supervision({ key: this.options.input.key, now: this.now(), cancel: true, reason }));
+    } catch (error) { return Promise.reject(error); }
   }
   close(): Promise<void> {
     if (this.closing) return this.closing;

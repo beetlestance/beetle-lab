@@ -13,16 +13,16 @@ function edit(path: string, sql: string): void {
 it('persists first cancellation and sticky clock rollback across reopen and later recovery', async () => {
   const path = f.path(); let journal = await f.open(path); await journal.immutableOffer(f.offer());
   expect(await journal.supervision({ key: f.key(), now: 1000 })).toEqual({
-    clockHighWater: 1000, clockFenced: false, cancelRequested: false, cancelRequestedAt: null });
+    clockHighWater: 1000, clockFenced: false, cancelRequested: false, cancelRequestedAt: null, cancelReason: null, immediateStop: false });
   expect(await journal.supervision({ key: f.key(), now: 1100, cancel: true })).toEqual({
-    clockHighWater: 1100, clockFenced: false, cancelRequested: true, cancelRequestedAt: 1100 });
+    clockHighWater: 1100, clockFenced: false, cancelRequested: true, cancelRequestedAt: 1100, cancelReason: 'cancelled', immediateStop: false });
   expect(await journal.supervision({ key: f.key(), now: 3000, cancel: true })).toMatchObject({ cancelRequestedAt: 1100 });
   await f.close(journal); journal = await f.open(path);
   expect(await journal.supervision({ key: f.key(), now: 2000 })).toEqual({
-    clockHighWater: 3000, clockFenced: true, cancelRequested: true, cancelRequestedAt: 1100 });
+    clockHighWater: 3000, clockFenced: true, cancelRequested: true, cancelRequestedAt: 1100, cancelReason: 'cancelled', immediateStop: false });
   await f.close(journal); journal = await f.open(path);
   expect(await journal.supervision({ key: f.key(), now: 5000, cancel: true })).toEqual({
-    clockHighWater: 5000, clockFenced: true, cancelRequested: true, cancelRequestedAt: 1100 });
+    clockHighWater: 5000, clockFenced: true, cancelRequested: true, cancelRequestedAt: 1100, cancelReason: 'cancelled', immediateStop: false });
 });
 
 it('anchors public durable cancel in its own worker transaction and never resets it', async () => {
@@ -76,7 +76,7 @@ it.each([8_640_000_000_000_001, Number.MAX_SAFE_INTEGER])('preserves cancel inte
   expect((await journal.get(scope(offer))).cancelRequested).toBe(true);
   await a.close(journal); journal = await a.open(path);
   expect(await journal.supervision({ key: scope(offer), now: Date.now() })).toEqual({
-    clockHighWater: high, clockFenced: true, cancelRequested: true, cancelRequestedAt: high });
+    clockHighWater: high, clockFenced: true, cancelRequested: true, cancelRequestedAt: high, cancelReason: 'cancelled', immediateStop: false });
   expect(await a.admit(journal, offer, Date.now())).toMatchObject({ kind: 'reject', reason: 'cancelled' });
 });
 
@@ -101,7 +101,7 @@ it('migrates v3 additively, preserving evidence and fencing an unanchored old ca
     + 'ALTER TABLE accepted_attempts DROP COLUMN exit_facts_json; ALTER TABLE accepted_attempts DROP COLUMN snapshot_bytes; PRAGMA user_version=3;');
   journal = await f.open(path);
   expect(await journal.supervision({ key: f.key(), now: 1234, cancel: true })).toEqual({
-    clockHighWater: 1234, clockFenced: true, cancelRequested: true, cancelRequestedAt: null });
+    clockHighWater: 1234, clockFenced: true, cancelRequested: true, cancelRequestedAt: null, cancelReason: null, immediateStop: false });
   expect((await journal.readEvents(f.key(), 0)).events).toHaveLength(1);
 });
 

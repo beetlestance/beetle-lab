@@ -1,6 +1,7 @@
 import type { AttemptSnapshot } from '@beetle/contracts';
 import type { Scope } from '../admission/index.js';
 import type { Operation } from '../backends/docker/index.js';
+import type { StopReason } from '../journal/index.js';
 import { allocation } from './recovery.js';
 import { releaseProvisional } from './ownership.js';
 import { budgetCopy, checkBudget } from './budget.js';
@@ -75,24 +76,38 @@ export class Manager implements InstallationController {
       }
     });
   }
-  private signal(entry: Entry): Promise<void> {
+  private signal(entry: Entry, reason: StopReason = 'cancelled'): Promise<void> {
     entry.cancelled = true; entry.abort.abort();
     if (!entry.controller) return Promise.resolve();
-    entry.cancellation ??= entry.controller.cancel();
+    const urgent = reason === 'output_limit' || reason === 'artifact_incomplete';
+    if (entry.cancellation && (!urgent || entry.urgentStop)) return entry.cancellation;
+    entry.urgentStop ||= urgent;
+    const previous = entry.cancellation;
+    const operation = entry.controller.cancel(reason);
+    entry.cancellation = Promise.allSettled([previous, operation]).then(outcomes => {
+      if (outcomes.some(value => value.status === 'rejected')) throw new InstallationError('cleanup');
+    });
     // Handle rejection immediately while retaining the original for shutdown.
     void entry.cancellation.catch(() => undefined);
     return entry.cancellation;
   }
   cancel(input: Scope): Promise<AttemptSnapshot> {
+    return this.requestStop(input, 'cancelled');
+  }
+  stop(input: Scope, reason: 'output_limit' | 'artifact_incomplete'): Promise<AttemptSnapshot> {
+    if (reason !== 'output_limit' && reason !== 'artifact_incomplete') return Promise.reject(new InstallationError('invalid_input'));
+    return this.requestStop(input, reason);
+  }
+  private requestStop(input: Scope, reason: StopReason): Promise<AttemptSnapshot> {
     return this.run(async () => {
       const key = scopeCopy(input); this.open(); const entry = this.entry(key);
       entry.users++; entry.version++;
       try {
         entry.cancelled = true; entry.abort.abort();
         const now = this.now(); this.open();
-        await this.options.journal.supervision({ key, now, cancel: true });
+        await this.options.journal.supervision({ key, now, cancel: true, reason });
         // Durable intent is observable while original runtime signalling drains.
-        this.signal(entry);
+        this.signal(entry, reason);
         return await this.options.journal.get(key);
       } finally {
         entry.users--;

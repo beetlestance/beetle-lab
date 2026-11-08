@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { Reservation, AdmissionValue } from '../admission/index.js';
 import type { InspectEvidence, MutationResult, Observation } from '../backends/docker/index.js';
-import type { SupervisionState } from '../journal/index.js';
+import type { StopReason, SupervisionState } from '../journal/index.js';
 import { validateReservation } from './identity.js';
 import { RuntimeEvidence } from './evidence.js';
 import { AttemptTime } from './time.js';
@@ -28,6 +28,7 @@ export class LaunchActor {
   private inFlight: Promise<LaunchState> | undefined;
   private cancellationWrite: Promise<void> | undefined;
   private cancellation: Promise<LaunchState> | undefined;
+  private urgentReason: StopReason | undefined;
   private localCancel = false;
   private closed = false;
   private launchAttempted = false;
@@ -44,14 +45,23 @@ export class LaunchActor {
   launch(): Promise<LaunchState> { return this.run(true); }
   reconcile(): Promise<LaunchState> { return this.run(false); }
   tick(): Promise<LaunchState> { return this.run(false); }
-  cancel(): Promise<LaunchState> {
+  cancel(reason: StopReason = 'cancelled'): Promise<LaunchState> {
     this.localCancel = true;
-    this.cancellation ??= this.persistCancellation().then(async () => {
-      // Launch failure must not discard a separately committed cancellation.
+    const urgent = reason === 'output_limit' || reason === 'artifact_incomplete' || reason === 'clock_integrity';
+    const escalation = urgent && this.urgentReason === undefined;
+    if (urgent) this.urgentReason ??= reason;
+    if (this.cancellation && !escalation) return this.cancellation;
+    const previous = this.cancellation;
+    const write = this.persistCancellation(reason);
+    const work = Promise.resolve().then(async () => {
+      const outcomes = await Promise.allSettled([previous, write]);
+      if (outcomes.some(value => value.status === 'rejected')) throw new SupervisorError('journal_unavailable');
       await this.inFlight?.catch(() => undefined);
+      if (this.urgentReason && !this.durable?.immediateStop) await this.persistCancellation(this.urgentReason);
+      await this.cancellationWrite;
       return this.run(false);
-    }).finally(() => { this.cancellation = undefined; });
-    return this.cancellation;
+    }).finally(() => { if (this.cancellation === work) this.cancellation = undefined; });
+    this.cancellation = work; return work;
   }
   /** Synchronous retirement refuses every outstanding lane; old handles are fenced. */
   retire(): void {
@@ -81,20 +91,25 @@ export class LaunchActor {
     this.current = value;
     this.disposition = value.launchSettlement?.disposition ?? (value.createToken ? 'unknown' : 'unclaimed');
   }
-  private async sample(cancel = false): Promise<void> {
+  private async sample(reason?: StopReason): Promise<void> {
     const issued = this.time.capture();
-    const state = await this.journal.supervision({ key: this.input.key, now: issued.wall, ...(cancel ? { cancel: true } : {}) });
+    const state = await this.journal.supervision({ key: this.input.key, now: issued.wall,
+      ...(reason ? { cancel: true, reason } : {}) });
     this.time.update(state, issued.monotonic, this.current);
     // A delayed pre-cancel read must never erase the concurrent durable cancel.
     if (!this.durable?.cancelRequested || state.cancelRequested) this.durable = state;
     this.localCancel ||= state.cancelRequested;
     if (this.time.fenced()) this.cause = 'clock_integrity';
-    else if (state.cancelRequested && this.cause === 'none') this.cause = 'cancelled';
+    else if (this.durable?.cancelRequested) this.cause = this.durable.cancelReason ?? 'clock_integrity';
   }
-  private persistCancellation(): Promise<void> {
+  private persistCancellation(reason: StopReason = this.cause === 'none' ? 'cancelled' : this.cause): Promise<void> {
     this.localCancel = true;
+    if (reason === 'output_limit' || reason === 'artifact_incomplete' || reason === 'clock_integrity') this.urgentReason ??= reason;
     if (this.cancellationWrite) return this.cancellationWrite;
-    const write = this.sample(true).catch(() => { throw new SupervisorError('journal_unavailable'); })
+    const write = Promise.resolve().then(async () => {
+      await this.sample(reason);
+      if (this.urgentReason && !this.durable?.immediateStop) await this.sample(this.urgentReason);
+    }).catch(() => { throw new SupervisorError('journal_unavailable'); })
       .finally(() => { this.cancellationWrite = undefined; });
     this.cancellationWrite = write;
     return write;
@@ -102,7 +117,7 @@ export class LaunchActor {
   private async gate(): Promise<boolean> {
     await this.sample();
     const permission = this.time.dispatch();
-    if (!permission.allowed) this.cause = permission.reason;
+    if (!permission.allowed && (this.cause === 'none' || permission.reason === 'clock_integrity')) this.cause = permission.reason;
     if (this.cause === 'timeout' || this.cause === 'clock_integrity') await this.persistCancellation();
     return !this.closed && !this.localCancel && permission.allowed;
   }
@@ -193,7 +208,7 @@ export class LaunchActor {
   }
   private record(view: Observation): void {
     if ('id' in view && this.current!.runtimeId !== view.id) throw new SupervisorError('conflict');
-    this.evidence.observe(view, this.time.wall(), this.cause);
+    this.evidence.observe(view, this.time.wall(), this.durable?.cancelReason ?? this.cause);
     this.observation = { ...view };
   }
   private async settle(): Promise<void> {
@@ -215,7 +230,7 @@ export class LaunchActor {
     // Launch has resolved before this lane executes; no in-flight start can escape stop.
     await this.sample();
     const emergency = this.time.fenced();
-    const kill = emergency || this.time.graceElapsed();
+    const kill = emergency || this.durable.immediateStop || this.time.graceElapsed();
     const result = await this.mutate(() => kill
       ? this.backend.kill(this.input.plan, this.time.operation())
       : this.backend.stop(this.input.plan, this.time.operation(), this.time.graceDeadline()));

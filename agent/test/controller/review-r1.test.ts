@@ -71,7 +71,9 @@ for (const ambiguous of [false, true]) {
     try {
       await expect(e.controller.launch(budget())).rejects.toMatchObject({ reason: 'journal' });
       expect((await e.journal.get(e.key)).cancelRequested).toBe(true);
-      expect(e.backend.stops.length).toBeGreaterThan(0);
+      expect(e.backend.kills).toBeGreaterThan(0);
+      expect(await e.journal.supervision({ key: e.key, now: e.time.wall() }))
+        .toMatchObject({ cancelReason: 'artifact_incomplete', immediateStop: true });
       expect(e.readers[0]!.pending).toBeDefined();
       e.time.advance(1);
       expect(await e.controller.tick(budget())).toEqual({ kind: 'control', events: 1 });

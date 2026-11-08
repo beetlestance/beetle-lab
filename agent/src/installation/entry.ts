@@ -5,6 +5,7 @@ import { copyControlScope } from '../control-protocol/index.js';
 import { InstallationError } from './types.js';
 import type { DriveProgress } from './types.js';
 export interface Entry {
+  urgentStop?: boolean;
   readonly key: Readonly<Scope>;
   readonly abort: AbortController;
   active?: Promise<DriveProgress>;

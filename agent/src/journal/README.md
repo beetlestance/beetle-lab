@@ -96,6 +96,9 @@ is distinct from normal five-second cancellation grace; never claim normal timin
 Future versions refuse open. Startup/commands remain 5 seconds;
 queue includes in-flight (default 32/max 64) plus close slot. Unknown commit outcome
 requires reconcile after reopen. close awaits exit; abort terminates pending work.
+Private supervision reason and migration007 preserve first stop attribution plus
+sticky immediate escalation independently. See [durable stops](../../../docs/design/lld/agent-stop.md).
+Historical cancellations with unknown cause stay unknown/fenced, never relabelled.
 Scoped checks (NODE_OPTIONS=--max-old-space-size=1024):
 `npx --no-install vitest run agent/test/journal --maxWorkers=2`
 `npm run typecheck`; `npx --no-install eslint agent/src/journal agent/test/journal`

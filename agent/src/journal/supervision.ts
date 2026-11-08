@@ -11,12 +11,27 @@ export const migration004 = `
   );
   PRAGMA user_version=4;
 `;
-interface ClockRow { high_water: number; fenced: number; cancel_at: number | null }
+interface ClockRow { high_water: number; fenced: number; cancel_at: number | null; cancel_reason: SupervisionState['cancelReason']; stop_immediate: number }
 
 function cancellationTime(prior: ClockRow | undefined, wasCancelled: boolean,
   input: SupervisionCommand, high: number): number | null {
   if (prior?.cancel_at != null) return prior.cancel_at;
   return input.cancel && !wasCancelled ? high : null;
+}
+function cancellationReason(prior: ClockRow | undefined, wasCancelled: boolean,
+  input: SupervisionCommand): SupervisionState['cancelReason'] {
+  if (wasCancelled) return prior?.cancel_reason ?? null;
+  return input.cancel ? input.reason ?? 'cancelled' : null;
+}
+function unanchored(prior: ClockRow | undefined, wasCancelled: boolean): boolean {
+  return wasCancelled && (prior?.cancel_at == null || prior.cancel_reason == null);
+}
+function clockFenced(prior: ClockRow | undefined, wasCancelled: boolean, input: SupervisionCommand, high: number): boolean {
+  return prior?.fenced === 1 || input.now < high || input.reason === 'clock_integrity' || unanchored(prior, wasCancelled);
+}
+function immediate(prior: ClockRow | undefined, input: SupervisionCommand): boolean {
+  return prior?.stop_immediate === 1 || input.reason === 'output_limit'
+    || input.reason === 'artifact_incomplete' || input.reason === 'clock_integrity';
 }
 
 function clockState(prior: ClockRow | undefined, global: number, wasCancelled: boolean,
@@ -25,17 +40,19 @@ function clockState(prior: ClockRow | undefined, global: number, wasCancelled: b
   const high = Math.max(previousHigh, input.now);
   // A pre-v4 cancel has no trustworthy origin. Preserve unknown rather than
   // granting a fresh grace period or inventing an elapsed timestamp.
-  const unanchored = wasCancelled && prior?.cancel_at == null;
   return { clockHighWater: high,
-    clockFenced: prior?.fenced === 1 || input.now < previousHigh || unanchored,
+    clockFenced: clockFenced(prior, wasCancelled, input, previousHigh),
     cancelRequestedAt: cancellationTime(prior, wasCancelled, input, high),
-    cancelRequested: wasCancelled || input.cancel === true };
+    cancelRequested: wasCancelled || input.cancel === true,
+    cancelReason: cancellationReason(prior, wasCancelled, input), immediateStop: immediate(prior, input) };
 }
 
 /** Strict input independently checked on both sides of the worker boundary. */
 export function checkedSupervision(input: SupervisionCommand): void {
   if (!Number.isSafeInteger(input.now) || input.now < 0 || input.now > 8_640_000_000_000_000
     || input.cancel !== undefined && input.cancel !== true) throw new Failure('invalid_input');
+  if (input.reason !== undefined && (input.cancel !== true
+    || !['cancelled', 'timeout', 'output_limit', 'artifact_incomplete', 'clock_integrity'].includes(input.reason))) throw new Failure('invalid_input');
 }
 
 function cancel(db: DatabaseSync, id: number, attemptId: string): void {
@@ -49,16 +66,17 @@ export function supervise(db: DatabaseSync, input: SupervisionCommand): Supervis
   checkedSupervision(input);
   return transaction(db, () => {
     const row = owner(db, input.key);
-    const prior = db.prepare('SELECT high_water,fenced,cancel_at FROM supervision_clock WHERE attempt_id=?')
+    const prior = db.prepare('SELECT high_water,fenced,cancel_at,cancel_reason,stop_immediate FROM supervision_clock WHERE attempt_id=?')
       .get(row.attempt_id) as unknown as ClockRow | undefined;
     const global = db.prepare('SELECT last_clock FROM admission_settings WHERE id=1').get()?.last_clock;
     if (typeof global !== 'number' || !Number.isSafeInteger(global)) throw new Failure('unavailable');
     const state = clockState(prior, global, row.cancel_requested === 1, input);
     if (input.cancel) cancel(db, row.id, row.attempt_id);
-    db.prepare(`INSERT INTO supervision_clock(attempt_id,high_water,fenced,cancel_at) VALUES (?,?,?,?)
+    db.prepare(`INSERT INTO supervision_clock(attempt_id,high_water,fenced,cancel_at,cancel_reason,stop_immediate) VALUES (?,?,?,?,?,?)
       ON CONFLICT(attempt_id) DO UPDATE SET high_water=excluded.high_water,
-      fenced=excluded.fenced,cancel_at=excluded.cancel_at`).run(row.attempt_id,
-      state.clockHighWater, Number(state.clockFenced), state.cancelRequestedAt);
+      fenced=excluded.fenced,cancel_at=excluded.cancel_at,cancel_reason=excluded.cancel_reason,
+      stop_immediate=excluded.stop_immediate`).run(row.attempt_id,
+      state.clockHighWater, Number(state.clockFenced), state.cancelRequestedAt, state.cancelReason, Number(state.immediateStop));
     return state;
   });
 }
