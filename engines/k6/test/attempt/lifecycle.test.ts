@@ -7,7 +7,7 @@ import { runCompiledK6 } from '../../wrapper/execution/index.js';
 
 const cleanups: (() => Promise<void>)[] = [];
 beforeEach(resetNative);
-afterEach(async () => { await Promise.all(cleanups.splice(0).map(clean => clean())); });
+afterEach(async () => { vi.useRealTimers(); await Promise.all(cleanups.splice(0).map(clean => clean())); });
 async function setup() { const value = await fixture(); cleanups.push(value.cleanup); return value; }
 function deferred() {
   let resolve!: () => void;
@@ -61,6 +61,19 @@ it('a pending original native close prevents seal and remains owned', async () =
   await vi.waitFor(() => expect(native.closes).toBe(1));
   expect(settled).toBe(false); await expect(readFile(join(f.outputRoot, 'engine-result.json'))).rejects.toMatchObject({ code: 'ENOENT' });
   close.resolve(); expect((await running).ok).toBe(true);
+});
+it('captures heartbeat cancellation while the actual original native cleanup remains pending', async () => {
+  const f = await setup();
+  for (const phase of f.manifest.phases) phase.timeoutMs = 60_000;
+  await f.save(); vi.useFakeTimers();
+  const close = deferred(); native.blockClose = close.promise;
+  let settled = false; const running = f.run().then(value => { settled = true; return value; });
+  await vi.waitFor(() => expect(native.closes).toBe(1)); f.controller.abort();
+  await vi.advanceTimersByTimeAsync(6000); expect(settled).toBe(false);
+  close.resolve(); const result = await running;
+  expect(result.reason).toBe('cancelled'); expect(result.result).toBeNull(); expect(native.calls).toBe(1);
+  const before = await readFile(join(f.outputRoot, 'control.ndjson'), 'utf8');
+  await vi.advanceTimersByTimeAsync(10_000); expect(await readFile(join(f.outputRoot, 'control.ndjson'), 'utf8')).toBe(before);
 });
 it('a timed-out original notification must quiesce before an eligible seal', async () => {
   const f = await setup(); const notification = deferred(); let calls = 0; let aborted = false;

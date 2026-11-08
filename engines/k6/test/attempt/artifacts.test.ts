@@ -4,6 +4,8 @@ import { join } from 'node:path';
 import { afterEach, expect, it, vi } from 'vitest';
 import { Artifacts } from '../../wrapper/attempt/artifacts.js';
 import { AttemptFence } from '../../wrapper/attempt/fence.js';
+import { numericAllowance, reserveOutput } from '../../wrapper/attempt/reservation.js';
+import { encodeJson } from '@beetle/contracts';
 
 vi.mock('node:fs/promises', async importOriginal => {
   const actual = await importOriginal<typeof fs>();
@@ -48,4 +50,19 @@ it('rejects cancellation before any artifact IO', async () => {
   const f = await setup(); f.fence.stop('cancelled');
   await expect(f.artifacts.numeric({ version: 1 })).rejects.toMatchObject({ reason: 'cancelled' });
   expect(await fs.readdir(f.directory)).toEqual([]);
+});
+it('counts LF and accepts the exact remaining collect allowance', async () => {
+  const f = await setup(); const value = { version: 1, quantiles: 'unknown' };
+  const bytes = Buffer.byteLength(encodeJson(value, 1_048_576)) + 1;
+  const remaining = numericAllowance(reserveOutput(8_388_608), 1_048_576, 1_048_576 - bytes);
+  const artifact = await f.artifacts.numeric(value, remaining);
+  expect(artifact.bytes).toBe(bytes); expect((await fs.stat(join(f.directory, 'numeric-final.json'))).size).toBe(bytes);
+});
+it('rejects one byte short before numeric open/write/sync', async () => {
+  const f = await setup(); const value = { version: 1, quantiles: 'unknown' };
+  const bytes = Buffer.byteLength(encodeJson(value, 1_048_576)) + 1;
+  const opened = vi.mocked(fs.open); opened.mockClear();
+  const remaining = numericAllowance(reserveOutput(8_388_608), 1_048_576, 1_048_576 - bytes + 1);
+  await expect(f.artifacts.numeric(value, remaining)).rejects.toMatchObject({ reason: 'output_limit' });
+  expect(opened).not.toHaveBeenCalled(); expect(await fs.readdir(f.directory)).toEqual([]);
 });

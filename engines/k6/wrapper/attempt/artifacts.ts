@@ -130,9 +130,10 @@ export class Artifacts {
     if (!Number.isSafeInteger(evidence.rawBytes) || evidence.rawBytes < 1 || evidence.rawBytes > cap) throw new AttemptError('artifact');
     return this.custody('beetle-evidence.json', evidence.rawBytes, evidence.sha256);
   }
-  async numeric(value: unknown): Promise<Artifact> {
+  async numeric(value: unknown, allowance = cap): Promise<Artifact> {
+    if (!Number.isSafeInteger(allowance) || allowance < 1 || allowance > cap) throw new AttemptError('output_limit');
     let bytes: Buffer;
-    try { bytes = Buffer.from(encodeJson(value, cap - 1) + '\n'); }
+    try { bytes = Buffer.from(encodeJson(value, allowance - 1) + '\n'); }
     catch { throw new AttemptError('output_limit'); }
     return this.custody('numeric-final.json', bytes.length, hash(bytes), bytes);
   }

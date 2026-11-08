@@ -30,10 +30,36 @@ it('rejects insufficient output partition before journal or execution', async ()
   const f = await setup(); f.offer.budget.outputBytes = 1_048_576; await f.save();
   const result = await f.run(); expect(result.reason).toBe('output_limit'); expect(native.calls).toBe(0);
 });
-it('retains a phase output-limit failure when the retrospective marker cannot finish prepare', async () => {
+it('caps build admission by prepare allowance before native start', async () => {
   const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'prepare')!.outputBytes = 28; await f.save();
+  const result = await f.run(); expect(result.execution).toMatchObject({ ok: false, code: 'build' }); expect(result.result).toBeNull();
+  expect(native.built?.maximumBuildBytes).toBe(28); expect(native.calls).toBe(0);
+});
+it.each([100, 99])('enforces exact prepare peak allowance %s before native start', async allowance => {
+  const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'prepare')!.outputBytes = allowance; await f.save();
+  const result = await f.run(); expect(native.built?.maximumBuildBytes).toBe(allowance);
+  expect(native.calls).toBe(allowance === 100 ? 1 : 0); expect(result.ok).toBe(allowance === 100);
+});
+it('rejects collect allowance below fixed producer ceiling before calling execution', async () => {
+  const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'collect')!.outputBytes = 1_048_575; await f.save();
   const result = await f.run(); expect(result.reason).toBe('output_limit'); expect(result.result).toBeNull();
-  expect(native.calls).toBe(1);
+  expect(native.built).toBeUndefined(); expect(native.calls).toBe(0);
+});
+it.each([0, 1])('enforces remaining collect allowance before numeric file creation (%s byte short)', async short => {
+  const baseline = await setup(); expect((await baseline.run()).ok).toBe(true);
+  const numericBytes = (await readFile(join(baseline.outputRoot, 'numeric-final.json'))).length;
+  const summaryBytes = (await readFile(join(baseline.outputRoot, 'beetle-evidence.json'))).length;
+  const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'collect')!.outputBytes = 1_048_576; await f.save();
+  native.summaryPadding = 1_048_576 - summaryBytes - numericBytes + short;
+  const result = await f.run();
+  if (short) {
+    expect(result.reason).toBe('output_limit'); expect(result.result).toBeNull();
+    await expect(readFile(join(f.outputRoot, 'numeric-final.json'))).rejects.toMatchObject({ code: 'ENOENT' });
+  } else {
+    expect(result.ok, JSON.stringify(result)).toBe(true);
+    expect((await readFile(join(f.outputRoot, 'numeric-final.json'))).length).toBe(numericBytes);
+    expect(result.result?.artifacts.reduce((sum, artifact) => sum + artifact.bytes, 0)).toBe(1_048_576);
+  }
 });
 it('bounds result publication by the manifest seal output allowance before writing', async () => {
   const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'seal')!.outputBytes = 1; await f.save();

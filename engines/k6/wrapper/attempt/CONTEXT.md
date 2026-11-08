@@ -11,19 +11,21 @@ initialization has UNKNOWN quiescence because its owner exposes no original-work
 receipt; it cannot produce a result or target work. Other issued original IO,
 callback and descriptor outcomes are awaited, even when a public owner fails early.
 Only enclosing agent/Docker containment can stop unresponsive original work.
-Logical output partition: control clamp(total/32,64KiB,64MiB), numeric1MiB,
-result64KiB, native summary1MiB, build remaining up to89MiB (minimum64KiB).
+Offer partition: control clamp(total/32,64KiB,64MiB), numeric1MiB,result64KiB,
+summary1MiB, build remaining<=89MiB. Prepare also caps peak build admission.
+Collect must admit the fixed1MiB native producer before execution; numeric encoding
+and IO use remaining collect bytes after summary (unknown summary charges1MiB).
+Control is shared, separately reserved, never charged twice to phase artifacts.
+Phase finishes report retained artifact bytes; numeric evidence separately retains peak.
 Parser work ceilings64GiB/268435456 records are independent of retained output;
 diagnostics64KiB, drain1000ms, collection<=30000ms. These unqualified installed
 ceilings do not establish throughput, hard memory or physical disk guarantees.
-
 Manifest phase deadlines never extend the original admitted wall/monotonic fence.
 Validated measurement receipt starts execute retrospectively; confirmed-stop
 collection callback starts collect. No execute phase is invented when marker is
 missing. Serial journal append/fsync precedes notification; heartbeats have one
 flight and no backlog. A failed notification disables further delivery; journal
 remains authoritative. Original callbacks must settle before eligible sealing.
-
 Fixed native numeric summary is rehashed against collector evidence after actual
 stop. Native and fresh numeric-final files receive bounded IO/fsync/close and
 exact bigint custody checks. They become eligible only through the atomically
@@ -31,7 +33,6 @@ published manifest. Partial files are preserved, never declared/refunded/deleted
 Numeric output retains totals, coverage, mapper diagnostics and build byte peaks.
 Mapper, shared seal codec and publisher own their original respective semantics.
 Published files remain reported even after terminal journal/notification failure.
-
 Receipt ok means complete healthy coordination, never application test pass.
 Native99 required failures can be healthy coordination with failed test outcome.
 Safe typed failures, final facts and explicit quiescence distinguish unknown work.

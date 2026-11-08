@@ -13,6 +13,7 @@ import type { StagedK6Options } from '../../wrapper/attempt/index.js';
 
 const native = vi.hoisted(() => ({ calls: 0, closes: 0, failed: false, discovery: false, missingMarker: false,
   closeFails: false, buildFails: false, summaryTamper: false, built: undefined as BuildInput | undefined,
+  summaryPadding: 0,
   blockBuild: undefined as Promise<void> | undefined, blockClose: undefined as Promise<void> | undefined }));
 export { native };
 vi.mock('../../build/index.js', () => ({ buildRuntimeScript: async (input: BuildInput) => {
@@ -27,7 +28,8 @@ vi.mock('../../wrapper/process/index.js', () => ({ createNativeProcess: (input: 
     const bytes = stream();
     if (bytes.length) await input.sink(bytes, { signal: input.signal!, deadlineMs: input.attempt.mode === 'managed' ? input.attempt.deadlineMs : now + 1000 });
     const raw = projected(native.built!);
-    await writeFile(join(input.directory, 'beetle-evidence.json'), native.summaryTamper ? raw + ' ' : raw, { mode: 0o600, flag: 'wx' });
+    await writeFile(join(input.directory, 'beetle-evidence.json'), (native.summaryTamper ? raw + ' ' : raw)
+      + ' '.repeat(native.summaryPadding), { mode: 0o600, flag: 'wx' });
     return { spawned: true, exitCode: native.failed || native.discovery ? 99 : 0, signal: null, cause: null,
       metricBytes: bytes.length, diagnosticBytes: 0, collection: 'complete', state: 'stopped',
       stdioClosed: true, groupAbsent: true, quiescent: true };
@@ -55,7 +57,7 @@ function projected(input: BuildInput): string {
 }
 export function resetNative(): void {
   Object.assign(native, { calls: 0, closes: 0, failed: false, discovery: false, missingMarker: false, closeFails: false,
-    buildFails: false, summaryTamper: false, built: undefined, blockBuild: undefined, blockClose: undefined });
+    buildFails: false, summaryTamper: false, summaryPadding: 0, built: undefined, blockBuild: undefined, blockClose: undefined });
 }
 export async function fixture() {
   const base = await stagedFixture();
