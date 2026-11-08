@@ -1,5 +1,6 @@
-export type MetricKind = 'counter' | 'gauge' | 'rate' | 'trend';
-export interface MetricDefinition { readonly name: string; readonly kind: MetricKind }
+import type { MetricKind, NativeMetricDefinition } from '../plan/index.js';
+export type { MetricKind } from '../plan/index.js';
+export type MetricDefinition = NativeMetricDefinition;
 export interface MetricPoint {
   readonly metric: string;
   readonly kind: MetricKind;

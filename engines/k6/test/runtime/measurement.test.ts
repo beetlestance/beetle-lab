@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { measureStartedMetric } from '../../plan/index.js';
+import { counterNames, measureStartedMetric, metricDefinitions } from '../../plan/index.js';
 import { nativeOptions } from '../../runtime/options.js';
 import { summaryProjection } from '../../runtime/summary.js';
 import { validateAndCompileSuite } from '../../compiler/suite/validation.js';
@@ -61,4 +61,12 @@ it('reserves the marker from user threshold rules and keeps its missing evidence
     .toEqual([{ threshold: 'count>=0', abortOnFail: false }]);
   expect(JSON.parse(summaryProjection(suite, { metrics: {} })).metrics[measureStartedMetric])
     .toEqual({ values: {}, thresholds: [{ expression: 'count>=0', ok: null }] });
+});
+it('shares an immutable unique metric catalogue between summary and wrapper admission', () => {
+  expect(Object.isFrozen(metricDefinitions)).toBe(true);
+  expect(metricDefinitions.every(Object.isFrozen)).toBe(true);
+  expect(new Set(metricDefinitions.map(metric => metric.name)).size).toBe(metricDefinitions.length);
+  for (const name of counterNames) expect(metricDefinitions).toContainEqual({ name, kind: 'counter' });
+  const output = JSON.parse(summaryProjection(compiled(configFor()), { metrics: {} })) as { metrics: Record<string, unknown> };
+  for (const { name } of metricDefinitions) expect(output.metrics).toHaveProperty(name);
 });

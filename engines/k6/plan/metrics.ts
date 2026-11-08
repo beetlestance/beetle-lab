@@ -16,6 +16,15 @@ const counters = new Set<string>([...counterNames.filter(name => name !== measur
   'http_reqs', 'iterations', 'dropped_iterations', 'data_received', 'data_sent']);
 const rates = new Set(['http_req_failed']);
 const gauges = new Set(['vus', 'vus_max']);
+export type MetricKind = 'counter' | 'gauge' | 'rate' | 'trend';
+export interface NativeMetricDefinition { readonly name: string; readonly kind: MetricKind }
+/** One immutable catalogue for owned native projection and wrapper admission. */
+export const metricDefinitions: readonly NativeMetricDefinition[] = Object.freeze([
+  ...[...trends].map(name => Object.freeze({ name, kind: 'trend' as const })),
+  ...[...new Set([...counters, measureStartedMetric])].map(name => Object.freeze({ name, kind: 'counter' as const })),
+  ...[...rates].map(name => Object.freeze({ name, kind: 'rate' as const })),
+  ...[...gauges].map(name => Object.freeze({ name, kind: 'gauge' as const })),
+]);
 const trendStats = new Set(['avg', 'min', 'max', 'med', 'p50', 'p90', 'p95', 'p99']);
 function supported(metric: string, stat: string): boolean {
   if (trends.has(metric)) return trendStats.has(stat);

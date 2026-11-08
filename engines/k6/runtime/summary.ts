@@ -1,10 +1,8 @@
 import type { CompiledSuite, DeepReadonly } from '../plan/index.js';
+import { metricDefinitions } from '../plan/index.js';
 import { BoundedText, quoted } from './bounds.js';
 import { nativeThresholds } from './options.js';
 
-const builtinMetrics = ['http_reqs', 'http_req_duration', 'http_req_blocked', 'http_req_connecting',
-  'http_req_tls_handshaking', 'http_req_sending', 'http_req_waiting', 'http_req_receiving',
-  'http_req_failed', 'iterations', 'iteration_duration', 'dropped_iterations', 'data_sent', 'data_received', 'vus', 'vus_max'];
 const stats = ['count', 'rate', 'value', 'avg', 'min', 'max', 'med', 'p(50)', 'p(90)', 'p(95)', 'p(99)', 'passes', 'fails'];
 function property(value: unknown, key: string): unknown {
   return value !== null && typeof value === 'object' && Object.hasOwn(value, key)
@@ -36,7 +34,7 @@ function thresholdEvidence(output: BoundedText, metric: unknown, expressions: re
 export function summaryProjection(suite: DeepReadonly<CompiledSuite>, data: unknown): string {
   const output = new BoundedText(1_048_576);
   const thresholds = nativeThresholds(suite);
-  const names = new Set([...builtinMetrics, ...Object.keys(thresholds)]);
+  const names = new Set([...metricDefinitions.map(metric => metric.name), ...Object.keys(thresholds)]);
   const metrics = property(data, 'metrics');
   output.append('{"version":1,"metrics":{');
   let separator = '';
