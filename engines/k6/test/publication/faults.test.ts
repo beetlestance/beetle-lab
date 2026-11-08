@@ -1,4 +1,4 @@
-import type { Stats } from 'node:fs';
+import type { BigIntStats } from 'node:fs';
 import { lstat, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
@@ -61,10 +61,10 @@ it('cancelled public result does not erase a later original close failure', asyn
   } finally { gate.resolve(); await op.close().catch(() => undefined); await clean(options); }
 });
 it.each([
-  ['size', (stat: Stats) => { stat.size++; }], ['links', (stat: Stats) => { stat.nlink++; }],
-  ['owner', (stat: Stats) => { stat.uid++; }], ['permissions', (stat: Stats) => { stat.mode |= 0o044; }],
-  ['inode', (stat: Stats) => { stat.ino++; }],
-  ['unsafe inode', (stat: Stats) => { stat.ino = Number.MAX_SAFE_INTEGER + 1; }],
+  ['size', (stat: BigIntStats) => { stat.size++; }], ['links', (stat: BigIntStats) => { stat.nlink++; }],
+  ['owner', (stat: BigIntStats) => { stat.uid++; }], ['permissions', (stat: BigIntStats) => { stat.mode |= 0o044n; }],
+  ['inode', (stat: BigIntStats) => { stat.ino++; }],
+  ['changed high inode', (stat: BigIntStats) => { stat.ino = (1n << 60n) + 1n; }],
 ] as const)('rejects changed file %s before final linking', async (_name, change) => {
   const options = await input(); let calls = 0;
   const io = overrideFile(nodeIo, (file, directory) => directory ? file : fileProxy(file, { stat: async () => {

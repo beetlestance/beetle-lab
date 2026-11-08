@@ -1,5 +1,5 @@
 import { constants } from 'node:fs';
-import type { Stats } from 'node:fs';
+import type { BigIntStats } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { PublicationError } from './types.js';
@@ -7,23 +7,23 @@ import type { Profile } from './profile.js';
 import type { Budget } from './budget.js';
 import type { PublicationFile, PublicationIo } from './ports.js';
 
-function identity(stat: Stats): boolean { return Number.isSafeInteger(stat.dev) && stat.dev >= 0 && Number.isSafeInteger(stat.ino) && stat.ino > 0; }
-function same(left: Stats, right: Stats): boolean { return identity(left) && identity(right) && left.dev === right.dev && left.ino === right.ino; }
-function file(stat: Stats, uid: number, bytes: number): void {
-  if (!identity(stat) || !stat.isFile() || stat.uid !== uid || stat.nlink !== 1 || (stat.mode & 0o777) !== 0o600 || stat.size !== bytes) {
+function identity(stat: BigIntStats): boolean { return typeof stat.dev === 'bigint' && stat.dev >= 0n && typeof stat.ino === 'bigint' && stat.ino > 0n; }
+function same(left: BigIntStats, right: BigIntStats): boolean { return identity(left) && identity(right) && left.dev === right.dev && left.ino === right.ino; }
+function file(stat: BigIntStats, uid: number, bytes: number): void {
+  if (!identity(stat) || !stat.isFile() || stat.uid !== BigInt(uid) || stat.nlink !== 1n || (stat.mode & 0o777n) !== 0o600n || stat.size !== BigInt(bytes)) {
     throw new PublicationError('integrity');
   }
 }
-function directory(stat: Stats, uid: number): void {
-  if (!stat.isDirectory() || stat.isSymbolicLink() || stat.uid !== uid || (stat.mode & 0o777) !== 0o700) {
+function directory(stat: BigIntStats, uid: number): void {
+  if (!stat.isDirectory() || stat.isSymbolicLink() || stat.uid !== BigInt(uid) || (stat.mode & 0o777n) !== 0o700n) {
     throw new PublicationError('profile');
   }
 }
 export class Files {
   private parent: PublicationFile | undefined;
   private pending: PublicationFile | undefined;
-  private parentIdentity: Stats | undefined;
-  private fileIdentity: Stats | undefined;
+  private parentIdentity: BigIntStats | undefined;
+  private fileIdentity: BigIntStats | undefined;
   private path: string | undefined;
   private readonly target: string;
   private fileClose: Promise<void> | undefined;

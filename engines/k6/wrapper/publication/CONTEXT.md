@@ -13,8 +13,10 @@ a second name, never a second data copy. Directory metadata/physical disk blocks
 are outside this logical allowance. This owner does not authorize reservations.
 
 Trusted root is canonical, nonsymlink, mode0700, owned by the supplied current UID
-and exclusively controlled against hostile same-UID replacement. Numeric device/
-inode identities must be safe integers. Fresh random pending file is mode0600,
+and exclusively controlled against hostile same-UID replacement. Private stat/
+lstat request bigint fields; device/inode comparisons preserve exact64-bit IDs.
+Public UID/byte counts convert only toward bigint for comparison, never back.
+Fresh random pending file is mode0600,
 regular/single-link. File size/identity/owner/permissions and parent descriptor/
 name identity are checked. File fsync and original close precede exclusive link;
 pending unlink, final single-link checks, parent fsync and original close precede
