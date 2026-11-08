@@ -9,14 +9,15 @@ export interface Row {
   spool_bytes: number; spool_rows: number; quota_bytes: number;
   wrapper_high: number; supervisor_high: number;
   wrapper_expired: number; supervisor_expired: number;
+  checkpoint_bytes: number; wrapper_checkpoint_json: string | null;
   phase: NonNullable<AttemptSnapshot['phase']> | null;
   exit_json: string | null; exit_facts_json: string | null; result_json: string | null; snapshot_bytes: number;
 }
 export const metadataColumns = `id, attempt_id, organization_id, workspace_id, intent_digest, generation,
   state, last_seq, cancel_requested, retained_start_seq, acknowledged_seq, spool_bytes,
   spool_rows, quota_bytes, wrapper_high, supervisor_high, wrapper_expired, supervisor_expired,
-  phase, exit_json, snapshot_bytes`;
-export const columns = `${metadataColumns}, result_json, exit_facts_json`;
+  phase, exit_json, snapshot_bytes, checkpoint_bytes`;
+export const columns = `${metadataColumns}, result_json, exit_facts_json, wrapper_checkpoint_json`;
 export class Failure extends Error {
   constructor(readonly code: ErrorCode, readonly recovery?: AttemptSnapshot) { super(code); }
 }

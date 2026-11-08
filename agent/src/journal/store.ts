@@ -6,6 +6,7 @@ import { AdmissionStore } from './admission-store.js';
 import type { AttemptKey, Command, Value } from './protocol.js';
 import { acknowledge, prune, readEvents } from './replay.js';
 import { append } from './spool.js';
+import { commitWrapperBatch, readWrapperCheckpoint } from './checkpoint.js';
 import { metadataColumns, Failure, owner, snapshot, transaction } from './sql.js';
 import type { Row } from './sql.js';
 import { supervise } from './supervision.js';
@@ -18,7 +19,7 @@ export class Store {
     this.admission = new AdmissionStore(db, quota);
     this.read = db.prepare(`SELECT CASE WHEN length(CAST(offer_json AS BLOB))<=1048576
       THEN offer_json ELSE NULL END AS offer_json FROM accepted_attempts WHERE id=?`);
-    this.list = db.prepare(`SELECT ${metadataColumns}, NULL AS result_json, NULL AS exit_facts_json
+    this.list = db.prepare(`SELECT ${metadataColumns}, NULL AS result_json, NULL AS exit_facts_json, NULL AS wrapper_checkpoint_json
       FROM accepted_attempts WHERE id>? ORDER BY id LIMIT ?`);
   }
   private offer(command: Extract<Command, { kind: 'offer' }>): AttemptSnapshot {
@@ -39,6 +40,8 @@ export class Store {
   }
   private eventCommand(command: Command): Value {
     switch (command.kind) {
+      case 'checkpoint': return readWrapperCheckpoint(this.db, command.key);
+      case 'wrapperBatch': return commitWrapperBatch(this.db, command.request);
       case 'append': return append(this.db, command.event);
       case 'events': return readEvents(this.db, command.key, command.after);
       case 'ack': return acknowledge(this.db, command.ack);
@@ -53,7 +56,7 @@ export class Store {
   execute(command: Command): Value {
     if (command.kind === 'supervision') return supervise(this.db, command.request);
     if (command.kind === 'admission') return this.admission.execute(command.request);
-    if (['append', 'events', 'ack', 'prune', 'sources'].includes(command.kind)) return this.eventCommand(command);
+    if (['append', 'events', 'ack', 'prune', 'sources', 'checkpoint', 'wrapperBatch'].includes(command.kind)) return this.eventCommand(command);
     switch (command.kind) {
       case 'offer': return this.offer(command);
       case 'get': return snapshot(owner(this.db, command.key));

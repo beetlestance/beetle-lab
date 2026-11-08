@@ -94,7 +94,8 @@ it('rolls back cancel and queued-work retirement when the final clock write fail
 it('migrates v3 additively, preserving evidence and fencing an unanchored old cancellation', async () => {
   const path = f.path(); let journal = await f.open(path); await journal.immutableOffer(f.offer());
   await journal.appendWrapper(f.wrapper()); await journal.durableCancel(f.key()); await f.close(journal);
-  edit(path, 'DROP TABLE supervision_clock; ALTER TABLE accepted_attempts DROP COLUMN phase;\n'
+  edit(path, 'DROP TABLE supervision_clock; ALTER TABLE accepted_attempts DROP COLUMN checkpoint_bytes; '
+    + 'ALTER TABLE accepted_attempts DROP COLUMN wrapper_checkpoint_json; ALTER TABLE accepted_attempts DROP COLUMN phase;\n'
     + 'ALTER TABLE accepted_attempts DROP COLUMN exit_json; ALTER TABLE accepted_attempts DROP COLUMN result_json;\n'
     + 'ALTER TABLE accepted_attempts DROP COLUMN exit_facts_json; ALTER TABLE accepted_attempts DROP COLUMN snapshot_bytes; PRAGMA user_version=3;');
   journal = await f.open(path);

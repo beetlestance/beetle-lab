@@ -1,3 +1,6 @@
+import { copyWrapperBatch } from '../control-protocol/index.js';
+import type { WrapperBatch, WrapperCheckpoint } from '../control-protocol/index.js';
+export type { WrapperBatch, WrapperCheckpoint, WrapperCursor } from '../control-protocol/index.js';
 import { Worker } from 'node:worker_threads';
 import type { Ack, AckReceipt, AgentEvent, AttemptSnapshot, ControlEvent, EventBatch, Offer } from '@beetle/contracts';
 import { ackInput, cursorInput, DEFAULT_QUOTA_BYTES, eventInput, generationKey } from './event-input.js';
@@ -100,6 +103,13 @@ export class Journal {
     return this.prepare(() => ({ kind: 'list', page: pageInput(page) })) as Promise<SnapshotPage>;
   }
 
+  readWrapperCheckpoint(key: GenerationKey): Promise<Readonly<WrapperCheckpoint> | null> {
+    return this.prepare(() => ({ kind: 'checkpoint', key: generationKey(key) })) as Promise<WrapperCheckpoint | null>;
+  }
+  /** Private collector CAS: bounded events, projections, charges and cursor commit together. */
+  commitWrapperBatch(input: WrapperBatch): Promise<Readonly<WrapperCheckpoint>> {
+    return this.prepare(() => ({ kind: 'wrapperBatch', request: copyWrapperBatch(input) })) as Promise<WrapperCheckpoint>;
+  }
   appendWrapper(input: ControlEvent): Promise<AgentEvent> {
     return this.prepare(() => ({ kind: 'append', event: eventInput(input, 'wrapper') })) as Promise<AgentEvent>;
   }

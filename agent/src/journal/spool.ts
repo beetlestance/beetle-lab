@@ -1,7 +1,8 @@
 import type { DatabaseSync } from 'node:sqlite';
+import { AGENT_EVENT_BYTES } from '../control-protocol/index.js';
 import { encodeJson, validate } from '@beetle/contracts';
 import type { AgentEvent, ControlEvent } from '@beetle/contracts';
-import { eventInput, eventKey, MAX_EVENT_BYTES } from './event-input.js';
+import { eventInput, eventKey } from './event-input.js';
 import type { Row } from './sql.js';
 import type { EventInput } from './protocol.js';
 import { Failure, owner, transaction } from './sql.js';
@@ -11,7 +12,11 @@ export function append(db: DatabaseSync, input: EventInput): AgentEvent {
   const checked = eventInput(input.source === 'wrapper' ? JSON.parse(input.json) :
     { sourceOrdinal: input.sourceKey, event: JSON.parse(input.json) }, input.source);
   if (checked.canonical !== input.canonical || checked.sourceKey !== input.sourceKey) throw new Failure('invalid_input');
-  return transaction(db, () => appendAtomic(db, checked));
+  return transaction(db, () => {
+    const row = owner(db, checked.key);
+    if (checked.source === 'wrapper' && row.wrapper_checkpoint_json !== null) throw new Failure('conflict');
+    return appendAtomic(db, checked);
+  });
 }
 export function appendAtomic(db: DatabaseSync, input: EventInput): AgentEvent {
   const row = owner(db, input.key);
@@ -31,7 +36,7 @@ export function appendAtomic(db: DatabaseSync, input: EventInput): AgentEvent {
   const projection = project(row, event);
   const bytes = Buffer.byteLength(json);
   const charge = bytes + Buffer.byteLength(input.canonical) + 256;
-  if (row.spool_rows >= 65_536 || row.spool_bytes + charge + projection.snapshot_bytes > row.quota_bytes) throw new Failure('quota_exceeded');
+  if (row.spool_rows >= 65_536 || row.spool_bytes + charge + projection.snapshot_bytes + row.checkpoint_bytes > row.quota_bytes) throw new Failure('quota_exceeded');
   db.prepare(`INSERT INTO event_spool
     (attempt_id,generation,seq,source,source_key,canonical_json,event_json,encoded_bytes,charged_bytes)
     VALUES (?,?,?,?,?,?,?,?,?)`).run(row.attempt_id, row.generation, event.seq,
@@ -51,7 +56,7 @@ function encodedEvent(row: Row, input: EventInput): { event: AgentEvent; json: s
     workspaceId: row.workspace_id, generation: row.generation, seq: row.last_seq + 1,
     source: input.source, ...(input.source === 'wrapper' ? { wrapperSeq: input.sourceKey } : {}) };
   let json: string;
-  try { json = encodeJson(event, MAX_EVENT_BYTES); } catch { throw new Failure('invalid_input'); }
+  try { json = encodeJson(event, AGENT_EVENT_BYTES); } catch { throw new Failure('invalid_input'); }
   if (!validate('AgentEvent', event).ok) throw new Failure('invalid_input');
   return { event: event as AgentEvent, json };
 }

@@ -87,7 +87,7 @@ describe('durable event append and fences', () => {
     expect(batch.events.length).toBeGreaterThan(0); expect(batch.events.length).toBeLessThan(10);
     expect(batch.events.map(event => event.seq)).toEqual(Array.from({ length: batch.events.length }, (_, index) => index + 104));
   });
-  it('rejects nested result identity mismatch and oversized valid envelopes atomically', async () => {
+  it('rejects oversized control and wrong nested scope while allowing agent enrichment', async () => {
     const journal = await f.open(); await journal.immutableOffer(f.offer());
     const large = await largeEvent(1, 100); expect(validate('ControlEvent', large).ok).toBe(true);
     await expect(journal.appendWrapper(large)).rejects.toMatchObject({ code: 'invalid_input' });
@@ -100,11 +100,11 @@ describe('durable event append and fences', () => {
     }
     expect(Buffer.byteLength(JSON.stringify(nearLimit))).toBe(65520);
     expect(validate('ControlEvent', nearLimit).ok).toBe(true);
-    await expect(journal.appendWrapper(nearLimit)).rejects.toMatchObject({ code: 'invalid_input' });
-    const result = await largeEvent(1, 1);
+    expect(await journal.appendWrapper(nearLimit)).toMatchObject({ seq: 1, wrapperSeq: 1 });
+    const result = await largeEvent(2, 1);
     const payload = result.payload as EngineResult; payload.workspaceId = '00000000-0000-4000-8000-000000000099';
     await expect(journal.appendWrapper(result)).rejects.toMatchObject({ code: 'conflict' });
-    expect((await journal.get(f.key())).lastSeq).toBe(0);
+    expect((await journal.get(f.key())).lastSeq).toBe(1);
   });
   it('charges persisted bytes and row allowance, rejects overflow without seq growth, and preserves quota after reopen', async () => {
     const path = f.path(); let journal = await f.open(path, 1024); await journal.immutableOffer(f.offer());

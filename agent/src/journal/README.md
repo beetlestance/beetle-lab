@@ -31,7 +31,8 @@ confirmed field across later unknowns and restart; known contradictions conflict
 Cancellation events require
 already-durable intent and never reset cancellation time.
 
-Envelopes max 64 KiB; readEvents(key,after) yields <=100 records and <=256 KiB,
+Control frames max64KiB including LF; supervisor input max64KiB. Stored agent
+envelopes allow512 extra bytes for enrichment. readEvents yields<=100/256KiB,
 including batch envelope. Lengths are selected before bounded payload loading.
 Default quota 64 MiB per attempt (override 1024..67108864 bytes for new offers only),
 charging encoded event + canonical source JSON +256-byte row/index allowance;
@@ -40,6 +41,17 @@ UTF-8 phase/first-exit/known-exit-facts/result projection bytes also remain char
 Admission checks spool_bytes + new_snapshot_bytes + event_charge <= quota;
 SQLite enforces the combined bound. Pruning refunds event charges only. Overflow
 returns quota_exceeded without event, cursor or projection growth.
+
+Private readWrapperCheckpoint(key)/commitWrapperBatch({key,expected,next,events})
+own incremental file intake. Batch1..100events and whole normalized input<=256KiB;
+scoped contiguous wrapper sequences, same exact bigint file identity, growing cursor.
+The journal computes canonical SHA256 batch identity. Checkpoint/events/projection/
+charges commit together; identical ambiguous replay works after pruning/restart.
+Changed replay/stale CAS conflicts. Claim requires no prior legacy wrapper stream;
+legacy appendWrapper is blocked after a checkpoint exists. Supervisor is independent.
+Checkpoint JSON<=1KiB stays charged after pruning. Migration006 preserves existing
+rows, adds checkpoint columns, and widens agent envelopes without shrinking producer
+frames. A checkpoint asserts reader observations, never proves filesystem custody.
 
 acknowledge(Ack) durably advances only the monotonic application-stored cursor;
 it never completes tests, finalizes artifacts, releases capacity or deletes outputs.

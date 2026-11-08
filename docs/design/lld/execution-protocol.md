@@ -123,6 +123,29 @@ Required phases declare their time/work/output budgets in the engine manifest.
 Prepare, execute and collect cannot contain an unbounded second scheduler; any
 independent heavy operation becomes another admitted task with a parent run ID.
 
+## Durable control intake (local profile)
+
+`control.ndjson` contains UTF-8 `ControlEvent` frames with LF, at most64KiB per
+frame, 65536 records and64MiB total. Agent enrichment has512 additional bytes;
+public event batches remain at most100 records/256KiB including their envelope.
+The agent reader must bound each pass to256KiB actual reads/eight read calls,
+one frame/read window and one pending immutable batch. It must not rescan the
+entire journal on every poll. Live torn tails wait; stopped torn tails fail.
+
+A private wrapper checkpoint records exact bigint device/inode decimal strings,
+committed byte offset, wrapper sequence and prefix SHA256. One SQLite transaction
+CAS-commits a bounded event batch, projections, quota charges and checkpoint. The
+journal computes its batch digest, so identical ambiguous replay remains safe after
+pruning. Checkpoints stay charged; legacy append cannot bypass an adopted stream.
+This is agent-internal state, not an engine SDK or browser endpoint.
+
+Incremental live observations remain provisional: inode/size/timestamps cannot
+prove an earlier prefix was unchanged during legitimate append. Restart must
+verify the durable prefix over bounded passes; eligible stopped collection must
+rehash the full accepted prefix under stable file identity/metadata. A mismatch
+invalidates collection without rewriting durable observation history. These
+checkpoints do not authorize capacity release or application finalization.
+
 ## Lifecycle and cancellation
 
 | Step | Invariant |

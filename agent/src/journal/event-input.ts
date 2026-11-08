@@ -1,9 +1,10 @@
+import { CONTROL_FRAME_BYTES } from '../control-protocol/index.js';
 import { encodeJson, validate } from '@beetle/contracts';
 import type { Ack, ControlEvent } from '@beetle/contracts';
 import { attemptKey, canonical } from './input.js';
 import type { EventInput, GenerationKey } from './protocol.js';
 
-export const MAX_EVENT_BYTES = 65_536;
+export const MAX_SUPERVISOR_INPUT_BYTES = 65_536;
 export const MAX_BATCH_BYTES = 262_144;
 export const DEFAULT_QUOTA_BYTES = 67_108_864;
 export function eventKey(input: GenerationKey): GenerationKey {
@@ -30,7 +31,7 @@ function supervisorDraft(copy: unknown): { event: Record<string, unknown>; ordin
   return { event: event as Record<string, unknown>, ordinal };
 }
 export function eventInput(input: unknown, source: 'wrapper' | 'agent'): EventInput {
-  const copy: unknown = JSON.parse(encodeJson(input, MAX_EVENT_BYTES));
+  const copy: unknown = JSON.parse(encodeJson(input, source === 'wrapper' ? CONTROL_FRAME_BYTES - 1 : MAX_SUPERVISOR_INPUT_BYTES));
   if (source === 'wrapper') {
     const result = validate('ControlEvent', copy);
     if (!result.ok) throw new Error('invalid_input');
