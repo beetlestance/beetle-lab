@@ -1,6 +1,6 @@
 # Local foundation evidence
 
-Full-gate source: `40e1cd7` on `rewrite/integration`.
+Full-gate source: `fe66003` on `rewrite/integration`.
 Date: 2026-11-08. Verification started at this clean source. It includes the
 reviewed staged loader, decoder/accumulator, summary collector, result-seal codec,
 backend/session/startup composition and browser gate. HTTP smoke has separate evidence below.
@@ -12,11 +12,11 @@ This report covers foundations; it does not qualify the rewritten product.
 
 - Runner/API/k6 generation checks: 37/23/6 outputs matched their sources.
 - TypeScript node/browser/native-k6 checks and ESLint passed.
-- Import boundaries, cycles and size checks covered 549 source files.
-- Documentation check covered 80 files.
+- Import boundaries, cycles and size checks covered 569 source files.
+- Documentation check covered 81 files.
 - Frontend production build passed; the main bundle was 611.56 kB / 178.59 kB gzip.
   Vite's large-chunk warning remains; no browser performance claim is made.
-- Vitest: 1,962 tests passed in 161 files, with at most two workers.
+- Vitest: 2,011 tests passed in 166 files, with at most two workers.
 
 Environment: Node v26.7.0 on macOS arm64. Compilation targets Node24, but
 compilation alone does not prove Node24 runtime behavior.
@@ -162,10 +162,10 @@ Linux controls, Docker execution or complete wrapper/application coordination.
 ## Missing release evidence
 
 The complete new submit/execute/observe/finalize/replay path is not implemented.
-Application artifact storage, staged wrapper composition, quantile aggregation, remaining
+Application artifact storage, agent collection/recovery, quantile aggregation, remaining
 frontend features, reports/comparison/export and packaging remain incomplete or
 under review. Reviewed native coordination and result-file publication are implemented;
-see the [outcome report](k6-outcomes.md) for their real-native evidence. The integrated frontend makes real API requests and shows errors;
+see the [outcome report](k6-outcomes.md) and [staged check](staged-k6.md) for real-native evidence. The integrated frontend makes real API requests and shows errors;
 it does not contain a demo backend or claim a functioning full application.
 
 No new images were built or published; no hosted CI run is claimed. Local Docker

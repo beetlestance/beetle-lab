@@ -48,3 +48,13 @@ esbuild output admission before file writes. At source `f28f249`, the same nativ
 check passed again: 48 records/9,037 bytes, native duration 115.935 ms, one measured
 HTTP request and complete windows. Nineteen focused build tests and independent
 UTF-8 quota/symlink-preservation probes passed; this is a logical file-byte limit.
+
+The complete staged-wrapper compatibility check starts from synthetic mounted
+headers and verifies both artifact files, result publication and all journal events:
+
+```sh
+node --import tsx engines/k6/test/native-process/smoke-staged.ts /absolute/path/to/k6
+npm run build:k6
+```
+
+See [staged evidence](staged-k6.md) for exact source/results and platform limits.
