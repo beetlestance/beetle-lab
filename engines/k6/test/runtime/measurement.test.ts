@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest';
 import { counterNames, measureStartedMetric, metricDefinitions } from '../../plan/index.js';
 import { nativeOptions } from '../../runtime/options.js';
+import { nativeThresholds } from '../../runtime/index.js';
 import { summaryProjection } from '../../runtime/summary.js';
 import { validateAndCompileSuite } from '../../compiler/suite/validation.js';
 import { compiled, dependencies } from '../suite/fixtures.js';
@@ -59,6 +60,7 @@ it('reserves the marker from user threshold rules and keeps its missing evidence
   const suite = compiled(configFor());
   expect(nativeOptions(suite, { mode: 'standalone', timeoutMs: 1000 }).thresholds[measureStartedMetric])
     .toEqual([{ threshold: 'count>=0', abortOnFail: false }]);
+  expect(nativeThresholds(suite)).toEqual(nativeOptions(suite, { mode: 'standalone', timeoutMs: 1000 }).thresholds);
   expect(JSON.parse(summaryProjection(suite, { metrics: {} })).metrics[measureStartedMetric])
     .toEqual({ values: {}, thresholds: [{ expression: 'count>=0', ok: null }] });
 });

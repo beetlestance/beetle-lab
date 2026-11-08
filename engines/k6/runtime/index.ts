@@ -10,6 +10,7 @@ import type { IterationPosition, IterationResult, Runtime, RuntimeInput } from '
 export type * from './types.js';
 export { RuntimeFailure } from './failure.js';
 export { validateAttempt } from './attempt.js';
+export { nativeThresholds } from './options.js';
 export type { AttemptBudget } from './attempt.js';
 
 /** One instance belongs to one VU; scenario counters never share another VU's state. */
