@@ -1,6 +1,7 @@
 # Live output and free-space guard
 
-Status: frozen component contract for implementation; actual enforcement is unqualified.
+Status: implemented and independently reviewed component;
+[local evidence](../../verification/output-guard.md). Native enforcement is unqualified.
 
 ## Filesystem sample
 
