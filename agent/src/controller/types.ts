@@ -22,6 +22,7 @@ export type AttemptProgress =
   | { readonly kind: 'runtime'; readonly state: LaunchState }
   | { readonly kind: 'control'; readonly events: number }
   | { readonly kind: 'verifying'; readonly phase: 'restart' | 'final'; readonly verifiedBytes: number; readonly targetBytes: number }
+  | { readonly kind: 'awaiting_collection'; readonly reason: 'busy' }
   | { readonly kind: 'awaiting_release'; readonly collection: 'finished' | 'failed' }
   | { readonly kind: 'released'; readonly collection: 'finished' | 'failed' };
 export interface CollectionObservation {

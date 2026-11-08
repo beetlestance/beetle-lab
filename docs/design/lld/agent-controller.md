@@ -40,6 +40,12 @@ checks the journaled result and invokes generic output verification. All origina
 collector operations and closes settle before the collection outcome is retained.
 A failed original close permanently prevents release. Invalid control data requests
 durable cancellation; missing/invalid outputs are failed collection, never a pass.
+Rejected result/quiescence promises independently close originals and permanently
+block release. An empty stopped control stream fails without a manufactured cursor.
+Output verification uses a nonextending monotonic deadline derived from the admitted
+wall deadline. Collector saturation defers within that budget; it is not a failed
+test or permission to rerun execution. A failed control commit fences execution
+while preserving its immutable pending batch for ambiguous replay.
 
 A later supervisor observation and quiescent collection observation are submitted
 with the exact persisted launch settlement to release capacity. Observations at the

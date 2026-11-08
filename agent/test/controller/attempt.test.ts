@@ -74,9 +74,9 @@ it('invalid or accessor budgets perform no launch and a subsequent valid call st
 it('cancellation while start is pending persists intent and prevents release until dispatch resolves', async () => {
   const e = await f.setupController(); e.backend.startHold = deferred();
   const launch = e.controller.launch(budget());
-  while (e.backend.starts === 0) await new Promise(resolve => setTimeout(resolve, 1));
+  await expect.poll(() => e.backend.starts).toBe(1);
   const cancel = e.controller.cancel();
-  while (!(await e.journal.get(e.key)).cancelRequested) await new Promise(resolve => setTimeout(resolve, 1));
+  await expect.poll(async () => (await e.journal.get(e.key)).cancelRequested).toBe(true);
   expect(reserved(await e.journal.admission({ kind: 'reservation', key: e.key })).status).toBe('charged');
   e.backend.startHold.resolve(e.backend.known('running'));
   await launch; await cancel;

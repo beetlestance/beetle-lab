@@ -46,3 +46,20 @@ it('wires actual stager, control filesystem, journal checkpoint and supervisor w
     expect(await e.owner.readWrapperCheckpoint(key)).toEqual(checkpoint);
   } finally { await controller.close(); }
 });
+it('fails an actually empty stopped control file and releases without manufacturing a checkpoint', async () => {
+  const e = await f.environment(); const prepared = e.prepare(e.create());
+  const plan = await prepared.result; await prepared.quiesced;
+  if (!plan.ok) throw new Error(plan.reason);
+  const time = clock(); time.advance(2); const owner = controlled(e.owner, time); const key = scope(e.offer);
+  await writeFile(join(e.rootPath, plan.value.name, 'output', 'control.ndjson'), '', { mode: 0o600 });
+  const controller = createAttemptController({ journal: e.owner, supervisor: owner.manager,
+    input: { key, plan: plan.value }, wallNow: time.wall,
+    collectOutputs: () => { throw new Error('empty control cannot authorize output collection'); } });
+  try {
+    expect(await controller.launch(operation())).toMatchObject({ kind: 'runtime' });
+    owner.backend.observation = owner.backend.known('exited').value; time.advance(1);
+    expect(await controller.tick(operation())).toEqual({ kind: 'awaiting_release', collection: 'failed' });
+    expect(await controller.tick(operation())).toEqual({ kind: 'released', collection: 'failed' });
+    expect(await e.owner.readWrapperCheckpoint(key)).toBeNull();
+  } finally { await controller.close(); }
+});

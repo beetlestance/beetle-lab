@@ -34,6 +34,8 @@ export class AttemptController {
   private cleanupFailed = false;
   private released = false;
   private wallHigh = 0;
+  private outputDeadline = Infinity;
+  private stoppedControlBytes: number | undefined;
   private readonly ownerKey: string;
   private readonly ownerMap: Map<string, AttemptController>;
   constructor(options: ControllerPorts) {
@@ -85,10 +87,15 @@ export class AttemptController {
     const current = reservation(await this.options.journal.admission({ kind: 'reservation', key: this.options.input.key }));
     this.guard(budget);
     const released = this.releasedProgress(current); if (released) return released;
+    this.boundCollection(current); this.guard(budget);
     this.offer ??= await this.options.journal.readOffer(this.options.input.key); this.guard(budget);
     const state = await this.state(launch); this.guard(budget);
-    if (this.cancelRequested && state.launch === 'unclaimed') return this.abortUnstarted();
+    if (this.unstartedCancelled(state)) return this.abortUnstarted();
     if (this.collection) return this.release(state, budget);
+    if (this.stoppedControlBytes !== undefined) {
+      if (!this.stopped(state)) return { kind: 'runtime', state };
+      return this.finish(this.stoppedControlBytes, budget);
+    }
     return this.advanceControl(state, budget);
   }
   private releasedProgress(current: Reservation): AttemptProgress | null {
@@ -96,6 +103,14 @@ export class AttemptController {
     if (!current.releaseEvidence && !current.aborted) throw new ControllerError('invalid_input');
     this.released = true;
     return { kind: 'released', collection: current.releaseEvidence?.collection.state ?? 'failed' };
+  }
+  private boundCollection(current: Reservation): void {
+    if (current.budget.timeoutMs > Number.MAX_SAFE_INTEGER - current.admittedAt) throw new ControllerError('clock');
+    const remaining = Math.max(0, current.admittedAt + current.budget.timeoutMs - this.now());
+    this.outputDeadline = Math.min(this.outputDeadline, performance.now() + remaining);
+  }
+  private unstartedCancelled(state: LaunchState): boolean {
+    return state.launch === 'unclaimed' && (this.cancelRequested || state.cancellation !== 'none');
   }
   private async advanceControl(state: LaunchState, budget: ControllerBudget): Promise<AttemptProgress> {
     const stopped = this.stopped(state);
@@ -106,14 +121,20 @@ export class AttemptController {
     }
     if (value.kind === 'batch') return { kind: 'control', events: value.request.events.length };
     if (value.kind === 'verifying') return value;
+    if (stopped && value.cursor === null) {
+      await this.closeReader(); this.collection = { state: 'failed', observedAt: this.now() };
+      return { kind: 'awaiting_release', collection: 'failed' };
+    }
     if (value.consistency !== 'stopped_verified') return { kind: 'runtime', state };
     return this.finish(value.cursor.offset, budget);
   }
   private async finish(controlBytes: number, budget: ControllerBudget): Promise<AttemptProgress> {
     await this.closeReader(); this.guard(budget);
+    this.stoppedControlBytes = controlBytes;
     const snapshot = await this.options.journal.get(this.options.input.key); this.guard(budget);
     if (!snapshot.result) this.collection = { state: 'failed', observedAt: this.now() };
     else await this.collect(snapshot.result, controlBytes, budget);
+    if (!this.collection) return { kind: 'awaiting_collection', reason: 'busy' };
     return { kind: 'awaiting_release', collection: this.collection!.state };
   }
   private stopped(state: LaunchState): boolean {
@@ -134,12 +155,12 @@ export class AttemptController {
     }
     const read = this.reader.read({ ...budget, stopped,
       deadline: Math.min(budget.deadline, performance.now() + CONTROL_READ_MAX_MS) });
-    const result = await read.result; await read.quiesced; this.guard(budget);
+    const result = await this.originals(read, () => this.reader!.close(), false); this.guard(budget);
     if (!result.ok) {
       await this.closeReader(); this.collection = { state: 'failed', observedAt: this.now() }; return null;
     }
     if (result.value.kind === 'batch') {
-      const checkpoint = await this.options.journal.commitWrapperBatch(result.value.request);
+      const checkpoint = await this.commitControl(result.value.request);
       this.reader.accept(checkpoint);
     }
     return result.value;
@@ -148,18 +169,45 @@ export class AttemptController {
     try { await this.reader?.close(); }
     catch { this.cleanupFailed = true; throw new ControllerError('cleanup'); }
   }
+  private async commitControl(request: Parameters<ControllerPorts['journal']['commitWrapperBatch']>[0]) {
+    try { return await this.options.journal.commitWrapperBatch(request); }
+    catch {
+      // Preserve the pending immutable batch for ambiguous replay, but fence further execution.
+      await this.cancel().catch(() => undefined);
+      throw new ControllerError('journal');
+    }
+  }
+  private async originals<T>(operation: { result: Promise<T>; quiesced: Promise<void> },
+    close: () => Promise<void>, closeAlways: boolean): Promise<T> {
+    let closing: Promise<void> | undefined;
+    const closeOnce = () => closing ??= Promise.resolve().then(close);
+    const failed = async () => {
+      this.cleanupFailed = true;
+      await closeOnce().catch(() => undefined);
+      throw new ControllerError('cleanup');
+    };
+    const outcomes = await Promise.allSettled([operation.result.catch(failed), operation.quiesced.catch(failed)]);
+    const result = outcomes[0];
+    if (result.status !== 'fulfilled' || outcomes[1].status !== 'fulfilled') throw new ControllerError('cleanup');
+    if (closeAlways) {
+      try { await closeOnce(); } catch { this.cleanupFailed = true; throw new ControllerError('cleanup'); }
+    }
+    return result.value;
+  }
   private async collect(result: NonNullable<CollectionObservation['result']>, controlBytes: number,
     budget: ControllerBudget): Promise<void> {
     this.guard(budget);
+    const deadline = Math.min(budget.deadline, this.outputDeadline);
+    if (performance.now() >= deadline) { this.collection = { state: 'failed', observedAt: this.now() }; return; }
     this.outputs = this.options.collectOutputs({ directory: this.directory(), uid: this.uid(), key: this.options.input.key,
       engineId: this.offer!.engine.id, reportedResult: result, controlBytes, outputBytes: this.offer!.budget.outputBytes,
-      deadline: budget.deadline, ...(budget.signal ? { signal: budget.signal } : {}) });
-    const outcome = await this.outputs.result; await this.outputs.quiesced;
-    try { await this.outputs.close(); }
-    catch { this.cleanupFailed = true; throw new ControllerError('cleanup'); }
+      deadline, ...(budget.signal ? { signal: budget.signal } : {}) });
+    const outcome = await this.originals(this.outputs, () => this.outputs!.close(), true);
     this.guard(budget);
-    this.collection = { state: outcome.ok ? 'finished' : 'failed', observedAt: this.now(),
-      ...(outcome.ok ? { result: outcome.value } : {}) };
+    if (!outcome.ok && outcome.reason === 'busy') return;
+    const finished = outcome.ok && performance.now() < deadline;
+    this.collection = { state: finished ? 'finished' : 'failed', observedAt: this.now(),
+      ...(outcome.ok && finished ? { result: outcome.value } : {}) };
   }
   private async release(state: LaunchState, budget: ControllerBudget): Promise<AttemptProgress> {
     const current = reservation(await this.options.journal.admission({ kind: 'reservation', key: this.options.input.key }));
@@ -169,6 +217,7 @@ export class AttemptController {
     this.collection = { ...this.collection!, observedAt: runtimeAt };
     const evidence = releaseEvidence({ reservation: current, state, collection: this.collection, runtimeAt });
     if (!evidence) return { kind: 'awaiting_release', collection: this.collection!.state };
+    this.guard(budget);
     await this.options.journal.admission({ kind: 'release', evidence });
     this.released = true;
     return { kind: 'released', collection: this.collection!.state };
