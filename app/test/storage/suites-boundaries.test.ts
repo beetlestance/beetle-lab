@@ -1,6 +1,8 @@
 import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { encodeJson } from '@beetle/contracts';
+import { validateApi } from '@beetle/contracts/api';
+import { transaction } from '../../src/adapters/outbound/sqlite/schema.js';
 import { command, requestId, scope, seed, settingsCommand, storageFixture, uuid } from './fixture.js';
 import { append, createSuite, suiteCommand } from './suites-fixture.js';
 const fixture = storageFixture();
@@ -19,16 +21,27 @@ it('rejects SQL replacement by existing revision identity or suite ordinal with 
 });
 
 it('preserves the existing 1MiB reply budget for 100 Unicode suites and namespace folders', async () => {
-  const metadata = await fixture.open(); await seed(metadata);
-  for (let index = 0; index < 100; index++) {
-    const name = '🪲'.repeat(125) + String(index).padStart(3, '0');
-    await createSuite(metadata, 1000 + index, scope, name);
-    await metadata.namespaces.execute(command({ kind: 'createFolder', id: uuid(2000 + index),
-      request: { scope, requestId: requestId(), parentFolderId: uuid(3), name } }));
-  }
+  const path = fixture.path(); let metadata = await fixture.open(path); await seed(metadata); await fixture.close(metadata);
+  // This regression concerns reply transport. Seed valid page rows in one transaction,
+  // rather than adding 200 fsync-heavy mutation receipts to unrelated lifecycle tests.
+  const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+  try {
+    transaction(db, () => {
+      for (let index = 0; index < 100; index++) {
+        const name = '🪲'.repeat(125) + String(index).padStart(3, '0');
+        expect(validateApi('CreateSuiteRequest', { scope, requestId: requestId(), name }).ok).toBe(true);
+        const fold = name.normalize('NFKC').toLowerCase();
+        db.prepare('INSERT INTO suites VALUES (?,?,?,?,?,?,1,NULL)').run(uuid(1000 + index), scope.organizationId, scope.workspaceId, uuid(3), name, fold);
+        db.prepare('INSERT INTO folders VALUES (?,?,?,?,1,?,?)').run(uuid(2000 + index), scope.organizationId, scope.workspaceId, uuid(3), name, fold);
+      }
+    });
+  } finally { db.close(); }
+  metadata = await fixture.open(path);
   const suites = await metadata.suites.listSuites({ scope, limit: 100 });
   const folders = await metadata.list({ kind: 'folder', scope, parentFolderId: uuid(3), limit: 100 });
   expect(suites.items).toHaveLength(100); expect(folders.items).toHaveLength(100);
+  expect(validateApi('SuitePage', suites).ok).toBe(true);
+  expect(validateApi('FolderPage', { scope, ...folders }).ok).toBe(true);
   for (const page of [suites, folders]) expect(Buffer.byteLength(encodeJson(page, 1048576))).toBeGreaterThan(65536);
 });
 it('binds page cursors to scope, suite and limit and rejects malformed continuations', async () => {
