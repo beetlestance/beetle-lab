@@ -23,9 +23,11 @@ export class CapabilityView {
     const overhead = addResources(configuration.controlReserve, configuration.headroom);
     const pool = effectivePool(configuration.pool, this.latest.capacity, overhead);
     const limit = configuration.perRun;
+    const capacity = { cpuMillis: Math.min(pool.cpuMillis, limit.cpuMillis), memoryBytes: Math.min(pool.memoryBytes, limit.memoryBytes),
+      pids: Math.min(pool.pids, limit.pids), outputBytes: Math.min(pool.outputBytes, limit.outputBytes), timeoutMs: configuration.maxTimeoutMs };
+    if (Object.values(capacity).some(value => value < 1)) throw new AgentHttpError(503, 'budget_unavailable', 'transport');
     return { protocolVersion: '1.0', protocolVersions: ['1.0'],
-      capacity: { cpuMillis: Math.min(pool.cpuMillis, limit.cpuMillis), memoryBytes: Math.min(pool.memoryBytes, limit.memoryBytes),
-        pids: Math.min(pool.pids, limit.pids), outputBytes: Math.min(pool.outputBytes, limit.outputBytes), timeoutMs: configuration.maxTimeoutMs },
+      capacity,
       supportedControls: [...this.latest.controls.filter((control): control is 'cpu' | 'memory' | 'pids' =>
         ['cpu', 'memory', 'pids'].includes(control)), 'timeout', 'output'],
       engines: catalog.engines.map(engine => ({ id: engine.manifest.engineId, version: engine.manifest.engineVersion,

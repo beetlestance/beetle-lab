@@ -94,6 +94,21 @@ it('can drain after listening fails before accepting connections', async () => {
   const reopened = f.keep(await openAgentRuntime(e.options)); expect(await reopened.initial).toEqual({ ready: true }); await reopened.close();
 });
 
+it.each(['cpuMillis', 'memoryBytes', 'pids', 'outputBytes'] as const)('reports 503 when the configured execution pool has zero %s', async resource => {
+  const e = await f.setup(); e.options.configuration.pool[resource] = 0;
+  const runtime = f.keep(await openAgentRuntime(e.options)); expect(await runtime.initial).toEqual({ ready: true });
+  const result = await runtime.server.inject({ url: '/runner/v1/capabilities', headers: e.headers });
+  expect(result.statusCode).toBe(503); expect(result.body).toBe('');
+  expect(e.daemon.mutations()).toHaveLength(0); await runtime.close();
+});
+
+it('reports unavailable when actual daemon capacity is fully consumed by reserve and headroom', async () => {
+  const e = await f.setup(); e.options.configuration.controlReserve.cpuMillis = 13_900;
+  const runtime = f.keep(await openAgentRuntime(e.options)); expect(await runtime.initial).toEqual({ ready: true });
+  const result = await runtime.server.inject({ url: '/runner/v1/capabilities', headers: e.headers });
+  expect(result.statusCode).toBe(503); expect(e.daemon.mutations()).toHaveLength(0); await runtime.close();
+});
+
 it('adopts and closes the original journal worker that becomes ready after startup abort', async () => {
   const e = await f.setup(); const abort = new AbortController();
   const marker = join(e.rootPath, 'worker-started'); const release = join(e.rootPath, 'worker-release');
