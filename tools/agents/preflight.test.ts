@@ -21,6 +21,14 @@ async function fixture() {
   return { root, packet, state };
 }
 describe('task packet boundary', () => {
+  it('records inherited execution explicitly and still requires available routing', async () => {
+    const { root, packet, state } = await fixture();
+    packet.model = 'inherit'; packet.packetHash = packetDigest(packet);
+    await expect(preflight(packet, root, state)).rejects.toThrow('Model unavailable');
+    await expect(preflight(packet, root, { ...state, availableModels: ['inherit'] })).resolves.toEqual(packet);
+    await expect(preflight({ ...packet, model: 'gpt-6.1-sol' }, root,
+      { ...state, availableModels: ['inherit'] })).rejects.toThrow('digest mismatch');
+  });
   it('accepts exact committed inputs and detects later context drift', async () => {
     const { root, packet, state } = await fixture();
     await expect(preflight(packet, root, state)).resolves.toEqual(packet);

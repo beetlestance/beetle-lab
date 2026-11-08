@@ -3,7 +3,7 @@
 Status: proposed routing policy. Models have not been calibrated on this rewrite.
 Assignments are recommendations, not guarantees of intelligence or correctness.
 
-## Models available in this environment
+## Planned model roles
 
 | Role | Exact model | Reasoning starting point | Assignment |
 | --- | --- | --- | --- |
@@ -16,6 +16,12 @@ Sol balances capability/cost, Luna serves scoped work, Astra suits demanding
 reasoning. Exact availability and the four-slot limit come from current session
 tools, not a universal API limit. Recheck the environment before dispatch. No dollar
 or throughput promise is made; stronger reasoning does not replace test evidence.
+
+An account can reject an advertised model alias. After a runtime rejection, the
+coordinator may freeze a new packet with `model: inherit`, declare that route
+available, and omit the model override when spawning. Record inherited execution
+explicitly; do not claim it ran on the rejected named model. Inherited routing
+still requires the same dependency, context, ownership and independent-review gates.
 
 ## Safe routing
 
