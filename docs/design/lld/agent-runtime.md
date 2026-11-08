@@ -15,6 +15,11 @@ this composition API is not a job-supplied dependency container.
 
 Reserve the process owner before reading options or invoking foreign services.
 Verify the actual installation root/agent/daemon binding before opening the journal.
+Read-only exact-digest image inspection also checks each installed engine's local
+image ID, full environment, Linux architecture matching the daemon, runtime and
+absence of inherited volumes. Missing/mismatched images fail before opening the
+journal; no implicit pull, emulation or tag selection. These local IDs are distinct
+from a registry's multiarchitecture manifest digest.
 Journal opening clears old observations. Derive approved profiles from the installed
 catalogue, then configure admission without dropping existing attempts/charges.
 Each installed engine gets a Stager bound to the same verified root and providers.

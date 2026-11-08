@@ -15,7 +15,8 @@ function validSocket(path: string): boolean {
 }
 function validRequest(input: DockerRequest): boolean {
   return !!input && ['GET', 'POST', 'DELETE'].includes(input.method) && typeof input.path === 'string' && input.path.length <= 2048
-    && /^\/(?:version|v1\.47\/(?:info|containers\/[^\s#]*))$/u.test(input.path)
+    && (/^\/(?:version|v1\.47\/(?:info|containers\/[^\s#]*))$/u.test(input.path)
+      || input.method === 'GET' && /^\/v1\.47\/images\/sha256:[a-f0-9]{64}\/json$/u.test(input.path))
     && Number.isFinite(input.deadline);
 }
 

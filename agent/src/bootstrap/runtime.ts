@@ -22,6 +22,7 @@ import type { Scheduler } from '../scheduler/index.js';
 import { AgentHttpError, createAgentServer } from '../transport/index.js';
 import type { FastifyInstance } from 'fastify';
 import { CapabilityView } from './capabilities.js';
+import { verifyInstalledImages } from './installed-images.js';
 import { AgentRuntimeError } from './types.js';
 import type { AgentRuntime, AgentRuntimeOptions } from './types.js';
 
@@ -82,6 +83,10 @@ class RuntimeOwner {
       operation: { deadline: performance.now() + 30_000, ...(options.signal ? { signal: options.signal } : {}) } });
     this.check(options);
     if (!verified.ok) throw new AgentRuntimeError('startup');
+    if (!await verifyInstalledImages({ catalog: options.catalog, transport: options.transport,
+      expectedDaemonId: options.installation.expectedDaemonId, operation: { deadline: performance.now() + 30_000,
+        ...(options.signal ? { signal: options.signal } : {}) } })) throw new AgentRuntimeError('startup');
+    this.check(options);
     this.journal = await openJournal(options.journal); this.check(options);
     const configuration = JSON.parse(encodeJson({ ...options.configuration,
       profiles: options.catalog.engines.map(engine => engine.approved) }, 65_536)) as PoolConfiguration;
@@ -97,8 +102,9 @@ class RuntimeOwner {
   }
   private compose(options: AgentRuntimeOptions, configuration: PoolConfiguration, root: VerifiedRoot): void {
     const journal = this.journal!;
+    const transport = options.transport;
     const supervisor = this.supervisor = new Supervisor({ journal, installationId: options.installation.installationId,
-      backendFactory: () => new DockerBackend(options.transport) });
+      backendFactory: () => new DockerBackend(transport) });
     for (const engine of options.catalog.engines) this.stagers.set(engine, new Stager({ root, journal,
       profile: engine.profile, manifest: engine.manifest, validation: engine.validation, providers: options.providers }));
     const overhead = addResources(configuration.controlReserve, configuration.headroom);

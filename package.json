@@ -25,6 +25,9 @@
     "generate:k6": "node --import tsx engines/k6/compiler/generate.ts",
     "check:k6": "node --import tsx engines/k6/compiler/generate.ts --check",
     "build:api": "node --import tsx tools/build-api.ts",
+    "build:agent": "node --import tsx tools/build-agent.ts",
+    "start:agent": "node agent/dist/main.js",
+    "smoke:agent": "node --import tsx agent/test/bootstrap/smoke-agent.ts",
     "start:api": "node app/dist/main.js",
     "smoke:api": "node --import tsx app/test/bootstrap/smoke-api.ts",
     "build:k6": "node --import tsx tools/build-k6.ts"

@@ -32,9 +32,11 @@ export function fixture() {
     const daemon = new FakeDocker(prepared.value);
     const transport: DockerTransport = { async request(input): Promise<DockerReply> {
       if (input.path.endsWith(`/${e.configuration.agentContainer}/json`)) return e.transport.request(input);
+      if (input.path === `/v1.47/images/${profile.imageDigest}/json`) return { ok: true, status: 200,
+        body: { Id: profile.imageDigest, Os: 'linux', Architecture: 'arm64', Config: { Env: profile.effectiveImage.environment } } };
       const response = await daemon.request(input);
       if (input.path === '/v1.47/info' && response.ok) return { ...response,
-        body: { ...(response.body as object), ID: e.configuration.expectedDaemonId, NCPU: 14, MemTotal: 16 * 1024 ** 3 } };
+        body: { ...(response.body as object), ID: e.configuration.expectedDaemonId, Architecture: 'aarch64', NCPU: 14, MemTotal: 16 * 1024 ** 3 } };
       return response;
     } };
     const config = configuration(); config.pool.outputBytes = 131_072; config.perRun.outputBytes = 131_072; config.maxTimeoutMs = 5000;
