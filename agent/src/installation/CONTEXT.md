@@ -13,6 +13,9 @@ Enqueue accepts only durable queued/replayed intents. Drives admit atomically,
 prepare fresh local setup once, or reconstruct exact claimed plans for tick.
 Tokenless abandoned setup is aborted without restaging. Released controllers close
 before owner eviction. Cancel persists clocked intent before signalling runtime.
+Cancelled controllers continue ticks through collection/release while execution stays fenced.
+Effect-free owners retire after settled callers and confirmed uncharged journal state;
+operation versions prevent stale probes from evicting a new active lane.
 Close fences callbacks, aborts preparation signals and independently drains originals;
 the bootstrap retains journal ownership.
 

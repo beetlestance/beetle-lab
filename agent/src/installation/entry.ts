@@ -12,6 +12,8 @@ export interface Entry {
   preparation?: Preparation;
   controller?: AttemptController;
   closing?: Promise<void>;
+  users: number;
+  version: number;
   cancelled: boolean;
   fresh: boolean;
   prepared: boolean;
@@ -24,5 +26,5 @@ export function identity(key: Scope): string {
   return [key.organizationId, key.workspaceId, key.attemptId, key.generation].join('/').toLowerCase();
 }
 export function createEntry(key: Readonly<Scope>): Entry {
-  return { key, abort: new AbortController(), cancelled: false, fresh: false, prepared: false, cleanupFailed: false };
+  return { key, abort: new AbortController(), users: 0, version: 0, cancelled: false, fresh: false, prepared: false, cleanupFailed: false };
 }

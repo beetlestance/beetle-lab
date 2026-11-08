@@ -1,5 +1,5 @@
 import type { Offer } from '@beetle/contracts';
-import type { Reservation } from '../admission/index.js';
+import type { AdmissionValue, Reservation } from '../admission/index.js';
 import type { Operation, RuntimePlan } from '../backends/docker/index.js';
 import { createAttemptController } from '../controller/index.js';
 import { collectOutputs } from '../collection/output/index.js';
@@ -21,16 +21,26 @@ async function abort(context: DriveContext, entry: Entry): Promise<DriveProgress
   await context.options.journal.admission({ kind: 'abortUnstarted', key: entry.key });
   await context.retire(entry); return failed;
 }
+function executionGuard(context: DriveContext, entry: Entry, budget: Operation): void {
+  context.guard(entry, budget);
+  if (entry.cancelled) throw new InstallationError('closed');
+}
 async function admit(context: DriveContext, entry: Entry, budget: Operation): Promise<Reservation | DriveProgress> {
   const { journal } = context.options;
-  const cursors = await journal.sourceCursors(entry.key); context.guard(entry, budget);
-  const now = context.now(); context.guard(entry, budget);
+  const cursors = await journal.sourceCursors(entry.key); executionGuard(context, entry, budget);
+  const now = context.now(); executionGuard(context, entry, budget);
   const value = await journal.admission({ kind: 'admit', key: entry.key,
     sourceOrdinal: cursors.supervisorOrdinal + 1, now });
   // A successful original admission remains owned even if cancellation overtook it.
   if ('status' in value) { entry.fresh = true; return value; }
-  context.guard(entry, budget);
-  if ('kind' in value && value.kind !== 'admit') return { kind: value.kind === 'defer' ? 'deferred' : 'rejected', reason: value.reason };
+  executionGuard(context, entry, budget);
+  return admissionProgress(value);
+}
+function admissionProgress(value: AdmissionValue): DriveProgress {
+  if ('kind' in value && value.kind !== 'admit') {
+    if (value.reason === 'cancelled') throw new InstallationError('closed');
+    return { kind: value.kind === 'defer' ? 'deferred' : 'rejected', reason: value.reason };
+  }
   throw new InstallationError('journal');
 }
 async function stage(context: DriveContext, entry: Entry, offer: Offer, current: Reservation,
@@ -38,9 +48,9 @@ async function stage(context: DriveContext, entry: Entry, offer: Offer, current:
   if (entry.prepared) throw new InstallationError('cleanup');
   if (!context.acquireStage()) return { kind: 'deferred', reason: 'staging_busy' };
   try {
-    context.guard(entry, budget);
+    executionGuard(context, entry, budget);
     const engine = context.options.catalog.resolve(offer, current.validation);
-    const stager = context.options.stagerFor(engine); context.guard(entry, budget);
+    const stager = context.options.stagerFor(engine); executionGuard(context, entry, budget);
     entry.prepared = true;
     const signal = budget.signal ? AbortSignal.any([budget.signal, entry.abort.signal]) : entry.abort.signal;
     entry.preparation = stager.prepare({ key: entry.key, operation: { deadline: budget.deadline, signal } });
@@ -54,7 +64,7 @@ async function stage(context: DriveContext, entry: Entry, offer: Offer, current:
       if (result.value.reason === 'busy') { entry.prepared = false; return { kind: 'deferred', reason: 'staging_busy' }; }
       return abort(context, entry);
     }
-    try { context.guard(entry, budget); } catch { return abort(context, entry); }
+    try { executionGuard(context, entry, budget); } catch { return abort(context, entry); }
     return result.value.value;
   } finally { context.releaseStage(); }
 }
@@ -71,6 +81,11 @@ async function controllerStep(context: DriveContext, entry: Entry, offer: Offer,
     launch = !current.createToken;
   }
   context.guard(entry, budget);
+  if (entry.cancelled) {
+    entry.cancellation ??= entry.controller.cancel();
+    void entry.cancellation.catch(() => { entry.cleanupFailed = true; });
+    launch = false;
+  }
   const progress = await (launch ? entry.controller.launch(budget) : entry.controller.tick(budget));
   checkBudget(budget);
   if (progress.kind === 'released') await context.retire(entry);

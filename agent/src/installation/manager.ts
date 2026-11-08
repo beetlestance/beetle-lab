@@ -2,6 +2,7 @@ import type { AttemptSnapshot } from '@beetle/contracts';
 import type { Scope } from '../admission/index.js';
 import type { Operation } from '../backends/docker/index.js';
 import { allocation } from './recovery.js';
+import { releaseProvisional } from './ownership.js';
 import { budgetCopy, checkBudget } from './budget.js';
 import { createEntry, identity, scopeCopy } from './entry.js';
 import type { Entry } from './entry.js';
@@ -29,9 +30,8 @@ export class Manager implements InstallationController {
     this.wallHigh = now; return now;
   }
   open(): void { if (this.closed) throw new InstallationError('closed'); }
-  guard(entry: Entry, budget: Operation): void {
+  guard(_entry: Entry, budget: Operation): void {
     this.open(); checkBudget(budget);
-    if (entry.cancelled) throw new InstallationError('closed');
   }
   acquireStage(): boolean { if (this.stages >= 2) return false; this.stages++; return true; }
   releaseStage(): void { this.stages--; }
@@ -60,6 +60,7 @@ export class Manager implements InstallationController {
     return this.run(async () => {
       const key = scopeCopy(input); this.open(); const entry = this.entry(key);
       if (entry.active) throw new InstallationError('busy');
+      entry.users++; entry.version++;
       // Reserve the lane before reading the caller's budget descriptors.
       let resolve!: (value: DriveProgress) => void; let reject!: (error: unknown) => void;
       const active = new Promise<DriveProgress>((yes, no) => { resolve = yes; reject = no; });
@@ -68,7 +69,10 @@ export class Manager implements InstallationController {
         const budget = budgetCopy(operation);
         void Promise.resolve().then(() => drive(this, entry, budget)).then(resolve, reject);
       } catch (error) { reject(error); }
-      try { return await active; } finally { delete entry.active; }
+      try { return await active; } finally {
+        delete entry.active; entry.users--;
+        await releaseProvisional(this.options.journal, this.entries, entry);
+      }
     });
   }
   private signal(entry: Entry): Promise<void> {
@@ -82,12 +86,18 @@ export class Manager implements InstallationController {
   cancel(input: Scope): Promise<AttemptSnapshot> {
     return this.run(async () => {
       const key = scopeCopy(input); this.open(); const entry = this.entry(key);
-      entry.cancelled = true; entry.abort.abort();
-      const now = this.now(); this.open();
-      await this.options.journal.supervision({ key, now, cancel: true });
-      // No await: durable intent can be observed while original runtime signalling drains.
-      this.signal(entry);
-      return this.options.journal.get(key);
+      entry.users++; entry.version++;
+      try {
+        entry.cancelled = true; entry.abort.abort();
+        const now = this.now(); this.open();
+        await this.options.journal.supervision({ key, now, cancel: true });
+        // Durable intent is observable while original runtime signalling drains.
+        this.signal(entry);
+        return await this.options.journal.get(key);
+      } finally {
+        entry.users--;
+        await releaseProvisional(this.options.journal, this.entries, entry);
+      }
     });
   }
   inspect(input: Scope): Promise<InstallationAttempt> {
