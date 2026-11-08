@@ -1,8 +1,36 @@
 import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
+import { encodeJson } from '@beetle/contracts';
 import { command, requestId, scope, seed, settingsCommand, storageFixture, uuid } from './fixture.js';
 import { append, createSuite, suiteCommand } from './suites-fixture.js';
 const fixture = storageFixture();
+it('rejects SQL replacement by existing revision identity or suite ordinal with recursive triggers disabled', async () => {
+  const path = fixture.path(); const metadata = await fixture.open(path); await seed(metadata);
+  const suite = await createSuite(metadata); const revision = await append(metadata, suite); await fixture.close(metadata);
+  const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+  try {
+    db.exec('PRAGMA recursive_triggers=OFF');
+    const replace = db.prepare(`INSERT OR REPLACE INTO suite_revisions
+      SELECT ?,suite_id,organization_id,workspace_id,ordinal,?,config_json,input_manifest_json FROM suite_revisions WHERE id=?`);
+    for (const id of [revision.id, uuid(99)]) expect(() => replace.run(id, 'b'.repeat(64), revision.id)).toThrow();
+    expect(db.prepare('SELECT digest FROM suite_revisions WHERE id=?').get(revision.id)?.digest).toBe(revision.digest);
+    expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+  } finally { db.close(); }
+});
+
+it('preserves the existing 1MiB reply budget for 100 Unicode suites and namespace folders', async () => {
+  const metadata = await fixture.open(); await seed(metadata);
+  for (let index = 0; index < 100; index++) {
+    const name = '🪲'.repeat(125) + String(index).padStart(3, '0');
+    await createSuite(metadata, 1000 + index, scope, name);
+    await metadata.namespaces.execute(command({ kind: 'createFolder', id: uuid(2000 + index),
+      request: { scope, requestId: requestId(), parentFolderId: uuid(3), name } }));
+  }
+  const suites = await metadata.suites.listSuites({ scope, limit: 100 });
+  const folders = await metadata.list({ kind: 'folder', scope, parentFolderId: uuid(3), limit: 100 });
+  expect(suites.items).toHaveLength(100); expect(folders.items).toHaveLength(100);
+  for (const page of [suites, folders]) expect(Buffer.byteLength(encodeJson(page, 1048576))).toBeGreaterThan(65536);
+});
 it('binds page cursors to scope, suite and limit and rejects malformed continuations', async () => {
   const metadata = await fixture.open(); await seed(metadata); await seed(metadata, 11, 12, 13);
   const suite = await createSuite(metadata); const other = await createSuite(metadata, 51);

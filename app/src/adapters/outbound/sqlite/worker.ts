@@ -22,7 +22,8 @@ function start(): void {
   port?.on('message', (message: Command) => {
     try {
       const operation = checkedOperation(message, runtimeTtlMs);
-      const value = boundedCopy(store.execute(operation), operation.kind === 'getRevision' ? 2097152 : operationMessageLimit(operation));
+      const replyLimit = operation.kind === 'getRevision' ? 2097152 : Math.max(1048576, operationMessageLimit(operation));
+      const value = boundedCopy(store.execute(operation), replyLimit);
       port.postMessage({ kind: 'result', messageId: message.messageId, ok: true, value } satisfies Reply);
       if (operation.kind === 'close') port.close();
     } catch (error) {

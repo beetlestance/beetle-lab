@@ -21,6 +21,9 @@ CREATE TRIGGER revisions_no_update BEFORE UPDATE ON suite_revisions BEGIN
  SELECT RAISE(ABORT,'immutable revision'); END;
 CREATE TRIGGER revisions_no_delete BEFORE DELETE ON suite_revisions BEGIN
  SELECT RAISE(ABORT,'immutable revision'); END;
+CREATE TRIGGER revisions_no_replace BEFORE INSERT ON suite_revisions
+WHEN EXISTS(SELECT 1 FROM suite_revisions WHERE id=NEW.id OR (suite_id=NEW.suite_id AND ordinal=NEW.ordinal)) BEGIN
+ SELECT RAISE(ABORT,'immutable revision'); END;
 CREATE INDEX suites_page ON suites(organization_id,workspace_id,id);
 CREATE INDEX revisions_page ON suite_revisions(organization_id,workspace_id,suite_id,id);
 CREATE TABLE input_blobs (
