@@ -105,7 +105,6 @@ export class AdmissionStore {
       version: '1.0', ...request.key, source: 'agent', phase: 'prepare',
       observedAt: new Date(request.now).toISOString(), kind: 'admitted', payload: { budget: item.budget },
     } }, 'agent'));
-    this.db.prepare("UPDATE accepted_attempts SET state='admitted' WHERE attempt_id=?").run(item.attemptId);
     this.db.prepare('UPDATE admission_queue SET pending=0 WHERE attempt_id=?').run(item.attemptId);
     return reservation;
   }

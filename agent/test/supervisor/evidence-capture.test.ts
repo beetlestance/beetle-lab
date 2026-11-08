@@ -14,6 +14,7 @@ it('coalesces repeated lifecycle inspections into four exact first events during
   const exited = { id, state: 'exited' as const, exitCode: 137, oomKilled: false };
   evidence.observe(running, now, 'none');
   await expect(evidence.flush()).rejects.toMatchObject({ code: 'queue_full' });
+  await s.journal.supervision({ key: s.input.key, now, cancel: true });
   evidence.cancelled(now, now + 1);
   evidence.observe(exited, now + 2, 'cancelled');
   evidence.observe({ state: 'missing' }, now + 3, 'cancelled');

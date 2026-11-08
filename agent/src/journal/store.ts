@@ -6,7 +6,7 @@ import { AdmissionStore } from './admission-store.js';
 import type { AttemptKey, Command, Value } from './protocol.js';
 import { acknowledge, prune, readEvents } from './replay.js';
 import { append } from './spool.js';
-import { columns, Failure, owner, snapshot, transaction } from './sql.js';
+import { metadataColumns, Failure, owner, snapshot, transaction } from './sql.js';
 import type { Row } from './sql.js';
 import { supervise } from './supervision.js';
 
@@ -18,7 +18,7 @@ export class Store {
     this.admission = new AdmissionStore(db, quota);
     this.read = db.prepare(`SELECT CASE WHEN length(CAST(offer_json AS BLOB))<=1048576
       THEN offer_json ELSE NULL END AS offer_json FROM accepted_attempts WHERE id=?`);
-    this.list = db.prepare(`SELECT ${columns} FROM accepted_attempts WHERE id>? ORDER BY id LIMIT ?`);
+    this.list = db.prepare(`SELECT ${metadataColumns}, NULL AS result_json FROM accepted_attempts WHERE id>? ORDER BY id LIMIT ?`);
   }
   private offer(command: Extract<Command, { kind: 'offer' }>): AttemptSnapshot {
     return transaction(this.db, () => offerAtomic(this.db, command, this.quota));

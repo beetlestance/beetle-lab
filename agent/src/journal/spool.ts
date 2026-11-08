@@ -5,6 +5,7 @@ import { eventInput, eventKey, MAX_EVENT_BYTES } from './event-input.js';
 import type { Row } from './sql.js';
 import type { EventInput } from './protocol.js';
 import { Failure, owner, transaction } from './sql.js';
+import { project } from './projection.js';
 
 export function append(db: DatabaseSync, input: EventInput): AgentEvent {
   const checked = eventInput(input.source === 'wrapper' ? JSON.parse(input.json) :
@@ -27,16 +28,18 @@ export function appendAtomic(db: DatabaseSync, input: EventInput): AgentEvent {
   if (input.sourceKey <= high) throw new Failure('expired_key');
   if (row.last_seq >= Number.MAX_SAFE_INTEGER - 1) throw new Failure('quota_exceeded');
   const { event, json } = encodedEvent(row, input);
+  const projection = project(row, event);
   const bytes = Buffer.byteLength(json);
   const charge = bytes + Buffer.byteLength(input.canonical) + 256;
-  if (row.spool_rows >= 65_536 || row.spool_bytes + charge > row.quota_bytes) throw new Failure('quota_exceeded');
+  if (row.spool_rows >= 65_536 || row.spool_bytes + charge + projection.snapshot_bytes > row.quota_bytes) throw new Failure('quota_exceeded');
   db.prepare(`INSERT INTO event_spool
     (attempt_id,generation,seq,source,source_key,canonical_json,event_json,encoded_bytes,charged_bytes)
     VALUES (?,?,?,?,?,?,?,?,?)`).run(row.attempt_id, row.generation, event.seq,
     input.source, input.sourceKey, input.canonical, json, bytes, charge);
   db.prepare(`UPDATE accepted_attempts SET last_seq=?, spool_bytes=spool_bytes+?,
-    spool_rows=spool_rows+1, ${counter}=? WHERE id=?`)
-    .run(event.seq, charge, input.sourceKey, row.id);
+    spool_rows=spool_rows+1, ${counter}=?, state=?, phase=?, exit_json=?, result_json=?, snapshot_bytes=? WHERE id=?`)
+    .run(event.seq, charge, input.sourceKey, projection.state, projection.phase,
+      projection.exit_json, projection.result_json, projection.snapshot_bytes, row.id);
   return event as AgentEvent;
 }
 

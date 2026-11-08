@@ -4,8 +4,6 @@ import { journalFixture } from './fixtures.js';
 import { offerInput } from '../../src/journal/input.js';
 import { eventInput } from '../../src/journal/event-input.js';
 import { migration002 } from '../../src/journal/schema.js';
-import { append } from '../../src/journal/spool.js';
-import { acknowledge, prune } from '../../src/journal/replay.js';
 
 const f = journalFixture();
 function populateV2(path: string): void {
@@ -21,10 +19,14 @@ function populateV2(path: string): void {
     db.prepare("INSERT INTO accepted_attempts VALUES (7,?,?,?,?,1,'offered',0,1,?,?)")
       .run(offer.attemptId, offer.organizationId, offer.workspaceId, offer.intentDigest, input.json, input.canonical);
     db.exec(migration002);
-    append(db, eventInput(f.wrapper(1), 'wrapper'));
-    append(db, eventInput(f.supervisor(2), 'agent'));
-    append(db, eventInput(f.wrapper(3), 'wrapper'));
-    acknowledge(db, f.ack(2)); prune(db, f.key());
+    // Literal v2 retained-prefix fixture; current v5 mutations require their own schema.
+    const event = eventInput(f.wrapper(3), 'wrapper');
+    const json = JSON.stringify({ ...JSON.parse(event.json), source: 'wrapper', wrapperSeq: 3, seq: 3 });
+    const bytes = Buffer.byteLength(json); const charge = bytes + Buffer.byteLength(event.canonical) + 256;
+    db.prepare(`INSERT INTO event_spool VALUES (?,1,3,'wrapper',3,?,?,?,?)`)
+      .run(offer.attemptId, event.canonical, json, bytes, charge);
+    db.prepare(`UPDATE accepted_attempts SET last_seq=3,retained_start_seq=3,acknowledged_seq=2,
+      spool_bytes=?,spool_rows=1,wrapper_high=3,supervisor_high=2,wrapper_expired=1,supervisor_expired=2`).run(charge);
     db.exec("UPDATE sqlite_sequence SET seq=100 WHERE name='accepted_attempts'");
   } finally { db.close(); }
 }
@@ -45,10 +47,12 @@ describe('transactional migration003 with foreign keys enabled', () => {
     await expect(journal.appendWrapper(f.wrapper(1))).rejects.toMatchObject({ code: 'expired_key' });
     await expect(journal.appendSupervisor(f.supervisor(2))).rejects.toMatchObject({ code: 'expired_key' });
     expect((await journal.readEvents(f.key(), 2)).events).toMatchObject([{ seq: 3 }]);
-    await f.close(journal); expect(rows(path)).toEqual(original);
+    await f.close(journal); const migrated = rows(path);
+    expect(migrated.events).toEqual(original.events); expect(migrated.sequence).toBe(original.sequence);
+    expect(migrated.attempts).toMatchObject(original.attempts);
     const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
     try {
-      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(4);
+      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(5);
       expect(db.prepare('PRAGMA foreign_keys').get()?.foreign_keys).toBe(1);
       expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
       db.prepare("UPDATE accepted_attempts SET state='admitted' WHERE id=7").run();

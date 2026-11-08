@@ -26,7 +26,7 @@ describe('durable event append and fences', () => {
     const batch = await journal.readEvents(f.key(), 0);
     expect(batch.events).toEqual([wrapper, supervisor, next]); expect(batch.nextCursor).toBe(3);
     expect(validate('EventBatch', batch).ok).toBe(true);
-    expect(await journal.get(f.key())).toMatchObject({ lastSeq: 3, state: 'offered' });
+    expect(await journal.get(f.key())).toMatchObject({ lastSeq: 3, state: 'running', phase: 'execute' });
   });
   it('deduplicates canonical input, rejects changed key reuse and new out-of-order ordinals', async () => {
     const journal = await f.open(); await journal.immutableOffer(f.offer());

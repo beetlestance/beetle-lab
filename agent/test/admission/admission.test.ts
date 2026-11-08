@@ -46,8 +46,9 @@ describe('one global transactional pool', () => {
   it('rolls back reservation, state, sequence, ordinal and queue on event quota overflow', async () => {
     const journal = await f.configured(undefined, 1024); const a = f.job(); await f.enqueue(journal, a);
     await journal.appendSupervisor({ ...f.supervisor(), event: { ...f.supervisor().event, ...scope(a) } });
+    const before = await journal.get(scope(a));
     await expect(f.admit(journal, a, now, 2)).rejects.toMatchObject({ code: 'quota_exceeded' });
-    expect(await journal.get(scope(a))).toMatchObject({ state: 'offered', lastSeq: 1 });
+    expect(await journal.get(scope(a))).toEqual(before);
     expect(await journal.admission({ kind: 'reservations', limit: 100 })).toEqual({ reservations: [] });
     expect(await journal.sourceCursors(scope(a))).toEqual({ supervisorOrdinal: 1, wrapperSeq: 0 });
   });

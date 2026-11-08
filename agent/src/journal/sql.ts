@@ -9,10 +9,14 @@ export interface Row {
   spool_bytes: number; spool_rows: number; quota_bytes: number;
   wrapper_high: number; supervisor_high: number;
   wrapper_expired: number; supervisor_expired: number;
+  phase: NonNullable<AttemptSnapshot['phase']> | null;
+  exit_json: string | null; result_json: string | null; snapshot_bytes: number;
 }
-export const columns = `id, attempt_id, organization_id, workspace_id, intent_digest, generation,
+export const metadataColumns = `id, attempt_id, organization_id, workspace_id, intent_digest, generation,
   state, last_seq, cancel_requested, retained_start_seq, acknowledged_seq, spool_bytes,
-  spool_rows, quota_bytes, wrapper_high, supervisor_high, wrapper_expired, supervisor_expired`;
+  spool_rows, quota_bytes, wrapper_high, supervisor_high, wrapper_expired, supervisor_expired,
+  phase, exit_json, snapshot_bytes`;
+export const columns = `${metadataColumns}, result_json`;
 export class Failure extends Error {
   constructor(readonly code: ErrorCode, readonly recovery?: AttemptSnapshot) { super(code); }
 }
@@ -20,7 +24,10 @@ export function snapshot(row: Row): AttemptSnapshot {
   return { protocolVersion: '1.0', attemptId: row.attempt_id, organizationId: row.organization_id,
     workspaceId: row.workspace_id, intentDigest: row.intent_digest, generation: row.generation,
     state: row.state, lastSeq: row.last_seq, retainedStartSeq: row.retained_start_seq,
-    cancelRequested: row.cancel_requested === 1 };
+    cancelRequested: row.cancel_requested === 1,
+    ...(row.phase === null ? {} : { phase: row.phase }),
+    ...(row.exit_json === null ? {} : { exitEvidence: JSON.parse(row.exit_json) }),
+    ...(row.result_json === null ? {} : { result: JSON.parse(row.result_json) }) };
 }
 export function transaction<T>(db: DatabaseSync, work: () => T): T {
   db.exec('BEGIN IMMEDIATE');
