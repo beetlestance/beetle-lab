@@ -7,7 +7,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./tooling/inference": "./scripts/inference.ts",
-    "./api": "./src/api/index.ts"
+    "./api": "./src/api/index.ts",
+    "./engine-config": "./src/engine-config/index.ts",
+    "./engine-config/k6": "./src/engine-config/k6.ts"
   },
   "dependencies": {
     "ajv": "8.20.0",
