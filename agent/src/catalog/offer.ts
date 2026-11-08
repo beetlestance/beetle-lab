@@ -30,6 +30,7 @@ export function permitsRuntime(offer: Offer, engine: EngineRegistration): boolea
   const name = runtimeName({ installationId: profile.installationId, ...offer, generation: 1 });
   const root = join(profile.stagingRoot, name);
   return prepareRuntime({ offer, manifest, profile, generation: 1,
+    requireHardOutputQuota: offer.requiredCapabilities.includes('hard-output-quota'),
     staged: { input: join(root, 'input'), output: join(root, 'output'), secrets: join(root, 'secrets') } }).ok;
 }
 export function validateConfig(offer: Offer, engine: InstalledEngine): void {

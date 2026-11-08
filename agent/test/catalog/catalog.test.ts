@@ -69,6 +69,15 @@ describe('installed engine catalogue', () => {
       invalid({ ...offer(), budget }, 'unapproved_engine', input => catalog.preflight(input));
     }
   });
+  it('rejects a required hard output quota even when the installed manifest advertises it', () => {
+    const installed = registration(); installed.manifest.capabilities.push('hard-output-quota');
+    const catalog = createEngineCatalog([installed]);
+    const ordinary = catalog.preflight(offer());
+    expect(ordinary.engine.approved.capabilities).toContain('hard-output-quota');
+    const requiring = { ...offer(), requiredCapabilities: ['http', 'hard-output-quota'] };
+    invalid(requiring, 'unapproved_engine', input => catalog.preflight(input));
+    invalid(requiring, 'identity', input => catalog.resolve(input, ordinary.validation));
+  });
   it('requires exact complete persisted validation identity and revalidates recovered config', () => {
     const catalog = createEngineCatalog([registration()]); const found = catalog.preflight(offer());
     for (const [key, value] of Object.entries(found.validation)) {
