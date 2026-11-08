@@ -62,6 +62,7 @@ export class TimeoutService implements TimeoutGuard {
   }
   private refreshAnchor(watch: Watch, request: TimeoutRequest): void {
     const now = this.sample();
+    if (this.closed) return;
     if (!now || request.clockFenced || request.sampledAt > now.monotonic || request.clockHighWater > now.wall) {
       watch.stop('clock_integrity');
     }
@@ -75,6 +76,7 @@ export class TimeoutService implements TimeoutGuard {
   }
   private fail(): void {
     this.failed = true;
+    if (this.closed) return;
     for (const watch of this.watches.values()) watch.stop('clock_integrity');
   }
   private validTime(wall: number, monotonic: number): boolean {

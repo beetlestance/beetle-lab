@@ -100,3 +100,14 @@ it('adopts a watch when the clock callback reenters service close', async () => 
   const f = setup(); const watch = guard.watch(f.request());
   expect(watch.status().ready).toBe(false); await guard.close(); expect(watch.status().closed).toBe(true);
 });
+
+it.each(['status', 'duplicate'] as const)('does not request a new stop after reentrant close and clock throw through %s', async mode => {
+  let reenter = false; let closing: Promise<void> | undefined; const stop = vi.fn(async () => undefined);
+  const guard: TimeoutGuard = createTimeoutGuard({ wallNow() {
+    if (reenter) { closing = guard.close(); throw new Error('synthetic clock failed after close'); }
+    return 1000;
+  }, monotonicNow: () => 100, stop });
+  services.push(guard); guard.start(); const f = setup(); const watch = guard.watch(f.request()); reenter = true;
+  if (mode === 'status') guard.status(); else expect(guard.watch(f.request())).toBe(watch);
+  await closing; expect(stop).not.toHaveBeenCalled(); expect(watch.status().closed).toBe(true);
+});
