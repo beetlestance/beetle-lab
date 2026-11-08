@@ -51,6 +51,7 @@ describe('original preparation ownership', () => {
     const offers = [1, 2, 3].map(i => ({ ...e.offer, attemptId: f.job(i).attemptId, budget: { ...e.offer.budget, pids: 1, cpuMillis: 100, memoryBytes: 100 } }));
     // All simultaneous reservations require independent staging disk capacity.
     const config = (await import('../admission/fixtures.js')).configuration();
+    config.maxTimeoutMs = e.offer.budget.timeoutMs;
     config.pool.stagingBytes = 100_000_000; config.perRun.stagingBytes = 100_000_000;
     await e.owner.admission({ kind: 'configure', configuration: config });
     const observe = (await import('../admission/fixtures.js')).observation(e.time.wall() + 1);

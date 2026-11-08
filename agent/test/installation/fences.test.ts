@@ -68,6 +68,7 @@ describe('installation fences and bounded intake', () => {
   });
   it('retains 64 rejected-cleanup owners and blocks a 65th without releasing charge', async () => {
     const e = await f.setup(); const config = configuration();
+    config.maxTimeoutMs = e.offer.budget.timeoutMs;
     config.maxConcurrent = 64;
     config.pool = { cpuMillis: 100_000, memoryBytes: 100_000, pids: 100_000, outputBytes: 100_000, stagingBytes: 1_000_000_000 };
     config.perRun = { ...config.pool };
