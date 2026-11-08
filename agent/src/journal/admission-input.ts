@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { encodeJson, validatePrimitive } from '@beetle/contracts';
 import type { AdmissionCommand, ApprovedProfile, LaunchSettlement, PoolConfiguration, Resources, RuntimeObservation, Scope, ValidationIdentity } from '../admission/index.js';
-import { addResources, resourceNames, validResources } from '../admission/index.js';
+import { addResources, resourceNames, validResources, MAX_ENGINE_PROFILES } from '../admission/index.js';
 import { canonical, offerInput } from './input.js';
 
 function requireValid(condition: unknown): asserts condition { if (!condition) throw new Error('invalid_input'); }
@@ -41,7 +41,7 @@ function configuration(value: PoolConfiguration): void {
   requireValid(integer(value.maxConcurrent, 64) && value.maxConcurrent > 0);
   requireValid(integer(value.maxTimeoutMs) && value.maxTimeoutMs > 0);
   requireValid(integer(value.observationTtlMs, 300_000) && value.observationTtlMs > 0);
-  requireValid(Array.isArray(value.profiles) && value.profiles.length > 0 && value.profiles.length <= 32);
+  requireValid(Array.isArray(value.profiles) && value.profiles.length > 0 && value.profiles.length <= MAX_ENGINE_PROFILES);
   value.profiles.forEach(profile);
   requireValid(Array.isArray(value.requiredSensors) && value.requiredSensors.length <= 2);
   requireValid(value.requiredSensors.every(sensor => sensor === 'idle' || sensor === 'thermal'));

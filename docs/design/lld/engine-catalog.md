@@ -4,7 +4,7 @@ Status: configuration-schema adapter and catalogue interface ready for review;
 registry implementation and installation composition remain in progress.
 Scope: trusted local installation, not a schema-upload API or engine marketplace.
 
-An installation registers at most64 pinned engine/profile/config-version combinations.
+An installation registers at most32 pinned engine/profile/config-version combinations.
 Registration supplies a manifest, approved Docker profile, positive config version,
 validation identity and opaque ConfigSchema created by the shared contract adapter.
 Arbitrary validator callbacks and remote schema resolution are unsupported. All
@@ -42,3 +42,8 @@ Success means pending admitted engine validation, as specified in
 engine/config bytes must match the installed entry. It never selects a newer
 catalogue version implicitly. Missing old pins keep uncertain executions charged and
 visible for reconciliation rather than rerunning load with another image.
+
+The catalogue and admission share MAX_ENGINE_PROFILES=32. Public prepareRuntime
+validates actual offered budgets/profile flags; public journal configDigest owns
+configuration identity. Registration rejects ambiguous engine/image/config-version
+selection and freezes its own JSON snapshots rather than retaining caller objects.

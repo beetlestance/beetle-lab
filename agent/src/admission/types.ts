@@ -2,6 +2,7 @@ import type { Offer } from '@beetle/contracts';
 import type { StagingEstimate } from './staging.js';
 
 export const resourceNames = ['cpuMillis', 'memoryBytes', 'pids', 'outputBytes', 'stagingBytes'] as const;
+export const MAX_ENGINE_PROFILES = 32;
 export type Resources = Record<typeof resourceNames[number], number>;
 export interface Scope { attemptId: string; organizationId: string; workspaceId: string; generation: number }
 export interface ApprovedProfile {

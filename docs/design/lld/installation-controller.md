@@ -52,3 +52,13 @@ component creates no hidden timers, unbounded work queue or fake resource sample
 This layer does not finalize application results, grant artifact deletion, apply
 hard output quotas or authenticate its private HTTP caller. Those remain separate
 owners. The full installation/container path needs qualification after composition.
+
+Implementation acceptance requires: saturation is checked before charge or retains
+fresh-owned never-prepared setup for retry; completed controllers close before
+eviction; pending/failed cleanup owners are never evicted to recover a slot. Exercise
+more than64 sequential completions and a blocked65th uncertain owner. Cancel/close
+fences must survive pending enqueue/admit continuations and be checked immediately
+before preparation/launch. Only durable queued intents and existing accepted
+reservations count as accepted; pending_full does not. Bind the public collectOutputs
+implementation directly when constructing AttemptController, without a new public
+port. Reconstruction includes the same deterministic secrets mount as fresh staging.
