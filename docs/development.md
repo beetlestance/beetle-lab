@@ -57,3 +57,28 @@ port with disposable synthetic storage. It checks pairing, namespace access, log
 and SIGTERM cleanup; it never starts k6 or contacts a target. It requires permission
 to bind that loopback port. CI runs build and smoke after the main verification gate.
 This does not qualify browser cookies, container controls or either Linux architecture.
+
+## Real Docker agent qualification
+
+After building the agent and k6 recipes locally, run the isolated qualification:
+
+```sh
+docker build -f agent/Dockerfile -t beetle-lab-agent:local .
+docker build -f engines/k6/Dockerfile -t beetle-lab-k6:local .
+npm run smoke:agent:docker -- beetle-lab-agent:local beetle-lab-k6:local 200 default
+npm run smoke:agent:docker -- beetle-lab-agent:local beetle-lab-k6:local 500 default
+```
+
+Use `desktop-linux` instead of `default` when that is the local Docker Desktop
+context. The context must use a Unix endpoint; image/daemon architectures must match
+amd64 or arm64. This exercise expects the daemon socket at `/var/run/docker.sock`
+on its Linux host/VM and permission to create/remove its own containers/network.
+It is a developer qualification command, separate from normal product installation.
+
+The command uses fresh private temporary files, an internal HTTP target, bounded
+containers and the real installed agent path. It checks pass/fail, seals, artifacts,
+durable reservation release, clean agent exit and owned-resource removal. Exit0
+means the qualification passed, including the expected failed-test outcome for500.
+It prints the private evidence directory and retains it for inspection; it never
+publishes images or removes unrelated resources. It does not establish resource
+stress, restart recovery, Compose or the complete application workflow.
