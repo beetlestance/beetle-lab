@@ -8,6 +8,8 @@ import { createK6ConfigSchema } from '@beetle/contracts/engine-config/k6';
 import { createEngineCatalog } from '../../src/catalog/index.js';
 import { createInstallationController } from '../../src/installation/index.js';
 import { createTimeoutGuard } from '../../src/timeout/index.js';
+import { createObservationPublisher, createResourceObserver } from '../../src/observation/index.js';
+import { resourceTransport } from './resource-fixtures.js';
 import { createAgentServer } from '../../src/transport/index.js';
 import { createScheduler } from '../../src/scheduler/index.js';
 import { createOutputGuard } from '../../src/guard/index.js';
@@ -15,7 +17,7 @@ import type { InstallationController } from '../../src/installation/index.js';
 import { runtimeName } from '../../src/backends/docker/index.js';
 import { fixture, operation } from '../staging/fixtures.js';
 import { controlled, clock, scope } from '../supervisor/fixtures.js';
-import { configuration, observation } from '../admission/fixtures.js';
+import { configuration } from '../admission/fixtures.js';
 
 const f = fixture();
 const digest = (value: string) => createHash('sha256').update(value).digest('hex');
@@ -36,8 +38,7 @@ it.each(['manual', 'scheduled', 'output_limit'] as const)('composes authenticate
   const config = configuration(); config.pool.outputBytes = 131_072; config.perRun.outputBytes = 131_072;
   await e.owner.admission({ kind: 'configure', configuration: { ...config,
     profiles: catalog.engines.map(engine => structuredClone(engine.approved)) } });
-  const observed = observation(time.wall() + 1); observed.capacity.outputBytes = 131_072; time.advance(1);
-  await e.owner.admission({ kind: 'observe', observation: observed });
+  time.advance(1);
   const stager = e.create({ manifest, profile, validation, wallNow: time.wall });
   const guard = createOutputGuard({ root: e.options.root, minimumFreeBytes: 0, intervalMs: 50, ttlMs: 5000,
     stop: (key, reason) => installation.stop(key, reason) });
@@ -46,6 +47,10 @@ it.each(['manual', 'scheduled', 'output_limit'] as const)('composes authenticate
     stagerFor: () => stager, wallNow: time.wall });
   timeout.start();
   guard.start();
+  const observer = createResourceObserver({ root: e.options.root, transport: resourceTransport(), configuration: config, wallNow: time.wall });
+  const publisher = createObservationPublisher({ journal: e.owner, observer, output: guard, timeout,
+    intervalMs: 50, ttlMs: 5000, wallNow: time.wall });
+  publisher.start();
   const scheduler = createScheduler({ journal: e.owner, installation, intervalMs: 50 });
   const capabilities = JSON.parse(await readFile('contracts/fixtures/valid/capabilities.json', 'utf8')) as Capabilities;
   const server = createAgentServer({ credential: 'I'.repeat(64), installation, journal: e.owner, capabilities: async () => capabilities });
@@ -53,6 +58,7 @@ it.each(['manual', 'scheduled', 'output_limit'] as const)('composes authenticate
   const headers = { authorization: `Bearer ${'I'.repeat(64)}`, 'x-beetle-organization-id': key.organizationId,
     'x-beetle-workspace-id': key.workspaceId, 'x-beetle-generation': '1' };
   try {
+    expect(await publisher.initial).toEqual({ ready: true });
     const accepted = await server.inject({ method: 'PUT', url: path, headers, payload: e.offer });
     expect(accepted.statusCode).toBe(202); expect(accepted.json()).toMatchObject({ state: 'offered', generation: 1 });
     if (mode === 'manual') expect(await installation.drive(key, operation())).toMatchObject({ kind: 'runtime' });
@@ -99,5 +105,8 @@ it.each(['manual', 'scheduled', 'output_limit'] as const)('composes authenticate
     expect(final.allocation).toMatchObject({ status: 'released', releaseEvidence: { collection: { state: 'finished' } } });
     expect((await server.inject({ url: `${path}/events?after=0`, headers })).json().events).toHaveLength(4);
     expect(runtime.backend.starts).toBe(1);
-  } finally { await server.close(); await scheduler.close(); await installation.close(); await guard.close(); await timeout.close(); }
+  } finally {
+    await server.close(); await scheduler.close(); await installation.close();
+    await publisher.close(); await observer.close(); await guard.close(); await timeout.close();
+  }
 });
