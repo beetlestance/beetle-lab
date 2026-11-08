@@ -33,7 +33,7 @@ model assignments, agent packets, concurrency and independent review.
 | Area | Integrated | Still required |
 | --- | --- | --- |
 | Foundation/contracts | Workspace gates; strict runner/staged-input and namespace/settings schemas/clients; Fastify JSON adapter | Full suite/run/result API and route wiring |
-| Agent | Catalogue/admission/staging/controllers; typed stops; bounded scheduling; resource and output-guard components; control/output verification; private runner HTTP | Timeout watchdog/freshness publisher, startup, Docker/stop-latency qualification, irreversible recovery fencing, telemetry, artifact transfer/finalization and actual Linux qualification |
+| Agent | Catalogue/admission/staging/controllers; typed stops; bounded scheduling; resource, output and timeout-guard components; control/output verification; private runner HTTP | Combined freshness publisher, startup, Docker/stop-latency qualification, irreversible recovery fencing, telemetry, artifact transfer/finalization and actual Linux qualification |
 | k6 | Suite compiler/runtime/builder, phase-isolated metrics, control journal, staged loader, child runner, numeric windows, summary collector, outcome mapper, staged wrapper, seal codec and artifact publication | Live quantiles, target sampler, reports/export |
 | Product | Namespace/settings SQLite/API composition, sessions, paired React screens, backend startup and dev proxy | Docker frontend proxy, artifact store, suite/run API/UI, reports and automation client |
 | Qualification | Local contract/unit/SQLite and real staged native pass/fail checks | Complete execution path, containers, scans, backup/soak and native architecture matrix |

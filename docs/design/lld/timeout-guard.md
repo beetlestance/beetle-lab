@@ -1,6 +1,7 @@
 # Attempt timeout watchdog
 
-Status: implementation in progress; no native stop-latency qualification claimed.
+Status: implemented and independently reviewed component;
+[local evidence](../../verification/timeout-guard.md). No native stop-latency qualification claimed.
 The public contract lives in `agent/src/timeout/index.ts`.
 
 The watchdog requests typed timeout or clock_integrity stops independently of

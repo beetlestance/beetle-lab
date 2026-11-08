@@ -1,7 +1,8 @@
 # Durable attempt stop reason
 
 Status: implemented and independently reviewed component;
-[local evidence](../../verification/durable-stop.md). Output guard and runtime qualification remain.
+[local evidence](../../verification/durable-stop.md). Output/timeout components have
+separate evidence; complete runtime qualification remains.
 
 The private supervision transaction owns the first durable stop time and reason.
 Reasons are cancelled, timeout, output_limit, artifact_incomplete or clock_integrity.
