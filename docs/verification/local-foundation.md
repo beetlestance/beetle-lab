@@ -1,6 +1,6 @@
 # Local foundation evidence
 
-Full-gate source: `f92c551` on `rewrite/integration`.
+Full-gate source: `99751a1` on `rewrite/integration`.
 Date: 2026-11-08. Verification started at this clean source. It includes the
 reviewed staged loader, decoder/accumulator, summary collector, result-seal codec,
 backend/session/startup composition and browser gate. HTTP smoke has separate evidence below.
@@ -12,11 +12,11 @@ This report covers foundations; it does not qualify the rewritten product.
 
 - Runner/API/k6 generation checks: 37/23/6 outputs matched their sources.
 - TypeScript node/browser/native-k6 checks and ESLint passed.
-- Import boundaries, cycles and size checks covered 503 source files.
-- Documentation check covered 75 files.
+- Import boundaries, cycles and size checks covered 521 source files.
+- Documentation check covered 77 files.
 - Frontend production build passed; the main bundle was 611.56 kB / 178.59 kB gzip.
   Vite's large-chunk warning remains; no browser performance claim is made.
-- Vitest: 1,641 tests passed in 141 files, with at most two workers.
+- Vitest: 1,780 tests passed in 149 files, with at most two workers.
 
 Environment: Node v26.7.0 on macOS arm64. Compilation targets Node24, but
 compilation alone does not prove Node24 runtime behavior.
@@ -147,6 +147,7 @@ buckets, with explicit late coverage and unknown quantiles. Summary collector
 probes. Result-seal codec `c681d7d` passed four normative/mutation/error tests and
 independent review; it proves content identity, not outcome or artifact eligibility.
 All are included in the full gate.
+The [outcome report](k6-outcomes.md) records the reviewed mapper and native pass/fail seal/replay checks.
 
 Phase isolation `5937af9` and correction `f08454d` now separate preparation from
 measured native summaries and accumulation. Independent review caught invalid
