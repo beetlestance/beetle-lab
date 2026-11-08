@@ -19,6 +19,7 @@ The owning document below must be updated before its implementation changes.
 | Independent execution timeout | [Timeout guard](lld/timeout-guard.md) | Durable admission deadline, independent polling, clock fences and original-stop ownership |
 | Full resource/guard publication | [Observation publisher](lld/observation-publisher.md) | Freshness composition, held-I/O revocation and original-write ownership |
 | Installed agent startup | [Agent runtime](lld/agent-runtime.md) | Actual component wiring, initial readiness and independent shutdown drains |
+| Mounted input/secret intake | [Installed providers](lld/installed-providers.md) | Scoped lazy input streams, explicit aliases, bounded private files and original cleanup |
 | Private runner HTTP | [Agent HTTP](lld/agent-http.md) | Credential/scope fences, bounded runner DTOs and request ownership |
 | Scheduler or instrumentation | [Resources/observability](lld/resources-observability.md) | Admission, budgets, CPU/RAM, phases, telemetry limits |
 | HTTP, CLI or browser | [Application/UI](lld/application-ui.md) | API routes, errors, events, queries, export, frontend |
