@@ -23,7 +23,10 @@
     "generate:api": "node --import tsx contracts/scripts/generate-api.ts",
     "check:api": "node --import tsx contracts/scripts/generate-api.ts --check",
     "generate:k6": "node --import tsx engines/k6/compiler/generate.ts",
-    "check:k6": "node --import tsx engines/k6/compiler/generate.ts --check"
+    "check:k6": "node --import tsx engines/k6/compiler/generate.ts --check",
+    "build:api": "node --import tsx tools/build-api.ts",
+    "start:api": "node app/dist/main.js",
+    "smoke:api": "node --import tsx app/test/bootstrap/smoke-api.ts"
   },
   "engines": {
     "node": ">=24.0.0"

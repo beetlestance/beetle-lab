@@ -30,6 +30,8 @@ jobs:
       - run: npm run check
       - run: npm run test:legacy
       - run: npm run verify:v2
+      - run: npm run build:api
+      - run: npm run smoke:api
 
   container:
     name: ci/container

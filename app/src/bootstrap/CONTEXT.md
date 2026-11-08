@@ -11,6 +11,12 @@ Startup token is returned only for explicit local startup output, never HTTP.
 and retains its original promise. Closing the returned server also closes storage.
 Startup failure retires authority and awaits cleanup; no successful partial handle.
 No generic service container, fake capacity or legacy app dependency is introduced.
-Suite/run/artifact routes, listener/config loading, agent dispatch and packaged
-proxy/startup delivery are still separate work.
+`configuration.ts` reads <=32KiB of installation JSON from BEETLE_CONFIG_FILE,
+rejects writable/symlink/nonregular config and requires an owned mode0700 data root.
+BEETLE_EXTERNAL_ORIGIN is required; normal listener defaults127.0.0.1:4311.
+`main.ts` prints the one-time token only after binding, handles INT/TERM, and
+uses private umask. Explicit0.0.0.0 is for the private backend container network.
+`npm run build:api` bundles main/worker separately; start:api runs that output.
+`npm run smoke:api` needs an owned loopback port and tests the built entrypoint.
+Suite/run/artifact routes, agent dispatch and packaged proxy delivery remain work.
 Check: npx vitest run app/src/bootstrap/api.integration.test.ts --maxWorkers=2.
