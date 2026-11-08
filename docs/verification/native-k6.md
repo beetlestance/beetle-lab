@@ -36,3 +36,9 @@ Executed at committed source `f92c551` on Node26.7.0/macOS arm64: exit 0, k6
 v2.2.0, one readiness plus one workload request, 48 records/9,036 bytes, complete
 windows, no diagnostics, native duration 109.802 ms and measured HTTP count one.
 The strict collector accepted the result and observed the owned child group absent.
+
+Builder `2d8cec4` adds caller-reserved scratch-byte accounting and direct pinned
+esbuild output admission before file writes. At source `f28f249`, the same native
+check passed again: 48 records/9,037 bytes, native duration 115.935 ms, one measured
+HTTP request and complete windows. Nineteen focused build tests and independent
+UTF-8 quota/symlink-preservation probes passed; this is a logical file-byte limit.

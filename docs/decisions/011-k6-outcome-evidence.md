@@ -17,6 +17,8 @@ are unknown. This matters because transport failure increments request attempts
 but skips assertion evaluation. More evaluations than attempts, failures greater
 than evaluations, or incompatible global required-failure totals are contradictory
 evidence. Never convert them to a passing or ordinary assertion-failure result.
+Known failures cannot exceed request attempts or the global failure count;
+missing terms do not erase these nonnegative lower bounds.
 
 Use compiler labels and the shared evidence layout. Sum required failure
 evaluations separately from definition counts and reconcile that sum against
@@ -24,6 +26,8 @@ evaluations separately from definition counts and reconcile that sum against
 are unknown, not zero. Numeric health counts and native `count==0` verdicts must
 agree. Complete pass requires known required health and consistent zero execution
 health. Positive execution failures take execution-error precedence over test failures.
+A consistent positive global required-failure guard proves a test failure even
+when missing per-definition counters leave its definition attribution unknown.
 
 ## Completion and discovery
 
@@ -31,6 +35,9 @@ Unknown child ownership, incomplete stop confirmation or outstanding issued work
 is not sealable. Confirmed never-started work may produce an error result, never a
 pass. Cancellation, timeout, script/adapter errors and contradictory evidence are
 inconclusive; absence of summary/measurement evidence cannot imply success.
+Caller supplies whole-orchestration quiescence and failure explicitly. A clean
+child exit cannot override later collection/publication timeout, cancellation,
+clock fencing or cleanup failure; failure cannot establish quiescence.
 
 For confirmed normal completion, known required assertion or ordinary SLO failure
 is failed. Ordinary pass requires exit zero and complete passing decision evidence.
