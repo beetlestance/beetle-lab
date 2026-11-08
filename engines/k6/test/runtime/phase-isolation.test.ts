@@ -72,3 +72,17 @@ it('shares phase-first native criteria and preserves discovery inverse abort, en
   expect(layout.metrics.find(item => item.key === 'http_req_failed')!.provenance.rateDenominator).toBe('samples');
   expect(layout.metrics.find(item => item.key === 'vus')).toMatchObject({ scope: 'engine', nativeKey: 'vus' });
 });
+it('uses native-supported aggregation methods for every generated observer threshold', () => {
+  const layout = metricEvidenceLayout(compiled(configFor()));
+  const supported = { counter: ['count', 'rate'], rate: ['rate'], gauge: ['value'],
+    trend: ['avg', 'min', 'max', 'med', 'p(50)', 'p(90)', 'p(95)', 'p(99)'] };
+  for (const metric of layout.metrics) {
+    for (const rule of metric.thresholds) {
+      const aggregation = rule.threshold.split(/[<>=!]/)[0]!;
+      expect(supported[metric.kind], `${metric.nativeKey}: ${rule.threshold}`).toContain(aggregation);
+    }
+  }
+  const trends = layout.metrics.filter(metric => metric.kind === 'trend');
+  expect(trends).toHaveLength(8);
+  expect(trends.every(metric => metric.thresholds.some(rule => rule.threshold === 'avg>=0'))).toBe(true);
+});

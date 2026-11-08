@@ -17,6 +17,7 @@ export interface EvidenceMetric {
 }
 const engine = new Set(['vus', 'vus_max', 'beetle_required_failures', 'beetle_execution_failures']);
 const aggregate = new Set(['data_sent', 'data_received', 'beetle_transport_failures', 'beetle_execution_failures']);
+const observer: Readonly<Record<MetricKind, string>> = { counter: 'count>=0', rate: 'rate>=0', trend: 'avg>=0', gauge: 'value>=0' };
 /** Native criterion spelling is phase first, then the one assigned label. */
 export function nativeMetricKey(metric: string, tags: MetricTags): string {
   const criteria = Object.entries(tags).filter(([, value]) => value !== undefined);
@@ -54,7 +55,7 @@ function projectionRules(input: { suite: DeepReadonly<CompiledSuite>; name: stri
   const { suite, name, tags, scoped, kind } = input;
   const rules = Object.keys(tags).length ? [] : (suite.loadPlan.options.thresholds[name] ?? []).map(rule => ({ ...rule }));
   if (counterNames.includes(name as typeof counterNames[number]) || Object.keys(scoped).length) {
-    rules.push({ threshold: kind === 'rate' ? 'rate>=0' : 'count>=0', abortOnFail: false });
+    rules.push({ threshold: observer[kind], abortOnFail: false });
   }
   if (['beetle_required_failures', 'beetle_execution_failures'].includes(name)) rules.push({ threshold: 'count==0', abortOnFail: false });
   return Object.freeze(rules.map(rule => Object.freeze(rule)));
