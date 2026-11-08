@@ -1,9 +1,9 @@
 # Local foundation evidence
 
-Full-gate source: `66ea8d3` on `rewrite/integration`.
-Date: 2026-11-07. Verification ran with a clean worktree at this source;
-this includes settings UI, staging, the secret bridge, native child and session contracts.
-Later metric projection remains a candidate with separate scoped checks.
+Full-gate source: `e8dc7bc` on `rewrite/integration`.
+Date: 2026-11-08. Verification started at this clean source. It includes the
+reviewed staged loader, metric decoder, backend/session composition and browser gate.
+Backend startup and development proxy have separate scoped checks below.
 This report covers foundations; it does not qualify the rewritten product.
 
 ## Executed checks
@@ -12,11 +12,11 @@ This report covers foundations; it does not qualify the rewritten product.
 
 - Runner/API/k6 generation checks: 37/23/6 outputs matched their sources.
 - TypeScript node/browser/native-k6 checks and ESLint passed.
-- Import boundaries, cycles and size checks covered 440 source files.
-- Documentation check covered 65 files.
-- Frontend production build passed; the main bundle was 606.23 kB / 176.89 kB gzip.
+- Import boundaries, cycles and size checks covered 469 source files.
+- Documentation check covered 69 files.
+- Frontend production build passed; the main bundle was 611.56 kB / 178.59 kB gzip.
   Vite's large-chunk warning remains; no browser performance claim is made.
-- Vitest: 1,332 tests passed in 117 files, with at most two workers.
+- Vitest: 1,503 tests passed in 129 files, with at most two workers.
 
 Environment: Node v26.7.0 on macOS arm64. Compilation targets Node24, but
 compilation alone does not prove Node24 runtime behavior.
@@ -59,8 +59,8 @@ stream response rejection. The API server factory contains pre-router URL and
 parameter errors plus fixed exception mapping. Namespace create/read/update/list
 and six settings GET/PATCH routes exercise actual SQLite use cases and scope checks.
 Identity-only settings lookup permits receipt replay after capacity expires. Tests
-inject a synthetic guard at the full-gate baseline. Later session composition
-evidence is recorded below; startup/listener/proxy wiring remains incomplete.
+inject a synthetic guard. Separate real session composition and startup/proxy
+evidence is recorded below; these are not packaged-install qualification.
 
 React tests use the real typed client with synthetic fetch replies. They cover
 scope switches/cancellation, bounded pagination, namespace editing and unknown
@@ -88,8 +88,10 @@ slots and late I/O. Failed close retains unknown quiescence. This is not proof o
 Docker/Desktop mount visibility. Later source `dd88b7c` aligns runner/k6 secret
 names and opaque provider/reference/version identities. Its 15 focused tests and
 296 broader seam tests pass; independent probes cleared alias/version/set/freeze
-checks. This pure bridge never resolves secret values; staged-loader integration
-remains pending.
+checks. This pure bridge never resolves secret values. The reviewed staged loader
+is integrated in `e8dc7bc`; its 103 tests cover headers, file/binding verification,
+one compilation and final publication. Failure verdicts now receive deadline and
+rollback fencing, preserving original close/quiescence and cancellation evidence.
 
 Later native child source `7020ae7` passed 49 integrated tests in six files and
 all three TypeScript projects. Independent review verified irreversible process-group
@@ -113,7 +115,7 @@ Retained native response bodies buffer before JS caps; see [exception E02](../en
 
 Session contracts in `66ea8d3` add three typed browser operations and fixed 429
 errors. Independent review caught and cleared a namespace-client scope assumption.
-Later session adapter `f8ae4e4`, backend composition `5b91285` and browser gate
+Session adapter `f8ae4e4`, backend composition `5b91285` and browser gate
 `09f951d` were independently approved. The session adapter has 21 focused Fastify
 tests. Backend composition exercises actual SQLite, authorization, restart and
 unknown capacity; the browser gate has 24 new DOM tests. A later combined run
@@ -129,10 +131,19 @@ impossible calendar timestamps and a cancelled concurrent push poisoning its own
 Only numeric points and approved labels leave the bounded decoder. Aggregation,
 native stream wiring and outcome finalization are not established by those tests.
 
+Backend startup `d296d62` passed 12 focused configuration tests and structural
+checks. Independent review found and cleared a FIFO-open hang with O_NONBLOCK and
+a bounded subprocess regression. The built 2.68 MB main/700.12 kB worker passed
+actual loopback pairing, namespace read, logout and clean SIGTERM on macOS arm64.
+Startup smoke caught/fixed CommonJS builtin loading and Fastify mutating frozen
+listen options. The development proxy separately served HTML and forwarded pairing,
+namespace read and logout successfully with Host/Origin intact. These are HTTP
+checks, not browser rendering/cookie qualification. See [development startup](../development.md).
+
 ## Missing release evidence
 
 The complete new submit/execute/observe/finalize/replay path is not implemented.
-Application artifact storage, staged-input loading, wrapper/native child coordination, aggregation, remaining
+Application artifact storage, wrapper/native child coordination, aggregation, remaining
 frontend features, reports/comparison/export and packaging remain incomplete or
 under review. The integrated frontend makes real API requests and shows errors;
 it does not contain a demo backend or claim a functioning full application.

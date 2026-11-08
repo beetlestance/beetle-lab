@@ -15,6 +15,7 @@ released application until the rewrite is qualified.
 | Change a module | [Engineering rules](engineering.md) | Structure and contribution limits |
 | Prove a slice works | [Verification](verification.md) | Test IDs and evidence scope |
 | Inspect local foundation evidence | [Local report](verification/local-foundation.md) | Exact source, commands and outstanding qualification |
+| Run the rewrite locally | [Development startup](development.md) | Private config, backend entrypoint and frontend dev proxy |
 | Understand a settled choice | [Rewrite](decisions/001-clean-rewrite.md), [MIT license](decisions/002-mit-license.md) | Reason, scope and rejected alternative |
 
 ## Working set
