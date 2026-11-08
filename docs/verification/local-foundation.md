@@ -1,9 +1,9 @@
 # Local foundation evidence
 
-Full-gate source: `e8dc7bc` on `rewrite/integration`.
+Full-gate source: `ba295b8` on `rewrite/integration`.
 Date: 2026-11-08. Verification started at this clean source. It includes the
-reviewed staged loader, metric decoder, backend/session composition and browser gate.
-Backend startup and development proxy have separate scoped checks below.
+reviewed staged loader, decoder/accumulator, summary collector, result-seal codec,
+backend/session/startup composition and browser gate. HTTP smoke has separate evidence below.
 This report covers foundations; it does not qualify the rewritten product.
 
 ## Executed checks
@@ -12,11 +12,11 @@ This report covers foundations; it does not qualify the rewritten product.
 
 - Runner/API/k6 generation checks: 37/23/6 outputs matched their sources.
 - TypeScript node/browser/native-k6 checks and ESLint passed.
-- Import boundaries, cycles and size checks covered 469 source files.
-- Documentation check covered 69 files.
+- Import boundaries, cycles and size checks covered 497 source files.
+- Documentation check covered 73 files.
 - Frontend production build passed; the main bundle was 611.56 kB / 178.59 kB gzip.
   Vite's large-chunk warning remains; no browser performance claim is made.
-- Vitest: 1,503 tests passed in 129 files, with at most two workers.
+- Vitest: 1,608 tests passed in 138 files, with at most two workers.
 
 Environment: Node v26.7.0 on macOS arm64. Compilation targets Node24, but
 compilation alone does not prove Node24 runtime behavior.
@@ -140,10 +140,22 @@ listen options. The development proxy separately served HTML and forwarded pairi
 namespace read and logout successfully with Host/Origin intact. These are HTTP
 checks, not browser rendering/cookie qualification. See [development startup](../development.md).
 
+Numeric accumulator `933a36c` passed 38 focused tests plus independent reordered
+stream/overflow/race probes. It retains exact totals and at most three source-second
+buckets, with explicit late coverage and unknown quantiles. Summary collector
+`ba295b8` passed 61 tests and independent final-publication/snapshot regression
+probes. Result-seal codec `c681d7d` passed four normative/mutation/error tests and
+independent review; it proves content identity, not outcome or artifact eligibility.
+All are included in the full gate.
+
+Readiness currently contaminates native global metrics and unfiltered accumulation.
+The [required scope correction](../decisions/010-readiness-metric-isolation.md) is
+selected but not implemented; native rate/discovery and gauge scope must remain honest.
+
 ## Missing release evidence
 
 The complete new submit/execute/observe/finalize/replay path is not implemented.
-Application artifact storage, wrapper/native child coordination, aggregation, remaining
+Application artifact storage, wrapper/native child coordination, quantile aggregation, remaining
 frontend features, reports/comparison/export and packaging remain incomplete or
 under review. The integrated frontend makes real API requests and shows errors;
 it does not contain a demo backend or claim a functioning full application.
