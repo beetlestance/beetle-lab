@@ -179,3 +179,26 @@ it('aborts a pending write on scope retirement and retires its draft', async () 
   expect(write?.signal?.aborted).toBe(true); late.resolve(json(revision(), 201));
   expect(screen.queryByRole('textbox', { name: 'Complete configuration JSON' })).not.toBeInTheDocument();
 });
+
+it('retains invalid Requests JSON while editing request controls', async () => {
+  const fixture = testClient(read); mount(fixture.client, path);
+  const requests = await screen.findByRole('textbox', { name: 'Requests JSON' });
+  fireEvent.change(requests, { target: { value: '[{"unfinished":' } });
+  fireEvent.change(screen.getByRole('textbox', { name: 'Request 1 path' }), { target: { value: '/changed' } });
+  expect(requests).toHaveValue('[{"unfinished":');
+});
+
+it('blocks save when a JSON part overflows the complete config', async () => {
+  const fixture = testClient(read); mount(fixture.client, path);
+  const editor = await openJson();
+  const config = { ...parseDraft(starter()), padding: 'x'.repeat(1047800) };
+  fireEvent.change(editor, { target: { value: draftText(config) } });
+  fireEvent.click(screen.getByRole('button', { name: 'Form editor' }));
+  const requests = screen.getByRole('textbox', { name: 'Requests JSON' });
+  const changed = [{ ...(config.requests as object[])[0], path: '/' + 'p'.repeat(2000) }];
+  fireEvent.change(requests, { target: { value: JSON.stringify(changed) } });
+  expect(requests).toHaveValue(JSON.stringify(changed));
+  expect(screen.getByRole('button', { name: 'Save new revision' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Save new revision' }));
+  expect(fixture.records.filter(record => record.method === 'POST')).toHaveLength(0);
+});

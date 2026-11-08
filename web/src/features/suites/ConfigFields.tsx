@@ -6,21 +6,26 @@ import type { Config } from './draft.js';
 export function ConfigFields({ text, change, disabled, validity }: { text: string; change: (text: string) => void; disabled: boolean; validity: (invalid: boolean) => void }) {
   const [intakeError, setIntakeError] = useState('');
   function editJson(next: string) {
-    if (next.length > SUITE_MAXIMUM_CONFIG_BYTES) { setIntakeError('Text exceeds 1 MiB characters; previous draft retained.'); validity(true); return; }
-    setIntakeError(''); validity(false); change(next);
+    if (next.length > SUITE_MAXIMUM_CONFIG_BYTES) { setIntakeError('Text exceeds 1 MiB characters; previous draft retained.'); return; }
+    setIntakeError(''); change(next);
   }
   const [invalid, setInvalid] = useState<Record<string, boolean>>({});
   function partValidity(key: string, bad: boolean) {
-    const next = { ...invalid, [key]: bad }; setInvalid(next); validity(Object.values(next).some(Boolean));
+    setInvalid(previous => ({ ...previous, [key]: bad }));
+  }
+  function commitPart(key: string, value: unknown) {
+    const next = updatePart(text, key, value); change(next); setIntakeError('');
   }
   function apply(key: string, value: unknown) {
-    try { change(updatePart(text, key, value)); setIntakeError(''); validity(Object.values(invalid).some(Boolean)); }
-    catch (caught) { setIntakeError((caught as Error).message); validity(true); }
+    if (Object.values(invalid).some(Boolean)) return;
+    try { commitPart(key, value); }
+    catch (caught) { setIntakeError((caught as Error).message); }
   }
   const [mode, setMode] = useState<'form' | 'json'>('form');
   let config: Config = {};
   let error = '';
   try { config = parseDraft(text); } catch (caught) { error = (caught as Error).message; }
+  useEffect(() => { validity(!!error || !!intakeError || Object.values(invalid).some(Boolean)); }, [error, intakeError, invalid, validity]);
   return <div className="suite-config">
     <div className="actions" role="group" aria-label="Configuration editor mode">
       <button type="button" aria-pressed={mode === 'form'} disabled={disabled || !!error || !!intakeError} onClick={() => setMode('form')}>Form editor</button>
@@ -30,12 +35,14 @@ export function ConfigFields({ text, change, disabled, validity }: { text: strin
     {mode === 'json' ? <label>Complete configuration JSON<textarea autoFocus aria-label="Complete configuration JSON" disabled={disabled}
       value={text} onChange={event => editJson(event.target.value)} spellCheck={false} /></label>
       : <fieldset disabled={disabled}><legend>Configuration</legend>
+        <fieldset disabled={Object.values(invalid).some(Boolean)}><legend>Structured controls</legend>
         <label>Target URL<input aria-label="Target URL" value={typeof config.target === 'string' ? config.target : ''}
           onChange={event => apply('target', event.target.value)} /></label>
         <LoadControls config={config} apply={apply} />
         <RequestControls config={config} apply={apply} />
-        <JsonPart key={`requests-${mode}`} label="Requests JSON" validity={bad => partValidity('requests', bad)} value={config.requests} apply={value => apply('requests', value)} />
-        <JsonPart label="Load plan JSON" validity={bad => partValidity('loadPlan', bad)} value={config.loadPlan} apply={value => apply('loadPlan', value)} />
+        </fieldset>
+        <JsonPart key={`requests-${mode}`} label="Requests JSON" validity={bad => partValidity('requests', bad)} value={config.requests} apply={value => commitPart('requests', value)} />
+        <JsonPart label="Load plan JSON" validity={bad => partValidity('loadPlan', bad)} value={config.loadPlan} apply={value => commitPart('loadPlan', value)} />
         <p>Advanced fields, including selections, dataset input references and opaque secret references, remain in complete JSON. Input upload and run validation are separate steps.</p>
       </fieldset>}
   </div>;
@@ -44,7 +51,7 @@ function JsonPart({ label, value, apply, validity }: { label: string; value: unk
   const [text, setText] = useState(() => value === undefined ? 'null' : draftText(value));
   const [error, setError] = useState('');
   const canonical = value === undefined ? 'null' : draftText(value);
-  useEffect(() => { setText(canonical); }, [canonical]);
+  useEffect(() => { if (!error) setText(canonical); }, [canonical, error]);
   return <label>{label}<textarea aria-label={label} value={text} spellCheck={false} onChange={event => {
     const next = event.target.value;
     if (next.length > SUITE_MAXIMUM_CONFIG_BYTES) { setError('Text exceeds 1 MiB characters; previous field retained.'); validity(true); return; }
