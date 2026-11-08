@@ -41,13 +41,14 @@ function* tokens(value: unknown, budget: Budget, depth = 0): Generator<string> {
 }
 function chunks(value: unknown): Generator<string> { return tokens(value, { nodes: 0, ancestors: new Set() }); }
 /** Two bounded passes, no full-corpus intermediate string or stringify-then-check. */
-export async function writePlanData(path: string, value: unknown): Promise<number> {
+export async function writePlanData(path: string, value: unknown, maximumBytes = maxDataBytes): Promise<number> {
+  if (!Number.isSafeInteger(maximumBytes) || maximumBytes < 1) throw new Error('script_limit');
   let bytes = 0;
   for (const token of chunks(value)) {
     bytes += Buffer.byteLength(token);
-    if (bytes > maxDataBytes) throw new Error('script_limit');
+    if (bytes > Math.min(maxDataBytes, maximumBytes)) throw new Error('script_limit');
   }
-  const file = await open(path, 'wx');
+  const file = await open(path, 'wx', 0o600);
   try {
     let pending = '';
     for (const token of chunks(value)) {

@@ -1,7 +1,7 @@
-import { mkdtemp, mkdir, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { lstat, mkdtemp, mkdir, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { build } from 'tsup';
+import { build } from 'esbuild';
 import { metricLayout } from '../plan/index.js';
 import type { CompiledSuite, DeepReadonly } from '../plan/index.js';
 import { validateAttempt } from '../runtime/index.js';
@@ -46,41 +46,60 @@ function approvedInput(path: string, staging: string): boolean {
   return absolute === join(staging, 'entry.ts') || absolute === join(staging, 'plan.json')
     || owner.startsWith('runtime/') || owner.startsWith('plan/');
 }
-async function bundle(staging: string): Promise<string> {
-  await build({ entry: { suite: join(staging, 'entry.ts') }, outDir: join(staging, 'bundle'),
-    format: ['esm'], platform: 'neutral', target: 'es2020', bundle: true, splitting: false,
-    minify: true, sourcemap: false, dts: false, clean: false, silent: true, config: false,
-    external: nativeExternals, esbuildOptions: options => { options.metafile = true; options.charset = 'utf8'; },
-    esbuildPlugins: [{ name: 'native-boundary', setup(context) {
-      context.onEnd(result => {
-        if (!result.metafile || !result.outputFiles) throw new Error('script_provenance');
-        for (const path of Object.keys(result.metafile.inputs)) if (!approvedInput(path, staging)) throw new Error('script_dependency');
-        for (const output of Object.values(result.metafile.outputs)) {
-          for (const imported of output.imports) if (!nativeExternals.includes(imported.path)) throw new Error('script_dependency');
-        }
-        for (const output of result.outputFiles) if (output.contents.byteLength > scriptCap) throw new Error('script_limit');
-      });
-    } }],
-  });
+function admitBundleBytes(files: readonly { contents: Uint8Array }[], maximumBytes: number): void {
+  if (files.length !== 1) throw new Error('script_provenance');
+  if (files[0]!.contents.byteLength > Math.min(scriptCap, maximumBytes)) throw new Error('script_limit');
+}
+async function freshScript(path: string): Promise<void> {
+  try { await lstat(path); }
+  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return; throw error; }
+  throw new Error('script_exists');
+}
+async function bundle(staging: string, maximumBytes: number): Promise<string> {
   const output = join(staging, 'bundle', 'suite.js');
-  if ((await stat(output)).size > scriptCap) throw new Error('script_limit');
+  const result = await build({ entryPoints: [join(staging, 'entry.ts')], outfile: output,
+    format: 'esm', platform: 'neutral', target: 'es2020', bundle: true, splitting: false,
+    minify: true, sourcemap: false, write: false, logLevel: 'silent', metafile: true,
+    external: nativeExternals, charset: 'utf8',
+  });
+  admitBundleBytes(result.outputFiles, maximumBytes);
+  if (result.outputFiles[0]!.path !== output) throw new Error('script_provenance');
+  for (const path of Object.keys(result.metafile.inputs)) if (!approvedInput(path, staging)) throw new Error('script_dependency');
+  for (const generated of Object.values(result.metafile.outputs)) {
+    for (const imported of generated.imports) if (!nativeExternals.includes(imported.path)) throw new Error('script_dependency');
+  }
+  await mkdir(dirname(output));
+  await writeFile(output, result.outputFiles[0]!.contents, { flag: 'wx', mode: 0o600 });
   return output;
 }
 /** Emits the one runnable script for later run/export; never accepts secret values. */
-export async function buildRuntimeScript(input: { suite: DeepReadonly<CompiledSuite>; outputDirectory: string; attempt: AttemptBudget }): Promise<{ scriptPath: string; bytes: number }> {
+export interface BuildInput {
+  readonly suite: DeepReadonly<CompiledSuite>;
+  readonly outputDirectory: string;
+  readonly attempt: AttemptBudget;
+  /** Caller-reserved logical file bytes, including simultaneous plan/entry/bundle scratch. */
+  readonly maximumBuildBytes?: number;
+}
+export interface BuildOutput { readonly scriptPath: string; readonly bytes: number; readonly peakBytes: number }
+export async function buildRuntimeScript(input: BuildInput): Promise<BuildOutput> {
   const attempt = validateAttempt(input.attempt);
   metricLayout(input.suite);
+  const maximum = input.maximumBuildBytes ?? Number.MAX_SAFE_INTEGER;
+  const entry = entrypoint(input.suite, attempt);
+  const entryBytes = Buffer.byteLength(entry);
+  if (!Number.isSafeInteger(maximum) || maximum <= entryBytes) throw new Error('script_limit');
   await admitRuntimeSource();
-  await mkdir(input.outputDirectory, { recursive: true });
+  await freshScript(join(input.outputDirectory, 'suite.js'));
+  await mkdir(input.outputDirectory, { recursive: true, mode: 0o700 });
   const staging = await mkdtemp(join(input.outputDirectory, '.native-build-'));
   try {
-    await writePlanData(join(staging, 'plan.json'), input.suite);
-    await writeFile(join(staging, 'entry.ts'), entrypoint(input.suite, attempt), { flag: 'wx' });
-    const output = await bundle(staging);
+    const planBytes = await writePlanData(join(staging, 'plan.json'), input.suite, maximum - entryBytes);
+    await writeFile(join(staging, 'entry.ts'), entry, { flag: 'wx', mode: 0o600 });
+    const output = await bundle(staging, maximum - entryBytes - planBytes);
     const bytes = (await stat(output)).size;
     const scriptPath = join(input.outputDirectory, 'suite.js');
     await rename(output, scriptPath);
-    return { scriptPath, bytes };
+    return { scriptPath, bytes, peakBytes: entryBytes + planBytes + bytes };
   } catch { throw new Error('script_build_failed'); }
   finally { await rm(staging, { recursive: true, force: true }); }
 }
