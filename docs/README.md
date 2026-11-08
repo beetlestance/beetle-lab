@@ -23,6 +23,7 @@ released application until the rewrite is qualified.
 | Inspect installation/private API | [Installation and HTTP](verification/installation-http.md) | Catalogue/admission/staging/HTTP composition, review corrections and runtime limits |
 | Inspect execution scheduling | [Agent scheduler](verification/agent-scheduler.md) | Indexed active discovery, original-call bounds, fairness and shutdown evidence |
 | Inspect resource observations | [Resource observer](verification/resource-observation.md) | Measured/configured provenance, readiness revocation, original-call ownership and runtime limits |
+| Inspect system stop handling | [Durable stop](verification/durable-stop.md) | First-cause attribution, urgent escalation, restart and original-write ownership |
 | Inspect engine image evidence | [k6 image](verification/engine-image.md) | Node24/Linux arm64 execution, cgroup settings and remaining qualification |
 | Run the rewrite locally | [Development startup](development.md) | Private config, backend entrypoint and frontend dev proxy |
 | Understand a settled choice | [Rewrite](decisions/001-clean-rewrite.md), [MIT license](decisions/002-mit-license.md) | Reason, scope and rejected alternative |
