@@ -17,3 +17,11 @@ Dockerfile
 docker-compose.yml
 docker-compose.*.yml
 *.tgz
+# Local rewrite orchestration, generated outputs and isolated agent state.
+.agent-work
+.agent-output
+**/.agent-work
+**/.agent-output
+**/dist
+coverage
+*.tsbuildinfo
