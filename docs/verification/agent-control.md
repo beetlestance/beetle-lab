@@ -46,3 +46,6 @@ This is component and reader-to-journal evidence. Production controller wiring,
 sealed output custody, application finalization, reservation release, private agent
 HTTP and full agent/container restart qualification remain. No new Docker image
 was built or published, and Linux/Node24/amd64 reader qualification is not claimed.
+
+Subsequent prepared-attempt wiring and generic output verification are recorded
+in [controller evidence](agent-controller.md), with their separate runtime limits.

@@ -1,6 +1,6 @@
 # Local attempt controller
 
-Status: implementation under independent review. Scope is one admitted, staged
+Status: implemented and independently reviewed component. Scope is one admitted, staged
 runtime; installation scheduler, fresh admission/staging and private HTTP composition
 remain separate work. This page owns the controller handoff, not another execution
 state machine. The [execution protocol](execution-protocol.md) owns lifecycle and
