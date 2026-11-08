@@ -1,6 +1,7 @@
 # Installed execution runtime
 
-Status: implementation in progress. This owns composition, not new lifecycle rules.
+Status: implemented and independently reviewed component;
+[local evidence](../../verification/agent-runtime.md). This owns composition, not new lifecycle rules.
 Public entrypoint: `agent/src/bootstrap/index.ts`.
 
 One runtime per process owns the exclusively opened journal, installed Stagers,
@@ -42,6 +43,8 @@ never return early after one rejection. After those drain, close guards and obse
 Close the journal only if all owned runtime cleanup/revocation succeeded. Unknown
 runtime or failed cleanup rejects clean close and retains the process owner/journal;
 the caller must not report clean shutdown or reopen execution under another owner.
+Known stopped reservations may remain charged pending collection/reconciliation;
+clean local shutdown is not proof that every reservation was released.
 Partially initialized startup follows the same draining path. At most one failed
 startup/runtime owner is retained, so repeated failures cannot accumulate owners.
 
