@@ -137,6 +137,10 @@ independent heavy operation becomes another admitted task with a parent run ID.
 | Finalize | Application validates complete evidence, commits outcome and acknowledges seal |
 | Release | Agent reservation released only after execution is confirmed stopped |
 
+The [measurement boundary decision](../../decisions/008-measurement-boundary.md)
+defines the native marker and retrospective wrapper observation; buffered receipt
+does not establish a durable pre-load handshake.
+
 Cancellation is durable before signal delivery. Wrapper gets a 5-second graceful
 stop window; then agent kills the container and verifies exit. Configurable engine
 profiles may extend grace, but repeated cancels do not reset it. Parent shutdown

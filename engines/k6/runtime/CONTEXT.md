@@ -5,6 +5,10 @@ clock, sleep, random and metric adapters, a private secret resolver and limits.
 One instance belongs to one VU; selection state is isolated by scenario. `prepare`
 and `iterate` both require the caller's accepted deadline. Results contain only
 fixed classifications and counts. Required assertion failures always emit evidence.
+Setup consumes prepare once. After successful readiness and a final deadline check,
+it emits untagged `beetle_measure_started=1`, including readiness-disabled runs.
+The native metric timestamp is source correlation; buffered receipt is retrospective,
+not a durable pre-load handshake. Missing/duplicate markers are not complete evidence.
 
 Private attempts are managed `{timeoutMs,deadlineMs}` or standalone `{timeoutMs}`,
 with explicit mode and timeout1ms..48h. Managed absolute deadlines include earlier

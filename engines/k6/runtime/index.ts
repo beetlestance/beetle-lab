@@ -1,4 +1,4 @@
-import { initialSelectionState, metricLayout, selectDatasetRows, selectRequest } from '../plan/index.js';
+import { initialSelectionState, measureStartedMetric, metricLayout, selectDatasetRows, selectRequest } from '../plan/index.js';
 import type { SelectionState } from '../plan/index.js';
 import { runtimeLimits } from './bounds.js';
 import { recordAssertions, recordOutcome } from './evidence.js';
@@ -19,6 +19,7 @@ export function createRuntime(input: RuntimeInput): Runtime {
   const secret = secretResolver(input.suite, input.resolveSecret, limits);
   const states = new Map<string, SelectionState>();
   let ownerVu: number | undefined;
+  let preparationConsumed = false;
   const iterate = (position: IterationPosition): IterationResult => {
     try {
       if (ownerVu !== undefined && ownerVu !== position.vu) stop('selection');
@@ -27,7 +28,13 @@ export function createRuntime(input: RuntimeInput): Runtime {
     } catch (error) { return executionError(input, error); }
   };
   return { iterate, prepare: deadlineMs => {
-    try { prepareReadiness({ ...input, limits, secret, layout, deadlineMs }); }
+    if (preparationConsumed) stop('preparation');
+    preparationConsumed = true;
+    try {
+      prepareReadiness({ ...input, limits, secret, layout, deadlineMs });
+      remaining(deadlineMs, input.adapters.now(), 1);
+      input.adapters.metric(measureStartedMetric, 1, {});
+    }
     catch (error) {
       const result = executionError(input, error);
       stop(result.code === 'adapter' ? 'adapter' : 'preparation');

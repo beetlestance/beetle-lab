@@ -1,8 +1,9 @@
 import { fail } from './failure.js';
 import type { CompiledSuite, DeepReadonly } from './suite.js';
 
+export const measureStartedMetric = 'beetle_measure_started' as const;
 export const counterNames = ['beetle_requests', 'beetle_assertions', 'beetle_assertion_failures',
-  'beetle_required_failures', 'beetle_transport_failures', 'beetle_execution_failures'] as const;
+  'beetle_required_failures', 'beetle_transport_failures', 'beetle_execution_failures', measureStartedMetric] as const;
 export type CounterName = typeof counterNames[number];
 export interface MetricLayout {
   requests: { id: string; label: string; assertions: { id: string; label: string }[] }[];
@@ -11,7 +12,8 @@ export interface MetricLayout {
 }
 const trends = new Set(['http_req_duration', 'http_req_blocked', 'http_req_connecting',
   'http_req_tls_handshaking', 'http_req_sending', 'http_req_waiting', 'http_req_receiving', 'iteration_duration']);
-const counters = new Set<string>([...counterNames, 'http_reqs', 'iterations', 'dropped_iterations', 'data_received', 'data_sent']);
+const counters = new Set<string>([...counterNames.filter(name => name !== measureStartedMetric),
+  'http_reqs', 'iterations', 'dropped_iterations', 'data_received', 'data_sent']);
 const rates = new Set(['http_req_failed']);
 const gauges = new Set(['vus', 'vus_max']);
 const trendStats = new Set(['avg', 'min', 'max', 'med', 'p50', 'p90', 'p95', 'p99']);

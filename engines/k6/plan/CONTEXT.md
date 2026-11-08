@@ -11,4 +11,6 @@ Effects: none. Random selection uses an explicit callback. The only external typ
 dependency is declaration-level imports from compiler/generated/types.
 Metric admission rejects unsupported metric/stat pairs and more than 200 distinct
 tag maps before execution; requests and assertions use deterministic rN/aN labels.
+`measureStartedMetric` is reserved control evidence; user SLO/discovery rules cannot
+override it. It shares the aggregate tag map and adds no request/assertion labels.
 Checks: scoped engine Vitest tests and the runtime TypeScript project.
