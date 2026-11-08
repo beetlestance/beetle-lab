@@ -1,6 +1,6 @@
 # Local foundation evidence
 
-Full-gate source: `b519bc6` on `rewrite/integration`.
+Full-gate source: `bcf20f1` on `rewrite/integration`.
 Date: 2026-11-08. Verification started at this clean source. It includes the
 reviewed staged loader, decoder/accumulator, summary collector, result-seal codec,
 backend/session/startup composition and browser gate. HTTP smoke has separate evidence below.
@@ -12,14 +12,14 @@ This report covers foundations; it does not qualify the rewritten product.
 
 - Runner/API/k6 generation checks: 37/23/6 outputs matched their sources.
 - TypeScript node/browser/native-k6 checks and ESLint passed.
-- Import boundaries, cycles and size checks covered 572 source files.
-- Documentation check covered 82 files.
+- Import boundaries, cycles and size checks covered 575 source files.
+- Documentation check covered 84 files.
 - Frontend production build passed; the main bundle was 611.56 kB / 178.59 kB gzip.
   Vite's large-chunk warning remains; no browser performance claim is made.
 - Vitest: 2,031 tests passed in 167 files, with at most two workers.
 
 Environment: Node v26.7.0 on macOS arm64. Compilation targets Node24, but
-compilation alone does not prove Node24 runtime behavior.
+compilation alone does not prove Node24 runtime behavior; [engine image evidence](engine-image.md) covers that subset.
 
 Independent read-only reviews cleared the runner and namespace/settings contracts,
 HTTP client/kernel, namespace/settings domain, suite compiler/native runtime,
@@ -169,10 +169,10 @@ under review. Reviewed native coordination and result-file publication are imple
 see the [outcome report](k6-outcomes.md) and [staged check](staged-k6.md) for real-native evidence. The integrated frontend makes real API requests and shows errors;
 it does not contain a demo backend or claim a functioning full application.
 
-No new images were built or published; no hosted CI run is claimed. Local Docker
-availability was checked read-only: Desktop 4.98.0, Engine 29.9.2, Linux arm64. This does not
-prove image controls, native amd64 operation or either release installation path.
-Node24 runtime, supply-chain/image scans, backup/restore, bounded soak, overhead,
+The separate k6 image passes the [Linux/arm64 exercise](engine-image.md); it remains local.
+Docker Desktop 4.98.0/Engine29.9.2 was previously checked; no hosted CI run is claimed.
+Agent control composition, native amd64 operation and release installation remain unqualified.
+Application/agent Node24 runtime, image scans, backup/restore, bounded soak, overhead,
 browser visual checks and the native amd64/arm64 matrix remain required.
 
 See [verification](../verification.md) for the full acceptance and failure matrix.
