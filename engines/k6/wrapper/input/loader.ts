@@ -7,7 +7,7 @@ import { Budget } from './budget.js';
 import { Files } from './files.js';
 import { matchSecretReferences } from './secrets.js';
 import { failure, InputError } from './types.js';
-import type { CompiledInput, InputOperation, InputResult, OpenStagedOptions, StagedHeaders, StagedInput } from './types.js';
+import type { CompiledInput, InputFailure, InputOperation, InputResult, OpenStagedOptions, StagedHeaders, StagedInput } from './types.js';
 
 /** One loader owns one staged attempt; no resolved secret values cross this boundary. */
 export class Loader {
@@ -99,21 +99,28 @@ export class Loader {
     let rejectQuiet!: (error: unknown) => void;
     const quiesced = new Promise<void>((resolve, reject) => { resolveQuiet = resolve; rejectQuiet = reject; });
     this.active = quiesced;
+    let closeFailed = false;
     const task = Promise.resolve().then(async () => {
       const outcome = await this.execute(work);
       await this.budget.settled();
       try { await this.files.close(); resolveQuiet(); }
-      catch (error) { rejectQuiet(error); throw error; }
+      catch (error) { closeFailed = true; rejectQuiet(error); throw error; }
       if (!outcome.ok) throw outcome.error;
       this.budget.check(); return outcome.value;
     });
     void quiesced.catch(() => undefined);
     const result: Promise<InputResult<T>> = this.budget.race(task).then(value => {
       this.budget.check(); return { ok: true as const, value };
-    }).catch(error => {
-      this.closed = true; this.budget.dispose(); return failure(error);
-    });
+    }).catch(error => this.publishFailure(error, closeFailed));
     return Object.freeze({ result, quiesced });
+  }
+  private publishFailure(error: unknown, closeFailed: boolean): InputFailure {
+    try { this.budget.check(); }
+    catch (fence) {
+      // Keep known original-close evidence; cancellation still takes precedence.
+      if (!closeFailed || fence instanceof InputError && fence.code === 'cancelled') error = fence;
+    }
+    this.closed = true; this.budget.dispose(); return failure(error);
   }
   private async execute<T>(work: () => Promise<T>): Promise<{ ok: true; value: T } | { ok: false; error: unknown }> {
     try {

@@ -24,6 +24,8 @@ No readiness, native process, target traffic or reservation release occurs here.
 
 The absolute admitted deadline includes staging/compile time. Wall rollback/invalid
 clocks, monotonic expiry, abort and close fence further IO and result publication.
+Failed validation verdicts receive the same final clock fence as successful results.
+Known original-close failures remain explicit filesystem evidence; abort takes precedence.
 Synchronous compiler work is fenced before/after; it cannot be preempted in-process.
 `close()` caches its original outcome; failed close cannot become eligible success.
 `quiesced` waits for every issued operation and original close; failed close rejects,
