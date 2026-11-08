@@ -4,7 +4,7 @@ import type { AttemptKey, GenerationKey } from '../journal/index.js';
 import { AgentHttpError, HTTP_LIMITS } from './types.js';
 import type { AgentHttpOptions, HttpScope } from './types.js';
 import { authenticate, credentialHash, scopeFromHeaders, attemptId, bodyMatches, decimal } from './auth.js';
-import { requestBody, sendJson } from './json.js';
+import { requestBody, snapshotBody, sendJson } from './json.js';
 import { sendError } from './errors.js';
 import { RequestWork } from './work.js';
 export { AgentHttpError, HTTP_LIMITS } from './types.js';
@@ -54,9 +54,8 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
     return { ...scope, attemptId: attemptId(request.params) };
   };
   const snapshot = async (request: FastifyRequest) => {
-    const scope = key(request); const value = await services.journal.get(scope as AttemptKey);
-    if (value.generation !== scope.generation) throw new AgentHttpError(409, 'conflicting_digest');
-    return value;
+    const scope = key(request);
+    return snapshotBody(await services.journal.get(scope as AttemptKey), scope);
   };
   server.get('/runner/v1/capabilities', async (request, reply) => {
     query(request); sendJson(reply, 200, 'Capabilities', await work(() => services.capabilities()));

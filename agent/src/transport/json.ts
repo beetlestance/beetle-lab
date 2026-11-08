@@ -9,7 +9,7 @@ export function requestBody<N extends ProtocolName>(name: N, input: unknown): Pr
     const copy: unknown = JSON.parse(encodeJson(input, HTTP_LIMITS.bytes));
     const checked = validate(name, copy);
     if (checked.ok) return checked.value;
-  } catch { /* Transport error is deliberately independent of input/validator exception text. */ }
+  } catch { /* Transport errors never include input or validator exception text. */ }
   throw new AgentHttpError(400, 'invalid_config');
 }
 function responseScope(name: ProtocolName, input: object, expected: HttpScope & { attemptId: string }): void {
@@ -26,14 +26,27 @@ function responseScope(name: ProtocolName, input: object, expected: HttpScope & 
     }
   }
 }
-/** Capture bounded object bytes before Fastify can choose a string/stream serializer bypass. */
+function capture<N extends ProtocolName>(name: N, input: unknown,
+  expected?: HttpScope & { attemptId: string }): { text: string; value: ProtocolTypes[N] } {
+  try {
+    const text = encodeJson(input, HTTP_LIMITS.bytes); const json: unknown = JSON.parse(text);
+    if (!json || typeof json !== 'object' || Array.isArray(json)) throw new Error();
+    const checked = validate(name, json); if (!checked.ok) throw new Error();
+    if (expected) responseScope(name, json, expected);
+    return { text, value: checked.value };
+  } catch { throw new AgentHttpError(500, 'invalid_protocol'); }
+}
+/** Capture before transport observes response fields or performs dependent service work. */
+export function snapshotBody(input: unknown, expected: HttpScope & { attemptId: string }): ProtocolTypes['AttemptSnapshot'] {
+  const value = capture('AttemptSnapshot', input).value;
+  try { responseScope('AttemptSnapshot', value, { ...expected, generation: value.generation }); }
+  catch { throw new AgentHttpError(500, 'invalid_protocol'); }
+  if (value.generation !== expected.generation) throw new AgentHttpError(409, 'conflicting_digest');
+  return value;
+}
+/** Only captured contract objects may reach Fastify's serializer selection. */
 export function sendJson<N extends ProtocolName>(reply: FastifyReply, status: number, name: N, input: unknown,
   expected?: HttpScope & { attemptId: string }): void {
-  let json: unknown; let text: string;
-  try {
-    text = encodeJson(input, HTTP_LIMITS.bytes); json = JSON.parse(text);
-    if (!json || typeof json !== 'object' || Array.isArray(json) || !validate(name, json).ok) throw new Error();
-    if (expected) responseScope(name, json, expected);
-  } catch { throw new AgentHttpError(500, 'invalid_protocol'); }
-  reply.code(status).type('application/json; charset=utf-8').serializer(() => text).send(json);
+  const { text, value } = capture(name, input, expected);
+  reply.code(status).type('application/json; charset=utf-8').serializer(() => text).send(value);
 }

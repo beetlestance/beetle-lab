@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import type { Capabilities, Offer } from '@beetle/contracts';
 import { createHttpTransport, createRunnerClient } from '@beetle/contracts';
 import { createAgentServer, HTTP_LIMITS } from '../../src/transport/index.js';
@@ -135,4 +135,24 @@ it('rejects a foreign nested event in an otherwise valid scoped response batch',
   e.events.mockResolvedValueOnce({ ...batch, events: batch.events.map(event => ({ ...event, workspaceId: other })) });
   const response = await e.server.inject({ url: `${e.path}/events?after=0`, headers: e.headers });
   expect(response.statusCode).toBe(500); expect(response.body).not.toContain(other);
+});
+it('captures snapshots before generation getters and before dependent events reads', async () => {
+  const e = await f.server(); const stored = await e.store(); let reads = 0;
+  const tainted = { ...stored, get generation() { reads++; return 1; } };
+  const get = vi.spyOn(e.journal, 'get').mockResolvedValue(tainted);
+  try {
+    for (const path of [e.path, `${e.path}/events?after=0`]) {
+      const response = await e.server.inject({ url: path, headers: e.headers });
+      expect(response.statusCode).toBe(500);
+    }
+    expect(reads).toBe(0); expect(e.events).not.toHaveBeenCalled();
+  } finally { get.mockRestore(); }
+});
+it('rejects a foreign service snapshot before dependent event collection', async () => {
+  const e = await f.server(); const stored = await e.store(); const other = '00000000-0000-4000-8000-000000000099';
+  const get = vi.spyOn(e.journal, 'get').mockResolvedValue({ ...stored, workspaceId: other });
+  try {
+    const response = await e.server.inject({ url: `${e.path}/events?after=0`, headers: e.headers });
+    expect(response.statusCode).toBe(500); expect(response.body).not.toContain(other); expect(e.events).not.toHaveBeenCalled();
+  } finally { get.mockRestore(); }
 });
