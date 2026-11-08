@@ -25,6 +25,7 @@ export function journalFixture() {
   afterAll(async () => { await rm(root, { recursive: true, force: true }); });
   return {
     path: () => join(root, `journal-${++counter}.sqlite`),
+    workerUrl: () => workerUrl,
     offer: () => structuredClone(original),
     key: (): GenerationKey => ({ attemptId: original.attemptId, organizationId: original.organizationId,
       workspaceId: original.workspaceId, generation: 1 }),
