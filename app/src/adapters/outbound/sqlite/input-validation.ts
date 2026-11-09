@@ -60,7 +60,7 @@ export function checkedInputOperation(operation: Operation): boolean {
     case 'advanceInput': advance(operation.command); return true;
     case 'getInput': checkedInputKey(operation.key); return true;
     case 'listInputs': page(operation.query); requireRule('scope' in operation.query); return true;
-    case 'recoverInputs': page(operation.query); return true;
+    case 'recoverInputs': fields(operation.query, ['limit', 'cursor']); page(operation.query); return true;
     case 'inputStorage': return true;
     default: return false;
   }
