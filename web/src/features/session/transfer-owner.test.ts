@@ -51,3 +51,14 @@ it('closes a client if its factory retires the epoch before returning', async ()
   const owner = new SessionTransferOwner(() => { epoch.abort(); return client(close); });
   expect(await owner.open(options, epoch.signal)).toBeUndefined(); expect(close).toHaveBeenCalledTimes(1);
 });
+
+it('rechecks the drain generation when retirement begins after replacement was requested', async () => {
+  const held = deferred(); const first = client(() => held.promise); const second = client(async () => undefined);
+  const factory = vi.fn().mockReturnValueOnce(first).mockReturnValueOnce(second);
+  const owner = new SessionTransferOwner(factory);
+  await owner.open(options, new AbortController().signal);
+  const replacement = owner.open(options, new AbortController().signal);
+  const retiring = owner.retire();
+  await Promise.resolve(); await Promise.resolve(); expect(factory).toHaveBeenCalledTimes(1);
+  held.resolve(); await retiring; expect(await replacement).toBe(second); await owner.retire();
+});

@@ -10,7 +10,11 @@ export class SessionTransferOwner {
   constructor(private readonly factory: TransferFactory) {}
 
   async open(options: InputTransferOptions, signal: AbortSignal): Promise<InputTransferClient | undefined> {
-    await this.draining;
+    let drained: Promise<void>;
+    do {
+      drained = this.draining;
+      await drained;
+    } while (drained !== this.draining);
     if (signal.aborted) return undefined;
     if (this.client) throw new Error('A transfer session is already active');
     const client = this.factory(options);
