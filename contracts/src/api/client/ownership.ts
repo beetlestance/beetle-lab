@@ -1,6 +1,7 @@
 import type { ApiOperation } from '../generated/operations.js';
 import type { EffectiveSettings, SettingsScope } from '../generated/types.js';
 import type { PreparedInput } from './input.js';
+import { inputOwnership } from './input-ownership.js';
 
 function sameUuid(left: unknown, right: unknown): boolean {
   return typeof left === 'string' && typeof right === 'string' && left.toLowerCase() === right.toLowerCase();
@@ -94,9 +95,13 @@ export function responseOwnership(operation: ApiOperation, input: PreparedInput,
   const reply = value as OwnedReply;
   if (!equal(expectedOwner(operation, input), reply.scope) || !identityMatches(operation, input, reply)) return false;
   if (reply.items && !reply.items.every(item => equal(reply.scope, item.scope))) return false;
-  if (!revisionOwnership(operation, input, reply)) return false;
+  if (!resourceOwnership(operation, input, reply)) return false;
   if (retention(operation) && !retentionMatches(input, reply)) return false;
   return !reply.effective || sourceAncestry(reply.scope, reply.effective);
+}
+
+function resourceOwnership(operation: ApiOperation, input: PreparedInput, reply: OwnedReply): boolean {
+  return revisionOwnership(operation, input, reply) && inputOwnership(operation, input, reply);
 }
 
 function revisionOwnership(operation: ApiOperation, input: PreparedInput, reply: OwnedReply): boolean {

@@ -321,5 +321,54 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "SuiteRevisionParams"
+  },
+  {
+    "name": "createInput",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs",
+    "response": "InputRecord",
+    "successStatus": 201,
+    "error": "ApiError",
+    "params": "WorkspaceParams",
+    "request": "CreateInputRequest"
+  },
+  {
+    "name": "listInputs",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs",
+    "response": "InputPage",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "WorkspaceParams",
+    "query": "PageQuery"
+  },
+  {
+    "name": "getInput",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs/{inputId}",
+    "response": "InputRecord",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "InputParams"
+  },
+  {
+    "name": "sealInput",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs/{inputId}/seal",
+    "response": "InputReceipt",
+    "successStatus": 202,
+    "error": "ApiError",
+    "params": "InputParams",
+    "request": "TransitionInputRequest"
+  },
+  {
+    "name": "deleteInput",
+    "method": "DELETE",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs/{inputId}",
+    "response": "InputReceipt",
+    "successStatus": 202,
+    "error": "ApiError",
+    "params": "InputParams",
+    "request": "TransitionInputRequest"
   }
 ]

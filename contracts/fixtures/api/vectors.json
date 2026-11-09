@@ -448,5 +448,60 @@
     "path": "valid/suite-revision-params.json",
     "schema": "SuiteRevisionParams",
     "valid": true
+  },
+  {
+    "path": "valid/input.json",
+    "schema": "InputRecord",
+    "valid": true
+  },
+  {
+    "path": "valid/input-receipt.json",
+    "schema": "InputReceipt",
+    "valid": true
+  },
+  {
+    "path": "valid/input-page.json",
+    "schema": "InputPage",
+    "valid": true
+  },
+  {
+    "path": "valid/create-input.json",
+    "schema": "CreateInputRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/transition-input.json",
+    "schema": "TransitionInputRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/input-params.json",
+    "schema": "InputParams",
+    "valid": true
+  },
+  {
+    "path": "invalid/input-too-large.json",
+    "schema": "CreateInputRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/input-path-leak.json",
+    "schema": "InputRecord",
+    "valid": false
+  },
+  {
+    "path": "invalid/input-unknown-state.json",
+    "schema": "InputRecord",
+    "valid": false
+  },
+  {
+    "path": "invalid/input-unsafe-reason.json",
+    "schema": "InputRecord",
+    "valid": false
+  },
+  {
+    "path": "invalid/input-old-acceptance.json",
+    "schema": "InputReceipt",
+    "valid": false
   }
 ]

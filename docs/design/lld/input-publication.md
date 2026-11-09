@@ -25,6 +25,10 @@ session/origin/CSRF guards, including binary mutations before body consumption.
 Generated schemas/client own JSON control and acknowledgement DTOs. A narrow byte
 route/client owns octet-stream chunks and content; do not generalize the JSON
 operation adapter into a transfer framework. Scope/path equality is mandatory.
+JSON descriptors use InputRecord, InputPage and InputReceipt; create returns the
+original staging snapshot, seal/delete return their operation/request-bound202
+receipt. Client checks scope/route, byte/progress consistency and immutable create
+expectations. Descriptors alone do not expose implemented upload routes.
 
 Create includes requestId, scope, name, optional folderId, expected hash/bytes.
 Seal/delete include requestId, scope and expectedVersion. Shared receipt lookup

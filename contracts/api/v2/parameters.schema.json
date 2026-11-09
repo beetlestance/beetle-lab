@@ -86,6 +86,26 @@
         "revisionId"
       ],
       "additionalProperties": false
+    },
+    "InputParams": {
+      "type": "object",
+      "properties": {
+        "organizationId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "workspaceId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "inputId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "organizationId",
+        "workspaceId",
+        "inputId"
+      ],
+      "additionalProperties": false
     }
   }
 }

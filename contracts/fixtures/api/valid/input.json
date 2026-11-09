@@ -1,0 +1,16 @@
+{
+  "id": "00000000-0000-4000-8000-000000000003",
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "name": "Dataset",
+  "folderId": "00000000-0000-4000-8000-000000000005",
+  "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "bytes": 12,
+  "offset": 0,
+  "version": 1,
+  "state": "staging",
+  "reason": null
+}
