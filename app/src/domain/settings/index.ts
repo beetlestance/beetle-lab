@@ -6,3 +6,5 @@ export { validateInstallation, validateRetention, installationDefaults, poolLowe
 export type { RuntimeCeilings } from './validation.js';
 export { decideSettingsChange } from './transition.js';
 export type { SettingsRequest, SettingsCommand, SettingsEvidence, SettingsChange } from './types.js';
+export { storageFits } from './storage.js';
+export type { StorageFitInput } from './storage.js';

@@ -1,3 +1,4 @@
+import { insertExecutionIntent } from './execution-intents.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeJson } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
@@ -52,14 +53,16 @@ export class Runs {
     }
   }
   private insert(run: Run, offer: string, profile: RunProfilePin): void {
-    const intentDigest = (JSON.parse(offer) as Offer).intentDigest;
+    const parsedOffer = JSON.parse(offer) as Offer;
+    const intentDigest = parsedOffer.intentDigest;
     this.db.prepare(`INSERT INTO runs(id,organization_id,workspace_id,suite_id,revision_id,active_attempt_id,
       version,state,outcome,validation_status,cancellation_requested,reason,requested_at,snapshot_json)
       VALUES(?,?,?,?,?,?,1,'queued','pending','pending',0,NULL,?,?)`).run(run.id, run.scope.organizationId,
       run.scope.workspaceId, run.suiteId, run.revisionId, run.activeAttemptId, run.requestedAt, encodeJson(run, 65536));
-    this.db.prepare(`INSERT INTO attempts(id,run_id,organization_id,workspace_id,ordinal,intent_digest,offer_json,registry_json,state)
-      VALUES(?,?,?,?,1,?,?,?,'offered')`).run(run.activeAttemptId, run.id, run.scope.organizationId,
+    this.db.prepare(`INSERT INTO attempts(id,run_id,organization_id,workspace_id,ordinal,intent_digest,offer_json,registry_json,state,foundation_owned)
+      VALUES(?,?,?,?,1,?,?,?,'offered',1)`).run(run.activeAttemptId, run.id, run.scope.organizationId,
       run.scope.workspaceId, intentDigest, offer, encodeJson(profile, 32768));
+    insertExecutionIntent(this.db, run, parsedOffer, profile);
     this.db.prepare('INSERT INTO dispatch_outbox(attempt_id,intent_digest) VALUES(?,?)').run(run.activeAttemptId, intentDigest);
   }
 }

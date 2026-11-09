@@ -1,3 +1,4 @@
+import { storageFits } from '../../../domain/settings/index.js';
 import type { DatabaseSync } from 'node:sqlite';
 import type { InputCommand, InputKey, InputRecord, InputReceipt, InputAdvance, InputStorage } from '../../../ports/inputs.js';
 import { INPUT_METADATA_CHARGE_BYTES } from '../../../ports/inputs.js';
@@ -52,9 +53,8 @@ export class Inputs {
     const folder = lower(request.folderId ?? workspace.rootFolderId); this.entities.folderRow(key.scope, folder);
     const storage = this.storage();
     const charge = request.bytes + INPUT_METADATA_CHARGE_BYTES;
-    requireRule(Number.isSafeInteger(charge + storage.freeSpaceReserveBytes) &&
-      storage.chargedBytes <= Number.MAX_SAFE_INTEGER - charge - storage.freeSpaceReserveBytes, 'capacity_unavailable');
-    requireRule(storage.chargedBytes + charge + storage.freeSpaceReserveBytes <= storage.allocationBytes, 'capacity_unavailable');
+    requireRule(storageFits({ chargedBytes: storage.chargedBytes, requestedBytes: charge,
+      allocationBytes: storage.allocationBytes, reserveBytes: storage.freeSpaceReserveBytes }), 'capacity_unavailable');
     this.db.prepare(`INSERT INTO input_blobs(id,organization_id,workspace_id,folder_id,name,sha256,bytes,offset,version,state,create_request_id)
       VALUES(?,?,?,?,?,?,?,0,1,'staging',?)`).run(key.id, key.scope.organizationId, key.scope.workspaceId,
       folder, normalizedName(request.name), request.sha256, request.bytes, lower(request.requestId));
