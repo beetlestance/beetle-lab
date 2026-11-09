@@ -1,6 +1,6 @@
 # Durable application dispatch storage
 
-Status: SQL/worker implementation in review; installation dispatcher runtime pending.
+Status: SQL and metadata RPC implemented; installation dispatcher runtime pending.
 Owner: application SQLite worker. Migration005 is reserved here; do not edit004.
 [Run intake](run-intake.md) owns immutable intent/receipt acceptance;
 [observation merge](attempt-observation.md) and [agent facts](agent-admission-evidence.md)

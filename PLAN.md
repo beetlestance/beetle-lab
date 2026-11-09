@@ -32,53 +32,20 @@ model assignments, agent packets, concurrency and independent review.
 
 | Area | Integrated | Still required |
 | --- | --- | --- |
-| Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings, suite and run-intake schemas/clients; exact installed descriptor binding in immutable Offers; atomic queued-run/attempt/outbox SQLite intake; authenticated enqueue/detail/history routes; Fastify JSON adapter; separate config/Offer bounds; private agent/backend capacity publication and owned startup/shutdown; shared exact staging accounting and same-lease execution limits | Execution delivery/ACK recovery, result routes and result storage |
+| Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings, suite and run-intake schemas/clients; exact installed descriptor binding in immutable Offers; atomic queued-run/attempt/outbox SQLite intake; authenticated enqueue/detail/history routes; Fastify JSON adapter; separate config/Offer bounds; private agent/backend capacity publication and owned startup/shutdown; shared exact staging accounting and same-lease execution limits; bounded claim/observation transactions and metadata dispatch RPC | Agent delivery/restart runtime, event ingestion/ACK, result routes and result storage |
 | Agent | Catalogue/admission/staging/controllers; typed stops; bounded scheduling; guards/full observation publisher; installed runtime; Node24 image/private HTTP; real arm64 k6 pass/fail; journal008/large-original bounds; Offer propagation and launch contention | Updated image/Compose/stop-latency qualification, irreversible recovery fencing, telemetry, application artifact transfer/finalization and native architecture matrix |
 | k6 | Suite compiler/runtime/builder, phase-isolated metrics, control journal, staged loader, child runner, numeric windows, summary collector, outcome mapper, staged wrapper, seal codec and artifact publication | Live quantiles, target sampler, reports/export |
 | Product | Namespace/settings and immutable suite/revision SQLite/API composition; native input publication/HTTP/recovery, bounded byte client and scoped inventory/deletion UI; sessions, paired React authoring, session-owned upload/download controls and dev proxy | Run UI, artifact store, reports, automation client and Docker frontend proxy |
 | Qualification | Local contract/unit/SQLite and real staged native pass/fail checks | Complete execution path, containers, scans, backup/soak and native architecture matrix |
 
-Worker submissions remain unaccepted until independent review and integration
-checks pass. No complete R0-R4 release slice is claimed by this inventory.
-The [suite authoring report](docs/verification/suite-authoring.md) records authoring
-evidence. [Storage intake](docs/verification/storage-intake.md) records the newer
-full gate and separates metadata/client/journal checks from pending byte publication,
-native stress, browser and complete execution evidence.
-The [input publication report](docs/verification/input-publication.md) records actual
-publisher/provider/Stager compatibility, configured HTTP/recovery and the newer
-2,886-test combined gate.
-The [byte-client report](docs/verification/input-client.md) records newer scoped
-inventory/client checks and actual compiled HTTP transfer. The
-[connected controls report](docs/verification/input-controls.md) records the newer
-3,048-test gate and real frontend-controller HTTP recovery checks.
-[Run intake evidence](docs/verification/run-intake.md) records reviewed schemas and
-pure commands plus atomic SQLite run/attempt/outbox enqueue; its newer3,086-test
-gate does not establish dispatch or completed execution. The newer
-[run HTTP report](docs/verification/run-http.md) records authenticated run routes,
-a real TCP lost202/restart test and the3,103-test gate; the agent bridge is pending.
-The newer [installed binding report](docs/verification/installed-binding.md) records
-actual descriptor hashing, immutable intent, scoped replay and restart/shutdown
-fences with the3,160-test gate. The [capacity report](docs/verification/capacity-wire.md)
-records required source-aware wire/cache and compiled checks; its newer full run
-has one unresolved timing failure. [Private connection components](docs/verification/backend-connection.md)
-now have reviewed implementations. The [startup report](docs/verification/backend-startup.md)
-records connected capacity publication and the3,499-test local gate. Delivery,
-ACK recovery and finalization remain. The [staging admission report](docs/verification/staging-admission.md)
-records the shared estimator and private execution view, independent review and
-combined exact-source verification, including a sandbox loopback failure/rerun.
-The [admission evidence contract](docs/design/lld/agent-admission-evidence.md)
-now has journal/HTTP projection and a [pure backend merge](docs/design/lld/attempt-observation.md).
-The [private observation transaction](docs/verification/dispatch-observation.md)
-now atomically acknowledges/projects/releases matched execution ownership. Durable
-claims, worker transport and dispatcher runtime remain pending; result finalization
-and durable event acknowledgment have separate authority. The
-[admission evidence report](docs/verification/admission-evidence.md) records independent
-reviews, the 3,649-test full gate and updated synthetic executable smoke.
+Worker submissions require independent review and exact-source integration checks.
+The [latest dispatch report](docs/verification/dispatch-rpc.md) records reviewed
+claims, observations and actual worker RPC, the 3,820-test full local gate and
+compiled backend smokes. Backend-to-agent delivery and completed execution remain
+pending. Earlier component reports are indexed in the [documentation map](docs/README.md).
 
-The [execution storage report](docs/verification/execution-storage.md) records
-migration005 compact intent/ownership facts, shared input/output quota, corrected
-SQL guards, independent reviews and the 3,677-test full gate. Dispatch methods
-and executable delivery remain pending.
+No complete R0-R4 release slice is claimed. Native engine component evidence does
+not establish the new backend path, Compose install or supported architecture matrix.
 
 ## Delivery order
 
