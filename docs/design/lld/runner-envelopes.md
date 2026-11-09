@@ -1,7 +1,8 @@
 # Runner Offer byte bounds
 
 Status: amendment in progress. Shared config validation/constants implemented;
-transport, journal migration008 and engine/staging propagation remain required.
+client propagation is under verification. Server, journal migration008 and
+engine/staging propagation remain required before integration acceptance.
 This does not claim that a full-size saved config can execute yet.
 
 ## Independent limits
@@ -21,6 +22,9 @@ request allowance independently of its existing response allowance; caller-speci
 smaller limits must remain effective. Do not widen the generic wire/API transport
 default for this purpose. Raw HTTP/staged file size and normalized serialized JSON
 are separate checks; whitespace/escaped Unicode do not increase normalized rights.
+The wire registry snapshots shipped request-specific overrides at construction;
+only the runner Offer selects2MiB. Response bounds retain their existing default.
+An explicit caller maximum restricts both response intake and any request override.
 
 ## Propagation and ownership
 

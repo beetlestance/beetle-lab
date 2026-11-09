@@ -17,6 +17,8 @@ export interface WireTransport<S extends object, E> {
 }
 export interface WireRegistry<S extends object, E> {
   pathPrefix: '/runner/v1/' | '/api/v2/';
+  /** Shipped request-only bounds; explicit caller limits can further restrict them. */
+  requestMaximumBytes?: Readonly<Partial<Record<MessageName<S>, number>>>;
   validate<N extends MessageName<S>>(name: N, input: unknown): ValidationResult<S[N]>;
   validateError(input: unknown): ValidationResult<E>;
 }
@@ -30,6 +32,12 @@ export interface HttpOptions {
 }
 interface ResolvedOptions {
   baseUrl: URL; fetch: typeof fetch; headers: Readonly<Record<string, string>>; maximumBytes: number; timeoutMs: number;
+  callerMaximumBytes: number | undefined;
+}
+
+function requestLimit<S extends object, E>(options: ResolvedOptions, name: MessageName<S> | undefined, registry: WireRegistry<S, E>): number {
+  const maximum = name === undefined ? undefined : registry.requestMaximumBytes?.[name];
+  return maximum === undefined ? options.maximumBytes : Math.min(maximum, options.callerMaximumBytes ?? maximum);
 }
 
 function requestBody<S extends object, E>(call: WireCall<MessageName<S>, MessageName<S>>, maximum: number, registry: WireRegistry<S, E>): WireResult<string | undefined, E> {
@@ -81,7 +89,7 @@ function fetchReply(fetcher: typeof fetch, url: URL, init: RequestInit, signal: 
 async function send<S extends object, E, N extends MessageName<S>>(options: ResolvedOptions, call: WireCall<N, MessageName<S>>, registry: WireRegistry<S, E>): Promise<WireResult<S[N], E>> {
   const url = requestUrl(options.baseUrl, call.path, registry.pathPrefix);
   if (!url) return { ok: false, error: { kind: 'request' } };
-  const body = requestBody(call, options.maximumBytes, registry);
+  const body = requestBody(call, requestLimit(options, call.request, registry), registry);
   if (!body.ok) return body;
   const deadline = AbortSignal.timeout(options.timeoutMs);
   const signal = call.signal ? AbortSignal.any([call.signal, deadline]) : deadline;
@@ -102,15 +110,24 @@ function limit(value: number, maximum: number, name: string): number {
   return value;
 }
 
+function snapshotRegistry<S extends object, E>(registry: WireRegistry<S, E>): WireRegistry<S, E> {
+  const requestMaximumBytes = Object.freeze({ ...registry.requestMaximumBytes });
+  for (const maximum of Object.values(requestMaximumBytes) as (number | undefined)[]) {
+    if (maximum !== undefined) limit(maximum, 16_777_216, 'request bytes');
+  }
+  return Object.freeze({ ...registry, requestMaximumBytes });
+}
+
 /** No retries: an execution retry requires explicit new user intent. */
 export function createWireTransport<S extends object, E>(options: HttpOptions, registry: WireRegistry<S, E>): WireTransport<S, E> {
-  const policy = Object.freeze({ ...registry });
+  const policy = snapshotRegistry(registry);
   let baseUrl: URL;
   try { baseUrl = new URL(options.baseUrl); } catch { throw new Error('Invalid service URL'); }
   if (!['http:', 'https:'].includes(baseUrl.protocol) || baseUrl.username || baseUrl.password) throw new Error('Invalid service URL');
   const resolved: ResolvedOptions = {
     baseUrl, fetch: options.fetch ?? fetch, headers: { ...options.headers },
     maximumBytes: limit(options.maximumBytes ?? 1_048_576, 16_777_216, 'bytes'),
+    callerMaximumBytes: options.maximumBytes,
     timeoutMs: limit(options.timeoutMs ?? 30_000, 300_000, 'timeout'),
   };
   return { json: call => send(resolved, call, policy) };
