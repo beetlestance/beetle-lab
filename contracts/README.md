@@ -39,3 +39,9 @@ Neither proves an admitted execution stopped: reconcile an ambiguous offer
 against the agent journal before retrying the same intent.
 Raw parsing and wrapper stdout's 64 KiB line limit remain transport duties.
 Authenticated artifact streams/ranges belong to the artifact transport owner.
+
+`estimateStaging` and `serializeStagedOffer` share policy1 pre-write accounting
+between backend dispatch and agent staging. Callers validate Offers first. The
+pure estimate includes exact bounded Offer JSON, input bytes, secret allowances
+and fixed manifest/metadata charges; unsafe totals reject without resolving secrets.
+`stagingPolicy` and `supportedStaging` preserve recorded policy/charge compatibility.

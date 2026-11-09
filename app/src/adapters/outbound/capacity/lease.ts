@@ -40,7 +40,8 @@ export class CapacityLease {
   private replay(fingerprint: string, candidate: RuntimeObservation): RuntimeObservation {
     const result = this.result;
     if (result === null || this.fingerprint !== fingerprint ||
-      encodeCanonicalJson(result.ceilings, 8192) !== encodeCanonicalJson(candidate.ceilings, 8192)) {
+      encodeCanonicalJson({ ceilings: result.ceilings, execution: result.execution }, 8192) !==
+        encodeCanonicalJson({ ceilings: candidate.ceilings, execution: candidate.execution }, 8192)) {
       this.revoke(); throw new CapacityError();
     }
     return structuredClone(result);

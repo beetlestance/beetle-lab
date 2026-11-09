@@ -39,7 +39,8 @@ class Source implements CapacitySource {
       const expiresAtMs = Math.min(frame.observation.expiresAtMs, observedAtMs + 1000);
       requireCapacity(now < expiresAtMs);
       return this.lease.accept(frame.observation.sampleStartedAtMs, fingerprint,
-        { ceilings: ceilings(frame, this.configuration, disk.total), observedAtMs, expiresAtMs });
+        { ceilings: ceilings(frame, this.configuration, disk.total), observedAtMs, expiresAtMs,
+          execution: { stagingBytes: frame.observation.pool.stagingBytes, perRunStagingBytes: frame.observation.perRunStagingBytes } });
     } catch { return this.lease.revoke(source); }
   }
   close(): Promise<void> {

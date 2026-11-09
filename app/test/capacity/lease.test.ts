@@ -6,6 +6,7 @@ describe('original agent and composite source leases', () => {
     const f = await fixture();
     try {
       const source = await f.open(); const first = await source.sample();
+      expect(first?.execution).toEqual({ stagingBytes: 500000, perRunStagingBytes: 125000 });
       expect(first?.observedAtMs).toBe(10000); expect(first?.expiresAtMs).toBe(11000);
       f.state.now = 10800;
       expect(await source.sample()).toEqual(first);
@@ -34,6 +35,8 @@ describe('original agent and composite source leases', () => {
   });
   it.each([
     ['unmapped policy', () => { const v = capabilities(); v.observation.policyDigest = 'f'.repeat(64); return v; }],
+    ['staging pool', () => { const v = capabilities(); v.observation.pool.stagingBytes++; return v; }],
+    ['per-run staging', () => { const v = capabilities(); v.observation.perRunStagingBytes--; return v; }],
     ['unmapped staging', () => { const v = capabilities(); v.observation.freeStagingDiskBytes = 123; return v; }],
     ['unmapped engine version', () => { const v = capabilities(); v.engines[0]!.version = '2'; return v; }],
     ['older original', () => capabilities(9990)],
@@ -75,7 +78,8 @@ describe('original agent and composite source leases', () => {
   it('revokes unknown responses and clock rollback; output copies cannot mutate replay custody', async () => {
     const f = await fixture();
     try {
-      const source = await f.open(); const first = await source.sample(); first!.ceilings.pool.cpuMillis = 1;
+      const source = await f.open(); const first = await source.sample(); first!.ceilings.pool.cpuMillis = 1; first!.execution.stagingBytes = 1;
+      expect((await source.sample())?.execution.stagingBytes).toBe(500000);
       expect((await source.sample())?.ceilings.pool.cpuMillis).toBe(4000);
       f.calls.mockResolvedValueOnce({ ok: false, error: { kind: 'transport' } });
       expect(await source.sample()).toBeNull(); expect(await source.sample()).toBeNull();

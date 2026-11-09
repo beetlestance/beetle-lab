@@ -18,8 +18,9 @@ Keep forced recursive read-only input/secret binds. Reusing Docker's internal
 named-volume directory is not a portable substitute. Named-volume engine mounts
 would require a separately reviewed profile and inspection contract.
 
-`agent/src/admission/staging.ts` owns versioned private policy and the deterministic
-cost estimator shared by journal projection and the forthcoming stager. Reserve
+`contracts/src/staging.ts` owns versioned policy and the deterministic cost
+estimator shared by backend admission, agent journal projection and staging.
+The agent admission entrypoint re-exports that implementation. Reserve
 exact prescribed offer JSON bytes, declared input bytes, secret allowance (64 KiB
 each, aggregate 1 MiB), 64 KiB engine manifest and 64 KiB staging metadata. Pin the
 breakdown/version with each reservation. Overflow rejects; no secret resolution is

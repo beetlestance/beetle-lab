@@ -56,9 +56,12 @@ export class RuntimeCapacity {
       now - observation.observedAtMs >= this.ttl)) this.revoke();
   }
   snapshot(): RuntimeCeilings | null {
+    return this.currentObservation()?.ceilings ?? null;
+  }
+  currentObservation(): Readonly<RuntimeObservation> | null {
     const now = this.currentTime();
     if (now === null) return null;
     this.expire(now);
-    return this.observation?.ceilings ?? null;
+    return this.observation;
   }
 }

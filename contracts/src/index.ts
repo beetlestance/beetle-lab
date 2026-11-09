@@ -12,3 +12,6 @@ export type { ResultDigest, ResultSeal } from './result-seal.js';
 
 export { deriveInstalledIdentity, installedDescriptorDigest, sameInstalledIdentity, InstalledIdentityError, installedManifestPrefix, installedProfilePrefix } from './installed-identity.js';
 export type { InstalledIdentityInput, InstalledLabels } from './installed-identity.js';
+
+export { stagingPolicy, serializeStagedOffer, estimateStaging, supportedStaging } from './staging.js';
+export type { StagingEstimate } from './staging.js';
