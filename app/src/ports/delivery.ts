@@ -18,7 +18,7 @@ export interface DeliveryRuntimeOptions {
   readonly runs: Pick<RunReader, 'getRun'>;
   /** Same installation gateway/credits as capacity; this owner never closes it. */
   readonly gateway: RunnerGateway;
-  /** Called once on fatal operation failure; original completion is owned through it. */
+  /** Called once on fatal failure; await original completion; never await delivery/composite close. */
   readonly onFailure: (error: unknown) => Promise<void>;
   /** Internal scheduler interval: default250, safe integer25..60000 milliseconds. */
   readonly intervalMs?: number;

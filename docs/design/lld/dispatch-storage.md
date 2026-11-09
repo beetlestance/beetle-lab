@@ -155,24 +155,29 @@ Implementation belongs to outbound runner/delivery; bootstrap owns its compositi
 Capture methods/options before any await. Default interval250ms, integer25..60000;
 one active turn, no overlapping timer work, <=one original Offer and two <=1024-byte
 lane cursors. Scan <=32; alternate queued/reconcile turns and advance past blocked
-items within each captured upper order. No per-run timer or unbounded item cache.
+items within each captured upper order, using selected item.after so unread page
+items are not skipped. No per-run timer or unbounded item cache.
 
 Read the original Offer, claim, then build the client from the stored journal UUID.
 Replay ALWAYS snapshots first, even from the queued lane. Only matched scoped
 attempt_not_found under that UUID can reoffer an unacknowledged original. An ACKed
 missing receipt never PUTs. Normal transport/protocol failures retain charge and
-advance fairness; unexpected thrown operation/storage errors stop scheduling and
-await onFailure once. Callback failures remain retained for close; no silent retry.
+advance fairness; local request-validation failures and unexpected thrown operation/
+storage errors stop scheduling and await onFailure once. Callback failures remain retained for close; no silent retry.
 
-Use the scoped Run reader before PUT. Cancellation intent prohibits reoffer/start;
+Bind the scoped Run id/scope/activeAttemptId before PUT. Cancellation intent or
+terminal finished/cancelled/errored state prohibits reoffer/start;
 existing receipts may receive the same idempotent generation-bound cancellation.
 An absent cancelled receipt stays charged pending durable agent refusal support;
 that missing-receipt cancellation protocol remains required first-release work.
+The Run read does not serialize a later cancellation commit with network issue.
 Every positive snapshot uses matched observe; no event ACK or terminal result here.
 
 close stops scheduling and signals abort but awaits all original calls and any
 already received positive observation custody. No new PUT/cancel after close.
-Fatal composition must stop capacity publication and revoke runtime readiness;
+onFailure must not await delivery/composite close, which would await itself.
+Fatal composition synchronously fences publication, drains any original positive
+publication, then publishes null and revokes readiness; no positive follows it;
 bootstrap drains delivery, poller, shared gateway and finally metadata in that order.
 Initial wiring does not qualify cancellation absence, events, artifacts or results.
 
