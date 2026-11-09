@@ -19,8 +19,8 @@ it('rejects unsupported providers, paths, duplicate portable names and unknown f
 it('retains all64 supported escaped maximum versions and rejects65 declarations', () => {
   const declarations = Array.from({ length: 64 }, (_, index) => ({ name: `TOKEN_${index}`, provider: 'env',
     locator: `SOURCE_${index}`, version: '\u0000'.repeat(256) }));
-  expect(prepareK6SecretReferences(declarations)).toMatchObject({ ok: true, value: expect.arrayContaining([
-    { name: 'TOKEN_63', provider: 'env', reference: 'SOURCE_63', version: '\u0000'.repeat(256) }]) });
+  expect(prepareK6SecretReferences(declarations)).toEqual({ ok: true, value: Array.from({ length: 64 }, (_, index) =>
+    ({ name: `TOKEN_${index}`, provider: 'env', reference: `SOURCE_${index}`, version: '\u0000'.repeat(256) })) });
   expect(prepareK6SecretReferences([...declarations, { ...declarations[0]!, name: 'EXTRA' }]))
     .toEqual({ ok: false, code: 'unsupported_secret_reference' });
 });

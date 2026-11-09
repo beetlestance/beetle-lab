@@ -115,7 +115,11 @@ Runs keep one immutable initial snapshot plus explicit current-state columns.
 A partial pending index bounds queue checks to the configured limit, independent
 of historical closed runs. Attempt/active-pointer FKs bind run and workspace;
 immutable triggers also reject REPLACE. Possible-delivery evidence is monotonic;
-actual claims and acknowledgements remain the next protocol boundary.
+unacknowledged uncertainty cannot be deleted/reset. Clearing it requires a stored
+agent generation; reinsertion after acknowledgment and generation rewind reject.
+Only a validated agent identity observation may set generation, under the future
+acknowledgment transaction. Active runs/attempts cannot be deleted. Actual claims
+and acknowledgment intake remain the next protocol boundary.
 
 ## Handoff to execution
 

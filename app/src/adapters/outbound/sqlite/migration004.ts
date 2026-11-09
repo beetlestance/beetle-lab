@@ -70,5 +70,20 @@ CREATE TRIGGER attempts_no_replace BEFORE INSERT ON attempts WHEN EXISTS(SELECT 
  BEGIN SELECT RAISE(ABORT,'retained attempt identity'); END;
 CREATE TRIGGER outbox_no_replace BEFORE INSERT ON dispatch_outbox WHEN EXISTS(SELECT 1 FROM dispatch_outbox WHERE attempt_id=NEW.attempt_id)
  BEGIN SELECT RAISE(ABORT,'retained dispatch identity'); END;
+CREATE TRIGGER outbox_initial_attempt BEFORE INSERT ON dispatch_outbox
+ WHEN NOT EXISTS(SELECT 1 FROM attempts a JOIN runs r ON r.id=a.run_id
+ WHERE a.id=NEW.attempt_id AND a.generation IS NULL AND a.state='offered' AND r.state='queued')
+ BEGIN SELECT RAISE(ABORT,'dispatch already acknowledged or closed'); END;
+CREATE TRIGGER outbox_retain_uncertainty BEFORE DELETE ON dispatch_outbox
+ WHEN OLD.possible_delivery=1 AND (SELECT generation FROM attempts WHERE id=OLD.attempt_id) IS NULL
+ BEGIN SELECT RAISE(ABORT,'delivery outcome unknown'); END;
+CREATE TRIGGER attempts_generation_monotone BEFORE UPDATE OF generation ON attempts
+ WHEN OLD.generation IS NOT NULL AND (NEW.generation IS NULL OR NEW.generation<OLD.generation)
+ BEGIN SELECT RAISE(ABORT,'generation cannot rewind'); END;
+CREATE TRIGGER runs_retain_active BEFORE DELETE ON runs WHEN OLD.state IN ('queued','dispatching','active','finalizing')
+ BEGIN SELECT RAISE(ABORT,'retained active run'); END;
+CREATE TRIGGER attempts_retain_active BEFORE DELETE ON attempts
+ WHEN EXISTS(SELECT 1 FROM runs WHERE id=OLD.run_id AND state IN ('queued','dispatching','active','finalizing'))
+ BEGIN SELECT RAISE(ABORT,'retained active attempt'); END;
 PRAGMA user_version=4;
 `;
