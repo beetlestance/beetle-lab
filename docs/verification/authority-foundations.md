@@ -1,8 +1,9 @@
 # Journal and installation authority foundations
 
-Status: independently reviewed components, integrated and locally verified.
-Source: `e0c270dd305a6767f1ea1a0548bafcd5fac117ba`.
-Startup, runner wire binding and backend dispatch are not established by this report.
+Status: independently reviewed foundations/startup, integrated and locally verified.
+Foundation source: `e0c270dd305a6767f1ea1a0548bafcd5fac117ba`.
+Startup/correction source: `4638d5e640ddcd62c719c377ae5c2eafc1a604d9`.
+Runner wire binding and backend dispatch are not established by this report.
 
 ## Durable journal identity
 
@@ -34,9 +35,19 @@ main DB uses at most 16 pages of 4096 bytes, 64KiB cache and no mmap. Settings a
 The store refuses missing/corrupt/nonready state, final symlinks/hardlinks, changed
 inodes and oversized files. It never deletes a state file to infer freshness.
 
+## Installed startup ownership
+
+The actual RuntimeOwner opens the ready control gate before foreign verification
+or journal recovery. It awaits the opened journal UUID, checks cancellation and
+asserts the exact binding before configuration, composition, publisher or scheduler
+startup. Missing/nonready/mismatched authority never triggers an initialization
+fallback. The gate closes only after all service/monitoring originals and the
+native journal close succeed. Cleanup failure retains runtime/control ownership,
+including unknown acquisition cleanup before a facade could be returned.
+
 ## Actual checks
 
-Integrated command: `node node_modules/vitest/vitest.mjs run` with installation-state
+Foundation integrated command: `node node_modules/vitest/vitest.mjs run` with installation-state
 and the nine impacted journal test files, `--maxWorkers=1`: 99 tests / 11 files passed,
 22.16 seconds. This combines 83 journal tests and 16 control-state tests.
 Global Node TypeScript exited 0; architecture checked 1,118 sources and documentation
@@ -59,6 +70,15 @@ Initial development failures were complexity lint and a digits-only uppercase
 negative fixture; both were corrected. Neither is presented as a production red.
 Independent reviews found no blocking source defect within the component model.
 
+The startup/correction source passed 72 tests across six gate/bootstrap files in
+31.43 seconds, plus global Node TypeScript and scoped lint. Independent startup
+review found one post-acquisition native-read cleanup gap. A real child fault test
+reproduced the leaked lease on the original code; unchanged test/runtime bytes
+passed after moving the final state capture inside its cleanup guard. Removing
+the extra factory read moves that injected third read to owned initial binding;
+the observable failure-cleanup/retry contract is unchanged. The follow-up review
+closed the finding. These checks do not exhaust every native I/O failure location.
+
 ## Limits and required next work
 
 This is not a full repository gate on this source; the earlier full gate remains
@@ -67,8 +87,7 @@ Host is macOS arm64/Node 26.7; target Node 24/Linux amd64+arm64 qualification re
 Process-crash tests do not prove hardware/power-loss durability. Arbitrary manual
 rewinds and hostile concurrent path replacement remain outside the accepted model.
 
-The actual startup must acquire the ready gate, bind the opened journal UUID before
-scheduler/publisher/intake, and retain it through shutdown. First-install tooling,
+First-install tooling/CLI/Compose provisioning, compiled executable smoke,
 capability/header contracts, immutable backend claim/observation binding, delivery
 runtime, and physical cold-backup/restore proof remain required. The control store
 alone does not verify quiescence, copy restored data or settle physical execution.

@@ -64,7 +64,12 @@ fencing, failed/aborted startup cleanup, listening failure and retained unknown
 runtime shutdown. Container entrypoint, native mount visibility, architecture matrix,
 stack overhead and full-pool stop latency require separate qualification.
 
-[Delivery authority](delivery-authority.md) adds a required pre-execution startup
-gate and durable journal authority. This extension is pending: gate validation must
-precede journal recovery, publisher and scheduler, not merely HTTP listening. Normal
-intact active restart retains authority; cold restore must first prove quiescence.
+[Delivery authority](delivery-authority.md) is enforced before verification/journal
+recovery and service startup: open the ready gate, read the actual journal UUID,
+check cancellation and assert their exact match before configuration/composition.
+Hold the gate through all original drains and native journal close; unknown cleanup
+retains the parent owner. The private control path is derived as the journal path
+plus `.authority.sqlite`, outside every file restoration may replace. Serving never
+initializes missing state. CLI/Compose first-install and cold-restore tooling remain
+pending; [local evidence](../../verification/authority-foundations.md) qualifies the
+implemented startup component, not that installation workflow.

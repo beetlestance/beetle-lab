@@ -1,6 +1,6 @@
 # Delivery authority and supported recovery
 
-Status: journal/control-store components verified; startup/wire/restore work pending.
+Status: journal/control-store and actual startup verified; wire/restore work pending.
 [Local foundation evidence](../../verification/authority-foundations.md).
 Owner: coordinator for the runner contract and migrations; agent journal for
 physical delivery authority; application dispatch for the immutable binding.
@@ -80,7 +80,7 @@ Do not present this limitation as recovery from arbitrary restored execution sta
 ## Control-store boundary
 
 `agent/src/installation-state/index.ts` implements the control-store component;
-actual startup wiring and the backup/restore command remain pending.
+RuntimeOwner consumes its lease; first-install and backup/restore commands remain pending.
 `initializeInstallationState` exclusively creates an initializing record.
 `resumeInstallationInitialization` is explicit recovery of that same initialization.
 `openServingState` accepts only ready state; its `assertJournalAuthority` must bind
