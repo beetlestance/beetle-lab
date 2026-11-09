@@ -45,3 +45,13 @@ it('isolates shipped per-request overrides from other messages and subsequent mu
   expect((await transport.json({ ...call, request: 'Small', body: { text: 'a'.repeat(1100) } })).ok).toBe(false);
   expect(fetcher).toHaveBeenCalledTimes(1);
 });
+
+it('captures the caller byte limit once before sending a request', async () => {
+  let reads = 0;
+  const fetcher = vi.fn<typeof fetch>();
+  const client = createRunnerClient(createHttpTransport({ baseUrl, fetch: fetcher,
+    get maximumBytes() { return ++reads === 1 ? 32 : 2_097_152; } }));
+  expect(await client.offer(offer.attemptId, offer)).toEqual({ ok: false, error: { kind: 'request' } });
+  expect(reads).toBe(1);
+  expect(fetcher).not.toHaveBeenCalled();
+});

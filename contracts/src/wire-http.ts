@@ -124,10 +124,11 @@ export function createWireTransport<S extends object, E>(options: HttpOptions, r
   let baseUrl: URL;
   try { baseUrl = new URL(options.baseUrl); } catch { throw new Error('Invalid service URL'); }
   if (!['http:', 'https:'].includes(baseUrl.protocol) || baseUrl.username || baseUrl.password) throw new Error('Invalid service URL');
+  const callerMaximumBytes = options.maximumBytes;
   const resolved: ResolvedOptions = {
     baseUrl, fetch: options.fetch ?? fetch, headers: { ...options.headers },
-    maximumBytes: limit(options.maximumBytes ?? 1_048_576, 16_777_216, 'bytes'),
-    callerMaximumBytes: options.maximumBytes,
+    maximumBytes: limit(callerMaximumBytes ?? 1_048_576, 16_777_216, 'bytes'),
+    callerMaximumBytes,
     timeoutMs: limit(options.timeoutMs ?? 30_000, 300_000, 'timeout'),
   };
   return { json: call => send(resolved, call, policy) };
