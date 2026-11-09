@@ -1,14 +1,15 @@
+import { snapshot } from './snapshot.js';
 import type { DatabaseSync } from 'node:sqlite';
 import type { Ack, AckReceipt, AgentEvent, EventBatch } from '@beetle/contracts';
 import { MAX_BATCH_BYTES } from './event-input.js';
 import type { GenerationKey, PruneReceipt } from './protocol.js';
-import { Failure, owner, snapshot, transaction } from './sql.js';
+import { Failure, owner, transaction } from './sql.js';
 
 interface LengthRow { seq: number; encoded_bytes: number }
 interface PruneRow { seq: number; source: 'wrapper' | 'agent'; source_key: number; charged_bytes: number }
 export function readEvents(db: DatabaseSync, key: GenerationKey, after: number): EventBatch {
   const row = owner(db, key);
-  if (after < row.retained_start_seq - 1) throw new Failure('cursor_expired', snapshot(row));
+  if (after < row.retained_start_seq - 1) throw new Failure('cursor_expired', snapshot(db, row));
   if (after > row.last_seq) throw new Failure('invalid_input');
   const batch: EventBatch = { protocolVersion: '1.0', organizationId: row.organization_id,
     workspaceId: row.workspace_id, attemptId: row.attempt_id, generation: row.generation,
@@ -61,6 +62,6 @@ export function prune(db: DatabaseSync, key: GenerationKey): PruneReceipt {
         spool_rows=spool_rows-?, wrapper_expired=?, supervisor_expired=? WHERE id=?`)
         .run(through + 1, bytes, rows.length, wrapper, supervisor, row.id);
     }
-    return { pruned: rows.length, snapshot: snapshot(owner(db, key)) };
+    return { pruned: rows.length, snapshot: snapshot(db, owner(db, key)) };
   });
 }

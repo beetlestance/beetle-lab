@@ -29,8 +29,11 @@ function startClaim(db: DatabaseSync, value: Reservation, input: Extract<Admissi
   const token = randomUUID();
   return { reservation: saveReservation(db, { ...value, startToken: token, startClaimedAt: input.now, launchEpoch: 1 }), token, dispatchAllowed: true };
 }
-function abortUnstarted(db: DatabaseSync, value: Reservation): Reservation {
+export function requireUnstarted(value: Reservation): void {
   if (value.createToken !== null || value.startToken !== null || value.runtimeId !== null) throw new Failure('conflict');
+}
+function abortUnstarted(db: DatabaseSync, value: Reservation): Reservation {
+  requireUnstarted(value);
   return saveReservation(db, { ...value, status: 'released', aborted: true, launchClosed: true });
 }
 export function ownershipCommand(db: DatabaseSync, input: OwnershipCommand): AdmissionValue {
