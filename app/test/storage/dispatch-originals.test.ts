@@ -102,6 +102,7 @@ it('fences exhausted wire identity before issuing or overwriting an original', a
 it('retains the same original termination through abort and close while replies remain held', async () => {
   const { metadata, original } = await open();
   const worker = Reflect.get(metadata, 'worker') as Worker;
+  const outstanding = Reflect.get(metadata, 'pending') as ReadonlyMap<number, unknown>;
   const nativeTerminate = worker.terminate.bind(worker);
   let finish!: (code: number) => void;
   const termination = new Promise<number>(resolve => { finish = resolve; });
@@ -114,6 +115,7 @@ it('retains the same original termination through abort and close while replies 
   const closing = metadata.close(); const closeRejected = expect(closing).rejects.toMatchObject({ code: 'unavailable' });
   try {
     await rejected; await new Promise<void>(resolve => setImmediate(resolve));
+    expect(outstanding.size).toBe(2);
     expect(aborted).toBe(false); expect(terminate).toHaveBeenCalledTimes(1);
     await expect(metadata.dispatch.readOffer(original.key)).rejects.toMatchObject({ code: 'closed' });
   } finally {
@@ -121,4 +123,5 @@ it('retains the same original termination through abort and close while replies 
     await aborting; await closeRejected;
   }
   expect(aborted).toBe(true); expect(terminate).toHaveBeenCalledTimes(1);
+  expect(outstanding.size).toBe(0);
 });
