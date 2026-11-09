@@ -10,6 +10,7 @@ import { usePage, Pagination } from '../../components/Pagination.js';
 import { MetadataEditor } from './MetadataEditor.js';
 import { RevisionEditor } from './RevisionEditor.js';
 import { History } from './History.js';
+import { AuthoringState } from './AuthoringState.js';
 import './suites.css';
 
 export function Suites({ organizationId, workspaceId, suiteId }: { organizationId: string; workspaceId: string; suiteId?: string }) {
@@ -19,18 +20,18 @@ export function Suites({ organizationId, workspaceId, suiteId }: { organizationI
   const key = queryKeys.workspace(organizationId, workspaceId);
   const organization = useQuery({ queryKey: queryKeys.organization(organizationId),
     queryFn: ({ signal }) => readResult(api.getOrganization({ params: { organizationId }, signal })) });
-  const workspace = useQuery({ queryKey: key, enabled: organization.isSuccess,
+  const workspace = useQuery({ queryKey: key, enabled: organization.data !== undefined,
     queryFn: ({ signal }) => readResult(api.getWorkspace({ params, signal })) });
   useEffect(() => () => {
     void client.cancelQueries({ queryKey: key }); client.removeQueries({ queryKey: key });
     void client.cancelQueries({ queryKey: queryKeys.organization(organizationId) });
     client.removeQueries({ queryKey: queryKeys.organization(organizationId) });
   }, [client, organizationId, workspaceId]);
-  return <QueryState query={organization}>{org => <QueryState query={workspace}>{data => <>
+  return <AuthoringState query={organization}>{org => <AuthoringState query={workspace}>{data => <>
     <nav className="breadcrumbs" aria-label="Breadcrumb"><Link to={routes.organization(org.id)}>{org.name}</Link>
       <Link to={routes.workspace(organizationId, workspaceId)}>{data.name}</Link><Link to={routes.suites(organizationId, workspaceId)}>Suites</Link></nav>
     {suiteId ? <SuiteDetail key={suiteId} workspace={data} suiteId={suiteId} /> : <SuiteIndex workspace={data} />}
-  </>}</QueryState>}</QueryState>;
+  </>}</AuthoringState>}</AuthoringState>;
 }
 function SuiteIndex({ workspace }: { workspace: Workspace }) {
   const api = useApi(); const client = useQueryClient();
@@ -56,7 +57,7 @@ function SuiteDetail({ workspace, suiteId }: { workspace: Workspace; suiteId: st
   const query = useQuery({ queryKey: key, queryFn: ({ signal }) => readResult(api.getSuite({ params, signal })) });
   useEffect(() => () => { void client.cancelQueries({ queryKey: key }); client.removeQueries({ queryKey: key }); }, [client, suiteId]);
   const refresh = () => client.invalidateQueries({ queryKey: queryKeys.suites(params.organizationId, params.workspaceId) });
-  return <QueryState query={query}>{suite => <SuiteContent suite={suite} workspace={workspace} refresh={refresh} />}</QueryState>;
+  return <AuthoringState query={query}>{suite => <SuiteContent suite={suite} workspace={workspace} refresh={refresh} />}</AuthoringState>;
 }
 function SuiteContent({ suite, workspace, refresh }: { suite: Suite; workspace: Workspace; refresh: () => Promise<unknown> }) {
   const [editing, edit] = useState(false);

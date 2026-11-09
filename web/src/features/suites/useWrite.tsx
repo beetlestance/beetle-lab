@@ -36,7 +36,7 @@ export function useWrite<T>(send: (body: T, signal: AbortSignal) => Promise<ApiC
 export function WriteStatus({ write, refresh }: { write: Pick<ReturnType<typeof useWrite<unknown>>, 'pending' | 'saved' | 'failure' | 'unknown' | 'replay' | 'newIntent'>; refresh: () => Promise<unknown> }) {
   return <>
     {write.pending && <p role="status">Saving…</p>}
-    {write.saved && <p role="status">Saved. The current version and history are refreshed.</p>}
+    {write.saved && <p role="status">Saved.</p>}
     {write.failure && <div className="notice error" role="alert"><p>{errorMessage(write.failure)}</p>
       {write.unknown && <><p>The outcome is unknown. Replay sends the identical request, including its version.</p>
         <button onClick={write.replay}>Retry identical request</button>

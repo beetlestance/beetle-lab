@@ -52,7 +52,7 @@ it('creates with the actual scoped root and supports paged folder selection with
   await waitFor(() => expect(document.activeElement).toBe(name));
   fireEvent.change(name, { target: { value: 'Checkout' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save suite' }));
-  await screen.findByText(/Saved. The current version/);
+  await screen.findByText(/^Saved\.$/);
   const body = fixture.records.find(record => record.method === 'POST')?.body;
   expect(body).toMatchObject({ name: 'Checkout', folderId: ids.root, scope });
 });
@@ -85,7 +85,7 @@ it('freezes an unknown write and replays identical request/version/config', asyn
   fireEvent.change(editor, { target: { value: draftText(config) } });
   fireEvent.click(screen.getByRole('button', { name: 'Save new revision' }));
   fireEvent.click(await screen.findByRole('button', { name: 'Retry identical request' }));
-  await screen.findByText(/Saved. The current version/);
+  await screen.findByText(/^Saved\.$/);
   const writes = fixture.records.filter(record => record.method === 'POST');
   expect(writes).toHaveLength(2); expect(writes[1]?.body).toEqual(writes[0]?.body);
   expect(writes[0]?.body).toMatchObject({ config, expectedVersion: 1, engineId: 'k6', configVersion: 1 });
@@ -201,4 +201,40 @@ it('blocks save when a JSON part overflows the complete config', async () => {
   expect(screen.getByRole('button', { name: 'Save new revision' })).toBeDisabled();
   fireEvent.click(screen.getByRole('button', { name: 'Save new revision' }));
   expect(fixture.records.filter(record => record.method === 'POST')).toHaveLength(0);
+});
+
+it('preserves a draft through a failed conflict reload and recovery', async () => {
+  let failRead = false;
+  const fixture = testClient(request => {
+    if (request.method === 'POST') return json(apiError('conflict'), 409);
+    if (request.path.endsWith(`/suites/${suiteId}`)) return failRead ? json(apiError('storage_unavailable'), 503) : json(suite(2));
+    return read(request);
+  });
+  mount(fixture.client, path); const editor = await openJson();
+  const draft = updatePart(starter(), 'target', 'http://kept-through-refresh.invalid');
+  fireEvent.change(editor, { target: { value: draft } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save new revision' }));
+  failRead = true; fireEvent.click(await screen.findByRole('button', { name: 'Reload current version' }));
+  await screen.findByText(/Storage unavailable/);
+  expect(screen.getByRole('textbox', { name: 'Complete configuration JSON' })).toHaveValue(draft);
+  failRead = false; fireEvent.click(screen.getByRole('button', { name: 'Retry loading' }));
+  await waitFor(() => expect(screen.queryByText(/Storage unavailable/)).not.toBeInTheDocument());
+  expect(screen.getByRole('textbox', { name: 'Complete configuration JSON' })).toHaveValue(draft);
+});
+
+it('preserves an acknowledged draft when refresh fails without claiming refreshed data', async () => {
+  let failRead = false;
+  const fixture = testClient(request => {
+    if (request.method === 'POST') { failRead = true; return json({ ...revision(), config: request.body!.config }, 201); }
+    if (request.path.endsWith(`/suites/${suiteId}`)) return failRead ? json(apiError('storage_unavailable'), 503) : json(suite());
+    return read(request);
+  });
+  mount(fixture.client, path); const editor = await openJson();
+  const draft = updatePart(starter(), 'target', 'http://acknowledged.invalid');
+  fireEvent.change(editor, { target: { value: draft } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save new revision' }));
+  await screen.findByText(/Storage unavailable/);
+  expect(screen.getByRole('textbox', { name: 'Complete configuration JSON' })).toHaveValue(draft);
+  expect(screen.getByText('Saved.')).toBeInTheDocument();
+  expect(screen.queryByText(/history are refreshed/)).not.toBeInTheDocument();
 });
