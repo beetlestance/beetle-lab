@@ -69,3 +69,45 @@ it('retires pre-write actions and ignores a status observation started before an
   expect(await screen.findByText('Action version 11')).toBeVisible();
   expect(screen.getByRole('button', { name: 'Replay identical deletion' })).toBeVisible();
 });
+
+it.each(['while deletion remains pending', 'after deletion becomes unknown'] as const)(
+  'rejects a GET started during deletion and resolved %s until a later read starts', async ordering => {
+    const deletionReply = deferred<Response>();
+    const duringDeletionRead = deferred<Response>();
+    let statusReads = 0;
+    const api = testClient(request => {
+      if (request.method === 'DELETE') return deletionReply.promise.then(() => { throw new Error('Synthetic response loss'); });
+      if (request.path.includes('?')) return page();
+      statusReads++;
+      return statusReads === 2 ? duringDeletionRead.promise : json(input({ version: statusReads === 1 ? 7 : 11 }));
+    });
+    const renderActions = vi.fn((record: InputRecord) => <span>Action version {record.version}</span>);
+    mount(api.client, workspace(), renderActions);
+    fireEvent.click(await screen.findByRole('button', { name: 'Read current status for Synthetic dataset' }));
+    await screen.findByText('Action version 7');
+    fireEvent.click(screen.getByRole('button', { name: 'Delete input' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm deletion' }));
+    await screen.findByText('Submitting deletion…');
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh current status' }));
+    await waitFor(() => expect(statusReads).toBe(2));
+    const callsBeforeHeldRead = renderActions.mock.calls.length;
+    if (ordering === 'after deletion becomes unknown') {
+      await act(async () => deletionReply.resolve(json({})));
+      await screen.findByText(/The request outcome is unknown/);
+    }
+    await act(async () => duringDeletionRead.resolve(json(input({ version: 8 }))));
+    await screen.findByText('8');
+    const callsAfterHeldRead = renderActions.mock.calls.length;
+    const exposedAfterHeldRead = screen.queryByText('Action version 8') !== null;
+    if (ordering === 'while deletion remains pending') {
+      expect(screen.getByText('Submitting deletion…')).toBeVisible();
+      await act(async () => deletionReply.resolve(json({})));
+      await screen.findByText(/The request outcome is unknown/);
+    }
+    expect(callsAfterHeldRead).toBe(callsBeforeHeldRead);
+    expect(exposedAfterHeldRead).toBe(false);
+    expect(screen.queryByText('Action version 8')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh current status' }));
+    expect(await screen.findByText('Action version 11')).toBeVisible();
+    expect(api.records.filter(request => request.method === 'DELETE')).toHaveLength(1);
+  });

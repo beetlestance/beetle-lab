@@ -44,6 +44,8 @@ export function useDeletion(params: InputParams, refresh: () => Promise<unknown>
       reply = { ok: false as const, error: { kind: 'transport' as const } };
     }
     if (active.signal.aborted) return;
+    // Reads begun during the original write cannot authorize later actions.
+    retireActions();
     busy.current = false;
     if (!reply.ok) {
       retained.current ||= unknownOutcome(reply.error);

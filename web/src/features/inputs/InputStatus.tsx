@@ -39,15 +39,15 @@ export function InputStatus({ params, close, ...actions }: {
       <button disabled={deletion.phase === 'pending' || (deletion.locked && !deleted)} onClick={close}>Close current status</button>
     </div></header>
     <StatusRead query={query} deletion={deletion} />
-    <CurrentActions query={query} record={actionRecord} {...actions} />
+    <CurrentActions query={query} record={actionRecord} pending={deletion.phase === 'pending'} {...actions} />
     <DeletionStatus deletion={deletion} deleted={deleted} />
   </section>;
 }
 
-function CurrentActions({ query, record, renderActions }: {
-  query: UseQueryResult<InputRecord>; record: InputRecord | null; renderActions?: (record: InputRecord) => ReactNode;
+function CurrentActions({ query, record, pending, renderActions }: {
+  query: UseQueryResult<InputRecord>; record: InputRecord | null; pending: boolean; renderActions?: (record: InputRecord) => ReactNode;
 }) {
-  if (!query.isSuccess || query.isFetching || !record || !renderActions) return null;
+  if (pending || !query.isSuccess || query.isFetching || !record || !renderActions) return null;
   return <div className="actions" key={record.id}>{renderActions(record)}</div>;
 }
 
