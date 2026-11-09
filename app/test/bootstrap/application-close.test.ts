@@ -38,3 +38,22 @@ it('propagates a rejection even when its original reason is falsy', () => {
     expect(thrown).toBe(true);
   }
 });
+
+it('preserves original error identity when multiple close paths propagate the same failure', () => {
+  const failure = new Error('synthetic original');
+  let caught = false;
+  try { throwCloseFailures([{ status: 'rejected', reason: failure }, { status: 'rejected', reason: failure }]); }
+  catch (error) { caught = true; expect(error).toBe(failure); }
+  expect(caught).toBe(true);
+});
+it('preserves distinct original failures even when their messages are identical', () => {
+  const first = new Error('same text'); const second = new Error('same text');
+  try { throwCloseFailures([{ status: 'rejected', reason: first }, { status: 'rejected', reason: second }]); }
+  catch (error) {
+    expect(error).toBeInstanceOf(AggregateError);
+    const aggregate = error as AggregateError;
+    expect(aggregate.errors).toHaveLength(2); expect(aggregate.errors[0]).toBe(first); expect(aggregate.errors[1]).toBe(second);
+    return;
+  }
+  throw new Error('Expected both original failures');
+});

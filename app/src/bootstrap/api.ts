@@ -42,17 +42,19 @@ const digest = (value: string): string => createHash('sha256').update(value, 'ut
 
 /** Local session, authoring and installation-owned input composition. */
 export async function openApplication(options: ApplicationOptions): Promise<Application> {
-  const agent = options.agent === undefined ? undefined : captureAgentRuntime(options.agent, options.metadata, options.inputsDirectory);
-  const session = createLocalSession({ externalOrigin: options.externalOrigin });
+  const { externalOrigin, metadata: metadataOptions, inputsDirectory, agent: requestedAgent } = options;
+  const agent = requestedAgent === undefined ? undefined : captureAgentRuntime(requestedAgent, metadataOptions, inputsDirectory);
+  const configuredMetadata = agentMetadata(metadataOptions, agent);
+  const session = createLocalSession({ externalOrigin });
   const server = createApiServer({ classify: classifyMetadataError });
   let metadata: Metadata | undefined;
   let agentRuntime: AgentRuntime | undefined;
   let inputRuntime: InputRuntime | undefined; let inputHttp: InputHttp | undefined;
   try {
     configureSchemaCompilers(server, { schemas: apiSchemas, encodeJson, maximumResponseBytes: API_MAXIMUM_JSON_BYTES });
-    metadata = await openMetadata(agentMetadata(options.metadata, agent));
+    metadata = await openMetadata(configuredMetadata);
     const store = metadata;
-    if (options.inputsDirectory !== undefined) inputRuntime = await openInputRuntime(options.inputsDirectory, store.inputs);
+    if (inputsDirectory !== undefined) inputRuntime = await openInputRuntime(inputsDirectory, store.inputs);
     if (agent) agentRuntime = await openAgentRuntime(agent, store);
     session.registerRoutes(server);
     registerNamespaceRoutes(server, { store: store.namespaces, reader: store, newId: randomUUID,

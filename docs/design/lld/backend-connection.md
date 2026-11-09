@@ -67,7 +67,9 @@ and uses the captured private profile registry. Programmatic authoring may omit 
 Normal executable loading requires the agent file and supplies this option.
 [Publication loop](runtime-polling.md) owns sampling and SQLite refusal/recovery.
 Shutdown drains that loop/source, then gateway, before closing metadata, preserving
-all failure causes. server.close follows the same owned-resource path.
+all failure causes. Repeated propagation of the same error object preserves its
+original identity; distinct failures still aggregate. server.close follows the
+same owned-resource path. Input paths are captured before any startup await.
 runtimeState is bounded publication diagnostics, not permission to dispatch.
 
 ## Original HTTP custody

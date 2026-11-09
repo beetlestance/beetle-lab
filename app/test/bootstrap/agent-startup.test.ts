@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from 'vitest';
 import { createServer } from 'node:http';
-import { readFile, realpath, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, realpath, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Capabilities } from '@beetle/contracts';
 import { validate } from '@beetle/contracts';
@@ -17,7 +17,7 @@ afterEach(async () => {
 });
 const fixture = storageFixture();
 const externalOrigin = 'http://localhost:4310';
-async function setup(stalled = false) {
+async function setup(stalled = false, mutateInputPath = false) {
   const installation = settingsFixture().chain.installation;
   installation.values.supportedProfiles = ['standard'];
   const dataRoot = await realpath(fixture.root());
@@ -45,8 +45,13 @@ async function setup(stalled = false) {
   const connection = await writeAgentFixture(dataRoot, installation, origin);
   const options = await loadBackendConfiguration({ BEETLE_CONFIG_FILE: join(dataRoot, 'installation.json'),
     BEETLE_AGENT_CONFIG_FILE: connection.path, BEETLE_DATA_DIR: dataRoot, BEETLE_EXTERNAL_ORIGIN: externalOrigin }, fixture.workerUrl());
-  const app = await openApplication(options.application); apps.push(app);
-  return { app, requests, reached };
+  const alternate = join(dataRoot, 'alternate-installation');
+  if (mutateInputPath) await mkdir(alternate, { mode: 0o700 });
+  const mutable = { ...options.application };
+  const opening = openApplication(mutable);
+  if (mutateInputPath) mutable.inputsDirectory = join(alternate, 'inputs');
+  const app = await opening; apps.push(app);
+  return { app, requests, reached, dataRoot, alternate };
 }
 async function pair(app: Application) {
   const response = await app.server.inject({ method: 'POST', url: '/api/v2/auth/pair',
@@ -73,4 +78,11 @@ it('server.close aborts and drains a real stalled agent request before closing m
   const { app, reached, requests } = await setup(true); await reached;
   await app.server.close(); expect(app.runtimeState()).toMatchObject({ status: 'closed' });
   const count = requests.length; await new Promise(resolve => setTimeout(resolve, 275)); expect(requests).toHaveLength(count);
+});
+
+it('captures the input directory before awaiting metadata so caller mutation cannot change storage roots', async () => {
+  const { app, dataRoot, alternate } = await setup(false, true);
+  expect((await stat(join(dataRoot, 'inputs', 'staging'))).isDirectory()).toBe(true);
+  await expect(stat(join(alternate, 'inputs'))).rejects.toMatchObject({ code: 'ENOENT' });
+  await app.close();
 });
