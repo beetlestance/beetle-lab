@@ -3,7 +3,7 @@
 Public entrypoint: `index.ts`; caller supplies `path`, compiled `workerUrl`, explicit
 `installation` record and `runtime: {ceilings,observedAtMs}|null` source observation.
 `openMetadata()` returns one worker owning one exclusive WAL SQLite connection.
-`namespaces.execute` and `settings.execute` implement the accepted ports.
+`namespaces.execute`, `settings.execute` and `suites` implement accepted ports.
 Each mutation verifies real SHA256 intent, checks receipt first, reads evidence,
 calls the domain decision and writes result/receipt in one immediate transaction.
 Fresh create allocations never replace original replay IDs or workspace root.
@@ -29,11 +29,12 @@ Fresh updates recover unknown capacity. Age validation
 does not prove source honesty or capability provenance; receipt replay stays original.
 Settings changes preserve the domain admission drain signal; no jobs are killed.
 UUID case folds to lowercase; UUID URNs remain distinct from bare UUIDs.
-Queue <=64 (default32), input <=64KiB, output <=1MiB, worker heap <=128MiB,
-SQLite cache2MiB/busy100ms and startup/command availability deadline5s.
+Queue <=64 (default32), suite pending<=2, input64KiB/reply1MiB by default;
+full revision command/reply2MiB with config1MiB; worker heap<=128MiB.
+SQLite cache2MiB/busy100ms; startup/command availability deadline5s.
 Close drains admitted FIFO work; close/abort await worker termination, including
 failure paths. Unknown outcomes never trigger automatic mutation retries.
 Static `StorageError` codes expose no database paths, SQL or submitted values.
-Migration001 is transactional; future schemas are refused without migration.
-Migration001 also prevents changing an existing workspace's root folder identity.
+Migrations001/002 are transactional; refuse future schemas; workspace roots immutable.
+Suite/revision and published-input pin rules: docs/design/lld/suite-authoring.md.
 Check: `npx --no-install vitest run app/test/storage --maxWorkers=2`.

@@ -9,6 +9,7 @@ The owning document below must be updated before its implementation changes.
 | Source/build layout | [Module map](lld/module-map.md) | Package tree, named owners, import graph and build boundaries |
 | Domain and storage | [Domain/storage](lld/domain-storage.md) | State, tables, transaction ownership, artifacts, secrets |
 | Suite authoring | [Suites/revisions](lld/suite-authoring.md) | Scoped authoring, immutable revisions, large bounded configs and editor behavior |
+| Input bytes | [Input publication](lld/input-publication.md) | Durable upload/offset/publication custody, quotas, pins and scoped binary transport |
 | Dispatcher, agent or engine | [Execution protocol](lld/execution-protocol.md) | APIs, envelopes, idempotency, fencing, cancellation, recovery |
 | Agent control and outputs | [Agent collection](lld/agent-collection.md) | Bounded file intake, atomic checkpoints, stopped verification and artifact custody |
 | Attempt orchestration | [Agent controller](lld/agent-controller.md) | Prepared-plan handoff, supervision/control/collection wiring and release ownership |
