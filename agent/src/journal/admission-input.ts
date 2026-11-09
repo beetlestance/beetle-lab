@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
-import { encodeJson, RUNNER_MAXIMUM_CONFIG_BYTES, RUNNER_MAXIMUM_OFFER_BYTES, validatePrimitive } from '@beetle/contracts';
+import { encodeJson, RUNNER_MAXIMUM_CONFIG_BYTES, validatePrimitive } from '@beetle/contracts';
 import type { AdmissionCommand, ApprovedProfile, LaunchSettlement, PoolConfiguration, Resources, RuntimeObservation, Scope, ValidationIdentity } from '../admission/index.js';
 import { addResources, resourceNames, validResources, MAX_ENGINE_PROFILES, MAX_RESOURCE_VALUE } from '../admission/index.js';
-import { canonical, offerInput } from './input.js';
+import { canonical } from './input.js';
+import { captureAdmissionOffer } from './admission-offer.js';
 
 function requireValid(condition: unknown): asserts condition { if (!condition) throw new Error('invalid_input'); }
 function integer(value: number, maximum = Number.MAX_SAFE_INTEGER): boolean {
@@ -134,23 +135,23 @@ export function configDigest(config: unknown): string {
   return createHash('sha256').update(canonical(copy)).digest('hex');
 }
 export function admissionInput(input: AdmissionCommand): AdmissionCommand {
-  const maximum = isOfferCommand(input) ? RUNNER_MAXIMUM_OFFER_BYTES + 65_536 : 65_536;
-  const copy = JSON.parse(encodeJson(input, maximum)) as AdmissionCommand;
+  if (isOfferCommand(input)) {
+    const copy = captureAdmissionOffer(input);
+    identity(copy.validation);
+    requireValid(configDigest(copy.offer.config) === copy.validation.configDigest);
+    return copy;
+  }
+  const copy = JSON.parse(encodeJson(input, 65_536)) as AdmissionCommand;
   requireValid(copy && typeof copy === 'object');
   switch (copy.kind) {
     case 'configure': configuration(copy.configuration); break;
     case 'observe': observation(copy.observation); break;
-    case 'offer': {
-      const offer = JSON.parse(offerInput(copy.offer).json) as typeof copy.offer;
-      identity(copy.validation); requireValid(integer(copy.now));
-      requireValid(configDigest(offer.config) === copy.validation.configDigest); break;
-    }
     case 'reservations': admissionPage(copy); break;
     case 'release': release(copy); break;
     case 'settleLaunch': settlement(copy.settlement); break;
     default: ownership(copy);
   }
-  if (copy.kind !== 'offer') encodeJson(copy, 65_536);
+  encodeJson(copy, 65_536);
   return copy;
 }
 /** Classification never reads caller properties through accessors. */

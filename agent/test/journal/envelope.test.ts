@@ -46,13 +46,15 @@ it('bounds non-Offer commands before traversal and classifies kind without invok
   const accessor = { get kind() { observed = true; return 'offer'; } };
   expect(() => admissionInput(accessor as never)).toThrow(); expect(observed).toBe(false);
 });
-it('allows only Offer commands the explicit2MiB plus64KiB whole-command allowance', () => {
+it('accepts the bounded original but rejects unknown whole-command padding', () => {
   const offer = f.offer(); offer.config = config(1048576);
   const command = { kind: 'offer' as const, offer, now: 1, padding: '', validation: {
     manifestId: 'synthetic', profileId: 'synthetic', schemaDigest: 'b'.repeat(64), catalogVersion: 1,
     configDigest: configDigest(offer.config) } };
+  const { padding: _padding, ...closed } = command; void _padding;
+  expect(admissionInput(closed).kind).toBe('offer');
   command.padding = 'x'.repeat(2097152 + 65536 - Buffer.byteLength(JSON.stringify(command)));
   expect(Buffer.byteLength(JSON.stringify(command))).toBe(2097152 + 65536);
-  expect(admissionInput(command).kind).toBe('offer');
+  expect(() => admissionInput(command)).toThrow();
   command.padding += 'x'; expect(() => admissionInput(command)).toThrow();
 });
