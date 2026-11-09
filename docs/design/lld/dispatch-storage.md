@@ -50,9 +50,14 @@ Store scalar eligibility fields; never parse Offer/config while scanning queues.
 
 Migration005 preserves existing rows without full-Offer/history backfill. Missing
 summary is explicitly untracked_intent, not permission to deliver or recreate it.
-An untracked possibly delivered/acknowledged active attempt blocks new claims with
-ownership_unknown. Reads/receipt replay stay available; no silent deletion or
-repricing. Released legacy config/history migration remains outside this rewrite.
+Any untracked possible-delivery or acknowledged identity without authoritative
+release blocks new claims with ownership_unknown, regardless of public Run state.
+Terminal/lost/exited is not release proof. Bound this separately from the pending
+isolation query: migration005 must provide indexed untracked-evidence lookup for
+possible outbox entries and generation-bearing attempts without an outbox. Markers
+may reflect owned summary presence, never infer execution release or require a
+history/Offer payload scan. Reads/receipt replay stay available; no silent deletion,
+repricing or auto-recreation. Legacy config/history migration remains out of scope.
 
 ## Logical capacity and fairness
 
@@ -74,10 +79,19 @@ Output storage reservation uses its [shared owner](output-allocation.md).
 
 Isolation is installation-wide across organisations and unknown charges. Any active
 isolated charge blocks every other new claim; isolated requires zero active charges.
+Freeze two evaluations in the shared eligibility owner. Individual feasibility
+checks current total execution/per-run/profile/staging ceilings plus current shared
+storage fit, ignoring execution occupancy/concurrency/isolation locks. Storage fit
+includes all existing input/output allocations; execution drain does not free them.
+Actual claim fit additionally subtracts execution charges, checks concurrency and
+enforces isolation. Never subtract active execution cost when deciding whether an
+isolated intent establishes the drain barrier.
+
 The oldest individually feasible queued isolated intent blocks younger parallel
-claims while current work drains. Older parallel work may progress. Individually
-impossible/profile-blocked intents do not establish a barrier; re-evaluate under
-current policy. Newly feasible predecessors must not be missed by a stale scan.
+claims while work drains. Older parallel work may progress. Individually impossible,
+profile-blocked or currently storage-blocked intents do not establish a barrier;
+re-evaluate current policy/usage each claim. Newly feasible predecessors cannot be
+missed by a stale scan. This does not promise future storage from retained data.
 
 The claim transaction evaluates that barrier against at most 4096 compact pending
 rows under current policy. Bound the pending query before interpretation; overflow
