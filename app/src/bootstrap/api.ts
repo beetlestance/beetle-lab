@@ -11,47 +11,64 @@ import { createLocalSession } from '../adapters/inbound/http/session/index.js';
 import { openMetadata } from '../adapters/outbound/sqlite/index.js';
 import type { Metadata, MetadataOptions, RuntimeObservation } from '../adapters/outbound/sqlite/index.js';
 import { classifyMetadataError } from './metadata-errors.js';
+import { openInputRuntime } from './input-runtime.js';
+import type { InputRuntime } from './input-runtime.js';
+import type { InputMaintenanceState } from './input-maintenance.js';
+import { registerInputRoutes } from '../adapters/inbound/http/inputs/index.js';
+import type { InputHttp } from '../adapters/inbound/http/inputs/index.js';
 
 export interface ApplicationOptions {
   readonly externalOrigin: string;
   readonly metadata: MetadataOptions;
+  /** Canonical installation-owned child of the private data directory. */
+  readonly inputsDirectory?: string;
 }
 export interface Application {
   readonly server: FastifyInstance;
   /** For explicit local startup output only; never an HTTP response. */
   readonly bootstrapToken: string;
   readonly updateRuntime: (observation: RuntimeObservation | null) => Promise<null>;
+  readonly inputRecoveryState: () => InputMaintenanceState | 'disabled';
   readonly close: () => Promise<void>;
 }
 const digest = (value: string): string => createHash('sha256').update(value, 'utf8').digest('hex');
 
-/** Real local session, namespace, settings and suite authoring composition. */
+/** Local session, authoring and installation-owned input composition. */
 export async function openApplication(options: ApplicationOptions): Promise<Application> {
   const session = createLocalSession({ externalOrigin: options.externalOrigin });
   const server = createApiServer({ classify: classifyMetadataError });
   let metadata: Metadata | undefined;
+  let inputRuntime: InputRuntime | undefined; let inputHttp: InputHttp | undefined;
   try {
     configureSchemaCompilers(server, { schemas: apiSchemas, encodeJson, maximumResponseBytes: API_MAXIMUM_JSON_BYTES });
     metadata = await openMetadata(options.metadata);
     const store = metadata;
+    if (options.inputsDirectory !== undefined) inputRuntime = await openInputRuntime(options.inputsDirectory, store.inputs);
     session.registerRoutes(server);
     registerNamespaceRoutes(server, { store: store.namespaces, reader: store, newId: randomUUID,
       digest, authorize: session.authorize });
     registerSuiteRoutes(server, { store: store.suites, reader: store.suites, newId: randomUUID, digest, authorize: session.authorize });
     registerSettingsRoutes(server, { store: store.settings, reader: store, digest, authorize: session.authorize });
-    server.addHook('onClose', async () => { session.close(); await store.close(); });
+    if (inputRuntime) inputHttp = registerInputRoutes(server, { inputs: inputRuntime.inputs, newId: randomUUID, authorize: session.authorize });
+    server.addHook('onClose', async () => { session.close(); await inputRuntime?.close(); await store.close(); });
     let closing: Promise<void> | undefined;
     const close = (): Promise<void> => {
       session.close();
-      closing ??= server.close();
+      if (!closing) {
+        const streams = inputHttp?.close(); const files = inputRuntime?.close(); const listener = server.close();
+        closing = Promise.all([streams, files, listener]).then(() => undefined);
+      }
       return closing;
     };
     await server.ready();
     return Object.freeze({ server, bootstrapToken: session.bootstrapToken,
+      inputRecoveryState: () => inputRuntime?.recoveryState() ?? 'disabled',
       updateRuntime: (observation: RuntimeObservation | null) => store.updateRuntime(observation), close });
   } catch (error) {
     session.close();
-    await Promise.allSettled([server.close(), ...(metadata ? [metadata.abort()] : [])]);
+    const streams = inputHttp?.close(); const files = inputRuntime?.close();
+    await Promise.allSettled([streams, files, server.close()]);
+    if (metadata) await metadata.abort();
     throw error;
   }
 }

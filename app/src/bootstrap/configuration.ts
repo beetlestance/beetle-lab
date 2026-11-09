@@ -88,5 +88,6 @@ export async function loadBackendConfiguration(environment: BackendEnvironment, 
   const record = await readInstallation(config);
   const directory = await dataDirectory(root);
   return Object.freeze({ listen, application: { externalOrigin,
+    inputsDirectory: join(directory, 'inputs'),
     metadata: { path: join(directory, 'metadata.sqlite'), workerUrl, installation: record, runtime: null } } });
 }
