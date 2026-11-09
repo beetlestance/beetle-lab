@@ -27,6 +27,7 @@ export function App({ apiClient }: { apiClient: ApiClient }) {
       <main id="main" tabIndex={-1}><div className="topbar"><span>Namespace browser</span><span>Beetle Lab</span></div>
         <EditorProvider><div className="page-content"><Suspense fallback={<p role="status">Loading view…</p>}>
           <Routes>
+            <Route path={routes.inputsPattern} element={<ScopeRoute view="inputs" />} />
             <Route path={routes.suitesPattern} element={<SuitesRoute />} />
             <Route path={routes.suitePattern} element={<SuitesRoute />} />
             <Route path={routes.settings} element={<Settings scope={{ kind: 'installation' }} />} />
@@ -42,10 +43,12 @@ export function App({ apiClient }: { apiClient: ApiClient }) {
     </div>
   </QueryClientProvider></ApiContext.Provider>;
 }
-function ScopeRoute() {
+function ScopeRoute({ view }: { view?: 'inputs' }) {
   const { organizationId, workspaceId } = useParams();
-  if (!validId(organizationId) || (workspaceId !== undefined && !validId(workspaceId))) return <InvalidRoute />;
-  return <OrganizationScope key={organizationId} organizationId={organizationId} {...(workspaceId ? { workspaceId } : {})} />;
+  if (!validId(organizationId) || (workspaceId !== undefined && !validId(workspaceId))
+    || (view === 'inputs' && !validId(workspaceId))) return <InvalidRoute />;
+  return <OrganizationScope key={organizationId} organizationId={organizationId}
+    {...(workspaceId ? { workspaceId } : {})} {...(view ? { view } : {})} />;
 }
 function InvalidRoute() {
   return <section className="notice"><h1>Page not found</h1><p>This namespace address is invalid.</p><Link to={routes.organizations}>View organizations</Link></section>;

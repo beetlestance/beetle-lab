@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { lazy, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useApi, readResult } from '../../app/api.js';
@@ -7,8 +7,9 @@ import { routes } from '../../app/routes.js';
 import { QueryState } from '../../components/QueryState.js';
 import { WorkspaceList } from './WorkspaceList.js';
 import { FolderList } from './FolderList.js';
+const InputInventory = lazy(() => import('../inputs/index.js').then(module => ({ default: module.InputInventory })));
 
-export function OrganizationScope({ organizationId, workspaceId }: { organizationId: string; workspaceId?: string }) {
+export function OrganizationScope({ organizationId, workspaceId, view }: { organizationId: string; workspaceId?: string; view?: 'inputs' }) {
   const api = useApi();
   const client = useQueryClient();
   const key = queryKeys.organization(organizationId);
@@ -25,11 +26,11 @@ export function OrganizationScope({ organizationId, workspaceId }: { organizatio
     </nav>
     <Link to={routes.organizationSettings(organizationId)}>Organization settings</Link>
     <div className="scope-label">Organization <span className="number">{organization.slug}</span></div>
-    {workspaceId ? <WorkspaceScope key={workspaceId} organizationId={organizationId} workspaceId={workspaceId} />
+    {workspaceId ? <WorkspaceScope key={workspaceId} organizationId={organizationId} workspaceId={workspaceId} {...(view ? { view } : {})} />
       : <WorkspaceList organizationId={organizationId} />}
   </>}</QueryState>;
 }
-function WorkspaceScope({ organizationId, workspaceId }: { organizationId: string; workspaceId: string }) {
+function WorkspaceScope({ organizationId, workspaceId, view }: { organizationId: string; workspaceId: string; view?: 'inputs' }) {
   const api = useApi();
   const client = useQueryClient();
   const workspace = useQuery({ queryKey: queryKeys.workspace(organizationId, workspaceId),
@@ -41,6 +42,8 @@ function WorkspaceScope({ organizationId, workspaceId }: { organizationId: strin
   return <QueryState query={workspace}>{data => <>
     <Link to={routes.workspaceSettings(organizationId, workspaceId)}>Workspace settings</Link>
     <Link to={routes.suites(organizationId, workspaceId)}>Suites</Link>
-    <p className="workspace-label">Workspace <strong>{data.name}</strong></p><FolderList workspace={data} />
+    <Link to={routes.inputs(organizationId, workspaceId)}>Inputs</Link>
+    <p className="workspace-label">Workspace <strong>{data.name}</strong></p>
+    {view === 'inputs' ? <InputInventory workspace={data} /> : <FolderList workspace={data} />}
   </>}</QueryState>;
 }

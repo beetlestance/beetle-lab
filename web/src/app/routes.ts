@@ -1,6 +1,8 @@
 import { validateApi } from '@beetle/contracts/api';
 
 export const routes = {
+  inputsPattern: '/organizations/:organizationId/workspaces/:workspaceId/inputs',
+  inputs: (org: string, workspace: string) => `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/inputs`,
   suitesPattern: '/organizations/:organizationId/workspaces/:workspaceId/suites',
   suitePattern: '/organizations/:organizationId/workspaces/:workspaceId/suites/:suiteId',
   suites: (org: string, workspace: string) => `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/suites`,
