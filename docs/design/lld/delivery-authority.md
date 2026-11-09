@@ -1,6 +1,7 @@
 # Delivery authority and supported recovery
 
-Status: accepted design after critical review; implementation and evidence pending.
+Status: journal/control-store components verified; startup/wire/restore work pending.
+[Local foundation evidence](../../verification/authority-foundations.md).
 Owner: coordinator for the runner contract and migrations; agent journal for
 physical delivery authority; application dispatch for the immutable binding.
 [Dispatch storage](dispatch-storage.md) retains charge and original identity.
