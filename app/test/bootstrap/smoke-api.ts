@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { once } from 'node:events';
 import { settingsFixture } from '../domain/fixtures.js';
 import { authorSuites } from './suite-authoring.js';
+import { authorInputs } from './input-authoring.js';
 type Child = ChildProcessByStdio<null, Readable, Readable>;
 type Exit = { code: number | null; signal: NodeJS.Signals | null };
 async function ownedPort(): Promise<number> {
@@ -46,6 +47,7 @@ async function exchange(origin: string, token: string): Promise<void> {
   if (page.status !== 200) throw new Error('Namespace status');
   await page.body?.cancel();
   await authorSuites(origin, cookie, view.csrfToken);
+  await authorInputs(origin, cookie, view.csrfToken);
   const logout = await fetch(origin + '/api/v2/auth/logout', { method: 'POST',
     headers: { ...headers, cookie, 'x-beetle-csrf': view.csrfToken }, body: '{}', signal: AbortSignal.timeout(3000) });
   if (logout.status !== 200) throw new Error('Logout status');
@@ -53,7 +55,10 @@ async function exchange(origin: string, token: string): Promise<void> {
 }
 async function run(root: string, port: number): Promise<void> {
   await mkdir(join(root, 'data'), { mode: 0o700 });
-  await writeFile(join(root, 'installation.json'), JSON.stringify(settingsFixture().chain.installation), { mode: 0o600 });
+  const installation = settingsFixture().chain.installation;
+  // The domain fixture's 10KB pool cannot hold one input's 64KB metadata charge.
+  installation.values.pool.storageBytes = 2_000_000;
+  await writeFile(join(root, 'installation.json'), JSON.stringify(installation), { mode: 0o600 });
   const origin = `http://127.0.0.1:${port}`;
   const child = spawn(process.execPath, ['app/dist/main.js'], { cwd: process.cwd(), env: {
     PATH: process.env.PATH ?? '', BEETLE_CONFIG_FILE: join(root, 'installation.json'),
@@ -66,7 +71,7 @@ async function run(root: string, port: number): Promise<void> {
     await exchange(origin, await startup(child, termination));
     child.kill('SIGTERM'); const exit = await termination;
     if (exit.code !== 0 || exit.signal !== null) throw new Error('Backend shutdown failed');
-    process.stdout.write('Backend smoke passed: pairing, namespace access, full-size suite save/read/replay, logout, clean SIGTERM.\n');
+    process.stdout.write('Backend smoke passed: pairing, namespaces, full-size suites, chunked input publication/read/delete, logout, clean SIGTERM.\n');
   } finally {
     clearTimeout(timer);
     if (!closed) { child.kill('SIGKILL'); await termination; }

@@ -1,11 +1,16 @@
 import { constants } from 'node:fs';
 import type { BigIntStats } from 'node:fs';
 import { lstat, mkdir, open, realpath } from 'node:fs/promises';
+import type { FileHandle } from 'node:fs/promises';
 import { dirname, isAbsolute, join, normalize } from 'node:path';
 
 export class InputDirectoryError extends Error {
   constructor() { super('Input storage initialization failed'); this.name = 'InputDirectoryError'; }
 }
+// One installation initializes per process. A failed close retains this owner
+// and its handle; another startup cannot replace unknown native custody.
+let initializing = false;
+let stranded: FileHandle | undefined;
 function privateDirectory(info: BigIntStats): void {
   if (!info.isDirectory() || process.getuid === undefined || info.uid !== BigInt(process.getuid())
     || (info.mode & 0o7777n) !== 0o700n) throw new InputDirectoryError();
@@ -20,7 +25,13 @@ async function flushDirectory(path: string, expected: BigIntStats): Promise<void
   try {
     sameDirectory(expected, await handle.stat({ bigint: true }));
     await handle.sync(); sameDirectory(expected, await lstat(path, { bigint: true }));
-  } finally { await handle.close(); }
+  } finally {
+    try { await handle.close(); }
+    catch {
+      stranded = handle;
+      await new Promise<never>(() => { /* Unknown close never proves drainage. */ });
+    }
+  }
 }
 async function ensure(path: string): Promise<void> {
   const parent = dirname(path); const before = await lstat(parent, { bigint: true }); privateDirectory(before);
@@ -37,6 +48,8 @@ async function ensure(path: string): Promise<void> {
  * Each new child and parent is flushed before the application can acknowledge files.
  */
 export async function initializeInputRoots(directory: string): Promise<{ stagingRoot: string; publishedRoot: string }> {
+  if (initializing || stranded) throw new InputDirectoryError();
+  initializing = true;
   try {
     if (!isAbsolute(directory) || normalize(directory) !== directory) throw new InputDirectoryError();
     const stagingRoot = join(directory, 'staging'); const publishedRoot = join(directory, 'published');
@@ -48,4 +61,5 @@ export async function initializeInputRoots(directory: string): Promise<{ staging
     await ensure(stagingRoot); await ensure(publishedRoot);
     return Object.freeze({ stagingRoot, publishedRoot });
   } catch { throw new InputDirectoryError(); }
+  finally { if (!stranded) initializing = false; }
 }

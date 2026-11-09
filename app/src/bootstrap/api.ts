@@ -50,13 +50,18 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     registerSuiteRoutes(server, { store: store.suites, reader: store.suites, newId: randomUUID, digest, authorize: session.authorize });
     registerSettingsRoutes(server, { store: store.settings, reader: store, digest, authorize: session.authorize });
     if (inputRuntime) inputHttp = registerInputRoutes(server, { inputs: inputRuntime.inputs, newId: randomUUID, authorize: session.authorize });
-    server.addHook('onClose', async () => { session.close(); await inputRuntime?.close(); await store.close(); });
+    server.addHook('onClose', async () => {
+      session.close();
+      try { await inputRuntime?.close(); } finally { await store.close(); }
+    });
     let closing: Promise<void> | undefined;
     const close = (): Promise<void> => {
       session.close();
       if (!closing) {
         const streams = inputHttp?.close(); const files = inputRuntime?.close(); const listener = server.close();
-        closing = Promise.all([streams, files, listener]).then(() => undefined);
+        closing = Promise.allSettled([streams, files, listener]).then(results => {
+          for (const result of results) if (result.status === 'rejected') throw result.reason;
+        });
       }
       return closing;
     };

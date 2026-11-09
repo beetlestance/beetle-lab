@@ -10,6 +10,8 @@ Startup token is returned only for explicit local startup output, never HTTP.
 Configured startup creates private durable input roots, the actual byte service,
 guarded input routes and one pending-only recovery scheduler. Omitted input roots
 disable these routes for existing composition tests; no fake byte service is used.
+Root initialization is serialized per process. Unknown directory close retains
+its handle and pending startup; subsequent initialization is fenced, without retry.
 `close` retires session authority, starts HTTP/file drains together, then closes metadata,
 and retains its original promise. Closing the returned server also closes storage.
 Startup failure retires authority and awaits cleanup; no successful partial handle.

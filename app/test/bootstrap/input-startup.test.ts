@@ -104,3 +104,22 @@ it('runtime shutdown fences intake and retains a held maintenance original witho
     expect((await metadata.inputs.list({ scope, limit: 10 })).items).toEqual([]);
   } finally { release(); await (closing ?? runtime.close()); }
 });
+
+it('failed maintenance cannot finish shutdown before a separate input original drains', async () => {
+  const config = await configuration(); const metadata = await seedInstallation(config);
+  let release!: () => void; let entered!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  const started = new Promise<void>(resolve => { entered = resolve; });
+  const runtime = await openInputRuntime(config.application.inputsDirectory!, { ...metadata.inputs,
+    recovery: async () => { throw new Error('synthetic transient recovery failure'); },
+    get: async key => { entered(); await held; return metadata.inputs.get(key); } });
+  let closing: Promise<unknown> | undefined;
+  try {
+    await expect.poll(() => runtime.recoveryState()).toBe('failed');
+    const read = runtime.inputs.get({ scope, id: uuid(990) }).catch(() => undefined); await started;
+    let done = false; closing = runtime.close().catch(error => { done = true; return error as unknown; });
+    await new Promise<void>(resolve => setImmediate(resolve)); expect(done).toBe(false);
+    release(); await read; expect(await closing).toMatchObject({ name: 'InputMaintenanceError' });
+    expect((await metadata.inputs.list({ scope, limit: 10 })).items).toEqual([]);
+  } finally { release(); await (closing ?? runtime.close().catch(() => undefined)); }
+});

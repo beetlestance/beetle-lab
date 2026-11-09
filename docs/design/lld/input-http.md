@@ -96,6 +96,9 @@ InputService.close independently before waiting, then drains the server and meta
 it must not deadlock by awaiting service close before aborting a held HTTP source.
 Metadata close follows byte-service drain. Failed native close still leaves the
 service's custody owner pending; HTTP response cleanup is not a substitute.
+Startup initializes one private durable input tree at a time per process. An unknown
+directory-close outcome retains its handle and pending initialization; another
+initialization is fenced. It cannot report successful startup or cleanup.
 
 ## Acceptance
 

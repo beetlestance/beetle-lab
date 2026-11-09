@@ -25,7 +25,9 @@ export async function openInputRuntime(directory: string, store: InputStore): Pr
       if (!closing) {
         // Start both before waiting: aborted scheduling cannot retire native originals.
         const scheduled = maintenance.close(); const custody = inputs.close();
-        closing = Promise.all([scheduled, custody]).then(() => undefined);
+        closing = Promise.allSettled([scheduled, custody]).then(results => {
+          for (const result of results) if (result.status === 'rejected') throw result.reason;
+        });
       }
       return closing;
     } });
