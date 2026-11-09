@@ -180,7 +180,7 @@ it('rejects an oversized stored snapshot from its scalar size before reading or 
   const text = vi.fn(() => { throw new Error('unbounded materialization'); });
   vi.spyOn(db, 'prepare').mockImplementation(sql => {
     if (!sql.includes('FROM execution_records')) return prepare(sql);
-    return { get: () => Object.defineProperty({ snapshot_bytes: 73_729, execution_charged: 1,
+    return { get: () => Object.defineProperty({ journal_authority: '33333333-3333-4333-8333-333333333333', snapshot_bytes: 73_729, execution_charged: 1,
       acknowledged_generation: 1, delivery_attempt_id: null, generation: 1 }, 'snapshot_json', { get: text }) } as unknown as StatementSync;
   });
   expect(() => observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key) })).toThrow();

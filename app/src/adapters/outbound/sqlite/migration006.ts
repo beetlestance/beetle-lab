@@ -1,7 +1,7 @@
 /** Bind new possible deliveries; prior ownership remains unbound and fenced. */
 export const migration006 = `
 ALTER TABLE execution_records ADD COLUMN journal_authority TEXT CHECK(journal_authority IS NULL OR (
- typeof(journal_authority)='text' AND length(journal_authority)=36 AND
+ typeof(journal_authority)='text' AND length(CAST(journal_authority AS BLOB))=36 AND length(journal_authority)=36 AND
  substr(journal_authority,9,1)='-' AND substr(journal_authority,14,1)='-' AND
  substr(journal_authority,19,1)='-' AND substr(journal_authority,24,1)='-' AND
  length(replace(journal_authority,'-',''))=32 AND replace(journal_authority,'-','') NOT GLOB '*[^0-9a-f]*'));

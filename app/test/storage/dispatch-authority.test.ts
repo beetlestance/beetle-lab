@@ -56,7 +56,7 @@ it('validates physical authority at both RPC edges independently of logical snap
     }
   }
 });
-it.each([null, '', 'bad', other.toUpperCase(), `urn:uuid:${other}`, other.replaceAll('-', '')])(
+it.each([null, '', 'bad', other.toUpperCase(), `urn:uuid:${other}`, other.replaceAll('-', ''), `${other}\0suffix`, `${other}\0`])(
   'rejects noncanonical newly inserted SQL authority before reservation custody: %s', journalAuthority => {
     const key = f.add(); const before = custody(f.db);
     expect(() => f.db.prepare(`INSERT INTO execution_records(attempt_id,queue_order,run_id,organization_id,
@@ -66,3 +66,21 @@ it.each([null, '', 'bad', other.toUpperCase(), `urn:uuid:${other}`, other.replac
       .toThrow(/CHECK constraint failed|new delivery requires journal authority/);
     expect(custody(f.db)).toEqual(before);
   });
+it('rolls back all custody when journal authority rotates during the post-reservation lease check', () => {
+  const key = f.add(); const before = custody(f.db);
+  const capacity = f.settings.capacity.bind(f.settings); let reads = 0;
+  const injected = vi.spyOn(f.settings, 'capacity').mockImplementation(() => {
+    reads++;
+    if (reads === 2) {
+      vi.advanceTimersByTime(1);
+      f.settings.updateRuntime({ ...f.runtime, journalAuthority: other,
+        observedAtMs: Date.now(), expiresAtMs: Date.now() + 5000 });
+    }
+    return capacity();
+  });
+  try {
+    expect(f.claims.claim(key)).toEqual({ kind: 'blocked', reason: 'capacity_unknown' });
+    expect(reads).toBe(2); expect(custody(f.db)).toEqual(before);
+  } finally { injected.mockRestore(); }
+  expect(f.claims.claim(key)).toEqual({ kind: 'claimed', key, journalAuthority: other });
+});

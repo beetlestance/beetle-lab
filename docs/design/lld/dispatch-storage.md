@@ -52,7 +52,7 @@ bounded accounting and qualification; they are not exactly2MiB resident memory.
 
 claim(key) has a compact request/reply <=64KiB. claimed and replay permit PUT of
 that same original; acknowledged forbids a new PUT; blocked carries a typed reason.
-observe({key,snapshot}) request <=75776 bytes; reply <=1MiB. Snapshot itself is
+observe({key,snapshot,journalAuthority}) request <=75776 bytes; reply <=1MiB. Snapshot itself is
 bounded by the existing 73728-byte merge owner. Keys never become remote evidence.
 All original requests/replies remain owned through completion or worker termination;
 parent timeout fences that Metadata owner, not proof of rollback or cancellation.
@@ -129,8 +129,8 @@ Use the same eligibility owner for advisory scan and authoritative claim.
 [Delivery authority](delivery-authority.md) additionally requires a durable journal
 authority bound atomically at first possible delivery and retained after ACK/outbox
 deletion. Claim replies and observations must carry/check that stored authority.
-This extension is not implemented yet; storage/RPC evidence does not authorize
-automatic network reoffers without it.
+Storage/RPC implements this binding. Automatic network delivery/reoffer remains
+pending; component evidence alone does not establish runtime recovery.
 
 The runtime may hold ONE captured Offer between readOffer, compact claim and network
 issue. No preloaded Offer backlog. A single non-overlapping delivery loop can admit
