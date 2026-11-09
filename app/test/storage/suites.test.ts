@@ -1,3 +1,5 @@
+import type { InputRecord } from '../../src/ports/inputs.js';
+import { createInput, inputOptions, trustedPublish } from './inputs-fixture.js';
 import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { encodeJson } from '@beetle/contracts';
@@ -52,21 +54,17 @@ it('isolates organizations, folders, names, races and failed receipts atomically
   expect((await append(metadata, { ...suite, version: 2 }, 62, invalid)).ordinal).toBe(1);
 });
 it('requires exact published input pins in the same workspace and deduplicates references', async () => {
-  const path = fixture.path(); let metadata = await fixture.open(path); await seed(metadata); await seed(metadata, 11, 12, 13);
+  const path = fixture.path(); const metadata = await fixture.open(path, inputOptions()); await seed(metadata); await seed(metadata, 11, 12, 13);
   const suite = await createSuite(metadata); const body = request(); const pin = { id: uuid(90), sha256: 'a'.repeat(64), bytes: 12 };
   body.config.datasets = [{ id: 'a', kind: 'json', selection: 'byVu', input: pin },
     { id: 'b', kind: 'json', selection: 'byVu', input: { ...pin, id: pin.id.toUpperCase() } }];
   await expect(append(metadata, suite, 60, body)).rejects.toMatchObject({ code: 'not_found' });
-  await fixture.close(metadata);
-  // Trusted upstream metadata fixture only; this is not actual input byte publication.
-  const db = new DatabaseSync(path); db.prepare('INSERT INTO input_blobs VALUES (?,?,?,?,?,?)')
-    .run(pin.id, uuid(11), uuid(12), pin.sha256, pin.bytes, 'published');
-  db.prepare('INSERT INTO input_blobs VALUES (?,?,?,?,?,?)').run(pin.id, scope.organizationId, scope.workspaceId, pin.sha256, pin.bytes, 'staging'); db.close();
-  metadata = await fixture.open(path);
+  // Trusted service metadata fixture only; no actual input byte publication.
+  await trustedPublish(metadata, await metadata.inputs.control(createInput(90, 12,
+    { ...scope, organizationId: uuid(11), workspaceId: uuid(12) })) as InputRecord);
+  const staged = await metadata.inputs.control(createInput(90)) as InputRecord;
   await expect(append(metadata, suite, 60, body)).rejects.toMatchObject({ code: 'not_found' });
-  await fixture.close(metadata); const publish = new DatabaseSync(path);
-  publish.prepare("UPDATE input_blobs SET state='published' WHERE organization_id=?").run(scope.organizationId); publish.close();
-  metadata = await fixture.open(path);
+  await trustedPublish(metadata, staged);
   const mismatch = structuredClone(body); (mismatch.config.datasets as { input: { bytes: number } }[])[0]!.input.bytes++;
   await expect(append(metadata, suite, 60, mismatch)).rejects.toMatchObject({ code: 'invalid_value' });
   const wrong = structuredClone(body); (wrong.config.datasets as { input: { bytes: number } }[]).forEach(value => value.input.bytes++);

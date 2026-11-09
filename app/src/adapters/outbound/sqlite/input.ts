@@ -1,32 +1,14 @@
+import { checkedInputOperation } from './input-validation.js';
+import { MAX_MESSAGE_BYTES, boundedCopy, checkedScope, uuid, sha256 } from './input-values.js';
+export { MAX_MESSAGE_BYTES, boundedCopy, checkedScope, uuid, sha256, lower, scopeKey } from './input-values.js';
 import { prepareSuiteCommand } from '../../../application/suites/index.js';
-import { createHash } from 'node:crypto';
-import { encodeJson, validatePrimitive } from '@beetle/contracts';
 import { validateApi } from '@beetle/contracts/api';
-import type { SettingsScope } from '@beetle/contracts/api';
 import { prepareNamespaceCommand } from '../../../application/namespaces/index.js';
 import { prepareSettingsCommand } from '../../../application/settings/index.js';
 import { requireRule } from '../../../domain/namespaces/index.js';
 import { StorageError } from './protocol.js';
 import type { Bootstrap, EntityKey, ListQuery, Operation, RuntimeObservation } from './protocol.js';
 
-export const MAX_MESSAGE_BYTES = 65536;
-export const sha256 = (value: string): string => createHash('sha256').update(value).digest('hex');
-export const lower = (id: string): string => id.toLowerCase();
-export const scopeKey = (scope: SettingsScope): string => {
-  if (scope.kind === 'installation') return 'installation';
-  if (scope.kind === 'organization') return `organization:${lower(scope.organizationId)}`;
-  return `workspace:${lower(scope.organizationId)}:${lower(scope.workspaceId)}`;
-};
-export function uuid(value: string): void {
-  if (!validatePrimitive('uuid', value).ok) throw new StorageError('invalid_input');
-}
-export function boundedCopy<T>(input: T, limit = MAX_MESSAGE_BYTES): T {
-  try { return JSON.parse(encodeJson(input, limit)) as T; }
-  catch { throw new StorageError('invalid_input'); }
-}
-export function checkedScope(scope: SettingsScope): void {
-  requireRule(validateApi('SettingsScope', scope).ok);
-}
 function checkedObservationTime(observation: RuntimeObservation, ttl: number): void {
   const now = Date.now();
   requireRule(observation !== undefined && Number.isSafeInteger(observation.observedAtMs) &&
@@ -106,6 +88,7 @@ function settingsRead(operation: Operation): boolean {
   checkedScope(operation.scope); return true;
 }
 function checkedExtendedOperation(operation: Operation): boolean {
+  if (checkedInputOperation(operation)) return true;
   if (suiteOperation(operation)) { checkedSuiteOperation(operation); return true; }
   return settingsRead(operation);
 }

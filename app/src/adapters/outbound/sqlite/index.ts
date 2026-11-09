@@ -1,3 +1,4 @@
+import type { InputStore } from '../../../ports/inputs.js';
 import type { SuiteStore, SuiteReader } from '../../../ports/suites.js';
 import { Worker } from 'node:worker_threads';
 import type { SettingsScope } from '@beetle/contracts/api';
@@ -45,6 +46,14 @@ export class Metadata {
   private readyResolve: () => void = () => undefined;
   private readyReject: (error: StorageError) => void = () => undefined;
   private readonly ready: Promise<void>;
+  readonly inputs: InputStore = {
+    control: command => this.call({ kind: 'input', command }) as ReturnType<InputStore['control']>,
+    advance: command => this.call({ kind: 'advanceInput', command }) as ReturnType<InputStore['advance']>,
+    get: key => this.call({ kind: 'getInput', key }) as ReturnType<InputStore['get']>,
+    list: query => this.call({ kind: 'listInputs', query }) as ReturnType<InputStore['list']>,
+    recovery: query => this.call({ kind: 'recoverInputs', query }) as ReturnType<InputStore['recovery']>,
+    storage: () => this.call({ kind: 'inputStorage' }) as ReturnType<InputStore['storage']>,
+  };
   readonly suites: SuiteStore & SuiteReader = {
     execute: command => this.call({ kind: 'suite', command }) as ReturnType<SuiteStore['execute']>,
     getSuite: key => this.call({ kind: 'getSuite', key }) as ReturnType<SuiteReader['getSuite']>,

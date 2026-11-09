@@ -1,3 +1,5 @@
+import { Inputs } from './inputs.js';
+import { InputReads } from './input-reads.js';
 import { Suites } from './suites.js';
 import { SuiteReads } from './suite-reads.js';
 import type { DatabaseSync } from 'node:sqlite';
@@ -20,6 +22,8 @@ export function safeCode(error: unknown): ErrorCode {
   return 'unavailable';
 }
 export class Store {
+  private readonly inputs: Inputs;
+  private readonly inputReads: InputReads;
   private readonly suites: Suites;
   private readonly suiteReads: SuiteReads;
   private readonly entities: Entities;
@@ -31,10 +35,12 @@ export class Store {
     this.suites = new Suites(db, this.entities);
     this.suiteReads = new SuiteReads(db, this.suites);
     this.settings = transaction(db, () => new Settings(db, bootstrap));
+    this.inputs = new Inputs(db, this.entities, this.settings);
+    this.inputReads = new InputReads(db, this.entities);
     this.namespaces = new Namespaces(db, this.entities, this.settings);
     this.reads = new Reads(db, this.entities);
   }
-  private mutation(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' }>): Value {
+  private mutation(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' }>): Value {
     const command = operation.command;
     return transaction(this.db, () => {
       const scope = scopeKey(command.request.scope);
@@ -46,7 +52,7 @@ export class Store {
         if (typeof receipt.result_json !== 'string') throw new StorageError('unavailable');
         return JSON.parse(receipt.result_json) as Value;
       }
-      const value = operation.kind === 'suite' ? this.suites.change(operation.command) : operation.kind === 'namespace' ? this.namespaces.change(operation.command) :
+      const value = operation.kind === 'input' ? this.inputs.control(operation.command) : operation.kind === 'suite' ? this.suites.change(operation.command) : operation.kind === 'namespace' ? this.namespaces.change(operation.command) :
         this.settings.change(operation.command);
       const copy = boundedCopy(value, operationMessageLimit(operation));
       this.db.prepare('INSERT INTO receipts(scope_key,request_id,digest,result_json) VALUES (?,?,?,?)')
@@ -63,15 +69,32 @@ export class Store {
       default: throw new StorageError('invalid_input');
     }
   }
+  private inputOperation(operation: Operation): Value {
+    switch (operation.kind) {
+      case 'input': return this.mutation(operation);
+      case 'advanceInput': return transaction(this.db, () => this.inputs.advance(operation.command));
+      case 'getInput': return this.inputs.get(operation.key);
+      case 'listInputs': case 'recoverInputs': return this.inputReads.list(operation.query);
+      case 'inputStorage': return this.inputs.storage();
+      default: throw new StorageError('invalid_input');
+    }
+  }
+  private settingsOperation(operation: Operation): Value {
+    switch (operation.kind) {
+      case 'getSettings': return this.settings.get(operation.scope);
+      case 'getSettingsIdentity': return this.settings.identity(operation.scope);
+      case 'runtime': return this.settings.updateRuntime(operation.runtime);
+      default: throw new StorageError('invalid_input');
+    }
+  }
   execute(operation: Operation): Value {
     if (suiteOperation(operation)) return this.suiteOperation(operation);
+    if (['getSettings', 'getSettingsIdentity', 'runtime'].includes(operation.kind)) return this.settingsOperation(operation);
+    if (['input', 'advanceInput', 'getInput', 'listInputs', 'recoverInputs', 'inputStorage'].includes(operation.kind)) return this.inputOperation(operation);
     switch (operation.kind) {
       case 'namespace': case 'settings': return this.mutation(operation);
       case 'get': return this.entities.get(operation.key);
       case 'list': return this.reads.list(operation.query);
-      case 'getSettings': return this.settings.get(operation.scope);
-      case 'getSettingsIdentity': return this.settings.identity(operation.scope);
-      case 'runtime': return this.settings.updateRuntime(operation.runtime);
       case 'close': this.db.close(); return null;
       default: throw new StorageError('invalid_input');
     }

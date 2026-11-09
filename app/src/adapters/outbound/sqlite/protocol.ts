@@ -1,3 +1,4 @@
+import type { InputCommand, InputAdvance, InputKey, InputList, InputRecoveryPage, InputRecord, InputReceipt, InputPage, InputStorage } from '../../../ports/inputs.js';
 import type { Suite, SuiteRevision, SuitePage, SuiteRevisionPage } from '@beetle/contracts/api';
 import type { SuiteCommand, SuiteKey, SuiteList, RevisionList } from '../../../ports/suites.js';
 import type { SettingsScope, Organization, Workspace, Folder, InstallationSettings,
@@ -17,6 +18,12 @@ export class StorageError extends Error {
 export interface RuntimeObservation { ceilings: RuntimeCeilings; observedAtMs: number }
 export type SettingsView = InstallationSettings | OrganizationSettings | WorkspaceSettings;
 export type Operation =
+  | { kind: 'input'; command: InputCommand }
+  | { kind: 'advanceInput'; command: InputAdvance }
+  | { kind: 'getInput'; key: InputKey }
+  | { kind: 'listInputs'; query: InputList }
+  | { kind: 'recoverInputs'; query: InputRecoveryPage }
+  | { kind: 'inputStorage' }
   | { kind: 'suite'; command: SuiteCommand }
   | { kind: 'getSuite'; key: SuiteKey }
   | { kind: 'getRevision'; key: SuiteKey }
@@ -30,7 +37,7 @@ export type Operation =
   | { kind: 'getSettingsIdentity'; scope: SettingsScope }
   | { kind: 'runtime'; runtime: RuntimeObservation | null }
   | { kind: 'close' };
-export type Value = Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
+export type Value = InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
 export type Command = Operation & { messageId: number };
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; messageId: number; ok: true; value: Value } |

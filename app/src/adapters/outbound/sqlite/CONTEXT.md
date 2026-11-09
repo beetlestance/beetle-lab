@@ -3,7 +3,7 @@
 Public entrypoint: `index.ts`; caller supplies `path`, compiled `workerUrl`, explicit
 `installation` record and `runtime: {ceilings,observedAtMs}|null` source observation.
 `openMetadata()` returns one worker owning one exclusive WAL SQLite connection.
-`namespaces.execute`, `settings.execute` and `suites` implement accepted ports.
+`namespaces.execute`, `settings.execute`, `suites` and `inputs` implement accepted ports.
 Each mutation verifies real SHA256 intent, checks receipt first, reads evidence,
 calls the domain decision and writes result/receipt in one immediate transaction.
 Fresh create allocations never replace original replay IDs or workspace root.
@@ -25,16 +25,16 @@ timestamps are rejected at caller ingress and worker dequeue, preserving fresh s
 Worker reads/decisions treat expired observations and clock rollback as unknown.
 Rollback-time updates are discarded; a persistent high-water source-time fence
 requires a genuinely later observation before recovery. Queueing never refreshes age.
-Fresh updates recover unknown capacity. Age validation
-does not prove source honesty or capability provenance; receipt replay stays original.
-Settings changes preserve the domain admission drain signal; no jobs are killed.
-UUID case folds to lowercase; UUID URNs remain distinct from bare UUIDs.
+Fresh updates recover unknown capacity; source age alone does not prove honesty or capability provenance.
+Settings reductions retain charges; input admission counts payload+64KiB and one
+configured reserve. Private advances require exact versions and trusted byte service.
 Queue <=64 (default32), suite pending<=2, input64KiB/reply1MiB by default;
 full revision command/reply2MiB with config1MiB; worker heap<=128MiB.
 SQLite cache2MiB/busy100ms; startup/command availability deadline5s.
 Close drains admitted FIFO work; close/abort await worker termination, including
 failure paths. Unknown outcomes never trigger automatic mutation retries.
 Static `StorageError` codes expose no database paths, SQL or submitted values.
-Migrations001/002 are transactional; refuse future schemas; workspace roots immutable.
-Suite/revision and published-input pin rules: docs/design/lld/suite-authoring.md.
-Check: `npx --no-install vitest run app/test/storage --maxWorkers=2`.
+Migrations001/002/003 are transactional; legacy rows remain fenced for byte checks.
+Immutable indexed revision pins serialize with deletion; tombstone metadata stays charged.
+Contract: docs/design/lld/input-publication.md. No metadata reply proves byte custody.
+Check: `node node_modules/vitest/vitest.mjs run app/test/storage --maxWorkers=1`.

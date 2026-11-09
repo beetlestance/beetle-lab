@@ -75,6 +75,8 @@ export class Suites {
     this.db.prepare(`INSERT INTO suite_revisions(id,suite_id,organization_id,workspace_id,ordinal,digest,config_json,input_manifest_json)
       VALUES (?,?,?,?,?,?,?,?)`).run(lower(command.id), suite.id, scope.organizationId, scope.workspaceId,
       ordinal, digest, canonicalConfig, encodeJson(manifest, 65536));
+    const insertPin = this.db.prepare('INSERT INTO revision_input_pins VALUES(?,?,?,?,?,?)');
+    for (const pin of manifest) insertPin.run(lower(command.id), scope.organizationId, scope.workspaceId, pin.id, pin.sha256, pin.bytes);
     this.db.prepare('UPDATE suites SET current_revision_id=?,version=? WHERE id=?')
       .run(lower(command.id), nextVersion(suite.version), suite.id);
     return this.getRevision({ scope, id: command.id });
