@@ -18,7 +18,7 @@ function expectedQuery(query: RunList): RunList {
   return copy;
 }
 
-export async function getRun(key: RunKey, reader: RunReader): Promise<Run> {
+export async function getRun(key: RunKey, reader: Pick<RunReader, 'getRun'>): Promise<Run> {
   const expected = expectedKey(key);
   const value = checkedRun(await reader.getRun(runSnapshot(expected, 2048)));
   requireRule(sameScope(value.scope, expected.scope) && sameUuid(value.id, expected.id), 'not_found');
