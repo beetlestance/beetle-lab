@@ -4,12 +4,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomBytes, randomUUID, createHash } from 'node:crypto';
 import { createK6ConfigSchema } from '@beetle/contracts/engine-config/k6';
+import { deriveInstalledIdentity } from '@beetle/contracts';
 import type { EngineManifest, Offer } from '@beetle/contracts';
 import type { InstallationProfile } from '../../src/backends/docker/index.js';
 import { runtimeName } from '../../src/backends/docker/index.js';
 import type { Docker, Daemon, Image } from './docker.js';
 
 export const digest = (value: string | Uint8Array): string => createHash('sha256').update(value).digest('hex');
+const registrationLabels = { manifestId: 'k6-native', profileId: 'native', catalogVersion: 1 };
 export async function fixture(docker: Docker, agentTag: string, engineTag: string, workStatus: number) {
   const agentImage = docker.json<Image[]>(['image', 'inspect', agentTag])[0]!;
   const engineImage = docker.json<Image[]>(['image', 'inspect', engineTag])[0]!;
@@ -40,6 +42,8 @@ export async function fixture(docker: Docker, agentTag: string, engineTag: strin
     entrypoint: manifest.entrypoint, user, stagingRoot: join(root, 'staging'),
     network: { profile: 'target-egress', name: network }, tmpfsBytes: 16777216, maximumBudget: budget };
   const offer = JSON.parse(await readFile(new URL('../../../contracts/fixtures/valid/offer.json', import.meta.url), 'utf8')) as Offer;
+  offer.installedIdentity = deriveInstalledIdentity({ manifest, profile,
+    identity: { ...registrationLabels, schemaDigest: schema.schemaDigest } }, digest);
   const revision = JSON.parse(await readFile(new URL('../../../contracts/fixtures/api/valid/suite-revision.json', import.meta.url), 'utf8')) as { config: Offer['config'] };
   Object.assign(offer, { attemptId: randomUUID(), intentDigest: digest(id), engine: { id: 'k6', imageDigest: engineImage.Id, configVersion: 1 },
     budget, inputs: [], secretReferences: [], executionPolicy: { mode: 'parallel', preferIdle: false }, config: revision.config });
@@ -62,5 +66,5 @@ export async function saveConfiguration(f: Fixture, agentImageId: string): Promi
     configuration: { pool: resources, perRun: { ...resources, cpuMillis: 1000, memoryBytes: 536870912, pids: 128 },
       controlReserve: reserve, headroom: reserve, maxConcurrent: 1, maxTimeoutMs: 30000, observationTtlMs: 5000, requiredSensors: [] },
     providers: { inputRoot: join(f.root, 'inputs'), secretBindings: [] }, engines: [{ manifest: f.manifest, profile: f.profile,
-      configVersion: 1, manifestId: 'k6-native', profileId: 'native', catalogVersion: 1 }], listen: { host: '127.0.0.1', port: 4312 } }), { mode: 0o600 });
+      configVersion: 1, ...registrationLabels }], listen: { host: '127.0.0.1', port: 4312 } }), { mode: 0o600 });
 }
