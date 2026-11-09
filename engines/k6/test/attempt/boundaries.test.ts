@@ -2,6 +2,7 @@ import { chmod, readFile, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, beforeEach, expect, it } from 'vitest';
 import { fixture, native, resetNative } from './fixtures.js';
+import { syntheticInstalledIdentity } from '../staged-input/fixtures.js';
 import { reserveOutput } from '../../wrapper/attempt/reservation.js';
 import { imageOptions } from '../../bootstrap/profile.js';
 import type { SuiteConfig } from '../../compiler/suite/index.js';
@@ -31,17 +32,20 @@ it('rejects insufficient output partition before journal or execution', async ()
   const result = await f.run(); expect(result.reason).toBe('output_limit'); expect(native.calls).toBe(0);
 });
 it('caps build admission by prepare allowance before native start', async () => {
-  const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'prepare')!.outputBytes = 28; await f.save();
+  const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'prepare')!.outputBytes = 28;
+  f.offer.installedIdentity = syntheticInstalledIdentity(f.manifest); await f.save();
   const result = await f.run(); expect(result.execution).toMatchObject({ ok: false, code: 'build' }); expect(result.result).toBeNull();
   expect(native.built?.maximumBuildBytes).toBe(28); expect(native.calls).toBe(0);
 });
 it.each([100, 99])('enforces exact prepare peak allowance %s before native start', async allowance => {
-  const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'prepare')!.outputBytes = allowance; await f.save();
+  const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'prepare')!.outputBytes = allowance;
+  f.offer.installedIdentity = syntheticInstalledIdentity(f.manifest); await f.save();
   const result = await f.run(); expect(native.built?.maximumBuildBytes).toBe(allowance);
   expect(native.calls).toBe(allowance === 100 ? 1 : 0); expect(result.ok).toBe(allowance === 100);
 });
 it('rejects collect allowance below fixed producer ceiling before calling execution', async () => {
-  const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'collect')!.outputBytes = 1_048_575; await f.save();
+  const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'collect')!.outputBytes = 1_048_575;
+  f.offer.installedIdentity = syntheticInstalledIdentity(f.manifest); await f.save();
   const result = await f.run(); expect(result.reason).toBe('output_limit'); expect(result.result).toBeNull();
   expect(native.built).toBeUndefined(); expect(native.calls).toBe(0);
 });
@@ -49,7 +53,8 @@ it.each([0, 1])('enforces remaining collect allowance before numeric file creati
   const baseline = await setup(); expect((await baseline.run()).ok).toBe(true);
   const numericBytes = (await readFile(join(baseline.outputRoot, 'numeric-final.json'))).length;
   const summaryBytes = (await readFile(join(baseline.outputRoot, 'beetle-evidence.json'))).length;
-  const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'collect')!.outputBytes = 1_048_576; await f.save();
+  const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'collect')!.outputBytes = 1_048_576;
+  f.offer.installedIdentity = syntheticInstalledIdentity(f.manifest); await f.save();
   native.summaryPadding = 1_048_576 - summaryBytes - numericBytes + short;
   const result = await f.run();
   if (short) {
@@ -62,7 +67,8 @@ it.each([0, 1])('enforces remaining collect allowance before numeric file creati
   }
 });
 it('bounds result publication by the manifest seal output allowance before writing', async () => {
-  const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'seal')!.outputBytes = 1; await f.save();
+  const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'seal')!.outputBytes = 1;
+  f.offer.installedIdentity = syntheticInstalledIdentity(f.manifest); await f.save();
   const result = await f.run(); expect(result.reason).toBe('publication'); expect(result.publication).toMatchObject({ ok: false, code: 'limit' });
   expect(result.result).toBeNull(); await expect(readFile(join(f.outputRoot, 'engine-result.json'))).rejects.toMatchObject({ code: 'ENOENT' });
 });

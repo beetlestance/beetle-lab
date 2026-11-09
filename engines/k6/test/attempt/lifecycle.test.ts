@@ -1,4 +1,5 @@
 import { fixture, native, resetNative } from './fixtures.js';
+import { syntheticInstalledIdentity } from '../staged-input/fixtures.js';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -29,7 +30,8 @@ it('parent cancellation fences a late successful original build and awaits it', 
   expect(native.calls).toBe(0);
 });
 it('prepare phase expiry preserves original build ownership with no late target start', async () => {
-  const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'prepare')!.timeoutMs = 30; await f.save();
+  const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'prepare')!.timeoutMs = 30;
+  f.offer.installedIdentity = syntheticInstalledIdentity(f.manifest); await f.save();
   const build = deferred(); native.blockBuild = build.promise;
   const running = f.run(); await vi.waitFor(() => expect(native.built).toBeDefined());
   await new Promise(resolve => setTimeout(resolve, 60)); build.resolve();
@@ -65,6 +67,7 @@ it('a pending original native close prevents seal and remains owned', async () =
 it('captures heartbeat cancellation while the actual original native cleanup remains pending', async () => {
   const f = await setup();
   for (const phase of f.manifest.phases) phase.timeoutMs = 60_000;
+  f.offer.installedIdentity = syntheticInstalledIdentity(f.manifest);
   await f.save(); vi.useFakeTimers();
   const close = deferred(); native.blockClose = close.promise;
   let settled = false; const running = f.run().then(value => { settled = true; return value; });

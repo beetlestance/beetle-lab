@@ -6,7 +6,7 @@ import type { NativeProcessOptions } from '../../wrapper/process/index.js';
 import type { SuiteConfig } from '../../compiler/suite/index.js';
 import { metricEvidenceLayout } from '../../plan/index.js';
 import { summaryProjection } from '../../runtime/summary.js';
-import { fixture as stagedFixture, now } from '../staged-input/fixtures.js';
+import { fixture as stagedFixture, now, syntheticInstalledIdentity } from '../staged-input/fixtures.js';
 import { runCompiledK6 } from '../../wrapper/execution/index.js';
 import { runAttempt } from '../../wrapper/attempt/attempt.js';
 import type { StagedK6Options } from '../../wrapper/attempt/index.js';
@@ -67,6 +67,7 @@ export async function fixture() {
   for (const phase of base.manifest.phases) { phase.timeoutMs = 5000; phase.outputBytes = 4_194_304; }
   const config = base.offer.config as SuiteConfig;
   config.requests[0]!.assertions = [{ id: 'required', kind: 'statusEq', value: 200, required: true }];
+  base.offer.installedIdentity = syntheticInstalledIdentity(base.manifest);
   await base.save();
   const outputRoot = join(base.root, 'output'); await mkdir(outputRoot, { mode: 0o700 });
   const options: StagedK6Options = { inputRoot: base.options.inputRoot, secretRoot: base.options.secretRoot,
