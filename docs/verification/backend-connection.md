@@ -1,7 +1,8 @@
 # Private backend connection components
 
-Status: independently reviewed components with local integrated checks. Executable
-startup wiring, polling and dispatch remain pending; no release qualification.
+Status: independently reviewed components with local integrated checks. The newer
+[startup report](backend-startup.md) records executable wiring and its full local
+gate; dispatch and release qualification remain pending.
 Owning contract: [backend connection](../design/lld/backend-connection.md).
 
 ## Reviewed source
@@ -56,10 +57,8 @@ at the unchanged production source checked1,019 files; documentation checked161.
 
 ## Limits and next proof
 
-The most recent full rewrite run remains the3208-pass/one-timeout result documented
-in [capacity evidence](capacity-wire.md). These focused checks do not make it green.
-The factories are not yet connected to executable application startup or its
-SQLite capacity publication loop. Real startup/shutdown, stale publication across
-the worker queue, dispatch/ACK recovery and result/artifact finalization still need
-integration. No new Docker/native k6, amd64/arm64 image, resource, supply-chain or
+This report retains the original component evidence. The newer
+[startup report](backend-startup.md) establishes the connected factories, original
+publication loop and3,499-test local gate. Dispatch/ACK recovery and
+result/artifact finalization still need integration. No new Docker/native k6, amd64/arm64 image, resource, supply-chain or
 release evidence is established by these component tests.

@@ -23,6 +23,7 @@ released application until the rewrite is qualified.
 | Inspect connected input controls | [Input controls](verification/input-controls.md) | Session ownership, upload/download, lost-ack recovery and remaining browser proof |
 | Inspect run intake boundary | [Run intake](verification/run-intake.md) | Reviewed command/SQLite enqueue, migration/recovery fences and remaining HTTP/dispatch work |
 | Inspect authenticated run API | [Run HTTP](verification/run-http.md) | Enqueue/detail/history, real TCP lost202/restart and remaining agent work |
+| Inspect executable capacity startup | [Backend startup](verification/backend-startup.md) | Actual private connection/publication, shutdown, full local gate and remaining execution work |
 | Inspect backend connection components | [Private runner connection](verification/backend-connection.md) | Private config, bounded original HTTP, independent disk source and pending executable wiring |
 | Inspect capacity wire/cache evidence | [Capacity sources](verification/capacity-wire.md) | Original expiry, revocation/replay, scoped and compiled checks, unresolved full-lane timing |
 | Inspect installed execution binding | [Installed binding](verification/installed-binding.md) | Actual descriptor pins, immutable Offer/replay, restart/shutdown fences and remaining dispatch work |
