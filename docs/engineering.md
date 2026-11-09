@@ -94,3 +94,12 @@ required contract fields and stale API/schema output in CI. A source edit touchi
 an interface must update its owner spec or state explicitly that the interface
 is unchanged. Use scoped tests during development and one required CI verification
 for the reviewed source; no repeated heavy builds for prose changes.
+
+## Functional test resources
+
+The normal Vitest lane runs one file worker to bound shared filesystem contention.
+Test selection, assertions, isolation and test/hook deadlines remain unchanged.
+Explicit races and concurrent operations inside each test still run concurrently.
+Focused commands may choose another worker count; record that execution setting.
+This lane supplies functional evidence. Parallel engine stress and performance
+qualification require their own controlled workload and resource measurements.
