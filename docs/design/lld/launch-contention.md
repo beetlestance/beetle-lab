@@ -1,7 +1,8 @@
 # Launch intent under bounded journal reads
 
-Status: implementation contract. Known gaps at source9caa151 are described in
-[storage intake evidence](../../verification/storage-intake.md); not yet qualified.
+Status: implemented, independently reviewed and locally verified; see
+[storage intake evidence](../../verification/storage-intake.md). Native stress and
+latency remain unqualified.
 Owner seams: controller/supervisor private types, installation drive and their tests.
 Read [Offer bounds](runner-envelopes.md) for original-work credit ownership.
 

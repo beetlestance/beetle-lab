@@ -1,9 +1,9 @@
 # Runner Offer byte bounds
 
-Status: client/journal migration008/cost bounds integrated and locally verified;
-see [storage intake](../../verification/storage-intake.md). Server and remaining
-consumer propagation plus [launch contention](launch-contention.md) remain.
-This does not claim that a full-size saved config can execute yet.
+Status: client, private HTTP, journal migration008, remaining consumers and
+[launch contention](launch-contention.md) are integrated and locally verified;
+see [storage intake](../../verification/storage-intake.md). Full-size loader/compile
+passes; updated native containers and parallel stress remain unqualified.
 
 ## Independent limits
 

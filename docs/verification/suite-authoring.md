@@ -56,8 +56,8 @@ Environment: macOS arm64, Node26.7.0; application Node24/image qualification rem
 
 Dataset pins require published metadata; this slice exposes no fake upload writer.
 Implement verified file publication before dataset-backed authoring is usable.
-Align the runner's current1MiB whole-envelope limit with the separate1MiB config
-allowance before wiring run submission; the full-size smoke did not execute a run.
+The newer [storage intake evidence](storage-intake.md) verifies separate config/Offer
+bounds through the actual loader/compiler; the authoring smoke did not execute a run.
 Run/outbox, artifact transfer/finalization, live results, reports/comparison/export,
 Compose, native architecture matrix and release qualification remain required.
 The [native agent report](native-agent-k6.md) covers its separate real Docker tests.
