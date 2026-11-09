@@ -1,6 +1,6 @@
 # Durable application dispatch storage
 
-Status: migration005 foundation implemented; scan/claim/observe/runtime pending.
+Status: migration005/private observe implemented; scan/claim/worker/runtime pending.
 Owner: application SQLite worker. Migration005 is reserved here; do not edit004.
 [Run intake](run-intake.md) owns immutable intent/receipt acceptance;
 [observation merge](attempt-observation.md) and [agent facts](agent-admission-evidence.md)
