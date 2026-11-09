@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { encodeJson, validatePrimitive } from '@beetle/contracts';
+import { encodeJson, RUNNER_MAXIMUM_CONFIG_BYTES, RUNNER_MAXIMUM_OFFER_BYTES, validatePrimitive } from '@beetle/contracts';
 import type { AdmissionCommand, ApprovedProfile, LaunchSettlement, PoolConfiguration, Resources, RuntimeObservation, Scope, ValidationIdentity } from '../admission/index.js';
 import { addResources, resourceNames, validResources, MAX_ENGINE_PROFILES, MAX_RESOURCE_VALUE } from '../admission/index.js';
 import { canonical, offerInput } from './input.js';
@@ -130,11 +130,12 @@ function admitInput(input: Extract<AdmissionCommand, { kind: 'admit' }>): void {
   requireValid(integer(input.sourceOrdinal) && input.sourceOrdinal > 0);
 }
 export function configDigest(config: unknown): string {
-  const copy: unknown = JSON.parse(encodeJson(config, 1_048_576));
+  const copy: unknown = JSON.parse(encodeJson(config, RUNNER_MAXIMUM_CONFIG_BYTES));
   return createHash('sha256').update(canonical(copy)).digest('hex');
 }
 export function admissionInput(input: AdmissionCommand): AdmissionCommand {
-  const copy = JSON.parse(encodeJson(input, 1_114_112)) as AdmissionCommand;
+  const maximum = isOfferCommand(input) ? RUNNER_MAXIMUM_OFFER_BYTES + 65_536 : 65_536;
+  const copy = JSON.parse(encodeJson(input, maximum)) as AdmissionCommand;
   requireValid(copy && typeof copy === 'object');
   switch (copy.kind) {
     case 'configure': configuration(copy.configuration); break;
@@ -151,6 +152,12 @@ export function admissionInput(input: AdmissionCommand): AdmissionCommand {
   }
   if (copy.kind !== 'offer') encodeJson(copy, 65_536);
   return copy;
+}
+/** Classification never reads caller properties through accessors. */
+export function isOfferCommand(input: unknown): boolean {
+  if (typeof input !== 'object' || input === null) return false;
+  const descriptor = Object.getOwnPropertyDescriptor(input, 'kind');
+  return descriptor !== undefined && 'value' in descriptor && descriptor.value === 'offer';
 }
 function admissionPage(value: { limit: number; cursor?: number }): void {
   requireValid(integer(value.limit, 100) && value.limit > 0);

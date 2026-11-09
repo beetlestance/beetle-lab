@@ -1,8 +1,8 @@
-import { encodeJson } from '@beetle/contracts';
+import { encodeJson, RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 
 /** Private installation policy, pinned in each candidate/reservation before I/O. */
-export const stagingPolicy = Object.freeze({ version: 1 as const, offerBytes: 1_048_576,
+export const stagingPolicy = Object.freeze({ version: 1 as const, offerBytes: RUNNER_MAXIMUM_OFFER_BYTES,
   manifestBytes: 65_536, metadataBytes: 65_536, secretBytes: 65_536, aggregateSecretBytes: 1_048_576 });
 export interface StagingEstimate {
   policyVersion: 1;

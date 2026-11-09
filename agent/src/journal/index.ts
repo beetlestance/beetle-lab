@@ -8,7 +8,7 @@ import { attemptKey, offerInput, pageInput, runnableInput } from './input.js';
 import type { RunnablePage, RunnableRequest } from './protocol.js';
 export type { RunnablePage, RunnableRequest } from './protocol.js';
 import type { AdmissionCommand, AdmissionValue } from '../admission/index.js';
-import { admissionInput } from './admission-input.js';
+import { admissionInput, isOfferCommand } from './admission-input.js';
 import { checkedSupervision } from './supervision.js';
 import type { SupervisionCommand, SupervisionState } from './protocol.js';
 export type { StopReason, SupervisionCommand, SupervisionState } from './protocol.js';
@@ -28,7 +28,7 @@ export interface JournalOptions {
   /** Per-attempt durable charge limit for new offers, 1024..64 MiB. */
   spoolQuotaBytes?: number;
 }
-interface Pending { resolve(value: Value): void; reject(error: JournalError): void; timer: NodeJS.Timeout }
+interface Pending { resolve(value: Value): void; reject(error: JournalError): void; timer: NodeJS.Timeout; large: boolean }
 
 function validateQuota(quota: number): void {
   if (!Number.isSafeInteger(quota) || quota < 1024 || quota > DEFAULT_QUOTA_BYTES) throw new JournalError('invalid_input');
@@ -47,6 +47,7 @@ export class Journal {
   private readonly pending = new Map<number, Pending>();
   private readonly limit: number;
   private nextId = 0;
+  private largePending = 0;
   private closing = false;
   private failed = false;
   private closePromise: Promise<void> | undefined;
@@ -77,11 +78,11 @@ export class Journal {
   }
 
   immutableOffer(input: unknown): Promise<AttemptSnapshot> {
-    return this.prepare(() => ({ kind: 'offer', ...offerInput(input) })) as Promise<AttemptSnapshot>;
+    return this.prepare(() => ({ kind: 'offer', ...offerInput(input) }), true) as Promise<AttemptSnapshot>;
   }
   /** Trusted supervisor/composition boundary; never expose as a wrapper or browser API. */
   admission(input: AdmissionCommand): Promise<AdmissionValue> {
-    return this.prepare(() => ({ kind: 'admission', request: admissionInput(input) })) as Promise<AdmissionValue>;
+    return this.prepare(() => ({ kind: 'admission', request: admissionInput(input) }), () => isOfferCommand(input)) as Promise<AdmissionValue>;
   }
   /** Private trusted supervisor clock/cancel transaction; never a wrapper/browser API. */
   supervision(input: SupervisionCommand): Promise<SupervisionState> {
@@ -97,7 +98,7 @@ export class Journal {
     return this.prepare(() => ({ kind: 'get', key: attemptKey(key) })) as Promise<AttemptSnapshot>;
   }
   readOffer(key: AttemptKey): Promise<Offer> {
-    return this.prepare(() => ({ kind: 'read', key: attemptKey(key) })) as Promise<Offer>;
+    return this.prepare(() => ({ kind: 'read', key: attemptKey(key) }), true) as Promise<Offer>;
   }
   durableCancel(key: AttemptKey): Promise<AttemptSnapshot> {
     return this.prepare(() => ({ kind: 'cancel', key: attemptKey(key) })) as Promise<AttemptSnapshot>;
@@ -149,19 +150,32 @@ export class Journal {
   /** Immediate shutdown: pending writes have unknown commit outcome. */
   async abort(): Promise<void> { this.closing = true; this.fail('unavailable'); await this.terminate(); }
 
-  private prepare(operation: () => Operation): Promise<Value> {
-    if (this.closing) return Promise.reject(new JournalError('closed'));
-    if (this.failed) return Promise.reject(new JournalError('unavailable'));
-    if (this.pending.size >= this.limit) return Promise.reject(new JournalError('queue_full'));
-    try { return this.send(operation()); } catch { return Promise.reject(new JournalError('invalid_input')); }
+  private refusal(): ErrorCode | null {
+    if (this.closing) return 'closed';
+    if (this.failed) return 'unavailable';
+    return this.pending.size >= this.limit ? 'queue_full' : null;
+  }
+  private prepare(operation: () => Operation, large: boolean | (() => boolean) = false): Promise<Value> {
+    const refusal = this.refusal();
+    if (refusal) return Promise.reject(new JournalError(refusal));
+    let reserved = false;
+    try {
+      const holdsLarge = typeof large === 'function' ? large() : large;
+      if (holdsLarge && this.largePending >= 2) return Promise.reject(new JournalError('queue_full'));
+      if (holdsLarge) { this.largePending++; reserved = true; }
+      return this.send(operation(), holdsLarge);
+    } catch {
+      if (reserved) this.largePending--;
+      return Promise.reject(new JournalError('invalid_input'));
+    }
   }
 
-  private send(operation: Operation): Promise<Value> {
+  private send(operation: Operation, large = false): Promise<Value> {
     if (this.failed) return Promise.reject(new JournalError('unavailable'));
     const id = ++this.nextId;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => this.fail('unavailable'), 5000);
-      this.pending.set(id, { resolve, reject, timer });
+      this.pending.set(id, { resolve, reject, timer, large });
       try { this.worker.postMessage({ ...operation, id }); } catch { this.fail('unavailable'); }
     });
   }
@@ -172,6 +186,7 @@ export class Journal {
     const pending = this.pending.get(reply.id);
     if (!pending) { this.fail('unavailable'); return; }
     this.pending.delete(reply.id); clearTimeout(pending.timer);
+    if (pending.large) this.largePending--;
     if (reply.ok) pending.resolve(reply.value);
     else {
       pending.reject(new JournalError(reply.code, reply.recovery));

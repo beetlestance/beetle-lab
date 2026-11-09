@@ -1,4 +1,5 @@
 import type { Offer } from '@beetle/contracts';
+import { JournalError } from '../journal/index.js';
 import type { AdmissionValue, Reservation } from '../admission/index.js';
 import type { Operation, RuntimePlan } from '../backends/docker/index.js';
 import { createAttemptController } from '../controller/index.js';
@@ -113,22 +114,37 @@ async function controllerStep(context: DriveContext, entry: Entry, offer: Offer,
   if (progress.kind === 'released') await context.retire(entry);
   return progress;
 }
+async function availableOffer(context: DriveContext, entry: Entry, budget: Operation): Promise<Offer | null> {
+  try { return await context.options.journal.readOffer(entry.key); }
+  catch (error) {
+    context.guard(entry, budget);
+    if (error instanceof JournalError && error.code === 'queue_full') return null;
+    throw error;
+  }
+}
 export async function drive(context: DriveContext, entry: Entry, budget: Operation): Promise<DriveProgress> {
   if (entry.cleanupFailed) throw new InstallationError('cleanup');
   context.guard(entry, budget);
-  const offer = await context.options.journal.readOffer(entry.key); context.guard(entry, budget);
-  let current = await allocation(context.options.journal, entry.key);
+  const offer = await availableOffer(context, entry, budget);
+  context.guard(entry, budget);
+  if (!offer) return { kind: 'deferred', reason: 'journal_busy' };
+  const current = await reservationFor(context, entry, budget);
+  if (!('status' in current)) return current;
+  if (current.status === 'released') { await context.retire(entry); return { kind: 'released', collection: current.releaseEvidence?.collection.state ?? 'failed' }; }
+  if (!current.createToken && abandoned(entry)) return abort(context, entry);
+  context.guard(entry, budget);
+  return controllerStep(context, entry, offer, current, budget);
+}
+async function reservationFor(context: DriveContext, entry: Entry, budget: Operation): Promise<Reservation | DriveProgress> {
+  const current = await allocation(context.options.journal, entry.key);
   if (!current) {
     if (!context.acquireStage()) return { kind: 'deferred', reason: 'staging_busy' };
     context.releaseStage();
     const admitted = await admit(context, entry, budget);
     if (!('status' in admitted)) return admitted;
-    current = admitted;
+    return admitted;
   }
-  if (current.status === 'released') { await context.retire(entry); return { kind: 'released', collection: current.releaseEvidence?.collection.state ?? 'failed' }; }
-  if (!current.createToken && abandoned(entry)) return abort(context, entry);
-  context.guard(entry, budget);
-  return controllerStep(context, entry, offer, current, budget);
+  return current;
 }
 
 function abandoned(entry: Entry): boolean { return !entry.fresh || entry.cancelled; }

@@ -1,5 +1,6 @@
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { AttemptSnapshot, Offer } from '@beetle/contracts';
+import { RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
 import { DEFAULT_QUOTA_BYTES } from './event-input.js';
 import { offerAtomic } from './offers.js';
 import { AdmissionStore } from './admission-store.js';
@@ -20,7 +21,7 @@ export class Store {
   constructor(private readonly db: DatabaseSync, private readonly quota = DEFAULT_QUOTA_BYTES) {
     this.admission = new AdmissionStore(db, quota);
     this.runnable = new RunnableScan(db);
-    this.read = db.prepare(`SELECT CASE WHEN length(CAST(offer_json AS BLOB))<=1048576
+    this.read = db.prepare(`SELECT CASE WHEN length(CAST(offer_json AS BLOB))<=${RUNNER_MAXIMUM_OFFER_BYTES}
       THEN offer_json ELSE NULL END AS offer_json FROM accepted_attempts WHERE id=?`);
     this.list = db.prepare(`SELECT ${metadataColumns}, NULL AS result_json, NULL AS exit_facts_json, NULL AS wrapper_checkpoint_json
       FROM accepted_attempts WHERE id>? ORDER BY id LIMIT ?`);

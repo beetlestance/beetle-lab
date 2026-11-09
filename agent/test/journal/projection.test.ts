@@ -205,7 +205,7 @@ describe('additive unpublished journal migration', () => {
     expect((await journal.readEvents(f.key(), 0)).events[0]?.kind).toBe('engine.result');
     await f.close(journal);
     inspect(path, db => {
-      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(7);
+      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(8);
       expect(db.prepare('SELECT last_seq,acknowledged_seq,spool_bytes FROM accepted_attempts').get()).toEqual(before);
       expect(db.prepare('SELECT snapshot_bytes FROM accepted_attempts').get()?.snapshot_bytes).toBe(0);
     });

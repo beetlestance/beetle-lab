@@ -1,8 +1,8 @@
-import { encodeJson, validate, validatePrimitive } from '@beetle/contracts';
+import { encodeJson, RUNNER_MAXIMUM_OFFER_BYTES, validate, validatePrimitive } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import type { AttemptKey, PageRequest, RunnableRequest } from './protocol.js';
 
-export const MAX_OFFER_BYTES = 1_048_576;
+export const MAX_OFFER_BYTES = RUNNER_MAXIMUM_OFFER_BYTES;
 
 export function canonical(value: unknown): string {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -16,7 +16,9 @@ export function offerInput(input: unknown): { json: string; canonical: string } 
   const copy: unknown = JSON.parse(json);
   if (!validate('Offer', copy).ok) throw new Error('invalid_input');
   // Compare complete bounded JSON, without resolving references or hashing secrets.
-  return { json, canonical: canonical(copy as Offer) };
+  const sorted = canonical(copy as Offer);
+  if (Buffer.byteLength(sorted) > MAX_OFFER_BYTES) throw new Error('invalid_input');
+  return { json, canonical: sorted };
 }
 
 export function attemptKey(input: AttemptKey): AttemptKey {

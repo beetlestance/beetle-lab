@@ -3,7 +3,7 @@
 Entrypoint `index.ts`: `openJournal({path, queueLimit?, spoolQuotaBytes?, workerUrl?})`.
 Node 24 packaging compiles sibling `worker.js`; retain `node:sqlite` in bundling.
 Tests compile with pinned tsup into task-owned temporary directories.
-`immutableOffer(unknown)` bounds/validates/copies Offer JSON (1 MiB), preserving
+`immutableOffer(unknown)` bounds/validates/copies Offer JSON (2 MiB; config1 MiB), preserving
 original identity text and canonical duplicate equality. Scoped get/read/cancel
 and listOpen (100 lightweight snapshots) return current projected state. Listing
 omits result payloads; scoped get owns the full-result read. Terminal rows remain
@@ -96,6 +96,13 @@ is distinct from normal five-second cancellation grace; never claim normal timin
 Future versions refuse open. Startup/commands remain 5 seconds;
 queue includes in-flight (default 32/max 64) plus close slot. Unknown commit outcome
 requires reconcile after reopen. close awaits exit; abort terminates pending work.
+Two original Offer writes/admissions/reads share a separate large-operation allowance,
+reserved before snapshots or worker messages. Capacity refusal is queue_full, before
+issuance; settlement retains slots through the original reply or failed-worker shutdown.
+Only readOffer's known refusal becomes staging busy or installation deferred; it does
+not abort an unstarted charged attempt. Engine concurrency retains its admission policy.
+Migration008 preserves the parent/four-child FK graph and all three identity high waters
+while widening only Offer/canonical storage. Staging policy1 keeps exact existing charges.
 Private supervision reason and migration007 preserve first stop attribution plus
 sticky immediate escalation independently. See [durable stops](../../../docs/design/lld/agent-stop.md).
 Historical cancellations with unknown cause stay unknown/fenced, never relabelled.

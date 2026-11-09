@@ -2,7 +2,7 @@ import { encodeJson, validate, validatePrimitive } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import { estimateStaging, stagingPolicy, supportedStaging } from '../admission/index.js';
 import type { Reservation, Scope, ValidationIdentity } from '../admission/index.js';
-import { configDigest } from '../journal/index.js';
+import { configDigest, JournalError } from '../journal/index.js';
 import { freeze, snapshot } from './bounds.js';
 import type { Boundary } from './bounds.js';
 import { StagingError } from './types.js';
@@ -63,7 +63,11 @@ function unsafeFilename(name: string): boolean {
 }
 export interface Authorized { readonly offer: Offer; readonly reservation: Reservation; readonly authority: Authority; readonly deadlineMs: number }
 export async function authorize(options: StagerOptions, key: Scope, boundary: Boundary): Promise<Authorized> {
-  const raw = await boundary.wait(() => options.journal.readOffer(key));
+  const raw = await boundary.wait(() => options.journal.readOffer(key)).catch(error => {
+    boundary.check();
+    if (error instanceof JournalError && error.code === 'queue_full') throw new StagingError('busy');
+    throw error;
+  });
   const offer = validate('Offer', snapshot(raw, stagingPolicy.offerBytes));
   if (!offer.ok || !scoped({ ...offer.value, generation: key.generation }, key)) throw new StagingError('reservation');
   validateNames(offer.value);
