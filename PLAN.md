@@ -58,7 +58,10 @@ gate does not establish dispatch or completed execution. The newer
 a real TCP lost202/restart test and the3,103-test gate; the agent bridge is pending.
 The newer [installed binding report](docs/verification/installed-binding.md) records
 actual descriptor hashing, immutable intent, scoped replay and restart/shutdown
-fences with the3,160-test gate. Fresh capacity, delivery and finalization remain.
+fences with the3,160-test gate. The [capacity report](docs/verification/capacity-wire.md)
+records required source-aware wire/cache and compiled checks; its newer full run
+has one unresolved timing failure. Private capacity polling, delivery and
+finalization remain.
 
 ## Delivery order
 
