@@ -1,4 +1,4 @@
-import { encodeCanonicalJson, encodeJson, validate, validatePrimitive } from '@beetle/contracts';
+import { encodeCanonicalJson, encodeJson, validate } from '@beetle/contracts';
 import type { AttemptSnapshot, ClientResult } from '@beetle/contracts';
 import { getRun } from '../../../../application/runs/index.js';
 import type { DispatchClaim, DispatchKey, DispatchStore } from '../../../../ports/dispatch.js';
@@ -19,8 +19,8 @@ function claimValue(input: DispatchClaim, expected: DispatchKey): DispatchClaim 
   const value = JSON.parse(encodeJson(input, 65_536)) as DispatchClaim;
   if (value.kind === 'blocked') return value;
   if (!['claimed', 'replay', 'acknowledged'].includes(value.kind)
-    || typeof value.journalAuthority !== 'string' || value.journalAuthority !== value.journalAuthority.toLowerCase()
-    || !validatePrimitive('uuid', value.journalAuthority).ok) throw new Error('Invalid delivery claim');
+    || typeof value.journalAuthority !== 'string'
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value.journalAuthority)) throw new Error('Invalid delivery claim');
   if (value.kind !== 'acknowledged') sameKey(value.key, expected);
   return value;
 }
@@ -93,5 +93,6 @@ export async function deliver(operations: DeliveryOperations, key: DispatchKey):
   const receipt: Receipt = { operations, key, authority: claim.journalAuthority, client };
   if (claim.kind !== 'claimed' && !await reconcile(receipt, claim.kind === 'acknowledged')) return;
   if (!await mayStart(operations, key)) return;
+  if (operations.stopped()) return;
   await observe(checked(await client.offer(original.offer, operations.signal)), receipt);
 }
