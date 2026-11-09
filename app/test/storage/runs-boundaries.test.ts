@@ -37,7 +37,7 @@ it('snapshots private registry input and rejects incompatible/ambiguous registra
   options.runs!.profiles[0]!.engine.imageDigest = `sha256:${'d'.repeat(64)}`;
   const revision = await append(metadata, await createSuite(metadata));
   expect((await metadata.runs.execute(runCommand(revision.id))).engine.imageDigest).toBe(`sha256:${'a'.repeat(64)}`);
-  const bad = runOptions(); bad.runs!.profiles[0]!.schemaDigest = 'd'.repeat(64);
+  const bad = runOptions(); bad.runs!.profiles[0]!.installedIdentity.schemaDigest = 'd'.repeat(64);
   await expect(fixture.open(undefined, bad)).rejects.toMatchObject({ code: 'invalid_input' });
   const duplicate = runOptions(); const pin = duplicate.runs!.profiles[0]!;
   duplicate.runs = { pendingLimit: 2, profiles: [pin, { ...pin, engine: { ...pin.engine, profileId: 'alias' } }] };

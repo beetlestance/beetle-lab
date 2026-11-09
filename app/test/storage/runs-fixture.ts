@@ -6,8 +6,9 @@ import { digest, requestId, scope, settingsFixture, uuid } from './fixture.js';
 
 export function runOptions(pendingLimit = 256): Pick<MetadataOptions, 'runs'> {
   return { runs: { pendingLimit, profiles: [{ engine: { id: 'k6', profileId: 'standard',
-    imageDigest: `sha256:${'a'.repeat(64)}`, configVersion: 1 }, manifestDigest: 'b'.repeat(64),
-    profileDigest: 'c'.repeat(64), schemaDigest: createK6ConfigSchema(digest).schemaDigest, requiredCapabilities: [] }] } };
+    imageDigest: `sha256:${'a'.repeat(64)}`, configVersion: 1 }, installedIdentity: {
+      manifestId: 'k6-v1', profileId: 'docker-v1', catalogVersion: 1, manifestDigest: 'b'.repeat(64),
+      profileDigest: 'c'.repeat(64), schemaDigest: createK6ConfigSchema(digest).schemaDigest }, requiredCapabilities: [] }] } };
 }
 export function runRequest(revisionId: string): CreateRunRequest {
   return { scope, requestId: requestId(), revisionId, engineProfile: 'standard',

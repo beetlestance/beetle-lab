@@ -1,4 +1,5 @@
 import type { CreateRunRequest, Run, RunPage, RunEngine, WorkspaceScope } from '@beetle/contracts/api';
+import type { InstalledIdentity } from '@beetle/contracts';
 
 export interface CreateRunOperation {
   kind: 'createRun';
@@ -25,9 +26,7 @@ export interface RunReader {
 /** Trusted installation identities, separate from browser-controlled enqueue fields. */
 export interface RunProfilePin {
   engine: RunEngine;
-  manifestDigest: string;
-  profileDigest: string;
-  schemaDigest: string;
+  installedIdentity: InstalledIdentity;
   requiredCapabilities: readonly string[];
 }
 export interface RunConfiguration { profiles: readonly RunProfilePin[]; pendingLimit: number }

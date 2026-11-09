@@ -1,4 +1,4 @@
-import { encodeJson } from '@beetle/contracts';
+import { encodeJson, validate } from '@beetle/contracts';
 import { k6ConfigSchema } from './configuration-schema.js';
 import { validateApi } from '@beetle/contracts/api';
 import type { RunProfilePin, RunConfiguration } from '../../../ports/runs.js';
@@ -21,10 +21,10 @@ export function checkedRunConfiguration(input: RunConfiguration): RunConfigurati
   return immutableSnapshot(copy);
 }
 function checkedProfile(pin: RunProfilePin): void {
-  requireRule(Object.keys(pin).every(key => ['engine', 'manifestDigest', 'profileDigest', 'schemaDigest', 'requiredCapabilities'].includes(key)));
+  requireRule(Object.keys(pin).every(key => ['engine', 'installedIdentity', 'requiredCapabilities'].includes(key)));
   requireRule(validateApi('RunEngine', pin.engine).ok);
-  for (const digest of [pin.manifestDigest, pin.profileDigest, pin.schemaDigest]) requireRule(typeof digest === 'string' && /^[a-f0-9]{64}$/.test(digest));
-  requireRule(pin.schemaDigest === k6ConfigSchema.schemaDigest);
+  requireRule(validate('InstalledIdentity', pin.installedIdentity).ok);
+  requireRule(pin.installedIdentity.schemaDigest === k6ConfigSchema.schemaDigest);
   requireRule(Array.isArray(pin.requiredCapabilities) && pin.requiredCapabilities.length <= 64);
   requireRule(new Set(pin.requiredCapabilities).size === pin.requiredCapabilities.length);
   pin.requiredCapabilities.forEach(capability => requireRule(validateApi('EngineProfile', capability).ok));

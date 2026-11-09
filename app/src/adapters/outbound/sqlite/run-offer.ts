@@ -16,6 +16,7 @@ export function makeRunOffer(run: Run, revision: SuiteRevision, profile: RunProf
   const intent = { protocolVersion: '1.0' as const, organizationId: run.scope.organizationId,
     workspaceId: run.scope.workspaceId, attemptId: run.activeAttemptId, engine: {
       id: profile.engine.id, imageDigest: profile.engine.imageDigest, configVersion: profile.engine.configVersion },
+    installedIdentity: profile.installedIdentity,
     inputs: revision.inputManifest, budget: run.budget, executionPolicy: run.executionPolicy,
     requiredCapabilities: profile.requiredCapabilities, secretReferences: secrets.value, config: revision.config };
   const intentDigest = digestMutationIntent(intent, text => sha256(`beetle-lab.run-offer.v1\n${text}`));

@@ -24,6 +24,7 @@ it('atomically persists run/attempt/outbox and replays original receipt after se
   for (const table of ['runs', 'attempts', 'dispatch_outbox']) expect(db.prepare(`SELECT count(*) AS n FROM ${table}`).get()?.n).toBe(1);
   const attempt = db.prepare('SELECT * FROM attempts').get()!; const offer = JSON.parse(String(attempt.offer_json)) as Offer;
   expect(validate('Offer', offer).ok).toBe(true);
+  expect(offer.installedIdentity).toEqual(options.runs!.profiles[0]!.installedIdentity);
   expect(offer).toMatchObject({ attemptId: uuid(170), organizationId: scope.organizationId, workspaceId: scope.workspaceId,
     config: revision.config, budget: run.budget, engine: { id: 'k6', imageDigest: run.engine.imageDigest, configVersion: 1 },
     secretReferences: [{ name: '_TOKEN', provider: 'env', reference: '_SOURCE', version: 'v2' }] });

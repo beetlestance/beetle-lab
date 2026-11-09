@@ -9,7 +9,9 @@ const labels = { manifestId: 'manifest-v1', profileId: 'local-default', catalogV
 it('hashes the complete descriptor with a kind-specific domain and exact canonical preimage', () => {
   const digest = vi.fn(sha256);
   const value = { z: ['☃', { '2': true, '10': false }], a: 1 };
-  installedDescriptorDigest('profile', value, digest);
+  // Independently calculated with Python hashlib over this literal UTF8 preimage.
+  expect(installedDescriptorDigest('profile', value, digest))
+    .toBe('a714fcf46f1bc355d27fed81b200751238e6df379be171c5299276da79411736');
   expect(digest).toHaveBeenCalledExactlyOnceWith('beetle-lab.installed-profile.v1\n{"a":1,"z":["☃",{"10":false,"2":true}]}');
   expect(installedDescriptorDigest('profile', Object.fromEntries(Object.entries(value).reverse()), sha256))
     .toBe(installedDescriptorDigest('profile', value, sha256));
