@@ -1,3 +1,5 @@
+import type { RunConfiguration, RunCommand, RunKey, RunList } from '../../../ports/runs.js';
+import type { Run, RunPage } from '@beetle/contracts/api';
 import type { InputCommand, InputAdvance, InputKey, InputList, InputRecoveryPage, InputRecord, InputReceipt, InputPage, InputStorage } from '../../../ports/inputs.js';
 import type { Suite, SuiteRevision, SuitePage, SuiteRevisionPage } from '@beetle/contracts/api';
 import type { SuiteCommand, SuiteKey, SuiteList, RevisionList } from '../../../ports/suites.js';
@@ -18,6 +20,9 @@ export class StorageError extends Error {
 export interface RuntimeObservation { ceilings: RuntimeCeilings; observedAtMs: number }
 export type SettingsView = InstallationSettings | OrganizationSettings | WorkspaceSettings;
 export type Operation =
+  | { kind: 'run'; command: RunCommand }
+  | { kind: 'getRun'; key: RunKey }
+  | { kind: 'listRuns'; query: RunList }
   | { kind: 'input'; command: InputCommand }
   | { kind: 'advanceInput'; command: InputAdvance }
   | { kind: 'getInput'; key: InputKey }
@@ -37,9 +42,9 @@ export type Operation =
   | { kind: 'getSettingsIdentity'; scope: SettingsScope }
   | { kind: 'runtime'; runtime: RuntimeObservation | null }
   | { kind: 'close' };
-export type Value = InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
+export type Value = Run | RunPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
 export type Command = Operation & { messageId: number };
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; messageId: number; ok: true; value: Value } |
   { kind: 'result'; messageId: number; ok: false; code: ErrorCode };
-export interface Bootstrap { installation: InstallationRecord; runtime: RuntimeObservation | null; runtimeTtlMs?: number }
+export interface Bootstrap { installation: InstallationRecord; runtime: RuntimeObservation | null; runtimeTtlMs?: number; runs?: RunConfiguration }

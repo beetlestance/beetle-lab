@@ -1,3 +1,5 @@
+import { Runs } from './runs.js';
+import { RunReads } from './run-reads.js';
 import { Inputs } from './inputs.js';
 import { InputReads } from './input-reads.js';
 import { Suites } from './suites.js';
@@ -22,6 +24,8 @@ export function safeCode(error: unknown): ErrorCode {
   return 'unavailable';
 }
 export class Store {
+  private readonly runs: Runs;
+  private readonly runReads: RunReads;
   private readonly inputs: Inputs;
   private readonly inputReads: InputReads;
   private readonly suites: Suites;
@@ -35,12 +39,14 @@ export class Store {
     this.suites = new Suites(db, this.entities);
     this.suiteReads = new SuiteReads(db, this.suites);
     this.settings = transaction(db, () => new Settings(db, bootstrap));
+    this.runs = new Runs(db, this.suites, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
+    this.runReads = new RunReads(db, this.suites);
     this.inputs = new Inputs(db, this.entities, this.settings);
     this.inputReads = new InputReads(db, this.entities);
     this.namespaces = new Namespaces(db, this.entities, this.settings);
     this.reads = new Reads(db, this.entities);
   }
-  private mutation(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' }>): Value {
+  private mutation(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' }>): Value {
     const command = operation.command;
     return transaction(this.db, () => {
       const scope = scopeKey(command.request.scope);
@@ -52,13 +58,29 @@ export class Store {
         if (typeof receipt.result_json !== 'string') throw new StorageError('unavailable');
         return JSON.parse(receipt.result_json) as Value;
       }
-      const value = operation.kind === 'input' ? this.inputs.control(operation.command) : operation.kind === 'suite' ? this.suites.change(operation.command) : operation.kind === 'namespace' ? this.namespaces.change(operation.command) :
-        this.settings.change(operation.command);
+      const value = this.change(operation);
       const copy = boundedCopy(value, operationMessageLimit(operation));
       this.db.prepare('INSERT INTO receipts(scope_key,request_id,digest,result_json) VALUES (?,?,?,?)')
         .run(scope, requestId, command.intentDigest, JSON.stringify(copy));
       return copy;
     });
+  }
+  private change(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' }>): Value {
+    switch (operation.kind) {
+      case 'run': return this.runs.create(operation.command);
+      case 'input': return this.inputs.control(operation.command);
+      case 'suite': return this.suites.change(operation.command);
+      case 'namespace': return this.namespaces.change(operation.command);
+      case 'settings': return this.settings.change(operation.command);
+    }
+  }
+  private runOperation(operation: Operation): Value {
+    switch (operation.kind) {
+      case 'run': return this.mutation(operation);
+      case 'getRun': return this.runReads.get(operation.key);
+      case 'listRuns': return this.runReads.list(operation.query);
+      default: throw new StorageError('invalid_input');
+    }
   }
   private suiteOperation(operation: Operation): Value {
     switch (operation.kind) {
@@ -88,6 +110,7 @@ export class Store {
     }
   }
   execute(operation: Operation): Value {
+    if (['run', 'getRun', 'listRuns'].includes(operation.kind)) return this.runOperation(operation);
     if (suiteOperation(operation)) return this.suiteOperation(operation);
     if (['getSettings', 'getSettingsIdentity', 'runtime'].includes(operation.kind)) return this.settingsOperation(operation);
     if (['input', 'advanceInput', 'getInput', 'listInputs', 'recoverInputs', 'inputStorage'].includes(operation.kind)) return this.inputOperation(operation);

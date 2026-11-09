@@ -1,3 +1,4 @@
+import type { RunStore, RunReader } from '../../../ports/runs.js';
 import type { InputStore } from '../../../ports/inputs.js';
 import type { SuiteStore, SuiteReader } from '../../../ports/suites.js';
 import { Worker } from 'node:worker_threads';
@@ -10,6 +11,7 @@ import { checkedBootstrap, checkedOperation, suiteOperation } from './input.js';
 import { StorageError } from './protocol.js';
 import type { Bootstrap, EntityKey, EntityPage, ErrorCode, ListQuery, Operation, Reply, RuntimeObservation, SettingsView, Value } from './protocol.js';
 export { StorageError } from './protocol.js';
+export type { RunConfiguration, RunProfilePin } from '../../../ports/runs.js';
 export type { Bootstrap, EntityKey, EntityPage, ErrorCode, ListQuery, RuntimeObservation, SettingsView } from './protocol.js';
 
 export interface MetadataOptions extends Bootstrap {
@@ -29,7 +31,7 @@ function validateOptions(options: MetadataOptions): Bootstrap {
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 64) throw new StorageError('invalid_input');
   validateLocation(options);
   try { return checkedBootstrap({ installation: options.installation, runtime: options.runtime,
-    runtimeTtlMs: options.runtimeTtlMs ?? 5000 }); }
+    ...(options.runs === undefined ? {} : { runs: options.runs }), runtimeTtlMs: options.runtimeTtlMs ?? 5000 }); }
   catch { throw new StorageError('invalid_input'); }
 }
 
@@ -46,6 +48,11 @@ export class Metadata {
   private readyResolve: () => void = () => undefined;
   private readyReject: (error: StorageError) => void = () => undefined;
   private readonly ready: Promise<void>;
+  readonly runs: RunStore & RunReader = {
+    execute: command => this.call({ kind: 'run', command }) as ReturnType<RunStore['execute']>,
+    getRun: key => this.call({ kind: 'getRun', key }) as ReturnType<RunReader['getRun']>,
+    listRuns: query => this.call({ kind: 'listRuns', query }) as ReturnType<RunReader['listRuns']>,
+  };
   readonly inputs: InputStore = {
     control: command => this.call({ kind: 'input', command }) as ReturnType<InputStore['control']>,
     advance: command => this.call({ kind: 'advanceInput', command }) as ReturnType<InputStore['advance']>,

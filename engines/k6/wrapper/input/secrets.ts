@@ -1,25 +1,12 @@
-import { validatePrimitive } from '@beetle/contracts';
-import type { Offer, SecretReference } from '@beetle/contracts';
+import { prepareK6SecretReferences } from '@beetle/contracts/engine-config/k6';
+import type { K6SecretBindings } from '@beetle/contracts/engine-config/k6';
+import type { Offer } from '@beetle/contracts';
 import type { ValidatedSuiteConfig } from '../../compiler/suite/index.js';
+export type SecretBindings = K6SecretBindings;
 
-type Failure = { readonly ok: false; readonly code: 'unsupported_secret_reference' | 'conflicting_secret_reference' };
-export type SecretBindings = { readonly ok: true; readonly value: readonly Readonly<SecretReference>[] } | Failure;
-
-/** First-release providers use opaque aliases, never host paths or resolved values. */
+/** Shared translation keeps application offers and staged engine checks identical. */
 export function prepareSecretReferences(config: ValidatedSuiteConfig): SecretBindings {
-  const references: Readonly<SecretReference>[] = [];
-  const names = new Set<string>();
-  for (const secret of config.secrets) {
-    const reference = { name: secret.name, provider: secret.provider, reference: secret.locator,
-      ...(secret.version === undefined ? {} : { version: secret.version }) };
-    const checked = validatePrimitive('secretReference', reference);
-    if (!checked.ok) return { ok: false, code: 'unsupported_secret_reference' };
-    // Portable staging must not alias two names on a case-insensitive host volume.
-    const name = secret.name.toLowerCase();
-    if (names.has(name)) return { ok: false, code: 'conflicting_secret_reference' };
-    names.add(name); references.push(Object.freeze(checked.value));
-  }
-  return Object.freeze({ ok: true, value: Object.freeze(references) });
+  return prepareK6SecretReferences(config.secrets);
 }
 
 /** Compare declared identities only; provider/version resolution belongs to trusted staging. */

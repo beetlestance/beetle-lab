@@ -1,3 +1,5 @@
+import { checkedRunOperation } from './run-validation.js';
+import { checkedRunConfiguration } from './run-profiles.js';
 import { checkedInputOperation } from './input-validation.js';
 import { MAX_MESSAGE_BYTES, boundedCopy, checkedScope, uuid, sha256 } from './input-values.js';
 export { MAX_MESSAGE_BYTES, boundedCopy, checkedScope, uuid, sha256, lower, scopeKey } from './input-values.js';
@@ -31,7 +33,8 @@ export function checkedBootstrap(input: Bootstrap): Bootstrap {
   const ttl = copy.runtimeTtlMs ?? 5000;
   requireRule(Number.isSafeInteger(ttl) && ttl >= 1 && ttl <= 60000);
   checkedRuntime(copy.runtime, ttl);
-  return copy;
+  copy.runs = checkedRunConfiguration(copy.runs ?? { profiles: [], pendingLimit: 256 });
+  return boundedCopy(copy);
 }
 function checkedKey(key: EntityKey): void {
   checkedScope(key.scope); uuid(key.id);
@@ -88,6 +91,7 @@ function settingsRead(operation: Operation): boolean {
   checkedScope(operation.scope); return true;
 }
 function checkedExtendedOperation(operation: Operation): boolean {
+  if (checkedRunOperation(operation)) return true;
   if (checkedInputOperation(operation)) return true;
   if (suiteOperation(operation)) { checkedSuiteOperation(operation); return true; }
   return settingsRead(operation);

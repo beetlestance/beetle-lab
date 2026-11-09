@@ -3,7 +3,7 @@
 Public entrypoint: `index.ts`; caller supplies `path`, compiled `workerUrl`, explicit
 `installation` record and `runtime: {ceilings,observedAtMs}|null` source observation.
 `openMetadata()` returns one worker owning one exclusive WAL SQLite connection.
-`namespaces.execute`, `settings.execute`, `suites` and `inputs` implement accepted ports.
+`namespaces.execute`, `settings.execute`, `suites`, `inputs` and `runs` implement ports.
 Each mutation verifies real SHA256 intent, checks receipt first, reads evidence,
 calls the domain decision and writes result/receipt in one immediate transaction.
 Fresh create allocations never replace original replay IDs or workspace root.
@@ -34,7 +34,7 @@ SQLite cache2MiB/busy100ms; startup/command availability deadline5s.
 Close drains admitted FIFO work; close/abort await worker termination, including
 failure paths. Unknown outcomes never trigger automatic mutation retries.
 Static `StorageError` codes expose no database paths, SQL or submitted values.
-Migrations001/002/003 are transactional; legacy rows remain fenced for byte checks.
+Migrations001..004 are transactional; legacy rows remain fenced for byte checks.
 Immutable indexed revision pins serialize with deletion; tombstone metadata stays charged.
-Contract: docs/design/lld/input-publication.md. No metadata reply proves byte custody.
+Contracts: input-publication.md and run-intake.md in docs/design/lld. No byte-custody proof.
 Check: `node node_modules/vitest/vitest.mjs run app/test/storage --maxWorkers=1`.

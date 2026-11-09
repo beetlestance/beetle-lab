@@ -56,7 +56,8 @@ The existing exclusive SQLite worker owns enqueue in one immediate transaction:
    omitted, prefixed by `beetle-lab.run-offer.v1\n`; never hash resolved secrets.
 5. Enforce installation control-plane pending-run bound, then insert run, first
    attempt and dispatch outbox atomically. Initial state queued/outcome pending,
-   version1, validation pending. Outbox stores the exact immutable Offer bytes.
+   version1, validation pending. Outbox references the attempt's exact immutable
+   Offer bytes; keep one copy, not two divergent payloads.
 6. Save the bounded original Run response in the same receipt transaction. Commit
    before replying. There is no HTTP, filesystem streaming or agent call in SQL.
 
@@ -88,6 +89,33 @@ detail ID and each page item to the route's workspace.
 Nonterminal DTOs have pending outcome. Finished allows passed/failed/inconclusive
 with engine validation passed; discovery exhaustion is completed but inconclusive; cancelled/errored mean inconclusive with a typed reason. These
 client consistency checks do not replace backend exit/seal/artifact verification.
+
+## SQLite implementation boundary
+
+`openMetadata` accepts optional private `runs: {profiles,pendingLimit}`. Profiles
+are <=32 unique names/selectors, with exact image/manifest/profile/schema digests
+and required capabilities; the total registry is <=32KiB within existing64KiB
+bootstrap intake. Schema pins must match the shipped k6 config adapter. The default
+registry is empty, refusing new enqueue while allowing receipt replay and reads.
+This is programmatic configuration; executable installed-profile loading and the
+agent capacity/identity bridge still need integration.
+
+The one worker builds an Offer synchronously from bounded saved configuration;
+create/get commands stay64KiB and pages remain within existing1MiB replies. No full
+Offer is returned to the parent yet. A future outbox read must reserve the declared
+two large-original slots before exposing2MiB replies. Enqueue does not imply that
+this unimplemented dispatch transport has been qualified.
+
+Shared `prepareK6SecretReferences` owns the <=64 alias translation in contracts;
+the engine wrapper delegates to it. Its128KiB serialization bound accommodates
+maximum escaped versions. It resolves no values. Application preflight rejects
+unsupported providers/paths before persisting a new Offer.
+
+Runs keep one immutable initial snapshot plus explicit current-state columns.
+A partial pending index bounds queue checks to the configured limit, independent
+of historical closed runs. Attempt/active-pointer FKs bind run and workspace;
+immutable triggers also reject REPLACE. Possible-delivery evidence is monotonic;
+actual claims and acknowledgements remain the next protocol boundary.
 
 ## Handoff to execution
 

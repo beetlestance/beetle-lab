@@ -1,3 +1,4 @@
+import { migration004 } from './migration004.js';
 import { migrate003 } from './migration003.js';
 import { migration002 } from './migration002.js';
 import { DatabaseSync } from 'node:sqlite';
@@ -66,11 +67,12 @@ export function initialize(path: string): DatabaseSync {
   try {
     db.exec('PRAGMA busy_timeout=100; PRAGMA cache_size=-2048; PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; COMMIT;');
     const version = db.prepare('PRAGMA user_version').get()?.user_version;
-    if (typeof version !== 'number' || version > 3) throw new StorageError('schema_newer');
+    if (typeof version !== 'number' || version > 4) throw new StorageError('schema_newer');
     db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; PRAGMA temp_store=MEMORY;');
     if (version === 0) transaction(db, () => db.exec(migration001));
     if (version < 2) transaction(db, () => db.exec(migration002));
     if (version < 3) transaction(db, () => migrate003(db));
+    if (version < 4) transaction(db, () => db.exec(migration004));
     return db;
   } catch (error) { db.close(); throw error; }
 }

@@ -15,3 +15,6 @@ export function createK6ConfigSchema(digest: ResultDigest): ConfigSchema {
   return createConfigSchema({ schemas: [assertions, common, datasets, loadPlan, requests, scenarios, suiteCommon, suite],
     schemaId: suite.$id, digest });
 }
+
+export { prepareK6SecretReferences } from './k6-bindings.js';
+export type { K6SecretBindings } from './k6-bindings.js';

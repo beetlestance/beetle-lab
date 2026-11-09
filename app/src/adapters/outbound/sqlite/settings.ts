@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
-import type { SettingsScope } from '@beetle/contracts/api';
-import { decideSettingsChange, resolveEffectiveSettings, validateInstallation } from '../../../domain/settings/index.js';
+import type { SettingsScope, RunDefaults, WorkspaceScope } from '@beetle/contracts/api';
+import { resolveRunSettings, decideSettingsChange, resolveEffectiveSettings, validateInstallation } from '../../../domain/settings/index.js';
 import type { InstallationRecord, OrganizationRecord, WorkspaceRecord, SettingsRecord,
   SettingsChain } from '../../../domain/settings/index.js';
 import { requireRule } from '../../../domain/namespaces/index.js';
@@ -60,6 +60,13 @@ export class Settings {
     if (scope.kind === 'organization') return { installation, organization };
     const workspace = this.record(scope) as WorkspaceRecord;
     return { installation, organization, workspace };
+  }
+  resolveRun(scope: WorkspaceScope, run: RunDefaults) {
+    const chain = this.chain(scope);
+    const resolved = resolveRunSettings({ scope, chain, runtime: this.runtime.snapshot(), run });
+    requireRule(chain.organization !== undefined && chain.workspace !== undefined, 'not_found');
+    return { defaults: resolved.defaults, versions: { installation: chain.installation.version,
+      organization: chain.organization.version, workspace: chain.workspace.version } };
   }
   identity(scope: SettingsScope): SettingsIdentity {
     const row = this.db.prepare('SELECT id,kind,organization_id,workspace_id FROM settings WHERE scope_key=?')
