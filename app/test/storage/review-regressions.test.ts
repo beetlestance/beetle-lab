@@ -43,7 +43,8 @@ describe('independent metadata review regressions', () => {
       const runtime = new RuntimeCapacity({ installation: settingsFixture().chain.installation,
         runtime: observation(settingsFixture().runtime, 10000), runtimeTtlMs: 1000 });
       clock.mockReturnValue(10100); expect(runtime.snapshot()).not.toBeNull();
-      clock.mockReturnValue(10050); runtime.update(observation(settingsFixture().runtime, 10050));
+      clock.mockReturnValue(10050);
+      expect(() => runtime.update(observation(settingsFixture().runtime, 10050))).toThrow();
       clock.mockReturnValue(10101); expect(runtime.snapshot()).toBeNull();
       expect(() => runtime.update(observation(settingsFixture().runtime, 10050))).toThrow();
       runtime.update(observation(settingsFixture().runtime, 10101)); expect(runtime.snapshot()).not.toBeNull();

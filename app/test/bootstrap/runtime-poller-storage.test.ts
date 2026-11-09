@@ -69,3 +69,22 @@ it('coalesces a real known-to-unknown transition while an old frame is refused b
   expect(publish.mock.calls[3]![0]!.observedAtMs).toBeGreaterThan(first.observedAtMs);
   expect(publish.mock.calls.filter(([fact]) => fact === null)).toHaveLength(1);
 });
+it('does not acknowledge a frame that the real worker revokes after clock rollback', async () => {
+  const entry = join(fixture.root(), 'worker-rollback.mjs');
+  await writeFile(entry, `import {parentPort} from 'node:worker_threads';Date.now=()=>10100;
+    parentPort.on('message',command=>{if(command.kind==='runtime'&&command.runtime!==null){
+      const now=command.runtime.observedAtMs;Date.now=()=>now;
+    }});await import(${JSON.stringify(fixture.workerUrl().href)});`);
+  const clock = vi.spyOn(Date, 'now').mockReturnValue(10100);
+  try {
+    const metadata = await fixture.open(undefined, { runtime: null, workerUrl: pathToFileURL(entry) });
+    const publish = createRuntimePublisher(metadata);
+    clock.mockReturnValue(10050);
+    expect(await publish(observation(settingsFixture().runtime, 10050, 1000))).toBe(false);
+    expect(await publish(null)).toBe(true);
+    await expect(metadata.getSettings({ kind: 'installation' })).rejects.toMatchObject({ code: 'capacity_unavailable' });
+    clock.mockReturnValue(10101);
+    expect(await publish(observation(settingsFixture().runtime, 10101, 1000))).toBe(true);
+    expect((await metadata.getSettings({ kind: 'installation' })).version).toBe(1);
+  } finally { clock.mockRestore(); }
+});
