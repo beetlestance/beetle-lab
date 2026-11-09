@@ -3,9 +3,9 @@
 Public entrypoint: `index.ts`; caller supplies `path`, compiled `workerUrl`, explicit
 `installation` record and `runtime: {ceilings,execution,observedAtMs,expiresAtMs}|null` source observation.
 `openMetadata()` returns one worker owning one exclusive WAL SQLite connection.
-`namespaces.execute`, `settings.execute`, `suites`, `inputs` and `runs` implement ports.
-Each mutation verifies real SHA256 intent, checks receipt first, reads evidence,
-calls the domain decision and writes result/receipt in one immediate transaction.
+`namespaces.execute`, `settings.execute`, `suites`, `inputs`, `runs` and private `dispatch` implement ports.
+Public commands verify intent/receipt; dispatch owns separate scan/read/claim/observe transactions.
+Domain decisions and original receipt writes commit atomically with public commands.
 `get({kind,scope,id})`, `list({kind,scope,limit,cursor?,parentFolderId?})` and
 `getSettings(scope)` expose API-derived namespace/settings values.
 Internal `getSettingsIdentity(scope)` reads only persisted UUID/scope, without
@@ -22,8 +22,8 @@ Rollback-time updates are discarded; a persistent high-water source-time fence
 requires a genuinely later observation before recovery. Queueing never refreshes age.
 Settings reductions retain charges; input admission counts payload+64KiB and one
 configured reserve. Private advances require exact versions and trusted byte service.
-Queue <=64 (default32), suite pending<=2, input64KiB/reply1MiB by default;
-full revision command/reply2MiB with config1MiB; worker heap<=128MiB.
+Queue <=64(default32); suites/readOffer SHARE TWO originals; input64KiB/reply1MiB;
+revision2MiB/config1MiB, Offer reply2MiB+64KiB with fixed carrier; worker heap<=128MiB.
 SQLite cache2MiB/busy100ms; startup/command availability deadline5s.
 Close drains admitted FIFO work; close/abort await worker termination, including
 failure paths. Unknown outcomes never trigger automatic mutation retries.

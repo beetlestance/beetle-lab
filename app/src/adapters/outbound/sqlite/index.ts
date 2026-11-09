@@ -1,4 +1,5 @@
 import type { RunStore, RunReader } from '../../../ports/runs.js';
+import type { DispatchStore } from '../../../ports/dispatch.js';
 import type { InputStore } from '../../../ports/inputs.js';
 import type { SuiteStore, SuiteReader } from '../../../ports/suites.js';
 import { Worker } from 'node:worker_threads';
@@ -7,21 +8,26 @@ import type { NamespaceStore } from '../../../ports/namespaces.js';
 import type { NamespaceEntity } from '../../../ports/namespaces.js';
 import type { SettingsStore } from '../../../ports/settings.js';
 import type { SettingsIdentity } from '../../../ports/settings-reader.js';
-import { checkedBootstrap, checkedOperation, suiteOperation } from './input.js';
+import { checkedBootstrap, checkedOperation, largeOperation, operationReplyLimit, boundedCopy } from './input.js';
+import { dispatchOperation, captureDispatchReply } from './dispatch-wire.js';
+import type { DispatchOperation } from './dispatch-wire.js';
+import { captureWorkerReply } from './worker-reply.js';
+import type { WorkerReply } from './worker-reply.js';
 import { StorageError } from './protocol.js';
-import type { Bootstrap, EntityKey, EntityPage, ErrorCode, ListQuery, Operation, Reply, RuntimeObservation, SettingsView, Value } from './protocol.js';
+import type { Bootstrap, EntityKey, EntityPage, ErrorCode, ListQuery, Operation, RuntimeObservation, SettingsView, Value } from './protocol.js';
 export { StorageError } from './protocol.js';
 export type { RunConfiguration, RunProfilePin } from '../../../ports/runs.js';
 export type { Bootstrap, EntityKey, EntityPage, ErrorCode, ListQuery, RuntimeObservation, SettingsView } from './protocol.js';
 
 export interface MetadataOptions extends Bootstrap {
   path: string;
-  /** Explicit compiled worker entrypoint supplied by the composition root. */
+  /** Trusted matched compiled worker entrypoint supplied by the composition root. */
   workerUrl: URL;
   /** Includes in-flight work; maximum 64. Close has one reserved slot. */
   queueLimit?: number;
 }
-interface Pending { resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout; suite: boolean }
+interface Pending { resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
+  large: boolean; replyLimit: number; dispatch?: DispatchOperation }
 function validateLocation(options: MetadataOptions): void {
   if (typeof options.path !== 'string' || !options.path || options.path === ':memory:' || options.path.length > 4096 ||
     !(options.workerUrl instanceof URL) || options.workerUrl.protocol !== 'file:') throw new StorageError('invalid_input');
@@ -53,6 +59,12 @@ export class Metadata {
     getRun: key => this.call({ kind: 'getRun', key }) as ReturnType<RunReader['getRun']>,
     listRuns: query => this.call({ kind: 'listRuns', query }) as ReturnType<RunReader['listRuns']>,
   };
+  readonly dispatch: DispatchStore = {
+    scan: query => this.call({ kind: 'dispatchScan', query }) as ReturnType<DispatchStore['scan']>,
+    readOffer: key => this.call({ kind: 'dispatchReadOffer', key }) as ReturnType<DispatchStore['readOffer']>,
+    claim: key => this.call({ kind: 'dispatchClaim', key }) as ReturnType<DispatchStore['claim']>,
+    observe: request => this.call({ kind: 'dispatchObserve', request }) as ReturnType<DispatchStore['observe']>,
+  };
   readonly inputs: InputStore = {
     control: command => this.call({ kind: 'input', command }) as ReturnType<InputStore['control']>,
     advance: command => this.call({ kind: 'advanceInput', command }) as ReturnType<InputStore['advance']>,
@@ -79,7 +91,7 @@ export class Metadata {
     this.ready = new Promise((resolve, reject) => { this.readyResolve = resolve; this.readyReject = reject; });
     this.worker = new Worker(options.workerUrl, { workerData: { path: options.path, bootstrap },
       resourceLimits: { maxOldGenerationSizeMb: 128 } });
-    this.worker.on('message', (reply: Reply) => this.receive(reply));
+    this.worker.on('message', (reply: unknown) => this.receive(reply));
     this.worker.on('error', () => this.fail('unavailable'));
     this.worker.on('exit', () => this.fail('unavailable'));
   }
@@ -118,39 +130,59 @@ export class Metadata {
     if (this.closing) return Promise.reject(new StorageError('closed'));
     if (this.failed) return Promise.reject(new StorageError('unavailable'));
     if (this.pending.size >= this.limit) return Promise.reject(new StorageError('queue_full'));
-    if (suiteOperation(operation) && [...this.pending.values()].filter(value => value.suite).length >= 2) return Promise.reject(new StorageError('queue_full'));
+    if (largeOperation(operation) && [...this.pending.values()].filter(value => value.large).length >= 2) return Promise.reject(new StorageError('queue_full'));
     try { return this.send(checkedOperation(operation, this.runtimeTtlMs)); }
     catch { return Promise.reject(new StorageError('invalid_input')); }
   }
   private send(operation: Operation): Promise<Value> {
     if (this.failed) return Promise.reject(new StorageError('unavailable'));
+    if (!Number.isSafeInteger(this.nextId) || this.nextId < 0 || this.nextId >= Number.MAX_SAFE_INTEGER) {
+      this.fail('unavailable'); return Promise.reject(new StorageError('unavailable'));
+    }
     const messageId = ++this.nextId;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => this.fail('unavailable'), 5000);
-      this.pending.set(messageId, { resolve, reject, timer, suite: suiteOperation(operation) });
+      this.pending.set(messageId, { resolve, reject, timer, large: largeOperation(operation),
+        replyLimit: operationReplyLimit(operation), ...(dispatchOperation(operation) ? { dispatch: operation } : {}) });
       try { this.worker.postMessage({ ...operation, messageId }); } catch { this.fail('unavailable'); }
     });
   }
-  private receive(reply: Reply): void {
+  private receive(input: unknown): void {
+    if (this.failed) return;
+    let reply: WorkerReply;
+    try { reply = captureWorkerReply(input); } catch { this.fail('unavailable'); return; }
     if (reply.kind === 'ready') { this.readyResolve(); return; }
     if (reply.kind === 'startup_error') { this.fail(reply.code); return; }
     const pending = this.pending.get(reply.messageId);
     if (!pending) { this.fail('unavailable'); return; }
-    this.pending.delete(reply.messageId); clearTimeout(pending.timer);
-    if (reply.ok) pending.resolve(reply.value);
+    if (reply.ok) this.resolve(reply, pending);
     else {
+      this.release(reply.messageId, pending);
       pending.reject(new StorageError(reply.code));
       if (reply.code === 'unavailable') this.fail('unavailable');
     }
+  }
+  private resolve(reply: Extract<WorkerReply, { kind: 'result'; ok: true }>, pending: Pending): void {
+    let value: Value;
+    try {
+      value = pending.dispatch ? captureDispatchReply(pending.dispatch, reply.value)
+        : boundedCopy(reply.value, pending.replyLimit) as Value;
+    } catch { this.fail('unavailable'); return; }
+    this.release(reply.messageId, pending);
+    pending.resolve(value);
+  }
+  private release(messageId: number, pending: Pending): void {
+    this.pending.delete(messageId); clearTimeout(pending.timer);
   }
   private fail(code: ErrorCode): void {
     if (this.failed) return;
     this.failed = true; this.readyReject(new StorageError(code));
     for (const pending of this.pending.values()) { clearTimeout(pending.timer); pending.reject(new StorageError(code)); }
-    this.pending.clear(); void this.terminate();
+    void this.terminate();
   }
   private terminate(): Promise<number> {
-    this.terminationPromise ??= this.worker.terminate(); return this.terminationPromise;
+    this.terminationPromise ??= this.worker.terminate().then(code => { this.pending.clear(); return code; });
+    return this.terminationPromise;
   }
 }
 export const openMetadata = Metadata.open;

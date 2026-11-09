@@ -1,4 +1,8 @@
 import { Runs } from './runs.js';
+import { DispatchClaims } from './dispatch-claims.js';
+import { DispatchObservations } from './dispatch-observations.js';
+import { dispatchOperation } from './dispatch-wire.js';
+import type { DispatchOperation } from './dispatch-wire.js';
 import { RunReads } from './run-reads.js';
 import { Inputs } from './inputs.js';
 import { InputReads } from './input-reads.js';
@@ -24,6 +28,8 @@ export function safeCode(error: unknown): ErrorCode {
   return 'unavailable';
 }
 export class Store {
+  private readonly dispatchClaims: DispatchClaims;
+  private readonly dispatchObservations: DispatchObservations;
   private readonly runs: Runs;
   private readonly runReads: RunReads;
   private readonly inputs: Inputs;
@@ -41,6 +47,8 @@ export class Store {
     this.settings = transaction(db, () => new Settings(db, bootstrap));
     this.runs = new Runs(db, this.suites, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
     this.runReads = new RunReads(db, this.suites);
+    this.dispatchClaims = new DispatchClaims(db, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
+    this.dispatchObservations = new DispatchObservations(db, this.runReads);
     this.inputs = new Inputs(db, this.entities, this.settings);
     this.inputReads = new InputReads(db, this.entities);
     this.namespaces = new Namespaces(db, this.entities, this.settings);
@@ -75,6 +83,7 @@ export class Store {
     }
   }
   private runOperation(operation: Operation): Value {
+    if (dispatchOperation(operation)) return this.dispatch(operation);
     switch (operation.kind) {
       case 'run': return this.mutation(operation);
       case 'getRun': return this.runReads.get(operation.key);
@@ -110,7 +119,8 @@ export class Store {
     }
   }
   execute(operation: Operation): Value {
-    if (['run', 'getRun', 'listRuns'].includes(operation.kind)) return this.runOperation(operation);
+    if (['run', 'getRun', 'listRuns', 'dispatchScan', 'dispatchReadOffer', 'dispatchClaim', 'dispatchObserve']
+      .includes(operation.kind)) return this.runOperation(operation);
     if (suiteOperation(operation)) return this.suiteOperation(operation);
     if (['getSettings', 'getSettingsIdentity', 'runtime'].includes(operation.kind)) return this.settingsOperation(operation);
     if (['input', 'advanceInput', 'getInput', 'listInputs', 'recoverInputs', 'inputStorage'].includes(operation.kind)) return this.inputOperation(operation);
@@ -120,6 +130,14 @@ export class Store {
       case 'list': return this.reads.list(operation.query);
       case 'close': this.db.close(); return null;
       default: throw new StorageError('invalid_input');
+    }
+  }
+  private dispatch(operation: DispatchOperation): Value {
+    switch (operation.kind) {
+      case 'dispatchScan': return this.dispatchClaims.scan(operation.query);
+      case 'dispatchReadOffer': return this.dispatchClaims.readOffer(operation.key);
+      case 'dispatchClaim': return this.dispatchClaims.claim(operation.key);
+      case 'dispatchObserve': return this.dispatchObservations.observe(operation.request);
     }
   }
 }

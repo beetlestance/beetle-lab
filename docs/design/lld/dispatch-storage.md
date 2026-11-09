@@ -1,6 +1,6 @@
 # Durable application dispatch storage
 
-Status: migration005/private observe implemented; scan/claim/worker/runtime pending.
+Status: SQL/worker implementation in review; installation dispatcher runtime pending.
 Owner: application SQLite worker. Migration005 is reserved here; do not edit004.
 [Run intake](run-intake.md) owns immutable intent/receipt acceptance;
 [observation merge](attempt-observation.md) and [agent facts](agent-admission-evidence.md)
@@ -31,6 +31,14 @@ JSON string or a recompiled config. Request <=1024 bytes; reply <=2162688 bytes
 worker-original credits BEFORE worker parsing/serialization; no extra pool.
 Stored Offer must equal its prescribed round-trip serialization and exact key.
 No current capacity/profile gate prevents observing an already-possible delivery.
+Preserve the original Offer's shared node/depth/collection limits independently.
+The closed {key,offer} carrier adds exactly9 nodes and1 depth; the worker result
+envelope adds another4 nodes and1 depth. captureDispatchOfferReply owns closed
+descriptor capture, original subtree validation, exact identity and byte accounting
+for SQL, worker producer and parent consumer. Never reapply the original-root JSON
+cap to those carriers or widen the generic codec. Two original slots bound count;
+stored text, encoder parts/string, parsed copies and native clones need their own
+bounded accounting and qualification; they are not exactly2MiB resident memory.
 
 claim(key) has a compact request/reply <=64KiB. claimed and replay permit PUT of
 that same original; acknowledged forbids a new PUT; blocked carries a typed reason.
@@ -38,6 +46,11 @@ observe({key,snapshot}) request <=75776 bytes; reply <=1MiB. Snapshot itself is
 bounded by the existing 73728-byte merge owner. Keys never become remote evidence.
 All original requests/replies remain owned through completion or worker termination;
 parent timeout fences that Metadata owner, not proof of rollback or cancellation.
+Internal operation/reply control fields allow <=1024 extra bytes, independently of
+the unchanged private request/value bounds; they grant no larger original subtree.
+The composition root supplies the matched trusted worker; its fixed reply producer
+bounds payloads before native cloning. Receiver validation is not a sandbox for
+arbitrary worker code or an independently bounded native structured-clone stream.
 
 ## Persistent intent and initial enqueue
 

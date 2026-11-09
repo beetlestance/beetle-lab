@@ -1,4 +1,6 @@
 import type { RunConfiguration, RunCommand, RunKey, RunList } from '../../../ports/runs.js';
+import type { DispatchKey, DispatchScan, DispatchObservationRequest, DispatchPage,
+  DispatchOffer, DispatchClaim, DispatchObservation } from '../../../ports/dispatch.js';
 import type { Run, RunPage } from '@beetle/contracts/api';
 import type { InputCommand, InputAdvance, InputKey, InputList, InputRecoveryPage, InputRecord, InputReceipt, InputPage, InputStorage } from '../../../ports/inputs.js';
 import type { Suite, SuiteRevision, SuitePage, SuiteRevisionPage } from '@beetle/contracts/api';
@@ -12,8 +14,9 @@ import type { SettingsCommand, SettingsChange } from '../../../ports/settings.js
 import type { SettingsIdentity } from '../../../ports/settings-reader.js';
 import type { InstallationRecord } from '../../../domain/settings/index.js';
 
-export type ErrorCode = 'invalid_input' | 'invalid_value' | 'not_found' | 'conflict' |
-  'capacity_unavailable' | 'queue_full' | 'closed' | 'unavailable' | 'owned' | 'schema_newer';
+export const STORAGE_ERROR_CODES = Object.freeze(['invalid_input', 'invalid_value', 'not_found', 'conflict',
+  'capacity_unavailable', 'queue_full', 'closed', 'unavailable', 'owned', 'schema_newer'] as const);
+export type ErrorCode = typeof STORAGE_ERROR_CODES[number];
 export class StorageError extends Error {
   constructor(readonly code: ErrorCode) { super(`Storage ${code}`); this.name = 'StorageError'; }
 }
@@ -21,6 +24,10 @@ import type { RuntimeObservation } from '../../../ports/runtime.js';
 export type { RuntimeObservation } from '../../../ports/runtime.js';
 export type SettingsView = InstallationSettings | OrganizationSettings | WorkspaceSettings;
 export type Operation =
+  | { kind: 'dispatchScan'; query: DispatchScan }
+  | { kind: 'dispatchReadOffer'; key: DispatchKey }
+  | { kind: 'dispatchClaim'; key: DispatchKey }
+  | { kind: 'dispatchObserve'; request: DispatchObservationRequest }
   | { kind: 'run'; command: RunCommand }
   | { kind: 'getRun'; key: RunKey }
   | { kind: 'listRuns'; query: RunList }
@@ -43,7 +50,7 @@ export type Operation =
   | { kind: 'getSettingsIdentity'; scope: SettingsScope }
   | { kind: 'runtime'; runtime: RuntimeObservation | null }
   | { kind: 'close' };
-export type Value = Run | RunPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
+export type Value = DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
 export type Command = Operation & { messageId: number };
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; messageId: number; ok: true; value: Value } |

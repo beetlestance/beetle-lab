@@ -1,4 +1,5 @@
 import { checkedRunOperation } from './run-validation.js';
+import { captureDispatchOperation, dispatchOperation, dispatchRequestLimit, dispatchReplyLimit } from './dispatch-wire.js';
 import { checkedRunConfiguration } from './run-profiles.js';
 import { checkedInputOperation } from './input-validation.js';
 import { MAX_MESSAGE_BYTES, boundedCopy, checkedScope, uuid, sha256 } from './input-values.js';
@@ -111,6 +112,7 @@ function checkedExtendedOperation(operation: Operation): boolean {
 }
 export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operation {
   const operation = boundedCopy(input, operationMessageLimit(input));
+  if (dispatchOperation(operation)) return captureDispatchOperation(operation);
   if (checkedExtendedOperation(operation)) return operation;
   switch (operation.kind) {
     case 'namespace': checkedNamespace(operation); break;
@@ -137,7 +139,17 @@ function dataProperty(value: unknown, key: string): unknown {
   return descriptor && 'value' in descriptor ? descriptor.value : undefined;
 }
 export function operationMessageLimit(operation: Operation): number {
+  if (dispatchOperation(operation)) return dispatchRequestLimit(operation);
   if (dataProperty(operation, 'kind') !== 'suite') return MAX_MESSAGE_BYTES;
   const command = dataProperty(operation, 'command');
   return dataProperty(command, 'kind') === 'createSuiteRevision' ? 2097152 : MAX_MESSAGE_BYTES;
+}
+
+/** One existing two-original allowance is shared by suites and original Offers. */
+export function largeOperation(operation: Operation): boolean {
+  return suiteOperation(operation) || dataProperty(operation, 'kind') === 'dispatchReadOffer';
+}
+export function operationReplyLimit(operation: Operation): number {
+  if (dispatchOperation(operation)) return dispatchReplyLimit(operation);
+  return operation.kind === 'getRevision' ? 2_097_152 : Math.max(1_048_576, operationMessageLimit(operation));
 }
