@@ -1,0 +1,3 @@
+.input-download { display: grid; gap: var(--space-3); min-width: 0; }
+.input-download .actions { align-items: center; }
+.input-download .notice { padding: var(--space-3); }
