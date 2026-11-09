@@ -1,3 +1,4 @@
+import { estimateStaging as sharedEstimate, serializeStagedOffer as sharedSerialize } from '@beetle/contracts';
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
 import { estimateStaging, serializeStagedOffer, stagingPolicy, supportedStaging } from '../../src/admission/index.js';
@@ -80,4 +81,8 @@ it('rejects unpublished pending records missing the cost policy before reserving
   journal = await f.open(path);
   expect(await f.admit(journal, offer)).toEqual({ kind: 'reject', reason: 'staging_policy' });
   await expect(journal.admission({ kind: 'reservation', key: scope(offer) })).rejects.toMatchObject({ code: 'not_found' });
+});
+
+it('re-exports the shared estimator and serializer without a parallel policy', () => {
+  expect(estimateStaging).toBe(sharedEstimate); expect(serializeStagedOffer).toBe(sharedSerialize);
 });

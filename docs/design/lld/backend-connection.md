@@ -97,6 +97,13 @@ and retains its own original promise. No exception details or URL/token leaks.
 
 ports/runtime.ts owns RuntimeObservation and CapacitySource. Keep the SQLite
 adapter's existing type re-export; there is one private observation ABI.
+Required execution:{stagingBytes,perRunStagingBytes} carries agent total/per-run
+staging limits from the same validated frame and lease. Both are positive safe
+integers <=floor(MAX_SAFE_INTEGER/256), with per-run <=total; no extra keys.
+These are separate from backend storage and are not advertised free disk.
+RuntimeCapacity.currentObservation returns the immutable complete fresh fact;
+snapshot uses that same freshness check for display ceilings. Shared policy1
+estimateStaging includes Offer JSON, inputs, secrets, manifest and metadata.
 One source sample at a time, no waiting queue. Keep one bounded fingerprint and
 scalar ordering/revocation fences for the original capability frame: identical
 equal-source replay cannot renew it; changed equal-time or older frames revoke,

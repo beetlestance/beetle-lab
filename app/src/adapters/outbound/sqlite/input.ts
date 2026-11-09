@@ -19,9 +19,19 @@ function checkedObservationTime(observation: RuntimeObservation, ttl: number): v
   requireRule(Number.isSafeInteger(observation.expiresAtMs) && observation.expiresAtMs > now &&
     observation.expiresAtMs <= 8640000000000000);
 }
+function checkedExecution(execution: RuntimeObservation['execution']): void {
+  requireRule(execution !== null && typeof execution === 'object' &&
+    Object.keys(execution).length === 2 && Object.hasOwn(execution, 'stagingBytes') &&
+    Object.hasOwn(execution, 'perRunStagingBytes'));
+  const maximum = Math.floor(Number.MAX_SAFE_INTEGER / 256);
+  requireRule(Number.isSafeInteger(execution.stagingBytes) && execution.stagingBytes > 0 &&
+    execution.stagingBytes <= maximum && Number.isSafeInteger(execution.perRunStagingBytes) &&
+    execution.perRunStagingBytes > 0 && execution.perRunStagingBytes <= execution.stagingBytes);
+}
 export function checkedRuntime(observation: RuntimeObservation | null, ttl = 5000): void {
   if (observation === null) return;
   checkedObservationTime(observation, ttl);
+  checkedExecution(observation.execution);
   const runtime = observation.ceilings;
   requireRule(runtime !== undefined && validateApi('PoolCapacity', runtime.pool).ok && validateApi('Budget', runtime.perRun).ok);
   requireRule(Array.isArray(runtime.supportedProfiles) && runtime.supportedProfiles.length >= 1 &&

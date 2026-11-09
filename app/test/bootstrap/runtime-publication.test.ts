@@ -5,7 +5,7 @@ import type { ErrorCode } from '../../src/adapters/outbound/sqlite/index.js';
 import { settingsFixture } from '../domain/fixtures.js';
 import { RuntimeCapacity } from '../../src/adapters/outbound/sqlite/runtime.js';
 import { SemanticError } from '../../src/domain/namespaces/index.js';
-const value = () => ({ ceilings: settingsFixture().runtime, observedAtMs: 100, expiresAtMs: 1100 });
+const value = () => ({ execution: { stagingBytes: 10485760, perRunStagingBytes: 2097152 }, ceilings: settingsFixture().runtime, observedAtMs: 100, expiresAtMs: 1100 });
 it('publishes original source time and does not retry a rejected operation', async () => {
   const updateRuntime = vi.fn().mockResolvedValue(null); const publish = createRuntimePublisher({ updateRuntime });
   const source = value(); expect(await publish(source)).toBe(true);
@@ -38,7 +38,7 @@ it('refuses a nonnull update on actual cache clock rollback while acknowledging 
   try {
     const fixture = settingsFixture();
     const cache = new RuntimeCapacity({ installation: fixture.chain.installation,
-      runtime: { ceilings: fixture.runtime, observedAtMs: 10000, expiresAtMs: 11000 } });
+      runtime: { execution: { stagingBytes: 10485760, perRunStagingBytes: 2097152 }, ceilings: fixture.runtime, observedAtMs: 10000, expiresAtMs: 11000 } });
     clock.mockReturnValue(10100); expect(cache.snapshot()).not.toBeNull();
     clock.mockReturnValue(10050);
     const publish = createRuntimePublisher({ updateRuntime: async fact => {
@@ -49,10 +49,10 @@ it('refuses a nonnull update on actual cache clock rollback while acknowledging 
         throw error;
       }
     } });
-    expect(await publish({ ceilings: fixture.runtime, observedAtMs: 10050, expiresAtMs: 11050 })).toBe(false);
+    expect(await publish({ execution: { stagingBytes: 10485760, perRunStagingBytes: 2097152 }, ceilings: fixture.runtime, observedAtMs: 10050, expiresAtMs: 11050 })).toBe(false);
     expect(cache.snapshot()).toBeNull();
     expect(await publish(null)).toBe(true);
     clock.mockReturnValue(10101);
-    expect(await publish({ ceilings: fixture.runtime, observedAtMs: 10101, expiresAtMs: 11101 })).toBe(true);
+    expect(await publish({ execution: { stagingBytes: 10485760, perRunStagingBytes: 2097152 }, ceilings: fixture.runtime, observedAtMs: 10101, expiresAtMs: 11101 })).toBe(true);
   } finally { clock.mockRestore(); }
 });
