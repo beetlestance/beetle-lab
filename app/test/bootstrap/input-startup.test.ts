@@ -1,3 +1,4 @@
+import { offlineAgentFixture } from './agent-fixture.js';
 import { afterEach, expect, it } from 'vitest';
 import { mkdir, realpath, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -12,7 +13,11 @@ import { inputCommand, inputOptions, transition } from '../storage/inputs-fixtur
 
 const fixture = storageFixture();
 const applications = new Set<Application>();
-afterEach(async () => { await Promise.all([...applications].map(app => app.close())); applications.clear(); });
+const agentCloses: (() => Promise<void>)[] = [];
+afterEach(async () => {
+  await Promise.all([...applications].map(app => app.close())); applications.clear();
+  await Promise.all(agentCloses.splice(0).map(close => close()));
+});
 const origin = 'http://127.0.0.1:43127';
 const base = `/api/v2/organizations/${scope.organizationId}/workspaces/${scope.workspaceId}/inputs`;
 async function configuration() {
@@ -20,7 +25,8 @@ async function configuration() {
   const directory = join(root, `installation-${requestId()}`); await mkdir(directory, { mode: 0o700 });
   const config = join(directory, 'installation.json');
   await writeFile(config, JSON.stringify(inputOptions().installation), { mode: 0o600 });
-  return loadBackendConfiguration({ BEETLE_CONFIG_FILE: config, BEETLE_DATA_DIR: directory,
+  const agent = await offlineAgentFixture(directory, inputOptions().installation); agentCloses.push(agent.close);
+  return loadBackendConfiguration({ BEETLE_AGENT_CONFIG_FILE: agent.path, BEETLE_CONFIG_FILE: config, BEETLE_DATA_DIR: directory,
     BEETLE_EXTERNAL_ORIGIN: origin }, fixture.workerUrl());
 }
 async function start(config: Awaited<ReturnType<typeof configuration>>) {

@@ -1,3 +1,4 @@
+import { loadAgentConfiguration } from './agent-configuration.js';
 import { constants } from 'node:fs';
 import { access, open, realpath, stat } from 'node:fs/promises';
 import type { FileHandle } from 'node:fs/promises';
@@ -7,12 +8,13 @@ import type { InstallationRecord } from '../domain/settings/index.js';
 import type { ApplicationOptions } from './api.js';
 
 export class BootstrapError extends Error {
-  constructor(readonly code: 'configuration' | 'data_directory' | 'listener') {
-    super('Backend startup failed'); this.name = 'BootstrapError';
+  constructor(readonly code: 'configuration' | 'data_directory' | 'listener', options?: ErrorOptions) {
+    super('Backend startup failed', options); this.name = 'BootstrapError';
   }
 }
 export interface BackendEnvironment {
   readonly BEETLE_CONFIG_FILE?: string;
+  readonly BEETLE_AGENT_CONFIG_FILE?: string;
   readonly BEETLE_DATA_DIR?: string;
   readonly BEETLE_EXTERNAL_ORIGIN?: string;
   readonly BEETLE_LISTEN_HOST?: string;
@@ -76,18 +78,24 @@ function listener(environment: BackendEnvironment): BackendConfiguration['listen
   if (port > 65535) throw new BootstrapError('listener');
   return Object.freeze({ host, port });
 }
+async function agentConnection(path: string, installationId: string) {
+  try { return await loadAgentConfiguration(path, installationId); }
+  catch (error) { throw new BootstrapError('configuration', { cause: error }); }
+}
 /** Installation-owned config and private existing data root only. No guessed
- * machine capacity: the agent must later supply actual fresh observations.
+ * machine capacity: actual source observations are published after startup.
  */
 export async function loadBackendConfiguration(environment: BackendEnvironment, workerUrl: URL): Promise<BackendConfiguration> {
   const listen = listener(environment);
   const config = absolute(environment.BEETLE_CONFIG_FILE);
+  const agentConfig = absolute(environment.BEETLE_AGENT_CONFIG_FILE);
   const root = absolute(environment.BEETLE_DATA_DIR);
   const externalOrigin = environment.BEETLE_EXTERNAL_ORIGIN;
   if (!externalOrigin || externalOrigin.length > 2048) throw new BootstrapError('configuration');
   const record = await readInstallation(config);
   const directory = await dataDirectory(root);
+  const connection = await agentConnection(agentConfig, record.id);
   return Object.freeze({ listen, application: { externalOrigin,
-    inputsDirectory: join(directory, 'inputs'),
+    inputsDirectory: join(directory, 'inputs'), agent: { connection, dataRoot: directory },
     metadata: { path: join(directory, 'metadata.sqlite'), workerUrl, installation: record, runtime: null } } });
 }

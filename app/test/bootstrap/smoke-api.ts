@@ -1,3 +1,4 @@
+import { offlineAgentFixture } from './agent-fixture.js';
 import { spawn } from 'node:child_process';
 import type { ChildProcessByStdio } from 'node:child_process';
 import type { Readable } from 'node:stream';
@@ -60,8 +61,9 @@ async function run(root: string, port: number): Promise<void> {
   installation.values.pool.storageBytes = 2_000_000;
   await writeFile(join(root, 'installation.json'), JSON.stringify(installation), { mode: 0o600 });
   const origin = `http://127.0.0.1:${port}`;
+  const agent = await offlineAgentFixture(root, installation);
   const child = spawn(process.execPath, ['app/dist/main.js'], { cwd: process.cwd(), env: {
-    PATH: process.env.PATH ?? '', BEETLE_CONFIG_FILE: join(root, 'installation.json'),
+    BEETLE_AGENT_CONFIG_FILE: agent.path, PATH: process.env.PATH ?? '', BEETLE_CONFIG_FILE: join(root, 'installation.json'),
     BEETLE_DATA_DIR: join(root, 'data'), BEETLE_EXTERNAL_ORIGIN: origin, BEETLE_LISTEN_PORT: String(port),
   }, stdio: ['ignore', 'pipe', 'pipe'] });
   let closed = false;
@@ -75,6 +77,7 @@ async function run(root: string, port: number): Promise<void> {
   } finally {
     clearTimeout(timer);
     if (!closed) { child.kill('SIGKILL'); await termination; }
+    await agent.close();
   }
 }
 const port = await ownedPort();

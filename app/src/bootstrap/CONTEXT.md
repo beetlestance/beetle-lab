@@ -1,6 +1,6 @@
 # Application composition
 
-`openApplication({externalOrigin,metadata,inputsDirectory?})` opens the real SQLite worker, strict
+`openApplication({externalOrigin,metadata,inputsDirectory?,agent?})` opens the real SQLite worker, strict
 Fastify schema/error adapter, local session routes and guarded namespace/settings
 plugins. It creates no listener and does not launch agents or engines.
 Caller supplies compiled metadata worker URL, stable installation record and an
@@ -12,12 +12,12 @@ guarded input routes and one pending-only recovery scheduler. Omitted input root
 disable these routes for existing composition tests; no fake byte service is used.
 Root initialization is serialized per process. Unknown directory close retains
 its handle and pending startup; subsequent initialization is fenced, without retry.
-`close` retires session authority, starts HTTP/file drains together, then closes metadata,
+`close` retires session authority, drains HTTP/agent/file originals before metadata,
 and retains its original promise. Closing the returned server also closes storage.
 Startup failure retires authority and awaits cleanup; no successful partial handle.
 No generic service container, fake capacity or legacy app dependency is introduced.
-`configuration.ts` reads <=32KiB of installation JSON from BEETLE_CONFIG_FILE,
-rejects writable/symlink/nonregular config and requires an owned mode0700 data root.
+`configuration.ts` reads settings plus required BEETLE_AGENT_CONFIG_FILE and its private token;
+it requires a canonical owned mode0700 data root and validated installed-profile pins.
 BEETLE_EXTERNAL_ORIGIN is required; normal listener defaults127.0.0.1:4311.
 `main.ts` prints the one-time token only after binding, handles INT/TERM, and
 uses private umask. Explicit0.0.0.0 is for the private backend container network.
@@ -28,5 +28,5 @@ Check: npx vitest run app/test/bootstrap app/src/bootstrap/api.integration.test.
 
 `runtime-poller.ts` owns one sample/publication at a time and coalesces unknown
 periods; `runtime-publication.ts` preserves explicit SQLite refusal versus failure.
-These helpers do not yet enable executable connection or dispatch. Polling contract:
+`agent-runtime.ts` wires actual HTTP/source/polling and ordered shutdown; dispatch remains pending. Contract:
 [Runtime polling](../../../docs/design/lld/runtime-polling.md).

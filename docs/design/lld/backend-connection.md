@@ -1,6 +1,6 @@
 # Backend connection to the execution agent
 
-Status: implementation contract; executable connection and dispatch are pending.
+Status: components and executable connection implemented; qualification and dispatch remain pending.
 This owns private configuration, backend HTTP custody and combined capacity facts.
 [Agent HTTP](agent-http.md) owns remote routes/auth; [capacity wire](capacity-wire.md)
 owns source evidence; [run intake](run-intake.md) owns immutable execution intent.
@@ -59,6 +59,18 @@ and openCapacitySource(options: CapacitySourceOptions): Promise<CapacitySource>
 in outbound/capacity. Port types own their inputs; bootstrap wires these factories.
 The capacity source owns its root handles and samples, while the gateway remains
 shared and is closed separately by bootstrap. Neither discovers environment values.
+
+openApplication optionally receives agent:{connection,dataRoot}, privately captured
+before awaits. The data root must be the metadata parent and configured input root
+parent; the installation identity must agree. Agent mode starts metadata unknown
+and uses the captured private profile registry. Programmatic authoring may omit it.
+Normal executable loading requires the agent file and supplies this option.
+[Publication loop](runtime-polling.md) owns sampling and SQLite refusal/recovery.
+Shutdown drains that loop/source, then gateway, before closing metadata, preserving
+all failure causes. Repeated propagation of the same error object preserves its
+original identity; distinct failures still aggregate. server.close follows the
+same owned-resource path. Input paths are captured before any startup await.
+runtimeState is bounded publication diagnostics, not permission to dispatch.
 
 ## Original HTTP custody
 
