@@ -2,15 +2,13 @@
 
 Entrypoint: `index.ts`; JSON Schema 2020-12 sources: `../../api/v2`.
 `apiSchemas` is a deeply frozen complete closure: API modules and runner common once.
-`apiMessageSchemas` maps public names to references; `ApiTypes` is schema-derived.
-`apiOperations` describes routes, UUID parameter objects, queries and status/schema names.
-Run enqueue/detail/page DTOs are defined; route implementation remains separate.
-See docs/design/lld/run-intake.md for pinned intent, receipt replay and queue bounds.
+`apiMessageSchemas` maps public schema names; `ApiTypes` is schema-derived.
+`apiOperations` describes routes, UUID parameters, queries and status/schema names.
+Run DTOs are defined; routes remain separate. Run-intake LLD owns receipt replay and queue bounds.
 `createApiClient`/`createApiHttpTransport` bind descriptors; see `client/CONTEXT.md` for effects/limits.
 `validateApi` validates already-parsed JSON without coercion, defaults or field removal;
 success preserves the reference. Failure exposes <=16 frozen structural path/code issues.
 HTTP owners bound parsing/serialization, reject accessors and apply strict response validation.
-
 Entities include UUID/version and owner scope. Workspace rootFolderId is a real folder;
 only that root may have null parent. Names/path segments are display data, never host paths.
 Consumers MUST compare route/body/result ownership, every parent and page item scope,
