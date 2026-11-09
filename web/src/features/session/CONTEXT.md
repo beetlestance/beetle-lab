@@ -9,4 +9,8 @@ Unknown pairing first reads session once; the one-time token is never replayed.
 Logout aborts resources before sending its separately scoped request. Unknown
 logout requires an explicit status read. Retired responses cannot restore App.
 Transport deadlines/bounds stay with the existing typed API client.
+Paired state includes one bounded input-transfer client. Epoch abort retires it;
+replacement waits for original fetch/read/cancel/crypto work to drain. Failed
+cleanup fences replacement until the browser view is reloaded. Byte-route401
+retires authority; late response bodies stay with the byte client's cleanup owner.
 Check: NODE_OPTIONS=--max-old-space-size=1024 npx --no-install vitest run web/src/features/session --maxWorkers=2.

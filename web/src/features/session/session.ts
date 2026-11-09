@@ -1,12 +1,13 @@
-import { createApiClient } from '@beetle/contracts/api';
-import type { ApiClient, ApiClientResult, BrowserSession } from '@beetle/contracts/api';
+import { createApiClient, createInputTransferClient } from '@beetle/contracts/api';
+import type { ApiClient, ApiClientResult, BrowserSession, InputTransferClient } from '@beetle/contracts/api';
 import { unknownOutcome } from '../../app/api.js';
+import { SessionTransferOwner } from './transfer-owner.js';
 
 export interface SessionOptions { baseUrl: string; fetch?: typeof fetch }
 export type SessionState =
   | { kind: 'checking' | 'pairing' | 'logging-out'; message: string }
   | { kind: 'unpaired' | 'unavailable'; message: string }
-  | { kind: 'paired'; session: BrowserSession; client: ApiClient; generation: number };
+  | { kind: 'paired'; session: BrowserSession; client: ApiClient; transfers: InputTransferClient; generation: number };
 interface Epoch { generation: number; abort: AbortController }
 const restart = 'Restart the local service to get a fresh startup token if the previous token was used or expired.';
 const lostPair = 'The pairing outcome is unknown. The one-time token may have been consumed.';
@@ -18,6 +19,7 @@ export class BrowserSessionGate {
   private epoch: Epoch = { generation: 0, abort: new AbortController() };
   private listeners = new Set<() => void>();
   private active = false;
+  private readonly transfers = new SessionTransferOwner(createInputTransferClient);
   constructor(private readonly options: SessionOptions) {}
   getSnapshot = () => this.state;
   subscribe = (listener: () => void) => {
@@ -58,10 +60,27 @@ export class BrowserSessionGate {
     };
     return createApiClient({ ...this.options, fetch: scopedFetch, headers });
   }
-  private accept(epoch: Epoch, session: BrowserSession) {
+  private transferFetch(epoch: Epoch): typeof fetch {
+    const fetcher = this.options.fetch ?? fetch;
+    return async (input, init) => {
+      const reply = await fetcher(input, init);
+      if (reply.status === 401 && this.current(epoch)) this.begin({ kind: 'unpaired', message: `${lostWrite} ${restart}` });
+      // The byte client owns late response body cancellation and its original promise.
+      return reply;
+    };
+  }
+  private async accept(epoch: Epoch, session: BrowserSession) {
     if (!this.current(epoch)) return;
-    const client = this.client(epoch, { 'X-Beetle-CSRF': session.csrfToken }, true);
-    this.publish({ kind: 'paired', session, client, generation: epoch.generation });
+    try {
+      const transfers = await this.transfers.open({ baseUrl: this.options.baseUrl,
+        headers: { 'X-Beetle-CSRF': session.csrfToken }, fetch: this.transferFetch(epoch) }, epoch.abort.signal);
+      if (!transfers || !this.current(epoch)) return;
+      const client = this.client(epoch, { 'X-Beetle-CSRF': session.csrfToken }, true);
+      this.publish({ kind: 'paired', session, client, transfers, generation: epoch.generation });
+    } catch {
+      if (this.current(epoch)) this.publish({ kind: 'unavailable',
+        message: 'The session could not open its transfers. Reload this page before continuing. Unacknowledged changes may have committed.' });
+    }
   }
   check = () => {
     const epoch = this.begin({ kind: 'checking', message: 'Checking local session…' });
@@ -70,7 +89,7 @@ export class BrowserSessionGate {
   private async readSession(epoch: Epoch, context = '') {
     const result = await this.client(epoch).getBrowserSession({ signal: epoch.abort.signal });
     if (!this.current(epoch)) return;
-    if (result.ok) { this.accept(epoch, result.value); return; }
+    if (result.ok) { await this.accept(epoch, result.value); return; }
     const unpaired = result.error.status === 401;
     this.publish({ kind: unpaired ? 'unpaired' : 'unavailable', message: unpaired
       ? `${context} Pair this browser with the token printed at local startup. ${restart}`
@@ -87,7 +106,7 @@ export class BrowserSessionGate {
   private async finishPair(epoch: Epoch, pending: Promise<ApiClientResult<BrowserSession>>) {
     const result = await pending;
     if (!this.current(epoch)) return;
-    if (result.ok) { this.accept(epoch, result.value); return; }
+    if (result.ok) { await this.accept(epoch, result.value); return; }
     if (unknownOutcome(result.error)) {
       this.publish({ kind: 'checking', message: `${lostPair} Checking session status…` });
       await this.readSession(epoch, lostPair);

@@ -15,7 +15,7 @@ export function SessionApp(options: SessionOptions) {
       <span>Local administrator · expires <time dateTime={state.session.expiresAt}>{state.session.expiresAt} UTC</time></span>
       <button onClick={gate.logout}>Sign out</button>
     </div>
-    <App key={state.generation} apiClient={state.client} />
+    <App key={state.generation} apiClient={state.client} inputTransfers={state.transfers} />
   </>;
   return <main className="session-page" id="main" tabIndex={-1}>
     <section className="session-panel" aria-labelledby="session-title">
