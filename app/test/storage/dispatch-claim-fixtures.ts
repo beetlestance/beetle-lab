@@ -58,7 +58,7 @@ export function claimsFixture() {
     db.prepare("UPDATE settings SET value_json=? WHERE scope_key='installation'").run(JSON.stringify(values));
   }
   function release(key: DispatchKey): void {
-    observations.observe({ key, snapshot: snapshotFor(key, { admission: { state: 'released', disposition: 'settled' } }) });
+    observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { admission: { state: 'released', disposition: 'settled' } }) });
   }
   return { db, store, settings, config, claims, reads, observations, runtime, add, addOther, policy, release,
     original: () => enqueue(db, store) };

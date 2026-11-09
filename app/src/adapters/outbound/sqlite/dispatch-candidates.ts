@@ -3,6 +3,7 @@ import type { DispatchKey } from '../../../ports/dispatch.js';
 import { MAX_DISPATCH_CHARGED, MAX_DISPATCH_PENDING } from '../../../ports/dispatch.js';
 import { captureDispatchKey } from './dispatch-values.js';
 import { StorageError } from './protocol.js';
+import { checkedJournalAuthority } from './input-values.js';
 
 export interface DispatchFact {
   attempt_id: string; run_id: string; organization_id: string; workspace_id: string; intent_digest: string;
@@ -13,7 +14,7 @@ export interface DispatchFact {
   foundation_owned: number; attempt_marker: string | null; outbox_marker: string | null;
   possible_delivery: number | null; first_delivery_at: string | null;
   record_id: string | null; execution_charged: number | null; acknowledged_generation: number | null;
-  delivery_attempt_id: string | null; snapshot_present: number; output_id: string | null;
+  journal_authority: string | null; delivery_attempt_id: string | null; snapshot_present: number; output_id: string | null;
   maximum_payload_bytes: number | null; metadata_bytes: number | null; charged_bytes: number | null;
 }
 const columns = `a.id attempt_id,a.run_id,a.organization_id,a.workspace_id,a.intent_digest,
@@ -21,6 +22,7 @@ const columns = `a.id attempt_id,a.run_id,a.organization_id,a.workspace_id,a.int
  i.output_bytes,i.staging_bytes,i.mode,r.state,(r.active_attempt_id=a.id) current_attempt,r.cancellation_requested,r.version,a.generation,a.foundation_owned,
  a.execution_intent_id attempt_marker,d.execution_intent_id outbox_marker,d.possible_delivery,d.first_delivery_at,
  e.attempt_id record_id,e.execution_charged,e.acknowledged_generation,e.delivery_attempt_id,
+ CASE WHEN length(CAST(e.journal_authority AS BLOB))=36 THEN e.journal_authority ELSE NULL END journal_authority,
  (e.snapshot_json IS NOT NULL) snapshot_present,o.attempt_id output_id,o.maximum_payload_bytes,o.metadata_bytes,o.charged_bytes`;
 const joins = `JOIN runs r ON r.id=a.run_id AND r.organization_id=a.organization_id AND r.workspace_id=a.workspace_id
  LEFT JOIN execution_intents i ON i.attempt_id=a.id
@@ -73,7 +75,7 @@ function requireReplayCustody(row: DispatchFact): void {
     && row.outbox_marker === row.attempt_id && row.first_delivery_at !== null;
   if (!replay) throw new StorageError('unavailable');
 }
-export function retainedClaim(row: DispatchFact): 'acknowledged' | 'replay' | null {
+export function retainedClaim(row: DispatchFact): 'acknowledged' | 'replay' | 'unbound' | null {
   if (row.record_id === null) {
     if ((row.queue_order !== null && row.possible_delivery === 1) || row.output_id !== null) throw new StorageError('unavailable');
     return null;
@@ -81,8 +83,13 @@ export function retainedClaim(row: DispatchFact): 'acknowledged' | 'replay' | nu
   requireOutputCustody(row);
   if (row.acknowledged_generation === 1) {
     requireAcknowledgedCustody(row);
-    return 'acknowledged';
+    return authority(row) ? 'acknowledged' : 'unbound';
   }
   requireReplayCustody(row);
-  return 'replay';
+  return authority(row) ? 'replay' : 'unbound';
+}
+function authority(row: DispatchFact): boolean {
+  if (row.journal_authority === null) return false;
+  checkedJournalAuthority(row.journal_authority);
+  return true;
 }

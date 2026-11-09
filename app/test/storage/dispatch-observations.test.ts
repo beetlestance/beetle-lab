@@ -39,7 +39,7 @@ it('ACKs the owned prior delivery before deleting outbox and preserves original 
     CREATE TRIGGER check_projection AFTER UPDATE ON runs BEGIN
       SELECT CASE WHEN EXISTS(SELECT 1 FROM dispatch_outbox) THEN RAISE(ABORT,'bad projection order') END;
       INSERT INTO ack_order VALUES('run'); END;`);
-  const value = observations.observe({ key, snapshot: snapshotFor(key) });
+  const value = observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key) });
   expect(value).toMatchObject({ executionCharged: true, runChanged: true, run: {
     version: 2, state: 'active', outcome: 'pending', validationStatus: 'pending' } });
   expect(db.prepare('SELECT step FROM ack_order').all().map(row => row.step)).toEqual(['record', 'attempt', 'delete', 'run']);
@@ -52,13 +52,13 @@ it('ACKs the owned prior delivery before deleting outbox and preserves original 
 
 it('replays exact observations without version increments and copies retained output', () => {
   const incoming = snapshotFor(key);
-  const first = observations.observe({ key, snapshot: incoming });
+  const first = observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: incoming });
   incoming.cancelRequested = true;
-  const replay = observations.observe({ key, snapshot: snapshotFor(key) });
+  const replay = observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key) });
   expect(replay).toEqual({ ...first, runChanged: false });
   (first.snapshot as AttemptSnapshot).lastSeq = 999;
   first.run.state = 'finalizing';
-  expect(observations.observe({ key, snapshot: snapshotFor(key) })).toEqual(replay);
+  expect(observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key) })).toEqual(replay);
   expect(db.prepare('SELECT count(*) n FROM dispatch_outbox').get()?.n).toBe(0);
 });
 
@@ -69,7 +69,7 @@ it.each(retainedAdmissions)('retains execution and output charge without final p
   const patch = admission === undefined ? {} : { admission };
   for (const state of ['admitted', 'lost', 'exited'] as const) {
     const snapshot = snapshotFor(key, { ...patch, state, lastSeq: state === 'admitted' ? 1 : state === 'lost' ? 2 : 3 });
-    const value = observations.observe({ key, snapshot });
+    const value = observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot });
     expect(value.executionCharged).toBe(true);
     expect(value.run.outcome).toBe('pending');
     expect(value.run.validationStatus).toBe('pending');
@@ -84,9 +84,9 @@ it.each<AttemptAdmission>([{ state: 'released', disposition: 'settled' }, { stat
   const usage = db.prepare('SELECT * FROM installation_storage_usage').all();
   const costs = db.prepare('SELECT * FROM execution_intents').all();
   const snapshot = snapshotFor(key, { admission });
-  const value = observations.observe({ key, snapshot });
+  const value = observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot });
   expect(value).toMatchObject({ executionCharged: false, run: { state: 'finalizing', outcome: 'pending', validationStatus: 'pending' } });
-  expect(observations.observe({ key, snapshot: snapshotFor(key, { lastSeq: 2 }) })).toMatchObject({
+  expect(observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { lastSeq: 2 }) })).toMatchObject({
     executionCharged: false, runChanged: false, snapshot: { admission } });
   expect(db.prepare('SELECT * FROM attempt_output_allocations').all()).toEqual(output);
   expect(db.prepare('SELECT * FROM installation_storage_usage').all()).toEqual(usage);
@@ -96,12 +96,12 @@ it.each<AttemptAdmission>([{ state: 'released', disposition: 'settled' }, { stat
 });
 
 it('merges older admission enrichment independently of sequence without acknowledging event bytes', () => {
-  observations.observe({ key, snapshot: snapshotFor(key, { lastSeq: 7, retainedStartSeq: 3, admission: { state: 'charged' } }) });
-  const value = observations.observe({ key, snapshot: snapshotFor(key, { lastSeq: 2, retainedStartSeq: 2,
+  observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { lastSeq: 7, retainedStartSeq: 3, admission: { state: 'charged' } }) });
+  const value = observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { lastSeq: 2, retainedStartSeq: 2,
     admission: { state: 'released', disposition: 'settled' } }) });
   expect(value).toMatchObject({ executionCharged: false, snapshot: { lastSeq: 7, retainedStartSeq: 3 },
     run: { state: 'finalizing', version: 3 } });
-  const next = observations.observe({ key, snapshot: snapshotFor(key, { lastSeq: 8, retainedStartSeq: 8 }) });
+  const next = observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { lastSeq: 8, retainedStartSeq: 8 }) });
   expect(next.runChanged).toBe(false);
   expect(next.run.version).toBe(3);
   expect(next.snapshot.retainedStartSeq).toBe(8);
@@ -110,9 +110,9 @@ it('merges older admission enrichment independently of sequence without acknowle
 
 it.each([false, true])('ORs durable cancellation intent with remote cancellation (local %s)', local => {
   if (local) db.exec('UPDATE runs SET cancellation_requested=1');
-  const first = observations.observe({ key, snapshot: snapshotFor(key, { cancelRequested: !local }) });
+  const first = observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { cancelRequested: !local }) });
   expect(first.run.cancellationRequested).toBe(true);
-  const next = observations.observe({ key, snapshot: snapshotFor(key, { lastSeq: 2 }) });
+  const next = observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { lastSeq: 2 }) });
   expect(next.run.cancellationRequested).toBe(true);
   expect(next.runChanged).toBe(false);
 });
@@ -122,7 +122,7 @@ it.each(['finished', 'cancelled', 'errored'] as const)('preserves terminal %s Ru
   db.prepare('UPDATE runs SET state=?,outcome=?,validation_status=?,reason=?,cancellation_requested=?,version=17')
     .run(state, state === 'finished' ? 'passed' : 'inconclusive', state === 'finished' ? 'passed' : 'pending', reason, Number(state === 'cancelled'));
   const before = reads.get({ id: key.runId, scope: { kind: 'workspace', organizationId: key.attempt.organizationId, workspaceId: key.attempt.workspaceId } });
-  const value = observations.observe({ key, snapshot: snapshotFor(key, { lastSeq: 7, state: 'exited', cancelRequested: true,
+  const value = observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { lastSeq: 7, state: 'exited', cancelRequested: true,
     admission: { state: 'released', disposition: 'settled' } }) });
   expect(value).toMatchObject({ run: before, runChanged: false, executionCharged: false });
   expect(value.snapshot.cancelRequested).toBe(true);
@@ -138,11 +138,11 @@ it('reopens a persisted acknowledged database and replays without outbox or rech
     const original = enqueue(persisted, seedFoundation(persisted));
     transaction(persisted, () => reserveAndMark(persisted!, original.key));
     const first = new DispatchObservations(persisted, new RunReads(persisted, new Suites(persisted, new Entities(persisted))))
-      .observe({ key: original.key, snapshot: snapshotFor(original.key, { admission: { state: 'released', disposition: 'settled' } }) });
+      .observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key: original.key, snapshot: snapshotFor(original.key, { admission: { state: 'released', disposition: 'settled' } }) });
     persisted.close();
     persisted = initialize(path);
     const replay = new DispatchObservations(persisted, new RunReads(persisted, new Suites(persisted, new Entities(persisted))))
-      .observe({ key: original.key, snapshot: snapshotFor(original.key) });
+      .observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key: original.key, snapshot: snapshotFor(original.key) });
     expect(replay).toEqual({ ...first, runChanged: false });
     expect(persisted.prepare('SELECT count(*) n FROM dispatch_outbox').get()?.n).toBe(0);
     expect(persisted.prepare('PRAGMA foreign_key_check').all()).toEqual([]);

@@ -44,3 +44,21 @@ it('also refuses malformed policy at the worker boundary', () => {
       runtime: { ...observation(settingsFixture().runtime, 10000), execution: undefined } as never })).toThrow();
   } finally { clock.mockRestore(); }
 });
+it('keeps journal authority in the immutable lease and revokes changed equal-time identity', () => {
+  const clock = vi.spyOn(Date, 'now').mockReturnValue(10000);
+  try {
+    const source = observation(settingsFixture().runtime, 10000);
+    const runtime = new RuntimeCapacity({ installation: settingsFixture().chain.installation, runtime: source });
+    const original = runtime.currentObservation();
+    expect(original?.journalAuthority).toBe(source.journalAuthority);
+    expect(Object.isFrozen(original)).toBe(true);
+    const rotated = { ...source, journalAuthority: 'abcdefab-cdef-4abc-8def-abcdefabcdef' };
+    expect(() => runtime.update(rotated)).toThrow();
+    expect(runtime.currentObservation()).toBeNull();
+  } finally { clock.mockRestore(); }
+});
+it.each([undefined, null, '', 'bad', 'ABCDEFAB-CDEF-4ABC-8DEF-ABCDEFABCDEF',
+  'urn:uuid:abcdefab-cdef-4abc-8def-abcdefabcdef'])('refuses noncanonical journal authority at parent ingress: %s', async journalAuthority => {
+  const metadata = await fixture.open();
+  await expect(metadata.updateRuntime({ ...observation(), journalAuthority } as never)).rejects.toMatchObject({ code: 'invalid_input' });
+});

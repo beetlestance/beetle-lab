@@ -5,6 +5,7 @@ import { migration002 } from '../../src/adapters/outbound/sqlite/migration002.js
 import { migrate003 } from '../../src/adapters/outbound/sqlite/migration003.js';
 import { migration004 } from '../../src/adapters/outbound/sqlite/migration004.js';
 import { migration005 } from '../../src/adapters/outbound/sqlite/migration005.js';
+import { migration006 } from '../../src/adapters/outbound/sqlite/migration006.js';
 import { hasUntrackedOwnership } from '../../src/adapters/outbound/sqlite/execution-ownership.js';
 import { seedFoundation, enqueue } from './execution-foundation-fixtures.js';
 function legacy(): DatabaseSync {
@@ -27,7 +28,7 @@ it('upgrades004 byte-for-byte without adopting legacy enqueue and retains indexe
     db.exec("UPDATE dispatch_outbox SET possible_delivery=1,first_delivery_at='synthetic'; UPDATE runs SET state='errored',outcome='inconclusive',reason='execution_lost';");
     const tables = ['runs', 'attempts', 'dispatch_outbox', 'receipts'];
     const before = tables.map(table => db.prepare(`SELECT * FROM ${table}`).all());
-    transaction(db, () => db.exec(migration005));
+    transaction(db, () => db.exec(migration005)); transaction(db, () => db.exec(migration006));
     tables.forEach((table, i) => {
       const columns = Object.keys(before[i]![0]!);
       expect(db.prepare(`SELECT ${columns.join(',')} FROM ${table}`).all()).toEqual(before[i]);
@@ -49,7 +50,7 @@ it('fences generation-bearing legacy attempts with no outbox regardless of termi
   const db = legacy();
   try {
     db.exec("UPDATE attempts SET generation=1,state='exited'; DELETE FROM dispatch_outbox; UPDATE runs SET state='errored',outcome='inconclusive',reason='execution_lost';");
-    transaction(db, () => db.exec(migration005)); expect(hasUntrackedOwnership(db)).toBe(true);
+    transaction(db, () => db.exec(migration005)); transaction(db, () => db.exec(migration006)); expect(hasUntrackedOwnership(db)).toBe(true);
   } finally { db.close(); }
 });
 it('keeps unpublished legacy unavailable and atomically rolls back late005 failure', () => {
@@ -59,7 +60,7 @@ it('keeps unpublished legacy unavailable and atomically rolls back late005 failu
     expect(() => transaction(db, () => db.exec(migration005))).toThrow();
     expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(4);
     expect(db.prepare("SELECT name FROM sqlite_master WHERE name='execution_intents'").get()).toBeUndefined();
-    db.exec('DROP TABLE attempt_output_allocations'); transaction(db, () => db.exec(migration005));
+    db.exec('DROP TABLE attempt_output_allocations'); transaction(db, () => db.exec(migration005)); transaction(db, () => db.exec(migration006));
     expect(hasUntrackedOwnership(db)).toBe(false);
     expect(() => db.exec("UPDATE dispatch_outbox SET possible_delivery=1,first_delivery_at='synthetic'")).toThrow();
     expect(() => db.exec('UPDATE attempts SET foundation_owned=1')).toThrow();
@@ -85,7 +86,7 @@ it.each(['uncertain-outbox', 'acknowledged-outbox', 'acknowledged-no-outbox'])('
     if (witness !== 'acknowledged-no-outbox') db.exec("UPDATE dispatch_outbox SET possible_delivery=1,first_delivery_at='synthetic'");
     if (witness !== 'uncertain-outbox') db.exec('UPDATE attempts SET generation=1');
     if (witness === 'acknowledged-no-outbox') db.exec('DELETE FROM dispatch_outbox');
-    transaction(db, () => db.exec(migration005));
+    transaction(db, () => db.exec(migration005)); transaction(db, () => db.exec(migration006));
     const runs = db.prepare('SELECT * FROM runs').all();
     const attempts = db.prepare('SELECT * FROM attempts').all();
     const outbox = db.prepare('SELECT * FROM dispatch_outbox').all();

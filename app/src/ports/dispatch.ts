@@ -41,9 +41,9 @@ export interface DispatchPage {
   readonly nextCursor: string | null;
 }
 export interface DispatchOffer { readonly key: DispatchKey; readonly offer: Offer }
-export type DispatchClaim = { readonly kind: 'claimed' | 'replay'; readonly key: DispatchKey } |
-  { readonly kind: 'acknowledged' } | { readonly kind: 'blocked'; readonly reason: DispatchBlockReason };
-export interface DispatchObservationRequest { readonly key: DispatchKey; readonly snapshot: unknown }
+export type DispatchClaim = { readonly kind: 'claimed' | 'replay'; readonly key: DispatchKey; readonly journalAuthority: string } |
+  { readonly kind: 'acknowledged'; readonly journalAuthority: string } | { readonly kind: 'blocked'; readonly reason: DispatchBlockReason };
+export interface DispatchObservationRequest { readonly key: DispatchKey; readonly snapshot: unknown; readonly journalAuthority: string }
 export interface DispatchObservation {
   readonly run: Run;
   readonly snapshot: Readonly<AttemptSnapshot>;

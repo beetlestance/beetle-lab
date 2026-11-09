@@ -1,7 +1,8 @@
 # Durable application dispatch storage
 
 Status: SQL and metadata RPC implemented; installation dispatcher runtime pending.
-Owner: application SQLite worker. Migration005 is reserved here; do not edit004.
+Owner: application SQLite worker. Migration006 pins physical delivery authority;
+prior migrations are immutable.
 [Run intake](run-intake.md) owns immutable intent/receipt acceptance;
 [observation merge](attempt-observation.md) and [agent facts](agent-admission-evidence.md)
 own chronology and remote release evidence. No second merge/compiler in this adapter.
@@ -12,6 +13,15 @@ ports/dispatch.ts owns DispatchStore: scan, readOffer, claim and observe.
 DispatchKey contains runId and the exact original five-field attempt identity,
 including generation 1. Validate/bind every key/request/result at parent and worker.
 The interface is installation-private, with no browser route or credentials.
+RuntimeObservation carries the canonical journalAuthority from the same validated
+capability frame as its capacity lease. First claim persists it atomically in
+execution_records before possible delivery. Claimed/replay/acknowledged replies
+carry this stored UUID; capacity refresh never rebinds it. Observe additionally
+requires journalAuthority, matched before merge, ACK or charge release. UUIDs stay
+private transport/storage metadata, separate from DispatchKey and engine Offer.
+Migration006 leaves existing records NULL and immutable; they cannot adopt a new
+UUID or be observed/released automatically. Charged unbound ownership blocks fresh
+claims installation-wide and remains visible as ownership_unknown diagnostics.
 
 scan({lane,limit,cursor?}) returns <=limit items, allowed 1..32, reply <=64KiB.
 Each item has key, stable order, after continuation and advisory eligibility.
@@ -42,7 +52,7 @@ bounded accounting and qualification; they are not exactly2MiB resident memory.
 
 claim(key) has a compact request/reply <=64KiB. claimed and replay permit PUT of
 that same original; acknowledged forbids a new PUT; blocked carries a typed reason.
-observe({key,snapshot}) request <=75776 bytes; reply <=1MiB. Snapshot itself is
+observe({key,snapshot,journalAuthority}) request <=75776 bytes; reply <=1MiB. Snapshot itself is
 bounded by the existing 73728-byte merge owner. Keys never become remote evidence.
 All original requests/replies remain owned through completion or worker termination;
 parent timeout fences that Metadata owner, not proof of rollback or cancellation.
@@ -119,8 +129,8 @@ Use the same eligibility owner for advisory scan and authoritative claim.
 [Delivery authority](delivery-authority.md) additionally requires a durable journal
 authority bound atomically at first possible delivery and retained after ACK/outbox
 deletion. Claim replies and observations must carry/check that stored authority.
-This extension is not implemented yet; storage/RPC evidence does not authorize
-automatic network reoffers without it.
+Storage/RPC implements this binding. Automatic network delivery/reoffer remains
+pending; component evidence alone does not establish runtime recovery.
 
 The runtime may hold ONE captured Offer between readOffer, compact claim and network
 issue. No preloaded Offer backlog. A single non-overlapping delivery loop can admit

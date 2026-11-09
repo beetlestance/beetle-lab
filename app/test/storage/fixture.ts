@@ -19,7 +19,7 @@ export const digest = (value: string): string => createHash('sha256').update(val
 let request = 100000;
 export const requestId = (): string => uuid(++request);
 export function observation(ceilings: RuntimeCeilings = settingsFixture().runtime, observedAtMs = Date.now(), ttlMs = 5000): RuntimeObservation {
-  return { execution: { stagingBytes: 10485760, perRunStagingBytes: 2097152 }, ceilings, observedAtMs, expiresAtMs: observedAtMs + ttlMs };
+  return { journalAuthority: '33333333-3333-4333-8333-333333333333', execution: { stagingBytes: 10485760, perRunStagingBytes: 2097152 }, ceilings, observedAtMs, expiresAtMs: observedAtMs + ttlMs };
 }
 export const scope: WorkspaceScope = { kind: 'workspace', organizationId: uuid(1), workspaceId: uuid(2) };
 export function command<T extends NamespaceOperation>(operation: T): T & { intentDigest: string } {

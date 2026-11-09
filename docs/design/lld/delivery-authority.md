@@ -1,6 +1,7 @@
 # Delivery authority and supported recovery
 
-Status: journal/control-store and actual startup verified; runner wire under verification; backend/restore work pending.
+Status: journal/control-store, startup and runner wire locally verified;
+backend binding under review; dispatch and restore work pending.
 [Local foundation evidence](../../verification/authority-foundations.md).
 Owner: coordinator for the runner contract and migrations; agent journal for
 physical delivery authority; application dispatch for the immutable binding.

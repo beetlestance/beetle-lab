@@ -35,7 +35,7 @@ it('upgrades3 without changing prior namespace/settings/revision/receipt data an
   const path = join(root, 'upgrade.sqlite'); let db = prior(path); seed(db);
   const tables = ['organizations', 'workspaces', 'folders', 'settings', 'suites', 'suite_revisions', 'receipts'];
   const before = tables.map(table => db.prepare(`SELECT * FROM ${table}`).all()); db.close(); db = initialize(path);
-  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(5);
+  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(6);
   expect(tables.map(table => db.prepare(`SELECT * FROM ${table}`).all())).toEqual(before);
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]); db.close(); db = initialize(path);
   expect(db.prepare('SELECT count(*) AS n FROM runs').get()?.n).toBe(0); db.close();
@@ -71,9 +71,9 @@ it('enforces active-attempt ownership, immutable intent and monotonic possible-d
 });
 it('rejects future schema without changing retained data', () => {
   const path = join(root, 'future.sqlite'); let db = new DatabaseSync(path);
-  db.exec("PRAGMA user_version=6; CREATE TABLE canary(value TEXT); INSERT INTO canary VALUES('synthetic');"); db.close();
+  db.exec("PRAGMA user_version=7; CREATE TABLE canary(value TEXT); INSERT INTO canary VALUES('synthetic');"); db.close();
   expect(() => initialize(path)).toThrow(); db = new DatabaseSync(path);
-  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(6);
+  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(7);
   expect(db.prepare('SELECT * FROM canary').get()).toEqual({ value: 'synthetic' }); db.close();
 });
 it('retains possible-delivery evidence against deletion before an acknowledged generation', () => {

@@ -44,7 +44,8 @@ export class DispatchClaims {
       const retained = retainedClaim(row);
       if (query.lane === 'reconcile' && retained === null) throw new StorageError('unavailable');
       return { key: factKey(row), order: orderOf(row), after: encodeCursor({ ...cursor, after: position(row) }),
-        eligibility: retained !== null ? { kind: 'ready' as const } : policy!.evaluate(row, barrier) };
+        eligibility: retained === 'unbound' ? { kind: 'blocked' as const, reason: 'ownership_unknown' as const }
+          : retained !== null ? { kind: 'ready' as const } : policy!.evaluate(row, barrier) };
     });
     return boundedCopy({ items, nextCursor: remaining.length > items.length ? items.at(-1)!.after : null }, DISPATCH_PAGE_BYTES);
   }
@@ -76,25 +77,26 @@ export class DispatchClaims {
     const row = originalFact(this.db, key);
     if (row === undefined) return { kind: 'blocked', reason: 'not_queued' };
     const retained = retainedClaim(row);
-    if (retained === 'acknowledged') return { kind: 'acknowledged' };
-    if (retained === 'replay') return { kind: 'replay', key };
+    if (retained === 'unbound') return { kind: 'blocked', reason: 'ownership_unknown' };
+    if (retained === 'acknowledged') return { kind: 'acknowledged', journalAuthority: row.journal_authority! };
+    if (retained === 'replay') return { kind: 'replay', key, journalAuthority: row.journal_authority! };
     const pending = pendingFacts(this.db);
     const policy = new DispatchEligibilityOwner(this.db, this.settings, this.config);
     const decision = policy.evaluate(row, policy.barrier(pending));
     if (decision.kind === 'blocked') return decision;
     const runtime = policy.capacity.runtime;
     if (runtime === null || policy.storage === null) throw new CapacityLost();
-    this.persist(key, row, policy.storage);
+    this.persist(key, row, policy.storage, runtime.journalAuthority);
     // RuntimeCapacity returns the same frozen original only while its original lease remains valid.
     if (this.settings.capacity().runtime !== runtime) throw new CapacityLost();
-    return { kind: 'claimed', key };
+    return { kind: 'claimed', key, journalAuthority: runtime.journalAuthority };
   }
-  private persist(key: DispatchKey, row: DispatchFact, storage: { allocationBytes: number; reserveBytes: number }): void {
+  private persist(key: DispatchKey, row: DispatchFact, storage: { allocationBytes: number; reserveBytes: number }, authority: string): void {
     const version = nextVersion(row.version);
     this.db.prepare(`INSERT INTO execution_records(attempt_id,queue_order,run_id,organization_id,workspace_id,
-      intent_digest,delivery_attempt_id,output_attempt_id) VALUES(?,?,?,?,?,?,?,?)`)
+      intent_digest,delivery_attempt_id,output_attempt_id,journal_authority) VALUES(?,?,?,?,?,?,?,?,?)`)
       .run(key.attempt.attemptId, row.queue_order!, key.runId, key.attempt.organizationId,
-        key.attempt.workspaceId, key.attempt.intentDigest, key.attempt.attemptId, key.attempt.attemptId);
+        key.attempt.workspaceId, key.attempt.intentDigest, key.attempt.attemptId, key.attempt.attemptId, authority);
     reserveRunOutput(this.db, key, storage);
     this.db.prepare('UPDATE dispatch_outbox SET possible_delivery=1,first_delivery_at=? WHERE attempt_id=?')
       .run(new Date().toISOString(), key.attempt.attemptId);

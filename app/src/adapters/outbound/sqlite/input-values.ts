@@ -15,6 +15,10 @@ export const scopeKey = (scope: SettingsScope): string => {
 export function uuid(value: string): void {
   if (!validatePrimitive('uuid', value).ok) throw new StorageError('invalid_input');
 }
+/** Physical journal authorities use one canonical lowercase wire representation. */
+export function checkedJournalAuthority(value: unknown): void {
+  requireRule(typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value));
+}
 export function boundedCopy<T>(input: T, limit = MAX_MESSAGE_BYTES): T {
   try { return JSON.parse(encodeJson(input, limit)) as T; }
   catch { throw new StorageError('invalid_input'); }

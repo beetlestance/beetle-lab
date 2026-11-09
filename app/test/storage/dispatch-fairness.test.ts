@@ -41,7 +41,7 @@ it('ignores individually impossible isolated work without subtracting active occ
   f.release(young);
   const another = f.add(73);
   f.policy(values => { values.perRunCeilings.cpuMillis = 1000; values.pool.cpuMillis = 500; });
-  expect(f.claims.claim(young)).toEqual({ kind: 'acknowledged' });
+  expect(f.claims.claim(young)).toEqual({ journalAuthority: '33333333-3333-4333-8333-333333333333', kind: 'acknowledged' });
   expect(f.claims.claim(another)).toEqual({ kind: 'blocked', reason: 'isolated_predecessor' });
   expect(f.claims.claim(isolated)).toEqual({ kind: 'blocked', reason: 'isolated' });
 });

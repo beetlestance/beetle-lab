@@ -30,8 +30,8 @@ export function enqueue(db: DatabaseSync, store: Store, id = 70): { key: Dispatc
 /** Structural claim fixture only; no eligibility decision or remote execution proof. */
 export function insertRecord(db: DatabaseSync, key: DispatchKey): void {
   db.prepare(`INSERT INTO execution_records(attempt_id,queue_order,run_id,organization_id,workspace_id,intent_digest,
-    delivery_attempt_id,output_attempt_id) SELECT attempt_id,queue_order,run_id,organization_id,workspace_id,intent_digest,
-    attempt_id,attempt_id FROM execution_intents WHERE attempt_id=?`).run(key.attempt.attemptId);
+    delivery_attempt_id,output_attempt_id,journal_authority) SELECT attempt_id,queue_order,run_id,organization_id,workspace_id,intent_digest,
+    attempt_id,attempt_id,'33333333-3333-4333-8333-333333333333' FROM execution_intents WHERE attempt_id=?`).run(key.attempt.attemptId);
 }
 export function reserveAndMark(db: DatabaseSync, key: DispatchKey, allocationBytes = Number.MAX_SAFE_INTEGER): void {
   insertRecord(db, key); reserveRunOutput(db, key, { allocationBytes, reserveBytes: 0 });

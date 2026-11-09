@@ -6,13 +6,13 @@ import type { AttemptObservation } from '../../../domain/runs/index.js';
 import { nextVersion, requireRule } from '../../../domain/namespaces/index.js';
 import { DISPATCH_OBSERVATION_REQUEST_BYTES } from '../../../ports/dispatch.js';
 import type { DispatchKey, DispatchObservation, DispatchObservationRequest } from '../../../ports/dispatch.js';
-import { boundedCopy } from './input-values.js';
+import { checkedJournalAuthority, boundedCopy } from './input-values.js';
 import { captureDispatchKey } from './dispatch-values.js';
 import type { RunReads } from './run-reads.js';
 import { transaction } from './schema.js';
 
 interface RecordRow {
-  snapshot_bytes: number | null; snapshot_json: string | null; execution_charged: number;
+  journal_authority: string | null; snapshot_bytes: number | null; snapshot_json: string | null; execution_charged: number;
   acknowledged_generation: number | null; delivery_attempt_id: string | null; generation: number | null;
 }
 interface DeliveryRow { intent_digest: string; execution_intent_id: string | null;
@@ -20,9 +20,10 @@ interface DeliveryRow { intent_digest: string; execution_intent_id: string | nul
 
 function captureRequest(input: DispatchObservationRequest): DispatchObservationRequest {
   const value = boundedCopy(input, DISPATCH_OBSERVATION_REQUEST_BYTES);
-  requireRule(value !== null && typeof value === 'object' && Object.keys(value).length === 2
-    && Object.hasOwn(value, 'key') && Object.hasOwn(value, 'snapshot'));
-  return { key: captureDispatchKey(value.key), snapshot: value.snapshot };
+  requireRule(value !== null && typeof value === 'object' && Object.keys(value).length === 3
+    && Object.hasOwn(value, 'key') && Object.hasOwn(value, 'snapshot') && Object.hasOwn(value, 'journalAuthority'));
+  checkedJournalAuthority(value.journalAuthority);
+  return { key: captureDispatchKey(value.key), snapshot: value.snapshot, journalAuthority: value.journalAuthority };
 }
 
 function project(run: Run, merged: Readonly<AttemptObservation>): Run {
@@ -48,6 +49,7 @@ export class DispatchObservations {
   private matched(request: DispatchObservationRequest): DispatchObservation {
     const { key, snapshot } = request;
     const row = this.record(key);
+    requireRule(row.journal_authority === request.journalAuthority);
     this.requireDelivery(key, row);
     requireRule(row.snapshot_bytes === null || row.snapshot_bytes <= MAX_ATTEMPT_OBSERVATION_BYTES);
     const previous: unknown = row.snapshot_json === null ? null : JSON.parse(row.snapshot_json);
@@ -70,6 +72,7 @@ export class DispatchObservations {
     // CASE guards SQLite's returned text: no Offer, registry or historical payload is selected.
     const row = this.db.prepare(`SELECT length(CAST(e.snapshot_json AS BLOB)) snapshot_bytes,
       CASE WHEN length(CAST(e.snapshot_json AS BLOB))<=73728 THEN e.snapshot_json ELSE NULL END snapshot_json,
+      CASE WHEN length(CAST(e.journal_authority AS BLOB))=36 THEN e.journal_authority ELSE NULL END journal_authority,
       e.execution_charged,e.acknowledged_generation,e.delivery_attempt_id,a.generation
       FROM execution_records e JOIN attempts a ON a.id=e.attempt_id JOIN runs r ON r.id=e.run_id
       WHERE e.attempt_id=? AND e.run_id=? AND e.organization_id=? AND e.workspace_id=? AND e.intent_digest=?

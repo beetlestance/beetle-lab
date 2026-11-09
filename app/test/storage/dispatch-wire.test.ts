@@ -14,7 +14,7 @@ beforeEach(() => { db = initialize(':memory:'); original = enqueue(db, seedFound
 afterEach(() => db.close());
 
 it('captures complete private commands without taking ownership of caller data', () => {
-  const input: DispatchOperation = { kind: 'dispatchObserve', request: {
+  const input: DispatchOperation = { kind: 'dispatchObserve', request: { journalAuthority: '33333333-3333-4333-8333-333333333333',
     key: original.key, snapshot: snapshotFor(original.key),
   } };
   const captured = captureDispatchOperation(input);
@@ -25,7 +25,7 @@ it('captures complete private commands without taking ownership of caller data',
 });
 
 it.each(['kind', 'request'])('rejects %s accessors without invoking them', field => {
-  const getter = vi.fn(() => field === 'kind' ? 'dispatchObserve' : { key: original.key, snapshot: snapshotFor(original.key) });
+  const getter = vi.fn(() => field === 'kind' ? 'dispatchObserve' : { journalAuthority: '33333333-3333-4333-8333-333333333333', key: original.key, snapshot: snapshotFor(original.key) });
   const value = { kind: 'dispatchObserve' };
   Object.defineProperty(value, field, { enumerable: true, get: getter });
   if (field === 'kind') expect(dispatchOperation(value)).toBe(false);
@@ -43,11 +43,11 @@ it('accepts only the declared worker envelope fields and safe message identity',
 
 it('rejects invalid original observation identity and semantic cursors before issue', () => {
   for (const patch of [{ generation: 2 }, { intentDigest: 'f'.repeat(64) }, { lastSeq: 0, retainedStartSeq: 2 }]) {
-    expect(() => captureDispatchOperation({ kind: 'dispatchObserve', request: {
+    expect(() => captureDispatchOperation({ kind: 'dispatchObserve', request: { journalAuthority: '33333333-3333-4333-8333-333333333333',
       key: original.key, snapshot: snapshotFor(original.key, patch),
     } })).toThrow();
   }
-  expect(() => captureDispatchOperation({ kind: 'dispatchObserve', request: {
+  expect(() => captureDispatchOperation({ kind: 'dispatchObserve', request: { journalAuthority: '33333333-3333-4333-8333-333333333333',
     key: original.key, snapshot: { invalid: 'x'.repeat(75_777) },
   } })).toThrow();
 });
@@ -91,18 +91,18 @@ it('accepts a full-size original config through the dedicated Offer reply budget
 
 it('binds claimed/replay identity and closes every compact claim result', () => {
   const operation: DispatchOperation = { kind: 'dispatchClaim', key: original.key };
-  for (const value of [{ kind: 'claimed', key: original.key }, { kind: 'replay', key: original.key },
-    { kind: 'acknowledged' }, { kind: 'blocked', reason: 'ownership_unknown' }]) {
+  for (const value of [{ journalAuthority: '33333333-3333-4333-8333-333333333333', kind: 'claimed', key: original.key }, { journalAuthority: '33333333-3333-4333-8333-333333333333', kind: 'replay', key: original.key },
+    { journalAuthority: '33333333-3333-4333-8333-333333333333', kind: 'acknowledged' }, { kind: 'blocked', reason: 'ownership_unknown' }]) {
     expect(captureDispatchReply(operation, value)).toEqual(value);
   }
-  for (const value of [{ kind: 'success' }, { kind: 'acknowledged', extra: true },
-    { kind: 'blocked', reason: 'invented' }, { kind: 'claimed', key: { ...original.key, runId: original.key.attempt.attemptId } }]) {
+  for (const value of [{ kind: 'success' }, { journalAuthority: '33333333-3333-4333-8333-333333333333', kind: 'acknowledged', extra: true },
+    { kind: 'blocked', reason: 'invented' }, { journalAuthority: '33333333-3333-4333-8333-333333333333', kind: 'claimed', key: { ...original.key, runId: original.key.attempt.attemptId } }]) {
     expect(() => captureDispatchReply(operation, value)).toThrow();
   }
 });
 
 it('binds observation Run/snapshot identity and validates copied reply values', () => {
-  const operation: DispatchOperation = { kind: 'dispatchObserve', request: { key: original.key, snapshot: snapshotFor(original.key) } };
+  const operation: DispatchOperation = { kind: 'dispatchObserve', request: { journalAuthority: '33333333-3333-4333-8333-333333333333', key: original.key, snapshot: snapshotFor(original.key) } };
   const value: DispatchObservation = { run: original.run, snapshot: snapshotFor(original.key), executionCharged: true, runChanged: false };
   const captured = captureDispatchReply(operation, value);
   expect(captured).toEqual(value); expect(captured).not.toBe(value);

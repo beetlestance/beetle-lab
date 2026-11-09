@@ -5,7 +5,7 @@ import { pin, credential } from './agent-config/fixture.js';
 function fixture() {
   const settings = settingsFixture();
   const metadata = { path: '/synthetic/private/metadata.sqlite', workerUrl: new URL('file:///synthetic/worker.js'),
-    installation: settings.chain.installation, runtime: { execution: { stagingBytes: 10485760, perRunStagingBytes: 2097152 }, ceilings: settings.runtime, observedAtMs: 100, expiresAtMs: 1100 } };
+    installation: settings.chain.installation, runtime: { journalAuthority: '33333333-3333-4333-8333-333333333333', execution: { stagingBytes: 10485760, perRunStagingBytes: 2097152 }, ceilings: settings.runtime, observedAtMs: 100, expiresAtMs: 1100 } };
   const options = { dataRoot: '/synthetic/private', connection: { token: credential, configuration: {
     version: 1 as const, origin: 'http://127.0.0.1:1', tokenFile: '/synthetic/token', expectedInstallationId: metadata.installation.id,
     profiles: [pin()], storageAllocationBytes: 20000, freeSpaceReserveBytes: 2000 } } };
