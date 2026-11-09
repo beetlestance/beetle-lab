@@ -1,7 +1,8 @@
 # Input byte publication
 
-Status: implementation contract; application migration003 reserved. No upload
-implementation or byte availability is claimed by this document.
+Status: metadata/migration003 implemented and independently reviewed; see
+[storage intake evidence](../../verification/storage-intake.md). Byte publication,
+transfer and UI remain; no upload availability is claimed.
 Owners: application input service, sole metadata worker, local byte adapter.
 The [installed provider](installed-providers.md) owns agent reads; the
 [suite contract](suite-authoring.md) owns immutable configuration references.
@@ -109,7 +110,7 @@ Backfill bounded rows from existing manifests; inconsistent pins stop migration.
 Preserve receipts/revisions/IDs; applied002 remains unchanged. Existing published
 rows enter publishing for byte verification before accepting new pins. Existing
 staging rows enter failed/unverified_legacy; offset0 recovery cannot create them.
-Use version1, actual workspace root and name input-<id> for old rows, with offset
+Use version1, actual workspace root and name `input-<id>` for old rows, with offset
 bytes for old published/offset0 for old staging. Initialize usage from every old
 payload+metadata charge; keep over-allocation charged and block new reservations.
 Retained historical pins survive the publishing fence. Never fabricate files.

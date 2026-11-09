@@ -19,6 +19,7 @@ export interface ControllerPorts extends AttemptControllerOptions {
   readonly createReader: ControlReaderFactory;
 }
 export type AttemptProgress =
+  | { readonly kind: 'deferred'; readonly reason: 'journal_busy' }
   | { readonly kind: 'runtime'; readonly state: LaunchState }
   | { readonly kind: 'control'; readonly events: number }
   | { readonly kind: 'verifying'; readonly phase: 'restart' | 'final'; readonly verifiedBytes: number; readonly targetBytes: number }

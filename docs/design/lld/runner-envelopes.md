@@ -1,8 +1,8 @@
 # Runner Offer byte bounds
 
-Status: amendment in progress. Shared config validation/constants implemented;
-client propagation is under verification. Server, journal migration008 and
-engine/staging propagation remain required before integration acceptance.
+Status: client/journal migration008/cost bounds integrated and locally verified;
+see [storage intake](../../verification/storage-intake.md). Server and remaining
+consumer propagation plus [launch contention](launch-contention.md) remain.
 This does not claim that a full-size saved config can execute yet.
 
 ## Independent limits

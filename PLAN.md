@@ -33,15 +33,17 @@ model assignments, agent packets, concurrency and independent review.
 | Area | Integrated | Still required |
 | --- | --- | --- |
 | Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings and suite schemas/clients; Fastify JSON adapter | Run/result API; runner envelope/config limit alignment |
-| Agent | Catalogue/admission/staging/controllers; typed stops; bounded scheduling; guards/full observation publisher; installed runtime; private config/providers/entrypoint; Node24 image; private runner HTTP; real arm64 k6 pass/fail and reservation release | Compose/stop-latency qualification, irreversible recovery fencing, telemetry, application artifact transfer/finalization and native architecture matrix |
+| Agent | Catalogue/admission/staging/controllers; typed stops; bounded scheduling; guards/full observation publisher; installed runtime; Node24 image/private HTTP; real arm64 k6 pass/fail; journal008/large-original bounds | Remaining Offer propagation and launch contention; Compose/stop-latency qualification, irreversible recovery fencing, telemetry, application artifact transfer/finalization and native architecture matrix |
 | k6 | Suite compiler/runtime/builder, phase-isolated metrics, control journal, staged loader, child runner, numeric windows, summary collector, outcome mapper, staged wrapper, seal codec and artifact publication | Live quantiles, target sampler, reports/export |
-| Product | Namespace/settings and immutable suite/revision SQLite/API composition, sessions, paired React authoring screens, backend startup and dev proxy | Verified input publication, run API/UI, artifact store, reports, automation client and Docker frontend proxy |
+| Product | Namespace/settings and immutable suite/revision SQLite/API composition; input metadata lifecycle/quotas/pins; sessions, paired React authoring, backend startup/dev proxy | Actual input bytes/transfer/UI, run API/UI, artifact store, reports, automation client and Docker frontend proxy |
 | Qualification | Local contract/unit/SQLite and real staged native pass/fail checks | Complete execution path, containers, scans, backup/soak and native architecture matrix |
 
 Worker submissions remain unaccepted until independent review and integration
 checks pass. No complete R0-R4 release slice is claimed by this inventory.
-The [suite authoring report](docs/verification/suite-authoring.md) records the latest
-local functional gate and separates it from pending browser and execution evidence.
+The [suite authoring report](docs/verification/suite-authoring.md) records authoring
+evidence. [Storage intake](docs/verification/storage-intake.md) records the newer
+full gate and separates metadata/client/journal checks from pending byte publication,
+launch contention, browser and complete execution evidence.
 
 ## Delivery order
 

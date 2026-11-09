@@ -5,6 +5,8 @@ runtime; installation scheduler, fresh admission/staging and private HTTP compos
 remain separate work. This page owns the controller handoff, not another execution
 state machine. The [execution protocol](execution-protocol.md) owns lifecycle and
 [collection](agent-collection.md) owns filesystem verification.
+The [launch contention contract](launch-contention.md) owns the pending amendment
+for known journal refusal, retained explicit launch and compact immutable authority.
 
 ## Construction and ownership
 

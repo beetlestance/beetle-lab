@@ -12,6 +12,7 @@ The owning document below must be updated before its implementation changes.
 | Input bytes | [Input publication](lld/input-publication.md) | Durable upload/offset/publication custody, quotas, pins and scoped binary transport |
 | Dispatcher, agent or engine | [Execution protocol](lld/execution-protocol.md) | APIs, envelopes, idempotency, fencing, cancellation, recovery |
 | Full-size runner intake | [Offer envelopes](lld/runner-envelopes.md) | Independent config/envelope bounds, ingress ownership and journal migration008 |
+| Launch read saturation | [Launch contention](lld/launch-contention.md) | Retained explicit intent, known refusal, compact authority and unknown-outcome fences |
 | Agent control and outputs | [Agent collection](lld/agent-collection.md) | Bounded file intake, atomic checkpoints, stopped verification and artifact custody |
 | Attempt orchestration | [Agent controller](lld/agent-controller.md) | Prepared-plan handoff, supervision/control/collection wiring and release ownership |
 | Installed engine preflight | [Engine catalogue](lld/engine-catalog.md) | Trusted schema bundles, manifest/profile pins and recovery identity |
