@@ -12,6 +12,7 @@ The owning document below must be updated before its implementation changes.
 | Input bytes | [Input publication](lld/input-publication.md) | Durable upload/offset/publication custody, quotas, pins and scoped binary transport |
 | Input routes | [Input HTTP](lld/input-http.md) | Pre-body guards, chunk/range transfer, request originals and shutdown |
 | Browser input bytes | [Input client](lld/input-client.md) | Bounded file preparation, append acknowledgement, download EOF/hash and original custody |
+| Input controls | [Input UI](lld/input-ui.md) | Prepared upload intent/replay, folder selection, verified download and session ownership |
 | Dispatcher, agent or engine | [Execution protocol](lld/execution-protocol.md) | APIs, envelopes, idempotency, fencing, cancellation, recovery |
 | Full-size runner intake | [Offer envelopes](lld/runner-envelopes.md) | Independent config/envelope bounds, ingress ownership and journal migration008 |
 | Launch read saturation | [Launch contention](lld/launch-contention.md) | Retained explicit intent, known refusal, compact authority and unknown-outcome fences |
