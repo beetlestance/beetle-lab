@@ -1,7 +1,7 @@
 # Rewrite development startup
 
-The released app still uses `npm start`. These commands run the new namespace and
-settings and suite-authoring surface; run execution and Docker installation are not complete.
+The released app still uses `npm start`. These commands run the new namespace,
+settings, suite authoring and input HTTP surface; run execution and Docker installation remain incomplete.
 Use Node 24 and install the locked development dependencies with `npm ci`.
 
 ## Create a private development installation once
@@ -49,12 +49,17 @@ Backend defaults to loopback port 4311. `BEETLE_LISTEN_PORT` selects 1–65535;
 The externally visible origin must remain canonical loopback in this release.
 The data directory must exist, belong to the backend user and have mode 0700.
 Config must be regular, single-linked, 32 KiB or smaller and not group/other writable.
+Startup creates private `inputs/staging` and `inputs/published` children. Existing
+unsafe roots are rejected. Pending publication/deletion is recovered in bounded
+background pages; ordinary published inputs are not periodically rehashed.
+The browser input interface is still pending.
 
 ## Check the built entrypoint
 
 After building, `npm run smoke:api` starts an owned backend on a temporary loopback
 port with disposable synthetic storage. It checks pairing, namespace access, full-size
-suite revision save/read/replay, metadata edits, logout
+suite revision save/read/replay, metadata edits, a two-chunk input upload,
+publication, terminated chunked download, deletion, logout
 and SIGTERM cleanup; it never starts k6 or contacts a target. It requires permission
 to bind that loopback port. CI runs build and smoke after the main verification gate.
 This does not qualify browser cookies, container controls or either Linux architecture.

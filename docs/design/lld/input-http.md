@@ -1,6 +1,6 @@
 # Input HTTP lifetime and transfer
 
-Status: routes implemented; configured startup under verification; browser transfers pending.
+Status: routes and configured startup locally verified; browser transfers pending.
 [Publication](input-publication.md) owns metadata, byte custody and service admission.
 This document owns only the guarded public transport and its shutdown boundary.
 
