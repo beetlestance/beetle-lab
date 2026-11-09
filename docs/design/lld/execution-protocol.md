@@ -137,6 +137,9 @@ independent heavy operation becomes another admitted task with a parent run ID.
 checkpoints, stopped-prefix verification and sealed output custody. Collection
 does not authorize application finalization or capacity release by itself.
 
+[Admission evidence](agent-admission-evidence.md) exposes independently durable
+queue refusal and reservation release; event state alone supplies neither proof.
+
 ## Lifecycle and cancellation
 
 | Step | Invariant |

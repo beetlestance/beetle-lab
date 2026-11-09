@@ -26,6 +26,7 @@ released application until the rewrite is qualified.
 | Inspect executable capacity startup | [Backend startup](verification/backend-startup.md) | Actual private connection/publication, shutdown, full local gate and remaining execution work |
 | Inspect backend connection components | [Private runner connection](verification/backend-connection.md) | Private config, bounded original HTTP, independent disk source and pending executable wiring |
 | Inspect capacity wire/cache evidence | [Capacity sources](verification/capacity-wire.md) | Original expiry, revocation/replay, scoped and compiled checks, unresolved full-lane timing |
+| Implement admission release/refusal facts | [Agent admission evidence](design/lld/agent-admission-evidence.md) | Wire contract and required journal/HTTP proof before durable dispatch |
 | Inspect shared staging admission | [Staging admission](verification/staging-admission.md) | Shared policy1 accounting, same-lease execution limits, combined local checks and remaining dispatch work |
 | Inspect installed execution binding | [Installed binding](verification/installed-binding.md) | Actual descriptor pins, immutable Offer/replay, restart/shutdown fences and remaining dispatch work |
 | Inspect native outcome evidence | [k6 outcomes](verification/k6-outcomes.md) | Real HTTP pass/fail, seal/replay checks and their limits |

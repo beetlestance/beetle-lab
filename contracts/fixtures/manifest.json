@@ -418,5 +418,40 @@
     "path": "invalid/missing-capacity-observation.json",
     "schema": "Capabilities",
     "valid": false
+  },
+  {
+    "path": "valid/admission-queued.json",
+    "schema": "AttemptAdmission",
+    "valid": true
+  },
+  {
+    "path": "valid/admission-charged.json",
+    "schema": "AttemptAdmission",
+    "valid": true
+  },
+  {
+    "path": "valid/admission-rejected.json",
+    "schema": "AttemptAdmission",
+    "valid": true
+  },
+  {
+    "path": "valid/admission-never-started.json",
+    "schema": "AttemptAdmission",
+    "valid": true
+  },
+  {
+    "path": "valid/admission-settled.json",
+    "schema": "AttemptAdmission",
+    "valid": true
+  },
+  {
+    "path": "invalid/admission-transient-refusal.json",
+    "schema": "AttemptAdmission",
+    "valid": false
+  },
+  {
+    "path": "invalid/admission-unknown-release.json",
+    "schema": "AttemptAdmission",
+    "valid": false
   }
 ]

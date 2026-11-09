@@ -8,6 +8,7 @@ The owning document below must be updated before its implementation changes.
 | Organisation and settings | [Organisation/settings](lld/organization-settings.md) | Hierarchy, scoped access, folders, inheritance and safe settings changes |
 | Source/build layout | [Module map](lld/module-map.md) | Package tree, named owners, import graph and build boundaries |
 | Domain and storage | [Domain/storage](lld/domain-storage.md) | State, tables, transaction ownership, artifacts, secrets |
+| Agent admission evidence | [Admission evidence](lld/agent-admission-evidence.md) | Independent queue refusal/released-reservation facts, merge rules and release authority |
 | Suite authoring | [Suites/revisions](lld/suite-authoring.md) | Scoped authoring, immutable revisions, large bounded configs and editor behavior |
 | Input bytes | [Input publication](lld/input-publication.md) | Durable upload/offset/publication custody, quotas, pins and scoped binary transport |
 | Input routes | [Input HTTP](lld/input-http.md) | Pre-body guards, chunk/range transfer, request originals and shutdown |
