@@ -89,6 +89,10 @@ Delete intent atomically requires no retained revision pins and prevents new pin
 Remove owned staging/published remnants, flush unlink parents, then commit deleted
 and release payload charge. Failed/unknown cleanup retains its charge. Retained
 tombstones/receipts remain charged and replay cannot resurrect their input identity.
+Explicit deletion authorizes the two exact derived filenames even if their bytes
+are corrupt: require private same-UID regular files with one link each, or the
+proven two-name alias below. Recheck opened/named identity before unlink. Never
+follow symlinks, unlink other names or release charge with an unexplained hard link.
 Manual retention is the initial default; abandoned uploads require explicit delete.
 Bounded paged recovery runs through the same service and operation limits.
 Cleanup failures preserve deleting and its original intent, with a safe reason;
