@@ -3,11 +3,12 @@ import type { RuntimeObservation } from '../admission/index.js';
 import { acknowledgement, capture, snapshot, unknownObservation, validWall } from './publisher-input.js';
 import type { Captured } from './publisher-input.js';
 import { PublisherError } from './publisher-types.js';
-import type { ObservationPublisher, PublisherOptions, PublisherStatus } from './publisher-types.js';
+import { publication } from './publication.js';
+import type { ObservationPublisher, PublishedObservation, PublisherOptions, PublisherStatus } from './publisher-types.js';
 
 const owners = new WeakSet<object>();
 interface Sample { promise: Promise<void>; abort: AbortController; epoch: number; start: number; wall: number; expired: boolean }
-interface Frame { observation: RuntimeObservation; epoch: number; start: number }
+interface Frame { observation: RuntimeObservation; epoch: number; start: number; wall: number }
 
 class Publisher implements ObservationPublisher {
   readonly initial: Promise<{ readonly ready: boolean }>;
@@ -25,6 +26,7 @@ class Publisher implements ObservationPublisher {
   private submitted = -1;
   private lastKnownAt: number | null = null;
   private knownStart: number | null = null;
+  private publishedFrame: PublishedObservation | null = null;
   private sample: Sample | undefined;
   private write: Promise<void> | undefined;
   private publishingFrame: Frame | undefined;
@@ -50,9 +52,12 @@ class Publisher implements ObservationPublisher {
     return { ready: this.ready && !reentrant, running: this.running, closed: this.closed, failed: this.failed,
       sampling: this.sample !== undefined, publishing: this.write !== undefined, lastKnownAt: this.lastKnownAt };
   }
+  snapshot(): PublishedObservation | null {
+    return this.status().ready ? this.publishedFrame : null;
+  }
   close(): Promise<void> {
     if (this.closing) return this.closing;
-    this.closed = true; this.running = false; this.ready = false; this.epoch++;
+    this.closed = true; this.running = false; this.ready = false; this.publishedFrame = null; this.epoch++;
     clearInterval(this.timer); this.pending = undefined; this.resolveInitial({ ready: false });
     const sample = this.sample; const write = this.write;
     this.closing = Promise.resolve().then(async () => {
@@ -125,18 +130,23 @@ class Publisher implements ObservationPublisher {
     if (frame?.observation.status === 'known' && frame.epoch === this.epoch && mono - frame.start >= this.ports.ttl) {
       this.invalidate(true);
     }
-    if (this.knownStart !== null && mono - this.knownStart >= this.ports.ttl) {
+    if (this.knownExpired(mono)) {
       this.knownStart = null; this.invalidate(true);
     }
   }
+  private knownExpired(mono: number): boolean {
+    return this.knownStart !== null && (mono - this.knownStart >= this.ports.ttl
+      || this.publishedFrame !== null && this.wallHigh >= this.publishedFrame.expiresAtMs);
+  }
   private invalidate(force = false): void {
     if (this.closed || this.failed) return;
-    this.ready = false; this.resolveInitial({ ready: false });
+    this.ready = false; this.publishedFrame = null; this.resolveInitial({ ready: false });
     if (this.invalid && !force) return;
     const revoke = !this.invalid;
     this.invalid = true; this.epoch++;
     if (!revoke) return;
-    this.enqueue({ observation: unknownObservation(this.wallTime()), epoch: this.epoch, start: this.monoHigh });
+    const wall = this.wallTime();
+    this.enqueue({ observation: unknownObservation(wall), epoch: this.epoch, start: this.monoHigh, wall });
   }
   private beginSample(time: { mono: number; wall: number }): void {
     const sample: Sample = { promise: Promise.resolve(), abort: new AbortController(), epoch: this.epoch,
@@ -164,7 +174,7 @@ class Publisher implements ObservationPublisher {
     if (!this.freshSample(observation, sample, time)) { this.invalidate(true); return; }
     if (observation.observedAt <= this.submitted) return;
     observation.guards = { source: 'supervisor', observedAt: observation.observedAt, controls: ['timeout', 'output'] };
-    this.enqueue({ observation, epoch: sample.epoch, start: sample.start });
+    this.enqueue({ observation, epoch: sample.epoch, start: sample.start, wall: sample.wall });
   }
   private currentSample(sample: Sample): boolean { return !sample.expired && sample.epoch === this.epoch; }
   private freshSample(observation: RuntimeObservation, sample: Sample, time: { mono: number; wall: number }): boolean {
@@ -193,14 +203,17 @@ class Publisher implements ObservationPublisher {
     this.submitted = Math.max(this.submitted, frame.observation.observedAt);
     if (frame.observation.status === 'known') this.invalid = false;
     try {
+      const view = frame.observation.status === 'known' ? publication(frame.observation, frame.wall, this.ports.ttl) : null;
       const stored = acknowledgement(await this.ports.admission({ kind: 'observe', observation: frame.observation }));
-      this.committed(frame, stored);
+      this.committed(frame, stored, view);
     } catch { this.fail(); }
   }
-  private committed(frame: Frame, stored: boolean): void {
+  private committed(frame: Frame, stored: boolean, view: PublishedObservation | null): void {
     if (this.closed || this.failed || frame.observation.status !== 'known') return;
     if (!this.eligible(frame)) return;
+    if (stored && !view) { this.fail(); return; }
     this.invalid = !stored; this.ready = stored;
+    this.publishedFrame = stored ? view : null;
     if (stored) { this.knownStart = frame.start; this.lastKnownAt = frame.observation.observedAt; this.resolveInitial({ ready: true }); }
     else this.resolveInitial({ ready: false });
   }
@@ -209,13 +222,13 @@ class Publisher implements ObservationPublisher {
     if (this.closed) return false;
     const guards = this.guardStatus();
     if (this.closed) return false;
-    if (!time || !guards || time.mono - frame.start >= this.ports.ttl) {
+    if (!time || !guards || time.mono - frame.start >= this.ports.ttl || time.wall - frame.wall >= this.ports.ttl) {
       this.guards = guards; this.invalidate(true); return false;
     }
     return frame.epoch === this.epoch;
   }
   private fail(): void {
-    this.failed = true; this.ready = false; this.running = false;
+    this.failed = true; this.ready = false; this.publishedFrame = null; this.running = false;
     this.pending = undefined; clearInterval(this.timer); this.resolveInitial({ ready: false });
     this.sample?.abort.abort();
   }

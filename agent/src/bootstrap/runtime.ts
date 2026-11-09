@@ -118,9 +118,9 @@ class RuntimeOwner {
         return stager;
       } });
     this.observer = createResourceObserver({ root, transport: options.transport, configuration });
-    const view = new CapabilityView({ observer: this.observer, configuration, catalog: options.catalog,
-      ready: () => !this.closed && this.publisher?.status().ready === true });
-    this.publisher = createObservationPublisher({ journal, observer: view, output: this.output, timeout: this.timeout });
+    const view = new CapabilityView({ configuration, catalog: options.catalog,
+      published: () => this.closed ? null : this.publisher?.snapshot() ?? null });
+    this.publisher = createObservationPublisher({ journal, observer: this.observer, output: this.output, timeout: this.timeout });
     this.scheduler = createScheduler({ journal, installation: this.installation });
     this.server = createAgentServer({ credential: options.credential, journal, installation: this.installation,
       capabilities: () => view.capabilities() });

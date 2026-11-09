@@ -53,6 +53,25 @@ acknowledged as stored, with no later invalidation, failure or shutdown. A read-
 status call cannot manufacture committed readiness. Bound reentrant callbacks and
 check shutdown fences after clocks, guard statuses and original completions.
 
+## Committed projection
+
+`ObservationPublisher.snapshot(): PublishedObservation | null` is the sole source
+for capability projection. PublishedObservation contains sampleStartedAtMs,
+expiresAtMs and the complete observation including actual composed guards.
+Capture sampleStartedAtMs before observer invocation; expiresAtMs is that original
+wall start plus this publisher's TTL. Neither acknowledgement nor reads renew it.
+Reject expiry overflow and revoke when either monotonic age or wall expiry elapses.
+Invalid final frame size/expiry fails before a known write and retains failure.
+
+Keep at most one deeply frozen committed frame, bounded to16KiB including metadata.
+Return it only after stored:true at the current eligible epoch. Pending samples or
+writes cannot upgrade an older committed frame. Guard/clock failure, expiry,
+stored:false, invalidation and close make the projection unavailable immediately;
+late acknowledgements cannot restore it. Reentrant reads return null. A read checks
+the existing status/revocation fences but never starts a new measurement. The frame
+is content evidence, not admission permission or a physical-control guarantee.
+CapabilityView reads this projection rather than caching raw observer results.
+
 Close is cached and synchronously fences polling/new sample issuance. Abort and
 drain original samples and writes independently; late results cannot restore known
 state. Then submit one final full unknown revocation, preserving timestamp rules.

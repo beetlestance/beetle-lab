@@ -10,9 +10,11 @@ The publisher in publisher.ts composes actual observer/output/timeout ports and
 owns full journal observation writes; no scheduling or runtime mutation authority.
 One original sample, one original write and one pending frame. Unknown revocation
 is independent of held sampling/writes. Preserve resource timestamps; only a newer
-actual sample can restore readiness. Local monotonic start age owns freshness.
+actual sample can restore readiness. Original monotonic and wall start bound freshness.
 Clock/guard failures revoke; write failures retain ownership and reject close.
 Close fences callbacks, drains originals and publishes final unknown revocation.
 External bootstrap still owns observer/guard/transport/journal shutdown.
+snapshot() exposes one frozen acknowledged frame, original sample wall start and
+expiry; reads cannot refresh its lease or expose pending resource results.
 Publisher contract: docs/design/lld/observation-publisher.md.
 Checks: npx --no-install vitest run agent/test/observation agent/test/integration/observation-publisher.test.ts --maxWorkers=2.
