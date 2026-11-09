@@ -74,9 +74,10 @@ async function stage(context: DriveContext, entry: Entry, offer: Offer, current:
     return result.value.value;
   } finally { context.releaseStage(); }
 }
-async function planFor(context: DriveContext, entry: Entry, offer: Offer, current: Reservation,
+async function planFor(context: DriveContext, entry: Entry, offer: Offer | undefined, current: Reservation,
   budget: Operation): Promise<RuntimePlan | DriveProgress> {
   if (entry.plan) return entry.plan;
+  if (!offer) throw new InstallationError('journal');
   const prepared = current.createToken ? recover(context.options.catalog, offer, current)
     : await stage(context, entry, offer, current, budget);
   if (!('kind' in prepared)) entry.plan = prepared;
@@ -89,7 +90,7 @@ function controllerFor(context: DriveContext, entry: Entry, plan: RuntimePlan) {
 function unstartedWithoutWatch(entry: Entry, current: Reservation, ready: boolean): boolean {
   return !ready && !current.createToken && !entry.controller;
 }
-async function controllerStep(context: DriveContext, entry: Entry, offer: Offer, current: Reservation,
+async function controllerStep(context: DriveContext, entry: Entry, offer: Offer | undefined, current: Reservation,
   budget: Operation): Promise<DriveProgress> {
   let launch = false;
   const timely = await ensureTimeoutWatch(context, entry, current, budget);
@@ -125,9 +126,9 @@ async function availableOffer(context: DriveContext, entry: Entry, budget: Opera
 export async function drive(context: DriveContext, entry: Entry, budget: Operation): Promise<DriveProgress> {
   if (entry.cleanupFailed) throw new InstallationError('cleanup');
   context.guard(entry, budget);
-  const offer = await availableOffer(context, entry, budget);
+  const offer = entry.plan ? undefined : await availableOffer(context, entry, budget);
   context.guard(entry, budget);
-  if (!offer) return { kind: 'deferred', reason: 'journal_busy' };
+  if (offer === null) return { kind: 'deferred', reason: 'journal_busy' };
   const current = await reservationFor(context, entry, budget);
   if (!('status' in current)) return current;
   if (current.status === 'released') { await context.retire(entry); return { kind: 'released', collection: current.releaseEvidence?.collection.state ?? 'failed' }; }

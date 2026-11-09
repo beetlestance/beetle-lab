@@ -2,10 +2,11 @@ import { randomUUID } from 'node:crypto';
 import type { Reservation, AdmissionValue } from '../admission/index.js';
 import type { InspectEvidence, MutationResult, Observation } from '../backends/docker/index.js';
 import type { StopReason, SupervisionState } from '../journal/index.js';
+import { captureAuthority, ReadOfferBusy } from './offer-authority.js';
 import { validateReservation } from './identity.js';
 import { RuntimeEvidence } from './evidence.js';
 import { AttemptTime } from './time.js';
-import type { BackendPort, Clock, JournalPort, LaunchInput, LaunchState } from './types.js';
+import type { BackendPort, Clock, JournalPort, LaunchInput, LaunchState, OfferAuthority } from './types.js';
 import { SupervisorError } from './types.js';
 
 function reservation(value: AdmissionValue): Reservation {
@@ -21,6 +22,7 @@ function claim(value: AdmissionValue) {
 export class LaunchActor {
   private readonly time: AttemptTime;
   private readonly evidence: RuntimeEvidence;
+  private authority: OfferAuthority | undefined;
   private current: Reservation | undefined;
   private durable: SupervisionState | undefined;
   private observation: Observation | null = null;
@@ -74,20 +76,25 @@ export class LaunchActor {
   private run(launch: boolean): Promise<LaunchState> {
     if (this.closed) return Promise.reject(new SupervisorError('closed'));
     if (this.inFlight) return this.inFlight;
+    const priorAttempted = this.launchAttempted;
     const shouldLaunch = launch && !this.launchAttempted;
     if (shouldLaunch) this.launchAttempted = true;
     const work = this.step(shouldLaunch).catch(error => {
+      if (error instanceof ReadOfferBusy) {
+        this.launchAttempted = priorAttempted;
+        throw new SupervisorError('journal_busy');
+      }
       // Any uncertain journal response permanently retires local launch grants.
       this.launchAttempted = true;
-      throw error instanceof SupervisorError ? error : new SupervisorError('journal_unavailable');
+      throw error instanceof SupervisorError && error.code !== 'journal_busy' ? error : new SupervisorError('journal_unavailable');
     }).finally(() => { this.inFlight = undefined; });
     this.inFlight = work;
     return work;
   }
   private async load(): Promise<void> {
     const value = reservation(await this.journal.admission({ kind: 'reservation', key: this.input.key }));
-    const offer = await this.journal.readOffer(this.input.key);
-    validateReservation(this.input, value, offer);
+    this.authority ??= await captureAuthority(this.journal, this.input, value);
+    validateReservation(this.input, value, this.authority);
     this.current = value;
     this.disposition = value.launchSettlement?.disposition ?? (value.createToken ? 'unknown' : 'unclaimed');
   }

@@ -1,5 +1,4 @@
 import { performance } from 'node:perf_hooks';
-import type { Offer } from '@beetle/contracts';
 import type { StopReason } from '../journal/index.js';
 import type { Reservation } from '../admission/index.js';
 import { isRuntimePlan } from '../backends/docker/index.js';
@@ -8,6 +7,9 @@ import { CONTROL_READ_MAX_MS } from '../collection/control/index.js';
 import type { OutputCollection } from '../collection/output/index.js';
 import { copyControlScope } from '../control-protocol/index.js';
 import type { LaunchActor, LaunchState } from '../supervisor/index.js';
+import { collectionAuthority } from './authority.js';
+import type { CollectionAuthority } from './authority.js';
+import { CollectionReadBusy, busyActor } from './launch-contention.js';
 import { releaseEvidence } from './release.js';
 import { budgetCopy, checkBudget } from './budget.js';
 import { ControllerError } from './types.js';
@@ -23,7 +25,8 @@ function reservation(input: unknown): Reservation {
 export class AttemptController {
   private readonly options: ControllerPorts;
   private actor: LaunchActor | undefined;
-  private offer: Offer | undefined;
+  private authority: CollectionAuthority | undefined;
+  private pendingLaunch = false;
   private reader: ControlReader | undefined;
   private outputs: OutputCollection | undefined;
   private collection: CollectionObservation | undefined;
@@ -58,12 +61,14 @@ export class AttemptController {
     let resolve!: (value: AttemptProgress) => void; let reject!: (error: unknown) => void;
     const work = new Promise<AttemptProgress>((yes, no) => { resolve = yes; reject = no; });
     this.active = work;
+    this.pendingLaunch ||= launch;
     let budget: Readonly<ControllerBudget> | undefined; let invalid: unknown;
     try { budget = budgetCopy(input); } catch (error) { invalid = error; }
     void Promise.resolve().then(() => {
       if (invalid) throw invalid;
-      return this.step(launch, budget!);
+      return this.step(budget!);
     }).then(value => { this.active = undefined; resolve(value); }, error => {
+      this.pendingLaunch = false;
       this.active = undefined; reject(error instanceof ControllerError ? error : new ControllerError('journal'));
     });
     return work;
@@ -83,16 +88,26 @@ export class AttemptController {
     try {
       if (this.cancelRequested) return await this.actor.cancel(this.cancelReason);
       return await (launch ? this.actor.launch() : this.actor.tick());
-    } catch { throw new ControllerError('supervisor'); }
+    } catch (error) {
+      if (busyActor(error)) throw error;
+      throw new ControllerError('supervisor');
+    }
   }
-  private async step(launch: boolean, budget: ControllerBudget): Promise<AttemptProgress> {
+  private async step(budget: ControllerBudget): Promise<AttemptProgress> {
     this.guard(budget);
     const current = reservation(await this.options.journal.admission({ kind: 'reservation', key: this.options.input.key }));
     this.guard(budget);
     const released = this.releasedProgress(current); if (released) return released;
     this.boundCollection(current); this.guard(budget);
-    this.offer ??= await this.options.journal.readOffer(this.options.input.key); this.guard(budget);
-    const state = await this.state(launch); this.guard(budget);
+    if (!await this.captureCollection(budget)) return { kind: 'deferred', reason: 'journal_busy' };
+    let state: LaunchState;
+    try { state = await this.state(this.pendingLaunch); }
+    catch (error) {
+      this.guard(budget);
+      if (busyActor(error)) return { kind: 'deferred', reason: 'journal_busy' };
+      throw error;
+    }
+    this.pendingLaunch = false; this.guard(budget);
     if (this.unstartedCancelled(state)) return this.abortUnstarted();
     if (this.collection) return this.release(state, budget);
     if (this.stoppedControlBytes !== undefined) {
@@ -100,6 +115,15 @@ export class AttemptController {
       return this.finish(this.stoppedControlBytes, budget);
     }
     return this.advanceControl(state, budget);
+  }
+  private async captureCollection(budget: ControllerBudget): Promise<boolean> {
+    try { this.authority ??= await collectionAuthority(this.options.journal, this.options.input.key); }
+    catch (error) {
+      this.guard(budget);
+      if (error instanceof CollectionReadBusy) return false;
+      throw error;
+    }
+    this.guard(budget); return true;
   }
   private releasedProgress(current: Reservation): AttemptProgress | null {
     if (current.status !== 'released') return null;
@@ -203,7 +227,7 @@ export class AttemptController {
     const deadline = Math.min(budget.deadline, this.outputDeadline);
     if (performance.now() >= deadline) { this.collection = { state: 'failed', observedAt: this.now() }; return; }
     this.outputs = this.options.collectOutputs({ directory: this.directory(), uid: this.uid(), key: this.options.input.key,
-      engineId: this.offer!.engine.id, reportedResult: result, controlBytes, outputBytes: this.offer!.budget.outputBytes,
+      engineId: this.authority!.engineId, reportedResult: result, controlBytes, outputBytes: this.authority!.outputBytes,
       deadline, ...(budget.signal ? { signal: budget.signal } : {}) });
     const outcome = await this.originals(this.outputs, () => this.outputs!.close(), true);
     this.guard(budget);
@@ -242,7 +266,7 @@ export class AttemptController {
   cancel(reason: StopReason = 'cancelled'): Promise<void> {
     if (this.released) return Promise.resolve();
     if (!this.cancelRequested) this.cancelReason = reason;
-    this.cancelRequested = true;
+    this.cancelRequested = true; this.pendingLaunch = false;
     const urgent = reason === 'output_limit' || reason === 'artifact_incomplete' || reason === 'clock_integrity';
     const escalation = urgent && !this.urgentStop;
     this.urgentStop ||= urgent;
@@ -268,7 +292,7 @@ export class AttemptController {
   }
   close(): Promise<void> {
     if (this.closing) return this.closing;
-    this.closed = true; this.cancelRequested = true;
+    this.closed = true; this.cancelRequested = true; this.pendingLaunch = false;
     this.closing = Promise.resolve().then(async () => {
       const outcomes = await Promise.allSettled([this.cancel(), this.closeReader(),
         Promise.resolve().then(() => this.outputs?.close()), this.active?.catch(() => undefined)]);
