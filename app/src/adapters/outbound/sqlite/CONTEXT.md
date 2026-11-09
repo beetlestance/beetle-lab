@@ -1,7 +1,7 @@
 # Application metadata worker
 
 Public entrypoint: `index.ts`; caller supplies `path`, compiled `workerUrl`, explicit
-`installation` record and `runtime: {ceilings,observedAtMs}|null` source observation.
+`installation` record and `runtime: {ceilings,observedAtMs,expiresAtMs}|null` source observation.
 `openMetadata()` returns one worker owning one exclusive WAL SQLite connection.
 `namespaces.execute`, `settings.execute`, `suites`, `inputs` and `runs` implement ports.
 Each mutation verifies real SHA256 intent, checks receipt first, reads evidence,
