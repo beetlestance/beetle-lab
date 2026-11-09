@@ -32,7 +32,7 @@ model assignments, agent packets, concurrency and independent review.
 
 | Area | Integrated | Still required |
 | --- | --- | --- |
-| Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings, suite and run-intake schemas/clients; exact installed descriptor binding in immutable Offers; atomic queued-run/attempt/outbox SQLite intake; authenticated enqueue/detail/history routes; Fastify JSON adapter; separate config/Offer bounds; private agent/backend capacity publication and owned startup/shutdown | Execution delivery/ACK recovery, result routes and result storage |
+| Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings, suite and run-intake schemas/clients; exact installed descriptor binding in immutable Offers; atomic queued-run/attempt/outbox SQLite intake; authenticated enqueue/detail/history routes; Fastify JSON adapter; separate config/Offer bounds; private agent/backend capacity publication and owned startup/shutdown; shared exact staging accounting and same-lease execution limits | Execution delivery/ACK recovery, result routes and result storage |
 | Agent | Catalogue/admission/staging/controllers; typed stops; bounded scheduling; guards/full observation publisher; installed runtime; Node24 image/private HTTP; real arm64 k6 pass/fail; journal008/large-original bounds; Offer propagation and launch contention | Updated image/Compose/stop-latency qualification, irreversible recovery fencing, telemetry, application artifact transfer/finalization and native architecture matrix |
 | k6 | Suite compiler/runtime/builder, phase-isolated metrics, control journal, staged loader, child runner, numeric windows, summary collector, outcome mapper, staged wrapper, seal codec and artifact publication | Live quantiles, target sampler, reports/export |
 | Product | Namespace/settings and immutable suite/revision SQLite/API composition; native input publication/HTTP/recovery, bounded byte client and scoped inventory/deletion UI; sessions, paired React authoring, session-owned upload/download controls and dev proxy | Run UI, artifact store, reports, automation client and Docker frontend proxy |
@@ -63,7 +63,9 @@ records required source-aware wire/cache and compiled checks; its newer full run
 has one unresolved timing failure. [Private connection components](docs/verification/backend-connection.md)
 now have reviewed implementations. The [startup report](docs/verification/backend-startup.md)
 records connected capacity publication and the3,499-test local gate. Delivery,
-ACK recovery and finalization remain.
+ACK recovery and finalization remain. The [staging admission report](docs/verification/staging-admission.md)
+records the shared estimator and private execution view, independent review and
+combined exact-source verification, including a sandbox loopback failure/rerun.
 
 ## Delivery order
 
