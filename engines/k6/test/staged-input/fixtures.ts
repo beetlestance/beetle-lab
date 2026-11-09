@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { validate } from '@beetle/contracts';
+import { deriveInstalledIdentity, validate } from '@beetle/contracts';
 import type { EngineManifest, Offer, StagedAttempt } from '@beetle/contracts';
 import type { SuiteConfig } from '../../compiler/suite/index.js';
 import { openStagedInput } from '../../wrapper/input/index.js';
@@ -11,6 +11,12 @@ import type { OpenStagedOptions, StagedInput } from '../../wrapper/input/index.j
 export const hash = (value: string | Uint8Array): string => createHash('sha256').update(value).digest('hex');
 export const uuid = (index: number): string => `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`;
 export const now = 1_800_000_000_000;
+/** Content binding for synthetic wrapper tests; never an approved agent profile. */
+export function syntheticInstalledIdentity(manifest: EngineManifest): Offer['installedIdentity'] {
+  return deriveInstalledIdentity({ manifest, profile: { synthetic: true, backend: 'fixture-only' },
+    identity: { manifestId: 'wrapper-fixture', profileId: 'synthetic-wrapper-profile',
+      catalogVersion: 1, schemaDigest: 'f'.repeat(64) } }, hash);
+}
 export function suite(reference: Offer['inputs'][number]): SuiteConfig {
   return { version: 1, target: 'https://example.invalid/api',
     loadPlan: { version: 1, scenarios: [{ id: 'main', name: 'main', executor: 'per-vu-iterations',
@@ -34,17 +40,18 @@ export async function fixture(): Promise<Fixture> {
   const content = '[{"name":"one"}]';
   const reference = { id: uuid(5), sha256: hash(content), bytes: Buffer.byteLength(content) };
   const budget = { cpuMillis: 1000, memoryBytes: 536_870_912, pids: 128, timeoutMs: 60_000, outputBytes: 1_048_576 };
-  const offer: Offer = { protocolVersion: '1.0', organizationId: uuid(1), workspaceId: uuid(2), attemptId: uuid(3),
-    intentDigest: 'a'.repeat(64), engine: { id: 'k6', imageDigest: 'sha256:' + 'b'.repeat(64), configVersion: 1 },
-    inputs: [reference], budget, executionPolicy: { mode: 'parallel', preferIdle: true }, requiredCapabilities: ['http'],
-    secretReferences: [{ name: '_TOKEN', provider: 'mounted', reference: 'token-ref', version: 'v1' }], config: suite(reference) };
-  const manifest: EngineManifest = { protocolVersion: '1.0', engineId: 'k6', engineVersion: 'fixture-1', imageDigest: offer.engine.imageDigest,
+  const manifest: EngineManifest = { protocolVersion: '1.0', engineId: 'k6', engineVersion: 'fixture-1', imageDigest: 'sha256:' + 'b'.repeat(64),
     protocolRange: { minimum: '1.0', maximum: '1.0' }, schemas: { config: 'https://beetle.test/contracts/engines/k6/v1/suite',
       result: 'https://beetle-lab.dev/contracts/runner/v1/engine-result' }, capabilities: ['http'],
     supportedControls: ['cpu', 'memory', 'pids', 'timeout', 'output'], defaultBudget: { ...budget }, minimumBudget: { ...budget, timeoutMs: 1 },
     backends: ['docker'], network: { required: true, profile: 'target-egress' },
     phases: ['validate', 'prepare', 'execute', 'collect', 'seal'].map(phase => ({ phase: phase as EngineManifest['phases'][number]['phase'],
       timeoutMs: 1000, workUnits: 1, outputBytes: 1024 })), entrypoint: { executable: 'wrapper', arguments: [] } };
+  const offer: Offer = { protocolVersion: '1.0', organizationId: uuid(1), workspaceId: uuid(2), attemptId: uuid(3),
+    intentDigest: 'a'.repeat(64), engine: { id: 'k6', imageDigest: manifest.imageDigest, configVersion: 1 },
+    installedIdentity: syntheticInstalledIdentity(manifest),
+    inputs: [reference], budget, executionPolicy: { mode: 'parallel', preferIdle: true }, requiredCapabilities: ['http'],
+    secretReferences: [{ name: '_TOKEN', provider: 'mounted', reference: 'token-ref', version: 'v1' }], config: suite(reference) };
   const staging: StagedAttempt = { protocolVersion: '1.0', organizationId: offer.organizationId, workspaceId: offer.workspaceId,
     attemptId: offer.attemptId, generation: 7, intentDigest: offer.intentDigest, specDigest: 'c'.repeat(64),
     offerSha256: '', manifestSha256: '', deadlineMs: now + 60_000, stagingPolicyVersion: 1,

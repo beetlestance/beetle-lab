@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto';
-import { encodeJson, validate } from '@beetle/contracts';
+import { encodeJson, installedDescriptorDigest, validate } from '@beetle/contracts';
 import type { EngineManifest, Offer, ProtocolName, ProtocolTypes, StagedAttempt } from '@beetle/contracts';
 import { InputError } from './types.js';
 import type { OpenStagedOptions } from './types.js';
 
 export const configSchema = 'https://beetle.test/contracts/engines/k6/v1/suite';
 export const resultSchema = 'https://beetle-lab.dev/contracts/runner/v1/engine-result';
-export function digest(bytes: Uint8Array): string { return createHash('sha256').update(bytes).digest('hex'); }
+export function digest(bytes: string | Uint8Array): string { return createHash('sha256').update(bytes).digest('hex'); }
 export function text(bytes: Uint8Array): string {
   try { return new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes); }
   catch { throw new InputError('utf8'); }
@@ -68,6 +68,10 @@ function checkEngine(options: OpenStagedOptions, offer: Offer, manifest: EngineM
   checkManifest(offer, manifest);
 }
 function checkManifest(offer: Offer, manifest: EngineManifest): void {
+  let manifestDigest: string;
+  try { manifestDigest = installedDescriptorDigest('manifest', manifest, digest); }
+  catch { throw new InputError('binding'); }
+  if (offer.installedIdentity.manifestDigest !== manifestDigest) throw new InputError('binding');
   if (manifest.schemas.config !== configSchema || manifest.schemas.result !== resultSchema
     || offer.engine.imageDigest !== manifest.imageDigest) throw new InputError('binding');
   if (offer.requiredCapabilities.some(capability => !manifest.capabilities.includes(capability))) throw new InputError('binding');

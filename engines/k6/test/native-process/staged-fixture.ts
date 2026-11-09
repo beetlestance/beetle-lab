@@ -1,7 +1,7 @@
 import { chmod, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { SuiteConfig } from '../../compiler/suite/index.js';
-import { fixture } from '../staged-input/fixtures.js';
+import { fixture, syntheticInstalledIdentity } from '../staged-input/fixtures.js';
 
 /** Private synthetic installation layout; no credentials or image capability claim. */
 export async function stagedFixture(target: string, timeoutMs = 15_000) {
@@ -24,6 +24,7 @@ export async function stagedFixture(target: string, timeoutMs = 15_000) {
     expectedStatus: 200, assertions: [] };
   await rm(join(base.options.inputRoot, 'input-000.bin'));
   await rm(join(base.options.secretRoot, '_TOKEN'));
+  base.offer.installedIdentity = syntheticInstalledIdentity(base.manifest);
   await base.save();
   for (const root of [base.options.inputRoot, base.options.secretRoot]) {
     for (const name of await readdir(root)) await chmod(join(root, name), 0o400);
