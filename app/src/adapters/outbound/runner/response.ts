@@ -49,6 +49,8 @@ export function receiveJson(response: IncomingMessage, complete: (value: unknown
     if (failed) return;
     try {
       if (!response.complete || (expected !== undefined && expected !== size)) throw new Error();
+      // Node exposes trailers only after EOF; runner JSON has no trailer semantics.
+      if (response.rawTrailers?.length) throw new Error();
       complete(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(body.subarray(0, size))) as unknown);
     } catch { fail(); }
   });
