@@ -14,6 +14,8 @@ intent/settings/snapshot identities and effective source ancestry are compared.
 UUID identity comparisons ignore letter case without rewriting payloads or aliasing
 URN-prefixed and unprefixed forms; names, cursors and protocol data retain their case.
 Organisation entities are installation-owned; settings record IDs are separate IDs.
+Run replies bind enqueue revision/profile/budget/policy and original queued state,
+detail ID, page scope and state/outcome consistency. They do not verify result seals.
 These guards supplement backend SQL scope/authorization checks; they establish neither
 authentication nor cursor signatures, hierarchy transactions, retention policy or cleanup.
 The shared transport alone owns JSON network I/O, same-origin prefix checks, no redirects,

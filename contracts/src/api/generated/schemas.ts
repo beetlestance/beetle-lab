@@ -8,6 +8,8 @@ import { schema as ApiNamespaceRequests } from './namespace-requests.js';
 import { schema as ApiNamespace } from './namespace.js';
 import { schema as ApiParameters } from './parameters.js';
 import { schema as ApiRetention } from './retention.js';
+import { schema as ApiRunRequests } from './run-requests.js';
+import { schema as ApiRun } from './run.js';
 import { schema as ApiSession } from './session.js';
 import { schema as ApiSettingsOverrides } from './settings-overrides.js';
 import { schema as ApiSettingsValues } from './settings-values.js';
@@ -15,7 +17,7 @@ import { schema as ApiSettings } from './settings.js';
 import { schema as ApiSuiteRequests } from './suite-requests.js';
 import { schema as ApiSuite } from './suite.js';
 /** Complete reference closure, including runner common exactly once. */
-export const apiSchemas = freezeSchema([Common, ApiCommon, ApiInputRequests, ApiInput, ApiNamespaceRequests, ApiNamespace, ApiParameters, ApiRetention, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
+export const apiSchemas = freezeSchema([Common, ApiCommon, ApiInputRequests, ApiInput, ApiNamespaceRequests, ApiNamespace, ApiParameters, ApiRetention, ApiRunRequests, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -57,12 +59,19 @@ export const apiMessageSchemas = freezeSchema({
   SuiteParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/SuiteParams' },
   SuiteRevisionParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/SuiteRevisionParams' },
   InputParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/InputParams' },
+  RunParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/RunParams' },
   RetentionPreviewRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionPreviewRequest' },
   RetentionCandidate: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionCandidate' },
   ProtectedExclusion: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/ProtectedExclusion' },
   RetentionPreview: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionPreview' },
   RetentionApplyRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionApplyRequest' },
   RetentionApplyReceipt: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionApplyReceipt' },
+  CreateRunRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/CreateRunRequest' },
+  RunExecutionPolicy: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunExecutionPolicy' },
+  RunEngine: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunEngine' },
+  RunSettingsVersions: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunSettingsVersions' },
+  Run: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run#/$defs/Run' },
+  RunPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunPage' },
   PairBrowserRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/session#/$defs/PairBrowserRequest' },
   BrowserSession: { $ref: 'https://beetle-lab.dev/contracts/api/v2/session#/$defs/BrowserSession' },
   LogoutBrowserRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/session#/$defs/LogoutBrowserRequest' },

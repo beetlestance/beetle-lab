@@ -2,6 +2,7 @@ import type { ApiOperation } from '../generated/operations.js';
 import type { EffectiveSettings, SettingsScope } from '../generated/types.js';
 import type { PreparedInput } from './input.js';
 import { inputOwnership } from './input-ownership.js';
+import { runOwnership } from './run-ownership.js';
 
 function sameUuid(left: unknown, right: unknown): boolean {
   return typeof left === 'string' && typeof right === 'string' && left.toLowerCase() === right.toLowerCase();
@@ -70,7 +71,7 @@ function identityMatches(operation: ApiOperation, input: PreparedInput, reply: O
   const params = input.params;
   const identities: Partial<Record<ApiOperation['response'], string | undefined>> = {
     Organization: params.organizationId, Workspace: params.workspaceId, Folder: params.id,
-    Suite: params.suiteId, SuiteRevision: params.revisionId,
+    Suite: params.suiteId, SuiteRevision: params.revisionId, Run: params.runId,
   };
   if (operation.response === 'DeletionReceipt') {
     return sameUuid(reply.id, params.id ?? params.workspaceId ?? params.organizationId) && sameUuid(reply.requestId, input.body?.requestId);
@@ -101,7 +102,8 @@ export function responseOwnership(operation: ApiOperation, input: PreparedInput,
 }
 
 function resourceOwnership(operation: ApiOperation, input: PreparedInput, reply: OwnedReply): boolean {
-  return revisionOwnership(operation, input, reply) && inputOwnership(operation, input, reply);
+  return revisionOwnership(operation, input, reply) && inputOwnership(operation, input, reply)
+    && runOwnership(operation, input, reply);
 }
 
 function revisionOwnership(operation: ApiOperation, input: PreparedInput, reply: OwnedReply): boolean {

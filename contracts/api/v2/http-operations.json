@@ -370,5 +370,34 @@
     "error": "ApiError",
     "params": "InputParams",
     "request": "TransitionInputRequest"
+  },
+  {
+    "name": "createRun",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs",
+    "response": "Run",
+    "successStatus": 202,
+    "error": "ApiError",
+    "params": "WorkspaceParams",
+    "request": "CreateRunRequest"
+  },
+  {
+    "name": "listRuns",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs",
+    "response": "RunPage",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "WorkspaceParams",
+    "query": "PageQuery"
+  },
+  {
+    "name": "getRun",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}",
+    "response": "Run",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunParams"
   }
 ]

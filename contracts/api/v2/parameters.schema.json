@@ -106,6 +106,26 @@
         "inputId"
       ],
       "additionalProperties": false
+    },
+    "RunParams": {
+      "type": "object",
+      "properties": {
+        "organizationId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "workspaceId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "runId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "organizationId",
+        "workspaceId",
+        "runId"
+      ],
+      "additionalProperties": false
     }
   }
 }

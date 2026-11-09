@@ -5,6 +5,7 @@ import { fixture } from '../fixtures.js';
 import { baseUrl, load, organizationId, params, reply } from './helpers.js';
 
 const files: Partial<Record<keyof ApiTypes, string>> = {
+  Run: 'run', RunPage: 'run-page', CreateRunRequest: 'create-run',
   InputRecord: 'input', InputReceipt: 'input-receipt', InputPage: 'input-page',
   CreateInputRequest: 'create-input', TransitionInputRequest: 'transition-input',
   Suite: 'suite', SuiteRevision: 'suite-revision', SuitePage: 'suite-page', SuiteRevisionPage: 'suite-revision-page',
@@ -24,7 +25,7 @@ const files: Partial<Record<keyof ApiTypes, string>> = {
 async function exchange(operation: ApiOperation) {
   const input: Record<string, unknown> = {};
   const parameterFiles = { OrganizationParams: 'organization', WorkspaceParams: 'workspace', FolderParams: 'folder',
-    SuiteParams: 'suite', SuiteRevisionParams: 'suite-revision', InputParams: 'input' };
+    SuiteParams: 'suite', SuiteRevisionParams: 'suite-revision', InputParams: 'input', RunParams: 'run' };
   if ('params' in operation) input.params = await fixture(`valid/${parameterFiles[operation.params]}-params.json`);
   if ('query' in operation) input.query = await load('page-query', 'PageQuery');
   const body = 'request' in operation ? await fixture(`valid/${files[operation.request]}.json`) as Record<string, unknown> : undefined;

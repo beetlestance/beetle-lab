@@ -44,6 +44,9 @@ Schema catalogue is complete, including runner common exactly once. These are ro
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs/{inputId} | InputParams | none | none | 200 | InputRecord |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs/{inputId}/seal | InputParams | none | TransitionInputRequest | 202 | InputReceipt |
 | DELETE | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs/{inputId} | InputParams | none | TransitionInputRequest | 202 | InputReceipt |
+| POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs | WorkspaceParams | none | CreateRunRequest | 202 | Run |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs | WorkspaceParams | PageQuery | none | 200 | RunPage |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId} | RunParams | none | none | 200 | Run |
 
 All errors use ApiError. UUID path parameters are validated before URL encoding.
 List queries require an integer limit 1–100 and optional opaque string cursor; HTTP query parsing belongs to the transport adapter.

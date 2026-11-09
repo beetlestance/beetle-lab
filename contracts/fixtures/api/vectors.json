@@ -503,5 +503,25 @@
     "path": "invalid/input-old-acceptance.json",
     "schema": "InputReceipt",
     "valid": false
+  },
+  {
+    "path": "valid/create-run.json",
+    "schema": "CreateRunRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/run.json",
+    "schema": "Run",
+    "valid": true
+  },
+  {
+    "path": "valid/run-page.json",
+    "schema": "RunPage",
+    "valid": true
+  },
+  {
+    "path": "valid/run-params.json",
+    "schema": "RunParams",
+    "valid": true
   }
 ]
