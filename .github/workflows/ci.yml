@@ -32,6 +32,7 @@ jobs:
       - run: npm run verify:v2
       - run: npm run build:api
       - run: npm run smoke:api
+      - run: npm run smoke:input-controls
 
   container:
     name: ci/container

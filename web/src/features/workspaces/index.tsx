@@ -7,7 +7,7 @@ import { routes } from '../../app/routes.js';
 import { QueryState } from '../../components/QueryState.js';
 import { WorkspaceList } from './WorkspaceList.js';
 import { FolderList } from './FolderList.js';
-const InputInventory = lazy(() => import('../inputs/index.js').then(module => ({ default: module.InputInventory })));
+const WorkspaceInputs = lazy(() => import('../input-screen/index.js').then(module => ({ default: module.WorkspaceInputs })));
 
 export function OrganizationScope({ organizationId, workspaceId, view }: { organizationId: string; workspaceId?: string; view?: 'inputs' }) {
   const api = useApi();
@@ -44,6 +44,6 @@ function WorkspaceScope({ organizationId, workspaceId, view }: { organizationId:
     <Link to={routes.suites(organizationId, workspaceId)}>Suites</Link>
     <Link to={routes.inputs(organizationId, workspaceId)}>Inputs</Link>
     <p className="workspace-label">Workspace <strong>{data.name}</strong></p>
-    {view === 'inputs' ? <InputInventory workspace={data} /> : <FolderList workspace={data} />}
+    {view === 'inputs' ? <WorkspaceInputs workspace={data} /> : <FolderList workspace={data} />}
   </>}</QueryState>;
 }

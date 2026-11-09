@@ -13,7 +13,8 @@
     "agent/**/*.ts",
     "contracts/**/*.ts",
     "engines/k6/**/*.ts",
-    "tools/**/*.ts"
+    "tools/**/*.ts",
+    "web/test/**/*.ts"
   ],
   "exclude": [
     "node_modules",

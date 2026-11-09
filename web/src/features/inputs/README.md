@@ -1,6 +1,7 @@
 # Input inventory
 
 Public entrypoint: `InputInventory({ workspace: Workspace, renderActions? })`.
+Optional children render after its heading and before the index, for scoped controls.
 Uses the generated JSON API, shared input query keys and existing Beetle tokens.
 Retains one page of at most 100 rows and at most 20 previous page cursors.
 One explicit status panel owns one frozen deletion intent, including scope,

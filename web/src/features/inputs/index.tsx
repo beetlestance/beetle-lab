@@ -10,13 +10,18 @@ import { InputStatus } from './InputStatus.js';
 import './inputs.css';
 
 /** One mounted workspace owns one page and one current-status/deletion panel. */
-export function InputInventory(props: { workspace: Workspace; renderActions?: (record: InputRecord) => ReactNode }) {
+interface InventoryProps {
+  workspace: Workspace;
+  renderActions?: (record: InputRecord) => ReactNode;
+  children?: ReactNode;
+}
+export function InputInventory(props: InventoryProps) {
   const { workspace } = props;
   const identity = JSON.stringify(queryKeys.inputs(workspace.scope.organizationId, workspace.id));
   return <InventoryScope key={identity} {...props} />;
 }
 
-function InventoryScope({ workspace, ...actions }: { workspace: Workspace; renderActions?: (record: InputRecord) => ReactNode }) {
+function InventoryScope({ workspace, children, ...actions }: InventoryProps) {
   const api = useApi();
   const client = useQueryClient();
   const params = { organizationId: workspace.scope.organizationId, workspaceId: workspace.id };
@@ -36,6 +41,7 @@ function InventoryScope({ workspace, ...actions }: { workspace: Workspace; rende
       <p>Inspect input metadata and current status. Deletion is explicit and may require cleanup.</p></div>
       <button disabled={query.isFetching} onClick={() => void query.refetch()}>Refresh input list</button>
     </header>
+    {children}
     <QueryState query={query}>{data => <>
       <InputTable items={data.items} selected={selected} select={select} />
       {!data.items.length && <p className="notice">No inputs in this workspace.</p>}

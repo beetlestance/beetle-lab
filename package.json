@@ -30,6 +30,7 @@
     "smoke:agent": "node --import tsx agent/test/bootstrap/smoke-agent.ts",
     "start:api": "node app/dist/main.js",
     "smoke:api": "node --import tsx app/test/bootstrap/smoke-api.ts",
+    "smoke:input-controls": "node --import tsx web/test/smoke-input-controls.ts",
     "build:k6": "node --import tsx tools/build-k6.ts",
     "smoke:agent:docker": "node --import tsx agent/test/container/smoke-agent.ts"
   },

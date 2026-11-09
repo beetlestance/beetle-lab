@@ -1,6 +1,6 @@
 import { createApiClient, createInputTransferClient } from '@beetle/contracts/api';
 import type { ApiClient, ApiClientResult, BrowserSession, InputTransferClient } from '@beetle/contracts/api';
-import { unknownOutcome } from '../../app/api.js';
+import { unknownOutcome } from '../../app/errors.js';
 import { SessionTransferOwner } from './transfer-owner.js';
 
 export interface SessionOptions { baseUrl: string; fetch?: typeof fetch }
