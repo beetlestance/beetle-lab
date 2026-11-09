@@ -32,7 +32,7 @@ model assignments, agent packets, concurrency and independent review.
 
 | Area | Integrated | Still required |
 | --- | --- | --- |
-| Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings, suite and run-intake schemas/clients; atomic queued-run/attempt/outbox SQLite intake; Fastify JSON adapter; separate config/Offer bounds through actual loader | Run/result routes, execution delivery and result storage |
+| Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings, suite and run-intake schemas/clients; atomic queued-run/attempt/outbox SQLite intake; authenticated enqueue/detail/history routes; Fastify JSON adapter; separate config/Offer bounds through actual loader | Execution delivery, result routes and result storage |
 | Agent | Catalogue/admission/staging/controllers; typed stops; bounded scheduling; guards/full observation publisher; installed runtime; Node24 image/private HTTP; real arm64 k6 pass/fail; journal008/large-original bounds; Offer propagation and launch contention | Updated image/Compose/stop-latency qualification, irreversible recovery fencing, telemetry, application artifact transfer/finalization and native architecture matrix |
 | k6 | Suite compiler/runtime/builder, phase-isolated metrics, control journal, staged loader, child runner, numeric windows, summary collector, outcome mapper, staged wrapper, seal codec and artifact publication | Live quantiles, target sampler, reports/export |
 | Product | Namespace/settings and immutable suite/revision SQLite/API composition; native input publication/HTTP/recovery, bounded byte client and scoped inventory/deletion UI; sessions, paired React authoring, session-owned upload/download controls and dev proxy | Run API/UI, artifact store, reports, automation client and Docker frontend proxy |
@@ -53,7 +53,9 @@ inventory/client checks and actual compiled HTTP transfer. The
 3,048-test gate and real frontend-controller HTTP recovery checks.
 [Run intake evidence](docs/verification/run-intake.md) records reviewed schemas and
 pure commands plus atomic SQLite run/attempt/outbox enqueue; its newer3,086-test
-gate does not establish run endpoints, dispatch or completed execution.
+gate does not establish dispatch or completed execution. The newer
+[run HTTP report](docs/verification/run-http.md) records authenticated run routes,
+a real TCP lost202/restart test and the3,103-test gate; the agent bridge is pending.
 
 ## Delivery order
 

@@ -2,7 +2,9 @@
 
 The released app still uses `npm start`. These commands run the new namespace,
 settings, suite authoring and input HTTP surface; run execution and Docker installation remain incomplete.
-Programmatic metadata enqueue is implemented, but run HTTP/dispatch is not connected yet.
+Run enqueue/detail/history routes are registered. Fresh enqueue returns503 until
+the installed-profile/capacity bridge is connected; programmatic integration tests
+use explicit synthetic pins/observations. Agent dispatch remains unimplemented.
 Use Node 24 and install the locked development dependencies with `npm ci`.
 
 ## Create a private development installation once

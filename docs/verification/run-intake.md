@@ -3,7 +3,8 @@
 Contract source: `1703126`; pure command: `5c8f09b`; storage: `bc01cb3`.
 Environment: 2026-11-09, macOS arm64/Node26.7.0, synthetic fixtures only.
 Scope: schemas/clients, pinned commands, migration004 and atomic metadata enqueue.
-Run HTTP routes, dispatch and actual engine execution remain unimplemented.
+This is the storage checkpoint. Later [run HTTP evidence](run-http.md) covers
+authenticated routes; dispatch and actual engine execution remain unimplemented.
 
 ## Defined boundary
 
@@ -101,7 +102,7 @@ loopback installations and verify old authoring/input workflows, lost input
 acknowledgements, logout and clean shutdown. These do not exercise run HTTP because
 those routes do not yet exist. No agent, external target or engine starts.
 
-Public run routes, executable registry/capacity bridge, dispatch/cancel, event
+The later linked report covers public run routes. Executable registry/capacity bridge, dispatch/cancel, event
 cursors, verified artifacts/finalization and UI run/results remain required before
 R2 or a complete workflow can be claimed. Native image evidence affected by shared
 wrapper source needs renewed qualification. Browser/proxy, Docker/Compose,
