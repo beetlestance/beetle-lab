@@ -3,7 +3,7 @@ import type { CreateRunRequest, Run, RunPage } from '../generated/types.js';
 import type { PreparedInput } from './input.js';
 
 function validRun(run: Run): boolean {
-  if (run.state === 'finished') return ['passed', 'failed'].includes(run.outcome)
+  if (run.state === 'finished') return ['passed', 'failed', 'inconclusive'].includes(run.outcome)
     && run.validationStatus === 'passed' && run.reason === null;
   if (run.state === 'cancelled') return run.outcome === 'inconclusive'
     && run.cancellationRequested && run.reason === 'cancelled';

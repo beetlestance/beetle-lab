@@ -68,6 +68,7 @@ export type RunEngine = FromSchema<typeof S8.RunEngine>;
 export type RunSettingsVersions = FromSchema<typeof S8.RunSettingsVersions>;
 export type Run = FromSchema<typeof S8.Run>;
 export type RunPage = FromSchema<typeof S8.RunPage>;
+export type RunTimestamp = FromSchema<typeof S8.RunTimestamp>;
 export type PairBrowserRequest = FromSchema<typeof S9.PairBrowserRequest>;
 export type BrowserSession = FromSchema<typeof S9.BrowserSession>;
 export type LogoutBrowserRequest = FromSchema<typeof S9.LogoutBrowserRequest>;
@@ -155,6 +156,7 @@ export interface ApiTypes {
   RunSettingsVersions: RunSettingsVersions;
   Run: Run;
   RunPage: RunPage;
+  RunTimestamp: RunTimestamp;
   PairBrowserRequest: PairBrowserRequest;
   BrowserSession: BrowserSession;
   LogoutBrowserRequest: LogoutBrowserRequest;

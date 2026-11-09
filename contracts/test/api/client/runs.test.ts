@@ -62,3 +62,14 @@ it('bounds run pages and request policy without coercion or default insertion', 
     expect(executionPolicy).toEqual(original);
   }
 });
+
+it('preserves a completed discovery run with an inconclusive outcome in detail and history', async () => {
+  const queued = await load('run', 'Run');
+  // Discovery can exhaust its range without reaching the abort rule; this is not an execution error.
+  const run: Run = { ...queued, state: 'finished', outcome: 'inconclusive', validationStatus: 'passed', version: 4 };
+  expect(await createApiClient({ baseUrl, fetch: reply(run) }).getRun({ params: { ...params, runId: run.id } }))
+    .toEqual({ ok: true, value: run });
+  const page = { scope: run.scope, items: [run], nextCursor: null };
+  expect(await createApiClient({ baseUrl, fetch: reply(page) }).listRuns({ params, query: { limit: 10 } }))
+    .toEqual({ ok: true, value: page });
+});

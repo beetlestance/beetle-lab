@@ -89,7 +89,7 @@
           "pattern": "^[a-f0-9]{64}$"
         },
         "requestedAt": {
-          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/timestamp"
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunTimestamp"
         },
         "state": {
           "enum": [
@@ -197,6 +197,9 @@
         "nextCursor"
       ],
       "additionalProperties": false
+    },
+    "RunTimestamp": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/timestamp"
     }
   }
 }

@@ -18,6 +18,11 @@ The application has a trusted, bounded installed profile registry (<=32 entries)
 Each profile maps engine ID/config version to exact image/manifest identity and
 required capabilities. First release supports k6; adding an engine requires its
 own registered contracts. Profile selection cannot silently choose another image.
+Persist the exact trusted registry manifest/profile/schema identities beside the
+Offer. Its public selector does not carry those pins. Before first dispatch, a
+changed same-selector registry identity must refuse delivery, never select updated
+semantics silently. After possible delivery, retain the old intent for reconciliation;
+the dispatch contract must define its exact agent-side identity handshake.
 The browser may display these pins but cannot author them through enqueue.
 
 Structural preflight is not semantic engine validation. Run.validationStatus starts
@@ -80,8 +85,8 @@ GET is observational and never launches work. Stable ID-ordered lists return<=10
 items with query-bound cursors; scope mismatch returns404. No cross-workspace lookup
 by a bare run ID. Client guards bind create reply revision/profile/budget/policy,
 detail ID and each page item to the route's workspace.
-Nonterminal DTOs have pending outcome. Finished means passed/failed with engine
-validation passed; cancelled/errored mean inconclusive with a typed reason. These
+Nonterminal DTOs have pending outcome. Finished allows passed/failed/inconclusive
+with engine validation passed; discovery exhaustion is completed but inconclusive; cancelled/errored mean inconclusive with a typed reason. These
 client consistency checks do not replace backend exit/seal/artifact verification.
 
 ## Handoff to execution
