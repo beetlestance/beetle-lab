@@ -12,6 +12,7 @@ function deferred<T>() {
   const promise = new Promise<T>(yes => { resolve = yes; }); return { promise, resolve };
 }
 const json = (value: unknown) => new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } });
+const turn = () => new Promise<void>(resolve => setTimeout(resolve, 0));
 async function paired(gate: BrowserSessionGate) {
   await expect.poll(() => gate.getSnapshot().kind).toBe('paired');
   const state = gate.getSnapshot(); if (state.kind !== 'paired') throw new Error('Expected paired gate'); return state;
@@ -64,4 +65,38 @@ it('failed cleanup cannot silently open a replacement transfer session', async (
   await expect.poll(() => gate.getSnapshot().kind).toBe('unavailable');
   expect(JSON.stringify(gate.getSnapshot())).not.toContain('PRIVATE_CANARY');
   gate.stop(); await expect(first.transfers.close()).rejects.toThrow('Input transfer cleanup failed');
+});
+
+it('a reentrant checking subscriber cannot make two reads adopt one current epoch', async () => {
+  const replies: ReturnType<typeof deferred<Response>>[] = [];
+  const gate = new BrowserSessionGate({ baseUrl: 'http://localhost', fetch: async () => {
+    const reply = deferred<Response>(); replies.push(reply); return reply.promise;
+  } });
+  let nested = false;
+  gate.subscribe(() => { if (!nested && gate.getSnapshot().kind === 'checking') { nested = true; gate.check(); } });
+  try {
+    gate.start(); await turn();
+    expect(replies).toHaveLength(1);
+    replies[0]!.resolve(json(session)); const state = await paired(gate);
+    gate.stop(); await state.transfers.close();
+  } finally {
+    gate.stop(); for (const reply of replies) reply.resolve(json(session));
+    await turn();
+  }
+});
+
+it('an abort callback can reenter check without leaving an orphan session read', async () => {
+  const reply = deferred<Response>(); let reads = 0; let nested = false;
+  const gate = new BrowserSessionGate({ baseUrl: 'http://localhost', fetch: async (input, init) => {
+    if (String(input).endsWith('/auth/session')) { reads++; return json(session); }
+    init?.signal?.addEventListener('abort', () => { if (!nested) { nested = true; gate.check(); } }, { once: true });
+    return reply.promise;
+  } });
+  gate.start(); const first = await paired(gate); const download = first.transfers.download({ record });
+  try {
+    gate.check(); await turn();
+    expect(reads).toBe(2); expect(gate.getSnapshot().kind).toBe('checking');
+    reply.resolve(new Response(null)); await download;
+    const next = await paired(gate); gate.stop(); await next.transfers.close();
+  } finally { gate.stop(); reply.resolve(new Response(null)); await download; await first.transfers.close(); }
 });

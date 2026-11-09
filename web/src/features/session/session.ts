@@ -38,10 +38,13 @@ export class BrowserSessionGate {
     this.listeners.forEach(listener => listener());
   }
   private begin(state: SessionState): Epoch {
-    this.epoch.abort.abort();
-    this.epoch = { generation: this.epoch.generation + 1, abort: new AbortController() };
-    this.publish(state);
-    return this.epoch;
+    const previous = this.epoch;
+    const next = { generation: previous.generation + 1, abort: new AbortController() };
+    // Cleanup and subscribers may reenter: reserve and return this exact epoch.
+    this.epoch = next;
+    previous.abort.abort();
+    if (this.current(next)) this.publish(state);
+    return next;
   }
   private client(epoch: Epoch, headers: Readonly<Record<string, string>> = {}, observe = false): ApiClient {
     const fetcher = this.options.fetch ?? fetch;
@@ -76,6 +79,7 @@ export class BrowserSessionGate {
         headers: { 'X-Beetle-CSRF': session.csrfToken }, fetch: this.transferFetch(epoch) }, epoch.abort.signal);
       if (!transfers || !this.current(epoch)) return;
       const client = this.client(epoch, { 'X-Beetle-CSRF': session.csrfToken }, true);
+      if (!this.current(epoch)) return;
       this.publish({ kind: 'paired', session, client, transfers, generation: epoch.generation });
     } catch {
       if (this.current(epoch)) this.publish({ kind: 'unavailable',
@@ -87,6 +91,7 @@ export class BrowserSessionGate {
     void this.readSession(epoch);
   };
   private async readSession(epoch: Epoch, context = '') {
+    if (!this.current(epoch)) return;
     const result = await this.client(epoch).getBrowserSession({ signal: epoch.abort.signal });
     if (!this.current(epoch)) return;
     if (result.ok) { await this.accept(epoch, result.value); return; }
@@ -98,6 +103,7 @@ export class BrowserSessionGate {
   pair = (bootstrapToken: string) => {
     if (this.state.kind !== 'unpaired') return;
     const epoch = this.begin({ kind: 'pairing', message: 'Pairing this browser…' });
+    if (!this.current(epoch)) return;
     const pending = this.client(epoch, { 'X-Beetle-Pair': '1' }).pairBrowserSession({
       body: { bootstrapToken }, signal: epoch.abort.signal,
     });
@@ -118,6 +124,7 @@ export class BrowserSessionGate {
     if (this.state.kind !== 'paired') return;
     const csrfToken = this.state.session.csrfToken;
     const epoch = this.begin({ kind: 'logging-out', message: 'Signing out… Unacknowledged changes may have committed; check their outcome before repeating them.' });
+    if (!this.current(epoch)) return;
     const pending = this.client(epoch, { 'X-Beetle-CSRF': csrfToken }).logoutBrowserSession({
       body: {}, signal: epoch.abort.signal,
     });
