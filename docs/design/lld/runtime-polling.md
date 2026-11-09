@@ -36,6 +36,17 @@ original failure. No success is fabricated. close subsequently rejects with that
 failure, preserving a simultaneous source-close failure in a bounded aggregate.
 A source returning null is ordinary unavailable evidence, not an exception.
 
+## Delivery composition
+
+agent-owners.ts shares one gateway between capacity and the delivery loop. A fatal
+producer exception stops delivery synchronously without awaiting that child from
+inside its producer. Both original drains remain owned; published status cannot
+hide the failure. Metadata publication failure retains the original error and
+lease expiry rather than retrying a positive mutation. Delivery failure fences
+new positive publication, drains the poller and its pending write, then publishes
+null once; a failed revoke is retained, never advertised as durable revocation.
+The failure callback cannot await delivery/composite close, which would await itself.
+
 ## Shutdown
 
 close fences new iterations, clears its own timer and aborts the active source
