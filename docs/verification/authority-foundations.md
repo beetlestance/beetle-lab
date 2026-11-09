@@ -3,7 +3,8 @@
 Status: independently reviewed foundations/startup, integrated and locally verified.
 Foundation source: `e0c270dd305a6767f1ea1a0548bafcd5fac117ba`.
 Startup/correction source: `4638d5e640ddcd62c719c377ae5c2eafc1a604d9`.
-Runner wire binding and backend dispatch are not established by this report.
+Runner wire source: `752d9d37835a9f14b99c68777f4aac88ae499b83`.
+Backend persisted binding and dispatch are not established by this report.
 
 ## Durable journal identity
 
@@ -79,16 +80,32 @@ the extra factory read moves that injected third read to owned initial binding;
 the observable failure-cleanup/retry contract is unchanged. The follow-up review
 closed the finding. These checks do not exhaust every native I/O failure location.
 
+## Runner wire and integrated verification
+
+Capabilities publish the actual journal UUID. The backend gateway captures one
+canonical expected UUID into its private header; all five attempt routes reject
+missing/malformed/mismatched authority before service work. Scoped missing receipts
+have a dedicated reason and validated attemptId. Engine Offers remain unchanged.
+Independent agent/schema and client reviews found no blocking source defect.
+The no-lookup regression relies partly on source ordering; the engine-reason
+separation and byte-preservation conclusions also include source inspection.
+
+Exact integrated source above passed `NODE_OPTIONS=--max-old-space-size=1024 npm run verify:v2`,
+exit 0: 3,963 tests / 374 files, 495.83 seconds for the test phase. Schema generation,
+all configured TypeScript/lint/architecture/docs checks and frontend build passed.
+The existing frontend chunk-size notice remains. This is local verification,
+not Docker, browser, native architecture or completed backend delivery evidence.
+
 ## Limits and required next work
 
-This is not a full repository gate on this source; the earlier full gate remains
-[run controls](run-controls.md). Component/Node checks do not qualify release images.
+The integrated gate verifies the runner-wire source above; it does not qualify
+release images. Earlier UI evidence remains in [run controls](run-controls.md).
 Host is macOS arm64/Node 26.7; target Node 24/Linux amd64+arm64 qualification remains.
 Process-crash tests do not prove hardware/power-loss durability. Arbitrary manual
 rewinds and hostile concurrent path replacement remain outside the accepted model.
 
 First-install tooling/CLI/Compose provisioning, compiled executable smoke,
-capability/header contracts, immutable backend claim/observation binding, delivery
+immutable backend claim/observation binding, delivery
 runtime, and physical cold-backup/restore proof remain required. The control store
 alone does not verify quiescence, copy restored data or settle physical execution.
 See [delivery authority](../design/lld/delivery-authority.md) and [PLAN](../../PLAN.md).
