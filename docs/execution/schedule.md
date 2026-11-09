@@ -69,6 +69,10 @@ evidence still determine whether another local build/test is appropriate.
    ready baseline only after consumed guarantees pass; record their accepted status.
    Integrated means landed with applicable seam checks; accepted means all evidence
    required by that packet's declared scope is satisfied. Qualification is separate. Unit passes from a child branch are scoped.
+7. After accepted integration, archive task reports/manifests and branch tips, verify
+   that no unique or uncommitted work remains, then remove the task worktree and local
+   branch. Include cherry-picked/squashed work only with patch or historical-tree proof.
+   Preserve the original and active integration worktrees; never discard local data.
 
 Rebase is coordinator-owned for waiting/returned branches; workers do not change
 base behind the packet's back. Contract/doc changes invalidate active packets when
