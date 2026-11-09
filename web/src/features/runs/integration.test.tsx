@@ -76,18 +76,23 @@ function paired(handler: (request: RequestRecord) => Response | Promise<Response
   };
   return { records, ...render(<MemoryRouter initialEntries={[initial]}><SessionApp baseUrl="http://localhost" fetch={fetcher} /></MemoryRouter>) };
 }
-it('retires a delayed submission on sign out and cannot navigate after its late 202', async () => {
+it('retires a delayed submission across sign out and re-pair before its late 202', async () => {
   const late = deferred<Response>();
   const fixture = paired(request => {
     if (request.path.endsWith('/auth/logout')) return json({ loggedOut: true });
+    if (request.path.endsWith('/auth/pair')) return json({ ...session, csrfToken: 'd'.repeat(43) });
     return request.method === 'POST' ? late.promise : suiteRead(request);
   });
   await submitSaved(); await waitFor(() => expect(fixture.records.some(record => record.path.endsWith('/runs'))).toBe(true));
   fireEvent.click(screen.getByRole('button', { name: 'Sign out' })); await screen.findByLabelText('Startup token');
   const write = fixture.records.find(record => record.path.endsWith('/runs')); expect(write?.signal?.aborted).toBe(true);
+  fireEvent.change(screen.getByLabelText('Startup token'), { target: { value: 'a'.repeat(43) } });
+  fireEvent.click(screen.getByRole('button', { name: 'Pair browser' }));
+  await screen.findByLabelText('Target URL');
   await act(async () => late.resolve(queued(write?.body)));
   expect(screen.queryByRole('heading', { name: 'Run detail' })).not.toBeInTheDocument();
-  expect(screen.getByLabelText('Startup token')).toBeVisible();
+  expect(screen.getByLabelText('Target URL')).toBeVisible();
+  expect(fixture.records.filter(record => record.path.endsWith('/runs'))).toHaveLength(1);
 });
 it('ends the session for a run-detail 401 without retaining old run content', async () => {
   const fixture = paired(() => json(apiError('unpaired'), 401), routes.run(ids.a, ids.workspace, runId));
