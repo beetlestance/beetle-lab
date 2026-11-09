@@ -3,7 +3,9 @@ import addFormatsModule from 'ajv-formats';
 import type { ErrorObject, ValidateFunction } from 'ajv';
 import { messageSchemas, schemas } from './generated/schemas.js';
 import { schema as common } from './generated/common.js';
-import type { Uuid, Cursor, ProtocolTypes, SecretReference } from './generated/types.js';
+import { encodeJson } from './json.js';
+import { RUNNER_MAXIMUM_CONFIG_BYTES } from './limits.js';
+import type { Uuid, Cursor, ProtocolTypes, SecretReference, Offer } from './generated/types.js';
 
 export type ProtocolName = keyof ProtocolTypes;
 export interface StructuralIssue { readonly path: string; readonly code: string }
@@ -46,5 +48,9 @@ function safeIssues(errors: ErrorObject[] | null | undefined): readonly Structur
 export function validate<N extends ProtocolName>(name: N, input: unknown): ValidationResult<ProtocolTypes[N]> {
   const validator = validators[name];
   if (!validator(input)) return { ok: false, issues: safeIssues(validator.errors) };
+  if (name === 'Offer') {
+    try { encodeJson((input as Offer).config, RUNNER_MAXIMUM_CONFIG_BYTES); }
+    catch { return { ok: false, issues: Object.freeze([Object.freeze({ path: '/config', code: 'limit' })]) }; }
+  }
   return { ok: true, value: input as ProtocolTypes[N] };
 }
