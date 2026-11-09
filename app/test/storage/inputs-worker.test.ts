@@ -73,6 +73,12 @@ it('rejects injected recovery scope at caller and dequeue while preserving globa
       .toMatchObject({ kind: 'result', ok: false, code: 'invalid_value' });
     expect(await send({ kind: 'listInputs', query: { limit: 1 } } as never))
       .toMatchObject({ kind: 'result', ok: false, code: 'invalid_value' });
+    expect(await send({ kind: 'recoverInputs', query: { limit: 1, mode: 'all' } } as never))
+      .toMatchObject({ kind: 'result', ok: false, code: 'invalid_value' });
+    expect(await send({ kind: 'recoverInputs', query: { limit: 1, mode: 'pending', scope } } as never))
+      .toMatchObject({ kind: 'result', ok: false, code: 'invalid_value' });
+    expect(await send({ kind: 'recoverInputs', query: { limit: 2, mode: 'pending' } }))
+      .toMatchObject({ kind: 'result', ok: true, value: { items: [], nextCursor: null } });
     expect(await send({ kind: 'recoverInputs', query: { limit: 2 } })).toMatchObject({ kind: 'result', ok: true,
       value: { items: [{ id: uuid(90), scope }, { id: uuid(91), scope: foreign }], nextCursor: null } });
     expect(await send({ kind: 'close' })).toMatchObject({ kind: 'result', ok: true });

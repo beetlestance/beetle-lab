@@ -95,6 +95,17 @@ it('bounds recovery pages/cursors and rejects scope injection before querying', 
   expect(await service.recover({ limit: 2, cursor: first.nextCursor! })).toMatchObject({ examined: 1, reconciled: 1, nextCursor: null });
   await service.close();
 });
+
+it('forwards private pending selection without processing ordinary staging custody', async () => {
+  const { service, store, model } = await setup(fixture);
+  await service.control(creation(90));
+  const scan = vi.spyOn(store, 'recovery'); const prepare = vi.spyOn(model.bytes, 'prepare');
+  expect(await service.recover({ limit: 16, mode: 'pending' }))
+    .toEqual({ examined: 0, reconciled: 0, busy: 0, pending: 0, nextCursor: null });
+  expect(scan).toHaveBeenCalledExactlyOnceWith({ limit: 16, mode: 'pending' }); expect(prepare).not.toHaveBeenCalled();
+  await expect(service.recover({ limit: 16, mode: 'all' } as never)).rejects.toMatchObject({ code: 'invalid_value' });
+  expect(scan).toHaveBeenCalledTimes(1); await service.close();
+});
 it('does not let page completion imply drained originals or retry cancelled work', async () => {
   const { service, model } = await setup(fixture); const record = await service.control(creation()) as InputRecord;
   const settled = deferred<void>(); const entered = deferred<void>();

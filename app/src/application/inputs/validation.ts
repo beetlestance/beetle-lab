@@ -50,7 +50,8 @@ export function commandSnapshot(value: InputControl, digest: IntentDigest): Inpu
 export function pageSnapshot<T extends InputList | InputRecoveryPage>(value: T, scoped: boolean): T {
   const copy = snapshot(value);
   requireRule(('scope' in copy) === scoped);
-  fields(copy, scoped ? ['scope', 'limit', 'cursor'] : ['limit', 'cursor']);
+  fields(copy, scoped ? ['scope', 'limit', 'cursor'] : ['limit', 'cursor', 'mode']);
+  if ('mode' in copy) requireRule(copy.mode === 'pending');
   requireRule(Number.isSafeInteger(copy.limit) && copy.limit >= 1 && copy.limit <= 100);
   requireRule(copy.cursor === undefined || (typeof copy.cursor === 'string' && copy.cursor.length <= 1024));
   if ('scope' in copy) return snapshot({ ...copy, scope: keySnapshot({ scope: copy.scope, id: '00000000-0000-4000-8000-000000000000' }).scope });

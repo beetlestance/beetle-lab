@@ -61,8 +61,13 @@ export class Ownership {
   }
   call<T>(work: () => Promise<T>): Promise<T> {
     this.check();
-    const result = work(); this.calls.add(result);
+    let resolve!: (value: T | PromiseLike<T>) => void;
+    let reject!: (reason: unknown) => void;
+    const result = new Promise<T>((yes, no) => { resolve = yes; reject = no; });
+    this.calls.add(result);
     void result.then(() => { this.calls.delete(result); }, () => { this.calls.delete(result); });
+    try { void Promise.resolve(work()).then(resolve, reject); }
+    catch (error) { reject(error); }
     return result;
   }
   close(): Promise<void> {

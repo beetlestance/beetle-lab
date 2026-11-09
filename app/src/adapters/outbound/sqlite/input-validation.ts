@@ -39,7 +39,10 @@ function page(query: InputList | InputRecoveryPage): void {
   if (query.cursor !== undefined) requireRule(typeof query.cursor === 'string' && query.cursor.length <= 1024);
   if ('scope' in query) {
     fields(query, ['scope', 'limit', 'cursor']); requireRule(validateApi('WorkspaceScope', query.scope).ok);
-  } else fields(query, ['limit', 'cursor']);
+  } else {
+    fields(query, ['limit', 'cursor', 'mode']);
+    requireRule(query.mode === undefined || query.mode === 'pending');
+  }
 }
 function advance(command: InputAdvance): void {
   checkedInputKey(command.key); version(command.expectedVersion);
@@ -60,7 +63,7 @@ export function checkedInputOperation(operation: Operation): boolean {
     case 'advanceInput': advance(operation.command); return true;
     case 'getInput': checkedInputKey(operation.key); return true;
     case 'listInputs': page(operation.query); requireRule('scope' in operation.query); return true;
-    case 'recoverInputs': fields(operation.query, ['limit', 'cursor']); page(operation.query); return true;
+    case 'recoverInputs': fields(operation.query, ['limit', 'cursor', 'mode']); page(operation.query); return true;
     case 'inputStorage': return true;
     default: return false;
   }

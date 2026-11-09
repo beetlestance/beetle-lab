@@ -35,7 +35,11 @@ export type InputAdvance =
   | { kind: 'publishInput' | 'deleteInputBytes'; key: InputKey; expectedVersion: number }
   | { kind: 'failInput'; key: InputKey; expectedVersion: number; reason: InputFailure };
 export interface InputList { scope: WorkspaceScope; limit: number; cursor?: string }
-export interface InputRecoveryPage { limit: number; cursor?: string }
+export interface InputRecoveryPage {
+  limit: number; cursor?: string;
+  /** Indexed publishing/deleting maintenance; omitted retains the full custody scan. */
+  mode?: 'pending';
+}
 export interface InputPage { items: InputRecord[]; nextCursor: string | null }
 export interface InputStorage {
   chargedBytes: number; allocationBytes: number; freeSpaceReserveBytes: number;

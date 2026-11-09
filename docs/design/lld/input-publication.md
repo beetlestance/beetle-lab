@@ -157,6 +157,8 @@ mid-response. Content uses safe attachment/octet-stream headers and bounded rang
 Private [byte jobs](../../../app/src/ports/input-bytes.ts) separate result from proven
 custody settlement; [the service](../../../app/src/ports/input-service.ts) alone owns
 global2/per-input1 admission. Capture canonical keys/requests/ranges before awaits.
+Reserve the original-result holder before foreign invocation, including metadata-only
+calls; reentrant shutdown cannot observe that holder as already drained.
 Invoke lazy chunk/sink callbacks only after owning capacity and current-state checks.
 Reads use one end-exclusive range within declared bytes (omission selects the full
 file); verify the complete published identity/hash before sending bounded chunks.
@@ -186,6 +188,10 @@ compensating delete or dependent byte work; explicit later calls reobserve the r
 Recovery re-gets each admitted item from one page<=100, returns bounded counts/cursor,
 and skips busy rows without waiting. Restart scans from the beginning after a pass:
 state-order movement can move work behind its cursor. Page end is not completion proof.
+Private mode:pending selects only publishing/deleting through the recovery index;
+its cursor is distinct from the full custody scan. It enables periodic maintenance
+without rehashing every published input. Omitting mode preserves the full scan.
+No recovery mode or maintenance cursor is exposed by a public input route.
 
 ## Acceptance packets
 
