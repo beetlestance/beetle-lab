@@ -40,10 +40,16 @@ describe('bounded source observation freshness', () => {
       .rejects.toMatchObject({ code: 'invalid_input' });
     expect((await metadata.getSettings(scope)).version).toBe(2);
     await metadata.updateRuntime(null);
+    const unknownReceiptAt = Date.now();
     await expect(metadata.getSettings(scope)).rejects.toMatchObject({ code: 'capacity_unavailable' });
     await expect(metadata.settings.execute(settingsCommand(settings.id, { ...change.request, expectedVersion: 2,
       requestId: requestId() }))).rejects.toMatchObject({ code: 'capacity_unavailable' });
     expect(await metadata.settings.execute(change)).toEqual(original);
+    // Recovery is a genuinely newer source, even when worker replies share a wall-clock tick.
+    for (let poll = 0; Date.now() <= unknownReceiptAt && poll < 100; poll++) {
+      await new Promise(resolve => setTimeout(resolve, 1));
+    }
+    expect(Date.now()).toBeGreaterThan(unknownReceiptAt);
     await metadata.updateRuntime(observation()); expect((await metadata.getSettings(scope)).version).toBe(2);
   });
   it('requires a real bounded source timestamp and validates TTL options and future updates', async () => {
