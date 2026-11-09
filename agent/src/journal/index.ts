@@ -41,6 +41,10 @@ function validateOptions(options: JournalOptions): void {
   const path = options.path;
   if (typeof path !== 'string' || !path || path === ':memory:' || path.length > 4096) throw new JournalError('invalid_input');
 }
+function largeOperation(operation: Operation): boolean {
+  return operation.kind === 'offer' || operation.kind === 'read'
+    || operation.kind === 'admission' && operation.request.kind === 'offer';
+}
 
 export class Journal {
   private readonly worker: Worker;
@@ -159,19 +163,28 @@ export class Journal {
     const refusal = this.refusal();
     if (refusal) return Promise.reject(new JournalError(refusal));
     let reserved = false;
+    let prepared: Operation;
     try {
       const holdsLarge = typeof large === 'function' ? large() : large;
       if (holdsLarge && this.largePending >= 2) return Promise.reject(new JournalError('queue_full'));
       if (holdsLarge) { this.largePending++; reserved = true; }
-      return this.send(operation(), holdsLarge);
+      prepared = operation();
     } catch {
-      if (reserved) this.largePending--;
       return Promise.reject(new JournalError('invalid_input'));
-    }
+    } finally { if (reserved) this.largePending--; }
+    return this.send(prepared);
   }
 
-  private send(operation: Operation, large = false): Promise<Value> {
+  private send(operation: Operation): Promise<Value> {
     if (this.failed) return Promise.reject(new JournalError('unavailable'));
+    if (operation.kind !== 'close') {
+      const refusal = this.refusal();
+      if (refusal) return Promise.reject(new JournalError(refusal));
+    }
+    // Only the validated snapshot authorizes accounting; caller hints can change.
+    const large = largeOperation(operation);
+    if (large && this.largePending >= 2) return Promise.reject(new JournalError('queue_full'));
+    if (large) this.largePending++;
     const id = ++this.nextId;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => this.fail('unavailable'), 5000);
