@@ -1,14 +1,14 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { encodeJson, validate, RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
-import type { Offer } from '@beetle/contracts';
+import { encodeJson, RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
 import type { DispatchKey, DispatchClaim, DispatchScan, DispatchPage, DispatchOffer } from '../../../ports/dispatch.js';
-import { DISPATCH_PAGE_BYTES, DISPATCH_OFFER_REPLY_BYTES } from '../../../ports/dispatch.js';
+import { DISPATCH_PAGE_BYTES } from '../../../ports/dispatch.js';
 import type { RunConfiguration } from '../../../ports/runs.js';
 import { nextVersion, requireRule } from '../../../domain/namespaces/index.js';
 import { checkedRunConfiguration } from './run-profiles.js';
 import type { Settings } from './settings.js';
 import { transaction } from './schema.js';
 import { captureDispatchKey } from './dispatch-values.js';
+import { captureDispatchOfferReply } from './dispatch-offer-reply.js';
 import { boundedCopy } from './input-values.js';
 import { originalFact, pendingFacts, chargedFacts, factKey, retainedClaim, orderOf } from './dispatch-candidates.js';
 import type { DispatchFact } from './dispatch-candidates.js';
@@ -59,12 +59,8 @@ export class DispatchClaims {
         .get(key.attempt.attemptId, key.runId, key.attempt.organizationId, key.attempt.workspaceId, key.attempt.intentDigest);
       requireRule(row !== undefined, 'not_found');
       requireRule(typeof row.bytes === 'number' && row.bytes <= RUNNER_MAXIMUM_OFFER_BYTES && typeof row.offer_json === 'string');
-      const offer = JSON.parse(row.offer_json) as Offer;
-      requireRule(validate('Offer', offer).ok && encodeJson(offer, RUNNER_MAXIMUM_OFFER_BYTES) === row.offer_json);
-      requireRule(offer.attemptId === key.attempt.attemptId && offer.organizationId === key.attempt.organizationId
-        && offer.workspaceId === key.attempt.workspaceId && offer.intentDigest === key.attempt.intentDigest);
-      const result = { key, offer };
-      encodeJson(result, DISPATCH_OFFER_REPLY_BYTES);
+      const result = captureDispatchOfferReply({ key, offer: JSON.parse(row.offer_json) as unknown }, key);
+      requireRule(encodeJson(result.offer, RUNNER_MAXIMUM_OFFER_BYTES) === row.offer_json);
       return result;
     });
   }
