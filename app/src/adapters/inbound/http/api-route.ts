@@ -10,13 +10,28 @@ type NamedOperation<N extends ApiOperation['name']> = Extract<ApiOperation, { na
 export type ApiHandler<N extends ApiOperation['name']> = (
   input: ApiOperationInput<NamedOperation<N>>,
 ) => Promise<ApiTypes[NamedOperation<N>['response']]>;
+export interface ApiRouteOptions {
+  bodyLimit?: number;
+  /** Transport-owned lifetime; normal request-body completion is not cancellation. */
+  signalFor?: (request: FastifyRequest) => AbortSignal;
+}
 
-function input<N extends ApiOperation['name']>(operation: NamedOperation<N>, request: FastifyRequest): ApiOperationInput<NamedOperation<N>> {
+function input<N extends ApiOperation['name']>(operation: NamedOperation<N>, request: FastifyRequest,
+  signalFor: ApiRouteOptions['signalFor']): ApiOperationInput<NamedOperation<N>> {
+  const signal = signalFor?.(request);
+  if (signal !== undefined && !(signal instanceof AbortSignal)) throw new Error('Invalid operation signal');
   return {
     ...('params' in operation ? { params: request.params } : {}),
     ...('query' in operation ? { query: request.query } : {}),
     ...('request' in operation ? { body: request.body } : {}),
+    ...(signal === undefined ? {} : { signal }),
   } as ApiOperationInput<NamedOperation<N>>;
+}
+function bodyLimit(operation: ApiOperation, requested: number | undefined): number | undefined {
+  if (requested !== undefined && (!Number.isSafeInteger(requested) || requested < 1 || requested > API_MAXIMUM_JSON_BYTES)) {
+    throw new RangeError('Invalid operation body limit');
+  }
+  return requested ?? (operation.name === 'createSuiteRevision' ? API_MAXIMUM_JSON_BYTES : undefined);
 }
 
 /** Snapshot before Fastify can choose its string/buffer/stream serializer bypass. */
@@ -32,14 +47,15 @@ function jsonObject(value: unknown): object {
  * Artifact/SSE byte routes have a separate bounded transfer owner.
  */
 export function registerApiOperation<N extends ApiOperation['name']>(
-  server: FastifyInstance, name: N, handler: ApiHandler<N>,
+  server: FastifyInstance, name: N, handler: ApiHandler<N>, options: ApiRouteOptions = {},
 ): void {
   const operation = apiOperations.find(candidate => candidate.name === name) as NamedOperation<N> | undefined;
   if (!operation) throw new Error('Unknown API operation');
+  const limit = bodyLimit(operation, options.bodyLimit); const signalFor = options.signalFor;
   server.route({
     method: operation.method,
     url: operation.path.replace(/\{([A-Za-z]+)\}/g, ':$1'),
-    ...(operation.name === 'createSuiteRevision' ? { bodyLimit: API_MAXIMUM_JSON_BYTES } : {}),
+    ...(limit === undefined ? {} : { bodyLimit: limit }),
     schema: {
       ...('params' in operation ? { params: apiMessageSchemas[operation.params] } : {}),
       ...('query' in operation ? { querystring: apiMessageSchemas[operation.query] } : {}),
@@ -54,7 +70,7 @@ export function registerApiOperation<N extends ApiOperation['name']>(
       }
     },
     handler: async (request, reply) => {
-      const result = jsonObject(await handler(input(operation, request)));
+      const result = jsonObject(await handler(input(operation, request, signalFor)));
       return reply.code(operation.successStatus).send(result);
     },
   });

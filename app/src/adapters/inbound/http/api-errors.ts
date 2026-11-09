@@ -3,6 +3,8 @@ import Fastify from 'fastify';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import type { ApiError } from '@beetle/contracts/api';
 import { SemanticError } from '../../../domain/namespaces/index.js';
+import { InputByteError } from '../../../ports/input-bytes.js';
+import type { InputByteErrorCode } from '../../../ports/input-bytes.js';
 
 type Code = ApiError['code'];
 const errors = {
@@ -52,9 +54,19 @@ const frameworkCodes = new Map<string, Code>([
   ['FST_ERR_BAD_URL', 'malformed_request'],
   ['FST_ERR_MAX_PARAM_LENGTH', 'malformed_request'],
 ]);
+const inputCodes = {
+  invalid_input: 'malformed_request', busy: 'capacity_unavailable', capacity_unavailable: 'capacity_unavailable',
+  closed: 'storage_unavailable', cancelled: 'storage_unavailable', custody_missing: 'storage_unavailable',
+  integrity: 'storage_unavailable', io: 'storage_unavailable', cleanup: 'storage_unavailable',
+} as const satisfies Record<InputByteErrorCode, Code>;
+function inputCode(code: unknown): Code {
+  return typeof code === 'string' && Object.hasOwn(inputCodes, code)
+    ? inputCodes[code as InputByteErrorCode] : 'internal_error';
+}
 function codeFor(error: unknown, classify: ApiErrorOptions['classify']): Code {
   try {
     const code = ownCode(error);
+    if (error instanceof InputByteError) return inputCode(code);
     if ((error instanceof ApiFault || error instanceof SemanticError) && knownCode(code)) return code;
     const framework = typeof code === 'string' ? frameworkCodes.get(code) : undefined;
     if (framework) return framework;
@@ -62,12 +74,13 @@ function codeFor(error: unknown, classify: ApiErrorOptions['classify']): Code {
     return knownCode(mapped) ? mapped : 'internal_error';
   } catch { return 'internal_error'; }
 }
-function response(code: Code): { status: number; body: ApiError } {
+/** Fixed body factory for byte routes whose HTTP semantics require e.g.416. */
+export function apiErrorResponse(code: Code): { status: number; body: ApiError } {
   const [status, message, retryable] = errors[code];
   return { status, body: { code, message, retryable, requestId: randomUUID(), fields: [] } };
 }
 function sendFailure(error: unknown, reply: FastifyReply, classify: ApiErrorOptions['classify']): FastifyReply {
-  const result = response(codeFor(error, classify));
+  const result = apiErrorResponse(codeFor(error, classify));
   return reply.header('Cache-Control', 'no-store').code(result.status).type('application/json').send(result.body);
 }
 
@@ -82,8 +95,11 @@ export function createApiServer(options: ApiServerOptions = {}): FastifyInstance
     throw new RangeError('Invalid API body limit');
   }
   const classify = options.classify;
-  const server = Fastify({ logger: false, bodyLimit, routerOptions: { maxParamLength: 128 },
+  const server = Fastify({ logger: false, bodyLimit, connectionTimeout: 30_000, requestTimeout: 30_000,
+    keepAliveTimeout: 5000, routerOptions: { maxParamLength: 128 },
     frameworkErrors: (error, _request, reply) => sendFailure(error, reply, classify) });
+  server.server.maxConnections = 64;
+  server.server.headersTimeout = 5000;
   configureApiErrors(server, options);
   return server;
 }
@@ -98,7 +114,7 @@ export function configureApiErrors(server: FastifyInstance, options: ApiErrorOpt
     return sendFailure(error, reply, classify);
   });
   server.setNotFoundHandler((_request, reply) => {
-    const result = response('not_found');
+    const result = apiErrorResponse('not_found');
     return reply.header('Cache-Control', 'no-store').code(result.status).type('application/json').send(result.body);
   });
 }

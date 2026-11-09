@@ -57,6 +57,31 @@ it('binds declared route parameters to validated handlers', async () => {
   expect(handler).toHaveBeenCalledTimes(1);
 });
 
+it('captures explicit route body bounds and transport signals without changing other operations', async () => {
+  const app = server(); const controller = new AbortController();
+  const handler = vi.fn(async () => organization);
+  const options = { bodyLimit: 64, signalFor: () => controller.signal };
+  registerApiOperation(app, 'createOrganization', handler, options);
+  options.bodyLimit = 4096;
+  const body = { scope: { kind: 'installation' }, requestId: organization.id, name: organization.name, slug: organization.slug };
+  expect(Buffer.byteLength(JSON.stringify(body))).toBeGreaterThan(64);
+  const large = await app.inject({ method: 'POST', url: '/api/v2/organizations', payload: body });
+  expect(large.statusCode).toBe(413); expect(handler).not.toHaveBeenCalled();
+  const signalHandler = vi.fn(async () => organization);
+  registerApiOperation(server(), 'getOrganization', signalHandler, { signalFor: () => controller.signal });
+  const other = servers.at(-1)!;
+  expect((await other.inject(`/api/v2/organizations/${organization.id}`)).statusCode).toBe(200);
+  expect(signalHandler.mock.calls).toEqual([[{ params: { organizationId: organization.id }, signal: controller.signal }]]);
+});
+
+it('rejects invalid per-operation limits before route registration', () => {
+  const app = server(); const handler = vi.fn(async () => organization);
+  for (const bodyLimit of [0, -1, 2_097_153, 1.5, Number.NaN]) {
+    expect(() => registerApiOperation(app, 'createOrganization', handler, { bodyLimit })).toThrow('Invalid operation body limit');
+  }
+  expect(handler).not.toHaveBeenCalled();
+});
+
 const invalidReplies: readonly [string, () => unknown][] = [
   ['raw JSON', () => JSON.stringify(organization)],
   ['buffer', () => Buffer.from('SYNTHETIC_RESPONSE_CANARY')],

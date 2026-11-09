@@ -8,6 +8,7 @@ import { configureSchemaCompilers } from './schema-compilers.js';
 import { registerApiOperation } from './api-route.js';
 import { ApiFault, createApiServer } from './api-errors.js';
 import type { ApiErrorOptions } from './api-errors.js';
+import { InputByteError } from '../../../ports/input-bytes.js';
 
 const canary = 'SYNTHETIC_PRIVATE_EXCEPTION_CANARY';
 const uuid = '00000000-0000-4000-8000-000000000001';
@@ -75,6 +76,29 @@ it('contains a broken classifier and refuses inherited/public code spoofing', as
     const result = await app.inject(url); expect(result.statusCode).toBe(500);
     check(result.statusCode, result.body, 'internal_error');
   }
+});
+
+it.each([
+  ['invalid_input', 'malformed_request', 400], ['busy', 'capacity_unavailable', 503],
+  ['capacity_unavailable', 'capacity_unavailable', 503], ['closed', 'storage_unavailable', 503],
+  ['cancelled', 'storage_unavailable', 503], ['custody_missing', 'storage_unavailable', 503],
+  ['integrity', 'storage_unavailable', 503], ['io', 'storage_unavailable', 503], ['cleanup', 'storage_unavailable', 503],
+] as const)('contains input %s errors without exposing custody details', async (reason, code, status) => {
+  const app = server(); app.get('/failure', async () => { throw new InputByteError(reason); });
+  const response = await app.inject('/failure'); expect(response.statusCode).toBe(status);
+  check(response.statusCode, response.body, code);
+});
+
+it('rejects an unexpected input error code and bounds transport sockets/timeouts', async () => {
+  const app = server();
+  app.get('/failure', async () => {
+    const error = new InputByteError('io'); Reflect.set(error, 'code', '__proto__'); throw error;
+  });
+  const response = await app.inject('/failure'); expect(response.statusCode).toBe(500);
+  check(response.statusCode, response.body, 'internal_error');
+  expect(app.server.maxConnections).toBe(64); expect(app.server.headersTimeout).toBe(5000);
+  expect(app.server.requestTimeout).toBe(30_000); expect(app.initialConfig.connectionTimeout).toBe(30_000);
+  expect(app.initialConfig.keepAliveTimeout).toBe(5000);
 });
 
 it('contains request/query/schema/body-size/parser/not-found and serializer failures', async () => {
