@@ -76,6 +76,29 @@ are outside this proposal's correctness claim. Supported backup/restore tooling
 must enforce the gate and rotation; documentation alone does not implement them.
 Do not present this limitation as recovery from arbitrary restored execution state.
 
+## Control-store boundary
+
+`agent/src/installation-state/index.ts` implements the control-store component;
+actual startup wiring and the backup/restore command remain pending.
+`initializeInstallationState` exclusively creates an initializing record.
+`resumeInstallationInitialization` is explicit recovery of that same initialization.
+`openServingState` accepts only ready state; its `assertJournalAuthority` must bind
+the UUID read from the opened journal before any execution owner starts.
+`openRestoringState` is an offline-only facade: begin durably records an operation
+and planned fresh authority; completion requires both exact identities. Its caller
+must prove physical quiescence and consistent restored data before completion.
+A ready serving facade exposes no mutation methods. The lease remains held until
+all runtime owners drain; missing/corrupt/nonready state never becomes fresh state.
+
+The separate control SQLite database stays outside every replaced backup path.
+It uses one retained process owner and an EXCLUSIVE connection, a singleton state,
+16 pages of 4096 bytes, 64KiB cache and no mmap. SQLite documents that EXCLUSIVE locks
+remain until close; EXTRA adds rollback-journal commit durability. See the
+[SQLite PRAGMA reference](https://www.sqlite.org/pragma.html#pragma_locking_mode).
+The store verifies those settings. Native handles remain retained on failed close;
+no stale lock-file deletion or process-liveness guess grants execution authority.
+Hardware power-loss and actual restore-stage qualification remain required.
+
 ## Contract ownership and acceptance
 
 Coordinator reserves the checked next unused application migration006 and agent
