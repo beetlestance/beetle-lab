@@ -1,4 +1,4 @@
-import { encodeJson } from './json.js';
+import { encodeJson, encodeCanonicalJson } from './json.js';
 import { validate } from './validate.js';
 import type { EngineResult } from './generated/types.js';
 
@@ -16,20 +16,9 @@ function snapshot(input: unknown): EngineResult {
   if (!checked.ok) throw new SealFailure('invalid_result');
   return checked.value;
 }
-/** Only schema-validated bounded JSON snapshots enter this recursion. */
-function canonical(value: unknown): string {
-  if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
-  if (value !== null && typeof value === 'object') {
-    const record = value as Record<string, unknown>;
-    return '{' + Object.keys(record).sort().map(key => JSON.stringify(key) + ':' + canonical(record[key])).join(',') + '}';
-  }
-  const text = JSON.stringify(value);
-  if (typeof text !== 'string') throw new SealFailure('invalid_result');
-  return text;
-}
 function preimage(result: EngineResult): string {
   // sealedAt is covered. Only the digest's self-reference is excluded.
-  return resultSealPrefix + canonical({ ...result, seal: { sealedAt: result.seal.sealedAt } });
+  return resultSealPrefix + encodeCanonicalJson({ ...result, seal: { sealedAt: result.seal.sealedAt } }, maximumBytes);
 }
 function digest(text: string, provider: ResultDigest): string {
   try {

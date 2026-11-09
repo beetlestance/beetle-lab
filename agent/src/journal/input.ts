@@ -1,14 +1,11 @@
-import { encodeJson, RUNNER_MAXIMUM_OFFER_BYTES, validate, validatePrimitive } from '@beetle/contracts';
+import { encodeCanonicalJson, encodeJson, RUNNER_MAXIMUM_OFFER_BYTES, validate, validatePrimitive } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import type { AttemptKey, PageRequest, RunnableRequest } from './protocol.js';
 
 export const MAX_OFFER_BYTES = RUNNER_MAXIMUM_OFFER_BYTES;
 
 export function canonical(value: unknown): string {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
-  const object = value as Record<string, unknown>;
-  return `{${Object.keys(object).sort().map(key => `${JSON.stringify(key)}:${canonical(object[key])}`).join(',')}}`;
+  return encodeCanonicalJson(value, MAX_OFFER_BYTES);
 }
 
 export function offerInput(input: unknown): { json: string; canonical: string } {

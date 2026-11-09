@@ -1,4 +1,4 @@
-interface EncoderState { bytes: number; nodes: number; maximum: number; parts: string[]; ancestors: Set<object> }
+interface EncoderState { bytes: number; nodes: number; maximum: number; canonical: boolean; parts: string[]; ancestors: Set<object> }
 const utf8 = new TextEncoder();
 
 function append(state: EncoderState, part: string): void {
@@ -12,16 +12,24 @@ function scalar(state: EncoderState, value: unknown): void {
   if (value !== null && !['boolean', 'number', 'string'].includes(typeof value)) throw new Error('invalid_json');
   append(state, JSON.stringify(value));
 }
-function object(state: EncoderState, value: object, depth: number): void {
-  if (![Object.prototype, null].includes(Object.getPrototypeOf(value) as object | null)) throw new Error('invalid_json');
-  append(state, '{');
-  let count = 0;
+function objectKeys(state: EncoderState, value: object): string[] {
+  const keys: string[] = [];
   for (const key in value) {
     if (!Object.hasOwn(value, key)) continue;
-    if (++count > 4096 || key.length > state.maximum) throw new Error('request_limit');
+    if (keys.length >= 4096 || key.length > state.maximum) throw new Error('request_limit');
+    keys.push(key);
+  }
+  return state.canonical ? keys.sort() : keys;
+}
+function object(state: EncoderState, value: object, depth: number): void {
+  if (![Object.prototype, null].includes(Object.getPrototypeOf(value) as object | null)) throw new Error('invalid_json');
+  const keys = objectKeys(state, value);
+  append(state, '{');
+  let count = 0;
+  for (const key of keys) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
     if (!descriptor || !('value' in descriptor)) throw new Error('invalid_json');
-    if (count > 1) append(state, ',');
+    if (count++) append(state, ',');
     append(state, JSON.stringify(key)); append(state, ':');
     visit(state, descriptor.value, depth + 1);
   }
@@ -49,11 +57,20 @@ function visit(state: EncoderState, value: unknown, depth: number): void {
 }
 
 /** Bounds bytes, depth, node count and each collection; rejects non-JSON values. */
-export function encodeJson(input: unknown, maximumBytes: number): string {
+function encode(input: unknown, maximumBytes: number, canonical: boolean): string {
   if (!Number.isSafeInteger(maximumBytes) || maximumBytes < 1 || maximumBytes > 16_777_216) throw new Error('invalid_limit');
-  const state: EncoderState = { bytes: 0, nodes: 0, maximum: maximumBytes, parts: [], ancestors: new Set() };
+  const state: EncoderState = { bytes: 0, nodes: 0, maximum: maximumBytes, canonical, parts: [], ancestors: new Set() };
   visit(state, input, 0);
   return state.parts.join('');
+}
+
+/** Bounded JSON with caller enumeration order; arrays preserve index order. */
+export function encodeJson(input: unknown, maximumBytes: number): string {
+  return encode(input, maximumBytes, false);
+}
+/** Same intake/output bounds, with UTF16 lexical ordering of every object's keys. */
+export function encodeCanonicalJson(input: unknown, maximumBytes: number): string {
+  return encode(input, maximumBytes, true);
 }
 
 type ChunkResult = Awaited<ReturnType<ReadableStreamDefaultReader<Uint8Array>['read']>>;

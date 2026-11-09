@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/runner/v1/installed-identity",
+  "title": "InstalledIdentity",
+  "type": "object",
+  "properties": {
+    "manifestId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+    },
+    "profileId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+    },
+    "catalogVersion": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "manifestDigest": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+    },
+    "profileDigest": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+    },
+    "schemaDigest": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+    }
+  },
+  "required": [
+    "manifestId",
+    "profileId",
+    "catalogVersion",
+    "manifestDigest",
+    "profileDigest",
+    "schemaDigest"
+  ],
+  "additionalProperties": false
+}

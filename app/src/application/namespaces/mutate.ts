@@ -1,3 +1,4 @@
+import { encodeCanonicalJson } from '@beetle/contracts';
 import { immutableSnapshot, projectNamespaceIntent, requireRule, sameScope, sameUuid } from '../../domain/namespaces/index.js';
 import type {
   NamespaceCommand, NamespaceEntity, NamespaceOperation, NamespaceStore,
@@ -11,15 +12,8 @@ type OperationResult<O extends NamespaceOperation> = O extends { kind: 'createOr
     ? Extract<NamespaceEntity, { rootFolderId: string }>
     : Extract<NamespaceEntity, { parentFolderId: string | null }>;
 
-function canonical(value: unknown): string {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
-  const object = value as Record<string, unknown>;
-  return `{${Object.keys(object).sort().map(key => `${JSON.stringify(key)}:${canonical(object[key])}`).join(',')}}`;
-}
-
 export function digestMutationIntent(operation: unknown, digest: IntentDigest): string {
-  const result = digest(canonical(operation));
+  const result = digest(encodeCanonicalJson(operation, 2097152));
   requireRule(/^[a-f0-9]{64}$/.test(result));
   return result;
 }

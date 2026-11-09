@@ -15,6 +15,7 @@ The owning document below must be updated before its implementation changes.
 | Input controls | [Input UI](lld/input-ui.md) | Prepared upload intent/replay, folder selection, verified download and session ownership |
 | Application run enqueue | [Run intake](lld/run-intake.md) | Receipt-first enqueue, pinned execution/settings and bounded run reads |
 | Dispatcher, agent or engine | [Execution protocol](lld/execution-protocol.md) | APIs, envelopes, idempotency, fencing, cancellation, recovery |
+| Installed execution binding | [Installed identity](lld/installed-identity.md) | Canonical content pins, required Offer binding and replay/recovery authority |
 | Full-size runner intake | [Offer envelopes](lld/runner-envelopes.md) | Independent config/envelope bounds, ingress ownership and journal migration008 |
 | Launch read saturation | [Launch contention](lld/launch-contention.md) | Retained explicit intent, known refusal, compact authority and unknown-outcome fences |
 | Agent control and outputs | [Agent collection](lld/agent-collection.md) | Bounded file intake, atomic checkpoints, stopped verification and artifact custody |
