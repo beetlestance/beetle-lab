@@ -18,13 +18,14 @@ const f = fixture();
 const run = promisify(execFile);
 it('carries exact1MiB UTF8 config through client/catalogue/installation/reopen/Stager/actual loader+compile', async () => {
   const e = await f.environment(false, 60_000); const job = fullOffer(e.offer);
-  const expected = { offerBytes: jsonBytes(job), configBytes: jsonBytes(job.config),
-    offerHash: hash(JSON.stringify(job)), configHash: hash(JSON.stringify(job.config)), requests: 1, inputs: 0 };
-  expect(expected.configBytes).toBe(1_048_576); expect(expected.offerBytes).toBeGreaterThan(1_048_576);
   const schema = createK6ConfigSchema(hash);
   const manifest = { ...e.options.manifest, defaultBudget: { ...job.budget }, schemas: { ...e.options.manifest.schemas, config: schema.schemaId } };
   const validation = { ...e.options.validation, schemaDigest: schema.schemaDigest };
   const catalog = createEngineCatalog([{ manifest, profile: e.options.profile, validation, configSchema: schema, configVersion: 1 }]);
+  job.installedIdentity = catalog.engines[0]!.installedIdentity;
+  const expected = { offerBytes: jsonBytes(job), configBytes: jsonBytes(job.config),
+    offerHash: hash(JSON.stringify(job)), configHash: hash(JSON.stringify(job.config)), requests: 1, inputs: 0 };
+  expect(expected.configBytes).toBe(1_048_576); expect(expected.offerBytes).toBeGreaterThan(1_048_576);
   const pool = { ...configuration(), maxTimeoutMs: job.budget.timeoutMs,
     profiles: catalog.engines.map(engine => structuredClone(engine.approved)) };
   await e.owner.admission({ kind: 'configure', configuration: pool });

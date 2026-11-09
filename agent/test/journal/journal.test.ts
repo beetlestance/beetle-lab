@@ -54,15 +54,22 @@ describe('durable immutable offer identity', () => {
     finally { inspection.close(); }
   });
 
-  it('rejects changed digest, config, org/workspace and reference metadata under the same ID', async () => {
+  it('rejects changed digest, config and reference metadata under the same scoped ID', async () => {
     const journal = await open(); await journal.immutableOffer(offer());
     const changes: Partial<Offer>[] = [
       { intentDigest: 'b'.repeat(64) }, { config: { synthetic: false } },
-      { organizationId: '00000000-0000-4000-8000-000000000099' },
-      { workspaceId: '00000000-0000-4000-8000-000000000098' },
       { secretReferences: [{ name: 'api-token', provider: 'mounted', reference: 'other-ref', version: 'v1' }] },
     ];
     for (const change of changes) await expect(journal.immutableOffer({ ...offer(), ...change })).rejects.toMatchObject({ code: 'conflict' });
+    expect(await journal.readOffer(key(original))).toEqual(original);
+  });
+
+  it('rejects another organization/workspace before comparing existing immutable intent', async () => {
+    const journal = await open(); await journal.immutableOffer(offer());
+    for (const change of [
+      { organizationId: '00000000-0000-4000-8000-000000000099' },
+      { workspaceId: '00000000-0000-4000-8000-000000000098' },
+    ]) await expect(journal.immutableOffer({ ...offer(), ...change })).rejects.toMatchObject({ code: 'not_found' });
     expect(await journal.readOffer(key(original))).toEqual(original);
   });
 

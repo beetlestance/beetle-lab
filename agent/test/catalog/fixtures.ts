@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { deriveInstalledIdentity } from '@beetle/contracts';
 import type { EngineManifest, Offer } from '@beetle/contracts';
 import { createK6ConfigSchema } from '@beetle/contracts/engine-config/k6';
 import type { EngineRegistration } from '../../src/catalog/index.js';
@@ -12,8 +13,10 @@ export function config() {
       startTime: '0s', gracefulStop: '0s', vus: 1, iterations: 1, maxDuration: '1s' }], slos: [] },
     selections: [{ scenarioId: 'main', entries: [{ requestId: 'read', weight: 1, wait: { durationMs: 0, jitterMs: 0 } }] }] };
 }
-export function offer(): Offer {
+export function offer(installed = registration()): Offer {
   const value = JSON.parse(readFileSync(new URL('../../../contracts/fixtures/valid/offer.json', import.meta.url), 'utf8')) as Offer;
+  value.installedIdentity = deriveInstalledIdentity({ manifest: installed.manifest, profile: installed.profile, identity: installed.validation },
+    value => createHash('sha256').update(value).digest('hex'));
   value.config = config(); return value;
 }
 export function registration(): EngineRegistration {

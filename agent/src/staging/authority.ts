@@ -1,4 +1,5 @@
-import { encodeJson, validate, validatePrimitive } from '@beetle/contracts';
+import { createHash } from 'node:crypto';
+import { deriveInstalledIdentity, sameInstalledIdentity, encodeJson, validate, validatePrimitive } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import { estimateStaging, stagingPolicy, supportedStaging } from '../admission/index.js';
 import type { Reservation, Scope, ValidationIdentity } from '../admission/index.js';
@@ -70,6 +71,9 @@ export async function authorize(options: StagerOptions, key: Scope, boundary: Bo
   });
   const offer = validate('Offer', snapshot(raw, stagingPolicy.offerBytes));
   if (!offer.ok || !scoped({ ...offer.value, generation: key.generation }, key)) throw new StagingError('reservation');
+  const installed = deriveInstalledIdentity({ manifest: options.manifest, profile: options.profile, identity: options.validation },
+    value => createHash('sha256').update(value).digest('hex'));
+  if (!sameInstalledIdentity(offer.value.installedIdentity, installed)) throw new StagingError('reservation');
   validateNames(offer.value);
   const rawReservation = await boundary.wait(() => options.journal.admission({ kind: 'reservation', key }));
   const reservation = checkedReservation(rawReservation, offer.value, key, options);

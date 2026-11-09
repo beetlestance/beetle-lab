@@ -24,6 +24,7 @@ export function fixture() {
     const profile = { ...e.options.profile, maximumBudget: { ...offer.budget } };
     const catalog = createEngineCatalog([{ manifest, profile, configVersion: 1, configSchema: schema,
       validation: { ...e.options.validation, schemaDigest: schema.schemaDigest } }]);
+    offer.installedIdentity = catalog.engines[0]!.installedIdentity;
     const name = runtimeName({ ...offer, installationId: profile.installationId, generation: 1 });
     const base = join(e.rootPath, name);
     const prepared = prepareRuntime({ offer, manifest, profile, generation: 1,

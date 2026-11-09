@@ -10,6 +10,7 @@ export function offerAtomic(db: DatabaseSync, input: { json: string; canonical: 
   const existing = db.prepare(`SELECT ${columns},canonical_json FROM accepted_attempts WHERE attempt_id=?`)
     .get(offer.attemptId) as unknown as (Row & { canonical_json: string }) | undefined;
   if (existing) {
+    owner(db, offer);
     if (existing.canonical_json !== input.canonical) throw new Failure('conflict');
     return snapshot(existing);
   }

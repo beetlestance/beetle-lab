@@ -1,3 +1,4 @@
+import { sameInstalledIdentity } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import type { ValidationIdentity } from '../admission/index.js';
 import { configDigest } from '../journal/index.js';
@@ -16,6 +17,7 @@ export function createEngineCatalog(registrations: readonly EngineRegistration[]
       const offer = offerSnapshot(input);
       const engine = lookup.get(selector(offer.engine));
       if (!engine) throw new CatalogError('unapproved_engine');
+      if (!sameInstalledIdentity(offer.installedIdentity, engine.installedIdentity)) throw new CatalogError('identity');
       validateConfig(offer, engine);
       return freeze({ offer, engine, validation: { ...engine.validation, configDigest: configDigest(offer.config) } });
     } catch (error) {

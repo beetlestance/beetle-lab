@@ -1,4 +1,5 @@
-import { validate } from '@beetle/contracts';
+import { createHash } from 'node:crypto';
+import { deriveInstalledIdentity, validate } from '@beetle/contracts';
 import type { EngineManifest, Offer } from '@beetle/contracts';
 import { isConfigSchema } from '@beetle/contracts/engine-config';
 import { MAX_ENGINE_PROFILES } from '../admission/index.js';
@@ -28,8 +29,8 @@ function identity(input: Omit<ValidationIdentity, 'configDigest'>): void {
   requireValid(typeof input.schemaDigest === 'string' && /^[a-f0-9]{64}$/.test(input.schemaDigest));
   requireValid(positive(input.catalogVersion));
 }
-function probe(engine: EngineRegistration, budget: Offer['budget']): Offer {
-  return { protocolVersion: '1.0', organizationId: '00000000-0000-4000-8000-000000000001',
+function probe(engine: EngineRegistration & Pick<InstalledEngine, 'installedIdentity'>, budget: Offer['budget']): Offer {
+  return { installedIdentity: engine.installedIdentity, protocolVersion: '1.0', organizationId: '00000000-0000-4000-8000-000000000001',
     workspaceId: '00000000-0000-4000-8000-000000000002', attemptId: '00000000-0000-4000-8000-000000000003',
     intentDigest: '0'.repeat(64), engine: { id: engine.manifest.engineId,
       imageDigest: engine.manifest.imageDigest, configVersion: engine.configVersion }, inputs: [], budget,
@@ -46,7 +47,9 @@ function registration(input: unknown): InstalledEngine {
   identity(validation);
   requireValid(manifest.schemas.config === configSchema.schemaId && validation.schemaDigest === configSchema.schemaDigest);
   requireValid(['cpu', 'memory', 'pids', 'timeout', 'output'].every(control => manifest.supportedControls.includes(control as 'cpu')));
-  const engine: EngineRegistration = { manifest, profile, validation, configVersion: configVersion as number, configSchema };
+  const installedIdentity = deriveInstalledIdentity({ manifest, profile, identity: validation },
+    value => createHash('sha256').update(value).digest('hex'));
+  const engine = { manifest, profile, validation, installedIdentity, configVersion: configVersion as number, configSchema };
   requireValid(permitsRuntime(probe(engine, manifest.minimumBudget), engine));
   requireValid(permitsRuntime(probe(engine, manifest.defaultBudget), engine));
   requireValid(budgetKeys.every(key => manifest.defaultBudget[key] >= manifest.minimumBudget[key]));

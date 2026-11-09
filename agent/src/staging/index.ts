@@ -33,7 +33,8 @@ export class Stager {
       || identity.configuration.stagingRoot !== profile.stagingRoot || identity.configuration.user !== profile.user) throw new StagingError('installation');
     const providers = Object.freeze({ input: options.providers.input.bind(options.providers),
       secret: options.providers.secret.bind(options.providers) });
-    this.options = Object.freeze({ ...options, providers, profile, manifest: snapshot(options.manifest, 65_536), validation: validationSnapshot(options.validation) });
+    const manifest = snapshot(options.manifest, 65_536); const validation = validationSnapshot(options.validation);
+    this.options = Object.freeze({ ...options, providers, profile, manifest, validation });
   }
   prepare(input: PrepareRequest): Preparation {
     if (this.closed) return rejected('closed');

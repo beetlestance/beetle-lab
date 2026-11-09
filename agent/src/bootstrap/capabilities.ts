@@ -31,6 +31,7 @@ export class CapabilityView {
       supportedControls: [...this.latest.controls.filter((control): control is 'cpu' | 'memory' | 'pids' =>
         ['cpu', 'memory', 'pids'].includes(control)), 'timeout', 'output'],
       engines: catalog.engines.map(engine => ({ id: engine.manifest.engineId, version: engine.manifest.engineVersion,
-        imageDigest: engine.profile.imageDigest, capabilities: [...engine.manifest.capabilities] })) };
+        imageDigest: engine.profile.imageDigest, configVersion: engine.configVersion,
+        installedIdentity: engine.installedIdentity, capabilities: [...engine.manifest.capabilities] })) };
   }
 }

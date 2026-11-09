@@ -1,6 +1,7 @@
 import { afterEach, expect } from 'vitest';
 import { createConfigSchema } from '@beetle/contracts/engine-config';
 import { createHash } from 'node:crypto';
+import { sameInstalledIdentity } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import type { Catalog, InstalledEngine } from '../../src/catalog/index.js';
 import type { InstallationController } from '../../src/installation/index.js';
@@ -18,13 +19,15 @@ export function fixture() {
     // Explicit staging deadline tests retain the shared fixture's short budgets.
     const env = await f.environment(false, 10_000);
     const owner = controlled(env.owner); owner.time.advance(1);
-    const engine: InstalledEngine = { manifest: env.options.manifest, profile: env.options.profile,
+    const engine: InstalledEngine = { installedIdentity: env.offer.installedIdentity, manifest: env.options.manifest, profile: env.options.profile,
       configVersion: 1, validation: env.options.validation, approved: configuration().profiles[0]!,
       configSchema: createConfigSchema({ schemas: [{ $id: 'synthetic', type: 'object' }], schemaId: 'synthetic', digest: value => createHash('sha256').update(value).digest('hex') }) };
     const catalog: Catalog = { engines: [engine], preflight(input: unknown) {
       const offer = structuredClone(input) as Offer;
+      if (!offer.installedIdentity || !sameInstalledIdentity(offer.installedIdentity, engine.installedIdentity)) throw new Error('synthetic missing pin');
       return { offer, engine, validation: validation(offer) };
-    }, resolve(_offer, identity) {
+    }, resolve(offer, identity) {
+      if (!offer.installedIdentity || !sameInstalledIdentity(offer.installedIdentity, engine.installedIdentity)) throw new Error('synthetic missing pin');
       if (identity.schemaDigest !== engine.validation.schemaDigest) throw new Error('synthetic missing pin');
       return engine;
     } };

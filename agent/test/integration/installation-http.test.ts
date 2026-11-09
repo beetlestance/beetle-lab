@@ -35,6 +35,7 @@ it.each(['manual', 'scheduled', 'output_limit'] as const)('composes authenticate
   const profile = { ...e.options.profile, maximumBudget: { ...e.offer.budget } };
   const validation = { ...e.options.validation, schemaDigest: schema.schemaDigest };
   const catalog = createEngineCatalog([{ manifest, profile, validation, configSchema: schema, configVersion: 1 }]);
+  e.offer.installedIdentity = catalog.engines[0]!.installedIdentity;
   const config = configuration(); config.pool.outputBytes = 131_072; config.perRun.outputBytes = 131_072;
   await e.owner.admission({ kind: 'configure', configuration: { ...config,
     profiles: catalog.engines.map(engine => structuredClone(engine.approved)) } });

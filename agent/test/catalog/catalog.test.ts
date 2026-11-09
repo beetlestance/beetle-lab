@@ -72,9 +72,9 @@ describe('installed engine catalogue', () => {
   it('rejects a required hard output quota even when the installed manifest advertises it', () => {
     const installed = registration(); installed.manifest.capabilities.push('hard-output-quota');
     const catalog = createEngineCatalog([installed]);
-    const ordinary = catalog.preflight(offer());
+    const ordinary = catalog.preflight(offer(installed));
     expect(ordinary.engine.approved.capabilities).toContain('hard-output-quota');
-    const requiring = { ...offer(), requiredCapabilities: ['http', 'hard-output-quota'] };
+    const requiring = { ...offer(installed), requiredCapabilities: ['http', 'hard-output-quota'] };
     invalid(requiring, 'unapproved_engine', input => catalog.preflight(input));
     invalid(requiring, 'identity', input => catalog.resolve(input, ordinary.validation));
   });
@@ -155,7 +155,7 @@ describe('installed engine catalogue', () => {
     const values = Array.from({ length: MAX_INSTALLED_ENGINES }, (_, n) => ({ ...registration(), configVersion: n + 1,
       validation: { ...registration().validation, profileId: `profile-${n}` } }));
     const catalog = createEngineCatalog(values); expect(catalog.engines).toHaveLength(32);
-    expect(catalog.preflight({ ...offer(), engine: { ...offer().engine, configVersion: 32 } }).engine.configVersion).toBe(32);
+    expect(catalog.preflight({ ...offer(values[31]!), engine: { ...offer().engine, configVersion: 32 } }).engine.configVersion).toBe(32);
     for (const input of [[], [...values, registration()], null, new Array(2)]) invalid(input, 'invalid_registration', createEngineCatalog);
   });
 });

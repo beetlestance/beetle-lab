@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
+import { deriveInstalledIdentity } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import type { DockerRequest, DockerReply, DockerTransport } from '../../src/backends/docker/index.js';
 import { Stager, verifyInstallation } from '../../src/staging/index.js';
@@ -59,6 +60,8 @@ export function fixture() {
       const options: StagerOptions = { root: verified.value, profile, manifest, journal: owner,
         validation: { manifestId: validation(offer).manifestId, profileId: 'locked', schemaDigest: 'b'.repeat(64), catalogVersion: 1 },
         providers: { input: async () => stream(), secret: async () => Buffer.from('SYNTHETIC_SENTINEL') }, wallNow: () => now + 1 };
+      offer.installedIdentity = deriveInstalledIdentity({ manifest, profile, identity: options.validation },
+        value => createHash('sha256').update(value).digest('hex'));
       if (enqueue) { await journal.enqueue(owner, offer); await journal.admit(owner, offer); }
       const create = (overrides: Partial<StagerOptions> = {}) => { const stager = new Stager({ ...options, ...overrides }); stagers.push(stager); return stager; };
       const prepare = (stager: Stager, target: Offer = offer, ms = 5000) => stager.prepare({ key: scope(target), operation: operation(ms) });

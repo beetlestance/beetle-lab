@@ -55,7 +55,9 @@ async function stage(context: DriveContext, entry: Entry, offer: Offer, current:
   if (!context.acquireStage()) return { kind: 'deferred', reason: 'staging_busy' };
   try {
     executionGuard(context, entry, budget);
-    const engine = context.options.catalog.resolve(offer, current.validation);
+    let engine: ReturnType<InstallationOptions['catalog']['resolve']>;
+    try { engine = context.options.catalog.resolve(offer, current.validation); }
+    catch { await context.retire(entry); return { kind: 'rejected', reason: 'installed_identity' }; }
     const stager = context.options.stagerFor(engine); executionGuard(context, entry, budget);
     entry.prepared = true;
     const signal = budget.signal ? AbortSignal.any([budget.signal, entry.abort.signal]) : entry.abort.signal;
@@ -126,26 +128,38 @@ async function availableOffer(context: DriveContext, entry: Entry, budget: Opera
 export async function drive(context: DriveContext, entry: Entry, budget: Operation): Promise<DriveProgress> {
   if (entry.cleanupFailed) throw new InstallationError('cleanup');
   context.guard(entry, budget);
-  const offer = entry.plan ? undefined : await availableOffer(context, entry, budget);
+  const offer = entry.controller ? undefined : await availableOffer(context, entry, budget);
   context.guard(entry, budget);
   if (offer === null) return { kind: 'deferred', reason: 'journal_busy' };
-  const current = await reservationFor(context, entry, budget);
+  const current = await reservationFor(context, entry, offer, budget);
   if (!('status' in current)) return current;
   if (current.status === 'released') { await context.retire(entry); return { kind: 'released', collection: current.releaseEvidence?.collection.state ?? 'failed' }; }
   if (!current.createToken && abandoned(entry)) return abort(context, entry);
   context.guard(entry, budget);
   return controllerStep(context, entry, offer, current, budget);
 }
-async function reservationFor(context: DriveContext, entry: Entry, budget: Operation): Promise<Reservation | DriveProgress> {
-  const current = await allocation(context.options.journal, entry.key);
-  if (!current) {
-    if (!context.acquireStage()) return { kind: 'deferred', reason: 'staging_busy' };
-    context.releaseStage();
-    const admitted = await admit(context, entry, budget);
-    if (!('status' in admitted)) return admitted;
-    return admitted;
-  }
-  return current;
+async function reservationFor(context: DriveContext, entry: Entry, offer: Offer | undefined, budget: Operation): Promise<Reservation | DriveProgress> {
+  const current = await boundReservation(context, entry, offer);
+  context.guard(entry, budget);
+  if (current) return current;
+  if (!context.acquireStage()) return { kind: 'deferred', reason: 'staging_busy' };
+  context.releaseStage();
+  return admit(context, entry, budget);
 }
 
 function abandoned(entry: Entry): boolean { return !entry.fresh || entry.cancelled; }
+
+async function boundReservation(context: DriveContext, entry: Entry, offer: Offer | undefined): Promise<Reservation | DriveProgress | null> {
+  const current = await allocation(context.options.journal, entry.key);
+  // A controller keeps its original bound plan and remains responsible for settlement.
+  if (entry.controller || current?.status === 'released') return current;
+  try {
+    if (!offer) throw new InstallationError('catalog');
+    if (current) context.options.catalog.resolve(offer, current.validation);
+    else context.options.catalog.preflight(offer);
+  } catch {
+    await context.retire(entry);
+    return { kind: 'rejected', reason: 'installed_identity' };
+  }
+  return current;
+}

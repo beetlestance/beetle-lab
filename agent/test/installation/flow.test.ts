@@ -38,10 +38,10 @@ describe('installation durable composition, synthetic Docker only', () => {
     const e = await f.setup(); await f.enqueue(e.owner, e.offer); await f.admit(e.owner, e.offer);
     await e.owner.admission({ kind: 'claimCreate', key: scope(e.offer), specDigest: 'f'.repeat(64) });
     const manager = e.create({ catalog: { ...e.catalog, resolve() { throw new Error('synthetic missing exact pin'); } } });
-    await expect(manager.drive(scope(e.offer), operation())).rejects.toThrow('synthetic missing exact pin');
+    expect(await manager.drive(scope(e.offer), operation())).toEqual({ kind: 'rejected', reason: 'installed_identity' });
     expect((await manager.inspect(scope(e.offer))).allocation?.status).toBe('charged');
     expect(e.backend.creates).toBe(0); expect(e.backend.starts).toBe(0);
-    await expect(manager.close()).rejects.toMatchObject({ reason: 'cleanup' });
+    await manager.close();
   });
   it('keeps mismatched reconstruction charged', async () => {
     const e = await f.setup(); await f.enqueue(e.owner, e.offer); await f.admit(e.owner, e.offer);

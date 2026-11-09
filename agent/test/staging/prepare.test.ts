@@ -9,14 +9,13 @@ import { data, fixture, hash, operation, stream } from './fixtures.js';
 
 const f = fixture();
 it('stages exact bytes, restrictive modes, hashes and shipped semantic metadata before a genuine plan', async () => {
-  const e = await f.environment(false);
+  const e = await f.environment(false, 10_000);
   e.offer.budget.timeoutMs = 10_000;
   await e.owner.admission({ kind: 'configure', configuration: { ...configuration(), maxTimeoutMs: 10_000 } });
   e.offer.secretReferences = [{ name: 'TOKEN', provider: 'mounted', reference: 'opaque-ref' }];
   e.offer.inputs.push({ id: '00000000-0000-4000-8000-000000000099', bytes: 0, sha256: hash(Buffer.alloc(0)) });
   await f.enqueue(e.owner, e.offer); await f.admit(e.owner, e.offer);
-  const stager = e.create({ profile: { ...e.options.profile,
-    maximumBudget: { ...e.options.profile.maximumBudget, timeoutMs: 10_000 } }, providers: { input: async request => {
+  const stager = e.create({ providers: { input: async request => {
     if (request.input.bytes) await new Promise(resolve => setTimeout(resolve, 1100));
     return stream(request.input.bytes ? data : Buffer.alloc(0));
   }, secret: async () => Buffer.from('SYNTHETIC_SENTINEL') } });

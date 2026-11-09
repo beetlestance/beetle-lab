@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import type { ControlEvent, EngineResult } from '@beetle/contracts';
-import { sealEngineResult } from '@beetle/contracts';
+import { deriveInstalledIdentity, sealEngineResult } from '@beetle/contracts';
 import { collectOutputs } from '../../src/collection/output/index.js';
 import { createAttemptController } from '../../src/controller/index.js';
 import { AttemptController } from '../../src/controller/attempt.js';
@@ -16,9 +16,9 @@ const f = fixture();
 it('wires actual stager, control filesystem, journal checkpoint and supervisor without rescanning history', async () => {
   const e = await f.environment(false);
   e.offer.budget.outputBytes = 4000;
+  const profile = outputProfile(e);
   await f.enqueue(e.owner, e.offer); await f.admit(e.owner, e.offer);
-  const stager = e.create({ profile: { ...e.options.profile,
-    maximumBudget: { ...e.options.profile.maximumBudget, outputBytes: 4000 } } });
+  const stager = e.create({ profile });
   const prepared = e.prepare(stager); const plan = await prepared.result; await prepared.quiesced;
   if (!plan.ok) throw new Error(plan.reason);
   const time = clock(); time.advance(2); const owner = controlled(e.owner, time);
@@ -69,9 +69,9 @@ it('fails an actually empty stopped control file and releases without manufactur
 });
 it('defers a valid first stopped frame fragmented across the eight-read budget without closing or failing it', async () => {
   const e = await f.environment(false); e.offer.budget.outputBytes = 4000;
+  const profile = outputProfile(e);
   await f.enqueue(e.owner, e.offer); await f.admit(e.owner, e.offer);
-  const prepared = e.prepare(e.create({ profile: { ...e.options.profile,
-    maximumBudget: { ...e.options.profile.maximumBudget, outputBytes: 4000 } } }));
+  const prepared = e.prepare(e.create({ profile }));
   const plan = await prepared.result; await prepared.quiesced;
   if (!plan.ok) throw new Error(plan.reason);
   const time = clock(); time.advance(2); const owner = controlled(e.owner, time); const key = scope(e.offer);
@@ -94,3 +94,10 @@ it('defers a valid first stopped frame fragmented across the eight-read budget w
   } finally { await controller.close(); }
   expect(observed.closes()).toBe(2);
 });
+
+function outputProfile(e: Awaited<ReturnType<ReturnType<typeof fixture>['environment']>>) {
+  const profile = { ...e.options.profile, maximumBudget: { ...e.options.profile.maximumBudget, outputBytes: 4000 } };
+  e.offer.installedIdentity = deriveInstalledIdentity({ manifest: e.options.manifest, profile, identity: e.options.validation },
+    text => createHash('sha256').update(text).digest('hex'));
+  return profile;
+}

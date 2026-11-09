@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { deriveInstalledIdentity } from '@beetle/contracts';
 import { expect, it } from 'vitest';
 import { readdir } from 'node:fs/promises';
 import { DatabaseSync } from 'node:sqlite';
@@ -34,8 +36,11 @@ it.each(['charge', 'policy', 'engine', 'budget', 'config', 'generation', 'scope'
   expect(await readdir(e.rootPath)).toEqual([]);
 });
 it('rejects an unsupported runtime profile before per-attempt writes', async () => {
-  const e = await f.environment();
+  const e = await f.environment(false);
   const profile = { ...e.options.profile, imageDigest: `sha256:${'d'.repeat(64)}` };
+  e.offer.installedIdentity = deriveInstalledIdentity({ manifest: e.options.manifest, profile, identity: e.options.validation },
+    value => createHash('sha256').update(value).digest('hex'));
+  await f.enqueue(e.owner, e.offer); await f.admit(e.owner, e.offer);
   const task = e.prepare(e.create({ profile })); expect(await task.result).toEqual({ ok: false, reason: 'invalid_input' }); await task.quiesced;
   expect(await readdir(e.rootPath)).toEqual([]);
 });
