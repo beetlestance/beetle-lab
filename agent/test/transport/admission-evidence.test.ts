@@ -12,12 +12,13 @@ afterEach(async () => { await Promise.all(servers.splice(0).map(server => server
 async function installed() {
   const env = await f.setup(); const installation = env.create();
   const capabilities = JSON.parse(await readFile('contracts/fixtures/valid/capabilities.json', 'utf8')) as Capabilities;
-  const server = createAgentServer({ credential: 'S'.repeat(64), installation, journal: env.owner,
+  capabilities.journalAuthority = await env.owner.journalAuthority();
+  const server = createAgentServer({ credential: 'S'.repeat(64), installation, journal: env.owner, journalAuthority: capabilities.journalAuthority,
     capabilities: async () => capabilities }); servers.push(server);
   const origin = await server.listen({ host: '127.0.0.1', port: 0 });
   const key = scope(env.offer); const url = `${origin}/runner/v1/attempts/${key.attemptId}`;
   const headers = { authorization: `Bearer ${'S'.repeat(64)}`, 'content-type': 'application/json',
-    'x-beetle-organization-id': key.organizationId, 'x-beetle-workspace-id': key.workspaceId, 'x-beetle-generation': '1' };
+    'x-beetle-organization-id': key.organizationId, 'x-beetle-workspace-id': key.workspaceId, 'x-beetle-journal-authority': capabilities.journalAuthority, 'x-beetle-generation': '1' };
   const request = async (method = 'GET', suffix = '', body?: unknown): Promise<AttemptSnapshot> => {
     const response = await fetch(url + suffix, { method, headers,
       ...(body === undefined ? {} : { body: JSON.stringify(body) }) });

@@ -1,6 +1,6 @@
 # Private runner HTTP adapter
 
-Status: implemented and independently reviewed component. The adapter constructs Fastify;
+Status: base adapter reviewed; authority extension implemented, verification/review pending. The adapter constructs Fastify;
 installation bootstrap owns listening, private networking, scheduling and shutdown.
 It implements the six existing generated runner operations. Artifact streaming and
 explicit application finalization acknowledgements remain separate work.
@@ -19,8 +19,13 @@ Attempt routes additionally require:
 - `x-beetle-organization-id`: UUID.
 - `x-beetle-workspace-id`: UUID.
 - `x-beetle-generation`: canonical positive decimal safe integer.
+- `x-beetle-journal-authority`: exactly one canonical lowercase journal UUID.
 
 The generated client's HttpOptions.headers supplies these backend-owned values.
+The server captures its opened journal authority before serving and checks expected
+authority before receipt lookup, body admission or service effects. Missing/malformed
+headers fail closed; mismatch is 409 `authority_mismatch`, never a receipt404.
+Capabilities expose required `journalAuthority`; a mismatched producer is refused.
 Path attempt ID, header scope and mutation DTO identities must match. GETs fence
 stale generations before returning scoped state/events. The initial Offer always
 uses generation1; future ownership generations cannot be requested through Offer.
@@ -30,11 +35,14 @@ Authentication/invalid-scope failures and global failures may return only an HTT
 status with an empty body: there is no authoritative organisation/workspace for a
 ProtocolError. The client reports a transport/response failure, not a fabricated
 namespace. Once scope is established, errors use bounded validated ProtocolError
-objects with fixed reasons and no exception/config/URL values.
+objects with fixed reasons and no exception/config/URL values. Validated attempt
+paths are echoed as attemptId. `attempt_not_found` requires that ID in its schema;
+generic/unstructured404 is not a receipt absence witness.
 
 ## Bounded JSON and operations
 
-Bodies and replies are at most1MiB. Runner validators reject unsupported fields;
+Bodies/replies are at most 1MiB except Offer PUT bodies, bounded independently at
+2MiB with 1MiB config. Existing TWO Offer originals remain shared, not another pool. Runner validators reject unsupported fields;
 there is no coercion, default insertion or arbitrary schema compilation. Replies
 are encoded/snapshotted before reading fields or choosing Fastify serializers;
 only validated objects are sent. Reply scope/generation must match the request.
@@ -53,7 +61,7 @@ only queues through the trusted InstallationController. Cancellation persists
 intent through that service. Snapshot/events/ACK use scoped journal methods.
 No automatic request or test retry is performed.
 
-[Delivery authority](delivery-authority.md) additionally requires exactly one private
-authority header checked before normal attempt reads/mutations. Missing/mismatch
-must remain distinct from a scoped receipt404. This extension is not implemented;
-existing HTTP component evidence does not establish restore-safe automatic replay.
+[Delivery authority](delivery-authority.md) owns continuity and restored-state
+semantics. The server holds one captured authority; only offline restoration after
+all serving originals drain may rotate it. First-install and cold-restore tooling,
+backend durable binding and automatic delivery are separate required work.

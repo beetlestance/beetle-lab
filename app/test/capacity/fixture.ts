@@ -19,7 +19,7 @@ export function configuration(): AgentConnectionConfiguration {
     requiredCapabilities: ['http'] }] };
 }
 export function capabilities(start = 10000): Capabilities {
-  return { protocolVersion: '1.0', protocolVersions: ['1.0'],
+  return { protocolVersion: '1.0', protocolVersions: ['1.0'], journalAuthority: '33333333-3333-4333-8333-333333333333',
     capacity: { cpuMillis: 1000, memoryBytes: 20000, pids: 50, timeoutMs: 60000, outputBytes: 100000 },
     supportedControls: ['cpu', 'memory', 'pids', 'timeout', 'output'],
     engines: [{ id: 'k6', version: '1', imageDigest: `sha256:${'d'.repeat(64)}`, configVersion: 1,

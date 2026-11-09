@@ -13,18 +13,19 @@ export function fixture() {
   return { ...f, async server() {
     const journal = await f.open(); const job = f.offer(); const key = f.key();
     const capabilities = JSON.parse(await readFile('contracts/fixtures/valid/capabilities.json', 'utf8')) as Capabilities;
+    capabilities.journalAuthority = await journal.journalAuthority();
     let cap: () => Promise<Capabilities> = async () => capabilities;
     const enqueue = vi.fn(async (input: unknown) => ({ accepted: true as const, snapshot: await journal.immutableOffer(input) }));
     const cancel = vi.fn(async () => {
       await journal.supervision({ key, now: Date.now(), cancel: true }); return journal.get(key);
     });
     const events = vi.fn(journal.readEvents.bind(journal));
-    const options: AgentHttpOptions = { credential, installation: { enqueue, cancel },
+    const options: AgentHttpOptions = { credential, journalAuthority: capabilities.journalAuthority, installation: { enqueue, cancel },
       journal: { get: input => journal.get(input), readEvents: events, acknowledge: input => journal.acknowledge(input) },
       capabilities: () => cap() };
     const server = createAgentServer(options); servers.push(server);
     const headers = { authorization: `Bearer ${credential}`, 'x-beetle-organization-id': key.organizationId,
-      'x-beetle-workspace-id': key.workspaceId, 'x-beetle-generation': String(key.generation) };
+      'x-beetle-workspace-id': key.workspaceId, 'x-beetle-journal-authority': capabilities.journalAuthority, 'x-beetle-generation': String(key.generation) };
     return { server, journal, job, key, headers, enqueue, cancel, events, capabilities,
       path: `/runner/v1/attempts/${key.attemptId}`, setCapabilities(value: typeof cap) { cap = value; },
       async store(): Promise<AttemptSnapshot> { return journal.immutableOffer(job); } };

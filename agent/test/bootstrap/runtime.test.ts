@@ -18,7 +18,7 @@ it('owns real services, reports actual clipped capabilities and closes a fresh i
   await expect(openAgentRuntime(e.options)).rejects.toMatchObject({ reason: 'busy' });
   const capabilities = await runtime.server.inject({ url: '/runner/v1/capabilities', headers: e.headers });
   expect(capabilities.statusCode).toBe(200); expect(capabilities.json()).toMatchObject({
-    capacity: { cpuMillis: 4000, memoryBytes: 4000, pids: 40, outputBytes: 131_072, timeoutMs: 5000 },
+    journalAuthority: e.journalAuthority, capacity: { cpuMillis: 4000, memoryBytes: 4000, pids: 40, outputBytes: 131_072, timeoutMs: 5000 },
     supportedControls: ['cpu', 'memory', 'pids', 'timeout', 'output'], engines: [{ id: 'k6', configVersion: 1, installedIdentity: e.options.catalog.engines[0]!.installedIdentity,
       imageDigest: e.options.catalog.engines[0]!.profile.imageDigest }] });
   expect(capabilities.body).not.toContain(e.rootPath);

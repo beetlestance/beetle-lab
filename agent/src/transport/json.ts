@@ -50,3 +50,10 @@ export function sendJson<N extends ProtocolName>(reply: FastifyReply, status: nu
   const { text, value } = capture(name, input, expected);
   reply.code(status).type('application/json; charset=utf-8').serializer(() => text).send(value);
 }
+
+/** Validate and bind the one producer frame before any authority field is observed. */
+export function sendCapabilities(reply: FastifyReply, input: unknown, journalAuthority: string): void {
+  const { text, value } = capture('Capabilities', input);
+  if (value.journalAuthority !== journalAuthority) throw new AgentHttpError(503, 'authority_mismatch');
+  reply.code(200).type('application/json; charset=utf-8').serializer(() => text).send(value);
+}

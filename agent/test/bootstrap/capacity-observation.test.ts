@@ -16,7 +16,7 @@ afterEach(async () => {
 async function fixture() {
   const f = setup(); owners.push(f); f.publisher.start(); await settle();
   const config = configuration(); const catalog = createEngineCatalog([registration()]);
-  const options = { configuration: config, catalog, published: () => f.publisher.snapshot(), wallNow: () => f.clock.wall };
+  const options = { journalAuthority: '33333333-3333-4333-8333-333333333333', configuration: config, catalog, published: () => f.publisher.snapshot(), wallNow: () => f.clock.wall };
   return { ...f, config, catalog, options };
 }
 

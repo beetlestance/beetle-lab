@@ -77,6 +77,11 @@
     },
     "observation": {
       "$ref": "https://beetle-lab.dev/contracts/runner/v1/capacity-observation"
+    },
+    "journalAuthority": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
     }
   },
   "required": [
@@ -85,7 +90,8 @@
     "capacity",
     "supportedControls",
     "engines",
-    "observation"
+    "observation",
+    "journalAuthority"
   ],
   "additionalProperties": false
 }

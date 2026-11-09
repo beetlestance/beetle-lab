@@ -14,7 +14,7 @@ afterEach(async () => {
 });
 function fixture() {
   const f = setup(); owners.push(f);
-  const options = { configuration: configuration(), catalog: createEngineCatalog([registration()]),
+  const options = { journalAuthority: '33333333-3333-4333-8333-333333333333', configuration: configuration(), catalog: createEngineCatalog([registration()]),
     published: () => f.publisher.snapshot(), wallNow: () => f.clock.wall };
   return { ...f, options, view: new CapabilityView(options) };
 }

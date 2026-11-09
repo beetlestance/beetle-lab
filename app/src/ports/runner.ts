@@ -22,6 +22,8 @@ export interface LoadedAgentConfiguration {
 
 /** Immutable expected remote identity, taken from the persisted original attempt. */
 export interface RunnerAttemptIdentity {
+  /** Durable physical journal binding, carried only in private transport headers. */
+  readonly journalAuthority: string;
   readonly organizationId: string;
   readonly workspaceId: string;
   readonly attemptId: string;

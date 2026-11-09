@@ -1,7 +1,9 @@
 # Runner gateway
 
 Public entrypoint: `createRunnerGateway(loaded): RunnerGateway`.
-It captures private origin/token/installation and copies immutable attempt scope.
+It captures private origin/token/installation and copies immutable attempt scope
+including expected journalAuthority. Exactly one private authority header is sent;
+that transport value never enters original Offer/config or logical reply matching.
 Generated runner methods, shared bounded encoding, and shipped validators own DTOs.
 Two Offer and eight ordinary original calls share credits across every facade.
 No queue, retries, redirect, address fallback, proxy, keepalive or decompression.

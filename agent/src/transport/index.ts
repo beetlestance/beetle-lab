@@ -3,11 +3,12 @@ import { RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { AttemptKey, GenerationKey } from '../journal/index.js';
 import { AgentHttpError, HTTP_LIMITS } from './types.js';
-import type { AgentHttpOptions, HttpScope } from './types.js';
-import { authenticate, credentialHash, scopeFromHeaders, attemptId, bodyMatches, decimal } from './auth.js';
-import { requestBody, snapshotBody, sendJson } from './json.js';
+import type { AgentHttpOptions } from './types.js';
+import { bodyMatches, decimal } from './auth.js';
+import { requestBody, snapshotBody, sendJson, sendCapabilities } from './json.js';
 import { sendError } from './errors.js';
 import { RequestWork } from './work.js';
+import { RequestIdentity } from './request-identity.js';
 import { OfferIngress } from './offers.js';
 export { AgentHttpError, HTTP_LIMITS } from './types.js';
 export type { AgentHttpOptions } from './types.js';
@@ -33,12 +34,12 @@ function query(request: FastifyRequest, cursor = false): number {
 }
 /** Private HTTP composition; caller owns listening, installation scheduling and journal shutdown. */
 export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
-  const expected = credentialHash(options.credential);
+  const identity = new RequestIdentity(options.credential, options.journalAuthority);
   const services = Object.freeze({ installation: options.installation, journal: options.journal, capabilities: options.capabilities });
   const server = Fastify({ logger: false, trustProxy: false, bodyLimit: HTTP_LIMITS.bytes, routerOptions: { querystringParser: parseQuery },
     requestTimeout: HTTP_LIMITS.requestMs, connectionTimeout: HTTP_LIMITS.requestMs, keepAliveTimeout: 5000 });
   server.server.maxConnections = HTTP_LIMITS.sockets;
-  const scopes = new WeakMap<FastifyRequest, HttpScope>(); const operations = new RequestWork();
+  const operations = new RequestWork();
   const offers = new OfferIngress();
   server.addHook('preClose', async () => {
     const draining = operations.close(); // Fence both lanes before awaiting either original owner.
@@ -47,31 +48,25 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
   server.addHook('onError', async request => { offers.releaseRequest(request); });
   server.addHook('onResponse', async request => { offers.releaseRequest(request); });
   server.addHook('onRequest', async request => {
-    const raw = authenticate(request, expected);
-    if ((request.raw.url?.length ?? 0) > 2048) throw new AgentHttpError(414, 'invalid_protocol');
-    if (request.routeOptions.url !== '/runner/v1/capabilities') scopes.set(request, scopeFromHeaders(raw));
+    identity.capture(request);
     if (request.method === 'PUT' && request.routeOptions.url === '/runner/v1/attempts/:attemptId') {
-      const scope = scopes.get(request)!; attemptId(request.params); query(request);
+      const scope = identity.key(request); query(request);
       if (scope.generation !== 1) throw new AgentHttpError(409, 'conflicting_digest');
       offers.acquire(request);
     }
   });
   server.setErrorHandler((error, request, reply) => {
-    try { sendError(reply, error, scopes.get(request)); } catch { reply.code(500).send(); }
+    try { sendError(reply, error, identity.scope(request)); } catch { reply.code(500).send(); }
   });
   server.setNotFoundHandler(() => { throw new AgentHttpError(404, 'invalid_protocol'); });
   const work = <T>(operation: () => Promise<T>) => operations.run(operation);
-  const key = (request: FastifyRequest): GenerationKey => {
-    const scope = scopes.get(request);
-    if (!scope) throw new AgentHttpError(403, 'invalid_protocol');
-    return { ...scope, attemptId: attemptId(request.params) };
-  };
+  const key = (request: FastifyRequest): GenerationKey => identity.key(request);
   const snapshot = async (request: FastifyRequest) => {
     const scope = key(request);
     return snapshotBody(await services.journal.get(scope as AttemptKey), scope);
   };
   server.get('/runner/v1/capabilities', async (request, reply) => {
-    query(request); sendJson(reply, 200, 'Capabilities', await work(() => services.capabilities()));
+    query(request); sendCapabilities(reply, await work(() => services.capabilities()), identity.journalAuthority);
   });
   server.put('/runner/v1/attempts/:attemptId', { bodyLimit: RUNNER_MAXIMUM_OFFER_BYTES }, async (request, reply) => {
     query(request); const scope = key(request); const body = requestBody('Offer', request.body);
