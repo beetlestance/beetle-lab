@@ -27,7 +27,8 @@ function operation(url: URL, method: string | undefined): 'create' | 'seal' | 'c
 }
 function transport(origin: string) {
   const native = browserTransport(origin); const dropped = new Set<string>();
-  const controls = { create: [] as string[], seal: [] as string[], offsets: [] as string[] };
+  const controls = { create: [] as string[], seal: [] as string[], offsets: [] as string[],
+    originalStatuses: {} as Partial<Record<'create' | 'chunk' | 'seal', number>> };
   const fetcher: typeof fetch = async (input, init) => {
     const url = new URL(String(input)); const kind = operation(url, init?.method);
     if (kind === 'chunk') controls.offsets.push(url.searchParams.get('offset') ?? '');
@@ -35,6 +36,7 @@ function transport(origin: string) {
     if (controls.create.length + controls.seal.length + controls.offsets.length > 16) throw new Error('Synthetic request limit');
     const response = await native(input, init);
     if (kind && !dropped.has(kind)) {
+      controls.originalStatuses[kind] = response.status;
       dropped.add(kind); await response.body?.cancel(); throw new Error('Synthetic lost acknowledgement');
     }
     return response;
@@ -93,6 +95,7 @@ await withBackend(async (origin, token) => {
     if (session.kind !== 'paired') throw new Error('Session unavailable');
     const workspace = await namespace(session.client);
     await upload(session.client, session.transfers, workspace);
+    assert.deepEqual(controls.originalStatuses, { create: 201, chunk: 200, seal: 202 });
     assert.equal(controls.create.length, 2); assert.equal(controls.create[0], controls.create[1]);
     assert.equal(controls.seal.length, 2); assert.equal(controls.seal[0], controls.seal[1]);
     assert.deepEqual(controls.offsets, ['0', '65536']);
