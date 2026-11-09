@@ -408,5 +408,15 @@
     "path": "invalid/missing-installed-identity.json",
     "schema": "Offer",
     "valid": false
+  },
+  {
+    "path": "valid/capacity-observation.json",
+    "schema": "CapacityObservation",
+    "valid": true
+  },
+  {
+    "path": "invalid/missing-capacity-observation.json",
+    "schema": "Capabilities",
+    "valid": false
   }
 ]

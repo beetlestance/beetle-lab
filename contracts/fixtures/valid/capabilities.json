@@ -35,5 +35,49 @@
       },
       "configVersion": 1
     }
-  ]
+  ],
+  "observation": {
+    "installationId": "00000000-0000-4000-8000-000000000010",
+    "daemonId": "fixture-daemon",
+    "policyDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "clock": "local-shared-wall",
+    "source": "fixture-docker-info",
+    "sampleStartedAtMs": 1767225600000,
+    "observedAtMs": 1767225600010,
+    "expiresAtMs": 1767225602000,
+    "observationTtlMs": 5000,
+    "pool": {
+      "cpuMillis": 4000,
+      "memoryBytes": 2147483648,
+      "pids": 512,
+      "outputBytes": 4294967296,
+      "stagingBytes": 1073741824
+    },
+    "perRunStagingBytes": 536870912,
+    "maxConcurrent": 4,
+    "provenance": {
+      "cpuMillis": "docker-info",
+      "memoryBytes": "docker-info",
+      "pids": "configured-policy",
+      "outputBytes": "configured-policy",
+      "stagingBytes": "configured-policy"
+    },
+    "diskSource": "statfs",
+    "freeStagingDiskBytes": 21474836480,
+    "physicalPidCapacity": null,
+    "runtimeControls": [
+      "cpu",
+      "memory",
+      "pids"
+    ],
+    "guards": {
+      "source": "supervisor",
+      "observedAtMs": 1767225600010,
+      "controls": [
+        "timeout",
+        "output"
+      ]
+    },
+    "requiredSensors": []
+  }
 }

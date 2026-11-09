@@ -74,6 +74,9 @@
         "additionalProperties": false
       },
       "maxItems": 64
+    },
+    "observation": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/capacity-observation"
     }
   },
   "required": [
@@ -81,7 +84,8 @@
     "protocolVersions",
     "capacity",
     "supportedControls",
-    "engines"
+    "engines",
+    "observation"
   ],
   "additionalProperties": false
 }

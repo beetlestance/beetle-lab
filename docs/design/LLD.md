@@ -27,6 +27,7 @@ The owning document below must be updated before its implementation changes.
 | Live output guard | [Output guard](lld/output-guard.md) | Bounded metadata scans, freshness watchdog, watch and stop ownership |
 | Independent execution timeout | [Timeout guard](lld/timeout-guard.md) | Durable admission deadline, independent polling, clock fences and original-stop ownership |
 | Full resource/guard publication | [Observation publisher](lld/observation-publisher.md) | Freshness composition, held-I/O revocation and original-write ownership |
+| Agent capacity wire/receiver | [Capacity observation](lld/capacity-wire.md) | Committed source age, global/per-run ceilings, provenance and backend cache fences |
 | Installed agent startup | [Agent runtime](lld/agent-runtime.md) | Actual component wiring, initial readiness and independent shutdown drains |
 | Mounted input/secret intake | [Installed providers](lld/installed-providers.md) | Scoped lazy input streams, explicit aliases, bounded private files and original cleanup |
 | Agent executable/container | [Executable agent](lld/executable-agent.md) | Private configuration, shipped schema bindings, signal ownership and image boundary |

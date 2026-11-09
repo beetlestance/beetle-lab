@@ -15,7 +15,7 @@ afterEach(async () => {
 function fixture() {
   const f = setup(); owners.push(f);
   const options = { configuration: configuration(), catalog: createEngineCatalog([registration()]),
-    published: () => f.publisher.snapshot() };
+    published: () => f.publisher.snapshot(), wallNow: () => f.clock.wall };
   return { ...f, options, view: new CapabilityView(options) };
 }
 

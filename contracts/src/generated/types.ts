@@ -8,6 +8,7 @@ import type { schema as AgentEventSchema } from './agent-event.inference.js';
 import type { schema as AttemptSnapshotSchema } from './attempt-snapshot.inference.js';
 import type { schema as CancellationSchema } from './cancellation.inference.js';
 import type { schema as CapabilitiesSchema } from './capabilities.inference.js';
+import type { schema as CapacityObservationSchema } from './capacity-observation.inference.js';
 import type { schema as ControlEventSchema } from './control-event.inference.js';
 import type { schema as EngineManifestSchema } from './engine-manifest.inference.js';
 import type { schema as EngineResultSchema } from './engine-result.inference.js';
@@ -38,6 +39,7 @@ export type AgentEvent = FromSchema<typeof AgentEventSchema, { references: [...t
 export type AttemptSnapshot = FromSchema<typeof AttemptSnapshotSchema, { references: [...typeof schemas] }>;
 export type Cancellation = FromSchema<typeof CancellationSchema, { references: [...typeof schemas] }>;
 export type Capabilities = FromSchema<typeof CapabilitiesSchema, { references: [...typeof schemas] }>;
+export type CapacityObservation = FromSchema<typeof CapacityObservationSchema, { references: [...typeof schemas] }>;
 export type ControlEvent = FromSchema<typeof ControlEventSchema, { references: [...typeof schemas] }>;
 export type EngineManifest = FromSchema<typeof EngineManifestSchema, { references: [...typeof schemas] }>;
 export type EngineResult = FromSchema<typeof EngineResultSchema, { references: [...typeof schemas] }>;
@@ -53,6 +55,7 @@ export interface ProtocolTypes {
   AttemptSnapshot: AttemptSnapshot;
   Cancellation: Cancellation;
   Capabilities: Capabilities;
+  CapacityObservation: CapacityObservation;
   ControlEvent: ControlEvent;
   EngineManifest: EngineManifest;
   EngineResult: EngineResult;
