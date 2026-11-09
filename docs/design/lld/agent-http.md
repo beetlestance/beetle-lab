@@ -52,3 +52,8 @@ The adapter exposes no drive/launch/profile/schema/Docker flag endpoint. Offer
 only queues through the trusted InstallationController. Cancellation persists
 intent through that service. Snapshot/events/ACK use scoped journal methods.
 No automatic request or test retry is performed.
+
+[Delivery authority](delivery-authority.md) additionally requires exactly one private
+authority header checked before normal attempt reads/mutations. Missing/mismatch
+must remain distinct from a scoped receipt404. This extension is not implemented;
+existing HTTP component evidence does not establish restore-safe automatic replay.

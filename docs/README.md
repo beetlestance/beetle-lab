@@ -29,6 +29,7 @@ released application until the rewrite is qualified.
 | Inspect dispatch storage and worker RPC | [Dispatch RPC](verification/dispatch-rpc.md) | Atomic claims, queue fairness, fixed original carrier, shared credits and full local verification |
 | Inspect matched observation transactions | [Dispatch observation](verification/dispatch-observation.md) | Atomic ACK/projection/release, original capacity lease and pending worker/runtime wiring |
 | Inspect execution storage foundation | [Execution storage](verification/execution-storage.md) | Immutable costs, ownership guards, shared quota and remaining dispatch work |
+| Review delivery restart/restore authority | [Delivery authority](design/lld/delivery-authority.md) | Accepted physical binding and cold restoration contract; implementation pending |
 | Implement durable delivery transactions | [Dispatch storage](design/lld/dispatch-storage.md), [output allocation](design/lld/output-allocation.md) | Private port, claim/observation atomics, bounded fairness and shared storage |
 | Merge agent snapshots in the backend | [Attempt observation](design/lld/attempt-observation.md) | Bounded pure identity/ordering merge before durable dispatch projection |
 | Inspect admission/observation evidence | [Local evidence](verification/admission-evidence.md) | Actual journal/HTTP facts, pure backend merge, full gate and remaining SQL delivery |

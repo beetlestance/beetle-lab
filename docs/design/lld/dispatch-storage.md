@@ -116,6 +116,12 @@ Use the same eligibility owner for advisory scan and authoritative claim.
 
 ## Possible delivery and recovery
 
+[Delivery authority](delivery-authority.md) additionally requires a durable journal
+authority bound atomically at first possible delivery and retained after ACK/outbox
+deletion. Claim replies and observations must carry/check that stored authority.
+This extension is not implemented yet; storage/RPC evidence does not authorize
+automatic network reoffers without it.
+
 The runtime may hold ONE captured Offer between readOffer, compact claim and network
 issue. No preloaded Offer backlog. A single non-overlapping delivery loop can admit
 many independently executing engines. Alternate bounded new/reconciliation turns.

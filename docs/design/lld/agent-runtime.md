@@ -63,3 +63,8 @@ real staged execution with a controlled daemon, unavailable capacity, one-owner
 fencing, failed/aborted startup cleanup, listening failure and retained unknown
 runtime shutdown. Container entrypoint, native mount visibility, architecture matrix,
 stack overhead and full-pool stop latency require separate qualification.
+
+[Delivery authority](delivery-authority.md) adds a required pre-execution startup
+gate and durable journal authority. This extension is pending: gate validation must
+precede journal recovery, publisher and scheduler, not merely HTTP listening. Normal
+intact active restart retains authority; cold restore must first prove quiescence.
