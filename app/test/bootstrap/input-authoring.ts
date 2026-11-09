@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
-import { createApiClient } from '@beetle/contracts/api';
-import type { ApiClientResult, InputRecord } from '@beetle/contracts/api';
+import { createApiClient, createInputTransferClient } from '@beetle/contracts/api';
+import type { ApiClientResult, InputTransferResult } from '@beetle/contracts/api';
 
-function value<T>(result: ApiClientResult<T>): T {
+function value<T>(result: ApiClientResult<T> | InputTransferResult<T>): T {
   assert(result.ok, 'Bundled input HTTP operation failed'); return result.value;
 }
 /** Real compiled bootstrap and HTTP framing; synthetic bytes and no engine. */
@@ -18,24 +18,23 @@ export async function authorInputs(origin: string, cookie: string, csrfToken: st
   const scope = { kind: 'workspace' as const, ...params };
   const bytes = Buffer.alloc(65_543, 0x61); bytes.set(Buffer.from('synthetic π\n'));
   const sha256 = createHash('sha256').update(bytes).digest('hex');
-  let record = value(await api.createInput({ params, body: { scope, requestId: randomUUID(), name: 'Input smoke',
-    sha256, bytes: bytes.length } }));
-  const key = { ...params, inputId: record.id };
-  const url = `${origin}/api/v2/organizations/${organization.id}/workspaces/${workspace.id}/inputs/${record.id}`;
-  for (let offset = 0; offset < bytes.length; offset += 65_536) {
-    const response = await fetch(`${url}/chunks?offset=${offset}`, { method: 'PUT',
-      headers: { ...headers, 'content-type': 'application/octet-stream' },
-      body: bytes.subarray(offset, Math.min(bytes.length, offset + 65_536)), signal: AbortSignal.timeout(3000) });
-    assert.equal(response.status, 200); record = await response.json() as InputRecord;
-    assert.equal(record.offset, Math.min(bytes.length, offset + 65_536));
-  }
-  value(await api.sealInput({ params: key, body: { scope, requestId: randomUUID(), expectedVersion: record.version } }));
-  record = value(await api.getInput({ params: key })); assert.equal(record.state, 'published');
-  const downloaded = await fetch(`${url}/content`, { headers, signal: AbortSignal.timeout(3000) });
-  assert.equal(downloaded.status, 200); assert.equal(downloaded.headers.get('content-length'), null);
-  assert.equal(downloaded.headers.get('transfer-encoding'), 'chunked');
-  // arrayBuffer resolves only after successful message termination, not expected-byte arrival.
-  assert.deepEqual(Buffer.from(await downloaded.arrayBuffer()), bytes);
-  value(await api.deleteInput({ params: key, body: { scope, requestId: randomUUID(), expectedVersion: record.version } }));
-  assert.equal(value(await api.getInput({ params: key })).state, 'deleted');
+  const transfers = createInputTransferClient({ baseUrl: origin, headers });
+  try {
+    const prepared = value(await transfers.prepare({ file: new Blob([new Uint8Array(bytes)]) }));
+    assert.equal(prepared.sha256, sha256); assert.deepEqual(Buffer.from(prepared.content), bytes);
+    let record = value(await api.createInput({ params, body: { scope, requestId: randomUUID(), name: 'Input smoke',
+      sha256: prepared.sha256, bytes: prepared.content.length } }));
+    const key = { ...params, inputId: record.id };
+    for (let offset = 0; offset < bytes.length; offset += 65_536) {
+      record = value(await transfers.append({ record, offset,
+        chunk: prepared.content.subarray(offset, Math.min(bytes.length, offset + 65_536)) }));
+      assert.equal(record.offset, Math.min(bytes.length, offset + 65_536));
+    }
+    value(await api.sealInput({ params: key, body: { scope, requestId: randomUUID(), expectedVersion: record.version } }));
+    record = value(await api.getInput({ params: key })); assert.equal(record.state, 'published');
+    const downloaded = value(await transfers.download({ record }));
+    assert.deepEqual(Buffer.from(downloaded), bytes);
+    value(await api.deleteInput({ params: key, body: { scope, requestId: randomUUID(), expectedVersion: record.version } }));
+    assert.equal(value(await api.getInput({ params: key })).state, 'deleted');
+  } finally { await transfers.close(); }
 }

@@ -8,3 +8,4 @@ export { createApiClient, createApiHttpTransport } from './client/index.js';
 export type { ApiClient, ApiClientFailure, ApiClientResult, ApiHttpOptions, ApiOperationInput, ApiTransport } from './client/index.js';
 export type { InputTransferOptions, InputTransferRequest, InputAppendRequest, InputPrepareRequest, PreparedInputBytes,
   InputTransferFailure, InputTransferResult, InputTransferClient } from './input-transfer-types.js';
+export { createInputTransferClient } from './input-transfer/index.js';

@@ -4,7 +4,7 @@ import { validateApi } from '../validate.js';
 import type { Operation } from './lifetime.js';
 import type { Intent } from './snapshot.js';
 
-export async function bytes(owner: Operation, maximum: number, exact: boolean): Promise<Uint8Array> {
+export async function bytes(owner: Operation, maximum: number, exact: boolean): Promise<Uint8Array<ArrayBuffer>> {
   const output = new Uint8Array(maximum);
   let size = 0;
   let reads = 0;
