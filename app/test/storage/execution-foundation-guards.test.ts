@@ -49,3 +49,30 @@ it('bounds charged ownership at64 without charging the65th output', () => {
     expect(db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()).toEqual(before);
   } finally { db.close(); }
 });
+it('rejects acknowledging and deleting an original whose delivery was never marked possible', () => {
+  const db = initialize(':memory:');
+  try {
+    const { key } = enqueue(db, seedFoundation(db));
+    const outbox = db.prepare('SELECT * FROM dispatch_outbox').all();
+    const attempts = db.prepare('SELECT * FROM attempts').all();
+    const usage = db.prepare('SELECT * FROM installation_storage_usage').all();
+    expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+    expect(() => transaction(db, () => {
+      insertRecord(db, key);
+      reserveRunOutput(db, key, { allocationBytes: 1e9, reserveBytes: 0 });
+      expect(db.prepare('SELECT possible_delivery,first_delivery_at FROM dispatch_outbox').get())
+        .toEqual({ possible_delivery: 0, first_delivery_at: null });
+      // Exact matched snapshot/ACK/detach/delete sequence; no possible mark precedes it.
+      db.prepare('UPDATE execution_records SET snapshot_json=?,acknowledged_generation=1,delivery_attempt_id=NULL WHERE attempt_id=?')
+        .run(JSON.stringify(snapshotFor(key)), key.attempt.attemptId);
+      db.prepare('UPDATE attempts SET generation=1 WHERE id=?').run(key.attempt.attemptId);
+      db.prepare('DELETE FROM dispatch_outbox WHERE attempt_id=?').run(key.attempt.attemptId);
+    })).toThrow();
+    expect(db.prepare('SELECT * FROM dispatch_outbox').all()).toEqual(outbox);
+    expect(db.prepare('SELECT * FROM attempts').all()).toEqual(attempts);
+    expect(db.prepare('SELECT * FROM installation_storage_usage').all()).toEqual(usage);
+    expect(db.prepare('SELECT * FROM execution_records').all()).toEqual([]);
+    expect(db.prepare('SELECT * FROM attempt_output_allocations').all()).toEqual([]);
+    expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+  } finally { db.close(); }
+});

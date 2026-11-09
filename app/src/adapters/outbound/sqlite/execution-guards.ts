@@ -58,6 +58,13 @@ CREATE TRIGGER execution_record_identity BEFORE UPDATE ON execution_records
  OR (OLD.acknowledged_generation IS NOT NULL AND NEW.acknowledged_generation IS NOT OLD.acknowledged_generation)
  OR (OLD.delivery_attempt_id IS NULL AND NEW.delivery_attempt_id IS NOT NULL)
  BEGIN SELECT RAISE(ABORT,'immutable execution ownership'); END;
+CREATE TRIGGER execution_first_ack BEFORE UPDATE ON execution_records
+ WHEN ((OLD.snapshot_json IS NULL AND NEW.snapshot_json IS NOT NULL) OR
+ (OLD.acknowledged_generation IS NULL AND NEW.acknowledged_generation IS NOT NULL) OR
+ (OLD.delivery_attempt_id IS NOT NULL AND NEW.delivery_attempt_id IS NULL))
+ AND NOT EXISTS(SELECT 1 FROM dispatch_outbox WHERE attempt_id=OLD.attempt_id AND intent_digest=OLD.intent_digest
+ AND execution_intent_id=OLD.attempt_id AND possible_delivery=1 AND first_delivery_at IS NOT NULL)
+ BEGIN SELECT RAISE(ABORT,'ack requires prior possible delivery'); END;
 CREATE TRIGGER execution_snapshot BEFORE UPDATE ON execution_records WHEN NEW.snapshot_json IS NOT NULL BEGIN
  SELECT CASE WHEN json_extract(NEW.snapshot_json,'$.protocolVersion') IS NOT '1.0'
  OR json_extract(NEW.snapshot_json,'$.attemptId') IS NOT NEW.attempt_id
@@ -88,11 +95,25 @@ CREATE TRIGGER execution_release BEFORE UPDATE ON execution_records
  json_extract(NEW.snapshot_json,'$.admission.reason') IN ('cancelled','staging_policy','unsupported_capability','unapproved_profile',
  'below_manifest_minimum','per_run_ceiling','timeout_ceiling','impossible_request','controls_unavailable'))) IS NOT 1
  BEGIN SELECT RAISE(ABORT,'execution release requires final admission'); END;
+CREATE TRIGGER execution_final_admission_immutable BEFORE UPDATE ON execution_records
+ WHEN json_extract(OLD.snapshot_json,'$.admission.state') IN ('released','rejected') AND (
+ json_extract(NEW.snapshot_json,'$.admission.state') IS NOT json_extract(OLD.snapshot_json,'$.admission.state') OR
+ json_extract(NEW.snapshot_json,'$.admission.reason') IS NOT json_extract(OLD.snapshot_json,'$.admission.reason') OR
+ json_extract(NEW.snapshot_json,'$.admission.disposition') IS NOT json_extract(OLD.snapshot_json,'$.admission.disposition'))
+ BEGIN SELECT RAISE(ABORT,'immutable final admission'); END;
 CREATE TRIGGER execution_record_retained BEFORE DELETE ON execution_records BEGIN SELECT RAISE(ABORT,'retained execution record'); END;
 CREATE TRIGGER attempts_owned_ack BEFORE UPDATE OF generation ON attempts WHEN NEW.foundation_owned=1 AND NEW.generation IS NOT NULL
  AND (NEW.generation IS NOT 1 OR NOT EXISTS(SELECT 1 FROM execution_records WHERE attempt_id=NEW.id
  AND acknowledged_generation=1 AND snapshot_json IS NOT NULL))
  BEGIN SELECT RAISE(ABORT,'ack requires matched snapshot'); END;
+CREATE TRIGGER attempts_retain_untracked BEFORE DELETE ON attempts
+ WHEN OLD.execution_intent_id IS NULL AND (OLD.generation IS NOT NULL OR
+ EXISTS(SELECT 1 FROM dispatch_outbox WHERE attempt_id=OLD.id AND possible_delivery=1))
+ BEGIN SELECT RAISE(ABORT,'retained untracked execution ownership'); END;
+CREATE TRIGGER outbox_retain_untracked BEFORE DELETE ON dispatch_outbox
+ WHEN OLD.execution_intent_id IS NULL AND (OLD.possible_delivery=1 OR
+ EXISTS(SELECT 1 FROM attempts WHERE id=OLD.attempt_id AND generation IS NOT NULL))
+ BEGIN SELECT RAISE(ABORT,'retained untracked delivery ownership'); END;
 CREATE TRIGGER outbox_matched_ack BEFORE DELETE ON dispatch_outbox WHEN OLD.possible_delivery=1 AND OLD.execution_intent_id IS NOT NULL
  AND NOT EXISTS(SELECT 1 FROM execution_records e JOIN attempts a ON a.id=e.attempt_id
  WHERE e.attempt_id=OLD.attempt_id AND e.acknowledged_generation=1 AND e.snapshot_json IS NOT NULL

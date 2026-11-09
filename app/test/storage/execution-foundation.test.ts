@@ -1,6 +1,7 @@
+import type { AttemptAdmission } from '@beetle/contracts';
 import { expect, it } from 'vitest';
 import { createHash } from 'node:crypto';
-import { encodeCanonicalJson, estimateStaging } from '@beetle/contracts';
+import { encodeCanonicalJson, estimateStaging, validate } from '@beetle/contracts';
 import { initialize, transaction } from '../../src/adapters/outbound/sqlite/schema.js';
 import { executionRegistryDigest } from '../../src/adapters/outbound/sqlite/execution-intents.js';
 import { runCommand, runOptions } from './runs-fixture.js';
@@ -58,6 +59,40 @@ it('accepts matched final admission only for execution release and retains outpu
     })).toThrow();
     expect(db.prepare('SELECT snapshot_json FROM execution_records').get()).toEqual(retained);
     expect(db.prepare('SELECT state FROM attempts').get()).toEqual(state);
+    expect(db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(offer.budget.outputBytes + 65536);
+    expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+  } finally { db.close(); }
+});
+
+const finalProofChanges: { original: AttemptAdmission; replacement: AttemptAdmission }[] = [
+  { original: { state: 'released', disposition: 'settled' }, replacement: { state: 'released', disposition: 'never_started' } },
+  { original: { state: 'released', disposition: 'settled' }, replacement: { state: 'rejected', reason: 'cancelled' } },
+  { original: { state: 'rejected', reason: 'cancelled' }, replacement: { state: 'rejected', reason: 'controls_unavailable' } },
+  { original: { state: 'rejected', reason: 'cancelled' }, replacement: { state: 'released', disposition: 'never_started' } },
+];
+const finalProofCases = finalProofChanges.flatMap(change => [0, 1].map(charged => ({ ...change, charged })));
+it.each(finalProofCases)('retains original final admission $original against $replacement (charge$charged)', ({ original, replacement, charged }) => {
+  const db = initialize(':memory:');
+  try {
+    const { key, offer } = enqueue(db, seedFoundation(db));
+    transaction(db, () => reserveAndMark(db, key));
+    const first = snapshotFor(key, { lastSeq: 2, admission: original });
+    expect(validate('AttemptSnapshot', first).ok).toBe(true);
+    transaction(db, () => acknowledge(db, key, first));
+    if (charged === 0) db.exec('UPDATE execution_records SET execution_charged=0');
+    const retained = db.prepare('SELECT * FROM execution_records').get();
+    const contradictory = snapshotFor(key, { lastSeq: 3, admission: replacement });
+    expect(validate('AttemptSnapshot', contradictory).ok).toBe(true);
+    expect(() => transaction(db, () => {
+      db.exec("UPDATE attempts SET state='lost'");
+      db.prepare('UPDATE execution_records SET snapshot_json=?').run(JSON.stringify(contradictory));
+    })).toThrow();
+    expect(db.prepare('SELECT * FROM execution_records').get()).toEqual(retained);
+    expect(db.prepare('SELECT state FROM attempts').get()?.state).toBe('offered');
+    const enriched = snapshotFor(key, { lastSeq: 4, state: 'lost', phase: 'seal', cancelRequested: true, admission: original });
+    expect(validate('AttemptSnapshot', enriched).ok).toBe(true);
+    db.prepare('UPDATE execution_records SET snapshot_json=?').run(JSON.stringify(enriched));
+    expect(JSON.parse(String(db.prepare('SELECT snapshot_json FROM execution_records').get()?.snapshot_json))).toEqual(enriched);
     expect(db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(offer.budget.outputBytes + 65536);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
   } finally { db.close(); }

@@ -78,3 +78,28 @@ it('keeps indexed ownership checks compact across large known terminal history',
     expect(plan.every(row => !String(row.detail).includes('SCAN attempts'))).toBe(true);
   } finally { db.close(); }
 });
+it.each(['uncertain-outbox', 'acknowledged-outbox', 'acknowledged-no-outbox'])('retains terminal legacy ownership against coupled witness/run erasure (%s)', witness => {
+  const db = legacy();
+  try {
+    db.exec("UPDATE runs SET state='errored',outcome='inconclusive',reason='execution_lost'; UPDATE attempts SET state='exited';");
+    if (witness !== 'acknowledged-no-outbox') db.exec("UPDATE dispatch_outbox SET possible_delivery=1,first_delivery_at='synthetic'");
+    if (witness !== 'uncertain-outbox') db.exec('UPDATE attempts SET generation=1');
+    if (witness === 'acknowledged-no-outbox') db.exec('DELETE FROM dispatch_outbox');
+    transaction(db, () => db.exec(migration005));
+    const runs = db.prepare('SELECT * FROM runs').all();
+    const attempts = db.prepare('SELECT * FROM attempts').all();
+    const outbox = db.prepare('SELECT * FROM dispatch_outbox').all();
+    expect(hasUntrackedOwnership(db)).toBe(true);
+    expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+    expect(() => transaction(db, () => {
+      db.exec('DELETE FROM dispatch_outbox');
+      db.exec('DELETE FROM attempts');
+      db.exec('DELETE FROM runs');
+    })).toThrow();
+    expect(db.prepare('SELECT * FROM runs').all()).toEqual(runs);
+    expect(db.prepare('SELECT * FROM attempts').all()).toEqual(attempts);
+    expect(db.prepare('SELECT * FROM dispatch_outbox').all()).toEqual(outbox);
+    expect(hasUntrackedOwnership(db)).toBe(true);
+    expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+  } finally { db.close(); }
+});
