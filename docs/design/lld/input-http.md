@@ -3,6 +3,7 @@
 Status: routes and configured startup locally verified; browser transfers pending.
 [Publication](input-publication.md) owns metadata, byte custody and service admission.
 This document owns only the guarded public transport and its shutdown boundary.
+The [browser client](input-client.md) owns bounded transfer consumption and integrity.
 
 ## Composition
 
