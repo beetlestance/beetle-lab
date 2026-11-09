@@ -53,13 +53,23 @@
               "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/token"
             },
             "maxItems": 64
+          },
+          "installedIdentity": {
+            "$ref": "https://beetle-lab.dev/contracts/runner/v1/installed-identity"
+          },
+          "configVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "id",
           "version",
           "imageDigest",
-          "capabilities"
+          "capabilities",
+          "installedIdentity",
+          "configVersion"
         ],
         "additionalProperties": false
       },

@@ -104,5 +104,13 @@
   ],
   "config": {
     "synthetic": true
+  },
+  "installedIdentity": {
+    "manifestId": "k6-v1",
+    "profileId": "docker-v1",
+    "catalogVersion": 1,
+    "manifestDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "profileDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "schemaDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
   }
 }

@@ -110,6 +110,9 @@
         "maxLength": 128
       },
       "additionalProperties": true
+    },
+    "installedIdentity": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/installed-identity"
     }
   },
   "required": [
@@ -119,6 +122,7 @@
     "attemptId",
     "intentDigest",
     "engine",
+    "installedIdentity",
     "inputs",
     "budget",
     "executionPolicy",

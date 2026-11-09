@@ -18,11 +18,12 @@ The application has a trusted, bounded installed profile registry (<=32 entries)
 Each profile maps engine ID/config version to exact image/manifest identity and
 required capabilities. First release supports k6; adding an engine requires its
 own registered contracts. Profile selection cannot silently choose another image.
-Persist the exact trusted registry manifest/profile/schema identities beside the
-Offer. Its public selector does not carry those pins. Before first dispatch, a
+Persist the exact trusted registry identity beside the Offer and in its required
+installedIdentity, as defined by [installed binding](installed-identity.md).
+Its public selector does not carry those pins. Before first dispatch, a
 changed same-selector registry identity must refuse delivery, never select updated
 semantics silently. After possible delivery, retain the old intent for reconciliation;
-the dispatch contract must define its exact agent-side identity handshake.
+the agent compares the full installed binding before any new acceptance.
 The browser may display these pins but cannot author them through enqueue.
 
 Structural preflight is not semantic engine validation. Run.validationStatus starts

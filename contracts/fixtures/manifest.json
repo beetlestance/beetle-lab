@@ -398,5 +398,15 @@
     "path": "invalid/execution-error-reason-pass.json",
     "schema": "EngineResult",
     "valid": false
+  },
+  {
+    "path": "valid/installed-identity.json",
+    "schema": "InstalledIdentity",
+    "valid": true
+  },
+  {
+    "path": "invalid/missing-installed-identity.json",
+    "schema": "Offer",
+    "valid": false
   }
 ]
