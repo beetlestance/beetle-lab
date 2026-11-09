@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import { RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { AttemptKey, GenerationKey } from '../journal/index.js';
 import { AgentHttpError, HTTP_LIMITS } from './types.js';
@@ -7,6 +8,7 @@ import { authenticate, credentialHash, scopeFromHeaders, attemptId, bodyMatches,
 import { requestBody, snapshotBody, sendJson } from './json.js';
 import { sendError } from './errors.js';
 import { RequestWork } from './work.js';
+import { OfferIngress } from './offers.js';
 export { AgentHttpError, HTTP_LIMITS } from './types.js';
 export type { AgentHttpOptions } from './types.js';
 
@@ -37,11 +39,22 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
     requestTimeout: HTTP_LIMITS.requestMs, connectionTimeout: HTTP_LIMITS.requestMs, keepAliveTimeout: 5000 });
   server.server.maxConnections = HTTP_LIMITS.sockets;
   const scopes = new WeakMap<FastifyRequest, HttpScope>(); const operations = new RequestWork();
-  server.addHook('preClose', async () => { await operations.close(); });
+  const offers = new OfferIngress();
+  server.addHook('preClose', async () => {
+    const draining = operations.close(); // Fence both lanes before awaiting either original owner.
+    await Promise.all([draining, offers.close()]);
+  });
+  server.addHook('onError', async request => { offers.releaseRequest(request); });
+  server.addHook('onResponse', async request => { offers.releaseRequest(request); });
   server.addHook('onRequest', async request => {
     const raw = authenticate(request, expected);
     if ((request.raw.url?.length ?? 0) > 2048) throw new AgentHttpError(414, 'invalid_protocol');
     if (request.routeOptions.url !== '/runner/v1/capabilities') scopes.set(request, scopeFromHeaders(raw));
+    if (request.method === 'PUT' && request.routeOptions.url === '/runner/v1/attempts/:attemptId') {
+      const scope = scopes.get(request)!; attemptId(request.params); query(request);
+      if (scope.generation !== 1) throw new AgentHttpError(409, 'conflicting_digest');
+      offers.acquire(request);
+    }
   });
   server.setErrorHandler((error, request, reply) => {
     try { sendError(reply, error, scopes.get(request)); } catch { reply.code(500).send(); }
@@ -60,11 +73,11 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
   server.get('/runner/v1/capabilities', async (request, reply) => {
     query(request); sendJson(reply, 200, 'Capabilities', await work(() => services.capabilities()));
   });
-  server.put('/runner/v1/attempts/:attemptId', async (request, reply) => {
+  server.put('/runner/v1/attempts/:attemptId', { bodyLimit: RUNNER_MAXIMUM_OFFER_BYTES }, async (request, reply) => {
     query(request); const scope = key(request); const body = requestBody('Offer', request.body);
     bodyMatches(scope, scope.attemptId, body);
     if (scope.generation !== 1) throw new AgentHttpError(409, 'conflicting_digest');
-    const result = await work(() => services.installation.enqueue(body));
+    const result = await offers.run(request, () => work(() => services.installation.enqueue(body)));
     if (!result.accepted) throw new AgentHttpError(result.decision.kind === 'defer' ? 429 : 422,
       'budget_unavailable', result.decision.kind === 'defer' ? 'transport' : 'never');
     sendJson(reply, 202, 'AttemptSnapshot', result.snapshot, scope);

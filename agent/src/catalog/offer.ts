@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { encodeJson, validate } from '@beetle/contracts';
+import { RUNNER_MAXIMUM_OFFER_BYTES, encodeJson, validate } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import { prepareRuntime, runtimeName } from '../backends/docker/index.js';
 import { CatalogError } from './types.js';
@@ -17,7 +17,7 @@ export function snapshot<T>(input: unknown, maximum: number): T {
 }
 export function offerSnapshot(input: unknown): Offer {
   try {
-    const result = validate('Offer', snapshot<unknown>(input, 1_048_576));
+    const result = validate('Offer', snapshot<unknown>(input, RUNNER_MAXIMUM_OFFER_BYTES));
     if (result.ok) return result.value;
   } catch { /* Boundary errors never expose input or validator diagnostics. */ }
   throw new CatalogError('invalid_offer');

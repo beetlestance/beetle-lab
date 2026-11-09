@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { isAbsolute, join, normalize } from 'node:path';
-import { encodeJson, validate, validatePrimitive } from '@beetle/contracts';
+import { RUNNER_MAXIMUM_OFFER_BYTES, encodeJson, validate, validatePrimitive } from '@beetle/contracts';
 import type { EngineManifest, Offer } from '@beetle/contracts';
 import { failure } from './types.js';
 import { validImageBaseline } from './image-baseline.js';
@@ -103,7 +103,7 @@ export class RuntimePlan {
 }
 
 function prepareSnapshot(input: PrepareInput): Result<{ name: string; spec: CreateSpec }> {
-  const raw: unknown = JSON.parse(encodeJson(input.offer, 1_048_576));
+  const raw: unknown = JSON.parse(encodeJson(input.offer, RUNNER_MAXIMUM_OFFER_BYTES));
   const rawManifest: unknown = JSON.parse(encodeJson(input.manifest, 65_536));
   const profile = JSON.parse(encodeJson(input.profile, 65_536)) as InstallationProfile;
   const staged = JSON.parse(encodeJson(input.staged, 4096)) as StagedRoots;

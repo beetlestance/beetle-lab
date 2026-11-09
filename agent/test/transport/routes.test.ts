@@ -76,7 +76,7 @@ it('bounds bodies and returns safe protocol errors instead of config or parser e
     expect(result.json()).toMatchObject({ protocolVersion: '1.0', issues: [] });
   }
   const large = await e.server.inject({ method: 'PUT', url: e.path,
-    headers: { ...e.headers, 'content-type': 'application/json' }, payload: 'x'.repeat(HTTP_LIMITS.bytes + 1) });
+    headers: { ...e.headers, 'content-type': 'application/json' }, payload: 'x'.repeat(2_097_153) });
   expect(large.statusCode).toBe(413); expect(e.enqueue).not.toHaveBeenCalled();
 });
 it('validates bounded response objects before observing getters or reflecting service exceptions', async () => {

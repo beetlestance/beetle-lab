@@ -1,4 +1,5 @@
 import { compileSuite } from '../../compiler/suite/index.js';
+import { RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import type { CompileInput, SuiteIssue } from '../../compiler/suite/index.js';
 import { sha256, validateCompileInput, validateSuiteConfig } from '../../compiler/suite/validation.js';
@@ -30,8 +31,8 @@ export class Loader {
       if (this.options.inputRoot === this.options.secretRoot) throw new InputError('binding');
       const staging = decode('StagedAttempt', await this.files.read(this.options.inputRoot, 'staging.json', 65_536), 65_536);
       this.budget.metadata(staging.deadlineMs);
-      const offerBytes = await this.files.read(this.options.inputRoot, 'offer.json', 1_048_576);
-      const offer = decode('Offer', offerBytes, 1_048_576);
+      const offerBytes = await this.files.read(this.options.inputRoot, 'offer.json', RUNNER_MAXIMUM_OFFER_BYTES);
+      const offer = decode('Offer', offerBytes, RUNNER_MAXIMUM_OFFER_BYTES);
       const attempt = this.budget.bind(offer.budget.timeoutMs, staging.deadlineMs);
       const manifestBytes = await this.files.read(this.options.inputRoot, 'manifest.json', 65_536);
       const manifest = decode('EngineManifest', manifestBytes, 65_536);

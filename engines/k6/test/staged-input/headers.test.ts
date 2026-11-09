@@ -25,7 +25,7 @@ describe('staged headers', () => {
     const value = await setup(); await writeFile(join(value.options.inputRoot, name), '{PRIVATE_CORRUPT');
     await rejected(value, 'schema');
   });
-  it.each([['staging.json', 65_537], ['offer.json', 1_048_577], ['manifest.json', 65_537]] as const)('bounds %s before allocation', async (name, size) => {
+  it.each([['staging.json', 65_537], ['offer.json', 2_097_153], ['manifest.json', 65_537]] as const)('bounds %s before allocation', async (name, size) => {
     const value = await setup(); await truncate(join(value.options.inputRoot, name), size);
     await rejected(value, 'filesystem');
   });

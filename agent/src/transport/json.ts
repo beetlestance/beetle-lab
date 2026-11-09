@@ -1,12 +1,12 @@
 import type { FastifyReply } from 'fastify';
-import { encodeJson, validate } from '@beetle/contracts';
+import { encodeJson, validate, RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
 import type { ProtocolName, ProtocolTypes } from '@beetle/contracts';
 import { AgentHttpError, HTTP_LIMITS } from './types.js';
 import type { HttpScope } from './types.js';
 import { bodyMatches } from './auth.js';
 export function requestBody<N extends ProtocolName>(name: N, input: unknown): ProtocolTypes[N] {
   try {
-    const copy: unknown = JSON.parse(encodeJson(input, HTTP_LIMITS.bytes));
+    const copy: unknown = JSON.parse(encodeJson(input, name === 'Offer' ? RUNNER_MAXIMUM_OFFER_BYTES : HTTP_LIMITS.bytes));
     const checked = validate(name, copy);
     if (checked.ok) return checked.value;
   } catch { /* Transport errors never include input or validator exception text. */ }
