@@ -66,3 +66,25 @@ This proves local composition and ordering, not native enforcement, Docker start
 stack overhead, full-pool stop latency, irreversible recovery fencing or complete
 application artifact/finalization behavior. Packaging, architecture qualification,
 scans, backup and soak remain. No hosted CI, publication or deployment is claimed.
+
+## Committed capability projection
+
+Source `29351ddcc10ad267ff85b3cd15a9fcb9174247b4` adds the publisher's immutable
+committed snapshot and removes CapabilityView's raw observer cache. A pending
+resource result cannot upgrade advertised capacity before its stored acknowledgement.
+Expiry is tied to the original cycle's wall start, with monotonic and wall checks;
+reads and acknowledgements cannot renew it. The final frame is bounded to16KiB.
+
+Focused publisher/bootstrap/SQLite integration checks passed48 tests in5 files;
+the final lease-focused file passed15 tests. Cases cover held acknowledgements,
+old-frame retention, freezing/no alias, guard loss, rollback, both expiry clocks,
+late completion, reentrant reads, shutdown ownership and final size/expiry failure.
+Node typechecking, lint, architecture and documentation checks passed. Independent
+source review found no blocker. The agent rebuild and compiled smoke exited0,
+including private configuration, authenticated capabilities and clean shutdown;
+the Docker daemon remained a fixture.
+
+This is component evidence, not a new full-suite or native-control qualification.
+The most recent complete suite remains the3,160-test run at `63d2783` recorded in
+[installed binding](installed-binding.md). Source timestamps/global pool limits
+are not yet on the runner wire; that bridge and application dispatch remain pending.
