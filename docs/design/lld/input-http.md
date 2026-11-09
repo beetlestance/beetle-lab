@@ -58,13 +58,21 @@ If-Range matches the strong quoted SHA256 ETag; otherwise ignore Range and send 
 Do not implement conditional304, multipart ranges or compression in this packet.
 
 Successful replies use application/octet-stream, nosniff, no-store, Accept-Ranges:
-bytes, exact Content-Length and a strong quoted SHA256 ETag. Partial206 adds exact
-Content-Range. Attachment names are derived ASCII input-<UUID>.bin, never display
-names or local paths. Do not send successful headers before the service's complete
-hash verification: start on its first sink callback, or after an empty read succeeds.
-Await each original raw write/backpressure callback. Finish the response only after
-InputService.read succeeds, including original file close. On a later failure,
-destroy the started response; do not append JSON or claim a complete download.
+bytes and a strong quoted SHA256 ETag. Partial206 adds exact Content-Range. Attachment
+names are derived ASCII input-<UUID>.bin, never display names or local paths.
+Require backend HTTP/1.1 for content requests; reject other upstream versions before
+service issue with malformed_request. Frontend proxies must use upstream HTTP/1.1.
+
+Nonempty downloads use chunked framing without Content-Length. Start headers only
+on the first sink callback, after the service's complete hash verification; await
+each original raw write/backpressure callback. Send the terminal chunk via raw.end
+only after InputService.read succeeds, including final verification and all original
+file/directory closes. On failure destroy the started response without its terminal
+framing; never append JSON. Receipt of the expected byte count alone is not download
+completion: clients must consume through successful message termination. An empty
+download sends Content-Length:0 only after the read and its closes succeed.
+No final-tail buffer or early sink acknowledgement is introduced. Exact byte counts
+remain in metadata and Content-Range; the completion marker stays under this owner.
 
 ## Request originals and close
 
@@ -99,6 +107,10 @@ excess/empty bodies, parser aborts, stalled sources, sink backpressure, two serv
 slots/third refusal, control responsiveness, disconnect after issue, normal body
 close, and close while upload/read/metadata originals remain held. Use task-owned
 loopback sockets with coordinator authorization; injection alone cannot prove these.
+Hold final verification/file close after the peer has received every expected data
+byte: its message must remain incomplete until successful close. Failure must abort
+the message without terminal framing, including range replies. Empty replies cannot
+complete their headers before close. Verify the frontend proxy preserves this rule.
 No browser/native image/RSS/stop-latency/release claim follows from transport tests.
 
 Implementation references: [Fastify content parsers](https://fastify.dev/docs/latest/Reference/ContentTypeParser/)
