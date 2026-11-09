@@ -5,6 +5,7 @@ import type { schema as CommonSchema } from './common.js';
 import type { schema as AckReceiptSchema } from './ack-receipt.inference.js';
 import type { schema as AckSchema } from './ack.inference.js';
 import type { schema as AgentEventSchema } from './agent-event.inference.js';
+import type { schema as AttemptAdmissionSchema } from './attempt-admission.inference.js';
 import type { schema as AttemptSnapshotSchema } from './attempt-snapshot.inference.js';
 import type { schema as CancellationSchema } from './cancellation.inference.js';
 import type { schema as CapabilitiesSchema } from './capabilities.inference.js';
@@ -36,6 +37,7 @@ export type Cursor = FromSchema<typeof CommonSchema.$defs.cursor, { references: 
 export type AckReceipt = FromSchema<typeof AckReceiptSchema, { references: [...typeof schemas] }>;
 export type Ack = FromSchema<typeof AckSchema, { references: [...typeof schemas] }>;
 export type AgentEvent = FromSchema<typeof AgentEventSchema, { references: [...typeof schemas] }>;
+export type AttemptAdmission = FromSchema<typeof AttemptAdmissionSchema, { references: [...typeof schemas] }>;
 export type AttemptSnapshot = FromSchema<typeof AttemptSnapshotSchema, { references: [...typeof schemas] }>;
 export type Cancellation = FromSchema<typeof CancellationSchema, { references: [...typeof schemas] }>;
 export type Capabilities = FromSchema<typeof CapabilitiesSchema, { references: [...typeof schemas] }>;
@@ -52,6 +54,7 @@ export interface ProtocolTypes {
   AckReceipt: AckReceipt;
   Ack: Ack;
   AgentEvent: AgentEvent;
+  AttemptAdmission: AttemptAdmission;
   AttemptSnapshot: AttemptSnapshot;
   Cancellation: Cancellation;
   Capabilities: Capabilities;

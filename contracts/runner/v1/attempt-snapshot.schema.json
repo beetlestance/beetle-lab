@@ -78,6 +78,9 @@
     },
     "result": {
       "$ref": "https://beetle-lab.dev/contracts/runner/v1/engine-result"
+    },
+    "admission": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/attempt-admission"
     }
   },
   "required": [
