@@ -2,6 +2,7 @@
 
 The released app still uses `npm start`. These commands run the new namespace,
 settings, suite authoring and input HTTP surface; run execution and Docker installation remain incomplete.
+Programmatic metadata enqueue is implemented, but run HTTP/dispatch is not connected yet.
 Use Node 24 and install the locked development dependencies with `npm ci`.
 
 ## Create a private development installation once

@@ -21,7 +21,7 @@ released application until the rewrite is qualified.
 | Implement browser input transfer | [Byte client](design/lld/input-client.md) | Append binding, bounded full downloads, integrity and original-call ownership |
 | Inspect byte-client and inventory evidence | [Input client](verification/input-client.md) | Scoped UI/client tests, compiled HTTP transfer and remaining browser work |
 | Inspect connected input controls | [Input controls](verification/input-controls.md) | Session ownership, upload/download, lost-ack recovery and remaining browser proof |
-| Inspect run intake boundary | [Run intake](verification/run-intake.md) | Reviewed schemas/command port, discovery correction and remaining database/dispatch work |
+| Inspect run intake boundary | [Run intake](verification/run-intake.md) | Reviewed command/SQLite enqueue, migration/recovery fences and remaining HTTP/dispatch work |
 | Inspect native outcome evidence | [k6 outcomes](verification/k6-outcomes.md) | Real HTTP pass/fail, seal/replay checks and their limits |
 | Inspect staged wrapper evidence | [Staged k6](verification/staged-k6.md) | Real staged input, native execution, artifact publication and replay |
 | Inspect agent snapshot evidence | [Agent snapshots](verification/agent-snapshots.md) | Durable lifecycle facts, pruning, restart and quota checks |
