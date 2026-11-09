@@ -1,7 +1,8 @@
 # Durable application dispatch storage
 
 Status: SQL and metadata RPC implemented; installation dispatcher runtime pending.
-Owner: application SQLite worker. Migration005 is reserved here; do not edit004.
+Owner: application SQLite worker. Migration006 pins physical delivery authority;
+prior migrations are immutable.
 [Run intake](run-intake.md) owns immutable intent/receipt acceptance;
 [observation merge](attempt-observation.md) and [agent facts](agent-admission-evidence.md)
 own chronology and remote release evidence. No second merge/compiler in this adapter.
@@ -12,6 +13,15 @@ ports/dispatch.ts owns DispatchStore: scan, readOffer, claim and observe.
 DispatchKey contains runId and the exact original five-field attempt identity,
 including generation 1. Validate/bind every key/request/result at parent and worker.
 The interface is installation-private, with no browser route or credentials.
+RuntimeObservation carries the canonical journalAuthority from the same validated
+capability frame as its capacity lease. First claim persists it atomically in
+execution_records before possible delivery. Claimed/replay/acknowledged replies
+carry this stored UUID; capacity refresh never rebinds it. Observe additionally
+requires journalAuthority, matched before merge, ACK or charge release. UUIDs stay
+private transport/storage metadata, separate from DispatchKey and engine Offer.
+Migration006 leaves existing records NULL and immutable; they cannot adopt a new
+UUID or be observed/released automatically. Charged unbound ownership blocks fresh
+claims installation-wide and remains visible as ownership_unknown diagnostics.
 
 scan({lane,limit,cursor?}) returns <=limit items, allowed 1..32, reply <=64KiB.
 Each item has key, stable order, after continuation and advisory eligibility.

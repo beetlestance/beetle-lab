@@ -3,6 +3,7 @@ import type { AgentConnectionConfiguration, RunnerGateway } from './runner.js';
 
 /** Private combined capacity fact: absolute source expiry is never receipt time. */
 export interface RuntimeObservation {
+  readonly journalAuthority: string;
   ceilings: RuntimeCeilings;
   execution: { stagingBytes: number; perRunStagingBytes: number };
   observedAtMs: number;

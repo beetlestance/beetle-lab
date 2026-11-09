@@ -37,7 +37,7 @@ function rejects(request: unknown): void {
 }
 
 it('refuses a missing record without creating, adopting or charging ownership', () => {
-  rejects({ key, snapshot: snapshotFor(key) });
+  rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key) });
   expect(db.prepare('SELECT count(*) n FROM execution_records').get()?.n).toBe(0);
 });
 it('cannot retain an unsent record and refuses an unsent Offer without ACK or outbox deletion', () => {
@@ -48,7 +48,7 @@ it('cannot retain an unsent record and refuses an unsent Offer without ACK or ou
   })).toThrow('FOREIGN KEY constraint failed');
   expect(tables()).toEqual(before);
   expect(db.prepare('SELECT possible_delivery FROM dispatch_outbox').get()?.possible_delivery).toBe(0);
-  rejects({ key, snapshot: snapshotFor(key) });
+  rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key) });
 });
 
 it.each(['runId', 'attemptId', 'organizationId', 'workspaceId', 'intentDigest', 'generation'] as const)('rejects wrong immutable key %s', field => {
@@ -58,7 +58,7 @@ it.each(['runId', 'attemptId', 'organizationId', 'workspaceId', 'intentDigest', 
     else if (field === 'intentDigest') wrong.attempt.intentDigest = 'f'.repeat(64);
     else if (field === 'generation') (wrong.attempt as { generation: number }).generation = 2;
     else wrong.attempt[field] = uuid(99);
-    rejects({ key: wrong, snapshot: snapshotFor(key) });
+    rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key: wrong, snapshot: snapshotFor(key) });
   });
 
 it('captures the closed key without normalization and isolates the captured copy', () => {
@@ -77,7 +77,7 @@ it('captures the closed key without normalization and isolates the captured copy
 it.each(['key', 'snapshot', 'attempt', 'attemptId'] as const)('rejects %s accessors before invoking caller code or SQL', field => {
   mark();
   const getter = vi.fn(() => { throw new Error('secret canary'); });
-  const request = { key: structuredClone(key), snapshot: snapshotFor(key) };
+  const request = { journalAuthority: '33333333-3333-4333-8333-333333333333', key: structuredClone(key), snapshot: snapshotFor(key) };
   const target = field === 'attemptId' ? request.key.attempt : field === 'attempt' ? request.key : request;
   Object.defineProperty(target, field, { get: getter, enumerable: true });
   const prepare = vi.spyOn(db, 'prepare');
@@ -88,12 +88,12 @@ it.each(['key', 'snapshot', 'attempt', 'attemptId'] as const)('rejects %s access
 
 it.each([{ name: 'null', snapshot: null }, { name: 'empty', snapshot: {} }, { name: 'incomplete', snapshot: { state: 'admitted' } },
   { name: 'snapshot-byte overflow', snapshot: { invalid: 'x'.repeat(73_729) } },
-  { name: 'request-byte overflow', snapshot: { invalid: 'x'.repeat(75_777) } }])('rejects $name original snapshot atomically', ({ snapshot }) => { mark(); rejects({ key, snapshot }); });
+  { name: 'request-byte overflow', snapshot: { invalid: 'x'.repeat(75_777) } }])('rejects $name original snapshot atomically', ({ snapshot }) => { mark(); rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot }); });
 it('rejects open envelopes and non-JSON originals before key/snapshot access', () => {
   mark();
-  rejects({ key, snapshot: snapshotFor(key), extra: true });
-  rejects({ key, snapshot: snapshotFor(key), extra: undefined });
-  rejects({ key, snapshot: { ...snapshotFor(key), lastSeq: Number.NaN } });
+  rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key), extra: true });
+  rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key), extra: undefined });
+  rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: { ...snapshotFor(key), lastSeq: Number.NaN } });
 });
 
 it.each(['attemptId', 'organizationId', 'workspaceId', 'intentDigest', 'generation'] as const)('rejects wrong snapshot %s', field => {
@@ -102,7 +102,7 @@ it.each(['attemptId', 'organizationId', 'workspaceId', 'intentDigest', 'generati
     if (field === 'intentDigest') snapshot.intentDigest = 'f'.repeat(64);
     else if (field === 'generation') snapshot.generation = 2;
     else snapshot[field] = uuid(99);
-    rejects({ key, snapshot });
+    rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot });
   });
 it.each(['attemptId', 'organizationId', 'workspaceId', 'generation'] as const)('rejects nested result %s mismatch', field => {
   mark();
@@ -110,65 +110,65 @@ it.each(['attemptId', 'organizationId', 'workspaceId', 'generation'] as const)('
     workspaceId: key.attempt.workspaceId, generation: 1 };
   if (field === 'generation') nested.generation = 2;
   else nested[field] = uuid(99);
-  rejects({ key, snapshot: snapshotFor(key, { result: nested }) });
+  rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { result: nested }) });
 });
 
 it.each<Partial<AttemptSnapshot>>([{ lastSeq: 1, state: 'running' }, { lastSeq: 2, state: 'offered' },
   { lastSeq: 3, retainedStartSeq: 5 }, { lastSeq: 0, state: 'exited' }])('rolls back conflicting sequence/cursor/chronology %j', patch => {
-  mark(); observations.observe({ key, snapshot: snapshotFor(key) });
-  rejects({ key, snapshot: snapshotFor(key, patch) });
+  mark(); observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key) });
+  rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, patch) });
 });
 it('accepts compatible stale observations without rewinding state, then rejects admission conflict', () => {
   mark();
-  observations.observe({ key, snapshot: snapshotFor(key, { lastSeq: 5, state: 'exited', admission: { state: 'released', disposition: 'settled' } }) });
-  expect(observations.observe({ key, snapshot: snapshotFor(key, { lastSeq: 3 }) })).toMatchObject({
+  observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { lastSeq: 5, state: 'exited', admission: { state: 'released', disposition: 'settled' } }) });
+  expect(observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { lastSeq: 3 }) })).toMatchObject({
     snapshot: { lastSeq: 5, state: 'exited' }, runChanged: false, executionCharged: false });
-  rejects({ key, snapshot: snapshotFor(key, { lastSeq: 6, state: 'exited', admission: { state: 'released', disposition: 'never_started' } }) });
+  rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { lastSeq: 6, state: 'exited', admission: { state: 'released', disposition: 'never_started' } }) });
 });
 
 it('revalidates stored snapshot cursor semantics through the merge owner before any mutation', () => {
   mark();
-  observations.observe({ key, snapshot: snapshotFor(key) });
+  observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key) });
   // Existing SQL guards validate scalar bounds, while the domain owns cursor chronology.
   db.prepare('UPDATE execution_records SET snapshot_json=?')
     .run(JSON.stringify(snapshotFor(key, { retainedStartSeq: 3 })));
-  rejects({ key, snapshot: snapshotFor(key, { lastSeq: 2 }) });
+  rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { lastSeq: 2 }) });
 });
 
 it('allows unchanged replay at maximum version but aborts changed DTO before ACK', () => {
   mark();
   db.prepare('UPDATE runs SET version=?').run(Number.MAX_SAFE_INTEGER);
-  rejects({ key, snapshot: snapshotFor(key) });
+  rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key) });
   db.exec("UPDATE runs SET state='active'");
-  const value = observations.observe({ key, snapshot: snapshotFor(key) });
+  const value = observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key) });
   expect(value).toMatchObject({ runChanged: false, run: { version: Number.MAX_SAFE_INTEGER } });
-  rejects({ key, snapshot: snapshotFor(key, { lastSeq: 2, cancelRequested: true }) });
-  expect(observations.observe({ key, snapshot: snapshotFor(key, { lastSeq: 2 }) })).toMatchObject({ runChanged: false });
+  rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { lastSeq: 2, cancelRequested: true }) });
+  expect(observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { lastSeq: 2 }) })).toMatchObject({ runChanged: false });
 });
 
 it.each(['attempts', 'dispatch_outbox', 'runs'] as const)('rolls every table back on late %s trigger failure', table => {
   mark();
   const event = table === 'dispatch_outbox' ? 'DELETE' : 'UPDATE';
   db.exec(`CREATE TRIGGER synthetic_failure BEFORE ${event} ON ${table} BEGIN SELECT RAISE(ABORT,'synthetic late failure'); END;`);
-  rejects({ key, snapshot: snapshotFor(key, { admission: { state: 'released', disposition: 'settled' } }) });
+  rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { admission: { state: 'released', disposition: 'settled' } }) });
 });
 it('rolls back ACK and execution release when resulting public Run read fails', () => {
   mark();
   const get = reads.get.bind(reads);
   vi.spyOn(reads, 'get').mockImplementationOnce(get).mockImplementationOnce(() => { throw new Error('synthetic projection failure'); });
-  rejects({ key, snapshot: snapshotFor(key, { admission: { state: 'released', disposition: 'settled' } }) });
+  rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { admission: { state: 'released', disposition: 'settled' } }) });
 });
 it('rolls back ACK and release when resulting reply exceeds its original serialization bound', () => {
   mark();
   const get = reads.get.bind(reads);
   vi.spyOn(reads, 'get').mockImplementationOnce(get).mockImplementationOnce(query => ({ ...get(query), extra: 'x'.repeat(1_048_576) }));
-  rejects({ key, snapshot: snapshotFor(key, { admission: { state: 'released', disposition: 'settled' } }) });
+  rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { admission: { state: 'released', disposition: 'settled' } }) });
 });
 
 it('CASE-bounds stored snapshot materialization and never selects Offer, registry or attempt history payloads', () => {
   mark();
   const prepare = vi.spyOn(db, 'prepare');
-  observations.observe({ key, snapshot: snapshotFor(key) });
+  observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key) });
   const queries = prepare.mock.calls.map(([sql]) => sql);
   const record = queries.find(sql => sql.includes('FROM execution_records'))!;
   expect(record).toMatch(/CASE WHEN length\(CAST\(e.snapshot_json AS BLOB\)\)<=73728 THEN e.snapshot_json ELSE NULL END/);
@@ -183,6 +183,6 @@ it('rejects an oversized stored snapshot from its scalar size before reading or 
     return { get: () => Object.defineProperty({ snapshot_bytes: 73_729, execution_charged: 1,
       acknowledged_generation: 1, delivery_attempt_id: null, generation: 1 }, 'snapshot_json', { get: text }) } as unknown as StatementSync;
   });
-  expect(() => observations.observe({ key, snapshot: snapshotFor(key) })).toThrow();
+  expect(() => observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key) })).toThrow();
   expect(text).not.toHaveBeenCalled();
 });

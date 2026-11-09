@@ -47,12 +47,12 @@ it('owns scan/read/claim/observe through the compiled worker and preserves repla
   const claims = await Promise.all([metadata.dispatch.claim(key), metadata.dispatch.claim(key)]);
   expect(claims.map(value => value.kind)).toEqual(['claimed', 'replay']);
   expect((await metadata.runs.getRun({ scope, id: run.id })).state).toBe('dispatching');
-  const observed = await metadata.dispatch.observe({ key, snapshot: snapshotFor(key) });
+  const observed = await metadata.dispatch.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key) });
   expect(observed).toMatchObject({ executionCharged: true, runChanged: true, run: { state: 'active', version: 3 } });
-  expect(await metadata.dispatch.claim(key)).toEqual({ kind: 'acknowledged' });
+  expect(await metadata.dispatch.claim(key)).toEqual({ journalAuthority: '33333333-3333-4333-8333-333333333333', kind: 'acknowledged' });
   expect((await metadata.dispatch.scan({ lane: 'reconcile', limit: 1 })).items[0]?.key).toEqual(key);
   const final = snapshotFor(key, { state: 'exited', lastSeq: 2, admission: { state: 'released', disposition: 'settled' } });
-  const released = await metadata.dispatch.observe({ key, snapshot: final });
+  const released = await metadata.dispatch.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: final });
   expect(released).toMatchObject({ executionCharged: false, run: { state: 'finalizing', outcome: 'pending', validationStatus: 'pending' } });
   await fixture.close(metadata);
   const db = new DatabaseSync(path);
@@ -63,9 +63,9 @@ it('owns scan/read/claim/observe through the compiled worker and preserves repla
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
   } finally { db.close(); }
   metadata = await fixture.open(path, { ...options(), runtime: null, runs: { profiles: [], pendingLimit: 256 } });
-  expect(await metadata.dispatch.claim(key)).toEqual({ kind: 'acknowledged' });
+  expect(await metadata.dispatch.claim(key)).toEqual({ journalAuthority: '33333333-3333-4333-8333-333333333333', kind: 'acknowledged' });
   expect(await metadata.dispatch.readOffer(key)).toEqual(original);
-  expect(await metadata.dispatch.observe({ key, snapshot: final })).toEqual({ ...released, runChanged: false });
+  expect(await metadata.dispatch.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: final })).toEqual({ ...released, runChanged: false });
   expect((await metadata.dispatch.scan({ lane: 'reconcile', limit: 1 })).items).toEqual([]);
 });
 
@@ -97,8 +97,8 @@ it('rejects malformed requests at parent ingress without mutating retained SQL c
   await expect(metadata.dispatch.scan({ lane: 'queued', limit: 33 })).rejects.toMatchObject({ code: 'invalid_input' });
   const invalid = { ...key, attempt: { ...key.attempt, generation: 2 } } as unknown as DispatchKey;
   await expect(metadata.dispatch.claim(invalid)).rejects.toMatchObject({ code: 'invalid_input' });
-  await expect(metadata.dispatch.observe({ key, snapshot: snapshotFor(key, { intentDigest: 'f'.repeat(64) }) }))
+  await expect(metadata.dispatch.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { intentDigest: 'f'.repeat(64) }) }))
     .rejects.toMatchObject({ code: 'invalid_input' });
   expect(await metadata.dispatch.scan({ lane: 'queued', limit: 1 })).toEqual(page);
-  expect(await metadata.dispatch.claim(key)).toEqual({ kind: 'claimed', key });
+  expect(await metadata.dispatch.claim(key)).toEqual({ journalAuthority: '33333333-3333-4333-8333-333333333333', kind: 'claimed', key });
 });

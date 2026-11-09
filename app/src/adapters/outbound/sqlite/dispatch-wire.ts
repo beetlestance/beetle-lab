@@ -8,7 +8,7 @@ import type { DispatchKey, DispatchScan, DispatchPage, DispatchCandidate, Dispat
   DispatchClaim, DispatchObservation } from '../../../ports/dispatch.js';
 import { captureDispatchKey } from './dispatch-values.js';
 import { captureDispatchOfferReply } from './dispatch-offer-reply.js';
-import { boundedCopy } from './input-values.js';
+import { checkedJournalAuthority, boundedCopy } from './input-values.js';
 import type { Operation } from './protocol.js';
 
 export type DispatchOperation = Extract<Operation, {
@@ -70,7 +70,8 @@ export function captureDispatchOperation(input: DispatchOperation): DispatchOper
     case 'dispatchReadOffer': case 'dispatchClaim': captureDispatchKey(value.key); break;
     case 'dispatchObserve': {
       const request = boundedCopy(value.request, DISPATCH_OBSERVATION_REQUEST_BYTES);
-      requireRule(request !== null && typeof request === 'object'); closed(request, ['key', 'snapshot']);
+      requireRule(request !== null && typeof request === 'object'); closed(request, ['key', 'snapshot', 'journalAuthority']);
+      checkedJournalAuthority(request.journalAuthority);
       const key = captureDispatchKey(request.key); boundSnapshot(key, request.snapshot); break;
     }
   }
@@ -96,8 +97,10 @@ function capturePage(value: DispatchPage, query: DispatchScan): void {
 }
 function captureClaim(value: DispatchClaim, expected: DispatchKey): void {
   switch (value.kind) {
-    case 'claimed': case 'replay': closed(value, ['kind', 'key']); sameKey(captureDispatchKey(value.key), expected); break;
-    case 'acknowledged': closed(value, ['kind']); break;
+    case 'claimed': case 'replay':
+      closed(value, ['kind', 'key', 'journalAuthority']); checkedJournalAuthority(value.journalAuthority);
+      sameKey(captureDispatchKey(value.key), expected); break;
+    case 'acknowledged': closed(value, ['kind', 'journalAuthority']); checkedJournalAuthority(value.journalAuthority); break;
     case 'blocked': closed(value, ['kind', 'reason']); requireRule(reasons.includes(value.reason)); break;
     default: requireRule(false);
   }

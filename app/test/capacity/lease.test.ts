@@ -7,6 +7,7 @@ describe('original agent and composite source leases', () => {
     try {
       const source = await f.open(); const first = await source.sample();
       expect(first?.execution).toEqual({ stagingBytes: 500000, perRunStagingBytes: 125000 });
+      expect(first?.journalAuthority).toBe(f.state.frame.journalAuthority);
       expect(first?.observedAtMs).toBe(10000); expect(first?.expiresAtMs).toBe(11000);
       f.state.now = 10800;
       expect(await source.sample()).toEqual(first);
@@ -34,6 +35,7 @@ describe('original agent and composite source leases', () => {
     } finally { await f.cleanup(); }
   });
   it.each([
+    ['journal authority', () => { const v = capabilities(); v.journalAuthority = 'abcdefab-cdef-4abc-8def-abcdefabcdef'; return v; }],
     ['unmapped policy', () => { const v = capabilities(); v.observation.policyDigest = 'f'.repeat(64); return v; }],
     ['staging pool', () => { const v = capabilities(); v.observation.pool.stagingBytes++; return v; }],
     ['per-run staging', () => { const v = capabilities(); v.observation.perRunStagingBytes--; return v; }],

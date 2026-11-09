@@ -9,7 +9,7 @@ function deferred<T>() {
   const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; });
   return { promise, resolve, reject };
 }
-const value = (at = 100): RuntimeObservation => ({ execution: { stagingBytes: 10485760, perRunStagingBytes: 2097152 }, ceilings: settingsFixture().runtime, observedAtMs: at, expiresAtMs: at + 1000 });
+const value = (at = 100): RuntimeObservation => ({ journalAuthority: '33333333-3333-4333-8333-333333333333', execution: { stagingBytes: 10485760, perRunStagingBytes: 2097152 }, ceilings: settingsFixture().runtime, observedAtMs: at, expiresAtMs: at + 1000 });
 const flush = async () => { for (let turn = 0; turn < 16; turn++) await Promise.resolve(); };
 const handles: RuntimePoller[] = [];
 function fixture(sample = vi.fn<CapacitySource['sample']>().mockResolvedValue(null),

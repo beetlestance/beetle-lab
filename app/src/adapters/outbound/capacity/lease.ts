@@ -39,7 +39,7 @@ export class CapacityLease {
   }
   private replay(fingerprint: string, candidate: RuntimeObservation): RuntimeObservation {
     const result = this.result;
-    if (result === null || this.fingerprint !== fingerprint ||
+    if (result === null || this.fingerprint !== fingerprint || result.journalAuthority !== candidate.journalAuthority ||
       encodeCanonicalJson({ ceilings: result.ceilings, execution: result.execution }, 8192) !==
         encodeCanonicalJson({ ceilings: candidate.ceilings, execution: candidate.execution }, 8192)) {
       this.revoke(); throw new CapacityError();

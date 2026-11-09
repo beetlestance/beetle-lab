@@ -2,7 +2,7 @@ import { checkedRunOperation } from './run-validation.js';
 import { captureDispatchOperation, dispatchOperation, dispatchRequestLimit, dispatchReplyLimit } from './dispatch-wire.js';
 import { checkedRunConfiguration } from './run-profiles.js';
 import { checkedInputOperation } from './input-validation.js';
-import { MAX_MESSAGE_BYTES, boundedCopy, checkedScope, uuid, sha256 } from './input-values.js';
+import { MAX_MESSAGE_BYTES, boundedCopy, checkedScope, uuid, sha256, checkedJournalAuthority } from './input-values.js';
 export { MAX_MESSAGE_BYTES, boundedCopy, checkedScope, uuid, sha256, lower, scopeKey } from './input-values.js';
 import { prepareSuiteCommand } from '../../../application/suites/index.js';
 import { validateApi } from '@beetle/contracts/api';
@@ -31,6 +31,7 @@ function checkedExecution(execution: RuntimeObservation['execution']): void {
 }
 export function checkedRuntime(observation: RuntimeObservation | null, ttl = 5000): void {
   if (observation === null) return;
+  checkedJournalAuthority(observation.journalAuthority);
   checkedObservationTime(observation, ttl);
   checkedExecution(observation.execution);
   const runtime = observation.ceilings;

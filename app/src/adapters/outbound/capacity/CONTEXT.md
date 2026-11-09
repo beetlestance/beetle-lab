@@ -13,3 +13,6 @@ Cached agent replay cannot renew the aggregate <=1000ms lease; invalid sources
 require a source strictly newer than the revocation fence. Optional sensors do
 not establish or block displayed capacity.
 Focused checks: npx vitest run app/test/capacity --maxWorkers=1
+
+The required journalAuthority comes from the same validated frame as the lease;
+equal-source replay cannot substitute another physical journal.
