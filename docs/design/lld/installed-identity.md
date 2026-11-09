@@ -1,6 +1,7 @@
 # Installed execution identity
 
-Status: first-release contract amendment in implementation. This unreleased runner
+Status: implemented and [locally verified](../../verification/installed-binding.md).
+Application dispatch remains pending. This unreleased runner
 protocol retains version1.0; before release its conformance corpus defines one
 required bound Offer, with no unpinned new-admission path.
 
@@ -55,8 +56,11 @@ Pre-amendment WIP records are not legacy product data to migrate. Preserve their
 bytes, identity, charges and diagnostics. Missing bindings reject new intake and
 must not be synthesized, rewritten or dispatched. Read-only reconciliation remains
 available where it does not require new preparation; unknown executions remain
-charged. Explicit quarantine/startup and application outbox blocking behavior must
-be implemented before normal dispatch is enabled; no compatibility write path.
+charged. Agent drive reports installed_identity before new reservation/preparation.
+Shutdown abort requires this manager's successful original admission; a missing
+or unknown original reply cannot confer ownership of an inherited charge.
+Application outbox blocking remains required before normal dispatch is enabled;
+there is no compatibility write path.
 Applied migrations are unchanged. Future storage changes reserve a new migration.
 
 ## Required proof

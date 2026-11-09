@@ -69,7 +69,9 @@ separate from that normal executable compatibility check.
 
 ## Required next work
 
-Normal private configuration, exact installed identity/source-fresh capacity,
+The newer [installed binding report](installed-binding.md) covers exact descriptor
+pins, immutable Offer binding and agent recovery fences at its tested source.
+Normal private configuration, source-fresh capacity,
 durable dispatch/acknowledgment/cancel, event cursors, verified artifact finalization
 and run/results UI remain required. No Docker/Compose, native engine architecture,
 resource/soak/backup, browser/proxy or release qualification is established here.
