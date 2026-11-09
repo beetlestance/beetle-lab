@@ -44,6 +44,20 @@ describe('source lease and revocation fences', () => {
       expect(cache.snapshot()).toEqual(source.ceilings);
     } finally { clock.mockRestore(); }
   });
+  it('revokes recovered capacity when a delayed valid fact predates the previous revocation fence', () => {
+    const { clock, source, cache } = controlled();
+    try {
+      clock.mockReturnValue(10050); cache.update(null);
+      clock.mockReturnValue(10051); cache.update(observation(source.ceilings, 10051));
+      expect(cache.snapshot()).not.toBeNull();
+      clock.mockReturnValue(10052);
+      expect(() => cache.update(observation(source.ceilings, 10025))).toThrow();
+      expect(cache.snapshot()).toBeNull();
+      expect(() => cache.update(observation(source.ceilings, 10051))).toThrow();
+      clock.mockReturnValue(10053); cache.update(observation(source.ceilings, 10053));
+      expect(cache.snapshot()).not.toBeNull();
+    } finally { clock.mockRestore(); }
+  });
   it('fences unknown at local revocation time even when the delayed source is newer than the previous source', () => {
     const { clock, source, cache } = controlled();
     try {

@@ -24,10 +24,10 @@ export class RuntimeCapacity {
     checkedRuntime(observation, this.ttl);
     this.expire(now);
     if (observation === null) { this.revoke(); return null; }
-    requireRule(observation.observedAtMs > this.revokedThrough);
     if (observation.observedAtMs < this.sourceHighWater) {
       this.revoke(); requireRule(false);
     }
+    requireRule(observation.observedAtMs > this.revokedThrough);
     if (observation.observedAtMs === this.sourceHighWater) {
       const equal = this.observation !== null &&
         encodeCanonicalJson(observation, MAX_MESSAGE_BYTES) === encodeCanonicalJson(this.observation, MAX_MESSAGE_BYTES);
