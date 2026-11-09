@@ -153,12 +153,16 @@ export class Manager implements InstallationController {
     await entry.active?.catch(() => undefined);
     if (entry.cleanupFailed || outcomes.some(value => value.status === 'rejected')) throw new InstallationError('cleanup');
     if (entry.controller) { await this.retire(entry); return; }
+    await this.releaseUnstarted(entry);
+    await this.retire(entry);
+  }
+  private async releaseUnstarted(entry: Entry): Promise<void> {
     const current = await allocation(this.options.journal, entry.key);
     if (current?.status === 'charged') {
       if (current.createToken) throw new InstallationError('cleanup');
-      await this.options.journal.admission({ kind: 'abortUnstarted', key: entry.key });
+      // Only a successful original admission proves this lifetime owns the charge.
+      if (entry.fresh) await this.options.journal.admission({ kind: 'abortUnstarted', key: entry.key });
     }
-    await this.retire(entry);
   }
   private async drainEntries(): Promise<boolean> {
     const entries = [...this.entries.values()]; let failed = false;
