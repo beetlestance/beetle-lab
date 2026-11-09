@@ -4,7 +4,8 @@ Status: independently reviewed foundations/startup, integrated and locally verif
 Foundation source: `e0c270dd305a6767f1ea1a0548bafcd5fac117ba`.
 Startup/correction source: `4638d5e640ddcd62c719c377ae5c2eafc1a604d9`.
 Runner wire source: `752d9d37835a9f14b99c68777f4aac88ae499b83`.
-Backend persisted binding and dispatch are not established by this report.
+Backend binding source: `6378d213a0302cb12f7652156ba893b128534482`.
+Automatic dispatch is not established by this report.
 
 ## Durable journal identity
 
@@ -96,6 +97,26 @@ all configured TypeScript/lint/architecture/docs checks and frontend build passe
 The existing frontend chunk-size notice remains. This is local verification,
 not Docker, browser, native architecture or completed backend delivery evidence.
 
+## Backend immutable binding
+
+Migration006 preserves existing execution records with NULL authority and refuses
+adoption. New claims atomically pin the UUID from the original validated capacity
+lease before possible delivery. Replay and acknowledged claims return the stored
+binding after capacity drift or outbox deletion. Observations must match it before
+merge, ACK or resource release. Indexed charged unbound ownership fences new claims.
+
+The integrated binding source passed Node TypeScript, architecture (1,127 sources),
+documentation (180 files) and 585 tests / 58 storage/capacity/bootstrap files,
+exit 0, 94.59 seconds. Scoped handwritten lint passed on the review candidate.
+This is scoped integration evidence; the full gate above predates backend binding.
+
+Independent review found a SQL text-length NUL gap and a masked oversized-snapshot
+oracle. Two new NUL cases failed against the original CHECK and passed unchanged
+after adding an exact byte bound. Correcting the snapshot mock restored its intended
+preconditions; removing the size guard then failed the getter oracle. A during-claim
+UUID rotation test verifies complete custody rollback. Both follow-up reviews closed
+the findings. These failure proofs do not establish automatic delivery or result custody.
+
 ## Limits and required next work
 
 The integrated gate verifies the runner-wire source above; it does not qualify
@@ -105,7 +126,6 @@ Process-crash tests do not prove hardware/power-loss durability. Arbitrary manua
 rewinds and hostile concurrent path replacement remain outside the accepted model.
 
 First-install tooling/CLI/Compose provisioning, compiled executable smoke,
-immutable backend claim/observation binding, delivery
-runtime, and physical cold-backup/restore proof remain required. The control store
+delivery runtime, and physical cold-backup/restore proof remain required. The control store
 alone does not verify quiescence, copy restored data or settle physical execution.
 See [delivery authority](../design/lld/delivery-authority.md) and [PLAN](../../PLAN.md).
