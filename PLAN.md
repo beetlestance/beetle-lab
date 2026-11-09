@@ -35,7 +35,7 @@ model assignments, agent packets, concurrency and independent review.
 | Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings and suite schemas/clients; Fastify JSON adapter; separate config/Offer bounds through actual loader | Run/result API |
 | Agent | Catalogue/admission/staging/controllers; typed stops; bounded scheduling; guards/full observation publisher; installed runtime; Node24 image/private HTTP; real arm64 k6 pass/fail; journal008/large-original bounds; Offer propagation and launch contention | Updated image/Compose/stop-latency qualification, irreversible recovery fencing, telemetry, application artifact transfer/finalization and native architecture matrix |
 | k6 | Suite compiler/runtime/builder, phase-isolated metrics, control journal, staged loader, child runner, numeric windows, summary collector, outcome mapper, staged wrapper, seal codec and artifact publication | Live quantiles, target sampler, reports/export |
-| Product | Namespace/settings and immutable suite/revision SQLite/API composition; input metadata lifecycle/quotas/pins; sessions, paired React authoring, backend startup/dev proxy | Actual input bytes/transfer/UI, run API/UI, artifact store, reports, automation client and Docker frontend proxy |
+| Product | Namespace/settings and immutable suite/revision SQLite/API composition; input metadata/quotas/pins and native publication service; sessions, paired React authoring, backend startup/dev proxy | Input HTTP/transfer/UI and startup maintenance, run API/UI, artifact store, reports, automation client and Docker frontend proxy |
 | Qualification | Local contract/unit/SQLite and real staged native pass/fail checks | Complete execution path, containers, scans, backup/soak and native architecture matrix |
 
 Worker submissions remain unaccepted until independent review and integration
@@ -44,6 +44,8 @@ The [suite authoring report](docs/verification/suite-authoring.md) records autho
 evidence. [Storage intake](docs/verification/storage-intake.md) records the newer
 full gate and separates metadata/client/journal checks from pending byte publication,
 native stress, browser and complete execution evidence.
+The [input publication report](docs/verification/input-publication.md) records actual
+publisher/provider/Stager compatibility and the newer2,823-test combined gate.
 
 ## Delivery order
 

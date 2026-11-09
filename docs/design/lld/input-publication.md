@@ -1,8 +1,8 @@
 # Input byte publication
 
-Status: metadata/migration003 implemented and independently reviewed; see
-[storage intake evidence](../../verification/storage-intake.md). Byte publication,
-transfer and UI remain; no upload availability is claimed.
+Status: metadata/migration003, application service and native byte publication are
+implemented and independently reviewed; see [local publication evidence](../../verification/input-publication.md).
+HTTP transfer and UI remain; no public upload availability is claimed.
 Owners: application input service, sole metadata worker, local byte adapter.
 The [installed provider](installed-providers.md) owns agent reads; the
 [suite contract](suite-authoring.md) owns immutable configuration references.

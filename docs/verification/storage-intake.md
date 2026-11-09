@@ -83,7 +83,9 @@ macOS arm64. Keep the [functional/stress distinction](../engineering.md#function
 
 ## Remaining work
 
-Input filesystem custody, publication/restart cleanup, binary HTTP and UI remain.
+At this checkpoint, filesystem custody, publication/restart cleanup and transfer/UI
+were absent. The newer [input publication report](input-publication.md) verifies the
+file service and2,823-test combined gate; public transfer/UI remain pending.
 Input accounting alone does not account for every database/revision/output byte or
 enforce a physical filesystem quota. No dataset availability is invented.
 Native full-size execution and measured parallel engine stress remain unqualified;
