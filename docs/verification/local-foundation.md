@@ -162,9 +162,9 @@ Linux controls, Docker execution or complete wrapper/application coordination.
 
 ## Missing release evidence
 
-Persisted suite/revision authoring is now implemented and locally verified; see
-[suite authoring](suite-authoring.md) for the current2,577-test functional gate,
-paired full-size backend smoke, review corrections and remaining boundaries.
+Newer local evidence covers [suite authoring](suite-authoring.md) and
+[storage intake](storage-intake.md), including the2,631-test functional gate,
+paired authoring smoke, input metadata and remaining byte/execution boundaries.
 
 The complete new submit/execute/observe/finalize/replay path is not implemented.
 Application artifact storage, irreversible recovery, quantile aggregation, remaining

@@ -11,7 +11,10 @@ export interface SupervisorOptions {
 }
 export interface LaunchInput { key: Scope; plan: RuntimePlan }
 /** Compact authority captured only after validating the original immutable Offer. */
-export type OfferAuthority = Pick<Offer, 'organizationId' | 'workspaceId' | 'attemptId' | 'intentDigest' | 'engine' | 'budget'>;
+export type OfferAuthority = Readonly<Pick<Offer, 'organizationId' | 'workspaceId' | 'attemptId' | 'intentDigest'>> & {
+  readonly engine: Readonly<Offer['engine']>;
+  readonly budget: Readonly<Offer['budget']>;
+};
 export interface LaunchState {
   observation: Observation | null;
   launch: 'unclaimed' | 'unknown' | 'completed' | 'retired';
