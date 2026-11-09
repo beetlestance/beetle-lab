@@ -1,6 +1,6 @@
 # Backend attempt observation merge
 
-Status: implementation contract for a pure boundary; SQL delivery/finalization pending.
+Status: pure boundary implemented; SQL delivery/finalization pending.
 Owner: app/domain/runs. [Execution](execution-protocol.md) owns agent event facts;
 [admission evidence](agent-admission-evidence.md) owns independent admission facts.
 

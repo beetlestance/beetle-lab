@@ -1,6 +1,6 @@
 # Agent admission evidence
 
-Status: wire contract selected; runtime projection and application consumption pending.
+Status: wire and journal/HTTP projection implemented; application consumption pending.
 Owner: agent journal for admission facts; backend dispatch for logical charges.
 [Execution](execution-protocol.md) owns lifecycle/events; [run intake](run-intake.md)
 owns the immutable original Offer. No application dispatch implementation is implied.

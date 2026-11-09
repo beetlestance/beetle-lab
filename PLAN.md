@@ -67,8 +67,9 @@ ACK recovery and finalization remain. The [staging admission report](docs/verifi
 records the shared estimator and private execution view, independent review and
 combined exact-source verification, including a sandbox loopback failure/rerun.
 The [admission evidence contract](docs/design/lld/agent-admission-evidence.md)
-is selected; actual journal/HTTP projection is the next dependency before logical
-charge release and durable dispatch can rely on refusal or reservation release.
+now has journal/HTTP projection and a [pure backend merge](docs/design/lld/attempt-observation.md).
+Durable claims, acknowledgment/projection and charge release transactions remain
+pending; neither boundary finalizes results or acknowledges unstored events.
 
 ## Delivery order
 
