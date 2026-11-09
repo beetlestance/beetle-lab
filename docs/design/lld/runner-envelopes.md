@@ -40,6 +40,10 @@ drains originals; it cannot certify cleanup from response completion alone.
 Bound queued/in-flight large journal requests independently of its total32/64
 request count and128MiB worker heap; cancellation/unknown commit cannot drop the
 original owner. Demonstrate the retained-byte bound, not just a successful small run.
+Known pre-issue readOffer queue_full must defer installation drive or return Stager
+busy before file/provider work; it cannot abort a legitimate parallel run. Preserve
+deadline/cancellation guards. Unavailable or unknown commit is never this refusal;
+do not add automatic execution retries or reduce active-engine concurrency to two.
 
 ## Journal migration008
 

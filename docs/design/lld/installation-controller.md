@@ -18,6 +18,9 @@ be returned as accepted. Identical replay does not launch a second execution.
 scope/budget, loads the immutable offer and reservation, and atomically admits queued
 work before any preparation. Admission deferrals remain uncharged; an admitted
 reservation is always retained while original preparation/runtime work is uncertain.
+Known journal readOffer queue_full before an original read is issued defers drive;
+Stager authority maps that refusal to busy before provider/file work. Unknown commit,
+unavailable, cancellation and deadline keep their existing failure semantics.
 At most two preparations run concurrently; saturation defers without treating the
 attempt as failed or inventing another execution.
 
