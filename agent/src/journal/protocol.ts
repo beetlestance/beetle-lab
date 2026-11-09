@@ -4,7 +4,7 @@ import type { AdmissionCommand, AdmissionValue } from '../admission/index.js';
 
 export type ErrorCode = 'invalid_input' | 'conflict' | 'not_found' | 'queue_full' |
   'closed' | 'unavailable' | 'owned' | 'schema_newer' | 'stale_generation' |
-  'quota_exceeded' | 'cursor_expired' | 'expired_key';
+  'quota_exceeded' | 'cursor_expired' | 'expired_key' | 'recovery_required';
 export interface AttemptKey { attemptId: string; organizationId: string; workspaceId: string }
 export interface GenerationKey extends AttemptKey { generation: number }
 /** Private supervisor input. now is trusted wall-clock milliseconds, never job data. */
@@ -31,6 +31,7 @@ export interface EventInput {
   key: GenerationKey; source: 'wrapper' | 'agent'; sourceKey: number; json: string; canonical: string;
 }
 export type Operation =
+  | { kind: 'authority' }
   | { kind: 'checkpoint'; key: GenerationKey }
   | { kind: 'wrapperBatch'; request: Readonly<WrapperBatch> }
   | { kind: 'supervision'; request: SupervisionCommand }
@@ -45,7 +46,7 @@ export type Operation =
   | { kind: 'prune' | 'sources'; key: GenerationKey }
   | { kind: 'close' };
 export type Command = Operation & { id: number };
-export type Value = AttemptSnapshot | SnapshotPage | RunnablePage | Offer | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | null;
+export type Value = AttemptSnapshot | SnapshotPage | RunnablePage | Offer | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | string | null;
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; id: number; ok: true; value: Value } |
   { kind: 'result'; id: number; ok: false; code: ErrorCode; recovery?: AttemptSnapshot };
