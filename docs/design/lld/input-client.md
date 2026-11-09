@@ -1,6 +1,6 @@
 # Browser input byte client
 
-Status: reviewed contract; implementation and browser qualification pending.
+Status: implementation locally verified; browser/session integration pending.
 The [HTTP contract](input-http.md) owns transport and message termination.
 The [publication contract](input-publication.md) owns durable progress and receipts.
 
@@ -19,6 +19,9 @@ Options/headers are plain data without accessors/extra option keys. Allow at mos
 reject CR/LF and Content-Type/Length/Encoding, Transfer-Encoding, Host, Connection,
 Range, If-Range and other conditional If-* headers (case-insensitive). The owner
 sets transfer headers. Snapshot base URL<=2048 characters and require HTTP(S).
+Browser-owned Origin/Cookie and connection/security headers are also reserved.
+Browsers supply origin/cookies through their native transport; a Node fixture may
+emulate that behavior in its trusted fetch adapter without weakening this guard.
 
 Each failure includes issued:boolean. False means no fetch invocation began; it
 does not assert anything about previous attempts. Busy/closed are local pre-issue

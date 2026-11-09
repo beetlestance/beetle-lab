@@ -35,7 +35,7 @@ model assignments, agent packets, concurrency and independent review.
 | Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings and suite schemas/clients; Fastify JSON adapter; separate config/Offer bounds through actual loader | Run/result API |
 | Agent | Catalogue/admission/staging/controllers; typed stops; bounded scheduling; guards/full observation publisher; installed runtime; Node24 image/private HTTP; real arm64 k6 pass/fail; journal008/large-original bounds; Offer propagation and launch contention | Updated image/Compose/stop-latency qualification, irreversible recovery fencing, telemetry, application artifact transfer/finalization and native architecture matrix |
 | k6 | Suite compiler/runtime/builder, phase-isolated metrics, control journal, staged loader, child runner, numeric windows, summary collector, outcome mapper, staged wrapper, seal codec and artifact publication | Live quantiles, target sampler, reports/export |
-| Product | Namespace/settings and immutable suite/revision SQLite/API composition; input metadata/quotas/pins, native publication, guarded HTTP and configured startup/recovery; sessions, paired React authoring and dev proxy | Browser input transfer/UI, run API/UI, artifact store, reports, automation client and Docker frontend proxy |
+| Product | Namespace/settings and immutable suite/revision SQLite/API composition; native input publication/HTTP/recovery, bounded byte client and scoped inventory/deletion UI; sessions, paired React authoring and dev proxy | Input upload/download UI and transfer session wiring, run API/UI, artifact store, reports, automation client and Docker frontend proxy |
 | Qualification | Local contract/unit/SQLite and real staged native pass/fail checks | Complete execution path, containers, scans, backup/soak and native architecture matrix |
 
 Worker submissions remain unaccepted until independent review and integration
@@ -47,6 +47,8 @@ native stress, browser and complete execution evidence.
 The [input publication report](docs/verification/input-publication.md) records actual
 publisher/provider/Stager compatibility, configured HTTP/recovery and the newer
 2,886-test combined gate.
+The [byte-client report](docs/verification/input-client.md) records newer scoped
+inventory/client checks and actual compiled HTTP transfer; no newer full gate is claimed.
 
 ## Delivery order
 
