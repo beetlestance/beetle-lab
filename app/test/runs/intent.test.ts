@@ -39,3 +39,21 @@ it('rejects invalid allocations/time and caller-supplied runtime payloads', () =
     expect(() => prepareRunCommand(changed, digest)).toThrow();
   }
 });
+it('rejects outer padding at the input bound before digest or command materialization', () => {
+  const input = { ...operation(), padding: '' };
+  input.padding = 'x'.repeat(65536 - Buffer.byteLength(JSON.stringify(input)));
+  expect(Buffer.byteLength(JSON.stringify(input))).toBe(65536);
+  let calls = 0;
+  expect(() => prepareRunCommand(input, value => { calls++; return digest(value); })).toThrow();
+  expect(calls).toBe(0);
+});
+it('rejects accessors without reading them and revalidates persisted command identity', () => {
+  const input = operation(); let reads = 0;
+  Object.defineProperty(input, 'padding', { enumerable: true, get() { reads++; return 'synthetic'; } });
+  expect(() => prepareRunCommand(input, digest)).toThrow(); expect(reads).toBe(0);
+  const command = prepareRunCommand(operation(), digest);
+  expect(prepareRunCommand(command, digest)).toEqual(command);
+  const tampered = { ...command, intentDigest: 'f'.repeat(64) };
+  expect(() => prepareRunCommand(tampered, digest)).toThrow();
+  expect(Buffer.byteLength(JSON.stringify(command))).toBeLessThanOrEqual(65536);
+});
