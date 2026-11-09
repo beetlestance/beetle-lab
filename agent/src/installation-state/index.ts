@@ -21,27 +21,27 @@ export interface RestoringState {
   complete(operationId: string, installedJournalAuthority: string): void;
   close(): void;
 }
-function open(path: string, create: boolean, allowed: State['phase'][]): ControlStore {
+interface AcquiredState { readonly store: ControlStore; readonly state: Readonly<State> }
+function open(path: string, create: boolean, allowed: State['phase'][]): AcquiredState {
   const store = ControlStore.open(path, create);
   try {
-    if (!allowed.includes(store.snapshot().phase)) throw new InstallationStateError('recovery_required');
-    return store;
+    const state = store.snapshot();
+    if (!allowed.includes(state.phase)) throw new InstallationStateError('recovery_required');
+    return { store, state };
   } catch (error) { store.close(); throw error; }
 }
 /** Opens a durable ready gate, exclusively held until the whole runtime drains. */
 export function openServingState(path: string): ServingState {
-  const store = open(path, false, ['ready']);
-  const initial = store.snapshot();
-  if (initial.phase !== 'ready') throw new InstallationStateError('recovery_required');
+  const { store, state: initial } = open(path, false, ['ready']);
+  if (initial.phase !== 'ready') { store.close(); throw new InstallationStateError('recovery_required'); }
   return Object.freeze({ journalAuthority: initial.authority,
     assertJournalAuthority: (actual: string) => {
       authority(actual); const current = store.snapshot();
       if (current.phase !== 'ready' || current.authority !== actual) throw new InstallationStateError('recovery_required');
     }, close: () => store.close() });
 }
-function initialization(store: ControlStore): InitializingState {
-  const initial = store.snapshot();
-  if (initial.phase !== 'initializing') throw new InstallationStateError('recovery_required');
+function initialization({ store, state: initial }: AcquiredState): InitializingState {
+  if (initial.phase !== 'initializing') { store.close(); throw new InstallationStateError('recovery_required'); }
   return Object.freeze({ operationId: initial.operationId,
     complete: (journalAuthority: string) => {
       authority(journalAuthority);
@@ -58,7 +58,7 @@ export function resumeInstallationInitialization(path: string): InitializingStat
 }
 /** Offline coordinator only: caller proves physical quiescence and owns restored data. */
 export function openRestoringState(path: string): RestoringState {
-  const store = open(path, false, ['ready', 'restoring']);
+  const { store } = open(path, false, ['ready', 'restoring']);
   const snapshot = () => {
     const value = store.snapshot();
     if (value.phase === 'initializing') throw new InstallationStateError('recovery_required');

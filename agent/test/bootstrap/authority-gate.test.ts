@@ -172,15 +172,11 @@ it('holds the gate and process owner through the original journal native close',
   assertReleased(e.journalPath);
 });
 
-// Failed owners intentionally survive until process exit; isolate them without reset/retry cleanup.
-it.each(['service', 'journal', 'gate', 'gate-acquisition'] as const)('retains runtime and gate ownership after %s cleanup failure', async failure => {
-  const e = await f.setup(); const engine = e.options.catalog.engines[0]!;
-  if (failure === 'gate-acquisition') database(installationStatePath(e.journalPath), db => {
-    db.prepare("UPDATE installation_state SET phase='initializing',operation_id=?,authority=NULL,pending=NULL").run(randomUUID());
-  });
-  const source = `
+function failureSource(e: Awaited<ReturnType<typeof f.setup>>, failure: string): string {
+  const engine = e.options.catalog.engines[0]!;
+  return `
 import assert from 'node:assert/strict';
-import { DatabaseSync } from 'node:sqlite';
+import { DatabaseSync, StatementSync } from 'node:sqlite';
 import { createConfigSchema } from ${JSON.stringify(resolve('contracts/src/engine-config/index.ts'))};
 import { openAgentRuntime, installationStatePath } from ${JSON.stringify(resolve('agent/src/bootstrap/index.ts'))};
 import { createEngineCatalog } from ${JSON.stringify(resolve('agent/src/catalog/index.ts'))};
@@ -203,6 +199,18 @@ input.transport = {request:async request=>{
   return {ok:false,reason:'unavailable',dispatched:false};
 }};
 const failure = ${JSON.stringify(failure)};
+if (failure === 'gate-read') {
+  const all = StatementSync.prototype.all; let reads = 0;
+  StatementSync.prototype.all = function(...args) {
+    if (this.sourceSQL.includes('FROM installation_state') && ++reads === 3) throw Error('synthetic final state read');
+    return all.apply(this,args);
+  };
+  await assert.rejects(openAgentRuntime(input),{reason:'startup'});
+  assert.equal(reads,3,'injected the third control-state read');
+  StatementSync.prototype.all = all;
+  const recovered = await openAgentRuntime(input); await recovered.initial; await recovered.close();
+  console.log('recovered failed initial state read without retained lease'); process.exit(0);
+}
 let runtime;
 if (failure === 'gate-acquisition') {
   DatabaseSync.prototype.close=function(){throw Error('synthetic acquisition close');};
@@ -219,8 +227,23 @@ assert.throws(()=>gate.prepare('SELECT * FROM installation_state').get());
 console.log('retained original runtime and exclusive gate');
 process.exit(0);
 `;
-  const script = join(e.rootPath, 'retained-owner.mjs'); await writeFile(script, source, { mode: 0o600 });
+}
+async function failureChild(e: Awaited<ReturnType<typeof f.setup>>, failure: string): Promise<string> {
+  const script = join(e.rootPath, `retained-${failure}.mjs`);
+  await writeFile(script, failureSource(e, failure), { mode: 0o600 });
   const child = await promisify(execFile)(process.execPath, ['--import', 'tsx', script],
     { cwd: process.cwd(), timeout: 15_000, maxBuffer: 65_536 });
-  expect(child.stdout).toContain('retained original runtime and exclusive gate');
+  return child.stdout;
+}
+// Failed owners intentionally survive until process exit; isolate them without reset/retry cleanup.
+it.each(['service', 'journal', 'gate', 'gate-acquisition'] as const)('retains runtime and gate ownership after %s cleanup failure', async failure => {
+  const e = await f.setup();
+  if (failure === 'gate-acquisition') database(installationStatePath(e.journalPath), db => {
+    db.prepare("UPDATE installation_state SET phase='initializing',operation_id=?,authority=NULL,pending=NULL").run(randomUUID());
+  });
+  expect(await failureChild(e, failure)).toContain('retained original runtime and exclusive gate');
+}, 20_000);
+it('releases a failed initial state read and permits a complete healthy retry', async () => {
+  const e = await f.setup();
+  expect(await failureChild(e, 'gate-read')).toContain('recovered failed initial state read without retained lease');
 }, 20_000);
