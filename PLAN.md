@@ -66,6 +66,9 @@ records connected capacity publication and the3,499-test local gate. Delivery,
 ACK recovery and finalization remain. The [staging admission report](docs/verification/staging-admission.md)
 records the shared estimator and private execution view, independent review and
 combined exact-source verification, including a sandbox loopback failure/rerun.
+The [admission evidence contract](docs/design/lld/agent-admission-evidence.md)
+is selected; actual journal/HTTP projection is the next dependency before logical
+charge release and durable dispatch can rely on refusal or reservation release.
 
 ## Delivery order
 

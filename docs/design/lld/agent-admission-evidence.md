@@ -54,8 +54,9 @@ accepted replay keeps the same original Offer and final admission disposition.
 
 Admission facts are independent of lastSeq. Merge this partial order for matching
 identity: absent -> queued -> charged -> released, or queued -> rejected. A missing
-or earlier fact cannot erase a known one. Rejected and released are incompatible;
-conflicting final reason/disposition fails closed. Equal facts are idempotent.
+or earlier fact cannot erase a known one. Every incomparable pair fails closed,
+including charged/rejected and rejected/released, as does conflicting final
+reason/disposition. Equal facts are idempotent.
 Receiving a final fact first is allowed; intermediate snapshots may have been lost.
 Canonical equality of the sequence-owned fields is still required at equal lastSeq.
 
