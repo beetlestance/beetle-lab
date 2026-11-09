@@ -17,7 +17,7 @@ function agent(operation: 'describe' | 'preflight', drift = false, offer?: unkno
     timeout: 5000, maxBuffer: 65536, encoding: 'utf8', env: { PATH: process.env.PATH },
   })) as unknown;
 }
-function describe(drift = false) {
+function describe(drift: boolean) {
   const value = agent('describe', drift);
   if (!value || typeof value !== 'object' || !('engine' in value) || !('installedIdentity' in value)) throw new Error('Invalid agent fixture');
   if (!value.engine || typeof value.engine !== 'object' || Array.isArray(value.engine)) throw new Error('Invalid agent fixture');
@@ -29,7 +29,7 @@ function describe(drift = false) {
 
 it('persists an Offer compatible with an actual registered catalogue and retains it after installation drift', async () => {
   // Deliberately synthetic budgets: no Docker, network or engine execution here.
-  const installed = describe();
+  const installed = describe(false);
   const options = runOptions(); options.runs = { pendingLimit: 256, profiles: [installed] };
   const path = fixture.path(); let metadata = await fixture.open(path, options); await seed(metadata);
   const revision = await append(metadata, await createSuite(metadata));
