@@ -18,7 +18,15 @@ export async function authorInputs(origin: string, cookie: string, csrfToken: st
   const scope = { kind: 'workspace' as const, ...params };
   const bytes = Buffer.alloc(65_543, 0x61); bytes.set(Buffer.from('synthetic π\n'));
   const sha256 = createHash('sha256').update(bytes).digest('hex');
-  const transfers = createInputTransferClient({ baseUrl: origin, headers });
+  // Node has no browser cookie jar or automatic Origin header. Supply only that
+  // transport behavior at fetch; the byte client's reserved-header guard stays on.
+  const browserFetch: typeof fetch = (input, init) => {
+    const outgoing = new Headers(init?.headers);
+    outgoing.set('origin', origin); outgoing.set('cookie', cookie);
+    return fetch(input, { ...init, headers: outgoing });
+  };
+  const transfers = createInputTransferClient({ baseUrl: origin, fetch: browserFetch,
+    headers: { 'x-beetle-csrf': csrfToken } });
   try {
     const prepared = value(await transfers.prepare({ file: new Blob([new Uint8Array(bytes)]) }));
     assert.equal(prepared.sha256, sha256); assert.deepEqual(Buffer.from(prepared.content), bytes);
