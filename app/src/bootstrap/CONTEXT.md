@@ -25,3 +25,8 @@ uses private umask. Explicit0.0.0.0 is for the private backend container network
 `npm run smoke:api` needs an owned loopback port and tests the built entrypoint.
 Run/artifact routes, agent dispatch and packaged proxy delivery remain work.
 Check: npx vitest run app/test/bootstrap app/src/bootstrap/api.integration.test.ts --maxWorkers=1.
+
+`runtime-poller.ts` owns one sample/publication at a time and coalesces unknown
+periods; `runtime-publication.ts` preserves explicit SQLite refusal versus failure.
+These helpers do not yet enable executable connection or dispatch. Polling contract:
+[Runtime polling](../../../docs/design/lld/runtime-polling.md).

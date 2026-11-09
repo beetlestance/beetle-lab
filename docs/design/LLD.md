@@ -13,6 +13,7 @@ The owning document below must be updated before its implementation changes.
 | Input routes | [Input HTTP](lld/input-http.md) | Pre-body guards, chunk/range transfer, request originals and shutdown |
 | Browser input bytes | [Input client](lld/input-client.md) | Bounded file preparation, append acknowledgement, download EOF/hash and original custody |
 | Input controls | [Input UI](lld/input-ui.md) | Prepared upload intent/replay, folder selection, verified download and session ownership |
+| Backend capacity publication | [Capacity polling](lld/runtime-polling.md) | One original iteration, unknown coalescing, SQLite refusal and shutdown custody |
 | Backend runner connection | [Backend connection](lld/backend-connection.md) | Private configuration, original HTTP custody and independently measured backend storage |
 | Application run enqueue | [Run intake](lld/run-intake.md) | Receipt-first enqueue, pinned execution/settings and bounded run reads |
 | Dispatcher, agent or engine | [Execution protocol](lld/execution-protocol.md) | APIs, envelopes, idempotency, fencing, cancellation, recovery |
