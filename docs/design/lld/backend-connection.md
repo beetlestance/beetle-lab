@@ -49,6 +49,14 @@ Capabilities must match expected installation and exact configured profile bindi
 before capacity use; an unexpected or ambiguous installed entry cannot replace a pin.
 A valid capabilities response alone does not authorize dispatch.
 
+Public factories are loadAgentConfiguration(path, installationId):
+Promise<LoadedAgentConfiguration> in bootstrap/agent-configuration.ts;
+createRunnerGateway(loaded: LoadedAgentConfiguration): RunnerGateway in outbound/runner;
+and openCapacitySource(options: CapacitySourceOptions): Promise<CapacitySource>
+in outbound/capacity. Port types own their inputs; bootstrap wires these factories.
+The capacity source owns its root handles and samples, while the gateway remains
+shared and is closed separately by bootstrap. Neither discovers environment values.
+
 ## Original HTTP custody
 
 Use the Node HTTP adapter with no redirects, automatic retries, proxies, cookies,
@@ -91,7 +99,10 @@ Never use the agent staging filesystem as backend metadata/input/artifact space.
 Combine agent CPU/RAM/PID/output/concurrency and per-run limits with that backend
 storage policy. Supported profile aliases come only from matched configured pins.
 The source time is the earliest start among required reads; expiry is the earliest
-original agent expiry and backend disk start+1000ms. Every source remains valid
+original agent expiry and earliest required source start+1000ms.
+This conservative aggregate lease is <=1s from its oldest source. Identical
+cached-agent samples retain identical source time and expiry across disk reads;
+changed same-time ceilings revoke, and disk polling cannot renew an old source. Every source remains valid
 at completion; cached agent observations retain their original time/expiry.
 Do not require optional idle/thermal evidence for displaying capacity; agent atomic
 admission owns those policies. Missing required resource/control evidence revokes

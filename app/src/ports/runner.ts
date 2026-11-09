@@ -14,6 +14,12 @@ export interface AgentConnectionConfiguration {
 }
 
 
+/** Captured private file intake; token is never an API value. */
+export interface LoadedAgentConfiguration {
+  readonly configuration: AgentConnectionConfiguration;
+  readonly token: string;
+}
+
 /** Immutable expected remote identity, taken from the persisted original attempt. */
 export interface RunnerAttemptIdentity {
   readonly organizationId: string;
