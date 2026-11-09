@@ -35,7 +35,7 @@ it('preserves literal v7 rows, all four children, defaults/indexes/FKs and three
     expect(definitions(db)).toEqual(schemas);
     expect(db.prepare('PRAGMA foreign_keys').get()?.foreign_keys).toBe(1);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(8);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(9);
     expect(db.prepare('SELECT * FROM admission_settings').get()).toEqual({
       id: 1, configuration_json: ' {"preserve":true} ', observation_json: null, last_clock: 777 });
     expect(db.prepare(`INSERT INTO accepted_attempts(attempt_id,organization_id,workspace_id,intent_digest,
@@ -86,11 +86,11 @@ it('rolls back a late migration fault including rows, indexes, sequences and ver
   finally { retried.close(); }
 });
 
-it('rejects future version9 without altering its data', () => {
-  const path = f.path(); const db = legacy(path); db.exec('PRAGMA user_version=9'); const before = contents(db); db.close();
+it('rejects future version10 without altering its data', () => {
+  const path = f.path(); const db = legacy(path); db.exec('PRAGMA user_version=10'); const before = contents(db); db.close();
   expect(() => initialize(path)).toThrow('schema_newer');
   const inspect = new DatabaseSync(path);
-  try { expect(contents(inspect)).toEqual(before); expect(inspect.prepare('PRAGMA user_version').get()?.user_version).toBe(9); }
+  try { expect(contents(inspect)).toEqual(before); expect(inspect.prepare('PRAGMA user_version').get()?.user_version).toBe(10); }
   finally { inspect.close(); }
 });
 it('rolls back on bounded SQLite disk-full and preserves the v7 graph for retry', () => {

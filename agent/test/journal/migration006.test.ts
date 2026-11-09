@@ -6,7 +6,7 @@ function edit<T>(path: string, work: (db: DatabaseSync) => T): T {
   const db = new DatabaseSync(path); try { return work(db); } finally { db.close(); }
 }
 function v5(db: DatabaseSync): void {
-  db.exec(`ALTER TABLE accepted_attempts DROP COLUMN checkpoint_bytes;
+  db.exec(`DROP TABLE journal_authority; ALTER TABLE accepted_attempts DROP COLUMN checkpoint_bytes;
     ALTER TABLE accepted_attempts DROP COLUMN wrapper_checkpoint_json;
     CREATE TABLE event_spool_v5 (
       attempt_id TEXT NOT NULL REFERENCES accepted_attempts(attempt_id),
@@ -35,7 +35,7 @@ it('preserves complete v5 retained rows, snapshots, clocks, ACK and source count
   expect(await journal.get(f.key())).toMatchObject({ state: 'running', phase: 'execute', lastSeq: 2 });
   await f.close(journal);
   edit(path, db => {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(8);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(9);
     expect(db.prepare('SELECT * FROM accepted_attempts').get()).toMatchObject({ ...before.row, wrapper_checkpoint_json: null, checkpoint_bytes: 0 });
     expect(db.prepare('SELECT * FROM event_spool ORDER BY seq').all()).toEqual(before.events);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);

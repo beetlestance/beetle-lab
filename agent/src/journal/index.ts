@@ -1,6 +1,7 @@
 import { copyWrapperBatch } from '../control-protocol/index.js';
 import type { WrapperBatch, WrapperCheckpoint } from '../control-protocol/index.js';
 export type { WrapperBatch, WrapperCheckpoint, WrapperCursor } from '../control-protocol/index.js';
+import { isJournalAuthority } from './authority.js';
 import { Worker } from 'node:worker_threads';
 import type { Ack, AckReceipt, AgentEvent, AttemptSnapshot, ControlEvent, EventBatch, Offer } from '@beetle/contracts';
 import { ackInput, cursorInput, DEFAULT_QUOTA_BYTES, eventInput, generationKey } from './event-input.js';
@@ -79,6 +80,16 @@ export class Journal {
     try { await journal.ready; return journal; }
     catch (error) { await journal.terminate(); throw error; }
     finally { clearTimeout(timer); }
+  }
+
+  /** Durable private composition identity; old or damaged journals require recovery. */
+  async journalAuthority(): Promise<string> {
+    const value = await this.prepare(() => ({ kind: 'authority' }));
+    if (!isJournalAuthority(value)) {
+      this.fail('unavailable');
+      throw new JournalError('unavailable');
+    }
+    return value;
   }
 
   immutableOffer(input: unknown): Promise<AttemptSnapshot> {

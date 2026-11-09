@@ -1,3 +1,4 @@
+import { readJournalAuthority } from './authority.js';
 import { snapshot } from './snapshot.js';
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { AttemptSnapshot, Offer } from '@beetle/contracts';
@@ -68,6 +69,7 @@ export class Store {
     }
   }
   execute(command: Command): Value {
+    if (command.kind === 'authority') return readJournalAuthority(this.db);
     if (command.kind === 'supervision') return supervise(this.db, command.request);
     if (command.kind === 'admission') return this.admission.execute(command.request);
     if (['append', 'events', 'ack', 'prune', 'sources', 'checkpoint', 'wrapperBatch'].includes(command.kind)) return this.eventCommand(command);
