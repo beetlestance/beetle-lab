@@ -16,6 +16,15 @@ export interface InputAppendRequest extends InputTransferRequest {
   readonly offset: number;
   readonly chunk: Uint8Array;
 }
+export interface InputPrepareRequest {
+  readonly file: Blob;
+  readonly signal?: AbortSignal;
+}
+export interface PreparedInputBytes {
+  readonly sha256: string;
+  /** Caller-owned bounded payload; append snapshots each supplied chunk. */
+  readonly content: Uint8Array;
+}
 export type InputTransferFailure = ApiClientFailure | { readonly kind: 'busy' | 'closed' };
 export type InputTransferResult<T> =
   | { readonly ok: true; readonly value: T }
@@ -23,6 +32,7 @@ export type InputTransferResult<T> =
 
 /** JSON create/status/seal/delete remain in ApiClient. No write retries here. */
 export interface InputTransferClient {
+  prepare(request: InputPrepareRequest): Promise<InputTransferResult<PreparedInputBytes>>;
   append(request: InputAppendRequest): Promise<InputTransferResult<InputRecord>>;
   download(request: InputTransferRequest): Promise<InputTransferResult<Uint8Array>>;
   /** Fences intake, aborts network work and drains every issued original. */

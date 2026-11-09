@@ -8,7 +8,7 @@ The [publication contract](input-publication.md) owns durable progress and recei
 
 `createInputTransferClient(InputTransferOptions): InputTransferClient` is a narrow
 contracts API export alongside the JSON ApiClient. Its [types](../../../contracts/src/api/input-transfer-types.ts)
-define append, full download and close. No range client, SDK publication or generic
+define file preparation, append, full download and close. No range client, SDK publication or generic
 JSON transport changes. Configure only a trusted same-origin service URL, fixed
 session headers, optional fetch seam and timeout1..30000ms (default30000).
 Snapshot configuration once; reject credentials/query/hash/path in base URLs,
@@ -47,6 +47,21 @@ retain both its in-flight read and cancel promises before releasing its lock. A 
 fetch response must have its unconsumed body cancelled and cancellation drained.
 Never hide cleanup failure as success. Abort listeners and timers retire exactly once.
 
+## File preparation
+
+`prepare({file:Blob,signal?})` shares the same two-operation owner and returns
+`{sha256,content:Uint8Array}`. It never issues fetch, so all its failures have
+issued:false. Capture a strict plain request without invoking accessors; use native
+Blob brand/size and Blob.prototype.arrayBuffer, not replaceable instance methods.
+Reject size>8MiB before reading. Retain the original buffer read and native digest
+through cancellation/close, check exact actual length and abort between originals.
+Return the bounded bytes only after digest success. Do not cache prepared content.
+
+The UI retains one prepared upload intent, taking synchronous64KiB subarrays for
+append rather than starting unowned per-chunk File reads. Caller retention is outside
+the client's active buffers; abandoning a view cannot release an active preparation
+slot early. Session replacement drains the old client before creating another.
+
 ## Append and acknowledgement
 
 Capture strict plain request/record data before asynchronous work; reject accessors,
@@ -81,18 +96,21 @@ native Web Crypto after EOF and return the bytes only after digest settlement.
 Preallocate at most the expected0..8MiB and copy incoming chunks only while within
 that bound. JSON replies use at most64KiB per operation. No whole-response helper,
 unbounded chunk list or persistent payload cache. Two full downloads retain at most
-16MiB of client output buffers; browser network chunks, crypto copies and caller
+16MiB of client output buffers (preparation and download share the two slots);
+browser network/file chunks, crypto copies and caller
 retention are additional and must not be advertised as measured process RSS.
 Native crypto is required; unavailable crypto fails, never skips integrity checks.
 
 ## Acceptance
 
-Synthetic fetch/streams cover maximum-size input, empty and UTF8 bytes, exact
+Synthetic Blob/fetch/streams cover maximum-size input, empty and UTF8 bytes, exact
 acknowledgement/retry binding, wrong identities/progress/headers/hash, safe error
 bodies, truncation/excess and failure after every expected byte. Hold original fetch,
 read, cancel and digest through abort/close: no new issue, third operation refuses,
 and close waits. Exercise reentrant close from foreign work, mutation after call,
-invalid accessor/getter and redirection policy. Never lower existing gates/deadlines.
+invalid accessor/getter and redirection policy. Preparation must reject oversize
+before reading and retain held buffer/digest originals without network issue.
+Never lower existing gates/deadlines.
 An actual task-owned HTTP fixture verifies the client against the shipped routes.
 Browser/session epoch integration, UI and frontend proxy semantics need separate
 acceptance; unit streams cannot qualify real browser buffering or container behavior.

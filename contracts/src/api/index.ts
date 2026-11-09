@@ -6,3 +6,5 @@ export { validateApi } from './validate.js';
 export { API_MAXIMUM_JSON_BYTES, SUITE_MAXIMUM_CONFIG_BYTES } from './limits.js';
 export { createApiClient, createApiHttpTransport } from './client/index.js';
 export type { ApiClient, ApiClientFailure, ApiClientResult, ApiHttpOptions, ApiOperationInput, ApiTransport } from './client/index.js';
+export type { InputTransferOptions, InputTransferRequest, InputAppendRequest, InputPrepareRequest, PreparedInputBytes,
+  InputTransferFailure, InputTransferResult, InputTransferClient } from './input-transfer-types.js';
