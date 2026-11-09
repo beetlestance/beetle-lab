@@ -6,6 +6,8 @@ import { DockerBackend } from '../backends/docker/index.js';
 import { openJournal } from '../journal/index.js';
 import type { Journal } from '../journal/index.js';
 import type { JournalOptions } from '../journal/index.js';
+import { InstallationStateError, openServingState } from '../installation-state/index.js';
+import type { ServingState } from '../installation-state/index.js';
 import { Stager, verifyInstallation } from '../staging/index.js';
 import type { VerifiedRoot } from '../staging/index.js';
 import { Supervisor } from '../supervisor/index.js';
@@ -22,6 +24,7 @@ import type { Scheduler } from '../scheduler/index.js';
 import { AgentHttpError, createAgentServer } from '../transport/index.js';
 import type { FastifyInstance } from 'fastify';
 import { CapabilityView } from './capabilities.js';
+import { installationStatePath } from './authority-state.js';
 import { verifyInstalledImages } from './installed-images.js';
 import { AgentRuntimeError } from './types.js';
 import type { AgentRuntime, AgentRuntimeOptions } from './types.js';
@@ -65,6 +68,8 @@ function capture(input: AgentRuntimeOptions): AgentRuntimeOptions {
 }
 /** One retained owner covers initialization, service originals and failed cleanup. */
 class RuntimeOwner {
+  private authorityState?: ServingState;
+  private authorityCleanupUnknown = false;
   private journal?: Journal;
   private supervisor?: Supervisor;
   private installation?: InstallationController;
@@ -79,6 +84,7 @@ class RuntimeOwner {
   private closing?: Promise<void>;
   async open(input: AgentRuntimeOptions): Promise<AgentRuntime> {
     const options = capture(input); this.check(options);
+    const authorityState = this.openAuthority(installationStatePath(options.journal.path));
     const verified = await verifyInstallation({ configuration: options.installation, transport: options.transport,
       operation: { deadline: performance.now() + 30_000, ...(options.signal ? { signal: options.signal } : {}) } });
     this.check(options);
@@ -88,6 +94,8 @@ class RuntimeOwner {
         ...(options.signal ? { signal: options.signal } : {}) } })) throw new AgentRuntimeError('startup');
     this.check(options);
     this.journal = await openJournal(options.journal); this.check(options);
+    const authority = await this.journal.journalAuthority(); this.check(options);
+    authorityState.assertJournalAuthority(authority);
     const configuration = JSON.parse(encodeJson({ ...options.configuration,
       profiles: options.catalog.engines.map(engine => engine.approved) }, 65_536)) as PoolConfiguration;
     await this.journal.admission({ kind: 'configure', configuration }); this.check(options);
@@ -96,6 +104,15 @@ class RuntimeOwner {
     this.output!.start(); this.timeout!.start(); this.publisher!.start(); this.scheduler!.start();
     const server = this.server!; const initial = this.publisher!.initial;
     return Object.freeze({ server, initial, status: () => this.status(), close: () => this.close() });
+  }
+  private openAuthority(path: string): ServingState {
+    try { return this.authorityState = openServingState(path); }
+    catch (error) {
+      // A failed native acquisition cleanup may retain a handle inside the control store.
+      this.authorityCleanupUnknown = !(error instanceof InstallationStateError)
+        || !['owned', 'recovery_required', 'invalid_input'].includes(error.code);
+      throw error;
+    }
   }
   private check(options: AgentRuntimeOptions): void {
     if (this.closed || options.signal?.aborted) throw new AgentRuntimeError('closed');
@@ -159,8 +176,9 @@ class RuntimeOwner {
   private async shutdown(): Promise<void> {
     const primary = await drain(this.executionCloses());
     const monitored = await drain(this.monitoringCloses());
-    if (!primary || !monitored) throw new AgentRuntimeError('cleanup');
+    if (!primary || !monitored || this.authorityCleanupUnknown) throw new AgentRuntimeError('cleanup');
     try { await this.journal?.close(); } catch { throw new AgentRuntimeError('cleanup'); }
+    try { this.authorityState?.close(); } catch { throw new AgentRuntimeError('cleanup'); }
     if (owner === this) owner = undefined;
   }
 }

@@ -1,11 +1,14 @@
 import { afterEach } from 'vitest';
 import { createHash } from 'node:crypto';
+import { realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createConfigSchema } from '@beetle/contracts/engine-config';
 import { createEngineCatalog } from '../../src/catalog/index.js';
 import { prepareRuntime, runtimeName } from '../../src/backends/docker/index.js';
 import type { DockerReply, DockerTransport } from '../../src/backends/docker/index.js';
 import type { AgentRuntime, AgentRuntimeOptions } from '../../src/bootstrap/index.js';
+import { installationStatePath } from '../../src/bootstrap/index.js';
+import { initializeInstallationState } from '../../src/installation-state/index.js';
 import { FakeDocker } from '../backends/docker/fixtures.js';
 import { fixture as stagingFixture } from '../staging/fixtures.js';
 import { configuration } from '../admission/fixtures.js';
@@ -16,7 +19,10 @@ export function fixture() {
   const f = stagingFixture(); const runtimes: AgentRuntime[] = [];
   afterEach(async () => { await Promise.allSettled(runtimes.splice(0).map(runtime => runtime.close())); });
   return { ...f, keep(runtime: AgentRuntime) { runtimes.push(runtime); return runtime; }, async setup() {
-    const e = await f.environment(false); await f.close(e.owner);
+    const e = await f.environment(false); const journalPath = await realpath(e.journalPath);
+    const initializer = initializeInstallationState(installationStatePath(journalPath));
+    try { initializer.complete(await e.owner.journalAuthority()); } finally { initializer.close(); }
+    await f.close(e.owner);
     const offer = { ...e.offer, budget: { ...e.offer.budget, timeoutMs: 5000, outputBytes: 65_536 } };
     const schema = createConfigSchema({ schemas: [{ $id: e.options.manifest.schemas.config, type: 'object' }],
       schemaId: e.options.manifest.schemas.config, digest });
@@ -41,11 +47,11 @@ export function fixture() {
       return response;
     } };
     const config = configuration(); config.pool.outputBytes = 131_072; config.perRun.outputBytes = 131_072; config.maxTimeoutMs = 5000;
-    const options: AgentRuntimeOptions = { journal: { path: e.journalPath, workerUrl: f.workerUrl() },
+    const options: AgentRuntimeOptions = { journal: { path: journalPath, workerUrl: f.workerUrl() },
       installation: e.configuration, transport, catalog, configuration: config, providers: e.options.providers,
       credential, minimumFreeBytes: 0 };
     const headers = { authorization: `Bearer ${credential}`, 'x-beetle-organization-id': offer.organizationId,
       'x-beetle-workspace-id': offer.workspaceId, 'x-beetle-generation': '1' };
-    return { ...e, offer, options, headers, daemon, output: join(base, 'output') };
+    return { ...e, journalPath, offer, options, headers, daemon, output: join(base, 'output') };
   } };
 }
