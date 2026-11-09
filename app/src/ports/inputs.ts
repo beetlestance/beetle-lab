@@ -42,10 +42,14 @@ export interface InputStorage {
 }
 /** Shared receipts precede state/version checks; canonical intent excludes create
  * allocations and includes transition route IDs. One intent of each kind per input.
- * Creation reserves payload plus metadata charge atomically against current settings.
+ * Creation reserves payload plus metadata charge plus configured free-space reserve
+ * against current allocation; retained usage is charged only once. Seal requires
+ * staging/offset==bytes; delete accepts staging/publishing/published/failed only.
  * Offset advances follow durable flush; publish follows verified promotion; delete
  * release follows durable absence. All advances check exact state and row version.
- * Scoped pins and delete intent serialize in this same worker transaction owner.
+ * Failure during deletion records its reason but remains deleting for recovery;
+ * failed inputs otherwise admit deletion only. Scoped pins and delete intent
+ * serialize in this same worker transaction owner.
  */
 export interface InputStore {
   control(command: InputCommand): Promise<InputControlResult>;

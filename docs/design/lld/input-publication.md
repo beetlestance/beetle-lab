@@ -36,6 +36,8 @@ does not. Pages are <=100, indexed and query/scope-bound like suite pages.
 Each input owns at most one create, seal and deletion intent/receipt. A new key
 cannot mint another receipt for an existing seal/delete intent; retry its original
 identity. Failed cleanup keeps that deletion intent, bounding retained metadata.
+Seal consumes its sole intent only from staging with offset==bytes. Delete may
+begin from staging/publishing/published/failed; deleted/deleting reject a new key.
 
 ## One durable lifecycle
 
@@ -46,7 +48,7 @@ identity. Failed cleanup keeps that deletion intent, bounding retained metadata.
 | published | Read/pin; begin deletion when unpinned | Verified publication evidence |
 | deleting | Durable cleanup; commit deleted | Fenced from new pins/reads |
 | deleted | Retained tombstone only | Durable absence established |
-| failed | Explicit deletion/reconciliation | Unknown custody remains charged |
+| failed | Explicit deletion | Unknown custody remains charged |
 
 The row itself is the create intent. For offset0 staging, recovery may create the
 missing exclusive staging file; never recreate a missing committed prefix.
@@ -77,11 +79,18 @@ and release payload charge. Failed/unknown cleanup retains its charge. Retained
 tombstones/receipts remain charged and replay cannot resurrect their input identity.
 Manual retention is the initial default; abandoned uploads require explicit delete.
 Bounded paged recovery runs through the same service and operation limits.
+Cleanup failures preserve deleting and its original intent, with a safe reason;
+recovery can finish without accepting another delete key. Never strand cleanup in
+failed. Progress requires staging and a strictly increasing offset<=bytes; publish
+requires publishing/offset==bytes; absence commit requires deleting. All advances
+compare exact version. Failure fences staging/publishing/published as failed;
+deleting retains its state, deleted rejects changes. No failed->staging/published.
 
 ## Quota, metadata and file ownership
 
 The sole SQLite worker reserves expected payload bytes plus64KiB metadata charge
-per input in one installation usage counter against current pool.storageBytes.
+per input in one installation usage counter: charged+payload+metadata+configured
+freeSpaceReserveBytes<=pool.storageBytes, using checked safe integer arithmetic.
 The fixed charge bounds zero-byte objects, directories, lifecycle rows and control
 receipts; no unbounded chunk history. Retain that charge with the tombstone.
 Future output/artifact owners consume this same counter, not another full allowance.
@@ -99,7 +108,11 @@ require authoritative published state. All retained revisions protect their pins
 Backfill bounded rows from existing manifests; inconsistent pins stop migration.
 Preserve receipts/revisions/IDs; applied002 remains unchanged. Existing published
 rows enter publishing for byte verification before accepting new pins. Existing
-staging rows without custody proof remain fenced/charged; never fabricate files.
+staging rows enter failed/unverified_legacy; offset0 recovery cannot create them.
+Use version1, actual workspace root and name input-<id> for old rows, with offset
+bytes for old published/offset0 for old staging. Initialize usage from every old
+payload+metadata charge; keep over-allocation charged and block new reservations.
+Retained historical pins survive the publishing fence. Never fabricate files.
 Namespace deletion must reject retained input dependencies; recursive cleanup and
 future tombstone removal need their own bounded fence/retention contract.
 
