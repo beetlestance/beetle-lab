@@ -4,7 +4,7 @@ import type { SettingsScope, RunDefaults, WorkspaceScope } from '@beetle/contrac
 import { resolveRunSettings, decideSettingsChange, resolveEffectiveSettings, validateInstallation } from '../../../domain/settings/index.js';
 import type { InstallationRecord, OrganizationRecord, WorkspaceRecord, SettingsRecord,
   SettingsChain } from '../../../domain/settings/index.js';
-import { requireRule } from '../../../domain/namespaces/index.js';
+import { immutableSnapshot, requireRule } from '../../../domain/namespaces/index.js';
 import type { SettingsCommand, SettingsChange } from '../../../ports/settings.js';
 import type { SettingsIdentity } from '../../../ports/settings-reader.js';
 import { lower, scopeKey, boundedCopy } from './input.js';
@@ -26,6 +26,11 @@ export class Settings {
     }
   }
   updateRuntime(runtime: RuntimeObservation | null): null { return this.runtime.update(runtime); }
+  /** Claim reads current policy with the original cache lease; no new observation. */
+  capacity(): Readonly<{ installation: InstallationRecord; runtime: Readonly<RuntimeObservation> | null }> {
+    const installation = immutableSnapshot(this.record({ kind: 'installation' }) as InstallationRecord);
+    return Object.freeze({ installation, runtime: this.runtime.currentObservation() });
+  }
   insert(record: SettingsRecord): void {
     const scope = record.scope;
     const organization = scope.kind === 'installation' ? null : lower(scope.organizationId);
