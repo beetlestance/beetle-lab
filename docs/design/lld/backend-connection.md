@@ -47,6 +47,9 @@ validate every returned event. A mismatch is a response failure, never authorita
 remote state. No schema or identity failure becomes a fabricated ProtocolError.
 Capabilities must match expected installation and exact configured profile bindings
 before capacity use; an unexpected or ambiguous installed entry cannot replace a pin.
+Normal capacity use requires docker-info CPU/RAM, configured-policy PID/output/
+staging, statfs disk and all five actual composed controls; synthetic labels never
+establish production readiness. Fixture values remain explicitly synthetic evidence.
 A valid capabilities response alone does not authorize dispatch.
 
 Public factories are loadAgentConfiguration(path, installationId):
@@ -82,7 +85,11 @@ and retains its own original promise. No exception details or URL/token leaks.
 
 ports/runtime.ts owns RuntimeObservation and CapacitySource. Keep the SQLite
 adapter's existing type re-export; there is one private observation ABI.
-One source sample at a time, no waiting queue. Capture wall time before reads;
+One source sample at a time, no waiting queue. Keep one bounded fingerprint and
+scalar ordering/revocation fences for the original capability frame: identical
+equal-source replay cannot renew it; changed equal-time or older frames revoke,
+requiring a newer source. This protects wire fields not present in derived ceilings.
+Capture wall time before reads;
 retain original filesystem/network promises through abort and shutdown. Unknown
 or failed inputs produce null, never a successful empty or guessed observation.
 
