@@ -10,14 +10,15 @@ import type { EntityKey, ListQuery, EntityPage } from '../../../ports/namespace-
 export type { EntityKind, EntityKey, ListQuery, EntityPage } from '../../../ports/namespace-reader.js';
 import type { SettingsCommand, SettingsChange } from '../../../ports/settings.js';
 import type { SettingsIdentity } from '../../../ports/settings-reader.js';
-import type { InstallationRecord, RuntimeCeilings } from '../../../domain/settings/index.js';
+import type { InstallationRecord } from '../../../domain/settings/index.js';
 
 export type ErrorCode = 'invalid_input' | 'invalid_value' | 'not_found' | 'conflict' |
   'capacity_unavailable' | 'queue_full' | 'closed' | 'unavailable' | 'owned' | 'schema_newer';
 export class StorageError extends Error {
   constructor(readonly code: ErrorCode) { super(`Storage ${code}`); this.name = 'StorageError'; }
 }
-export interface RuntimeObservation { ceilings: RuntimeCeilings; observedAtMs: number; expiresAtMs: number }
+import type { RuntimeObservation } from '../../../ports/runtime.js';
+export type { RuntimeObservation } from '../../../ports/runtime.js';
 export type SettingsView = InstallationSettings | OrganizationSettings | WorkspaceSettings;
 export type Operation =
   | { kind: 'run'; command: RunCommand }
