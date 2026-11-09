@@ -5,12 +5,12 @@ import type { Run, SuiteRevision } from '@beetle/contracts/api';
 import { digestMutationIntent } from '../../../application/namespaces/index.js';
 import { requireRule } from '../../../domain/namespaces/index.js';
 import type { RunProfilePin } from './run-profiles.js';
-import { runConfigSchema } from './run-profiles.js';
+import { k6ConfigSchema } from './configuration-schema.js';
 import { sha256 } from './input-values.js';
 
 /** The same immutable revision and pins own both public snapshot and private Offer. */
 export function makeRunOffer(run: Run, revision: SuiteRevision, profile: RunProfilePin): string {
-  requireRule(runConfigSchema.validate(revision.config));
+  requireRule(k6ConfigSchema.validate(revision.config));
   const secrets = prepareK6SecretReferences(revision.config.secrets);
   requireRule(secrets.ok);
   const intent = { protocolVersion: '1.0' as const, organizationId: run.scope.organizationId,

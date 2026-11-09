@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeJson } from '@beetle/contracts';
-import { createK6ConfigSchema } from '@beetle/contracts/engine-config/k6';
+import { k6ConfigSchema } from './configuration-schema.js';
 import type { Suite, SuiteRevision, WorkspaceScope } from '@beetle/contracts/api';
 import type { SuiteCommand, SuiteKey } from '../../../ports/suites.js';
 import { digestMutationIntent } from '../../../application/namespaces/index.js';
@@ -15,7 +15,6 @@ interface RevisionRow { id: string; organization_id: string; workspace_id: strin
  ordinal: number; digest: string; config_json: string; input_manifest_json: string }
 export const normalizedScope = (scope: WorkspaceScope): WorkspaceScope => ({ kind: 'workspace',
   organizationId: lower(scope.organizationId), workspaceId: lower(scope.workspaceId) });
-const schema = createK6ConfigSchema(sha256);
 export class Suites {
   constructor(private readonly db: DatabaseSync, private readonly entities: Entities) {}
   workspace(scope: WorkspaceScope) {
@@ -58,7 +57,7 @@ export class Suites {
     const suite = this.getSuite({ scope, id: command.suiteId });
     requireRule(suite.version === command.request.expectedVersion, 'conflict');
     const config = command.request.config;
-    requireRule(schema.validate(config));
+    requireRule(k6ConfigSchema.validate(config));
     const manifest = inputManifest(config);
     for (const pin of manifest) {
       const row = this.db.prepare(`SELECT id FROM input_blobs WHERE organization_id=? AND workspace_id=?
