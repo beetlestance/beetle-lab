@@ -68,11 +68,22 @@ Flush before advancing persisted offset. Store no per-chunk receipts/hashes.
 Crash with excess file bytes: truncate to committed offset and flush before append.
 Shorter/mismatched custody fails closed; offset never advances from client claims.
 
+Create is metadata-only, including receipt replay; it never creates or repairs files.
+Append or staging recovery may create missing offset0 custody. Seal/delete acquire
+canonical route-key ownership before control, without preceding state/version checks.
+After known acceptance, re-get the current row before optional inline reconciliation;
+return the original receipt even when work remains pending. An old seal replay cannot
+republish deleting/deleted/failed bytes. No receipt-lookup projection is required.
+
 Publishing recovery checks deterministic staging and destination identities.
 A valid destination may finish publication; valid staging may finish promotion.
 Missing, mismatched or ambiguous ownership remains fenced/charged and reports
 unavailable or failed; never overwrite an unexpected destination. No append after
 publishing intent. Deleted/published files are never synthesized from metadata.
+The sole reconstructible exception is publishing with bytes=offset=0 and SHA256(empty):
+after proving BOTH names absent and private parent ownership, exclusively materialize
+and flush empty staging, then use ordinary publication. Never reconstruct a nonempty
+committed prefix or a published/deleted file; a wrong empty digest is integrity failure.
 
 Delete intent atomically requires no retained revision pins and prevents new pins.
 Remove owned staging/published remnants, flush unlink parents, then commit deleted
@@ -131,6 +142,41 @@ ownership until settled; uncertain cleanup cannot free a slot or storage charge.
 Close fences intake and drains originals. Metadata remains one bounded worker.
 Published content reads and deletion share input ownership; no disappearing file
 mid-response. Content uses safe attachment/octet-stream headers and bounded ranges.
+
+## Native service boundary
+
+Private [byte jobs](../../../app/src/ports/input-bytes.ts) separate result from proven
+custody settlement; [the service](../../../app/src/ports/input-service.ts) alone owns
+global2/per-input1 admission. Capture canonical keys/requests/ranges before awaits.
+Invoke lazy chunk/sink callbacks only after owning capacity and current-state checks.
+Reads use one end-exclusive range within declared bytes (omission selects the full
+file); verify the complete published identity/hash before sending bounded chunks.
+Writes await consumer backpressure. No second adapter semaphore or waiter queue.
+
+Every original file AND directory descriptor closes once. Result success requires
+successful close; cancellation cannot retire a held original. Failed close reports
+fixed cleanup failure, fences service intake and keeps job/handle/slot reachable;
+settled remains pending and close cannot claim drained. No close retry or GC release.
+
+No-overwrite publication uses same-filesystem link(staging,destination), destination
+parent flush, proven staging unlink and source parent flush. During publishing only,
+exactly two deterministic names may alias one verified dev/inode with nlink=2,0600,
+same UID and exact bytes/hash; compare both names with the opened descriptor and
+recheck ancestry around each step. Refresh identity after intentional link/ctime
+changes. Restore and verify destination nlink=1 before metadata publication.
+Staging-only nlink=1 may promote; destination-only nlink=1 may verify/flush and finish.
+Distinct inodes, a third link or unexpected ownership/hash never authorize overwrite
+or unknown unlink. EEXIST uses this recovery classification. Unsupported link or
+directory sync fails closed; no rename/copy fallback. Agent provider stays unchanged.
+
+Transient IO/cancellation preserves staging/publishing state and charge. Only conclusive
+missing/corrupt custody after originals settle justifies terminal failInput; ordinary
+IO must not irreversibly disable publication recovery. Deleting may record io reason
+while retaining its state/intent. Unknown metadata outcomes cause no internal retry,
+compensating delete or dependent byte work; explicit later calls reobserve the row.
+Recovery re-gets each admitted item from one page<=100, returns bounded counts/cursor,
+and skips busy rows without waiting. Restart scans from the beginning after a pass:
+state-order movement can move work behind its cursor. Page end is not completion proof.
 
 ## Acceptance packets
 
