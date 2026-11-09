@@ -1,6 +1,6 @@
 # Durable application dispatch storage
 
-Status: selected contract; port types only, transactions/runtime pending.
+Status: migration005 foundation implemented; scan/claim/observe/runtime pending.
 Owner: application SQLite worker. Migration005 is reserved here; do not edit004.
 [Run intake](run-intake.md) owns immutable intent/receipt acceptance;
 [observation merge](attempt-observation.md) and [agent facts](agent-admission-evidence.md)

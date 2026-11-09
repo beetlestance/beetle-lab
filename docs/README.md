@@ -26,6 +26,7 @@ released application until the rewrite is qualified.
 | Inspect executable capacity startup | [Backend startup](verification/backend-startup.md) | Actual private connection/publication, shutdown, full local gate and remaining execution work |
 | Inspect backend connection components | [Private runner connection](verification/backend-connection.md) | Private config, bounded original HTTP, independent disk source and pending executable wiring |
 | Inspect capacity wire/cache evidence | [Capacity sources](verification/capacity-wire.md) | Original expiry, revocation/replay, scoped and compiled checks, unresolved full-lane timing |
+| Inspect execution storage foundation | [Execution storage](verification/execution-storage.md) | Immutable costs, ownership guards, shared quota and remaining dispatch work |
 | Implement durable delivery transactions | [Dispatch storage](design/lld/dispatch-storage.md), [output allocation](design/lld/output-allocation.md) | Private port, claim/observation atomics, bounded fairness and shared storage |
 | Merge agent snapshots in the backend | [Attempt observation](design/lld/attempt-observation.md) | Bounded pure identity/ordering merge before durable dispatch projection |
 | Inspect admission/observation evidence | [Local evidence](verification/admission-evidence.md) | Actual journal/HTTP facts, pure backend merge, full gate and remaining SQL delivery |

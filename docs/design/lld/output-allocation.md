@@ -1,6 +1,6 @@
 # Backend output storage allocation
 
-Status: selected dispatch prerequisite; SQL allocation and artifact adoption pending.
+Status: SQL reservation helper implemented; claim wiring and artifact adoption pending.
 Owner: application metadata worker. [Dispatch](dispatch-storage.md) reserves execution
 resources; [input publication](input-publication.md) owns existing input byte custody.
 This is a logical byte allowance, not a filesystem quota or a physical free-space

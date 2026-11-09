@@ -73,6 +73,11 @@ pending; neither boundary finalizes results or acknowledges unstored events. The
 [admission evidence report](docs/verification/admission-evidence.md) records independent
 reviews, the 3,649-test full gate and updated synthetic executable smoke.
 
+The [execution storage report](docs/verification/execution-storage.md) records
+migration005 compact intent/ownership facts, shared input/output quota, corrected
+SQL guards, independent reviews and the 3,677-test full gate. Dispatch methods
+and executable delivery remain pending.
+
 ## Delivery order
 
 | Slice | Deliverable | Exit condition |
