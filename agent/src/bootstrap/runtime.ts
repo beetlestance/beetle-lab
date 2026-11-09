@@ -99,7 +99,7 @@ class RuntimeOwner {
     const configuration = JSON.parse(encodeJson({ ...options.configuration,
       profiles: options.catalog.engines.map(engine => engine.approved) }, 65_536)) as PoolConfiguration;
     await this.journal.admission({ kind: 'configure', configuration }); this.check(options);
-    this.compose(options, configuration, verified.value);
+    this.compose(options, configuration, verified.value, authority);
     this.check(options);
     this.output!.start(); this.timeout!.start(); this.publisher!.start(); this.scheduler!.start();
     const server = this.server!; const initial = this.publisher!.initial;
@@ -117,7 +117,7 @@ class RuntimeOwner {
   private check(options: AgentRuntimeOptions): void {
     if (this.closed || options.signal?.aborted) throw new AgentRuntimeError('closed');
   }
-  private compose(options: AgentRuntimeOptions, configuration: PoolConfiguration, root: VerifiedRoot): void {
+  private compose(options: AgentRuntimeOptions, configuration: PoolConfiguration, root: VerifiedRoot, journalAuthority: string): void {
     const journal = this.journal!;
     const transport = options.transport;
     const supervisor = this.supervisor = new Supervisor({ journal, installationId: options.installation.installationId,
@@ -135,11 +135,11 @@ class RuntimeOwner {
         return stager;
       } });
     this.observer = createResourceObserver({ root, transport: options.transport, configuration });
-    const view = new CapabilityView({ configuration, catalog: options.catalog,
+    const view = new CapabilityView({ configuration, catalog: options.catalog, journalAuthority,
       published: () => this.closed ? null : this.publisher?.snapshot() ?? null });
     this.publisher = createObservationPublisher({ journal, observer: this.observer, output: this.output, timeout: this.timeout });
     this.scheduler = createScheduler({ journal, installation: this.installation });
-    this.server = createAgentServer({ credential: options.credential, journal, installation: this.installation,
+    this.server = createAgentServer({ credential: options.credential, journalAuthority, journal, installation: this.installation,
       capabilities: () => view.capabilities() });
     this.server.addHook('onRequest', async () => {
       if (this.closed) throw new AgentHttpError(503, 'budget_unavailable', 'transport');

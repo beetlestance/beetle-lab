@@ -20,8 +20,9 @@ export function fixture() {
   afterEach(async () => { await Promise.allSettled(runtimes.splice(0).map(runtime => runtime.close())); });
   return { ...f, keep(runtime: AgentRuntime) { runtimes.push(runtime); return runtime; }, async setup() {
     const e = await f.environment(false); const journalPath = await realpath(e.journalPath);
+    const journalAuthority = await e.owner.journalAuthority();
     const initializer = initializeInstallationState(installationStatePath(journalPath));
-    try { initializer.complete(await e.owner.journalAuthority()); } finally { initializer.close(); }
+    try { initializer.complete(journalAuthority); } finally { initializer.close(); }
     await f.close(e.owner);
     const offer = { ...e.offer, budget: { ...e.offer.budget, timeoutMs: 5000, outputBytes: 65_536 } };
     const schema = createConfigSchema({ schemas: [{ $id: e.options.manifest.schemas.config, type: 'object' }],
@@ -51,7 +52,7 @@ export function fixture() {
       installation: e.configuration, transport, catalog, configuration: config, providers: e.options.providers,
       credential, minimumFreeBytes: 0 };
     const headers = { authorization: `Bearer ${credential}`, 'x-beetle-organization-id': offer.organizationId,
-      'x-beetle-workspace-id': offer.workspaceId, 'x-beetle-generation': '1' };
-    return { ...e, journalPath, offer, options, headers, daemon, output: join(base, 'output') };
+      'x-beetle-workspace-id': offer.workspaceId, 'x-beetle-journal-authority': journalAuthority, 'x-beetle-generation': '1' };
+    return { ...e, journalPath, journalAuthority, offer, options, headers, daemon, output: join(base, 'output') };
   } };
 }

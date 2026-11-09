@@ -9,6 +9,7 @@ export function fixture<T>(name: string): T {
   return JSON.parse(readFileSync(new URL(`../../../contracts/fixtures/valid/${name}.json`, import.meta.url), 'utf8')) as T;
 }
 export const identity: RunnerAttemptIdentity = {
+  journalAuthority: '33333333-3333-4333-8333-333333333333',
   organizationId: '00000000-0000-4000-8000-000000000001',
   workspaceId: '00000000-0000-4000-8000-000000000002',
   attemptId: '00000000-0000-4000-8000-000000000003', generation: 1, intentDigest: 'a'.repeat(64),

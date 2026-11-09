@@ -7,7 +7,7 @@ import { AgentHttpError } from './types.js';
 import type { HttpScope } from './types.js';
 import { sendJson } from './json.js';
 function journal(error: JournalError): AgentHttpError {
-  if (error.code === 'not_found') return new AgentHttpError(404, 'invalid_config');
+  if (error.code === 'not_found') return new AgentHttpError(404, 'attempt_not_found');
   if (['conflict', 'stale_generation'].includes(error.code)) return new AgentHttpError(409, 'conflicting_digest');
   if (error.code === 'cursor_expired') return new AgentHttpError(409, 'cursor_expired', 'transport');
   if (['queue_full', 'quota_exceeded'].includes(error.code)) return new AgentHttpError(429, 'budget_unavailable', 'transport');
@@ -30,7 +30,7 @@ export function sendError(reply: FastifyReply, error: unknown, scope: HttpScope 
   // Authentication/invalid-scope failures have no authoritative namespace. Do not invent IDs.
   if (!scope) { reply.code(failure.status).send(); return; }
   const response: ProtocolError = { protocolVersion: '1.0', organizationId: scope.organizationId,
-    workspaceId: scope.workspaceId, reason: failure.reason, retry: failure.retry, issues: [] };
+    workspaceId: scope.workspaceId, ...(scope.attemptId ? { attemptId: scope.attemptId } : {}), reason: failure.reason, retry: failure.retry, issues: [] };
   if (error instanceof JournalError && error.code === 'cursor_expired' && error.recovery) {
     response.cursorRecovery = { retainedStartSeq: error.recovery.retainedStartSeq, snapshotAvailable: true };
   }

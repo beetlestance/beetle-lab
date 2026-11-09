@@ -17,7 +17,17 @@
       "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
     },
     "reason": {
-      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/reason"
+      "anyOf": [
+        {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/reason"
+        },
+        {
+          "enum": [
+            "authority_mismatch",
+            "attempt_not_found"
+          ]
+        }
+      ]
     },
     "retry": {
       "enum": [
@@ -77,5 +87,29 @@
     "retry",
     "issues"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "reason": {
+            "const": "attempt_not_found"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "then": {
+        "required": [
+          "attemptId"
+        ],
+        "properties": {
+          "attemptId": {
+            "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+          }
+        }
+      }
+    }
+  ]
 }

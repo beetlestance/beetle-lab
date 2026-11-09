@@ -5,12 +5,14 @@ import type { Journal } from '../journal/index.js';
 export interface AgentHttpOptions {
   /** Trusted mounted installation credential, never returned to the browser or engine. */
   readonly credential: string;
+  /** Immutable UUID of the exclusively opened journal, bound before serving. */
+  readonly journalAuthority: string;
   readonly installation: Pick<InstallationController, 'enqueue' | 'cancel'>;
   readonly journal: Pick<Journal, 'get' | 'readEvents' | 'acknowledge'>;
   capabilities(): Promise<Capabilities>;
 }
 export interface HttpScope {
-  readonly organizationId: string; readonly workspaceId: string; readonly generation: number;
+  readonly organizationId: string; readonly workspaceId: string; readonly generation: number; readonly attemptId?: string;
 }
 export class AgentHttpError extends Error {
   constructor(readonly status: number, readonly reason: ProtocolError['reason'],

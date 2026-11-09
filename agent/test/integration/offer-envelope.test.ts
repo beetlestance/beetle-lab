@@ -35,9 +35,10 @@ it('carries exact1MiB UTF8 config through client/catalogue/installation/reopen/S
   const installation = createInstallationController({ journal: e.owner, catalog, supervisor: runtime.manager,
     guard: { watch: unused }, timeout: { watch: unused }, stagerFor: unused });
   const capabilities = JSON.parse(await readFile('contracts/fixtures/valid/capabilities.json', 'utf8')) as Capabilities;
-  const server = createAgentServer({ credential: 'F'.repeat(64), installation, journal: e.owner, capabilities: async () => capabilities });
+  capabilities.journalAuthority = await e.owner.journalAuthority();
+  const server = createAgentServer({ credential: 'F'.repeat(64), installation, journal: e.owner, journalAuthority: capabilities.journalAuthority, capabilities: async () => capabilities });
   const key = scope(job); const headers = { authorization: `Bearer ${'F'.repeat(64)}`,
-    'x-beetle-organization-id': key.organizationId, 'x-beetle-workspace-id': key.workspaceId, 'x-beetle-generation': '1' };
+    'x-beetle-organization-id': key.organizationId, 'x-beetle-workspace-id': key.workspaceId, 'x-beetle-journal-authority': capabilities.journalAuthority, 'x-beetle-generation': '1' };
   const client = pairedClient(server, headers);
   try {
     // Independent config+1 rejection occurs before durable/provider/file/runtime effects.

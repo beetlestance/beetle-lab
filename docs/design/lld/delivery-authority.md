@@ -1,6 +1,6 @@
 # Delivery authority and supported recovery
 
-Status: journal/control-store and actual startup verified; wire/restore work pending.
+Status: journal/control-store and actual startup verified; runner wire under verification; backend/restore work pending.
 [Local foundation evidence](../../verification/authority-foundations.md).
 Owner: coordinator for the runner contract and migrations; agent journal for
 physical delivery authority; application dispatch for the immutable binding.
@@ -20,7 +20,8 @@ under a different original. The current component cannot make this distinction.
 Persist one random UUID when a new empty journal is initialized. Preserve it
 across intact process/journal restarts. Missing/malformed authority in an existing
 journal is an explicit upgrade/recovery condition, never implicit initialization.
-Capabilities publish that authority with the installed observation. The backend
+Capabilities publish required canonical `journalAuthority` with the installed
+observation. The server binds its producer to the captured opened-journal UUID. The backend
 captures it from the same validated source frame used for the first claim.
 
 Persist the authority atomically with first possible delivery, before PUT. This
@@ -35,7 +36,10 @@ one canonical UUID and reject duplicate/unknown forms before intake. Agent mutat
 checks must use current journal authority, with no asynchronous check/use gap
 allowing an offline restore to replace the journal beneath a running owner.
 
-A mismatched authority returns a fixed bounded conflict, never a missing-receipt404.
+A mismatched authority returns 409 `authority_mismatch`, never a missing-receipt404.
+A scoped404 is specifically `attempt_not_found` with required validated attemptId.
+Only the authenticated current-authority path can emit that receipt witness; generic
+404/invalid protocol responses cannot authorize reoffer.
 Unknown/mismatched authority retains all charges and forbids automatic reoffer or
 new attempt. Normal routes reject older authorities. Supported cold restoration has no live
 original to reconcile across authorities; terminal history remains readable through

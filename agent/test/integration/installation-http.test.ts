@@ -54,10 +54,11 @@ it.each(['manual', 'scheduled', 'output_limit'] as const)('composes authenticate
   publisher.start();
   const scheduler = createScheduler({ journal: e.owner, installation, intervalMs: 50 });
   const capabilities = JSON.parse(await readFile('contracts/fixtures/valid/capabilities.json', 'utf8')) as Capabilities;
-  const server = createAgentServer({ credential: 'I'.repeat(64), installation, journal: e.owner, capabilities: async () => capabilities });
+  capabilities.journalAuthority = await e.owner.journalAuthority();
+  const server = createAgentServer({ credential: 'I'.repeat(64), installation, journal: e.owner, journalAuthority: capabilities.journalAuthority, capabilities: async () => capabilities });
   const key = scope(e.offer); const path = `/runner/v1/attempts/${key.attemptId}`;
   const headers = { authorization: `Bearer ${'I'.repeat(64)}`, 'x-beetle-organization-id': key.organizationId,
-    'x-beetle-workspace-id': key.workspaceId, 'x-beetle-generation': '1' };
+    'x-beetle-workspace-id': key.workspaceId, 'x-beetle-journal-authority': capabilities.journalAuthority, 'x-beetle-generation': '1' };
   try {
     expect(await publisher.initial).toEqual({ ready: true });
     const accepted = await server.inject({ method: 'PUT', url: path, headers, payload: e.offer });
