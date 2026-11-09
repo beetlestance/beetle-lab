@@ -145,3 +145,23 @@ snapshot after edits; bounded full-size Offer/config and ingress originals.
 Independent HTTP tests must lose a successful202 reply and prove one durable run,
 one attempt/outbox and unchanged original returned IDs. Storage-only tests do not
 prove dispatch, cancellation, results, browser behavior or real Docker execution.
+
+## Application and HTTP entrypoints
+
+Application public functions: `enqueueRun({operation,digest,store}):Promise<Run>`,
+`getRun(key,reader):Promise<Run>` and `listRuns(query,reader):Promise<RunPage>`.
+Types come from the existing run ports; digest is the shared IntentDigest.
+Capture bounded immutable expected input before awaiting a foreign repository.
+Validate bounded replies and bind scope/identity. Enqueue binds the historical
+queued/version1 response to request revision/profile/budget/policy, not newly
+allocated IDs/time. A detail reply binds its requested ID. A page binds every item,
+contains no duplicate UUIDs and never exceeds the requested limit. Invalid replies
+fail; do not normalize them into successful snapshots or retry a mutation.
+
+HTTP public registration is `registerRunRoutes(server, options)`, with options
+`{store,reader,newId,digest,now,authorize}`. `now()` is a trusted ISO timestamp
+provider; `newId()` supplies two distinct allocations. Require an onRequest guard
+before parsing/validation and reuse generated operations/schema/page decoding.
+Enqueue has64KiB body limit, requires exact route/body workspace ownership and
+returns202 only after the store settles. Queries are observational. No cancel,
+retry, reconciliation or execution is implied by these three routes.
