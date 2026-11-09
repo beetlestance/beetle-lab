@@ -3,7 +3,9 @@
 Runtime/client integration: `d35f71e` (including the Node smoke-fixture correction).
 Date/environment: 2026-11-09, Node26.7.0/macOS arm64; synthetic data only.
 Scope: shared byte client, workspace inventory/deletion and compiled HTTP consumption.
-Upload/download UI, actual browser and release qualification remain pending.
+This is the earlier client/inventory checkpoint. Connected upload/download and the
+newer full gate are recorded in [input controls](input-controls.md); actual browser
+and release qualification remain pending.
 
 ## Implemented boundaries
 
@@ -19,9 +21,8 @@ confirmed deletion. One original deletion identity/version survives unknown resu
 202 is acceptance, not completed cleanup. Action slots use authoritative selected
 GET records, with pending-deletion and post-settlement observation fences.
 
-A session transfer-owner helper drains an old client before replacement. It is
-tested but not yet wired into BrowserSessionGate or transfer controls. This does
-not establish session-level transfer behavior in the running product.
+At this checkpoint the session transfer-owner helper was tested independently;
+its later BrowserSessionGate/control integration is recorded in the linked report.
 
 ## Review and scoped checks
 
@@ -39,8 +40,8 @@ web/src/features/inputs, web/src/app/inputs.test.tsx and the session-owner helpe
 architecture910 and documentation142 passed after browser BufferSource types were corrected by preserving
 native ArrayBuffer provenance. No cast or extra payload copy was introduced.
 `npm run build:web` also exited0; the existing main-chunk size warning remains.
-The latest full gate remains the earlier2,886-test checkpoint; scoped results do
-not substitute for a new full gate or concurrent engine qualification.
+This checkpoint used the earlier2,886-test gate. The linked controls report owns
+the newer combined gate; neither establishes concurrent engine qualification.
 
 ## Actual compiled HTTP
 
@@ -57,8 +58,8 @@ This is real HTTP client/server evidence, not a browser cookie-jar/proxy test.
 
 ## Remaining acceptance
 
-Wire the helper/client into session epochs, prepared upload intent/resume controls
-and verified download UI. Browser tools currently lack their execution surface;
+Session epochs and prepared upload/download controls are now integrated; see the
+linked report for their exact evidence. Browser tools lack their execution surface;
 no screenshots, keyboard audit, browser buffering or proxy-framing proof is claimed.
 Full-size live client/HTTP qualification, containers/architectures, resource overhead,
 backup/soak and the complete run/results/reports workflow remain outstanding.

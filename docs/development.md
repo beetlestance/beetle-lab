@@ -52,7 +52,10 @@ Config must be regular, single-linked, 32 KiB or smaller and not group/other wri
 Startup creates private `inputs/staging` and `inputs/published` children. Existing
 unsafe roots are rejected. Pending publication/deletion is recovered in bounded
 background pages; ordinary published inputs are not periodically rehashed.
-The browser input interface is still pending.
+The workspace Inputs view supports one local file up to8MiB, explicit recovery
+after interruption, and verified download from selected current published status.
+Upload drafts remain in memory and retire on workspace/session departure; partial
+backend inputs can remain for explicit inspection/deletion.
 
 ## Check the built entrypoint
 
@@ -62,7 +65,11 @@ suite revision save/read/replay, metadata edits, a two-chunk input upload,
 publication, terminated chunked download, deletion, logout
 and SIGTERM cleanup; it never starts k6 or contacts a target. It requires permission
 to bind that loopback port. CI runs build and smoke after the main verification gate.
-This does not qualify browser cookies, container controls or either Linux architecture.
+`npm run smoke:input-controls` additionally drives the real frontend session and
+upload controller through lost create/chunk/seal acknowledgements, exact replay,
+committed-offset resume and verified empty/nonempty downloads. It uses the same
+compiled backend and its own disposable installation.
+These checks do not qualify browser cookies, container controls or either Linux architecture.
 
 ## Real Docker agent qualification
 
