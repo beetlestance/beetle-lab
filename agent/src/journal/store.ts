@@ -1,3 +1,4 @@
+import { snapshot } from './snapshot.js';
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 import type { AttemptSnapshot, Offer } from '@beetle/contracts';
 import { RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
@@ -8,7 +9,7 @@ import type { AttemptKey, Command, Value } from './protocol.js';
 import { acknowledge, prune, readEvents } from './replay.js';
 import { append } from './spool.js';
 import { commitWrapperBatch, readWrapperCheckpoint } from './checkpoint.js';
-import { metadataColumns, Failure, owner, snapshot, transaction } from './sql.js';
+import { metadataColumns, Failure, owner, transaction } from './sql.js';
 import type { Row } from './sql.js';
 import { supervise } from './supervision.js';
 import { RunnableScan } from './runnable.js';
@@ -38,7 +39,7 @@ export class Store {
   private listOpen(page: { limit: number; cursor?: number }): Value {
     const rows = this.list.all(page.cursor ?? 0, page.limit + 1) as unknown as Row[];
     const more = rows.length > page.limit;
-    const snapshots = rows.slice(0, page.limit).map(snapshot);
+    const snapshots = rows.slice(0, page.limit).map(row => snapshot(this.db, row));
     const cursor = rows[page.limit - 1]?.id;
     return more && cursor !== undefined ? { snapshots, cursor } : { snapshots };
   }
@@ -59,7 +60,7 @@ export class Store {
   }
   private readCommand(command: Command): Value {
     switch (command.kind) {
-      case 'get': return snapshot(owner(this.db, command.key));
+      case 'get': return snapshot(this.db, owner(this.db, command.key));
       case 'read': return this.readOffer(command.key);
       case 'list': return this.listOpen(command.page);
       case 'runnable': return this.runnable.read(command.page);
@@ -76,7 +77,7 @@ export class Store {
       case 'cancel': {
         const row = owner(this.db, command.key);
         supervise(this.db, { key: { ...command.key, generation: row.generation }, now: Date.now(), cancel: true });
-        return snapshot(owner(this.db, command.key));
+        return snapshot(this.db, owner(this.db, command.key));
       }
       case 'close': this.db.close(); return null;
       default: throw new Failure('invalid_input');

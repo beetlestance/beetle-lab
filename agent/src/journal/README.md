@@ -18,6 +18,16 @@ Discovery confers no dispatch/release authority; the controller rechecks durable
 `admission(command)` is the trusted production admission/ownership entrypoint;
 see [admission contract](../admission/CONTEXT.md). Compatibility `immutableOffer`
 does not validate installed engine semantics or reserve resources.
+Snapshots project optional `admission` from original queue/reservation rows, independent
+of event state/lastSeq/ACK. No tracked facts leaves it absent. Queued/rejected requires
+no reservation; charged/released requires exact original queue/scope/generation and
+matching private status. SQL caps candidate/decision/reservation bytes before loading
+(16KiB/512B/32KiB); malformed, inconsistent or oversized tracked facts fail the read.
+Ordinary get/list/cancel never load Offer/config to project admission. Release reuses
+the ownership predicates: unstarted abort has no escaped create/start/runtime;
+settled release needs a definitive current launch and matching later runtime/collection
+proof. The public field contains only state plus final reason/disposition. Exact Offer
+replay and reopen preserve it without retry, new events or inferred result success.
 Admission revalidates stored observations, including required provenance; invalid
 samples are unknown. Journal reopen clears observations and guard readiness while
 preserving clocks/configuration/queue/charged reservations. Full observation updates
