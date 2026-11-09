@@ -1,4 +1,5 @@
 import { registerSuiteRoutes } from '../adapters/inbound/http/suites/index.js';
+import { registerRunRoutes } from '../adapters/inbound/http/runs/index.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { encodeJson } from '@beetle/contracts';
 import { API_MAXIMUM_JSON_BYTES, apiSchemas } from '@beetle/contracts/api';
@@ -48,6 +49,8 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     registerNamespaceRoutes(server, { store: store.namespaces, reader: store, newId: randomUUID,
       digest, authorize: session.authorize });
     registerSuiteRoutes(server, { store: store.suites, reader: store.suites, newId: randomUUID, digest, authorize: session.authorize });
+    registerRunRoutes(server, { store: store.runs, reader: store.runs, newId: randomUUID, digest,
+      now: () => new Date().toISOString(), authorize: session.authorize });
     registerSettingsRoutes(server, { store: store.settings, reader: store, digest, authorize: session.authorize });
     if (inputRuntime) inputHttp = registerInputRoutes(server, { inputs: inputRuntime.inputs, newId: randomUUID, authorize: session.authorize });
     server.addHook('onClose', async () => {

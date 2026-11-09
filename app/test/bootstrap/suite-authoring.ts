@@ -43,4 +43,12 @@ export async function authorSuites(origin: string, cookie: string, csrfToken: st
   const page = value(await api.listSuiteRevisions({ params: key, query: { limit: 100 } }));
   assert.equal(page.items.length, 1); assert(!Object.hasOwn(page.items[0]!, 'config'));
   assert.deepEqual(value(await api.getSuite({ params: key })), renamed);
+  // Normal executable has no installed-profile/capacity bridge yet: never fake enqueue.
+  const queued = await api.createRun({ params, body: { scope, requestId: randomUUID(), revisionId: first.id,
+    engineProfile: 'standard', budget: { cpuMillis: 1, memoryBytes: 1, pids: 1, timeoutMs: 1, outputBytes: 1 },
+    executionPolicy: { mode: 'parallel', preferIdle: false } } });
+  assert(!queued.ok && queued.error.status === 503, 'Unconfigured execution must remain unavailable');
+  assert.deepEqual(value(await api.listRuns({ params, query: { limit: 10 } })).items, []);
+  const missing = await api.getRun({ params: { ...params, runId: randomUUID() } });
+  assert(!missing.ok && missing.error.status === 404, 'Missing run must remain scoped not-found');
 }

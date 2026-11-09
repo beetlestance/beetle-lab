@@ -71,7 +71,7 @@ async function run(root: string, port: number): Promise<void> {
     await exchange(origin, await startup(child, termination));
     child.kill('SIGTERM'); const exit = await termination;
     if (exit.code !== 0 || exit.signal !== null) throw new Error('Backend shutdown failed');
-    process.stdout.write('Backend smoke passed: pairing, namespaces, full-size suites, chunked input publication/read/delete, logout, clean SIGTERM.\n');
+    process.stdout.write('Backend smoke passed: pairing, namespaces, full-size suites, unavailable run enqueue/scoped reads, chunked input publication/read/delete, logout, clean SIGTERM.\n');
   } finally {
     clearTimeout(timer);
     if (!closed) { child.kill('SIGKILL'); await termination; }
