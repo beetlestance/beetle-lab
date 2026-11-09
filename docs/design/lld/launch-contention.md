@@ -25,6 +25,11 @@ control/collection work and retains the Boolean. A later tick may service that
 same intent. Successful/nondeferral actor settlement or ambiguous failure consumes
 it; cancel/close fence it. Rejected concurrent/closed calls cannot create new intent.
 This is completion of the original request, not an execution retry.
+After a returned deferral, the completed call's deadline/signal is retired. A later
+tick checks its own operation budget and the original admitted execution timeout.
+A deadline/cancel thrown while a call is active consumes pending intent; durable
+attempt timeout/cancellation always fences dispatch. Never retain the old caller
+object/signal or extend the admitted timeout to resume work.
 
 LaunchActor preserves its PRIOR launchAttempted value on this one pre-issue read
 refusal, allowing the original explicit request to resume. It never blindly resets
@@ -39,6 +44,9 @@ Never replace original Offer authority with independently mirrored reservation o
 plan fields. First read must retain the existing Offer/Reservation/Plan validation.
 After that success, cache only scope, intentDigest, engine and the five budget
 fields from the immutable accepted Offer, with frozen nested engine/budget objects.
+Copy only the declared scalar keys, including engine.id/imageDigest/configVersion;
+do not spread an entire Offer or retain unknown nested data. Validate the captured
+authority against the fresh reservation and existing plan bindings before caching.
 Fresh reservations are still read and checked each step against that authority.
 Preserve generation/status/aborted/specDigest, plan labels/image and CPU/RAM/PID
 binding checks. Accepted Offer immutability belongs to the sole journal writer;
