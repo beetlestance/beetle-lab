@@ -1,18 +1,21 @@
 import type { FastifyRequest } from 'fastify';
+import { validateApi } from '@beetle/contracts/api';
 import type { WorkspaceScope } from '@beetle/contracts/api';
 import { ApiFault } from '../api-errors.js';
 
 export const inputPath = '/api/v2/organizations/:organizationId/workspaces/:workspaceId/inputs';
 interface Params { organizationId: string; workspaceId: string; inputId?: string }
-const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export function scope(params: Params): WorkspaceScope {
   return { kind: 'workspace', organizationId: params.organizationId, workspaceId: params.workspaceId };
 }
 export function routeParams(request: FastifyRequest): Params {
-  const params = request.params as Params;
-  for (const value of Object.values(params)) {
-    if (typeof value !== 'string' || !uuid.test(value)) throw new ApiFault('malformed_request');
-  }
+  const input = validateApi('InputParams', request.params);
+  const checked = input.ok ? input : validateApi('WorkspaceParams', request.params);
+  if (!checked.ok) throw new ApiFault('malformed_request');
+  const value = checked.value;
+  const params: Params = { organizationId: value.organizationId.toLowerCase(), workspaceId: value.workspaceId.toLowerCase(),
+    ...(input.ok ? { inputId: input.value.inputId.toLowerCase() } : {}) };
+  request.params = params;
   return params;
 }
 export function routeKey(request: FastifyRequest) {

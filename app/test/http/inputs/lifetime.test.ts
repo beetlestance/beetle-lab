@@ -26,6 +26,28 @@ it('does not cancel completed body close and retains an original after the respo
   original.resolve('done'); expect(await result).toBe('done'); await owner.drain();
   expect(retire).toHaveBeenCalledTimes(1);
 });
+it.each(['resolve', 'reject'])('reserves an original before reentrant destroy/drain with late %s', async outcome => {
+  const { owner, retire } = context(); const held = deferred<void>();
+  let drained = false; let drain!: Promise<void>;
+  const result = owner.run(() => {
+    owner.destroy(); drain = owner.drain().then(() => { drained = true; }); return held.promise;
+  }).catch(error => error);
+  try {
+    expect((await result).code).toBe('storage_unavailable'); await turn();
+    expect(owner.originals.size).toBe(1); expect(drained).toBe(false); expect(retire).not.toHaveBeenCalled();
+    if (outcome === 'resolve') held.resolve(); else held.reject(new Error('Synthetic late rejection'));
+    await drain; expect(drained).toBe(true); expect(owner.originals.size).toBe(0); expect(retire).toHaveBeenCalledTimes(1);
+  } finally { held.resolve(); await owner.drain(); }
+});
+it('releases the reserved holder exactly once when a reentrant foreign invocation throws synchronously', async () => {
+  const { owner, retire } = context(); const failure = new Error('Synthetic synchronous failure');
+  let reserved = 0; let drain!: Promise<void>;
+  const result = owner.run(() => {
+    reserved = owner.originals.size; owner.destroy(); drain = owner.drain(); throw failure;
+  });
+  await expect(result).rejects.toBe(failure); await drain;
+  expect(reserved).toBe(1); expect(owner.originals.size).toBe(0); expect(retire).toHaveBeenCalledTimes(1);
+});
 it('disconnect fences future issue while close continues to retain a held metadata original', async () => {
   const { owner, response, retire } = context(); const original = deferred<void>();
   const work = owner.run(() => original.promise); const observed = work.catch(error => error);

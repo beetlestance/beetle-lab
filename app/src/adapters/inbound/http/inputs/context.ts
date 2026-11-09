@@ -44,7 +44,9 @@ export class RequestContext {
   }
   async run<T>(issue: () => Promise<T>): Promise<T> {
     this.check();
-    const original = issue(); this.originals.add(original);
+    let accept!: (value: T | PromiseLike<T>) => void; let reject!: (error: unknown) => void;
+    const original = new Promise<T>((resolve, fail) => { accept = resolve; reject = fail; });
+    this.originals.add(original);
     const settle = () => { this.originals.delete(original); this.release(); };
     void original.then(settle, settle);
     let abort!: () => void;
@@ -53,7 +55,11 @@ export class RequestContext {
       this.signal.addEventListener('abort', abort, { once: true });
       if (this.signal.aborted) abort();
     });
-    try { return await Promise.race([original, cancelled]); }
+    try {
+      // Foreign invocation may synchronously reenter close/drain before returning.
+      try { accept(issue()); } catch (error) { reject(error); }
+      return await Promise.race([original, cancelled]);
+    }
     finally { this.signal.removeEventListener('abort', abort); }
   }
   async drain(): Promise<void> { await Promise.allSettled([...this.originals]); }
