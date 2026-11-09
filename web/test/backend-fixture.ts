@@ -1,3 +1,4 @@
+import { offlineAgentFixture } from '../../tools/fixtures/backend-agent.js';
 import { spawn } from 'node:child_process';
 import type { ChildProcessByStdio } from 'node:child_process';
 import type { Readable } from 'node:stream';
@@ -36,19 +37,19 @@ function startup(child: Child, termination: Promise<Exit>): Promise<string> {
     void termination.then(() => reject(new Error('Backend closed before startup')));
   });
 }
-async function installation(root: string): Promise<void> {
+async function installation(root: string) {
   const checked = validateApi('InstallationSettings', template);
   if (!checked.ok) throw new Error('Invalid synthetic installation');
   const values = structuredClone(checked.value.values);
   values.pool.storageBytes = 2_000_000; values.pool.freeSpaceReserveBytes = 1000;
   await mkdir(join(root, 'data'), { mode: 0o700 });
-  await writeFile(join(root, 'installation.json'), JSON.stringify({ id: randomUUID(), version: 1,
-    schemaVersion: 2, scope: { kind: 'installation' }, values }), { mode: 0o600 });
+  const record = { id: randomUUID(), version: 1 as const, schemaVersion: 2 as const, scope: { kind: 'installation' as const }, values };
+  await writeFile(join(root, 'installation.json'), JSON.stringify(record), { mode: 0o600 }); return record;
 }
 async function serve(root: string, work: (origin: string, token: string) => Promise<void>): Promise<void> {
-  await installation(root); const port = await ownedPort(); const origin = `http://127.0.0.1:${port}`;
+  const record = await installation(root); const agent = await offlineAgentFixture(root, record); const port = await ownedPort(); const origin = `http://127.0.0.1:${port}`;
   const child = spawn(process.execPath, ['app/dist/main.js'], { cwd: process.cwd(), env: {
-    PATH: process.env.PATH ?? '', BEETLE_CONFIG_FILE: join(root, 'installation.json'),
+    BEETLE_AGENT_CONFIG_FILE: agent.path, PATH: process.env.PATH ?? '', BEETLE_CONFIG_FILE: join(root, 'installation.json'),
     BEETLE_DATA_DIR: join(root, 'data'), BEETLE_EXTERNAL_ORIGIN: origin, BEETLE_LISTEN_PORT: String(port),
   }, stdio: ['ignore', 'pipe', 'pipe'] });
   let closed = false;
@@ -61,6 +62,7 @@ async function serve(root: string, work: (origin: string, token: string) => Prom
   } finally {
     clearTimeout(timer);
     if (!closed) { child.kill('SIGKILL'); await termination; }
+    await agent.close();
   }
 }
 /** Fresh private installation; no engine, target or shared database. */

@@ -2,9 +2,8 @@
 
 The released app still uses `npm start`. These commands run the new namespace,
 settings, suite authoring and input HTTP surface; run execution and Docker installation remain incomplete.
-Run enqueue/detail/history routes are registered. Fresh enqueue returns503 until
-the installed-profile/capacity bridge is connected; programmatic integration tests
-use explicit synthetic pins/observations. Agent dispatch remains unimplemented.
+Run enqueue/detail/history routes are registered. Fresh enqueue requires matching installed profiles and fresh agent/backend capacity.
+The private connection and publication loop are wired; agent dispatch remains unimplemented.
 Use Node 24 and install the locked development dependencies with `npm ci`.
 
 ## Create a private development installation once
@@ -29,11 +28,20 @@ The JSON contains `id`, `version:1`, `schemaVersion:2`, installation `scope` and
 `values` matching the generated `InstallationValues` contract. It has no `effective`
 field or resolved secrets. Existing installations keep their persisted UI settings.
 
+The backend also requires a private `agent.json` beside these settings. Follow the
+[connection contract](design/lld/backend-connection.md) for its closed configuration:
+version1, private HTTP origin, canonical token-file path, matching installation UUID,
+actual installed-profile pins and backend allocation/reserve. Use the descriptors
+and bearer-token file from your agent installation; keep both files private (0600).
+The token payload is43..128 allowed characters, with one optional terminal LF.
+Agent setup, Compose packaging and completed run execution remain separate work.
+
 ## Start backend and frontend
 
 ```sh
 npm run build:api
 BEETLE_CONFIG_FILE="$PWD/.agent-output/dev/installation.json" \
+BEETLE_AGENT_CONFIG_FILE="$PWD/.agent-output/dev/agent.json" \
 BEETLE_DATA_DIR="$PWD/.agent-output/dev" \
 BEETLE_EXTERNAL_ORIGIN=http://127.0.0.1:5173 npm run start:api
 ```
@@ -44,8 +52,8 @@ one-time token printed by backend startup. Tokens expire after 15 minutes or one
 sessions last 8 hours. Logout/expiry requires restarting the backend to pair again.
 
 Only a fresh, trusted agent observation can resolve effective resource settings.
-Until that integration exists, settings may show capacity unavailable; startup does
-not substitute the host machine size or pretend that an engine ran.
+An unreachable agent, mismatched profile or expired source leaves capacity unavailable.
+The backend samples its own storage independently and retains original source expiry.
 
 Backend defaults to loopback port 4311. `BEETLE_LISTEN_PORT` selects 1–65535;
 `BEETLE_LISTEN_HOST=0.0.0.0` is reserved for the private backend container network.
@@ -64,7 +72,8 @@ backend inputs can remain for explicit inspection/deletion.
 
 After building, `npm run smoke:api` starts an owned backend on a temporary loopback
 port with disposable synthetic storage. It checks pairing, namespace access, full-size
-suite revision save/read/replay, metadata edits, a two-chunk input upload,
+suite revision save/read/replay, private config plus an explicit unavailable agent
+HTTP fixture, metadata edits, a two-chunk input upload,
 publication, terminated chunked download, deletion, logout
 and SIGTERM cleanup; it never starts k6 or contacts a target. It requires permission
 to bind that loopback port. CI runs build and smoke after the main verification gate.

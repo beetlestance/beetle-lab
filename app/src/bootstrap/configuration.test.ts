@@ -6,16 +6,21 @@ import { promisify } from 'node:util';
 import { afterEach, expect, it } from 'vitest';
 import { loadBackendConfiguration } from './configuration.js';
 import { settingsFixture } from '../../test/domain/fixtures.js';
+import { pin, credential } from '../../test/bootstrap/agent-config/fixture.js';
 const roots: string[] = [];
 const execute = promisify(execFile);
 afterEach(async () => { await Promise.all(roots.splice(0).map(root => rm(root, { recursive: true, force: true }))); });
 async function fixture() {
-  const root = await mkdtemp(join(tmpdir(), 'beetle-configuration-')); roots.push(root);
+  const root = await realpath(await mkdtemp(join(tmpdir(), 'beetle-configuration-'))); roots.push(root);
   const data = join(root, 'data'); await mkdir(data, { mode: 0o700 });
   const config = join(root, 'installation.json'); const installation = settingsFixture().chain.installation;
   await writeFile(config, JSON.stringify(installation), { mode: 0o600 });
-  const environment = { BEETLE_CONFIG_FILE: config, BEETLE_DATA_DIR: data, BEETLE_EXTERNAL_ORIGIN: 'http://localhost:4310' };
-  return { root, config, data, installation, environment };
+  const tokenFile = join(root, 'agent-token'); await writeFile(tokenFile, credential, { mode: 0o600 });
+  const agentConfig = join(root, 'agent.json');
+  await writeFile(agentConfig, JSON.stringify({ version: 1, origin: 'http://agent:4312', tokenFile,
+    expectedInstallationId: installation.id, profiles: [pin()], storageAllocationBytes: 20000, freeSpaceReserveBytes: 2000 }), { mode: 0o600 });
+  const environment = { BEETLE_AGENT_CONFIG_FILE: agentConfig, BEETLE_CONFIG_FILE: config, BEETLE_DATA_DIR: data, BEETLE_EXTERNAL_ORIGIN: 'http://localhost:4310' };
+  return { root, config, agentConfig, tokenFile, data, installation, environment };
 }
 const worker = new URL('file:///synthetic/worker.js');
 it('loads only explicit installation settings and preserves unknown runtime capacity', async () => {
@@ -25,6 +30,8 @@ it('loads only explicit installation settings and preserves unknown runtime capa
   expect(loaded.application.metadata).toEqual({ path: join(await realpath(value.data), 'metadata.sqlite'), workerUrl: worker,
     installation: value.installation, runtime: null });
   expect(loaded.application.externalOrigin).toBe('http://localhost:4310');
+  expect(loaded.application.agent?.connection.configuration.profiles).toEqual([pin()]);
+  expect(loaded.application.agent?.dataRoot).toBe(await realpath(value.data));
   expect(Object.isFrozen(loaded)).toBe(true);
 });
 it.each(['0', '-1', '65536', '1.5', '04311', '4311junk'])('rejects invalid listener port %s', async port => {
@@ -72,4 +79,17 @@ it('rejects unknown installation fields and malformed settings before opening st
     await writeFile(value.config, JSON.stringify(input));
     await expect(loadBackendConfiguration(value.environment, worker)).rejects.toMatchObject({ code: 'configuration' });
   }
+});
+
+it('requires explicit private agent configuration and redacts invalid agent file failures', async () => {
+  const value = await fixture();
+  await expect(loadBackendConfiguration({ BEETLE_CONFIG_FILE: value.config, BEETLE_DATA_DIR: value.data,
+    BEETLE_EXTERNAL_ORIGIN: value.environment.BEETLE_EXTERNAL_ORIGIN }, worker)).rejects.toMatchObject({ code: 'configuration' });
+  for (const file of ['', 'relative.json']) {
+    await expect(loadBackendConfiguration({ ...value.environment, BEETLE_AGENT_CONFIG_FILE: file }, worker))
+      .rejects.toMatchObject({ code: 'configuration' });
+  }
+  await writeFile(value.agentConfig, 'SYNTHETIC_PRIVATE_MARKER');
+  const error = await loadBackendConfiguration(value.environment, worker).catch((failure: unknown) => failure);
+  expect(error).toMatchObject({ code: 'configuration' }); expect(String(error)).not.toContain('SYNTHETIC_PRIVATE_MARKER');
 });

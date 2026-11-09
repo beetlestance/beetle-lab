@@ -1,3 +1,7 @@
+import { captureAgentRuntime, agentMetadata, openAgentRuntime } from './agent-runtime.js';
+import type { AgentRuntime, AgentRuntimeOptions } from './agent-runtime.js';
+import type { RuntimePollerState } from './runtime-poller.js';
+import { closeApplicationStore, throwCloseFailures } from './application-close.js';
 import { registerSuiteRoutes } from '../adapters/inbound/http/suites/index.js';
 import { registerRunRoutes } from '../adapters/inbound/http/runs/index.js';
 import { createHash, randomUUID } from 'node:crypto';
@@ -21,6 +25,7 @@ import type { InputHttp } from '../adapters/inbound/http/inputs/index.js';
 export interface ApplicationOptions {
   readonly externalOrigin: string;
   readonly metadata: MetadataOptions;
+  readonly agent?: AgentRuntimeOptions;
   /** Canonical installation-owned child of the private data directory. */
   readonly inputsDirectory?: string;
 }
@@ -30,21 +35,25 @@ export interface Application {
   readonly bootstrapToken: string;
   readonly updateRuntime: (observation: RuntimeObservation | null) => Promise<null>;
   readonly inputRecoveryState: () => InputMaintenanceState | 'disabled';
+  readonly runtimeState: () => RuntimePollerState | 'disabled';
   readonly close: () => Promise<void>;
 }
 const digest = (value: string): string => createHash('sha256').update(value, 'utf8').digest('hex');
 
 /** Local session, authoring and installation-owned input composition. */
 export async function openApplication(options: ApplicationOptions): Promise<Application> {
+  const agent = options.agent === undefined ? undefined : captureAgentRuntime(options.agent, options.metadata, options.inputsDirectory);
   const session = createLocalSession({ externalOrigin: options.externalOrigin });
   const server = createApiServer({ classify: classifyMetadataError });
   let metadata: Metadata | undefined;
+  let agentRuntime: AgentRuntime | undefined;
   let inputRuntime: InputRuntime | undefined; let inputHttp: InputHttp | undefined;
   try {
     configureSchemaCompilers(server, { schemas: apiSchemas, encodeJson, maximumResponseBytes: API_MAXIMUM_JSON_BYTES });
-    metadata = await openMetadata(options.metadata);
+    metadata = await openMetadata(agentMetadata(options.metadata, agent));
     const store = metadata;
     if (options.inputsDirectory !== undefined) inputRuntime = await openInputRuntime(options.inputsDirectory, store.inputs);
+    if (agent) agentRuntime = await openAgentRuntime(agent, store);
     session.registerRoutes(server);
     registerNamespaceRoutes(server, { store: store.namespaces, reader: store, newId: randomUUID,
       digest, authorize: session.authorize });
@@ -55,15 +64,17 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     if (inputRuntime) inputHttp = registerInputRoutes(server, { inputs: inputRuntime.inputs, newId: randomUUID, authorize: session.authorize });
     server.addHook('onClose', async () => {
       session.close();
-      try { await inputRuntime?.close(); } finally { await store.close(); }
+      await closeApplicationStore(agentRuntime, inputRuntime, store);
     });
     let closing: Promise<void> | undefined;
     const close = (): Promise<void> => {
       session.close();
       if (!closing) {
-        const streams = inputHttp?.close(); const files = inputRuntime?.close(); const listener = server.close();
-        closing = Promise.allSettled([streams, files, listener]).then(results => {
-          for (const result of results) if (result.status === 'rejected') throw result.reason;
+        closing = Promise.resolve().then(async () => {
+          const results = await Promise.allSettled([Promise.resolve().then(() => inputHttp?.close()),
+            Promise.resolve().then(() => agentRuntime?.close()), Promise.resolve().then(() => inputRuntime?.close()),
+            Promise.resolve().then(() => server.close())]);
+          throwCloseFailures(results);
         });
       }
       return closing;
@@ -71,12 +82,14 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     await server.ready();
     return Object.freeze({ server, bootstrapToken: session.bootstrapToken,
       inputRecoveryState: () => inputRuntime?.recoveryState() ?? 'disabled',
+      runtimeState: () => agentRuntime?.state() ?? 'disabled',
       updateRuntime: (observation: RuntimeObservation | null) => store.updateRuntime(observation), close });
   } catch (error) {
     session.close();
-    const streams = inputHttp?.close(); const files = inputRuntime?.close();
-    await Promise.allSettled([streams, files, server.close()]);
-    if (metadata) await metadata.abort();
+    const resources = await Promise.allSettled([Promise.resolve().then(() => inputHttp?.close()),
+      Promise.resolve().then(() => agentRuntime?.close()), Promise.resolve().then(() => inputRuntime?.close()), Promise.resolve().then(() => server.close())]);
+    const store = await Promise.allSettled([metadata?.abort()]);
+    throwCloseFailures([{ status: 'rejected', reason: error }, ...resources, ...store]);
     throw error;
   }
 }
