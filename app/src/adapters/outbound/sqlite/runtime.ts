@@ -19,7 +19,7 @@ export class RuntimeCapacity {
   }
   update(input: RuntimeObservation | null): null {
     const now = this.currentTime();
-    if (now === null) return null;
+    if (now === null) { requireRule(input === null); return null; }
     const observation = boundedCopy(input);
     checkedRuntime(observation, this.ttl);
     this.expire(now);

@@ -69,6 +69,8 @@ Revocation fences the last valid local wall time and source time; delayed facts
 sampled at or before that fence cannot restore capacity. Conflicting equal-time
 or older valid facts revoke; identical live replays preserve the original lease.
 Malformed ingress rejects without replacing a currently valid observation.
+Clock rollback revokes the cache: a nonnull update explicitly refuses rather than
+acknowledging an unaccepted fact. A null update may acknowledge that revocation.
 Trusted private configuration, bounded HTTP ownership, backend disk observation,
 SQLite handoff and dispatcher remain required follow-on implementation.
 
