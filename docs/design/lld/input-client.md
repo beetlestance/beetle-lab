@@ -1,6 +1,6 @@
 # Browser input byte client
 
-Status: contract draft; implementation and browser qualification pending.
+Status: reviewed contract; implementation and browser qualification pending.
 The [HTTP contract](input-http.md) owns transport and message termination.
 The [publication contract](input-publication.md) owns durable progress and receipts.
 
@@ -14,6 +14,11 @@ session headers, optional fetch seam and timeout1..30000ms (default30000).
 Snapshot configuration once; reject credentials/query/hash/path in base URLs,
 unsafe header names and invalid options before creating an owner. Never redirect
 credential-bearing requests: fetch uses redirect:error and same-origin credentials.
+Options/headers are plain data without accessors/extra option keys. Allow at most
+32 headers, names<=64 characters, values<=2048 characters and total UTF8<=8192 bytes;
+reject CR/LF and Content-Type/Length/Encoding, Transfer-Encoding, Host, Connection,
+Range, If-Range and other conditional If-* headers (case-insensitive). The owner
+sets transfer headers. Snapshot base URL<=2048 characters and require HTTP(S).
 
 Each failure includes issued:boolean. False means no fetch invocation began; it
 does not assert anything about previous attempts. Busy/closed are local pre-issue
@@ -29,6 +34,9 @@ close synchronously fences intake and aborts all active operation controllers.
 Track original promises through settlement, even when a timeout or caller abort
 has already made their results unusable. No race wrapper retires their capacity.
 Close returns one retained promise and cannot finish before those originals settle.
+Client close aborts an active operation as cancelled with its actual issued flag;
+closed is reserved for later intake. Cleanup failure rejects close only after all
+issued originals settle; no successful operation may hide such failure.
 An adapter that ignores abort can keep its operation/close pending; this is truthful
 custody, not a claim of a hard browser resource or time limit.
 
@@ -52,7 +60,7 @@ The record is a status snapshot, not authority to skip backend validation.
 PUT the derived workspace/input chunks URL with application/octet-stream. Read
 response bytes incrementally through EOF, max65536, then strict UTF8/JSON/ApiError
 or InputRecord validation. Never use unbounded response.json/text/arrayBuffer.
-Only200 acknowledges append. Bind all immutable fields to the captured record
+Only200 acknowledges append, with state:staging and reason:null. Bind all immutable fields to the captured record
 (UUIDs/scope/folder/name/hash/size). A fresh append at current offset must acknowledge
 offset+length and version+1. A retry wholly before the committed offset preserves
 offset/version; partial overlap is invalid locally. These checks detect response

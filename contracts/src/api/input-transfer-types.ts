@@ -5,7 +5,7 @@ export interface InputTransferOptions {
   readonly baseUrl: string;
   readonly fetch?: typeof fetch;
   readonly headers?: Readonly<Record<string, string>>;
-  /** 1..30,000 milliseconds, default 30,000; bounds one complete operation. */
+  /** 1..30,000ms, default 30,000; abort deadline, not proof of original settlement. */
   readonly timeoutMs?: number;
 }
 export interface InputTransferRequest {
