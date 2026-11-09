@@ -11,6 +11,7 @@ import { ThemePicker } from '../components/ThemePicker.js';
 const Organizations = lazy(() => import('../features/organizations/index.js').then(module => ({ default: module.Organizations })));
 const OrganizationScope = lazy(() => import('../features/workspaces/index.js').then(module => ({ default: module.OrganizationScope })));
 
+const Runs = lazy(() => import('../features/runs/index.js').then(module => ({ default: module.Runs })));
 const Suites = lazy(() => import('../features/suites/index.js').then(module => ({ default: module.Suites })));
 const Settings = lazy(() => import('../features/settings/index.js').then(module => ({ default: module.Settings })));
 
@@ -27,6 +28,8 @@ export function App({ apiClient, inputTransfers }: { apiClient: ApiClient; input
       <main id="main" tabIndex={-1}><div className="topbar"><span>Namespace browser</span><span>Beetle Lab</span></div>
         <EditorProvider><div className="page-content"><Suspense fallback={<p role="status">Loading view…</p>}>
           <Routes>
+            <Route path={routes.runsPattern} element={<RunsRoute />} />
+            <Route path={routes.runPattern} element={<RunsRoute />} />
             <Route path={routes.inputsPattern} element={<ScopeRoute view="inputs" />} />
             <Route path={routes.suitesPattern} element={<SuitesRoute />} />
             <Route path={routes.suitePattern} element={<SuitesRoute />} />
@@ -66,4 +69,10 @@ function SuitesRoute() {
   const { organizationId, workspaceId, suiteId } = useParams();
   if (!validId(organizationId) || !validId(workspaceId) || (suiteId !== undefined && !validId(suiteId))) return <InvalidRoute />;
   return <Suites key={`${organizationId}/${workspaceId}/${suiteId ?? ''}`} organizationId={organizationId} workspaceId={workspaceId} {...(suiteId ? { suiteId } : {})} />;
+}
+
+function RunsRoute() {
+  const { organizationId, workspaceId, runId } = useParams();
+  if (!validId(organizationId) || !validId(workspaceId) || (runId !== undefined && !validId(runId))) return <InvalidRoute />;
+  return <Runs key={`${organizationId}/${workspaceId}/${runId ?? ''}`} organizationId={organizationId} workspaceId={workspaceId} {...(runId ? { runId } : {})} />;
 }

@@ -43,6 +43,7 @@ function WorkspaceScope({ organizationId, workspaceId, view }: { organizationId:
     <Link to={routes.workspaceSettings(organizationId, workspaceId)}>Workspace settings</Link>
     <Link to={routes.suites(organizationId, workspaceId)}>Suites</Link>
     <Link to={routes.inputs(organizationId, workspaceId)}>Inputs</Link>
+    <Link to={routes.runs(organizationId, workspaceId)}>Runs</Link>
     <p className="workspace-label">Workspace <strong>{data.name}</strong></p>
     {view === 'inputs' ? <WorkspaceInputs workspace={data} /> : <FolderList workspace={data} />}
   </>}</QueryState>;
