@@ -69,7 +69,9 @@ combined exact-source verification, including a sandbox loopback failure/rerun.
 The [admission evidence contract](docs/design/lld/agent-admission-evidence.md)
 now has journal/HTTP projection and a [pure backend merge](docs/design/lld/attempt-observation.md).
 Durable claims, acknowledgment/projection and charge release transactions remain
-pending; neither boundary finalizes results or acknowledges unstored events.
+pending; neither boundary finalizes results or acknowledges unstored events. The
+[admission evidence report](docs/verification/admission-evidence.md) records independent
+reviews, the 3,649-test full gate and updated synthetic executable smoke.
 
 ## Delivery order
 
