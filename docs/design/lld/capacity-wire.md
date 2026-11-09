@@ -62,6 +62,13 @@ The backend cache must revoke on out-of-order or conflicting equal-time facts.
 An identical equal-time replay cannot extend expiry; unknown/revoked state needs
 a strictly newer source. Keep one bounded observation and scalar fences. Original
 source expiry and the backend's maximum age both constrain use; no receipt stamps.
+The private RuntimeObservation requires ceilings, observedAtMs and expiresAtMs.
+Its lease is half-open: observedAtMs <= now < min(expiresAtMs, observedAtMs +
+runtimeTtlMs), checked at ingress and dequeue. Cache copies are bounded and frozen.
+Revocation fences the last valid local wall time and source time; delayed facts
+sampled at or before that fence cannot restore capacity. Conflicting equal-time
+or older valid facts revoke; identical live replays preserve the original lease.
+Malformed ingress rejects without replacing a currently valid observation.
 Trusted private configuration, bounded HTTP ownership, backend disk observation,
 SQLite handoff and dispatcher remain required follow-on implementation.
 

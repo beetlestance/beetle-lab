@@ -23,7 +23,17 @@ describe('independent metadata review regressions', () => {
       await import(${JSON.stringify(fixture.workerUrl().href)});`);
     const metadata = await fixture.open(undefined, { runtimeTtlMs: 60000, workerUrl: pathToFileURL(entry) });
     expect((await metadata.getSettings({ kind: 'installation' })).version).toBe(1);
-    await expect(metadata.updateRuntime(observation(settingsFixture().runtime, base - 2000)))
+    await expect(metadata.updateRuntime(observation(settingsFixture().runtime, base - 2000, 60000)))
+      .rejects.toMatchObject({ code: 'invalid_value' });
+    expect((await metadata.getSettings({ kind: 'installation' })).version).toBe(1);
+  });
+  it('rejects original source expiry after queue delay even within the backend maximum age', async () => {
+    const base = Date.now(); const entry = join(fixture.root(), 'dequeue-expiry.mjs');
+    await writeFile(entry, `import {parentPort} from 'node:worker_threads';
+      parentPort.on('message',command=>{if(command.kind==='runtime')Date.now=()=>${base + 2000}});
+      await import(${JSON.stringify(fixture.workerUrl().href)});`);
+    const metadata = await fixture.open(undefined, { runtimeTtlMs: 60000, workerUrl: pathToFileURL(entry) });
+    await expect(metadata.updateRuntime(observation(settingsFixture().runtime, base, 1000)))
       .rejects.toMatchObject({ code: 'invalid_value' });
     expect((await metadata.getSettings({ kind: 'installation' })).version).toBe(1);
   });

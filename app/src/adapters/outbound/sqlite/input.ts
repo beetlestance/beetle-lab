@@ -14,7 +14,10 @@ import type { Bootstrap, EntityKey, ListQuery, Operation, RuntimeObservation } f
 function checkedObservationTime(observation: RuntimeObservation, ttl: number): void {
   const now = Date.now();
   requireRule(observation !== undefined && Number.isSafeInteger(observation.observedAtMs) &&
-    observation.observedAtMs >= 0 && observation.observedAtMs <= now && now - observation.observedAtMs <= ttl);
+    observation.observedAtMs >= 0 && observation.observedAtMs <= now && now - observation.observedAtMs < ttl);
+  requireRule(Number.isSafeInteger(now) && now >= 0 && now <= 8640000000000000);
+  requireRule(Number.isSafeInteger(observation.expiresAtMs) && observation.expiresAtMs > now &&
+    observation.expiresAtMs <= 8640000000000000);
 }
 export function checkedRuntime(observation: RuntimeObservation | null, ttl = 5000): void {
   if (observation === null) return;

@@ -18,8 +18,8 @@ export { uuid, settingsFixture } from '../domain/fixtures.js';
 export const digest = (value: string): string => createHash('sha256').update(value).digest('hex');
 let request = 100000;
 export const requestId = (): string => uuid(++request);
-export function observation(ceilings: RuntimeCeilings = settingsFixture().runtime, observedAtMs = Date.now()): RuntimeObservation {
-  return { ceilings, observedAtMs };
+export function observation(ceilings: RuntimeCeilings = settingsFixture().runtime, observedAtMs = Date.now(), ttlMs = 5000): RuntimeObservation {
+  return { ceilings, observedAtMs, expiresAtMs: observedAtMs + ttlMs };
 }
 export const scope: WorkspaceScope = { kind: 'workspace', organizationId: uuid(1), workspaceId: uuid(2) };
 export function command<T extends NamespaceOperation>(operation: T): T & { intentDigest: string } {
@@ -47,7 +47,7 @@ export function storageFixture() {
   async function open(dbPath = path(), options: Partial<MetadataOptions> = {}): Promise<Metadata> {
     const fixture = settingsFixture();
     const handle = await openMetadata({ path: dbPath, workerUrl, installation: fixture.chain.installation,
-      runtime: observation(fixture.runtime), ...options });
+      runtime: observation(fixture.runtime, Date.now(), options.runtimeTtlMs ?? 5000), ...options });
     handles.add(handle); return handle;
   }
   async function close(handle: Metadata): Promise<void> { await handle.close(); handles.delete(handle); }

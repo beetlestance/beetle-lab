@@ -17,7 +17,7 @@ export type ErrorCode = 'invalid_input' | 'invalid_value' | 'not_found' | 'confl
 export class StorageError extends Error {
   constructor(readonly code: ErrorCode) { super(`Storage ${code}`); this.name = 'StorageError'; }
 }
-export interface RuntimeObservation { ceilings: RuntimeCeilings; observedAtMs: number }
+export interface RuntimeObservation { ceilings: RuntimeCeilings; observedAtMs: number; expiresAtMs: number }
 export type SettingsView = InstallationSettings | OrganizationSettings | WorkspaceSettings;
 export type Operation =
   | { kind: 'run'; command: RunCommand }

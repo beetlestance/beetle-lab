@@ -7,12 +7,12 @@ describe('bounded source observation freshness', () => {
   it('expires source timestamps without refreshing stale queued observations', () => {
     const clock = vi.spyOn(Date, 'now').mockReturnValue(10000);
     try {
-      const source = observation(settingsFixture().runtime, 9900);
+      const source = observation(settingsFixture().runtime, 9901);
       const runtime = new RuntimeCapacity({ installation: settingsFixture().chain.installation, runtime: source, runtimeTtlMs: 100 });
       expect(runtime.snapshot()).toEqual(source.ceilings);
       clock.mockReturnValue(10001); expect(runtime.snapshot()).toBeNull();
       expect(() => runtime.update(source)).toThrow(); expect(runtime.snapshot()).toBeNull();
-      runtime.update(observation(source.ceilings, 10001)); expect(runtime.snapshot()).toEqual(source.ceilings);
+      clock.mockReturnValue(10002); runtime.update(observation(source.ceilings, 10002)); expect(runtime.snapshot()).toEqual(source.ceilings);
       runtime.update(null); expect(runtime.snapshot()).toBeNull();
     } finally { clock.mockRestore(); }
   });
