@@ -1,6 +1,7 @@
 # Suite authoring and immutable revisions
 
-Status: frozen implementation contract; application migration002 reserved.
+Status: implemented and independently reviewed; application migration002 applied.
+Local functional evidence: [suite authoring](../../verification/suite-authoring.md).
 Owner seams: `app/src/ports/suites.ts`, generated API suite DTOs/operations.
 This adds real persisted authoring; execution/input publication follow separately.
 
