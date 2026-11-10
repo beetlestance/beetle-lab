@@ -1,13 +1,14 @@
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
 import { journalFixture } from './fixtures.js';
+import { removeFutureRetention } from './legacy-fixtures.js';
 import { admissionFixture, now, observation, reserved, scope } from '../admission/fixtures.js';
 
 const f = journalFixture();
 const a = admissionFixture();
-function edit(path: string, sql: string): void {
+function edit(path: string, sql: string | ((db: DatabaseSync) => void)): void {
   const db = new DatabaseSync(path);
-  try { db.exec(sql); } finally { db.close(); }
+  try { if (typeof sql === 'string') db.exec(sql); else sql(db); } finally { db.close(); }
 }
 
 it('persists first cancellation and sticky clock rollback across reopen and later recovery', async () => {
@@ -95,10 +96,13 @@ it('rolls back cancel and queued-work retirement when the final clock write fail
 it('migrates v3 additively, preserving evidence and fencing an unanchored old cancellation', async () => {
   const path = f.path(); let journal = await f.open(path); await journal.immutableOffer(f.offer());
   await journal.appendWrapper(f.wrapper()); await journal.durableCancel(f.key()); await f.close(journal);
-  edit(path, 'DROP TABLE cancelled_originals; DROP TABLE journal_authority; DROP TABLE supervision_clock; ALTER TABLE accepted_attempts DROP COLUMN checkpoint_bytes; '
+  edit(path, db => {
+    removeFutureRetention(db);
+    db.exec('DROP TABLE cancelled_originals; DROP TABLE journal_authority; DROP TABLE supervision_clock; ALTER TABLE accepted_attempts DROP COLUMN checkpoint_bytes; '
     + 'ALTER TABLE accepted_attempts DROP COLUMN wrapper_checkpoint_json; ALTER TABLE accepted_attempts DROP COLUMN phase;\n'
     + 'ALTER TABLE accepted_attempts DROP COLUMN exit_json; ALTER TABLE accepted_attempts DROP COLUMN result_json;\n'
     + 'ALTER TABLE accepted_attempts DROP COLUMN exit_facts_json; ALTER TABLE accepted_attempts DROP COLUMN snapshot_bytes; PRAGMA user_version=3;');
+  });
   journal = await f.open(path);
   expect(await journal.supervision({ key: f.key(), now: 1234, cancel: true })).toEqual({
     clockHighWater: 1234, clockFenced: true, cancelRequested: true, cancelRequestedAt: null, cancelReason: null, immediateStop: false });
