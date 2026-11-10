@@ -129,11 +129,13 @@ it('stores events before TCP ACK, then re-ACKs a pruned prefix after a lost repl
     runtime = await openAgentRuntime({ connection: server.connection, dataRoot: root }, metadata);
     const resumed = metadata; const exactBinding = binding;
     await until(async () => (await resumed.events.load(exactBinding)).ackConfirmedThrough === 2);
+    await until(async () => server.state.sources > 0);
     await runtime.close(); runtime = undefined;
     expect(await metadata.events.load(binding)).toEqual({ ...stored, ackConfirmedThrough: 2 });
     expect(beforeAck).toEqual([2, 2]); expect(server.events.afters).toEqual([0]);
     expect(server.events.acks).toBe(2); expect(server.state.accepted).toBe(1); expect(server.state.puts).toBe(1);
     expect((await metadata.runs.getRun({ id: run.id, scope })).state).toBe('active');
+    expect((await metadata.outputs.load(binding)).kind).toBe('pending');
     expect(server.state.failure).toBeUndefined();
   } finally {
     try { await runtime?.close(); }

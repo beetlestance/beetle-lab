@@ -36,7 +36,7 @@ function protocol(reason: ProtocolError['reason'], attemptId: string): ProtocolE
 /** Real TCP fake-agent receipt. It does not claim a real agent/engine execution. */
 export async function deliveryHttpFixture(initial: RunProfilePin) {
   const events = eventHttpPeer();
-  const state = { profile: initial, snapshots: true, losePut: false, puts: 0, gets: 0, caps: 0,
+  const state = { profile: initial, snapshots: true, losePut: false, puts: 0, gets: 0, caps: 0, sources: 0,
     accepted: 0, absences: 0, requireAbsence: false, receipt: undefined as AttemptSnapshot | undefined,
     original: undefined as Offer | undefined, bytes: undefined as string | undefined,
     failure: undefined as { error: unknown } | undefined };
@@ -45,7 +45,7 @@ export async function deliveryHttpFixture(initial: RunProfilePin) {
     if (request.url === '/runner/v1/capabilities') {
       getCapabilities(response); return;
     }
-    const match = /^\/runner\/v1\/attempts\/([0-9a-f-]{36})(?:\/(events|ack)(?:\?after=[0-9]+)?)?$/.exec(request.url ?? '');
+    const match = /^\/runner\/v1\/attempts\/([0-9a-f-]{36})(?:\/(events|ack|source)(?:\?after=[0-9]+)?)?$/.exec(request.url ?? '');
     if (!match) throw new Error('Unexpected fixture route');
     const attemptId = match[1]!;
     if (request.headers['x-beetle-journal-authority'] !== journalAuthority) {
@@ -53,12 +53,20 @@ export async function deliveryHttpFixture(initial: RunProfilePin) {
     }
     const count = request.rawHeaders.filter((name, index) => index % 2 === 0 && name.toLowerCase() === 'x-beetle-journal-authority').length;
     if (count !== 1) throw new Error('Fixture authority multiplicity');
-    if (match[2]) { await eventRequest(request, response, attemptId); return; }
+    if (match[2]) { await attemptRoute(request, response, attemptId, match[2]); return; }
     if (request.method === 'GET') { getSnapshot(response, attemptId); return; }
     if (request.method !== 'PUT') throw new Error('Unexpected fixture method');
     await putOffer(request, response, attemptId);
   }
-  async function eventRequest(request: IncomingMessage, response: ServerResponse, attemptId: string): Promise<void> {
+  function getSource(request: IncomingMessage, response: ServerResponse, attemptId: string): void {
+    if (request.method !== 'GET' || request.url !== `/runner/v1/attempts/${attemptId}/source`
+      || state.original?.attemptId !== attemptId || ++state.sources > 16) throw new Error('Unexpected fixture source route');
+    const pending: ProtocolError = { ...protocol('source_pending', attemptId), retry: 'transport' };
+    if (!validate('ProtocolError', pending).ok) throw new Error('Invalid fixture source pending');
+    send(response, pending, 409);
+  }
+  async function attemptRoute(request: IncomingMessage, response: ServerResponse, attemptId: string, route: string): Promise<void> {
+    if (route === 'source') { getSource(request, response, attemptId); return; }
     if (!state.original) { send(response, protocol('attempt_not_found', attemptId), 404); return; }
     await events.handle(request, response, state.original);
   }

@@ -7,7 +7,7 @@ export type RuntimePublisher = (observation: RuntimeObservation | null) => Promi
 export interface RuntimePollerState {
   readonly status: 'published' | 'unknown' | 'failed' | 'closed';
   readonly sampling: boolean;
-  readonly reason: 'unavailable' | 'observation_rejected' | RuntimeFailureReason | 'dispatch_failure' | null;
+  readonly reason: 'unavailable' | 'observation_rejected' | RuntimeFailureReason | 'dispatch_failure' | 'output_failure' | null;
 }
 export interface RuntimePoller {
   state(): RuntimePollerState;
