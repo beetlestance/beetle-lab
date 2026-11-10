@@ -1,44 +1,16 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createScheduler } from '../../src/scheduler/index.js';
-import type { Scheduler, SchedulerOptions } from '../../src/scheduler/index.js';
-import type { GenerationKey, RunnablePage } from '../../src/journal/index.js';
+import { describe, expect, it, vi } from 'vitest';
+import type { RunnablePage } from '../../src/journal/index.js';
 import type { DriveProgress } from '../../src/installation/index.js';
-
-function key(id: number): GenerationKey {
-  return { organizationId: '00000000-0000-4000-8000-000000000001',
-    workspaceId: '00000000-0000-4000-8000-000000000002',
-    attemptId: `00000000-0000-4000-8000-${id.toString().padStart(12, '0')}`, generation: 1 };
-}
-function deferred<T>() {
-  let resolve!: (value: T) => void;
-  const promise = new Promise<T>(done => { resolve = done; });
-  return { promise, resolve };
-}
-const released: DriveProgress = { kind: 'released', collection: 'finished' };
-const loops: Scheduler[] = [];
-const releases: (() => void)[] = [];
-function fixture(overrides: Partial<SchedulerOptions> = {}) {
-  vi.useFakeTimers();
-  const scanRunnable = vi.fn<SchedulerOptions['journal']['scanRunnable']>().mockResolvedValue({ attempts: [] });
-  const drive = vi.fn<SchedulerOptions['installation']['drive']>().mockResolvedValue(released);
-  const loop = createScheduler({ journal: { scanRunnable }, installation: { drive },
-    intervalMs: 50, operationTimeoutMs: 100, monotonicNow: () => 1000, ...overrides });
-  loops.push(loop);
-  return { loop, scanRunnable, drive };
-}
-afterEach(async () => {
-  for (const release of releases.splice(0)) release();
-  await Promise.all(loops.splice(0).map(loop => loop.close()));
-  vi.useRealTimers();
-});
+import { deferred, empty, fixture, key, released, releases } from './fixtures.js';
 
 describe('bounded installation scheduling', () => {
-  it('starts once and discovers charged before queued without owning lifecycle outcomes', async () => {
+  it('starts once with charged/delivery/queued discovery without owning lifecycle outcomes', async () => {
     const { loop, scanRunnable, drive } = fixture();
-    scanRunnable.mockImplementation(async page => ({ attempts: [key(page.lane === 'charged' ? 1 : 2)] }));
+    scanRunnable.mockImplementation(async page => page.lane === 'delivery'
+      ? { attempts: [key(3)], through: 3 } : { attempts: [key(page.lane === 'charged' ? 1 : 2)] });
     loop.start(); loop.start(); await vi.advanceTimersByTimeAsync(0);
-    expect(scanRunnable.mock.calls.map(([page]) => page.lane)).toEqual(['charged', 'queued']);
-    expect(drive.mock.calls.map(([scope]) => scope)).toEqual([key(1), key(2)]);
+    expect(scanRunnable.mock.calls.map(([page]) => page.lane)).toEqual(['charged', 'delivery', 'queued']);
+    expect(drive.mock.calls.map(([scope]) => scope)).toEqual([key(1), key(3), key(2)]);
     expect(drive.mock.calls[0]?.[1]).toMatchObject({ deadline: 1100, signal: expect.any(AbortSignal) });
     expect(loop.status()).toEqual({ running: true, closed: false, outstanding: 0, lastError: null });
   });
@@ -47,10 +19,18 @@ describe('bounded installation scheduling', () => {
     const { loop, scanRunnable, drive } = fixture();
     const held = deferred<DriveProgress>(); releases.push(() => held.resolve(released));
     drive.mockReturnValue(held.promise);
-    scanRunnable.mockImplementation(async page => ({ attempts: page.lane === 'queued'
-      ? Array.from({ length: page.limit }, (_, id) => key(id + 2)) : [key(1)] }));
+    const queued = Array.from({ length: 63 }, (_, id) => key(id + 2));
+    scanRunnable.mockImplementation(async page => {
+      if (page.lane === 'charged') return { attempts: [key(1)] };
+      if (page.lane === 'delivery') return empty(page);
+      const start = page.cursor ?? 0; const end = start + page.limit;
+      return { attempts: queued.slice(start, end), ...(end < queued.length ? { cursor: end } : {}) };
+    });
     loop.start(); await vi.advanceTimersByTimeAsync(0);
+    expect(drive).toHaveBeenCalledTimes(33);
+    await vi.advanceTimersByTimeAsync(50);
     expect(drive).toHaveBeenCalledTimes(64);
+    expect(new Set(drive.mock.calls.map(([scope]) => scope.attemptId)).size).toBe(64);
     await vi.advanceTimersByTimeAsync(250);
     expect(drive).toHaveBeenCalledTimes(64);
     expect(loop.status().outstanding).toBe(64);
@@ -61,26 +41,26 @@ describe('bounded installation scheduling', () => {
     expect(loop.status()).toMatchObject({ closed: true, running: false, outstanding: 0 });
   });
 
-  it('advances queued pages and restarts at zero, rechecking charged on every pass', async () => {
+  it('advances queued pages and restarts at zero while rotating the first lane', async () => {
     const { loop, scanRunnable, drive } = fixture();
     scanRunnable.mockImplementation(async page => {
-      if (page.lane === 'charged') return { attempts: [] };
+      if (page.lane !== 'queued') return empty(page);
       return page.cursor === undefined ? { attempts: [key(1)], cursor: 7 } : { attempts: [key(2)] };
     });
     loop.start(); await vi.advanceTimersByTimeAsync(100);
     expect(scanRunnable.mock.calls.map(([page]) => page)).toEqual([
-      { lane: 'charged', limit: 100 }, { lane: 'queued', limit: 64 },
-      { lane: 'charged', limit: 100 }, { lane: 'queued', limit: 64, cursor: 7 },
-      { lane: 'charged', limit: 100 }, { lane: 'queued', limit: 64 },
+      { lane: 'charged', limit: 100 }, { lane: 'delivery', limit: 32 }, { lane: 'queued', limit: 32 },
+      { lane: 'delivery', limit: 32 }, { lane: 'queued', limit: 32, cursor: 7 }, { lane: 'charged', limit: 100 },
+      { lane: 'queued', limit: 32 }, { lane: 'charged', limit: 100 }, { lane: 'delivery', limit: 32 },
     ]);
     expect(drive.mock.calls.map(([scope]) => scope.attemptId)).toEqual([key(1).attemptId, key(2).attemptId, key(1).attemptId]);
   });
 
-  it('does not dispatch queued work when charged discovery fails or exceeds its durable bound', async () => {
+  it.each(['rejected', 'continued'] as const)('does not dispatch following lanes when first charged discovery is %s', async failure => {
     const { loop, scanRunnable, drive } = fixture();
-    scanRunnable.mockRejectedValueOnce(new Error('synthetic'));
-    scanRunnable.mockResolvedValue({ attempts: [key(1)], cursor: 1 });
-    loop.start(); await vi.advanceTimersByTimeAsync(50);
+    if (failure === 'rejected') scanRunnable.mockRejectedValueOnce(new Error('synthetic'));
+    else scanRunnable.mockResolvedValueOnce({ attempts: [key(1)], cursor: 1 });
+    loop.start(); await vi.advanceTimersByTimeAsync(0);
     expect(scanRunnable.mock.calls.every(([page]) => page.lane === 'charged')).toBe(true);
     expect(drive).not.toHaveBeenCalled(); expect(loop.status().lastError).toBe('scan');
   });
@@ -90,11 +70,11 @@ describe('bounded installation scheduling', () => {
     const queued = Array.from({ length: 100 }, (_, index) => key(index + 1));
     drive.mockResolvedValue({ kind: 'deferred', reason: 'budget_unavailable' });
     scanRunnable.mockImplementation(async page => {
-      if (page.lane === 'charged') return { attempts: [] };
+      if (page.lane !== 'queued') return empty(page);
       const offset = page.cursor ?? 0; const end = offset + page.limit;
       return { attempts: queued.slice(offset, end), ...(end < queued.length ? { cursor: end } : {}) };
     });
-    loop.start(); await vi.advanceTimersByTimeAsync(50);
+    loop.start(); await vi.advanceTimersByTimeAsync(150);
     expect(new Set(drive.mock.calls.map(([scope]) => scope.attemptId)).size).toBe(100);
     expect(drive.mock.calls.at(-1)?.[0]).toEqual(key(100));
     expect(loop.status()).toMatchObject({ outstanding: 0, lastError: null });
@@ -115,7 +95,7 @@ describe('bounded installation scheduling', () => {
 
   it('records synchronous drive failure and reconciles on the next pass', async () => {
     const { loop, scanRunnable, drive } = fixture();
-    scanRunnable.mockImplementation(async page => ({ attempts: page.lane === 'charged' ? [key(1)] : [] }));
+    scanRunnable.mockImplementation(async page => page.lane === 'charged' ? { attempts: [key(1)] } : empty(page));
     drive.mockImplementationOnce(() => { throw new Error('synthetic'); });
     loop.start(); await vi.advanceTimersByTimeAsync(50);
     expect(drive).toHaveBeenCalledTimes(2); expect(loop.status().lastError).toBe('drive');
@@ -139,7 +119,7 @@ describe('bounded installation scheduling', () => {
     const { loop, scanRunnable, drive } = fixture();
     const held = deferred<DriveProgress>(); releases.push(() => held.resolve(released));
     let reentrant: Promise<void> | undefined;
-    scanRunnable.mockImplementation(async page => ({ attempts: page.lane === 'charged' ? [key(1)] : [] }));
+    scanRunnable.mockImplementation(async page => page.lane === 'charged' ? { attempts: [key(1)] } : empty(page));
     drive.mockImplementation((_key, operation) => {
       operation.signal?.addEventListener('abort', () => { reentrant = loop.close(); }); return held.promise;
     });
@@ -151,7 +131,7 @@ describe('bounded installation scheduling', () => {
 
   it('does not invent deadlines when the trusted clock fails', async () => {
     const { loop, scanRunnable, drive } = fixture({ monotonicNow: () => Number.NaN });
-    scanRunnable.mockResolvedValue({ attempts: [key(1)] });
+    scanRunnable.mockImplementation(async page => ({ attempts: [key(1)], ...(page.lane === 'delivery' ? { through: 1 } : {}) }));
     loop.start(); await vi.advanceTimersByTimeAsync(0);
     expect(drive).not.toHaveBeenCalled(); expect(loop.status().lastError).toBe('clock');
   });
@@ -160,7 +140,7 @@ describe('bounded installation scheduling', () => {
     const { loop, scanRunnable, drive } = fixture();
     const attempts = Array.from({ length: 64 }, (_, index) => key(index + 1));
     const serviced = new Set<string>(); let active = 0;
-    scanRunnable.mockImplementation(async page => ({ attempts: page.lane === 'charged' ? attempts : [] }));
+    scanRunnable.mockImplementation(async page => page.lane === 'charged' ? { attempts } : empty(page));
     drive.mockImplementation(async scope => {
       if (active >= capacity) throw new Error('synthetic queue_full');
       active++; serviced.add(scope.attemptId);
