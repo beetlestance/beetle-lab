@@ -10,6 +10,7 @@ import { sendError } from './errors.js';
 import { RequestWork } from './work.js';
 import { RequestIdentity } from './request-identity.js';
 import { OfferIngress } from './offers.js';
+import { registerSources, sourceRoute } from './sources.js';
 export { AgentHttpError, HTTP_LIMITS } from './types.js';
 export type { AgentHttpOptions } from './types.js';
 
@@ -32,6 +33,28 @@ function query(request: FastifyRequest, cursor = false): number {
   if (keys.join(',') !== 'after') throw new AgentHttpError(400, 'invalid_protocol');
   return decimal((raw as Record<string, unknown>).after, 0);
 }
+function ingress(server: FastifyInstance, identity: RequestIdentity, operations: RequestWork, offers: OfferIngress): void {
+  server.addHook('preClose', async () => {
+    const draining = operations.close();
+    await Promise.all([draining, offers.close()]);
+  });
+  server.addHook('onError', async request => { offers.releaseRequest(request); });
+  server.addHook('onResponse', async request => {
+    offers.releaseRequest(request); operations.responseFinished(request);
+  });
+  server.addHook('onRequest', async (request, reply) => {
+    const source = sourceRoute(request);
+    if (source) reply.header('Connection', 'close');
+    identity.capture(request);
+    const offerBody = (request.method === 'PUT' && request.routeOptions.url === '/runner/v1/attempts/:attemptId')
+      || (request.method === 'POST' && request.routeOptions.url === '/runner/v1/attempts/:attemptId/cancel-original');
+    if (offerBody || source) {
+      const scope = identity.key(request); query(request);
+      if (scope.generation !== 1) throw new AgentHttpError(409, 'conflicting_digest');
+      if (source) operations.acquireSource(request, reply); else offers.acquire(request);
+    }
+  });
+}
 /** Private HTTP composition; caller owns listening, installation scheduling and journal shutdown. */
 export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
   const identity = new RequestIdentity(options.credential, options.journalAuthority);
@@ -41,24 +64,9 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
   server.server.maxConnections = HTTP_LIMITS.sockets;
   const operations = new RequestWork();
   const offers = new OfferIngress();
-  server.addHook('preClose', async () => {
-    const draining = operations.close(); // Fence both lanes before awaiting either original owner.
-    await Promise.all([draining, offers.close()]);
-  });
-  server.addHook('onError', async request => { offers.releaseRequest(request); });
-  server.addHook('onResponse', async request => { offers.releaseRequest(request); });
-  server.addHook('onRequest', async request => {
-    identity.capture(request);
-    const offerBody = (request.method === 'PUT' && request.routeOptions.url === '/runner/v1/attempts/:attemptId')
-      || (request.method === 'POST' && request.routeOptions.url === '/runner/v1/attempts/:attemptId/cancel-original');
-    if (offerBody) {
-      const scope = identity.key(request); query(request);
-      if (scope.generation !== 1) throw new AgentHttpError(409, 'conflicting_digest');
-      offers.acquire(request);
-    }
-  });
+  ingress(server, identity, operations, offers);
   server.setErrorHandler((error, request, reply) => {
-    try { sendError(reply, error, identity.scope(request)); } catch { reply.code(500).send(); }
+    try { sendError(reply, error, identity.scope(request), sourceRoute(request)); } catch { reply.code(500).send(); }
   });
   server.setNotFoundHandler(() => { throw new AgentHttpError(404, 'invalid_protocol'); });
   const work = <T>(operation: () => Promise<T>) => operations.run(operation);
@@ -102,5 +110,6 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
     query(request); const scope = key(request); const body = requestBody('Ack', request.body); bodyMatches(scope, scope.attemptId, body);
     sendJson(reply, 200, 'AckReceipt', await work(() => services.journal.acknowledge(body)), scope);
   });
+  registerSources(server, { outputs: options.outputs, identity, operations });
   return server;
 }

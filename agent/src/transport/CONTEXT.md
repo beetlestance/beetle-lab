@@ -14,13 +14,18 @@ response fields; reject getters and non-object serializer bypasses. Query cursor
 use canonical decimal grammar. Unknown fields, generations and scopes reject before
 effects. Errors never return raw config, credentials, exception text or URLs.
 
-RequestWork owns at most32 original service calls through response disconnect and
-server shutdown. No hidden retries/queues; preClose fences intake and drains all
-originals. InstallationController retains its own async stop/preparation work and
-must close separately before bootstrap closes the journal.
+RequestWork shares32 originals across metadata and source operations. Source GET
+and chunk POST atomically reserve a maximum-two subset before body parsing; chunks
+are limited to1024 bytes. SourceWork retains the issued service and request/response/
+socket cleanup together, including after stop hints. Source replies use Connection:
+close,75776/90112-byte caps and shared content validators before serialization.
+preClose fences intake, stops source parsers/sockets and drains all original work.
+InstallationController must close separately before bootstrap closes the journal.
 
 HTTP metadata evidence is separate from engine execution and result finalization.
 Offer and cancelOriginal share two pre-body slots and identical Offer bounds.
 Fresh cancellation does not fall back to enqueue. Contract: cancellation.md.
-Artifact/range and explicit finalization ACK endpoints are not implemented here.
+An explicit OutputSourceReader owns durable source/closure/native range checks;
+absent wiring returns503. Transport never manufactures closure or publication.
+Explicit finalization ACK endpoints remain separate work.
 Focused checks: agent/test/transport, Node TS and changed lint/structural gates.
