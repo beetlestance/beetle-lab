@@ -60,7 +60,7 @@ describe('installation durable composition, synthetic Docker only', () => {
       stagingBytes: estimateStaging(e.offer).totalBytes * 66 };
     const config = configuration(); config.maxTimeoutMs = e.offer.budget.timeoutMs;
     config.pool = { ...config.pool, ...disk };
-    const capacity = observation(); capacity.capacity = { ...capacity.capacity, ...disk };
+    const capacity = observation(e.time.wall()); capacity.capacity = { ...capacity.capacity, ...disk };
     await e.owner.admission({ kind: 'configure', configuration: config });
     await e.owner.admission({ kind: 'observe', observation: capacity });
     for (let i = 1; i <= 66; i++) {
