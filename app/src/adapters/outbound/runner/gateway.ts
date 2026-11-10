@@ -33,6 +33,7 @@ export function openGateway(loaded: LoadedAgentConfiguration, io: NativeIo): Run
       const scoped = createRunnerClient(createTransport(connection, captured));
       const facade: RunnerAttemptClient = {
         offer: (body, signal) => scoped.offer(captured.attemptId, body, signal),
+        cancelOriginal: (body, signal) => scoped.cancelOriginal(captured.attemptId, body, signal),
         snapshot: signal => scoped.snapshot(captured.attemptId, signal),
         cancel: (body, signal) => scoped.cancel(captured.attemptId, body, signal),
         events: (after, signal) => scoped.events(captured.attemptId, after, signal),

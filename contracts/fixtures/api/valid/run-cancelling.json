@@ -1,0 +1,41 @@
+{
+  "id": "00000000-0000-4000-8000-000000000005",
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "version": 2,
+  "suiteId": "00000000-0000-4000-8000-000000000003",
+  "revisionId": "00000000-0000-4000-8000-000000000004",
+  "revisionDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "requestedAt": "2026-11-09T00:00:00.000Z",
+  "state": "queued",
+  "outcome": "pending",
+  "validationStatus": "pending",
+  "activeAttemptId": "00000000-0000-4000-8000-000000000006",
+  "cancellationRequested": true,
+  "reason": null,
+  "engine": {
+    "id": "k6",
+    "profileId": "k6-local",
+    "imageDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "configVersion": 1
+  },
+  "budget": {
+    "cpuMillis": 1000,
+    "memoryBytes": 536870912,
+    "pids": 128,
+    "timeoutMs": 60000,
+    "outputBytes": 1048576
+  },
+  "executionPolicy": {
+    "mode": "parallel",
+    "preferIdle": false
+  },
+  "settingsVersions": {
+    "installation": 1,
+    "organization": 1,
+    "workspace": 1
+  }
+}

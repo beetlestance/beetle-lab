@@ -52,6 +52,7 @@ export function fixture() {
   const run = runValue();
   const client = {
     offer: vi.fn<RunnerAttemptClient['offer']>(async () => { calls.push('PUT'); return positive(); }),
+    cancelOriginal: vi.fn<RunnerAttemptClient['cancelOriginal']>(async () => { throw new Error('Unexpected fresh cancellation'); }),
     snapshot: vi.fn<RunnerAttemptClient['snapshot']>(async () => { calls.push('GET'); return missing(); }),
     cancel: vi.fn<RunnerAttemptClient['cancel']>(async () => { calls.push('cancel'); return positive(); }),
     events: vi.fn<RunnerAttemptClient['events']>(), ack: vi.fn<RunnerAttemptClient['ack']>(),

@@ -63,6 +63,7 @@ export type RetentionPreview = FromSchema<typeof S6.RetentionPreview>;
 export type RetentionApplyRequest = FromSchema<typeof S6.RetentionApplyRequest>;
 export type RetentionApplyReceipt = FromSchema<typeof S6.RetentionApplyReceipt>;
 export type CreateRunRequest = FromSchema<typeof S7.CreateRunRequest>;
+export type CancelRunRequest = FromSchema<typeof S7.CancelRunRequest>;
 export type RunExecutionPolicy = FromSchema<typeof S8.RunExecutionPolicy>;
 export type RunEngine = FromSchema<typeof S8.RunEngine>;
 export type RunSettingsVersions = FromSchema<typeof S8.RunSettingsVersions>;
@@ -151,6 +152,7 @@ export interface ApiTypes {
   RetentionApplyRequest: RetentionApplyRequest;
   RetentionApplyReceipt: RetentionApplyReceipt;
   CreateRunRequest: CreateRunRequest;
+  CancelRunRequest: CancelRunRequest;
   RunExecutionPolicy: RunExecutionPolicy;
   RunEngine: RunEngine;
   RunSettingsVersions: RunSettingsVersions;

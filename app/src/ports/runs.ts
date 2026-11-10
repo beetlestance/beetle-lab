@@ -1,4 +1,4 @@
-import type { CreateRunRequest, Run, RunPage, RunEngine, WorkspaceScope } from '@beetle/contracts/api';
+import type { CancelRunRequest, CreateRunRequest, Run, RunPage, RunEngine, WorkspaceScope } from '@beetle/contracts/api';
 import type { InstalledIdentity } from '@beetle/contracts';
 
 export interface CreateRunOperation {
@@ -9,6 +9,14 @@ export interface CreateRunOperation {
   request: CreateRunRequest;
 }
 export type RunCommand = CreateRunOperation & { intentDigest: string };
+/** Monotonic scoped intent; no physical stop or release is inferred from acceptance. */
+export interface CancelRunOperation {
+  kind: 'cancelRun';
+  id: string;
+  request: CancelRunRequest;
+}
+export type CancelRunCommand = CancelRunOperation & { intentDigest: string };
+export interface RunCancellationStore { cancel(command: CancelRunCommand): Promise<Run> }
 export interface RunKey { scope: WorkspaceScope; id: string }
 export interface RunList { scope: WorkspaceScope; limit: number; cursor?: string }
 

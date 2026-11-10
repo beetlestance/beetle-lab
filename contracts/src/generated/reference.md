@@ -8,6 +8,7 @@ Source: `contracts/runner/v1`; regenerate with `node --import tsx contracts/scri
 | PUT | /runner/v1/attempts/{attemptId} | Offer | 202 | AttemptSnapshot |
 | GET | /runner/v1/attempts/{attemptId} | none | 200 | AttemptSnapshot |
 | POST | /runner/v1/attempts/{attemptId}/cancel | Cancellation | 200 | AttemptSnapshot |
+| POST | /runner/v1/attempts/{attemptId}/cancel-original | Offer | 200 | AttemptSnapshot |
 | GET | /runner/v1/attempts/{attemptId}/events | none | 200 | EventBatch |
 | POST | /runner/v1/attempts/{attemptId}/ack | Ack | 200 | AckReceipt |
 

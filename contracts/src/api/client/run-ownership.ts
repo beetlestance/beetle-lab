@@ -25,5 +25,7 @@ export function runOwnership(operation: ApiOperation, input: PreparedInput, valu
   if (operation.response === 'RunPage') return (value as RunPage).items.every(validRun);
   if (operation.response !== 'Run') return true;
   const run = value as Run;
-  return validRun(run) && (operation.name !== 'createRun' || creationMatches(input, run));
+  const cancellationMatches = operation.name !== 'cancelRun' || run.cancellationRequested
+    || ['finished', 'cancelled', 'errored'].includes(run.state);
+  return cancellationMatches && validRun(run) && (operation.name !== 'createRun' || creationMatches(input, run));
 }

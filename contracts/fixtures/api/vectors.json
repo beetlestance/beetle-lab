@@ -523,5 +523,20 @@
     "path": "valid/run-params.json",
     "schema": "RunParams",
     "valid": true
+  },
+  {
+    "path": "valid/cancel-run.json",
+    "schema": "CancelRunRequest",
+    "valid": true
+  },
+  {
+    "path": "invalid/cancel-run-extra.json",
+    "schema": "CancelRunRequest",
+    "valid": false
+  },
+  {
+    "path": "valid/run-cancelling.json",
+    "schema": "Run",
+    "valid": true
   }
 ]

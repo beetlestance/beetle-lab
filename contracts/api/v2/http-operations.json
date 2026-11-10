@@ -399,5 +399,15 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "RunParams"
+  },
+  {
+    "name": "cancelRun",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/cancel",
+    "response": "Run",
+    "successStatus": 202,
+    "error": "ApiError",
+    "params": "RunParams",
+    "request": "CancelRunRequest"
   }
 ]

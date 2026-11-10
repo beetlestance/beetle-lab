@@ -24,7 +24,7 @@
     "runner/v1/supervisor-events.schema.json": "9065408c049290a99372a4e9a3d22eb617c25b710bc84c080626acec8e735974",
     "runner/v1/wrapper-events.schema.json": "b14590f134d092d5e926f24492222d8eb27d437226fa670564ff83bb27665f1f"
   },
-  "operationsSha256": "416e0f09e93463cf0a1f8108a0cd2614792e93f036a6a63024e15cb0298c23e0",
+  "operationsSha256": "efa7a33358680010ef50ed68d5f520282eaeaa9dcbb20b82717b6b2ef43ef295",
   "outputs": [
     "ack-receipt.inference.ts",
     "ack-receipt.ts",

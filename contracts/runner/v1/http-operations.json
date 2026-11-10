@@ -30,6 +30,14 @@
     "successStatus": 200
   },
   {
+    "name": "cancelOriginal",
+    "method": "POST",
+    "path": "/runner/v1/attempts/{attemptId}/cancel-original",
+    "request": "Offer",
+    "response": "AttemptSnapshot",
+    "successStatus": 200
+  },
+  {
     "name": "events",
     "method": "GET",
     "path": "/runner/v1/attempts/{attemptId}/events",

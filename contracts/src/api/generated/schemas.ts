@@ -67,6 +67,7 @@ export const apiMessageSchemas = freezeSchema({
   RetentionApplyRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionApplyRequest' },
   RetentionApplyReceipt: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionApplyReceipt' },
   CreateRunRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/CreateRunRequest' },
+  CancelRunRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/CancelRunRequest' },
   RunExecutionPolicy: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunExecutionPolicy' },
   RunEngine: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunEngine' },
   RunSettingsVersions: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunSettingsVersions' },

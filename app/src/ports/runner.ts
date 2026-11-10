@@ -36,6 +36,7 @@ export interface RunnerAttemptIdentity {
  */
 export interface RunnerAttemptClient {
   offer(body: Offer, signal?: AbortSignal): Promise<ClientResult<AttemptSnapshot>>;
+  cancelOriginal(body: Offer, signal?: AbortSignal): Promise<ClientResult<AttemptSnapshot>>;
   snapshot(signal?: AbortSignal): Promise<ClientResult<AttemptSnapshot>>;
   cancel(body: Cancellation, signal?: AbortSignal): Promise<ClientResult<AttemptSnapshot>>;
   events(after: number, signal?: AbortSignal): Promise<ClientResult<EventBatch>>;
