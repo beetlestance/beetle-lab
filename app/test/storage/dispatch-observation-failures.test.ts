@@ -171,7 +171,7 @@ it('CASE-bounds stored snapshot materialization and never selects Offer, registr
   observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key) });
   const queries = prepare.mock.calls.map(([sql]) => sql);
   const record = queries.find(sql => sql.includes('FROM execution_records'))!;
-  expect(record).toMatch(/CASE WHEN length\(CAST\(e.snapshot_json AS BLOB\)\)<=73728 THEN e.snapshot_json ELSE NULL END/);
+  expect(record).toMatch(/CASE WHEN length\(CAST\(e.snapshot_json AS BLOB\)\)<=2048 THEN e.snapshot_json ELSE NULL END/);
   expect(queries.join('\n')).not.toMatch(/offer_json|registry_json|config_json|SELECT \* FROM attempts/i);
 });
 it('rejects an oversized stored snapshot from its scalar size before reading or parsing its text', () => {
