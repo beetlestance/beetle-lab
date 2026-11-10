@@ -8,6 +8,8 @@ import { agentOrigin } from './configuration.js';
 
 export async function provision(f: Fixture): Promise<string> {
   f.docker.run(['network', 'create', '--internal', '--label', `dev.beetle.qualification=${f.id}`, f.network]);
+  const control = `beetle-control-${f.id}`;
+  f.docker.run(['network', 'create', '--driver', 'bridge', '--label', `dev.beetle.qualification=${f.id}`, control]);
   const program = `const counts={ready:0,work:0,unexpected:0};require('node:http').createServer((q,r)=>{
 if(q.url==='/counts'){r.end(JSON.stringify(counts));return;}
 const key=q.url==='/ready'?'ready':q.url==='/work'?'work':'unexpected';
@@ -17,13 +19,13 @@ if(++counts[key]>4)process.exit(3);r.writeHead(key==='ready'?200:key==='work'?${
     '--network', f.network, '--network-alias', 'target', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges:true',
     '--cpus', '0.5', '--memory', '128m', '--pids-limit', '64', '--log-driver', 'local', '--log-opt', 'max-size=1m',
     '--log-opt', 'max-file=2', '--entrypoint', 'node', f.agentImage.Id, '-e', program]);
-  await createAgent(f);
+  await createAgent(f, control);
   return agentOrigin(f.docker.run(['port', f.agent, '4312/tcp']));
 }
-async function createAgent(f: Fixture): Promise<void> {
+async function createAgent(f: Fixture, control: string): Promise<void> {
   const mounts = ['staging', 'journal', 'inputs', 'config'].flatMap(name => ['--mount',
     `type=bind,src=${join(f.root, name)},dst=${join(f.root, name)}${['inputs', 'config'].includes(name) ? ',readonly' : ''}`]);
-  f.docker.run(['create', '--pull', 'never', '--name', f.agent, '--label', `dev.beetle.qualification=${f.id}`, '--network', f.network,
+  f.docker.run(['create', '--pull', 'never', '--name', f.agent, '--label', `dev.beetle.qualification=${f.id}`, '--network', control,
     '--publish', '127.0.0.1::4312', '--user', f.user, '--group-add', '0', '--read-only', '--cap-drop', 'ALL',
     '--security-opt', 'no-new-privileges:true', '--cpus', '1', '--memory', '512m', '--pids-limit', '128',
     '--log-driver', 'local', '--log-opt', 'max-size=1m', '--log-opt', 'max-file=2',

@@ -17,7 +17,7 @@ import { enqueue, finished, ownedOrigin, publicClient, value, waitForCapacity } 
 import { inspectClosed } from './evidence.js';
 
 const args = argumentsFor(process.argv.slice(2));
-const f = await fixture(new Docker(args.context), args.agentImage, args.engineImage, args.status);
+const f = await fixture(new Docker(args.context, 2), args.agentImage, args.engineImage, args.status);
 const evidence: Record<string, unknown> = { status: 'running', phase: 'provision', transport: 'native TCP',
   architecture: f.architecture, agentImage: f.agentImage.Id, engineImage: f.engineImage.Id,
   daemonVersion: f.info.ServerVersion, nodeVersion: process.version, platform: process.platform,
