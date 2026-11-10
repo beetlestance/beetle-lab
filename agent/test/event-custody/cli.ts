@@ -1,6 +1,5 @@
-import { join, relative, resolve } from 'node:path';
+import { relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { build } from 'tsup';
 import { openJournal, JournalError } from '../../src/journal/index.js';
 import type { Journal } from '../../src/journal/index.js';
 import { HttpHarness } from './http-harness.js';
@@ -78,16 +77,15 @@ function inputLane(journal: Journal, http: HttpHarness, path: string): Promise<v
   });
 }
 
+function checkedPath(root: string, value: string): void {
+  const local = relative(resolve(root), resolve(value));
+  if (!local || local.startsWith('..') || local.startsWith('/') || value.length > 4096) throw new Error('Fixture path outside root');
+}
 async function main(): Promise<void> {
-  const [path, directory, root] = process.argv.slice(2);
-  if (!path || !directory || !root || process.argv.length !== 5) throw new Error('Invalid fixture paths');
-  for (const value of [path, directory]) {
-    const local = relative(resolve(root), resolve(value));
-    if (!local || local.startsWith('..') || local.startsWith('/') || value.length > 4096) throw new Error('Fixture path outside root');
-  }
-  await build({ entry: ['agent/src/journal/worker.ts'], outDir: directory, format: ['esm'], platform: 'node', target: 'node24',
-    bundle: true, noExternal: [/.*/], shims: true, removeNodeProtocol: false, splitting: false, silent: true });
-  const journal = await openJournal({ path, workerUrl: pathToFileURL(join(directory, 'worker.js')) });
+  const [path, worker, root] = process.argv.slice(2);
+  if (!path || !worker || !root || root.length > 4096 || process.argv.length !== 5) throw new Error('Invalid fixture paths');
+  for (const value of [path, worker]) checkedPath(root, value);
+  const journal = await openJournal({ path, workerUrl: pathToFileURL(worker) });
   const http = new HttpHarness(journal, resolve(root));
   const deadline = setTimeout(() => { process.exitCode = 1; process.stdin.destroy(new Error('Fixture lifetime bound')); }, 30000);
   try { await send({ id: 0, ok: true, value: null }); await inputLane(journal, http, path); }
