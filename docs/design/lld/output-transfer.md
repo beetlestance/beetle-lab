@@ -7,31 +7,13 @@ migration IDs are accepted by this draft. Depends on implemented
 
 ## Delivery closure
 
-A source commit and physical execution release do not close the agent event stream.
-Before final result publication, persist one immutable DeliveryClosure bound to
-journalAuthority, original scope/intent, manifestDigest and sourceDigest. It records
-version1 and finalAgentSeq, the exact current durable event high-water. No timestamp
-or independently generated closure ID is needed: the original source tuple is unique.
-
-The installation owner first synchronously fences that attempt against new
-producer leases and owner recreation. After physical source release, drain every
-previously issued cancellation/preparation/drive/watch/controller/supervisor lane,
-excluding the closure caller itself to avoid self-deadlock. Keep that fence held
-through durable closure; only then retire memory ownership. Existing Manager.retire
-alone does not establish this barrier. The Journal validates the stored source/receipt and
-released reservation, captures finalAgentSeq itself, charges closure metadata and
-atomically fences subsequent control/supervisor appends for that attempt. A caller
-cannot supply the high-water or claim quiescence over HTTP. Exact replay returns
-unchanged closure, including after lost reply/reopen. Unknown/failed close retains
-obligations; it does not mark events complete. On restart, source-first recovery
-must retire its original owners before requesting a missing closure.
-
-Closure metadata is capped at1024 canonical bytes plus256 row allowance and remains
-charged under agent journal quota. Its new charge must join every live quota guard;
-no ACK/prune refund. No migration number is reserved yet. Closure proves a fixed
-stream end under trusted process ownership, not artifact durability or test outcome.
-Nonexecution/error stream closure without a source needs a separately reviewed
-proof and is still required before the whole first release can qualify.
+Source commit and physical release do not close the event stream. SourceEnvelope
+requires the exact stored OutputDeliveryClosure under its source receipt. The
+[delivery closure contract](output-delivery-closure.md) owns final sequence capture,
+producer fencing/drain/reconciliation, indexed restart discovery and quota. HTTP
+only reads that closure; no caller may submit a sequence or quiescence claim.
+Source-free nonexecution/error closure remains separately required before the
+complete first release can qualify. Closure does not prove artifact publication.
 
 ## Private wire
 
