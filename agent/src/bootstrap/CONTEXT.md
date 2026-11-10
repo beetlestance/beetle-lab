@@ -4,6 +4,9 @@ Public API: index.ts. runtime.ts owns exactly one process runtime, from verified
 installation and fresh journal through actual guards/publisher/scheduler/private
 HTTP composition. No test/backend factory is accepted from a job or HTTP caller.
 Trusted catalogue, transport and providers come from the executable configuration.
+One output source reader binds the same Journal to the native range owner and is
+passed to the HTTP adapter through its outputs option. No second pool or loop is
+created; HTTP routes and backend publication require their own integration evidence.
 
 capabilities.ts keeps one informational actual observation, clipped by configured
 policy and reserve/headroom. This is not admission authority or a reservation.

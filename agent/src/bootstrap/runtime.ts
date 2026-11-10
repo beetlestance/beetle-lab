@@ -21,6 +21,8 @@ import { createObservationPublisher, createResourceObserver } from '../observati
 import type { ObservationPublisher, ResourceObserver } from '../observation/index.js';
 import { createScheduler } from '../scheduler/index.js';
 import type { Scheduler } from '../scheduler/index.js';
+import { createOutputSourceReader } from '../output-transfer/index.js';
+import { readOutputRange } from '../collection/output/index.js';
 import { AgentHttpError, createAgentServer } from '../transport/index.js';
 import type { FastifyInstance } from 'fastify';
 import { CapabilityView } from './capabilities.js';
@@ -140,7 +142,7 @@ class RuntimeOwner {
     this.publisher = createObservationPublisher({ journal, observer: this.observer, output: this.output, timeout: this.timeout });
     this.scheduler = createScheduler({ journal, installation: this.installation });
     this.server = createAgentServer({ credential: options.credential, journalAuthority, journal, installation: this.installation,
-      capabilities: () => view.capabilities() });
+      outputs: createOutputSourceReader({ journal, readRange: readOutputRange }), capabilities: () => view.capabilities() });
     this.server.addHook('onRequest', async () => {
       if (this.closed) throw new AgentHttpError(503, 'budget_unavailable', 'transport');
     });
