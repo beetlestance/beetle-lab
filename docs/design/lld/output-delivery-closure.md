@@ -1,8 +1,8 @@
 # Durable output delivery closure
 
 Status: Journal storage, migration013 and indexed discovery are implemented and
-independently reviewed. Scheduler wiring is implemented/reviewed; Manager producer
-barriers remain pending. See [component evidence](../../verification/output-delivery-closure.md).
+independently reviewed. Scheduler and Manager producer barriers are implemented
+and independently reviewed for the source-backed component. See [component evidence](../../verification/output-delivery-closure.md).
 Refines the producer
 barrier in [output transfer](output-transfer.md), using the existing immutable
 [source receipt](output-source-journal.md). It does not publish backend results.
@@ -134,6 +134,13 @@ recovery must reconcile the stored source/closure before creating any native
 producer. A recreated owner around a committed source performs receipt release/
 producer retirement/closure reconciliation only, with no catalogue or engine work.
 A current retiring entry rejects new producer admission as busy, without queueing.
+
+A newly created producer-free late-call owner reconciles an exact existing closure
+after its final producer lease. Metadata cleanup remains part of the same bounded
+public original and synchronously fences native admission before reading. It must
+not leave closed historical sources awaiting scheduler debt already cleared. No
+close replay on absence in this cleanup; retain uncertain owners for the normal
+exact-release/reconciliation drive. Existing native owners retain full retirement.
 
 A source already committed proves that engine/output collection stopped; late
 cancel/cancelOriginal may persist their existing non-event cancellation metadata

@@ -1,7 +1,7 @@
 # Native declared output ranges
 
-Status: frozen coordinator interface; implementation and independent acceptance
-pending. Refines [output transfer](output-transfer.md). Root owns range-types.ts;
+Status: implemented and independently reviewed native component. See
+[local evidence](../../verification/output-range.md). Refines [output transfer](output-transfer.md). Root owns range-types.ts;
 worker may add the exact readOutputRange entrypoint to collection/output/index.ts.
 No new public request shape, digest format or historical artifact identity.
 

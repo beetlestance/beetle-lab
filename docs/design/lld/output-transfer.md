@@ -1,8 +1,8 @@
 # Output transport and event closure
 
 Status: shared structural schemas, pure semantic codecs and declared service ports
-implemented and independently reviewed. HTTP/gateway/native range wiring is
-pending. No migration ID is allocated here. Depends on implemented
+implemented and independently reviewed. Native range reading is also reviewed;
+HTTP/gateway/service wiring remains pending. No migration ID is allocated here. Depends on implemented
 [source Journal](output-source-journal.md); backend accounting is in
 [adoption](output-adoption.md). Existing source and event contracts remain binding.
 

@@ -67,10 +67,11 @@ implemented durable intents/sources, exact quota and receipt-gated release.
 integrated native collection, stable source requests and conservative restart recovery.
 Source-backed stream closure storage and indexed debt discovery are implemented;
 [closure evidence](docs/verification/output-delivery-closure.md) records scoped limits.
-Scheduler delivery fairness is integrated; Manager producer barriers, artifact
-transfer and publication are next.
+Scheduler delivery fairness and Manager producer barriers are integrated; artifact
+HTTP transfer and backend publication are next.
 [Transport values](docs/verification/output-transfer-values.md) are integrated;
-native range and same-connection gateway implementations are in progress.
+[native ranges](docs/verification/output-range.md) are integrated. Same-connection
+gateway and Journal-backed source service are in progress.
 The [result panel](docs/verification/run-result-panel.md) is implemented with explicit
 unavailable data until the backend result read path exists.
 
