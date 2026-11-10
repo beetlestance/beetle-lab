@@ -11,8 +11,9 @@ dispatchAllowed:false. Binding already-created ownership remains possible after 
 
 Explicit config owns pool, per-run/time ceilings, manifest minimum including timeout,
 reserve/headroom, approved identities and finite observation TTL. Timeout never sums
-across attempts. Lower pools drain without changing accepted jobs. Physical free disk
-must cover charged output+staging plus reserve/headroom; release never proves deletion.
+across attempts. Lower pools preserve retained debt and drain. Required `DiskRetention`
+adds retained output+staging to logical fit/fairness; only active jobs own CPU/isolation.
+Physical free disk covers active future writes plus overhead; retained files count once.
 `estimateStaging` pins complete setup charges/policy per reservation before I/O;
 unknown policy rejects new admission. See ../../../../docs/decisions/006-agent-staging.md.
 Profiles require cpu/memory/pids/timeout/output. Docker cannot supply timeout/output:
@@ -21,8 +22,7 @@ guard, not a filesystem quota; required `hard-output-quota` is unsupported.
 No host capacities or sensor readings are inferred; unknown/stale stays unknown.
 Trusted preflight pins config SHA256/schema/catalog before offer; full semantics run after admission.
 Hashes are identity, not validation; `immutableOffer` is compatibility only.
-Private evidence/ownership commands never reach browser/wrapper transports.
-Required CPU/RAM, policy/disk source labels are provenance, not authentication; physical PID capacity stays null.
+Private ownership commands stay private; source labels are provenance, not authentication; physical PID capacity stays null.
 Reopen clears samples, not ownership. One full composer owns guards; omission revokes readiness.
 
 Claim create BEFORE backend create; bind exact token/spec/runtime; claim start(now)
@@ -37,4 +37,4 @@ Settlement closes future start claims, including epoch0 before any start. Releas
 references the persisted definitive settlement and requires stopped/absent runtime
 AND finished/failed collection samples strictly AFTER settlement (ties reject).
 Missing ID/uncertain action, ACK, wrapper events or timeout never authorize release.
-Abort before any create claim releases and permanently fences dispatch. No deletion.
+Abort/release retain both original disk promises and permanently fence dispatch. No deletion.

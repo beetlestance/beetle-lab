@@ -6,7 +6,7 @@ export interface Row {
   id: number; attempt_id: string; organization_id: string; workspace_id: string;
   intent_digest: string; generation: number; state: AttemptSnapshot['state']; last_seq: number;
   cancel_requested: number; retained_start_seq: number; acknowledged_seq: number;
-  spool_bytes: number; spool_rows: number; quota_bytes: number;
+  spool_bytes: number; spool_rows: number; quota_bytes: number; hold_bytes: number;
   wrapper_high: number; supervisor_high: number;
   wrapper_expired: number; supervisor_expired: number;
   checkpoint_bytes: number; wrapper_checkpoint_json: string | null;
@@ -17,7 +17,7 @@ export const metadataColumns = `id, attempt_id, organization_id, workspace_id, i
   state, last_seq, cancel_requested, retained_start_seq, acknowledged_seq, spool_bytes,
   spool_rows, quota_bytes, wrapper_high, supervisor_high, wrapper_expired, supervisor_expired,
   phase, exit_json, snapshot_bytes, checkpoint_bytes`;
-export const columns = `${metadataColumns}, result_json, exit_facts_json, wrapper_checkpoint_json`;
+export const columns = `${metadataColumns}, hold_bytes, result_json, exit_facts_json, wrapper_checkpoint_json`;
 export class Failure extends Error {
   constructor(readonly code: ErrorCode, readonly recovery?: AttemptSnapshot) { super(code); }
 }

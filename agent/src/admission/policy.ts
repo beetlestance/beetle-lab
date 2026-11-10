@@ -1,6 +1,9 @@
 import type { AdmissionSnapshot, ApprovedProfile, Candidate, Decision, Resources, RuntimeObservation } from './types.js';
 import { addResources, effectivePool, fits, zeroResources } from './resources.js';
 import { supportedStaging } from './staging.js';
+import { captureDiskRetention, DISK_HOLD_LIMIT } from './retention.js';
+import type { DiskRetention } from './retention.js';
+import { retainedFit } from './retention-policy.js';
 
 export const PROMOTION_MS = 30_000;
 export const MAX_SCAN = 100;
@@ -48,17 +51,18 @@ function thermalDecision(observation: RuntimeObservation, snapshot: AdmissionSna
   }
   return { kind: 'admit' };
 }
-function fairness(candidate: Candidate, snapshot: AdmissionSnapshot, pool: Resources, used: Resources): Decision {
+function fairness(candidate: Candidate, snapshot: AdmissionSnapshot, pool: Resources, used: Resources, retention: DiskRetention): Decision {
   for (const older of snapshot.queue.slice(0, MAX_SCAN)) {
     if (older.order >= candidate.order) break;
     if (validateCandidate(older, snapshot).kind !== 'admit' || !fits(older.resources, pool)) continue;
     const promoted = older.queuedAt === null || snapshot.now - older.queuedAt >= PROMOTION_MS;
     if (promoted) return { kind: 'defer', reason: 'promoted_predecessor' };
-    if (fits(addResources(older.resources, used), pool)) return { kind: 'defer', reason: 'fifo_predecessor' };
+    if (retainedFit(older.resources, used, pool, retention)) return { kind: 'defer', reason: 'fifo_predecessor' };
   }
   return { kind: 'admit' };
 }
-export function decideAdmission(candidate: Candidate, snapshot: AdmissionSnapshot): Decision {
+export function decideAdmission(candidate: Candidate, snapshot: AdmissionSnapshot, retention: DiskRetention): Decision {
+  const held = captureDiskRetention(retention);
   const validation = validateCandidate(candidate, snapshot);
   if (validation.kind !== 'admit') return validation;
   if (snapshot.now < snapshot.lastClock) return { kind: 'defer', reason: 'clock_rollback' };
@@ -76,7 +80,7 @@ export function decideAdmission(candidate: Candidate, snapshot: AdmissionSnapsho
   const thermal = thermalDecision(observation, snapshot);
   if (thermal.kind !== 'admit') return thermal;
   const diskFree = Math.max(0, observation.freeDiskBytes - overhead.outputBytes - overhead.stagingBytes);
-  return capacityDecision(candidate, snapshot, pool, diskFree);
+  return capacityDecision(candidate, snapshot, pool, diskFree, held);
 }
 function controlDecision(candidate: Candidate, observation: RuntimeObservation, snapshot: AdmissionSnapshot): Decision {
   const profile = approvedProfile(candidate, snapshot.configuration.profiles);
@@ -87,18 +91,21 @@ function controlDecision(candidate: Candidate, observation: RuntimeObservation, 
   if (profile?.controls.some(control => !supported.has(control))) return { kind: 'reject', reason: 'controls_unavailable' };
   return { kind: 'admit' };
 }
-function capacityDecision(candidate: Candidate, snapshot: AdmissionSnapshot, pool: Resources, freeDiskBytes: number): Decision {
+function capacityDecision(candidate: Candidate, snapshot: AdmissionSnapshot, pool: Resources, freeDiskBytes: number, retention: DiskRetention): Decision {
   const active = snapshot.reservations.filter(item => item.status === 'charged');
   if (active.length >= snapshot.configuration.maxConcurrent || active.length >= 64) return { kind: 'defer', reason: 'concurrency' };
   if (active.some(item => item.mode === 'isolated') || (candidate.mode === 'isolated' && active.length > 0)) {
     return { kind: 'defer', reason: 'isolated' };
   }
   const used = active.reduce((sum, item) => addResources(sum, item.resources), zeroResources());
-  const fair = fairness(candidate, snapshot, pool, used);
+  const fair = fairness(candidate, snapshot, pool, used, retention);
   if (fair.kind !== 'admit') return fair;
-  const total = addResources(used, candidate.resources);
-  if (!fits(total, pool)) return { kind: 'defer', reason: 'budget_unavailable' };
-  const disk = addResources(total, zeroResources());
+  if (retention.heldCount >= DISK_HOLD_LIMIT) return { kind: 'defer', reason: 'retention_capacity' };
+  if (!retainedFit(candidate.resources, used, pool, retention)) return { kind: 'defer', reason: 'budget_unavailable' };
+  return nativeDiskDecision(used, candidate.resources, freeDiskBytes);
+}
+function nativeDiskDecision(used: Resources, candidate: Resources, freeDiskBytes: number): Decision {
+  const disk = addResources(used, candidate);
   if (disk.outputBytes > freeDiskBytes || disk.stagingBytes > freeDiskBytes - disk.outputBytes) {
     return { kind: 'defer', reason: 'disk_unavailable' };
   }
