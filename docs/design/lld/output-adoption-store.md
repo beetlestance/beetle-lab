@@ -12,7 +12,9 @@ The private OutputCustodyStore port owns scan/load/readSource/adopt in the exist
 metadata worker. It creates no new connection, background loop or network pool.
 Adoption request<=79872 bytes; state/page<=65536; source<=75776; cursor<=1024;
 scan limit1..32. Capture closed bounded input before hashing/cloning. Request and
-reply limits apply on both sides of worker RPC; preserve its original-call bounds.
+reply limits apply on both sides of worker RPC. adopt/readSource share the existing
+two-large-original worker allowance, reserved before capture and held through the
+actual original; do not add a pool.
 Bound native SELECT text before materialization. Do not persist an RPC receipt
 containing another complete source/result copy.
 
@@ -28,10 +30,14 @@ capability, profile or logical cursor cannot replace these original facts.
 
 In one immediate metadata transaction, confirm the owned acknowledged execution
 and output allocation, compare any existing provisional carrier result, enforce
-C+M+A+D<=P and replace/insert the sole canonical manifest carrier. Persist only
+C+M+A+D<=P and replace/insert the sole canonical manifest carrier. Refuse an
+existing durableThrough or highest retained event above finalAgentSeq. Once adopted,
+a native insert ceiling rejects every new event above that immutable end; equal
+retained replays at/below it remain valid. Persist only
 compact closure/source identity and one compact initial slot per declared artifact.
 Use fresh random UUID upload tokens once, preserving them on equal replay. No
-file operation occurs in this transaction. All versions start1 and are safe
+file operation occurs in this transaction. Tokens are natively unique within each
+attempt/path namespace; a UUID collision aborts atomically. All versions start1 and are safe
 integers. Different source/manifest/closure conflicts without changing rows,
 versions, tokens or counters. A lost committed reply replays the same state.
 
