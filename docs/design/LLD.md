@@ -27,10 +27,12 @@ The owning document below must be updated before its implementation changes.
 | Launch read saturation | [Launch contention](lld/launch-contention.md) | Retained explicit intent, known refusal, compact authority and unknown-outcome fences |
 | Collected output facts | [Collection custody](lld/output-collection-custody.md) | Private bounded root/result facts after original closes; not source/publication authority |
 | Agent disk retention | [Disk retention](lld/disk-retention.md) | Required active/retained disk accounting contract, journal quota and atomic migration policy |
-| Verified source proposal | [Verified output source](lld/output-source.md) | Proposed durable agent manifest and transfer custody; review required before code |
+| Verified source decisions | [Verified output source](lld/output-source.md) | Settled custody decisions and focused contract ownership |
 | Source commit contract | [Durable collected source](lld/output-source-commit.md) | Reviewed values/digest vectors, quota and finished-release gate; wiring pending |
 | Source collection recovery | [Collection intent](lld/output-collection-intent.md) | Reviewed preparation gate and absent-source restart contract; wiring pending |
-| Source Journal contract | [Source transactions](lld/output-source-journal.md) | Reviewed private source/release wire, quota/migration and atomic lifecycle; implementation pending |
+| Source Journal contract | [Source transactions](lld/output-source-journal.md) | Implemented/reviewed storage component; controller lifecycle pending |
+| Output transport direction | [Output transfer](lld/output-transfer.md) | Reviewed chunk/closure direction; exact wire and producer barrier pending |
+| Backend output direction | [Output adoption](lld/output-adoption.md) | Reviewed shared-budget direction; exact storage/finalization contracts pending |
 | Agent control and outputs | [Agent collection](lld/agent-collection.md) | Bounded file intake, atomic checkpoints, stopped verification and artifact custody |
 | Attempt orchestration | [Agent controller](lld/agent-controller.md) | Prepared-plan handoff, supervision/control/collection wiring and release ownership |
 | Installed engine preflight | [Engine catalogue](lld/engine-catalog.md) | Trusted schema bundles, manifest/profile pins and recovery identity |

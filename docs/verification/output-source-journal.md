@@ -59,5 +59,14 @@ guards and byte bounds; deliberately corrupted copies separately test read refus
 They do not prove filesystem quiescence, original controller lifetime, native k6
 execution, application publication, Linux architecture support or release readiness.
 
+Source-first installation recovery is integrated from source `cf931a7` in
+`fd50875`. Coordinator review checked the three owned paths, runtime ordering and
+actual compiled-worker reply-loss/reopen tests. Its16 focused tests passed,
+real5.49s; lint passed, real0.61s; Node types passed, real5.89s, after a test-only
+concrete-controller setup correction. The tests use synthetic root metadata;
+they prove durable recovery ordering, not native file custody. These exact-source
+checks were reused at integration without rerunning them. Coordinator review
+elapsed time was not separately measured.
+
 Controller intent/source/recovery wiring and historical current-schema fixtures
-remain follow-ups. No full-suite or container build was repeated for this packet.
+remain follow-ups. No full-suite or container build was repeated for these packets.
