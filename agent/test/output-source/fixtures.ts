@@ -3,7 +3,7 @@ import { encodeCanonicalJson, sealEngineResult } from '@beetle/contracts';
 import type { EngineResult } from '@beetle/contracts';
 import type { CollectedSource, CollectionIntent, PrivateSource } from '../../src/output-source/index.js';
 import { OUTPUT_MANIFEST_PREFIX, OUTPUT_SOURCE_PREFIX } from '../../src/output-source/index.js';
-import data from './vectors/v1.json' with { type: 'json' };
+import data from '../../../contracts/fixtures/output-source/v1.json' with { type: 'json' };
 
 export type Mutable<T> = T extends readonly (infer Item)[] ? Mutable<Item>[]
   : T extends object ? { -readonly [Key in keyof T]: Mutable<T[Key]> } : T;

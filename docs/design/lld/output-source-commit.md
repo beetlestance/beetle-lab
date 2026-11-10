@@ -124,7 +124,7 @@ Throw OutputSourceError: invalid_input for malformed fields/bounds/relationships
 integrity for a validly shaped result/manifest/source digest mismatch, digest_failed
 for a throwing digest provider or non-lowercase/non-64-hex provider result. Reuse
 the result-seal verifier, mapping its errors to these codes without hiding failure.
-[Version1 vectors](../../../agent/test/output-source/vectors/v1.json) freeze complete
+[Version1 vectors](../../../contracts/fixtures/output-source/v1.json) freeze complete
 preimages/digests and lengths for base, key order, private root changes, raw-result
 whitespace and artifact order. They are synthetic content facts, not source receipts.
 

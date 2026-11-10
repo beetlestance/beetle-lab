@@ -10,7 +10,7 @@ import type { OutputSourceOperation, FailedOutputCollection } from '../../src/jo
 import { prepareOutputSource, captureCollectionIntent } from '../../src/output-source/index.js';
 import type { CollectedSource, CollectionIntent } from '../../src/output-source/index.js';
 import { admissionFixture, configuration, observation, now, reserved, scope } from '../admission/fixtures.js';
-import vectors from '../output-source/vectors/v1.json' with { type: 'json' };
+import vectors from '../../../contracts/fixtures/output-source/v1.json' with { type: 'json' };
 
 type Mutable<T> = T extends readonly (infer Item)[] ? Mutable<Item>[] : T extends object ? { -readonly [Key in keyof T]: Mutable<T[Key]> } : T;
 export const hash = (text: string): string => createHash('sha256').update(text).digest('hex');
