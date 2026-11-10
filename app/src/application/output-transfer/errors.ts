@@ -28,7 +28,7 @@ function classify(error: unknown): OutputTransferError {
 }
 function transferError(error: OutputTransferError): OutputTransferError {
   const codes: readonly OutputTransferCode[] = ['invalid_input', 'busy', 'closed', 'cancelled', 'source_unavailable',
-    'transport', 'conflict', 'integrity', 'storage', 'cleanup'];
+    'source_absent', 'transport', 'conflict', 'integrity', 'storage', 'cleanup'];
   return new OutputTransferError(codes.includes(error.code) ? error.code : 'storage');
 }
 function metadataError(error: Error): OutputTransferError {

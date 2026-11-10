@@ -23,7 +23,7 @@ export interface OutputTransferOptions {
   readonly monotonicNow?: () => number;
 }
 export type OutputTransferCode = 'invalid_input' | 'busy' | 'closed' | 'cancelled' |
-  'source_unavailable' | 'transport' | 'conflict' | 'integrity' | 'storage' | 'cleanup';
+  'source_unavailable' | 'source_absent' | 'transport' | 'conflict' | 'integrity' | 'storage' | 'cleanup';
 export class OutputTransferError extends Error {
   constructor(readonly code: OutputTransferCode) {
     super('Output transfer failed'); this.name = 'OutputTransferError';
