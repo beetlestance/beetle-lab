@@ -1,6 +1,6 @@
 # Application output transfer owner
 
-Status: coordinator implementation contract. Consumes accepted [writer metadata](output-artifact-writer.md),
+Status: implemented and reviewed locally. Consumes accepted [writer metadata](output-artifact-writer.md),
 [source transport](output-transfer.md) and [native byte storage](output-files.md).
 No engine offer, automatic target retry, terminal run, refund or deletion occurs.
 

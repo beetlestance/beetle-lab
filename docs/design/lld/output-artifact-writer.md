@@ -1,6 +1,6 @@
 # Artifact writer and progress metadata
 
-Status: coordinator implementation contract, application migration010 reserved.
+Status: implemented and reviewed locally with application migration010.
 Extends [source adoption](output-adoption-store.md) and [native bytes](output-files.md).
 No terminal projection, quota refund, deletion or network/file IO occurs in SQL.
 

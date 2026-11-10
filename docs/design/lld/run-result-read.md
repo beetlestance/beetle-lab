@@ -1,6 +1,6 @@
 # Scoped run result read
 
-Status: typed public contract; metadata/HTTP/UI implementation is pending.
+Status: metadata/HTTP/UI implemented locally; connected engine/browser qualification pending.
 GET /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/result
 returns RunResultSnapshot: id, workspace scope, activeAttemptId, result or null.
 The result schema references the existing runner EngineResult and its dependency

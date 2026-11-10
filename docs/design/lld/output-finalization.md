@@ -58,6 +58,9 @@ After all custody/release/event gates, apply this precedence:
 
 - Persisted Run cancellation wins: cancelled/inconclusive/reason cancelled.
 - Confirmed wrapper OOM yields errored/inconclusive/reason memory_limit.
+- Otherwise missing/null wrapper exitCode or oomKilled stays pending exit_evidence,
+  including when the sealed child reports error/lost. A sealed child cannot supply
+  missing wrapper evidence. Unavailable-exit recovery closure is separate work.
 - A known nonzero wrapper exit yields errored/inconclusive, preserving an explicit
   non-cancellation failure reason, otherwise engine_crash.
 - An explicit non-cancellation exit reason prevents ordinary success even at0.

@@ -32,18 +32,18 @@ model assignments, agent packets, concurrency and independent review.
 
 | Area | Integrated | Still required |
 | --- | --- | --- |
-| Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings, suite and run-intake schemas/clients; exact installed descriptor binding in immutable Offers; atomic queued-run/attempt/outbox SQLite intake; authenticated enqueue/detail/history routes; Fastify JSON adapter; separate config/Offer bounds; private agent/backend capacity publication and owned startup/shutdown; shared exact staging accounting and same-lease execution limits; bounded claim/observation transactions, metadata dispatch RPC and immutable journal binding; bounded automatic delivery/reconciliation; receipt-first scoped cancellation; durable event ingestion/ACK and fair collection | Artifact writer/terminal settlement and result routes |
+| Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings, suite and run-intake schemas/clients; exact installed descriptor binding in immutable Offers; atomic queued-run/attempt/outbox SQLite intake; authenticated enqueue/detail/history routes; Fastify JSON adapter; separate config/Offer bounds; private agent/backend capacity publication and owned startup/shutdown; shared exact staging accounting and same-lease execution limits; bounded claim/observation transactions, metadata dispatch RPC and immutable journal binding; bounded automatic delivery/reconciliation; receipt-first scoped cancellation; durable event ingestion/ACK and fair collection; artifact writer/transfer and verified result route | Automatic output startup and terminal settlement |
 | Agent | Catalogue/admission/staging/controllers; typed stops; bounded scheduling; guards/full observation publisher; installed runtime; Node24 image/private HTTP; real arm64 k6 pass/fail; journal010/immutable identity and atomic fresh cancellation refusal; exclusive control store and actual startup/wire binding; large-original bounds, propagation and launch contention; admission carrier at node/depth maxima; immutable collected output root/byte facts | First-install provisioning; updated image/Compose/stop-latency qualification, irreversible recovery fencing, telemetry, application artifact transfer/finalization and native architecture matrix |
 | k6 | Suite compiler/runtime/builder, phase-isolated metrics, control journal, staged loader, child runner, numeric windows, summary collector, outcome mapper, staged wrapper, seal codec and artifact publication | Live quantiles, target sampler, reports/export |
-| Product | Namespace/settings and immutable suite/revision SQLite/API composition; native input publication/HTTP/recovery, bounded byte client and scoped inventory/deletion UI; sessions, paired React authoring, session-owned upload/download controls and dev proxy; scoped run history/detail and saved-revision submission/replay and scoped cancellation controls | Browser qualification, live metrics, artifact store, reports, automation client and Docker frontend proxy |
+| Product | Namespace/settings and immutable suite/revision SQLite/API composition; native input publication/HTTP/recovery, bounded byte client and scoped inventory/deletion UI; sessions, paired React authoring, session-owned upload/download controls and dev proxy; scoped run history/detail and saved-revision submission/replay and scoped cancellation controls; scoped verified result reads/UI | Browser qualification, live metrics, automatic artifact lifecycle, reports, automation client and Docker frontend proxy |
 | Qualification | Local contract/unit/SQLite and real staged native pass/fail checks | Complete execution path, containers, scans, backup/soak and native architecture matrix |
 
 Worker submissions require independent review and exact-source integration checks.
 The [run-controls report](docs/verification/run-controls.md) records the reviewed
-UI/admission carrier, full local verification and browser/execution limits.
+UI/admission carrier, earlier full local verification and browser/execution limits.
 The [dispatch report](docs/verification/dispatch-rpc.md) records the earlier storage
-and worker RPC boundary. Backend delivery, cancellation and durable event transport are connected; artifact/result handling remains
-pending; [delivery authority](docs/design/lld/delivery-authority.md) defines the
+and worker RPC boundary. Backend delivery, cancellation and durable event transport are connected;
+automatic output scheduling/settlement remain pending; [delivery authority](docs/design/lld/delivery-authority.md) defines the
 accepted restart/cold-restore contract still requiring implementation. Earlier
 component reports are indexed in the [documentation map](docs/README.md).
 
@@ -78,9 +78,10 @@ and end-to-end k6 results remain pending.
 [Backend native files](docs/verification/output-files.md) records shared custody,
 no-overwrite promotion, standalone lease and native byte adapter evidence. Payload
 storage and metadata source adoption are integrated; artifact writer
-coordination, transfer/finalization and result routes remain pending.
-The [result panel](docs/verification/run-result-panel.md) is implemented with explicit
-unavailable data until the backend result read path exists.
+coordination and [transfer](docs/verification/output-transfer.md) are integrated;
+automatic startup and finalization remain pending.
+The [result read path](docs/verification/run-result-read.md) connects the verified
+backend source to the existing scoped result panel; real-k6/UI qualification remains.
 
 ## Delivery order
 
