@@ -34,3 +34,7 @@ success requires every original close and a final cancellation/deadline fence.
 Focused checks: Vitest agent/test/output-collection --maxWorkers=2, Node TS,
 scoped ESLint, architecture/docs/diff. Real temp files and private fault ports
 exercise ownership; test-only Python os.mkfifo creates owned FIFO fixtures.
+
+Successful collection also returns immutable private root identity and actual
+result/control byte facts, bounded to32KiB. They appear only after original closes
+and final named/fence checks; they are not a durable source/publication receipt.

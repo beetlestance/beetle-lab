@@ -7,7 +7,7 @@ describe('generic stopped output verification', () => {
   it('verifies a zero-artifact result with exact actual-result/control accounting', async () => {
     const result = f.result(); await f.write(result); const bytes = Buffer.byteLength(JSON.stringify(result)) + 123;
     const t = tracking(); const operation = f.collect(f.options(result, { outputBytes: bytes }), t.ports);
-    expect(await operation.result).toEqual({ ok: true, value: result, verifiedBytes: bytes });
+    expect(await operation.result).toEqual({ ok: true, value: result, verifiedBytes: bytes, custody: await f.custody() });
     expect(t.closed.length).toBe(t.opened.length); expect(Object.isFrozen(result)).toBe(true);
     await operation.quiesced; expect(operation.close()).toBe(operation.close());
   });
@@ -15,7 +15,7 @@ describe('generic stopped output verification', () => {
     const body = Buffer.alloc(2_000_000, 71); const artifact = await f.artifact('reports/nested/large.bin', body);
     const result = f.result([artifact]); await f.write(result); const t = tracking({ chunk: 17_111 });
     const operation = f.collect(f.options(result), t.ports); const outcome = await operation.result;
-    expect(outcome).toEqual({ ok: true, value: result, verifiedBytes: Buffer.byteLength(JSON.stringify(result)) + artifact.bytes + 123 });
+    expect(outcome).toEqual({ ok: true, value: result, verifiedBytes: Buffer.byteLength(JSON.stringify(result)) + artifact.bytes + 123, custody: await f.custody() });
     const artifactReads = t.reads.filter(read => read.path.endsWith('large.bin'));
     expect(artifactReads.length).toBeGreaterThan(30); expect(artifactReads.reduce((sum, read) => sum + read.bytes, 0)).toBe(body.length);
     expect(Math.max(...t.reads.map(read => read.requested))).toBeLessThanOrEqual(65_536);

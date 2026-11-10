@@ -1,13 +1,14 @@
 import { createHash } from 'node:crypto';
-import { verifyEngineResultSeal } from '@beetle/contracts';
+import { encodeJson, verifyEngineResultSeal } from '@beetle/contracts';
 import type { EngineResult } from '@beetle/contracts';
 import { CONTROL_FILE } from '../../control-protocol/index.js';
-import { OUTPUT_READ_BYTES, OUTPUT_RESULT_FILE } from './types.js';
+import { OUTPUT_READ_BYTES, OUTPUT_RESULT_FILE, OUTPUT_CUSTODY_BYTES } from './types.js';
 import { accountedBytes } from './budget.js';
 import type { OutputSnapshot } from './budget.js';
 import { OutputFailure } from './ports.js';
 import type { OutputIO } from './ports.js';
 import type { OutputFiles } from './files.js';
+import type { OutputCustody } from './types.js';
 
 function sealed(input: unknown): Readonly<EngineResult> {
   const result = verifyEngineResultSeal(input, text => createHash('sha256').update(text).digest('hex'));
@@ -52,7 +53,7 @@ async function artifactFile(files: OutputFiles, artifact: EngineResult['artifact
   } finally { await files.closeOutput(opened); }
 }
 export async function verifyOutputs(options: OutputSnapshot, files: OutputFiles, io: OutputIO): Promise<{
-  readonly value: Readonly<EngineResult>; readonly verifiedBytes: number;
+  readonly value: Readonly<EngineResult>; readonly verifiedBytes: number; readonly custody: Readonly<OutputCustody>;
 }> {
   const reported = sealed(options.reportedResult); scope(reported, options); inventory(reported); io.check();
   const result = await resultFile(files); scope(result.value, options); inventory(result.value);
@@ -61,5 +62,8 @@ export async function verifyOutputs(options: OutputSnapshot, files: OutputFiles,
   }
   const verifiedBytes = accountedBytes(options, result.bytes, result.value.artifacts.map(artifact => artifact.bytes));
   for (const artifact of result.value.artifacts) await artifactFile(files, artifact, io);
-  await files.finalCheck(); io.check(); return { value: result.value, verifiedBytes };
+  await files.finalCheck(); io.check();
+  const custody = Object.freeze({ resultFileBytes: result.bytes, controlBytes: options.controlBytes, root: files.rootIdentity() });
+  encodeJson(custody, OUTPUT_CUSTODY_BYTES);
+  return { value: result.value, verifiedBytes, custody };
 }
