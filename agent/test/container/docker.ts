@@ -3,7 +3,8 @@ import { execFileSync } from 'node:child_process';
 /** Manual qualification only: explicit local context, fixed API and bounded subprocesses. */
 export class Docker {
   private readonly environment: NodeJS.ProcessEnv = { ...process.env, DOCKER_API_VERSION: '1.47' };
-  constructor(private readonly context: string) {
+  constructor(private readonly context: string, private readonly maximumNetworks: 1 | 2 = 1) {
+    if (maximumNetworks !== 1 && maximumNetworks !== 2) throw new Error('Invalid qualification network limit');
     delete this.environment.DOCKER_HOST; delete this.environment.DOCKER_CONTEXT;
     const endpoint = this.run(['context', 'inspect', context, '--format', '{{.Endpoints.docker.Host}}']);
     if (!endpoint.startsWith('unix://')) throw new Error('A local Unix Docker context is required');
@@ -28,7 +29,7 @@ export class Docker {
     }
     const networks = this.run(['network', 'ls', '-q', '--no-trunc', '--filter', `label=dev.beetle.qualification=${installationId}`])
       .split('\n').filter(Boolean);
-    if (networks.length > 1) throw new Error('Invalid qualification network inventory');
+    if (networks.length > this.maximumNetworks) throw new Error('Invalid qualification network inventory');
     for (const id of networks) { try { this.run(['network', 'rm', id]); } catch { failures.push('network'); } }
     if (failures.length || this.ownedIds(installationId).length || this.run(['network', 'ls', '-q', '--filter',
       `label=dev.beetle.qualification=${installationId}`])) throw new Error('Qualification cleanup remains incomplete');
