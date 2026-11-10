@@ -33,6 +33,7 @@ released application until the rewrite is qualified.
 | Inspect connected source collection/recovery | [Controller source](verification/controller-source-lifecycle.md) | Native file/Journal composition, exact release proof and scoped installation seams; backend publication pending |
 | Inspect durable stream closure storage | [Delivery closure](verification/output-delivery-closure.md) | Journal quota, native fences and discovery; Manager/scheduler pending |
 | Inspect scoped result presentation | [Result panel](verification/run-result-panel.md) | Scope fencing and provisional outcome display; result route/browser qualification pending |
+| Inspect shared output transport values | [Transfer values](verification/output-transfer-values.md) | Generated schemas, receipt matching and canonical range values; runtime transfer pending |
 | Inspect standalone script construction | [Engine export](verification/standalone-export.md) | Actual compiler/builder and generated-bundle semantics; HTTP/UI/native qualification pending |
 | Inspect retained execution disk | [Disk retention](verification/disk-retention.md) | Atomic holds, release/abort accounting and worker reply-loss replay; source/cleanup pending |
 | Inspect actual agent event recovery | [Agent event seam](verification/event-agent.md) | Separate-process real HTTP/Journal ACK/prune/reopen and immutable physical authority; no engine/result claim |

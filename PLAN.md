@@ -69,6 +69,8 @@ Source-backed stream closure storage and indexed debt discovery are implemented;
 [closure evidence](docs/verification/output-delivery-closure.md) records scoped limits.
 Scheduler delivery fairness is integrated; Manager producer barriers, artifact
 transfer and publication are next.
+[Transport values](docs/verification/output-transfer-values.md) are integrated;
+native range and same-connection gateway implementations are in progress.
 The [result panel](docs/verification/run-result-panel.md) is implemented with explicit
 unavailable data until the backend result read path exists.
 

@@ -35,4 +35,9 @@ Root owns package exports and this frozen types.ts. The implementation task owns
 its new modules and agent aliases/call sites, without root dependency edits. Verify
 all existing independent vectors, new public-only ownership/negative/provider cases,
 affected private source codecs and one compiled Journal source transaction seam.
-No HTTP/schema/transport endpoint, database migration or SDK publication is added.
+The original extraction added no endpoint, migration or SDK publication.
+Subsequent [transport values](output-transfer.md) move structural binding/core/
+manifest/receipt/closure ownership to runner JSON schemas and generated aliases;
+shared semantic codecs remain the same owner of counts, seals and digest preimages.
+See [value evidence](../../verification/output-transfer-values.md). Actual native
+transport and backend publication remain separate pending implementations.
