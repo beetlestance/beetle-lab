@@ -74,6 +74,10 @@ transfer are integrated; backend adoption, publication and result routes are nex
 gateway and Journal-backed source service are integrated.
 [Native source HTTP](docs/verification/output-source-http.md) proves the real agent
 Journal/file/HTTP path; backend adoption and end-to-end k6 results remain pending.
+[Backend native files](docs/verification/output-files.md) records shared custody,
+no-overwrite promotion and standalone lease evidence; the full byte adapter is in
+progress. Payload storage remains under review; source adoption/finalization and
+result routes are pending.
 The [result panel](docs/verification/run-result-panel.md) is implemented with explicit
 unavailable data until the backend result read path exists.
 
