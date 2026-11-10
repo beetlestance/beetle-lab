@@ -27,6 +27,7 @@ released application until the rewrite is qualified.
 | Inspect backend connection components | [Private runner connection](verification/backend-connection.md) | Private config, bounded original HTTP, independent disk source and pending executable wiring |
 | Inspect capacity wire/cache evidence | [Capacity sources](verification/capacity-wire.md) | Original expiry, revocation/replay, scoped and compiled checks, unresolved full-lane timing |
 | Inspect integrated run controls | [Run controls](verification/run-controls.md) | Scoped run UI, agent original carrier, independent reviews and full local gate |
+| Inspect durable event transport | [Event custody](verification/event-custody.md) | Durable ingestion/ACK, lost-response recovery, independent SQL ordering oracle and remaining real-agent/result work |
 | Inspect durable cancellation | [Cancellation](verification/cancellation.md) | Scoped intent, atomic fresh refusal, lost-reply custody, UI recovery, full local gate and native limits |
 | Inspect automatic delivery and restart recovery | [Delivery runtime](verification/delivery-runtime.md) | Shared gateway/loops, immutable replay, real TCP/SQLite restart, full gate and remaining native/result work |
 | Inspect dispatch storage and worker RPC | [Dispatch RPC](verification/dispatch-rpc.md) | Atomic claims, queue fairness, fixed original carrier, shared credits and full local verification |

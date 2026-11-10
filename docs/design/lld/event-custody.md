@@ -1,6 +1,7 @@
 # Durable event custody
 
-Status: accepted boundary design; implementation and qualification pending.
+Status: implemented and locally verified; [evidence](../../verification/event-custody.md)
+records source scope and remaining real-agent/result qualification.
 Owner: application metadata worker; runtime orchestration shares the existing
 delivery owner and private gateway. This completes event transport custody before
 the separately owned artifact/result finalization work.
