@@ -81,6 +81,12 @@ small working set. Do not duplicate design paragraphs into code comments. Commen
 explain non-obvious invariants; public adapters document effects/limits/failures.
 No session names, phase numbers or private investigation details in runtime code.
 
+Cross-service native qualification belongs in `tools/qualification/native-application`,
+outside either service. Its architecture boundary names the permitted bootstrap
+entrypoints and shared test fixtures. Other service internals remain forbidden;
+services cannot import the qualification tools. Keep real orchestration there,
+without adding production dependencies on fixture code.
+
 ## Documentation discipline
 
 HLD owns boundaries; each LLD owns one contract; PLAN owns pending work. Decision

@@ -9,7 +9,7 @@ import { verifySourceEnvelope } from '@beetle/contracts/output-source';
 import type { Run, RunResultSnapshot } from '@beetle/contracts/api';
 import { digest } from '../../../agent/test/container/fixture.js';
 import type { Fixture } from '../../../agent/test/container/fixture.js';
-import { EVENT_ROW_ALLOWANCE } from '../../src/ports/events.js';
+import { EVENT_ROW_ALLOWANCE } from '../../../app/src/ports/events.js';
 
 type Row = Record<string, SQLOutputValue>;
 function row(db: DatabaseSync, table: 'execution_output_sources' | 'execution_output_payloads' | 'execution_output_finalizations' |

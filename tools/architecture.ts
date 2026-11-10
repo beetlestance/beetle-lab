@@ -1,6 +1,7 @@
 import { builtinModules } from 'node:module';
 import { dirname, resolve, relative } from 'node:path';
 import ts from 'typescript';
+import { qualificationBoundary } from './qualification-boundaries.js';
 export interface ArchitectureIssue { file: string; reason: string }
 export interface ImportEdge { target: string; typeOnly: boolean }
 const workspaceOwners: Record<string, string> = {
@@ -76,6 +77,8 @@ function environmentIssue(file: string, edge: ImportEdge, resolved: string): str
 }
 function runtimeIssue(file: string, target: string, resolved: string): string | undefined {
   if (target === '<unresolved-runtime-import>') return 'Computed module import requires explicit architecture review';
+  const qualification = qualificationBoundary(file, resolved);
+  if (qualification !== undefined) return qualification ? undefined : `Unapproved qualification boundary: ${target}`;
   const owner = serviceOwner(target);
   if (owner && owner !== file.split('/')[0]) return `Cross-service package import: ${target}`;
   if (/^(?:app|agent|web|engines)\//.test(resolved) && resolved.split('/')[0] !== file.split('/')[0]) {

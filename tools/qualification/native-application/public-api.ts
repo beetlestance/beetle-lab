@@ -4,7 +4,7 @@ import { createServer } from 'node:net';
 import { once } from 'node:events';
 import { createApiClient } from '@beetle/contracts/api';
 import type { ApiClient, ApiClientResult, Run } from '@beetle/contracts/api';
-import type { Application } from '../../src/bootstrap/api.js';
+import type { Application } from '../../../app/src/bootstrap/api.js';
 import type { Fixture } from '../../../agent/test/container/fixture.js';
 
 export const pause = () => new Promise(resolve => setTimeout(resolve, 250));

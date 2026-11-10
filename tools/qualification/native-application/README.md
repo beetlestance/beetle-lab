@@ -7,8 +7,8 @@ matching compiled metadata worker; this directory does not build images.
 From the repository root, with installed dependencies and Docker permission:
 
 ```sh
-node --import tsx app/test/container/smoke-app.ts AGENT_IMAGE ENGINE_IMAGE 200 LOCAL_CONTEXT
-node --import tsx app/test/container/smoke-app.ts AGENT_IMAGE ENGINE_IMAGE 500 LOCAL_CONTEXT
+node --import tsx tools/qualification/native-application/smoke-app.ts AGENT_IMAGE ENGINE_IMAGE 200 LOCAL_CONTEXT
+node --import tsx tools/qualification/native-application/smoke-app.ts AGENT_IMAGE ENGINE_IMAGE 500 LOCAL_CONTEXT
 ```
 
 The optional status defaults to200 and context to`default`. A context must resolve
@@ -46,4 +46,4 @@ browser, Compose, crash recovery during execution, resource abuse or a release.
 Unknown Docker work remains a failed qualification even if cleanup currently sees
 no resources; inventory cannot prove absence of a delayed create.
 
-Pure helper controls: `npx vitest run app/test/container/helpers.test.ts`.
+Pure helper controls: `npx vitest run tools/qualification/native-application/helpers.test.ts`.

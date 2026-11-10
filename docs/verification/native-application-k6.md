@@ -5,7 +5,8 @@ Status: locally verified functional slice, not release qualification.
 ## Tested source and environment
 
 Harness source: `rewrite/native-app-harness` at `dc051f4`, integrated without source
-changes. Application/agent source is `ad53195`; engine recipe correction `eeba3a6`
+changes to its behavior. It now lives under the qualification-tool owner; import
+paths changed to preserve service boundaries. Application/agent source is `ad53195`; engine recipe correction `eeba3a6`
 adds the engine schemas required by its existing bundle imports.
 
 Host backend: macOS, Node26.7.0. Agent and engine: Node24 Linux containers on native
@@ -22,7 +23,7 @@ No image was published by this qualification.
 
 ## Actual path and observations
 
-The manual [harness](../../app/test/container/README.md) performs explicit fresh
+The manual [harness](../../tools/qualification/native-application/README.md) performs explicit fresh
 installation initialization using the real Journal authority and ready gate. It
 starts the actual application, pairs a public API session, saves namespace/suite/
 revision records and enqueues once through the public API. Normal capacity and

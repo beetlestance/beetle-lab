@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Fixture } from '../../../agent/test/container/fixture.js';
-import { loadBackendConfiguration } from '../../src/bootstrap/configuration.js';
+import { loadBackendConfiguration } from '../../../app/src/bootstrap/configuration.js';
 
 export function argumentsFor(values: string[]) {
   const [agentImage, engineImage, status = '200', context = 'default'] = values;
