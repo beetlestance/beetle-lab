@@ -12,7 +12,12 @@ for explicit unknown-outcome replay. No automatic mutation retries occur.
 Unmount/session retirement aborts and fences original callbacks; abort cannot
 prove absence of commit. SessionApp remounts App by authenticated generation.
 Accepted receipts invalidate detail/history; receipt version 1 never seeds detail.
-State, outcome and validation are independent. Metrics/artifacts are unavailable.
+State, outcome and validation are independent. Result reads use generated
+getRunResult under the scoped run key plus active attempt; retiring that identity
+aborts/removes its query. Null remains unavailable; HTTP errors remain explicit.
+Results poll while nonterminal and stop on errors/terminal state. A terminal
+transition rechecks a previously null source. Only current Run state finalizes
+the result panel's provisional label; declarations grant no download authority.
 RunDetail owns cancellation above QueryState, retaining intent through read errors.
 RunCancellation displays one scoped request ID across unknown reply retries; accepted
 intent displays waiting, never terminal stop. Receipt replay invalidates reads;

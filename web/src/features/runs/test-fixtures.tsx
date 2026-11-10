@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
-import type { CreateRunRequest, Run, SuiteRevision, WorkspaceSettings } from '@beetle/contracts/api';
+import type { CreateRunRequest, Run, RunResultSnapshot, SuiteRevision, WorkspaceSettings } from '@beetle/contracts/api';
 import { ApiContext } from '../../app/api.js';
 import { createQueryClient } from '../../app/queries.js';
 import { ids, json, readNamespace, type testClient } from '../../app/test-fixtures.js';
@@ -35,6 +35,9 @@ export function run(organizationId = ids.a): Run {
     budget: { ...budget }, executionPolicy: { mode: 'parallel', preferIdle: false },
     settingsVersions: { installation: 1, organization: 1, workspace: 1 } };
 }
+export function resultSnapshot(current: Run = run()): RunResultSnapshot {
+  return { id: current.id, scope: current.scope, activeAttemptId: current.activeAttemptId, result: null };
+}
 export function receipt(body: CreateRunRequest): Run {
   return { ...run(body.scope.organizationId), revisionId: body.revisionId, engine: { ...run().engine, profileId: body.engineProfile },
     budget: body.budget, executionPolicy: body.executionPolicy };
@@ -58,5 +61,6 @@ export function runRead(request: Parameters<typeof readNamespace>[0]) {
   const organizationId = request.path.includes(ids.b) ? ids.b : ids.a;
   if (request.path.includes('/runs?')) return json({ scope: { ...scope, organizationId }, items: [run(organizationId)], nextCursor: null });
   if (request.path.endsWith(`/runs/${runId}`)) return json(run(organizationId));
+  if (request.path.endsWith(`/runs/${runId}/result`)) return json(resultSnapshot(run(organizationId)));
   return readNamespace(request);
 }
