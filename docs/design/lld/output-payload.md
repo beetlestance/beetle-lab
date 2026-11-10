@@ -46,7 +46,9 @@ separate accepted deletion protocol authorizes removal.
 Native header guards prohibit an embedded result, cap bytes and require a matching
 carrier whenever result_observed=1. Existing admission, first-ACK, release and
 immutable ownership guards remain active against the result-free header. Never
-weaken these guards to make migration pass. Bound native SELECT text with CASE
+weaken these guards to make migration pass. In particular, fail intact when an old
+NULL-authority row requires snapshot conversion; do not relax the physical binding
+fence or invent an authority for it. Bound native SELECT text with CASE
 before returning bodies, and validate reconstructed snapshots through existing
 contracts before merge or response serialization.
 
