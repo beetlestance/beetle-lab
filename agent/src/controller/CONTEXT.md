@@ -25,5 +25,12 @@ provisional. No cleanup/deletion authority follows from cursor acknowledgement o
 this controller. Restart of an already released attempt reports its durable release
 state; it never launches that attempt again.
 
+Read durable source then intent before supervisor/collector work. One SourceSession
+retains exact intent/source/release requests through ambiguity. Only receipt release
+finishes collection. Preexisting intent always means recovered custody, including
+same-Journal recreation; recovered failure stays charged. Artifact-only recovery
+uses pinned native root/checkpoint and a fresh bounded budget, never target launch.
+Installation source-first catalogue/staging recovery is a separate composition step.
+
 Focused checks: agent/test/controller, Node TypeScript, changed ESLint and structural
 gates. Synthetic Docker/collector tests prove wiring, not actual Linux execution.

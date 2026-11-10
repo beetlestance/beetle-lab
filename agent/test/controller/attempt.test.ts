@@ -1,4 +1,5 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
+import type { Reservation } from '../../src/admission/index.js';
 import { ControllerError } from '../../src/controller/index.js';
 import { fixture, budget } from './fixtures.js';
 import { reserved } from '../admission/fixtures.js';
@@ -26,9 +27,11 @@ it('retains charges until a strictly later real wall-clock observation; no fabri
   const e = await f.setupController(); await e.controller.launch(budget());
   e.backend.observation = e.backend.known('exited').value;
   await e.controller.tick(budget());
-  expect(await e.controller.tick(budget())).toEqual({ kind: 'awaiting_release', collection: 'finished' });
+  expect(await e.controller.tick(budget())).toMatchObject({ kind: 'runtime' });
+  expect(e.collections).toHaveLength(0); expect(await e.journal.readOutputCollection(e.key)).toBeNull();
   expect(reserved(await e.journal.admission({ kind: 'reservation', key: e.key })).status).toBe('charged');
   e.time.advance(1);
+  expect(await e.controller.tick(budget())).toEqual({ kind: 'awaiting_release', collection: 'finished' });
   expect(await e.controller.tick(budget())).toEqual({ kind: 'released', collection: 'finished' });
 });
 it('never upgrades uncertain launch dispatches to stopped collection or released capacity', async () => {
@@ -112,4 +115,50 @@ it('close from a budget descriptor trap cannot allow late launch or orphan its a
   } });
   await expect(e.controller.launch(input)).rejects.toMatchObject({ reason: 'closed' });
   await close; expect(e.backend.creates).toBe(0);
+});
+const abortReplyFaults = {
+  charged: (value: Reservation) => { value.status = 'charged'; },
+  nonaborted: (value: Reservation) => { value.aborted = false; },
+  scope: (value: Reservation) => { value.workspaceId = value.attemptId; },
+  releaseEvidence: (value: Reservation) => { Reflect.set(value, 'releaseEvidence', { contradictoryAbort: true }); },
+  createToken: (value: Reservation) => { value.createToken = 'unexpected'; },
+  specDigest: (value: Reservation) => { value.specDigest = 'a'.repeat(64); },
+  runtimeId: (value: Reservation) => { value.runtimeId = 'unexpected'; },
+  startToken: (value: Reservation) => { value.startToken = 'unexpected'; },
+  startClaimedAt: (value: Reservation) => { value.startClaimedAt = value.admittedAt; },
+  launchEpoch: (value: Reservation) => { value.launchEpoch = 1; },
+  launchSettlement: (value: Reservation) => { Reflect.set(value, 'launchSettlement', { contradictoryAbort: true }); },
+  launchClosed: (value: Reservation) => { value.launchClosed = false; },
+};
+it.each(Object.keys(abortReplyFaults) as (keyof typeof abortReplyFaults)[])('refuses contradictory unstarted abort reply %s before reporting release', async fault => {
+  const e = await f.setupController(); await e.controller.cancel(); const admission = e.journal.admission.bind(e.journal);
+  const spy = vi.spyOn(e.journal, 'admission').mockImplementation(async input => {
+    if (input.kind !== 'abortUnstarted') return admission(input);
+    const value = structuredClone(reserved(await admission({ kind: 'reservation', key: input.key })));
+    value.status = 'released'; value.aborted = true; value.launchClosed = true; abortReplyFaults[fault](value);
+    return value;
+  });
+  try {
+    await expect(e.controller.launch(budget())).rejects.toMatchObject({ reason: 'journal' });
+    expect(reserved(await admission({ kind: 'reservation', key: e.key }))).toMatchObject({ status: 'charged', aborted: false,
+      createToken: null, startToken: null, runtimeId: null, releaseEvidence: null });
+    expect(() => e.recreate()).toThrowError(ControllerError); expect(e.backend.creates).toBe(0); expect(e.backend.starts).toBe(0);
+    spy.mockImplementation(admission);
+    expect(await e.controller.tick(budget())).toEqual({ kind: 'released', collection: 'failed' });
+    const aborts = spy.mock.calls.map(([input]) => input).filter(input => input.kind === 'abortUnstarted');
+    expect(aborts).toHaveLength(2); expect(aborts[1]!.key).toBe(aborts[0]!.key); expect(aborts[1]!.key).toEqual(e.key);
+    expect(reserved(await admission({ kind: 'reservation', key: e.key }))).toMatchObject({ status: 'released', aborted: true, releaseEvidence: null });
+  } finally { spy.mockRestore(); }
+});
+it('a false abort acknowledgement during close cannot retire the unstarted owner', async () => {
+  const e = await f.setupController(); const admission = e.journal.admission.bind(e.journal);
+  const spy = vi.spyOn(e.journal, 'admission').mockImplementation(input => input.kind === 'abortUnstarted'
+    ? admission({ kind: 'reservation', key: input.key }) : admission(input));
+  try {
+    const closing = e.controller.close(); await expect(closing).rejects.toMatchObject({ reason: 'journal' });
+    expect(e.controller.close()).toBe(closing);
+    expect(reserved(await admission({ kind: 'reservation', key: e.key }))).toMatchObject({ status: 'charged', aborted: false });
+    expect(() => e.recreate()).toThrowError(ControllerError);
+    expect(e.backend.creates).toBe(0); expect(e.backend.starts).toBe(0);
+  } finally { spy.mockRestore(); }
 });

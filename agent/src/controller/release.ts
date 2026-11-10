@@ -6,7 +6,7 @@ import type { CollectionObservation } from './types.js';
 function bound(value: Reservation): boolean {
   return Boolean(value.createToken && value.specDigest && value.runtimeId && value.launchSettlement);
 }
-function stopped(value: Reservation, state: LaunchState): boolean {
+export function stoppedReservation(value: Reservation, state: LaunchState): boolean {
   if (state.cancellation === 'clock_integrity' || state.launch === 'unknown' || state.launch === 'unclaimed') return false;
   const view = state.observation;
   return view !== null && 'id' in view && view.id === value.runtimeId && ['created', 'exited'].includes(view.state);
@@ -16,7 +16,7 @@ export function releaseEvidence(input: { reservation: Reservation; state: Launch
   collection: CollectionObservation; runtimeAt: number }): ReleaseEvidence | null {
   const { reservation: value, state, collection, runtimeAt } = input;
   const settled = value.launchSettlement;
-  if (!bound(value) || !settled || settled.disposition === 'unknown' || !stopped(value, state)) return null;
+  if (!bound(value) || !settled || settled.disposition === 'unknown' || !stoppedReservation(value, state)) return null;
   if (runtimeAt <= settled.settledAt || collection.observedAt <= settled.settledAt) return null;
   return { authority: 'supervisor', key: { organizationId: value.organizationId, workspaceId: value.workspaceId,
     attemptId: value.attemptId, generation: value.generation }, createToken: value.createToken!,
