@@ -13,5 +13,6 @@ export function createRunnerClient(transport: RunnerTransport) {
     ack: (attemptId: string, body: Ack, signal?: AbortSignal) => invokeRunner(transport, { method: 'POST', path: '/runner/v1/attempts/{attemptId}/ack', response: 'AckReceipt', successStatus: 200, request: 'Ack' }, { attemptId, body, signal }),
     source: (attemptId: string, signal?: AbortSignal) => invokeRunner(transport, { method: 'GET', path: '/runner/v1/attempts/{attemptId}/source', response: 'SourceEnvelope', successStatus: 200 }, { attemptId, signal }),
     sourceChunk: (attemptId: string, body: SourceChunkRequest, signal?: AbortSignal) => invokeRunner(transport, { method: 'POST', path: '/runner/v1/attempts/{attemptId}/source/chunk', response: 'SourceChunk', successStatus: 200, request: 'SourceChunkRequest' }, { attemptId, body, signal }),
+    outputAbsence: (attemptId: string, signal?: AbortSignal) => invokeRunner(transport, { method: 'GET', path: '/runner/v1/attempts/{attemptId}/source/absence', response: 'OutputAbsence', successStatus: 200 }, { attemptId, signal }),
   };
 }
