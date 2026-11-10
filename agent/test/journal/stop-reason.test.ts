@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
 import { journalFixture } from './fixtures.js';
+import { removeFutureRetention } from './legacy-fixtures.js';
 import type { SupervisionCommand } from '../../src/journal/index.js';
 
 const f = journalFixture();
@@ -42,7 +43,7 @@ it('migrates a v6 cancellation without inventing its missing historical cause or
   const before = await journal.supervision({ key: f.key(), now: 1000, cancel: true });
   await f.close(journal);
   const db = new DatabaseSync(path);
-  try { db.exec('DROP TABLE cancelled_originals; DROP TABLE journal_authority; ALTER TABLE supervision_clock DROP COLUMN cancel_reason; ALTER TABLE supervision_clock DROP COLUMN stop_immediate; PRAGMA user_version=6;'); }
+  try { removeFutureRetention(db); db.exec('DROP TABLE cancelled_originals; DROP TABLE journal_authority; ALTER TABLE supervision_clock DROP COLUMN cancel_reason; ALTER TABLE supervision_clock DROP COLUMN stop_immediate; PRAGMA user_version=6;'); }
   finally { db.close(); }
   journal = await f.open(path);
   expect(await journal.supervision({ key: f.key(), now: 2000, cancel: true, reason: 'output_limit' }))
