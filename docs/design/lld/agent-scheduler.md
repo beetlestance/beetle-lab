@@ -14,12 +14,13 @@ promises. It does not close the installation, journal or HTTP server. Bootstrap
 must separately cancel/drain runtimes and handle uncertain cleanup before claiming
 clean installation shutdown. Scheduler close alone makes no termination claim.
 
-Each pass scans charged identities before queued identities. Discovery uses the
-journal's indexed active lanes, never full historical snapshots. Charged recovery
+Each pass rotates its first lane among charged, delivery and queued. Discovery
+uses indexed active/debt lanes, never full historical snapshots. Charged recovery
 is handed to the existing controller, which reconstructs pins and reconciles rather
 than restaging or redispatching claimed work. All charged attempts fit one100-row
-page under the admission limit64; an unexpected continuation fails the pass before
-queued dispatch rather than ignoring unknown charged work.
+page under admission limit64; unexpected continuation fails that pass before
+later lanes dispatch. The [delivery closure contract](output-delivery-closure.md)
+owns finite-upper debt discovery and three-lane fairness requirements.
 Charged iteration rotates by one identity per pass so transient journal queue
 saturation cannot repeatedly exclude the same tail. Rotation changes scheduling
 order only, never durable admission FIFO or recovery/dispatch authority.
@@ -30,11 +31,13 @@ timeout/abort until it settles. Each call has an absolute monotonic deadline and
 aborting never counts as original completion. Two-preparation and two-collection
 limits remain owned by the existing components. No overlapping discovery passes.
 
-Queued discovery advances one page limited to available original-drive slots
-(at most64) per pass, restarting from0 after
-exhaustion. Durable admission retains FIFO/promotion and capacity authority; a
-deferral is not failure. Every pass revisits charged attempts before more queued
-work. Already-outstanding identities are skipped, not invoked concurrently.
+Delivery and queued discovery each advance one considered page, limited to
+min(32,available original slots). Their cursors are independent; delivery also pins
+its finite upper until that pass completes. A full old work map prevents new
+scans/dispatch until originals settle. Durable admission retains FIFO/promotion
+and capacity authority; a deferral is not failure. Already-outstanding identities
+are skipped, not invoked concurrently. A whole bounded page is validated/copied
+before dispatch; malformed/refused discovery does not consume its position.
 
 Default interval250ms (allowed50..5000); operation budget30s (allowed100..300000).
 No resource observations or guard freshness are invented by the scheduler. Bootstrap
@@ -51,8 +54,8 @@ timeout/output stop latency. A64-job pool sharing a32-command journal can delay
 the tail over multiple passes; bootstrap guard freshness/latency must be measured
 and may require a separate reserved guard lane before advertising enforcement.
 
-Acceptance: charged-before-queued discovery, one call per key,64-original bound,
+Acceptance: rotating three-lane discovery, one call per key,64-original bound,
 blocked-original retention after abort, paginated queue revisit, scan failure without
-queued dispatch, shutdown waiting for original work and no calls after close.
+following-lane dispatch, shutdown waiting for original work and no calls after close.
 Actual Linux execution, capacity observation, output guards and host shutdown need
 their own integration evidence.

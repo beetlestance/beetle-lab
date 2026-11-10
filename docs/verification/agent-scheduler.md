@@ -3,7 +3,7 @@
 Date: 2026-11-08. Integrated source: `f43db64`.
 Environment: Node26.7.0/macOS arm64, real SQLite and temporary files.
 
-## Implemented path
+## Original component at f43db64
 
 Private scanRunnable pages indexed charged reservations or pending queue rows,
 returning only scoped generation keys. It reads no config/result/event payloads,
@@ -60,3 +60,24 @@ Bootstrap must separately handle installation/runtime cleanup and journal lifeti
 Actual Docker/Compose execution, irreversible uncertain-dispatch retirement,
 application artifact transfer/finalization, native AMD64, hosted CI, scans, backup
 and soak were not performed by this component slice.
+
+## Durable delivery lane follow-up
+
+Source `ca37048`, integrated at `dd183af9938540a0c9b8ef037c9f8c4cf5094a5e`, adds
+released-source closure debt to the same64-original scheduling map. First lane
+rotates charged/delivery/queued; noncharged pages cap at32 and remaining slots.
+Delivery keeps a finite upper independently from queued progress. Whole scope pages
+are copied before dispatch, including sparse-array refusal. No new pool or queue.
+
+38 distinct focused passing cases: initial36 in1.62s, then only two added shutdown/
+sparse-page cases in0.72s. Changed-file lint passed0.80s; whitespace check0.36s.
+The bounded copy changed from map to Array.from before the final two cases to
+validate holes; valid dense behavior is unchanged. No public type/interface change
+or TypeScript/full-suite/Docker rerun. Coordinator source review matched all six
+frozen path hashes, with no blocker (67s elapsed including handoff observation).
+
+Synthetic scheduler ports prove fairness, finite passes amid arrivals and retained
+scan/drive custody. They do not establish native producer closure or result
+publication. [Journal discovery evidence](output-delivery-closure.md) is separate.
+Manager closure wiring remains pending; the earlier full gate is historical evidence
+for its original source, not a current full-suite claim.
