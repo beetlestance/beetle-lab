@@ -117,7 +117,7 @@ export class AttemptController {
     return this.advanceControl(state, budget);
   }
   private async captureCollection(budget: ControllerBudget): Promise<boolean> {
-    try { this.authority ??= await collectionAuthority(this.options.journal, this.options.input.key); }
+    try { this.authority ??= await collectionAuthority(this.options.journal, this.options.input.key, this.options.input.plan.specDigest); }
     catch (error) {
       this.guard(budget);
       if (error instanceof CollectionReadBusy) return false;
