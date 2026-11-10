@@ -1,8 +1,7 @@
 # Agent disk retention accounting
 
-Status: frozen implementation contract candidate; new types are available, but
-journal/policy wiring and independent acceptance are required before this feature
-is implemented. Scope: logical disk promises retained after execution release.
+Status: accepted implementation contract and scalar types; journal/policy wiring
+and its independent acceptance remain required before this feature is implemented. Scope: logical disk promises retained after execution release.
 This is not a source manifest, deletion API or physical filesystem quota.
 
 ## Private interface and limits
