@@ -6,3 +6,5 @@ import { nativeIo } from './native.js';
 export function createRunnerGateway(loaded: LoadedAgentConfiguration): RunnerGateway {
   return openGateway(loaded, nativeIo);
 }
+
+export { startDeliveryRuntime } from './delivery/index.js';

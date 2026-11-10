@@ -176,9 +176,10 @@ Every positive snapshot uses matched observe; no event ACK or terminal result he
 close stops scheduling and signals abort but awaits all original calls and any
 already received positive observation custody. No new PUT/cancel after close.
 onFailure must not await delivery/composite close, which would await itself.
-Fatal composition synchronously fences publication, drains any original positive
+Delivery-failure composition fences publication, drains any original positive
 publication, then publishes null and revokes readiness; no positive follows it;
-bootstrap drains delivery, poller, shared gateway and finally metadata in that order.
+A fatal capacity producer/publication/capture error also stops delivery immediately.
+Bootstrap drains both loops before the shared gateway and finally metadata.
 Initial wiring does not qualify cancellation absence, events, artifacts or results.
 
 ## Matched observation transaction

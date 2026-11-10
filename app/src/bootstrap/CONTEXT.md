@@ -23,10 +23,12 @@ BEETLE_EXTERNAL_ORIGIN is required; normal listener defaults127.0.0.1:4311.
 uses private umask. Explicit0.0.0.0 is for the private backend container network.
 `npm run build:api` bundles main/worker separately; start:api runs that output.
 `npm run smoke:api` needs an owned loopback port and tests the built entrypoint.
-Run/artifact routes, agent dispatch and packaged proxy delivery remain work.
+Artifact finalization and packaged proxy delivery remain work.
 Check: npx vitest run app/test/bootstrap app/src/bootstrap/api.integration.test.ts --maxWorkers=1.
 
 `runtime-poller.ts` owns one sample/publication at a time and coalesces unknown
 periods; `runtime-publication.ts` preserves explicit SQLite refusal versus failure.
-`agent-runtime.ts` wires actual HTTP/source/polling and ordered shutdown; dispatch remains pending. Contract:
+`agent-runtime.ts` and `agent-owners.ts` wire one shared gateway, capacity and
+automatic delivery. Fatal errors fence work; shutdown owns both loop originals
+before the gateway and metadata. Contract:
 [Runtime polling](../../../docs/design/lld/runtime-polling.md).
