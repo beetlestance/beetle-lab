@@ -12,6 +12,7 @@ import { EVENT_ROW_ALLOWANCE } from '../../../app/src/ports/events.js';
 import { loadAgentConfiguration } from '../../../agent/src/bootstrap/index.js';
 import { initializationWorkerUrl } from './initialize.js';
 import { absenceCharge } from './absence-values.js';
+import { allocationBinding, eventBinding, executionBinding } from './absence-bindings.js';
 
 type Row = Record<string, SQLOutputValue>;
 const bounded = (name: string, maximum: number) =>
@@ -39,8 +40,8 @@ function eventCharge(db: DatabaseSync, proof: OutputAbsence, cursor: Row): numbe
   let bytes = 0;
   for (const [index, event] of events.entries()) {
     const checked = validate('AgentEvent', json(event.canonical_json, 65536)); assert(checked.ok);
-    assert.equal(event.seq, index + 1); assert.equal(checked.value.seq, index + 1); assert.equal(event.generation, 1);
-    assert.equal(checked.value.attemptId, proof.attemptId);
+    assert.equal(event.seq, index + 1); assert.equal(checked.value.seq, index + 1); assert.equal(event.generation, proof.generation);
+    eventBinding(checked.value, proof);
     const encoded = encodeCanonicalJson(checked.value, 65536); assert.equal(event.canonical_json, encoded);
     const charge = Buffer.byteLength(encoded) + EVENT_ROW_ALLOWANCE;
     assert.equal(event.charged_bytes, charge); bytes += charge; assert.equal(event.cumulative_bytes, bytes);
@@ -75,8 +76,10 @@ function settlement(db: DatabaseSync, f: Fixture, run: Run, proof: OutputAbsence
   assert.equal(receipt.final_agent_seq, proof.finalAgentSeq); assert.equal(receipt.run_version, run.version);
   for (const [column, expected] of Object.entries({ state: run.state, outcome: run.outcome,
     validation_status: run.validationStatus, reason: run.reason })) assert.equal(receipt[column], expected);
-  const execution = one(db, `SELECT execution_charged,event_pending,output_pending,journal_authority,
+  const execution = one(db, `SELECT attempt_id,run_id,organization_id,workspace_id,intent_digest,acknowledged_generation,
+    execution_charged,event_pending,output_pending,journal_authority,
     ${bounded('snapshot_json', 2048)} FROM execution_records WHERE attempt_id=?`, run.activeAttemptId);
+  executionBinding(execution, proof, run.id);
   const checked = validate('AttemptSnapshot', json(execution.snapshot_json, 2048)); assert(checked.ok);
   assert.deepEqual(checked.value.admission, proof.admission); assert.equal(checked.value.result, undefined);
   assert.equal(checked.value.lastSeq, proof.finalAgentSeq);
@@ -85,17 +88,15 @@ function settlement(db: DatabaseSync, f: Fixture, run: Run, proof: OutputAbsence
   }
   for (const field of ['execution_charged', 'event_pending']) assert.equal(execution[field], 0);
   assert.equal(execution.output_pending, 1); // Immutable original output obligation; receipt closes discovery.
-  assert.equal(execution.journal_authority, proof.journalAuthority);
   const cursor = one(db, 'SELECT * FROM event_cursors WHERE attempt_id=?', run.activeAttemptId);
   binding(cursor, proof, run); assert.equal(cursor.coverage, 'contiguous'); assert.equal(cursor.blocked_reason, null);
   for (const field of ['durable_through', 'ack_confirmed_through', 'event_count']) assert.equal(cursor[field], proof.finalAgentSeq);
   const charge = absenceCharge(eventCharge(db, proof, cursor), 0, f.budget.outputBytes);
   assert.equal(receipt.retained_payload_bytes, charge.retained); assert.equal(receipt.refunded_bytes, charge.refunded);
-  const allocation = one(db, 'SELECT * FROM attempt_output_allocations WHERE attempt_id=?', run.activeAttemptId);
-  assert.equal(allocation.maximum_payload_bytes, f.budget.outputBytes); assert.equal(allocation.metadata_bytes, 65536);
-  assert.equal(allocation.charged_bytes, f.budget.outputBytes + 65536);
+  const allocation = allocationBinding(one(db, 'SELECT * FROM attempt_output_allocations WHERE attempt_id=?', run.activeAttemptId),
+    proof, run.id, f.budget.outputBytes);
   assert.equal(one(db, 'SELECT charged_bytes FROM installation_storage_usage WHERE id=1').charged_bytes, charge.charged);
-  return { receipt, charge, snapshot: checked.value };
+  return { receipt, charge, allocation, snapshot: checked.value };
 }
 /** No production finalizer, receipt math or SQL views participate in this oracle. */
 export function inspectAbsence(f: Fixture, run: Run) {

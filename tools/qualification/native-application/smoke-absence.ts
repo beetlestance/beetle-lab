@@ -30,7 +30,7 @@ let app: Application | undefined;
 let applicationClosed = false;
 const started = Date.now();
 async function fingerprints(worker: URL) {
-  const names = ['smoke-absence.ts', 'absence-values.ts', 'absence-values.test.ts', 'absence-public.ts',
+  const names = ['smoke-absence.ts', 'absence-values.ts', 'absence-values.test.ts', 'absence-bindings.ts', 'absence-bindings.test.ts', 'absence-public.ts',
     'absence-evidence.ts', 'absence-native.ts', 'configuration.ts', 'containers.ts', 'public-api.ts', 'initialize.ts', 'README.md'];
   const entries: [string, string][] = [];
   for (const name of names) entries.push([name, digest(await boundedFile(new URL(name, import.meta.url), 1048576))]);
@@ -52,7 +52,8 @@ try {
   evidence.publicRequests = session.requestCount(); await privateJson(join(f.root, 'public-terminal.json'), terminal);
   await app.close(); app = undefined; applicationClosed = true;
   evidence.phase = 'physical-verification'; const physical = inspectAbsence(rejected, terminal.run);
-  Object.assign(evidence, { proof: physical.proof, proofDigest: physical.proofDigest, receipt: physical.receipt, charge: physical.charge });
+  Object.assign(evidence, { proof: physical.proof, proofDigest: physical.proofDigest,
+    receipt: physical.receipt, charge: physical.charge, allocation: physical.allocation });
   evidence.phase = 'agent-verification'; evidence.agent = verifyAgentAbsence(f, physical);
   evidence.engineExecutions = noEngineExecutions(f); evidence.targetCounts = targetCounts(f, zero);
   evidence.phase = 'metadata-reopen'; app = await openApplication(configuration.application); applicationClosed = false;
