@@ -3,12 +3,11 @@ import { captureOutputAbsence } from '@beetle/contracts/output-source';
 import { captureEventBinding } from '../../../../domain/events/index.js';
 import { requireRule } from '../../../../domain/namespaces/index.js';
 import type { EventBinding } from '../../../../ports/events.js';
-import type { OutputAbsenceAdoptRequest, OutputAbsenceFinalizeRequest, OutputAbsenceState,
+import type { OutputAbsenceState,
   OutputAbsenceFinalizationReply } from '../../../../ports/output-absence.js';
 import { boundedCopy, sha256 } from '../input-values.js';
-export type AbsenceOperation = { kind: 'absenceRead'; binding: EventBinding }
- | { kind: 'absenceAdopt'; request: OutputAbsenceAdoptRequest }
- | { kind: 'absenceFinalize'; request: OutputAbsenceFinalizeRequest };
+import type { AbsenceOperation } from './operations.js';
+export type { AbsenceOperation } from './operations.js';
 export type AbsenceValue = OutputAbsenceState | OutputAbsenceFinalizationReply | null;
 function closed(value: object, fields: readonly string[]): void {
   requireRule(value !== null && typeof value === 'object' && Reflect.ownKeys(value).length === fields.length
