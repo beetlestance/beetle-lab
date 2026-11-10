@@ -1,4 +1,4 @@
-import type { RunConfiguration, RunCommand, RunKey, RunList } from '../../../ports/runs.js';
+import type { RunConfiguration, RunCommand, CancelRunCommand, RunKey, RunList } from '../../../ports/runs.js';
 import type { DispatchKey, DispatchScan, DispatchObservationRequest, DispatchPage,
   DispatchOffer, DispatchClaim, DispatchObservation } from '../../../ports/dispatch.js';
 import type { Run, RunPage } from '@beetle/contracts/api';
@@ -29,6 +29,7 @@ export type Operation =
   | { kind: 'dispatchClaim'; key: DispatchKey }
   | { kind: 'dispatchObserve'; request: DispatchObservationRequest }
   | { kind: 'run'; command: RunCommand }
+  | { kind: 'cancelRun'; command: CancelRunCommand }
   | { kind: 'getRun'; key: RunKey }
   | { kind: 'listRuns'; query: RunList }
   | { kind: 'input'; command: InputCommand }
