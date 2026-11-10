@@ -69,23 +69,32 @@ describe('validation and physical capacity', () => {
   });
   it.each([
     ['impossible_request', 5000], ['below_manifest_minimum', 1],
-  ])('rejects %s before persisting the Offer', async (expected, cpu) => {
+  ])('persists the original Offer and final %s without reserving', async (expected, cpu) => {
     const journal = await f.configured(); const a = f.job(1, cpu);
     const config = configuration(); config.perRun.cpuMillis = 6000;
     await journal.admission({ kind: 'configure', configuration: config });
     expect(await f.enqueue(journal, a)).toEqual({ kind: 'reject', reason: expected });
-    await expect(journal.get(scope(a))).rejects.toMatchObject({ code: 'not_found' });
+    expect(await journal.get(scope(a))).toMatchObject({ lastSeq: 0, admission: { state: 'rejected', reason: expected } });
+    expect(await journal.readOffer(scope(a))).toEqual(a);
+    expect(await journal.admission({ kind: 'reservations', limit: 1 })).toEqual({ reservations: [] });
   });
   it('rejects missing capabilities, controls, timeout ceiling and unsafe byte sums', async () => {
     const journal = await f.configured(); const a = f.job(); a.requiredCapabilities = ['browser'];
     expect(await f.enqueue(journal, a)).toEqual({ kind: 'reject', reason: 'unsupported_capability' });
-    a.requiredCapabilities = ['http']; a.budget.timeoutMs = 1001;
-    expect(await f.enqueue(journal, a)).toEqual({ kind: 'reject', reason: 'timeout_ceiling' });
-    a.budget.timeoutMs = 1000;
+    const timeout = f.job(2); timeout.budget.timeoutMs = 1001;
+    expect(await f.enqueue(journal, timeout)).toEqual({ kind: 'reject', reason: 'timeout_ceiling' });
+    const controls = f.job(3);
     await journal.admission({ kind: 'observe', observation: { ...observation(now + 1), controls: [] } });
-    expect(await f.enqueue(journal, a, now + 1)).toEqual({ kind: 'reject', reason: 'controls_unavailable' });
-    a.inputs = [{ ...a.inputs[0]!, bytes: Number.MAX_SAFE_INTEGER }, { ...a.inputs[0]!, bytes: 1 }];
-    expect(await f.enqueue(journal, a, now + 1)).toEqual({ kind: 'reject', reason: 'impossible_request' });
+    expect(await f.enqueue(journal, controls, now + 1)).toEqual({ kind: 'reject', reason: 'controls_unavailable' });
+    for (const [offer, expected] of [[a, 'unsupported_capability'], [timeout, 'timeout_ceiling'], [controls, 'controls_unavailable']] as const) {
+      expect(await journal.get(scope(offer))).toMatchObject({ lastSeq: 0, admission: { state: 'rejected', reason: expected } });
+      expect(await journal.readOffer(scope(offer))).toEqual(offer);
+    }
+    expect(await journal.admission({ kind: 'reservations', limit: 1 })).toEqual({ reservations: [] });
+    const unsafe = f.job(4);
+    unsafe.inputs = [{ ...unsafe.inputs[0]!, bytes: Number.MAX_SAFE_INTEGER }, { ...unsafe.inputs[0]!, bytes: 1 }];
+    expect(await f.enqueue(journal, unsafe, now + 1)).toEqual({ kind: 'reject', reason: 'impossible_request' });
+    await expect(journal.get(scope(unsafe))).rejects.toMatchObject({ code: 'not_found' });
   });
   it('honors configured disk reserve and headroom in physical free-space checks', async () => {
     const journal = await f.configured(); const config = configuration();

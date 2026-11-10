@@ -12,6 +12,7 @@ import { eventInput } from './event-input.js';
 import { appendAtomic } from './spool.js';
 import { Failure, owner, transaction, quotaUsed } from './sql.js';
 import { diskRetention } from './disk-retention/facts.js';
+import { persistRefusal } from './admission-refusal.js';
 
 function mergeSensors(incoming: RuntimeObservation, old: RuntimeObservation | null): RuntimeObservation {
   if (!old) return incoming;
@@ -68,9 +69,9 @@ export class AdmissionStore {
     const metadata = projectCandidate(request, legacy.exists, snapshot.lastClock);
     if (!metadata) return { kind: 'reject', reason: 'impossible_request' };
     const validation = validateCandidate(metadata, snapshot);
-    if (validation.kind !== 'admit') return validation;
+    if (validation.kind === 'reject') return persistRefusal(this.db, { request, metadata, decision: validation, quota: this.quota });
     const current = decideAdmission(metadata, snapshot, diskRetention(this.db));
-    if (current.kind === 'reject') return current;
+    if (current.kind === 'reject') return persistRefusal(this.db, { request, metadata, decision: current, quota: this.quota });
     const count = Number(this.db.prepare('SELECT count(*) AS n FROM admission_queue WHERE pending=1').get()?.n);
     if (count >= 1024) return { kind: 'defer', reason: 'pending_full' };
     offerAtomic(this.db, offerInput(offer), this.quota);
