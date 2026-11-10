@@ -1,6 +1,6 @@
 # Shared public source values
 
-Status: coordinator-frozen extraction interface; implementation pending. The
+Status: implemented and independently reviewed shared value component. The
 accepted [source commit](output-source-commit.md) owns all existing value grammars,
 bounds and digest preimages. This extraction changes no identity or wire format.
 

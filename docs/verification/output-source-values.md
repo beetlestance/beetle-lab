@@ -30,6 +30,21 @@ materialization, and private request encoding before worker cloning. Actual
 Journal/transport acceptance must prove those boundaries. Malformed-object unit
 rejection is not memory qualification or an arbitrary JavaScript sandbox.
 
+## Shared public manifest owner
+
+Source `e2a79511d5bc3398fdc4e53a61b5e681c9b91f96` extracts public types,
+capture/error/binding/result/count rules and prepare/verify into
+`@beetle/contracts/output-source`. Agent private codecs delegate after validating
+their complete private envelope. Existing preimages, vectors, error class/order,
+UUID spellings, byte caps and ownership remain unchanged; no native/private path
+dependencies enter the public module graph.
+
+All85 existing private and50 new public cases passed together, real2.71s. One
+compiled Journal source transaction passed, real2.00s; changed-file lint passed,
+real1.94s; Node types passed, real10.08s. Independent source review took4m52s,
+found no blocker and reused those checks. This proves shared pure values/private
+delegation; it adds no transport, browser or native custody qualification.
+
 ## Native root producer
 
 Source `59280ea51cce9e40139177fe532d4fb08a56dc49` passed134 tests/14 affected

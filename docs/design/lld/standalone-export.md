@@ -1,6 +1,6 @@
 # Engine-owned standalone script export
 
-Status: frozen engine-component interface; implementation pending. Implements the
+Status: implemented and reviewed engine component. Implements the
 shared compiler requirement in [application/UI](application-ui.md) and F15. HTTP
 admission/download, UI actions and real native execution qualification remain later
 parts of the same first-release feature, not implied by this helper.

@@ -29,9 +29,11 @@ The owning document below must be updated before its implementation changes.
 | Agent disk retention | [Disk retention](lld/disk-retention.md) | Required active/retained disk accounting contract, journal quota and atomic migration policy |
 | Verified source decisions | [Verified output source](lld/output-source.md) | Settled custody decisions and focused contract ownership |
 | Source commit contract | [Durable collected source](lld/output-source-commit.md) | Reviewed local values/Journal/controller components; backend publication pending |
+| Shared source values | [Public manifests](lld/output-public-values.md) | Shared pure manifest prepare/verify and private agent delegation; no custody authority |
 | Source collection recovery | [Collection intent](lld/output-collection-intent.md) | Implemented preparation gate and conservative absent-source recovery |
 | Source Journal contract | [Source transactions](lld/output-source-journal.md) | Implemented/reviewed local storage and controller components |
 | Output transport direction | [Output transfer](lld/output-transfer.md) | Reviewed chunk/closure direction; exact wire and producer barrier pending |
+| Source event-stream end | [Delivery closure](lld/output-delivery-closure.md) | Reviewed Journal/producer/discovery contract; migration013 implementation pending |
 | Backend output direction | [Output adoption](lld/output-adoption.md) | Reviewed shared-budget direction; exact storage/finalization contracts pending |
 | Agent control and outputs | [Agent collection](lld/agent-collection.md) | Bounded file intake, atomic checkpoints, stopped verification and artifact custody |
 | Attempt orchestration | [Agent controller](lld/agent-controller.md) | Prepared-plan handoff, supervision/control/collection wiring and release ownership |
@@ -49,6 +51,7 @@ The owning document below must be updated before its implementation changes.
 | Private runner HTTP | [Agent HTTP](lld/agent-http.md) | Credential/scope fences, bounded runner DTOs and request ownership |
 | Scheduler or instrumentation | [Resources/observability](lld/resources-observability.md) | Admission, budgets, CPU/RAM, phases, telemetry limits |
 | HTTP, CLI or browser | [Application/UI](lld/application-ui.md) | API routes, errors, events, queries, export, frontend |
+| Standalone script component | [Engine export](lld/standalone-export.md) | Shared compiler/runtime builder and explicit secret refusal; HTTP/UI admission pending |
 
 Cross-cutting implementation limits live in [engineering](../engineering.md).
 Acceptance scenarios live in [verification](../verification.md). Read both for

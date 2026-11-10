@@ -31,6 +31,7 @@ released application until the rewrite is qualified.
 | Inspect source values and stopped roots | [Source values](verification/output-source-values.md) | Reviewed codecs/digest vectors and native post-close root facts; backend transfer pending |
 | Inspect durable source storage | [Source Journal](verification/output-source-journal.md) | Immutable intent/source records, quota and receipt release; backend transfer pending |
 | Inspect connected source collection/recovery | [Controller source](verification/controller-source-lifecycle.md) | Native file/Journal composition, exact release proof and scoped installation seams; backend publication pending |
+| Inspect standalone script construction | [Engine export](verification/standalone-export.md) | Actual compiler/builder and generated-bundle semantics; HTTP/UI/native qualification pending |
 | Inspect retained execution disk | [Disk retention](verification/disk-retention.md) | Atomic holds, release/abort accounting and worker reply-loss replay; source/cleanup pending |
 | Inspect actual agent event recovery | [Agent event seam](verification/event-agent.md) | Separate-process real HTTP/Journal ACK/prune/reopen and immutable physical authority; no engine/result claim |
 | Inspect durable event transport | [Event custody](verification/event-custody.md) | Durable ingestion/ACK, lost-response recovery, independent SQL ordering oracle and remaining real-agent/result work |
