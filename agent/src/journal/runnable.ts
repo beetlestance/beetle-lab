@@ -22,11 +22,15 @@ export class RunnableScan {
       FROM (SELECT id,attempt_id FROM admission_queue INDEXED BY admission_pending
         WHERE pending=1 AND id>? ORDER BY id LIMIT ?) q
       JOIN accepted_attempts a ON a.attempt_id=q.attempt_id ORDER BY q.id`);
-    const eligible = `FROM accepted_attempts a INDEXED BY output_delivery_pending WHERE a.delivery_pending=1
+    const fields = 'a.id,a.attempt_id,a.organization_id,a.workspace_id,a.generation';
+    const sourceDebt = `FROM accepted_attempts a INDEXED BY output_delivery_pending WHERE a.delivery_pending=1
       AND EXISTS(SELECT 1 FROM reservations r WHERE r.attempt_id=a.attempt_id AND r.charged=0)`;
-    this.delivery = db.prepare(`SELECT a.id,a.attempt_id,a.organization_id,a.workspace_id,a.generation ${eligible}
-      AND a.id>? AND a.id<=? ORDER BY a.id LIMIT ?`);
-    this.deliveryUpper = db.prepare(`SELECT COALESCE(MAX(a.id),0) AS through ${eligible}`);
+    const absenceDebt = 'FROM accepted_attempts a INDEXED BY output_absence_pending WHERE a.absence_pending=1';
+    this.delivery = db.prepare(`SELECT ${fields} ${sourceDebt} AND a.id>? AND a.id<=?
+      UNION SELECT ${fields} ${absenceDebt} AND a.id>? AND a.id<=? ORDER BY id LIMIT ?`);
+    this.deliveryUpper = db.prepare(`SELECT MAX(through) AS through FROM (
+      SELECT COALESCE(MAX(a.id),0) AS through ${sourceDebt}
+      UNION ALL SELECT COALESCE(MAX(a.id),0) AS through ${absenceDebt})`);
   }
 
   read(input: RunnableRequest): RunnablePage {
@@ -43,7 +47,8 @@ export class RunnableScan {
   private readDelivery(page: RunnableRequest): RunnablePage {
     const through = page.through ?? this.deliveryUpper.get()?.through;
     if (typeof through !== 'number' || !Number.isSafeInteger(through) || through < 0) throw new Failure('unavailable');
-    const rows = this.delivery.all(page.cursor ?? 0, through, page.limit + 1) as unknown as RunnableRow[];
+    const after = page.cursor ?? 0;
+    const rows = this.delivery.all(after, through, after, through, page.limit + 1) as unknown as RunnableRow[];
     const attempts = rows.slice(0, page.limit).map(row => ({ attemptId: row.attempt_id,
       organizationId: row.organization_id, workspaceId: row.workspace_id, generation: row.generation }));
     const cursor = rows[page.limit - 1]?.id;

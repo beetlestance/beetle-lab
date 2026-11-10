@@ -4,6 +4,8 @@ import type { AdmissionCommand, AdmissionValue } from '../admission/index.js';
 import type { CollectionIntent, PrivateSource, SourceReceipt } from '../output-source/index.js';
 import type { OutputSourceOperation } from './output-source-protocol.js';
 import type { OutputDeliveryOperation, OutputDeliveryClosure } from './output-delivery-protocol.js';
+import type { OutputAbsence } from '@beetle/contracts/output-source';
+import type { OutputAbsenceOperation } from './output-absence-protocol.js';
 
 export type ErrorCode = 'invalid_input' | 'conflict' | 'not_found' | 'queue_full' |
   'closed' | 'unavailable' | 'owned' | 'schema_newer' | 'stale_generation' |
@@ -33,7 +35,7 @@ export interface PruneReceipt { pruned: number; snapshot: AttemptSnapshot }
 export interface EventInput {
   key: GenerationKey; source: 'wrapper' | 'agent'; sourceKey: number; json: string; canonical: string;
 }
-export type Operation = OutputSourceOperation | OutputDeliveryOperation
+export type Operation = OutputSourceOperation | OutputDeliveryOperation | OutputAbsenceOperation
   | { kind: 'authority' }
   | { kind: 'checkpoint'; key: GenerationKey }
   | { kind: 'wrapperBatch'; request: Readonly<WrapperBatch> }
@@ -50,7 +52,7 @@ export type Operation = OutputSourceOperation | OutputDeliveryOperation
   | { kind: 'prune' | 'sources'; key: GenerationKey }
   | { kind: 'close' };
 export type Command = Operation & { id: number };
-export type Value = AttemptSnapshot | SnapshotPage | RunnablePage | Offer | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | CollectionIntent | PrivateSource | SourceReceipt | OutputDeliveryClosure | string | null;
+export type Value = AttemptSnapshot | SnapshotPage | RunnablePage | Offer | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | CollectionIntent | PrivateSource | SourceReceipt | OutputDeliveryClosure | OutputAbsence | string | null;
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; id: number; ok: true; value: Value } |
   { kind: 'result'; id: number; ok: false; code: ErrorCode; recovery?: AttemptSnapshot };

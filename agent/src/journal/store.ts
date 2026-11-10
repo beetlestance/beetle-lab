@@ -17,6 +17,7 @@ import { RunnableScan } from './runnable.js';
 import { cancelOriginal } from './cancel-original.js';
 import { OutputSources, outputSourceOperation } from './output-source.js';
 import { executeOutputDelivery, outputDeliveryOperation } from './output-delivery.js';
+import { executeOutputAbsence, outputAbsenceOperation } from './output-absence.js';
 
 export class Store {
   private readonly admission: AdmissionStore;
@@ -87,6 +88,7 @@ export class Store {
     }
   }
   execute(command: Command): Value {
+    if (outputAbsenceOperation(command)) return executeOutputAbsence(this.db, command);
     if (outputDeliveryOperation(command)) return executeOutputDelivery(this.db, command);
     if (outputSourceOperation(command)) return this.outputs.execute(command);
     if (command.kind === 'supervision') return supervise(this.db, command.request);

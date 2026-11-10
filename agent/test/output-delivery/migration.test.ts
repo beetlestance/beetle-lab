@@ -7,10 +7,10 @@ import type { OutputDeliveryClosure } from '../../src/journal/output-delivery-pr
 import { deliveryFixture, durableRows, insertClosure, inspect, json, schema12 } from './fixtures.js';
 const f = deliveryFixture();
 
-it('initializes exact schema13 with empty seventh charge and no manufactured source/closure', () => {
+it('initializes current schema with empty delivery charge and no manufactured source/closure', () => {
   const db = initialize(f.path());
   try {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(13);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(14);
     expect(db.prepare('SELECT * FROM output_delivery_closures').all()).toEqual([]);
     expect(db.prepare('SELECT * FROM output_sources').all()).toEqual([]);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
@@ -26,8 +26,9 @@ it('upgrades an actual schema12 released source with only debt marker and preser
   expect(await journal.scanRunnable({ lane: 'delivery', limit: 32 })).toEqual({ attempts: [e.key], through: 1 });
   await f.close(journal); const db = new DatabaseSync(e.path);
   try {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(13);
-    expect(db.prepare('SELECT * FROM accepted_attempts').get()).toEqual({ ...before, delivery_bytes: 0, delivery_pending: 1 });
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(14);
+    expect(db.prepare('SELECT * FROM accepted_attempts').get()).toEqual({ ...before, delivery_bytes: 0, delivery_pending: 1,
+      absence_bytes: 0, absence_pending: 0 });
     expect(db.prepare('SELECT * FROM output_sources').all()).toEqual(source);
     expect(db.prepare('SELECT * FROM reservations').all()).toEqual(reservation);
     expect(db.prepare('SELECT * FROM sqlite_sequence ORDER BY name').all()).toEqual(sequence);
@@ -39,7 +40,7 @@ it('does not invent source or closure for a genuine old released original withou
   const e = await f.seed(); await e.journal.admission({ kind: 'release', evidence: e.failed.evidence }); await f.close(e.journal);
   const db = initialize(e.path); schema12(db); db.close();
   const journal = await f.open(e.path); expect(await journal.readOutputDelivery(e.key)).toBeNull();
-  expect(await journal.scanRunnable({ lane: 'delivery', limit: 32 })).toEqual({ attempts: [], through: 0 });
+  expect(await journal.scanRunnable({ lane: 'delivery', limit: 32 })).toEqual({ attempts: [e.key], through: 1 });
   await f.close(journal); const state = inspect(e.path);
   expect(state.rows.find(row => row.table === 'accepted_attempts')!.rows[0]).toMatchObject({ delivery_bytes: 0, delivery_pending: 0 });
   for (const name of ['output_collection_intents', 'output_sources', 'output_delivery_closures']) expect(state.rows.find(row => row.table === name)!.rows).toEqual([]);

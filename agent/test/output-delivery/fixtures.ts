@@ -9,6 +9,7 @@ import { transaction } from '../../src/journal/sql.js';
 import type { OutputDeliveryClosure, OutputDeliveryOperation } from '../../src/journal/output-delivery-protocol.js';
 import { sourceFixture, hash, json, tables, rows, loseReply } from '../source-journal/fixtures.js';
 import { configuration, now, observation, reserved, scope } from '../admission/fixtures.js';
+import { removeFutureAbsence } from '../journal/legacy-fixtures.js';
 
 export { hash, json, loseReply };
 export const deliveryTriggers = ['delivery_parent_insert', 'delivery_insert', 'delivery_inserted',
@@ -23,6 +24,7 @@ export function used(db: DatabaseSync): number {
 /** A real current source fixture transformed into precisely historical schema12, with FKs on. */
 export function schema12(db: DatabaseSync): void {
   transaction(db, () => {
+    removeFutureAbsence(db);
     if (db.prepare('SELECT COUNT(*) AS n FROM output_delivery_closures').get()?.n !== 0
       || db.prepare('SELECT COUNT(*) AS n FROM accepted_attempts WHERE delivery_bytes!=0').get()?.n !== 0) throw new Error('Closure must be absent');
     for (const name of deliveryTriggers) db.exec(`DROP TRIGGER ${name}`);
