@@ -1,13 +1,14 @@
 # Backend native output prerequisites
 
-Status: locally verified shared physical custody/promotion and standalone namespace
-lease. The complete output byte adapter, metadata-worker survival integration and
-backend artifact/result lifecycle remain pending.
+Status: locally verified shared physical custody/promotion, namespace lease and
+byte adapter. Metadata-worker survival/transfer integration and complete backend
+artifact/result lifecycle remain pending.
 
 | Component | Accepted source | Focused evidence |
 | --- | --- | --- |
 | Shared physical custody | `d697aa6` | 72 affected input/mapping cases, 6.553s; lint1.212s; NodeTS8.367s |
 | Permanent parent-held lease | `a8a028d` | 20 native/process cases, 2.181s; lint1.285s; NodeTS8.134s |
+| Native byte adapter | `f576ed2`, `592c258`, `8c6f0de` | 35 native/lifetime cases plus6 ownership and2 identifier/ordinal cases; targeted retries only |
 | Shared physical promotion | `f4df01e` | 16 publication/recovery +4 absence cases, 1.983s; one new error mapping,0.462s; lint0.972s; NodeTS7.036s |
 
 Commands used Vitest with one worker, changed-file ESLint and the affected Node
@@ -37,6 +38,19 @@ staging unlink sequence, with full hash and both parent flushes. It never create
 an absent file, including an empty artifact. Input state eligibility and its explicit
 empty-file reconstruction remain outside that helper. Positive promotion still
 requires its caller to close original handles successfully before a receipt.
+
+The native byte adapter tests exercise real binary append/replay/partial tails,
+zero/missing files, exact whole-file hash, lost link/unlink replies, signature
+mutation, original sinks and closes, cancellation/deadlines and bounded credits.
+Child processes prove held or failed file/directory closes retain namespace
+exclusion until successful drain or confirmed process exit. The35 original cases
+ran in separate focused groups (4.200s,7.055s,2.631s,2.159s); NodeTS passed8.111s.
+Independent review found nested proxy capture could borrow another token's FileJob.
+Six regression cases reproduced it, then passed1.331s after direct original-job
+binding; one native control passed1.201s, lint0.777s and NodeTS6.898s. Two later
+contract cases passed0.814s: ordinal128 refuses before IO, while declared uppercase
+artifact IDs retain their exact spelling through real append/publication/read.
+Original suites were not repeated for these corrections.
 
 The [native output contract](../design/lld/output-files.md) specifies the remaining
 complete adapter and process evidence. Standalone lease tests do not prove that an

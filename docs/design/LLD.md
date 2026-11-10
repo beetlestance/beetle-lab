@@ -34,9 +34,9 @@ The owning document below must be updated before its implementation changes.
 | Source Journal contract | [Source transactions](lld/output-source-journal.md) | Implemented/reviewed local storage and controller components |
 | Output transport direction | [Output transfer](lld/output-transfer.md) | Integrated source wire/service/HTTP; backend adoption pending |
 | Source event-stream end | [Delivery closure](lld/output-delivery-closure.md) | Integrated Journal013, producer drain and indexed discovery |
-| Backend payload storage | [Payload carrier](lld/output-payload.md) | One canonical result/manifest body, snapshot replay and shared event allowance |
-| Native output ownership | [Output files](lld/output-files.md) | Shared custody/promotion and standalone lease integrated; full adapter pending |
-| Source adoption storage | [Adoption store](lld/output-adoption-store.md) | Reviewed bounded metadata port, original pins, event ceiling and upload tokens; implementation pending |
+| Backend payload storage | [Payload carrier](lld/output-payload.md) | Integrated single result/manifest body, snapshot replay and shared event allowance |
+| Native output ownership | [Output files](lld/output-files.md) | Integrated native byte adapter and ownership; transfer composition pending |
+| Source adoption storage | [Adoption store](lld/output-adoption-store.md) | Integrated metadata adoption/RPC, original pins, event ceiling and upload tokens |
 | Backend output direction | [Output adoption](lld/output-adoption.md) | Reviewed shared-budget direction; exact storage/finalization contracts pending |
 | Agent control and outputs | [Agent collection](lld/agent-collection.md) | Bounded file intake, atomic checkpoints, stopped verification and artifact custody |
 | Attempt orchestration | [Agent controller](lld/agent-controller.md) | Prepared-plan handoff, supervision/control/collection wiring and release ownership |

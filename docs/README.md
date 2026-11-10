@@ -35,7 +35,8 @@ released application until the rewrite is qualified.
 | Inspect scoped result presentation | [Result panel](verification/run-result-panel.md) | Scope fencing and provisional outcome display; result route/browser qualification pending |
 | Inspect shared output transport values | [Transfer values](verification/output-transfer-values.md) | Generated schemas, receipt matching and canonical range values; runtime transfer pending |
 | Inspect native source HTTP | [Source HTTP](verification/output-source-http.md) | Real Journal/files, authenticated source/chunk routes and bootstrap; backend adoption pending |
-| Inspect backend native file prerequisites | [Output files](verification/output-files.md) | Shared physical custody/promotion and standalone namespace lease; full byte adapter pending |
+| Inspect backend source adoption | [Output adoption](verification/output-adoption.md) | Single payload carrier, exact source metadata and worker replay; transfer/finalization pending |
+| Inspect backend native file prerequisites | [Output files](verification/output-files.md) | Shared physical custody/promotion, namespace lease and byte adapter; transfer composition pending |
 | Inspect native artifact ranges | [Range evidence](verification/output-range.md) | Shared custody/lifetime, checked EOF and original IO; HTTP/adoption pending |
 | Inspect standalone script construction | [Engine export](verification/standalone-export.md) | Actual compiler/builder and generated-bundle semantics; HTTP/UI/native qualification pending |
 | Inspect retained execution disk | [Disk retention](verification/disk-retention.md) | Atomic holds, release/abort accounting and worker reply-loss replay; source/cleanup pending |
