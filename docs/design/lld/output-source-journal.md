@@ -105,6 +105,14 @@ intent failed with physical failed release. Arrange SQL phase transitions around
 the reservation update so no per-statement guard requires a circular prior phase;
 the final committed phase/reservation/source relations must all agree.
 
+Before that first-transition epoch/pending gate, reconcile exact terminal failure
+replay: require a failed intent, absent source, and released reservation with the
+same collectionId and exact stored release evidence. Return that unchanged
+reservation even after worker reopen; no new failure authority is being granted.
+Different candidate evidence conflicts; persisted phase/source/reservation
+contradictions are unavailable. This covers a committed failed release whose
+actual worker reply was lost, not merely a discarded successful return.
+
 The same uninterrupted controller must know genuine collection failure/quiescence
 before any success/source issue. Epoch equality alone does not prove that lifetime;
 same-Journal controller recreation always uses conservative recovered semantics.
@@ -127,6 +135,7 @@ must name any caller/test work not yet connected; preserve legacy npm start.
 ## Acceptance
 
 Actual worker begin/commit/release, same-path/authority reopen, withheld real replies,
+including failed-release COMMIT reply loss and exact replay after reopen,
 exact replay and native row/counter inspection; source quota exact/one-byte short,
 late COMMIT rollback, lowered quota, immutable native DML/REPLACE and epoch mismatch.
 Prove SQL byte CASE bounds before Node payloads and encoded byte caps before actual
