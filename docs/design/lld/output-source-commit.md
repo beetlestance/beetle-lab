@@ -36,6 +36,22 @@ WrapperCheckpoint, not a second checkpoint grammar. ReleaseEvidence uses existin
 scope/launch/runtime validators with collection.state=finished and runtime.state=
 stopped; absent runtime or failed collection cannot create a verified source.
 
+Source-owned closed scalar capture is authorized where no public data validator
+exists; do not import private Journal validators or duplicate its durable decisions:
+
+| Scalar owner | Exact additional grammar |
+| --- | --- |
+| Engine | id uses Common.token; imageDigest uses Common.imageDigest; configVersion integer1..MAX_SAFE_INTEGER |
+| Scope | Existing UUID spellings preserved; generation1; journalAuthority and collectionId canonical lowercase36-byte UUIDs |
+| Root | Absolute normalized NUL-free directory<=4096 UTF-8 bytes; uid integer0..4294967295; device/inode canonical unsigned decimal0..18446744073709551615, <=20 digits |
+| Root timestamps | Canonical signed decimal strings<=32 characters, no plus/leading zero/-0; preserve negative pre-epoch nanoseconds and never convert to Number |
+| Private evidence text | createToken/runtimeId/startToken/evidenceId/settlementId nonempty<=128 UTF16 units, except collection evidenceId is canonical collectionId |
+| Definitive launch | epoch0/null startToken requires retired; epoch1/nonempty startToken permits completed or retired; settledAt integer0..8640000000000000 |
+| Release | Exact declared supervisor/stopped/finished constants and epoch/startToken tuple; observation/begun times nonnegative safe integers; collection.observedAt>=runtime.observedAt |
+
+InstalledIdentity still uses its public schema, and checkpoint/scope/result seal
+use existing public owners. All declared containers remain closed original data.
+
 Result-file bytes1..1048576 and control bytes0..67108864 remain raw native counts.
 verifiedBytes equals their sum plus all declared artifact bytes, exactly under the
 original output budget. Reject arithmetic overflow. Canonical EngineResult remains
