@@ -1,3 +1,4 @@
+import type { EventBinding, EventScan, EventPage, EventCursorState, EventIngestRequest, EventIngestResult, EventAckRequest, EventProblemRequest } from '../../../ports/events.js';
 import type { RunConfiguration, RunCommand, CancelRunCommand, RunKey, RunList } from '../../../ports/runs.js';
 import type { DispatchKey, DispatchScan, DispatchObservationRequest, DispatchPage,
   DispatchOffer, DispatchClaim, DispatchObservation } from '../../../ports/dispatch.js';
@@ -24,6 +25,11 @@ import type { RuntimeObservation } from '../../../ports/runtime.js';
 export type { RuntimeObservation } from '../../../ports/runtime.js';
 export type SettingsView = InstallationSettings | OrganizationSettings | WorkspaceSettings;
 export type Operation =
+  | { kind: 'eventScan'; query: EventScan }
+  | { kind: 'eventLoad'; binding: EventBinding }
+  | { kind: 'eventIngest'; request: EventIngestRequest }
+  | { kind: 'eventConfirmAck'; request: EventAckRequest }
+  | { kind: 'eventProblem'; request: EventProblemRequest }
   | { kind: 'dispatchScan'; query: DispatchScan }
   | { kind: 'dispatchReadOffer'; key: DispatchKey }
   | { kind: 'dispatchClaim'; key: DispatchKey }
@@ -51,7 +57,7 @@ export type Operation =
   | { kind: 'getSettingsIdentity'; scope: SettingsScope }
   | { kind: 'runtime'; runtime: RuntimeObservation | null }
   | { kind: 'close' };
-export type Value = DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
+export type Value = EventPage | EventCursorState | EventIngestResult | DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
 export type Command = Operation & { messageId: number };
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; messageId: number; ok: true; value: Value } |
