@@ -8,3 +8,5 @@ export type { Directory, Location } from './directories.js';
 export { PhysicalFile, FILE_CHUNK_BYTES } from './file.js';
 export { FileCustodyError } from './errors.js';
 export type { FileCustodyErrorCode } from './errors.js';
+export { promoteVerifiedFile } from './promotion.js';
+export type { PhysicalPublication } from './promotion.js';

@@ -1,4 +1,4 @@
-export type FileCustodyErrorCode = 'invalid_input' | 'cancelled' | 'integrity' | 'io' | 'cleanup' | 'capacity_unavailable';
+export type FileCustodyErrorCode = 'custody_missing' | 'invalid_input' | 'cancelled' | 'integrity' | 'io' | 'cleanup' | 'capacity_unavailable';
 export class FileCustodyError extends Error {
   constructor(readonly code: FileCustodyErrorCode) { super('File custody operation failed'); this.name = 'FileCustodyError'; }
 }
