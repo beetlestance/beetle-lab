@@ -9,6 +9,11 @@ import { budgetCopy, checkBudget } from './budget.js';
 import { createEntry, identity, scopeCopy } from './entry.js';
 import type { Entry } from './entry.js';
 import { drive } from './drive.js';
+import type { DriveContext } from './drive.js';
+import { acquireLease } from './leases.js';
+import type { EntryLease } from './leases.js';
+import { closeWatches, retireNative } from './retirement.js';
+import { reconcileDelivery, releaseStoredSource, rememberSource } from './delivery.js';
 import { enqueue } from './enqueue.js';
 import { structuralOffer } from './offer.js';
 import { InstallationError } from './types.js';
@@ -35,6 +40,7 @@ export class Manager implements InstallationController {
   open(): void { if (this.closed) throw new InstallationError('closed'); }
   guard(_entry: Entry, budget: Operation): void {
     this.open(); checkBudget(budget);
+    if (_entry.retiring) throw new InstallationError('busy');
   }
   acquireStage(): boolean { if (this.stages >= 2) return false; this.stages++; return true; }
   releaseStage(): void { this.stages--; }
@@ -43,6 +49,24 @@ export class Manager implements InstallationController {
     if (existing) return existing;
     if (this.entries.size >= 64) throw new InstallationError('capacity');
     const entry = createEntry(key); this.entries.set(id, entry); return entry;
+  }
+  private async releaseLease(entry: Entry, lease: EntryLease): Promise<void> {
+    entry.users--;
+    try { await releaseProvisional(this.options.journal, this.entries, entry); }
+    finally { lease.finish(); }
+  }
+  private driveContext(caller: EntryLease): DriveContext {
+    return { options: this.options, now: () => this.now(), guard: (entry, budget) => this.guard(entry, budget),
+      acquireStage: () => this.acquireStage(), releaseStage: () => this.releaseStage(),
+      retire: (entry, progress) => this.retire(entry, caller, progress),
+      stopGuard: entry => this.stopGuard(entry), stopTimeout: (entry, reason) => this.stopTimeout(entry, reason) };
+  }
+  private async sourceCommitted(entry: Entry): Promise<boolean> {
+    if (entry.sourceReceipt) return true;
+    entry.sourceCheck = true;
+    const source = await this.options.journal.readOutputSource(entry.key);
+    if (source) { rememberSource(entry, source); return true; }
+    entry.sourceCheck = false; return false;
   }
   /** Reserve before touching caller objects, proxies, providers or clocks. */
   private run<T>(operation: () => Promise<T>): Promise<T> {
@@ -65,14 +89,14 @@ export class Manager implements InstallationController {
       const key = scopeCopy({ organizationId: offer.organizationId, workspaceId: offer.workspaceId,
         attemptId: offer.attemptId, generation: 1 });
       this.open(); const entry = this.entry(key);
-      entry.users++; entry.version++;
+      const lease = acquireLease(entry);
       try {
         const snapshot = await this.options.journal.cancelOriginal({ offer, now: this.now() });
-        this.signal(entry);
+        entry.cancelled = true;
+        if (!await this.sourceCommitted(entry)) this.signal(entry);
         return snapshot;
       } finally {
-        entry.users--;
-        await releaseProvisional(this.options.journal, this.entries, entry);
+        await this.releaseLease(entry, lease);
       }
     });
   }
@@ -80,18 +104,26 @@ export class Manager implements InstallationController {
     return this.run(async () => {
       const key = scopeCopy(input); this.open(); const entry = this.entry(key);
       if (entry.active) throw new InstallationError('busy');
-      entry.users++; entry.version++;
+      const lease = acquireLease(entry, true);
       // Reserve the lane before reading the caller's budget descriptors.
       let resolve!: (value: DriveProgress) => void; let reject!: (error: unknown) => void;
       const active = new Promise<DriveProgress>((yes, no) => { resolve = yes; reject = no; });
       entry.active = active;
       try {
         const budget = budgetCopy(operation);
-        void Promise.resolve().then(() => drive(this, entry, budget)).then(resolve, reject);
+        void Promise.resolve().then(async () => {
+          this.open();
+          if (entry.retiring || entry.sourceReceipt) {
+            const progress = entry.retirementProgress ?? (entry.sourceReceipt ? { kind: 'released' as const, collection: 'finished' as const } : null);
+            if (!progress) throw new InstallationError('cleanup');
+            await this.retire(entry, lease, progress); return progress;
+          }
+          return drive(this.driveContext(lease), entry, budget);
+        }).then(resolve, reject);
       } catch (error) { reject(error); }
       try { return await active; } finally {
-        delete entry.active; entry.users--;
-        await releaseProvisional(this.options.journal, this.entries, entry);
+        delete entry.active;
+        await this.releaseLease(entry, lease);
       }
     });
   }
@@ -108,7 +140,7 @@ export class Manager implements InstallationController {
       if (outcomes.some(value => value.status === 'rejected')) throw new InstallationError('cleanup');
     });
     // Handle rejection immediately while retaining the original for shutdown.
-    void entry.cancellation.catch(() => undefined);
+    void entry.cancellation.catch(() => { entry.cleanupFailed = true; });
     return entry.cancellation;
   }
   cancel(input: Scope): Promise<AttemptSnapshot> {
@@ -121,32 +153,25 @@ export class Manager implements InstallationController {
   private requestStop(input: Scope, reason: StopReason): Promise<AttemptSnapshot> {
     return this.run(async () => {
       const key = scopeCopy(input); this.open(); const entry = this.entry(key);
-      entry.users++; entry.version++;
+      const lease = acquireLease(entry);
       try {
         await this.requestIntent(entry, reason);
         return await this.options.journal.get(key);
       } finally {
-        entry.users--;
-        await releaseProvisional(this.options.journal, this.entries, entry);
+        await this.releaseLease(entry, lease);
       }
     });
   }
   stopGuard(entry: Entry): Promise<void> { return this.requestIntent(entry, 'artifact_incomplete'); }
   stopTimeout(entry: Entry, reason: TimeoutReason | 'artifact_incomplete'): Promise<void> { return this.requestIntent(entry, reason); }
   private async requestIntent(entry: Entry, reason: StopReason): Promise<void> {
-    entry.cancelled = true; entry.abort.abort();
+    entry.cancelled = true;
     const now = reason === 'clock_integrity' ? 0 : this.now(); this.open();
     await this.options.journal.supervision({ key: entry.key, now, cancel: true, reason });
-    this.signal(entry, reason);
+    if (!await this.sourceCommitted(entry)) this.signal(entry, reason);
   }
   private closeWatch(entry: Entry): void {
-    if (entry.timeout) {
-      entry.timeoutClosing ??= entry.timeout.close();
-      void entry.timeoutClosing.catch(() => { entry.cleanupFailed = true; });
-    }
-    if (!entry.watch) return;
-    entry.watchClosing ??= entry.watch.close();
-    void entry.watchClosing?.catch(() => { entry.cleanupFailed = true; });
+    closeWatches(entry);
   }
   inspect(input: Scope): Promise<InstallationAttempt> {
     return this.run(async () => {
@@ -155,23 +180,15 @@ export class Manager implements InstallationController {
       return { snapshot, allocation: await allocation(this.options.journal, key) };
     });
   }
-  async retire(entry: Entry): Promise<void> {
-    if (entry.cleanupFailed) throw new InstallationError('cleanup');
-    this.closeWatch(entry);
-    if (entry.controller) {
-      entry.closing ??= entry.controller.close();
-    }
-    const outcomes = await Promise.allSettled([entry.watchClosing, entry.timeoutClosing, entry.closing]);
-    if (outcomes.some(result => result.status === 'rejected')) { entry.cleanupFailed = true; throw new InstallationError('cleanup'); }
+  async retire(entry: Entry, caller?: EntryLease, progress?: DriveProgress): Promise<void> {
+    if (progress) entry.retirementProgress ??= progress;
+    await retireNative(entry, caller);
+    if (await releaseStoredSource(this.options.journal, entry)) await reconcileDelivery(this.options.journal, entry);
     this.entries.delete(identity(entry.key));
   }
   private async drain(entry: Entry): Promise<void> {
-    const outcomes = await Promise.allSettled([entry.preparation?.result, entry.preparation?.quiesced,
-      entry.cancellation, entry.watchClosing, entry.timeoutClosing]);
-    await entry.active?.catch(() => undefined);
-    if (entry.cleanupFailed || outcomes.some(value => value.status === 'rejected')) throw new InstallationError('cleanup');
-    if (entry.controller) { await this.retire(entry); return; }
-    await this.releaseUnstarted(entry);
+    await retireNative(entry);
+    if (!entry.controller && !entry.sourceReceipt) await this.releaseUnstarted(entry);
     await this.retire(entry);
   }
   private async releaseUnstarted(entry: Entry): Promise<void> {
@@ -197,12 +214,8 @@ export class Manager implements InstallationController {
     this.closing = Promise.resolve().then(async () => {
       const entries = [...this.entries.values()];
       for (const entry of entries) {
+        entry.retiring = true; entry.cancelled = true; entry.abort.abort();
         this.closeWatch(entry);
-        this.signal(entry);
-        if (entry.controller) {
-          entry.closing ??= entry.controller.close();
-          void entry.closing.catch(() => { entry.cleanupFailed = true; });
-        }
       }
       const work = await Promise.allSettled([...this.work]);
       const failed = await this.drainEntries();

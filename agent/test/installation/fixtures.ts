@@ -1,7 +1,7 @@
 import { afterEach, expect } from 'vitest';
 import { createConfigSchema } from '@beetle/contracts/engine-config';
 import { createHash } from 'node:crypto';
-import { sameInstalledIdentity } from '@beetle/contracts';
+import { sameInstalledIdentity, deriveInstalledIdentity } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import type { Catalog, InstalledEngine } from '../../src/catalog/index.js';
 import type { InstallationController } from '../../src/installation/index.js';
@@ -14,10 +14,16 @@ export { operation, scope, deferred, validation };
 export function fixture() {
   const f = stagingFixture(); const managers: InstallationController[] = [];
   afterEach(async () => { await Promise.allSettled(managers.splice(0).map(manager => manager.close())); });
-  return { ...f, async setup() {
+  return { ...f, async setup(outputBytes?: number) {
     // Nominal lifecycle setup is real filesystem I/O, not a one-second latency SLA.
     // Explicit staging deadline tests retain the shared fixture's short budgets.
     const env = await f.environment(false, 10_000);
+    if (outputBytes !== undefined) {
+      env.offer.budget.outputBytes = outputBytes;
+      Reflect.set(env.options.profile.maximumBudget, 'outputBytes', outputBytes);
+      env.offer.installedIdentity = deriveInstalledIdentity({ manifest: env.options.manifest, profile: env.options.profile,
+        identity: env.options.validation }, value => createHash('sha256').update(value).digest('hex'));
+    }
     const owner = controlled(env.owner); owner.time.advance(1);
     const engine: InstalledEngine = { installedIdentity: env.offer.installedIdentity, manifest: env.options.manifest, profile: env.options.profile,
       configVersion: 1, validation: env.options.validation, approved: configuration().profiles[0]!,

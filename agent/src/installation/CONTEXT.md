@@ -21,6 +21,14 @@ operation versions prevent stale probes from evicting a new active lane.
 Close fences callbacks, aborts preparation signals and independently drains originals;
 the bootstrap retains journal ownership.
 
+Entry completion leases retain public drive/cancel/stop/cancelOriginal cleanup.
+Retirement fences new producers and excludes only its actual drive caller, drains
+other leases, preparation/watch originals and the final cancellation chain before
+cached native close. Metadata closure retries reuse that completion and exact source
+receipt. Unknown/quota outcomes retain the fenced owner; serialized drives reconcile
+stored closure before replay. Source-backed late cancellation writes metadata only.
+Contract: `docs/design/lld/output-delivery-closure.md`; no publication/deletion claim.
+
 Contract: `docs/design/lld/installation-controller.md` and `types.ts`.
 Focused checks: `npx vitest run agent/test/installation --maxWorkers=2`;
 `npx tsc -p tsconfig.node.json --noEmit`.

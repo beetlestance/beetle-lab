@@ -1,4 +1,5 @@
 import { expect, it, vi } from 'vitest';
+import { encodeCanonicalJson } from '@beetle/contracts';
 import { createInstallationController } from '../../src/installation/index.js';
 import { drive } from '../../src/installation/drive.js';
 import type { DriveContext } from '../../src/installation/drive.js';
@@ -175,5 +176,9 @@ it('replays exact durable source release after withholding the actual release CO
   try { expect(await manager.drive(e.key, operation(5000))).toEqual({ kind: 'released', collection: 'finished' }); }
   finally { await manager.close(); }
   expect(release.mock.calls).toEqual([[receiptForOutputSource(e.source, hash)]]); noEffects(next);
+  const closure = await reopened.readOutputDelivery(e.key); expect(closure?.receipt).toEqual(receiptForOutputSource(e.source, hash));
+  const parent = before.find(value => value.table === 'accepted_attempts')!.rows[0]!;
+  expect(closure?.finalAgentSeq).toBe(parent.last_seq);
+  parent.delivery_bytes = Buffer.byteLength(encodeCanonicalJson(closure, 1024)) + 256; parent.delivery_pending = 0;
   await f.close(reopened); expect(sourceRows(e.path)).toEqual(before);
 });
