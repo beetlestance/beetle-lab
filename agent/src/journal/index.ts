@@ -8,7 +8,12 @@ import { ackInput, cursorInput, DEFAULT_QUOTA_BYTES, eventInput, generationKey }
 import { attemptKey, offerInput, pageInput, runnableInput } from './input.js';
 import type { RunnablePage, RunnableRequest } from './protocol.js';
 export type { RunnablePage, RunnableRequest } from './protocol.js';
-import type { AdmissionCommand, AdmissionValue } from '../admission/index.js';
+import type { AdmissionCommand, AdmissionValue, Reservation, Scope } from '../admission/index.js';
+import type { CollectionIntent, CollectedSource, PrivateSource, SourceReceipt } from '../output-source/index.js';
+import type { JournalOutputSources, OutputSourceOperation, FailedOutputCollection } from './output-source-protocol.js';
+export type { JournalOutputSources, FailedOutputCollection } from './output-source-protocol.js';
+import { captureCollectionIntent, prepareOutputSource, receiptForOutputSource, copyReceipt, copyFailed,
+  sourceHash, sourceJson, sourceCaps, sameSource, sourceScope, intentReply, sourceReply, reservationReply } from './output-source-input.js';
 import { admissionInput, isOfferCommand } from './admission-input.js';
 import { checkedSupervision } from './supervision.js';
 import { captureCancelledOriginal } from './cancel-original-input.js';
@@ -44,11 +49,12 @@ function validateOptions(options: JournalOptions): void {
   if (typeof path !== 'string' || !path || path === ':memory:' || path.length > 4096) throw new JournalError('invalid_input');
 }
 function largeOperation(operation: Operation): boolean {
-  return operation.kind === 'offer' || operation.kind === 'cancelOriginal' || operation.kind === 'read'
+  return ['outputCollectionBegin', 'outputCollectionRead', 'outputSourceCommit', 'outputSourceRead', 'outputSourceRelease', 'outputCollectionFailed'].includes(operation.kind)
+    || operation.kind === 'offer' || operation.kind === 'cancelOriginal' || operation.kind === 'read'
     || operation.kind === 'admission' && operation.request.kind === 'offer';
 }
 
-export class Journal {
+export class Journal implements JournalOutputSources {
   private readonly worker: Worker;
   private readonly pending = new Map<number, Pending>();
   private readonly limit: number;
@@ -103,6 +109,58 @@ export class Journal {
   /** Trusted supervisor/composition boundary; never expose as a wrapper or browser API. */
   admission(input: AdmissionCommand): Promise<AdmissionValue> {
     return this.prepare(() => ({ kind: 'admission', request: admissionInput(input) }), () => isOfferCommand(input)) as Promise<AdmissionValue>;
+  }
+  private output<T>(prepare: () => OutputSourceOperation, validate: (value: Value) => T): Promise<T> {
+    return this.prepare(prepare, true).then(value => {
+      try { return validate(value); }
+      catch { this.fail('unavailable'); throw new JournalError('unavailable'); }
+    });
+  }
+  beginOutputCollection(input: CollectionIntent): Promise<CollectionIntent> {
+    let expected: CollectionIntent;
+    return this.output(() => {
+      expected = captureCollectionIntent(input);
+      return { kind: 'outputCollectionBegin', json: sourceJson(expected, sourceCaps.outputCollectionBegin) };
+    }, value => {
+      const result = intentReply(value, expected.binding);
+      if (!sameSource(result, expected)) throw new Error('Unexpected intent reply'); return result;
+    });
+  }
+  readOutputCollection(key: Scope): Promise<CollectionIntent | null> {
+    let expected: Scope;
+    return this.output(() => ({ kind: 'outputCollectionRead', key: expected = sourceScope(key) }),
+      value => value === null ? null : intentReply(value, expected));
+  }
+  commitOutputSource(input: CollectedSource): Promise<SourceReceipt> {
+    let expected: SourceReceipt;
+    return this.output(() => {
+      const source = prepareOutputSource(input, sourceHash); expected = receiptForOutputSource(source, sourceHash);
+      return { kind: 'outputSourceCommit', json: sourceJson(source, sourceCaps.outputSourceCommit) };
+    }, value => {
+      const result = copyReceipt(value);
+      if (!sameSource(result, expected)) throw new Error('Unexpected source receipt'); return result;
+    });
+  }
+  readOutputSource(key: Scope): Promise<PrivateSource | null> {
+    let expected: Scope;
+    return this.output(() => ({ kind: 'outputSourceRead', key: expected = sourceScope(key) }),
+      value => value === null ? null : sourceReply(value, expected));
+  }
+  releaseOutputSource(receipt: SourceReceipt): Promise<Reservation> {
+    let expected: SourceReceipt;
+    return this.output(() => ({ kind: 'outputSourceRelease', json: sourceJson(expected = copyReceipt(receipt), sourceCaps.outputSourceRelease) }),
+      value => {
+        const result = reservationReply(value, expected.key);
+        if (result.releaseEvidence?.collection.state !== 'finished') throw new Error('Unexpected source release reply'); return result;
+      });
+  }
+  failOutputCollection(input: FailedOutputCollection): Promise<Reservation> {
+    let expected: FailedOutputCollection;
+    return this.output(() => ({ kind: 'outputCollectionFailed', json: sourceJson(expected = copyFailed(input), sourceCaps.outputCollectionFailed) }),
+      value => {
+        const result = reservationReply(value, expected.evidence.key);
+        if (!sameSource(result.releaseEvidence, expected.evidence)) throw new Error('Unexpected failed release reply'); return result;
+      });
   }
   /** Private trusted supervisor clock/cancel transaction; never a wrapper/browser API. */
   supervision(input: SupervisionCommand): Promise<SupervisionState> {

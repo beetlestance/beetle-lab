@@ -6,7 +6,7 @@ export interface Row {
   id: number; attempt_id: string; organization_id: string; workspace_id: string;
   intent_digest: string; generation: number; state: AttemptSnapshot['state']; last_seq: number;
   cancel_requested: number; retained_start_seq: number; acknowledged_seq: number;
-  spool_bytes: number; spool_rows: number; quota_bytes: number; hold_bytes: number;
+  spool_bytes: number; spool_rows: number; quota_bytes: number; hold_bytes: number; collection_bytes: number; source_bytes: number;
   wrapper_high: number; supervisor_high: number;
   wrapper_expired: number; supervisor_expired: number;
   checkpoint_bytes: number; wrapper_checkpoint_json: string | null;
@@ -17,9 +17,22 @@ export const metadataColumns = `id, attempt_id, organization_id, workspace_id, i
   state, last_seq, cancel_requested, retained_start_seq, acknowledged_seq, spool_bytes,
   spool_rows, quota_bytes, wrapper_high, supervisor_high, wrapper_expired, supervisor_expired,
   phase, exit_json, snapshot_bytes, checkpoint_bytes`;
-export const columns = `${metadataColumns}, hold_bytes, result_json, exit_facts_json, wrapper_checkpoint_json`;
+export const columns = `${metadataColumns}, hold_bytes, collection_bytes, source_bytes,
+  CASE WHEN length(CAST(result_json AS BLOB))<=65536 THEN result_json ELSE NULL END AS result_json,
+  CASE WHEN length(CAST(exit_facts_json AS BLOB))<=1024 THEN exit_facts_json ELSE NULL END AS exit_facts_json,
+  CASE WHEN length(CAST(wrapper_checkpoint_json AS BLOB))<=1024 THEN wrapper_checkpoint_json ELSE NULL END AS wrapper_checkpoint_json`;
 export class Failure extends Error {
   constructor(readonly code: ErrorCode, readonly recovery?: AttemptSnapshot) { super(code); }
+}
+type Charges = Pick<Row, 'spool_bytes' | 'snapshot_bytes' | 'checkpoint_bytes' | 'hold_bytes' | 'collection_bytes' | 'source_bytes'>;
+export function quotaUsed(row: Charges, replace: Partial<Charges> = {}): number {
+  let total = 0;
+  for (const name of ['spool_bytes', 'snapshot_bytes', 'checkpoint_bytes', 'hold_bytes', 'collection_bytes', 'source_bytes'] as const) {
+    const value = replace[name] === undefined ? row[name] : replace[name];
+    if (!Number.isSafeInteger(value) || value < 0 || value > Number.MAX_SAFE_INTEGER - total) throw new Failure('unavailable');
+    total += value;
+  }
+  return total;
 }
 export function snapshot(row: Row): AttemptSnapshot {
   return { protocolVersion: '1.0', attemptId: row.attempt_id, organizationId: row.organization_id,
