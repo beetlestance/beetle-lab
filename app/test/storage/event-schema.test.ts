@@ -82,3 +82,14 @@ it('keeps the indexed obligation after matched physical release and outbox retir
   expect(plan.some(row => String(row.detail).includes('execution_event_pending'))).toBe(true);
   f.append(); expect(f.cursor().event_count).toBe(1);
 });
+
+it('requires a new event obligation instead of accepting explicit closure at record birth', () => {
+  expect(() => eventSchemaFixture(1000, true, 0)).toThrow('new event obligation required');
+});
+it.each([undefined, 1])('keeps omitted/explicit pending%s discoverable after acknowledgment and release', pending => {
+  const f = eventSchemaFixture(1000, true, pending); f.release(f.binding.key);
+  expect(f.db.prepare(`SELECT event_pending,execution_charged FROM execution_records INDEXED BY execution_event_pending
+    WHERE acknowledged_generation=1 AND event_pending=1`).all())
+    .toEqual([{ event_pending: 1, execution_charged: 0 }]);
+  f.create(); expect(f.cursor().durable_through).toBe(0);
+});

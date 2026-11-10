@@ -8,6 +8,9 @@ CREATE INDEX execution_event_pending ON execution_records(queue_order,attempt_id
  WHERE acknowledged_generation=1 AND event_pending=1;
 CREATE UNIQUE INDEX execution_event_binding ON execution_records
  (attempt_id,run_id,organization_id,workspace_id,intent_digest,journal_authority,acknowledged_generation);
+CREATE TRIGGER execution_event_pending_insert BEFORE INSERT ON execution_records
+ WHEN NEW.event_pending IS NOT 1
+ BEGIN SELECT RAISE(ABORT,'new event obligation required'); END;
 CREATE TRIGGER execution_event_pending_retained BEFORE UPDATE OF event_pending ON execution_records
  WHEN NEW.event_pending IS NOT OLD.event_pending
  BEGIN SELECT RAISE(ABORT,'event closure requires finalization authority'); END;
