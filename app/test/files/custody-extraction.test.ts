@@ -4,7 +4,7 @@ import { nativePort as inputNativePort } from '../../src/adapters/outbound/files
 import { safeError } from '../../src/adapters/outbound/files/inputs/job.js';
 import { InputByteError } from '../../src/ports/input-bytes.js';
 
-it.each(['invalid_input', 'cancelled', 'integrity', 'io', 'cleanup', 'capacity_unavailable'] as const)(
+it.each(['custody_missing', 'invalid_input', 'cancelled', 'integrity', 'io', 'cleanup', 'capacity_unavailable'] as const)(
   'maps physical %s failures to the existing input error ABI', code => {
     const physical = new FileCustodyError(code);
     const error = safeError(physical);
