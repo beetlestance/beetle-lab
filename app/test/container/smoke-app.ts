@@ -56,7 +56,7 @@ try {
   const configuration = await backendConfiguration(f, agent, origin);
   evidence.sourceDigests = await fingerprints(configuration.application.metadata.workerUrl);
   evidence.phase = 'application-startup'; app = await openApplication(configuration.application);
-  await app.server.listen(configuration.listen);
+  await app.server.listen({ ...configuration.listen });
   const session = await publicClient(app, origin); await waitForCapacity(app);
   evidence.phase = 'public-enqueue'; const queued = await enqueue(session.api, f);
   evidence.phase = 'public-terminal'; const terminal = await finished(session.api, queued, f.workStatus);
@@ -67,7 +67,7 @@ try {
   Object.assign(evidence, { receipt: physical.receipt, charge: physical.charge,
     publishedArtifacts: physical.artifacts, durableAgentEvents: physical.eventCount });
   evidence.phase = 'metadata-reopen'; app = await openApplication(configuration.application); applicationClosed = false;
-  await app.server.listen(configuration.listen); const reopened = await publicClient(app, origin);
+  await app.server.listen({ ...configuration.listen }); const reopened = await publicClient(app, origin);
   assert.deepEqual(value(await reopened.api.getRun({ params: terminal.params })), terminal.run);
   assert.deepEqual(value(await reopened.api.getRunResult({ params: terminal.params })), terminal.result);
   evidence.reopenPublicRequests = reopened.requestCount(); await app.close(); app = undefined; applicationClosed = true;
