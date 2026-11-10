@@ -1,8 +1,9 @@
 # Durable output delivery closure
 
-Status: independently reviewed exact contract; unused interface declarations
-only, implementation pending. Coordinator reserves agent migration013 for this
-boundary. Refines the producer
+Status: Journal storage, migration013 and indexed discovery are implemented and
+independently reviewed. Manager producer barriers and scheduler wiring remain
+pending. See [component evidence](../../verification/output-delivery-closure.md).
+Refines the producer
 barrier in [output transfer](output-transfer.md), using the existing immutable
 [source receipt](output-source-journal.md). It does not publish backend results.
 

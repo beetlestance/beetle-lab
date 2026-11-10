@@ -1,7 +1,8 @@
 # Run result presentation
 
-Status: frozen component interface, implementation pending. Uses existing Run and
-EngineResult contracts and project theme tokens. Backend result persistence/read
+Status: presentation component implemented and independently reviewed. Uses existing
+Run and EngineResult contracts and project theme tokens. See
+[component evidence](../../verification/run-result-panel.md). Backend result persistence/read
 routes and real-engine/browser qualification remain separate required work.
 
 Public feature entry exports RunResultPanel and RunResultProps. Props in types.ts

@@ -65,7 +65,11 @@ private codecs, digest vectors and native stopped-root facts.
 implemented durable intents/sources, exact quota and receipt-gated release.
 [Controller source evidence](docs/verification/controller-source-lifecycle.md) records
 integrated native collection, stable source requests and conservative restart recovery.
-Backend artifact transfer, event-stream closure and publication are next.
+Source-backed stream closure storage and indexed debt discovery are implemented;
+[closure evidence](docs/verification/output-delivery-closure.md) records scoped limits.
+Manager producer barriers, scheduler wiring, artifact transfer and publication are next.
+The [result panel](docs/verification/run-result-panel.md) is implemented with explicit
+unavailable data until the backend result read path exists.
 
 ## Delivery order
 
