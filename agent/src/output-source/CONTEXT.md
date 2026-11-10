@@ -23,6 +23,6 @@ and identity owners. Capture closed owned values before hashing or worker issue.
 Respect separate public/private byte limits; raw result length is not canonical
 sealed content length. No native IO, catalogue lookup or engine invocation here.
 
-Digest vectors live in agent/test/output-source/vectors/v1.json. Focused codec
+Digest vectors live in contracts/fixtures/output-source/v1.json. Focused codec
 tests validate failures and boundaries as well as those positive vectors.
 Focused command: vitest run agent/test/output-source --maxWorkers=1.

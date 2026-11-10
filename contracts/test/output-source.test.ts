@@ -4,7 +4,7 @@ import { encodeCanonicalJson, sealEngineResult } from '../src/index.js';
 import { prepareOutputManifest, verifyOutputManifest, OUTPUT_MANIFEST_PREFIX, OUTPUT_MANIFEST_BYTES,
   OUTPUT_SOURCE_RESULT_BYTES, OutputSourceError } from '../src/output-source/index.js';
 import type { PublicCore, PublicManifest } from '../src/output-source/index.js';
-import data from '../../agent/test/output-source/vectors/v1.json' with { type: 'json' };
+import data from '../fixtures/output-source/v1.json' with { type: 'json' };
 
 type Mutable<T> = T extends readonly (infer Item)[] ? Mutable<Item>[]
   : T extends object ? { -readonly [Key in keyof T]: Mutable<T[Key]> } : T;
