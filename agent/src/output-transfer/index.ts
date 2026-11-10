@@ -21,7 +21,6 @@ export interface OutputSourceReaderOptions {
   readonly monotonicNow?: () => number;
 }
 export type CreateOutputSourceReader = (options: OutputSourceReaderOptions) => OutputSourceReader;
-export type OutputTransferCode = 'invalid_input' | 'pending' | 'unavailable' | 'conflict' | 'busy' | 'interrupted';
-export class OutputTransferError extends Error {
-  constructor(readonly code: OutputTransferCode) { super(`Output transfer ${code}`); }
-}
+export { OutputTransferError } from './errors.js';
+export type { OutputTransferCode } from './errors.js';
+export { createOutputSourceReader } from './reader.js';
