@@ -5,6 +5,7 @@ import { validate } from '@beetle/contracts';
 import type { ControlEvent, EngineResult } from '@beetle/contracts';
 import type { SupervisorInput } from '../../src/journal/index.js';
 import { journalFixture } from './fixtures.js';
+import { removeFutureRetention } from './legacy-fixtures.js';
 
 const f = journalFixture();
 function phase(seq: number, phase: ControlEvent['phase']): ControlEvent { return { ...f.wrapper(seq), phase }; }
@@ -31,6 +32,7 @@ function inspect<T>(path: string, work: (db: DatabaseSync) => T): T {
   const db = new DatabaseSync(path); try { return work(db); } finally { db.close(); }
 }
 function dropProjection(db: DatabaseSync, keepResult = false): void {
+  removeFutureRetention(db);
   db.exec('DROP TABLE cancelled_originals; DROP TABLE journal_authority; ALTER TABLE accepted_attempts DROP COLUMN checkpoint_bytes; ALTER TABLE accepted_attempts DROP COLUMN wrapper_checkpoint_json; '
     + 'ALTER TABLE accepted_attempts DROP COLUMN snapshot_bytes; ALTER TABLE accepted_attempts DROP COLUMN phase; '
     + 'ALTER TABLE accepted_attempts DROP COLUMN exit_json; ALTER TABLE accepted_attempts DROP COLUMN exit_facts_json;');
@@ -205,7 +207,7 @@ describe('additive unpublished journal migration', () => {
     expect((await journal.readEvents(f.key(), 0)).events[0]?.kind).toBe('engine.result');
     await f.close(journal);
     inspect(path, db => {
-      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(10);
+      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
       expect(db.prepare('SELECT last_seq,acknowledged_seq,spool_bytes FROM accepted_attempts').get()).toEqual(before);
       expect(db.prepare('SELECT snapshot_bytes FROM accepted_attempts').get()?.snapshot_bytes).toBe(0);
     });

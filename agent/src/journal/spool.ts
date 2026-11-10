@@ -38,7 +38,7 @@ export function appendAtomic(db: DatabaseSync, input: EventInput): AgentEvent {
   const projection = project(row, event);
   const bytes = Buffer.byteLength(json);
   const charge = bytes + Buffer.byteLength(input.canonical) + 256;
-  if (row.spool_rows >= 65_536 || row.spool_bytes + charge + projection.snapshot_bytes + row.checkpoint_bytes > row.quota_bytes) throw new Failure('quota_exceeded');
+  if (row.spool_rows >= 65_536 || row.spool_bytes + charge + projection.snapshot_bytes + row.checkpoint_bytes + row.hold_bytes > row.quota_bytes) throw new Failure('quota_exceeded');
   db.prepare(`INSERT INTO event_spool
     (attempt_id,generation,seq,source,source_key,canonical_json,event_json,encoded_bytes,charged_bytes)
     VALUES (?,?,?,?,?,?,?,?,?)`).run(row.attempt_id, row.generation, event.seq,

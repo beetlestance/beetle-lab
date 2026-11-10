@@ -21,13 +21,15 @@ const corruption: [string, (db: DatabaseSync) => void][] = [
   ['queue forgotten closure', db => { db.exec('UPDATE admission_queue SET pending=0'); }],
 ];
 const reservationCorruption: [string, (db: DatabaseSync) => void][] = [
+  ['reservation queue pending', db => { db.exec('UPDATE admission_queue SET pending=1'); }],
+  ['reservation missing queue', db => { db.exec('DELETE FROM admission_queue'); }],
+  ['reservation queue identity', db => mutateReservation(db, value => { value.order = 100; })],
+];
+const guardedReservationCorruption: [string, (db: DatabaseSync) => void][] = [
   ['reservation malformed', db => { db.exec("UPDATE reservations SET reservation_json='[]'"); }],
   ['reservation scope', db => mutateReservation(db, value => { value.workspaceId = f.job(2).workspaceId + '0'; })],
   ['reservation generation', db => mutateReservation(db, value => { value.generation = 2; })],
   ['reservation charged column', db => { db.exec('UPDATE reservations SET charged=0'); }],
-  ['reservation queue pending', db => { db.exec('UPDATE admission_queue SET pending=1'); }],
-  ['reservation missing queue', db => { db.exec('DELETE FROM admission_queue'); }],
-  ['reservation queue identity', db => mutateReservation(db, value => { value.order = 100; })],
   ['released without proof', db => {
     mutateReservation(db, value => { value.status = 'released'; }); db.exec('UPDATE reservations SET charged=0');
   }],
@@ -37,6 +39,26 @@ const reservationCorruption: [string, (db: DatabaseSync) => void][] = [
     db.exec('UPDATE reservations SET charged=0');
   }],
 ];
+function assertReservationWriteDenied(db: DatabaseSync, change: (db: DatabaseSync) => void,
+  reason = 'immutable disk reservation'): void {
+  const tables = ['accepted_attempts', 'event_spool', 'admission_queue', 'reservations',
+    'disk_holds', 'disk_retention_stats', 'sqlite_sequence'];
+  const rows = () => tables.map(table => ({ table, rows: db.prepare(`SELECT * FROM ${table}`).all() }));
+  const before = rows();
+  expect(() => change(db)).toThrow(reason);
+  expect(rows()).toEqual(before);
+  expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+}
+function oversizedReservation(db: DatabaseSync): string {
+  const row = db.prepare('SELECT reservation_json FROM reservations').get();
+  const original: unknown = JSON.parse(String(row?.reservation_json));
+  if (typeof original !== 'object' || original === null || Array.isArray(original)) {
+    throw new Error('expected original reservation object');
+  }
+  const oversized = JSON.stringify({ ...original, diagnosticPadding: '🪲'.repeat(32768 / 4) });
+  expect(Buffer.byteLength(oversized, 'utf8')).toBeGreaterThan(32768);
+  return oversized;
+}
 describe('bounded durable admission storage validation', () => {
   it.each(corruption)('fails closed on %s', async (_name, change) => {
     const path = f.path(); const journal = await f.configured(path); const job = f.job(); await f.enqueue(journal, job);
@@ -52,6 +74,15 @@ describe('bounded durable admission storage validation', () => {
     const reopened = await f.open(path);
     await expect(reopened.get(scope(job))).rejects.toMatchObject({ code: 'unavailable' });
   });
+  it.each(guardedReservationCorruption)('rejects %s at WRITE with unchanged rows, counters and valid read', async (_name, change) => {
+    const path = f.path(); const journal = await f.configured(path); const job = f.job();
+    await f.enqueue(journal, job); await f.admit(journal, job);
+    const before = await journal.get(scope(job)); await f.close(journal);
+    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+    try { assertReservationWriteDenied(db, change); } finally { db.close(); }
+    const reopened = await f.open(path);
+    expect(await reopened.get(scope(job))).toEqual(before);
+  });
   it.each(['capacity_unknown', 'made_up', 'cancelled'])('rejects inconsistent durable refusal %s', async reason => {
     const path = f.path(); const journal = await f.configured(path); const job = f.job(); await f.enqueue(journal, job);
     await f.close(journal); const db = new DatabaseSync(path);
@@ -65,9 +96,10 @@ describe('bounded durable admission storage validation', () => {
     if (column === 'reservation_json') await f.admit(journal, job);
     await f.close(journal); const db = new DatabaseSync(path);
     const table = column === 'reservation_json' ? 'reservations' : 'admission_queue';
-    const cap = column === 'candidate_json' ? 16384 : column === 'decision_json' ? 512 : 32768;
+    const cap = column === 'candidate_json' ? 16384 : 512;
+    const oversized = column === 'reservation_json' ? oversizedReservation(db) : JSON.stringify('🪲'.repeat(cap / 4));
     db.exec('PRAGMA ignore_check_constraints=ON');
-    db.prepare(`UPDATE ${table} SET ${column}=?`).run(JSON.stringify('🪲'.repeat(cap / 4)));
+    db.prepare(`UPDATE ${table} SET ${column}=?`).run(oversized);
     const original = db.prepare.bind(db); const inspected: unknown[] = [];
     const spy = vi.spyOn(db, 'prepare').mockImplementation(sql => {
       const statement = original(sql);
@@ -84,6 +116,19 @@ describe('bounded durable admission storage validation', () => {
       expect(() => store.execute({ kind: 'get', key: scope(job), id: 1 })).toThrow('unavailable');
       expect(inspected).toContain(null);
     } finally { spy.mockRestore(); db.close(); }
+  });
+  it('rejects oversized reservation_json at WRITE before materialization with unchanged rows and read', async () => {
+    const path = f.path(); const journal = await f.configured(path); const job = f.job();
+    await f.enqueue(journal, job); await f.admit(journal, job);
+    const before = await journal.get(scope(job)); await f.close(journal);
+    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+    try {
+      assertReservationWriteDenied(db, connection => {
+        connection.prepare('UPDATE reservations SET reservation_json=?').run(oversizedReservation(connection));
+      }, 'CHECK constraint failed');
+    } finally { db.close(); }
+    const reopened = await f.open(path);
+    expect(await reopened.get(scope(job))).toEqual(before);
   });
   it('keeps ordinary tracked GET/list/cancel reads compact without loading any Offer/config payload', async () => {
     const path = f.path(); const journal = await f.configured(path); const job = f.job();
@@ -126,12 +171,13 @@ describe('bounded durable admission storage validation', () => {
     const reopened = await f.open(path);
     await expect(reopened.get(scope(job))).rejects.toMatchObject({ code: 'unavailable' });
   });
-  it('rejects unknown settlement masquerading as released despite matching release payloads', async () => {
+  it('rejects unknown settlement masquerading as released at WRITE despite matching release payloads', async () => {
     const path = f.path(); const journal = await f.configured(path); const job = f.job();
-    await f.enqueue(journal, job); await f.admit(journal, job); await f.close(journal);
-    const db = new DatabaseSync(path);
+    await f.enqueue(journal, job); await f.admit(journal, job);
+    const before = await journal.get(scope(job)); await f.close(journal);
+    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
     try {
-      mutateReservation(db, value => {
+      assertReservationWriteDenied(db, connection => mutateReservation(connection, value => {
         value.status = 'released'; value.createToken = 'private-create'; value.specDigest = digest; value.runtimeId = 'private-runtime';
         value.launchClosed = true;
         const binding = { key: scope(job), createToken: value.createToken, specDigest: digest, runtimeId: value.runtimeId };
@@ -141,10 +187,10 @@ describe('bounded durable admission storage validation', () => {
           launch: { epoch: 0, startToken: null, settlementId: 'private-settlement' },
           runtime: { state: 'stopped', source: 'supervisor', observedAt: now + 1, evidenceId: 'private-stop' },
           collection: { state: 'finished', observedAt: now + 1, evidenceId: 'private-collection' } };
-      });
-      db.exec('UPDATE reservations SET charged=0');
+      }));
+      assertReservationWriteDenied(db, connection => { connection.exec('UPDATE reservations SET charged=0'); });
     } finally { db.close(); }
     const reopened = await f.open(path);
-    await expect(reopened.get(scope(job))).rejects.toMatchObject({ code: 'unavailable' });
+    expect(await reopened.get(scope(job))).toEqual(before);
   });
 });

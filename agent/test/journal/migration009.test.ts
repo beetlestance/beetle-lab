@@ -4,6 +4,7 @@ import { expect, it } from 'vitest';
 import { initialize } from '../../src/journal/schema.js';
 import { migration008 } from '../../src/journal/migration008.js';
 import { migration009 } from '../../src/journal/migration009.js';
+import { migration010 } from '../../src/journal/migration010.js';
 import { readJournalAuthority } from '../../src/journal/authority.js';
 import { transaction } from '../../src/journal/sql.js';
 import { journalFixture } from './fixtures.js';
@@ -25,10 +26,32 @@ function durableRows(db: DatabaseSync) {
   return ['accepted_attempts', 'event_spool', 'admission_settings', 'admission_queue', 'reservations',
     'supervision_clock', 'sqlite_sequence'].map(table => ({ table, rows: db.prepare(`SELECT * FROM ${table}`).all() }));
 }
+function migrateAuthority(db: DatabaseSync): void {
+  transaction(db, () => {
+    db.exec(migration009);
+    db.prepare('INSERT INTO journal_authority(id,authority) VALUES(1,?)').run(null);
+    db.exec(migration010);
+  });
+}
 
-it.each([false, true])('quarantines old v8 journal (empty=%s) without adopting identity or changing durable rows', async empty => {
+it.each([false, true])('historical migrations quarantine old v8 journal (empty=%s) without changing durable rows or schema', empty => {
   const path = f.path(); const old = v8(path, empty);
   const before = durableRows(old); const graph = definitions(old);
+  migrateAuthority(old); old.close();
+  for (let count = 0; count < 2; count++) {
+    const db = new DatabaseSync(path);
+    try {
+      expect(() => readJournalAuthority(db)).toThrow(expect.objectContaining({ code: 'recovery_required' }));
+      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(10);
+      expect(db.prepare('SELECT * FROM journal_authority').all()).toEqual([{ id: 1, authority: null }]);
+      expect(durableRows(db)).toEqual(before); expect(definitions(db)).toEqual(graph);
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+    } finally { db.close(); }
+  }
+});
+
+it('keeps an empty old journal quarantined through latest initialization and repeated reopen', async () => {
+  const path = f.path(); const old = v8(path, true); const before = durableRows(old);
   const settings = before.find(entry => entry.table === 'admission_settings')?.rows[0];
   if (!settings) throw new Error('Missing synthetic settings');
   settings.observation_json = null; old.close();
@@ -38,18 +61,35 @@ it.each([false, true])('quarantines old v8 journal (empty=%s) without adopting i
     await f.close(journal);
     const db = new DatabaseSync(path);
     try {
-      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(10);
+      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
       expect(db.prepare('SELECT * FROM journal_authority').all()).toEqual([{ id: 1, authority: null }]);
-      expect(durableRows(db)).toEqual(before); expect(definitions(db)).toEqual(graph);
+      expect(durableRows(db)).toEqual(before);
+      expect(db.prepare('SELECT * FROM disk_holds').all()).toEqual([]);
+      expect(db.prepare('SELECT * FROM disk_retention_stats').all()).toEqual([{
+        id: 1, held_count: 0, held_output_bytes: 0, held_staging_bytes: 0,
+        retained_output_bytes: 0, retained_staging_bytes: 0,
+      }]);
       expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
     } finally { db.close(); }
   }
 });
 
-it.each(['fresh', 'old'])('forbids insert/update/delete/replace of the %s singleton even with recursive triggers off', mode => {
-  const path = f.path(); if (mode === 'old') v8(path).close();
-  const db = initialize(path);
+it('refuses unsupported legacy reservation debt atomically without creating authority or retention state', async () => {
+  const path = f.path(); const old = v8(path); const before = durableRows(old); const graph = definitions(old); old.close();
+  await expect(f.open(path)).rejects.toMatchObject({ code: 'unavailable' });
+  const db = new DatabaseSync(path);
   try {
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(8);
+    expect(durableRows(db)).toEqual(before); expect(definitions(db)).toEqual(graph);
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE name IN ('journal_authority','cancelled_originals','disk_holds','disk_retention_stats')").all()).toEqual([]);
+    expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+  } finally { db.close(); }
+});
+
+it.each(['fresh', 'old'])('forbids insert/update/delete/replace of the %s singleton even with recursive triggers off', mode => {
+  const path = f.path(); const db = mode === 'old' ? v8(path) : initialize(path);
+  try {
+    if (mode === 'old') migrateAuthority(db);
     const before = db.prepare('SELECT * FROM journal_authority').all();
     db.exec('PRAGMA recursive_triggers=OFF');
     for (const sql of [
@@ -120,13 +160,13 @@ it('rolls back authority creation when COMMIT itself rejects a deferred foreign 
   } finally { db.close(); }
 });
 
-it('rejects future version11 through the compiled worker while preserving every row and version', async () => {
-  const path = f.path(); const old = v8(path); old.exec('PRAGMA user_version=11');
+it('rejects future version12 through the compiled worker while preserving every row and version', async () => {
+  const path = f.path(); const old = v8(path); old.exec('PRAGMA user_version=12');
   const before = durableRows(old); old.close();
   await expect(f.open(path)).rejects.toMatchObject({ code: 'schema_newer' });
   const db = new DatabaseSync(path);
   try {
     expect(durableRows(db)).toEqual(before);
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(12);
   } finally { db.close(); }
 });

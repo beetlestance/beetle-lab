@@ -1,7 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeJson } from '@beetle/contracts';
 import type { AdmissionCommand, AdmissionValue, Candidate, Decision, Reservation, RuntimeObservation } from '../admission/index.js';
-import { decideAdmission, validateCandidate } from '../admission/index.js';
+import { decideAdmission, validateCandidate, DISK_HOLD_METADATA_BYTES } from '../admission/index.js';
 import { admissionInput } from './admission-input.js';
 import { projectCandidate } from './admission-candidate.js';
 import { candidate, findReservation, settings, storedObservation } from './admission-data.js';
@@ -11,6 +11,7 @@ import { offerAtomic } from './offers.js';
 import { eventInput } from './event-input.js';
 import { appendAtomic } from './spool.js';
 import { Failure, owner, transaction } from './sql.js';
+import { diskRetention } from './disk-retention/facts.js';
 
 function mergeSensors(incoming: RuntimeObservation, old: RuntimeObservation | null): RuntimeObservation {
   if (!old) return incoming;
@@ -68,7 +69,7 @@ export class AdmissionStore {
     if (!metadata) return { kind: 'reject', reason: 'impossible_request' };
     const validation = validateCandidate(metadata, snapshot);
     if (validation.kind !== 'admit') return validation;
-    const current = decideAdmission(metadata, snapshot);
+    const current = decideAdmission(metadata, snapshot, diskRetention(this.db));
     if (current.kind === 'reject') return current;
     const count = Number(this.db.prepare('SELECT count(*) AS n FROM admission_queue WHERE pending=1').get()?.n);
     if (count >= 1024) return { kind: 'defer', reason: 'pending_full' };
@@ -98,10 +99,14 @@ export class AdmissionStore {
     const item = candidate(this.db, request.key);
     const snapshot = settings(this.db, request.now);
     if (snapshot.queue.length === 100 && item.order > (snapshot.queue[99]?.order ?? 0)) return { kind: 'defer', reason: 'scan_window' };
-    const decision = decideAdmission(item, snapshot);
+    const decision = decideAdmission(item, snapshot, diskRetention(this.db));
     this.db.prepare('UPDATE admission_settings SET last_clock=MAX(last_clock,?) WHERE id=1').run(request.now);
     if (decision.kind === 'reject') return this.reject(item, decision);
     if (decision.kind !== 'admit') return decision;
+    const row = owner(this.db, request.key);
+    if (row.spool_bytes + row.snapshot_bytes + row.checkpoint_bytes + DISK_HOLD_METADATA_BYTES > row.quota_bytes) {
+      throw new Failure('quota_exceeded');
+    }
     const reservation: Reservation = { ...item, status: 'charged', admittedAt: request.now, createToken: null,
       specDigest: null, runtimeId: null, startToken: null, launchEpoch: 0, startClaimedAt: null,
       launchClosed: false, launchSettlement: null, aborted: false, releaseEvidence: null };
