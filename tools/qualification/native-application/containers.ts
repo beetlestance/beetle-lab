@@ -40,14 +40,14 @@ async function createAgent(f: Fixture, control: string): Promise<void> {
   await initializeFreshInstallation(f);
   f.docker.run(['start', f.agent]);
 }
-export function targetCounts(f: Fixture): unknown {
+export function targetCounts(f: Fixture, expected = { ready: 1, work: 1, unexpected: 0 }): unknown {
   const program = `fetch('http://127.0.0.1:8080/counts',{signal:AbortSignal.timeout(2000)}).then(async r=>{
 if(r.status!==200)throw Error('counts status');const reader=r.body.getReader();let text='',bytes=0;
 for(let calls=0;calls<16;calls++){const p=await reader.read();if(p.done){console.log(text);return;}
 bytes+=p.value.length;if(bytes>256){await reader.cancel();throw Error('counts limit');}text+=Buffer.from(p.value).toString();}
 await reader.cancel();throw Error('counts fragments');}).catch(()=>process.exit(2));`;
   const counts: unknown = JSON.parse(f.docker.run(['exec', f.target, 'node', '-e', program]));
-  assert.deepEqual(counts, { ready: 1, work: 1, unexpected: 0 }); return counts;
+  assert.deepEqual(counts, expected); return counts;
 }
 export async function captureLogs(f: Fixture): Promise<string[]> {
   const failures: string[] = [];

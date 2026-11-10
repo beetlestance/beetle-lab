@@ -47,3 +47,38 @@ Unknown Docker work remains a failed qualification even if cleanup currently see
 no resources; inventory cannot prove absence of a delayed create.
 
 Pure helper controls: `npx vitest run tools/qualification/native-application/helpers.test.ts`.
+
+The separate source-free rejection command uses the same unchanged private
+installation and public session/enqueue helpers:
+
+```sh
+node --import tsx tools/qualification/native-application/smoke-absence.ts AGENT_IMAGE ENGINE_IMAGE LOCAL_CONTEXT
+```
+
+Context defaults to `default`; compiled worker overrides above apply. After
+configuring the original installation, this command lowers only the public
+enqueue CPU budget to one below the actual manifest minimum. It requires the
+agent's durable `below_manifest_minimum` rejection; earlier backend rejection
+fails qualification. No capacity, proof, source or result is supplied by the
+harness. Public reads must show errored/inconclusive, pending validation,
+`budget_unavailable` and a null result.
+
+After application close, independent bounded SQL checks compare the persisted
+Offer, canonical absence proof/digest, physical Journal UUID, exact confirmed ACK
+and event end (including zero), released execution credit and one absence receipt.
+The charge oracle derives event bytes from actual canonical bodies plus row
+allowance; this rejection must retain no provisional result, manifest, artifact
+slots or source receipt. Original allocation stays unchanged and retained storage
+must equal event bytes plus 65536. Public metadata reopen must preserve these
+facts. Authenticated agent snapshot/absence/source routes are checked separately;
+after clean agent stop, read-only Journal checks use the real loader's path and
+require no reservation, collection intent or source. Both passes require zero
+engine containers and target counts `0/0/0`.
+
+Evidence records bounded source/compiled-worker fingerprints, immutable image IDs,
+failure phase and exact-label cleanup. The command has not been Docker qualified
+merely by passing helper tests, lint or TypeScript. It makes no browser, Compose,
+native amd64 (unless actually recorded), soak or release claim.
+
+Pure rejection controls:
+`npx vitest run tools/qualification/native-application/absence-values.test.ts`.
