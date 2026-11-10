@@ -13,7 +13,7 @@ function proof(settlement: LaunchSettlement): ReleaseEvidence {
     specDigest: settlement.specDigest, runtimeId: settlement.runtimeId,
     launch: { epoch: settlement.epoch, startToken: settlement.startToken, settlementId: settlement.evidenceId },
     runtime: { state: 'stopped', source: 'supervisor', observedAt: settlement.settledAt + 1, evidenceId: 'runtime-canary' },
-    collection: { state: 'finished', observedAt: settlement.settledAt + 1, evidenceId: 'collection-canary' } };
+    collection: { state: 'failed', observedAt: settlement.settledAt + 1, evidenceId: 'collection-canary' } };
 }
 describe('original durable admission snapshots', () => {
   it('keeps untracked direct Offers absent while queue refusal survives exact replay and reopen without events', async () => {
@@ -76,6 +76,11 @@ describe('original durable admission snapshots', () => {
     const evidence = proof(settled); evidence.collection.observedAt = settled.settledAt;
     await expect(journal.admission({ kind: 'release', evidence })).rejects.toMatchObject({ code: 'invalid_input' });
     const before = await journal.get(scope(job));
+    expect(before.admission).toEqual({ state: 'charged' });
+    expect(await journal.readOutputSource(scope(job))).toBeNull();
+    const finished = proof(settled); finished.collection.state = 'finished';
+    await expect(journal.admission({ kind: 'release', evidence: finished })).rejects.toMatchObject({ code: 'conflict' });
+    expect(await journal.get(scope(job))).toEqual(before);
     await journal.admission({ kind: 'release', evidence: proof(settled) });
     const released = { ...before, admission: { state: 'released', disposition: 'settled' } };
     expect(await journal.get(scope(job))).toEqual(released);
