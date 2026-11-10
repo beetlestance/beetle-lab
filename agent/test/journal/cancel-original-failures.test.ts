@@ -6,6 +6,7 @@ import { offerInput } from '../../src/journal/input.js';
 import { admissionFixture, now, scope } from '../admission/fixtures.js';
 
 const f = admissionFixture();
+const invalidReservation = "INSERT INTO reservations(attempt_id,reservation_json,charged) SELECT attempt_id,'{}',1 FROM accepted_attempts";
 function edit(path: string, sql: string): void {
   const db = new DatabaseSync(path);
   try { db.exec(sql); } finally { db.close(); }
@@ -73,7 +74,6 @@ it.each([
   `INSERT INTO event_spool(attempt_id,generation,seq,source,source_key,canonical_json,event_json,encoded_bytes,charged_bytes)
     SELECT attempt_id,1,1,'agent',1,'{}','{}',2,260 FROM accepted_attempts`,
   "INSERT INTO admission_queue(attempt_id,candidate_json,pending) SELECT attempt_id,'{}',0 FROM accepted_attempts",
-  "INSERT INTO reservations(attempt_id,reservation_json,charged) SELECT attempt_id,'{}',1 FROM accepted_attempts",
 ])('fails closed on fresh-marker contradiction: %s', async damage => {
   const path = f.path(); const seed = await f.open(path);
   await seed.cancelOriginal({ offer: f.offer(), now }); await f.close(seed); edit(path, damage);
@@ -83,16 +83,42 @@ it.each([
   await expect(list.listOpen({ limit: 1 })).rejects.toMatchObject({ code: 'unavailable' });
 });
 
-it('denies admission/ownership before any effect when a marker coexists with reservation corruption', async () => {
+it('rejects reservation corruption beside a fresh marker before changing any native row or disk counter', async () => {
   const path = f.path(); const seed = await f.open(path);
   await seed.cancelOriginal({ offer: f.offer(), now }); await f.close(seed);
-  edit(path, "INSERT INTO reservations(attempt_id,reservation_json,charged) SELECT attempt_id,'{}',1 FROM accepted_attempts");
+  const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+  try {
+    const rows = () => ['accepted_attempts', 'supervision_clock', 'cancelled_originals', 'admission_queue',
+      'reservations', 'event_spool', 'disk_holds', 'disk_retention_stats', 'sqlite_sequence']
+      .map(table => ({ table, rows: db.prepare(`SELECT * FROM ${table}`).all() }));
+    const before = rows();
+    expect(db.prepare('SELECT * FROM disk_holds').all()).toEqual([]);
+    expect(db.prepare('SELECT hold_bytes FROM accepted_attempts').all()).toEqual([{ hold_bytes: 0 }]);
+    expect(db.prepare('SELECT * FROM disk_retention_stats').all()).toEqual([{
+      id: 1, held_count: 0, held_output_bytes: 0, held_staging_bytes: 0,
+      retained_output_bytes: 0, retained_staging_bytes: 0,
+    }]);
+    expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+    expect(() => db.exec(invalidReservation)).toThrow('invalid disk original');
+    expect(rows()).toEqual(before);
+    expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+  } finally { db.close(); }
+});
+
+it('preserves fresh refusal get/admit/claim semantics after native reservation injection is denied', async () => {
+  const path = f.path(); const seed = await f.open(path);
+  const initial = await seed.cancelOriginal({ offer: f.offer(), now }); await f.close(seed);
+  expect(() => edit(path, invalidReservation)).toThrow('invalid disk original');
   const journal = await f.open(path);
-  await expect(journal.admission({ kind: 'admit', key: f.key(), now, sourceOrdinal: 1 })).rejects.toMatchObject({ code: 'unavailable' });
-  await journal.abort();
+  expect(await journal.get(f.key())).toEqual(initial);
+  expect(await journal.admission({ kind: 'admit', key: f.key(), now, sourceOrdinal: 1 }))
+    .toEqual({ kind: 'reject', reason: 'cancelled' });
+  await f.close(journal);
   const reopened = await f.open(path);
+  expect(await reopened.get(f.key())).toEqual(initial);
   await expect(reopened.admission({ kind: 'claimCreate', key: f.key(), specDigest: 'b'.repeat(64) }))
-    .rejects.toMatchObject({ code: 'unavailable' });
+    .rejects.toMatchObject({ code: 'not_found' });
+  expect(await reopened.get(f.key())).toEqual(initial);
 });
 
 it('denies native event creation on a fresh refusal without changing the receipt', async () => {
