@@ -17,8 +17,9 @@ that result inside the separate65536 metadata allowance. Persist no second compl
 result/manifest copy without counting it in D; derive summary views from the one
 stored result or explicitly charge any persisted derivative.
 
-Each artifact owns one task-specific staging file followed by same-filesystem
-atomic rename; that same content counts once in A. A second temporary/final copy
+Each artifact owns one task-specific staging file, promoted on the same filesystem
+by no-overwrite hardlink, verified two-alias custody and staging unlink. Both names
+refer to one inode/content charged once in A. A second temporary/final copy
 counts separately in D before writing. Recovery reconciles its existing file/token
 before creating another writer; an unresolved old original prevents a replacement.
 Do not silently expand P, borrow metadata allowance or rerun the engine on shortage.
@@ -65,8 +66,8 @@ One writer per artifact uses durable random upload identity, bounded append/stat
 reconciliation and exact expected length/hash from the adopted manifest. Keep
 source ID, artifact ID, file token and expected hash immutable. A resumed file is
 rehash-verified to full expected SHA256 before publication, including zero bytes.
-Original writes, data flush, cached descriptor closes and parent-directory rename
-flush must succeed before a file receipt escapes. Lost publication reply reconciles
+Original writes, data flush, cached descriptor closes and both parent-directory
+flushes must succeed before a file receipt escapes. Lost publication reply reconciles
 the same token/path/digest, never creates another uncharged copy or marks missing
 files complete. Reuse common local file custody primitives; input lifecycle rows
 and engine source paths are not artifact storage authority.
@@ -104,7 +105,7 @@ Retention/deletion and nonexecution/error closure remain required first-release 
 
 Native files plus real metadata worker: C+M+A+D exact/one-byte-short/overflow,
 concurrent event/adoption reserve, settings reduction, commit/serialization rollback,
-wrong original/source/UUID, duplicate/resumed appends, partial fsync/close/rename,
+wrong original/source/UUID, duplicate/resumed appends, partial fsync/close/link/unlink,
 zero-byte full hash, reply loss after native/SQL publication, no double-copy/refund,
 late/missing events against immutable closure, cancellation before/after terminal
 COMMIT, and restart recovery without target execution. Inspect rows/counters/files,
