@@ -25,7 +25,7 @@ it('converts and reopens actual schema7 without duplicating result or changing r
   const before = oldFacts(old.db); old.db.close();
   let db = initialize(path);
   try {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(8);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(9);
     expect(oldFacts(db).slice(1)).toEqual(before.slice(1));
     const observations = new DispatchObservations(db, new RunReads(db, new Suites(db, new Entities(db))));
     expect(observations.observe({ key: old.key, journalAuthority: '33333333-3333-4333-8333-333333333333', snapshot: old.snapshot }).snapshot).toEqual(old.snapshot);
@@ -59,10 +59,10 @@ it('keeps an old unbound result-free header without relaxing its immutable autho
     expect(() => db.exec('UPDATE execution_records SET snapshot_json=snapshot_json')).toThrow('immutable delivery authority');
   } finally { db.close(); }
 });
-it('rejects future schema9 and preserves its version', () => {
-  const path = join(root, 'future.sqlite'); const db = new DatabaseSync(path); db.exec('PRAGMA user_version=9'); db.close();
+it('rejects future schema10 and preserves its version', () => {
+  const path = join(root, 'future.sqlite'); const db = new DatabaseSync(path); db.exec('PRAGMA user_version=10'); db.close();
   expect(() => initialize(path)).toThrow(); const read = new DatabaseSync(path);
-  try { expect(read.prepare('PRAGMA user_version').get()?.user_version).toBe(9); } finally { read.close(); }
+  try { expect(read.prepare('PRAGMA user_version').get()?.user_version).toBe(10); } finally { read.close(); }
 });
 it.each(['padded', 'duplicate-key'] as const)('fails intact on a stored result-free %s header that the new reader would refuse', mode => {
   const path = join(root, 'raw-header.sqlite'); const old = legacyPayload(path, { body: false });

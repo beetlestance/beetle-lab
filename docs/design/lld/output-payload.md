@@ -1,7 +1,8 @@
 # Backend output payload carrier
 
-Status: coordinator contract for implementation. Migration008 is reserved for
-this boundary; source adoption and terminal settlement are separate work.
+Status: implemented and independently reviewed as application migration008;
+[local evidence](../../verification/output-adoption.md) records its scope. Source
+adoption and terminal settlement have separate owners.
 This refines [output adoption](output-adoption.md), without changing public wire
 schemas or the pure attempt-observation merge.
 

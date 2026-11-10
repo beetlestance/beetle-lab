@@ -31,11 +31,11 @@ function prior(path: string): DatabaseSync {
   const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
   db.exec(migration001); db.exec(migration002); migrate003(db); return db;
 }
-it('upgrades3 without changing prior namespace/settings/revision/receipt data and reopens5', () => {
+it('upgrades3 without changing prior namespace/settings/revision/receipt data and reopens latest schema', () => {
   const path = join(root, 'upgrade.sqlite'); let db = prior(path); seed(db);
   const tables = ['organizations', 'workspaces', 'folders', 'settings', 'suites', 'suite_revisions', 'receipts'];
   const before = tables.map(table => db.prepare(`SELECT * FROM ${table}`).all()); db.close(); db = initialize(path);
-  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(7);
+  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(9);
   expect(tables.map(table => db.prepare(`SELECT * FROM ${table}`).all())).toEqual(before);
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]); db.close(); db = initialize(path);
   expect(db.prepare('SELECT count(*) AS n FROM runs').get()?.n).toBe(0); db.close();

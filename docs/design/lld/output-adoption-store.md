@@ -1,8 +1,8 @@
 # Backend source adoption store
 
-Status: proposed coordinator port; implementation waits for the accepted payload
-carrier. [Output adoption](output-adoption.md) owns accounting; [payload storage](output-payload.md)
-owns the single result/manifest body. Application migration009 is reserved for this
+Status: implemented and independently reviewed; [local evidence](../../verification/output-adoption.md)
+records SQLite and compiled-worker limits. [Output adoption](output-adoption.md) owns accounting; [payload storage](output-payload.md)
+owns the single result/manifest body. Application migration009 implements this
 store; agent Journal migration numbers are independent. No artifact writer,
 finalization or deletion authority is granted by this prerequisite.
 

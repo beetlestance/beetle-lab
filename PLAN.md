@@ -32,7 +32,7 @@ model assignments, agent packets, concurrency and independent review.
 
 | Area | Integrated | Still required |
 | --- | --- | --- |
-| Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings, suite and run-intake schemas/clients; exact installed descriptor binding in immutable Offers; atomic queued-run/attempt/outbox SQLite intake; authenticated enqueue/detail/history routes; Fastify JSON adapter; separate config/Offer bounds; private agent/backend capacity publication and owned startup/shutdown; shared exact staging accounting and same-lease execution limits; bounded claim/observation transactions, metadata dispatch RPC and immutable journal binding; bounded automatic delivery/reconciliation; receipt-first scoped cancellation; durable event ingestion/ACK and fair collection | Result routes and result storage |
+| Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings, suite and run-intake schemas/clients; exact installed descriptor binding in immutable Offers; atomic queued-run/attempt/outbox SQLite intake; authenticated enqueue/detail/history routes; Fastify JSON adapter; separate config/Offer bounds; private agent/backend capacity publication and owned startup/shutdown; shared exact staging accounting and same-lease execution limits; bounded claim/observation transactions, metadata dispatch RPC and immutable journal binding; bounded automatic delivery/reconciliation; receipt-first scoped cancellation; durable event ingestion/ACK and fair collection | Artifact writer/terminal settlement and result routes |
 | Agent | Catalogue/admission/staging/controllers; typed stops; bounded scheduling; guards/full observation publisher; installed runtime; Node24 image/private HTTP; real arm64 k6 pass/fail; journal010/immutable identity and atomic fresh cancellation refusal; exclusive control store and actual startup/wire binding; large-original bounds, propagation and launch contention; admission carrier at node/depth maxima; immutable collected output root/byte facts | First-install provisioning; updated image/Compose/stop-latency qualification, irreversible recovery fencing, telemetry, application artifact transfer/finalization and native architecture matrix |
 | k6 | Suite compiler/runtime/builder, phase-isolated metrics, control journal, staged loader, child runner, numeric windows, summary collector, outcome mapper, staged wrapper, seal codec and artifact publication | Live quantiles, target sampler, reports/export |
 | Product | Namespace/settings and immutable suite/revision SQLite/API composition; native input publication/HTTP/recovery, bounded byte client and scoped inventory/deletion UI; sessions, paired React authoring, session-owned upload/download controls and dev proxy; scoped run history/detail and saved-revision submission/replay and scoped cancellation controls | Browser qualification, live metrics, artifact store, reports, automation client and Docker frontend proxy |
@@ -75,9 +75,8 @@ gateway and Journal-backed source service are integrated.
 [Native source HTTP](docs/verification/output-source-http.md) proves the real agent
 Journal/file/HTTP path; backend adoption and end-to-end k6 results remain pending.
 [Backend native files](docs/verification/output-files.md) records shared custody,
-no-overwrite promotion and standalone lease evidence; the full byte adapter is in
-progress. Payload storage remains under review; source adoption/finalization and
-result routes are pending.
+no-overwrite promotion, standalone lease and native byte adapter evidence. Payload storage and metadata source adoption are integrated; artifact writer
+coordination, transfer/finalization and result routes remain pending.
 The [result panel](docs/verification/run-result-panel.md) is implemented with explicit
 unavailable data until the backend result read path exists.
 
