@@ -58,6 +58,8 @@ The owning document below must be updated before its implementation changes.
 | Mounted input/secret intake | [Installed providers](lld/installed-providers.md) | Scoped lazy input streams, explicit aliases, bounded private files and original cleanup |
 | Agent executable/container | [Executable agent](lld/executable-agent.md) | Private configuration, shipped schema bindings, signal ownership and image boundary |
 | Private runner HTTP | [Agent HTTP](lld/agent-http.md) | Credential/scope fences, bounded runner DTOs and request ownership |
+| Public event replay and activity | [Event reads](lld/run-event-reads.md), [activity UI](lld/run-timeline-ui.md) | Scoped bounded durable reads and truthful recent execution activity |
+| Published artifact access | [Download backend](lld/run-artifact-downloads.md), [browser controls](lld/run-artifact-controls.md) | Publication evidence, native verified streaming and bounded browser inventory |
 | k6 live duration estimates | [Distributions](lld/k6-distributions.md) | Bounded mergeable histograms, precision, numeric artifacts and acceptance |
 | Scheduler or instrumentation | [Resources/observability](lld/resources-observability.md) | Admission, budgets, CPU/RAM, phases, telemetry limits |
 | HTTP, CLI or browser | [Application/UI](lld/application-ui.md) | API routes, errors, events, queries, export, frontend |

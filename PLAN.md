@@ -35,59 +35,27 @@ model assignments, agent packets, concurrency and independent review.
 | Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings, suite and run-intake schemas/clients; exact installed descriptor binding in immutable Offers; atomic queued-run/attempt/outbox SQLite intake; authenticated enqueue/detail/history routes; Fastify JSON adapter; separate config/Offer bounds; private agent/backend capacity publication and owned startup/shutdown; shared exact staging accounting and same-lease execution limits; bounded claim/observation transactions, metadata dispatch RPC and immutable journal binding; bounded automatic delivery/reconciliation; receipt-first scoped cancellation; durable event ingestion/ACK and fair collection; artifact writer/transfer and verified result route | Publication cleanup, retention and release qualification |
 | Agent | Catalogue/admission/staging/controllers; typed stops; bounded scheduling; guards/full observation publisher; installed runtime; Node24 image/private HTTP; real arm64 k6 pass/fail; journal010/immutable identity and atomic fresh cancellation refusal; exclusive control store and actual startup/wire binding; large-original bounds, propagation and launch contention; admission carrier at node/depth maxima; immutable collected output root/byte facts | First-install provisioning; updated image/Compose/stop-latency qualification, irreversible recovery fencing, per-attempt CPU/RAM/PID telemetry, publication cleanup and native architecture matrix |
 | k6 | Suite compiler/runtime/builder, phase-isolated metrics, control journal, staged loader, child runner, numeric windows with bounded mergeable duration distributions, summary collector, outcome mapper, staged wrapper, seal codec and artifact publication | Live metric transport/API/charts, target sampler, reports/export |
-| Product | Namespace/settings and immutable suite/revision SQLite/API composition; native input publication/HTTP/recovery, bounded byte client and scoped inventory/deletion UI; sessions, paired React authoring, session-owned upload/download controls and dev proxy; scoped run history/detail and saved-revision submission/replay and scoped cancellation controls; scoped verified result reads/UI; authenticated durable event replay API and client; bounded execution activity UI | Browser qualification, live metrics, artifact download/retention lifecycle, reports, automation client and Docker frontend proxy |
+| Product | Namespace/settings and immutable suite/revision SQLite/API composition; native input publication/HTTP/recovery, bounded byte client and scoped inventory/deletion UI; sessions, paired React authoring, session-owned upload/download controls and dev proxy; scoped run history/detail and saved-revision submission/replay and scoped cancellation controls; scoped verified result reads/UI; authenticated durable event replay API and client; bounded execution activity UI; verified published artifact metadata/content | Browser qualification, live metrics, artifact browser controls/retention lifecycle, reports, automation client and Docker frontend proxy |
 | Qualification | Local contract/unit/SQLite and public API through real agent/k6 pass/fail, artifact settlement and metadata reopen | Browser, shipped containers/Compose, scans, backup/soak and native architecture matrix |
 
 Worker submissions require independent review and exact-source integration checks.
-The [run-controls report](docs/verification/run-controls.md) records the reviewed
-UI/admission carrier, earlier full local verification and browser/execution limits.
-The [dispatch report](docs/verification/dispatch-rpc.md) records the earlier storage
-and worker RPC boundary. Backend delivery, cancellation and durable event transport are connected;
-automatic source-backed publication/settlement are connected locally; [delivery authority](docs/design/lld/delivery-authority.md) defines the
-accepted restart/cold-restore contract still requiring implementation. Earlier
-component reports are indexed in the [documentation map](docs/README.md).
+The [documentation map](docs/README.md) indexes focused implementation evidence.
+The [actual backend/agent/k6 path](docs/verification/native-application-k6.md) has
+local pass/fail, artifact settlement and metadata-reopen evidence; the
+[source-free path](docs/verification/output-absence.md) additionally covers rejected
+intake and exact terminal credit. These do not qualify Compose or the release matrix.
 
-[Automatic delivery evidence](docs/verification/delivery-runtime.md) records the
-connected private HTTP/SQLite recovery path, synthetic-peer limits and full local gate.
-[Durable cancellation evidence](docs/verification/cancellation.md) records scoped intent,
-atomic original refusal, review corrections and the full local gate.
-[Event custody evidence](docs/verification/event-custody.md) records the reviewed
-backend transport path. [Actual agent event recovery](docs/verification/event-agent.md)
-adds separate-process HTTP/Journal pruning/reopen evidence; artifact/result qualification remains.
-No complete R0-R4 release slice is claimed. Native engine component evidence does
-not establish the new backend path, Compose install or supported architecture matrix.
-[Disk retention evidence](docs/verification/disk-retention.md) records integrated
-atomic output/staging holds through execution release and391 focused passing tests;
-cleanup and complete result transfer/finalization remain pending.
-[Source values evidence](docs/verification/output-source-values.md) records reviewed
-private codecs, digest vectors and native stopped-root facts.
-[Source Journal evidence](docs/verification/output-source-journal.md) records
-implemented durable intents/sources, exact quota and receipt-gated release.
-[Controller source evidence](docs/verification/controller-source-lifecycle.md) records
-integrated native collection, stable source requests and conservative restart recovery.
-Source-backed stream closure storage and indexed debt discovery are implemented;
-[closure evidence](docs/verification/output-delivery-closure.md) records scoped limits.
-Scheduler delivery fairness, Manager producer barriers and agent artifact HTTP
-transfer are integrated; connected publication, finalization and result routes are next.
-[Transport values](docs/verification/output-transfer-values.md) are integrated;
-[native ranges](docs/verification/output-range.md) are integrated. Same-connection
-gateway and Journal-backed source service are integrated.
-[Native source HTTP](docs/verification/output-source-http.md) proves the real agent
-Journal/file/HTTP path. Backend metadata adoption is integrated; connected transfer
-and end-to-end k6 results remain pending.
-[Backend native files](docs/verification/output-files.md) records shared custody,
-no-overwrite promotion, standalone lease and native byte adapter evidence. Payload
-storage and metadata source adoption are integrated; artifact writer
-coordination and [transfer](docs/verification/output-transfer.md) are integrated;
-automatic startup and [terminal settlement](docs/verification/output-settlement.md) are connected locally;
-source-free/error closure is [integrated](docs/verification/output-absence.md), including
-actual native rejected intake and exact credit. Publication cleanup and retention
-remain pending. The public API through real
-agent/k6 pass/fail path is now [locally verified](docs/verification/native-application-k6.md),
-including artifacts, terminal accounting and settled metadata reopen. Browser,
-Compose and full release qualification remain pending.
-The [result read path](docs/verification/run-result-read.md) connects the verified
-backend source to the existing scoped result panel; real-k6/UI qualification remains.
+Public [event replay](docs/verification/run-event-reads.md), bounded
+[execution activity](docs/verification/run-timeline-ui.md),
+[duration distributions](docs/verification/k6-distributions.md) and verified
+[artifact metadata/downloads](docs/verification/run-artifact-downloads.md) are
+integrated locally. Browser artifact controls are in implementation. Live metric
+transport/charts, actual per-attempt resource observations, target sampling,
+reports/comparison/export/automation and publication cleanup/retention remain.
+The [delivery authority](docs/design/lld/delivery-authority.md) contract still needs
+its remaining restart/cold-restore implementation. R4 additionally requires fresh
+installation, shipped images/Compose, scans, backup/restore, bounded soak/overhead
+and native amd64/arm64 evidence. No complete R0-R4 release is claimed.
 
 ## Delivery order
 
