@@ -1,6 +1,6 @@
 export { nativePort, readFlags, writeFlags, createFlags, directoryFlags } from './native.js';
 export type { NativePort } from './native.js';
-export { pinRoots, checkRoots, privateStat, sameFileOwner, same, sameDirectory } from './identity.js';
+export { pinRoot, pinRoots, checkRoots, privateStat, sameFileOwner, same, sameDirectory } from './identity.js';
 export type { Identity, Root, Roots } from './identity.js';
 export { Custody } from './custody.js';
 export { Directories } from './directories.js';
