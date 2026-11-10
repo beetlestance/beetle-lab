@@ -1,5 +1,6 @@
 import { performance } from 'node:perf_hooks';
 import type { Scope } from '../admission/index.js';
+import { Discovery } from './discovery.js';
 import { SchedulerError } from './types.js';
 import type { Scheduler, SchedulerOptions, SchedulerStatus } from './types.js';
 
@@ -24,7 +25,7 @@ class Loop implements Scheduler {
   private timer: NodeJS.Timeout | undefined;
   private pass: Promise<void> | undefined;
   private closing: Promise<void> | undefined;
-  private queuedCursor: number | undefined;
+  private readonly discovery = new Discovery();
   private chargedOffset = 0;
 
   constructor(private readonly options: SchedulerOptions) {
@@ -71,18 +72,17 @@ class Loop implements Scheduler {
   }
 
   private async scan(): Promise<void> {
-    const charged = await this.options.journal.scanRunnable({ lane: 'charged', limit: 100 });
-    if (this.closed) return;
-    if (charged.cursor !== undefined || charged.attempts.length > MAX_DRIVES) throw new SchedulerError('invalid_input');
-    this.dispatchCharged(charged.attempts);
-    if (this.closed || this.work.size >= MAX_DRIVES) return;
-    const queued = await this.options.journal.scanRunnable({ lane: 'queued', limit: MAX_DRIVES - this.work.size,
-      ...(this.queuedCursor === undefined ? {} : { cursor: this.queuedCursor }) });
-    if (this.closed) return;
-    // Advance only through a page whose identities were considered; an occupied
-    // slot is not a queued identity and is revisited in the next durable pass.
-    for (const key of queued.attempts) this.dispatch(key);
-    this.queuedCursor = queued.cursor;
+    for (const lane of this.discovery.nextPass()) {
+      if (this.closed || this.work.size >= MAX_DRIVES) return;
+      const request = this.discovery.request(lane, MAX_DRIVES - this.work.size);
+      const page = await this.options.journal.scanRunnable(request);
+      if (this.closed) return;
+      const attempts = this.discovery.validate(request, page);
+      if (lane === 'charged') this.dispatchCharged(attempts);
+      else for (const key of attempts) this.dispatch(key);
+      if (this.closed) return;
+      this.discovery.considered(request, page);
+    }
   }
 
   private dispatchCharged(attempts: readonly Scope[]): void {
