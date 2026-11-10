@@ -28,6 +28,7 @@ The owning document below must be updated before its implementation changes.
 | Collected output facts | [Collection custody](lld/output-collection-custody.md) | Private bounded root/result facts after original closes; not source/publication authority |
 | Agent disk retention | [Disk retention](lld/disk-retention.md) | Required active/retained disk accounting contract, journal quota and atomic migration policy |
 | Verified source proposal | [Verified output source](lld/output-source.md) | Proposed durable agent manifest and transfer custody; review required before code |
+| Source commit draft | [Durable collected source](lld/output-source-commit.md) | Proposed exact private commit, digest domains, quota and finished-release gate |
 | Agent control and outputs | [Agent collection](lld/agent-collection.md) | Bounded file intake, atomic checkpoints, stopped verification and artifact custody |
 | Attempt orchestration | [Agent controller](lld/agent-controller.md) | Prepared-plan handoff, supervision/control/collection wiring and release ownership |
 | Installed engine preflight | [Engine catalogue](lld/engine-catalog.md) | Trusted schema bundles, manifest/profile pins and recovery identity |
