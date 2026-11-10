@@ -18,6 +18,17 @@ hidden fields, accessors, unsupported prototypes, proxies/traps that fail captur
 sparse arrays, nonfinite numbers and unsafe counters. Capture owned frozen values
 before serialization/await; no mutable caller object enters the worker message.
 Reuse existing bounded JSON encoding, result seal, checkpoint and identity codecs.
+Object-form codecs consume already bounded application-owned carriers constructed
+from the bounded collection/checkpoint/root/Offer owners, or parsed from bounded
+serialized records. This is an explicit private intake precondition. Native JS
+own-key reflection allocates caller-key metadata and is not hard-bounded on an
+arbitrary foreign graph; unknown parameters provide defensive value validation,
+not a same-process JavaScript resource sandbox. All runtime rejection/copy gates
+remain in force. External original UTF-8 bytes must be capped before JSON parsing;
+SQL reads cap stored JSON before native materialization, and Journal callers bound
+encoded private requests before cloning/postMessage. Consumer acceptance must
+exercise those actual original-byte boundaries; malformed-object rejection alone
+is not memory qualification.
 
 | Value | Exact fields |
 | --- | --- |
@@ -75,7 +86,7 @@ covered by sourceDigest. A private custody change can retain the public digest
 while changing sourceDigest. Neither digest proves a test verdict or file absence.
 
 PublicManifest <=73728 UTF-8 bytes; PrivateSource <=131072; SourceReceipt <=1024.
-Bound original capture before materialization: depth<=64, nodes<=65536, per-array
+For the bounded carriers, copy/encoding limits are depth<=64, nodes<=65536, per-array
 and object fields<=4096, additionally existing result schema and artifact limits.
 Do not stringify unbounded foreign values and check only afterward. Independent
 codec vectors must freeze exact preimage bytes/digests, key reordering, non-ASCII

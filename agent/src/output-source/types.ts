@@ -62,7 +62,12 @@ export interface CollectionIntent {
   readonly begunAt: number;
 }
 
-/** Pure boundaries; no native operation, durable authority or release permission. */
+/**
+ * Private codecs consume already bounded, application-owned producer/parsed data.
+ * Original serialized bytes must be bounded before parsing/worker cloning; native
+ * key reflection on arbitrary foreign JS graphs has no hard allocation bound here.
+ * Strict value/copy/encoding gates remain enforced; no durable/release authority.
+ */
 export type CaptureCollectionIntent = (input: unknown) => CollectionIntent;
 export type PrepareOutputSource = (input: unknown, digest: ResultDigest) => PrivateSource;
 export type VerifyOutputSource = (input: unknown, digest: ResultDigest) => PrivateSource;
