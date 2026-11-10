@@ -41,10 +41,13 @@ it('uses the partial pending index/range before LIMIT and never prepares history
   expect(queries).toHaveLength(2);
   for (const query of queries) {
     expect(query).not.toMatch(/offer_json|source_json|intent_json|canonical_json|SELECT \*/);
-    const args = query.includes('LIMIT ?') ? [0, 1, 2] : [];
+    const args = query.includes('LIMIT ?') ? [0, 1, 0, 1, 2] : [];
     const plan = e.db.prepare('EXPLAIN QUERY PLAN ' + query).all(...args).map(row => row.detail).join('\n');
     expect(plan).toContain('output_delivery_pending');
+    expect(plan).toContain('output_absence_pending');
   }
-  expect(queries.find(query => query.includes('LIMIT ?'))).toMatch(/a\.id>\? AND a\.id<=\? ORDER BY a\.id LIMIT \?/);
+  const bounded = queries.find(query => query.includes('LIMIT ?'))!;
+  expect(bounded.match(/a\.id>\? AND a\.id<=\?/g)).toHaveLength(2);
+  expect(bounded).toMatch(/UNION SELECT .*output_absence_pending[\s\S]*a\.id>\? AND a\.id<=\? ORDER BY id LIMIT \?/);
   expect(() => scan.read({ lane: 'delivery', limit: 100 })).toThrow(expect.objectContaining({ code: 'invalid_input' }));
 });
