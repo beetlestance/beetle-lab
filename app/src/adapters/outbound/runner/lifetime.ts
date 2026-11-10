@@ -9,9 +9,14 @@ export interface OriginalCall {
   finish(): void;
 }
 
-function original(offer: boolean, caller?: AbortSignal): OriginalCall {
+interface PendingCall extends OriginalCall { start(caller?: AbortSignal): void }
+
+/** Construct internal custody without observing caller-owned registration hooks. */
+function original(offer: boolean): PendingCall {
   const controller = new AbortController();
   let cause: 'cancelled' | 'timeout' | undefined;
+  let caller: AbortSignal | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   let complete!: () => void;
   const done = new Promise<void>(resolve => { complete = resolve; });
   const stop = (reason: 'cancelled' | 'timeout') => {
@@ -20,12 +25,18 @@ function original(offer: boolean, caller?: AbortSignal): OriginalCall {
     controller.abort();
   };
   const abort = () => stop('cancelled');
-  caller?.addEventListener('abort', abort, { once: true });
-  const timer = setTimeout(() => stop('timeout'), 5000);
-  if (caller?.aborted) abort();
   return {
     offer, signal: controller.signal, done, failure: () => cause, abort,
-    finish: () => { clearTimeout(timer); caller?.removeEventListener('abort', abort); complete(); },
+    start: signal => {
+      caller = signal;
+      timer = setTimeout(() => stop('timeout'), 5000);
+      caller?.addEventListener('abort', abort, { once: true });
+      if (caller?.aborted) abort();
+    },
+    finish: () => {
+      clearTimeout(timer);
+      try { caller?.removeEventListener('abort', abort); } finally { complete(); }
+    },
   };
 }
 
@@ -61,10 +72,11 @@ export class CallCredits {
     if (this.full(kind)) {
       return { ok: false, error: { kind: 'transport' } };
     }
-    const call = original(kind === 'offer', caller);
+    const call = original(kind === 'offer');
     this.calls.add(call);
     this.count(kind, 1);
     try {
+      call.start(caller);
       if (call.signal.aborted) return { ok: false, error: { kind: 'cancelled' } };
       const result = await work(call);
       return settledResult(result, call.failure());
