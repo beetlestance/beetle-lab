@@ -1,6 +1,6 @@
 # Source-free execution closure
 
-Status: proposed frozen contract; implementation pending. Complements
+Status: frozen contract; backend runtime wired with scoped synthetic evidence. Complements
 [source settlement](output-finalization.md); it never manufactures a source receipt.
 Agent migration014 and application migration012 are reserved for this work.
 
@@ -117,7 +117,9 @@ native originals must retire first. Runtime fetches/captures the proof on the sa
 connection, adopts it, then finalizes using current scoped Run version. Retained
 proof read avoids a remote refetch after reopen. Missing required capability fails
 explicitly; no synthetic proof or successful partial owner. Production startup
-always wires the real absence store/client once the implementation lands.
+wires the real absence store/client and dispatch observation capability before
+capacity startup awaits. Retained proof reads occur only inside the settled
+source-absent handoff, preserving source-present mutual exclusion.
 
 Ordinary snapshot polling ends when execution charge is released. If finalization
 finds an older header, the retained output owner must fetch the full bound attempt

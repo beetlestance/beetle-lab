@@ -73,3 +73,12 @@ it.each([0, 24, 60001, Number.NaN])('rejects interval %s before creating files',
   await expect(openOutputRuntime({...f.options, dataRoot: root, intervalMs})).rejects.toThrow();
   await expect(lstat(join(root, 'outputs'))).rejects.toMatchObject({code: 'ENOENT'}); f.dispose();
 });
+it.each(['read', 'adopt', 'finalize', 'observe', 'attempt', 'output'] as const)(
+  'rejects missing %s capability before creating native roots', async method => {
+    const root = await directory(); const f = fixture();
+    const target = ['read', 'adopt', 'finalize'].includes(method) ? f.options.absences
+      : method === 'observe' ? f.options.observations : f.options.gateway;
+    Reflect.deleteProperty(target, method);
+    await expect(openOutputRuntime({...f.options, dataRoot: root})).rejects.toThrow('Invalid output runtime value');
+    await expect(lstat(join(root, 'outputs'))).rejects.toMatchObject({code: 'ENOENT'}); f.dispose();
+  });

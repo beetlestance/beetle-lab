@@ -1,3 +1,4 @@
+import { handoffAbsence } from './absence.js';
 import { getRun } from '../../application/runs/index.js';
 import { createEventDiscovery } from '../../adapters/outbound/runner/index.js';
 import type { EventBinding } from '../../ports/events.js';
@@ -75,10 +76,23 @@ export class OutputScheduler implements OutputRuntime {
     if (this.stopped) return;
     const job = this.transfers.transfer(binding, signal);
     let outcome: OutputTransferOutcome | undefined;
-    const result = job.result.then(value => { outcome = transferValue(value, binding); }).catch(error => this.transferFailure(error));
+    let absent = false;
+    const result = job.result.then(value => { outcome = transferValue(value, binding); }).catch(error => {
+      if (error instanceof OutputTransferError && error.code === 'source_absent') absent = true;
+      else this.transferFailure(error);
+    });
     const settled = job.settled.catch(error => this.fail(error));
     await Promise.all([result, settled]);
-    if (this.stopped || outcome?.kind !== 'published') return;
+    if (this.stopped) return;
+    if (absent) {
+      try { await handoffAbsence(this.options, binding, signal); }
+      catch (error) { this.transferFailure(error); }
+      return;
+    }
+    if (outcome?.kind !== 'published') return;
+    await this.finalizeSource(binding, outcome);
+  }
+  private async finalizeSource(binding: EventBinding, outcome: Extract<OutputTransferOutcome, {kind: 'published'}>): Promise<void> {
     const attempt = binding.key.attempt;
     const run = await getRun({id: binding.key.runId, scope: {kind: 'workspace',
       organizationId: attempt.organizationId, workspaceId: attempt.workspaceId}}, this.options.runs);

@@ -7,6 +7,7 @@ import { createRunnerGateway } from '../adapters/outbound/runner/index.js';
 import { openCapacitySource } from '../adapters/outbound/capacity/index.js';
 import type { Metadata, MetadataOptions } from '../adapters/outbound/sqlite/index.js';
 import { openAgentOwners } from './agent-owners.js';
+import type { OutputRuntimeOptions } from '../ports/output-runtime.js';
 import { openOutputRuntime } from './output-runtime/index.js';
 import { captureDeliveryMetadata, captureOutputMetadata, captureGateway } from './output-parent/capture.js';
 import type { AgentRuntime } from './agent-owners.js';
@@ -44,8 +45,14 @@ export async function openAgentRuntime(options: AgentRuntimeOptions, metadata: M
   const outputMetadata = captureOutputMetadata(metadata); const deliveryMetadata = captureDeliveryMetadata(metadata);
   const freeSpaceReserveBytes = configuration.freeSpaceReserveBytes;
   const gateway = createRunnerGateway(options.connection);
+  if (typeof gateway.output !== 'function' || typeof gateway.attempt !== 'function') throw new Error('Missing output gateway capability');
   const capturedGateway = captureGateway(gateway);
-  const outputGateway = Object.freeze({ output: gateway.output.bind(gateway) });
+  const attempt = gateway.attempt.bind(gateway);
+  const outputGateway: OutputRuntimeOptions['gateway'] = Object.freeze({ output: gateway.output.bind(gateway), attempt: identity => {
+    const client = attempt(identity);
+    if (typeof client?.snapshot !== 'function') throw new Error('Missing output snapshot capability');
+    return Object.freeze({ snapshot: client.snapshot.bind(client) });
+  } });
   let source: CapacitySource;
   try {
     source = await openCapacitySource({ dataRoot, configuration, gateway });
