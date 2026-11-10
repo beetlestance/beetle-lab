@@ -2,7 +2,6 @@ import type { DatabaseSync, SQLOutputValue } from 'node:sqlite';
 import type { Run, RunResultSnapshot } from '@beetle/contracts/api';
 import type { RunKey } from '../../../../ports/runs.js';
 import type { EventBinding } from '../../../../ports/events.js';
-import type { RunReads } from '../run-reads.js';
 import { readEnvelope } from '../output-custody/index.js';
 import { transaction } from '../schema.js';
 import { StorageError } from '../protocol.js';
@@ -10,6 +9,8 @@ import { captureEventBinding } from '../../../../domain/events/index.js';
 import { captureResultOperation, captureResultReply } from './wire.js';
 export { resultOperation, captureResultOperation, captureResultReply } from './wire.js';
 export type { ResultOperation } from './wire.js';
+
+interface RunLookup { get(key: RunKey): Run }
 
 function retainedOwner(row: Record<string, SQLOutputValue>, run: Run): void {
   if (row.run_id !== null && (row.run_id !== run.id || row.organization_id !== run.scope.organizationId
@@ -24,7 +25,7 @@ function retainedOwner(row: Record<string, SQLOutputValue>, run: Run): void {
  * Focused command: vitest run app/test/run-results/*.test.ts.
  */
 export class RunResults {
-  constructor(private readonly db: DatabaseSync, private readonly runs: RunReads) {}
+  constructor(private readonly db: DatabaseSync, private readonly runs: RunLookup) {}
   get(input: RunKey): RunResultSnapshot {
     const { key } = captureResultOperation({ kind: 'getRunResult', key: input });
     return transaction(this.db, () => {
