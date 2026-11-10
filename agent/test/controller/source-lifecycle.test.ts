@@ -1,11 +1,17 @@
 import { DatabaseSync } from 'node:sqlite';
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { expect, it, vi } from 'vitest';
 import { JournalError } from '../../src/journal/index.js';
 import type { Journal } from '../../src/journal/index.js';
 import { fixture, budget } from './fixtures.js';
 import { deferred, reserved } from '../supervisor/fixtures.js';
+import { controlled, clock, scope } from '../supervisor/fixtures.js';
+import { createAttemptController } from '../../src/controller/index.js';
+import { fixture as stagingFixture, operation } from '../staging/fixtures.js';
 
 const f = fixture();
+const nativeControl = stagingFixture();
 async function stopped(e: Awaited<ReturnType<typeof f.setupController>>) {
   await e.controller.launch(budget()); e.time.advance(1); e.backend.observation = e.backend.known('exited').value;
 }
@@ -140,4 +146,38 @@ it('refuses source and release when the stopped control owner fails its original
     expect(await e.journal.readOutputSource(e.key)).toBeNull();
     expect(reserved(await e.journal.admission({ kind: 'reservation', key: e.key })).status).toBe('charged');
   } finally { begin.mockRestore(); commit.mockRestore(); }
+});
+it.each(['charged', 'scope', 'evidence'] as const)('refuses a no-intent failed release reply with %s and replays its exact proof', async fault => {
+  const e = await nativeControl.environment(); const prepared = e.prepare(e.create());
+  const plan = await prepared.result; await prepared.quiesced; if (!plan.ok) throw new Error(plan.reason);
+  const time = clock(); time.advance(2); const owner = controlled(e.owner, time); const key = scope(e.offer);
+  await writeFile(join(e.rootPath, plan.value.name, 'output', 'control.ndjson'), '', { mode: 0o600 });
+  const collector = vi.fn((): never => { throw new Error('Empty native control cannot authorize collection'); });
+  const controller = createAttemptController({ journal: e.owner, supervisor: owner.manager,
+    input: { key, plan: plan.value }, wallNow: time.wall, collectOutputs: collector });
+  const admission = e.owner.admission.bind(e.owner); const spy = vi.spyOn(e.owner, 'admission').mockImplementation(async input => {
+    if (input.kind !== 'release') return admission(input);
+    const value = structuredClone(reserved(await admission({ kind: 'reservation', key })));
+    if (fault === 'charged') return value;
+    value.status = 'released'; value.releaseEvidence = structuredClone(input.evidence);
+    if (fault === 'scope') value.workspaceId = value.attemptId;
+    else value.releaseEvidence.collection.evidenceId = '00000000-0000-4000-8000-000000000099';
+    return value;
+  });
+  try {
+    expect(await controller.launch(operation())).toMatchObject({ kind: 'runtime' });
+    owner.backend.observation = owner.backend.known('exited').value; time.advance(1);
+    expect(await controller.tick(operation())).toEqual({ kind: 'awaiting_release', collection: 'failed' });
+    expect(await e.owner.readWrapperCheckpoint(key)).toBeNull(); expect(await e.owner.readOutputCollection(key)).toBeNull();
+    await expect(controller.tick(operation())).rejects.toMatchObject({ reason: 'journal' });
+    expect(reserved(await admission({ kind: 'reservation', key })).status).toBe('charged');
+    expect(collector).not.toHaveBeenCalled(); expect(await e.owner.readOutputSource(key)).toBeNull();
+    const releases = () => spy.mock.calls.map(([input]) => input).filter(input => input.kind === 'release');
+    const original = releases()[0]!.evidence;
+    spy.mockImplementation(admission); time.advance(5);
+    expect(await controller.tick(operation())).toEqual({ kind: 'released', collection: 'failed' });
+    expect(releases()[1]!.evidence).toBe(original);
+    expect(reserved(await admission({ kind: 'reservation', key })).releaseEvidence).toEqual(original);
+    expect(owner.backend.creates).toBe(1); expect(owner.backend.starts).toBe(1);
+  } finally { spy.mockRestore(); await controller.close(); }
 });

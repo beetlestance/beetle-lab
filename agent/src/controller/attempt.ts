@@ -14,7 +14,7 @@ import type { CollectionAuthority } from './authority.js';
 import { CollectionReadBusy, busyActor } from './launch-contention.js';
 import { releaseEvidence } from './release.js';
 import { SourceSession } from './source-session.js';
-import { outputLocation, sameSourceFact } from './source-recovery.js';
+import { checkReleased, outputLocation, sameSourceFact } from './source-recovery.js';
 import { budgetCopy, checkBudget } from './budget.js';
 import { ControllerError } from './types.js';
 import type { ControllerPorts, ControllerBudget, AttemptProgress, CollectionObservation } from './types.js';
@@ -290,12 +290,17 @@ export class AttemptController {
     const evidence = this.failedRelease;
     if (!evidence) return { kind: 'awaiting_release', collection: this.collection!.state };
     this.guard(budget);
-    await this.options.journal.admission({ kind: 'release', evidence });
+    checkReleased(reservation(await this.options.journal.admission({ kind: 'release', evidence })), evidence);
     this.released = true;
     return { kind: 'released', collection: this.collection!.state };
   }
   private async abortUnstarted(): Promise<AttemptProgress> {
-    await this.options.journal.admission({ kind: 'abortUnstarted', key: this.options.input.key });
+    const current = reservation(await this.options.journal.admission({ kind: 'abortUnstarted', key: this.options.input.key }));
+    const key = { organizationId: current.organizationId, workspaceId: current.workspaceId,
+      attemptId: current.attemptId, generation: current.generation };
+    const empty = ['createToken', 'specDigest', 'runtimeId', 'startToken', 'startClaimedAt', 'launchSettlement', 'releaseEvidence'] as const;
+    if (current.status !== 'released' || current.aborted !== true || current.launchClosed !== true || current.launchEpoch !== 0
+      || !sameSourceFact(key, this.options.input.key) || !empty.every(field => current[field] === null)) throw new ControllerError('journal');
     this.released = true;
     return { kind: 'released', collection: 'failed' };
   }
