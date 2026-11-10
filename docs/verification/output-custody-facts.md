@@ -24,9 +24,12 @@ Darwin arm64, Node26.7.0:
 - Node TypeScript, scoped output/controller-fixture ESLint, architecture1220 and
   docs191 checks: exit0. Independent source review found no blocking issue.
 
-The previous full event verification predates this production change. A new full
-verification and affected controller checks remain required on the composed
-candidate. These scoped passes do not establish that full pass.
+Composed source `226dedb1fcb3729e70567355f18d6fed4302687d` subsequently passed
+`NODE_OPTIONS=--max-old-space-size=1024 npm run verify:v2`: exit0,
+4497 tests/426 files, test phase600.13s, including generation/static/docs/frontend
+checks. Affected controller and actual-agent tests separately passed50 tests/5
+files. [Agent event evidence](event-agent.md) records that seam and its limits.
+This report is a separately checked documentation-only followup to that code.
 
 The [verified source proposal](../design/lld/output-source.md) still requires exact
 trusted observations, durable source receipts, journal/retention quotas, replay,
