@@ -8,6 +8,7 @@ import { canonical } from './input.js';
 import { requireLaunchBinding, requireSettledRelease } from './launch-settlement.js';
 import { requireUnstarted } from './ownership.js';
 import { Failure } from './sql.js';
+import { freshRefusal } from './fresh-refusal.js';
 import type { Row } from './sql.js';
 
 function requireFact(condition: unknown): asserts condition {
@@ -156,6 +157,6 @@ function queueFact(queue: { pending?: unknown; has_decision?: unknown; decision_
 
 /** Stored corruption has no public fallback and grants no admission authority. */
 export function admissionSnapshot(db: DatabaseSync, row: Row): AttemptAdmission | undefined {
-  try { return project(db, row); }
+  try { return freshRefusal(db, row) ?? project(db, row); }
   catch { throw new Failure('unavailable'); }
 }

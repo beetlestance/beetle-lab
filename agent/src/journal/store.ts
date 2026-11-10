@@ -14,6 +14,7 @@ import { metadataColumns, Failure, owner, transaction } from './sql.js';
 import type { Row } from './sql.js';
 import { supervise } from './supervision.js';
 import { RunnableScan } from './runnable.js';
+import { cancelOriginal } from './cancel-original.js';
 
 export class Store {
   private readonly admission: AdmissionStore;
@@ -72,6 +73,7 @@ export class Store {
     if (command.kind === 'authority') return readJournalAuthority(this.db);
     if (command.kind === 'supervision') return supervise(this.db, command.request);
     if (command.kind === 'admission') return this.admission.execute(command.request);
+    if (command.kind === 'cancelOriginal') return cancelOriginal(this.db, command, this.quota);
     if (['append', 'events', 'ack', 'prune', 'sources', 'checkpoint', 'wrapperBatch'].includes(command.kind)) return this.eventCommand(command);
     if (['get', 'read', 'list', 'runnable'].includes(command.kind)) return this.readCommand(command);
     switch (command.kind) {

@@ -11,6 +11,7 @@ export type { RunnablePage, RunnableRequest } from './protocol.js';
 import type { AdmissionCommand, AdmissionValue } from '../admission/index.js';
 import { admissionInput, isOfferCommand } from './admission-input.js';
 import { checkedSupervision } from './supervision.js';
+import { captureCancelledOriginal } from './cancel-original-input.js';
 import type { SupervisionCommand, SupervisionState } from './protocol.js';
 export type { StopReason, SupervisionCommand, SupervisionState } from './protocol.js';
 import type { AttemptKey, ErrorCode, GenerationKey, Operation, PageRequest, PruneReceipt, Reply, SnapshotPage, SourceCursors, SupervisorInput, Value } from './protocol.js';
@@ -43,7 +44,7 @@ function validateOptions(options: JournalOptions): void {
   if (typeof path !== 'string' || !path || path === ':memory:' || path.length > 4096) throw new JournalError('invalid_input');
 }
 function largeOperation(operation: Operation): boolean {
-  return operation.kind === 'offer' || operation.kind === 'read'
+  return operation.kind === 'offer' || operation.kind === 'cancelOriginal' || operation.kind === 'read'
     || operation.kind === 'admission' && operation.request.kind === 'offer';
 }
 
@@ -94,6 +95,10 @@ export class Journal {
 
   immutableOffer(input: unknown): Promise<AttemptSnapshot> {
     return this.prepare(() => ({ kind: 'offer', ...offerInput(input) }), true) as Promise<AttemptSnapshot>;
+  }
+  /** Captures one original and trusted local time; shares Offer's two large credits. */
+  cancelOriginal(input: { offer: unknown; now: number }): Promise<AttemptSnapshot> {
+    return this.prepare(() => ({ kind: 'cancelOriginal', ...captureCancelledOriginal(input) }), true) as Promise<AttemptSnapshot>;
   }
   /** Trusted supervisor/composition boundary; never expose as a wrapper or browser API. */
   admission(input: AdmissionCommand): Promise<AdmissionValue> {

@@ -8,6 +8,7 @@ import { appendAtomic } from './spool.js';
 import { Failure, owner, transaction } from './sql.js';
 import type { Row } from './sql.js';
 import type { GenerationKey } from './protocol.js';
+import { freshRefusal } from './fresh-refusal.js';
 
 export function readWrapperCheckpoint(db: DatabaseSync, key: GenerationKey): Readonly<WrapperCheckpoint> | null {
   const row = owner(db, key);
@@ -33,6 +34,7 @@ export function commitWrapperBatch(db: DatabaseSync, input: WrapperBatch): Reado
   if (bytes > 1024) throw new Failure('invalid_input');
   return transaction(db, () => {
     const row = owner(db, request.key);
+    if (freshRefusal(db, row)) throw new Failure('conflict');
     const replay = reconcile(row, request, digest, next); if (replay) return replay;
     if (row.spool_bytes + row.snapshot_bytes + bytes > row.quota_bytes) throw new Failure('quota_exceeded');
     // Reserve the complete replacement before appendAtomic charges events/projections.

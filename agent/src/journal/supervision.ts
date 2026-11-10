@@ -48,9 +48,12 @@ function clockState(prior: ClockRow | undefined, global: number, wasCancelled: b
 }
 
 /** Strict input independently checked on both sides of the worker boundary. */
+export function checkedWallTime(now: number): void {
+  if (!Number.isSafeInteger(now) || now < 0 || now > 8_640_000_000_000_000) throw new Failure('invalid_input');
+}
 export function checkedSupervision(input: SupervisionCommand): void {
-  if (!Number.isSafeInteger(input.now) || input.now < 0 || input.now > 8_640_000_000_000_000
-    || input.cancel !== undefined && input.cancel !== true) throw new Failure('invalid_input');
+  checkedWallTime(input.now);
+  if (input.cancel !== undefined && input.cancel !== true) throw new Failure('invalid_input');
   if (input.reason !== undefined && (input.cancel !== true
     || !['cancelled', 'timeout', 'output_limit', 'artifact_incomplete', 'clock_integrity'].includes(input.reason))) throw new Failure('invalid_input');
 }
@@ -63,20 +66,23 @@ function cancel(db: DatabaseSync, id: number, attemptId: string): void {
 
 /** No generation can acquire a new clock; owner() checks it before any write. */
 export function supervise(db: DatabaseSync, input: SupervisionCommand): SupervisionState {
+  return transaction(db, () => superviseAtomic(db, input));
+}
+
+/** Caller owns the immediate transaction, including any original receipt write. */
+export function superviseAtomic(db: DatabaseSync, input: SupervisionCommand): SupervisionState {
   checkedSupervision(input);
-  return transaction(db, () => {
-    const row = owner(db, input.key);
-    const prior = db.prepare('SELECT high_water,fenced,cancel_at,cancel_reason,stop_immediate FROM supervision_clock WHERE attempt_id=?')
-      .get(row.attempt_id) as unknown as ClockRow | undefined;
-    const global = db.prepare('SELECT last_clock FROM admission_settings WHERE id=1').get()?.last_clock;
-    if (typeof global !== 'number' || !Number.isSafeInteger(global)) throw new Failure('unavailable');
-    const state = clockState(prior, global, row.cancel_requested === 1, input);
-    if (input.cancel) cancel(db, row.id, row.attempt_id);
-    db.prepare(`INSERT INTO supervision_clock(attempt_id,high_water,fenced,cancel_at,cancel_reason,stop_immediate) VALUES (?,?,?,?,?,?)
-      ON CONFLICT(attempt_id) DO UPDATE SET high_water=excluded.high_water,
-      fenced=excluded.fenced,cancel_at=excluded.cancel_at,cancel_reason=excluded.cancel_reason,
-      stop_immediate=excluded.stop_immediate`).run(row.attempt_id,
-      state.clockHighWater, Number(state.clockFenced), state.cancelRequestedAt, state.cancelReason, Number(state.immediateStop));
-    return state;
-  });
+  const row = owner(db, input.key);
+  const prior = db.prepare('SELECT high_water,fenced,cancel_at,cancel_reason,stop_immediate FROM supervision_clock WHERE attempt_id=?')
+    .get(row.attempt_id) as unknown as ClockRow | undefined;
+  const global = db.prepare('SELECT last_clock FROM admission_settings WHERE id=1').get()?.last_clock;
+  if (typeof global !== 'number' || !Number.isSafeInteger(global)) throw new Failure('unavailable');
+  const state = clockState(prior, global, row.cancel_requested === 1, input);
+  if (input.cancel) cancel(db, row.id, row.attempt_id);
+  db.prepare(`INSERT INTO supervision_clock(attempt_id,high_water,fenced,cancel_at,cancel_reason,stop_immediate) VALUES (?,?,?,?,?,?)
+    ON CONFLICT(attempt_id) DO UPDATE SET high_water=excluded.high_water,
+    fenced=excluded.fenced,cancel_at=excluded.cancel_at,cancel_reason=excluded.cancel_reason,
+    stop_immediate=excluded.stop_immediate`).run(row.attempt_id,
+    state.clockHighWater, Number(state.clockFenced), state.cancelRequestedAt, state.cancelReason, Number(state.immediateStop));
+  return state;
 }

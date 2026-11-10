@@ -37,6 +37,7 @@ export type Operation =
   | { kind: 'supervision'; request: SupervisionCommand }
   | { kind: 'admission'; request: AdmissionCommand }
   | { kind: 'offer'; json: string; canonical: string }
+  | { kind: 'cancelOriginal'; json: string; canonical: string; now: number }
   | { kind: 'get' | 'cancel' | 'read'; key: AttemptKey }
   | { kind: 'list'; page: PageRequest }
   | { kind: 'runnable'; page: RunnableRequest }
