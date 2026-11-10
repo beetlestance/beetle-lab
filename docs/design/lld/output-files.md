@@ -1,7 +1,8 @@
 # Native output file ownership
 
-Status: coordinator implementation contract. Native adapter and process proofs are
-pending; existing input physical custody is being extracted for reuse. Depends on
+Status: coordinator implementation contract. Shared physical custody/promotion and
+standalone namespace lease are integrated. Complete output adapter/process proofs
+remain pending. Depends on
 [output adoption](output-adoption.md) for original allocation and durable tokens.
 No filesystem receipt alone authorizes terminal state, deletion or quota refund.
 
@@ -75,6 +76,59 @@ Extract the existing input physical promotion sequence for reuse, keeping input
 state eligibility and zero-byte reconstruction policy outside that common owner.
 Output reconstruction authority comes from its adopted manifest/token; absence
 alone does not authorize creating or declaring an empty artifact.
+
+## Byte-store contract
+
+app/src/ports/output-bytes.ts owns the private byte-store interface. Composition
+opens existing canonical sibling staging/published roots and the permanent lease
+in their common private parent. Explicit fresh provisioning alone creates the
+sidecar. Validate all record/context values and capture at most4096 record bytes;
+reserve two jobs/one original per token before capture, callbacks or IO. Fresh
+per-operation monotonic deadline<=300000ms is independent of the expired engine
+budget. Cancellation/deadline fences work but retains issued originals/sinks.
+
+Derive the same relative UUID components under both roots:
+organization/workspace/run/attempt, with upload token as basename. Never use an
+engine relativePath as storage authority. Mutations require a non-NULL durable
+writer UUID and transferring/publishing eligibility; reads require published state
+with no writer. Validate versions, ordinals, offsets, expected length and SHA256.
+
+prepare reconciles the same existing token, or creates an absent empty staging
+file only for fresh transferring state with offset0/identity=null. An existing file
+under that initial state must also be empty; do not adopt an unexplained payload.
+A known identity with missing native custody refuses rather than replacing it.
+Native length must be between durable offset and expected bytes. Flush before a
+recovered offset receipt. Never truncate an unexplained tail: an interrupted append
+may have written it before losing its reply.
+
+append captures1..65536 bytes before any copy/allocation beyond that cap. Require
+request offset equal durable record offset; compare any already-written overlap,
+then append only the remaining suffix. Refuse conflicting overlap, gaps, oversized
+extent or unsafe arithmetic. Return the reconciled durable native extent after
+file flush and successful closes, retaining the same token/identity. Only metadata
+CAS can record progress; the byte receipt alone grants no SQL writer authority.
+
+A staging identity is a SHA256 digest with a versioned domain over exact binding,
+artifact ordinal/ID/token/expected length/SHA256, canonical root-pair names/stable
+identities and file device/
+inode/UID/GID/mode. Exclude append-mutated size/times/link count. Common physical
+checks still enforce the exact allowed links and every current operation signature.
+Publication runs the one shared physical promotion owner, full expected SHA256
+and size, then returns a published identity including final size/mtimeNs/ctimeNs/
+nlink1. That identity upgrade is permitted only by a published native receipt.
+
+Recovery from ambiguous publication verifies the old staging identity against the
+same inode under its deterministic aliases, then full content/hash before the
+published identity upgrade. A published record requires its full identity to match;
+read rechecks it before/after streaming bounded chunks to an awaited sink, with
+original file signatures checked through close. Never bless a changed published
+file by silently rehashing it to a new receipt. Zero-byte publication still requires
+actual checked custody; prepare supplies its explicit fresh-create authority.
+
+All receipts follow successful cached file/directory closes and matching post-close
+named checks. Original close failure retains the job, token credit and namespace
+lease, fences the whole store and makes close fail sticky. Result rejection is not
+settlement. Metadata-worker loss stops new mutations without dropping those owners.
 
 ## Required process evidence
 
