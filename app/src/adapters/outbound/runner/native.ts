@@ -73,7 +73,10 @@ function ownSocket(input: NativeInput, io: NativeIo, address: Address): Promise<
       resolve(owner.result);
     };
     const stop = () => { owner.response?.destroy(); req.destroy(); owner.socket?.destroy(); };
-    const fail = () => { owner.result = { ok: false, kind: owner.response ? 'response' : 'transport' }; stop(); };
+    const fail = () => {
+      if (!owner.result.ok) owner.result = { ok: false, kind: owner.response ? 'response' : 'transport' };
+      stop();
+    };
     req.once('socket', socket => {
       owner.socket = socket; owner.socketClosed = socket.closed;
       socket.once('close', () => { owner.socketClosed = true; finish(); });

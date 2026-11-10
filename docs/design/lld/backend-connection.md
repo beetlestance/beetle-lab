@@ -90,6 +90,11 @@ a request from a late result, and use only the selected result for that request.
 Bound returned address collections to8; no address fallback retry of mutations.
 Retain request and response socket close, including aborted/partial replies.
 No Promise.race or logical fetch abort can prove original completion.
+Complete JSON EOF already owned by the native reader survives subsequent abort,
+deadline and cleanup errors during native drain. Preserve it only as a positive
+client result after normal status/schema/identity validation; incomplete or invalid
+data remains uncertainty. The caller fences later effects after stop and still owns
+storage/confirmation of any received positive evidence through shutdown.
 close fences intake, aborts owned calls, waits for all original DNS/socket work,
 and retains its own original promise. No exception details or URL/token leaks.
 
