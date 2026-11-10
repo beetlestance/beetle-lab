@@ -34,6 +34,7 @@ released application until the rewrite is qualified.
 | Inspect durable stream closure storage | [Delivery closure](verification/output-delivery-closure.md) | Journal quota, native fences and discovery; Manager/scheduler pending |
 | Inspect scoped result presentation | [Result panel](verification/run-result-panel.md) | Scope fencing and provisional outcome display; result route/browser qualification pending |
 | Inspect shared output transport values | [Transfer values](verification/output-transfer-values.md) | Generated schemas, receipt matching and canonical range values; runtime transfer pending |
+| Inspect native source HTTP | [Source HTTP](verification/output-source-http.md) | Real Journal/files, authenticated source/chunk routes and bootstrap; backend adoption pending |
 | Inspect native artifact ranges | [Range evidence](verification/output-range.md) | Shared custody/lifetime, checked EOF and original IO; HTTP/adoption pending |
 | Inspect standalone script construction | [Engine export](verification/standalone-export.md) | Actual compiler/builder and generated-bundle semantics; HTTP/UI/native qualification pending |
 | Inspect retained execution disk | [Disk retention](verification/disk-retention.md) | Atomic holds, release/abort accounting and worker reply-loss replay; source/cleanup pending |
