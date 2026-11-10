@@ -106,7 +106,7 @@ it('applies the smaller envelope cap before later field capture and accepts one 
   expect(response.statusCode).toBe(500); expect(reads).toBe(0); expect(response.body).not.toContain('/private');
   await new Promise(resolve => setImmediate(resolve));
   const bytes = Buffer.alloc(65_536, 7); const selector = { ...e.selector, length: bytes.length };
-  e.getChunk.mockResolvedValueOnce({ ...e.chunk, nextOffset: bytes.length, totalBytes: bytes.length, base64: bytes.toString('base64') });
+  e.getChunk.mockResolvedValueOnce({ ...e.chunk, nextOffset: bytes.length, totalBytes: bytes.length, eof: true, base64: bytes.toString('base64') });
   const chunk = await e.server.inject({ method: 'POST', url: `${e.path}/chunk`, headers: e.headers, payload: selector });
   expect(chunk.statusCode).toBe(200); expect(Buffer.byteLength(chunk.body)).toBeLessThanOrEqual(90_112);
   expect(Buffer.from(chunk.json().base64, 'base64')).toEqual(bytes);
