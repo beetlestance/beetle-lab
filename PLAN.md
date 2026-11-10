@@ -80,7 +80,10 @@ no-overwrite promotion, standalone lease and native byte adapter evidence. Paylo
 storage and metadata source adoption are integrated; artifact writer
 coordination and [transfer](docs/verification/output-transfer.md) are integrated;
 automatic startup and [terminal settlement](docs/verification/output-settlement.md) are connected locally;
-source-free/error closure, cleanup and real-agent qualification remain pending.
+source-free/error closure and cleanup remain pending. The public API through real
+agent/k6 pass/fail path is now [locally verified](docs/verification/native-application-k6.md),
+including artifacts, terminal accounting and settled metadata reopen. Browser,
+Compose and full release qualification remain pending.
 The [result read path](docs/verification/run-result-read.md) connects the verified
 backend source to the existing scoped result panel; real-k6/UI qualification remains.
 
