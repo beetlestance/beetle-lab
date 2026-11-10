@@ -25,6 +25,7 @@ The owning document below must be updated before its implementation changes.
 | Installed execution binding | [Installed identity](lld/installed-identity.md) | Canonical content pins, required Offer binding and replay/recovery authority |
 | Full-size runner intake | [Offer envelopes](lld/runner-envelopes.md) | Independent config/envelope bounds, ingress ownership and journal migration008 |
 | Launch read saturation | [Launch contention](lld/launch-contention.md) | Retained explicit intent, known refusal, compact authority and unknown-outcome fences |
+| Verified source proposal | [Verified output source](lld/output-source.md) | Proposed durable agent manifest and transfer custody; review required before code |
 | Agent control and outputs | [Agent collection](lld/agent-collection.md) | Bounded file intake, atomic checkpoints, stopped verification and artifact custody |
 | Attempt orchestration | [Agent controller](lld/agent-controller.md) | Prepared-plan handoff, supervision/control/collection wiring and release ownership |
 | Installed engine preflight | [Engine catalogue](lld/engine-catalog.md) | Trusted schema bundles, manifest/profile pins and recovery identity |
