@@ -1,16 +1,16 @@
 import type { CapturedInput } from './capture.js';
 import { requireState } from './capture.js';
-import type { Directories, Location } from './directories.js';
-import { InputFile } from './file.js';
-import type { Roots } from './identity.js';
+import type { Directories, Location } from '../custody/index.js';
+import { PhysicalFile } from '../custody/index.js';
+import type { Roots } from '../custody/index.js';
 import { fail } from './job.js';
 
-async function unlinkSingle(tree: Directories, location: Location, file: InputFile): Promise<void> {
+async function unlinkSingle(tree: Directories, location: Location, file: PhysicalFile): Promise<void> {
   file.requireLinks(1n); await file.verify(); await tree.check();
   await tree.owner.port.unlink(location.path); await tree.check(); await tree.sync(location.parent);
 }
 async function unlinkPair(tree: Directories, locations: readonly [Location, Location],
-  files: readonly [InputFile, InputFile], input: CapturedInput): Promise<void> {
+  files: readonly [PhysicalFile, PhysicalFile], input: CapturedInput): Promise<void> {
   const [stage, destination] = files;
   stage.requireLinks(2n); destination.requireLinks(2n);
   await stage.verify(); await destination.verify();
@@ -21,7 +21,7 @@ async function unlinkPair(tree: Directories, locations: readonly [Location, Loca
   await unlinkSingle(tree, locations[1], destination);
 }
 async function unlinkSingles(tree: Directories, locations: readonly [Location, Location],
-  files: readonly [InputFile | undefined, InputFile | undefined]): Promise<void> {
+  files: readonly [PhysicalFile | undefined, PhysicalFile | undefined]): Promise<void> {
   const [source, target] = files;
   // Classify both names before deleting either: third links fail without cleanup.
   source?.requireLinks(1n); target?.requireLinks(1n);
@@ -30,14 +30,14 @@ async function unlinkSingles(tree: Directories, locations: readonly [Location, L
 }
 export async function remove(tree: Directories, roots: Roots, input: CapturedInput): Promise<void> {
   requireState(input, 'deleting');
-  const stage = await tree.location(roots.stage, input, false);
-  const destination = await tree.location(roots.published, input, false);
-  const source = await InputFile.open(tree, stage, false);
-  const target = await InputFile.open(tree, destination, false);
+  const stage = await tree.location(roots.stage, { components: input.components, name: input.sha256 }, false);
+  const destination = await tree.location(roots.published, { components: input.components, name: input.sha256 }, false);
+  const source = await PhysicalFile.open(tree, stage, false);
+  const target = await PhysicalFile.open(tree, destination, false);
   if (source && target && (source.links === 2n || target.links === 2n)) {
     await unlinkPair(tree, [stage, destination], [source, target], input);
   } else await unlinkSingles(tree, [stage, destination], [source, target]);
   // Absence recovery still needs the nearest extant ancestor durably flushed.
   await tree.sync(stage.parent); await tree.sync(destination.parent); await tree.check();
-  if (await InputFile.open(tree, stage, false) || await InputFile.open(tree, destination, false)) fail('integrity');
+  if (await PhysicalFile.open(tree, stage, false) || await PhysicalFile.open(tree, destination, false)) fail('integrity');
 }

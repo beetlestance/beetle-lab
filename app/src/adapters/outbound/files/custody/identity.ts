@@ -1,6 +1,6 @@
 import type { BigIntStats } from 'node:fs';
 import { dirname, isAbsolute, normalize, parse } from 'node:path';
-import { fail } from './job.js';
+import { fail } from './errors.js';
 import type { NativePort } from './native.js';
 
 export interface Identity { readonly path: string; readonly stat: BigIntStats }

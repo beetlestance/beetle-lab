@@ -1,0 +1,10 @@
+export { nativePort, readFlags, writeFlags, createFlags, directoryFlags } from './native.js';
+export type { NativePort } from './native.js';
+export { pinRoots, checkRoots, privateStat, sameFileOwner, same, sameDirectory } from './identity.js';
+export type { Identity, Root, Roots } from './identity.js';
+export { Custody } from './custody.js';
+export { Directories } from './directories.js';
+export type { Directory, Location } from './directories.js';
+export { PhysicalFile, FILE_CHUNK_BYTES } from './file.js';
+export { FileCustodyError } from './errors.js';
+export type { FileCustodyErrorCode } from './errors.js';

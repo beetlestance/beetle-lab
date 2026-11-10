@@ -1,5 +1,5 @@
 import type { InputByteStore } from '../../../../ports/input-bytes.js';
-import { nativePort } from './native.js';
+import { nativePort } from '../custody/index.js';
 import { openStore } from './store.js';
 
 /** Existing canonical private sibling roots; same filesystem and numeric UID.

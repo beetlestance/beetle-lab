@@ -2,16 +2,16 @@ import { INPUT_CHUNK_BYTES } from '../../../../ports/inputs.js';
 import type { InputContentRange, InputContentSink } from '../../../../ports/input-bytes.js';
 import type { CapturedInput } from './capture.js';
 import { requireState, validateRange } from './capture.js';
-import type { Directories } from './directories.js';
-import { InputFile } from './file.js';
-import type { Roots } from './identity.js';
+import type { Directories } from '../custody/index.js';
+import { PhysicalFile } from '../custody/index.js';
+import type { Roots } from '../custody/index.js';
 import { fail } from './job.js';
 
 export async function read(tree: Directories, roots: Roots, input: CapturedInput,
   response: { range: InputContentRange; sink: InputContentSink }): Promise<void> {
   requireState(input, 'published'); validateRange(response.range, input.bytes);
-  const location = await tree.location(roots.published, input, false);
-  const file = await InputFile.open(tree, location, false); if (!file) fail('custody_missing');
+  const location = await tree.location(roots.published, { components: input.components, name: input.sha256 }, false);
+  const file = await PhysicalFile.open(tree, location, false); if (!file) fail('custody_missing');
   file.requireLinks(1n); await file.verifyContent(input);
   let position = response.range.start;
   while (position < response.range.endExclusive) {
