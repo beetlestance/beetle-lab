@@ -10,7 +10,8 @@ finalization implementation is accepted here yet. Uses the existing immutable
 Let P be original maximum payload bytes, C the charged retained-control bytes
 (canonical events+128 per row), M the canonical PublicManifest bytes, A the safe
 sum of all declared artifact bytes, and D any additional durable/staging/report
-copies. Before adoption require C+M+A+D<=P with safe integer arithmetic. The whole
+copies. The [payload carrier](output-payload.md) owns provisional result S and its
+atomic replacement by the manifest. Before adopting a manifest require C+M+A+D<=P with safe integer arithmetic. The whole
 manifest counts once as payload, including its embedded EngineResult. Never hide
 that result inside the separate65536 metadata allowance. Persist no second complete
 result/manifest copy without counting it in D; derive summary views from the one

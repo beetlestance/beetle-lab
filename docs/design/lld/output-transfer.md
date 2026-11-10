@@ -2,7 +2,8 @@
 
 Status: shared structural schemas, pure semantic codecs and declared service ports
 implemented and independently reviewed. Native range and gateway components are
-also reviewed; HTTP/service composition remains pending. No migration ID is
+also reviewed. Journal/native reader, bootstrap wiring and authenticated agent HTTP
+composition are implemented; backend adoption remains pending. No migration ID is
 allocated here. Depends on implemented
 [source Journal](output-source-journal.md); backend accounting is in
 [adoption](output-adoption.md). Existing source and event contracts remain binding.
@@ -79,7 +80,8 @@ preserves declared ID spelling. The concrete runner constructor returns this
 extended gateway with shared source credits and bounded native HTTP response reads.
 Existing metadata attempt calls retain their facade; the separate output facade
 owns only source transfer, without a second connection or credit owner. Actual
-agent HTTP/service and backend adoption composition remain pending.
+agent HTTP/service composition is covered by the scoped
+[native HTTP evidence](../../verification/output-source-http.md); backend adoption remains pending.
 
 Canonical JSON chunks reuse the existing generated JSON gateway instead of a
 second binary client/pool. Their base64 overhead is explicit and bounded; measure
@@ -92,7 +94,7 @@ OutputSourceReader in agent/src/output-transfer/index.ts is the private service
 port. It owns Journal readSource/readClosure and calls the collection owner's
 public native range entrypoint; transport never deep-imports OutputFiles. Methods
 settle only after all issued originals and cached closes, including on cancellation.
-Implementation/startup wiring remain pending.
+Implementation and startup wiring are integrated; see the native HTTP evidence.
 
 The agent file owner reuses existing output/root custody primitives. Each range
 pins the stored root identity, then opens the declared file and checks current
