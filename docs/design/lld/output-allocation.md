@@ -1,6 +1,6 @@
 # Backend output storage allocation
 
-Status: SQL reservation helper implemented; claim wiring and artifact adoption pending.
+Status: reservation/claim wiring implemented; artifact adoption pending.
 Owner: application metadata worker. [Dispatch](dispatch-storage.md) reserves execution
 resources; [input publication](input-publication.md) owns existing input byte custody.
 This is a logical byte allowance, not a filesystem quota or a physical free-space
@@ -40,6 +40,13 @@ Physical execution release does not release this reservation: sealed output may
 still need transfer. Output publication must adopt this existing allowance, not add
 an unaccounted second copy. All output/control/report writes stay within declared
 budgets and bounded artifact metadata; staging and interrupted transfer stay charged.
+
+[Event custody](event-custody.md) owns a retained-control payload subledger:
+canonical event bytes+128 per unique row, <=min(original payload allowance,64MiB)
+and<=65536 rows. It consumes this same allowance; no second installation charge or
+ACK refund is created. Future artifact/report adoption must subtract retained
+control usage and account for copies before accepting bytes. The metadata64KiB
+allowance covers bounded cursor/diagnostics; it cannot hide event payload storage.
 
 A future separately frozen artifact/finalization transaction may settle the reserved
 payload to verified retained bytes only after original writers/transfer quiesce,
