@@ -1,44 +1,13 @@
-import { validate, validatePrimitive } from '@beetle/contracts';
-import type { EngineResult } from '@beetle/contracts';
+import { integer, text, sha, uuid, scope, sameScope } from '@beetle/contracts/output-source/internal';
+export { integer, text, sha, uuid, scope, sameScope, binding, result, counts } from '@beetle/contracts/output-source/internal';
 import { isAbsolute, normalize } from 'node:path';
 import type { OutputRootIdentity } from '../collection/output/index.js';
-import { copyControlScope, copyWrapperCheckpoint } from '../control-protocol/index.js';
+import { copyWrapperCheckpoint } from '../control-protocol/index.js';
 import type { WrapperCheckpoint } from '../control-protocol/index.js';
-import { fields, requireInput, canonical } from './capture.js';
-import { OUTPUT_SOURCE_RESULT_BYTES } from './limits.js';
-import type { SourceScope, SourceBinding, StoppedRuntime, FinishedRelease, SettledLaunch } from './types.js';
+import { fields, requireInput } from './capture.js';
+import type { SourceBinding, StoppedRuntime, FinishedRelease, SettledLaunch } from './types.js';
 
-export function integer(value: unknown, maximum = Number.MAX_SAFE_INTEGER, minimum = 0): asserts value is number {
-  requireInput(typeof value === 'number' && Number.isSafeInteger(value) && value >= minimum && value <= maximum);
-}
-export function text(value: unknown): asserts value is string {
-  requireInput(typeof value === 'string' && value.length > 0 && value.length <= 128);
-}
-export function sha(value: unknown): asserts value is string {
-  requireInput(typeof value === 'string' && /^[a-f0-9]{64}$/.test(value));
-}
-export function uuid(value: unknown): asserts value is string {
-  requireInput(typeof value === 'string' && value.length === 36 && validatePrimitive('uuid', value).ok && value === value.toLowerCase());
-}
-export function scope(input: unknown): SourceScope {
-  const value = copyControlScope(input); requireInput(value.generation === 1);
-  return value as SourceScope;
-}
-export function sameScope(value: SourceScope, expected: SourceScope): void {
-  for (const key of ['organizationId', 'workspaceId', 'attemptId', 'generation'] as const) requireInput(value[key] === expected[key]);
-}
 export function checkpoint(input: unknown): Readonly<WrapperCheckpoint> { return copyWrapperCheckpoint(input); }
-export function binding(input: unknown): SourceBinding {
-  const value = fields(input, 'journalAuthority,organizationId,workspaceId,attemptId,generation,intentDigest,engine,installedIdentity,specDigest');
-  scope({ organizationId: value.organizationId, workspaceId: value.workspaceId, attemptId: value.attemptId, generation: value.generation });
-  uuid(value.journalAuthority); sha(value.intentDigest); sha(value.specDigest);
-  const engine = fields(value.engine, 'id,imageDigest,configVersion');
-  requireInput(typeof engine.id === 'string' && /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(engine.id));
-  requireInput(typeof engine.imageDigest === 'string' && /^sha256:[a-f0-9]{64}$/.test(engine.imageDigest));
-  integer(engine.configVersion, Number.MAX_SAFE_INTEGER, 1);
-  requireInput(validate('InstalledIdentity', value.installedIdentity).ok);
-  return value as unknown as SourceBinding;
-}
 function uint64(value: unknown): void {
   requireInput(typeof value === 'string' && /^(0|[1-9][0-9]{0,19})$/.test(value));
   requireInput(BigInt(value) <= 18_446_744_073_709_551_615n);
@@ -87,19 +56,4 @@ export function release(input: unknown, binding: SourceBinding): FinishedRelease
   requireInput(collection.observedAt >= stopped.observedAt);
   const launch = launchIdentity(value.launch, 'epoch,startToken,settlementId'); text(launch.settlementId);
   return value as unknown as FinishedRelease;
-}
-export function result(input: unknown, binding: SourceBinding): EngineResult {
-  canonical(input, OUTPUT_SOURCE_RESULT_BYTES);
-  const checked = validate('EngineResult', input); requireInput(checked.ok);
-  const value = checked.value;
-  sameScope(value as SourceScope, binding); requireInput(value.engineId === binding.engine.id);
-  return value;
-}
-export function counts(input: { resultFileBytes: unknown; controlBytes: unknown; verifiedBytes: unknown }, result: EngineResult): void {
-  integer(input.resultFileBytes, 1_048_576, 1); integer(input.controlBytes, 67_108_864); integer(input.verifiedBytes);
-  let total = input.resultFileBytes + input.controlBytes;
-  for (const artifact of result.artifacts) {
-    requireInput(artifact.bytes <= Number.MAX_SAFE_INTEGER - total); total += artifact.bytes;
-  }
-  requireInput(input.verifiedBytes === total);
 }

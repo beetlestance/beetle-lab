@@ -6,6 +6,11 @@ for arbitrary foreign JS graphs. External original bytes must be capped before
 parse, and private request encoding before worker cloning. These provenance
 requirements do not remove any strict-shape, copy/encoding, node or depth gate.
 
+Contracts output-source owns public types, capture, errors, scalar/public rules
+and manifest hashing. This wrapper reuses that owner after checking all private
+facts before foreign digest callbacks. Native path/checkpoint/runtime/release
+validation stays here; public contracts import no agent or Node filesystem code.
+
 Pure value boundary for a verified source manifest, private file custody and
 durable collection intent. Contracts: docs/design/lld/output-source-commit.md and
 output-collection-intent.md. The four pure codecs capture closed owned inputs,
