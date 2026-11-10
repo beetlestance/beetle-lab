@@ -1,4 +1,6 @@
 const inputs = {
+  outputClosure: ['NEW.closure_json', '2048'],
+  outputSlot: ['NEW.slot_json', '256'],
   carrier: ['NEW.canonical_json', "CASE NEW.kind WHEN 'result' THEN 65536 WHEN 'manifest' THEN 73728 ELSE 0 END"],
   header: ['NEW.snapshot_json', '2048'],
   snapshot: ['e.snapshot_json', '73728'],

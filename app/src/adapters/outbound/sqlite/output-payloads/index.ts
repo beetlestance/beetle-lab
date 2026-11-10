@@ -1,3 +1,4 @@
+export { boundedUniqueJson } from './json.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import type { AttemptSnapshot } from '@beetle/contracts';
