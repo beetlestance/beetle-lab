@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { DatabaseSync } from 'node:sqlite';
+import { commitProbe, committed } from './event-commit-probe.js';
 import { realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import { openAgentRuntime } from '../../src/bootstrap/agent-runtime.js';
@@ -92,25 +92,23 @@ it('stores events before TCP ACK, then re-ACKs a pruned prefix after a lost repl
   configured.runtime!.ceilings.perRun.outputBytes = 10_000; const server = await deliveryHttpFixture(configured.runs!.profiles[0]!);
   server.events.count = 2; server.events.loseAck = true;
   const root = await realpath(fixture.root()); const path = join(root, 'event-ack-loss.sqlite');
+  const workerUrl = await commitProbe(root, fixture.workerUrl());
   let metadata: Metadata | undefined; let runtime: AgentRuntime | undefined;
   let binding: Parameters<Metadata['events']['load']>[0] | undefined;
   const beforeAck: number[] = [];
   server.events.beforeAck = () => {
     if (!binding) throw new Error('ACK before durable binding');
-    // This independent connection observes the last committed WAL snapshot at
-    // request arrival. It cannot queue behind the metadata worker's ingest.
-    const db = new DatabaseSync(path, { readOnly: true });
-    try {
-      const attempt = binding.key.attempt.attemptId;
-      const cursor = db.prepare('SELECT durable_through,event_count,retained_bytes FROM event_cursors WHERE attempt_id=?').get(attempt);
-      const rows = db.prepare('SELECT count(*) n,sum(charged_bytes) bytes FROM run_events WHERE attempt_id=?').get(attempt);
-      expect(cursor).toMatchObject({ durable_through: 2, event_count: 2 });
-      expect(rows).toMatchObject({ n: 2, bytes: cursor?.retained_bytes });
-      expect(cursor?.retained_bytes).toBeGreaterThan(0); beforeAck.push(2);
-    } finally { db.close(); }
+    // Native COMMIT has already returned before this bounded observation is
+    // published. Reading it cannot queue or wait for the Metadata worker.
+    const snapshot = committed(path);
+    expect(snapshot).toMatchObject({ cursor: { attempt_id: binding.key.attempt.attemptId,
+      durable_through: 2, event_count: 2 }, rows: { n: 2 } });
+    const value = snapshot as { cursor: { retained_bytes: number }; rows: { bytes: number } };
+    expect(value.cursor.retained_bytes).toBeGreaterThan(0);
+    expect(value.rows.bytes).toBe(value.cursor.retained_bytes); beforeAck.push(2);
   };
   try {
-    metadata = await fixture.open(path, configured); await seed(metadata);
+    metadata = await fixture.open(path, { ...configured, workerUrl }); await seed(metadata);
     const revision = await append(metadata, await createSuite(metadata));
     const request = runRequest(revision.id); request.budget.outputBytes = 10_000;
     const run = await metadata.runs.execute(runCommand(revision.id, 70, request));
@@ -126,7 +124,7 @@ it('stores events before TCP ACK, then re-ACKs a pruned prefix after a lost repl
     const stored = await metadata.events.load(binding);
     expect(stored).toMatchObject({ durableThrough: 2, eventCount: 2, ackConfirmedThrough: 0, coverage: 'contiguous', blockedReason: null });
     expect(server.events.afters).toEqual([0]); expect(server.events.acks).toBe(1);
-    await fixture.close(metadata); metadata = await fixture.open(path, { ...configured, runtime: null });
+    await fixture.close(metadata); metadata = await fixture.open(path, { ...configured, workerUrl, runtime: null });
     expect(await metadata.events.load(binding)).toEqual(stored);
     runtime = await openAgentRuntime({ connection: server.connection, dataRoot: root }, metadata);
     const resumed = metadata; const exactBinding = binding;
