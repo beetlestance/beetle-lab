@@ -1,6 +1,6 @@
 # Output source Journal transactions
 
-Status: proposed exact transaction/wire amendment; review before implementation.
+Status: reviewed exact transaction/wire contract; implementation remains required.
 Value/intent contracts: [source commit](output-source-commit.md) and
 [collection intent](output-collection-intent.md). This page owns the additional
 private release operations and migration/wire allocation, not filesystem truth.
@@ -41,7 +41,7 @@ No new worker pool or source enumeration/history scan is introduced.
 
 ## Migration and accounting
 
-Reserve agent migration012 after this amendment's review. Preserve migrations001
+Coordinator reserves agent migration012 for this boundary. Preserve migrations001
 through011 and their historical guard definitions; new guards that reference new
 columns must be installed by012, not retrofitted into011's standalone SQL.
 Migration012 creates the previously declared intent/source tables and adds

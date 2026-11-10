@@ -30,7 +30,7 @@ The owning document below must be updated before its implementation changes.
 | Verified source proposal | [Verified output source](lld/output-source.md) | Proposed durable agent manifest and transfer custody; review required before code |
 | Source commit contract | [Durable collected source](lld/output-source-commit.md) | Reviewed values/digest vectors, quota and finished-release gate; wiring pending |
 | Source collection recovery | [Collection intent](lld/output-collection-intent.md) | Reviewed preparation gate and absent-source restart contract; wiring pending |
-| Source Journal amendment | [Source transactions](lld/output-source-journal.md) | Proposed private source/release wire, quota/migration and atomic lifecycle operations |
+| Source Journal contract | [Source transactions](lld/output-source-journal.md) | Reviewed private source/release wire, quota/migration and atomic lifecycle; implementation pending |
 | Agent control and outputs | [Agent collection](lld/agent-collection.md) | Bounded file intake, atomic checkpoints, stopped verification and artifact custody |
 | Attempt orchestration | [Agent controller](lld/agent-controller.md) | Prepared-plan handoff, supervision/control/collection wiring and release ownership |
 | Installed engine preflight | [Engine catalogue](lld/engine-catalog.md) | Trusted schema bundles, manifest/profile pins and recovery identity |
