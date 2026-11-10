@@ -3,11 +3,13 @@ import type { ClientResult } from '@beetle/contracts';
 import { captureSourceChunkRequest, SOURCE_CHUNK_REQUEST_BYTES, SOURCE_CHUNK_BYTES, SOURCE_ENVELOPE_BYTES } from '@beetle/contracts/output-source';
 import type { Owned, SourceChunkRequest } from '@beetle/contracts/output-source';
 import type { RunnerOutputClient } from '../../../ports/output-source.js';
+import type { RunnerOutputAbsenceClient } from '../../../ports/output-absence.js';
 import type { RunnerAttemptIdentity } from '../../../ports/runner.js';
 import { scopeHeaders } from './identity.js';
 import { nativeCall } from './native.js';
 import { chunkReply, envelopeReply } from './source-replies.js';
 import type { Connection } from './transport.js';
+import { absence } from './absence.js';
 
 function requestBody(input: SourceChunkRequest, artifactBytes: number): ClientResult<{ request: Owned<SourceChunkRequest>; body: string }> {
   try {
@@ -28,8 +30,9 @@ function read(connection: Connection, identity: RunnerAttemptIdentity, signal: A
 }
 
 /** An immutable facade on the same connection, credits and native-close owner. */
-export function createSourceClient(connection: Connection, identity: RunnerAttemptIdentity): RunnerOutputClient {
+export function createSourceClient(connection: Connection, identity: RunnerAttemptIdentity): RunnerOutputClient & RunnerOutputAbsenceClient {
   return Object.freeze({
+    absence: signal => absence(connection, identity, signal),
     source: signal => connection.credits.run('source', signal, async original => {
       if (identity.generation !== 1) return { ok: false, error: { kind: 'request' } };
       return envelopeReply(await read(connection, identity, original.signal), identity);
@@ -41,5 +44,5 @@ export function createSourceClient(connection: Connection, identity: RunnerAttem
       const response = await read(connection, identity, original.signal, captured.value.body);
       return chunkReply(response, identity, captured.value.request, artifactBytes);
     }),
-  } satisfies RunnerOutputClient);
+  } satisfies RunnerOutputClient & RunnerOutputAbsenceClient);
 }

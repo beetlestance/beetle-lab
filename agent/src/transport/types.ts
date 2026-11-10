@@ -1,6 +1,7 @@
 import type { Capabilities, ProtocolError } from '@beetle/contracts';
 import type { InstallationController } from '../installation/index.js';
 import type { Journal } from '../journal/index.js';
+import type { JournalOutputAbsence } from '../journal/output-absence-protocol.js';
 import type { OutputSourceReader } from '../output-transfer/index.js';
 
 export interface AgentHttpOptions {
@@ -12,6 +13,8 @@ export interface AgentHttpOptions {
   readonly journal: Pick<Journal, 'get' | 'readEvents' | 'acknowledge'>;
   /** Source adapter is explicit; absent service returns a scoped unavailable error. */
   readonly outputs?: OutputSourceReader;
+  /** Read-only durable closure capability; transport cannot create absence authority. */
+  readonly absences?: Pick<JournalOutputAbsence, 'readOutputAbsence'>;
   capabilities(): Promise<Capabilities>;
 }
 export interface HttpScope {

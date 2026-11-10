@@ -10,11 +10,12 @@ function sourceDisposition(error: ProtocolError, status: number): boolean {
   switch (error.reason) {
     case 'source_pending': return status === 409 && error.retry === 'transport';
     case 'source_unavailable': return status === 409 && error.retry === 'never';
+    case 'source_absent': return status === 409 && error.retry === 'never';
     default: return true;
   }
 }
 
-function errorReply(response: Extract<NativeResult, { ok: true }>, identity: RunnerAttemptIdentity): ClientResult<never> {
+export function errorReply(response: Extract<NativeResult, { ok: true }>, identity: RunnerAttemptIdentity): ClientResult<never> {
   const refused: ClientResult<never> = { ok: false, error: { kind: 'response', status: response.status } };
   if (response.status < 400 || response.status > 599) return refused;
   const reply = protocolReply(response, identity);

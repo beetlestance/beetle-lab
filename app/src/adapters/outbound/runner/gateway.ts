@@ -1,6 +1,6 @@
 import { createRunnerClient, validatePrimitive } from '@beetle/contracts';
 import type { LoadedAgentConfiguration, RunnerAttemptClient } from '../../../ports/runner.js';
-import type { RunnerOutputGateway } from '../../../ports/output-source.js';
+import type { RunnerOutputAbsenceGateway } from '../../../ports/output-absence.js';
 import { captureIdentity } from './identity.js';
 import { CallCredits } from './lifetime.js';
 import type { NativeIo } from './native.js';
@@ -25,7 +25,7 @@ function capture(loaded: LoadedAgentConfiguration): { origin: URL; token: string
 }
 
 /** Internal composition seam; public construction always uses real Node I/O. */
-export function openGateway(loaded: LoadedAgentConfiguration, io: NativeIo): RunnerOutputGateway {
+export function openGateway(loaded: LoadedAgentConfiguration, io: NativeIo): RunnerOutputAbsenceGateway {
   const connection = { ...capture(loaded), credits: new CallCredits(), io };
   const client = createRunnerClient(createTransport(connection));
   return Object.freeze({
@@ -45,5 +45,5 @@ export function openGateway(loaded: LoadedAgentConfiguration, io: NativeIo): Run
       return Object.freeze(facade);
     },
     close: () => connection.credits.close(),
-  } satisfies RunnerOutputGateway);
+  } satisfies RunnerOutputAbsenceGateway);
 }
