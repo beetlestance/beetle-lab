@@ -1,4 +1,4 @@
-import type { OutputCustodyStore } from '../../../ports/output-custody.js';
+import type { OutputArtifactStore } from '../../../ports/output-artifacts.js';
 import { outputOperation, captureOutputReply } from './output-custody/index.js';
 import type { OutputOperation } from './output-custody/index.js';
 import type { EventCustodyStore } from '../../../ports/events.js';
@@ -61,11 +61,15 @@ export class Metadata {
   private readyResolve: () => void = () => undefined;
   private readyReject: (error: StorageError) => void = () => undefined;
   private readonly ready: Promise<void>;
-  readonly outputs: OutputCustodyStore = {
-    scan: query => this.call({ kind: 'outputScan', query }) as ReturnType<OutputCustodyStore['scan']>,
-    load: binding => this.call({ kind: 'outputLoad', binding }) as ReturnType<OutputCustodyStore['load']>,
-    readSource: binding => this.call({ kind: 'outputReadSource', binding }) as ReturnType<OutputCustodyStore['readSource']>,
-    adopt: request => this.call({ kind: 'outputAdopt', request }) as ReturnType<OutputCustodyStore['adopt']>,
+  readonly outputs: OutputArtifactStore = {
+    claimArtifact: request => this.call({kind: 'outputClaimArtifact', request}) as ReturnType<OutputArtifactStore['claimArtifact']>,
+    recordProgress: request => this.call({kind: 'outputRecordProgress', request}) as ReturnType<OutputArtifactStore['recordProgress']>,
+    beginPublication: request => this.call({kind: 'outputBeginPublication', request}) as ReturnType<OutputArtifactStore['beginPublication']>,
+    recordPublication: request => this.call({kind: 'outputRecordPublication', request}) as ReturnType<OutputArtifactStore['recordPublication']>,
+    scan: query => this.call({ kind: 'outputScan', query }) as ReturnType<OutputArtifactStore['scan']>,
+    load: binding => this.call({ kind: 'outputLoad', binding }) as ReturnType<OutputArtifactStore['load']>,
+    readSource: binding => this.call({ kind: 'outputReadSource', binding }) as ReturnType<OutputArtifactStore['readSource']>,
+    adopt: request => this.call({ kind: 'outputAdopt', request }) as ReturnType<OutputArtifactStore['adopt']>,
   };
   readonly events: EventCustodyStore = {
     scan: query => this.call({ kind: 'eventScan', query }) as ReturnType<EventCustodyStore['scan']>,

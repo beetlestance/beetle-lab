@@ -1,3 +1,5 @@
+import type { OutputArtifactClaim, OutputArtifactProgress } from '../../../ports/output-artifacts.js';
+import type { OutputFileRecord } from '../../../ports/output-bytes.js';
 import type { Owned, SourceEnvelope } from '@beetle/contracts/output-source';
 import type { OutputAdoptRequest, OutputCustodyState, OutputPage } from '../../../ports/output-custody.js';
 import type { EventBinding, EventScan, EventPage, EventCursorState, EventIngestRequest, EventIngestResult, EventAckRequest, EventProblemRequest } from '../../../ports/events.js';
@@ -27,6 +29,8 @@ import type { RuntimeObservation } from '../../../ports/runtime.js';
 export type { RuntimeObservation } from '../../../ports/runtime.js';
 export type SettingsView = InstallationSettings | OrganizationSettings | WorkspaceSettings;
 export type Operation =
+  | { kind: 'outputClaimArtifact' | 'outputBeginPublication'; request: OutputArtifactClaim }
+  | { kind: 'outputRecordProgress' | 'outputRecordPublication'; request: OutputArtifactProgress }
   | { kind: 'outputScan'; query: EventScan }
   | { kind: 'outputLoad'; binding: EventBinding }
   | { kind: 'outputReadSource'; binding: EventBinding }
@@ -63,7 +67,7 @@ export type Operation =
   | { kind: 'getSettingsIdentity'; scope: SettingsScope }
   | { kind: 'runtime'; runtime: RuntimeObservation | null }
   | { kind: 'close' };
-export type Value = OutputCustodyState | OutputPage | Owned<SourceEnvelope> | EventPage | EventCursorState | EventIngestResult | DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
+export type Value = OutputFileRecord | OutputCustodyState | OutputPage | Owned<SourceEnvelope> | EventPage | EventCursorState | EventIngestResult | DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
 export type Command = Operation & { messageId: number };
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; messageId: number; ok: true; value: Value } |

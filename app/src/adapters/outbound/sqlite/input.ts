@@ -1,3 +1,4 @@
+import { artifactOperation } from './output-artifacts/index.js';
 import { outputOperation, captureOutputOperation, outputReplyLimit } from './output-custody/index.js';
 import { eventOperation, captureEventOperation, eventRequestLimit, eventReplyLimit } from './event-custody/index.js';
 import { checkedRunOperation } from './run-validation.js';
@@ -151,6 +152,7 @@ function dataProperty(value: unknown, key: string): unknown {
   return descriptor && 'value' in descriptor ? descriptor.value : undefined;
 }
 export function operationMessageLimit(operation: Operation): number {
+  if (artifactOperation(operation)) return 4096;
   if (outputOperation(operation)) return 79872;
   if (eventOperation(operation)) return eventRequestLimit(operation);
   if (dispatchOperation(operation)) return dispatchRequestLimit(operation);

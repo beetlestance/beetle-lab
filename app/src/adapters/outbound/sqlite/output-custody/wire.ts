@@ -1,3 +1,7 @@
+import { artifactOperation, captureArtifactOperation, captureArtifactReply } from '../output-artifacts/index.js';
+import type { ArtifactOperation } from '../output-artifacts/index.js';
+import type { OutputFileRecord } from '../../../../ports/output-bytes.js';
+import { decodeArtifact } from './slot.js';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import { verifySourceEnvelope } from '@beetle/contracts/output-source';
 import type { Owned, SourceEnvelope } from '@beetle/contracts/output-source';
@@ -6,20 +10,26 @@ import { requireRule } from '../../../../domain/namespaces/index.js';
 import type { OutputCustodyState, OutputPage } from '../../../../ports/output-custody.js';
 import type { Operation } from '../protocol.js';
 import { boundedCopy, sha256 } from '../input-values.js';
-import { closed, natural, scanQuery, token } from './values.js';
-export type OutputOperation = Exclude<Extract<Operation, {kind: 'outputScan' | 'outputLoad' | 'outputReadSource' | 'outputAdopt'}>, {kind: 'outputAdopt'}>
+import { closed, natural, scanQuery } from './values.js';
+export type OutputOperation = ArtifactOperation | BaseOperation;
+type BaseOperation = Exclude<Extract<Operation, {kind: 'outputScan' | 'outputLoad' | 'outputReadSource' | 'outputAdopt'}>, {kind: 'outputAdopt'}>
   | {kind: 'outputAdopt'; request: {binding: ReturnType<typeof captureEventBinding>; envelope: Owned<SourceEnvelope>}};
-export type OutputValue = OutputCustodyState | OutputPage | Owned<SourceEnvelope> | null;
+export type OutputValue = OutputCustodyState | OutputPage | Owned<SourceEnvelope> | OutputFileRecord | null;
 const kinds = ['outputScan', 'outputLoad', 'outputReadSource', 'outputAdopt'];
 export function outputOperation(input: unknown): input is OutputOperation {
+  if (artifactOperation(input)) return true;
   if (!input || typeof input !== 'object') return false;
   const kind = Object.getOwnPropertyDescriptor(input, 'kind');
   return !!kind && 'value' in kind && kinds.includes(kind.value as string);
 }
-export function outputReplyLimit(input: OutputOperation): number { return input.kind === 'outputReadSource' ? 75776 : 65536; }
+export function outputReplyLimit(input: OutputOperation): number { return artifactOperation(input) ? 4096 : input.kind === 'outputReadSource' ? 75776 : 65536; }
 export function captureOutputOperation(input: Operation): OutputOperation {
+  if (artifactOperation(input)) return captureArtifactOperation(input);
+  return captureBaseOperation(input);
+}
+function captureBaseOperation(input: Operation): BaseOperation {
   const copy = boundedCopy(input, 79872);
-  requireRule(outputOperation(copy));
+  requireRule(outputOperation(copy) && !artifactOperation(copy));
   const field = copy.kind === 'outputScan' ? 'query' : copy.kind === 'outputAdopt' ? 'request' : 'binding';
   closed(copy, Object.hasOwn(copy, 'messageId') ? ['kind', field, 'messageId'] : ['kind', field]);
   if ('messageId' in copy) { natural(copy.messageId); requireRule(copy.messageId > 0); }
@@ -41,15 +51,15 @@ function state(input: OutputCustodyState, binding: ReturnType<typeof captureEven
   requireRule(hex(input.manifestDigest) && hex(input.sourceDigest)); natural(input.finalAgentSeq);
   const tokens = new Set<string>();
   input.artifacts.forEach((artifact, index) => {
-    closed(artifact, ['ordinal', 'artifactId', 'token', 'bytes', 'sha256', 'offset', 'phase', 'identity', 'writer', 'version']);
-    requireRule(artifact.ordinal === index && artifact.version === 1 && artifact.phase === 'transferring');
-    requireRule(artifact.identity === null && artifact.writer === null && artifact.offset === 0);
-    requireRule(typeof artifact.artifactId === 'string' && Buffer.byteLength(artifact.artifactId) <= 128);
-    requireRule(hex(artifact.sha256)); natural(artifact.bytes); token(artifact.token);
+    decodeArtifact(artifact); requireRule(artifact.ordinal === index);
     requireRule(!tokens.has(artifact.token)); tokens.add(artifact.token);
   });
 }
 export function captureOutputReply(operation: OutputOperation, input: unknown): OutputValue {
+  if (artifactOperation(operation)) return captureArtifactReply(operation, input);
+  return captureBaseReply(operation, input);
+}
+function captureBaseReply(operation: BaseOperation, input: unknown): OutputValue {
   const copy = boundedCopy(input, outputReplyLimit(operation));
   if (operation.kind === 'outputReadSource') {
     if (copy === null) return null;
