@@ -97,9 +97,11 @@ would deadlock. All other earlier public leases must drain, including callbacks
 that settle after the retirement fence. Stop new staging/watch/controller creation.
 releaseProvisional must never remove a retiring owner.
 
-Then drain preparation result+quiesced, all cancellations (including a later chain
-assigned by a drained public lease), watch/timeout cached closes and controller/
-supervisor close/retire. Recheck the sticky cleanup state after draining. Existing
+Then drain preparation result+quiesced and cached watch/timeout closes, including
+all their already-issued callbacks. Only afterward re-read and drain the final
+cancellation chain, including chains assigned by drained public leases or watch
+callbacks; then close/retire controller/supervisor originals. Recheck sticky cleanup
+state after draining. Existing
 Manager.retire's initial three-Promise snapshot is insufficient: cancellation may
 be assigned after that snapshot. No producer may be orphaned by deleting the map.
 Only after these originals quiesce, request closeOutputDelivery and validate its
@@ -107,9 +109,23 @@ exact source receipt and closure. Hold the retiring fence through any ambiguous
 close; only a known durable closure permits memory-owner removal. Source/metadata
 quota or unknown close leaves the owner fenced and retained for reconciliation.
 Global shutdown drains its public work before retirement; it has no self drive lease
-and may not bypass the same barrier. Cached original close failures stay rejected.
+and may not bypass the same barrier or create new native work on a retiring owner.
+Cached original close failures stay rejected. Cache native retirement separately
+from the metadata closure attempt: a metadata error does not undo successful drain.
 
-## Late calls and restart
+## Reconciliation, late calls and restart
+
+A retiring entry admits at most one serialized reconciliation-only drive after its
+previous active drive settles, sharing the same global64 originals. It never
+reopens producer admission or creates staging/watch/controller/native work. Reuse
+cached native closes and the immutable source receipt. Wait any earlier issued
+close original/Journal FIFO quiescence before reading closure; exact stored closure
+wins, and only proven absence on a usable Journal permits replay of the same close.
+A quota failure may therefore recover in the same manager after ACK/prune creates
+headroom. A settled lost reply can reconcile without restart. An unresolved original
+or failed Journal remains fenced/unavailable; sticky native close failure never
+resets. Exclude only this actual reconciliation caller from its own completion wait.
+
 
 No unbounded in-memory tombstone map is required. After deletion, source-first
 recovery must reconcile the stored source/closure before creating any native
@@ -152,7 +168,9 @@ refuse reentrant new producers, release that cancellation and keep closure pendi
 through its resulting native actor/watch/descriptor close. Exclude only the actual
 closure caller, not another drive. Concurrent guard/timeout/close and global shutdown
 must retain every original. Withhold closure reply and retain owner/fence; replay
-same source after restart. Late cancellation on a closed source changes no sequence
+same source after restart. Also prove quota failure->ACK/prune->same-manager closure
+retry and settled ambiguous reply->same-manager exact read/reconcile, without any
+new native producer. Late cancellation on a closed source changes no sequence
 and performs no actor/stager/native work. Inspect original rows/counts/handles, not
 only fake service return values. Synthetic engine observations are not native k6
 or backend publication qualification.
