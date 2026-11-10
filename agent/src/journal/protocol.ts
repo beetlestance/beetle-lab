@@ -1,6 +1,8 @@
 import type { Ack, AckReceipt, AgentEvent, AttemptSnapshot, EventBatch, Offer } from '@beetle/contracts';
 import type { WrapperBatch, WrapperCheckpoint } from '../control-protocol/index.js';
 import type { AdmissionCommand, AdmissionValue } from '../admission/index.js';
+import type { CollectionIntent, PrivateSource, SourceReceipt } from '../output-source/index.js';
+import type { OutputSourceOperation } from './output-source-protocol.js';
 
 export type ErrorCode = 'invalid_input' | 'conflict' | 'not_found' | 'queue_full' |
   'closed' | 'unavailable' | 'owned' | 'schema_newer' | 'stale_generation' |
@@ -30,7 +32,7 @@ export interface PruneReceipt { pruned: number; snapshot: AttemptSnapshot }
 export interface EventInput {
   key: GenerationKey; source: 'wrapper' | 'agent'; sourceKey: number; json: string; canonical: string;
 }
-export type Operation =
+export type Operation = OutputSourceOperation
   | { kind: 'authority' }
   | { kind: 'checkpoint'; key: GenerationKey }
   | { kind: 'wrapperBatch'; request: Readonly<WrapperBatch> }
@@ -47,7 +49,7 @@ export type Operation =
   | { kind: 'prune' | 'sources'; key: GenerationKey }
   | { kind: 'close' };
 export type Command = Operation & { id: number };
-export type Value = AttemptSnapshot | SnapshotPage | RunnablePage | Offer | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | string | null;
+export type Value = AttemptSnapshot | SnapshotPage | RunnablePage | Offer | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | CollectionIntent | PrivateSource | SourceReceipt | string | null;
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; id: number; ok: true; value: Value } |
   { kind: 'result'; id: number; ok: false; code: ErrorCode; recovery?: AttemptSnapshot };

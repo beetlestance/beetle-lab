@@ -6,8 +6,8 @@ Disk hold insertion, immutable original metadata, 512-byte quota charge and comp
 counters commit with the reservation and admitted event. Replay adds no charge.
 SQL reservation release moves original output AND staging to retained counters once;
 the process retirement proof does not prove physical file absence. No refund API exists.
-Every spool, projection and checkpoint quota includes the hold charge; ACK/prune
-release event bytes only. Native free disk and logical disk promises are independent.
+Every live quota includes spool, snapshot, checkpoint, hold, collection and source
+charges. ACK/prune releases event bytes only. Native free disk is independent.
 
 Migration011 validates at most 4096 bounded original scheduling records and preserves
 active and released originals. Unknown identity/staging, unsafe totals and quota debt
@@ -19,3 +19,11 @@ Normal admission reads only scalar retention counters, 64 active reservations an
 
 Contract: [disk retention](../../../docs/design/lld/disk-retention.md).
 Scoped proof: `vitest run agent/test/disk-retention agent/test/admission --maxWorkers=1`.
+
+Migration012 adds immutable collection intents and verified sources with bounded
+native/worker JSON reads. Six private source operations share the two large credits.
+Per-open epochs fence first failed closure; exact terminal failed replay survives
+reopen. Finished release requires its stored source receipt and original evidence.
+The controller still owns native file facts and uninterrupted collection lifetime.
+Contract: docs/design/lld/output-source-journal.md.
+Focused proof: `vitest run agent/test/source-journal --maxWorkers=1`.

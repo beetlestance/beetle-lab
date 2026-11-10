@@ -15,15 +15,18 @@ import type { Row } from './sql.js';
 import { supervise } from './supervision.js';
 import { RunnableScan } from './runnable.js';
 import { cancelOriginal } from './cancel-original.js';
+import { OutputSources, outputSourceOperation } from './output-source.js';
 
 export class Store {
   private readonly admission: AdmissionStore;
   private readonly read: StatementSync;
   private readonly list: StatementSync;
   private readonly runnable: RunnableScan;
+  private readonly outputs: OutputSources;
   constructor(private readonly db: DatabaseSync, private readonly quota = DEFAULT_QUOTA_BYTES) {
     this.admission = new AdmissionStore(db, quota);
     this.runnable = new RunnableScan(db);
+    this.outputs = new OutputSources(db);
     this.read = db.prepare(`SELECT CASE WHEN length(CAST(offer_json AS BLOB))<=${RUNNER_MAXIMUM_OFFER_BYTES}
       THEN offer_json ELSE NULL END AS offer_json FROM accepted_attempts WHERE id=?`);
     this.list = db.prepare(`SELECT ${metadataColumns}, NULL AS result_json, NULL AS exit_facts_json, NULL AS wrapper_checkpoint_json
@@ -62,6 +65,7 @@ export class Store {
   }
   private readCommand(command: Command): Value {
     switch (command.kind) {
+      case 'authority': return readJournalAuthority(this.db);
       case 'get': return snapshot(this.db, owner(this.db, command.key));
       case 'read': return this.readOffer(command.key);
       case 'list': return this.listOpen(command.page);
@@ -70,12 +74,12 @@ export class Store {
     }
   }
   execute(command: Command): Value {
-    if (command.kind === 'authority') return readJournalAuthority(this.db);
+    if (outputSourceOperation(command)) return this.outputs.execute(command);
     if (command.kind === 'supervision') return supervise(this.db, command.request);
     if (command.kind === 'admission') return this.admission.execute(command.request);
     if (command.kind === 'cancelOriginal') return cancelOriginal(this.db, command, this.quota);
     if (['append', 'events', 'ack', 'prune', 'sources', 'checkpoint', 'wrapperBatch'].includes(command.kind)) return this.eventCommand(command);
-    if (['get', 'read', 'list', 'runnable'].includes(command.kind)) return this.readCommand(command);
+    if (['authority', 'get', 'read', 'list', 'runnable'].includes(command.kind)) return this.readCommand(command);
     switch (command.kind) {
       case 'offer': return this.offer(command);
       case 'cancel': {

@@ -10,7 +10,7 @@ import { canonical, offerInput } from './input.js';
 import { offerAtomic } from './offers.js';
 import { eventInput } from './event-input.js';
 import { appendAtomic } from './spool.js';
-import { Failure, owner, transaction } from './sql.js';
+import { Failure, owner, transaction, quotaUsed } from './sql.js';
 import { diskRetention } from './disk-retention/facts.js';
 
 function mergeSensors(incoming: RuntimeObservation, old: RuntimeObservation | null): RuntimeObservation {
@@ -104,7 +104,7 @@ export class AdmissionStore {
     if (decision.kind === 'reject') return this.reject(item, decision);
     if (decision.kind !== 'admit') return decision;
     const row = owner(this.db, request.key);
-    if (row.spool_bytes + row.snapshot_bytes + row.checkpoint_bytes + DISK_HOLD_METADATA_BYTES > row.quota_bytes) {
+    if (quotaUsed(row, { hold_bytes: DISK_HOLD_METADATA_BYTES }) > row.quota_bytes) {
       throw new Failure('quota_exceeded');
     }
     const reservation: Reservation = { ...item, status: 'charged', admittedAt: request.now, createToken: null,
