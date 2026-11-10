@@ -71,7 +71,7 @@ function identityMatches(operation: ApiOperation, input: PreparedInput, reply: O
   const params = input.params;
   const identities: Partial<Record<ApiOperation['response'], string | undefined>> = {
     Organization: params.organizationId, Workspace: params.workspaceId, Folder: params.id,
-    Suite: params.suiteId, SuiteRevision: params.revisionId, Run: params.runId,
+    Suite: params.suiteId, SuiteRevision: params.revisionId, Run: params.runId, RunResultSnapshot: params.runId,
   };
   if (operation.response === 'DeletionReceipt') {
     return sameUuid(reply.id, params.id ?? params.workspaceId ?? params.organizationId) && sameUuid(reply.requestId, input.body?.requestId);

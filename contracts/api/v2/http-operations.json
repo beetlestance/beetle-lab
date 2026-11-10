@@ -401,6 +401,15 @@
     "params": "RunParams"
   },
   {
+    "name": "getRunResult",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/result",
+    "response": "RunResultSnapshot",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunParams"
+  },
+  {
     "name": "cancelRun",
     "method": "POST",
     "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/cancel",

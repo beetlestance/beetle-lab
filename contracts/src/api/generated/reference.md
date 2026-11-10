@@ -47,6 +47,7 @@ Schema catalogue is complete, including runner common exactly once. These are ro
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs | WorkspaceParams | none | CreateRunRequest | 202 | Run |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs | WorkspaceParams | PageQuery | none | 200 | RunPage |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId} | RunParams | none | none | 200 | Run |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/result | RunParams | none | none | 200 | RunResultSnapshot |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/cancel | RunParams | none | CancelRunRequest | 202 | Run |
 
 All errors use ApiError. UUID path parameters are validated before URL encoding.
