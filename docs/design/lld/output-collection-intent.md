@@ -1,7 +1,7 @@
 # Durable output collection intent
 
-Status: independently reviewed contract and value types; durable gate and producer
-implementation remain required. Extends [source commit](output-source-commit.md). This gate distinguishes interrupted source collection
+Status: reviewed contract/types and locally verified stopped-root producer;
+durable gate/controller wiring remains required. Extends [source commit](output-source-commit.md). This gate distinguishes interrupted source collection
 from collection that never began. It does not establish file integrity or outcome.
 
 ## Before collecting
