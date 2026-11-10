@@ -178,7 +178,7 @@ already received positive observation custody. No new PUT/cancel after close.
 onFailure must not await delivery/composite close, which would await itself.
 Delivery-failure composition fences publication, drains any original positive
 publication, then publishes null and revokes readiness; no positive follows it;
-A fatal capacity producer/publication error also stops delivery immediately.
+A fatal capacity producer/publication/capture error also stops delivery immediately.
 Bootstrap drains both loops before the shared gateway and finally metadata.
 Initial wiring does not qualify cancellation absence, events, artifacts or results.
 

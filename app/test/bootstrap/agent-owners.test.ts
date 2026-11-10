@@ -94,3 +94,16 @@ it.each(['source_failure', 'publication_failure'] as const)('stops new delivery 
   await expect(runtime.close()).rejects.toBe(failure);
   expect(f.delivery.close).toHaveBeenCalledOnce(); expect(f.gateway.close).toHaveBeenCalledOnce();
 });
+it('stops delivery when bounded observation capture fails before the publication wrapper', async () => {
+  const f = ownerFixture(mocks.start);
+  const oversized = { ...f.frame, extra: 'x'.repeat(65_537) };
+  vi.mocked(f.source.sample).mockResolvedValue(oversized);
+  const runtime = await openAgentOwners(f);
+  try {
+    await flush(); expect(runtime.state()).toMatchObject({ status: 'failed', reason: 'publication_failure' });
+    expect(f.metadata.updateRuntime).not.toHaveBeenCalled();
+    expect(f.delivery.close).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(f.source.sample).toHaveBeenCalledOnce(); expect(f.delivery.close).toHaveBeenCalledOnce();
+  } finally { await expect(runtime.close()).rejects.toThrow(); }
+});

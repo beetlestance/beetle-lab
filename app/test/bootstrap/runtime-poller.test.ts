@@ -133,3 +133,28 @@ describe('original capacity publication loop', () => {
     expect(source.sample).not.toHaveBeenCalled();
   });
 });
+
+it('retains source, synchronous notification and revocation failures without repeating notification', async () => {
+  const original = new Error('Synthetic source failure'); const notification = new Error('Synthetic notification failure');
+  const revocation = new Error('Synthetic revocation failure');
+  const sample = vi.fn<CapacitySource['sample']>().mockResolvedValueOnce(value()).mockRejectedValue(original);
+  const publish = vi.fn<RuntimePublisher>().mockResolvedValueOnce(true).mockRejectedValue(revocation);
+  const notify = vi.fn(() => { throw notification; });
+  const poller = startRuntimePoller({ source: { sample, close: async () => {} }, publish, onFailure: notify });
+  handles.push(poller); await flush(); expect(poller.state().status).toBe('published');
+  await vi.advanceTimersByTimeAsync(250); await flush();
+  expect(notify).toHaveBeenCalledOnce(); expect(notify).toHaveBeenCalledWith('source_failure');
+  expect(publish.mock.calls.map(([fact]) => fact === null)).toEqual([false, true]);
+  const close = poller.close();
+  await expect(close).rejects.toMatchObject({ errors: [{ errors: [original, notification] }, revocation] });
+  expect(poller.close()).toBe(close);
+});
+it('captures the synchronous failure notification before starting its source', async () => {
+  const failure = new Error('Synthetic capture failure');
+  const source: CapacitySource = { sample: vi.fn().mockRejectedValue(failure), close: vi.fn().mockResolvedValue(undefined) };
+  const notify = vi.fn((): undefined => undefined); const replacement = vi.fn((): undefined => undefined);
+  const options = { source, publish: vi.fn<RuntimePublisher>().mockResolvedValue(true), onFailure: notify };
+  const poller = startRuntimePoller(options); handles.push(poller); options.onFailure = replacement;
+  await flush(); expect(notify).toHaveBeenCalledOnce(); expect(replacement).not.toHaveBeenCalled();
+  await expect(poller.close()).rejects.toBe(failure);
+});

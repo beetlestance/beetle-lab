@@ -40,7 +40,9 @@ A source returning null is ordinary unavailable evidence, not an exception.
 
 agent-owners.ts shares one gateway between capacity and the delivery loop. A fatal
 producer exception stops delivery synchronously without awaiting that child from
-inside its producer. Both original drains remain owned; published status cannot
+inside its producer. A captured synchronous failure notification also covers
+poller-local bounded encoding/freezing errors; it cannot return a Promise.
+Notification exceptions are retained with the original failure. Both drains remain owned; published status cannot
 hide the failure. Metadata publication failure retains the original error and
 lease expiry rather than retrying a positive mutation. Delivery failure fences
 new positive publication, drains the poller and its pending write, then publishes

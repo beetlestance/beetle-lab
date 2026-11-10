@@ -4,7 +4,7 @@ import type { DeliveryRuntime } from '../ports/delivery.js';
 import type { Metadata } from '../adapters/outbound/sqlite/index.js';
 import { startDeliveryRuntime } from '../adapters/outbound/runner/index.js';
 import { startRuntimePoller } from './runtime-poller.js';
-import type { RuntimePoller, RuntimePollerState } from './runtime-poller.js';
+import type { RuntimeFailureReason, RuntimePoller, RuntimePollerState } from './runtime-poller.js';
 import { createRuntimePublisher } from './runtime-publication.js';
 import type { RuntimePublisher } from './runtime-poller.js';
 import { throwCloseFailures } from './application-close.js';
@@ -28,41 +28,35 @@ class AgentOwners implements AgentRuntime {
   private poller: RuntimePoller | undefined;
   private delivery: DeliveryRuntime | undefined;
   private readonly publish: RuntimePublisher;
-  private readonly sampleSource: CapacitySource['sample'];
   private readonly closeSource: CapacitySource['close'];
   private readonly closeGateway: RunnerGateway['close'];
   private closed = false;
   private deliveryFailed = false;
-  private producerFailure: 'source_failure' | 'publication_failure' | undefined;
+  private producerFailure: RuntimeFailureReason | undefined;
   private deliveryDrain: Promise<PromiseSettledResult<void>[]> | undefined;
   private revocation: Promise<void> | undefined;
   private closing: Promise<void> | undefined;
   constructor(private readonly options: OwnerOptions) {
-    this.sampleSource = options.source.sample.bind(options.source);
     this.publish = createRuntimePublisher(options.metadata);
     this.closeSource = options.source.close.bind(options.source);
     this.closeGateway = options.gateway.close.bind(options.gateway);
   }
   start(): void {
-    this.poller = startRuntimePoller({ source: { sample: signal => this.sample(signal), close: this.closeSource },
-      publish: observation => this.publishCapacity(observation) });
+    this.poller = startRuntimePoller({ source: this.options.source,
+      publish: observation => this.publishCapacity(observation), onFailure: reason => this.failProducer(reason) });
     this.delivery = startDeliveryRuntime({ store: this.options.metadata.dispatch,
       runs: this.options.metadata.runs, gateway: this.options.gateway,
       onFailure: () => this.failDelivery() });
   }
-  private async sample(signal?: AbortSignal): Promise<RuntimeObservation | null> {
-    try { return await this.sampleSource(signal); }
-    catch (error) { this.failProducer('source_failure'); throw error; }
+  private publishCapacity(observation: RuntimeObservation | null): Promise<boolean> {
+    if (observation !== null && (this.deliveryFailed || this.producerFailure || this.closed)) return Promise.resolve(false);
+    return this.publish(observation);
   }
-  private async publishCapacity(observation: RuntimeObservation | null): Promise<boolean> {
-    if (observation !== null && (this.deliveryFailed || this.producerFailure || this.closed)) return false;
-    try { return await this.publish(observation); }
-    catch (error) { this.failProducer('publication_failure'); throw error; }
-  }
-  private failProducer(reason: 'source_failure' | 'publication_failure'): void {
+  private failProducer(reason: RuntimeFailureReason): undefined {
     this.producerFailure ??= reason;
     // Do not await delivery from its producer: its failure callback may drain us.
     void this.stopDelivery();
+    return undefined;
   }
   private stopDelivery(): Promise<PromiseSettledResult<void>[]> {
     this.deliveryDrain ??= Promise.allSettled([stop(() => this.delivery?.close())]);

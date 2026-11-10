@@ -35,7 +35,7 @@ function protocol(reason: ProtocolError['reason'], attemptId: string): ProtocolE
 /** Real TCP fake-agent receipt. It does not claim a real agent/engine execution. */
 export async function deliveryHttpFixture(initial: RunProfilePin) {
   const state = { profile: initial, snapshots: true, losePut: false, puts: 0, gets: 0, caps: 0,
-    accepted: 0, receipt: undefined as AttemptSnapshot | undefined,
+    accepted: 0, absences: 0, requireAbsence: false, receipt: undefined as AttemptSnapshot | undefined,
     original: undefined as Offer | undefined, bytes: undefined as string | undefined,
     failure: undefined as { error: unknown } | undefined };
   async function handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
@@ -62,10 +62,11 @@ export async function deliveryHttpFixture(initial: RunProfilePin) {
   function getSnapshot(response: ServerResponse, attemptId: string): void {
     if (++state.gets > 128) throw new Error('Fixture snapshot bound');
     if (!state.snapshots) { response.writeHead(503); response.end(); return; }
-    if (!state.receipt) { send(response, protocol('attempt_not_found', attemptId), 404); return; }
+    if (!state.receipt) { state.absences++; send(response, protocol('attempt_not_found', attemptId), 404); return; }
     send(response, state.receipt);
   }
   async function putOffer(request: IncomingMessage, response: ServerResponse, attemptId: string): Promise<void> {
+    if (state.requireAbsence && state.absences === 0) throw new Error('Offer before scoped absence');
     if (++state.puts > 4) throw new Error('Fixture mutation bound');
     const text = await body(request); const checked = validate('Offer', JSON.parse(text) as unknown);
     if (!checked.ok || checked.value.attemptId !== attemptId) throw new Error('Invalid fixture Offer');

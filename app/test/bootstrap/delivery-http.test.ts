@@ -25,6 +25,7 @@ async function until(predicate: () => Promise<boolean>): Promise<void> {
 }
 it('reopens a claim made before any PUT, reconciles a scoped404 and sends the same original once over TCP', async () => {
   const configured = options(); const server = await deliveryHttpFixture(configured.runs!.profiles[0]!);
+  server.state.requireAbsence = true;
   const root = await realpath(fixture.root()); const path = join(root, 'before-put.sqlite');
   let metadata: Metadata | undefined; let runtime: AgentRuntime | undefined;
   try {
@@ -39,7 +40,7 @@ it('reopens a claim made before any PUT, reconciles a scoped404 and sends the sa
     runtime = await openAgentRuntime({ connection: server.connection, dataRoot: root }, metadata);
     const resumed = metadata;
     await until(async () => (await resumed.runs.getRun({ id: run.id, scope })).state === 'active');
-    expect(server.state.gets).toBeGreaterThan(0); expect(server.state.puts).toBe(1); expect(server.state.accepted).toBe(1);
+    expect(server.state.absences).toBe(1); expect(server.state.gets).toBeGreaterThan(0); expect(server.state.puts).toBe(1); expect(server.state.accepted).toBe(1);
     expect(server.state.original).toEqual(original.offer); expect(server.state.failure).toBeUndefined();
     expect(await metadata.dispatch.claim(key)).toEqual({ kind: 'acknowledged', journalAuthority });
     expect((await metadata.dispatch.scan({ lane: 'queued', limit: 1 })).items).toEqual([]);
