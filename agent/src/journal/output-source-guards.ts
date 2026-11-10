@@ -7,6 +7,8 @@ const immutable = (table: string, prefix: string): string => `
 const pinned = ['organizationId', 'workspaceId', 'attemptId', 'generation', 'intentDigest'];
 const parentNames = ['organization_id', 'workspace_id', 'attempt_id', 'generation', 'intent_digest'];
 const bindingMatches = pinned.map((name, index) => `json_extract(NEW.intent_json,'$.binding.${name}') IS a.${parentNames[index]}`).join(' AND ');
+const intentTimes = ['begunAt', 'runtime.observedAt', 'launch.settledAt'].map(name =>
+  `json_type(NEW.intent_json,'$.${name}')='integer' AND json_extract(NEW.intent_json,'$.${name}') BETWEEN 0 AND ${name === 'launch.settledAt' ? 8_640_000_000_000_000 : Number.MAX_SAFE_INTEGER}`).join(' AND ');
 function jsonEqual(left: string, right: string): string {
   const values = (input: string) => `SELECT fullkey,type,atom FROM json_tree(${input})`;
   return `(NOT EXISTS(${values(left)} EXCEPT ${values(right)}) AND NOT EXISTS(${values(right)} EXCEPT ${values(left)}))`;
@@ -18,8 +20,12 @@ function releaseRelation(release: string, intent: string): string {
     `json_extract(${release},'$.${name}') IS json_extract(${intent},'$.launch.${name}')`);
   const launch = ['epoch', 'startToken'].map(name =>
     `json_extract(${release},'$.launch.${name}') IS json_extract(${intent},'$.launch.${name}')`);
-  return [...scope, ...binding, ...launch,
+  return [`json_extract(${release},'$.authority')='supervisor'`,
+    `json_extract(${release},'$.runtime.state')='stopped'`, `json_extract(${release},'$.runtime.source')='supervisor'`,
+    ...scope, ...binding, ...launch,
     `json_extract(${release},'$.launch.settlementId') IS json_extract(${intent},'$.launch.evidenceId')`,
+    `json_type(${release},'$.collection.observedAt')='integer'`,
+    `json_extract(${release},'$.collection.observedAt') BETWEEN 0 AND ${Number.MAX_SAFE_INTEGER}`,
     `json_extract(${release},'$.collection.observedAt')>=json_extract(${intent},'$.begunAt')`,
     jsonEqual(`json_extract(${release},'$.runtime')`, `json_extract(${intent},'$.runtime')`)].join(' AND ');
 }
@@ -33,6 +39,10 @@ export const outputSourceGuards = `
       WHERE a.attempt_id=NEW.attempt_id AND r.charged=1 AND h.phase='active' AND ${bindingMatches}
         AND json_extract(NEW.intent_json,'$.binding.journalAuthority')=(SELECT authority FROM journal_authority WHERE id=1)
         AND json_extract(NEW.intent_json,'$.collectionId')=NEW.collection_id
+        AND json_extract(NEW.intent_json,'$.runtime.state')='stopped' AND json_extract(NEW.intent_json,'$.runtime.source')='supervisor'
+        AND ${intentTimes}
+        AND json_extract(NEW.intent_json,'$.begunAt')>=json_extract(NEW.intent_json,'$.runtime.observedAt')
+        AND json_extract(NEW.intent_json,'$.runtime.observedAt')>json_extract(NEW.intent_json,'$.launch.settledAt')
         AND a.result_json IS NOT NULL AND json_extract(NEW.intent_json,'$.checkpoint.wrapperSeq')=a.wrapper_high
         AND json_extract(NEW.intent_json,'$.binding.specDigest')=json_extract(r.reservation_json,'$.specDigest')
         AND ${jsonEqual("json_extract(NEW.intent_json,'$.launch')", "json_extract(r.reservation_json,'$.launchSettlement')")}
@@ -58,6 +68,7 @@ export const outputSourceGuards = `
   CREATE TRIGGER output_source_validate BEFORE INSERT ON output_sources BEGIN
     SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM output_collection_intents i JOIN reservations r USING(attempt_id)
       JOIN accepted_attempts a USING(attempt_id) WHERE i.attempt_id=NEW.attempt_id AND i.phase='pending' AND r.charged=1
+        AND json_extract(NEW.source_json,'$.release.collection.state')='finished'
         AND json_extract(NEW.source_json,'$.manifest.binding')=json_extract(i.intent_json,'$.binding')
         AND json_extract(NEW.source_json,'$.root')=json_extract(i.intent_json,'$.root')
         AND json_extract(NEW.source_json,'$.checkpoint')=json_extract(i.intent_json,'$.checkpoint')

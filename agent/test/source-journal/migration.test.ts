@@ -87,6 +87,103 @@ it.each(['runtime', 'chronology', 'launch', 'scope'] as const)('native source in
     VALUES(?,?,?,?,?)`).run(e.key.attemptId, text, value.manifest.manifestDigest, value.sourceDigest, Buffer.byteLength(text) + 256)).toThrow('invalid output source');
   expect(rows(e.db)).toEqual(before);
 });
+it.each(['authority', 'runtime-state', 'runtime-source', 'collection-state'] as const)('native source insertion rejects rehashed release %s constants before sourcing or charging', async kind => {
+  const e = await f.native(); e.op({ kind: 'outputCollectionBegin', json: json(e.intent) });
+  const value = structuredClone(e.source);
+  const changes = {
+    authority: () => { Reflect.set(value.release, 'authority', 'wrapper'); },
+    'runtime-state': () => { Reflect.set(value.release.runtime, 'state', 'absent'); },
+    'runtime-source': () => { Reflect.set(value.release.runtime, 'source', 'wrapper'); },
+    'collection-state': () => { Reflect.set(value.release.collection, 'state', 'failed'); },
+  };
+  changes[kind](); const core = { ...value }; Reflect.deleteProperty(core, 'sourceDigest');
+  Reflect.set(value, 'sourceDigest', hash('beetle-lab.output-source.v1\n' + json(core)));
+  const text = json(value); const before = rows(e.db);
+  expect(() => e.db.prepare(`INSERT INTO output_sources(attempt_id,source_json,manifest_digest,source_digest,charged_bytes)
+    VALUES(?,?,?,?,?)`).run(e.key.attemptId, text, value.manifest.manifestDigest, value.sourceDigest, Buffer.byteLength(text) + 256))
+    .toThrow('invalid output source');
+  expect(rows(e.db)).toEqual(before);
+  expect(e.db.prepare('SELECT COUNT(*) AS n FROM output_sources').get()?.n).toBe(0);
+  expect(e.db.prepare('SELECT phase FROM output_collection_intents').get()?.phase).toBe('pending');
+  expect(e.db.prepare('SELECT source_bytes FROM accepted_attempts').get()?.source_bytes).toBe(0);
+  expect(e.db.prepare('SELECT charged FROM reservations').get()?.charged).toBe(1);
+  expect(e.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+});
+it.each(['runtime-state', 'runtime-source', 'runtime-at-settlement', 'begin-before-runtime', 'begin-text', 'runtime-text', 'runtime-fraction', 'begin-unsafe'] as const)('native intent insertion rejects %s without changing rows or charges', async kind => {
+  const e = await f.native(); const value = structuredClone(e.intent);
+  const changes = {
+    'runtime-state': () => { Reflect.set(value.runtime, 'state', 'absent'); },
+    'runtime-source': () => { Reflect.set(value.runtime, 'source', 'wrapper'); },
+    'runtime-at-settlement': () => { Reflect.set(value.runtime, 'observedAt', value.launch.settledAt); },
+    'begin-before-runtime': () => { Reflect.set(value, 'begunAt', value.runtime.observedAt - 1); },
+    'begin-text': () => { Reflect.set(value, 'begunAt', String(value.begunAt)); },
+    'runtime-text': () => { Reflect.set(value.runtime, 'observedAt', String(value.runtime.observedAt)); },
+    'runtime-fraction': () => { Reflect.set(value.runtime, 'observedAt', value.runtime.observedAt + 0.5); },
+    'begin-unsafe': () => { Reflect.set(value, 'begunAt', Number.MAX_SAFE_INTEGER + 1); },
+  };
+  changes[kind](); const text = json(value); const before = rows(e.db);
+  expect(() => e.db.prepare(`INSERT INTO output_collection_intents(attempt_id,collection_id,intent_json,charged_bytes,phase,created_epoch)
+    VALUES(?,?,?,?,'pending',?)`).run(e.key.attemptId, e.intent.collectionId, text, Buffer.byteLength(text) + 256,
+    '22222222-2222-4222-8222-222222222222')).toThrow('invalid output intent');
+  expect(rows(e.db)).toEqual(before);
+  expect(e.db.prepare('SELECT collection_bytes,source_bytes FROM accepted_attempts').get()).toEqual({ collection_bytes: 0, source_bytes: 0 });
+  expect(e.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+});
+it('native failed release rejects wrapper authority while preserving pending intent, reservation and disk counters', async () => {
+  const e = await f.native(); e.op({ kind: 'outputCollectionBegin', json: json(e.intent) });
+  const row = e.db.prepare('SELECT reservation_json FROM reservations').get();
+  const reservation = JSON.parse(String(row?.reservation_json)) as Record<string, unknown>;
+  reservation.status = 'released'; reservation.releaseEvidence = { ...e.failed.evidence, authority: 'wrapper' };
+  const before = rows(e.db);
+  expect(() => e.db.prepare('UPDATE reservations SET reservation_json=?,charged=0').run(JSON.stringify(reservation))).toThrow('output release proof required');
+  expect(rows(e.db)).toEqual(before);
+  expect(e.db.prepare('SELECT phase FROM output_collection_intents').get()?.phase).toBe('pending');
+  expect(e.db.prepare('SELECT charged FROM reservations').get()?.charged).toBe(1);
+  expect(e.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+});
+it.each(['text', 'fractional', 'unsafe'] as const)('native source insertion rejects rehashed %s collection observation before sourcing or charging', async kind => {
+  const e = await f.native(); e.op({ kind: 'outputCollectionBegin', json: json(e.intent) });
+  const value = structuredClone(e.source);
+  const observedAt = { text: 'bad', fractional: e.intent.begunAt + 0.5, unsafe: Number.MAX_SAFE_INTEGER + 1 }[kind];
+  Reflect.set(value.release.collection, 'observedAt', observedAt);
+  const core = { ...value }; Reflect.deleteProperty(core, 'sourceDigest');
+  Reflect.set(value, 'sourceDigest', hash('beetle-lab.output-source.v1\n' + json(core)));
+  const text = json(value); const before = rows(e.db);
+  expect(() => e.db.prepare(`INSERT INTO output_sources(attempt_id,source_json,manifest_digest,source_digest,charged_bytes)
+    VALUES(?,?,?,?,?)`).run(e.key.attemptId, text, value.manifest.manifestDigest, value.sourceDigest, Buffer.byteLength(text) + 256))
+    .toThrow('invalid output source');
+  expect(rows(e.db)).toEqual(before);
+  expect(e.db.prepare('SELECT phase FROM output_collection_intents').get()?.phase).toBe('pending');
+  expect(e.db.prepare('SELECT source_bytes FROM accepted_attempts').get()?.source_bytes).toBe(0);
+  expect(e.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+});
+it.each(['text', 'fractional', 'unsafe'] as const)('native failed release rejects %s collection observation without changing pending custody', async kind => {
+  const e = await f.native(); e.op({ kind: 'outputCollectionBegin', json: json(e.intent) });
+  const row = e.db.prepare('SELECT reservation_json FROM reservations').get();
+  const reservation = JSON.parse(String(row?.reservation_json)) as Record<string, unknown>;
+  const observedAt = { text: 'bad', fractional: e.intent.begunAt + 0.5, unsafe: Number.MAX_SAFE_INTEGER + 1 }[kind];
+  const evidence = structuredClone(e.failed.evidence); Reflect.set(evidence.collection, 'observedAt', observedAt);
+  reservation.status = 'released'; reservation.releaseEvidence = evidence;
+  const before = rows(e.db);
+  expect(() => e.db.prepare('UPDATE reservations SET reservation_json=?,charged=0').run(JSON.stringify(reservation)))
+    .toThrow('output release proof required');
+  expect(rows(e.db)).toEqual(before);
+  expect(e.db.prepare('SELECT phase FROM output_collection_intents').get()?.phase).toBe('pending');
+  expect(e.db.prepare('SELECT charged FROM reservations').get()?.charged).toBe(1);
+  expect(e.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+});
+it.each(['finished', 'failed'] as const)('retains valid native %s release and exact source/intent accounting', async kind => {
+  const e = await f.native(); e.op({ kind: 'outputCollectionBegin', json: json(e.intent) });
+  if (kind === 'finished') {
+    const receipt = e.op({ kind: 'outputSourceCommit', json: json(e.source) });
+    expect(e.op({ kind: 'outputSourceRelease', json: json(receipt) })).toMatchObject({ status: 'released', releaseEvidence: e.collected.release });
+  } else expect(e.op({ kind: 'outputCollectionFailed', json: json(e.failed) })).toMatchObject({ status: 'released', releaseEvidence: e.failed.evidence });
+  expect(e.db.prepare('SELECT phase FROM output_collection_intents').get()?.phase).toBe(kind === 'finished' ? 'sourced' : 'failed');
+  expect(e.db.prepare('SELECT collection_bytes,source_bytes FROM accepted_attempts').get()).toEqual({
+    collection_bytes: Buffer.byteLength(json(e.intent)) + 256, source_bytes: kind === 'finished' ? Buffer.byteLength(json(e.source)) + 256 : 0 });
+  expect(e.db.prepare('SELECT phase FROM disk_holds').get()?.phase).toBe('retained');
+  expect(e.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+});
 it.each(['json', 'digest', 'charge'] as const)('refuses malformed native source %s state', async kind => {
   const e = await f.native(); e.op({ kind: 'outputCollectionBegin', json: json(e.intent) }); e.op({ kind: 'outputSourceCommit', json: json(e.source) });
   f.closeNative(e.db); const broken = f.corruptCopy(e.path);
