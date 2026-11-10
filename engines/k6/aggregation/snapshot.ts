@@ -1,3 +1,5 @@
+import type { DurationDistribution } from './distribution-types.js';
+import type { DurationHistogram } from './distribution.js';
 import type { MetricScope } from '../plan/index.js';
 import type { MetricKind, MetricPoint } from './types.js';
 
@@ -8,7 +10,7 @@ export class MetricAccumulatorError extends Error {
 }
 export type NumericTotal = Readonly<{ kind: 'counter'; sum: number }>
   | Readonly<{ kind: 'rate'; numerator: number; sampleCount: number }>
-  | Readonly<{ kind: 'trend'; count: number; sum: number; min: number; max: number; mean: number }>
+  | Readonly<{ kind: 'trend'; count: number; sum: number; min: number; max: number; mean: number; distribution: DurationDistribution }>
   | Readonly<{ kind: 'gauge'; latest: number; sourceTimeMs: number; min: number; max: number }>;
 export interface SeriesTotal {
   readonly metric: string;
@@ -17,6 +19,9 @@ export interface SeriesTotal {
   readonly total: NumericTotal;
   readonly scope: MetricScope;
 }
+export type AccumulatedTotal = Exclude<NumericTotal, { kind: 'trend' }>
+  | (Omit<Extract<NumericTotal, { kind: 'trend' }>, 'distribution'> & { readonly distribution: DurationHistogram });
+export type AccumulatedSeries = Omit<SeriesTotal, 'total'> & { readonly total: AccumulatedTotal };
 export interface MetricWindow {
   readonly startTimeMs: number;
   readonly endTimeMs: number;
@@ -27,10 +32,16 @@ export interface MetricSnapshot {
   readonly totalsComplete: true;
   readonly measurement: Readonly<{ complete: true; sourceTimeMs: number }>;
   readonly windowCoverage: Readonly<{ complete: boolean; latePoints: number; markerDelayDroppedBuckets: number }>;
-  readonly quantiles: 'unknown';
+  readonly quantiles: 'histogram-estimate';
 }
-export function seriesSnapshot(series: ReadonlyMap<string, SeriesTotal>): readonly SeriesTotal[] {
+export function seriesSnapshot(series: ReadonlyMap<string, AccumulatedSeries>): readonly SeriesTotal[] {
   return Object.freeze([...series.values()].map(value => Object.freeze({
-    ...value, tags: Object.freeze({ ...value.tags }), total: Object.freeze({ ...value.total }),
+    ...value, tags: Object.freeze({ ...value.tags }), total: snapshotTotal(value.total),
   })));
+}
+
+function snapshotTotal(total: AccumulatedSeries['total']): NumericTotal {
+  return total.kind === 'trend'
+    ? Object.freeze({ ...total, distribution: total.distribution.snapshot() })
+    : Object.freeze({ ...total });
 }

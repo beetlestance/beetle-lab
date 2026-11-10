@@ -30,8 +30,8 @@ Fixed native numeric summary is rehashed against collector evidence after actual
 stop. Native and fresh numeric-final files receive bounded IO/fsync/close and
 exact bigint custody checks. They become eligible only through the atomically
 published manifest. Partial files are preserved, never declared/refunded/deleted.
-Numeric output retains totals, coverage, mapper diagnostics and build byte peaks.
-Mapper, shared seal codec and publisher own their original respective semantics.
+Numeric-final v2 retains distributions, histogram-estimate provenance, coverage,
+mapper diagnostics and build byte peaks. Absent measurement quantiles stay unknown.
 Published files remain reported even after terminal journal/notification failure.
 Receipt ok means complete healthy coordination, never application test pass.
 Native99 required failures can be healthy coordination with failed test outcome.

@@ -167,8 +167,8 @@ class Attempt {
     const numericBytes = numericAllowance(this.reservation!, collectOutputBytes, summary?.ok ? summary.evidence.rawBytes : 1_048_576);
     const artifacts: EngineResult['artifacts'] = [];
     if (summary?.ok) artifacts.push(await this.artifacts!.summary(summary.evidence));
-    artifacts.push(await this.artifacts!.numeric({ version: 1, scope: this.state.scope, metrics: this.state.execution!.metrics,
-      diagnostics, buildUsage: this.buildUsage(), windowsRetained: false, quantiles: 'unknown' }, numericBytes));
+    artifacts.push(await this.artifacts!.numeric({ version: 2, scope: this.state.scope, metrics: this.state.execution!.metrics,
+      diagnostics, buildUsage: this.buildUsage(), windowsRetained: false, quantiles: this.state.execution!.metrics?.quantiles ?? 'unknown' }, numericBytes));
     this.quiet.artifacts = this.artifacts!.quiescence;
     await this.notifications.quiesce(); this.fence.check();
     if (!this.collecting) this.fail('execution');

@@ -16,11 +16,11 @@ it('decodes exact totals, keeps zero distinct from missing, and chooses gauges b
   expect(result.totals.map(item => [item.metric, item.total])).toEqual([
     ['beetle_requests', { kind: 'counter', sum: 0 }],
     ['http_req_failed', { kind: 'rate', numerator: 1, sampleCount: 2 }],
-    ['http_req_duration', { kind: 'trend', count: 2, sum: 12, min: 3, max: 9, mean: 6 }],
+    ['http_req_duration', { kind: 'trend', count: 2, sum: 12, min: 3, max: 9, mean: 6, distribution: expect.objectContaining({ count: 2, min: 3, max: 9 }) }],
     ['vus', { kind: 'gauge', latest: 8, sourceTimeMs: 2500, min: 2, max: 8 }],
   ]);
   expect(result).toMatchObject({ totalsComplete: true, measurement: { complete: true, sourceTimeMs: 1000 },
-    windowCoverage: { complete: true, latePoints: 0 }, quantiles: 'unknown' });
+    windowCoverage: { complete: true, latePoints: 0 }, quantiles: 'histogram-estimate' });
   expect(windows.map(window => window.startTimeMs)).toEqual([1000, 2000]);
 });
 

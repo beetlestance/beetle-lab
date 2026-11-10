@@ -40,7 +40,11 @@ it.each([false, true])('composes actual compiler/execution/parser/collector/mapp
     expect((await stat(path)).mode & 0o777).toBe(0o600);
   }
   const numeric = JSON.parse(await readFile(join(f.outputRoot, 'numeric-final.json'), 'utf8')) as Record<string, unknown>;
-  expect(numeric.windowsRetained).toBe(false); expect(numeric.quantiles).toBe('unknown');
+  expect(numeric.windowsRetained).toBe(false); expect(numeric.quantiles).toBe('histogram-estimate'); expect(numeric.version).toBe(2);
+  expect(numeric.metrics).toMatchObject({ quantiles: 'histogram-estimate', totals: [expect.objectContaining({
+    metric: 'http_req_duration', total: expect.objectContaining({ kind: 'trend', count: 1,
+      distribution: expect.objectContaining({ format: 'exponential-v1', unit: 'ms', count: 1, min: 3, max: 3 }) }),
+  })] });
   expect(numeric.buildUsage).toEqual({ bytes: 29, peakBytes: 100 });
   expect(numeric.diagnostics).toEqual({ windowCoverage: { complete: true, latePoints: 0, markerDelayDroppedBuckets: 0 } });
   expect(JSON.stringify(receipt) + JSON.stringify(events)).not.toContain('SECRET');

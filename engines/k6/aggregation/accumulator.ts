@@ -1,8 +1,9 @@
+import type { AccumulatedSeries } from './snapshot.js';
 import { measureStartedMetric, metricSeriesKey } from '../plan/index.js';
 import { isK6MetricProfile } from './profile.js';
 import type { K6MetricProfile } from './profile.js';
 import { MetricAccumulatorError, seriesSnapshot } from './snapshot.js';
-import type { AccumulatorCode, MetricSnapshot, MetricWindow, SeriesTotal } from './snapshot.js';
+import type { AccumulatorCode, MetricSnapshot, MetricWindow } from './snapshot.js';
 import { accumulate, checkedSum } from './totals.js';
 import { Windows } from './windows.js';
 import type { MetricPoint } from './types.js';
@@ -14,7 +15,7 @@ export interface MetricAccumulatorOptions {
 export class MetricAccumulator {
   private readonly profile: K6MetricProfile;
   private readonly sink: MetricAccumulatorOptions['window'];
-  private readonly totals = new Map<string, SeriesTotal>();
+  private readonly totals = new Map<string, AccumulatedSeries>();
   private readonly windows: Windows;
   private flight: Promise<unknown> | undefined;
   private closePromise: Promise<void> | undefined;
@@ -117,7 +118,7 @@ export class MetricAccumulator {
         measurement: Object.freeze({ complete: true, sourceTimeMs: this.markerTime }),
         windowCoverage: Object.freeze({ complete: this.windows.latePoints === 0 && this.markerDelayDroppedBuckets === 0,
           latePoints: this.windows.latePoints, markerDelayDroppedBuckets: this.markerDelayDroppedBuckets }),
-        quantiles: 'unknown' });
+        quantiles: 'histogram-estimate' });
       this.closed = true; return result;
     });
   }

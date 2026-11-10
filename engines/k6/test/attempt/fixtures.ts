@@ -40,6 +40,9 @@ function stream(): Uint8Array {
   return Buffer.from([
     { type: 'Metric', metric: 'beetle_measure_started', data: { type: 'counter' } },
     { type: 'Point', metric: 'beetle_measure_started', data: { value: 1, time: new Date(now).toISOString(), tags: {} } },
+    { type: 'Metric', metric: 'http_req_duration', data: { type: 'trend' } },
+    { type: 'Point', metric: 'http_req_duration', data: { value: 3, time: new Date(now).toISOString(),
+      tags: { phase: 'execute', request: 'r0' } } },
   ].map(value => JSON.stringify(value)).join('\n') + '\n');
 }
 function projected(input: BuildInput): string {

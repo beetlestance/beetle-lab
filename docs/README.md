@@ -69,6 +69,7 @@ released application until the rewrite is qualified.
 | Inspect executable/provider packaging | [Agent executable](verification/agent-executable.md) | Private file intake, reviewed entrypoint, full gate and Linux arm64 fixture smoke |
 | Inspect actual agent-controlled Docker execution | [Native agent/k6](verification/native-agent-k6.md) | Real pass/fail, sealed artifacts, durable reservation release and Desktop corrections |
 | Inspect public API through real k6 execution | [Native application/k6](verification/native-application-k6.md) | Actual backend/agent pass/fail, artifact credit and metadata reopen; browser/Compose pending |
+| Inspect bounded k6 duration estimates | [Distribution evidence](verification/k6-distributions.md) | Immutable windows/final histograms, numeric v2 and resource qualification limits |
 | Inspect rejected and source-free settlement | [Output absence](verification/output-absence.md) | Native rejected intake, immutable proof/credit and affected real-k6 control; release matrix pending |
 | Inspect system stop handling | [Durable stop](verification/durable-stop.md) | First-cause attribution, urgent escalation, restart and original-write ownership |
 | Inspect output monitoring | [Output guard](verification/output-guard.md) | Real filesystem sampling, freshness, launch fences and remaining native qualification |

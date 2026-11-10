@@ -1,3 +1,7 @@
+export { DurationHistogram, mergeDistributions } from './distribution.js';
+export { distributionPercentile } from './percentile.js';
+export { DistributionError } from './distribution-types.js';
+export type { DurationDistribution, DurationPercentile, PercentileEstimate } from './distribution-types.js';
 import { Records } from './record.js';
 import { MetricStreamError } from './types.js';
 import type { MetricStreamCode, MetricStreamOptions } from './types.js';

@@ -37,8 +37,9 @@ support. All emitted JSON numbers are finite.
 
 The aggregation public entrypoint exports the distribution type and bounded
 record/snapshot, merge and percentile operations. Internal mutable storage remains
-private. Snapshot arrays/objects are detached and deeply immutable. Bound checks
-precede iteration or allocation on externally supplied distributions; reject extra
+private. Snapshot arrays/objects are detached and deeply immutable. Raw adapters must enforce a 2 KiB standalone distribution JSON limit before parsing;
+in-process validation assumes bounded data objects, not hostile reflective proxies.
+Bucket-length checks precede count iteration/allocation; reject extra
 fields, inconsistent counts/extrema, invalid scales/offsets and oversized arrays.
 A rejected record/merge must not partially mutate the previous distribution.
 

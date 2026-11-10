@@ -2,8 +2,7 @@
 
 Public `MetricStream` accepts trusted allowed metric names/kinds and the compiled
 rN/aN label sets; it never learns a series from native output. Metric declarations
-precede points, each declaration is unique. Only finite nonnegative numeric points,
-UTC/offset timestamps and exact approved phase/request/assertion tags leave the parser.
+precede points, each declaration is unique. Only finite nonnegative points, timestamps and approved phase/request/assertion tags leave the parser.
 Raw metadata, URLs, groups, errors and arbitrary tags are never forwarded or logged.
 Input is stock k6 NDJSON, one LF-terminated record per line; CRLF is JSON whitespace.
 Each push snapshots <=1MiB, retains <=64KiB partial frame, and serially awaits one
@@ -30,11 +29,12 @@ Late points still update totals but mark window coverage partial. Gauges choose
 latest by source timestamp; unobserved series stay absent, measured zero stays zero.
 Exactly one untagged counter marker of value 1 is required; missing/malformed/
 duplicate evidence fails with `measurement`. Source time is correlation only.
-Series totals/windows retain execute or engine scope. Snapshots are deeply frozen. Counts/counter sums must be safe integers, numeric
-sums finite; overflow fails. One issued operation, busy rejection without poison,
-close/abort fence late callbacks and preserve outstanding sink work. No native
-termination, output-byte accounting or outcome inference is claimed here.
-Quantiles remain unknown pending owned histogram/native-final-summary work.
-Source format: https://grafana.com/docs/k6/latest/results-output/real-time/json/
-Pinned native encoder: https://raw.githubusercontent.com/grafana/k6/v2.2.0/internal/output/json/json.go
+Series totals/windows retain execute or engine scope. Snapshots are deeply frozen. Counts/counter sums must be safe integers, sums finite; overflow fails. One issued operation, busy rejection without poison,
+close/abort fence late callbacks and preserve outstanding sink work. No native termination or outcome inference is claimed here.
+Trend totals carry immutable exponential-v1 millisecond distributions, <=64 buckets,
+scale4 down to -10. DurationHistogram records in place; mergeDistributions validates
+external snapshots before bounded work. distributionPercentile returns conservative
+nearest-rank histogram-estimate intervals, never native threshold verdicts.
+External standalone distributions require <=2KiB JSON admission before parsing;
+in-process validation expects bounded data objects, not hostile reflective proxies.
 Check: npx vitest run engines/k6/test/aggregation --maxWorkers=2.

@@ -1,11 +1,12 @@
+import type { AccumulatedSeries } from './snapshot.js';
 import { accumulate, checkedSum } from './totals.js';
 import { seriesSnapshot } from './snapshot.js';
-import type { MetricWindow, SeriesTotal } from './snapshot.js';
+import type { MetricWindow } from './snapshot.js';
 import type { MetricPoint } from './types.js';
 
 /** Only occupied source buckets are retained; gaps never allocate or iterate seconds. */
 export class Windows {
-  private readonly buckets = new Map<number, Map<string, SeriesTotal>>();
+  private readonly buckets = new Map<number, Map<string, AccumulatedSeries>>();
   private highWater = -1;
   latePoints = 0;
   constructor(private readonly maximumSeries: number) {}

@@ -27,7 +27,7 @@ export function fixture(config = configFor()): Mutable<K6ResultInput> {
   terminalObservedAt: '2026-01-01T00:00:00Z',
   summary: { version: 2, metrics, timing: { testRunDurationMs: 2000 }, rawBytes: 1000, sha256: '1'.repeat(64), nativeCollection: 'complete' },
   metrics: { totals: [], totalsComplete: true, measurement: { complete: true, sourceTimeMs: 1000 },
-    windowCoverage: { complete: true, latePoints: 0, markerDelayDroppedBuckets: 0 }, quantiles: 'unknown' }, artifacts: [] };
+    windowCoverage: { complete: true, latePoints: 0, markerDelayDroppedBuckets: 0 }, quantiles: 'histogram-estimate' }, artifacts: [] };
   const result = structuredClone(input) as Mutable<K6ResultInput>;
   count(result, 'beetle_measure_started', 1);
   const layout = metricLayout(suite);
