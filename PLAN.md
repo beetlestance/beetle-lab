@@ -32,23 +32,25 @@ model assignments, agent packets, concurrency and independent review.
 
 | Area | Integrated | Still required |
 | --- | --- | --- |
-| Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings, suite and run-intake schemas/clients; exact installed descriptor binding in immutable Offers; atomic queued-run/attempt/outbox SQLite intake; authenticated enqueue/detail/history routes; Fastify JSON adapter; separate config/Offer bounds; private agent/backend capacity publication and owned startup/shutdown; shared exact staging accounting and same-lease execution limits; bounded claim/observation transactions, metadata dispatch RPC and immutable journal binding; bounded automatic delivery/reconciliation | Event ingestion/ACK, result routes and result storage |
-| Agent | Catalogue/admission/staging/controllers; typed stops; bounded scheduling; guards/full observation publisher; installed runtime; Node24 image/private HTTP; real arm64 k6 pass/fail; journal009/immutable identity; exclusive control store and actual startup/wire binding; large-original bounds, propagation and launch contention; admission carrier at node/depth maxima | First-install provisioning; updated image/Compose/stop-latency qualification, irreversible recovery fencing, telemetry, application artifact transfer/finalization and native architecture matrix |
+| Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings, suite and run-intake schemas/clients; exact installed descriptor binding in immutable Offers; atomic queued-run/attempt/outbox SQLite intake; authenticated enqueue/detail/history routes; Fastify JSON adapter; separate config/Offer bounds; private agent/backend capacity publication and owned startup/shutdown; shared exact staging accounting and same-lease execution limits; bounded claim/observation transactions, metadata dispatch RPC and immutable journal binding; bounded automatic delivery/reconciliation; receipt-first scoped cancellation | Event ingestion/ACK, result routes and result storage |
+| Agent | Catalogue/admission/staging/controllers; typed stops; bounded scheduling; guards/full observation publisher; installed runtime; Node24 image/private HTTP; real arm64 k6 pass/fail; journal010/immutable identity and atomic fresh cancellation refusal; exclusive control store and actual startup/wire binding; large-original bounds, propagation and launch contention; admission carrier at node/depth maxima | First-install provisioning; updated image/Compose/stop-latency qualification, irreversible recovery fencing, telemetry, application artifact transfer/finalization and native architecture matrix |
 | k6 | Suite compiler/runtime/builder, phase-isolated metrics, control journal, staged loader, child runner, numeric windows, summary collector, outcome mapper, staged wrapper, seal codec and artifact publication | Live quantiles, target sampler, reports/export |
-| Product | Namespace/settings and immutable suite/revision SQLite/API composition; native input publication/HTTP/recovery, bounded byte client and scoped inventory/deletion UI; sessions, paired React authoring, session-owned upload/download controls and dev proxy; scoped run history/detail and saved-revision submission/replay | Browser qualification, live metrics, artifact store, reports, automation client and Docker frontend proxy |
+| Product | Namespace/settings and immutable suite/revision SQLite/API composition; native input publication/HTTP/recovery, bounded byte client and scoped inventory/deletion UI; sessions, paired React authoring, session-owned upload/download controls and dev proxy; scoped run history/detail and saved-revision submission/replay and scoped cancellation controls | Browser qualification, live metrics, artifact store, reports, automation client and Docker frontend proxy |
 | Qualification | Local contract/unit/SQLite and real staged native pass/fail checks | Complete execution path, containers, scans, backup/soak and native architecture matrix |
 
 Worker submissions require independent review and exact-source integration checks.
 The [run-controls report](docs/verification/run-controls.md) records the reviewed
 UI/admission carrier, full local verification and browser/execution limits.
 The [dispatch report](docs/verification/dispatch-rpc.md) records the earlier storage
-and worker RPC boundary. Backend-to-agent delivery and completed execution remain
+and worker RPC boundary. Backend delivery and cancellation are connected; complete event/result handling remains
 pending; [delivery authority](docs/design/lld/delivery-authority.md) defines the
 accepted restart/cold-restore contract still requiring implementation. Earlier
 component reports are indexed in the [documentation map](docs/README.md).
 
 [Automatic delivery evidence](docs/verification/delivery-runtime.md) records the
 connected private HTTP/SQLite recovery path, synthetic-peer limits and full local gate.
+[Durable cancellation evidence](docs/verification/cancellation.md) records scoped intent,
+atomic original refusal, review corrections and the full local gate.
 No complete R0-R4 release slice is claimed. Native engine component evidence does
 not establish the new backend path, Compose install or supported architecture matrix.
 

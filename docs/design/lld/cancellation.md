@@ -1,6 +1,7 @@
 # Durable run cancellation
 
-Status: accepted boundary design; implementation and qualification pending.
+Status: implemented and locally verified; native/browser qualification pending.
+Evidence: [durable cancellation](../../verification/cancellation.md).
 Owners: backend run command, delivery loop, agent journal/installation and scoped UI.
 This extends [run intake](run-intake.md), [dispatch storage](dispatch-storage.md)
 and [agent stop](agent-stop.md); their ownership and resource limits still apply.
