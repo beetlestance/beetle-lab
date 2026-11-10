@@ -68,14 +68,16 @@ integrated native collection, stable source requests and conservative restart re
 Source-backed stream closure storage and indexed debt discovery are implemented;
 [closure evidence](docs/verification/output-delivery-closure.md) records scoped limits.
 Scheduler delivery fairness, Manager producer barriers and agent artifact HTTP
-transfer are integrated; backend adoption, publication and result routes are next.
+transfer are integrated; connected publication, finalization and result routes are next.
 [Transport values](docs/verification/output-transfer-values.md) are integrated;
 [native ranges](docs/verification/output-range.md) are integrated. Same-connection
 gateway and Journal-backed source service are integrated.
 [Native source HTTP](docs/verification/output-source-http.md) proves the real agent
-Journal/file/HTTP path; backend adoption and end-to-end k6 results remain pending.
+Journal/file/HTTP path. Backend metadata adoption is integrated; connected transfer
+and end-to-end k6 results remain pending.
 [Backend native files](docs/verification/output-files.md) records shared custody,
-no-overwrite promotion, standalone lease and native byte adapter evidence. Payload storage and metadata source adoption are integrated; artifact writer
+no-overwrite promotion, standalone lease and native byte adapter evidence. Payload
+storage and metadata source adoption are integrated; artifact writer
 coordination, transfer/finalization and result routes remain pending.
 The [result panel](docs/verification/run-result-panel.md) is implemented with explicit
 unavailable data until the backend result read path exists.
