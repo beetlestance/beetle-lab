@@ -52,7 +52,8 @@ connected private HTTP/SQLite recovery path, synthetic-peer limits and full loca
 [Durable cancellation evidence](docs/verification/cancellation.md) records scoped intent,
 atomic original refusal, review corrections and the full local gate.
 [Event custody evidence](docs/verification/event-custody.md) records the reviewed
-backend transport path and remaining real-agent/artifact/result qualification.
+backend transport path. [Actual agent event recovery](docs/verification/event-agent.md)
+adds separate-process HTTP/Journal pruning/reopen evidence; artifact/result qualification remains.
 No complete R0-R4 release slice is claimed. Native engine component evidence does
 not establish the new backend path, Compose install or supported architecture matrix.
 

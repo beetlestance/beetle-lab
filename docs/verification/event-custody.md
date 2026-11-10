@@ -51,7 +51,7 @@ producer tests and is recorded separately from execution evidence.
 
 ## Limits
 
-The TCP peer is synthetic. Actual agent HTTP/Journal pruning and physical authority
-still need a connected seam test. No complete engine/backend run, power-loss,
+The original TCP peer is synthetic. The subsequent [actual agent seam](event-agent.md)
+exercises real HTTP/Journal pruning, graceful reopen and physical authority. No complete engine/backend run, power-loss,
 artifact/seal closure, terminal outcome, Docker install, native architecture,
 resource/soak or browser qualification follows from these checks. R0–R4 remain open.
