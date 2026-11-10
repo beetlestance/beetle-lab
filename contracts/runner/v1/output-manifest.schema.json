@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/runner/v1/output-manifest",
+  "title": "OutputManifest",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "binding": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/source-values#/$defs/binding"
+    },
+    "result": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/engine-result"
+    },
+    "resultFileBytes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1048576
+    },
+    "controlBytes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 67108864
+    },
+    "verifiedBytes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "manifestDigest": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+    }
+  },
+  "required": [
+    "version",
+    "binding",
+    "result",
+    "resultFileBytes",
+    "controlBytes",
+    "verifiedBytes",
+    "manifestDigest"
+  ],
+  "additionalProperties": false
+}
