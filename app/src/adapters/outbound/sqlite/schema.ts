@@ -1,3 +1,4 @@
+import { migration010 } from './migration010.js';
 import { migration009 } from './migration009.js';
 import { migrate008 } from './migration008.js';
 import { migration006 } from './migration006.js';
@@ -72,7 +73,7 @@ export function initialize(path: string): DatabaseSync {
   try {
     db.exec('PRAGMA busy_timeout=100; PRAGMA cache_size=-2048; PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; COMMIT;');
     const version = db.prepare('PRAGMA user_version').get()?.user_version;
-    if (typeof version !== 'number' || version > 9) throw new StorageError('schema_newer');
+    if (typeof version !== 'number' || version > 10) throw new StorageError('schema_newer');
     db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; PRAGMA temp_store=MEMORY;');
     applyMigrations(db, version);
     return db;
@@ -81,13 +82,10 @@ export function initialize(path: string): DatabaseSync {
 
 /** Each schema step retains its own atomic boundary and original version ordering. */
 function applyMigrations(db: DatabaseSync, version: number): void {
-  if (version === 0) transaction(db, () => db.exec(migration001));
-  if (version < 2) transaction(db, () => db.exec(migration002));
-  if (version < 3) transaction(db, () => migrate003(db));
-  if (version < 4) transaction(db, () => db.exec(migration004));
-  if (version < 5) transaction(db, () => db.exec(migration005));
-  if (version < 6) transaction(db, () => db.exec(migration006));
-  if (version < 7) transaction(db, () => db.exec(migration007));
-  if (version < 8) transaction(db, () => migrate008(db));
-  if (version < 9) transaction(db, () => db.exec(migration009));
+  const steps: readonly (() => void)[] = [
+    () => db.exec(migration001), () => db.exec(migration002), () => migrate003(db),
+    () => db.exec(migration004), () => db.exec(migration005), () => db.exec(migration006),
+    () => db.exec(migration007), () => migrate008(db), () => db.exec(migration009), () => db.exec(migration010),
+  ];
+  steps.forEach((step, index) => { if (version <= index) transaction(db, step); });
 }
