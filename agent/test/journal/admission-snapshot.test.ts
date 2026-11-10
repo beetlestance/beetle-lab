@@ -39,12 +39,13 @@ const guardedReservationCorruption: [string, (db: DatabaseSync) => void][] = [
     db.exec('UPDATE reservations SET charged=0');
   }],
 ];
-function assertReservationWriteDenied(db: DatabaseSync, change: (db: DatabaseSync) => void): void {
+function assertReservationWriteDenied(db: DatabaseSync, change: (db: DatabaseSync) => void,
+  reason = 'immutable disk reservation'): void {
   const tables = ['accepted_attempts', 'event_spool', 'admission_queue', 'reservations',
     'disk_holds', 'disk_retention_stats', 'sqlite_sequence'];
   const rows = () => tables.map(table => ({ table, rows: db.prepare(`SELECT * FROM ${table}`).all() }));
   const before = rows();
-  expect(() => change(db)).toThrow('immutable disk reservation');
+  expect(() => change(db)).toThrow(reason);
   expect(rows()).toEqual(before);
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
 }
@@ -110,8 +111,15 @@ describe('bounded durable admission storage validation', () => {
     const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
     try {
       assertReservationWriteDenied(db, connection => {
-        connection.prepare('UPDATE reservations SET reservation_json=?').run(JSON.stringify('🪲'.repeat(32768 / 4)));
-      });
+        const row = connection.prepare('SELECT reservation_json FROM reservations').get();
+        const original: unknown = JSON.parse(String(row?.reservation_json));
+        if (typeof original !== 'object' || original === null || Array.isArray(original)) {
+          throw new Error('expected original reservation object');
+        }
+        const oversized = JSON.stringify({ ...original, diagnosticPadding: '🪲'.repeat(32768 / 4) });
+        expect(Buffer.byteLength(oversized, 'utf8')).toBeGreaterThan(32768);
+        connection.prepare('UPDATE reservations SET reservation_json=?').run(oversized);
+      }, 'CHECK constraint failed');
     } finally { db.close(); }
     const reopened = await f.open(path);
     expect(await reopened.get(scope(job))).toEqual(before);
