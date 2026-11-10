@@ -66,6 +66,23 @@ codec vectors must freeze exact preimage bytes/digests, key reordering, non-ASCI
 values, array order, raw/canonical result differences and private/public changes
 before consumers implement this interface.
 
+## Pure codec interface
+
+[Private types/constants](../../../agent/src/output-source/index.ts) declare the
+following functions for the later codec implementation: captureCollectionIntent
+(unknown)->CollectionIntent; prepareOutputSource(unknown, ResultDigest)->PrivateSource;
+verifyOutputSource(unknown, ResultDigest)->PrivateSource; receiptForOutputSource
+(unknown, ResultDigest)->SourceReceipt. Each returns owned recursively frozen data.
+These functions grant no durable, filesystem or release authority.
+
+Throw OutputSourceError: invalid_input for malformed fields/bounds/relationships,
+integrity for a validly shaped result/manifest/source digest mismatch, digest_failed
+for a throwing digest provider or non-lowercase/non-64-hex provider result. Reuse
+the result-seal verifier, mapping its errors to these codes without hiding failure.
+[Version1 vectors](../../../agent/test/output-source/vectors/v1.json) freeze complete
+preimages/digests and lengths for base, key order, private root changes, raw-result
+whitespace and artifact order. They are synthetic content facts, not source receipts.
+
 ## Private Journal surface
 
 `commitOutputSource(observation: CollectedSource): Promise<SourceReceipt>`.

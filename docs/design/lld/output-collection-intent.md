@@ -76,6 +76,9 @@ failed with physical release. A failed close does not satisfy that condition.
 The controller retains whether success/source issue occurred; it may never relabel
 a source quota/commit failure as a collector failure. JSON cannot prove this trust
 condition; no HTTP route or general caller may issue this command.
+Reconstructing a controller around an existing intent always enters recovered
+semantics, even if its Journal worker/created_epoch is unchanged. Epoch equality
+alone never grants the original controller's process-owned failure-close authority.
 
 No-intent failed release is allowed only when source collection never began, for
 example no stopped journaled result, and all existing stopped/quiescence proofs
@@ -123,3 +126,5 @@ COMMIT failure after successful real collection, actual owner recreation with an
 expired execution deadline, root replacement, failed recovery collection and
 recovered successful collection. Inspect actual rows/counters and process/file
 quiescence; no successful-source reopen test substitutes for absent-source recovery.
+Include controller close/recreation with the same live Journal worker: its pending
+intent still cannot turn an earlier successful collection into failed release.
