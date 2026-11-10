@@ -1,3 +1,4 @@
+import { EventCustody, eventOperation } from './event-custody/index.js';
 import { Runs } from './runs.js';
 import { RunCancellations } from './run-cancellations.js';
 import { captureCancelRunReply } from './run-cancellation-reply.js';
@@ -30,6 +31,7 @@ export function safeCode(error: unknown): ErrorCode {
   return 'unavailable';
 }
 export class Store {
+  private readonly events: EventCustody;
   private readonly dispatchClaims: DispatchClaims;
   private readonly dispatchObservations: DispatchObservations;
   private readonly runs: Runs;
@@ -44,6 +46,7 @@ export class Store {
   private readonly settings: Settings;
   private readonly reads: Reads;
   constructor(private readonly db: DatabaseSync, bootstrap: Bootstrap) {
+    this.events = new EventCustody(db, bootstrap.installation.id);
     this.entities = new Entities(db);
     this.suites = new Suites(db, this.entities);
     this.suiteReads = new SuiteReads(db, this.suites);
@@ -127,6 +130,10 @@ export class Store {
     }
   }
   execute(operation: Operation): Value {
+    if (eventOperation(operation)) return this.events.execute(operation);
+    return this.executeLegacy(operation);
+  }
+  private executeLegacy(operation: Operation): Value {
     if (['run', 'cancelRun', 'getRun', 'listRuns', 'dispatchScan', 'dispatchReadOffer', 'dispatchClaim', 'dispatchObserve']
       .includes(operation.kind)) return this.runOperation(operation);
     if (suiteOperation(operation)) return this.suiteOperation(operation);
