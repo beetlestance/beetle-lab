@@ -26,6 +26,9 @@ const artifactFields = ['ordinal', 'artifactId', 'token', 'bytes', 'sha256', 'of
 export function uuid(value: unknown): value is string {
   return typeof value === 'string' && /^[0-9a-f-]{36}$/.test(value) && validatePrimitive('uuid', value).ok;
 }
+function artifactId(value: unknown): value is string {
+  return typeof value === 'string' && /^[0-9a-f-]{36}$/i.test(value) && validatePrimitive('uuid', value).ok;
+}
 function hash(value: unknown): value is string { return typeof value === 'string' && /^[0-9a-f]{64}$/.test(value); }
 function integer(value: unknown, minimum = 0): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= minimum;
@@ -36,9 +39,9 @@ export function token(input: unknown): string {
 }
 function artifact(input: unknown): OutputArtifactState {
   const value = fields(input, artifactFields);
-  if (![value.artifactId, value.token].every(uuid) || !hash(value.sha256)) fail('invalid_input');
+  if (!artifactId(value.artifactId) || !uuid(value.token) || !hash(value.sha256)) fail('invalid_input');
   if (![value.ordinal, value.bytes, value.offset].every(item => integer(item)) || !integer(value.version, 1)) fail('invalid_input');
-  if ((value.offset as number) > (value.bytes as number)) fail('invalid_input');
+  if ((value.ordinal as number) > 127 || (value.offset as number) > (value.bytes as number)) fail('invalid_input');
   artifactState(value);
   return value as unknown as OutputArtifactState;
 }
