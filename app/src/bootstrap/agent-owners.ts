@@ -16,7 +16,7 @@ export interface AgentRuntime {
 interface OwnerOptions {
   readonly source: CapacitySource;
   readonly gateway: RunnerGateway;
-  readonly metadata: Pick<Metadata, 'dispatch' | 'runs' | 'updateRuntime'>;
+  readonly metadata: Pick<Metadata, 'dispatch' | 'events' | 'runs' | 'updateRuntime'>;
 }
 
 function stop(close: () => Promise<void> | undefined): Promise<void> {
@@ -45,7 +45,7 @@ class AgentOwners implements AgentRuntime {
     this.poller = startRuntimePoller({ source: this.options.source,
       publish: observation => this.publishCapacity(observation), onFailure: reason => this.failProducer(reason) });
     this.delivery = startDeliveryRuntime({ store: this.options.metadata.dispatch,
-      runs: this.options.metadata.runs, gateway: this.options.gateway,
+      events: this.options.metadata.events, runs: this.options.metadata.runs, gateway: this.options.gateway,
       onFailure: () => this.failDelivery() });
   }
   private publishCapacity(observation: RuntimeObservation | null): Promise<boolean> {

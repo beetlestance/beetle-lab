@@ -1,3 +1,6 @@
+import type { EventCustodyStore } from '../../../ports/events.js';
+import { eventOperation, captureEventReply } from './event-custody/index.js';
+import type { EventOperation } from './event-custody/index.js';
 import type { RunStore, RunReader, RunCancellationStore, CancelRunCommand } from '../../../ports/runs.js';
 import { captureCancelRunReply } from './run-cancellation-reply.js';
 import type { DispatchStore } from '../../../ports/dispatch.js';
@@ -28,7 +31,7 @@ export interface MetadataOptions extends Bootstrap {
   queueLimit?: number;
 }
 interface Pending { resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
-  large: boolean; replyLimit: number; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
+  large: boolean; replyLimit: number; event?: EventOperation; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
 function validateLocation(options: MetadataOptions): void {
   if (typeof options.path !== 'string' || !options.path || options.path === ':memory:' || options.path.length > 4096 ||
     !(options.workerUrl instanceof URL) || options.workerUrl.protocol !== 'file:') throw new StorageError('invalid_input');
@@ -55,6 +58,13 @@ export class Metadata {
   private readyResolve: () => void = () => undefined;
   private readyReject: (error: StorageError) => void = () => undefined;
   private readonly ready: Promise<void>;
+  readonly events: EventCustodyStore = {
+    scan: query => this.call({ kind: 'eventScan', query }) as ReturnType<EventCustodyStore['scan']>,
+    load: binding => this.call({ kind: 'eventLoad', binding }) as ReturnType<EventCustodyStore['load']>,
+    ingest: request => this.call({ kind: 'eventIngest', request }) as ReturnType<EventCustodyStore['ingest']>,
+    confirmAck: request => this.call({ kind: 'eventConfirmAck', request }) as ReturnType<EventCustodyStore['confirmAck']>,
+    recordProblem: request => this.call({ kind: 'eventProblem', request }) as ReturnType<EventCustodyStore['recordProblem']>,
+  };
   readonly runs: RunStore & RunReader & RunCancellationStore = {
     execute: command => this.call({ kind: 'run', command }) as ReturnType<RunStore['execute']>,
     getRun: key => this.call({ kind: 'getRun', key }) as ReturnType<RunReader['getRun']>,
@@ -145,7 +155,7 @@ export class Metadata {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => this.fail('unavailable'), 5000);
       this.pending.set(messageId, { resolve, reject, timer, large: largeOperation(operation),
-        replyLimit: operationReplyLimit(operation), ...(dispatchOperation(operation) ? { dispatch: operation } : {}),
+        replyLimit: operationReplyLimit(operation), ...(eventOperation(operation) ? { event: operation } : {}), ...(dispatchOperation(operation) ? { dispatch: operation } : {}),
         ...(operation.kind === 'cancelRun' ? { cancellation: operation.command } : {}) });
       try { this.worker.postMessage({ ...operation, messageId }); } catch { this.fail('unavailable'); }
     });
@@ -168,7 +178,8 @@ export class Metadata {
   private resolve(reply: Extract<WorkerReply, { kind: 'result'; ok: true }>, pending: Pending): void {
     let value: Value;
     try {
-      value = pending.dispatch ? captureDispatchReply(pending.dispatch, reply.value)
+      value = pending.event ? captureEventReply(pending.event, reply.value)
+        : pending.dispatch ? captureDispatchReply(pending.dispatch, reply.value)
         : pending.cancellation ? captureCancelRunReply(reply.value, pending.cancellation)
         : boundedCopy(reply.value, pending.replyLimit) as Value;
     } catch { this.fail('unavailable'); return; }

@@ -1,3 +1,4 @@
+import { eventOperation, captureEventOperation, eventRequestLimit, eventReplyLimit } from './event-custody/index.js';
 import { checkedRunOperation } from './run-validation.js';
 import { captureDispatchOperation, dispatchOperation, dispatchRequestLimit, dispatchReplyLimit } from './dispatch-wire.js';
 import { checkedRunConfiguration } from './run-profiles.js';
@@ -112,6 +113,12 @@ function checkedExtendedOperation(operation: Operation): boolean {
   return settingsRead(operation);
 }
 export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operation {
+  if (eventOperation(input)) {
+    try { return captureEventOperation(input); } catch { throw new StorageError('invalid_input'); }
+  }
+  return checkedCommonOperation(input, runtimeTtlMs);
+}
+function checkedCommonOperation(input: Operation, runtimeTtlMs: number): Operation {
   const operation = boundedCopy(input, operationMessageLimit(input));
   if (dispatchOperation(operation)) return captureDispatchOperation(operation);
   if (checkedExtendedOperation(operation)) return operation;
@@ -140,17 +147,19 @@ function dataProperty(value: unknown, key: string): unknown {
   return descriptor && 'value' in descriptor ? descriptor.value : undefined;
 }
 export function operationMessageLimit(operation: Operation): number {
+  if (eventOperation(operation)) return eventRequestLimit(operation);
   if (dispatchOperation(operation)) return dispatchRequestLimit(operation);
   if (dataProperty(operation, 'kind') !== 'suite') return MAX_MESSAGE_BYTES;
   const command = dataProperty(operation, 'command');
   return dataProperty(command, 'kind') === 'createSuiteRevision' ? 2097152 : MAX_MESSAGE_BYTES;
 }
 
-/** One existing two-original allowance is shared by suites and original Offers. */
+/** One two-original allowance is shared by suites, Offers and event batches. */
 export function largeOperation(operation: Operation): boolean {
-  return suiteOperation(operation) || dataProperty(operation, 'kind') === 'dispatchReadOffer';
+  return suiteOperation(operation) || ['dispatchReadOffer', 'eventIngest'].includes(dataProperty(operation, 'kind') as string);
 }
 export function operationReplyLimit(operation: Operation): number {
+  if (eventOperation(operation)) return eventReplyLimit(operation);
   if (dispatchOperation(operation)) return dispatchReplyLimit(operation);
   return operation.kind === 'getRevision' ? 2_097_152 : Math.max(1_048_576, operationMessageLimit(operation));
 }

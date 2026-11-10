@@ -1,8 +1,8 @@
 # Delivery runtime
 
 Public entrypoint: startDeliveryRuntime(options), implementing ports/delivery.ts.
-One nonoverlapping timer turn alternates queued/reconcile discovery, scans <=32,
-selects <=one candidate and holds <=one original Offer. Two bounded continuations
+One nonoverlapping timer rotates queued/reconcile/events, scans <=32,
+selects <=one candidate and holds <=one original Offer or event batch. Three bounded continuations
 preserve captured-pass fairness. No client/Offer queue or per-run timer exists.
 
 The stored claim authority supplies the client identity. Replay always GETs before
@@ -12,7 +12,8 @@ terminal state and active-attempt mismatch before PUT; they cannot serialize lat
 cancellation commits. Existing receipts can receive generation1 cancellation.
 
 Every positive response reaches store.observe, including during close. Store owns
-merge/ACK/release; event/output/result completion is outside this runtime. Missing
+merge/ACK/release. The event helper owns durable ingest before remote ACK and
+confirmation, including positive custody during close. Output/result finalization remains separate. Missing
 receipts retain charge until matched refusal/release evidence is observed.
 
 Remote uncertainty advances fairness. Local request failures or thrown operations

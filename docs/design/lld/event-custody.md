@@ -129,7 +129,9 @@ that attempt; native disk/worker failure remains a fatal retained-owner failure.
 
 ## Runtime and shutdown
 
-Extend the same nonoverlapping delivery runtime with a fair event lane; no new
+Rotate queued, reconciliation and event discovery in that order, one lane per
+completed turn, with independent bounded continuations. Extend the same
+nonoverlapping delivery runtime with a fair event lane; no new
 gateway pool, per-attempt timer, in-memory event backlog or lifecycle mapper.
 One turn selects one attempt and retains one batch original. Load durable state,
 confirm outstanding ACK first, then GET from durableThrough, validate, ingest and

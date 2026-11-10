@@ -2,6 +2,8 @@ import type { DeliveryRuntime, DeliveryRuntimeOptions, DeliveryRuntimeState } fr
 import { deliver } from './attempt.js';
 import type { DeliveryOperations } from './attempt.js';
 import { discovery } from './discovery.js';
+import { eventDiscovery } from './event-discovery.js';
+import { collectEvents } from '../events/index.js';
 
 function capture(options: DeliveryRuntimeOptions) {
   const interval = options.intervalMs ?? 250;
@@ -9,9 +11,12 @@ function capture(options: DeliveryRuntimeOptions) {
   const store = options.store;
   const runs = options.runs;
   const gateway = options.gateway;
+  const events = options.events;
   return { interval, onFailure: options.onFailure.bind(options),
     store: { scan: store.scan.bind(store), readOffer: store.readOffer.bind(store),
       claim: store.claim.bind(store), observe: store.observe.bind(store) },
+    events: { scan: events.scan.bind(events), load: events.load.bind(events), ingest: events.ingest.bind(events),
+      confirmAck: events.confirmAck.bind(events), recordProblem: events.recordProblem.bind(events) },
     runs: { getRun: runs.getRun.bind(runs) }, attempt: gateway.attempt.bind(gateway) };
 }
 
@@ -20,6 +25,8 @@ export function startDeliveryRuntime(options: DeliveryRuntimeOptions): DeliveryR
   const captured = capture(options);
   const controller = new AbortController();
   const next = discovery(captured.store.scan);
+  const nextEvent = eventDiscovery(captured.events.scan);
+  let lane = 0;
   let stopped = false;
   let status: DeliveryRuntimeState['status'] = 'running';
   let reason: DeliveryRuntimeState['reason'] = null;
@@ -44,8 +51,16 @@ export function startDeliveryRuntime(options: DeliveryRuntimeOptions): DeliveryR
   }
   async function turn(): Promise<void> {
     try {
-      const candidate = await next();
-      if (!stopped && candidate) await deliver(operations, candidate.key);
+      const eventTurn = lane === 2;
+      lane = (lane + 1) % 3;
+      if (eventTurn) {
+        const candidate = await nextEvent();
+        if (!stopped && candidate) await collectEvents({ store: captured.events, attempt: captured.attempt,
+          signal: controller.signal, stopped: () => stopped }, candidate.binding);
+      } else {
+        const candidate = await next();
+        if (!stopped && candidate) await deliver(operations, candidate.key);
+      }
     } catch (error: unknown) { await fail(error); }
     finally {
       active = undefined;

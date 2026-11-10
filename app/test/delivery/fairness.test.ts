@@ -8,7 +8,7 @@ it('alternates bounded lanes and advances after one selected item despite remote
   const f = fixture(); f.claim('replay'); f.client.snapshot.mockResolvedValue({ ok: false, error: { kind: 'timeout' } });
   f.store.scan.mockImplementation(async query => ({ items: [candidate(query.lane === 'queued' ? 1 : 2)], nextCursor: null }));
   f.store.claim.mockImplementation(async key => ({ kind: 'replay', key, journalAuthority: '33333333-3333-4333-8333-333333333333' }));
-  const runtime = f.start(); await tick(100); await runtime.close();
+  const runtime = f.start(); await tick(150); await runtime.close();
   expect(f.store.scan.mock.calls.map(([query]) => query.lane)).toEqual(['queued', 'reconcile', 'queued', 'reconcile', 'queued']);
   expect(f.store.scan.mock.calls.every(([query]) => query.limit === 32)).toBe(true);
   expect(f.store.claim.mock.calls.map(([key]) => key.attempt.attemptId)).toEqual([1, 2, 1, 2, 1].map(i => candidate(i).key.attempt.attemptId));
@@ -17,7 +17,7 @@ it('alternates bounded lanes and advances after one selected item despite remote
 it('traverses more than32 blocked items and revisits blocked prefix next captured pass', async () => {
   const f = fixture(); const items = Array.from({ length: 35 }, (_, i) => candidate(i + 1, i === 34));
   f.store.scan.mockImplementation(queueScanner(items)); f.store.claim.mockResolvedValue({ kind: 'blocked', reason: 'budget_unavailable' });
-  const runtime = f.start(); await tick(200); await runtime.close();
+  const runtime = f.start(); await tick(300); await runtime.close();
   expect(f.store.claim.mock.calls.map(([key]) => key.attempt.attemptId)).toEqual([items[34]!.key.attempt.attemptId, items[34]!.key.attempt.attemptId]);
   const queued = f.store.scan.mock.calls.map(([query]) => query).filter(query => query.lane === 'queued');
   expect(queued.map(query => query.cursor)).toEqual([undefined, '32:35', '35:35', undefined, '32:35']);
@@ -25,7 +25,7 @@ it('traverses more than32 blocked items and revisits blocked prefix next capture
 it('resumes selected item.after on final page and does not skip unread eligible successors', async () => {
   const f = fixture(); const items = [candidate(1), candidate(2), candidate(3)];
   f.store.scan.mockImplementation(queueScanner(items)); f.store.claim.mockResolvedValue({ kind: 'blocked', reason: 'budget_unavailable' });
-  const runtime = f.start(); await tick(100); await runtime.close();
+  const runtime = f.start(); await tick(150); await runtime.close();
   expect(f.store.claim.mock.calls.map(([key]) => key.attempt.attemptId)).toEqual(items.map(item => item.key.attempt.attemptId));
   expect(f.store.scan.mock.calls[2]![0].cursor).toBe('1:3');
 });
@@ -34,7 +34,7 @@ it('preserves captured upper order through removals and empty tails before admit
   f.store.scan.mockImplementation(queueScanner(items)); f.store.claim.mockResolvedValue({ kind: 'blocked', reason: 'budget_unavailable' });
   const runtime = f.start(); await tick();
   items.splice(0, items.length, candidate(4));
-  await tick(100); await runtime.close();
+  await tick(150); await runtime.close();
   expect(f.store.claim.mock.calls.map(([key]) => key.attempt.attemptId)).toEqual([candidate(1).key.attempt.attemptId, candidate(4).key.attempt.attemptId]);
   const queued = f.store.scan.mock.calls.map(([query]) => query).filter(query => query.lane === 'queued');
   expect(queued.map(query => query.cursor)).toEqual([undefined, '1:3', undefined]);
@@ -62,7 +62,7 @@ it('bounds total discovery reply bytes even with compact valid candidates', asyn
 it('revisits a newly eligible blocked prefix after the finite captured pass', async () => {
   const f = fixture(); const items = Array.from({ length: 35 }, (_, i) => candidate(i + 1, i === 34));
   f.store.scan.mockImplementation(queueScanner(items)); f.store.claim.mockResolvedValue({ kind: 'blocked', reason: 'budget_unavailable' });
-  const runtime = f.start(); await tick(50); items[0] = candidate(1);
-  await tick(100); await runtime.close();
+  const runtime = f.start(); await tick(75); items[0] = candidate(1);
+  await tick(150); await runtime.close();
   expect(f.store.claim.mock.calls.map(([key]) => key.attempt.attemptId)).toEqual([candidate(35).key.attempt.attemptId, candidate(1).key.attempt.attemptId]);
 });
