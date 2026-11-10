@@ -37,7 +37,7 @@ it('preserves complete v5 retained rows, snapshots, clocks, ACK and source count
   expect(await journal.get(f.key())).toMatchObject({ state: 'running', phase: 'execute', lastSeq: 2 });
   await f.close(journal);
   edit(path, db => {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(12);
     expect(db.prepare('SELECT * FROM accepted_attempts').get()).toMatchObject({ ...before.row, wrapper_checkpoint_json: null, checkpoint_bytes: 0 });
     expect(db.prepare('SELECT * FROM event_spool ORDER BY seq').all()).toEqual(before.events);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
