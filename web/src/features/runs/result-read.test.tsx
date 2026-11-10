@@ -81,6 +81,23 @@ it('rechecks a null source when authoritative finalization becomes terminal and 
   expect(resultRequests(fixture)).toHaveLength(reads);
 });
 
+it('rechecks an older in-flight null response arriving after authoritative terminal state', async () => {
+  let current = run(); let reads = 0;
+  const older = deferred<Response>();
+  const fixture = testClient(request => request.path.endsWith('/result')
+    ? ++reads === 1 ? older.promise : json(evidence(current)) : json(current));
+  mountDetail(fixture.client);
+  await waitFor(() => expect(resultRequests(fixture)).toHaveLength(1));
+  current = { ...current, version: 2, state: 'finished', outcome: 'passed', validationStatus: 'passed' };
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh run' }));
+  await waitFor(() => expect(screen.getByText('State').nextElementSibling).toHaveTextContent('finished'));
+  expect(reads).toBe(1);
+  await act(async () => older.resolve(json(resultSnapshot())));
+  expect(await screen.findByText('reports/current.json')).toBeVisible();
+  expect(reads).toBe(2);
+  expect(panel().queryByText('Provisional')).not.toBeInTheDocument();
+});
+
 const switches = {
   organization: (current: Run): Run => ({ ...current, scope: { ...current.scope, organizationId: ids.b } }),
   workspace: (current: Run): Run => ({ ...current, scope: { ...current.scope, workspaceId: ids.b } }),
