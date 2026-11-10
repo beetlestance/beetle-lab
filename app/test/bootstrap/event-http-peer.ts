@@ -15,12 +15,14 @@ async function body(request: IncomingMessage): Promise<string> {
 /** Bounded synthetic journal peer; no real agent or engine execution is inferred. */
 export function eventHttpPeer() {
   const state = { count: 0, gets: 0, acks: 0, acknowledged: 0, loseAck: false, afters: [] as number[],
-    beforeAck: undefined as ((through: number) => Promise<void>) | undefined };
+    beforeAck: undefined as (() => void) | undefined };
   function readEvents(request: IncomingMessage, response: ServerResponse, original: Offer): void {
     const scope = { organizationId: original.organizationId, workspaceId: original.workspaceId,
       attemptId: original.attemptId, generation: 1 as const };
     const url = new URL(request.url!, 'http://fixture.invalid');
-    const after = Number(url.searchParams.get('after'));
+    const afterText = url.searchParams.get('after');
+    const after = Number(afterText);
+    if (afterText === null || String(after) !== afterText || request.url !== `/runner/v1/attempts/${original.attemptId}/events?after=${after}`) throw new Error('Unexpected synthetic event route');
     if (++state.gets > 16 || !Number.isSafeInteger(after) || after < state.acknowledged
       || after > state.count || state.count > 2) throw new Error('Unexpected synthetic event read');
     state.afters.push(after);
@@ -32,13 +34,13 @@ export function eventHttpPeer() {
   }
   async function acknowledge(request: IncomingMessage, response: ServerResponse, original: Offer): Promise<void> {
     const scope = { organizationId: original.organizationId, workspaceId: original.workspaceId, attemptId: original.attemptId, generation: 1 as const };
-    const url = new URL(request.url!, 'http://fixture.invalid');
-    if (!url.pathname.endsWith('/ack') || request.method !== 'POST' || ++state.acks > 8) throw new Error('Unexpected synthetic event mutation');
+    if (request.url !== `/runner/v1/attempts/${original.attemptId}/ack` || request.method !== 'POST' || ++state.acks > 8) throw new Error('Unexpected synthetic event mutation');
+    // Synchronous arrival oracle must precede body reads and their asynchronous turns.
+    state.beforeAck?.();
     const text = await body(request);
     const ack = validate('Ack', JSON.parse(text) as unknown);
     if (!ack.ok || !Object.entries(scope).every(([key, value]) => Reflect.get(ack.value, key) === value)
       || ack.value.throughSeq > state.count || ack.value.throughSeq < state.acknowledged) throw new Error('Invalid synthetic ACK');
-    await state.beforeAck?.(ack.value.throughSeq);
     state.acknowledged = ack.value.throughSeq;
     if (state.loseAck) { state.loseAck = false; response.destroy(); return; }
     send(response, { protocolVersion: '1.0', ...scope, acknowledgedSeq: state.acknowledged });

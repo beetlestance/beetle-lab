@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { DatabaseSync } from 'node:sqlite';
 import { realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import { openAgentRuntime } from '../../src/bootstrap/agent-runtime.js';
@@ -94,11 +95,19 @@ it('stores events before TCP ACK, then re-ACKs a pruned prefix after a lost repl
   let metadata: Metadata | undefined; let runtime: AgentRuntime | undefined;
   let binding: Parameters<Metadata['events']['load']>[0] | undefined;
   const beforeAck: number[] = [];
-  server.events.beforeAck = async through => {
-    if (!binding || !metadata) throw new Error('ACK before durable binding');
-    const state = await metadata.events.load(binding);
-    expect(state.durableThrough).toBe(through); expect(state.eventCount).toBe(through);
-    expect(state.retainedBytes).toBeGreaterThan(0); beforeAck.push(through);
+  server.events.beforeAck = () => {
+    if (!binding) throw new Error('ACK before durable binding');
+    // This independent connection observes the last committed WAL snapshot at
+    // request arrival. It cannot queue behind the metadata worker's ingest.
+    const db = new DatabaseSync(path, { readOnly: true });
+    try {
+      const attempt = binding.key.attempt.attemptId;
+      const cursor = db.prepare('SELECT durable_through,event_count,retained_bytes FROM event_cursors WHERE attempt_id=?').get(attempt);
+      const rows = db.prepare('SELECT count(*) n,sum(charged_bytes) bytes FROM run_events WHERE attempt_id=?').get(attempt);
+      expect(cursor).toMatchObject({ durable_through: 2, event_count: 2 });
+      expect(rows).toMatchObject({ n: 2, bytes: cursor?.retained_bytes });
+      expect(cursor?.retained_bytes).toBeGreaterThan(0); beforeAck.push(2);
+    } finally { db.close(); }
   };
   try {
     metadata = await fixture.open(path, configured); await seed(metadata);
