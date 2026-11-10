@@ -1,3 +1,4 @@
+import { outputOperation, captureOutputReply } from './output-custody/index.js';
 import { eventOperation, captureEventReply } from './event-custody/index.js';
 import { parentPort, workerData } from 'node:worker_threads';
 import { checkedBootstrap, checkedOperation, boundedCopy, operationReplyLimit } from './input.js';
@@ -34,7 +35,7 @@ function start(): void {
     try {
       const operation = checkedOperation(message as Command, runtimeTtlMs);
       const original = store.execute(operation);
-      const value = eventOperation(operation) ? captureEventReply(operation, original)
+      const value = outputOperation(operation) ? captureOutputReply(operation, original) : eventOperation(operation) ? captureEventReply(operation, original)
         : dispatchOperation(operation) ? captureDispatchReply(operation, original)
         : boundedCopy(original, operationReplyLimit(operation));
       port.postMessage({ kind: 'result', messageId, ok: true, value } satisfies Reply);

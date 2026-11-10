@@ -1,3 +1,4 @@
+import { outputOperation, captureOutputOperation, outputReplyLimit } from './output-custody/index.js';
 import { eventOperation, captureEventOperation, eventRequestLimit, eventReplyLimit } from './event-custody/index.js';
 import { checkedRunOperation } from './run-validation.js';
 import { captureDispatchOperation, dispatchOperation, dispatchRequestLimit, dispatchReplyLimit } from './dispatch-wire.js';
@@ -113,6 +114,9 @@ function checkedExtendedOperation(operation: Operation): boolean {
   return settingsRead(operation);
 }
 export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operation {
+  if (outputOperation(input)) {
+    try { return captureOutputOperation(input); } catch { throw new StorageError('invalid_input'); }
+  }
   if (eventOperation(input)) {
     try { return captureEventOperation(input); } catch { throw new StorageError('invalid_input'); }
   }
@@ -147,6 +151,7 @@ function dataProperty(value: unknown, key: string): unknown {
   return descriptor && 'value' in descriptor ? descriptor.value : undefined;
 }
 export function operationMessageLimit(operation: Operation): number {
+  if (outputOperation(operation)) return 79872;
   if (eventOperation(operation)) return eventRequestLimit(operation);
   if (dispatchOperation(operation)) return dispatchRequestLimit(operation);
   if (dataProperty(operation, 'kind') !== 'suite') return MAX_MESSAGE_BYTES;
@@ -156,9 +161,10 @@ export function operationMessageLimit(operation: Operation): number {
 
 /** One two-original allowance is shared by suites, Offers and event batches. */
 export function largeOperation(operation: Operation): boolean {
-  return suiteOperation(operation) || ['dispatchReadOffer', 'eventIngest'].includes(dataProperty(operation, 'kind') as string);
+  return suiteOperation(operation) || ['dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource'].includes(dataProperty(operation, 'kind') as string);
 }
 export function operationReplyLimit(operation: Operation): number {
+  if (outputOperation(operation)) return outputReplyLimit(operation);
   if (eventOperation(operation)) return eventReplyLimit(operation);
   if (dispatchOperation(operation)) return dispatchReplyLimit(operation);
   return operation.kind === 'getRevision' ? 2_097_152 : Math.max(1_048_576, operationMessageLimit(operation));

@@ -1,3 +1,4 @@
+import { OutputCustody, outputOperation } from './output-custody/index.js';
 import { EventCustody, eventOperation } from './event-custody/index.js';
 import { Runs } from './runs.js';
 import { RunCancellations } from './run-cancellations.js';
@@ -31,6 +32,7 @@ export function safeCode(error: unknown): ErrorCode {
   return 'unavailable';
 }
 export class Store {
+  private readonly outputs: OutputCustody;
   private readonly events: EventCustody;
   private readonly dispatchClaims: DispatchClaims;
   private readonly dispatchObservations: DispatchObservations;
@@ -46,6 +48,7 @@ export class Store {
   private readonly settings: Settings;
   private readonly reads: Reads;
   constructor(private readonly db: DatabaseSync, bootstrap: Bootstrap) {
+    this.outputs = new OutputCustody(db, bootstrap.installation.id);
     this.events = new EventCustody(db, bootstrap.installation.id);
     this.entities = new Entities(db);
     this.suites = new Suites(db, this.entities);
@@ -130,6 +133,7 @@ export class Store {
     }
   }
   execute(operation: Operation): Value {
+    if (outputOperation(operation)) return this.outputs.execute(operation);
     if (eventOperation(operation)) return this.events.execute(operation);
     return this.executeLegacy(operation);
   }

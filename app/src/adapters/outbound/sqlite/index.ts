@@ -1,3 +1,6 @@
+import type { OutputCustodyStore } from '../../../ports/output-custody.js';
+import { outputOperation, captureOutputReply } from './output-custody/index.js';
+import type { OutputOperation } from './output-custody/index.js';
 import type { EventCustodyStore } from '../../../ports/events.js';
 import { eventOperation, captureEventReply } from './event-custody/index.js';
 import type { EventOperation } from './event-custody/index.js';
@@ -31,7 +34,7 @@ export interface MetadataOptions extends Bootstrap {
   queueLimit?: number;
 }
 interface Pending { resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
-  large: boolean; replyLimit: number; event?: EventOperation; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
+  output?: OutputOperation; large: boolean; replyLimit: number; event?: EventOperation; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
 function validateLocation(options: MetadataOptions): void {
   if (typeof options.path !== 'string' || !options.path || options.path === ':memory:' || options.path.length > 4096 ||
     !(options.workerUrl instanceof URL) || options.workerUrl.protocol !== 'file:') throw new StorageError('invalid_input');
@@ -58,6 +61,12 @@ export class Metadata {
   private readyResolve: () => void = () => undefined;
   private readyReject: (error: StorageError) => void = () => undefined;
   private readonly ready: Promise<void>;
+  readonly outputs: OutputCustodyStore = {
+    scan: query => this.call({ kind: 'outputScan', query }) as ReturnType<OutputCustodyStore['scan']>,
+    load: binding => this.call({ kind: 'outputLoad', binding }) as ReturnType<OutputCustodyStore['load']>,
+    readSource: binding => this.call({ kind: 'outputReadSource', binding }) as ReturnType<OutputCustodyStore['readSource']>,
+    adopt: request => this.call({ kind: 'outputAdopt', request }) as ReturnType<OutputCustodyStore['adopt']>,
+  };
   readonly events: EventCustodyStore = {
     scan: query => this.call({ kind: 'eventScan', query }) as ReturnType<EventCustodyStore['scan']>,
     load: binding => this.call({ kind: 'eventLoad', binding }) as ReturnType<EventCustodyStore['load']>,
@@ -155,7 +164,7 @@ export class Metadata {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => this.fail('unavailable'), 5000);
       this.pending.set(messageId, { resolve, reject, timer, large: largeOperation(operation),
-        replyLimit: operationReplyLimit(operation), ...(eventOperation(operation) ? { event: operation } : {}), ...(dispatchOperation(operation) ? { dispatch: operation } : {}),
+        replyLimit: operationReplyLimit(operation), ...(outputOperation(operation) ? { output: operation } : {}), ...(eventOperation(operation) ? { event: operation } : {}), ...(dispatchOperation(operation) ? { dispatch: operation } : {}),
         ...(operation.kind === 'cancelRun' ? { cancellation: operation.command } : {}) });
       try { this.worker.postMessage({ ...operation, messageId }); } catch { this.fail('unavailable'); }
     });
@@ -178,7 +187,7 @@ export class Metadata {
   private resolve(reply: Extract<WorkerReply, { kind: 'result'; ok: true }>, pending: Pending): void {
     let value: Value;
     try {
-      value = pending.event ? captureEventReply(pending.event, reply.value)
+      value = pending.output ? captureOutputReply(pending.output, reply.value) : pending.event ? captureEventReply(pending.event, reply.value)
         : pending.dispatch ? captureDispatchReply(pending.dispatch, reply.value)
         : pending.cancellation ? captureCancelRunReply(reply.value, pending.cancellation)
         : boundedCopy(reply.value, pending.replyLimit) as Value;

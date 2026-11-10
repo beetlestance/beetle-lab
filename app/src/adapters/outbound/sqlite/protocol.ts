@@ -1,3 +1,5 @@
+import type { Owned, SourceEnvelope } from '@beetle/contracts/output-source';
+import type { OutputAdoptRequest, OutputCustodyState, OutputPage } from '../../../ports/output-custody.js';
 import type { EventBinding, EventScan, EventPage, EventCursorState, EventIngestRequest, EventIngestResult, EventAckRequest, EventProblemRequest } from '../../../ports/events.js';
 import type { RunConfiguration, RunCommand, CancelRunCommand, RunKey, RunList } from '../../../ports/runs.js';
 import type { DispatchKey, DispatchScan, DispatchObservationRequest, DispatchPage,
@@ -25,6 +27,10 @@ import type { RuntimeObservation } from '../../../ports/runtime.js';
 export type { RuntimeObservation } from '../../../ports/runtime.js';
 export type SettingsView = InstallationSettings | OrganizationSettings | WorkspaceSettings;
 export type Operation =
+  | { kind: 'outputScan'; query: EventScan }
+  | { kind: 'outputLoad'; binding: EventBinding }
+  | { kind: 'outputReadSource'; binding: EventBinding }
+  | { kind: 'outputAdopt'; request: OutputAdoptRequest }
   | { kind: 'eventScan'; query: EventScan }
   | { kind: 'eventLoad'; binding: EventBinding }
   | { kind: 'eventIngest'; request: EventIngestRequest }
@@ -57,7 +63,7 @@ export type Operation =
   | { kind: 'getSettingsIdentity'; scope: SettingsScope }
   | { kind: 'runtime'; runtime: RuntimeObservation | null }
   | { kind: 'close' };
-export type Value = EventPage | EventCursorState | EventIngestResult | DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
+export type Value = OutputCustodyState | OutputPage | Owned<SourceEnvelope> | EventPage | EventCursorState | EventIngestResult | DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
 export type Command = Operation & { messageId: number };
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; messageId: number; ok: true; value: Value } |
