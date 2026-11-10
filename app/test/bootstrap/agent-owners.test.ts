@@ -11,8 +11,8 @@ it('passes the shared gateway/store/readers to delivery and drains both loops be
   const f = ownerFixture(mocks.start); const held = deferred<void>();
   f.delivery.close.mockReturnValue(held.promise);
   const runtime = await openAgentOwners(f); await flush();
-  expect(f.options()?.gateway).toBe(f.gateway); expect(f.options()?.store).toBe(f.metadata.dispatch);
-  expect(f.options()?.runs).toBe(f.metadata.runs);
+  expect(Object.isFrozen(f.options()?.gateway)).toBe(true); expect(Object.keys(f.options()!.store)).toEqual(Object.keys(f.metadata.dispatch));
+  expect(Object.keys(f.options()!.runs)).toEqual(['getRun']);
   expect(Object.isFrozen(runtime)).toBe(true);
   const { close: closeRuntime } = runtime;
   const close = closeRuntime(); expect(runtime.close()).toBe(close);
