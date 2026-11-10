@@ -1,3 +1,4 @@
+import { absenceOperation, captureAbsenceReply } from './output-absence/index.js';
 import { finalizationOperation, captureFinalizationReply } from './output-finalization/index.js';
 import { resultOperation, captureResultReply } from './run-results/index.js';
 import { outputOperation, captureOutputReply } from './output-custody/index.js';
@@ -17,7 +18,7 @@ function commandId(message: unknown): unknown {
   return messageId;
 }
 function captureReply(operation: Operation, original: Value): Value {
-  return finalizationOperation(operation) ? captureFinalizationReply(operation, original) : resultOperation(operation) ? captureResultReply(operation.key, original) : outputOperation(operation) ? captureOutputReply(operation, original) : eventOperation(operation) ? captureEventReply(operation, original)
+  return absenceOperation(operation) ? captureAbsenceReply(operation, original) : finalizationOperation(operation) ? captureFinalizationReply(operation, original) : resultOperation(operation) ? captureResultReply(operation.key, original) : outputOperation(operation) ? captureOutputReply(operation, original) : eventOperation(operation) ? captureEventReply(operation, original)
         : dispatchOperation(operation) ? captureDispatchReply(operation, original)
         : boundedCopy(original, operationReplyLimit(operation));
 }

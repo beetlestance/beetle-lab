@@ -46,8 +46,9 @@ export function readState(db: DatabaseSync, binding: EventBinding, allowAbsent =
 
 /** Finalized ACK recovery is a point read, independent of pending discovery. */
 export function finalizedState(db: DatabaseSync, binding: EventBinding): EventCursorState | null {
-  const row = db.prepare('SELECT final_agent_seq FROM execution_output_finalizations WHERE attempt_id=? AND run_id=? AND organization_id=? AND workspace_id=? AND intent_digest=? AND journal_authority=? AND generation=?')
-    .get(...bindingArgs(binding));
+  const where = 'WHERE attempt_id=? AND run_id=? AND organization_id=? AND workspace_id=? AND intent_digest=? AND journal_authority=? AND generation=?';
+  const row = db.prepare(`SELECT final_agent_seq FROM execution_output_finalizations ${where}
+    UNION ALL SELECT final_agent_seq FROM execution_output_absence_finalizations ${where}`).get(...bindingArgs(binding), ...bindingArgs(binding));
   if (!row) return null;
   const state = readState(db, binding);
   if (state.durableThrough !== row.final_agent_seq || state.ackConfirmedThrough !== row.final_agent_seq

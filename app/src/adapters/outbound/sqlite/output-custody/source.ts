@@ -18,6 +18,10 @@ function retained(db: DatabaseSync, binding: EventBinding, body: boolean): Recor
   if (!row) throw new StorageError('not_found');
   return row;
 }
+/** Exact retained physical original; no Offer, manifest or source body is materialized. */
+export function requireRetainedOriginal(db: DatabaseSync, binding: EventBinding): void {
+  retained(db, binding, false);
+}
 export function original(db: DatabaseSync, binding: EventBinding): Offer {
   const row = retained(db, binding, true);
   if (typeof row.offer_json !== 'string') throw new StorageError('unavailable');

@@ -1,3 +1,4 @@
+import { absenceOperation, captureAbsenceOperation } from './output-absence/index.js';
 import { finalizationOperation, captureFinalizationOperation } from './output-finalization/index.js';
 import { resultOperation, captureResultOperation } from './run-results/index.js';
 import { artifactOperation } from './output-artifacts/index.js';
@@ -117,6 +118,13 @@ function checkedExtendedOperation(operation: Operation): boolean {
   return settingsRead(operation);
 }
 export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operation {
+  if (absenceOperation(input)) return checkedAbsenceOperation(input);
+  return checkedOutputOperation(input, runtimeTtlMs);
+}
+function checkedAbsenceOperation(input: Operation): Operation {
+  try { return captureAbsenceOperation(input); } catch { throw new StorageError('invalid_input'); }
+}
+function checkedOutputOperation(input: Operation, runtimeTtlMs: number): Operation {
   if (finalizationOperation(input)) {
     try { return captureFinalizationOperation(input); } catch { throw new StorageError('invalid_input'); }
   }
@@ -160,7 +168,7 @@ function dataProperty(value: unknown, key: string): unknown {
   return descriptor && 'value' in descriptor ? descriptor.value : undefined;
 }
 export function operationMessageLimit(operation: Operation): number {
-  if (finalizationOperation(operation) || resultOperation(operation) || artifactOperation(operation)) return 4096;
+  if (absenceOperation(operation) || finalizationOperation(operation) || resultOperation(operation) || artifactOperation(operation)) return 4096;
   if (outputOperation(operation)) return 79872;
   if (eventOperation(operation)) return eventRequestLimit(operation);
   if (dispatchOperation(operation)) return dispatchRequestLimit(operation);
@@ -174,7 +182,7 @@ export function largeOperation(operation: Operation): boolean {
   return suiteOperation(operation) || ['dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource', 'getRunResult'].includes(dataProperty(operation, 'kind') as string);
 }
 export function operationReplyLimit(operation: Operation): number {
-  if (finalizationOperation(operation)) return 4096;
+  if (absenceOperation(operation) || finalizationOperation(operation)) return 4096;
   if (resultOperation(operation)) return 73728;
   if (outputOperation(operation)) return outputReplyLimit(operation);
   if (eventOperation(operation)) return eventReplyLimit(operation);
