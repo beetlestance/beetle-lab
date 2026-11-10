@@ -14,6 +14,7 @@ export { outputOperation, captureOutputOperation, captureOutputReply, outputRepl
 export type { OutputOperation } from './wire.js';
 /** Shared verified source read; caller owns the transaction and retained binding. */
 export { readEnvelope } from './source.js';
+export { loadOutput } from './load.js';
 export class OutputCustody {
   constructor(private readonly db: DatabaseSync, private readonly installation: string) {}
   execute(input: OutputOperation): OutputValue {

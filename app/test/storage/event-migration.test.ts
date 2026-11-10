@@ -45,7 +45,7 @@ it.each([true, false])('preserves actual schema6 ownership without claiming inge
   const old = retainedTables.map(table => ({ table, rows: db.prepare(`SELECT * FROM ${table}`).all() })); db.close();
   db = initialize(path);
   try {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(9);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
     for (const { table, rows } of old) {
       const columns = rows[0] ? Object.keys(rows[0]).join(',') : '*';
       expect(db.prepare(`SELECT ${columns} FROM ${table}`).all()).toEqual(rows);
@@ -85,7 +85,7 @@ it('rolls back a late schema007 failure without partial columns, indexes, counte
     db.exec('DROP TABLE run_events');
   } finally { db.close(); }
   db = initialize(path);
-  try { expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(9); }
+  try { expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11); }
   finally { db.close(); }
 });
 

@@ -1,3 +1,4 @@
+import { migration011 } from './migration011.js';
 import { migration010 } from './migration010.js';
 import { migration009 } from './migration009.js';
 import { migrate008 } from './migration008.js';
@@ -73,7 +74,7 @@ export function initialize(path: string): DatabaseSync {
   try {
     db.exec('PRAGMA busy_timeout=100; PRAGMA cache_size=-2048; PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; COMMIT;');
     const version = db.prepare('PRAGMA user_version').get()?.user_version;
-    if (typeof version !== 'number' || version > 10) throw new StorageError('schema_newer');
+    if (typeof version !== 'number' || version > 11) throw new StorageError('schema_newer');
     db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; PRAGMA temp_store=MEMORY;');
     applyMigrations(db, version);
     return db;
@@ -85,7 +86,7 @@ function applyMigrations(db: DatabaseSync, version: number): void {
   const steps: readonly (() => void)[] = [
     () => db.exec(migration001), () => db.exec(migration002), () => migrate003(db),
     () => db.exec(migration004), () => db.exec(migration005), () => db.exec(migration006),
-    () => db.exec(migration007), () => migrate008(db), () => db.exec(migration009), () => db.exec(migration010),
+    () => db.exec(migration007), () => migrate008(db), () => db.exec(migration009), () => db.exec(migration010), () => db.exec(migration011),
   ];
   steps.forEach((step, index) => { if (version <= index) transaction(db, step); });
 }
