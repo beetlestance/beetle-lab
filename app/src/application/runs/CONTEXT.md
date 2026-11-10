@@ -1,6 +1,7 @@
 # Run intake
 
-Public entrypoints: prepareRunCommand, enqueueRun, getRun and listRuns in index.ts.
+Public entrypoints: prepareRunCommand, enqueueRun, getRun, listRuns,
+prepareCancelRunCommand and cancelRun in index.ts.
 Command inputs are one create operation and trusted digest. Output is a frozen
 <=64KiB command; strict public request,
 distinct UUID allocations and timestamp are validated. Canonical request digest
@@ -10,6 +11,8 @@ run/attempt/Offer/outbox acceptance. Replay binds intent while retaining origina
 IDs/time. Reads call RunReader once and remain observational. Expected inputs are
 captured before awaits. Run replies are <=64KiB; pages <=1MiB, <=requested limit,
 unique IDs and exact workspace ownership. Invalid replies fail without retry.
-No dispatch, agent call, cancellation or execution is implemented here.
-Contract: docs/design/lld/run-intake.md. Checks: app/test/{runs,application/runs}
+Cancellation captures a <=64KiB command binding scope, run and request ID, calls
+RunCancellationStore once and validates intent/terminal acceptance. No agent call
+or physical stop/release is inferred. Store owns claim serialization and receipts.
+Contracts: docs/design/lld/{run-intake,cancellation}.md. Checks: app/test/{runs,application/runs}
 and app/test/http/runs; Node TS and scoped lint.
