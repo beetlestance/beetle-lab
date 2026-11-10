@@ -12,9 +12,10 @@ it.each(['scan', 'readOffer', 'claim', 'observe'] as const)('retains fatal %s fa
   const close = runtime.close(); expect(runtime.close()).toBe(close); await expect(close).rejects.toBe(error);
   await tick(1000); expect(f.onFailure).toHaveBeenCalledTimes(1);
 });
-it.each(['offer', 'snapshot', 'cancel'] as const)('makes local %s request construction failure fatal', async operation => {
+it.each(['offer', 'snapshot', 'cancel', 'cancelOriginal'] as const)('makes local %s request construction failure fatal', async operation => {
   const f = fixture();
   if (operation !== 'offer') f.claim('replay');
+  if (operation === 'cancelOriginal') f.run.cancellationRequested = true;
   if (operation === 'cancel') { f.run.cancellationRequested = true; f.client.snapshot.mockResolvedValue(positive()); }
   f.client[operation].mockResolvedValue({ ok: false, error: { kind: 'request' } });
   const runtime = f.start(); await tick(); await expect(runtime.close()).rejects.toThrow('Invalid delivery request');

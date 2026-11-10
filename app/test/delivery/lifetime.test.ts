@@ -54,10 +54,11 @@ it('checks close after last awaited Run decision', async () => {
   const runtime = f.start(); await tick(); const close = runtime.close(); pending.resolve(runValue());
   await close; expect(f.client.offer).not.toHaveBeenCalled();
 });
-it.each(['offer', 'snapshot', 'cancel'] as const)('drains received positive %s into observation after close', async operation => {
+it.each(['offer', 'snapshot', 'cancel', 'cancelOriginal'] as const)('drains received positive %s into observation after close', async operation => {
   const f = fixture(); const pending = deferred<ClientResult<AttemptSnapshot>>();
   const custody = deferred<DispatchObservation>(); f.store.observe.mockReturnValue(custody.promise);
   if (operation !== 'offer') f.claim('replay');
+  if (operation === 'cancelOriginal') f.run.cancellationRequested = true;
   if (operation === 'cancel') {
     f.run.cancellationRequested = true;
     f.client.snapshot.mockResolvedValue(positive());

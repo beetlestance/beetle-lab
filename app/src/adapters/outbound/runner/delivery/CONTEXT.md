@@ -13,7 +13,7 @@ cancellation commits. Existing receipts can receive generation1 cancellation.
 
 Every positive response reaches store.observe, including during close. Store owns
 merge/ACK/release; event/output/result completion is outside this runtime. Missing
-cancelled receipts stay charged pending required durable-refusal implementation.
+receipts retain charge until matched refusal/release evidence is observed.
 
 Remote uncertainty advances fairness. Local request failures or thrown operations
 stop scheduling, await onFailure once and remain retained for close. Callback
@@ -22,3 +22,6 @@ this runtime/composite close. close stops network mutation synchronously, aborts
 as a hint, drains originals/observations, and never closes the shared gateway.
 
 Focused verification: npx vitest run app/test/delivery; scoped ESLint and Node TS.
+
+Cancelled unacknowledged originals use cancelOriginal after scoped absence,
+including freshly claimed originals. ACKed absence stays unknown; no PUT fallback.

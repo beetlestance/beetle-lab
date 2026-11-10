@@ -46,7 +46,8 @@ function terminal(state: string): boolean {
   return ['finished', 'cancelled', 'errored'].includes(state);
 }
 function clientMethods(client: RunnerAttemptClient) {
-  return { offer: client.offer.bind(client), snapshot: client.snapshot.bind(client), cancel: client.cancel.bind(client) };
+  return { offer: client.offer.bind(client), snapshot: client.snapshot.bind(client), cancel: client.cancel.bind(client),
+    cancelOriginal: client.cancelOriginal.bind(client) };
 }
 type Client = ReturnType<typeof clientMethods>;
 interface Receipt {
@@ -76,10 +77,22 @@ async function reconcile(receipt: Receipt, acknowledged: boolean): Promise<boole
   if (snapshot.ok) { await observe(snapshot, receipt); return false; }
   return !operations.stopped() && !acknowledged && absent(snapshot, key);
 }
-async function mayStart(operations: DeliveryOperations, key: DispatchKey): Promise<boolean> {
-  if (operations.stopped()) return false;
+async function nextAction(operations: DeliveryOperations, key: DispatchKey): Promise<'offer' | 'cancelOriginal' | null> {
+  if (operations.stopped()) return null;
   const run = await currentRun(operations, key);
-  return !operations.stopped() && !run.cancellationRequested && !terminal(run.state);
+  if (operations.stopped() || (terminal(run.state) && run.state !== 'cancelled')) return null;
+  return run.cancellationRequested ? 'cancelOriginal' : 'offer';
+}
+
+/** Resolve permission under the stored claim; cancellation requires positive absence proof. */
+async function authorizedAction(receipt: Receipt, kind: Exclude<DispatchClaim['kind'], 'blocked'>) {
+  if (kind !== 'claimed' && !await reconcile(receipt, kind === 'acknowledged')) return null;
+  const action = await nextAction(receipt.operations, receipt.key);
+  if (action !== 'cancelOriginal' || kind !== 'claimed') return action;
+  // A fresh claim has not yet made the scoped read required for refusal evidence.
+  if (!await reconcile(receipt, false)) return null;
+  const current = await nextAction(receipt.operations, receipt.key);
+  return current === 'cancelOriginal' ? current : null;
 }
 
 /** Storage alone owns claim/merge/release; this owner delivers one original. */
@@ -91,8 +104,8 @@ export async function deliver(operations: DeliveryOperations, key: DispatchKey):
   if (operations.stopped() || claim.kind === 'blocked') return;
   const client = clientMethods(operations.attempt({ ...key.attempt, journalAuthority: claim.journalAuthority }));
   const receipt: Receipt = { operations, key, authority: claim.journalAuthority, client };
-  if (claim.kind !== 'claimed' && !await reconcile(receipt, claim.kind === 'acknowledged')) return;
-  if (!await mayStart(operations, key)) return;
+  const action = await authorizedAction(receipt, claim.kind);
+  if (!action) return;
   if (operations.stopped()) return;
-  await observe(checked(await client.offer(original.offer, operations.signal)), receipt);
+  await observe(checked(await client[action](original.offer, operations.signal)), receipt);
 }

@@ -81,11 +81,13 @@ it.each<Run['state']>(['finished', 'cancelled', 'errored'])('forbids original PU
   const runtime = f.start(); await tick(); await runtime.close();
   expect(f.client.offer).not.toHaveBeenCalled();
 });
-it.each(['claimed', 'replay'] as const)('retains absent cancelled %s original without PUT/cancel/release', async kind => {
+it.each(['claimed', 'replay'] as const)('durably refuses an absent cancelled %s original before ordinary cancellation', async kind => {
   const f = fixture(); f.claim(kind); f.run.cancellationRequested = true;
   const runtime = f.start(); await tick(); await runtime.close();
-  expect(f.client.offer).not.toHaveBeenCalled(); expect(f.client.cancel).not.toHaveBeenCalled();
-  expect(f.store.observe).not.toHaveBeenCalled();
+  expect(f.client.offer).not.toHaveBeenCalled();
+  expect(f.client.cancelOriginal).toHaveBeenCalledTimes(1);
+  expect(f.calls.indexOf('GET')).toBeLessThan(f.calls.indexOf('cancelOriginal'));
+  expect(f.store.observe).toHaveBeenCalledTimes(2);
 });
 it('observes a receipt then delivers same scoped cancellation and observes its receipt', async () => {
   const f = fixture(); f.claim('replay'); f.run.cancellationRequested = true; f.client.snapshot.mockResolvedValue(positive());
