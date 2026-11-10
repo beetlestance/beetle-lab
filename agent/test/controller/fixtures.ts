@@ -65,7 +65,10 @@ export function fixture() {
       }, collectOutputs: options => {
         collections.push(options);
         return output ? output(options) : { result: Promise.resolve({ ok: true, value: options.reportedResult,
-          verifiedBytes: options.controlBytes + 1 }), quiesced: Promise.resolve(),
+          verifiedBytes: options.controlBytes + 1,
+          // Synthetic collector for orchestration tests; these are not filesystem/source receipts.
+          custody: { resultFileBytes: 1, controlBytes: options.controlBytes,
+            root: { directory: options.directory, uid: options.uid, device: '0', inode: '0', modifiedNs: '0', changedNs: '0' } } }), quiesced: Promise.resolve(),
         close: () => { outputClose++; return Promise.resolve(); } };
       } };
     const controller = new AttemptController(controllerOptions);

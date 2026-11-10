@@ -1,5 +1,5 @@
 import { afterEach, beforeEach } from 'vitest';
-import { chmod, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import { chmod, lstat, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -70,6 +70,13 @@ export function fixture() {
       await writeFile(target, body, { mode: 0o600 });
       return { artifactId: `00000000-0000-4000-8000-${String(++counter).padStart(12, '0')}`, kind: 'report',
         relativePath: path, bytes: Buffer.byteLength(body), sha256: sha(body), sealedAt: '2026-01-01T00:00:00Z' };
+    },
+    async custody(controlBytes = 123) {
+      const root = await lstat(directory, { bigint: true });
+      const result = await lstat(join(directory, 'engine-result.json'));
+      return { resultFileBytes: result.size, controlBytes,
+        root: { directory, uid: Number(root.uid), device: root.dev.toString(), inode: root.ino.toString(),
+          modifiedNs: root.mtimeNs.toString(), changedNs: root.ctimeNs.toString() } };
     },
     options(result: Readonly<EngineResult>, overrides: Partial<OutputCollectionOptions> = {}): OutputCollectionOptions {
       const { organizationId, workspaceId, attemptId, generation } = result;

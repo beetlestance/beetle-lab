@@ -50,8 +50,12 @@ public manifest identity excludes private host paths and file descriptors.
 The exact preimage and field schemas must freeze with conformance vectors before
 code. Source identity is content/custody identity, not a test verdict.
 
-The actual control/journal producer limits result JSON to65536 bytes; the generic
-seal codec's1MiB limit does not enlarge that producer. A public source envelope
+[Collected output facts](output-collection-custody.md) preserve raw result-file
+length and root custody as a first producer step. A valid raw result file may be
+1MiB because whitespace is not covered by the canonical content seal. Later
+source delivery persists canonical verified result content, not raw result bytes.
+The actual control/journal producer bounds canonical result payload by its65536-byte
+frame; this does not shrink the collector's existing raw-file limit. A public source envelope
 including the result is at most73728 bytes; the private persisted source record is
 at most131072 bytes. Preserve the existing128-artifact result bound. Recheck byte,
 depth and node limits independently before canonicalization or RPC serialization.
@@ -112,6 +116,23 @@ its own writer/transfer quiescence, manifest closure and published retained byte
 only then may unused allowance be released. Missing files or generic404 prove
 neither absence nor completed transfer. Refused/unstarted attempts need separate
 nonexecution closure and cannot fabricate an EngineResult/source manifest.
+
+## Required decisions before source commit
+
+The independent opinion requires exact collected-checkpoint/launch/runtime fact
+schemas; stopped_verified is currently process-owned, not a persisted checkpoint
+flag. Bind the trusted observation without claiming JSON proves quiescence.
+Freeze separate public manifest/private custody digest preimages and stable replay
+identity, then require a matching source receipt for new finished releases. Existing
+released attempts remain source-unavailable; never backfill from a snapshot.
+
+Specify source commit/read ambiguity and shutdown custody without downgrading a
+failed source commit into successful physical release. Add source record bytes to
+all existing per-attempt journal quota equations, and separately bound retained
+output files after execution release. Current admission excludes released resource
+reservations, so metadata charging alone does not provide retained-file capacity.
+Source recovery must read retained authority without execution restaging. These
+journal/retention/release amendments are not implemented by collected facts.
 
 ## Implementation order and acceptance
 

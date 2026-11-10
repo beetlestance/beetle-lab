@@ -3,6 +3,7 @@ import type { BigIntStats } from 'node:fs';
 import type { FileHandle } from 'node:fs/promises';
 import { join } from 'node:path';
 import { OUTPUT_READ_BYTES, OUTPUT_RESULT_BYTES } from './types.js';
+import type { OutputRootIdentity } from './types.js';
 import { OutputFailure } from './ports.js';
 import type { OutputIO, OutputPorts } from './ports.js';
 
@@ -88,6 +89,12 @@ export class OutputFiles {
       const actual = await this.named(entry.path, entry.directory);
       if (signature(actual) !== signature(entry.stat)) throw new OutputFailure('custody');
     }
+  }
+  rootIdentity(): Readonly<OutputRootIdentity> {
+    if (!this.root) throw new OutputFailure('custody');
+    const { path, stat } = this.root;
+    return Object.freeze({ directory: path, uid: this.options.uid, device: stat.dev.toString(), inode: stat.ino.toString(),
+      modifiedNs: stat.mtimeNs.toString(), changedNs: stat.ctimeNs.toString() });
   }
   async finalCheck(): Promise<void> {
     await this.namedCheck();
