@@ -6,7 +6,7 @@ import type { OutputCollector } from '../collection/output/index.js';
 import type { Operation } from '../backends/docker/index.js';
 
 export type ControllerJournal = Pick<Journal, 'admission' | 'readOffer' | 'get' | 'supervision'
-  | 'readWrapperCheckpoint' | 'commitWrapperBatch'>;
+  | 'readWrapperCheckpoint' | 'commitWrapperBatch' | 'journalAuthority'>;
 /** Trusted composition for one admitted, staged runtime; never browser options. */
 export interface AttemptControllerOptions {
   readonly journal: ControllerJournal;
