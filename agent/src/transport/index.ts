@@ -110,6 +110,6 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
     query(request); const scope = key(request); const body = requestBody('Ack', request.body); bodyMatches(scope, scope.attemptId, body);
     sendJson(reply, 200, 'AckReceipt', await work(() => services.journal.acknowledge(body)), scope);
   });
-  registerSources(server, { outputs: options.outputs, identity, operations });
+  registerSources(server, { outputs: options.outputs, absences: options.absences, journal: options.journal, identity, operations });
   return server;
 }

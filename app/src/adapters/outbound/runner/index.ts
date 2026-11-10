@@ -1,10 +1,10 @@
 import type { LoadedAgentConfiguration } from '../../../ports/runner.js';
-import type { RunnerOutputGateway } from '../../../ports/output-source.js';
+import type { RunnerOutputAbsenceGateway } from '../../../ports/output-absence.js';
 import { openGateway } from './gateway.js';
 import { nativeIo } from './native.js';
 
 /** Installation-owned, bounded Node HTTP gateway. Closing retains original I/O. */
-export function createRunnerGateway(loaded: LoadedAgentConfiguration): RunnerOutputGateway {
+export function createRunnerGateway(loaded: LoadedAgentConfiguration): RunnerOutputAbsenceGateway {
   return openGateway(loaded, nativeIo);
 }
 
