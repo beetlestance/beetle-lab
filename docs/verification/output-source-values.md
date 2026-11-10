@@ -48,6 +48,18 @@ fails. Review confirms removing the quiescence await would fail the new oracle;
 no production timer or gate changed. Integration:
 `c13ded650deb8f96cf2c2d166b6138aad79aaedf`.
 
+## Original controller binding
+
+Source `0b86e51ba521812ce82d2bfdd8dc06a761f8a960` captures only original Offer
+scope, engine, installed identity and output budget before awaiting the same
+Journal's physical UUID. The controller supplies its immutable runtime plan digest.
+Owned frozen metadata preserves original UUID spellings and requires generation1;
+config, inputs and secrets are not retained. Focused tests passed29 cases, real1.29s;
+changed production-file lint passed, real0.75s; affected Node types passed, real6.72s.
+Independent review accepted the exact source in approximately55s, reusing those
+checks without rerunning them. Integration: `d749b76b9305762128900d311013b6cd07b564da`.
+This proves metadata capture, not native custody or a connected source lifecycle.
+
 Evidence is Darwin arm64/Node26.7.0 component verification. No full-suite rerun,
 durable source receipt, complete backend/engine path, native Linux architecture
 matrix, container install, power-loss, soak or release qualification is claimed.
