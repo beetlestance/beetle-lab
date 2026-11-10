@@ -7,6 +7,7 @@ import type { Row } from './sql.js';
 import type { EventInput } from './protocol.js';
 import { Failure, owner, transaction } from './sql.js';
 import { project } from './projection.js';
+import { freshRefusal } from './fresh-refusal.js';
 
 export function append(db: DatabaseSync, input: EventInput): AgentEvent {
   const checked = eventInput(input.source === 'wrapper' ? JSON.parse(input.json) :
@@ -20,6 +21,7 @@ export function append(db: DatabaseSync, input: EventInput): AgentEvent {
 }
 export function appendAtomic(db: DatabaseSync, input: EventInput): AgentEvent {
   const row = owner(db, input.key);
+  if (freshRefusal(db, row)) throw new Failure('conflict');
   const { expired, high, counter } = sourceCounters(row, input.source);
   if (input.sourceKey <= expired) throw new Failure('expired_key');
   // Project only bounded rows: SQL constraints cap both stored JSON columns.

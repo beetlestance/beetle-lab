@@ -8,6 +8,11 @@ original identity text and canonical duplicate equality. Scoped get/read/cancel
 and listOpen (100 lightweight snapshots) return current projected state. Listing
 omits result payloads; scoped get owns the full-result read. Terminal rows remain
 listed until collection/release/retention authority exists. Cancel persists intent.
+`cancelOriginal({offer:unknown,now})` shares the two large-original credits. One
+immediate transaction equality-checks/inserts the original and persists supervision.
+Migration010 marks only a receipt inserted by that cancellation as a fresh refusal:
+rejected/cancelled, without queue/reservation/events. Marker contradictions fail closed;
+existing unknown or charged receipts keep their actual evidence and original custody.
 Private `scanRunnable({lane:'charged'|'queued',limit,cursor?})` returns <=100 scoped
 generation keys using charged/pending indexes before joining identity metadata.
 It excludes released reservations, retired queue rows and compatibility-only offers;
@@ -106,7 +111,7 @@ is distinct from normal five-second cancellation grace; never claim normal timin
 Future versions refuse open. Startup/commands remain 5 seconds;
 queue includes in-flight (default 32/max 64) plus close slot. Unknown commit outcome
 requires reconcile after reopen. close awaits exit; abort terminates pending work.
-Two original Offer writes/admissions/reads share a separate large-operation allowance,
+Two original Offer/cancelOriginal writes/admissions/reads share a separate large-operation allowance,
 reserved before snapshots or worker messages. Capacity refusal is queue_full, before
 issuance; settlement retains slots through the original reply or failed-worker shutdown.
 Only readOffer's known refusal becomes staging busy or installation deferred; it does

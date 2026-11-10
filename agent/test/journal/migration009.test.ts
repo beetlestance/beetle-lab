@@ -19,7 +19,7 @@ function v8(path: string, empty = false): DatabaseSync {
   return db;
 }
 function definitions(db: DatabaseSync) {
-  return db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_master WHERE name NOT LIKE 'journal_authority%' ORDER BY name").all();
+  return db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_master WHERE name NOT LIKE 'journal_authority%' AND name NOT LIKE '%cancelled_originals%' ORDER BY name").all();
 }
 function durableRows(db: DatabaseSync) {
   return ['accepted_attempts', 'event_spool', 'admission_settings', 'admission_queue', 'reservations',
@@ -38,7 +38,7 @@ it.each([false, true])('quarantines old v8 journal (empty=%s) without adopting i
     await f.close(journal);
     const db = new DatabaseSync(path);
     try {
-      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(9);
+      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(10);
       expect(db.prepare('SELECT * FROM journal_authority').all()).toEqual([{ id: 1, authority: null }]);
       expect(durableRows(db)).toEqual(before); expect(definitions(db)).toEqual(graph);
       expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
@@ -120,13 +120,13 @@ it('rolls back authority creation when COMMIT itself rejects a deferred foreign 
   } finally { db.close(); }
 });
 
-it('rejects future version10 through the compiled worker while preserving every row and version', async () => {
-  const path = f.path(); const old = v8(path); old.exec('PRAGMA user_version=10');
+it('rejects future version11 through the compiled worker while preserving every row and version', async () => {
+  const path = f.path(); const old = v8(path); old.exec('PRAGMA user_version=11');
   const before = durableRows(old); old.close();
   await expect(f.open(path)).rejects.toMatchObject({ code: 'schema_newer' });
   const db = new DatabaseSync(path);
   try {
     expect(durableRows(db)).toEqual(before);
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(10);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
   } finally { db.close(); }
 });

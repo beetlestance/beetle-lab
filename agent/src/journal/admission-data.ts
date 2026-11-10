@@ -3,6 +3,7 @@ import { encodeJson } from '@beetle/contracts';
 import type { AdmissionSnapshot, Candidate, PoolConfiguration, Reservation, RuntimeObservation, Scope } from '../admission/index.js';
 import { Failure, owner } from './sql.js';
 import { admissionInput } from './admission-input.js';
+import { freshRefusal } from './fresh-refusal.js';
 
 export function storedObservation(raw: unknown): RuntimeObservation | null {
   if (typeof raw !== 'string') return null;
@@ -25,14 +26,14 @@ export function settings(db: DatabaseSync, now: number): AdmissionSnapshot {
     queue: queue.map(item => ({ ...JSON.parse(item.candidate_json as string) as Candidate, order: Number(item.id) })) };
 }
 export function candidate(db: DatabaseSync, key: Scope): Candidate {
-  owner(db, key);
+  freshRefusal(db, owner(db, key));
   const row = db.prepare('SELECT id,candidate_json,pending FROM admission_queue WHERE attempt_id=?').get(key.attemptId);
   if (!row) throw new Failure('not_found');
   if (row.pending !== 1) throw new Failure('conflict');
   return { ...JSON.parse(row.candidate_json as string) as Candidate, order: Number(row.id) };
 }
 export function findReservation(db: DatabaseSync, key: Scope): Reservation | null {
-  owner(db, key);
+  freshRefusal(db, owner(db, key));
   const row = db.prepare('SELECT reservation_json FROM reservations WHERE attempt_id=?').get(key.attemptId);
   return row ? JSON.parse(row.reservation_json as string) as Reservation : null;
 }
