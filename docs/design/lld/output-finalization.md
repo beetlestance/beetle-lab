@@ -63,7 +63,8 @@ After all custody/release/event gates, apply this precedence:
 - An explicit non-cancellation exit reason prevents ordinary success even at0.
 - Wrapper exit0, oomKilled=false, no failure reason and a completed sealed child
   yields finished with the sealed passed/failed/inconclusive outcome and no reason.
-- A sealed execution error yields errored/inconclusive with its validated reason.
+- A sealed execution error or lost execution yields errored/inconclusive with its
+  validated reason (execution_lost for lost execution).
 - Missing/null exit evidence or contradictory cancellation without persisted
   intent stays pending exit_evidence; do not invent successful execution.
 
