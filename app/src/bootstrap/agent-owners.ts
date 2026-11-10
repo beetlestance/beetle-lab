@@ -30,6 +30,7 @@ function stop(close: () => Promise<void> | undefined): Promise<void> {
 
 /** Owns the shared connection and its loops, never metadata itself. */
 class AgentOwners implements AgentRuntime {
+  private outputReadView: Pick<OutputByteStore, 'read'> | undefined;
   private poller: RuntimePoller | undefined;
   private delivery: DeliveryRuntime | undefined;
   private closeOutputs: OutputRuntime['close'] | undefined;
@@ -54,6 +55,10 @@ class AgentOwners implements AgentRuntime {
     if (this.options.openOutputs) {
       const outputs = await this.options.openOutputs(error => this.failOutputs(error));
       this.closeOutputs = outputs.close.bind(outputs);
+      if (outputs.publishedBytes) {
+        const read = outputs.publishedBytes.read.bind(outputs.publishedBytes);
+        this.outputReadView = Object.freeze({read});
+      }
       if (this.outputFailure) throw this.outputFailure.error;
     }
     this.poller = startRuntimePoller({ source: this.options.source,
@@ -66,7 +71,7 @@ class AgentOwners implements AgentRuntime {
   }
   handle(): AgentRuntime {
     if (this.outputFailure) throw this.outputFailure.error;
-    return Object.freeze({ state: () => this.state(), close: () => this.close() });
+    return Object.freeze({ ...(this.outputReadView ? {publishedBytes: this.outputReadView} : {}), state: () => this.state(), close: () => this.close() });
   }
   private publishCapacity(observation: RuntimeObservation | null): Promise<boolean> {
     if (observation !== null && (this.deliveryFailed || this.outputFailure || this.producerFailure || this.closed)) return Promise.resolve(false);

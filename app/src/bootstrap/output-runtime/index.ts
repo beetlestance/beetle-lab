@@ -1,3 +1,4 @@
+import { OutputByteError } from '../../ports/output-bytes.js';
 import { randomUUID } from 'node:crypto';
 import { openLocalOutputBytes } from '../../adapters/outbound/files/outputs/index.js';
 import { createOutputTransfers } from '../../application/output-transfer/index.js';
@@ -41,7 +42,14 @@ export async function openOutputRuntime(options: OutputRuntimeOptions): Promise<
   try {
     const transfers = createOutputTransfers({metadata: captured.outputs, gateway: captured.gateway, files,
       freeSpaceReserveBytes: captured.freeSpaceReserveBytes, newWriterId: randomUUID});
-    const scheduler = new OutputScheduler(captured, transfers, files); scheduler.start(); return scheduler;
+    const scheduler = new OutputScheduler(captured, transfers, files);
+    const read = files.read.bind(files);
+    const publishedBytes = Object.freeze({read: (...args: Parameters<typeof read>) => {
+      if (scheduler.state().status !== 'running') throw new OutputByteError('closed');
+      return read(...args);
+    }});
+    scheduler.start();
+    return Object.freeze({publishedBytes, state: () => scheduler.state(), close: () => scheduler.close()});
   } catch (error) {
     try { await files.close(); }
     catch (cleanup) { throw new AggregateError([error, cleanup], 'Output startup cleanup failed', {cause: cleanup}); }

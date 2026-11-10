@@ -1,16 +1,9 @@
 import type { FastifyRequest } from 'fastify';
 import { ApiFault } from '../api-errors.js';
 
-export function header(request: FastifyRequest, name: string): string | undefined {
-  let found: string | undefined;
-  const raw = request.raw.rawHeaders;
-  for (let index = 0; index < raw.length; index += 2) {
-    if (raw[index]!.toLowerCase() !== name) continue;
-    if (found !== undefined) throw new ApiFault('malformed_request');
-    found = raw[index + 1]!;
-  }
-  return found;
-}
+import { header } from '../byte-content.js';
+export { header } from '../byte-content.js';
+
 export function uploadHeaders(request: FastifyRequest): void {
   if (header(request, 'content-type')?.toLowerCase() !== 'application/octet-stream' ||
     header(request, 'content-encoding') !== undefined) throw new ApiFault('malformed_request');

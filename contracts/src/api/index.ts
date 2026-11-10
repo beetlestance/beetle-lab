@@ -12,3 +12,5 @@ export { createInputTransferClient } from './input-transfer/index.js';
 
 export { captureRunEventCursor, encodeRunEventCursor, runEventPageMatches } from './client/run-event-ownership.js';
 export { RUN_ARTIFACT_CONTENT_ROUTE, runArtifactContentPath } from './artifact-content.js';
+
+export { encodeRunArtifactCursor, captureRunArtifactCursor, runArtifactPageMatches } from './client/run-artifact-ownership.js';

@@ -14,12 +14,7 @@ function classify(error: unknown): OutputTransferError {
   if (error instanceof OutputTransferError) return transferError(error);
   if (error instanceof OutputSourceError) return new OutputTransferError('integrity');
   if (error instanceof OutputByteError) {
-    switch (error.code) {
-      case 'cleanup': return new OutputTransferError('cleanup');
-      case 'cancelled': case 'deadline': return new OutputTransferError('cancelled');
-      case 'integrity': case 'custody_missing': return new OutputTransferError('integrity');
-      default: return new OutputTransferError('storage');
-    }
+    return byteError(error);
   }
   if (error instanceof Error) {
     return metadataError(error);
@@ -34,4 +29,14 @@ function transferError(error: OutputTransferError): OutputTransferError {
 function metadataError(error: Error): OutputTransferError {
   const code: unknown = Object.getOwnPropertyDescriptor(error, 'code')?.value;
   return new OutputTransferError(code === 'conflict' ? 'conflict' : 'storage');
+}
+
+function byteError(error: OutputByteError): OutputTransferError {
+    switch (error.code) {
+      case 'busy': return new OutputTransferError('busy');
+      case 'cleanup': return new OutputTransferError('cleanup');
+      case 'cancelled': case 'deadline': return new OutputTransferError('cancelled');
+      case 'integrity': case 'custody_missing': return new OutputTransferError('integrity');
+      default: return new OutputTransferError('storage');
+    }
 }

@@ -2,6 +2,8 @@ import type { ApiOperation } from '../generated/operations.js';
 import type { EffectiveSettings, SettingsScope } from '../generated/types.js';
 import type { PreparedInput } from './input.js';
 import { inputOwnership } from './input-ownership.js';
+import { runArtifactPageMatches } from './run-artifact-ownership.js';
+import type { RunArtifactPage } from '../generated/types.js';
 import { runEventPageMatches } from './run-event-ownership.js';
 import type { RunEventPage } from '../generated/types.js';
 import { runOwnership } from './run-ownership.js';
@@ -97,6 +99,8 @@ export function responseOwnership(operation: ApiOperation, input: PreparedInput,
   if (session(operation)) return true;
   if (operation.response === 'RunEventPage') return runEventPageMatches(value as RunEventPage, { id: input.params.runId!,
     scope: routeOwner(input) as RunEventPage['scope'], ...input.query! });
+  if (operation.response === 'RunArtifactPage') return runArtifactPageMatches(value as RunArtifactPage, { id: input.params.runId!,
+    attemptId: input.params.attemptId!, scope: routeOwner(input) as RunArtifactPage['scope'], ...input.query! });
   return genericResponseOwnership(operation, input, value as OwnedReply);
 }
 function genericResponseOwnership(operation: ApiOperation, input: PreparedInput, reply: OwnedReply): boolean {

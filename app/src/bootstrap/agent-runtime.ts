@@ -62,6 +62,11 @@ export async function openAgentRuntime(options: AgentRuntimeOptions, metadata: M
     throw error;
   }
   return openAgentOwners({ source, gateway: capturedGateway, metadata: deliveryMetadata,
-    openOutputs: onFailure => openOutputRuntime({ dataRoot, ...outputMetadata,
-      gateway: outputGateway, freeSpaceReserveBytes, onFailure }) });
+    openOutputs: async onFailure => {
+      const outputs = await openOutputRuntime({dataRoot, ...outputMetadata, gateway: outputGateway, freeSpaceReserveBytes, onFailure});
+      if (typeof outputs.publishedBytes?.read !== 'function') {
+        await outputs.close(); throw new Error('Missing published output read capability');
+      }
+      return outputs;
+    } });
 }

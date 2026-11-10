@@ -1,3 +1,4 @@
+import { RunArtifacts, artifactReadOperation } from './run-artifacts/index.js';
 import { OutputAbsences, absenceOperation } from './output-absence/index.js';
 import { OutputFinalizations, finalizationOperation } from './output-finalization/index.js';
 import { RunEvents } from './run-events/index.js';
@@ -39,6 +40,7 @@ export class Store {
   private readonly absences: OutputAbsences;
   private readonly finalizations: OutputFinalizations;
   private readonly results: RunResults;
+  private readonly runArtifacts: RunArtifacts;
   private readonly runEvents: RunEvents;
   private readonly outputs: OutputCustody;
   private readonly events: EventCustody;
@@ -66,6 +68,7 @@ export class Store {
     this.settings = transaction(db, () => new Settings(db, bootstrap));
     this.runs = new Runs(db, this.suites, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
     this.runReads = new RunReads(db, this.suites);
+    this.runArtifacts = new RunArtifacts(db, this.runReads);
     this.results = new RunResults(db, this.runReads);
     this.runEvents = new RunEvents(db, this.runReads);
     this.runCancellations = new RunCancellations(db, this.runReads);
@@ -145,6 +148,7 @@ export class Store {
     }
   }
   execute(operation: Operation): Value {
+    if (artifactReadOperation(operation)) return this.runArtifacts.execute(operation);
     if (absenceOperation(operation)) return this.absences.execute(operation);
     if (finalizationOperation(operation)) return this.finalizations.execute(operation);
     if (operation.kind === 'getRunEvents') return this.runEvents.get(operation.query);

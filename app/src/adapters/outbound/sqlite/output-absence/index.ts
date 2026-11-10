@@ -27,7 +27,8 @@ export class OutputAbsences {
     });
     return captureAbsenceReply(operation, result);
   }
-  private read(binding: EventBinding): OutputAbsenceState | null {
+  /** Shared read; caller owns the transaction. No mutations or native IO. */
+  read(binding: EventBinding): OutputAbsenceState | null {
     // Reuse the retained original's exact physical/scoped identity check.
     requireRetainedOriginal(this.db, binding);
     if (this.db.prepare('SELECT attempt_id FROM execution_output_sources WHERE attempt_id=?').get(binding.key.attempt.attemptId)) {

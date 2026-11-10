@@ -56,3 +56,5 @@ export class OutputCustody {
     return loadOutput(this.db, binding);
   }
 }
+
+export { decodeArtifact } from './slot.js';

@@ -1,3 +1,4 @@
+import { artifactReadOperation, captureArtifactReadOperation } from './run-artifacts/index.js';
 import { runEventsOperation, captureRunEventsOperation } from './run-events/index.js';
 import { absenceOperation, captureAbsenceOperation } from './output-absence/index.js';
 import { finalizationOperation, captureFinalizationOperation } from './output-finalization/index.js';
@@ -119,6 +120,9 @@ function checkedExtendedOperation(operation: Operation): boolean {
   return settingsRead(operation);
 }
 export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operation {
+  if (artifactReadOperation(input)) {
+    try { return captureArtifactReadOperation(input); } catch { throw new StorageError('invalid_input'); }
+  }
   if (runEventsOperation(input)) {
     try { return captureRunEventsOperation(input); } catch { throw new StorageError('invalid_input'); }
   }
@@ -183,12 +187,13 @@ export function operationMessageLimit(operation: Operation): number {
 
 /** One two-original allowance is shared by suites, Offers and event batches. */
 export function largeOperation(operation: Operation): boolean {
-  return suiteOperation(operation) || ['dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource', 'getRunResult', 'getRunEvents'].includes(dataProperty(operation, 'kind') as string);
+  return suiteOperation(operation) || ['dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource', 'getRunResult', 'getRunEvents', 'listRunArtifacts'].includes(dataProperty(operation, 'kind') as string);
 }
 export function operationReplyLimit(operation: Operation): number {
   if (absenceOperation(operation) || finalizationOperation(operation)) return 4096;
+  if (operation.kind === 'getRunArtifact') return 4096;
   if (runEventsOperation(operation)) return 262144;
-  if (resultOperation(operation)) return 73728;
+  if (['listRunArtifacts', 'getRunResult'].includes(operation.kind)) return 73728;
   if (outputOperation(operation)) return outputReplyLimit(operation);
   if (eventOperation(operation)) return eventReplyLimit(operation);
   if (dispatchOperation(operation)) return dispatchReplyLimit(operation);
@@ -197,6 +202,6 @@ export function operationReplyLimit(operation: Operation): number {
 
 /** Fixed small control/read requests never use large payload envelopes. */
 function compactOperation(operation: Operation): boolean {
-  return runEventsOperation(operation) || absenceOperation(operation) || finalizationOperation(operation)
+  return artifactReadOperation(operation) || runEventsOperation(operation) || absenceOperation(operation) || finalizationOperation(operation)
     || resultOperation(operation) || artifactOperation(operation);
 }
