@@ -1,7 +1,7 @@
 # Native output file ownership
 
-Status: coordinator implementation contract. Shared physical custody/promotion and
-standalone namespace lease and byte adapter are integrated. Combined transfer and
+Status: locally implemented and independently reviewed. Shared physical custody/
+promotion, namespace lease and byte adapter are integrated. Combined transfer and
 metadata-worker-failure process proofs remain pending. Depends on
 [output adoption](output-adoption.md) for original allocation and durable tokens.
 No filesystem receipt alone authorizes terminal state, deletion or quota refund.
