@@ -1,8 +1,9 @@
 # Private source values and stopped-root facts
 
 Status: independently reviewed, locally verified components. Durable collection
-intent/source transactions, matching-receipt finished-release gating and backend
-transfer/publication remain required; these components grant none of that authority.
+intent/source transactions and matching-receipt release are implemented in the
+[Journal component](output-source-journal.md). Controller wiring and backend
+transfer/publication remain required; these value components grant no authority.
 Contracts: [source commit](../design/lld/output-source-commit.md) and
 [collection intent](../design/lld/output-collection-intent.md).
 

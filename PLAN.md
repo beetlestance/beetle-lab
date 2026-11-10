@@ -60,8 +60,10 @@ not establish the new backend path, Compose install or supported architecture ma
 atomic output/staging holds through execution release and391 focused passing tests;
 source receipts, cleanup and complete result transfer/finalization remain pending.
 [Source values evidence](docs/verification/output-source-values.md) records reviewed
-private codecs, digest vectors and native stopped-root facts. Durable collection
-intents/source records and receipt-gated release are next, before backend transfer.
+private codecs, digest vectors and native stopped-root facts.
+[Source Journal evidence](docs/verification/output-source-journal.md) records
+implemented durable intents/sources, exact quota and receipt-gated release.
+Controller lifecycle/recovery wiring is next, before backend artifact transfer.
 
 ## Delivery order
 
