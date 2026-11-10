@@ -18,6 +18,8 @@ export function ownerFixture(start: ReturnType<typeof vi.fn>) {
   const gateway: RunnerGateway = { capabilities: vi.fn(unexpected), attempt: vi.fn(() => { throw new Error('Unexpected client'); }),
     close: vi.fn(async () => {}) };
   const metadata = { dispatch: { scan: vi.fn(unexpected), readOffer: vi.fn(unexpected), claim: vi.fn(unexpected), observe: vi.fn(unexpected) },
+    events: { scan: vi.fn(unexpected), load: vi.fn(unexpected), ingest: vi.fn(unexpected),
+      confirmAck: vi.fn(unexpected), recordProblem: vi.fn(unexpected) },
     runs: { cancel: vi.fn(unexpected), execute: vi.fn(unexpected), getRun: vi.fn(unexpected), listRuns: vi.fn(unexpected) },
     updateRuntime: vi.fn(async (value: typeof frame | null): Promise<null> => { void value; return null; }) };
   let options: DeliveryRuntimeOptions | undefined;

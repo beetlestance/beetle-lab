@@ -1,3 +1,4 @@
+import type { EventCustodyStore } from './events.js';
 import type { DispatchStore } from './dispatch.js';
 import type { RunnerGateway } from './runner.js';
 import type { RunReader } from './runs.js';
@@ -15,6 +16,7 @@ export interface DeliveryRuntime {
 }
 export interface DeliveryRuntimeOptions {
   readonly store: DispatchStore;
+  readonly events: EventCustodyStore;
   readonly runs: Pick<RunReader, 'getRun'>;
   /** Same installation gateway/credits as capacity; this owner never closes it. */
   readonly gateway: RunnerGateway;

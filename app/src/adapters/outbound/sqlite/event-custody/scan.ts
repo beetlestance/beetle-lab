@@ -1,10 +1,9 @@
 import type { DatabaseSync, SQLOutputValue } from 'node:sqlite';
 import { validatePrimitive } from '@beetle/contracts';
 import { EVENT_CURSOR_BYTES, EVENT_PAGE_BYTES } from '../../../../ports/events.js';
-import { captureEventBinding } from '../../../../domain/events/index.js';
+import { captureEventBinding, captureEventKey } from '../../../../domain/events/index.js';
 import type { EventPage, EventScan } from '../../../../ports/events.js';
 import { requireRule } from '../../../../domain/namespaces/index.js';
-import { captureDispatchKey } from '../dispatch-values.js';
 import { boundedCopy } from '../input-values.js';
 import { StorageError } from '../protocol.js';
 import { closed, cursor, natural, scanQuery } from './values.js';
@@ -45,7 +44,7 @@ export function scanEvents(db: DatabaseSync, installation: string, query: EventS
     ORDER BY queue_order,attempt_id LIMIT ?`).all(...state.after, ...state.upper, query.limit + 1);
   const items = rows.slice(0, query.limit).map(row => {
     const at = rowPosition(row);
-    const key = captureDispatchKey({ runId: row.run_id, attempt: { organizationId: row.organization_id,
+    const key = captureEventKey({ runId: row.run_id, attempt: { organizationId: row.organization_id,
       workspaceId: row.workspace_id, attemptId: row.attempt_id, intentDigest: row.intent_digest, generation: 1 } });
     const common = { order: at[0], after: encode({ ...state, after: at }) };
     if (row.journal_authority === null) return { ...common, kind: 'unbound' as const, key };

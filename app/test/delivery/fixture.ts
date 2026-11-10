@@ -3,6 +3,7 @@ import type { AttemptSnapshot, ClientResult, Offer, ProtocolError } from '@beetl
 import type { Run } from '@beetle/contracts/api';
 import type { DispatchCandidate, DispatchClaim, DispatchKey, DispatchPage, DispatchScan, DispatchStore } from '../../src/ports/dispatch.js';
 import type { RunnerAttemptClient, RunnerGateway } from '../../src/ports/runner.js';
+import type { EventCustodyStore } from '../../src/ports/events.js';
 import type { DeliveryRuntimeOptions } from '../../src/ports/delivery.js';
 import { startDeliveryRuntime } from '../../src/adapters/outbound/runner/delivery/index.js';
 import offerFixture from '../../../contracts/fixtures/valid/offer.json' with { type: 'json' };
@@ -68,8 +69,12 @@ export function fixture() {
   const gateway = { attempt: vi.fn<RunnerGateway['attempt']>(() => client),
     capabilities: vi.fn<RunnerGateway['capabilities']>(), close: vi.fn<RunnerGateway['close']>() };
   const onFailure = vi.fn<DeliveryRuntimeOptions['onFailure']>(async () => undefined);
-  const options = { store, runs: { getRun }, gateway, onFailure, intervalMs: 25 };
-  return { key, run, client, store, getRun, gateway, onFailure, options, calls,
+  const unexpected = async (): Promise<never> => { throw new Error('Unexpected event fixture operation'); };
+  const events = { scan: vi.fn<EventCustodyStore['scan']>(async () => ({ items: [], nextCursor: null })),
+    load: vi.fn<EventCustodyStore['load']>(unexpected), ingest: vi.fn<EventCustodyStore['ingest']>(unexpected),
+    confirmAck: vi.fn<EventCustodyStore['confirmAck']>(unexpected), recordProblem: vi.fn<EventCustodyStore['recordProblem']>(unexpected) };
+  const options = { store, events, runs: { getRun }, gateway, onFailure, intervalMs: 25 };
+  return { key, run, client, store, events, getRun, gateway, onFailure, options, calls,
     start: () => startDeliveryRuntime(options),
     claim: (kind: Exclude<DispatchClaim['kind'], 'blocked'>) => store.claim.mockImplementation(async () => {
       calls.push('claim');
