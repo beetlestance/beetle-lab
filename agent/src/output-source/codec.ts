@@ -1,33 +1,11 @@
-import { verifyEngineResultSeal } from '@beetle/contracts';
-import type { EngineResult, ResultDigest } from '@beetle/contracts';
+import { prepareOutputManifest, verifyOutputManifest } from '@beetle/contracts/output-source';
+import { digest, publicCore } from '@beetle/contracts/output-source/internal';
 import { capture, canonical, checked, fields, freeze, requireInput } from './capture.js';
-import { binding, checkpoint, counts, release, result, root, sha, uuid } from './shape.js';
-import { OUTPUT_MANIFEST_BYTES, OUTPUT_MANIFEST_PREFIX, OUTPUT_SOURCE_BYTES, OUTPUT_SOURCE_PREFIX,
+import { binding, checkpoint, release, root, sha, uuid } from './shape.js';
+import { OUTPUT_MANIFEST_BYTES, OUTPUT_SOURCE_BYTES, OUTPUT_SOURCE_PREFIX,
   OUTPUT_SOURCE_RECEIPT_BYTES, OutputSourceError } from './limits.js';
 import type { PrepareOutputSource, VerifyOutputSource, ReceiptForOutputSource, PublicCore, PrivateCore, PrivateSource } from './types.js';
 
-function digest(text: string, provider: ResultDigest): string {
-  try {
-    const value = provider(text);
-    if (typeof value !== 'string' || !/^[a-f0-9]{64}$/.test(value)) throw new Error('Invalid digest');
-    return value;
-  } catch { throw new OutputSourceError('digest_failed'); }
-}
-function seal(value: EngineResult, provider: ResultDigest): void {
-  const verified = verifyEngineResultSeal(value, provider);
-  if (!verified.ok) {
-    const codes = { invalid_result: 'invalid_input', digest_failed: 'digest_failed', seal_mismatch: 'integrity' } as const;
-    throw new OutputSourceError(codes[verified.code]);
-  }
-}
-function publicCore(input: unknown, stored: boolean): PublicCore {
-  const value = fields(input, `version,binding,result,resultFileBytes,controlBytes,verifiedBytes${stored ? ',manifestDigest' : ''}`);
-  requireInput(value.version === 1);
-  const original = binding(value.binding); const engineResult = result(value.result, original);
-  counts({ resultFileBytes: value.resultFileBytes, controlBytes: value.controlBytes, verifiedBytes: value.verifiedBytes }, engineResult);
-  return { version: 1, binding: original, result: engineResult, resultFileBytes: value.resultFileBytes as number,
-    controlBytes: value.controlBytes as number, verifiedBytes: value.verifiedBytes as number };
-}
 function privateCore(input: unknown): PrivateCore {
   const value = fields(input, 'version,manifest,root,checkpoint,release,sourceDigest');
   requireInput(value.version === 1);
@@ -54,9 +32,7 @@ function collected(input: unknown): { public: PublicCore; private: Omit<PrivateC
 /** Pure content preparation; native custody and original admission remain separate. */
 export const prepareOutputSource: PrepareOutputSource = (input, provider) => checked(() => {
   const value = collected(capture(input, OUTPUT_SOURCE_BYTES));
-  seal(value.public.result as EngineResult, provider);
-  const manifestDigest = digest(OUTPUT_MANIFEST_PREFIX + canonical(value.public, OUTPUT_MANIFEST_BYTES), provider);
-  const manifest = { ...value.public, manifestDigest }; canonical(manifest, OUTPUT_MANIFEST_BYTES);
+  const manifest = prepareOutputManifest(value.public, provider);
   const core: PrivateCore = { version: 1, manifest, ...value.private };
   const sourceDigest = digest(OUTPUT_SOURCE_PREFIX + canonical(core, OUTPUT_SOURCE_BYTES), provider);
   const source = { ...core, sourceDigest }; canonical(source, OUTPUT_SOURCE_BYTES);
@@ -65,9 +41,8 @@ export const prepareOutputSource: PrepareOutputSource = (input, provider) => che
 /** Check the complete private envelope, result seal and both content digests. */
 export const verifyOutputSource: VerifyOutputSource = (input, provider) => checked(() => {
   const value = capture(input, OUTPUT_SOURCE_BYTES) as PrivateSource;
-  const core = privateCore(value); seal(core.manifest.result as EngineResult, provider);
-  const { manifestDigest, ...manifestCore } = core.manifest;
-  if (digest(OUTPUT_MANIFEST_PREFIX + canonical(manifestCore, OUTPUT_MANIFEST_BYTES), provider) !== manifestDigest) throw new OutputSourceError('integrity');
+  const captured = privateCore(value);
+  const core: PrivateCore = { ...captured, manifest: verifyOutputManifest(captured.manifest, provider) };
   if (digest(OUTPUT_SOURCE_PREFIX + canonical(core, OUTPUT_SOURCE_BYTES), provider) !== value.sourceDigest) throw new OutputSourceError('integrity');
   return freeze({ ...core, sourceDigest: value.sourceDigest });
 });
