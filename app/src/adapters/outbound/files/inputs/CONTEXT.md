@@ -11,6 +11,7 @@ Reads verify the entire expected hash/size before awaited bounded sink writes.
 All native descriptors belong to synchronous jobs, through once-only close.
 Failure codes are fixed; cancellation drains originals. Failed close retains the
 job/handle with pending settlement, allowing the service to fence intake.
+Physical custody owner: sibling `custody/index.ts`; input jobs map neutral errors.
 Native test seam: `store.ts`/`native.ts`; production always uses Node operations.
 Limits:8MiB expected payload,64KiB chunks; statfs supplements logical quota.
 Contract: `docs/design/lld/input-publication.md`, `app/src/ports/input-bytes.ts`.

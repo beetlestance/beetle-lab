@@ -1,10 +1,9 @@
 import type { FileHandle } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { CapturedInput } from './capture.js';
 import { checkRoots, privateStat, sameDirectory } from './identity.js';
 import type { Identity, Root, Roots } from './identity.js';
-import { errorCode, fail } from './job.js';
-import type { Custody } from './job.js';
+import { errorCode, fail } from './errors.js';
+import type { Custody } from './custody.js';
 import { directoryFlags } from './native.js';
 
 export interface Directory extends Identity { readonly handle: FileHandle }
@@ -32,9 +31,9 @@ export class Directories {
     const entry = { path, stat, handle }; this.opened.set(path, entry);
     await this.check(); return entry;
   }
-  async location(root: Root, input: CapturedInput, create: boolean): Promise<Location> {
+  async location(root: Root, input: { readonly components: readonly string[]; readonly name: string }, create: boolean): Promise<Location> {
     let parent = await this.open(root.path);
-    const path = join(root.path, ...input.components, input.sha256);
+    const path = join(root.path, ...input.components, input.name);
     for (const component of input.components) {
       const child = join(parent.path, component);
       await this.check();

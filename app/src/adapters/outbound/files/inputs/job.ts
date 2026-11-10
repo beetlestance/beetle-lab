@@ -1,7 +1,7 @@
-import type { FileHandle } from 'node:fs/promises';
 import { InputByteError } from '../../../../ports/input-bytes.js';
 import type { InputByteContext, InputByteJob } from '../../../../ports/input-bytes.js';
-import type { NativePort } from './native.js';
+import { Custody, FileCustodyError } from '../custody/index.js';
+import type { NativePort } from '../custody/index.js';
 
 // Reachability is custody, not admission: the service alone limits concurrent jobs.
 const owners = new Set<Custody>();
@@ -12,28 +12,8 @@ export function errorCode(error: unknown): string | undefined {
 }
 export function safeError(error: unknown): InputByteError {
   if (error instanceof InputByteError) return error;
+  if (error instanceof FileCustodyError) return new InputByteError(error.code);
   return new InputByteError(errorCode(error) === 'ENOSPC' ? 'capacity_unavailable' : 'io');
-}
-export class Custody {
-  private readonly handles = new Set<FileHandle>();
-  constructor(readonly port: NativePort, readonly context: InputByteContext) {}
-  check(): void {
-    if (this.context.signal?.aborted) fail('cancelled');
-    if (!Number.isSafeInteger(this.context.freeSpaceReserveBytes) || this.context.freeSpaceReserveBytes < 0) fail('invalid_input');
-  }
-  async open(path: string, flags: number, mode?: number): Promise<FileHandle> {
-    this.check();
-    const handle = await this.port.open(path, flags, mode);
-    this.handles.add(handle); this.check(); return handle;
-  }
-  async close(): Promise<boolean> {
-    let closed = true;
-    for (const handle of this.handles) {
-      try { await this.port.close(handle); this.handles.delete(handle); }
-      catch { closed = false; }
-    }
-    return closed;
-  }
 }
 export function startJob<T>(port: NativePort, context: InputByteContext,
   work: (owner: Custody) => Promise<T>): InputByteJob<T> {
@@ -49,7 +29,7 @@ export function startJob<T>(port: NativePort, context: InputByteContext,
     const closed = await owner.close();
     if (!closed) fail('cleanup');
     owners.delete(owner); release();
-    owner.check();
+    try { owner.check(); } catch (error) { throw safeError(error); }
     if (failure) throw failure;
     return value as T;
   });
