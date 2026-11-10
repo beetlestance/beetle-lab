@@ -1,4 +1,6 @@
 import { Runs } from './runs.js';
+import { RunCancellations } from './run-cancellations.js';
+import { captureCancelRunReply } from './run-cancellation-reply.js';
 import { DispatchClaims } from './dispatch-claims.js';
 import { DispatchObservations } from './dispatch-observations.js';
 import { dispatchOperation } from './dispatch-wire.js';
@@ -31,6 +33,7 @@ export class Store {
   private readonly dispatchClaims: DispatchClaims;
   private readonly dispatchObservations: DispatchObservations;
   private readonly runs: Runs;
+  private readonly runCancellations: RunCancellations;
   private readonly runReads: RunReads;
   private readonly inputs: Inputs;
   private readonly inputReads: InputReads;
@@ -47,6 +50,7 @@ export class Store {
     this.settings = transaction(db, () => new Settings(db, bootstrap));
     this.runs = new Runs(db, this.suites, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
     this.runReads = new RunReads(db, this.suites);
+    this.runCancellations = new RunCancellations(db, this.runReads);
     this.dispatchClaims = new DispatchClaims(db, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
     this.dispatchObservations = new DispatchObservations(db, this.runReads);
     this.inputs = new Inputs(db, this.entities, this.settings);
@@ -54,17 +58,20 @@ export class Store {
     this.namespaces = new Namespaces(db, this.entities, this.settings);
     this.reads = new Reads(db, this.entities);
   }
-  private mutation(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' }>): Value {
+  private mutation(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' }>): Value {
     const command = operation.command;
     return transaction(this.db, () => {
       const scope = scopeKey(command.request.scope);
       const requestId = lower(command.request.requestId);
-      const receipt = this.db.prepare('SELECT digest,result_json FROM receipts WHERE scope_key=? AND request_id=?')
-        .get(scope, requestId);
+      const receipt = this.db.prepare(`SELECT digest,
+        CASE WHEN length(CAST(result_json AS BLOB))<=? THEN result_json ELSE NULL END result_json
+        FROM receipts WHERE scope_key=? AND request_id=?`)
+        .get(operationMessageLimit(operation), scope, requestId);
       if (receipt) {
         if (receipt.digest !== command.intentDigest) throw new StorageError('conflict');
         if (typeof receipt.result_json !== 'string') throw new StorageError('unavailable');
-        return JSON.parse(receipt.result_json) as Value;
+        const value = JSON.parse(receipt.result_json) as Value;
+        return operation.kind === 'cancelRun' ? captureCancelRunReply(value, operation.command) : value;
       }
       const value = this.change(operation);
       const copy = boundedCopy(value, operationMessageLimit(operation));
@@ -73,9 +80,10 @@ export class Store {
       return copy;
     });
   }
-  private change(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' }>): Value {
+  private change(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' }>): Value {
     switch (operation.kind) {
       case 'run': return this.runs.create(operation.command);
+      case 'cancelRun': return this.runCancellations.cancel(operation.command);
       case 'input': return this.inputs.control(operation.command);
       case 'suite': return this.suites.change(operation.command);
       case 'namespace': return this.namespaces.change(operation.command);
@@ -85,7 +93,7 @@ export class Store {
   private runOperation(operation: Operation): Value {
     if (dispatchOperation(operation)) return this.dispatch(operation);
     switch (operation.kind) {
-      case 'run': return this.mutation(operation);
+      case 'run': case 'cancelRun': return this.mutation(operation);
       case 'getRun': return this.runReads.get(operation.key);
       case 'listRuns': return this.runReads.list(operation.query);
       default: throw new StorageError('invalid_input');
@@ -119,7 +127,7 @@ export class Store {
     }
   }
   execute(operation: Operation): Value {
-    if (['run', 'getRun', 'listRuns', 'dispatchScan', 'dispatchReadOffer', 'dispatchClaim', 'dispatchObserve']
+    if (['run', 'cancelRun', 'getRun', 'listRuns', 'dispatchScan', 'dispatchReadOffer', 'dispatchClaim', 'dispatchObserve']
       .includes(operation.kind)) return this.runOperation(operation);
     if (suiteOperation(operation)) return this.suiteOperation(operation);
     if (['getSettings', 'getSettingsIdentity', 'runtime'].includes(operation.kind)) return this.settingsOperation(operation);
