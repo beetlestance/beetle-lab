@@ -1,10 +1,10 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { chmod, link, lstat, mkdir, readdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { runtimeName, RuntimePlan } from '../../src/backends/docker/index.js';
 import { serializeStagedOffer, estimateStaging } from '../../src/admission/index.js';
-import { scope, configuration } from '../admission/fixtures.js';
+import { scope, configuration, reserved } from '../admission/fixtures.js';
 import { data, fixture, hash, operation, stream } from './fixtures.js';
 
 const f = fixture();
@@ -117,13 +117,34 @@ it('rejects a hardlink introduced by an input stream before its first write', as
 });
 it('requires pinned staging policy and exact charge even for existing charged rows', async () => {
   const path = f.path(); let owner = await f.configured(path); const e = await f.environment(false);
-  await f.enqueue(owner, e.offer); await f.admit(owner, e.offer); await f.close(owner);
-  const db = new DatabaseSync(path);
-  try { db.exec("UPDATE reservations SET reservation_json=json_remove(reservation_json,'$.staging')"); }
-  finally { db.close(); }
+  await f.enqueue(owner, e.offer); await f.admit(owner, e.offer);
+  const original = reserved(await owner.admission({ kind: 'reservation', key: scope(e.offer) }));
+  await f.close(owner);
+  const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+  try {
+    const rows = () => ['reservations', 'accepted_attempts', 'admission_queue', 'event_spool', 'supervision_clock',
+      'disk_holds', 'disk_retention_stats', 'sqlite_sequence'].map(table => ({ table, rows: db.prepare(`SELECT * FROM ${table}`).all() }));
+    const before = rows();
+    expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+    expect(() => db.exec("UPDATE reservations SET reservation_json=json_remove(reservation_json,'$.staging')"))
+      .toThrow('immutable disk reservation');
+    expect(rows()).toEqual(before);
+    expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+  } finally { db.close(); }
   owner = await f.open(path);
-  const task = e.prepare(e.create({ journal: owner })); expect(await task.result).toEqual({ ok: false, reason: 'reservation' }); await task.quiesced;
-  expect(await readdir(e.rootPath)).toEqual([]);
+  const malformed = structuredClone(original); Reflect.deleteProperty(malformed, 'staging');
+  const admission = owner.admission.bind(owner);
+  const reply = vi.spyOn(owner, 'admission').mockImplementation(input => input.kind === 'reservation'
+    ? Promise.resolve(structuredClone(malformed)) : admission(input));
+  const providers = { input: vi.fn(e.options.providers.input), secret: vi.fn(e.options.providers.secret) };
+  try {
+    const task = e.prepare(e.create({ journal: owner, providers }));
+    expect(await task.result).toEqual({ ok: false, reason: 'reservation' }); await task.quiesced;
+    expect(reply).toHaveBeenCalledWith({ kind: 'reservation', key: scope(e.offer) });
+    expect(providers.input).not.toHaveBeenCalled(); expect(providers.secret).not.toHaveBeenCalled();
+    expect(await readdir(e.rootPath)).toEqual([]);
+  } finally { reply.mockRestore(); }
+  expect(await owner.admission({ kind: 'reservation', key: scope(e.offer) })).toEqual(original);
 });
 
 it('hashes a backpressured multichunk stream and refuses reuse of completed evidence', async () => {
