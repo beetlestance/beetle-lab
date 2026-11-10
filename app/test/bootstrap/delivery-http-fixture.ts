@@ -6,6 +6,7 @@ import { loopback, loaded, send } from '../runner/fixtures.js';
 import { capabilities } from '../capacity/fixture.js';
 import { snapshotFor } from '../storage/execution-foundation-fixtures.js';
 import { scope, uuid } from '../storage/fixture.js';
+import { eventHttpPeer } from './event-http-peer.js';
 
 export const journalAuthority = '33333333-3333-4333-8333-333333333333';
 async function body(request: IncomingMessage): Promise<string> {
@@ -34,6 +35,7 @@ function protocol(reason: ProtocolError['reason'], attemptId: string): ProtocolE
 
 /** Real TCP fake-agent receipt. It does not claim a real agent/engine execution. */
 export async function deliveryHttpFixture(initial: RunProfilePin) {
+  const events = eventHttpPeer();
   const state = { profile: initial, snapshots: true, losePut: false, puts: 0, gets: 0, caps: 0,
     accepted: 0, absences: 0, requireAbsence: false, receipt: undefined as AttemptSnapshot | undefined,
     original: undefined as Offer | undefined, bytes: undefined as string | undefined,
@@ -43,17 +45,22 @@ export async function deliveryHttpFixture(initial: RunProfilePin) {
     if (request.url === '/runner/v1/capabilities') {
       getCapabilities(response); return;
     }
-    const match = /^\/runner\/v1\/attempts\/([0-9a-f-]{36})$/.exec(request.url ?? '');
-    if (!match?.[1]) throw new Error('Unexpected fixture route');
-    const attemptId = match[1];
+    const match = /^\/runner\/v1\/attempts\/([0-9a-f-]{36})(?:\/(events|ack)(?:\?after=[0-9]+)?)?$/.exec(request.url ?? '');
+    if (!match) throw new Error('Unexpected fixture route');
+    const attemptId = match[1]!;
     if (request.headers['x-beetle-journal-authority'] !== journalAuthority) {
       send(response, protocol('authority_mismatch', attemptId), 409); return;
     }
     const count = request.rawHeaders.filter((name, index) => index % 2 === 0 && name.toLowerCase() === 'x-beetle-journal-authority').length;
     if (count !== 1) throw new Error('Fixture authority multiplicity');
+    if (match[2]) { await eventRequest(request, response, attemptId); return; }
     if (request.method === 'GET') { getSnapshot(response, attemptId); return; }
     if (request.method !== 'PUT') throw new Error('Unexpected fixture method');
     await putOffer(request, response, attemptId);
+  }
+  async function eventRequest(request: IncomingMessage, response: ServerResponse, attemptId: string): Promise<void> {
+    if (!state.original) { send(response, protocol('attempt_not_found', attemptId), 404); return; }
+    await events.handle(request, response, state.original);
   }
   function getCapabilities(response: ServerResponse): void {
     if (++state.caps > 128) throw new Error('Fixture capability bound');
@@ -85,6 +92,6 @@ export async function deliveryHttpFixture(initial: RunProfilePin) {
       state.failure ??= { error }; if (!response.destroyed) { response.writeHead(500); response.end(); }
     });
   });
-  return { state, close: server.close, connection: { ...server.loaded, configuration: {
+  return { state, events: events.state, close: server.close, connection: { ...server.loaded, configuration: {
     ...server.loaded.configuration, profiles: [initial], storageAllocationBytes: 2_000_000, freeSpaceReserveBytes: 2000 } } };
 }

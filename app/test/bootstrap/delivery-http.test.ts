@@ -6,7 +6,7 @@ import type { AgentRuntime } from '../../src/bootstrap/agent-runtime.js';
 import type { Metadata } from '../../src/adapters/outbound/sqlite/index.js';
 import { seed, settingsFixture, storageFixture, observation, scope } from '../storage/fixture.js';
 import { append, createSuite } from '../storage/suites-fixture.js';
-import { runCommand, runOptions } from '../storage/runs-fixture.js';
+import { runCommand, runOptions, runRequest } from '../storage/runs-fixture.js';
 import { deliveryHttpFixture, journalAuthority } from './delivery-http-fixture.js';
 
 const fixture = storageFixture();
@@ -77,6 +77,57 @@ it('recovers a lost PUT response after backend worker restart and profile drift 
     expect(server.state.original).toEqual(original.offer); expect(server.state.failure).toBeUndefined();
     expect(await metadata.dispatch.claim(key)).toEqual({ kind: 'acknowledged', journalAuthority });
     expect((await metadata.dispatch.readOffer(key)).offer).toEqual(original.offer);
+  } finally {
+    try { await runtime?.close(); }
+    finally { try { if (metadata) await fixture.close(metadata); } finally { await server.close(); } }
+  }
+});
+
+it('stores events before TCP ACK, then re-ACKs a pruned prefix after a lost reply and metadata restart', async () => {
+  const configured = options();
+  configured.installation.values.pool.outputBytes = 20_000;
+  configured.installation.values.perRunCeilings.outputBytes = 10_000;
+  configured.runtime!.ceilings.pool.outputBytes = 20_000;
+  configured.runtime!.ceilings.perRun.outputBytes = 10_000; const server = await deliveryHttpFixture(configured.runs!.profiles[0]!);
+  server.events.count = 2; server.events.loseAck = true;
+  const root = await realpath(fixture.root()); const path = join(root, 'event-ack-loss.sqlite');
+  let metadata: Metadata | undefined; let runtime: AgentRuntime | undefined;
+  let binding: Parameters<Metadata['events']['load']>[0] | undefined;
+  const beforeAck: number[] = [];
+  server.events.beforeAck = async through => {
+    if (!binding || !metadata) throw new Error('ACK before durable binding');
+    const state = await metadata.events.load(binding);
+    expect(state.durableThrough).toBe(through); expect(state.eventCount).toBe(through);
+    expect(state.retainedBytes).toBeGreaterThan(0); beforeAck.push(through);
+  };
+  try {
+    metadata = await fixture.open(path, configured); await seed(metadata);
+    const revision = await append(metadata, await createSuite(metadata));
+    const request = runRequest(revision.id); request.budget.outputBytes = 10_000;
+    const run = await metadata.runs.execute(runCommand(revision.id, 70, request));
+    const key = (await metadata.dispatch.scan({ lane: 'queued', limit: 1 })).items[0]!.key;
+    binding = { key, journalAuthority };
+    runtime = await openAgentRuntime({ connection: server.connection, dataRoot: root }, metadata);
+    await until(async () => {
+      if (server.state.failure) throw server.state.failure.error;
+      if (runtime?.state().status === 'failed') throw new Error(`Delivery failed: ${JSON.stringify(runtime.state())}; peer=${JSON.stringify(server.events)}`);
+      return server.events.acknowledged === 2;
+    });
+    await runtime.close(); runtime = undefined;
+    const stored = await metadata.events.load(binding);
+    expect(stored).toMatchObject({ durableThrough: 2, eventCount: 2, ackConfirmedThrough: 0, coverage: 'contiguous', blockedReason: null });
+    expect(server.events.afters).toEqual([0]); expect(server.events.acks).toBe(1);
+    await fixture.close(metadata); metadata = await fixture.open(path, { ...configured, runtime: null });
+    expect(await metadata.events.load(binding)).toEqual(stored);
+    runtime = await openAgentRuntime({ connection: server.connection, dataRoot: root }, metadata);
+    const resumed = metadata; const exactBinding = binding;
+    await until(async () => (await resumed.events.load(exactBinding)).ackConfirmedThrough === 2);
+    await runtime.close(); runtime = undefined;
+    expect(await metadata.events.load(binding)).toEqual({ ...stored, ackConfirmedThrough: 2 });
+    expect(beforeAck).toEqual([2, 2]); expect(server.events.afters).toEqual([0]);
+    expect(server.events.acks).toBe(2); expect(server.state.accepted).toBe(1); expect(server.state.puts).toBe(1);
+    expect((await metadata.runs.getRun({ id: run.id, scope })).state).toBe('active');
+    expect(server.state.failure).toBeUndefined();
   } finally {
     try { await runtime?.close(); }
     finally { try { if (metadata) await fixture.close(metadata); } finally { await server.close(); } }
