@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import type { AgentEvent } from '@beetle/contracts';
 import type { EventBinding } from '../../src/ports/events.js';
 import type { Metadata } from '../../src/adapters/outbound/sqlite/index.js';
-import type { Journal } from '../../../agent/src/journal/index.js';
+import type { AgentFixture } from './agent-fixture.js';
 import { seed, observation, settingsFixture, storageFixture } from '../storage/fixture.js';
 import { append, createSuite } from '../storage/suites-fixture.js';
 import { runCommand, runOptions, runRequest } from '../storage/runs-fixture.js';
@@ -20,7 +20,7 @@ export function configured(authority: string) {
   return { installation: values.chain.installation, runtime, ...runOptions() };
 }
 
-export async function boundOriginal(metadata: Metadata, journal: Journal): Promise<EventBinding> {
+export async function boundOriginal(metadata: Metadata, journal: AgentFixture): Promise<EventBinding> {
   await seed(metadata);
   const revision = await append(metadata, await createSuite(metadata));
   const request = runRequest(revision.id); request.budget.outputBytes = 10_000;
@@ -35,7 +35,7 @@ export async function boundOriginal(metadata: Metadata, journal: Journal): Promi
   return { key, journalAuthority: authority };
 }
 
-export async function appendEvents(journal: Journal, binding: EventBinding): Promise<AgentEvent[]> {
+export async function appendEvents(journal: AgentFixture, binding: EventBinding): Promise<AgentEvent[]> {
   const { attemptId, organizationId, workspaceId, generation } = binding.key.attempt;
   const first = await journal.appendSupervisor({ sourceOrdinal: 1, event: {
     version: '1.0', attemptId, organizationId, workspaceId, generation, phase: 'execute', source: 'agent',
@@ -59,17 +59,9 @@ export function inspectBackend(path: string) {
   } finally { db.close(); }
 }
 
-export function inspectJournal(path: string) {
-  const db = new DatabaseSync(path, { readOnly: true });
-  try {
-    return { attempts: db.prepare(`SELECT attempt_id,last_seq,acknowledged_seq,retained_start_seq,spool_rows,spool_bytes
-      FROM accepted_attempts LIMIT 2`).all(), rows: db.prepare('SELECT seq FROM event_spool ORDER BY seq LIMIT 3').all() };
-  } finally { db.close(); }
-}
-
 export function metadataFixture() {
   const fixture = storageFixture();
-  return { ...fixture, async start(journal: Journal) {
+  return { ...fixture, async start(journal: AgentFixture) {
     const authority = await journal.journalAuthority();
     const path = fixture.path();
     const workerUrl = await commitProbe(fixture.root(), fixture.workerUrl());

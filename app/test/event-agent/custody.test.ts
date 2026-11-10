@@ -4,15 +4,14 @@ import type { Metadata } from '../../src/adapters/outbound/sqlite/index.js';
 import type { RunnerGateway } from '../../src/ports/runner.js';
 import { collectEvents } from '../../src/adapters/outbound/runner/events/index.js';
 import { prepareEventBatch } from '../../src/domain/events/index.js';
-import { journalFixture } from '../../../agent/test/journal/fixtures.js';
-import { committed } from '../bootstrap/event-commit-probe.js';
 import { scope } from '../storage/fixture.js';
 import { agentHttpFixture } from './http-fixture.js';
-import { appendEvents, configured, inspectBackend, inspectJournal, metadataFixture } from './storage-fixture.js';
+import { agentProcessFixture } from './agent-fixture.js';
+import { appendEvents, configured, inspectBackend, metadataFixture } from './storage-fixture.js';
 
 const peers = agentHttpFixture();
-const journals = journalFixture();
 const backend = metadataFixture();
+const journals = agentProcessFixture(backend.root);
 function collect(metadata: Metadata, gateway: RunnerGateway, binding: EventBinding) {
   return collectEvents({ store: metadata.events, attempt: gateway.attempt,
     signal: new AbortController().signal, stopped: () => false }, binding);
@@ -38,18 +37,19 @@ it('collects actual Journal events over agent TCP, durably ACKs, and retains exa
   const stored = await metadata.events.load(binding);
   expect(stored).toMatchObject({ durableThrough: 2, ackConfirmedThrough: 2, eventCount: 2,
     retainedBytes: charge, blockedReason: null, coverage: 'contiguous' });
-  expect(peer.state.receipts).toMatchObject([{ acknowledgedSeq: 2, attemptId: binding.key.attempt.attemptId }]);
+  expect((await peer.traffic()).receipts).toMatchObject([{ acknowledgedSeq: 2, attemptId: binding.key.attempt.attemptId }]);
   expect(await journal.prune(binding.key.attempt)).toMatchObject({ pruned: 2, snapshot: { lastSeq: 2, retainedStartSeq: 3 } });
   await expect(journal.readEvents(binding.key.attempt, 0)).rejects.toMatchObject({ code: 'cursor_expired' });
   await collect(metadata, peer.gateway, binding);
   expect(await metadata.events.load(binding)).toEqual(stored);
-  expect(peer.state.requests).toEqual([eventsPath(binding, 0), ackPath(binding), eventsPath(binding, 2)]);
+  expect((await peer.traffic()).requests).toEqual([eventsPath(binding, 0), ackPath(binding), eventsPath(binding, 2)]);
   expect(await metadata.runs.getRun({ id: binding.key.runId, scope })).toEqual(runBefore);
-  await peer.close(); await backend.close(metadata); await journals.close(journal);
+  await peer.close(); await backend.close(metadata);
+  const journalState = await journal.inspect(); await journals.close(journal);
   const persisted = inspectBackend(f.path);
   expect(persisted.rows).toEqual(expected.map(record => ({ seq: record.seq, canonical_json: record.canonical, charged_bytes: record.chargedBytes })));
   expect(persisted.custody).toEqual(f.baseline.custody); expect(persisted.foreignKeys).toEqual([]);
-  expect(inspectJournal(journalPath)).toEqual({ rows: [], attempts: [{ attempt_id: binding.key.attempt.attemptId,
+  expect(journalState).toEqual({ rows: [], attempts: [{ attempt_id: binding.key.attempt.attemptId,
     last_seq: 2, acknowledged_seq: 2, retained_start_seq: 3, spool_rows: 0, spool_bytes: 0 }] });
 });
 
@@ -60,40 +60,44 @@ it('loses an applied real ACK response, prunes, and reopens both original paths 
   const batch = await journal.readEvents(binding.key.attempt, 0);
   const expected = prepareEventBatch({ binding, after: 0, batch }).records;
   const charge = expected.reduce((sum, record) => sum + record.chargedBytes, 0);
-  const observations: unknown[] = [];
-  let peer = await peers(journal); peer.state.loseAck = true;
-  peer.state.beforeAck = () => { observations.push(committed(f.path)); };
+  let peer = await peers(journal);
+  await peer.configure({ loseAck: true, commitPath: f.path + '.commit-observed' });
   const runBefore = await metadata.runs.getRun({ id: binding.key.runId, scope });
   await collect(metadata, peer.gateway, binding);
-  expect(peer.state.receipts).toHaveLength(1);
-  expect(peer.state.receipts[0]?.acknowledgedSeq).toBe(2);
+  const traffic = await peer.traffic(); const observations = traffic.observations;
+  expect(traffic.receipts).toHaveLength(1);
+  expect(traffic.receipts[0]?.acknowledgedSeq).toBe(2);
   expect(observations).toEqual([{ cursor: { attempt_id: binding.key.attempt.attemptId,
     durable_through: 2, event_count: 2, retained_bytes: charge }, rows: { n: 2, bytes: charge } }]);
   const stored = await metadata.events.load(binding);
   expect(stored).toMatchObject({ durableThrough: 2, ackConfirmedThrough: 0, eventCount: 2, retainedBytes: charge });
   expect(await journal.prune(binding.key.attempt)).toMatchObject({ pruned: 2, snapshot: { retainedStartSeq: 3 } });
-  expect(peer.state.requests).toEqual([eventsPath(binding, 0), ackPath(binding)]);
-  await peer.close(); await backend.close(metadata); await journals.close(journal);
+  expect((await peer.traffic()).requests).toEqual([eventsPath(binding, 0), ackPath(binding)]);
+  await peer.close(); await backend.close(metadata);
+  const beforeJournal = await journal.inspect(); await journals.close(journal);
   const beforeRestart = inspectBackend(f.path);
-  expect(inspectJournal(journalPath).attempts).toMatchObject([{ acknowledged_seq: 2, retained_start_seq: 3, spool_rows: 0 }]);
+  expect(beforeJournal.attempts).toMatchObject([{ acknowledged_seq: 2, retained_start_seq: 3, spool_rows: 0 }]);
   journal = await journals.open(journalPath);
   expect(await journal.journalAuthority()).toBe(binding.journalAuthority);
   metadata = await f.reopen();
   expect(await metadata.events.load(binding)).toEqual(stored);
-  peer = await peers(journal); peer.state.beforeAck = () => { observations.push(committed(f.path)); };
+  peer = await peers(journal);
+  await peer.configure({ loseAck: false, commitPath: f.path + '.commit-observed' });
   await collect(metadata, peer.gateway, binding);
-  expect(peer.state.requests).toEqual([ackPath(binding)]);
-  expect(peer.state.receipts).toMatchObject([{ acknowledgedSeq: 2 }]);
-  expect(observations).toHaveLength(2); expect(observations[1]).toEqual(observations[0]);
+  const resumed = await peer.traffic();
+  expect(resumed.requests).toEqual([ackPath(binding)]);
+  expect(resumed.receipts).toMatchObject([{ acknowledgedSeq: 2 }]);
+  expect(resumed.observations).toHaveLength(1); expect(resumed.observations[0]).toEqual(observations[0]);
   expect(await metadata.events.load(binding)).toEqual({ ...stored, ackConfirmedThrough: 2 });
   expect(await metadata.runs.getRun({ id: binding.key.runId, scope })).toEqual(runBefore);
   expect(await metadata.dispatch.claim(binding.key)).toEqual({ kind: 'acknowledged', journalAuthority: binding.journalAuthority });
-  await peer.close(); await backend.close(metadata); await journals.close(journal);
+  await peer.close(); await backend.close(metadata);
+  const afterJournal = await journal.inspect(); await journals.close(journal);
   const persisted = inspectBackend(f.path);
   expect(persisted.rows).toEqual(expected.map(record => ({ seq: record.seq, canonical_json: record.canonical, charged_bytes: record.chargedBytes })));
   expect(persisted.rows).toEqual(beforeRestart.rows); expect(persisted.custody).toEqual(f.baseline.custody);
   expect(persisted.cursors).toMatchObject([{ durable_through: 2, ack_confirmed_through: 2, event_count: 2, retained_bytes: charge }]);
-  expect(inspectJournal(journalPath)).toEqual({ rows: [], attempts: [{ attempt_id: binding.key.attempt.attemptId,
+  expect(afterJournal).toEqual({ rows: [], attempts: [{ attempt_id: binding.key.attempt.attemptId,
     last_seq: 2, acknowledged_seq: 2, retained_start_seq: 3, spool_rows: 0, spool_bytes: 0 }] });
 });
 
@@ -112,14 +116,16 @@ it('records genuine actual-journal cursor expiry as partial without inventing lo
     retainedBytes: 0, coverage: 'partial', blockedReason: 'cursor_expired', retainedStartSeq: 3 });
   await collect(metadata, peer.gateway, binding);
   expect(await metadata.events.load(binding)).toEqual(partial);
-  expect(peer.state.requests).toEqual([eventsPath(binding, 0)]);
-  expect(peer.state.statuses).toEqual([409]); expect(peer.state.receipts).toEqual([]);
+  const traffic = await peer.traffic();
+  expect(traffic.requests).toEqual([eventsPath(binding, 0)]);
+  expect(traffic.statuses).toEqual([409]); expect(traffic.receipts).toEqual([]);
   expect(await metadata.runs.getRun({ id: binding.key.runId, scope })).toEqual(runBefore);
-  await peer.close(); await backend.close(metadata); await journals.close(journal);
+  await peer.close(); await backend.close(metadata);
+  const journalState = await journal.inspect(); await journals.close(journal);
   const persisted = inspectBackend(f.path);
   expect(persisted.rows).toEqual([]); expect(persisted.custody).toEqual(f.baseline.custody);
   expect(persisted.cursors).toMatchObject([{ durable_through: 0, ack_confirmed_through: 0, coverage: 'partial', blocked_reason: 'cursor_expired' }]);
-  expect(inspectJournal(journalPath).attempts).toMatchObject([{ acknowledged_seq: 2, retained_start_seq: 3, spool_rows: 0 }]);
+  expect(journalState.attempts).toMatchObject([{ acknowledged_seq: 2, retained_start_seq: 3, spool_rows: 0 }]);
 });
 
 it.each(['absent', 'expired'] as const)('fences a different actual physical journal with %s history without adoption or false diagnostics', async history => {
@@ -145,15 +151,17 @@ it.each(['absent', 'expired'] as const)('fences a different actual physical jour
   expect(await client.events(0)).toMatchObject({ ok: false, error: { kind: 'protocol', status: 409,
     protocol: { reason: 'authority_mismatch' } } });
   await collect(metadata, peer.gateway, binding);
-  expect(peer.state.statuses).toEqual([history === 'absent' ? 404 : 409, 409, 409]);
-  expect(peer.state.receipts).toEqual([]);
+  const traffic = await peer.traffic();
+  expect(traffic.statuses).toEqual([history === 'absent' ? 404 : 409, 409, 409]);
+  expect(traffic.receipts).toEqual([]);
   expect(await metadata.events.load(binding)).toEqual(before);
   expect(before).toMatchObject({ binding, durableThrough: 0, ackConfirmedThrough: 0,
     coverage: 'contiguous', blockedReason: null, retainedStartSeq: null, eventCount: 0 });
   await expect(metadata.events.load({ ...binding, journalAuthority: authority })).rejects.toMatchObject({ code: 'not_found' });
   expect(await metadata.dispatch.claim(binding.key)).toEqual({ kind: 'acknowledged', journalAuthority: binding.journalAuthority });
-  await peer.close(); await backend.close(metadata); await journals.close(replacement);
+  await peer.close(); await backend.close(metadata);
+  const replacementState = await replacement.inspect(); await journals.close(replacement);
   const persisted = inspectBackend(f.path);
   expect(persisted.rows).toEqual([]); expect(persisted.custody).toEqual(f.baseline.custody);
-  expect(inspectJournal(replacementPath).attempts).toHaveLength(history === 'absent' ? 0 : 1);
+  expect(replacementState.attempts).toHaveLength(history === 'absent' ? 0 : 1);
 });
