@@ -13,9 +13,12 @@ journalAuthority, original scope/intent, manifestDigest and sourceDigest. It rec
 version1 and finalAgentSeq, the exact current durable event high-water. No timestamp
 or independently generated closure ID is needed: the original source tuple is unique.
 
-The installation owner may request closure only after physical source release and
-successful retirement of its controller, supervisor, watches, cancellations and
-all event-producing originals. The Journal validates the stored source/receipt and
+The installation owner first synchronously fences that attempt against new
+producer leases and owner recreation. After physical source release, drain every
+previously issued cancellation/preparation/drive/watch/controller/supervisor lane,
+excluding the closure caller itself to avoid self-deadlock. Keep that fence held
+through durable closure; only then retire memory ownership. Existing Manager.retire
+alone does not establish this barrier. The Journal validates the stored source/receipt and
 released reservation, captures finalAgentSeq itself, charges closure metadata and
 atomically fences subsequent control/supervisor appends for that attempt. A caller
 cannot supply the high-water or claim quiescence over HTTP. Exact replay returns
@@ -73,12 +76,15 @@ public source value owner rather than copying agent codec/manifest logic.
 ## Original byte custody
 
 The agent file owner reuses existing output/root custody primitives. Each range
-opens the pinned canonical root and declared file with stored identity/uid/modes,
-checks declared size and symlink/link/ancestor policy, reads<=65536 bytes, rechecks
-named/descriptor identity and closes every original before positive reply. Same
-names after replacement confer no authority. Missing old profile/root refuses;
-current catalogue defaults cannot replace original custody. File mutation preserves
-the source and returns an explicit failure, never replacement bytes under its ID.
+pins the stored root identity, then opens the declared file and checks current
+per-operation descriptor/named identity, declared size, uid/modes and symlink/link/
+ancestor policy. It reads<=65536 bytes, rechecks custody and closes every original
+before a positive reply. No historical per-artifact inode/timestamp is stored by
+PrivateSource. Same-size mutation before a read can therefore return different
+provisional bytes; backend whole-file expected SHA256 must reject them before
+publication. Mutation detected during a read refuses. No source digest authenticates
+individual chunks. Missing old profile/root refuses; current catalogue defaults
+cannot replace original custody. Failures never rewrite the immutable source.
 
 Acquire a two-source-original byte window before request body parse/capture and
 file IO. It is a subset of existing32 server RequestWork calls; reject saturation

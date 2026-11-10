@@ -30,9 +30,13 @@ up, no persisted/written byte can escape the reserved accounting. Extra report
 files reserve their own D before creation; on-demand bounded streaming without
 persistent copies uses control-process buffer budgets instead.
 
-The metadata allowance covers bounded binding/cursors/diagnostics and<=128 artifact
-state rows. Freeze per-row allowances and an independently calculated maximum
-before a port/migration is accepted; unbounded error text/URLs never enter it.
+Partition the65536 metadata allowance:128 artifact slots*384=49152; owner/binding/
+closure/event cursor8192; bounded diagnostics4096; fixed auxiliary allowance4096.
+Each artifact slot permits canonical state<=256 bytes plus128 row allowance, with
+bounded UUID tokens/index/offset/phase/version. Derive expected length/hash/path
+from the one manifest and scope from parent FKs. Exact fields and worst-case
+canonical lengths still require calculation before port/migration acceptance;
+this is logical accounting, not physical SQLite/WAL sizing. No unbounded errors/URLs.
 Settings reductions do not invalidate owned reservations or grant permission to
 refund them. Physical backing-store free-space checks remain separate safety gates.
 
@@ -46,8 +50,11 @@ Discover retained output obligations with a captured upper keyset, pages1..32,
 compact items/page<=65536 and cursors<=1024, including released execution records.
 
 adopt captures SourceEnvelope and original EventBinding, validates public digest,
-result seal, physical UUID/scope/intent/engine/installed/spec binding against the
-retained original, and reserves the exact source/artifact plan. Equal replay returns
+result seal and physical UUID/scope/intent/engine/installed pins against the retained
+original, then reserves the exact source/artifact plan. The backend has no prepared
+runtime plan: it captures specDigest as authenticated agent evidence covered by
+manifestDigest and requires exact replay equality. Original-spec validation remains
+the producer Journal guarantee; no current plan/catalogue is substituted. Equal replay returns
 the same records; different source/manifest content conflicts. Do not adopt current
 catalogue/capability values or choose a new physical Journal. Envelope bytes are
 bounded before parsing, native SQL before materialization, RPC before cloning.
