@@ -2,6 +2,7 @@ import { EVENT_MAX_RETAINED_BYTES } from '../../../../ports/events.js';
 import type { DatabaseSync } from 'node:sqlite';
 import type { EventBinding, EventCursorState } from '../../../../ports/events.js';
 import { StorageError } from '../protocol.js';
+import { remainingEventAllowance } from '../output-payloads/index.js';
 import { captureState } from './values.js';
 export function bindingArgs(binding: EventBinding): (string | number)[] {
   const { key, journalAuthority } = binding; const a = key.attempt;
@@ -17,7 +18,7 @@ export function ownedAllowance(db: DatabaseSync, binding: EventBinding): number 
   if (!owner) throw new StorageError('not_found');
   if (typeof owner.maximum_payload_bytes !== 'number' || !Number.isSafeInteger(owner.maximum_payload_bytes)
     || owner.maximum_payload_bytes < 0) throw new StorageError('unavailable');
-  return Math.min(owner.maximum_payload_bytes, EVENT_MAX_RETAINED_BYTES);
+  return Math.min(remainingEventAllowance(db, binding.key.attempt.attemptId, owner.maximum_payload_bytes), EVENT_MAX_RETAINED_BYTES);
 }
 export function ensureCursor(db: DatabaseSync, binding: EventBinding): void {
   ownedAllowance(db, binding);

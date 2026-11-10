@@ -1,5 +1,4 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { encodeJson } from '@beetle/contracts';
 import type { Run } from '@beetle/contracts/api';
 import { MAX_ATTEMPT_OBSERVATION_BYTES, mergeAttemptObservation } from '../../../domain/runs/index.js';
 import type { AttemptObservation } from '../../../domain/runs/index.js';
@@ -10,9 +9,10 @@ import { checkedJournalAuthority, boundedCopy } from './input-values.js';
 import { captureDispatchKey } from './dispatch-values.js';
 import type { RunReads } from './run-reads.js';
 import { transaction } from './schema.js';
+import { previousSnapshot, persistSnapshot } from './output-payloads/index.js';
 
 interface RecordRow {
-  journal_authority: string | null; snapshot_bytes: number | null; snapshot_json: string | null; execution_charged: number;
+  journal_authority: string | null; snapshot_bytes: number | null; snapshot_json: string | null; result_observed: number; execution_charged: number;
   acknowledged_generation: number | null; delivery_attempt_id: string | null; generation: number | null;
 }
 interface DeliveryRow { intent_digest: string; execution_intent_id: string | null;
@@ -52,7 +52,7 @@ export class DispatchObservations {
     requireRule(row.journal_authority === request.journalAuthority);
     this.requireDelivery(key, row);
     requireRule(row.snapshot_bytes === null || row.snapshot_bytes <= MAX_ATTEMPT_OBSERVATION_BYTES);
-    const previous: unknown = row.snapshot_json === null ? null : JSON.parse(row.snapshot_json);
+    const previous = previousSnapshot(this.db, key, row);
     const merged = mergeAttemptObservation({ expected: key.attempt, previous: previous as AttemptObservation['snapshot'] | null, incoming: snapshot });
     const runKey = { id: key.runId, scope: { kind: 'workspace' as const,
       organizationId: key.attempt.organizationId, workspaceId: key.attempt.workspaceId } };
@@ -71,9 +71,9 @@ export class DispatchObservations {
   private record(key: DispatchKey): RecordRow {
     // CASE guards SQLite's returned text: no Offer, registry or historical payload is selected.
     const row = this.db.prepare(`SELECT length(CAST(e.snapshot_json AS BLOB)) snapshot_bytes,
-      CASE WHEN length(CAST(e.snapshot_json AS BLOB))<=73728 THEN e.snapshot_json ELSE NULL END snapshot_json,
+      CASE WHEN length(CAST(e.snapshot_json AS BLOB))<=2048 THEN e.snapshot_json ELSE NULL END snapshot_json,
       CASE WHEN length(CAST(e.journal_authority AS BLOB))=36 THEN e.journal_authority ELSE NULL END journal_authority,
-      e.execution_charged,e.acknowledged_generation,e.delivery_attempt_id,a.generation
+      e.result_observed,e.execution_charged,e.acknowledged_generation,e.delivery_attempt_id,a.generation
       FROM execution_records e JOIN attempts a ON a.id=e.attempt_id JOIN runs r ON r.id=e.run_id
       WHERE e.attempt_id=? AND e.run_id=? AND e.organization_id=? AND e.workspace_id=? AND e.intent_digest=?
       AND a.run_id=e.run_id AND a.organization_id=e.organization_id AND a.workspace_id=e.workspace_id
@@ -100,9 +100,7 @@ export class DispatchObservations {
   }
 
   private persist(key: DispatchKey, merged: Readonly<AttemptObservation>, charged: boolean): void {
-    this.db.prepare(`UPDATE execution_records SET snapshot_json=?,acknowledged_generation=1,
-      delivery_attempt_id=NULL,execution_charged=? WHERE attempt_id=?`)
-      .run(encodeJson(merged.snapshot, MAX_ATTEMPT_OBSERVATION_BYTES), Number(charged), key.attempt.attemptId);
+    persistSnapshot(this.db, key, merged.snapshot, charged);
     this.db.prepare('UPDATE attempts SET generation=1,state=? WHERE id=?').run(merged.snapshot.state, key.attempt.attemptId);
     this.db.prepare('DELETE FROM dispatch_outbox WHERE attempt_id=?').run(key.attempt.attemptId);
   }
