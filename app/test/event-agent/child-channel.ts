@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
+import { relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { encodeJson } from '@beetle/contracts';
 
@@ -29,10 +30,15 @@ export class ChildChannel {
   private size = 0;
   private chunks = 0;
   private diagnostics = 0;
-  constructor(paths: { journal: string; directory: string; root: string }) {
+  constructor(paths: { journal: string; worker: string; root: string }) {
+    if (!paths.root || paths.root.length > 4096) throw new Error('Invalid agent fixture root');
+    for (const value of [paths.journal, paths.worker]) {
+      const local = relative(resolve(paths.root), resolve(value));
+      if (!value || !local || local.startsWith('..') || local.startsWith('/') || value.length > 4096) throw new Error('Fixture path outside root');
+    }
     this.child = spawn(process.execPath, ['--import', 'tsx',
       fileURLToPath(new URL('../../../agent/test/event-custody/cli.ts', import.meta.url)),
-      paths.journal, paths.directory, paths.root], { stdio: ['pipe', 'pipe', 'pipe'], env: { PATH: process.env.PATH } });
+      paths.journal, paths.worker, paths.root], { stdio: ['pipe', 'pipe', 'pipe'], env: { PATH: process.env.PATH } });
     this.ready = new Promise((resolve, reject) => { this.pending = { id: 0, resolve, reject }; });
     this.exit = new Promise(resolve => {
       this.child.once('close', (code, signal) => {
