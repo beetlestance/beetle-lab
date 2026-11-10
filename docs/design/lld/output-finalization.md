@@ -1,10 +1,10 @@
 # Source-backed output finalization
 
-Status: frozen private contract; implementation and connected qualification pending.
+Status: implemented and reviewed locally; real-agent/release qualification pending.
 Owner: metadata adapter. Port: `app/src/ports/output-finalization.ts`.
 Dependencies: [writer](output-artifact-writer.md),
 [transfer](output-transfer-owner.md), [events](event-custody.md).
-Migration011 is reserved for this implementation; no schema change is implied yet.
+Application migration011 owns the receipt and native settlement fences.
 
 ## Transaction and bounded interface
 
@@ -30,6 +30,10 @@ No result, manifest, source or native receipt supplied by the caller is trusted.
 2. Require execution_charged=0 and a bounded result-free snapshot header with
    admission.state=released and disposition=settled. An exit or CPU release alone
    does not establish this fact. Missing source/execution evidence stays pending.
+   Its validated lastSeq must not exceed the source closure's finalAgentSeq:
+   both use the agent Journal sequence. A higher header is a contradiction and
+   fails before cursor/receipt/accounting writes, with an independent native
+   insertion fence. Older stored snapshots remain valid; equality is unnecessary.
 3. Require exactly the manifest's artifact count, at most128 slots, every slot
    published at declared bytes with full native identity and writer=NULL.
    The transfer owner must have drained the producer/native original before its

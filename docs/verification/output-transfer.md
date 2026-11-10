@@ -1,7 +1,7 @@
 # Backend artifact transfer evidence
 
-Status: locally implemented and reviewed; automatic startup and terminal settlement
-remain pending. No connected real-k6 or release qualification is implied.
+Status: locally implemented and reviewed. Automatic startup and terminal settlement
+have [separate evidence](output-settlement.md). No real-k6 or release qualification is implied.
 Owning contract: [transfer owner](../design/lld/output-transfer-owner.md).
 
 ## Source and behavior
@@ -40,6 +40,6 @@ retried:1486 source files passed in2.90s. No full suite/build/Docker lane was ru
 
 Synthetic source HTTP proves this adapter connection, not a real agent/Journal/k6
 run, startup polling, terminal projection, retention or resource behavior. Unknown
-native cleanup remains charged and owned. Automatic scheduling, source-free error
+native cleanup remains charged and owned. Source-free error
 closure, agent publication acknowledgement/deletion and staging-parent custody
 remain first-release integration work.

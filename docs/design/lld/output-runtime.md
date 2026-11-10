@@ -1,6 +1,6 @@
 # Automatic output runtime
 
-Status: frozen private contract; implementation and production wiring pending.
+Status: implemented with production wiring; local synthetic composition qualified.
 Port: `app/src/ports/output-runtime.ts`. Bootstrap entry:
 `app/src/bootstrap/output-runtime/index.ts`, `openOutputRuntime(options)`.
 Consumes [transfer](output-transfer-owner.md), [settlement](output-finalization.md)
@@ -13,8 +13,10 @@ advertising new execution capacity. Its factory owns output file storage, the
 transfer service, and its scheduler; injected metadata/gateway/run readers remain
 externally owned. Production composition must supply actual finalizations.
 Omitted output runtime support in a fixture must never imply successful publication.
-The application composition will wire this owner separately after both components
-land; this packet does not alter agent-owners or the metadata interface.
+Production agent composition always supplies the real output factory to its parent
+owner, which awaits it before capacity polling and delivery start. A private
+optional factory supports subset owner fixtures. Bound capability facades preserve
+the consumed methods and receivers before capacity/output provisioning awaits.
 
 Capture paths/configuration and bind dependency methods before foreign awaits.
 Use the shared installation freeSpaceReserveBytes and randomUUID writer IDs.
@@ -81,5 +83,5 @@ actual composed finalizer seam until that implementation is available.
 Prove fresh private roots/reopen/symlink or replaced directory refusal and missing
 lease fail-closed behavior. Preserve existing input initialization controls when
 factoring shared roots. No full build/Docker/browser/real-k6 claim from this packet.
-First-install provisioning, parent composition and connected native-k6 qualification
+First-install distribution and connected native-k6 qualification
 remain explicit next integration work, not implied by a passing scheduler fixture.

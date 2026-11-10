@@ -33,7 +33,7 @@ released application until the rewrite is qualified.
 | Inspect connected source collection/recovery | [Controller source](verification/controller-source-lifecycle.md) | Native file/Journal composition, exact release proof and scoped installation seams; backend publication pending |
 | Inspect durable stream closure storage | [Delivery closure](verification/output-delivery-closure.md) | Journal quota, native fences and discovery; Manager/scheduler pending |
 | Inspect scoped result presentation | [Result reads](verification/run-result-read.md) | Verified metadata/HTTP and scoped UI; browser/real-k6 qualification pending |
-| Inspect backend artifact publication | [Output transfer](verification/output-transfer.md) | Reviewed metadata/native transfer; automatic startup and terminal settlement pending |
+| Inspect backend artifact publication | [Output settlement](verification/output-settlement.md) | Actual native/metadata/HTTP transfer and terminal credit; real-agent qualification pending |
 | Inspect shared output transport values | [Transfer values](verification/output-transfer-values.md) | Generated schemas, receipt matching and canonical range values; runtime transfer pending |
 | Inspect native source HTTP | [Source HTTP](verification/output-source-http.md) | Real Journal/files, authenticated source/chunk routes and bootstrap; backend adoption pending |
 | Inspect backend source adoption | [Output adoption](verification/output-adoption.md) | Single payload carrier, exact source metadata and worker replay; transfer/finalization pending |
