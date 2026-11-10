@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { Reservation, AdmissionValue } from '../admission/index.js';
-import type { InspectEvidence, MutationResult, Observation } from '../backends/docker/index.js';
+import type { InspectEvidence, MutationResult, Observation, Operation } from '../backends/docker/index.js';
+import { inspectReleased } from './retirement.js';
 import type { StopReason, SupervisionState } from '../journal/index.js';
 import { captureAuthority, ReadOfferBusy } from './offer-authority.js';
 import { validateReservation } from './identity.js';
@@ -38,16 +39,25 @@ export class LaunchActor {
   private startSent = false;
   private startKnown = false;
   private disposition: LaunchState['launch'] = 'unclaimed';
+  private retirement: Promise<void> | undefined;
+  private retirementFailed = false;
+  private retirementReady = false;
+  private retiring = false;
 
   constructor(readonly input: LaunchInput, private readonly journal: JournalPort,
     private readonly backend: BackendPort, clock: Clock) {
     this.time = new AttemptTime(clock);
     this.evidence = new RuntimeEvidence(journal, input.key);
   }
-  launch(): Promise<LaunchState> { return this.run(true); }
-  reconcile(): Promise<LaunchState> { return this.run(false); }
-  tick(): Promise<LaunchState> { return this.run(false); }
+  launch(): Promise<LaunchState> { return this.publicRun(true); }
+  reconcile(): Promise<LaunchState> { return this.publicRun(false); }
+  tick(): Promise<LaunchState> { return this.publicRun(false); }
+  private publicRun(launch: boolean): Promise<LaunchState> {
+    return this.fenced() ? Promise.reject(new SupervisorError('closed')) : this.run(launch);
+  }
+  private fenced(): boolean { return this.closed || this.retiring; }
   cancel(reason: StopReason = 'cancelled'): Promise<LaunchState> {
+    if (this.fenced()) return Promise.reject(new SupervisorError('closed'));
     this.localCancel = true;
     const urgent = reason === 'output_limit' || reason === 'artifact_incomplete' || reason === 'clock_integrity';
     const escalation = urgent && this.urgentReason === undefined;
@@ -67,8 +77,24 @@ export class LaunchActor {
   }
   /** Synchronous retirement refuses every outstanding lane; old handles are fenced. */
   retire(): void {
+    if (this.retiring && !this.retirementReady) throw new SupervisorError('conflict');
     if (this.inFlight || this.cancellationWrite || this.cancellation || this.evidence.hasPending) throw new SupervisorError('conflict');
     this.closed = true;
+  }
+  /** Fence public actor handles, drain originals, then inspect without producing new facts. */
+  retireReleased(operation: Operation): Promise<void> {
+    this.retiring = true;
+    if (this.retirement) return this.retirement;
+    this.retirement = Promise.resolve().then(async () => {
+      const outcomes = await Promise.allSettled([this.inFlight, this.cancellationWrite, this.cancellation]);
+      if (outcomes.some(value => value.status === 'rejected') || this.evidence.hasPending) this.retirementFailed = true;
+      if (this.retirementFailed) throw new SupervisorError('conflict');
+      await inspectReleased({ journal: this.journal, backend: this.backend, launch: this.input, operation });
+      this.retirementReady = true;
+    });
+    const original = this.retirement;
+    void original.catch(() => { if (!this.retirementFailed && this.retirement === original) this.retirement = undefined; });
+    return original;
   }
   private state(): LaunchState {
     return { observation: this.observation ? { ...this.observation } : null, launch: this.disposition, cancellation: this.cause };
@@ -188,10 +214,10 @@ export class LaunchActor {
     } else await this.recover();
   }
   private dispatchOperation() {
-    if (this.closed || this.localCancel) return undefined;
+    if (this.closed || this.retiring || this.localCancel) return undefined;
     const permission = this.time.dispatch();
     if (!permission.allowed) { this.cause = permission.reason; return undefined; }
-    if (this.closed || this.localCancel) return undefined;
+    if (this.closed || this.retiring || this.localCancel) return undefined;
     return permission.operation;
   }
   private async mutate(action: () => Promise<MutationResult<InspectEvidence>>): Promise<MutationResult<InspectEvidence>> {

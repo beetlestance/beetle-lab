@@ -49,7 +49,7 @@ export function supervisorFixture() {
 }
 export function port(journal: Journal, admission?: (input: AdmissionCommand) => Promise<AdmissionValue>): JournalPort {
   return { admission: admission ?? (input => journal.admission(input)),
-    readOffer: key => journal.readOffer(key), supervision: input => journal.supervision(input),
+    readOffer: key => journal.readOffer(key), get: key => journal.get(key), supervision: input => journal.supervision(input),
     sourceCursors: key => journal.sourceCursors(key), appendSupervisor: input => journal.appendSupervisor(input) };
 }
 /** Exact backend signatures, one observed identity, and explicit synthetic effect counters. */

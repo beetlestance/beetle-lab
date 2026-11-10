@@ -9,6 +9,7 @@ import { InstallationError } from './types.js';
 import type { DriveProgress } from './types.js';
 import type { SourceReceipt, FinishedRelease } from '../output-source/index.js';
 import type { OutputDeliveryClosure } from '../journal/index.js';
+import type { OutputAbsence, Owned } from '@beetle/contracts/output-source';
 export interface EntryLease { readonly entry: Entry; readonly done: Promise<void>; finish(): void }
 export interface Entry {
   readonly leases: Set<EntryLease>;
@@ -19,6 +20,8 @@ export interface Entry {
   sourceRelease?: FinishedRelease;
   nativeRetirement?: Promise<void>;
   deliveryAttempt?: Promise<OutputDeliveryClosure>;
+  absenceAttempt?: Promise<Owned<OutputAbsence> | null>;
+  absenceNative?: Promise<void>;
   retirementProgress?: DriveProgress;
   urgentStop?: boolean;
   readonly key: Readonly<Scope>;

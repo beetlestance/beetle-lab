@@ -3,6 +3,7 @@ import { LaunchActor } from './actor.js';
 import { identity, sameScope, validateInput } from './identity.js';
 import { SupervisorError } from './types.js';
 import type { LaunchInput, SupervisorOptions } from './types.js';
+import type { Operation } from '../backends/docker/index.js';
 export { SupervisorError };
 export type { LaunchActor } from './actor.js';
 export type { BackendPort, Clock, JournalPort, LaunchInput, LaunchState, SupervisorOptions } from './types.js';
@@ -41,5 +42,11 @@ export class Supervisor {
     }
     actor.retire();
     this.actors.delete(identity(input.key));
+  }
+  /** Existing installation ownership and durable release bind this read-only native barrier. */
+  async retireReleased(input: LaunchInput, operation: Operation): Promise<void> {
+    const actor = this.actor(input);
+    await actor.retireReleased(operation);
+    this.retire(input);
   }
 }

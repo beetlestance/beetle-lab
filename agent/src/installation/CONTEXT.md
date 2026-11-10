@@ -20,7 +20,6 @@ Effect-free owners retire after settled callers and confirmed uncharged journal 
 operation versions prevent stale probes from evicting a new active lane.
 Close fences callbacks, aborts preparation signals and independently drains originals;
 the bootstrap retains journal ownership.
-
 Entry completion leases retain public drive/cancel/stop/cancelOriginal cleanup.
 Retirement fences new producers and excludes only its actual drive caller, drains
 other leases, preparation/watch originals and the final cancellation chain before
@@ -31,8 +30,11 @@ Producer-free late callers finish all leases, fence and validate the exact exist
 closure before owner eviction; absence/uncertainty retains reconciliation ownership.
 Private guard/timeout stops run under the drive lease; issued service callbacks stay
 owned by cached watch closes before the final cancellation chain is captured.
-Contract: `docs/design/lld/output-delivery-closure.md`; no publication/deletion claim.
-
-Contract: `docs/design/lld/installation-controller.md` and `types.ts`.
-Focused checks: `npx vitest run agent/test/installation --maxWorkers=2`;
-`npx tsc -p tsconfig.node.json --noEmit`.
+Source-free rejected/released debt uses the same native barrier before Scope-only
+Journal closure; no owner is evicted while required closure remains pending.
+Cold settled debt additionally drains/fences the Supervisor actor and performs a
+read-only exact stopped-runtime inspection; it emits no events or late stop cause.
+Unknown inspection/native close stays unresolved; metadata retries retain completion.
+Contracts: `docs/design/lld/output-{delivery-closure,absence}.md`,
+`docs/design/lld/installation-controller.md` and `types.ts`.
+Focused checks: installation tests and affected Node typecheck.
