@@ -2,23 +2,16 @@ import { encodeCanonicalJson, encodeJson, validate } from '@beetle/contracts';
 import type { AgentEvent, EventBatch } from '@beetle/contracts';
 import { immutableSnapshot } from '../namespaces/index.js';
 import { captureEventBinding } from './binding.js';
+import { captureFields } from './carrier.js';
 import { EVENT_BATCH_BYTES, EVENT_BATCH_COUNT, EVENT_RECORD_BYTES, EVENT_ROW_ALLOWANCE, EventBatchError } from './types.js';
 import type { EventBatchInput, EventBinding, EventRecord, PreparedEventBatch } from './types.js';
 
 /** Capture only the fixed carrier; the batch retains its independent node/depth budget. */
-function readCarrier(input: EventBatchInput): { binding: unknown; after: unknown; batch: unknown } {
-  if (input === null || typeof input !== 'object'
-    || ![Object.prototype, null].includes(Object.getPrototypeOf(input) as object | null)) throw new EventBatchError('invalid_batch');
-  const keys = Reflect.ownKeys(input);
-  if (keys.length !== 3 || keys.some(key => typeof key !== 'string' || !['binding', 'after', 'batch'].includes(key))) {
-    throw new EventBatchError('invalid_batch');
+function carrier(input: EventBatchInput): { binding: unknown; after: unknown; batch: unknown } {
+  try {
+    const fields = captureFields(input, ['binding', 'after', 'batch']);
+    return { binding: fields.binding, after: fields.after, batch: fields.batch };
   }
-  const fields = ['binding', 'after', 'batch'].map(key => Object.getOwnPropertyDescriptor(input, key));
-  if (fields.some(field => !field || !field.enumerable || !('value' in field))) throw new EventBatchError('invalid_batch');
-  return { binding: fields[0]!.value as unknown, after: fields[1]!.value as unknown, batch: fields[2]!.value as unknown };
-}
-function carrier(input: EventBatchInput): ReturnType<typeof readCarrier> {
-  try { return readCarrier(input); }
   catch { throw new EventBatchError('invalid_batch'); }
 }
 function checkedBatch(input: unknown): EventBatch {

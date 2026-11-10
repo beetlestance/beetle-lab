@@ -1,4 +1,4 @@
-export { captureEventBinding } from './binding.js';
+export { captureEventBinding, captureEventKey } from './binding.js';
 export { prepareEventBatch } from './batch.js';
 export { expiryCoverage } from './expiry.js';
 export { EVENT_BATCH_BYTES, EVENT_BATCH_COUNT, EVENT_RECORD_BYTES, EVENT_ROW_ALLOWANCE,

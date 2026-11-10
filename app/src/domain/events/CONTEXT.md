@@ -1,6 +1,8 @@
 # Event evidence capture
 
-Public entries: captureEventBinding, prepareEventBatch and expiryCoverage in index.ts.
+Public entries: captureEventBinding, captureEventKey, prepareEventBatch and expiryCoverage.
+Fixed carriers reject hidden/symbol/accessor fields before nested payload capture.
+Unbound discovery keys can be captured without inventing a journal UUID.
 Pure descriptor-safe capture; <=100 events/262144 bytes independently of carrier.
 Inputs bind run/attempt/scope/digest/generation1 and canonical journal UUID.
 Validate schemas, all nested identities, retained start and contiguous sequences.
