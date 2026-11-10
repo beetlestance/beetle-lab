@@ -25,7 +25,7 @@ export class OutputFiles {
   private readonly entries = new Map<string, Entry>();
   private readonly identities = new Set<string>();
   private root: OpenEntry | undefined;
-  constructor(private readonly options: { readonly directory: string; readonly uid: number },
+  constructor(private readonly options: { readonly directory: string; readonly uid: number; readonly root?: Readonly<OutputRootIdentity> },
     private readonly ports: OutputPorts, private readonly io: OutputIO) {}
   private async named(path: string, directory: boolean): Promise<BigIntStats> {
     const canonical = await this.io.io(() => this.ports.realpath(path));
@@ -53,6 +53,13 @@ export class OutputFiles {
   }
   async openOutput(relativePath: string): Promise<OpenOutput> {
     this.root ??= await this.open(this.options.directory, true);
+    const expected = this.options.root;
+    if (expected) {
+      const actual = this.rootIdentity();
+      for (const key of ['directory', 'uid', 'device', 'inode', 'modifiedNs', 'changedNs'] as const) {
+        if (actual[key] !== expected[key]) throw new OutputFailure('custody');
+      }
+    }
     const chain: OpenEntry[] = [this.root]; const pieces = relativePath.split('/');
     let path = this.options.directory;
     for (const piece of pieces.slice(0, -1)) { path = join(path, piece); chain.push(await this.open(path, true)); }

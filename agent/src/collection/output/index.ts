@@ -4,4 +4,5 @@ export type { OutputCollectionReason, OutputCollectionOptions, OutputCollectionR
 export type { OutputRangeOptions, OutputRangeResult, OutputRange, OutputRangeReader } from './range-types.js';
 import { startCollection } from './operation.js';
 import type { OutputCollectionOptions, OutputCollection } from './types.js';
+export { readOutputRange } from './range.js';
 export function collectOutputs(options: OutputCollectionOptions): OutputCollection { return startCollection(options); }

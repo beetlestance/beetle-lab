@@ -1,6 +1,6 @@
 import { integer, text, sha, uuid, scope, sameScope } from '@beetle/contracts/output-source/internal';
 export { integer, text, sha, uuid, scope, sameScope, binding, result, counts } from '@beetle/contracts/output-source/internal';
-import { isAbsolute, normalize } from 'node:path';
+import { captureCollectionRootIdentity } from '../collection/root/index.js';
 import type { OutputRootIdentity } from '../collection/output/index.js';
 import { copyWrapperCheckpoint } from '../control-protocol/index.js';
 import type { WrapperCheckpoint } from '../control-protocol/index.js';
@@ -8,21 +8,9 @@ import { fields, requireInput } from './capture.js';
 import type { SourceBinding, StoppedRuntime, FinishedRelease, SettledLaunch } from './types.js';
 
 export function checkpoint(input: unknown): Readonly<WrapperCheckpoint> { return copyWrapperCheckpoint(input); }
-function uint64(value: unknown): void {
-  requireInput(typeof value === 'string' && /^(0|[1-9][0-9]{0,19})$/.test(value));
-  requireInput(BigInt(value) <= 18_446_744_073_709_551_615n);
-}
-function nanoseconds(value: unknown): void {
-  requireInput(typeof value === 'string' && value.length <= 32 && /^(0|-?[1-9][0-9]*)$/.test(value));
-}
 export function root(input: unknown): Readonly<OutputRootIdentity> {
-  const value = fields(input, 'directory,uid,device,inode,modifiedNs,changedNs');
-  requireInput(typeof value.directory === 'string');
-  requireInput(isAbsolute(value.directory) && normalize(value.directory) === value.directory);
-  requireInput(!value.directory.includes('\u0000') && new TextEncoder().encode(value.directory).byteLength <= 4096);
-  integer(value.uid, 4_294_967_295); uint64(value.device); uint64(value.inode);
-  nanoseconds(value.modifiedNs); nanoseconds(value.changedNs);
-  return value as unknown as Readonly<OutputRootIdentity>;
+  try { return captureCollectionRootIdentity(input); }
+  catch { requireInput(false); }
 }
 export function runtime(input: unknown): StoppedRuntime {
   const value = fields(input, 'state,source,observedAt,evidenceId');
