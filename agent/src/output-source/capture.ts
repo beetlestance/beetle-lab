@@ -53,7 +53,11 @@ export function freeze<T>(value: T): Owned<T> {
   }
   return value as Owned<T>;
 }
-/** Inspect original descriptors and bound allocation before any encoding or callback. */
+/**
+ * Snapshot an already bounded private carrier before encoding/foreign callbacks.
+ * Copying and serialization are capped here. Native own-key reflection requires
+ * that carrier provenance; arbitrary caller graphs are not a resource sandbox.
+ */
 export function capture(input: unknown, maximum: number): unknown {
   try { return freeze(visit(input, { bytes: 0, nodes: 0, maximum, ancestors: new Set() }, 0)); }
   catch { throw new OutputSourceError('invalid_input'); }
