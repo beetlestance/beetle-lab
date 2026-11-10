@@ -22,7 +22,9 @@ tails wait; stopped incomplete tails fail. No raw OS errors/content escape.
 Restart rehashes the durable prefix over bounded passes before new intake.
 Stopped verification rehashes the full committed prefix under stable metadata;
 live reads remain explicitly provisional. Cached stopped proof rechecks custody
-and metadata on every later read. These observations confer no release authority.
+and metadata on every later read. Only stopped proof carries frozen shared root
+facts from current checked metadata when final verification begins. Live output
+creation may change the initial stat; after pinning, mutation cannot refresh it.
 
 `accept` checks the sole pending cursor and adopts the journal-owned digest.
 Wrong acknowledgements preserve pending state. Runtime IO/custody/corruption and
@@ -30,7 +32,9 @@ interrupted active IO fail the reader closed to further intake; construct anothe
 reader from durable state to resume. Busy/invalid-budget calls affect no owner.
 `close` caches one outcome, waits for all issued original IO, closes descriptors
 independently, and permanently preserves any original close failure.
+Pinned roots receive bounded owned named/canonical checks after all closes. Facts
+remain provisional until close succeeds and confer no source/intent/release authority.
 
-Focused checks: `vitest run agent/test/collection-control --maxWorkers=2`, Node TS,
-and ESLint on this module and its tests. Tests use real task-owned temp files and
-private fault seams; journal integration uses only its public entrypoint.
+Focused checks: `vitest run agent/test/collection-control --maxWorkers=1`, Node TS,
+and scoped ESLint. Tests use owned temp files/private faults; journal integration
+uses only its public entrypoint.

@@ -2,6 +2,7 @@ import { isAbsolute, normalize } from 'node:path';
 import type { BigIntStats } from 'node:fs';
 import { copyControlScope, copyWrapperCheckpoint, copyWrapperCursor } from '../../control-protocol/index.js';
 import type { WrapperBatch, WrapperCheckpoint } from '../../control-protocol/index.js';
+import type { CollectionRootIdentity } from '../root/index.js';
 import { CONTROL_READ_BYTES, CONTROL_READ_CALLS, ControlReadError } from './types.js';
 import type { ControlReadBudget, ControlReadOperation, ControlReader, ControlReaderOptions, ControlReadValue } from './types.js';
 import { nodePorts } from './ports.js';
@@ -122,14 +123,15 @@ export class Reader implements ControlReader {
   private async final(op: Operation, stat: BigIntStats): Promise<ControlReadValue> {
     this.verification?.matches(stat);
     if (stat.size !== BigInt(this.checkpoint!.offset)) return this.caughtUp();
-    if (this.finalSignature === signature(stat)) return this.verified();
+    const root = await this.custody.stoppedRoot(op);
+    if (this.finalSignature === signature(stat)) return this.verified(root);
     this.verification ??= new Verification('final', this.checkpoint!, stat);
     const outcome = await this.verification.pass(this.custody, op);
     if ('kind' in outcome) return outcome;
-    this.verification = undefined; this.finalSignature = signature(stat); return this.verified();
+    this.verification = undefined; this.finalSignature = signature(stat); return this.verified(root);
   }
-  private verified(): ControlReadValue {
-    return { kind: 'caught_up', cursor: this.checkpoint!, tail: 'none', consistency: 'stopped_verified' };
+  private verified(root: Readonly<CollectionRootIdentity>): ControlReadValue {
+    return { kind: 'caught_up', cursor: this.checkpoint!, tail: 'none', consistency: 'stopped_verified', root };
   }
   private caughtUp(): ControlReadValue {
     return { kind: 'caught_up', cursor: this.checkpoint, tail: this.frames.incomplete ? 'incomplete' : 'none',
