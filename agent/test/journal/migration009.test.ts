@@ -61,7 +61,7 @@ it('keeps an empty old journal quarantined through latest initialization and rep
     await f.close(journal);
     const db = new DatabaseSync(path);
     try {
-      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
+      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(12);
       expect(db.prepare('SELECT * FROM journal_authority').all()).toEqual([{ id: 1, authority: null }]);
       expect(durableRows(db)).toEqual(before);
       expect(db.prepare('SELECT * FROM disk_holds').all()).toEqual([]);
@@ -160,13 +160,13 @@ it('rolls back authority creation when COMMIT itself rejects a deferred foreign 
   } finally { db.close(); }
 });
 
-it('rejects future version12 through the compiled worker while preserving every row and version', async () => {
-  const path = f.path(); const old = v8(path); old.exec('PRAGMA user_version=12');
+it('rejects future version13 through the compiled worker while preserving every row and version', async () => {
+  const path = f.path(); const old = v8(path); old.exec('PRAGMA user_version=13');
   const before = durableRows(old); old.close();
   await expect(f.open(path)).rejects.toMatchObject({ code: 'schema_newer' });
   const db = new DatabaseSync(path);
   try {
     expect(durableRows(db)).toEqual(before);
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(12);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(13);
   } finally { db.close(); }
 });

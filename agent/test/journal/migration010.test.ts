@@ -65,7 +65,7 @@ it('preserves fresh v9 UUID and an unknown original when upgrading then cancelli
   await f.close(journal);
   const db = new DatabaseSync(path);
   try {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(12);
     expect(db.prepare('SELECT * FROM cancelled_originals').all()).toEqual([]);
   }
   finally { db.close(); }
