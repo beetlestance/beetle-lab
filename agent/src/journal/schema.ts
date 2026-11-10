@@ -9,6 +9,7 @@ import { migration007 } from './migration007.js';
 import { migration008 } from './migration008.js';
 import { migration009 } from './migration009.js';
 import { migration010 } from './migration010.js';
+import { migration011 } from './migration011.js';
 
 // Rebuild only the foundation's fixed sequence constraint. Copy immutable JSON and
 // row IDs verbatim, including original UUID spellings and durable cancel intent.
@@ -59,20 +60,22 @@ const migration001 = `CREATE TABLE accepted_attempts (
   canonical_json TEXT NOT NULL CHECK(length(CAST(canonical_json AS BLOB))<=1048576)
 ); PRAGMA user_version=1;`;
 
-function migrateAuthority(db: DatabaseSync, version: number, authority: string | null): void {
-  if (version >= 9) return;
-  db.exec(migration009);
-  db.prepare('INSERT INTO journal_authority(id,authority) VALUES (1,?)').run(authority);
+function migrateIdentity(db: DatabaseSync, version: number, authority: string | null): void {
+  if (version < 9) {
+    db.exec(migration009);
+    db.prepare('INSERT INTO journal_authority(id,authority) VALUES (1,?)').run(authority);
+  }
+  if (version < 10) db.exec(migration010);
 }
 export function initialize(path: string): DatabaseSync {
   const db = new DatabaseSync(path, { timeout: 100, enableForeignKeyConstraints: true });
   try {
     db.exec('PRAGMA busy_timeout=100; PRAGMA cache_size=-2048; PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; COMMIT;');
     const version = db.prepare('PRAGMA user_version').get()?.user_version;
-    if (typeof version !== 'number' || version > 10) throw new Failure('schema_newer');
+    if (typeof version !== 'number' || version > 11) throw new Failure('schema_newer');
     db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;');
     const authority = version === 0 ? randomUUID() : null;
-    if (version < 10) transaction(db, () => {
+    if (version < 11) transaction(db, () => {
       if (version === 0) db.exec(migration001);
       if (version < 2) db.exec(migration002);
       if (version < 3) db.exec(migration003);
@@ -81,8 +84,8 @@ export function initialize(path: string): DatabaseSync {
       if (version < 6) db.exec(migration006);
       if (version < 7) db.exec(migration007);
       if (version < 8) db.exec(migration008);
-      migrateAuthority(db, version, authority);
-      db.exec(migration010);
+      migrateIdentity(db, version, authority);
+      migration011(db);
       if (db.prepare('PRAGMA foreign_key_check').get()) throw new Failure('unavailable');
     });
     // Samples and process-owned guard readiness are not valid startup authority.

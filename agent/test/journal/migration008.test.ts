@@ -13,6 +13,11 @@ function legacy(path: string): DatabaseSync {
   const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
   db.exec(literal); return db;
 }
+function migrateHistorical8(path: string): DatabaseSync {
+  const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+  try { transaction(db, () => db.exec(migration008)); return db; }
+  catch (error) { db.close(); throw error; }
+}
 function contents(db: DatabaseSync) {
   return tables.map(table => ({ table, rows: db.prepare(`SELECT * FROM ${table}`).all(),
     columns: db.prepare(`PRAGMA table_info(${table})`).all(),
@@ -29,15 +34,15 @@ function definitions(db: DatabaseSync) {
 it('preserves literal v7 rows, all four children, defaults/indexes/FKs and three deleted-high identities', () => {
   const path = f.path(); const old = legacy(path); const before = contents(old); const highs = sequences(old);
   const schemas = definitions(old).map((sql, index) => index === 0 ? sql.replaceAll('1048576', '2097152') : sql); old.close();
-  const db = initialize(path);
+  const db = migrateHistorical8(path);
   try {
     expect(contents(db)).toEqual(before); expect(sequences(db)).toEqual(highs);
     expect(definitions(db)).toEqual(schemas);
     expect(db.prepare('PRAGMA foreign_keys').get()?.foreign_keys).toBe(1);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(10);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(8);
     expect(db.prepare('SELECT * FROM admission_settings').get()).toEqual({
-      id: 1, configuration_json: ' {"preserve":true} ', observation_json: null, last_clock: 777 });
+      id: 1, configuration_json: ' {"preserve":true} ', observation_json: '{"obsolete":true}', last_clock: 777 });
     expect(db.prepare(`INSERT INTO accepted_attempts(attempt_id,organization_id,workspace_id,intent_digest,
       generation,state,last_seq,offer_json,canonical_json) VALUES ('next','o','w','d',1,'offered',0,'{}','{}')`).run().lastInsertRowid).toBe(102);
     expect(db.prepare("INSERT INTO admission_queue(attempt_id,candidate_json) VALUES ('next','{}')").run().lastInsertRowid).toBe(203);
@@ -53,14 +58,18 @@ it('preserves literal v7 rows, all four children, defaults/indexes/FKs and three
     expect(() => db.prepare('UPDATE accepted_attempts SET offer_json=?').run('é'.repeat(1048576) + 'x')).toThrow();
     db.prepare('UPDATE accepted_attempts SET offer_json=?,canonical_json=? WHERE id=17').run('é'.repeat(1048576), 'x'.repeat(2097152));
   } finally { db.close(); }
-  const reopened = initialize(path); reopened.close();
+  const reopened = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+  try {
+    expect(reopened.prepare('PRAGMA user_version').get()?.user_version).toBe(8);
+    expect(reopened.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+  } finally { reopened.close(); }
 });
 
 it.each(['empty-high', 'missing-row'])('preserves %s sequence state and safe subsequent allocation', mode => {
   const path = f.path(); const old = legacy(path);
   old.exec('DELETE FROM event_spool; DELETE FROM admission_queue; DELETE FROM reservations; DELETE FROM supervision_clock; DELETE FROM accepted_attempts;');
   if (mode === 'missing-row') old.exec('DELETE FROM sqlite_sequence');
-  const highs = sequences(old); old.close(); const db = initialize(path);
+  const highs = sequences(old); old.close(); const db = migrateHistorical8(path);
   try {
     for (const high of highs) expect(sequences(db)).toContainEqual(high);
     const id = db.prepare(`INSERT INTO accepted_attempts(attempt_id,organization_id,workspace_id,intent_digest,
@@ -81,16 +90,16 @@ it('rolls back a late migration fault including rows, indexes, sequences and ver
     expect(db.prepare("SELECT name FROM sqlite_master WHERE name LIKE '%_v8'").all()).toEqual([]);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
   } finally { db.close(); }
-  const retried = initialize(path);
+  const retried = migrateHistorical8(path);
   try { expect(contents(retried)).toEqual(before); expect(sequences(retried)).toEqual(highs); }
   finally { retried.close(); }
 });
 
-it('rejects future version11 without altering its data', () => {
-  const path = f.path(); const db = legacy(path); db.exec('PRAGMA user_version=11'); const before = contents(db); db.close();
+it('rejects future version12 without altering its data', () => {
+  const path = f.path(); const db = legacy(path); db.exec('PRAGMA user_version=12'); const before = contents(db); db.close();
   expect(() => initialize(path)).toThrow('schema_newer');
   const inspect = new DatabaseSync(path);
-  try { expect(contents(inspect)).toEqual(before); expect(inspect.prepare('PRAGMA user_version').get()?.user_version).toBe(11); }
+  try { expect(contents(inspect)).toEqual(before); expect(inspect.prepare('PRAGMA user_version').get()?.user_version).toBe(12); }
   finally { inspect.close(); }
 });
 it('rolls back on bounded SQLite disk-full and preserves the v7 graph for retry', () => {
@@ -105,7 +114,22 @@ it('rolls back on bounded SQLite disk-full and preserves the v7 graph for retry'
     expect(db.prepare("SELECT name FROM sqlite_master WHERE name LIKE '%_v8'").all()).toEqual([]);
     db.exec(`PRAGMA max_page_count=${pages + 100}`);
   } finally { db.close(); }
-  const retry = initialize(path);
+  const retry = migrateHistorical8(path);
   try { expect(contents(retry)).toEqual(before); expect(sequences(retry)).toEqual(highs); }
   finally { retry.close(); }
+});
+
+it('latest migration rejects opaque v7 reservation debt atomically without guessing holds', () => {
+  const path = f.path(); const old = legacy(path); const before = contents(old); const highs = sequences(old);
+  const schema = old.prepare('SELECT * FROM sqlite_master ORDER BY type,name').all();
+  const settings = old.prepare('SELECT * FROM admission_settings').all(); old.close();
+  expect(() => initialize(path)).toThrow('unavailable');
+  const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+  try {
+    expect(contents(db)).toEqual(before); expect(sequences(db)).toEqual(highs);
+    expect(db.prepare('SELECT * FROM sqlite_master ORDER BY type,name').all()).toEqual(schema);
+    expect(db.prepare('SELECT * FROM admission_settings').all()).toEqual(settings);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(7);
+    expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+  } finally { db.close(); }
 });

@@ -6,12 +6,20 @@ import { migration008 } from '../../src/journal/migration008.js';
 import { migration009 } from '../../src/journal/migration009.js';
 import { migration010 } from '../../src/journal/migration010.js';
 import { transaction } from '../../src/journal/sql.js';
+import { readJournalAuthority } from '../../src/journal/authority.js';
 import { journalFixture } from './fixtures.js';
+import { removeFutureRetention } from './legacy-fixtures.js';
 
 const f = journalFixture();
-function old(path: string): DatabaseSync {
+function old(path: string, validIdentity = false): DatabaseSync {
   const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
-  db.exec(readFileSync('agent/test/journal/v7-fixture.sql', 'utf8'));
+  let literal = readFileSync('agent/test/journal/v7-fixture.sql', 'utf8');
+  if (validIdentity) {
+    const offer = f.offer();
+    literal = literal.replaceAll('Attempt-UPPER', offer.attemptId).replaceAll('Org-UPPER', offer.organizationId)
+      .replaceAll('Workspace-UPPER', offer.workspaceId).replaceAll("'intent'", `'${offer.intentDigest}'`);
+  }
+  db.exec(literal);
   transaction(db, () => { db.exec(migration008); db.exec(migration009); db.exec('INSERT INTO journal_authority VALUES(1,NULL)'); });
   return db;
 }
@@ -20,32 +28,46 @@ function durable(db: DatabaseSync) {
     'supervision_clock', 'journal_authority', 'sqlite_sequence'].map(table => ({ table, rows: db.prepare(`SELECT * FROM ${table}`).all() }));
 }
 
-it('preserves v9 quarantine and all old ownership bytes without backfilling fresh refusal', async () => {
+it('historical10 preserves v9 quarantine and all ownership bytes without backfilling fresh refusal', () => {
   const path = f.path(); const seed = old(path);
   seed.exec('UPDATE admission_settings SET observation_json=NULL'); const before = durable(seed); seed.close();
+  const migrated = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+  try { transaction(migrated, () => migrated.exec(migration010)); } finally { migrated.close(); }
   for (let count = 0; count < 2; count++) {
-    const db = initialize(path);
+    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
     try {
       expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(10);
       expect(durable(db)).toEqual(before);
       expect(db.prepare('SELECT * FROM cancelled_originals').all()).toEqual([]);
+      expect(() => readJournalAuthority(db)).toThrow('recovery_required');
       expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
     } finally { db.close(); }
   }
-  const journal = await f.open(path);
-  await expect(journal.journalAuthority()).rejects.toMatchObject({ code: 'recovery_required' });
+  expect(() => initialize(path)).toThrow('unavailable');
+  const inspect = new DatabaseSync(path);
+  try {
+    expect(durable(inspect)).toEqual(before);
+    expect(inspect.prepare('SELECT authority FROM journal_authority').get()?.authority).toBeNull();
+    expect(inspect.prepare('PRAGMA user_version').get()?.user_version).toBe(10);
+    expect(inspect.prepare('SELECT * FROM cancelled_originals').all()).toEqual([]);
+  } finally { inspect.close(); }
 });
 
 it('preserves fresh v9 UUID and an unknown original when upgrading then cancelling', async () => {
   const path = f.path(); let journal = await f.open(path); const authority = await journal.journalAuthority();
   await journal.immutableOffer(f.offer()); await f.close(journal);
-  const seed = new DatabaseSync(path); seed.exec('DROP TABLE cancelled_originals; PRAGMA user_version=9'); seed.close();
+  const seed = new DatabaseSync(path);
+  try { removeFutureRetention(seed); seed.exec('DROP TABLE cancelled_originals; PRAGMA user_version=9'); }
+  finally { seed.close(); }
   journal = await f.open(path);
   expect(await journal.journalAuthority()).toBe(authority);
   expect(await journal.cancelOriginal({ offer: f.offer(), now: 1000 })).not.toHaveProperty('admission');
   await f.close(journal);
   const db = new DatabaseSync(path);
-  try { expect(db.prepare('SELECT * FROM cancelled_originals').all()).toEqual([]); }
+  try {
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
+    expect(db.prepare('SELECT * FROM cancelled_originals').all()).toEqual([]);
+  }
   finally { db.close(); }
 });
 
@@ -81,13 +103,37 @@ it('atomically rolls back schema10, triggers, old rows and version on late migra
   } finally { db.close(); }
 });
 
-it('initialization checks migrated v9 foreign keys and rolls back marker schema on corruption', () => {
+it('historical10 foreign-key validation rolls back marker schema on v9 corruption', () => {
   const path = f.path(); const seed = old(path);
   seed.exec('PRAGMA foreign_keys=OFF; DELETE FROM accepted_attempts'); seed.close();
-  expect(() => initialize(path)).toThrow('unavailable');
-  const db = new DatabaseSync(path);
+  const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+  const before = durable(db);
   try {
+    expect(() => transaction(db, () => {
+      db.exec(migration010);
+      if (db.prepare('PRAGMA foreign_key_check').get()) throw new Error('unavailable');
+    })).toThrow('unavailable');
+    expect(durable(db)).toEqual(before);
     expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(9);
     expect(db.prepare("SELECT name FROM sqlite_master WHERE name LIKE '%cancelled_originals%'").all()).toEqual([]);
+  } finally { db.close(); }
+});
+
+it('latest initialization rejects missing v9 debt facts and rolls back all schema additions', () => {
+  const path = f.path(); const seed = old(path, true); const before = durable(seed);
+  expect(seed.prepare('SELECT attempt_id,organization_id,workspace_id,intent_digest FROM accepted_attempts').get()).toEqual({
+    attempt_id: f.offer().attemptId, organization_id: f.offer().organizationId,
+    workspace_id: f.offer().workspaceId, intent_digest: f.offer().intentDigest });
+  expect(seed.prepare('SELECT reservation_json FROM reservations').get()?.reservation_json)
+    .toBe('{"charged":133333,"staging":{"policyVersion":1}}');
+  const schema = seed.prepare('SELECT * FROM sqlite_master ORDER BY type,name').all(); seed.close();
+  expect(() => initialize(path)).toThrow('unavailable');
+  const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+  try {
+    expect(durable(db)).toEqual(before);
+    expect(db.prepare('SELECT * FROM sqlite_master ORDER BY type,name').all()).toEqual(schema);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(9);
+    expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+    expect(() => readJournalAuthority(db)).toThrow('recovery_required');
   } finally { db.close(); }
 });

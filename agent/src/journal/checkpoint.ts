@@ -36,7 +36,7 @@ export function commitWrapperBatch(db: DatabaseSync, input: WrapperBatch): Reado
     const row = owner(db, request.key);
     if (freshRefusal(db, row)) throw new Failure('conflict');
     const replay = reconcile(row, request, digest, next); if (replay) return replay;
-    if (row.spool_bytes + row.snapshot_bytes + bytes > row.quota_bytes) throw new Failure('quota_exceeded');
+    if (row.spool_bytes + row.snapshot_bytes + bytes + row.hold_bytes > row.quota_bytes) throw new Failure('quota_exceeded');
     // Reserve the complete replacement before appendAtomic charges events/projections.
     // Its temporary future cursor is visible only inside this all-or-nothing transaction.
     db.prepare('UPDATE accepted_attempts SET wrapper_checkpoint_json=?,checkpoint_bytes=? WHERE id=?').run(json, bytes, row.id);
