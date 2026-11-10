@@ -1,7 +1,8 @@
 # Durable output delivery closure
 
-Status: coordinator draft for independent review; unused interface declarations
-only. No migration ID or implementation is accepted yet. Refines the producer
+Status: independently reviewed exact contract; unused interface declarations
+only, implementation pending. Coordinator reserves agent migration013 for this
+boundary. Refines the producer
 barrier in [output transfer](output-transfer.md), using the existing immutable
 [source receipt](output-source-journal.md). It does not publish backend results.
 
@@ -38,7 +39,7 @@ Add delivery_bytes (integer0 initially) and output_delivery_closures FK to the
 original source. All seven live charges include delivery in preflight/SQL quota;
 ACK/prune/physical release cannot refund it. Preserve001..012 definitions and their
 historical guard templates. A new migration installs the current replacement parent
-quota guard; its ID is reserved only after review. No undefined-counter defaults.
+quota guard in migration013. No undefined-counter defaults.
 Immutable child INSERT/REPLACE/UPDATE/DELETE and parent counter forging refuse.
 Migration data/DDL/version/FKs commit or roll back together without source backfill.
 
