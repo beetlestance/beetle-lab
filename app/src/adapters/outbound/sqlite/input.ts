@@ -1,3 +1,4 @@
+import { resultOperation, captureResultOperation } from './run-results/index.js';
 import { artifactOperation } from './output-artifacts/index.js';
 import { outputOperation, captureOutputOperation, outputReplyLimit } from './output-custody/index.js';
 import { eventOperation, captureEventOperation, eventRequestLimit, eventReplyLimit } from './event-custody/index.js';
@@ -115,6 +116,9 @@ function checkedExtendedOperation(operation: Operation): boolean {
   return settingsRead(operation);
 }
 export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operation {
+  if (resultOperation(input)) {
+    try { return captureResultOperation(input); } catch { throw new StorageError('invalid_input'); }
+  }
   if (outputOperation(input)) {
     try { return captureOutputOperation(input); } catch { throw new StorageError('invalid_input'); }
   }
@@ -152,7 +156,7 @@ function dataProperty(value: unknown, key: string): unknown {
   return descriptor && 'value' in descriptor ? descriptor.value : undefined;
 }
 export function operationMessageLimit(operation: Operation): number {
-  if (artifactOperation(operation)) return 4096;
+  if (resultOperation(operation) || artifactOperation(operation)) return 4096;
   if (outputOperation(operation)) return 79872;
   if (eventOperation(operation)) return eventRequestLimit(operation);
   if (dispatchOperation(operation)) return dispatchRequestLimit(operation);
@@ -163,9 +167,10 @@ export function operationMessageLimit(operation: Operation): number {
 
 /** One two-original allowance is shared by suites, Offers and event batches. */
 export function largeOperation(operation: Operation): boolean {
-  return suiteOperation(operation) || ['dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource'].includes(dataProperty(operation, 'kind') as string);
+  return suiteOperation(operation) || ['dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource', 'getRunResult'].includes(dataProperty(operation, 'kind') as string);
 }
 export function operationReplyLimit(operation: Operation): number {
+  if (resultOperation(operation)) return 73728;
   if (outputOperation(operation)) return outputReplyLimit(operation);
   if (eventOperation(operation)) return eventReplyLimit(operation);
   if (dispatchOperation(operation)) return dispatchReplyLimit(operation);
