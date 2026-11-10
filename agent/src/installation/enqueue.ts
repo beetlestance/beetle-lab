@@ -1,7 +1,7 @@
-import { RUNNER_MAXIMUM_OFFER_BYTES, encodeCanonicalJson, encodeJson, validate } from '@beetle/contracts';
+import { RUNNER_MAXIMUM_OFFER_BYTES, encodeCanonicalJson, encodeJson } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import { JournalError } from '../journal/index.js';
-import { CatalogError } from '../catalog/index.js';
+import { structuralOffer } from './offer.js';
 import type { ValidationIdentity } from '../admission/index.js';
 import type { InstallationOptions } from './types.js';
 interface EnqueueContext { readonly options: InstallationOptions; now(): number; open(): void }
@@ -24,13 +24,6 @@ export async function enqueue(manager: EnqueueContext, input: unknown): Promise<
   throw new InstallationError('journal');
 }
 
-function structuralOffer(input: unknown): Offer {
-  try {
-    const checked = validate('Offer', JSON.parse(encodeJson(input, RUNNER_MAXIMUM_OFFER_BYTES)) as unknown);
-    if (checked.ok) return checked.value;
-  } catch { /* Keep boundary diagnostics independent of private input. */ }
-  throw new CatalogError('invalid_offer');
-}
 async function acceptedReplay(manager: EnqueueContext, offer: Offer): Promise<OfferAcceptance | null> {
   const key = { attemptId: offer.attemptId, organizationId: offer.organizationId, workspaceId: offer.workspaceId };
   let accepted: Offer;

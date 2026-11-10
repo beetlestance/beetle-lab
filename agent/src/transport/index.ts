@@ -49,7 +49,9 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
   server.addHook('onResponse', async request => { offers.releaseRequest(request); });
   server.addHook('onRequest', async request => {
     identity.capture(request);
-    if (request.method === 'PUT' && request.routeOptions.url === '/runner/v1/attempts/:attemptId') {
+    const offerBody = (request.method === 'PUT' && request.routeOptions.url === '/runner/v1/attempts/:attemptId')
+      || (request.method === 'POST' && request.routeOptions.url === '/runner/v1/attempts/:attemptId/cancel-original');
+    if (offerBody) {
       const scope = identity.key(request); query(request);
       if (scope.generation !== 1) throw new AgentHttpError(409, 'conflicting_digest');
       offers.acquire(request);
@@ -76,6 +78,13 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
     if (!result.accepted) throw new AgentHttpError(result.decision.kind === 'defer' ? 429 : 422,
       'budget_unavailable', result.decision.kind === 'defer' ? 'transport' : 'never');
     sendJson(reply, 202, 'AttemptSnapshot', result.snapshot, scope);
+  });
+  server.post('/runner/v1/attempts/:attemptId/cancel-original', { bodyLimit: RUNNER_MAXIMUM_OFFER_BYTES }, async (request, reply) => {
+    query(request); const scope = key(request); const body = requestBody('Offer', request.body);
+    bodyMatches(scope, scope.attemptId, body);
+    if (scope.generation !== 1) throw new AgentHttpError(409, 'conflicting_digest');
+    const result = await offers.run(request, () => work(() => services.installation.cancelOriginal(body)));
+    sendJson(reply, 200, 'AttemptSnapshot', result, scope);
   });
   server.get('/runner/v1/attempts/:attemptId', async (request, reply) => {
     query(request); sendJson(reply, 200, 'AttemptSnapshot', await work(() => snapshot(request)), key(request));

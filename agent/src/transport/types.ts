@@ -7,7 +7,7 @@ export interface AgentHttpOptions {
   readonly credential: string;
   /** Immutable UUID of the exclusively opened journal, bound before serving. */
   readonly journalAuthority: string;
-  readonly installation: Pick<InstallationController, 'enqueue' | 'cancel'>;
+  readonly installation: Pick<InstallationController, 'enqueue' | 'cancel' | 'cancelOriginal'>;
   readonly journal: Pick<Journal, 'get' | 'readEvents' | 'acknowledge'>;
   capabilities(): Promise<Capabilities>;
 }

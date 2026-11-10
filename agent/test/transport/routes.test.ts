@@ -102,7 +102,7 @@ it('holds the service-operation allowance through original pending promises', as
 it('refuses weak installation credentials and unknown endpoints without echoing URL contents', async () => {
   const e = await f.server();
   expect(() => createAgentServer({ credential: 'weak', journalAuthority: e.capabilities.journalAuthority, capabilities: async () => e.capabilities,
-    installation: { enqueue: e.enqueue, cancel: e.cancel }, journal: e.journal })).toThrow(TypeError);
+    installation: { enqueue: e.enqueue, cancel: e.cancel, cancelOriginal: e.cancelOriginal }, journal: e.journal })).toThrow(TypeError);
   const response = await e.server.inject({ url: '/unknown/SYNTHETIC_QUERY_SECRET', headers: e.headers });
   expect(response.statusCode).toBe(404); expect(response.body).not.toContain('SYNTHETIC_QUERY_SECRET');
 });

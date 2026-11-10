@@ -7,7 +7,7 @@ interface Owner {
   finish(): void;
   issued: boolean;
 }
-/** Two body owners, retained until the original enqueue settles, without a waiting queue. */
+/** Two body owners, retained until the original Offer or cancellation settles, without a waiting queue. */
 export class OfferIngress {
   private readonly owners = new Map<FastifyRequest, Owner>();
   private closed = false;

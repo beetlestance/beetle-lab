@@ -10,6 +10,7 @@ import { createEntry, identity, scopeCopy } from './entry.js';
 import type { Entry } from './entry.js';
 import { drive } from './drive.js';
 import { enqueue } from './enqueue.js';
+import { structuralOffer } from './offer.js';
 import { InstallationError } from './types.js';
 import type { DriveProgress, InstallationAttempt, InstallationController, InstallationOptions, OfferAcceptance } from './types.js';
 const owners = new WeakMap<InstallationOptions['journal'], Manager>();
@@ -58,6 +59,23 @@ export class Manager implements InstallationController {
     return result;
   }
   enqueue(input: unknown): Promise<OfferAcceptance> { return this.run(() => enqueue(this, input)); }
+  cancelOriginal(input: unknown): Promise<AttemptSnapshot> {
+    return this.run(async () => {
+      const offer = structuralOffer(input);
+      const key = scopeCopy({ organizationId: offer.organizationId, workspaceId: offer.workspaceId,
+        attemptId: offer.attemptId, generation: 1 });
+      this.open(); const entry = this.entry(key);
+      entry.users++; entry.version++;
+      try {
+        const snapshot = await this.options.journal.cancelOriginal({ offer, now: this.now() });
+        this.signal(entry);
+        return snapshot;
+      } finally {
+        entry.users--;
+        await releaseProvisional(this.options.journal, this.entries, entry);
+      }
+    });
+  }
   drive(input: Scope, operation: Operation): Promise<DriveProgress> {
     return this.run(async () => {
       const key = scopeCopy(input); this.open(); const entry = this.entry(key);

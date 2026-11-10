@@ -1,6 +1,6 @@
 # Private runner HTTP
 
-createAgentServer composes six shipped runner routes. It does not listen, schedule,
+createAgentServer composes shipped runner routes. It does not listen, schedule,
 launch Docker, close the journal or finalize artifacts. Bootstrap owns those effects.
 Handlers use trusted installation services plus the public journal, not raw SQL.
 
@@ -20,5 +20,7 @@ originals. InstallationController retains its own async stop/preparation work an
 must close separately before bootstrap closes the journal.
 
 HTTP metadata evidence is separate from engine execution and result finalization.
+Offer and cancelOriginal share two pre-body slots and identical Offer bounds.
+Fresh cancellation does not fall back to enqueue. Contract: cancellation.md.
 Artifact/range and explicit finalization ACK endpoints are not implemented here.
 Focused checks: agent/test/transport, Node TS and changed lint/structural gates.

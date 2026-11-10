@@ -11,7 +11,7 @@ afterEach(async () => { await Promise.all(fixtures.splice(0).map(value => value.
 it('requires the authorization function at route registration', async () => {
   const f = setup(); const server = createApiServer();
   try {
-    expect(() => registerRunRoutes(server, { store: { execute: f.execute },
+    expect(() => registerRunRoutes(server, { store: { execute: f.execute, cancel: f.cancel },
       reader: { getRun: f.getRun, listRuns: f.listRuns }, newId: f.newId, now: f.now,
       digest: () => 'a'.repeat(64), authorize: undefined as unknown as onRequestAsyncHookHandler })).toThrow();
   } finally { await server.close(); }

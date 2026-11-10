@@ -91,17 +91,19 @@ it('reserves two slots before parsing, refuses invalid credentials/scope/path fi
   expect((await e.server.inject({ method: 'PUT', url: e.path, headers, payload: e.job })).statusCode).toBe(429);
   held[1]!.request.destroy(); another.request.destroy();
 });
-it('retains credit through normal request close and aborted responses until original enqueue settles', async () => {
+it('shares credit across Offer and cancellation through disconnect until both originals settle', async () => {
   const e = await f.server(); const snapshot = await e.store();
   const releases: (() => void)[] = [];
   e.enqueue.mockImplementation(() => new Promise(resolve => { releases.push(() => resolve({ accepted: true, snapshot })); }));
+  e.cancelOriginal.mockImplementation(() => new Promise(resolve => { releases.push(() => resolve(snapshot)); }));
   const port = await listening(e.server); const headers = { ...e.headers, 'content-type': 'application/json' };
   const first = raw(port, e.path, headers); first.request.end(JSON.stringify(e.job));
-  const second = raw(port, e.path, headers); second.request.end(JSON.stringify(e.job));
+  const second = raw(port, `${e.path}/cancel-original`, headers, 'POST'); second.request.end(JSON.stringify(e.job));
   await expect.poll(() => releases.length).toBe(2);
   first.request.destroy(); second.request.destroy(); await Promise.all([first.response, second.response]);
   expect((await e.server.inject({ method: 'PUT', url: e.path, headers, payload: e.job })).statusCode).toBe(429);
-  expect(e.enqueue).toHaveBeenCalledTimes(2);
+  expect(e.enqueue).toHaveBeenCalledTimes(1); expect(e.cancelOriginal).toHaveBeenCalledTimes(1);
+  expect((await e.server.inject({ method: 'POST', url: `${e.path}/cancel-original`, headers, payload: e.job })).statusCode).toBe(429);
   expect((await e.server.inject({ url: '/runner/v1/capabilities', headers: e.headers })).statusCode).toBe(200);
   releases[0]!(); await new Promise(resolve => setImmediate(resolve));
   // A parse failure takes/releases only the credit belonging to this request.

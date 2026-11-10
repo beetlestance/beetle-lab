@@ -13,5 +13,8 @@ Unmount/session retirement aborts and fences original callbacks; abort cannot
 prove absence of commit. SessionApp remounts App by authenticated generation.
 Accepted receipts invalidate detail/history; receipt version 1 never seeds detail.
 State, outcome and validation are independent. Metrics/artifacts are unavailable.
+RunCancellation owns one scoped request ID across unknown reply retries; accepted
+intent displays waiting, never terminal stop. Receipt replay invalidates reads;
+it cannot overwrite newer detail. Session/scope retirement fences callbacks.
 Focused checks: `node node_modules/vitest/vitest.mjs run web/src/features/runs
 --maxWorkers=1` (use repository root executable when this worktree lacks deps).
