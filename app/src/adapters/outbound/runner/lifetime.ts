@@ -29,6 +29,12 @@ function original(offer: boolean, caller?: AbortSignal): OriginalCall {
   };
 }
 
+/** A stop hint cannot erase validated evidence already returned by original work. */
+function settledResult<T>(result: ClientResult<T>, failure: 'cancelled' | 'timeout' | undefined): ClientResult<T> {
+  if (result.ok || failure === undefined) return result;
+  return { ok: false, error: { kind: failure } };
+}
+
 /** Credits belong to original work; abort is only a stop request. No wait queue. */
 export class CallCredits {
   private readonly calls = new Set<OriginalCall>();
@@ -49,8 +55,7 @@ export class CallCredits {
     try {
       if (call.signal.aborted) return { ok: false, error: { kind: 'cancelled' } };
       const result = await work(call);
-      const failure = call.failure();
-      return failure ? { ok: false, error: { kind: failure } } : result;
+      return settledResult(result, call.failure());
     } catch {
       return { ok: false, error: { kind: call.failure() ?? 'transport' } };
     } finally {

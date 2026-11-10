@@ -9,6 +9,9 @@ Two Offer and eight ordinary original calls share credits across every facade.
 No queue, retries, redirect, address fallback, proxy, keepalive or decompression.
 DNS completes before one pinned address is used. Abort prevents late DNS delivery.
 Calls retain DNS/request/response/socket ownership until actual native completion.
+Complete valid EOF is retained through abort/deadline and cleanup errors while
+resources drain; schema/identity/status validation must still succeed before a
+positive reply escapes. Incomplete/malformed evidence never becomes positive.
 Close fences calls, aborts active requests, and retains one drain promise.
 Requests: Offer <=2MiB, ordinary <=64KiB. Replies <=1MiB/4096 fragments.
 Headers <=16KiB/32 fields. Logical deadline: 5000ms; it never releases credit.
