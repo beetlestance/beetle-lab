@@ -1,3 +1,4 @@
+import { finalizationOperation, captureFinalizationOperation } from './output-finalization/index.js';
 import { resultOperation, captureResultOperation } from './run-results/index.js';
 import { artifactOperation } from './output-artifacts/index.js';
 import { outputOperation, captureOutputOperation, outputReplyLimit } from './output-custody/index.js';
@@ -116,6 +117,9 @@ function checkedExtendedOperation(operation: Operation): boolean {
   return settingsRead(operation);
 }
 export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operation {
+  if (finalizationOperation(input)) {
+    try { return captureFinalizationOperation(input); } catch { throw new StorageError('invalid_input'); }
+  }
   if (resultOperation(input)) {
     try { return captureResultOperation(input); } catch { throw new StorageError('invalid_input'); }
   }
@@ -156,7 +160,7 @@ function dataProperty(value: unknown, key: string): unknown {
   return descriptor && 'value' in descriptor ? descriptor.value : undefined;
 }
 export function operationMessageLimit(operation: Operation): number {
-  if (resultOperation(operation) || artifactOperation(operation)) return 4096;
+  if (finalizationOperation(operation) || resultOperation(operation) || artifactOperation(operation)) return 4096;
   if (outputOperation(operation)) return 79872;
   if (eventOperation(operation)) return eventRequestLimit(operation);
   if (dispatchOperation(operation)) return dispatchRequestLimit(operation);
@@ -170,6 +174,7 @@ export function largeOperation(operation: Operation): boolean {
   return suiteOperation(operation) || ['dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource', 'getRunResult'].includes(dataProperty(operation, 'kind') as string);
 }
 export function operationReplyLimit(operation: Operation): number {
+  if (finalizationOperation(operation)) return 4096;
   if (resultOperation(operation)) return 73728;
   if (outputOperation(operation)) return outputReplyLimit(operation);
   if (eventOperation(operation)) return eventReplyLimit(operation);

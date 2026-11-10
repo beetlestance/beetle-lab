@@ -1,3 +1,4 @@
+import { finalizationOperation, captureFinalizationReply } from './output-finalization/index.js';
 import { resultOperation, captureResultReply } from './run-results/index.js';
 import { outputOperation, captureOutputReply } from './output-custody/index.js';
 import { eventOperation, captureEventReply } from './event-custody/index.js';
@@ -6,7 +7,7 @@ import { checkedBootstrap, checkedOperation, boundedCopy, operationReplyLimit } 
 import { dispatchOperation, captureDispatchReply } from './dispatch-wire.js';
 import { initialize } from './schema.js';
 import { Store, safeCode } from './store.js';
-import type { Bootstrap, Command, Reply } from './protocol.js';
+import type { Bootstrap, Command, Reply, Operation, Value } from './protocol.js';
 
 const port = parentPort;
 if (!port) throw new Error('Storage worker required');
@@ -14,6 +15,11 @@ function commandId(message: unknown): unknown {
   const descriptor = message !== null && typeof message === 'object' ? Object.getOwnPropertyDescriptor(message, 'messageId') : undefined;
   const messageId: unknown = descriptor && 'value' in descriptor ? descriptor.value : undefined;
   return messageId;
+}
+function captureReply(operation: Operation, original: Value): Value {
+  return finalizationOperation(operation) ? captureFinalizationReply(operation, original) : resultOperation(operation) ? captureResultReply(operation.key, original) : outputOperation(operation) ? captureOutputReply(operation, original) : eventOperation(operation) ? captureEventReply(operation, original)
+        : dispatchOperation(operation) ? captureDispatchReply(operation, original)
+        : boundedCopy(original, operationReplyLimit(operation));
 }
 function start(): void {
   let store: Store;
@@ -36,9 +42,7 @@ function start(): void {
     try {
       const operation = checkedOperation(message as Command, runtimeTtlMs);
       const original = store.execute(operation);
-      const value = resultOperation(operation) ? captureResultReply(operation.key, original) : outputOperation(operation) ? captureOutputReply(operation, original) : eventOperation(operation) ? captureEventReply(operation, original)
-        : dispatchOperation(operation) ? captureDispatchReply(operation, original)
-        : boundedCopy(original, operationReplyLimit(operation));
+      const value = captureReply(operation, original);
       port.postMessage({ kind: 'result', messageId, ok: true, value } satisfies Reply);
       if (operation.kind === 'close') port.close();
     } catch (error) {
