@@ -21,7 +21,7 @@ it('reproduces exact outputs and rejects stale, missing, unexpected and changed-
     await mkdir(join(owned, 'scripts'), { recursive: true });
     await cp(join(root, 'scripts/generate-api.ts'), join(owned, 'scripts/generate-api.ts'));
     await mkdir(join(owned, 'runner/v1'), { recursive: true });
-    await cp(join(root, 'runner/v1/common.schema.json'), join(owned, 'runner/v1/common.schema.json'));
+    await cp(join(root, 'runner/v1'), join(owned, 'runner/v1'), { recursive: true });
     await writeFile(join(owned, 'package.json'), '{"type":"module"}\n');
     expect(() => run(true)).toThrow();
     run();

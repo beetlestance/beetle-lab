@@ -538,5 +538,20 @@
     "path": "valid/run-cancelling.json",
     "schema": "Run",
     "valid": true
+  },
+  {
+    "path": "valid/run-result-pending.json",
+    "schema": "RunResultSnapshot",
+    "valid": true
+  },
+  {
+    "path": "valid/run-events-pending.json",
+    "schema": "RunEventPage",
+    "valid": true
+  },
+  {
+    "path": "invalid/run-events-generation.json",
+    "schema": "RunEventPage",
+    "valid": false
   }
 ]

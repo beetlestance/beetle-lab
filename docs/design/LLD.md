@@ -11,6 +11,7 @@ The owning document below must be updated before its implementation changes.
 | Durable dispatch/storage | [Dispatch storage](lld/dispatch-storage.md), [output allocation](lld/output-allocation.md) | Claim/ACK/recovery, bounded isolation and shared byte reservations |
 | Durable cancellation | [Cancellation](lld/cancellation.md) | Scoped public intent, atomic original refusal, delivery races and UI confirmation |
 | Durable event transport | [Event custody](lld/event-custody.md) | Bounded batch/cursor commit before ACK, replay, gaps, output accounting and shutdown |
+| Public durable event reads | [Run events](lld/run-event-reads.md) | Scoped finite cursor pages, storage bounds and client ownership |
 | Backend snapshot merge | [Attempt observation](lld/attempt-observation.md) | Identity, sequence/independent fact merge and nonterminal run projection |
 | Agent admission evidence | [Admission evidence](lld/agent-admission-evidence.md) | Independent queue refusal/released-reservation facts, merge rules and release authority |
 | Suite authoring | [Suites/revisions](lld/suite-authoring.md) | Scoped authoring, immutable revisions, large bounded configs and editor behavior |

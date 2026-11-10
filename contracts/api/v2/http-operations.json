@@ -418,5 +418,15 @@
     "error": "ApiError",
     "params": "RunParams",
     "request": "CancelRunRequest"
+  },
+  {
+    "name": "listRunEvents",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/events",
+    "response": "RunEventPage",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunParams",
+    "query": "PageQuery"
   }
 ]

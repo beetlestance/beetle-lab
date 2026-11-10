@@ -4,6 +4,10 @@ import { schema as Common } from '../../generated/common.js';
 import { schema as EngineResult } from '../../generated/engine-result.js';
 import { schema as ResultEvidence } from '../../generated/result-evidence.js';
 import { schema as ResultExecution } from '../../generated/result-execution.js';
+import { schema as AgentEvent } from '../../generated/agent-event.js';
+import { schema as EventEnvelope } from '../../generated/event-envelope.js';
+import { schema as WrapperEvents } from '../../generated/wrapper-events.js';
+import { schema as SupervisorEvents } from '../../generated/supervisor-events.js';
 import { schema as ApiCommon } from './common.js';
 import { schema as ApiInputRequests } from './input-requests.js';
 import { schema as ApiInput } from './input.js';
@@ -11,6 +15,7 @@ import { schema as ApiNamespaceRequests } from './namespace-requests.js';
 import { schema as ApiNamespace } from './namespace.js';
 import { schema as ApiParameters } from './parameters.js';
 import { schema as ApiRetention } from './retention.js';
+import { schema as ApiRunEvents } from './run-events.js';
 import { schema as ApiRunRequests } from './run-requests.js';
 import { schema as ApiRunResult } from './run-result.js';
 import { schema as ApiRun } from './run.js';
@@ -21,7 +26,7 @@ import { schema as ApiSettings } from './settings.js';
 import { schema as ApiSuiteRequests } from './suite-requests.js';
 import { schema as ApiSuite } from './suite.js';
 /** Complete reference closure; runner result schemas are shared, never copied. */
-export const apiSchemas = freezeSchema([Common, EngineResult, ResultEvidence, ResultExecution, ApiCommon, ApiInputRequests, ApiInput, ApiNamespaceRequests, ApiNamespace, ApiParameters, ApiRetention, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
+export const apiSchemas = freezeSchema([Common, EngineResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiInputRequests, ApiInput, ApiNamespaceRequests, ApiNamespace, ApiParameters, ApiRetention, ApiRunEvents, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -70,6 +75,7 @@ export const apiMessageSchemas = freezeSchema({
   RetentionPreview: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionPreview' },
   RetentionApplyRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionApplyRequest' },
   RetentionApplyReceipt: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionApplyReceipt' },
+  RunEventPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-events#/$defs/RunEventPage' },
   CreateRunRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/CreateRunRequest' },
   CancelRunRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/CancelRunRequest' },
   RunResultSnapshot: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-result#/$defs/RunResultSnapshot' },
