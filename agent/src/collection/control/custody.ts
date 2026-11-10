@@ -3,9 +3,11 @@ import type { BigIntStats } from 'node:fs';
 import type { FileHandle } from 'node:fs/promises';
 import { join } from 'node:path';
 import { CONTROL_FILE, CONTROL_FILE_BYTES } from '../../control-protocol/index.js';
-import { ControlReadError } from './types.js';
+import { snapshotRootIdentity } from '../root/index.js';
+import type { CollectionRootIdentity } from '../root/index.js';
+import { CONTROL_READ_MAX_MS, ControlReadError } from './types.js';
 import type { ReaderPorts } from './ports.js';
-import type { Operation } from './operation.js';
+import { Operation } from './operation.js';
 
 export function identity(a: BigIntStats, b: BigIntStats): boolean { return a.dev === b.dev && a.ino === b.ino; }
 export function signature(s: BigIntStats): string {
@@ -25,6 +27,8 @@ export class Custody {
   private file: FileHandle | undefined;
   private parentStat: BigIntStats | undefined;
   private fileStat: BigIntStats | undefined;
+  private stoppedStat: BigIntStats | undefined;
+  private stoppedIdentity: Readonly<CollectionRootIdentity> | undefined;
   private highSize = 0n;
   constructor(private readonly directory: string, private readonly uid: number, private readonly ports: ReaderPorts) {}
   private async canonical(op: Operation): Promise<void> {
@@ -61,7 +65,7 @@ export class Custody {
     this.fileStat = actual;
     return this.check(op);
   }
-  private async parentCheck(op: Operation): Promise<void> {
+  private async parentCheck(op: Operation, pin = false): Promise<BigIntStats> {
     await this.canonical(op);
     const named = await op.io(() => this.ports.lstat(this.directory, { bigint: true }));
     const actual = await op.io(() => this.parent!.stat({ bigint: true }));
@@ -69,6 +73,17 @@ export class Custody {
     if (!this.parentStat || !identity(named, this.parentStat) || !identity(actual, this.parentStat)) {
       throw new ControlReadError('custody');
     }
+    if ((pin && signature(named) !== signature(actual)) || (this.stoppedStat
+      && (signature(named) !== signature(this.stoppedStat) || signature(actual) !== signature(this.stoppedStat)))) {
+      throw new ControlReadError('custody');
+    }
+    return actual;
+  }
+  async stoppedRoot(op: Operation): Promise<Readonly<CollectionRootIdentity>> {
+    const actual = await this.parentCheck(op, true);
+    this.stoppedStat ??= actual;
+    this.stoppedIdentity ??= snapshotRootIdentity(this.directory, this.uid, this.stoppedStat);
+    return this.stoppedIdentity;
   }
   async check(op: Operation): Promise<BigIntStats> {
     await this.parentCheck(op);
@@ -94,5 +109,19 @@ export class Custody {
       Promise.resolve().then(() => this.file?.close()), Promise.resolve().then(() => this.parent?.close()),
     ]);
     if (outcomes.some(outcome => outcome.status === 'rejected')) throw new ControlReadError('io');
+    if (this.stoppedStat) await this.postClose();
+  }
+  private async postClose(): Promise<void> {
+    const op = new Operation(this.ports);
+    op.run({ deadline: this.ports.now() + CONTROL_READ_MAX_MS, stopped: true }, async () => {
+      await this.canonical(op);
+      const named = await op.io(() => this.ports.lstat(this.directory, { bigint: true }));
+      assertMetadata(named, this.uid, true);
+      if (signature(named) !== signature(this.stoppedStat!)) throw new ControlReadError('custody');
+      return { kind: 'caught_up', cursor: null, tail: 'none', consistency: 'live_provisional' };
+    }, () => undefined);
+    const result = await op.operation.result;
+    await op.operation.quiesced;
+    if (!result.ok) throw new ControlReadError(result.reason);
   }
 }

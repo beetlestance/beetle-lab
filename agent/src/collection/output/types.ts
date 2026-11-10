@@ -1,5 +1,6 @@
 import type { EngineResult } from '@beetle/contracts';
 import type { ControlScope } from '../../control-protocol/index.js';
+import type { CollectionRootIdentity } from '../root/index.js';
 
 export const OUTPUT_RESULT_FILE = 'engine-result.json';
 export const OUTPUT_RESULT_BYTES = 1_048_576;
@@ -23,14 +24,7 @@ export interface OutputCollectionOptions {
   readonly signal?: AbortSignal;
 }
 /** Private owned facts, published only after the collection's original closes succeed. */
-export interface OutputRootIdentity {
-  readonly directory: string;
-  readonly uid: number;
-  readonly device: string;
-  readonly inode: string;
-  readonly modifiedNs: string;
-  readonly changedNs: string;
-}
+export type OutputRootIdentity = CollectionRootIdentity;
 export interface OutputCustody {
   readonly resultFileBytes: number;
   readonly controlBytes: number;

@@ -1,4 +1,5 @@
 import type { ControlScope, WrapperBatch, WrapperCheckpoint, WrapperCursor } from '../../control-protocol/index.js';
+import type { CollectionRootIdentity } from '../root/index.js';
 
 export const CONTROL_READ_BYTES = 262_144;
 export const CONTROL_READ_CALLS = 8;
@@ -26,7 +27,9 @@ export type ControlReadValue =
   | { readonly kind: 'caught_up'; readonly cursor: Readonly<WrapperCursor> | null;
       readonly tail: 'none' | 'incomplete'; readonly consistency: 'live_provisional' }
   | { readonly kind: 'caught_up'; readonly cursor: Readonly<WrapperCursor>;
-      readonly tail: 'none'; readonly consistency: 'stopped_verified' };
+      readonly tail: 'none'; readonly consistency: 'stopped_verified';
+      /** Provisional native snapshot until this original reader closes successfully. */
+      readonly root: Readonly<CollectionRootIdentity> };
 export type ControlReadResult = { readonly ok: true; readonly value: ControlReadValue }
   | { readonly ok: false; readonly reason: ControlReadReason };
 export interface ControlReadOperation {
@@ -38,6 +41,6 @@ export interface ControlReader {
   read(budget: ControlReadBudget): ControlReadOperation;
   /** Synchronous acknowledgement of the sole pending batch; mismatches throw ControlReadError(checkpoint). */
   accept(checkpoint: Readonly<WrapperCheckpoint>): void;
-  /** One cached outcome covering every issued operation and original descriptor close. */
+  /** One cached outcome covering issued IO, original closes and final named-root checks. */
   close(): Promise<void>;
 }

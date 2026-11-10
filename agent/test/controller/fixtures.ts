@@ -13,6 +13,7 @@ import { controlled, supervisorFixture, scope } from '../supervisor/fixtures.js'
 export const budget = () => ({ deadline: performance.now() + 5000 });
 export const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 export class ScriptReader implements ControlReader {
+  private readonly syntheticRoot;
   checkpoint: Readonly<WrapperCheckpoint> | null;
   pending: WrapperBatch | undefined;
   readonly budgets: ControlReadBudget[] = [];
@@ -21,6 +22,9 @@ export class ScriptReader implements ControlReader {
   closeFailure = false;
   private closing: Promise<void> | undefined;
   constructor(options: ControlReaderOptions, events: ControlEvent[]) {
+    // Synthetic orchestration facts derived from this fixture's options, never native authority.
+    this.syntheticRoot = Object.freeze({ directory: options.directory, uid: options.uid,
+      device: '0', inode: '0', modifiedNs: '0', changedNs: '0' });
     this.checkpoint = options.checkpoint;
     if (!this.checkpoint && events.length) this.pending = { key: options.key, expected: null,
       next: { version: 1, dev: '1', ino: '2', offset: Buffer.byteLength(events.map(e => JSON.stringify(e) + '\n').join('')),
@@ -32,7 +36,7 @@ export class ScriptReader implements ControlReader {
       : this.pending ? { ok: true as const, value: { kind: 'batch' as const, request: this.pending } }
         : budget.stopped && this.checkpoint
           ? { ok: true as const, value: { kind: 'caught_up' as const, cursor: this.checkpoint,
-            tail: 'none' as const, consistency: 'stopped_verified' as const } }
+            tail: 'none' as const, consistency: 'stopped_verified' as const, root: this.syntheticRoot } }
           : { ok: true as const, value: { kind: 'caught_up' as const, cursor: this.checkpoint,
             tail: 'none' as const, consistency: 'live_provisional' as const } };
     return { result: Promise.resolve(result), quiesced: Promise.resolve() };

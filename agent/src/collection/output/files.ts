@@ -2,6 +2,7 @@ import { constants } from 'node:fs';
 import type { BigIntStats } from 'node:fs';
 import type { FileHandle } from 'node:fs/promises';
 import { join } from 'node:path';
+import { snapshotRootIdentity } from '../root/index.js';
 import { OUTPUT_READ_BYTES, OUTPUT_RESULT_BYTES } from './types.js';
 import type { OutputRootIdentity } from './types.js';
 import { OutputFailure } from './ports.js';
@@ -93,8 +94,7 @@ export class OutputFiles {
   rootIdentity(): Readonly<OutputRootIdentity> {
     if (!this.root) throw new OutputFailure('custody');
     const { path, stat } = this.root;
-    return Object.freeze({ directory: path, uid: this.options.uid, device: stat.dev.toString(), inode: stat.ino.toString(),
-      modifiedNs: stat.mtimeNs.toString(), changedNs: stat.ctimeNs.toString() });
+    return snapshotRootIdentity(path, this.options.uid, stat);
   }
   async finalCheck(): Promise<void> {
     await this.namedCheck();
