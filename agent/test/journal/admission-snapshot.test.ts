@@ -49,6 +49,16 @@ function assertReservationWriteDenied(db: DatabaseSync, change: (db: DatabaseSyn
   expect(rows()).toEqual(before);
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
 }
+function oversizedReservation(db: DatabaseSync): string {
+  const row = db.prepare('SELECT reservation_json FROM reservations').get();
+  const original: unknown = JSON.parse(String(row?.reservation_json));
+  if (typeof original !== 'object' || original === null || Array.isArray(original)) {
+    throw new Error('expected original reservation object');
+  }
+  const oversized = JSON.stringify({ ...original, diagnosticPadding: '🪲'.repeat(32768 / 4) });
+  expect(Buffer.byteLength(oversized, 'utf8')).toBeGreaterThan(32768);
+  return oversized;
+}
 describe('bounded durable admission storage validation', () => {
   it.each(corruption)('fails closed on %s', async (_name, change) => {
     const path = f.path(); const journal = await f.configured(path); const job = f.job(); await f.enqueue(journal, job);
@@ -81,12 +91,15 @@ describe('bounded durable admission storage validation', () => {
     const reopened = await f.open(path);
     await expect(reopened.get(scope(job))).rejects.toMatchObject({ code: 'unavailable' });
   });
-  it.each(['candidate_json', 'decision_json'] as const)('caps %s UTF-8 bytes in SQLite before materialization', async column => {
+  it.each(['candidate_json', 'decision_json', 'reservation_json'] as const)('caps %s UTF-8 bytes in SQLite before materialization', async column => {
     const path = f.path(); const journal = await f.configured(path); const job = f.job(); await f.enqueue(journal, job);
+    if (column === 'reservation_json') await f.admit(journal, job);
     await f.close(journal); const db = new DatabaseSync(path);
+    const table = column === 'reservation_json' ? 'reservations' : 'admission_queue';
     const cap = column === 'candidate_json' ? 16384 : 512;
+    const oversized = column === 'reservation_json' ? oversizedReservation(db) : JSON.stringify('🪲'.repeat(cap / 4));
     db.exec('PRAGMA ignore_check_constraints=ON');
-    db.prepare(`UPDATE admission_queue SET ${column}=?`).run(JSON.stringify('🪲'.repeat(cap / 4)));
+    db.prepare(`UPDATE ${table} SET ${column}=?`).run(oversized);
     const original = db.prepare.bind(db); const inspected: unknown[] = [];
     const spy = vi.spyOn(db, 'prepare').mockImplementation(sql => {
       const statement = original(sql);
@@ -111,14 +124,7 @@ describe('bounded durable admission storage validation', () => {
     const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
     try {
       assertReservationWriteDenied(db, connection => {
-        const row = connection.prepare('SELECT reservation_json FROM reservations').get();
-        const original: unknown = JSON.parse(String(row?.reservation_json));
-        if (typeof original !== 'object' || original === null || Array.isArray(original)) {
-          throw new Error('expected original reservation object');
-        }
-        const oversized = JSON.stringify({ ...original, diagnosticPadding: '🪲'.repeat(32768 / 4) });
-        expect(Buffer.byteLength(oversized, 'utf8')).toBeGreaterThan(32768);
-        connection.prepare('UPDATE reservations SET reservation_json=?').run(oversized);
+        connection.prepare('UPDATE reservations SET reservation_json=?').run(oversizedReservation(connection));
       }, 'CHECK constraint failed');
     } finally { db.close(); }
     const reopened = await f.open(path);
