@@ -5,7 +5,7 @@ import { validate } from '@beetle/contracts';
 import type { ControlEvent, EngineResult } from '@beetle/contracts';
 import type { SupervisorInput } from '../../src/journal/index.js';
 import { journalFixture } from './fixtures.js';
-import { removeFutureRetention } from './legacy-fixtures.js';
+import { removeFutureRetention, CURRENT_JOURNAL_SCHEMA } from './legacy-fixtures.js';
 
 const f = journalFixture();
 function phase(seq: number, phase: ControlEvent['phase']): ControlEvent { return { ...f.wrapper(seq), phase }; }
@@ -207,7 +207,7 @@ describe('additive unpublished journal migration', () => {
     expect((await journal.readEvents(f.key(), 0)).events[0]?.kind).toBe('engine.result');
     await f.close(journal);
     inspect(path, db => {
-      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(12);
+      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(CURRENT_JOURNAL_SCHEMA);
       expect(db.prepare('SELECT last_seq,acknowledged_seq,spool_bytes FROM accepted_attempts').get()).toEqual(before);
       expect(db.prepare('SELECT snapshot_bytes FROM accepted_attempts').get()?.snapshot_bytes).toBe(0);
     });

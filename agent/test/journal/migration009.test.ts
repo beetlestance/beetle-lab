@@ -1,3 +1,4 @@
+import { CURRENT_JOURNAL_SCHEMA } from './legacy-fixtures.js';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
@@ -61,7 +62,7 @@ it('keeps an empty old journal quarantined through latest initialization and rep
     await f.close(journal);
     const db = new DatabaseSync(path);
     try {
-      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(12);
+      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(CURRENT_JOURNAL_SCHEMA);
       expect(db.prepare('SELECT * FROM journal_authority').all()).toEqual([{ id: 1, authority: null }]);
       expect(durableRows(db)).toEqual(before);
       expect(db.prepare('SELECT * FROM disk_holds').all()).toEqual([]);
@@ -160,13 +161,13 @@ it('rolls back authority creation when COMMIT itself rejects a deferred foreign 
   } finally { db.close(); }
 });
 
-it('rejects future version13 through the compiled worker while preserving every row and version', async () => {
-  const path = f.path(); const old = v8(path); old.exec('PRAGMA user_version=13');
+it('rejects future schema beyond current through the compiled worker while preserving every row and version', async () => {
+  const path = f.path(); const old = v8(path); old.exec(`PRAGMA user_version=${CURRENT_JOURNAL_SCHEMA + 1}`);
   const before = durableRows(old); old.close();
   await expect(f.open(path)).rejects.toMatchObject({ code: 'schema_newer' });
   const db = new DatabaseSync(path);
   try {
     expect(durableRows(db)).toEqual(before);
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(13);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(CURRENT_JOURNAL_SCHEMA + 1);
   } finally { db.close(); }
 });

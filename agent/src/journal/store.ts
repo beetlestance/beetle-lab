@@ -16,6 +16,7 @@ import { supervise } from './supervision.js';
 import { RunnableScan } from './runnable.js';
 import { cancelOriginal } from './cancel-original.js';
 import { OutputSources, outputSourceOperation } from './output-source.js';
+import { executeOutputDelivery, outputDeliveryOperation } from './output-delivery.js';
 
 export class Store {
   private readonly admission: AdmissionStore;
@@ -73,13 +74,7 @@ export class Store {
       default: throw new Failure('invalid_input');
     }
   }
-  execute(command: Command): Value {
-    if (outputSourceOperation(command)) return this.outputs.execute(command);
-    if (command.kind === 'supervision') return supervise(this.db, command.request);
-    if (command.kind === 'admission') return this.admission.execute(command.request);
-    if (command.kind === 'cancelOriginal') return cancelOriginal(this.db, command, this.quota);
-    if (['append', 'events', 'ack', 'prune', 'sources', 'checkpoint', 'wrapperBatch'].includes(command.kind)) return this.eventCommand(command);
-    if (['authority', 'get', 'read', 'list', 'runnable'].includes(command.kind)) return this.readCommand(command);
+  private lifecycleCommand(command: Command): Value {
     switch (command.kind) {
       case 'offer': return this.offer(command);
       case 'cancel': {
@@ -90,5 +85,15 @@ export class Store {
       case 'close': this.db.close(); return null;
       default: throw new Failure('invalid_input');
     }
+  }
+  execute(command: Command): Value {
+    if (outputDeliveryOperation(command)) return executeOutputDelivery(this.db, command);
+    if (outputSourceOperation(command)) return this.outputs.execute(command);
+    if (command.kind === 'supervision') return supervise(this.db, command.request);
+    if (command.kind === 'admission') return this.admission.execute(command.request);
+    if (command.kind === 'cancelOriginal') return cancelOriginal(this.db, command, this.quota);
+    if (['append', 'events', 'ack', 'prune', 'sources', 'checkpoint', 'wrapperBatch'].includes(command.kind)) return this.eventCommand(command);
+    if (['authority', 'get', 'read', 'list', 'runnable'].includes(command.kind)) return this.readCommand(command);
+    return this.lifecycleCommand(command);
   }
 }

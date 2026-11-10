@@ -32,9 +32,17 @@ export function pageInput(input: PageRequest): PageRequest {
   return copy.cursor === undefined ? { limit: copy.limit } : { limit: copy.limit, cursor: copy.cursor };
 }
 
+function runnableBounds(copy: RunnableRequest): void {
+  if (copy.lane === 'delivery') {
+    if (copy.limit > 32) throw new Error('invalid_input');
+    if (copy.through !== undefined && (!Number.isSafeInteger(copy.through) || copy.through < 0)) throw new Error('invalid_input');
+  } else if (Object.hasOwn(copy, 'through')) throw new Error('invalid_input');
+}
 export function runnableInput(input: RunnableRequest): RunnableRequest {
   const copy = JSON.parse(encodeJson(input, 192)) as RunnableRequest;
-  if (copy.lane !== 'charged' && copy.lane !== 'queued') throw new Error('invalid_input');
-  if (Object.keys(copy).some(key => !['lane', 'limit', 'cursor'].includes(key))) throw new Error('invalid_input');
-  return { ...pageInput({ limit: copy.limit, ...(copy.cursor === undefined ? {} : { cursor: copy.cursor }) }), lane: copy.lane };
+  if (!['charged', 'queued', 'delivery'].includes(copy.lane)) throw new Error('invalid_input');
+  if (Object.keys(copy).some(key => !['lane', 'limit', 'cursor', 'through'].includes(key))) throw new Error('invalid_input');
+  runnableBounds(copy);
+  return { ...pageInput({ limit: copy.limit, ...(copy.cursor === undefined ? {} : { cursor: copy.cursor }) }), lane: copy.lane,
+    ...(copy.through === undefined ? {} : { through: copy.through }) };
 }

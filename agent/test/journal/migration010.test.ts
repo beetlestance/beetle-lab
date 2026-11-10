@@ -8,7 +8,7 @@ import { migration010 } from '../../src/journal/migration010.js';
 import { transaction } from '../../src/journal/sql.js';
 import { readJournalAuthority } from '../../src/journal/authority.js';
 import { journalFixture } from './fixtures.js';
-import { removeFutureRetention } from './legacy-fixtures.js';
+import { removeFutureRetention, CURRENT_JOURNAL_SCHEMA } from './legacy-fixtures.js';
 
 const f = journalFixture();
 function old(path: string, validIdentity = false): DatabaseSync {
@@ -65,7 +65,7 @@ it('preserves fresh v9 UUID and an unknown original when upgrading then cancelli
   await f.close(journal);
   const db = new DatabaseSync(path);
   try {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(12);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(CURRENT_JOURNAL_SCHEMA);
     expect(db.prepare('SELECT * FROM cancelled_originals').all()).toEqual([]);
   }
   finally { db.close(); }

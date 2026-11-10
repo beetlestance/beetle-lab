@@ -11,6 +11,10 @@ export type { RunnablePage, RunnableRequest } from './protocol.js';
 import type { AdmissionCommand, AdmissionValue, Reservation, Scope } from '../admission/index.js';
 import type { CollectionIntent, CollectedSource, PrivateSource, SourceReceipt } from '../output-source/index.js';
 import type { JournalOutputSources, OutputSourceOperation, FailedOutputCollection } from './output-source-protocol.js';
+import type { JournalOutputDelivery, OutputDeliveryClosure, OutputDeliveryOperation } from './output-delivery-protocol.js';
+export type { JournalOutputDelivery, OutputDeliveryClosure } from './output-delivery-protocol.js';
+import { OUTPUT_DELIVERY_BYTES } from './output-delivery-protocol.js';
+import { deliveryReply } from './delivery-input.js';
 export type { JournalOutputSources, FailedOutputCollection } from './output-source-protocol.js';
 import { captureCollectionIntent, prepareOutputSource, receiptForOutputSource, copyReceipt, copyFailed,
   sourceHash, sourceJson, sourceCaps, sameSource, sourceScope, intentReply, sourceReply, reservationReply } from './output-source-input.js';
@@ -49,12 +53,13 @@ function validateOptions(options: JournalOptions): void {
   if (typeof path !== 'string' || !path || path === ':memory:' || path.length > 4096) throw new JournalError('invalid_input');
 }
 function largeOperation(operation: Operation): boolean {
-  return ['outputCollectionBegin', 'outputCollectionRead', 'outputSourceCommit', 'outputSourceRead', 'outputSourceRelease', 'outputCollectionFailed'].includes(operation.kind)
+  return ['outputCollectionBegin', 'outputCollectionRead', 'outputSourceCommit', 'outputSourceRead', 'outputSourceRelease', 'outputCollectionFailed',
+    'outputDeliveryClose', 'outputDeliveryRead'].includes(operation.kind)
     || operation.kind === 'offer' || operation.kind === 'cancelOriginal' || operation.kind === 'read'
     || operation.kind === 'admission' && operation.request.kind === 'offer';
 }
 
-export class Journal implements JournalOutputSources {
+export class Journal implements JournalOutputSources, JournalOutputDelivery {
   private readonly worker: Worker;
   private readonly pending = new Map<number, Pending>();
   private readonly limit: number;
@@ -110,7 +115,7 @@ export class Journal implements JournalOutputSources {
   admission(input: AdmissionCommand): Promise<AdmissionValue> {
     return this.prepare(() => ({ kind: 'admission', request: admissionInput(input) }), () => isOfferCommand(input)) as Promise<AdmissionValue>;
   }
-  private output<T>(prepare: () => OutputSourceOperation, validate: (value: Value) => T): Promise<T> {
+  private output<T>(prepare: () => OutputSourceOperation | OutputDeliveryOperation, validate: (value: Value) => T): Promise<T> {
     return this.prepare(prepare, true).then(value => {
       try { return validate(value); }
       catch { this.fail('unavailable'); throw new JournalError('unavailable'); }
@@ -265,6 +270,17 @@ export class Journal implements JournalOutputSources {
       this.pending.set(id, { resolve, reject, timer, large });
       try { this.worker.postMessage({ ...operation, id }); } catch { this.fail('unavailable'); }
     });
+  }
+  /** Call only after the owning producer barrier; worker captures the durable stream end. */
+  closeOutputDelivery(receipt: SourceReceipt): Promise<OutputDeliveryClosure> {
+    let expected: SourceReceipt;
+    return this.output(() => ({ kind: 'outputDeliveryClose', json: sourceJson(expected = copyReceipt(receipt), OUTPUT_DELIVERY_BYTES) }),
+      value => deliveryReply(value, expected));
+  }
+  readOutputDelivery(key: Scope): Promise<OutputDeliveryClosure | null> {
+    let expected: Scope;
+    return this.output(() => ({ kind: 'outputDeliveryRead', key: expected = sourceScope(key) }),
+      value => value === null ? null : deliveryReply(value, expected));
   }
 
   private receive(reply: Reply): void {

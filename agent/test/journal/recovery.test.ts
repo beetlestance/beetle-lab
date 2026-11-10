@@ -1,3 +1,4 @@
+import { CURRENT_JOURNAL_SCHEMA } from './legacy-fixtures.js';
 import { describe, expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { validate } from '@beetle/contracts';
@@ -83,7 +84,7 @@ describe('migration and transactional failures on real SQLite', () => {
     await journal.appendWrapper(f.wrapper()); await f.close(journal);
     const db = new DatabaseSync(path);
     try {
-      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(12);
+      expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(CURRENT_JOURNAL_SCHEMA);
       expect(db.prepare('SELECT id,cancel_requested,last_seq FROM accepted_attempts').get()).toMatchObject({ id: 7, cancel_requested: 1, last_seq: 1 });
     } finally { db.close(); }
   });

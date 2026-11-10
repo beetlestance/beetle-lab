@@ -6,7 +6,7 @@ Disk hold insertion, immutable original metadata, 512-byte quota charge and comp
 counters commit with the reservation and admitted event. Replay adds no charge.
 SQL reservation release moves original output AND staging to retained counters once;
 the process retirement proof does not prove physical file absence. No refund API exists.
-Every live quota includes spool, snapshot, checkpoint, hold, collection and source
+Every live quota includes spool, snapshot, checkpoint, hold, collection, source and delivery
 charges. ACK/prune releases event bytes only. Native free disk is independent.
 
 Migration011 validates at most 4096 bounded original scheduling records and preserves
@@ -27,3 +27,12 @@ reopen. Finished release requires its stored source receipt and original evidenc
 The controller still owns native file facts and uninterrupted collection lifetime.
 Contract: docs/design/lld/output-source-journal.md.
 Focused proof: `vitest run agent/test/source-journal --maxWorkers=1`.
+
+Migration013 adds exact immutable source-backed delivery closures and indexed debt.
+Close/read share the source originals/credits; only the worker captures last_seq.
+Existing source/release owners validate authority; native guards fence late events,
+high-water changes and charge forgery. ACK/prune never refund closure metadata.
+Delivery discovery captures a finite upper ID and reads indexed released markers,
+never source/Offer history. Producer quiescence and scheduler fairness remain callers'
+responsibility. Contract: docs/design/lld/output-delivery-closure.md.
+Focused proof: `vitest run agent/test/output-delivery --maxWorkers=1`.

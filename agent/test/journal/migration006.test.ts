@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
 import { journalFixture } from './fixtures.js';
-import { removeFutureRetention } from './legacy-fixtures.js';
+import { removeFutureRetention, CURRENT_JOURNAL_SCHEMA } from './legacy-fixtures.js';
 const f = journalFixture();
 function edit<T>(path: string, work: (db: DatabaseSync) => T): T {
   const db = new DatabaseSync(path); try { return work(db); } finally { db.close(); }
@@ -37,7 +37,7 @@ it('preserves complete v5 retained rows, snapshots, clocks, ACK and source count
   expect(await journal.get(f.key())).toMatchObject({ state: 'running', phase: 'execute', lastSeq: 2 });
   await f.close(journal);
   edit(path, db => {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(12);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(CURRENT_JOURNAL_SCHEMA);
     expect(db.prepare('SELECT * FROM accepted_attempts').get()).toMatchObject({ ...before.row, wrapper_checkpoint_json: null, checkpoint_bytes: 0 });
     expect(db.prepare('SELECT * FROM event_spool ORDER BY seq').all()).toEqual(before.events);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
