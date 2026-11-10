@@ -10,7 +10,7 @@ export const finalizationEvidence = `
 CREATE VIEW output_finalization_evidence AS SELECT e.attempt_id,e.run_id,e.organization_id,e.workspace_id,
  e.intent_digest,e.journal_authority,e.acknowledged_generation generation,s.source_digest,s.manifest_digest,s.final_agent_seq,
  r.version+1 run_version,r.active_attempt_id,r.state previous_state,r.cancellation_requested,
- a.maximum_payload_bytes,
+ a.maximum_payload_bytes,${header('lastSeq')} header_last_seq,
  coalesce(c.retained_bytes,0)+length(CAST(p.canonical_json AS BLOB))+
   coalesce((SELECT sum(json_extract(value,'$.bytes')) FROM json_each(p.canonical_json,'$.result.artifacts')),0) retained_payload_bytes,
  CASE WHEN r.cancellation_requested=1 THEN 'cancelled'

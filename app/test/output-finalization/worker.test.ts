@@ -127,3 +127,19 @@ it('keeps finalization in the ordinary RPC lane alongside both occupied large-or
   expect((await result).result).toEqual(f.envelope.manifest.result);
   expect(await finalization).toMatchObject({ kind: 'finalized', receipt: { sourceDigest: f.envelope.sourceDigest } });
 });
+
+it('rejects the header2/end1 contradiction through the compiled RPC without changing Run, usage or discovery', async () => {
+  const f = finalizationFixture({ events: 1 }); f.ready(); const path = storage.path(); f.db.prepare('VACUUM INTO ?').run(path);
+  const metadata = await storage.open(path, { runs: f.config });
+  const before = await Promise.all([metadata.runs.getRun({ id: f.key.runId, scope }), metadata.inputs.storage(),
+    metadata.outputs.scan({ limit: 32 }), metadata.events.scan({ limit: 32 })]);
+  await expect(metadata.finalizations.finalize(f.command())).rejects.toMatchObject({ code: 'conflict' });
+  expect(await Promise.all([metadata.runs.getRun({ id: f.key.runId, scope }), metadata.inputs.storage(),
+    metadata.outputs.scan({ limit: 32 }), metadata.events.scan({ limit: 32 })])).toEqual(before);
+  await storage.close(metadata);
+  const db = new DatabaseSync(path);
+  try {
+    expect(db.prepare('SELECT count(*) n FROM execution_output_finalizations').get()?.n).toBe(0);
+    expect(db.prepare('SELECT event_pending FROM execution_records').get()?.event_pending).toBe(1);
+  } finally { db.close(); }
+});

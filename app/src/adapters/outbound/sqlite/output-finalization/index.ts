@@ -40,7 +40,7 @@ export class OutputFinalizations {
     this.requireRun(request);
     if (!source) return { kind: 'pending', reason: 'source' };
     this.requireDigests(request, source.sourceDigest, source.manifest.manifestDigest);
-    this.checkHeader(a.attemptId);
+    this.checkHeader(a.attemptId, source.closure.finalAgentSeq);
     if (source.closure.finalAgentSeq === 0) this.zeroCursor(request);
     const row = this.db.prepare('SELECT * FROM output_finalization_evidence WHERE attempt_id=?').get(a.attemptId);
     if (!row) throw new StorageError('unavailable');
@@ -80,11 +80,14 @@ export class OutputFinalizations {
     if (typeof retained !== 'number' || !Number.isSafeInteger(retained) || retained < 0
       || typeof maximum !== 'number' || !Number.isSafeInteger(maximum) || retained > maximum) throw new StorageError('unavailable');
   }
-  private checkHeader(attempt: string): void {
+  private checkHeader(attempt: string, finalAgentSeq: number): void {
     const row = this.db.prepare(`SELECT CASE WHEN length(CAST(snapshot_json AS BLOB))<=2048 THEN snapshot_json ELSE NULL END header
       FROM execution_records WHERE attempt_id=?`).get(attempt);
     if (!row) throw new StorageError('unavailable');
-    if (typeof row.header !== 'string' || !validate('AttemptSnapshot', JSON.parse(row.header) as unknown).ok) throw new StorageError('unavailable');
+    if (typeof row.header !== 'string') throw new StorageError('unavailable');
+    const header = validate('AttemptSnapshot', JSON.parse(row.header) as unknown);
+    if (!header.ok) throw new StorageError('unavailable');
+    if (header.value.lastSeq > finalAgentSeq) throw new StorageError('conflict');
   }
   private zeroCursor(request: OutputFinalizationRequest): void {
     const { key, journalAuthority } = request.binding; const a = key.attempt;
