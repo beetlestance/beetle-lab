@@ -1,7 +1,5 @@
 import type { IncomingMessage } from 'node:http';
 
-const maximumBytes = 1_048_576;
-
 function countHeaders(response: IncomingMessage): void {
   if (response.rawHeaders.length > 64) throw new Error();
   const seen = new Set<string>();
@@ -12,13 +10,13 @@ function countHeaders(response: IncomingMessage): void {
   }
 }
 
-function contentLength(length: string | undefined): number | undefined {
+function contentLength(length: string | undefined, maximumBytes: number): number | undefined {
   if (length === undefined) return undefined;
   if (!/^(0|[1-9][0-9]*)$/.test(length) || Number(length) > maximumBytes) throw new Error();
   return Number(length);
 }
 
-function headers(response: IncomingMessage): number | undefined {
+function headers(response: IncomingMessage, maximumBytes: number): number | undefined {
   countHeaders(response);
   const length = response.headers['content-length'];
   const transfer = response.headers['transfer-encoding'];
@@ -26,14 +24,14 @@ function headers(response: IncomingMessage): number | undefined {
   if (transfer !== undefined && (transfer !== 'chunked' || length !== undefined)) throw new Error();
   if (encoding !== undefined && encoding !== 'identity') throw new Error();
   if (!/^application\/json(?:;\s*charset=utf-8)?$/i.test(response.headers['content-type'] ?? '')) throw new Error();
-  return contentLength(length);
+  return contentLength(length, maximumBytes);
 }
 
 /** Completion is data only; the native owner separately waits for close events. */
-export function receiveJson(response: IncomingMessage, complete: (value: unknown) => void,
+export function receiveJson(response: IncomingMessage, maximumBytes: number, complete: (value: unknown) => void,
   fail: () => void): void {
   let expected: number | undefined;
-  try { expected = headers(response); } catch { fail(); return; }
+  try { expected = headers(response, maximumBytes); } catch { fail(); return; }
   const body = Buffer.allocUnsafe(maximumBytes);
   let size = 0;
   let fragments = 0;

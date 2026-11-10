@@ -40,18 +40,30 @@ export class CallCredits {
   private readonly calls = new Set<OriginalCall>();
   private offers = 0;
   private ordinary = 0;
+  private sources = 0;
   private closed = false;
   private closing: Promise<void> | undefined;
 
-  async run<T>(offer: boolean, caller: AbortSignal | undefined,
+  private full(kind: 'offer' | 'ordinary' | 'source'): boolean {
+    if (this.closed) return true;
+    if (kind === 'offer') return this.offers >= 2;
+    return this.ordinary >= 8 || (kind === 'source' && this.sources >= 2);
+  }
+
+  private count(kind: 'offer' | 'ordinary' | 'source', delta: number): void {
+    if (kind === 'offer') this.offers += delta;
+    else this.ordinary += delta;
+    if (kind === 'source') this.sources += delta;
+  }
+
+  async run<T>(kind: 'offer' | 'ordinary' | 'source', caller: AbortSignal | undefined,
     work: (call: OriginalCall) => Promise<ClientResult<T>>): Promise<ClientResult<T>> {
-    if (this.closed || (offer ? this.offers >= 2 : this.ordinary >= 8)) {
+    if (this.full(kind)) {
       return { ok: false, error: { kind: 'transport' } };
     }
-    const call = original(offer, caller);
+    const call = original(kind === 'offer', caller);
     this.calls.add(call);
-    if (offer) this.offers++;
-    else this.ordinary++;
+    this.count(kind, 1);
     try {
       if (call.signal.aborted) return { ok: false, error: { kind: 'cancelled' } };
       const result = await work(call);
@@ -60,8 +72,7 @@ export class CallCredits {
       return { ok: false, error: { kind: call.failure() ?? 'transport' } };
     } finally {
       this.calls.delete(call);
-      if (offer) this.offers--;
-      else this.ordinary--;
+      this.count(kind, -1);
       call.finish();
     }
   }
