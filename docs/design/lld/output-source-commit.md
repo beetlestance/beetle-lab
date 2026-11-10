@@ -1,7 +1,7 @@
 # Durable collected output source
 
-Status: proposed exact private commit boundary; independent review required before
-implementation. Extends [verified source](output-source.md), using existing
+Status: independently reviewed private contract, types and digest vectors accepted;
+codec/Journal/controller implementation remains required. Extends [verified source](output-source.md), using existing
 [collected facts](output-collection-custody.md) and [disk holds](disk-retention.md).
 No HTTP transport, file deletion or backend publication is introduced here.
 

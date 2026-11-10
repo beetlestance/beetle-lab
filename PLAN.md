@@ -59,6 +59,8 @@ not establish the new backend path, Compose install or supported architecture ma
 [Disk retention evidence](docs/verification/disk-retention.md) records integrated
 atomic output/staging holds through execution release and391 focused passing tests;
 source receipts, cleanup and complete result transfer/finalization remain pending.
+[Source value contracts](docs/design/lld/output-source-commit.md) now have reviewed
+private types and independent digest vectors; codecs and durable wiring are next.
 
 ## Delivery order
 

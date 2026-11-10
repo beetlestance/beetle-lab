@@ -1,7 +1,7 @@
 # Durable output collection intent
 
-Status: proposed correction to the [source commit](output-source-commit.md) draft;
-independent review required. This gate distinguishes interrupted source collection
+Status: independently reviewed contract and value types; durable gate and producer
+implementation remain required. Extends [source commit](output-source-commit.md). This gate distinguishes interrupted source collection
 from collection that never began. It does not establish file integrity or outcome.
 
 ## Before collecting
