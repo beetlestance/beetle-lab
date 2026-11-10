@@ -53,7 +53,7 @@ function reply<N extends ProtocolName>(call: Call & { response: N }, response: N
   return checked;
 }
 
-function protocolReply(response: Extract<NativeResult, { ok: true }>,
+export function protocolReply(response: Extract<NativeResult, { ok: true }>,
   identity?: RunnerAttemptIdentity): ClientResult<never> {
   const checked = validate('ProtocolError', response.value);
   if (!checked.ok || !identity || !matchesReply(checked.value, identity)) {
@@ -64,12 +64,12 @@ function protocolReply(response: Extract<NativeResult, { ok: true }>,
 
 export function createTransport(connection: Connection, identity?: RunnerAttemptIdentity): RunnerTransport {
   return {
-    json: call => connection.credits.run(call.request === 'Offer', call.signal, async original => {
+    json: call => connection.credits.run(call.request === 'Offer' ? 'offer' : 'ordinary', call.signal, async original => {
       const body = bodyFor(call, identity);
       if (!body.ok) return body;
       const response = await nativeCall({ origin: connection.origin, method: call.method, path: call.path,
         headers: { authorization: `Bearer ${connection.token}`, ...scopeHeaders(identity) },
-        body: body.value, signal: original.signal }, connection.io);
+        body: body.value, signal: original.signal, responseBytes: 1_048_576 }, connection.io);
       return reply(call, response, connection, identity);
     }),
   };

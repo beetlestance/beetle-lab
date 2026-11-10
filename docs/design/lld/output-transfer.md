@@ -1,8 +1,9 @@
 # Output transport and event closure
 
 Status: shared structural schemas, pure semantic codecs and declared service ports
-implemented and independently reviewed. Native range reading is also reviewed;
-HTTP/gateway/service wiring remains pending. No migration ID is allocated here. Depends on implemented
+implemented and independently reviewed. Native range and gateway components are
+also reviewed; HTTP/service composition remains pending. No migration ID is
+allocated here. Depends on implemented
 [source Journal](output-source-journal.md); backend accounting is in
 [adoption](output-adoption.md). Existing source and event contracts remain binding.
 
@@ -67,15 +68,18 @@ decodedBytes=min(length,totalBytes-offset), eof iff nextOffset=totalBytes.
 offset>totalBytes refuses. offset=totalBytes returns empty canonical base64 and
 explicit eof, including a zero-byte artifact after actual checked open/close.
 No per-chunk checksum substitutes for backend whole-file SHA256 verification.
-RunnerOutputClient in app/src/ports/output-source.ts extends the existing connection
-without a new pool. sourceChunk also takes private artifactBytes selected from
+RunnerOutputGateway.output(identity) in app/src/ports/output-source.ts returns a
+RunnerOutputClient on the same installation connection without a new pool.
+sourceChunk also takes private artifactBytes selected from
 exactly one matching declared artifact in its verified envelope. No manifest cache
 is introduced. Gateway must validate total/eof against that expectation via shared
 verifySourceChunk, which checks canonical padding/unused bits before byte decode.
 HTTP resolves exactly one declared artifact, never the first ambiguous ID, and
-preserves declared ID spelling. The existing runner facade will implement this
-extension when its source credits/native reader are wired; declaration is not
-current runtime support.
+preserves declared ID spelling. The concrete runner constructor returns this
+extended gateway with shared source credits and bounded native HTTP response reads.
+Existing metadata attempt calls retain their facade; the separate output facade
+owns only source transfer, without a second connection or credit owner. Actual
+agent HTTP/service and backend adoption composition remain pending.
 
 Canonical JSON chunks reuse the existing generated JSON gateway instead of a
 second binary client/pool. Their base64 overhead is explicit and bounded; measure

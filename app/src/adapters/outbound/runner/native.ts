@@ -22,6 +22,7 @@ export interface NativeInput {
   readonly headers: Readonly<Record<string, string>>;
   readonly body: string | undefined;
   readonly signal: AbortSignal;
+  readonly responseBytes: number;
 }
 export type NativeResult = { ok: true; status: number; value: unknown }
   | { ok: false; kind: 'transport' | 'response' };
@@ -82,7 +83,7 @@ function ownSocket(input: NativeInput, io: NativeIo, address: Address): Promise<
       socket.once('close', () => { owner.socketClosed = true; finish(); });
       if (input.signal.aborted) stop();
     });
-    req.once('response', response => ownResponse(owner, response, { finish, fail, stop }));
+    req.once('response', response => ownResponse(owner, response, { finish, fail, stop }, input.responseBytes));
     req.once('close', () => { owner.requestClosed = true; finish(); });
     req.on('error', fail);
     req.on('information', fail);
@@ -95,14 +96,14 @@ function ownSocket(input: NativeInput, io: NativeIo, address: Address): Promise<
 }
 
 function ownResponse(owner: SocketOwner, response: IncomingMessage,
-  callbacks: { finish(): void; fail(): void; stop(): void }): void {
+  callbacks: { finish(): void; fail(): void; stop(): void }, responseBytes: number): void {
   owner.response = response;
   owner.responseClosed = false;
   owner.result = { ok: false, kind: 'response' };
   response.once('close', () => { owner.responseClosed = true; callbacks.finish(); });
   response.on('error', callbacks.fail);
   response.once('aborted', callbacks.fail);
-  receiveJson(response, value => {
+  receiveJson(response, responseBytes, value => {
     owner.result = { ok: true, status: response.statusCode ?? 0, value };
     callbacks.stop();
   }, callbacks.fail);
