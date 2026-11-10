@@ -5,7 +5,7 @@ import { messageSchemas, schemas } from './generated/schemas.js';
 import { schema as common } from './generated/common.js';
 import { encodeJson } from './json.js';
 import { RUNNER_MAXIMUM_CONFIG_BYTES } from './limits.js';
-import type { Uuid, Cursor, ProtocolTypes, SecretReference, Offer } from './generated/types.js';
+import type { Uuid, Cursor, ProtocolTypes, SecretReference, Offer, Artifact } from './generated/types.js';
 
 export type ProtocolName = keyof ProtocolTypes;
 export interface StructuralIssue { readonly path: string; readonly code: string }
@@ -25,8 +25,8 @@ const validators = Object.fromEntries(Object.entries(messageSchemas).map(([name,
   return [name, validator];
 })) as Record<ProtocolName, ValidateFunction>;
 
-interface PrimitiveTypes { uuid: Uuid; cursor: Cursor; secretReference: SecretReference }
-const primitives = Object.fromEntries(['uuid', 'cursor', 'secretReference'].map(name => {
+interface PrimitiveTypes { uuid: Uuid; cursor: Cursor; secretReference: SecretReference; artifact: Artifact }
+const primitives = Object.fromEntries(['uuid', 'cursor', 'secretReference', 'artifact'].map(name => {
   const validator = ajv.getSchema(`${common.$id}#/$defs/${name}`);
   if (!validator) throw new Error(`Missing shipped primitive: ${name}`);
   return [name, validator];
