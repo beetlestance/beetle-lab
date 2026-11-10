@@ -23,11 +23,16 @@ export function RunResultRead({ scope, runId, run, terminal }: {
     client.removeQueries({ queryKey, exact: true });
   }, [client, organizationId, workspaceId, runId, activeAttemptId]);
   const wasTerminal = useRef(terminal);
+  const terminalRefresh = useRef(false);
   useEffect(() => {
-    // Finalization can adopt a source between the last null read and terminal Run.
-    if (terminal && !wasTerminal.current && query.data?.result === null) void query.refetch();
+    // An older null request can finish after the Run becomes terminal. Wait for
+    // that original, then recheck once; terminal polling has already stopped.
+    if (terminal && !wasTerminal.current) terminalRefresh.current = true;
     wasTerminal.current = terminal;
-  }, [terminal, query.data, query.refetch]);
+    if (!terminal || !terminalRefresh.current || query.isPending || query.isFetching) return;
+    terminalRefresh.current = false;
+    if (!query.isError && query.data?.result === null) void query.refetch();
+  }, [terminal, query.data, query.isPending, query.isFetching, query.isError, query.refetch]);
   const snapshot = query.data;
   const result = snapshot?.activeAttemptId === activeAttemptId ? snapshot.result : null;
   const status = query.isPending ? 'loading' : query.isError ? 'error' : result === null ? 'unavailable' : 'ready';
