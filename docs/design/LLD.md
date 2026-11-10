@@ -37,9 +37,9 @@ The owning document below must be updated before its implementation changes.
 | Backend payload storage | [Payload carrier](lld/output-payload.md) | Integrated single result/manifest body, snapshot replay and shared event allowance |
 | Native output ownership | [Output files](lld/output-files.md) | Integrated native byte adapter and ownership; transfer composition pending |
 | Source adoption storage | [Adoption store](lld/output-adoption-store.md) | Integrated metadata adoption/RPC, original pins, event ceiling and upload tokens |
-| Source-backed terminal settlement | [Output finalization](lld/output-finalization.md) | Frozen bounded metadata contract; implementation and source-free closure pending |
-| Source-free terminal settlement | [Output absence](lld/output-absence.md) | Definitive retirement, final snapshot reconciliation and sibling accounting; implementation pending |
-| Automatic backend output owner | [Output runtime](lld/output-runtime.md) | Frozen bounded scheduling/startup contract; implementation and parent wiring pending |
+| Source-backed terminal settlement | [Output finalization](lld/output-finalization.md) | Integrated bounded metadata finalization; release qualification pending |
+| Source-free terminal settlement | [Output absence](lld/output-absence.md) | Integrated definitive retirement, snapshot reconciliation and sibling accounting |
+| Automatic backend output owner | [Output runtime](lld/output-runtime.md) | Integrated bounded scheduling, startup and parent wiring |
 | Backend output direction | [Output adoption](lld/output-adoption.md) | Reviewed shared-budget direction; exact storage/finalization contracts pending |
 | Agent control and outputs | [Agent collection](lld/agent-collection.md) | Bounded file intake, atomic checkpoints, stopped verification and artifact custody |
 | Attempt orchestration | [Agent controller](lld/agent-controller.md) | Prepared-plan handoff, supervision/control/collection wiring and release ownership |

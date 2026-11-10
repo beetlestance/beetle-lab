@@ -1,8 +1,9 @@
 # Source-free execution closure
 
-Status: frozen contract; backend runtime wired with scoped synthetic evidence. Complements
+Status: integrated; native rejection and an affected real-k6 control are
+[locally verified](../../verification/output-absence.md). Complements
 [source settlement](output-finalization.md); it never manufactures a source receipt.
-Agent migration014 and application migration012 are reserved for this work.
+Journal migration014 and application migration012 implement the storage contract.
 
 ## Wire and ownership
 
