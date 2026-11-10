@@ -1,6 +1,7 @@
 import type { ApiOperation } from '../generated/operations.js';
-import type { CreateRunRequest, Run, RunPage } from '../generated/types.js';
+import type { CreateRunRequest, Run, RunPage, RunResultSnapshot } from '../generated/types.js';
 import type { PreparedInput } from './input.js';
+import { encodeJson } from '../../json.js';
 
 function validRun(run: Run): boolean {
   if (run.state === 'finished') return ['passed', 'failed', 'inconclusive'].includes(run.outcome)
@@ -22,10 +23,20 @@ function creationMatches(input: PreparedInput, run: Run): boolean {
 }
 /** Common route/scope and schema checks run before these execution-intent bindings. */
 export function runOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
+  if (operation.response === 'RunResultSnapshot') return resultMatches(value as RunResultSnapshot);
   if (operation.response === 'RunPage') return (value as RunPage).items.every(validRun);
   if (operation.response !== 'Run') return true;
   const run = value as Run;
   const cancellationMatches = operation.name !== 'cancelRun' || run.cancellationRequested
     || ['finished', 'cancelled', 'errored'].includes(run.state);
   return cancellationMatches && validRun(run) && (operation.name !== 'createRun' || creationMatches(input, run));
+}
+
+function resultMatches(value: RunResultSnapshot): boolean {
+  try { encodeJson(value, 73728); } catch { return false; }
+  const result = value.result;
+  return result === null || (result.generation === 1
+    && result.attemptId.toLowerCase() === value.activeAttemptId.toLowerCase()
+    && result.organizationId.toLowerCase() === value.scope.organizationId.toLowerCase()
+    && result.workspaceId.toLowerCase() === value.scope.workspaceId.toLowerCase());
 }

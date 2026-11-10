@@ -28,7 +28,9 @@ async function source(path: string): Promise<Source> {
 async function sources(): Promise<Source[]> {
   const names = (await readdir(sourceDir)).filter(file => file.endsWith('.schema.json')).sort();
   const schemas = await Promise.all(names.map(file => source(`api/v2/${file}`)));
-  return [await source('runner/v1/common.schema.json'), ...schemas];
+  const runner = await Promise.all(['common', 'engine-result', 'result-evidence', 'result-execution']
+    .map(name => source(`runner/v1/${name}.schema.json`)));
+  return [...runner, ...schemas];
 }
 
 function messages(schemas: Source[]): Message[] {
@@ -66,8 +68,8 @@ function validateOperation(operation: Operation, types: Message[]): void {
 
 function catalogueOutput(schemas: Source[], types: Message[]): string {
   return banner + `import { freezeSchema } from '../../freeze.js';\n` + schemas.map(schema =>
-    `import { schema as ${schema.title} } from '${schema.path.startsWith('runner/') ? '../../generated/common.js' : `./${schema.file.replace('.schema.json', '.js')}`}';`).join('\n')
-    + '\n/** Complete reference closure, including runner common exactly once. */\n'
+    `import { schema as ${schema.title} } from '${schema.path.startsWith('runner/') ? `../../generated/${schema.file.replace('.schema.json', '.js')}` : `./${schema.file.replace('.schema.json', '.js')}`}';`).join('\n')
+    + '\n/** Complete reference closure; runner result schemas are shared, never copied. */\n'
     + `export const apiSchemas = freezeSchema([${schemas.map(schema => schema.title).join(', ')}] as const);\n`
     + 'export const apiMessageSchemas = freezeSchema({\n' + types.map(message =>
       `  ${message.name}: { $ref: '${message.reference}' },`).join('\n') + '\n} as const);\n';
