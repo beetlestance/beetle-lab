@@ -1,5 +1,8 @@
 import type { ClientResult } from '@beetle/contracts';
 
+const signalAborted = Object.getOwnPropertyDescriptor(AbortSignal.prototype, 'aborted')!.get!;
+const removeListener = EventTarget.prototype.removeEventListener;
+
 export interface OriginalCall {
   readonly signal: AbortSignal;
   readonly done: Promise<void>;
@@ -28,14 +31,16 @@ function original(offer: boolean): PendingCall {
   return {
     offer, signal: controller.signal, done, failure: () => cause, abort,
     start: signal => {
+      // Brand-check without caller hooks before retaining a cleanup target.
+      if (signal !== undefined) Reflect.apply(signalAborted, signal, []);
       caller = signal;
       timer = setTimeout(() => stop('timeout'), 5000);
       caller?.addEventListener('abort', abort, { once: true });
-      if (caller?.aborted) abort();
+      if (caller && Reflect.apply(signalAborted, caller, [])) abort();
     },
     finish: () => {
       clearTimeout(timer);
-      try { caller?.removeEventListener('abort', abort); } finally { complete(); }
+      try { if (caller) Reflect.apply(removeListener, caller, ['abort', abort]); } finally { complete(); }
     },
   };
 }
