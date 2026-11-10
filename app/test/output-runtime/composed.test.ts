@@ -24,7 +24,7 @@ it('automatically publishes through compiled metadata, native roots and real HTT
     expect(state.artifacts).toHaveLength(1); expect(state.artifacts[0]).toMatchObject({phase: 'published', writer: null, offset: bytes.length});
     return {kind: 'pending' as const, reason: 'events' as const};
   });
-  let runtime = await openOutputRuntime({dataRoot: root, outputs: metadata.outputs, runs: metadata.runs, gateway,
+  let runtime = await openOutputRuntime({dataRoot: root, outputs: metadata.outputs, absences: metadata.absences, observations: metadata.dispatch, runs: metadata.runs, gateway,
     finalizations: {finalize}, freeSpaceReserveBytes: 0, intervalMs: 25, onFailure: async error => {failures.push(error);}});
   try {
     await vi.waitFor(() => expect(finalize.mock.calls.length).toBeGreaterThan(0), {timeout: 5000, interval: 25});
@@ -35,7 +35,7 @@ it('automatically publishes through compiled metadata, native roots and real HTT
     expect(actual).toEqual(bytes); expect(sha(actual)).toBe(artifact.sha256);
     const calls = remote.selectors.length; const token = artifact.token;
     await runtime.close();
-    runtime = await openOutputRuntime({dataRoot: root, outputs: metadata.outputs, runs: metadata.runs, gateway,
+    runtime = await openOutputRuntime({dataRoot: root, outputs: metadata.outputs, absences: metadata.absences, observations: metadata.dispatch, runs: metadata.runs, gateway,
       finalizations: {finalize}, freeSpaceReserveBytes: 0, intervalMs: 25, onFailure: async error => {failures.push(error);}});
     const before = finalize.mock.calls.length;
     await vi.waitFor(() => expect(finalize.mock.calls.length).toBeGreaterThan(before), {timeout: 5000, interval: 25});

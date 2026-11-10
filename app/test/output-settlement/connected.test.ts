@@ -43,7 +43,7 @@ it.each([false, true])('automatically publishes and durably settles with real me
   const before = await metadata.runs.getRun(key);
   const charged = (await metadata.inputs.storage()).chargedBytes;
   const observed = observeFinalizations(metadata.finalizations);
-  const runtime = await openOutputRuntime({ dataRoot: root, outputs: metadata.outputs, runs: metadata.runs, gateway,
+  const runtime = await openOutputRuntime({ dataRoot: root, outputs: metadata.outputs, absences: metadata.absences, observations: metadata.dispatch, runs: metadata.runs, gateway,
     finalizations: observed.finalizations, freeSpaceReserveBytes: 0, intervalMs: 25,
     onFailure: async error => { failures.push(error); } });
   try {

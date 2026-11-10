@@ -45,6 +45,21 @@ positive replies fail the runtime, fence new work and notify onFailure once.
 Local busy means defer, never create more jobs. A callback failure remains explicit.
 This scheduler cannot refund storage, delete sources, clear writers or change pins.
 
+Only the initial source GET's exact `source_absent` transfer error permits the
+absence handoff. After both transfer originals retire, the same active slot reads
+retained proof or fetches/adopts a bounded bound proof, then finalizes against the
+current scoped Run version. Source-present and source-pending work never reads
+absence custody. Required `absences`, `observations.observe`, and gateway
+`output`/snapshot-only `attempt` capabilities are bound before startup awaits;
+missing capabilities fail startup.
+
+An absence finalizer's pending execution reply permits one full bound snapshot
+refresh per pass through that same gateway and existing `dispatch.observe`.
+Runtime validates the full snapshot, rereads Run/version, and retries the exact
+proof once. Metadata owns admission/result/ACK/receipt authority. Proof, snapshot,
+observation and absence finalization originals retain the same slot/native lease;
+close fences subsequent calls and drains every issued original.
+
 ## Native roots and shutdown
 
 Fixed canonical private roots are dataRoot/outputs/staging and

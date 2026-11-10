@@ -1,4 +1,6 @@
 import { vi } from 'vitest';
+import type { OutputAbsenceStore } from '../../src/ports/output-absence.js';
+import type { DispatchStore } from '../../src/ports/dispatch.js';
 import type { OutputRuntimeOptions } from '../../src/ports/output-runtime.js';
 import type { OutputArtifactStore } from '../../src/ports/output-artifacts.js';
 import type { OutputTransferJob, OutputTransferOutcome } from '../../src/ports/output-transfer.js';
@@ -26,10 +28,16 @@ export function fixture(count = 1) {
     return {items: selected.map((binding, offset) => ({kind: 'ready' as const, binding,
       order: index + offset, after: String(index + offset + 1)})), nextCursor: selected.length ? String(index + selected.length) : null};
   })};
-  const options: OutputRuntimeOptions = {dataRoot: '/synthetic', outputs, gateway: transferFixture().gateway,
+  const absences = {read: vi.fn<OutputAbsenceStore['read']>(async () => null),
+    adopt: vi.fn<OutputAbsenceStore['adopt']>(async () => {throw new Error('Unexpected adoption');}),
+    finalize: vi.fn<OutputAbsenceStore['finalize']>(async () => ({kind: 'pending', reason: 'events'}))};
+  const observations = {observe: vi.fn<DispatchStore['observe']>(async () => {throw new Error('Unexpected observation');})};
+  const options: OutputRuntimeOptions = {dataRoot: '/synthetic', outputs, absences, observations, gateway: {...transferFixture().gateway,
+    output: vi.fn(() => {throw new Error('Unexpected absence client');}),
+    attempt: vi.fn(() => {throw new Error('Unexpected snapshot client');})},
     runs: {getRun}, finalizations: {finalize}, freeSpaceReserveBytes: 0, intervalMs: 25, onFailure: vi.fn(async () => {})};
   const scheduler = new OutputScheduler(options, transfers, files);
-  return {scheduler, transfers, files, options, finalize, getRun, outputs, bindings, scans, dispose: () => f.db.close()};
+  return {scheduler, absences, observations, transfers, files, options, finalize, getRun, outputs, bindings, scans, dispose: () => f.db.close()};
 }
 export function published(binding: EventBinding): OutputTransferOutcome {
   return {kind: 'published', binding, sourceDigest: 'c'.repeat(64), manifestDigest: 'b'.repeat(64)};

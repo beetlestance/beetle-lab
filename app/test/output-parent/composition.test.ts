@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { openAgentRuntime } from '../../src/bootstrap/agent-runtime.js';
 import type { OutputRuntimeOptions } from '../../src/ports/output-runtime.js';
-import type { RunnerOutputGateway } from '../../src/ports/output-source.js';
+import type { RunnerOutputAbsenceGateway } from '../../src/ports/output-absence.js';
 import { storageFixture, settingsFixture } from '../storage/fixture.js';
 import { pin, credential } from '../bootstrap/agent-config/fixture.js';
 import { deferred, flush, outputOwnerFixture } from './fixture.js';
@@ -24,7 +24,7 @@ function configuration() {
 }
 async function setup() {
   const metadata = await fixture.open(); const f = outputOwnerFixture(mocks.delivery);
-  const gateway: RunnerOutputGateway = { ...f.gateway, output: vi.fn(() => { throw new Error('Synthetic output client'); }) };
+  const gateway: RunnerOutputAbsenceGateway = { ...f.gateway, output: vi.fn(() => { throw new Error('Synthetic output client'); }) };
   mocks.gateway.mockReturnValue(gateway); mocks.source.mockResolvedValue(f.source);
   mocks.outputs.mockResolvedValue(f.output);
   return { f, metadata, gateway, options: configuration() };
@@ -39,7 +39,7 @@ it('always provisions the actual output factory with installation metadata and a
   expect(captured).toMatchObject({ dataRoot: options.dataRoot, freeSpaceReserveBytes: 2000 });
   expect(Object.keys(captured.outputs).sort()).toEqual(Object.keys(metadata.outputs).sort());
   expect(Object.keys(captured.finalizations)).toEqual(['finalize']); expect(Object.keys(captured.runs)).toEqual(['getRun']);
-  expect(Object.isFrozen(captured.outputs)).toBe(true); expect(Object.keys(captured.gateway)).toEqual(['output']);
+  expect(Object.isFrozen(captured.outputs)).toBe(true); expect(Object.keys(captured.gateway)).toEqual(['output', 'attempt']);
   const identity = { journalAuthority: '33333333-3333-4333-8333-333333333333', organizationId: 'org',
     workspaceId: 'workspace', attemptId: 'attempt', generation: 1, intentDigest: 'a'.repeat(64) };
   expect(() => captured.gateway.output(identity)).toThrow('Synthetic output client');
@@ -111,4 +111,52 @@ it('closes the sole gateway if capacity-source provisioning fails before outputs
     await expect(openAgentRuntime(options, metadata)).rejects.toBe(failure);
     expect(gateway.close).toHaveBeenCalledOnce(); expect(mocks.outputs).not.toHaveBeenCalled();
   } finally { await fixture.close(metadata); }
+});
+it('captures real absence/observation and narrow snapshot capabilities before held capacity startup', async () => {
+  const { f, metadata, gateway, options } = await setup(); const held = deferred<typeof f.source>();
+  const original = new Error('Synthetic original capability'); const replacement = new Error('Synthetic replaced capability');
+  const read = vi.spyOn(metadata.absences, 'read').mockRejectedValue(original);
+  const adopt = vi.spyOn(metadata.absences, 'adopt').mockRejectedValue(original);
+  const finalize = vi.spyOn(metadata.absences, 'finalize').mockRejectedValue(original);
+  const observe = vi.spyOn(metadata.dispatch, 'observe').mockRejectedValue(original);
+  const snapshot = vi.fn(async () => {throw original;});
+  const client = {snapshot, offer: vi.fn(), cancelOriginal: vi.fn(), cancel: vi.fn(), events: vi.fn(), ack: vi.fn()};
+  const attempt = vi.fn(() => client); gateway.attempt = attempt;
+  mocks.source.mockReturnValueOnce(held.promise);
+  const opening = openAgentRuntime(options, metadata); await flush();
+  metadata.absences.read = vi.fn(async () => {throw replacement;});
+  metadata.absences.adopt = vi.fn(async () => {throw replacement;});
+  metadata.absences.finalize = vi.fn(async () => {throw replacement;});
+  metadata.dispatch.observe = vi.fn(async () => {throw replacement;});
+  gateway.attempt = vi.fn(() => {throw replacement;});
+  held.resolve(f.source); const runtime = await opening;
+  const captured = mocks.outputs.mock.calls[0]![0] as OutputRuntimeOptions;
+  const key = keyFor(); const binding = {key, journalAuthority: '33333333-3333-4333-8333-333333333333'};
+  const facade = captured.gateway.attempt({...key.attempt, journalAuthority: binding.journalAuthority});
+  client.snapshot = vi.fn(async () => {throw replacement;});
+  try {
+    expect(Object.keys(captured.absences).sort()).toEqual(['adopt', 'finalize', 'read']);
+    expect(Object.keys(captured.observations)).toEqual(['observe']);
+    expect(Object.keys(facade)).toEqual(['snapshot']); expect(Object.isFrozen(facade)).toBe(true);
+    await expect(captured.absences.read(binding)).rejects.toBe(original);
+    await expect(captured.absences.adopt({binding, closure: {}})).rejects.toBe(original);
+    await expect(captured.absences.finalize({binding, proofDigest: 'a'.repeat(64), expectedRunVersion: 1})).rejects.toBe(original);
+    await expect(captured.observations.observe({key, journalAuthority: binding.journalAuthority, snapshot: {}})).rejects.toBe(original);
+    await expect(facade.snapshot()).rejects.toBe(original);
+    for (const [method, context] of [[read, metadata.absences], [adopt, metadata.absences], [finalize, metadata.absences],
+      [observe, metadata.dispatch], [attempt, gateway], [snapshot, client]] as const) {
+      expect(method).toHaveBeenCalledOnce(); expect(method.mock.contexts[0]).toBe(context);
+    }
+    expect(gateway.attempt).not.toHaveBeenCalled(); expect(client.snapshot).not.toHaveBeenCalled();
+  } finally {await runtime.close(); await fixture.close(metadata);}
+});
+it.each(['read', 'adopt', 'finalize', 'observe'] as const)('fails mandatory missing %s capability before capacity startup', async method => {
+  const {metadata, options} = await setup();
+  const target = method === 'observe' ? metadata.dispatch : metadata.absences;
+  const original = Object.getOwnPropertyDescriptor(target, method)!;
+  Reflect.deleteProperty(target, method);
+  try {
+    await expect(openAgentRuntime(options, metadata)).rejects.toThrow('Missing output absence capability');
+    expect(mocks.source).not.toHaveBeenCalled(); expect(mocks.gateway).not.toHaveBeenCalled(); expect(mocks.outputs).not.toHaveBeenCalled();
+  } finally {Object.defineProperty(target, method, original); await fixture.close(metadata);}
 });

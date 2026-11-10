@@ -19,14 +19,20 @@ export function captureDeliveryMetadata(metadata: DeliveryMetadata): DeliveryMet
   });
 }
 
-export function captureOutputMetadata(metadata: Pick<Metadata, 'outputs' | 'finalizations' | 'runs'>):
-Pick<OutputRuntimeOptions, 'outputs' | 'finalizations' | 'runs'> {
-  const { outputs, finalizations, runs } = metadata;
+export function captureOutputMetadata(metadata: Pick<Metadata, 'outputs' | 'finalizations' | 'absences' | 'dispatch' | 'runs'>):
+Pick<OutputRuntimeOptions, 'outputs' | 'finalizations' | 'absences' | 'observations' | 'runs'> {
+  const { outputs, finalizations, absences, dispatch, runs } = metadata;
+  if (typeof absences?.read !== 'function' || typeof absences.adopt !== 'function'
+    || typeof absences.finalize !== 'function' || typeof dispatch?.observe !== 'function') {
+    throw new Error('Missing output absence capability');
+  }
   return Object.freeze({
     outputs: Object.freeze({ scan: outputs.scan.bind(outputs), load: outputs.load.bind(outputs),
       readSource: outputs.readSource.bind(outputs), adopt: outputs.adopt.bind(outputs),
       claimArtifact: outputs.claimArtifact.bind(outputs), recordProgress: outputs.recordProgress.bind(outputs),
       beginPublication: outputs.beginPublication.bind(outputs), recordPublication: outputs.recordPublication.bind(outputs) }),
+    absences: Object.freeze({ read: absences.read.bind(absences), adopt: absences.adopt.bind(absences), finalize: absences.finalize.bind(absences) }),
+    observations: Object.freeze({ observe: dispatch.observe.bind(dispatch) }),
     finalizations: Object.freeze({ finalize: finalizations.finalize.bind(finalizations) }),
     runs: Object.freeze({ getRun: runs.getRun.bind(runs) }),
   });

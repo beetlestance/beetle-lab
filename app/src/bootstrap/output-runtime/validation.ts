@@ -10,7 +10,7 @@ import type { OutputTransferOutcome } from '../../ports/output-transfer.js';
 export function requireValue(condition: unknown): asserts condition {
   if (!condition) throw new Error('Invalid output runtime value');
 }
-function fields(input: unknown, names: readonly string[]): Record<string, unknown> {
+export function fields(input: unknown, names: readonly string[]): Record<string, unknown> {
   requireValue(input !== null && typeof input === 'object'
     && [Object.prototype, null].includes(Object.getPrototypeOf(input) as object | null));
   const keys = Reflect.ownKeys(input);
@@ -29,7 +29,7 @@ export function sameBinding(a: EventBinding, b: EventBinding): boolean {
 function digest(value: unknown): asserts value is string {
   requireValue(typeof value === 'string' && /^[a-f0-9]{64}$/.test(value));
 }
-function discriminator(value: unknown): unknown {
+export function discriminator(value: unknown): unknown {
   requireValue(value !== null && typeof value === 'object');
   const property = Object.getOwnPropertyDescriptor(value, 'kind');
   requireValue(property && 'value' in property); return property.value as unknown;
@@ -43,7 +43,7 @@ export function transferValue(input: OutputTransferOutcome, expected: EventBindi
   digest(value.sourceDigest); digest(value.manifestDigest);
   return {kind, binding, sourceDigest: value.sourceDigest, manifestDigest: value.manifestDigest};
 }
-function integer(value: unknown, minimum = 0): asserts value is number {
+export function integer(value: unknown, minimum = 0): asserts value is number {
   requireValue(Number.isSafeInteger(value) && (value as number) >= minimum);
 }
 export function finalizationValue(input: OutputFinalizationReply, request: OutputFinalizationRequest, run: Run): void {
