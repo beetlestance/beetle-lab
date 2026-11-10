@@ -5,6 +5,7 @@ import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
 import { QueryState } from '../../components/QueryState.js';
+import { RunResultPanel } from '../run-results/index.js';
 import { budgetFields } from './request.js';
 import type { RunScope } from './types.js';
 import { RunCancellation } from './RunCancellation.js';
@@ -22,9 +23,10 @@ export function RunDetail(scope: RunScope & { runId: string }) {
     refetchIntervalInBackground: false });
   return <><header className="section-header"><div><h1>Run detail</h1><p className="number">{scope.runId}</p></div>
     <button onClick={() => void query.refetch()} disabled={query.isFetching}>Refresh run</button></header>
-    <QueryState query={query}>{run => <><RunCancellation run={run} cancel={cancellation} /><RunSnapshot run={run} /></>}</QueryState></>;
+    <QueryState query={query}>{run => <><RunCancellation run={run} cancel={cancellation} /><RunSnapshot run={run}
+      scope={{ kind: 'workspace', organizationId: scope.organizationId, workspaceId: scope.workspaceId }} runId={scope.runId} /></>}</QueryState></>;
 }
-function RunSnapshot({ run }: { run: Run }) {
+function RunSnapshot({ run, scope, runId }: { run: Run; scope: Run['scope']; runId: string }) {
   return <>
     <dl className="run-facts">
       <div><dt>State</dt><dd>{run.state}</dd></div><div><dt>Outcome</dt><dd>{run.outcome}</dd></div>
@@ -43,7 +45,7 @@ function RunSnapshot({ run }: { run: Run }) {
       {budgetFields.map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{run.budget[key]}</dd></div>)}
       <div><dt>Settings versions</dt><dd>Installation {run.settingsVersions.installation}, organization {run.settingsVersions.organization}, workspace {run.settingsVersions.workspace}</dd></div>
     </dl>
-    <p className="notice">Metrics and result artifacts are unavailable in this view. State, outcome and engine validation are reported independently.</p>
+    <RunResultPanel scope={scope} runId={runId} run={run} result={null} status="unavailable" />
     {run.outcome === 'pending' && <p role="status">The outcome is pending, including while finalization is in progress.</p>}
   </>;
 }
