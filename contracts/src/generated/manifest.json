@@ -29,7 +29,7 @@
     "runner/v1/source-envelope.schema.json": "9b918891aa5cdb1cc15c72f6cd8b7b00da518b75245adc84fa063259bb58c7cb",
     "runner/v1/source-values.schema.json": "5b9c018349e779387c26b494acefc857cd51790825c795b17253da8f481c559d",
     "runner/v1/staged-attempt.schema.json": "754fca51a15e9ca9faede73ba9f7d072c3ea020beaf5fa801660813d494b3e93",
-    "runner/v1/supervisor-events.schema.json": "9065408c049290a99372a4e9a3d22eb617c25b710bc84c080626acec8e735974",
+    "runner/v1/supervisor-events.schema.json": "c55be82182f18875f3902b106a1c6d14655dda64e9f70509d5126fb7b2e2d62a",
     "runner/v1/wrapper-events.schema.json": "b14590f134d092d5e926f24492222d8eb27d437226fa670564ff83bb27665f1f"
   },
   "operationsSha256": "ee06602d2c3a4f127586257cf795e1fa3276466f17194db8c949a67fec4cc64d",

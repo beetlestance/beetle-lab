@@ -12,6 +12,11 @@
     "completedUnits": 2,
     "totalUnits": 10,
     "heartbeat": true,
-    "usefulProgress": false
+    "usefulProgress": false,
+    "source": "docker-stats",
+    "lastSampleAt": "2026-01-01T00:00:00Z",
+    "samples": 1,
+    "missedSamples": 0,
+    "reason": null
   }
 }

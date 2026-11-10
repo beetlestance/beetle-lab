@@ -30,7 +30,7 @@ it('only phase transitions and increasing useful nonheartbeat counts advance pro
 it('projects zero resources distinctly and strips runtime IDs and artifact paths', () => {
   const base = event(1);
   const summary = { ...base, kind: 'resource.summary' as const, payload: { scope: 'container' as const, cpuMillis: 0,
-    peakMemoryBytes: 0, peakPids: 0, outputBytes: 0, enforcedControls: [] } };
+    peakMemoryBytes: 0, peakPids: 0, outputBytes: 0, enforcedControls: [], source: 'docker-stats' as const, lastSampleAt: base.observedAt, samples: 1, missedSamples: 0, reason: null } };
   const data = project({ ...page({ through: 1 }), items: [summary] });
   expect(data.resources).toContain('CPU time 0 ms'); expect(data.resources).toContain('peak memory 0 bytes');
   expect(project(page()).resources).toBeNull();
@@ -56,4 +56,17 @@ it('phase end is useful even with zero units and a repeated end preserves its cl
   expect(data.progress?.usefulAt).toBe(finished.observedAt);
   expect(data.progress?.completed).toBe(0);
   expect(project({ ...page({ after: 2, through: 3 }), items: [{ ...finished, seq: 3, observedAt: '2026-11-10T00:00:03.000Z' }] }, data).progress).toEqual(data.progress);
+});
+
+it('labels unavailable resource values and sampled coverage without inventing zero', () => {
+  const base = event(1);
+  const summary = { ...base, kind: 'resource.summary' as const, payload: { scope: 'container' as const,
+    cpuMillis: null, peakMemoryBytes: null, peakPids: null, outputBytes: null, enforcedControls: [],
+    source: 'docker-stats' as const, lastSampleAt: null, samples: 0, missedSamples: 3, reason: 'unavailable' as const } };
+  const data = project({ ...page({ through: 1 }), items: [summary] });
+  expect(data.resources).toContain('CPU time not reported');
+  expect(data.resources).toContain('sampled peak memory not reported');
+  expect(data.resources).toContain('missed 3');
+  expect(data.resources).toContain('observation unavailable');
+  expect(data.resources).not.toContain('0 ms');
 });

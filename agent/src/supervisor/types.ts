@@ -1,10 +1,13 @@
 import type { Offer } from '@beetle/contracts';
-import type { DockerBackend, Observation, RuntimePlan } from '../backends/docker/index.js';
+import type { DockerBackend, Observation, RuntimePlan, ResourceReading, Operation } from '../backends/docker/index.js';
 import type { Journal, StopReason } from '../journal/index.js';
 import type { Scope } from '../admission/index.js';
 
 export type JournalPort = Pick<Journal, 'admission' | 'readOffer' | 'get' | 'supervision' | 'sourceCursors' | 'appendSupervisor'>;
-export type BackendPort = Pick<DockerBackend, 'ensureCreated' | 'dispatchStartOnce' | 'inspect' | 'stop' | 'kill'>;
+export type BackendPort = Pick<DockerBackend, 'ensureCreated' | 'dispatchStartOnce' | 'inspect' | 'stop' | 'kill'> & {
+  /** Optional for focused fixtures; installed Docker backend must supply it. */
+  sampleResources?(plan: RuntimePlan, operation: Operation): Promise<ResourceReading>;
+};
 export interface Clock { wall(): number; monotonic(): number }
 export interface SupervisorOptions {
   journal: JournalPort; backendFactory(): BackendPort; installationId: string; clock?: Clock;

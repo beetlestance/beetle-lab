@@ -7,8 +7,10 @@ export interface Timeline {
   coverage: RunEventPage['coverage']; blocked: RunEventPage['blockedReason']; retainedStart: number | null;
   progress: Progress | null; resources: string | null;
 }
+const measured = (value: number | null, unit = '') => value === null ? 'not reported' : `${value}${unit}`;
 const resourceText = (p: Extract<Event, { kind: 'resource.summary' }>['payload']) =>
-  `Container aggregate: CPU time ${p.cpuMillis} ms; peak memory ${p.peakMemoryBytes} bytes; peak PIDs ${p.peakPids}; output ${p.outputBytes} bytes. Declared enforced controls: ${p.enforcedControls.join(', ') || 'none'}.`;
+  `Container aggregate (${p.source}): last observed CPU time ${measured(p.cpuMillis, ' ms')}; sampled peak memory ${measured(p.peakMemoryBytes, ' bytes')}; sampled peak PIDs ${measured(p.peakPids)}; output ${measured(p.outputBytes, ' bytes')}. Samples ${p.samples}; missed ${p.missedSamples}; last sample ${p.lastSampleAt ?? 'not reported'}; observation ${p.reason ?? 'reported'}. Declared enforced controls: ${p.enforcedControls.join(', ') || 'none'}.`;
+
 function wrapperText(event: Extract<Event, { source: 'wrapper' }>): string {
   switch (event.kind) {
     case 'phase.started': return 'Phase started';

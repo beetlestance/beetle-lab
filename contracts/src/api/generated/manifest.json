@@ -8,7 +8,7 @@
     "runner/v1/agent-event.schema.json": "063ad52fb49ddcb837e7c348d37350ddb00f44de3e5a7ff302d4657525f113d6",
     "runner/v1/event-envelope.schema.json": "bae38be39e49c90793ffa73bb514f5bed15139a1dc14e3a15e34c93ad8f6e7b3",
     "runner/v1/wrapper-events.schema.json": "b14590f134d092d5e926f24492222d8eb27d437226fa670564ff83bb27665f1f",
-    "runner/v1/supervisor-events.schema.json": "9065408c049290a99372a4e9a3d22eb617c25b710bc84c080626acec8e735974",
+    "runner/v1/supervisor-events.schema.json": "c55be82182f18875f3902b106a1c6d14655dda64e9f70509d5126fb7b2e2d62a",
     "api/v2/common.schema.json": "07b2d5deb2276604678386fa60795643a17cb5be5cd6b913eb4097ce74c99266",
     "api/v2/input-requests.schema.json": "e5970ad4ad54d9f229436e83b6e8cededa3eccab878554f2896c19c927de3897",
     "api/v2/input.schema.json": "4aac5c976cdd5a6a5dd377092573728489a2ec7c8200a68faa9292a209fadc74",

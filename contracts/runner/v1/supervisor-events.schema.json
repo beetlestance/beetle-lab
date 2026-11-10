@@ -36,22 +36,34 @@
           "const": "container"
         },
         "cpuMillis": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0,
           "maximum": 9007199254740991
         },
         "peakMemoryBytes": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0,
           "maximum": 9007199254740991
         },
         "peakPids": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0,
           "maximum": 9007199254740991
         },
         "outputBytes": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0,
           "maximum": 9007199254740991
         },
@@ -67,6 +79,40 @@
             ]
           },
           "maxItems": 5
+        },
+        "source": {
+          "const": "docker-stats"
+        },
+        "lastSampleAt": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "samples": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "missedSamples": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "reason": {
+          "enum": [
+            null,
+            "unavailable",
+            "unsupported",
+            "invalid",
+            "counter_reset",
+            "restarted",
+            "clock"
+          ]
         }
       },
       "required": [
@@ -75,9 +121,51 @@
         "peakMemoryBytes",
         "peakPids",
         "outputBytes",
-        "enforcedControls"
+        "enforcedControls",
+        "source",
+        "lastSampleAt",
+        "samples",
+        "missedSamples",
+        "reason"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "samples": {
+                "const": 0
+              }
+            },
+            "required": [
+              "samples"
+            ]
+          },
+          "then": {
+            "properties": {
+              "cpuMillis": {
+                "const": null
+              },
+              "peakMemoryBytes": {
+                "const": null
+              },
+              "peakPids": {
+                "const": null
+              },
+              "lastSampleAt": {
+                "const": null
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "lastSampleAt": {
+                "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/timestamp"
+              }
+            }
+          }
+        }
+      ]
     },
     "cancellation_requested": {
       "type": "object",
