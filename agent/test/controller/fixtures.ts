@@ -24,7 +24,7 @@ export class ScriptReader implements ControlReader {
   constructor(options: ControlReaderOptions, events: ControlEvent[]) {
     // Synthetic orchestration facts derived from this fixture's options, never native authority.
     this.syntheticRoot = Object.freeze({ directory: options.directory, uid: options.uid,
-      device: '0', inode: '0', modifiedNs: '0', changedNs: '0' });
+      device: '1', inode: '0', modifiedNs: '0', changedNs: '0' });
     this.checkpoint = options.checkpoint;
     if (!this.checkpoint && events.length) this.pending = { key: options.key, expected: null,
       next: { version: 1, dev: '1', ino: '2', offset: Buffer.byteLength(events.map(e => JSON.stringify(e) + '\n').join('')),
@@ -52,8 +52,10 @@ export function fixture() {
   const controllers: AttemptController[] = [];
   afterEach(async () => { await Promise.allSettled(controllers.splice(0).map(controller => controller.close())); });
   const f = supervisorFixture();
-  return { ...f, async setupController() {
-    const env = await f.setup(); const owner = controlled(env.journal, env.time);
+  return { ...f, async setupController(quota?: number) {
+    const journalPath = f.path();
+    const env = await f.setup(journalPath, 1, offer => { offer.budget.outputBytes = 4000; }, quota);
+    const owner = controlled(env.journal, env.time);
     const key = scope(env.offer);
     const original = JSON.parse(await readFile('contracts/fixtures/valid/passed-result.json', 'utf8')) as EngineResult;
     const { seal: _seal, ...body } = original; void _seal;
@@ -68,16 +70,20 @@ export function fixture() {
         const reader = new ScriptReader(options, [event]); readers.push(reader); return reader;
       }, collectOutputs: options => {
         collections.push(options);
+        const resultFileBytes = Buffer.byteLength(JSON.stringify(options.reportedResult));
         return output ? output(options) : { result: Promise.resolve({ ok: true, value: options.reportedResult,
-          verifiedBytes: options.controlBytes + 1,
+          verifiedBytes: options.controlBytes + resultFileBytes,
           // Synthetic collector for orchestration tests; these are not filesystem/source receipts.
-          custody: { resultFileBytes: 1, controlBytes: options.controlBytes,
-            root: { directory: options.directory, uid: options.uid, device: '0', inode: '0', modifiedNs: '0', changedNs: '0' } } }), quiesced: Promise.resolve(),
+          custody: { resultFileBytes, controlBytes: options.controlBytes,
+            root: { directory: options.directory, uid: options.uid, device: '1', inode: '0', modifiedNs: '0', changedNs: '0' } } }), quiesced: Promise.resolve(),
         close: () => { outputClose++; return Promise.resolve(); } };
       } };
     const controller = new AttemptController(controllerOptions);
     controllers.push(controller);
-    return { ...env, ...owner, controller, readers, collections, key, event,
-      controllerOptions, outputClose: () => outputClose, setOutput(value: typeof output) { output = value; } };
+    return { ...env, ...owner, controller, readers, collections, key, event, journalPath,
+      controllerOptions, outputClose: () => outputClose, setOutput(value: typeof output) { output = value; },
+      recreate(overrides: Partial<ControllerPorts> = {}) {
+        const next = new AttemptController({ ...controllerOptions, ...overrides }); controllers.push(next); return next;
+      } };
   } };
 }

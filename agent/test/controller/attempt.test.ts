@@ -26,9 +26,11 @@ it('retains charges until a strictly later real wall-clock observation; no fabri
   const e = await f.setupController(); await e.controller.launch(budget());
   e.backend.observation = e.backend.known('exited').value;
   await e.controller.tick(budget());
-  expect(await e.controller.tick(budget())).toEqual({ kind: 'awaiting_release', collection: 'finished' });
+  expect(await e.controller.tick(budget())).toMatchObject({ kind: 'runtime' });
+  expect(e.collections).toHaveLength(0); expect(await e.journal.readOutputCollection(e.key)).toBeNull();
   expect(reserved(await e.journal.admission({ kind: 'reservation', key: e.key })).status).toBe('charged');
   e.time.advance(1);
+  expect(await e.controller.tick(budget())).toEqual({ kind: 'awaiting_release', collection: 'finished' });
   expect(await e.controller.tick(budget())).toEqual({ kind: 'released', collection: 'finished' });
 });
 it('never upgrades uncertain launch dispatches to stopped collection or released capacity', async () => {
