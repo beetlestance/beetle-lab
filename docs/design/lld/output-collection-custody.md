@@ -1,6 +1,7 @@
 # Collected output facts
 
-Status: implementation candidate; independent acceptance required. This private
+Status: implemented and locally verified; [evidence](../../verification/output-custody-facts.md)
+records scope and remaining composed checks. This private
 producer contract is the first step of [verified source](output-source.md), not a
 journal source receipt, HTTP manifest or publication API.
 
