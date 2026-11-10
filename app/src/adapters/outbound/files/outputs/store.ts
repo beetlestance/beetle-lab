@@ -41,17 +41,19 @@ class LocalOutputStore implements OutputByteStore {
     if (job.token) this.tokens.delete(job.token);
   }
   private stop(): void { this.fenced = true; for (const job of this.jobs) job.policy.controller.abort(); }
-  private run<T>(context: OutputFileContext, capture: (claim: (input: unknown) => OutputFileRecord) => () => Promise<T>): OutputFileJob<T> {
+  private run<T>(context: OutputFileContext, capture: (job: FileJob<unknown>, claim: (input: unknown) => OutputFileRecord) => () => Promise<T>): OutputFileJob<T> {
     if (this.fenced || this.jobs.size >= 2) return this.refused(this.fenced ? 'closed' : 'busy');
     const job = new FileJob<T>({ port: this.port, roots: this.roots, lease: this.lease!, clock: this.clock,
       done: owner => this.done(owner), broken: () => { this.broken = true; this.stop(); } });
     this.jobs.add(job as FileJob<unknown>);
     try {
-      const work = capture(input => {
+      const work = capture(job as FileJob<unknown>, input => {
         const key = token(input);
         if (this.tokens.has(key)) fail('busy');
         job.token = key; this.tokens.set(key, job as FileJob<unknown>);
-        return record(input);
+        const value = record(input);
+        if (value.artifact.token !== key) fail('invalid_input');
+        return value;
       });
       job.capture(context); job.start(work);
     } catch (error) { job.refuse(error); }
@@ -61,29 +63,28 @@ class LocalOutputStore implements OutputByteStore {
     return { result: Promise.reject(new OutputByteError(code)), settled: Promise.resolve() };
   }
   prepare(input: OutputFileRecord, context: OutputFileContext): OutputFileJob<OutputFileReceipt> {
-    return this.run(context, claim => { const value = claim(input); return () => prepare(this.job(value), this.roots, value); });
+    return this.run(context, (job, claim) => { const value = claim(input); return () => prepare(job, this.roots, value); });
   }
   publish(input: OutputFileRecord, context: OutputFileContext): OutputFileJob<OutputFileReceipt> {
-    return this.run(context, claim => { const value = claim(input); return () => publish(this.job(value), this.roots, value); });
+    return this.run(context, (job, claim) => { const value = claim(input); return () => publish(job, this.roots, value); });
   }
   append(input: Parameters<OutputByteStore['append']>[0], context: OutputFileContext): OutputFileJob<OutputFileReceipt> {
-    return this.run(context, claim => {
+    return this.run(context, (job, claim) => {
       const request = fields(input, ['record', 'offset', 'bytes']); const value = claim(request.record); const bytes = chunk(request.bytes);
       if (typeof request.offset !== 'number' || !Number.isSafeInteger(request.offset) || request.offset < 0) fail('invalid_input');
-      const offset = request.offset; return () => append(this.job(value), this.roots, value, { offset, bytes });
+      const offset = request.offset; return () => append(job, this.roots, value, { offset, bytes });
     });
   }
   read(input: Parameters<OutputByteStore['read']>[0], context: OutputFileContext): OutputFileJob<void> {
-    return this.run(context, claim => {
+    return this.run(context, (job, claim) => {
       const request = fields(input, ['record', 'start', 'endExclusive', 'sink']); const value = claim(request.record);
       const sink = fields(request.sink, ['write']); if (typeof sink.write !== 'function') fail('invalid_input');
       if (typeof request.start !== 'number' || typeof request.endExclusive !== 'number') fail('invalid_input');
       const range = { start: request.start, endExclusive: request.endExclusive,
         write: (bytes: Uint8Array) => Reflect.apply(sink.write as (bytes: Uint8Array) => Promise<void>, request.sink, [bytes]) as Promise<void> };
-      return () => read(this.job(value), this.roots, value, range);
+      return () => read(job, this.roots, value, range);
     });
   }
-  private job(record: OutputFileRecord): FileJob<unknown> { return this.tokens.get(record.artifact.token)!; }
   close(): Promise<void> { this.stop(); this.closing ??= this.drain(); return this.closing; }
   private async drain(): Promise<void> {
     await Promise.allSettled([...this.jobs].map(job => job.result));

@@ -43,16 +43,25 @@ function artifact(input: unknown): OutputArtifactState {
   return value as unknown as OutputArtifactState;
 }
 function artifactState(value: Record<string, unknown>): void {
-  if (!['transferring', 'publishing', 'published'].includes(String(value.phase))) fail('invalid_input');
+  if (typeof value.phase !== 'string' || !['transferring', 'publishing', 'published'].includes(value.phase)) fail('invalid_input');
   if (value.identity !== null && !hash(value.identity)) fail('invalid_input');
   if (value.writer !== null && !uuid(value.writer)) fail('invalid_input');
   if (value.phase !== 'transferring' && value.offset !== value.bytes) fail('invalid_input');
 }
+function binding(input: unknown): OutputFileRecord['binding'] {
+  const value = fields(input, ['key', 'journalAuthority']);
+  const key = fields(value.key, ['runId', 'attempt']);
+  const attempt = fields(key.attempt, ['organizationId', 'workspaceId', 'attemptId', 'generation', 'intentDigest']);
+  if (![value.journalAuthority, key.runId, attempt.organizationId, attempt.workspaceId, attempt.attemptId].every(uuid)) fail('invalid_input');
+  if (attempt.generation !== 1 || !hash(attempt.intentDigest)) fail('invalid_input');
+  return captureEventBinding({ key: { runId: key.runId, attempt }, journalAuthority: value.journalAuthority });
+}
 export function record(input: unknown): OutputFileRecord {
   try {
     const value = fields(input, ['binding', 'artifact']);
-    const captured = JSON.parse(encodeJson(value, OUTPUT_FILE_RECORD_BYTES)) as Record<string, unknown>;
-    return { binding: captureEventBinding(captured.binding), artifact: artifact(captured.artifact) };
+    // Only validated primitive leaves and owned fixed-shape snapshots reach encoding.
+    const captured = { binding: binding(value.binding), artifact: artifact(value.artifact) };
+    return JSON.parse(encodeJson(captured, OUTPUT_FILE_RECORD_BYTES)) as OutputFileRecord;
   } catch { fail('invalid_input'); }
 }
 const typedPrototype = Object.getPrototypeOf(Uint8Array.prototype) as object;
