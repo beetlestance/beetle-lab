@@ -4,6 +4,8 @@ Status: proposal under independent review; no new wire schema, journal migration
 or implementation is accepted by this page. Scope: durable agent source authority
 for later backend transfer. Application publication and terminal results remain
 separate contracts under [output allocation](output-allocation.md).
+The [source commit contract](output-source-commit.md) freezes reviewed private values,
+digest vectors, journal quota and finished-release gating; implementation is pending.
 
 ## Ownership and existing evidence
 
