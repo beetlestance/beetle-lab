@@ -3,7 +3,7 @@ import { captureSourceChunkRequest } from '@beetle/contracts/output-source';
 import { copyControlScope } from '../control-protocol/index.js';
 import type { Scope } from '../admission/index.js';
 import type { Operation } from '../backends/docker/index.js';
-import type { CreateOutputSourceReader, OutputSourceReader } from './index.js';
+import type { CreateOutputSourceReader, OutputSourceReader } from './types.js';
 import { Budget } from './budget.js';
 import { OutputTransferError } from './errors.js';
 import { declaredArtifact, readBytes, chunkValue } from './range.js';

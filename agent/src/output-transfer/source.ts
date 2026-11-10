@@ -4,7 +4,7 @@ import type { Owned, SourceEnvelope } from '@beetle/contracts/output-source';
 import type { Scope } from '../admission/index.js';
 import { receiptForOutputSource } from '../output-source/index.js';
 import type { PrivateSource } from '../output-source/index.js';
-import type { OutputSourceReaderOptions } from './index.js';
+import type { OutputSourceReaderOptions } from './types.js';
 import type { Budget } from './budget.js';
 import { OutputTransferError } from './errors.js';
 
