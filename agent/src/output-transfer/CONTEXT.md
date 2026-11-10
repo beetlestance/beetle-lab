@@ -11,6 +11,9 @@ range owner retains result/quiesced/cached-close custody before service settleme
 Public replies require the current physical Journal, source and complete closure
 receipt; no private root/runtime/checkpoint escapes. Chunk selection rejects ambiguous
 or differently spelled IDs and serializes only checked owned <=65536-byte ranges.
+An absent source followed by a released/rejected snapshot is re-read once after
+that terminal fact before unavailable is allowed. Existing-source and pending
+paths add no query; source/closure proofs and request budget fences still apply.
 
 Contract: docs/design/lld/output-transfer.md. Public value validation lives in
 @beetle/contracts/output-source; root/checkpoint/runtime remain agent-private.

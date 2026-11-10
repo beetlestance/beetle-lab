@@ -28,12 +28,15 @@ function publicSource(source: PrivateSource,
 export async function readSource(journal: OutputSourceReaderOptions['journal'], key: Readonly<Scope>, budget: Budget)
   : Promise<{ source: PrivateSource; envelope: Owned<SourceEnvelope> }> {
   budget.check(); const authority = await journal.journalAuthority(); budget.check();
-  const source = await journal.readOutputSource(key); budget.check();
+  let source = await journal.readOutputSource(key); budget.check();
   if (source === null) {
     const snapshot = await journal.get(key); budget.check();
     if (!matches(snapshot, key)) throw new OutputTransferError('unavailable');
     const terminal = snapshot.admission?.state === 'released' || snapshot.admission?.state === 'rejected';
-    throw new OutputTransferError(terminal ? 'unavailable' : 'pending');
+    if (!terminal) throw new OutputTransferError('pending');
+    // Only absence observed after the terminal fact can prove source-free release.
+    source = await journal.readOutputSource(key); budget.check();
+    if (source === null) throw new OutputTransferError('unavailable');
   }
   proveSource(source, key, authority);
   const closure = await journal.readOutputDelivery(key); budget.check();
