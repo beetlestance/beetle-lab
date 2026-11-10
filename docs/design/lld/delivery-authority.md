@@ -1,7 +1,8 @@
 # Delivery authority and supported recovery
 
 Status: journal/control-store, startup and runner wire locally verified;
-backend storage binding locally verified; dispatch and restore work pending.
+backend binding/delivery locally verified against a synthetic peer;
+restore and native qualification remain pending.
 [Local foundation evidence](../../verification/authority-foundations.md).
 Owner: coordinator for the runner contract and migrations; agent journal for
 physical delivery authority; application dispatch for the immutable binding.
@@ -14,7 +15,8 @@ A backend claim commits before network issue. A missing agent receipt can mean
 that the original PUT never arrived, or that receipt history was reset/restored.
 Logical installation identity, Docker daemon identity and generation1 do not
 prove journal continuity. A404 alone never permits release, replacement or retry
-under a different original. The current component cannot make this distinction.
+under a different original. The authority and supported-recovery contract below
+define that distinction; manual rewind remains unsupported.
 
 ## Authority
 

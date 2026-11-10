@@ -5,7 +5,7 @@ Foundation source: `e0c270dd305a6767f1ea1a0548bafcd5fac117ba`.
 Startup/correction source: `4638d5e640ddcd62c719c377ae5c2eafc1a604d9`.
 Runner wire source: `752d9d37835a9f14b99c68777f4aac88ae499b83`.
 Backend binding source: `6378d213a0302cb12f7652156ba893b128534482`.
-Automatic dispatch is not established by this report.
+Connected dispatch is covered separately by [delivery runtime](delivery-runtime.md).
 
 ## Durable journal identity
 

@@ -1,6 +1,7 @@
 # Durable application dispatch storage
 
-Status: SQL and metadata RPC implemented; installation dispatcher runtime pending.
+Status: SQL, metadata RPC and bounded delivery runtime locally verified;
+events/results and native qualification remain pending.
 Owner: application SQLite worker. Migration006 pins physical delivery authority;
 prior migrations are immutable.
 [Run intake](run-intake.md) owns immutable intent/receipt acceptance;
@@ -129,8 +130,9 @@ Use the same eligibility owner for advisory scan and authoritative claim.
 [Delivery authority](delivery-authority.md) additionally requires a durable journal
 authority bound atomically at first possible delivery and retained after ACK/outbox
 deletion. Claim replies and observations must carry/check that stored authority.
-Storage/RPC implements this binding. Automatic network delivery/reoffer remains
-pending; component evidence alone does not establish runtime recovery.
+Storage/RPC and the connected loop implement this binding;
+[local delivery evidence](../../verification/delivery-runtime.md) records the synthetic-peer
+recovery scope. Actual agent/native recovery and release qualification remain pending.
 
 The runtime may hold ONE captured Offer between readOffer, compact claim and network
 issue. No preloaded Offer backlog. A single non-overlapping delivery loop can admit
