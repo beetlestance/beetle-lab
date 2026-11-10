@@ -24,7 +24,9 @@
         {
           "enum": [
             "authority_mismatch",
-            "attempt_not_found"
+            "attempt_not_found",
+            "source_pending",
+            "source_unavailable"
           ]
         }
       ]

@@ -17,6 +17,12 @@ import type { schema as ProtocolErrorSchema } from './error.inference.js';
 import type { schema as EventBatchSchema } from './event-batch.inference.js';
 import type { schema as InstalledIdentitySchema } from './installed-identity.inference.js';
 import type { schema as OfferSchema } from './offer.inference.js';
+import type { schema as OutputManifestCoreSchema } from './output-manifest-core.inference.js';
+import type { schema as OutputManifestSchema } from './output-manifest.inference.js';
+import type { schema as SourceBindingSchema } from './source-binding.inference.js';
+import type { schema as SourceChunkRequestSchema } from './source-chunk-request.inference.js';
+import type { schema as SourceChunkSchema } from './source-chunk.inference.js';
+import type { schema as SourceEnvelopeSchema } from './source-envelope.inference.js';
 import type { schema as StagedAttemptSchema } from './staged-attempt.inference.js';
 export type Uuid = FromSchema<typeof CommonSchema.$defs.uuid, { references: [...typeof schemas] }>;
 export type Timestamp = FromSchema<typeof CommonSchema.$defs.timestamp, { references: [...typeof schemas] }>;
@@ -49,6 +55,12 @@ export type ProtocolError = FromSchema<typeof ProtocolErrorSchema, { references:
 export type EventBatch = FromSchema<typeof EventBatchSchema, { references: [...typeof schemas] }>;
 export type InstalledIdentity = FromSchema<typeof InstalledIdentitySchema, { references: [...typeof schemas] }>;
 export type Offer = FromSchema<typeof OfferSchema, { references: [...typeof schemas] }>;
+export type OutputManifestCore = FromSchema<typeof OutputManifestCoreSchema, { references: [...typeof schemas] }>;
+export type OutputManifest = FromSchema<typeof OutputManifestSchema, { references: [...typeof schemas] }>;
+export type SourceBinding = FromSchema<typeof SourceBindingSchema, { references: [...typeof schemas] }>;
+export type SourceChunkRequest = FromSchema<typeof SourceChunkRequestSchema, { references: [...typeof schemas] }>;
+export type SourceChunk = FromSchema<typeof SourceChunkSchema, { references: [...typeof schemas] }>;
+export type SourceEnvelope = FromSchema<typeof SourceEnvelopeSchema, { references: [...typeof schemas] }>;
 export type StagedAttempt = FromSchema<typeof StagedAttemptSchema, { references: [...typeof schemas] }>;
 export interface ProtocolTypes {
   AckReceipt: AckReceipt;
@@ -66,5 +78,11 @@ export interface ProtocolTypes {
   EventBatch: EventBatch;
   InstalledIdentity: InstalledIdentity;
   Offer: Offer;
+  OutputManifestCore: OutputManifestCore;
+  OutputManifest: OutputManifest;
+  SourceBinding: SourceBinding;
+  SourceChunkRequest: SourceChunkRequest;
+  SourceChunk: SourceChunk;
+  SourceEnvelope: SourceEnvelope;
   StagedAttempt: StagedAttempt;
 }

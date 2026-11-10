@@ -52,5 +52,20 @@
     "request": "Ack",
     "response": "AckReceipt",
     "successStatus": 200
+  },
+  {
+    "name": "source",
+    "method": "GET",
+    "path": "/runner/v1/attempts/{attemptId}/source",
+    "response": "SourceEnvelope",
+    "successStatus": 200
+  },
+  {
+    "name": "sourceChunk",
+    "method": "POST",
+    "path": "/runner/v1/attempts/{attemptId}/source/chunk",
+    "request": "SourceChunkRequest",
+    "response": "SourceChunk",
+    "successStatus": 200
   }
 ]

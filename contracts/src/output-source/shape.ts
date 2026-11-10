@@ -27,15 +27,8 @@ export function sameScope(value: SourceScope, expected: SourceScope): void {
   for (const key of ['organizationId', 'workspaceId', 'attemptId', 'generation'] as const) requireInput(value[key] === expected[key]);
 }
 export function binding(input: unknown): SourceBinding {
-  const value = fields(input, 'journalAuthority,organizationId,workspaceId,attemptId,generation,intentDigest,engine,installedIdentity,specDigest');
-  scope({ organizationId: value.organizationId, workspaceId: value.workspaceId, attemptId: value.attemptId, generation: value.generation });
-  uuid(value.journalAuthority); sha(value.intentDigest); sha(value.specDigest);
-  const engine = fields(value.engine, 'id,imageDigest,configVersion');
-  requireInput(typeof engine.id === 'string' && /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(engine.id));
-  requireInput(typeof engine.imageDigest === 'string' && /^sha256:[a-f0-9]{64}$/.test(engine.imageDigest));
-  integer(engine.configVersion, Number.MAX_SAFE_INTEGER, 1);
-  requireInput(validate('InstalledIdentity', value.installedIdentity).ok);
-  return value as unknown as SourceBinding;
+  const result = validate('SourceBinding', input); requireInput(result.ok);
+  return result.value;
 }
 export function result(input: unknown, binding: SourceBinding): EngineResult {
   canonical(input, OUTPUT_SOURCE_RESULT_BYTES);
@@ -54,8 +47,8 @@ export function counts(input: { resultFileBytes: unknown; controlBytes: unknown;
 }
 /** Structural checks on captured data, before any foreign hashing callback. */
 export function publicCore(input: unknown, stored: boolean): PublicCore {
-  const value = fields(input, `version,binding,result,resultFileBytes,controlBytes,verifiedBytes${stored ? ',manifestDigest' : ''}`);
-  requireInput(value.version === 1);
+  const checked = stored ? validate('OutputManifest', input) : validate('OutputManifestCore', input);
+  requireInput(checked.ok); const value = checked.value;
   const original = binding(value.binding); const engineResult = result(value.result, original);
   counts({ resultFileBytes: value.resultFileBytes, controlBytes: value.controlBytes, verifiedBytes: value.verifiedBytes }, engineResult);
   return { version: 1, binding: original, result: engineResult, resultFileBytes: value.resultFileBytes as number,
