@@ -5,6 +5,7 @@ import type { RunnerOutputGateway } from '../../src/ports/output-source.js';
 import { storageFixture, settingsFixture } from '../storage/fixture.js';
 import { pin, credential } from '../bootstrap/agent-config/fixture.js';
 import { deferred, flush, outputOwnerFixture } from './fixture.js';
+import { keyFor } from '../delivery/fixture.js';
 
 const mocks = vi.hoisted(() => ({ gateway: vi.fn(), source: vi.fn(), outputs: vi.fn(), delivery: vi.fn() }));
 vi.mock('../../src/adapters/outbound/runner/index.js', () => ({ createRunnerGateway: mocks.gateway, startDeliveryRuntime: mocks.delivery }));
@@ -36,8 +37,9 @@ it('always provisions the actual output factory with installation metadata and a
   expect(mocks.delivery).not.toHaveBeenCalled();
   const captured = mocks.outputs.mock.calls[0]![0] as OutputRuntimeOptions;
   expect(captured).toMatchObject({ dataRoot: options.dataRoot, freeSpaceReserveBytes: 2000 });
-  expect(captured.outputs).toBe(metadata.outputs); expect(captured.finalizations).toBe(metadata.finalizations);
-  expect(captured.runs).toBe(metadata.runs); expect(Object.keys(captured.gateway)).toEqual(['output']);
+  expect(Object.keys(captured.outputs).sort()).toEqual(Object.keys(metadata.outputs).sort());
+  expect(Object.keys(captured.finalizations)).toEqual(['finalize']); expect(Object.keys(captured.runs)).toEqual(['getRun']);
+  expect(Object.isFrozen(captured.outputs)).toBe(true); expect(Object.keys(captured.gateway)).toEqual(['output']);
   const identity = { journalAuthority: '33333333-3333-4333-8333-333333333333', organizationId: 'org',
     workspaceId: 'workspace', attemptId: 'attempt', generation: 1, intentDigest: 'a'.repeat(64) };
   expect(() => captured.gateway.output(identity)).toThrow('Synthetic output client');
@@ -46,7 +48,50 @@ it('always provisions the actual output factory with installation metadata and a
   try {
     expect(mocks.gateway).toHaveBeenCalledOnce();
     expect(mocks.source).toHaveBeenCalledWith({ dataRoot: options.dataRoot, configuration: options.connection.configuration, gateway });
-    expect(f.options()?.gateway).toBe(gateway);
+    expect(Object.isFrozen(f.options()?.gateway)).toBe(true);
+  } finally { await runtime.close(); await fixture.close(metadata); }
+});
+it('binds output and delivery methods before held capacity provisioning despite later port method replacement', async () => {
+  const { f, metadata, gateway, options } = await setup(); const held = deferred<typeof f.source>();
+  const original = new Error('Synthetic captured method'); const replacement = new Error('Synthetic replacement method');
+  const scan = vi.spyOn(metadata.outputs, 'scan').mockRejectedValue(original);
+  const load = vi.spyOn(metadata.outputs, 'load').mockRejectedValue(original);
+  const publish = vi.spyOn(metadata.outputs, 'recordPublication').mockRejectedValue(original);
+  const finalize = vi.spyOn(metadata.finalizations, 'finalize').mockRejectedValue(original);
+  const getRun = vi.spyOn(metadata.runs, 'getRun').mockRejectedValue(original);
+  const dispatch = vi.spyOn(metadata.dispatch, 'scan').mockRejectedValue(original);
+  const events = vi.spyOn(metadata.events, 'load').mockRejectedValue(original);
+  mocks.source.mockReturnValueOnce(held.promise);
+  const opening = openAgentRuntime(options, metadata); await flush(); expect(mocks.outputs).not.toHaveBeenCalled();
+  metadata.outputs.scan = vi.fn(async () => { throw replacement; }); metadata.outputs.load = vi.fn(async () => { throw replacement; });
+  metadata.outputs.recordPublication = vi.fn(async () => { throw replacement; });
+  metadata.finalizations.finalize = vi.fn(async () => { throw replacement; }); metadata.runs.getRun = vi.fn(async () => { throw replacement; });
+  metadata.dispatch.scan = vi.fn(async () => { throw replacement; }); metadata.events.load = vi.fn(async () => { throw replacement; });
+  const attempt = gateway.attempt; gateway.attempt = vi.fn(() => { throw replacement; });
+  held.resolve(f.source); const runtime = await opening;
+  const captured = mocks.outputs.mock.calls[0]![0] as OutputRuntimeOptions;
+  const delivery = f.options(); if (!delivery) throw new Error('Missing delivery options');
+  const key = keyFor(); const binding = { key, journalAuthority: '33333333-3333-4333-8333-333333333333' };
+  const identity = { ...key.attempt, journalAuthority: binding.journalAuthority };
+  const artifact = { binding, sourceDigest: 'a'.repeat(64), manifestDigest: 'b'.repeat(64), ordinal: 0 };
+  try {
+    await expect(captured.outputs.scan({ limit: 1 })).rejects.toBe(original);
+    await expect(captured.outputs.load(binding)).rejects.toBe(original);
+    await expect(captured.outputs.recordPublication({ key: artifact, writerId: 'writer', expectedVersion: 1,
+      receipt: { token: 'token', offset: 0, phase: 'published', identity: 'identity' } })).rejects.toBe(original);
+    await expect(captured.finalizations.finalize({ ...artifact, expectedRunVersion: 1 })).rejects.toBe(original);
+    await expect(captured.runs.getRun({ id: key.runId, scope: { kind: 'workspace',
+      organizationId: key.attempt.organizationId, workspaceId: key.attempt.workspaceId } })).rejects.toBe(original);
+    await expect(delivery.store.scan({ lane: 'queued', limit: 1 })).rejects.toBe(original);
+    await expect(delivery.events.load(binding)).rejects.toBe(original);
+    expect(() => delivery.gateway.attempt(identity)).toThrow('Unexpected client');
+    expect(attempt).toHaveBeenCalledWith(identity); expect(gateway.attempt).not.toHaveBeenCalled();
+    for (const [method, context] of [[scan, metadata.outputs], [load, metadata.outputs], [publish, metadata.outputs],
+      [finalize, metadata.finalizations], [getRun, metadata.runs], [dispatch, metadata.dispatch], [events, metadata.events]] as const) {
+      expect(method).toHaveBeenCalledOnce(); expect(method.mock.contexts[0]).toBe(context);
+    }
+    expect(metadata.outputs.scan).not.toHaveBeenCalled(); expect(metadata.finalizations.finalize).not.toHaveBeenCalled();
+    expect(metadata.runs.getRun).not.toHaveBeenCalled();
   } finally { await runtime.close(); await fixture.close(metadata); }
 });
 it('owns source and shared connection cleanup when mandatory production output provisioning rejects', async () => {

@@ -8,6 +8,7 @@ import { openCapacitySource } from '../adapters/outbound/capacity/index.js';
 import type { Metadata, MetadataOptions } from '../adapters/outbound/sqlite/index.js';
 import { openAgentOwners } from './agent-owners.js';
 import { openOutputRuntime } from './output-runtime/index.js';
+import { captureDeliveryMetadata, captureOutputMetadata, captureGateway } from './output-parent/capture.js';
 import type { AgentRuntime } from './agent-owners.js';
 export type { AgentRuntime } from './agent-owners.js';
 
@@ -40,19 +41,20 @@ export function agentMetadata(metadata: MetadataOptions, agent: AgentRuntimeOpti
 /** Capacity and delivery share one installation-owned gateway and its credits. */
 export async function openAgentRuntime(options: AgentRuntimeOptions, metadata: Metadata): Promise<AgentRuntime> {
   const dataRoot = options.dataRoot; const configuration = options.connection.configuration;
-  const outputs = metadata.outputs; const finalizations = metadata.finalizations; const runs = metadata.runs;
+  const outputMetadata = captureOutputMetadata(metadata); const deliveryMetadata = captureDeliveryMetadata(metadata);
   const freeSpaceReserveBytes = configuration.freeSpaceReserveBytes;
   const gateway = createRunnerGateway(options.connection);
+  const capturedGateway = captureGateway(gateway);
   const outputGateway = Object.freeze({ output: gateway.output.bind(gateway) });
   let source: CapacitySource;
   try {
     source = await openCapacitySource({ dataRoot, configuration, gateway });
   } catch (error) {
-    try { await gateway.close(); }
+    try { await capturedGateway.close(); }
     catch (closeError) { throw new AggregateError([error, closeError], 'Agent runtime startup failed', { cause: closeError }); }
     throw error;
   }
-  return openAgentOwners({ source, gateway, metadata,
-    openOutputs: onFailure => openOutputRuntime({ dataRoot, outputs, finalizations, runs,
+  return openAgentOwners({ source, gateway: capturedGateway, metadata: deliveryMetadata,
+    openOutputs: onFailure => openOutputRuntime({ dataRoot, ...outputMetadata,
       gateway: outputGateway, freeSpaceReserveBytes, onFailure }) });
 }

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { openAgentOwners } from '../../src/bootstrap/agent-owners.js';
 import { deferred, flush, outputOwnerFixture } from './fixture.js';
+import { keyFor } from '../delivery/fixture.js';
 
 const mocks = vi.hoisted(() => ({ start: vi.fn() }));
 vi.mock('../../src/adapters/outbound/runner/index.js', () => ({ startDeliveryRuntime: mocks.start }));
@@ -36,6 +37,36 @@ it('rejects early output failure after draining returned ownership without adver
   expect(f.metadata.updateRuntime.mock.calls).toEqual([[null]]); expect(f.gateway.close).not.toHaveBeenCalled();
   held.resolve(); expect(await opening).toBe(failure);
   expect(f.source.close).toHaveBeenCalledOnce(); expect(f.gateway.close).toHaveBeenCalledOnce();
+});
+it('binds delivery metadata and gateway methods before held output initialization despite caller replacement', async () => {
+  const f = outputOwnerFixture(mocks.start); const held = deferred<typeof f.output>();
+  const original = new Error('Synthetic captured delivery method'); const replacement = new Error('Synthetic replacement method');
+  f.metadata.dispatch.scan.mockRejectedValue(original); f.metadata.events.load.mockRejectedValue(original);
+  f.metadata.runs.getRun.mockRejectedValue(original);
+  const scan = f.metadata.dispatch.scan; const load = f.metadata.events.load; const getRun = f.metadata.runs.getRun;
+  const attempt = f.gateway.attempt;
+  f.openOutputs.mockReturnValueOnce(held.promise); const opening = openAgentOwners(f); await flush();
+  f.metadata.dispatch.scan = vi.fn(async () => { throw replacement; });
+  f.metadata.events.load = vi.fn(async () => { throw replacement; });
+  f.metadata.runs.getRun = vi.fn(async () => { throw replacement; });
+  f.gateway.attempt = vi.fn(() => { throw replacement; });
+  held.resolve(f.output); const runtime = await opening;
+  const delivery = f.options(); if (!delivery) throw new Error('Missing delivery options');
+  const key = keyFor(); const binding = { key, journalAuthority: '33333333-3333-4333-8333-333333333333' };
+  const identity = { ...key.attempt, journalAuthority: binding.journalAuthority };
+  try {
+    await expect(delivery.store.scan({ lane: 'queued', limit: 1 })).rejects.toBe(original);
+    await expect(delivery.events.load(binding)).rejects.toBe(original);
+    await expect(delivery.runs.getRun({ id: key.runId, scope: { kind: 'workspace',
+      organizationId: key.attempt.organizationId, workspaceId: key.attempt.workspaceId } })).rejects.toBe(original);
+    expect(() => delivery.gateway.attempt(identity)).toThrow('Unexpected client');
+    expect(attempt).toHaveBeenCalledWith(identity); expect(f.gateway.attempt).not.toHaveBeenCalled();
+    for (const [method, context] of [[scan, f.metadata.dispatch], [load, f.metadata.events], [getRun, f.metadata.runs]] as const) {
+      expect(method).toHaveBeenCalledOnce(); expect(method.mock.contexts[0]).toBe(context);
+    }
+    expect(f.metadata.dispatch.scan).not.toHaveBeenCalled(); expect(f.metadata.events.load).not.toHaveBeenCalled();
+    expect(f.metadata.runs.getRun).not.toHaveBeenCalled();
+  } finally { await runtime.close(); }
 });
 it('retains failed output startup plus source and connection cleanup failures', async () => {
   const f = outputOwnerFixture(mocks.start); const original = new Error('Synthetic factory rejection');

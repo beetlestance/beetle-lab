@@ -2,7 +2,8 @@ import type { CapacitySource, RuntimeObservation } from '../ports/runtime.js';
 import type { RunnerGateway } from '../ports/runner.js';
 import type { DeliveryRuntime } from '../ports/delivery.js';
 import type { OutputRuntime } from '../ports/output-runtime.js';
-import type { Metadata } from '../adapters/outbound/sqlite/index.js';
+import type { DeliveryMetadata } from './output-parent/capture.js';
+import { captureDeliveryMetadata, captureGateway } from './output-parent/capture.js';
 import { startDeliveryRuntime } from '../adapters/outbound/runner/index.js';
 import { startRuntimePoller } from './runtime-poller.js';
 import type { RuntimeFailureReason, RuntimePoller, RuntimePollerState } from './runtime-poller.js';
@@ -17,7 +18,7 @@ export interface AgentRuntime {
 interface OwnerOptions {
   readonly source: CapacitySource;
   readonly gateway: RunnerGateway;
-  readonly metadata: Pick<Metadata, 'dispatch' | 'events' | 'runs' | 'updateRuntime'>;
+  readonly metadata: DeliveryMetadata;
   readonly openOutputs?: (onFailure: (error: unknown) => Promise<void>) => Promise<OutputRuntime>;
 }
 
@@ -141,9 +142,8 @@ export async function openAgentOwners(options: OwnerOptions): Promise<AgentRunti
   let owner: AgentOwners | undefined;
   try {
     const capturedSource = { sample: source.sample.bind(source), close: closeSource };
-    const capturedMetadata = { dispatch: metadata.dispatch, events: metadata.events, runs: metadata.runs,
-      updateRuntime: metadata.updateRuntime.bind(metadata) };
-    owner = new AgentOwners({ source: capturedSource, gateway, metadata: capturedMetadata,
+    const capturedMetadata = captureDeliveryMetadata(metadata);
+    owner = new AgentOwners({ source: capturedSource, gateway: captureGateway(gateway), metadata: capturedMetadata,
       ...(openOutputs ? { openOutputs } : {}) });
     await owner.start();
     return owner.handle();
