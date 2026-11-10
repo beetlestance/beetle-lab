@@ -1,3 +1,4 @@
+import { CURRENT_JOURNAL_SCHEMA } from './legacy-fixtures.js';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
@@ -95,11 +96,11 @@ it('rolls back a late migration fault including rows, indexes, sequences and ver
   finally { retried.close(); }
 });
 
-it('rejects future version13 without altering its data', () => {
-  const path = f.path(); const db = legacy(path); db.exec('PRAGMA user_version=13'); const before = contents(db); db.close();
+it('rejects future schema beyond current without altering its data', () => {
+  const path = f.path(); const db = legacy(path); db.exec(`PRAGMA user_version=${CURRENT_JOURNAL_SCHEMA + 1}`); const before = contents(db); db.close();
   expect(() => initialize(path)).toThrow('schema_newer');
   const inspect = new DatabaseSync(path);
-  try { expect(contents(inspect)).toEqual(before); expect(inspect.prepare('PRAGMA user_version').get()?.user_version).toBe(13); }
+  try { expect(contents(inspect)).toEqual(before); expect(inspect.prepare('PRAGMA user_version').get()?.user_version).toBe(CURRENT_JOURNAL_SCHEMA + 1); }
   finally { inspect.close(); }
 });
 it('rolls back on bounded SQLite disk-full and preserves the v7 graph for retry', () => {

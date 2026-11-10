@@ -1,3 +1,5 @@
+import { migration013 } from '../../src/journal/migration013.js';
+import { CURRENT_JOURNAL_SCHEMA } from '../journal/legacy-fixtures.js';
 import { DatabaseSync } from 'node:sqlite';
 import type { SQLOutputValue } from 'node:sqlite';
 import { expect, it, vi } from 'vitest';
@@ -17,8 +19,9 @@ it('applies real migration011 before additive012 without inventing old source au
   expect(db.prepare('SELECT * FROM reservations').all()).toEqual(before);
   expect(db.prepare('SELECT collection_bytes,source_bytes FROM accepted_attempts').all()).toEqual([{ collection_bytes: 0, source_bytes: 0 }]);
   const key = { attemptId: reservation.attemptId, organizationId: reservation.organizationId, workspaceId: reservation.workspaceId, generation: 1 };
-  expect(new Store(db).execute({ kind: 'outputSourceRead', key, id: 1 })).toBeNull();
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+  transaction(db, () => migration013(db));
+  expect(new Store(db).execute({ kind: 'outputSourceRead', key, id: 1 })).toBeNull();
 });
 it('rolls back all012 DDL/guards/columns/version on a late table collision', () => {
   const db = legacy(); migration011(db); db.exec('CREATE TABLE output_sources(canary TEXT);');
@@ -27,10 +30,10 @@ it('rolls back all012 DDL/guards/columns/version on a late table collision', () 
   expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
   expect(db.prepare('SELECT type,name,sql FROM sqlite_master ORDER BY name').all()).toEqual(before);
 });
-it('rejects future13 without touching the owned native file', () => {
-  const path = f.path(); const seed = initialize(path); seed.exec('PRAGMA user_version=13'); seed.close();
+it('rejects schema beyond current without touching the owned native file', () => {
+  const path = f.path(); const seed = initialize(path); seed.exec(`PRAGMA user_version=${CURRENT_JOURNAL_SCHEMA + 1}`); seed.close();
   expect(() => initialize(path)).toThrow(expect.objectContaining({ code: 'schema_newer' }));
-  const db = new DatabaseSync(path); try { expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(13); } finally { db.close(); }
+  const db = new DatabaseSync(path); try { expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(CURRENT_JOURNAL_SCHEMA + 1); } finally { db.close(); }
 });
 it.each([
   "UPDATE output_sources SET source_json=json_set(source_json,'$.root.uid',2)",

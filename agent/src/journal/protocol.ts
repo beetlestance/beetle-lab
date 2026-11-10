@@ -3,6 +3,7 @@ import type { WrapperBatch, WrapperCheckpoint } from '../control-protocol/index.
 import type { AdmissionCommand, AdmissionValue } from '../admission/index.js';
 import type { CollectionIntent, PrivateSource, SourceReceipt } from '../output-source/index.js';
 import type { OutputSourceOperation } from './output-source-protocol.js';
+import type { OutputDeliveryOperation, OutputDeliveryClosure } from './output-delivery-protocol.js';
 
 export type ErrorCode = 'invalid_input' | 'conflict' | 'not_found' | 'queue_full' |
   'closed' | 'unavailable' | 'owned' | 'schema_newer' | 'stale_generation' |
@@ -25,14 +26,14 @@ export interface SupervisorInput { sourceOrdinal: number; event: WithoutSeq<Extr
 export interface SourceCursors { wrapperSeq: number; supervisorOrdinal: number }
 export interface PageRequest { limit: number; cursor?: number }
 export interface SnapshotPage { snapshots: AttemptSnapshot[]; cursor?: number }
-/** Private scheduler discovery. Cursors belong to their lane, not accepted-attempt IDs. */
-export interface RunnableRequest extends PageRequest { lane: 'charged' | 'queued' }
-export interface RunnablePage { attempts: GenerationKey[]; cursor?: number }
+/** Private discovery. Each lane owns its cursor; delivery also pins a finite upper ID. */
+export interface RunnableRequest extends PageRequest { lane: 'charged' | 'queued' | 'delivery'; through?: number }
+export interface RunnablePage { attempts: GenerationKey[]; cursor?: number; through?: number }
 export interface PruneReceipt { pruned: number; snapshot: AttemptSnapshot }
 export interface EventInput {
   key: GenerationKey; source: 'wrapper' | 'agent'; sourceKey: number; json: string; canonical: string;
 }
-export type Operation = OutputSourceOperation
+export type Operation = OutputSourceOperation | OutputDeliveryOperation
   | { kind: 'authority' }
   | { kind: 'checkpoint'; key: GenerationKey }
   | { kind: 'wrapperBatch'; request: Readonly<WrapperBatch> }
@@ -49,7 +50,7 @@ export type Operation = OutputSourceOperation
   | { kind: 'prune' | 'sources'; key: GenerationKey }
   | { kind: 'close' };
 export type Command = Operation & { id: number };
-export type Value = AttemptSnapshot | SnapshotPage | RunnablePage | Offer | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | CollectionIntent | PrivateSource | SourceReceipt | string | null;
+export type Value = AttemptSnapshot | SnapshotPage | RunnablePage | Offer | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | CollectionIntent | PrivateSource | SourceReceipt | OutputDeliveryClosure | string | null;
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; id: number; ok: true; value: Value } |
   { kind: 'result'; id: number; ok: false; code: ErrorCode; recovery?: AttemptSnapshot };
