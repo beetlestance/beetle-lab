@@ -9,9 +9,9 @@ import { agentHttpFixture } from './http-fixture.js';
 import { agentProcessFixture } from './agent-fixture.js';
 import { appendEvents, configured, inspectBackend, metadataFixture } from './storage-fixture.js';
 
-const peers = agentHttpFixture();
 const backend = metadataFixture();
 const journals = agentProcessFixture(backend.root);
+const peers = agentHttpFixture();
 function collect(metadata: Metadata, gateway: RunnerGateway, binding: EventBinding) {
   return collectEvents({ store: metadata.events, attempt: gateway.attempt,
     signal: new AbortController().signal, stopped: () => false }, binding);
