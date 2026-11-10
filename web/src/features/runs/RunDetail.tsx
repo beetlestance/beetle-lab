@@ -8,19 +8,21 @@ import { QueryState } from '../../components/QueryState.js';
 import { budgetFields } from './request.js';
 import type { RunScope } from './types.js';
 import { RunCancellation } from './RunCancellation.js';
+import { useCancellation } from './useCancellation.js';
 
 export function terminal(run: Run | undefined) {
   return run !== undefined && ['finished', 'cancelled', 'errored'].includes(run.state);
 }
 export function RunDetail(scope: RunScope & { runId: string }) {
   const api = useApi();
+  const cancellation = useCancellation(scope);
   const query = useQuery({ queryKey: queryKeys.run(scope.organizationId, scope.workspaceId, scope.runId),
     queryFn: ({ signal }) => readResult(api.getRun({ params: scope, signal })),
     refetchInterval: query => terminal(query.state.data) || query.state.status === 'error' ? false : 2000,
     refetchIntervalInBackground: false });
   return <><header className="section-header"><div><h1>Run detail</h1><p className="number">{scope.runId}</p></div>
     <button onClick={() => void query.refetch()} disabled={query.isFetching}>Refresh run</button></header>
-    <QueryState query={query}>{run => <><RunCancellation run={run} /><RunSnapshot run={run} /></>}</QueryState></>;
+    <QueryState query={query}>{run => <><RunCancellation run={run} cancel={cancellation} /><RunSnapshot run={run} /></>}</QueryState></>;
 }
 function RunSnapshot({ run }: { run: Run }) {
   return <>

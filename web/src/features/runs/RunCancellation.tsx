@@ -1,9 +1,7 @@
 import type { Run } from '@beetle/contracts/api';
-import { useCancellation } from './useCancellation.js';
+import type { useCancellation } from './useCancellation.js';
 
-export function RunCancellation({ run }: { run: Run }) {
-  const cancel = useCancellation({ organizationId: run.scope.organizationId,
-    workspaceId: run.scope.workspaceId, runId: run.id });
+export function RunCancellation({ run, cancel }: { run: Run; cancel: ReturnType<typeof useCancellation> }) {
   const terminal = ['finished', 'cancelled', 'errored'].includes(run.state);
   if (terminal) return null;
   const requested = run.cancellationRequested || cancel.accepted;

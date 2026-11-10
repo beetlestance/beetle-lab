@@ -31,9 +31,10 @@ export function runFixture() {
   async function close(app: Application) { await app.close(); applications.delete(app); }
   return { open, close };
 }
-export async function client(app: Application, loseFirstRun = false, wireOrigin?: string) {
+export async function client(app: Application, loseFirstRun = false, wireOrigin?: string, loseFirstCancellation = false) {
   if (wireOrigin && !/^http:\/\/127\.0\.0\.1:[0-9]+$/.test(wireOrigin)) throw new Error('Synthetic listener boundary');
   const origin = wireOrigin ?? defaultOrigin;
+  const lostRoute = loseFirstRun ? '/runs' : loseFirstCancellation ? '/cancel' : null;
   let cookie = ''; let requests = 0;
   const observed: { status?: number; run?: Run } = {};
   const fetcher: typeof fetch = async (input, init) => {
@@ -44,7 +45,7 @@ export async function client(app: Application, loseFirstRun = false, wireOrigin?
     const response = await exchange(app, url, init, headers, wireOrigin);
     const received = response.headers.get('set-cookie');
     if (received) cookie = received.split(';')[0]!;
-    if (shouldLose(loseFirstRun, init?.method, url.pathname, observed.status)) {
+    if (shouldLose(lostRoute, init?.method, url.pathname, observed.status)) {
       observed.status = response.status;
       const checked = validateApi('Run', await response.json()); if (checked.ok) observed.run = checked.value;
       throw new Error('Synthetic lost enqueue response');
@@ -80,8 +81,8 @@ async function exchange(app: Application, url: URL, init: RequestInit | undefine
   return new Response(response.body, { status: response.statusCode, headers: outgoing });
 }
 
-function shouldLose(enabled: boolean, method: string | undefined, path: string, status: number | undefined): boolean {
-  return enabled && method === 'POST' && path.endsWith('/runs') && status === undefined;
+function shouldLose(route: string | null, method: string | undefined, path: string, status: number | undefined): boolean {
+  return route !== null && method === 'POST' && path.endsWith(route) && status === undefined;
 }
 
 async function ownedOrigin(): Promise<string> {
