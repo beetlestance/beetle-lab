@@ -37,6 +37,10 @@ only after a verified running observation, fence new sampling when stopped/retir
 and retain/drain issued originals. No detached timers after actor retirement.
 The concrete installed factory supplies the backend reader; optional typing may
 support focused old fixtures but must not silently disable installed telemetry.
+SupervisorOptions.requireResourceTelemetry is true in installed bootstrap; startup
+checks the concrete backend capability. Supervisor.closeTelemetry fences/drains all
+monitor originals before shared transport/Journal shutdown. Existing actor ticks
+may drive due sampling; no additional per-actor timer is required.
 
 Resource summaries have source docker-stats, lastSampleAt, samples, missedSamples
 and reason. CPU is the last observed cumulative counter, not a sum of cumulative

@@ -10,6 +10,8 @@ export type BackendPort = Pick<DockerBackend, 'ensureCreated' | 'dispatchStartOn
 };
 export interface Clock { wall(): number; monotonic(): number }
 export interface SupervisorOptions {
+  /** Concrete installation enables this; old focused backend fixtures may omit telemetry. */
+  requireResourceTelemetry?: boolean;
   journal: JournalPort; backendFactory(): BackendPort; installationId: string; clock?: Clock;
 }
 export interface LaunchInput { key: Scope; plan: RuntimePlan }
