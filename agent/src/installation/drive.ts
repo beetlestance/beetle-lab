@@ -14,6 +14,7 @@ import { InstallationError } from './types.js';
 import type { DriveProgress, InstallationOptions } from './types.js';
 import type { CollectionIntent } from '../output-source/index.js';
 import { recoverSource } from './source-recovery.js';
+import { recoverAbsence } from './absence.js';
 export interface DriveContext {
   readonly options: InstallationOptions;
   now(): number;
@@ -41,6 +42,10 @@ async function admit(context: DriveContext, entry: Entry, budget: Operation): Pr
     sourceOrdinal: cursors.supervisorOrdinal + 1, now });
   // A successful original admission remains owned even if cancellation overtook it.
   if ('status' in value) { entry.fresh = true; return value; }
+  if ('kind' in value && value.kind === 'reject') {
+    const progress = { kind: 'rejected' as const, reason: value.reason };
+    await context.retire(entry, progress); return progress;
+  }
   executionGuard(context, entry, budget);
   return admissionProgress(value);
 }
@@ -135,22 +140,29 @@ export async function drive(context: DriveContext, entry: Entry, budget: Operati
   context.guard(entry, budget);
   const recovery = await recoverSource(context, entry, budget);
   if ('progress' in recovery) return recovery.progress;
+  const absence = await recoverAbsence({ journal: context.options.journal, entry, budget, intent: recovery.intent,
+    guard: (owner, operation) => context.guard(owner, operation), retire: (owner, value) => context.retire(owner, value) });
+  if (absence) return absence;
   const offer = entry.controller ? undefined : await availableOffer(context, entry, budget);
   context.guard(entry, budget);
   if (offer === null) return { kind: 'deferred', reason: 'journal_busy' };
   const current = await reservationFor(context, entry, offer, budget, recovery.intent);
   if (!('status' in current)) return current;
-  if (current.status === 'released') {
-    const progress = { kind: 'released' as const, collection: current.releaseEvidence ? current.releaseEvidence.collection.state : 'failed' as const };
-    await context.retire(entry, progress); return progress;
-  }
+  const released = await retireReleased(context, entry, current);
+  if (released) return released;
   if (!current.createToken && abandoned(entry)) return abort(context, entry);
   context.guard(entry, budget);
   return controllerStep(context, entry, offer, current, budget);
 }
+async function retireReleased(context: DriveContext, entry: Entry, current: Reservation): Promise<DriveProgress | null> {
+  if (current.status !== 'released') return null;
+  const progress = { kind: 'released' as const, collection: current.releaseEvidence?.collection.state ?? 'failed' as const };
+  await context.retire(entry, progress); return progress;
+}
 async function reservationFor(context: DriveContext, entry: Entry, offer: Offer | undefined, budget: Operation,
   intent: CollectionIntent | null): Promise<Reservation | DriveProgress> {
   const current = await boundReservation(context, entry, offer, intent);
+  if (current && !('status' in current)) return current;
   context.guard(entry, budget);
   if (current) return current;
   if (!context.acquireStage()) return { kind: 'deferred', reason: 'staging_busy' };

@@ -3,7 +3,7 @@ import type { DockerBackend, Observation, RuntimePlan } from '../backends/docker
 import type { Journal, StopReason } from '../journal/index.js';
 import type { Scope } from '../admission/index.js';
 
-export type JournalPort = Pick<Journal, 'admission' | 'readOffer' | 'supervision' | 'sourceCursors' | 'appendSupervisor'>;
+export type JournalPort = Pick<Journal, 'admission' | 'readOffer' | 'get' | 'supervision' | 'sourceCursors' | 'appendSupervisor'>;
 export type BackendPort = Pick<DockerBackend, 'ensureCreated' | 'dispatchStartOnce' | 'inspect' | 'stop' | 'kill'>;
 export interface Clock { wall(): number; monotonic(): number }
 export interface SupervisorOptions {

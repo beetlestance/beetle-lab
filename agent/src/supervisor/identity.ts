@@ -25,9 +25,20 @@ export function validateInput(input: LaunchInput, installationId: string): void 
     || plan.name !== runtimeName({ ...key, installationId })) throw new SupervisorError('conflict');
 }
 export function validateReservation(input: LaunchInput, reservation: Reservation, offer: OfferAuthority): void {
+  if (reservation.status !== 'charged' || reservation.aborted) throw new SupervisorError('conflict');
+  validateBinding(input, reservation, offer);
+}
+/** Journal.get separately verifies definitive launch and release witnesses. */
+export function validateReleasedReservation(input: LaunchInput, reservation: Reservation, offer: OfferAuthority): void {
+  if (reservation.status !== 'released' || reservation.aborted || !reservation.runtimeId
+    || !reservation.createToken || !reservation.launchClosed || !reservation.launchSettlement || !reservation.releaseEvidence) {
+    throw new SupervisorError('conflict');
+  }
+  validateBinding(input, reservation, offer);
+}
+function validateBinding(input: LaunchInput, reservation: Reservation, offer: OfferAuthority): void {
   const { key, plan } = input;
-  if (!sameScope(key, reservation) || !sameScope(key, { ...offer, generation: key.generation })
-    || reservation.status !== 'charged' || reservation.aborted) throw new SupervisorError('conflict');
+  if (!sameScope(key, reservation) || !sameScope(key, { ...offer, generation: key.generation })) throw new SupervisorError('conflict');
   if (reservation.specDigest !== null && reservation.specDigest !== plan.specDigest) throw new SupervisorError('conflict');
   if (offer.intentDigest !== plan.spec.Labels['dev.beetle.intent'] || offer.engine.imageDigest !== plan.spec.Image
     || !sameBudget(offer, reservation)) throw new SupervisorError('conflict');

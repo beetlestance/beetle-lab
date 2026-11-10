@@ -13,6 +13,28 @@ import { deferred } from '../supervisor/fixtures.js';
 import { fixture } from './fixtures.js';
 
 const f = fixture();
+it('serves actual Journal absence proof and source marker through authenticated production runtime HTTP wiring', async () => {
+  const e = await f.setup(); const runtime = f.keep(await openAgentRuntime(e.options)); await runtime.initial;
+  const origin = await runtime.server.listen({ host: '127.0.0.1', port: 0 });
+  const path = `/runner/v1/attempts/${e.offer.attemptId}`;
+  try {
+    const refused = await fetch(origin + path + '/cancel-original', { method: 'POST', headers: { ...e.headers, 'content-type': 'application/json' },
+      body: JSON.stringify(e.offer) });
+    expect(refused.status).toBe(200);
+    const response = await fetch(origin + path + '/source/absence', { headers: e.headers });
+    expect(response.status).toBe(200); const body = await response.text(); expect(Buffer.byteLength(body)).toBeLessThanOrEqual(2048);
+    const proof = JSON.parse(body) as { journalAuthority: string; finalAgentSeq: number };
+    expect(proof).toMatchObject({ journalAuthority: e.journalAuthority, finalAgentSeq: 0,
+      admission: { state: 'rejected', reason: 'cancelled' }, reason: 'cancelled' });
+    const marker = await fetch(origin + path + '/source', { headers: e.headers });
+    expect(marker.status).toBe(409); expect(await marker.json()).toMatchObject({ reason: 'source_absent', retry: 'never' });
+    const denied = await fetch(origin + path + '/source/absence', { headers: { ...e.headers, authorization: 'Bearer ' + 'X'.repeat(64) } });
+    expect(denied.status).toBe(401); expect(e.daemon.mutations()).toHaveLength(0);
+  } finally { await runtime.close(); }
+  const journal = await f.open(e.journalPath);
+  expect(await journal.readOutputAbsence({ organizationId: e.offer.organizationId, workspaceId: e.offer.workspaceId,
+    attemptId: e.offer.attemptId, generation: 1 })).toMatchObject({ journalAuthority: e.journalAuthority, finalAgentSeq: 0 });
+});
 function database<T>(path: string, read: (db: DatabaseSync) => T): T {
   const db = new DatabaseSync(path, { timeout: 100 });
   try { return read(db); } finally { db.close(); }

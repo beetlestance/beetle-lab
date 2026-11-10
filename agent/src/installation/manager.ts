@@ -3,7 +3,9 @@ import type { Scope } from '../admission/index.js';
 import type { Operation } from '../backends/docker/index.js';
 import type { StopReason } from '../journal/index.js';
 import type { TimeoutReason } from '../timeout/index.js';
-import { allocation } from './recovery.js';
+import { allocation, recover } from './recovery.js';
+import { performance } from 'node:perf_hooks';
+import { reconcileAbsence } from './absence.js';
 import { closedSourceCandidate, releaseProvisional } from './ownership.js';
 import { budgetCopy, checkBudget } from './budget.js';
 import { createEntry, identity, scopeCopy } from './entry.js';
@@ -52,8 +54,9 @@ export class Manager implements InstallationController {
   }
   private async releaseLease(entry: Entry, lease: EntryLease): Promise<void> {
     entry.users--;
-    try { await releaseProvisional(this.options.journal, this.entries, entry); }
-    finally { lease.finish(); }
+    lease.finish();
+    await releaseProvisional({ journal: this.options.journal, entries: this.entries, entry,
+      retire: () => this.retire(entry) });
     await this.releaseClosedSource(entry);
   }
   private async releaseClosedSource(entry: Entry): Promise<void> {
@@ -65,10 +68,10 @@ export class Manager implements InstallationController {
       if (this.entries.get(key) === entry) this.entries.delete(key);
     }
   }
-  private driveContext(caller: EntryLease): DriveContext {
+  private driveContext(caller: EntryLease, budget: Operation): DriveContext {
     return { options: this.options, now: () => this.now(), guard: (entry, budget) => this.guard(entry, budget),
       acquireStage: () => this.acquireStage(), releaseStage: () => this.releaseStage(),
-      retire: (entry, progress) => this.retire(entry, caller, progress),
+      retire: (entry, progress) => this.retire(entry, caller, progress, budget),
       stopGuard: entry => this.stopGuard(entry), stopTimeout: (entry, reason) => this.stopTimeout(entry, reason) };
   }
   private async sourceCommitted(entry: Entry): Promise<boolean> {
@@ -126,9 +129,9 @@ export class Manager implements InstallationController {
           if (entry.retiring || entry.sourceReceipt) {
             const progress = entry.retirementProgress ?? (entry.sourceReceipt ? { kind: 'released' as const, collection: 'finished' as const } : null);
             if (!progress) throw new InstallationError('cleanup');
-            await this.retire(entry, lease, progress); return progress;
+            await this.retire(entry, lease, progress, budget); return progress;
           }
-          return drive(this.driveContext(lease), entry, budget);
+          return drive(this.driveContext(lease, budget), entry, budget);
         }).then(resolve, reject);
       } catch (error) { reject(error); }
       try { return await active; } finally {
@@ -190,11 +193,23 @@ export class Manager implements InstallationController {
       return { snapshot, allocation: await allocation(this.options.journal, key) };
     });
   }
-  async retire(entry: Entry, caller?: EntryLease, progress?: DriveProgress): Promise<void> {
+  async retire(entry: Entry, caller?: EntryLease, progress?: DriveProgress, operation?: Operation): Promise<void> {
     if (progress) entry.retirementProgress ??= progress;
     await retireNative(entry, caller);
-    if (await releaseStoredSource(this.options.journal, entry)) await reconcileDelivery(this.options.journal, entry);
-    this.entries.delete(identity(entry.key));
+    if (await releaseStoredSource(this.options.journal, entry)) {
+      await reconcileDelivery(this.options.journal, entry);
+      this.entries.delete(identity(entry.key));
+    } else {
+      const closed = await reconcileAbsence(this.options.journal, entry, () => this.retireReleased(entry, operation));
+      if (closed || !await allocation(this.options.journal, entry.key)) this.entries.delete(identity(entry.key));
+    }
+  }
+  private async retireReleased(entry: Entry, operation?: Operation): Promise<void> {
+    const { journal, catalog, supervisor } = this.options;
+    const current = await allocation(journal, entry.key);
+    if (current?.status !== 'released') throw new InstallationError('cleanup');
+    const plan = recover(catalog, await journal.readOffer(entry.key), current);
+    await supervisor.retireReleased({ key: entry.key, plan }, operation ?? { deadline: performance.now() + 30_000 });
   }
   private async drain(entry: Entry): Promise<void> {
     await retireNative(entry);
@@ -202,6 +217,7 @@ export class Manager implements InstallationController {
     await this.retire(entry);
   }
   private async releaseUnstarted(entry: Entry): Promise<void> {
+    if (entry.retirementProgress?.kind === 'rejected') return;
     const current = await allocation(this.options.journal, entry.key);
     if (current?.status === 'charged') {
       if (current.createToken) throw new InstallationError('cleanup');

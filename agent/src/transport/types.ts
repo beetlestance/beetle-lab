@@ -1,7 +1,7 @@
 import type { Capabilities, ProtocolError } from '@beetle/contracts';
 import type { InstallationController } from '../installation/index.js';
 import type { Journal } from '../journal/index.js';
-import type { JournalOutputAbsence } from '../journal/output-absence-protocol.js';
+import type { JournalOutputAbsence } from '../journal/index.js';
 import type { OutputSourceReader } from '../output-transfer/index.js';
 
 export interface AgentHttpOptions {
