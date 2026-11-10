@@ -2,7 +2,7 @@
 
 Status: locally implemented and independently reviewed. Contract:
 [run timeline](../design/lld/run-timeline-ui.md).
-Reviewed component source: `8058569`, based on `6cdda6c` and the integrated public
+Integrated implementation: `f380890`, based on `6cdda6c` and the integrated public
 [event reader](run-event-reads.md).
 
 Run detail shows recent phase activity, useful progress, reported resources and

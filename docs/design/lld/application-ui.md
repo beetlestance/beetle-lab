@@ -28,7 +28,7 @@ raw exception/config/environment values. Read lists use opaque cursor + limit.
 | POST /runs; GET /runs; GET /runs/:id | Idempotent enqueue, paged index, bounded detail snapshot |
 | POST /runs/:id/cancel; POST /runs/:id/retry | Explicit cancel/retry intent; retry never implicit |
 | GET /runs/:id/events; GET /runs/:id/samples | Resume control events; range/resolution-bounded samples |
-| GET /runs/:id/artifacts; GET /artifacts/:id/content | Verified artifacts, safe MIME/download and range reads |
+| GET /runs/:id/attempts/:attemptId/artifacts; GET /runs/:id/attempts/:attemptId/artifacts/:artifactId/content | Verified artifacts, safe MIME/download and range reads |
 | POST /runs/:id/exports; GET /exports/:id | Admitted report/CSV/script generation; query task status |
 | DELETE /runs/:id; POST /comparisons | Tombstone closed run; compare at most four compatible runs |
 | GET /health/live; GET /health/ready; GET /capacity | Control liveness/readiness and agent availability/budget |

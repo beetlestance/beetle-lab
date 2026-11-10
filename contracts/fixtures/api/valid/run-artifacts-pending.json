@@ -1,0 +1,14 @@
+{
+  "id": "00000000-0000-4000-8000-000000000005",
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "attemptId": "00000000-0000-4000-8000-000000000006",
+  "generation": 1,
+  "availability": "pending",
+  "manifestDigest": null,
+  "items": [],
+  "nextCursor": null
+}

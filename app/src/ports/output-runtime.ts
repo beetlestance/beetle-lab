@@ -1,3 +1,4 @@
+import type { OutputByteStore } from './output-bytes.js';
 import type { OutputArtifactStore } from './output-artifacts.js';
 import type { OutputFinalizations } from './output-finalization.js';
 import type { OutputAbsenceStore, RunnerOutputAbsenceGateway } from './output-absence.js';
@@ -11,6 +12,8 @@ export interface OutputRuntimeState {
   readonly problem: 'transport' | 'source_unavailable' | 'operation_failure' | 'failure_notification' | null;
 }
 export interface OutputRuntime {
+  /** Present on the concrete installed runtime; read-only and shares its native owner. */
+  readonly publishedBytes?: Pick<OutputByteStore, 'read'>;
   state(): OutputRuntimeState;
   /** Fence scheduling/transfers synchronously; drain originals before namespace release. */
   close(): Promise<void>;

@@ -4,3 +4,6 @@ export const SUITE_MAXIMUM_CONFIG_BYTES = 1_048_576;
 
 /** Complete run-event JSON page, including metadata and cursors. */
 export const RUN_EVENT_PAGE_BYTES = 262_144;
+
+/** Public artifact metadata page; native file records retain their 4 KiB bound. */
+export const RUN_ARTIFACT_PAGE_BYTES = 73_728;

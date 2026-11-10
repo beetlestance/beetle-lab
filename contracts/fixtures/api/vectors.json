@@ -553,5 +553,15 @@
     "path": "invalid/run-events-generation.json",
     "schema": "RunEventPage",
     "valid": false
+  },
+  {
+    "path": "valid/run-artifacts-pending.json",
+    "schema": "RunArtifactPage",
+    "valid": true
+  },
+  {
+    "path": "valid/run-attempt-params.json",
+    "schema": "RunAttemptParams",
+    "valid": true
   }
 ]

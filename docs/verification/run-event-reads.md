@@ -16,7 +16,7 @@ GET does not create event cursors, acknowledge events, mutate runs or alter char
 
 ## Evidence
 
-Reviewed component source: `74fa66b`, based on contract snapshot `973cc40`.
+Integrated implementation: `b35fb9b`, based on contract snapshot `973cc40`.
 Coordinator verified all 20 submitted source hashes and reviewed storage, worker,
 HTTP/bootstrap, client guards and failure oracles. Worker independently reviewed
 the coordinator-authored contracts before implementation.

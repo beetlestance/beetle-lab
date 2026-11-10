@@ -5,6 +5,7 @@ import { fixture } from '../fixtures.js';
 import { baseUrl, load, organizationId, params, reply } from './helpers.js';
 
 const files: Partial<Record<keyof ApiTypes, string>> = {
+  RunResultSnapshot: 'run-result-pending', RunEventPage: 'run-events-pending', RunArtifactPage: 'run-artifacts-pending',
   Run: 'run', RunPage: 'run-page', CreateRunRequest: 'create-run', CancelRunRequest: 'cancel-run',
   InputRecord: 'input', InputReceipt: 'input-receipt', InputPage: 'input-page',
   CreateInputRequest: 'create-input', TransitionInputRequest: 'transition-input',
@@ -26,12 +27,16 @@ async function operationReply(operation: ApiOperation): Promise<Record<string, u
   const file = operation.name === 'cancelRun' ? 'run-cancelling' : files[operation.response];
   return await fixture(`valid/${file}.json`) as Record<string, unknown>;
 }
+async function queryFixture(operation: ApiOperation) {
+  return ['listRunEvents', 'listRunArtifacts'].includes(operation.name)
+    ? { limit: 100 } : await load('page-query', 'PageQuery');
+}
 async function exchange(operation: ApiOperation) {
   const input: Record<string, unknown> = {};
   const parameterFiles = { OrganizationParams: 'organization', WorkspaceParams: 'workspace', FolderParams: 'folder',
-    SuiteParams: 'suite', SuiteRevisionParams: 'suite-revision', InputParams: 'input', RunParams: 'run' };
+    SuiteParams: 'suite', SuiteRevisionParams: 'suite-revision', InputParams: 'input', RunParams: 'run', RunAttemptParams: 'run-attempt' };
   if ('params' in operation) input.params = await fixture(`valid/${parameterFiles[operation.params]}-params.json`);
-  if ('query' in operation) input.query = await load('page-query', 'PageQuery');
+  if ('query' in operation) input.query = await queryFixture(operation);
   const body = 'request' in operation ? await fixture(`valid/${files[operation.request]}.json`) as Record<string, unknown> : undefined;
   const response = await operationReply(operation);
   if (body) input.body = body;

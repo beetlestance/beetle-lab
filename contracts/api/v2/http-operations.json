@@ -428,5 +428,15 @@
     "error": "ApiError",
     "params": "RunParams",
     "query": "PageQuery"
+  },
+  {
+    "name": "listRunArtifacts",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/artifacts",
+    "response": "RunArtifactPage",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunAttemptParams",
+    "query": "PageQuery"
   }
 ]

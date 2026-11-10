@@ -15,6 +15,7 @@ import { schema as ApiNamespaceRequests } from './namespace-requests.js';
 import { schema as ApiNamespace } from './namespace.js';
 import { schema as ApiParameters } from './parameters.js';
 import { schema as ApiRetention } from './retention.js';
+import { schema as ApiRunArtifacts } from './run-artifacts.js';
 import { schema as ApiRunEvents } from './run-events.js';
 import { schema as ApiRunRequests } from './run-requests.js';
 import { schema as ApiRunResult } from './run-result.js';
@@ -26,7 +27,7 @@ import { schema as ApiSettings } from './settings.js';
 import { schema as ApiSuiteRequests } from './suite-requests.js';
 import { schema as ApiSuite } from './suite.js';
 /** Complete reference closure; runner result schemas are shared, never copied. */
-export const apiSchemas = freezeSchema([Common, EngineResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiInputRequests, ApiInput, ApiNamespaceRequests, ApiNamespace, ApiParameters, ApiRetention, ApiRunEvents, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
+export const apiSchemas = freezeSchema([Common, EngineResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiInputRequests, ApiInput, ApiNamespaceRequests, ApiNamespace, ApiParameters, ApiRetention, ApiRunArtifacts, ApiRunEvents, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -69,12 +70,15 @@ export const apiMessageSchemas = freezeSchema({
   SuiteRevisionParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/SuiteRevisionParams' },
   InputParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/InputParams' },
   RunParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/RunParams' },
+  RunAttemptParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/RunAttemptParams' },
+  RunArtifactParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/RunArtifactParams' },
   RetentionPreviewRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionPreviewRequest' },
   RetentionCandidate: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionCandidate' },
   ProtectedExclusion: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/ProtectedExclusion' },
   RetentionPreview: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionPreview' },
   RetentionApplyRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionApplyRequest' },
   RetentionApplyReceipt: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionApplyReceipt' },
+  RunArtifactPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-artifacts#/$defs/RunArtifactPage' },
   RunEventPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-events#/$defs/RunEventPage' },
   CreateRunRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/CreateRunRequest' },
   CancelRunRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/CancelRunRequest' },

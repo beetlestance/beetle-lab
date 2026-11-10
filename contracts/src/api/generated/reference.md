@@ -50,6 +50,7 @@ Schema catalogue is complete, including runner common exactly once. These are ro
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/result | RunParams | none | none | 200 | RunResultSnapshot |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/cancel | RunParams | none | CancelRunRequest | 202 | Run |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/events | RunParams | PageQuery | none | 200 | RunEventPage |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/artifacts | RunAttemptParams | PageQuery | none | 200 | RunArtifactPage |
 
 All errors use ApiError. UUID path parameters are validated before URL encoding.
 List queries require an integer limit 1–100 and optional opaque string cursor; HTTP query parsing belongs to the transport adapter.

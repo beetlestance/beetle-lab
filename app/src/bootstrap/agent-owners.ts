@@ -1,3 +1,4 @@
+import type { OutputByteStore } from '../ports/output-bytes.js';
 import type { CapacitySource, RuntimeObservation } from '../ports/runtime.js';
 import type { RunnerGateway } from '../ports/runner.js';
 import type { DeliveryRuntime } from '../ports/delivery.js';
@@ -12,6 +13,7 @@ import type { RuntimePublisher } from './runtime-poller.js';
 import { throwCloseFailures } from './application-close.js';
 
 export interface AgentRuntime {
+  readonly publishedBytes?: Pick<OutputByteStore, 'read'>;
   state(): RuntimePollerState;
   close(): Promise<void>;
 }
