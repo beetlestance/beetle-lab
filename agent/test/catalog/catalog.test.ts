@@ -63,11 +63,11 @@ describe('installed engine catalogue', () => {
     }
     expect(calls).toBe(0);
   });
-  it('delegates actual offered budgets and safe profile policy to prepareRuntime', () => {
+  it('preserves original minima for admission and delegates profile maxima to prepareRuntime', () => {
     const catalog = createEngineCatalog([registration()]);
-    for (const budget of [{ ...offer().budget, cpuMillis: 999 }, { ...offer().budget, pids: 129 }]) {
-      invalid({ ...offer(), budget }, 'unapproved_engine', input => catalog.preflight(input));
-    }
+    const source = { ...offer(), budget: { ...offer().budget, cpuMillis: 999 } };
+    expect(catalog.preflight(source).offer).toEqual(source);
+    invalid({ ...offer(), budget: { ...offer().budget, pids: 129 } }, 'unapproved_engine', input => catalog.preflight(input));
   });
   it('rejects a required hard output quota even when the installed manifest advertises it', () => {
     const installed = registration(); installed.manifest.capabilities.push('hard-output-quota');

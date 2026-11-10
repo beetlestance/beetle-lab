@@ -35,5 +35,10 @@ export function permitsRuntime(offer: Offer, engine: EngineRegistration): boolea
 }
 export function validateConfig(offer: Offer, engine: InstalledEngine): void {
   if (!engine.configSchema.validate(offer.config)) throw new CatalogError('invalid_config');
-  if (!permitsRuntime(offer, engine)) throw new CatalogError('unapproved_engine');
+  const budget = { ...offer.budget };
+  for (const key of ['cpuMillis', 'memoryBytes', 'pids', 'timeoutMs', 'outputBytes'] as const) {
+    budget[key] = Math.max(budget[key], engine.manifest.minimumBudget[key]);
+  }
+  // Probe installed feasibility only; admission owns the original budget decision.
+  if (!permitsRuntime({ ...offer, budget }, engine)) throw new CatalogError('unapproved_engine');
 }

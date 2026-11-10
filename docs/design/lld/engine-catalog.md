@@ -33,10 +33,16 @@ entrypoint, Docker flag, schema bundle or validator.
 
 `preflight` returns one immutable bounded Offer, its exact installed engine and
 ValidationIdentity including configDigest. It validates the runner envelope,
-engine-specific structure, approved runtime plan/budgets and capabilities. It reads
+engine-specific structure, approved runtime feasibility and capabilities. It reads
 no datasets, resolves no secrets and performs no I/O or semantic compilation.
 Success means pending admitted engine validation, as specified in
 [the validation decision](../../decisions/007-admitted-validation.md).
+
+For this feasibility probe only, a temporary Offer copy raises the five budget
+fields below trusted manifest minima to those minima. Larger values and all other
+fields stay exact, so profile maxima and unsupported controls still reject.
+The copy never becomes the returned/persisted Offer or an execution plan.
+Admission owns the original minimum-budget policy decision and durable refusal.
 
 `resolve` is recovery-only: the complete persisted validation identity and immutable
 engine/config bytes must match the installed entry. It never selects a newer
@@ -44,6 +50,8 @@ catalogue version implicitly. Missing old pins keep uncertain executions charged
 visible for reconciliation rather than rerunning load with another image.
 
 The catalogue and admission share MAX_ENGINE_PROFILES=32. Public prepareRuntime
-validates actual offered budgets/profile flags; public journal configDigest owns
+validates actual offered budgets/profile flags, including manifest minima and
+profile maxima. Registration and actual staging/recovery use those strict guards
+with their original budgets; public journal configDigest owns
 configuration identity. Registration rejects ambiguous engine/image/config-version
 selection and freezes its own JSON snapshots rather than retaining caller objects.

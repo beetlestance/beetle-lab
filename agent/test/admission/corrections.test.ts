@@ -33,12 +33,14 @@ describe('reviewer launch/cancel/minimum/queue regressions', () => {
     await expect(journal.admission({ kind: 'release', evidence } as never)).rejects.toBeDefined();
     expect(await journal.admission({ kind: 'reservation', key: scope(offer) })).toMatchObject({ status: 'charged' });
   });
-  it('rejects timeout below an approved minimum before persisting the offer', async () => {
+  it('durably rejects timeout below an approved minimum without changing the original', async () => {
     const journal = await f.configured(); const config = configuration(); Object.assign(config.profiles[0]!.minimum, { timeoutMs: 500 });
     await journal.admission({ kind: 'configure', configuration: config });
     const offer = f.job(); offer.budget.timeoutMs = 1;
     expect(await f.enqueue(journal, offer)).toEqual({ kind: 'reject', reason: 'below_manifest_minimum' });
-    await expect(journal.get(scope(offer))).rejects.toMatchObject({ code: 'not_found' });
+    expect(await journal.get(scope(offer))).toMatchObject({ lastSeq: 0, admission: { state: 'rejected', reason: 'below_manifest_minimum' } });
+    expect(await journal.readOffer(scope(offer))).toEqual(offer);
+    expect(await journal.admission({ kind: 'reservations', limit: 1 })).toEqual({ reservations: [] });
   });
   it('retires a cancelled pending head before admitting a successor', async () => {
     const journal = await f.configured(); const head = f.job(); const next = f.job(2);

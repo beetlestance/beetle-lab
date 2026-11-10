@@ -34,6 +34,16 @@ rejections. Defer reasons are not final refusals. Once rejected, the exact accep
 Offer replay cannot enqueue or admit it anew. Cancellation of a pending queue is a
 final rejection; cancellation of a charged reservation remains charged until release.
 
+Intake atomically stores a representable original Offer and its actual typed policy
+rejection before returning a final negative decision, including below-manifest
+budgets. It inserts a closed queue fact without a pending-slot charge, reservation,
+event or staging/launch work. Existing indexed absence debt then schedules closure
+through the native retirement barrier. Exact replay/reopen retains the original
+decision; a changed original or validation identity conflicts. The existing snapshot
+reader validates candidate and rejection inside the write transaction, so an
+unrepresentable staging/resource fact or any later write failure rolls back both
+records. Raw candidate projection failure remains a non-durable intake failure.
+
 ## Release authority
 
 Released disposition never_started requires the existing abortUnstarted authority:

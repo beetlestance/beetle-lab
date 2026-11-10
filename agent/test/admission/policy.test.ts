@@ -13,10 +13,16 @@ describe('freshness and honest optional sensors', () => {
     expect(await f.enqueue(journal, f.job(), now + 2000)).toEqual({ kind: 'reject', reason: 'controls_unavailable' });
     const fresh = observation(now + 2001); fresh.guards!.controls = ['timeout'];
     await journal.admission({ kind: 'observe', observation: fresh });
-    expect(await f.enqueue(journal, f.job(), now + 2001)).toEqual({ kind: 'reject', reason: 'controls_unavailable' });
+    expect(await f.enqueue(journal, f.job(2), now + 2001)).toEqual({ kind: 'reject', reason: 'controls_unavailable' });
     fresh.observedAt++; fresh.guards!.observedAt++; fresh.guards!.controls = ['timeout', 'output'];
     await journal.admission({ kind: 'observe', observation: fresh });
-    expect(await f.enqueue(journal, f.job(), now + 2002)).toEqual({ kind: 'defer', reason: 'queued' });
+    expect(await f.enqueue(journal, f.job(3), now + 2002)).toEqual({ kind: 'defer', reason: 'queued' });
+    for (const original of [f.job(), f.job(2)]) {
+      expect(await f.enqueue(journal, original, now + 2002)).toEqual({ kind: 'reject', reason: 'controls_unavailable' });
+      expect(await journal.get(scope(original))).toMatchObject({ lastSeq: 0, admission: { state: 'rejected', reason: 'controls_unavailable' } });
+      expect(await journal.readOffer(scope(original))).toEqual(original);
+      await expect(journal.admission({ kind: 'reservation', key: scope(original) })).rejects.toMatchObject({ code: 'not_found' });
+    }
   });
   it('rejects required hard filesystem output quota even if mislisted in the trusted catalog', async () => {
     const journal = await f.configured(); const config = configuration(); config.profiles[0]!.capabilities.push('hard-output-quota');
