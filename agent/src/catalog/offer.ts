@@ -39,6 +39,7 @@ export function validateConfig(offer: Offer, engine: InstalledEngine): void {
   for (const key of ['cpuMillis', 'memoryBytes', 'pids', 'timeoutMs', 'outputBytes'] as const) {
     budget[key] = Math.max(budget[key], engine.manifest.minimumBudget[key]);
   }
-  // Probe installed feasibility only; admission owns the original budget decision.
-  if (!permitsRuntime({ ...offer, budget }, engine)) throw new CatalogError('unapproved_engine');
+  // Native feasibility excludes payload bytes; the original is already validated.
+  // Native guards consuming an omitted field must amend this private projection.
+  if (!permitsRuntime({ ...offer, budget, config: {}, inputs: [], secretReferences: [] }, engine)) throw new CatalogError('unapproved_engine');
 }

@@ -31,7 +31,7 @@ staging allowance remains owned by admission. Unknown engine/image/config versio
 and unsupported capabilities reject before queueing. An offer cannot choose a path,
 entrypoint, Docker flag, schema bundle or validator.
 
-`preflight` returns one immutable bounded Offer, its exact installed engine and
+`preflight` returns one immutable Offer bounded to2MiB, its exact installed engine and
 ValidationIdentity including configDigest. It validates the runner envelope,
 engine-specific structure, approved runtime feasibility and capabilities. It reads
 no datasets, resolves no secrets and performs no I/O or semantic compilation.
@@ -39,8 +39,13 @@ Success means pending admitted engine validation, as specified in
 [the validation decision](../../decisions/007-admitted-validation.md).
 
 For this feasibility probe only, a temporary Offer copy raises the five budget
-fields below trusted manifest minima to those minima. Larger values and all other
-fields stay exact, so profile maxima and unsupported controls still reject.
+fields below trusted manifest minima to those minima. After original envelope,
+installed identity and engine config validation, it projects config to an empty
+object and inputs/secret references to empty arrays: those payload bytes do not
+affect native guards and cannot make the probe exceed the original Offer byte cap.
+Larger budgets and every native guard field stay exact, so profile maxima and
+unsupported controls still reject. Future native guards using an omitted payload
+field must amend this private projection.
 The copy never becomes the returned/persisted Offer or an execution plan.
 Admission owns the original minimum-budget policy decision and durable refusal.
 
