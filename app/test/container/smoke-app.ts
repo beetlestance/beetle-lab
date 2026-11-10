@@ -15,6 +15,7 @@ import { argumentsFor, backendConfiguration } from './configuration.js';
 import { provision, targetCounts, captureLogs } from './containers.js';
 import { enqueue, finished, ownedOrigin, publicClient, value, waitForCapacity } from './public-api.js';
 import { inspectClosed } from './evidence.js';
+import { initializationWorkerUrl } from './initialize.js';
 
 const args = argumentsFor(process.argv.slice(2));
 const f = await fixture(new Docker(args.context, 2), args.agentImage, args.engineImage, args.status);
@@ -28,11 +29,14 @@ let app: Application | undefined;
 let applicationClosed = false;
 const started = Date.now();
 async function fingerprints(worker: URL): Promise<Record<string, string>> {
-  const files = ['configuration.ts', 'containers.ts', 'public-api.ts', 'evidence.ts', 'smoke-app.ts'];
+  const files = ['configuration.ts', 'containers.ts', 'public-api.ts', 'evidence.ts', 'smoke-app.ts', 'initialize.ts'];
   const entries: [string, string][] = [];
   for (const name of files) entries.push([name, digest(await readFile(new URL(name, import.meta.url)))]);
   const workerStat = await stat(worker); assert(workerStat.isFile() && workerStat.size <= 8_388_608);
-  entries.push(['metadataWorker', digest(await readFile(worker))]); return Object.fromEntries(entries);
+  entries.push(['metadataWorker', digest(await readFile(worker))]);
+  const agentWorker = initializationWorkerUrl(); const agentStat = await stat(agentWorker);
+  assert(agentStat.isFile() && agentStat.size <= 8_388_608);
+  entries.push(['agentInitializationWorker', digest(await readFile(agentWorker))]); return Object.fromEntries(entries);
 }
 async function verifyNative(physical: Awaited<ReturnType<typeof inspectClosed>>, publicResult: RunResultSnapshot['result']) {
   const offer = physical.offer;

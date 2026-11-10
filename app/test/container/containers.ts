@@ -5,6 +5,7 @@ import { saveConfiguration } from '../../../agent/test/container/fixture.js';
 import type { Fixture } from '../../../agent/test/container/fixture.js';
 import type { Inspection } from '../../../agent/test/container/docker.js';
 import { agentOrigin } from './configuration.js';
+import { initializeFreshInstallation } from './initialize.js';
 
 export async function provision(f: Fixture): Promise<string> {
   f.docker.run(['network', 'create', '--internal', '--label', `dev.beetle.qualification=${f.id}`, f.network]);
@@ -36,6 +37,7 @@ async function createAgent(f: Fixture, control: string): Promise<void> {
   await saveConfiguration(f, actual.Image);
   const config = JSON.parse(await readFile(f.configPath, 'utf8')) as { listen: { host: string; port: number } };
   config.listen.host = '0.0.0.0'; await writeFile(f.configPath, JSON.stringify(config), { mode: 0o600 });
+  await initializeFreshInstallation(f);
   f.docker.run(['start', f.agent]);
 }
 export function targetCounts(f: Fixture): unknown {
