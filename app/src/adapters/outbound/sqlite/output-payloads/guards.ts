@@ -1,3 +1,4 @@
+import { boundedUniqueJson } from './json.js';
 const resultPath = "CASE NEW.kind WHEN 'result' THEN '$' ELSE '$.result' END";
 const identity = (['organizationId', 'workspaceId', 'attemptId'] as const).map(field => {
   const column = { organizationId: 'organization_id', workspaceId: 'workspace_id', attemptId: 'attempt_id' }[field];
@@ -32,10 +33,12 @@ function bodyGuard(): string {
 }
 export const payloadGuards = `
 CREATE TRIGGER output_payload_insert BEFORE INSERT ON execution_output_payloads BEGIN
+ SELECT CASE WHEN ${boundedUniqueJson('carrier')} IS NOT 1 THEN RAISE(ABORT,'invalid bounded unique output JSON') END;
  SELECT CASE WHEN EXISTS(SELECT 1 FROM execution_output_payloads WHERE attempt_id=NEW.attempt_id)
  THEN RAISE(ABORT,'retained output payload') END;
  ${bodyGuard()} END;
 CREATE TRIGGER output_payload_update BEFORE UPDATE ON execution_output_payloads BEGIN
+ SELECT CASE WHEN ${boundedUniqueJson('carrier')} IS NOT 1 THEN RAISE(ABORT,'invalid bounded unique output JSON') END;
  SELECT CASE WHEN NEW.attempt_id IS NOT OLD.attempt_id OR NOT (
   (NEW.kind IS OLD.kind AND NEW.canonical_json IS OLD.canonical_json) OR
   (OLD.kind='result' AND NEW.kind='manifest' AND json_extract(NEW.canonical_json,'$.result') IS OLD.canonical_json))
@@ -48,12 +51,13 @@ export const headerGuards = `
 CREATE TRIGGER output_header_insert BEFORE INSERT ON execution_records WHEN NEW.result_observed!=0
  BEGIN SELECT RAISE(ABORT,'new execution has no result observation'); END;
 CREATE TRIGGER output_header_update BEFORE UPDATE ON execution_records BEGIN
+ SELECT CASE WHEN NEW.snapshot_json IS NOT NULL AND ${boundedUniqueJson('header')} IS NOT 1
+ THEN RAISE(ABORT,'invalid bounded unique header JSON') END;
  SELECT CASE WHEN NEW.result_observed<OLD.result_observed THEN RAISE(ABORT,'monotonic result observation') END;
  SELECT CASE WHEN NEW.snapshot_json IS NOT NULL AND (length(CAST(NEW.snapshot_json AS BLOB))>2048
   OR json_type(NEW.snapshot_json,'$.result') IS NOT NULL
   OR EXISTS(SELECT 1 FROM json_each(NEW.snapshot_json) WHERE key NOT IN
-   ('protocolVersion','organizationId','workspaceId','attemptId','generation','intentDigest','state','phase','lastSeq','retainedStartSeq','cancelRequested','exitEvidence','admission'))
-  OR (SELECT count(*) FROM json_each(NEW.snapshot_json))!=(SELECT count(DISTINCT key) FROM json_each(NEW.snapshot_json))) THEN RAISE(ABORT,'bounded result-free header') END;
+   ('protocolVersion','organizationId','workspaceId','attemptId','generation','intentDigest','state','phase','lastSeq','retainedStartSeq','cancelRequested','exitEvidence','admission'))) THEN RAISE(ABORT,'bounded result-free header') END;
  SELECT CASE WHEN NEW.result_observed=1 AND (NEW.snapshot_json IS NULL OR NOT EXISTS(
   SELECT 1 FROM execution_output_payloads p WHERE p.attempt_id=NEW.attempt_id))
  THEN RAISE(ABORT,'observed result requires carrier') END; END;

@@ -1,13 +1,14 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { mergeAttemptObservation } from '../../../../domain/runs/index.js';
 import type { AttemptIdentity } from '../../../../domain/runs/index.js';
+import { boundedUniqueJson } from './json.js';
 import { HEADER_BYTES, RESULT_BYTES, requirePayload, splitSnapshot } from './values.js';
 
 function visit(db: DatabaseSync, work: (row: Record<string, unknown>) => void): void {
   let after = 0;
   const query = db.prepare(`SELECT e.queue_order,e.attempt_id,e.organization_id,e.workspace_id,e.intent_digest,e.journal_authority,
     length(CAST(e.snapshot_json AS BLOB)) bytes,
-    (SELECT count(*)=count(DISTINCT key) FROM json_each(e.snapshot_json)) unique_header_keys,
+    ${boundedUniqueJson('snapshot')} valid_snapshot,
     CASE WHEN length(CAST(e.snapshot_json AS BLOB))<=73728 THEN e.snapshot_json ELSE NULL END snapshot_json,
     a.maximum_payload_bytes,coalesce(c.retained_bytes,0) retained_bytes
     FROM execution_records e JOIN attempt_output_allocations a ON a.attempt_id=e.attempt_id
@@ -15,6 +16,7 @@ function visit(db: DatabaseSync, work: (row: Record<string, unknown>) => void): 
   for (;;) {
     const row = query.get(after); if (!row) return;
     requirePayload(typeof row.queue_order === 'number' && row.queue_order > after); after = row.queue_order;
+    if (row.bytes !== null) requirePayload(row.valid_snapshot === 1);
     work(row);
   }
 }
@@ -31,7 +33,7 @@ export function preflightPayloads(db: DatabaseSync): void {
     if (row.bytes === null) return;
     const value = split(row);
     requirePayload(Buffer.byteLength(value.header) <= HEADER_BYTES);
-    if (value.result === null) { requirePayload(typeof row.bytes === 'number' && row.bytes <= HEADER_BYTES && row.unique_header_keys === 1); return; }
+    if (value.result === null) { requirePayload(typeof row.bytes === 'number' && row.bytes <= HEADER_BYTES); return; }
     requirePayload(row.journal_authority !== null);
     const size = Buffer.byteLength(value.result);
     requirePayload(size <= RESULT_BYTES && typeof row.maximum_payload_bytes === 'number' && Number.isSafeInteger(row.maximum_payload_bytes));
