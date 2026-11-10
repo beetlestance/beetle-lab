@@ -19,7 +19,7 @@ it('settles verified source custody once, independently counts retained bytes, p
   expect(f.usage()).toBe(before - result.receipt.refundedBytes);
   expect(f.outputs.execute({ kind: 'outputScan', query: { limit: 32 } })).toEqual({ items: [], nextCursor: null });
   expect(f.events.scan({ limit: 32 })).toEqual({ items: [], nextCursor: null });
-  expect(f.events.confirmAck({ binding: f.binding, throughSeq: 1, receipt: ack(f.binding, 1) })).toMatchObject({ ackConfirmedThrough: 1 });
+  expect(f.events.confirmAck({ binding: f.binding, throughSeq: 2, receipt: ack(f.binding, 2) })).toMatchObject({ ackConfirmedThrough: 2 });
   expect(f.outputs.execute({ kind: 'outputReadSource', binding: f.binding })).toEqual(f.envelope);
   const plan = f.db.prepare('EXPLAIN QUERY PLAN SELECT * FROM output_finalization_evidence WHERE attempt_id=?').all(f.key.attempt.attemptId);
   expect(plan.some(row => String(row.detail).includes('SEARCH e USING INDEX'))).toBe(true);

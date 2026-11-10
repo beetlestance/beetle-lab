@@ -8,6 +8,7 @@ CREATE TRIGGER finalization_insert BEFORE INSERT ON execution_output_finalizatio
  SELECT CASE WHEN ${finalized()} THEN RAISE(ABORT,'retained output finalization') END;
  SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM output_finalization_evidence v WHERE v.attempt_id=NEW.attempt_id AND ${match}
   AND v.active_attempt_id=NEW.attempt_id AND v.previous_state IN ('queued','dispatching','active','finalizing')
+  AND v.header_last_seq<=v.final_agent_seq
   AND v.execution_ready=1 AND v.events_ready=1 AND v.artifacts_ready=1
   AND v.maximum_payload_bytes-NEW.retained_payload_bytes=NEW.refunded_bytes
   AND (SELECT charged_bytes FROM installation_storage_usage WHERE id=1)>=NEW.refunded_bytes)
