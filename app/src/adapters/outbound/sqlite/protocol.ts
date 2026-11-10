@@ -1,4 +1,4 @@
-import type { AbsenceOperation } from './output-absence/index.js';
+import type { AbsenceOperation } from './output-absence/operations.js';
 import type { OutputAbsenceState, OutputAbsenceFinalizationReply } from '../../../ports/output-absence.js';
 import type { OutputFinalizationRequest, OutputFinalizationReply } from '../../../ports/output-finalization.js';
 import type { OutputArtifactClaim, OutputArtifactProgress } from '../../../ports/output-artifacts.js';
