@@ -6,7 +6,7 @@ import type { EventBinding, EventScan, EventPage, EventCursorState, EventIngestR
 import type { RunConfiguration, RunCommand, CancelRunCommand, RunKey, RunList } from '../../../ports/runs.js';
 import type { DispatchKey, DispatchScan, DispatchObservationRequest, DispatchPage,
   DispatchOffer, DispatchClaim, DispatchObservation } from '../../../ports/dispatch.js';
-import type { Run, RunPage } from '@beetle/contracts/api';
+import type { Run, RunPage, RunResultSnapshot } from '@beetle/contracts/api';
 import type { InputCommand, InputAdvance, InputKey, InputList, InputRecoveryPage, InputRecord, InputReceipt, InputPage, InputStorage } from '../../../ports/inputs.js';
 import type { Suite, SuiteRevision, SuitePage, SuiteRevisionPage } from '@beetle/contracts/api';
 import type { SuiteCommand, SuiteKey, SuiteList, RevisionList } from '../../../ports/suites.js';
@@ -47,6 +47,7 @@ export type Operation =
   | { kind: 'run'; command: RunCommand }
   | { kind: 'cancelRun'; command: CancelRunCommand }
   | { kind: 'getRun'; key: RunKey }
+  | { kind: 'getRunResult'; key: RunKey }
   | { kind: 'listRuns'; query: RunList }
   | { kind: 'input'; command: InputCommand }
   | { kind: 'advanceInput'; command: InputAdvance }
@@ -67,7 +68,7 @@ export type Operation =
   | { kind: 'getSettingsIdentity'; scope: SettingsScope }
   | { kind: 'runtime'; runtime: RuntimeObservation | null }
   | { kind: 'close' };
-export type Value = OutputFileRecord | OutputCustodyState | OutputPage | Owned<SourceEnvelope> | EventPage | EventCursorState | EventIngestResult | DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
+export type Value = OutputFileRecord | OutputCustodyState | OutputPage | Owned<SourceEnvelope> | EventPage | EventCursorState | EventIngestResult | DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | RunResultSnapshot | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
 export type Command = Operation & { messageId: number };
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; messageId: number; ok: true; value: Value } |

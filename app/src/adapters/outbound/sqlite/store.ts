@@ -1,3 +1,4 @@
+import { RunResults } from './run-results/index.js';
 import { OutputCustody, outputOperation } from './output-custody/index.js';
 import { EventCustody, eventOperation } from './event-custody/index.js';
 import { Runs } from './runs.js';
@@ -32,6 +33,7 @@ export function safeCode(error: unknown): ErrorCode {
   return 'unavailable';
 }
 export class Store {
+  private readonly results: RunResults;
   private readonly outputs: OutputCustody;
   private readonly events: EventCustody;
   private readonly dispatchClaims: DispatchClaims;
@@ -56,6 +58,7 @@ export class Store {
     this.settings = transaction(db, () => new Settings(db, bootstrap));
     this.runs = new Runs(db, this.suites, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
     this.runReads = new RunReads(db, this.suites);
+    this.results = new RunResults(db, this.runReads);
     this.runCancellations = new RunCancellations(db, this.runReads);
     this.dispatchClaims = new DispatchClaims(db, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
     this.dispatchObservations = new DispatchObservations(db, this.runReads);
@@ -133,6 +136,7 @@ export class Store {
     }
   }
   execute(operation: Operation): Value {
+    if (operation.kind === 'getRunResult') return this.results.get(operation.key);
     if (outputOperation(operation)) return this.outputs.execute(operation);
     if (eventOperation(operation)) return this.events.execute(operation);
     return this.executeLegacy(operation);

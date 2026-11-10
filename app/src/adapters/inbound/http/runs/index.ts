@@ -4,11 +4,14 @@ import type { IntentDigest } from '../../../../application/namespaces/index.js';
 import { cancelRun, enqueueRun, getRun, listRuns } from '../../../../application/runs/index.js';
 import { requireRule, sameScope } from '../../../../domain/namespaces/index.js';
 import type { RunCancellationStore, RunReader, RunStore } from '../../../../ports/runs.js';
+import type { RunResultReader } from '../../../../ports/run-results.js';
+import { getResult } from './result.js';
 import { registerApiOperation } from '../api-route.js';
 
 interface Options {
   store: RunStore & RunCancellationStore; reader: RunReader; newId(): string; digest: IntentDigest;
   now(): string; authorize: onRequestAsyncHookHandler;
+  resultReader?: RunResultReader;
 }
 const scope = (params: { organizationId: string; workspaceId: string }): WorkspaceScope =>
   ({ kind: 'workspace', organizationId: params.organizationId, workspaceId: params.workspaceId });
@@ -22,6 +25,8 @@ export function registerRunRoutes(server: FastifyInstance, options: Options): vo
       listRuns({ scope: scope(params), ...query }, options.reader));
     registerApiOperation(scoped, 'getRun', ({ params }) =>
       getRun({ scope: scope(params), id: params.runId }, options.reader));
+    registerApiOperation(scoped, 'getRunResult', ({ params }) =>
+      getResult({ scope: scope(params), id: params.runId }, options.resultReader));
     registerApiOperation(scoped, 'cancelRun', ({ params, body }) => {
       requireRule(sameScope(scope(params), body.scope), 'not_found');
       return cancelRun({ operation: { kind: 'cancelRun', id: params.runId, request: body },
