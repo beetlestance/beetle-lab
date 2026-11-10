@@ -21,3 +21,8 @@ original input/output charges. Unrestricted direct counter UPDATE remains outsid
 this receipt authority, matching existing input accounting.
 
 Focused command: `vitest run app/test/output-finalization/*.test.ts`.
+
+Shared public entrypoint: `facts.ts` supplies bounded current-run/header/zero-cursor
+checks, retention validation and pure SQL execution/event predicates. Sibling
+absence evidence imports it directly to avoid a runtime/schema import cycle.
+Source-backed headers may precede the source end; absence requires equality.

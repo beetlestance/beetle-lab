@@ -1,3 +1,4 @@
+import { finalEventsReady, releasedHeader } from './facts.js';
 const header = (path: string) => `json_extract(e.snapshot_json,'$.${path}')`;
 const child = (path: string) => `json_extract(p.canonical_json,'$.result.${path}')`;
 const wrapperReason = header('exitEvidence.reason');
@@ -36,13 +37,9 @@ CREATE VIEW output_finalization_evidence AS SELECT e.attempt_id,e.run_id,e.organ
   WHEN ${wrapperReason} IS NOT NULL AND ${wrapperReason}!='cancelled' THEN ${wrapperReason}
   WHEN ${child('execution.status')}='lost' THEN 'execution_lost'
   WHEN ${child('execution.status')}='error' AND ${childReason}!='cancelled' THEN ${childReason} ELSE NULL END reason,
- e.execution_charged=0 AND length(CAST(e.snapshot_json AS BLOB))<=2048
-  AND json_type(e.snapshot_json,'$.result') IS NULL
+ ${releasedHeader}
   AND ${header('admission.state')}='released' AND ${header('admission.disposition')}='settled' execution_ready,
- c.durable_through=s.final_agent_seq AND c.event_count=s.final_agent_seq
-  AND c.ack_confirmed_through=s.final_agent_seq AND c.coverage='contiguous' AND c.blocked_reason IS NULL
-  AND coalesce((SELECT max(seq) FROM run_events WHERE attempt_id=e.attempt_id AND generation=1),0)=s.final_agent_seq
-  AND coalesce((SELECT cumulative_bytes FROM run_events WHERE attempt_id=e.attempt_id AND generation=1 AND seq=s.final_agent_seq),0)=c.retained_bytes events_ready,
+ ${finalEventsReady('s.final_agent_seq')} events_ready,
  (SELECT count(*) FROM execution_output_slots WHERE attempt_id=e.attempt_id)=json_array_length(p.canonical_json,'$.result.artifacts')
   AND NOT EXISTS(SELECT 1 FROM execution_output_slots x WHERE x.attempt_id=e.attempt_id AND (
    json_extract(x.slot_json,'$.p') IS NOT 'published' OR json_extract(x.slot_json,'$.w') IS NOT NULL

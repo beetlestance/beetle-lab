@@ -1,3 +1,6 @@
+import { absenceOperation, captureAbsenceReply } from './output-absence/index.js';
+import type { AbsenceOperation } from './output-absence/index.js';
+import type { OutputAbsenceStore } from '../../../ports/output-absence.js';
 import type { OutputFinalizations } from '../../../ports/output-finalization.js';
 import { finalizationOperation, captureFinalizationReply } from './output-finalization/index.js';
 import type { FinalizationOperation } from './output-finalization/index.js';
@@ -40,7 +43,7 @@ export interface MetadataOptions extends Bootstrap {
   queueLimit?: number;
 }
 interface Pending { resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
-  finalization?: FinalizationOperation; result?: RunKey; output?: OutputOperation; large: boolean; replyLimit: number; event?: EventOperation; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
+  absence?: AbsenceOperation; finalization?: FinalizationOperation; result?: RunKey; output?: OutputOperation; large: boolean; replyLimit: number; event?: EventOperation; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
 function validateLocation(options: MetadataOptions): void {
   if (typeof options.path !== 'string' || !options.path || options.path === ':memory:' || options.path.length > 4096 ||
     !(options.workerUrl instanceof URL) || options.workerUrl.protocol !== 'file:') throw new StorageError('invalid_input');
@@ -67,6 +70,11 @@ export class Metadata {
   private readyResolve: () => void = () => undefined;
   private readyReject: (error: StorageError) => void = () => undefined;
   private readonly ready: Promise<void>;
+  readonly absences: OutputAbsenceStore = {
+    read: binding => this.call({ kind: 'absenceRead', binding }) as ReturnType<OutputAbsenceStore['read']>,
+    adopt: request => this.call({ kind: 'absenceAdopt', request }) as ReturnType<OutputAbsenceStore['adopt']>,
+    finalize: request => this.call({ kind: 'absenceFinalize', request }) as ReturnType<OutputAbsenceStore['finalize']>,
+  };
   readonly finalizations: OutputFinalizations = {
     finalize: request => this.call({ kind: 'outputFinalize', request }) as ReturnType<OutputFinalizations['finalize']>,
   };
@@ -180,7 +188,7 @@ export class Metadata {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => this.fail('unavailable'), 5000);
       this.pending.set(messageId, { resolve, reject, timer, large: largeOperation(operation),
-        replyLimit: operationReplyLimit(operation), ...(finalizationOperation(operation) ? { finalization: operation } : {}), ...(outputOperation(operation) ? { output: operation } : {}), ...(eventOperation(operation) ? { event: operation } : {}), ...(dispatchOperation(operation) ? { dispatch: operation } : {}),
+        replyLimit: operationReplyLimit(operation), ...(absenceOperation(operation) ? { absence: operation } : {}), ...(finalizationOperation(operation) ? { finalization: operation } : {}), ...(outputOperation(operation) ? { output: operation } : {}), ...(eventOperation(operation) ? { event: operation } : {}), ...(dispatchOperation(operation) ? { dispatch: operation } : {}),
         ...(operation.kind === 'getRunResult' ? { result: operation.key } : {}),
         ...(operation.kind === 'cancelRun' ? { cancellation: operation.command } : {}) });
       try { this.worker.postMessage({ ...operation, messageId }); } catch { this.fail('unavailable'); }
@@ -204,7 +212,7 @@ export class Metadata {
   private resolve(reply: Extract<WorkerReply, { kind: 'result'; ok: true }>, pending: Pending): void {
     let value: Value;
     try {
-      value = pending.finalization ? captureFinalizationReply(pending.finalization, reply.value) : pending.result ? captureResultReply(pending.result, reply.value) : pending.output ? captureOutputReply(pending.output, reply.value) : pending.event ? captureEventReply(pending.event, reply.value)
+      value = pending.absence ? captureAbsenceReply(pending.absence, reply.value) : pending.finalization ? captureFinalizationReply(pending.finalization, reply.value) : pending.result ? captureResultReply(pending.result, reply.value) : pending.output ? captureOutputReply(pending.output, reply.value) : pending.event ? captureEventReply(pending.event, reply.value)
         : pending.dispatch ? captureDispatchReply(pending.dispatch, reply.value)
         : pending.cancellation ? captureCancelRunReply(reply.value, pending.cancellation)
         : boundedCopy(reply.value, pending.replyLimit) as Value;
