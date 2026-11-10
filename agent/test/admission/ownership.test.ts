@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { AdmissionValue, ReleaseEvidence } from '../../src/admission/index.js';
 import type { Journal } from '../../src/journal/index.js';
+import { sourceFixture } from '../source-journal/fixtures.js';
 import { admissionFixture, digest, now, reserved, scope } from './fixtures.js';
 
 const f = admissionFixture();
+const sources = sourceFixture();
 function claim(value: AdmissionValue): { token: string; dispatchAllowed: boolean } {
   if (!('token' in value)) throw new Error('expected claim'); return value;
 }
@@ -57,9 +59,32 @@ describe('durable runtime ownership dispatch fences', () => {
   });
 });
 describe('trusted supervisor stopped and collection evidence', () => {
-  it.each(['finished', 'failed'] as const)('releases only after explicit %s collection and preserves proof across restart', async state => {
-    const path = f.path(); let journal = await f.configured(path); const evidence = await runtime(journal); evidence.collection.state = state;
-    if (state === 'failed') evidence.runtime.state = 'absent';
+  it('releases finished collection only through its published source receipt and preserves authority across restart', async () => {
+    const source = await sources.seed(); let journal = source.journal;
+    const evidence = source.collected.release;
+    expect(await journal.readOutputSource(source.key)).toBeNull();
+    await expect(journal.admission({ kind: 'release', evidence })).rejects.toMatchObject({ code: 'conflict' });
+    expect(reserved(await journal.admission({ kind: 'reservation', key: source.key })).status).toBe('charged');
+    expect(await journal.beginOutputCollection(source.intent)).toEqual(source.intent);
+    const receipt = await journal.commitOutputSource(source.collected);
+    expect(await journal.readOutputSource(source.key)).toEqual(source.source);
+    await expect(journal.admission({ kind: 'release', evidence })).rejects.toMatchObject({ code: 'conflict' });
+    expect(reserved(await journal.admission({ kind: 'reservation', key: source.key })).status).toBe('charged');
+    const released = await journal.releaseOutputSource(receipt);
+    expect(released).toMatchObject({ status: 'released', releaseEvidence: evidence });
+    await sources.close(journal); journal = await sources.open(source.path);
+    expect(await journal.journalAuthority()).toBe(source.intent.binding.journalAuthority);
+    expect(await journal.readOutputCollection(source.key)).toEqual(source.intent);
+    expect(await journal.readOutputSource(source.key)).toEqual(source.source);
+    expect(await journal.commitOutputSource(source.collected)).toEqual(receipt);
+    expect(await journal.releaseOutputSource(receipt)).toEqual(released);
+    expect(await journal.admission({ kind: 'release', evidence })).toEqual(released);
+    expect(reserved(await journal.admission({ kind: 'reservation', key: source.key })).releaseEvidence).toEqual(evidence);
+    await expect(journal.admission({ kind: 'release', evidence: { ...evidence, runtimeId: 'different' } })).rejects.toMatchObject({ code: 'conflict' });
+  });
+  it('releases after explicit failed collection and preserves proof across restart', async () => {
+    const path = f.path(); let journal = await f.configured(path); const evidence = await runtime(journal);
+    evidence.collection.state = 'failed'; evidence.runtime.state = 'absent';
     const released = await journal.admission({ kind: 'release', evidence }); expect(reserved(released).status).toBe('released');
     await f.close(journal); journal = await f.open(path);
     expect(await journal.admission({ kind: 'release', evidence })).toEqual(released);
