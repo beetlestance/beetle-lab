@@ -1,4 +1,4 @@
-import { EVENT_STATE_BYTES, EVENT_BATCH_COUNT, EVENT_MAX_RETAINED_ROWS, EVENT_RECORD_BYTES } from '../../../../ports/events.js';
+import { EVENT_BATCH_COUNT, EVENT_MAX_RETAINED_ROWS, EVENT_RECORD_BYTES } from '../../../../ports/events.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { validate } from '@beetle/contracts';
 import { EventBatchError, expiryCoverage, prepareEventBatch } from '../../../../domain/events/index.js';
@@ -7,10 +7,9 @@ import type { EventAckRequest, EventBinding, EventCursorState, EventIngestReques
   EventPage, EventProblem, EventProblemRequest, EventScan } from '../../../../ports/events.js';
 import { transaction } from '../schema.js';
 import { StorageError } from '../protocol.js';
-import { boundedCopy } from '../input-values.js';
 import { captureEventOperation } from './wire.js';
 import type { EventOperation } from './wire.js';
-import { captureEventReply } from './reply.js';
+import { capturePreparedIngestReply } from './reply.js';
 import type { EventValue } from './reply.js';
 import { ensureCursor, ownedAllowance, readState } from './rows.js';
 import { scanEvents } from './scan.js';
@@ -46,11 +45,15 @@ export class EventCustody {
   }
   ingest(request: EventIngestRequest): EventIngestResult {
     const batch = prepareEventBatch(request);
-    const result = transaction(this.db, () => this.append(batch));
+    const result = transaction(this.db, () => {
+      const value = this.append(batch);
+      return typeof value === 'string' ? value : this.ingestReply(batch, value);
+    });
     if (typeof result !== 'string') return result;
-    const state = this.recordProblem({ binding: batch.binding, after: batch.after, kind: result });
-    try { return boundedCopy({ state, inserted: 0, ackThrough: state.durableThrough }, EVENT_STATE_BYTES); }
-    catch { throw new StorageError('unavailable'); }
+    return transaction(this.db, () => {
+      const state = this.problem({ binding: batch.binding, after: batch.after, kind: result });
+      return this.ingestReply(batch, { state, inserted: 0, ackThrough: state.durableThrough });
+    });
   }
   private append(batch: PreparedEventBatch): EventIngestResult | EventProblem {
     const allowance = ownedAllowance(this.db, batch.binding);
@@ -70,9 +73,11 @@ export class EventCustody {
       cumulative += record.chargedBytes;
       insert.run(batch.binding.key.attempt.attemptId, 1, record.seq, record.canonical, record.chargedBytes, cumulative);
     }
-    try { return captureEventReply({ kind: 'eventIngest', request: { binding: batch.binding, after: batch.after, batch: null } }, {
-      state: readState(this.db, batch.binding), inserted: suffix.length, ackThrough: Math.max(state.durableThrough, batch.nextCursor),
-    }) as EventIngestResult; }
+    return { state: readState(this.db, batch.binding), inserted: suffix.length,
+      ackThrough: Math.max(state.durableThrough, batch.nextCursor) };
+  }
+  private ingestReply(batch: PreparedEventBatch, result: EventIngestResult): EventIngestResult {
+    try { return capturePreparedIngestReply(batch, result); }
     catch { throw new StorageError('unavailable'); }
   }
   private replayConflict(batch: PreparedEventBatch, durable: number): boolean {
@@ -101,17 +106,18 @@ export class EventCustody {
   }
   recordProblem(request: EventProblemRequest): EventCursorState {
     problemRequest(request);
-    return transaction(this.db, () => {
-      ensureCursor(this.db, request.binding);
-      const state = readState(this.db, request.binding);
-      if (request.after > state.durableThrough) throw new StorageError('invalid_input');
-      if (request.kind === 'cursor_expired'
-        && expiryCoverage(request.after, request.retainedStartSeq!, state.durableThrough) === 'covered') return state;
-      if (state.blockedReason !== null) return state;
-      this.db.prepare(`UPDATE event_cursors SET blocked_reason=?,coverage=?,retained_start_seq=? WHERE attempt_id=?`)
-        .run(request.kind, request.kind === 'cursor_expired' ? 'partial' : 'contiguous', request.retainedStartSeq ?? null,
-          request.binding.key.attempt.attemptId);
-      return readState(this.db, request.binding);
-    });
+    return transaction(this.db, () => this.problem(request));
+  }
+  private problem(request: EventProblemRequest): EventCursorState {
+    ensureCursor(this.db, request.binding);
+    const state = readState(this.db, request.binding);
+    if (request.after > state.durableThrough) throw new StorageError('invalid_input');
+    if (request.kind === 'cursor_expired'
+      && expiryCoverage(request.after, request.retainedStartSeq!, state.durableThrough) === 'covered') return state;
+    if (state.blockedReason !== null) return state;
+    this.db.prepare(`UPDATE event_cursors SET blocked_reason=?,coverage=?,retained_start_seq=? WHERE attempt_id=?`)
+      .run(request.kind, request.kind === 'cursor_expired' ? 'partial' : 'contiguous', request.retainedStartSeq ?? null,
+        request.binding.key.attempt.attemptId);
+    return readState(this.db, request.binding);
   }
 }
