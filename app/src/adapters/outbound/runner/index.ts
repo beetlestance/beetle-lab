@@ -9,3 +9,4 @@ export function createRunnerGateway(loaded: LoadedAgentConfiguration): RunnerOut
 }
 
 export { startDeliveryRuntime } from './delivery/index.js';
+export { eventDiscovery as createEventDiscovery } from './delivery/event-discovery.js';
