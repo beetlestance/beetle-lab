@@ -28,7 +28,7 @@ function validPath(path: string): void {
   if (typeof path !== 'string' || !isAbsolute(path) || normalize(path) !== path
     || Buffer.byteLength(path) > 1024 || path.split('/').length > 32) fail('invalid_input');
 }
-async function pinRoot(port: NativePort, path: string): Promise<Root> {
+export async function pinRoot(port: NativePort, path: string): Promise<Root> {
   validPath(path);
   const paths = [parse(path).root];
   let parent = dirname(path);
