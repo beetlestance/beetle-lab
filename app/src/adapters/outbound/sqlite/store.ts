@@ -1,3 +1,4 @@
+import { OutputFinalizations, finalizationOperation } from './output-finalization/index.js';
 import { RunResults } from './run-results/index.js';
 import { OutputCustody, outputOperation } from './output-custody/index.js';
 import { EventCustody, eventOperation } from './event-custody/index.js';
@@ -33,6 +34,7 @@ export function safeCode(error: unknown): ErrorCode {
   return 'unavailable';
 }
 export class Store {
+  private readonly finalizations: OutputFinalizations;
   private readonly results: RunResults;
   private readonly outputs: OutputCustody;
   private readonly events: EventCustody;
@@ -50,6 +52,7 @@ export class Store {
   private readonly settings: Settings;
   private readonly reads: Reads;
   constructor(private readonly db: DatabaseSync, bootstrap: Bootstrap) {
+    this.finalizations = new OutputFinalizations(db);
     this.outputs = new OutputCustody(db, bootstrap.installation.id);
     this.events = new EventCustody(db, bootstrap.installation.id);
     this.entities = new Entities(db);
@@ -136,6 +139,7 @@ export class Store {
     }
   }
   execute(operation: Operation): Value {
+    if (finalizationOperation(operation)) return this.finalizations.execute(operation);
     if (operation.kind === 'getRunResult') return this.results.get(operation.key);
     if (outputOperation(operation)) return this.outputs.execute(operation);
     if (eventOperation(operation)) return this.events.execute(operation);

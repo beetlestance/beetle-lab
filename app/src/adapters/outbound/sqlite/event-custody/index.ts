@@ -11,7 +11,7 @@ import { captureEventOperation } from './wire.js';
 import type { EventOperation } from './wire.js';
 import { capturePreparedIngestReply } from './reply.js';
 import type { EventValue } from './reply.js';
-import { ensureCursor, ownedAllowance, readState } from './rows.js';
+import { ensureCursor, ownedAllowance, readState, finalizedState } from './rows.js';
 import { scanEvents } from './scan.js';
 import { ackRequest, problemRequest } from './values.js';
 export { captureEventOperation, eventOperation, eventReplyLimit, eventRequestLimit } from './wire.js';
@@ -95,6 +95,12 @@ export class EventCustody {
   confirmAck(request: EventAckRequest): EventCursorState {
     ackRequest(request);
     return transaction(this.db, () => {
+      const finalized = finalizedState(this.db, request.binding);
+      if (finalized) {
+        const receipt = validate('AckReceipt', request.receipt);
+        if (!receipt.ok || receipt.value.acknowledgedSeq !== finalized.durableThrough) throw new StorageError('invalid_input');
+        return finalized;
+      }
       ensureCursor(this.db, request.binding);
       const state = readState(this.db, request.binding);
       const receipt = validate('AckReceipt', request.receipt);

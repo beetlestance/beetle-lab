@@ -44,7 +44,7 @@ it('native guards permit exactly the four transitions and return mutable slots',
   f.update({...slot, v: 4, p: 'publishing'}); slot = f.raw();
   f.update({...slot, v: 5, p: 'published', i: 'f'.repeat(64), w: null});
   expect(f.outputs.execute({kind: 'outputLoad', binding: f.binding})).toMatchObject({version: 1, artifacts: [{version: 5, phase: 'published'}]});
-  expect(f.db.prepare('PRAGMA user_version').get()?.user_version).toBe(10);
+  expect(f.db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
 });
 it('retains native initial slot, token uniqueness and source immutability guards after migration010', () => {
   const f = fixture(10000, [artifact, {...artifact, artifactId: writerId}]); f.adopt();
