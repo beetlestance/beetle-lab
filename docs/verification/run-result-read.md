@@ -1,7 +1,8 @@
 # Scoped result read evidence
 
-Status: locally implemented, independently reviewed and integrated. Browser,
-connected real-k6, finalization and release qualification remain pending.
+Status: locally implemented, independently reviewed and integrated. Connected
+real-k6 finalization and reads are [locally verified](native-application-k6.md).
+Browser and release qualification remain pending.
 Contract: [result reads](../design/lld/run-result-read.md).
 
 ## Implemented path

@@ -1,6 +1,7 @@
 # Automatic output and terminal settlement evidence
 
-Status: locally implemented and reviewed; connected real-agent/k6/UI and release
+Status: locally implemented and reviewed. The connected host-backend/real-agent/k6
+slice is [locally verified](native-application-k6.md); browser and release
 qualification remain pending. Contracts: [runtime](../design/lld/output-runtime.md),
 [settlement](../design/lld/output-finalization.md).
 
