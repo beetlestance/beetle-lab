@@ -7,11 +7,21 @@ import { openOutputRuntime } from '../../src/bootstrap/output-runtime/index.js';
 import { createRunnerGateway } from '../../src/adapters/outbound/runner/index.js';
 import { prepareCancelRunCommand } from '../../src/application/runs/index.js';
 import { EVENT_ROW_ALLOWANCE } from '../../src/ports/events.js';
+import type { OutputFinalizations } from '../../src/ports/output-finalization.js';
 import { storageFixture, digest, requestId } from '../storage/fixture.js';
 import { ack, request } from '../storage/events/fixtures.js';
 import { binary, descriptor, peer, seeded, sha } from '../output-transfer/peer-fixture.js';
 
 const storage = storageFixture();
+function observeFinalizations(store: OutputFinalizations) {
+  const pending = { execution: false, events: false };
+  const finalizations: OutputFinalizations = { finalize: async input => {
+    const value = await store.finalize(input);
+    if (value.kind === 'pending' && value.reason in pending) pending[value.reason as keyof typeof pending] = true;
+    return value;
+  } };
+  return { pending, finalizations };
+}
 
 it.each([false, true])('automatically publishes and durably settles with real metadata/native files, cancellation=%s', async cancelled => {
   const bytes = binary(); const empty = Buffer.alloc(0);
@@ -32,14 +42,16 @@ it.each([false, true])('automatically publishes and durably settles with real me
     organizationId: a.organizationId, workspaceId: a.workspaceId } };
   const before = await metadata.runs.getRun(key);
   const charged = (await metadata.inputs.storage()).chargedBytes;
+  const observed = observeFinalizations(metadata.finalizations);
   const runtime = await openOutputRuntime({ dataRoot: root, outputs: metadata.outputs, runs: metadata.runs, gateway,
-    finalizations: metadata.finalizations, freeSpaceReserveBytes: 0, intervalMs: 25,
+    finalizations: observed.finalizations, freeSpaceReserveBytes: 0, intervalMs: 25,
     onFailure: async error => { failures.push(error); } });
   try {
     await vi.waitFor(async () => {
       const value = await metadata.outputs.load(f.binding);
       expect(value.kind === 'adopted' && value.artifacts.every(artifact => artifact.phase === 'published')).toBe(true);
     }, { timeout: 5000, interval: 25 });
+    await vi.waitFor(() => expect(observed.pending.execution).toBe(true), { timeout: 5000, interval: 25 });
     // Real publication alone must neither finalize nor refund the original hold.
     expect((await metadata.runs.getRun(key)).outcome).toBe('pending');
     expect((await metadata.inputs.storage()).chargedBytes).toBe(charged);
@@ -57,8 +69,11 @@ it.each([false, true])('automatically publishes and durably settles with real me
     }
     const batch = request(f.binding, 0, 2);
     await metadata.events.ingest(batch);
-    await metadata.events.confirmAck({ binding: f.binding, throughSeq: 2, receipt: ack(f.binding, 2) });
     await metadata.dispatch.observe({ key: f.binding.key, journalAuthority: f.binding.journalAuthority, snapshot: released.value });
+    await vi.waitFor(() => expect(observed.pending.events).toBe(true), { timeout: 5000, interval: 25 });
+    expect((await metadata.runs.getRun(key)).outcome).toBe('pending');
+    expect((await metadata.inputs.storage()).chargedBytes).toBe(charged);
+    await metadata.events.confirmAck({ binding: f.binding, throughSeq: 2, receipt: ack(f.binding, 2) });
     await vi.waitFor(async () => expect(await metadata.runs.getRun(key)).toMatchObject({
       state: cancelled ? 'cancelled' : 'finished', outcome: cancelled ? 'inconclusive' : 'passed',
       reason: cancelled ? 'cancelled' : null, validationStatus: 'passed',
