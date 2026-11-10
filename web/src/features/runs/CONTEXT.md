@@ -27,3 +27,6 @@ Focused checks: `node node_modules/vitest/vitest.mjs run web/src/features/runs
 ExecutionActivity is composed through timeline/index; it owns one bounded projected
 activity query per scoped active attempt. See timeline/CONTEXT.md for read limits,
 retirement, useful progress and terminal drain behavior.
+RunArtifacts is composed through artifacts/index for bounded published inventory
+and browser-owned UUID-only downloads. See artifacts/CONTEXT.md for read lifetime,
+paging and transfer ownership; result declarations alone still grant no links.

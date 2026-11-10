@@ -2,7 +2,7 @@ import { render } from '@testing-library/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { captureRunEventCursor, encodeRunEventCursor, validateApi } from '@beetle/contracts/api';
-import type { RunEventPage, CreateRunRequest, Run, RunResultSnapshot, SuiteRevision, WorkspaceSettings } from '@beetle/contracts/api';
+import type { RunArtifactPage, RunEventPage, CreateRunRequest, Run, RunResultSnapshot, SuiteRevision, WorkspaceSettings } from '@beetle/contracts/api';
 import { ApiContext } from '../../app/api.js';
 import { createQueryClient } from '../../app/queries.js';
 import { ids, json, readNamespace, testClient as baseClient } from '../../app/test-fixtures.js';
@@ -79,6 +79,12 @@ export function testClient(handler: Parameters<typeof baseClient>[0]) {
   const snapshots = new Map<string, Run>();
   return baseClient(async request => {
     const url = new URL(request.path, 'http://localhost');
+    const artifact = /^(.*)\/attempts\/([a-fA-F0-9-]{36})\/artifacts$/.exec(url.pathname);
+    if (request.method === 'GET' && artifact) {
+      const current = snapshots.get(artifact[1]!);
+      if (!current) throw new Error('Artifacts requested before synthetic Run read');
+      return json(pendingArtifacts(current, artifact[2]!));
+    }
     if (url.pathname.endsWith('/events')) {
       const current = snapshots.get(url.pathname.replace(/\/events$/, ''));
       if (!current) throw new Error('Events requested before synthetic Run read');
@@ -86,10 +92,20 @@ export function testClient(handler: Parameters<typeof baseClient>[0]) {
       return json(emptyEvents(current, cursor ? captureRunEventCursor(cursor).afterSeq : 0));
     }
     const response = await handler(request);
-    if (request.method === 'GET' && /\/runs\/[^/]+$/.test(url.pathname) && response.status === 200) {
-      const checked = validateApi('Run', await response.clone().json());
-      if (checked.ok) snapshots.set(url.pathname, checked.value);
-    }
+    await captureRunRead({ request, response, url, snapshots });
     return response;
   });
+}
+
+export function pendingArtifacts(current: Run = run(), attemptId = current.activeAttemptId): RunArtifactPage {
+  return { id: current.id, scope: current.scope, attemptId, generation: 1, availability: 'pending',
+    manifestDigest: null, items: [], nextCursor: null };
+}
+
+async function captureRunRead({ request, response, url, snapshots }: {
+  request: Parameters<typeof readNamespace>[0]; response: Response; url: URL; snapshots: Map<string, Run>;
+}) {
+  if (request.method !== 'GET' || !/\/runs\/[^/]+$/.test(url.pathname) || response.status !== 200) return;
+  const checked = validateApi('Run', await response.clone().json());
+  if (checked.ok) snapshots.set(url.pathname, checked.value);
 }

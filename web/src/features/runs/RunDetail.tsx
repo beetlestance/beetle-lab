@@ -5,6 +5,7 @@ import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
 import { QueryState } from '../../components/QueryState.js';
+import { RunArtifacts } from './artifacts/index.js';
 import { ExecutionActivity } from './timeline/index.js';
 import { RunResultRead } from './RunResultRead.js';
 import { budgetFields } from './request.js';
@@ -49,6 +50,7 @@ function RunSnapshot({ run, scope, runId }: { run: Run; scope: Run['scope']; run
     <ExecutionActivity key={`${scope.organizationId}/${scope.workspaceId}/${runId}/${run.activeAttemptId}`} run={run} terminal={terminal(run)} />
     <RunResultRead key={`${scope.organizationId}/${scope.workspaceId}/${runId}/${run.activeAttemptId}`}
       scope={scope} runId={runId} run={run} terminal={terminal(run)} />
+    <RunArtifacts run={{ ...run, scope, id: runId }} terminal={terminal(run)} />
     {run.outcome === 'pending' && <p role="status">The outcome is pending, including while finalization is in progress.</p>}
   </>;
 }
