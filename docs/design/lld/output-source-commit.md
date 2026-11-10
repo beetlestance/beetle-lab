@@ -27,7 +27,7 @@ Reuse existing bounded JSON encoding, result seal, checkpoint and identity codec
 | PrivateCore | version=1, manifest:PublicManifest, root:OutputRootIdentity, checkpoint:WrapperCheckpoint, release:ReleaseEvidence |
 | PrivateSource | all PrivateCore fields plus sourceDigest |
 | SourceReceipt | version=1, journalAuthority, key:Scope, manifestDigest, sourceDigest |
-| CollectedSource | binding:SourceBinding, collection:successful OutputCollectionResult, checkpoint:WrapperCheckpoint, release:ReleaseEvidence |
+| CollectedSource | collectionId, binding:SourceBinding, collection:successful OutputCollectionResult, checkpoint:WrapperCheckpoint, release:ReleaseEvidence |
 
 SourceBinding UUIDs/digests and engine/installedIdentity use existing Offer and
 authority validators. specDigest is the immutable prepared runtime SHA256.
@@ -72,13 +72,17 @@ before consumers implement this interface.
 `readOutputSource(key: Scope): Promise<PrivateSource | null>`.
 These use existing bounded original RPC credits, request IDs, worker timeout and
 shutdown ownership. They are not admission commands or public HTTP routes.
+[Collection intent](output-collection-intent.md) must commit before invoking the
+collector; it owns the added begin/read operations and absent-source recovery gate.
 The controller captures one immutable request and evidence identity before issue.
 After a lost commit reply, read/replay that exact request; never infer a retry of
-target execution or recollection. Pending/failed native operations retain owners.
+target execution. Only the intent contract's proven-absent-source recovery permits
+artifact recollection. Pending/failed native operations retain owners.
 
 Commit is one immediate worker transaction with no filesystem/network operation:
 
-1. Validate opened journal UUID and exact original scope/intent/engine/installed
+1. Require matching pending collection intent and collectionId; validate opened
+   journal UUID and exact original scope/intent/engine/installed
    descriptor pins, reservation specDigest/create/runtime binding and disk hold.
 2. Require a definitive durable launch settlement and compare the release launch
    tuple using the existing release validator. Runtime and collection observations
@@ -87,7 +91,8 @@ Commit is one immediate worker transaction with no filesystem/network operation:
    checkpoint.wrapperSeq=accepted wrapper high-water, and exact stored EngineResult.
    stopped_verified itself remains a controller-owned observation, not a fabricated
    durable flag; a live/provisional reader may not submit this method.
-4. Derive/validate both digests from owned data, then store source and source charge
+4. Derive/validate both digests from owned data, then store source, source charge
+   and intent pending->sourced transition
    atomically. Existing exact source replay returns the original receipt without
    another charge. Same original with any different private source conflicts.
 
@@ -108,7 +113,7 @@ accepted_attempts.source_bytes is zero iff no source, otherwise equals that char
 Identity/source/digests/charge are immutable; reject UPDATE/REPLACE/DELETE and counter
 forgery, including recursive triggers off. No new source enumeration is required.
 
-Add source_bytes to every existing spool/snapshot/checkpoint/hold quota preflight
+Add source_bytes and collection_bytes to every spool/snapshot/checkpoint/hold quota preflight
 and SQL sum check. Source insert and parent charge rollback together, including
 late COMMIT failure. ACK/prune cannot refund source or hold charges. Reads exclude
 oversized/corrupt native JSON before it crosses into JavaScript. Revalidate stored
@@ -119,14 +124,16 @@ the exact PrivateSource.release observation. Capture it once; do not regenerate
 evidence IDs/timestamps between source commit, ambiguous replay and release.
 Bind receipt outside existing ReleaseEvidence as a separate required private
 release-command field when collection.state=finished. collection.failed carries no
-receipt and keeps existing settled physical-release semantics and both disk holds.
+source receipt; its intent/no-intent authorization follows the collection-intent
+contract and retains both disk holds.
 Existing already-released replay remains readable without backfilling a receipt.
 
 A source COMMIT failure cannot be relabeled collection.failed to obtain release.
 Keep physical release pending, preserve disk holds and original request, expose the
 storage failure, and reconcile exact source state. On restart, an existing source
 supplies its original release request/receipt before any recollection or restaging.
-This does not grant publication permission or refund retained native files.
+For absent source, recover the durable intent instead of converting an expired
+deadline into failed release. This grants no publication or native-file refund.
 
 ## Required acceptance
 
