@@ -4,7 +4,7 @@ Status: independently reviewed and locally verified journal/admission integratio
 Code source `b3c3cc2f28307d0651f1569c1a196820f31e8695`; integration
 `e9c2434c0546b3c1f5d9d394075f3f22d036af59` has an identical tree.
 Contract: [disk retention](../design/lld/disk-retention.md).
-Full repository verification remains pending for this source.
+The later full run failed; scoped corrections and remaining limits are below.
 
 ## Implemented behavior
 
@@ -47,6 +47,35 @@ transfer or charge twice, and retained pressure defers a subsequent original.
 Runtime and collection evidence in these fixtures is synthetic, not a real engine
 or physical-file occupancy measurement. This proves worker RPC response-loss
 recovery; it does not establish power-loss or abrupt-process crash durability.
+
+## Later integration checks
+
+Full source `228ab245d284b1778f8ad931978a78768a42fc44` passed generation, all
+project types, lint, architecture1244, docs196 and frontend build. Its test phase
+failed:4464 passed/83 failed across433 files,595.07s. Eight staging/sequential
+fixture failures reflected new immutable guards and retained disk promises.
+Seventy HTTP failures reported native loopback listen EPERM; five separate-process
+agent cases exited during fixture setup in that restricted context. This full
+result is not a passing gate or release qualification.
+
+The eight fixture failures were corrected without weakening production guards or
+stager input validation. The single composed three-file run on source
+`f2f5f577448e60e0de598482ff6ed82b67b17285` passed48 tests, real49.36s; changed-file
+lint passed, real7.92s. Integration `ee2ea59d4b675d19464723b604ffa414c85c32b8`
+has an identical tree. The66-attempt fixture now budgets every retained promise
+and independently checks66 native retained holds, exact counters and zero active
+reservations after owner closure.
+
+A socket-permitted five-case event run then passed3/failed2, real39.64s: its
+five-second child startup included repeatedly compiling the same Journal worker.
+The fixture now compiles once per task-owned test-file setup, preserving the
+five-second actual child startup and all HTTP/ACK/prune/reopen oracles. All five
+cases passed, real18.48s. Final changed-file lint passed, real1.14s; independent
+review verified the only subsequent edit extracted identical path validation to
+meet the existing complexity limit. Fixture source
+`adf40f1cd1a571c2315c53edeab725aa8a5a6ec4`, integration
+`c1c0b02a5d99dceeeaff2b93a164730f29880d3b`. No second behavior run or automatic
+full rerun was performed; runtime evidence predates that equivalent extraction.
 
 ## Remaining boundary
 

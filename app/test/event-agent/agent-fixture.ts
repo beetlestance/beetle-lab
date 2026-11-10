@@ -1,5 +1,6 @@
-import { afterEach } from 'vitest';
+import { afterEach, beforeAll } from 'vitest';
 import { join } from 'node:path';
+import { build } from 'tsup';
 import { validate, validatePrimitive } from '@beetle/contracts';
 import type { Ack, AckReceipt, AgentEvent, ControlEvent, Offer, ProtocolName } from '@beetle/contracts';
 import { ChildChannel, record } from './child-channel.js';
@@ -76,11 +77,19 @@ function attemptInspection(input: unknown): Record<string, unknown> {
   return value;
 }
 export function agentProcessFixture(root: () => string) {
-  let sequence = 0; const handles = new Set<AgentFixture>();
+  let sequence = 0; let worker: string; const handles = new Set<AgentFixture>();
+  beforeAll(async () => {
+    const directory = root();
+    if (!directory || directory.length > 4096) throw new Error('Invalid agent fixture root');
+    const outDir = join(directory, 'agent-worker');
+    await build({ entry: ['agent/src/journal/worker.ts'], outDir, format: ['esm'], platform: 'node', target: 'node24',
+      bundle: true, noExternal: [/.*/], shims: true, removeNodeProtocol: false, splitting: false, silent: true });
+    worker = join(outDir, 'worker.js');
+  }, 20000);
   afterEach(async () => { const closing = [...handles]; handles.clear(); await Promise.all(closing.map(handle => handle.close())); });
   const path = () => join(root(), `agent-journal-${++sequence}.sqlite`);
   return { path, async open(journalPath = path()) {
-    const channel = new ChildChannel({ root: root(), journal: journalPath, directory: join(root(), `agent-worker-${++sequence}`) });
+    const channel = new ChildChannel({ root: root(), journal: journalPath, worker });
     const agent = new AgentFixture(channel); handles.add(agent);
     await channel.start(); return agent;
   }, async close(agent: AgentFixture) { await agent.close(); handles.delete(agent); } };
