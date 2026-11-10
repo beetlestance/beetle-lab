@@ -36,9 +36,13 @@ afterEach(async () => { await Promise.all([...handles].map(handle => handle.abor
 afterAll(async () => { await rm(root, { recursive: true, force: true }); });
 async function open(mode = 'valid') {
   const f = eventFixture(); const path = join(root, `metadata-${++seq}.sqlite`);
-  const state = f.store.execute({ kind: 'eventLoad', binding: f.binding });
+  const state = ['oversized-insert', 'higher-prefix', 'under-ack'].includes(mode)
+    ? (f.store.execute({ kind: 'eventIngest', request: request(f.binding, 0, mode === 'oversized-insert' ? 2 : 3) }) as { state: unknown }).state
+    : mode === 'blocked-prefix'
+      ? f.store.execute({ kind: 'eventProblem', request: { binding: f.binding, after: 0, kind: 'missing_receipt' } })
+      : f.store.execute({ kind: 'eventLoad', binding: f.binding });
   const suite = f.store.execute({ kind: 'getSuite', key: { scope, id: uuid(50) } });
-  await writeFile(path + '.json', JSON.stringify({ mode, result: { state, inserted: 0, ackThrough: 0 }, suite }));
+  await writeFile(path + '.json', JSON.stringify({ mode, result: { state, inserted: mode === 'oversized-insert' ? 2 : 0, ackThrough: mode === 'higher-prefix' ? 2 : mode === 'under-ack' ? 1 : 0 }, suite }));
   const values = settingsFixture();
   const metadata = await openMetadata({ path, workerUrl: pathToFileURL(join(root, 'worker.mjs')),
     installation: values.chain.installation, runtime: observation(values.runtime) });
@@ -63,4 +67,21 @@ it.each(['wrong-state', 'bad-ack'])('fences malformed %s producer replies and re
   const rejected = expect(issued).rejects.toMatchObject({ code: 'unavailable' });
   await release(); await rejected;
   await expect(metadata.events.load(binding)).rejects.toMatchObject({ code: 'unavailable' });
+});
+
+it.each(['zero-prefix', 'oversized-insert', 'under-ack'])('fences request-inconsistent %s ingest replies despite matched authority', async mode => {
+  const { metadata, binding, release } = await open(mode);
+  const issued = metadata.events.ingest(request(binding, mode === 'under-ack' || mode === 'higher-prefix' ? 1 : 0, 1));
+  const rejected = expect(issued).rejects.toMatchObject({ code: 'unavailable' });
+  await release(); await rejected;
+  await expect(metadata.events.load(binding)).rejects.toMatchObject({ code: 'unavailable' });
+});
+
+it.each(['higher-prefix', 'blocked-prefix'])('accepts safe %s replies with ACK below the current durable prefix', async mode => {
+  const { metadata, binding, release } = await open(mode);
+  const issued = metadata.events.ingest(request(binding, mode === 'under-ack' || mode === 'higher-prefix' ? 1 : 0, 1));
+  await release();
+  expect(await issued).toMatchObject({ inserted: 0, ackThrough: mode === 'higher-prefix' ? 2 : 0,
+    state: { durableThrough: mode === 'higher-prefix' ? 3 : 0 } });
+  await expect(metadata.suites.getSuite({ scope, id: uuid(50) })).resolves.toMatchObject({ id: uuid(50) });
 });

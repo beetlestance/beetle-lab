@@ -1,7 +1,8 @@
 import { validate } from '@beetle/contracts';
-import { EVENT_BATCH_COUNT } from '../../../../ports/events.js';
-import type { EventIngestResult, EventPage, EventCursorState, EventAckRequest, EventProblemRequest, EventBinding } from '../../../../ports/events.js';
-import { captureEventBinding, expiryCoverage } from '../../../../domain/events/index.js';
+import { EVENT_STATE_BYTES } from '../../../../ports/events.js';
+import type { EventIngestResult, EventPage, EventCursorState, EventAckRequest, EventProblemRequest } from '../../../../ports/events.js';
+import { captureEventBinding, expiryCoverage, prepareEventBatch } from '../../../../domain/events/index.js';
+import type { PreparedEventBatch } from '../../../../domain/events/index.js';
 import { requireRule } from '../../../../domain/namespaces/index.js';
 import { boundedCopy } from '../input-values.js';
 import { captureDispatchKey } from '../dispatch-values.js';
@@ -25,7 +26,7 @@ export function captureEventReply(operation: EventOperation, input: unknown): Ev
   if (operation.kind === 'eventScan') { page(value as EventPage, operation.query.limit); return value; }
   const binding = operation.kind === 'eventLoad' ? operation.binding : operation.request.binding;
   if (operation.kind === 'eventIngest') {
-    ingested(value as EventIngestResult, binding);
+    return capturePreparedIngestReply(prepareEventBatch(operation.request), value);
   } else {
     const state = captureState(value, binding);
     if (operation.kind === 'eventConfirmAck') confirmation(state, operation.request);
@@ -45,9 +46,14 @@ function problem(state: EventCursorState, request: EventProblemRequest): void {
   requireRule(state.blockedReason !== null);
 }
 
-function ingested(result: EventIngestResult, binding: EventBinding): void {
-    closed(result, ['state', 'inserted', 'ackThrough']);
-    const state = captureState(result.state, binding); natural(result.inserted); natural(result.ackThrough);
-    requireRule(result.inserted <= EVENT_BATCH_COUNT && result.inserted <= state.eventCount && result.ackThrough <= state.durableThrough
-      && (state.blockedReason === null || result.inserted === 0));
+/** The SQL producer and RPC consumer share the original batch's validated facts. */
+export function capturePreparedIngestReply(batch: PreparedEventBatch, input: unknown): EventIngestResult {
+  const result = boundedCopy(input, EVENT_STATE_BYTES) as EventIngestResult;
+  requireRule(result !== null && typeof result === 'object'); closed(result, ['state', 'inserted', 'ackThrough']);
+  const state = captureState(result.state, batch.binding); natural(result.inserted); natural(result.ackThrough);
+  requireRule(result.inserted <= batch.records.length && result.inserted <= state.eventCount
+    && result.ackThrough <= state.durableThrough && state.durableThrough >= batch.after);
+  if (state.blockedReason === null) requireRule(state.durableThrough >= batch.nextCursor && result.ackThrough >= batch.nextCursor);
+  else requireRule(result.inserted === 0);
+  return result;
 }
