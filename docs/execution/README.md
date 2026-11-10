@@ -21,7 +21,8 @@ Code rules remain in [engineering](../engineering.md). Tests remain in
 ## Concurrency and roles
 
 Current environment: four active agent slots total, including the coordinator.
-Normal maximum is one coordinator plus three workers. An Astra reviewer consumes
+Default is one feature owner plus coordinator review; three workers is a maximum.
+Use extra workers only for independent ready features. An Astra reviewer consumes
 one of those three slots; it is not extra capacity. Recheck available tools/limits
 at execution time. A model's large context window is not permission to load the
 entire repository. No nested delegation by workers.

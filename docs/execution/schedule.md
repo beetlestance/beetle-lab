@@ -1,6 +1,6 @@
 # Parallelism, exclusive work and integration
 
-Status: proposed execution schedule; no agents started by this plan.
+Status: implementation policy; the session board records current assignments.
 Capacity is four active sessions including coordinator in the current environment.
 Do not confuse model slots with local CPU, Docker or test-resource capacity.
 
@@ -25,17 +25,39 @@ The table is a dispatch guide; the dependency graph is authoritative.
 
 ## Model slot use
 
-Normal: coordinator + three Sol workers. If one task is mechanical and bounded,
-replace a Sol slot with calibrated Luna. Risk review: coordinator + two workers +
-Astra; do not add Astra as a fifth session. A reviewer must not review its own code. When two packets await review, reserve
-one worker slot for review instead of launching a third builder.
-When the coordinator authored a boundary, another Sol/Astra reviews it.
+Default: one implementation owner per complete feature batch, with scoped tests
+and one independent review by the coordinator. The coordinator cannot independently
+review code it authored; assign one reviewer for that batch. Additional workers
+are useful only for ready, independent features with frozen interfaces. Three
+workers is a ceiling, not a utilization target. Use moderate reasoning for routine
+implementation; reserve high reasoning and Astra for a named unresolved risk.
+Do not stack an opinion, a separate review and another acceptance review over the
+same unchanged boundary. Reopen review only for affected corrections or new evidence.
 
 Use separate worktrees/branches from an accepted integration SHA. Each worker's
 isolated filesystem, ports, SQLite files, Compose project, artifact directories
 and fake targets have task-specific names. Tools still share the host/Docker daemon.
 Worktrees are not a security sandbox; instructions are not enforced permissions.
 Apply tool/filesystem controls where available and audit mutations independently.
+
+## Bounded continuous delivery
+
+Complete, review and integrate one feature batch, then start the next ready batch
+without asking for routine confirmation. Keep the full R0-R4 scope; a batch is a
+work boundary, not a smaller definition of completion. Authorization limits for
+push, publication and deployment remain in force.
+
+Use one short assignment and source pointers per batch; automate mechanical hash,
+path and evidence bookkeeping. Do not create a new worker for each helper or fix.
+Before starting, name the observable result, owned files, decisive checks and
+expected effort. At handoff record changed paths, actual check exits, unresolved
+limitations and token usage when exposed. Unknown usage stays unknown. Investigate
+a material overrun before spending on additional review or widening the task.
+
+Workers run affected checks once; coordinator runs changed integration seams once
+per composed batch. Reuse unchanged source-bound evidence. Full release checks
+belong to a named qualification batch. Preserve required failure and isolation
+coverage; reducing orchestration does not relax correctness gates.
 
 ## Exclusive lanes
 
