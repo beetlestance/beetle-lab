@@ -1,12 +1,13 @@
 import { render } from '@testing-library/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
-import type { CreateRunRequest, Run, RunResultSnapshot, SuiteRevision, WorkspaceSettings } from '@beetle/contracts/api';
+import { captureRunEventCursor, encodeRunEventCursor, validateApi } from '@beetle/contracts/api';
+import type { RunEventPage, CreateRunRequest, Run, RunResultSnapshot, SuiteRevision, WorkspaceSettings } from '@beetle/contracts/api';
 import { ApiContext } from '../../app/api.js';
 import { createQueryClient } from '../../app/queries.js';
-import { ids, json, readNamespace, type testClient } from '../../app/test-fixtures.js';
+import { ids, json, readNamespace, testClient as baseClient } from '../../app/test-fixtures.js';
 import { RunSavedRevision } from './index.js';
-export { ids, json, readNamespace, testClient, deferred, mount, apiError } from '../../app/test-fixtures.js';
+export { ids, json, readNamespace, deferred, mount, apiError } from '../../app/test-fixtures.js';
 export const scope = { kind: 'workspace' as const, organizationId: ids.a, workspaceId: ids.workspace };
 export const runId = '11111111-1111-4111-8111-111111111111';
 export const revisionId = '22222222-2222-4222-8222-222222222222';
@@ -59,8 +60,36 @@ export function mountLauncher(client: ReturnType<typeof testClient>['client']) {
 }
 export function runRead(request: Parameters<typeof readNamespace>[0]) {
   const organizationId = request.path.includes(ids.b) ? ids.b : ids.a;
+  if (request.path.includes('/events?')) return json(emptyEvents(run(organizationId)));
   if (request.path.includes('/runs?')) return json({ scope: { ...scope, organizationId }, items: [run(organizationId)], nextCursor: null });
   if (request.path.endsWith(`/runs/${runId}`)) return json(run(organizationId));
   if (request.path.endsWith(`/runs/${runId}/result`)) return json(resultSnapshot(run(organizationId)));
   return readNamespace(request);
+}
+
+export function emptyEvents(current: Run = run(), afterSeq = 0): RunEventPage {
+  const resumeCursor = encodeRunEventCursor({ organizationId: current.scope.organizationId, workspaceId: current.scope.workspaceId, runId: current.id,
+    attemptId: current.activeAttemptId, generation: 1, afterSeq });
+  return { id: current.id, scope: current.scope, activeAttemptId: current.activeAttemptId, generation: 1,
+    afterSeq, durableThrough: afterSeq, coverage: afterSeq === 0 ? 'pending' : 'contiguous', blockedReason: null,
+    retainedStartSeq: null, items: [], resumeCursor, nextCursor: null };
+}
+/** Existing run fixtures now expose a genuine empty event reader for the last Run read. */
+export function testClient(handler: Parameters<typeof baseClient>[0]) {
+  const snapshots = new Map<string, Run>();
+  return baseClient(async request => {
+    const url = new URL(request.path, 'http://localhost');
+    if (url.pathname.endsWith('/events')) {
+      const current = snapshots.get(url.pathname.replace(/\/events$/, ''));
+      if (!current) throw new Error('Events requested before synthetic Run read');
+      const cursor = url.searchParams.get('cursor');
+      return json(emptyEvents(current, cursor ? captureRunEventCursor(cursor).afterSeq : 0));
+    }
+    const response = await handler(request);
+    if (request.method === 'GET' && /\/runs\/[^/]+$/.test(url.pathname) && response.status === 200) {
+      const checked = validateApi('Run', await response.clone().json());
+      if (checked.ok) snapshots.set(url.pathname, checked.value);
+    }
+    return response;
+  });
 }

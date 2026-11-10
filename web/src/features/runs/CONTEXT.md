@@ -24,3 +24,6 @@ intent displays waiting, never terminal stop. Receipt replay invalidates reads;
 it cannot overwrite newer detail. Session/scope retirement fences callbacks.
 Focused checks: `node node_modules/vitest/vitest.mjs run web/src/features/runs
 --maxWorkers=1` (use repository root executable when this worktree lacks deps).
+ExecutionActivity is composed through timeline/index; it owns one bounded projected
+activity query per scoped active attempt. See timeline/CONTEXT.md for read limits,
+retirement, useful progress and terminal drain behavior.

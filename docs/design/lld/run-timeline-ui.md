@@ -41,7 +41,8 @@ show explicit retry. A page with nextCursor is backlog, not a reason for a tight
 fetch loop. Continue bounded polling until caught up; preserve recent-history notice
 when eviction occurs. Empty caught-up polls preserve rows and progress facts.
 
-On a terminal Run transition, stop ordinary polling, wait for an already-issued
+An existing read error takes precedence over terminal refresh; only manual retry
+restarts reads after that error. On a terminal Run transition, stop ordinary polling, wait for an already-issued
 read to settle, then perform one final refresh. If that final read has backlog,
 continue bounded draining until caught up or error. A terminal initial mount still
 loads recent history. Terminal state never fabricates stream completeness.
