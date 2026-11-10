@@ -1,3 +1,4 @@
+import { validate } from '@beetle/contracts';
 import type { ClientResult, ClientFailure } from '@beetle/contracts';
 import type { Owned, SourceEnvelope } from '@beetle/contracts/output-source';
 import type { EventBinding } from '../../ports/events.js';
@@ -21,8 +22,15 @@ function disposition(error: ClientFailure, original: EventBinding, pending: bool
   if (error.status !== 409 || value.attemptId !== original.key.attempt.attemptId) fail('transport');
   check(value.organizationId === original.key.attempt.organizationId
     && value.workspaceId === original.key.attempt.workspaceId, 'transport');
-  if (pending && value.reason === 'source_pending' && value.retry === 'transport') return null;
   if (value.reason === 'source_unavailable' && value.retry === 'never') fail('source_unavailable');
+  if (pending) return initialSourceDisposition(value);
+  fail('transport');
+}
+function initialSourceDisposition(value: NonNullable<ClientFailure['protocol']>): null {
+  if (value.reason === 'source_pending' && value.retry === 'transport') return null;
+  if (value.reason === 'source_absent' && value.retry === 'never') {
+    check(validate('ProtocolError', value).ok, 'transport'); fail('source_absent');
+  }
   fail('transport');
 }
 export function client(options: OutputTransferOptions, owner: TransferOwner, original: EventBinding): RunnerOutputClient {

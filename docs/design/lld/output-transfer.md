@@ -37,8 +37,13 @@ and result seal and treats sourceDigest as opaque authenticated source identity.
 Both routes require the same verified durable source and exact closure. Neither
 route creates closure. HTTP200 is their sole success status. For a known unfinished
 original with missing source/closure, use scoped ProtocolError HTTP409,
-reason=source_pending, retry=transport. A known source-less released reservation or durable fresh refusal uses HTTP409
-source_unavailable/retry=never; no fabricated result or indefinite progress. A
+reason=source_pending, retry=transport. A durable
+[source-free closure](output-absence.md) uses HTTP409 source_absent/retry=never;
+that marker permits a separate proof read, never terminal projection or credit.
+Transfer exposes a distinct source_absent error only for a fully scoped initial
+source GET409 marker. Its original must settle before the output owner handles
+the proof. A later chunk error cannot change adopted source custody into absence.
+Other unavailable sources use source_unavailable/retry=never. A
 provisional snapshot exited/lost state alone cannot prove collection is finished. Missing original remains404 attempt_not_found; physical
 mismatch409 authority_mismatch. Wrong source/manifest/artifact selector is409
 conflicting_digest; malformed/beyond-end range400 invalid_protocol. Missing,
