@@ -2,8 +2,8 @@
 
 The original proposal is superseded by the focused contracts below. This page
 preserves its decisions and navigation; it grants no additional API authority.
-Source values and Journal storage are implemented and reviewed locally. Controller
-wiring, transfer, backend publication and complete release qualification remain
+Source values, Journal storage and controller lifecycle are implemented and reviewed
+locally. Transfer, backend publication and complete release qualification remain
 separate work; see [source evidence](../../verification/output-source-journal.md).
 
 ## Settled decisions
@@ -32,7 +32,7 @@ source deletion or refunds unused backend storage.
 | Need | Owner | State |
 | --- | --- | --- |
 | Private/public values, digest preimages and bounds | [Source commit](output-source-commit.md) | Implemented/reviewed values and Journal gate |
-| Precollection intent and conservative recovery | [Collection intent](output-collection-intent.md) | Storage implemented; controller wiring in progress |
+| Precollection intent and conservative recovery | [Collection intent](output-collection-intent.md) | Storage/controller components implemented locally |
 | Journal operations, quota and receipt release | [Source Journal](output-source-journal.md) | Implemented/reviewed component |
 | Native root/result byte facts | [Collection custody](output-collection-custody.md) | Implemented/reviewed producers |
 | Bounded ranges and durable event closure | [Output transfer](output-transfer.md) | Reviewed direction; exact interfaces pending |

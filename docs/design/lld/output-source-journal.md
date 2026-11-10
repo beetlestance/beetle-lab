@@ -1,7 +1,8 @@
 # Output source Journal transactions
 
-Status: reviewed and locally implemented Journal component; controller wiring
-remains required. [Evidence](../../verification/output-source-journal.md).
+Status: reviewed and locally implemented Journal and controller components.
+[Storage evidence](../../verification/output-source-journal.md),
+[controller evidence](../../verification/controller-source-lifecycle.md).
 Value/intent contracts: [source commit](output-source-commit.md) and
 [collection intent](output-collection-intent.md). This page owns the additional
 private release operations and migration/wire allocation, not filesystem truth.

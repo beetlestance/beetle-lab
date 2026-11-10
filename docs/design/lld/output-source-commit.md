@@ -1,8 +1,9 @@
 # Durable collected output source
 
 Status: independently reviewed private contract, types and digest vectors accepted;
-pure codecs are [locally verified](../../verification/output-source-values.md), while
-Journal/controller wiring remains required. Extends [verified source](output-source.md), using existing
+pure codecs are [locally verified](../../verification/output-source-values.md), with
+[Journal/controller components integrated](../../verification/controller-source-lifecycle.md).
+Backend transfer/publication remains required. Extends [verified source](output-source.md), using existing
 [collected facts](output-collection-custody.md) and [disk holds](disk-retention.md).
 No HTTP transport, file deletion or backend publication is introduced here.
 

@@ -1,9 +1,9 @@
 # Durable output source Journal
 
-Status: reviewed local storage component. Controller lifecycle wiring, native
-collection composition and backend artifact transfer remain required. The v2
-controller's former generic finished-release call now refuses; the legacy app is
-preserved. This report does not establish a complete execution path.
+Status: reviewed local storage component. The [controller lifecycle](controller-source-lifecycle.md)
+now connects native collection/recovery and receipt release; backend artifact
+transfer remains required. The legacy app is preserved. This storage report does
+not establish a complete execution path.
 
 ## Implementation
 
@@ -68,5 +68,6 @@ they prove durable recovery ordering, not native file custody. These exact-sourc
 checks were reused at integration without rerunning them. Coordinator review
 elapsed time was not separately measured.
 
-Controller intent/source/recovery wiring and historical current-schema fixtures
-remain follow-ups. No full-suite or container build was repeated for these packets.
+Controller wiring and current-schema fixture follow-ups are integrated in the
+[controller evidence](controller-source-lifecycle.md). Backend transfer/publication
+remains required. No full-suite or container build was repeated for these packets.
