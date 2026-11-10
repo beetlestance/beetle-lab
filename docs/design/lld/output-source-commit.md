@@ -75,6 +75,22 @@ verifyOutputSource(unknown, ResultDigest)->PrivateSource; receiptForOutputSource
 (unknown, ResultDigest)->SourceReceipt. Each returns owned recursively frozen data.
 These functions grant no durable, filesystem or release authority.
 
+Accepted input grammars are exactly CollectionIntent for capture, CollectedSource
+for prepare, and complete PrivateSource for verify/receipt. Receipt creation fully
+verifies the source first; it must never extract unchecked digests or scope.
+All codecs validate locally available relationships: binding/result/release scope
+and generation agree; result.engineId=binding.engine.id; release.specDigest matches
+binding.specDigest; collectionId=release.collection.evidenceId on prepare;
+checkpoint.offset=controlBytes; verifiedBytes is the exact safe raw/control/artifact
+sum. Intent capture also matches binding/launch scope/spec, verifies checkpoint
+device=root.device and begunAt>=runtime.observedAt>launch.settledAt. Definitive
+launch epoch/startToken shape remains consistent with its disposition. Prepare
+checks the complete success/custody envelope; verify rechecks these relationships
+from its manifest/root/checkpoint/release and validates both stored digests.
+Original budget, durable intent/launch/checkpoint equality, installed authority,
+file integrity/quiescence and retained hold permission remain Journal/controller
+checks; a pure codec cannot prove them or grant release from a valid digest.
+
 Throw OutputSourceError: invalid_input for malformed fields/bounds/relationships,
 integrity for a validly shaped result/manifest/source digest mismatch, digest_failed
 for a throwing digest provider or non-lowercase/non-64-hex provider result. Reuse
