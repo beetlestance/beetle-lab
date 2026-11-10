@@ -67,5 +67,12 @@
     "request": "SourceChunkRequest",
     "response": "SourceChunk",
     "successStatus": 200
+  },
+  {
+    "name": "outputAbsence",
+    "method": "GET",
+    "path": "/runner/v1/attempts/{attemptId}/source/absence",
+    "response": "OutputAbsence",
+    "successStatus": 200
   }
 ]

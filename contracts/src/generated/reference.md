@@ -13,8 +13,9 @@ Source: `contracts/runner/v1`; regenerate with `node --import tsx contracts/scri
 | POST | /runner/v1/attempts/{attemptId}/ack | Ack | 200 | AckReceipt |
 | GET | /runner/v1/attempts/{attemptId}/source | none | 200 | SourceEnvelope |
 | POST | /runner/v1/attempts/{attemptId}/source/chunk | SourceChunkRequest | 200 | SourceChunk |
+| GET | /runner/v1/attempts/{attemptId}/source/absence | none | 200 | OutputAbsence |
 
 All error replies use ProtocolError. Events accept the `after` cursor query.
 GET sealed artifact streams/ranges belong to the artifact transport owner.
 
-Shipped schemas: AckReceipt, Ack, AgentEvent, AttemptAdmission, AttemptSnapshot, Cancellation, Capabilities, CapacityObservation, Common, ControlEvent, EngineManifest, EngineResult, ProtocolError, EventBatch, EventEnvelope, InstalledIdentity, Offer, OutputManifestCore, OutputManifest, ResultEvidence, ResultExecution, SourceBinding, SourceChunkRequest, SourceChunk, SourceEnvelope, SourceValues, StagedAttempt, SupervisorEvents, WrapperEvents.
+Shipped schemas: AckReceipt, Ack, AgentEvent, AttemptAdmission, AttemptSnapshot, Cancellation, Capabilities, CapacityObservation, Common, ControlEvent, EngineManifest, EngineResult, ProtocolError, EventBatch, EventEnvelope, InstalledIdentity, Offer, OutputAbsence, OutputManifestCore, OutputManifest, ResultEvidence, ResultExecution, SourceBinding, SourceChunkRequest, SourceChunk, SourceEnvelope, SourceValues, StagedAttempt, SupervisorEvents, WrapperEvents.

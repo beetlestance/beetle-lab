@@ -17,6 +17,7 @@ import type { schema as ProtocolErrorSchema } from './error.inference.js';
 import type { schema as EventBatchSchema } from './event-batch.inference.js';
 import type { schema as InstalledIdentitySchema } from './installed-identity.inference.js';
 import type { schema as OfferSchema } from './offer.inference.js';
+import type { schema as OutputAbsenceSchema } from './output-absence.inference.js';
 import type { schema as OutputManifestCoreSchema } from './output-manifest-core.inference.js';
 import type { schema as OutputManifestSchema } from './output-manifest.inference.js';
 import type { schema as SourceBindingSchema } from './source-binding.inference.js';
@@ -55,6 +56,7 @@ export type ProtocolError = FromSchema<typeof ProtocolErrorSchema, { references:
 export type EventBatch = FromSchema<typeof EventBatchSchema, { references: [...typeof schemas] }>;
 export type InstalledIdentity = FromSchema<typeof InstalledIdentitySchema, { references: [...typeof schemas] }>;
 export type Offer = FromSchema<typeof OfferSchema, { references: [...typeof schemas] }>;
+export type OutputAbsence = FromSchema<typeof OutputAbsenceSchema, { references: [...typeof schemas] }>;
 export type OutputManifestCore = FromSchema<typeof OutputManifestCoreSchema, { references: [...typeof schemas] }>;
 export type OutputManifest = FromSchema<typeof OutputManifestSchema, { references: [...typeof schemas] }>;
 export type SourceBinding = FromSchema<typeof SourceBindingSchema, { references: [...typeof schemas] }>;
@@ -78,6 +80,7 @@ export interface ProtocolTypes {
   EventBatch: EventBatch;
   InstalledIdentity: InstalledIdentity;
   Offer: Offer;
+  OutputAbsence: OutputAbsence;
   OutputManifestCore: OutputManifestCore;
   OutputManifest: OutputManifest;
   SourceBinding: SourceBinding;

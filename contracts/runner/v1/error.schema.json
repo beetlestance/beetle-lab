@@ -26,7 +26,8 @@
             "authority_mismatch",
             "attempt_not_found",
             "source_pending",
-            "source_unavailable"
+            "source_unavailable",
+            "source_absent"
           ]
         }
       ]
@@ -109,6 +110,28 @@
         "properties": {
           "attemptId": {
             "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "reason": {
+            "const": "source_absent"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "then": {
+        "required": [
+          "attemptId"
+        ],
+        "properties": {
+          "retry": {
+            "const": "never"
           }
         }
       }
