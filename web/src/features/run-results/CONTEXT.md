@@ -14,7 +14,7 @@ wrapping and semantic labels. Declarations grant no publication/download authori
 
 Project light/dark tokens and existing run-detail styling own the visual system.
 No new assets, palette, animation or guessed links/actions. RunDetail passes active
-requested scope/runId and unavailable/null result until a real read contract exists.
+requested scope/runId and the generated scoped read's loading/error/null/result.
 Existing query/cancellation/session ownership is unchanged. Focused checks: this
 feature's results.test.tsx, runs/detail.test.tsx, changed lint and web TypeScript.
 Synthetic DTO component tests are not browser/native/publication qualification.

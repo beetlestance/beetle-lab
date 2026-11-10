@@ -5,7 +5,7 @@ import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
 import { QueryState } from '../../components/QueryState.js';
-import { RunResultPanel } from '../run-results/index.js';
+import { RunResultRead } from './RunResultRead.js';
 import { budgetFields } from './request.js';
 import type { RunScope } from './types.js';
 import { RunCancellation } from './RunCancellation.js';
@@ -45,7 +45,8 @@ function RunSnapshot({ run, scope, runId }: { run: Run; scope: Run['scope']; run
       {budgetFields.map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{run.budget[key]}</dd></div>)}
       <div><dt>Settings versions</dt><dd>Installation {run.settingsVersions.installation}, organization {run.settingsVersions.organization}, workspace {run.settingsVersions.workspace}</dd></div>
     </dl>
-    <RunResultPanel scope={scope} runId={runId} run={run} result={null} status="unavailable" />
+    <RunResultRead key={`${scope.organizationId}/${scope.workspaceId}/${runId}/${run.activeAttemptId}`}
+      scope={scope} runId={runId} run={run} terminal={terminal(run)} />
     {run.outcome === 'pending' && <p role="status">The outcome is pending, including while finalization is in progress.</p>}
   </>;
 }
