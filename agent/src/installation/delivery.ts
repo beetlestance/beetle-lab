@@ -44,3 +44,10 @@ export async function reconcileDelivery(journal: Journal, entry: Entry): Promise
   void entry.deliveryAttempt.catch(() => undefined);
   closure(await entry.deliveryAttempt, entry);
 }
+
+/** Absence never authorizes a late metadata caller to create a closure. */
+export async function readClosedDelivery(journal: Journal, entry: Entry): Promise<boolean> {
+  const stored = await journal.readOutputDelivery(entry.key);
+  if (stored === null) return false;
+  closure(stored, entry); return true;
+}

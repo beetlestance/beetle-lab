@@ -27,6 +27,10 @@ other leases, preparation/watch originals and the final cancellation chain befor
 cached native close. Metadata closure retries reuse that completion and exact source
 receipt. Unknown/quota outcomes retain the fenced owner; serialized drives reconcile
 stored closure before replay. Source-backed late cancellation writes metadata only.
+Producer-free late callers finish all leases, fence and validate the exact existing
+closure before owner eviction; absence/uncertainty retains reconciliation ownership.
+Private guard/timeout stops run under the drive lease; issued service callbacks stay
+owned by cached watch closes before the final cancellation chain is captured.
 Contract: `docs/design/lld/output-delivery-closure.md`; no publication/deletion claim.
 
 Contract: `docs/design/lld/installation-controller.md` and `types.ts`.

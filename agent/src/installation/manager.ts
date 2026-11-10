@@ -4,7 +4,7 @@ import type { Operation } from '../backends/docker/index.js';
 import type { StopReason } from '../journal/index.js';
 import type { TimeoutReason } from '../timeout/index.js';
 import { allocation } from './recovery.js';
-import { releaseProvisional } from './ownership.js';
+import { closedSourceCandidate, releaseProvisional } from './ownership.js';
 import { budgetCopy, checkBudget } from './budget.js';
 import { createEntry, identity, scopeCopy } from './entry.js';
 import type { Entry } from './entry.js';
@@ -13,7 +13,7 @@ import type { DriveContext } from './drive.js';
 import { acquireLease } from './leases.js';
 import type { EntryLease } from './leases.js';
 import { closeWatches, retireNative } from './retirement.js';
-import { reconcileDelivery, releaseStoredSource, rememberSource } from './delivery.js';
+import { readClosedDelivery, reconcileDelivery, releaseStoredSource, rememberSource } from './delivery.js';
 import { enqueue } from './enqueue.js';
 import { structuralOffer } from './offer.js';
 import { InstallationError } from './types.js';
@@ -54,6 +54,16 @@ export class Manager implements InstallationController {
     entry.users--;
     try { await releaseProvisional(this.options.journal, this.entries, entry); }
     finally { lease.finish(); }
+    await this.releaseClosedSource(entry);
+  }
+  private async releaseClosedSource(entry: Entry): Promise<void> {
+    const key = identity(entry.key);
+    if (this.entries.get(key) !== entry || !closedSourceCandidate(entry)) return;
+    // Fence synchronously after the last public lease, before the first Journal await.
+    await retireNative(entry);
+    if (await readClosedDelivery(this.options.journal, entry)) {
+      if (this.entries.get(key) === entry) this.entries.delete(key);
+    }
   }
   private driveContext(caller: EntryLease): DriveContext {
     return { options: this.options, now: () => this.now(), guard: (entry, budget) => this.guard(entry, budget),

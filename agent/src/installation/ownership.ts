@@ -8,6 +8,16 @@ function provisional(entry: Entry): boolean {
   return !reconciling(entry) && entry.users === 0 && !entry.active && !entry.controller && !entry.preparation
     && !entry.cancellation && !entry.closing && !entry.cleanupFailed && !entry.timeout && !entry.watch;
 }
+/** Only newly created metadata owners qualify; existing native custody stays on retirement. */
+export function closedSourceCandidate(entry: Entry): boolean {
+  const native = entry.controller || entry.preparation || entry.cancellation || entry.closing
+    || entry.watch || entry.timeout || entry.plan;
+  return Boolean(entry.sourceReceipt) && !reconcilingNative(entry) && !native;
+}
+function reconcilingNative(entry: Entry): boolean {
+  return entry.retiring || entry.users !== 0 || entry.leases.size !== 0 || Boolean(entry.active)
+    || entry.cleanupFailed || entry.fresh || entry.prepared;
+}
 /** Original public operations retain this probe; uncertain journal observations keep ownership. */
 export async function releaseProvisional(journal: Journal, entries: Map<string, Entry>, entry: Entry): Promise<void> {
   const key = identity(entry.key);

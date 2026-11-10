@@ -19,7 +19,7 @@ async function drainNative(entry: Entry, caller?: EntryLease): Promise<void> {
   await drainLeases(entry, caller);
   closeWatches(entry);
   await settle(entry, [entry.preparation?.result, entry.preparation?.quiesced, entry.watchClosing, entry.timeoutClosing]);
-  // Public leases and watch closes include the callbacks which can assign this chain.
+  // Drive leases retain private stop callbacks; watch closes retain issued service callbacks.
   const cancellation = entry.cancellation;
   await settle(entry, [cancellation]);
   if (entry.cancellation !== cancellation) entry.cleanupFailed = true;

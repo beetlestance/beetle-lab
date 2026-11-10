@@ -99,7 +99,7 @@ it('late cancel, stop and canonical cancelOriginal around a committed closed sou
   const closure = await e.journal.readOutputDelivery(e.key); const cursors = await e.journal.sourceCursors(e.key);
   for (const cancel of [() => manager.cancel(e.key), () => manager.stop(e.key, 'timeout'), () => manager.cancelOriginal(e.offer)]) {
     expect((await cancel()).cancelRequested).toBe(true);
-    expect(await manager.drive(e.key, operation())).toEqual({ kind: 'released', collection: 'finished' });
+    expect(entries(manager).size).toBe(0);
   }
   await expect(manager.cancelOriginal({ ...e.offer, intentDigest: '0'.repeat(64) })).rejects.toMatchObject({ code: 'conflict' });
   expect((await e.journal.get(e.key)).lastSeq).toBe(closure!.finalAgentSeq);
