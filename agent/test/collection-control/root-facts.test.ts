@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { BigIntStats } from 'node:fs';
 import { chmod, lstat, mkdir, rename, rm, symlink, utimes, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -205,5 +205,42 @@ describe('stopped control root facts', () => {
       expect(checks).toBe(1); expect(t.opened).toHaveLength(2); expect(t.closedStats()).toBe(0);
       expect(reader.close()).toBe(closing);
     } finally { release.resolve(); await settled; }
+  });
+  it('retains post-close original metadata after the actual deadline timer settles its early result', async () => {
+    const entered = deferred<void>(); const release = deferred<void>(); let checks = 0; let originalDone = false;
+    const originalSettled = deferred<void>();
+    const t = faultPorts({});
+    const ports: ReaderPorts = { ...t.ports,
+      lstat: new Proxy(t.ports.lstat, { apply: async (target, receiver, args) => {
+        if (t.closed.length === 2) {
+          checks++; entered.resolve(); await release.promise;
+          try { return await Reflect.apply(target, receiver, args); }
+          finally { originalDone = true; originalSettled.resolve(); }
+        }
+        return Reflect.apply(target, receiver, args);
+      } }),
+    };
+    const reader = await prepared(ports); stopped(await value(reader, true));
+    let closing: Promise<void> | undefined; let outcome = 'pending';
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      closing = reader.close();
+      void closing.then(() => { outcome = 'resolved'; }, () => { outcome = 'rejected'; });
+      await entered.promise;
+      expect(vi.getTimerCount()).toBe(1); expect(t.closed).toHaveLength(2);
+      await vi.advanceTimersByTimeAsync(CONTROL_READ_MAX_MS);
+      expect(vi.getTimerCount()).toBe(0); expect(originalDone).toBe(false);
+      expect(outcome).toBe('pending'); expect(reader.close()).toBe(closing);
+      release.resolve();
+      await expect(closing).rejects.toMatchObject({ reason: 'deadline' });
+      expect(originalDone).toBe(true); expect(outcome).toBe('rejected');
+      expect(reader.close()).toBe(closing);
+      await expect(reader.close()).rejects.toMatchObject({ reason: 'deadline' });
+      expect(checks).toBe(1); expect(t.opened).toHaveLength(2); expect(t.closedStats()).toBe(0);
+    } finally {
+      release.resolve();
+      try { await Promise.allSettled([closing ?? reader.close(), originalSettled.promise]); }
+      finally { vi.useRealTimers(); }
+    }
   });
 });
