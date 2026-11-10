@@ -60,7 +60,7 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     registerNamespaceRoutes(server, { store: store.namespaces, reader: store, newId: randomUUID,
       digest, authorize: session.authorize });
     registerSuiteRoutes(server, { store: store.suites, reader: store.suites, newId: randomUUID, digest, authorize: session.authorize });
-    registerRunRoutes(server, { store: store.runs, reader: store.runs, resultReader: store.results, newId: randomUUID, digest,
+    registerRunRoutes(server, { store: store.runs, reader: store.runs, resultReader: store.results, eventReader: store.runEvents, newId: randomUUID, digest,
       now: () => new Date().toISOString(), authorize: session.authorize });
     registerSettingsRoutes(server, { store: store.settings, reader: store, digest, authorize: session.authorize });
     if (inputRuntime) inputHttp = registerInputRoutes(server, { inputs: inputRuntime.inputs, newId: randomUUID, authorize: session.authorize });

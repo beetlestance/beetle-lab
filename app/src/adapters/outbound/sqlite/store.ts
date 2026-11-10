@@ -1,5 +1,6 @@
 import { OutputAbsences, absenceOperation } from './output-absence/index.js';
 import { OutputFinalizations, finalizationOperation } from './output-finalization/index.js';
+import { RunEvents } from './run-events/index.js';
 import { RunResults } from './run-results/index.js';
 import { OutputCustody, outputOperation } from './output-custody/index.js';
 import { EventCustody, eventOperation } from './event-custody/index.js';
@@ -38,6 +39,7 @@ export class Store {
   private readonly absences: OutputAbsences;
   private readonly finalizations: OutputFinalizations;
   private readonly results: RunResults;
+  private readonly runEvents: RunEvents;
   private readonly outputs: OutputCustody;
   private readonly events: EventCustody;
   private readonly dispatchClaims: DispatchClaims;
@@ -65,6 +67,7 @@ export class Store {
     this.runs = new Runs(db, this.suites, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
     this.runReads = new RunReads(db, this.suites);
     this.results = new RunResults(db, this.runReads);
+    this.runEvents = new RunEvents(db, this.runReads);
     this.runCancellations = new RunCancellations(db, this.runReads);
     this.dispatchClaims = new DispatchClaims(db, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
     this.dispatchObservations = new DispatchObservations(db, this.runReads);
@@ -144,6 +147,7 @@ export class Store {
   execute(operation: Operation): Value {
     if (absenceOperation(operation)) return this.absences.execute(operation);
     if (finalizationOperation(operation)) return this.finalizations.execute(operation);
+    if (operation.kind === 'getRunEvents') return this.runEvents.get(operation.query);
     if (operation.kind === 'getRunResult') return this.results.get(operation.key);
     if (outputOperation(operation)) return this.outputs.execute(operation);
     if (eventOperation(operation)) return this.events.execute(operation);

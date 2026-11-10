@@ -55,6 +55,9 @@ If the first event cannot fit, report unavailable rather than loop with no progr
 Canonical event bytes plus existing row charge make this conservative: no refund,
 ACK, Run mutation, source adoption, engine effects or schema write occurs on GET.
 
+Shared pure captureRunEventCursor/encodeRunEventCursor/runEventPageMatches helpers
+are exported from contracts/api; storage and client reuse them. Cursor position
+contains organizationId/workspaceId/runId/attemptId/generation/afterSeq.
 Metadata input/reply codecs validate this new boundary. Client validation binds
 page scope/run and every event to activeAttemptId/generation, requires contiguous
 sequences starting afterSeq+1, items<=requested limit and lastSeq<=durableThrough,

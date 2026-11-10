@@ -8,3 +8,8 @@ before allocation/time/store effects. Two IDs/one timestamp are trusted inputs.
 are observational; application replies are bounded/scoped before serialization.
 No retry, dispatch, cancellation, target request or agent credential lives here.
 Contract: docs/design/lld/run-intake.md. Check: app/test/http/runs and bootstrap/run-intake.test.ts.
+
+Finite event reads use the optional RunEventReader (required in bootstrap), existing
+durable storage and a <=100-event/262144-byte page, with scoped canonical resume
+cursors and semantic validation. No SSE/ACK effects. Contract: run-event-reads.md;
+checks: app/test/run-events and contracts/test/api/client/run-events.test.ts.

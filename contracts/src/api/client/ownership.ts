@@ -2,6 +2,8 @@ import type { ApiOperation } from '../generated/operations.js';
 import type { EffectiveSettings, SettingsScope } from '../generated/types.js';
 import type { PreparedInput } from './input.js';
 import { inputOwnership } from './input-ownership.js';
+import { runEventPageMatches } from './run-event-ownership.js';
+import type { RunEventPage } from '../generated/types.js';
 import { runOwnership } from './run-ownership.js';
 
 function sameUuid(left: unknown, right: unknown): boolean {
@@ -93,7 +95,11 @@ function sourceAncestry(scope: SettingsScope, effective: EffectiveSettings): boo
 /** Structural validation precedes this route/body/result binding. Backend SQL authorization is independent. */
 export function responseOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
   if (session(operation)) return true;
-  const reply = value as OwnedReply;
+  if (operation.response === 'RunEventPage') return runEventPageMatches(value as RunEventPage, { id: input.params.runId!,
+    scope: routeOwner(input) as RunEventPage['scope'], ...input.query! });
+  return genericResponseOwnership(operation, input, value as OwnedReply);
+}
+function genericResponseOwnership(operation: ApiOperation, input: PreparedInput, reply: OwnedReply): boolean {
   if (!equal(expectedOwner(operation, input), reply.scope) || !identityMatches(operation, input, reply)) return false;
   if (reply.items && !reply.items.every(item => equal(reply.scope, item.scope))) return false;
   if (!resourceOwnership(operation, input, reply)) return false;

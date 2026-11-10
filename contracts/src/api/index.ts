@@ -9,3 +9,5 @@ export type { ApiClient, ApiClientFailure, ApiClientResult, ApiHttpOptions, ApiO
 export type { InputTransferOptions, InputTransferRequest, InputAppendRequest, InputPrepareRequest, PreparedInputBytes,
   InputTransferFailure, InputTransferResult, InputTransferClient } from './input-transfer-types.js';
 export { createInputTransferClient } from './input-transfer/index.js';
+
+export { captureRunEventCursor, encodeRunEventCursor, runEventPageMatches } from './client/run-event-ownership.js';

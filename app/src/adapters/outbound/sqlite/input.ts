@@ -1,3 +1,4 @@
+import { runEventsOperation, captureRunEventsOperation } from './run-events/index.js';
 import { absenceOperation, captureAbsenceOperation } from './output-absence/index.js';
 import { finalizationOperation, captureFinalizationOperation } from './output-finalization/index.js';
 import { resultOperation, captureResultOperation } from './run-results/index.js';
@@ -118,6 +119,9 @@ function checkedExtendedOperation(operation: Operation): boolean {
   return settingsRead(operation);
 }
 export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operation {
+  if (runEventsOperation(input)) {
+    try { return captureRunEventsOperation(input); } catch { throw new StorageError('invalid_input'); }
+  }
   if (absenceOperation(input)) return checkedAbsenceOperation(input);
   return checkedOutputOperation(input, runtimeTtlMs);
 }
@@ -168,7 +172,7 @@ function dataProperty(value: unknown, key: string): unknown {
   return descriptor && 'value' in descriptor ? descriptor.value : undefined;
 }
 export function operationMessageLimit(operation: Operation): number {
-  if (absenceOperation(operation) || finalizationOperation(operation) || resultOperation(operation) || artifactOperation(operation)) return 4096;
+  if (compactOperation(operation)) return 4096;
   if (outputOperation(operation)) return 79872;
   if (eventOperation(operation)) return eventRequestLimit(operation);
   if (dispatchOperation(operation)) return dispatchRequestLimit(operation);
@@ -179,13 +183,20 @@ export function operationMessageLimit(operation: Operation): number {
 
 /** One two-original allowance is shared by suites, Offers and event batches. */
 export function largeOperation(operation: Operation): boolean {
-  return suiteOperation(operation) || ['dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource', 'getRunResult'].includes(dataProperty(operation, 'kind') as string);
+  return suiteOperation(operation) || ['dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource', 'getRunResult', 'getRunEvents'].includes(dataProperty(operation, 'kind') as string);
 }
 export function operationReplyLimit(operation: Operation): number {
   if (absenceOperation(operation) || finalizationOperation(operation)) return 4096;
+  if (runEventsOperation(operation)) return 262144;
   if (resultOperation(operation)) return 73728;
   if (outputOperation(operation)) return outputReplyLimit(operation);
   if (eventOperation(operation)) return eventReplyLimit(operation);
   if (dispatchOperation(operation)) return dispatchReplyLimit(operation);
   return operation.kind === 'getRevision' ? 2_097_152 : Math.max(1_048_576, operationMessageLimit(operation));
+}
+
+/** Fixed small control/read requests never use large payload envelopes. */
+function compactOperation(operation: Operation): boolean {
+  return runEventsOperation(operation) || absenceOperation(operation) || finalizationOperation(operation)
+    || resultOperation(operation) || artifactOperation(operation);
 }
