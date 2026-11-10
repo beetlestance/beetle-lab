@@ -16,7 +16,7 @@ if(++counts[key]>4)process.exit(3);r.writeHead(key==='ready'?200:key==='work'?${
   f.docker.run(['run', '-d', '--pull', 'never', '--name', f.target, '--label', `dev.beetle.qualification=${f.id}`,
     '--network', f.network, '--network-alias', 'target', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges:true',
     '--cpus', '0.5', '--memory', '128m', '--pids-limit', '64', '--log-driver', 'local', '--log-opt', 'max-size=1m',
-    '--log-opt', 'max-file=1', '--entrypoint', 'node', f.agentImage.Id, '-e', program]);
+    '--log-opt', 'max-file=2', '--entrypoint', 'node', f.agentImage.Id, '-e', program]);
   await createAgent(f);
   return agentOrigin(f.docker.run(['port', f.agent, '4312/tcp']));
 }
@@ -26,7 +26,7 @@ async function createAgent(f: Fixture): Promise<void> {
   f.docker.run(['create', '--pull', 'never', '--name', f.agent, '--label', `dev.beetle.qualification=${f.id}`, '--network', f.network,
     '--publish', '127.0.0.1::4312', '--user', f.user, '--group-add', '0', '--read-only', '--cap-drop', 'ALL',
     '--security-opt', 'no-new-privileges:true', '--cpus', '1', '--memory', '512m', '--pids-limit', '128',
-    '--log-driver', 'local', '--log-opt', 'max-size=1m', '--log-opt', 'max-file=1',
+    '--log-driver', 'local', '--log-opt', 'max-size=1m', '--log-opt', 'max-file=2',
     '--tmpfs', `/tmp:rw,nosuid,nodev,size=33554432,uid=${f.uid},gid=${f.gid}`, ...mounts,
     '--mount', 'type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock',
     '--env', `BEETLE_AGENT_CONFIG_FILE=${f.configPath}`, f.agentImage.Id]);

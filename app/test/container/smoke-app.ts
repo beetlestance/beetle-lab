@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { validate } from '@beetle/contracts';
+import type { RunResultSnapshot } from '@beetle/contracts/api';
 import { Docker, request } from '../../../agent/test/container/docker.js';
 import type { Inspection } from '../../../agent/test/container/docker.js';
 import { fixture, digest } from '../../../agent/test/container/fixture.js';
@@ -33,7 +34,7 @@ async function fingerprints(worker: URL): Promise<Record<string, string>> {
   const workerStat = await stat(worker); assert(workerStat.isFile() && workerStat.size <= 8_388_608);
   entries.push(['metadataWorker', digest(await readFile(worker))]); return Object.fromEntries(entries);
 }
-async function verifyNative(physical: Awaited<ReturnType<typeof inspectClosed>>) {
+async function verifyNative(physical: Awaited<ReturnType<typeof inspectClosed>>, publicResult: RunResultSnapshot['result']) {
   const offer = physical.offer;
   // Only this persisted public enqueue original names the execution. Fixture's random Offer never triggers load.
   f.offer = offer; f.engine = runtimeName({ installationId: f.id, ...offer, generation: 1 });
@@ -43,6 +44,7 @@ async function verifyNative(physical: Awaited<ReturnType<typeof inspectClosed>>)
       'x-beetle-journal-authority': String(physical.receipt.journal_authority) } });
   assert.equal(response.status, 200);
   const snapshot = validate('AttemptSnapshot', JSON.parse(response.body) as unknown); assert(snapshot.ok);
+  assert(publicResult); assert.deepEqual(snapshot.value.result, publicResult);
   f.docker.run(['stop', '-t', '10', f.agent]);
   assert.equal(f.docker.json<Inspection[]>(['inspect', f.agent])[0]!.State.ExitCode, 0);
   const engines = f.docker.run(['ps', '-aq', '--no-trunc', '--filter', `label=dev.beetle.installation=${f.id}`]).split('\n').filter(Boolean);
@@ -70,7 +72,7 @@ try {
   assert.deepEqual(value(await reopened.api.getRunResult({ params: terminal.params })), terminal.result);
   evidence.reopenPublicRequests = reopened.requestCount(); await app.close(); app = undefined; applicationClosed = true;
   assert.deepEqual(await inspectClosed(f, terminal.run, terminal.result), physical);
-  evidence.targetCounts = targetCounts(f); Object.assign(evidence, await verifyNative(physical), { engineExecutions: 1 });
+  evidence.targetCounts = targetCounts(f); Object.assign(evidence, await verifyNative(physical, terminal.result.result), { engineExecutions: 1 });
   evidence.status = 'passed'; evidence.phase = 'finished';
 } catch (error) {
   evidence.status = 'failed'; evidence.failure = error instanceof Error ? `${error.name}: ${error.message}`.slice(0, 1024) : 'Unknown qualification failure';
