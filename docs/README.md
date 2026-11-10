@@ -28,6 +28,7 @@ released application until the rewrite is qualified.
 | Inspect capacity wire/cache evidence | [Capacity sources](verification/capacity-wire.md) | Original expiry, revocation/replay, scoped and compiled checks, unresolved full-lane timing |
 | Inspect integrated run controls | [Run controls](verification/run-controls.md) | Scoped run UI, agent original carrier, independent reviews and full local gate |
 | Inspect collected output facts | [Output custody facts](verification/output-custody-facts.md) | Immutable private root/raw-length facts after original closes; durable source authority pending |
+| Inspect retained execution disk | [Disk retention](verification/disk-retention.md) | Atomic holds, release/abort accounting and worker reply-loss replay; source/cleanup pending |
 | Inspect actual agent event recovery | [Agent event seam](verification/event-agent.md) | Separate-process real HTTP/Journal ACK/prune/reopen and immutable physical authority; no engine/result claim |
 | Inspect durable event transport | [Event custody](verification/event-custody.md) | Durable ingestion/ACK, lost-response recovery, independent SQL ordering oracle and remaining real-agent/result work |
 | Inspect durable cancellation | [Cancellation](verification/cancellation.md) | Scoped intent, atomic fresh refusal, lost-reply custody, UI recovery, full local gate and native limits |

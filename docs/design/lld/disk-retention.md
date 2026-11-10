@@ -1,7 +1,8 @@
 # Agent disk retention accounting
 
-Status: accepted implementation contract and scalar types; journal/policy wiring
-and its independent acceptance remain required before this feature is implemented. Scope: logical disk promises retained after execution release.
+Status: journal/policy wiring independently reviewed and integrated; focused local
+checks passed. [Evidence](../../verification/disk-retention.md) records remaining
+full verification and qualification. Scope: logical disk promises retained after execution release.
 This is not a source manifest, deletion API or physical filesystem quota.
 
 ## Private interface and limits

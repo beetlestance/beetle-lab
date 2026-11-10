@@ -56,6 +56,9 @@ backend transport path. [Actual agent event recovery](docs/verification/event-ag
 adds separate-process HTTP/Journal pruning/reopen evidence; artifact/result qualification remains.
 No complete R0-R4 release slice is claimed. Native engine component evidence does
 not establish the new backend path, Compose install or supported architecture matrix.
+[Disk retention evidence](docs/verification/disk-retention.md) records integrated
+atomic output/staging holds through execution release and391 focused passing tests;
+source receipts, cleanup and complete result transfer/finalization remain pending.
 
 ## Delivery order
 
