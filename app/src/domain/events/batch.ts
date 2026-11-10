@@ -9,13 +9,12 @@ import type { EventBatchInput, EventBinding, EventRecord, PreparedEventBatch } f
 function readCarrier(input: EventBatchInput): { binding: unknown; after: unknown; batch: unknown } {
   if (input === null || typeof input !== 'object'
     || ![Object.prototype, null].includes(Object.getPrototypeOf(input) as object | null)) throw new EventBatchError('invalid_batch');
-  let count = 0;
-  for (const key in input) {
-    if (!Object.hasOwn(input, key)) continue;
-    if (++count > 3 || !['binding', 'after', 'batch'].includes(key)) throw new EventBatchError('invalid_batch');
+  const keys = Reflect.ownKeys(input);
+  if (keys.length !== 3 || keys.some(key => typeof key !== 'string' || !['binding', 'after', 'batch'].includes(key))) {
+    throw new EventBatchError('invalid_batch');
   }
   const fields = ['binding', 'after', 'batch'].map(key => Object.getOwnPropertyDescriptor(input, key));
-  if (count !== 3 || fields.some(field => !field || !field.enumerable || !('value' in field))) throw new EventBatchError('invalid_batch');
+  if (fields.some(field => !field || !field.enumerable || !('value' in field))) throw new EventBatchError('invalid_batch');
   return { binding: fields[0]!.value as unknown, after: fields[1]!.value as unknown, batch: fields[2]!.value as unknown };
 }
 function carrier(input: EventBatchInput): ReturnType<typeof readCarrier> {

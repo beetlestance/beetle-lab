@@ -114,11 +114,18 @@ recordProblem binds the same original and after<=durableThrough; it never advanc
 either cursor. Typed problems are cursor_expired, quota_exhausted, missing_receipt
 and replay_conflict. Missing/expired information must come from a matched private
 reply under the stored UUID, not generic404/authority mismatch. cursor_expired
-requires retainedStartSeq and sets coverage partial permanently; block cross-gap
+requires retainedStartSeq>after+1; use overflow-safe differences and the shared
+expiryCoverage helper. In the problem transaction compare against the CURRENT
+durableThrough: if retainedStartSeq<=durableThrough+1, local history covers the
+stale request's missing interval, so return unchanged contiguous state. Only a
+gap beyond that prefix sets coverage partial permanently; block cross-gap
 ACK until a separate reconstruction contract exists. Snapshot/seal names cannot
 reconstruct missing intervals. Other problems retain the known contiguous prefix
 and block further event mutation until explicit recovery authority is implemented.
 Repeated identical problems do not rewrite counters or change their first evidence.
+Runtime skips ingestion and further network mutations for blocked states while
+retaining diagnostics and advancing fairness. Expected quota blockage is scoped to
+that attempt; native disk/worker failure remains a fatal retained-owner failure.
 
 ## Runtime and shutdown
 

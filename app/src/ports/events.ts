@@ -46,7 +46,7 @@ export interface EventProblemRequest {
   readonly binding: EventBinding;
   readonly after: number;
   readonly kind: EventProblem;
-  /** Required only for a matched cursor_expired reply. Never advances the cursor. */
+  /** Matched valid expiry; ignore when current local durability covers its gap. */
   readonly retainedStartSeq?: number;
 }
 

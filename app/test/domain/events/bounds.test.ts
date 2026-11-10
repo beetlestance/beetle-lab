@@ -76,6 +76,12 @@ it('bounds carrier proxy errors without exposing caller diagnostics', () => {
   expect(() => prepareEventBatch(input)).toThrow('Event batch invalid_batch');
 });
 
+it.each(['hidden', 'symbol'])('rejects an extra %s own carrier field', kind => {
+  const input = { binding: binding(), after: 0, batch: events() };
+  Object.defineProperty(input, kind === 'symbol' ? Symbol('extra') : 'extra', { value: 1 });
+  expect(() => prepareEventBatch(input)).toThrow('invalid_batch');
+});
+
 it.each([-1, 0.5, Infinity, NaN, Number.MAX_SAFE_INTEGER + 1])('rejects invalid starting cursor %s', after => {
   expect(() => prepareEventBatch({ binding: binding(), after, batch: events() })).toThrow('invalid_batch');
 });
