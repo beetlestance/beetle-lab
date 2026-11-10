@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { prepareRuntime, runtimeName } from '../../src/backends/docker/index.js';
 import { fixture, operation, scope } from './fixtures.js';
 import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
+import { configuration, observation } from '../admission/fixtures.js';
+import { estimateStaging } from '../../src/admission/index.js';
 const f = fixture();
 describe('installation durable composition, synthetic Docker only', () => {
   it('uses real Stager, SQLite, Supervisor and controller; replay never redispatches', async () => {
@@ -53,11 +56,28 @@ describe('installation durable composition, synthetic Docker only', () => {
   });
   it('retires original controllers across more than 64 sequential real staged attempts', async () => {
     const e = await f.setup(); const manager = e.create();
+    const disk = { outputBytes: e.offer.budget.outputBytes * 66,
+      stagingBytes: estimateStaging(e.offer).totalBytes * 66 };
+    const config = configuration(); config.maxTimeoutMs = e.offer.budget.timeoutMs;
+    config.pool = { ...config.pool, ...disk };
+    const capacity = observation(e.time.wall()); capacity.capacity = { ...capacity.capacity, ...disk };
+    await e.owner.admission({ kind: 'configure', configuration: config });
+    await e.owner.admission({ kind: 'observe', observation: capacity });
     for (let i = 1; i <= 66; i++) {
       const offer = { ...e.offer, attemptId: f.job(i).attemptId };
       await e.accepted(manager, offer); await e.finish(manager, offer);
     }
     expect(e.backend.starts).toBe(66); expect(e.manager.size).toBe(0);
     await manager.close();
+    await f.close(e.owner);
+    const db = new DatabaseSync(e.journalPath, { readOnly: true });
+    try {
+      expect(db.prepare("SELECT COUNT(*) AS count FROM disk_holds WHERE phase='retained'").get()?.count).toBe(66);
+      expect(db.prepare('SELECT * FROM disk_retention_stats').get()).toMatchObject({ held_count: 66,
+        held_output_bytes: disk.outputBytes, retained_output_bytes: disk.outputBytes,
+        held_staging_bytes: disk.stagingBytes, retained_staging_bytes: disk.stagingBytes });
+      expect(db.prepare('SELECT COUNT(*) AS count FROM reservations WHERE charged=1').get()?.count).toBe(0);
+      expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+    } finally { db.close(); }
   }, 30000);
 });
