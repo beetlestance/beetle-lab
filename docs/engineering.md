@@ -92,8 +92,15 @@ closes, remove its work list without deleting durable rationale.
 Generated references stay separate and indexed. Check internal links, page size,
 required contract fields and stale API/schema output in CI. A source edit touching
 an interface must update its owner spec or state explicitly that the interface
-is unchanged. Use scoped tests during development and one required CI verification
-for the reviewed source; no repeated heavy builds for prose changes.
+is unchanged. Workers run focused behavior tests and changed-file lint; typecheck
+the affected project when types or interfaces change. Reuse source-bound evidence
+rather than repeating it merely for another green result. The coordinator checks
+affected integration boundaries once per composed batch. Reserve full local
+verification for major milestones, release candidates or changes with broad
+impact; CI requirements remain in force. Do not automatically rerun the full suite
+after each packet or fixture correction, or repeat heavy builds for prose changes.
+Record elapsed time per command and category. Check socket/container prerequisites
+before issuing their tests; environment denial must not weaken an assertion.
 
 ## Functional test resources
 
