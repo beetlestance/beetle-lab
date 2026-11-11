@@ -5,6 +5,7 @@ import { fixture } from '../fixtures.js';
 import { baseUrl, load, organizationId, params, reply } from './helpers.js';
 
 const files: Partial<Record<keyof ApiTypes, string>> = {
+  RunMetricSeriesPage: 'run-metric-series-pending', RunMetricSamplesPage: 'run-metric-samples',
   RunResultSnapshot: 'run-result-pending', RunEventPage: 'run-events-pending', RunArtifactPage: 'run-artifacts-pending',
   Run: 'run', RunPage: 'run-page', CreateRunRequest: 'create-run', CancelRunRequest: 'cancel-run',
   InputRecord: 'input', InputReceipt: 'input-receipt', InputPage: 'input-page',
@@ -28,7 +29,8 @@ async function operationReply(operation: ApiOperation): Promise<Record<string, u
   return await fixture(`valid/${file}.json`) as Record<string, unknown>;
 }
 async function queryFixture(operation: ApiOperation) {
-  return ['listRunEvents', 'listRunArtifacts'].includes(operation.name)
+  if (operation.name === 'getRunMetricSamples') return {limit: 100, seriesOrdinal: 0};
+  return ['listRunEvents', 'listRunArtifacts', 'listRunMetricSeries'].includes(operation.name)
     ? { limit: 100 } : await load('page-query', 'PageQuery');
 }
 async function exchange(operation: ApiOperation) {

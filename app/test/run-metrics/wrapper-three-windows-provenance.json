@@ -1,0 +1,13 @@
+{
+  "sourceCommit": "a635074c8b924b87631b1ccf44239916d350cd55",
+  "harnessSha256": "9f8fc2c2f7bdce882ff9c65ed961e65042c8fd5f028a98b8ac7c051832443dc8",
+  "fixtureSha256": "d73ceedcf74a33c9656d1275f12b0899669d9f518fe2f4ee412625445f263e8a",
+  "bytes": 5166,
+  "command": "node node_modules/vitest/vitest.mjs run --config .agent-work/metric-fixture.config.mts",
+  "exit": 0,
+  "durationSeconds": 3.68,
+  "scope": "Actual staged wrapper composition with synthetic native process/builder; no actual k6/Docker/browser claim",
+  "points": "duration3ms at source offsets0,3000,6000; three windows with gaps",
+  "generation": 1,
+  "attemptId": "00000000-0000-4000-8000-000000000170"
+}

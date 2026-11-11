@@ -4,3 +4,6 @@ export { distributionPercentile } from './percentile.js';
 export { DistributionError } from './distribution-types.js';
 export type { DurationDistribution, DurationPercentile, PercentileEstimate } from './distribution-types.js';
 export type { MetricKind, MetricScope, MetricTags, NumericTotal, SeriesTotal, MetricWindow } from './series-types.js';
+export { captureMetricSeries } from './capture-series.js';
+export { captureMetricWindow } from './capture-window.js';
+export { metricSeriesIdentity } from './identity.js';

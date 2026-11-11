@@ -21,9 +21,9 @@ it.each(['finished', 'cancelled', 'errored'] as const)('stops polling on %s and 
     reason: state === 'finished' ? null : state === 'cancelled' ? 'cancelled' : 'execution_lost', cancellationRequested: state === 'cancelled' };
   const fixture = testClient(request => json(request.path.endsWith('/result') ? resultSnapshot(terminal) : terminal)); const view = mount(fixture.client, path);
   await screen.findAllByText(state); await screen.findByText(/Metrics and result artifacts are unavailable/);
-  expect(fixture.records.filter(record => !record.path.includes('/events?') && !record.path.includes('/artifacts?'))).toHaveLength(2);
+  expect(fixture.records.filter(record => !record.path.includes('/events?') && !record.path.includes('/artifacts?') && !record.path.includes('/metrics?'))).toHaveLength(2);
   await act(() => vi.advanceTimersByTimeAsync(6000));
-  expect(fixture.records.filter(record => !record.path.includes('/events?') && !record.path.includes('/artifacts?'))).toHaveLength(2); view.unmount();
+  expect(fixture.records.filter(record => !record.path.includes('/events?') && !record.path.includes('/artifacts?') && !record.path.includes('/metrics?'))).toHaveLength(2); view.unmount();
 });
 it('polls nonterminal detail at two seconds then stops on the actual terminal result', async () => {
   vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });

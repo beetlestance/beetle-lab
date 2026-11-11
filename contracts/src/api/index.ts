@@ -14,3 +14,5 @@ export { captureRunEventCursor, encodeRunEventCursor, runEventPageMatches } from
 export { RUN_ARTIFACT_CONTENT_ROUTE, runArtifactContentPath } from './artifact-content.js';
 
 export { encodeRunArtifactCursor, captureRunArtifactCursor, runArtifactPageMatches } from './client/run-artifact-ownership.js';
+
+export { encodeRunMetricSeriesCursor, captureRunMetricSeriesCursor, encodeRunMetricSamplesCursor, captureRunMetricSamplesCursor, runMetricSeriesPageMatches, runMetricSamplesPageMatches } from './client/run-metric-ownership.js';

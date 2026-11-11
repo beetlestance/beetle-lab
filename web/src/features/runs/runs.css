@@ -25,3 +25,14 @@
 .artifact-table th { color: var(--muted); font-size: var(--text-small); }
 .artifact-table td { min-width: 9rem; }
 .artifact-table .artifact-sha { min-width: 12rem; max-width: 24rem; }
+
+.run-metrics { border-top: 1px solid var(--border); margin-top: var(--space-8); padding-top: var(--space-6); }
+.run-metrics select { max-width: 100%; display: block; margin-top: var(--space-2); }
+.metric-chart { width: 100%; height: auto; min-height: 160px; color: var(--ink); }
+.metric-chart text { fill: var(--muted); font-size: 10px; }
+.metric-axis { stroke: var(--border-strong); }
+.metric-line { fill: none; stroke: var(--accent); stroke-width: 2; }
+.metric-dot { fill: var(--accent); }
+.metric-table { overflow-x: auto; max-height: 24rem; }
+.metric-table table { width: 100%; border-collapse: collapse; }
+.metric-table th, .metric-table td { text-align: left; padding: var(--space-2); border-bottom: 1px solid var(--border); }

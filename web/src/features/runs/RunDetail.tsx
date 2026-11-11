@@ -1,3 +1,4 @@
+import { RunMetrics } from './metrics/index.js';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import type { Run } from '@beetle/contracts/api';
@@ -47,9 +48,10 @@ function RunSnapshot({ run, scope, runId }: { run: Run; scope: Run['scope']; run
       {budgetFields.map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{run.budget[key]}</dd></div>)}
       <div><dt>Settings versions</dt><dd>Installation {run.settingsVersions.installation}, organization {run.settingsVersions.organization}, workspace {run.settingsVersions.workspace}</dd></div>
     </dl>
-    <ExecutionActivity key={`${scope.organizationId}/${scope.workspaceId}/${runId}/${run.activeAttemptId}`} run={run} terminal={terminal(run)} />
-    <RunResultRead key={`${scope.organizationId}/${scope.workspaceId}/${runId}/${run.activeAttemptId}`}
+    <ExecutionActivity key={`activity:${scope.organizationId}/${scope.workspaceId}/${runId}/${run.activeAttemptId}`} run={run} terminal={terminal(run)} />
+    <RunResultRead key={`result:${scope.organizationId}/${scope.workspaceId}/${runId}/${run.activeAttemptId}`}
       scope={scope} runId={runId} run={run} terminal={terminal(run)} />
+    <RunMetrics run={{ ...run, scope, id: runId }} terminal={terminal(run)} />
     <RunArtifacts run={{ ...run, scope, id: runId }} terminal={terminal(run)} />
     {run.outcome === 'pending' && <p role="status">The outcome is pending, including while finalization is in progress.</p>}
   </>;

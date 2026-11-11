@@ -1,3 +1,5 @@
+import { runMetricSeriesPageMatches, runMetricSamplesPageMatches } from './run-metric-ownership.js';
+import type { RunMetricSeriesPage, RunMetricSamplesPage } from '../generated/types.js';
 import type { ApiOperation } from '../generated/operations.js';
 import type { EffectiveSettings, SettingsScope } from '../generated/types.js';
 import type { PreparedInput } from './input.js';
@@ -101,6 +103,10 @@ export function responseOwnership(operation: ApiOperation, input: PreparedInput,
     scope: routeOwner(input) as RunEventPage['scope'], ...input.query! });
   if (operation.response === 'RunArtifactPage') return runArtifactPageMatches(value as RunArtifactPage, { id: input.params.runId!,
     attemptId: input.params.attemptId!, scope: routeOwner(input) as RunArtifactPage['scope'], ...input.query! });
+  if (operation.response === 'RunMetricSeriesPage') return runMetricSeriesPageMatches(value as RunMetricSeriesPage, { id: input.params.runId!,
+    attemptId: input.params.attemptId!, scope: routeOwner(input) as RunMetricSeriesPage['scope'], ...input.query! });
+  if (operation.response === 'RunMetricSamplesPage') return runMetricSamplesPageMatches(value as RunMetricSamplesPage, { id: input.params.runId!,
+    attemptId: input.params.attemptId!, scope: routeOwner(input) as RunMetricSamplesPage['scope'], ...input.query! });
   return genericResponseOwnership(operation, input, value as OwnedReply);
 }
 function genericResponseOwnership(operation: ApiOperation, input: PreparedInput, reply: OwnedReply): boolean {

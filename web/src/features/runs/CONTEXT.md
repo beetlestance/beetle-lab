@@ -30,3 +30,5 @@ retirement, useful progress and terminal drain behavior.
 RunArtifacts is composed through artifacts/index for bounded published inventory
 and browser-owned UUID-only downloads. See artifacts/CONTEXT.md for read lifetime,
 paging and transfer ownership; result declarations alone still grant no links.
+RunMetrics composes sealed history through metrics/index; one catalogue page and
+bounded replacement chart views. See metrics/CONTEXT.md for paging and ownership.

@@ -1,3 +1,5 @@
+import { createRunMetricsService } from '../application/run-metrics/index.js';
+import { registerRunMetricRoutes } from '../adapters/inbound/http/run-metrics/index.js';
 import { registerRunArtifactRoutes } from '../adapters/inbound/http/run-artifacts/index.js';
 import { captureAgentRuntime, agentMetadata, openAgentRuntime } from './agent-runtime.js';
 import type { AgentRuntime, AgentRuntimeOptions } from './agent-runtime.js';
@@ -8,7 +10,7 @@ import { registerRunRoutes } from '../adapters/inbound/http/runs/index.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { encodeJson } from '@beetle/contracts';
 import { API_MAXIMUM_JSON_BYTES, apiSchemas } from '@beetle/contracts/api';
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, onRequestAsyncHookHandler } from 'fastify';
 import { createApiServer } from '../adapters/inbound/http/api-errors.js';
 import { configureSchemaCompilers } from '../adapters/inbound/http/schema-compilers.js';
 import { registerNamespaceRoutes } from '../adapters/inbound/http/namespaces/index.js';
@@ -50,7 +52,9 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
   const server = createApiServer({ classify: classifyMetadataError });
   let metadata: Metadata | undefined;
   let agentRuntime: AgentRuntime | undefined;
+  let metricHttp: {close(): Promise<void>} | undefined;
   let artifactHttp: {close(): Promise<void>} | undefined;
+  const closeMetrics = () => metricHttp?.close();
   let inputRuntime: InputRuntime | undefined; let inputHttp: InputHttp | undefined;
   try {
     configureSchemaCompilers(server, { schemas: apiSchemas, encodeJson, maximumResponseBytes: API_MAXIMUM_JSON_BYTES });
@@ -66,20 +70,23 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
       now: () => new Date().toISOString(), authorize: session.authorize });
     artifactHttp = registerRunArtifactRoutes(server, {reader: store.runArtifacts, authorize: session.authorize,
       ...(agentRuntime?.publishedBytes ? {bytes: agentRuntime.publishedBytes} : {})});
+    metricHttp = metricRoutes(server, store, agentRuntime, session.authorize);
     registerSettingsRoutes(server, { store: store.settings, reader: store, digest, authorize: session.authorize });
     if (inputRuntime) inputHttp = registerInputRoutes(server, { inputs: inputRuntime.inputs, newId: randomUUID, authorize: session.authorize });
     server.addHook('onClose', async () => {
       session.close();
+      await closeMetrics();
       await artifactHttp?.close();
       await closeApplicationStore(agentRuntime, inputRuntime, store);
     });
     let closing: Promise<void> | undefined;
     const close = (): Promise<void> => {
       session.close();
+      const metrics = closeMetrics();
       const downloads = artifactHttp?.close();
       if (!closing) {
         closing = Promise.resolve().then(async () => {
-          const results = await Promise.allSettled([downloads, Promise.resolve().then(() => inputHttp?.close()),
+          const results = await Promise.allSettled([metrics, downloads, Promise.resolve().then(() => inputHttp?.close()),
             Promise.resolve().then(() => agentRuntime?.close()), Promise.resolve().then(() => inputRuntime?.close()),
             Promise.resolve().then(() => server.close())]);
           throwCloseFailures(results);
@@ -94,10 +101,16 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
       updateRuntime: (observation: RuntimeObservation | null) => store.updateRuntime(observation), close });
   } catch (error) {
     session.close();
-    const resources = await Promise.allSettled([artifactHttp?.close(), Promise.resolve().then(() => inputHttp?.close()),
+    const resources = await Promise.allSettled([closeMetrics(), artifactHttp?.close(), Promise.resolve().then(() => inputHttp?.close()),
       Promise.resolve().then(() => agentRuntime?.close()), Promise.resolve().then(() => inputRuntime?.close()), Promise.resolve().then(() => server.close())]);
     const store = await Promise.allSettled([metadata?.abort()]);
     throwCloseFailures([{ status: 'rejected', reason: error }, ...resources, ...store]);
     throw error;
   }
+}
+function metricRoutes(server: FastifyInstance, store: Metadata, agent: AgentRuntime | undefined, authorize: onRequestAsyncHookHandler) {
+  return registerRunMetricRoutes(server, {authorize, service: createRunMetricsService({artifacts: store.runArtifacts,
+    ...(agent?.publishedBytes ? {bytes: agent.publishedBytes} : {}),
+    createDigest: () => {const hash = createHash('sha256'); return {update: bytes => {hash.update(bytes);}, hex: () => hash.digest('hex')};},
+  })});
 }
