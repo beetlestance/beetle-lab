@@ -74,3 +74,14 @@ RSS/overhead, native architecture or release qualification follows from this
 slice. One initial denied-listener setup may have left a bounded synthetic temp
 root whose path was unlogged; subsequent fixture cleanup now covers setup failure.
 No shared temporary-directory pruning was performed.
+
+## Shared projection for live consumers
+
+Numeric value projection moved to contracts/metrics in9864887. The ratio and
+percentile calculation body is byte-identical to the reviewed history implementation;
+the app retains its fixed unavailable error mapping. No live feed is claimed here.
+Affected history checks passed3/3 after task-local dependency/cache resolution was
+corrected; five other cases had passed initially and were not repeated. Node types,
+scoped lint and architecture1733files passed. Full private failure/command and exact
+body identity evidence is archived with the completed projection task. No image
+rebuild or full suite was needed for this relocation.
