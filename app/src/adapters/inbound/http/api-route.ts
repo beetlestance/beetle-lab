@@ -7,9 +7,11 @@ import { ResponseContractError } from './schema-compilers.js';
 import { ApiFault } from './api-errors.js';
 
 type NamedOperation<N extends ApiOperation['name']> = Extract<ApiOperation, { name: N }>;
+type OperationInputs = { [O in ApiOperation as O['name']]: ApiOperationInput<O> };
+type OperationReplies = { [O in ApiOperation as O['name']]: ApiTypes[O['response']] };
 export type ApiHandler<N extends ApiOperation['name']> = (
-  input: ApiOperationInput<NamedOperation<N>>,
-) => Promise<ApiTypes[NamedOperation<N>['response']]>;
+  input: OperationInputs[N],
+) => Promise<OperationReplies[N]>;
 export interface ApiRouteOptions {
   bodyLimit?: number;
   /** Transport-owned lifetime; normal request-body completion is not cancellation. */
@@ -17,7 +19,7 @@ export interface ApiRouteOptions {
 }
 
 function input<N extends ApiOperation['name']>(operation: NamedOperation<N>, request: FastifyRequest,
-  signalFor: ApiRouteOptions['signalFor']): ApiOperationInput<NamedOperation<N>> {
+  signalFor: ApiRouteOptions['signalFor']): OperationInputs[N] {
   const signal = signalFor?.(request);
   if (signal !== undefined && !(signal instanceof AbortSignal)) throw new Error('Invalid operation signal');
   return {
@@ -25,7 +27,7 @@ function input<N extends ApiOperation['name']>(operation: NamedOperation<N>, req
     ...('query' in operation ? { query: request.query } : {}),
     ...('request' in operation ? { body: request.body } : {}),
     ...(signal === undefined ? {} : { signal }),
-  } as ApiOperationInput<NamedOperation<N>>;
+  } as OperationInputs[N];
 }
 function bodyLimit(operation: ApiOperation, requested: number | undefined): number | undefined {
   if (requested !== undefined && (!Number.isSafeInteger(requested) || requested < 1 || requested > API_MAXIMUM_JSON_BYTES)) {

@@ -2,6 +2,8 @@ import { QueryClient } from '@tanstack/react-query';
 
 const root = ['namespace'] as const;
 export const queryKeys = {
+  runMetrics: (org: string, workspace: string, run: string, attempt: string) =>
+    [...queryKeys.run(org, workspace, run), 'metrics', attempt.toLowerCase()] as const,
   runArtifacts: (org: string, workspace: string, run: string, attempt: string) =>
     [...queryKeys.run(org, workspace, run), 'artifacts', attempt.toLowerCase()] as const,
   runEvents: (org: string, workspace: string, run: string, attempt: string) =>

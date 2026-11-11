@@ -3,8 +3,8 @@ import type { MetricKind } from './metrics.js';
 import type { CompiledSuite, DeepReadonly } from './suite.js';
 import type { K6Threshold } from './load.js';
 
-export type MetricScope = 'prepare' | 'execute' | 'engine' | 'control';
-export interface MetricTags { readonly phase?: 'prepare' | 'execute'; readonly request?: string; readonly assertion?: string }
+import type { MetricScope, MetricTags } from '@beetle/contracts/metrics';
+export type { MetricScope, MetricTags } from '@beetle/contracts/metrics';
 export interface AllowedMetricSeries { readonly metric: string; readonly kind: MetricKind; readonly tags: MetricTags; readonly scope: MetricScope }
 export interface MetricProvenance {
   readonly source: 'native';

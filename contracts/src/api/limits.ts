@@ -7,3 +7,6 @@ export const RUN_EVENT_PAGE_BYTES = 262_144;
 
 /** Public artifact metadata page; native file records retain their 4 KiB bound. */
 export const RUN_ARTIFACT_PAGE_BYTES = 73_728;
+
+/** Complete retained-metric catalogue/sample JSON page. */
+export const RUN_METRIC_PAGE_BYTES = 262_144;

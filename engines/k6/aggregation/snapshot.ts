@@ -1,31 +1,14 @@
-import type { DurationDistribution, DurationHistogram } from '@beetle/contracts/metrics';
-import type { MetricScope } from '../plan/index.js';
-import type { MetricKind, MetricPoint } from './types.js';
+import type { DurationHistogram, NumericTotal, SeriesTotal } from '@beetle/contracts/metrics';
+export type { NumericTotal, SeriesTotal, MetricWindow } from '@beetle/contracts/metrics';
 
 export type AccumulatorCode = 'invalid_profile' | 'invalid_point' | 'series_limit' | 'overflow'
   | 'measurement' | 'cancelled' | 'closed' | 'busy' | 'sink_failed';
 export class MetricAccumulatorError extends Error {
   constructor(readonly code: AccumulatorCode) { super('Metric accumulator rejected'); this.name = 'MetricAccumulatorError'; }
 }
-export type NumericTotal = Readonly<{ kind: 'counter'; sum: number }>
-  | Readonly<{ kind: 'rate'; numerator: number; sampleCount: number }>
-  | Readonly<{ kind: 'trend'; count: number; sum: number; min: number; max: number; mean: number; distribution: DurationDistribution }>
-  | Readonly<{ kind: 'gauge'; latest: number; sourceTimeMs: number; min: number; max: number }>;
-export interface SeriesTotal {
-  readonly metric: string;
-  readonly kind: MetricKind;
-  readonly tags: MetricPoint['tags'];
-  readonly total: NumericTotal;
-  readonly scope: MetricScope;
-}
 export type AccumulatedTotal = Exclude<NumericTotal, { kind: 'trend' }>
   | (Omit<Extract<NumericTotal, { kind: 'trend' }>, 'distribution'> & { readonly distribution: DurationHistogram });
 export type AccumulatedSeries = Omit<SeriesTotal, 'total'> & { readonly total: AccumulatedTotal };
-export interface MetricWindow {
-  readonly startTimeMs: number;
-  readonly endTimeMs: number;
-  readonly series: readonly SeriesTotal[];
-}
 export interface MetricSnapshot {
   readonly totals: readonly SeriesTotal[];
   readonly totalsComplete: true;

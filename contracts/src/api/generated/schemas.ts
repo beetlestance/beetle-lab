@@ -17,6 +17,7 @@ import { schema as ApiParameters } from './parameters.js';
 import { schema as ApiRetention } from './retention.js';
 import { schema as ApiRunArtifacts } from './run-artifacts.js';
 import { schema as ApiRunEvents } from './run-events.js';
+import { schema as ApiRunMetrics } from './run-metrics.js';
 import { schema as ApiRunRequests } from './run-requests.js';
 import { schema as ApiRunResult } from './run-result.js';
 import { schema as ApiRun } from './run.js';
@@ -27,7 +28,7 @@ import { schema as ApiSettings } from './settings.js';
 import { schema as ApiSuiteRequests } from './suite-requests.js';
 import { schema as ApiSuite } from './suite.js';
 /** Complete reference closure; runner result schemas are shared, never copied. */
-export const apiSchemas = freezeSchema([Common, EngineResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiInputRequests, ApiInput, ApiNamespaceRequests, ApiNamespace, ApiParameters, ApiRetention, ApiRunArtifacts, ApiRunEvents, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
+export const apiSchemas = freezeSchema([Common, EngineResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiInputRequests, ApiInput, ApiNamespaceRequests, ApiNamespace, ApiParameters, ApiRetention, ApiRunArtifacts, ApiRunEvents, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -80,6 +81,20 @@ export const apiMessageSchemas = freezeSchema({
   RetentionApplyReceipt: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionApplyReceipt' },
   RunArtifactPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-artifacts#/$defs/RunArtifactPage' },
   RunEventPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-events#/$defs/RunEventPage' },
+  RunMetricTags: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricTags' },
+  RunMetricPercentile: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricPercentile' },
+  RunMetricCounter: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricCounter' },
+  RunMetricRate: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricRate' },
+  RunMetricGauge: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricGauge' },
+  RunMetricTrend: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricTrend' },
+  RunMetricValue: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricValue' },
+  RunMetricSeries: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricSeries' },
+  RunMetricCoverage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricCoverage' },
+  RunMetricSpan: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricSpan' },
+  RunMetricPoint: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricPoint' },
+  RunMetricSeriesPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricSeriesPage' },
+  RunMetricSamplesQuery: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricSamplesQuery' },
+  RunMetricSamplesPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricSamplesPage' },
   CreateRunRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/CreateRunRequest' },
   CancelRunRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/CancelRunRequest' },
   RunResultSnapshot: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-result#/$defs/RunResultSnapshot' },

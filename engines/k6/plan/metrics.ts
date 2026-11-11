@@ -16,7 +16,8 @@ const counters = new Set<string>([...counterNames.filter(name => name !== measur
   'http_reqs', 'iterations', 'dropped_iterations', 'data_received', 'data_sent']);
 const rates = new Set(['http_req_failed']);
 const gauges = new Set(['vus', 'vus_max']);
-export type MetricKind = 'counter' | 'gauge' | 'rate' | 'trend';
+import type { MetricKind } from '@beetle/contracts/metrics';
+export type { MetricKind } from '@beetle/contracts/metrics';
 export interface NativeMetricDefinition { readonly name: string; readonly kind: MetricKind }
 /** One immutable catalogue for owned native projection and wrapper admission. */
 export const metricDefinitions: readonly NativeMetricDefinition[] = Object.freeze([

@@ -563,5 +563,15 @@
     "path": "valid/run-attempt-params.json",
     "schema": "RunAttemptParams",
     "valid": true
+  },
+  {
+    "path": "valid/run-metric-series-pending.json",
+    "schema": "RunMetricSeriesPage",
+    "valid": true
+  },
+  {
+    "path": "valid/run-metric-samples.json",
+    "schema": "RunMetricSamplesPage",
+    "valid": true
   }
 ]

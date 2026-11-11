@@ -18,6 +18,7 @@
     "api/v2/retention.schema.json": "d6544985c54e4c6606ffcaf7753b3508c978a483b461be3415d5861f509fbc70",
     "api/v2/run-artifacts.schema.json": "093708ae3c917b759125fc08a3dffc31c0978bb122472b824a67d59f4554a59e",
     "api/v2/run-events.schema.json": "1e9f5d24aaac78ff7909396ef2d056c3c963891d7874e4cee45052c545b21dbf",
+    "api/v2/run-metrics.schema.json": "a3e3a170c392c7461e03b5d67d6756c27b7319ee56d8620f661b84650167c58c",
     "api/v2/run-requests.schema.json": "1dbb5b63574b20aba206765581824348bc787ee0c650a34e3a9558fb784bcc28",
     "api/v2/run-result.schema.json": "297cc10fe77e5ca7c2e9d11124a7e4abff461eaba85f3472d1e6a0f0f81d0829",
     "api/v2/run.schema.json": "98cb5712be23b7e7bed6c3b11005d57faa7003ebecb33f4b5607d49407ac4c36",
@@ -28,7 +29,7 @@
     "api/v2/suite-requests.schema.json": "793032e02eb16c0c4f13b87eebaa556d7d7df2efbb522e16078d9a9202708431",
     "api/v2/suite.schema.json": "c90e5d43bc41061a0d80701d0b172764faf9fa44b7b4463349aac452f1cd4dbf"
   },
-  "operationsSha256": "07d3967dcf21830e599507b6e500cd2db0bf2051181ba95bfdb81f51d820c881",
+  "operationsSha256": "1bd5a4ef853d94674075cf30b3b11b8750bbb2fbbd77a4a23819f8939b0b96ee",
   "outputs": [
     "common.inference.ts",
     "common.ts",
@@ -51,6 +52,8 @@
     "run-artifacts.ts",
     "run-events.inference.ts",
     "run-events.ts",
+    "run-metrics.inference.ts",
+    "run-metrics.ts",
     "run-requests.inference.ts",
     "run-requests.ts",
     "run-result.inference.ts",

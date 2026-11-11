@@ -438,5 +438,25 @@
     "error": "ApiError",
     "params": "RunAttemptParams",
     "query": "PageQuery"
+  },
+  {
+    "name": "listRunMetricSeries",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics",
+    "response": "RunMetricSeriesPage",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunAttemptParams",
+    "query": "PageQuery"
+  },
+  {
+    "name": "getRunMetricSamples",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics/samples",
+    "response": "RunMetricSamplesPage",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunAttemptParams",
+    "query": "RunMetricSamplesQuery"
   }
 ]

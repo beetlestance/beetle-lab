@@ -1,10 +1,11 @@
-# Shared duration metric values
+# Shared numeric metric values
 
 Public entry: @beetle/contracts/metrics. Pure exponential-v1 millisecond values,
 fixed64-bucket recording/merge, strict distribution validation and percentile
 estimates/bounds. Engine, backend and browser use this one implementation; raw
 point parsing, series ownership and source windows remain engine responsibilities.
-No Node/framework/engine/IO dependency, clock, cache or result authority.
+Shared MetricKind/Scope/Tags, NumericTotal/SeriesTotal/MetricWindow types preserve
+engine value semantics. No Node/framework/engine/IO dependency, clock, cache or result authority.
 
 Counters are safe integers, values finite/nonnegative. Scale4 down to-10, exact
 zero/extrema, immutable snapshots and common-scale merge. Percentiles use nearest
