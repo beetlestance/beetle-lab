@@ -104,7 +104,7 @@ unbounded publishers. No process-global job scheduler belongs in this component.
 
 The [custody decision](../../decisions/013-live-metric-mailbox-custody.md) replaces
 the shared-root rename/unlink adapter. Use a dedicated initially empty `/beetle/live`
-tmpfs capped at128KiB/four inodes, carved from the existing temporary allocation and
+local-driver tmpfs volume capped at128KiB/four inodes, carved from the existing temporary allocation and
 memory budget. No Offer or phase ceiling increase. The one fixed mailbox is private
 to this container, separate from inputs/secrets/retained outputs. Do not rename or
 unlink its children; container teardown after physical stop owns mount cleanup.

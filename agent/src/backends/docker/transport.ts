@@ -5,6 +5,8 @@ import { isAbsolute, normalize } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { encodeJson } from '@beetle/contracts';
 import type { DockerReply, DockerRequest, DockerTransport, FailureReason } from './types.js';
+import type { MailboxArchiveRequest, MailboxArchiveReply } from './types.js';
+import { readMailboxOriginal } from './mailbox-read.js';
 
 export const TRANSPORT_LIMITS = Object.freeze({ requestBytes: 65_536, responseBytes: 1_048_576,
   fragments: 4096, concurrent: 64, timeoutMs: 30_000 });
@@ -20,12 +22,28 @@ function validRequest(input: DockerRequest): boolean {
       || input.method === 'GET' && inspectionPath(input.path))
     && Number.isFinite(input.deadline);
 }
+function validMailboxRequest(input: MailboxArchiveRequest): boolean {
+  if (!input || typeof input.containerId !== 'string' || !/^[a-f0-9]{64}$/.test(input.containerId) || !Number.isFinite(input.deadline)) return false;
+  return input.signal === undefined || input.signal instanceof AbortSignal;
+}
 
 /** One bounded Unix HTTP owner. Inject request factory for synthetic streams; never follows redirects. */
 export class UnixDockerTransport implements DockerTransport {
   private active = 0;
+  private mailboxActive = 0;
   constructor(private readonly socketPath: string, private readonly factory: RequestFactory = httpRequest) {
     if (!validSocket(socketPath)) throw new Error('invalid_socket');
+  }
+  async readMailboxArchive(input: MailboxArchiveRequest): Promise<MailboxArchiveReply> {
+    if (!validMailboxRequest(input)) return {ok: false, reason: 'invalid_input', dispatched: false};
+    if (input.signal?.aborted) return {ok: false, reason: 'aborted', dispatched: false};
+    if (input.deadline <= performance.now()) return {ok: false, reason: 'deadline', dispatched: false};
+    // Telemetry occupies at most two ordinary slots, leaving capacity for controls.
+    if (this.mailboxActive >= 2 || this.active >= TRANSPORT_LIMITS.concurrent - 2) return {ok: false, reason: 'overflow', dispatched: false};
+    const deadline = Math.min(input.deadline, performance.now() + 5000);
+    this.active++; this.mailboxActive++;
+    try {return await readMailboxOriginal({socketPath: this.socketPath, input: {...input, deadline}, factory: this.factory});}
+    finally {this.active--; this.mailboxActive--;}
   }
   async request(input: DockerRequest): Promise<DockerReply> {
     if (!validRequest(input)) return { ok: false, reason: 'invalid_input', dispatched: false };

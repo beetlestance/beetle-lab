@@ -13,7 +13,13 @@ export interface DockerRequest extends Operation {
 }
 export type DockerReply = { readonly ok: true; readonly status: number; readonly body: unknown }
   | (Failure & { readonly dispatched: boolean });
-export interface DockerTransport { request(input: DockerRequest): Promise<DockerReply> }
+export interface MailboxArchiveRequest extends Operation {readonly containerId: string}
+export type MailboxArchiveReply = {readonly ok: true; readonly status: number; readonly image: Uint8Array | null}
+  | (Failure & {readonly dispatched: boolean});
+export interface DockerTransport {
+  request(input: DockerRequest): Promise<DockerReply>;
+  readMailboxArchive?(input: MailboxArchiveRequest): Promise<MailboxArchiveReply>;
+}
 export interface EntryPoint { readonly executable: string; readonly arguments: readonly string[] }
 export interface EffectiveImage {
   readonly imageDigest: string;

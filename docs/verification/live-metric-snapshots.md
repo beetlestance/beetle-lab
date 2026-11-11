@@ -1,6 +1,6 @@
 # Shared live metric snapshot evidence
 
-Status: locally verified shared contract and publisher core, not a user-visible live feature.
+Status: locally verified live components; runtime integration remains pending.
 Candidateee62fa5 integrated374d142. Independent source review found no blockers.
 Frame<=64KiB binds attempt scope/epoch/subset digest and one real source-second
 window. Selection<=20, exact identities/ordinals, coalescing counters, sparse values,
@@ -49,7 +49,7 @@ passed; worktree package links were corrected before the sink test run.
 Review rejected the shared-root file adapter: checking an inode before a later
 rename/unlink cannot prevent child replacement races. Its native root-anchor proof
 did not cover that gap. The draft was not integrated. Decision013 records the
-replacement: bounded per-container tmpfs and a fixed descriptor-only mailbox.
+replacement: bounded private tmpfs and a fixed descriptor-only mailbox.
 Native mailbox creation/admission are now separately verified below; transport and
 runtime composition remain pending.
 
@@ -74,3 +74,29 @@ cross-frame ordering/freshness, bounded physical IO/accounting/cleanup, private 
 public routes, browser polling and measured overhead. The engine publisher core
 is implemented only as a component; physical adapter/accounting and consumers are
 next. See [contract](../design/lld/live-metric-snapshots.md).
+
+## Bounded Docker archive reader
+
+The raw transport accepts a fixed container ID/path and captures one regular TAR
+entry without extraction. Limits are96KiB,256 chunks, bounded PAX metadata and
+five seconds. At most two telemetry reads share ordinary capacity while preserving
+control slots. Cancellation/deadline request destruction does not release a slot
+until both physical HTTP originals close. No queue or retries are introduced.
+
+Sixteen parser cases, seven reader cases, one qualification-boundary case and
+21 unchanged transport cases passed across scoped runs. Lint findings were fixed;
+final lint and Node types passed. Independent read-only review found no blockers.
+Failures remain in private check-runner evidence; no full suite or image build ran.
+
+The initial container-local tmpfs probe returned404: Docker documents that archive
+cannot copy that mount type. A local-driver tmpfs volume with the same128KiB/four
+inode limits passed the actual native producer, envelope/hash and bounded archive
+read. The cached-image Linux arm64 fixture used UID10001, no network, dropped
+capabilities, read-only root and CPU/RAM/PID limits. A stopped-fixture read returned
+404; this does not independently measure memory reclamation. Guarded fixture
+container/volume cleanup passed. No amd64 qualification is claimed.
+
+Sources: `tools/qualification/native-application/mailbox-{producer,archive}.ts`.
+The existing admission flag still describes the earlier container-local prototype;
+it is not runtime-enabled. Exact local-driver volume ownership/options, active-plan
+authorization, read drainage and lifecycle cleanup must precede enablement.

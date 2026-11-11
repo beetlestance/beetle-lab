@@ -7,12 +7,17 @@ shared writable output root. Directory descriptors pin a directory but do not ma
 child identity checks and rename/unlink conditional. Review identified a foreign
 file race; the unintegrated adapter draft was retained privately and retired.
 
-Use one fixed mailbox in a dedicated, initially empty per-container tmpfs at
-`/beetle/live`, capped at 128KiB and four inodes. Carve its allocation from existing
+Use one fixed mailbox in a dedicated, initially empty per-attempt local-driver
+tmpfs volume at `/beetle/live`, capped at 128KiB and four inodes. Container-local
+HostConfig.Tmpfs is not archive-readable; real proof and Docker's documented copy
+limitation rejected that combination. The local-driver volume was proved readable
+through the bounded archive endpoint. Carve its allocation from existing
 temporary-memory/admitted resources; never increase an Offer or hard ceiling.
 Keep it separate from staged inputs, secrets, retained outputs and host user data.
 The producer only writes through its original file descriptor, without renaming
-or unlinking. Container teardown after process-tree stop owns mount cleanup.
+or unlinking. The runtime owner must verify exact driver/options and immutable
+installation/attempt/generation labels before use or removal; never reuse a foreign
+named volume. Container/volume teardown after physical stop owns mount cleanup.
 
 The mailbox has a fixed 128-byte header, 65,536-byte payload area and 128-byte
 footer. Sequential busy/body/commit writes plus matching committed envelopes and

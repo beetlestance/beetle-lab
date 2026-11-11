@@ -82,3 +82,20 @@ native amd64 (unless actually recorded), soak or release claim.
 
 Pure rejection controls:
 `npx vitest run tools/qualification/native-application/absence-values.test.ts`.
+
+
+## Mailbox transport component probe
+
+Use a cached backend image containing Node24 and a fresh task-owned proof directory.
+Bundle `mailbox-producer.ts` with esbuild (`--bundle --platform=node --format=esm
+--target=node24`) to `producer.mjs` in that directory, then run:
+
+```sh
+node --import tsx tools/qualification/native-application/mailbox-archive.ts CACHED_IMAGE ABSOLUTE_PROOF_DIRECTORY ABSOLUTE_DOCKER_SOCKET
+```
+
+The command creates a uniquely labelled local-driver tmpfs volume and bounded,
+networkless non-root container, checks the actual archive/envelope, probes after
+stop, and removes only its matching fixtures. Container-local tmpfs is not
+archive-readable. This is a synthetic mailbox transport proof, not a real k6 run,
+active-plan authorization, complete live metrics, or cross-architecture evidence.

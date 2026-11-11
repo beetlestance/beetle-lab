@@ -7,5 +7,6 @@ export type { RequestFactory } from './transport.js';
 export type { CleanupEvidence, DockerReply, DockerRequest, DockerTransport, EffectiveImage, EntryPoint,
   InstallationProfile, InspectEvidence, MutationResult, Observation, Operation,
   PrepareInput, Result, StagedRoots } from './types.js';
+export type { MailboxArchiveRequest, MailboxArchiveReply } from './types.js';
 
 export type { ResourceReading } from './resource-types.js';

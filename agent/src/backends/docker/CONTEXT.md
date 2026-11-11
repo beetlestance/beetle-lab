@@ -1,42 +1,37 @@
 # Docker adapter private contract
-`index.ts` is the cross-feature entrypoint; no admission, staging, durable wrapper
-start, artifact finalization or capacity release occurs here.
-prepareRuntime validates shipped Offer/EngineManifest snapshots (1 MiB/64 KiB),
-engine/image equality, minimum/install budget ceilings and manifest-matching entrypoint.
-InstallationProfile is trusted install input: installation UUID, immutable imageDigest,
-numeric non-root UID:GID, approved network (none or named beetle-* target-egress),
-bounded tmpfs/shared memory, absolute stagingRoot and maximumBudget. Trusted
-liveMetricMailbox opt-in splits128KiB/four inodes into private /beetle/live; absent
-opt-in preserves /tmp. It never comes from job config or increases a budget.
-Required effectiveImage pins the same imageDigest, defaultRuntime and public image
-environment (<=64 unique KEY=value entries, <=4096 chars each, <=16 KiB UTF-8 total).
-The install owner obtains this baseline from the approved image/daemon; never from
-Offer.config/browser environment/resolved secrets. Inherited PATH must match. Create pins Env/Runtime, disables Healthcheck with NONE,
-uses SIGTERM; exact NONE allows known nonnegative safe-integer timing/retry metadata.
-StagedRoots: <stagingRoot>/<runtimeName>/{input,output,secrets} -> /beetle/{input,output,secrets}.
-Staging owner verifies realpath, symlinks and task ownership; no staging occurs here.
-Input/secrets require forced recursive read-only, rprivate binds; output is writable.
-Kernel >=5.12 and daemon defaultRuntime/control evidence are required; no RO downgrade.
-Job config belongs in staged input; resolved secret values only in restricted secrets.
-Inspect normalizes only known API1.47 omissions: NetworkDisabled false, disabled
-network's empty/null attachment map, zero/false bind options and empty omitted map options.
-OomKillDisable null means the default enabled OOM killer; true/missing/nonboolean reject.
-Unknown overrides and nonempty daemon default-ulimits fail.
-UnixDockerTransport: explicit Unix socket/API1.47; 64 KiB request/1 MiB reply,
-4096 fragments, 16 KiB headers, 64 active requests; no URLs/retries/pulls/subprocesses/logs.
-All composed steps share the caller's monotonic performance.now() deadline, clamped
-once to 30s. Finish rechecks it even if timers stall; abort/deadline destroys streams.
+Public index.ts; no staging, durable start, finalization or capacity release here.
+prepareRuntime snapshots Offer/EngineManifest (1MiB/64KiB), validates image/engine,
+minimum/install ceilings and manifest-matching entrypoint. InstallationProfile is
+trusted: installation UUID, immutable image, numeric non-root UID:GID, approved
+none/beetle-* network, bounded temporary allocation, absolute stagingRoot, ceilings.
+Live mailbox opt-in is trusted install metadata, never job/browser config. Its
+container-local tmpfs prototype cannot serve archive reads; guarded local-driver
+volume lifecycle is required before runtime enablement, without budget increases.
+effectiveImage pins imageDigest/defaultRuntime/public environment (64 unique entries,
+4096 chars each/16KiB total), from approved daemon/image only; inherited PATH matches.
+Create pins Env/Runtime/SIGTERM and disables healthcheck; known NONE timings accepted.
+StagedRoots are <stagingRoot>/<runtimeName>/{input,output,secrets}; staging owner checks
+physical paths/ownership. Input/secrets binds are recursively read-only/rprivate;
+output writable. Kernel>=5.12 and daemon evidence required; no RO downgrade.
+Secrets stay restricted; job config is staged, never forwarded as Docker flags.
+Inspect normalizes only known API1.47 defaults/omissions; unknown overrides,
+nonempty default-ulimits and disabled/missing OOM killer fail.
+UnixDockerTransport uses explicit local socket/API1.47, ordinary64 slots, JSON
+64KiB request/1MiB response/4096 fragments/16KiB headers and one<=30s deadline.
+Mailbox archive uses <=2 ordinary slots with control headroom, <=5s, 96KiB actual
+stream/256 fragments. It retains both request/response originals through physical
+close after cancel/error. Fixed container-ID path; no retry, extraction or links.
+TAR permits one bounded PAX header and exact regular mailbox extent. Frame semantic
+validation and active-plan authorization belong to the caller, not raw transport.
 ensureCreated never starts. <=64 non-evicted lifetime entries retain exact adopted
-runtime ID, history and claims. Each 404 binds to its issue-time ID, rechecked before return/use.
-No same-attempt recreation after observing a runtime; dispatchStartOnce is created-only,
-one dispatch; old pre-discovery 404 returns unknown; terminal/removal history wins over late replies.
-Persist durable start intent BEFORE calling. Recreating the adapter loses these fences;
-one exclusive supervisor/journal owns durable recovery, reservations and finalization.
-stop retains first absolute graceDeadline, rounding remaining grace up to seconds;
-HTTP deadlines cannot shorten grace. Durable idempotence belongs to the supervisor.
-Observation expiry is unknown. stop/kill require stopped proof; remove also requires
-sealed/applicationAcknowledged evidence and force=false/v=false, never volume removal.
-sampleResources reads only inspected running owners by full ID, bounded one-shot
-stats; raw usage/null provenance. No mutation lane or ownership revocation on failure.
-Exit137 is not OOM. Native enforcement remains unqualified; no hard output quota.
-Tests: npx vitest run agent/test/backends/docker --maxWorkers=2 (synthetic only).
+runtime ID/history/claims; each404 is issue-ID-bound and rechecked before use.
+No same-attempt recreation after observation; dispatchStartOnce is created-only,
+one dispatch; stale404 returns unknown, terminal/removal history wins over late IO.
+Persist start intent first. One exclusive supervisor/journal owns recovery,
+reservations and finalization; recreating the adapter loses in-memory fences.
+stop retains first absolute graceDeadline rounded up; HTTP timeout cannot shorten
+it. Observation expiry is unknown. stop/kill require stopped proof; remove requires
+sealed/applicationAcknowledged, force=false/v=false. Volume ownership/cleanup pending.
+sampleResources reads inspected running owners by full ID, one-shot stats with raw
+usage/null provenance; no mutation lane/revocation on failure. Exit137 is not OOM.
+Focused tests: scoped files in agent/test/backends/docker; no Docker in unit lane.
