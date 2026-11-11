@@ -140,3 +140,27 @@ describe('bounded Unix HTTP transport', () => {
     expect(count).toBe(1);
   });
 });
+
+it('admits named read-only installation inspections through the bounded transport', async () => {
+  const {transport, requests} = harness(request => request.respond().end('{}'));
+  const paths = ['/v1.47/images/' + encodeURIComponent('ghcr.io/beetlestance/k6:local') + '/json',
+    '/v1.47/images/' + encodeURIComponent('registry.example:5000/team/engine@sha256:' + 'a'.repeat(64)) + '/json',
+    '/v1.47/images/sha256:' + 'b'.repeat(64) + '/json', '/v1.47/networks/beetle-targets'];
+  for (const path of paths) expect(await transport.request(call({path}))).toMatchObject({ok: true, status: 200});
+  expect(requests.map(r => r.options.path)).toEqual(paths);
+  expect(requests.every(r => r.options.method === 'GET')).toBe(true);
+});
+it('rejects named read-only installation path escapes and all new mutation routes before dispatch', async () => {
+  const {transport, requests} = harness(request => request.respond().end('{}'));
+  const images = ['repo%2F..%2F..%2Fcontainers%2Fsecret', 'repo%2fimage', 'repo%252Fimage',
+    'http%3A%2F%2Fevil', 'repo%3Fpull', 'repo%23fragment', 'repo%5Cimage', 'repo%2F%2Fimage', '%', 'x'.repeat(257)];
+  const paths = [...images.map(ref => `/v1.47/images/${ref}/json`), '/v1.47/networks/name?force=1',
+    '/v1.47/networks/name%2F..%2Fcontainers', '/v1.47/networks/%6Eame'];
+  for (const path of paths) expect(await transport.request(call({path}))).toMatchObject({ok: false, reason: 'invalid_input', dispatched: false});
+  for (const method of ['POST', 'DELETE'] as const) {
+    for (const path of ['/v1.47/images/engine/json', '/v1.47/networks/beetle-targets']) {
+      expect(await transport.request(call({method, path}))).toMatchObject({ok: false, reason: 'invalid_input', dispatched: false});
+    }
+  }
+  expect(requests).toHaveLength(0);
+});
