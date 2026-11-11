@@ -54,8 +54,8 @@ rootfs. All five HTTP temp paths now use deployment-supplied /tmp; only frontend
 was rebuilt. Follow-up source review and actual runtime checks passed.
 
 All recorded smoke containers/networks were removed; synthetic private data remains
-in task-owned evidence. Build cache/images remain owned by the ongoing packaging
-lane until its cleanup. No repeated full test suite or backend rebuild was run.
+in task-owned evidence. The exact task-owned builder and its cache volume were removed after packaging;
+recorded final local images remain available. No repeated full test suite or backend rebuild was run.
 Native amd64 execution, browser checks, source/image-pull Compose installs,
 SBOM/license/security scans and measured stack overhead remain release work.
 
