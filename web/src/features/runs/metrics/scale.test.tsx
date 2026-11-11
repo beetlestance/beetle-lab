@@ -68,19 +68,42 @@ it('uses a finite fallback domain for zero and all-null rate data, preserving ga
     point(2, { kind: 'rate', ratio: null, numerator: 0, sampleCount: 0 }, 5)], rateSeries);
   expect(document.querySelectorAll('circle.metric-dot')).toHaveLength(0);
   expect(document.querySelectorAll('path.metric-line')).toHaveLength(0);
-  expect(document.querySelector('line.metric-axis')).toHaveAttribute('y1', '170');
+  expect(document.querySelector('[role="status"]')).toHaveTextContent('No measured values in these source windows.');
+  expect(document.querySelector('svg')).not.toBeInTheDocument();
+  expect(document.querySelector('summary')).toHaveTextContent('Source samples and estimate bounds');
+  expect(document.querySelectorAll('tbody tr')).toHaveLength(2);
+  expect([...document.querySelectorAll('tbody td:nth-child(2)')].map(cell => cell.textContent)).toEqual(['No samples', 'No samples']);
+  expect([...document.querySelectorAll('tbody td:first-child')].map(cell => cell.textContent)).toEqual(['0–5', '5–10']);
+  expect([...document.querySelectorAll('tbody td:nth-child(3)')].map(cell => cell.textContent)).toEqual(['0 / 0 samples', '0 / 0 samples']);
+  cleanup();
+
+  chart([point(1, { kind: 'rate', ratio: 0, numerator: 0, sampleCount: 5 }, 0)], rateSeries);
   expect(document.querySelector('svg')).toBeInTheDocument();
-  assertFiniteSvg();
+  expect(document.querySelectorAll('circle.metric-dot')).toHaveLength(1);
+  expect(document.querySelector('[role="status"]')).not.toBeInTheDocument();
+  expect(document.querySelector('tbody td:nth-child(2)')).toHaveTextContent('0');
+  expect(document.querySelector('tbody td:nth-child(3)')).toHaveTextContent('0 / 5 samples');
   cleanup();
 
   chart([point(1, gauge(1), 0), point(2, { kind: 'rate', ratio: null, numerator: 0, sampleCount: 0 }, 5), point(4, gauge(2), 20)]);
   expect(document.querySelectorAll('path.metric-line')).toHaveLength(2);
   expect(document.querySelectorAll('circle.metric-dot')).toHaveLength(2);
   expect([...document.querySelectorAll('path.metric-line')].map(path => path.getAttribute('d'))).toEqual(['M40,100', 'M600,30']);
+  expect(document.querySelector('[role="status"]')).not.toBeInTheDocument();
+  expect(document.querySelectorAll('tbody tr')).toHaveLength(3);
+  expect(document.querySelectorAll('tbody td:nth-child(2)')[1]).toHaveTextContent('No samples');
+  expect(document.querySelectorAll('tbody td:nth-child(3)')[1]).toHaveTextContent('0 / 0 samples');
   assertFiniteSvg();
   cleanup();
 
   chart([point(1, gauge(1), 0), point(3, gauge(2), 20)]);
   expect(document.querySelectorAll('path.metric-line')).toHaveLength(2);
   expect([...document.querySelectorAll('path.metric-line')].map(path => path.getAttribute('d'))).toEqual(['M40,100', 'M600,30']);
+});
+
+it('keeps the existing empty-items status', () => {
+  chart([]);
+  expect(document.querySelector('[role="status"]')).toHaveTextContent('No samples for this series in the examined source windows.');
+  expect(document.querySelector('svg')).not.toBeInTheDocument();
+  expect(document.querySelector('summary')).not.toBeInTheDocument();
 });

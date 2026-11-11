@@ -10,6 +10,11 @@ export function valueNumber(v: RunMetricValue): number | null {
 export function MetricChart({items, series}: {items: readonly RunMetricPoint[]; series: RunMetricSeries}) {
   const values = items.map(p => valueNumber(p.value)); const measured = values.filter((v): v is number => v !== null);
   if (!items.length) return <p role="status">No samples for this series in the examined source windows.</p>;
+  const samples = <details><summary>Source samples and estimate bounds</summary><div className="metric-table" tabIndex={0} role="region" aria-label="Metric samples">
+    <table><thead><tr><th scope="col">Source interval (ms)</th><th scope="col">Value ({series.unit})</th><th scope="col">Evidence</th></tr></thead>
+      <tbody>{items.map(p => <tr key={p.windowOrdinal}><td>{p.startTimeMs}–{p.endTimeMs}</td><td>{valueNumber(p.value) ?? 'No samples'}</td>
+        <td>{evidence(p.value)}</td></tr>)}</tbody></table></div></details>;
+  if (!measured.length) return <><p role="status">No measured values in these source windows.</p>{samples}</>;
   const first = items[0]!.startTimeMs; const last = items.at(-1)!.endTimeMs;
   const lowValue = Math.min(0, ...measured); const highValue = Math.max(0, ...measured);
   const min = lowValue === highValue ? 0 : lowValue; const max = lowValue === highValue ? 1 : highValue;
@@ -32,10 +37,7 @@ export function MetricChart({items, series}: {items: readonly RunMetricPoint[]; 
     {items.map((p, i) => values[i] === null ? null : <circle key={p.windowOrdinal} cx={x(p.startTimeMs)} cy={y(values[i]!)} r="3" className="metric-dot">
       <title>{p.startTimeMs}: {values[i]} {series.unit}</title></circle>)}
     <text x="40" y="200">{new Date(first).toISOString()}</text><text x="740" y="200" textAnchor="end">{new Date(last).toISOString()}</text>
-  </svg><details><summary>Source samples and estimate bounds</summary><div className="metric-table" tabIndex={0} role="region" aria-label="Metric samples">
-    <table><thead><tr><th scope="col">Source interval (ms)</th><th scope="col">Value ({series.unit})</th><th scope="col">Evidence</th></tr></thead>
-      <tbody>{items.map(p => <tr key={p.windowOrdinal}><td>{p.startTimeMs}–{p.endTimeMs}</td><td>{valueNumber(p.value) ?? 'No samples'}</td>
-        <td>{evidence(p.value)}</td></tr>)}</tbody></table></div></details></>;
+  </svg>{samples}</>;
 }
 export function evidence(v: RunMetricValue): string {
   if (v.kind === 'trend') {const p = v.percentiles.p95; return `Estimated p95; bounds ${p.lower}–${p.upper} ms; scale ${p.scale}; ${v.count} samples`;}
