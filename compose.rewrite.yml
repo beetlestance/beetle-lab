@@ -1,0 +1,156 @@
+name: beetle-${BEETLE_INSTANCE:?Set a unique local installation name}
+
+x-runtime: &runtime
+  read_only: true
+  init: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,size=16777216
+  logging:
+    driver: local
+    options:
+      max-size: 1m
+      max-file: "2"
+  restart: unless-stopped
+  stop_grace_period: 45s
+
+x-build: &build
+  context: .
+  args:
+    VCS_REF: ${BEETLE_SOURCE_REVISION:-unknown}
+
+x-private-config: &config
+  type: bind
+  source: ${BEETLE_ROOT:?Set an absolute private installation root}/config
+  target: ${BEETLE_ROOT:?Set an absolute private installation root}/config
+  read_only: true
+  bind:
+    create_host_path: false
+
+x-socket: &socket
+  type: bind
+  source: ${BEETLE_DOCKER_SOCKET:?Set the host Docker socket path}
+  target: /var/run/docker.sock
+  read_only: true
+  bind:
+    create_host_path: false
+
+services:
+  frontend:
+    <<: *runtime
+    image: ${BEETLE_FRONTEND_IMAGE:?Set the frontend image reference}
+    build:
+      <<: *build
+      dockerfile: web/Dockerfile
+    cpus: 0.1
+    mem_limit: 64m
+    pids_limit: 32
+    ports:
+      - "127.0.0.1:${BEETLE_PORT:?Set the loopback frontend port}:8080"
+    networks: [control]
+
+  backend:
+    <<: *runtime
+    image: ${BEETLE_BACKEND_IMAGE:?Set the backend image reference}
+    build:
+      <<: *build
+      dockerfile: app/Dockerfile
+    user: "${BEETLE_UID:?Set positive installation UID}:${BEETLE_GID:?Set positive installation GID}"
+    cpus: 0.25
+    mem_limit: 256m
+    pids_limit: 64
+    environment:
+      BEETLE_CONFIG_FILE: ${BEETLE_ROOT}/config/installation.json
+      BEETLE_AGENT_CONFIG_FILE: ${BEETLE_ROOT}/config/backend-agent.json
+      BEETLE_DATA_DIR: ${BEETLE_ROOT}/backend
+      BEETLE_EXTERNAL_ORIGIN: http://127.0.0.1:${BEETLE_PORT}
+      BEETLE_LISTEN_HOST: 0.0.0.0
+    volumes:
+      - *config
+      - type: bind
+        source: ${BEETLE_ROOT}/backend
+        target: ${BEETLE_ROOT}/backend
+        bind:
+          create_host_path: false
+    networks: [control]
+
+  agent:
+    <<: *runtime
+    image: ${BEETLE_AGENT_IMAGE:?Set the agent image reference}
+    build:
+      <<: *build
+      dockerfile: agent/Dockerfile
+    container_name: beetle-${BEETLE_INSTANCE}-agent
+    user: "${BEETLE_UID}:${BEETLE_GID}"
+    group_add: ["${BEETLE_DOCKER_GID:?Set the container-visible Docker socket group}"]
+    cpus: 0.25
+    mem_limit: 256m
+    pids_limit: 64
+    environment:
+      BEETLE_AGENT_CONFIG_FILE: ${BEETLE_ROOT}/config/agent.json
+    volumes:
+      - *config
+      - *socket
+      - type: bind
+        source: ${BEETLE_ROOT}/agent
+        target: ${BEETLE_ROOT}/agent
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${BEETLE_ROOT}/backend/inputs/published
+        target: ${BEETLE_ROOT}/backend/inputs/published
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [control]
+
+  installer:
+    <<: *runtime
+    profiles: [setup]
+    image: ${BEETLE_INSTALLER_IMAGE:?Set the installer image reference}
+    build:
+      <<: *build
+      dockerfile: tools/install/Dockerfile
+    restart: "no"
+    user: "${BEETLE_UID}:${BEETLE_GID}"
+    group_add: ["${BEETLE_DOCKER_GID}"]
+    cpus: 1
+    mem_limit: 256m
+    pids_limit: 64
+    command: [--request, "${BEETLE_REQUEST_FILE:?Set an absolute private request file}"]
+    volumes:
+      - *socket
+      - type: bind
+        source: ${BEETLE_ROOT}
+        target: ${BEETLE_ROOT}
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${BEETLE_REQUEST_FILE}
+        target: ${BEETLE_REQUEST_FILE}
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [targets]
+
+  engine-image:
+    <<: *runtime
+    profiles: [images]
+    image: ${BEETLE_ENGINE_IMAGE:?Set the engine image reference}
+    build:
+      <<: *build
+      dockerfile: engines/k6/Dockerfile
+    restart: "no"
+    cpus: 0.25
+    mem_limit: 64m
+    pids_limit: 32
+    network_mode: none
+    entrypoint: [node, -e, "process.exit(0)"]
+
+networks:
+  control:
+    internal: true
+  targets:
+    name: beetle-${BEETLE_INSTANCE}-targets
+    driver: bridge
