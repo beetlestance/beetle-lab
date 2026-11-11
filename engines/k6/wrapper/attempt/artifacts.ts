@@ -1,3 +1,4 @@
+import { captureTargetRuntimeReport } from '@beetle/contracts/target-runtime';
 import { constants } from 'node:fs';
 import type { BigIntStats } from 'node:fs';
 import { lstat, open, realpath } from 'node:fs/promises';
@@ -124,7 +125,7 @@ export class Artifacts {
     return this.encoded(value, allowance, 'numeric-final.json', 'numeric-final');
   }
   async target(value: unknown, allowance: number): Promise<Artifact> {
-    return this.encoded(value, allowance, 'target-runtime.json', 'target-runtime');
+    return this.encoded(captureTargetRuntimeReport(value), allowance, 'target-runtime.json', 'target-runtime');
   }
   private async encoded(value: unknown, allowance: number, name: string, kind: string): Promise<Artifact> {
     if (!Number.isSafeInteger(allowance) || allowance < 1 || allowance > cap) throw new AttemptError('output_limit');

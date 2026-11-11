@@ -1,0 +1,366 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report",
+  "title": "TargetRuntimeReport",
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": "beetle-target-runtime"
+    },
+    "version": {
+      "const": 1
+    },
+    "scope": {
+      "const": "target-reported"
+    },
+    "samples": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/sample"
+      }
+    },
+    "limited": {
+      "type": "boolean"
+    },
+    "missed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 257
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "scope",
+    "samples",
+    "limited",
+    "missed"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "values": {
+      "type": "object",
+      "properties": {
+        "heapAlloc": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "heapInuse": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "heapIdle": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "heapSys": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "heapReleased": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "heapObjects": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "stackInuse": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "rss": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "external": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "arrayBuffers": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "totalHeapSize": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "usedHeapSize": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "heapSizeLimit": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "mallocedMemory": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "peakMallocedMemory": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "goroutines": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "activeRequests": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "numCPU": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "totalMemory": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "freeMemory": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "uptime": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "cpuPercent": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "systemCpuPercent": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "uvThreadpoolSize": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "cppHeap.allocated_size": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "cppHeap.used_size": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "eventLoopDelay.mean": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "eventLoopDelay.p90": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "eventLoopDelay.p99": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "eventLoopDelay.max": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "gc.count": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "gc.duration": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        }
+      },
+      "required": [
+        "heapAlloc",
+        "heapInuse",
+        "heapIdle",
+        "heapSys",
+        "heapReleased",
+        "heapObjects",
+        "stackInuse",
+        "rss",
+        "external",
+        "arrayBuffers",
+        "totalHeapSize",
+        "usedHeapSize",
+        "heapSizeLimit",
+        "mallocedMemory",
+        "peakMallocedMemory",
+        "goroutines",
+        "activeRequests",
+        "numCPU",
+        "totalMemory",
+        "freeMemory",
+        "uptime",
+        "cpuPercent",
+        "systemCpuPercent",
+        "uvThreadpoolSize",
+        "cppHeap.allocated_size",
+        "cppHeap.used_size",
+        "eventLoopDelay.mean",
+        "eventLoopDelay.p90",
+        "eventLoopDelay.p99",
+        "eventLoopDelay.max",
+        "gc.count",
+        "gc.duration"
+      ],
+      "additionalProperties": false
+    },
+    "sample": {
+      "type": "object",
+      "properties": {
+        "observedAt": {
+          "type": "string",
+          "format": "date-time",
+          "maxLength": 64,
+          "pattern": "Z$"
+        },
+        "phase": {
+          "enum": [
+            "before",
+            "during",
+            "after"
+          ]
+        },
+        "status": {
+          "enum": [
+            "ready",
+            "unavailable"
+          ]
+        },
+        "reason": {
+          "enum": [
+            null,
+            "http",
+            "invalid_json",
+            "body_limit",
+            "timeout",
+            "transport",
+            "cancelled"
+          ]
+        },
+        "values": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/values"
+        }
+      },
+      "required": [
+        "observedAt",
+        "phase",
+        "status",
+        "reason",
+        "values"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "ready"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "reason": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "reason": {
+                "enum": [
+                  "http",
+                  "invalid_json",
+                  "body_limit",
+                  "timeout",
+                  "transport",
+                  "cancelled"
+                ]
+              },
+              "values": {
+                "properties": {
+                  "heapAlloc": {
+                    "type": "null"
+                  },
+                  "heapInuse": {
+                    "type": "null"
+                  },
+                  "heapIdle": {
+                    "type": "null"
+                  },
+                  "heapSys": {
+                    "type": "null"
+                  },
+                  "heapReleased": {
+                    "type": "null"
+                  },
+                  "heapObjects": {
+                    "type": "null"
+                  },
+                  "stackInuse": {
+                    "type": "null"
+                  },
+                  "rss": {
+                    "type": "null"
+                  },
+                  "external": {
+                    "type": "null"
+                  },
+                  "arrayBuffers": {
+                    "type": "null"
+                  },
+                  "totalHeapSize": {
+                    "type": "null"
+                  },
+                  "usedHeapSize": {
+                    "type": "null"
+                  },
+                  "heapSizeLimit": {
+                    "type": "null"
+                  },
+                  "mallocedMemory": {
+                    "type": "null"
+                  },
+                  "peakMallocedMemory": {
+                    "type": "null"
+                  },
+                  "goroutines": {
+                    "type": "null"
+                  },
+                  "activeRequests": {
+                    "type": "null"
+                  },
+                  "numCPU": {
+                    "type": "null"
+                  },
+                  "totalMemory": {
+                    "type": "null"
+                  },
+                  "freeMemory": {
+                    "type": "null"
+                  },
+                  "uptime": {
+                    "type": "null"
+                  },
+                  "cpuPercent": {
+                    "type": "null"
+                  },
+                  "systemCpuPercent": {
+                    "type": "null"
+                  },
+                  "uvThreadpoolSize": {
+                    "type": "null"
+                  },
+                  "cppHeap.allocated_size": {
+                    "type": "null"
+                  },
+                  "cppHeap.used_size": {
+                    "type": "null"
+                  },
+                  "eventLoopDelay.mean": {
+                    "type": "null"
+                  },
+                  "eventLoopDelay.p90": {
+                    "type": "null"
+                  },
+                  "eventLoopDelay.p99": {
+                    "type": "null"
+                  },
+                  "eventLoopDelay.max": {
+                    "type": "null"
+                  },
+                  "gc.count": {
+                    "type": "null"
+                  },
+                  "gc.duration": {
+                    "type": "null"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "reading": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1.7976931348623157e+308
+    }
+  }
+}

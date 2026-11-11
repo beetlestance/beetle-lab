@@ -13,7 +13,8 @@
     "./output-source": "./src/output-source/index.ts",
     "./output-source/internal": "./src/output-source/internal.ts",
     "./metrics": "./src/metrics/index.ts",
-    "./live-mailbox": "./src/live-mailbox/index.ts"
+    "./live-mailbox": "./src/live-mailbox/index.ts",
+    "./target-runtime": "./src/target-runtime/index.ts"
   },
   "dependencies": {
     "ajv": "8.20.0",

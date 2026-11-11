@@ -30,6 +30,7 @@
     "runner/v1/source-values.schema.json": "5b9c018349e779387c26b494acefc857cd51790825c795b17253da8f481c559d",
     "runner/v1/staged-attempt.schema.json": "754fca51a15e9ca9faede73ba9f7d072c3ea020beaf5fa801660813d494b3e93",
     "runner/v1/supervisor-events.schema.json": "c55be82182f18875f3902b106a1c6d14655dda64e9f70509d5126fb7b2e2d62a",
+    "runner/v1/target-runtime-report.schema.json": "d00221b2d02925e59297be1d352ffe54400e1b467aeebb5b34b1416270e407ed",
     "runner/v1/wrapper-events.schema.json": "b14590f134d092d5e926f24492222d8eb27d437226fa670564ff83bb27665f1f"
   },
   "operationsSha256": "ee06602d2c3a4f127586257cf795e1fa3276466f17194db8c949a67fec4cc64d",
@@ -90,6 +91,8 @@
     "staged-attempt.inference.ts",
     "staged-attempt.ts",
     "supervisor-events.ts",
+    "target-runtime-report.inference.ts",
+    "target-runtime-report.ts",
     "types.ts",
     "wrapper-events.ts"
   ]

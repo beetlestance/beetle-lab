@@ -453,5 +453,15 @@
     "path": "invalid/admission-unknown-release.json",
     "schema": "AttemptAdmission",
     "valid": false
+  },
+  {
+    "path": "valid/target-runtime-report.json",
+    "schema": "TargetRuntimeReport",
+    "valid": true
+  },
+  {
+    "path": "invalid/target-runtime-report.json",
+    "schema": "TargetRuntimeReport",
+    "valid": false
   }
 ]
