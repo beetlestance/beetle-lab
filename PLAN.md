@@ -34,7 +34,7 @@ model assignments, agent packets, concurrency and independent review.
 | --- | --- | --- |
 | Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings, suite and run-intake schemas/clients; exact installed descriptor binding in immutable Offers; atomic queued-run/attempt/outbox SQLite intake; authenticated enqueue/detail/history routes; Fastify JSON adapter; separate config/Offer bounds; private agent/backend capacity publication and owned startup/shutdown; shared exact staging accounting and same-lease execution limits; bounded claim/observation transactions, metadata dispatch RPC and immutable journal binding; bounded automatic delivery/reconciliation; receipt-first scoped cancellation; durable event ingestion/ACK and fair collection; artifact writer/transfer and verified result route | Publication cleanup, retention and release qualification |
 | Agent | Catalogue/admission/staging/controllers; typed stops; bounded scheduling; guards/full observation publisher; installed runtime; Node24 image/private HTTP; real arm64 k6 pass/fail; journal010/immutable identity and atomic fresh cancellation refusal; exclusive control store and actual startup/wire binding; large-original bounds, propagation and launch contention; admission carrier at node/depth maxima; immutable collected output root/byte facts; explicit offline installation provisioner | Final-recipe from-empty/pull install and stop-latency qualification, irreversible recovery fencing, native per-attempt telemetry accuracy/overhead, publication cleanup and native architecture matrix |
-| k6 | Suite compiler/runtime/builder, phase-isolated metrics, control journal, staged loader, child runner, numeric windows with bounded mergeable duration distributions and sealed history/index artifacts, summary collector, outcome mapper, staged wrapper, seal codec and artifact publication | Live metric transport/charts, target sampler, reports/export |
+| k6 | Suite compiler/runtime/builder, phase-isolated metrics, control journal, staged loader, child runner, numeric windows with bounded mergeable duration distributions and sealed history/index artifacts, summary collector, outcome mapper, staged wrapper, seal codec and artifact publication; bounded literal body inputs and scoped target-observation artifacts | Live metric transport/charts, target observation charts/heuristics, reports/export |
 | Product | Namespace/settings and immutable suite/revision SQLite/API composition; native input publication/HTTP/recovery, bounded byte client and scoped inventory/deletion UI; sessions, paired React authoring, session-owned upload/download controls and dev proxy; scoped run history/detail and saved-revision submission/replay and scoped cancellation controls; scoped verified result reads/UI; authenticated durable event replay API and client; bounded execution activity UI; verified published artifact metadata/content; sealed metric catalogue, reverse samples and selectable chart | Browser qualification, live metrics, artifact retention lifecycle, reports and automation client |
 | Qualification | Local contract/unit/SQLite and public API through real agent/k6 pass/fail, artifact settlement and metadata reopen | Browser, final-release from-empty/pull Compose, scans, backup/soak and native architecture matrix |
 
@@ -60,6 +60,18 @@ installation, shipped images/Compose, scans, backup/restore, bounded soak/overhe
 and native amd64/arm64 evidence. No complete R0-R4 release is claimed.
 
 First local usage is now evidenced through [fresh source setup and browser execution](docs/verification/first-use.md): namespace/test authoring, real k6, durable result, chart, history and one hash-verified download. This does not close the remaining product or release qualification work.
+
+## Local first-use corrections
+
+- Make ordinary startup work through Docker Compose; users should not need the
+  custom launcher. Keep a helper only where it provides an optional, clear benefit.
+- Revisit local authentication: requiring users to retrieve/paste a startup token
+  and restart the backend after token expiry is excessive friction. Agree the
+  local access and persistent-session design before changing authentication.
+
+Large input bodies and the initial optional target collector are now locally verified;
+see [feature evidence](docs/verification/large-bodies-target-observations.md).
+Target observation charts/heuristics and release qualification remain pending.
 
 ## Delivery order
 
