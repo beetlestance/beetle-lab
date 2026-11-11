@@ -4,6 +4,7 @@ import { RUNNER_MAXIMUM_OFFER_BYTES, encodeJson, validate, validatePrimitive } f
 import type { EngineManifest, Offer } from '@beetle/contracts';
 import { failure } from './types.js';
 import { validImageBaseline } from './image-baseline.js';
+import { validTemporaryProfile, temporaryMounts } from './live-channel.js';
 import type { CreateSpec, DockerMount, InstallationProfile, PrepareInput, Result, StagedRoots } from './types.js';
 
 const budgetKeys = ['cpuMillis', 'memoryBytes', 'pids', 'timeoutMs', 'outputBytes'] as const;
@@ -26,7 +27,7 @@ function validRoot(value: string): boolean {
 function validProfile(profile: InstallationProfile): boolean {
   if (!validatePrimitive('uuid', profile.installationId).ok || !validRoot(profile.stagingRoot)) return false;
   if (!/^[1-9][0-9]{0,8}:[1-9][0-9]{0,8}$/u.test(profile.user)) return false;
-  if (!Number.isSafeInteger(profile.tmpfsBytes) || profile.tmpfsBytes < 4096 || profile.tmpfsBytes > 67_108_864) return false;
+  if (!validTemporaryProfile(profile)) return false;
   return validImageBaseline(profile)
     && budgetKeys.every(key => Number.isSafeInteger(profile.maximumBudget[key]) && profile.maximumBudget[key] > 0);
 }
@@ -150,7 +151,7 @@ function createSpec(input: { offer: Offer; profile: InstallationProfile; generat
         '/proc/timer_list', '/proc/timer_stats', '/proc/sched_debug', '/proc/scsi', '/sys/firmware', '/sys/devices/virtual/powercap'],
       PublishAllPorts: false, PortBindings: {}, Devices: [], DeviceRequests: [], Binds: [], VolumesFrom: [],
       RestartPolicy: { Name: 'no', MaximumRetryCount: 0 }, AutoRemove: false, Mounts: input.boundMounts,
-      Tmpfs: { '/tmp': `rw,noexec,nosuid,nodev,size=${profile.tmpfsBytes},mode=1777` },
+      Tmpfs: temporaryMounts(profile),
       LogConfig: { Type: 'none', Config: {} } },
   };
 }

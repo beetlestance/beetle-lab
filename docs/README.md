@@ -78,7 +78,7 @@ released application until the rewrite is qualified.
 | Inspect published artifact downloads | [Artifact downloads](verification/run-artifact-downloads.md) | Scoped metadata, actual native streaming and withheld-EOF evidence; [browser inventory/links](verification/run-artifact-controls.md) locally verified; browser save qualification pending |
 | Inspect run execution activity | [Timeline UI](verification/run-timeline-ui.md) | Bounded recent activity and lifetime/progress checks; browser/resource production pending |
 | Inspect public event replay | [Run event reads](verification/run-event-reads.md) | Scoped finite reads through actual worker/HTTP, resume and unchanged accounting |
-| Inspect advisory live metric foundation | [Live snapshot contract](verification/live-metric-snapshots.md) | Bounded shared frame/codec only; producer/reader/browser remain pending |
+| Inspect advisory live metric foundation | [Live snapshot contract](verification/live-metric-snapshots.md) | Frame, publisher, mailbox and native cores locally verified; runtime/readers/browser pending |
 | Review live transport custody | [Mailbox decision](decisions/013-live-metric-mailbox-custody.md) | Private bounded mailbox; shared-root rename/unlink adapter rejected |
 | Inspect retained k6 metric history | [Metric archive](verification/k6-metric-archive.md) | Streamed data/index custody and phase accounting; [history reads/chart](verification/run-metric-history.md) locally verified; live transport pending |
 | Inspect recorded metric filters | [Source ranges](verification/metric-source-range.md) | UTC draft/apply/reset controls, bounded paging and retired-read ownership |

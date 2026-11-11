@@ -50,7 +50,24 @@ Review rejected the shared-root file adapter: checking an inode before a later
 rename/unlink cannot prevent child replacement races. Its native root-anchor proof
 did not cover that gap. The draft was not integrated. Decision013 records the
 replacement: bounded per-container tmpfs and a fixed descriptor-only mailbox.
-Native mailbox creation, admission, transport and runtime proof remain pending.
+Native mailbox creation/admission are now separately verified below; transport and
+runtime composition remain pending.
+
+## Native mailbox and admission
+
+Trusted installation-profile opt-in splits a private128KiB/four-inode tmpfs from
+the existing temporary allowance, preserving memory/swap, output binds and default
+profiles. Twenty-two scoped admission/preparation cases passed; final changed-file
+lint/Node types passed. A read-only independent review found no blocking issue.
+
+A cached-image Linux arm64 proof ran as UID10001 with all capabilities dropped,
+no network, read-only root, bounded CPU/RAM/PIDs and private tmpfs. The actual native
+opener checked tmpfs size/inode limits and created the fixed file through a pinned
+directory. It published two committed frames, rejected a sparse oversized extent
+before materialisation, enforced the inode cap and confirmed original close.
+Source: `engines/k6/wrapper/live-mailbox/native-proof.ts`; tiny esbuild proof bundle,
+no image build/pull or service changes. The ephemeral container was removed.
+This proves this arm64 component scenario, not amd64 or live runtime integration.
 
 Caller obligations remain: approved subset and expected scope/epoch/journal binding,
 cross-frame ordering/freshness, bounded physical IO/accounting/cleanup, private and

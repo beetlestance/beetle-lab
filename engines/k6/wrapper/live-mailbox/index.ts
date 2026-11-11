@@ -1,6 +1,7 @@
 import { encodeMailboxHeader, MAILBOX_BYTES, MAILBOX_HEADER_BYTES, MAILBOX_FOOTER_OFFSET,
   MAILBOX_PAYLOAD_BYTES, type MailboxHash } from '@beetle/contracts/live-mailbox';
 import type { LiveMetricSink } from '../live/index.js';
+export { openNativeMailbox, NativeMailboxError } from './native.js';
 
 export interface MailboxFile {
   size(): Promise<number>;

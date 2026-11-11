@@ -29,6 +29,8 @@ export interface InstallationProfile {
   readonly stagingRoot: string;
   readonly network: { readonly profile: 'none' | 'target-egress'; readonly name: string };
   readonly tmpfsBytes: number;
+  /** Trusted image-install opt-in; never derived from an Offer or browser config. */
+  readonly liveMetricMailbox?: boolean;
   readonly maximumBudget: Readonly<Record<'cpuMillis' | 'memoryBytes' | 'pids' | 'timeoutMs' | 'outputBytes', number>>;
 }
 /** Private trusted staging output: directories must match <stagingRoot>/<runtime name>/{input,output,secrets}. */

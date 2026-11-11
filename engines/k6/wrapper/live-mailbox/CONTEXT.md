@@ -7,5 +7,7 @@ Each serialized original writes busy head/footer, body, committed footer/head;
 partial writes are bounded. Headers and body are charged before IO. No retry queue.
 Close fences synchronously and drains write/close originals; failed cleanup stays
 explicit. Neither this component nor its header grants directory/admission authority.
-Native mount/file creation, Docker archive transport and scoped reads remain pending.
+Native fixed-path creation checks actual Linux tmpfs size/inode caps and retains
+descriptor originals. Trusted Docker install opt-in carves the private mount from
+existing temporary allocation. Runtime wiring, archive transport and reads remain pending.
 Focused tests: engines/k6/wrapper/live-mailbox/sink.test.ts.

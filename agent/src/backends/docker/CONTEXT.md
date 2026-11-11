@@ -5,7 +5,9 @@ prepareRuntime validates shipped Offer/EngineManifest snapshots (1 MiB/64 KiB),
 engine/image equality, minimum/install budget ceilings and manifest-matching entrypoint.
 InstallationProfile is trusted install input: installation UUID, immutable imageDigest,
 numeric non-root UID:GID, approved network (none or named beetle-* target-egress),
-bounded tmpfs/shared memory, absolute stagingRoot and maximumBudget.
+bounded tmpfs/shared memory, absolute stagingRoot and maximumBudget. Trusted
+liveMetricMailbox opt-in splits128KiB/four inodes into private /beetle/live; absent
+opt-in preserves /tmp. It never comes from job config or increases a budget.
 Required effectiveImage pins the same imageDigest, defaultRuntime and public image
 environment (<=64 unique KEY=value entries, <=4096 chars each, <=16 KiB UTF-8 total).
 The install owner obtains this baseline from the approved image/daemon; never from
