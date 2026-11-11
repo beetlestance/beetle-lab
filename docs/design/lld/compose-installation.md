@@ -29,6 +29,12 @@ Required environment fields: BEETLE_INSTANCE, BEETLE_ROOT, BEETLE_REQUEST_FILE,
 BEETLE_UID, BEETLE_GID, BEETLE_DOCKER_GID, BEETLE_DOCKER_SOCKET, BEETLE_PORT,
 BEETLE_FRONTEND_IMAGE, BEETLE_BACKEND_IMAGE, BEETLE_AGENT_IMAGE,
 BEETLE_INSTALLER_IMAGE, BEETLE_ENGINE_IMAGE. No credential environment field.
+Generated request must use dockerSocket /var/run/docker.sock (container path),
+agentOrigin http://agent:4312, agentContainer beetle-INSTANCE-agent, targetNetwork
+beetle-INSTANCE-targets, externalOrigin http://127.0.0.1:PORT and exactly the same
+root/uid/gid/image references. BEETLE_DOCKER_SOCKET is the host source path.
+The installer build includes the accepted starter CLI as /beetle/install/starter.js;
+run it explicitly with --entrypoint node and private --options file before setup.
 Root/request/socket paths are explicit absolute host paths; bind mounts do not
 silently create missing host files/directories. Installation root remains at the
 same absolute path inside installer/backend/agent, so daemon-resolved engine bind
