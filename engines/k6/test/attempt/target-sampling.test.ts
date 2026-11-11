@@ -4,6 +4,8 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { fixture, native, resetNative } from './fixtures.js';
 import { reserveOutput, phaseReservation } from '../../wrapper/attempt/reservation.js';
+import * as targetSampling from '../../wrapper/target-sampling/index.js';
+import { now } from '../staged-input/fixtures.js';
 import type { SuiteConfig } from '../../compiler/suite/index.js';
 const cleanups: (() => Promise<void>)[] = [];
 beforeEach(resetNative);
@@ -40,4 +42,22 @@ it('reserves target bytes from existing partitions and rejects insufficient coll
   expect(phaseReservation(sampled, f.manifest).historyCollect).toBe(1048576);
   f.manifest.phases.find(phase => phase.phase === 'collect')!.outputBytes = 3 * 1048576;
   expect(() => phaseReservation(sampled, f.manifest)).toThrow('output_limit');
+});
+
+it('starts collection with a fresh timestamp after nonzero target cooldown', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response('{"rss":1234}'));
+  const actual = targetSampling.startTargetSampling;
+  vi.spyOn(targetSampling, 'startTargetSampling').mockImplementation(async options => {
+    const owner = await actual(options);
+    return { finish: async () => { const report = await owner.finish(); native.wallOffset = 100; return report; },
+      close: () => owner.close() };
+  });
+  const f = await setup();(f.offer.config as SuiteConfig).targetSampling!.cooldownMs = 25;await f.save();
+  expect((await f.run()).ok).toBe(true);
+  const events = (await readFile(join(f.outputRoot, 'control.ndjson'), 'utf8')).trim().split('\n')
+    .map(line => JSON.parse(line) as {kind: string; phase: string; observedAt: string});
+  const finish = events.find(event => event.phase === 'execute' && event.kind === 'phase.finished')!;
+  const collect = events.find(event => event.phase === 'collect' && event.kind === 'phase.started')!;
+  expect(Date.parse(collect.observedAt)).toBeGreaterThanOrEqual(Date.parse(finish.observedAt));
+  expect(Date.parse(collect.observedAt)).toBe(now + 100);
 });

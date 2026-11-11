@@ -157,7 +157,7 @@ class Attempt {
         this.collecting = true;
         this.historyAtCollect = this.archive?.bytes ?? 0;
         this.archive?.beginCollection(reservation.historyCollect);
-        await this.phases!.transition('collect', this.measured ? 1 : 0, receipt.observedAt,
+        await this.phases!.transition('collect', this.measured ? 1 : 0, this.targetSampler ? undefined : receipt.observedAt,
           this.historyAtCollect + (this.measured ? 0 : receipt.build.bytes));
       } });
     await this.execution.result;
