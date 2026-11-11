@@ -80,6 +80,7 @@ released application until the rewrite is qualified.
 | Inspect output monitoring | [Output guard](verification/output-guard.md) | Real filesystem sampling, freshness, launch fences and remaining native qualification |
 | Inspect deadline monitoring | [Timeout guard](verification/timeout-guard.md) | Original admission budget, independent polling, clock fencing and shutdown review |
 | Inspect engine image evidence | [k6 image](verification/engine-image.md) | Node24/Linux arm64 execution, cgroup settings and remaining qualification |
+| Inspect fresh offline installation | [Provisioning evidence](verification/fresh-installation.md) | Actual private files/Journal/authority/loaders; Compose and first-boot qualification pending |
 | Run the rewrite locally | [Development startup](development.md) | Private config, backend entrypoint and frontend dev proxy |
 | Understand a settled choice | [Rewrite](decisions/001-clean-rewrite.md), [MIT license](decisions/002-mit-license.md) | Reason, scope and rejected alternative |
 

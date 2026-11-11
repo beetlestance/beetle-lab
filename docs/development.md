@@ -1,48 +1,44 @@
 # Rewrite development startup
 
-The released app still uses `npm start`. These commands run the new namespace,
-settings, suite authoring and input HTTP surface; run execution and Docker installation remain incomplete.
-Run enqueue/detail/history routes are registered. Fresh enqueue requires matching installed profiles and fresh agent/backend capacity.
-The private connection and publication loop are wired; agent dispatch remains unimplemented.
-Use Node 24 and install the locked development dependencies with `npm ci`.
+The released app still uses `npm start`. The rewrite includes namespace/settings,
+suite/input authoring, authenticated run control, agent execution, durable results,
+event replay and sealed metric charts. Native backend/agent/k6 execution has local
+evidence; complete Docker/Compose installation and release qualification remain pending.
+Use Node24 and the locked development dependencies (`npm ci`).
 
-## Create a private development installation once
+## Create a private development installation
 
-From the repository root:
+The explicit [fresh provisioner](design/lld/fresh-installation.md) creates coherent
+private backend/agent configuration, token, Journal and authority gate. Supply an
+owned private request file matching [ProvisionRequest](../tools/install/types.ts):
+settings/policy/manifest are explicit, and the named images/network must already
+exist. Provisioning performs read-only Docker inspection and creates no containers.
+It never guesses host capacity or resets an interrupted/existing installation.
 
 ```sh
-mkdir -m 700 -p .agent-output/dev
-node --input-type=module <<'JS'
-import { readFile, writeFile } from 'node:fs/promises';
-import { randomUUID } from 'node:crypto';
-const fixture = JSON.parse(await readFile('contracts/fixtures/api/valid/installation-settings.json', 'utf8'));
-const { effective, ...installation } = fixture;
-installation.id = randomUUID();
-await writeFile('.agent-output/dev/installation.json', JSON.stringify(installation), { mode: 0o600, flag: 'wx' });
-JS
+npm run build:api
+npm run build:agent
+node --import tsx tools/install/cli.ts \
+  --request /absolute/private/provision.json \
+  --agent-worker "$PWD/agent/dist/worker.js" \
+  --backend-worker "$PWD/app/dist/worker.js"
 ```
 
-This creates synthetic development settings, not a measured engine resource profile.
-Keep this file and installation identity when restarting an existing database.
-The JSON contains `id`, `version:1`, `schemaVersion:2`, installation `scope` and
-`values` matching the generated `InstallationValues` contract. It has no `effective`
-field or resolved secrets. Existing installations keep their persisted UI settings.
-
-The backend also requires a private `agent.json` beside these settings. Follow the
-[connection contract](design/lld/backend-connection.md) for its closed configuration:
-version1, private HTTP origin, canonical token-file path, matching installation UUID,
-actual installed-profile pins and backend allocation/reserve. Use the descriptors
-and bearer-token file from your agent installation; keep both files private (0600).
-The token payload is43..128 allowed characters, with one optional terminal LF.
-Agent setup, Compose packaging and completed run execution remain separate work.
+This is an advanced source-development path, not a finished Compose installer.
+Run as the request's non-root uid/gid. New directories use0700 and files0600.
+An interrupted receipt requires explicit recovery; no automatic data reset exists.
+Ready replay is offline and requires unchanged request/image pins and exclusive
+authority. Subsequent serving startup retains its normal missing/restore fences.
+Keep the installation identity and its private data across restarts.
+The command prints configuration paths, never the generated token value.
 
 ## Start backend and frontend
 
 ```sh
 npm run build:api
-BEETLE_CONFIG_FILE="$PWD/.agent-output/dev/installation.json" \
-BEETLE_AGENT_CONFIG_FILE="$PWD/.agent-output/dev/agent.json" \
-BEETLE_DATA_DIR="$PWD/.agent-output/dev" \
+BEETLE_CONFIG_FILE="$PWD/.agent-output/dev/config/installation.json" \
+BEETLE_AGENT_CONFIG_FILE="$PWD/.agent-output/dev/config/backend-agent.json" \
+BEETLE_DATA_DIR="$PWD/.agent-output/dev/backend" \
 BEETLE_EXTERNAL_ORIGIN=http://127.0.0.1:5173 npm run start:api
 ```
 
