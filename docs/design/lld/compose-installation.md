@@ -7,7 +7,8 @@ Depends on [starter](installation-starter.md), [provisioning](fresh-installation
 ## Topology and effects
 
 compose.rewrite.yml is opt-in. Frontend, backend and agent are separate services.
-Only frontend publishes127.0.0.1:configured-port. Control network is internal;
+Only frontend publishes127.0.0.1:configured-port. Frontend also joins an ingress bridge for published-port reachability.
+Control network is internal;
 backend/agent have no published ports. Engine attempts use a separate target-egress
 bridge created during explicit installer setup, never the control network.
 No database/object-store/external IAM is introduced in the local first release.
@@ -41,7 +42,9 @@ same absolute path inside installer/backend/agent, so daemon-resolved engine bin
 sources agree with agent staging paths. No named-volume translation for staging.
 
 Installer mounts private request/root and Docker socket. Agent mounts only config
-read-only, agent state read-write, published inputs read-only and Docker socket.
+read-only, journal and staging as distinct exact read-write binds, published inputs
+read-only and Docker socket. Staging uses explicit rprivate propagation: the existing
+agent attestation requires an exact staging-root mount and rejects ancestor mounts.
 Backend mounts config read-only/backend state read-write. Frontend mounts neither.
 Shared positive uid/gid owns private files; only installer/agent get the explicit
 socket supplemental group. Socket read-only mount still grants powerful daemon

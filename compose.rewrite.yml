@@ -48,7 +48,7 @@ services:
     pids_limit: 32
     ports:
       - "127.0.0.1:${BEETLE_PORT:?Set the loopback frontend port}:8080"
-    networks: [control]
+    networks: [ingress, control]
 
   backend:
     <<: *runtime
@@ -93,8 +93,8 @@ services:
       - *config
       - *socket
       - type: bind
-        source: ${BEETLE_ROOT}/agent
-        target: ${BEETLE_ROOT}/agent
+        source: ${BEETLE_ROOT}/agent/journal
+        target: ${BEETLE_ROOT}/agent/journal
         bind:
           create_host_path: false
       - type: bind
@@ -103,6 +103,12 @@ services:
         read_only: true
         bind:
           create_host_path: false
+      - type: bind
+        source: ${BEETLE_ROOT}/agent/staging
+        target: ${BEETLE_ROOT}/agent/staging
+        bind:
+          create_host_path: false
+          propagation: rprivate
     networks: [control]
 
   installer:
@@ -149,6 +155,8 @@ services:
     entrypoint: [node, -e, "process.exit(0)"]
 
 networks:
+  ingress:
+    driver: bridge
   control:
     internal: true
   targets:
