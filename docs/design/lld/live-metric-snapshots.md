@@ -130,6 +130,13 @@ drains actual write/close originals. Failed cleanup retains explicit failed
 quiescence. Native creation, admitted tmpfs wiring and physical stop/read drainage
 are mandatory before enabling the producer in images.
 
+The [approval constraint](../../decisions/014-live-metric-approval-authority.md)
+requires trusted compile-owned scope/epoch/subset before consumption; never infer
+approval from a frame. Generic reader input is explicit; startup handoff is pending.
+Reader age bounds capture, source-window end and publication to6s with no future
+timestamps. Unchanged revisions retain a monotonic expiry even if wall time freezes.
+New revisions cannot overlap/regress source windows or captured/publication times.
+
 Agent exposes finite authenticated scope/journal-authority-bound reads from the
 fixed mailbox of its matched active container only, never caller paths. Docker
 archive transport must cap actual stream bytes independently of advertised length,

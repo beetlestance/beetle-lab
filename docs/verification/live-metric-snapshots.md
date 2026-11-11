@@ -148,3 +148,19 @@ attempt/archive regression lane passed; changed lint/Node types passed. Independ
 read-only review found no blockers. No image build, profile enablement or user
 service changes. Private/public reads, browser polling and native end-to-end
 qualification remain pending.
+
+
+## Trusted reader component
+
+`agent/src/live-metrics` requires explicit trusted scope/epoch/subset approval and
+retains one original through cancellation/close. Shared envelope/frame validation
+precedes exact identity/order checks; altered repeats, overlapping windows, stale
+capture/source/publication and future timestamps reject. Unchanged polling retains
+its monotonic expiry, including when the wall clock freezes. No metric corpus.
+
+Fourteen cases passed after review found an overlapping-window gap. Added cases
+cover delayed source/capture and frozen-wall expiry. A lint complexity finding
+was resolved by separating synchronous frame validation from original IO ownership.
+Final scoped checks and independent correction review accompany this component.
+No authenticated route, compiler-owned approval handoff or profile activation is
+claimed. Decision014 records the remaining authority dependency.
