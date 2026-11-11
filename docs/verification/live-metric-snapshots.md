@@ -37,6 +37,21 @@ passed the nine producer cases. Ten lifetime cases passed on unchanged source.
 Scoped lint and Node types passed; missing worktree dependency links were corrected
 without installing packages. No Docker/build/full-suite or native IO was run.
 
+## Mailbox envelope and sink
+
+The shared `live-mailbox` export and engine mailbox sink are locally verified,
+independently reviewed components. Ten envelope cases cover canonical layout,
+busy/corrupt/torn data, length/revision limits and digest failure. Five sink cases
+cover ordered commits, input copying, one original, held write/close drainage,
+full physical charges, truncation and partial-write bounds. Scoped lint/Node types
+passed; worktree package links were corrected before the sink test run.
+
+Review rejected the shared-root file adapter: checking an inode before a later
+rename/unlink cannot prevent child replacement races. Its native root-anchor proof
+did not cover that gap. The draft was not integrated. Decision013 records the
+replacement: bounded per-container tmpfs and a fixed descriptor-only mailbox.
+Native mailbox creation, admission, transport and runtime proof remain pending.
+
 Caller obligations remain: approved subset and expected scope/epoch/journal binding,
 cross-frame ordering/freshness, bounded physical IO/accounting/cleanup, private and
 public routes, browser polling and measured overhead. The engine publisher core

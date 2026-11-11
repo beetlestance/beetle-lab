@@ -79,6 +79,7 @@ released application until the rewrite is qualified.
 | Inspect run execution activity | [Timeline UI](verification/run-timeline-ui.md) | Bounded recent activity and lifetime/progress checks; browser/resource production pending |
 | Inspect public event replay | [Run event reads](verification/run-event-reads.md) | Scoped finite reads through actual worker/HTTP, resume and unchanged accounting |
 | Inspect advisory live metric foundation | [Live snapshot contract](verification/live-metric-snapshots.md) | Bounded shared frame/codec only; producer/reader/browser remain pending |
+| Review live transport custody | [Mailbox decision](decisions/013-live-metric-mailbox-custody.md) | Private bounded mailbox; shared-root rename/unlink adapter rejected |
 | Inspect retained k6 metric history | [Metric archive](verification/k6-metric-archive.md) | Streamed data/index custody and phase accounting; [history reads/chart](verification/run-metric-history.md) locally verified; live transport pending |
 | Inspect recorded metric filters | [Source ranges](verification/metric-source-range.md) | UTC draft/apply/reset controls, bounded paging and retired-read ownership |
 | Inspect bounded k6 duration estimates | [Distribution evidence](verification/k6-distributions.md) | Immutable windows/final histograms, numeric v2 and resource qualification limits |

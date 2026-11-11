@@ -102,17 +102,34 @@ unbounded publishers. No process-global job scheduler belongs in this component.
 
 ## Subsequent physical and consumer packets
 
-A later fixed-file adapter writes live-metrics.json/live-metrics.tmp under the exact
-trusted output root, mode0600/no-follow/single-link/root identity checks and atomic
-replacement. No per-window fsync, append log or lifecycle journal event. Carve out
-128KiB peak retained/temp allowance from existing output before load; never raise
-an Offer or phase ceiling. Count actual replacement bytes against a finite phase/
-lifetime produced-output allowance. Stop/drain/remove the two exact live files before
-stopped artifact scanning/sealing; unknown cleanup remains fenced, never fake success.
-This accounting/custody wiring is mandatory before enabling the producer in images.
+The [custody decision](../../decisions/013-live-metric-mailbox-custody.md) replaces
+the shared-root rename/unlink adapter. Use a dedicated initially empty `/beetle/live`
+tmpfs capped at128KiB/four inodes, carved from the existing temporary allocation and
+memory budget. No Offer or phase ceiling increase. The one fixed mailbox is private
+to this container, separate from inputs/secrets/retained outputs. Do not rename or
+unlink its children; container teardown after physical stop owns mount cleanup.
+No per-window fsync, append log, new process or lifecycle journal event.
 
-Agent exposes finite authenticated scope/journal-authority-bound reads from trusted
-active-attempt roots only, not the stopped artifact-range authority or caller paths.
+The shared `@beetle/contracts/live-mailbox` format has128-byte envelopes at offsets
+0 and65664 with a65,536-byte payload area between them; total65792 bytes. Envelopes
+contain ASCII BLIVE001 at0, committed flag0/1 at8, big-endian revision at16, length
+at20, SHA256 bytes24..55 and zeroes elsewhere. Revision1..65536 never wraps; body
+length1..65536. Write busy head/footer, body, then committed footer/head, awaiting
+each actual original and bounding partial writes. Charge body+512 envelope bytes
+before IO against finite admitted lifetime output; never retry uncertain effects.
+Readers require exact extent, equal canonical committed envelopes and body hash,
+then existing frame capture and revision==publishedSequence. Truncation, growth,
+mixed bytes or invalid digest means unavailable without retry or age refresh.
+
+The producer sink owns one original and one bounded body copy; close fences and
+drains actual write/close originals. Failed cleanup retains explicit failed
+quiescence. Native creation, admitted tmpfs wiring and physical stop/read drainage
+are mandatory before enabling the producer in images.
+
+Agent exposes finite authenticated scope/journal-authority-bound reads from the
+fixed mailbox of its matched active container only, never caller paths. Docker
+archive transport must cap actual stream bytes independently of advertised length,
+parse one expected regular entry without extraction/links, and drain originals.
 Reuse existing ordinary transport credits: globally<=2 telemetry originals, no queue,
 control/cancel priority preserved. Root/name replacement or scope/epoch mismatch
 fails closed; normal atomic replacement races return explicit unavailable. Reads,

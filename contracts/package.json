@@ -12,7 +12,8 @@
     "./engine-config/k6": "./src/engine-config/k6.ts",
     "./output-source": "./src/output-source/index.ts",
     "./output-source/internal": "./src/output-source/internal.ts",
-    "./metrics": "./src/metrics/index.ts"
+    "./metrics": "./src/metrics/index.ts",
+    "./live-mailbox": "./src/live-mailbox/index.ts"
   },
   "dependencies": {
     "ajv": "8.20.0",
