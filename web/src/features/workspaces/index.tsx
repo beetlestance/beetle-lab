@@ -40,10 +40,10 @@ function WorkspaceScope({ organizationId, workspaceId, view }: { organizationId:
     client.removeQueries({ queryKey: queryKeys.workspace(organizationId, workspaceId) });
   }, [client, organizationId, workspaceId]);
   return <QueryState query={workspace}>{data => <>
-    <Link to={routes.workspaceSettings(organizationId, workspaceId)}>Workspace settings</Link>
+    <nav className="actions" aria-label="Workspace navigation"><Link to={routes.workspaceSettings(organizationId, workspaceId)}>Workspace settings</Link>
     <Link to={routes.suites(organizationId, workspaceId)}>Suites</Link>
     <Link to={routes.inputs(organizationId, workspaceId)}>Inputs</Link>
-    <Link to={routes.runs(organizationId, workspaceId)}>Runs</Link>
+    <Link to={routes.runs(organizationId, workspaceId)}>Runs</Link></nav>
     <p className="workspace-label">Workspace <strong>{data.name}</strong></p>
     {view === 'inputs' ? <WorkspaceInputs workspace={data} /> : <FolderList workspace={data} />}
   </>}</QueryState>;

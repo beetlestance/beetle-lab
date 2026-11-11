@@ -38,6 +38,10 @@ RUN node -e "if (process.versions.node.split('.')[0] !== '24') throw new Error('
 FROM ${K6_IMAGE} AS native-k6
 
 FROM ${NODE_IMAGE} AS engine
+ARG VCS_REF=unknown
+LABEL org.opencontainers.image.source="https://github.com/beetlestance/beetle-lab" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.revision=$VCS_REF
 WORKDIR /beetle
 ENV NODE_ENV=production
 COPY --from=native-k6 /usr/bin/k6 /usr/local/bin/k6
