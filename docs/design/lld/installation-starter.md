@@ -50,8 +50,10 @@ qualified minimum hardware. No automatic adoption of idle host cores or sensors.
   timeout1ms/output1byte. Placeholder imageDigest sha256 followed by64 zeros is
   replaced only by actual provisioning inspection; it is not an executable pin.
   Five phases validate/prepare/execute/collect/seal: workUnits100 each.
-  Execute phase uses the default budget timeout300000ms and output64MiB;
-  other phases use timeout5000ms/output4MiB. The overall Offer deadline and
+  Prepare and execute use the default budget timeout300000ms: native k6 JSON
+  buffering can delay the measurement-start marker during low-volume runs.
+  Execute output is64MiB; other phase output is4MiB. Validate/collect/seal
+  timeouts are5000ms. The overall Offer deadline and
   admitted output ceiling still apply; phase ceilings never grant extra resources. Manifest ID k6-v1/profile k6-local/catalog1/config1;
   tmpfs16MiB. No fabricated image digest after provisioning.
 

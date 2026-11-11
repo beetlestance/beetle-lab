@@ -44,13 +44,21 @@ it('ships the actual schema and explicit nonexecutable image template', () => {
     entrypoint: { executable: 'node', arguments: ['/beetle/bootstrap/main.js'] },
     phases: [
       { phase: 'validate', timeoutMs: 5000, workUnits: 100, outputBytes: 4194304 },
-      { phase: 'prepare', timeoutMs: 5000, workUnits: 100, outputBytes: 4194304 },
+      { phase: 'prepare', timeoutMs: 300000, workUnits: 100, outputBytes: 4194304 },
       { phase: 'execute', timeoutMs: 300000, workUnits: 100, outputBytes: 67108864 },
       { phase: 'collect', timeoutMs: 5000, workUnits: 100, outputBytes: 4194304 },
       { phase: 'seal', timeoutMs: 5000, workUnits: 100, outputBytes: 4194304 },
     ],
   });
   expect(validate('EngineManifest', manifest).ok).toBe(true);
+});
+
+it('allows buffered measurement-start delivery during prepare within the unchanged overall deadline', () => {
+  const policy = createStarterRequest(options);
+  const prepare = policy.engine.manifest.phases.find(phase => phase.phase === 'prepare');
+  expect(prepare?.timeoutMs).toBe(policy.engine.manifest.defaultBudget.timeoutMs);
+  expect(prepare?.outputBytes).toBe(4 * 1_048_576);
+  expect(policy.agentPolicy.maxTimeoutMs).toBe(300_000);
 });
 
 it('keeps execute phase ceilings equal to the declared default budget and unchanged overall ceilings', () => {

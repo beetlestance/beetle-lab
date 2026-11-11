@@ -30,7 +30,7 @@ export function starterPolicy(): Pick<ProvisionRequest, 'installationValues' | '
         defaultBudget: { ...budget }, minimumBudget: { ...budget, timeoutMs: 1, outputBytes: 1 },
         backends: ['docker'], network: { required: true, profile: 'target-egress' },
         phases: (['validate', 'prepare', 'execute', 'collect', 'seal'] as const).map(phase => ({
-          phase, timeoutMs: phase === 'execute' ? budget.timeoutMs : 5000, workUnits: 100,
+          phase, timeoutMs: phase === 'execute' || phase === 'prepare' ? budget.timeoutMs : 5000, workUnits: 100,
           outputBytes: phase === 'execute' ? budget.outputBytes : 4 * MiB,
         })),
         entrypoint: { executable: 'node', arguments: ['/beetle/bootstrap/main.js'] },
