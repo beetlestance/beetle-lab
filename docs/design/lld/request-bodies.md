@@ -16,6 +16,9 @@ the4096-character template source and65536-character substitution limits.
 A text input without template delimiters is a literal input plan, appended under
 the body byte cap. Text containing delimiters uses the existing template plan.
 No raw JSON.stringify or unbounded materialization bypasses the bounded renderer.
+Native plan serialization streams quoted chunks for compiler-marked literal body
+fields only, under an8MiB expanded-string ceiling and the existing24MiB total/
+peak build admission. Unrelated strings and keys retain their65536-character cap.
 
 Acceptance: published approximately700KiB JSON values round-trip and text is byte-exact;
 Unicode/escaping, reused references and native build/run keep limits. Oversized
