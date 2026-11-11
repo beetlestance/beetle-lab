@@ -157,7 +157,7 @@ case "$command" in
     ensure_image backend app/Dockerfile "beetle-local-backend:$revision"
     ensure_image agent agent/Dockerfile "beetle-local-agent:$revision"
     ensure_image engine engines/k6/Dockerfile "beetle-local-engine:$revision"
-    case "$state" in *_fresh) dc --profile setup run --rm --no-deps --no-build --pull never installer ;; esac
+    case "$state" in *_fresh) dc --profile setup run --rm --no-deps --pull never installer ;; esac
     dc up -d --no-build --pull never frontend backend agent
     wait_ready
     printf 'Open http://127.0.0.1:%s\nRetrieve the latest startup token: %s token --directory "%s"\n' "$port" "$0" "$directory" ;;

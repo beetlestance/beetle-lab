@@ -71,6 +71,8 @@ it('fresh up initializes once before starting services and fails visibly on inst
   const installer = recorded.findIndex(call => call.a[0] === 'compose' && call.a.includes('installer'));
   const up = recorded.findIndex(call => call.a[0] === 'compose' && call.a.includes('up'));
   expect(installer).toBeGreaterThan(-1); expect(up).toBeGreaterThan(installer);
+  expect(recorded[installer]!.a).not.toContain('--no-build');
+  expect(recorded[installer]!.a).toContain('--pull');
   f.env.FAKE_INSTALL_FAIL = 'yes'; await fs.writeFile(f.log, '');
   await expect(run(f, 'up')).rejects.toMatchObject({ code: 1 }); recorded = await calls(f);
   expect(recorded.some(call => call.a.includes('up'))).toBe(false);
