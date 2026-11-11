@@ -1,6 +1,7 @@
 import { builtinModules } from 'node:module';
 import { dirname, resolve, relative } from 'node:path';
 import ts from 'typescript';
+import { installationBoundary } from './installation-boundaries.js';
 import { qualificationBoundary } from './qualification-boundaries.js';
 export interface ArchitectureIssue { file: string; reason: string }
 export interface ImportEdge { target: string; typeOnly: boolean }
@@ -78,6 +79,8 @@ function environmentIssue(file: string, edge: ImportEdge, resolved: string): str
 }
 function runtimeIssue(file: string, target: string, resolved: string): string | undefined {
   if (target === '<unresolved-runtime-import>') return 'Computed module import requires explicit architecture review';
+  const installation = installationBoundary(file, resolved);
+  if (installation !== undefined) return installation ? undefined : `Unapproved installation boundary: ${target}`;
   const qualification = qualificationBoundary(file, resolved);
   if (qualification !== undefined) return qualification ? undefined : `Unapproved qualification boundary: ${target}`;
   const owner = serviceOwner(target);
