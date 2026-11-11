@@ -202,4 +202,3 @@ async function closeRequest(handle: FileHandle): Promise<void> {
   try { await handle.close(); }
   catch (cause) { requestCleanupFailed = true; retained.add(handle); throw new ProvisionError('cleanup', { cause }); }
 }
-
