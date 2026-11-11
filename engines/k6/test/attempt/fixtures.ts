@@ -9,6 +9,7 @@ import { summaryProjection } from '../../runtime/summary.js';
 import { fixture as stagedFixture, now, syntheticInstalledIdentity } from '../staged-input/fixtures.js';
 import { runCompiledK6 } from '../../wrapper/execution/index.js';
 import { runAttempt } from '../../wrapper/attempt/attempt.js';
+import type { AttemptPorts } from '../../wrapper/attempt/ports.js';
 import type { StagedK6Options } from '../../wrapper/attempt/index.js';
 
 const native = vi.hoisted(() => ({ calls: 0, closes: 0, failed: false, discovery: false, missingMarker: false,
@@ -97,8 +98,8 @@ export async function fixture() {
     await Promise.all([chmod(options.inputRoot, 0o700), chmod(options.secretRoot, 0o700)]); await base.cleanup();
   };
   return { ...base, cleanup, outputRoot, options, clock,
-    run: async (overrides: Partial<StagedK6Options> = {}) => {
-      await protect(); return runAttempt({ ...options, ...overrides }, { execute: runCompiledK6, clock });
+    run: async (overrides: Partial<StagedK6Options> = {}, ports: Partial<AttemptPorts> = {}) => {
+      await protect(); return runAttempt({ ...options, ...overrides }, { execute: runCompiledK6, clock, ...ports });
     } };
 }
 export async function flush(): Promise<void> { for (let i = 0; i < 50; i++) await Promise.resolve(); }

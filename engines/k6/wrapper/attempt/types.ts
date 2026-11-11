@@ -1,3 +1,4 @@
+import type { AttemptLiveState } from './live.js';
 import type { ControlEvent, EngineResult } from '@beetle/contracts';
 import type { MetricWindow } from '../../aggregation/index.js';
 import type { ExecutionReceipt } from '../execution/index.js';
@@ -8,6 +9,8 @@ import type { PublicationResult } from '../publication/index.js';
 /** Trusted packaging arguments. No options are read from the staged payload. */
 export interface StagedK6Options extends Omit<OpenStagedOptions, 'wallNow' | 'headerTimeoutMs'> {
   readonly outputRoot: string;
+  /** Trusted image-install opt-in, never staged job configuration. */
+  readonly liveMetricMailbox?: boolean;
   readonly headerTimeoutMs?: number;
   /** Serial, bounded and cooperative; original callback work remains owned until settled. */
   readonly onEvent?: (event: ControlEvent, signal: AbortSignal) => Promise<void>;
@@ -27,6 +30,7 @@ export interface StagedK6Receipt {
   readonly result: EngineResult | null;
   readonly publication: PublicationResult | null;
   readonly quiescence: Readonly<Record<'input' | 'execution' | 'artifacts' | 'journal' | 'publication' | 'notifications', Quiescence>>;
+  readonly liveMetrics: AttemptLiveState;
   readonly notifications: 'complete' | 'disabled' | 'failed';
 }
 export class AttemptError extends Error {

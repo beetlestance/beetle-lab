@@ -50,11 +50,12 @@ export class AttemptFence {
   phase(timeout: number): void {
     const sample = this.check(); this.phaseEnd = Math.min(this.globalEnd, sample.mono + timeout); this.check();
   }
-  remaining(): number {
+  lifetimeRemaining(): number {
     const sample = this.check();
-    return Math.max(1, Math.min(60_000, this.wallEnd - sample.wall,
+    return Math.max(1, Math.min(this.wallEnd - sample.wall,
       this.globalEnd - sample.mono, this.phaseEnd - sample.mono));
   }
+  remaining(): number {return Math.min(60_000, this.lifetimeRemaining());}
   budget() { return { deadline: performance.now() + this.remaining(), signal: this.controller.signal }; }
   timestamp(): string { return new Date(this.check().wall).toISOString(); }
   private tick(): void {

@@ -144,6 +144,23 @@ prior original settles; stops/retires ownership on scope/session/attempt change.
 Errors/staleness are explicit; terminal state switches to published sealed history.
 SSE, arbitrary live series selection and replay are not implied by this component.
 
+## Attempt publisher composition
+
+Only trusted packaging may set liveMetricMailbox; staged configuration cannot.
+The default subset takes the first20 eligible execute/engine descriptors from the
+approved parser catalogue, excludes prepare/control, and reports all other series.
+Capture/freeze before native effects. Each invocation uses a fresh producer UUID;
+consumers still bind it to the matched container/attempt generation.
+
+Carve at most8MiB and one eighth of total output, further capped at one eighth of
+execute output. Reduce history allocation; never extend admission. Charge the
+initial65792-byte extent plus sink body/envelope writes conservatively. Publication
+starts after measured-phase transition and drains before collect starts; report
+these bytes in execute completion. A safe advisory failure leaves the test outcome
+alone. Failed native/publisher cleanup prevents sealing. Receipt.liveMetrics reports
+status/reason/produced bytes/quiescence separately from the authoritative verdict.
+Original phase/global remaining time bounds publication, without the per-IO60s cap.
+
 ## Focused acceptance
 
 Core checks: existing projection parity for every kind, percentile bounds/zero ratios,

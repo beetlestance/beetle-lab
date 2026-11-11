@@ -17,6 +17,7 @@ import type { TargetSamplingOwner, TargetSamplingReport } from '../target-sampli
 import { MetricArchive } from './archive/index.js';
 import type { ArchiveEvidence } from './archive/index.js';
 import type { MetricWindow } from '../../aggregation/index.js';
+import { AttemptLive } from './live.js';
 import { AttemptFence } from './fence.js';
 import { Notifications } from './notifications.js';
 import { Phases } from './phases.js';
@@ -41,8 +42,9 @@ function capture(input: StagedK6Options): StagedK6Options {
   const headerTimeoutMs = input.headerTimeoutMs ?? 5000;
   if (!Number.isSafeInteger(headerTimeoutMs) || headerTimeoutMs < 1 || headerTimeoutMs > 60_000) throw new AttemptError('profile');
   validateCallbacks(input);
+  if (input.liveMetricMailbox !== undefined && typeof input.liveMetricMailbox !== 'boolean') throw new AttemptError('profile');
   return Object.freeze({ inputRoot: input.inputRoot, secretRoot: input.secretRoot, outputRoot: input.outputRoot,
-    uid: input.uid, signal: input.signal, headerTimeoutMs, installed: Object.freeze({ ...input.installed }),
+    uid: input.uid, signal: input.signal, headerTimeoutMs, liveMetricMailbox: input.liveMetricMailbox === true, installed: Object.freeze({ ...input.installed }),
     ...(input.expected ? { expected: Object.freeze({ ...input.expected }) } : {}),
     ...(input.onEvent ? { onEvent: input.onEvent } : {}), ...(input.onWindow ? { onWindow: input.onWindow } : {}) });
 }
@@ -53,13 +55,14 @@ function validateCallbacks(input: StagedK6Options): void {
 }
 function blank(): State {
   return { ok: false, reason: null, scope: null, inputFailure: null, execution: null, result: null, publication: null,
-    notifications: 'complete', quiescence: { input: 'not_started', execution: 'not_started',
+    notifications: 'complete', liveMetrics: {status: 'disabled', reason: null, producedBytes: 0, quiescence: 'confirmed'}, quiescence: { input: 'not_started', execution: 'not_started',
       artifacts: 'not_started', journal: 'not_started', publication: 'not_started', notifications: 'not_started' } };
 }
 
 /** Composition root: no compiler/parser/outcome or publication implementation here. */
 class Attempt {
   private readonly state = blank();
+  private readonly live = new AttemptLive();
   private readonly quiet: Quiet = { ...this.state.quiescence };
   private readonly fence: AttemptFence;
   private readonly notifications: Notifications;
@@ -97,6 +100,7 @@ class Attempt {
     } finally {
       await this.cleanup(); this.fence.dispose();
     }
+    this.state.liveMetrics = this.live.state();
     this.state.notifications = this.notifications.status;
     if (this.notifications.status !== 'complete') { this.state.ok = false; this.state.reason ??= 'notification'; }
     this.state.quiescence = Object.freeze({ ...this.quiet });
@@ -115,7 +119,7 @@ class Attempt {
     this.fence.phase(input.manifest.phases.find(item => item.phase === 'validate')!.timeoutMs);
     const { organizationId, workspaceId, attemptId, generation } = input.staging;
     this.state.scope = Object.freeze({ organizationId, workspaceId, attemptId, generation });
-    this.stage = 'output_limit'; this.reservation = phaseReservation(reserveOutput(input.offer.budget.outputBytes), input.manifest);
+    this.stage = 'output_limit'; this.reservation = phaseReservation(reserveOutput(input.offer.budget.outputBytes, false, this.options.liveMetricMailbox), input.manifest);
     this.stage = 'profile';
     this.artifacts = new Artifacts({ directory: this.options.outputRoot, uid: this.options.uid, fence: this.fence });
     await outputRoot({ directory: this.options.outputRoot, uid: this.options.uid, fence: this.fence });
@@ -131,7 +135,7 @@ class Attempt {
     const result = await operation.result;
     await this.settle('input', [operation.quiesced]);
     if (!result.ok) { this.state.inputFailure = result; this.fail('compile'); }
-    this.reservation = phaseReservation(reserveOutput(this.input!.offer.budget.outputBytes, !!result.value.suite.targetSampling), this.input!.manifest);
+    this.reservation = phaseReservation(reserveOutput(this.input!.offer.budget.outputBytes, !!result.value.suite.targetSampling, this.options.liveMetricMailbox), this.input!.manifest);
     await this.phases!.transition('prepare', 1); this.fence.check(); return result.value;
   }
   private async invoke(compiled: CompiledInput): Promise<void> {
@@ -150,15 +154,17 @@ class Attempt {
       measureStarted: async receipt => {
         if (this.measured || this.collecting) this.fail('execution');
         this.measured = true; await this.phases!.transition('execute', 1, receipt.observedAt, receipt.build.bytes);
+        await this.startLive(compiled);
       }, collectStarted: async receipt => {
         if (this.collecting) this.fail('execution');
         if (this.targetSampler) this.targetReport = await this.targetSampler.finish();
         this.fence.check();
+        await this.closeLive();
         this.collecting = true;
         this.historyAtCollect = this.archive?.bytes ?? 0;
         this.archive?.beginCollection(reservation.historyCollect);
         await this.phases!.transition('collect', this.measured ? 1 : 0, this.targetSampler ? undefined : receipt.observedAt,
-          this.historyAtCollect + (this.measured ? 0 : receipt.build.bytes));
+          this.historyAtCollect + this.live.state().producedBytes + (this.measured ? 0 : receipt.build.bytes));
       } });
     await this.execution.result;
     // First failure may precede original work. Preserve late actual facts without upgrading it.
@@ -166,10 +172,21 @@ class Attempt {
     const final = results[0]; if (final?.status === 'fulfilled') this.state.execution = final.value;
     this.quiet.execution = results.slice(0, 3).every(item => item.status === 'fulfilled') ? 'confirmed' : 'failed';
     this.quiet.input = results[3]?.status === 'fulfilled' ? 'confirmed' : 'failed';
+    await this.closeLive();
     await this.notifications.quiesce(); this.quiet.notifications = 'confirmed';
     if (this.quiet.execution !== 'confirmed' || this.quiet.input !== 'confirmed') this.fail('cleanup');
     if (this.archiveFailure) throw this.archiveFailure;
     this.fence.check();
+  }
+  private async startLive(compiled: CompiledInput): Promise<void> {
+    if (!this.options.liveMetricMailbox) return;
+    await this.live.start({suite: compiled.suite, scope: this.state.scope!, uid: this.options.uid,
+      maximumBytes: this.reservation!.live, timeoutMs: Math.max(1, Math.floor(this.fence.lifetimeRemaining())),
+      signal: this.fence.controller.signal, clock: this.ports.clock}, this.ports.openMailbox);
+    if (this.live.state().quiescence === 'failed') this.fail('cleanup');
+  }
+  private async closeLive(): Promise<void> {
+    if ((await this.live.close()).quiescence !== 'confirmed') this.fail('cleanup');
   }
   private async ensureArchive(): Promise<MetricArchive> {
     if (this.archive) return this.archive;
@@ -191,6 +208,7 @@ class Attempt {
     catch (error) {
       this.archiveFailure ??= error instanceof AttemptError ? error : new AttemptError('artifact'); throw this.archiveFailure;
     }
+    if (this.measured && !this.collecting) this.live.accept(window);
     await this.options.onWindow?.(window, signal); this.fence.check();
   }
   private async archiveEvidence(): Promise<ArchiveEvidence | null> {
@@ -236,7 +254,7 @@ class Attempt {
   }
   private artifactQuiescence(): 'confirmed' | 'failed' {
     return this.quiet.artifacts === 'failed' || this.artifacts?.quiescence === 'failed'
-      || this.archive?.quiescence === 'failed' ? 'failed' : 'confirmed';
+      || this.archive?.quiescence === 'failed' || this.live.state().quiescence === 'failed' ? 'failed' : 'confirmed';
   }
   private async finishResult(compiled: CompiledInput): Promise<void> {
     this.stage = 'mapping'; this.fence.check();
@@ -276,6 +294,7 @@ class Attempt {
       ...(this.publication ? [{ key: 'publication' as const, work: () => this.publication!.close() }] : []),
       ...(this.archive ? [{ key: 'artifacts' as const, work: () => this.archive!.close() }] : []),
       ...(this.targetSampler ? [{ key: 'artifacts' as const, work: () => this.targetSampler!.close() }] : []),
+      ...(this.options.liveMetricMailbox ? [{key: 'artifacts' as const, work: () => this.closeLive()}] : []),
       { key: 'notifications', work: () => this.notifications.quiesce() },
       ...(this.writer ? [{ key: 'journal' as const, work: async () => {
         try { await this.phases?.stop(); } finally { await this.writer!.close(); }

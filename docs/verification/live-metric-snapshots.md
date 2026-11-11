@@ -127,3 +127,24 @@ type import cycle; its file port was extracted without changing public exports.
 A cached arm64 probe confirmed exact volume metadata and non-forced API removal
 followed by404, with guarded task-owned fixture cleanup. No user services,
 images or profiles were changed. Full engine/API/browser wiring remains pending.
+
+
+## Engine attempt composition
+
+Trusted opt-in now connects native mailbox/sink/publisher to the real measured
+window callback. An execution fixture spanning the accumulator's two-second reorder
+allowance produced a validated frame with matching scope, selected numeric values
+and publication sequence. Its actual sink bytes plus initial extent appear in
+execute phase accounting; sealed historical output remains valid. Clean setup
+failure preserves the test outcome; failed descriptor cleanup prevents sealing.
+This fixture uses the actual compiler/execution/accumulator with a synthetic native
+process and in-memory mailbox, not a real Docker k6 workload.
+
+Direct cases prove approved/frozen selection, physical charges, held write/close,
+startup drainage, same-turn retirement, repeated-start ownership, pre-aborted
+startup and failed native cleanup. Initial subset/freeze/reorder fixture failures
+were corrected without weakening gates. Scoped owner/integration cases and the
+attempt/archive regression lane passed; changed lint/Node types passed. Independent
+read-only review found no blockers. No image build, profile enablement or user
+service changes. Private/public reads, browser polling and native end-to-end
+qualification remain pending.

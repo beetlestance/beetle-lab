@@ -9,5 +9,6 @@ Close fences synchronously and drains write/close originals; failed cleanup stay
 explicit. Neither this component nor its header grants directory/admission authority.
 Native fixed-path creation checks actual Linux tmpfs size/inode caps and retains
 descriptor originals. Trusted Docker install opt-in carves the private mount from
-existing temporary allocation. Runtime wiring, archive transport and reads remain pending.
+existing temporary allocation. Attempt publisher wiring and raw archive reads exist separately; native end-to-end
+qualification and API/browser consumption remain pending.
 Focused tests: engines/k6/wrapper/live-mailbox/sink.test.ts.
