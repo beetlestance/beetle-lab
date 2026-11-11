@@ -17,7 +17,7 @@ A text input without template delimiters is a literal input plan, appended under
 the body byte cap. Text containing delimiters uses the existing template plan.
 No raw JSON.stringify or unbounded materialization bypasses the bounded renderer.
 
-Acceptance: published approximately700KiB JSON/text inputs render byte-exactly;
+Acceptance: published approximately700KiB JSON values round-trip and text is byte-exact;
 Unicode/escaping, reused references and native build/run keep limits. Oversized
 input, rendered bytes, dynamic templates and aggregate expansion fail explicitly.
 Source integrity, export/compiler parity, cancellation and output limits remain

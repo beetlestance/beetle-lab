@@ -30,8 +30,8 @@ semantics into HTTP/SQLite/UI. preflightStatus:passed means structural validatio
 not semantic validation, available capacity or a successful test. Full validation
 still happens under engine admission before target interaction.
 
-InputManifest derives from config dataset references, never a second independently
-submitted manifest. Deduplicate identical input identities, reject conflicting
+InputManifest derives from dataset and request-body input references, never a second independently
+submitted manifest. Keep the combined reference ceiling64. Deduplicate identical input identities, reject conflicting
 same-ID pins, normalize UUIDs and verify every pin against a published input blob
 with exact organisation/workspace/hash/size in the same metadata transaction.
 No input publication endpoint is supplied by this slice: no metadata-only fake

@@ -10,7 +10,7 @@ import { unsafeNames } from './limits.js';
 import { compileReadiness } from './readiness.js';
 import { compileRequests } from './requests.js';
 import { compileSelections } from './selection.js';
-import { compileTarget } from './target.js';
+import { compileTarget, safeRelativePath } from './target.js';
 import type { CompiledSuite, CompileOptions, DeepReadonly, Result, ValidatedSuiteConfig } from './types.js';
 export type * from './types.js';
 export { initialSelectionState, selectDatasetRows, selectRequest } from './selection.js';
@@ -53,6 +53,11 @@ export function compileSuite(config: ValidatedSuiteConfig, options: CompileOptio
       } };
     const readiness = compileReadiness(config, scope);
     if (readiness) result.readiness = readiness;
+    if (config.targetSampling) {
+      const sampling = config.targetSampling;
+      if (!safeRelativePath(sampling.path) || sampling.timeoutMs > sampling.intervalMs) fail('target', '/targetSampling');
+      result.targetSampling = { ...sampling };
+    }
     metricLayout(result);
     result.identity.digest = checkedDigest(options.digest, canonical({ compilerVersion: result.compilerVersion,
       schemaVersion: result.schemaVersion, config, target, engine: options.input.engine, inputs: loaded.refs }));

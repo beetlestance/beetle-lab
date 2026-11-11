@@ -59,7 +59,9 @@ function bodyNode(output: BoundedText, node: DeepReadonly<BodyNode>, scope: Rend
 function body(plan: DeepReadonly<RequestPlan>, scope: RenderScope): string | null {
   if (!plan.body) return null;
   const output = new BoundedText(plan.serialization.bodyBytes);
-  if (plan.body.kind === 'input' && plan.body.format === 'text') output.append(renderTemplate(plan.body.value, scope));
+  if (plan.body.kind === 'input' && plan.body.format === 'text') {
+    output.append('literal' in plan.body ? plan.body.literal : renderTemplate(plan.body.value, scope));
+  }
   else bodyNode(output, plan.body.value, scope);
   return output.finish();
 }

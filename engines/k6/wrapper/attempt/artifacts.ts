@@ -30,7 +30,7 @@ export async function outputRoot(options: ArtifactOptions): Promise<void> {
   throw new AttemptError('journal');
 }
 
-/** Two fixed artifact names only. All descriptor outcomes retained, no speculative deletion. */
+/** Fixed artifact names only. All descriptor outcomes retained, no speculative deletion. */
 export class Artifacts {
   private failed = false;
   constructor(private readonly options: ArtifactOptions) {}
@@ -78,7 +78,7 @@ export class Artifacts {
       throw error;
     }
   }
-  private async custody(name: string, bytes: number, expected: string, content?: Uint8Array): Promise<Artifact> {
+  private async custody(name: string, bytes: number, expected: string, content?: Uint8Array, kind = 'numeric-final'): Promise<Artifact> {
     const parent = await this.parent(); let file: FileHandle | undefined; let stat: BigIntStats | undefined;
     let error: unknown;
     const path = join(this.options.directory, name);
@@ -103,7 +103,7 @@ export class Artifacts {
     this.options.fence.check();
     const named = await this.checked(() => lstat(path, { bigint: true })); regular(named, this.options.uid, bytes);
     namedArtifact(stat, named);
-    return Object.freeze({ artifactId: randomUUID(), kind: content ? 'numeric-final' : 'native-summary',
+    return Object.freeze({ artifactId: randomUUID(), kind: content ? kind : 'native-summary',
       relativePath: name, bytes, sha256: expected, sealedAt: this.options.fence.timestamp() });
   }
   private async verify(file: FileHandle, bytes: number, expected: string): Promise<BigIntStats> {
@@ -121,10 +121,16 @@ export class Artifacts {
     return this.custody('beetle-evidence.json', evidence.rawBytes, evidence.sha256);
   }
   async numeric(value: unknown, allowance = cap): Promise<Artifact> {
+    return this.encoded(value, allowance, 'numeric-final.json', 'numeric-final');
+  }
+  async target(value: unknown, allowance: number): Promise<Artifact> {
+    return this.encoded(value, allowance, 'target-runtime.json', 'target-runtime');
+  }
+  private async encoded(value: unknown, allowance: number, name: string, kind: string): Promise<Artifact> {
     if (!Number.isSafeInteger(allowance) || allowance < 1 || allowance > cap) throw new AttemptError('output_limit');
     let bytes: Buffer;
     try { bytes = Buffer.from(encodeJson(value, allowance - 1) + '\n'); }
     catch { throw new AttemptError('output_limit'); }
-    return this.custody('numeric-final.json', bytes.length, hash(bytes), bytes);
+    return this.custody(name, bytes.length, hash(bytes), bytes, kind);
   }
 }

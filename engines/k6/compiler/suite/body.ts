@@ -10,7 +10,9 @@ interface BodyState { budget: ExpansionBudget; scope: TemplateScope }
 function bodyNode(value: unknown, state: BodyState, depth: number): BodyNode {
   reserveBodyNode(state.budget);
   if (depth > suiteLimits.jsonDepth) fail('input_limit');
-  if (typeof value === 'string') return { kind: 'template', template: compileTemplate(value, 'json', state.scope) };
+  if (typeof value === 'string') return value.includes('{{') || value.includes('}}')
+    ? { kind: 'template', template: compileTemplate(value, 'json', state.scope) }
+    : { kind: 'scalar', value };
   if (scalar(value)) return { kind: 'scalar', value };
   if (Array.isArray(value)) {
     if (value.length > 4096) fail('input_limit');
@@ -28,7 +30,9 @@ export function compileBody(body: DeepReadonly<RequestConfig['body']>, inputs: R
   if (body.kind === 'json') return { kind: 'json', value: bodyNode(body.value, { budget, scope }, 0) };
   reserveExpansion(budget, body.input.bytes);
   const text = inputs.get(body.input.id)!;
-  if (body.format === 'text') return { kind: 'input', format: 'text', input: { ...body.input }, value: compileTemplate(text, 'text', scope) };
-  const value = parseInputJson(text, suiteLimits.jsonNodes - budget.bodyNodes);
+  if (body.format === 'text') return text.includes('{{') || text.includes('}}')
+    ? { kind: 'input', format: 'text', input: { ...body.input }, value: compileTemplate(text, 'text', scope) }
+    : { kind: 'input', format: 'text', input: { ...body.input }, literal: text };
+  const value = parseInputJson(text, suiteLimits.jsonNodes - budget.bodyNodes, undefined, true);
   return { kind: 'input', format: 'json', input: { ...body.input }, value: bodyNode(value, { budget, scope }, 0) };
 }

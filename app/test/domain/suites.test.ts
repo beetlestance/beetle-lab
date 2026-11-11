@@ -12,3 +12,17 @@ it('rejects conflicting same-ID pins and bounds the manifest', () => {
     id: `00000000-0000-4000-8000-${String(i).padStart(12, '0')}` } }));
   expect(() => inputManifest({ datasets })).toThrow();
 });
+
+it('pins body inputs with dataset inputs and rejects conflicts across both sources', () => {
+  const body = { kind: 'input', format: 'json', input: pin };
+  expect(inputManifest({ datasets: [], requests: [{ body }] })).toEqual([{ ...pin, id: pin.id.toLowerCase() }]);
+  expect(inputManifest({ datasets: [{ kind: 'json', input: pin }], requests: [{ body }] })).toHaveLength(1);
+  expect(() => inputManifest({ datasets: [{ kind: 'csv', input: pin }],
+    requests: [{ body: { ...body, input: { ...pin, sha256: 'b'.repeat(64) } } }] })).toThrow();
+});
+it('keeps the combined input reference ceiling at64', () => {
+  const requests = Array.from({ length: 64 }, (_, i) => ({ body: { kind: 'input', input: { ...pin,
+    id: `00000000-0000-4000-8000-${String(i).padStart(12, '0')}` } } }));
+  expect(inputManifest({ datasets: [], requests })).toHaveLength(64);
+  expect(() => inputManifest({ datasets: [{ kind: 'json', input: pin }], requests })).toThrow();
+});

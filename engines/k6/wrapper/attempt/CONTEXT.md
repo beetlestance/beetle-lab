@@ -30,10 +30,11 @@ Fixed native numeric summary is rehashed against collector evidence after actual
 stop. Native and fresh numeric-final files receive bounded IO/fsync/close and
 exact bigint custody checks. They become eligible only through the atomically
 published manifest. Partial files are preserved, never declared/refunded/deleted.
-Numeric-final v3 binds retained window/index artifact IDs and retains distributions,
-histogram-estimate provenance, coverage,
-mapper diagnostics and build byte peaks. Absent measurement quantiles stay unknown.
+Numeric-final v3 binds history IDs, distributions/estimate provenance, coverage,
+diagnostics and peak build bytes. Absent measurement quantiles stay unknown.
 Published files remain reported even after terminal journal/notification failure.
 Receipt ok means complete healthy coordination, never application test pass.
 Native99 required failures can be healthy coordination with failed test outcome.
 Check: scoped Vitest engines/k6/test/attempt and test/metric-archive; Node types.
+Optional target observations reserve1MiB within existing output/collect ceilings.
+Cooldown precedes collect; cleanup aborts and drains original sampler work.

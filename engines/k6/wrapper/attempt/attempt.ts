@@ -12,6 +12,8 @@ import type { K6ResultInput, K6ResultMapping } from '../result/index.js';
 import { publishK6Result } from '../publication/index.js';
 import type { ResultPublication } from '../publication/index.js';
 import { Artifacts, outputRoot } from './artifacts.js';
+import { startTargetSampling } from '../target-sampling/index.js';
+import type { TargetSamplingOwner, TargetSamplingReport } from '../target-sampling/index.js';
 import { MetricArchive } from './archive/index.js';
 import type { ArchiveEvidence } from './archive/index.js';
 import type { MetricWindow } from '../../aggregation/index.js';
@@ -69,6 +71,8 @@ class Attempt {
   private artifacts: Artifacts | undefined;
   private archive: MetricArchive | undefined;
   private archiveFailure: AttemptError | undefined;
+  private targetSampler: TargetSamplingOwner | undefined;
+  private targetReport: TargetSamplingReport | undefined;
   private historyAtCollect = 0;
   private reservation: OutputReservation | undefined;
   private stage: AttemptReason = 'input';
@@ -127,10 +131,14 @@ class Attempt {
     const result = await operation.result;
     await this.settle('input', [operation.quiesced]);
     if (!result.ok) { this.state.inputFailure = result; this.fail('compile'); }
+    this.reservation = phaseReservation(reserveOutput(this.input!.offer.budget.outputBytes, !!result.value.suite.targetSampling), this.input!.manifest);
     await this.phases!.transition('prepare', 1); this.fence.check(); return result.value;
   }
   private async invoke(compiled: CompiledInput): Promise<void> {
     this.stage = 'execution'; this.fence.check(); this.quiet.execution = 'unknown';
+    const sampling = compiled.suite.targetSampling;
+    if (sampling) this.targetSampler = await startTargetSampling({ target: compiled.suite.target, config: sampling, signal: this.fence.controller.signal });
+    this.fence.check();
     const reservation = this.reservation!;
     const collectMs = this.input!.manifest.phases.find(item => item.phase === 'collect')!.timeoutMs;
     this.execution = this.ports.execute({ compiled, binary: '/usr/local/bin/k6', emptyConfig: '/beetle/image/empty.json',
@@ -144,6 +152,8 @@ class Attempt {
         this.measured = true; await this.phases!.transition('execute', 1, receipt.observedAt, receipt.build.bytes);
       }, collectStarted: async receipt => {
         if (this.collecting) this.fail('execution');
+        if (this.targetSampler) this.targetReport = await this.targetSampler.finish();
+        this.fence.check();
         this.collecting = true;
         this.historyAtCollect = this.archive?.bytes ?? 0;
         this.archive?.beginCollection(reservation.historyCollect);
@@ -202,8 +212,10 @@ class Attempt {
     const collectOutputBytes = this.input!.manifest.phases.find(phase => phase.phase === 'collect')!.outputBytes;
     const history = await this.archiveEvidence();
     const historyWork = this.archiveAccounting(history);
-    const numericBytes = numericAllowance(this.reservation!, collectOutputBytes - historyWork.produced, summary?.ok ? summary.evidence.rawBytes : 1_048_576);
+    const target = this.targetReport ? await this.artifacts!.target(this.targetReport, this.reservation!.target) : undefined;
+    const numericBytes = numericAllowance(this.reservation!, collectOutputBytes - historyWork.produced - (target?.bytes ?? 0), summary?.ok ? summary.evidence.rawBytes : 1_048_576);
     const artifacts: EngineResult['artifacts'] = [...historyWork.artifacts];
+    if (target) artifacts.push(target);
     if (summary?.ok) artifacts.push(await this.artifacts!.summary(summary.evidence));
     artifacts.push(await this.artifacts!.numeric(this.numericEvidence(diagnostics, history), numericBytes));
     this.quiet.artifacts = this.artifactQuiescence();
@@ -263,6 +275,7 @@ class Attempt {
       ...(this.execution ? [{ key: 'execution' as const, work: () => this.execution!.close() }] : []),
       ...(this.publication ? [{ key: 'publication' as const, work: () => this.publication!.close() }] : []),
       ...(this.archive ? [{ key: 'artifacts' as const, work: () => this.archive!.close() }] : []),
+      ...(this.targetSampler ? [{ key: 'artifacts' as const, work: () => this.targetSampler!.close() }] : []),
       { key: 'notifications', work: () => this.notifications.quiesce() },
       ...(this.writer ? [{ key: 'journal' as const, work: async () => {
         try { await this.phases?.stop(); } finally { await this.writer!.close(); }
