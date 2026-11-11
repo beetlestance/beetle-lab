@@ -1,6 +1,7 @@
 # Offline installer image packaging
 
-Status: next packaging component; first-boot Compose wiring follows separately.
+Status: image and CLI packaging locally verified; first-boot Compose wiring follows.
+See [evidence](../../verification/container-recipes.md).
 Owning provisioning contract: [fresh installation](fresh-installation.md).
 
 ## Responsibility

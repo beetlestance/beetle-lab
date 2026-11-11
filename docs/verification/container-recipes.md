@@ -58,3 +58,22 @@ in task-owned evidence. Build cache/images remain owned by the ongoing packaging
 lane until its cleanup. No repeated full test suite or backend rebuild was run.
 Native amd64 execution, browser checks, source/image-pull Compose installs,
 SBOM/license/security scans and measured stack overhead remain release work.
+
+## Offline installer packaging
+
+Source: 623321ca2d19a3ad00f92ca85fab79653f59aac1; integrated e49b83d.
+Independent source review found no blockers in the separate finite installer image,
+CLI bundle and actual Journal/metadata worker placement. Runtime provisioning source
+and dependencies were unchanged; compared before integration.
+Native arm64 cached image build exit0 in 2.32s on the same capped builder.
+Actual read-only, network-disabled compiled entrypoint returned exit2/invalid_input
+with no arguments (0.72s), and exit1/invalid_input for a missing private request
+(0.69s). Both stdout streams were empty; no socket or installation root was mounted.
+Scoped build-script lint passed; documentation check passed283 files. The first
+lint invocation used a nonexistent worktree-local binary; using the existing root
+binary passed without installing dependencies.
+
+This verifies packaging and argument execution, not Journal worker startup or
+fresh provisioning with a real daemon. Compose/first boot remains the next task.
+Private command/build/CLI evidence is retained alongside the component image
+records; reviewer report and branch bundles are archived before worktree removal.
