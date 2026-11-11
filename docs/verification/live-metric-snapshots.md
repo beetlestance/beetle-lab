@@ -1,6 +1,6 @@
 # Shared live metric snapshot evidence
 
-Status: locally verified shared contract, not a user-visible live feature.
+Status: locally verified shared contract and publisher core, not a user-visible live feature.
 Candidateee62fa5 integrated374d142. Independent source review found no blockers.
 Frame<=64KiB binds attempt scope/epoch/subset digest and one real source-second
 window. Selection<=20, exact identities/ordinals, coalescing counters, sparse values,
@@ -19,7 +19,26 @@ compatible. Descriptor/value calculation bodies reuse the reviewed historical
 implementation; app fixed-error mapping remains unchanged. Private reports and
 Git bundles are hash-verified under the completed live-contract cleanup archive.
 
+## Publisher core
+
+`engines/k6/wrapper/live` now supplies the fixed publisher interface. It uses shared
+projection and frame capture, retains one latest slot plus one write original,
+enforces monotonic cadence/deadline and charges whole buffers before write.
+Stop discards pending data and waits for actual write/close originals. Failed
+cleanup remains explicitly unconfirmed; advisory errors cannot change verdicts.
+
+Nineteen focused cases cover projection parity, sparse/missing data, source gaps,
+coalescing before/during writes, mutation isolation, cadence, invalid windows,
+quota/clock/deadline failures, aborted startup, original drainage, reentrant close,
+cleanup failure and invalid options. Initial eighteen cases passed; lint findings
+were corrected. Independent review identified a publication-ordinal race between
+success and cleanup reactions; a decisive regression case and issued-count fix
+passed the nine producer cases. Ten lifetime cases passed on unchanged source.
+Scoped lint and Node types passed; missing worktree dependency links were corrected
+without installing packages. No Docker/build/full-suite or native IO was run.
+
 Caller obligations remain: approved subset and expected scope/epoch/journal binding,
 cross-frame ordering/freshness, bounded physical IO/accounting/cleanup, private and
 public routes, browser polling and measured overhead. The engine publisher core
-is the next packet. See [contract](../design/lld/live-metric-snapshots.md).
+is implemented only as a component; physical adapter/accounting and consumers are
+next. See [contract](../design/lld/live-metric-snapshots.md).

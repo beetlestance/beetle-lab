@@ -1,7 +1,8 @@
 # Bounded advisory live metric snapshots
 
-Status: accepted next component contract. This is distinct from final sealed metric
-history and durable lifecycle events; no user-visible live feed is implemented yet.
+Status: shared frame and publisher core locally verified. This is distinct from
+final sealed metric history and durable lifecycle events; no user-visible live feed
+is implemented yet.
 The pipeline will be engine producer -> private agent read -> scoped backend read ->
 visible browser polling. No second parser/compiler or backend percentile aggregation.
 
