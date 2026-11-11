@@ -32,14 +32,16 @@ else if(a[0]==='image')process.exit(process.env.FAKE_MISSING==='yes'?1:0);
 else if(a[0]==='build')process.exit(process.env.FAKE_BUILD_FAIL==='yes'?1:0);
 else if(a.includes('/beetle/install/local.js')){if(process.env.FAKE_CONFIG_FAIL==='yes')process.exit(1);if(process.env.FAKE_STATE==='local_created_fresh'){const d=a[a.indexOf('--directory')+1];fs.mkdirSync(d+'/setup',{recursive:true});fs.writeFileSync(d+'/setup/compose.env','synthetic');}console.log(process.env.FAKE_STATE||'local_unchanged_ready');}
 else if(a[0]==='run')console.log('0');
+else if(a[0]==='compose'&&a.includes('exec')){console.error(process.env.FAKE_NEVER_READY==='yes'?'private readiness failure canary':'  HTTP/1.1 401 Unauthorized');process.exit(1);}
 else if(a[0]==='compose'&&a.includes('ps')&&a.includes('-q'))console.log('synthetic-backend');
 else if(a[0]==='inspect'){if(process.env.FAKE_RUNNING!=='no')console.log('2026-01-01T00:00:00Z');}
 else if(a[0]==='logs'){console.log('private unrelated canary'); if(process.env.FAKE_TOKEN_MISSING!=='yes')console.log('Beetle Lab local startup token: '+ 'T'.repeat(43));}
 else if(a[0]==='compose'&&a.includes('installer')&&process.env.FAKE_INSTALL_FAIL==='yes')process.exit(1);
 `;
   await fs.writeFile(join(bin, 'docker'), docker, { mode: 0o700 });
+  await fs.writeFile(join(bin, 'sleep'), "#!/bin/sh\nprintf '%s\\n' sleep >> \"$FAKE_SLEEP_LOG\"\n", { mode: 0o700 });
   const f = { root, directory, socket, log, server, env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, FAKE_LOG: log,
-    FAKE_SOCKET: socket, DOCKER_HOST: `unix://${socket}`, DOCKER_CONTEXT: 'synthetic-context', BEETLE_PORT: '9999' } };
+    FAKE_SOCKET: socket, FAKE_SLEEP_LOG: join(root, 'sleeps'), DOCKER_HOST: `unix://${socket}`, DOCKER_CONTEXT: 'synthetic-context', BEETLE_PORT: '9999' } };
   fixtures.push(f); return f;
 }
 async function run(f: Fixture, command: string, extra: string[] = []) {
@@ -59,6 +61,8 @@ it('ready up verifies configuration, preserves spaces/pins and skips all builds/
   const up = recorded.find(call => call.a[0] === 'compose')!;
   expect(up.a).toContain(join(f.directory, 'setup', 'compose.env'));
   expect(up.a.slice(-7)).toEqual(['up', '-d', '--no-build', '--pull', 'never', 'frontend', 'backend', 'agent'].slice(-7));
+  const readiness = recorded.find(call => call.a[0] === 'compose' && call.a.includes('exec'))!;
+  expect(readiness.a.slice(-14)).toEqual(['exec', '-T', 'frontend', 'wget', '-S', '-O', '/dev/null', '-T', '1', '--header', 'Host: 127.0.0.1:8890', '--header', 'Origin: http://127.0.0.1:8890', 'http://127.0.0.1:8080/api/v2/organizations?limit=1']);
   expect(up.host).toBe(`unix://${f.socket}`); expect(up.context).toBeUndefined(); expect(up.override).toBeUndefined();
 });
 it('fresh up initializes once before starting services and fails visibly on installer error', async () => {
@@ -137,5 +141,16 @@ it('a failed source build preserves the root and never configures or provisions'
   const recorded = await calls(f); expect(recorded.filter(call => call.a[0] === 'build')).toHaveLength(1);
   expect(recorded.some(call => call.a[0] === 'run' || call.a[0] === 'compose')).toBe(false);
   expect(recorded.find(call => call.a[0] === 'build')!.a).not.toContain('--builder');
+  expect((await fs.stat(f.directory)).isDirectory()).toBe(true);
+});
+
+it('up bounds never-ready startup and preserves services/data without exposing probe output', async () => {
+  const f = await fixture(); f.env.FAKE_NEVER_READY = 'yes';
+  await expect(run(f, 'up')).rejects.toMatchObject({ code: 1, stdout: '',
+    stderr: 'beetle: frontend/backend readiness timed out; services and data preserved\n' });
+  const recorded = await calls(f);
+  expect(recorded.filter(call => call.a[0] === 'compose' && call.a.includes('exec'))).toHaveLength(15);
+  expect((await fs.readFile(join(f.root, 'sleeps'), 'utf8')).trim().split('\n')).toHaveLength(14);
+  expect(recorded.some(call => call.a.includes('stop') || call.a.includes('down'))).toBe(false);
   expect((await fs.stat(f.directory)).isDirectory()).toBe(true);
 });

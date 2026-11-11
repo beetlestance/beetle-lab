@@ -135,6 +135,19 @@ dc() {
     -u BEETLE_INSTALLER_IMAGE -u BEETLE_ENGINE_IMAGE \
     docker compose --env-file "$env_file" --project-directory "$repo" -f "$compose" "$@"
 }
+wait_ready() {
+  attempt=0
+  while [ "$attempt" -lt 15 ]; do
+    attempt=$((attempt + 1))
+    # BusyBox wget exits1 for the expected unauthenticated API response.
+    response=$(dc exec -T frontend wget -S -O /dev/null -T 1 \
+      --header "Host: 127.0.0.1:$port" --header "Origin: http://127.0.0.1:$port" \
+      'http://127.0.0.1:8080/api/v2/organizations?limit=1' 2>&1 | head -c 8192)
+    if printf '%s\n' "$response" | LC_ALL=C grep -Eq '^[[:space:]]*HTTP/1\.[01] 401([[:space:]]|$)'; then return; fi
+    if [ "$attempt" -lt 15 ]; then sleep 1; fi
+  done
+  fail 'frontend/backend readiness timed out; services and data preserved'
+}
 case "$command" in
   up)
     ensure_image frontend web/Dockerfile "beetle-local-frontend:$revision"
@@ -143,6 +156,7 @@ case "$command" in
     ensure_image engine engines/k6/Dockerfile "beetle-local-engine:$revision"
     case "$state" in *_fresh) dc --profile setup run --rm --no-deps --no-build --pull never installer ;; esac
     dc up -d --no-build --pull never frontend backend agent
+    wait_ready
     printf 'Open http://127.0.0.1:%s\nRetrieve the latest startup token: %s token --directory "%s"\n' "$port" "$0" "$directory" ;;
   stop) dc stop frontend backend agent ;;
   status) dc ps --all frontend backend agent ;;
