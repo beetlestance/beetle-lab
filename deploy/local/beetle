@@ -1,0 +1,157 @@
+#!/bin/sh
+# Trusted local Unix-daemon profile. Generated Compose environment is never sourced.
+set -eu
+umask 077
+fail() { printf '%s\n' "beetle: $1" >&2; exit 1; }
+usage() { fail 'usage: beetle up|stop|status|token [--directory ABS] [up: --port N --socket ABS --docker-gid N --build]'; }
+command=${1:-}; [ "$#" -gt 0 ] || usage; shift
+case "$command" in up|stop|status|token) ;; *) usage ;; esac
+directory=${HOME:?}/.beetle-lab
+port=; socket=; docker_gid=; build=no
+seen=' '
+while [ "$#" -gt 0 ]; do
+  key=$1; shift
+  case "$seen" in *" $key "*) usage ;; esac
+  seen="$seen$key "
+  case "$key" in
+    --build) [ "$command" = up ] || usage; build=yes ;;
+    --directory|--port|--socket|--docker-gid)
+      [ "$#" -gt 0 ] || usage; value=$1; shift
+      case "$key" in
+        --directory) directory=$value ;;
+        --port) [ "$command" = up ] || usage; port=$value ;;
+        --socket) [ "$command" = up ] || usage; socket=$value ;;
+        --docker-gid) [ "$command" = up ] || usage; docker_gid=$value ;;
+      esac ;;
+    *) usage ;;
+  esac
+done
+safe_path() {
+  case "$1" in /*) ;; *) fail 'paths must be absolute' ;; esac
+  case "$1" in *[!\ -~]*|*","*|*":"*|*"'"*|*'"'*|*'$'*|*'\'*|*'#'*) fail 'unsupported path delimiter/control character' ;; esac
+}
+number() { case "$1" in ''|*[!0-9]*|??????????*) fail 'invalid numeric option' ;; esac; }
+safe_path "$directory"
+case "$directory" in */|*/./*|*/../*|*/.|*/..|*//*) fail 'canonical deployment directory required' ;; esac
+[ "$(id -u)" -gt 0 ] && [ "$(id -g)" -gt 0 ] || fail 'positive non-root UID/GID required'
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+repo=$(CDPATH= cd -- "$script_dir/../.." && pwd -P)
+compose=$repo/compose.rewrite.yml
+[ -f "$compose" ] || fail 'source checkout with compose.rewrite.yml required'
+env_file=$directory/setup/compose.env
+# Only fixed single-quoted scalars are extracted; CLI later verifies the entire file.
+get() {
+  result=$(dd if="$env_file" bs=8192 count=1 2>/dev/null | sed -n "s/^$1='\([^']*\)'$/\1/p")
+  [ -n "$result" ] || fail 'incomplete deployment configuration'
+  printf '%s\n' "$result"
+}
+current_revision() {
+  git -C "$repo" rev-parse --is-inside-work-tree >/dev/null 2>&1 || fail 'source build requires a Git checkout'
+  revision=$(git -C "$repo" rev-parse --short=12 HEAD)
+  dirty=$(git -C "$repo" status --porcelain --untracked-files=normal | head -n 1)
+  if [ -n "$dirty" ]; then
+    # Each dirty invocation has a distinct dev identity and must build its own images.
+    revision="$revision-dirty-$(date +%s)-$$"
+  fi
+  printf '%s\n' "$revision"
+}
+build_image() {
+  component=$1; recipe=$2; tag=$3
+  set -- docker build --file "$repo/$recipe" --tag "$tag" --build-arg "VCS_REF=$revision"
+  if [ -n "${BEETLE_BUILDER:-}" ]; then set -- "$@" --builder "$BEETLE_BUILDER"; fi
+  "$@" "$repo"
+}
+ensure_image() {
+  component=$1; recipe=$2; tag=$3
+  if [ "$build" = yes ] || ! docker image inspect "$tag" >/dev/null 2>&1; then
+    [ "$revision" = "$source_revision" ] || fail 'pinned images require their original source checkout; use a new directory for changed source'
+    build_image "$component" "$recipe" "$tag"
+  fi
+}
+if [ -f "$env_file" ]; then
+  [ ! -L "$env_file" ] && [ ! -L "$directory/setup" ] || fail 'symlink configuration unsupported'
+  [ "$(CDPATH= cd -- "$directory" && pwd -P)" = "$directory" ] || fail 'canonical deployment directory required'
+  revision=$(get BEETLE_SOURCE_REVISION)
+  port=${port:-$(get BEETLE_PORT)}
+  socket=${socket:-$(get BEETLE_DOCKER_SOCKET)}
+  docker_gid=${docker_gid:-$(get BEETLE_DOCKER_GID)}
+else
+  [ "$command" = up ] || fail 'deployment configuration missing'
+  revision=$(current_revision)
+  case "$revision" in *-dirty-*) build=yes ;; esac
+  port=${port:-8080}
+fi
+number "$port"; [ "$port" -ge 1 ] && [ "$port" -le 65535 ] || fail 'invalid port'
+case "$revision" in ''|*[!a-z0-9_.-]*|?????????????????????????????????????????????????????????????????????????????????????????????????*) fail 'invalid revision' ;; esac
+source_revision=$revision
+if [ "$command" = up ]; then
+  source_revision=$(current_revision)
+  # Fresh dirty builds use the identity already selected above.
+  if [ ! -f "$env_file" ]; then source_revision=$revision; fi
+fi
+installer=beetle-local-installer:$revision
+if [ -z "$socket" ]; then
+  endpoint=${DOCKER_HOST:-$(docker context inspect --format '{{.Endpoints.docker.Host}}')}
+  case "$endpoint" in unix:///*) socket=${endpoint#unix://} ;; *) fail 'only local Unix Docker daemons are supported' ;; esac
+fi
+safe_path "$socket"
+# Resolve socket symlinks without changing the selected context or daemon.
+count=0
+while [ -L "$socket" ]; do
+  count=$((count + 1)); [ "$count" -le 16 ] || fail 'socket symlink limit'
+  target=$(readlink "$socket")
+  case "$target" in /*) socket=$target ;; *) socket=$(dirname "$socket")/$target ;; esac
+done
+socket=$(CDPATH= cd -- "$(dirname -- "$socket")" && printf '%s/%s\n' "$(pwd -P)" "$(basename -- "$socket")")
+safe_path "$socket"; [ -S "$socket" ] || fail 'Docker socket missing'
+# Explicit remote daemon settings cannot be combined with local bind mounts.
+endpoint=${DOCKER_HOST:-$(docker context inspect --format '{{.Endpoints.docker.Host}}')}
+case "$endpoint" in unix:///*) ;; *) fail 'only local Unix Docker daemons are supported' ;; esac
+DOCKER_HOST=unix://$socket
+export DOCKER_HOST
+unset DOCKER_CONTEXT
+if [ "$command" = up ]; then ensure_image installer tools/install/Dockerfile "$installer"; fi
+if [ -z "$docker_gid" ]; then
+  docker_gid=$(docker run --rm --network none --read-only --user 65534:65534 --cpus 0.1 --memory 64m --pids-limit 16 \
+    --mount "type=bind,source=$socket,target=/var/run/docker.sock,readonly" \
+    --entrypoint node "$installer" -e 'const s=require("node:fs").statSync("/var/run/docker.sock");if(!s.isSocket())process.exit(1);process.stdout.write(String(s.gid))')
+fi
+number "$docker_gid"
+if [ "$command" = up ]; then
+  if [ ! -e "$directory" ]; then mkdir -m 700 -- "$directory"; fi
+  # Configuration helper has no socket or network. Host and container paths agree.
+  state=$(docker run --rm --network none --read-only --user "$(id -u):$(id -g)" --cpus 1 --memory 256m --pids-limit 64 \
+    --mount "type=bind,source=$directory,target=$directory" --entrypoint node "$installer" /beetle/install/local.js \
+    --directory "$directory" --uid "$(id -u)" --gid "$(id -g)" --docker-gid "$docker_gid" \
+    --docker-socket "$socket" --port "$port" --revision "$revision")
+  case "$state" in local_created_fresh|local_unchanged_fresh|local_unchanged_ready) ;; *) fail 'configuration failed' ;; esac
+fi
+# Prevent inherited Compose settings or a repository .env from changing this deployment.
+dc() {
+  env -u COMPOSE_FILE -u COMPOSE_PROJECT_NAME -u COMPOSE_PROFILES -u COMPOSE_ENV_FILES \
+    -u BEETLE_INSTANCE -u BEETLE_ROOT -u BEETLE_REQUEST_FILE -u BEETLE_UID -u BEETLE_GID \
+    -u BEETLE_DOCKER_GID -u BEETLE_DOCKER_SOCKET -u BEETLE_PORT -u BEETLE_SOURCE_REVISION \
+    -u BEETLE_FRONTEND_IMAGE -u BEETLE_BACKEND_IMAGE -u BEETLE_AGENT_IMAGE \
+    -u BEETLE_INSTALLER_IMAGE -u BEETLE_ENGINE_IMAGE \
+    docker compose --env-file "$env_file" --project-directory "$repo" -f "$compose" "$@"
+}
+case "$command" in
+  up)
+    ensure_image frontend web/Dockerfile "beetle-local-frontend:$revision"
+    ensure_image backend app/Dockerfile "beetle-local-backend:$revision"
+    ensure_image agent agent/Dockerfile "beetle-local-agent:$revision"
+    ensure_image engine engines/k6/Dockerfile "beetle-local-engine:$revision"
+    case "$state" in *_fresh) dc --profile setup run --rm --no-deps --no-build --pull never installer ;; esac
+    dc up -d --no-build --pull never frontend backend agent
+    printf 'Open http://127.0.0.1:%s\nRetrieve the latest startup token: %s token --directory "%s"\n' "$port" "$0" "$directory" ;;
+  stop) dc stop frontend backend agent ;;
+  status) dc ps --all frontend backend agent ;;
+  token)
+    container=$(dc ps -q backend); [ -n "$container" ] || fail 'backend is not running'
+    started=$(docker inspect --format '{{if .State.Running}}{{.State.StartedAt}}{{end}}' "$container")
+    [ -n "$started" ] || fail 'backend is not running'
+    logs=$(docker logs --since "$started" --tail 200 "$container" 2>&1) || fail 'backend logs unavailable'
+    token=$(printf '%s\n' "$logs" | sed -n 's/^Beetle Lab local startup token: \([A-Za-z0-9_-]\{43\}\)$/\1/p' | tail -n 1)
+    [ -n "$token" ] || fail 'startup token unavailable in current backend logs'
+    printf '%s\n' "$token" ;;
+esac
