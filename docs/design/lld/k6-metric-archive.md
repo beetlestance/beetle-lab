@@ -50,10 +50,12 @@ is explicit output_limit/measurement failure; it cannot become complete history.
 Retained build + native summary + history + control + numeric + result never exceeds
 the Offer ceiling. Reserve bounded footer space before accepting records. Finalization cannot borrow
 an unbounded temporary allowance.
-Existing collect allowance still governs newly produced summary/numeric evidence;
-retained execute history is not charged twice as newly produced collect output.
-Report history bytes as execute-phase work, including final drained windows at the
-actual transition boundary. Preserve exact output accounting and useful progress.
+At the existing collect transition, capture retained history bytes without moving
+the measurement/collection boundary. Already retained execute history is not charged
+twice. Bound later drained windows and footer/index writes by the collect allowance
+remaining after the existing native-summary and numeric reservations. Require at
+least64KiB of that room before load. Count the actual final-drain delta as collect
+output and the earlier history bytes as execute output. Preserve useful progress.
 
 ## Seal and cleanup
 
