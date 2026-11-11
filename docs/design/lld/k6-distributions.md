@@ -6,8 +6,10 @@ native final-summary mapper remains the authority for threshold verdicts.
 
 ## Ownership and representation
 
-The engine aggregation owner maintains mergeable positive-duration histograms for
-trend series. It never retains a duration corpus or averages percentile values.
+The pure @beetle/contracts/metrics owner supplies duration values, validation,
+record/merge and percentile operations without engine/framework dependencies. Engine
+aggregation owns the instances, series catalogue, points and source windows. It
+maintains mergeable positive-duration histograms for trend series. It never retains a duration corpus or averages percentile values.
 Use the base-2 exponential bucket model described by
 [OpenTelemetry](https://opentelemetry.io/docs/specs/otel/metrics/data-model/#exponentialhistogram).
 This is an engine numeric representation, not a new telemetry service dependency.
@@ -35,8 +37,9 @@ support. All emitted JSON numbers are finite.
 
 ## Operations and quantiles
 
-The aggregation public entrypoint exports the distribution type and bounded
-record/snapshot, merge and percentile operations. Internal mutable storage remains
+The shared metrics entrypoint exports distribution types and bounded record/
+snapshot, validation, merge and percentile operations; the aggregation facade
+reexports the operations it consumes. Internal mutable storage remains
 private. Snapshot arrays/objects are detached and deeply immutable. Raw adapters must enforce a 2 KiB standalone distribution JSON limit before parsing;
 in-process validation assumes bounded data objects, not hostile reflective proxies.
 Bucket-length checks precede count iteration/allocation; reject extra

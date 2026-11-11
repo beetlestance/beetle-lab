@@ -11,7 +11,8 @@
     "./engine-config": "./src/engine-config/index.ts",
     "./engine-config/k6": "./src/engine-config/k6.ts",
     "./output-source": "./src/output-source/index.ts",
-    "./output-source/internal": "./src/output-source/internal.ts"
+    "./output-source/internal": "./src/output-source/internal.ts",
+    "./metrics": "./src/metrics/index.ts"
   },
   "dependencies": {
     "ajv": "8.20.0",

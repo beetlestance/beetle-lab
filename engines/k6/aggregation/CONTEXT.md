@@ -31,7 +31,7 @@ Exactly one untagged counter marker of value 1 is required; missing/malformed/
 duplicate evidence fails with `measurement`. Source time is correlation only.
 Series totals/windows retain execute or engine scope. Snapshots are deeply frozen. Counts/counter sums must be safe integers, sums finite; overflow fails. One issued operation, busy rejection without poison,
 close/abort fence late callbacks and preserve outstanding sink work. No native termination or outcome inference is claimed here.
-Trend totals carry immutable exponential-v1 millisecond distributions, <=64 buckets,
+Shared @beetle/contracts/metrics owns immutable exponential-v1 ms distributions, <=64 buckets,
 scale4 down to -10. DurationHistogram records in place; mergeDistributions validates
 external snapshots before bounded work. distributionPercentile returns conservative
 nearest-rank histogram-estimate intervals, never native threshold verdicts.

@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
-import { DurationHistogram, distributionPercentile, mergeDistributions } from '../../aggregation/index.js';
-import type { DurationDistribution } from '../../aggregation/index.js';
+import { DurationHistogram, distributionPercentile, mergeDistributions } from '../../src/metrics/index.js';
+import type { DurationDistribution } from '../../src/metrics/index.js';
 
 function histogram(values: readonly number[]): DurationDistribution {
   const histogram = new DurationHistogram();

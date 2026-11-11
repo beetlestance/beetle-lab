@@ -1,7 +1,7 @@
 import { metricSeriesKey } from '../plan/index.js';
 import { MetricAccumulatorError } from './snapshot.js';
 import type { AccumulatedTotal, AccumulatedSeries } from './snapshot.js';
-import { DurationHistogram } from './distribution.js';
+import { DurationHistogram } from '@beetle/contracts/metrics';
 import type { MetricPoint } from './types.js';
 
 export function checkedSum(left: number, right: number, integer = false): number {

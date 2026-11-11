@@ -1,5 +1,4 @@
-import type { DurationDistribution } from './distribution-types.js';
-import type { DurationHistogram } from './distribution.js';
+import type { DurationDistribution, DurationHistogram } from '@beetle/contracts/metrics';
 import type { MetricScope } from '../plan/index.js';
 import type { MetricKind, MetricPoint } from './types.js';
 
