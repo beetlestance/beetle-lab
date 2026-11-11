@@ -3,6 +3,7 @@ import { build } from 'tsup';
 await build({ entry: {
   main: 'tools/install/cli.ts',
   starter: 'tools/install/starter-cli.ts',
+  local: 'tools/install/local-cli.ts',
   'agent-worker': 'agent/src/journal/worker.ts',
   'backend-worker': 'app/src/adapters/outbound/sqlite/worker.ts',
 }, outDir: 'tools/install/dist', format: ['esm'], platform: 'node', target: 'node24', bundle: true,

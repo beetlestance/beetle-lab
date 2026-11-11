@@ -1,20 +1,9 @@
-import { Ajv2020 } from 'ajv/dist/2020.js';
-import addFormatsModule from 'ajv-formats';
-import type { ErrorObject, ValidateFunction } from 'ajv';
+import { createApiRegistry } from './validator-registry.js';
+import type { ErrorObject } from 'ajv';
 import type { ValidationResult } from '../validate.js';
-import { apiMessageSchemas, apiSchemas } from './generated/schemas.js';
 import type { ApiTypes } from './generated/types.js';
 
-const ajv = new Ajv2020({ strict: true, allErrors: false, validateFormats: true,
-  coerceTypes: false, useDefaults: false, removeAdditional: false });
-const addFormats = addFormatsModule as unknown as (instance: Ajv2020) => void;
-addFormats(ajv);
-for (const schema of apiSchemas) ajv.addSchema(schema);
-const validators = Object.fromEntries(Object.entries(apiMessageSchemas).map(([name, schema]) => {
-  const validator = ajv.getSchema(schema.$ref);
-  if (!validator) throw new Error(`Missing shipped API schema: ${name}`);
-  return [name, validator];
-})) as Record<keyof ApiTypes, ValidateFunction>;
+const { validators } = createApiRegistry();
 
 function safeIssues(errors: ErrorObject[] | null | undefined) {
   return Object.freeze((errors ?? []).slice(0, 16).map(error => Object.freeze({

@@ -12,6 +12,7 @@ COPY engines/k6/package.json ./engines/k6/package.json
 RUN npm ci --ignore-scripts --include=optional
 COPY tsconfig.base.json ./
 COPY contracts/src ./contracts/src
+COPY contracts/scripts/standalone.ts ./contracts/scripts/standalone.ts
 COPY web ./web
 RUN npm run build:web
 

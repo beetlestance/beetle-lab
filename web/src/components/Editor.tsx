@@ -52,10 +52,10 @@ function Editor({ intent, close }: { intent: EditorIntent; close: () => void }) 
     setSaved(true);
     await intent.refresh();
   }
+  if (saved) return <aside className="editor" role="status">Changes saved. <button onClick={close}>Close editor</button></aside>;
   if (location.pathname !== intent.path) return <aside className="draft-banner" role="status">
     Your {intent.title.toLowerCase()} draft is preserved. <Link to={intent.path}>Return to draft</Link>
   </aside>;
-  if (saved) return <aside className="editor" role="status">Changes saved. <button onClick={close}>Close editor</button></aside>;
   return <section className="editor" aria-labelledby={`${id}-title`}>
     <h2 id={`${id}-title`}>{intent.title}</h2>
     <form onSubmit={event => { event.preventDefault(); void send(false); }}>

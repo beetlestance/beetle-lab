@@ -221,3 +221,16 @@ describe('mutation identity and draft ownership', () => {
     expect(screen.queryByLabelText('Organization name')).not.toBeInTheDocument();
   });
 });
+
+it('keeps confirmed changes closable after navigating so the next namespace can be edited', async () => {
+  const api = testClient(request => request.method === 'GET' ? readNamespace(request)
+    : json({...org(), name: 'New organization', slug: 'new-organization'}, 201));
+  mount(api.client); await openCreateOrganization(); save();
+  expect(await screen.findByText('Changes saved.')).toBeVisible();
+  fireEvent.click(screen.getAllByRole('link', {name: 'Same organization'})[0]!);
+  expect(await screen.findByRole('heading', {name: 'Workspaces'})).toBeVisible();
+  expect(screen.queryByText(/Your create organization draft is preserved/)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', {name: 'Close editor'}));
+  expect(screen.getByRole('button', {name: 'Create workspace'})).toBeEnabled();
+  expect(mutations(api.records)).toHaveLength(1);
+});
