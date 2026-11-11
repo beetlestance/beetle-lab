@@ -42,9 +42,27 @@ it('ships the actual schema and explicit nonexecutable image template', () => {
     minimumBudget: { cpuMillis: 1000, memoryBytes: 536870912, pids: 128, timeoutMs: 1, outputBytes: 1 },
     backends: ['docker'], network: { required: true, profile: 'target-egress' },
     entrypoint: { executable: 'node', arguments: ['/beetle/bootstrap/main.js'] },
-    phases: ['validate', 'prepare', 'execute', 'collect', 'seal'].map(phase => ({ phase, timeoutMs: 5000, workUnits: 100, outputBytes: 4194304 })),
+    phases: [
+      { phase: 'validate', timeoutMs: 5000, workUnits: 100, outputBytes: 4194304 },
+      { phase: 'prepare', timeoutMs: 5000, workUnits: 100, outputBytes: 4194304 },
+      { phase: 'execute', timeoutMs: 300000, workUnits: 100, outputBytes: 67108864 },
+      { phase: 'collect', timeoutMs: 5000, workUnits: 100, outputBytes: 4194304 },
+      { phase: 'seal', timeoutMs: 5000, workUnits: 100, outputBytes: 4194304 },
+    ],
   });
   expect(validate('EngineManifest', manifest).ok).toBe(true);
+});
+
+it('keeps execute phase ceilings equal to the declared default budget and unchanged overall ceilings', () => {
+  const r = createStarterRequest(options); const manifest = r.engine.manifest;
+  const execute = manifest.phases.find(phase => phase.phase === 'execute');
+  const budget = r.installationValues.runDefaults.budget;
+  expect(execute).toMatchObject({ timeoutMs: budget.timeoutMs, outputBytes: budget.outputBytes });
+  expect(manifest.defaultBudget).toEqual(budget);
+  expect(r.installationValues.perRunCeilings).toEqual(budget);
+  expect(r.agentPolicy.maxTimeoutMs).toBe(budget.timeoutMs);
+  expect(r.agentPolicy.perRun.outputBytes).toBe(budget.outputBytes);
+  expect(budget.timeoutMs).toBe(300000); expect(budget.outputBytes).toBe(67108864);
 });
 
 it('returns detached editable data with no shared nested defaults', () => {
