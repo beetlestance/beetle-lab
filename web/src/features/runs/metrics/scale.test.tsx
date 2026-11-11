@@ -75,6 +75,10 @@ it('uses a finite fallback domain for zero and all-null rate data, preserving ga
   expect([...document.querySelectorAll('tbody td:nth-child(2)')].map(cell => cell.textContent)).toEqual(['No samples', 'No samples']);
   expect([...document.querySelectorAll('tbody td:first-child')].map(cell => cell.textContent)).toEqual(['0–5', '5–10']);
   expect([...document.querySelectorAll('tbody td:nth-child(3)')].map(cell => cell.textContent)).toEqual(['0 / 0 samples', '0 / 0 samples']);
+  expect([...document.querySelectorAll('tbody time')].map(node => node.getAttribute('dateTime'))).toEqual([
+    '1970-01-01T00:00:00.000Z', '1970-01-01T00:00:00.005Z',
+    '1970-01-01T00:00:00.005Z', '1970-01-01T00:00:00.010Z',
+  ]);
   cleanup();
 
   chart([point(1, { kind: 'rate', ratio: 0, numerator: 0, sampleCount: 5 }, 0)], rateSeries);
@@ -106,4 +110,21 @@ it('keeps the existing empty-items status', () => {
   expect(document.querySelector('[role="status"]')).toHaveTextContent('No samples for this series in the examined source windows.');
   expect(document.querySelector('svg')).not.toBeInTheDocument();
   expect(document.querySelector('summary')).not.toBeInTheDocument();
+});
+
+it('adds semantic UTC source times while retaining raw interval milliseconds', () => {
+  const start = Date.parse('2024-05-01T23:59:59.123Z');
+  const end = Date.parse('2024-05-02T00:00:01.456Z');
+  chart([point(1, gauge(-1), start, end)]);
+  expect([...document.querySelectorAll('th')].map(cell => cell.textContent)).toEqual([
+    'Source interval (ms)', 'Value (count)', 'Evidence', 'Source interval (UTC)',
+  ]);
+  expect(document.querySelector('tbody td:first-child')).toHaveTextContent(`${start}–${end}`);
+  const times = [...document.querySelectorAll('tbody time')];
+  expect(times.map(node => node.getAttribute('dateTime'))).toEqual([
+    '2024-05-01T23:59:59.123Z', '2024-05-02T00:00:01.456Z',
+  ]);
+  expect(times.map(node => node.textContent)).toEqual([
+    '2024-05-01T23:59:59.123Z', '2024-05-02T00:00:01.456Z',
+  ]);
 });
