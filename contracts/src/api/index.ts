@@ -16,3 +16,6 @@ export { RUN_ARTIFACT_CONTENT_ROUTE, runArtifactContentPath } from './artifact-c
 export { encodeRunArtifactCursor, captureRunArtifactCursor, runArtifactPageMatches } from './client/run-artifact-ownership.js';
 
 export { encodeRunMetricSeriesCursor, captureRunMetricSeriesCursor, encodeRunMetricSamplesCursor, captureRunMetricSamplesCursor, runMetricSeriesPageMatches, runMetricSamplesPageMatches } from './client/run-metric-ownership.js';
+
+export { LIVE_METRIC_FRAME_BYTES, LiveMetricError, captureLiveMetricSubset, liveMetricSubsetText, liveMetricScopeMatches, captureLiveMetricSnapshot, encodeLiveMetricSnapshot, decodeLiveMetricSnapshot } from './live-metrics.js';
+export type { LiveMetricHash } from './live-metrics.js';

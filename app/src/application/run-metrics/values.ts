@@ -1,5 +1,5 @@
 import { MetricReadError } from '../../ports/run-metrics.js';
-import { captureMetricSeries, metricSeriesIdentity, projectMetricValue } from '@beetle/contracts/metrics';
+import { captureMetricSeries, metricSeriesIdentity, projectMetricValue, projectMetricSeries } from '@beetle/contracts/metrics';
 import type { NumericTotal, SeriesTotal } from '@beetle/contracts/metrics';
 import type { RunMetricSeries, RunMetricValue, RunMetricCoverage } from '@beetle/contracts/api';
 export function fail(): never { throw new MetricReadError('unavailable'); }
@@ -14,10 +14,7 @@ export function metricValue(total: NumericTotal): RunMetricValue {
   try { return projectMetricValue(total); } catch { return fail(); }
 }
 export function descriptor(value: SeriesTotal, ordinal: number): RunMetricSeries {
-  if (value.scope !== 'execute' && value.scope !== 'engine') return fail();
-  const unit = value.kind === 'trend' ? 'ms' : value.kind === 'rate' ? 'ratio'
-    : ['data_received', 'data_sent'].includes(value.metric) ? 'bytes' : 'count';
-  return {ordinal, metric: value.metric, kind: value.kind, scope: value.scope, tags: {...value.tags}, unit, total: metricValue(value.total)};
+  try { return projectMetricSeries(value, ordinal); } catch { return fail(); }
 }
 export interface NumericEvidence {
   readonly totals: readonly SeriesTotal[]; readonly coverage: RunMetricCoverage; readonly sourceTimeMs: number;
