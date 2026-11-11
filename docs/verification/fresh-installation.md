@@ -86,3 +86,14 @@ provisioning still enforces physical canonical paths. The native seam was repeat
 once during the worker's all-files correction, then retained without more repeats.
 Private full command/failure report is archived with task source and cache evidence.
 No actual daemon/image/Compose or release qualification follows from this slice.
+
+## Execution-phase starter correction
+
+In829c0c3 the execute phase now inherits the existing default run timeout300000ms
+and output64MiB. Other phases, overall/admission ceilings and engine enforcement
+are unchanged. Tracing the real Phases.start fence showed the original uniform
+5000ms manifest value would cap longer runs prematurely; this was a coordinator
+contract error. Three affected policy/schema cases passed in2.96s (wall3.61s),
+scoped lint and diff checks passed. No native workload/build was repeated for the
+policy-only correction; retained earlier local images still identify their older
+source, while new source builds include the corrected template.
