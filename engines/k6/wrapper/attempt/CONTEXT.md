@@ -10,11 +10,11 @@ compile. An existing journal/result refuses another invocation. Rejected journal
 initialization has UNKNOWN quiescence because its owner exposes no original-work
 receipt; it cannot produce a result or target work. Other issued original IO,
 callback and descriptor outcomes are awaited, even when a public owner fails early.
-Only enclosing agent/Docker containment can stop unresponsive original work.
 Offer partition: control clamp(total/32,64KiB,64MiB), numeric1MiB,result64KiB,
-summary1MiB, build remaining<=89MiB. Prepare also caps peak build admission.
-Collect must admit the fixed1MiB native producer before execution; numeric encoding
-and IO use remaining collect bytes after summary (unknown summary charges1MiB).
+summary1MiB; history quarter of remaining, <=256MiB; build remainder<=89MiB.
+Execute phase also caps history; collect reserves summary1MiB/numeric1MiB plus
+>=64KiB final-drain room before load. Preserve earlier history; charge only new
+collect writes. Prepare caps peak build admission. See archive/CONTEXT.md.
 Control is shared, separately reserved, never charged twice to phase artifacts.
 Phase finishes report retained artifact bytes; numeric evidence separately retains peak.
 Parser work ceilings64GiB/268435456 records are independent of retained output;
@@ -30,11 +30,10 @@ Fixed native numeric summary is rehashed against collector evidence after actual
 stop. Native and fresh numeric-final files receive bounded IO/fsync/close and
 exact bigint custody checks. They become eligible only through the atomically
 published manifest. Partial files are preserved, never declared/refunded/deleted.
-Numeric-final v2 retains distributions, histogram-estimate provenance, coverage,
+Numeric-final v3 binds retained window/index artifact IDs and retains distributions,
+histogram-estimate provenance, coverage,
 mapper diagnostics and build byte peaks. Absent measurement quantiles stay unknown.
 Published files remain reported even after terminal journal/notification failure.
 Receipt ok means complete healthy coordination, never application test pass.
 Native99 required failures can be healthy coordination with failed test outcome.
-Safe typed failures, final facts and explicit quiescence distinguish unknown work.
-CLI is Linux-only, umask077, fixed image paths/pins and one SIGINT/TERM cancel path.
-Check: scoped Vitest engines/k6/test/attempt --maxWorkers=2; all TypeScript projects.
+Check: scoped Vitest engines/k6/test/attempt and test/metric-archive; Node types.

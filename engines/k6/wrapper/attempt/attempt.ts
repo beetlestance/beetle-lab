@@ -12,6 +12,9 @@ import type { K6ResultInput, K6ResultMapping } from '../result/index.js';
 import { publishK6Result } from '../publication/index.js';
 import type { ResultPublication } from '../publication/index.js';
 import { Artifacts, outputRoot } from './artifacts.js';
+import { MetricArchive } from './archive/index.js';
+import type { ArchiveEvidence } from './archive/index.js';
+import type { MetricWindow } from '../../aggregation/index.js';
 import { AttemptFence } from './fence.js';
 import { Notifications } from './notifications.js';
 import { Phases } from './phases.js';
@@ -64,6 +67,9 @@ class Attempt {
   private execution: ExecutionOperation | undefined;
   private publication: ResultPublication | undefined;
   private artifacts: Artifacts | undefined;
+  private archive: MetricArchive | undefined;
+  private archiveFailure: AttemptError | undefined;
+  private historyAtCollect = 0;
   private reservation: OutputReservation | undefined;
   private stage: AttemptReason = 'input';
   private measured = false;
@@ -132,14 +138,17 @@ class Attempt {
       clock: this.ports.clock, limits: { maximumBuildBytes: reservation.build, reservedOutputBytes: reservation.execution,
         maximumMetricBytes: 68_719_476_736, maximumMetricRecords: 268_435_456,
         maximumDiagnosticBytes: 65_536, drainTimeoutMs: 1000, collectionTimeoutMs: Math.min(30_000, collectMs) },
-      window: async (window, signal) => { this.fence.check(); await this.options.onWindow?.(window, signal); this.fence.check(); },
+      window: (window, signal) => this.writeWindow(window, signal),
       measureStarted: async receipt => {
         if (this.measured || this.collecting) this.fail('execution');
         this.measured = true; await this.phases!.transition('execute', 1, receipt.observedAt, receipt.build.bytes);
       }, collectStarted: async receipt => {
         if (this.collecting) this.fail('execution');
         this.collecting = true;
-        await this.phases!.transition('collect', this.measured ? 1 : 0, receipt.observedAt, this.measured ? 0 : receipt.build.bytes);
+        this.historyAtCollect = this.archive?.bytes ?? 0;
+        this.archive?.beginCollection(reservation.historyCollect);
+        await this.phases!.transition('collect', this.measured ? 1 : 0, receipt.observedAt,
+          this.historyAtCollect + (this.measured ? 0 : receipt.build.bytes));
       } });
     await this.execution.result;
     // First failure may precede original work. Preserve late actual facts without upgrading it.
@@ -149,7 +158,34 @@ class Attempt {
     this.quiet.input = results[3]?.status === 'fulfilled' ? 'confirmed' : 'failed';
     await this.notifications.quiesce(); this.quiet.notifications = 'confirmed';
     if (this.quiet.execution !== 'confirmed' || this.quiet.input !== 'confirmed') this.fail('cleanup');
+    if (this.archiveFailure) throw this.archiveFailure;
     this.fence.check();
+  }
+  private async ensureArchive(): Promise<MetricArchive> {
+    if (this.archive) return this.archive;
+    this.quiet.artifacts = 'unknown';
+    const reserved = this.reservation!;
+    try {
+      this.archive = await MetricArchive.create({ directory: this.options.outputRoot, uid: this.options.uid,
+        allowance: this.collecting ? Math.min(reserved.history, reserved.historyCollect) : reserved.history,
+        scope: this.state.scope!, fence: this.fence });
+      return this.archive;
+    } catch (error) {
+      this.quiet.artifacts = error instanceof AttemptError && error.reason === 'cleanup' ? 'failed' : 'confirmed';
+      throw error;
+    }
+  }
+  private async writeWindow(window: MetricWindow, signal: AbortSignal): Promise<void> {
+    this.fence.check();
+    try { await (await this.ensureArchive()).append(window); }
+    catch (error) {
+      this.archiveFailure ??= error instanceof AttemptError ? error : new AttemptError('artifact'); throw this.archiveFailure;
+    }
+    await this.options.onWindow?.(window, signal); this.fence.check();
+  }
+  private async archiveEvidence(): Promise<ArchiveEvidence | null> {
+    if (this.state.execution!.metrics) return (await this.ensureArchive()).finish();
+    await this.archive?.close(); return null;
   }
   private evidence(compiled: CompiledInput, artifacts: EngineResult['artifacts']): K6ResultInput {
     const receipt = this.state.execution!;
@@ -164,16 +200,31 @@ class Attempt {
     this.stage = 'artifact'; this.quiet.artifacts = 'unknown';
     const summary = this.state.execution!.summary;
     const collectOutputBytes = this.input!.manifest.phases.find(phase => phase.phase === 'collect')!.outputBytes;
-    const numericBytes = numericAllowance(this.reservation!, collectOutputBytes, summary?.ok ? summary.evidence.rawBytes : 1_048_576);
-    const artifacts: EngineResult['artifacts'] = [];
+    const history = await this.archiveEvidence();
+    const historyWork = this.archiveAccounting(history);
+    const numericBytes = numericAllowance(this.reservation!, collectOutputBytes - historyWork.produced, summary?.ok ? summary.evidence.rawBytes : 1_048_576);
+    const artifacts: EngineResult['artifacts'] = [...historyWork.artifacts];
     if (summary?.ok) artifacts.push(await this.artifacts!.summary(summary.evidence));
-    artifacts.push(await this.artifacts!.numeric({ version: 2, scope: this.state.scope, metrics: this.state.execution!.metrics,
-      diagnostics, buildUsage: this.buildUsage(), windowsRetained: false, quantiles: this.state.execution!.metrics?.quantiles ?? 'unknown' }, numericBytes));
-    this.quiet.artifacts = this.artifacts!.quiescence;
+    artifacts.push(await this.artifacts!.numeric(this.numericEvidence(diagnostics, history), numericBytes));
+    this.quiet.artifacts = this.artifactQuiescence();
     await this.notifications.quiesce(); this.fence.check();
     if (!this.collecting) this.fail('execution');
-    await this.phases!.finish(1, artifacts.reduce((sum, artifact) => sum + artifact.bytes, 0));
+    await this.phases!.finish(1, artifacts.reduce((sum, artifact) => sum + artifact.bytes, 0) - historyWork.published + historyWork.produced);
     return artifacts;
+  }
+  private archiveAccounting(history: ArchiveEvidence | null) {
+    return { produced: (this.archive?.bytes ?? 0) - this.historyAtCollect,
+      published: history?.bytes ?? 0, artifacts: history?.artifacts ?? [] };
+  }
+  private numericEvidence(diagnostics: MappingDiagnostics, history: ArchiveEvidence | null) {
+    return { version: 3, scope: this.state.scope, metrics: this.state.execution!.metrics,
+      diagnostics, buildUsage: this.buildUsage(), windowsRetained: history !== null,
+      history: history ? { windows: history.windows, bytes: history.bytes, dataArtifactId: history.dataArtifactId, indexArtifactId: history.indexArtifactId } : null,
+      quantiles: this.state.execution!.metrics?.quantiles ?? 'unknown' };
+  }
+  private artifactQuiescence(): 'confirmed' | 'failed' {
+    return this.quiet.artifacts === 'failed' || this.artifacts?.quiescence === 'failed'
+      || this.archive?.quiescence === 'failed' ? 'failed' : 'confirmed';
   }
   private async finishResult(compiled: CompiledInput): Promise<void> {
     this.stage = 'mapping'; this.fence.check();
@@ -211,6 +262,7 @@ class Attempt {
       ...(this.input ? [{ key: 'input' as const, work: () => this.input!.close() }] : []),
       ...(this.execution ? [{ key: 'execution' as const, work: () => this.execution!.close() }] : []),
       ...(this.publication ? [{ key: 'publication' as const, work: () => this.publication!.close() }] : []),
+      ...(this.archive ? [{ key: 'artifacts' as const, work: () => this.archive!.close() }] : []),
       { key: 'notifications', work: () => this.notifications.quiesce() },
       ...(this.writer ? [{ key: 'journal' as const, work: async () => {
         try { await this.phases?.stop(); } finally { await this.writer!.close(); }
@@ -223,7 +275,9 @@ class Attempt {
         this.quiet[key] = 'failed'; this.state.ok = false; this.state.reason ??= 'cleanup';
       } else if (this.quiet[key] !== 'failed') this.quiet[key] = 'confirmed';
     });
-    if (this.artifacts && this.quiet.artifacts !== 'not_started') this.quiet.artifacts = this.artifacts.quiescence;
+    if (this.artifacts && this.quiet.artifacts !== 'not_started') {
+      this.quiet.artifacts = this.artifactQuiescence();
+    }
   }
 }
 

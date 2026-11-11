@@ -49,21 +49,19 @@ it('rejects collect allowance below fixed producer ceiling before calling execut
   const result = await f.run(); expect(result.reason).toBe('output_limit'); expect(result.result).toBeNull();
   expect(native.built).toBeUndefined(); expect(native.calls).toBe(0);
 });
-it.each([0, 1])('enforces remaining collect allowance before numeric file creation (%s byte short)', async short => {
-  const baseline = await setup(); expect((await baseline.run()).ok).toBe(true);
-  const numericBytes = (await readFile(join(baseline.outputRoot, 'numeric-final.json'))).length;
-  const summaryBytes = (await readFile(join(baseline.outputRoot, 'beetle-evidence.json'))).length;
-  const f = await setup(); f.manifest.phases.find(phase => phase.phase === 'collect')!.outputBytes = 1_048_576;
+it.each([0, 1])('reserves collect final-drain room before native load (%s byte short)', async short => {
+  const f = await setup();
+  const minimum = 2 * 1_048_576 + 65_536;
+  f.manifest.phases.find(phase => phase.phase === 'collect')!.outputBytes = minimum - short;
   f.offer.installedIdentity = syntheticInstalledIdentity(f.manifest); await f.save();
-  native.summaryPadding = 1_048_576 - summaryBytes - numericBytes + short;
   const result = await f.run();
   if (short) {
-    expect(result.reason).toBe('output_limit'); expect(result.result).toBeNull();
+    expect(result.reason).toBe('output_limit'); expect(result.result).toBeNull(); expect(native.calls).toBe(0);
     await expect(readFile(join(f.outputRoot, 'numeric-final.json'))).rejects.toMatchObject({ code: 'ENOENT' });
   } else {
-    expect(result.ok, JSON.stringify(result)).toBe(true);
-    expect((await readFile(join(f.outputRoot, 'numeric-final.json'))).length).toBe(numericBytes);
-    expect(result.result?.artifacts.reduce((sum, artifact) => sum + artifact.bytes, 0)).toBe(1_048_576);
+    expect(result.ok, JSON.stringify(result)).toBe(true); expect(native.calls).toBe(1);
+    expect(result.result!.artifacts.map(artifact => artifact.kind)).toEqual(['metric-windows', 'metric-index', 'native-summary', 'numeric-final']);
+    expect(result.result!.artifacts.reduce((sum, artifact) => sum + artifact.bytes, 0)).toBeLessThanOrEqual(minimum);
   }
 });
 it('bounds result publication by the manifest seal output allowance before writing', async () => {
@@ -73,7 +71,7 @@ it('bounds result publication by the manifest seal output allowance before writi
   expect(result.result).toBeNull(); await expect(readFile(join(f.outputRoot, 'engine-result.json'))).rejects.toMatchObject({ code: 'ENOENT' });
 });
 it('reserves exact finite output partitions without integer overflow', () => {
-  const minimum = 2_300_102;
+  const minimum = 2_503_052;
   expect(() => reserveOutput(minimum - 1)).toThrow('output_limit');
   const exact = reserveOutput(minimum); expect(Object.values(exact).every(Number.isSafeInteger)).toBe(true);
   expect(exact.control + exact.numeric + exact.result + exact.execution).toBe(minimum);

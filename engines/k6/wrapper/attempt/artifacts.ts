@@ -9,24 +9,14 @@ import type { EngineResult } from '@beetle/contracts';
 import type { SummaryEvidence } from '../collection/index.js';
 import type { AttemptFence } from './fence.js';
 import { AttemptError } from './types.js';
+import { same, regular, directory } from './artifact-identity.js';
 
 type Artifact = EngineResult['artifacts'][number];
 interface ArtifactOptions { readonly directory: string; readonly uid: number; readonly fence: AttemptFence }
 const cap = 1_048_576;
 const hash = (bytes: Uint8Array): string => createHash('sha256').update(bytes).digest('hex');
-function same(left: BigIntStats, right: BigIntStats): boolean {
-  return left.dev === right.dev && left.ino === right.ino && left.size === right.size
-    && left.mtimeNs === right.mtimeNs && left.ctimeNs === right.ctimeNs;
-}
-function regular(stat: BigIntStats, uid: number, bytes: number): void {
-  if (!stat.isFile() || stat.nlink !== 1n || stat.uid !== BigInt(uid) || (stat.mode & 0o777n) !== 0o600n
-    || stat.size !== BigInt(bytes)) throw new AttemptError('artifact');
-}
 function namedArtifact(stat: BigIntStats | undefined, named: BigIntStats): void {
   if (!stat || !same(stat, named)) throw new AttemptError('artifact');
-}
-function directory(stat: BigIntStats, uid: number): void {
-  if (!stat.isDirectory() || stat.uid !== BigInt(uid) || (stat.mode & 0o777n) !== 0o700n) throw new AttemptError('profile');
 }
 export async function outputRoot(options: ArtifactOptions): Promise<void> {
   options.fence.check();

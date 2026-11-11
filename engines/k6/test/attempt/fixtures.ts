@@ -14,6 +14,7 @@ import type { StagedK6Options } from '../../wrapper/attempt/index.js';
 const native = vi.hoisted(() => ({ calls: 0, closes: 0, failed: false, discovery: false, missingMarker: false,
   closeFails: false, buildFails: false, summaryTamper: false, built: undefined as BuildInput | undefined,
   summaryPadding: 0,
+  metricOffsets: undefined as readonly number[] | undefined, wallOffset: 0,
   blockBuild: undefined as Promise<void> | undefined, blockClose: undefined as Promise<void> | undefined }));
 export { native };
 vi.mock('../../build/index.js', () => ({ buildRuntimeScript: async (input: BuildInput) => {
@@ -26,7 +27,7 @@ vi.mock('../../wrapper/process/index.js', () => ({ createNativeProcess: (input: 
   run: async () => {
     native.calls++;
     const bytes = stream();
-    if (bytes.length) await input.sink(bytes, { signal: input.signal!, deadlineMs: input.attempt.mode === 'managed' ? input.attempt.deadlineMs : now + 1000 });
+    if (bytes.length) await deliverMetrics(input, bytes);
     const raw = projected(native.built!);
     await writeFile(join(input.directory, 'beetle-evidence.json'), (native.summaryTamper ? raw + ' ' : raw)
       + ' '.repeat(native.summaryPadding), { mode: 0o600, flag: 'wx' });
@@ -35,14 +36,23 @@ vi.mock('../../wrapper/process/index.js', () => ({ createNativeProcess: (input: 
       stdioClosed: true, groupAbsent: true, quiescent: true };
   }, close: async () => { native.closes++; await native.blockClose; if (native.closeFails) throw new Error('SECRET_CLOSE_ERROR'); },
 }) }));
+async function deliverMetrics(input: NativeProcessOptions, bytes: Uint8Array): Promise<void> {
+  const budget = { signal: input.signal!, deadlineMs: input.attempt.mode === 'managed' ? input.attempt.deadlineMs : now + 1000 };
+  if (!native.metricOffsets) { await input.sink(bytes, budget); return; }
+  const offsets = [...native.metricOffsets];
+  for (const [index, line] of Buffer.from(bytes).toString('utf8').trimEnd().split('\n').entries()) {
+    if (index >= 3) native.wallOffset = offsets[index - 3]!;
+    await input.sink(Buffer.from(line + '\n'), budget);
+  }
+}
 function stream(): Uint8Array {
   if (native.missingMarker) return new Uint8Array();
   return Buffer.from([
     { type: 'Metric', metric: 'beetle_measure_started', data: { type: 'counter' } },
     { type: 'Point', metric: 'beetle_measure_started', data: { value: 1, time: new Date(now).toISOString(), tags: {} } },
     { type: 'Metric', metric: 'http_req_duration', data: { type: 'trend' } },
-    { type: 'Point', metric: 'http_req_duration', data: { value: 3, time: new Date(now).toISOString(),
-      tags: { phase: 'execute', request: 'r0' } } },
+    ...(native.metricOffsets ?? [0]).map(offset => ({ type: 'Point', metric: 'http_req_duration',
+      data: { value: 3, time: new Date(now + offset).toISOString(), tags: { phase: 'execute', request: 'r0' } } })),
   ].map(value => JSON.stringify(value)).join('\n') + '\n');
 }
 function projected(input: BuildInput): string {
@@ -56,11 +66,12 @@ function projected(input: BuildInput): string {
     return [metric.nativeKey, { values, thresholds: Object.fromEntries(metric.thresholds.map(rule => [rule.threshold,
       { ok: !failed && !(native.discovery && rule.abortOnFail) }])) }];
   }));
-  return summaryProjection(input.suite, { state: { testRunDurationMs: 1000 }, metrics });
+  return summaryProjection(input.suite, { state: { testRunDurationMs: Math.max(1000, native.wallOffset) }, metrics });
 }
 export function resetNative(): void {
   Object.assign(native, { calls: 0, closes: 0, failed: false, discovery: false, missingMarker: false, closeFails: false,
-    buildFails: false, summaryTamper: false, summaryPadding: 0, built: undefined, blockBuild: undefined, blockClose: undefined });
+    buildFails: false, summaryTamper: false, summaryPadding: 0, metricOffsets: undefined, wallOffset: 0,
+    built: undefined, blockBuild: undefined, blockClose: undefined });
 }
 export async function fixture() {
   const base = await stagedFixture();
@@ -75,7 +86,7 @@ export async function fixture() {
   const outputRoot = join(base.root, 'output'); await mkdir(outputRoot, { mode: 0o700 });
   const options: StagedK6Options = { inputRoot: base.options.inputRoot, secretRoot: base.options.secretRoot,
     outputRoot, uid: base.options.uid, installed: base.options.installed, signal: base.controller.signal };
-  const clock = { wall: () => now, monotonic: () => performance.now() };
+  const clock = { wall: () => now + native.wallOffset, monotonic: () => performance.now() };
   const protect = async () => {
     for (const root of [options.inputRoot, options.secretRoot]) {
       for (const name of await readdir(root)) await chmod(join(root, name), 0o400);

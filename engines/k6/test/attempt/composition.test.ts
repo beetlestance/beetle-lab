@@ -7,6 +7,7 @@ import type { ControlEvent } from '@beetle/contracts';
 import { replayControl } from '../../wrapper/control/index.js';
 import { fixture, native, resetNative } from './fixtures.js';
 import { discoveryConfig } from '../result/fixtures.js';
+import { syntheticInstalledIdentity } from '../staged-input/fixtures.js';
 import type { SuiteConfig } from '../../compiler/suite/index.js';
 
 const cleanups: (() => Promise<void>)[] = [];
@@ -16,6 +17,29 @@ async function setup() { const value = await fixture(); cleanups.push(value.clea
 function prepareOutput(events: readonly ControlEvent[]) {
   return events.find(event => event.kind === 'phase.finished' && event.phase === 'prepare')?.payload;
 }
+it('accounts execute history and collect final drain separately through real staged composition', async () => {
+  const f = await setup(); native.metricOffsets = [0, 3000, 6000];
+  for (const phase of f.manifest.phases) phase.timeoutMs = 30_000;
+  f.offer.installedIdentity = syntheticInstalledIdentity(f.manifest); await f.save();
+  const events: ControlEvent[] = [];
+  const receipt = await f.run({ onEvent: async event => { events.push(event); } });
+  expect(receipt.ok, JSON.stringify(receipt)).toBe(true); expect(native.calls).toBe(1);
+  const data = (await readFile(join(f.outputRoot, 'metric-windows.ndjson'), 'utf8')).trimEnd().split('\n');
+  const index = (await readFile(join(f.outputRoot, 'metric-index.ndjson'), 'utf8')).trimEnd().split('\n');
+  expect(data).toHaveLength(5); expect(index).toHaveLength(5);
+  for (let i = 1; i <= 3; i++) expect(JSON.parse(data[i]!)).toMatchObject({ sequence: i, window: {
+    series: [expect.objectContaining({ total: expect.objectContaining({ count: 1, min: 3, max: 3 }) })],
+  } });
+  // Two occupied windows flush during native input; the third drains after collect starts.
+  const executeBytes = Buffer.byteLength(data.slice(0, 3).join('\n') + '\n')
+    + Buffer.byteLength(index.slice(0, 3).join('\n') + '\n');
+  expect(events.find(event => event.kind === 'phase.finished' && event.phase === 'execute'))
+    .toMatchObject({ payload: { outputBytes: executeBytes } });
+  const total = receipt.result!.artifacts.reduce((sum, artifact) => sum + artifact.bytes, 0);
+  expect(events.find(event => event.kind === 'phase.finished' && event.phase === 'collect'))
+    .toMatchObject({ payload: { outputBytes: total - executeBytes } });
+  expect(Object.values(receipt.quiescence).every(value => value === 'confirmed')).toBe(true);
+});
 it.each([false, true])('composes actual compiler/execution/parser/collector/mapper/seal/publication (required failure %s)', async failed => {
   const f = await setup(); native.failed = failed;
   const events: ControlEvent[] = [];
@@ -40,11 +64,19 @@ it.each([false, true])('composes actual compiler/execution/parser/collector/mapp
     expect((await stat(path)).mode & 0o777).toBe(0o600);
   }
   const numeric = JSON.parse(await readFile(join(f.outputRoot, 'numeric-final.json'), 'utf8')) as Record<string, unknown>;
-  expect(numeric.windowsRetained).toBe(false); expect(numeric.quantiles).toBe('histogram-estimate'); expect(numeric.version).toBe(2);
+  expect(numeric.windowsRetained).toBe(true); expect(numeric.quantiles).toBe('histogram-estimate'); expect(numeric.version).toBe(3);
   expect(numeric.metrics).toMatchObject({ quantiles: 'histogram-estimate', totals: [expect.objectContaining({
     metric: 'http_req_duration', total: expect.objectContaining({ kind: 'trend', count: 1,
       distribution: expect.objectContaining({ format: 'exponential-v1', unit: 'ms', count: 1, min: 3, max: 3 }) }),
   })] });
+  expect(numeric.history).toMatchObject({ windows: 1,
+    dataArtifactId: result.artifacts.find(artifact => artifact.kind === 'metric-windows')!.artifactId,
+    indexArtifactId: result.artifacts.find(artifact => artifact.kind === 'metric-index')!.artifactId });
+  const history = (await readFile(join(f.outputRoot, 'metric-windows.ndjson'), 'utf8')).trimEnd().split('\n');
+  expect(history).toHaveLength(3);
+  expect(JSON.parse(history[1]!)).toMatchObject({ sequence: 1, window: { series: [expect.objectContaining({
+    metric: 'http_req_duration', total: expect.objectContaining({ count: 1, min: 3, max: 3 }),
+  })] } });
   expect(numeric.buildUsage).toEqual({ bytes: 29, peakBytes: 100 });
   expect(numeric.diagnostics).toEqual({ windowCoverage: { complete: true, latePoints: 0, markerDelayDroppedBuckets: 0 } });
   expect(JSON.stringify(receipt) + JSON.stringify(events)).not.toContain('SECRET');
