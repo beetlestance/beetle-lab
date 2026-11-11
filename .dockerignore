@@ -25,3 +25,14 @@ docker-compose.*.yml
 **/dist
 coverage
 *.tsbuildinfo
+
+# Local credential/agent state must never enter a remote build context.
+.aws
+.ssh
+.codex
+.agents
+**/.aws
+**/.ssh
+**/.codex
+**/.agents
+**/node_modules
