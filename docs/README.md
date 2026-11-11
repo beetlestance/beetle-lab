@@ -75,6 +75,7 @@ released application until the rewrite is qualified.
 | Inspect published artifact downloads | [Artifact downloads](verification/run-artifact-downloads.md) | Scoped metadata, actual native streaming and withheld-EOF evidence; [browser inventory/links](verification/run-artifact-controls.md) locally verified; browser save qualification pending |
 | Inspect run execution activity | [Timeline UI](verification/run-timeline-ui.md) | Bounded recent activity and lifetime/progress checks; browser/resource production pending |
 | Inspect public event replay | [Run event reads](verification/run-event-reads.md) | Scoped finite reads through actual worker/HTTP, resume and unchanged accounting |
+| Inspect advisory live metric foundation | [Live snapshot contract](verification/live-metric-snapshots.md) | Bounded shared frame/codec only; producer/reader/browser remain pending |
 | Inspect retained k6 metric history | [Metric archive](verification/k6-metric-archive.md) | Streamed data/index custody and phase accounting; [history reads/chart](verification/run-metric-history.md) locally verified; live transport pending |
 | Inspect bounded k6 duration estimates | [Distribution evidence](verification/k6-distributions.md) | Immutable windows/final histograms, numeric v2 and resource qualification limits |
 | Inspect rejected and source-free settlement | [Output absence](verification/output-absence.md) | Native rejected intake, immutable proof/credit and affected real-k6 control; release matrix pending |

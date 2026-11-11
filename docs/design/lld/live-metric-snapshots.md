@@ -70,6 +70,35 @@ pending/closed/failed state and fixed failure reason; no raw data/errors/paths.
 Projected current+pending state<=128KiB; serializer/output temporary<=64KiB, plus
 bounded shared validation scratch. No retained source-window or point corpus.
 
+## Core public interface and admission
+
+Root-reserved engines/k6/wrapper/live/types.ts fixes the interface; index.ts exports
+createLiveMetricPublisher(options), types and fixed error. Factory captures options
+and trusted capability methods before async work; invalid options throw fixed
+invalid_options before sink effects. Scope/subset are detached using existing
+schema/semantic owners. Timeout uses existing validateAttempt limits (<=172800000ms).
+maximumProducedBytes is a required integer1..4294967296 caller-owned lifetime charge;
+max writes is min(65536,1+floor(timeoutMs/2000)). Neither grants new output authority.
+Use existing shared descriptor/value math and frame codec; no duplicate unit rules.
+
+Clock defaults Date.now/performance.now; trusted supplied clocks are captured once.
+First acceptance establishes source order and cadence without awaiting the sink.
+Optional signal fences on abort; already-aborted input starts no write. Sink receives
+canonical encoded bytes<=64KiB and captured abort signal; chargedBytes conservatively
+reserves the whole buffer before issuing IO, including failed/partial uncertainty.
+It is not reported as actual bytes written. Stop discards at most one pending window
+and exposes discardedOnStop separately from coalesced replacement counts.
+
+stop/close synchronously fence and return the same Promise<LiveMetricCloseResult>.
+It resolves only after actual original write and sink.close settle. Confirmed close
+may retain a prior advisory failure reason; failed cleanup returns quiescence failed
+and retains/fences its owner. No thrown failure escapes accept or a timer callback.
+State snapshots are detached/frozen scalar facts; preserve the first failure reason
+and expose cleanup failure via quiescence. No automatic producer restart or final
+flush. Per-instance bounds are established here; actual integration creates exactly
+one publisher per engine attempt within existing agent admission, not arbitrary
+unbounded publishers. No process-global job scheduler belongs in this component.
+
 ## Subsequent physical and consumer packets
 
 A later fixed-file adapter writes live-metrics.json/live-metrics.tmp under the exact
