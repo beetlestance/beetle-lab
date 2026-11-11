@@ -81,6 +81,10 @@ native physical custody and indexed/schema binding, not a new full-file SHA clai
 Yield during long bounded parsing; no synchronous whole-index materialization.
 
 RunMetricsService owns one operation, no queue, and captures readers/capability.
+Its factory accepts RunMetricServiceOptions with artifacts, optional bytes and
+createDigest (fresh incremental SHA256 update/hex instance per full read). Bootstrap
+supplies the hashing adapter; the application imports no Node crypto. Missing either
+byte/hash capability permits metadata reads but ready history reads fail503.
 Both port methods take MetricReadContext {signal,deadline}; fixed <=30s monotonic
 budget covers metadata/native/parse/final serialization. Never reset it between IO.
 Wait for native result AND settlement; original work remains owned after abort.

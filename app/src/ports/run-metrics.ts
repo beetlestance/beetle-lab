@@ -1,5 +1,7 @@
 import type { RunMetricSeriesPage, RunMetricSamplesPage } from '@beetle/contracts/api';
 import type { RunKey } from './runs.js';
+import type { RunArtifactsReader } from './run-artifacts.js';
+import type { OutputByteStore } from './output-bytes.js';
 
 export interface MetricReadContext { readonly signal: AbortSignal; readonly deadline: number }
 export interface RunMetricSeriesQuery extends RunKey {
@@ -17,4 +19,12 @@ export interface RunMetricsService {
   readonly reader: RunMetricsReader;
   /** Fence synchronously, abort and drain originals; shared adapters remain owned by bootstrap. */
   close(): Promise<void>;
+}
+
+/** Incremental SHA256 supplied by composition; one instance per verified full read. */
+export interface MetricDigest { update(bytes: Uint8Array): void; hex(): string }
+export interface RunMetricServiceOptions {
+  readonly artifacts: RunArtifactsReader;
+  readonly bytes?: Pick<OutputByteStore, 'read'>;
+  readonly createDigest?: () => MetricDigest;
 }

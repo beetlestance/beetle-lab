@@ -5,7 +5,7 @@ import { validateApi } from '../validate.js';
 
 export interface PreparedInput {
   params: Record<string, string>;
-  query?: ApiTypes['PageQuery'];
+  query?: ApiTypes['PageQuery'] | ApiTypes['RunMetricSamplesQuery'];
   body?: Record<string, unknown>;
   signal?: AbortSignal;
 }
@@ -50,7 +50,7 @@ export function prepareInput(operation: ApiOperation, input: unknown, maximum: n
     const snapshot = JSON.parse(encodeJson(extracted, maximum)) as Record<string, unknown>;
     if (!validateFields(operation, snapshot)) return undefined;
     const prepared: PreparedInput = { params: (snapshot.params ?? {}) as Record<string, string> };
-    if ('query' in operation) prepared.query = snapshot.query as ApiTypes['PageQuery'];
+    if ('query' in operation) prepared.query = snapshot.query as NonNullable<PreparedInput['query']>;
     if ('request' in operation) prepared.body = snapshot.body as Record<string, unknown>;
     if (signal !== undefined) prepared.signal = signal;
     return prepared;
@@ -62,5 +62,10 @@ export function operationPath(operation: ApiOperation, input: PreparedInput): st
   if (!input.query) return path;
   const query = new URLSearchParams({ limit: String(input.query.limit) });
   if (input.query.cursor !== undefined) query.set('cursor', input.query.cursor);
+  if ('seriesOrdinal' in input.query) {
+    query.set('seriesOrdinal', String(input.query.seriesOrdinal));
+    if (input.query.fromTimeMs !== undefined) query.set('fromTimeMs', String(input.query.fromTimeMs));
+    if (input.query.toTimeMs !== undefined) query.set('toTimeMs', String(input.query.toTimeMs));
+  }
   return `${path}?${query.toString()}`;
 }
