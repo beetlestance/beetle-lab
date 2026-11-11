@@ -47,3 +47,10 @@ Native resource qualification remains outstanding; no budget was raised.
 
 Executable window transport, public sample API, chart replay, target sampling,
 browser and updated native image qualification remain separate unfinished work.
+
+The pure value implementation moved to @beetle/contracts/metrics at `1b89ed7`
+without changing the five algorithm modules' bytes. Existing distribution/engine
+integration14 checks passed in3.14s and staged composition6 in2.51s. Node types,
+changed lint, architecture1660 and docs271 passed; a context-line overflow was
+corrected without changing its gate. This is ownership/import evidence, not new
+numeric precision, browser, native resource or performance qualification.
