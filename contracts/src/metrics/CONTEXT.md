@@ -20,3 +20,7 @@ iteration before work. Domain errors are explicit, never a measured zero.
 Moved byte-for-byte from the independently reviewed engine implementation; do not
 fork engine/backend/chart copies. Owning spec: docs/design/lld/k6-distributions.md.
 Focused checks: vitest run contracts/test/metrics plus affected engine aggregation.
+
+projectMetricValue projects validated NumericTotal into the existing API value shape.
+History and future live snapshots share its ratios/percentile bounds; no reaggregation.
+It performs no IO; malformed unvalidated input is outside this trusted typed boundary.

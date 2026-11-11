@@ -7,3 +7,4 @@ export type { MetricKind, MetricScope, MetricTags, NumericTotal, SeriesTotal, Me
 export { captureMetricSeries } from './capture-series.js';
 export { captureMetricWindow } from './capture-window.js';
 export { metricSeriesIdentity } from './identity.js';
+export { projectMetricValue } from './project-value.js';

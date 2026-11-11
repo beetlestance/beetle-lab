@@ -1,5 +1,5 @@
 import { MetricReadError } from '../../ports/run-metrics.js';
-import { captureMetricSeries, metricSeriesIdentity, distributionPercentile } from '@beetle/contracts/metrics';
+import { captureMetricSeries, metricSeriesIdentity, projectMetricValue } from '@beetle/contracts/metrics';
 import type { NumericTotal, SeriesTotal } from '@beetle/contracts/metrics';
 import type { RunMetricSeries, RunMetricValue, RunMetricCoverage } from '@beetle/contracts/api';
 export function fail(): never { throw new MetricReadError('unavailable'); }
@@ -11,11 +11,7 @@ export function safe(v: unknown, max = Number.MAX_SAFE_INTEGER): number {
   if (typeof v !== 'number' || !Number.isSafeInteger(v) || v < 0 || v > max || Object.is(v, -0)) return fail(); return v;
 }
 export function metricValue(total: NumericTotal): RunMetricValue {
-  if (total.kind === 'rate') return {...total, ratio: total.sampleCount ? total.numerator / total.sampleCount : null};
-  if (total.kind !== 'trend') return {...total};
-  const {distribution, ...value} = total;
-  const p = (n: 50 | 90 | 95 | 99) => distributionPercentile(distribution, n) ?? fail();
-  return {...value, percentiles: {p50: p(50), p90: p(90), p95: p(95), p99: p(99)}};
+  try { return projectMetricValue(total); } catch { return fail(); }
 }
 export function descriptor(value: SeriesTotal, ordinal: number): RunMetricSeries {
   if (value.scope !== 'execute' && value.scope !== 'engine') return fail();
