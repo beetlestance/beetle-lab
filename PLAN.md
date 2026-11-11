@@ -59,6 +59,8 @@ its remaining restart/cold-restore implementation. R4 additionally requires fres
 installation, shipped images/Compose, scans, backup/restore, bounded soak/overhead
 and native amd64/arm64 evidence. No complete R0-R4 release is claimed.
 
+First local usage is now evidenced through [fresh source setup and browser execution](docs/verification/first-use.md): namespace/test authoring, real k6, durable result, chart, history and one hash-verified download. This does not close the remaining product or release qualification work.
+
 ## Delivery order
 
 | Slice | Deliverable | Exit condition |
