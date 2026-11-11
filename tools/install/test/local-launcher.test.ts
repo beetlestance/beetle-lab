@@ -154,3 +154,10 @@ it('up bounds never-ready startup and preserves services/data without exposing p
   expect(recorded.some(call => call.a.includes('stop') || call.a.includes('down'))).toBe(false);
   expect((await fs.stat(f.directory)).isDirectory()).toBe(true);
 });
+
+it('validates ordinary ASCII deployment paths independently of the inherited locale', async () => {
+  const f = await fixture(); f.env.LC_ALL = 'en_US.UTF-8';
+  const result = await run(f, 'status');
+  expect(result.stderr).not.toContain('unsupported path');
+  expect((await calls(f)).at(-1)!.a).toContain('ps');
+});
