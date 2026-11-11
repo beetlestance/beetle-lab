@@ -1,0 +1,12 @@
+{
+  "root": "/home/you/beetle-lab-data",
+  "uid": 1000,
+  "gid": 1000,
+  "externalOrigin": "http://127.0.0.1:4310",
+  "agentOrigin": "http://agent:4312",
+  "dockerSocket": "/var/run/docker.sock",
+  "agentContainer": "beetle-local-agent",
+  "agentImage": "beetle-lab-rewrite-agent:local",
+  "engineImage": "beetle-lab-rewrite-k6:local",
+  "targetNetwork": "beetle-local-targets"
+}

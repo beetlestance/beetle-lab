@@ -1,6 +1,7 @@
 # Explicit rewrite Compose installation
 
-Status: wiring under implementation, separate from released legacy Compose.
+Status: composition locally verified, separate from released legacy Compose.
+See [evidence](../../verification/compose-installation.md) for actual corrections/limits.
 Depends on [starter](installation-starter.md), [provisioning](fresh-installation.md),
 [installer image](installer-image.md) and [service images](container-recipes.md).
 
