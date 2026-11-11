@@ -10,6 +10,7 @@ import { sendError } from './errors.js';
 import { RequestWork } from './work.js';
 import { RequestIdentity } from './request-identity.js';
 import { OfferIngress } from './offers.js';
+import { liveRoute, registerLiveMetrics } from './live-metrics.js';
 import { registerSources, sourceRoute } from './sources.js';
 export { AgentHttpError, HTTP_LIMITS } from './types.js';
 export type { AgentHttpOptions } from './types.js';
@@ -33,6 +34,13 @@ function query(request: FastifyRequest, cursor = false): number {
   if (keys.join(',') !== 'after') throw new AgentHttpError(400, 'invalid_protocol');
   return decimal((raw as Record<string, unknown>).after, 0);
 }
+function ingressRoute(request: FastifyRequest): 'source' | 'live' | 'offer' | undefined {
+  if (sourceRoute(request)) return 'source';
+  if (liveRoute(request)) return 'live';
+  if ((request.method === 'PUT' && request.routeOptions.url === '/runner/v1/attempts/:attemptId')
+    || (request.method === 'POST' && request.routeOptions.url === '/runner/v1/attempts/:attemptId/cancel-original')) return 'offer';
+  return undefined;
+}
 function ingress(server: FastifyInstance, identity: RequestIdentity, operations: RequestWork, offers: OfferIngress): void {
   server.addHook('preClose', async () => {
     const draining = operations.close();
@@ -43,15 +51,16 @@ function ingress(server: FastifyInstance, identity: RequestIdentity, operations:
     offers.releaseRequest(request); operations.responseFinished(request);
   });
   server.addHook('onRequest', async (request, reply) => {
-    const source = sourceRoute(request);
-    if (source) reply.header('Connection', 'close');
+    const kind = ingressRoute(request);
+    if (kind === 'source' || kind === 'live') reply.header('Connection', 'close');
     identity.capture(request);
-    const offerBody = (request.method === 'PUT' && request.routeOptions.url === '/runner/v1/attempts/:attemptId')
-      || (request.method === 'POST' && request.routeOptions.url === '/runner/v1/attempts/:attemptId/cancel-original');
-    if (offerBody || source) {
-      const scope = identity.key(request); query(request);
-      if (scope.generation !== 1) throw new AgentHttpError(409, 'conflicting_digest');
-      if (source) operations.acquireSource(request, reply); else offers.acquire(request);
+    if (!kind) return;
+    const scope = identity.key(request); query(request);
+    if (scope.generation !== 1) throw new AgentHttpError(409, 'conflicting_digest');
+    switch (kind) {
+      case 'source': operations.acquireSource(request, reply); break;
+      case 'live': operations.acquireLive(request, reply); break;
+      case 'offer': offers.acquire(request); break;
     }
   });
 }
@@ -66,7 +75,7 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
   const offers = new OfferIngress();
   ingress(server, identity, operations, offers);
   server.setErrorHandler((error, request, reply) => {
-    try { sendError(reply, error, identity.scope(request), sourceRoute(request)); } catch { reply.code(500).send(); }
+    try { sendError(reply, error, identity.scope(request), sourceRoute(request) || liveRoute(request)); } catch { reply.code(500).send(); }
   });
   server.setNotFoundHandler(() => { throw new AgentHttpError(404, 'invalid_protocol'); });
   const work = <T>(operation: () => Promise<T>) => operations.run(operation);
@@ -110,6 +119,7 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
     query(request); const scope = key(request); const body = requestBody('Ack', request.body); bodyMatches(scope, scope.attemptId, body);
     sendJson(reply, 200, 'AckReceipt', await work(() => services.journal.acknowledge(body)), scope);
   });
+  registerLiveMetrics(server, {identity, operations, read: options.liveMetrics});
   registerSources(server, { outputs: options.outputs, absences: options.absences, journal: options.journal, identity, operations });
   return server;
 }

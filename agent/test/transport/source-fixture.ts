@@ -8,6 +8,7 @@ import type { Operation } from '../../src/backends/docker/index.js';
 import type { Scope } from '../../src/admission/index.js';
 import type { Owned, SourceEnvelope, SourceChunkRequest, SourceChunk } from '@beetle/contracts/output-source';
 import { source } from '../output-source/fixtures.js';
+import type { AgentHttpOptions } from '../../src/transport/index.js';
 import { createAgentServer } from '../../src/transport/index.js';
 import { JournalError } from '../../src/journal/index.js';
 
@@ -23,7 +24,7 @@ export function sourceFixture() {
     await Promise.all(servers.splice(0).map(server => server.close()));
   });
   return {
-    async server(absent = false) {
+    async server(absent = false, liveMetrics?: AgentHttpOptions['liveMetrics']) {
       const stored = source(); const original = stored.manifest.binding;
       const key = { organizationId: original.organizationId, workspaceId: original.workspaceId,
         attemptId: original.attemptId, generation: 1 as const };
@@ -47,6 +48,7 @@ export function sourceFixture() {
       const unused = vi.fn(async () => { throw new JournalError('not_found'); });
       const server = createAgentServer({ credential: 'S'.repeat(64), journalAuthority: original.journalAuthority,
         installation: { enqueue: unused, cancel: unused, cancelOriginal: unused },
+        ...(liveMetrics ? {liveMetrics} : {}),
         journal: { get: unused, readEvents: unused, acknowledge: unused }, capabilities: cap,
         ...(absent ? {} : { outputs: { source: getSource, chunk: getChunk } }) });
       servers.push(server);

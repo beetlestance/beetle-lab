@@ -19,6 +19,9 @@ and chunk POST atomically reserve a maximum-two subset before body parsing; chun
 are limited to1024 bytes. SourceWork retains the issued service and request/response/
 socket cleanup together, including after stop hints. Source replies use Connection:
 close,75776/90112-byte caps and shared content validators before serialization.
+Live GET independently reserves two of the same32 credits and a fixed5s lifetime.
+It uses the same physical original owner; source slots remain separate. Shared
+snapshot capture/scope checks cap successful replies at64KiB, with no-store.
 preClose fences intake, stops source parsers/sockets and drains all original work.
 InstallationController must close separately before bootstrap closes the journal.
 

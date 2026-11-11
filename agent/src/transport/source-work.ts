@@ -16,10 +16,10 @@ export class SourceWork {
   private serviceSettled = true;
   private finished = false;
   constructor(private readonly request: FastifyRequest, private readonly reply: FastifyReply,
-    private readonly release: () => void) {
-    this.operation = Object.freeze({ deadline: performance.now() + HTTP_LIMITS.requestMs, signal: this.controller.signal });
+    private readonly release: () => void, lifetimeMs: number = HTTP_LIMITS.requestMs) {
+    this.operation = Object.freeze({ deadline: performance.now() + lifetimeMs, signal: this.controller.signal });
     this.socket = reply.raw.socket!;
-    this.timer = setTimeout(() => this.close(), HTTP_LIMITS.requestMs);
+    this.timer = setTimeout(() => this.close(), lifetimeMs);
     request.raw.once('end', () => { this.requestClosed = true; this.finish(); });
     request.raw.once('aborted', () => this.controller.abort());
     request.raw.once('close', () => {

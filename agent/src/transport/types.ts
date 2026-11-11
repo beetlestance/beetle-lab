@@ -1,3 +1,6 @@
+import type { Scope } from '../admission/index.js';
+import type { LiveMetricRead } from '../live-metrics/index.js';
+import type { Operation } from '../backends/docker/index.js';
 import type { Capabilities, ProtocolError } from '@beetle/contracts';
 import type { InstallationController } from '../installation/index.js';
 import type { Journal } from '../journal/index.js';
@@ -12,6 +15,7 @@ export interface AgentHttpOptions {
   readonly installation: Pick<InstallationController, 'enqueue' | 'cancel' | 'cancelOriginal'>;
   readonly journal: Pick<Journal, 'get' | 'readEvents' | 'acknowledge'>;
   /** Source adapter is explicit; absent service returns a scoped unavailable error. */
+  readonly liveMetrics?: (key: Scope, operation: Operation) => Promise<LiveMetricRead>;
   readonly outputs?: OutputSourceReader;
   /** Read-only durable closure capability; transport cannot create absence authority. */
   readonly absences?: Pick<JournalOutputAbsence, 'readOutputAbsence'>;

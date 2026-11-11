@@ -23,9 +23,12 @@ it('refuses source body admission when ordinary originals alone fill all32 share
 it('atomically charges the same32 originals and source2 before body parse and releases failed parsers only after socket cleanup', async () => {
   const e = await f.server(); const release = deferred<void>();
   e.cap.mockImplementation(async () => { await release.promise; return e.capabilities; });
-  let parsed = 0;
+  let parsed = 0; const parserCloses: Promise<void>[] = [];
   e.server.addHook('preParsing', (request, _reply, payload, done) => {
-    if (request.url.endsWith('/source/chunk')) parsed++; done(null, payload);
+    if (request.url.endsWith('/source/chunk')) {
+      parsed++; parserCloses.push(new Promise(resolve => request.raw.socket.once('close', () => resolve())));
+    }
+    done(null, payload);
   });
   const port = await f.listen(e.server);
   const metadata = Array.from({ length: 30 }, () => { const r = f.raw(port, '/runner/v1/capabilities', e.headers); r.client.end(); return r; });
@@ -40,7 +43,7 @@ it('atomically charges the same32 originals and source2 before body parse and re
     const source = await e.server.inject({ method: 'POST', url: `${e.path}/chunk`, headers: e.headers, payload: '{invalid' });
     expect(source.statusCode).toBe(429); expect(parsed).toBe(2); expect(e.getChunk).not.toHaveBeenCalled();
     for (const parser of parsers) parser.client.destroy(); await Promise.all(parsers.map(p => p.response));
-    await new Promise(resolve => setImmediate(resolve));
+    await Promise.all(parserCloses);
     const accepted = await e.server.inject({ method: 'POST', url: `${e.path}/chunk`, headers: e.headers, payload: e.selector });
     expect(accepted.statusCode).toBe(200); expect(e.getChunk).toHaveBeenCalledTimes(1);
   } finally { for (const parser of parsers) parser.client.destroy(); release.resolve(); }

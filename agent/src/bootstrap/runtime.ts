@@ -143,6 +143,7 @@ class RuntimeOwner {
     this.publisher = createObservationPublisher({ journal, observer: this.observer, output: this.output, timeout: this.timeout });
     this.scheduler = createScheduler({ journal, installation: this.installation });
     this.server = createAgentServer({ credential: options.credential, journalAuthority, journal, installation: this.installation,
+      liveMetrics: (key, operation) => supervisor.readLiveMetrics(key, operation),
       outputs: createOutputSourceReader({ journal, readRange: readOutputRange }), absences: journal, capabilities: () => view.capabilities() });
     this.server.addHook('onRequest', async () => {
       if (this.closed) throw new AgentHttpError(503, 'budget_unavailable', 'transport');
