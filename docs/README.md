@@ -73,6 +73,7 @@ released application until the rewrite is qualified.
 | Inspect published artifact downloads | [Artifact downloads](verification/run-artifact-downloads.md) | Scoped metadata, actual native streaming and withheld-EOF evidence; [browser inventory/links](verification/run-artifact-controls.md) locally verified; browser save qualification pending |
 | Inspect run execution activity | [Timeline UI](verification/run-timeline-ui.md) | Bounded recent activity and lifetime/progress checks; browser/resource production pending |
 | Inspect public event replay | [Run event reads](verification/run-event-reads.md) | Scoped finite reads through actual worker/HTTP, resume and unchanged accounting |
+| Inspect retained k6 metric history | [Metric archive](verification/k6-metric-archive.md) | Streamed data/index custody and phase accounting; sample API/live charts pending |
 | Inspect bounded k6 duration estimates | [Distribution evidence](verification/k6-distributions.md) | Immutable windows/final histograms, numeric v2 and resource qualification limits |
 | Inspect rejected and source-free settlement | [Output absence](verification/output-absence.md) | Native rejected intake, immutable proof/credit and affected real-k6 control; release matrix pending |
 | Inspect system stop handling | [Durable stop](verification/durable-stop.md) | First-cause attribution, urgent escalation, restart and original-write ownership |
