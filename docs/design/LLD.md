@@ -61,6 +61,7 @@ The owning document below must be updated before its implementation changes.
 | Public event replay and activity | [Event reads](lld/run-event-reads.md), [activity UI](lld/run-timeline-ui.md) | Scoped bounded durable reads and truthful recent execution activity |
 | Published artifact access | [Download backend](lld/run-artifact-downloads.md), [browser controls](lld/run-artifact-controls.md) | Publication evidence, native verified streaming and bounded browser inventory |
 | Retained k6 metric windows | [Metric archive](lld/k6-metric-archive.md) | Bounded data/index artifacts, output partition and streamed final custody |
+| Sealed metric history API/chart | [Metric history](lld/run-metric-history.md) | Scoped catalogue/sample reads, streamed proof and bounded chart ownership |
 | k6 live duration estimates | [Distributions](lld/k6-distributions.md) | Bounded mergeable histograms, precision, numeric artifacts and acceptance |
 | Per-attempt resource producer | [Attempt resources](lld/attempt-resources.md) | Owned Docker samples, truthful missing values, sampled peaks and event producer barriers |
 | Scheduler or instrumentation | [Resources/observability](lld/resources-observability.md) | Admission, budgets, CPU/RAM, phases, telemetry limits |
