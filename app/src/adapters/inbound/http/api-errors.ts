@@ -1,3 +1,4 @@
+import { MetricReadError } from '../../../ports/run-metrics.js';
 import { randomUUID } from 'node:crypto';
 import Fastify from 'fastify';
 import type { FastifyInstance, FastifyReply } from 'fastify';
@@ -63,10 +64,20 @@ function inputCode(code: unknown): Code {
   return typeof code === 'string' && Object.hasOwn(inputCodes, code)
     ? inputCodes[code as InputByteErrorCode] : 'internal_error';
 }
+function metricCode(code: unknown): Code {
+  return code === 'invalid_input' ? 'malformed_request'
+    : code === 'busy' ? 'capacity_unavailable' : 'storage_unavailable';
+}
+function portCode(error: unknown, code: unknown): Code | undefined {
+  if (error instanceof MetricReadError) return metricCode(code);
+  if (error instanceof InputByteError) return inputCode(code);
+  return undefined;
+}
 function codeFor(error: unknown, classify: ApiErrorOptions['classify']): Code {
   try {
     const code = ownCode(error);
-    if (error instanceof InputByteError) return inputCode(code);
+    const port = portCode(error, code);
+    if (port) return port;
     if ((error instanceof ApiFault || error instanceof SemanticError) && knownCode(code)) return code;
     const framework = typeof code === 'string' ? frameworkCodes.get(code) : undefined;
     if (framework) return framework;

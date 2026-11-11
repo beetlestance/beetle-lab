@@ -28,3 +28,12 @@ export interface RunMetricServiceOptions {
   readonly bytes?: Pick<OutputByteStore, 'read'>;
   readonly createDigest?: () => MetricDigest;
 }
+
+export type MetricReadErrorCode = 'invalid_input' | 'busy' | 'closed' | 'cancelled'
+  | 'deadline' | 'integrity' | 'unavailable';
+/** Fixed boundary classification; source values never enter the public message. */
+export class MetricReadError extends Error {
+  constructor(readonly code: MetricReadErrorCode) {
+    super('Metric history read failed'); this.name = 'MetricReadError';
+  }
+}
