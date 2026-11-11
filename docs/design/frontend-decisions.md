@@ -3,6 +3,10 @@
 Status: frontend choice delegated and selected; asset terms/SDK scope still open. Docker-only delivery and separate images are
 confirmed. Keep these choices independent of engine implementation language.
 
+UI experience is provisional. Functional implementation comes first; a separate
+product UI audit and redesign plan follows, as settled in
+[decision012](../decisions/012-ui-redesign-after-functional-rewrite.md).
+
 ## Frontend framework
 
 The UI needs org/workspace navigation, editable suites/settings, live run events,

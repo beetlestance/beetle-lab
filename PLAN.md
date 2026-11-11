@@ -16,6 +16,15 @@ routes, storage keys, config parser, history reader, import tool or rollback win
 is required. Qualify a fresh installation. Preserve existing source until rewrite
 acceptance; ordinary rollback applies only to future v2 image/schema versions.
 
+## UI sequencing
+
+Complete the current functional plan first. The current UI is provisional; its
+layouts and workflows are not the accepted final experience. After functionality
+is concrete, perform a separate UI audit and plan a full redesign, rather than a
+polish pass. Current UI work is limited to exposing required functions and fixing
+blocking correctness/accessibility/safety issues. See the
+[sequencing decision](docs/decisions/012-ui-redesign-after-functional-rewrite.md).
+
 ## Read in this order
 
 1. [Feature inventory](docs/current-features.md): implemented scope and deliberate changes.

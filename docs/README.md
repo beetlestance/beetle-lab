@@ -7,6 +7,7 @@ released application until the rewrite is qualified.
 | --- | --- | --- |
 | Agent execution/effort | [Execution plan](execution/README.md) | Work packages, model routing, locks and context packets |
 | Scope and implementation order | [PLAN](../PLAN.md) | Work sequencing |
+| UI redesign timing | [Decision012](decisions/012-ui-redesign-after-functional-rewrite.md) | Functional completion first; separate UI audit and redesign plan afterward |
 | Frontend/assets/SDK choices | [Discussion](design/frontend-decisions.md) | Options and unresolved decisions |
 | What exists today | [Feature inventory](current-features.md) | Source-grounded capability checklist |
 | System boundaries | [HLD](design/HLD.md) | Component ownership and deployment |
