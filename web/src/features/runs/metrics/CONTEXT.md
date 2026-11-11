@@ -13,5 +13,7 @@ Terminal transition rechecks pending publication. Catalogue/sample manual action
 exposes API completion, not an ignored underlying fetch settlement guarantee.
 Real source gaps split chart paths; rate no-sample ratio stays null. Trends show
 estimated p95 plus source bounds/scale; totals are whole-run, never selected range.
+Chart y domains include zero and measured values; positive-only zero sits at the
+bottom, negative-only zero at the top, and an empty or zero-only domain stays finite.
 Existing design tokens, keyboard select, responsive SVG/table and no animation.
-Focused checks: web/src/features/runs/metrics.
+Focused checks: chart.test.tsx and scale.test.tsx in this directory.

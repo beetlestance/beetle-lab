@@ -11,8 +11,10 @@ export function MetricChart({items, series}: {items: readonly RunMetricPoint[]; 
   const values = items.map(p => valueNumber(p.value)); const measured = values.filter((v): v is number => v !== null);
   if (!items.length) return <p role="status">No samples for this series in the examined source windows.</p>;
   const first = items[0]!.startTimeMs; const last = items.at(-1)!.endTimeMs;
-  const max = Math.max(...measured, 1); const x = (t: number) => 40 + ((t - first) / Math.max(1, last - first)) * 700;
-  const y = (v: number) => 170 - (v / max) * 140;
+  const lowValue = Math.min(0, ...measured); const highValue = Math.max(0, ...measured);
+  const min = lowValue === highValue ? 0 : lowValue; const max = lowValue === highValue ? 1 : highValue;
+  const x = (t: number) => 40 + ((t - first) / Math.max(1, last - first)) * 700;
+  const y = (v: number) => 170 - ((v - min) / (max - min)) * 140;
   const segments: string[] = []; let segment = '';
   items.forEach((point, index) => {
     const v = values[index]; const prev = items[index - 1];
@@ -24,8 +26,8 @@ export function MetricChart({items, series}: {items: readonly RunMetricPoint[]; 
   });
   if (segment) segments.push(segment);
   return <><svg className="metric-chart" viewBox="0 0 780 210" role="img" aria-label={`${series.metric} source window chart; gaps are unmeasured`}>
-    <line x1="40" y1="170" x2="740" y2="170" className="metric-axis" />
-    <text x="4" y="28">{max.toPrecision(3)}</text><text x="4" y="174">0</text>
+    <line x1="40" y1={y(0)} x2="740" y2={y(0)} className="metric-axis" />
+    <text x="4" y="28">{max.toPrecision(3)}</text><text x="4" y="174">{min.toPrecision(3)}</text>
     {segments.map((d, i) => <path key={i} d={d} className="metric-line" />)}
     {items.map((p, i) => values[i] === null ? null : <circle key={p.windowOrdinal} cx={x(p.startTimeMs)} cy={y(values[i]!)} r="3" className="metric-dot">
       <title>{p.startTimeMs}: {values[i]} {series.unit}</title></circle>)}
