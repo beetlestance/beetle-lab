@@ -65,3 +65,24 @@ No actual Docker inspection/container launch, Compose/image-pull installation,
 real engine/browser, native architecture, resource-overhead or release qualification
 follows from these checks. Initial fixture incompatibilities were corrected against
 existing validators; no gates/assertions were weakened.
+
+## Explicit starter descriptor
+
+Source511c44c, integrated32af703. Coordinator reviewed the three production files
+and focused failure tests. Starter returns detached, closed bounded deployment
+fields plus editable shipped settings/policy/k6 template; no inspection, credential
+creation or provisioning occurs. CLI reuses private request IO and fixed deadline,
+preserves original read/close through cancellation, and emits one canonical request.
+Control reserve600millicores/576MiB/PID160 matches planned Compose control caps.
+
+Focused starter tests passed51/51 in5.01s, including one actual private-files/
+catalogue/Journal/authority/loader composition with synthetic Docker replies.
+After test-only typing corrections, only affected pure API/CLI files repeated:
+50/50 in1.70s (wall2.03s). Final Node typecheck and scoped lint exit0.
+Initial worktree dependency-resolution and test typing failures were fixed using
+existing exact-lock dependencies; no installation/lockfile change. One rejected
+trailing-slash test assumption was removed: shared lexical normalization remains;
+provisioning still enforces physical canonical paths. The native seam was repeated
+once during the worker's all-files correction, then retained without more repeats.
+Private full command/failure report is archived with task source and cache evidence.
+No actual daemon/image/Compose or release qualification follows from this slice.
