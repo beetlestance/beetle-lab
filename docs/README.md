@@ -68,6 +68,7 @@ released application until the rewrite is qualified.
 | Inspect full admission evidence | [Observation publisher](verification/observation-publisher.md) | Actual resource/guard composition, independent revocation and draining writes |
 | Inspect installed runtime composition | [Agent runtime](verification/agent-runtime.md) | Verified startup, actual services, capability limits and retained shutdown ownership |
 | Inspect executable/provider packaging | [Agent executable](verification/agent-executable.md) | Private file intake, reviewed entrypoint, full gate and Linux arm64 fixture smoke |
+| Inspect large bodies and target observations | [Feature evidence](verification/large-bodies-target-observations.md) | Bounded body inputs, native serialization and separately scoped target samples |
 | Inspect first usable local source cut | [First-use evidence](verification/first-use.md) | Browser authoring, real k6 result/chart/history/download and remaining qualification |
 | Inspect opt-in Compose installation | [Compose evidence](verification/compose-installation.md) | Real provisioning, corrected startup, native k6 result and restart; release qualification pending |
 | Inspect separated frontend/backend images | [Container recipes](verification/container-recipes.md) | Native arm64 builds, authenticated proxy and synthetic stream failure/cancellation; Compose pending |
