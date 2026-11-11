@@ -1,6 +1,6 @@
 # Decision014: live metric approval authority
 
-Status: shared policy/assignment implemented; actor/private transport wired; backend wired; browser/activation pending.
+Status: shared policy/assignment implemented; actor/private transport wired; agent/backend/browser wired; packaging activation pending.
 
 A frame's subset digest proves consistency, not permission to choose descriptors or
 an epoch. Generic readers require trusted expected scope/epoch/subset; never learn

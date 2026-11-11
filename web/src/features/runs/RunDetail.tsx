@@ -1,3 +1,4 @@
+import { RunLiveMetrics } from './live-metrics/index.js';
 import { RunReads } from './RunReads.js';
 import { RunMetrics } from './metrics/index.js';
 import { useQuery } from '@tanstack/react-query';
@@ -52,7 +53,8 @@ function RunSnapshot({ run, scope, runId }: { run: Run; scope: Run['scope']; run
     <ExecutionActivity key={`activity:${scope.organizationId}/${scope.workspaceId}/${runId}/${run.activeAttemptId}`} run={run} terminal={terminal(run)} />
     <RunResultRead key={`result:${scope.organizationId}/${scope.workspaceId}/${runId}/${run.activeAttemptId}`}
       scope={scope} runId={runId} run={run} terminal={terminal(run)} />
-    <RunMetrics run={{ ...run, scope, id: runId }} terminal={terminal(run)} />
+    {run.state === 'active' ? <RunLiveMetrics run={run} scope={scope} runId={runId} />
+      : <RunMetrics run={{ ...run, scope, id: runId }} terminal={terminal(run)} />}
     <RunArtifacts run={{ ...run, scope, id: runId }} terminal={terminal(run)} />
     {run.outcome === 'pending' && <p role="status">The outcome is pending, including while finalization is in progress.</p>}
   </RunReads>;
