@@ -1,3 +1,4 @@
+import { RunReads } from './RunReads.js';
 import { RunMetrics } from './metrics/index.js';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -30,7 +31,7 @@ export function RunDetail(scope: RunScope & { runId: string }) {
       scope={{ kind: 'workspace', organizationId: scope.organizationId, workspaceId: scope.workspaceId }} runId={scope.runId} /></>}</QueryState></>;
 }
 function RunSnapshot({ run, scope, runId }: { run: Run; scope: Run['scope']; runId: string }) {
-  return <>
+  return <RunReads key={`${scope.organizationId}/${scope.workspaceId}/${runId}/${run.activeAttemptId}`}>
     <dl className="run-facts">
       <div><dt>State</dt><dd>{run.state}</dd></div><div><dt>Outcome</dt><dd>{run.outcome}</dd></div>
       <div><dt>Engine validation</dt><dd>{run.validationStatus}</dd></div>
@@ -54,5 +55,5 @@ function RunSnapshot({ run, scope, runId }: { run: Run; scope: Run['scope']; run
     <RunMetrics run={{ ...run, scope, id: runId }} terminal={terminal(run)} />
     <RunArtifacts run={{ ...run, scope, id: runId }} terminal={terminal(run)} />
     {run.outcome === 'pending' && <p role="status">The outcome is pending, including while finalization is in progress.</p>}
-  </>;
+  </RunReads>;
 }

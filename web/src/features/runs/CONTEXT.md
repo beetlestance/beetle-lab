@@ -32,3 +32,8 @@ and browser-owned UUID-only downloads. See artifacts/CONTEXT.md for read lifetim
 paging and transfer ownership; result declarations alone still grant no links.
 RunMetrics composes sealed history through metrics/index; one catalogue page and
 bounded replacement chart views. See metrics/CONTEXT.md for paging and ownership.
+
+RunReads admits one original detail read plus at most four waiting intents. Waiting
+expires after five seconds or caller abort; retirement rejects queued intents.
+Original completion releases admission. Storage bounds and explicit HTTP errors
+remain unchanged; there are no automatic retries or mutation admission changes.
