@@ -115,6 +115,17 @@ Engine scope stays distinct from request scope. No raw artifact IDs, private pat
 JSON dumps, fake percentage progress or independent saved-file/integrity claim.
 Keyboard selection, focus, small viewports and reduced motion use existing patterns.
 
+## Browser source range
+
+Recorded-metric controls accept From/To datetime-local values interpreted as UTC,
+including milliseconds. Apply requires two valid source timestamps within the API
+bounds and From < To; invalid drafts show an error without issuing a read. Editing
+drafts does not fetch. Reset restores all source windows. Applied bounds remain
+fixed through Latest/Older pagination and are displayed separately from whole-run
+totals/coverage. Range replacement clears the cursor/view, retires and aborts the
+old selection and waits for its exposed original API call before another starts.
+Series, manifest, attempt and scope replacement reset the selection and drafts.
+
 ## Acceptance
 
 Actual native publication/metadata/TCP reads and real generated client establish

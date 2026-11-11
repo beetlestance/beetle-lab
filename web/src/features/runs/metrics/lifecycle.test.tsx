@@ -44,7 +44,8 @@ it('preserves null sample ratios rather than drawing measured zero', async () =>
   const descriptor = {...page().items[0]!, metric: 'http_req_failed', kind: 'rate' as const, unit: 'ratio' as const, total: value};
   const f = testClient(request => json(request.path.includes('/samples?') ? {...samples(1, 1), windows: 1, series: descriptor,
     items: [{windowOrdinal: 1, startTimeMs: 2000, endTimeMs: 3000, value}], nextCursor: null} : {...page(), windows: 1, items: [descriptor]}));
-  mountMetrics(f.client); await screen.findByRole('img'); expect(document.querySelectorAll('.metric-dot')).toHaveLength(0);
+  mountMetrics(f.client); await screen.findByText('No measured values in these source windows.');
+  expect(screen.queryByRole('img')).not.toBeInTheDocument(); expect(document.querySelectorAll('.metric-dot')).toHaveLength(0);
   expect(screen.getByText(/Chart shows ratios of recorded samples/)).toBeVisible();
   expect(run().scope.kind).toBe('workspace');
 });

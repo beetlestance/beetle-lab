@@ -15,6 +15,7 @@ Real source gaps split chart paths; rate no-sample ratio stays null. Trends show
 estimated p95 plus source bounds/scale; totals are whole-run, never selected range.
 All-unmeasured source windows retain their evidence table and expose an accessible status.
 Sample tables preserve raw intervals and include semantic UTC source times.
+Applied UTC source-time ranges bound every sample page; totals and coverage remain whole-run.
 Chart y domains include zero and measured values; positive-only zero sits at the
 bottom, negative-only zero at the top, and an empty or zero-only domain stays finite.
 Existing design tokens, keyboard select, responsive SVG/table and no animation.

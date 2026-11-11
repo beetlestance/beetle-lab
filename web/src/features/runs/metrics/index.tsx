@@ -4,6 +4,8 @@ import type { Run, RunMetricSeriesPage, RunMetricSeries } from '@beetle/contract
 import { useCatalogue } from './useCatalogue.js';
 import { useSamples } from './useSamples.js';
 import { MetricChart, evidence, valueNumber } from './Chart.js';
+import { SourceRangeControls } from './range.js';
+import type { SourceRange } from './useSamples.js';
 export function RunMetrics({run, terminal}: {run: Run; terminal: boolean}) {
   const admission = useMemo(() => new ReadAdmission(), []);
   return <Inventory key={`${run.scope.organizationId}/${run.scope.workspaceId}/${run.id}/${run.activeAttemptId}`} run={run} terminal={terminal} admission={admission} />;
@@ -40,10 +42,16 @@ function Selection({page, admission}: {page: RunMetricSeriesPage; admission: Rea
     <SeriesView key={`${page.manifestDigest}/${series.ordinal}`} page={page} series={series} admission={admission} /></>;
 }
 function SeriesView({page, series, admission}: {page: RunMetricSeriesPage; series: RunMetricSeries; admission: ReadAdmission}) {
-  const {view, load} = useSamples(page, series, admission);
+  const [range, setRange] = useState<SourceRange>();
   return <><p><strong>Whole-run total:</strong> {valueNumber(series.total) ?? 'No samples'} {series.unit}. {evidence(series.total)}.
     {' '}Scope: {series.scope}. Source marker: {page.measurementSourceTimeMs} ms.</p>
-    <p>{chartLabel(series.kind)} Gaps are unmeasured.</p>
+    <SourceRangeControls applied={range} onApply={setRange} onReset={() => setRange(undefined)} />
+    <SamplesView key={range ? `${range.fromTimeMs}/${range.toTimeMs}` : 'all'} page={page} series={series} admission={admission} range={range} />
+  </>;
+}
+function SamplesView({page, series, admission, range}: {page: RunMetricSeriesPage; series: RunMetricSeries; admission: ReadAdmission; range: SourceRange | undefined}) {
+  const {view, load} = useSamples(page, series, admission, range);
+  return <><p>{chartLabel(series.kind)} Gaps are unmeasured.</p>
     {view.busy && <p role="status">Loading source windows…</p>}
     {view.error && <p role="alert">Source samples could not be loaded. Automatic reads stopped; use Latest samples to retry.</p>}
     {!view.busy && !view.error && <MetricChart items={view.items} series={series} />}
