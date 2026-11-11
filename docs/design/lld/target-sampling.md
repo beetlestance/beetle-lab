@@ -58,8 +58,13 @@ existing summary/numeric/history artifacts. Retained report<=1MiB is carved from
 the existing admitted output/collection allowance; final byte accounting includes
 it. Collector failure leaves unavailable observations and does not change test
 assertions. Artifact custody/write/seal failure remains an execution failure.
-The initial browser exposes the verified artifact through existing downloads;
-no target values are relabeled as engine-resource measurements.
+The browser reuses the verified result descriptor and offers a scoped report view
+plus existing download. It verifies bounded bytes/SHA before decoding; retires
+old session/attempt ownership and retains in-flight originals through cancellation.
+Source zeros, missing readings, collection limits and unplottable timestamps stay
+explicit. Point comparisons require consistent time/phase order; a missing final
+after reading remains unknown. Memory follow-up hints are qualified, not leak
+verdicts. No target values are relabeled as engine-resource measurements.
 
 ## Acceptance
 

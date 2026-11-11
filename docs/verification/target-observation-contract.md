@@ -24,6 +24,26 @@ Initial schema reference/strictTypes and worktree export-link failures were fixe
 no checks or assertions were disabled. Generated/browser/structural checks accompany
 integration. No image build, service restart or native workload was run.
 
-Next: verified artifact read and scoped browser ownership, target plots, explicit
-missing-data display and labelled baseline/final/cooldown heuristics. These are
-observations; a before point is not a qualified steady baseline or leak verdict.
+## Connected target views
+
+The result reader reuses its existing matching-result guard and descriptor list,
+with no additional inventory API. Exactly one target-runtime descriptor permits a
+read; ambiguous descriptors are explicit. Browser reads use fixed scoped UUID
+routes, two shared originals, no queue/retry/cache, a five-second whole-body/hash
+budget and exact length/SHA verification before shared decoding. Fetch, stream,
+cancellation and hash originals remain owned after an abort hint.
+
+Session/scope/run/attempt/artifact changes retire prior values during render and
+fence late callbacks; StrictMode and manual retry are covered. Summary uses the
+single before point, observed during peak and actual last after point. Missing
+final values stay unknown; contradictory phase/time order suppresses comparison
+and growth hints. Only memory fields receive a qualified follow-up signal. The
+chart preserves zeros/gaps, phase/time resets and finite extreme values. Valid
+leap-second timestamps that JavaScript cannot plot remain explicit in the raw table.
+
+Scoped byte, lifecycle, summary and result-integration cases passed, including the
+native WebCrypto fixture digest. Chart cases/types/lint passed after coordinator
+corrections. Independent review found leap-time extent and phase-order gaps; both
+have regressions and correction acceptance. Final composed checks accompany this
+slice. Real-browser qualification is pending: the required browser-control tool
+is not exposed in this session. No user service was restarted or image rebuilt.

@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Run } from '@beetle/contracts/api';
 import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
-import { RunResultPanel } from '../run-results/index.js';
+import { RunTargetObservations } from './target-observations/index.js';
+import { RunResultPanel, resultView } from '../run-results/index.js';
 
 /** Keyed by requested namespace/run and authoritative attempt in RunDetail. */
 export function RunResultRead({ scope, runId, run, terminal }: {
@@ -36,5 +37,11 @@ export function RunResultRead({ scope, runId, run, terminal }: {
   const snapshot = query.data;
   const result = snapshot?.activeAttemptId === activeAttemptId ? snapshot.result : null;
   const status = query.isPending ? 'loading' : query.isError ? 'error' : result === null ? 'unavailable' : 'ready';
-  return <RunResultPanel scope={scope} runId={runId} run={run} result={result} status={status} />;
+  const view = resultView({scope, runId, run, result, status});
+  const targets = view.status === 'ready' ? view.result.artifacts.filter(artifact => artifact.kind === 'target-runtime') : [];
+  return <><RunResultPanel scope={scope} runId={runId} run={run} result={result} status={status} />
+    {targets.length > 1 && <p role="alert">Multiple target observation reports were published; this view requires one report.</p>}
+    {targets.length === 1 && <RunTargetObservations params={{organizationId, workspaceId, runId,
+      attemptId: activeAttemptId, artifactId: targets[0]!.artifactId}} artifact={targets[0]!} />}
+  </>;
 }
