@@ -7,8 +7,8 @@ VU positions accept positive safe integer global identities, independently of
 per-scenario concurrency. Counters allocate by selection entries, never VU ID;
 dataset row selection uses modulo without an identity-sized allocation.
 
-Effects: none. Random selection uses an explicit callback. The only external type
-dependency is declaration-level imports from compiler/generated/types.
+Effects: none. Random selection uses an explicit callback. External type dependencies are declaration-level imports from compiler/generated/types
+and shared numeric metric types in @beetle/contracts/metrics; all erase at runtime.
 Metric admission rejects unsupported metric/stat pairs and more than 200 distinct
 tag maps before execution; requests and assertions use deterministic rN/aN labels.
 `measureStartedMetric` is reserved control evidence; user SLO/discovery rules cannot

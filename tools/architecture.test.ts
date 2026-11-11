@@ -62,3 +62,14 @@ describe('architecture gate negative fixtures', () => {
     expect(boundaryIssues('engines/k6/runtime/http.ts', ['fastify'])).toHaveLength(1);
   });
 });
+
+it('permits shared metric declarations in the plan while keeping runtime imports forbidden', () => {
+  for (const source of ["import type { MetricKind } from '@beetle/contracts/metrics';",
+    "export type { MetricTags } from '@beetle/contracts/metrics';"]) {
+    expect(boundaryIssues('engines/k6/plan/metrics.ts', importEdges(source))).toEqual([]);
+  }
+  for (const source of ["import { DurationHistogram } from '@beetle/contracts/metrics';",
+    "import type { Run } from '@beetle/contracts/api';"]) {
+    expect(boundaryIssues('engines/k6/plan/metrics.ts', importEdges(source))).toHaveLength(1);
+  }
+});

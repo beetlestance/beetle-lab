@@ -59,6 +59,7 @@ function approvedPlanImport(source: 'runtime' | 'plan', edge: ImportEdge, resolv
   return edge.typeOnly && /^engines\/k6\/compiler\/generated\/types\.[jt]s$/.test(resolved);
 }
 function approvedK6Package(source: 'runtime' | 'plan', edge: ImportEdge): boolean {
+  if (source === 'plan' && edge.typeOnly && edge.target === '@beetle/contracts/metrics') return true;
   return source === 'runtime' && (edge.target === 'k6' || edge.target.startsWith('k6/'));
 }
 function k6Boundary(file: string, edge: ImportEdge, resolved: string): string | undefined {

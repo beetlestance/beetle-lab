@@ -1,6 +1,6 @@
 import { encodeJson } from '@beetle/contracts';
 import { validateApi } from '@beetle/contracts/api';
-import type { PageQuery } from '@beetle/contracts/api';
+import type { RunMetricSamplesQuery, PageQuery } from '@beetle/contracts/api';
 
 export type PageQueryDecodeResult = { readonly ok: true; readonly value: PageQuery } | { readonly ok: false };
 
@@ -28,6 +28,21 @@ export function decodePageQuery(input: unknown): PageQueryDecodeResult {
     if (typeof query.limit !== 'string' || !/^(0|[1-9][0-9]*)$/.test(query.limit)) return { ok: false };
     query.limit = Number(query.limit);
     const checked = validateApi('PageQuery', query);
+    return checked.ok ? checked : { ok: false };
+  } catch { return { ok: false }; }
+}
+
+/** Canonical HTTP-only numeric decoding; the JSON client still requires numbers. */
+export function decodeMetricSamplesQuery(input: unknown):
+  { readonly ok: true; readonly value: RunMetricSamplesQuery } | { readonly ok: false } {
+  try {
+    const query = JSON.parse(encodeJson(rawFields(input), 4096)) as Record<string, unknown>;
+    for (const key of ['limit', 'seriesOrdinal', 'fromTimeMs', 'toTimeMs']) {
+      if (query[key] === undefined) continue;
+      if (typeof query[key] !== 'string' || !/^(0|[1-9][0-9]*)$/.test(query[key])) return { ok: false };
+      query[key] = Number(query[key]);
+    }
+    const checked = validateApi('RunMetricSamplesQuery', query);
     return checked.ok ? checked : { ok: false };
   } catch { return { ok: false }; }
 }
