@@ -93,3 +93,6 @@ A run is finished only when execution termination is known and its result/artifa
 seal is verified. Unexpected disappearance or missing evidence yields errored or
 lost with an inconclusive outcome. Never infer passed from a heartbeat, UI state,
 HTTP 200, progress percentage or process exit alone.
+
+Target observation and large-body contracts: [target sampling](lld/target-sampling.md),
+[request bodies](lld/request-bodies.md).

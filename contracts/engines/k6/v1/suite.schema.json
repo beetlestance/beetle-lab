@@ -150,6 +150,38 @@
           "maxItems": 64
         }
       }
+    },
+    "targetSampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "intervalMs",
+        "timeoutMs",
+        "cooldownMs"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "intervalMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 60000
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 5000
+        },
+        "cooldownMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60000
+        }
+      }
     }
   }
 }

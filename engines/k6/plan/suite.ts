@@ -32,8 +32,10 @@ export interface TemplatePlan {
 }
 export type BodyNode = { kind: 'scalar'; value: Scalar } | { kind: 'template'; template: TemplatePlan }
   | { kind: 'array'; items: BodyNode[] } | { kind: 'object'; entries: { key: string; value: BodyNode }[] };
+export type TargetSamplingConfig = NonNullable<SuiteConfig['targetSampling']>;
 export type BodyPlan = { kind: 'json'; value: BodyNode }
   | { kind: 'input'; input: InputRef; format: 'text'; value: TemplatePlan }
+  | { kind: 'input'; input: InputRef; format: 'text'; literal: string }
   | { kind: 'input'; input: InputRef; format: 'json'; value: BodyNode };
 export type AssertionPlan<T = AssertionConfig> = T extends { path: string }
   ? Omit<T, 'path'> & { segments: (string | number)[] } : T;
@@ -55,7 +57,7 @@ export interface ReadinessPlan {
 export interface CompiledSuite {
   component: 'k6-suite'; compilerVersion: '1.0'; schemaVersion: 1;
   loadPlan: CompiledLoadPlan; target: string; requests: RequestPlan[]; datasets: DatasetPlan[];
-  selections: SelectionPlan[]; readiness?: ReadinessPlan;
+  selections: SelectionPlan[]; readiness?: ReadinessPlan; targetSampling?: TargetSamplingConfig;
   identity: { digest: string; engine: CompileInput['engine']; inputs: InputRef[];
     secrets: SuiteConfig['secrets']; reproducibility: 'pinned' | 'unknown' };
 }
