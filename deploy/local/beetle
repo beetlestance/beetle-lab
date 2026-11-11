@@ -57,7 +57,7 @@ current_revision() {
 }
 build_image() {
   component=$1; recipe=$2; tag=$3
-  set -- docker build --file "$repo/$recipe" --tag "$tag" --build-arg "VCS_REF=$revision"
+  set -- docker build --load --file "$repo/$recipe" --tag "$tag" --build-arg "VCS_REF=$revision"
   if [ -n "${BEETLE_BUILDER:-}" ]; then set -- "$@" --builder "$BEETLE_BUILDER"; fi
   "$@" "$repo"
 }

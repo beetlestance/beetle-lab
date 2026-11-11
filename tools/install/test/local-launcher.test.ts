@@ -97,8 +97,8 @@ it('fresh source builds serially with explicit optional builder and probes conta
   f.env.FAKE_MISSING = 'yes'; f.env.FAKE_STATE = 'local_created_fresh'; f.env.BEETLE_BUILDER = 'synthetic-builder';
   await run(f, 'up', ['--socket', f.socket]); const recorded = await calls(f);
   const builds = recorded.filter(call => call.a[0] === 'build'); expect(builds).toHaveLength(5);
-  expect(builds.map(call => call.a[2])).toEqual(['tools/install/Dockerfile', 'web/Dockerfile', 'app/Dockerfile', 'agent/Dockerfile', 'engines/k6/Dockerfile'].map(file => resolve(file)));
-  for (const build of builds) { expect(build.a).toContain('--builder'); expect(build.a).toContain('synthetic-builder'); }
+  expect(builds.map(call => call.a[call.a.indexOf('--file') + 1])).toEqual(['tools/install/Dockerfile', 'web/Dockerfile', 'app/Dockerfile', 'agent/Dockerfile', 'engines/k6/Dockerfile'].map(file => resolve(file)));
+  for (const build of builds) { expect(build.a).toContain('--load'); expect(build.a).toContain('--builder'); expect(build.a).toContain('synthetic-builder'); }
   const probe = recorded.find(call => call.a[0] === 'run' && call.a.includes('65534:65534'))!;
   expect(probe.a).toContain('--network'); expect(probe.a).toContain('none'); expect(probe.a).toContain('--memory');
   const setup = recorded.find(call => call.a.includes('/beetle/install/local.js'))!;
