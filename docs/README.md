@@ -68,6 +68,7 @@ released application until the rewrite is qualified.
 | Inspect full admission evidence | [Observation publisher](verification/observation-publisher.md) | Actual resource/guard composition, independent revocation and draining writes |
 | Inspect installed runtime composition | [Agent runtime](verification/agent-runtime.md) | Verified startup, actual services, capability limits and retained shutdown ownership |
 | Inspect executable/provider packaging | [Agent executable](verification/agent-executable.md) | Private file intake, reviewed entrypoint, full gate and Linux arm64 fixture smoke |
+| Inspect separated frontend/backend images | [Container recipes](verification/container-recipes.md) | Native arm64 builds, authenticated proxy and synthetic stream failure/cancellation; Compose pending |
 | Inspect actual agent-controlled Docker execution | [Native agent/k6](verification/native-agent-k6.md) | Real pass/fail, sealed artifacts, durable reservation release and Desktop corrections |
 | Inspect public API through real k6 execution | [Native application/k6](verification/native-application-k6.md) | Actual backend/agent pass/fail, artifact credit and metadata reopen; browser/Compose pending |
 | Inspect published artifact downloads | [Artifact downloads](verification/run-artifact-downloads.md) | Scoped metadata, actual native streaming and withheld-EOF evidence; [browser inventory/links](verification/run-artifact-controls.md) locally verified; browser save qualification pending |

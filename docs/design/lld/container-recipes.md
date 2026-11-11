@@ -1,7 +1,7 @@
 # Rewrite frontend and backend image recipes
 
-Status: component recipes under review; Compose/first-install wiring and release
-qualification remain separate. Published legacy image defaults are preserved.
+Status: component recipes locally verified; Compose/first-install wiring and release
+qualification remain separate. See [evidence](../../verification/container-recipes.md). Published legacy image defaults are preserved.
 
 ## Ownership and build
 
