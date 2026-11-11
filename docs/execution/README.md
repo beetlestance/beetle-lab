@@ -18,6 +18,12 @@ Product architecture remains in [HLD](../design/HLD.md), not this orchestration 
 Code rules remain in [engineering](../engineering.md). Tests remain in
 [verification](../verification.md); an agent cannot redefine them in its report.
 
+For a frozen scoped check plan, use the [check runner](../../tools/check-runner/CONTEXT.md).
+It runs each named command once, rejects exact duplicates, stops on failure and
+records bounded logs with actual exit statuses and durations. Related tasks may
+reuse an existing worker with a new worktree/base/ownership packet; retained
+conversation is context, never authority over the new packet or source hashes.
+
 ## Concurrency and roles
 
 Current environment: four active agent slots total, including the coordinator.
