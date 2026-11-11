@@ -22,3 +22,10 @@ it('keeps individual expanded strings and keys bounded before file creation', as
     await expect(lstat(file)).rejects.toMatchObject({code:'ENOENT'});
   }
 });
+
+it('rechecks output admission during the second pass even if foreign data changes', async () => {
+  const file=await path();let reads=0;const value=Object.defineProperty({},'text',{enumerable:true,
+    get:()=>++reads===1?'small':'x'.repeat(50000)});
+  await expect(writePlanData(file,value,100)).rejects.toThrow('script_limit');
+  expect((await lstat(file)).size).toBeLessThanOrEqual(100);expect(reads).toBe(2);
+});

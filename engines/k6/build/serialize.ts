@@ -70,22 +70,28 @@ function* tokens(value: unknown, budget: Budget, depth = 0, literalBody = false)
   budget.ancestors.delete(value);
 }
 function chunks(value: unknown): Generator<string> { return tokens(value, { nodes: 0, ancestors: new Set() }); }
+function admit(bytes: number, token: string, maximum: number): number {
+  const next = bytes + Buffer.byteLength(token);
+  if (next > Math.min(maxDataBytes,maximum)) throw new Error('script_limit');
+  return next;
+}
 /** Two bounded passes, no full-corpus intermediate string or stringify-then-check. */
 export async function writePlanData(path: string, value: unknown, maximumBytes = maxDataBytes): Promise<number> {
   if (!Number.isSafeInteger(maximumBytes) || maximumBytes < 1) throw new Error('script_limit');
   let bytes = 0;
   for (const token of chunks(value)) {
-    bytes += Buffer.byteLength(token);
-    if (bytes > Math.min(maxDataBytes, maximumBytes)) throw new Error('script_limit');
+    bytes = admit(bytes,token,maximumBytes);
   }
   const file = await open(path, 'wx', 0o600);
   try {
-    let pending = '';
+    let pending = '';let written = 0;
     for (const token of chunks(value)) {
+      written = admit(written,token,maximumBytes);
       pending += token;
       if (pending.length >= 65_536) { await file.writeFile(pending); pending = ''; }
     }
     if (pending) await file.writeFile(pending);
+    if (written !== bytes) throw new Error('script_data');
   } finally { await file.close(); }
   return bytes;
 }
