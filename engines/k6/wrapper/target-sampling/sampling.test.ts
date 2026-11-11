@@ -162,6 +162,35 @@ describe('target sampling ownership and bounds', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it('retires parent listener after baseline cleanup failure before rejecting startup', async () => {
+    vi.useFakeTimers();
+    const controller = new AbortController();
+    const add = vi.spyOn(controller.signal, 'addEventListener');
+    const remove = vi.spyOn(controller.signal, 'removeEventListener');
+    let failCleanup: ((error: Error) => void) | undefined;
+    const cancel = vi.fn(() => new Promise<void>((_resolve, reject) => { failCleanup = reject; }));
+    const fetch = vi.fn<typeof globalThis.fetch>(async () => new Response(new ReadableStream({ cancel })));
+    let settled = false;
+    const starting = startTargetSampling(options(fetch, { signal: controller.signal }));
+    const rejection = expect(starting).rejects.toThrow('reader_cancel');
+    const completion = starting.then(() => { settled = true; }, () => { settled = true; });
+    await vi.advanceTimersByTimeAsync(100);
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(settled).toBe(false);
+    expect(remove).not.toHaveBeenCalled();
+    failCleanup!(new Error('private cleanup diagnostic'));
+    await rejection;
+    await completion;
+    expect(settled).toBe(true);
+    expect(add).toHaveBeenCalledOnce();
+    expect(remove).toHaveBeenCalledExactlyOnceWith('abort', add.mock.calls[0]![1]);
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+    controller.abort();
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
   it('propagates failed original body cancellation through finish and close', async () => {
     vi.useFakeTimers();
     const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValueOnce(json({}))
