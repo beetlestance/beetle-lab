@@ -80,3 +80,11 @@ it('restricts offline installation to named public service entrypoints', () => {
   expect(boundaryIssues('tools/install/index.ts', ['../../app/src/adapters/outbound/sqlite/index.js'])).toHaveLength(1);
   expect(boundaryIssues('app/src/bootstrap/api.ts', ['../../../tools/install/index.js'])).toHaveLength(1);
 });
+
+ it('admits only the shared k6 catalogue entry into the plan', () => {
+  expect(boundaryIssues('engines/k6/plan/metrics.ts', ['@beetle/contracts/k6-metrics'])).toEqual([]);
+  for (const target of ['@beetle/contracts/k6-live', '@beetle/contracts/k6-metrics/private', '@beetle/contracts/engine-config/k6']) {
+    expect(boundaryIssues('engines/k6/plan/metrics.ts', [target])).toHaveLength(1);
+  }
+  expect(boundaryIssues('engines/k6/runtime/metrics.ts', ['@beetle/contracts/k6-metrics'])).toHaveLength(1);
+});

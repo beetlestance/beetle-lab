@@ -5,8 +5,9 @@ path/byte count. Input is the accepted immutable compiled plan, never secret
 values. A two-pass token serializer bounds plan data at 24MiB before any writes;
 only <=640KiB chunks are written. This leaves conservative code/encoding headroom
 under the hard 64MiB script cap. The pinned esbuild bundler processes that bounded
-source; flat owned runtime/plan source is admitted at <=2MiB before bundling.
-Provenance rejects inputs outside those owners and staging data. UTF-8 emission
+source; flat owned runtime/plan source plus the exact Node-free k6-metrics policy entry
+is admitted at <=2MiB before bundling. Provenance rejects all other sources;
+shared policy resolution uses the installed package export, not job-supplied paths. UTF-8 emission
 avoids ASCII-escape amplification; actual output is also checked against 64MiB.
 Only the four used k6 API modules remain external. No compiler validators, Node
 modules or duplicated runtime strings enter the output. Temporary build files

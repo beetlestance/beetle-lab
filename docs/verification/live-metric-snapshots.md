@@ -131,7 +131,7 @@ images or profiles were changed. Full engine/API/browser wiring remains pending.
 
 ## Engine attempt composition
 
-Trusted opt-in now connects native mailbox/sink/publisher to the real measured
+Trusted opt-in connects native mailbox/sink/publisher to the real measured
 window callback. An execution fixture spanning the accumulator's two-second reorder
 allowance produced a validated frame with matching scope, selected numeric values
 and publication sequence. Its actual sink bytes plus initial extent appear in
@@ -164,3 +164,10 @@ was resolved by separating synchronous frame validation from original IO ownersh
 Final scoped checks and independent correction review accompany this component.
 No authenticated route, compiler-owned approval handoff or profile activation is
 claimed. Decision014 records the remaining authority dependency.
+
+
+## Shared k6 approval policy
+
+See [approval evidence](k6-live-approval.md) for source factoring, assigned epochs,
+raw/compiled parity and native init qualification. Actor/HTTP/profile activation
+remains pending.

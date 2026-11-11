@@ -1,23 +1,29 @@
 # Decision014: live metric approval authority
 
-Status: authority constraint accepted; startup handoff design/implementation pending.
+Status: shared policy/assignment implemented; actor, transport and activation pending.
 
-A mailbox frame binds its subset with a digest. That digest proves consistency,
-not permission to choose the subset or producer epoch. An approved image and a
-matched container do not replace the compiler-owned catalogue approval.
+A frame's subset digest proves consistency, not permission to choose descriptors or
+an epoch. Generic readers require trusted expected scope/epoch/subset; never learn
+approval from the first frame or an image's self-declared output.
 
-The generic reader requires a detached trusted approval: exact attempt scope,
-producer UUID and selected descriptors. The compiler/catalogue owner must create
-it once and supply the same UUID/subset to the producer through trusted launch
-configuration. The agent validates/consumes approval; it does not reimplement an
-engine compiler. Do not learn approval from the first received live frame.
+The existing pure k6 label/catalogue rules now live in a Node-free shared engine
+contract, reused by compiler/parser and the installed policy owner. Validated raw
+config and compiled input preserve request/assertion order, IDs and counts; no
+readiness assertion is invented. Compilation, datasets, secrets and threshold
+validation stay engine-owned. The generic agent consumes a policy capability.
 
-Currently the k6 catalogue becomes available after in-container compilation, and
-the producer chooses its UUID there. A prelaunch caller cannot yet supply that
-approval. A bounded independently trusted startup handoff or earlier catalogue
-preparation must connect these owners before activation. This record does not
-choose a new channel, authentication scheme, sidecar or per-window helper.
+A shared assignment derives a UUID from canonical scope/generation, intent digest
+and exact runtime spec digest under a versioned purpose. Staging already writes
+RuntimePlan.specDigest into the readonly StagedAttempt, so producer and approver
+independently possess the same trusted inputs. No new channel/credential/sidecar or
+wire field is required. Image/manifest digests are not interchangeable with spec.
 
-The reusable reader can be qualified independently with explicit synthetic
-approval. Keep live profiles off until provenance, producer configuration,
-authenticated routing and native end-to-end qualification are connected.
+The deterministic UUID identifies one logical producer; it is not authentication.
+Durable single-start/control-journal fences must prohibit replacement under the
+same launch identity. Any permitted new producer needs a new generation/identity.
+Golden vectors pin policy behavior; incompatible changes require a new version.
+
+Both sides freeze the same approved subset before native effects. Latency, errors,
+throughput and load receive default priority under the unchanged20-series cap;
+omissions remain explicit. Keep profiles off until actor authorization, authenticated
+routing, consumer ownership and native end-to-end qualification are connected.

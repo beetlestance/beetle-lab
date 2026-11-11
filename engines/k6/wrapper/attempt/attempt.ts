@@ -180,7 +180,8 @@ class Attempt {
   }
   private async startLive(compiled: CompiledInput): Promise<void> {
     if (!this.options.liveMetricMailbox) return;
-    await this.live.start({suite: compiled.suite, scope: this.state.scope!, uid: this.options.uid,
+    await this.live.start({assignment: {specDigest: this.input!.staging.specDigest, intentDigest: this.input!.offer.intentDigest},
+      suite: compiled.suite, scope: this.state.scope!, uid: this.options.uid,
       maximumBytes: this.reservation!.live, timeoutMs: Math.max(1, Math.floor(this.fence.lifetimeRemaining())),
       signal: this.fence.controller.signal, clock: this.ports.clock}, this.ports.openMailbox);
     if (this.live.state().quiescence === 'failed') this.fail('cleanup');

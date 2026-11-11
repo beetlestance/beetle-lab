@@ -14,7 +14,9 @@
     "./output-source/internal": "./src/output-source/internal.ts",
     "./metrics": "./src/metrics/index.ts",
     "./live-mailbox": "./src/live-mailbox/index.ts",
-    "./target-runtime": "./src/target-runtime/index.ts"
+    "./target-runtime": "./src/target-runtime/index.ts",
+    "./k6-metrics": "./src/k6-metrics/index.ts",
+    "./k6-live": "./src/k6-live/index.ts"
   },
   "dependencies": {
     "ajv": "8.20.0",

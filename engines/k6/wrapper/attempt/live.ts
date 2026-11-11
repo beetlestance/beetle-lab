@@ -1,8 +1,8 @@
-import { createHash, randomUUID } from 'node:crypto';
-import { captureLiveMetricSubset } from '@beetle/contracts/api';
+import { createHash } from 'node:crypto';
+import { createK6LiveApproval, k6LiveSubset } from '@beetle/contracts/k6-live';
+import type { K6LiveAssignment } from '@beetle/contracts/k6-live';
 import type { LiveMetricScope } from '@beetle/contracts/api';
 import { MAILBOX_BYTES } from '@beetle/contracts/live-mailbox';
-import { createK6MetricProfile } from '../../aggregation/index.js';
 import type { MetricWindow } from '../../aggregation/index.js';
 import type { CompiledInput } from '../input/index.js';
 import { createLiveMetricPublisher } from '../live/index.js';
@@ -18,19 +18,13 @@ export interface AttemptLiveState {
   readonly quiescence: 'confirmed' | 'failed' | 'unknown';
 }
 interface Input {
+  readonly assignment: K6LiveAssignment;
   readonly suite: CompiledInput['suite']; readonly scope: LiveMetricScope; readonly uid: number;
   readonly maximumBytes: number; readonly timeoutMs: number; readonly signal: AbortSignal; readonly clock: ExecutionClock;
 }
 const hash = (value: string | Uint8Array): string => createHash('sha256').update(value).digest('hex');
 /** Trusted default subset is derived from the same approved catalogue as the parser. */
-export function attemptLiveSubset(suite: CompiledInput['suite']) {
-  const approved = createK6MetricProfile(suite).allowedSeries;
-  const eligible = approved.filter(item => (item.scope === 'execute' || item.scope === 'engine') && item.tags.phase !== 'prepare');
-  const selected = eligible.slice(0, 20).map((item, ordinal) => ({...item, ordinal}));
-  const subset = captureLiveMetricSubset({selected, excludedSeries: approved.length - selected.length});
-  for (const item of subset.selected) {Object.freeze(item.tags); Object.freeze(item);}
-  Object.freeze(subset.selected); Object.freeze(subset); return subset;
-}
+export function attemptLiveSubset(suite: CompiledInput['suite']) {return k6LiveSubset(suite);}
 /** Advisory failures disable publication; failed original cleanup still blocks sealing. */
 export class AttemptLive {
   private publisher: LiveMetricPublisher | undefined;
@@ -57,13 +51,13 @@ export class AttemptLive {
   private async initialize(input: Input, open: typeof openNativeMailbox): Promise<void> {
     if (this.closing || input.signal.aborted) return;
     try {
-      const subset = attemptLiveSubset(input.suite);
+      const approval = createK6LiveApproval({source: input.suite, scope: input.scope, assignment: input.assignment, hash});
       if (input.maximumBytes <= MAILBOX_BYTES + 512) throw new Error('quota');
       this.facts = {...this.facts, producedBytes: MAILBOX_BYTES};
       this.file = await open({uid: input.uid, signal: input.signal});
       if (this.closing) return;
       this.sink = createMailboxSink({file: this.file, hash, maximumProducedBytes: input.maximumBytes - MAILBOX_BYTES});
-      this.publisher = createLiveMetricPublisher({scope: input.scope, producerEpoch: randomUUID(), subset, hash,
+      this.publisher = createLiveMetricPublisher({...approval, hash,
         timeoutMs: input.timeoutMs, maximumProducedBytes: input.maximumBytes - MAILBOX_BYTES,
         sink: this.sink, signal: input.signal, clock: input.clock});
       this.facts = {...this.facts, status: 'open', reason: null};

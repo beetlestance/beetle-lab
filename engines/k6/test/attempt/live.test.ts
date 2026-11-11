@@ -12,7 +12,10 @@ it('derives a bounded immutable subset only from the approved parser catalogue',
   const input = liveInput(); const subset = attemptLiveSubset(input.suite); const profile = createK6MetricProfile(input.suite);
   expect(subset.selected).toHaveLength(Math.min(20, profile.allowedSeries.length));
   expect(subset.excludedSeries).toBe(profile.allowedSeries.length - subset.selected.length);
-  expect(subset.selected.map(({ordinal, ...row}) => {expect(ordinal).toBeLessThan(20); return row;})).toEqual(profile.allowedSeries.filter(item => (item.scope === 'execute' || item.scope === 'engine') && item.tags.phase !== 'prepare').slice(0, 20));
+  subset.selected.forEach(({ordinal, ...row}, index) => {
+    expect(ordinal).toBe(index); expect(profile.allowedSeries).toContainEqual(row);
+  });
+  expect(subset.selected.map(row => row.metric)).toEqual(expect.arrayContaining(['http_req_duration', 'http_req_failed', 'vus', 'dropped_iterations']));
   expect(Object.isFrozen(subset.selected)).toBe(true);
 });
 it('publishes an actual mailbox frame and charges extent plus every physical write', async () => {

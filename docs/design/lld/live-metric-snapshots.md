@@ -132,7 +132,8 @@ are mandatory before enabling the producer in images.
 
 The [approval constraint](../../decisions/014-live-metric-approval-authority.md)
 requires trusted compile-owned scope/epoch/subset before consumption; never infer
-approval from a frame. Generic reader input is explicit; startup handoff is pending.
+approval from a frame. Shared k6 policy and existing staged launch fields now supply
+assignment; generic actor/transport wiring remains pending.
 Reader age bounds capture, source-window end and publication to6s with no future
 timestamps. Unchanged revisions retain a monotonic expiry even if wall time freezes.
 New revisions cannot overlap/regress source windows or captured/publication times.
@@ -154,10 +155,11 @@ SSE, arbitrary live series selection and replay are not implied by this componen
 ## Attempt publisher composition
 
 Only trusted packaging may set liveMetricMailbox; staged configuration cannot.
-The default subset takes the first20 eligible execute/engine descriptors from the
-approved parser catalogue, excludes prepare/control, and reports all other series.
-Capture/freeze before native effects. Each invocation uses a fresh producer UUID;
-consumers still bind it to the matched container/attempt generation.
+The shared policy selects<=20 eligible execute/engine descriptors, preferring
+latency/errors/throughput/load; prepare/control and other omissions stay explicit.
+Validated raw config and compiled input use the same catalogue rules. Capture/freeze
+before effects. Assign UUID from canonical scope/generation, intent and runtime spec
+digests. One logical producer per launch; replacements need a new launch identity.
 
 Carve at most8MiB and one eighth of total output, further capped at one eighth of
 execute output. Reduce history allocation; never extend admission. Charge the

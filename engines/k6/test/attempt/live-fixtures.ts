@@ -16,7 +16,7 @@ export class MemoryMailbox implements MailboxFile {
   async close(): Promise<void> {this.closes++; await this.closeGate;}
 }
 export function liveInput() {
-  return {suite: compiled(), scope: {organizationId: '00000000-0000-4000-8000-000000000001',
+  return {assignment: {specDigest: '1'.repeat(64), intentDigest: '2'.repeat(64)}, suite: compiled(), scope: {organizationId: '00000000-0000-4000-8000-000000000001',
     workspaceId: '00000000-0000-4000-8000-000000000002', attemptId: '00000000-0000-4000-8000-000000000003', generation: 1},
     uid: 10001, maximumBytes: 1048576, timeoutMs: 10000, signal: new AbortController().signal,
     clock: {wall: () => 1800000000000, monotonic: () => 0}};

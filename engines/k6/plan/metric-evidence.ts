@@ -1,11 +1,13 @@
-import { counterNames, measureStartedMetric, metricDefinitions, metricLayout } from './metrics.js';
+import type { K6AllowedMetricSeries } from '@beetle/contracts/k6-metrics';
+import { k6MetricCatalogue, k6MetricScope as metricScope } from '@beetle/contracts/k6-metrics';
+import { counterNames, metricDefinitions, metricLayout } from './metrics.js';
 import type { MetricKind } from './metrics.js';
 import type { CompiledSuite, DeepReadonly } from './suite.js';
 import type { K6Threshold } from './load.js';
 
 import type { MetricScope, MetricTags } from '@beetle/contracts/metrics';
 export type { MetricScope, MetricTags } from '@beetle/contracts/metrics';
-export interface AllowedMetricSeries { readonly metric: string; readonly kind: MetricKind; readonly tags: MetricTags; readonly scope: MetricScope }
+export type AllowedMetricSeries = K6AllowedMetricSeries;
 export interface MetricProvenance {
   readonly source: 'native';
   readonly counterRateDenominator: 'engine-duration' | null;
@@ -15,8 +17,6 @@ export interface EvidenceMetric {
   readonly key: string; readonly nativeKey: string; readonly kind: MetricKind; readonly scope: MetricScope;
   readonly provenance: MetricProvenance; readonly thresholds: readonly K6Threshold[];
 }
-const engine = new Set(['vus', 'vus_max', 'beetle_required_failures', 'beetle_execution_failures']);
-const aggregate = new Set(['data_sent', 'data_received', 'beetle_transport_failures', 'beetle_execution_failures']);
 const observer: Readonly<Record<MetricKind, string>> = { counter: 'count>=0', rate: 'rate>=0', trend: 'avg>=0', gauge: 'value>=0' };
 /** Native criterion spelling is phase first, then the one assigned label. */
 export function nativeMetricKey(metric: string, tags: MetricTags): string {
@@ -27,28 +27,8 @@ export function nativeMetricKey(metric: string, tags: MetricTags): string {
 export function metricSeriesKey(metric: string, tags: MetricTags): string {
   return `${metric}:${tags.phase ?? ''}:${tags.request ?? ''}:${tags.assertion ?? ''}`;
 }
-function seriesTags(name: string, layout: ReturnType<typeof metricLayout>): readonly MetricTags[] {
-  if ([measureStartedMetric, 'vus', 'vus_max', 'dropped_iterations'].includes(name)) return [{}];
-  if (aggregate.has(name)) return [{ phase: 'prepare' }, { phase: 'execute' }];
-  if (['iterations', 'iteration_duration', 'beetle_required_failures'].includes(name)) return [{ phase: 'execute' }];
-  const requests = [...layout.requests.map(item => ({ ...item, phase: 'execute' as const })),
-    ...(layout.readiness ? [{ ...layout.readiness, phase: 'prepare' as const }] : [])];
-  if (name === 'beetle_assertions' || name === 'beetle_assertion_failures') {
-    return requests.flatMap(request => request.assertions.map(assertion => ({ phase: request.phase, assertion: assertion.label })));
-  }
-  return requests.map(request => ({ phase: request.phase, request: request.label }));
-}
-function metricScope(name: string, tags: MetricTags = {}): MetricScope {
-  if (name === measureStartedMetric) return 'control';
-  if (tags.phase === 'prepare') return 'prepare';
-  return engine.has(name) ? 'engine' : 'execute';
-}
 function series(suite: DeepReadonly<CompiledSuite>): readonly AllowedMetricSeries[] {
-  const layout = metricLayout(suite);
-  const result = metricDefinitions.flatMap(({ name, kind }) => seriesTags(name, layout)
-    .map(tags => Object.freeze({ metric: name, kind, tags: Object.freeze(tags), scope: metricScope(name, tags) })));
-  if (result.length > 4600) throw new Error('metric_limit');
-  return Object.freeze(result);
+  return k6MetricCatalogue(metricLayout(suite));
 }
 function projectionRules(input: { suite: DeepReadonly<CompiledSuite>; name: string; tags: MetricTags;
   scoped: MetricTags; kind: MetricKind }): readonly K6Threshold[] {

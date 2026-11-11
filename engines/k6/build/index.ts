@@ -1,6 +1,7 @@
 import { lstat, mkdtemp, mkdir, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 import { build } from 'esbuild';
 import { metricLayout } from '../plan/index.js';
 import type { CompiledSuite, DeepReadonly } from '../plan/index.js';
@@ -9,10 +10,14 @@ import type { AttemptBudget } from '../runtime/index.js';
 import { writePlanData } from './serialize.js';
 
 const engineRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const policySource = createRequire(import.meta.url).resolve('@beetle/contracts/k6-metrics');
 const scriptCap = 64 * 1_048_576;
 const nativeExternals = ['k6', 'k6/http', 'k6/execution', 'k6/metrics'];
 async function admitRuntimeSource(): Promise<void> {
-  let bytes = 0;
+  const policy = await lstat(policySource);
+  if (!policy.isFile()) throw new Error('script_source');
+  let bytes = policy.size;
+  if (bytes > 2 * 1_048_576) throw new Error('script_limit');
   for (const owner of ['runtime', 'plan']) {
     const directory = join(engineRoot, owner);
     for (const file of await readdir(directory, { withFileTypes: true })) {
@@ -43,7 +48,7 @@ function entrypoint(suite: DeepReadonly<CompiledSuite>, attempt: AttemptBudget):
 function approvedInput(path: string, staging: string): boolean {
   const absolute = resolve(path);
   const owner = relative(engineRoot, absolute).replaceAll('\\', '/');
-  return absolute === join(staging, 'entry.ts') || absolute === join(staging, 'plan.json')
+  return absolute === policySource || absolute === join(staging, 'entry.ts') || absolute === join(staging, 'plan.json')
     || owner.startsWith('runtime/') || owner.startsWith('plan/');
 }
 function admitBundleBytes(files: readonly { contents: Uint8Array }[], maximumBytes: number): void {

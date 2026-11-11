@@ -60,6 +60,7 @@ function approvedPlanImport(source: 'runtime' | 'plan', edge: ImportEdge, resolv
   return edge.typeOnly && /^engines\/k6\/compiler\/generated\/types\.[jt]s$/.test(resolved);
 }
 function approvedK6Package(source: 'runtime' | 'plan', edge: ImportEdge): boolean {
+  if (source === 'plan' && edge.target === '@beetle/contracts/k6-metrics') return true;
   if (source === 'plan' && edge.typeOnly && edge.target === '@beetle/contracts/metrics') return true;
   return source === 'runtime' && (edge.target === 'k6' || edge.target.startsWith('k6/'));
 }
