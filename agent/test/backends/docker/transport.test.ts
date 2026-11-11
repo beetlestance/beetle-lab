@@ -164,3 +164,18 @@ it('rejects named read-only installation path escapes and all new mutation route
   }
   expect(requests).toHaveLength(0);
 });
+
+it('allows only fixed mailbox volume API paths', async () => {
+  const {transport, requests} = harness(request => request.respond(204).end());
+  const name = `beetle-${'a'.repeat(64)}-live`;
+  for (const input of [{method: 'GET', path: `/v1.47/volumes/${name}`},
+    {method: 'POST', path: '/v1.47/volumes/create'},
+    {method: 'DELETE', path: `/v1.47/volumes/${name}?force=false`}] as const) {
+    expect((await transport.request(call(input))).ok).toBe(true);
+  }
+  for (const path of ['/v1.47/volumes', `/v1.47/volumes/${name}?force=true`,
+    `/v1.47/volumes/${name}/../foreign`, '/v1.47/volumes/foreign?force=false']) {
+    expect(await transport.request(call({method: 'DELETE', path}))).toMatchObject({ok: false, reason: 'invalid_input', dispatched: false});
+  }
+  expect(requests).toHaveLength(3);
+});

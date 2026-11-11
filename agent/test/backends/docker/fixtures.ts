@@ -33,8 +33,10 @@ export function payload(plan: RuntimePlan, state = 'created'): Record<string, un
       Entrypoint: [...plan.spec.Entrypoint], Cmd: [...plan.spec.Cmd], WorkingDir: plan.spec.WorkingDir,
       Env: [...plan.spec.Env], Healthcheck: { ...plan.spec.Healthcheck }, StopSignal: plan.spec.StopSignal,
       NetworkDisabled: plan.spec.NetworkDisabled }, HostConfig: host,
-    Mounts: plan.spec.HostConfig.Mounts.map(mount => ({ Type: mount.Type, Source: mount.Source,
-      Destination: mount.Target, RW: !mount.ReadOnly, Propagation: mount.BindOptions.Propagation })),
+    Mounts: plan.spec.HostConfig.Mounts.map(mount => mount.Type === 'bind'
+      ? {Type: mount.Type, Source: mount.Source, Destination: mount.Target, RW: !mount.ReadOnly, Propagation: mount.BindOptions.Propagation}
+      : {Type: mount.Type, Name: mount.Source, Source: `/daemon/volumes/${mount.Source}/_data`, Destination: mount.Target,
+        Driver: 'local', Mode: '', RW: true, Propagation: ''}),
     NetworkSettings: { Networks: { [plan.spec.HostConfig.NetworkMode]: {} } },
     State: { Status: state, Running: ['running', 'restarting', 'paused'].includes(state),
       OOMKilled: false, ExitCode: 0, Paused: state === 'paused', Restarting: state === 'restarting', Dead: state === 'dead' } };

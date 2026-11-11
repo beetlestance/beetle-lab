@@ -4,7 +4,7 @@ import { RUNNER_MAXIMUM_OFFER_BYTES, encodeJson, validate, validatePrimitive } f
 import type { EngineManifest, Offer } from '@beetle/contracts';
 import { failure } from './types.js';
 import { validImageBaseline } from './image-baseline.js';
-import { validTemporaryProfile, temporaryMounts } from './live-channel.js';
+import { validTemporaryProfile, temporaryMounts, mailboxMount } from './live-channel.js';
 import type { CreateSpec, DockerMount, InstallationProfile, PrepareInput, Result, StagedRoots } from './types.js';
 
 const budgetKeys = ['cpuMillis', 'memoryBytes', 'pids', 'timeoutMs', 'outputBytes'] as const;
@@ -66,7 +66,7 @@ function mounts(roots: StagedRoots, profile: InstallationProfile, name: string):
       ReadOnly: key !== 'output', BindOptions: { Propagation: 'rprivate', NonRecursive: false,
         CreateMountpoint: false, ReadOnlyNonRecursive: false, ReadOnlyForceRecursive: key !== 'output' } });
   }
-  return result;
+  return [...result, ...mailboxMount(profile, name)];
 }
 
 export function runtimeName(input: { installationId: string; organizationId: string;

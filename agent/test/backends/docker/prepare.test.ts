@@ -15,7 +15,7 @@ describe('approved Docker specification', () => {
         PidMode: '', IpcMode: 'private', UTSMode: '', CgroupnsMode: 'private', PublishAllPorts: false,
         PortBindings: {}, Devices: [], DeviceRequests: [], Binds: [], VolumesFrom: [],
         Tmpfs: { '/tmp': 'rw,noexec,nosuid,nodev,size=1048576,mode=1777' }, LogConfig: { Type: 'none', Config: {} } } });
-    expect(plan.spec.HostConfig.Mounts.map(mount => [mount.Target, mount.ReadOnly, mount.BindOptions.Propagation]))
+    expect(plan.spec.HostConfig.Mounts.map(mount => [mount.Target, mount.ReadOnly, mount.Type === 'bind' ? mount.BindOptions.Propagation : undefined]))
       .toEqual([['/beetle/input', true, 'rprivate'], ['/beetle/output', false, 'rprivate'], ['/beetle/secrets', true, 'rprivate']]);
     expect(plan.spec.Labels['dev.beetle.spec']).toBe(plan.specDigest);
     expect(Object.isFrozen(plan.spec.HostConfig.Mounts[0])).toBe(true);

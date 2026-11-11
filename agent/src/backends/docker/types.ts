@@ -49,12 +49,17 @@ export interface PrepareInput {
   readonly staged: StagedRoots;
   readonly requireHardOutputQuota?: boolean;
 }
-export interface DockerMount {
+export interface DockerBindMount {
   readonly Type: 'bind'; readonly Source: string; readonly Target: string;
   readonly ReadOnly: boolean;
   readonly BindOptions: { readonly Propagation: 'rprivate'; readonly NonRecursive: false;
     readonly CreateMountpoint: false; readonly ReadOnlyNonRecursive: false; readonly ReadOnlyForceRecursive: boolean };
 }
+export interface DockerVolumeMount {
+  readonly Type: 'volume'; readonly Source: string; readonly Target: '/beetle/live';
+  readonly ReadOnly: false; readonly VolumeOptions: {readonly NoCopy: true};
+}
+export type DockerMount = DockerBindMount | DockerVolumeMount;
 export interface CreateSpec {
   readonly Image: string; readonly User: string; readonly Entrypoint: readonly string[];
   readonly Cmd: readonly string[]; readonly Env: readonly string[];

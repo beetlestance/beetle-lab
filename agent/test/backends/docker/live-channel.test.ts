@@ -1,16 +1,17 @@
 import { expect, it } from 'vitest';
 import { prepareRuntime } from '../../../src/backends/docker/index.js';
 import { makeInput, makePlan } from './fixtures.js';
-it('carves an immutable private mailbox tmpfs from the existing allowance only for trusted opt-in', () => {
+it('carves an immutable private mailbox volume from the existing allowance only for trusted opt-in', () => {
   const input = makeInput(); const normal = makePlan(input);
   const enabled = makePlan({...input, profile: {...input.profile, liveMetricMailbox: true}});
   expect(enabled.spec.HostConfig.Tmpfs).toEqual({
-    '/tmp': 'rw,noexec,nosuid,nodev,size=917504,mode=1777',
-    '/beetle/live': 'rw,noexec,nosuid,nodev,size=131072,nr_inodes=4,uid=10001,gid=10001,mode=0700'});
+    '/tmp': 'rw,noexec,nosuid,nodev,size=917504,mode=1777'});
   expect(enabled.spec.HostConfig.Memory).toBe(normal.spec.HostConfig.Memory);
   expect(enabled.spec.HostConfig.MemorySwap).toBe(normal.spec.HostConfig.MemorySwap);
   expect(enabled.spec.HostConfig.ShmSize).toBe(normal.spec.HostConfig.ShmSize);
-  expect(enabled.spec.HostConfig.Mounts).toEqual(normal.spec.HostConfig.Mounts);
+  expect(enabled.spec.HostConfig.Mounts.slice(0, -1)).toEqual(normal.spec.HostConfig.Mounts);
+  expect(enabled.spec.HostConfig.Mounts.at(-1)).toEqual({Type: 'volume', Source: `${enabled.name}-live`,
+    Target: '/beetle/live', ReadOnly: false, VolumeOptions: {NoCopy: true}});
   expect(enabled.specDigest).not.toBe(normal.specDigest); expect(Object.isFrozen(enabled.spec.HostConfig.Tmpfs)).toBe(true);
 });
 it('does not enable a live channel from untrusted job config', () => {

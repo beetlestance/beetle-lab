@@ -105,9 +105,13 @@ unbounded publishers. No process-global job scheduler belongs in this component.
 The [custody decision](../../decisions/013-live-metric-mailbox-custody.md) replaces
 the shared-root rename/unlink adapter. Use a dedicated initially empty `/beetle/live`
 local-driver tmpfs volume capped at128KiB/four inodes, carved from the existing temporary allocation and
-memory budget. No Offer or phase ceiling increase. The one fixed mailbox is private
+memory budget. No Offer or phase ceiling increase. Mount with NoCopy=true and an exact per-plan
+name. Verify local driver, tmpfs options and installation/attempt/generation/spec
+labels before adoption, start or deletion. Never attach a pre-existing orphan as
+fresh execution. Uncertain dispatched creation stays charged; missing-container
+cleanup requires retained definite creation settlement or a prior removal claim. The one fixed mailbox is private
 to this container, separate from inputs/secrets/retained outputs. Do not rename or
-unlink its children; container teardown after physical stop owns mount cleanup.
+unlink its children; guarded volume teardown after physical stop owns mount cleanup.
 No per-window fsync, append log, new process or lifecycle journal event.
 
 The shared `@beetle/contracts/live-mailbox` format has128-byte envelopes at offsets
@@ -131,8 +135,8 @@ fixed mailbox of its matched active container only, never caller paths. Docker
 archive transport must cap actual stream bytes independently of advertised length,
 parse one expected regular entry without extraction/links, and drain originals.
 Reuse existing ordinary transport credits: globally<=2 telemetry originals, no queue,
-control/cancel priority preserved. Root/name replacement or scope/epoch mismatch
-fails closed; normal atomic replacement races return explicit unavailable. Reads,
+control/cancel priority preserved. Volume verification cannot block stop/kill of an independently matched container.
+Root/name replacement or scope/epoch mismatch fails closed; normal atomic replacement races return explicit unavailable. Reads,
 decode, encode and response share a fixed<=5s deadline and original lifetime.
 Backend resolves scoped run/attempt first, retains no corpus/subscriber registry,
 and returns<=64KiB. Browser polls visible selected active attempt every2s only after

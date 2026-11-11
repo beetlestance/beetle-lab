@@ -19,8 +19,13 @@ function validSocket(path: string): boolean {
 function validRequest(input: DockerRequest): boolean {
   return !!input && ['GET', 'POST', 'DELETE'].includes(input.method) && typeof input.path === 'string' && input.path.length <= 2048
     && (/^\/(?:version|v1\.47\/(?:info|containers\/[^\s#]*))$/u.test(input.path)
-      || input.method === 'GET' && inspectionPath(input.path))
+      || input.method === 'GET' && inspectionPath(input.path) || volumePath(input))
     && Number.isFinite(input.deadline);
+}
+function volumePath(input: DockerRequest): boolean {
+  if (input.method === 'POST') return input.path === '/v1.47/volumes/create';
+  const suffix = input.method === 'DELETE' ? '\\?force=false' : '';
+  return new RegExp(`^/v1\\.47/volumes/beetle-[a-f0-9]{64}-live${suffix}$`).test(input.path);
 }
 function validMailboxRequest(input: MailboxArchiveRequest): boolean {
   if (!input || typeof input.containerId !== 'string' || !/^[a-f0-9]{64}$/.test(input.containerId) || !Number.isFinite(input.deadline)) return false;

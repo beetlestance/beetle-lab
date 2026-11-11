@@ -31,11 +31,31 @@ function removeOwned(docker: Docker, kind: 'container' | 'volume', target: strin
   if (kind === 'container') {assert.match(entry.Id, /^[a-f0-9]{64}$/); docker(['rm', '--force', entry.Id]);}
   else {assert.equal(entry.Name, target); docker(['volume', 'rm', target]);}
 }
+async function verifyVolume(transport: UnixDockerTransport, volume: string, nonce: string): Promise<void> {
+  const reply = await transport.request({method: 'GET', path: `/v1.47/volumes/${volume}`, deadline: performance.now() + 5000});
+  if (!reply.ok) throw new Error(`Volume inspect failed: ${reply.reason}`);
+  assert.equal(reply.status, 200);
+  assert.ok(reply.body && typeof reply.body === 'object');
+  const value = reply.body as Record<string, unknown>;
+  assert.equal(value.Name, volume); assert.equal(value.Driver, 'local'); assert.equal(value.Scope, 'local');
+  assert.deepEqual(value.Labels, {'dev.beetle.qualification': nonce});
+  assert.deepEqual(value.Options, {type: 'tmpfs', device: 'tmpfs',
+    o: 'rw,noexec,nosuid,nodev,size=131072,nr_inodes=4,uid=10001,gid=10001,mode=0700'});
+}
+async function removeVolume(transport: UnixDockerTransport, volume: string): Promise<void> {
+  const reply = await transport.request({method: 'DELETE', path: `/v1.47/volumes/${volume}?force=false`, deadline: performance.now() + 5000});
+  if (!reply.ok) throw new Error(`Volume removal failed: ${reply.reason}`);
+  assert.equal(reply.status, 204);
+  const after = await transport.request({method: 'GET', path: `/v1.47/volumes/${volume}`, deadline: performance.now() + 5000});
+  if (!after.ok) throw new Error(`Volume absence failed: ${after.reason}`);
+  assert.equal(after.status, 404);
+}
 async function main(): Promise<void> {
   const {image, directory, socket} = argumentsList(); assert.equal(await realpath(directory), directory);
   const docker: Docker = args => execFileSync('docker', ['--host', `unix://${socket}`, ...args], {encoding: 'utf8', timeout: 15000, maxBuffer: 1048576}).trim();
   const digest = docker(['image', 'inspect', '--format', '{{.Id}}', image]); assert.match(digest, /^sha256:[a-f0-9]{64}$/);
-  const nonce = randomUUID(); const name = `beetle-mailbox-archive-${nonce}`; const volume = `${name}-live`;
+  const nonce = randomUUID(); const name = `beetle-mailbox-archive-${nonce}`; const volume = `beetle-${createHash('sha256').update(nonce).digest('hex')}-live`;
+  const transport = new UnixDockerTransport(socket);
   try {
     docker(['volume', 'create', '--driver', 'local', '--label', `dev.beetle.qualification=${nonce}`,
       '--opt', 'type=tmpfs', '--opt', 'device=tmpfs', '--opt', 'o=rw,noexec,nosuid,nodev,size=131072,nr_inodes=4,uid=10001,gid=10001,mode=0700', volume]);
@@ -45,7 +65,8 @@ async function main(): Promise<void> {
       '--tmpfs', '/tmp:rw,noexec,nosuid,nodev,size=917504,mode=1777',
       '--mount', `type=volume,src=${volume},dst=/beetle/live,volume-nocopy`,
       '--mount', `type=bind,src=${directory},dst=/proof,readonly`, '--entrypoint', 'node', digest, '/proof/producer.mjs']);
-    assert.match(id, /^[a-f0-9]{64}$/); const transport = new UnixDockerTransport(socket);
+    assert.match(id, /^[a-f0-9]{64}$/);
+    await verifyVolume(transport, volume, nonce);
     const deadline = performance.now() + 5000; let reply = await transport.readMailboxArchive({containerId: id, deadline});
     for (let waits = 0; reply.ok && reply.status === 404 && waits < 20; waits++) {
       await delay(100); reply = await transport.readMailboxArchive({containerId: id, deadline});
@@ -63,6 +84,8 @@ async function main(): Promise<void> {
     docker(['stop', '--time', '0', id]);
     const stopped = await transport.readMailboxArchive({containerId: id, deadline: performance.now() + 5000});
     assert.equal(stopped.ok, true);
+    removeOwned(docker, 'container', name, nonce);
+    await removeVolume(transport, volume);
     console.log(JSON.stringify({image: digest, platform: 'linux', architecture: Reflect.get(source, 'architecture'),
       mailboxRevision: mailbox.revision, boundedArchive: true, physicalHttpClose: true,
       archiveStatusAfterStop: stopped.ok ? stopped.status : null}));

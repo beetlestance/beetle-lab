@@ -97,6 +97,33 @@ capabilities, read-only root and CPU/RAM/PID limits. A stopped-fixture read retu
 container/volume cleanup passed. No amd64 qualification is claimed.
 
 Sources: `tools/qualification/native-application/mailbox-{producer,archive}.ts`.
-The existing admission flag still describes the earlier container-local prototype;
-it is not runtime-enabled. Exact local-driver volume ownership/options, active-plan
-authorization, read drainage and lifecycle cleanup must precede enablement.
+The earlier container-local prototype was superseded by the guarded local-driver
+volume component below. No default installation profile enables live metrics.
+
+
+## Volume ownership and active-plan reads
+
+The backend now prepares/verifies a unique per-plan local-driver volume with exact
+scope/spec/purpose labels and tmpfs options. NoCopy prevents image population;
+/tmp shrinks by the same128KiB. An existing orphan cannot become fresh execution.
+Matched existing containers can recover their verified volume. Lost create replies
+are reconciled without repeated create; missing unknown creation remains charged.
+
+Read authorization uses the branded active running RuntimePlan and retained full
+container ID. One read per owner retains its credit until the raw original closes;
+late data after stop is discarded. Cleanup refuses active readers, removes only a
+matched stopped container, then verifies/removes its volume with force=false.
+Definite container-create failures permit guarded orphan cleanup; uncertain issued
+creation and cold missing orphans lack settlement evidence and remain retained.
+Durable recovery for that case is required before runtime enablement.
+
+Independent review found cancellation and definite-create cleanup gaps, both fixed
+with regressions. Volume verification now gates reads/start/adoption/cleanup while
+stop and kill can act on independently matched containers despite volume failure.
+207 scoped Docker cases passed before a verification-helper extraction; affected
+regressions also passed afterward, including in-flight volume-verification revocation.
+Final lint/Node types passed. The architecture gate found an existing native-to-index
+type import cycle; its file port was extracted without changing public exports.
+A cached arm64 probe confirmed exact volume metadata and non-forced API removal
+followed by404, with guarded task-owned fixture cleanup. No user services,
+images or profiles were changed. Full engine/API/browser wiring remains pending.

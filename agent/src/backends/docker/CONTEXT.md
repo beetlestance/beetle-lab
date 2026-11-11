@@ -1,12 +1,13 @@
 # Docker adapter private contract
-Public index.ts; no staging, durable start, finalization or capacity release here.
+Public index.ts; staging, durable start and capacity release belong to supervisor.
 prepareRuntime snapshots Offer/EngineManifest (1MiB/64KiB), validates image/engine,
 minimum/install ceilings and manifest-matching entrypoint. InstallationProfile is
 trusted: installation UUID, immutable image, numeric non-root UID:GID, approved
 none/beetle-* network, bounded temporary allocation, absolute stagingRoot, ceilings.
 Live mailbox opt-in is trusted install metadata, never job/browser config. Its
-container-local tmpfs prototype cannot serve archive reads; guarded local-driver
-volume lifecycle is required before runtime enablement, without budget increases.
+local-driver tmpfs volume uses NoCopy and exact per-plan labels/options; its128KiB
+comes from /tmp. No default profile enables it. Cold missing orphans without
+creation-settlement proof remain charged; durable recovery precedes enablement.
 effectiveImage pins imageDigest/defaultRuntime/public environment (64 unique entries,
 4096 chars each/16KiB total), from approved daemon/image only; inherited PATH matches.
 Create pins Env/Runtime/SIGTERM and disables healthcheck; known NONE timings accepted.
@@ -31,7 +32,8 @@ Persist start intent first. One exclusive supervisor/journal owns recovery,
 reservations and finalization; recreating the adapter loses in-memory fences.
 stop retains first absolute graceDeadline rounded up; HTTP timeout cannot shorten
 it. Observation expiry is unknown. stop/kill require stopped proof; remove requires
-sealed/applicationAcknowledged, force=false/v=false. Volume ownership/cleanup pending.
+sealed/applicationAcknowledged, force=false/v=false; archive originals must drain.
+Matched stop/kill works despite volume failure; reads/start/cleanup require ownership.
 sampleResources reads inspected running owners by full ID, one-shot stats with raw
 usage/null provenance; no mutation lane/revocation on failure. Exit137 is not OOM.
 Focused tests: scoped files in agent/test/backends/docker; no Docker in unit lane.

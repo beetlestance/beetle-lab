@@ -3,11 +3,8 @@ import { encodeMailboxHeader, MAILBOX_BYTES, MAILBOX_HEADER_BYTES, MAILBOX_FOOTE
 import type { LiveMetricSink } from '../live/index.js';
 export { openNativeMailbox, NativeMailboxError } from './native.js';
 
-export interface MailboxFile {
-  size(): Promise<number>;
-  write(bytes: Uint8Array, position: number): Promise<number>;
-  close(): Promise<void>;
-}
+import type { MailboxFile } from './file.js';
+export type { MailboxFile } from './file.js';
 export interface MailboxSinkOptions {readonly file: MailboxFile; readonly hash: MailboxHash; readonly maximumProducedBytes: number}
 type Reason = 'invalid_options' | 'invalid_input' | 'busy' | 'closed' | 'quota' | 'aborted' | 'io';
 export class MailboxSinkError extends Error {

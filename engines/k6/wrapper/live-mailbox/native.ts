@@ -1,7 +1,7 @@
 import { constants, type BigIntStats } from 'node:fs';
 import { lstat, open, readdir, realpath, statfs, type FileHandle } from 'node:fs/promises';
 import { LIVE_MAILBOX_PATH, MAILBOX_BYTES } from '@beetle/contracts/live-mailbox';
-import type { MailboxFile } from './index.js';
+import type { MailboxFile } from './file.js';
 
 export class NativeMailboxError extends Error {
   constructor(readonly code: 'invalid_options' | 'unsupported' | 'filesystem' | 'aborted' | 'closed' | 'busy' | 'cleanup', readonly owner?: MailboxFile) {

@@ -1,7 +1,7 @@
 import { encodeJson } from '@beetle/contracts';
 import type { RuntimePlan } from './prepare.js';
 import { failure } from './types.js';
-import type { CreateSpec, DockerMount, InspectEvidence, Result } from './types.js';
+import type { CreateSpec, DockerBindMount, DockerMount, InspectEvidence, Result } from './types.js';
 
 export function record(value: unknown): Record<string, unknown> | undefined {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -58,7 +58,7 @@ function controls(host: Record<string, unknown>, spec: CreateSpec): boolean {
   if (!arrays.every(key => empty(host[key]))) return false;
   return objects.every(key => optionalEmptyObject(host[key])) && additionalHostDefaults(host, spec);
 }
-function bindOptions(input: unknown, expected: DockerMount): boolean {
+function bindOptions(input: unknown, expected: DockerBindMount): boolean {
   const options = record(input);
   if (!options) return false;
   return Object.entries(expected.BindOptions).every(([key, value]) =>
@@ -67,7 +67,9 @@ function bindOptions(input: unknown, expected: DockerMount): boolean {
 }
 function requestedMount(input: unknown, expected: DockerMount): boolean {
   const mount = record(input);
-  if (!mount || !bindOptions(mount.BindOptions, expected)) return false;
+  if (!mount) return false;
+  if (expected.Type === 'volume') return same({...mount, ReadOnly: mount.ReadOnly ?? false}, expected);
+  if (!bindOptions(mount.BindOptions, expected)) return false;
   const actual = { ...mount, ReadOnly: mount.ReadOnly === undefined ? false : mount.ReadOnly };
   const optional = ['Consistency', 'VolumeOptions', 'TmpfsOptions', 'ClusterOptions'];
   if (mount.Consistency !== undefined && mount.Consistency !== '') return false;
@@ -83,7 +85,7 @@ function requestedMounts(input: unknown, spec: CreateSpec): boolean {
     return matches.length === 1 && requestedMount(matches[0], expected);
   });
 }
-function summaryOptions(mount: Record<string, unknown>, expected: DockerMount): boolean {
+function summaryOptions(mount: Record<string, unknown>, expected: DockerBindMount): boolean {
   if (mount.BindOptions !== undefined && !bindOptions(mount.BindOptions, expected)) return false;
   const allowed = ['Type', 'Name', 'Source', 'Destination', 'Driver', 'Mode', 'RW', 'Propagation', 'BindOptions'];
   const mode = mount.Mode;
@@ -97,9 +99,17 @@ function mountEvidence(value: unknown, spec: CreateSpec): boolean {
     const matches = value.filter(item => record(item)?.Destination === expected.Target);
     if (matches.length !== 1) return false;
     const mount = record(matches[0]);
+    if (expected.Type === 'volume') return !!mount && volumeSummary(mount, expected);
     return mount?.Type === 'bind' && mount.Source === expected.Source
       && mount.RW === !expected.ReadOnly && mount.Propagation === 'rprivate' && summaryOptions(mount, expected);
   });
+}
+function volumeSummary(mount: Record<string, unknown>, expected: DockerMount): boolean {
+  const allowed = ['Type', 'Name', 'Source', 'Destination', 'Driver', 'Mode', 'RW', 'Propagation'];
+  return mount.Type === 'volume' && mount.Name === expected.Source && mount.Driver === 'local'
+    && mount.RW === true && mount.Propagation === '' && (mount.Mode === '' || mount.Mode === 'rw')
+    && typeof mount.Source === 'string' && mount.Source.startsWith('/')
+    && Object.keys(mount).every(key => allowed.includes(key));
 }
 function disabledHealthcheck(input: unknown): boolean {
   const healthcheck = record(input);
