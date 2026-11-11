@@ -43,4 +43,3 @@ export const targetMetricNames = [
   'eventLoopDelay.max', 'gc.count', 'gc.duration',
 ] as const;
 export type TargetMetricName = typeof targetMetricNames[number];
-
