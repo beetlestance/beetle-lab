@@ -122,7 +122,7 @@ class RuntimeOwner {
   private compose(options: AgentRuntimeOptions, configuration: PoolConfiguration, root: VerifiedRoot, journalAuthority: string): void {
     const journal = this.journal!;
     const transport = options.transport;
-    const supervisor = this.supervisor = new Supervisor({ journal, installationId: options.installation.installationId,
+    const supervisor = this.supervisor = new Supervisor({ journal, requireResourceTelemetry: true, installationId: options.installation.installationId,
       backendFactory: () => new DockerBackend(transport) });
     for (const engine of options.catalog.engines) this.stagers.set(engine, new Stager({ root, journal,
       profile: engine.profile, manifest: engine.manifest, validation: engine.validation, providers: options.providers }));
@@ -170,6 +170,7 @@ class RuntimeOwner {
   }
   private monitoringCloses(): Close[] {
     const guards: Close[] = [];
+    if (this.supervisor) guards.push(() => this.supervisor!.closeTelemetry());
     if (this.output) guards.push(() => this.output!.close());
     if (this.timeout) guards.push(() => this.timeout!.close());
     if (this.observer) guards.push(() => this.observer!.close());

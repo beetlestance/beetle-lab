@@ -24,17 +24,17 @@ separately and may kill after durable cancellation. Fenced inherited clocks neve
 enter normal timing/date arithmetic. Invalid monotonic time can prevent requests;
 unknown remains charged for reconciliation. No guard capability is advertised.
 
-Runtime evidence captures synchronously, then flushes before settlement. At most
-four pending first observations (started, cancellation, exited, lost) retain their
-original order, timestamps, payloads and assigned ordinals; repeats coalesce by kind.
-Delivery failure durably cancels and reports journal_unavailable; the next cancel/
-tick signals before retrying delivery. Pending evidence blocks retirement/settlement.
+One serialized evidence owner retains four first lifecycle facts, one exact issued
+resource append and one coalesced latest summary. Unknown append replays its frozen
+intent/ordinal; lifecycle takes priority before unissued telemetry. Exit follows the
+final drained summary. Lifecycle uncertainty preserves cancellation/error semantics;
+telemetry-only failure retains bounded replay. Pending work blocks retirement.
 completed requires known local create/start and durable evidence; recovered actors
 cannot infer that proof. retired means known create without a sent start. Unknown
 stays charged. Exit0/137 and OOM never establish test outcome; no release is inferred.
 
 Composition must call tick every100ms while active, including after step failures.
-Backend calls cap at30s; launch also uses remaining execution budget. These bounded
-steps do not replace the missing independent wrapper wall deadline/output writer.
-No collection, release, deletion, wrapper events or output guard is supplied.
+Backend calls cap at30s; launch also uses remaining execution budget. Telemetry uses
+shared two-original admission, 1s reads/5s publication; installed bootstrap requires
+its backend capability and drains closeTelemetry before Journal shutdown.
 Tests: NODE_OPTIONS=--max-old-space-size=1024 npx --no-install vitest run agent/test/supervisor --maxWorkers=2

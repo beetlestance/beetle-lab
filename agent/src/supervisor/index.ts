@@ -1,3 +1,4 @@
+import { SamplingAdmission } from '../telemetry/index.js';
 import { performance } from 'node:perf_hooks';
 import { LaunchActor } from './actor.js';
 import { identity, sameScope, validateInput } from './identity.js';
@@ -11,9 +12,26 @@ export type { BackendPort, Clock, JournalPort, LaunchInput, LaunchState, Supervi
 /** Composition owns one manager per exclusively locked journal/installation. */
 export class Supervisor {
   private readonly actors = new Map<string, LaunchActor>();
-  constructor(private readonly options: SupervisorOptions) {}
+  private readonly sampling = new SamplingAdmission();
+  private telemetryClosed = false;
+  private telemetryClosing: Promise<void> | undefined;
+  constructor(private readonly options: SupervisorOptions) {
+    if (options.requireResourceTelemetry) this.backend();
+  }
+  closeTelemetry(): Promise<void> {
+    if (this.telemetryClosing) return this.telemetryClosing;
+    this.telemetryClosed = true;
+    let resolve!: () => void; let reject!: (error: unknown) => void;
+    this.telemetryClosing = new Promise<void>((yes, no) => { resolve = yes; reject = no; });
+    void Promise.allSettled(Array.from(this.actors.values(), actor => actor.closeTelemetry())).then(results => {
+      if (results.some(result => result.status === 'rejected')) reject(new SupervisorError('journal_unavailable'));
+      else resolve();
+    });
+    return this.telemetryClosing;
+  }
   get size(): number { return this.actors.size; }
   actor(input: LaunchInput): LaunchActor {
+    if (this.telemetryClosed) throw new SupervisorError('closed');
     try { validateInput(input, this.options.installationId); }
     catch (error) { throw error instanceof SupervisorError ? error : new SupervisorError('invalid_input'); }
     const key = identity(input.key);
@@ -27,12 +45,16 @@ export class Supervisor {
     if (this.actors.size >= 64) throw new SupervisorError('capacity');
     const snapshot = Object.freeze({ key: Object.freeze({ ...input.key }), plan: input.plan });
     const actor = new LaunchActor(snapshot, this.options.journal, this.backend(),
-      this.options.clock ?? { wall: Date.now, monotonic: () => performance.now() });
+      this.options.clock ?? { wall: Date.now, monotonic: () => performance.now() }, this.sampling);
     this.actors.set(key, actor);
     return actor;
   }
   private backend() {
-    try { return this.options.backendFactory(); }
+    try {
+      const backend = this.options.backendFactory();
+      if (this.options.requireResourceTelemetry && typeof backend.sampleResources !== 'function') throw new Error('telemetry');
+      return backend;
+    }
     catch { throw new SupervisorError('backend_unavailable'); }
   }
   retire(input: LaunchInput): void {

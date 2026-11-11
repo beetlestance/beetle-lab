@@ -1,4 +1,6 @@
 import { performance } from 'node:perf_hooks';
+import { resourceReading, unknownResources } from './resources.js';
+import type { ResourceReading } from './resource-types.js';
 import { isRuntimePlan } from './prepare.js';
 import type { RuntimePlan } from './prepare.js';
 import { compatibleVersion, containerId, inspectEvidence, record, supportedDaemon } from './inspect.js';
@@ -7,7 +9,7 @@ import type { CleanupEvidence, DockerReply, DockerRequest, DockerTransport, Fail
 
 interface Entry {
   readonly digest: string; busy: boolean; createClaimed: boolean; startClaimed: boolean;
-  runtimeId: string | undefined; terminal: boolean; removed: boolean; graceDeadline: number | undefined;
+  running: boolean; cpuNs: number | null; runtimeId: string | undefined; terminal: boolean; removed: boolean; graceDeadline: number | undefined;
 }
 interface Inspection {
   readonly observation: Observation;
@@ -34,6 +36,28 @@ export class DockerBackend {
       const reason = await this.qualify(context, plan.spec.HostConfig.Runtime);
       return reason ? { state: 'unknown', reason } : this.current(entry, await this.observe(plan, context));
     } finally { this.active--; }
+  }
+
+  /** Reads only an existing inspected owner; never acquires a mutation lane. */
+  async sampleResources(plan: RuntimePlan, operation: Operation): Promise<ResourceReading> {
+    const context = this.context(operation);
+    if (!context || !isRuntimePlan(plan)) return unknownResources('invalid');
+    const entry = this.entries.get(plan.name);
+    if (!entry || entry.digest !== plan.specDigest) return unknownResources('invalid');
+    if (!this.resourceOwner(entry)) return unknownResources('unavailable');
+    if (this.active >= 64) return unknownResources('unavailable');
+    const id = entry.runtimeId!;
+    this.active++;
+    try {
+      const reply = await this.request({ ...context, deadline: Math.min(context.deadline, performance.now() + 1000),
+        method: 'GET', path: `/v1.47/containers/${id}/stats?stream=false&one-shot=true` });
+      if (!this.resourceOwner(entry) || entry.runtimeId !== id) return unknownResources('unavailable');
+      return resourceReading(reply, id, entry);
+    } finally { this.active--; }
+  }
+
+  private resourceOwner(entry: Entry): boolean {
+    return entry.running && !entry.terminal && !entry.removed && entry.runtimeId !== undefined;
   }
 
   async ensureCreated(plan: RuntimePlan, operation: Operation): Promise<MutationResult<InspectEvidence>> {
@@ -147,7 +171,7 @@ export class DockerBackend {
     if (existing) return existing.digest === plan.specDigest ? existing : 'conflict';
     if (this.entries.size >= 64) return 'overflow';
     const entry: Entry = { digest: plan.specDigest, busy: false, createClaimed: false, startClaimed: false,
-      runtimeId: undefined, terminal: false, removed: false, graceDeadline: undefined };
+      running: false, cpuNs: null, runtimeId: undefined, terminal: false, removed: false, graceDeadline: undefined };
     this.entries.set(plan.name, entry);
     return entry;
   }
@@ -177,12 +201,14 @@ export class DockerBackend {
   private absent(entry: Entry | undefined, runtimeIdAtIssue: string | undefined): Observation {
     if (!entry) return { state: 'unknown', reason: 'overflow' };
     if (entry.runtimeId !== runtimeIdAtIssue) return { state: 'unknown', reason: 'unsafe_state' };
+    entry.running = false;
     if (runtimeIdAtIssue !== undefined) { entry.createClaimed = true; entry.startClaimed = true; entry.terminal = true; }
     return { state: 'missing' };
   }
   private remember(entry: Entry, evidence: InspectEvidence): Observation {
     if (!this.retainIdentity(entry, evidence.id)) return { state: 'unknown', reason: 'conflict' };
     if (this.regressive(entry, evidence)) return { state: 'unknown', reason: 'unsafe_state' };
+    entry.running = evidence.state === 'running';
     if (evidence.state !== 'created') entry.startClaimed = true;
     if (evidence.state === 'exited') entry.terminal = true;
     return evidence;
