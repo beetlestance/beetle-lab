@@ -1,40 +1,33 @@
 # Supervisor launch boundary
 
-`index.ts` exposes Supervisor and actor launch/reconcile/tick/cancel steps plus
-fixed SupervisorError codes. One trusted composition owns the exclusively locked
-Journal, installation identity, staged/validated genuine RuntimePlan and manager.
-Wire contracts and Journal/Docker signatures are unchanged. Fresh backend per actor;
-<=64 live actors, coalesced operations, no queue. Retirement refuses pending work and
-fences old handles. Durable claims remain authoritative after manager eviction.
-Journal UUID spelling stays exact; normalized manager collisions reject changed
-spelling/spec rather than sharing distinct journal ownership.
+Public Supervisor/LaunchActor own launch, reconcile, cancel, retirement and reads.
+One trusted composition owns the locked Journal, installation, genuine RuntimePlan
+and manager. Fresh backend per actor; <=64 actors, coalesced operations, no queue.
+Normalized identity collisions reject changed spelling/spec; durable claims survive
+manager eviction. Retirement fences old handles and refuses pending originals.
 
-Reservation/offer/plan identity is checked before effects. Create claim precedes
+Reservation/Offer/plan binding validates before effects. Create claim precedes
 ensureCreated; exact runtime binding and durable clock/cancel reread precede the
-sole start claim. Only fresh grants dispatch. Replay inspects, including missing
-runtimes. Cancel fences synchronously and persists independently during held launch;
-signals wait for create/start resolution. Delayed callbacks cannot revive a grant.
-Final dispatch atomically samples clock permission and constructs its operation;
-any detected fault/deadline blocks launch. Journal failures close local grants.
+sole start claim. Only fresh grants dispatch. Replay inspects, never restarts.
+Cancel fences synchronously; signals wait for create/start resolution. Delayed
+callbacks cannot revive grants. Journal uncertainty permanently closes grants.
 
-Durable first cancel/high-water plus request-issued monotonic ceilings bound timeout
-and grace. Absolute timeout is admittedAt+budget.timeoutMs; five-second grace never
-resets across cancels/recovery. clock_integrity exposes emergency timing uncertainty
-separately and may kill after durable cancellation. Fenced inherited clocks never
-enter normal timing/date arithmetic. Invalid monotonic time can prevent requests;
-unknown remains charged for reconciliation. No guard capability is advertised.
+Durable first cancel/high-water and monotonic ceilings bound timeout and grace.
+Timeout=admittedAt+budget; five-second grace never resets across cancel/recovery.
+Clock-integrity faults fence dispatch and may kill after durable cancellation.
+Unknown stays charged; exit codes/OOM do not establish test outcome or release.
 
-One serialized evidence owner retains four first lifecycle facts, one exact issued
-resource append and one coalesced latest summary. Unknown append replays its frozen
-intent/ordinal; lifecycle takes priority before unissued telemetry. Exit follows the
-final drained summary. Lifecycle uncertainty preserves cancellation/error semantics;
-telemetry-only failure retains bounded replay. Pending work blocks retirement.
-completed requires known local create/start and durable evidence; recovered actors
-cannot infer that proof. retired means known create without a sent start. Unknown
-stays charged. Exit0/137 and OOM never establish test outcome; no release is inferred.
+One evidence owner retains four first lifecycle facts, one exact issued resource
+append and one coalesced latest summary. Unknown append replays frozen intent.
+Lifecycle has priority; exit follows final drained summary. Pending facts block
+settlement. Completed requires known local create/start; recovery cannot infer it.
 
-Composition must call tick every100ms while active, including after step failures.
-Backend calls cap at30s; launch also uses remaining execution budget. Telemetry uses
-shared two-original admission, 1s reads/5s publication; installed bootstrap requires
-its backend capability and drains closeTelemetry before Journal shutdown.
-Tests: NODE_OPTIONS=--max-old-space-size=1024 npx --no-install vitest run agent/test/supervisor --maxWorkers=2
+Composition ticks every100ms, including after failures. Backend calls cap30s and
+launch consumes remaining execution time. Resource/live telemetry share two
+original slots. Resource cadence is1s reads/5s publication; live reads cap5s.
+Installed bootstrap requires resource capability and drains before Journal close.
+readLiveMetrics uses an existing running actor only, never creates or launches.
+Installed policy approves once after Offer/reservation validation; rejection is
+advisory. Close/retire retain mailbox originals; cancellation/exit fence replies.
+
+Tests: vitest run agent/test/supervisor; live reader: agent/test/live-metrics.

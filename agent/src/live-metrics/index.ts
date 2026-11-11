@@ -23,6 +23,7 @@ export class LiveMetricReader {
     this.clock = options.clock ? {wall: options.clock.wall.bind(options.clock), monotonic: options.clock.monotonic.bind(options.clock)}
       : {wall: Date.now, monotonic: () => performance.now()};
   }
+  get pending(): boolean { return this.original !== undefined; }
   read(operation: Operation): Promise<LiveMetricRead> {
     if (this.closing) return Promise.resolve(failed('closed'));
     if (this.original) return Promise.resolve(failed('busy'));

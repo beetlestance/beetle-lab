@@ -1,3 +1,4 @@
+import type { LiveMetricApproval } from '../live-metrics/index.js';
 import type { Offer } from '@beetle/contracts';
 import type { DockerBackend, Observation, RuntimePlan, ResourceReading, Operation } from '../backends/docker/index.js';
 import type { Journal, StopReason } from '../journal/index.js';
@@ -6,10 +7,14 @@ import type { Scope } from '../admission/index.js';
 export type JournalPort = Pick<Journal, 'admission' | 'readOffer' | 'get' | 'supervision' | 'sourceCursors' | 'appendSupervisor'>;
 export type BackendPort = Pick<DockerBackend, 'ensureCreated' | 'dispatchStartOnce' | 'inspect' | 'stop' | 'kill'> & {
   /** Optional for focused fixtures; installed Docker backend must supply it. */
+  readMailbox?: DockerBackend['readMailbox'];
   sampleResources?(plan: RuntimePlan, operation: Operation): Promise<ResourceReading>;
 };
 export interface Clock { wall(): number; monotonic(): number }
+export type LiveMetricApprovalFactory = (offer: Offer, input: LaunchInput) => LiveMetricApproval | undefined;
 export interface SupervisorOptions {
+  /** Trusted installed policy; never derives approval from received telemetry. */
+  liveMetricApproval?: LiveMetricApprovalFactory;
   /** Concrete installation enables this; old focused backend fixtures may omit telemetry. */
   requireResourceTelemetry?: boolean;
   journal: JournalPort; backendFactory(): BackendPort; installationId: string; clock?: Clock;

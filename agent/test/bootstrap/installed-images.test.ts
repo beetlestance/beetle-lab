@@ -50,14 +50,18 @@ it('retains an aborted original image inspection and refuses its late success', 
   expect(await checking).toBe(false);
 });
 
-it('limits the transport image surface to exact digest inspection GET requests', async () => {
+it('permits read-only installed and named image inspection while rejecting mutation and traversal', async () => {
   const factory: RequestFactory = vi.fn(() => { throw new Error('Synthetic unavailable socket'); });
   const transport = new UnixDockerTransport('/unused-docker.sock', factory);
   const path = `/v1.47/images/sha256:${'a'.repeat(64)}/json`;
   expect(await transport.request({ method: 'POST', path, ...operation() })).toMatchObject({ ok: false, reason: 'invalid_input', dispatched: false });
   expect(factory).not.toHaveBeenCalled();
-  expect(await transport.request({ method: 'GET', path: '/v1.47/images/latest/json', ...operation() })).toMatchObject({ reason: 'invalid_input' });
+  expect(await transport.request({ method: 'GET', path: '/v1.47/images/../json', ...operation() })).toMatchObject({ reason: 'invalid_input' });
   expect(factory).not.toHaveBeenCalled();
   expect(await transport.request({ method: 'GET', path, ...operation() })).toMatchObject({ ok: false, reason: 'unavailable' });
   expect(factory).toHaveBeenCalledOnce();
+  expect(await transport.request({ method: 'GET', path: '/v1.47/images/latest/json', ...operation() })).toMatchObject({ reason: 'unavailable' });
+  expect(factory).toHaveBeenCalledTimes(2);
+  expect(await transport.request({ method: 'POST', path: '/v1.47/images/latest/json', ...operation() })).toMatchObject({ reason: 'invalid_input' });
+  expect(factory).toHaveBeenCalledTimes(2);
 });

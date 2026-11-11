@@ -1,13 +1,16 @@
-import { SamplingAdmission } from '../telemetry/index.js';
+import { AttemptLiveMetrics } from './live.js';
+import type { Scope } from '../admission/index.js';
+import type { LiveMetricRead } from '../live-metrics/index.js';
+import { AttemptResources, SamplingAdmission } from '../telemetry/index.js';
 import { performance } from 'node:perf_hooks';
 import { LaunchActor } from './actor.js';
 import { identity, sameScope, validateInput } from './identity.js';
 import { SupervisorError } from './types.js';
-import type { LaunchInput, SupervisorOptions } from './types.js';
+import type { BackendPort, Clock, LaunchInput, SupervisorOptions } from './types.js';
 import type { Operation } from '../backends/docker/index.js';
 export { SupervisorError };
 export type { LaunchActor } from './actor.js';
-export type { BackendPort, Clock, JournalPort, LaunchInput, LaunchState, SupervisorOptions } from './types.js';
+export type { BackendPort, Clock, JournalPort, LaunchInput, LaunchState, SupervisorOptions, LiveMetricApprovalFactory } from './types.js';
 
 /** Composition owns one manager per exclusively locked journal/installation. */
 export class Supervisor {
@@ -44,10 +47,25 @@ export class Supervisor {
     }
     if (this.actors.size >= 64) throw new SupervisorError('capacity');
     const snapshot = Object.freeze({ key: Object.freeze({ ...input.key }), plan: input.plan });
-    const actor = new LaunchActor(snapshot, this.options.journal, this.backend(),
-      this.options.clock ?? { wall: Date.now, monotonic: () => performance.now() }, this.sampling);
+    const backend = this.backend();
+    const clock = this.options.clock ?? { wall: Date.now, monotonic: () => performance.now() };
+    const actor = new LaunchActor(snapshot, this.options.journal, backend, clock, this.telemetry(snapshot, backend, clock));
     this.actors.set(key, actor);
     return actor;
+  }
+  private telemetry(input: LaunchInput, backend: BackendPort, clock: Clock) {
+    const resources = backend.sampleResources ? new AttemptResources({clock, admission: this.sampling,
+      read: operation => backend.sampleResources!(input.plan, operation)}) : undefined;
+    const live = new AttemptLiveMetrics({input, backend, clock, admission: this.sampling,
+      ...(this.options.liveMetricApproval ? {approve: this.options.liveMetricApproval} : {})});
+    return {...(resources ? {resources} : {}), live};
+  }
+  /** Read existing ownership only: never creates an actor or dispatches work. */
+  readLiveMetrics(key: Scope, operation: Operation): Promise<LiveMetricRead> {
+    if (this.telemetryClosed) return Promise.resolve({ok: false, reason: 'closed'});
+    const actor = this.actors.get(identity(key));
+    if (!actor || !sameScope(actor.input.key, key)) return Promise.resolve({ok: false, reason: 'unavailable'});
+    return actor.readLiveMetrics(operation);
   }
   private backend() {
     try {

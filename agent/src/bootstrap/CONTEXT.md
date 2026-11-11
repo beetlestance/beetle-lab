@@ -20,3 +20,7 @@ Executable still owns listening and transport lifetime; no artifact deletion ACK
 Contract: docs/design/lld/agent-runtime.md.
 Checks: npx --no-install vitest run agent/test/bootstrap --maxWorkers=1;
 npx --no-install eslint agent/src/bootstrap agent/test/bootstrap.
+
+Installed live approval selects k6 only from validated catalogue configuration
+and an opted-in profile with the assigned mailbox mount. It shares producer
+policy/epoch rules, retaining compact approval only; all profiles remain off.

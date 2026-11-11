@@ -9,7 +9,7 @@ Expected scope/epoch/subset are mandatory. Capture/source/published age<=6s; no 
 Scalar revision/source/end/time/coalescing/digest state fences regressions and
 altered repeats/overlapping windows. Unchanged polling keeps the original producer timestamp; no age
 refresh; a monotonic expiry also protects against a frozen wall clock. No metric corpus or subscriber registry. One reader per retained owner.
-This component is not an authenticated route or runtime enablement. The trusted
-compile-owned approval and producer configuration handoff must be wired first;
+This component is not an authenticated route or runtime enablement. Supervisor now derives approval once from the validated immutable Offer via
+trusted installed policy; authenticated transport and activation remain pending;
 an approved image/digest alone does not authorize a self-declared subset/epoch.
 Checks: agent/test/live-metrics; Node types and changed lint.

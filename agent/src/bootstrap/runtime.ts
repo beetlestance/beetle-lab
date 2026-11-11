@@ -1,3 +1,4 @@
+import { installedLiveMetricApproval } from './live-metrics.js';
 import { performance } from 'node:perf_hooks';
 import { encodeJson } from '@beetle/contracts';
 import type { PoolConfiguration } from '../admission/index.js';
@@ -122,7 +123,7 @@ class RuntimeOwner {
   private compose(options: AgentRuntimeOptions, configuration: PoolConfiguration, root: VerifiedRoot, journalAuthority: string): void {
     const journal = this.journal!;
     const transport = options.transport;
-    const supervisor = this.supervisor = new Supervisor({ journal, requireResourceTelemetry: true, installationId: options.installation.installationId,
+    const supervisor = this.supervisor = new Supervisor({ journal, liveMetricApproval: installedLiveMetricApproval(options.catalog), requireResourceTelemetry: true, installationId: options.installation.installationId,
       backendFactory: () => new DockerBackend(transport) });
     for (const engine of options.catalog.engines) this.stagers.set(engine, new Stager({ root, journal,
       profile: engine.profile, manifest: engine.manifest, validation: engine.validation, providers: options.providers }));

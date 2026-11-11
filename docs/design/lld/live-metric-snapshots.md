@@ -133,7 +133,8 @@ are mandatory before enabling the producer in images.
 The [approval constraint](../../decisions/014-live-metric-approval-authority.md)
 requires trusted compile-owned scope/epoch/subset before consumption; never infer
 approval from a frame. Shared k6 policy and existing staged launch fields now supply
-assignment; generic actor/transport wiring remains pending.
+assignment; existing actors now own approved readers. Authenticated transport
+and activation remain pending.
 Reader age bounds capture, source-window end and publication to6s with no future
 timestamps. Unchanged revisions retain a monotonic expiry even if wall time freezes.
 New revisions cannot overlap/regress source windows or captured/publication times.

@@ -1,3 +1,4 @@
+import type { Offer } from '@beetle/contracts';
 import { JournalError } from '../journal/index.js';
 import { validateReservation } from './identity.js';
 import type { Reservation } from '../admission/index.js';
@@ -6,7 +7,7 @@ import type { JournalPort, LaunchInput, OfferAuthority } from './types.js';
 /** Private provenance: only a concrete, nonissued readOffer refusal creates it. */
 export class ReadOfferBusy extends Error {}
 export async function captureAuthority(journal: JournalPort, input: LaunchInput,
-  current: Reservation): Promise<OfferAuthority> {
+  current: Reservation, validated?: (offer: Offer) => void): Promise<OfferAuthority> {
   let offer;
   try { offer = await journal.readOffer(input.key); }
   catch (error) {
@@ -19,5 +20,6 @@ export async function captureAuthority(journal: JournalPort, input: LaunchInput,
     budget: Object.freeze({ cpuMillis: offer.budget.cpuMillis, memoryBytes: offer.budget.memoryBytes,
       pids: offer.budget.pids, timeoutMs: offer.budget.timeoutMs, outputBytes: offer.budget.outputBytes }) });
   validateReservation(input, current, authority);
+  validated?.(offer);
   return authority;
 }

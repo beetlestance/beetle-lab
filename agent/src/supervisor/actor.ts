@@ -1,5 +1,5 @@
-import { AttemptResources } from '../telemetry/index.js';
-import type { SamplingAdmission } from '../telemetry/index.js';
+import type { AttemptResources } from '../telemetry/index.js';
+import type { AttemptLiveMetrics } from './live.js';
 import { randomUUID } from 'node:crypto';
 import type { Reservation, AdmissionValue } from '../admission/index.js';
 import type { InspectEvidence, MutationResult, Observation, Operation } from '../backends/docker/index.js';
@@ -26,6 +26,7 @@ export class LaunchActor {
   private readonly time: AttemptTime;
   private readonly evidence: RuntimeEvidence;
   private readonly resources: AttemptResources | undefined;
+  private readonly live: AttemptLiveMetrics;
   private finalResources = false;
   private authority: OfferAuthority | undefined;
   private current: Reservation | undefined;
@@ -49,11 +50,10 @@ export class LaunchActor {
   private retiring = false;
 
   constructor(readonly input: LaunchInput, private readonly journal: JournalPort,
-    private readonly backend: BackendPort, clock: Clock, admission: SamplingAdmission) {
+    private readonly backend: BackendPort, clock: Clock, telemetry: {resources?: AttemptResources; live: AttemptLiveMetrics}) {
     this.time = new AttemptTime(clock);
     this.evidence = new RuntimeEvidence(journal, input.key);
-    if (backend.sampleResources) this.resources = new AttemptResources({ clock, admission,
-      read: operation => backend.sampleResources!(input.plan, operation) });
+    this.resources = telemetry.resources; this.live = telemetry.live;
   }
   launch(): Promise<LaunchState> { return this.publicRun(true); }
   reconcile(): Promise<LaunchState> { return this.publicRun(false); }
@@ -84,9 +84,13 @@ export class LaunchActor {
   /** Synchronous retirement refuses every outstanding lane; old handles are fenced. */
   retire(): void {
     if (this.retiring && !this.retirementReady) throw new SupervisorError('conflict');
-    if (this.inFlight || this.cancellationWrite || this.cancellation || this.resources?.pending || this.evidence.hasPending) throw new SupervisorError('conflict');
+    if (this.hasPending()) throw new SupervisorError('conflict');
     this.closed = true;
     void this.resources?.close();
+    void this.live.close();
+  }
+  private hasPending(): boolean {
+    return !!(this.inFlight || this.cancellationWrite || this.cancellation || this.resources?.pending || this.live.pending || this.evidence.hasPending);
   }
   /** Fence public actor handles, drain originals, then inspect without producing new facts. */
   retireReleased(operation: Operation): Promise<void> {
@@ -103,6 +107,12 @@ export class LaunchActor {
     const original = this.retirement;
     void original.catch(() => { if (!this.retirementFailed && this.retirement === original) this.retirement = undefined; });
     return original;
+  }
+  readLiveMetrics(operation: Operation) {
+    if (this.fenced()) return Promise.resolve({ok: false as const, reason: 'closed' as const});
+    if (this.localCancel || this.observation?.state !== 'running') return Promise.resolve({ok: false as const, reason: 'unavailable' as const});
+    return this.live.read(operation).then(result => this.fenced() || this.localCancel || this.observation?.state !== 'running'
+      ? {ok: false as const, reason: 'closed' as const} : result);
   }
   private state(): LaunchState {
     return { observation: this.observation ? { ...this.observation } : null, launch: this.disposition, cancellation: this.cause };
@@ -127,7 +137,7 @@ export class LaunchActor {
   }
   private async load(): Promise<void> {
     const value = reservation(await this.journal.admission({ kind: 'reservation', key: this.input.key }));
-    this.authority ??= await captureAuthority(this.journal, this.input, value);
+    this.authority ??= await captureAuthority(this.journal, this.input, value, offer => this.live.approve(offer));
     validateReservation(this.input, value, this.authority);
     this.current = value;
     this.disposition = value.launchSettlement?.disposition ?? (value.createToken ? 'unknown' : 'unclaimed');
@@ -178,7 +188,7 @@ export class LaunchActor {
   }
   /** Also used by installed shutdown after controller originals have drained. */
   async closeTelemetry(): Promise<void> {
-    await this.resources?.close();
+    await Promise.all([this.resources?.close(), this.live.close()]);
     await this.evidence.flush();
     if (this.evidence.hasPending) throw new SupervisorError('journal_unavailable');
   }
@@ -284,6 +294,10 @@ export class LaunchActor {
     if ('id' in view && this.current!.runtimeId !== view.id) throw new SupervisorError('conflict');
     this.evidence.observe(view, this.time.wall(), this.durable?.cancelReason ?? this.cause);
     this.observation = { ...view };
+    this.recordTelemetry(view, recovered);
+  }
+  private recordTelemetry(view: Observation, recovered: boolean): void {
+    if (view.state === 'exited' || view.state === 'missing') void this.live.close();
     if (view.state === 'running') { this.resources?.running(recovered); this.resources?.tick(); }
   }
   private async settle(): Promise<void> {
