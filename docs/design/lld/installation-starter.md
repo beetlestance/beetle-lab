@@ -37,7 +37,9 @@ qualified minimum hardware. No automatic adoption of idle host cores or sensors.
 - Per run ceiling/default: CPU1000 millicores, memory512MiB, PID128,
   timeout300000ms, output64MiB. Profile k6-local. Retention manual.
 - Agent admission pool matches CPU/memory/PIDs/output; staging128MiB. Per-run
-  staging64MiB. Control reserve CPU250/memory128MiB/PID16; output/staging0.
+  staging64MiB. Control reserve CPU600/memory576MiB/PID160; output/staging0.
+  This matches Compose caps: backend/agent each CPU250,memory256MiB,PID64;
+  frontend CPU100,memory64MiB,PID32. These are hard ceilings, not idle measurements.
   Headroom CPU250/memory128MiB/PID16; output/staging0. MaxConcurrent2,
   MaxTimeout300000ms, observationTtl1000ms, requiredSensors[].
 - k6 image template version2.2.0, protocol1.0 range1.0..1.0, http capability,
