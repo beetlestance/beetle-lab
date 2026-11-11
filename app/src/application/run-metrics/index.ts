@@ -7,7 +7,7 @@ import { SemanticError } from '../../domain/namespaces/index.js';
 import { publication } from './archive.js';
 import type { Publication } from './archive.js';
 import { ArchiveIO } from './io.js';
-import { Operation } from './lifetime.js';
+import { MetricReadOperation as Operation } from '../metric-read-lifetime/index.js';
 import { descriptor, fail } from './values.js';
 import { samples } from './samples.js';
 function unavailable(q: RunMetricSeriesQuery, p: Publication): RunMetricSeriesPage {

@@ -3,7 +3,7 @@ import { ApiFault } from '../api-errors.js';
 import { RequestContext } from './context.js';
 
 export class RequestLifetimes {
-  constructor(private readonly limit = 64) {}
+  constructor(private readonly limit = 64, private readonly lifetimeMs = 30_000) {}
   private closed = false;
   private closing?: Promise<void>;
   private readonly active = new Set<RequestContext>();
@@ -12,7 +12,7 @@ export class RequestLifetimes {
   register(server: FastifyInstance): void {
     server.addHook('onRequest', async (request, reply) => {
       if (this.closed || this.active.size >= this.limit) throw new ApiFault('capacity_unavailable');
-      const context = new RequestContext(request, reply, () => this.active.delete(context));
+      const context = new RequestContext(request, reply, () => this.active.delete(context), this.lifetimeMs);
       this.active.add(context); this.requests.set(request, context); this.signals.set(context.signal, context);
     });
     server.addHook('onSend', async (request, reply, payload) => {

@@ -1,3 +1,5 @@
+import type { RunExecutionReader } from '../../../ports/run-live-metrics.js';
+import { captureExecutionReply } from './execution-binding/index.js';
 import { artifactReadOperation, captureArtifactReadReply } from './run-artifacts/index.js';
 import type { ArtifactReadOperation } from './run-artifacts/index.js';
 import type { RunArtifactsReader } from '../../../ports/run-artifacts.js';
@@ -48,7 +50,7 @@ export interface MetadataOptions extends Bootstrap {
   queueLimit?: number;
 }
 interface Pending { resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
-  artifacts?: ArtifactReadOperation; absence?: AbsenceOperation; finalization?: FinalizationOperation; result?: RunKey; runEvents?: RunEventsQuery; output?: OutputOperation; large: boolean; replyLimit: number; event?: EventOperation; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
+  artifacts?: ArtifactReadOperation; absence?: AbsenceOperation; finalization?: FinalizationOperation; result?: RunKey; execution?: RunKey; runEvents?: RunEventsQuery; output?: OutputOperation; large: boolean; replyLimit: number; event?: EventOperation; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
 function validateLocation(options: MetadataOptions): void {
   if (typeof options.path !== 'string' || !options.path || options.path === ':memory:' || options.path.length > 4096 ||
     !(options.workerUrl instanceof URL) || options.workerUrl.protocol !== 'file:') throw new StorageError('invalid_input');
@@ -89,6 +91,9 @@ export class Metadata {
   readonly runArtifacts: RunArtifactsReader = {
     listRunArtifacts: query => this.call({kind: 'listRunArtifacts', query}) as ReturnType<RunArtifactsReader['listRunArtifacts']>,
     getRunArtifact: key => this.call({kind: 'getRunArtifact', key}) as ReturnType<RunArtifactsReader['getRunArtifact']>,
+  };
+  readonly executions: RunExecutionReader = {
+    getRunExecution: key => this.call({kind: 'getRunExecution', key}) as ReturnType<RunExecutionReader['getRunExecution']>,
   };
   readonly results: RunResultReader = {
     getRunResult: key => this.call({ kind: 'getRunResult', key }) as ReturnType<RunResultReader['getRunResult']>,
@@ -235,11 +240,13 @@ export class Metadata {
     pending.resolve(value);
   }
   private bindReadRequest(pending: Pending, operation: Operation): void {
+    if (operation.kind === 'getRunExecution') pending.execution = operation.key;
     if (artifactReadOperation(operation)) pending.artifacts = operation;
     if (operation.kind === 'getRunEvents') pending.runEvents = operation.query;
     if (operation.kind === 'getRunResult') pending.result = operation.key;
   }
   private readReply(pending: Pending, value: unknown): Value | undefined {
+    if (pending.execution) return captureExecutionReply(pending.execution, value);
     if (pending.artifacts) return captureArtifactReadReply(pending.artifacts, value);
     if (pending.runEvents) return captureRunEventsReply(pending.runEvents, value);
     if (pending.result) return captureResultReply(pending.result, value);

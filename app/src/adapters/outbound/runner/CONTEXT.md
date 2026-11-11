@@ -25,3 +25,6 @@ Failures expose fixed typed categories; native exceptions/configuration stay pri
 Capacity mapping and freshness remain the capacity adapter's responsibility.
 Focused checks: `npx vitest run app/test/runner --maxWorkers=1`.
 Internal `gateway`/`native` seams exist for controlled original-custody tests only.
+
+Live reads use two of the same ordinary credits, separate from source transfer;
+fixed path,64KiB frame/freshness and late-abort checks follow actual native close.

@@ -1,3 +1,4 @@
+import type { RunnerLiveMetricGateway } from '../ports/run-live-metrics.js';
 import type { OutputByteStore } from '../ports/output-bytes.js';
 import type { CapacitySource, RuntimeObservation } from '../ports/runtime.js';
 import type { RunnerGateway } from '../ports/runner.js';
@@ -13,11 +14,13 @@ import type { RuntimePublisher } from './runtime-poller.js';
 import { throwCloseFailures } from './application-close.js';
 
 export interface AgentRuntime {
+  readonly liveMetrics?: RunnerLiveMetricGateway['liveMetrics'];
   readonly publishedBytes?: Pick<OutputByteStore, 'read'>;
   state(): RuntimePollerState;
   close(): Promise<void>;
 }
 interface OwnerOptions {
+  readonly liveMetrics?: RunnerLiveMetricGateway['liveMetrics'];
   readonly source: CapacitySource;
   readonly gateway: RunnerGateway;
   readonly metadata: DeliveryMetadata;
@@ -71,7 +74,8 @@ class AgentOwners implements AgentRuntime {
   }
   handle(): AgentRuntime {
     if (this.outputFailure) throw this.outputFailure.error;
-    return Object.freeze({ ...(this.outputReadView ? {publishedBytes: this.outputReadView} : {}), state: () => this.state(), close: () => this.close() });
+    return Object.freeze({ ...(this.options.liveMetrics ? {liveMetrics: ((identity, signal) => this.closed
+      ? Promise.resolve({ok: false, error: {kind: 'cancelled'}}) : this.options.liveMetrics!(identity, signal)) as RunnerLiveMetricGateway['liveMetrics']} : {}), ...(this.outputReadView ? {publishedBytes: this.outputReadView} : {}), state: () => this.state(), close: () => this.close() });
   }
   private publishCapacity(observation: RuntimeObservation | null): Promise<boolean> {
     if (observation !== null && (this.deliveryFailed || this.outputFailure || this.producerFailure || this.closed)) return Promise.resolve(false);
@@ -144,14 +148,14 @@ class AgentOwners implements AgentRuntime {
 /** Once called, this factory owns source/gateway even when startup fails. */
 export async function openAgentOwners(options: OwnerOptions): Promise<AgentRuntime> {
   const source = options.source; const gateway = options.gateway; const metadata = options.metadata;
-  const openOutputs = options.openOutputs;
+  const openOutputs = options.openOutputs; const liveMetrics = options.liveMetrics;
   const closeSource = source.close.bind(source); const closeGateway = gateway.close.bind(gateway);
   let owner: AgentOwners | undefined;
   try {
     const capturedSource = { sample: source.sample.bind(source), close: closeSource };
     const capturedMetadata = captureDeliveryMetadata(metadata);
     owner = new AgentOwners({ source: capturedSource, gateway: captureGateway(gateway), metadata: capturedMetadata,
-      ...(openOutputs ? { openOutputs } : {}) });
+      ...(openOutputs ? { openOutputs } : {}), ...(liveMetrics ? {liveMetrics} : {}) });
     await owner.start();
     return owner.handle();
   }

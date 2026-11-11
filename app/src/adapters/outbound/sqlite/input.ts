@@ -1,3 +1,4 @@
+import { executionOperation, captureExecutionOperation } from './execution-binding/index.js';
 import { artifactReadOperation, captureArtifactReadOperation } from './run-artifacts/index.js';
 import { runEventsOperation, captureRunEventsOperation } from './run-events/index.js';
 import { absenceOperation, captureAbsenceOperation } from './output-absence/index.js';
@@ -120,6 +121,10 @@ function checkedExtendedOperation(operation: Operation): boolean {
   return settingsRead(operation);
 }
 export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operation {
+  if (executionOperation(input)) {
+    try { return captureExecutionOperation(input); } catch { throw new StorageError('invalid_input'); }
+  }
+
   if (artifactReadOperation(input)) {
     try { return captureArtifactReadOperation(input); } catch { throw new StorageError('invalid_input'); }
   }
@@ -203,5 +208,5 @@ export function operationReplyLimit(operation: Operation): number {
 /** Fixed small control/read requests never use large payload envelopes. */
 function compactOperation(operation: Operation): boolean {
   return artifactReadOperation(operation) || runEventsOperation(operation) || absenceOperation(operation) || finalizationOperation(operation)
-    || resultOperation(operation) || artifactOperation(operation);
+    || executionOperation(operation) || resultOperation(operation) || artifactOperation(operation);
 }

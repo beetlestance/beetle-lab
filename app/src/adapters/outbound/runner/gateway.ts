@@ -1,6 +1,7 @@
+import { readLiveMetrics } from './live-metrics.js';
 import { createRunnerClient, validatePrimitive } from '@beetle/contracts';
 import type { LoadedAgentConfiguration, RunnerAttemptClient } from '../../../ports/runner.js';
-import type { RunnerOutputAbsenceGateway } from '../../../ports/output-absence.js';
+import type { RunnerLiveMetricGateway } from '../../../ports/run-live-metrics.js';
 import { captureIdentity } from './identity.js';
 import { CallCredits } from './lifetime.js';
 import type { NativeIo } from './native.js';
@@ -25,10 +26,11 @@ function capture(loaded: LoadedAgentConfiguration): { origin: URL; token: string
 }
 
 /** Internal composition seam; public construction always uses real Node I/O. */
-export function openGateway(loaded: LoadedAgentConfiguration, io: NativeIo): RunnerOutputAbsenceGateway {
+export function openGateway(loaded: LoadedAgentConfiguration, io: NativeIo): RunnerLiveMetricGateway {
   const connection = { ...capture(loaded), credits: new CallCredits(), io };
   const client = createRunnerClient(createTransport(connection));
   return Object.freeze({
+    liveMetrics: (identity, signal) => readLiveMetrics(connection, captureIdentity(identity), signal),
     capabilities: (signal?: AbortSignal) => client.capabilities(signal),
     output: identity => createSourceClient(connection, captureIdentity(identity)),
     attempt: identity => {
@@ -45,5 +47,5 @@ export function openGateway(loaded: LoadedAgentConfiguration, io: NativeIo): Run
       return Object.freeze(facade);
     },
     close: () => connection.credits.close(),
-  } satisfies RunnerOutputAbsenceGateway);
+  } satisfies RunnerLiveMetricGateway);
 }

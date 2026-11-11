@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "scope": {
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002",
+    "attemptId": "00000000-0000-4000-8000-000000000006",
+    "generation": 1
+  },
+  "producerEpoch": "00000000-0000-4000-8000-000000000004",
+  "subset": {
+    "selected": [
+      {
+        "ordinal": 0,
+        "metric": "beetle_requests",
+        "kind": "counter",
+        "scope": "execute",
+        "tags": {
+          "phase": "execute",
+          "request": "r0"
+        }
+      }
+    ],
+    "excludedSeries": 0
+  },
+  "subsetDigest": "521314b9490e26192899786a1feda12a1e8a5321351dadbfaa529bdbaa6d6fea",
+  "sourceSequence": 1,
+  "publishedSequence": 1,
+  "coalescedWindows": 0,
+  "capturedAtMs": 1000,
+  "publishedAtMs": 1000,
+  "startTimeMs": 0,
+  "endTimeMs": 1000,
+  "upstreamCoverage": "unknown",
+  "series": []
+}

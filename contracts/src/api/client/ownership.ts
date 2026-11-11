@@ -1,3 +1,5 @@
+import { liveMetricScopeMatches } from '../live-metrics.js';
+import type { LiveMetricSnapshot } from '../generated/types.js';
 import { runMetricSeriesPageMatches, runMetricSamplesPageMatches } from './run-metric-ownership.js';
 import type { RunMetricSeriesPage, RunMetricSamplesPage } from '../generated/types.js';
 import type { ApiOperation } from '../generated/operations.js';
@@ -99,6 +101,8 @@ function sourceAncestry(scope: SettingsScope, effective: EffectiveSettings): boo
 /** Structural validation precedes this route/body/result binding. Backend SQL authorization is independent. */
 export function responseOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
   if (session(operation)) return true;
+  if (operation.response === 'LiveMetricSnapshot') return liveMetricScopeMatches((value as LiveMetricSnapshot).scope,
+    {organizationId: input.params.organizationId!, workspaceId: input.params.workspaceId!, attemptId: input.params.attemptId!, generation: 1});
   if (operation.response === 'RunEventPage') return runEventPageMatches(value as RunEventPage, { id: input.params.runId!,
     scope: routeOwner(input) as RunEventPage['scope'], ...input.query! });
   if (operation.response === 'RunArtifactPage') return runArtifactPageMatches(value as RunArtifactPage, { id: input.params.runId!,

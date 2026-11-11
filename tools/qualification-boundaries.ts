@@ -2,6 +2,11 @@ const owner = 'tools/qualification/native-application/';
 const entrypoints = new Set([
   'app/src/bootstrap/api.js', 'app/src/bootstrap/configuration.js',
   'app/src/ports/events.js',
+  'app/src/ports/run-metrics.js', 'app/src/application/run-live-metrics/index.js',
+  'app/src/adapters/outbound/runner/index.js', 'app/src/adapters/outbound/sqlite/execution-binding/index.js',
+  'app/test/run-live-metrics/fixtures.js', 'app/test/run-results/fixture.js',
+  'app/test/runner/fixtures.js', 'app/test/http/run-metrics/fixture.js',
+  'agent/src/transport/index.js',
   'agent/src/bootstrap/index.js', 'agent/src/installation-state/index.js',
   'agent/src/journal/index.js', 'agent/src/backends/docker/index.js',
   'engines/k6/wrapper/live-mailbox/index.js',

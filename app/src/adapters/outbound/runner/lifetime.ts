@@ -57,22 +57,24 @@ export class CallCredits {
   private offers = 0;
   private ordinary = 0;
   private sources = 0;
+  private live = 0;
   private closed = false;
   private closing: Promise<void> | undefined;
 
-  private full(kind: 'offer' | 'ordinary' | 'source'): boolean {
+  private full(kind: 'offer' | 'ordinary' | 'source' | 'live'): boolean {
     if (this.closed) return true;
     if (kind === 'offer') return this.offers >= 2;
-    return this.ordinary >= 8 || (kind === 'source' && this.sources >= 2);
+    return this.ordinary >= 8 || (kind === 'source' && this.sources >= 2) || (kind === 'live' && this.live >= 2);
   }
 
-  private count(kind: 'offer' | 'ordinary' | 'source', delta: number): void {
+  private count(kind: 'offer' | 'ordinary' | 'source' | 'live', delta: number): void {
     if (kind === 'offer') this.offers += delta;
     else this.ordinary += delta;
     if (kind === 'source') this.sources += delta;
+    if (kind === 'live') this.live += delta;
   }
 
-  async run<T>(kind: 'offer' | 'ordinary' | 'source', caller: AbortSignal | undefined,
+  async run<T>(kind: 'offer' | 'ordinary' | 'source' | 'live', caller: AbortSignal | undefined,
     work: (call: OriginalCall) => Promise<ClientResult<T>>): Promise<ClientResult<T>> {
     if (this.full(kind)) {
       return { ok: false, error: { kind: 'transport' } };

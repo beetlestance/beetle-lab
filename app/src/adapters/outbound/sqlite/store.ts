@@ -1,3 +1,4 @@
+import { RunExecutions } from './execution-binding/index.js';
 import { RunArtifacts, artifactReadOperation } from './run-artifacts/index.js';
 import { OutputAbsences, absenceOperation } from './output-absence/index.js';
 import { OutputFinalizations, finalizationOperation } from './output-finalization/index.js';
@@ -39,6 +40,7 @@ export function safeCode(error: unknown): ErrorCode {
 export class Store {
   private readonly absences: OutputAbsences;
   private readonly finalizations: OutputFinalizations;
+  private readonly executions: RunExecutions;
   private readonly results: RunResults;
   private readonly runArtifacts: RunArtifacts;
   private readonly runEvents: RunEvents;
@@ -69,6 +71,7 @@ export class Store {
     this.runs = new Runs(db, this.suites, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
     this.runReads = new RunReads(db, this.suites);
     this.runArtifacts = new RunArtifacts(db, this.runReads);
+    this.executions = new RunExecutions(db, this.runReads);
     this.results = new RunResults(db, this.runReads);
     this.runEvents = new RunEvents(db, this.runReads);
     this.runCancellations = new RunCancellations(db, this.runReads);
@@ -152,6 +155,7 @@ export class Store {
     if (absenceOperation(operation)) return this.absences.execute(operation);
     if (finalizationOperation(operation)) return this.finalizations.execute(operation);
     if (operation.kind === 'getRunEvents') return this.runEvents.get(operation.query);
+    if (operation.kind === 'getRunExecution') return this.executions.get(operation.key);
     if (operation.kind === 'getRunResult') return this.results.get(operation.key);
     if (outputOperation(operation)) return this.outputs.execute(operation);
     if (eventOperation(operation)) return this.events.execute(operation);

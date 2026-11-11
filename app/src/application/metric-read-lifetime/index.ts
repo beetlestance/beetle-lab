@@ -1,14 +1,13 @@
 import { MetricReadError } from '../../ports/run-metrics.js';
 import { SemanticError } from '../../domain/namespaces/index.js';
 import type { MetricReadContext } from '../../ports/run-metrics.js';
-import type { ReadOwner } from './io.js';
 /** Caller failure can precede original settlement; the service retains this owner. */
-export class Operation implements ReadOwner {
+export class MetricReadOperation {
   readonly controller: AbortController; readonly signal: AbortSignal; readonly deadline: number;
   private readonly timer: ReturnType<typeof setTimeout>;
-  constructor(context: MetricReadContext) {
+  constructor(context: MetricReadContext, maximumMs = 30000) {
     if (!(context.signal instanceof AbortSignal) || !Number.isFinite(context.deadline)) throw new SemanticError('invalid_value');
-    this.deadline = Math.min(context.deadline, performance.now() + 30000);
+    this.deadline = Math.min(context.deadline, performance.now() + maximumMs);
     this.controller = new AbortController(); this.signal = AbortSignal.any([context.signal, this.controller.signal]);
     this.timer = setTimeout(() => this.controller.abort(), Math.max(0, this.deadline - performance.now())); this.timer.unref?.();
   }

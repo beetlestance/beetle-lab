@@ -1,10 +1,10 @@
 import type { LoadedAgentConfiguration } from '../../../ports/runner.js';
-import type { RunnerOutputAbsenceGateway } from '../../../ports/output-absence.js';
+import type { RunnerLiveMetricGateway } from '../../../ports/run-live-metrics.js';
 import { openGateway } from './gateway.js';
 import { nativeIo } from './native.js';
 
 /** Installation-owned, bounded Node HTTP gateway. Closing retains original I/O. */
-export function createRunnerGateway(loaded: LoadedAgentConfiguration): RunnerOutputAbsenceGateway {
+export function createRunnerGateway(loaded: LoadedAgentConfiguration): RunnerLiveMetricGateway {
   return openGateway(loaded, nativeIo);
 }
 

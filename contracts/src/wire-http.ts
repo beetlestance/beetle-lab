@@ -18,6 +18,7 @@ export interface WireTransport<S extends object, E> {
 export interface WireRegistry<S extends object, E> {
   pathPrefix: '/runner/v1/' | '/api/v2/';
   /** Shipped request-only bounds; explicit caller limits can further restrict them. */
+  responseMaximumBytes?: Readonly<Partial<Record<MessageName<S>, number>>>;
   requestMaximumBytes?: Readonly<Partial<Record<MessageName<S>, number>>>;
   validate<N extends MessageName<S>>(name: N, input: unknown): ValidationResult<S[N]>;
   validateError(input: unknown): ValidationResult<E>;
@@ -101,7 +102,7 @@ async function send<S extends object, E, N extends MessageName<S>>(options: Reso
     }, signal);
   } catch { return { ok: false, error: { kind: interrupted(signal, call.signal, 'transport') } }; }
   let input: unknown;
-  try { input = await readJson(response, options.maximumBytes, signal); }
+  try { input = await readJson(response, Math.min(options.maximumBytes, registry.responseMaximumBytes?.[call.response] ?? options.maximumBytes), signal); }
   catch { return { ok: false, error: { kind: interrupted(signal, call.signal, 'response'), status: response.status } }; }
   return reply(response, input, call, registry);
 }

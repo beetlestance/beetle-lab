@@ -458,5 +458,14 @@
     "error": "ApiError",
     "params": "RunAttemptParams",
     "query": "RunMetricSamplesQuery"
+  },
+  {
+    "name": "getRunLiveMetrics",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics/live",
+    "response": "LiveMetricSnapshot",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunAttemptParams"
   }
 ]

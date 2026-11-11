@@ -61,7 +61,7 @@ export async function openAgentRuntime(options: AgentRuntimeOptions, metadata: M
     catch (closeError) { throw new AggregateError([error, closeError], 'Agent runtime startup failed', { cause: closeError }); }
     throw error;
   }
-  return openAgentOwners({ source, gateway: capturedGateway, metadata: deliveryMetadata,
+  return openAgentOwners({liveMetrics: gateway.liveMetrics.bind(gateway), source, gateway: capturedGateway, metadata: deliveryMetadata,
     openOutputs: async onFailure => {
       const outputs = await openOutputRuntime({dataRoot, ...outputMetadata, gateway: outputGateway, freeSpaceReserveBytes, onFailure});
       if (typeof outputs.publishedBytes?.read !== 'function') {

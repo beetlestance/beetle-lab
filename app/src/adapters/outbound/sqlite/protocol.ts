@@ -1,3 +1,4 @@
+import type { RunExecutionSnapshot } from '../../../ports/run-live-metrics.js';
 import type { RunArtifactListQuery, RunArtifactKey } from '../../../ports/run-artifacts.js';
 import type { RunEventsQuery } from '../../../ports/run-events.js';
 import type { AbsenceOperation } from './output-absence/operations.js';
@@ -55,6 +56,7 @@ export type Operation = AbsenceOperation
   | { kind: 'cancelRun'; command: CancelRunCommand }
   | { kind: 'getRun'; key: RunKey }
   | { kind: 'getRunResult'; key: RunKey }
+  | { kind: 'getRunExecution'; key: RunKey }
   | { kind: 'getRunEvents'; query: RunEventsQuery }
   | { kind: 'listRunArtifacts'; query: RunArtifactListQuery }
   | { kind: 'getRunArtifact'; key: RunArtifactKey }
@@ -78,7 +80,7 @@ export type Operation = AbsenceOperation
   | { kind: 'getSettingsIdentity'; scope: SettingsScope }
   | { kind: 'runtime'; runtime: RuntimeObservation | null }
   | { kind: 'close' };
-export type Value = OutputAbsenceState | OutputAbsenceFinalizationReply | OutputFinalizationReply | OutputFileRecord | OutputCustodyState | OutputPage | Owned<SourceEnvelope> | EventPage | EventCursorState | EventIngestResult | DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | RunResultSnapshot | RunEventPage | RunArtifactPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
+export type Value = RunExecutionSnapshot | OutputAbsenceState | OutputAbsenceFinalizationReply | OutputFinalizationReply | OutputFileRecord | OutputCustodyState | OutputPage | Owned<SourceEnvelope> | EventPage | EventCursorState | EventIngestResult | DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | RunResultSnapshot | RunEventPage | RunArtifactPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
 export type Command = Operation & { messageId: number };
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; messageId: number; ok: true; value: Value } |
