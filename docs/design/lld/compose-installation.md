@@ -73,3 +73,39 @@ failures or reset shared data to obtain success. Only recorded owned containers/
 networks/temp data may be cleaned. No global prune/push/deploy.
 Native amd64, published pull installation, browser, scans, measured overhead and
 full feature/recovery qualification remain distinct release checks.
+
+## First-use launcher
+
+The next first-use packet adds deploy/local/beetle (POSIX shell) and a packaged
+local setup CLI. Commands up/stop/status/token accept --directory; up also accepts
+--port, --socket, --docker-gid and --build. No host Node/npm dependency. Source-build
+mode requires a Git checkout; derive a safe revision tag and rebuild dirty/missing
+images rather than reusing stale source. Use an explicit optional BEETLE_BUILDER
+without changing Docker context/default builder; build services serially.
+
+CLI tools/install/local-cli.ts exports runLocalSetupCli(argv) and accepts exact
+pairs --directory ABS --uid N --gid N --docker-gid N --docker-socket ABS --port N
+--revision TAG, with optional --instance NAME. It creates private directory/setup
+and directory/data, setup/options.json, request.json and compose.env using existing
+starter/capture semantics. Default instance is a stable hash of the canonical
+directory. All caller-owned paths/IDs/URLs/images are derived once consistently.
+No credentials or installation authority are created by this configuration step.
+New files0600/directories0700, current positive owner, canonical/no-follow identities,
+exclusive creation; no overwrite/chown/recursive repair/delete on failures. Existing
+complete matching configuration returns unchanged; partial/conflicting state fails
+explicitly and remains preserved. Never ignore native close/rename/sync errors.
+
+The launcher resolves the actual local Unix socket (remote daemons unsupported in
+this local profile), probes its container-visible group with a bounded finite image,
+and prepares config through the packaged CLI as the common non-root owner. Compose
+uses --env-file, never shell-evals generated config. Preserve spaces safely; reject
+unsupported delimiter/control paths explicitly. Do not read an unrelated repo .env.
+
+up builds missing/explicitly requested source images, provisions only a fresh root,
+and starts the three services. Existing ready installation skips offline provisioning
+while serving. Do not rewrite settings/credentials or silently migrate image pins.
+Print the loopback URL and how to obtain the latest startup token; token is the only
+explicit command that prints that local bootstrap credential. stop preserves data;
+status is read-only. No global prune, published tags or legacy-default replacement.
+Worker owns local CLI/helpers, launcher, focused tests and deploy/local README;
+coordinator owns build entry/recipes, integration and actual Docker/browser proof.
