@@ -49,7 +49,7 @@ async function assertDirectory(path: string, expected: BigIntStats): Promise<voi
 }
 /** New private file only; a partial/unknown write is retained, never overwritten. */
 export async function writeCredentials(path: string, text: string): Promise<void> {
-  let parent: Awaited<ReturnType<typeof privateDirectory>> | undefined; let file; let failed = false;
+  let parent: Awaited<ReturnType<typeof privateDirectory>> | undefined; let file: FileHandle | undefined; let failed = false;
   try {
     if (Buffer.byteLength(text) > 4096) failure(); parent = await privateDirectory(path);
     file = await open(path, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600);
