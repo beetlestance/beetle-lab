@@ -5,6 +5,7 @@ import type { RunScope } from '../types.js';
 import { evidence, valueNumber } from '../metrics/Chart.js';
 import { useLiveMetrics } from './useLiveMetrics.js';
 import type { LiveMetricReads } from './read.js';
+import {DroppedLoad} from '../load-advice/index.js';
 export function RunLiveMetrics({run, scope, runId, reads}: {
   run: Run; scope: RunScope; runId: string; reads?: Pick<LiveMetricReads, 'read'>;
 }) {
@@ -18,11 +19,12 @@ export function RunLiveMetrics({run, scope, runId, reads}: {
     {state.status === 'paused' && <p role="status">Live metrics paused.</p>}
     {state.status === 'unavailable' && <p role="status">Live metrics unavailable. Waiting for the next update.</p>}
     {state.status === 'stale' && <p role="status">Live metrics expired. Waiting for a fresh source window.</p>}
-    {state.status === 'ready' && <Latest frame={state.value.frame} />}</section>;
+    {state.status === 'ready' && <Latest frame={state.value.frame} k6={run.engine.id==='k6'} />}</section>;
 }
-function Latest({frame}: {frame: LiveMetricSnapshot}) {
+function Latest({frame,k6}: {frame: LiveMetricSnapshot;k6:boolean}) {
   return <><p>Source window: <time>{new Date(frame.startTimeMs).toISOString()}</time> – <time>{new Date(frame.endTimeMs).toISOString()}</time>.
     {' '}Upstream coverage: {frame.upstreamCoverage}. {frame.coalescedWindows} coalesced windows; {frame.subset.excludedSeries} series excluded.</p>
+    {k6&&<DroppedLoad rows={frame.series} coverage={frame.upstreamCoverage} scope="live window" />}
     <div className="metric-table" tabIndex={0} role="region" aria-label="Live metric values"><table><thead><tr>
       <th scope="col">Metric</th><th scope="col">Scope / labels</th><th scope="col">Window value</th><th scope="col">Evidence</th></tr></thead>
       <tbody>{frame.subset.selected.map(selected => {

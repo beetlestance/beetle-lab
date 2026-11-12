@@ -72,8 +72,7 @@ installation, shipped images/Compose, scans, backup/restore, bounded soak/overhe
 and native amd64/arm64 evidence. No complete R0-R4 release is claimed.
 
 The [remaining parity checklist](docs/verification/functional-parity.md) also keeps
-dashboard rollups and dropped-load guidance open until their inventory acceptance
-fixtures are closed. [Contextual command search](docs/verification/command-search.md) is locally implemented; native browser qualification remains. [Embedded reference/agent downloads](docs/verification/embedded-reference.md) are locally implemented with source-image HTTP evidence. These are
+dashboard rollups open. [Observed load guidance](docs/verification/load-advice.md) is locally implemented; native warning classification and configured-scenario guidance remain open. [Contextual command search](docs/verification/command-search.md) is locally implemented; native browser qualification remains. [Embedded reference/agent downloads](docs/verification/embedded-reference.md) are locally implemented with source-image HTTP evidence. These are
 functional obligations, separate from the deferred UI redesign.
 
 First local usage is now evidenced through [fresh source setup and browser execution](docs/verification/first-use.md): namespace/test authoring, real k6, durable result, chart, history and one hash-verified download. This does not close the remaining product or release qualification work.
