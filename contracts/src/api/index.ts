@@ -1,6 +1,8 @@
 export type * from './generated/types.js';
 export { apiSchemas, apiMessageSchemas } from './generated/schemas.js';
 export { apiOperations } from './generated/operations.js';
+export {apiBinaryOperations} from './binary-reference.js';
+export {INPUT_CHUNK_ROUTE,INPUT_CONTENT_ROUTE,INPUT_CHUNK_BYTES,inputChunkPath,inputContentPath} from './input-content.js';
 export type { ApiOperation } from './generated/operations.js';
 export { validateApi } from './validate.js';
 export { API_MAXIMUM_JSON_BYTES, SUITE_MAXIMUM_CONFIG_BYTES, RUN_EVENT_PAGE_BYTES, RUN_ARTIFACT_PAGE_BYTES, RUN_METRIC_PAGE_BYTES } from './limits.js';

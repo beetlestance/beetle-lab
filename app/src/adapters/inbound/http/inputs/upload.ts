@@ -1,16 +1,16 @@
 import { Readable } from 'node:stream';
 import type { FastifyInstance } from 'fastify';
-import { apiMessageSchemas } from '@beetle/contracts/api';
+import { apiMessageSchemas,INPUT_CHUNK_ROUTE } from '@beetle/contracts/api';
 import { ApiFault } from '../api-errors.js';
 import { ChunkBody } from './body.js';
 import type { RequestLifetimes } from './lifetime.js';
 import type { InputRouteOptions } from './types.js';
-import { chunkOffset, inputPath, routeKey } from './validation.js';
+import { chunkOffset, routeKey } from './validation.js';
 import { checkedRecord } from './response.js';
 
 export function registerUpload(server: FastifyInstance, options: InputRouteOptions, owners: RequestLifetimes): void {
   server.addContentTypeParser('application/octet-stream', (_request, payload, done) => done(null, payload));
-  server.route({ method: 'PUT', url: `${inputPath}/:inputId/chunks`,
+  server.route({ method: 'PUT', url: INPUT_CHUNK_ROUTE,
     schema: { response: { 200: apiMessageSchemas.InputRecord } },
     handler: async (request, reply) => {
       const owner = owners.forRequest(request);

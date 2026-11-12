@@ -1,14 +1,15 @@
 import type { FastifyInstance } from 'fastify';
+import {INPUT_CONTENT_ROUTE} from '@beetle/contracts/api';
 import { apiErrorResponse } from '../api-errors.js';
 import { header } from './headers.js';
 import type { RequestLifetimes } from './lifetime.js';
 import type { InputRouteOptions } from './types.js';
-import { inputPath, routeKey } from './validation.js';
+import { routeKey } from './validation.js';
 import { selectRange } from './ranges.js';
 import { beginContent, checkedRecord, writeContent } from './response.js';
 
 export function registerContent(server: FastifyInstance, options: InputRouteOptions, owners: RequestLifetimes): void {
-  server.route({ method: 'GET', url: `${inputPath}/:inputId/content`, exposeHeadRoute: false,
+  server.route({ method: 'GET', url: INPUT_CONTENT_ROUTE, exposeHeadRoute: false,
     handler: async (request, reply) => {
       const owner = owners.forRequest(request); const key = routeKey(request);
       const record = checkedRecord(await owner.run(() => options.inputs.get(key)));

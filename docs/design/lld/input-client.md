@@ -117,3 +117,11 @@ Never lower existing gates/deadlines.
 An actual task-owned HTTP fixture verifies the client against the shipped routes.
 Browser/session epoch integration, UI and frontend proxy semantics need separate
 acceptance; unit streams cannot qualify real browser buffering or container behavior.
+
+## Reference and path ownership
+
+Public INPUT_CHUNK_ROUTE/INPUT_CONTENT_ROUTE and inputChunkPath/inputContentPath
+own the existing URI templates; client and server share them. INPUT_CHUNK_BYTES
+remains 65,536. apiBinaryOperations documents those same routes for the embedded
+reference, including offset, media type and full-file verification. No new route,
+retry, request identity, authorization or byte allowance is introduced.

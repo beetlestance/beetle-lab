@@ -10,6 +10,7 @@ released application until the rewrite is qualified.
 | UI redesign timing | [Decision012](decisions/012-ui-redesign-after-functional-rewrite.md) | Functional completion first; separate UI audit and redesign plan afterward |
 | Frontend/assets/SDK choices | [Discussion](design/frontend-decisions.md) | Options and unresolved decisions |
 | Audit unfinished product parity | [Remaining parity](verification/functional-parity.md) | Targeted source gaps and pending inventory acceptance; separate from UI redesign |
+| Inspect embedded API/agent reference | [Reference evidence](verification/embedded-reference.md) | Generated schemas, binary guide, standalone instructions and source-image asset delivery |
 | What exists today | [Feature inventory](current-features.md) | Source-grounded capability checklist |
 | System boundaries | [HLD](design/HLD.md) | Component ownership and deployment |
 | Implement a feature | [LLD index](design/LLD.md), then its owner spec | Wire formats, state and failure behavior |

@@ -15,6 +15,7 @@ const RunComparison = lazy(() => import('../features/runs/comparison/index.js').
 const Runs = lazy(() => import('../features/runs/index.js').then(module => ({ default: module.Runs })));
 const Suites = lazy(() => import('../features/suites/index.js').then(module => ({ default: module.Suites })));
 const Settings = lazy(() => import('../features/settings/index.js').then(module => ({ default: module.Settings })));
+const Reference = lazy(() => import('../features/reference/index.js').then(module => ({default: module.Reference})));
 
 /** Router is supplied by the host: BrowserRouter in production, MemoryRouter in tests. */
 export function App({ apiClient, inputTransfers }: { apiClient: ApiClient; inputTransfers?: InputTransferClient }) {
@@ -23,12 +24,13 @@ export function App({ apiClient, inputTransfers }: { apiClient: ApiClient; input
     <div className="app-shell"><a className="skip-link" href="#main">Skip to content</a>
       <aside className="sidebar"><Link className="wordmark" to={routes.organizations}><span className="brand-mark" aria-hidden="true">b.</span>beetle<span className="wordmark-detail">lab</span></Link>
         <p className="sidebar-caption">Local performance testing</p>
-        <nav aria-label="Main navigation"><Link className="sidebar-link" to={routes.organizations}>Organizations <span aria-hidden="true">↗</span></Link><Link className="sidebar-link" to={routes.settings}>Installation settings</Link></nav>
+        <nav aria-label="Main navigation"><Link className="sidebar-link" to={routes.organizations}>Organizations <span aria-hidden="true">↗</span></Link><Link className="sidebar-link" to={routes.settings}>Installation settings</Link><Link className="sidebar-link" to={routes.reference}>API reference</Link></nav>
         <div className="sidebar-bottom"><span>Appearance</span><ThemePicker /></div>
       </aside>
       <main id="main" tabIndex={-1}><div className="topbar"><span>Namespace browser</span><span>Beetle Lab</span></div>
         <EditorProvider><div className="page-content"><Suspense fallback={<p role="status">Loading view…</p>}>
           <Routes>
+            <Route path={routes.reference} element={<Reference />} />
             <Route path={routes.comparisonPattern} element={<ComparisonRoute />} />
             <Route path={routes.runsPattern} element={<RunsRoute />} />
             <Route path={routes.runPattern} element={<RunsRoute />} />

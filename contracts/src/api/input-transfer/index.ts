@@ -29,7 +29,7 @@ async function transfer<T>({ owner, request, config, append, consume }: Transfer
   try {
     owner.check();
     owner.issued = true;
-    const response = await config.fetch(config.base + path(request.record) + (append ? `/chunks?offset=${request.offset}` : '/content'), fetchInit(owner, request, config, append) );
+    const response = await config.fetch(config.base + path(request.record,append,request.offset), fetchInit(owner, request, config, append) );
     status = response.status;
     owner.acquire(response.body);
     owner.check();

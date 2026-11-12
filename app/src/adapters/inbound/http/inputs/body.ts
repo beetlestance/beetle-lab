@@ -1,5 +1,6 @@
 import type { Readable } from 'node:stream';
 import { ApiFault } from '../api-errors.js';
+import {INPUT_CHUNK_BYTES} from '@beetle/contracts/api';
 
 /** Lazy: listeners and reads start only when InputService invokes the source. */
 export class ChunkBody {
@@ -10,7 +11,7 @@ export class ChunkBody {
   }
   async read(): Promise<Uint8Array> {
     if (this.signal.aborted) this.fail('storage_unavailable');
-    const buffer = Buffer.allocUnsafe(65_536);
+    const buffer = Buffer.allocUnsafe(INPUT_CHUNK_BYTES);
     let size = 0;
     const abort = () => this.stream.destroy(new ApiFault('storage_unavailable'));
     this.signal.addEventListener('abort', abort, { once: true });

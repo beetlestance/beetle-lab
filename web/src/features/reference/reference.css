@@ -1,0 +1,10 @@
+.reference-schema {
+  max-height: 32rem;
+  overflow: auto;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-small);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  white-space: pre;
+}

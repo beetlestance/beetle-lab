@@ -2,6 +2,7 @@ import { encodeJson } from '../../json.js';
 import type { InputRecord } from '../generated/types.js';
 import type { InputTransferOptions } from '../input-transfer-types.js';
 import { validateApi } from '../validate.js';
+import {inputChunkPath,inputContentPath,INPUT_CHUNK_BYTES} from '../input-content.js';
 
 export interface Configuration { base: string; fetch: typeof fetch; headers: Record<string, string>; timeout: number }
 export interface Intent { record: InputRecord; signal: AbortSignal | undefined; offset: number; chunk: Uint8Array<ArrayBuffer> | undefined }
@@ -86,7 +87,7 @@ export function signal(input: unknown): AbortSignal | undefined {
 function chunk(input: unknown): Uint8Array<ArrayBuffer> {
   if (!(input instanceof Uint8Array) || Object.getPrototypeOf(input) !== Uint8Array.prototype) throw new Error('invalid');
   const length: unknown = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(Uint8Array.prototype), 'length')?.get?.call(input);
-  if (typeof length !== 'number' || length < 1 || length > 65_536) throw new Error('invalid');
+  if (typeof length !== 'number' || length < 1 || length > INPUT_CHUNK_BYTES) throw new Error('invalid');
   const copy = new Uint8Array(length);
   Uint8Array.prototype.set.call(copy, input);
   return copy;
@@ -109,6 +110,7 @@ export function intent(input: unknown, append: boolean): Intent {
   if (!append && value.state !== 'published') throw new Error('invalid');
   return { record: value, signal: signal(data.signal), ...(append ? appendFields(data, value) : { offset: 0, chunk: undefined }) };
 }
-export function path(value: InputRecord): string {
-  return `/api/v2/organizations/${value.scope.organizationId}/workspaces/${value.scope.workspaceId}/inputs/${value.id}`;
+export function path(value: InputRecord,append:boolean,offset:number): string {
+  const params={organizationId:value.scope.organizationId,workspaceId:value.scope.workspaceId,inputId:value.id};
+  return append?inputChunkPath(params,offset):inputContentPath(params);
 }

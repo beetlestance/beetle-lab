@@ -1,6 +1,7 @@
 import { validateApi } from '@beetle/contracts/api';
 
 export const routes = {
+  reference: '/reference',
   runsPattern: '/organizations/:organizationId/workspaces/:workspaceId/runs',
   comparisonPattern: '/organizations/:organizationId/workspaces/:workspaceId/runs/compare',
   comparison: (org: string, workspace: string, ids: readonly string[]) => `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/runs/compare?runs=${ids.map(encodeURIComponent).join(',')}`,
@@ -25,6 +26,7 @@ export const routes = {
   workspace: (organizationId: string, workspaceId: string) =>
     `/organizations/${encodeURIComponent(organizationId)}/workspaces/${encodeURIComponent(workspaceId)}`,
 };
+export {referenceDownloads} from './reference-downloads.js';
 
 export function validId(value: string | undefined): value is string {
   return validateApi('Uuid', value).ok;

@@ -1,5 +1,6 @@
 import type { FastifyRequest } from 'fastify';
 import { ApiFault } from '../api-errors.js';
+import {INPUT_CHUNK_BYTES} from '@beetle/contracts/api';
 
 import { header } from '../byte-content.js';
 export { header } from '../byte-content.js';
@@ -10,7 +11,7 @@ export function uploadHeaders(request: FastifyRequest): void {
   const length = header(request, 'content-length');
   if (length === undefined) return;
   if (!/^[1-9][0-9]{0,15}$/.test(length)) throw new ApiFault('malformed_request');
-  if (Number(length) > 65_536) throw new ApiFault('body_limit');
+  if (Number(length) > INPUT_CHUNK_BYTES) throw new ApiFault('body_limit');
 }
 export function contentHeaders(request: FastifyRequest): void {
   if (request.raw.httpVersion !== '1.1' || header(request, 'transfer-encoding') !== undefined ||

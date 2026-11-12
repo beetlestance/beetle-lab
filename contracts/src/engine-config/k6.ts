@@ -9,11 +9,13 @@ import suite from '../../engines/k6/v1/suite.schema.json' with { type: 'json' };
 import { createConfigSchema } from './index.js';
 import type { ConfigSchema } from './index.js';
 import type { ResultDigest } from '../result-seal.js';
+import {freezeSchema} from '../freeze.js';
+export const k6ConfigReference=freezeSchema({schemaId:suite.$id,
+  schemas:[assertions,common,datasets,loadPlan,requests,scenarios,suiteCommon,suite]} as const);
 
 /** Same language-neutral sources used by engine generation; no engine implementation import. */
 export function createK6ConfigSchema(digest: ResultDigest): ConfigSchema {
-  return createConfigSchema({ schemas: [assertions, common, datasets, loadPlan, requests, scenarios, suiteCommon, suite],
-    schemaId: suite.$id, digest });
+  return createConfigSchema({ schemas:k6ConfigReference.schemas,schemaId:k6ConfigReference.schemaId,digest });
 }
 
 export { prepareK6SecretReferences } from './k6-bindings.js';

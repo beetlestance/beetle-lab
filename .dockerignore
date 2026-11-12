@@ -19,6 +19,8 @@ docker-compose.*.yml
 *.tgz
 # Local rewrite orchestration, generated outputs and isolated agent state.
 .agent-work
+.beetle
+**/.beetle
 .agent-output
 **/.agent-work
 **/.agent-output
