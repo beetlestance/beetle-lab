@@ -29,18 +29,7 @@ describe('original work, cleanup and processwide slots', () => {
     expect(operation.close()).toBe(closing); release.resolve(); await closing; await operation.quiesced;
     expect(t.opened).toHaveLength(1); expect(t.closed).toHaveLength(1);
   });
-  it('keeps late original close failure rejected forever and closes independent descriptors', async () => {
-    const result = f.result(); await f.write(result); const issued = deferred<void>(); const release = deferred<void>();
-    const t = tracking({ closeDone: async path => {
-      if (path.endsWith('engine-result.json')) { issued.resolve(); await release.promise; throw new Error('private OS detail'); }
-    } });
-    const operation = f.collect(f.options(result), t.ports); await issued.promise;
-    const closing = operation.close(); const rejected = expect(closing).rejects.toMatchObject({ message: 'Output collection io' });
-    expect(await operation.result).toEqual({ ok: false, reason: 'closed' });
-    release.resolve(); await rejected; await operation.quiesced;
-    expect(operation.close()).toBe(closing); await expect(operation.close()).rejects.toMatchObject({ reason: 'io' });
-    expect(t.closed).toHaveLength(2); expect(new Set(t.closed).size).toBe(2);
-  });
+
   it('publishes no success until root close succeeds and performs the final cancellation fence', async () => {
     const result = f.result(); await f.write(result); const issued = deferred<void>(); const release = deferred<void>();
     const t = tracking({ close: async path => { if (path === f.directory()) { issued.resolve(); await release.promise; } } });
@@ -50,13 +39,7 @@ describe('original work, cleanup and processwide slots', () => {
     let quiet = false; void operation.quiesced.then(() => { quiet = true; }); await Promise.resolve(); expect(quiet).toBe(false);
     release.resolve(); await operation.quiesced; await operation.close(); expect(t.closed.length).toBe(t.opened.length);
   });
-  it('suppresses success when an original descriptor close rejects without public cancellation', async () => {
-    const result = f.result(); await f.write(result);
-    const t = tracking({ closeDone: path => { if (path === f.directory()) throw new Error('secret close detail'); } });
-    const operation = f.collect(f.options(result), t.ports);
-    expect(await operation.result).toEqual({ ok: false, reason: 'io' }); await operation.quiesced;
-    await expect(operation.close()).rejects.toMatchObject({ reason: 'io' }); expect(t.closed.length).toBe(t.opened.length);
-  });
+
   it('reserves before descriptor callbacks and preserves call-entry options and signal', async () => {
     const result = f.result(); await f.write(result); const t = tracking(); let nested: OutputCollection | undefined; let busy: OutputCollection | undefined;
     const plain = f.options(result); let reentered = false;

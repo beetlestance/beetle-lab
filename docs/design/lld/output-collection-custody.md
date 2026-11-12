@@ -41,6 +41,14 @@ original read and descriptor close has settled successfully, the named-file
 post-close check passes and final cancellation/deadline fences pass. Failure,
 pending/failed close, mutation or stop yields no successful custody object.
 
+Collection and range each retain at most two native owners. A failed original
+descriptor close keeps its same rejected close promise, strong owner reference
+and occupied admission slot until process exit; settled failure never refunds a
+slot. Other descriptors still close. Saturation refuses before caller capture or
+new native IO. Successful descriptor cleanup removes its owner even when the
+operation result failed for another reason. quiesced means issued work settled;
+it does not turn rejected close into successful physical cleanup.
+
 controlBytes is the controller's captured byte count. It does not prove a persisted
 stopped_verified checkpoint or settled runtime by itself. A future trusted source
 commit must bind the complete accepted checkpoint/launch/runtime observations and

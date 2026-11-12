@@ -5,15 +5,16 @@ import type { OutputPorts } from './ports.js';
 import { snapshotRange } from './range-budget.js';
 import type { OutputRange, OutputRangeOptions, OutputRangeResult } from './range-types.js';
 
-let active = 0;
+// Strong custody and native admission share one bounded owner set.
+const owners = new Set<OutputLifetime<Extract<OutputRangeResult, { ok: true }>>>();
 /** Private fault seam; range originals have an independent processwide bound. */
 export function startRange(input: OutputRangeOptions, ports: OutputPorts = nodePorts): OutputRange {
-  if (active >= 2) {
+  if (owners.size >= 2) {
     const closed = Promise.resolve();
     return { result: Promise.resolve({ ok: false, reason: 'busy' }), quiesced: closed, close: () => closed };
   }
-  active++;
-  const owner = new OutputLifetime<Extract<OutputRangeResult, { ok: true }>>(ports, () => { active--; });
+  const owner = new OutputLifetime<Extract<OutputRangeResult, { ok: true }>>(ports, () => { owners.delete(owner); });
+  owners.add(owner);
   let files: OutputFiles;
   owner.start(() => snapshotRange(input), async options => {
     files = new OutputFiles({ ...options.root, root: options.root }, ports, owner);

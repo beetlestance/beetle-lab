@@ -88,6 +88,7 @@ export class OutputLifetime<T extends { readonly ok: true }> implements OutputIO
     try { if (cleanup) { clearTimeout(cleanup.timer); cleanup.remove(); } }
     catch { outcome = { ok: false, reason: 'io' }; }
     if (closeFailure) this.closeBad(new OutputFailure('io')); else this.closeGood();
-    this.release(); this.quiet(); this.finish(outcome);
+    if (!closeFailure) this.release();
+    this.quiet(); this.finish(outcome);
   }
 }

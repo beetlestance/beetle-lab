@@ -25,8 +25,8 @@ Overflow-safe accounting covers actual result + declared artifacts + control byt
 
 Public cancellation/deadline/close may precede original IO completion. Quiescence
 and cached close retain all original work and independent descriptor cleanup.
-Failed closes are never retried or hidden. Slots remain held through cleanup;
-success requires every original close and a final cancellation/deadline fence.
+Failed closes are never retried; strong owners/slots remain until process exit.
+quiesced is settlement only; success needs successful closes and final stop fences.
 
 Focused checks: Vitest agent/test/output-collection and output-range --maxWorkers=1,
 Node TS and scoped ESLint. Real temp files and private fault ports exercise custody.

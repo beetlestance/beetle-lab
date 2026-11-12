@@ -65,7 +65,7 @@ engine, agent and backend; browser components are locally verified. Native resou
 qualification, automation image qualification and publication cleanup/retention remain. [Public standalone exports](docs/verification/public-standalone-export.md) now have durable jobs/API/UI/download and actual offline Docker/restart evidence. Reports, comparison and the automation client have focused local evidence.
 [Target observation views](docs/verification/target-observation-contract.md) are
 integrated locally; real-browser qualification remains pending. Live activation is bound to [trusted installed image capability](docs/decisions/014-live-metric-approval-authority.md).
-[Deletion progress](docs/verification/output-deletion-store.md) persists actual native plans and backend-file absence across reopen while preserving producer authority and all charges; [bounded backend file driver](docs/verification/output-deletion-runtime.md) is locally verified; agent cleanup acknowledgement and final purge/refund remain pending.
+[Deletion progress](docs/verification/output-deletion-store.md) persists actual native plans and backend-file absence across reopen while preserving producer authority and all charges; [bounded backend file driver](docs/verification/output-deletion-runtime.md) is locally verified; agent cleanup acknowledgement and final purge/refund remain pending. [Native output close-failure custody](docs/verification/output-close-custody.md) now retains failed owners/slots as a cleanup prerequisite.
 The [delivery authority](docs/design/lld/delivery-authority.md) contract still needs
 its remaining restart/cold-restore implementation. R4 additionally requires fresh
 installation, shipped images/Compose, scans, backup/restore, bounded soak/overhead
