@@ -10,3 +10,7 @@ partial data ranges rely on existing pinned native custody and indexed binding.
 Index scan retains <=100 rows and <=64KiB input buffers, selected contiguous data
 range <=8MiB and one <=1MiB frame. No result/writer/accounting mutations.
 Focused checks: app/test/run-metrics and app/test/http/run-metrics.
+Internal lookupRunMetricSeries captures one exact RunMetricKey, reuses that same
+verified source/projection and returns its ACTUAL original (no early deadline race).
+Catalogue/sample routes retain their prior early caller failure and owned drain.
+Lookup shares their one physical admission; no pagination/corpus or second parser.

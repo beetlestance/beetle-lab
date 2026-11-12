@@ -1,3 +1,5 @@
+import { createRunComparisonService } from '../application/run-comparison/index.js';
+import { registerRunComparisonRoutes } from '../adapters/inbound/http/run-comparison/index.js';
 import { createRunLiveMetricsService } from '../application/run-live-metrics/index.js';
 import { registerRunLiveMetricRoutes } from '../adapters/inbound/http/run-live-metrics/index.js';
 import { createRunMetricsService } from '../application/run-metrics/index.js';
@@ -111,11 +113,14 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
   }
 }
 function metricRoutes(server: FastifyInstance, store: Metadata, agent: AgentRuntime | undefined, authorize: onRequestAsyncHookHandler) {
-  const history = registerRunMetricRoutes(server, {authorize, service: createRunMetricsService({artifacts: store.runArtifacts,
+  const historyService = createRunMetricsService({artifacts: store.runArtifacts,
     ...(agent?.publishedBytes ? {bytes: agent.publishedBytes} : {}),
     createDigest: () => {const hash = createHash('sha256'); return {update: bytes => {hash.update(bytes);}, hex: () => hash.digest('hex')};},
-  })});
+  });
+  const history = registerRunMetricRoutes(server, {authorize, service: historyService});
+  const comparisons = registerRunComparisonRoutes(server, {authorize, service: createRunComparisonService({runs: store.runs,
+    results: store.results, suites: store.suites, metrics: historyService, digest})});
   const live = registerRunLiveMetricRoutes(server, {authorize, service: createRunLiveMetricsService({executions: store.executions,
     ...(agent?.liveMetrics ? {gateway: {liveMetrics: agent.liveMetrics}} : {}), hash: digest})});
-  return {close: async () => {await Promise.all([history.close(), live.close()]);}};
+  return {close: async () => {await Promise.all([history.close(), live.close(), comparisons.close()]);}};
 }

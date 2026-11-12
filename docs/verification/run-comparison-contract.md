@@ -1,7 +1,8 @@
 # Four-run comparison boundary
 
-Status: reviewed contract and generated-client component; backend and browser
-comparison are not implemented by this packet. Contract:
+Status: reviewed contract and generated-client component. The separate
+[backend slice](run-comparison-service.md) is locally verified; browser remains
+pending. This packet itself implements no backend or browser behavior. Contract:
 [bounded comparison](../design/lld/run-comparison.md).
 
 compareRuns describes a stateless scoped POST with2..4 ordered terminal runs,

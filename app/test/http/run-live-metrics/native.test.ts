@@ -3,7 +3,7 @@ import type { RunMetricsService } from '../../../src/ports/run-metrics.js';
 import type { RunLiveMetricsService } from '../../../src/ports/run-live-metrics.js';
 import { frame, deferred } from '../../run-live-metrics/fixtures.js';
 import { httpFixture } from '../run-metrics/fixture.js';
-const history: RunMetricsService = {reader: {listRunMetricSeries: async () => {throw new Error('unused');},
+const history: RunMetricsService = {lookupRunMetricSeries: async () => {throw new Error('Unexpected metric lookup');},reader: {listRunMetricSeries: async () => {throw new Error('unused');},
   getRunMetricSamples: async () => {throw new Error('unused');}}, close: async () => {}};
 it('bounds public response lifetime to five seconds while retaining both ignored-abort originals through shutdown', async () => {
   const gate = deferred<ReturnType<typeof frame>>();

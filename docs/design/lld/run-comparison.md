@@ -1,6 +1,6 @@
 # Bounded run comparison
 
-Status: reviewed contract/client boundary for F13; backend/browser follows.
+Status: contract/client/backend HTTP implemented locally; browser comparison follows.
 Owner: application/run-comparison. No stored comparison, migration or execution.
 
 ## Request and identity
@@ -45,7 +45,7 @@ fingerprints, baseline differences, fixed warnings and optional metric evidence.
 Copy engine outcome/completeness/execution/assertion-definition counts; missing
 result is null. Sealed evidence does not override the Run's application outcome.
 
-Environment contains target/input/secret-reference fingerprints, known versus
+Environment contains target/input/secret-reference fingerprints (including inline datasets), known versus
 unknown secret versions and configured/disabled target sampler. Never resolve
 secret values. Target revision and actual contention remain unknown: matching
 config/suite hashes cannot prove a stable target or idle environment. Compare
@@ -55,10 +55,11 @@ that runs are or are not scientifically comparable.
 
 Config diffs carry at most100 changed JSON pointers per non-baseline run, with
 added/removed/changed and an explicit limited flag. No config values, headers,
-bodies, target URLs, secret locators or raw exceptions are returned. Use at most65536 visited nodes per peer, depth64 and512 encoded bytes per
-pointer; a pointer that cannot be represented safely must be
+bodies, target URLs, secret locators or raw exceptions are returned. Use at most65536 visited nodes and4096 pending pairs per peer, depth64 and512
+encoded bytes per pointer; a pointer that cannot be represented safely must be
 reported as a limited parent/root change, never truncated into a different path.
-The baseline has no differences. Unknown secret version, target revision,
+Equal pinned revisions skip traversal only after bounded canonical config/input
+content equality; contradictory equal pins fail. The baseline has no differences. Unknown secret version, target revision,
 contention, sampler absence, missing/partial result and incomplete metric source
 have fixed warnings. Do not hide missing data or a limited diff.
 
@@ -69,9 +70,9 @@ installation; admission is retained through physical settlement). Read at most f
 results and pinned revisions, sequentially; at most four metric lookups. Bound
 revision bytes to existing1MiB configs/envelopes and transient four-run work; do
 not send configs to the browser. A whole30s caller deadline covers metadata,
-projection and final reconciliation. Internal metric lookup returns the actual
-original promise, not the history reader's early deadline race; comparison keeps
-its original until native settlement. The shared metric owner remains exclusive. Abort/close fence new calls and await issued
+projection and final reconciliation. Internal metric lookup and comparison both return their actual original
+promises; the HTTP owner supplies the fast cancellation race and retains the
+original until metadata/native settlement. The shared metric owner remains exclusive. Abort/close fence new calls and await issued
 originals; no timeout-based physical refund. Existing metadata/native owners retain
 their limits. Recheck Run identity/version/activeAttempt and pinned revision after
 source reads before publishing. State change or source mismatch fails explicitly.
