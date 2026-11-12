@@ -100,8 +100,10 @@ export async function inspectClosed(f: Fixture, run: Run, result: RunResultSnaps
   } finally { db.close(); }
 }
 async function inspectArtifacts(db: DatabaseSync, f: Fixture, run: Run, artifacts: NonNullable<RunResultSnapshot['result']>['artifacts']) {
-  const slots = db.prepare('SELECT ordinal,slot_json FROM execution_output_slots WHERE attempt_id=? ORDER BY ordinal LIMIT 3').all(run.activeAttemptId);
-  assert.equal(slots.length, 2); assert.equal(slots.length, artifacts.length);
+  // The sealed contract permits up to128 artifacts, including retained metric history.
+  assert(artifacts.length <= 128);
+  const slots = db.prepare('SELECT ordinal,slot_json FROM execution_output_slots WHERE attempt_id=? ORDER BY ordinal LIMIT 129').all(run.activeAttemptId);
+  assert.equal(slots.length, artifacts.length);
   const entries = []; let bytes = 0;
   for (const [index, slot] of slots.entries()) {
     assert.equal(slot.ordinal, index);

@@ -1,6 +1,6 @@
 # Decision014: live metric approval authority
 
-Status: shared policy/assignment implemented; actor/private transport wired; agent/backend/browser wired; packaging activation pending.
+Status: trusted producer/agent/backend/browser wiring and image-bound activation implemented.
 
 A frame's subset digest proves consistency, not permission to choose descriptors or
 an epoch. Generic readers require trusted expected scope/epoch/subset; never learn
@@ -25,5 +25,6 @@ Golden vectors pin policy behavior; incompatible changes require a new version.
 
 Both sides freeze the same approved subset before native effects. Latency, errors,
 throughput and load receive default priority under the unchanged20-series cap;
-omissions remain explicit. Keep profiles off until actor authorization, authenticated
-routing, consumer ownership and native end-to-end qualification are connected.
+omissions remain explicit. Fresh installs enable the mailbox only from the versioned inspected image marker.
+Older images remain off. Native functional evidence and release limits are recorded
+separately; a suite/Offer cannot enable this profile.

@@ -13,6 +13,7 @@ import { openApplication } from '../../../app/src/bootstrap/api.js';
 import type { Application } from '../../../app/src/bootstrap/api.js';
 import { argumentsFor, backendConfiguration } from './configuration.js';
 import { inspectClosed } from './evidence.js';
+import { inspectCancelled } from './cancel-evidence.js';
 import { provision, captureLogs, targetCounts } from './containers.js';
 import { enqueue, ownedOrigin, publicClient, value, waitForCapacity, pause } from './public-api.js';
 import { cleanupLiveVolumes } from './live-volumes.js';
@@ -33,6 +34,9 @@ const evidence: Record<string, unknown> = {status: 'running', mode, architecture
   agentImage: f.agentImage.Id, engineImage: f.engineImage.Id, nodeVersion: process.version, platform: process.platform,
   cleanupVerified: false, limits: {vus: 1, iterations: 20, requestsPerTargetPath: 32, runTimeoutMs: 30000},
   limitations: ['No browser, Compose, amd64 or overhead qualification; current inventory cannot prove absence of delayed unknown daemon work.']};
+await writeFile(join(f.root, 'live-owner.json'), JSON.stringify({installationId: f.id, root: f.root, user: f.user,
+  agent: f.agent, target: f.target, network: f.network}), {mode: 0o600});
+console.log(JSON.stringify({kind: 'qualification.started', directory: f.root, installationId: f.id}));
 let app: Application | undefined; const started = Date.now();
 interface Collected {frames: LiveMetricSnapshot[]; cancelled: boolean; unavailable: number}
 function appendFrame(state: Collected, input: unknown): void {
@@ -60,8 +64,12 @@ async function terminal(api: ApiClient, run: Run, state: Collected) {
   const params = {organizationId: run.scope.organizationId, workspaceId: run.scope.workspaceId, runId: run.id};
   assert(state.frames.length >= 2, 'Need two observed native publisher revisions');
   assert.equal(run.state, mode === 'cancel' ? 'cancelled' : 'finished');
-  const result = value(await api.getRunResult({params})); assert(result.result);
-  assert.equal(result.result.outcome, mode === 'cancel' ? 'inconclusive' : 'passed');
+  const result = value(await api.getRunResult({params}));
+  if (mode === 'complete') {assert(result.result); assert.equal(result.result.outcome, 'passed');}
+  else {
+    assert.equal(state.cancelled, true); assert.equal(run.outcome, 'inconclusive');
+    assert.equal(result.result, null, 'This cancellation proof qualifies the unsealed-result path only');
+  }
   const after = await api.getRunLiveMetrics({params: {...params, attemptId: run.activeAttemptId}});
   assert(!after.ok && after.error.status === 503);
   return {run, result, ...state};
@@ -71,7 +79,10 @@ async function observe(api: ApiClient, queued: Run) {
   const state: Collected = {frames: [], cancelled: false, unavailable: 0}; let lastLive = 0;
   for (let calls = 0; calls < 200 && Date.now() - started < 90000; calls++) {
     const run = value(await api.getRun({params}));
-    if (['finished', 'cancelled', 'errored'].includes(run.state)) return terminal(api, run, state);
+    if (['finished', 'cancelled', 'errored'].includes(run.state)) {
+      evidence.terminalState = run.state; evidence.revisions = state.frames.map(frame => frame.publishedSequence);
+      return terminal(api, run, state);
+    }
     if (run.state === 'active' && Date.now() - lastLive >= 500 && !state.cancelled) {
       lastLive = Date.now(); await sample(api, queued, run, state);
     }
@@ -85,10 +96,10 @@ try {
   const configuration = await backendConfiguration(f, privateOrigin, origin);
   app = await openApplication(configuration.application); await app.server.listen({...configuration.listen});
   const session = await publicClient(app, origin); await waitForCapacity(app);
-  const queued = await enqueue(session.api, f); const observed = await observe(session.api, queued);
+  evidence.phase = 'enqueue'; const queued = await enqueue(session.api, f); evidence.phase = 'observe'; const observed = await observe(session.api, queued);
   Object.assign(evidence, observed); evidence.publicRequests = session.requestCount();
   await app.close(); app = undefined;
-  evidence.physical = await inspectClosed(f, observed.run, observed.result);
+  evidence.physical = mode === 'complete' ? await inspectClosed(f, observed.run, observed.result) : inspectCancelled(f, observed.run, observed.result);
   if (mode === 'complete') evidence.targetCounts = targetCounts(f, {ready: 1, work: 20, unexpected: 0});
   evidence.status = 'passed';
 } catch (error) {
