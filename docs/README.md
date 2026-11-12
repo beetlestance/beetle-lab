@@ -11,6 +11,7 @@ released application until the rewrite is qualified.
 | Frontend/assets/SDK choices | [Discussion](design/frontend-decisions.md) | Options and unresolved decisions |
 | Audit unfinished product parity | [Remaining parity](verification/functional-parity.md) | Targeted source gaps and pending inventory acceptance; separate from UI redesign |
 | Inspect embedded API/agent reference | [Reference evidence](verification/embedded-reference.md) | Generated schemas, binary guide, standalone instructions and source-image asset delivery |
+| Inspect workspace dashboard | [Workspace overview](verification/workspace-overview.md) | Scoped snapshot counts, activity, recent/active navigation and schema preservation |
 | Inspect observed k6 load guidance | [Load guidance](verification/load-advice.md) | Current-source drops, explicit iteration-based planning and missing-data limits |
 | Inspect keyboard/context navigation | [Command search](verification/command-search.md) | Shared scoped page queries, modal lifetime/keyboard checks and honest search bounds |
 | What exists today | [Feature inventory](current-features.md) | Source-grounded capability checklist |

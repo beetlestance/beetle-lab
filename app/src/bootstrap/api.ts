@@ -1,3 +1,4 @@
+import {registerOverviewRoute} from '../adapters/inbound/http/overview/index.js';
 import {registerExportRoutes} from '../adapters/inbound/http/exports/index.js';
 import type { LocalSession } from '../adapters/inbound/http/session/index.js';
 import { captureLocalAccess, openApplicationSession } from './local-access.js';
@@ -79,6 +80,7 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     registerNamespaceRoutes(server, { store: store.namespaces, reader: store, newId: randomUUID,
       digest, authorize: session.authorize });
     registerSuiteRoutes(server, { store: store.suites, reader: store.suites, newId: randomUUID, digest, authorize: session.authorize });
+    registerOverviewRoute(server,{reader:store.overview,authorize:session.authorize,now:()=>new Date().toISOString()});
     registerRunRoutes(server, { store: store.runs, reader: store.runs, resultReader: store.results, eventReader: store.runEvents, newId: randomUUID, digest,
       now: () => new Date().toISOString(), authorize: session.authorize });
     artifactHttp=downloadRoutes(server,store,agentRuntime,session.authorize);

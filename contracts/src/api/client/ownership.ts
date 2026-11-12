@@ -1,3 +1,5 @@
+import {workspaceOverviewMatches} from '../overview.js';
+import type {WorkspaceOverview} from '../generated/types.js';
 import { exportOwnership, exportRequestMatches } from './export-ownership.js';
 import { runComparisonRequestMatches, runComparisonSnapshotMatches } from './comparison.js';
 import type { RunComparisonRequest, RunComparisonSnapshot } from '../generated/types.js';
@@ -107,6 +109,7 @@ function sourceAncestry(scope: SettingsScope, effective: EffectiveSettings): boo
 /** Structural validation precedes this route/body/result binding. Backend SQL authorization is independent. */
 export function responseOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
   if (session(operation)) return true;
+  if(operation.response==='WorkspaceOverview')return workspaceOverviewMatches(value as WorkspaceOverview,{organizationId:input.params.organizationId!,workspaceId:input.params.workspaceId!});
   if (operation.response === 'RunComparisonSnapshot') return runComparisonSnapshotMatches(value as RunComparisonSnapshot, input.body as unknown as RunComparisonRequest);
   if (operation.response === 'LiveMetricSnapshot') return liveMetricScopeMatches((value as LiveMetricSnapshot).scope,
     {organizationId: input.params.organizationId!, workspaceId: input.params.workspaceId!, attemptId: input.params.attemptId!, generation: 1});

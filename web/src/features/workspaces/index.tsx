@@ -1,3 +1,4 @@
+import {WorkspaceOverview} from '../workspace-overview/index.js';
 import { lazy, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -45,6 +46,6 @@ function WorkspaceScope({ organizationId, workspaceId, view }: { organizationId:
     <Link to={routes.inputs(organizationId, workspaceId)}>Inputs</Link>
     <Link to={routes.runs(organizationId, workspaceId)}>Runs</Link></nav>
     <p className="workspace-label">Workspace <strong>{data.name}</strong></p>
-    {view === 'inputs' ? <WorkspaceInputs workspace={data} /> : <FolderList workspace={data} />}
+    {view === 'inputs' ? <WorkspaceInputs workspace={data} /> : <><WorkspaceOverview organizationId={organizationId} workspaceId={workspaceId} /><FolderList workspace={data} /></>}
   </>}</QueryState>;
 }

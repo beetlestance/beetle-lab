@@ -203,6 +203,7 @@ export function largeOperation(operation: Operation): boolean {
   return suiteOperation(operation) || ['getExportOriginal','listExports','dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource', 'getRunResult', 'getRunEvents', 'listRunArtifacts'].includes(dataProperty(operation, 'kind') as string);
 }
 export function operationReplyLimit(operation: Operation): number {
+  if(operation.kind==='getWorkspaceOverview')return 32768;
   if (exportOperation(operation)) return exportReplyLimit(operation);
   if (localSessionOperation(operation)) return 2048;
   if (deletionOperation(operation)) return deletionReplyLimit(operation);
@@ -222,6 +223,6 @@ function payloadReplyLimit(operation: Operation): number {
 
 /** Fixed small control/read requests never use large payload envelopes. */
 function compactOperation(operation: Operation): boolean {
-  return artifactReadOperation(operation) || runEventsOperation(operation) || absenceOperation(operation) || finalizationOperation(operation)
+  return dataProperty(operation,'kind')==='getWorkspaceOverview'||artifactReadOperation(operation) || runEventsOperation(operation) || absenceOperation(operation) || finalizationOperation(operation)
     || executionOperation(operation) || resultOperation(operation) || artifactOperation(operation);
 }

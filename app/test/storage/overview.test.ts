@@ -1,0 +1,34 @@
+import {expect,it} from 'vitest';
+import {DatabaseSync} from 'node:sqlite';
+import {scope,seed,storageFixture,uuid,digest,createFolder} from './fixture.js';
+import {append,createSuite} from './suites-fixture.js';
+import {runOptions,runRequest} from './runs-fixture.js';
+import {prepareRunCommand} from '../../src/application/runs/index.js';
+const fixture=storageFixture();const now='2026-11-12T12:00:00.000Z';
+it('reads whole-workspace scalar counts with bounded recent/active lists across the actual worker',async()=>{
+ const path=fixture.path();let metadata=await fixture.open(path,runOptions());await seed(metadata);await seed(metadata,11,12,13);await createFolder(metadata,14);
+ const revision=await append(metadata,await createSuite(metadata));
+ const moments=['2026-11-11T11:59:59.999Z','2026-11-11T12:00:00.000Z','2026-11-11T12:59:59.999Z','2026-11-11T13:00:00.000Z',now,'2026-11-12T12:00:00.001Z'];
+ for(let n=0;n<33;n++)await metadata.runs.execute(prepareRunCommand({kind:'createRun',id:uuid(500+n),attemptId:uuid(1500+n),requestedAt:moments[n]??'2026-11-12T11:00:00.000Z',request:runRequest(revision.id)},digest));
+ await fixture.close(metadata);const db=new DatabaseSync(path);
+ db.prepare("UPDATE runs SET state='active' WHERE id>=? AND id<?").run(uuid(500),uuid(525));
+ db.prepare("UPDATE runs SET state='finished',outcome='failed',validation_status='passed' WHERE id=?").run(uuid(525));
+ db.prepare("UPDATE runs SET state='finished',outcome='passed',validation_status='passed' WHERE id=?").run(uuid(526));
+ db.prepare("UPDATE runs SET state='errored',outcome='inconclusive',reason='engine_crash' WHERE id=?").run(uuid(527));
+ db.prepare("UPDATE runs SET state='cancelled',outcome='inconclusive',cancellation_requested=1,reason='cancelled' WHERE id=?").run(uuid(528));
+ db.prepare("UPDATE runs SET state='dispatching' WHERE id=?").run(uuid(529));db.prepare("UPDATE runs SET state='finalizing' WHERE id=?").run(uuid(530));db.close();
+ metadata=await fixture.open(path,runOptions());const overview=await metadata.overview.read({scope,now});
+ expect(overview.counts).toEqual({folders:2,suites:1,runs:33,submitted24h:30,failed24h:1,active:25,queued:2,dispatching:1,finalizing:1,finished:2,cancelled:1,errored:1});
+ expect(overview.recent).toHaveLength(8);expect(overview.recent[0]!.id).toBe(uuid(505));expect(overview.active).toHaveLength(20);expect(overview.activeHasMore).toBe(true);
+ expect(overview.activity).toHaveLength(24);expect(overview.activity[0]!.count).toBe(2);expect(overview.activity[1]!.count).toBe(1);expect(overview.activity[23]!.count).toBe(27);
+ const other=await metadata.overview.read({scope:{...scope,organizationId:uuid(11),workspaceId:uuid(12)},now});expect(other.counts.runs).toBe(0);expect(other.recent).toEqual([]);
+ await expect(metadata.overview.read({scope:{...scope,workspaceId:uuid(99)},now})).rejects.toMatchObject({code:'not_found'});
+ await expect(metadata.overview.read({scope,now:'2026-02-30T12:00:00.000Z'})).rejects.toMatchObject({code:'invalid_value'});
+});
+it('makes noncanonical admitted timestamps unavailable without poisoning another workspace read',async()=>{
+ const metadata=await fixture.open(undefined,runOptions());await seed(metadata);await seed(metadata,11,12,13);
+ const revision=await append(metadata,await createSuite(metadata));
+ await metadata.runs.execute(prepareRunCommand({kind:'createRun',id:uuid(600),attemptId:uuid(1600),requestedAt:'2026-11-12T11:00:00Z',request:runRequest(revision.id)},digest));
+ await expect(metadata.overview.read({scope,now})).rejects.toMatchObject({code:'invalid_value'});
+ expect((await metadata.overview.read({scope:{...scope,organizationId:uuid(11),workspaceId:uuid(12)},now})).counts.runs).toBe(0);
+});

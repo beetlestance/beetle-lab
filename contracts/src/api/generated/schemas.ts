@@ -16,6 +16,7 @@ import { schema as ApiInput } from './input.js';
 import { schema as LiveMetrics } from './live-metrics.js';
 import { schema as ApiNamespaceRequests } from './namespace-requests.js';
 import { schema as ApiNamespace } from './namespace.js';
+import { schema as ApiOverview } from './overview.js';
 import { schema as ApiParameters } from './parameters.js';
 import { schema as ApiRetention } from './retention.js';
 import { schema as ApiRunArtifacts } from './run-artifacts.js';
@@ -32,7 +33,7 @@ import { schema as ApiSettings } from './settings.js';
 import { schema as ApiSuiteRequests } from './suite-requests.js';
 import { schema as ApiSuite } from './suite.js';
 /** Complete reference closure; runner result schemas are shared, never copied. */
-export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiExportJobs, ApiInputRequests, ApiInput, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiParameters, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
+export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiExportJobs, ApiInputRequests, ApiInput, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -80,6 +81,10 @@ export const apiMessageSchemas = freezeSchema({
   OrganizationPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/namespace#/$defs/OrganizationPage' },
   WorkspacePage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/namespace#/$defs/WorkspacePage' },
   FolderPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/namespace#/$defs/FolderPage' },
+  OverviewRun: { $ref: 'https://beetle-lab.dev/contracts/api/v2/overview#/$defs/OverviewRun' },
+  OverviewCounts: { $ref: 'https://beetle-lab.dev/contracts/api/v2/overview#/$defs/OverviewCounts' },
+  OverviewBucket: { $ref: 'https://beetle-lab.dev/contracts/api/v2/overview#/$defs/OverviewBucket' },
+  WorkspaceOverview: { $ref: 'https://beetle-lab.dev/contracts/api/v2/overview#/$defs/WorkspaceOverview' },
   OrganizationParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/OrganizationParams' },
   WorkspaceParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/WorkspaceParams' },
   FolderParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/FolderParams' },

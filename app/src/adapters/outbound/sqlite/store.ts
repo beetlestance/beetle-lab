@@ -1,3 +1,4 @@
+import {Overviews} from './overview.js';
 import {exportOperation} from './export-wire.js';
 import {ExportJobs,ExportClaims,ExportObservations,ExportOutputs} from './export-jobs/index.js';
 import type {ExportOperation} from './export-jobs/index.js';
@@ -63,6 +64,7 @@ export class Store {
   private readonly runs: Runs;
   private readonly runCancellations: RunCancellations;
   private readonly runReads: RunReads;
+  private readonly overviews:Overviews;
   private readonly inputs: Inputs;
   private readonly inputReads: InputReads;
   private readonly suites: Suites;
@@ -86,6 +88,7 @@ export class Store {
     this.exportOutputs=new ExportOutputs(db,this.exports.reads);
     this.runs = new Runs(db, this.suites, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
     this.runReads = new RunReads(db, this.suites);
+    this.overviews=new Overviews(db,this.suites);
     this.runArtifacts = new RunArtifacts(db, this.runReads);
     this.executions = new RunExecutions(db, this.runReads);
     this.results = new RunResults(db, this.runReads);
@@ -140,6 +143,7 @@ export class Store {
       case 'run': case 'cancelRun': return this.mutation(operation);
       case 'getRun': return this.runReads.get(operation.key);
       case 'listRuns': return this.runReads.list(operation.query);
+      case 'getWorkspaceOverview':return this.overviews.read(operation.query);
       default: throw new StorageError('invalid_input');
     }
   }
@@ -215,7 +219,7 @@ export class Store {
     }
   }
   private executeLegacy(operation: Operation): Value {
-    if (['run', 'cancelRun', 'getRun', 'listRuns', 'dispatchScan', 'dispatchReadOffer', 'dispatchClaim', 'dispatchObserve']
+    if (['getWorkspaceOverview','run', 'cancelRun', 'getRun', 'listRuns', 'dispatchScan', 'dispatchReadOffer', 'dispatchClaim', 'dispatchObserve']
       .includes(operation.kind)) return this.runOperation(operation);
     if (suiteOperation(operation)) return this.suiteOperation(operation);
     if (['getSettings', 'getSettingsIdentity', 'runtime', 'loadLocalSession', 'saveLocalSession'].includes(operation.kind)) return this.installationOperation(operation);

@@ -61,6 +61,7 @@ Schema catalogue is complete, including runner common exactly once. These are ro
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/exports/{exportId} | ExportParams | none | none | 200 | ExportJob |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/exports/{exportId}/cancel | ExportParams | none | CancelExportRequest | 200 | ExportJob |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/exports/profiles | WorkspaceParams | none | none | 200 | ExportProfiles |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/overview | WorkspaceParams | none | none | 200 | WorkspaceOverview |
 
 All errors use ApiError. UUID path parameters are validated before URL encoding.
 List queries require an integer limit 1–100 and optional opaque string cursor; HTTP query parsing belongs to the transport adapter.

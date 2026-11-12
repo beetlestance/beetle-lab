@@ -17,6 +17,7 @@
     "api/v2/live-metrics.schema.json": "6a49b5baacf5442bf81a206c66f41e7a66010b3514aae1bc1ae58055dc6cb887",
     "api/v2/namespace-requests.schema.json": "6cfaab7c5382d77bffe35ccd7dcfb9173ec89f184f4f0bc4090758294d8e44c2",
     "api/v2/namespace.schema.json": "3df14df2770cabaf1b04c70a44d453dad6ab1e7b0afe5699d6cae375ab2bec3f",
+    "api/v2/overview.schema.json": "5e01c5a314eac309c6a28ea57287e89289deef973fa38966f9268f040f1e0780",
     "api/v2/parameters.schema.json": "295398a74751cc8f3548d5c0df6ab35396e7c532d1821c9701a9124957943bc5",
     "api/v2/retention.schema.json": "d6544985c54e4c6606ffcaf7753b3508c978a483b461be3415d5861f509fbc70",
     "api/v2/run-artifacts.schema.json": "093708ae3c917b759125fc08a3dffc31c0978bb122472b824a67d59f4554a59e",
@@ -33,7 +34,7 @@
     "api/v2/suite-requests.schema.json": "793032e02eb16c0c4f13b87eebaa556d7d7df2efbb522e16078d9a9202708431",
     "api/v2/suite.schema.json": "c90e5d43bc41061a0d80701d0b172764faf9fa44b7b4463349aac452f1cd4dbf"
   },
-  "operationsSha256": "efae1c8ac7076614582b93b01c065eb797b13a7c3a34493d827c5f2b91acde83",
+  "operationsSha256": "54bd3e5b90a877813ebdf1d334a2055f5432f7a729c0e4ae4861eb7b285988e2",
   "outputs": [
     "common.inference.ts",
     "common.ts",
@@ -51,6 +52,8 @@
     "namespace.inference.ts",
     "namespace.ts",
     "operations.ts",
+    "overview.inference.ts",
+    "overview.ts",
     "parameters.inference.ts",
     "parameters.ts",
     "reference.md",

@@ -534,5 +534,14 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "WorkspaceParams"
+  },
+  {
+    "name": "getWorkspaceOverview",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/overview",
+    "response": "WorkspaceOverview",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "WorkspaceParams"
   }
 ]

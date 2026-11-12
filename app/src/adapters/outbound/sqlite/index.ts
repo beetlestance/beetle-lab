@@ -1,3 +1,5 @@
+import {checkedOverview,checkedOverviewQuery} from '../../../application/overview/index.js';
+import type {OverviewReader} from '../../../ports/overview.js';
 import {exportOperation,captureExportReply} from './export-wire.js';
 import type {ExportOperation} from './export-wire.js';
 import type {ExportArtifacts,ExportExecutionStore,ExportStore} from '../../../ports/exports.js';
@@ -161,6 +163,7 @@ export class Metadata {
     confirmAck: request => this.call({ kind: 'eventConfirmAck', request }) as ReturnType<EventCustodyStore['confirmAck']>,
     recordProblem: request => this.call({ kind: 'eventProblem', request }) as ReturnType<EventCustodyStore['recordProblem']>,
   };
+  readonly overview:OverviewReader={read:async input=>{const query=checkedOverviewQuery(input);const value=await this.call({kind:'getWorkspaceOverview',query});return checkedOverview(value,query);}};
   readonly runs: RunStore & RunReader & RunCancellationStore = {
     execute: command => this.call({ kind: 'run', command }) as ReturnType<RunStore['execute']>,
     getRun: key => this.call({ kind: 'getRun', key }) as ReturnType<RunReader['getRun']>,

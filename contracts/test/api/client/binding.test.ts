@@ -5,6 +5,7 @@ import { fixture } from '../fixtures.js';
 import { baseUrl, load, organizationId, params, reply } from './helpers.js';
 
 const files: Partial<Record<keyof ApiTypes, string>> = {
+  WorkspaceOverview:'workspace-overview',
   ExportJob: 'export-job', ExportJobPage: 'export-job-page', ExportProfiles: 'export-profiles',
   CreateExportRequest: 'create-export', CancelExportRequest: 'cancel-export',
   RunComparisonRequest: 'run-comparison-request', RunComparisonSnapshot: 'run-comparison',
