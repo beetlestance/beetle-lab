@@ -27,6 +27,17 @@ export function summary(job: RunHistoryJob): RunHistorySummary {
 
 /** Task-owned fixture only: recreate the actual predecessor schema before reopen. */
 export function asSchema17(db: DatabaseSync): void {
+  asSchema18(db);
   for (const name of ['history_summary_initial', 'history_summary_retained', 'history_summary_capture']) db.exec('DROP TRIGGER ' + name);
   db.exec('DROP INDEX run_history_due; ALTER TABLE runs DROP COLUMN history_summary_json; ALTER TABLE runs DROP COLUMN history_summary_due_ms; PRAGMA user_version=17;');
+}
+
+/** Remove only migration019 objects before testing earlier schema upgrades. */
+export function asSchema18(db: DatabaseSync): void {
+  for (const table of ['folders', 'suites']) {
+    for (const event of ['insert', 'rename', 'delete']) db.exec('DROP TRIGGER ' + table + '_history_' + event);
+  }
+  for (const index of ['suites_history_folder', 'runs_history_suite', 'runs_history_suite_state',
+    'runs_history_suite_outcome', 'runs_history_suite_state_outcome']) db.exec('DROP INDEX ' + index);
+  db.exec('DROP TABLE history_name_grams; DROP TABLE history_name_progress; PRAGMA user_version=18;');
 }

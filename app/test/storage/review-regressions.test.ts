@@ -1,3 +1,4 @@
+import { registerSearchFold } from '../../src/adapters/outbound/sqlite/run-search-fold.js';
 import { describe, expect, it, vi } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { writeFile } from 'node:fs/promises';
@@ -53,7 +54,7 @@ describe('independent metadata review regressions', () => {
   it('bounds actual indexed child enumeration before allocating a wide traversal frontier', async () => {
     const path = fixture.path(); const metadata = await fixture.open(path); await seed(metadata); await createFolder(metadata, 4);
     await fixture.close(metadata);
-    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true }); registerSearchFold(db);
     let visits = 0;
     try {
       db.prepare(`WITH RECURSIVE n(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM n WHERE i<100000)
@@ -84,7 +85,7 @@ describe('independent metadata review regressions', () => {
     const path = fixture.path(); const metadata = await fixture.open(path); await seed(metadata);
     await createFolder(metadata, 4); await createFolder(metadata, 5, uuid(4)); await createFolder(metadata, 6, uuid(5));
     await createFolder(metadata, 7, uuid(4)); await fixture.close(metadata);
-    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true }); registerSearchFold(db);
     try {
       const entities = new Entities(db);
       expect(entities.subtreeHeight(scope, uuid(4))).toBe(2);
@@ -100,7 +101,7 @@ describe('independent metadata review regressions', () => {
   it('rejects workspace root pointer reassignment even when the proposed root passes foreign keys', async () => {
     const path = fixture.path(); const metadata = await fixture.open(path); await seed(metadata); await createFolder(metadata, 4);
     await fixture.close(metadata);
-    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true }); registerSearchFold(db);
     try {
       expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
       expect(() => db.prepare('UPDATE workspaces SET root_folder_id=? WHERE id=?').run(uuid(4), uuid(2))).toThrow();

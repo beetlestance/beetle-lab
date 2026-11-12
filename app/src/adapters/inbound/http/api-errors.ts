@@ -16,6 +16,8 @@ const errors = {
   conflict: [409, 'Version or intent conflict', false],
   body_limit: [413, 'Body limit exceeded', false],
   invalid_value: [422, 'Invalid value', false],
+  search_too_broad: [422, 'Search is too broad; refine the query', false],
+  search_indexing: [503, 'Search index is being prepared; retry this query', true],
   capacity_unavailable: [503, 'Capacity unavailable', true],
   storage_unavailable: [503, 'Storage unavailable', true],
   cursor_expired: [409, 'Cursor expired', false],

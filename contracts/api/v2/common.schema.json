@@ -50,8 +50,8 @@
     "ApiError": {
       "type": "object",
       "properties": {
-        "code": { "enum": ["malformed_request", "unpaired", "forbidden", "not_found", "conflict", "body_limit", "invalid_value", "capacity_unavailable", "storage_unavailable", "cursor_expired", "protected_dependency", "internal_error", "rate_limited"] },
-        "message": { "enum": ["Malformed request", "Pairing required", "Access denied", "Resource not found", "Version or intent conflict", "Body limit exceeded", "Invalid value", "Capacity unavailable", "Storage unavailable", "Cursor expired", "Protected dependency", "Internal error", "Too many requests"] },
+        "code": { "enum": ["malformed_request", "unpaired", "forbidden", "not_found", "conflict", "body_limit", "invalid_value", "capacity_unavailable", "storage_unavailable", "cursor_expired", "protected_dependency", "internal_error", "rate_limited", "search_too_broad", "search_indexing"] },
+        "message": { "enum": ["Malformed request", "Pairing required", "Access denied", "Resource not found", "Version or intent conflict", "Body limit exceeded", "Invalid value", "Capacity unavailable", "Storage unavailable", "Cursor expired", "Protected dependency", "Internal error", "Too many requests", "Search is too broad; refine the query", "Search index is being prepared; retry this query"] },
         "retryable": { "type": "boolean" },
         "requestId": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" },
         "fields": {

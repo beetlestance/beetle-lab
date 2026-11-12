@@ -14,6 +14,9 @@ it('serves bound history through actual application HTTP and compiled SQLite wor
   const sorted = submitted.toSorted((a,b) => b.requestedAt.localeCompare(a.requestedAt) || b.id.localeCompare(a.id));
   const page = value(await paired.api.listRuns({ params: saved.params, query: { limit: 2, state: 'queued', outcome: 'pending' } }));
   expect(page.items).toEqual(sorted.slice(0,2)); expect(page.nextCursor).not.toBeNull();
+  const search = value(await paired.api.listRuns({ params: saved.params, query: { limit: 2, name: 'Synthetic suite' } }));
+  expect(search.items).toEqual(sorted.slice(0, 2)); expect(search.nextCursor).not.toBeNull();
+  expect(value(await paired.api.listRuns({ params: saved.params, query: { limit: 2, runIdPrefix: sorted[0]!.id } })).items).toEqual([sorted[0]]);
   const next = value(await paired.api.listRuns({ params: saved.params, query: { limit: 2, state: 'queued', outcome: 'pending', cursor: page.nextCursor! } }));
   expect(next.items).toEqual(sorted.slice(2)); expect(next.nextCursor).toBeNull();
   expect(value(await paired.api.listRuns({ params: saved.params, query: { limit: 2, order: 'oldest' } })).items).toEqual(sorted.toReversed().slice(0,2));
@@ -32,5 +35,6 @@ it('serves bound history through actual application HTTP and compiled SQLite wor
   expect(db.prepare('SELECT SUM(possible_delivery) AS n FROM dispatch_outbox').get()?.n).toBe(0); db.close();
   const second = await fixture.open(first.path, { runtime: null, runs: { profiles: [], pendingLimit: 1 } });
   const reopened = await client(second.app);
+  expect(value(await reopened.api.listRuns({ params: saved.params, query: { limit: 2, name: 'synthetic suite', cursor: search.nextCursor! } })).items).toEqual(sorted.slice(2));
   expect(value(await reopened.api.listRuns({ params: saved.params, query: { limit: 2, state: 'queued', outcome: 'pending', cursor: page.nextCursor! } }))).toEqual(next);
 });

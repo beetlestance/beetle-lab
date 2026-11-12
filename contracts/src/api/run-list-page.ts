@@ -6,7 +6,8 @@ function owns(row:Run,scope:WorkspaceScope):boolean{
  return row.scope.organizationId.toLowerCase()===scope.organizationId.toLowerCase()&&row.scope.workspaceId.toLowerCase()===scope.workspaceId.toLowerCase();
 }
 function accepts(row:Run,query:NormalizedRunListQuery):boolean{
- return (query.state===undefined||row.state===query.state)&&(query.outcome===undefined||row.outcome===query.outcome)&&runListTimestamp(row.requestedAt);
+ return (query.state===undefined||row.state===query.state)&&(query.outcome===undefined||row.outcome===query.outcome)&&runListTimestamp(row.requestedAt)
+  &&(query.runIdPrefix===undefined||row.id.toLowerCase().startsWith(query.runIdPrefix));
 }
 function ordered(rows:readonly Run[],position:RunListPosition|null,scope:WorkspaceScope,query:NormalizedRunListQuery):boolean{
  const ids=new Set<string>();let prior:Pick<Run,'id'|'requestedAt'>|null=position;

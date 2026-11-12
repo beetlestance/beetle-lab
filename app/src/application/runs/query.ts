@@ -15,8 +15,8 @@ function expectedQuery(query: RunList): RunList {
   const copy = runSnapshot(query, 2048);
   const { scope, ...page } = copy;
   requireRule(validateApi('WorkspaceScope', scope).ok && validateApi('RunListQuery', page).ok);
+  try { runListPosition(scope, page); } catch { requireRule(false); }
   const normalized = normalizeRunListQuery(page);
-  try { runListPosition(scope, normalized); } catch { requireRule(false); }
   return { scope, ...normalized };
 }
 

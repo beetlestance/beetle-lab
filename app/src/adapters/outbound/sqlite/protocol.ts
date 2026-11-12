@@ -35,7 +35,7 @@ import type { SettingsIdentity } from '../../../ports/settings-reader.js';
 import type { InstallationRecord } from '../../../domain/settings/index.js';
 
 export const STORAGE_ERROR_CODES = Object.freeze(['invalid_input', 'invalid_value', 'not_found', 'conflict',
-  'capacity_unavailable', 'queue_full', 'closed', 'unavailable', 'owned', 'schema_newer'] as const);
+  'capacity_unavailable', 'search_too_broad', 'search_indexing', 'queue_full', 'closed', 'unavailable', 'owned', 'schema_newer'] as const);
 export type ErrorCode = typeof STORAGE_ERROR_CODES[number];
 export class StorageError extends Error {
   constructor(readonly code: ErrorCode) { super(`Storage ${code}`); this.name = 'StorageError'; }

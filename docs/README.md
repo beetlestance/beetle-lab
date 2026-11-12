@@ -15,6 +15,7 @@ released application until the rewrite is qualified.
 | Plan producer retirement and cleanup | [Contract](design/lld/output-retirement.md), [packets](execution/output-retirement.md) | Proposed physical ACK, durable namespace, replay-safe settlement and dependency order |
 | Inspect native output cleanup custody | [Close-failure custody](verification/output-close-custody.md) | Sticky rejected closes retain bounded native owners and slots |
 | Inspect stored history summaries | [Summary evidence](verification/run-history-summary.md) | Verified scalar projection, provenance, bounded indexing and remaining qualification |
+| Inspect bounded history search | [Search evidence](verification/run-history-search.md) | Current names, scoped ID prefixes, bounded candidates and resumable indexing |
 | Inspect history filters/pagination | [History query evidence](verification/run-history-query.md) | Scoped state/outcome filters, keyset order, cursor binding and remaining summary/search work |
 | Inspect workspace dashboard | [Workspace overview](verification/workspace-overview.md) | Scoped snapshot counts, activity, recent/active navigation and schema preservation |
 | Inspect observed k6 load guidance | [Load guidance](verification/load-advice.md) | Current-source drops, explicit iteration-based planning and missing-data limits |

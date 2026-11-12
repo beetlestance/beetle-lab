@@ -7,7 +7,7 @@ import { requireRule } from '../../../domain/namespaces/index.js';
 import { lower } from './input-values.js';
 import { normalizedScope } from './suites.js';
 import type { Suites } from './suites.js';
-import { runListStatement } from './run-list-query.js';
+import { prepareHistorySearch, historyKeys } from './run-search/index.js';
 import { transaction } from './schema.js';
 
 interface Row { snapshot_json: string; version: number; state: Run['state']; outcome: Run['outcome'];
@@ -31,10 +31,11 @@ export class RunReads {
     const { scope: owner, ...page } = input;
     const query = normalizeRunListQuery(page);
     const scope = normalizedScope(owner);
-    const statement = runListStatement(input);
+    const search = { scope, ...query };
+    if (query.name !== undefined) { this.suites.workspace(scope); prepareHistorySearch(this.db, search); }
     return transaction(this.db, () => {
       this.suites.workspace(scope);
-      const rows = this.db.prepare(statement.sql).all(...statement.values) as unknown as { id: string; requested_at: string }[];
+      const rows = historyKeys(this.db, search);
       const selected = rows.slice(0, query.limit); const last = selected.at(-1);
       const nextCursor = rows.length > query.limit && last
         ? encodeRunListCursor({ scope, query, requestedAt: last.requested_at, id: last.id }) : null;

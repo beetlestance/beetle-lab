@@ -58,7 +58,7 @@ it('uses covering indexed paths for every filter and preserves v16 data on migra
   }
   expect((await metadata.runs.listRuns({ scope, limit: 100, state: 'active', outcome: 'passed' })).items).toEqual([]);
   await fixture.close(metadata); const inspected = new DatabaseSync(path);
-  expect(inspected.prepare('PRAGMA user_version').get()?.user_version).toBe(18);
+  expect(inspected.prepare('PRAGMA user_version').get()?.user_version).toBe(19);
   expect(inspected.prepare('SELECT COUNT(*) AS n FROM dispatch_outbox').get()).toEqual(retained);
   for (const filters of [{}, { state: 'finished' }, { outcome: 'passed' }, { state: 'finished', outcome: 'passed' }] as Omit<RunListQuery, 'limit'>[]) {
     for (const order of ['newest', 'oldest'] as const) {

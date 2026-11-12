@@ -1,7 +1,7 @@
 # Scoped run history parity
 
 Status: H1 locally verified; [evidence](../../verification/run-history-query.md).
-H2 summaries are locally verified, including native arm64/restart; H3 remains proposed.
+H2 summaries are locally verified, including native arm64/restart; H3 [indexed search](run-history-search.md) is being implemented.
 Owner: Run query/SQLite reader and existing scoped history UI.
 Inventory: F06; [remaining parity](../../verification/functional-parity.md).
 
@@ -75,7 +75,7 @@ malformed returned row times fail instead of being silently normalised.
 
 ## H2: verified summary projection
 
-The [H2 summary amendment](run-history-summary.md) freezes the locally implemented lean\nsource-bound projection before implementation.
+The [H2 summary amendment](run-history-summary.md) freezes the locally implemented lean source-bound projection before implementation.
 Reuse the existing verified metric/archive owner and exact global metric identities;
 never add a second numeric parser or read an entire archive per visible row.
 Prefer a durable bounded scalar projection from verified publication/indexing,
@@ -96,6 +96,9 @@ snapshot; avoid100 native reads or result bodies for a100-row page. Define the
 complete reply byte limit before enabling the projection.
 
 ## H3: bounded text/name search
+
+The [search contract](run-history-search.md) owns exact normalization, indexes,
+backfill/readiness and work budgets, including deliberate legacy differences.
 
 Legacy substring search must not become first-page-only filtering presented as
 all-history search. Choose and qualify a scoped bounded search-index owner before

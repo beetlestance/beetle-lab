@@ -79,5 +79,11 @@ export function operationPath(operation: ApiOperation, input: PreparedInput): st
 function appendRunQuery(query: URLSearchParams, input: NonNullable<PreparedInput['query']>): void {
   if ('state' in input && input.state !== undefined) query.set('state', input.state);
   if ('outcome' in input && input.outcome !== undefined) query.set('outcome', input.outcome);
+  appendRunSearch(query, input);
   if ('order' in input && input.order !== undefined) query.set('order', input.order);
+}
+
+function appendRunSearch(query: URLSearchParams, input: NonNullable<PreparedInput['query']>): void {
+  if ('name' in input && input.name !== undefined) query.set('name', input.name);
+  if ('runIdPrefix' in input && input.runIdPrefix !== undefined) query.set('runIdPrefix', input.runIdPrefix);
 }

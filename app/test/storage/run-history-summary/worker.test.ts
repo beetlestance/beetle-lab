@@ -43,7 +43,7 @@ it('migrates retained v17 rows and uses the exact indexed due scan with replay-s
   await storage.close(metadata); const db = new DatabaseSync(path);
   const plan = db.prepare('EXPLAIN QUERY PLAN ' + historyScanSql).all(2000, 16).map(row => row.detail).join(' ');
   expect(plan).toContain('run_history_due'); expect(plan).not.toContain('TEMP B-TREE'); expect(plan).not.toContain('SCAN r');
-  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(18);
+  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(19);
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]); db.close();
 });
 it('rejects forged or mutable raw SQL projections without changing accounting', () => {

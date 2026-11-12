@@ -71,12 +71,34 @@
             "newest",
             "oldest"
           ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 64
+        },
+        "runIdPrefix": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 36,
+          "pattern": "^[0-9A-Fa-f-]+$"
         }
       },
       "required": [
         "limit"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "not": {
+        "type": "object",
+        "properties": {
+          "name": {},
+          "runIdPrefix": {}
+        },
+        "required": [
+          "name",
+          "runIdPrefix"
+        ]
+      }
     }
   }
 }

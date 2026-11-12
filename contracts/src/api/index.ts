@@ -30,6 +30,7 @@ export {workspaceOverviewMatches} from './overview.js';
 
 export {normalizeRunListQuery,runListPosition,captureRunListCursor,encodeRunListCursor,compareRunListPosition,runListTimestamp} from './run-list.js';
 export type {NormalizedRunListQuery,RunListPosition} from './run-list.js';
+export {foldRunSearchName,normalizeRunSearchName,normalizeRunIdPrefix,runSearchTerms} from './run-search.js';
 export {runListPageMatches} from './run-list-page.js';
 export { pendingRunHistorySummary, pendingRunHistoryMetrics, runHistorySummaryMatches } from './run-history-summary.js';
 export type { RunHistoryMetrics } from './run-history-summary.js';
