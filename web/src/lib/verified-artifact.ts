@@ -67,4 +67,3 @@ function capture(input: ArtifactRead, policy: Pick<ArtifactReadPolicy<unknown>, 
     || checked.value.artifactId.toLowerCase() !== input.params.artifactId.toLowerCase()) throw new Error('Invalid artifact metadata');
   return {path: runArtifactContentPath(input.params), artifact: checked.value, signal: input.signal};
 }
-
