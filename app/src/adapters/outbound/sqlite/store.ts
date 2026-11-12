@@ -1,3 +1,5 @@
+import { OutputDeletions, deletionOperation, captureDeletionOperation } from './output-deletion/index.js';
+import type { OutputDeletionOperation } from '../../../ports/output-deletion-metadata.js';
 import { RunExecutions } from './execution-binding/index.js';
 import { RunArtifacts, artifactReadOperation } from './run-artifacts/index.js';
 import { OutputAbsences, absenceOperation } from './output-absence/index.js';
@@ -38,6 +40,7 @@ export function safeCode(error: unknown): ErrorCode {
   return 'unavailable';
 }
 export class Store {
+  private readonly deletions: OutputDeletions;
   private readonly absences: OutputAbsences;
   private readonly finalizations: OutputFinalizations;
   private readonly executions: RunExecutions;
@@ -77,12 +80,13 @@ export class Store {
     this.runCancellations = new RunCancellations(db, this.runReads);
     this.dispatchClaims = new DispatchClaims(db, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
     this.dispatchObservations = new DispatchObservations(db, this.runReads);
+    this.deletions = new OutputDeletions(db, this.runReads);
     this.inputs = new Inputs(db, this.entities, this.settings);
     this.inputReads = new InputReads(db, this.entities);
     this.namespaces = new Namespaces(db, this.entities, this.settings);
     this.reads = new Reads(db, this.entities);
   }
-  private mutation(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' }>): Value {
+  private mutation(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'beginOutputDeletion' }>): Value {
     const command = operation.command;
     return transaction(this.db, () => {
       const scope = scopeKey(command.request.scope);
@@ -104,8 +108,9 @@ export class Store {
       return copy;
     });
   }
-  private change(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' }>): Value {
+  private change(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'beginOutputDeletion' }>): Value {
     switch (operation.kind) {
+      case 'beginOutputDeletion': return this.deletions.begin(operation.command);
       case 'run': return this.runs.create(operation.command);
       case 'cancelRun': return this.runCancellations.cancel(operation.command);
       case 'input': return this.inputs.control(operation.command);
@@ -150,7 +155,12 @@ export class Store {
       default: throw new StorageError('invalid_input');
     }
   }
+  private deletion(operation: OutputDeletionOperation): Value {
+    const captured = captureDeletionOperation(operation);
+    return captured.kind === 'beginOutputDeletion' ? this.mutation(captured) : this.deletions.execute(captured);
+  }
   execute(operation: Operation): Value {
+    if (deletionOperation(operation)) return this.deletion(operation);
     if (artifactReadOperation(operation)) return this.runArtifacts.execute(operation);
     if (absenceOperation(operation)) return this.absences.execute(operation);
     if (finalizationOperation(operation)) return this.finalizations.execute(operation);

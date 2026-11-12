@@ -1,3 +1,4 @@
+import { deletionOperation, captureDeletionReply } from './output-deletion/index.js';
 import { executionOperation, captureExecutionReply } from './execution-binding/index.js';
 import { absenceOperation, captureAbsenceReply } from './output-absence/index.js';
 import { finalizationOperation, captureFinalizationReply } from './output-finalization/index.js';
@@ -19,6 +20,7 @@ function commandId(message: unknown): unknown {
   return messageId;
 }
 function captureReply(operation: Operation, original: Value): Value {
+  if (deletionOperation(operation)) return captureDeletionReply(operation, original);
   if (executionOperation(operation)) return captureExecutionReply(operation.key, original);
   return absenceOperation(operation) ? captureAbsenceReply(operation, original) : finalizationOperation(operation) ? captureFinalizationReply(operation, original) : resultOperation(operation) ? captureResultReply(operation.key, original) : outputOperation(operation) ? captureOutputReply(operation, original) : eventOperation(operation) ? captureEventReply(operation, original)
         : dispatchOperation(operation) ? captureDispatchReply(operation, original)

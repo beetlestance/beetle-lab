@@ -29,6 +29,7 @@ export class RunArtifacts {
   }
   private read(operation: ArtifactReadOperation): unknown {
     const key = operation.kind === 'listRunArtifacts' ? operation.query : operation.key;
+    this.requireAvailable(key);
     const run = this.runs.get(key); const binding = this.binding(run, key.attemptId);
     const page: RunArtifactPage = {id: run.id, scope: run.scope, attemptId: key.attemptId, generation: 1,
       availability: 'pending', manifestDigest: null, items: [], nextCursor: null};
@@ -49,6 +50,9 @@ export class RunArtifacts {
       return this.unready(operation, page);
     }
     return this.published(operation, page, binding, final, source);
+  }
+  private requireAvailable(key: RunKey): void {
+    if (this.db.prepare('SELECT 1 FROM output_deletion_intents WHERE run_id=? AND organization_id=? AND workspace_id=?').get(key.id, key.scope.organizationId, key.scope.workspaceId)) throw new StorageError('not_found');
   }
   private pendingSource(operation: ArtifactReadOperation, binding: EventBinding, source: ReturnType<typeof readEnvelope>): void {
     if (!source) return;

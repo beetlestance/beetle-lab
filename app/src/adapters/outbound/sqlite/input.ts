@@ -1,3 +1,4 @@
+import { deletionOperation, captureDeletionOperation, deletionReplyLimit } from './output-deletion/index.js';
 import { executionOperation, captureExecutionOperation } from './execution-binding/index.js';
 import { artifactReadOperation, captureArtifactReadOperation } from './run-artifacts/index.js';
 import { runEventsOperation, captureRunEventsOperation } from './run-events/index.js';
@@ -121,16 +122,12 @@ function checkedExtendedOperation(operation: Operation): boolean {
   return settingsRead(operation);
 }
 export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operation {
-  if (executionOperation(input)) {
-    try { return captureExecutionOperation(input); } catch { throw new StorageError('invalid_input'); }
-  }
-
-  if (artifactReadOperation(input)) {
-    try { return captureArtifactReadOperation(input); } catch { throw new StorageError('invalid_input'); }
-  }
-  if (runEventsOperation(input)) {
-    try { return captureRunEventsOperation(input); } catch { throw new StorageError('invalid_input'); }
-  }
+  try {
+    if (deletionOperation(input)) return captureDeletionOperation(input);
+    if (executionOperation(input)) return captureExecutionOperation(input);
+    if (artifactReadOperation(input)) return captureArtifactReadOperation(input);
+    if (runEventsOperation(input)) return captureRunEventsOperation(input);
+  } catch {throw new StorageError('invalid_input');}
   if (absenceOperation(input)) return checkedAbsenceOperation(input);
   return checkedOutputOperation(input, runtimeTtlMs);
 }
@@ -181,6 +178,7 @@ function dataProperty(value: unknown, key: string): unknown {
   return descriptor && 'value' in descriptor ? descriptor.value : undefined;
 }
 export function operationMessageLimit(operation: Operation): number {
+  if (deletionOperation(operation)) return 12288;
   if (compactOperation(operation)) return 4096;
   if (outputOperation(operation)) return 79872;
   if (eventOperation(operation)) return eventRequestLimit(operation);
@@ -195,10 +193,15 @@ export function largeOperation(operation: Operation): boolean {
   return suiteOperation(operation) || ['dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource', 'getRunResult', 'getRunEvents', 'listRunArtifacts'].includes(dataProperty(operation, 'kind') as string);
 }
 export function operationReplyLimit(operation: Operation): number {
+  if (deletionOperation(operation)) return deletionReplyLimit(operation);
   if (absenceOperation(operation) || finalizationOperation(operation)) return 4096;
   if (operation.kind === 'getRunArtifact') return 4096;
   if (runEventsOperation(operation)) return 262144;
   if (['listRunArtifacts', 'getRunResult'].includes(operation.kind)) return 73728;
+  return payloadReplyLimit(operation);
+}
+/** Variable payload owners retain their own reply budget; fixed envelopes are above. */
+function payloadReplyLimit(operation: Operation): number {
   if (outputOperation(operation)) return outputReplyLimit(operation);
   if (eventOperation(operation)) return eventReplyLimit(operation);
   if (dispatchOperation(operation)) return dispatchReplyLimit(operation);
