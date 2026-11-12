@@ -15,6 +15,8 @@ import type { schema as EngineManifestSchema } from './engine-manifest.inference
 import type { schema as EngineResultSchema } from './engine-result.inference.js';
 import type { schema as ProtocolErrorSchema } from './error.inference.js';
 import type { schema as EventBatchSchema } from './event-batch.inference.js';
+import type { schema as StandaloneExportAssignmentSchema } from './export-assignment.inference.js';
+import type { schema as StandaloneExportResultSchema } from './export-result.inference.js';
 import type { schema as InstalledIdentitySchema } from './installed-identity.inference.js';
 import type { schema as OfferSchema } from './offer.inference.js';
 import type { schema as OutputAbsenceSchema } from './output-absence.inference.js';
@@ -55,6 +57,8 @@ export type EngineManifest = FromSchema<typeof EngineManifestSchema, { reference
 export type EngineResult = FromSchema<typeof EngineResultSchema, { references: [...typeof schemas] }>;
 export type ProtocolError = FromSchema<typeof ProtocolErrorSchema, { references: [...typeof schemas] }>;
 export type EventBatch = FromSchema<typeof EventBatchSchema, { references: [...typeof schemas] }>;
+export type StandaloneExportAssignment = FromSchema<typeof StandaloneExportAssignmentSchema, { references: [...typeof schemas] }>;
+export type StandaloneExportResult = FromSchema<typeof StandaloneExportResultSchema, { references: [...typeof schemas] }>;
 export type InstalledIdentity = FromSchema<typeof InstalledIdentitySchema, { references: [...typeof schemas] }>;
 export type Offer = FromSchema<typeof OfferSchema, { references: [...typeof schemas] }>;
 export type OutputAbsence = FromSchema<typeof OutputAbsenceSchema, { references: [...typeof schemas] }>;
@@ -80,6 +84,8 @@ export interface ProtocolTypes {
   EngineResult: EngineResult;
   ProtocolError: ProtocolError;
   EventBatch: EventBatch;
+  StandaloneExportAssignment: StandaloneExportAssignment;
+  StandaloneExportResult: StandaloneExportResult;
   InstalledIdentity: InstalledIdentity;
   Offer: Offer;
   OutputAbsence: OutputAbsence;

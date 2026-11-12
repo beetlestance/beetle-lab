@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "purpose": "standalone_export",
+  "exportId": "00000000-0000-4000-8000-000000000004",
+  "attemptId": "00000000-0000-4000-8000-000000000003",
+  "organizationId": "00000000-0000-4000-8000-000000000001",
+  "workspaceId": "00000000-0000-4000-8000-000000000002",
+  "generation": 1,
+  "assignmentDigest": "374137476ffd403654df737b707bc7bd13f92ad139cf132c4adbfd9abb789273",
+  "status": "succeeded",
+  "reason": null,
+  "artifact": {
+    "artifactId": "00000000-0000-4000-8000-000000000008",
+    "kind": "standalone-k6-script",
+    "relativePath": "standalone/suite.js",
+    "bytes": 1024,
+    "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "sealedAt": "2026-01-01T00:00:00.000Z"
+  },
+  "buildUsage": {
+    "bytes": 1024,
+    "peakBytes": 4096
+  },
+  "seal": {
+    "sealedAt": "2026-01-01T00:00:01.000Z",
+    "sha256": "abbd30714fea79345ef790ac19e8768ff618cd7633dfc7d1616877135d93edd1"
+  }
+}

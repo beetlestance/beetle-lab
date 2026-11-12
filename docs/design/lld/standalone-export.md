@@ -5,6 +5,9 @@ shared compiler requirement in [application/UI](application-ui.md) and F15. HTTP
 admission/download, UI actions and real native execution qualification remain later
 parts of the same first-release feature, not implied by this helper.
 
+The [independent job contract](standalone-export-jobs.md) owns the separate admitted
+purpose/result boundary; its wire component does not complete HTTP/runtime integration.
+
 Public engine entrypoint engines/k6/export/index.ts exports exportStandaloneScript
 and the types in types.ts. It accepts the actual owned/frozen compileSuite output,
 caller-owned fresh outputDirectory, timeoutMs and required maximumBuildBytes.

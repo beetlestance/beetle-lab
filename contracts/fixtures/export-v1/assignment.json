@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "purpose": "standalone_export",
+  "exportId": "00000000-0000-4000-8000-000000000004",
+  "requestId": "00000000-0000-4000-8000-000000000006",
+  "source": {
+    "revisionId": "00000000-0000-4000-8000-000000000007",
+    "revisionDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "offer": {
+    "protocolVersion": "1.0",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002",
+    "attemptId": "00000000-0000-4000-8000-000000000003",
+    "intentDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "engine": {
+      "id": "k6",
+      "imageDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "configVersion": 1
+    },
+    "inputs": [
+      {
+        "id": "00000000-0000-4000-8000-000000000005",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "bytes": 1024
+      }
+    ],
+    "budget": {
+      "cpuMillis": 1000,
+      "memoryBytes": 536870912,
+      "pids": 128,
+      "timeoutMs": 600000,
+      "outputBytes": 1073741824
+    },
+    "executionPolicy": {
+      "mode": "parallel",
+      "preferIdle": true
+    },
+    "requiredCapabilities": [
+      "standalone-export-v1"
+    ],
+    "secretReferences": [],
+    "config": {
+      "synthetic": true
+    },
+    "installedIdentity": {
+      "manifestId": "k6-v1",
+      "profileId": "docker-v1",
+      "catalogVersion": 1,
+      "manifestDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "profileDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "schemaDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  },
+  "options": {
+    "scriptTimeoutMs": 180000,
+    "maximumBuildBytes": 2097152
+  },
+  "assignmentDigest": "374137476ffd403654df737b707bc7bd13f92ad139cf132c4adbfd9abb789273"
+}

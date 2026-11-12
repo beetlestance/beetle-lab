@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/runner/v1/export-assignment",
+  "title": "StandaloneExportAssignment",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "purpose": {
+      "const": "standalone_export"
+    },
+    "exportId": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+    },
+    "requestId": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "revisionId": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+        },
+        "revisionDigest": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+        }
+      },
+      "required": [
+        "revisionId",
+        "revisionDigest"
+      ],
+      "additionalProperties": false
+    },
+    "offer": {
+      "allOf": [
+        {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/offer"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "engine": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "const": "k6"
+                },
+                "configVersion": {
+                  "const": 1
+                }
+              }
+            },
+            "requiredCapabilities": {
+              "type": "array",
+              "contains": {
+                "const": "standalone-export-v1"
+              }
+            },
+            "secretReferences": {
+              "type": "array"
+            }
+          },
+          "required": [
+            "secretReferences"
+          ]
+        }
+      ]
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "scriptTimeoutMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 172800000
+        },
+        "maximumBuildBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 67108864
+        }
+      },
+      "required": [
+        "scriptTimeoutMs",
+        "maximumBuildBytes"
+      ],
+      "additionalProperties": false
+    },
+    "assignmentDigest": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+    }
+  },
+  "required": [
+    "version",
+    "purpose",
+    "exportId",
+    "requestId",
+    "source",
+    "offer",
+    "options",
+    "assignmentDigest"
+  ],
+  "additionalProperties": false
+}

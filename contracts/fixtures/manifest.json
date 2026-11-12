@@ -463,5 +463,15 @@
     "path": "invalid/target-runtime-report.json",
     "schema": "TargetRuntimeReport",
     "valid": false
+  },
+  {
+    "path": "export-v1/assignment.json",
+    "schema": "StandaloneExportAssignment",
+    "valid": true
+  },
+  {
+    "path": "export-v1/result.json",
+    "schema": "StandaloneExportResult",
+    "valid": true
   }
 ]
