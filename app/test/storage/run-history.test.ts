@@ -1,3 +1,4 @@
+import { asSchema17 } from './run-history-summary/fixture.js';
 import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { encodeRunListCursor } from '@beetle/contracts/api';
@@ -36,6 +37,7 @@ it('uses covering indexed paths for every filter and preserves v16 data on migra
   for (let id = 500; id < 511; id++) await metadata.runs.execute(runCommand(revision.id, id));
   const before = await metadata.runs.getRun({ scope, id: uuid(500) }); await fixture.close(metadata);
   const db = new DatabaseSync(path);
+  asSchema17(db);
   db.exec('DROP INDEX runs_history_outcome; DROP INDEX runs_history_state_outcome; PRAGMA user_version=16;');
   const changes: [number, string, string, string, number, string | null][] = [
     [501, 'dispatching', 'pending', 'pending', 0, null], [502, 'active', 'pending', 'pending', 0, null],
@@ -56,7 +58,7 @@ it('uses covering indexed paths for every filter and preserves v16 data on migra
   }
   expect((await metadata.runs.listRuns({ scope, limit: 100, state: 'active', outcome: 'passed' })).items).toEqual([]);
   await fixture.close(metadata); const inspected = new DatabaseSync(path);
-  expect(inspected.prepare('PRAGMA user_version').get()?.user_version).toBe(17);
+  expect(inspected.prepare('PRAGMA user_version').get()?.user_version).toBe(18);
   expect(inspected.prepare('SELECT COUNT(*) AS n FROM dispatch_outbox').get()).toEqual(retained);
   for (const filters of [{}, { state: 'finished' }, { outcome: 'passed' }, { state: 'finished', outcome: 'passed' }] as Omit<RunListQuery, 'limit'>[]) {
     for (const order of ['newest', 'oldest'] as const) {

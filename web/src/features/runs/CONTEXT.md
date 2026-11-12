@@ -6,6 +6,8 @@ Generated ApiClient owns request/response validation and scope bindings.
 History retains bounded query-bound keyset pages through the shared Pagination owner.
 HistoryFilters applies exact state/outcome/order explicitly; context changes reset
 pagination and selection. Refresh starts page one; comparison persists across pages.
+HistorySummaryCells consumes ordered stored summaries only: measured units, missing
+values/coverage, histogram estimates and logical-versus-published byte provenance.
 Details poll every two seconds while nonterminal, stop on errors/terminal states,
 and suspend interval work when hidden. Unmount cancels/removes scoped run queries.
 Submission fetches effective settings only after explicit opening; form state
@@ -24,16 +26,14 @@ RunDetail owns cancellation above QueryState, retaining intent through read erro
 RunCancellation displays one scoped request ID across unknown reply retries; accepted
 intent displays waiting, never terminal stop. Receipt replay invalidates reads;
 it cannot overwrite newer detail. Session/scope retirement fences callbacks.
-Focused checks: `node node_modules/vitest/vitest.mjs run web/src/features/runs
---maxWorkers=1` (use repository root executable when this worktree lacks deps).
+Check: `node node_modules/vitest/vitest.mjs run web/src/features/runs --maxWorkers=1`
 ExecutionActivity is composed through timeline/index; it owns one bounded projected
 activity query per scoped active attempt. See timeline/CONTEXT.md for read limits,
 retirement, useful progress and terminal drain behavior.
 RunArtifacts is composed through artifacts/index for bounded published inventory
 and browser-owned UUID-only downloads. See artifacts/CONTEXT.md for read lifetime,
 paging and transfer ownership; result declarations alone still grant no links.
-RunMetrics composes sealed history through metrics/index; one catalogue page and
-bounded replacement chart views. See metrics/CONTEXT.md for paging and ownership.
+RunMetrics uses metrics/index for one catalogue and bounded chart views; see its CONTEXT.md.
 RunReads admits one original detail read plus at most four waiting intents. Waiting
 expires after five seconds or caller abort; retirement rejects queued intents.
 Original completion releases admission. Storage bounds and explicit HTTP errors

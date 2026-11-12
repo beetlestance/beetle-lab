@@ -1,3 +1,4 @@
+import { readHistorySummaries } from './run-history/index.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeRunListCursor, normalizeRunListQuery, runListPageMatches, validateApi } from '@beetle/contracts/api';
 import type { Run, RunPage } from '@beetle/contracts/api';
@@ -37,7 +38,8 @@ export class RunReads {
       const selected = rows.slice(0, query.limit); const last = selected.at(-1);
       const nextCursor = rows.length > query.limit && last
         ? encodeRunListCursor({ scope, query, requestedAt: last.requested_at, id: last.id }) : null;
-      const result = { scope, items: selected.map(row => this.get({ scope, id: row.id })), nextCursor };
+      const items = selected.map(row => this.get({ scope, id: row.id }));
+      const result = { scope, items, summaries: readHistorySummaries(this.db, scope, items), nextCursor };
       if (!runListPageMatches(result, scope, query)) throw new Error('Invalid persisted run page');
       return result;
     });

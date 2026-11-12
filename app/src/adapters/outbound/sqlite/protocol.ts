@@ -1,3 +1,6 @@
+import type { HistoryOperation } from '../../../ports/run-history.js';
+import type { RunHistoryJob } from '../../../ports/run-history.js';
+import type { RunHistorySummary } from '@beetle/contracts/api';
 import type {OverviewQuery} from '../../../ports/overview.js';
 import type {WorkspaceOverview} from '@beetle/contracts/api';
 import type {ExportOperation,ExportValue} from './export-jobs/protocol.js';
@@ -40,7 +43,7 @@ export class StorageError extends Error {
 import type { RuntimeObservation } from '../../../ports/runtime.js';
 export type { RuntimeObservation } from '../../../ports/runtime.js';
 export type SettingsView = InstallationSettings | OrganizationSettings | WorkspaceSettings;
-export type Operation = {kind:'getWorkspaceOverview';query:OverviewQuery} | ExportOperation | LocalSessionOperation | OutputDeletionOperation | AbsenceOperation
+export type Operation = HistoryOperation | {kind:'getWorkspaceOverview';query:OverviewQuery} | ExportOperation | LocalSessionOperation | OutputDeletionOperation | AbsenceOperation
 
   | { kind: 'outputFinalize'; request: OutputFinalizationRequest }
   | { kind: 'outputClaimArtifact' | 'outputBeginPublication'; request: OutputArtifactClaim }
@@ -86,7 +89,7 @@ export type Operation = {kind:'getWorkspaceOverview';query:OverviewQuery} | Expo
   | { kind: 'getSettingsIdentity'; scope: SettingsScope }
   | { kind: 'runtime'; runtime: RuntimeObservation | null }
   | { kind: 'close' };
-export type Value = WorkspaceOverview | ExportValue | LocalSessionRecord | OutputDeletionValue | PublishedArtifactRead | RunExecutionSnapshot | OutputAbsenceState | OutputAbsenceFinalizationReply | OutputFinalizationReply | OutputFileRecord | OutputCustodyState | OutputPage | Owned<SourceEnvelope> | EventPage | EventCursorState | EventIngestResult | DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | RunResultSnapshot | RunEventPage | RunArtifactPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
+export type Value = RunHistoryJob[] | RunHistorySummary | WorkspaceOverview | ExportValue | LocalSessionRecord | OutputDeletionValue | PublishedArtifactRead | RunExecutionSnapshot | OutputAbsenceState | OutputAbsenceFinalizationReply | OutputFinalizationReply | OutputFileRecord | OutputCustodyState | OutputPage | Owned<SourceEnvelope> | EventPage | EventCursorState | EventIngestResult | DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | RunResultSnapshot | RunEventPage | RunArtifactPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
 export type Command = Operation & { messageId: number };
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; messageId: number; ok: true; value: Value } |

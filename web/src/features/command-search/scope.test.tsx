@@ -3,6 +3,7 @@ import '@testing-library/jest-dom/vitest';
 import {act,cleanup,fireEvent,screen,waitFor,within} from '@testing-library/react';
 import {afterEach,expect,it} from 'vitest';
 import {read,ids,json,testClient,mount,deferred,suite,workspace,apiError} from './fixtures.js';
+import {historyPage} from '../runs/test-fixtures.js';
 import {routes} from '../../app/routes.js';
 afterEach(cleanup);
 async function open(){fireEvent.click(screen.getByRole('button',{name:'Search commands'}));return await screen.findByRole('dialog');}
@@ -41,6 +42,6 @@ it('shares only the identical unfiltered history first page with command search'
  expect(f.records.filter(row=>row.path.includes('/runs?'))).toHaveLength(1);
  const original=f.records.find(row=>row.path.includes('/runs?'))!;expect(original.path).toContain('limit=100&order=newest');
  fireEvent.keyDown(within(dialog).getByRole('searchbox'),{key:'Escape'});expect(original.signal?.aborted).toBe(false);
- await act(async()=>held.resolve(json({scope:{kind:'workspace',organizationId:ids.a,workspaceId:ids.workspace},items:[],nextCursor:null})));
+ await act(async()=>held.resolve(json(historyPage([]))));
  await screen.findByText('No runs match this history query.');
 });

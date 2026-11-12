@@ -47,5 +47,23 @@
       }
     }
   ],
-  "nextCursor": null
+  "nextCursor": null,
+  "summaries": [
+    {
+      "availability": "pending",
+      "source": null,
+      "testDurationMs": null,
+      "requestCount": null,
+      "requestsPerSecond": null,
+      "httpFailures": null,
+      "httpSamples": null,
+      "httpFailureRatio": null,
+      "httpP95": null,
+      "publishedArtifactBytes": null,
+      "runId": "00000000-0000-4000-8000-000000000005",
+      "attemptId": "00000000-0000-4000-8000-000000000006",
+      "retainedLogicalBytes": null,
+      "metadataAllowanceBytes": null
+    }
+  ]
 }

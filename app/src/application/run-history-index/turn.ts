@@ -1,0 +1,43 @@
+import { pendingRunHistorySummary, runHistorySummaryMatches } from '@beetle/contracts/api';
+import type { RunHistorySummary } from '@beetle/contracts/api';
+import { MetricReadError } from '../../ports/run-metrics.js';
+import type { RunHistoryJob, RunHistoryStore, RunHistoryMetricReader } from '../../ports/run-history.js';
+
+export class HistoryTurnRetired extends Error { constructor() { super('History indexing turn retired'); } }
+export class HistoryTurn {
+  readonly controller = new AbortController();
+  readonly deadline = performance.now() + 45000;
+  private readonly timer: ReturnType<typeof setTimeout>;
+  constructor(expired: () => void) { this.timer = setTimeout(() => { this.controller.abort(); expired(); }, 45000); }
+  check(): void {
+    if (this.controller.signal.aborted || performance.now() >= this.deadline) throw new HistoryTurnRetired();
+  }
+  dispose(): void { clearTimeout(this.timer); }
+  async run(store: RunHistoryStore, metrics: RunHistoryMetricReader): Promise<void> {
+    this.check(); const jobs = await store.scan({ nowMs: Date.now(), limit: 1 }); this.check();
+    const job = jobs[0]; if (!job) return;
+    if (job.manifestDigest === null && job.absenceProofDigest === null) { await this.defer(store, job, 30000); return; }
+    const summary = await this.project(metrics, job); this.check();
+    if (summary === null) { await this.defer(store, job, 1000); return; }
+    if (summary.availability === 'pending') { await this.defer(store, job, 30000); return; }
+    if (!runHistorySummaryMatches(summary, { id: job.id, activeAttemptId: job.attemptId })) throw new Error('Invalid indexed history summary');
+    this.check(); await store.commit({ job, summary }); this.check();
+  }
+  private async project(metrics: RunHistoryMetricReader, job: RunHistoryJob): Promise<RunHistorySummary | null> {
+    const base = pendingRunHistorySummary({ id: job.id, activeAttemptId: job.attemptId });
+    try {
+      const projection = await metrics.readRunHistorySummary({ id: job.id, scope: job.scope, attemptId: job.attemptId },
+        { signal: this.controller.signal, deadline: this.deadline });
+      this.check(); return { ...base, ...projection };
+    } catch (error) {
+      this.check();
+      if (!(error instanceof MetricReadError)) throw error;
+      if (error.code === 'busy') return null;
+      if (!['integrity', 'unavailable', 'deadline'].includes(error.code)) throw error;
+      return { ...base, availability: 'unavailable' };
+    }
+  }
+  private async defer(store: RunHistoryStore, job: RunHistoryJob, delayMs: number): Promise<void> {
+    this.check(); await store.defer({ job, dueMs: Date.now() + delayMs }); this.check();
+  }
+}

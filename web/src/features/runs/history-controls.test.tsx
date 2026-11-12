@@ -4,7 +4,7 @@ import { afterEach, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
-import { ids, json, testClient, mount, run, scope, deferred } from './test-fixtures.js';
+import { historyPage, ids, json, testClient, mount, run, deferred } from './test-fixtures.js';
 afterEach(cleanup);
 const path = routes.runs(ids.a, ids.workspace);
 it('applies filters explicitly, fences old replies, resets selection and performs no row reads', async () => {
@@ -15,7 +15,7 @@ it('applies filters explicitly, fences old replies, resets selection and perform
     if (!url.pathname.endsWith('/runs')) throw Error('Unexpected history fanout');
     if (url.searchParams.get('state') === 'active') return late.promise;
     const items = url.searchParams.get('state') === 'queued' ? [] : [base];
-    return json({ scope, items, nextCursor: null });
+    return json(historyPage(items));
   });
   mount(fixture.client, path); const box = await screen.findByRole('checkbox'); fireEvent.click(box);
   expect(screen.getByText(/1 selected/)).toBeInTheDocument();
@@ -27,7 +27,7 @@ it('applies filters explicitly, fences old replies, resets selection and perform
   fireEvent.click(screen.getByRole('button', { name: 'Apply filters' }));
   await screen.findByText('No runs match this history query.');
   expect(fixture.records[1]!.signal?.aborted).toBe(true);
-  late.resolve(json({ scope, items: [{ ...run(), state: 'active' }], nextCursor: null }));
+  late.resolve(json(historyPage([{ ...run(), state: 'active' }])));
   await Promise.resolve(); expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Reset filters' }));
   await screen.findByRole('checkbox'); expect(screen.getByLabelText('State')).toHaveValue('');

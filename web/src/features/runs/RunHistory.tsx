@@ -1,3 +1,4 @@
+import { HistorySummaryCells } from './HistorySummaryCells.js';
 import { HistoryFilters } from './HistoryFilters.js';
 import type { HistoryFilter } from './HistoryFilters.js';
 import { useMemo, useState } from 'react';
@@ -41,13 +42,13 @@ function HistoryPage({ scope, filters }: { scope: RunScope; filters: HistoryFilt
     {selected.length > 0 && <button onClick={() => setSelected([])}>Clear selection</button>}
     <QueryState query={query}>{data => <>
       <div className="table-scroll"><table><caption className="sr-only">Workspace run history</caption>
-        <thead><tr><th>Select</th><th>Run / saved revision</th><th>Requested</th><th>State</th><th>Outcome</th><th>Engine validation</th></tr></thead>
-        <tbody>{data.items.map(run => <tr key={run.id}>
+        <thead><tr><th>Select</th><th>Run / saved revision</th><th>Requested</th><th>State</th><th>Outcome</th><th>Engine validation</th><th>k6 test duration</th><th>HTTP requests</th><th>HTTP RPS</th><th>HTTP p95</th><th>HTTP failures</th><th>Published artifacts</th><th>Retained allowance</th></tr></thead>
+        <tbody>{data.items.map((run, index) => <tr key={run.id}>
           <td><input type="checkbox" aria-label={`Compare ${run.id}`} checked={selected.includes(run.id)} disabled={!terminal(run) || (!selected.includes(run.id) && selected.length >= 4)} onChange={() => toggle(run.id)} /></td>
           <th scope="row"><Link className="number" to={routes.run(scope.organizationId, scope.workspaceId, run.id)}>{run.id}</Link>
             <span className="display-path number">{run.revisionId}</span></th>
           <td><time dateTime={run.requestedAt}>{run.requestedAt}</time></td><td>{run.state}</td>
-          <td>{run.outcome}</td><td>{run.validationStatus}</td>
+          <td>{run.outcome}</td><td>{run.validationStatus}</td><HistorySummaryCells value={data.summaries[index]!} />
         </tr>)}</tbody></table></div>
       {!data.items.length && <p className="notice">No runs match this history query.</p>}
       <Pagination page={page} next={data.nextCursor} />

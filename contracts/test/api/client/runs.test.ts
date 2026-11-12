@@ -1,3 +1,4 @@
+import { pendingRunHistorySummary } from '@beetle/contracts/api';
 import { expect, it } from 'vitest';
 import { createApiClient, validateApi } from '../../../src/api/index.js';
 import type { Run } from '../../../src/api/index.js';
@@ -69,7 +70,7 @@ it('preserves a completed discovery run with an inconclusive outcome in detail a
   const run: Run = { ...queued, state: 'finished', outcome: 'inconclusive', validationStatus: 'passed', version: 4 };
   expect(await createApiClient({ baseUrl, fetch: reply(run) }).getRun({ params: { ...params, runId: run.id } }))
     .toEqual({ ok: true, value: run });
-  const page = { scope: run.scope, items: [run], nextCursor: null };
+  const page = { scope: run.scope, items: [run], summaries: [pendingRunHistorySummary(run)], nextCursor: null };
   expect(await createApiClient({ baseUrl, fetch: reply(page) }).listRuns({ params, query: { limit: 10 } }))
     .toEqual({ ok: true, value: page });
 });

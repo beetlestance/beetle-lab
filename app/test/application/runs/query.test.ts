@@ -1,3 +1,4 @@
+import { pendingRunHistorySummary } from '@beetle/contracts/api';
 import { expect, it, vi } from 'vitest';
 import type { Run, RunPage } from '@beetle/contracts/api';
 import { getRun, listRuns } from '../../../src/application/runs/index.js';
@@ -5,7 +6,7 @@ import type { RunKey, RunList, RunReader } from '../../../src/ports/runs.js';
 import { deferred, otherId, runValue } from './fixture.js';
 
 const reader = (run = runValue()): RunReader => ({ getRun: async () => run,
-  listRuns: async () => ({ scope: run.scope, items: [run], nextCursor: null }) });
+  listRuns: async () => ({ scope: run.scope, items: [run], summaries: [pendingRunHistorySummary(run)], nextCursor: null }) });
 const key = (): RunKey => ({ scope: runValue().scope, id: runValue().id });
 const query = (): RunList => ({ scope: runValue().scope, limit: 1 });
 
@@ -34,7 +35,7 @@ it('binds detail ID and scope and rejects inconsistent states instead of normali
 });
 
 it('rejects foreign, oversized, duplicate and over-limit pages', async () => {
-  const run = runValue(); const page: RunPage = { scope: run.scope, items: [run], nextCursor: null };
+  const run = runValue(); const page: RunPage = { scope: run.scope, items: [run], summaries: [pendingRunHistorySummary(run)], nextCursor: null };
   for (const invalid of [{ ...page, scope: { ...page.scope, organizationId: otherId } },
     { ...page, items: [{ ...run, scope: { ...run.scope, workspaceId: otherId } }] },
     { ...page, items: [run, { ...run, id: run.id.toUpperCase() }] },
@@ -61,12 +62,12 @@ it('captures keys, page scope and requested limit before held reader awaits', as
   const requestedQuery = query(); const held = deferred<RunPage>();
   const pending = listRuns(requestedQuery, { ...reader(), listRuns: () => held.promise });
   requestedQuery.limit = 2;
-  held.resolve({ scope: runValue().scope, items: [runValue(), { ...runValue(), id: otherId }], nextCursor: null });
+  held.resolve({ scope: runValue().scope, items: [{ ...runValue(), id: otherId }, runValue()], summaries: [pendingRunHistorySummary({ ...runValue(), id: otherId }), pendingRunHistorySummary(runValue())], nextCursor: null });
   await expect(pending).rejects.toThrow();
   const scopedQuery = query(); const scopedHeld = deferred<RunPage>();
   const scopedPending = listRuns(scopedQuery, { ...reader(), listRuns: () => scopedHeld.promise });
   scopedQuery.scope.organizationId = otherId;
-  scopedHeld.resolve({ scope: runValue().scope, items: [runValue()], nextCursor: null });
+  scopedHeld.resolve({ scope: runValue().scope, items: [runValue()], summaries: [pendingRunHistorySummary(runValue())], nextCursor: null });
   expect((await scopedPending).items).toEqual([runValue()]);
 });
 

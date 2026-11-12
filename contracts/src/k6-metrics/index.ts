@@ -82,3 +82,5 @@ export function k6MetricCatalogue(layout: K6MetricLayout): readonly K6AllowedMet
   if (result.length > 4600) throw new K6MetricPolicyError('metric_limit');
   return Object.freeze(result);
 }
+export { K6HttpSummaryError, summarizeK6HttpTotals, k6RequestsPerSecond } from './history.js';
+export type { K6HttpSummary } from './history.js';

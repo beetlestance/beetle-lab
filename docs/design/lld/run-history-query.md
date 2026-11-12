@@ -1,7 +1,7 @@
 # Scoped run history parity
 
 Status: H1 locally verified; [evidence](../../verification/run-history-query.md).
-H2/H3 remain proposals.
+H2 has a reviewed implementation pending final qualification; H3 remains proposed.
 Owner: Run query/SQLite reader and existing scoped history UI.
 Inventory: F06; [remaining parity](../../verification/functional-parity.md).
 
@@ -75,7 +75,7 @@ malformed returned row times fail instead of being silently normalised.
 
 ## H2: verified summary projection
 
-Before adding summary columns, define one lean source-bound history projection.
+The [H2 summary amendment](run-history-summary.md) freezes the proposed lean\nsource-bound projection before implementation.
 Reuse the existing verified metric/archive owner and exact global metric identities;
 never add a second numeric parser or read an entire archive per visible row.
 Prefer a durable bounded scalar projection from verified publication/indexing,

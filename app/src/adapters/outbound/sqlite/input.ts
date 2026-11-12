@@ -1,3 +1,4 @@
+import { historyOperation, captureHistoryOperation } from './run-history/index.js';
 import {exportOperation,captureExportOperation,exportReplyLimit,exportRequestLimit} from './export-wire.js';
 import { localSessionOperation, captureLocalSessionOperation } from './local-session/index.js';
 import { deletionOperation, captureDeletionOperation, deletionReplyLimit } from './output-deletion/index.js';
@@ -119,6 +120,7 @@ function settingsRead(operation: Operation): boolean {
   checkedScope(operation.scope); return true;
 }
 function checkedExtendedOperation(operation: Operation): boolean {
+  if (historyOperation(operation)) { captureHistoryOperation(operation); return true; }
   if (checkedRunOperation(operation)) return true;
   if (checkedInputOperation(operation)) return true;
   if (suiteOperation(operation)) { checkedSuiteOperation(operation); return true; }
@@ -202,8 +204,10 @@ export function largeOperation(operation: Operation): boolean {
   }
   return suiteOperation(operation) || ['getExportOriginal','listExports','dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource', 'getRunResult', 'getRunEvents', 'listRunArtifacts'].includes(dataProperty(operation, 'kind') as string);
 }
+const fixedReplyLimits: Partial<Record<Operation['kind'], number>> = { historySummary: 16384, getWorkspaceOverview: 32768 };
 export function operationReplyLimit(operation: Operation): number {
-  if(operation.kind==='getWorkspaceOverview')return 32768;
+  const fixed = fixedReplyLimits[operation.kind];
+  if (fixed !== undefined) return fixed;
   if (exportOperation(operation)) return exportReplyLimit(operation);
   if (localSessionOperation(operation)) return 2048;
   if (deletionOperation(operation)) return deletionReplyLimit(operation);
@@ -223,6 +227,6 @@ function payloadReplyLimit(operation: Operation): number {
 
 /** Fixed small control/read requests never use large payload envelopes. */
 function compactOperation(operation: Operation): boolean {
-  return dataProperty(operation,'kind')==='getWorkspaceOverview'||artifactReadOperation(operation) || runEventsOperation(operation) || absenceOperation(operation) || finalizationOperation(operation)
+  return ['getWorkspaceOverview', 'historySummary'].includes(dataProperty(operation,'kind') as string)||artifactReadOperation(operation) || runEventsOperation(operation) || absenceOperation(operation) || finalizationOperation(operation)
     || executionOperation(operation) || resultOperation(operation) || artifactOperation(operation);
 }

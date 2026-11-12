@@ -1,3 +1,4 @@
+import type { RunHistoryMetricReader } from './run-history.js';
 import type { RunMetricKey, RunMetricSeries, RunMetricSeriesPage, RunMetricSamplesPage } from '@beetle/contracts/api';
 import type { RunKey } from './runs.js';
 import type { RunArtifactsReader } from './run-artifacts.js';
@@ -15,7 +16,7 @@ export interface RunMetricsReader {
   listRunMetricSeries(query: RunMetricSeriesQuery, context: MetricReadContext): Promise<RunMetricSeriesPage>;
   getRunMetricSamples(query: RunMetricSamplesQuery, context: MetricReadContext): Promise<RunMetricSamplesPage>;
 }
-export interface RunMetricsService extends RunMetricLookupReader {
+export interface RunMetricsService extends RunMetricLookupReader, RunHistoryMetricReader {
   readonly reader: RunMetricsReader;
   /** Fence synchronously, abort and drain originals; shared adapters remain owned by bootstrap. */
   close(): Promise<void>;

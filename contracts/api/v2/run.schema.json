@@ -189,12 +189,20 @@
               "type": "null"
             }
           ]
+        },
+        "summaries": {
+          "type": "array",
+          "items": {
+            "$ref": "https://beetle-lab.dev/contracts/api/v2/run-history#/$defs/RunHistorySummary"
+          },
+          "maxItems": 100
         }
       },
       "required": [
         "scope",
         "items",
-        "nextCursor"
+        "nextCursor",
+        "summaries"
       ],
       "additionalProperties": false
     },

@@ -96,7 +96,7 @@ export async function inspectClosed(f: Fixture, run: Run, result: RunResultSnaps
     assert.equal(receipt.journal_authority, execution.journal_authority);
     assert.equal(receipt.journal_authority, envelope.manifest.binding.journalAuthority);
     assert.equal(db.prepare('SELECT charged_bytes FROM installation_storage_usage WHERE id=1').get()!.charged_bytes, charge.charged);
-    return { offer: offer.value, receipt, charge, artifacts: artifacts.entries, eventCount: events.length };
+    return { offer: offer.value, receipt, charge, timing: artifacts.timing, artifacts: artifacts.entries, eventCount: events.length };
   } finally { db.close(); }
 }
 async function inspectArtifacts(db: DatabaseSync, f: Fixture, run: Run, artifacts: NonNullable<RunResultSnapshot['result']>['artifacts']) {
@@ -105,6 +105,7 @@ async function inspectArtifacts(db: DatabaseSync, f: Fixture, run: Run, artifact
   const slots = db.prepare('SELECT ordinal,slot_json FROM execution_output_slots WHERE attempt_id=? ORDER BY ordinal LIMIT 129').all(run.activeAttemptId);
   assert.equal(slots.length, artifacts.length);
   const entries = []; let bytes = 0;
+  const timing: { numericVersion: number | null; numericTestDurationMs: number | null; nativeTestDurationMs: number | null } = { numericVersion: null, numericTestDurationMs: null, nativeTestDurationMs: null };
   for (const [index, slot] of slots.entries()) {
     assert.equal(slot.ordinal, index);
     const state = json(slot.slot_json, 1024) as { p: string; w: unknown; t: string; o: number };
@@ -113,7 +114,12 @@ async function inspectArtifacts(db: DatabaseSync, f: Fixture, run: Run, artifact
     const actual = await publishedBytes(join(f.root, 'backend/outputs/published', run.scope.organizationId,
       run.scope.workspaceId, run.id, run.activeAttemptId, state.t), expected.bytes);
     assert.equal(digest(actual), expected.sha256); bytes += actual.length;
+    if (expected.kind === 'numeric-final' || expected.kind === 'native-summary') {
+      const value = JSON.parse(actual.toString('utf8')) as { version: number; timing?: { testRunDurationMs: number | null } };
+      if (expected.kind === 'numeric-final') { timing.numericVersion = value.version; timing.numericTestDurationMs = value.timing?.testRunDurationMs ?? null; }
+      else timing.nativeTestDurationMs = value.timing?.testRunDurationMs ?? null;
+    }
     entries.push({ relativePath: expected.relativePath, bytes: actual.length, sha256: digest(actual) });
   }
-  return { entries, bytes };
+  return { entries, bytes, timing };
 }

@@ -1,8 +1,8 @@
 import { render } from '@testing-library/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
-import { captureRunEventCursor, encodeRunEventCursor, validateApi } from '@beetle/contracts/api';
-import type { RunMetricSeriesPage, RunArtifactPage, RunEventPage, CreateRunRequest, Run, RunResultSnapshot, SuiteRevision, WorkspaceSettings } from '@beetle/contracts/api';
+import { pendingRunHistorySummary, captureRunEventCursor, encodeRunEventCursor, validateApi } from '@beetle/contracts/api';
+import type { RunPage, WorkspaceScope, RunMetricSeriesPage, RunArtifactPage, RunEventPage, CreateRunRequest, Run, RunResultSnapshot, SuiteRevision, WorkspaceSettings } from '@beetle/contracts/api';
 import { ApiContext } from '../../app/api.js';
 import { createQueryClient } from '../../app/queries.js';
 import { ids, json, readNamespace, testClient as baseClient } from '../../app/test-fixtures.js';
@@ -61,7 +61,7 @@ export function mountLauncher(client: ReturnType<typeof testClient>['client']) {
 export function runRead(request: Parameters<typeof readNamespace>[0]) {
   const organizationId = request.path.includes(ids.b) ? ids.b : ids.a;
   if (request.path.includes('/events?')) return json(emptyEvents(run(organizationId)));
-  if (request.path.includes('/runs?')) return json({ scope: { ...scope, organizationId }, items: [run(organizationId)], nextCursor: null });
+  if (request.path.includes('/runs?')) return json({ scope: { ...scope, organizationId }, items: [run(organizationId)], summaries: [pendingRunHistorySummary(run(organizationId))], nextCursor: null });
   if (request.path.endsWith(`/runs/${runId}`)) return json(run(organizationId));
   if (request.path.endsWith(`/runs/${runId}/result`)) return json(resultSnapshot(run(organizationId)));
   return readNamespace(request);
@@ -119,4 +119,8 @@ async function captureRunRead({ request, response, url, snapshots }: {
 export function pendingMetrics(current: Run = run(), attemptId = current.activeAttemptId): RunMetricSeriesPage {
   return {id: current.id, scope: current.scope, attemptId, generation: 1, availability: 'pending', manifestDigest: null,
     reason: null, windows: 0, totalSeries: 0, measurementSourceTimeMs: null, coverage: null, items: [], nextCursor: null};
+}
+
+export function historyPage(items: Run[], owner: WorkspaceScope = scope, nextCursor: string | null = null): RunPage {
+  return { scope: owner, items, summaries: items.map(pendingRunHistorySummary), nextCursor };
 }

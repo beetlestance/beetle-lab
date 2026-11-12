@@ -26,7 +26,8 @@ Failed notification disables delivery; journal stays authoritative. Originals
 must settle before sealing. Native/final numeric files have bounded IO/fsync/close
 and exact bigint custody, eligible only via atomic published manifest. Partial
 files remain preserved/charged. Numeric-final v3 binds history IDs/distributions,
-coverage/diagnostics/peak build; absent quantiles stay unknown. Published files
+coverage/diagnostics/peak build; numeric4 also retains the complete native summary
+test duration (otherwise null). Absent quantiles stay unknown. Published files
 remain reported despite later notification failure. Receipt.ok means coordination,
 not test pass; native99 required failures can be healthy failed-test coordination.
 Target observations reserve1MiB within output/collect; cooldown precedes collect,

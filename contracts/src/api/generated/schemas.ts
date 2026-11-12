@@ -22,6 +22,7 @@ import { schema as ApiRetention } from './retention.js';
 import { schema as ApiRunArtifacts } from './run-artifacts.js';
 import { schema as ApiRunComparison } from './run-comparison.js';
 import { schema as ApiRunEvents } from './run-events.js';
+import { schema as ApiRunHistory } from './run-history.js';
 import { schema as ApiRunMetrics } from './run-metrics.js';
 import { schema as ApiRunRequests } from './run-requests.js';
 import { schema as ApiRunResult } from './run-result.js';
@@ -33,7 +34,7 @@ import { schema as ApiSettings } from './settings.js';
 import { schema as ApiSuiteRequests } from './suite-requests.js';
 import { schema as ApiSuite } from './suite.js';
 /** Complete reference closure; runner result schemas are shared, never copied. */
-export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiExportJobs, ApiInputRequests, ApiInput, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
+export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiExportJobs, ApiInputRequests, ApiInput, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunHistory, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -111,6 +112,8 @@ export const apiMessageSchemas = freezeSchema({
   RunComparisonItem: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonItem' },
   RunComparisonSnapshot: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonSnapshot' },
   RunEventPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-events#/$defs/RunEventPage' },
+  RunHistorySource: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-history#/$defs/RunHistorySource' },
+  RunHistorySummary: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-history#/$defs/RunHistorySummary' },
   RunMetricKey: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricKey' },
   RunMetricTags: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricTags' },
   RunMetricPercentile: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricPercentile' },

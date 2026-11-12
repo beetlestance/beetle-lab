@@ -1,3 +1,4 @@
+import { HistorySummaries, historyOperation } from './run-history/index.js';
 import {Overviews} from './overview.js';
 import {exportOperation} from './export-wire.js';
 import {ExportJobs,ExportClaims,ExportObservations,ExportOutputs} from './export-jobs/index.js';
@@ -45,6 +46,7 @@ export function safeCode(error: unknown): ErrorCode {
   return 'unavailable';
 }
 export class Store {
+  private readonly historySummaries: HistorySummaries;
   private readonly localSessions: LocalSessions;
   private readonly deletions: OutputDeletions;
   private readonly absences: OutputAbsences;
@@ -74,6 +76,7 @@ export class Store {
   private readonly settings: Settings;
   private readonly reads: Reads;
   constructor(private readonly db: DatabaseSync, bootstrap: Bootstrap) {
+    this.historySummaries = new HistorySummaries(this.db);
     this.absences = new OutputAbsences(db);
     this.finalizations = new OutputFinalizations(db);
     this.outputs = new OutputCustody(db, bootstrap.installation.id);
@@ -186,6 +189,7 @@ export class Store {
     if (absenceOperation(operation)) return this.absences.execute(operation);
     if (finalizationOperation(operation)) return this.finalizations.execute(operation);
     if (['getRunEvents','getRunExecution','getRunResult'].includes(operation.kind)) return this.runRead(operation);
+    if (historyOperation(operation)) return this.historySummaries.execute(operation);
     if (outputOperation(operation)) return this.outputs.execute(operation);
     if (eventOperation(operation)) return this.events.execute(operation);
     return this.executeLegacy(operation);

@@ -1,3 +1,6 @@
+import { captureHistoryReply, historyOperation } from './run-history/index.js';
+import type { HistoryOperation } from './run-history/index.js';
+import type { RunHistoryStore } from '../../../ports/run-history.js';
 import {checkedOverview,checkedOverviewQuery} from '../../../application/overview/index.js';
 import type {OverviewReader} from '../../../ports/overview.js';
 import {exportOperation,captureExportReply} from './export-wire.js';
@@ -58,7 +61,7 @@ export interface MetadataOptions extends Bootstrap {
   /** Includes in-flight work; maximum 64. Close has one reserved slot. */
   queueLimit?: number;
 }
-interface Pending { exportJob?:ExportOperation; localSession?: LocalSessionOperation; deletion?: OutputDeletionOperation; resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
+interface Pending { history?: HistoryOperation; exportJob?:ExportOperation; localSession?: LocalSessionOperation; deletion?: OutputDeletionOperation; resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
   artifacts?: ArtifactReadOperation; absence?: AbsenceOperation; finalization?: FinalizationOperation; result?: RunKey; execution?: RunKey; runEvents?: RunEventsQuery; output?: OutputOperation; large: boolean; replyLimit: number; event?: EventOperation; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
 function validateLocation(options: MetadataOptions): void {
   if (typeof options.path !== 'string' || !options.path || options.path === ':memory:' || options.path.length > 4096 ||
@@ -87,6 +90,20 @@ export class Metadata {
   private readyResolve: () => void = () => undefined;
   private readyReject: (error: StorageError) => void = () => undefined;
   private readonly ready: Promise<void>;
+  readonly historySummaries: RunHistoryStore = {
+    scan: query => this.historyCall({kind:'historySummary',operation:{method:'scan',query}}) as ReturnType<RunHistoryStore['scan']>,
+    defer: request => this.historyCall({kind:'historySummary',operation:{method:'defer',request}}) as ReturnType<RunHistoryStore['defer']>,
+    commit: request => this.historyCall({kind:'historySummary',operation:{method:'commit',request}}) as ReturnType<RunHistoryStore['commit']>,
+  };
+  private async historyCall(operation: HistoryOperation): Promise<Value> {
+    try { return await this.call(operation); }
+    catch (error) {
+      if (this.failed) {
+        try { await this.terminate(); } catch (cleanup) { throw new AggregateError([error, cleanup], 'History carrier termination failed', { cause: cleanup }); }
+      }
+      throw error;
+    }
+  }
   readonly exportOutputs:ExportArtifacts={
     published:key=>this.call({kind:'exportOutput',operation:{method:'published',key}}) as ReturnType<ExportArtifacts['published']>,
     settleAbsence:request=>this.call({kind:'exportOutput',operation:{method:'absence',request}}) as ReturnType<ExportArtifacts['settleAbsence']>,
@@ -280,7 +297,7 @@ export class Metadata {
   private resolve(reply: Extract<WorkerReply, { kind: 'result'; ok: true }>, pending: Pending): void {
     let value: Value;
     try {
-      value = this.readReply(pending, reply.value) ?? (pending.absence ? captureAbsenceReply(pending.absence, reply.value) : pending.finalization ? captureFinalizationReply(pending.finalization, reply.value) : pending.output ? captureOutputReply(pending.output, reply.value) : pending.event ? captureEventReply(pending.event, reply.value)
+      value = pending.history ? captureHistoryReply(pending.history, reply.value) : this.readReply(pending, reply.value) ?? (pending.absence ? captureAbsenceReply(pending.absence, reply.value) : pending.finalization ? captureFinalizationReply(pending.finalization, reply.value) : pending.output ? captureOutputReply(pending.output, reply.value) : pending.event ? captureEventReply(pending.event, reply.value)
         : pending.dispatch ? captureDispatchReply(pending.dispatch, reply.value)
         : pending.cancellation ? captureCancelRunReply(reply.value, pending.cancellation)
         : boundedCopy(reply.value, pending.replyLimit) as Value);
@@ -289,6 +306,7 @@ export class Metadata {
     pending.resolve(value);
   }
   private bindReadRequest(pending: Pending, operation: Operation): void {
+    if (historyOperation(operation)) pending.history = operation;
     if(exportOperation(operation))pending.exportJob=operation;
     if (operation.kind === 'getRunExecution') pending.execution = operation.key;
     if (artifactReadOperation(operation)) pending.artifacts = operation;

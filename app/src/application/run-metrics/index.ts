@@ -1,3 +1,5 @@
+import type { RunKey } from '../../ports/runs.js';
+import { captureHistoryKey, historyProjection } from './history.js';
 import { captureLookupQuery, lookup, metricSource } from './lookup.js';
 import { MetricReadError } from '../../ports/run-metrics.js';
 import { captureRunMetricSeriesCursor, encodeRunMetricSeriesCursor, runMetricSeriesPageMatches, runMetricSamplesPageMatches, validateApi } from '@beetle/contracts/api';
@@ -52,6 +54,11 @@ export function createRunMetricsService(options: RunMetricServiceOptions): RunMe
     active = {owner, original}; return actualOriginal ? original : owner.race(original);
   }
   return Object.freeze({
+    readRunHistorySummary(key: RunKey & { attemptId: string }, context: MetricReadContext) {
+      let captured;
+      try { captured = captureHistoryKey(key); } catch (error) { return Promise.reject(error); }
+      return run({ ...captured, limit: 1 }, context, async (_captured, p) => historyProjection(p), true);
+    },
     lookupRunMetricSeries(q: RunMetricLookupQuery, c: MetricReadContext) {
       let input;
       try {input = captureLookupQuery(q);} catch (error) {return Promise.reject(error);}

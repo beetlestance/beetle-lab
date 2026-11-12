@@ -1,3 +1,4 @@
+import { observedHistory } from './history-summary.js';
 /** Manual public application -> real agent -> real k6 qualification. Coordinator runs Docker. */
 import assert from 'node:assert/strict';
 import { readFile, stat, writeFile } from 'node:fs/promises';
@@ -29,7 +30,7 @@ let app: Application | undefined;
 let applicationClosed = false;
 const started = Date.now();
 async function fingerprints(worker: URL): Promise<Record<string, string>> {
-  const files = ['configuration.ts', 'containers.ts', 'public-api.ts', 'evidence.ts', 'smoke-app.ts', 'initialize.ts'];
+  const files = ['configuration.ts', 'containers.ts', 'public-api.ts', 'evidence.ts', 'smoke-app.ts', 'initialize.ts', 'history-summary.ts'];
   const entries: [string, string][] = [];
   for (const name of files) entries.push([name, digest(await readFile(new URL(name, import.meta.url)))]);
   const workerStat = await stat(worker); assert(workerStat.isFile() && workerStat.size <= 8_388_608);
@@ -64,16 +65,23 @@ try {
   const session = await publicClient(app, origin); await waitForCapacity(app);
   evidence.phase = 'public-enqueue'; const queued = await enqueue(session.api, f);
   evidence.phase = 'public-terminal'; const terminal = await finished(session.api, queued, f.workStatus);
-  evidence.publicRequests = session.requestCount();
+  evidence.phase = 'history-projection'; const running = app;
+  const summary = await observedHistory(session.api, terminal.run, () => running.historySummaryState());
+  evidence.historySummary = summary; evidence.publicRequests = session.requestCount();
   await writeFile(join(f.root, 'public-terminal.json'), JSON.stringify(terminal, null, 2), { mode: 0o600 });
   await app.close(); app = undefined; applicationClosed = true;
   evidence.phase = 'physical-verification'; const physical = await inspectClosed(f, terminal.run, terminal.result);
+  assert.equal(summary.testDurationMs, physical.timing.nativeTestDurationMs);
+  assert.equal(summary.testDurationMs, physical.timing.numericTestDurationMs);
+  assert.equal(physical.timing.numericVersion, 4);
   Object.assign(evidence, { receipt: physical.receipt, charge: physical.charge,
     publishedArtifacts: physical.artifacts, durableAgentEvents: physical.eventCount });
   evidence.phase = 'metadata-reopen'; app = await openApplication(configuration.application); applicationClosed = false;
   await app.server.listen({ ...configuration.listen }); const reopened = await publicClient(app, origin);
   assert.deepEqual(value(await reopened.api.getRun({ params: terminal.params })), terminal.run);
   assert.deepEqual(value(await reopened.api.getRunResult({ params: terminal.params })), terminal.result);
+  const restoredHistory = value(await reopened.api.listRuns({ params: { organizationId: terminal.run.scope.organizationId, workspaceId: terminal.run.scope.workspaceId }, query: { limit: 1 } }));
+  assert.deepEqual(restoredHistory.summaries, [summary]);
   evidence.reopenPublicRequests = reopened.requestCount(); await app.close(); app = undefined; applicationClosed = true;
   assert.deepEqual(await inspectClosed(f, terminal.run, terminal.result), physical);
   evidence.targetCounts = targetCounts(f); Object.assign(evidence, await verifyNative(physical, terminal.result.result), { engineExecutions: 1 });

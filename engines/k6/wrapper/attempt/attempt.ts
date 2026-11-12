@@ -259,7 +259,10 @@ class Attempt {
       published: history?.bytes ?? 0, artifacts: history?.artifacts ?? [] };
   }
   private numericEvidence(diagnostics: MappingDiagnostics, history: ArchiveEvidence | null) {
-    return { version: 3, scope: this.state.scope, metrics: this.state.execution!.metrics,
+    const summary = this.state.execution!.summary;
+    const timing = summary?.ok && summary.evidence.nativeCollection === 'complete'
+      ? summary.evidence.timing : { testRunDurationMs: null };
+    return { version: 4, timing, scope: this.state.scope, metrics: this.state.execution!.metrics,
       diagnostics, buildUsage: this.buildUsage(), windowsRetained: history !== null,
       history: history ? { windows: history.windows, bytes: history.bytes, dataArtifactId: history.dataArtifactId, indexArtifactId: history.indexArtifactId } : null,
       quantiles: this.state.execution!.metrics?.quantiles ?? 'unknown' };

@@ -1,3 +1,5 @@
+import { openHistoryIndex } from './history-index.js';
+import type { RunHistoryIndexerState } from '../ports/run-history.js';
 import {registerOverviewRoute} from '../adapters/inbound/http/overview/index.js';
 import {registerExportRoutes} from '../adapters/inbound/http/exports/index.js';
 import type { LocalSession } from '../adapters/inbound/http/session/index.js';
@@ -48,6 +50,7 @@ export interface Application {
   readonly updateRuntime: (observation: RuntimeObservation | null) => Promise<null>;
   readonly inputRecoveryState: () => InputMaintenanceState | 'disabled';
   readonly runtimeState: () => RuntimePollerState | 'disabled';
+  readonly historySummaryState: () => RunHistoryIndexerState | 'disabled';
   readonly close: () => Promise<void>;
 }
 const digest = (value: string): string => createHash('sha256').update(value, 'utf8').digest('hex');
@@ -64,7 +67,7 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
   const server = createApiServer({ classify: classifyMetadataError });
   let metadata: Metadata | undefined;
   let agentRuntime: AgentRuntime | undefined;
-  let metricHttp: {close(): Promise<void>} | undefined;
+  let metricHttp: ReturnType<typeof metricRoutes> | undefined;
   let artifactHttp: {close(): Promise<void>} | undefined;
   const closeArtifacts=()=>artifactHttp?.close();
   const closeMetrics = () => metricHttp?.close();
@@ -89,9 +92,9 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     if (inputRuntime) inputHttp = registerInputRoutes(server, { inputs: inputRuntime.inputs, newId: randomUUID, authorize: session.authorize });
     server.addHook('onClose', async () => {
       closeSession();
-      await closeMetrics();
-      await closeArtifacts();
-      await closeApplicationStore(agentRuntime, inputRuntime, store);
+      const readers = await Promise.allSettled([closeMetrics(), closeArtifacts()]);
+      const storage = await Promise.allSettled([closeApplicationStore(agentRuntime, inputRuntime, store)]);
+      throwCloseFailures([...readers, ...storage]);
     });
     let closing: Promise<void> | undefined;
     const close = (): Promise<void> => {
@@ -100,10 +103,11 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
       const downloads = closeArtifacts();
       if (!closing) {
         closing = Promise.resolve().then(async () => {
-          const results = await Promise.allSettled([metrics, downloads, Promise.resolve().then(() => inputHttp?.close()),
+          const readers = await Promise.allSettled([metrics, downloads]);
+          const results = await Promise.allSettled([Promise.resolve().then(() => inputHttp?.close()),
             Promise.resolve().then(() => agentRuntime?.close()), Promise.resolve().then(() => inputRuntime?.close()),
             Promise.resolve().then(() => server.close())]);
-          throwCloseFailures(results);
+          throwCloseFailures([...readers, ...results]);
         });
       }
       return closing;
@@ -112,13 +116,15 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     return Object.freeze({ server, bootstrapToken: session.bootstrapToken,
       inputRecoveryState: () => inputRuntime?.recoveryState() ?? 'disabled',
       runtimeState: () => agentRuntime?.state() ?? 'disabled',
+      historySummaryState: () => metricHttp?.historySummaryState() ?? 'disabled',
       updateRuntime: (observation: RuntimeObservation | null) => store.updateRuntime(observation), close });
   } catch (error) {
     closeSession();
-    const resources = await Promise.allSettled([closeMetrics(), closeArtifacts(), Promise.resolve().then(() => inputHttp?.close()),
+    const readers = await Promise.allSettled([closeMetrics(), closeArtifacts()]);
+    const resources = await Promise.allSettled([Promise.resolve().then(() => inputHttp?.close()),
       Promise.resolve().then(() => agentRuntime?.close()), Promise.resolve().then(() => inputRuntime?.close()), Promise.resolve().then(() => server.close())]);
     const store = await Promise.allSettled([metadata?.abort()]);
-    throwCloseFailures([{ status: 'rejected', reason: error }, ...resources, ...store]);
+    throwCloseFailures([{ status: 'rejected', reason: error }, ...readers, ...resources, ...store]);
     throw error;
   }
 }
@@ -127,12 +133,17 @@ function metricRoutes(server: FastifyInstance, store: Metadata, agent: AgentRunt
     ...(agent?.publishedBytes ? {bytes: agent.publishedBytes} : {}),
     createDigest: () => {const hash = createHash('sha256'); return {update: bytes => {hash.update(bytes);}, hex: () => hash.digest('hex')};},
   });
+  const index = openHistoryIndex(store, agent?.publishedBytes, async problem => {
+    server.log.error({ code: 'history_summary_index_failure', problem }, 'History summary indexing failed');
+  });
   const history = registerRunMetricRoutes(server, {authorize, service: historyService});
   const comparisons = registerRunComparisonRoutes(server, {authorize, service: createRunComparisonService({runs: store.runs,
     results: store.results, suites: store.suites, metrics: historyService, digest})});
   const live = registerRunLiveMetricRoutes(server, {authorize, service: createRunLiveMetricsService({executions: store.executions,
     ...(agent?.liveMetrics ? {gateway: {liveMetrics: agent.liveMetrics}} : {}), hash: digest})});
-  return {close: async () => {await Promise.all([history.close(), live.close(), comparisons.close()]);}};
+  return { historySummaryState: index.state, close: async () => {
+    throwCloseFailures(await Promise.allSettled([index.close(), history.close(), live.close(), comparisons.close()]));
+  } };
 }
 
 function downloadRoutes(server:FastifyInstance,store:Metadata,agent:AgentRuntime|undefined,authorize:onRequestAsyncHookHandler){

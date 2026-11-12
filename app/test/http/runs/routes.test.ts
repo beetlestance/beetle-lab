@@ -1,3 +1,4 @@
+import { pendingRunHistorySummary } from '@beetle/contracts/api';
 import { afterEach, expect, it } from 'vitest';
 import { encodeRunListCursor } from '@beetle/contracts/api';
 import type { Run } from '@beetle/contracts/api';
@@ -62,7 +63,7 @@ it('fails invalid repository output and uncertain mutation failure without succe
   expect(f.execute).toHaveBeenCalledTimes(2);
   f.getRun.mockResolvedValueOnce({ ...runValue(), id: otherId });
   expect((await f.server.inject({ url: `${f.base}/${runValue().id}`, headers })).statusCode).toBe(404);
-  f.listRuns.mockResolvedValueOnce({ scope: f.body.scope, items: [runValue(), runValue()], nextCursor: null });
+  f.listRuns.mockResolvedValueOnce({ scope: f.body.scope, items: [runValue(), runValue()], summaries: [pendingRunHistorySummary(runValue()), pendingRunHistorySummary(runValue())], nextCursor: null });
   expect((await f.server.inject({ url: `${f.base}?limit=2`, headers })).statusCode).toBe(500);
 });
 
@@ -71,7 +72,7 @@ it('decodes exact run filters and direction while preserving read-only behavior'
   const response = await f.server.inject({ url: f.base + '?limit=2&state=queued&outcome=pending&order=oldest', headers });
   expect(response.statusCode).toBe(200);
   expect(f.listRuns).toHaveBeenCalledWith({ scope: f.body.scope, limit: 2, state: 'queued', outcome: 'pending', order: 'oldest' });
-  f.listRuns.mockResolvedValueOnce({ scope: f.body.scope, items: [runValue()], nextCursor: null });
+  f.listRuns.mockResolvedValueOnce({ scope: f.body.scope, items: [runValue()], summaries: [pendingRunHistorySummary(runValue())], nextCursor: null });
   expect((await f.server.inject({ url: f.base + '?limit=2&state=active', headers })).statusCode).toBe(500);
   expect(f.execute).not.toHaveBeenCalled(); expect(f.cancel).not.toHaveBeenCalled();
   expect(f.newId).not.toHaveBeenCalled(); expect(f.now).not.toHaveBeenCalled();

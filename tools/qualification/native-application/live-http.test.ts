@@ -8,7 +8,7 @@ import { frame, hash } from '../../../app/test/run-live-metrics/fixtures.js';
 import { fixture, keyFor, uuid } from '../../../app/test/run-results/fixture.js';
 import { loaded } from '../../../app/test/runner/fixtures.js';
 import { httpFixture } from '../../../app/test/http/run-metrics/fixture.js';
-const history: RunMetricsService = {lookupRunMetricSeries: async () => {throw new Error('Unexpected metric lookup');},reader: {listRunMetricSeries: async () => {throw new Error('unused');},
+const history: RunMetricsService = {readRunHistorySummary: async () => { throw new Error('Unexpected synthetic history indexing'); }, lookupRunMetricSeries: async () => {throw new Error('Unexpected metric lookup');},reader: {listRunMetricSeries: async () => {throw new Error('unused');},
   getRunMetricSamples: async () => {throw new Error('unused');}}, close: async () => {}};
 it('carries a scoped live frame through actual private agent HTTP, gateway, SQL binding and authenticated public TCP', async () => {
   const f = fixture(); f.observe({state: 'running', phase: 'execute', lastSeq: 2});

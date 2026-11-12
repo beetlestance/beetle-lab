@@ -17,6 +17,7 @@ export function descriptor(value: SeriesTotal, ordinal: number): RunMetricSeries
   try { return projectMetricSeries(value, ordinal); } catch { return fail(); }
 }
 export interface NumericEvidence {
+  readonly version: 3 | 4; readonly testDurationMs: number | null;
   readonly totals: readonly SeriesTotal[]; readonly coverage: RunMetricCoverage; readonly sourceTimeMs: number;
   readonly windows: number; readonly bytes: number; readonly dataArtifactId: string; readonly indexArtifactId: string;
 }
@@ -40,14 +41,23 @@ function snapshot(value: unknown) {
   return {totals, coverage: coverageValue(m.windowCoverage), sourceTimeMs: safe(measurement.sourceTimeMs, 8640000000000000)};
 }
 export function captureNumeric(input: unknown, scope: unknown): NumericEvidence | null {
-  if (!knownVersion(input, 3)) return null;
-  const v = fields(input, ['version', 'scope', 'metrics', 'diagnostics', 'buildUsage', 'windowsRetained', 'history', 'quantiles']);
+  const version = knownVersion(input, 3) ? 3 : knownVersion(input, 4) ? 4 : null;
+  if (version === null) return null;
+  const keys = ['version', 'scope', 'metrics', 'diagnostics', 'buildUsage', 'windowsRetained', 'history', 'quantiles'];
+  const v = fields(input, version === 4 ? [...keys, 'timing'] : keys);
   numericScope(v.scope, scope);
   if (v.windowsRetained !== true || v.quantiles !== 'histogram-estimate') return fail();
   const h = fields(v.history, ['windows', 'bytes', 'dataArtifactId', 'indexArtifactId']);
   if (typeof h.dataArtifactId !== 'string' || typeof h.indexArtifactId !== 'string') return fail();
-  return {...snapshot(v.metrics), windows: safe(h.windows, 65536), bytes: safe(h.bytes, 268435456),
+  return {...snapshot(v.metrics), version, testDurationMs: version === 4 ? testDuration(v.timing) : null,
+    windows: safe(h.windows, 65536), bytes: safe(h.bytes, 268435456),
     dataArtifactId: h.dataArtifactId, indexArtifactId: h.indexArtifactId};
+}
+function testDuration(input: unknown): number | null {
+  const value = fields(input, ['testRunDurationMs']).testRunDurationMs;
+  if (value === null) return null;
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) return fail();
+  return value;
 }
 export function knownVersion(value: unknown, current: number): boolean {
   if (!value || typeof value !== 'object' || Array.isArray(value) || !Object.hasOwn(value, 'version')) return fail();

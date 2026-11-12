@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { encodeRunListCursor, captureRunListCursor, normalizeRunListQuery, runListPosition, runListPageMatches, validateApi } from '../../src/api/index.js';
+import { pendingRunHistorySummary, encodeRunListCursor, captureRunListCursor, normalizeRunListQuery, runListPosition, runListPageMatches, validateApi } from '../../src/api/index.js';
 import type { Run, RunListQuery } from '../../src/api/index.js';
 import { fixture } from './fixtures.js';
 const scope = { kind: 'workspace' as const, organizationId: '00000000-0000-4000-8000-000000000001', workspaceId: '00000000-0000-4000-8000-000000000002' };
@@ -36,13 +36,13 @@ it('rejects noncanonical UTC spellings and tuple identity aliases', () => {
 it('checks strict tie ordering, filters, last cursor, short pages and continuation position', async () => {
   const run = await fixture('valid/run.json') as Run;
   const older = { ...run, id: '00000000-0000-4000-8000-000000000004' };
-  const page = { scope, items: [run, older], nextCursor: encodeRunListCursor({ scope, query, requestedAt, id: older.id }) };
+  const page = { scope, items: [run, older], summaries: [pendingRunHistorySummary(run), pendingRunHistorySummary(older)], nextCursor: encodeRunListCursor({ scope, query, requestedAt, id: older.id }) };
   expect(runListPageMatches(page, scope, query)).toBe(true);
   for (const invalid of [{ ...page, items: [older, run] }, { ...page, items: [run, run] }, { ...page, items: [older] },
     { ...page, nextCursor: cursor() }, { ...page, items: [{ ...run, state: 'active' as const }, older] }]) {
     expect(runListPageMatches(invalid, scope, { ...query, state: 'queued' })).toBe(false);
   }
-  expect(runListPageMatches({ ...page, items: [older], nextCursor: null }, scope, { ...query, cursor: cursor() })).toBe(true);
+  expect(runListPageMatches({ ...page, items: [older], summaries: [pendingRunHistorySummary(older)], nextCursor: null }, scope, { ...query, cursor: cursor() })).toBe(true);
   expect(runListPageMatches({ ...page, nextCursor: null }, scope, { ...query, cursor: cursor() })).toBe(false);
-  expect(runListPageMatches({ scope, items: [older, run], nextCursor: null }, scope, { ...query, order: 'oldest' })).toBe(true);
+  expect(runListPageMatches({ scope, items: [older, run], summaries: [pendingRunHistorySummary(older), pendingRunHistorySummary(run)], nextCursor: null }, scope, { ...query, order: 'oldest' })).toBe(true);
 });

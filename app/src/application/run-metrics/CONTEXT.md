@@ -14,3 +14,6 @@ Internal lookupRunMetricSeries captures one exact RunMetricKey, reuses that same
 verified source/projection and returns its ACTUAL original (no early deadline race).
 Catalogue/sample routes retain their prior early caller failure and owned drain.
 Lookup shares their one physical admission; no pagination/corpus or second parser.
+readRunHistorySummary shares that same parser/actual-original lane and returns
+compact v3/v4 source-bound scalars. Native4 timing comes from the sole collector;
+HTTP request distributions merge through the shared k6 projector.

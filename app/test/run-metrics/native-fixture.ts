@@ -5,8 +5,8 @@ import type { PublishedArtifactRead, RunArtifactsReader } from '../../src/ports/
 import type { OutputFileRecord, OutputFileReceipt } from '../../src/ports/output-bytes.js';
 import type { RunArtifactPage } from '@beetle/contracts/api';
 import { fixture as metricsFixture } from './fixture.js';
-export async function nativeFixture(openFiles:()=>ReturnType<typeof filesFixture>=filesFixture) {
-  const source = await metricsFixture(); const f = finalizationFixture({artifacts: source.descriptors}); f.ready();
+export async function nativeFixture(openFiles:()=>ReturnType<typeof filesFixture>=filesFixture, prepare:()=>ReturnType<typeof metricsFixture>=metricsFixture) {
+  const source = await prepare(); const f = finalizationFixture({artifacts: source.descriptors}); f.ready();
   if (f.key.attempt.attemptId !== source.query.attemptId) throw new Error('Producer fixture scope does not match original metadata');
   const files = await openFiles(); const writerId = '00000000-0000-4000-8000-000000000800';
   for (const [ordinal, descriptor] of source.descriptors.entries()) {

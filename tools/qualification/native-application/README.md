@@ -25,7 +25,9 @@ cleanup allows at most two. Agent/target containers are capped; the application
 also uses a dynamic loopback port. The real application loads private configuration and derives
 capacity from its normal agent/backend sources. A paired public API session saves
 a namespace/workspace/suite/revision, enqueues once, and reads the terminal result.
-Only the agent dispatch path starts k6. Work is one VU/iteration plus one readiness
+Only the agent dispatch path starts k6. The normal history indexer must produce
+a numeric4 summary; native summary/numeric timing and stored history agree across
+reopen, with one execute HTTP request and unchanged target/accounting checks. Work is one VU/iteration plus one readiness
 request, with a30s/16MiB execution profile. Requests, replies, polling, logs and
 artifact verification reads have explicit limits; mutations are never retried.
 Before starting the agent, the fixture explicitly creates its real journal and
