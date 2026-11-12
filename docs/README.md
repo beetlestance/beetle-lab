@@ -99,6 +99,7 @@ released application until the rewrite is qualified.
 | Inspect fresh offline installation | [Provisioning evidence](verification/fresh-installation.md) | Actual private files/Journal/authority/loaders; Compose and first-boot qualification pending |
 | Inspect automation client evidence | [Automation checks](verification/automation-client.md) | Actual authenticated TCP/worker commands, replay and bounded client behavior; image/CI qualification pending |
 | Inspect automatic loopback sessions | [Local access](verification/local-auto-session.md) | Persisted session/revocation, actual TCP/restart and compiled token-free startup; packaged browser pending |
+| Inspect automatic CLI connection | [Local connect](verification/automation-local-connect.md) | Same-origin automatic grant, strict private credentials and real TCP lost-reply recovery; image qualification pending |
 | Run the optional automation client | [Automation](automation.md) | Container entrypoint, mounted credentials, request files and explicit outcome semantics |
 | Run the rewrite locally | [Development startup](development.md) | Private config, backend entrypoint and frontend dev proxy |
 | Understand a settled choice | [Rewrite](decisions/001-clean-rewrite.md), [MIT license](decisions/002-mit-license.md) | Reason, scope and rejected alternative |

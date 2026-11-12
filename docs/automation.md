@@ -4,13 +4,10 @@ The optional client uses the same authenticated API as the UI. Compose remains t
 installation entrypoint. The backend build recipe packages automation.js; this is
 locally verified source, not a claim that the published image contains the rewrite.
 
-Use a fresh CI backend/agent installation with BEETLE_LOCAL_ACCESS=paired. The
-normal browser profile opens local access automatically; this optional client uses
-the explicit paired profile. Its startup token can be exchanged only once. Mount a private directory owned by the client
-UID with0700 permissions and a0600 token file supplied by that installation's
-trusted startup step. The client never reads Docker logs or discovers credentials.
-An already paired browser installation needs its existing session; a second pair
-will not work in that paired profile.
+Use connect with the normal automatic local profile. Mount a private directory
+owned by the client UID with0700 permissions; the command creates one fresh0600
+session file. No startup token is needed. The client sends the same exact local
+Origin/Host and custom-header exchange as the browser; it never reads Docker logs.
 
 The executable is /beetle/backend/automation.js inside a source-built backend image.
 Override the image's normal backend entrypoint; connect to the private control
@@ -21,19 +18,33 @@ source-built image and installation network:
 docker run --rm --network "$CONTROL_NETWORK" \
   --user "$(id -u):$(id -g)" --entrypoint node \
   --mount "type=bind,src=$PWD/ci-auth,dst=/auth" \
-  "$BACKEND_IMAGE" /beetle/backend/automation.js pair \
+  "$BACKEND_IMAGE" /beetle/backend/automation.js connect \
   --endpoint http://backend:4311 --origin http://127.0.0.1:8080 \
-  --session-file /auth/session.json --token-file /auth/startup-token
+  --session-file /auth/session.json
 ```
 
 Use the installation's actual configured external origin/port. Endpoint can name
 the private backend; Host/Origin still match that configured external origin.
-The command prints only {"paired":true}. session.json is exclusive0600 and expires
-with the existing session, on logout or backend restart. Mount it read-only for
-subsequent commands; mount request files separately. No host package install.
+The command prints only {"connected":true}. session.json is exclusive0600, binds
+that exact endpoint/origin, and preserves the server session's remaining8h lifetime
+across backend restarts. Logout revokes it. Mount it read-only for subsequent
+commands; mount request files separately. No host package install.
+
+Connect refuses an existing destination. It makes one HTTP call, with no automatic
+retry. After a lost grant reply with no file created, explicitly repeat connect to
+the same fresh file; the server reuses/reconciles its retained grant. An unknown
+file-write outcome requires inspection; no existing file is overwritten. Normal
+run/cancel commands never reconnect or replay user mutations implicitly.
+
+For BEETLE_LOCAL_ACCESS=paired, use pair with --token-file /auth/startup-token
+instead. Supply that fresh installation's one-time token through a private0600
+mounted file. Pair prints {"paired":true}; it cannot pair an already consumed token,
+and that profile invalidates its session on restart.
 
 | Command | Required additional flags | Output |
 | --- | --- | --- |
+| connect | none | Connected receipt; fresh private session file |
+| pair | --token-file | Paired receipt for the explicit token profile |
 | run | --request-file; optional --wait-ms | Acknowledged submission, or final/pending run |
 | status | --organization, --workspace, --run; optional --wait-ms | Authoritative run and waiting flag |
 | result | --organization, --workspace, --run | Result snapshot; absent result stays null |

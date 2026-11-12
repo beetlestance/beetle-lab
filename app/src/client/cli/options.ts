@@ -2,16 +2,16 @@ import { isIP } from 'node:net';
 import { isAbsolute } from 'node:path';
 import { validateApi } from '@beetle/contracts/api';
 import { ClientError } from './errors.js';
-export type Command = 'pair' | 'run' | 'status' | 'result' | 'cancel' | 'compare';
+export type Command = 'connect' | 'pair' | 'run' | 'status' | 'result' | 'cancel' | 'compare';
 export interface ClientOptions {
   readonly command: Command; readonly endpoint: string; readonly origin: string; readonly sessionFile: string;
   readonly tokenFile?: string; readonly requestFile?: string; readonly waitMs?: number;
   readonly run?: {readonly organizationId: string; readonly workspaceId: string; readonly runId: string};
 }
 const invalid = (): never => {throw new ClientError('invalid_input', 2);};
-const names = ['pair', 'run', 'status', 'result', 'cancel', 'compare'] as const;
+const names = ['connect', 'pair', 'run', 'status', 'result', 'cancel', 'compare'] as const;
 const extras: Record<Command, readonly string[]> = {
-  pair: ['token-file'], run: ['request-file', 'wait-ms'], status: ['organization', 'workspace', 'run', 'wait-ms'],
+  connect: [], pair: ['token-file'], run: ['request-file', 'wait-ms'], status: ['organization', 'workspace', 'run', 'wait-ms'],
   result: ['organization', 'workspace', 'run'], cancel: ['organization', 'workspace', 'run', 'request-file'], compare: ['request-file'],
 };
 function origin(value: string, local = false): string {

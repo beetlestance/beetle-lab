@@ -2,7 +2,7 @@ import { nodeFetch } from './http.js';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { encodeJson } from '@beetle/contracts';
-import { authenticatedClient, pair } from './auth.js';
+import { authenticatedClient, establishCredentials } from './auth.js';
 import { execute } from './execute.js';
 import { ClientError } from './errors.js';
 import { parseOptions } from './options.js';
@@ -18,8 +18,9 @@ export async function runClient(argv: readonly string[], streams: ClientStreams,
     const options = parseOptions(argv); controller = new AbortController();
     const duration = options.waitMs ?? 30000; const deadline = waitClock.now() + duration;
     timer = setTimeout(abort, duration); timer.unref(); process.once('SIGINT', abort); process.once('SIGTERM', abort);
-    if (options.command === 'pair') {
-      await pair(options, controller.signal, fetcher); await streams.stdout.write('{"paired":true}\n', AbortSignal.timeout(1000)); return 0;
+    const session = sessionReceipt(options.command);
+    if (session) {
+      await establishCredentials(options, controller.signal, fetcher); await streams.stdout.write(JSON.stringify(session) + '\n', AbortSignal.timeout(1000)); return 0;
     }
     const api = await authenticatedClient(options, fetcher);
     const result = await execute({options, api, signal: controller.signal, deadline, clock: waitClock});
@@ -32,4 +33,10 @@ export async function runClient(argv: readonly string[], streams: ClientStreams,
 }
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   process.exitCode = await runClient(process.argv.slice(2), {stdout: streamOutput(process.stdout), stderr: streamOutput(process.stderr)});
+}
+
+function sessionReceipt(command: string): object | undefined {
+  if (command === 'pair') return {paired: true};
+  if (command === 'connect') return {connected: true};
+  return undefined;
 }

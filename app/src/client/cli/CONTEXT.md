@@ -5,9 +5,10 @@ app/dist/automation.js from build:api, already copied by the backend image recip
 See docs/design/lld/automation-client.md for the closed commands and exit contract.
 Optional container client; installation remains Compose-first. HTTP only, no
 SQLite, agent, engine compiler, target requests or separate outcome calculation.
-Pair consumes the existing startup token once on a fresh CI backend and writes
-one exclusive private credential file; never logs tokens/cookies/CSRF or re-pairs
-an already-used browser installation. Strict source ownership/mode/byte checks.
+Connect uses the normal automatic local exchange without a token; pair consumes
+the explicit paired profile startup token. Both share one strict cookie capture and
+one exclusive private credential writer; never logs tokens/cookies/CSRF or re-pairs
+an already-used paired installation. Connect requires explicit automatic mode. Strict source ownership/mode/byte checks.
 Session files bind exact endpoint and configured loopback origin. The Node HTTP
 adapter preserves Host (native fetch overrides it); no redirects/upgrades/retries,
 headers16KiB, request4KiB, response queue64KiB and existing typed wire byte limits.

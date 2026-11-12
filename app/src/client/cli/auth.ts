@@ -33,11 +33,11 @@ export async function authenticatedClient(options: ClientOptions, fetcher = node
   return createApiClient({baseUrl: options.endpoint, fetch: fetcher, headers: {...headers(options),
     cookie: `beetle_session=${grant.cookie}`, 'x-beetle-csrf': grant.session.csrfToken}});
 }
-/** Capture only the one successful pairing cookie; the wire client owns the body. */
-export async function pair(options: ClientOptions, signal: AbortSignal, fetcher = nodeFetch): Promise<void> {
+/** One explicit grant; shared cookie/credential custody, no implicit retries. */
+export async function establishCredentials(options: ClientOptions, signal: AbortSignal, fetcher = nodeFetch): Promise<void> {
+  if (!['pair','connect'].includes(options.command)) throw new ClientError('invalid_input', 2);
   await prepareCredentialDestination(options.sessionFile);
-  const text = await readFileBounded(options.tokenFile!, 64, true); const token = text.endsWith('\n') ? text.slice(0, -1) : text;
-  if (!secret(token)) throw new ClientError('invalid_input', 2);
+  const token = options.command === 'pair' ? await bootstrapToken(options.tokenFile!) : undefined;
   let cookie: string | undefined; let calls = 0;
   const capture: typeof fetch = async (input, init) => {
     if (++calls !== 1) throw new ClientError('request_failed', 3);
@@ -49,12 +49,18 @@ export async function pair(options: ClientOptions, signal: AbortSignal, fetcher 
     }
     return response;
   };
-  const api = createApiClient({baseUrl: options.endpoint, fetch: capture, headers: {...headers(options), 'x-beetle-pair': '1'}});
+  const api = createApiClient({baseUrl: options.endpoint, fetch: capture, headers: {...headers(options), [token === undefined ? 'x-beetle-local' : 'x-beetle-pair']: '1'}});
   ensureActive(signal);
-  const result = await api.pairBrowserSession({body: {bootstrapToken: token}, signal});
+  const result = token === undefined ? await api.openLocalBrowserSession({body: {}, signal})
+    : await api.pairBrowserSession({body: {bootstrapToken: token}, signal});
   if (!result.ok) clientFailure(result.error);
-  if (!cookie) throw new ClientError('request_failed', 3);
+  if (!cookie || (token === undefined && result.value.accessMode !== 'automatic')) throw new ClientError('request_failed', 3);
   const grant: Credentials = {version: 1, endpoint: options.endpoint, origin: options.origin, cookie, session: result.value};
   ensureActive(signal);
   await writeCredentials(options.sessionFile, JSON.stringify(grant) + '\n');
+}
+
+async function bootstrapToken(path: string): Promise<string> {
+  const text = await readFileBounded(path, 64, true); const token = text.endsWith('\n') ? text.slice(0, -1) : text;
+  if (!secret(token)) throw new ClientError('invalid_input', 2); return token;
 }

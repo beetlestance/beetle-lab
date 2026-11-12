@@ -9,7 +9,8 @@ The backend image includes automation.js; use an explicit Node entrypoint overri
 
 Common flags: --endpoint canonical HTTP(S) root URL, --origin canonical configured
 loopback external origin, --session-file absolute private file, optional --json.
-Pair uses --token-file instead of existing credentials and creates session-file.
+Connect uses the normal automatic local profile; pair uses --token-file for the
+explicit paired profile. Both create a fresh exclusive session-file.
 All options are closed, unique, bounded strings; no positional ambiguity, URL
 credentials, paths/query/fragments on endpoint, redirects or environment expansion.
 Host/Origin bind the configured external origin, including private Compose access.
@@ -20,6 +21,7 @@ wire validation. Abort destroys the request/body. Endpoint and origin are captur
 
 | Command | Additional input | Behavior |
 | --- | --- | --- |
+| connect | none | One automatic same-origin local exchange; require automatic mode and persist its private session |
 | pair | --token-file | One existing startup-token exchange on a fresh CI backend; persist returned session privately |
 | run | --request-file, optional --wait-ms | Validate CreateRunRequest, enqueue once; optional bounded wait |
 | status | --organization, --workspace, --run, optional --wait-ms | Read authoritative Run; optionally wait |
@@ -41,20 +43,21 @@ engine generation remains outside the backend and this client's responsibility.
 Pairing uses the existing single-use15-minute startup token; it does not create a
 new authentication path or permit bypass of Host/Origin/CSRF. CI uses a fresh backend
 without frontend. Existing browser sessions cannot be paired again by this client;
-local automatic access is a separate design. Do not pass secrets on argv/stdout.
-Only pair captures one Set-Cookie under its owned fetch adapter; validate the exact
+automatic installations instead use connect, without a startup token. Do not pass secrets on argv/stdout.
+Connect and pair share one Set-Cookie capture under its owned fetch adapter; validate the exact
 session cookie and existing BrowserSession before writing. No cookie jar/library.
 The credential file holds version, endpoint, origin, session cookie and BrowserSession.
 It is <=4KiB, closed/strictly validated, regular, current-UID-owned, single-link and
 0600; use O_NOFOLLOW and check stable opened-file identity/size. Token <=64 bytes.
 Request files <=4KiB; read at most limit+1 with stable identity checks. Credential
 creation is exclusive0600 with fsync, in a current-UID private directory, never
-overwrites an existing file. Failed pairing or unknown file outcome must not print
-secrets or retry the exchange. No global stores, credential copying or real data
+overwrites an existing file. Failed grant or unknown file outcome must not print
+secrets or automatically retry the exchange. An explicit connect retry with no
+file created recovers the server's same retained grant; no resource write is replayed. No global stores, credential copying or real data
 in tests. Fixed public diagnostics never contain paths, URLs, config or exceptions.
 
 Successful records use bounded encoded JSON (<=1MiB) on stdout. Pair prints only
-{paired:true}; credentials never appear there. Error JSON is bounded/fixed on stderr.
+{paired:true}; connect prints only {connected:true}; credentials never appear there. Error JSON is bounded/fixed on stderr.
 Write output once with a separate1s output budget; handle backpressure/failure
 explicitly and retain stream error ownership through failed-write callback/error
 ordering. Native file IO originals drain before returning, even beyond cancellation. Capture signals
@@ -69,7 +72,7 @@ signal/deadline; no concurrent polling, event corpus or unbounded output. Poll o
 while nonterminal; final Run state/outcome remains authoritative. Timeout/unavailable
 is not cancellation or test failure. Waiting does not extend an execution budget.
 Run without waiting exits0 for an acknowledged submission, explicitly labelled
-submitted; it does not claim test success. Pair/cancel/result/compare exit0 for a
+submitted; it does not claim test success. Connect/pair/cancel/result/compare exit0 for a
 successful command/read. Status and run-with-wait map the authoritative terminal
 Run: passed0, failed1, inconclusive3, cancelled4. Pending or unavailable deadline
 is5. Invalid input2; transport/invalid reply or unknown mutation outcome3;
