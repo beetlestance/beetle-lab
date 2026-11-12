@@ -65,7 +65,7 @@ export async function openAgentRuntime(options: AgentRuntimeOptions, metadata: M
   return openAgentOwners({liveMetrics: gateway.liveMetrics.bind(gateway), source, gateway: capturedGateway, metadata: deliveryMetadata,
     openOutputs: async onFailure => {
       const outputs = await openOutputRuntime({dataRoot, ...outputMetadata, gateway: outputGateway, freeSpaceReserveBytes, onFailure,
-        exports:{executions:metadata.exportExecutions,outputs:metadata.exportOutputs,gateway}});
+        exports:{executions:metadata.exportExecutions,outputs:metadata.exportOutputs,gateway},deletions:metadata.outputDeletions});
       if (typeof outputs.publishedBytes?.read !== 'function') {
         await outputs.close(); throw new Error('Missing published output read capability');
       }

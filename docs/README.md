@@ -53,6 +53,7 @@ released application until the rewrite is qualified.
 | Inspect export build lifecycle | [Build lifetime](verification/standalone-build-lifetime.md) | Original call retention, cancellation and fixed build deadline; admitted workflow pending |
 | Inspect standalone script construction | [Engine export](verification/standalone-export.md) | Actual compiler/builder and generated-bundle semantics; HTTP/UI/native qualification pending |
 | Inspect durable deletion progress | [Deletion metadata](verification/output-deletion-store.md) | Scoped intent, exact persisted native plans, worker reopen and retained charges; runtime/producer retirement pending |
+| Inspect automatic backend file deletion | [Deletion driver](verification/output-deletion-runtime.md) | Committed intent/native-plan processing, restart and retained producer charges; final retirement/refund pending |
 | Inspect native published-output removal | [Deletion evidence](verification/output-deletion-native.md) | Prepared namespace-bound absence, original close/lease proof; metadata/runtime retention pending |
 | Inspect retained execution disk | [Disk retention](verification/disk-retention.md) | Atomic holds, release/abort accounting and worker reply-loss replay; source/cleanup pending |
 | Inspect actual agent event recovery | [Agent event seam](verification/event-agent.md) | Separate-process real HTTP/Journal ACK/prune/reopen and immutable physical authority; no engine/result claim |

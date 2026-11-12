@@ -75,7 +75,8 @@ persisted plan recovers lost unlink acknowledgement and absent bytes after resta
 Native cleanup failure retains its job/lease; metadata progress cannot turn it into
 an absence receipt. Lifecycle/runtime composition must retain native originals and
 wait for their settled promise before releasing application admission. This owner
-stores facts; a later bounded driver supplies that lifecycle and then public API/UI.
+stores facts; the [bounded driver](output-deletion-runtime.md) supplies native
+lifecycle. Public API/UI and producer retirement/refund remain separate.
 
 ## Acceptance
 

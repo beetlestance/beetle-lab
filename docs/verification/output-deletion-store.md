@@ -1,6 +1,7 @@
 # Durable output deletion progress evidence
 
-Status: locally verified metadata/native composition; runtime retention pending.
+Status: locally verified metadata/native composition; final retention pending.
+The subsequent [backend driver](output-deletion-runtime.md) has separate evidence.
 Source: feature commit containing this report, based on59c0ffe.
 Contract: [durable progress](../design/lld/output-deletion-store.md).
 No public DELETE route, scheduler, agent cleanup, quota refund or SQL purge.

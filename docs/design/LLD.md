@@ -40,6 +40,7 @@ The owning document below must be updated before its implementation changes.
 | Source event-stream end | [Delivery closure](lld/output-delivery-closure.md) | Integrated Journal013, producer drain and indexed discovery |
 | Backend payload storage | [Payload carrier](lld/output-payload.md) | Integrated single result/manifest body, snapshot replay and shared event allowance |
 | Published output deletion | [Deletion](lld/output-deletion.md), [durable progress](lld/output-deletion-store.md) | Native prepared absence and scoped metadata progress; lifecycle, producer retirement and refund pending |
+| Backend deletion lifecycle | [Driver](lld/output-deletion-runtime.md) | Existing intent/native-plan processing, bounded originals and parent shutdown |
 | Native output ownership | [Output files](lld/output-files.md) | Integrated native byte adapter and ownership; transfer composition pending |
 | Source adoption storage | [Adoption store](lld/output-adoption-store.md) | Integrated metadata adoption/RPC, original pins, event ceiling and upload tokens |
 | Source-backed terminal settlement | [Output finalization](lld/output-finalization.md) | Integrated bounded metadata finalization; release qualification pending |

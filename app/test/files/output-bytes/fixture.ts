@@ -30,8 +30,9 @@ export async function pending(promise: Promise<unknown>): Promise<boolean> {
   let done = false; void promise.then(() => { done = true; }, () => { done = true; });
   await new Promise<void>(resolve => setImmediate(resolve)); return !done;
 }
-export async function fixture(port: NativePort = nativePort, clock?: () => number) {
-  const root = await realpath(await mkdtemp(join(tmpdir(), 'beetle-output-bytes-'))); await chmod(root, 0o700);
+export async function fixture(port: NativePort = nativePort, clock?: () => number, ownedRoot?:string) {
+  if(ownedRoot)await mkdir(ownedRoot,{mode:0o700});
+  const root = await realpath(ownedRoot??await mkdtemp(join(tmpdir(), 'beetle-output-bytes-'))); await chmod(root, 0o700);
   const options = { stagingRoot: join(root, 'staging'), publishedRoot: join(root, 'published'), leasePath: join(root, 'namespace.sqlite'), createLease: true };
   await mkdir(options.stagingRoot, { mode: 0o700 }); await mkdir(options.publishedRoot, { mode: 0o700 });
   let store: OutputByteStore<OutputBinding> & OutputDeletionStore = await openStore(options, { nativePort: port, ...(clock ? { clock } : {}) });

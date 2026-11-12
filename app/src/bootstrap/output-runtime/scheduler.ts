@@ -17,8 +17,7 @@ export class OutputScheduler implements OutputRuntime {
   private scanner: Promise<void> | undefined;
   private closing?: Promise<void>;
   private transferClose?: Promise<void>;
-  private child?: {close():Promise<void>};
-  private childClose?:Promise<void>;
+  private readonly children:{child:{close():Promise<void>};closing?:Promise<void>}[]=[];
   private notification?: Promise<void>;
   private stopped = false;
   private failed = false;
@@ -29,7 +28,7 @@ export class OutputScheduler implements OutputRuntime {
     private readonly files: Pick<OutputByteStore, 'close'>) {
     this.discover = createEventDiscovery(options.outputs.scan);
   }
-  own(child:{close():Promise<void>}):void { if(this.child||this.stopped)throw new Error('Output child ownership unavailable');this.child=child; }
+  own(child:{close():Promise<void>}):void { if(this.children.length>=2||this.stopped)throw new Error('Output child ownership unavailable');this.children.push({child}); }
   failedChild(error:unknown):void { this.fail(error); }
   start(): void { this.turn(); }
   state(): OutputRuntimeState {
@@ -39,8 +38,10 @@ export class OutputScheduler implements OutputRuntime {
   private fence(): void {
     this.stopped = true; clearTimeout(this.timer); this.timer = undefined;
     for (const owner of this.active.values()) owner.abort.abort();
-    if(this.child)this.childClose??=this.child.close();
-    void this.childClose?.catch(error=>this.fail(error));
+    for(const owner of this.children){
+      if(!owner.closing){try{owner.closing=owner.child.close();}catch(error){owner.closing=Promise.reject(error);}}
+      void owner.closing.catch(error=>this.fail(error));
+    }
     this.transferClose ??= this.transfers.close();
     void this.transferClose.catch(error => this.fail(error));
   }
@@ -118,7 +119,7 @@ export class OutputScheduler implements OutputRuntime {
     this.closing = this.drain(); return this.closing;
   }
   private async drain(): Promise<void> {
-    const originals = await Promise.allSettled([this.scanner, this.transferClose, this.childClose,
+    const originals = await Promise.allSettled([this.scanner, this.transferClose, ...this.children.map(owner=>owner.closing),
       ...[...this.active.values()].map(owner => owner.original)]);
     // Never release the lease before producer, scanner, Run and finalization originals retire.
     let nativeError: {error: unknown} | undefined;

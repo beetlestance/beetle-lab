@@ -8,6 +8,7 @@ import type { OutputAbsenceStore, RunnerOutputAbsenceGateway } from './output-ab
 import type { DispatchStore } from './dispatch.js';
 import type { RunnerAttemptClient, RunnerAttemptIdentity } from './runner.js';
 import type { RunReader } from './runs.js';
+import type {OutputDeletionMetadata} from './output-deletion-metadata.js';
 
 export interface OutputRuntimeState {
   readonly status: 'running' | 'failed' | 'closed';
@@ -22,6 +23,7 @@ export interface OutputRuntime {
   close(): Promise<void>;
 }
 export interface OutputRuntimeOptions {
+  readonly deletions?:Pick<OutputDeletionMetadata,'scan'|'getFile'|'recordPlan'|'recordAbsence'>;
   readonly exports?:{readonly executions:ExportExecutionStore;readonly outputs:ExportArtifacts;readonly gateway:Pick<RunnerExportGateway,'exportAttempt'|'output'>};
   readonly dataRoot: string;
   readonly outputs: OutputArtifactStore;
