@@ -35,7 +35,7 @@ export async function check(f: Fixture, snapshot: AttemptSnapshot): Promise<Reco
   const result = seal.value; const expected = f.workStatus === 200 ? 'passed' : 'failed';
   assert.equal(result.outcome, expected); assert.equal(result.execution.exitCode, f.workStatus === 200 ? 0 : 99);
   assert.deepEqual(result.requiredAssertions, { required: 1, passed: Number(f.workStatus === 200), failed: Number(f.workStatus === 500), unknown: 0 });
-  assert.deepEqual(result.artifacts.map(item => item.relativePath).sort(), ['beetle-evidence.json', 'numeric-final.json']);
+  assert.deepEqual(result.artifacts.map(item => item.relativePath).sort(), ['beetle-evidence.json', 'metric-index.ndjson', 'metric-windows.ndjson', 'metrics.csv', 'numeric-final.json', 'performance-report.txt']);
   for (const artifact of result.artifacts) {
     const bytes = await privateFile(f, artifact.relativePath); assert.equal(bytes.length, artifact.bytes); assert.equal(digest(bytes), artifact.sha256);
   }

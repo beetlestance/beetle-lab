@@ -1,7 +1,8 @@
 # Verified history summary projection
 
 Status: reviewed H2 implementation; [evidence](../../verification/run-history-summary.md).
-Root owns metadata migration018; final/native qualification is pending.
+Metadata migration018 and native arm64 production/restart are locally verified;
+release/platform/browser qualification remains separate.
 Parent: [history queries](run-history-query.md). H3 text search remains separate.
 
 ## Public values

@@ -1,7 +1,7 @@
 # Scoped run history parity
 
 Status: H1 locally verified; [evidence](../../verification/run-history-query.md).
-H2 has a reviewed implementation pending final qualification; H3 remains proposed.
+H2 summaries are locally verified, including native arm64/restart; H3 remains proposed.
 Owner: Run query/SQLite reader and existing scoped history UI.
 Inventory: F06; [remaining parity](../../verification/functional-parity.md).
 
@@ -9,8 +9,8 @@ Inventory: F06; [remaining parity](../../verification/functional-parity.md).
 
 The legacy history offered workspace/status/text filters and displayed duration,
 requests, RPS, p95, errors and size. H1 adds scoped state/outcome filtering and
-requested-time keyset ordering while retaining validation and comparison selection. Metrics in Run detail
-do not close the missing history presentation. Preserve the four-run comparison
+requested-time keyset ordering while retaining validation and comparison selection. H2 adds the [verified stored scalars](run-history-summary.md); text/name search
+remains H3. Preserve the four-run comparison
 cap and scope fences while completing this behavior.
 
 ## H1: first ready query/control slice
@@ -75,7 +75,7 @@ malformed returned row times fail instead of being silently normalised.
 
 ## H2: verified summary projection
 
-The [H2 summary amendment](run-history-summary.md) freezes the proposed lean\nsource-bound projection before implementation.
+The [H2 summary amendment](run-history-summary.md) freezes the locally implemented lean\nsource-bound projection before implementation.
 Reuse the existing verified metric/archive owner and exact global metric identities;
 never add a second numeric parser or read an entire archive per visible row.
 Prefer a durable bounded scalar projection from verified publication/indexing,

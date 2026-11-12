@@ -46,6 +46,7 @@ records known gaps and still requires a full inventory acceptance audit.
 
 | Area | Locally integrated | Evidence |
 | --- | --- | --- |
+| History controls/scalars | Scoped filters, keyset order, verified compact metrics/storage provenance; indexed text search pending | [H1](docs/verification/run-history-query.md), [H2](docs/verification/run-history-summary.md) |
 | Execution | Durable intake/admission/delivery/cancel, scheduling, real arm64 k6 pass/fail and metadata reopen | [Native application](docs/verification/native-application-k6.md) |
 | Result custody | Source/absence closure, event replay, artifact publication and verified downloads | [Source-free path](docs/verification/output-absence.md), [downloads](docs/verification/run-artifact-downloads.md) |
 | Metrics | Live windows, sealed history/charts, duration estimates, resources and target observations | [Live path](docs/verification/native-live-metrics.md), [history](docs/verification/run-metric-history.md), [target views](docs/verification/target-observation-contract.md) |

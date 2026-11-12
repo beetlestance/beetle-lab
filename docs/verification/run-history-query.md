@@ -2,7 +2,8 @@
 
 Status: H1 locally verified on the history slice based on ccd9369.
 Scope: [history contract](../design/lld/run-history-query.md), F06/A02/V19.
-H2 scalar summaries and H3 indexed text search remain proposals.
+H2 scalar summaries have [separate evidence](run-history-summary.md). H3 indexed
+text search remains proposed.
 
 ## Behavior
 
