@@ -72,6 +72,7 @@ The owning document below must be updated before its implementation changes.
 | Scheduler or instrumentation | [Resources/observability](lld/resources-observability.md) | Admission, budgets, CPU/RAM, phases, telemetry limits |
 | HTTP, CLI or browser | [Application/UI](lld/application-ui.md) | API routes, errors, events, queries, export, frontend |
 | Embedded public reference | [Reference](lld/embedded-reference.md) | Generated schema/transfer presentation and source-only agent downloads |
+| Proposed history parity | [History query](lld/run-history-query.md) | Query/cursor controls, verified scalar summary and bounded search prerequisites |
 | Workspace overview | [Overview](lld/workspace-overview.md) | Scoped counts, bounded recent/active links and snapshot consistency |
 | Observed dropped-load guidance | [Load advice](lld/load-advice.md) | Current-source counters, iteration-median heuristic and missing-data limits |
 | Proposed producer cleanup | [Retirement](lld/output-retirement.md) | Durable namespace/read fence, physical ACK and separate settlement |
