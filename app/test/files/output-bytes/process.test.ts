@@ -5,7 +5,7 @@ import { lstat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
 import { nativePort } from '../../../src/adapters/outbound/files/custody/index.js';
-import { advance, context, deferred, finish, fixture, pending, record } from './fixture.js';
+import { advance, context, deferred, finish, fixture, pending, record, populated, id } from './fixture.js';
 import type { Fixture } from './fixture.js';
 
 let files: Fixture; const children = new Set<ChildProcess>();
@@ -14,9 +14,10 @@ async function kill(child: ChildProcess) {
   const exit = once(child, 'exit'); child.kill('SIGKILL'); await exit;
 }
 afterEach(async () => { await Promise.all([...children].map(kill)); children.clear(); await files?.dispose(); });
-function child(mode: 'contender' | 'cleanup' | 'cleanup-directory') {
+function child(mode: 'contender' | 'cleanup' | 'cleanup-directory' | 'cleanup-removal' | 'cleanup-removal-directory', request?: object) {
   if (children.size >= 4) throw new Error('Synthetic process bound');
-  const child = fork(join(process.cwd(), 'app/test/files/output-bytes/process.child.ts'), [files.root, mode],
+  const encoded = request ? JSON.stringify(request) : ''; if (encoded.length > 8192) throw new Error('Synthetic input bound');
+  const child = fork(join(process.cwd(), 'app/test/files/output-bytes/process.child.ts'), [files.root, mode, encoded],
     { execArgv: ['--max-old-space-size=128', '--import', 'tsx'], stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
   children.add(child); const exit = once(child, 'exit');
   const ready = new Promise<unknown>((resolve, reject) => {
@@ -51,4 +52,16 @@ it.each(['file', 'directory'] as const)('keeps a failed %s close job/token/names
   await kill(active.child); expect(active.child.signalCode).toBe('SIGKILL');
   await files.reopen(); await finish(files.store.prepare(record(), context()));
   const after = await lstat(files.path(record()), { bigint: true }); expect(after.ino).toBe(before.ino);
+});
+
+it.each(['file', 'directory'] as const)('retains namespace and unsettled removal after unknown %s close until process death', async kind => {
+  files = await fixture(); const value = await populated(files); const publishing = {...value, artifact: {...value.artifact, phase: 'publishing' as const}};
+  const record = advance(publishing, await finish(files.store.publish(publishing, context())), 'published');
+  const request = await finish(files.store.prepareRemoval({record, deletionId: id(40), deletionVersion: 1}, context())); await files.store.close();
+  const active = child(kind === 'file' ? 'cleanup-removal' : 'cleanup-removal-directory', request);
+  expect(await active.ready).toEqual({kind: 'cleanup', code: 'cleanup', closed: 'cleanup', admission: 'closed', closes: 1, pending: true, cached: true});
+  await expect(lstat(files.path(record, true))).rejects.toMatchObject({code: 'ENOENT'});
+  const contender = child('contender'); expect(await contender.ready).toEqual({kind: 'excluded'}); await contender.exit;
+  await kill(active.child); expect(active.child.signalCode).toBe('SIGKILL');
+  await files.reopen(); expect((await finish(files.store.remove(request, context()))).phase).toBe('absent');
 });

@@ -1,3 +1,4 @@
+import type { OutputDeletionIntent } from '../../../../ports/output-deletion.js';
 import { createHash } from 'node:crypto';
 import type { BigIntStats } from 'node:fs';
 import { encodeCanonicalJson } from '@beetle/contracts';
@@ -15,4 +16,14 @@ export function identity(record: OutputFileRecord, roots: Roots, stat: BigIntSta
     final: published ? { bytes: stat.size.toString(), modifiedNs: stat.mtimeNs.toString(), changedNs: stat.ctimeNs.toString(), links: stat.nlink.toString() } : null };
   const domain = published ? 'beetle.output.published.v1\0' : 'beetle.output.staging.v1\0';
   return createHash('sha256').update(domain).update(encodeCanonicalJson(value, 8192)).digest('hex');
+}
+
+/** Stable across legitimate child creation/reopen; not a host free-space claim. */
+export function deletionNamespace(roots: Roots): string {
+  const value = [roots.stage, roots.published].map(root => ({path: root.path, ...stable(root.stat)}));
+  return createHash('sha256').update('beetle.output.deletion.namespace.v1\0').update(encodeCanonicalJson(value, 8192)).digest('hex');
+}
+export function deletionPreparation(intent: OutputDeletionIntent, namespaceIdentity: string): string {
+  const value = {record: intent.record, deletionId: intent.deletionId, deletionVersion: intent.deletionVersion, namespaceIdentity};
+  return createHash('sha256').update('beetle.output.deletion.preparation.v1\0').update(encodeCanonicalJson(value, 8192)).digest('hex');
 }

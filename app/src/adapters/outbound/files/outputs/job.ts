@@ -2,8 +2,8 @@ import { constants } from 'node:fs';
 import type { BigIntStats } from 'node:fs';
 import type { FileHandle } from 'node:fs/promises';
 import type { OutputFileContext, OutputFileJob } from '../../../../ports/output-bytes.js';
-import { Custody, Directories, checkRoots, same, sameDirectory } from '../custody/index.js';
-import type { NativePort, PhysicalFile, Roots } from '../custody/index.js';
+import { Custody, Directories, checkRoots, same, sameDirectory, requireAbsent, PhysicalFile } from '../custody/index.js';
+import type { NativePort, Roots, Location } from '../custody/index.js';
 import type { OutputLease } from './lease.js';
 import { JobPolicy } from './policy.js';
 import { guardedPort } from './native.js';
@@ -27,7 +27,7 @@ export class FileJob<T> implements OutputFileJob<T> {
   private reject!: (error: unknown) => void;
   private release!: () => void;
   private owner?: JobCustody;
-  private confirmation?: { path: string; stat: BigIntStats };
+  private confirmation?: {kind: 'file'; path: string; stat: BigIntStats} | {kind: 'absent'; paths: readonly string[]};
   tree!: Directories;
   token?: string;
   constructor(private readonly options: { port: NativePort; roots: Roots; lease: OutputLease; clock: () => number;
@@ -42,16 +42,29 @@ export class FileJob<T> implements OutputFileJob<T> {
   private complete(): void { this.options.done(this as FileJob<unknown>); this.release(); }
   async confirm(file: PhysicalFile): Promise<BigIntStats> {
     await file.verify(); const stat = await file.handle.stat({ bigint: true }); await file.verify();
-    this.confirmation = { path: file.path, stat }; return stat;
+    this.confirmation = {kind: 'file', path: file.path, stat}; return stat;
+  }
+  async confirmAbsent(locations: readonly [Location, Location]): Promise<void> {
+    const paths = locations.map(location => location.absentAncestor ?? location.path);
+    for (const path of paths) await PhysicalFile.requireAbsent(this.tree, path);
+    this.confirmation = {kind: 'absent', paths};
+  }
+  private async closedNamespace(): Promise<void> {
+    this.policy.check(); await this.options.lease.check(); await checkRoots(this.options.port, this.options.roots);
+    for (const [path, stat] of this.owner!.directories) {
+      if (!sameDirectory(stat, await this.options.port.lstat(path, {bigint: true}))) fail('integrity');
+    }
+    this.policy.check();
   }
   private async postClose(): Promise<void> {
-    await this.options.lease.check(); await checkRoots(this.options.port, this.options.roots);
-    for (const [path, stat] of this.owner!.directories) {
-      if (!sameDirectory(stat, await this.options.port.lstat(path, { bigint: true }))) fail('integrity');
-    }
-    if (this.confirmation) {
-      const current = await this.options.port.lstat(this.confirmation.path, { bigint: true });
-      if (!same(this.confirmation.stat, current)) fail('integrity');
+    await this.closedNamespace();
+    const confirmation = this.confirmation;
+    if (confirmation?.kind === 'file') {
+      const current = await this.options.port.lstat(confirmation.path, {bigint: true});
+      if (!same(confirmation.stat, current)) fail('integrity');
+    } else if (confirmation?.kind === 'absent') {
+      for (const path of confirmation.paths) await requireAbsent(this.options.port, path);
+      await this.closedNamespace();
     }
     this.policy.check();
   }

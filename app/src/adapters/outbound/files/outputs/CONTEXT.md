@@ -1,6 +1,6 @@
 # Native output bytes
 
-Public entrypoint: `openLocalOutputBytes` in `index.ts`; implements `OutputByteStore`.
+Public entrypoint: `openLocalOutputBytes` in `index.ts`; implements `OutputByteStore` and separate `OutputDeletionStore` capabilities.
 Existing private sibling roots share the permanent namespace lease's parent.
 The factory reserves process ownership before capture and acquires the lease first.
 Jobs reserve global2/token1 credits synchronously; no callback queue exists.
@@ -16,7 +16,14 @@ A transferring reconciliation receipt cannot authorize metadata phase regression
 Receipts wait for original closes and post-close named/ancestor checks.
 Close cancels intake, drains jobs, then closes the private namespace lease last.
 Failed original close keeps job settlement pending and retains job/token/lease fences.
-No SQL lifecycle, dispatch, finalization, deletion or quota release lives here.
+No SQL lifecycle, dispatch, intent creation, finalization or quota refund lives here.
 Private fault seam: `store.ts` accepts native operations and a monotonic clock.
 Contract: `app/src/ports/output-bytes.ts`, `docs/design/lld/output-files.md`.
 Focused native tests: `app/test/files/output-bytes/*.test.ts`.
+
+prepareRemoval verifies present published custody and returns a namespace/record/intent
+commitment after original closes. Metadata must persist that actual plan before remove.
+Missing fresh preparation refuses; absence replay requires the same captured plan.
+remove preserves staged/unknown files, uses shared checked unlink, and confirms absence
+only after all closes plus lease/root/ancestor/name/ancestor rechecks. Same token/global
+credits protect both methods. See docs/design/lld/output-deletion.md; no runtime wiring.

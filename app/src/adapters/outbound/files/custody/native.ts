@@ -1,3 +1,4 @@
+import { errorCode, fail } from './errors.js';
 import { constants } from 'node:fs';
 import type { BigIntStats, BigIntStatsFs } from 'node:fs';
 import { link, lstat, mkdir, open, realpath, statfs, unlink } from 'node:fs/promises';
@@ -30,3 +31,10 @@ export const readFlags = constants.O_RDONLY | constants.O_NOFOLLOW | constants.O
 export const writeFlags = constants.O_RDWR | constants.O_NOFOLLOW | constants.O_NONBLOCK;
 export const createFlags = writeFlags | constants.O_CREAT | constants.O_EXCL;
 export const directoryFlags = readFlags | constants.O_DIRECTORY;
+
+/** Named absence only; callers own ancestor/lease checks around this operation. */
+export async function requireAbsent(port: NativePort, path: string): Promise<void> {
+  try {await port.lstat(path, {bigint: true});}
+  catch (cause) {if (errorCode(cause) === 'ENOENT') return; throw cause;}
+  fail('integrity');
+}

@@ -1,14 +1,10 @@
 import type { CapturedInput } from './capture.js';
 import { requireState } from './capture.js';
 import type { Directories, Location } from '../custody/index.js';
-import { PhysicalFile } from '../custody/index.js';
+import { PhysicalFile, unlinkVerifiedFile } from '../custody/index.js';
 import type { Roots } from '../custody/index.js';
 import { fail } from './job.js';
 
-async function unlinkSingle(tree: Directories, location: Location, file: PhysicalFile): Promise<void> {
-  file.requireLinks(1n); await file.verify(); await tree.check();
-  await tree.owner.port.unlink(location.path); await tree.check(); await tree.sync(location.parent);
-}
 async function unlinkPair(tree: Directories, locations: readonly [Location, Location],
   files: readonly [PhysicalFile, PhysicalFile], input: CapturedInput): Promise<void> {
   const [stage, destination] = files;
@@ -18,15 +14,15 @@ async function unlinkPair(tree: Directories, locations: readonly [Location, Loca
   await destination.verifyContent(input); await stage.verify();
   await tree.owner.port.unlink(locations[0].path);
   await destination.refreshLink(locations[1].path, 1n); await tree.sync(locations[0].parent);
-  await unlinkSingle(tree, locations[1], destination);
+  await unlinkVerifiedFile(tree, locations[1], destination);
 }
 async function unlinkSingles(tree: Directories, locations: readonly [Location, Location],
   files: readonly [PhysicalFile | undefined, PhysicalFile | undefined]): Promise<void> {
   const [source, target] = files;
   // Classify both names before deleting either: third links fail without cleanup.
   source?.requireLinks(1n); target?.requireLinks(1n);
-  if (source) await unlinkSingle(tree, locations[0], source);
-  if (target) await unlinkSingle(tree, locations[1], target);
+  if (source) await unlinkVerifiedFile(tree, locations[0], source);
+  if (target) await unlinkVerifiedFile(tree, locations[1], target);
 }
 export async function remove(tree: Directories, roots: Roots, input: CapturedInput): Promise<void> {
   requireState(input, 'deleting');

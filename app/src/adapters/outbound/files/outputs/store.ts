@@ -9,12 +9,14 @@ import type { OutputLease } from './lease.js';
 import { fields, record, token, chunk } from './capture.js';
 import { FileJob } from './job.js';
 import { prepare, append, publish } from './mutations.js';
+import type { OutputDeletionStore, OutputDeletionIntent, OutputDeletionRequest, OutputDeletionReceipt } from '../../../../ports/output-deletion.js';
+import { captureDeletion, captureDeletionIntent, prepareRemoval, remove } from './removal.js';
 import { read } from './content.js';
 import { fail, safeError } from './errors.js';
 
 export interface StoreOptions { stagingRoot: string; publishedRoot: string; leasePath: string; createLease: boolean }
 let processOwner: LocalOutputStore | undefined;
-class LocalOutputStore implements OutputByteStore {
+class LocalOutputStore implements OutputByteStore, OutputDeletionStore {
   private roots!: Roots;
   private lease?: OutputLease;
   private port!: NativePort;
@@ -85,6 +87,16 @@ class LocalOutputStore implements OutputByteStore {
       return () => read(job, this.roots, value, range);
     });
   }
+  prepareRemoval(input: OutputDeletionIntent, context: OutputFileContext): OutputFileJob<OutputDeletionRequest> {
+    return this.run(context, (job, claim) => {
+      const intent = captureDeletionIntent(input, claim); return () => prepareRemoval(job, this.roots, intent);
+    });
+  }
+  remove(input: OutputDeletionRequest, context: OutputFileContext): OutputFileJob<OutputDeletionReceipt> {
+    return this.run(context, (job, claim) => {
+      const request = captureDeletion(input, claim, this.roots); return () => remove(job, this.roots, request);
+    });
+  }
   close(): Promise<void> { this.stop(); this.closing ??= this.drain(); return this.closing; }
   private async drain(): Promise<void> {
     await Promise.allSettled([...this.jobs].map(job => job.result));
@@ -94,7 +106,7 @@ class LocalOutputStore implements OutputByteStore {
   }
 }
 /** Private native/clock fault seam; production callers use index.ts only. */
-export function openStore(options: StoreOptions, seam?: { nativePort: NativePort; clock?: () => number }): Promise<OutputByteStore> {
+export function openStore(options: StoreOptions, seam?: { nativePort: NativePort; clock?: () => number }): Promise<OutputByteStore & OutputDeletionStore> {
   if (processOwner) return Promise.reject(new OutputByteError('busy'));
   const owner = new LocalOutputStore(); processOwner = owner;
   return owner.initialize(options, seam).then(() => owner);

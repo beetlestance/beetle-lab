@@ -3,6 +3,7 @@ import { chmod, mkdir, mkdtemp, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
+import type { OutputDeletionStore } from '../../../src/ports/output-deletion.js';
 import type { OutputByteStore, OutputFileContext, OutputFileJob, OutputFileReceipt, OutputFileRecord } from '../../../src/ports/output-bytes.js';
 import { nativePort } from '../../../src/adapters/outbound/files/custody/index.js';
 import type { NativePort } from '../../../src/adapters/outbound/files/custody/index.js';
@@ -32,7 +33,7 @@ export async function fixture(port: NativePort = nativePort, clock?: () => numbe
   const root = await realpath(await mkdtemp(join(tmpdir(), 'beetle-output-bytes-'))); await chmod(root, 0o700);
   const options = { stagingRoot: join(root, 'staging'), publishedRoot: join(root, 'published'), leasePath: join(root, 'namespace.sqlite'), createLease: true };
   await mkdir(options.stagingRoot, { mode: 0o700 }); await mkdir(options.publishedRoot, { mode: 0o700 });
-  let store: OutputByteStore = await openStore(options, { nativePort: port, ...(clock ? { clock } : {}) });
+  let store: OutputByteStore & OutputDeletionStore = await openStore(options, { nativePort: port, ...(clock ? { clock } : {}) });
   return { root, options, get store() { return store; },
     path: (value: OutputFileRecord, published = false) => join(published ? options.publishedRoot : options.stagingRoot,
       value.binding.key.attempt.organizationId, value.binding.key.attempt.workspaceId, value.binding.key.runId,

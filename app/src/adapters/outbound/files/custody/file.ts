@@ -5,7 +5,7 @@ export const FILE_CHUNK_BYTES = 65_536;
 import type { Directories, Location } from './directories.js';
 import { privateStat, same, sameFileOwner } from './identity.js';
 import { errorCode, fail } from './errors.js';
-import { createFlags, readFlags, writeFlags } from './native.js';
+import { createFlags, readFlags, writeFlags, requireAbsent } from './native.js';
 
 export class PhysicalFile {
   private constructor(readonly tree: Directories, public path: string,
@@ -24,9 +24,7 @@ export class PhysicalFile {
   }
   static async requireAbsent(tree: Directories, path: string): Promise<void> {
     await tree.check();
-    try { await tree.owner.port.lstat(path, { bigint: true }); }
-    catch (error) { if (errorCode(error) === 'ENOENT') { await tree.check(); return; } throw error; }
-    fail('integrity');
+    await requireAbsent(tree.owner.port, path); await tree.check();
   }
   static async create(tree: Directories, location: Location): Promise<PhysicalFile> {
     await tree.reserve(0);
