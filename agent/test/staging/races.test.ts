@@ -36,7 +36,7 @@ it.each(['cancel', 'deadline', 'clock', 'claim', 'released'])('rejects %s state 
   await mutations[kind]!();
   const task = e.prepare(e.create(kind === 'deadline' ? { wallNow: () => now + 1000 } : {}));
   expect((await task.result).ok).toBe(false); await task.quiesced;
-  expect(await readdir(e.rootPath)).toEqual([]);
+  expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']);
 });
 it('durable cancellation during a provider callback prevents its first input write', async () => {
   const e = await f.environment();

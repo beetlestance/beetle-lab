@@ -55,14 +55,14 @@ it('retains the one-second admitted deadline while a slow input provider quiesce
 it('checks reservation before first task write and rejects wrong scope/generation/profile/config', async () => {
   const e = await f.environment(false); const stager = e.create();
   let task = e.prepare(stager); expect((await task.result).ok).toBe(false); await task.quiesced;
-  expect(await readdir(e.rootPath)).toEqual([]);
+  expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']);
   await f.enqueue(e.owner, e.offer); await f.admit(e.owner, e.offer);
   for (const key of [{ ...scope(e.offer), generation: 2 }, { ...scope(e.offer), workspaceId: e.offer.attemptId }]) {
     task = stager.prepare({ key, operation: operation() }); expect((await task.result).ok).toBe(false); await task.quiesced;
   }
   const badProfile = e.create({ validation: { ...e.options.validation, profileId: 'wrong' } });
   task = e.prepare(badProfile); expect(await task.result).toEqual({ ok: false, reason: 'reservation' }); await task.quiesced;
-  expect(await readdir(e.rootPath)).toEqual([]);
+  expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']);
 });
 it.each(['short', 'overlong', 'digest', 'window'])('rejects %s input and preserves charged evidence without metadata', async kind => {
   const e = await f.environment();
@@ -84,7 +84,7 @@ it.each(['duplicate-input', 'duplicate-secret', 'case-secret', 'device-secret', 
   }
   await f.enqueue(e.owner, e.offer); await f.admit(e.owner, e.offer);
   const task = e.prepare(e.create()); expect(await task.result).toEqual({ ok: false, reason: 'invalid_input' }); await task.quiesced;
-  expect(await readdir(e.rootPath)).toEqual([]);
+  expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']);
 });
 it.each(['file', 'symlink', 'partial'])('refuses existing %s task roots without altering them', async kind => {
   const e = await f.environment();
@@ -142,7 +142,7 @@ it('requires pinned staging policy and exact charge even for existing charged ro
     expect(await task.result).toEqual({ ok: false, reason: 'reservation' }); await task.quiesced;
     expect(reply).toHaveBeenCalledWith({ kind: 'reservation', key: scope(e.offer) });
     expect(providers.input).not.toHaveBeenCalled(); expect(providers.secret).not.toHaveBeenCalled();
-    expect(await readdir(e.rootPath)).toEqual([]);
+    expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']);
   } finally { reply.mockRestore(); }
   expect(await owner.admission({ kind: 'reservation', key: scope(e.offer) })).toEqual(original);
 });

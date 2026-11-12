@@ -29,7 +29,8 @@ it('upgrades an actual schema12 released source with only debt marker and preser
   try {
     expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(CURRENT_JOURNAL_SCHEMA);
     expect(db.prepare('SELECT * FROM accepted_attempts').get()).toEqual({ ...before, delivery_bytes: 0, delivery_pending: 1,
-      absence_bytes: 0, absence_pending: 0, execution_purpose: 'performance', export_result_json: null });
+      absence_bytes: 0, absence_pending: 0, execution_purpose: 'performance', export_result_json: null,
+      cleanup_control_version: 0, cleanup_control_bytes: 0, staging_namespace_identity: null });
     expect(db.prepare('SELECT * FROM output_sources').all()).toEqual(source);
     expect(db.prepare('SELECT * FROM reservations').all()).toEqual(reservation);
     expect(db.prepare('SELECT * FROM sqlite_sequence ORDER BY name').all()).toEqual(sequence);

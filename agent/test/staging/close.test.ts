@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import type * as FsPromises from 'node:fs/promises';
 import { join } from 'node:path';
+import { runtimeName } from '../../src/backends/docker/index.js';
 import { scope } from '../admission/fixtures.js';
 import { data, fixture, operation, stream } from './fixtures.js';
 
@@ -42,9 +43,29 @@ async function isolated() {
   const e = await f.environment();
   const verified = await library.verifyInstallation({ configuration: e.configuration, transport: e.transport, operation: operation() });
   if (!verified.ok) throw new Error(verified.reason);
-  return { e, library, root: verified.value, stager: new library.Stager({ ...e.options, root: verified.value }) };
+  const binding = new library.NamespaceBinding({ root: verified.value, journal: e.owner.stagingNamespace,
+    journalAuthority: await e.owner.journalAuthority(), operation: operation() });
+  try { await binding.bind(); } finally { await binding.close(); }
+  const baselineCalls = new Map(fault.calls);
+  return { baselineCalls, e, library, root: verified.value, stager: new library.Stager({ ...e.options, root: verified.value }) };
 }
 
+function expectedTaskCloses(environment: Awaited<ReturnType<ReturnType<typeof fixture>['environment']>>): Map<string, number> {
+  const root = join(environment.rootPath, runtimeName({ ...scope(environment.offer), installationId: environment.options.profile.installationId }));
+  return new Map([environment.rootPath, root, join(root, 'input'), join(root, 'output'), join(root, 'secrets'), join(root, 'input/input-000.bin')]
+    .map(path => [path, 1]));
+}
+function closeDelta(before: ReadonlyMap<string, number>): Map<string, number> {
+  const result = new Map<string, number>();
+  for (const [path, total] of fault.calls) {
+    const count = total - (before.get(path) ?? 0); expect(count).toBeGreaterThanOrEqual(0);
+    if (count) result.set(path, count);
+  }
+  return result;
+}
+function allTaskDescriptorsClosed(environment: Awaited<ReturnType<ReturnType<typeof fixture>['environment']>>): void {
+  for (const path of expectedTaskCloses(environment).keys()) expect(fault.closed.has(path)).toBe(true);
+}
 it('preserves first-close rejection without retrying and still closes other owned descriptors', async () => {
   const { e, root } = await isolated();
   const { Files } = await import('../../src/staging/files.js');
@@ -67,13 +88,18 @@ it('preserves first-close rejection without retrying and still closes other owne
   } finally { boundary.dispose(); }
 });
 it('keeps first-close failure charged and holds two slots, quiesced and service close', async () => {
-  const { e, library, root, stager } = await isolated();
+  const { e, library, root, stager, baselineCalls } = await isolated();
   const first = stager.prepare({ key: scope(e.offer), operation: operation(500) });
   expect(await first.result).toEqual({ ok: false, reason: 'io' });
+  expect(closeDelta(baselineCalls)).toEqual(expectedTaskCloses(e));
   const secondEnvironment = await f.environment();
   const secondRoot = await library.verifyInstallation({ configuration: secondEnvironment.configuration,
     transport: secondEnvironment.transport, operation: operation() });
   if (!secondRoot.ok) throw new Error(secondRoot.reason);
+  const secondBinding = new library.NamespaceBinding({ root: secondRoot.value, journal: secondEnvironment.owner.stagingNamespace,
+    journalAuthority: await secondEnvironment.owner.journalAuthority(), operation: operation() });
+  try { await secondBinding.bind(); } finally { await secondBinding.close(); }
+  const secondBaseline = new Map(fault.calls);
   const secondStager = new library.Stager({ ...secondEnvironment.options, root: secondRoot.value });
   const second = secondStager.prepare({ key: scope(secondEnvironment.offer), operation: operation(500) });
   expect(await second.result).toEqual({ ok: false, reason: 'io' });
@@ -81,10 +107,12 @@ it('keeps first-close failure charged and holds two slots, quiesced and service 
   expect(await remainsPending(stager.close())).toBe(true); expect(await remainsPending(secondStager.close())).toBe(true);
   const third = new library.Stager({ ...e.options, root });
   expect(await third.prepare({ key: scope(e.offer), operation: operation() }).result).toEqual({ ok: false, reason: 'busy' });
-  expect([...fault.calls.values()]).toEqual([1, 1]); expect(fault.closed.size).toBe(2);
+  expect(closeDelta(secondBaseline)).toEqual(expectedTaskCloses(secondEnvironment));
+  expect(fault.calls.get(join(e.rootPath, runtimeName({ ...scope(e.offer), installationId: e.options.profile.installationId }), 'input/input-000.bin'))).toBe(1);
+  allTaskDescriptorsClosed(e); allTaskDescriptorsClosed(secondEnvironment);
 });
 it.each(['cancel', 'deadline'])('keeps a late rejected original close sticky after %s and drain', async kind => {
-  const { e, stager } = await isolated();
+  const { e, stager, baselineCalls } = await isolated();
   let started: () => void = () => undefined; let reject: (error: Error) => void = () => undefined;
   const entered = new Promise<void>(resolve => { started = resolve; });
   const late = new Promise<void>((_, fail) => { reject = fail; });
@@ -96,11 +124,11 @@ it.each(['cancel', 'deadline'])('keeps a late rejected original close sticky aft
   expect(await remainsPending(task.quiesced)).toBe(true);
   reject(new Error('LATE_CLOSE_FAILED'));
   expect(await remainsPending(task.quiesced)).toBe(true); expect(await remainsPending(stager.close())).toBe(true);
-  expect([...fault.calls.values()]).toEqual([1]); expect(fault.closed.size).toBe(1);
+  expect(closeDelta(baselineCalls)).toEqual(expectedTaskCloses(e)); allTaskDescriptorsClosed(e);
 });
 
 it('accepts a definitively successful original close after abort without issuing another close', async () => {
-  const { e, stager } = await isolated();
+  const { e, stager, baselineCalls } = await isolated();
   let started: () => void = () => undefined; let finish: () => void = () => undefined;
   const entered = new Promise<void>(resolve => { started = resolve; });
   const late = new Promise<void>(resolve => { finish = resolve; });
@@ -113,5 +141,5 @@ it('accepts a definitively successful original close after abort without issuing
     expect(await remainsPending(task.quiesced)).toBe(true);
   } finally { finish(); }
   await task.quiesced; await stager.close();
-  expect([...fault.calls.values()]).toEqual([1]); expect(fault.closed.size).toBe(1);
+  expect(closeDelta(baselineCalls)).toEqual(expectedTaskCloses(e)); allTaskDescriptorsClosed(e);
 });

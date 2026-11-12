@@ -1,3 +1,4 @@
+import { CURRENT_JOURNAL_SCHEMA } from '../legacy-fixtures.js';
 import { expect, it } from 'vitest';
 import type { DatabaseSync } from 'node:sqlite';
 import { initialize } from '../../../src/journal/schema.js';
@@ -21,8 +22,9 @@ it.each([false, true])('backfills only bounded debt from exact schema13 fresh=%s
   const sequence = e.db.prepare('SELECT * FROM sqlite_sequence ORDER BY name').all();
   f.closeNative(e.db); const db = initialize(e.path);
   try {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(14);
-    expect(db.prepare('SELECT * FROM accepted_attempts').all()).toEqual(before.map(row => ({ ...row, absence_bytes: 0, absence_pending: 1 })));
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(CURRENT_JOURNAL_SCHEMA);
+    expect(db.prepare('SELECT * FROM accepted_attempts').all()).toEqual(before.map(row => ({ ...row, absence_bytes: 0, absence_pending: 1, execution_purpose: 'performance', export_result_json: null,
+      cleanup_control_version: 0, cleanup_control_bytes: 0, staging_namespace_identity: null })));
     expect(db.prepare('SELECT * FROM sqlite_sequence ORDER BY name').all()).toEqual(sequence);
     expect(db.prepare('SELECT * FROM output_absence_closures').all()).toEqual([]);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);

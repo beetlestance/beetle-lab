@@ -1,3 +1,5 @@
+import { runtimeName } from '../../runtime-identity.js';
+export { runtimeName } from '../../runtime-identity.js';
 import { exportEnvironment } from './export-binding.js';
 import { createHash } from 'node:crypto';
 import { isAbsolute, join, normalize } from 'node:path';
@@ -68,13 +70,6 @@ function mounts(roots: StagedRoots, profile: InstallationProfile, name: string):
         CreateMountpoint: false, ReadOnlyNonRecursive: false, ReadOnlyForceRecursive: key !== 'output' } });
   }
   return [...result, ...mailboxMount(profile, name)];
-}
-
-export function runtimeName(input: { installationId: string; organizationId: string;
-  workspaceId: string; attemptId: string; generation: number }): string {
-  const identity = [input.installationId, input.organizationId, input.workspaceId, input.attemptId]
-    .map(normalizeIdentity);
-  return `beetle-${hash([...identity, input.generation])}`;
 }
 
 /** Immutable private handle. Config and secret values are deliberately absent from the Docker specification. */

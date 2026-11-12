@@ -1,3 +1,4 @@
+import { bindSyntheticStore } from '../staging-namespace/model-fixtures.js';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach } from 'vitest';
@@ -39,7 +40,7 @@ export function reservation(item: Candidate, charged = true): Reservation {
     launchSettlement: null, aborted: !charged, releaseEvidence: null };
 }
 export function native(quota = 67_108_864) {
-  const db = initialize(':memory:'); handles.add(db);
+  const db = initialize(':memory:'); handles.add(db); bindSyntheticStore(db);
   const store = new AdmissionStore(db, quota);
   store.execute({ kind: 'configure', configuration: configuration() });
   store.execute({ kind: 'observe', observation: observation() });

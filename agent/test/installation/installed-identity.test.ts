@@ -44,7 +44,7 @@ it.each(['manifest', 'profile'] as const)('GET/PUT %s drift rejects before durab
   await expect(manager.enqueue({ ...e.job, installedIdentity: undefined })).rejects.toMatchObject({ reason: 'invalid_offer' });
   expect(write).not.toHaveBeenCalled(); expect(stagerFor).not.toHaveBeenCalled();
   expect(e.backend.creates).toBe(0); expect(e.backend.starts).toBe(0);
-  expect(await readdir(e.rootPath)).toEqual([]); write.mockRestore();
+  expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']); write.mockRestore();
 });
 
 it('rejects every installed binding field before a new durable admission', async () => {
@@ -135,5 +135,5 @@ it.each([
   await manager.close(); await f.close(journal);
   expect(durable(e.journalPath)).toEqual(before);
   expect(stagerFor).not.toHaveBeenCalled(); expect(e.backend.creates).toBe(0); expect(e.backend.starts).toBe(0);
-  expect(await readdir(e.rootPath)).toEqual([]);
+  expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']);
 });

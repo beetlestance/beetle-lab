@@ -10,7 +10,7 @@ import type { Boundary } from './bounds.js';
 import { authorize, eligibility } from './authority.js';
 import type { Authorized } from './authority.js';
 import { bytes, Files } from './files.js';
-import { rootIdentity } from './root.js';
+import { rootIdentity, boundRootNamespace } from './root.js';
 import { StagingError } from './types.js';
 import type { StagerOptions, PrepareRequest } from './types.js';
 
@@ -37,8 +37,17 @@ export async function prepareFiles(input: { options: StagerOptions; request: Pre
   checkPlan(plan, authorized, options);
   const check = () => eligibility(options, authorized, boundary);
   const files = createFiles(options, boundary, check); input.ownFiles(files);
+  const namespaceIntent = { protocolVersion: 1 as const, original: { ...request.key, generation: 1 as const, intentDigest: authorized.offer.intentDigest },
+    purpose: authorized.assignment ? 'standalone_export' as const : 'performance' as const,
+    namespaceIdentity: boundRootNamespace(options.root).namespaceIdentity, specDigest: plan.specDigest, runtimeName: name };
+  const namespace = await boundary.wait(() => options.journal.stagingNamespace.beginTask(namespaceIntent));
+  if (namespace.state !== 'preparing') throw new StagingError('reservation');
   await files.directory(taskRoot);
   for (const path of [staged.input, staged.output, staged.secrets]) await files.directory(path);
+  await files.syncDirectories();
+  const directories = await files.directoryFacts({ task: taskRoot, input: staged.input, output: staged.output, secrets: staged.secrets });
+  await boundary.wait(() => options.journal.stagingNamespace.commitTask({ intent: namespaceIntent, directories }));
+  await check();
   await stageInputs({ options, authorized, files, staged, boundary });
   await stageSecrets({ options, authorized, files, staged, boundary });
   const offerBytes = utf8(serializeStagedOffer(authorized.offer));

@@ -6,9 +6,9 @@ declare const verified: unique symbol;
 export interface VerifiedRoot { readonly [verified]: true }
 
 export type StagingReason = 'invalid_input' | 'installation' | 'reservation' | 'cancelled' | 'deadline'
-  | 'clock_fenced' | 'busy' | 'closed' | 'io' | 'provider' | 'input_integrity' | 'secret_limit';
+  | 'recovery_required' | 'clock_fenced' | 'busy' | 'closed' | 'io' | 'provider' | 'input_integrity' | 'secret_limit';
 export class StagingError extends Error {
-  constructor(readonly reason: StagingReason) { super(`Staging ${reason}`); this.name = 'StagingError'; }
+  constructor(readonly reason: StagingReason, options?: ErrorOptions) { super(`Staging ${reason}`, options); this.name = 'StagingError'; }
 }
 export type StagingResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly reason: StagingReason };
 export interface InstallationConfiguration {

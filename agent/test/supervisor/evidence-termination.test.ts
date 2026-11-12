@@ -1,3 +1,4 @@
+import { cleanupControl } from '../../src/cleanup-control/index.js';
 import { describe, expect, it } from 'vitest';
 import { JournalError } from '../../src/journal/index.js';
 import type { SupervisorInput } from '../../src/journal/index.js';
@@ -35,7 +36,7 @@ describe('termination remains available during evidence delivery failure', () =>
     expect(reserved(await s.journal.admission({ kind: 'reservation', key: s.input.key })).launchSettlement?.disposition).toBe('completed');
   });
   it('real SQLite spool quota blocks settlement but not durable cancellation and termination', async () => {
-    const s = await f.setup(undefined, 1, undefined, 2048); const base = port(s.journal);
+    const s = await f.setup(undefined, 1, undefined, cleanupControl.reservedBytes + 2048); const base = port(s.journal);
     const codes: string[] = []; const delivered: SupervisorInput[] = [];
     const c = controlled({ ...base, appendSupervisor: async input => {
       try { const event = await base.appendSupervisor(input); delivered.push(structuredClone(input)); return event; }

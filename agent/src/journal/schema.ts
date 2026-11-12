@@ -1,3 +1,5 @@
+import { migration016 } from './migration016.js';
+import { registerNamespaceValidation } from './staging-namespace/index.js';
 import { randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { Failure, transaction } from './sql.js';
@@ -81,10 +83,24 @@ export function initialize(path: string): DatabaseSync {
   try {
     db.exec('PRAGMA busy_timeout=100; PRAGMA cache_size=-2048; PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; COMMIT;');
     const version = db.prepare('PRAGMA user_version').get()?.user_version;
-    if (typeof version !== 'number' || version > 15) throw new Failure('schema_newer');
+    if (typeof version !== 'number' || version > 16) throw new Failure('schema_newer');
     db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;');
     const authority = version === 0 ? randomUUID() : null;
-    if (version < 15) transaction(db, () => {
+    registerNamespaceValidation(db);
+    if (version < 16) transaction(db, () => {
+      migrateFoundation(db, version);
+      if (version < 15) migrateOwnership(db, version, authority);
+      db.exec(migration016);
+      if (db.prepare('PRAGMA foreign_key_check').get()) throw new Failure('unavailable');
+    });
+    // Samples and process-owned guard readiness are not valid startup authority.
+    // Preserve configurations, clocks, queue and charged ownership; require refresh.
+    db.prepare('UPDATE admission_settings SET observation_json=NULL WHERE id=1').run();
+    return db;
+  } catch (error) { db.close(); throw error; }
+}
+
+function migrateFoundation(db: DatabaseSync, version: number): void {
       if (version === 0) db.exec(migration001);
       if (version < 2) db.exec(migration002);
       if (version < 3) db.exec(migration003);
@@ -93,12 +109,4 @@ export function initialize(path: string): DatabaseSync {
       if (version < 6) db.exec(migration006);
       if (version < 7) db.exec(migration007);
       if (version < 8) db.exec(migration008);
-      migrateOwnership(db, version, authority);
-      if (db.prepare('PRAGMA foreign_key_check').get()) throw new Failure('unavailable');
-    });
-    // Samples and process-owned guard readiness are not valid startup authority.
-    // Preserve configurations, clocks, queue and charged ownership; require refresh.
-    db.prepare('UPDATE admission_settings SET observation_json=NULL WHERE id=1').run();
-    return db;
-  } catch (error) { db.close(); throw error; }
 }

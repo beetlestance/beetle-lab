@@ -9,7 +9,7 @@ import type { Journal } from '../journal/index.js';
 import type { JournalOptions } from '../journal/index.js';
 import { InstallationStateError, openServingState } from '../installation-state/index.js';
 import type { ServingState } from '../installation-state/index.js';
-import { Stager, verifyInstallation } from '../staging/index.js';
+import { Stager, verifyInstallation, NamespaceBinding, NamespaceBindingError } from '../staging/index.js';
 import type { VerifiedRoot } from '../staging/index.js';
 import { Supervisor } from '../supervisor/index.js';
 import { createInstallationController } from '../installation/index.js';
@@ -74,6 +74,7 @@ class RuntimeOwner {
   private authorityState?: ServingState;
   private authorityCleanupUnknown = false;
   private journal?: Journal;
+  private namespace?: NamespaceBinding;
   private supervisor?: Supervisor;
   private installation?: InstallationController;
   private output?: OutputGuard;
@@ -99,6 +100,9 @@ class RuntimeOwner {
     this.journal = await openJournal(options.journal); this.check(options);
     const authority = await this.journal.journalAuthority(); this.check(options);
     authorityState.assertJournalAuthority(authority);
+    this.namespace = new NamespaceBinding({ root: verified.value, journal: this.journal.stagingNamespace, journalAuthority: authority,
+      operation: { deadline: performance.now() + 30_000, ...(options.signal ? { signal: options.signal } : {}) } });
+    await this.namespace.bind(); this.check(options);
     const configuration = JSON.parse(encodeJson({ ...options.configuration,
       profiles: options.catalog.engines.map(engine => engine.approved) }, 65_536)) as PoolConfiguration;
     await this.journal.admission({ kind: 'configure', configuration }); this.check(options);
@@ -163,6 +167,7 @@ class RuntimeOwner {
   }
   private executionCloses(): Close[] {
     const first: Close[] = [];
+    if (this.namespace) first.push(() => this.namespace!.close());
     if (this.server) first.push(() => this.server!.close());
     if (this.publisher) first.push(() => this.publisher!.close());
     if (this.scheduler) first.push(() => this.scheduler!.close());
@@ -192,8 +197,8 @@ export async function openAgentRuntime(options: AgentRuntimeOptions): Promise<Ag
   if (owner) throw new AgentRuntimeError('busy');
   const current = new RuntimeOwner(); owner = current;
   try { return await current.open(options); }
-  catch {
+  catch (error) {
     await current.close();
-    throw new AgentRuntimeError('startup');
+    throw new AgentRuntimeError(error instanceof NamespaceBindingError ? 'recovery_required' : 'startup');
   }
 }

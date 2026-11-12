@@ -1,0 +1,25 @@
+import { expect, it } from 'vitest';
+import { DatabaseSync } from 'node:sqlite';
+import { admissionFixture, scope, reserved } from '../admission/fixtures.js';
+import { rootFacts } from './model-fixtures.js';
+import { asSchema15 } from './legacy.js';
+const f = admissionFixture();
+it('preserves admitted predecessor data and charges without inventing old namespace observations or reserves', async () => {
+  const path = f.path(); let journal = await f.configured(path); const job = f.job();
+  await f.enqueue(journal, job); const reservation = reserved(await f.admit(journal, job));
+  const snapshot = await journal.get(scope(job)); const offer = await journal.readOffer(scope(job)); await f.close(journal);
+  let db = new DatabaseSync(path, { enableForeignKeyConstraints: true }); asSchema15(db);
+  const holds = db.prepare('SELECT * FROM disk_holds').all(); const stats = db.prepare('SELECT * FROM disk_retention_stats').all();
+  const row = db.prepare('SELECT offer_json,canonical_json,spool_bytes,snapshot_bytes,quota_bytes,last_seq FROM accepted_attempts').get(); db.close();
+  journal = await f.open(path); expect(await journal.get(scope(job))).toEqual(snapshot); expect(await journal.readOffer(scope(job))).toEqual(offer);
+  expect(await journal.admission({ kind: 'reservation', key: scope(job) })).toEqual(reservation);
+  expect(await journal.stagingNamespace.read()).toBeNull();
+  await expect(journal.stagingNamespace.begin(rootFacts)).rejects.toMatchObject({ code: 'recovery_required' });
+  await expect(f.admit(journal, job)).rejects.toMatchObject({ code: 'recovery_required' });
+  await f.close(journal); db = new DatabaseSync(path);
+  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(16);
+  expect(db.prepare('SELECT offer_json,canonical_json,spool_bytes,snapshot_bytes,quota_bytes,last_seq FROM accepted_attempts').get()).toEqual(row);
+  expect(db.prepare('SELECT * FROM disk_holds').all()).toEqual(holds); expect(db.prepare('SELECT * FROM disk_retention_stats').all()).toEqual(stats);
+  expect(db.prepare('SELECT cleanup_control_bytes,staging_namespace_identity FROM accepted_attempts').get()).toEqual({ cleanup_control_bytes: 0, staging_namespace_identity: null });
+  expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]); db.close();
+});

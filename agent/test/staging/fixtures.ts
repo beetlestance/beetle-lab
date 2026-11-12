@@ -7,7 +7,7 @@ import { performance } from 'node:perf_hooks';
 import { deriveInstalledIdentity } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import type { DockerRequest, DockerReply, DockerTransport } from '../../src/backends/docker/index.js';
-import { Stager, verifyInstallation } from '../../src/staging/index.js';
+import { Stager, verifyInstallation, NamespaceBinding } from '../../src/staging/index.js';
 import type { InstallationConfiguration, StagerOptions } from '../../src/staging/index.js';
 import { admissionFixture, configuration as admissionConfiguration, now, scope, validation } from '../admission/fixtures.js';
 import { makeInput } from '../backends/docker/fixtures.js';
@@ -54,7 +54,11 @@ export function fixture() {
       const transport = new Inspection(configuration);
       const verified = await verifyInstallation({ configuration, transport, operation: operation() });
       if (!verified.ok) throw new Error(verified.reason);
-      const journalPath = journal.path(); const owner = await journal.configured(journalPath);
+      const journalPath = journal.path(); const owner = await journal.configured(journalPath, undefined, async current => {
+        const binding = new NamespaceBinding({ root: verified.value, journal: current.stagingNamespace,
+          journalAuthority: await current.journalAuthority(), operation: operation() });
+        try { await binding.bind(); } finally { await binding.close(); }
+      });
       if (timeoutMs !== 1000) await owner.admission({ kind: 'configure',
         configuration: { ...admissionConfiguration(), maxTimeoutMs: timeoutMs } });
       const options: StagerOptions = { root: verified.value, profile, manifest, journal: owner,

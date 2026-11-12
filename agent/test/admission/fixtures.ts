@@ -1,3 +1,4 @@
+import { bindSyntheticNamespace } from '../staging-namespace/model-fixtures.js';
 import type { Offer } from '@beetle/contracts';
 import type { AdmissionValue, PoolConfiguration, Reservation, Resources, RuntimeObservation, Scope, ValidationIdentity } from '../../src/admission/index.js';
 import { configDigest } from '../../src/journal/admission-input.js';
@@ -47,8 +48,9 @@ export function admissionFixture() {
       value.executionPolicy.preferIdle = false;
       return value;
     },
-    async configured(path?: string, quota?: number): Promise<Journal> {
+    async configured(path?: string, quota?: number, bind?: (journal: Journal) => Promise<void>): Promise<Journal> {
       const journal = await f.open(path, quota);
+      if (bind) await bind(journal); else await bindSyntheticNamespace(journal);
       await journal.admission({ kind: 'configure', configuration: configuration() });
       await journal.admission({ kind: 'observe', observation: observation() });
       return journal;

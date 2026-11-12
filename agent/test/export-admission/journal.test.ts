@@ -1,3 +1,5 @@
+import { bindSyntheticNamespace } from '../staging-namespace/model-fixtures.js';
+import { cleanupControl } from '../../src/cleanup-control/index.js';
 import { DatabaseSync } from 'node:sqlite';
 import { createHash } from 'node:crypto';
 import { expect, it } from 'vitest';
@@ -13,7 +15,7 @@ function assignment(offer:Offer,timeout=60000):StandaloneExportAssignment {
 }
 function job(id=1){const offer=f.job(id);offer.budget.outputBytes=300000;offer.requiredCapabilities=['standalone-export-v1'];offer.secretReferences=[];return offer;}
 async function configured(path?:string){
-  const journal=await f.open(path);const config=configuration();config.pool.outputBytes=2000000;config.perRun.outputBytes=1000000;
+  const journal=await f.open(path);await bindSyntheticNamespace(journal);const config=configuration();config.pool.outputBytes=2000000;config.perRun.outputBytes=1000000;
   config.profiles[0]!.capabilities.push('standalone-export-v1');await journal.admission({kind:'configure',configuration:config});
   const observed=observation();observed.capacity.outputBytes=2000000;await journal.admission({kind:'observe',observation:observed});return journal;
 }
@@ -78,4 +80,15 @@ it('durably cancels a missing exact export before late admission without creatin
   await expect(journal.admission({kind:'reservation',key})).rejects.toMatchObject({code:'not_found'});
   await expect(journal.cancelExportOriginal({assignment:assignment(value.offer,90000),now})).rejects.toMatchObject({code:'conflict'});
   expect(await journal.get(key)).toEqual(first);
+});
+
+it('reserves the same non-refundable logical cleanup capacity for an admitted export original', async () => {
+  const path = f.path(); const journal = await configured(path); const value = assignment(job());
+  await enqueue(journal, value); reserved(await f.admit(journal, value.offer)); await f.close(journal);
+  const db = new DatabaseSync(path);
+  try {
+    const row = db.prepare('SELECT cleanup_control_bytes,staging_namespace_identity,execution_purpose FROM accepted_attempts').get()!;
+    expect(row.cleanup_control_bytes).toBe(cleanupControl.reservedBytes); expect(row.execution_purpose).toBe('standalone_export');
+    expect(String(row.staging_namespace_identity)).toMatch(/^[a-f0-9]{64}$/);
+  } finally { db.close(); }
 });

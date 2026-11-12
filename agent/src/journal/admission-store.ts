@@ -1,3 +1,4 @@
+import { reserveCleanupControl, assertCleanupControl } from './staging-namespace/index.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeJson } from '@beetle/contracts';
 import type { AdmissionCommand, AdmissionValue, Candidate, Decision, Reservation, RuntimeObservation } from '../admission/index.js';
@@ -10,7 +11,7 @@ import { canonical, offerInput } from './input.js';
 import { offerAtomic } from './offers.js';
 import { eventInput } from './event-input.js';
 import { appendAtomic } from './spool.js';
-import { Failure, owner, transaction, quotaUsed } from './sql.js';
+import { Failure, owner, transaction } from './sql.js';
 import { diskRetention } from './disk-retention/facts.js';
 import { persistRefusal } from './admission-refusal.js';
 
@@ -95,7 +96,7 @@ export class AdmissionStore {
   }
   private admit(request: Extract<AdmissionCommand, { kind: 'admit' }>): AdmissionValue {
     const existing = findReservation(this.db, request.key);
-    if (existing) return existing;
+    if (existing) { assertCleanupControl(this.db, owner(this.db, request.key)); return existing; }
     if (owner(this.db, request.key).cancel_requested) return { kind: 'reject', reason: 'cancelled' };
     const item = candidate(this.db, request.key);
     const snapshot = settings(this.db, request.now);
@@ -105,9 +106,7 @@ export class AdmissionStore {
     if (decision.kind === 'reject') return this.reject(item, decision);
     if (decision.kind !== 'admit') return decision;
     const row = owner(this.db, request.key);
-    if (quotaUsed(row, { hold_bytes: DISK_HOLD_METADATA_BYTES }) > row.quota_bytes) {
-      throw new Failure('quota_exceeded');
-    }
+    reserveCleanupControl(this.db, row, DISK_HOLD_METADATA_BYTES);
     const reservation: Reservation = { ...item, status: 'charged', admittedAt: request.now, createToken: null,
       specDigest: null, runtimeId: null, startToken: null, launchEpoch: 0, startClaimedAt: null,
       launchClosed: false, launchSettlement: null, aborted: false, releaseEvidence: null };

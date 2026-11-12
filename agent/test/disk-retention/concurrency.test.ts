@@ -1,8 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
 import { admissionFixture, configuration, now, observation, reserved, scope } from '../admission/fixtures.js';
-import { close, legacy, legacyRow } from './fixtures.js';
-import { transaction } from '../../src/journal/sql.js';
+import { seedHeldOriginals } from './held-fixtures.js';
 import { estimateStaging } from '../../src/admission/index.js';
 
 const f = admissionFixture();
@@ -35,8 +34,7 @@ it('serializes two competing last-byte admissions and preserves the winner acros
   } finally { db.close(); }
 });
 it('serializes the final native hold slot without a second charge on concurrent replay', async () => {
-  const path = f.path(); const db = legacy(path);
-  transaction(db, () => { for (let id = 1; id <= 4095; id++) legacyRow(db, id, false); }); close(db);
+  const path = f.path(); seedHeldOriginals(path, 4095);
   const journal = await f.configured(path); const config = configuration();
   config.pool.outputBytes = 1_000_000; config.pool.stagingBytes = 2_000_000_000;
   await journal.admission({ kind: 'configure', configuration: config });

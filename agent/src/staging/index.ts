@@ -1,9 +1,12 @@
+export { NamespaceBinding, NamespaceBindingError } from './namespace-binding.js';
+export type { NamespaceBindingOptions } from './namespace-binding.js';
+export type { StagingFilesPort } from './files.js';
 import type { RuntimePlan } from '../backends/docker/index.js';
 import { snapshot, Boundary } from './bounds.js';
 import { scopeSnapshot, validationSnapshot } from './authority.js';
 import type { Files } from './files.js';
 import { prepareFiles } from './prepare.js';
-import { rootIdentity } from './root.js';
+import { rootIdentity, boundRootNamespace } from './root.js';
 import { StagingError } from './types.js';
 import type { StagerOptions, Preparation, PrepareRequest, StagingResult } from './types.js';
 export { verifyInstallation } from './root.js';
@@ -27,7 +30,7 @@ export class Stager {
   private readonly running = new Set<Promise<void>>();
   private closed = false;
   constructor(options: StagerOptions) {
-    const identity = rootIdentity(options.root);
+    const identity = rootIdentity(options.root); boundRootNamespace(options.root);
     const profile = snapshot(options.profile, 65_536);
     if (identity.configuration.installationId.toLowerCase() !== profile.installationId.toLowerCase()
       || identity.configuration.stagingRoot !== profile.stagingRoot || identity.configuration.user !== profile.user) throw new StagingError('installation');

@@ -1,3 +1,4 @@
+import { NamespaceStore, namespaceOperation } from './staging-namespace/index.js';
 import { readExport } from './export-assignment.js';
 import { readJournalAuthority } from './authority.js';
 import { snapshot } from './snapshot.js';
@@ -21,12 +22,14 @@ import { executeOutputDelivery, outputDeliveryOperation } from './output-deliver
 import { executeOutputAbsence, outputAbsenceOperation } from './output-absence.js';
 
 export class Store {
+  private readonly namespaces: NamespaceStore;
   private readonly admission: AdmissionStore;
   private readonly read: StatementSync;
   private readonly list: StatementSync;
   private readonly runnable: RunnableScan;
   private readonly outputs: OutputSources;
   constructor(private readonly db: DatabaseSync, private readonly quota = DEFAULT_QUOTA_BYTES) {
+    this.namespaces = new NamespaceStore(db);
     this.admission = new AdmissionStore(db, quota);
     this.runnable = new RunnableScan(db);
     this.outputs = new OutputSources(db);
@@ -90,6 +93,7 @@ export class Store {
     }
   }
   execute(command: Command): Value {
+    if (namespaceOperation(command)) return this.namespaces.execute(command);
     if (outputAbsenceOperation(command)) return executeOutputAbsence(this.db, command);
     if (outputDeliveryOperation(command)) return executeOutputDelivery(this.db, command);
     if (outputSourceOperation(command)) return this.outputs.execute(command);

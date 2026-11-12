@@ -18,7 +18,7 @@ async function stopped(e: Awaited<ReturnType<typeof f.setupController>>) {
 function native(path: string) {
   const db = new DatabaseSync(path, { readOnly: true });
   try {
-    return { rows: db.prepare('SELECT collection_bytes,source_bytes,spool_bytes,snapshot_bytes,checkpoint_bytes,hold_bytes FROM accepted_attempts').all(),
+    return { rows: db.prepare('SELECT collection_bytes,source_bytes,spool_bytes,snapshot_bytes,checkpoint_bytes,hold_bytes,cleanup_control_bytes FROM accepted_attempts').all(),
       intents: db.prepare('SELECT collection_id,phase,charged_bytes FROM output_collection_intents').all(),
       sources: db.prepare('SELECT manifest_digest,source_digest,charged_bytes FROM output_sources').all(),
       holds: db.prepare('SELECT * FROM disk_holds').all(), counters: db.prepare('SELECT * FROM disk_retention_stats').all(),
@@ -116,7 +116,7 @@ it('retains the exact successful request across actual native source quota refus
   const sized = await f.setupController(); await stopped(sized); await sized.controller.tick(budget());
   await sized.controller.close(); await f.close(sized.journal);
   const measured = native(sized.journalPath).rows[0]!;
-  const quota = ['collection_bytes', 'source_bytes', 'spool_bytes', 'snapshot_bytes', 'checkpoint_bytes', 'hold_bytes']
+  const quota = ['collection_bytes', 'source_bytes', 'spool_bytes', 'snapshot_bytes', 'checkpoint_bytes', 'hold_bytes', 'cleanup_control_bytes']
     .reduce((total, field) => total + Number(measured[field]), 0) - 1;
   const e = await f.setupController(quota); await stopped(e);
   const commit = vi.spyOn(e.journal, 'commitOutputSource'); const fail = vi.spyOn(e.journal, 'failOutputCollection');

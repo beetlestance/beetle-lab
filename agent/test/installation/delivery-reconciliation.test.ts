@@ -26,7 +26,7 @@ it('same Manager retains native completion across real quota denial and retries 
   const e = await seed(); const last = (await e.journal.get(e.key)).lastSeq; await f.close(e.journal);
   const db = new DatabaseSync(e.path); const charge = Buffer.byteLength(encodeCanonicalJson({ version: 1, receipt: e.receipt, finalAgentSeq: last }, 1024)) + 256;
   try {
-    const used = Number(db.prepare('SELECT spool_bytes+snapshot_bytes+checkpoint_bytes+hold_bytes+collection_bytes+source_bytes+delivery_bytes AS n FROM accepted_attempts').get()?.n);
+    const used = Number(db.prepare('SELECT spool_bytes+snapshot_bytes+checkpoint_bytes+hold_bytes+collection_bytes+source_bytes+delivery_bytes+absence_bytes+cleanup_control_bytes AS n FROM accepted_attempts').get()?.n);
     db.prepare('UPDATE accepted_attempts SET quota_bytes=?').run(used + charge - 1);
   } finally { db.close(); }
   const journal = await f.open(e.path); const options = trapped(journal); const manager = create(options);

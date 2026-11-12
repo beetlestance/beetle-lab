@@ -18,7 +18,7 @@ export function durableRows(db: DatabaseSync) {
   return [...rows(db), { table: 'output_delivery_closures', rows: db.prepare('SELECT * FROM output_delivery_closures').all() }];
 }
 export function used(db: DatabaseSync): number {
-  return Number(db.prepare(`SELECT spool_bytes+snapshot_bytes+checkpoint_bytes+hold_bytes+collection_bytes+source_bytes+delivery_bytes AS n
+  return Number(db.prepare(`SELECT spool_bytes+snapshot_bytes+checkpoint_bytes+hold_bytes+collection_bytes+source_bytes+delivery_bytes+absence_bytes+cleanup_control_bytes AS n
     FROM accepted_attempts`).get()?.n);
 }
 /** A real current source fixture transformed into precisely historical schema12, with FKs on. */

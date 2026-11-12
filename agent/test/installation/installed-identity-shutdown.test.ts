@@ -67,7 +67,7 @@ it.each(['unbound', 'changed'] as const)('preserves inherited %s charge when clo
   await expect(driving).rejects.toMatchObject({ reason: 'closed' }); await closing;
   expect(e.admission.mock.calls.filter(([command]) => command.kind === 'abortUnstarted')).toHaveLength(0);
   expect(e.stagerFor).not.toHaveBeenCalled(); expect(e.backend.creates).toBe(0); expect(e.backend.starts).toBe(0);
-  expect(await readdir(e.rootPath)).toEqual([]);
+  expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']);
   await f.close(e.journal); expect(persisted(e.journalPath)).toEqual(e.before);
 });
 it.each(['unbound', 'changed'] as const)('preserves inherited %s charge after actual queue_full read deferral and close', async binding => {
@@ -79,7 +79,7 @@ it.each(['unbound', 'changed'] as const)('preserves inherited %s charge after ac
   await e.manager.close();
   expect(e.admission.mock.calls.filter(([command]) => command.kind === 'abortUnstarted')).toHaveLength(0);
   expect(e.stagerFor).not.toHaveBeenCalled(); expect(e.backend.creates).toBe(0); expect(e.backend.starts).toBe(0);
-  expect(await readdir(e.rootPath)).toEqual([]);
+  expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']);
   await f.close(e.journal); expect(persisted(e.journalPath)).toEqual(e.before);
 });
 it('cleans a fresh committed admission once after shutdown drains its delayed original reply', async () => {

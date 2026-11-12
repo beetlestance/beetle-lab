@@ -9,7 +9,7 @@ it('returns busy on refused read without providers/files and permits a later pre
   read.mockRejectedValueOnce(new JournalError('queue_full'));
   const input = vi.fn(e.options.providers.input); const stager = e.create({ providers: { ...e.options.providers, input } });
   const task = e.prepare(stager); expect(await task.result).toEqual({ ok: false, reason: 'busy' }); await task.quiesced;
-  expect(input).not.toHaveBeenCalled(); expect(await readdir(e.rootPath)).toEqual([]);
+  expect(input).not.toHaveBeenCalled(); expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']);
   const retry = e.prepare(stager); expect((await retry.result).ok).toBe(true); await retry.quiesced;
   expect(input).toHaveBeenCalledTimes(1); read.mockRestore();
 });
@@ -20,5 +20,5 @@ it('preserves unavailable failures and deadline failures instead of reporting bu
   read.mockRejectedValue(new JournalError('queue_full'));
   const expired = e.prepare(stager, e.offer, -1);
   expect(await expired.result).toEqual({ ok: false, reason: 'deadline' }); await expired.quiesced;
-  expect(await readdir(e.rootPath)).toEqual([]); read.mockRestore();
+  expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']); read.mockRestore();
 });

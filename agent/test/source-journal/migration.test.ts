@@ -1,3 +1,5 @@
+import { migration016 } from '../../src/journal/migration016.js';
+import { registerNamespaceValidation } from '../../src/journal/staging-namespace/validation.js';
 import { migration013 } from '../../src/journal/migration013.js';
 import { migration015 } from '../../src/journal/migration015.js';
 import { migration014 } from '../../src/journal/migration014.js';
@@ -25,6 +27,7 @@ it('applies real migration011 before additive012 without inventing old source au
   transaction(db, () => migration013(db));
   transaction(db, () => migration014(db));
   transaction(db, () => migration015(db));
+  registerNamespaceValidation(db); transaction(db, () => db.exec(migration016));
   expect(new Store(db).execute({ kind: 'outputSourceRead', key, id: 1 })).toBeNull();
 });
 it('rolls back all012 DDL/guards/columns/version on a late table collision', () => {

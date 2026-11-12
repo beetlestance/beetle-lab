@@ -46,7 +46,7 @@ it('carries exact1MiB UTF8 config through client/catalogue/installation/reopen/S
     expect((await client.offer(key.attemptId, tooLarge)).ok).toBe(false);
     expect((await server.inject({ method: 'PUT', url: `/runner/v1/attempts/${key.attemptId}`, headers, payload: tooLarge })).statusCode).toBe(400);
     await expect(e.owner.get(key)).rejects.toMatchObject({ code: 'not_found' });
-    expect(await readdir(e.rootPath)).toEqual([]); expect(unused).not.toHaveBeenCalled();
+    expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']); expect(unused).not.toHaveBeenCalled();
     const first = await client.offer(key.attemptId, job); expect(first.ok).toBe(true);
     const reordered = Object.fromEntries(Object.entries(job).reverse());
     expect((await client.offer(key.attemptId, reordered as typeof job))).toEqual(first);

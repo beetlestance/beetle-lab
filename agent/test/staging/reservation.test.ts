@@ -45,7 +45,7 @@ it.each(guarded)('rejects native %s mutation with every row and retention counte
   const owner = await f.open(e.journalPath);
   expect(await owner.admission({ kind: 'reservation', key: scope(e.offer) })).toEqual(original);
   expect(await owner.get(scope(e.offer))).toMatchObject({ admission: { state: 'charged' } });
-  expect(await readdir(e.rootPath)).toEqual([]);
+  expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']);
 });
 it.each(guarded)('rejects synthetic malformed %s Journal authority at the independent Stager boundary', async kind => {
   const e = await f.environment();
@@ -60,7 +60,7 @@ it.each(guarded)('rejects synthetic malformed %s Journal authority at the indepe
     expect(await task.result).toEqual({ ok: false, reason: 'reservation' }); await task.quiesced;
     expect(reply).toHaveBeenCalledWith({ kind: 'reservation', key: scope(e.offer) });
     expect(providers.input).not.toHaveBeenCalled(); expect(providers.secret).not.toHaveBeenCalled();
-    expect(await readdir(e.rootPath)).toEqual([]);
+    expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']);
   } finally { reply.mockRestore(); }
   expect(await e.owner.admission({ kind: 'reservation', key: scope(e.offer) })).toEqual(original);
 });
@@ -75,7 +75,7 @@ it.each(writable)('rejects writable %s corruption read through the reopened Jour
   } finally { db.close(); }
   const owner = await f.open(e.journalPath);
   const task = e.prepare(e.create({ journal: owner })); expect(await task.result).toEqual({ ok: false, reason: 'reservation' }); await task.quiesced;
-  expect(await readdir(e.rootPath)).toEqual([]);
+  expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']);
   if (kind === 'date') expect(await owner.get(scope(e.offer))).toMatchObject({ admission: { state: 'charged' } });
   else await expect(owner.get(scope(e.offer))).rejects.toMatchObject({ code: 'unavailable' });
 });
@@ -86,5 +86,5 @@ it('rejects an unsupported runtime profile before per-attempt writes', async () 
     value => createHash('sha256').update(value).digest('hex'));
   await f.enqueue(e.owner, e.offer); await f.admit(e.owner, e.offer);
   const task = e.prepare(e.create({ profile })); expect(await task.result).toEqual({ ok: false, reason: 'invalid_input' }); await task.quiesced;
-  expect(await readdir(e.rootPath)).toEqual([]);
+  expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']);
 });

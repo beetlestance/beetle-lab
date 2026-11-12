@@ -1,3 +1,5 @@
+import { createStagingNamespaceClient } from './staging-namespace-client.js';
+import type { StagingNamespaceJournal } from '../staging-namespace/index.js';
 import { captureExport } from './export-assignment.js';
 import { copyWrapperBatch } from '../control-protocol/index.js';
 import type { WrapperBatch, WrapperCheckpoint } from '../control-protocol/index.js';
@@ -65,6 +67,7 @@ function largeOperation(operation: Operation): boolean {
 }
 
 export class Journal implements JournalOutputSources, JournalOutputDelivery, JournalOutputAbsence {
+  readonly stagingNamespace: StagingNamespaceJournal;
   private readonly worker: Worker;
   private readonly pending = new Map<number, Pending>();
   private readonly limit: number;
@@ -79,6 +82,8 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
   private readonly ready: Promise<void>;
 
   private constructor(options: JournalOptions) {
+    this.stagingNamespace = createStagingNamespaceClient({ send: operation => this.prepare(operation),
+      invalidReply: () => { this.fail('unavailable'); throw new JournalError('unavailable'); } });
     this.limit = options.queueLimit ?? 32;
     this.ready = new Promise((resolve, reject) => { this.readyResolve = resolve; this.readyReject = reject; });
     this.worker = new Worker(options.workerUrl ?? new URL('./worker.js', import.meta.url), {

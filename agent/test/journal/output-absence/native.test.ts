@@ -63,7 +63,7 @@ it('does not authorize zero-event unknown originals or unretired/charged launch 
 
 it('enforces exact/one-byte-short quota in both native and worker transaction, preserving debt on failure', async () => {
   const { db, proof, store, key } = await f.ready();
-  const used = Number(db.prepare(`SELECT spool_bytes+snapshot_bytes+checkpoint_bytes+hold_bytes+collection_bytes+source_bytes+delivery_bytes AS n
+  const used = Number(db.prepare(`SELECT spool_bytes+snapshot_bytes+checkpoint_bytes+hold_bytes+collection_bytes+source_bytes+delivery_bytes+absence_bytes+cleanup_control_bytes AS n
     FROM accepted_attempts`).get()?.n);
   const exact = used + Buffer.byteLength(json(proof)) + 256;
   db.prepare('UPDATE accepted_attempts SET quota_bytes=?').run(exact - 1);

@@ -15,7 +15,7 @@ it.each(['manifestId', 'profileId', 'catalogVersion', 'manifestDigest', 'profile
     const task = e.prepare(e.create({ providers: { input, secret } }));
     expect(await task.result).toEqual({ ok: false, reason: 'reservation' }); await task.quiesced;
     expect(input).not.toHaveBeenCalled(); expect(secret).not.toHaveBeenCalled(); expect(write).not.toHaveBeenCalled();
-    expect(await readdir(e.rootPath)).toEqual([]); read.mockRestore(); write.mockRestore();
+    expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']); read.mockRestore(); write.mockRestore();
   });
 it.each(['manifest', 'profile'] as const)('compares actual captured %s semantics independently of catalogue callers', async kind => {
   const e = await f.environment();
@@ -27,5 +27,5 @@ it.each(['manifest', 'profile'] as const)('compares actual captured %s semantics
   const task = e.prepare(stager);
   expect(await task.result).toEqual({ ok: false, reason: 'reservation' }); await task.quiesced;
   expect(input).not.toHaveBeenCalled(); expect(secret).not.toHaveBeenCalled();
-  expect(await readdir(e.rootPath)).toEqual([]);
+  expect(await readdir(e.rootPath)).toEqual(['.beetle-namespace-v1.json']);
 });

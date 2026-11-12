@@ -1,12 +1,15 @@
+import { asSchema15 } from '../staging-namespace/legacy.js';
 import type { DatabaseSync } from 'node:sqlite';
 
 /** Synthetic downgrade only: no export authority or result may exist. */
 export function removeFutureExport(db: DatabaseSync): void {
-  if (db.prepare('PRAGMA user_version').get()?.user_version !== 15
+  const version = db.prepare('PRAGMA user_version').get()?.user_version;
+  if ((version !== 15 && version !== 16)
     || db.prepare('SELECT COUNT(*) AS n FROM export_assignments').get()?.n !== 0
     || db.prepare("SELECT COUNT(*) AS n FROM accepted_attempts WHERE execution_purpose!='performance' OR export_result_json IS NOT NULL").get()?.n !== 0) {
     throw new Error('legacy fixture requires performance-only schema15');
   }
+  if (version === 16) asSchema15(db);
   restorePerformanceSourceGuards(db);
   for (const name of ['execution_purpose_immutable', 'export_assignment_insert', 'export_assignment_immutable',
     'export_assignment_retained', 'result_purpose_exclusive', 'export_result_authority', 'performance_result_authority',

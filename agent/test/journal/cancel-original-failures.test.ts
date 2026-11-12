@@ -99,7 +99,7 @@ it('rejects reservation corruption beside a fresh marker before changing any nat
       retained_output_bytes: 0, retained_staging_bytes: 0,
     }]);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
-    expect(() => db.exec(invalidReservation)).toThrow('invalid disk original');
+    expect(() => db.exec(invalidReservation)).toThrow('missing cleanup control reserve');
     expect(rows()).toEqual(before);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
   } finally { db.close(); }
@@ -108,7 +108,7 @@ it('rejects reservation corruption beside a fresh marker before changing any nat
 it('preserves fresh refusal get/admit/claim semantics after native reservation injection is denied', async () => {
   const path = f.path(); const seed = await f.open(path);
   const initial = await seed.cancelOriginal({ offer: f.offer(), now }); await f.close(seed);
-  expect(() => edit(path, invalidReservation)).toThrow('invalid disk original');
+  expect(() => edit(path, invalidReservation)).toThrow('missing cleanup control reserve');
   const journal = await f.open(path);
   expect(await journal.get(f.key())).toEqual(initial);
   expect(await journal.admission({ kind: 'admit', key: f.key(), now, sourceOrdinal: 1 }))

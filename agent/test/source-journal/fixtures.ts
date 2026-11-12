@@ -19,7 +19,7 @@ export const tables = ['accepted_attempts', 'admission_settings', 'admission_que
   'supervision_clock', 'journal_authority', 'cancelled_originals', 'disk_holds', 'disk_retention_stats', 'output_collection_intents', 'output_sources'];
 export function rows(db: DatabaseSync) { return tables.map(table => ({ table, rows: db.prepare(`SELECT * FROM ${table}`).all() })); }
 export function used(db: DatabaseSync): number {
-  return Number(db.prepare('SELECT spool_bytes+snapshot_bytes+checkpoint_bytes+hold_bytes+collection_bytes+source_bytes AS n FROM accepted_attempts').get()?.n);
+  return Number(db.prepare('SELECT spool_bytes+snapshot_bytes+checkpoint_bytes+hold_bytes+collection_bytes+source_bytes+delivery_bytes+absence_bytes+cleanup_control_bytes AS n FROM accepted_attempts').get()?.n);
 }
 export function inspect(path: string) {
   const db = new DatabaseSync(path, { readOnly: true });

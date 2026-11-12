@@ -1,3 +1,4 @@
+import type { InstalledNamespaceAnchor } from '../staging-namespace/index.js';
 import { constants } from 'node:fs';
 import { access, lstat, realpath } from 'node:fs/promises';
 import { isAbsolute, normalize, dirname } from 'node:path';
@@ -8,9 +9,19 @@ import {verifyAgentIdentity} from './agent-identity.js';
 import { StagingError } from './types.js';
 import type { InstallationConfiguration, StagingResult, VerifyInput, VerifiedRoot } from './types.js';
 
-export interface RootIdentity { readonly configuration: InstallationConfiguration; readonly dev: number; readonly ino: number; readonly uid: number; readonly gid: number }
+export interface RootIdentity { readonly configuration: InstallationConfiguration; readonly dev: bigint; readonly ino: bigint; readonly mode: bigint; readonly uid: number; readonly gid: number }
 export type { VerifiedRoot } from './types.js';
 const roots = new WeakMap<VerifiedRoot, RootIdentity>();
+const namespaces = new WeakMap<VerifiedRoot, InstalledNamespaceAnchor>();
+export function boundRootNamespace(root: VerifiedRoot): InstalledNamespaceAnchor {
+  const anchor = namespaces.get(root); if (!anchor) throw new StagingError('installation'); return anchor;
+}
+export function rememberRootNamespace(root: VerifiedRoot, anchor: InstalledNamespaceAnchor): void {
+  rootIdentity(root);
+  const existing = namespaces.get(root);
+  if (existing && existing.namespaceIdentity !== anchor.namespaceIdentity) throw new StagingError('installation');
+  namespaces.set(root, anchor);
+}
 export function rootIdentity(root: VerifiedRoot): RootIdentity {
   const data = roots.get(root);
   if (!data) throw new StagingError('installation');
@@ -71,9 +82,9 @@ function checkMount(mount: Record<string, unknown>, root: string): void {
 }
 export async function checkRoot(identity: RootIdentity, boundary: Boundary): Promise<void> {
   const root = identity.configuration.stagingRoot;
-  const stat = await boundary.wait(() => lstat(root));
+  const stat = await boundary.wait(() => lstat(root, { bigint: true }));
   if (!stat.isDirectory() || stat.isSymbolicLink() || stat.dev !== identity.dev || stat.ino !== identity.ino
-    || stat.uid !== identity.uid || stat.gid !== identity.gid || (stat.mode & 0o022) !== 0) throw new StagingError('installation');
+    || stat.uid !== BigInt(identity.uid) || stat.gid !== BigInt(identity.gid) || stat.mode !== identity.mode || (stat.mode & 0o022n) !== 0n) throw new StagingError('installation');
   if (await boundary.wait(() => realpath(root)) !== root) throw new StagingError('installation');
 }
 async function localRoot(config: InstallationConfiguration, boundary: Boundary): Promise<RootIdentity> {
@@ -86,8 +97,8 @@ async function localRoot(config: InstallationConfiguration, boundary: Boundary):
     if (path === '/') break;
     path = dirname(path);
   }
-  const stat = await boundary.wait(() => lstat(config.stagingRoot));
-  const identity = Object.freeze({ configuration: config, dev: stat.dev, ino: stat.ino, uid: uid!, gid: gid! });
+  const stat = await boundary.wait(() => lstat(config.stagingRoot, { bigint: true }));
+  const identity = Object.freeze({ configuration: config, dev: stat.dev, ino: stat.ino, mode: stat.mode, uid: uid!, gid: gid! });
   await checkRoot(identity, boundary);
   await boundary.wait(() => access(config.stagingRoot, constants.W_OK | constants.X_OK));
   return identity;
