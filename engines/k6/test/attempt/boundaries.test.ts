@@ -51,7 +51,7 @@ it('rejects collect allowance below fixed producer ceiling before calling execut
 });
 it.each([0, 1])('reserves collect final-drain room before native load (%s byte short)', async short => {
   const f = await setup();
-  const minimum = 2 * 1_048_576 + 65_536;
+  const minimum = 2 * 1_048_576 + 524_288 + 65_536;
   f.manifest.phases.find(phase => phase.phase === 'collect')!.outputBytes = minimum - short;
   f.offer.installedIdentity = syntheticInstalledIdentity(f.manifest); await f.save();
   const result = await f.run();
@@ -60,7 +60,7 @@ it.each([0, 1])('reserves collect final-drain room before native load (%s byte s
     await expect(readFile(join(f.outputRoot, 'numeric-final.json'))).rejects.toMatchObject({ code: 'ENOENT' });
   } else {
     expect(result.ok, JSON.stringify(result)).toBe(true); expect(native.calls).toBe(1);
-    expect(result.result!.artifacts.map(artifact => artifact.kind)).toEqual(['metric-windows', 'metric-index', 'native-summary', 'numeric-final']);
+    expect(result.result!.artifacts.map(artifact => artifact.kind)).toEqual(['metric-windows', 'metric-index', 'native-summary', 'numeric-final', 'performance-report', 'metrics-csv']);
     expect(result.result!.artifacts.reduce((sum, artifact) => sum + artifact.bytes, 0)).toBeLessThanOrEqual(minimum);
   }
 });
@@ -71,10 +71,10 @@ it('bounds result publication by the manifest seal output allowance before writi
   expect(result.result).toBeNull(); await expect(readFile(join(f.outputRoot, 'engine-result.json'))).rejects.toMatchObject({ code: 'ENOENT' });
 });
 it('reserves exact finite output partitions without integer overflow', () => {
-  const minimum = 2_503_052;
+  const minimum = 3_044_252;
   expect(() => reserveOutput(minimum - 1)).toThrow('output_limit');
   const exact = reserveOutput(minimum); expect(Object.values(exact).every(Number.isSafeInteger)).toBe(true);
-  expect(exact.control + exact.numeric + exact.result + exact.execution).toBe(minimum);
+  expect(exact.control + exact.numeric + exact.result + exact.execution + exact.reports).toBe(minimum);
   for (const value of [NaN, Infinity, -1, Number.MAX_SAFE_INTEGER + 1]) expect(() => reserveOutput(value)).toThrow('output_limit');
   expect(reserveOutput(Number.MAX_SAFE_INTEGER).build).toBe(89 * 1_048_576);
 });

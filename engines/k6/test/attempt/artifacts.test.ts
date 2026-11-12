@@ -66,3 +66,18 @@ it('rejects one byte short before numeric open/write/sync', async () => {
   await expect(f.artifacts.numeric(value, remaining)).rejects.toMatchObject({ reason: 'output_limit' });
   expect(opened).not.toHaveBeenCalled(); expect(await fs.readdir(f.directory)).toEqual([]);
 });
+it('rejects report cancellation and overflow before opening any artifact', async () => {
+  const f = await setup(); const opened = vi.mocked(fs.open); opened.mockClear();
+  await expect(f.artifacts.report('performance-report', Buffer.from('report\n'), 6)).rejects.toMatchObject({reason: 'output_limit'});
+  expect(opened).not.toHaveBeenCalled(); expect(await fs.readdir(f.directory)).toEqual([]);
+  f.fence.stop('cancelled');
+  await expect(f.artifacts.report('metrics-csv', Buffer.from('header\n'), 262144)).rejects.toMatchObject({reason: 'cancelled'});
+  expect(opened).not.toHaveBeenCalled();
+});
+it('captures report bytes before asynchronous custody and verifies the exact accepted file', async () => {
+  const f = await setup(); const content = Buffer.from('bounded report\n'); const expected = Buffer.from(content);
+  const original = f.artifacts.report('performance-report', content, content.length); content.fill(0);
+  const artifact = await original;
+  expect(artifact).toMatchObject({kind: 'performance-report', relativePath: 'performance-report.txt', bytes: expected.length});
+  expect(await fs.readFile(join(f.directory, artifact.relativePath))).toEqual(expected);
+});

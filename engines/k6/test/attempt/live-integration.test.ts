@@ -43,7 +43,7 @@ it('carves initial extent and produced bytes from total and execute ceilings', a
   const enabled = phaseReservation(reserveOutput(total, false, true), f.manifest);
   expect(enabled.live).toBeLessThanOrEqual(Math.floor(total / 8));
   expect(enabled.live).toBeLessThanOrEqual(Math.floor(f.manifest.phases.find(phase => phase.phase === 'execute')!.outputBytes / 8));
-  expect(enabled.build + enabled.history + 1048576 + enabled.live + enabled.control + enabled.numeric + enabled.result).toBeLessThanOrEqual(total);
+  expect(enabled.build + enabled.history + 1048576 + enabled.live + enabled.control + enabled.numeric + enabled.result + enabled.reports).toBeLessThanOrEqual(total);
   expect(enabled.history).toBeLessThan(ordinary.history);
   expect(enabled.history + 1048576 + enabled.live).toBeLessThanOrEqual(f.manifest.phases.find(phase => phase.phase === 'execute')!.outputBytes);
 });

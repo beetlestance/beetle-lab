@@ -25,6 +25,7 @@ COPY engines/k6/aggregation ./engines/k6/aggregation
 COPY engines/k6/plan ./engines/k6/plan
 COPY engines/k6/runtime ./engines/k6/runtime
 COPY engines/k6/wrapper ./engines/k6/wrapper
+COPY engines/k6/report ./engines/k6/report
 RUN npm run build:k6
 
 # Default FROM platform is TARGETPLATFORM, including npm's optional binary choice.

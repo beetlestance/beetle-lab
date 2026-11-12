@@ -60,12 +60,11 @@ Public [event replay](docs/verification/run-event-reads.md), bounded
 [execution activity](docs/verification/run-timeline-ui.md),
 [duration distributions](docs/verification/k6-distributions.md) and verified
 [artifact metadata/downloads](docs/verification/run-artifact-downloads.md) are
-integrated locally. [Browser artifact controls](docs/verification/run-artifact-controls.md) are integrated locally. [Per-attempt resource summaries](docs/verification/attempt-resources.md) are integrated locally. [Sealed metric history](docs/verification/k6-metric-archive.md) is integrated locally. [History reads/chart](docs/verification/run-metric-history.md) are integrated locally. Live metric
-approval handoff and agent/backend/browser wiring, native resource-observation
+integrated locally. [Browser artifact controls](docs/verification/run-artifact-controls.md) are integrated locally. [Per-attempt resource summaries](docs/verification/attempt-resources.md) are integrated locally. [Sealed metric history](docs/verification/k6-metric-archive.md) is integrated locally. [History reads/chart](docs/verification/run-metric-history.md) are integrated locally. The [native live path](docs/verification/native-live-metrics.md) is locally verified through
+engine, agent and backend; browser components are locally verified. Native resource
 qualification, reports/comparison/export/automation and publication cleanup/retention remain.
 [Target observation views](docs/verification/target-observation-contract.md) are
-integrated locally; real-browser qualification remains pending. Live components
-remain disabled pending [trusted approval provenance](docs/decisions/014-live-metric-approval-authority.md).
+integrated locally; real-browser qualification remains pending. Live activation is bound to [trusted installed image capability](docs/decisions/014-live-metric-approval-authority.md).
 The [delivery authority](docs/design/lld/delivery-authority.md) contract still needs
 its remaining restart/cold-restore implementation. R4 additionally requires fresh
 installation, shipped images/Compose, scans, backup/restore, bounded soak/overhead

@@ -127,6 +127,14 @@ export class Artifacts {
   async target(value: unknown, allowance: number): Promise<Artifact> {
     return this.encoded(captureTargetRuntimeReport(value), allowance, 'target-runtime.json', 'target-runtime');
   }
+  async report(kind: 'performance-report' | 'metrics-csv', content: Uint8Array, allowance: number): Promise<Artifact> {
+    this.options.fence.check();
+    if (!(content instanceof Uint8Array) || !Number.isSafeInteger(allowance) || allowance < 1
+      || allowance > 262144 || content.length < 1 || content.length > allowance) throw new AttemptError('output_limit');
+    if (kind !== 'performance-report' && kind !== 'metrics-csv') throw new AttemptError('artifact');
+    const bytes = Buffer.from(content);
+    return this.custody(kind === 'performance-report' ? 'performance-report.txt' : 'metrics.csv', bytes.length, hash(bytes), bytes, kind);
+  }
   private async encoded(value: unknown, allowance: number, name: string, kind: string): Promise<Artifact> {
     if (!Number.isSafeInteger(allowance) || allowance < 1 || allowance > cap) throw new AttemptError('output_limit');
     let bytes: Buffer;

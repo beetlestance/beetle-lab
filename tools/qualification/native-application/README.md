@@ -106,7 +106,8 @@ After building current agent/k6 images and matched metadata/Journal workers, run
 smoke-live.ts AGENT_IMAGE ENGINE_IMAGE complete LOCAL_CONTEXT, then cancel mode.
 This explicit fixture uses one VU,20 iterations with500ms waits and a30s budget;
 it requires two native producer revisions through authenticated public reads,
-terminal sealed results, output/event charge checks, post-terminal unavailable
+sealed completion or explicit unsealed cancellation, execution/output charge
+checks, post-terminal unavailable
 and exact task-owned volume cleanup. It does not run from unit tests.
 
 The versioned baked image marker selects an installed live mailbox profile.

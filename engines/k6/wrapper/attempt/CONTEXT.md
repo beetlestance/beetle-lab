@@ -7,8 +7,8 @@ journal precedes compile. Existing journal/result refuses another invocation.
 Rejected journal initialization has UNKNOWN quiescence; no result/target work.
 Issued IO/callback/descriptor originals are awaited despite early public failure.
 Offer partition: control clamp(total/32,64KiB,64MiB), numeric1MiB,result64KiB,
-summary1MiB; history quarter remaining<=256MiB; build remainder<=89MiB.
-Execute caps history; collect reserves summary/numeric plus>=64KiB drain room.
+summary1MiB,reports512KiB; history quarter remainder<=256MiB; build<=89MiB.
+Execute caps history; collect reserves summary/numeric/reports plus>=64KiB drain.
 Prepare caps peak build. Control has a separate reservation, never phase double-charge.
 Live opt-in carves min(8MiB,total/8,execute/8), reducing history without budget growth.
 Approved catalogue supplies first20 eligible execute/engine series; freeze/detach

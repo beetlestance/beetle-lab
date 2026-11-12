@@ -37,9 +37,9 @@ it('keeps target HTTP failures advisory without fabricating sensor values', asyn
 it('reserves target bytes from existing partitions and rejects insufficient collection space', async () => {
   const f = await setup();const total = f.offer.budget.outputBytes;const plain = reserveOutput(total);const sampled = reserveOutput(total, true);
   expect(sampled.target).toBe(1048576);expect(plain.target).toBe(0);
-  expect(sampled.control + sampled.numeric + sampled.result + sampled.execution + sampled.target).toBeLessThanOrEqual(total);
+  expect(sampled.control + sampled.numeric + sampled.result + sampled.execution + sampled.target + sampled.reports).toBeLessThanOrEqual(total);
   expect(sampled.build).toBeLessThan(plain.build);
-  expect(phaseReservation(sampled, f.manifest).historyCollect).toBe(1048576);
+  expect(phaseReservation(sampled, f.manifest).historyCollect).toBe(524288);
   f.manifest.phases.find(phase => phase.phase === 'collect')!.outputBytes = 3 * 1048576;
   expect(() => phaseReservation(sampled, f.manifest)).toThrow('output_limit');
 });
