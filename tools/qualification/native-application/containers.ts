@@ -7,14 +7,15 @@ import type { Inspection } from '../../../agent/test/container/docker.js';
 import { agentOrigin } from './configuration.js';
 import { initializeFreshInstallation } from './initialize.js';
 
-export async function provision(f: Fixture): Promise<string> {
+export async function provision(f: Fixture, maximumTargetRequests = 4): Promise<string> {
+  assert(Number.isSafeInteger(maximumTargetRequests) && maximumTargetRequests >= 1 && maximumTargetRequests <= 64);
   f.docker.run(['network', 'create', '--internal', '--label', `dev.beetle.qualification=${f.id}`, f.network]);
   const control = `beetle-control-${f.id}`;
   f.docker.run(['network', 'create', '--driver', 'bridge', '--label', `dev.beetle.qualification=${f.id}`, control]);
   const program = `const counts={ready:0,work:0,unexpected:0};require('node:http').createServer((q,r)=>{
 if(q.url==='/counts'){r.end(JSON.stringify(counts));return;}
 const key=q.url==='/ready'?'ready':q.url==='/work'?'work':'unexpected';
-if(++counts[key]>4)process.exit(3);r.writeHead(key==='ready'?200:key==='work'?${f.workStatus}:404);r.end('ok');
+if(++counts[key]>${maximumTargetRequests})process.exit(3);r.writeHead(key==='ready'?200:key==='work'?${f.workStatus}:404);r.end('ok');
 }).listen(8080,'0.0.0.0');`;
   f.docker.run(['run', '-d', '--pull', 'never', '--name', f.target, '--label', `dev.beetle.qualification=${f.id}`,
     '--network', f.network, '--network-alias', 'target', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges:true',

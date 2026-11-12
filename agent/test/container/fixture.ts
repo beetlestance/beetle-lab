@@ -1,3 +1,4 @@
+import { K6_LIVE_METRIC_IMAGE_ENV } from '@beetle/contracts/k6-live';
 import assert from 'node:assert/strict';
 import { chown, mkdir, mkdtemp, readFile, realpath, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -40,6 +41,7 @@ export async function fixture(docker: Docker, agentTag: string, engineTag: strin
   const profile: InstallationProfile = { installationId: id, imageDigest: engineImage.Id,
     effectiveImage: { imageDigest: engineImage.Id, environment: engineImage.Config.Env, defaultRuntime: info.DefaultRuntime },
     entrypoint: manifest.entrypoint, user, stagingRoot: join(root, 'staging'),
+    ...(engineImage.Config.Env.includes(`${K6_LIVE_METRIC_IMAGE_ENV}=1`) ? {liveMetricMailbox: true} : {}),
     network: { profile: 'target-egress', name: network }, tmpfsBytes: 16777216, maximumBudget: budget };
   const offer = JSON.parse(await readFile(new URL('../../../contracts/fixtures/valid/offer.json', import.meta.url), 'utf8')) as Offer;
   offer.installedIdentity = deriveInstalledIdentity({ manifest, profile,

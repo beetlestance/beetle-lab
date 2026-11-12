@@ -43,7 +43,7 @@ LABEL org.opencontainers.image.source="https://github.com/beetlestance/beetle-la
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.revision=$VCS_REF
 WORKDIR /beetle
-ENV NODE_ENV=production
+ENV NODE_ENV=production BEETLE_K6_LIVE_METRICS_V1=1
 COPY --from=native-k6 /usr/bin/k6 /usr/local/bin/k6
 COPY --from=production-deps /beetle/node_modules ./node_modules
 COPY --from=production-deps /beetle/package.json ./package.json

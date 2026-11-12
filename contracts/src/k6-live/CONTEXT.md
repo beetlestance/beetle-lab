@@ -14,3 +14,6 @@ Stager writes RuntimePlan.specDigest into the readonly StagedAttempt. Both sides
 must use that field; image/manifest digests cannot substitute for runtime spec.
 This does not activate profiles or provide actor/HTTP/browser wiring.
 Checks: approval.test.ts and engine raw/compiled parity plus attempt publisher cases.
+
+K6_LIVE_METRIC_IMAGE_ENV names the versioned trusted image marker shared by
+packaging/install inspection. It is not a user configuration field or new wire DTO.

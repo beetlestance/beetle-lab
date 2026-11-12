@@ -99,3 +99,18 @@ networkless non-root container, checks the actual archive/envelope, probes after
 stop, and removes only its matching fixtures. Container-local tmpfs is not
 archive-readable. This is a synthetic mailbox transport proof, not a real k6 run,
 active-plan authorization, complete live metrics, or cross-architecture evidence.
+
+## Live producer qualification
+
+After building current agent/k6 images and matched metadata/Journal workers, run
+smoke-live.ts AGENT_IMAGE ENGINE_IMAGE complete LOCAL_CONTEXT, then cancel mode.
+This explicit fixture uses one VU,20 iterations with500ms waits and a30s budget;
+it requires two native producer revisions through authenticated public reads,
+terminal sealed results, output/event charge checks, post-terminal unavailable
+and exact task-owned volume cleanup. It does not run from unit tests.
+
+The versioned baked image marker selects an installed live mailbox profile.
+No suite/Offer field, image self-declared frame or browser selects its approval.
+Live proof uses the same bounded two-network/control/runtime fixture, with at most
+32 requests per target path. Only matching local128KiB/four-inode tmpfs volumes
+are non-forcibly removed after owned containers are removed.

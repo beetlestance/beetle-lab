@@ -1,3 +1,4 @@
+import { K6_LIVE_METRIC_IMAGE_ENV } from '@beetle/contracts/k6-live';
 import { join } from 'node:path';
 import { createK6ConfigSchema } from '@beetle/contracts/engine-config/k6';
 import { createEngineCatalog } from '../../../agent/src/catalog/index.js';
@@ -21,6 +22,7 @@ export function configurations(c: Captured, installationId: string, facts: Facts
   const profile = { installationId, imageDigest: facts.engineId, entrypoint: manifest.entrypoint,
     effectiveImage: { imageDigest: facts.engineId, environment: facts.environment, defaultRuntime: facts.defaultRuntime },
     user: `${r.uid}:${r.gid}`, stagingRoot: p.agentStaging,
+    ...(facts.environment.includes(`${K6_LIVE_METRIC_IMAGE_ENV}=1`) ? {liveMetricMailbox: true} : {}),
     network: { profile: 'target-egress' as const, name: r.targetNetwork }, tmpfsBytes: r.engine.tmpfsBytes,
     maximumBudget: r.installationValues.perRunCeilings };
   const { manifestId, profileId, catalogVersion, configVersion } = r.engine;

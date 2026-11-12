@@ -3,6 +3,8 @@ import type { LiveMetricHash, LiveMetricScope, LiveMetricSubset } from '../api/i
 import { encodeCanonicalJson } from '../json.js';
 import { k6MetricCatalogue, k6MetricLayout } from '../k6-metrics/index.js';
 import type { K6MetricShape } from '../k6-metrics/index.js';
+/** Trusted image metadata only; never a suite/Offer option. */
+export const K6_LIVE_METRIC_IMAGE_ENV = 'BEETLE_K6_LIVE_METRICS_V1';
 export interface K6LiveAssignment {
   readonly specDigest: string;
   readonly intentDigest: string;
