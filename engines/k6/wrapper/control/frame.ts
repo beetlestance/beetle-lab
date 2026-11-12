@@ -42,7 +42,7 @@ export function validateEvent(input: unknown, scope: JournalScope): ControlEvent
   const checked = validate('ControlEvent', input);
   if (!checked.ok) throw new JournalError('invalid_event');
   assertScope(checked.value, scope);
-  if (checked.value.kind === 'engine.result') assertScope(checked.value.payload, scope);
+  if ((checked.value.kind === 'engine.result' || checked.value.kind === 'export.result')) assertScope(checked.value.payload, scope);
   freeze(checked.value);
   return checked.value;
 }

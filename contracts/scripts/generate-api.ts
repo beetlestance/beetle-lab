@@ -28,7 +28,7 @@ async function source(path: string): Promise<Source> {
 async function sources(): Promise<Source[]> {
   const names = (await readdir(sourceDir)).filter(file => file.endsWith('.schema.json')).sort();
   const schemas = await Promise.all(names.map(file => source(`api/v2/${file}`)));
-  const runner = await Promise.all(['common', 'engine-result', 'result-evidence', 'result-execution',
+  const runner = await Promise.all(['common', 'engine-result', 'export-result', 'result-evidence', 'result-execution',
     'agent-event', 'event-envelope', 'wrapper-events', 'supervisor-events']
     .map(name => source(`runner/v1/${name}.schema.json`)));
   return [...runner, ...schemas];

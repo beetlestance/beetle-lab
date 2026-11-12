@@ -227,8 +227,26 @@
             "kind",
             "payload"
           ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "export.result"
+            },
+            "payload": {
+              "$ref": "https://beetle-lab.dev/contracts/runner/v1/wrapper-events#/$defs/export_result"
+            }
+          },
+          "required": [
+            "kind",
+            "payload"
+          ]
         }
       ]
+    },
+    "export_result": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/export-result"
     }
   }
 }

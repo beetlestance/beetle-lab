@@ -1,11 +1,11 @@
-import type { EngineResult } from '@beetle/contracts';
+import type { ExecutionResult } from '@beetle/contracts';
 import type { Journal } from '../journal/index.js';
 import type { Supervisor, LaunchInput, LaunchState } from '../supervisor/index.js';
 import type { ControlReaderFactory } from '../collection/control/index.js';
 import type { OutputCollector } from '../collection/output/index.js';
 import type { Operation } from '../backends/docker/index.js';
 
-export type ControllerJournal = Pick<Journal, 'admission' | 'readOffer' | 'get' | 'supervision'
+export type ControllerJournal = Pick<Journal, 'admission' | 'readOffer' | 'readExportAssignment' | 'get' | 'supervision'
   | 'readWrapperCheckpoint' | 'commitWrapperBatch' | 'journalAuthority' | 'beginOutputCollection' | 'readOutputCollection'
   | 'commitOutputSource' | 'readOutputSource' | 'releaseOutputSource' | 'failOutputCollection'>;
 /** Trusted composition for one admitted, staged runtime; never browser options. */
@@ -30,7 +30,7 @@ export type AttemptProgress =
 export interface CollectionObservation {
   readonly state: 'finished' | 'failed';
   /** Content/custody evidence only. Never infer application outcome from this field. */
-  readonly result?: Readonly<EngineResult>;
+  readonly result?: Readonly<ExecutionResult>;
   readonly observedAt: number;
 }
 export type ControllerReason = 'invalid_input' | 'busy' | 'closed' | 'cancelled' | 'deadline'

@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import type { DatabaseSync, SQLOutputValue } from 'node:sqlite';
 import { captureRunArtifactCursor, encodeRunArtifactCursor } from '@beetle/contracts/api';
 import type { Run, RunArtifactPage } from '@beetle/contracts/api';
@@ -58,7 +59,7 @@ export class RunArtifacts {
     if (!source) return;
     // Validate bounded persisted slot structure even before publication is complete.
     requireEvidence(loadOutput(this.db, binding).kind === 'adopted');
-    if (operation.kind === 'getRunArtifact' && !source.manifest.result.artifacts.some(a => a.artifactId === operation.key.artifactId)) {
+    if (operation.kind === 'getRunArtifact' && !executionArtifacts(source.manifest.result).some(a => a.artifactId === operation.key.artifactId)) {
       throw new StorageError('not_found');
     }
   }
@@ -72,11 +73,11 @@ export class RunArtifacts {
     if (operation.kind === 'getRunArtifact') {
       const artifact = state.artifacts.find(a => a.artifactId === operation.key.artifactId);
       if (!artifact) throw new StorageError('not_found');
-      const descriptor = source.manifest.result.artifacts.find(item => item.artifactId === artifact.artifactId);
+      const descriptor = executionArtifacts(source.manifest.result).find(item => item.artifactId === artifact.artifactId);
       requireEvidence(descriptor);
       return {record: {binding, artifact}, kind: descriptor.kind};
     }
-    return this.page(operation, {...page, availability: 'ready', manifestDigest: source.manifest.manifestDigest}, source.manifest.result.artifacts);
+    return this.page(operation, {...page, availability: 'ready', manifestDigest: source.manifest.manifestDigest}, executionArtifacts(source.manifest.result));
   }
   private unready(operation: ArtifactReadOperation, page: RunArtifactPage): RunArtifactPage {
     if (operation.kind === 'getRunArtifact') throw new StorageError(page.availability === 'pending' ? 'conflict' : 'not_found');

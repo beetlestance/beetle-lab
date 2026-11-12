@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import { performance } from 'node:perf_hooks';
 import { captureSourceChunkRequest } from '@beetle/contracts/output-source';
 import { copyControlScope } from '../control-protocol/index.js';
@@ -37,7 +38,7 @@ export const createOutputSourceReader: CreateOutputSourceReader = options => {
     chunk: (key, input, operation) => run(key, operation, async (captured, budget) => {
       const expected = request(input); const { source, envelope } = await readSource(journal, captured, budget);
       if (expected.manifestDigest !== envelope.manifest.manifestDigest || expected.sourceDigest !== envelope.sourceDigest) throw new OutputTransferError('conflict');
-      const artifact = declaredArtifact(envelope.manifest.result.artifacts, expected);
+      const artifact = declaredArtifact(executionArtifacts(envelope.manifest.result), expected);
       const bytes = await readBytes(readRange, { root: source.root, artifact, offset: expected.offset, length: expected.length,
         deadline: budget.deadline, signal: budget.signal }, budget);
       budget.check(); return chunkValue(expected, artifact.bytes, bytes);

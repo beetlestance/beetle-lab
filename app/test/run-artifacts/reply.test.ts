@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import { expect, it } from 'vitest';
 import { RunArtifacts, captureArtifactReadReply } from '../../src/adapters/outbound/sqlite/run-artifacts/index.js';
 import { published } from './fixture.js';
@@ -6,7 +7,7 @@ it('binds the bounded private format reply to the exact published record and rej
   const f = await published([Buffer.from('report\n')], ['performance-report']);
   try {
     const operation = {kind: 'getRunArtifact' as const, key: {id: f.key.runId, scope,
-      attemptId: f.key.attempt.attemptId, artifactId: f.envelope.manifest.result.artifacts[0]!.artifactId}};
+      attemptId: f.key.attempt.attemptId, artifactId: executionArtifacts(f.envelope.manifest.result)[0]!.artifactId}};
     const reader = new RunArtifacts(f.db, f.reads); const captured = captureArtifactReadReply(operation, reader.execute(operation));
     if (!('record' in captured)) throw new Error('Wrong reply fixture');
     expect(captured.kind).toBe('performance-report'); expect(Object.keys(captured.record).sort()).toEqual(['artifact', 'binding']);

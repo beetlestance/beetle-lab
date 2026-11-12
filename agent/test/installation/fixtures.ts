@@ -28,7 +28,7 @@ export function fixture() {
     const engine: InstalledEngine = { installedIdentity: env.offer.installedIdentity, manifest: env.options.manifest, profile: env.options.profile,
       configVersion: 1, validation: env.options.validation, approved: configuration().profiles[0]!,
       configSchema: createConfigSchema({ schemas: [{ $id: 'synthetic', type: 'object' }], schemaId: 'synthetic', digest: value => createHash('sha256').update(value).digest('hex') }) };
-    const catalog: Catalog = { engines: [engine], preflight(input: unknown) {
+    const catalog: Catalog = { preflightExport(){throw new Error('unexpected_export');}, engines: [engine], preflight(input: unknown) {
       const offer = structuredClone(input) as Offer;
       if (!offer.installedIdentity || !sameInstalledIdentity(offer.installedIdentity, engine.installedIdentity)) throw new Error('synthetic missing pin');
       return { offer, engine, validation: validation(offer) };

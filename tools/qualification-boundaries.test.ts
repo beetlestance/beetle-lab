@@ -12,3 +12,13 @@ it('limits cross-service qualification to named entrypoints in its own tooling o
     .toHaveLength(1);
   expect(boundaryIssues(owner, ['@beetle/agent'])).toHaveLength(1);
 });
+
+it('admits only the reviewed standalone export composition entries and rejects private/reverse imports',()=>{
+  const owner='tools/qualification/native-application/export/runner.test.ts';
+  expect(boundaryIssues(owner,['../../../../engines/k6/wrapper/export/index.js','../../../../agent/src/collection/output/index.js',
+    '../../../../engines/k6/compiler/suite/index.js','../../../../engines/k6/build/index.js','../../../../engines/k6/test/staged-input/fixtures.js'])).toEqual([]);
+  expect(boundaryIssues(owner,['../../../../engines/k6/wrapper/export/runner.js'])).toHaveLength(1);
+  expect(boundaryIssues(owner,['../../../../agent/src/collection/output/verify.js'])).toHaveLength(1);
+  expect(boundaryIssues('engines/k6/wrapper/export/index.ts',['../../../../tools/qualification/native-application/export/fixture.js'])).toHaveLength(1);
+  expect(boundaryIssues('tools/qualification/unreviewed/runner.ts',['../../../agent/src/collection/output/index.js'])).toHaveLength(1);
+});

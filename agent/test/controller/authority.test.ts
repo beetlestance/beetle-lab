@@ -19,6 +19,7 @@ function fixture() {
   const key = { organizationId: offer.organizationId, workspaceId: offer.workspaceId,
     attemptId: offer.attemptId, generation: 1 };
   const journal = {
+    readExportAssignment: vi.fn<ControllerJournal['readExportAssignment']>().mockResolvedValue(null),
     readOffer: vi.fn<ControllerJournal['readOffer']>().mockResolvedValue(offer),
     journalAuthority: vi.fn<ControllerJournal['journalAuthority']>().mockResolvedValue(journalAuthority),
   };

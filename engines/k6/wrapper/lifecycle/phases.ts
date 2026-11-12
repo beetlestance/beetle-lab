@@ -1,8 +1,8 @@
 import { encodeJson } from '@beetle/contracts';
-import type { ControlEvent, EngineManifest, EngineResult } from '@beetle/contracts';
+import type { ControlEvent, EngineManifest, ExecutionResult } from '@beetle/contracts';
 import type { StagedHeaders } from '../input/index.js';
 import type { ControlDraft, ControlWriter, JournalScope } from '../control/index.js';
-import { AttemptError } from './types.js';
+import { AttemptError } from '../failure/index.js';
 import type { AttemptFence } from './fence.js';
 import type { Notifications } from './notifications.js';
 type Phase = EngineManifest['phases'][number]['phase'];
@@ -73,8 +73,8 @@ export class Phases {
     await this.finish(completed, outputBytes); await this.start(phase, observedAt);
   }
   /** Check the entire final envelope (including worst-case sequence and LF) before publication. */
-  resultDraft(result: EngineResult): ControlDraft {
-    const event = this.draft({ kind: 'engine.result', payload: result });
+  resultDraft(result: ExecutionResult): ControlDraft {
+    const event = 'purpose' in result ? this.draft({kind:'export.result',payload:result}) : this.draft({kind:'engine.result',payload:result});
     try { encodeJson({ ...event, seq: 65_536 }, 65_535); }
     catch { throw new AttemptError('output_limit'); }
     return event;

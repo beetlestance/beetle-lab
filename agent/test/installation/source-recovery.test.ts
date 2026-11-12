@@ -16,7 +16,7 @@ import { sourceFixture, inspect, hash } from '../source-journal/fixtures.js';
 const f = sourceFixture();
 function trapped(journal: Journal) {
   const trap = () => { throw new Error('unexpected native/catalogue/staging access'); };
-  const catalog = { engines: [], preflight: vi.fn(trap), resolve: vi.fn(trap) };
+  const catalog = { engines: [], preflightExport: vi.fn(trap), preflight: vi.fn(trap), resolve: vi.fn(trap) };
   const backendFactory = vi.fn(trap);
   const supervisor = new Supervisor({ journal, backendFactory, installationId: '00000000-0000-4000-8000-000000000010' });
   const actor = vi.spyOn(supervisor, 'actor').mockImplementation(trap); const retireActor = vi.spyOn(supervisor, 'retire').mockImplementation(trap);

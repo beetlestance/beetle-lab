@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import { expect, it } from 'vitest';
 import type { Artifact } from '@beetle/contracts';
 import { verifyEngineResultSeal } from '@beetle/contracts';
@@ -13,7 +14,7 @@ it.each(['artifacts array', 'artifact bytes', 'result swap'] as const)('refuses 
       : canonical.replace('"result":', '"result":' + json(f.value) + ',"result":');
   expect(raw).not.toBe(canonical);
   const parsed: unknown = JSON.parse(raw); expect(verifyOutputManifest(parsed, hash)).toEqual(manifest);
-  expect(manifest.result.artifacts[0]!.bytes).toBe(50000);
+  expect(executionArtifacts(manifest.result)[0]!.bytes).toBe(50000);
   expect(Buffer.byteLength(raw)).toBeLessThan(10000);
   const first = f.db.prepare("SELECT coalesce((SELECT sum(json_extract(value,'$.bytes')) FROM json_each(?,'$.result.artifacts')),0) AS n").get(raw);
   expect(first?.n).toBe(0); expect(Buffer.byteLength(raw) + artifact.bytes).toBeGreaterThan(10000);

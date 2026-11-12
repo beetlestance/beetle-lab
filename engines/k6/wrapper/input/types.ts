@@ -1,4 +1,4 @@
-import type { EngineManifest, Offer, StagedAttempt } from '@beetle/contracts';
+import type { EngineManifest, Offer, StagedAttempt, StandaloneExportAssignment } from '@beetle/contracts';
 import type { CompiledSuite, DeepReadonly, SuiteIssue } from '../../compiler/suite/index.js';
 import type { AttemptBudget } from '../../runtime/index.js';
 
@@ -14,7 +14,7 @@ export interface InputOperation<T> {
 export interface InstalledEngine {
   readonly id: 'k6'; readonly version: string; readonly configVersion: number;
   readonly configSchema: 'https://beetle.test/contracts/engines/k6/v1/suite';
-  readonly resultSchema: 'https://beetle-lab.dev/contracts/runner/v1/engine-result';
+  readonly resultSchema: 'https://beetle-lab.dev/contracts/runner/v1/engine-result' | 'https://beetle-lab.dev/contracts/runner/v1/export-result';
 }
 export interface OpenStagedOptions {
   /** Trusted, immutable, read-only mounts and their expected numeric owner. */
@@ -25,9 +25,11 @@ export interface OpenStagedOptions {
   /** Optional pins from trusted launch authority, never browser/job parameters. */
   readonly expected?: Readonly<Partial<Pick<StagedAttempt, 'organizationId' | 'workspaceId' | 'attemptId'
     | 'generation' | 'intentDigest' | 'specDigest' | 'offerSha256' | 'manifestSha256'>>>;
+  readonly exportAssignment?: {readonly purpose:'standalone_export';readonly assignmentDigest:string};
   readonly signal: AbortSignal; readonly wallNow?: () => number;
 }
 export interface StagedHeaders {
+  readonly assignment?: DeepReadonly<StandaloneExportAssignment>;
   readonly offer: DeepReadonly<Offer>; readonly manifest: DeepReadonly<EngineManifest>;
   readonly staging: DeepReadonly<StagedAttempt>; readonly attempt: Readonly<Extract<AttemptBudget, { mode: 'managed' }>>;
 }

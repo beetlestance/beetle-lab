@@ -7,7 +7,8 @@ const matchesCandidate = ['resources', 'budget', 'staging'].map(name =>
 const stagingFields = ['offerBytes', 'inputBytes', 'secretBytes', 'manifestBytes', 'metadataBytes'];
 const stagingInteger = stagingFields.map(name => `json_type(NEW.reservation_json,'$.staging.${name}')='integer'
   AND json_extract(NEW.reservation_json,'$.staging.${name}') BETWEEN 0 AND ${MAX_RESOURCE_VALUE}`).join(' AND ');
-const stagingSum = stagingFields.map(name => `json_extract(NEW.reservation_json,'$.staging.${name}')`).join('+');
+const stagingSum = stagingFields.map(name => `json_extract(NEW.reservation_json,'$.staging.${name}')`).join('+')
+  + "+COALESCE(json_extract(NEW.reservation_json,'$.staging.assignmentBytes'),0)";
 
 /** Parent guards keep the immutable original and the hold's phase inseparable. */
 export const parentGuards = `
@@ -38,6 +39,8 @@ export const parentGuards = `
       AND json_extract(NEW.reservation_json,'$.budget.outputBytes')=json_extract(NEW.reservation_json,'$.resources.outputBytes')
       AND json_type(NEW.reservation_json,'$.resources.stagingBytes')='integer'
       AND json_extract(NEW.reservation_json,'$.resources.stagingBytes') BETWEEN 0 AND ${MAX_RESOURCE_VALUE}
+      AND (json_type(NEW.reservation_json,'$.staging.assignmentBytes') IS NULL OR (json_type(NEW.reservation_json,'$.staging.assignmentBytes')='integer'
+        AND json_extract(NEW.reservation_json,'$.staging.assignmentBytes') BETWEEN 1 AND 2105344))
       AND json_extract(NEW.reservation_json,'$.staging.policyVersion')=1 AND ${stagingInteger}
       AND json_extract(NEW.reservation_json,'$.staging.manifestBytes')=65536
       AND json_extract(NEW.reservation_json,'$.staging.metadataBytes')=65536

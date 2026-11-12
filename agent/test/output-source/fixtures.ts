@@ -8,22 +8,22 @@ import data from '../../../contracts/fixtures/output-source/v1.json' with { type
 export type Mutable<T> = T extends readonly (infer Item)[] ? Mutable<Item>[]
   : T extends object ? { -readonly [Key in keyof T]: Mutable<T[Key]> } : T;
 interface Vector {
-  name: string; input: CollectedSource;
+  name: string; input: CollectedSource<EngineResult>;
   expected: { manifestPreimage: string; manifestDigest: string; sourcePreimage: string; sourceDigest: string;
     manifestBytes: number; sourceBytes: number };
 }
 export const vectors = data.vectors as unknown as readonly Vector[];
 export const digest = (text: string): string => createHash('sha256').update(text, 'utf8').digest('hex');
-export function input(): Mutable<CollectedSource> { return structuredClone(vectors[0]!.input) as Mutable<CollectedSource>; }
+export function input(): Mutable<CollectedSource<EngineResult>> { return structuredClone(vectors[0]!.input) as Mutable<CollectedSource<EngineResult>>; }
 export function intent(): Mutable<CollectionIntent> { return structuredClone(data.intent) as Mutable<CollectionIntent>; }
-export function source(value = input()): Mutable<PrivateSource> {
+export function source(value = input()): Mutable<PrivateSource<EngineResult>> {
   const manifest = { version: 1 as const, binding: value.binding, result: value.collection.value,
     resultFileBytes: value.collection.custody.resultFileBytes, controlBytes: value.collection.custody.controlBytes,
     verifiedBytes: value.collection.verifiedBytes, manifestDigest: '' };
   return rehash({ version: 1, manifest, root: value.collection.custody.root,
     checkpoint: value.checkpoint, release: value.release, sourceDigest: '' });
 }
-export function rehash(value: Mutable<PrivateSource>): Mutable<PrivateSource> {
+export function rehash(value: Mutable<PrivateSource<EngineResult>>): Mutable<PrivateSource<EngineResult>> {
   const { manifestDigest: omittedManifest, ...publicCore } = value.manifest;
   const { sourceDigest: omittedSource, ...privateCore } = value;
   void omittedManifest; void omittedSource;

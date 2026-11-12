@@ -1,3 +1,4 @@
+import { requireEventPurpose } from './event-purpose.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { AGENT_EVENT_BYTES } from '../control-protocol/index.js';
 import { encodeJson, validate } from '@beetle/contracts';
@@ -35,6 +36,7 @@ export function appendAtomic(db: DatabaseSync, input: EventInput): AgentEvent {
   if (input.sourceKey <= high) throw new Failure('expired_key');
   if (row.last_seq >= Number.MAX_SAFE_INTEGER - 1) throw new Failure('quota_exceeded');
   const { event, json } = encodedEvent(row, input);
+  requireEventPurpose(db,row,event);
   const projection = project(row, event);
   const bytes = Buffer.byteLength(json);
   const charge = bytes + Buffer.byteLength(input.canonical) + 256;
@@ -44,15 +46,15 @@ export function appendAtomic(db: DatabaseSync, input: EventInput): AgentEvent {
     VALUES (?,?,?,?,?,?,?,?,?)`).run(row.attempt_id, row.generation, event.seq,
     input.source, input.sourceKey, input.canonical, json, bytes, charge);
   db.prepare(`UPDATE accepted_attempts SET last_seq=?, spool_bytes=spool_bytes+?,
-    spool_rows=spool_rows+1, ${counter}=?, state=?, phase=?, exit_json=?, exit_facts_json=?, result_json=?, snapshot_bytes=? WHERE id=?`)
+    spool_rows=spool_rows+1, ${counter}=?, state=?, phase=?, exit_json=?, exit_facts_json=?, result_json=?, export_result_json=?, snapshot_bytes=? WHERE id=?`)
     .run(event.seq, charge, input.sourceKey, projection.state, projection.phase,
-      projection.exit_json, projection.exit_facts_json, projection.result_json, projection.snapshot_bytes, row.id);
+      projection.exit_json, projection.exit_facts_json, projection.result_json, projection.export_result_json, projection.snapshot_bytes, row.id);
   return event as AgentEvent;
 }
 
 function encodedEvent(row: Row, input: EventInput): { event: AgentEvent; json: string } {
   const original = JSON.parse(input.json) as ControlEvent | AgentEvent;
-  if (original.kind === 'engine.result' &&
+  if ((original.kind === 'engine.result' || original.kind === 'export.result') &&
     JSON.stringify(eventKey(original.payload)) !== JSON.stringify(input.key)) throw new Failure('conflict');
   const event = { ...original, attemptId: row.attempt_id, organizationId: row.organization_id,
     workspaceId: row.workspace_id, generation: row.generation, seq: row.last_seq + 1,

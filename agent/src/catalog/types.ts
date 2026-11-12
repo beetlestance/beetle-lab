@@ -1,4 +1,4 @@
-import type { EngineManifest, InstalledIdentity, Offer } from '@beetle/contracts';
+import type { EngineManifest, InstalledIdentity, Offer, StandaloneExportAssignment } from '@beetle/contracts';
 import type { ConfigSchema } from '@beetle/contracts/engine-config';
 import type { ApprovedProfile, ValidationIdentity } from '../admission/index.js';
 import type { InstallationProfile } from '../backends/docker/index.js';
@@ -22,8 +22,9 @@ export interface PreflightOffer {
 export interface Catalog {
   readonly engines: readonly Readonly<InstalledEngine>[];
   preflight(input: unknown): PreflightOffer;
+  preflightExport(input: unknown): PreflightOffer & {readonly assignment: StandaloneExportAssignment};
   /** Recovery resolves exact persisted identity; never silently upgrades. */
-  resolve(offer: Offer, validation: ValidationIdentity): Readonly<InstalledEngine>;
+  resolve(offer: Offer, validation: ValidationIdentity, assignment?: StandaloneExportAssignment | null): Readonly<InstalledEngine>;
 }
 export type CatalogReason = 'invalid_registration' | 'invalid_offer' | 'unapproved_engine' | 'invalid_config' | 'identity';
 export class CatalogError extends Error {

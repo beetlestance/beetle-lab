@@ -1,3 +1,5 @@
+import { executionArtifacts } from '../src/index.js';
+import type { EngineResult } from '../src/index.js';
 import { createHash } from 'node:crypto';
 import { expect, it, vi } from 'vitest';
 import { encodeCanonicalJson, sealEngineResult } from '../src/index.js';
@@ -9,15 +11,15 @@ import data from '../fixtures/output-source/v1.json' with { type: 'json' };
 type Mutable<T> = T extends readonly (infer Item)[] ? Mutable<Item>[]
   : T extends object ? { -readonly [Key in keyof T]: Mutable<T[Key]> } : T;
 const digest = (text: string): string => createHash('sha256').update(text, 'utf8').digest('hex');
-function core(index = 0): Mutable<PublicCore> {
-  return JSON.parse(data.vectors[index]!.expected.manifestPreimage.slice(OUTPUT_MANIFEST_PREFIX.length)) as Mutable<PublicCore>;
+function core(index = 0): Mutable<PublicCore<EngineResult>> {
+  return JSON.parse(data.vectors[index]!.expected.manifestPreimage.slice(OUTPUT_MANIFEST_PREFIX.length)) as Mutable<PublicCore<EngineResult>>;
 }
-function manifest(): Mutable<PublicManifest> { return { ...core(), manifestDigest: data.vectors[0]!.expected.manifestDigest }; }
-function rehash(value: Mutable<PublicManifest>): void {
+function manifest(): Mutable<PublicManifest<EngineResult>> { return { ...core(), manifestDigest: data.vectors[0]!.expected.manifestDigest }; }
+function rehash(value: Mutable<PublicManifest<EngineResult>>): void {
   const { manifestDigest, ...body } = value; void manifestDigest;
   value.manifestDigest = digest(OUTPUT_MANIFEST_PREFIX + encodeCanonicalJson(body, OUTPUT_MANIFEST_BYTES));
 }
-function reseal(value: Mutable<PublicCore>): void {
+function reseal(value: Mutable<PublicCore<EngineResult>>): void {
   const { seal, ...body } = value.result;
   const sealed = sealEngineResult(body, seal.sealedAt, digest);
   if (!sealed.ok) throw new Error(`Fixture seal rejected: ${sealed.code}`);
@@ -38,7 +40,7 @@ function invalid(input: unknown): void {
 }
 
 it.each(data.vectors)('matches the sole golden $name public preimage, digest and bytes', vector => {
-  const value = JSON.parse(vector.expected.manifestPreimage.slice(OUTPUT_MANIFEST_PREFIX.length)) as PublicCore;
+  const value = JSON.parse(vector.expected.manifestPreimage.slice(OUTPUT_MANIFEST_PREFIX.length)) as PublicCore<EngineResult>;
   const preimages: string[] = [];
   const prepared = prepareOutputManifest(value, text => { preimages.push(text); return digest(text); });
   expect(preimages).toHaveLength(2);
@@ -64,10 +66,10 @@ it('retains original UUID spelling and generation one without normalizing mixed 
   value.result.attemptId = value.result.attemptId.toLowerCase(); reseal(value); invalid(value);
 });
 const relationshipChanges = {
-  scope: (v: Mutable<PublicManifest>) => { v.result.workspaceId = v.result.attemptId; reseal(v); },
-  engine: (v: Mutable<PublicManifest>) => { v.result.engineId = 'other'; reseal(v); },
-  generation: (v: Mutable<PublicManifest>) => { Reflect.set(v.binding, 'generation', 2); },
-  sum: (v: Mutable<PublicManifest>) => { v.verifiedBytes++; },
+  scope: (v: Mutable<PublicManifest<EngineResult>>) => { v.result.workspaceId = v.result.attemptId; reseal(v); },
+  engine: (v: Mutable<PublicManifest<EngineResult>>) => { v.result.engineId = 'other'; reseal(v); },
+  generation: (v: Mutable<PublicManifest<EngineResult>>) => { Reflect.set(v.binding, 'generation', 2); },
+  sum: (v: Mutable<PublicManifest<EngineResult>>) => { v.verifiedBytes++; },
 };
 it.each(Object.entries(relationshipChanges))('rejects rehashed %s relationships before foreign hashing', (_, change) => {
   const value = manifest(); change(value); rehash(value);
@@ -82,14 +84,14 @@ it.each(['result', 'manifest'] as const)('classifies the shaped %s digest mismat
   expect(() => verifyOutputManifest(value, digest)).toThrow(expect.objectContaining({ code: 'integrity' }));
 });
 const debtChanges = {
-  zero: (v: Mutable<PublicCore>) => { v.resultFileBytes = 0; },
-  raw: (v: Mutable<PublicCore>) => { v.resultFileBytes = 1_048_577; },
-  control: (v: Mutable<PublicCore>) => { v.controlBytes = 67_108_865; },
-  fractional: (v: Mutable<PublicCore>) => { v.controlBytes = 0.5; },
-  sum: (v: Mutable<PublicCore>) => { v.verifiedBytes++; },
-  overflow: (v: Mutable<PublicCore>) => { v.result.artifacts[0]!.bytes = Number.MAX_SAFE_INTEGER; reseal(v); },
-  artifacts: (v: Mutable<PublicCore>) => { v.result.artifacts = Array(129).fill(v.result.artifacts[0]); },
-  thresholds: (v: Mutable<PublicCore>) => { v.result.thresholds = Array(257).fill(v.result.thresholds[0]); },
+  zero: (v: Mutable<PublicCore<EngineResult>>) => { v.resultFileBytes = 0; },
+  raw: (v: Mutable<PublicCore<EngineResult>>) => { v.resultFileBytes = 1_048_577; },
+  control: (v: Mutable<PublicCore<EngineResult>>) => { v.controlBytes = 67_108_865; },
+  fractional: (v: Mutable<PublicCore<EngineResult>>) => { v.controlBytes = 0.5; },
+  sum: (v: Mutable<PublicCore<EngineResult>>) => { v.verifiedBytes++; },
+  overflow: (v: Mutable<PublicCore<EngineResult>>) => { v.result.artifacts[0]!.bytes = Number.MAX_SAFE_INTEGER; reseal(v); },
+  artifacts: (v: Mutable<PublicCore<EngineResult>>) => { v.result.artifacts = Array(129).fill(v.result.artifacts[0]); },
+  thresholds: (v: Mutable<PublicCore<EngineResult>>) => { v.result.thresholds = Array(257).fill(v.result.thresholds[0]); },
 };
 it.each(Object.entries(debtChanges))('rejects %s raw/count debt before hashing', (_, change) => {
   const value = core(); change(value); invalid(value);
@@ -117,24 +119,24 @@ it('accepts exactly 65536 canonical result bytes and rejects one extra before ha
   result.artifacts[127]!.relativePath += 'a'; invalid(value);
 });
 const closedChanges = {
-  hidden: (v: Mutable<PublicCore>) => { Object.defineProperty(v.binding.engine, 'extra', { value: 1 }); },
-  symbol: (v: Mutable<PublicCore>) => { Reflect.set(v, Symbol('extra'), 1); },
-  prototype: (v: Mutable<PublicCore>) => { Object.setPrototypeOf(v.binding, { inherited: true }); },
-  cycle: (v: Mutable<PublicCore>) => { Reflect.set(v.binding, 'extra', v); },
-  extra: (v: Mutable<PublicCore>) => { Reflect.set(v, 'privateRoot', {}); },
-  sparse: (v: Mutable<PublicCore>) => { Reflect.deleteProperty(v.result.artifacts, '0'); },
-  arrayExtra: (v: Mutable<PublicCore>) => { Reflect.set(v.result.artifacts, 'extra', 1); },
-  undefined: (v: Mutable<PublicCore>) => { Reflect.set(v.binding, 'extra', undefined); },
-  bigint: (v: Mutable<PublicCore>) => { Reflect.set(v.binding, 'extra', 1n); },
-  nan: (v: Mutable<PublicCore>) => { v.controlBytes = NaN; },
-  infinity: (v: Mutable<PublicCore>) => { v.controlBytes = Infinity; },
-  unsafe: (v: Mutable<PublicCore>) => { v.controlBytes = Number.MAX_SAFE_INTEGER + 1; },
-  authority: (v: Mutable<PublicCore>) => { v.binding.journalAuthority = 'AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA'; },
-  digest: (v: Mutable<PublicCore>) => { v.binding.intentDigest = 'A'.repeat(64); },
-  token: (v: Mutable<PublicCore>) => { v.binding.engine.id = 'bad token'; },
-  image: (v: Mutable<PublicCore>) => { v.binding.engine.imageDigest = 'sha256:' + 'A'.repeat(64); },
-  config: (v: Mutable<PublicCore>) => { v.binding.engine.configVersion = 0; },
-  installed: (v: Mutable<PublicCore>) => { Reflect.set(v.binding.installedIdentity, 'extra', 1); },
+  hidden: (v: Mutable<PublicCore<EngineResult>>) => { Object.defineProperty(v.binding.engine, 'extra', { value: 1 }); },
+  symbol: (v: Mutable<PublicCore<EngineResult>>) => { Reflect.set(v, Symbol('extra'), 1); },
+  prototype: (v: Mutable<PublicCore<EngineResult>>) => { Object.setPrototypeOf(v.binding, { inherited: true }); },
+  cycle: (v: Mutable<PublicCore<EngineResult>>) => { Reflect.set(v.binding, 'extra', v); },
+  extra: (v: Mutable<PublicCore<EngineResult>>) => { Reflect.set(v, 'privateRoot', {}); },
+  sparse: (v: Mutable<PublicCore<EngineResult>>) => { Reflect.deleteProperty(v.result.artifacts, '0'); },
+  arrayExtra: (v: Mutable<PublicCore<EngineResult>>) => { Reflect.set(v.result.artifacts, 'extra', 1); },
+  undefined: (v: Mutable<PublicCore<EngineResult>>) => { Reflect.set(v.binding, 'extra', undefined); },
+  bigint: (v: Mutable<PublicCore<EngineResult>>) => { Reflect.set(v.binding, 'extra', 1n); },
+  nan: (v: Mutable<PublicCore<EngineResult>>) => { v.controlBytes = NaN; },
+  infinity: (v: Mutable<PublicCore<EngineResult>>) => { v.controlBytes = Infinity; },
+  unsafe: (v: Mutable<PublicCore<EngineResult>>) => { v.controlBytes = Number.MAX_SAFE_INTEGER + 1; },
+  authority: (v: Mutable<PublicCore<EngineResult>>) => { v.binding.journalAuthority = 'AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA'; },
+  digest: (v: Mutable<PublicCore<EngineResult>>) => { v.binding.intentDigest = 'A'.repeat(64); },
+  token: (v: Mutable<PublicCore<EngineResult>>) => { v.binding.engine.id = 'bad token'; },
+  image: (v: Mutable<PublicCore<EngineResult>>) => { v.binding.engine.imageDigest = 'sha256:' + 'A'.repeat(64); },
+  config: (v: Mutable<PublicCore<EngineResult>>) => { v.binding.engine.configVersion = 0; },
+  installed: (v: Mutable<PublicCore<EngineResult>>) => { Reflect.set(v.binding.installedIdentity, 'extra', 1); },
 };
 it.each(Object.entries(closedChanges))('rejects original %s carrier without a digest callback', (_, change) => {
   const value = core(); change(value); invalid(value);
@@ -182,5 +184,5 @@ it('captures every original before provider mutation and recursively freezes ind
     stored.binding.engine.id = 'changed'; stored.result.artifacts.length = 0; stored.manifestDigest = '0'.repeat(64); return digest(text);
   });
   expect(verified).toEqual(expected); expect(frozen(verified)).toBe(true);
-  expect(verified.result.artifacts).not.toBe(stored.result.artifacts);
+  expect(executionArtifacts(verified.result)).not.toBe(executionArtifacts(stored.result));
 });

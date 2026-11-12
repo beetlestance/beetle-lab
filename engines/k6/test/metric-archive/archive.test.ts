@@ -9,7 +9,7 @@ import { DurationHistogram } from '../../aggregation/index.js';
 import type { MetricWindow } from '../../aggregation/index.js';
 import { MetricArchive } from '../../wrapper/attempt/archive/index.js';
 import { MetricFiles } from '../../wrapper/attempt/archive/files.js';
-import { AttemptFence } from '../../wrapper/attempt/fence.js';
+import { AttemptFence } from '../../wrapper/lifecycle/index.js';
 
 vi.mock('node:fs/promises', async original => {
   const actual = await original<typeof fs>(); return { ...actual, open: vi.fn(actual.open) };

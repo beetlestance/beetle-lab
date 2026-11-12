@@ -13,6 +13,7 @@ import { migration011 } from './migration011.js';
 import { migration012 } from './migration012.js';
 import { migration013 } from './migration013.js';
 import { migration014 } from './migration014.js';
+import { migration015 } from './migration015.js';
 
 // Rebuild only the foundation's fixed sequence constraint. Copy immutable JSON and
 // row IDs verbatim, including original UUID spellings and durable cancel intent.
@@ -72,17 +73,18 @@ function migrateOwnership(db: DatabaseSync, version: number, authority: string |
   if (version < 11) migration011(db);
   if (version < 12) migration012(db);
   if (version < 13) migration013(db);
-  migration014(db);
+  if (version < 14) migration014(db);
+  migration015(db);
 }
 export function initialize(path: string): DatabaseSync {
   const db = new DatabaseSync(path, { timeout: 100, enableForeignKeyConstraints: true });
   try {
     db.exec('PRAGMA busy_timeout=100; PRAGMA cache_size=-2048; PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; COMMIT;');
     const version = db.prepare('PRAGMA user_version').get()?.user_version;
-    if (typeof version !== 'number' || version > 14) throw new Failure('schema_newer');
+    if (typeof version !== 'number' || version > 15) throw new Failure('schema_newer');
     db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;');
     const authority = version === 0 ? randomUUID() : null;
-    if (version < 14) transaction(db, () => {
+    if (version < 15) transaction(db, () => {
       if (version === 0) db.exec(migration001);
       if (version < 2) db.exec(migration002);
       if (version < 3) db.exec(migration003);

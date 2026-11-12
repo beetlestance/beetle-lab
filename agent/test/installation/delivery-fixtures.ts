@@ -21,7 +21,7 @@ export function trapped(journal: Journal) {
   const trap = vi.fn((): never => { throw new Error('unexpected producer/catalogue/staging work'); });
   const supervisor = new Supervisor({ journal, backendFactory: trap, installationId: '00000000-0000-4000-8000-000000000010' });
   vi.spyOn(supervisor, 'actor').mockImplementation(trap); vi.spyOn(supervisor, 'retire').mockImplementation(trap);
-  return { journal, supervisor, catalog: { engines: [], preflight: trap, resolve: trap }, stagerFor: trap,
+  return { journal, supervisor, catalog: { engines: [], preflightExport: trap, preflight: trap, resolve: trap }, stagerFor: trap,
     guard: { watch: trap }, timeout: { watch: trap }, trap, wallNow: () => 100_010 };
 }
 /** Real files and seals; synthetic backend observations do not qualify native execution. */

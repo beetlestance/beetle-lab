@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import { expect, it } from 'vitest';
 import type { SourceEnvelope } from '@beetle/contracts/output-source';
 import { originalIdentity, envelope, selector, chunk, setup } from './source-fixtures.js';
@@ -11,7 +12,7 @@ it('uses exact source routes and captured headers with shared owned manifest and
   first.body(envelope()); first.close(); const result = await source;
   expect(result).toEqual({ ok: true, value: envelope() });
   if (!result.ok) throw new Error('Expected verified source');
-  expect(Object.isFrozen(result.value.manifest.result.artifacts)).toBe(true);
+  expect(Object.isFrozen(executionArtifacts(result.value.manifest.result))).toBe(true);
   expect(Object.isFrozen(result.value.closure.receipt.key)).toBe(true);
   const pending = client.sourceChunk(selector(), 32); await turns(); const second = native.originals[1]!;
   second.body(chunk()); second.close(); const bytes = await pending;

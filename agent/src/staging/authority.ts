@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { deriveInstalledIdentity, sameInstalledIdentity, encodeJson, validate, validatePrimitive } from '@beetle/contracts';
-import type { Offer } from '@beetle/contracts';
+import type { Offer, StandaloneExportAssignment } from '@beetle/contracts';
 import { estimateStaging, stagingPolicy, supportedStaging } from '../admission/index.js';
 import type { Reservation, Scope, ValidationIdentity } from '../admission/index.js';
 import { configDigest, JournalError } from '../journal/index.js';
@@ -27,13 +27,14 @@ function scoped(left: Scope, right: Scope): boolean {
   return left.generation === right.generation && ['organizationId', 'workspaceId', 'attemptId']
     .every(field => String(left[field as keyof Scope]).toLowerCase() === String(right[field as keyof Scope]).toLowerCase());
 }
-function checkedReservation(raw: unknown, offer: Offer, key: Scope, options: StagerOptions): Reservation {
+function checkedReservation(raw: unknown, offer: Offer, key: Scope, options: StagerOptions, assignment?: StandaloneExportAssignment): Reservation {
   if (!raw || typeof raw !== 'object' || !('status' in raw)) throw new StagingError('reservation');
   const reservation = raw as Reservation;
   if (!scoped(reservation, key)) throw new StagingError('reservation');
   checkUnowned(reservation);
   checkIdentity(reservation, offer, options);
-  const estimate = estimateStaging(offer);
+  const estimate = estimateStaging(offer,assignment);
+  if (reservation.assignment?.assignmentDigest !== assignment?.assignmentDigest) throw new StagingError('reservation');
   if (!supportedStaging(reservation.staging, reservation.resources.stagingBytes)
     || !Object.entries(estimate).every(([field, value]) => reservation.staging[field as keyof typeof estimate] === value)) throw new StagingError('reservation');
   return reservation;
@@ -62,7 +63,7 @@ function unsafeFilename(name: string): boolean {
     || Array.from(name).some(character => character.charCodeAt(0) < 32 || prohibited.includes(character))
     || /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/u.test(name.split('.')[0]!);
 }
-export interface Authorized { readonly offer: Offer; readonly reservation: Reservation; readonly authority: Authority; readonly deadlineMs: number }
+export interface Authorized { readonly assignment?: StandaloneExportAssignment; readonly offer: Offer; readonly reservation: Reservation; readonly authority: Authority; readonly deadlineMs: number }
 export async function authorize(options: StagerOptions, key: Scope, boundary: Boundary): Promise<Authorized> {
   const raw = await boundary.wait(() => options.journal.readOffer(key)).catch(error => {
     boundary.check();
@@ -75,13 +76,14 @@ export async function authorize(options: StagerOptions, key: Scope, boundary: Bo
     value => createHash('sha256').update(value).digest('hex'));
   if (!sameInstalledIdentity(offer.value.installedIdentity, installed)) throw new StagingError('reservation');
   validateNames(offer.value);
+  const assignment=await boundary.wait(()=>options.journal.readExportAssignment(key));
   const rawReservation = await boundary.wait(() => options.journal.admission({ kind: 'reservation', key }));
-  const reservation = checkedReservation(rawReservation, offer.value, key, options);
+  const reservation = checkedReservation(rawReservation, offer.value, key, options, assignment ?? undefined);
   const deadlineMs = reservation.admittedAt + offer.value.budget.timeoutMs;
   if (!Number.isSafeInteger(reservation.admittedAt) || reservation.admittedAt < 0
     || !Number.isSafeInteger(deadlineMs) || deadlineMs > 8_640_000_000_000_000) throw new StagingError('reservation');
   const authority = freeze({ ...key, installationId: options.profile.installationId, intentDigest: offer.value.intentDigest });
-  return { offer: freeze(offer.value), reservation, authority, deadlineMs };
+  return { offer: freeze(offer.value), ...(assignment ? {assignment:freeze(assignment)} : {}), reservation, authority, deadlineMs };
 }
 export async function eligibility(options: StagerOptions, authorized: Authorized, boundary: Boundary): Promise<void> {
   boundary.check();
@@ -92,7 +94,7 @@ export async function eligibility(options: StagerOptions, authorized: Authorized
   if (state.clockFenced) throw new StagingError('clock_fenced');
   if (now >= authorized.deadlineMs || state.clockHighWater >= authorized.deadlineMs) throw new StagingError('deadline');
   const raw = await boundary.wait(() => options.journal.admission({ kind: 'reservation', key: authorized.authority }));
-  const current = checkedReservation(raw, authorized.offer, authorized.authority, options);
+  const current = checkedReservation(raw, authorized.offer, authorized.authority, options, authorized.assignment);
   if (current.admittedAt !== authorized.reservation.admittedAt) throw new StagingError('reservation');
   await checkAttempt(options, authorized, boundary);
   boundary.check();

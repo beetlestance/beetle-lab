@@ -1,9 +1,10 @@
+import { AttemptError } from '../wrapper/failure/index.js';
 import { createHash } from 'node:crypto';
 import { isAbsolute, join, resolve } from 'node:path';
 import { captureStandaloneExportAssignment, encodeCanonicalJson, RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
 import type { StandaloneExportAssignment } from '@beetle/contracts';
 import type { StagedInput } from '../wrapper/input/index.js';
-import type { AttemptFence } from '../wrapper/attempt/fence.js';
+import type { AttemptFence } from '../wrapper/lifecycle/index.js';
 import { sealExportScript } from '../wrapper/artifact-custody/index.js';
 import type { ExportScriptJob } from '../wrapper/artifact-custody/index.js';
 import { startStandaloneBuild } from './lifetime.js';
@@ -17,6 +18,8 @@ export interface ExportOperationInput {
   readonly fence: AttemptFence;
   readonly outputRoot: string;
   readonly uid: number;
+  /** Trusted phase-writer callback; its owner retains native close work. */
+  readonly onCollect?: (usage: Readonly<{bytes:number;peakBytes:number}>) => Promise<void>;
 }
 export interface ExportOperationOutput {
   readonly artifact: Awaited<ExportScriptJob['result']>;
@@ -35,8 +38,10 @@ function requireProfile(input: ExportOperationInput): void {
 function capture(input: ExportOperationInput): StandaloneExportAssignment {
   try {
     requireProfile(input);
+    if (input.onCollect !== undefined && typeof input.onCollect !== 'function') throw new Error();
     const assignment=captureStandaloneExportAssignment(input.assignment,value=>createHash('sha256').update(value).digest('hex'));
-    if (input.staged.staging.generation !== 1 || encodeCanonicalJson(assignment.offer,RUNNER_MAXIMUM_OFFER_BYTES)
+    if (input.staged.assignment?.assignmentDigest !== assignment.assignmentDigest
+      || input.staged.staging.assignment?.assignmentDigest !== assignment.assignmentDigest || input.staged.staging.generation !== 1 || encodeCanonicalJson(assignment.offer,RUNNER_MAXIMUM_OFFER_BYTES)
       !== encodeCanonicalJson(input.staged.offer,RUNNER_MAXIMUM_OFFER_BYTES)) throw new Error();
     return assignment;
   } catch {throw new ExportOperationError('binding');}
@@ -52,6 +57,7 @@ async function generate(input: ExportOperationInput, assignment: StandaloneExpor
     signal:input.fence.controller.signal,deadline:performance.now()+input.fence.lifetimeRemaining()});
   const output=await built.result.finally(()=>built.settled);
   input.fence.check();
+  await input.onCollect?.(Object.freeze({bytes:output.bytes,peakBytes:output.peakBytes}));input.fence.check();
   const custody=sealExportScript({outputRoot:input.outputRoot,uid:input.uid,built:output,
     maximumBuildBytes:assignment.options.maximumBuildBytes,fence:input.fence});
   const artifact=await custody.result.finally(()=>custody.settled);
@@ -67,12 +73,17 @@ export function startExportOperation(input: ExportOperationInput): ExportOperati
   const original=Promise.resolve().then(()=>generate(owned,assignment)).finally(async()=>{
     try {await owned.staged.close();} catch {throw new ExportOperationError('cleanup');}
   });
-  const settled=original.then(()=>undefined,error=>{throw error instanceof ExportOperationError?error:new ExportOperationError('generation_failed');});
+  const settled=original.then(()=>undefined,error=>{throw operationFailure(error);});
   const result=Promise.race([original,stopped]).then(value=>{owned.fence.check();return value;})
-    .catch(error=>{throw reason ?? (error instanceof ExportOperationError?error:new ExportOperationError('generation_failed'));})
+    .catch(error=>{throw reason ?? (operationFailure(error));})
     .finally(()=>owned.fence.controller.signal.removeEventListener('abort',abort));
   owned.fence.controller.signal.addEventListener('abort',abort,{once:true});
   if (owned.fence.controller.signal.aborted) abort();
   void result.catch(()=>undefined);void settled.catch(()=>undefined);void stopped.catch(()=>undefined);
   return Object.freeze({result,settled,close(){reason ??= new ExportOperationError('closed');reject(reason);owned.fence.stop('cancelled');return settled;}});
+}
+
+function operationFailure(error:unknown):ExportOperationError {
+  if (error instanceof ExportOperationError) return error;
+  return new ExportOperationError(error instanceof AttemptError && error.reason==='cleanup'?'cleanup':'generation_failed');
 }

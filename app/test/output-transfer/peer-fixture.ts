@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import { createHash } from 'node:crypto';
 import { sealEngineResult } from '@beetle/contracts';
 import type { Artifact } from '@beetle/contracts';
@@ -52,7 +53,7 @@ export async function peer(envelope: Owned<SourceEnvelope>, contents: readonly U
     request.on('end', () => {
       try {
         const selector = captureSourceChunkRequest(JSON.parse(body) as unknown);
-        const ordinal = envelope.manifest.result.artifacts.findIndex(artifact => artifact.artifactId === selector.artifactId);
+        const ordinal = executionArtifacts(envelope.manifest.result).findIndex(artifact => artifact.artifactId === selector.artifactId);
         if (selector.manifestDigest !== envelope.manifest.manifestDigest || selector.sourceDigest !== envelope.sourceDigest || ordinal < 0) throw new Error();
         const bytes = contents[ordinal]!; selectors.push(selector);
         const end = Math.min(bytes.length, selector.offset + selector.length);

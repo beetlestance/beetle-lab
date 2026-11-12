@@ -47,7 +47,7 @@ export function sourceFixture() {
       const cap = vi.fn(async () => capabilities);
       const unused = vi.fn(async () => { throw new JournalError('not_found'); });
       const server = createAgentServer({ credential: 'S'.repeat(64), journalAuthority: original.journalAuthority,
-        installation: { enqueue: unused, cancel: unused, cancelOriginal: unused },
+        installation: { cancelExportOriginal: unused, enqueueExport: unused, enqueue: unused, cancel: unused, cancelOriginal: unused },
         ...(liveMetrics ? {liveMetrics} : {}),
         journal: { get: unused, readEvents: unused, acknowledge: unused }, capabilities: cap,
         ...(absent ? {} : { outputs: { source: getSource, chunk: getChunk } }) });

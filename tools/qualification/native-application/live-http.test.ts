@@ -19,7 +19,7 @@ it('carries a scoped live frame through actual private agent HTTP, gateway, SQL 
   });
   const unused = async (): Promise<never> => {throw new Error('unused');};
   const agent = createAgentServer({credential: 'S'.repeat(64), journalAuthority: f.binding.journalAuthority,
-    installation: {enqueue: unused, cancel: unused, cancelOriginal: unused},
+    installation: {cancelExportOriginal:async()=>{throw new Error('unexpected_export');},enqueueExport: async()=>{throw new Error('unexpected_export');},enqueue: unused, cancel: unused, cancelOriginal: unused},
     journal: {get: unused, readEvents: unused, acknowledge: unused}, capabilities: unused, liveMetrics: read});
   await agent.listen({host: '127.0.0.1', port: 0}); const address = agent.server.address();
   if (!address || typeof address === 'string') throw new Error('missing private loopback');

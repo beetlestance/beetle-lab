@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import { randomUUID } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeCanonicalJson } from '@beetle/contracts';
@@ -51,7 +52,7 @@ export class OutputCustody {
         binding.journalAuthority, envelope.sourceDigest, envelope.manifest.manifestDigest, envelope.closure.finalAgentSeq,
         encodeCanonicalJson(envelope.closure, 2048));
     const insert = this.db.prepare('INSERT INTO execution_output_slots VALUES(?,?,?)');
-    envelope.manifest.result.artifacts.forEach((_, ordinal) => insert.run(attempt.attemptId, ordinal,
+    executionArtifacts(envelope.manifest.result).forEach((_, ordinal) => insert.run(attempt.attemptId, ordinal,
       encodeCanonicalJson({ v: 1, t: randomUUID(), o: 0, p: 'transferring', i: null, w: null }, 256)));
     return loadOutput(this.db, binding);
   }

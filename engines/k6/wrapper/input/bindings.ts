@@ -57,24 +57,32 @@ export function checkBindings(input: { staging: StagedAttempt; offer: Offer; man
   for (const [field, expected] of Object.entries(options.expected ?? {})) {
     if (!Object.hasOwn(staging, field) || staging[field as keyof StagedAttempt] !== expected) throw new InputError('binding');
   }
+  checkAssignmentBinding(staging,options);
   checkEngine(options, offer, manifest);
   checkMapping(staging, offer);
 }
 function checkEngine(options: OpenStagedOptions, offer: Offer, manifest: EngineManifest): void {
   const installed = options.installed;
-  if (installed.id !== 'k6' || installed.configSchema !== configSchema || installed.resultSchema !== resultSchema
+  if (installed.id !== 'k6' || installed.configSchema !== configSchema || installed.resultSchema !== (options.exportAssignment ? 'https://beetle-lab.dev/contracts/runner/v1/export-result' : resultSchema)
     || manifest.engineId !== installed.id || offer.engine.id !== installed.id
     || manifest.engineVersion !== installed.version || offer.engine.configVersion !== installed.configVersion) throw new InputError('binding');
-  checkManifest(offer, manifest);
+  checkManifest(offer, manifest,installed.resultSchema);
 }
-function checkManifest(offer: Offer, manifest: EngineManifest): void {
+function checkManifest(offer: Offer, manifest: EngineManifest, expectedResult: string): void {
   let manifestDigest: string;
   try { manifestDigest = installedDescriptorDigest('manifest', manifest, digest); }
   catch { throw new InputError('binding'); }
   if (offer.installedIdentity.manifestDigest !== manifestDigest) throw new InputError('binding');
-  if (manifest.schemas.config !== configSchema || manifest.schemas.result !== resultSchema
+  if (manifest.schemas.config !== configSchema || manifest.schemas.result !== expectedResult
     || offer.engine.imageDigest !== manifest.imageDigest) throw new InputError('binding');
   if (offer.requiredCapabilities.some(capability => !manifest.capabilities.includes(capability))) throw new InputError('binding');
   const budgetFields = ['cpuMillis', 'memoryBytes', 'pids', 'timeoutMs', 'outputBytes'] as const;
   if (budgetFields.some(field => offer.budget[field] < manifest.minimumBudget[field])) throw new InputError('binding');
+}
+
+function checkAssignmentBinding(staging:StagedAttempt,options:OpenStagedOptions):void {
+  const expected=options.exportAssignment;const binding=staging.assignment;
+  if (!expected && !binding) return;
+  if (!expected || !binding || expected.purpose !== binding.purpose || expected.assignmentDigest !== binding.assignmentDigest
+    || staging.generation !== 1) throw new InputError('binding');
 }

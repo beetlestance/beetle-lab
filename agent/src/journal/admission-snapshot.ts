@@ -46,7 +46,12 @@ function candidateBudget(item: Candidate): void {
   requireFact(budgetNames.every(name => integer(item.budget[name]) && item.budget[name] > 0));
   requireFact(budgetNames.filter(name => name !== 'timeoutMs').every(name => item.budget[name] === item.resources[name]));
   requireFact(supportedStaging(item.staging, item.resources.stagingBytes));
-  keys(item.staging, ['policyVersion', 'offerBytes', 'inputBytes', 'secretBytes', 'manifestBytes', 'metadataBytes', 'totalBytes']);
+  keys(item.staging, ['policyVersion', 'offerBytes', 'inputBytes', 'secretBytes', 'manifestBytes', 'metadataBytes', 'totalBytes', ...(item.assignment ? ['assignmentBytes'] : [])]);
+  if (item.assignment) {
+    keys(item.assignment,['purpose','assignmentDigest']);
+    requireFact(item.assignment.purpose === 'standalone_export' && digest(item.assignment.assignmentDigest));
+    requireFact(integer(item.staging.assignmentBytes) && item.staging.assignmentBytes > 0);
+  }
 }
 function candidateIdentity(item: Candidate): void {
   const { engine, validation } = item;
@@ -63,7 +68,7 @@ function queueCandidate(row: Row, raw: unknown): Candidate {
   const item = parse(raw) as Candidate;
   requireFact(item && typeof item === 'object'); sameScope(item, row);
   keys(item, ['attemptId', 'organizationId', 'workspaceId', 'generation', 'staging', 'resources', 'budget',
-    'mode', 'preferIdle', 'requiredCapabilities', 'engine', 'validation', 'queuedAt', 'order']);
+    'mode', 'preferIdle', 'requiredCapabilities', 'engine', 'validation', 'queuedAt', 'order', ...(item.assignment ? ['assignment'] : [])]);
   requireFact(item.queuedAt === null || integer(item.queuedAt));
   requireFact(item.order === 0 && typeof item.preferIdle === 'boolean');
   requireFact(item.mode === 'parallel' || item.mode === 'isolated');

@@ -18,6 +18,7 @@ function wrapperText(event: Extract<Event, { source: 'wrapper' }>): string {
     case 'progress': return event.payload.heartbeat ? 'Heartbeat received' : `Progress reported: ${event.payload.completedUnits} completed units`;
     case 'case.result': return `Case result reported: ${event.payload.outcome}`;
     case 'artifact.sealed': return `Artifact sealed: ${event.payload.bytes} bytes`;
+    case 'export.result': return 'Standalone export report; no performance verdict';
     case 'engine.result': return `Provisional engine report: ${event.payload.outcome}; application outcome remains authoritative`;
   }
 }

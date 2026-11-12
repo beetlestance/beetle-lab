@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import { expect, it, vi } from 'vitest';
 import { encodeJson } from '@beetle/contracts';
 import { sealEngineResult } from '@beetle/contracts';
@@ -12,14 +13,14 @@ import { deferred, operation, ranges, reader, releases, request, track, turns, u
 const f = deliveryFixture();
 async function ready() {
   const e = await f.ready(); const closure = await e.journal.closeOutputDelivery(e.receipt);
-  return { ...e, closure, artifact: e.source.manifest.result.artifacts[0]! };
+  return { ...e, closure, artifact: executionArtifacts(e.source.manifest.result)[0]! };
 }
 
 it('returns the actual durable public source/closure across Journal reopen, without private facts or native calls', async () => {
   const e = await ready(); await f.close(e.journal); const journal = await f.open(e.path); const r = reader(journal);
   const value = await track(r.service.source(e.key, operation()));
   expect(value).toEqual({ version: 1, manifest: e.source.manifest, sourceDigest: e.receipt.sourceDigest, closure: e.closure });
-  expect(Object.isFrozen(value.manifest.result.artifacts)).toBe(true); expect(Object.isFrozen(value.closure.receipt.key)).toBe(true);
+  expect(Object.isFrozen(executionArtifacts(value.manifest.result))).toBe(true); expect(Object.isFrozen(value.closure.receipt.key)).toBe(true);
   expect(r.readRange).not.toHaveBeenCalled();
   const json = encodeJson(value, 75_776);
   for (const privateField of ['directory', 'checkpoint', 'release', 'createToken', 'runtimeId', 'modifiedNs']) expect(json).not.toContain(`"${privateField}"`);
@@ -34,13 +35,13 @@ it('sends exact stored root/declaration and fresh budget to the injected native 
     expect(Buffer.from(value.base64, 'base64')).toEqual(expected); expect(value.nextOffset).toBe(offset + expected.length);
     expect(value.eof).toBe(value.nextOffset === 32); expect(value.totalBytes).toBe(32); expect(Object.isFrozen(value)).toBe(true);
   }
-  const empty = e.source.manifest.result.artifacts[1]!;
+  const empty = executionArtifacts(e.source.manifest.result)[1]!;
   const value = await track(r.service.chunk(e.key, request(e.receipt, empty.artifactId), operation()));
   expect(value).toMatchObject({ base64: '', eof: true, nextOffset: 0, totalBytes: 0 });
   expect(r.originals).toHaveLength(4);
   for (const work of r.originals) {
     expect(work.options.root).toEqual(e.source.root); expect(Object.isFrozen(work.options.root)).toBe(true);
-    expect(work.options.artifact).toEqual(e.source.manifest.result.artifacts.find(artifact => artifact.artifactId === work.options.artifact.artifactId));
+    expect(work.options.artifact).toEqual(executionArtifacts(e.source.manifest.result).find(artifact => artifact.artifactId === work.options.artifact.artifactId));
     expect(work.options.deadline).toBe(1000); expect(work.options.signal).toBeInstanceOf(AbortSignal); expect(work.close).toHaveBeenCalledTimes(1);
   }
 });
@@ -129,7 +130,7 @@ it('rejects beyond-end ranges and malformed scopes/requests without issuing nati
 });
 
 it.each(['exact duplicate', 'case aliases'] as const)('rejects %s declarations in a faulty Journal reply without first-match selection', async mode => {
-  const e = await ready(); const draft = structuredClone(e.collected); const artifacts = draft.collection.value.artifacts;
+  const e = await ready(); const draft = structuredClone(e.collected); const result=draft.collection.value;if ('purpose' in result) throw new Error('Expected performance fixture');const artifacts=result.artifacts;
   const id = mode === 'case aliases' ? 'AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA' : artifacts[0]!.artifactId;
   artifacts[0]!.artifactId = id; artifacts[1]!.artifactId = mode === 'case aliases' ? id.toLowerCase() : id;
   const { seal, ...body } = draft.collection.value; const sealed = sealEngineResult(body, seal.sealedAt, hash);

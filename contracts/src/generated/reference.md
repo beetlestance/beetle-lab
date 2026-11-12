@@ -6,6 +6,8 @@ Source: `contracts/runner/v1`; regenerate with `node --import tsx contracts/scri
 | --- | --- | --- | --- | --- |
 | GET | /runner/v1/capabilities | none | 200 | Capabilities |
 | PUT | /runner/v1/attempts/{attemptId} | Offer | 202 | AttemptSnapshot |
+| PUT | /runner/v1/attempts/{attemptId}/export | StandaloneExportAssignment | 202 | AttemptSnapshot |
+| POST | /runner/v1/attempts/{attemptId}/export/cancel-original | StandaloneExportAssignment | 200 | AttemptSnapshot |
 | GET | /runner/v1/attempts/{attemptId} | none | 200 | AttemptSnapshot |
 | POST | /runner/v1/attempts/{attemptId}/cancel | Cancellation | 200 | AttemptSnapshot |
 | POST | /runner/v1/attempts/{attemptId}/cancel-original | Offer | 200 | AttemptSnapshot |
@@ -18,4 +20,4 @@ Source: `contracts/runner/v1`; regenerate with `node --import tsx contracts/scri
 All error replies use ProtocolError. Events accept the `after` cursor query.
 GET sealed artifact streams/ranges belong to the artifact transport owner.
 
-Shipped schemas: AckReceipt, Ack, AgentEvent, AttemptAdmission, AttemptSnapshot, Cancellation, Capabilities, CapacityObservation, Common, ControlEvent, EngineManifest, EngineResult, ProtocolError, EventBatch, EventEnvelope, StandaloneExportAssignment, StandaloneExportResult, InstalledIdentity, Offer, OutputAbsence, OutputManifestCore, OutputManifest, ResultEvidence, ResultExecution, SourceBinding, SourceChunkRequest, SourceChunk, SourceEnvelope, SourceValues, StagedAttempt, SupervisorEvents, TargetRuntimeReport, WrapperEvents.
+Shipped schemas: AckReceipt, Ack, AgentEvent, AttemptAdmission, AttemptSnapshot, Cancellation, Capabilities, CapacityObservation, Common, ControlEvent, EngineManifest, EngineResult, ProtocolError, EventBatch, EventEnvelope, ExecutionResult, StandaloneExportAssignment, StandaloneExportResult, InstalledIdentity, Offer, OutputAbsence, OutputManifestCore, OutputManifest, ResultEvidence, ResultExecution, SourceBinding, SourceChunkRequest, SourceChunk, SourceEnvelope, SourceValues, StagedAttempt, SupervisorEvents, TargetRuntimeReport, WrapperEvents.

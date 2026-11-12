@@ -25,7 +25,7 @@ async function installed() {
 }
 it.each(['manifest', 'profile'] as const)('GET/PUT %s drift rejects before durable/provider/runtime effects; exact accepted replay survives', async kind => {
   const e = await installed(); let current = e.catalog;
-  const catalog: Catalog = { engines: current.engines, preflight: input => current.preflight(input),
+  const catalog: Catalog = { engines: current.engines, preflightExport: input=>current.preflightExport(input), preflight: input => current.preflight(input),
     resolve: (offer, validation) => current.resolve(offer, validation) };
   const stagerFor = vi.fn((): never => { throw new Error('unexpected_stager'); });
   const manager = e.create({ catalog, stagerFor });

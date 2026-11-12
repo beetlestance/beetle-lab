@@ -34,7 +34,8 @@ function probe(engine: EngineRegistration & Pick<InstalledEngine, 'installedIden
     workspaceId: '00000000-0000-4000-8000-000000000002', attemptId: '00000000-0000-4000-8000-000000000003',
     intentDigest: '0'.repeat(64), engine: { id: engine.manifest.engineId,
       imageDigest: engine.manifest.imageDigest, configVersion: engine.configVersion }, inputs: [], budget,
-    executionPolicy: { mode: 'parallel', preferIdle: false }, requiredCapabilities: [], secretReferences: [], config: {} };
+    executionPolicy: { mode: 'parallel', preferIdle: false }, requiredCapabilities: engine.manifest.schemas.result.endsWith('/export-result') ? ['standalone-export-v1'] : [],
+    secretReferences: [], config: {} };
 }
 function registration(input: unknown): InstalledEngine {
   const configSchema: unknown = field(input, 'configSchema');

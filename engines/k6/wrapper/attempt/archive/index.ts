@@ -5,7 +5,7 @@ import { encodeJson } from '@beetle/contracts';
 import type { EngineResult } from '@beetle/contracts';
 import type { MetricWindow } from '../../../aggregation/index.js';
 import type { JournalScope } from '../../control/index.js';
-import type { AttemptFence } from '../fence.js';
+import type { AttemptFence } from '../../lifecycle/index.js';
 import { AttemptError } from '../types.js';
 import { MetricFiles, names } from './files.js';
 import type { Lane } from './files.js';

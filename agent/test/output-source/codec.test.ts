@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import { expect, it, vi } from 'vitest';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import { OUTPUT_MANIFEST_PREFIX, OUTPUT_SOURCE_PREFIX, prepareOutputSource, verifyOutputSource,
@@ -27,7 +28,7 @@ it('distinguishes public content from private custody, raw whitespace and array 
   expect(values[2]!.manifest.manifestDigest).toBe(values[0]!.manifest.manifestDigest);
   for (const index of [2, 3, 4]) expect(values[index]!.sourceDigest).not.toBe(values[0]!.sourceDigest);
   for (const index of [3, 4]) expect(values[index]!.manifest.manifestDigest).not.toBe(values[0]!.manifest.manifestDigest);
-  expect(values[0]!.manifest.result.artifacts[1]!.bytes).toBe(0);
+  expect(executionArtifacts(values[0]!.manifest.result)[1]!.bytes).toBe(0);
 });
 it.each(['result', 'manifest', 'source'] as const)('classifies validly shaped %s hash mismatches as integrity', kind => {
   const value = source();

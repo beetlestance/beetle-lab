@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto';
-import { rm } from 'node:fs/promises';
+import { rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createStandaloneExportAssignment } from '@beetle/contracts';
 import { fixture, opened, now, uuid, syntheticInstalledIdentity } from '../staged-input/fixtures.js';
 import type { Fixture } from '../staged-input/fixtures.js';
 import type { SuiteConfig } from '../../compiler/suite/index.js';
-import { AttemptFence } from '../../wrapper/attempt/fence.js';
+import { AttemptFence } from '../../wrapper/lifecycle/index.js';
 import { startExportOperation } from '../../export/index.js';
 import * as builder from '../../build/index.js';
 const fixtures:Fixture[]=[];const fences:AttemptFence[]=[];
@@ -17,12 +17,19 @@ async function setup(){
   f.offer.secretReferences=[];f.staging.secretNames=[];await rm(join(f.options.secretRoot,'_TOKEN'));
   f.manifest.capabilities.push('standalone-export-v1');f.offer.requiredCapabilities=['standalone-export-v1'];
   f.offer.installedIdentity=syntheticInstalledIdentity(f.manifest);f.staging.generation=1;await f.save();
-  const staged=await opened(f.options);
   const assignment=createStandaloneExportAssignment({version:1,purpose:'standalone_export',exportId:uuid(20),requestId:uuid(21),
     source:{revisionId:uuid(22),revisionDigest:'b'.repeat(64)},offer:f.offer,
     options:{scriptTimeoutMs:180000,maximumBuildBytes:900000}},s=>createHash('sha256').update(s).digest('hex'));
+  f.manifest.schemas.result='https://beetle-lab.dev/contracts/runner/v1/export-result';
+  f.offer.installedIdentity=syntheticInstalledIdentity(f.manifest);
+  const body={...assignment,offer:f.offer};Reflect.deleteProperty(body,'assignmentDigest');
+  const finalAssignment=createStandaloneExportAssignment(body,s=>createHash('sha256').update(s).digest('hex'));
+  f.staging.assignment={purpose:'standalone_export',assignmentDigest:finalAssignment.assignmentDigest,fileName:'assignment.json'};
+  f.options={...f.options,exportAssignment:{purpose:'standalone_export',assignmentDigest:finalAssignment.assignmentDigest},installed:{...f.options.installed,resultSchema:f.manifest.schemas.result}};
+  await f.save();await writeFile(join(f.options.inputRoot,'assignment.json'),JSON.stringify(finalAssignment),{mode:0o600});
+  const staged=await opened(f.options);
   const fence=new AttemptFence({wall:()=>now,monotonic:()=>performance.now()},f.controller.signal,5000);fence.bind(staged);fences.push(fence);
-  return {f,staged,assignment,fence,outputRoot:f.root,uid:process.getuid!()};
+  return {f,staged,assignment:finalAssignment,fence,outputRoot:f.root,uid:process.getuid!()};
 }
 it('composes exact staged inputs through actual compiler/build/native custody without target execution',async()=>{
   const value=await setup();const work=startExportOperation(value);const result=await work.result;await work.settled;

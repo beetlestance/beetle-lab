@@ -1,4 +1,4 @@
-import type { EngineResult } from '@beetle/contracts';
+import type { ExecutionResult, ExportResultExpectation } from '@beetle/contracts';
 import type { ControlScope } from '../../control-protocol/index.js';
 import type { CollectionRootIdentity } from '../root/index.js';
 
@@ -15,7 +15,8 @@ export interface OutputCollectionOptions {
   readonly key: Readonly<ControlScope>;
   readonly engineId: string;
   /** Journaled engine.result payload, still provisional until collection completes. */
-  readonly reportedResult: Readonly<EngineResult>;
+  readonly expectedExport?: ExportResultExpectation;
+  readonly reportedResult: Readonly<ExecutionResult>;
   /** Byte offset from the stopped_verified control cursor. */
   readonly controlBytes: number;
   readonly outputBytes: number;
@@ -30,8 +31,8 @@ export interface OutputCustody {
   readonly controlBytes: number;
   readonly root: Readonly<OutputRootIdentity>;
 }
-export type OutputCollectionResult =
-  | { readonly ok: true; readonly value: Readonly<EngineResult>; readonly verifiedBytes: number; readonly custody: Readonly<OutputCustody> }
+export type OutputCollectionResult<T extends ExecutionResult = ExecutionResult> =
+  | { readonly ok: true; readonly value: Readonly<T>; readonly verifiedBytes: number; readonly custody: Readonly<OutputCustody> }
   | { readonly ok: false; readonly reason: OutputCollectionReason };
 export interface OutputCollection {
   /** Success is published only after all original closes succeed and the final budget fence. */

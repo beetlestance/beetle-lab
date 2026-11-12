@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import { expect, it } from 'vitest';
 import { unlink } from 'node:fs/promises';
 import { RunArtifacts } from '../../src/adapters/outbound/sqlite/run-artifacts/index.js';
@@ -14,14 +15,14 @@ it('lists exact native publication, pages canonical positions, reads ranges/empt
   try {
     const before = f.facts();
     const first = reader.execute({kind: 'listRunArtifacts', query}) as RunArtifactPage;
-    expect(first.items).toEqual(f.envelope.manifest.result.artifacts.slice(0, 1));
+    expect(first.items).toEqual(executionArtifacts(f.envelope.manifest.result).slice(0, 1));
     expect(captureRunArtifactCursor(first.nextCursor!).ordinal).toBe(1);
     const next = reader.execute({kind: 'listRunArtifacts', query: {...query, cursor: first.nextCursor!}}) as RunArtifactPage;
-    expect(next.items).toEqual(f.envelope.manifest.result.artifacts.slice(1, 2));
+    expect(next.items).toEqual(executionArtifacts(f.envelope.manifest.result).slice(1, 2));
     expect(() => reader.execute({kind: 'listRunArtifacts', query: {...query, id: uuid(999), cursor: first.nextCursor!}})).toThrow();
     expect(() => reader.execute({kind: 'listRunArtifacts', query: {...query, cursor: first.nextCursor! + '='}})).toThrow();
     for (const [ordinal, expected] of contents.entries()) {
-      const published = reader.execute({kind: 'getRunArtifact', key: {id: query.id, scope, attemptId: query.attemptId, artifactId: f.envelope.manifest.result.artifacts[ordinal]!.artifactId}}) as PublishedArtifactRead;
+      const published = reader.execute({kind: 'getRunArtifact', key: {id: query.id, scope, attemptId: query.attemptId, artifactId: executionArtifacts(f.envelope.manifest.result)[ordinal]!.artifactId}}) as PublishedArtifactRead;
       const chunks: Buffer[] = [];
       await finish(f.files.store.read({record: published.record, start: 0, endExclusive: expected.length, sink: {write: async bytes => {chunks.push(Buffer.from(bytes));}}}, context()));
       expect(Buffer.concat(chunks)).toEqual(expected);

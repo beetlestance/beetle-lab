@@ -43,7 +43,10 @@
           "maxLength": 512
         },
         "result": {
-          "const": "https://beetle-lab.dev/contracts/runner/v1/engine-result"
+          "enum": [
+            "https://beetle-lab.dev/contracts/runner/v1/engine-result",
+            "https://beetle-lab.dev/contracts/runner/v1/export-result"
+          ]
         }
       },
       "required": [

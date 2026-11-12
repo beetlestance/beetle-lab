@@ -1,6 +1,6 @@
 import { isAbsolute, normalize } from 'node:path';
-import { encodeJson } from '@beetle/contracts';
-import type { EngineResult } from '@beetle/contracts';
+import { encodeJson, captureExportExpectation } from '@beetle/contracts';
+import type { ExecutionResult, ExportResultExpectation } from '@beetle/contracts';
 import { copyControlScope, CONTROL_FILE_BYTES } from '../../control-protocol/index.js';
 import type { ControlScope } from '../../control-protocol/index.js';
 import { OUTPUT_RESULT_BYTES } from './types.js';
@@ -9,7 +9,8 @@ import { OutputFailure } from './ports.js';
 
 export interface OutputSnapshot {
   readonly directory: string; readonly uid: number; readonly key: Readonly<ControlScope>;
-  readonly engineId: string; readonly reportedResult: Readonly<EngineResult>;
+  readonly expectedExport?: ExportResultExpectation;
+  readonly engineId: string; readonly reportedResult: Readonly<ExecutionResult>;
   readonly controlBytes: number; readonly outputBytes: number; readonly deadline: number;
   readonly signal?: AbortSignal;
 }
@@ -40,13 +41,14 @@ export function snapshotOptions(input: OutputCollectionOptions): OutputSnapshot 
   try {
     const directory = directoryValue(own(input, 'directory')); const uid = own(input, 'uid');
     const key = copyControlScope(own(input, 'key')); const engineId = engineValue(own(input, 'engineId'));
+    const context=exportContext(own(input,'expectedExport'));
     const reported: unknown = JSON.parse(encodeJson(own(input, 'reportedResult'), OUTPUT_RESULT_BYTES));
     const controlBytes = own(input, 'controlBytes'); const outputBytes = own(input, 'outputBytes');
     const deadline = own(input, 'deadline'); const signal = signalValue(own(input, 'signal'));
     if (!integer(uid, 0, 4_294_967_295) || !integer(controlBytes, 0, CONTROL_FILE_BYTES)
       || !integer(outputBytes, 1, Number.MAX_SAFE_INTEGER)) throw new OutputFailure('invalid_options');
     if (typeof deadline !== 'number' || !Number.isFinite(deadline)) throw new OutputFailure('invalid_options');
-    return Object.freeze({ directory, uid, key, engineId, reportedResult: reported as EngineResult,
+    return Object.freeze({ directory, uid, key, engineId, reportedResult: reported as ExecutionResult, ...context,
       controlBytes, outputBytes, deadline, ...(signal === undefined ? {} : { signal }) });
   } catch (error) {
     if (error instanceof OutputFailure) throw error;
@@ -58,4 +60,8 @@ export function accountedBytes(options: OutputSnapshot, resultBytes: number, art
   for (const bytes of artifactBytes) total += BigInt(bytes);
   if (total > BigInt(options.outputBytes)) throw new OutputFailure('output_limit');
   return Number(total);
+}
+
+function exportContext(input:unknown): {readonly expectedExport?:ExportResultExpectation} {
+  return input === undefined ? {} : {expectedExport:captureExportExpectation(input)};
 }

@@ -1,3 +1,4 @@
+import { CURRENT_JOURNAL_SCHEMA } from '../journal/legacy-fixtures.js';
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it, vi } from 'vitest';
 import { initialize } from '../../src/journal/schema.js';
@@ -10,7 +11,7 @@ const f = deliveryFixture();
 it('initializes current schema with empty delivery charge and no manufactured source/closure', () => {
   const db = initialize(f.path());
   try {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(14);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(CURRENT_JOURNAL_SCHEMA);
     expect(db.prepare('SELECT * FROM output_delivery_closures').all()).toEqual([]);
     expect(db.prepare('SELECT * FROM output_sources').all()).toEqual([]);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
@@ -26,9 +27,9 @@ it('upgrades an actual schema12 released source with only debt marker and preser
   expect(await journal.scanRunnable({ lane: 'delivery', limit: 32 })).toEqual({ attempts: [e.key], through: 1 });
   await f.close(journal); const db = new DatabaseSync(e.path);
   try {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(14);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(CURRENT_JOURNAL_SCHEMA);
     expect(db.prepare('SELECT * FROM accepted_attempts').get()).toEqual({ ...before, delivery_bytes: 0, delivery_pending: 1,
-      absence_bytes: 0, absence_pending: 0 });
+      absence_bytes: 0, absence_pending: 0, execution_purpose: 'performance', export_result_json: null });
     expect(db.prepare('SELECT * FROM output_sources').all()).toEqual(source);
     expect(db.prepare('SELECT * FROM reservations').all()).toEqual(reservation);
     expect(db.prepare('SELECT * FROM sqlite_sequence ORDER BY name').all()).toEqual(sequence);

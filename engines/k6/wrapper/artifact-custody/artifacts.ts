@@ -14,17 +14,19 @@ import { same, regular, directory } from './identity.js';
 
 type Artifact = EngineResult['artifacts'][number];
 export interface ArtifactFence {check(): void; timestamp(): string}
-interface ArtifactOptions { readonly directory: string; readonly uid: number; readonly fence: ArtifactFence }
+interface ArtifactOptions { readonly resultFile?: 'engine-result.json' | 'export-result.json'; readonly directory: string; readonly uid: number; readonly fence: ArtifactFence }
 const cap = 1_048_576;
 const hash = (bytes: Uint8Array): string => createHash('sha256').update(bytes).digest('hex');
 function namedArtifact(stat: BigIntStats | undefined, named: BigIntStats): void {
   if (!stat || !same(stat, named)) throw new AttemptError('artifact');
 }
 export async function outputRoot(options: ArtifactOptions): Promise<void> {
+  const resultFile=options.resultFile ?? 'engine-result.json';
+  if (!['engine-result.json','export-result.json'].includes(resultFile)) throw new AttemptError('profile');
   options.fence.check();
   if (await realpath(options.directory) !== options.directory) throw new AttemptError('profile');
   directory(await lstat(options.directory, { bigint: true }), options.uid); options.fence.check();
-  try { await lstat(join(options.directory, 'engine-result.json')); }
+  try { await lstat(join(options.directory, resultFile)); }
   catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') { options.fence.check(); return; }
     throw error;

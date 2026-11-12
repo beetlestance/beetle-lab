@@ -4,35 +4,107 @@
   "title": "StagedAttempt",
   "type": "object",
   "properties": {
-    "protocolVersion": { "const": "1.0" },
-    "organizationId": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid" },
-    "workspaceId": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid" },
-    "attemptId": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid" },
-    "generation": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
-    "intentDigest": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256" },
-    "specDigest": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256" },
-    "offerSha256": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256" },
-    "manifestSha256": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256" },
-    "deadlineMs": { "type": "integer", "minimum": 0, "maximum": 8640000000000000 },
-    "stagingPolicyVersion": { "const": 1 },
+    "protocolVersion": {
+      "const": "1.0"
+    },
+    "organizationId": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+    },
+    "workspaceId": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+    },
+    "attemptId": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "intentDigest": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+    },
+    "specDigest": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+    },
+    "offerSha256": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+    },
+    "manifestSha256": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+    },
+    "deadlineMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 8640000000000000
+    },
+    "stagingPolicyVersion": {
+      "const": 1
+    },
     "inputFiles": {
-      "type": "array", "maxItems": 128,
+      "type": "array",
+      "maxItems": 128,
       "items": {
         "type": "object",
         "properties": {
-          "inputId": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid" },
-          "fileName": { "type": "string", "pattern": "^input-[0-9]{3}\\.bin$" }
+          "inputId": {
+            "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+          },
+          "fileName": {
+            "type": "string",
+            "pattern": "^input-[0-9]{3}\\.bin$"
+          }
         },
-        "required": ["inputId", "fileName"], "additionalProperties": false
+        "required": [
+          "inputId",
+          "fileName"
+        ],
+        "additionalProperties": false
       }
     },
     "secretNames": {
-      "type": "array", "maxItems": 64, "uniqueItems": true,
-      "items": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/secretToken" }
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/secretToken"
+      }
+    },
+    "assignment": {
+      "type": "object",
+      "properties": {
+        "purpose": {
+          "const": "standalone_export"
+        },
+        "assignmentDigest": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+        },
+        "fileName": {
+          "const": "assignment.json"
+        }
+      },
+      "required": [
+        "purpose",
+        "assignmentDigest",
+        "fileName"
+      ],
+      "additionalProperties": false
     }
   },
-  "required": ["protocolVersion", "organizationId", "workspaceId", "attemptId", "generation",
-    "intentDigest", "specDigest", "offerSha256", "manifestSha256", "deadlineMs",
-    "stagingPolicyVersion", "inputFiles", "secretNames"],
+  "required": [
+    "protocolVersion",
+    "organizationId",
+    "workspaceId",
+    "attemptId",
+    "generation",
+    "intentDigest",
+    "specDigest",
+    "offerSha256",
+    "manifestSha256",
+    "deadlineMs",
+    "stagingPolicyVersion",
+    "inputFiles",
+    "secretNames"
+  ],
   "additionalProperties": false
 }

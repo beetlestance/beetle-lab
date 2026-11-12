@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import { encodeCanonicalJson, validate, validatePrimitive } from '@beetle/contracts';
 import type { Owned, SourceEnvelope } from '@beetle/contracts/output-source';
 import { SOURCE_ENVELOPE_BYTES } from '@beetle/contracts/output-source';
@@ -26,6 +27,7 @@ const natural = (value: number): boolean => Number.isSafeInteger(value) && value
 export function envelope(input: Owned<SourceEnvelope>, original: EventBinding): Owned<SourceEnvelope> {
   const value = snapshot(input, SOURCE_ENVELOPE_BYTES);
   check(validate('SourceEnvelope', value).ok);
+  check(!('purpose' in value.manifest.result));
   const remote = value.manifest.binding;
   check(same(original.key.attempt, {organizationId: remote.organizationId, workspaceId: remote.workspaceId,
     attemptId: remote.attemptId, generation: remote.generation, intentDigest: remote.intentDigest}));
@@ -35,7 +37,7 @@ export function envelope(input: Owned<SourceEnvelope>, original: EventBinding): 
     && receipt.sourceDigest === value.sourceDigest);
   check(same(receipt.key, {organizationId: remote.organizationId, workspaceId: remote.workspaceId,
     attemptId: remote.attemptId, generation: remote.generation}));
-  check(value.manifest.result.artifacts.length <= 128); return value;
+  check(executionArtifacts(value.manifest.result).length <= 128); return value;
 }
 export function artifact(value: OutputArtifactState): void {
   check(natural(value.ordinal) && value.ordinal < 128 && uuid(value.artifactId) && uuid(value.token));
@@ -65,7 +67,7 @@ export function state(input: OutputCustodyState, original: EventBinding): Output
 export function matchedState(value: Extract<OutputCustodyState, {kind: 'adopted'}>, source: Owned<SourceEnvelope>): void {
   check(value.manifestDigest === source.manifest.manifestDigest && value.sourceDigest === source.sourceDigest);
   check(value.finalAgentSeq === source.closure.finalAgentSeq);
-  const declared = source.manifest.result.artifacts; check(value.artifacts.length === declared.length);
+  const declared = executionArtifacts(source.manifest.result); check(value.artifacts.length === declared.length);
   value.artifacts.forEach((item, ordinal) => {
     const expected = declared[ordinal]!;
     check(item.artifactId === expected.artifactId && item.bytes === expected.bytes && item.sha256 === expected.sha256);

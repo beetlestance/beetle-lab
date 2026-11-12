@@ -5,7 +5,7 @@ import * as builder from '../../build/index.js';
 import { startStandaloneBuild } from '../../export/index.js';
 import { suite, directories } from '../export/fixtures.js';
 import { sealExportScript } from '../../wrapper/artifact-custody/index.js';
-import { AttemptFence } from '../../wrapper/attempt/fence.js';
+import { AttemptFence } from '../../wrapper/lifecycle/index.js';
 const directory=directories(); afterEach(() => {vi.restoreAllMocks(); vi.useRealTimers();});
 function deferred<T>() {let resolve!: (value:T)=>void; let reject!: (error:unknown)=>void; const promise=new Promise<T>((yes,no)=>{resolve=yes;reject=no;}); return {promise,resolve,reject};}
 async function pending(value:Promise<unknown>) {let done=false; void value.then(()=>{done=true;},()=>{done=true;}); await Promise.resolve(); await Promise.resolve(); return !done;}

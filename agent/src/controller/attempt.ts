@@ -9,7 +9,7 @@ import { OUTPUT_COLLECTION_MAX_MS } from '../collection/output/index.js';
 import type { OutputCollection, OutputRootIdentity } from '../collection/output/index.js';
 import { copyControlScope } from '../control-protocol/index.js';
 import type { LaunchActor, LaunchState } from '../supervisor/index.js';
-import { collectionAuthority } from './authority.js';
+import { collectionAuthority, collectionOptions, reportedResult } from './authority.js';
 import type { CollectionAuthority } from './authority.js';
 import { CollectionReadBusy, busyActor } from './launch-contention.js';
 import { releaseEvidence } from './release.js';
@@ -187,7 +187,8 @@ export class AttemptController {
   private async finish(state: LaunchState, budget: ControllerBudget): Promise<AttemptProgress> {
     await this.closeReader(); this.guard(budget);
     const snapshot = await this.options.journal.get(this.options.input.key); this.guard(budget);
-    if (!snapshot.result || !this.source.hasCustody && performance.now() >= this.outputDeadline) {
+    const reported=reportedResult(this.authority!,snapshot);
+    if (!reported || !this.source.hasCustody && performance.now() >= this.outputDeadline) {
       if (this.source.hasCustody) throw new ControllerError('journal');
       this.collection = { state: 'failed', observedAt: this.now() };
     } else {
@@ -199,7 +200,7 @@ export class AttemptController {
         return { kind: 'runtime', state };
       }
       this.guard(budget);
-      await this.collect(snapshot.result, checkpoint.offset, budget);
+      await this.collect(reported, checkpoint.offset, budget);
     }
     if (!this.collection) return { kind: 'awaiting_collection', reason: 'busy' };
     return { kind: 'awaiting_release', collection: this.collection!.state };
@@ -269,9 +270,9 @@ export class AttemptController {
     const deadline = Math.min(budget.deadline, performance.now() + OUTPUT_COLLECTION_MAX_MS,
       this.source.recovered ? Infinity : this.outputDeadline);
     if (performance.now() >= deadline) throw new ControllerError('deadline');
-    this.outputs = this.options.collectOutputs({ directory: this.directory(), uid: this.uid(), key: this.options.input.key,
-      engineId: this.authority!.engineId, reportedResult: result, controlBytes, outputBytes: this.authority!.outputBytes,
-      deadline, ...(budget.signal ? { signal: budget.signal } : {}) });
+    this.outputs = this.options.collectOutputs(collectionOptions(this.authority!,{ directory: this.directory(), uid: this.uid(), key: this.options.input.key,
+      reportedResult: result, controlBytes,
+      deadline, ...(budget.signal ? { signal: budget.signal } : {}) }));
     const outcome = await this.originals(this.outputs, () => this.outputs!.close(), true);
     if (!outcome.ok && outcome.reason === 'busy') return;
     if (outcome.ok) this.source.success(outcome, () => this.now());

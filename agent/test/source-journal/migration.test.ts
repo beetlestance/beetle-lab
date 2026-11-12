@@ -1,4 +1,5 @@
 import { migration013 } from '../../src/journal/migration013.js';
+import { migration015 } from '../../src/journal/migration015.js';
 import { migration014 } from '../../src/journal/migration014.js';
 import { CURRENT_JOURNAL_SCHEMA } from '../journal/legacy-fixtures.js';
 import { DatabaseSync } from 'node:sqlite';
@@ -23,6 +24,7 @@ it('applies real migration011 before additive012 without inventing old source au
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
   transaction(db, () => migration013(db));
   transaction(db, () => migration014(db));
+  transaction(db, () => migration015(db));
   expect(new Store(db).execute({ kind: 'outputSourceRead', key, id: 1 })).toBeNull();
 });
 it('rolls back all012 DDL/guards/columns/version on a late table collision', () => {

@@ -1,4 +1,7 @@
 export { createStandaloneExportAssignment, captureStandaloneExportAssignment, exportAssignmentPrefix } from './assignment.js';
-export { sealStandaloneExportResult, verifyStandaloneExportResultSeal, standaloneExportResultSealPreimage, captureStandaloneExportResult, exportResultPrefix } from './result.js';
+export { sealStandaloneExportResult, verifyStandaloneExportResultSeal, standaloneExportResultSealPreimage, captureStandaloneExportResult, captureExportResultForExpectation, exportResultPrefix } from './result.js';
 export { ExportContractError, EXPORT_ASSIGNMENT_BYTES, EXPORT_RESULT_BYTES, EXPORT_CONTROL_BYTES } from './values.js';
 export type { ExportContractCode } from './values.js';
+
+export { captureExportExpectation, exportExpectation } from './expectation.js';
+export type { ExportResultExpectation } from './expectation.js';

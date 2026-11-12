@@ -1,6 +1,6 @@
 # Independent standalone export jobs
 
-Status: assignment/result contract first; full admitted lifecycle remains required.
+Status: private admitted lifecycle verified; [evidence](../../verification/admitted-standalone-export.md). Public metadata/API/UI remain required.
 Owners: shared protocol for immutable values/integrity, engine for compiler/build,
 agent for physical admission/lifetime, metadata for durable intent/artifact publication.
 This extends [engine export](standalone-export.md), not a backend-local build path.

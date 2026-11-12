@@ -1,8 +1,9 @@
 import { createResultSealer } from '../result-seal-core.js';
 import type { ResultDigest } from '../result-seal-core.js';
 import { validate } from '../validate.js';
-import type { StandaloneExportAssignment, StandaloneExportResult } from '../generated/types.js';
-import { captureStandaloneExportAssignment } from './assignment.js';
+import type { StandaloneExportResult } from '../generated/types.js';
+import { captureExportExpectation, exportExpectation } from './expectation.js';
+import type { ExportResultExpectation } from './expectation.js';
 import { ExportContractError, EXPORT_RESULT_BYTES } from './values.js';
 export const exportResultPrefix = 'beetle-lab.standalone-export-result.v1\n';
 const result = createResultSealer({prefix: exportResultPrefix, maximumBytes: EXPORT_RESULT_BYTES, decode(input: unknown) {
@@ -14,14 +15,17 @@ export const standaloneExportResultSealPreimage = result.preimage;
 const same = (left: string, right: string): boolean => left.toLowerCase() === right.toLowerCase();
 /** Binding/integrity only: physical producer admission and native custody are separate. */
 export function captureStandaloneExportResult(input: unknown, expected: unknown, hash: ResultDigest): StandaloneExportResult {
-  const assignment = captureStandaloneExportAssignment(expected, hash);
+  return captureExportResultForExpectation(input,exportExpectation(expected,hash),hash);
+}
+export function captureExportResultForExpectation(input: unknown, expected: unknown, hash: ResultDigest): StandaloneExportResult {
+  const assignment=captureExportExpectation(expected);
   const checked = result.verify(input, hash); if (!checked.ok) throw new ExportContractError('invalid_result');
   const value = checked.value;
-  requireBinding(value, assignment); requireBuildEvidence(value, assignment.options.maximumBuildBytes);
+  requireBinding(value, assignment); requireBuildEvidence(value, assignment.maximumBuildBytes);
   return value;
 }
-function requireBinding(value: StandaloneExportResult, assignment: StandaloneExportAssignment): void {
-  const offer = assignment.offer;
+function requireBinding(value: StandaloneExportResult, assignment: ExportResultExpectation): void {
+  const offer = assignment;
   if (!same(value.exportId, assignment.exportId) || !same(value.attemptId, offer.attemptId) || !same(value.organizationId, offer.organizationId)
     || !same(value.workspaceId, offer.workspaceId) || value.assignmentDigest !== assignment.assignmentDigest) throw new ExportContractError('binding_mismatch');
 }

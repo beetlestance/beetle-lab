@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { expect, it } from 'vitest';
@@ -25,7 +26,7 @@ async function chunk(client: Client, attemptId: string, request: SourceChunkRequ
   return response.value;
 }
 async function transfer(client: Client, e: Evidence, envelope: SourceEnvelope) {
-  const artifact = envelope.manifest.result.artifacts[0]!;
+  const artifact = executionArtifacts(envelope.manifest.result)[0]!;
   expect(artifact.bytes).toBe(131_089);
   const payloads: Buffer[] = []; const lengths: number[] = [];
   for (let offset = 0; offset < artifact.bytes;) {
@@ -41,7 +42,7 @@ async function transfer(client: Client, e: Evidence, envelope: SourceEnvelope) {
   expect(digest(combined)).toBe(digest(e.bytes)); expect(digest(combined)).toBe(artifact.sha256);
   const end = await chunk(client, e.key.attemptId, selector(envelope, artifact.artifactId, artifact.bytes), artifact.bytes);
   expect(end).toMatchObject({ base64: '', nextOffset: artifact.bytes, totalBytes: artifact.bytes, eof: true });
-  const empty = envelope.manifest.result.artifacts[1]!; expect(empty.bytes).toBe(0);
+  const empty = executionArtifacts(envelope.manifest.result)[1]!; expect(empty.bytes).toBe(0);
   const zero = await chunk(client, e.key.attemptId, selector(envelope, empty.artifactId), empty.bytes);
   expect(zero).toMatchObject({ base64: '', nextOffset: 0, totalBytes: 0, eof: true });
   expect(digest(Buffer.from(zero.base64, 'base64'))).toBe(empty.sha256);
@@ -51,7 +52,7 @@ async function transfer(client: Client, e: Evidence, envelope: SourceEnvelope) {
 it('serves actual Journal/native source bytes and closure over authenticated loopback HTTP', async () => {
   const e = await f.prepare(); const journalAuthority = await e.journal.journalAuthority();
   const server = createAgentServer({ credential: 'S'.repeat(64), journalAuthority, journal: e.journal, outputs: e.reader,
-    installation: { enqueue: unused, cancel: unused, cancelOriginal: unused }, capabilities: unused });
+    installation: { cancelExportOriginal: unused, enqueueExport: unused, enqueue: unused, cancel: unused, cancelOriginal: unused }, capabilities: unused });
   try {
     const baseUrl = await server.listen({ host: '127.0.0.1', port: 0 });
     const client = createRunnerClient(createHttpTransport({ baseUrl, maximumBytes: 90_112, timeoutMs: 5000, headers: {

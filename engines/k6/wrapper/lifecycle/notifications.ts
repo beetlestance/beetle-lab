@@ -1,5 +1,5 @@
 import type { ControlEvent } from '@beetle/contracts';
-import type { StagedK6Options } from './types.js';
+export type EventNotification = (event: ControlEvent, signal: AbortSignal) => Promise<void>;
 import type { AttemptFence } from './fence.js';
 
 /** At most one original notification, retained even after its bounded wait expires. */
@@ -7,7 +7,7 @@ export class Notifications {
   status: 'complete' | 'disabled' | 'failed' = 'complete';
   private original: Promise<void> = Promise.resolve();
   private pending = false;
-  constructor(private readonly callback: StagedK6Options['onEvent'], private readonly fence: AttemptFence) {}
+  constructor(private readonly callback: EventNotification | undefined, private readonly fence: AttemptFence) {}
   async send(event: ControlEvent): Promise<void> {
     if (!this.callback || this.status !== 'complete') return;
     const cancel = new AbortController();

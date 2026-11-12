@@ -60,7 +60,7 @@ function eventsCopy(input: unknown, key: Readonly<ControlScope>, after: number):
     const event = checked.value;
     encodeJson(event, CONTROL_FRAME_BYTES - 1);
     assertScope(event, key);
-    if (event.kind === 'engine.result') assertScope(event.payload, key);
+    if ((event.kind === 'engine.result' || event.kind === 'export.result')) assertScope(event.payload, key);
     if (event.seq !== after + events.length + 1) throw new ControlProtocolError();
     freeze(event); events.push(event);
   }

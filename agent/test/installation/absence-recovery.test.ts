@@ -24,7 +24,7 @@ it('replays indexed cold rejection without catalogue/staging and clears debt onl
   const e = await f.setup(); const key = scope(e.offer);
   await e.owner.cancelOriginal({ offer: e.offer, now: e.time.wall() }); await f.close(e.owner);
   const journal = await f.open(e.journalPath); const trap = vi.fn((): never => { throw new Error('unexpected native launch or catalogue'); });
-  const manager = create({ ...e.options, journal, catalog: { engines: [], preflight: trap, resolve: trap }, stagerFor: trap });
+  const manager = create({ ...e.options, journal, catalog: { engines: [], preflightExport: trap, preflight: trap, resolve: trap }, stagerFor: trap });
   expect((await journal.scanRunnable({ lane: 'delivery', limit: 1 })).attempts).toEqual([key]);
   expect(await manager.drive(key, operation())).toEqual({ kind: 'rejected', reason: 'cancelled' });
   expect(await journal.readOutputAbsence(key)).toMatchObject({ admission: { state: 'rejected', reason: 'cancelled' }, finalAgentSeq: 0 });

@@ -28,7 +28,9 @@ it('freezes the complete unique schema closure, public references and operation 
   const pending: unknown[] = [apiSchemas, apiMessageSchemas, apiOperations];
   const ids = apiSchemas.map(schema => schema.$id);
   expect(new Set(ids).size).toBe(ids.length);
-  expect(ids.filter(id => id.includes('/runner/'))).toEqual(['https://beetle-lab.dev/contracts/runner/v1/common']);
+  expect(ids.filter(id => id.includes('/runner/'))).toEqual(
+    ['common', 'engine-result', 'export-result', 'result-evidence', 'result-execution', 'agent-event',
+      'event-envelope', 'wrapper-events', 'supervisor-events'].map(name => `https://beetle-lab.dev/contracts/runner/v1/${name}`));
   while (pending.length) {
     const value = pending.pop();
     if (value === null || typeof value !== 'object') continue;

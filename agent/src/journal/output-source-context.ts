@@ -1,9 +1,10 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { verifyEngineResultSeal } from '@beetle/contracts';
-import type { EngineResult } from '@beetle/contracts';
+import { verifyEngineResultSeal, captureStandaloneExportResult, executionEngineId, RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
+import type { ExecutionResult } from '@beetle/contracts';
 import type { Scope, Reservation } from '../admission/index.js';
 import { captureCollectionIntent, verifyOutputSource, OUTPUT_COLLECTION_INTENT_BYTES, OUTPUT_SOURCE_BYTES } from '../output-source/index.js';
 import type { CollectionIntent, PrivateSource, SourceBinding } from '../output-source/index.js';
+import { readExport } from './export-assignment.js';
 import { readJournalAuthority } from './authority.js';
 import { readWrapperCheckpoint } from './checkpoint.js';
 import { admissionSnapshot } from './admission-snapshot.js';
@@ -49,17 +50,16 @@ export function original(db: DatabaseSync, key: Scope) {
     THEN reservation_json ELSE NULL END AS json FROM reservations WHERE attempt_id=?`).get(row.attempt_id);
   requireSource(typeof stored?.json === 'string', 'unavailable');
   const reservation = JSON.parse(stored.json) as Reservation;
-  const offer = db.prepare(`SELECT CASE WHEN json_valid(offer_json) AND length(CAST(offer_json AS BLOB))<=1048576
+  const offer = db.prepare(`SELECT CASE WHEN json_valid(offer_json) AND length(CAST(offer_json AS BLOB))<=${RUNNER_MAXIMUM_OFFER_BYTES}
     THEN json_extract(offer_json,'$.engine') END AS engine,
-    CASE WHEN json_valid(offer_json) AND length(CAST(offer_json AS BLOB))<=1048576
+    CASE WHEN json_valid(offer_json) AND length(CAST(offer_json AS BLOB))<=${RUNNER_MAXIMUM_OFFER_BYTES}
     THEN json_extract(offer_json,'$.installedIdentity') END AS installed FROM accepted_attempts WHERE id=?`).get(row.id);
   requireSource(typeof offer?.engine === 'string' && typeof offer.installed === 'string', 'unavailable');
   checkHold(db, row, reservation);
   const checkpoint = readWrapperCheckpoint(db, key);
-  requireSource(checkpoint && checkpoint.wrapperSeq === row.wrapper_high && row.result_json !== null, 'unavailable');
-  const result = verifyEngineResultSeal(parseSourceJson(row.result_json, 65_536), sourceHash);
-  requireSource(result.ok, 'unavailable');
-  return { row, reservation, checkpoint, result: result.value, engine: JSON.parse(offer.engine) as unknown,
+  requireSource(checkpoint && checkpoint.wrapperSeq === row.wrapper_high,'unavailable');
+  const result=originalResult(db,key,row);
+  return { row, reservation, checkpoint, result, engine: JSON.parse(offer.engine) as unknown,
     installedIdentity: JSON.parse(offer.installed) as unknown, authority: readJournalAuthority(db) };
 }
 function checkHold(db: DatabaseSync, row: Row, reservation: Reservation): void {
@@ -79,9 +79,9 @@ export function matchOriginal(db: DatabaseSync, intent: CollectionIntent) {
     && value.reservation.specDigest === binding.specDigest, 'conflict');
   resultScope(value.result, binding); return value;
 }
-function resultScope(result: EngineResult, binding: SourceBinding): void {
+function resultScope(result: ExecutionResult, binding: SourceBinding): void {
   for (const key of ['organizationId', 'workspaceId', 'attemptId', 'generation'] as const) requireSource(result[key] === binding[key], 'conflict');
-  requireSource(result.engineId === binding.engine.id, 'conflict');
+  requireSource(executionEngineId(result) === binding.engine.id, 'conflict');
 }
 export function matchIntent(source: PrivateSource, intent: CollectionIntent, reservation: Reservation): void {
   requireSource(sameSource(source.manifest.binding, intent.binding) && sameSource(source.root, intent.root)
@@ -114,4 +114,14 @@ export function readSourceState(db: DatabaseSync, key: Scope): SourceState {
     } else requireSource(intent.phase === 'pending' && reservation.status === 'charged', 'unavailable');
     return { row, intent, source, reservation };
   } catch { throw new Failure('unavailable'); }
+}
+
+function originalResult(db:DatabaseSync,key:Scope,row:Row):ExecutionResult {
+  const assignment=readExport(db,key);
+  const json=assignment ? row.export_result_json : row.result_json;
+  requireSource(typeof json === 'string','unavailable');
+  const result = assignment ? {ok:true as const,value:captureStandaloneExportResult(parseSourceJson(json,8192),assignment,sourceHash)}
+    : verifyEngineResultSeal(parseSourceJson(json,65_536),sourceHash);
+  requireSource(result.ok, 'unavailable');
+  return result.value;
 }

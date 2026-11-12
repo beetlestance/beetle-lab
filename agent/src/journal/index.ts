@@ -1,9 +1,10 @@
+import { captureExport } from './export-assignment.js';
 import { copyWrapperBatch } from '../control-protocol/index.js';
 import type { WrapperBatch, WrapperCheckpoint } from '../control-protocol/index.js';
 export type { WrapperBatch, WrapperCheckpoint, WrapperCursor } from '../control-protocol/index.js';
 import { isJournalAuthority } from './authority.js';
 import { Worker } from 'node:worker_threads';
-import type { Ack, AckReceipt, AgentEvent, AttemptSnapshot, ControlEvent, EventBatch, Offer } from '@beetle/contracts';
+import type { Ack, AckReceipt, AgentEvent, AttemptSnapshot, ControlEvent, EventBatch, Offer, StandaloneExportAssignment } from '@beetle/contracts';
 import { ackInput, cursorInput, DEFAULT_QUOTA_BYTES, eventInput, generationKey } from './event-input.js';
 import { attemptKey, offerInput, pageInput, runnableInput } from './input.js';
 import type { RunnablePage, RunnableRequest } from './protocol.js';
@@ -24,7 +25,7 @@ import { captureCollectionIntent, prepareOutputSource, receiptForOutputSource, c
   sourceHash, sourceJson, sourceCaps, sameSource, sourceScope, intentReply, sourceReply, reservationReply } from './output-source-input.js';
 import { admissionInput, isOfferCommand } from './admission-input.js';
 import { checkedSupervision } from './supervision.js';
-import { captureCancelledOriginal } from './cancel-original-input.js';
+import { captureCancelledOriginal, captureCancelledExportOriginal } from './cancel-original-input.js';
 import type { SupervisionCommand, SupervisionState } from './protocol.js';
 export type { StopReason, SupervisionCommand, SupervisionState } from './protocol.js';
 import type { AttemptKey, ErrorCode, GenerationKey, Operation, PageRequest, PruneReceipt, Reply, SnapshotPage, SourceCursors, SupervisorInput, Value } from './protocol.js';
@@ -59,7 +60,7 @@ function validateOptions(options: JournalOptions): void {
 function largeOperation(operation: Operation): boolean {
   return ['outputCollectionBegin', 'outputCollectionRead', 'outputSourceCommit', 'outputSourceRead', 'outputSourceRelease', 'outputCollectionFailed',
     'outputDeliveryClose', 'outputDeliveryRead', 'outputAbsenceClose', 'outputAbsenceRead'].includes(operation.kind)
-    || operation.kind === 'offer' || operation.kind === 'cancelOriginal' || operation.kind === 'read'
+    || operation.kind === 'offer' || operation.kind === 'cancelOriginal' || operation.kind === 'read' || operation.kind === 'readExportAssignment'
     || operation.kind === 'admission' && operation.request.kind === 'offer';
 }
 
@@ -114,6 +115,9 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
   /** Captures one original and trusted local time; shares Offer's two large credits. */
   cancelOriginal(input: { offer: unknown; now: number }): Promise<AttemptSnapshot> {
     return this.prepare(() => ({ kind: 'cancelOriginal', ...captureCancelledOriginal(input) }), true) as Promise<AttemptSnapshot>;
+  }
+  cancelExportOriginal(input: {assignment:unknown;now:number}): Promise<AttemptSnapshot> {
+    return this.prepare(()=>({kind:'cancelOriginal',...captureCancelledExportOriginal(input)}),true) as Promise<AttemptSnapshot>;
   }
   /** Trusted supervisor/composition boundary; never expose as a wrapper or browser API. */
   admission(input: AdmissionCommand): Promise<AdmissionValue> {
@@ -186,6 +190,11 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
   }
   readOffer(key: AttemptKey): Promise<Offer> {
     return this.prepare(() => ({ kind: 'read', key: attemptKey(key) }), true) as Promise<Offer>;
+  }
+  async readExportAssignment(key: AttemptKey): Promise<StandaloneExportAssignment | null> {
+    const value=await this.prepare(() => ({kind:'readExportAssignment',key:attemptKey(key)}),true);
+    if (value === null) return null;
+    try {return captureExport(value);} catch {this.fail('unavailable');throw new JournalError('unavailable');}
   }
   durableCancel(key: AttemptKey): Promise<AttemptSnapshot> {
     return this.prepare(() => ({ kind: 'cancel', key: attemptKey(key) })) as Promise<AttemptSnapshot>;

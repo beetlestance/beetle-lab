@@ -1,3 +1,4 @@
+import { EXPORT_ASSIGNMENT_BYTES } from '@beetle/contracts';
 import Fastify from 'fastify';
 import { RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -37,8 +38,8 @@ function query(request: FastifyRequest, cursor = false): number {
 function ingressRoute(request: FastifyRequest): 'source' | 'live' | 'offer' | undefined {
   if (sourceRoute(request)) return 'source';
   if (liveRoute(request)) return 'live';
-  if ((request.method === 'PUT' && request.routeOptions.url === '/runner/v1/attempts/:attemptId')
-    || (request.method === 'POST' && request.routeOptions.url === '/runner/v1/attempts/:attemptId/cancel-original')) return 'offer';
+  if ((request.method === 'PUT' && (request.routeOptions.url === '/runner/v1/attempts/:attemptId' || request.routeOptions.url === '/runner/v1/attempts/:attemptId/export'))
+    || (request.method === 'POST' && (request.routeOptions.url === '/runner/v1/attempts/:attemptId/cancel-original' || request.routeOptions.url === '/runner/v1/attempts/:attemptId/export/cancel-original'))) return 'offer';
   return undefined;
 }
 function ingress(server: FastifyInstance, identity: RequestIdentity, operations: RequestWork, offers: OfferIngress): void {
@@ -95,6 +96,20 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
     if (!result.accepted) throw new AgentHttpError(result.decision.kind === 'defer' ? 429 : 422,
       'budget_unavailable', result.decision.kind === 'defer' ? 'transport' : 'never');
     sendJson(reply, 202, 'AttemptSnapshot', result.snapshot, scope);
+  });
+  server.put('/runner/v1/attempts/:attemptId/export', {bodyLimit:EXPORT_ASSIGNMENT_BYTES},async(request,reply)=>{
+    query(request);const scope=key(request);const body=requestBody('StandaloneExportAssignment',request.body);
+    bodyMatches(scope,scope.attemptId,body.offer);
+    if (scope.generation !== 1) throw new AgentHttpError(409,'conflicting_digest');
+    const result=await offers.run(request,()=>work(()=>services.installation.enqueueExport(body)));
+    if (!result.accepted) throw new AgentHttpError(result.decision.kind === 'defer' ? 429 : 422,'budget_unavailable',result.decision.kind === 'defer' ? 'transport':'never');
+    sendJson(reply,202,'AttemptSnapshot',result.snapshot,scope);
+  });
+  server.post('/runner/v1/attempts/:attemptId/export/cancel-original',{bodyLimit:EXPORT_ASSIGNMENT_BYTES},async(request,reply)=>{
+    query(request);const scope=key(request);const body=requestBody('StandaloneExportAssignment',request.body);bodyMatches(scope,scope.attemptId,body.offer);
+    if (scope.generation !== 1) throw new AgentHttpError(409,'conflicting_digest');
+    const result=await offers.run(request,()=>work(()=>services.installation.cancelExportOriginal(body)));
+    sendJson(reply,200,'AttemptSnapshot',result,scope);
   });
   server.post('/runner/v1/attempts/:attemptId/cancel-original', { bodyLimit: RUNNER_MAXIMUM_OFFER_BYTES }, async (request, reply) => {
     query(request); const scope = key(request); const body = requestBody('Offer', request.body);

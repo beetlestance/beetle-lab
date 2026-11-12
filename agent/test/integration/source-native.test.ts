@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import { createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { lstat, readFile } from 'node:fs/promises';
@@ -29,7 +30,7 @@ it('composes actual collector, compiled Journal, native ranges and source servic
     { seq: 1, kind: 'admitted', source: 'agent' }, { seq: 2, kind: 'engine.result', source: 'wrapper' }]);
   expect(events.events[1]).toMatchObject({ wrapperSeq: 1, payload: e.result });
   expect(events.nextCursor).toBe(2); expect(envelope.closure).toMatchObject({ receipt: e.receipt, finalAgentSeq: 2 });
-  expect(Object.isFrozen(envelope.manifest.result.artifacts)).toBe(true);
+  expect(Object.isFrozen(executionArtifacts(envelope.manifest.result))).toBe(true);
   const text = encodeJson(envelope, 75_776);
   for (const field of ['root', 'directory', 'checkpoint', 'release', 'createToken', 'runtimeId', 'modifiedNs', 'changedNs']) expect(text).not.toContain(`"${field}"`);
   expect(text).not.toContain(e.files.directory()); expect(text).not.toContain(e.path);
@@ -43,7 +44,7 @@ it('composes actual collector, compiled Journal, native ranges and source servic
   expect(JSON.parse(resultBytes.toString('utf8'))).toEqual(e.result);
   expect(e.collection.verifiedBytes).toBe(resultBytes.length + controlBytes.length + e.bytes.length);
   const payloads: Buffer[] = []; const lengths: number[] = [];
-  const artifact = envelope.manifest.result.artifacts[0]!;
+  const artifact = executionArtifacts(envelope.manifest.result)[0]!;
   for (let offset = 0; offset < artifact.bytes;) {
     const request = selector(envelope, artifact.artifactId, offset); const reply = await e.reader.chunk(e.key, request, operation());
     expect(verifySourceChunk(reply, request, artifact.bytes)).toEqual(reply); expect(encodeJson(reply, 90_112)).toBeTruthy();
@@ -56,7 +57,7 @@ it('composes actual collector, compiled Journal, native ranges and source servic
   expect(digest(combined)).toBe(digest(e.bytes)); expect(digest(combined)).toBe(artifact.sha256);
   const end = await e.reader.chunk(e.key, selector(envelope, artifact.artifactId, artifact.bytes), operation());
   expect(end).toMatchObject({ base64: '', nextOffset: artifact.bytes, totalBytes: artifact.bytes, eof: true });
-  const empty = envelope.manifest.result.artifacts[1]!; expect(empty.bytes).toBe(0);
+  const empty = executionArtifacts(envelope.manifest.result)[1]!; expect(empty.bytes).toBe(0);
   expect(await e.reader.chunk(e.key, selector(envelope, empty.artifactId), operation())).toMatchObject({ base64: '', nextOffset: 0, totalBytes: 0, eof: true });
   expect(digest(await readFile(e.files.path(empty.relativePath)))).toBe(empty.sha256);
   expect(await e.journal.readOutputDelivery(e.key)).toEqual(e.closure);
@@ -69,7 +70,7 @@ it('reopens the same physical source/closure and refuses stale selectors before 
   const reader = createOutputSourceReader({ journal, readRange: native }); const envelope = await reader.source(e.key, operation());
   expect(envelope).toEqual(before); expect(await journal.journalAuthority()).toBe(before.manifest.binding.journalAuthority);
   expect(await journal.readOutputCollection(e.key)).toEqual(e.intent); expect(await journal.readOutputDelivery(e.key)).toEqual(e.closure);
-  const request = selector(envelope, envelope.manifest.result.artifacts[0]!.artifactId);
+  const request = selector(envelope, executionArtifacts(envelope.manifest.result)[0]!.artifactId);
   for (const field of ['manifestDigest', 'sourceDigest', 'artifactId'] as const) {
     const stale = { ...request, [field]: field === 'artifactId' ? 'ffffffff-ffff-4fff-8fff-ffffffffffff' : 'f'.repeat(64) };
     await expect(reader.chunk(e.key, stale, operation())).rejects.toMatchObject({ code: 'conflict' });

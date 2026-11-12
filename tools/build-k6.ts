@@ -23,7 +23,7 @@ for (const owner of ['runtime', 'plan']) {
 
 // Keep esbuild external: its runtime selects the installed platform binary.
 // The bundled builder resolves runtime/plan relative to dist/bootstrap/main.js.
-await build({ entry: { main: 'engines/k6/bootstrap/main.ts' }, outDir: 'engines/k6/dist/bootstrap',
+await build({ entry: { main: 'engines/k6/bootstrap/main.ts', 'export-main':'engines/k6/bootstrap/export-main.ts' }, outDir: 'engines/k6/dist/bootstrap',
   format: ['esm'], platform: 'node', target: 'node24', bundle: true,
   noExternal: [/^(?!esbuild$).*/], external: ['esbuild'], shims: true,
   removeNodeProtocol: false, splitting: false, clean: false,

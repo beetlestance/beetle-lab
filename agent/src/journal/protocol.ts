@@ -1,4 +1,4 @@
-import type { Ack, AckReceipt, AgentEvent, AttemptSnapshot, EventBatch, Offer } from '@beetle/contracts';
+import type { Ack, AckReceipt, AgentEvent, AttemptSnapshot, EventBatch, Offer, StandaloneExportAssignment } from '@beetle/contracts';
 import type { WrapperBatch, WrapperCheckpoint } from '../control-protocol/index.js';
 import type { AdmissionCommand, AdmissionValue } from '../admission/index.js';
 import type { CollectionIntent, PrivateSource, SourceReceipt } from '../output-source/index.js';
@@ -42,8 +42,8 @@ export type Operation = OutputSourceOperation | OutputDeliveryOperation | Output
   | { kind: 'supervision'; request: SupervisionCommand }
   | { kind: 'admission'; request: AdmissionCommand }
   | { kind: 'offer'; json: string; canonical: string }
-  | { kind: 'cancelOriginal'; json: string; canonical: string; now: number }
-  | { kind: 'get' | 'cancel' | 'read'; key: AttemptKey }
+  | { kind: 'cancelOriginal'; json: string; canonical: string; now: number; assignment?:StandaloneExportAssignment }
+  | { kind: 'get' | 'cancel' | 'read' | 'readExportAssignment'; key: AttemptKey }
   | { kind: 'list'; page: PageRequest }
   | { kind: 'runnable'; page: RunnableRequest }
   | { kind: 'append'; event: EventInput }
@@ -52,7 +52,7 @@ export type Operation = OutputSourceOperation | OutputDeliveryOperation | Output
   | { kind: 'prune' | 'sources'; key: GenerationKey }
   | { kind: 'close' };
 export type Command = Operation & { id: number };
-export type Value = AttemptSnapshot | SnapshotPage | RunnablePage | Offer | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | CollectionIntent | PrivateSource | SourceReceipt | OutputDeliveryClosure | OutputAbsence | string | null;
+export type Value = AttemptSnapshot | SnapshotPage | RunnablePage | Offer | StandaloneExportAssignment | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | CollectionIntent | PrivateSource | SourceReceipt | OutputDeliveryClosure | OutputAbsence | string | null;
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; id: number; ok: true; value: Value } |
   { kind: 'result'; id: number; ok: false; code: ErrorCode; recovery?: AttemptSnapshot };

@@ -55,7 +55,7 @@ it.each(['root', 'runtime', 'result', 'budget', 'chronology'] as const)('rejects
   const e = await f.seed(); await e.journal.beginOutputCollection(e.intent); const value = structuredClone(e.collected);
   if (kind === 'root') value.collection.custody.root.directory = '/synthetic/replaced';
   if (kind === 'runtime') value.release.runtime.evidenceId = 'wrong-runtime';
-  if (kind === 'result') value.collection.value.artifacts.reverse();
+  if (kind === 'result') {const result=value.collection.value;if ('purpose' in result) throw new Error('Expected performance fixture');result.artifacts.reverse();}
   if (kind === 'budget') { value.collection.custody.resultFileBytes = 1_048_576; value.collection.verifiedBytes += 1_048_576 - e.collected.collection.custody.resultFileBytes; }
   if (kind === 'chronology') value.release.collection.observedAt = e.intent.begunAt - 1;
   if (kind === 'result') {

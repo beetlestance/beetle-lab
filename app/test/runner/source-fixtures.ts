@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import { EventEmitter } from 'node:events';
 import type { ClientRequest, IncomingMessage, RequestOptions } from 'node:http';
 import type { Socket } from 'node:net';
@@ -27,7 +28,7 @@ export function originalIdentity(): RunnerAttemptIdentity {
 export function selector(offset = 0, length = 32): SourceChunkRequest {
   const value = envelope();
   return { version: 1, manifestDigest: value.manifest.manifestDigest, sourceDigest: value.sourceDigest,
-    artifactId: value.manifest.result.artifacts[0]!.artifactId, offset, length };
+    artifactId: executionArtifacts(value.manifest.result)[0]!.artifactId, offset, length };
 }
 export function chunk(bytes = Buffer.alloc(32, 7), request = selector(), total = 32): SourceChunk {
   const { length, ...selected } = request; void length;

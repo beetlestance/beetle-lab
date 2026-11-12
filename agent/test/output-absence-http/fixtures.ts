@@ -24,7 +24,7 @@ export function snapshot(): AttemptSnapshot {
 export const unused = async (): Promise<never> => { throw new Error('Unexpected service call'); };
 export function server(options: Partial<AgentHttpOptions> = {}, absence = true) {
   return createAgentServer({ credential: 'S'.repeat(64), journalAuthority: authority,
-    installation: { enqueue: unused, cancel: unused, cancelOriginal: unused }, capabilities: unused,
+    installation: { cancelExportOriginal: unused, enqueueExport: unused, enqueue: unused, cancel: unused, cancelOriginal: unused }, capabilities: unused,
     journal: { get: async () => snapshot(), readEvents: unused, acknowledge: unused },
     ...(absence ? { absences: { readOutputAbsence: async () => proof() } } : {}), ...options });
 }

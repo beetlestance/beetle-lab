@@ -14,7 +14,7 @@ export function persistRefusal(db: DatabaseSync, input: {
   quota: number;
 }): Decision {
   const { request, metadata, decision, quota } = input;
-  offerAtomic(db, offerInput(request.offer), quota);
+  offerAtomic(db, offerInput(request.offer), quota, request.assignment);
   db.prepare('INSERT INTO admission_queue(attempt_id,candidate_json,pending,decision_json) VALUES (?,?,0,?)')
     .run(request.offer.attemptId, encodeJson(metadata, 16_384), encodeJson(decision, 512));
   // Reuse the read authority before commit; unrepresentable facts roll back together.

@@ -12,7 +12,7 @@ export interface AgentHttpOptions {
   readonly credential: string;
   /** Immutable UUID of the exclusively opened journal, bound before serving. */
   readonly journalAuthority: string;
-  readonly installation: Pick<InstallationController, 'enqueue' | 'cancel' | 'cancelOriginal'>;
+  readonly installation: Pick<InstallationController, 'enqueue' | 'enqueueExport' | 'cancel' | 'cancelOriginal' | 'cancelExportOriginal'>;
   readonly journal: Pick<Journal, 'get' | 'readEvents' | 'acknowledge'>;
   /** Source adapter is explicit; absent service returns a scoped unavailable error. */
   readonly liveMetrics?: (key: Scope, operation: Operation) => Promise<LiveMetricRead>;

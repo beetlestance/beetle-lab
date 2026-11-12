@@ -21,7 +21,7 @@ export function fixture() {
     });
     const cancelOriginal = vi.fn(async (offer: unknown) => journal.cancelOriginal({ offer, now: Date.now() }));
     const events = vi.fn(journal.readEvents.bind(journal));
-    const options: AgentHttpOptions = { credential, journalAuthority: capabilities.journalAuthority, installation: { enqueue, cancel, cancelOriginal },
+    const options: AgentHttpOptions = { credential, journalAuthority: capabilities.journalAuthority, installation: { cancelExportOriginal:async()=>{throw new Error('unexpected_export');}, enqueueExport:async()=>{throw new Error('unexpected_export');}, enqueue, cancel, cancelOriginal },
       journal: { get: input => journal.get(input), readEvents: events, acknowledge: input => journal.acknowledge(input) },
       capabilities: () => cap() };
     const server = createAgentServer(options); servers.push(server);

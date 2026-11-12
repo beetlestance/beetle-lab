@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
-import { encodeJson, validate } from '@beetle/contracts';
+import { encodeJson, validate, EXPORT_ASSIGNMENT_BYTES } from '@beetle/contracts';
 import type { StagedAttempt } from '@beetle/contracts';
 import { serializeStagedOffer, stagingPolicy } from '../admission/index.js';
 import { prepareRuntime, runtimeName } from '../backends/docker/index.js';
@@ -30,7 +30,8 @@ export async function prepareFiles(input: { options: StagerOptions; request: Pre
   const taskRoot = join(options.profile.stagingRoot, name);
   const staged = freeze({ input: join(taskRoot, 'input'), output: join(taskRoot, 'output'), secrets: join(taskRoot, 'secrets') });
   const prepared = prepareRuntime({ offer: authorized.offer, manifest: options.manifest,
-    profile: options.profile, generation: request.key.generation, staged });
+    profile: options.profile, generation: request.key.generation, staged,
+    ...(authorized.assignment ? {assignment:{purpose:'standalone_export',assignmentDigest:authorized.assignment.assignmentDigest}} : {}) });
   if (!prepared.ok || prepared.value.name !== name) throw new StagingError('invalid_input');
   const plan = prepared.value;
   checkPlan(plan, authorized, options);
@@ -43,6 +44,7 @@ export async function prepareFiles(input: { options: StagerOptions; request: Pre
   const offerBytes = utf8(serializeStagedOffer(authorized.offer));
   const manifestBytes = utf8(encodeJson(options.manifest, stagingPolicy.manifestBytes));
   await files.file(staged.input, 'offer.json', bytes(offerBytes), authorized.reservation.staging.offerBytes);
+  if (authorized.assignment) await files.file(staged.input,'assignment.json',bytes(utf8(encodeJson(authorized.assignment,EXPORT_ASSIGNMENT_BYTES))),authorized.reservation.staging.assignmentBytes!);
   await files.file(staged.input, 'manifest.json', bytes(manifestBytes), stagingPolicy.manifestBytes);
   await files.syncDirectories(); await check();
   const metadata = stagedMetadata({ authorized, plan, offerBytes, manifestBytes });
@@ -89,6 +91,7 @@ function stagedMetadata(input: { authorized: Authorized; plan: RuntimePlan; offe
   const metadata = { protocolVersion: '1.0' as const, organizationId: offer.organizationId, workspaceId: offer.workspaceId,
     attemptId: offer.attemptId, generation: authorized.authority.generation, intentDigest: offer.intentDigest,
     specDigest: plan.specDigest, offerSha256: digest(input.offerBytes), manifestSha256: digest(input.manifestBytes),
+    ...(authorized.assignment ? {assignment:{purpose:'standalone_export' as const,assignmentDigest:authorized.assignment.assignmentDigest,fileName:'assignment.json' as const}} : {}),
     deadlineMs: authorized.deadlineMs, stagingPolicyVersion: 1 as const,
     inputFiles: offer.inputs.map((reference, index) => ({ inputId: reference.id, fileName: `input-${String(index).padStart(3, '0')}.bin` })),
     secretNames: (offer.secretReferences ?? []).map(secret => secret.name) };

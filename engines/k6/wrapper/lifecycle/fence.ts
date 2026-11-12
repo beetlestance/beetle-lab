@@ -1,7 +1,7 @@
 import type { StagedHeaders } from '../input/index.js';
 import type { ExecutionClock } from '../execution/index.js';
-import { AttemptError } from './types.js';
-import type { AttemptReason } from './types.js';
+import { AttemptError } from '../failure/index.js';
+import type { AttemptReason } from '../failure/index.js';
 
 /** One sticky original deadline across phases. Timers cancel, never certify IO stop. */
 export class AttemptFence {

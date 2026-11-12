@@ -3,11 +3,12 @@
   "sources": {
     "runner/v1/common.schema.json": "2087962245fd73028f8707cea8a26809b3f94d6b412c8462c1eaf29fc8a32482",
     "runner/v1/engine-result.schema.json": "5e527c42e7f1c014aec1b4fcb235a3399b63e6039b1bddf2c254ca2698b0d744",
+    "runner/v1/export-result.schema.json": "4450dd96c98c68118c41c1fc3d22114e39122583225d69e73c2fef81faae363c",
     "runner/v1/result-evidence.schema.json": "c71bcce9bb9a3fe480c85012d9e4d4f9797b5152f65c6d6dbacbdd46cf9c2783",
     "runner/v1/result-execution.schema.json": "7afacbde6ec0e8ecd77ccc556d5819bd02bffb825002a25b265ee02241a245b3",
     "runner/v1/agent-event.schema.json": "063ad52fb49ddcb837e7c348d37350ddb00f44de3e5a7ff302d4657525f113d6",
     "runner/v1/event-envelope.schema.json": "bae38be39e49c90793ffa73bb514f5bed15139a1dc14e3a15e34c93ad8f6e7b3",
-    "runner/v1/wrapper-events.schema.json": "b14590f134d092d5e926f24492222d8eb27d437226fa670564ff83bb27665f1f",
+    "runner/v1/wrapper-events.schema.json": "3a9dfb19a15dee2d5a05d0d6036f644bb43102f72e36e2fcf91280da52edd1bc",
     "runner/v1/supervisor-events.schema.json": "c55be82182f18875f3902b106a1c6d14655dda64e9f70509d5126fb7b2e2d62a",
     "api/v2/common.schema.json": "07b2d5deb2276604678386fa60795643a17cb5be5cd6b913eb4097ce74c99266",
     "api/v2/input-requests.schema.json": "e5970ad4ad54d9f229436e83b6e8cededa3eccab878554f2896c19c927de3897",

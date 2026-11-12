@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import { vi } from 'vitest';
 import { createHash } from 'node:crypto';
 import { sealEngineResult } from '@beetle/contracts';
@@ -16,7 +17,8 @@ export { pending } from '../files/output-bytes/fixture.js';
 export const id = (value: number) => `00000000-0000-4000-8000-${String(value).padStart(12, '0')}`;
 export function fileJob<T>(value: T): OutputFileJob<T> {return {result: Promise.resolve(value), settled: Promise.resolve()};}
 function singleSource(): SourceEnvelope {
-  const source = vector(); const {seal, ...body} = source.manifest.result;
+  const source = vector(); if ('purpose' in source.manifest.result) throw new Error('Expected performance fixture');
+  const {seal, ...body} = source.manifest.result;
   const hash = (text: string) => createHash('sha256').update(text).digest('hex');
   const result = sealEngineResult({...body, artifacts: body.artifacts.slice(0, 1)}, seal.sealedAt, hash);
   if (!result.ok) throw new Error('Invalid synthetic source');
@@ -35,7 +37,7 @@ export function fixture() {
     identity: published ? 'e'.repeat(64) : 'd'.repeat(64)});
   function adopted(): Extract<OutputCustodyState, {kind: 'adopted'}> {
     return {kind: 'adopted', binding, version: 1, manifestDigest: source.manifest.manifestDigest, sourceDigest: source.sourceDigest,
-      finalAgentSeq: source.closure.finalAgentSeq, artifacts: source.manifest.result.artifacts.map((a, ordinal) => ({ordinal,
+      finalAgentSeq: source.closure.finalAgentSeq, artifacts: executionArtifacts(source.manifest.result).map((a, ordinal) => ({ordinal,
         artifactId: a.artifactId, token: id(100 + ordinal), bytes: a.bytes, sha256: a.sha256,
         offset: 0, phase: 'transferring', identity: null, writer: null, version: 1}))};
   }

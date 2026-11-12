@@ -29,7 +29,7 @@ export class Files {
   private fileClose: Promise<void> | undefined;
   private closing: Promise<void> | undefined;
   constructor(private readonly profile: Profile, private readonly budget: Budget, private readonly io: PublicationIo) {
-    this.target = join(profile.directory, 'engine-result.json');
+    this.target = join(profile.directory, profile.relativePath);
   }
   async open(): Promise<void> {
     this.budget.check();
@@ -39,7 +39,7 @@ export class Files {
     this.budget.check(); this.parentIdentity = await this.parent.stat(); this.budget.check();
     await this.checkDirectory();
     this.budget.check();
-    this.path = join(this.profile.directory, '.engine-result.pending-' + randomUUID());
+    this.path = join(this.profile.directory, '.'+this.profile.relativePath+'.pending-' + randomUUID());
     this.pending = await this.io.open(this.path, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL
       | constants.O_NOFOLLOW | constants.O_NONBLOCK, 0o600);
     this.budget.check(); this.fileIdentity = await this.pending.stat(); this.budget.check();

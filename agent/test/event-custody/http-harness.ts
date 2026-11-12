@@ -30,7 +30,7 @@ export class HttpHarness {
     if (this.server) throw new Error('Server already open');
     const unexpected = async (): Promise<never> => { throw new Error('Unexpected installation/execution call'); };
     const server = createAgentServer({ credential: 'S'.repeat(64), journalAuthority: await this.journal.journalAuthority(),
-      journal: this.journal, installation: { enqueue: unexpected, cancel: unexpected, cancelOriginal: unexpected }, capabilities: unexpected });
+      journal: this.journal, installation: { cancelExportOriginal: unexpected, enqueueExport: unexpected, enqueue: unexpected, cancel: unexpected, cancelOriginal: unexpected }, capabilities: unexpected });
     this.server = server;
     server.server.prependListener('request', request => {
       try { this.arrival(request); }

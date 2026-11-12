@@ -63,7 +63,7 @@ async function stage(context: DriveContext, entry: Entry, offer: Offer, current:
   try {
     executionGuard(context, entry, budget);
     let engine: ReturnType<InstallationOptions['catalog']['resolve']>;
-    try { engine = context.options.catalog.resolve(offer, current.validation); }
+    try { engine = context.options.catalog.resolve(offer, current.validation, await context.options.journal.readExportAssignment(entry.key)); }
     catch {
       const progress = { kind: 'rejected' as const, reason: 'installed_identity' };
       await context.retire(entry, progress); return progress;
@@ -90,7 +90,7 @@ async function planFor(context: DriveContext, entry: Entry, offer: Offer | undef
   budget: Operation): Promise<RuntimePlan | DriveProgress> {
   if (entry.plan) return entry.plan;
   if (!offer) throw new InstallationError('journal');
-  const prepared = current.createToken ? recover(context.options.catalog, offer, current)
+  const prepared = current.createToken ? recover(context.options.catalog, offer, current, await context.options.journal.readExportAssignment(entry.key))
     : await stage(context, entry, offer, current, budget);
   if (!('kind' in prepared)) entry.plan = prepared;
   return prepared;
@@ -183,8 +183,11 @@ async function boundReservation(context: DriveContext, entry: Entry, offer: Offe
   pendingReservation(intent, current);
   try {
     if (!offer) throw new InstallationError('catalog');
-    if (current) context.options.catalog.resolve(offer, current.validation);
-    else context.options.catalog.preflight(offer);
+    if (current) context.options.catalog.resolve(offer, current.validation, await context.options.journal.readExportAssignment(entry.key));
+    else {
+      const assignment=await context.options.journal.readExportAssignment(entry.key);
+      if (assignment) context.options.catalog.preflightExport(assignment); else context.options.catalog.preflight(offer);
+    }
   } catch {
     if (intent) throw new InstallationError('catalog');
     const progress = { kind: 'rejected' as const, reason: 'installed_identity' };

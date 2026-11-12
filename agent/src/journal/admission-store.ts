@@ -74,7 +74,7 @@ export class AdmissionStore {
     if (current.kind === 'reject') return persistRefusal(this.db, { request, metadata, decision: current, quota: this.quota });
     const count = Number(this.db.prepare('SELECT count(*) AS n FROM admission_queue WHERE pending=1').get()?.n);
     if (count >= 1024) return { kind: 'defer', reason: 'pending_full' };
-    offerAtomic(this.db, offerInput(offer), this.quota);
+    offerAtomic(this.db, offerInput(offer), this.quota, request.assignment);
     this.db.prepare('INSERT INTO admission_queue(attempt_id,candidate_json) VALUES (?,?)')
       .run(offer.attemptId, encodeJson(metadata, 16_384));
     this.db.prepare('UPDATE admission_settings SET last_clock=MAX(last_clock,?) WHERE id=1').run(request.now);
@@ -82,11 +82,11 @@ export class AdmissionStore {
   }
   private legacyOffer(request: Extract<AdmissionCommand, { kind: 'offer' }>): { exists: boolean; cancelled: boolean } {
     const row = this.db.prepare('SELECT id,cancel_requested FROM accepted_attempts WHERE attempt_id=?').get(request.offer.attemptId);
-    if (row) offerAtomic(this.db, offerInput(request.offer), this.quota);
+    if (row) offerAtomic(this.db, offerInput(request.offer), this.quota, request.assignment);
     return { exists: Boolean(row), cancelled: row?.cancel_requested === 1 };
   }
   private replayOffer(request: Extract<AdmissionCommand, { kind: 'offer' }>, row: { candidate_json?: unknown; decision_json?: unknown }): AdmissionValue {
-    offerAtomic(this.db, offerInput(request.offer), this.quota);
+    offerAtomic(this.db, offerInput(request.offer), this.quota, request.assignment);
     const old = JSON.parse(row.candidate_json as string) as Candidate;
     if (canonical(old.validation) !== canonical(request.validation)) throw new Failure('conflict');
     const key = { ...request.offer, generation: 1 };

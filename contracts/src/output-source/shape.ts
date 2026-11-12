@@ -1,5 +1,6 @@
 import { validate, validatePrimitive } from '../validate.js';
-import type { EngineResult } from '../generated/types.js';
+import type { ExecutionResult } from '../generated/types.js';
+import { executionArtifacts, executionEngineId } from '../execution-result.js';
 import { fields, requireInput, canonical, freeze } from './capture.js';
 import { OUTPUT_SOURCE_RESULT_BYTES } from './limits.js';
 import type { SourceScope, SourceBinding, PublicCore } from './types.js';
@@ -30,17 +31,17 @@ export function binding(input: unknown): SourceBinding {
   const result = validate('SourceBinding', input); requireInput(result.ok);
   return result.value;
 }
-export function result(input: unknown, binding: SourceBinding): EngineResult {
+export function result(input: unknown, binding: SourceBinding): ExecutionResult {
   canonical(input, OUTPUT_SOURCE_RESULT_BYTES);
-  const checked = validate('EngineResult', input); requireInput(checked.ok);
+  const checked = validate('ExecutionResult', input); requireInput(checked.ok);
   const value = checked.value;
-  sameScope(value as SourceScope, binding); requireInput(value.engineId === binding.engine.id);
+  sameScope(value as SourceScope, binding); requireInput(executionEngineId(value) === binding.engine.id);
   return value;
 }
-export function counts(input: { resultFileBytes: unknown; controlBytes: unknown; verifiedBytes: unknown }, result: EngineResult): void {
+export function counts(input: { resultFileBytes: unknown; controlBytes: unknown; verifiedBytes: unknown }, result: ExecutionResult): void {
   integer(input.resultFileBytes, 1_048_576, 1); integer(input.controlBytes, 67_108_864); integer(input.verifiedBytes);
   let total = input.resultFileBytes + input.controlBytes;
-  for (const artifact of result.artifacts) {
+  for (const artifact of executionArtifacts(result)) {
     requireInput(artifact.bytes <= Number.MAX_SAFE_INTEGER - total); total += artifact.bytes;
   }
   requireInput(input.verifiedBytes === total);

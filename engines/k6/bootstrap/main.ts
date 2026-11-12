@@ -1,3 +1,4 @@
+import { stdoutEvents } from './event-output.js';
 import { encodeJson } from '@beetle/contracts';
 import { runStagedK6 } from '../wrapper/attempt/index.js';
 import { imageOptions } from './profile.js';
@@ -9,20 +10,15 @@ async function main(): Promise<void> {
   }
   process.umask(0o077);
   const cancel = new AbortController(); const stop = () => cancel.abort();
-  let stdoutFailed = false;
-  const stdoutError = () => { stdoutFailed = true; };
-  process.once('SIGINT', stop); process.once('SIGTERM', stop); process.stdout.on('error', stdoutError);
+  const output=stdoutEvents();
+  process.once('SIGINT', stop); process.once('SIGTERM', stop);
   try {
-    const receipt = await runStagedK6({ ...imageOptions(cancel.signal), onEvent: async event => {
-      if (stdoutFailed) throw new Error('notification');
-      const frame = encodeJson(event, 65_535) + '\n';
-      await new Promise<void>((resolve, reject) => process.stdout.write(frame, error => error ? reject(error) : resolve()));
-    } });
+    const receipt = await runStagedK6({ ...imageOptions(cancel.signal), onEvent: event => output.send(event) });
     process.exitCode = receipt.ok ? 0 : 1;
     if (!receipt.ok) process.stderr.write(encodeJson({ kind: 'wrapper.error', reason: receipt.reason }, 1024) + '\n');
   } finally {
     process.removeListener('SIGINT', stop); process.removeListener('SIGTERM', stop);
-    process.stdout.removeListener('error', stdoutError);
+    output.close();
   }
 }
 void main().catch(() => { process.stderr.write('{"kind":"wrapper.error","reason":"profile"}\n'); process.exitCode = 1; });

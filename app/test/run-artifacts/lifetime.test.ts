@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import { expect, it, vi } from 'vitest';
 import { runArtifactContentPath } from '@beetle/contracts/api';
 import { published } from './fixture.js';
@@ -10,7 +11,7 @@ import { scope } from '../storage/fixture.js';
 async function controlled() {
   const f = await published([Buffer.from('synthetic original')]); const reader = new RunArtifacts(f.db, f.reads);
   const params = {organizationId: scope.organizationId, workspaceId: scope.workspaceId, runId: f.key.runId,
-    attemptId: f.key.attempt.attemptId, artifactId: f.envelope.manifest.result.artifacts[0]!.artifactId};
+    attemptId: f.key.attempt.attemptId, artifactId: executionArtifacts(f.envelope.manifest.result)[0]!.artifactId};
   const release = deferred(); const nativeDone = deferred(); let signal: AbortSignal | undefined;
   const http = await httpFixture({listRunArtifacts: async query => reader.execute({kind: 'listRunArtifacts', query}) as RunArtifactPage,
     getRunArtifact: async key => reader.execute({kind: 'getRunArtifact', key}) as PublishedArtifactRead}, {read: (request, context) => {
@@ -46,7 +47,7 @@ it('disconnect cancels the original and shutdown retains ownership until late na
 it.each(['settlement', 'streamed hash'] as const)('destroys midstream bytes without successful EOF on %s failure', async mode => {
   const f = await published([Buffer.from('synthetic original')]); const reader = new RunArtifacts(f.db, f.reads);
   const params = {organizationId: scope.organizationId, workspaceId: scope.workspaceId, runId: f.key.runId,
-    attemptId: f.key.attempt.attemptId, artifactId: f.envelope.manifest.result.artifacts[0]!.artifactId};
+    attemptId: f.key.attempt.attemptId, artifactId: executionArtifacts(f.envelope.manifest.result)[0]!.artifactId};
   const http = await httpFixture({listRunArtifacts: async query => reader.execute({kind: 'listRunArtifacts', query}) as RunArtifactPage,
     getRunArtifact: async key => reader.execute({kind: 'getRunArtifact', key}) as PublishedArtifactRead}, {read: (request, context) => {
       const job = f.files.store.read({...request, sink: {write: async chunk => {

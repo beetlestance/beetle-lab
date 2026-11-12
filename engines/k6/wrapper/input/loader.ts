@@ -1,6 +1,6 @@
 import { compileSuite } from '../../compiler/suite/index.js';
-import { RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
-import type { Offer } from '@beetle/contracts';
+import { RUNNER_MAXIMUM_OFFER_BYTES, captureStandaloneExportAssignment, encodeCanonicalJson, EXPORT_ASSIGNMENT_BYTES } from '@beetle/contracts';
+import type { Offer, StagedAttempt, StandaloneExportAssignment } from '@beetle/contracts';
 import type { CompileInput, SuiteIssue } from '../../compiler/suite/index.js';
 import { sha256, validateCompileInput, validateSuiteConfig } from '../../compiler/suite/validation.js';
 import { checkBindings, decode, digest, freeze, text } from './bindings.js';
@@ -37,14 +37,24 @@ export class Loader {
       const manifestBytes = await this.files.read(this.options.inputRoot, 'manifest.json', 65_536);
       const manifest = decode('EngineManifest', manifestBytes, 65_536);
       checkBindings({ staging, offer, manifest, offerBytes, manifestBytes, options: this.options });
-      await this.files.entries(this.options.inputRoot, ['staging.json', 'offer.json', 'manifest.json', ...staging.inputFiles.map(item => item.fileName)]);
+      const assignment=await this.assignment(staging,offer);
+      await this.files.entries(this.options.inputRoot, ['staging.json', 'offer.json', 'manifest.json', ...(assignment ? ['assignment.json'] : []), ...staging.inputFiles.map(item => item.fileName)]);
       await this.files.entries(this.options.secretRoot, staging.secretNames);
       await this.statSecrets(staging.secretNames);
       this.offer = offer;
-      this.headers = freeze({ staging, offer, manifest, attempt });
+      this.headers = freeze({ staging, offer, manifest, attempt, ...(assignment ? {assignment} : {}) });
       this.budget.headersFinished();
       return Object.freeze({ ...this.headers, compile: () => this.compile(), close: () => this.close() });
     });
+  }
+  private async assignment(staging: StagedAttempt, offer: Offer): Promise<StandaloneExportAssignment | undefined> {
+    const binding=staging.assignment;if (!binding) return undefined;
+    const raw=await this.files.read(this.options.inputRoot,binding.fileName,EXPORT_ASSIGNMENT_BYTES);
+    let value: StandaloneExportAssignment;
+    try {value=captureStandaloneExportAssignment(JSON.parse(text(raw)) as unknown,sha256);} catch {throw new InputError('binding');}
+    if (value.assignmentDigest !== binding.assignmentDigest
+      || encodeCanonicalJson(value.offer,RUNNER_MAXIMUM_OFFER_BYTES) !== encodeCanonicalJson(offer,RUNNER_MAXIMUM_OFFER_BYTES)) throw new InputError('binding');
+    return value;
   }
   private async statSecrets(names: readonly string[]): Promise<void> {
     let total = 0;

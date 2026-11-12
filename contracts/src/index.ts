@@ -19,6 +19,7 @@ export { artifactDownload } from './artifact-download.js';
 
 export { createStandaloneExportAssignment, captureStandaloneExportAssignment, exportAssignmentPrefix,
   sealStandaloneExportResult, verifyStandaloneExportResultSeal, standaloneExportResultSealPreimage,
-  captureStandaloneExportResult, exportResultPrefix, ExportContractError,
+  captureStandaloneExportResult, captureExportResultForExpectation, captureExportExpectation, exportExpectation, exportResultPrefix, ExportContractError,
   EXPORT_ASSIGNMENT_BYTES, EXPORT_RESULT_BYTES, EXPORT_CONTROL_BYTES } from './export-job/index.js';
-export type { ExportContractCode } from './export-job/index.js';
+export type { ExportContractCode, ExportResultExpectation } from './export-job/index.js';
+export { executionArtifacts, executionEngineId, isExportResult, verifyExecutionResultSeal } from './execution-result.js';

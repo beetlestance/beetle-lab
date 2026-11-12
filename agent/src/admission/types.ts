@@ -1,4 +1,4 @@
-import type { Offer } from '@beetle/contracts';
+import type { Offer, StandaloneExportAssignment } from '@beetle/contracts';
 import type { StagingEstimate } from './staging.js';
 
 export const resourceNames = ['cpuMillis', 'memoryBytes', 'pids', 'outputBytes', 'stagingBytes'] as const;
@@ -35,6 +35,7 @@ export interface ValidationIdentity {
   manifestId: string; profileId: string; schemaDigest: string; catalogVersion: number; configDigest: string;
 }
 export interface Candidate extends Scope {
+  assignment?: {purpose: 'standalone_export'; assignmentDigest: string};
   staging: Readonly<StagingEstimate>;
   resources: Resources; budget: Offer['budget']; mode: 'parallel' | 'isolated'; preferIdle: boolean;
   requiredCapabilities: string[]; engine: Offer['engine']; validation: ValidationIdentity;
@@ -65,7 +66,7 @@ export interface AdmissionSnapshot {
 export type AdmissionCommand =
   | { kind: 'configure'; configuration: PoolConfiguration }
   | { kind: 'observe'; observation: RuntimeObservation }
-  | { kind: 'offer'; offer: Offer; validation: ValidationIdentity; now: number }
+  | { kind: 'offer'; offer: Offer; assignment?: StandaloneExportAssignment; validation: ValidationIdentity; now: number }
   | { kind: 'admit'; key: Scope; sourceOrdinal: number; now: number }
   | { kind: 'reservations'; limit: number; cursor?: number }
   | { kind: 'reservation'; key: Scope }

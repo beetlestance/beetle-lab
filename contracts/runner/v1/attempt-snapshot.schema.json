@@ -81,6 +81,9 @@
     },
     "admission": {
       "$ref": "https://beetle-lab.dev/contracts/runner/v1/attempt-admission"
+    },
+    "exportResult": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/export-result"
     }
   },
   "required": [
@@ -95,5 +98,19 @@
     "retainedStartSeq",
     "cancelRequested"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "not": {
+        "required": [
+          "result",
+          "exportResult"
+        ],
+        "properties": {
+          "result": {},
+          "exportResult": {}
+        }
+      }
+    }
+  ]
 }

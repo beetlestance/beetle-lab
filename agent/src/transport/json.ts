@@ -1,12 +1,12 @@
 import type { FastifyReply } from 'fastify';
-import { encodeJson, validate, RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
+import { encodeJson, validate, RUNNER_MAXIMUM_OFFER_BYTES, EXPORT_ASSIGNMENT_BYTES } from '@beetle/contracts';
 import type { ProtocolName, ProtocolTypes } from '@beetle/contracts';
 import { AgentHttpError, HTTP_LIMITS } from './types.js';
 import type { HttpScope } from './types.js';
 import { bodyMatches } from './auth.js';
 export function requestBody<N extends ProtocolName>(name: N, input: unknown): ProtocolTypes[N] {
   try {
-    const copy: unknown = JSON.parse(encodeJson(input, name === 'Offer' ? RUNNER_MAXIMUM_OFFER_BYTES : HTTP_LIMITS.bytes));
+    const copy: unknown = JSON.parse(encodeJson(input, name === 'Offer' ? RUNNER_MAXIMUM_OFFER_BYTES : name === 'StandaloneExportAssignment' ? EXPORT_ASSIGNMENT_BYTES : HTTP_LIMITS.bytes));
     const checked = validate(name, copy);
     if (checked.ok) return checked.value;
   } catch { /* Transport errors never include input or validator exception text. */ }
@@ -16,13 +16,14 @@ function responseScope(name: ProtocolName, input: object, expected: HttpScope & 
   bodyMatches(expected, expected.attemptId,
     input as { organizationId: string; workspaceId: string; attemptId: string; generation: number });
   if (name === 'AttemptSnapshot') {
-    const result = (input as ProtocolTypes['AttemptSnapshot']).result;
+    const snapshot=input as ProtocolTypes['AttemptSnapshot'];
+    const result = snapshot.result ?? snapshot.exportResult;
     if (result) bodyMatches(expected, expected.attemptId, result);
   }
   if (name === 'EventBatch') {
     for (const event of (input as ProtocolTypes['EventBatch']).events) {
       bodyMatches(expected, expected.attemptId, event);
-      if (event.kind === 'engine.result') bodyMatches(expected, expected.attemptId, event.payload);
+      if ((event.kind === 'engine.result' || event.kind === 'export.result')) bodyMatches(expected, expected.attemptId, event.payload);
     }
   }
 }

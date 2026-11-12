@@ -41,8 +41,10 @@ export interface InstallationProfile {
 }
 /** Private trusted staging output: directories must match <stagingRoot>/<runtime name>/{input,output,secrets}. */
 export interface StagedRoots { readonly input: string; readonly output: string; readonly secrets?: string }
+export interface ExportBinding {readonly purpose:'standalone_export';readonly assignmentDigest:string}
 export interface PrepareInput {
   readonly offer: unknown;
+  readonly assignment?: ExportBinding;
   readonly manifest: unknown;
   readonly profile: InstallationProfile;
   readonly generation: number;

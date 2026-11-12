@@ -15,6 +15,22 @@
     "successStatus": 202
   },
   {
+    "name": "offerExport",
+    "method": "PUT",
+    "path": "/runner/v1/attempts/{attemptId}/export",
+    "request": "StandaloneExportAssignment",
+    "response": "AttemptSnapshot",
+    "successStatus": 202
+  },
+  {
+    "name": "cancelExportOriginal",
+    "method": "POST",
+    "path": "/runner/v1/attempts/{attemptId}/export/cancel-original",
+    "request": "StandaloneExportAssignment",
+    "response": "AttemptSnapshot",
+    "successStatus": 200
+  },
+  {
     "name": "snapshot",
     "method": "GET",
     "path": "/runner/v1/attempts/{attemptId}",

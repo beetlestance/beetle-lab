@@ -2,7 +2,7 @@ import { afterEach } from 'vitest';
 import { chmod, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { AttemptFence } from '../../wrapper/attempt/fence.js';
+import { AttemptFence } from '../../wrapper/lifecycle/index.js';
 const cleanups: (() => Promise<void> | void)[] = [];
 afterEach(async () => {await Promise.all(cleanups.splice(0).map(clean => clean()));});
 export async function fixture(content = Buffer.from('export const options = {};\n')) {

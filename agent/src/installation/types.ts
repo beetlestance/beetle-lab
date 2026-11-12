@@ -30,8 +30,10 @@ export interface InstallationAttempt {
 }
 export interface InstallationController {
   enqueue(input: unknown): Promise<OfferAcceptance>;
+  enqueueExport(input: unknown): Promise<OfferAcceptance>;
   /** Atomically refuse a missing original or cancel an existing canonical receipt. */
   cancelOriginal(input: unknown): Promise<AttemptSnapshot>;
+  cancelExportOriginal(input: unknown): Promise<AttemptSnapshot>;
   drive(key: Scope, operation: Operation): Promise<DriveProgress>;
   /** Persist intent and fence owned work; signalling/draining may remain outstanding. */
   cancel(key: Scope): Promise<AttemptSnapshot>;

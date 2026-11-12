@@ -1,4 +1,4 @@
-import type { ResultDigest } from '@beetle/contracts';
+import type { ResultDigest, ExecutionResult } from '@beetle/contracts';
 import type { Owned, SourceBinding, PublicManifest, SourceReceipt } from '@beetle/contracts/output-source';
 export type { Owned, SourceScope, SourceBinding, PublicCore, PublicManifest, SourceReceipt } from '@beetle/contracts/output-source';
 import type { LaunchSettlement, ReleaseEvidence } from '../admission/index.js';
@@ -11,18 +11,18 @@ export type FinishedRelease = Owned<Omit<ReleaseEvidence, 'runtime' | 'collectio
   readonly collection: Owned<ReleaseEvidence['collection']> & { readonly state: 'finished' };
 };
 export type SettledLaunch = Owned<LaunchSettlement> & { readonly disposition: 'completed' | 'retired' };
-export interface PrivateCore {
+export interface PrivateCore<T extends ExecutionResult = ExecutionResult> {
   readonly version: 1;
-  readonly manifest: PublicManifest;
+  readonly manifest: PublicManifest<T>;
   readonly root: Readonly<OutputRootIdentity>;
   readonly checkpoint: Readonly<WrapperCheckpoint>;
   readonly release: FinishedRelease;
 }
-export interface PrivateSource extends PrivateCore { readonly sourceDigest: string }
-export interface CollectedSource {
+export interface PrivateSource<T extends ExecutionResult = ExecutionResult> extends PrivateCore<T> { readonly sourceDigest: string }
+export interface CollectedSource<T extends ExecutionResult = ExecutionResult> {
   readonly collectionId: string;
   readonly binding: SourceBinding;
-  readonly collection: Owned<Extract<OutputCollectionResult, { readonly ok: true }>>;
+  readonly collection: Owned<Extract<OutputCollectionResult<T>, { readonly ok: true }>>;
   readonly checkpoint: Readonly<WrapperCheckpoint>;
   readonly release: FinishedRelease;
 }

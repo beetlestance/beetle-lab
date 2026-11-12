@@ -11,7 +11,7 @@
       "$ref": "https://beetle-lab.dev/contracts/runner/v1/source-values#/$defs/binding"
     },
     "result": {
-      "$ref": "https://beetle-lab.dev/contracts/runner/v1/engine-result"
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/execution-result"
     },
     "resultFileBytes": {
       "type": "integer",

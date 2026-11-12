@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import { expect, it } from 'vitest';
 import { runArtifactContentPath } from '@beetle/contracts/api';
 import { published } from './fixture.js';
@@ -12,7 +13,7 @@ it('serves verified text/CSV/JSON with fixed safe attachment names over authenti
   const http = await httpFixture(metadata.runArtifacts, f.files.store);
   try {
     const charges = await metadata.inputs.storage();
-    for (const [ordinal, artifact] of f.envelope.manifest.result.artifacts.entries()) {
+    for (const [ordinal, artifact] of executionArtifacts(f.envelope.manifest.result).entries()) {
       const route = runArtifactContentPath({organizationId: scope.organizationId, workspaceId: scope.workspaceId,
         runId: f.key.runId, attemptId: f.key.attempt.attemptId, artifactId: artifact.artifactId});
       for (const range of [false, true]) {

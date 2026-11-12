@@ -1,3 +1,4 @@
+import { readExport } from './export-assignment.js';
 import { readJournalAuthority } from './authority.js';
 import { snapshot } from './snapshot.js';
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
@@ -31,7 +32,7 @@ export class Store {
     this.outputs = new OutputSources(db);
     this.read = db.prepare(`SELECT CASE WHEN length(CAST(offer_json AS BLOB))<=${RUNNER_MAXIMUM_OFFER_BYTES}
       THEN offer_json ELSE NULL END AS offer_json FROM accepted_attempts WHERE id=?`);
-    this.list = db.prepare(`SELECT ${metadataColumns}, NULL AS result_json, NULL AS exit_facts_json, NULL AS wrapper_checkpoint_json
+    this.list = db.prepare(`SELECT ${metadataColumns}, execution_purpose, NULL AS result_json, NULL AS export_result_json, NULL AS exit_facts_json, NULL AS wrapper_checkpoint_json
       FROM accepted_attempts WHERE id>? ORDER BY id LIMIT ?`);
   }
   private offer(command: Extract<Command, { kind: 'offer' }>): AttemptSnapshot {
@@ -67,6 +68,7 @@ export class Store {
   }
   private readCommand(command: Command): Value {
     switch (command.kind) {
+      case 'readExportAssignment': return readExport(this.db,command.key);
       case 'authority': return readJournalAuthority(this.db);
       case 'get': return snapshot(this.db, owner(this.db, command.key));
       case 'read': return this.readOffer(command.key);
@@ -95,7 +97,7 @@ export class Store {
     if (command.kind === 'admission') return this.admission.execute(command.request);
     if (command.kind === 'cancelOriginal') return cancelOriginal(this.db, command, this.quota);
     if (['append', 'events', 'ack', 'prune', 'sources', 'checkpoint', 'wrapperBatch'].includes(command.kind)) return this.eventCommand(command);
-    if (['authority', 'get', 'read', 'list', 'runnable'].includes(command.kind)) return this.readCommand(command);
+    if (['authority', 'get', 'read', 'readExportAssignment', 'list', 'runnable'].includes(command.kind)) return this.readCommand(command);
     return this.lifecycleCommand(command);
   }
 }

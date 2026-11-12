@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto';
 import { isAbsolute, resolve } from 'node:path';
-import { encodeJson, verifyEngineResultSeal } from '@beetle/contracts';
-import type { EngineResult } from '@beetle/contracts';
+import { encodeJson, verifyEngineResultSeal, captureStandaloneExportResult } from '@beetle/contracts';
+import type { ExecutionResult } from '@beetle/contracts';
 import { PublicationError } from './types.js';
-import type { PublicationOptions } from './types.js';
+import type { PublicationOptions, ExportPublicationOptions } from './types.js';
 type CapturedOptions = Omit<PublicationOptions, 'signal' | 'wallNow'> & {
   readonly signal: AbortSignal | undefined; readonly wallNow: (() => number) | undefined;
 };
@@ -15,7 +15,8 @@ export interface Profile {
   readonly timeoutMs: number;
   readonly signal: AbortSignal | undefined;
   readonly wallNow: () => number;
-  readonly value: EngineResult;
+  readonly value: ExecutionResult;
+  readonly relativePath: 'engine-result.json' | 'export-result.json';
   readonly bytes: Buffer;
   readonly rawSha256: string;
 }
@@ -33,7 +34,7 @@ function assertProfile(options: CapturedOptions): void {
   if (options.wallNow !== undefined && typeof options.wallNow !== 'function') throw new PublicationError('profile');
   if (options.signal !== undefined && !(options.signal instanceof AbortSignal)) throw new PublicationError('profile');
 }
-function scopeMatches(options: CapturedOptions, value: EngineResult): void {
+function scopeMatches(options: CapturedOptions, value: ExecutionResult): void {
   let scope: Record<string, unknown>;
   try { scope = JSON.parse(encodeJson(options.expectedScope, 1024)) as Record<string, unknown>; }
   catch { throw new PublicationError('scope'); }
@@ -42,18 +43,28 @@ function scopeMatches(options: CapturedOptions, value: EngineResult): void {
     || keys.some(key => scope[key] !== value[key])) throw new PublicationError('scope');
 }
 /** No clock or IO callbacks occur while capturing and validating the caller's data. */
-export function snapshot(input: PublicationOptions): Profile {
+export function snapshot(input: PublicationOptions | ExportPublicationOptions): Profile {
   const options = { result: input.result, expectedScope: input.expectedScope, directory: input.directory, uid: input.uid,
     maximumBytes: input.maximumBytes, deadlineMs: input.deadlineMs, timeoutMs: input.timeoutMs,
     signal: input.signal, wallNow: input.wallNow };
   assertProfile(options);
-  const checked = verifyEngineResultSeal(options.result, sha256);
-  if (!checked.ok || checked.value.engineId !== 'k6') throw new PublicationError('invalid_result');
-  scopeMatches(options, checked.value);
+  const value=checkedResult(input,options.result);
+  const relativePath='purpose' in value ? 'export-result.json' : 'engine-result.json';
+  scopeMatches(options, value);
   let bytes: Buffer;
-  try { bytes = Buffer.from(encodeJson(checked.value, options.maximumBytes - 1) + '\n', 'utf8'); }
+  try { bytes = Buffer.from(encodeJson(value, options.maximumBytes - 1) + '\n', 'utf8'); }
   catch { throw new PublicationError('limit'); }
   return Object.freeze({ directory: options.directory, uid: options.uid, deadlineMs: options.deadlineMs,
     timeoutMs: options.timeoutMs, signal: options.signal, wallNow: options.wallNow ?? Date.now,
-    value: checked.value, bytes, rawSha256: sha256(bytes) });
+    value, relativePath, bytes, rawSha256: sha256(bytes) });
+}
+
+function checkedResult(input: PublicationOptions | ExportPublicationOptions, result: unknown): ExecutionResult {
+  if ('purpose' in input) {
+    if (input.purpose !== 'standalone_export') throw new PublicationError('profile');
+    try {return captureStandaloneExportResult(result,input.assignment,sha256);} catch {throw new PublicationError('invalid_result');}
+  }
+  const checked=verifyEngineResultSeal(result,sha256);
+  if (!checked.ok || checked.value.engineId !== 'k6') throw new PublicationError('invalid_result');
+  return checked.value;
 }

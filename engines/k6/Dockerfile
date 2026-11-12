@@ -20,6 +20,7 @@ COPY contracts/src ./contracts/src
 COPY contracts/engines ./contracts/engines
 COPY engines/k6/bootstrap ./engines/k6/bootstrap
 COPY engines/k6/build ./engines/k6/build
+COPY engines/k6/export ./engines/k6/export
 COPY engines/k6/compiler ./engines/k6/compiler
 COPY engines/k6/aggregation ./engines/k6/aggregation
 COPY engines/k6/plan ./engines/k6/plan
@@ -38,13 +39,13 @@ RUN node -e "if (process.versions.node.split('.')[0] !== '24') throw new Error('
 
 FROM ${K6_IMAGE} AS native-k6
 
-FROM ${NODE_IMAGE} AS engine
+FROM ${NODE_IMAGE} AS engine-base
 ARG VCS_REF=unknown
 LABEL org.opencontainers.image.source="https://github.com/beetlestance/beetle-lab" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.revision=$VCS_REF
 WORKDIR /beetle
-ENV NODE_ENV=production BEETLE_K6_LIVE_METRICS_V1=1
+ENV NODE_ENV=production
 COPY --from=native-k6 /usr/bin/k6 /usr/local/bin/k6
 COPY --from=production-deps /beetle/node_modules ./node_modules
 COPY --from=production-deps /beetle/package.json ./package.json
@@ -67,3 +68,9 @@ HEALTHCHECK NONE
 STOPSIGNAL SIGTERM
 ENTRYPOINT ["node", "/beetle/bootstrap/main.js"]
 CMD []
+
+FROM engine-base AS export-engine
+ENTRYPOINT ["node", "/beetle/bootstrap/export-main.js"]
+
+FROM engine-base AS engine
+ENV BEETLE_K6_LIVE_METRICS_V1=1

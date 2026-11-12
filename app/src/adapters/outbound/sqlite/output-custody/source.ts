@@ -1,3 +1,4 @@
+import { executionArtifacts } from '@beetle/contracts';
 import type { DatabaseSync, SQLOutputValue } from 'node:sqlite';
 import { encodeCanonicalJson, validate } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
@@ -33,12 +34,13 @@ export function original(db: DatabaseSync, binding: EventBinding): Offer {
   return value.value;
 }
 export function pins(value: Owned<SourceEnvelope>, binding: EventBinding, offer: Offer): void {
+  requirePerformanceSource(value,'conflict');
   const b = value.manifest.binding; const a = binding.key.attempt;
   const equal = b.organizationId === a.organizationId && b.workspaceId === a.workspaceId && b.attemptId === a.attemptId
     && b.intentDigest === a.intentDigest && b.generation === a.generation && b.journalAuthority === binding.journalAuthority;
   if (!equal || encodeCanonicalJson(b.engine, 4096) !== encodeCanonicalJson(offer.engine, 4096)
     || encodeCanonicalJson(b.installedIdentity, 4096) !== encodeCanonicalJson(offer.installedIdentity, 4096)) throw new StorageError('conflict');
-  const ids = value.manifest.result.artifacts.map(artifact => artifact.artifactId.toLowerCase());
+  const ids = executionArtifacts(value.manifest.result).map(artifact => artifact.artifactId.toLowerCase());
   if (new Set(ids).size !== ids.length) throw new StorageError('conflict');
 }
 function storedPins(row: Record<string, SQLOutputValue>, envelope: Owned<SourceEnvelope>, binding: EventBinding): void {
@@ -61,7 +63,12 @@ export function readEnvelope(db: DatabaseSync, binding: EventBinding, checkOrigi
   if (typeof row.closure_json !== 'string' || typeof row.canonical_json !== 'string') throw new StorageError('unavailable');
   const envelope = verifySourceEnvelope({ version: 1, sourceDigest: row.source_digest,
     manifest: JSON.parse(row.canonical_json) as unknown, closure: JSON.parse(row.closure_json) as unknown }, sha256);
+  requirePerformanceSource(envelope,'unavailable');
   storedPins(row, envelope, binding);
   if (offer) pins(envelope, binding, offer);
   return envelope;
+}
+
+function requirePerformanceSource(value:Owned<SourceEnvelope>,code:'conflict'|'unavailable'):void {
+  if ('purpose' in value.manifest.result) throw new StorageError(code);
 }

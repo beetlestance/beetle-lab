@@ -1,3 +1,4 @@
+import { exportEnvironment } from './export-binding.js';
 import { createHash } from 'node:crypto';
 import { isAbsolute, join, normalize } from 'node:path';
 import { RUNNER_MAXIMUM_OFFER_BYTES, encodeJson, validate, validatePrimitive } from '@beetle/contracts';
@@ -115,6 +116,7 @@ function prepareSnapshot(input: PrepareInput): Result<{ name: string; spec: Crea
   if (!validGeneration(input.generation)) return failure('invalid_input');
   if (input.requireHardOutputQuota) return failure('unsupported');
   if (!approved(offer.value, manifest.value, profile)) return failure('unsupported');
+  const environment=exportEnvironment(input.assignment,offer.value,manifest.value,profile);
   const nanoCpus = offer.value.budget.cpuMillis * 1_000_000;
   if (!Number.isSafeInteger(nanoCpus)) return failure('unsupported');
   const name = runtimeName({ installationId: profile.installationId, ...offer.value, generation: input.generation });
@@ -122,16 +124,16 @@ function prepareSnapshot(input: PrepareInput): Result<{ name: string; spec: Crea
   const network = networkName(profile);
   if (!boundMounts || !network) return failure('invalid_input');
   return { ok: true, value: { name,
-    spec: createSpec({ offer: offer.value, profile, generation: input.generation, boundMounts, nanoCpus, network }) } };
+    spec: createSpec({ offer: offer.value, profile, generation: input.generation, boundMounts, nanoCpus, network, environment }) } };
 }
 
 function createSpec(input: { offer: Offer; profile: InstallationProfile; generation: number;
-  boundMounts: DockerMount[]; nanoCpus: number; network: string }): CreateSpec {
+  boundMounts: DockerMount[]; nanoCpus: number; network: string; environment: readonly string[] }): CreateSpec {
   const { offer, profile } = input;
   return {
     Image: profile.imageDigest, User: profile.user,
     Entrypoint: [profile.entrypoint.executable], Cmd: [...profile.entrypoint.arguments],
-    Env: [...profile.effectiveImage.environment], Healthcheck: { Test: ['NONE'] }, StopSignal: 'SIGTERM',
+    Env: [...input.environment], Healthcheck: { Test: ['NONE'] }, StopSignal: 'SIGTERM',
     WorkingDir: '/beetle/input', NetworkDisabled: input.network === 'none',
     Labels: { 'dev.beetle.installation': normalizeIdentity(profile.installationId),
       'dev.beetle.organization': normalizeIdentity(offer.organizationId),

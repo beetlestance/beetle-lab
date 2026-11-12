@@ -1,9 +1,9 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import type { ControlEvent, EngineManifest } from '@beetle/contracts';
 import type { ControlDraft, ControlWriter } from '../../wrapper/control/index.js';
-import { AttemptFence } from '../../wrapper/attempt/fence.js';
-import { Notifications } from '../../wrapper/attempt/notifications.js';
-import { Phases } from '../../wrapper/attempt/phases.js';
+import { AttemptFence } from '../../wrapper/lifecycle/index.js';
+import { Notifications } from '../../wrapper/lifecycle/index.js';
+import { Phases } from '../../wrapper/lifecycle/index.js';
 
 const disposals: (() => void)[] = [];
 afterEach(() => { for (const dispose of disposals.splice(0)) dispose(); vi.useRealTimers(); });

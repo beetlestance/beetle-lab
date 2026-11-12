@@ -1,3 +1,4 @@
+import type { Offer, StandaloneExportAssignment } from '@beetle/contracts';
 import type { AttemptSnapshot } from '@beetle/contracts';
 import type { Scope } from '../admission/index.js';
 import type { Operation } from '../backends/docker/index.js';
@@ -16,8 +17,8 @@ import { acquireLease } from './leases.js';
 import type { EntryLease } from './leases.js';
 import { closeWatches, retireNative } from './retirement.js';
 import { readClosedDelivery, reconcileDelivery, releaseStoredSource, rememberSource } from './delivery.js';
-import { enqueue } from './enqueue.js';
-import { structuralOffer } from './offer.js';
+import { enqueue, enqueueExport } from './enqueue.js';
+import { structuralOffer, structuralExport } from './offer.js';
 import { InstallationError } from './types.js';
 import type { DriveProgress, InstallationAttempt, InstallationController, InstallationOptions, OfferAcceptance } from './types.js';
 const owners = new WeakMap<InstallationOptions['journal'], Manager>();
@@ -96,22 +97,19 @@ export class Manager implements InstallationController {
     return result;
   }
   enqueue(input: unknown): Promise<OfferAcceptance> { return this.run(() => enqueue(this, input)); }
-  cancelOriginal(input: unknown): Promise<AttemptSnapshot> {
-    return this.run(async () => {
-      const offer = structuralOffer(input);
-      const key = scopeCopy({ organizationId: offer.organizationId, workspaceId: offer.workspaceId,
-        attemptId: offer.attemptId, generation: 1 });
-      this.open(); const entry = this.entry(key);
-      const lease = acquireLease(entry);
-      try {
-        const snapshot = await this.options.journal.cancelOriginal({ offer, now: this.now() });
-        entry.cancelled = true;
-        if (!await this.sourceCommitted(entry)) this.signal(entry);
-        return snapshot;
-      } finally {
-        await this.releaseLease(entry, lease);
-      }
-    });
+  enqueueExport(input: unknown): Promise<OfferAcceptance> {return this.run(()=>enqueueExport(this,input));}
+  cancelOriginal(input: unknown): Promise<AttemptSnapshot> {return this.run(()=>this.cancelledOriginal(structuralOffer(input)));}
+  cancelExportOriginal(input: unknown): Promise<AttemptSnapshot> {
+    return this.run(()=>{const assignment=structuralExport(input);return this.cancelledOriginal(assignment.offer,assignment);});
+  }
+  private async cancelledOriginal(offer:Offer,assignment?:StandaloneExportAssignment):Promise<AttemptSnapshot> {
+    const key=scopeCopy({organizationId:offer.organizationId,workspaceId:offer.workspaceId,attemptId:offer.attemptId,generation:1});
+    this.open();const entry=this.entry(key);const lease=acquireLease(entry);
+    try {
+      const now=this.now();const snapshot=assignment ? await this.options.journal.cancelExportOriginal({assignment,now})
+        : await this.options.journal.cancelOriginal({offer,now});
+      entry.cancelled=true;if (!await this.sourceCommitted(entry)) this.signal(entry);return snapshot;
+    } finally {await this.releaseLease(entry,lease);}
   }
   drive(input: Scope, operation: Operation): Promise<DriveProgress> {
     return this.run(async () => {
