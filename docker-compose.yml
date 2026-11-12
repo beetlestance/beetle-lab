@@ -1,31 +1,154 @@
-# Convenience wrapper around the Dockerfile. Use `docker compose up` if you
-# don't want to remember the `-p` and `-v` flags every time.
-#
-#   docker compose up --build       # build and start
-#   docker compose up -d             # detached
-#   docker compose down              # stop (data in ./configs persists)
-#
+# Rewrite source installation: run from the canonical checkout directory.
+# docker compose up --build -d
+name: beetle-${BEETLE_INSTANCE:-local}
+
+x-runtime: &runtime
+  read_only: true
+  init: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  tmpfs: ["/tmp:rw,noexec,nosuid,nodev,size=16777216"]
+  logging:
+    driver: local
+    options: {max-size: 1m, max-file: "2"}
+  stop_grace_period: 45s
+
+x-build: &build
+  context: .
+  args: {VCS_REF: "${BEETLE_SOURCE_REVISION:-local}"}
+
+x-socket: &socket
+  type: bind
+  source: ${BEETLE_DOCKER_SOCKET:-/var/run/docker.sock}
+  target: /var/run/docker.sock
+  read_only: true
+  bind: {create_host_path: false}
+
+x-config: &config
+  type: bind
+  source: ${BEETLE_HOME:-${PWD:?Run Compose from the checkout}/.beetle}/data/config
+  target: ${BEETLE_HOME:-${PWD}/.beetle}/data/config
+  read_only: true
 
 services:
-  beetle-lab:
-    build:
-      context: .
-      args:
-        K6_VERSION: "1.5.0"
-        NODE_VERSION: "22"
-    image: ghcr.io/beetlestance/beetle-lab:latest
-    container_name: beetle-lab
-    ports:
-      - "127.0.0.1:4567:4567"
-    volumes:
-      # Buckets, configs, payloads, runs — host-mounted so they survive the
-      # container, and so users can edit configs from the host filesystem.
-      - ./configs:/app/configs
+  engine-image:
+    <<: *runtime
+    image: ${BEETLE_ENGINE_IMAGE:-beetle-lab-k6:rewrite}
+    build: {<<: *build, dockerfile: engines/k6/Dockerfile, target: engine}
+    network_mode: none
+    cpus: 0.1
+    mem_limit: 64m
+    pids_limit: 32
+    entrypoint: [node, -e, "process.exit(0)"]
+
+  export-image:
+    <<: *runtime
+    image: ${BEETLE_EXPORT_IMAGE:-beetle-lab-k6-export:rewrite}
+    build: {<<: *build, dockerfile: engines/k6/Dockerfile, target: export-engine}
+    network_mode: none
+    cpus: 0.1
+    mem_limit: 64m
+    pids_limit: 32
+    entrypoint: [node, -e, "process.exit(0)"]
+
+  setup:
+    <<: *runtime
+    init: false
+    image: ${BEETLE_INSTALLER_IMAGE:-beetle-lab-installer:rewrite}
+    build: {<<: *build, dockerfile: tools/install/Dockerfile}
+    user: "0:0"
+    # Empty-directory preparation, then permanent runtime identity/group drop.
+    cap_add: [CHOWN, FOWNER, SETUID, SETGID]
+    cpus: 1
+    mem_limit: 256m
+    pids_limit: 64
+    entrypoint: [node, /beetle/install/compose.js]
+    depends_on:
+      engine-image: {condition: service_completed_successfully}
+      export-image: {condition: service_completed_successfully}
     environment:
-      # External-tool hooks are off by default. To opt in, set both:
-      #   K6_STUDIO_HOOKS_ENABLED=1
-      #   K6_STUDIO_HOOKS_ALLOWED_BINARIES=docker,curl,kubectl
-      # Only commands whose first word is in the allow-list will execute.
-      K6_STUDIO_HOOKS_ENABLED: "${K6_STUDIO_HOOKS_ENABLED:-0}"
-      K6_STUDIO_HOOKS_ALLOWED_BINARIES: "${K6_STUDIO_HOOKS_ALLOWED_BINARIES:-}"
+      BEETLE_COMPOSE_HOME: ${BEETLE_HOME:-${PWD}/.beetle}
+      BEETLE_COMPOSE_INSTANCE: ${BEETLE_INSTANCE:-local}
+      BEETLE_COMPOSE_PORT: ${BEETLE_PORT:-4567}
+      BEETLE_COMPOSE_AGENT_IMAGE: ${BEETLE_AGENT_IMAGE:-beetle-lab-agent:rewrite}
+      BEETLE_COMPOSE_ENGINE_IMAGE: ${BEETLE_ENGINE_IMAGE:-beetle-lab-k6:rewrite}
+      BEETLE_COMPOSE_EXPORT_IMAGE: ${BEETLE_EXPORT_IMAGE:-beetle-lab-k6-export:rewrite}
+    volumes:
+      - *socket
+      - type: bind
+        source: ${BEETLE_HOME:-${PWD}/.beetle}
+        target: ${BEETLE_HOME:-${PWD}/.beetle}
+    networks: [targets]
+
+  agent:
+    <<: *runtime
+    init: false
+    image: ${BEETLE_AGENT_IMAGE:-beetle-lab-agent:rewrite}
+    build: {<<: *build, dockerfile: agent/Dockerfile}
+    container_name: beetle-${BEETLE_INSTANCE:-local}-agent
+    # The packaging entry drops identity before existing agent code starts.
+    user: "0:0"
+    cap_add: [SETUID, SETGID]
+    entrypoint: [node, /beetle/agent/container.js]
+    cpus: 0.25
+    mem_limit: 256m
+    pids_limit: 64
     restart: unless-stopped
+    depends_on: {setup: {condition: service_completed_successfully}}
+    environment:
+      BEETLE_AGENT_CONFIG_FILE: ${BEETLE_HOME:-${PWD}/.beetle}/data/config/agent.json
+    volumes:
+      - *config
+      - *socket
+      - type: bind
+        source: ${BEETLE_HOME:-${PWD}/.beetle}/data/agent/journal
+        target: ${BEETLE_HOME:-${PWD}/.beetle}/data/agent/journal
+      - type: bind
+        source: ${BEETLE_HOME:-${PWD}/.beetle}/data/agent/staging
+        target: ${BEETLE_HOME:-${PWD}/.beetle}/data/agent/staging
+      - type: bind
+        source: ${BEETLE_HOME:-${PWD}/.beetle}/data/backend/inputs/published
+        target: ${BEETLE_HOME:-${PWD}/.beetle}/data/backend/inputs/published
+        read_only: true
+    networks: [control]
+
+  backend:
+    <<: *runtime
+    image: ${BEETLE_BACKEND_IMAGE:-beetle-lab-backend:rewrite}
+    build: {<<: *build, dockerfile: app/Dockerfile}
+    user: "1000:1000"
+    cpus: 0.25
+    mem_limit: 256m
+    pids_limit: 64
+    restart: unless-stopped
+    depends_on: {setup: {condition: service_completed_successfully}}
+    environment:
+      BEETLE_CONFIG_FILE: ${BEETLE_HOME:-${PWD}/.beetle}/data/config/installation.json
+      BEETLE_AGENT_CONFIG_FILE: ${BEETLE_HOME:-${PWD}/.beetle}/data/config/backend-agent.json
+      BEETLE_DATA_DIR: ${BEETLE_HOME:-${PWD}/.beetle}/data/backend
+      BEETLE_LOCAL_ACCESS: automatic
+      BEETLE_EXTERNAL_ORIGIN: http://127.0.0.1:${BEETLE_PORT:-4567}
+      BEETLE_LISTEN_HOST: 0.0.0.0
+    volumes:
+      - *config
+      - type: bind
+        source: ${BEETLE_HOME:-${PWD}/.beetle}/data/backend
+        target: ${BEETLE_HOME:-${PWD}/.beetle}/data/backend
+    networks: [control]
+
+  frontend:
+    <<: *runtime
+    image: ${BEETLE_FRONTEND_IMAGE:-beetle-lab-frontend:rewrite}
+    build: {<<: *build, dockerfile: web/Dockerfile}
+    cpus: 0.1
+    mem_limit: 64m
+    pids_limit: 32
+    restart: unless-stopped
+    depends_on: {backend: {condition: service_started}}
+    ports: ["127.0.0.1:${BEETLE_PORT:-4567}:8080"]
+    networks: [ingress, control]
+
+networks:
+  ingress: {driver: bridge}
+  control: {internal: true}
+  targets: {name: "beetle-${BEETLE_INSTANCE:-local}-targets", driver: bridge}

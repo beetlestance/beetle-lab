@@ -1,7 +1,7 @@
 # Explicit fresh installation
 
-Status: coordinator-reviewed local component. Docker/Compose first boot and release
-qualification remain subsequent work. Contract: [provisioning](../design/lld/fresh-installation.md).
+Status: coordinator-reviewed local component. [Ordinary source Compose](compose-first-boot.md)
+now has separate native first-boot evidence; release qualification remains pending. Contract: [provisioning](../design/lld/fresh-installation.md).
 
 ## Source and behavior
 

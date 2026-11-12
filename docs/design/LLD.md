@@ -58,6 +58,7 @@ The owning document below must be updated before its implementation changes.
 | Agent capacity wire/receiver | [Capacity observation](lld/capacity-wire.md) | Committed source age, global/per-run ceilings, provenance and backend cache fences |
 | Installed agent startup | [Agent runtime](lld/agent-runtime.md) | Actual component wiring, initial readiness and independent shutdown drains |
 | Fresh offline installation | [Provisioning](lld/fresh-installation.md) | Private configuration, inspected image pins, explicit Journal authority and replay |
+| Ordinary source Compose | [First boot](lld/compose-first-boot.md) | Empty mount preparation, runtime identity drop and configuration-only readiness |
 | Mounted input/secret intake | [Installed providers](lld/installed-providers.md) | Scoped lazy input streams, explicit aliases, bounded private files and original cleanup |
 | Agent executable/container | [Executable agent](lld/executable-agent.md) | Private configuration, shipped schema bindings, signal ownership and image boundary |
 | Private runner HTTP | [Agent HTTP](lld/agent-http.md) | Credential/scope fences, bounded runner DTOs and request ownership |

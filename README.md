@@ -2,7 +2,29 @@
 
 A testing workbench by Beetlestance. Currently supports configurable HTTP performance tests powered by k6, live metrics, saved reports, and run comparisons.
 
-## Run with Docker
+## Rewrite source checkout
+
+On `rewrite/integration`, Docker Compose builds and starts the separate frontend,
+backend, agent and engine images:
+
+```sh
+docker compose up --build -d
+```
+
+Open http://127.0.0.1:4567. Local browser access is automatic. Private installation
+state, tests and results persist under `.beetle/`; keep that directory between
+starts. Use `docker compose down` to stop this installation. `BEETLE_HOME` can
+select another absolute canonical directory before the first start; an existing
+installation keeps its image pins and identity.
+
+The source recipe requires Linux Docker containers (amd64 or arm64) and access to
+the Docker socket. [First-boot design](docs/design/lld/compose-first-boot.md) explains
+ownership and refusal of partial/conflicting state. This branch is still under
+qualification; the published `latest` image below is the previous application.
+Advanced configuration remains in `compose.rewrite.yml`; the old Compose recipe
+is retained as `compose.legacy.yml`.
+
+## Published application
 
 ```sh
 docker run --rm -p 127.0.0.1:4567:4567 \
@@ -14,7 +36,7 @@ Open http://localhost:4567. Test configurations and results persist in the named
 
 For local targets from Docker Desktop, use `http://host.docker.internal:PORT` in your config. Inside a container, `localhost` refers to that container.
 
-## Local development
+## Previous application development
 
 Install Node.js 22 or later and k6, then:
 

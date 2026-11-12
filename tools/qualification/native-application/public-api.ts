@@ -1,3 +1,4 @@
+import type {Offer} from '@beetle/contracts';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:net';
@@ -40,7 +41,7 @@ export async function publicClient(app: Application, origin: string) {
   return { api, requestCount: () => requests, content:(path:string,headers:Record<string,string>={})=>
     fetcher(new URL(path,origin),{headers,signal:AbortSignal.timeout(5000)}) };
 }
-export async function saveRevision(api: ApiClient, f: Fixture) {
+export async function saveRevision(api: ApiClient, f: {readonly offer:{readonly config:Offer['config']}}) {
   const organization = value(await api.createOrganization({ body: { scope: { kind: 'installation' },
     requestId: randomUUID(), name: 'Synthetic native qualification', slug: 'native-qualification' } }));
   const workspace = value(await api.createWorkspace({ params: { organizationId: organization.id }, body: {

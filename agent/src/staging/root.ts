@@ -4,6 +4,7 @@ import { isAbsolute, normalize, dirname } from 'node:path';
 import { encodeJson, validatePrimitive } from '@beetle/contracts';
 import type { DockerReply } from '../backends/docker/index.js';
 import { Boundary, snapshot } from './bounds.js';
+import {verifyAgentIdentity} from './agent-identity.js';
 import { StagingError } from './types.js';
 import type { InstallationConfiguration, StagingResult, VerifyInput, VerifiedRoot } from './types.js';
 
@@ -37,10 +38,11 @@ function validPath(root: string): boolean {
     && !Array.from(root).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
 }
 function inspectAgent(raw: Record<string, unknown>, config: InstallationConfiguration): void {
-  const state = record(raw.State); const imageConfig = record(raw.Config);
+  const state = record(raw.State);
   const exactId = /^[a-f0-9]{64}$/u.test(config.agentContainer);
   if ((exactId ? raw.Id !== config.agentContainer : raw.Name !== `/${config.agentContainer}`)
-    || raw.Image !== config.agentImageId || imageConfig.User !== config.user) throw new StagingError('installation');
+    || raw.Image !== config.agentImageId) throw new StagingError('installation');
+  verifyAgentIdentity(raw,config);
   if (state.Running !== true || state.Paused !== false || state.Restarting !== false || state.Dead !== false) throw new StagingError('installation');
   inspectMounts(raw.Mounts, config.stagingRoot);
 }

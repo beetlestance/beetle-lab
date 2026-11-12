@@ -104,6 +104,7 @@ released application until the rewrite is qualified.
 | Inspect deadline monitoring | [Timeout guard](verification/timeout-guard.md) | Original admission budget, independent polling, clock fencing and shutdown review |
 | Inspect engine image evidence | [k6 image](verification/engine-image.md) | Node24/Linux arm64 execution, cgroup settings and remaining qualification |
 | Inspect fresh offline installation | [Provisioning evidence](verification/fresh-installation.md) | Actual private files/Journal/authority/loaders; Compose and first-boot qualification pending |
+| Inspect ordinary source Compose | [First boot](verification/compose-first-boot.md) | Automatic loopback session, real k6/offline export, ready setup and restart; native arm64 only |
 | Inspect automation client evidence | [Automation checks](verification/automation-client.md) | Actual authenticated TCP/worker commands, replay and bounded client behavior; image/CI qualification pending |
 | Inspect automatic loopback sessions | [Local access](verification/local-auto-session.md) | Persisted session/revocation, actual TCP/restart and compiled token-free startup; packaged browser pending |
 | Inspect automatic CLI connection | [Local connect](verification/automation-local-connect.md) | Same-origin automatic grant, strict private credentials and real TCP lost-reply recovery; image qualification pending |

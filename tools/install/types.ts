@@ -3,6 +3,14 @@ import type { InstallationValues } from '@beetle/contracts/api';
 import type { PoolConfiguration } from '../../agent/src/admission/index.js';
 import type { DockerTransport } from '../../agent/src/backends/docker/index.js';
 
+export interface ProvisionEngine {
+  readonly manifest: EngineManifest;
+  readonly manifestId: string;
+  readonly profileId: string;
+  readonly catalogVersion: number;
+  readonly configVersion: 1;
+  readonly tmpfsBytes: number;
+}
 export interface ProvisionRequest {
   readonly root: string;
   readonly uid: number;
@@ -12,18 +20,13 @@ export interface ProvisionRequest {
   readonly dockerSocket: string;
   readonly agentContainer: string;
   readonly agentImage: string;
+  readonly agentIdentity?:'socket-group-drop-v1';
   readonly engineImage: string;
   readonly targetNetwork: string;
   readonly installationValues: InstallationValues;
   readonly agentPolicy: Omit<PoolConfiguration, 'profiles'>;
-  readonly engine: {
-    readonly manifest: EngineManifest;
-    readonly manifestId: string;
-    readonly profileId: string;
-    readonly catalogVersion: number;
-    readonly configVersion: 1;
-    readonly tmpfsBytes: number;
-  };
+  readonly engine: ProvisionEngine;
+  readonly exportEngine?:ProvisionEngine & {readonly image:string;readonly sourceProfileId:string};
 }
 export interface ProvisionContext {
   readonly docker: DockerTransport;

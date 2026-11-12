@@ -24,12 +24,13 @@ function origin(value: unknown, privateOnly: boolean): void {
 }
 function requestValues(r: ProvisionRequest): void {
   fields(r, ['root', 'uid', 'gid', 'externalOrigin', 'agentOrigin', 'dockerSocket', 'agentContainer', 'agentImage',
-    'engineImage', 'targetNetwork', 'installationValues', 'agentPolicy', 'engine']);
+    'engineImage', 'targetNetwork', 'installationValues', 'agentPolicy', 'engine',...(Object.hasOwn(r,'exportEngine')?['exportEngine']:[]),...(Object.hasOwn(r,'agentIdentity')?['agentIdentity']:[])]);
+  if(Object.hasOwn(r,'agentIdentity'))requireInput(r.agentIdentity==='socket-group-drop-v1');
   path(r.root, 400); path(r.dockerSocket);
   ownership(r);
   origin(r.externalOrigin, false); origin(r.agentOrigin, true);
   for (const name of [r.agentContainer, r.targetNetwork]) requireInput(typeof name === 'string' && /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/u.test(name));
-  for (const image of [r.agentImage, r.engineImage]) requireInput(typeof image === 'string' && /^[A-Za-z0-9][A-Za-z0-9_.:/@-]{0,255}$/u.test(image));
+  for (const image of [r.agentImage, r.engineImage,...(r.exportEngine?[r.exportEngine.image]:[])]) requireInput(typeof image === 'string' && /^[A-Za-z0-9][A-Za-z0-9_.:/@-]{0,255}$/u.test(image));
   requireInput(validateApi('InstallationValues', r.installationValues).ok);
 }
 function ownership(r: ProvisionRequest): void {
@@ -44,6 +45,7 @@ function engineValues(r: ProvisionRequest): void {
   for (const id of [e.manifestId, e.profileId]) requireInput(typeof id === 'string' && /^[A-Za-z0-9_.-]{1,128}$/u.test(id));
   requireInput(Number.isSafeInteger(e.catalogVersion) && e.catalogVersion > 0 && e.configVersion === 1);
   requireInput(Number.isSafeInteger(e.tmpfsBytes) && e.tmpfsBytes > 0);
+  checkExportEngine(r);
   const supported = r.installationValues.supportedProfiles;
   requireInput(supported.length === 1 && supported[0] === e.profileId && r.installationValues.runDefaults.engineProfile === e.profileId);
 }
@@ -65,4 +67,20 @@ export function capture(request: ProvisionRequest, context: ProvisionContext): C
 export function check(context: Pick<ProvisionContext, 'signal' | 'deadline'>): void {
   if (context.signal.aborted) throw new ProvisionError('cancelled');
   if (performance.now() >= context.deadline) throw new ProvisionError('deadline');
+}
+
+function checkExportEngine(r:ProvisionRequest):void {
+ const e=r.exportEngine;if(e===undefined)return;
+ fields(e,['image','sourceProfileId','manifest','manifestId','profileId','catalogVersion','configVersion','tmpfsBytes']);
+ requireInput(e.sourceProfileId===r.engine.profileId&&e.profileId!==r.engine.profileId);
+ requireInput(validate('EngineManifest',e.manifest).ok&&e.manifest.engineId==='k6');
+ requireInput(e.manifest.schemas.result==='https://beetle-lab.dev/contracts/runner/v1/export-result');
+ exportNetwork(e.manifest);
+ for(const id of [e.manifestId,e.profileId])requireInput(typeof id==='string'&&/^[A-Za-z0-9_.-]{1,128}$/u.test(id));
+ requireInput(Number.isSafeInteger(e.catalogVersion)&&e.catalogVersion>0&&e.configVersion===1);
+ requireInput(Number.isSafeInteger(e.tmpfsBytes)&&e.tmpfsBytes>0);
+}
+
+function exportNetwork(manifest:ProvisionRequest['engine']['manifest']):void{
+ requireInput(manifest.capabilities.includes('standalone-export-v1')&&!manifest.network.required&&manifest.network.profile==='none');
 }

@@ -47,7 +47,7 @@ async function create(c: Captured, files: PrivateFiles): Promise<ProvisionResult
   await files.ready(receipt, operationId);
   return Object.freeze({ installationId, status: 'created', paths: paths(c.request.root) });
 }
-async function replay(c: Captured, files: PrivateFiles): Promise<ProvisionResult> {
+async function verifiedConfiguration(c:Captured,files:PrivateFiles):Promise<Receipt>{
   const receipt = await readReceipt(c, files);
   await layout(c, files, false); await verifyConfigs(c, files, receipt);
   const facts = await inspect(c);
@@ -60,6 +60,10 @@ async function replay(c: Captured, files: PrivateFiles): Promise<ProvisionResult
     }
   }
   await journalFiles(c, files, false);
+  return receipt;
+}
+async function replay(c:Captured,files:PrivateFiles):Promise<ProvisionResult>{
+  const receipt=await verifiedConfiguration(c,files);
   await authority(c, files, receipt.installationId, receipt.authority!);
   await files.sync(c.request.root); check(c.context);
   return Object.freeze({ installationId: receipt.installationId, status: 'unchanged', paths: paths(c.request.root) });
@@ -89,4 +93,15 @@ export async function provisionFreshInstallation(request: ProvisionRequest, cont
     await files.close();
     if (files.clean && !cleanupFailed) owners.delete(c.request.root);
   }
+}
+
+/** Read-only configuration custody only; never opens Journal or grants authority. */
+export async function inspectReadyConfiguration(request:ProvisionRequest,context:ProvisionContext):Promise<{readonly installationId:string;readonly readiness:'configuration_only';readonly paths:ProvisionResult['paths']}>{
+ const c=capture(request,context);check(c.context);if(owners.size!==0)throw new ProvisionError('conflict');
+ const files=new PrivateFiles(c);owners.set(c.request.root,files);let cleanupFailed=false;
+ try{
+  await files.pin(c.request.root);const receipt=await verifiedConfiguration(c,files);check(c.context);
+  return Object.freeze({installationId:receipt.installationId,readiness:'configuration_only',paths:paths(c.request.root)});
+ }catch(cause){cleanupFailed=cause instanceof ProvisionError&&cause.code==='cleanup';return translate(cause,c,true);}
+ finally{await files.close();if(files.clean&&!cleanupFailed)owners.delete(c.request.root);}
 }

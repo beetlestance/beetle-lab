@@ -22,7 +22,7 @@ function image(value: Record<string, unknown>, arch: string): { id: string; envi
   // Catalogue validates the effective environment's names, duplicate keys and byte bounds.
   return { id, environment: environment as string[] };
 }
-export interface Facts { daemonId: string; agentId: string; engineId: string; environment: string[]; defaultRuntime: string }
+export interface Facts { daemonId: string; agentId: string; engineId: string; environment: string[]; defaultRuntime: string; export?:{id:string;environment:string[]} }
 export async function inspect(captured: Captured): Promise<Facts> {
   const { request: r, context } = captured;
   const get = async (path: string) => {
@@ -39,9 +39,10 @@ export async function inspect(captured: Captured): Promise<Facts> {
     requireFact(typeof defaultRuntime === 'string' && /^[a-z][a-z0-9_.-]{0,63}$/u.test(defaultRuntime));
     const agent = image(await get(`/v1.47/images/${encodeURIComponent(r.agentImage)}/json`), arch);
     const engine = image(await get(`/v1.47/images/${encodeURIComponent(r.engineImage)}/json`), arch);
+    const offline=r.exportEngine?image(await get(`/v1.47/images/${encodeURIComponent(r.exportEngine.image)}/json`),arch):undefined;
     const network = await get(`/v1.47/networks/${encodeURIComponent(r.targetNetwork)}`);
     requireFact(network.Name === r.targetNetwork);
-    return { daemonId, defaultRuntime, agentId: agent.id, engineId: engine.id, environment: engine.environment };
+    return { daemonId, defaultRuntime, agentId: agent.id, engineId: engine.id, environment: engine.environment,...(offline?{export:offline}:{}) };
   } catch (cause) {
     check(context); throw new ProvisionError('inspection', { cause });
   }

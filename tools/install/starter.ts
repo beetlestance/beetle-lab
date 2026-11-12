@@ -1,3 +1,4 @@
+import {starterExport} from './starter/export.js';
 import { performance } from 'node:perf_hooks';
 import { ProvisionError } from './types.js';
 import type { ProvisionRequest } from './types.js';
@@ -14,7 +15,9 @@ export interface StarterOptions {
   readonly dockerSocket: string;
   readonly agentContainer: string;
   readonly agentImage: string;
+  readonly agentIdentity?:'socket-group-drop-v1';
   readonly engineImage: string;
+  readonly exportEngineImage?:string;
   readonly targetNetwork: string;
 }
 
@@ -23,8 +26,9 @@ export function createStarterRequest(options: StarterOptions): ProvisionRequest 
   try {
     const capturedOptions = JSON.parse(canonical(options)) as StarterOptions;
     fields(capturedOptions, ['root', 'uid', 'gid', 'externalOrigin', 'agentOrigin', 'dockerSocket',
-      'agentContainer', 'agentImage', 'engineImage', 'targetNetwork']);
-    const request = { ...capturedOptions, ...starterPolicy() };
+      'agentContainer', 'agentImage', 'engineImage', 'targetNetwork',...(Object.hasOwn(capturedOptions,'exportEngineImage')?['exportEngineImage']:[]),...(Object.hasOwn(capturedOptions,'agentIdentity')?['agentIdentity']:[])]);
+    const {exportEngineImage,...baseOptions}=capturedOptions;const policy=starterPolicy();
+    const request = {...baseOptions,...policy,...(exportEngineImage!==undefined?{exportEngine:starterExport(policy.engine,exportEngineImage)}:{})};
     // Capture owns scalar validation and bounded, detached JSON. This capability is
     // never used: only the provisioning entrypoint performs daemon inspection.
     return capture(request, {

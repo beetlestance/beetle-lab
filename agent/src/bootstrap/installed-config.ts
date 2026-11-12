@@ -50,7 +50,8 @@ function installedCatalog(input: unknown): Catalog {
   return createEngineCatalog(entries);
 }
 function installation(raw: unknown): InstallationConfiguration {
-  const input = record(raw, ['installationId', 'stagingRoot', 'expectedDaemonId', 'agentContainer', 'agentImageId', 'user']);
+  const input = record(raw, ['installationId', 'stagingRoot', 'expectedDaemonId', 'agentContainer', 'agentImageId', 'user','agentIdentity']);
+  bootstrapIdentity(input);
   if (!validatePrimitive('uuid', input.installationId).ok || typeof input.agentImageId !== 'string'
     || !/^sha256:[a-f0-9]{64}$/u.test(input.agentImageId)
     || typeof input.user !== 'string' || !/^[1-9][0-9]{0,8}:[1-9][0-9]{0,8}$/u.test(input.user)) throw new AgentConfigurationError();
@@ -58,6 +59,9 @@ function installation(raw: unknown): InstallationConfiguration {
   if (typeof input.expectedDaemonId !== 'string' || !/^[A-Za-z0-9:._-]{1,128}$/u.test(input.expectedDaemonId)
     || typeof input.agentContainer !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/u.test(input.agentContainer)) throw new AgentConfigurationError();
   return input as unknown as InstallationConfiguration;
+}
+function bootstrapIdentity(input:Record<string,unknown>):void{
+  if(Object.hasOwn(input,'agentIdentity')&&input.agentIdentity!=='socket-group-drop-v1')throw new AgentConfigurationError();
 }
 function listen(raw: unknown): InstalledConfiguration['listen'] {
   const input = raw === undefined ? {} : record(raw, ['host', 'port']);

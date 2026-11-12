@@ -14,6 +14,7 @@ export type StagingResult<T> = { readonly ok: true; readonly value: T } | { read
 export interface InstallationConfiguration {
   readonly installationId: string; readonly stagingRoot: string; readonly expectedDaemonId: string;
   readonly agentContainer: string; readonly agentImageId: string; readonly user: string;
+  readonly agentIdentity?:'socket-group-drop-v1';
 }
 export interface VerifyInput { readonly configuration: InstallationConfiguration; readonly transport: DockerTransport; readonly operation: Operation }
 /** Private providers receive immutable identity, never the mutable caller request. IDs are opaque references. */

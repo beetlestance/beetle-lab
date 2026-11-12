@@ -1,6 +1,6 @@
 # Explicit fresh installation provisioning
 
-Status: accepted next component for Docker/Compose installation. Existing serving
+Status: implemented offline provisioning contract. Existing serving
 startup keeps refusing a missing or interrupted authority gate. This component
 creates private installation files and a fresh agent journal; it does not start
 services, qualify Compose, migrate data or update an existing installation.
@@ -24,10 +24,17 @@ template; replace its imageDigest only with the inspected engine image ID. Its
 schema must equal the shipped k6 config schema. No production test-fixture import,
 whole-environment snapshot or guessed host capacity/default resource pool.
 
-The first implementation handles one k6 profile, Linux amd64/arm64 and a common
+An optional exportEngine supplies a separate inspected image, sourceProfileId and
+engine template with standalone-export-v1 capability, export-result schema and
+networknone. Configuration derives both installed identities through the shared
+catalogue; backend exportProfiles maps the performance alias to the offline pin.
+The optional agentIdentity socket-group-drop-v1 is explicit packaging input; see
+[ordinary Compose](compose-first-boot.md) for its runtime verification.
+
+The initializer handles one performance k6 profile, Linux amd64/arm64 and a common
 non-root uid:gid for backend/agent/engine. User budgets/pool/retention are explicit
 installation values; later UI changes remain owned by existing settings storage.
-Compose can supply a separately reviewed starter template/default policy later.
+Compose supplies the separately specified starter template/default policy.
 Do not claim that caller policy describes measured capacity or a qualified minimum.
 
 ## Container client
@@ -99,7 +106,7 @@ the authority gate with that exact journal authority. Providers/journal/gate and
 native originals close before the receipt atomically becomes ready. No serving
 openAgentRuntime/listener/container launch is part of provisioning.
 
-Provisioning and unchanged validation are offline operations; a serving authority
+Provisioning and unchanged replay are offline operations; a serving authority
 lease causes conflict, not forced takeover. A ready re-invocation is unchanged
 only after bounded receipt/config/authority
 identity validation with the same captured request and immutable image pins.
@@ -110,6 +117,11 @@ unknown receipt/config files, changed pins/policy, missing expected file or unsa
 with a fixed recovery_required/conflict classification. Explicit interrupted-init
 recovery/update/restore remains a separate operation; no fallback or automatic reset.
 
+inspectReadyConfiguration(request, context) reuses receipt, private configuration
+and inspected pin checks without opening the Journal/authority owner. Its result
+contains installationId, paths and readiness configuration_only. It does not grant
+serving authority, repair a missing gate or validate mutable runtime state.
+
 ## Composition boundary
 
 Production installer may import only named public entrypoints from agent/bootstrap,
@@ -118,11 +130,11 @@ agent/backends/docker, plus backend/bootstrap/configuration for validation. Runt
 services must never import the installer. No private storage/SQL imports, copied
 compiler/catalogue/authority implementation, global install or root dependency edit.
 
-Docker packaging must later mount agent staging at the same canonical absolute
+Docker packaging must mount agent staging at the same canonical absolute
 host/container path: sibling engine bind sources are interpreted by the daemon.
 Backend published inputs are shared read-only with agent; credentials/config are
-private mounts. Backend/frontend images, proxy, Compose and real first-boot
-qualification remain subsequent components and do not follow from this helper.
+private mounts. [Ordinary Compose](compose-first-boot.md) owns packaging and
+first-boot orchestration; its qualification does not follow from this helper.
 
 ## Failure and verification
 

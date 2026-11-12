@@ -1,0 +1,31 @@
+# Convenience wrapper around the Dockerfile. Use `docker compose up` if you
+# don't want to remember the `-p` and `-v` flags every time.
+#
+#   docker compose up --build       # build and start
+#   docker compose up -d             # detached
+#   docker compose down              # stop (data in ./configs persists)
+#
+
+services:
+  beetle-lab:
+    build:
+      context: .
+      args:
+        K6_VERSION: "1.5.0"
+        NODE_VERSION: "22"
+    image: ghcr.io/beetlestance/beetle-lab:latest
+    container_name: beetle-lab
+    ports:
+      - "127.0.0.1:4567:4567"
+    volumes:
+      # Buckets, configs, payloads, runs — host-mounted so they survive the
+      # container, and so users can edit configs from the host filesystem.
+      - ./configs:/app/configs
+    environment:
+      # External-tool hooks are off by default. To opt in, set both:
+      #   K6_STUDIO_HOOKS_ENABLED=1
+      #   K6_STUDIO_HOOKS_ALLOWED_BINARIES=docker,curl,kubectl
+      # Only commands whose first word is in the allow-list will execute.
+      K6_STUDIO_HOOKS_ENABLED: "${K6_STUDIO_HOOKS_ENABLED:-0}"
+      K6_STUDIO_HOOKS_ALLOWED_BINARIES: "${K6_STUDIO_HOOKS_ALLOWED_BINARIES:-}"
+    restart: unless-stopped
