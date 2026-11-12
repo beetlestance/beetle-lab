@@ -1,9 +1,9 @@
 import { createApiClient, createInputTransferClient } from '@beetle/contracts/api';
-import type { ApiClient, ApiClientResult, BrowserSession, InputTransferClient } from '@beetle/contracts/api';
+import type { ApiClient, ApiClientResult, ApiClientFailure, BrowserSession, InputTransferClient } from '@beetle/contracts/api';
 import { unknownOutcome } from '../../app/errors.js';
 import { SessionTransferOwner } from './transfer-owner.js';
 
-export interface SessionOptions { baseUrl: string; fetch?: typeof fetch }
+export interface SessionOptions { baseUrl: string; fetch?: typeof fetch; autoOpen?: boolean }
 export type SessionState =
   | { kind: 'checking' | 'pairing' | 'logging-out'; message: string }
   | { kind: 'unpaired' | 'unavailable'; message: string }
@@ -19,6 +19,7 @@ export class BrowserSessionGate {
   private epoch: Epoch = { generation: 0, abort: new AbortController() };
   private listeners = new Set<() => void>();
   private active = false;
+  private accessMode: 'automatic' | 'paired' = 'paired';
   private readonly transfers = new SessionTransferOwner(createInputTransferClient);
   constructor(private readonly options: SessionOptions) {}
   getSnapshot = () => this.state;
@@ -53,7 +54,7 @@ export class BrowserSessionGate {
       signal.throwIfAborted();
       const reply = await fetcher(input, { ...init, signal, credentials: 'same-origin' });
       if (observe && reply.status === 401 && this.current(epoch)) {
-        this.begin({ kind: 'unpaired', message: `${lostWrite} ${restart}` });
+        this.ended();
       }
       if (!this.current(epoch)) {
         await reply.body?.cancel();
@@ -67,13 +68,18 @@ export class BrowserSessionGate {
     const fetcher = this.options.fetch ?? fetch;
     return async (input, init) => {
       const reply = await fetcher(input, init);
-      if (reply.status === 401 && this.current(epoch)) this.begin({ kind: 'unpaired', message: `${lostWrite} ${restart}` });
+      if (reply.status === 401 && this.current(epoch)) this.ended();
       // The byte client owns late response body cancellation and its original promise.
       return reply;
     };
   }
+  private ended() {
+    this.begin({kind: this.accessMode === 'automatic' ? 'unavailable' : 'unpaired',
+      message: this.accessMode === 'automatic' ? `${lostWrite} Check session status to reconnect.` : `${lostWrite} ${restart}`});
+  }
   private async accept(epoch: Epoch, session: BrowserSession) {
     if (!this.current(epoch)) return;
+    this.accessMode = session.accessMode ?? 'paired';
     try {
       const transfers = await this.transfers.open({ baseUrl: this.options.baseUrl,
         headers: { 'X-Beetle-CSRF': session.csrfToken }, fetch: this.transferFetch(epoch) }, epoch.abort.signal);
@@ -90,15 +96,32 @@ export class BrowserSessionGate {
     const epoch = this.begin({ kind: 'checking', message: 'Checking local session…' });
     void this.readSession(epoch);
   };
-  private async readSession(epoch: Epoch, context = '') {
+  private async readSession(epoch: Epoch, context = '', automatic = this.options.autoOpen !== false) {
     if (!this.current(epoch)) return;
     const result = await this.client(epoch).getBrowserSession({ signal: epoch.abort.signal });
     if (!this.current(epoch)) return;
     if (result.ok) { await this.accept(epoch, result.value); return; }
     const unpaired = result.error.status === 401;
+    if (automatic && localExchangeNeeded(result.error)) {await this.openLocal(epoch); return;}
     this.publish({ kind: unpaired ? 'unpaired' : 'unavailable', message: unpaired
       ? `${context} Pair this browser with the token printed at local startup. ${restart}`
       : `${context} Session status could not be verified. Check that the local service is running, then check again.` });
+  }
+  private async openLocal(epoch: Epoch) {
+    const result = await this.client(epoch, {'X-Beetle-Local': '1'}).openLocalBrowserSession({body: {}, signal: epoch.abort.signal});
+    if (!this.current(epoch)) return;
+    if (result.ok) {await this.accept(epoch, result.value); return;}
+    if (result.error.status === 401) {
+      this.publish({kind: 'unpaired', message: `Pair this browser with the token printed at local startup. ${restart}`}); return;
+    }
+    if (unknownOutcome(result.error)) {await this.recoverLocal(epoch); return;}
+    this.publish({kind: 'unavailable', message: 'Local access could not open. Check that the service is running, then check session status.'});
+  }
+  private async recoverLocal(epoch: Epoch) {
+    const result = await this.client(epoch).getBrowserSession({signal: epoch.abort.signal});
+    if (!this.current(epoch)) return;
+    if (result.ok) {await this.accept(epoch, result.value); return;}
+    this.publish({kind: 'unavailable', message: 'Local access could not be confirmed. Check session status to reconnect.'});
   }
   pair = (bootstrapToken: string) => {
     if (this.state.kind !== 'unpaired') return;
@@ -115,7 +138,7 @@ export class BrowserSessionGate {
     if (result.ok) { await this.accept(epoch, result.value); return; }
     if (unknownOutcome(result.error)) {
       this.publish({ kind: 'checking', message: `${lostPair} Checking session status…` });
-      await this.readSession(epoch, lostPair);
+      await this.readSession(epoch, lostPair, false);
       return;
     }
     this.publish({ kind: 'unpaired', message: `Pairing was not accepted. Check the startup token and service status. ${restart}` });
@@ -134,9 +157,13 @@ export class BrowserSessionGate {
     const result = await pending;
     if (!this.current(epoch)) return;
     if (result.ok || result.error.status === 401) {
-      this.publish({ kind: 'unpaired', message: `This browser is signed out. Unacknowledged changes may have committed; their outcome is unknown. ${restart}` });
+      this.publish({ kind: this.accessMode === 'automatic' ? 'unavailable' : 'unpaired', message: `This browser is signed out. Unacknowledged changes may have committed; their outcome is unknown. ${this.accessMode === 'automatic' ? 'Check session status to reopen Beetle Lab.' : restart}` });
       return;
     }
     this.publish({ kind: 'unavailable', message: `Sign-out could not be confirmed. The session may still be active. Check session status before continuing. Unacknowledged changes may have committed; their outcome is unknown.` });
   }
+}
+
+function localExchangeNeeded(error: ApiClientFailure): boolean {
+  return error.status === 401 || error.protocol?.code === 'storage_unavailable';
 }

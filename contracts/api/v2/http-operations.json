@@ -229,6 +229,15 @@
     "params": "FolderParams"
   },
   {
+    "name": "openLocalBrowserSession",
+    "method": "POST",
+    "path": "/api/v2/auth/local",
+    "request": "OpenLocalBrowserRequest",
+    "response": "BrowserSession",
+    "successStatus": 200,
+    "error": "ApiError"
+  },
+  {
     "name": "pairBrowserSession",
     "method": "POST",
     "path": "/api/v2/auth/pair",

@@ -13,6 +13,7 @@ export class BootstrapError extends Error {
   }
 }
 export interface BackendEnvironment {
+  readonly BEETLE_LOCAL_ACCESS?: string;
   readonly BEETLE_CONFIG_FILE?: string;
   readonly BEETLE_AGENT_CONFIG_FILE?: string;
   readonly BEETLE_DATA_DIR?: string;
@@ -87,6 +88,8 @@ async function agentConnection(path: string, installationId: string) {
  */
 export async function loadBackendConfiguration(environment: BackendEnvironment, workerUrl: URL): Promise<BackendConfiguration> {
   const listen = listener(environment);
+  const localAccess = environment.BEETLE_LOCAL_ACCESS ?? 'automatic';
+  if (!['paired','automatic'].includes(localAccess)) throw new BootstrapError('configuration');
   const config = absolute(environment.BEETLE_CONFIG_FILE);
   const agentConfig = absolute(environment.BEETLE_AGENT_CONFIG_FILE);
   const root = absolute(environment.BEETLE_DATA_DIR);
@@ -95,7 +98,7 @@ export async function loadBackendConfiguration(environment: BackendEnvironment, 
   const record = await readInstallation(config);
   const directory = await dataDirectory(root);
   const connection = await agentConnection(agentConfig, record.id);
-  return Object.freeze({ listen, application: { externalOrigin,
+  return Object.freeze({ listen, application: { externalOrigin, localAccess: localAccess as 'paired' | 'automatic',
     inputsDirectory: join(directory, 'inputs'), agent: { connection, dataRoot: directory },
     metadata: { path: join(directory, 'metadata.sqlite'), workerUrl, installation: record, runtime: null } } });
 }

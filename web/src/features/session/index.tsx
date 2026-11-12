@@ -19,7 +19,7 @@ export function SessionApp(options: SessionOptions) {
   </>;
   return <main className="session-page" id="main" tabIndex={-1}>
     <section className="session-panel" aria-labelledby="session-title">
-      <header><p>Beetle Lab · Local access</p><h1 id="session-title">Pair this browser</h1></header>
+      <header><p>Beetle Lab · Local access</p><h1 id="session-title">{state.kind === 'unpaired' ? 'Pair this browser' : 'Local access'}</h1></header>
       <p role={state.kind === 'unavailable' ? 'alert' : 'status'}>{state.message}</p>
       {state.kind === 'unpaired' && <PairForm pair={gate.pair} />}
       {(state.kind === 'unavailable' || state.kind === 'unpaired') && <button onClick={gate.check}>Check session status</button>}

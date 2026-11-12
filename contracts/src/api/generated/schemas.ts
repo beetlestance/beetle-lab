@@ -124,6 +124,7 @@ export const apiMessageSchemas = freezeSchema({
   BrowserSession: { $ref: 'https://beetle-lab.dev/contracts/api/v2/session#/$defs/BrowserSession' },
   LogoutBrowserRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/session#/$defs/LogoutBrowserRequest' },
   LogoutBrowserReceipt: { $ref: 'https://beetle-lab.dev/contracts/api/v2/session#/$defs/LogoutBrowserReceipt' },
+  OpenLocalBrowserRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/session#/$defs/OpenLocalBrowserRequest' },
   BudgetOverrides: { $ref: 'https://beetle-lab.dev/contracts/api/v2/settings-overrides#/$defs/BudgetOverrides' },
   BudgetOverridePatch: { $ref: 'https://beetle-lab.dev/contracts/api/v2/settings-overrides#/$defs/BudgetOverridePatch' },
   RunDefaultOverrides: { $ref: 'https://beetle-lab.dev/contracts/api/v2/settings-overrides#/$defs/RunDefaultOverrides' },

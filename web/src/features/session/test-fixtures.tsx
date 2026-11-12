@@ -10,7 +10,8 @@ export const token = 'synthetic_startup_token_'.padEnd(43, 'x');
 export const session: BrowserSession = { scope: 'local-admin', expiresAt: '2027-01-01T00:00:00.000Z', csrfToken: 'c'.repeat(43) };
 export const unpaired = () => json(apiError('unpaired'), 401);
 export interface Record extends RequestRecord { headers: Headers; credentials: RequestCredentials | undefined }
-export function browser(handler: (record: Record) => Response | Promise<Response>, initial = '/') {
+/** Paired-profile fixture by default; automatic-profile cases opt in explicitly. */
+export function browser(handler: (record: Record) => Response | Promise<Response>, initial = '/', autoOpen = false) {
   const records: Record[] = [];
   const fetcher: typeof fetch = async (input, init) => {
     const url = new URL(String(input));
@@ -21,7 +22,7 @@ export function browser(handler: (record: Record) => Response | Promise<Response
     if (records.length > 100) throw new Error('Synthetic request budget exceeded');
     return handler(record);
   };
-  return { records, ...render(<MemoryRouter initialEntries={[initial]}><SessionApp baseUrl="http://localhost" fetch={fetcher} /></MemoryRouter>) };
+  return { records, ...render(<MemoryRouter initialEntries={[initial]}><SessionApp baseUrl="http://localhost" fetch={fetcher} autoOpen={autoOpen} /></MemoryRouter>) };
 }
 type RecordBody = { [key: string]: unknown };
 export function namespace(record: RequestRecord) { return readNamespace(record); }

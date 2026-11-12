@@ -19,14 +19,14 @@ async function ownedPort(): Promise<number> {
   await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
   return address.port;
 }
-function startup(child: Child, termination: Promise<Exit>): Promise<string> {
+function startup(child: Child, termination: Promise<Exit>): Promise<void> {
   return new Promise((resolve, reject) => {
     let stdout = ''; let stderrBytes = 0;
     child.stdout.on('data', (data: Buffer) => {
       if (Buffer.byteLength(stdout) + data.byteLength > 4096) { child.kill('SIGKILL'); reject(new Error('Startup stdout limit')); return; }
       stdout += data.toString('utf8');
-      const token = /local startup token: ([A-Za-z0-9_-]{43})\n/.exec(stdout);
-      if (token) resolve(token[1]!);
+      if (stdout.includes('local startup token:')) {reject(new Error('Automatic startup exposed a pairing token')); return;}
+      if (stdout.includes('Beetle Lab local access ready.')) resolve();
     });
     child.stderr.on('data', (data: Buffer) => {
       stderrBytes += data.byteLength;
@@ -36,11 +36,11 @@ function startup(child: Child, termination: Promise<Exit>): Promise<string> {
     void termination.then(() => reject(new Error('Backend exited before startup')));
   });
 }
-async function exchange(origin: string, token: string): Promise<void> {
-  const headers = { origin, 'content-type': 'application/json', 'x-beetle-pair': '1' };
-  const pair = await fetch(origin + '/api/v2/auth/pair', { method: 'POST', headers,
-    body: JSON.stringify({ bootstrapToken: token }), signal: AbortSignal.timeout(3000) });
-  if (pair.status !== 200) throw new Error('Pairing status');
+async function exchange(origin: string): Promise<void> {
+  const headers = { origin, 'content-type': 'application/json', 'x-beetle-local': '1' };
+  const pair = await fetch(origin + '/api/v2/auth/local', { method: 'POST', headers,
+    body: '{}', signal: AbortSignal.timeout(3000) });
+  if (pair.status !== 200) throw new Error('Automatic local access status');
   const view = await pair.json() as { csrfToken: string };
   const cookie = pair.headers.get('set-cookie')?.split(';')[0];
   if (!cookie) throw new Error('No session cookie');
@@ -70,10 +70,10 @@ async function run(root: string, port: number): Promise<void> {
   const termination = new Promise<Exit>(resolve => child.once('close', (code, signal) => { closed = true; resolve({ code, signal }); }));
   const timer = setTimeout(() => { if (!closed) child.kill('SIGKILL'); }, 30_000);
   try {
-    await exchange(origin, await startup(child, termination));
+    await startup(child, termination); await exchange(origin);
     child.kill('SIGTERM'); const exit = await termination;
     if (exit.code !== 0 || exit.signal !== null) throw new Error('Backend shutdown failed');
-    process.stdout.write('Backend smoke passed: pairing, namespaces, full-size suites, unavailable run enqueue/scoped reads, chunked input publication/read/delete, logout, clean SIGTERM.\n');
+    process.stdout.write('Backend smoke passed: automatic local access without token output, namespaces, full-size suites, unavailable run enqueue/scoped reads, chunked input publication/read/delete, logout, clean SIGTERM.\n');
   } finally {
     clearTimeout(timer);
     if (!closed) { child.kill('SIGKILL'); await termination; }

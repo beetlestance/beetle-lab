@@ -618,5 +618,10 @@
     "path": "valid/live-metric-snapshot.json",
     "schema": "LiveMetricSnapshot",
     "valid": true
+  },
+  {
+    "path": "valid/open-local-browser-request.json",
+    "schema": "OpenLocalBrowserRequest",
+    "valid": true
   }
 ]

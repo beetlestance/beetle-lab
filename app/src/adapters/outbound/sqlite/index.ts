@@ -1,3 +1,5 @@
+import { localSessionOperation, captureLocalSessionReply } from './local-session/index.js';
+import type { LocalSessionStore, LocalSessionOperation } from '../../../ports/local-session.js';
 import { deletionOperation, captureDeletionReply } from './output-deletion/index.js';
 import type { OutputDeletionMetadata, OutputDeletionOperation } from '../../../ports/output-deletion-metadata.js';
 import type { RunExecutionReader } from '../../../ports/run-live-metrics.js';
@@ -51,7 +53,7 @@ export interface MetadataOptions extends Bootstrap {
   /** Includes in-flight work; maximum 64. Close has one reserved slot. */
   queueLimit?: number;
 }
-interface Pending { deletion?: OutputDeletionOperation; resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
+interface Pending { localSession?: LocalSessionOperation; deletion?: OutputDeletionOperation; resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
   artifacts?: ArtifactReadOperation; absence?: AbsenceOperation; finalization?: FinalizationOperation; result?: RunKey; execution?: RunKey; runEvents?: RunEventsQuery; output?: OutputOperation; large: boolean; replyLimit: number; event?: EventOperation; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
 function validateLocation(options: MetadataOptions): void {
   if (typeof options.path !== 'string' || !options.path || options.path === ':memory:' || options.path.length > 4096 ||
@@ -79,6 +81,10 @@ export class Metadata {
   private readyResolve: () => void = () => undefined;
   private readyReject: (error: StorageError) => void = () => undefined;
   private readonly ready: Promise<void>;
+  readonly localSessions: LocalSessionStore = {
+    load: () => this.call({kind: 'loadLocalSession'}) as ReturnType<LocalSessionStore['load']>,
+    save: (expectedVersion, session) => this.call({kind: 'saveLocalSession', expectedVersion, session}) as ReturnType<LocalSessionStore['save']>,
+  };
   readonly outputDeletions: OutputDeletionMetadata = {
     begin: command => this.call({kind: 'beginOutputDeletion', command}) as ReturnType<OutputDeletionMetadata['begin']>,
     get: key => this.call({kind: 'getOutputDeletion', key}) as ReturnType<OutputDeletionMetadata['get']>,
@@ -215,7 +221,7 @@ export class Metadata {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => this.fail('unavailable'), 5000);
       this.pending.set(messageId, { resolve, reject, timer, large: largeOperation(operation),
-        replyLimit: operationReplyLimit(operation), ...(deletionOperation(operation) ? {deletion: operation} : {}), ...(absenceOperation(operation) ? { absence: operation } : {}), ...(finalizationOperation(operation) ? { finalization: operation } : {}), ...(outputOperation(operation) ? { output: operation } : {}), ...(eventOperation(operation) ? { event: operation } : {}), ...(dispatchOperation(operation) ? { dispatch: operation } : {}),
+        replyLimit: operationReplyLimit(operation), ...(localSessionOperation(operation) ? {localSession: operation} : {}), ...(deletionOperation(operation) ? {deletion: operation} : {}), ...(absenceOperation(operation) ? { absence: operation } : {}), ...(finalizationOperation(operation) ? { finalization: operation } : {}), ...(outputOperation(operation) ? { output: operation } : {}), ...(eventOperation(operation) ? { event: operation } : {}), ...(dispatchOperation(operation) ? { dispatch: operation } : {}),
 
         ...(operation.kind === 'cancelRun' ? { cancellation: operation.command } : {}) });
       const pending = this.pending.get(messageId)!;
@@ -256,6 +262,7 @@ export class Metadata {
     if (operation.kind === 'getRunResult') pending.result = operation.key;
   }
   private readReply(pending: Pending, value: unknown): Value | undefined {
+    if (pending.localSession) return captureLocalSessionReply(pending.localSession, value);
     if (pending.deletion) return captureDeletionReply(pending.deletion, value);
     if (pending.execution) return captureExecutionReply(pending.execution, value);
     if (pending.artifacts) return captureArtifactReadReply(pending.artifacts, value);

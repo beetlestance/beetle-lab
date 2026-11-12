@@ -1,3 +1,4 @@
+import { localSessionOperation, captureLocalSessionOperation } from './local-session/index.js';
 import { deletionOperation, captureDeletionOperation, deletionReplyLimit } from './output-deletion/index.js';
 import { executionOperation, captureExecutionOperation } from './execution-binding/index.js';
 import { artifactReadOperation, captureArtifactReadOperation } from './run-artifacts/index.js';
@@ -123,6 +124,7 @@ function checkedExtendedOperation(operation: Operation): boolean {
 }
 export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operation {
   try {
+    if (localSessionOperation(input)) return captureLocalSessionOperation(input);
     if (deletionOperation(input)) return captureDeletionOperation(input);
     if (executionOperation(input)) return captureExecutionOperation(input);
     if (artifactReadOperation(input)) return captureArtifactReadOperation(input);
@@ -178,6 +180,7 @@ function dataProperty(value: unknown, key: string): unknown {
   return descriptor && 'value' in descriptor ? descriptor.value : undefined;
 }
 export function operationMessageLimit(operation: Operation): number {
+  if (localSessionOperation(operation)) return 2048;
   if (deletionOperation(operation)) return 12288;
   if (compactOperation(operation)) return 4096;
   if (outputOperation(operation)) return 79872;
@@ -193,6 +196,7 @@ export function largeOperation(operation: Operation): boolean {
   return suiteOperation(operation) || ['dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource', 'getRunResult', 'getRunEvents', 'listRunArtifacts'].includes(dataProperty(operation, 'kind') as string);
 }
 export function operationReplyLimit(operation: Operation): number {
+  if (localSessionOperation(operation)) return 2048;
   if (deletionOperation(operation)) return deletionReplyLimit(operation);
   if (absenceOperation(operation) || finalizationOperation(operation)) return 4096;
   if (operation.kind === 'getRunArtifact') return 4096;

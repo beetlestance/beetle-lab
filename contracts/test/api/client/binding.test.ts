@@ -13,7 +13,7 @@ const files: Partial<Record<keyof ApiTypes, string>> = {
   CreateInputRequest: 'create-input', TransitionInputRequest: 'transition-input',
   Suite: 'suite', SuiteRevision: 'suite-revision', SuitePage: 'suite-page', SuiteRevisionPage: 'suite-revision-page',
   CreateSuiteRequest: 'create-suite', PatchSuiteRequest: 'patch-suite', CreateSuiteRevisionRequest: 'create-suite-revision',
-  PairBrowserRequest: 'pair-browser-request', BrowserSession: 'browser-session',
+  OpenLocalBrowserRequest: 'open-local-browser-request', PairBrowserRequest: 'pair-browser-request', BrowserSession: 'browser-session',
   LogoutBrowserRequest: 'logout-browser-request', LogoutBrowserReceipt: 'logout-browser-receipt',
   Organization: 'organization', Workspace: 'workspace', Folder: 'folder', DeletionReceipt: 'deletion-receipt',
   OrganizationPage: 'organization-page', WorkspacePage: 'workspace-page', FolderPage: 'folder-page',

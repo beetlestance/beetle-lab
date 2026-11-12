@@ -1,3 +1,5 @@
+import type { LocalSession } from '../adapters/inbound/http/session/index.js';
+import { captureLocalAccess, openApplicationSession } from './local-access.js';
 import { createRunComparisonService } from '../application/run-comparison/index.js';
 import { registerRunComparisonRoutes } from '../adapters/inbound/http/run-comparison/index.js';
 import { createRunLiveMetricsService } from '../application/run-live-metrics/index.js';
@@ -19,7 +21,7 @@ import { createApiServer } from '../adapters/inbound/http/api-errors.js';
 import { configureSchemaCompilers } from '../adapters/inbound/http/schema-compilers.js';
 import { registerNamespaceRoutes } from '../adapters/inbound/http/namespaces/index.js';
 import { registerSettingsRoutes } from '../adapters/inbound/http/settings/index.js';
-import { createLocalSession } from '../adapters/inbound/http/session/index.js';
+import { captureLocalExternalOrigin } from '../adapters/inbound/http/session/index.js';
 import { openMetadata } from '../adapters/outbound/sqlite/index.js';
 import type { Metadata, MetadataOptions, RuntimeObservation } from '../adapters/outbound/sqlite/index.js';
 import { classifyMetadataError } from './metadata-errors.js';
@@ -31,6 +33,7 @@ import type { InputHttp } from '../adapters/inbound/http/inputs/index.js';
 
 export interface ApplicationOptions {
   readonly externalOrigin: string;
+  readonly localAccess?: 'paired' | 'automatic';
   readonly metadata: MetadataOptions;
   readonly agent?: AgentRuntimeOptions;
   /** Canonical installation-owned child of the private data directory. */
@@ -50,9 +53,12 @@ const digest = (value: string): string => createHash('sha256').update(value, 'ut
 /** Local session, authoring and installation-owned input composition. */
 export async function openApplication(options: ApplicationOptions): Promise<Application> {
   const { externalOrigin, metadata: metadataOptions, inputsDirectory, agent: requestedAgent } = options;
+  const localAccess = captureLocalAccess(options.localAccess);
+  captureLocalExternalOrigin(externalOrigin);
   const agent = requestedAgent === undefined ? undefined : captureAgentRuntime(requestedAgent, metadataOptions, inputsDirectory);
   const configuredMetadata = agentMetadata(metadataOptions, agent);
-  const session = createLocalSession({ externalOrigin });
+  let session: LocalSession | undefined;
+  const closeSession = () => session?.close();
   const server = createApiServer({ classify: classifyMetadataError });
   let metadata: Metadata | undefined;
   let agentRuntime: AgentRuntime | undefined;
@@ -64,6 +70,7 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     configureSchemaCompilers(server, { schemas: apiSchemas, encodeJson, maximumResponseBytes: API_MAXIMUM_JSON_BYTES });
     metadata = await openMetadata(configuredMetadata);
     const store = metadata;
+    session = await openApplicationSession(externalOrigin, localAccess, store.localSessions);
     if (inputsDirectory !== undefined) inputRuntime = await openInputRuntime(inputsDirectory, store.inputs);
     if (agent) agentRuntime = await openAgentRuntime(agent, store);
     session.registerRoutes(server);
@@ -78,14 +85,14 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     registerSettingsRoutes(server, { store: store.settings, reader: store, digest, authorize: session.authorize });
     if (inputRuntime) inputHttp = registerInputRoutes(server, { inputs: inputRuntime.inputs, newId: randomUUID, authorize: session.authorize });
     server.addHook('onClose', async () => {
-      session.close();
+      closeSession();
       await closeMetrics();
       await artifactHttp?.close();
       await closeApplicationStore(agentRuntime, inputRuntime, store);
     });
     let closing: Promise<void> | undefined;
     const close = (): Promise<void> => {
-      session.close();
+      closeSession();
       const metrics = closeMetrics();
       const downloads = artifactHttp?.close();
       if (!closing) {
@@ -104,7 +111,7 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
       runtimeState: () => agentRuntime?.state() ?? 'disabled',
       updateRuntime: (observation: RuntimeObservation | null) => store.updateRuntime(observation), close });
   } catch (error) {
-    session.close();
+    closeSession();
     const resources = await Promise.allSettled([closeMetrics(), artifactHttp?.close(), Promise.resolve().then(() => inputHttp?.close()),
       Promise.resolve().then(() => agentRuntime?.close()), Promise.resolve().then(() => inputRuntime?.close()), Promise.resolve().then(() => server.close())]);
     const store = await Promise.allSettled([metadata?.abort()]);

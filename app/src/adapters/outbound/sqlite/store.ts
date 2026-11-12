@@ -1,3 +1,4 @@
+import { LocalSessions, localSessionOperation } from './local-session/index.js';
 import { OutputDeletions, deletionOperation, captureDeletionOperation } from './output-deletion/index.js';
 import type { OutputDeletionOperation } from '../../../ports/output-deletion-metadata.js';
 import { RunExecutions } from './execution-binding/index.js';
@@ -40,6 +41,7 @@ export function safeCode(error: unknown): ErrorCode {
   return 'unavailable';
 }
 export class Store {
+  private readonly localSessions: LocalSessions;
   private readonly deletions: OutputDeletions;
   private readonly absences: OutputAbsences;
   private readonly finalizations: OutputFinalizations;
@@ -80,6 +82,7 @@ export class Store {
     this.runCancellations = new RunCancellations(db, this.runReads);
     this.dispatchClaims = new DispatchClaims(db, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
     this.dispatchObservations = new DispatchObservations(db, this.runReads);
+    this.localSessions = new LocalSessions(db);
     this.deletions = new OutputDeletions(db, this.runReads);
     this.inputs = new Inputs(db, this.entities, this.settings);
     this.inputReads = new InputReads(db, this.entities);
@@ -147,7 +150,8 @@ export class Store {
       default: throw new StorageError('invalid_input');
     }
   }
-  private settingsOperation(operation: Operation): Value {
+  private installationOperation(operation: Operation): Value {
+    if (localSessionOperation(operation)) return this.localSessions.execute(operation);
     switch (operation.kind) {
       case 'getSettings': return this.settings.get(operation.scope);
       case 'getSettingsIdentity': return this.settings.identity(operation.scope);
@@ -175,7 +179,7 @@ export class Store {
     if (['run', 'cancelRun', 'getRun', 'listRuns', 'dispatchScan', 'dispatchReadOffer', 'dispatchClaim', 'dispatchObserve']
       .includes(operation.kind)) return this.runOperation(operation);
     if (suiteOperation(operation)) return this.suiteOperation(operation);
-    if (['getSettings', 'getSettingsIdentity', 'runtime'].includes(operation.kind)) return this.settingsOperation(operation);
+    if (['getSettings', 'getSettingsIdentity', 'runtime', 'loadLocalSession', 'saveLocalSession'].includes(operation.kind)) return this.installationOperation(operation);
     if (['input', 'advanceInput', 'getInput', 'listInputs', 'recoverInputs', 'inputStorage'].includes(operation.kind)) return this.inputOperation(operation);
     switch (operation.kind) {
       case 'namespace': case 'settings': return this.mutation(operation);

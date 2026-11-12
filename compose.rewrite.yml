@@ -64,6 +64,7 @@ services:
       BEETLE_CONFIG_FILE: ${BEETLE_ROOT}/config/installation.json
       BEETLE_AGENT_CONFIG_FILE: ${BEETLE_ROOT}/config/backend-agent.json
       BEETLE_DATA_DIR: ${BEETLE_ROOT}/backend
+      BEETLE_LOCAL_ACCESS: ${BEETLE_LOCAL_ACCESS:-automatic}
       BEETLE_EXTERNAL_ORIGIN: http://127.0.0.1:${BEETLE_PORT}
       BEETLE_LISTEN_HOST: 0.0.0.0
     volumes:

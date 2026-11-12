@@ -36,6 +36,12 @@
           "minLength": 43,
           "maxLength": 43,
           "pattern": "^[A-Za-z0-9_-]{43}$"
+        },
+        "accessMode": {
+          "enum": [
+            "automatic",
+            "paired"
+          ]
         }
       },
       "required": [
@@ -61,6 +67,12 @@
       "required": [
         "loggedOut"
       ],
+      "additionalProperties": false
+    },
+    "OpenLocalBrowserRequest": {
+      "type": "object",
+      "properties": {},
+      "required": [],
       "additionalProperties": false
     }
   }

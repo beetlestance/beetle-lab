@@ -37,7 +37,7 @@ export async function backendConfiguration(f: Fixture, origin: string, externalO
       installedIdentity: f.offer.installedIdentity, requiredCapabilities: [] }],
     storageAllocationBytes: 268435456, freeSpaceReserveBytes: 16777216 }), { mode: 0o600, flag: 'wx' });
   const workerFile = resolve(process.env.BEETLE_METADATA_WORKER_FILE ?? 'app/dist/worker.js');
-  return loadBackendConfiguration({ BEETLE_CONFIG_FILE: installationFile, BEETLE_AGENT_CONFIG_FILE: connectionFile,
+  return loadBackendConfiguration({ BEETLE_LOCAL_ACCESS: 'paired', BEETLE_CONFIG_FILE: installationFile, BEETLE_AGENT_CONFIG_FILE: connectionFile,
     BEETLE_DATA_DIR: dataRoot, BEETLE_EXTERNAL_ORIGIN: externalOrigin,
     BEETLE_LISTEN_HOST: '127.0.0.1', BEETLE_LISTEN_PORT: new URL(externalOrigin).port }, pathToFileURL(workerFile));
 }

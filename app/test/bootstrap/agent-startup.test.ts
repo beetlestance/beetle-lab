@@ -43,7 +43,7 @@ async function setup(stalled = false, mutateInputPath = false) {
   });
   const origin = await listenAgent(server); agents.push(() => closeAgent(server));
   const connection = await writeAgentFixture(dataRoot, installation, origin);
-  const options = await loadBackendConfiguration({ BEETLE_CONFIG_FILE: join(dataRoot, 'installation.json'),
+  const options = await loadBackendConfiguration({ BEETLE_LOCAL_ACCESS: 'paired', BEETLE_CONFIG_FILE: join(dataRoot, 'installation.json'),
     BEETLE_AGENT_CONFIG_FILE: connection.path, BEETLE_DATA_DIR: dataRoot, BEETLE_EXTERNAL_ORIGIN: externalOrigin }, fixture.workerUrl());
   const alternate = join(dataRoot, 'alternate-installation');
   if (mutateInputPath) await mkdir(alternate, { mode: 0o700 });

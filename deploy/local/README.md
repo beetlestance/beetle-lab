@@ -9,15 +9,16 @@ From a Git checkout, run the first-use launcher with Docker and Docker Compose:
 The launcher builds the five local component images serially, prepares private
 configuration, initializes fresh installation authority once, and starts frontend,
 backend and agent. No host Node/npm is required. Open the printed loopback URL.
-Retrieve the current backend startup token explicitly and pair in the browser:
+The loopback UI opens automatically with a persistent HttpOnly session; no startup
+token is needed. Session credentials stay in private installation metadata and the
+browser cookie, with CSRF checked on writes. Restart preserves only the remaining
+8h lifetime. Expiry renews automatically; sign-out stays signed out until reconnect.
+Execution capacity can become ready after the frontend; refused capacity starts no
+workload. This is one trusted local administrator, with no LAN/hosted access.
 
-```sh
-./deploy/local/beetle token --directory "$HOME/.beetle-lab"
-```
-
-The token expires after 15 minutes and changes when the backend restarts. Keep it
-private. Normal up/status/stop do not print it. Execution capacity can become ready
-after the frontend; refused capacity starts no workload.
+For an explicitly paired developer/CI profile, set BEETLE_LOCAL_ACCESS=paired in
+the Compose environment. Only that profile emits a startup token and supports the
+optional `beetle token` helper. Normal status/log/up output does not print tokens.
 
 ## Paths and local Docker access
 

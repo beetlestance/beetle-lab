@@ -43,9 +43,13 @@ BEETLE_EXTERNAL_ORIGIN=http://127.0.0.1:5173 npm run start:api
 ```
 
 In another terminal run `npm run dev:web`, then open `http://127.0.0.1:5173`.
-The development proxy preserves Host and forwards `/api/v2` to port 4311. Enter the
-one-time token printed by backend startup. Tokens expire after 15 minutes or one use;
-sessions last 8 hours. Logout/expiry requires restarting the backend to pair again.
+The development proxy preserves Host and forwards `/api/v2` to port4311. The
+loopback UI opens automatically; no token is printed or pasted. Its HttpOnly
+session persists across backend restarts for its remaining8h lifetime. Expiry
+renews through a same-origin exchange; logout stays signed out until reconnect.
+`BEETLE_LOCAL_ACCESS=paired` selects the advanced one-time-token profile for
+automation/developer workflows. It retains the existing15min token and8h session
+limits; that profile requires restart after token consumption/expiry.
 
 Only a fresh, trusted agent observation can resolve effective resource settings.
 An unreachable agent, mismatched profile or expired source leaves capacity unavailable.

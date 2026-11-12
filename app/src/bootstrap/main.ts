@@ -25,6 +25,7 @@ try {
       // Fastify augments its listen options; retain our immutable configuration.
       await application.server.listen({ ...options.listen });
       if (stopping) await application.close();
+      else if (options.application.localAccess === 'automatic') process.stdout.write('Beetle Lab local access ready. Open the configured loopback URL.\n');
       else process.stdout.write(`Beetle Lab local startup token: ${application.bootstrapToken}\n`);
     }
   }

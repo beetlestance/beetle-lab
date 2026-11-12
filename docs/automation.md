@@ -4,12 +4,13 @@ The optional client uses the same authenticated API as the UI. Compose remains t
 installation entrypoint. The backend build recipe packages automation.js; this is
 locally verified source, not a claim that the published image contains the rewrite.
 
-Use a fresh CI backend/agent installation without frontend pairing. The startup
-token can be exchanged only once. Mount a private directory owned by the client
+Use a fresh CI backend/agent installation with BEETLE_LOCAL_ACCESS=paired. The
+normal browser profile opens local access automatically; this optional client uses
+the explicit paired profile. Its startup token can be exchanged only once. Mount a private directory owned by the client
 UID with0700 permissions and a0600 token file supplied by that installation's
 trusted startup step. The client never reads Docker logs or discovers credentials.
 An already paired browser installation needs its existing session; a second pair
-will not work. Automatic local access remains a separate pending change.
+will not work in that paired profile.
 
 The executable is /beetle/backend/automation.js inside a source-built backend image.
 Override the image's normal backend entrypoint; connect to the private control

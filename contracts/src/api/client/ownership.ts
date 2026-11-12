@@ -39,7 +39,7 @@ function retention(operation: ApiOperation): boolean {
  * Their exact local-admin scope and shapes are enforced by shipped schemas.
  */
 function session(operation: ApiOperation): boolean {
-  return operation.name === 'pairBrowserSession' || operation.name === 'getBrowserSession'
+  return operation.name === 'openLocalBrowserSession' || operation.name === 'pairBrowserSession' || operation.name === 'getBrowserSession'
     || operation.name === 'logoutBrowserSession';
 }
 

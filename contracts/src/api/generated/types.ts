@@ -113,6 +113,7 @@ export type PairBrowserRequest = FromSchema<typeof S15.PairBrowserRequest>;
 export type BrowserSession = FromSchema<typeof S15.BrowserSession>;
 export type LogoutBrowserRequest = FromSchema<typeof S15.LogoutBrowserRequest>;
 export type LogoutBrowserReceipt = FromSchema<typeof S15.LogoutBrowserReceipt>;
+export type OpenLocalBrowserRequest = FromSchema<typeof S15.OpenLocalBrowserRequest>;
 export type BudgetOverrides = FromSchema<typeof S16.BudgetOverrides>;
 export type BudgetOverridePatch = FromSchema<typeof S16.BudgetOverridePatch>;
 export type RunDefaultOverrides = FromSchema<typeof S16.RunDefaultOverrides>;
@@ -235,6 +236,7 @@ export interface ApiTypes {
   BrowserSession: BrowserSession;
   LogoutBrowserRequest: LogoutBrowserRequest;
   LogoutBrowserReceipt: LogoutBrowserReceipt;
+  OpenLocalBrowserRequest: OpenLocalBrowserRequest;
   BudgetOverrides: BudgetOverrides;
   BudgetOverridePatch: BudgetOverridePatch;
   RunDefaultOverrides: RunDefaultOverrides;

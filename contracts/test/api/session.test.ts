@@ -28,6 +28,14 @@ it('requires explicit logout and describes auth operations without creating rout
   expect(validateApi('LogoutBrowserReceipt', { loggedOut: false }).ok).toBe(false);
   expect(apiOperations.filter(operation => operation.path.startsWith('/api/v2/auth/'))
     .map(operation => [operation.name, operation.method, operation.successStatus])).toEqual([
-      ['pairBrowserSession', 'POST', 200], ['getBrowserSession', 'GET', 200], ['logoutBrowserSession', 'POST', 200],
+      ['openLocalBrowserSession', 'POST', 200], ['pairBrowserSession', 'POST', 200], ['getBrowserSession', 'GET', 200], ['logoutBrowserSession', 'POST', 200],
     ]);
+});
+
+it('keeps automatic grants empty and exposes only the optional local access mode', () => {
+  expect(validateApi('OpenLocalBrowserRequest', {}).ok).toBe(true);
+  expect(validateApi('OpenLocalBrowserRequest', {bootstrapToken: 'a'.repeat(43)}).ok).toBe(false);
+  const view = {scope: 'local-admin', csrfToken: 'a'.repeat(43), expiresAt: '2026-11-12T08:00:00.000Z'};
+  expect(validateApi('BrowserSession', {...view, accessMode: 'automatic'}).ok).toBe(true);
+  expect(validateApi('BrowserSession', {...view, accessMode: 'hosted'}).ok).toBe(false);
 });
