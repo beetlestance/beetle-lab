@@ -38,3 +38,6 @@ Exit codes/signals are observations, never pass/fail/OOM evidence. No result sea
 reservation release, restart replay or guard capability qualification lives here.
 
 Check: `NODE_OPTIONS=--max-old-space-size=1024 node node_modules/vitest/vitest.mjs run engines/k6/test/native-process --maxWorkers=2`.
+
+Read currently available bytes up to64KiB; the chunk cap is not a minimum fill.
+Keep a positive read at zero buffered bytes so native EOF is observed.

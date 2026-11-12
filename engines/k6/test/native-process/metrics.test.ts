@@ -1,3 +1,6 @@
+import { PassThrough } from 'node:stream';
+import { MetricStream } from '../../wrapper/process/metrics.js';
+import { options } from './fixtures.js';
 import { expect, it, vi } from 'vitest';
 import { deferred, flush, harness } from './fixtures.js';
 
@@ -66,4 +69,16 @@ it('a stream error stops signals independently of its error payload', async () =
   expect(h.signals).toContain('SIGTERM'); h.absent(); h.child.end(); h.child.finish();
   const result = await run; expect(result.cause).toBe('stream'); expect(JSON.stringify(result)).not.toContain('SECRET');
   await h.actor.close();
+});
+
+it('delivers small live chunks before EOF instead of waiting for the64KiB cap', async () => {
+  vi.useFakeTimers(); const stdout = new PassThrough(); const stderr = new PassThrough();
+  const sink = vi.fn<ReturnType<typeof options>['sink']>(async () => {}); const fail = vi.fn();
+  const stream = new MetricStream(options({sink}), fail, () => true, () => {});
+  stream.attach(stdout, stderr); stdout.write(Buffer.from('measurement-marker\n'));
+  try {
+    await vi.advanceTimersByTimeAsync(0);
+    expect(sink).toHaveBeenCalledTimes(1); expect(sink.mock.calls[0]![0]).toEqual(Buffer.from('measurement-marker\n'));
+    expect(stream.ended).toBe(false); expect(fail).not.toHaveBeenCalled();
+  } finally {stream.stop(); stdout.destroy(); stderr.destroy(); await stream.close();}
 });

@@ -32,7 +32,9 @@ export class MetricStream {
   private read(stdout: Readable): void {
     if (this.stopped || this.pending || !this.decision()) return;
     if (stdout.readableLength > RETAINED_LIMIT - CHUNK) { this.fail('stream'); return; }
-    const bytes: Buffer | null = stdout.read(CHUNK) as Buffer | null;
+    // A positive size still observes EOF; below the cap, deliver available bytes immediately.
+    const size = Math.min(CHUNK, Math.max(1, stdout.readableLength));
+    const bytes: Buffer | null = stdout.read(size) as Buffer | null;
     if (bytes === null) return;
     if (bytes.length > this.input.maxMetricStreamBytes - this.bytes) {
       this.fail('metric_limit'); return;
