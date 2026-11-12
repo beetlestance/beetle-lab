@@ -30,8 +30,9 @@ abort/remove the exact query; session replacement already remounts the app.
 ## Browser-owned content
 
 Use a same-origin anchor derived only by runArtifactContentPath from validated
-scope/run/attempt/artifact UUIDs. Attachment name is artifact-<UUID>.bin, matching
-the backend. No URL credentials, engine path, query/hash, external navigation,
+scope/run/attempt/artifact UUIDs. Shared artifactDownload chooses a fixed
+artifact-<UUID> name with txt/CSV/JSON extensions for the corresponding known kinds,
+bin otherwise, matching the backend. No URL credentials, engine path, query/hash, external navigation,
 fetch/blob buffer, client-side payload cache or new transfer/session owner.
 GET uses the existing local session cookie; no mutation CSRF header is required.
 Do not change the Host/Origin/session guard or public route to support a link.

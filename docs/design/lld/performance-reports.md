@@ -54,5 +54,12 @@ or sealed manifest references an unverified file. Report failure cannot rerun lo
 The final engine result lists both artifacts with their byte lengths and hashes.
 Backend adoption/download uses its existing verified artifact pipeline. The fixed
 256KiB per-output ceiling can reject large reports even with a larger total budget;
-this explicit first-release limit does not permit silently omitting series. Inline
-browser display and save qualification remain a dependent slice.
+this explicit first-release limit does not permit silently omitting series. RunResultRead selects exactly one scoped published performance-report descriptor;
+multiple reports show an explicit ambiguity error. The browser verifies <=256KiB,
+exact file length/SHA256 and fatal UTF-8 before rendering plain text. No report
+HTML, second metric renderer or browser-side outcome inference is used. The shared
+artifact reader owns two originals across target/performance kinds and a5s whole
+read. A session/scope/attempt/artifact display lease and independent5s UI watchdog
+retire stale results without releasing unsettled originals. Retry is explicit.
+Safe fixed-UUID text/CSV/JSON attachment links reuse the existing artifact routes.
+Actual browser display/save qualification remains pending.

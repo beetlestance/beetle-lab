@@ -1,7 +1,7 @@
 import { encodeJson } from '@beetle/contracts';
 import { runArtifactPageMatches, validateApi, RUN_ARTIFACT_PAGE_BYTES } from '@beetle/contracts/api';
 import type { RunArtifactPage } from '@beetle/contracts/api';
-import type { RunArtifactsReader } from '../../ports/run-artifacts.js';
+import type { PublishedArtifactRead, RunArtifactsReader } from '../../ports/run-artifacts.js';
 import type { RunMetricSeriesQuery } from '../../ports/run-metrics.js';
 import type { OutputFileRecord } from '../../ports/output-bytes.js';
 import { fields, fail, captureNumeric, knownVersion } from './values.js';
@@ -27,12 +27,17 @@ async function catalogue(reader: RunArtifactsReader, q: RunMetricSeriesQuery, ow
   if (items.length > 128 || new Set(items.map(a => a.artifactId)).size !== items.length) return fail();
   return {...first, items, nextCursor: null};
 }
+function matchesDescriptor(read: PublishedArtifactRead, expected: Artifact): boolean {
+  const actual = read.record.artifact;
+  return read.kind === expected.kind && actual.artifactId === expected.artifactId && actual.bytes === expected.bytes
+    && actual.sha256 === expected.sha256 && actual.phase === 'published';
+}
 async function record(reader: RunArtifactsReader, q: RunMetricSeriesQuery, a: Artifact, owner: ReadOwner): Promise<OutputFileRecord> {
-  const r = await reader.getRunArtifact({id: q.id, scope: q.scope, attemptId: q.attemptId, artifactId: a.artifactId}); owner.check();
-  const b = r.binding.key; const s = b.attempt;
+  const published = await reader.getRunArtifact({id: q.id, scope: q.scope, attemptId: q.attemptId, artifactId: a.artifactId}); owner.check();
+  if (!matchesDescriptor(published, a)) return fail();
+  const r = published.record; const b = r.binding.key; const s = b.attempt;
   if (b.runId !== q.id || s.attemptId !== q.attemptId || s.organizationId !== q.scope.organizationId
-    || s.workspaceId !== q.scope.workspaceId || s.generation !== 1 || r.artifact.artifactId !== a.artifactId
-    || r.artifact.bytes !== a.bytes || r.artifact.sha256 !== a.sha256 || r.artifact.phase !== 'published') return fail();
+    || s.workspaceId !== q.scope.workspaceId || s.generation !== 1) return fail();
   return r;
 }
 export async function publication(reader: RunArtifactsReader, q: RunMetricSeriesQuery, io: ArchiveIO | undefined,

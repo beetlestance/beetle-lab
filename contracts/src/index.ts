@@ -15,3 +15,4 @@ export type { InstalledIdentityInput, InstalledLabels } from './installed-identi
 
 export { stagingPolicy, serializeStagedOffer, estimateStaging, supportedStaging } from './staging.js';
 export type { StagingEstimate } from './staging.js';
+export { artifactDownload } from './artifact-download.js';

@@ -29,8 +29,9 @@ and collect ceilings. Each output is capped at256KiB. Large reports fail explici
 rather than truncate; the fixed report ceiling is a first-release limit. This
 changes the minimum usable output partition and reduces build/history allowance.
 Actual file lengths/hashes are part of the ordinary sealed artifact manifest.
-Generic artifact download already carries the files; dedicated report names/MIME,
-inline display and actual browser save remain dependent work.
+Generic artifact download carries the files; [report controls](report-controls.md)
+add safe extensions/MIME and verified inline display. Actual browser save remains
+pending.
 
 A production engine build from de25c19 passed in3.00s, using the unchanged normal
 Dockerfile plus the owned report source copy. The backend bundle took1.41s; a

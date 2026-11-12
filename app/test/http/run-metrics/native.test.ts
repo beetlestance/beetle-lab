@@ -29,7 +29,7 @@ it('serves exact wrapper history through native publication, actual metadata, au
     const foreign = await http.client.listRunMetricSeries({params: {...params, organizationId: '00000000-0000-4000-8000-000000000999'}, query: {limit: 100}});
     expect(foreign).toMatchObject({ok: false, error: {kind: 'protocol', status: 404}});
     const data = f.source.descriptors.find(a => a.kind === 'metric-windows')!;
-    const record = await f.reader.getRunArtifact({id: f.source.query.id, scope: f.source.query.scope, attemptId: f.source.query.attemptId, artifactId: data.artifactId}); await unlink(f.files.path(record, true));
+    const record = await f.reader.getRunArtifact({id: f.source.query.id, scope: f.source.query.scope, attemptId: f.source.query.attemptId, artifactId: data.artifactId}); await unlink(f.files.path(record.record, true));
     const missing = await http.client.getRunMetricSamples({params, query: {seriesOrdinal: 0, limit: 100}});
     expect(missing).toMatchObject({ok: false, error: {kind: 'protocol', status: 503}});
     expect(f.facts()).toEqual(before);

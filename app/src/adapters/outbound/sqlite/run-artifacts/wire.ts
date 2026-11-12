@@ -5,7 +5,7 @@ import { captureEventBinding } from '../../../../domain/events/index.js';
 import { requireRule } from '../../../../domain/namespaces/index.js';
 import { decodeArtifact } from '../output-custody/index.js';
 import { boundedCopy, lower } from '../input-values.js';
-import type { RunArtifactKey, RunArtifactListQuery } from '../../../../ports/run-artifacts.js';
+import type { PublishedArtifactRead, RunArtifactKey, RunArtifactListQuery } from '../../../../ports/run-artifacts.js';
 import type { EventBinding } from '../../../../ports/events.js';
 import type { Operation } from '../protocol.js';
 export type ArtifactReadOperation = Extract<Operation, {kind: 'listRunArtifacts' | 'getRunArtifact'}>;
@@ -35,12 +35,16 @@ function captureList(base: Omit<RunArtifactListQuery, 'limit'>, query: RunArtifa
   return {...base, limit: query.limit, ...(query.cursor === undefined ? {} : {cursor: query.cursor})};
 }
 
-export function captureArtifactReadReply(operation: ArtifactReadOperation, input: unknown): RunArtifactPage | OutputFileRecord {
+export function captureArtifactReadReply(operation: ArtifactReadOperation, input: unknown): RunArtifactPage | PublishedArtifactRead {
   if (operation.kind === 'listRunArtifacts') {
     const checked = validateApi('RunArtifactPage', boundedCopy(input, 73728)); requireRule(checked.ok);
     requireRule(runArtifactPageMatches(checked.value, operation.query)); return checked.value;
   }
-  return captureRecord(operation.key, input);
+  const value = boundedCopy(input, 4096) as PublishedArtifactRead;
+  requireRule(value !== null && typeof value === 'object' && Object.keys(value).length === 2
+    && Object.hasOwn(value, 'record') && Object.hasOwn(value, 'kind')
+    && typeof value.kind === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(value.kind));
+  return {record: captureRecord(operation.key, value.record), kind: value.kind};
 }
 function captureRecord(key: RunArtifactKey, input: unknown): OutputFileRecord {
   const record = boundedCopy(input, 4096) as OutputFileRecord;

@@ -1,3 +1,4 @@
+import { artifactDownload } from '@beetle/contracts';
 import { useId } from 'react';
 import { runArtifactContentPath } from '@beetle/contracts/api';
 import type { Run, RunArtifactPage } from '@beetle/contracts/api';
@@ -35,7 +36,7 @@ function ArtifactList({ page }: { page: RunArtifactPage }) {
         <td className="number">{item.bytes}</td><td className="number artifact-sha">{item.sha256}</td>
         <td><a href={runArtifactContentPath({ organizationId: page.scope.organizationId, workspaceId: page.scope.workspaceId,
           runId: page.id, attemptId: page.attemptId, artifactId: item.artifactId })}
-        download={`artifact-${item.artifactId.toLowerCase()}.bin`} aria-label={`Download artifact ${item.relativePath}`}>Download</a></td>
+        download={artifactDownload(item).filename} aria-label={`Download artifact ${item.relativePath}`}>Download</a></td>
       </tr>)}</tbody></table>
   </div>;
 }

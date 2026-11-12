@@ -2,7 +2,7 @@ import type { DatabaseSync, SQLOutputValue } from 'node:sqlite';
 import { captureRunArtifactCursor, encodeRunArtifactCursor } from '@beetle/contracts/api';
 import type { Run, RunArtifactPage } from '@beetle/contracts/api';
 import type { RunKey } from '../../../../ports/runs.js';
-import type { OutputFileRecord } from '../../../../ports/output-bytes.js';
+import type { PublishedArtifactRead } from '../../../../ports/run-artifacts.js';
 import type { EventBinding } from '../../../../ports/events.js';
 import { captureEventBinding } from '../../../../domain/events/index.js';
 import { readEnvelope, loadOutput } from '../output-custody/index.js';
@@ -23,7 +23,7 @@ function matches(row: Row, binding: EventBinding): void {
 /** Read-only publication evidence. Uses bounded shared source/slot readers, never a writer or native file probe. */
 export class RunArtifacts {
   constructor(private readonly db: DatabaseSync, private readonly runs: {get(key: RunKey): Run}) {}
-  execute(input: ArtifactReadOperation): RunArtifactPage | OutputFileRecord {
+  execute(input: ArtifactReadOperation): RunArtifactPage | PublishedArtifactRead {
     const operation = captureArtifactReadOperation(input);
     return transaction(this.db, () => captureArtifactReadReply(operation, this.read(operation)));
   }
@@ -68,7 +68,9 @@ export class RunArtifacts {
     if (operation.kind === 'getRunArtifact') {
       const artifact = state.artifacts.find(a => a.artifactId === operation.key.artifactId);
       if (!artifact) throw new StorageError('not_found');
-      return {binding, artifact};
+      const descriptor = source.manifest.result.artifacts.find(item => item.artifactId === artifact.artifactId);
+      requireEvidence(descriptor);
+      return {record: {binding, artifact}, kind: descriptor.kind};
     }
     return this.page(operation, {...page, availability: 'ready', manifestDigest: source.manifest.manifestDigest}, source.manifest.result.artifacts);
   }

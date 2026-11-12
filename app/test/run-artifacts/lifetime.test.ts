@@ -4,7 +4,7 @@ import { published } from './fixture.js';
 import { httpFixture } from './http-fixture.js';
 import { RunArtifacts } from '../../src/adapters/outbound/sqlite/run-artifacts/index.js';
 import type { RunArtifactPage } from '@beetle/contracts/api';
-import type { OutputFileRecord } from '../../src/ports/output-bytes.js';
+import type { PublishedArtifactRead } from '../../src/ports/run-artifacts.js';
 import { deferred, pending } from '../files/output-bytes/fixture.js';
 import { scope } from '../storage/fixture.js';
 async function controlled() {
@@ -13,7 +13,7 @@ async function controlled() {
     attemptId: f.key.attempt.attemptId, artifactId: f.envelope.manifest.result.artifacts[0]!.artifactId};
   const release = deferred(); const nativeDone = deferred(); let signal: AbortSignal | undefined;
   const http = await httpFixture({listRunArtifacts: async query => reader.execute({kind: 'listRunArtifacts', query}) as RunArtifactPage,
-    getRunArtifact: async key => reader.execute({kind: 'getRunArtifact', key}) as OutputFileRecord}, {read: (request, context) => {
+    getRunArtifact: async key => reader.execute({kind: 'getRunArtifact', key}) as PublishedArtifactRead}, {read: (request, context) => {
       signal = context.signal;
       const job = f.files.store.read(request, context);
       const settled = job.settled.then(async () => {nativeDone.resolve(); await release.promise;});
@@ -48,7 +48,7 @@ it.each(['settlement', 'streamed hash'] as const)('destroys midstream bytes with
   const params = {organizationId: scope.organizationId, workspaceId: scope.workspaceId, runId: f.key.runId,
     attemptId: f.key.attempt.attemptId, artifactId: f.envelope.manifest.result.artifacts[0]!.artifactId};
   const http = await httpFixture({listRunArtifacts: async query => reader.execute({kind: 'listRunArtifacts', query}) as RunArtifactPage,
-    getRunArtifact: async key => reader.execute({kind: 'getRunArtifact', key}) as OutputFileRecord}, {read: (request, context) => {
+    getRunArtifact: async key => reader.execute({kind: 'getRunArtifact', key}) as PublishedArtifactRead}, {read: (request, context) => {
       const job = f.files.store.read({...request, sink: {write: async chunk => {
         const altered = Buffer.from(chunk); if (mode === 'streamed hash') altered[0] = altered[0]! ^ 1;
         await request.sink.write(altered);

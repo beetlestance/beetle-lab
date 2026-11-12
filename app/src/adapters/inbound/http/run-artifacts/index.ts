@@ -30,12 +30,13 @@ export function registerRunArtifactRoutes(server: FastifyInstance, options: Opti
         }
         const params: RunArtifactParams = parsed.value; const owner = owners.forRequest(request);
         const bytes = options.bytes; if (!bytes) throw new ApiFault('storage_unavailable');
-        const record = await owner.run(() => options.reader.getRunArtifact({id: params.runId.toLowerCase(),
+        const published = await owner.run(() => options.reader.getRunArtifact({id: params.runId.toLowerCase(),
           attemptId: params.attemptId.toLowerCase(), artifactId: params.artifactId.toLowerCase(), scope: scope(params)}));
+        const record = published.record;
         const ifRange = header(request, 'if-range'); const rangeHeader = header(request, 'range');
         const range = selectRange(ifRange === undefined || ifRange === `"${record.artifact.sha256}"` ? rangeHeader : undefined, record.artifact.bytes);
         if (range === false) return reply.header('Content-Range', `bytes */${record.artifact.bytes}`).code(416).send(apiErrorResponse('invalid_value').body);
-        return sendArtifact({reply, owner, record, range, bytes});
+        return sendArtifact({reply, owner, record, kind: published.kind, range, bytes});
       }});
   });
   return Object.freeze({close: () => owners.close()});

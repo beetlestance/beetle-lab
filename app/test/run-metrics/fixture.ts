@@ -22,7 +22,8 @@ export async function fixture() {
   const reader: RunArtifactsReader = {
     async listRunArtifacts(q) {
       return {id: q.id, scope: q.scope, attemptId: q.attemptId, generation: 1, availability: 'ready', manifestDigest: 'c'.repeat(64), items: descriptors, nextCursor: null};
-    }, async getRunArtifact(key) {const record = records.get(key.artifactId); if (!record) throw new Error('No artifact'); return record;},
+    }, async getRunArtifact(key) {const record = records.get(key.artifactId); const descriptor = descriptors.find(a => a.artifactId === key.artifactId);
+      if (!record || !descriptor) throw new Error('No artifact'); return {record, kind: descriptor.kind};},
   };
   const chunkSize = {bytes: 37};
   const reads: {id: string; start: number; end: number}[] = [];

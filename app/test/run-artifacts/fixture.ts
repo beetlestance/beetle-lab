@@ -3,8 +3,10 @@ import { descriptor } from '../output-transfer/peer-fixture.js';
 import { fixture, context, finish } from '../files/output-bytes/fixture.js';
 import type { OutputFileRecord, OutputFileReceipt } from '../../src/ports/output-bytes.js';
 import { uuid } from '../storage/fixture.js';
-export async function published(contents: Buffer[]) {
-  const f = finalizationFixture({artifacts: contents.map(descriptor)}); f.ready(); const files = await fixture();
+export async function published(contents: Buffer[], kinds?: readonly string[]) {
+  if (kinds && kinds.length !== contents.length) throw new Error('Invalid kind fixture');
+  const f = finalizationFixture({artifacts: contents.map((bytes, ordinal) => ({...descriptor(bytes, ordinal),
+    ...(kinds ? {kind: kinds[ordinal]!} : {})}))}); f.ready(); const files = await fixture();
   const writerId = uuid(800);
   for (const [ordinal, bytes] of contents.entries()) {
     const key = {binding: f.binding, manifestDigest: f.envelope.manifest.manifestDigest, sourceDigest: f.envelope.sourceDigest, ordinal};

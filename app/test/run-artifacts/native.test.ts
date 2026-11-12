@@ -6,7 +6,7 @@ import { published } from './fixture.js';
 import { scope, uuid } from '../storage/fixture.js';
 import { context, finish } from '../files/output-bytes/fixture.js';
 import type { RunArtifactPage } from '@beetle/contracts/api';
-import type { OutputFileRecord } from '../../src/ports/output-bytes.js';
+import type { PublishedArtifactRead } from '../../src/ports/run-artifacts.js';
 it('lists exact native publication, pages canonical positions, reads ranges/empty and refuses missing custody without mutations', async () => {
   const contents = [Buffer.from('synthetic artifact'), Buffer.alloc(0), Buffer.from('third')];
   const f = await published(contents); const reader = new RunArtifacts(f.db, f.reads);
@@ -21,15 +21,15 @@ it('lists exact native publication, pages canonical positions, reads ranges/empt
     expect(() => reader.execute({kind: 'listRunArtifacts', query: {...query, id: uuid(999), cursor: first.nextCursor!}})).toThrow();
     expect(() => reader.execute({kind: 'listRunArtifacts', query: {...query, cursor: first.nextCursor! + '='}})).toThrow();
     for (const [ordinal, expected] of contents.entries()) {
-      const record = reader.execute({kind: 'getRunArtifact', key: {id: query.id, scope, attemptId: query.attemptId, artifactId: f.envelope.manifest.result.artifacts[ordinal]!.artifactId}}) as OutputFileRecord;
+      const published = reader.execute({kind: 'getRunArtifact', key: {id: query.id, scope, attemptId: query.attemptId, artifactId: f.envelope.manifest.result.artifacts[ordinal]!.artifactId}}) as PublishedArtifactRead;
       const chunks: Buffer[] = [];
-      await finish(f.files.store.read({record, start: 0, endExclusive: expected.length, sink: {write: async bytes => {chunks.push(Buffer.from(bytes));}}}, context()));
+      await finish(f.files.store.read({record: published.record, start: 0, endExclusive: expected.length, sink: {write: async bytes => {chunks.push(Buffer.from(bytes));}}}, context()));
       expect(Buffer.concat(chunks)).toEqual(expected);
       if (ordinal === 0) {
-        await unlink(f.files.path(record, true));
+        await unlink(f.files.path(published.record, true));
         // Persisted publication remains metadata; native access independently refuses lost custody.
         expect(reader.execute({kind: 'listRunArtifacts', query})).toEqual(first);
-        await expect(finish(f.files.store.read({record, start: 0, endExclusive: expected.length, sink: {write: async () => {}}}, context()))).rejects.toThrow();
+        await expect(finish(f.files.store.read({record: published.record, start: 0, endExclusive: expected.length, sink: {write: async () => {}}}, context()))).rejects.toThrow();
       }
     }
     expect(f.facts()).toEqual(before);

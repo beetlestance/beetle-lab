@@ -10,7 +10,8 @@ absent and errors stop. A terminal transition waits for the original pending rea
 before one refresh. Retirement aborts/removes the exact query and fences replies.
 RunDetail composes the feature with requested scope and authoritative attempt.
 Only publication metadata grants links, derived by runArtifactContentPath.
-Relative paths are text; fixed UUID attachment names never use engine filenames.
+Relative paths are text; shared artifactDownload sets fixed UUID names and safe
+txt/CSV/JSON extensions for known kinds, bin otherwise; no engine filenames.
 Browser owns bytes, save/progress/cancel; links create no completion state or byte
 client/cache. Already-issued native transfers remain browser/server owned.
 Checks: node ../../../node_modules/vitest/vitest.mjs run

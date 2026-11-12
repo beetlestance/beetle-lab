@@ -86,3 +86,15 @@ it('renders safe relative path as text only; punctuation never becomes a file se
   expect(link.getAttribute('href')).not.toContain('reports');
   expect(link.getAttribute('download')).not.toContain('reports');
 });
+it('offers fixed text/CSV/JSON extensions while retaining UUID-only content paths', async () => {
+  const current = run(); const base = page(current);
+  const items = ['performance-report', 'metrics-csv', 'numeric-final'].map((kind, index) => ({...artifact(index), kind}));
+  const source = {...base, items};
+  const f = testClient(async () => json(source)); mountArtifacts(f.client, current, true);
+  for (const [index, extension] of ['txt', 'csv', 'json'].entries()) {
+    const link = await screen.findByRole('link', {name: `Download artifact ${items[index]!.relativePath}`});
+    expect(link).toHaveAttribute('download', `artifact-${items[index]!.artifactId}.${extension}`);
+    expect(link.getAttribute('href')).toContain(`/artifacts/${items[index]!.artifactId}/content`);
+    expect(link.getAttribute('href')).not.toContain(items[index]!.relativePath);
+  }
+});

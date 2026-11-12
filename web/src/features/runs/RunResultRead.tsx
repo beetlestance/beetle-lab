@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Run } from '@beetle/contracts/api';
 import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
+import { RunPerformanceReport } from './performance-report/index.js';
 import { RunTargetObservations } from './target-observations/index.js';
 import { RunResultPanel, resultView } from '../run-results/index.js';
 
@@ -38,10 +39,21 @@ export function RunResultRead({ scope, runId, run, terminal }: {
   const result = snapshot?.activeAttemptId === activeAttemptId ? snapshot.result : null;
   const status = query.isPending ? 'loading' : query.isError ? 'error' : result === null ? 'unavailable' : 'ready';
   const view = resultView({scope, runId, run, result, status});
-  const targets = view.status === 'ready' ? view.result.artifacts.filter(artifact => artifact.kind === 'target-runtime') : [];
   return <><RunResultPanel scope={scope} runId={runId} run={run} result={result} status={status} />
+    <PublishedReports view={view} /></>;
+}
+/** Published report selection is separate from result-query ownership. */
+function PublishedReports({view}: {view: ReturnType<typeof resultView>}) {
+  if (view.status !== 'ready') return null;
+  const {result, run} = view;
+  const targets = result.artifacts.filter(artifact => artifact.kind === 'target-runtime');
+  const reports = result.artifacts.filter(artifact => artifact.kind === 'performance-report');
+  const params = {organizationId: run.scope.organizationId, workspaceId: run.scope.workspaceId,
+    runId: run.id, attemptId: run.activeAttemptId};
+  return <>
+    {reports.length > 1 && <p role="alert">Multiple performance reports were published; this view requires one report.</p>}
+    {reports.length === 1 && <RunPerformanceReport params={{...params, artifactId: reports[0]!.artifactId}} artifact={reports[0]!} />}
     {targets.length > 1 && <p role="alert">Multiple target observation reports were published; this view requires one report.</p>}
-    {targets.length === 1 && <RunTargetObservations params={{organizationId, workspaceId, runId,
-      attemptId: activeAttemptId, artifactId: targets[0]!.artifactId}} artifact={targets[0]!} />}
+    {targets.length === 1 && <RunTargetObservations params={{...params, artifactId: targets[0]!.artifactId}} artifact={targets[0]!} />}
   </>;
 }

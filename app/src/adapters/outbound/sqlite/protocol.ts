@@ -1,5 +1,5 @@
 import type { RunExecutionSnapshot } from '../../../ports/run-live-metrics.js';
-import type { RunArtifactListQuery, RunArtifactKey } from '../../../ports/run-artifacts.js';
+import type { PublishedArtifactRead, RunArtifactListQuery, RunArtifactKey } from '../../../ports/run-artifacts.js';
 import type { RunEventsQuery } from '../../../ports/run-events.js';
 import type { AbsenceOperation } from './output-absence/operations.js';
 import type { OutputAbsenceState, OutputAbsenceFinalizationReply } from '../../../ports/output-absence.js';
@@ -80,7 +80,7 @@ export type Operation = AbsenceOperation
   | { kind: 'getSettingsIdentity'; scope: SettingsScope }
   | { kind: 'runtime'; runtime: RuntimeObservation | null }
   | { kind: 'close' };
-export type Value = RunExecutionSnapshot | OutputAbsenceState | OutputAbsenceFinalizationReply | OutputFinalizationReply | OutputFileRecord | OutputCustodyState | OutputPage | Owned<SourceEnvelope> | EventPage | EventCursorState | EventIngestResult | DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | RunResultSnapshot | RunEventPage | RunArtifactPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
+export type Value = PublishedArtifactRead | RunExecutionSnapshot | OutputAbsenceState | OutputAbsenceFinalizationReply | OutputFinalizationReply | OutputFileRecord | OutputCustodyState | OutputPage | Owned<SourceEnvelope> | EventPage | EventCursorState | EventIngestResult | DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | RunResultSnapshot | RunEventPage | RunArtifactPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
 export type Command = Operation & { messageId: number };
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; messageId: number; ok: true; value: Value } |

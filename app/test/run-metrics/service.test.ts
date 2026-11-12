@@ -101,3 +101,12 @@ it('captures closed bounded metadata before semantic matching and refuses extra 
   try {await expect(service.reader.listRunMetricSeries(f.query, context())).rejects.toMatchObject({code: 'unavailable'});}
   finally {await service.close();}
 });
+it('rejects a published descriptor kind mismatch before opening metric archive bytes', async () => {
+  const f = await fixture(); const read = f.reader.getRunArtifact.bind(f.reader);
+  f.reader.getRunArtifact = async key => ({...await read(key), kind: 'raw'});
+  const service = f.service();
+  try {
+    await expect(service.reader.listRunMetricSeries(f.query, context())).rejects.toMatchObject({code: 'unavailable'});
+    expect(f.reads).toEqual([]);
+  } finally {await service.close();}
+});

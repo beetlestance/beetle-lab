@@ -1,7 +1,7 @@
 import { finalizationFixture } from '../output-finalization/fixture.js';
 import { fixture as filesFixture, context, finish } from '../files/output-bytes/fixture.js';
 import { RunArtifacts } from '../../src/adapters/outbound/sqlite/run-artifacts/index.js';
-import type { RunArtifactsReader } from '../../src/ports/run-artifacts.js';
+import type { PublishedArtifactRead, RunArtifactsReader } from '../../src/ports/run-artifacts.js';
 import type { OutputFileRecord, OutputFileReceipt } from '../../src/ports/output-bytes.js';
 import type { RunArtifactPage } from '@beetle/contracts/api';
 import { fixture as metricsFixture } from './fixture.js';
@@ -27,7 +27,7 @@ export async function nativeFixture() {
   const metadata = new RunArtifacts(f.db, f.reads);
   const reader: RunArtifactsReader = {
     async listRunArtifacts(query) {return metadata.execute({kind: 'listRunArtifacts', query}) as RunArtifactPage;},
-    async getRunArtifact(key) {return metadata.execute({kind: 'getRunArtifact', key}) as OutputFileRecord;},
+    async getRunArtifact(key) {return metadata.execute({kind: 'getRunArtifact', key}) as PublishedArtifactRead;},
   };
   return {...f, files, reader, source};
 }

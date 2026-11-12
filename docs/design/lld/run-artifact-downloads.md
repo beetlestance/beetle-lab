@@ -34,8 +34,9 @@ requested <=100 descriptors; never materialize raw history or file contents.
 Private RunArtifactsReader has listRunArtifacts(RunArtifactListQuery) and
 getRunArtifact(RunArtifactKey). Metadata.runArtifacts and listRunArtifacts /
 getRunArtifact worker operations use the frozen port/protocol. File lookup returns
-only the exact published OutputFileRecord, <=4096 bytes, matching the requested
-artifact and scope/attempt. Pending publication is conflict, not an empty file.
+a closed {record:OutputFileRecord,kind} reply, <=4096 bytes, matching the requested
+artifact and scope/attempt. Kind comes from the corresponding validated manifest
+descriptor; native file custody retains its unchanged closed record shape. Pending publication is conflict, not an empty file.
 Public list client and private reply codecs validate identity/availability/cursors,
 uniqueness and complete byte bounds. Shared pure encodeRunArtifactCursor,
 captureRunArtifactCursor and runArtifactPageMatches belong in contracts/api; both
@@ -48,8 +49,11 @@ The same-origin content route and path builder are exported by contracts/api:
 Use the local session/Host/Origin guard, strict five-UUID params, no body/query,
 and one supported byte range with the existing input range semantics. Invalid or
 unsatisfiable ranges return416; If-Range behaves as on input content. Disable
-implicit HEAD. Use octet-stream, nosniff, no-store, SHA ETag and a fixed UUID-only
-attachment filename; engine relative paths never choose a file or header.
+implicit HEAD. Use nosniff, no-store, SHA ETag and a fixed UUID-only attachment
+filename. Shared artifactDownload selects txt/text-plain for performance-report,
+csv/text-csv for metrics-csv, json/application-json for numeric-final; all other
+kinds retain bin/octet-stream. All formats remain attachments. Engine relative
+paths never choose a file, header, extension or MIME value.
 
 Reuse the existing installation OutputByteStore.read. Do not open another namespace
 lease, reconstruct a path or create a second filesystem reader. The concrete
