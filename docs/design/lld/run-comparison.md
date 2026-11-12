@@ -1,6 +1,7 @@
 # Bounded run comparison
 
-Status: contract/client/backend HTTP implemented locally; browser comparison follows.
+Status: contract/client/backend HTTP and browser components implemented locally;
+actual browser qualification remains pending.
 Owner: application/run-comparison. No stored comparison, migration or execution.
 
 ## Request and identity
@@ -77,7 +78,9 @@ originals; no timeout-based physical refund. Existing metadata/native owners ret
 their limits. Recheck Run identity/version/activeAttempt and pinned revision after
 source reads before publishing. State change or source mismatch fails explicitly.
 
-Browser retains at most four selections in one workspace and clears them on
+Browser admission survives route/session remounts and retains exposed API originals
+until settlement; the generated transport does not promise ignored underlying fetch
+settlement. Retired renders/callbacks are fenced. Browser retains at most four selections in one workspace and clears them on
 session/scope changes. A baseline catalogue page chooses one metric; returned
 per-run ordinals/manifests/measurement times drive the existing bounded historical
 sample/chart reader. Keep each run's source/time basis explicit. Config differences

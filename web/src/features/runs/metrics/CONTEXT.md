@@ -1,9 +1,10 @@
 # Recorded metric chart
 
-Public entry: RunMetrics({run,terminal}). Generated client reads only published
+Public entries: RunMetrics({run,terminal}), bounded SamplesView, ReadAdmission,
+MetricSampleSource and existing evidence/valueNumber presenters. Generated client reads only published
 metric history under registered runMetrics query key. Retains one catalogue page
 and one replacement sample view <=1,000 points/1MiB. Each action reads at most ten
-pages sequentially, stops on failure, and checks original selection/abort before
+pages sequentially, verifies source manifest and full metric identity, stops on failure, and checks original selection/abort before
 and after every call. No cursor-keyed history cache or accumulating run corpus.
 Catalogue/series changes logically retire immutable action tokens and wait for
 the exposed API original before starting the latest selection. StrictMode cannot

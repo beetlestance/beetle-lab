@@ -5,7 +5,7 @@ import { useCatalogue } from './useCatalogue.js';
 import { useSamples } from './useSamples.js';
 import { MetricChart, evidence, valueNumber } from './Chart.js';
 import { SourceRangeControls } from './range.js';
-import type { SourceRange } from './useSamples.js';
+import type { MetricSampleSource, SourceRange } from './useSamples.js';
 export function RunMetrics({run, terminal}: {run: Run; terminal: boolean}) {
   const admission = useMemo(() => new ReadAdmission(), []);
   return <Inventory key={`${run.scope.organizationId}/${run.scope.workspaceId}/${run.id}/${run.activeAttemptId}`} run={run} terminal={terminal} admission={admission} />;
@@ -49,7 +49,7 @@ function SeriesView({page, series, admission}: {page: RunMetricSeriesPage; serie
     <SamplesView key={range ? `${range.fromTimeMs}/${range.toTimeMs}` : 'all'} page={page} series={series} admission={admission} range={range} />
   </>;
 }
-function SamplesView({page, series, admission, range}: {page: RunMetricSeriesPage; series: RunMetricSeries; admission: ReadAdmission; range: SourceRange | undefined}) {
+export function SamplesView({page, series, admission, range}: {page: MetricSampleSource; series: RunMetricSeries; admission: ReadAdmission; range: SourceRange | undefined}) {
   const {view, load} = useSamples(page, series, admission, range);
   return <><p>{chartLabel(series.kind)} Gaps are unmeasured.</p>
     {view.busy && <p role="status">Loading source windows…</p>}
@@ -67,3 +67,7 @@ function chartLabel(kind: RunMetricSeries['kind']): string {
     case 'gauge': return 'Chart shows latest source values.';
   }
 }
+
+export { ReadAdmission } from './admission.js';
+export type { MetricSampleSource } from './useSamples.js';
+export { evidence, valueNumber } from './Chart.js';

@@ -40,6 +40,7 @@ released application until the rewrite is qualified.
 | Inspect backend source adoption | [Output adoption](verification/output-adoption.md) | Single payload carrier, exact source metadata and worker replay; transfer/finalization pending |
 | Inspect backend native file prerequisites | [Output files](verification/output-files.md) | Shared physical custody/promotion, namespace lease and byte adapter; transfer composition pending |
 | Inspect native artifact ranges | [Range evidence](verification/output-range.md) | Shared custody/lifetime, checked EOF and original IO; HTTP/adoption pending |
+| Inspect comparison browser controls | [Comparison controls](verification/run-comparison-controls.md) | Bounded selection, provenance and source charts; actual browser qualification pending |
 | Inspect admitted comparison reads | [Comparison service](verification/run-comparison-service.md) | Logical matching, actual worker/files, authenticated HTTP and bootstrap; browser pending |
 | Inspect four-run comparison boundary | [Comparison contract](verification/run-comparison-contract.md) | Scoped DTO/client invariants; backend/browser implementation pending |
 | Inspect inline report and format controls | [Report controls](verification/report-controls.md) | Verified plain text, shared read custody and safe attachments; actual browser pending |

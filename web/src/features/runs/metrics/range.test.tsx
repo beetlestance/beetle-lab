@@ -19,7 +19,8 @@ function reply(path: string, paginate = false) {
   const query = new URL(path, 'http://metrics.local').searchParams;
   const cursor = query.get('cursor'); const before = cursor ? captureRunMetricSamplesCursor(cursor).beforeWindow : 2000;
   const fromTimeMs = Number(query.get('fromTimeMs') ?? 0); const toTimeMs = Number(query.get('toTimeMs') ?? 8640000000000000);
-  const selected = {...series, ordinal: Number(query.get('seriesOrdinal'))};
+  const ordinal = Number(query.get('seriesOrdinal'));
+  const selected = {...series, ordinal, metric: ordinal === 1 ? 'other_metric' : series.metric};
   const source = samples(before, 1, selected); const startTimeMs = fromTimeMs + (before - 1900) * 1000;
   return {...source, fromTimeMs, toTimeMs, span: {startTimeMs, endTimeMs: startTimeMs + 1000},
     items: [{windowOrdinal: before, startTimeMs, endTimeMs: startTimeMs + 1000, value: {kind: 'counter' as const, sum: 1}}],
