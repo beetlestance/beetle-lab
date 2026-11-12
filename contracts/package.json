@@ -17,7 +17,8 @@
     "./target-runtime": "./src/target-runtime/index.ts",
     "./k6-metrics": "./src/k6-metrics/index.ts",
     "./k6-live": "./src/k6-live/index.ts",
-    "./api/reference": "./src/api/generated/reference.md"
+    "./api/reference": "./src/api/generated/reference.md",
+    "./k6-history": "./src/k6-metrics/history.ts"
   },
   "dependencies": {
     "ajv": "8.20.0",

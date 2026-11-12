@@ -12,3 +12,7 @@ Engine plan/metrics retains compiled-load threshold validation, including reject
 measurement-marker thresholds. The native builder admits only this exact shared
 source file under its existing source-byte cap; no contracts-directory allowlist.
 Checks: policy.test.ts and affected engine runtime/build/catalogue cases.
+
+The Node-free runtime policy entry stays flat. Backend-only HTTP history projection
+is exported separately as @beetle/contracts/k6-history; the native script builder
+never imports that dependency graph. Check runtime/metrics-build.test.ts too.

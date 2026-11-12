@@ -2,7 +2,7 @@ import { DistributionError } from '@beetle/contracts/metrics';
 import { encodeJson } from '@beetle/contracts';
 import type { RunKey } from '../../ports/runs.js';
 import { MetricReadError } from '../../ports/run-metrics.js';
-import { K6HttpSummaryError, summarizeK6HttpTotals, k6RequestsPerSecond } from '@beetle/contracts/k6-metrics';
+import { K6HttpSummaryError, summarizeK6HttpTotals, k6RequestsPerSecond } from '@beetle/contracts/k6-history';
 import { pendingRunHistoryMetrics } from '@beetle/contracts/api';
 import type { RunHistoryProjection } from '../../ports/run-history.js';
 import type { Publication } from './archive.js';

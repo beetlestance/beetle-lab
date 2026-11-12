@@ -44,7 +44,9 @@ separate from assertion failures or overall test outcome.
 Reuse the existing numeric parser, native custody and digest verification in
 application/run-metrics. Extend its public internal service with one actual-original
 history summary projection; catalogue/sample/lookup behavior stays owned there.
-No new numeric/JSON archive parser and no percentile average.
+No new numeric/JSON archive parser and no percentile average. Backend projection
+uses the separate @beetle/contracts/k6-history entry. The flat Node-free runtime
+policy entry remains unchanged for the script builder's approved input graph.
 
 Current producer stores HTTP totals per request, not a global HTTP series. A shared
 pure k6 summary projector aggregates only known http_reqs/counter,
