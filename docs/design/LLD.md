@@ -5,6 +5,7 @@ The owning document below must be updated before its implementation changes.
 
 | Implementing | Read | Includes |
 | --- | --- | --- |
+| Container automation client | [Automation](lld/automation-client.md) | Authenticated HTTP commands, private files, finite waiting and outcome exits |
 | Organisation and settings | [Organisation/settings](lld/organization-settings.md) | Hierarchy, scoped access, folders, inheritance and safe settings changes |
 | Source/build layout | [Module map](lld/module-map.md) | Package tree, named owners, import graph and build boundaries |
 | Domain and storage | [Domain/storage](lld/domain-storage.md) | State, tables, transaction ownership, artifacts, secrets |
