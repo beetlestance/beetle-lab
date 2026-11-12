@@ -73,6 +73,7 @@ The owning document below must be updated before its implementation changes.
 | Performance report artifacts | [Engine reports](lld/performance-reports.md) | Mapped result and shared numeric presentation; admitted text/CSV custody |
 | Portable script custody | [Script custody](lld/export-script-custody.md) | Shared streamed hashes/native script descriptor and close proof; job orchestration pending |
 | Independent export job | [Export jobs](lld/standalone-export-jobs.md) | Separate generation assignment/result integrity; admitted runtime, durable queue and public workflow pending |
+| Staged export composition | [Export operation](lld/standalone-export-operation.md) | Exact staged assignment, one compiler/build/native custody chain; admission/public workflow pending |
 | Export build lifetime | [Build lifetime](lld/standalone-build-lifetime.md) | Sticky deadline/cancellation and retained opaque builder; physical stop and admission remain parent-owned |
 | Standalone script component | [Engine export](lld/standalone-export.md) | Shared compiler/runtime builder and explicit secret refusal; HTTP/UI admission pending |
 

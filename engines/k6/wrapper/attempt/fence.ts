@@ -47,6 +47,16 @@ export class AttemptFence {
     this.globalEnd = sample.mono + (headers.attempt.deadlineMs - sample.wall);
     this.phaseEnd = this.globalEnd; this.check();
   }
+  /** Apply staged authority without extending any existing parent/phase ceiling. */
+  narrow(headers: StagedHeaders): void {
+    const sample = this.check();
+    if (sample.wall < headers.attempt.deadlineMs - headers.attempt.timeoutMs) {
+      this.stop('clock'); throw new AttemptError('clock');
+    }
+    this.wallEnd = Math.min(this.wallEnd, headers.attempt.deadlineMs);
+    this.globalEnd = Math.min(this.globalEnd, sample.mono + headers.attempt.deadlineMs - sample.wall);
+    this.phaseEnd = Math.min(this.phaseEnd, this.globalEnd); this.check();
+  }
   phase(timeout: number): void {
     const sample = this.check(); this.phaseEnd = Math.min(this.globalEnd, sample.mono + timeout); this.check();
   }
