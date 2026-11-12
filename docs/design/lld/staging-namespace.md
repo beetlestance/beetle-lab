@@ -1,7 +1,7 @@
 # Durable staging namespace and cleanup capacity
 
-Status: C1 implementation in progress; no physical cleanup/ACK or refund authority.
-Parent: [retirement](output-retirement.md). Agent Journal migration016 is reserved.
+Status: C1 locally verified; no physical cleanup/ACK or refund authority.
+[Evidence](../../verification/staging-namespace.md). Parent: [retirement](output-retirement.md). Journal migration016 is implemented.
 Owners: staging native originals, Journal namespace/control rows, RuntimeOwner gate.
 
 ## Installed custody

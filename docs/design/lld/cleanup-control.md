@@ -1,6 +1,6 @@
 # Cleanup control value contract
 
-Status: C1 implementation in progress; values grant no IO or refund authority.
+Status: C1 values locally verified; values grant no IO or refund authority.
 Owner: agent cleanup-control, used by the [namespace reserve](staging-namespace.md).
 Physical lifecycle remains in [retirement](output-retirement.md).
 

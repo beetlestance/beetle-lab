@@ -15,11 +15,12 @@ Agent source/delivery or absence closure does not authorize its own deletion.
 [Native failed closes](output-collection-custody.md) now retain strong owners and
 admission slots; quiesced means settlement, not successful descriptor cleanup.
 
-The verified staging root currently lives in a process-local WeakMap. RuntimePlan
-binds paths/profile/spec, while PrivateSource pins the output root. Neither gives
-complete durable native custody for input/secrets/task roots after restart. Before
-cleanup, persist a verified namespace anchor and exact task-root preparation facts.
-A newly configured empty root must never manufacture absence for old retained data.
+[C1 namespace/control](staging-namespace.md) now persists installed marker/root and
+per-task four-directory anchors before work. Its process-local verified-root token
+still gates actual Stager construction. Old admitted history without trustworthy
+anchors remains recovery-required. Neither these observations nor PrivateSource's
+output receipt establishes current absence, retired readers or released native IO.
+A newly configured empty root cannot manufacture custody for retained data.
 
 ## Phase A: retire and prove physical cleanup
 

@@ -1,7 +1,7 @@
 # Producer cleanup: next implementation packets
 
-Status: proposed dependency plan, not implemented cleanup or release acceptance.
-Base8da81ed. Root owns integration, contracts/migrations and dependency files.
+Status: C1 locally verified; C2–C6 pending, no implemented cleanup or release acceptance.
+C1 evidence: [namespace](../verification/staging-namespace.md). Base44a95b8. Root owns integration, contracts/migrations and dependency files.
 Contract: [retirement/cleanup acknowledgement](../design/lld/output-retirement.md).
 
 ## Why this is next
