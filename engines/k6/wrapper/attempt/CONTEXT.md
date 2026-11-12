@@ -31,4 +31,5 @@ remain reported despite later notification failure. Receipt.ok means coordinatio
 not test pass; native99 required failures can be healthy failed-test coordination.
 Target observations reserve1MiB within output/collect; cooldown precedes collect,
 cleanup aborts/drains sampler originals. Historical output is independent of live.
+Native descriptor/hash ownership is shared through ../artifact-custody/index.
 Checks: scoped Vitest engines/k6/test/{attempt,metric-archive}; Node types.

@@ -79,6 +79,8 @@ a descriptor or result hash is not proof of physical publication/release.
 
 ## Integration and acceptance
 
+The [native script custody](export-script-custody.md) component supplies bounded
+file verification/descriptor construction; it grants no job admission.
 Next implement one engine-owned operation using the existing compiler/builder,
 retaining original build/hash/close work through cancellation and exposing no
 success after close/deadline. It runs only inside the separately admitted container.

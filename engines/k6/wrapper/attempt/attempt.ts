@@ -12,7 +12,7 @@ import { mapK6Result } from '../result/index.js';
 import type { K6ResultInput, K6ResultMapping } from '../result/index.js';
 import { publishK6Result } from '../publication/index.js';
 import type { ResultPublication } from '../publication/index.js';
-import { Artifacts, outputRoot } from './artifacts.js';
+import { Artifacts, outputRoot } from '../artifact-custody/index.js';
 import { startTargetSampling } from '../target-sampling/index.js';
 import type { TargetSamplingOwner, TargetSamplingReport } from '../target-sampling/index.js';
 import { MetricArchive } from './archive/index.js';

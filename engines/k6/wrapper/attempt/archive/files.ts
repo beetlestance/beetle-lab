@@ -2,9 +2,9 @@ import { constants } from 'node:fs';
 import type { BigIntStats } from 'node:fs';
 import { lstat, open, realpath } from 'node:fs/promises';
 import type { FileHandle } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
+import { hashArtifactFile } from '../../artifact-custody/index.js';
 import { join } from 'node:path';
-import { same, regular, directory } from '../artifact-identity.js';
+import { same, regular, directory } from '../../artifact-custody/index.js';
 import { AttemptError } from '../types.js';
 
 export const names = { data: 'metric-windows.ndjson', index: 'metric-index.ndjson' } as const;
@@ -72,19 +72,8 @@ export class MetricFiles {
     if (!same(before, after)) throw new AttemptError('artifact');
     await this.verifyRoot(); return after;
   }
-  private async hash(file: OwnedFile): Promise<string> {
-    const buffer = new Uint8Array(65_536); const hash = createHash('sha256');
-    const limit = Math.ceil(file.bytes / buffer.length) + 32;
-    for (let offset = 0, calls = 0; offset < file.bytes;) {
-      if (++calls > limit) throw new AttemptError('artifact');
-      const length = Math.min(buffer.length, file.bytes - offset);
-      const read = await this.checked(() => file.handle.read(buffer, 0, length, offset));
-      if (!Number.isSafeInteger(read.bytesRead) || read.bytesRead < 1 || read.bytesRead > length) throw new AttemptError('artifact');
-      hash.update(buffer.subarray(0, read.bytesRead)); offset += read.bytesRead;
-    }
-    const tail = await this.checked(() => file.handle.read(buffer, 0, 1, file.bytes));
-    if (tail.bytesRead !== 0) throw new AttemptError('artifact');
-    return hash.digest('hex');
+  private hash(file: OwnedFile): Promise<string> {
+    return hashArtifactFile({file: file.handle, bytes: file.bytes, maximumBytes: 256 * 1048576, check: () => this.options.check()});
   }
   async verifyNames(stats: ReadonlyMap<Lane, BigIntStats>): Promise<void> {
     await this.verifyRoot();

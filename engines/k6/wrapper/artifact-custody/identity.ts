@@ -1,5 +1,5 @@
 import type { BigIntStats } from 'node:fs';
-import { AttemptError } from './types.js';
+import { AttemptError } from '../failure/index.js';
 
 export function same(left: BigIntStats, right: BigIntStats): boolean {
   return left.dev === right.dev && left.ino === right.ino && left.size === right.size

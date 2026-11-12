@@ -71,6 +71,7 @@ The owning document below must be updated before its implementation changes.
 | HTTP, CLI or browser | [Application/UI](lld/application-ui.md) | API routes, errors, events, queries, export, frontend |
 | Four-run comparison | [Comparison](lld/run-comparison.md) | Scoped terminal-run provenance/diffs and logically matched selected metrics |
 | Performance report artifacts | [Engine reports](lld/performance-reports.md) | Mapped result and shared numeric presentation; admitted text/CSV custody |
+| Portable script custody | [Script custody](lld/export-script-custody.md) | Shared streamed hashes/native script descriptor and close proof; job orchestration pending |
 | Independent export job | [Export jobs](lld/standalone-export-jobs.md) | Separate generation assignment/result integrity; admitted runtime, durable queue and public workflow pending |
 | Standalone script component | [Engine export](lld/standalone-export.md) | Shared compiler/runtime builder and explicit secret refusal; HTTP/UI admission pending |
 

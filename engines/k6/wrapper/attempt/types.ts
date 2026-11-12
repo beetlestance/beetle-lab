@@ -1,3 +1,6 @@
+import type { AttemptReason } from '../failure/index.js';
+export type { AttemptReason } from '../failure/index.js';
+export { AttemptError } from '../failure/index.js';
 import type { AttemptLiveState } from './live.js';
 import type { ControlEvent, EngineResult } from '@beetle/contracts';
 import type { MetricWindow } from '../../aggregation/index.js';
@@ -16,9 +19,6 @@ export interface StagedK6Options extends Omit<OpenStagedOptions, 'wallNow' | 'he
   readonly onEvent?: (event: ControlEvent, signal: AbortSignal) => Promise<void>;
   readonly onWindow?: (window: MetricWindow, signal: AbortSignal) => Promise<void>;
 }
-export type AttemptReason = 'profile' | 'input' | 'output_limit' | 'journal' | 'compile'
-  | 'execution' | 'artifact' | 'mapping' | 'seal' | 'publication' | 'cleanup'
-  | 'cancelled' | 'deadline' | 'clock' | 'notification';
 export type Quiescence = 'confirmed' | 'unknown' | 'failed' | 'not_started';
 export interface StagedK6Receipt {
   /** Healthy coordination and published durable result; never a test verdict. */
@@ -32,7 +32,4 @@ export interface StagedK6Receipt {
   readonly quiescence: Readonly<Record<'input' | 'execution' | 'artifacts' | 'journal' | 'publication' | 'notifications', Quiescence>>;
   readonly liveMetrics: AttemptLiveState;
   readonly notifications: 'complete' | 'disabled' | 'failed';
-}
-export class AttemptError extends Error {
-  constructor(readonly reason: AttemptReason) { super(reason); this.name = 'AttemptError'; }
 }

@@ -2,7 +2,7 @@ import * as fs from 'node:fs/promises';
 import { promises as realFs } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, expect, it, vi } from 'vitest';
-import { Artifacts } from '../../wrapper/attempt/artifacts.js';
+import { Artifacts } from '../../wrapper/artifact-custody/index.js';
 import { AttemptFence } from '../../wrapper/attempt/fence.js';
 import { numericAllowance, reserveOutput } from '../../wrapper/attempt/reservation.js';
 import { encodeJson } from '@beetle/contracts';

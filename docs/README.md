@@ -45,6 +45,7 @@ released application until the rewrite is qualified.
 | Inspect four-run comparison boundary | [Comparison contract](verification/run-comparison-contract.md) | Scoped DTO/client invariants; backend/browser implementation pending |
 | Inspect inline report and format controls | [Report controls](verification/report-controls.md) | Verified plain text, shared read custody and safe attachments; actual browser pending |
 | Inspect performance report artifacts | [Engine reports](verification/performance-reports.md) | Bounded text/CSV, admitted custody and native arm64 publication; browser pending |
+| Inspect native export script files | [Script custody](verification/export-script-custody.md) | Shared streamed verification, actual builder/large file and original close/root proof; admitted job pending |
 | Inspect independent export wire integrity | [Export job contract](verification/standalone-export-contract.md) | Separate purpose, bounded assignment/result and legacy seal compatibility; admitted lifecycle/public workflow pending |
 | Inspect standalone script construction | [Engine export](verification/standalone-export.md) | Actual compiler/builder and generated-bundle semantics; HTTP/UI/native qualification pending |
 | Inspect durable deletion progress | [Deletion metadata](verification/output-deletion-store.md) | Scoped intent, exact persisted native plans, worker reopen and retained charges; runtime/producer retirement pending |
