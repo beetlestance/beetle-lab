@@ -71,6 +71,11 @@ its remaining restart/cold-restore implementation. R4 additionally requires fres
 installation, shipped images/Compose, scans, backup/restore, bounded soak/overhead
 and native amd64/arm64 evidence. No complete R0-R4 release is claimed.
 
+The [remaining parity checklist](docs/verification/functional-parity.md) also keeps
+dashboard rollups, dropped-load guidance, command search and embedded reference/skill
+downloads open until their inventory acceptance fixtures are closed. These are
+functional obligations, separate from the deferred UI redesign.
+
 First local usage is now evidenced through [fresh source setup and browser execution](docs/verification/first-use.md): namespace/test authoring, real k6, durable result, chart, history and one hash-verified download. This does not close the remaining product or release qualification work.
 
 ## Local first-use corrections
