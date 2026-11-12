@@ -1,3 +1,4 @@
+import {registerExportRoutes} from '../adapters/inbound/http/exports/index.js';
 import type { LocalSession } from '../adapters/inbound/http/session/index.js';
 import { captureLocalAccess, openApplicationSession } from './local-access.js';
 import { createRunComparisonService } from '../application/run-comparison/index.js';
@@ -64,6 +65,7 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
   let agentRuntime: AgentRuntime | undefined;
   let metricHttp: {close(): Promise<void>} | undefined;
   let artifactHttp: {close(): Promise<void>} | undefined;
+  const closeArtifacts=()=>artifactHttp?.close();
   const closeMetrics = () => metricHttp?.close();
   let inputRuntime: InputRuntime | undefined; let inputHttp: InputHttp | undefined;
   try {
@@ -79,22 +81,21 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     registerSuiteRoutes(server, { store: store.suites, reader: store.suites, newId: randomUUID, digest, authorize: session.authorize });
     registerRunRoutes(server, { store: store.runs, reader: store.runs, resultReader: store.results, eventReader: store.runEvents, newId: randomUUID, digest,
       now: () => new Date().toISOString(), authorize: session.authorize });
-    artifactHttp = registerRunArtifactRoutes(server, {reader: store.runArtifacts, authorize: session.authorize,
-      ...(agentRuntime?.publishedBytes ? {bytes: agentRuntime.publishedBytes} : {})});
+    artifactHttp=downloadRoutes(server,store,agentRuntime,session.authorize);
     metricHttp = metricRoutes(server, store, agentRuntime, session.authorize);
     registerSettingsRoutes(server, { store: store.settings, reader: store, digest, authorize: session.authorize });
     if (inputRuntime) inputHttp = registerInputRoutes(server, { inputs: inputRuntime.inputs, newId: randomUUID, authorize: session.authorize });
     server.addHook('onClose', async () => {
       closeSession();
       await closeMetrics();
-      await artifactHttp?.close();
+      await closeArtifacts();
       await closeApplicationStore(agentRuntime, inputRuntime, store);
     });
     let closing: Promise<void> | undefined;
     const close = (): Promise<void> => {
       closeSession();
       const metrics = closeMetrics();
-      const downloads = artifactHttp?.close();
+      const downloads = closeArtifacts();
       if (!closing) {
         closing = Promise.resolve().then(async () => {
           const results = await Promise.allSettled([metrics, downloads, Promise.resolve().then(() => inputHttp?.close()),
@@ -112,7 +113,7 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
       updateRuntime: (observation: RuntimeObservation | null) => store.updateRuntime(observation), close });
   } catch (error) {
     closeSession();
-    const resources = await Promise.allSettled([closeMetrics(), artifactHttp?.close(), Promise.resolve().then(() => inputHttp?.close()),
+    const resources = await Promise.allSettled([closeMetrics(), closeArtifacts(), Promise.resolve().then(() => inputHttp?.close()),
       Promise.resolve().then(() => agentRuntime?.close()), Promise.resolve().then(() => inputRuntime?.close()), Promise.resolve().then(() => server.close())]);
     const store = await Promise.allSettled([metadata?.abort()]);
     throwCloseFailures([{ status: 'rejected', reason: error }, ...resources, ...store]);
@@ -130,4 +131,12 @@ function metricRoutes(server: FastifyInstance, store: Metadata, agent: AgentRunt
   const live = registerRunLiveMetricRoutes(server, {authorize, service: createRunLiveMetricsService({executions: store.executions,
     ...(agent?.liveMetrics ? {gateway: {liveMetrics: agent.liveMetrics}} : {}), hash: digest})});
   return {close: async () => {await Promise.all([history.close(), live.close(), comparisons.close()]);}};
+}
+
+function downloadRoutes(server:FastifyInstance,store:Metadata,agent:AgentRuntime|undefined,authorize:onRequestAsyncHookHandler){
+ const bytes=agent?.publishedBytes;
+ const runs=registerRunArtifactRoutes(server,{reader:store.runArtifacts,authorize,...(bytes?{bytes}:{})});
+ const exports=registerExportRoutes(server,{store:store.exports,outputs:store.exportOutputs,newId:randomUUID,digest,
+  now:()=>new Date().toISOString(),authorize,...(bytes?{bytes}:{})});
+ return {close:async()=>{throwCloseFailures(await Promise.allSettled([runs.close(),exports.close()]));}};
 }

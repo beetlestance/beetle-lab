@@ -623,5 +623,40 @@
     "path": "valid/open-local-browser-request.json",
     "schema": "OpenLocalBrowserRequest",
     "valid": true
+  },
+  {
+    "path": "valid/export-job.json",
+    "schema": "ExportJob",
+    "valid": true
+  },
+  {
+    "path": "valid/export-job-page.json",
+    "schema": "ExportJobPage",
+    "valid": true
+  },
+  {
+    "path": "valid/export-profiles.json",
+    "schema": "ExportProfiles",
+    "valid": true
+  },
+  {
+    "path": "valid/create-export.json",
+    "schema": "CreateExportRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/cancel-export.json",
+    "schema": "CancelExportRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/export-params.json",
+    "schema": "ExportParams",
+    "valid": true
+  },
+  {
+    "path": "invalid/create-export-zero-build.json",
+    "schema": "CreateExportRequest",
+    "valid": false
   }
 ]

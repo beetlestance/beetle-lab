@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeJson } from '@beetle/contracts';
-import { k6ConfigSchema } from './configuration-schema.js';
+import { k6ConfigSchema } from '../execution-profiles/index.js';
 import type { Suite, SuiteRevision, WorkspaceScope } from '@beetle/contracts/api';
 import type { SuiteCommand, SuiteKey } from '../../../ports/suites.js';
 import { digestMutationIntent } from '../../../application/namespaces/index.js';

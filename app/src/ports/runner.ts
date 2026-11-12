@@ -1,3 +1,4 @@
+import type { ExportProfilePin } from './exports.js';
 import type { Ack, AckReceipt, AttemptSnapshot, Cancellation, Capabilities, ClientResult,
   EventBatch, Offer } from '@beetle/contracts';
 import type { RunProfilePin } from './runs.js';
@@ -9,6 +10,7 @@ export interface AgentConnectionConfiguration {
   readonly tokenFile: string;
   readonly expectedInstallationId: string;
   readonly profiles: readonly RunProfilePin[];
+  readonly exportProfiles?: readonly ExportProfilePin[];
   readonly storageAllocationBytes: number;
   readonly freeSpaceReserveBytes: number;
 }

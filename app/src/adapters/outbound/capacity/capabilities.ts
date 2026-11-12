@@ -1,3 +1,4 @@
+import {checkedExportConfiguration} from '../execution-profiles/index.js';
 import { encodeCanonicalJson, sameInstalledIdentity, validate, validatePrimitive } from '@beetle/contracts';
 import { createHash } from 'node:crypto';
 import type { Capabilities } from '@beetle/contracts';
@@ -28,6 +29,7 @@ export function captureConfiguration(input: AgentConnectionConfiguration): Agent
     requireCapacity(Array.isArray(pin.requiredCapabilities) && pin.requiredCapabilities.length <= 64);
     requireCapacity(pin.requiredCapabilities.every((value: unknown) => typeof value === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(value)));
   }
+  checkedExportConfiguration({profiles:copy.exportProfiles??[],pendingLimit:4096},{profiles:copy.profiles,pendingLimit:4096});
   return copy;
 }
 export function captureCapabilities(input: unknown): { frame: Capabilities; fingerprint: string } {
@@ -46,7 +48,8 @@ export function checkFrame(frame: Capabilities, configuration: AgentConnectionCo
   requireCapacity(observation.perRunStagingBytes <= observation.pool.stagingBytes);
   requireCapacity(pooled.every(key => frame.capacity[key] <= observation.pool[key]));
   checkControls(frame); checkProvenance(frame);
-  configuration.profiles.forEach(pin => {
+  const pins=[...configuration.profiles,...(configuration.exportProfiles??[]).map(entry=>entry.profile)];
+  pins.forEach(pin => {
     const matching = frame.engines.filter(engine => engine.id === pin.engine.id
       && engine.imageDigest === pin.engine.imageDigest && engine.configVersion === pin.engine.configVersion
       && sameInstalledIdentity(engine.installedIdentity, pin.installedIdentity));

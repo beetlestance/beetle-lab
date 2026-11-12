@@ -16,8 +16,7 @@ These are partial, targeted observations. They do not prove all other inventory
 items are complete, nor require copying the legacy visual layout. Close each item
 against its existing acceptance ID; audit the remaining inventory before R3 closes.
 
-Other known open work remains: standalone export admitted lifecycle and public
-workflow (F15); producer retirement, retention/delete orchestration and final
+Other known open work remains: default offline-engine installation for the locally verified [export workflow](public-standalone-export.md) (F15); producer retirement, retention/delete orchestration and final
 purge/accounting (F14); ordinary one-command Compose provisioning (F18); delivery
 restart/cold-restore authority; packaged automation/browser qualification; and R4
 fresh/pull installs, native amd64/arm64, backup/restore, scans and bounded soak/

@@ -7,7 +7,7 @@ import { registerApiOperation } from '../api-route.js';
 import { ApiFault, apiErrorResponse } from '../api-errors.js';
 import { RequestLifetimes } from '../request-lifetimes/index.js';
 import { header, selectRange } from '../byte-content.js';
-import { sendArtifact } from './content.js';
+import { sendArtifact } from '../artifact-content/index.js';
 import { listArtifacts } from '../../../../application/run-artifacts/index.js';
 interface Options { reader: RunArtifactsReader; bytes?: Pick<OutputByteStore, 'read'>; authorize: onRequestAsyncHookHandler }
 const scope = (p: {organizationId: string; workspaceId: string}) => ({kind: 'workspace' as const,

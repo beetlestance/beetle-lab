@@ -34,8 +34,7 @@ export function captureSnapshot(input: unknown, expected: AttemptIdentity): Atte
   requireRule(value.intentDigest === expected.intentDigest);
   requireRule(value.retainedStartSeq <= value.lastSeq ||
     value.lastSeq < Number.MAX_SAFE_INTEGER && value.retainedStartSeq === value.lastSeq + 1);
-  if (value.result !== undefined) {
-    requireScope(value.result, expected);
-  }
+  if (value.result !== undefined) requireScope(value.result, expected);
+  if (value.exportResult !== undefined) requireScope(value.exportResult, expected);
   return value;
 }

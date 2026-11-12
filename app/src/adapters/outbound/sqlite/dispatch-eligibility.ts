@@ -1,3 +1,6 @@
+import type {ExecutionResourceFact} from '../../../ports/execution-resources.js';
+import type {ExportConfiguration} from '../../../ports/exports.js';
+import {chargedExportResources,pendingExportResources} from './export-jobs/resources.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { validateApi } from '@beetle/contracts/api';
 import type { DispatchBlockReason, DispatchEligibility } from '../../../ports/dispatch.js';
@@ -19,7 +22,7 @@ function safe(value: number): number {
   if (!Number.isSafeInteger(value) || value < 0) throw new StorageError('unavailable');
   return value;
 }
-function checkedCosts(row: DispatchFact): void {
+function checkedCosts(row: ExecutionResourceFact): void {
   for (const key of [...costs, 'timeout_ms'] as const) if (safe(row[key]) === 0) throw new StorageError('unavailable');
   safe(row.output_bytes + 65536);
   if (!['parallel', 'isolated'].includes(row.mode)) throw new StorageError('unavailable');
@@ -29,11 +32,12 @@ export class DispatchEligibilityOwner {
   readonly capacity: Capacity;
   readonly storage: { allocationBytes: number; reserveBytes: number } | null;
   private readonly usage: number;
-  private readonly active: DispatchFact[];
+  private readonly active: ExecutionResourceFact[];
   private readonly totals = { cpu_millis: 0, memory_bytes: 0, pids: 0, output_bytes: 0, staging_bytes: 0 };
   private readonly unknown: boolean;
   private readonly registry: Map<string, string>;
-  constructor(db: DatabaseSync, settings: Settings, config: RunConfiguration) {
+  private readonly exportRegistry: Map<string,string>;
+  constructor(private readonly db: DatabaseSync, settings: Settings, config: RunConfiguration, exports:ExportConfiguration={profiles:[],pendingLimit:4096}) {
     this.capacity = settings.capacity();
     const values = this.capacity.installation.values;
     if (!validateApi('InstallationValues', values).ok) throw new StorageError('unavailable');
@@ -46,13 +50,16 @@ export class DispatchEligibilityOwner {
     this.usage = safe(usage);
     this.unknown = hasUntrackedOwnership(db);
     this.registry = new Map(config.profiles.map(pin => [pin.engine.profileId, executionRegistryDigest(pin)]));
-    this.active = chargedFacts(db);
+    this.exportRegistry=new Map(exports.profiles.map(pin=>[pin.sourceProfileId,executionRegistryDigest(pin.profile)]));
+    const runs=chargedFacts(db);for(const row of runs)retainedClaim(row);
+    this.active = [...runs,...chargedExportResources(db)];
+    if(this.active.length>64)throw new StorageError('unavailable');
     for (const row of this.active) {
-      retainedClaim(row); checkedCosts(row);
+      checkedCosts(row);
       for (const key of costs) this.totals[key] = safe(this.totals[key] + row[key]);
     }
   }
-  individual(row: DispatchFact): DispatchEligibility {
+  individual(row: ExecutionResourceFact): DispatchEligibility {
     const runtime = this.capacity.runtime;
     if (runtime === null) return blocked('capacity_unknown');
     checkedCosts(row);
@@ -64,12 +71,12 @@ export class DispatchEligibilityOwner {
     }
     if (costs.slice(0, 4).some(key => row[key] > this.pool(key))) return blocked('budget_unavailable');
     if (row.staging_bytes > Math.min(runtime.execution.stagingBytes, runtime.execution.perRunStagingBytes)) return blocked('staging_unavailable');
-    if (this.storage === null || !storageFits({ chargedBytes: this.usage, requestedBytes: row.output_bytes + 65536,
+    if (this.storage === null || !storageFits({ chargedBytes: this.usage, requestedBytes: row.storage_bytes ?? row.output_bytes + 65536,
       ...this.storage })) return blocked('storage_unavailable');
     return { kind: 'ready' };
   }
-  private profileAvailable(row: DispatchFact): boolean {
-    return this.registry.get(row.profile_alias) === row.registry_digest
+  private profileAvailable(row: ExecutionResourceFact): boolean {
+    return (row.purpose==='standalone_export'?this.exportRegistry:this.registry).get(row.profile_alias) === row.registry_digest
       && this.capacity.installation.values.supportedProfiles.includes(row.profile_alias)
       && this.capacity.runtime!.ceilings.supportedProfiles.includes(row.profile_alias);
   }
@@ -81,12 +88,14 @@ export class DispatchEligibilityOwner {
     return safe(Math.min(this.capacity.installation.values.pool[name], runtime.ceilings.pool[name]));
   }
   barrier(rows: readonly DispatchFact[]): number | null {
-    let oldest: number | null = null;
-    for (const row of rows) {
-      if (this.fresh(row) !== null || row.mode !== 'isolated') continue;
-      if (this.individual(row).kind === 'ready' && (oldest === null || row.queue_order! < oldest)) oldest = row.queue_order;
-    }
+    let oldest:number|null=null;
+    for(const row of rows)if(this.fresh(row)===null)oldest=this.isolatedOrder(row,oldest);
+    for(const row of pendingExportResources(this.db))oldest=this.isolatedOrder(row,oldest);
     return oldest;
+  }
+  private isolatedOrder(row:ExecutionResourceFact,oldest:number|null):number|null {
+    if(row.mode!=='isolated'||this.individual(row).kind!=='ready')return oldest;
+    return oldest===null||row.queue_order!<oldest?row.queue_order:oldest;
   }
   private fresh(row: DispatchFact): DispatchBlockReason | null {
     if (row.queue_order === null || row.attempt_marker === null) return 'untracked_intent';
@@ -102,6 +111,9 @@ export class DispatchEligibilityOwner {
   evaluate(row: DispatchFact, predecessor: number | null): DispatchEligibility {
     const reason = this.fresh(row);
     if (reason !== null) return blocked(reason);
+    return this.evaluateResources(row,predecessor);
+  }
+  evaluateResources(row:ExecutionResourceFact,predecessor:number|null):DispatchEligibility {
     if (this.unknown) return blocked('ownership_unknown');
     const individual = this.individual(row);
     if (individual.kind === 'blocked') return individual;
@@ -109,7 +121,7 @@ export class DispatchEligibilityOwner {
     if (row.mode === 'parallel' && predecessor !== null && row.queue_order! > predecessor) return blocked('isolated_predecessor');
     return this.remaining(row);
   }
-  private remaining(row: DispatchFact): DispatchEligibility {
+  private remaining(row: ExecutionResourceFact): DispatchEligibility {
     const runtime = this.capacity.runtime;
     if (runtime === null) return blocked('capacity_unknown');
     const concurrency = Math.min(this.capacity.installation.values.pool.concurrency, runtime.ceilings.pool.concurrency);

@@ -10,7 +10,7 @@ import { ApiContext } from '../../app/api.js';
 import { createQueryClient, queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
 import { Runs } from './index.js';
-import { captureRequest, initialValues } from './request.js';
+import { captureRequest, initialValues } from '../execution-request/index.js';
 import { useSubmission } from './useSubmission.js';
 import { ids, json, testClient, run, runId, runRead, deferred, receipt, revision, settings } from './test-fixtures.js';
 

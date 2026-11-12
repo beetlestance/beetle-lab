@@ -4,8 +4,8 @@ import { prepareK6SecretReferences } from '@beetle/contracts/engine-config/k6';
 import type { Run, SuiteRevision } from '@beetle/contracts/api';
 import { digestMutationIntent } from '../../../application/namespaces/index.js';
 import { requireRule } from '../../../domain/namespaces/index.js';
-import type { RunProfilePin } from './run-profiles.js';
-import { k6ConfigSchema } from './configuration-schema.js';
+import type { RunProfilePin } from '../execution-profiles/index.js';
+import { k6ConfigSchema } from '../execution-profiles/index.js';
 import { sha256 } from './input-values.js';
 
 /** The same immutable revision and pins own both public snapshot and private Offer. */

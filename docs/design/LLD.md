@@ -71,11 +71,12 @@ The owning document below must be updated before its implementation changes.
 | HTTP, CLI or browser | [Application/UI](lld/application-ui.md) | API routes, errors, events, queries, export, frontend |
 | Four-run comparison | [Comparison](lld/run-comparison.md) | Scoped terminal-run provenance/diffs and logically matched selected metrics |
 | Performance report artifacts | [Engine reports](lld/performance-reports.md) | Mapped result and shared numeric presentation; admitted text/CSV custody |
-| Portable script custody | [Script custody](lld/export-script-custody.md) | Shared streamed hashes/native script descriptor and close proof; job orchestration pending |
-| Independent export job | [Export jobs](lld/standalone-export-jobs.md) | Separate generation assignment/result integrity; admitted runtime, durable queue and public workflow pending |
-| Staged export composition | [Export operation](lld/standalone-export-operation.md) | Exact staged assignment, one compiler/build/native custody chain; admission/public workflow pending |
+| Portable script custody | [Script custody](lld/export-script-custody.md) | Shared streamed hashes/native script descriptor and close proof |
+| Public export publication | [Export publication](lld/export-publication.md) | Separate durable jobs, shared capacity/output custody, public scoped API/download and original lifetime |
+| Independent export job | [Export jobs](lld/standalone-export-jobs.md) | Separate generation assignment/result integrity; admitted offline runtime |
+| Staged export composition | [Export operation](lld/standalone-export-operation.md) | Exact staged assignment and shared compiler/build/native custody chain |
 | Export build lifetime | [Build lifetime](lld/standalone-build-lifetime.md) | Sticky deadline/cancellation and retained opaque builder; physical stop and admission remain parent-owned |
-| Standalone script component | [Engine export](lld/standalone-export.md) | Shared compiler/runtime builder and explicit secret refusal; HTTP/UI admission pending |
+| Standalone script component | [Engine export](lld/standalone-export.md) | Shared compiler/runtime builder and explicit secret refusal |
 
 Cross-cutting implementation limits live in [engineering](../engineering.md).
 Acceptance scenarios live in [verification](../verification.md). Read both for

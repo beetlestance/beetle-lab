@@ -37,9 +37,10 @@ export async function publicClient(app: Application, origin: string) {
   const session = value(await unpaired.pairBrowserSession({ body: { bootstrapToken: app.bootstrapToken } }));
   const api = createApiClient({ ...options, headers: { 'X-Beetle-CSRF': session.csrfToken } });
   assert.deepEqual(value(await api.getBrowserSession()), session);
-  return { api, requestCount: () => requests };
+  return { api, requestCount: () => requests, content:(path:string,headers:Record<string,string>={})=>
+    fetcher(new URL(path,origin),{headers,signal:AbortSignal.timeout(5000)}) };
 }
-export async function enqueue(api: ApiClient, f: Fixture): Promise<Run> {
+export async function saveRevision(api: ApiClient, f: Fixture) {
   const organization = value(await api.createOrganization({ body: { scope: { kind: 'installation' },
     requestId: randomUUID(), name: 'Synthetic native qualification', slug: 'native-qualification' } }));
   const workspace = value(await api.createWorkspace({ params: { organizationId: organization.id }, body: {
@@ -50,6 +51,10 @@ export async function enqueue(api: ApiClient, f: Fixture): Promise<Run> {
   const revision = value(await api.createSuiteRevision({ params: { ...params, suiteId: suite.id }, body: {
     scope, requestId: randomUUID(), expectedVersion: suite.version, engineId: 'k6', configVersion: 1, config: f.offer.config } }));
   assert.deepEqual(value(await api.getSuiteRevision({ params: { ...params, revisionId: revision.id } })), revision);
+  return {params,scope,revision};
+}
+export async function enqueue(api:ApiClient,f:Fixture):Promise<Run>{
+  const {params,scope,revision}=await saveRevision(api,f);
   return value(await api.createRun({ params, body: { scope, requestId: randomUUID(), revisionId: revision.id,
     engineProfile: 'native-k6', budget: f.budget, executionPolicy: { mode: 'parallel', preferIdle: false } } }));
 }

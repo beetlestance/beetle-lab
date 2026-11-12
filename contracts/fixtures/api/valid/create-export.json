@@ -1,0 +1,25 @@
+{
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "requestId": "00000000-0000-4000-8000-000000000010",
+  "revisionId": "00000000-0000-4000-8000-000000000004",
+  "engineProfile": "k6-local",
+  "budget": {
+    "cpuMillis": 1000,
+    "memoryBytes": 536870912,
+    "pids": 128,
+    "timeoutMs": 60000,
+    "outputBytes": 1048576
+  },
+  "executionPolicy": {
+    "mode": "parallel",
+    "preferIdle": false
+  },
+  "options": {
+    "scriptTimeoutMs": 180000,
+    "maximumBuildBytes": 262144
+  }
+}

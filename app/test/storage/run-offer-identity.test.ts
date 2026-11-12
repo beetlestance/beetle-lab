@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 import { validate } from '@beetle/contracts';
 import { validateApi } from '@beetle/contracts/api';
 import { makeRunOffer } from '../../src/adapters/outbound/sqlite/run-offer.js';
-import { checkedRunConfiguration } from '../../src/adapters/outbound/sqlite/run-profiles.js';
+import { checkedRunConfiguration } from '../../src/adapters/outbound/execution-profiles/index.js';
 import { runOptions } from './runs-fixture.js';
 import runFixture from '../../../contracts/fixtures/api/valid/run.json' with { type: 'json' };
 import revisionFixture from '../../../contracts/fixtures/api/valid/suite-revision.json' with { type: 'json' };

@@ -7,7 +7,7 @@ import type { Inspection } from '../../../agent/test/container/docker.js';
 import { agentOrigin } from './configuration.js';
 import { initializeFreshInstallation } from './initialize.js';
 
-export async function provision(f: Fixture, maximumTargetRequests = 4): Promise<string> {
+export async function provision(f: Fixture, maximumTargetRequests = 4, configureAgent?: (path:string)=>Promise<void>): Promise<string> {
   assert(Number.isSafeInteger(maximumTargetRequests) && maximumTargetRequests >= 1 && maximumTargetRequests <= 64);
   f.docker.run(['network', 'create', '--internal', '--label', `dev.beetle.qualification=${f.id}`, f.network]);
   const control = `beetle-control-${f.id}`;
@@ -21,10 +21,10 @@ if(++counts[key]>${maximumTargetRequests})process.exit(3);r.writeHead(key==='rea
     '--network', f.network, '--network-alias', 'target', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges:true',
     '--cpus', '0.5', '--memory', '128m', '--pids-limit', '64', '--log-driver', 'local', '--log-opt', 'max-size=1m',
     '--log-opt', 'max-file=2', '--entrypoint', 'node', f.agentImage.Id, '-e', program]);
-  await createAgent(f, control);
+  await createAgent(f, control, configureAgent);
   return agentOrigin(f.docker.run(['port', f.agent, '4312/tcp']));
 }
-async function createAgent(f: Fixture, control: string): Promise<void> {
+async function createAgent(f: Fixture, control: string, configureAgent?: (path:string)=>Promise<void>): Promise<void> {
   const mounts = ['staging', 'journal', 'inputs', 'config'].flatMap(name => ['--mount',
     `type=bind,src=${join(f.root, name)},dst=${join(f.root, name)}${['inputs', 'config'].includes(name) ? ',readonly' : ''}`]);
   f.docker.run(['create', '--pull', 'never', '--name', f.agent, '--label', `dev.beetle.qualification=${f.id}`, '--network', control,
@@ -38,6 +38,7 @@ async function createAgent(f: Fixture, control: string): Promise<void> {
   await saveConfiguration(f, actual.Image);
   const config = JSON.parse(await readFile(f.configPath, 'utf8')) as { listen: { host: string; port: number } };
   config.listen.host = '0.0.0.0'; await writeFile(f.configPath, JSON.stringify(config), { mode: 0o600 });
+  await configureAgent?.(f.configPath);
   await initializeFreshInstallation(f);
   f.docker.run(['start', f.agent]);
 }

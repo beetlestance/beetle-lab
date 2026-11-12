@@ -5,6 +5,8 @@ import { fixture } from '../fixtures.js';
 import { baseUrl, load, organizationId, params, reply } from './helpers.js';
 
 const files: Partial<Record<keyof ApiTypes, string>> = {
+  ExportJob: 'export-job', ExportJobPage: 'export-job-page', ExportProfiles: 'export-profiles',
+  CreateExportRequest: 'create-export', CancelExportRequest: 'cancel-export',
   RunComparisonRequest: 'run-comparison-request', RunComparisonSnapshot: 'run-comparison',
   LiveMetricSnapshot: 'live-metric-snapshot', RunMetricSeriesPage: 'run-metric-series-pending', RunMetricSamplesPage: 'run-metric-samples',
   RunResultSnapshot: 'run-result-pending', RunEventPage: 'run-events-pending', RunArtifactPage: 'run-artifacts-pending',
@@ -26,7 +28,7 @@ const files: Partial<Record<keyof ApiTypes, string>> = {
   PatchWorkspaceSettingsRequest: 'patch-workspace-settings', RetentionPreviewRequest: 'retention-preview-request', RetentionApplyRequest: 'retention-apply-request',
 };
 async function operationReply(operation: ApiOperation): Promise<Record<string, unknown>> {
-  const file = operation.name === 'cancelRun' ? 'run-cancelling' : files[operation.response];
+  const file = operation.name === 'cancelRun' ? 'run-cancelling' : operation.name === 'cancelExport' ? 'export-cancelling' : files[operation.response];
   return await fixture(`valid/${file}.json`) as Record<string, unknown>;
 }
 async function queryFixture(operation: ApiOperation) {
@@ -37,12 +39,13 @@ async function queryFixture(operation: ApiOperation) {
 async function exchange(operation: ApiOperation) {
   const input: Record<string, unknown> = {};
   const parameterFiles = { OrganizationParams: 'organization', WorkspaceParams: 'workspace', FolderParams: 'folder',
-    SuiteParams: 'suite', SuiteRevisionParams: 'suite-revision', InputParams: 'input', RunParams: 'run', RunAttemptParams: 'run-attempt' };
+    SuiteParams: 'suite', SuiteRevisionParams: 'suite-revision', InputParams: 'input', RunParams: 'run', RunAttemptParams: 'run-attempt', ExportParams: 'export' };
   if ('params' in operation) input.params = await fixture(`valid/${parameterFiles[operation.params]}-params.json`);
   if ('query' in operation) input.query = await queryFixture(operation);
   const body = 'request' in operation ? await fixture(`valid/${files[operation.request]}.json`) as Record<string, unknown> : undefined;
   const response = await operationReply(operation);
   if (body) input.body = body;
+  bindRevision(operation,input,body);
   if (operation.name.includes('InstallationRetention')) { body!.scope = { kind: 'installation' }; response.scope = body!.scope; }
   if (operation.response === 'DeletionReceipt') {
     const path = input.params as Record<string, string>;
@@ -101,3 +104,7 @@ it('fixes the public transport namespace and rejects runner paths before fetch',
     .toEqual({ ok: false, error: { kind: 'request' } });
   expect(fetcher).not.toHaveBeenCalled();
 });
+
+function bindRevision(operation:ApiOperation,input:Record<string,unknown>,body:Record<string,unknown>|undefined):void {
+ if(operation.name==='createExport')(input.params as Record<string,string>).revisionId=body!.revisionId as string;
+}

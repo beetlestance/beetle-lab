@@ -47,6 +47,7 @@ released application until the rewrite is qualified.
 | Inspect inline report and format controls | [Report controls](verification/report-controls.md) | Verified plain text, shared read custody and safe attachments; actual browser pending |
 | Inspect performance report artifacts | [Engine reports](verification/performance-reports.md) | Bounded text/CSV, admitted custody and native arm64 publication; browser pending |
 | Inspect native export script files | [Script custody](verification/export-script-custody.md) | Shared streamed verification, actual builder/large file and original close/root proof; admitted job pending |
+| Inspect public standalone exports | [Public export workflow](verification/public-standalone-export.md) | Durable separate jobs, shared admission/publication, authenticated download, actual offline Docker/restart and remaining installation/retention |
 | Inspect independent export wire integrity | [Export job contract](verification/standalone-export-contract.md) | Separate purpose, bounded assignment/result and legacy seal compatibility; admitted lifecycle/public workflow pending |
 | Inspect staged export composition | [Export operation](verification/standalone-export-operation.md) | Exact staged input/assignment and retained compile/build/native custody; public job pending |
 | Inspect export build lifecycle | [Build lifetime](verification/standalone-build-lifetime.md) | Original call retention, cancellation and fixed build deadline; admitted workflow pending |

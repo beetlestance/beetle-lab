@@ -1,8 +1,7 @@
+import {captureOutputState} from '../output-state.js';
 import { artifactOperation, captureArtifactOperation, captureArtifactReply } from '../output-artifacts/index.js';
 import type { ArtifactOperation } from '../output-artifacts/index.js';
 import type { OutputFileRecord } from '../../../../ports/output-bytes.js';
-import { decodeArtifact } from './slot.js';
-import { encodeCanonicalJson } from '@beetle/contracts';
 import { verifySourceEnvelope } from '@beetle/contracts/output-source';
 import type { Owned, SourceEnvelope } from '@beetle/contracts/output-source';
 import { captureEventBinding, captureEventKey } from '../../../../domain/events/index.js';
@@ -42,19 +41,6 @@ function captureBaseOperation(input: Operation): BaseOperation {
     case 'outputLoad': case 'outputReadSource': return {kind: copy.kind, binding: captureEventBinding(copy.binding)};
   }
 }
-function hex(input: unknown): boolean { return typeof input === 'string' && /^[a-f0-9]{64}$/.test(input); }
-function state(input: OutputCustodyState, binding: ReturnType<typeof captureEventBinding>): void {
-  closed(input, input.kind === 'pending' ? ['kind', 'binding'] : ['kind', 'binding', 'manifestDigest', 'sourceDigest', 'finalAgentSeq', 'version', 'artifacts']);
-  requireRule(encodeCanonicalJson(captureEventBinding(input.binding), 4096) === encodeCanonicalJson(binding, 4096));
-  if (input.kind === 'pending') return;
-  requireRule(input.kind === 'adopted' && input.version === 1 && Array.isArray(input.artifacts) && input.artifacts.length <= 128);
-  requireRule(hex(input.manifestDigest) && hex(input.sourceDigest)); natural(input.finalAgentSeq);
-  const tokens = new Set<string>();
-  input.artifacts.forEach((artifact, index) => {
-    decodeArtifact(artifact); requireRule(artifact.ordinal === index);
-    requireRule(!tokens.has(artifact.token)); tokens.add(artifact.token);
-  });
-}
 export function captureOutputReply(operation: OutputOperation, input: unknown): OutputValue {
   if (artifactOperation(operation)) return captureArtifactReply(operation, input);
   return captureBaseReply(operation, input);
@@ -70,7 +56,7 @@ function captureBaseReply(operation: BaseOperation, input: unknown): OutputValue
     return source;
   }
   if (operation.kind !== 'outputScan') {
-    state(copy as OutputCustodyState, operation.kind === 'outputAdopt' ? operation.request.binding : operation.binding);
+    captureOutputState(copy as OutputCustodyState, operation.kind === 'outputAdopt' ? operation.request.binding : operation.binding);
     return copy as OutputCustodyState;
   }
   return capturePage(copy, operation.query.limit);

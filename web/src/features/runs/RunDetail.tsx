@@ -11,7 +11,7 @@ import { QueryState } from '../../components/QueryState.js';
 import { RunArtifacts } from './artifacts/index.js';
 import { ExecutionActivity } from './timeline/index.js';
 import { RunResultRead } from './RunResultRead.js';
-import { budgetFields } from './request.js';
+import { budgetFields } from '../execution-request/index.js';
 import type { RunScope } from './types.js';
 import { RunCancellation } from './RunCancellation.js';
 import { useCancellation } from './useCancellation.js';

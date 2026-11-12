@@ -1,0 +1,332 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/api/v2/export-jobs",
+  "title": "ApiExportJobs",
+  "$defs": {
+    "StandaloneExportOptions": {
+      "type": "object",
+      "properties": {
+        "scriptTimeoutMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 172800000
+        },
+        "maximumBuildBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 67108864
+        }
+      },
+      "required": [
+        "scriptTimeoutMs",
+        "maximumBuildBytes"
+      ],
+      "additionalProperties": false
+    },
+    "CreateExportRequest": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+        },
+        "requestId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "revisionId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "engineProfile": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/EngineProfile"
+        },
+        "budget": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget"
+        },
+        "executionPolicy": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunExecutionPolicy"
+        },
+        "options": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/export-jobs#/$defs/StandaloneExportOptions"
+        }
+      },
+      "required": [
+        "scope",
+        "requestId",
+        "revisionId",
+        "engineProfile",
+        "budget",
+        "executionPolicy",
+        "options"
+      ],
+      "additionalProperties": false
+    },
+    "CancelExportRequest": {
+      "$ref": "https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/CancelRunRequest"
+    },
+    "ExportScriptArtifact": {
+      "type": "object",
+      "properties": {
+        "artifactId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 67108864
+        },
+        "sha256": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+        },
+        "name": {
+          "const": "suite.js"
+        },
+        "mediaType": {
+          "const": "text/javascript"
+        }
+      },
+      "required": [
+        "artifactId",
+        "bytes",
+        "sha256",
+        "name",
+        "mediaType"
+      ],
+      "additionalProperties": false
+    },
+    "ExportJob": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+        },
+        "version": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Version"
+        },
+        "suiteId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "revisionId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "revisionDigest": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+        },
+        "activeAttemptId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "requestedAt": {
+          "type": "string",
+          "format": "date-time",
+          "maxLength": 40
+        },
+        "state": {
+          "enum": [
+            "queued",
+            "dispatching",
+            "generating",
+            "publishing",
+            "ready",
+            "failed",
+            "cancelled",
+            "unknown"
+          ]
+        },
+        "cancellationRequested": {
+          "type": "boolean"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "enum": [
+                "invalid_config",
+                "unsupported_capability",
+                "budget_unavailable",
+                "setup_failed",
+                "engine_crash",
+                "memory_limit",
+                "timeout",
+                "output_limit",
+                "cancelled",
+                "execution_lost",
+                "artifact_incomplete",
+                "conflicting_digest",
+                "invalid_protocol",
+                "unsupported_secrets",
+                "invalid_input",
+                "build_failed",
+                "deadline",
+                "clock_fenced",
+                "input_integrity",
+                "publication_failed",
+                "delivery_unknown",
+                "publication_unknown",
+                "ownership_unknown"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "engine": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunEngine"
+        },
+        "budget": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget"
+        },
+        "executionPolicy": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunExecutionPolicy"
+        },
+        "settingsVersions": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunSettingsVersions"
+        },
+        "options": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/export-jobs#/$defs/StandaloneExportOptions"
+        },
+        "artifact": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/export-jobs#/$defs/ExportScriptArtifact"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sourceProfileId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/EngineProfile"
+        }
+      },
+      "required": [
+        "id",
+        "scope",
+        "version",
+        "suiteId",
+        "revisionId",
+        "revisionDigest",
+        "activeAttemptId",
+        "requestedAt",
+        "state",
+        "cancellationRequested",
+        "reason",
+        "engine",
+        "budget",
+        "executionPolicy",
+        "settingsVersions",
+        "options",
+        "artifact",
+        "sourceProfileId"
+      ],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "const": "ready"
+            },
+            "artifact": {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/export-jobs#/$defs/ExportScriptArtifact"
+            },
+            "reason": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "enum": [
+                "queued",
+                "dispatching",
+                "generating",
+                "publishing",
+                "failed",
+                "cancelled",
+                "unknown"
+              ]
+            },
+            "artifact": {
+              "type": "null"
+            }
+          }
+        }
+      ]
+    },
+    "ExportJobPage": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "https://beetle-lab.dev/contracts/api/v2/export-jobs#/$defs/ExportJob"
+          },
+          "maxItems": 100
+        },
+        "nextCursor": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/OpaqueCursor"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+        }
+      },
+      "required": [
+        "items",
+        "nextCursor",
+        "scope"
+      ],
+      "additionalProperties": false
+    },
+    "ExportParams": {
+      "type": "object",
+      "properties": {
+        "organizationId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "workspaceId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "exportId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "organizationId",
+        "workspaceId",
+        "exportId"
+      ],
+      "additionalProperties": false
+    },
+    "ExportProfiles": {
+      "type": "object",
+      "properties": {
+        "profiles": {
+          "type": "array",
+          "items": {
+            "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/EngineProfile"
+          },
+          "maxItems": 32,
+          "uniqueItems": true
+        },
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+        }
+      },
+      "required": [
+        "profiles",
+        "scope"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

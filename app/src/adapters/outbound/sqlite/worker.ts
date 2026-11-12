@@ -1,3 +1,4 @@
+import {exportOperation,captureExportReply} from './export-wire.js';
 import { localSessionOperation, captureLocalSessionReply } from './local-session/index.js';
 import { deletionOperation, captureDeletionReply } from './output-deletion/index.js';
 import { executionOperation, captureExecutionReply } from './execution-binding/index.js';
@@ -21,9 +22,13 @@ function commandId(message: unknown): unknown {
   return messageId;
 }
 function captureReply(operation: Operation, original: Value): Value {
+  if(exportOperation(operation))return captureExportReply(operation,original);
   if (localSessionOperation(operation)) return captureLocalSessionReply(operation, original);
   if (deletionOperation(operation)) return captureDeletionReply(operation, original);
   if (executionOperation(operation)) return captureExecutionReply(operation.key, original);
+  return captureCustodyReply(operation,original);
+}
+function captureCustodyReply(operation:Operation,original:Value):Value {
   return absenceOperation(operation) ? captureAbsenceReply(operation, original) : finalizationOperation(operation) ? captureFinalizationReply(operation, original) : resultOperation(operation) ? captureResultReply(operation.key, original) : outputOperation(operation) ? captureOutputReply(operation, original) : eventOperation(operation) ? captureEventReply(operation, original)
         : dispatchOperation(operation) ? captureDispatchReply(operation, original)
         : boundedCopy(original, operationReplyLimit(operation));

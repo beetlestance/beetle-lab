@@ -1,3 +1,4 @@
+import type { OutputBinding } from '../domain/output-owner/index.js';
 import type { Owned, SourceEnvelope } from '@beetle/contracts/output-source';
 import type { EventBinding, EventCandidate, EventScan } from './events.js';
 
@@ -22,12 +23,12 @@ export interface OutputArtifactState {
   readonly writer: string | null;
   readonly version: number;
 }
-export type OutputCustodyState = {
+export type OutputCustodyState<B extends OutputBinding = EventBinding> = {
   readonly kind: 'pending';
-  readonly binding: EventBinding;
+  readonly binding: B;
 } | {
   readonly kind: 'adopted';
-  readonly binding: EventBinding;
+  readonly binding: B;
   readonly manifestDigest: string;
   readonly sourceDigest: string;
   readonly finalAgentSeq: number;
@@ -38,8 +39,8 @@ export interface OutputPage {
   readonly items: readonly EventCandidate[];
   readonly nextCursor: string | null;
 }
-export interface OutputAdoptRequest {
-  readonly binding: EventBinding;
+export interface OutputAdoptRequest<B extends OutputBinding = EventBinding> {
+  readonly binding: B;
   /** Capture and validate this bounded foreign value before digest/SQL work. */
   readonly envelope: unknown;
 }
@@ -49,9 +50,9 @@ export interface OutputAdoptRequest {
  * terminal projection, allocation refund or source deletion. Source-free closure
  * and artifact writer/publication methods are separate contracts.
  */
-export interface OutputCustodyStore {
+export interface OutputCustodyStore<B extends OutputBinding = EventBinding> {
   scan(query: EventScan): Promise<OutputPage>;
-  load(binding: EventBinding): Promise<OutputCustodyState>;
-  readSource(binding: EventBinding): Promise<Owned<SourceEnvelope> | null>;
-  adopt(request: OutputAdoptRequest): Promise<OutputCustodyState>;
+  load(binding: B): Promise<OutputCustodyState<B>>;
+  readSource(binding: B): Promise<Owned<SourceEnvelope> | null>;
+  adopt(request: OutputAdoptRequest<B>): Promise<OutputCustodyState<B>>;
 }

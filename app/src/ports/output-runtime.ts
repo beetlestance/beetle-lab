@@ -1,3 +1,6 @@
+import type {ExportArtifacts,ExportExecutionStore} from './exports.js';
+import type {RunnerExportGateway} from './export-runner.js';
+import type {OutputBinding} from '../domain/output-owner/index.js';
 import type { OutputByteStore } from './output-bytes.js';
 import type { OutputArtifactStore } from './output-artifacts.js';
 import type { OutputFinalizations } from './output-finalization.js';
@@ -13,12 +16,13 @@ export interface OutputRuntimeState {
 }
 export interface OutputRuntime {
   /** Present on the concrete installed runtime; read-only and shares its native owner. */
-  readonly publishedBytes?: Pick<OutputByteStore, 'read'>;
+  readonly publishedBytes?: Pick<OutputByteStore<OutputBinding>, 'read'>;
   state(): OutputRuntimeState;
   /** Fence scheduling/transfers synchronously; drain originals before namespace release. */
   close(): Promise<void>;
 }
 export interface OutputRuntimeOptions {
+  readonly exports?:{readonly executions:ExportExecutionStore;readonly outputs:ExportArtifacts;readonly gateway:Pick<RunnerExportGateway,'exportAttempt'|'output'>};
   readonly dataRoot: string;
   readonly outputs: OutputArtifactStore;
   readonly finalizations: OutputFinalizations;

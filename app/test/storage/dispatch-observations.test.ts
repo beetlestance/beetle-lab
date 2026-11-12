@@ -91,7 +91,8 @@ it.each<AttemptAdmission>([{ state: 'released', disposition: 'settled' }, { stat
   expect(db.prepare('SELECT * FROM attempt_output_allocations').all()).toEqual(output);
   expect(db.prepare('SELECT * FROM installation_storage_usage').all()).toEqual(usage);
   expect(db.prepare('SELECT * FROM execution_intents').all()).toEqual(costs);
-  expect(db.prepare('SELECT snapshot_json FROM execution_records').get()?.snapshot_json).toContain(JSON.stringify(admission));
+  const stored=db.prepare('SELECT snapshot_json FROM execution_records').get()?.snapshot_json;
+  expect(typeof stored).toBe('string');expect((JSON.parse(stored as string) as AttemptSnapshot).admission).toEqual(admission);
   expect(() => db.exec('UPDATE execution_records SET execution_charged=1')).toThrow();
 });
 

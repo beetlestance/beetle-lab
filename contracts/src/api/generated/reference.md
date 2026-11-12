@@ -56,6 +56,11 @@ Schema catalogue is complete, including runner common exactly once. These are ro
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics/samples | RunAttemptParams | RunMetricSamplesQuery | none | 200 | RunMetricSamplesPage |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics/live | RunAttemptParams | none | none | 200 | LiveMetricSnapshot |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/comparisons | WorkspaceParams | none | RunComparisonRequest | 200 | RunComparisonSnapshot |
+| POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/revisions/{revisionId}/exports | SuiteRevisionParams | none | CreateExportRequest | 202 | ExportJob |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/exports | WorkspaceParams | PageQuery | none | 200 | ExportJobPage |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/exports/{exportId} | ExportParams | none | none | 200 | ExportJob |
+| POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/exports/{exportId}/cancel | ExportParams | none | CancelExportRequest | 200 | ExportJob |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/exports/profiles | WorkspaceParams | none | none | 200 | ExportProfiles |
 
 All errors use ApiError. UUID path parameters are validated before URL encoding.
 List queries require an integer limit 1–100 and optional opaque string cursor; HTTP query parsing belongs to the transport adapter.

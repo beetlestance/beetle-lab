@@ -1,3 +1,5 @@
+import {checkedExportConfiguration} from '../../adapters/outbound/execution-profiles/index.js';
+import type {ExportProfilePin} from '../../ports/exports.js';
 import { isAbsolute, normalize } from 'node:path';
 import { createHash } from 'node:crypto';
 import { validate } from '@beetle/contracts';
@@ -57,16 +59,16 @@ function profiles(input: unknown): readonly RunProfilePin[] {
   return Object.freeze(pins);
 }
 export function configuration(input: unknown, installationId: string): AgentConnectionConfiguration {
+  const extra = input !== null && typeof input === 'object' && Object.hasOwn(input, 'exportProfiles') ? ['exportProfiles'] : [];
   const value = object(input, ['version', 'origin', 'tokenFile', 'expectedInstallationId', 'profiles',
-    'storageAllocationBytes', 'freeSpaceReserveBytes']);
+    'storageAllocationBytes', 'freeSpaceReserveBytes', ...extra]);
   requireValue(validateApi('Uuid', installationId).ok && value.expectedInstallationId === installationId);
   requireValue(value.version === 1);
-  const allocation = value.storageAllocationBytes;
-  const reserve = value.freeSpaceReserveBytes;
-  requireValue(Number.isSafeInteger(allocation) && typeof allocation === 'number' && allocation > 0);
-  requireValue(Number.isSafeInteger(reserve) && typeof reserve === 'number' && reserve >= 0 && allocation > reserve);
-  return Object.freeze({ version: 1, origin: origin(value.origin), tokenFile: absolutePath(value.tokenFile),
-    expectedInstallationId: installationId, profiles: profiles(value.profiles),
+  const {allocation,reserve}=storageLimits(value);
+  const pins = profiles(value.profiles);
+  const exports = extra.length ? checkedExportConfiguration({profiles: value.exportProfiles as readonly ExportProfilePin[], pendingLimit: 4096}, {profiles: pins, pendingLimit: 4096}).profiles : undefined;
+  return Object.freeze({ version: 1, ...(exports === undefined ? {} : {exportProfiles: exports}), origin: origin(value.origin), tokenFile: absolutePath(value.tokenFile),
+    expectedInstallationId: installationId, profiles: pins,
     storageAllocationBytes: allocation, freeSpaceReserveBytes: reserve });
 }
 export function token(bytes: Uint8Array): string {
@@ -74,4 +76,12 @@ export function token(bytes: Uint8Array): string {
   const value = text.endsWith('\n') ? text.slice(0, -1) : text;
   requireValue(/^[A-Za-z0-9_-]{43,128}$/.test(value));
   return value;
+}
+
+function storageLimits(value:Record<string,unknown>){
+  const allocation = value.storageAllocationBytes;
+  const reserve = value.freeSpaceReserveBytes;
+  requireValue(Number.isSafeInteger(allocation) && typeof allocation === 'number' && allocation > 0);
+  requireValue(Number.isSafeInteger(reserve) && typeof reserve === 'number' && reserve >= 0 && allocation > reserve);
+  return {allocation,reserve};
 }

@@ -1,10 +1,12 @@
+import type { ResultDigest } from '@beetle/contracts';
+import { captureExportResultForExpectation } from '@beetle/contracts';
 import { executionArtifacts } from '@beetle/contracts';
 import { encodeCanonicalJson, validate, validatePrimitive } from '@beetle/contracts';
 import type { Owned, SourceEnvelope } from '@beetle/contracts/output-source';
 import { SOURCE_ENVELOPE_BYTES } from '@beetle/contracts/output-source';
-import { captureEventBinding } from '../../domain/events/index.js';
+import { captureOutputBinding, isExportOutput } from '../../domain/output-owner/index.js';
 import { immutableSnapshot } from '../../domain/namespaces/index.js';
-import type { EventBinding } from '../../ports/events.js';
+import type { OutputBinding } from '../../domain/output-owner/index.js';
 import type { OutputArtifactState, OutputCustodyState } from '../../ports/output-custody.js';
 import type { OutputFileReceipt, OutputFileRecord } from '../../ports/output-bytes.js';
 import { fail, requireTransfer as check } from './errors.js';
@@ -16,18 +18,21 @@ export function snapshot<T>(value: T, maximum: number): T {
 export function same(a: unknown, b: unknown): boolean {
   return encodeCanonicalJson(a, 4096) === encodeCanonicalJson(b, 4096);
 }
-export function binding(input: EventBinding): EventBinding {
-  try { return captureEventBinding(input); } catch { fail('invalid_input'); }
+export function binding(input: OutputBinding): OutputBinding {
+  try { return captureOutputBinding(input); } catch { fail('invalid_input'); }
 }
 export function uuid(value: unknown): value is string {
   return typeof value === 'string' && /^[0-9a-f-]{36}$/.test(value) && validatePrimitive('uuid', value).ok;
 }
 const hash = (value: unknown): boolean => typeof value === 'string' && /^[0-9a-f]{64}$/.test(value);
 const natural = (value: number): boolean => Number.isSafeInteger(value) && value >= 0;
-export function envelope(input: Owned<SourceEnvelope>, original: EventBinding): Owned<SourceEnvelope> {
+export function envelope(input: Owned<SourceEnvelope>, original: OutputBinding, digest?: ResultDigest): Owned<SourceEnvelope> {
   const value = snapshot(input, SOURCE_ENVELOPE_BYTES);
   check(validate('SourceEnvelope', value).ok);
-  check(!('purpose' in value.manifest.result));
+  if (isExportOutput(original)) {
+    check(typeof digest === 'function');
+    try { captureExportResultForExpectation(value.manifest.result, original.expectation, digest); } catch { fail('integrity'); }
+  } else check(!('purpose' in value.manifest.result));
   const remote = value.manifest.binding;
   check(same(original.key.attempt, {organizationId: remote.organizationId, workspaceId: remote.workspaceId,
     attemptId: remote.attemptId, generation: remote.generation, intentDigest: remote.intentDigest}));
@@ -53,7 +58,7 @@ function artifactPhase(value: OutputArtifactState): void {
   if (value.phase === 'publishing') check(value.writer !== null);
   if (value.phase === 'published') check(value.writer === null);
 }
-export function state(input: OutputCustodyState, original: EventBinding): OutputCustodyState {
+export function state(input: OutputCustodyState<OutputBinding>, original: OutputBinding): OutputCustodyState<OutputBinding> {
   const value = snapshot(input, 65_536); check(same(value.binding, original));
   check(value.kind === 'pending' || value.kind === 'adopted');
   if (value.kind === 'adopted') {
@@ -64,7 +69,7 @@ export function state(input: OutputCustodyState, original: EventBinding): Output
   }
   return value;
 }
-export function matchedState(value: Extract<OutputCustodyState, {kind: 'adopted'}>, source: Owned<SourceEnvelope>): void {
+export function matchedState(value: Extract<OutputCustodyState<OutputBinding>, {kind: 'adopted'}>, source: Owned<SourceEnvelope>): void {
   check(value.manifestDigest === source.manifest.manifestDigest && value.sourceDigest === source.sourceDigest);
   check(value.finalAgentSeq === source.closure.finalAgentSeq);
   const declared = executionArtifacts(source.manifest.result); check(value.artifacts.length === declared.length);
@@ -73,13 +78,13 @@ export function matchedState(value: Extract<OutputCustodyState, {kind: 'adopted'
     check(item.artifactId === expected.artifactId && item.bytes === expected.bytes && item.sha256 === expected.sha256);
   });
 }
-export function record(input: OutputFileRecord, previous: OutputFileRecord): OutputFileRecord {
+export function record(input: OutputFileRecord<OutputBinding>, previous: OutputFileRecord<OutputBinding>): OutputFileRecord<OutputBinding> {
   const value = snapshot(input, 4096); check(same(value.binding, previous.binding)); artifact(value.artifact);
   for (const key of ['ordinal', 'artifactId', 'token', 'bytes', 'sha256'] as const) check(value.artifact[key] === previous.artifact[key]);
   check(value.artifact.version >= previous.artifact.version && value.artifact.offset >= previous.artifact.offset);
   return value;
 }
-export function receipt(input: OutputFileReceipt, value: OutputFileRecord, published: boolean): OutputFileReceipt {
+export function receipt(input: OutputFileReceipt, value: OutputFileRecord<OutputBinding>, published: boolean): OutputFileReceipt {
   const result = snapshot(input, 4096); check(result.token === value.artifact.token && hash(result.identity));
   check(natural(result.offset) && result.offset >= value.artifact.offset && result.offset <= value.artifact.bytes);
   check(result.phase === (published ? 'published' : 'transferring'));

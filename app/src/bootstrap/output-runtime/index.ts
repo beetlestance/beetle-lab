@@ -1,3 +1,7 @@
+import {captureExports} from './exports.js';
+import {createHash} from 'node:crypto';
+import {startExportRuntime} from '../../application/export-runtime/index.js';
+import {transferMetadata} from './metadata.js';
 import { OutputByteError } from '../../ports/output-bytes.js';
 import { randomUUID } from 'node:crypto';
 import { openLocalOutputBytes } from '../../adapters/outbound/files/outputs/index.js';
@@ -23,6 +27,7 @@ function capture(options: OutputRuntimeOptions): OutputRuntimeOptions {
   capabilities(options);
   const attempt = gateway.attempt.bind(gateway);
   return Object.freeze({dataRoot, freeSpaceReserveBytes, intervalMs, onFailure,
+    ...captureExports(options),
     outputs: Object.freeze({scan: outputs.scan.bind(outputs), load: outputs.load.bind(outputs), readSource: outputs.readSource.bind(outputs),
       adopt: outputs.adopt.bind(outputs), claimArtifact: outputs.claimArtifact.bind(outputs), recordProgress: outputs.recordProgress.bind(outputs),
       beginPublication: outputs.beginPublication.bind(outputs), recordPublication: outputs.recordPublication.bind(outputs)}),
@@ -40,9 +45,12 @@ export async function openOutputRuntime(options: OutputRuntimeOptions): Promise<
   const captured = capture(options);
   const files = await openLocalOutputBytes(await outputRoots(captured.dataRoot));
   try {
-    const transfers = createOutputTransfers({metadata: captured.outputs, gateway: captured.gateway, files,
-      freeSpaceReserveBytes: captured.freeSpaceReserveBytes, newWriterId: randomUUID});
+    const transfers = createOutputTransfers({metadata: transferMetadata(captured), gateway: captured.gateway, files,
+      freeSpaceReserveBytes: captured.freeSpaceReserveBytes, newWriterId: randomUUID,
+      digest:value=>createHash('sha256').update(value).digest('hex')});
     const scheduler = new OutputScheduler(captured, transfers, files);
+    if(captured.exports)scheduler.own(startExportRuntime({...captured.exports,transfers,intervalMs:captured.intervalMs??250,
+      onFailure:async error=>{scheduler.failedChild(error);}}));
     const read = files.read.bind(files);
     const publishedBytes = Object.freeze({read: (...args: Parameters<typeof read>) => {
       if (scheduler.state().status !== 'running') throw new OutputByteError('closed');

@@ -22,3 +22,4 @@ export type { LiveMetricHash } from './live-metrics.js';
 
 export { RUN_COMPARISON_BYTES } from './limits.js';
 export { runComparisonRequestMatches, runComparisonSnapshotMatches, comparisonFields, comparisonWarnings } from './client/comparison.js';
+export {EXPORT_CONTENT_ROUTE,exportContentPath} from './export-content.js';

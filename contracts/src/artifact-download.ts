@@ -8,6 +8,7 @@ export function artifactDownload(artifact: Pick<Artifact, 'artifactId' | 'kind'>
 }
 function artifactFormat(kind: string) {
   switch (kind) {
+    case 'standalone-k6-script': return {contentType: 'text/javascript; charset=utf-8', extension: 'js'};
     case 'performance-report': return {contentType: 'text/plain; charset=utf-8', extension: 'txt'};
     case 'metrics-csv': return {contentType: 'text/csv; charset=utf-8', extension: 'csv'};
     case 'numeric-final': return {contentType: 'application/json; charset=utf-8', extension: 'json'};

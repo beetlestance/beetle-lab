@@ -1,3 +1,4 @@
+import type {OutputBinding} from '../domain/output-owner/index.js';
 import type { RunnerLiveMetricGateway } from '../ports/run-live-metrics.js';
 import type { OutputByteStore } from '../ports/output-bytes.js';
 import type { CapacitySource, RuntimeObservation } from '../ports/runtime.js';
@@ -15,7 +16,7 @@ import { throwCloseFailures } from './application-close.js';
 
 export interface AgentRuntime {
   readonly liveMetrics?: RunnerLiveMetricGateway['liveMetrics'];
-  readonly publishedBytes?: Pick<OutputByteStore, 'read'>;
+  readonly publishedBytes?: Pick<OutputByteStore<OutputBinding>, 'read'>;
   state(): RuntimePollerState;
   close(): Promise<void>;
 }
@@ -33,7 +34,7 @@ function stop(close: () => Promise<void> | undefined): Promise<void> {
 
 /** Owns the shared connection and its loops, never metadata itself. */
 class AgentOwners implements AgentRuntime {
-  private outputReadView: Pick<OutputByteStore, 'read'> | undefined;
+  private outputReadView: Pick<OutputByteStore<OutputBinding>, 'read'> | undefined;
   private poller: RuntimePoller | undefined;
   private delivery: DeliveryRuntime | undefined;
   private closeOutputs: OutputRuntime['close'] | undefined;

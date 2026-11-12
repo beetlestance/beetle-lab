@@ -37,7 +37,8 @@ function checkStoragePaths(root: string, metadataPath: string, inputsDirectory?:
 export function agentMetadata(metadata: MetadataOptions, agent: AgentRuntimeOptions | undefined): MetadataOptions {
   if (!agent) return metadata;
   return { ...metadata, runtime: null, runs: { profiles: agent.connection.configuration.profiles,
-    pendingLimit: metadata.runs?.pendingLimit ?? 256 } };
+    pendingLimit: metadata.runs?.pendingLimit ?? 256 }, exports:{profiles:agent.connection.configuration.exportProfiles??[],
+    pendingLimit:metadata.exports?.pendingLimit??metadata.runs?.pendingLimit??256} };
 }
 /** Capacity and delivery share one installation-owned gateway and its credits. */
 export async function openAgentRuntime(options: AgentRuntimeOptions, metadata: Metadata): Promise<AgentRuntime> {
@@ -63,7 +64,8 @@ export async function openAgentRuntime(options: AgentRuntimeOptions, metadata: M
   }
   return openAgentOwners({liveMetrics: gateway.liveMetrics.bind(gateway), source, gateway: capturedGateway, metadata: deliveryMetadata,
     openOutputs: async onFailure => {
-      const outputs = await openOutputRuntime({dataRoot, ...outputMetadata, gateway: outputGateway, freeSpaceReserveBytes, onFailure});
+      const outputs = await openOutputRuntime({dataRoot, ...outputMetadata, gateway: outputGateway, freeSpaceReserveBytes, onFailure,
+        exports:{executions:metadata.exportExecutions,outputs:metadata.exportOutputs,gateway}});
       if (typeof outputs.publishedBytes?.read !== 'function') {
         await outputs.close(); throw new Error('Missing published output read capability');
       }

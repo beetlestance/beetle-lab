@@ -1,3 +1,4 @@
+import {exportOperation,captureExportOperation,exportReplyLimit,exportRequestLimit} from './export-wire.js';
 import { localSessionOperation, captureLocalSessionOperation } from './local-session/index.js';
 import { deletionOperation, captureDeletionOperation, deletionReplyLimit } from './output-deletion/index.js';
 import { executionOperation, captureExecutionOperation } from './execution-binding/index.js';
@@ -11,7 +12,7 @@ import { outputOperation, captureOutputOperation, outputReplyLimit } from './out
 import { eventOperation, captureEventOperation, eventRequestLimit, eventReplyLimit } from './event-custody/index.js';
 import { checkedRunOperation } from './run-validation.js';
 import { captureDispatchOperation, dispatchOperation, dispatchRequestLimit, dispatchReplyLimit } from './dispatch-wire.js';
-import { checkedRunConfiguration } from './run-profiles.js';
+import { checkedExportConfiguration, checkedRunConfiguration } from '../execution-profiles/index.js';
 import { checkedInputOperation } from './input-validation.js';
 import { MAX_MESSAGE_BYTES, boundedCopy, checkedScope, uuid, sha256, checkedJournalAuthority } from './input-values.js';
 export { MAX_MESSAGE_BYTES, boundedCopy, checkedScope, uuid, sha256, lower, scopeKey } from './input-values.js';
@@ -60,6 +61,7 @@ export function checkedBootstrap(input: Bootstrap): Bootstrap {
   requireRule(Number.isSafeInteger(ttl) && ttl >= 1 && ttl <= 60000);
   checkedRuntime(copy.runtime, ttl);
   copy.runs = checkedRunConfiguration(copy.runs ?? { profiles: [], pendingLimit: 256 });
+  copy.exports = checkedExportConfiguration(copy.exports ?? {profiles:[],pendingLimit:copy.runs.pendingLimit},copy.runs);
   return boundedCopy(copy);
 }
 function checkedKey(key: EntityKey): void {
@@ -124,6 +126,7 @@ function checkedExtendedOperation(operation: Operation): boolean {
 }
 export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operation {
   try {
+    if (exportOperation(input)) return captureExportOperation(input);
     if (localSessionOperation(input)) return captureLocalSessionOperation(input);
     if (deletionOperation(input)) return captureDeletionOperation(input);
     if (executionOperation(input)) return captureExecutionOperation(input);
@@ -180,6 +183,7 @@ function dataProperty(value: unknown, key: string): unknown {
   return descriptor && 'value' in descriptor ? descriptor.value : undefined;
 }
 export function operationMessageLimit(operation: Operation): number {
+  if (exportOperation(operation)) return exportRequestLimit(operation);
   if (localSessionOperation(operation)) return 2048;
   if (deletionOperation(operation)) return 12288;
   if (compactOperation(operation)) return 4096;
@@ -193,9 +197,13 @@ export function operationMessageLimit(operation: Operation): number {
 
 /** One two-original allowance is shared by suites, Offers and event batches. */
 export function largeOperation(operation: Operation): boolean {
-  return suiteOperation(operation) || ['dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource', 'getRunResult', 'getRunEvents', 'listRunArtifacts'].includes(dataProperty(operation, 'kind') as string);
+  if(dataProperty(operation,'kind')==='exportOutput'){
+    const method=dataProperty(dataProperty(operation,'operation'),'method');return method==='adopt'||method==='source';
+  }
+  return suiteOperation(operation) || ['getExportOriginal','listExports','dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource', 'getRunResult', 'getRunEvents', 'listRunArtifacts'].includes(dataProperty(operation, 'kind') as string);
 }
 export function operationReplyLimit(operation: Operation): number {
+  if (exportOperation(operation)) return exportReplyLimit(operation);
   if (localSessionOperation(operation)) return 2048;
   if (deletionOperation(operation)) return deletionReplyLimit(operation);
   if (absenceOperation(operation) || finalizationOperation(operation)) return 4096;

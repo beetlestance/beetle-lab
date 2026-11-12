@@ -1,8 +1,9 @@
-import { encodeJson, RUNNER_MAXIMUM_OFFER_BYTES, validate } from '@beetle/contracts';
+import {bodyFor} from './request-body.js';
+import { validate } from '@beetle/contracts';
 import type { ClientResult, ProtocolName, ProtocolTypes, RunnerTransport } from '@beetle/contracts';
 import type { RunnerAttemptIdentity } from '../../../ports/runner.js';
 import type { CallCredits } from './lifetime.js';
-import { matchesIdentity, matchesReply, scopeHeaders } from './identity.js';
+import { matchesReply, scopeHeaders } from './identity.js';
 import { nativeCall } from './native.js';
 import type { NativeIo, NativeResult } from './native.js';
 
@@ -15,18 +16,6 @@ export interface Connection {
   readonly io: NativeIo;
 }
 
-function bodyFor(call: Call, identity?: RunnerAttemptIdentity): ClientResult<string | undefined> {
-  if (!call.request) return { ok: true, value: undefined };
-  try {
-    const body = encodeJson(call.body, call.request === 'Offer' ? RUNNER_MAXIMUM_OFFER_BYTES : 65_536);
-    const value: unknown = JSON.parse(body);
-    const checked = validate(call.request, value);
-    if (!checked.ok) return { ok: false, error: { kind: 'request', issues: checked.issues } };
-    if (!identity || !matchesIdentity(checked.value, identity)) return { ok: false, error: { kind: 'request' } };
-    if (call.request === 'Offer' && identity.generation !== 1) return { ok: false, error: { kind: 'request' } };
-    return { ok: true, value: body };
-  } catch { return { ok: false, error: { kind: 'request' } }; }
-}
 
 function expectedStatus(status: number, successStatus: number): boolean {
   return status === successStatus || (status >= 400 && status <= 599);
@@ -64,7 +53,7 @@ export function protocolReply(response: Extract<NativeResult, { ok: true }>,
 
 export function createTransport(connection: Connection, identity?: RunnerAttemptIdentity): RunnerTransport {
   return {
-    json: call => connection.credits.run(call.request === 'Offer' ? 'offer' : 'ordinary', call.signal, async original => {
+    json: call => connection.credits.run(call.request === 'Offer' || call.request === 'StandaloneExportAssignment' ? 'offer' : 'ordinary', call.signal, async original => {
       const body = bodyFor(call, identity);
       if (!body.ok) return body;
       const response = await nativeCall({ origin: connection.origin, method: call.method, path: call.path,

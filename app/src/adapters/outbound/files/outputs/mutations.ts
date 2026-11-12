@@ -1,3 +1,4 @@
+import type { OutputBinding } from '../../../../domain/output-owner/index.js';
 import type { OutputFileReceipt, OutputFileRecord } from '../../../../ports/output-bytes.js';
 import { PhysicalFile, promoteVerifiedFile } from '../custody/index.js';
 import type { Roots } from '../custody/index.js';
@@ -5,7 +6,7 @@ import type { FileJob } from './job.js';
 import { locations, match, mutation, published, receipt, stage } from './files.js';
 import { fail } from './errors.js';
 
-export async function prepare(job: FileJob<unknown>, roots: Roots, record: OutputFileRecord): Promise<OutputFileReceipt> {
+export async function prepare(job: FileJob<unknown>, roots: Roots, record: OutputFileRecord<OutputBinding>): Promise<OutputFileReceipt> {
   if (record.artifact.phase === 'published') return receipt(job, roots, record, await published(job, roots, record), true);
   if (record.artifact.phase === 'transferring') {
     mutation(record, 'transferring'); return receipt(job, roots, record, await stage(job, roots, record), false);
@@ -28,7 +29,7 @@ async function compare(file: PhysicalFile, bytes: Uint8Array, offset: number): P
     compared += current.length;
   }
 }
-export async function append(job: FileJob<unknown>, roots: Roots, record: OutputFileRecord,
+export async function append(job: FileJob<unknown>, roots: Roots, record: OutputFileRecord<OutputBinding>,
   request: { offset: number; bytes: Uint8Array }): Promise<OutputFileReceipt> {
   mutation(record, 'transferring');
   if (record.artifact.identity === null || request.offset !== record.artifact.offset) fail('invalid_input');
@@ -41,7 +42,7 @@ export async function append(job: FileJob<unknown>, roots: Roots, record: Output
   if (suffix.length) { await job.tree.reserve(suffix.length); await file.write(suffix, Number(file.size)); }
   await file.sync(); return receipt(job, roots, record, file, false);
 }
-export async function publish(job: FileJob<unknown>, roots: Roots, record: OutputFileRecord): Promise<OutputFileReceipt> {
+export async function publish(job: FileJob<unknown>, roots: Roots, record: OutputFileRecord<OutputBinding>): Promise<OutputFileReceipt> {
   mutation(record, 'publishing');
   if (record.artifact.identity === null) fail('custody_missing');
   const places = await locations(job, roots, record, true);

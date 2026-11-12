@@ -1,3 +1,4 @@
+import type { OutputBinding } from '../../../../domain/output-owner/index.js';
 import { dirname } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { OutputByteError } from '../../../../ports/output-bytes.js';
@@ -6,7 +7,7 @@ import { nativePort, pinRoots } from '../custody/index.js';
 import type { NativePort, Roots } from '../custody/index.js';
 import { openOutputLease } from './lease.js';
 import type { OutputLease } from './lease.js';
-import { fields, record, token, chunk } from './capture.js';
+import { fields, record, runRecord, token, chunk } from './capture.js';
 import { FileJob } from './job.js';
 import { prepare, append, publish } from './mutations.js';
 import type { OutputDeletionStore, OutputDeletionIntent, OutputDeletionRequest, OutputDeletionReceipt } from '../../../../ports/output-deletion.js';
@@ -16,7 +17,7 @@ import { fail, safeError } from './errors.js';
 
 export interface StoreOptions { stagingRoot: string; publishedRoot: string; leasePath: string; createLease: boolean }
 let processOwner: LocalOutputStore | undefined;
-class LocalOutputStore implements OutputByteStore, OutputDeletionStore {
+class LocalOutputStore implements OutputByteStore<OutputBinding>, OutputDeletionStore {
   private roots!: Roots;
   private lease?: OutputLease;
   private port!: NativePort;
@@ -43,7 +44,7 @@ class LocalOutputStore implements OutputByteStore, OutputDeletionStore {
     if (job.token) this.tokens.delete(job.token);
   }
   private stop(): void { this.fenced = true; for (const job of this.jobs) job.policy.controller.abort(); }
-  private run<T>(context: OutputFileContext, capture: (job: FileJob<unknown>, claim: (input: unknown) => OutputFileRecord) => () => Promise<T>): OutputFileJob<T> {
+  private run<T>(context: OutputFileContext, capture: (job: FileJob<unknown>, claim: (input: unknown) => OutputFileRecord<OutputBinding>) => () => Promise<T>): OutputFileJob<T> {
     if (this.fenced || this.jobs.size >= 2) return this.refused(this.fenced ? 'closed' : 'busy');
     const job = new FileJob<T>({ port: this.port, roots: this.roots, lease: this.lease!, clock: this.clock,
       done: owner => this.done(owner), broken: () => { this.broken = true; this.stop(); } });
@@ -64,20 +65,20 @@ class LocalOutputStore implements OutputByteStore, OutputDeletionStore {
   private refused<T>(code: 'closed' | 'busy'): OutputFileJob<T> {
     return { result: Promise.reject(new OutputByteError(code)), settled: Promise.resolve() };
   }
-  prepare(input: OutputFileRecord, context: OutputFileContext): OutputFileJob<OutputFileReceipt> {
+  prepare(input: OutputFileRecord<OutputBinding>, context: OutputFileContext): OutputFileJob<OutputFileReceipt> {
     return this.run(context, (job, claim) => { const value = claim(input); return () => prepare(job, this.roots, value); });
   }
-  publish(input: OutputFileRecord, context: OutputFileContext): OutputFileJob<OutputFileReceipt> {
+  publish(input: OutputFileRecord<OutputBinding>, context: OutputFileContext): OutputFileJob<OutputFileReceipt> {
     return this.run(context, (job, claim) => { const value = claim(input); return () => publish(job, this.roots, value); });
   }
-  append(input: Parameters<OutputByteStore['append']>[0], context: OutputFileContext): OutputFileJob<OutputFileReceipt> {
+  append(input: Parameters<OutputByteStore<OutputBinding>['append']>[0], context: OutputFileContext): OutputFileJob<OutputFileReceipt> {
     return this.run(context, (job, claim) => {
       const request = fields(input, ['record', 'offset', 'bytes']); const value = claim(request.record); const bytes = chunk(request.bytes);
       if (typeof request.offset !== 'number' || !Number.isSafeInteger(request.offset) || request.offset < 0) fail('invalid_input');
       const offset = request.offset; return () => append(job, this.roots, value, { offset, bytes });
     });
   }
-  read(input: Parameters<OutputByteStore['read']>[0], context: OutputFileContext): OutputFileJob<void> {
+  read(input: Parameters<OutputByteStore<OutputBinding>['read']>[0], context: OutputFileContext): OutputFileJob<void> {
     return this.run(context, (job, claim) => {
       const request = fields(input, ['record', 'start', 'endExclusive', 'sink']); const value = claim(request.record);
       const sink = fields(request.sink, ['write']); if (typeof sink.write !== 'function') fail('invalid_input');
@@ -89,12 +90,12 @@ class LocalOutputStore implements OutputByteStore, OutputDeletionStore {
   }
   prepareRemoval(input: OutputDeletionIntent, context: OutputFileContext): OutputFileJob<OutputDeletionRequest> {
     return this.run(context, (job, claim) => {
-      const intent = captureDeletionIntent(input, claim); return () => prepareRemoval(job, this.roots, intent);
+      const intent = captureDeletionIntent(input, raw => runRecord(claim(raw))); return () => prepareRemoval(job, this.roots, intent);
     });
   }
   remove(input: OutputDeletionRequest, context: OutputFileContext): OutputFileJob<OutputDeletionReceipt> {
     return this.run(context, (job, claim) => {
-      const request = captureDeletion(input, claim, this.roots); return () => remove(job, this.roots, request);
+      const request = captureDeletion(input, raw => runRecord(claim(raw)), this.roots); return () => remove(job, this.roots, request);
     });
   }
   close(): Promise<void> { this.stop(); this.closing ??= this.drain(); return this.closing; }
@@ -106,7 +107,7 @@ class LocalOutputStore implements OutputByteStore, OutputDeletionStore {
   }
 }
 /** Private native/clock fault seam; production callers use index.ts only. */
-export function openStore(options: StoreOptions, seam?: { nativePort: NativePort; clock?: () => number }): Promise<OutputByteStore & OutputDeletionStore> {
+export function openStore(options: StoreOptions, seam?: { nativePort: NativePort; clock?: () => number }): Promise<OutputByteStore<OutputBinding> & OutputDeletionStore> {
   if (processOwner) return Promise.reject(new OutputByteError('busy'));
   const owner = new LocalOutputStore(); processOwner = owner;
   return owner.initialize(options, seam).then(() => owner);

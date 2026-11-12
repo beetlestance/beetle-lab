@@ -1,5 +1,5 @@
 import { encodeJson, validate } from '@beetle/contracts';
-import { k6ConfigSchema } from './configuration-schema.js';
+import { k6ConfigSchema } from './schema.js';
 import { validateApi } from '@beetle/contracts/api';
 import type { RunProfilePin, RunConfiguration } from '../../../ports/runs.js';
 export type { RunProfilePin, RunConfiguration } from '../../../ports/runs.js';

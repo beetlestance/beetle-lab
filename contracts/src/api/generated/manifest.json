@@ -11,6 +11,7 @@
     "runner/v1/wrapper-events.schema.json": "3a9dfb19a15dee2d5a05d0d6036f644bb43102f72e36e2fcf91280da52edd1bc",
     "runner/v1/supervisor-events.schema.json": "c55be82182f18875f3902b106a1c6d14655dda64e9f70509d5126fb7b2e2d62a",
     "api/v2/common.schema.json": "07b2d5deb2276604678386fa60795643a17cb5be5cd6b913eb4097ce74c99266",
+    "api/v2/export-jobs.schema.json": "616c0f0620a4dc78e345dc99e53e9ff03a575d35486b8c9afc8ba502ab965f0b",
     "api/v2/input-requests.schema.json": "e5970ad4ad54d9f229436e83b6e8cededa3eccab878554f2896c19c927de3897",
     "api/v2/input.schema.json": "4aac5c976cdd5a6a5dd377092573728489a2ec7c8200a68faa9292a209fadc74",
     "api/v2/live-metrics.schema.json": "6a49b5baacf5442bf81a206c66f41e7a66010b3514aae1bc1ae58055dc6cb887",
@@ -32,10 +33,12 @@
     "api/v2/suite-requests.schema.json": "793032e02eb16c0c4f13b87eebaa556d7d7df2efbb522e16078d9a9202708431",
     "api/v2/suite.schema.json": "c90e5d43bc41061a0d80701d0b172764faf9fa44b7b4463349aac452f1cd4dbf"
   },
-  "operationsSha256": "60f0cb243fd18aa08f0445254d293984d9fafef962c1e6515c22275f36e1fba6",
+  "operationsSha256": "efae1c8ac7076614582b93b01c065eb797b13a7c3a34493d827c5f2b91acde83",
   "outputs": [
     "common.inference.ts",
     "common.ts",
+    "export-jobs.inference.ts",
+    "export-jobs.ts",
     "input-requests.inference.ts",
     "input-requests.ts",
     "input.inference.ts",

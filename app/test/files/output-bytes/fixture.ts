@@ -1,3 +1,4 @@
+import type {OutputBinding} from '../../../src/domain/output-owner/index.js';
 import { createHash } from 'node:crypto';
 import { chmod, mkdir, mkdtemp, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -33,7 +34,7 @@ export async function fixture(port: NativePort = nativePort, clock?: () => numbe
   const root = await realpath(await mkdtemp(join(tmpdir(), 'beetle-output-bytes-'))); await chmod(root, 0o700);
   const options = { stagingRoot: join(root, 'staging'), publishedRoot: join(root, 'published'), leasePath: join(root, 'namespace.sqlite'), createLease: true };
   await mkdir(options.stagingRoot, { mode: 0o700 }); await mkdir(options.publishedRoot, { mode: 0o700 });
-  let store: OutputByteStore & OutputDeletionStore = await openStore(options, { nativePort: port, ...(clock ? { clock } : {}) });
+  let store: OutputByteStore<OutputBinding> & OutputDeletionStore = await openStore(options, { nativePort: port, ...(clock ? { clock } : {}) });
   return { root, options, get store() { return store; },
     path: (value: OutputFileRecord, published = false) => join(published ? options.publishedRoot : options.stagingRoot,
       value.binding.key.attempt.organizationId, value.binding.key.attempt.workspaceId, value.binding.key.runId,

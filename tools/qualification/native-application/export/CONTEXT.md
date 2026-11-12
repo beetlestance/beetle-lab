@@ -10,3 +10,10 @@ It checks lost-reply replay, fixed offline dispatch, physical stop, exact source
 chunks/restart, conflicts/scoping and late cancellation without target traffic.
 Images are supplied, never built or pulled here; logs and evidence remain local.
 Component tests alone do not imply these native facts.
+
+public-smoke.ts accepts AGENT_IMAGE PERFORMANCE_IMAGE EXPORT_IMAGE [LOCAL_CONTEXT].
+It installs both purposes, uses actual public revision/job routes, verifies public
+script download, physical offline stop and same source/job/script after backend
+and agent restart. Dynamic qualification address refresh preserves installed/Journal
+identity. Supplied images and matching compiled workers stay explicit. Default
+Compose offline-profile provisioning is outside this host-backend proof.

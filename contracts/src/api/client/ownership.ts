@@ -1,3 +1,4 @@
+import { exportOwnership, exportRequestMatches } from './export-ownership.js';
 import { runComparisonRequestMatches, runComparisonSnapshotMatches } from './comparison.js';
 import type { RunComparisonRequest, RunComparisonSnapshot } from '../generated/types.js';
 import { liveMetricScopeMatches } from '../live-metrics.js';
@@ -46,7 +47,7 @@ function session(operation: ApiOperation): boolean {
 export function requestOwnership(operation: ApiOperation, input: PreparedInput): boolean {
   if (session(operation) || !input.body) return true;
   return (operation.name !== 'compareRuns' || runComparisonRequestMatches(input.body as unknown as RunComparisonRequest))
-    && scopedBodyOwnership(operation, input);
+    && exportRequestMatches(operation, input) && scopedBodyOwnership(operation, input);
 }
 function scopedBodyOwnership(operation: ApiOperation, input: PreparedInput): boolean {
   const scope = input.body!.scope as SettingsScope;
@@ -84,7 +85,7 @@ function identityMatches(operation: ApiOperation, input: PreparedInput, reply: O
   const params = input.params;
   const identities: Partial<Record<ApiOperation['response'], string | undefined>> = {
     Organization: params.organizationId, Workspace: params.workspaceId, Folder: params.id,
-    Suite: params.suiteId, SuiteRevision: params.revisionId, Run: params.runId, RunResultSnapshot: params.runId,
+    Suite: params.suiteId, SuiteRevision: params.revisionId, Run: params.runId, RunResultSnapshot: params.runId, ExportJob: params.exportId,
   };
   if (operation.response === 'DeletionReceipt') {
     return sameUuid(reply.id, params.id ?? params.workspaceId ?? params.organizationId) && sameUuid(reply.requestId, input.body?.requestId);
@@ -129,7 +130,7 @@ function genericResponseOwnership(operation: ApiOperation, input: PreparedInput,
 
 function resourceOwnership(operation: ApiOperation, input: PreparedInput, reply: OwnedReply): boolean {
   return revisionOwnership(operation, input, reply) && inputOwnership(operation, input, reply)
-    && runOwnership(operation, input, reply);
+    && runOwnership(operation, input, reply) && exportOwnership(operation, input, reply);
 }
 
 function revisionOwnership(operation: ApiOperation, input: PreparedInput, reply: OwnedReply): boolean {

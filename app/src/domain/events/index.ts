@@ -1,3 +1,4 @@
+export { captureFields } from './carrier.js';
 export { captureEventBinding, captureEventKey } from './binding.js';
 export { prepareEventBatch } from './batch.js';
 export { expiryCoverage } from './expiry.js';

@@ -10,7 +10,7 @@ function equal(left: unknown, right: unknown): boolean {
 }
 function projection(value: AttemptSnapshot): object {
   return { state: value.state, phase: value.phase ?? null,
-    result: value.result ?? null, exitEvidence: value.exitEvidence ?? null };
+    result: value.result ?? null, exportResult: value.exportResult ?? null, exitEvidence: value.exitEvidence ?? null };
 }
 function forwardState(earlier: AttemptSnapshot['state'], later: AttemptSnapshot['state']): void {
   if (earlier !== 'offered') requireRule(later !== 'offered');
@@ -25,6 +25,7 @@ function forward(earlier: AttemptSnapshot, later: AttemptSnapshot): void {
     requireRule(later.phase !== undefined && phases.indexOf(later.phase) >= phases.indexOf(earlier.phase));
   }
   if (earlier.result !== undefined) requireRule(later.result !== undefined && equal(earlier.result, later.result));
+  if (earlier.exportResult !== undefined) requireRule(later.exportResult !== undefined && equal(earlier.exportResult,later.exportResult));
   if (earlier.exitEvidence !== undefined) {
     requireRule(later.exitEvidence !== undefined && equal(earlier.exitEvidence, later.exitEvidence));
   }

@@ -34,7 +34,7 @@ export function discriminator(value: unknown): unknown {
   const property = Object.getOwnPropertyDescriptor(value, 'kind');
   requireValue(property && 'value' in property); return property.value as unknown;
 }
-export function transferValue(input: OutputTransferOutcome, expected: EventBinding): OutputTransferOutcome {
+export function transferValue(input: unknown, expected: EventBinding): OutputTransferOutcome {
   const kind = discriminator(input);
   if (kind === 'pending') { fields(input, ['kind']); return {kind}; }
   requireValue(kind === 'published');

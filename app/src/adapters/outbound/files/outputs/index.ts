@@ -1,3 +1,4 @@
+import type { OutputBinding } from '../../../../domain/output-owner/index.js';
 import type { OutputDeletionStore } from '../../../../ports/output-deletion.js';
 import type { OutputByteStore } from '../../../../ports/output-bytes.js';
 import { openStore } from './store.js';
@@ -7,4 +8,4 @@ import { openStore } from './store.js';
  */
 export function openLocalOutputBytes(options: {
   stagingRoot: string; publishedRoot: string; leasePath: string; createLease: boolean;
-}): Promise<OutputByteStore & OutputDeletionStore> { return openStore(options); }
+}): Promise<OutputByteStore<OutputBinding> & OutputDeletionStore> { return openStore(options); }

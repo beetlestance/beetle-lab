@@ -1,3 +1,6 @@
+import {exportOperation} from './export-wire.js';
+import {ExportJobs,ExportClaims,ExportObservations,ExportOutputs} from './export-jobs/index.js';
+import type {ExportOperation} from './export-jobs/index.js';
 import { LocalSessions, localSessionOperation } from './local-session/index.js';
 import { OutputDeletions, deletionOperation, captureDeletionOperation } from './output-deletion/index.js';
 import type { OutputDeletionOperation } from '../../../ports/output-deletion-metadata.js';
@@ -53,6 +56,10 @@ export class Store {
   private readonly events: EventCustody;
   private readonly dispatchClaims: DispatchClaims;
   private readonly dispatchObservations: DispatchObservations;
+  private readonly exports: ExportJobs;
+  private readonly exportClaims: ExportClaims;
+  private readonly exportObservations: ExportObservations;
+  private readonly exportOutputs: ExportOutputs;
   private readonly runs: Runs;
   private readonly runCancellations: RunCancellations;
   private readonly runReads: RunReads;
@@ -73,6 +80,10 @@ export class Store {
     this.suites = new Suites(db, this.entities);
     this.suiteReads = new SuiteReads(db, this.suites);
     this.settings = transaction(db, () => new Settings(db, bootstrap));
+    this.exports=new ExportJobs(db,this.suites,this.settings,{runs:bootstrap.runs??{profiles:[],pendingLimit:256},exports:bootstrap.exports??{profiles:[],pendingLimit:256}});
+    this.exportClaims=new ExportClaims(db,this.exports.reads,this.settings,{runs:bootstrap.runs??{profiles:[],pendingLimit:256},exports:this.exports.configuration});
+    this.exportObservations=new ExportObservations(db,this.exports.reads);
+    this.exportOutputs=new ExportOutputs(db,this.exports.reads);
     this.runs = new Runs(db, this.suites, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
     this.runReads = new RunReads(db, this.suites);
     this.runArtifacts = new RunArtifacts(db, this.runReads);
@@ -80,7 +91,7 @@ export class Store {
     this.results = new RunResults(db, this.runReads);
     this.runEvents = new RunEvents(db, this.runReads);
     this.runCancellations = new RunCancellations(db, this.runReads);
-    this.dispatchClaims = new DispatchClaims(db, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
+    this.dispatchClaims = new DispatchClaims(db, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 },bootstrap.exports);
     this.dispatchObservations = new DispatchObservations(db, this.runReads);
     this.localSessions = new LocalSessions(db);
     this.deletions = new OutputDeletions(db, this.runReads);
@@ -89,7 +100,7 @@ export class Store {
     this.namespaces = new Namespaces(db, this.entities, this.settings);
     this.reads = new Reads(db, this.entities);
   }
-  private mutation(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'beginOutputDeletion' }>): Value {
+  private mutation(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'exportJob' | 'beginOutputDeletion' }>): Value {
     const command = operation.command;
     return transaction(this.db, () => {
       const scope = scopeKey(command.request.scope);
@@ -111,8 +122,9 @@ export class Store {
       return copy;
     });
   }
-  private change(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'beginOutputDeletion' }>): Value {
+  private change(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'exportJob' | 'beginOutputDeletion' }>): Value {
     switch (operation.kind) {
+      case 'exportJob': return operation.command.kind==='createExport'?this.exports.create(operation.command):this.exports.cancel(operation.command);
       case 'beginOutputDeletion': return this.deletions.begin(operation.command);
       case 'run': return this.runs.create(operation.command);
       case 'cancelRun': return this.runCancellations.cancel(operation.command);
@@ -164,16 +176,43 @@ export class Store {
     return captured.kind === 'beginOutputDeletion' ? this.mutation(captured) : this.deletions.execute(captured);
   }
   execute(operation: Operation): Value {
+    if(exportOperation(operation))return this.exportOperation(operation);
     if (deletionOperation(operation)) return this.deletion(operation);
     if (artifactReadOperation(operation)) return this.runArtifacts.execute(operation);
     if (absenceOperation(operation)) return this.absences.execute(operation);
     if (finalizationOperation(operation)) return this.finalizations.execute(operation);
-    if (operation.kind === 'getRunEvents') return this.runEvents.get(operation.query);
-    if (operation.kind === 'getRunExecution') return this.executions.get(operation.key);
-    if (operation.kind === 'getRunResult') return this.results.get(operation.key);
+    if (['getRunEvents','getRunExecution','getRunResult'].includes(operation.kind)) return this.runRead(operation);
     if (outputOperation(operation)) return this.outputs.execute(operation);
     if (eventOperation(operation)) return this.events.execute(operation);
     return this.executeLegacy(operation);
+  }
+  private runRead(operation:Operation):Value {
+    switch(operation.kind){
+      case 'getRunEvents':return this.runEvents.get(operation.query);
+      case 'getRunExecution':return this.executions.get(operation.key);
+      case 'getRunResult':return this.results.get(operation.key);
+      default:throw new StorageError('invalid_input');
+    }
+  }
+  private exportOperation(operation:ExportOperation):Value {
+    switch(operation.kind){
+      case 'exportJob':return this.mutation(operation);
+      case 'getExport':return this.exports.reads.get(operation.key);
+      case 'listExports':return this.exports.reads.list(operation.query);
+      case 'getExportProfiles':return {scope:operation.scope,profiles:[...this.exports.profiles(operation.scope)]};
+      case 'exportOutput':return this.exportOutputs.execute(operation.operation);
+      default:return this.exportExecution(operation);
+    }
+  }
+  private exportExecution(operation:Exclude<ExportOperation,{kind:'exportJob'|'getExport'|'listExports'|'getExportProfiles'|'exportOutput'}>):Value {
+    switch(operation.kind){
+      case 'scanExportJobs':return this.exportClaims.scan(operation.query);
+      case 'getExportOriginal':return this.exportClaims.original(operation.key);
+      case 'getExportControl':return this.exportClaims.control(operation.key);
+      case 'claimExport':return this.exportClaims.claim(operation.key);
+      case 'observeExport':return this.exportObservations.observe(operation.request);
+      case 'finalizeExport':return this.exportOutputs.finalize(operation.request);
+    }
   }
   private executeLegacy(operation: Operation): Value {
     if (['run', 'cancelRun', 'getRun', 'listRuns', 'dispatchScan', 'dispatchReadOffer', 'dispatchClaim', 'dispatchObserve']

@@ -1,19 +1,20 @@
+import {checkExecutionQueue} from './execution-queue.js';
+import {checkRevisionPins} from './revision-pins.js';
 import { insertExecutionIntent } from './execution-intents.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeJson } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import { validateApi } from '@beetle/contracts/api';
-import type { Run, SuiteRevision } from '@beetle/contracts/api';
+import type { Run } from '@beetle/contracts/api';
 import type { RunCommand } from '../../../ports/runs.js';
 import { requireRule } from '../../../domain/namespaces/index.js';
 import { lower } from './input-values.js';
 import { normalizedScope } from './suites.js';
 import type { Suites } from './suites.js';
 import type { Settings } from './settings.js';
-import type { RunConfiguration, RunProfilePin } from './run-profiles.js';
-import { checkedRunConfiguration } from './run-profiles.js';
+import type { RunConfiguration, RunProfilePin } from '../execution-profiles/index.js';
+import { checkedRunConfiguration } from '../execution-profiles/index.js';
 import { makeRunOffer } from './run-offer.js';
-import { StorageError } from './protocol.js';
 
 /** Called only inside Store's existing receipt-first immediate transaction. */
 export class Runs {
@@ -23,12 +24,12 @@ export class Runs {
   create(command: RunCommand): Run {
     const scope = normalizedScope(command.request.scope); this.suites.workspace(scope);
     const revision = this.suites.getRevision({ scope, id: command.request.revisionId });
-    this.checkPins(revision);
+    checkRevisionPins(this.db,revision);
     const resolved = this.settings.resolveRun(scope, { engineProfile: command.request.engineProfile, budget: command.request.budget });
     const profile = this.config.profiles.find(pin => pin.engine.profileId === resolved.defaults.engineProfile);
     requireRule(profile !== undefined, 'capacity_unavailable');
     requireRule(profile.engine.id === revision.engineId && profile.engine.configVersion === revision.configVersion);
-    this.checkQueue();
+    checkExecutionQueue(this.db,this.config.pendingLimit);
     const run: Run = { id: lower(command.id), scope, version: 1, suiteId: revision.suiteId, revisionId: revision.id,
       revisionDigest: revision.digest, requestedAt: command.requestedAt, state: 'queued', outcome: 'pending', validationStatus: 'pending',
       activeAttemptId: lower(command.attemptId), cancellationRequested: false, reason: null,
@@ -38,19 +39,6 @@ export class Runs {
     const offer = makeRunOffer(run, revision, profile);
     this.insert(run, offer, profile);
     return run;
-  }
-  private checkQueue(): void {
-    const pending = this.db.prepare(`SELECT id FROM runs INDEXED BY runs_pending
-      WHERE state IN ('queued','dispatching','active','finalizing') LIMIT ?`).all(this.config.pendingLimit);
-    if (pending.length >= this.config.pendingLimit) throw new StorageError('queue_full');
-  }
-  private checkPins(revision: SuiteRevision): void {
-    for (const pin of revision.inputManifest) {
-      const row = this.db.prepare(`SELECT id FROM input_blobs WHERE organization_id=? AND workspace_id=?
-        AND id=? AND sha256=? AND bytes=? AND state='published'`)
-        .get(revision.scope.organizationId, revision.scope.workspaceId, pin.id, pin.sha256, pin.bytes);
-      requireRule(row !== undefined, 'not_found');
-    }
   }
   private insert(run: Run, offer: string, profile: RunProfilePin): void {
     const parsedOffer = JSON.parse(offer) as Offer;

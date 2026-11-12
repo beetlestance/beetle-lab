@@ -106,3 +106,10 @@ it.each(['run', 'finalize'] as const)('retains a late %s original until close dr
   run.resolve(current); final.resolve({kind: 'pending', reason: 'events'}); await closing;
   if (phase === 'run') expect(f.finalize).not.toHaveBeenCalled(); expect(f.files.close).toHaveBeenCalledTimes(1); f.dispose();
 });
+it('fences its export sibling before shared transfer close and retains the native lease through sibling originals',async()=>{
+ const f=fixture(0);const held=deferred<void>();const order:string[]=[];
+ f.scheduler.own({close:()=>{order.push('exports');return held.promise;}});
+ f.transfers.close.mockImplementation(async()=>{order.push('transfers');});
+ const close=f.scheduler.close();await tick();expect(order).toEqual(['exports','transfers']);expect(f.files.close).not.toHaveBeenCalled();
+ expect(f.scheduler.close()).toBe(close);held.resolve();await close;expect(f.files.close).toHaveBeenCalledTimes(1);f.dispose();
+});

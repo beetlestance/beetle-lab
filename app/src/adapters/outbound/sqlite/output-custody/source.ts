@@ -1,6 +1,6 @@
-import { executionArtifacts } from '@beetle/contracts';
+import {requireSourceOriginal} from '../source-original.js';
 import type { DatabaseSync, SQLOutputValue } from 'node:sqlite';
-import { encodeCanonicalJson, validate } from '@beetle/contracts';
+import { validate } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import { verifySourceEnvelope } from '@beetle/contracts/output-source';
 import type { Owned, SourceEnvelope } from '@beetle/contracts/output-source';
@@ -35,13 +35,7 @@ export function original(db: DatabaseSync, binding: EventBinding): Offer {
 }
 export function pins(value: Owned<SourceEnvelope>, binding: EventBinding, offer: Offer): void {
   requirePerformanceSource(value,'conflict');
-  const b = value.manifest.binding; const a = binding.key.attempt;
-  const equal = b.organizationId === a.organizationId && b.workspaceId === a.workspaceId && b.attemptId === a.attemptId
-    && b.intentDigest === a.intentDigest && b.generation === a.generation && b.journalAuthority === binding.journalAuthority;
-  if (!equal || encodeCanonicalJson(b.engine, 4096) !== encodeCanonicalJson(offer.engine, 4096)
-    || encodeCanonicalJson(b.installedIdentity, 4096) !== encodeCanonicalJson(offer.installedIdentity, 4096)) throw new StorageError('conflict');
-  const ids = executionArtifacts(value.manifest.result).map(artifact => artifact.artifactId.toLowerCase());
-  if (new Set(ids).size !== ids.length) throw new StorageError('conflict');
+  requireSourceOriginal(value,binding,offer);
 }
 function storedPins(row: Record<string, SQLOutputValue>, envelope: Owned<SourceEnvelope>, binding: EventBinding): void {
   const a = binding.key.attempt;

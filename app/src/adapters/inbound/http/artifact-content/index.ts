@@ -1,3 +1,4 @@
+import type {OutputBinding} from '../../../../domain/output-owner/index.js';
 import { artifactDownload } from '@beetle/contracts';
 import { createHash } from 'node:crypto';
 import type { FastifyReply } from 'fastify';
@@ -7,7 +8,7 @@ import type { RequestContext } from '../request-lifetimes/index.js';
 import { writeContent } from '../byte-content.js';
 import { ApiFault } from '../api-errors.js';
 interface Range {start: number; endExclusive: number}
-function begin(reply: FastifyReply, record: OutputFileRecord, range: Range | undefined, kind: string): void {
+function begin(reply: FastifyReply, record: OutputFileRecord<OutputBinding>, range: Range | undefined, kind: string): void {
   const artifact = record.artifact; const download = artifactDownload({artifactId: artifact.artifactId, kind});
   reply.hijack(); reply.raw.writeHead(range ? 206 : 200, {
     'Content-Type': download.contentType, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store',
@@ -18,8 +19,8 @@ function begin(reply: FastifyReply, record: OutputFileRecord, range: Range | und
   });
 }
 /** One native range job; keep socket EOF behind original result, settlement and streamed integrity. */
-export async function sendArtifact(input: {reply: FastifyReply; owner: RequestContext; record: OutputFileRecord;
-  range: Range | undefined; kind: string; bytes: Pick<OutputByteStore, 'read'>}): Promise<FastifyReply> {
+export async function sendArtifact<B extends OutputBinding>(input: {reply: FastifyReply; owner: RequestContext; record: OutputFileRecord<B>;
+  range: Range | undefined; kind: string; bytes: Pick<OutputByteStore<B>, 'read'>}): Promise<FastifyReply> {
   const {reply, owner, record, range, bytes, kind} = input;
   const selected = range ?? {start: 0, endExclusive: record.artifact.bytes};
   const hash = createHash('sha256'); let count = 0; let started = false;

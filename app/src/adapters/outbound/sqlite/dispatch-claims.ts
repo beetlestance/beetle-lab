@@ -1,10 +1,11 @@
+import type {ExportConfiguration} from '../../../ports/exports.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeJson, RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
 import type { DispatchKey, DispatchClaim, DispatchScan, DispatchPage, DispatchOffer } from '../../../ports/dispatch.js';
 import { DISPATCH_PAGE_BYTES } from '../../../ports/dispatch.js';
 import type { RunConfiguration } from '../../../ports/runs.js';
 import { nextVersion, requireRule } from '../../../domain/namespaces/index.js';
-import { checkedRunConfiguration } from './run-profiles.js';
+import { checkedRunConfiguration } from '../execution-profiles/index.js';
 import type { Settings } from './settings.js';
 import { transaction } from './schema.js';
 import { captureDispatchKey } from './dispatch-values.js';
@@ -22,7 +23,7 @@ function position(row: DispatchFact) { return { order: orderOf(row), id: row.att
 /** Each entrypoint owns its transaction; Store must delegate without nesting. */
 export class DispatchClaims {
   private readonly config: RunConfiguration;
-  constructor(private readonly db: DatabaseSync, private readonly settings: Settings, config: RunConfiguration) {
+  constructor(private readonly db: DatabaseSync, private readonly settings: Settings, config: RunConfiguration,private readonly exports:ExportConfiguration={profiles:[],pendingLimit:4096}) {
     this.config = checkedRunConfiguration(config);
   }
   scan(input: DispatchScan): DispatchPage {
@@ -38,7 +39,7 @@ export class DispatchClaims {
       : decodeCursor(query.cursor, installation, query.lane);
     const remaining = sorted.filter(row => comparePosition(position(row), cursor.after) > 0
       && comparePosition(position(row), cursor.upper) <= 0);
-    const policy = query.lane === 'queued' ? new DispatchEligibilityOwner(this.db, this.settings, this.config) : null;
+    const policy = query.lane === 'queued' ? new DispatchEligibilityOwner(this.db, this.settings, this.config,this.exports) : null;
     const barrier = policy?.barrier(rows) ?? null;
     const items = remaining.slice(0, query.limit).map(row => {
       const retained = retainedClaim(row);
@@ -81,7 +82,7 @@ export class DispatchClaims {
     if (retained === 'acknowledged') return { kind: 'acknowledged', journalAuthority: row.journal_authority! };
     if (retained === 'replay') return { kind: 'replay', key, journalAuthority: row.journal_authority! };
     const pending = pendingFacts(this.db);
-    const policy = new DispatchEligibilityOwner(this.db, this.settings, this.config);
+    const policy = new DispatchEligibilityOwner(this.db, this.settings, this.config,this.exports);
     const decision = policy.evaluate(row, policy.barrier(pending));
     if (decision.kind === 'blocked') return decision;
     const runtime = policy.capacity.runtime;

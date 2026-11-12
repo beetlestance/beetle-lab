@@ -1,3 +1,4 @@
+import type { OutputBinding } from '../../domain/output-owner/index.js';
 import { verifySourceChunk } from '@beetle/contracts/output-source';
 import type { SourceChunkRequest } from '@beetle/contracts/output-source';
 import type { OutputArtifactKey } from '../../ports/output-artifacts.js';
@@ -10,12 +11,12 @@ import { record, receipt, uuid } from './validation.js';
 import { fail, requireTransfer as check } from './errors.js';
 
 interface ArtifactTransfer {
-  options: OutputTransferOptions;
+  options: OutputTransferOptions<OutputBinding>;
   owner: TransferOwner;
-  key: OutputArtifactKey;
+  key: OutputArtifactKey<OutputBinding>;
   clock: () => number;
 }
-function request(transfer: ArtifactTransfer, value: OutputFileRecord) {
+function request(transfer: ArtifactTransfer, value: OutputFileRecord<OutputBinding>) {
   check(value.artifact.writer !== null);
   return {key: transfer.key, writerId: value.artifact.writer, expectedVersion: value.artifact.version};
 }
@@ -27,13 +28,13 @@ function newWriter(transfer: ArtifactTransfer): string {
   try { writerId = transfer.options.newWriterId(); } catch { fail('invalid_input'); }
   check(uuid(writerId), 'invalid_input'); return writerId;
 }
-async function progress(transfer: ArtifactTransfer, value: OutputFileRecord, native: OutputFileReceipt): Promise<OutputFileRecord> {
+async function progress(transfer: ArtifactTransfer, value: OutputFileRecord<OutputBinding>, native: OutputFileReceipt): Promise<OutputFileRecord<OutputBinding>> {
   const next = record(await transfer.owner.call(() => transfer.options.metadata.recordProgress({
     ...request(transfer, value), receipt: native})), value);
   check(next.artifact.phase === 'transferring' && next.artifact.writer === value.artifact.writer);
   check(next.artifact.offset === native.offset && next.artifact.identity === native.identity); return next;
 }
-async function appendChunks(transfer: ArtifactTransfer, input: OutputFileRecord): Promise<OutputFileRecord> {
+async function appendChunks(transfer: ArtifactTransfer, input: OutputFileRecord<OutputBinding>): Promise<OutputFileRecord<OutputBinding>> {
   let value = input; const {options, owner, key} = transfer;
   const output = client(options, owner, value.binding);
   while (value.artifact.offset < value.artifact.bytes) {
@@ -51,7 +52,7 @@ async function appendChunks(transfer: ArtifactTransfer, input: OutputFileRecord)
   }
   return value;
 }
-async function publish(transfer: ArtifactTransfer, value: OutputFileRecord): Promise<OutputFileRecord> {
+async function publish(transfer: ArtifactTransfer, value: OutputFileRecord<OutputBinding>): Promise<OutputFileRecord<OutputBinding>> {
   const {owner, options} = transfer;
   // The serial producer has left appendChunks permanently before publication.
   const policy = context(transfer);
@@ -60,7 +61,7 @@ async function publish(transfer: ArtifactTransfer, value: OutputFileRecord): Pro
   check(next.artifact.phase === 'published' && next.artifact.writer === null);
   check(next.artifact.offset === native.offset && next.artifact.identity === native.identity); return next;
 }
-export async function transferArtifact(transfer: ArtifactTransfer, input: OutputFileRecord): Promise<void> {
+export async function transferArtifact(transfer: ArtifactTransfer, input: OutputFileRecord<OutputBinding>): Promise<void> {
   const {options, owner} = transfer; let value = input;
   if (value.artifact.phase === 'published') {
     const policy = context(transfer);

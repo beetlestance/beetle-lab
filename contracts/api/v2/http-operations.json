@@ -486,5 +486,53 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "WorkspaceParams"
+  },
+  {
+    "name": "createExport",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/revisions/{revisionId}/exports",
+    "response": "ExportJob",
+    "successStatus": 202,
+    "error": "ApiError",
+    "params": "SuiteRevisionParams",
+    "request": "CreateExportRequest"
+  },
+  {
+    "name": "listExports",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/exports",
+    "response": "ExportJobPage",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "WorkspaceParams",
+    "query": "PageQuery"
+  },
+  {
+    "name": "getExport",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/exports/{exportId}",
+    "response": "ExportJob",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "ExportParams"
+  },
+  {
+    "name": "cancelExport",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/exports/{exportId}/cancel",
+    "response": "ExportJob",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "ExportParams",
+    "request": "CancelExportRequest"
+  },
+  {
+    "name": "getExportProfiles",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/exports/profiles",
+    "response": "ExportProfiles",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "WorkspaceParams"
   }
 ]

@@ -1,3 +1,6 @@
+import {exportOperation,captureExportReply} from './export-wire.js';
+import type {ExportOperation} from './export-wire.js';
+import type {ExportArtifacts,ExportExecutionStore,ExportStore} from '../../../ports/exports.js';
 import { localSessionOperation, captureLocalSessionReply } from './local-session/index.js';
 import type { LocalSessionStore, LocalSessionOperation } from '../../../ports/local-session.js';
 import { deletionOperation, captureDeletionReply } from './output-deletion/index.js';
@@ -53,7 +56,7 @@ export interface MetadataOptions extends Bootstrap {
   /** Includes in-flight work; maximum 64. Close has one reserved slot. */
   queueLimit?: number;
 }
-interface Pending { localSession?: LocalSessionOperation; deletion?: OutputDeletionOperation; resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
+interface Pending { exportJob?:ExportOperation; localSession?: LocalSessionOperation; deletion?: OutputDeletionOperation; resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
   artifacts?: ArtifactReadOperation; absence?: AbsenceOperation; finalization?: FinalizationOperation; result?: RunKey; execution?: RunKey; runEvents?: RunEventsQuery; output?: OutputOperation; large: boolean; replyLimit: number; event?: EventOperation; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
 function validateLocation(options: MetadataOptions): void {
   if (typeof options.path !== 'string' || !options.path || options.path === ':memory:' || options.path.length > 4096 ||
@@ -64,7 +67,8 @@ function validateOptions(options: MetadataOptions): Bootstrap {
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 64) throw new StorageError('invalid_input');
   validateLocation(options);
   try { return checkedBootstrap({ installation: options.installation, runtime: options.runtime,
-    ...(options.runs === undefined ? {} : { runs: options.runs }), runtimeTtlMs: options.runtimeTtlMs ?? 5000 }); }
+    ...(options.runs === undefined ? {} : { runs: options.runs }),
+    ...(options.exports === undefined ? {} : {exports:options.exports}), runtimeTtlMs: options.runtimeTtlMs ?? 5000 }); }
   catch { throw new StorageError('invalid_input'); }
 }
 
@@ -81,6 +85,32 @@ export class Metadata {
   private readyResolve: () => void = () => undefined;
   private readyReject: (error: StorageError) => void = () => undefined;
   private readonly ready: Promise<void>;
+  readonly exportOutputs:ExportArtifacts={
+    published:key=>this.call({kind:'exportOutput',operation:{method:'published',key}}) as ReturnType<ExportArtifacts['published']>,
+    settleAbsence:request=>this.call({kind:'exportOutput',operation:{method:'absence',request}}) as ReturnType<ExportArtifacts['settleAbsence']>,
+    load:binding=>this.call({kind:'exportOutput',operation:{method:'load',binding}}) as ReturnType<ExportArtifacts['load']>,
+    readSource:binding=>this.call({kind:'exportOutput',operation:{method:'source',binding}}) as ReturnType<ExportArtifacts['readSource']>,
+    adopt:request=>this.call({kind:'exportOutput',operation:{method:'adopt',request}}) as ReturnType<ExportArtifacts['adopt']>,
+    claimArtifact:request=>this.call({kind:'exportOutput',operation:{method:'artifact',operation:{kind:'outputClaimArtifact',request}}}) as ReturnType<ExportArtifacts['claimArtifact']>,
+    recordProgress:request=>this.call({kind:'exportOutput',operation:{method:'artifact',operation:{kind:'outputRecordProgress',request}}}) as ReturnType<ExportArtifacts['recordProgress']>,
+    beginPublication:request=>this.call({kind:'exportOutput',operation:{method:'artifact',operation:{kind:'outputBeginPublication',request}}}) as ReturnType<ExportArtifacts['beginPublication']>,
+    recordPublication:request=>this.call({kind:'exportOutput',operation:{method:'artifact',operation:{kind:'outputRecordPublication',request}}}) as ReturnType<ExportArtifacts['recordPublication']>,
+  };
+  readonly exportExecutions:ExportExecutionStore={
+    finalize:request=>this.call({kind:'finalizeExport',request}) as ReturnType<ExportExecutionStore['finalize']>,
+    scan:query=>this.call({kind:'scanExportJobs',query}) as ReturnType<ExportExecutionStore['scan']>,
+    original:key=>this.call({kind:'getExportOriginal',key}) as ReturnType<ExportExecutionStore['original']>,
+    control:key=>this.call({kind:'getExportControl',key}) as ReturnType<ExportExecutionStore['control']>,
+    claim:key=>this.call({kind:'claimExport',key}) as ReturnType<ExportExecutionStore['claim']>,
+    observe:request=>this.call({kind:'observeExport',request}) as ReturnType<ExportExecutionStore['observe']>,
+  };
+  readonly exports:ExportStore={
+    create:command=>this.call({kind:'exportJob',command}) as ReturnType<ExportStore['create']>,
+    cancel:command=>this.call({kind:'exportJob',command}) as ReturnType<ExportStore['cancel']>,
+    get:key=>this.call({kind:'getExport',key}) as ReturnType<ExportStore['get']>,
+    list:query=>this.call({kind:'listExports',query}) as ReturnType<ExportStore['list']>,
+    profiles:scope=>this.call({kind:'getExportProfiles',scope}) as ReturnType<ExportStore['profiles']>,
+  };
   readonly localSessions: LocalSessionStore = {
     load: () => this.call({kind: 'loadLocalSession'}) as ReturnType<LocalSessionStore['load']>,
     save: (expectedVersion, session) => this.call({kind: 'saveLocalSession', expectedVersion, session}) as ReturnType<LocalSessionStore['save']>,
@@ -256,12 +286,14 @@ export class Metadata {
     pending.resolve(value);
   }
   private bindReadRequest(pending: Pending, operation: Operation): void {
+    if(exportOperation(operation))pending.exportJob=operation;
     if (operation.kind === 'getRunExecution') pending.execution = operation.key;
     if (artifactReadOperation(operation)) pending.artifacts = operation;
     if (operation.kind === 'getRunEvents') pending.runEvents = operation.query;
     if (operation.kind === 'getRunResult') pending.result = operation.key;
   }
   private readReply(pending: Pending, value: unknown): Value | undefined {
+    if(pending.exportJob)return captureExportReply(pending.exportJob,value);
     if (pending.localSession) return captureLocalSessionReply(pending.localSession, value);
     if (pending.deletion) return captureDeletionReply(pending.deletion, value);
     if (pending.execution) return captureExecutionReply(pending.execution, value);
