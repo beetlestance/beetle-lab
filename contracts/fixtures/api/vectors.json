@@ -573,5 +573,50 @@
     "path": "valid/run-metric-samples.json",
     "schema": "RunMetricSamplesPage",
     "valid": true
+  },
+  {
+    "path": "valid/run-comparison-request.json",
+    "schema": "RunComparisonRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/run-comparison.json",
+    "schema": "RunComparisonSnapshot",
+    "valid": true
+  },
+  {
+    "path": "valid/run-comparison-selected-request.json",
+    "schema": "RunComparisonRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/run-comparison-selected.json",
+    "schema": "RunComparisonSnapshot",
+    "valid": true
+  },
+  {
+    "path": "invalid/run-comparison-five.json",
+    "schema": "RunComparisonRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/run-comparison-extra.json",
+    "schema": "RunComparisonRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/run-comparison-one.json",
+    "schema": "RunComparisonRequest",
+    "valid": false
+  },
+  {
+    "path": "valid/run-metric-samples-query.json",
+    "schema": "RunMetricSamplesQuery",
+    "valid": true
+  },
+  {
+    "path": "valid/live-metric-snapshot.json",
+    "schema": "LiveMetricSnapshot",
+    "valid": true
   }
 ]

@@ -1,0 +1,186 @@
+{
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "baselineRunId": "00000000-0000-4000-8000-000000000005",
+  "metric": null,
+  "metricBinding": null,
+  "items": [
+    {
+      "run": {
+        "id": "00000000-0000-4000-8000-000000000005",
+        "scope": {
+          "kind": "workspace",
+          "organizationId": "00000000-0000-4000-8000-000000000001",
+          "workspaceId": "00000000-0000-4000-8000-000000000002"
+        },
+        "version": 1,
+        "suiteId": "00000000-0000-4000-8000-000000000003",
+        "revisionId": "00000000-0000-4000-8000-000000000004",
+        "revisionDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "requestedAt": "2026-11-09T00:00:00.000Z",
+        "state": "finished",
+        "outcome": "passed",
+        "validationStatus": "passed",
+        "activeAttemptId": "00000000-0000-4000-8000-000000000006",
+        "cancellationRequested": false,
+        "reason": null,
+        "engine": {
+          "id": "k6",
+          "profileId": "k6-local",
+          "imageDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "configVersion": 1
+        },
+        "budget": {
+          "cpuMillis": 1000,
+          "memoryBytes": 536870912,
+          "pids": 128,
+          "timeoutMs": 60000,
+          "outputBytes": 1048576
+        },
+        "executionPolicy": {
+          "mode": "parallel",
+          "preferIdle": false
+        },
+        "settingsVersions": {
+          "installation": 1,
+          "organization": 1,
+          "workspace": 1
+        }
+      },
+      "result": {
+        "outcome": "passed",
+        "completeness": "complete",
+        "execution": {
+          "status": "completed",
+          "exitCode": 0,
+          "stoppedAt": "2026-01-01T00:00:00Z"
+        },
+        "requiredAssertions": {
+          "required": 2,
+          "passed": 2,
+          "failed": 0,
+          "unknown": 0
+        },
+        "failedSloCount": 0,
+        "discoveryReached": null
+      },
+      "environment": {
+        "targetDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "inputsDigest": "2222222222222222222222222222222222222222222222222222222222222222",
+        "secretBindingsDigest": "3333333333333333333333333333333333333333333333333333333333333333",
+        "secretVersions": "known",
+        "targetSampler": "disabled",
+        "targetRevision": "unknown",
+        "contention": "unknown"
+      },
+      "differences": {
+        "fields": [],
+        "configChanges": [],
+        "limited": false
+      },
+      "warnings": [
+        "unknown_target_revision",
+        "unknown_contention",
+        "target_sampler_disabled"
+      ],
+      "metric": {
+        "availability": "not_requested",
+        "reason": null,
+        "series": null,
+        "manifestDigest": null,
+        "measurementSourceTimeMs": null,
+        "coverage": null
+      }
+    },
+    {
+      "run": {
+        "id": "00000000-0000-4000-8000-000000000007",
+        "scope": {
+          "kind": "workspace",
+          "organizationId": "00000000-0000-4000-8000-000000000001",
+          "workspaceId": "00000000-0000-4000-8000-000000000002"
+        },
+        "version": 1,
+        "suiteId": "00000000-0000-4000-8000-000000000003",
+        "revisionId": "00000000-0000-4000-8000-000000000004",
+        "revisionDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "requestedAt": "2026-11-09T00:00:00.000Z",
+        "state": "finished",
+        "outcome": "passed",
+        "validationStatus": "passed",
+        "activeAttemptId": "00000000-0000-4000-8000-000000000008",
+        "cancellationRequested": false,
+        "reason": null,
+        "engine": {
+          "id": "k6",
+          "profileId": "k6-local",
+          "imageDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "configVersion": 1
+        },
+        "budget": {
+          "cpuMillis": 1000,
+          "memoryBytes": 536870912,
+          "pids": 128,
+          "timeoutMs": 60000,
+          "outputBytes": 1048576
+        },
+        "executionPolicy": {
+          "mode": "parallel",
+          "preferIdle": false
+        },
+        "settingsVersions": {
+          "installation": 1,
+          "organization": 1,
+          "workspace": 1
+        }
+      },
+      "result": {
+        "outcome": "passed",
+        "completeness": "complete",
+        "execution": {
+          "status": "completed",
+          "exitCode": 0,
+          "stoppedAt": "2026-01-01T00:00:00Z"
+        },
+        "requiredAssertions": {
+          "required": 2,
+          "passed": 2,
+          "failed": 0,
+          "unknown": 0
+        },
+        "failedSloCount": 0,
+        "discoveryReached": null
+      },
+      "environment": {
+        "targetDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "inputsDigest": "2222222222222222222222222222222222222222222222222222222222222222",
+        "secretBindingsDigest": "3333333333333333333333333333333333333333333333333333333333333333",
+        "secretVersions": "known",
+        "targetSampler": "disabled",
+        "targetRevision": "unknown",
+        "contention": "unknown"
+      },
+      "differences": {
+        "fields": [],
+        "configChanges": [],
+        "limited": false
+      },
+      "warnings": [
+        "unknown_target_revision",
+        "unknown_contention",
+        "target_sampler_disabled"
+      ],
+      "metric": {
+        "availability": "not_requested",
+        "reason": null,
+        "series": null,
+        "manifestDigest": null,
+        "measurementSourceTimeMs": null,
+        "coverage": null
+      }
+    }
+  ]
+}

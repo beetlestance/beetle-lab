@@ -1,3 +1,5 @@
+import { runComparisonRequestMatches, runComparisonSnapshotMatches } from './comparison.js';
+import type { RunComparisonRequest, RunComparisonSnapshot } from '../generated/types.js';
 import { liveMetricScopeMatches } from '../live-metrics.js';
 import type { LiveMetricSnapshot } from '../generated/types.js';
 import { runMetricSeriesPageMatches, runMetricSamplesPageMatches } from './run-metric-ownership.js';
@@ -42,9 +44,12 @@ function session(operation: ApiOperation): boolean {
 }
 
 export function requestOwnership(operation: ApiOperation, input: PreparedInput): boolean {
-  if (session(operation)) return true;
-  if (!input.body) return true;
-  const scope = input.body.scope as SettingsScope;
+  if (session(operation) || !input.body) return true;
+  return (operation.name !== 'compareRuns' || runComparisonRequestMatches(input.body as unknown as RunComparisonRequest))
+    && scopedBodyOwnership(operation, input);
+}
+function scopedBodyOwnership(operation: ApiOperation, input: PreparedInput): boolean {
+  const scope = input.body!.scope as SettingsScope;
   const route = routeOwner(input);
   if (retention(operation)) return route.kind === 'installation' ? scope.kind === 'installation' : contains(route, scope);
   // Organisations themselves are installation-owned; their UUID lives in the route.
@@ -101,6 +106,7 @@ function sourceAncestry(scope: SettingsScope, effective: EffectiveSettings): boo
 /** Structural validation precedes this route/body/result binding. Backend SQL authorization is independent. */
 export function responseOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
   if (session(operation)) return true;
+  if (operation.response === 'RunComparisonSnapshot') return runComparisonSnapshotMatches(value as RunComparisonSnapshot, input.body as unknown as RunComparisonRequest);
   if (operation.response === 'LiveMetricSnapshot') return liveMetricScopeMatches((value as LiveMetricSnapshot).scope,
     {organizationId: input.params.organizationId!, workspaceId: input.params.workspaceId!, attemptId: input.params.attemptId!, generation: 1});
   if (operation.response === 'RunEventPage') return runEventPageMatches(value as RunEventPage, { id: input.params.runId!,

@@ -1,0 +1,21 @@
+{
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "runIds": [
+    "00000000-0000-4000-8000-000000000005",
+    "00000000-0000-4000-8000-000000000007"
+  ],
+  "metric": {
+    "metric": "http_req_duration",
+    "kind": "trend",
+    "scope": "execute",
+    "tags": {
+      "phase": "execute",
+      "request": "r0"
+    }
+  },
+  "secret": "synthetic-canary"
+}

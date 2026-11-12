@@ -42,13 +42,18 @@ it('freezes the complete unique schema closure, public references and operation 
   expect(Reflect.set(apiOperations, '0', {})).toBe(false);
 });
 
-it('provides parameter/query schemas for every route and validates each UUID parameter', () => {
+it('provides parameter/query schemas for every route and validates each UUID parameter', async () => {
+  const valid = (await vectors()).filter(vector => vector.valid);
   const uuid = '00000000-0000-4000-8000-000000000001';
   for (const operation of apiOperations) {
     expect(apiMessageSchemas).toHaveProperty(operation.response);
     expect(apiMessageSchemas).toHaveProperty(operation.error);
     if ('request' in operation) expect(apiMessageSchemas).toHaveProperty(operation.request);
-    if ('query' in operation) expect(validateApi(operation.query, { limit: 100, cursor: 'opaque_page' }).ok).toBe(true);
+    if ('query' in operation) {
+      const vector = valid.find(vector => vector.schema === operation.query);
+      if (!vector) throw new Error(`Missing query fixture: ${operation.query}`);
+      expect(validateApi(operation.query, await fixture(vector.path)).ok).toBe(true);
+    }
     const names = [...operation.path.matchAll(/\{([A-Za-z]+)\}/g)].map(match => match[1] ?? '');
     if (!('params' in operation)) { expect(names).toHaveLength(0); continue; }
     const params = Object.fromEntries(names.map(name => [name, uuid]));

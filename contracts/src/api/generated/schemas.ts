@@ -17,6 +17,7 @@ import { schema as ApiNamespace } from './namespace.js';
 import { schema as ApiParameters } from './parameters.js';
 import { schema as ApiRetention } from './retention.js';
 import { schema as ApiRunArtifacts } from './run-artifacts.js';
+import { schema as ApiRunComparison } from './run-comparison.js';
 import { schema as ApiRunEvents } from './run-events.js';
 import { schema as ApiRunMetrics } from './run-metrics.js';
 import { schema as ApiRunRequests } from './run-requests.js';
@@ -29,7 +30,7 @@ import { schema as ApiSettings } from './settings.js';
 import { schema as ApiSuiteRequests } from './suite-requests.js';
 import { schema as ApiSuite } from './suite.js';
 /** Complete reference closure; runner result schemas are shared, never copied. */
-export const apiSchemas = freezeSchema([Common, EngineResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiInputRequests, ApiInput, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiParameters, ApiRetention, ApiRunArtifacts, ApiRunEvents, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
+export const apiSchemas = freezeSchema([Common, EngineResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiInputRequests, ApiInput, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiParameters, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -85,7 +86,17 @@ export const apiMessageSchemas = freezeSchema({
   RetentionApplyRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionApplyRequest' },
   RetentionApplyReceipt: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionApplyReceipt' },
   RunArtifactPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-artifacts#/$defs/RunArtifactPage' },
+  RunComparisonRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonRequest' },
+  RunComparisonBinding: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonBinding' },
+  RunComparisonResult: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonResult' },
+  RunComparisonEnvironment: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonEnvironment' },
+  RunComparisonConfigChange: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonConfigChange' },
+  RunComparisonDifferences: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonDifferences' },
+  RunComparisonMetricRead: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonMetricRead' },
+  RunComparisonItem: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonItem' },
+  RunComparisonSnapshot: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonSnapshot' },
   RunEventPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-events#/$defs/RunEventPage' },
+  RunMetricKey: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricKey' },
   RunMetricTags: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricTags' },
   RunMetricPercentile: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricPercentile' },
   RunMetricCounter: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricCounter' },

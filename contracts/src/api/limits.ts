@@ -10,3 +10,6 @@ export const RUN_ARTIFACT_PAGE_BYTES = 73_728;
 
 /** Complete retained-metric catalogue/sample JSON page. */
 export const RUN_METRIC_PAGE_BYTES = 262_144;
+
+/** Full bounded four-run comparison; no configurations or artifact bytes. */
+export const RUN_COMPARISON_BYTES = 262_144;

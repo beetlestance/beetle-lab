@@ -3,6 +3,17 @@
   "$id": "https://beetle-lab.dev/contracts/api/v2/run-metrics",
   "title": "ApiRunMetrics",
   "$defs": {
+    "RunMetricKey": {
+      "type": "object",
+      "properties": {
+        "metric": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z_][A-Za-z0-9_:]*$"},
+        "kind": {"enum": ["counter", "rate", "gauge", "trend"]},
+        "scope": {"enum": ["execute", "engine"]},
+        "tags": {"type": "object", "properties": {"phase": {"const": "execute"}, "request": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9_.:-]+$"}, "assertion": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9_.:-]+$"}}, "additionalProperties": false}
+      },
+      "required": ["metric", "kind", "scope", "tags"],
+      "additionalProperties": false
+    },
     "RunMetricTags": {
       "type": "object",
       "properties": {

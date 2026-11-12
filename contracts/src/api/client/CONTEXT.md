@@ -30,3 +30,7 @@ only canonical decimal `limit` strings convert. JSON body coercion stays disable
 Focused checks: `npx vitest run contracts/test/api/client
 app/src/adapters/inbound/http/page-query.test.ts --maxWorkers=2`;
 `npm run typecheck`; scoped ESLint. Set `NODE_OPTIONS=--max-old-space-size=1024`.
+Comparison requests reject case-folded duplicate run IDs. Response checks bind
+ordered terminal runs, baseline/selection/source/summary, exact warning/difference
+policies and262144 encoded bytes. Logical aliases are resolved by the application,
+not inferred by the client. See docs/design/lld/run-comparison.md.

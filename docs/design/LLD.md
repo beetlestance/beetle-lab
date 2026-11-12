@@ -67,6 +67,7 @@ The owning document below must be updated before its implementation changes.
 | Per-attempt resource producer | [Attempt resources](lld/attempt-resources.md) | Owned Docker samples, truthful missing values, sampled peaks and event producer barriers |
 | Scheduler or instrumentation | [Resources/observability](lld/resources-observability.md) | Admission, budgets, CPU/RAM, phases, telemetry limits |
 | HTTP, CLI or browser | [Application/UI](lld/application-ui.md) | API routes, errors, events, queries, export, frontend |
+| Four-run comparison | [Comparison](lld/run-comparison.md) | Scoped terminal-run provenance/diffs and logically matched selected metrics |
 | Performance report artifacts | [Engine reports](lld/performance-reports.md) | Mapped result and shared numeric presentation; admitted text/CSV custody |
 | Standalone script component | [Engine export](lld/standalone-export.md) | Shared compiler/runtime builder and explicit secret refusal; HTTP/UI admission pending |
 

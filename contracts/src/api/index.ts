@@ -19,3 +19,6 @@ export { encodeRunMetricSeriesCursor, captureRunMetricSeriesCursor, encodeRunMet
 
 export { LIVE_METRIC_FRAME_BYTES, LiveMetricError, captureLiveMetricSubset, liveMetricSubsetText, liveMetricScopeMatches, captureLiveMetricSnapshot, encodeLiveMetricSnapshot, decodeLiveMetricSnapshot } from './live-metrics.js';
 export type { LiveMetricHash } from './live-metrics.js';
+
+export { RUN_COMPARISON_BYTES } from './limits.js';
+export { runComparisonRequestMatches, runComparisonSnapshotMatches, comparisonFields, comparisonWarnings } from './client/comparison.js';

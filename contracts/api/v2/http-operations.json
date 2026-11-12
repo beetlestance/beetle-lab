@@ -467,5 +467,15 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "RunAttemptParams"
+  },
+  {
+    "name": "compareRuns",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/comparisons",
+    "request": "RunComparisonRequest",
+    "response": "RunComparisonSnapshot",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "WorkspaceParams"
   }
 ]
