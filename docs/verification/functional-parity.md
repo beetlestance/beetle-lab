@@ -1,6 +1,6 @@
 # Remaining functional parity
 
-Status: source audit at131a253, not complete release acceptance.
+Status: targeted audit updated through2e51b67; not complete release acceptance.
 Authority: [feature inventory](../current-features.md) and
 [acceptance matrix](../verification.md). UI redesign remains a separate later task.
 This checklist records gaps that must not disappear behind broader feature labels.

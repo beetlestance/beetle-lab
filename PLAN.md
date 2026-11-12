@@ -39,43 +39,46 @@ model assignments, agent packets, concurrency and independent review.
 
 ## Current implementation
 
-| Area | Integrated | Still required |
+These are locally verified source capabilities. They do not establish hosted CI,
+final images or a qualified R0-R4 release. The [documentation map](docs/README.md)
+links evidence; the [parity checklist](docs/verification/functional-parity.md)
+records known gaps and still requires a full inventory acceptance audit.
+
+| Area | Locally integrated | Evidence |
 | --- | --- | --- |
-| Foundation/contracts | Workspace gates; strict runner/staged-input, namespace/settings, suite and run-intake schemas/clients; exact installed descriptor binding in immutable Offers; atomic queued-run/attempt/outbox SQLite intake; authenticated enqueue/detail/history routes; Fastify JSON adapter; separate config/Offer bounds; private agent/backend capacity publication and owned startup/shutdown; shared exact staging accounting and same-lease execution limits; bounded claim/observation transactions, metadata dispatch RPC and immutable journal binding; bounded automatic delivery/reconciliation; receipt-first scoped cancellation; durable event ingestion/ACK and fair collection; artifact writer/transfer and verified result route | Runtime publication cleanup, producer retirement and retention settlement (native prepared deletion and durable progress verified), plus release qualification |
-| Agent | Catalogue/admission/staging/controllers; typed stops; bounded scheduling; guards/full observation publisher; installed runtime; Node24 image/private HTTP; real arm64 k6 pass/fail; journal010/immutable identity and atomic fresh cancellation refusal; exclusive control store and actual startup/wire binding; large-original bounds, propagation and launch contention; admission carrier at node/depth maxima; immutable collected output root/byte facts; explicit offline installation provisioner | Final-recipe from-empty/pull install and stop-latency qualification, irreversible recovery fencing, native per-attempt telemetry accuracy/overhead, publication cleanup and native architecture matrix |
-| k6 | Suite compiler/runtime/builder, phase-isolated metrics, control journal, staged loader, child runner, numeric windows with bounded mergeable duration distributions and sealed history/index artifacts, summary collector, outcome mapper, staged wrapper, seal codec and artifact publication; bounded literal body inputs, shared strict target-observation artifacts and scoped point/chart views; bounded opt-in live publisher/mailbox/read components; mapped text/CSV reports with admitted verified artifacts | Retention and broader native/release qualification; [public export jobs/download](docs/verification/public-standalone-export.md) locally verified |
-| Product | Namespace/settings and immutable suite/revision SQLite/API composition; native input publication/HTTP/recovery, bounded byte client and scoped inventory/deletion UI; automatic persistent loopback sessions, optional paired access and React authoring, session-owned upload/download controls and dev proxy; scoped run history/detail and saved-revision submission/replay and scoped cancellation controls; scoped verified result reads/UI; authenticated durable event replay API and client; bounded execution activity UI; verified published artifact metadata/content and inline text reports with safe format downloads; admitted four-run comparison backend and browser controls with logical metric matching; optional authenticated container-client bundle with token-free local connect, bounded waiting and explicit replay; sealed metric catalogue, reverse samples and selectable chart; verified target-report charts/table and qualified before/during/after comparisons | Browser qualification, artifact retention lifecycle and automation/container qualification |
-| Qualification | Local contract/unit/SQLite and public API through real agent/k6 pass/fail, artifact settlement and metadata reopen | Browser, final-release from-empty/pull Compose, scans, backup/soak and native architecture matrix |
+| Execution | Durable intake/admission/delivery/cancel, scheduling, real arm64 k6 pass/fail and metadata reopen | [Native application](docs/verification/native-application-k6.md) |
+| Result custody | Source/absence closure, event replay, artifact publication and verified downloads | [Source-free path](docs/verification/output-absence.md), [downloads](docs/verification/run-artifact-downloads.md) |
+| Metrics | Live windows, sealed history/charts, duration estimates, resources and target observations | [Live path](docs/verification/native-live-metrics.md), [history](docs/verification/run-metric-history.md), [target views](docs/verification/target-observation-contract.md) |
+| Product | Namespace list/create/rename, settings, authoring, inputs, submit/history/detail/cancel, comparison and reports | [First use](docs/verification/first-use.md) |
+| Export | Durable jobs, API/UI/download and actual offline Docker/restart | [Public exports](docs/verification/public-standalone-export.md) |
+| Overview | Exact workspace counts, hourly submissions and bounded recent/active links | [Overview](docs/verification/workspace-overview.md) |
+| Load advice | Observed dropped iterations and explicit iteration-median VU heuristic | [Guidance](docs/verification/load-advice.md) |
+| Navigation/reference | Command search, API/config downloads and standalone agent instructions | [Search](docs/verification/command-search.md), [reference](docs/verification/embedded-reference.md) |
+| Deletion prerequisite | Persisted backend removal/absence plans; failed native closes retain owners/slots | [Backend driver](docs/verification/output-deletion-runtime.md), [native custody](docs/verification/output-close-custody.md) |
 
-Worker submissions require independent review and exact-source integration checks.
-The [documentation map](docs/README.md) indexes focused implementation evidence.
-The [actual backend/agent/k6 path](docs/verification/native-application-k6.md) has
-local pass/fail, artifact settlement and metadata-reopen evidence; the
-[source-free path](docs/verification/output-absence.md) additionally covers rejected
-intake and exact terminal credit. [Opt-in Compose](docs/verification/compose-installation.md)
-adds real provisioning, corrected startup, native execution and restart evidence;
-final-release installation and the architecture matrix remain unqualified.
+[Operation availability](docs/verification/reference-availability.md) checks all57
+JSON descriptors against the configured application:50 registered,7 planned.
+Registration does not prove runtime readiness or complete feature acceptance.
+Native live activation uses [trusted image capability](docs/decisions/014-live-metric-approval-authority.md).
 
-Public [event replay](docs/verification/run-event-reads.md), bounded
-[execution activity](docs/verification/run-timeline-ui.md),
-[duration distributions](docs/verification/k6-distributions.md) and verified
-[artifact metadata/downloads](docs/verification/run-artifact-downloads.md) are
-integrated locally. [Browser artifact controls](docs/verification/run-artifact-controls.md) are integrated locally. [Per-attempt resource summaries](docs/verification/attempt-resources.md) are integrated locally. [Sealed metric history](docs/verification/k6-metric-archive.md) is integrated locally. [History reads/chart](docs/verification/run-metric-history.md) are integrated locally. The [native live path](docs/verification/native-live-metrics.md) is locally verified through
-engine, agent and backend; browser components are locally verified. Native resource
-qualification, automation image qualification and publication cleanup/retention remain. [Public standalone exports](docs/verification/public-standalone-export.md) now have durable jobs/API/UI/download and actual offline Docker/restart evidence. Reports, comparison and the automation client have focused local evidence.
-[Target observation views](docs/verification/target-observation-contract.md) are
-integrated locally; real-browser qualification remains pending. Live activation is bound to [trusted installed image capability](docs/decisions/014-live-metric-approval-authority.md).
-[Deletion progress](docs/verification/output-deletion-store.md) persists actual native plans and backend-file absence across reopen while preserving producer authority and all charges; [bounded backend file driver](docs/verification/output-deletion-runtime.md) is locally verified; agent cleanup acknowledgement and final purge/refund remain pending. [Proposed next contract/packets](docs/execution/output-retirement.md) identify durable namespace, native/read drain, positive unsent handling and replay-safe settlement prerequisites. [Native output close-failure custody](docs/verification/output-close-custody.md) now retains failed owners/slots as a cleanup prerequisite.
-The [delivery authority](docs/design/lld/delivery-authority.md) contract still needs
-its remaining restart/cold-restore implementation. R4 additionally requires fresh
-installation, shipped images/Compose, scans, backup/restore, bounded soak/overhead
-and native amd64/arm64 evidence. No complete R0-R4 release is claimed.
+## Remaining before complete R0-R4 acceptance
 
-[Reference availability](docs/verification/reference-availability.md) now distinguishes implemented routes from seven planned deletion/retention operations. Namespace deletion and history filters/sort/duration/storage remain open. The [remaining parity checklist](docs/verification/functional-parity.md) also keeps
-[Workspace overview](docs/verification/workspace-overview.md) locally implemented with exact scoped counts, activity and recent/active navigation. Cross-workspace rollups and native browser qualification remain separate. [Observed load guidance](docs/verification/load-advice.md) is locally implemented; native warning classification and configured-scenario guidance remain open. [Contextual command search](docs/verification/command-search.md) is locally implemented; native browser qualification remains. [Embedded reference/agent downloads](docs/verification/embedded-reference.md) are locally implemented with source-image HTTP evidence. These are
-functional obligations, separate from the deferred UI redesign.
+| Work | Required completion |
+| --- | --- |
+| Producer cleanup | Durable staging namespace, actual producer/read drain, persisted native plan and exact agent receipt; preserve all charges until settlement |
+| Purge/retention | Replay-safe tombstones, exact refunds, protected selection, immutable preview/apply and public progress/error controls |
+| Namespace deletion | Organisation/workspace/folder DELETE routes and controls with child/input/run/cleanup protection |
+| History parity | Indexed filters/sort and truthful duration/storage presentation; current history is UUID-paged |
+| Warning guidance | Native warning classification and configured-scenario advice; the current heuristic is partial F10 |
+| Recovery | Remaining [delivery authority](docs/design/lld/delivery-authority.md) restart/cold-restore and actual supported backup/restore tooling |
+| Qualification | Final source/pull installs, matching images, browser/automation, native amd64/arm64, scans, bounded soak, overhead and rollback |
 
-First local usage is now evidenced through [fresh source setup and browser execution](docs/verification/first-use.md): namespace/test authoring, real k6, durable result, chart, history and one hash-verified download. This does not close the remaining product or release qualification work.
+The [next cleanup packets](docs/execution/output-retirement.md) are a reviewed
+proposal/handoff, not implemented cleanup authority. Positive unsent cancellations
+have their own no-agent branch; missing receipts/404 do not prove non-delivery.
+Workspace/cross-workspace acceptance and other feature IDs still need inventory
+fixtures; targeted checks do not prove every unlisted requirement complete.
+Functional closure remains separate from the deferred UI redesign.
 
 ## Local first-use corrections
 
@@ -90,7 +93,8 @@ First local usage is now evidenced through [fresh source setup and browser execu
 
 Large input bodies and the initial optional target collector are now locally verified;
 see [feature evidence](docs/verification/large-bodies-target-observations.md).
-Target observation charts/heuristics and release qualification remain pending.
+Target observation views are locally implemented; packaged browser/native and
+release qualification remain pending.
 
 ## Delivery order
 

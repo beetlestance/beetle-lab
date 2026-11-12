@@ -72,6 +72,9 @@ The owning document below must be updated before its implementation changes.
 | Scheduler or instrumentation | [Resources/observability](lld/resources-observability.md) | Admission, budgets, CPU/RAM, phases, telemetry limits |
 | HTTP, CLI or browser | [Application/UI](lld/application-ui.md) | API routes, errors, events, queries, export, frontend |
 | Embedded public reference | [Reference](lld/embedded-reference.md) | Generated schema/transfer presentation and source-only agent downloads |
+| Workspace overview | [Overview](lld/workspace-overview.md) | Scoped counts, bounded recent/active links and snapshot consistency |
+| Observed dropped-load guidance | [Load advice](lld/load-advice.md) | Current-source counters, iteration-median heuristic and missing-data limits |
+| Proposed producer cleanup | [Retirement](lld/output-retirement.md) | Durable namespace/read fence, physical ACK and separate settlement |
 | Contextual command navigation | [Command search](lld/command-search.md) | Modal focus/scope ownership and shared bounded list queries |
 | Four-run comparison | [Comparison](lld/run-comparison.md) | Scoped terminal-run provenance/diffs and logically matched selected metrics |
 | Performance report artifacts | [Engine reports](lld/performance-reports.md) | Mapped result and shared numeric presentation; admitted text/CSV custody |
