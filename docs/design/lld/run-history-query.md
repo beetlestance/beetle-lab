@@ -1,7 +1,7 @@
 # Scoped run history parity
 
 Status: H1 locally verified; [evidence](../../verification/run-history-query.md).
-H2 summaries are locally verified, including native arm64/restart; H3 [indexed search](run-history-search.md) is being implemented.
+H2 summaries are locally verified, including native arm64/restart; H3 [indexed search](run-history-search.md) is locally verified.
 Owner: Run query/SQLite reader and existing scoped history UI.
 Inventory: F06; [remaining parity](../../verification/functional-parity.md).
 
@@ -10,7 +10,7 @@ Inventory: F06; [remaining parity](../../verification/functional-parity.md).
 The legacy history offered workspace/status/text filters and displayed duration,
 requests, RPS, p95, errors and size. H1 adds scoped state/outcome filtering and
 requested-time keyset ordering while retaining validation and comparison selection. H2 adds the [verified stored scalars](run-history-summary.md); text/name search
-remains H3. Preserve the four-run comparison
+is owned by H3. Preserve the four-run comparison
 cap and scope fences while completing this behavior.
 
 ## H1: first ready query/control slice
@@ -100,15 +100,6 @@ complete reply byte limit before enabling the projection.
 The [search contract](run-history-search.md) owns exact normalization, indexes,
 backfill/readiness and work budgets, including deliberate legacy differences.
 
-Legacy substring search must not become first-page-only filtering presented as
-all-history search. Choose and qualify a scoped bounded search-index owner before
-shipping it. Bound input length, result page, cursor and update/recovery work;
-search has no regex/SQL interpretation. Current suite names and immutable revision
-identity are different facts: renaming a suite must not rewrite historical identity.
-No unbounded LIKE scan, cross-workspace corpus load or silent result truncation.
-
-H1 can proceed independently of cleanup after exact query/client/transport/schema
-amendments are reviewed. H2 and H3 remain separate readiness gates; freeze their
-interfaces before code. H1 reserves metadata migration017 for two scoped outcome/order indexes.
-No new endpoint is reserved.
-Native browser and release qualification remain outside local component proof.
+H3 implements the linked bounded search contract. Current-name and UUID-prefix
+modes deliberately replace legacy path/ID substring behavior. Its verified scope
+and remaining browser/platform/release work live in the evidence report.

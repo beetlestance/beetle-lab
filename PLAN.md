@@ -46,7 +46,7 @@ records known gaps and still requires a full inventory acceptance audit.
 
 | Area | Locally integrated | Evidence |
 | --- | --- | --- |
-| History controls/scalars | Scoped filters, keyset order, verified compact metrics/storage provenance; indexed text search pending | [H1](docs/verification/run-history-query.md), [H2](docs/verification/run-history-summary.md) |
+| History controls/scalars | Scoped filters/keyset order, verified metrics/storage provenance and bounded indexed current-name/ID-prefix search | [H1](docs/verification/run-history-query.md), [H2](docs/verification/run-history-summary.md), [H3](docs/verification/run-history-search.md) |
 | Execution | Durable intake/admission/delivery/cancel, scheduling, real arm64 k6 pass/fail and metadata reopen | [Native application](docs/verification/native-application-k6.md) |
 | Result custody | Source/absence closure, event replay, artifact publication and verified downloads | [Source-free path](docs/verification/output-absence.md), [downloads](docs/verification/run-artifact-downloads.md) |
 | Metrics | Live windows, sealed history/charts, duration estimates, resources and target observations | [Live path](docs/verification/native-live-metrics.md), [history](docs/verification/run-metric-history.md), [target views](docs/verification/target-observation-contract.md) |
@@ -69,7 +69,7 @@ Native live activation uses [trusted image capability](docs/decisions/014-live-m
 | Producer cleanup | Durable staging namespace, actual producer/read drain, persisted native plan and exact agent receipt; preserve all charges until settlement |
 | Purge/retention | Replay-safe tombstones, exact refunds, protected selection, immutable preview/apply and public progress/error controls |
 | Namespace deletion | Organisation/workspace/folder DELETE routes and controls with child/input/run/cleanup protection |
-| History parity | Indexed filters/sort and truthful duration/storage presentation; current history is UUID-paged |
+| History parity | H1–H3 locally implemented; remaining native browser/platform and inventory-wide acceptance, with explicit legacy search differences |
 | Warning guidance | Native warning classification and configured-scenario advice; the current heuristic is partial F10 |
 | Recovery | Remaining [delivery authority](docs/design/lld/delivery-authority.md) restart/cold-restore and actual supported backup/restore tooling |
 | Qualification | Final source/pull installs, matching images, browser/automation, native amd64/arm64, scans, bounded soak, overhead and rollback |

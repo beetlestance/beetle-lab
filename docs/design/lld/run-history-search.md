@@ -1,6 +1,7 @@
 # Indexed history search
 
-Status: H3 implementation in progress; migration019 reserved by the coordinator.
+Status: H3 locally verified; [evidence](../../verification/run-history-search.md).
+Migration019 is owned by the coordinator.
 Owner: public RunListQuery/SQLite Run reader and scoped history controls.
 Parent: [history](run-history-query.md). No engine or native byte owner changes.
 

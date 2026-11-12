@@ -1,6 +1,6 @@
 # Indexed history search evidence
 
-Status: H3 scoped acceptance in progress, based on integration0a9f6e2.
+Status: H3 locally verified at0025f70, based on integration0a9f6e2.
 Scope: [search contract](../design/lld/run-history-search.md), F06/A02/V19.
 This evidence is separate from [H1](run-history-query.md) and [H2](run-history-summary.md).
 
@@ -26,18 +26,38 @@ is exercised through actual worker pagination, migration and reopen.
 
 ## Source-bound checks
 
-Pending frozen scoped lane and independent correction review. Earlier failures
-and their exact commands/logs remain in task evidence: strictRequired schema
-fixture, predecessor-schema fixture, schema400 versus semantic422 expectation,
-TypeScript boundary fixes and changed-code complexity/unused checks. Failures
-are not substituted with unrelated green runs.
+Source-bound check evidence covers524 tests in51 files:449 contract/storage/HTTP,
+29 DOM and46 native-live schema regressions. Actual application registration plus
+generated client and compiled SQLite worker exercise search pagination and reopen.
+Worker fixtures cover scoped Unicode names, mutable ancestry, cursor binding,
+resumed backfill, late inserts, explicit overflow,258 histories for one suite,
+covering query plans, atomic rename failures and unchanged namespace identity.
 
-No execution/image inputs change. Reuse H2 engine/agent native evidence only for
-those unchanged inputs; the changed SQLite worker/API/search require their own
-component/build checks. Source equality does not qualify a new packaged backend.
+The first frozen lane retained a raw-writer fixture failure: its direct SQLite
+connection lacked the newly required function. Other429 tests in35 files remain
+valid. Registering the production function on raw writer fixtures passed20 tests
+in3 files, including the unchanged100,000-folder enumeration workload. No assertion
+or bound was relaxed. Hash comparison confirms only those three test files changed
+from that freeze. Original failures and exact commands/logs are retained privately.
+
+Node/web types, changed lint, API drift, architecture, documentation and API/web/
+agent/engine builds pass. The amended11-command lane took48.92s; the raw-writer
+correction test command reports15.51s. Independent review caught and then accepted
+the Unicode correction and confirmed fixture assertions/workloads were preserved.
+
+The shared API registry is reachable from native bundles; the built agent main
+hash changed, so old image evidence was not reused as current-image qualification.
+Matching local images for0025f70 built in a task-owned2GiB/two-CPU BuildKit builder,
+then one native arm64 smoke passed in8.87s. It verified one readiness plus one work
+request, zero unexpected requests, sealed six-artifact output, numeric-v4 summary,
+exact retained logical charge104168 bytes, unchanged summary across backend reopen,
+released task reservation and task cleanup. The builder was removed. Host Node26,
+container Node24; this remains a narrow synthetic native control.
+Engine log capture was unavailable under the configured log driver; its diagnostic
+failure remains recorded, so this does not establish successful log inspection.
 
 ## Remaining qualification
 
-DOM tests are not native browser evidence. No new Compose deployment, user-service
-restart, target load, amd64, soak, hosted CI, dependency/image scan or publication
+DOM tests are not native browser evidence. No Compose deployment, user-service
+restart, real-target load, amd64, soak, hosted CI, dependency/image scan or publication
 is established by this slice. Complete R0-R4 acceptance remains separate.
