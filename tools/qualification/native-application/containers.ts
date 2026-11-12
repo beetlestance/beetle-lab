@@ -53,6 +53,8 @@ await reader.cancel();throw Error('counts fragments');}).catch(()=>process.exit(
 export async function captureLogs(f: Fixture): Promise<string[]> {
   const failures: string[] = [];
   for (const id of f.docker.ownedIds(f.id)) {
+    try { await writeFile(join(f.root, `container-${id}-inspect.json`), JSON.stringify(f.docker.json(['inspect', id]), null, 2), {mode: 0o600}); }
+    catch { failures.push(`inspect:${id}`); }
     try { await writeFile(join(f.root, `container-${id}-logs.txt`), f.docker.run(['logs', '--tail', '100', id]), { mode: 0o600 }); }
     catch { failures.push(`logs:${id}`); }
   }

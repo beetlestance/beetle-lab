@@ -100,3 +100,15 @@ it.each(['stop', 'kill'] as const)('keeps %s available when volume verification 
   expect((await backend.remove(plan, operation(), evidence)).outcome).toBe('rejected');
   expect(docker.volume).toBeDefined();
 });
+
+it.each(['', 'rw', 'z'])('accepts only supported named-volume summary metadata: %s', mode => {
+  const {plan} = liveFixture(); const value = payload(plan);
+  const mounts = value.Mounts as Record<string, unknown>[]; mounts.at(-1)!.Mode = mode;
+  expect(inspectEvidence(value, plan).ok).toBe(true);
+  mounts.at(-1)!.RW = false; expect(inspectEvidence(value, plan).ok).toBe(false);
+});
+it.each(['ro', 'z,ro', 'Z', 'rw,z', 'shared', null])('refuses unknown or permission-changing summary modes: %s', mode => {
+  const {plan} = liveFixture(); const value = payload(plan);
+  const mounts = value.Mounts as Record<string, unknown>[]; mounts.at(-1)!.Mode = mode;
+  expect(inspectEvidence(value, plan).ok).toBe(false);
+});

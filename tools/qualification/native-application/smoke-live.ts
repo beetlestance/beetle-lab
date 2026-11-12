@@ -23,9 +23,10 @@ const args = argumentsFor([agentImage, engineImage, '200', context]);
 const f = await fixture(new Docker(args.context, 2), args.agentImage, args.engineImage, 200);
 assert.equal(f.profile.liveMetricMailbox, true, 'Exact image capability must enable mailbox profile');
 const execution = f.manifest.phases.find(phase => phase.phase === 'execute')!; execution.timeoutMs = 20000;
-f.offer.config.loadPlan = {version: 1, scenarios: [{id: 'live', name: 'Bounded native live', executor: 'per-vu-iterations',
+f.offer.config.loadPlan = {version: 1, scenarios: [{id: 'live', name: 'bounded_native_live', executor: 'per-vu-iterations',
   vus: 1, iterations: 20, maxDuration: '15s', startTime: '0s', gracefulStop: '0s'}], slos: []};
 f.offer.config.selections = [{scenarioId: 'live', entries: [{requestId: 'get', weight: 1, wait: {durationMs: 500, jitterMs: 0}}]}];
+assert(createK6ConfigSchema(digest).validate(f.offer.config), 'Synthetic live config must validate before Docker effects');
 f.offer.installedIdentity = deriveInstalledIdentity({manifest: f.manifest, profile: f.profile,
   identity: {manifestId: 'k6-native', profileId: 'native', catalogVersion: 1, schemaDigest: createK6ConfigSchema(digest).schemaDigest}}, digest);
 const evidence: Record<string, unknown> = {status: 'running', mode, architecture: f.architecture,
@@ -46,7 +47,10 @@ function appendFrame(state: Collected, input: unknown): void {
 async function sample(api: ApiClient, queued: Run, run: Run, state: Collected): Promise<void> {
   const params = {organizationId: queued.scope.organizationId, workspaceId: queued.scope.workspaceId, runId: queued.id};
   const response = await api.getRunLiveMetrics({params: {...params, attemptId: run.activeAttemptId}});
-  if (!response.ok) {assert([429, 503].includes(response.error.status ?? 0)); state.unavailable++; return;}
+  if (!response.ok) {
+    assert([429, 503].includes(response.error.status ?? 0) || ['transport', 'timeout'].includes(response.error.kind));
+    state.unavailable++; return;
+  }
   appendFrame(state, response.value);
   if (mode === 'cancel' && state.frames.length >= 2) {
     value(await api.cancelRun({params, body: {scope: queued.scope, requestId: randomUUID()}})); state.cancelled = true;

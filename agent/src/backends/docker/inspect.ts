@@ -104,10 +104,12 @@ function mountEvidence(value: unknown, spec: CreateSpec): boolean {
       && mount.RW === !expected.ReadOnly && mount.Propagation === 'rprivate' && summaryOptions(mount, expected);
   });
 }
+// Docker's volume summary uses z for its shared SELinux label; RW/driver/name/options stay independently bound.
+const volumeSummaryModes = new Set<unknown>(['', 'rw', 'z']);
 function volumeSummary(mount: Record<string, unknown>, expected: DockerMount): boolean {
   const allowed = ['Type', 'Name', 'Source', 'Destination', 'Driver', 'Mode', 'RW', 'Propagation'];
   return mount.Type === 'volume' && mount.Name === expected.Source && mount.Driver === 'local'
-    && mount.RW === true && mount.Propagation === '' && (mount.Mode === '' || mount.Mode === 'rw')
+    && mount.RW === true && mount.Propagation === '' && volumeSummaryModes.has(mount.Mode)
     && typeof mount.Source === 'string' && mount.Source.startsWith('/')
     && Object.keys(mount).every(key => allowed.includes(key));
 }
