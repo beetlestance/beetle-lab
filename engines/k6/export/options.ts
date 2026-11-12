@@ -26,7 +26,7 @@ function allowance(value: unknown): number {
   return value;
 }
 /** Trusted compiler output remains owned; only supplied scalar options are captured here. */
-export function captureOptions(input: StandaloneExportInput): Readonly<BuildInput> {
+export function captureOptions(input: StandaloneExportInput): Readonly<BuildInput & {maximumBuildBytes: number}> {
   try {
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('export_options');
     const suite = compiled(own(input, 'suite'));

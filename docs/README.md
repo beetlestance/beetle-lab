@@ -47,6 +47,7 @@ released application until the rewrite is qualified.
 | Inspect performance report artifacts | [Engine reports](verification/performance-reports.md) | Bounded text/CSV, admitted custody and native arm64 publication; browser pending |
 | Inspect native export script files | [Script custody](verification/export-script-custody.md) | Shared streamed verification, actual builder/large file and original close/root proof; admitted job pending |
 | Inspect independent export wire integrity | [Export job contract](verification/standalone-export-contract.md) | Separate purpose, bounded assignment/result and legacy seal compatibility; admitted lifecycle/public workflow pending |
+| Inspect export build lifecycle | [Build lifetime](verification/standalone-build-lifetime.md) | Original call retention, cancellation and fixed build deadline; admitted workflow pending |
 | Inspect standalone script construction | [Engine export](verification/standalone-export.md) | Actual compiler/builder and generated-bundle semantics; HTTP/UI/native qualification pending |
 | Inspect durable deletion progress | [Deletion metadata](verification/output-deletion-store.md) | Scoped intent, exact persisted native plans, worker reopen and retained charges; runtime/producer retirement pending |
 | Inspect native published-output removal | [Deletion evidence](verification/output-deletion-native.md) | Prepared namespace-bound absence, original close/lease proof; metadata/runtime retention pending |
