@@ -23,3 +23,12 @@ it('uses the ordinary sidebar link and keeps empty search honest',async()=>{
  expect(screen.getByText('No matching operations.')).toBeVisible();expect(screen.queryByRole('region',{name:'Selected operation'})).not.toBeInTheDocument();
  expect(api.records).toHaveLength(before);expect(within(screen.getByRole('navigation',{name:'Main navigation'})).getByRole('link',{name:'Organizations'})).toBeVisible();
 });
+it('shows planned operations explicitly without attempting an unavailable API',async()=>{
+ const api=testClient(()=>{throw Error('Reference must remain offline');});mount(api.client,routes.reference);
+ await screen.findByRole('heading',{name:'Public API reference'});
+ fireEvent.change(screen.getByRole('searchbox'),{target:{value:'planned'}});
+ expect(screen.getByRole('status')).toHaveTextContent('7 of 7 matching operations');
+ expect(screen.getAllByRole('cell',{name:'Planned'})).toHaveLength(7);
+ fireEvent.click(screen.getByRole('button',{name:'Inspect previewInstallationRetention'}));
+ expect(screen.getByText('Planned: this operation has schemas but is not implemented.')).toBeInTheDocument();expect(api.records).toEqual([]);
+});

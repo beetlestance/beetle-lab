@@ -12,7 +12,7 @@ const internal = new Set(['MutationIntent', 'VersionedIntent', 'SettingsIdentity
 interface Source { path: string; file: string; title: string; id: string; value: Record<string, unknown>; hash: string }
 interface Message { name: string; source: Source; reference: string }
 interface Operation {
-  name: string; method: string; path: string; request?: string; response: string;
+  name: string; method: string; path: string; request?: string; response: string; implementation:'implemented'|'planned';
   successStatus: number; error: string; params?: string; query?: string;
 }
 
@@ -51,7 +51,11 @@ function parameterNames(name: string | undefined, types: Message[]): string[] {
   return Object.keys(definitions[message.name]?.properties ?? {}).sort();
 }
 
+function implementation(operation:Operation):void{
+  if(!['implemented','planned'].includes(operation.implementation))throw Error('Invalid operation implementation status');
+}
 function validateOperation(operation: Operation, types: Message[]): void {
+  implementation(operation);
   const names = new Set(types.map(message => message.name));
   const referenced = [operation.request, operation.response, operation.error, operation.params, operation.query];
   if (referenced.some(name => name !== undefined && !names.has(name))) throw new Error('Unknown operation schema');
@@ -87,9 +91,9 @@ function typeOutput(types: Message[]): string {
 function reference(operations: Operation[]): string {
   return '# Generated API v2 namespace/settings reference\n\n'
     + 'Sources: `contracts/api/v2`; runtime entrypoint: `contracts/src/api/index.ts`.\n'
-    + 'Schema catalogue is complete, including runner common exactly once. These are route descriptors, not implemented routes or an HTTP client.\n\n'
-    + '| Method | Route | Params | Query | Request | Success | Response |\n| --- | --- | --- | --- | --- | --- | --- |\n'
-    + operations.map(op => `| ${op.method} | ${op.path} | ${op.params ?? 'none'} | ${op.query ?? 'none'} | ${op.request ?? 'none'} | ${op.successStatus} | ${op.response} |`).join('\n')
+    + 'Schema catalogue is complete, including runner common exactly once. Implementation status describes route support in the standard source configuration, not runtime readiness or release qualification. Planned operations have schemas/clients but no shipped route.\n\n'
+    + '| Method | Route | Status | Params | Query | Request | Success | Response |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n'
+    + operations.map(op => `| ${op.method} | ${op.path} | ${op.implementation} | ${op.params ?? 'none'} | ${op.query ?? 'none'} | ${op.request ?? 'none'} | ${op.successStatus} | ${op.response} |`).join('\n')
     + '\n\nAll errors use ApiError. UUID path parameters are validated before URL encoding.\n'
     + 'List queries require an integer limit 1–100 and optional opaque string cursor; HTTP query parsing belongs to the transport adapter.\n'
     + 'Organisation retention operations also accept a workspace scope within that route organisation; installation retention operations require installation scope.\n'

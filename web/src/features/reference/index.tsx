@@ -8,7 +8,7 @@ const labels={params:'Path parameters',query:'Query',request:'Request body',resp
 export function Reference(){
  const [query,setQuery]=useState('');const [selected,setSelected]=useState('listOrganizations');const filter=useId();
  const page=filterOperations(query);const operation=page.items.find(row=>row.name===selected)??page.items[0];
- return <section><header className="section-header"><div><h1>Public API reference</h1><p>Explore the generated endpoints and schemas shipped with this frontend.</p></div></header>
+ return <section><header className="section-header"><div><h1>Public API reference</h1><p>Explore the matching operations and schemas. Planned operations have no shipped route.</p></div></header>
   <div className="button-row"><a href={referenceDownloads.markdown} download="public-api.md">Download API reference</a>
    <a href={referenceDownloads.catalogue} download="public-api.json">Download schema catalogue</a>
    <a href={referenceDownloads.k6} download="k6-config.json">Download k6 configuration schemas</a>
@@ -17,10 +17,11 @@ export function Reference(){
   <label htmlFor={filter}>Filter JSON operations</label><input id={filter} type="search" maxLength={128} value={query} onChange={event=>setQuery(event.target.value.slice(0,128))} />
   <p role="status">{page.items.length} of {page.total} matching operations.</p>
   {page.items.length===0?<p>No matching operations.</p>:<div className="table-scroll" tabIndex={0} role="region" aria-label="Public API operations">
-   <table><caption>Generated public API operations</caption><thead><tr><th scope="col">Method</th><th scope="col">Route</th><th scope="col">Success</th><th scope="col">Schema</th></tr></thead>
-    <tbody>{page.items.map(row=><tr key={row.name}><td>{row.method}</td><td><code>{row.path}</code></td><td>{row.successStatus}</td>
+   <table><caption>Generated public API operations</caption><thead><tr><th scope="col">Method</th><th scope="col">Route</th><th scope="col">Status</th><th scope="col">Success</th><th scope="col">Schema</th></tr></thead>
+    <tbody>{page.items.map(row=><tr key={row.name}><td>{row.method}</td><td><code>{row.path}</code></td><td>{row.implementation==='planned'?'Planned':'Implemented'}</td><td>{row.successStatus}</td>
      <td><button aria-label={`Inspect ${row.name}`} aria-pressed={row.name===operation?.name} onClick={()=>setSelected(row.name)}>Inspect</button></td></tr>)}</tbody></table></div>}
   {operation&&<section aria-label="Selected operation"><h2>{operation.name}</h2><p><code>{operation.method} {operation.path}</code> · HTTP {operation.successStatus}</p>
+   <p>{operation.implementation==='planned'?'Planned: this operation has schemas but is not implemented.':'Implemented in the standard configuration; local access, configured services and engine capabilities still apply.'}</p>
    <p>Schema references ($ref) resolve against the downloaded catalogue. Requests also need the installation’s local session and mutation CSRF headers.</p>
    {(Object.keys(labels) as (keyof SchemaFields)[]).map(field=><SchemaSection key={`${operation.name}/${field}`} label={labels[field]} name={(operation as SchemaFields)[field]} />)}
   </section>}

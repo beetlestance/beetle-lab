@@ -11,6 +11,7 @@ released application until the rewrite is qualified.
 | Frontend/assets/SDK choices | [Discussion](design/frontend-decisions.md) | Options and unresolved decisions |
 | Audit unfinished product parity | [Remaining parity](verification/functional-parity.md) | Targeted source gaps and pending inventory acceptance; separate from UI redesign |
 | Inspect embedded API/agent reference | [Reference evidence](verification/embedded-reference.md) | Generated schemas, binary guide, standalone instructions and source-image asset delivery |
+| Inspect implemented versus planned API routes | [Reference availability](verification/reference-availability.md) | Actual application registration checked against every JSON descriptor |
 | Plan producer retirement and cleanup | [Contract](design/lld/output-retirement.md), [packets](execution/output-retirement.md) | Proposed physical ACK, durable namespace, replay-safe settlement and dependency order |
 | Inspect native output cleanup custody | [Close-failure custody](verification/output-close-custody.md) | Sticky rejected closes retain bounded native owners and slots |
 | Inspect workspace dashboard | [Workspace overview](verification/workspace-overview.md) | Scoped snapshot counts, activity, recent/active navigation and schema preservation |

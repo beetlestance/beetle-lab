@@ -53,6 +53,7 @@ export function registerApiOperation<N extends ApiOperation['name']>(
 ): void {
   const operation = apiOperations.find(candidate => candidate.name === name) as NamedOperation<N> | undefined;
   if (!operation) throw new Error('Unknown API operation');
+  if(operation.implementation!=='implemented')throw new Error('API operation is planned, not implemented');
   const limit = bodyLimit(operation, options.bodyLimit); const signalFor = options.signalFor;
   server.route({
     method: operation.method,

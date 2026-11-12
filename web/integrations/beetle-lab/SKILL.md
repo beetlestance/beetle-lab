@@ -14,7 +14,9 @@ Preserve the target, workspace and resource budget authorized by the user's task
 Obtain the installation's exact configured origin, including its port. Fetch
 `/reference/public-api.json` from that origin before choosing operations or payloads.
 It contains generated JSON operations, binaryOperations, message references and
-their JSON Schema catalogue. Binary entries supply content/upload paths, offset
+their JSON Schema catalogue. Choose operations marked implementation=implemented;
+planned entries have contracts but no shipped route. A listed schema alone does not
+establish support or runtime readiness. Binary entries supply content/upload paths, offset
 query, media type, byte bounds and headers; do not guess missing transfer URLs.
 Keep the full catalogue outside model context; extract only needed operations and
 referenced definitions with your tools. Resolve `$ref` against included `$id` values. The human

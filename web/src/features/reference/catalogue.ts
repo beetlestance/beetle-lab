@@ -23,6 +23,6 @@ export function schemaText(name:MessageName):{text:string;compact:boolean}{
 }
 export function filterOperations(query:string){
  const needle=query.slice(0,128).trim().toLowerCase();
- const matches=apiOperations.filter(row=>`${row.method} ${row.path} ${row.name}`.toLowerCase().includes(needle));
+ const matches=apiOperations.filter(row=>`${row.method} ${row.path} ${row.name} ${row.implementation}`.toLowerCase().includes(needle));
  return {items:matches.slice(0,80),total:matches.length};
 }

@@ -71,7 +71,7 @@ its remaining restart/cold-restore implementation. R4 additionally requires fres
 installation, shipped images/Compose, scans, backup/restore, bounded soak/overhead
 and native amd64/arm64 evidence. No complete R0-R4 release is claimed.
 
-The [remaining parity checklist](docs/verification/functional-parity.md) also keeps
+[Reference availability](docs/verification/reference-availability.md) now distinguishes implemented routes from seven planned deletion/retention operations. Namespace deletion and history filters/sort/duration/storage remain open. The [remaining parity checklist](docs/verification/functional-parity.md) also keeps
 [Workspace overview](docs/verification/workspace-overview.md) locally implemented with exact scoped counts, activity and recent/active navigation. Cross-workspace rollups and native browser qualification remain separate. [Observed load guidance](docs/verification/load-advice.md) is locally implemented; native warning classification and configured-scenario guidance remain open. [Contextual command search](docs/verification/command-search.md) is locally implemented; native browser qualification remains. [Embedded reference/agent downloads](docs/verification/embedded-reference.md) are locally implemented with source-image HTTP evidence. These are
 functional obligations, separate from the deferred UI redesign.
 

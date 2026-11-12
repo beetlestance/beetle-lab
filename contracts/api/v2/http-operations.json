@@ -6,7 +6,8 @@
     "response": "OrganizationPage",
     "successStatus": 200,
     "error": "ApiError",
-    "query": "PageQuery"
+    "query": "PageQuery",
+    "implementation": "implemented"
   },
   {
     "name": "createOrganization",
@@ -15,7 +16,8 @@
     "response": "Organization",
     "successStatus": 201,
     "error": "ApiError",
-    "request": "CreateOrganizationRequest"
+    "request": "CreateOrganizationRequest",
+    "implementation": "implemented"
   },
   {
     "name": "getOrganization",
@@ -24,7 +26,8 @@
     "response": "Organization",
     "successStatus": 200,
     "error": "ApiError",
-    "params": "OrganizationParams"
+    "params": "OrganizationParams",
+    "implementation": "implemented"
   },
   {
     "name": "patchOrganization",
@@ -34,7 +37,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "request": "PatchOrganizationRequest",
-    "params": "OrganizationParams"
+    "params": "OrganizationParams",
+    "implementation": "implemented"
   },
   {
     "name": "deleteOrganization",
@@ -44,7 +48,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "request": "DeleteOrganizationRequest",
-    "params": "OrganizationParams"
+    "params": "OrganizationParams",
+    "implementation": "planned"
   },
   {
     "name": "getInstallationSettings",
@@ -52,7 +57,8 @@
     "path": "/api/v2/settings",
     "response": "InstallationSettings",
     "successStatus": 200,
-    "error": "ApiError"
+    "error": "ApiError",
+    "implementation": "implemented"
   },
   {
     "name": "patchInstallationSettings",
@@ -61,7 +67,8 @@
     "response": "InstallationSettings",
     "successStatus": 200,
     "error": "ApiError",
-    "request": "PatchInstallationSettingsRequest"
+    "request": "PatchInstallationSettingsRequest",
+    "implementation": "implemented"
   },
   {
     "name": "getOrganizationSettings",
@@ -70,7 +77,8 @@
     "response": "OrganizationSettings",
     "successStatus": 200,
     "error": "ApiError",
-    "params": "OrganizationParams"
+    "params": "OrganizationParams",
+    "implementation": "implemented"
   },
   {
     "name": "patchOrganizationSettings",
@@ -80,7 +88,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "request": "PatchOrganizationSettingsRequest",
-    "params": "OrganizationParams"
+    "params": "OrganizationParams",
+    "implementation": "implemented"
   },
   {
     "name": "getWorkspaceSettings",
@@ -89,7 +98,8 @@
     "response": "WorkspaceSettings",
     "successStatus": 200,
     "error": "ApiError",
-    "params": "WorkspaceParams"
+    "params": "WorkspaceParams",
+    "implementation": "implemented"
   },
   {
     "name": "patchWorkspaceSettings",
@@ -99,7 +109,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "request": "PatchWorkspaceSettingsRequest",
-    "params": "WorkspaceParams"
+    "params": "WorkspaceParams",
+    "implementation": "implemented"
   },
   {
     "name": "previewInstallationRetention",
@@ -108,7 +119,8 @@
     "response": "RetentionPreview",
     "successStatus": 200,
     "error": "ApiError",
-    "request": "RetentionPreviewRequest"
+    "request": "RetentionPreviewRequest",
+    "implementation": "planned"
   },
   {
     "name": "applyInstallationRetention",
@@ -117,7 +129,8 @@
     "response": "RetentionApplyReceipt",
     "successStatus": 202,
     "error": "ApiError",
-    "request": "RetentionApplyRequest"
+    "request": "RetentionApplyRequest",
+    "implementation": "planned"
   },
   {
     "name": "previewOrganizationRetention",
@@ -127,7 +140,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "request": "RetentionPreviewRequest",
-    "params": "OrganizationParams"
+    "params": "OrganizationParams",
+    "implementation": "planned"
   },
   {
     "name": "applyOrganizationRetention",
@@ -137,7 +151,8 @@
     "successStatus": 202,
     "error": "ApiError",
     "request": "RetentionApplyRequest",
-    "params": "OrganizationParams"
+    "params": "OrganizationParams",
+    "implementation": "planned"
   },
   {
     "name": "listWorkspaces",
@@ -147,7 +162,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "OrganizationParams",
-    "query": "PageQuery"
+    "query": "PageQuery",
+    "implementation": "implemented"
   },
   {
     "name": "createWorkspace",
@@ -157,7 +173,8 @@
     "successStatus": 201,
     "error": "ApiError",
     "request": "CreateWorkspaceRequest",
-    "params": "OrganizationParams"
+    "params": "OrganizationParams",
+    "implementation": "implemented"
   },
   {
     "name": "getWorkspace",
@@ -166,7 +183,8 @@
     "response": "Workspace",
     "successStatus": 200,
     "error": "ApiError",
-    "params": "WorkspaceParams"
+    "params": "WorkspaceParams",
+    "implementation": "implemented"
   },
   {
     "name": "patchWorkspace",
@@ -176,7 +194,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "request": "PatchWorkspaceRequest",
-    "params": "WorkspaceParams"
+    "params": "WorkspaceParams",
+    "implementation": "implemented"
   },
   {
     "name": "deleteWorkspace",
@@ -186,7 +205,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "request": "DeleteWorkspaceRequest",
-    "params": "WorkspaceParams"
+    "params": "WorkspaceParams",
+    "implementation": "planned"
   },
   {
     "name": "listFolders",
@@ -196,7 +216,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "WorkspaceParams",
-    "query": "PageQuery"
+    "query": "PageQuery",
+    "implementation": "implemented"
   },
   {
     "name": "createFolder",
@@ -206,7 +227,8 @@
     "successStatus": 201,
     "error": "ApiError",
     "request": "CreateFolderRequest",
-    "params": "WorkspaceParams"
+    "params": "WorkspaceParams",
+    "implementation": "implemented"
   },
   {
     "name": "patchFolder",
@@ -216,7 +238,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "request": "PatchFolderRequest",
-    "params": "FolderParams"
+    "params": "FolderParams",
+    "implementation": "implemented"
   },
   {
     "name": "deleteFolder",
@@ -226,7 +249,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "request": "DeleteFolderRequest",
-    "params": "FolderParams"
+    "params": "FolderParams",
+    "implementation": "planned"
   },
   {
     "name": "openLocalBrowserSession",
@@ -235,7 +259,8 @@
     "request": "OpenLocalBrowserRequest",
     "response": "BrowserSession",
     "successStatus": 200,
-    "error": "ApiError"
+    "error": "ApiError",
+    "implementation": "implemented"
   },
   {
     "name": "pairBrowserSession",
@@ -244,7 +269,8 @@
     "request": "PairBrowserRequest",
     "response": "BrowserSession",
     "successStatus": 200,
-    "error": "ApiError"
+    "error": "ApiError",
+    "implementation": "implemented"
   },
   {
     "name": "getBrowserSession",
@@ -252,7 +278,8 @@
     "path": "/api/v2/auth/session",
     "response": "BrowserSession",
     "successStatus": 200,
-    "error": "ApiError"
+    "error": "ApiError",
+    "implementation": "implemented"
   },
   {
     "name": "logoutBrowserSession",
@@ -261,7 +288,8 @@
     "request": "LogoutBrowserRequest",
     "response": "LogoutBrowserReceipt",
     "successStatus": 200,
-    "error": "ApiError"
+    "error": "ApiError",
+    "implementation": "implemented"
   },
   {
     "name": "listSuites",
@@ -271,7 +299,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "WorkspaceParams",
-    "query": "PageQuery"
+    "query": "PageQuery",
+    "implementation": "implemented"
   },
   {
     "name": "createSuite",
@@ -281,7 +310,8 @@
     "successStatus": 201,
     "error": "ApiError",
     "params": "WorkspaceParams",
-    "request": "CreateSuiteRequest"
+    "request": "CreateSuiteRequest",
+    "implementation": "implemented"
   },
   {
     "name": "getSuite",
@@ -290,7 +320,8 @@
     "response": "Suite",
     "successStatus": 200,
     "error": "ApiError",
-    "params": "SuiteParams"
+    "params": "SuiteParams",
+    "implementation": "implemented"
   },
   {
     "name": "patchSuite",
@@ -300,7 +331,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "SuiteParams",
-    "request": "PatchSuiteRequest"
+    "request": "PatchSuiteRequest",
+    "implementation": "implemented"
   },
   {
     "name": "listSuiteRevisions",
@@ -310,7 +342,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "SuiteParams",
-    "query": "PageQuery"
+    "query": "PageQuery",
+    "implementation": "implemented"
   },
   {
     "name": "createSuiteRevision",
@@ -320,7 +353,8 @@
     "successStatus": 201,
     "error": "ApiError",
     "params": "SuiteParams",
-    "request": "CreateSuiteRevisionRequest"
+    "request": "CreateSuiteRevisionRequest",
+    "implementation": "implemented"
   },
   {
     "name": "getSuiteRevision",
@@ -329,7 +363,8 @@
     "response": "SuiteRevision",
     "successStatus": 200,
     "error": "ApiError",
-    "params": "SuiteRevisionParams"
+    "params": "SuiteRevisionParams",
+    "implementation": "implemented"
   },
   {
     "name": "createInput",
@@ -339,7 +374,8 @@
     "successStatus": 201,
     "error": "ApiError",
     "params": "WorkspaceParams",
-    "request": "CreateInputRequest"
+    "request": "CreateInputRequest",
+    "implementation": "implemented"
   },
   {
     "name": "listInputs",
@@ -349,7 +385,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "WorkspaceParams",
-    "query": "PageQuery"
+    "query": "PageQuery",
+    "implementation": "implemented"
   },
   {
     "name": "getInput",
@@ -358,7 +395,8 @@
     "response": "InputRecord",
     "successStatus": 200,
     "error": "ApiError",
-    "params": "InputParams"
+    "params": "InputParams",
+    "implementation": "implemented"
   },
   {
     "name": "sealInput",
@@ -368,7 +406,8 @@
     "successStatus": 202,
     "error": "ApiError",
     "params": "InputParams",
-    "request": "TransitionInputRequest"
+    "request": "TransitionInputRequest",
+    "implementation": "implemented"
   },
   {
     "name": "deleteInput",
@@ -378,7 +417,8 @@
     "successStatus": 202,
     "error": "ApiError",
     "params": "InputParams",
-    "request": "TransitionInputRequest"
+    "request": "TransitionInputRequest",
+    "implementation": "implemented"
   },
   {
     "name": "createRun",
@@ -388,7 +428,8 @@
     "successStatus": 202,
     "error": "ApiError",
     "params": "WorkspaceParams",
-    "request": "CreateRunRequest"
+    "request": "CreateRunRequest",
+    "implementation": "implemented"
   },
   {
     "name": "listRuns",
@@ -398,7 +439,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "WorkspaceParams",
-    "query": "PageQuery"
+    "query": "PageQuery",
+    "implementation": "implemented"
   },
   {
     "name": "getRun",
@@ -407,7 +449,8 @@
     "response": "Run",
     "successStatus": 200,
     "error": "ApiError",
-    "params": "RunParams"
+    "params": "RunParams",
+    "implementation": "implemented"
   },
   {
     "name": "getRunResult",
@@ -416,7 +459,8 @@
     "response": "RunResultSnapshot",
     "successStatus": 200,
     "error": "ApiError",
-    "params": "RunParams"
+    "params": "RunParams",
+    "implementation": "implemented"
   },
   {
     "name": "cancelRun",
@@ -426,7 +470,8 @@
     "successStatus": 202,
     "error": "ApiError",
     "params": "RunParams",
-    "request": "CancelRunRequest"
+    "request": "CancelRunRequest",
+    "implementation": "implemented"
   },
   {
     "name": "listRunEvents",
@@ -436,7 +481,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "RunParams",
-    "query": "PageQuery"
+    "query": "PageQuery",
+    "implementation": "implemented"
   },
   {
     "name": "listRunArtifacts",
@@ -446,7 +492,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "RunAttemptParams",
-    "query": "PageQuery"
+    "query": "PageQuery",
+    "implementation": "implemented"
   },
   {
     "name": "listRunMetricSeries",
@@ -456,7 +503,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "RunAttemptParams",
-    "query": "PageQuery"
+    "query": "PageQuery",
+    "implementation": "implemented"
   },
   {
     "name": "getRunMetricSamples",
@@ -466,7 +514,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "RunAttemptParams",
-    "query": "RunMetricSamplesQuery"
+    "query": "RunMetricSamplesQuery",
+    "implementation": "implemented"
   },
   {
     "name": "getRunLiveMetrics",
@@ -475,7 +524,8 @@
     "response": "LiveMetricSnapshot",
     "successStatus": 200,
     "error": "ApiError",
-    "params": "RunAttemptParams"
+    "params": "RunAttemptParams",
+    "implementation": "implemented"
   },
   {
     "name": "compareRuns",
@@ -485,7 +535,8 @@
     "response": "RunComparisonSnapshot",
     "successStatus": 200,
     "error": "ApiError",
-    "params": "WorkspaceParams"
+    "params": "WorkspaceParams",
+    "implementation": "implemented"
   },
   {
     "name": "createExport",
@@ -495,7 +546,8 @@
     "successStatus": 202,
     "error": "ApiError",
     "params": "SuiteRevisionParams",
-    "request": "CreateExportRequest"
+    "request": "CreateExportRequest",
+    "implementation": "implemented"
   },
   {
     "name": "listExports",
@@ -505,7 +557,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "WorkspaceParams",
-    "query": "PageQuery"
+    "query": "PageQuery",
+    "implementation": "implemented"
   },
   {
     "name": "getExport",
@@ -514,7 +567,8 @@
     "response": "ExportJob",
     "successStatus": 200,
     "error": "ApiError",
-    "params": "ExportParams"
+    "params": "ExportParams",
+    "implementation": "implemented"
   },
   {
     "name": "cancelExport",
@@ -524,7 +578,8 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "ExportParams",
-    "request": "CancelExportRequest"
+    "request": "CancelExportRequest",
+    "implementation": "implemented"
   },
   {
     "name": "getExportProfiles",
@@ -533,7 +588,8 @@
     "response": "ExportProfiles",
     "successStatus": 200,
     "error": "ApiError",
-    "params": "WorkspaceParams"
+    "params": "WorkspaceParams",
+    "implementation": "implemented"
   },
   {
     "name": "getWorkspaceOverview",
@@ -542,6 +598,7 @@
     "response": "WorkspaceOverview",
     "successStatus": 200,
     "error": "ApiError",
-    "params": "WorkspaceParams"
+    "params": "WorkspaceParams",
+    "implementation": "implemented"
   }
 ]

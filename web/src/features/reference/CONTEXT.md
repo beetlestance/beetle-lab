@@ -1,7 +1,8 @@
 # Embedded public reference
 
 Reference is a read-only route; catalogue.ts uses the generated public operation
-and schema registry. It resolves only included schema IDs/pointers, never fetches
+and schema registry. Implementation status is source-owned; planned rows have
+contracts but no shipped handler. Registration coverage is checked by the actual app. It resolves only included schema IDs/pointers, never fetches
 an arbitrary schema URL. Query128chars, displayed80routes, inline schema64KiB
 source/256KiB pretty; limit/error states remain explicit.
 

@@ -6,8 +6,14 @@ Owner: frontend reference feature and source-build public reference asset plugin
 ## Read-only product surface
 
 The existing application shell links to /reference. Generated apiOperations owns
-JSON route/method/status names; apiMessageSchemas and apiSchemas own exact message
-references/definitions. No second endpoint catalogue or live API probe is added.
+JSON route/method/status names and required implementation status; apiMessageSchemas and apiSchemas own exact message
+references/definitions. No second endpoint catalogue or live API probe is added. Every JSON descriptor
+is implemented or planned. Planned operations retain their schemas/clients but
+have no shipped route; route registration rejects them until the source status
+is updated. The reference shows/filter this status and agent instructions require
+implemented entries. Implemented means registered in the standard configuration,
+not runtime readiness or release qualification. A composed application fixture
+checks every descriptor against actual route registration, including input services.
 Filter input is capped at 128 characters; show at most 80 matching JSON operations and the
 actual match count. Selection exposes path/query/body/success schemas as text.
 
