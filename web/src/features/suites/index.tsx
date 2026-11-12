@@ -38,7 +38,7 @@ function SuiteIndex({ workspace }: { workspace: Workspace }) {
   const params = { organizationId: workspace.scope.organizationId, workspaceId: workspace.id };
   const key = queryKeys.suites(params.organizationId, params.workspaceId);
   const page = usePage(key); const [editing, edit] = useState(false);
-  const query = useQuery({ queryKey: [...key, page.cursor], queryFn: ({ signal }) => readResult(api.listSuites({ params, query: page.query, signal })) });
+  const query = useQuery({ queryKey: queryKeys.suitesPage(params.organizationId,params.workspaceId,page.cursor), queryFn: ({ signal }) => readResult(api.listSuites({ params, query: page.query, signal })) });
   const refresh = () => client.invalidateQueries({ queryKey: key });
   return <section className="content-section"><header className="section-header"><div><h1>Suites</h1><p>Author configurations and preserve immutable revision history.</p></div>
     <button className="primary" disabled={editing} onClick={() => edit(true)}>Create suite</button></header>

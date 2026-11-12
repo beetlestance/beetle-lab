@@ -15,7 +15,7 @@ export function WorkspaceList({ organizationId }: { organizationId: string }) {
   const editor = useEditor();
   const { pathname } = useLocation();
   const page = usePage(queryKeys.workspaces(organizationId));
-  const query = useQuery({ queryKey: [...queryKeys.workspaces(organizationId), page.cursor],
+  const query = useQuery({ queryKey: queryKeys.workspacesPage(organizationId,page.cursor),
     queryFn: ({ signal }) => readResult(api.listWorkspaces({ params: { organizationId }, query: page.query, signal })) });
   const refresh = () => client.invalidateQueries({ queryKey: queryKeys.workspaces(organizationId) });
   function edit(workspace?: Workspace) {

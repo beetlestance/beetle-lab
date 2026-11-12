@@ -18,7 +18,7 @@ export function RunHistory(scope: RunScope) {
   function toggle(id: string) {setSelected(previous => previous.includes(id) ? previous.filter(value => value !== id) : previous.length < 4 ? [...previous, id] : previous);}
   const key = queryKeys.runs(scope.organizationId, scope.workspaceId);
   const page = usePage(key);
-  const query = useQuery({ queryKey: [...key, 'page', page.cursor],
+  const query = useQuery({ queryKey: queryKeys.runsPage(scope.organizationId,scope.workspaceId,page.cursor),
     queryFn: ({ signal }) => readResult(api.listRuns({ params: scope, query: page.query, signal })) });
   return <><header className="section-header"><div><h1>Runs</h1>
     <p>Execution history for this workspace. Open a saved suite revision to submit a run.</p></div>

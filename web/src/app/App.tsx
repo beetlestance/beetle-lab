@@ -1,12 +1,13 @@
 import { lazy, Suspense, useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { Link, Route, Routes, useParams } from 'react-router-dom';
+import { Link, Route, Routes, useParams,useLocation } from 'react-router-dom';
 import type { ApiClient, InputTransferClient } from '@beetle/contracts/api';
 import { ApiContext, InputTransferContext } from './api.js';
 import { createQueryClient } from './queries.js';
 import { routes, validId } from './routes.js';
 import { EditorProvider } from '../components/Editor.js';
 import { ThemePicker } from '../components/ThemePicker.js';
+import {CommandPalette,useCommandNavigation} from '../features/command-search/index.js';
 
 const Organizations = lazy(() => import('../features/organizations/index.js').then(module => ({ default: module.Organizations })));
 const OrganizationScope = lazy(() => import('../features/workspaces/index.js').then(module => ({ default: module.OrganizationScope })));
@@ -20,14 +21,15 @@ const Reference = lazy(() => import('../features/reference/index.js').then(modul
 /** Router is supplied by the host: BrowserRouter in production, MemoryRouter in tests. */
 export function App({ apiClient, inputTransfers }: { apiClient: ApiClient; inputTransfers?: InputTransferClient }) {
   const [client] = useState(createQueryClient);
+  const commands=useCommandNavigation();const location=useLocation();
   return <ApiContext.Provider value={apiClient}><InputTransferContext.Provider value={inputTransfers ?? null}><QueryClientProvider client={client}>
-    <div className="app-shell"><a className="skip-link" href="#main">Skip to content</a>
+    <div inert={commands.visible} aria-hidden={commands.visible||undefined}><div className="app-shell"><a className="skip-link" href="#main">Skip to content</a>
       <aside className="sidebar"><Link className="wordmark" to={routes.organizations}><span className="brand-mark" aria-hidden="true">b.</span>beetle<span className="wordmark-detail">lab</span></Link>
         <p className="sidebar-caption">Local performance testing</p>
         <nav aria-label="Main navigation"><Link className="sidebar-link" to={routes.organizations}>Organizations <span aria-hidden="true">↗</span></Link><Link className="sidebar-link" to={routes.settings}>Installation settings</Link><Link className="sidebar-link" to={routes.reference}>API reference</Link></nav>
         <div className="sidebar-bottom"><span>Appearance</span><ThemePicker /></div>
       </aside>
-      <main id="main" tabIndex={-1}><div className="topbar"><span>Namespace browser</span><span>Beetle Lab</span></div>
+      <main id="main" tabIndex={-1}><div className="topbar"><span>Namespace browser</span><button aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" onClick={commands.show}>Search commands</button><span>Beetle Lab</span></div>
         <EditorProvider><div className="page-content"><Suspense fallback={<p role="status">Loading view…</p>}>
           <Routes>
             <Route path={routes.reference} element={<Reference />} />
@@ -47,7 +49,8 @@ export function App({ apiClient, inputTransfers }: { apiClient: ApiClient; input
           </Routes>
         </Suspense></div></EditorProvider>
       </main>
-    </div>
+    </div></div>
+    {commands.visible&&<CommandPalette pathname={location.pathname} close={commands.close} />}
   </QueryClientProvider></InputTransferContext.Provider></ApiContext.Provider>;
 }
 function ScopeRoute({ view }: { view?: 'inputs' }) {

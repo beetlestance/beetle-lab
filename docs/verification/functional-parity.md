@@ -9,7 +9,7 @@ This checklist records gaps that must not disappear behind broader feature label
 | --- | --- | --- |
 | F01 dashboard | [Organization index](../../web/src/features/organizations/index.tsx) lists namespaces; [application routes](../../web/src/app/App.tsx) provide workspace/run views | Scope and implement required aggregate/recent/live-run navigation, with bounded scoped queries and an acceptance fixture |
 | F10 warnings | Metric/history and comparison views exist; dedicated dropped-load/VU guidance was not found in run/result feature source | Prove dropped-load presentation and advisory guidance; label sizing as heuristic and retain unknown/missing distinctions |
-| F16 command search | Shell, breadcrumbs and theme picker exist in the application; no search route/control appears there | Implement keyboard-accessible bounded command navigation or record an explicit agreed scope change |
+| F16 command search | [Contextual command search](command-search.md) shares namespace list pages and supports keyboard/focus/scope retirement | Locally implemented; native browser qualification remains |
 | F17 embedded reference | [Reference/downloads](embedded-reference.md) use generated schemas, real binary route owners and a standalone agent skill; source-image HTTP verified | Locally implemented; broader browser/release qualification remains |
 
 These are partial, targeted observations. They do not prove all other inventory
