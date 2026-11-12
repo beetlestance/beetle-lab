@@ -1,5 +1,5 @@
 import {checkedOverviewQuery} from '../../../application/overview/index.js';
-import { validateApi } from '@beetle/contracts/api';
+import { runListPosition, validateApi } from '@beetle/contracts/api';
 import { prepareRunCommand, prepareCancelRunCommand } from '../../../application/runs/index.js';
 import { requireRule } from '../../../domain/namespaces/index.js';
 import type { Operation } from './protocol.js';
@@ -17,7 +17,8 @@ export function checkedRunOperation(operation: Operation): boolean {
       requireRule(validateApi('WorkspaceScope', operation.key.scope).ok && validateApi('Uuid', operation.key.id).ok); return true;
     case 'listRuns': {
       const { scope, ...page } = operation.query;
-      requireRule(validateApi('WorkspaceScope', scope).ok && validateApi('PageQuery', page).ok); return true;
+      requireRule(validateApi('WorkspaceScope', scope).ok && validateApi('RunListQuery', page).ok);
+      runListPosition(scope, page); return true;
     }
     default: return false;
   }

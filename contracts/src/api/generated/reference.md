@@ -46,7 +46,7 @@ Schema catalogue is complete, including runner common exactly once. Implementati
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs/{inputId}/seal | implemented | InputParams | none | TransitionInputRequest | 202 | InputReceipt |
 | DELETE | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs/{inputId} | implemented | InputParams | none | TransitionInputRequest | 202 | InputReceipt |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs | implemented | WorkspaceParams | none | CreateRunRequest | 202 | Run |
-| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs | implemented | WorkspaceParams | PageQuery | none | 200 | RunPage |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs | implemented | WorkspaceParams | RunListQuery | none | 200 | RunPage |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId} | implemented | RunParams | none | none | 200 | Run |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/result | implemented | RunParams | none | none | 200 | RunResultSnapshot |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/cancel | implemented | RunParams | none | CancelRunRequest | 202 | Run |

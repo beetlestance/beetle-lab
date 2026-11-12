@@ -128,6 +128,7 @@ export const apiMessageSchemas = freezeSchema({
   RunMetricSamplesPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricSamplesPage' },
   CreateRunRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/CreateRunRequest' },
   CancelRunRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/CancelRunRequest' },
+  RunListQuery: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/RunListQuery' },
   RunResultSnapshot: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-result#/$defs/RunResultSnapshot' },
   RunExecutionPolicy: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunExecutionPolicy' },
   RunEngine: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunEngine' },

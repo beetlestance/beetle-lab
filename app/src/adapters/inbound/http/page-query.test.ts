@@ -63,3 +63,16 @@ it('does not mutate raw query values and bounds/rejects unsafe decoder input', (
     expect(decodePageQuery(input)).toEqual({ ok: false });
   }
 });
+
+it('keeps history enums exact and rejects duplicate or unknown HTTP fields without mutating input', async () => {
+  const { decodeRunListQuery } = await import('./page-query.js');
+  const raw = { limit: '2', state: 'finished', outcome: 'passed', order: 'oldest' };
+  expect(decodeRunListQuery(raw)).toEqual({ ok: true, value: { ...raw, limit: 2 } });
+  expect(raw.limit).toBe('2');
+  expect(decodeRunListQuery({ limit: '2' })).toEqual({ ok: true, value: { limit: 2 } });
+  for (const input of [{ ...raw, state: ['active', 'finished'] }, { ...raw, outcome: ['passed', 'failed'] },
+    { ...raw, order: ['newest', 'oldest'] }, { ...raw, order: 'NEWEST' }, { ...raw, state: 'bogus' },
+    { ...raw, extra: true }, { ...raw, limit: '01' }, { ...raw, limit: 2 }, { ...raw, cursor: 'a'.repeat(513) }]) {
+    expect(decodeRunListQuery(input)).toEqual({ ok: false });
+  }
+});

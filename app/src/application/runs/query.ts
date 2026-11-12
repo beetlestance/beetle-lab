@@ -1,4 +1,4 @@
-import { validateApi } from '@beetle/contracts/api';
+import { normalizeRunListQuery, runListPosition, runListPageMatches, validateApi } from '@beetle/contracts/api';
 import type { Run, RunPage } from '@beetle/contracts/api';
 import { requireRule, sameScope, sameUuid } from '../../domain/namespaces/index.js';
 import type { RunKey, RunList, RunReader } from '../../ports/runs.js';
@@ -14,8 +14,10 @@ function expectedKey(key: RunKey): RunKey {
 function expectedQuery(query: RunList): RunList {
   const copy = runSnapshot(query, 2048);
   const { scope, ...page } = copy;
-  requireRule(validateApi('WorkspaceScope', scope).ok && validateApi('PageQuery', page).ok);
-  return copy;
+  requireRule(validateApi('WorkspaceScope', scope).ok && validateApi('RunListQuery', page).ok);
+  const normalized = normalizeRunListQuery(page);
+  try { runListPosition(scope, normalized); } catch { requireRule(false); }
+  return { scope, ...normalized };
 }
 
 export async function getRun<Reader extends Pick<RunReader, 'getRun'>>(key: RunKey, reader: Reader): Promise<Run> {
@@ -29,13 +31,7 @@ export async function listRuns(query: RunList, reader: RunReader): Promise<RunPa
   const expected = expectedQuery(query);
   const value = checkedRunPage(await reader.listRuns(runSnapshot(expected, 2048)));
   requireRule(sameScope(value.scope, expected.scope), 'not_found');
-  if (value.items.length > expected.limit) throw new Error('Invalid run repository page');
-  const ids = new Set<string>();
-  for (const item of value.items) {
-    requireRule(sameScope(item.scope, expected.scope), 'not_found');
-    const id = item.id.toLowerCase();
-    if (ids.has(id)) throw new Error('Invalid run repository page');
-    ids.add(id);
-  }
+  const { scope, ...page } = expected;
+  if (!runListPageMatches(value, scope, page)) throw new Error('Invalid run repository page');
   return value;
 }

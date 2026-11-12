@@ -14,6 +14,7 @@ released application until the rewrite is qualified.
 | Inspect implemented versus planned API routes | [Reference availability](verification/reference-availability.md) | Actual application registration checked against every JSON descriptor |
 | Plan producer retirement and cleanup | [Contract](design/lld/output-retirement.md), [packets](execution/output-retirement.md) | Proposed physical ACK, durable namespace, replay-safe settlement and dependency order |
 | Inspect native output cleanup custody | [Close-failure custody](verification/output-close-custody.md) | Sticky rejected closes retain bounded native owners and slots |
+| Inspect history filters/pagination | [History query evidence](verification/run-history-query.md) | Scoped state/outcome filters, keyset order, cursor binding and remaining summary/search work |
 | Inspect workspace dashboard | [Workspace overview](verification/workspace-overview.md) | Scoped snapshot counts, activity, recent/active navigation and schema preservation |
 | Inspect observed k6 load guidance | [Load guidance](verification/load-advice.md) | Current-source drops, explicit iteration-based planning and missing-data limits |
 | Inspect keyboard/context navigation | [Command search](verification/command-search.md) | Shared scoped page queries, modal lifetime/keyboard checks and honest search bounds |

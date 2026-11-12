@@ -3,7 +3,9 @@
 Public entries: `Runs({organizationId, workspaceId, runId?})` and
 `RunSavedRevision({revision})`. Only immutable saved revisions can launch runs.
 Generated ApiClient owns request/response validation and scope bindings.
-History retains bounded opaque pages through the shared Pagination owner.
+History retains bounded query-bound keyset pages through the shared Pagination owner.
+HistoryFilters applies exact state/outcome/order explicitly; context changes reset
+pagination and selection. Refresh starts page one; comparison persists across pages.
 Details poll every two seconds while nonterminal, stop on errors/terminal states,
 and suspend interval work when hidden. Unmount cancels/removes scoped run queries.
 Submission fetches effective settings only after explicit opening; form state
@@ -32,7 +34,6 @@ and browser-owned UUID-only downloads. See artifacts/CONTEXT.md for read lifetim
 paging and transfer ownership; result declarations alone still grant no links.
 RunMetrics composes sealed history through metrics/index; one catalogue page and
 bounded replacement chart views. See metrics/CONTEXT.md for paging and ownership.
-
 RunReads admits one original detail read plus at most four waiting intents. Waiting
 expires after five seconds or caller abort; retirement rejects queued intents.
 Original completion releases admission. Storage bounds and explicit HTTP errors

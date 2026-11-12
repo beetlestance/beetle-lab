@@ -1,3 +1,5 @@
+import {runListPageMatches} from '../run-list-page.js';
+import type {RunListQuery} from '../generated/types.js';
 import type { ApiOperation } from '../generated/operations.js';
 import type { CreateRunRequest, Run, RunPage, RunResultSnapshot } from '../generated/types.js';
 import type { PreparedInput } from './input.js';
@@ -24,7 +26,8 @@ function creationMatches(input: PreparedInput, run: Run): boolean {
 /** Common route/scope and schema checks run before these execution-intent bindings. */
 export function runOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
   if (operation.response === 'RunResultSnapshot') return resultMatches(value as RunResultSnapshot);
-  if (operation.response === 'RunPage') return (value as RunPage).items.every(validRun);
+  if (operation.response === 'RunPage') return (value as RunPage).items.every(validRun)
+    &&runListPageMatches(value as RunPage,{kind:'workspace',organizationId:input.params.organizationId!,workspaceId:input.params.workspaceId!},input.query as RunListQuery);
   if (operation.response !== 'Run') return true;
   const run = value as Run;
   const cancellationMatches = operation.name !== 'cancelRun' || run.cancellationRequested

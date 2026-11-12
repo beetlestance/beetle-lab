@@ -33,6 +33,7 @@ async function operationReply(operation: ApiOperation): Promise<Record<string, u
   return await fixture(`valid/${file}.json`) as Record<string, unknown>;
 }
 async function queryFixture(operation: ApiOperation) {
+  if (operation.name === 'listRuns') return { limit: 100 };
   if (operation.name === 'getRunMetricSamples') return {limit: 100, seriesOrdinal: 0};
   return ['listRunEvents', 'listRunArtifacts', 'listRunMetricSeries'].includes(operation.name)
     ? { limit: 100 } : await load('page-query', 'PageQuery');

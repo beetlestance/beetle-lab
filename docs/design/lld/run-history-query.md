@@ -1,14 +1,15 @@
 # Scoped run history parity
 
-Status: proposed read-model contract, not implemented history controls.
+Status: H1 locally verified; [evidence](../../verification/run-history-query.md).
+H2/H3 remain proposals.
 Owner: Run query/SQLite reader and existing scoped history UI.
 Inventory: F06; [remaining parity](../../verification/functional-parity.md).
 
 ## Current gap
 
 The legacy history offered workspace/status/text filters and displayed duration,
-requests, RPS, p95, errors and size. The new history provides bounded UUID-ordered
-pages, state/outcome/validation and comparison selection. Metrics in Run detail
+requests, RPS, p95, errors and size. H1 adds scoped state/outcome filtering and
+requested-time keyset ordering while retaining validation and comparison selection. Metrics in Run detail
 do not close the missing history presentation. Preserve the four-run comparison
 cap and scope fences while completing this behavior.
 
@@ -48,6 +49,30 @@ bound cursor rejection, lifecycle changes between pages and unchanged target cou
 DOM fixtures cover apply/reset/refresh, late scope/filter replies, empty versus error,
 comparison limit and request count. H1 alone does not close F06 summary/search.
 
+### H1 exact query/cursor amendment
+
+RunListQuery has required integer limit1..100; optional state and outcome use the
+existing Run enums; optional order is newest|oldest with application default newest.
+No defaults/coercion are inserted by schema validation. HTTP decodes only canonical
+decimal limit. Unknown, duplicate, array or malformed fields reject. Cursor retains
+the existing <=512-character canonical base64url OpaqueCursor bound (within the
+4096-byte outer query budget). No new public endpoint is introduced.
+
+One shared browser-safe codec owns query normalisation, cursor identity and page
+matching. The fixed ASCII tuple is [run-page-v1,lowercaseOrg,lowercaseWorkspace,
+limit,stateOrNull,outcomeOrNull,order,lastRequestedAt,lastLowercaseUUID]. Timestamp
+must be the trusted writer's canonical UTC millisecond ISO spelling. Re-encoding
+must equal the original cursor. Scope/filter/order/limit mismatch rejects before
+repository/native reads; the old UUID-only cursor is invalid.
+
+Pages retain RunPage shape. Client/application enforce scope, filters, unique IDs,
+strict requestedAt/UUID order after the requested cursor, at most limit rows and
+an exact next cursor for the last row when continuation exists. A short page has
+no next cursor; a final full page may also have none. SQL scalar selection plus Run projection occurs in one read transaction.
+Missing workspace is not an empty result. SQL selects a fixed covering index for
+each filter combination; migration017 adds outcome and state+outcome access paths. Current producer timestamps are canonical;
+malformed returned row times fail instead of being silently normalised.
+
 ## H2: verified summary projection
 
 Before adding summary columns, define one lean source-bound history projection.
@@ -81,5 +106,6 @@ No unbounded LIKE scan, cross-workspace corpus load or silent result truncation.
 
 H1 can proceed independently of cleanup after exact query/client/transport/schema
 amendments are reviewed. H2 and H3 remain separate readiness gates; freeze their
-interfaces before code. No new endpoint or migration ID is reserved by this draft.
+interfaces before code. H1 reserves metadata migration017 for two scoped outcome/order indexes.
+No new endpoint is reserved.
 Native browser and release qualification remain outside local component proof.

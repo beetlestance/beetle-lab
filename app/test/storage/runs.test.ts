@@ -45,9 +45,9 @@ it('enforces a global pending queue atomically while preserving scoped pages and
   expect(outcomes.map(value => value.status)).toEqual(['fulfilled', 'fulfilled', 'rejected']);
   expect(outcomes[2]).toMatchObject({ reason: { code: 'queue_full' } });
   const page = await metadata.runs.listRuns({ scope, limit: 1 });
-  expect(page.items.map(run => run.id)).toEqual([uuid(70)]); expect(page.nextCursor).not.toBeNull();
+  expect(page.items.map(run => run.id)).toEqual([uuid(71)]); expect(page.nextCursor).not.toBeNull();
   const next = await metadata.runs.listRuns({ scope, limit: 1, cursor: page.nextCursor! });
-  expect(next.items.map(run => run.id)).toEqual([uuid(71)]); expect(next.nextCursor).toBeNull();
+  expect(next.items.map(run => run.id)).toEqual([uuid(70)]); expect(next.nextCursor).toBeNull();
   await expect(metadata.runs.listRuns({ scope, limit: 2, cursor: page.nextCursor! })).rejects.toMatchObject({ code: 'invalid_input' });
   const foreign = { ...scope, organizationId: uuid(11), workspaceId: uuid(12) };
   await expect(metadata.runs.getRun({ scope: foreign, id: uuid(70) })).rejects.toMatchObject({ code: 'not_found' });

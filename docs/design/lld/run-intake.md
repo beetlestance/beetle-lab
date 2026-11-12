@@ -156,7 +156,7 @@ Capture bounded immutable expected input before awaiting a foreign repository.
 Validate bounded replies and bind scope/identity. Enqueue binds the historical
 queued/version1 response to request revision/profile/budget/policy, not newly
 allocated IDs/time. A detail reply binds its requested ID. A page binds every item,
-contains no duplicate UUIDs and never exceeds the requested limit. Invalid replies
+contains no duplicate UUIDs and never exceeds the requested limit. History uses\nRunListQuery and the query-bound time/UUID cursor in [history](run-history-query.md). Invalid replies
 fail; do not normalize them into successful snapshots or retry a mutation.
 
 HTTP public registration is `registerRunRoutes(server, options)`, with options

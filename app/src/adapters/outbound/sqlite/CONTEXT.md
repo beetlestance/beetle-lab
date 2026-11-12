@@ -27,7 +27,7 @@ revision2MiB/config1MiB, Offer reply2MiB+64KiB with fixed carrier; worker heap<=
 SQLite cache2MiB/busy100ms; startup/command availability deadline5s.
 Close drains admitted FIFO work; close/abort await worker termination, including
 failure paths. Unknown outcomes never trigger automatic mutation retries.
-Migrations001..005 are transactional; legacy rows stay unadopted and indexed.
+Migrations are transactional; legacy rows stay unadopted and indexed.\nRun history uses one scoped read snapshot, fixed covering indexes (migration017),\nlimit+1 time/UUID keys and a strict query-bound cursor; no native/metric reads.
 Immutable indexed revision pins serialize with deletion; tombstone metadata stays charged.
 execution_intents: order/identity/profile digest/budget/mode/policy1 staging scalars.
 execution_records: immutable intent/order, charge, bounded snapshot/gen1/outbox custody.

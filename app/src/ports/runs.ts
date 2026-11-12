@@ -1,4 +1,4 @@
-import type { CancelRunRequest, CreateRunRequest, Run, RunPage, RunEngine, WorkspaceScope } from '@beetle/contracts/api';
+import type { CancelRunRequest, CreateRunRequest, Run, RunPage, RunListQuery, RunEngine, WorkspaceScope } from '@beetle/contracts/api';
 import type { InstalledIdentity } from '@beetle/contracts';
 
 export interface CreateRunOperation {
@@ -18,7 +18,7 @@ export interface CancelRunOperation {
 export type CancelRunCommand = CancelRunOperation & { intentDigest: string };
 export interface RunCancellationStore { cancel(command: CancelRunCommand): Promise<Run> }
 export interface RunKey { scope: WorkspaceScope; id: string }
-export interface RunList { scope: WorkspaceScope; limit: number; cursor?: string }
+export type RunList = RunListQuery & { scope: WorkspaceScope };
 
 /** One receipt-first worker transaction owns scoped revision/settings/profile pins,
  * run + attempt + immutable Offer/outbox inserts, queue bound and original response.

@@ -658,5 +658,15 @@
     "path": "invalid/create-export-zero-build.json",
     "schema": "CreateExportRequest",
     "valid": false
+  },
+  {
+    "path": "valid/run-list-query.json",
+    "schema": "RunListQuery",
+    "valid": true
+  },
+  {
+    "path": "invalid/run-list-query-order.json",
+    "schema": "RunListQuery",
+    "valid": false
   }
 ]

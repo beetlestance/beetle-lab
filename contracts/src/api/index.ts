@@ -27,3 +27,7 @@ export { runComparisonRequestMatches, runComparisonSnapshotMatches, comparisonFi
 export {EXPORT_CONTENT_ROUTE,exportContentPath} from './export-content.js';
 
 export {workspaceOverviewMatches} from './overview.js';
+
+export {normalizeRunListQuery,runListPosition,captureRunListCursor,encodeRunListCursor,compareRunListPosition,runListTimestamp} from './run-list.js';
+export type {NormalizedRunListQuery,RunListPosition} from './run-list.js';
+export {runListPageMatches} from './run-list-page.js';

@@ -1,23 +1,16 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { validateApi } from '@beetle/contracts/api';
+import { encodeRunListCursor, normalizeRunListQuery, runListPageMatches, validateApi } from '@beetle/contracts/api';
 import type { Run, RunPage } from '@beetle/contracts/api';
 import type { RunKey, RunList } from '../../../ports/runs.js';
 import { requireRule } from '../../../domain/namespaces/index.js';
-import { boundedCopy, lower, scopeKey, sha256, uuid } from './input-values.js';
+import { lower } from './input-values.js';
 import { normalizedScope } from './suites.js';
 import type { Suites } from './suites.js';
-import { StorageError } from './protocol.js';
+import { runListStatement } from './run-list-query.js';
+import { transaction } from './schema.js';
 
 interface Row { snapshot_json: string; version: number; state: Run['state']; outcome: Run['outcome'];
   validation_status: Run['validationStatus']; active_attempt_id: string; cancellation_requested: number; reason: Run['reason'] }
-function queryIdentity(query: RunList): string { return sha256(JSON.stringify(['runs', scopeKey(query.scope), query.limit])); }
-function after(query: RunList): string {
-  if (query.cursor === undefined) return '';
-  try {
-    const cursor = boundedCopy(JSON.parse(Buffer.from(query.cursor, 'base64url').toString('utf8')) as { identity: string; after: string }, 1024);
-    requireRule(cursor.identity === queryIdentity(query)); uuid(cursor.after); return lower(cursor.after);
-  } catch { throw new StorageError('invalid_input'); }
-}
 export class RunReads {
   constructor(private readonly db: DatabaseSync, private readonly suites: Suites) {}
   get(key: RunKey): Run {
@@ -33,13 +26,20 @@ export class RunReads {
       && run.scope.workspaceId === scope.workspaceId, 'not_found');
     return run;
   }
-  list(query: RunList): RunPage {
-    this.suites.workspace(query.scope);
-    const scope = normalizedScope(query.scope);
-    const rows = this.db.prepare(`SELECT id FROM runs WHERE organization_id=? AND workspace_id=? AND id>? ORDER BY id LIMIT ?`)
-      .all(scope.organizationId, scope.workspaceId, after(query), query.limit + 1) as unknown as { id: string }[];
-    const selected = rows.slice(0, query.limit); const last = selected.at(-1);
-    const nextCursor = rows.length > query.limit && last ? Buffer.from(JSON.stringify({ identity: queryIdentity(query), after: last.id })).toString('base64url') : null;
-    return { scope, items: selected.map(row => this.get({ scope, id: row.id })), nextCursor };
+  list(input: RunList): RunPage {
+    const { scope: owner, ...page } = input;
+    const query = normalizeRunListQuery(page);
+    const scope = normalizedScope(owner);
+    const statement = runListStatement(input);
+    return transaction(this.db, () => {
+      this.suites.workspace(scope);
+      const rows = this.db.prepare(statement.sql).all(...statement.values) as unknown as { id: string; requested_at: string }[];
+      const selected = rows.slice(0, query.limit); const last = selected.at(-1);
+      const nextCursor = rows.length > query.limit && last
+        ? encodeRunListCursor({ scope, query, requestedAt: last.requested_at, id: last.id }) : null;
+      const result = { scope, items: selected.map(row => this.get({ scope, id: row.id })), nextCursor };
+      if (!runListPageMatches(result, scope, query)) throw new Error('Invalid persisted run page');
+      return result;
+    });
   }
 }

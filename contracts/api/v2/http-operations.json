@@ -439,7 +439,7 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "WorkspaceParams",
-    "query": "PageQuery",
+    "query": "RunListQuery",
     "implementation": "implemented"
   },
   {

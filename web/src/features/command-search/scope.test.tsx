@@ -35,3 +35,12 @@ it('shows more-page and unavailable groups without turning failed reads into emp
  expect(await within(dialog).findByText('More suites are available in the list view.')).toBeVisible();expect(await within(dialog).findByText('Recent runs could not be loaded.')).toBeVisible();
  const reads=f.records.length;fireEvent.change(within(dialog).getByRole('searchbox'),{target:{value:'Shared'}});await waitFor(()=>expect(within(dialog).getAllByRole('link')).toHaveLength(1));expect(f.records).toHaveLength(reads);
 });
+it('shares only the identical unfiltered history first page with command search', async () => {
+ const held=deferred<Response>();const f=testClient(request=>request.path.includes('/runs?')?held.promise:read(request));
+ mount(f.client,routes.runs(ids.a,ids.workspace));await screen.findByRole('heading',{name:'Runs'});const dialog=await open();
+ expect(f.records.filter(row=>row.path.includes('/runs?'))).toHaveLength(1);
+ const original=f.records.find(row=>row.path.includes('/runs?'))!;expect(original.path).toContain('limit=100&order=newest');
+ fireEvent.keyDown(within(dialog).getByRole('searchbox'),{key:'Escape'});expect(original.signal?.aborted).toBe(false);
+ await act(async()=>held.resolve(json({scope:{kind:'workspace',organizationId:ids.a,workspaceId:ids.workspace},items:[],nextCursor:null})));
+ await screen.findByText('No runs match this history query.');
+});

@@ -50,6 +50,33 @@
         "requestId"
       ],
       "additionalProperties": false
+    },
+    "RunListQuery": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/PageQuery/properties/limit"
+        },
+        "cursor": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/OpaqueCursor"
+        },
+        "state": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/Run/properties/state"
+        },
+        "outcome": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/Run/properties/outcome"
+        },
+        "order": {
+          "enum": [
+            "newest",
+            "oldest"
+          ]
+        }
+      },
+      "required": [
+        "limit"
+      ],
+      "additionalProperties": false
     }
   }
 }

@@ -116,6 +116,7 @@ export type RunMetricSamplesQuery = FromSchema<typeof S13.RunMetricSamplesQuery>
 export type RunMetricSamplesPage = FromSchema<typeof S13.RunMetricSamplesPage>;
 export type CreateRunRequest = FromSchema<typeof S14.CreateRunRequest>;
 export type CancelRunRequest = FromSchema<typeof S14.CancelRunRequest>;
+export type RunListQuery = FromSchema<typeof S14.RunListQuery>;
 export type RunResultSnapshot = FromSchema<typeof S15.RunResultSnapshot>;
 export type RunExecutionPolicy = FromSchema<typeof S16.RunExecutionPolicy>;
 export type RunEngine = FromSchema<typeof S16.RunEngine>;
@@ -251,6 +252,7 @@ export interface ApiTypes {
   RunMetricSamplesPage: RunMetricSamplesPage;
   CreateRunRequest: CreateRunRequest;
   CancelRunRequest: CancelRunRequest;
+  RunListQuery: RunListQuery;
   RunResultSnapshot: RunResultSnapshot;
   RunExecutionPolicy: RunExecutionPolicy;
   RunEngine: RunEngine;

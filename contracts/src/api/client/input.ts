@@ -1,3 +1,4 @@
+import {normalizeRunListQuery,runListPosition} from '../run-list.js';
 import { encodeJson } from '../../json.js';
 import type { ApiOperation } from '../generated/operations.js';
 import type { ApiTypes } from '../generated/types.js';
@@ -5,7 +6,7 @@ import { validateApi } from '../validate.js';
 
 export interface PreparedInput {
   params: Record<string, string>;
-  query?: ApiTypes['PageQuery'] | ApiTypes['RunMetricSamplesQuery'];
+  query?: ApiTypes['PageQuery'] | ApiTypes['RunMetricSamplesQuery'] | ApiTypes['RunListQuery'];
   body?: Record<string, unknown>;
   signal?: AbortSignal;
 }
@@ -51,6 +52,10 @@ export function prepareInput(operation: ApiOperation, input: unknown, maximum: n
     if (!validateFields(operation, snapshot)) return undefined;
     const prepared: PreparedInput = { params: (snapshot.params ?? {}) as Record<string, string> };
     if ('query' in operation) prepared.query = snapshot.query as NonNullable<PreparedInput['query']>;
+    if(operation.name==='listRuns'){
+      prepared.query=normalizeRunListQuery(snapshot.query as ApiTypes['RunListQuery']);
+      runListPosition({kind:'workspace',organizationId:prepared.params.organizationId!,workspaceId:prepared.params.workspaceId!},prepared.query);
+    }
     if ('request' in operation) prepared.body = snapshot.body as Record<string, unknown>;
     if (signal !== undefined) prepared.signal = signal;
     return prepared;
@@ -62,10 +67,17 @@ export function operationPath(operation: ApiOperation, input: PreparedInput): st
   if (!input.query) return path;
   const query = new URLSearchParams({ limit: String(input.query.limit) });
   if (input.query.cursor !== undefined) query.set('cursor', input.query.cursor);
+  appendRunQuery(query, input.query);
   if ('seriesOrdinal' in input.query) {
     query.set('seriesOrdinal', String(input.query.seriesOrdinal));
     if (input.query.fromTimeMs !== undefined) query.set('fromTimeMs', String(input.query.fromTimeMs));
     if (input.query.toTimeMs !== undefined) query.set('toTimeMs', String(input.query.toTimeMs));
   }
   return `${path}?${query.toString()}`;
+}
+
+function appendRunQuery(query: URLSearchParams, input: NonNullable<PreparedInput['query']>): void {
+  if ('state' in input && input.state !== undefined) query.set('state', input.state);
+  if ('outcome' in input && input.outcome !== undefined) query.set('outcome', input.outcome);
+  if ('order' in input && input.order !== undefined) query.set('order', input.order);
 }
