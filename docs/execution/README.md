@@ -8,6 +8,7 @@ Scope: R0-R4 in [PLAN](../../PLAN.md); other engines and hosted mode remain late
 
 | Need | Owner document |
 | --- | --- |
+| Next producer-cleanup sequence | [Cleanup packets](output-retirement.md) |
 | Dependency order and effort | [Work packages](work-packages.md) |
 | Concurrent versus exclusive work | [Schedule and locks](schedule.md) |
 | Model assignment and unchanged quality bar | [Model/quality policy](model-quality.md) |
