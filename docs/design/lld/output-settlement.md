@@ -1,6 +1,6 @@
 # Output settlement
 
-Status: private admitted-agent settlement implemented; runner transport, backend settlement and public retention remain gated.
+Status: admitted-agent settlement and authenticated runner transport implemented; backend settlement and public retention remain gated.
 Owning predecessors: [retirement](output-retirement.md),
 [backend control](backend-cleanup-control.md). Root owns migrations agent022/backend024.
 
@@ -27,6 +27,13 @@ process methods and inventory persistence. Native operations retain their lease 
 actual close; failed metadata joins actual worker termination. Opaque drain observations
 bind owner and exact retirement request and remain valid only while the fence is held.
 HTTP control originals retain request/response/socket closure ownership before release.
+A two-entry coordinator reserves capacity and captures the deadline before read-only
+worker preflight. Positive eligibility precedes the local fence; the commit revalidates
+it in its own transaction. Cancellation withdraws only unissued waiters and invalidates
+minted observations synchronously, retaining actual native leases. It refuses withdrawal
+while a mutating carrier exists. Root stops unissued waits before joining shutdown.
+Every failed metadata carrier joins actual worker termination; rejected termination
+retains the entry/fence. Endpoint details: [evidence](../../verification/agent-settlement-http.md).
 These implemented local rules grant no database eligibility or physical cleanup proof.
 
 Agent settlement atomically stores a permanent immutable replay tombstone, purges the

@@ -10,10 +10,10 @@ export class CleanupAccessError extends Error {
 export interface CleanupLease {release():void}
 declare const drained:unique symbol;
 export interface SettlementObservation {readonly [drained]:true}
-export interface SettlementFence {drain():Promise<SettlementObservation>;release():void}
-interface Lease {readonly done:Promise<void>;complete():void}
+export interface SettlementFence {drain():Promise<SettlementObservation>;release():void;cancel():void}
+interface Lease {readonly identity:object}
 interface Entry {readonly key:Scope;readonly leases:Set<Lease>;fence?:Fence}
-interface Fence {carrier?:boolean;readonly digest:string;readonly request:RetirementRequest;drain?:Promise<SettlementObservation>;observation?:SettlementObservation}
+interface Fence {carrier?:boolean;resolve?:(value:SettlementObservation)=>void;reject?:(error:unknown)=>void;readonly digest:string;readonly request:RetirementRequest;drain?:Promise<SettlementObservation>;observation?:SettlementObservation}
 interface Observation {readonly gate:CleanupAccess;readonly entry:Entry;readonly fence:Fence}
 const observations=new WeakMap<SettlementObservation,Observation>();
 const gates=new WeakMap<object,CleanupAccess>();
@@ -50,10 +50,9 @@ export class CleanupAccess {
  acquire(input:Scope):CleanupLease{
   if(this.leases>=256)throw new CleanupAccessError('capacity');const entry=this.entry(input);
   if(entry.fence)throw new CleanupAccessError('fenced');
-  let complete!:()=>void;const done=new Promise<void>(resolve=>{complete=resolve;});
-  const lease:Lease={done,complete};entry.leases.add(lease);this.leases++;
+  const lease:Lease={identity:{}};entry.leases.add(lease);this.leases++;
   let released=false;return Object.freeze({release:()=>{
-   if(released)return;released=true;entry.leases.delete(lease);this.leases--;lease.complete();this.evict(entry);
+   if(released)return;released=true;entry.leases.delete(lease);this.leases--;if(entry.fence)this.completeDrain(entry,entry.fence);this.evict(entry);
   }});
  }
  reserve(input:unknown):SettlementFence{
@@ -66,18 +65,27 @@ export class CleanupAccess {
   return Object.freeze({
    drain:()=>{
     current();if(fence.drain)return fence.drain;
-    fence.drain=Promise.resolve().then(async()=>{
-     await Promise.all([...entry.leases].map(lease=>lease.done));current();
-     if(entry.leases.size)throw new CleanupAccessError('custody');
-     const observation=Object.freeze({}) as SettlementObservation;fence.observation=observation;
-     observations.set(observation,{gate:this,entry,fence});return observation;
-    });return fence.drain;
+    fence.drain=new Promise<SettlementObservation>((resolve,reject)=>{fence.resolve=resolve;fence.reject=reject;});
+    void fence.drain.catch(()=>{});this.completeDrain(entry,fence);
+    return fence.drain;
    },
    release:()=>{
     current();if(entry.leases.size||fence.carrier)throw new CleanupAccessError('custody');
-    released=true;if(fence.observation)observations.delete(fence.observation);delete entry.fence;this.evict(entry);
+    released=true;this.withdraw(entry,fence);
    },
+   cancel:()=>{current();if(fence.carrier)throw new CleanupAccessError('custody');released=true;this.withdraw(entry,fence);},
   });
+ }
+ private completeDrain(entry:Entry,fence:Fence):void{
+  if(entry.fence!==fence||entry.leases.size||!fence.resolve)return;
+  const observation=Object.freeze({}) as SettlementObservation;fence.observation=observation;
+  observations.set(observation,{gate:this,entry,fence});const resolve=fence.resolve;
+  delete fence.resolve;delete fence.reject;resolve(observation);
+ }
+ private withdraw(entry:Entry,fence:Fence):void{
+  if(fence.observation)observations.delete(fence.observation);
+  const reject=fence.reject;delete fence.resolve;delete fence.reject;
+  delete entry.fence;this.evict(entry);reject?.(new CleanupAccessError('custody'));
  }
  status(){return Object.freeze({originals:this.entries.size,leases:this.leases,fences:[...this.entries.values()].filter(entry=>entry.fence).length});}
  ownCarrier(input:SettlementObservation,owner:object,expected:unknown):CleanupLease{

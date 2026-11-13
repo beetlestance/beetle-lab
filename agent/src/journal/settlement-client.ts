@@ -1,13 +1,14 @@
 import { encodeJson } from '@beetle/contracts';
 import { captureOutputRetirementRequest,captureOutputRetirementReply } from '@beetle/contracts/output-retirement';
 import type { RetirementReply } from '@beetle/contracts/output-retirement';
-import { captureSettlementRequest,captureSettlementReply } from '@beetle/contracts/output-settlement';
+import { captureSettlementRequest,captureSettlementReply,settlementRequestDigest } from '@beetle/contracts/output-settlement';
 import type { SettlementReply } from '@beetle/contracts/output-settlement';
 import { ownSettlementCarrier } from '../cleanup-access/index.js';
 import type { SettlementObservation } from '../cleanup-access/index.js';
 import { retirementDigest } from '../retirement-values/index.js';
 import type { SettlementOperation } from './settlement-protocol.js';
 export interface JournalSettlements{
+ preflight(request:unknown):Promise<void>;
  settle(observation:SettlementObservation,request:unknown):Promise<SettlementReply>;
  retiredReply(request:unknown):Promise<RetirementReply|null>;
  settleCarrier():Promise<void>;
@@ -20,6 +21,15 @@ interface Options{
 }
 export function createSettlementClient(options:Options):JournalSettlements{
  return Object.freeze({
+  async preflight(input:unknown){
+   const request=captureSettlementRequest(input);
+   const value=await options.send(()=>({kind:'preflightAgentStorage',json:encodeJson(request,3584)}));
+   try{
+    const row=JSON.parse(encodeJson(value,512)) as {version:unknown;state:unknown;requestDigest:unknown};
+    if(!row||Object.keys(row).sort().join(',')!=='requestDigest,state,version'||row.version!==1||row.state!=='eligible'
+     ||row.requestDigest!==settlementRequestDigest(request,retirementDigest))throw Error();
+   }catch{return options.invalidReply();}
+  },
   async settle(observation:SettlementObservation,input:unknown){
    const request=captureSettlementRequest(input);const carrier=ownSettlementCarrier(observation,options.owner(),request.retirement);
    let known=false;

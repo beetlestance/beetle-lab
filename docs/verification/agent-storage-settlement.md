@@ -1,7 +1,7 @@
 # Admitted agent settlement evidence
 
 [Contract](../design/lld/output-settlement.md). Private Journal022 operations implement
-admitted performance source/absence settlement. Runner settlement HTTP, backend
+admitted performance source/absence settlement. Runner settlement HTTP is covered by the [later transport evidence](agent-settlement-http.md). Backend
 credit/purge and whole-chain settlement qualification remain separate. Never-admitted
 and export originals remain protected; they cannot borrow a retained hold's funding.
 

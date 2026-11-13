@@ -1,3 +1,4 @@
+import type { StorageSettlement } from '../storage-settlement/index.js';
 import type { RetirementPipeline } from '../retirement-pipeline/index.js';
 import type { Scope } from '../admission/index.js';
 import type { LiveMetricRead } from '../live-metrics/index.js';
@@ -9,6 +10,7 @@ import type { JournalOutputAbsence } from '../journal/index.js';
 import type { OutputSourceReader } from '../output-transfer/index.js';
 
 export interface AgentHttpOptions {
+  readonly settlement?: Pick<StorageSettlement,'settle'>;
   /** Explicit trusted pipeline; raw receipt rows cannot service this route. */
   readonly cleanup?: Pick<RetirementPipeline, 'tick'>;
   /** Trusted mounted installation credential, never returned to the browser or engine. */

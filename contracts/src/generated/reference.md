@@ -17,6 +17,7 @@ Source: `contracts/runner/v1`; regenerate with `node --import tsx contracts/scri
 | POST | /runner/v1/attempts/{attemptId}/source/chunk | SourceChunkRequest | 200 | SourceChunk |
 | GET | /runner/v1/attempts/{attemptId}/source/absence | none | 200 | OutputAbsence |
 | POST | /runner/v1/attempts/{attemptId}/output-retirement | OutputRetirementRequest | 200 | OutputRetirementReply |
+| POST | /runner/v1/attempts/{attemptId}/output-settlement | OutputSettlementRequest | 200 | OutputSettlementReply |
 
 All error replies use ProtocolError. Events accept the `after` cursor query.
 GET sealed artifact streams/ranges belong to the artifact transport owner.

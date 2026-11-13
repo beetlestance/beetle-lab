@@ -1,6 +1,6 @@
 import { expect,it } from 'vitest';
 import request from '../../../contracts/fixtures/valid/output-retirement-source.json' with {type:'json'};
-import { cleanupAccess,drainedSettlementFacts } from '../../src/cleanup-access/index.js';
+import { cleanupAccess,drainedSettlementFacts,ownSettlementCarrier } from '../../src/cleanup-access/index.js';
 import type { SettlementObservation } from '../../src/cleanup-access/index.js';
 const turn=()=>new Promise<void>(resolve=>setImmediate(resolve));
 it('fences synchronously, drains actual leases and binds opaque observations to owner/request/current fence',async()=>{
@@ -33,4 +33,20 @@ it('retains an unresolved original without treating caller abandonment as drain'
  void fence.drain().then(()=>{done=true;});await turn();expect(done).toBe(false);
  expect(gate.status()).toEqual({originals:1,leases:1,fences:1});expect(()=>fence.release()).toThrow('custody');
  lease.release();await fence.drain();fence.release();
+});
+
+it('cancels only unissued fences and detaches each pending waiter from held native custody',async()=>{
+ const owner={};const gate=cleanupAccess(owner);const lease=gate.acquire(request);
+ for(let n=0;n<256;n++){
+  const fence=gate.reserve(request);const drained=fence.drain();fence.cancel();
+  await expect(drained).rejects.toThrow('custody');
+  expect(gate.status()).toEqual({originals:1,leases:1,fences:0});
+ }
+ lease.release();expect(gate.status().originals).toBe(0);
+ const fence=gate.reserve(request);const proof=await fence.drain();fence.cancel();
+ expect(()=>drainedSettlementFacts(proof,owner,request)).toThrow('custody');
+ const issued=gate.reserve(request);const issuedProof=await issued.drain();const carrier=ownSettlementCarrier(issuedProof,owner,request);
+ expect(()=>issued.cancel()).toThrow('custody');expect(()=>issued.release()).toThrow('custody');
+ expect(drainedSettlementFacts(issuedProof,owner,request)).toEqual(request);
+ carrier.release();issued.release();expect(gate.status().originals).toBe(0);
 });

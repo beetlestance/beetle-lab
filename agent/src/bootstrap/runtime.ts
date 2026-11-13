@@ -1,3 +1,4 @@
+import { StorageSettlement } from '../storage-settlement/index.js';
 import { RetirementPipeline } from '../retirement-pipeline/index.js';
 import type { RetirementRequest } from '@beetle/contracts/output-retirement';
 import { NativeReceipt } from '../native-receipt/index.js';
@@ -90,6 +91,7 @@ class RuntimeOwner {
   private nativeRemoval: NativeRemoval | undefined;
   private nativeReceipt: NativeReceipt | undefined;
   private cleanup: RetirementPipeline | undefined;
+  private settlement?: StorageSettlement;
   private authorityState?: ServingState;
   private authorityCleanupUnknown = false;
   private journal?: Journal;
@@ -175,12 +177,13 @@ class RuntimeOwner {
     this.nativeRemoval = new NativeRemoval({ journal, root });
     this.nativeReceipt = new NativeReceipt({ journal, root, removal: this.nativeRemoval });
     this.cleanup = new RetirementPipeline({ journal, producer: this.retirement, runtime: this.retiredRuntime, inventory: this.taskInventory, removal: this.nativeRemoval, receipt: this.nativeReceipt });
+    this.settlement = new StorageSettlement({journal});
     this.observer = createResourceObserver({ root, transport: options.transport, configuration });
     const view = new CapabilityView({ configuration, catalog: options.catalog, journalAuthority,
       published: () => this.closed ? null : this.publisher?.snapshot() ?? null });
     this.publisher = createObservationPublisher({ journal, observer: this.observer, output: this.output, timeout: this.timeout });
     this.scheduler = createScheduler({ journal, installation: this.installation });
-    this.server = createAgentServer({ cleanup: this.cleanup, credential: options.credential, journalAuthority, journal, installation: this.installation,
+    this.server = createAgentServer({ settlement: this.settlement, cleanup: this.cleanup, credential: options.credential, journalAuthority, journal, installation: this.installation,
       liveMetrics: (key, operation) => supervisor.readLiveMetrics(key, operation),
       outputs: createOutputSourceReader({ journal, gate, readRange: readOutputRange }), absences: journal, capabilities: () => view.capabilities() });
     this.server.addHook('onRequest', async () => {
@@ -193,7 +196,7 @@ class RuntimeOwner {
   }
   close(): Promise<void> {
     if (this.closing) return this.closing;
-    this.closed = true;
+    this.closed = true;this.settlement?.stop();
     let resolve!: () => void; let reject!: (error: unknown) => void;
     this.closing = new Promise<void>((yes, no) => { resolve = yes; reject = no; });
     void this.shutdown().then(resolve, reject);
@@ -212,7 +215,7 @@ class RuntimeOwner {
   }
   private async closeRetirement(): Promise<void> {
     let closed = true;
-    for (const service of [this.cleanup, this.nativeReceipt, this.nativeRemoval, this.taskInventory, this.retiredRuntime, this.retirement, this.gate]) {
+    for (const service of [this.settlement, this.cleanup, this.nativeReceipt, this.nativeRemoval, this.taskInventory, this.retiredRuntime, this.retirement, this.gate]) {
       if (service) closed = await drain([() => service.close()]) && closed;
     }
     if (!closed) throw new AgentRuntimeError('cleanup');

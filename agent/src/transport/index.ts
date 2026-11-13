@@ -1,3 +1,4 @@
+import { registerSettlement,settlementRoute } from './settlement.js';
 import { registerRetirement, retirementRoute } from './retirement.js';
 import { EXPORT_ASSIGNMENT_BYTES } from '@beetle/contracts';
 import Fastify from 'fastify';
@@ -36,8 +37,11 @@ function query(request: FastifyRequest, cursor = false): number {
   if (keys.join(',') !== 'after') throw new AgentHttpError(400, 'invalid_protocol');
   return decimal((raw as Record<string, unknown>).after, 0);
 }
+function sourceOperationRoute(request:FastifyRequest):boolean {
+  return sourceRoute(request)||retirementRoute(request)||settlementRoute(request);
+}
 function ingressRoute(request: FastifyRequest): 'source' | 'live' | 'offer' | undefined {
-  if (sourceRoute(request) || retirementRoute(request)) return 'source';
+  if (sourceOperationRoute(request)) return 'source';
   if (liveRoute(request)) return 'live';
   if ((request.method === 'PUT' && (request.routeOptions.url === '/runner/v1/attempts/:attemptId' || request.routeOptions.url === '/runner/v1/attempts/:attemptId/export'))
     || (request.method === 'POST' && (request.routeOptions.url === '/runner/v1/attempts/:attemptId/cancel-original' || request.routeOptions.url === '/runner/v1/attempts/:attemptId/export/cancel-original'))) return 'offer';
@@ -77,7 +81,7 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
   const offers = new OfferIngress();
   ingress(server, identity, operations, offers);
   server.setErrorHandler((error, request, reply) => {
-    try { sendError(reply, error, identity.scope(request), sourceRoute(request) || liveRoute(request) || retirementRoute(request)); } catch { reply.code(500).send(); }
+    try { sendError(reply, error, identity.scope(request), sourceOperationRoute(request) || liveRoute(request)); } catch { reply.code(500).send(); }
   });
   server.setNotFoundHandler(() => { throw new AgentHttpError(404, 'invalid_protocol'); });
   const work = <T>(operation: () => Promise<T>) => operations.run(operation);
@@ -136,6 +140,7 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
     sendJson(reply, 200, 'AckReceipt', await work(() => services.journal.acknowledge(body)), scope);
   });
   registerLiveMetrics(server, {identity, operations, read: options.liveMetrics});
+  registerSettlement(server, {settlement: options.settlement, identity, operations});
   registerRetirement(server, {cleanup: options.cleanup, identity, operations});
   registerSources(server, { outputs: options.outputs, absences: options.absences, journal: options.journal, identity, operations });
   return server;

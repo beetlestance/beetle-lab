@@ -4,4 +4,6 @@ Service entries acquire before foreign calls; release only after known actual cl
 metadata carrier settlement. Sticky custody retains leases and strong active owner.
 Settlement fence drains original leases, blocks new work and mints owner/request-bound
 opaque local observation. Not native absence, database eligibility or refund authority.
-Owning contract:docs/design/lld/output-settlement.md. Durable fence after purge pending.
+Owning contract:docs/design/lld/output-settlement.md. Durable Journal022 tombstones fence recreation after purge.
+Unissued cancellation detaches its drain waiter and invalidates minted proof; it
+retains every native lease and refuses while an issued settlement carrier exists.

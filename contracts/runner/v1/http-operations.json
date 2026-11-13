@@ -98,5 +98,13 @@
     "request": "OutputRetirementRequest",
     "response": "OutputRetirementReply",
     "successStatus": 200
+  },
+  {
+    "name": "settleOutput",
+    "method": "POST",
+    "path": "/runner/v1/attempts/{attemptId}/output-settlement",
+    "request": "OutputSettlementRequest",
+    "response": "OutputSettlementReply",
+    "successStatus": 200
   }
 ]

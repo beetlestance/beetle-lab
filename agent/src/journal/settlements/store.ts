@@ -1,9 +1,11 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeJson } from '@beetle/contracts';
-import { captureSettlementRequest } from '@beetle/contracts/output-settlement';
+import { captureSettlementRequest,settlementRequestDigest } from '@beetle/contracts/output-settlement';
 import { captureOutputRetirementRequest } from '@beetle/contracts/output-retirement';
 import { commitAgentSettlement } from '../settlement-guard/index.js';
-import { readRetiredReply } from './rows.js';
+import { prepareAgentSettlement } from './facts.js';
+import { retirementDigest } from '../../retirement-values/index.js';
+import { readStoredSettlement,readRetiredReply } from './rows.js';
 import { Failure,transaction } from '../sql.js';
 import { settlementOperation } from '../settlement-protocol.js';
 import type { SettlementOperation,SettlementValue } from '../settlement-protocol.js';
@@ -18,8 +20,12 @@ export class SettlementStore{
  execute(input:SettlementOperation&{id:number}):SettlementValue{
   const operation=capture(input);let value:unknown;
   try{value=JSON.parse(operation.json) as unknown;}catch{throw new Failure('invalid_input');}
-  return transaction(this.db,()=>operation.kind==='settleAgentStorage'
-   ?commitAgentSettlement(this.db,captureSettlementRequest(value))
-   :{reply:readRetiredReply(this.db,captureOutputRetirementRequest(value))});
+  return transaction(this.db,()=>{
+   if(operation.kind==='readRetiredOutputReply')return{reply:readRetiredReply(this.db,captureOutputRetirementRequest(value))};
+   const request=captureSettlementRequest(value);
+   if(operation.kind==='settleAgentStorage')return commitAgentSettlement(this.db,request);
+   if(!readStoredSettlement(this.db,request))prepareAgentSettlement(this.db,request);
+   return{version:1,state:'eligible',requestDigest:settlementRequestDigest(request,retirementDigest)};
+  });
  }
 }
