@@ -1,3 +1,4 @@
+import type { ProducerGate } from '../producer-gate/index.js';
 import type { AttemptSnapshot } from '@beetle/contracts';
 import type { Decision, Reservation, Scope } from '../admission/index.js';
 import type { Catalog, InstalledEngine } from '../catalog/index.js';
@@ -10,6 +11,7 @@ import type { OutputGuard } from '../guard/index.js';
 import type { TimeoutGuard, TimeoutReason } from '../timeout/index.js';
 
 export interface InstallationOptions {
+  readonly gate: ProducerGate;
   readonly journal: Journal;
   readonly catalog: Catalog;
   readonly supervisor: Supervisor;

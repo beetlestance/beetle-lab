@@ -1,3 +1,4 @@
+import { gateFor } from '../producer-gate/fixtures.js';
 import { afterEach, vi } from 'vitest';
 import { setTimeout as wait } from 'node:timers/promises';
 import type { OutputRangeOptions, OutputRangeReader, OutputRangeResult } from '../../src/collection/output/index.js';
@@ -40,7 +41,8 @@ export function ranges(automatic = true) {
   return { readRange, originals };
 }
 export function reader(journal: OutputSourceReaderOptions['journal'], native = ranges(), monotonicNow = () => 100) {
-  return { ...native, service: createOutputSourceReader({ journal, readRange: native.readRange, monotonicNow }) };
+  const gate = gateFor(journal);
+  return { ...native, gate, service: createOutputSourceReader({ journal, gate, readRange: native.readRange, monotonicNow }) };
 }
 export async function until(predicate: () => boolean): Promise<void> {
   // Real worker IPC needs elapsed time; do not advance the request's fake deadline.

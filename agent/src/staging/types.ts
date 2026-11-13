@@ -1,3 +1,4 @@
+import type { ProducerGate } from '../producer-gate/index.js';
 import type { EngineManifest, Offer } from '@beetle/contracts';
 import type { Scope, ValidationIdentity } from '../admission/index.js';
 import type { DockerTransport, InstallationProfile, Operation, RuntimePlan } from '../backends/docker/index.js';
@@ -26,6 +27,7 @@ export interface Providers {
   secret(request: SecretRequest): Promise<Uint8Array>;
 }
 export interface StagerOptions {
+  readonly gate: ProducerGate;
   readonly root: VerifiedRoot; readonly profile: InstallationProfile; readonly manifest: EngineManifest;
   readonly validation: Omit<ValidationIdentity, 'configDigest'>; readonly journal: Journal; readonly providers: Providers;
   readonly wallNow?: () => number;

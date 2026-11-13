@@ -1,7 +1,8 @@
 # Durable producer and reader retirement
 
-Status: C2a durable metadata implemented locally; C2b local barrier below remains
-proposed. No cleanup endpoint, file removal, ACK or refund.
+Status: C2a durable metadata and C2b shared lease gate implemented locally. The
+C2c whole-producer barrier/coordinator below remains proposed. No cleanup endpoint,
+file removal, ACK or refund.
 Parent [retirement](output-retirement.md), [namespace](staging-namespace.md) and
 [control capacity](cleanup-control.md). Root reserves agent Journal migration017.
 
@@ -60,7 +61,13 @@ two-operation credit. Acquire a read lease synchronously before the first await,
 then check the durable gate and local fence again before native work. Lease release
 requires actual original settlement; a timeout or abort cannot release it early.
 
-One fixed monotonic budget (<=30s) starts before preflight and covers begin,
+C2b reserves each bounded original slot before invoking its factory. A poisoned
+factory/quiescence/close fences its scope and retains the original plus service
+credit. Shutdown waits actual leases; unknown cleanup refuses Journal/runtime owner
+release. A preflight reservation leaves intake open until its explicit fence. Exact
+positive confirmation rereads the immutable Journal intent before local eviction.
+
+C2c must add one fixed monotonic budget (<=30s) starts before preflight and covers begin,
 reconciliation, producer/read drain and cold inspection. Expiry is observable as
 expired/fenced; it cannot release issued originals/credits or mint a late C3 token.
 Drain/cached-close ownership continues after expiry. A new budget is possible only

@@ -1,3 +1,5 @@
+import { ProducerGateError } from '../producer-gate/index.js';
+import type { ProducerLease } from '../producer-gate/index.js';
 import type { Offer, StandaloneExportAssignment } from '@beetle/contracts';
 import type { AttemptSnapshot } from '@beetle/contracts';
 import type { Scope } from '../admission/index.js';
@@ -32,6 +34,7 @@ export class Manager implements InstallationController {
   private stages = 0;
   private wallHigh = 0;
   constructor(options: InstallationOptions) {
+    options.gate.assertOwner(options.journal.retirements);
     if (owners.has(options.journal)) throw new InstallationError('busy');
     this.options = Object.freeze({ ...options }); owners.set(options.journal, this);
   }
@@ -69,8 +72,8 @@ export class Manager implements InstallationController {
       if (this.entries.get(key) === entry) this.entries.delete(key);
     }
   }
-  private driveContext(caller: EntryLease, budget: Operation): DriveContext {
-    return { options: this.options, now: () => this.now(), guard: (entry, budget) => this.guard(entry, budget),
+  private driveContext(caller: EntryLease, budget: Operation, producer: ProducerLease): DriveContext {
+    return { options: this.options, now: () => this.now(), guard: (entry, budget) => { producer.check(); this.guard(entry, budget); },
       acquireStage: () => this.acquireStage(), releaseStage: () => this.releaseStage(),
       retire: (entry, progress) => this.retire(entry, caller, progress, budget),
       stopGuard: entry => this.stopGuard(entry), stopTimeout: (entry, reason) => this.stopTimeout(entry, reason) };
@@ -111,30 +114,50 @@ export class Manager implements InstallationController {
       entry.cancelled=true;if (!await this.sourceCommitted(entry)) this.signal(entry);return snapshot;
     } finally {await this.releaseLease(entry,lease);}
   }
+  private async releaseDrive(entry: Entry, lease: EntryLease, producer: ProducerLease): Promise<void> {
+    try {
+      await this.releaseLease(entry, lease);
+      if (entry.cleanupFailed) producer.poison(); else producer.finish();
+    } catch (error) { producer.poison(); throw error; }
+  }
+  private driveLease(key: Readonly<Scope>) {
+    let producer: ProducerLease;
+    try { producer = this.options.gate.acquire(key); }
+    catch (error) {
+      if (error instanceof ProducerGateError) {
+        const reason = error.reason === 'capacity' || error.reason === 'cleanup' ? error.reason : 'closed';
+        throw new InstallationError(reason);
+      }
+      throw error;
+    }
+    try {
+      const entry = this.entry(key); if (entry.active) throw new InstallationError('busy');
+      return { entry, lease: acquireLease(entry, true), producer };
+    } catch (error) { producer.finish(); throw error; }
+  }
   drive(input: Scope, operation: Operation): Promise<DriveProgress> {
     return this.run(async () => {
-      const key = scopeCopy(input); this.open(); const entry = this.entry(key);
-      if (entry.active) throw new InstallationError('busy');
-      const lease = acquireLease(entry, true);
+      const key = scopeCopy(input); this.open();
+      const { entry, lease, producer } = this.driveLease(key);
       // Reserve the lane before reading the caller's budget descriptors.
       let resolve!: (value: DriveProgress) => void; let reject!: (error: unknown) => void;
       const active = new Promise<DriveProgress>((yes, no) => { resolve = yes; reject = no; });
-      entry.active = active;
+      entry.active = active; producer.issue(() => ({ owner: this, active }));
       try {
         const budget = budgetCopy(operation);
         void Promise.resolve().then(async () => {
-          this.open();
+          await producer.ready(); this.open();
           if (entry.retiring || entry.sourceReceipt) {
             const progress = entry.retirementProgress ?? (entry.sourceReceipt ? { kind: 'released' as const, collection: 'finished' as const } : null);
             if (!progress) throw new InstallationError('cleanup');
             await this.retire(entry, lease, progress, budget); return progress;
           }
-          return drive(this.driveContext(lease, budget), entry, budget);
+          return drive(this.driveContext(lease, budget, producer), entry, budget);
         }).then(resolve, reject);
       } catch (error) { reject(error); }
       try { return await active; } finally {
         delete entry.active;
-        await this.releaseLease(entry, lease);
+        await this.releaseDrive(entry, lease, producer);
       }
     });
   }

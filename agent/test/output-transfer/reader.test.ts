@@ -4,7 +4,6 @@ import { encodeJson } from '@beetle/contracts';
 import { sealEngineResult } from '@beetle/contracts';
 import type { Scope } from '../../src/admission/index.js';
 import { JournalError } from '../../src/journal/index.js';
-import { OutputTransferError } from '../../src/output-transfer/index.js';
 import { prepareOutputSource, receiptForOutputSource } from '../../src/output-source/index.js';
 import { deliveryFixture, hash } from '../output-delivery/fixtures.js';
 import { now, reserved, scope } from '../admission/fixtures.js';
@@ -94,7 +93,11 @@ it.each(['organizationId', 'workspaceId', 'attemptId', 'generation'] as const)('
   const e = await ready(); const original = e.journal.readOutputSource.bind(e.journal);
   vi.spyOn(e.journal, 'readOutputSource').mockImplementation(() => original(e.key));
   const key = { ...e.key, [field]: field === 'generation' ? 2 : 'ffffffff-ffff-4fff-8fff-ffffffffffff' };
-  await expect(track(reader(e.journal).service.source(key, operation()))).rejects.toMatchObject({ code: field === 'generation' ? 'invalid_input' : 'unavailable' });
+  // Deliberately faulty durable-open reply isolates the independent source binding check.
+  const journal = { retirements: { ...e.journal.retirements, isOpen: async () => true },
+    readOutputSource: e.journal.readOutputSource.bind(e.journal), readOutputDelivery: e.journal.readOutputDelivery.bind(e.journal),
+    get: e.journal.get.bind(e.journal), journalAuthority: e.journal.journalAuthority.bind(e.journal) };
+  await expect(track(reader(journal).service.source(key, operation()))).rejects.toMatchObject({ code: field === 'generation' ? 'invalid_input' : 'unavailable' });
 });
 
 it.each(['journalAuthority', 'manifestDigest', 'sourceDigest', 'organizationId', 'workspaceId', 'attemptId', 'generation'] as const)(
@@ -207,18 +210,6 @@ it.each(['quiet', 'close'] as const)('does not settle an early failed result whi
   await expect(pending).rejects.toMatchObject({ code: 'unavailable' }); expect(work.close).toHaveBeenCalledTimes(1);
 });
 
-it.each(['result', 'quiet', 'close'] as const)('sanitizes rejected native %s while retaining every other cleanup original', async rejected => {
-  const e = await ready(); const r = reader(e.journal, ranges(false));
-  const pending = track(r.service.chunk(e.key, request(e.receipt, e.artifact.artifactId), operation())); await until(() => r.originals.length === 1);
-  const work = r.originals[0]!; const error = new Error('/private/synthetic-root/native failure');
-  if (rejected === 'result') work.result.reject(error); else work.result.resolve({ ok: true, value: new Uint8Array(32) });
-  await until(() => work.close.mock.calls.length === 1);
-  if (rejected === 'quiet') work.quiet.reject(error); else work.quiet.resolve();
-  let settled = false; void pending.catch(() => { settled = true; }); await turns(); expect(settled).toBe(false);
-  if (rejected === 'close') work.closed.reject(error); else work.closed.resolve();
-  await expect(pending).rejects.toBeInstanceOf(OutputTransferError);
-  await expect(pending).rejects.toMatchObject({ code: 'unavailable', message: 'Output transfer unavailable' });
-});
 
 it('snapshots bounded positive bytes before delayed native quiescence and cached close', async () => {
   const e = await ready(); const r = reader(e.journal, ranges(false)); const pending = track(r.service.chunk(e.key, request(e.receipt, e.artifact.artifactId), operation()));

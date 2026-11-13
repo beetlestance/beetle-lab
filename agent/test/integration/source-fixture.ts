@@ -1,3 +1,4 @@
+import { gateFor } from '../producer-gate/fixtures.js';
 import { lstat, writeFile } from 'node:fs/promises';
 import type { ControlEvent, Offer } from '@beetle/contracts';
 import { captureCollectionIntent } from '../../src/output-source/index.js';
@@ -65,7 +66,7 @@ export function sourceFixture() {
     const source: CollectedSource = { collectionId, binding, collection: collected.collection, checkpoint, release };
     const receipt = await journal.commitOutputSource(source); const released = await journal.releaseOutputSource(receipt);
     const closure = await journal.closeOutputDelivery(receipt);
-    const reader = createOutputSourceReader({ journal, readRange: readOutputRange });
+    const reader = createOutputSourceReader({ journal, gate: gateFor(journal), readRange: readOutputRange });
     return { ...collected, journal, path, key, offer, intent, receipt, released, closure, reader, files };
   }
   return { ...f, prepare };

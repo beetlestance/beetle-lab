@@ -1,3 +1,5 @@
+import { ProducerGateError } from '../producer-gate/index.js';
+import type { ProducerLease } from '../producer-gate/index.js';
 import { executionArtifacts } from '@beetle/contracts';
 import { performance } from 'node:perf_hooks';
 import { captureSourceChunkRequest } from '@beetle/contracts/output-source';
@@ -24,24 +26,33 @@ function request(input: Parameters<OutputSourceReader['chunk']>[1]) {
 }
 
 export const createOutputSourceReader: CreateOutputSourceReader = options => {
-  const { journal, readRange, monotonicNow = () => performance.now() } = options;
-  async function run<T>(key: Scope, operation: Operation, work: (key: Readonly<Scope>, budget: Budget) => Promise<T>): Promise<T> {
+  const { journal, gate, readRange, monotonicNow = () => performance.now() } = options;
+  gate.assertOwner(journal.retirements);
+  async function run<T>(key: Scope, operation: Operation, prepare: (key: Readonly<Scope>, budget: Budget, lease: ProducerLease) => () => Promise<T>): Promise<T> {
     if (active >= 2) throw new OutputTransferError('busy');
-    active++; let budget: Budget | undefined;
+    active++; let budget: Budget | undefined; let lease: ProducerLease | undefined;
     try {
-      const captured = scope(key); budget = new Budget(operation, monotonicNow);
-      return await work(captured, budget);
-    } finally { budget?.finish(); active--; }
+      const captured = scope(key); lease = gate.acquire(captured); budget = new Budget(operation, monotonicNow);
+      const work = prepare(captured, budget, lease);
+      await lease.ready(); budget.check();
+      return await work();
+    } catch (error) {
+      if (error instanceof ProducerGateError) throw new OutputTransferError(error.reason === 'capacity' ? 'busy' : 'unavailable');
+      throw error;
+    } finally { budget?.finish(); if (!lease || lease.finish()) active--; }
   }
   return Object.freeze({
-    source: (key, operation) => run(key, operation, async (captured, budget) => (await readSource(journal, captured, budget)).envelope),
-    chunk: (key, input, operation) => run(key, operation, async (captured, budget) => {
-      const expected = request(input); const { source, envelope } = await readSource(journal, captured, budget);
+    source: (key, operation) => run(key, operation, (captured, budget) => async () => (await readSource(journal, captured, budget)).envelope),
+    chunk: (key, input, operation) => run(key, operation, (captured, budget, lease) => {
+      const expected = request(input);
+      return async () => {
+      const { source, envelope } = await readSource(journal, captured, budget);
       if (expected.manifestDigest !== envelope.manifest.manifestDigest || expected.sourceDigest !== envelope.sourceDigest) throw new OutputTransferError('conflict');
       const artifact = declaredArtifact(executionArtifacts(envelope.manifest.result), expected);
       const bytes = await readBytes(readRange, { root: source.root, artifact, offset: expected.offset, length: expected.length,
-        deadline: budget.deadline, signal: budget.signal }, budget);
+        deadline: budget.deadline, signal: budget.signal }, budget, lease);
       budget.check(); return chunkValue(expected, artifact.bytes, bytes);
+      };
     }),
   } satisfies OutputSourceReader);
 };

@@ -44,7 +44,7 @@ it.each(['manual', 'scheduled', 'output_limit'] as const)('composes authenticate
   const guard = createOutputGuard({ root: e.options.root, minimumFreeBytes: 0, intervalMs: 50, ttlMs: 5000,
     stop: (key, reason) => installation.stop(key, reason) });
   const timeout = createTimeoutGuard({ wallNow: time.wall, stop: (key, reason) => installation.stop(key, reason) });
-  const installation: InstallationController = createInstallationController({ journal: e.owner, supervisor: runtime.manager, catalog, guard, timeout,
+  const installation: InstallationController = createInstallationController({ journal: e.owner, gate: e.options.gate, supervisor: runtime.manager, catalog, guard, timeout,
     stagerFor: () => stager, wallNow: time.wall });
   timeout.start();
   guard.start();

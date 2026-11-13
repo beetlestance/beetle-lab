@@ -114,6 +114,10 @@ it('a rejected original native watch close stays cached and fenced independently
   entries(manager).set(identity(e.key), entry); const closure = vi.spyOn(e.journal, 'closeOutputDelivery');
   try {
     await expect(manager.drive(e.key, operation())).rejects.toMatchObject({ reason: 'cleanup' });
+    expect(options.gate.status().leases).toBe(1);
+    const slot = options.gate.reserve(e.key); slot.fence();
+    await expect(slot.drain()).rejects.toMatchObject({ reason: 'cleanup' });
+    expect(() => slot.release()).toThrow('cleanup');
     const original = entry.nativeRetirement; expect(entry.retiring).toBe(true); expect(entry.cleanupFailed).toBe(true);
     await expect(manager.drive(e.key, operation())).rejects.toMatchObject({ reason: 'cleanup' });
     expect(entry.nativeRetirement).toBe(original); expect(watchClose).toHaveBeenCalledTimes(1); expect(closure).not.toHaveBeenCalled();

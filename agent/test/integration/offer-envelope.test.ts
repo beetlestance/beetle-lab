@@ -32,7 +32,7 @@ it('carries exact1MiB UTF8 config through client/catalogue/installation/reopen/S
   await e.owner.admission({ kind: 'observe', observation: observation(Date.now()) });
   const runtime = controlled(e.owner);
   const unused = vi.fn(() => { throw new Error('unexpected_runtime_or_provider'); });
-  const installation = createInstallationController({ journal: e.owner, catalog, supervisor: runtime.manager,
+  const installation = createInstallationController({ journal: e.owner, gate: e.options.gate, catalog, supervisor: runtime.manager,
     guard: { watch: unused }, timeout: { watch: unused }, stagerFor: unused });
   const capabilities = JSON.parse(await readFile('contracts/fixtures/valid/capabilities.json', 'utf8')) as Capabilities;
   capabilities.journalAuthority = await e.owner.journalAuthority();

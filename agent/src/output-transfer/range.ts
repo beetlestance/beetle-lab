@@ -1,3 +1,4 @@
+import type { ProducerLease } from '../producer-gate/index.js';
 import { verifySourceChunk, SOURCE_RANGE_BYTES } from '@beetle/contracts/output-source';
 import type { Owned, SourceChunk, SourceChunkRequest } from '@beetle/contracts/output-source';
 import type { OutputRangeReader, OutputRangeOptions, OutputRangeResult } from '../collection/output/index.js';
@@ -25,11 +26,14 @@ function failure(result: Exclude<OutputRangeResult, { ok: true }>): never {
 }
 
 /** Result, true quiescence and the single cached close all retain the service slot. */
-export async function readBytes(read: OutputRangeReader, options: OutputRangeOptions, budget: Budget): Promise<Uint8Array> {
-  budget.check();
+export async function readBytes(read: OutputRangeReader, options: OutputRangeOptions, budget: Budget, lease: ProducerLease): Promise<Uint8Array> {
+  budget.check(); lease.check();
   let range: ReturnType<OutputRangeReader>;
-  try { range = read(options); } catch { throw new OutputTransferError('unavailable'); }
-  const quiet = range.quiesced.then(() => true, () => false);
+  let quiet: Promise<boolean>;
+  try {
+    range = lease.issue(() => read(options));
+    quiet = range.quiesced.then(() => true, () => false);
+  } catch { lease.poison(); throw new OutputTransferError('unavailable'); }
   let result: OutputRangeResult | undefined; let bytes: Uint8Array | undefined;
   try {
     result = await range.result;
@@ -37,6 +41,7 @@ export async function readBytes(read: OutputRangeReader, options: OutputRangeOpt
   } catch { result = undefined; }
   const closed = Promise.resolve().then(() => range.close()).then(() => true, () => false);
   const cleanup = await Promise.all([quiet, closed]);
+  if (!cleanup.every(Boolean)) lease.poison();
   budget.check();
   if (!cleanup.every(Boolean) || result === undefined) throw new OutputTransferError('unavailable');
   if (!result.ok) failure(result);

@@ -1,3 +1,4 @@
+import { gateFor } from '../producer-gate/fixtures.js';
 import { expect, it, vi } from 'vitest';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import { createInstallationController } from '../../src/installation/index.js';
@@ -21,7 +22,7 @@ function trapped(journal: Journal) {
   const supervisor = new Supervisor({ journal, backendFactory, installationId: '00000000-0000-4000-8000-000000000010' });
   const actor = vi.spyOn(supervisor, 'actor').mockImplementation(trap); const retireActor = vi.spyOn(supervisor, 'retire').mockImplementation(trap);
   const stagerFor = vi.fn(trap); const outputWatch = vi.fn(trap); const timeoutWatch = vi.fn(trap);
-  const options = { journal, catalog, supervisor, stagerFor, guard: { watch: outputWatch }, timeout: { watch: timeoutWatch } };
+  const options = { journal, gate: gateFor(journal), catalog, supervisor, stagerFor, guard: { watch: outputWatch }, timeout: { watch: timeoutWatch } };
   const retire = vi.fn(async () => undefined);
   const context: DriveContext = { options, now: () => 100_010,
     guard: vi.fn((_entry, budget) => checkBudget(budget)), acquireStage: vi.fn(trap), releaseStage: vi.fn(trap),

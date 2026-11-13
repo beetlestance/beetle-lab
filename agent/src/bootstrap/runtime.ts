@@ -1,3 +1,4 @@
+import { ProducerGate } from '../producer-gate/index.js';
 import { installedLiveMetricApproval } from './live-metrics.js';
 import { performance } from 'node:perf_hooks';
 import { encodeJson } from '@beetle/contracts';
@@ -9,7 +10,7 @@ import type { Journal } from '../journal/index.js';
 import type { JournalOptions } from '../journal/index.js';
 import { InstallationStateError, openServingState } from '../installation-state/index.js';
 import type { ServingState } from '../installation-state/index.js';
-import { Stager, verifyInstallation, NamespaceBinding, NamespaceBindingError } from '../staging/index.js';
+import { Stager, verifyInstallation, NamespaceBinding, NamespaceBindingError, boundRootNamespace } from '../staging/index.js';
 import type { VerifiedRoot } from '../staging/index.js';
 import { Supervisor } from '../supervisor/index.js';
 import { createInstallationController } from '../installation/index.js';
@@ -71,6 +72,7 @@ function capture(input: AgentRuntimeOptions): AgentRuntimeOptions {
 }
 /** One retained owner covers initialization, service originals and failed cleanup. */
 class RuntimeOwner {
+  private gate: ProducerGate | undefined;
   private authorityState?: ServingState;
   private authorityCleanupUnknown = false;
   private journal?: Journal;
@@ -126,16 +128,17 @@ class RuntimeOwner {
   }
   private compose(options: AgentRuntimeOptions, configuration: PoolConfiguration, root: VerifiedRoot, journalAuthority: string): void {
     const journal = this.journal!;
+    const gate = this.gate = new ProducerGate({ journal: journal.retirements, namespaceIdentity: boundRootNamespace(root).namespaceIdentity });
     const transport = options.transport;
     const supervisor = this.supervisor = new Supervisor({ journal, liveMetricApproval: installedLiveMetricApproval(options.catalog), requireResourceTelemetry: true, installationId: options.installation.installationId,
       backendFactory: () => new DockerBackend(transport) });
-    for (const engine of options.catalog.engines) this.stagers.set(engine, new Stager({ root, journal,
+    for (const engine of options.catalog.engines) this.stagers.set(engine, new Stager({ root, journal, gate,
       profile: engine.profile, manifest: engine.manifest, validation: engine.validation, providers: options.providers }));
     const overhead = addResources(configuration.controlReserve, configuration.headroom);
     this.output = createOutputGuard({ root, minimumFreeBytes: Math.max(options.minimumFreeBytes, overhead.outputBytes + overhead.stagingBytes),
       stop: (key, reason) => this.installation!.stop(key, reason) });
     this.timeout = createTimeoutGuard({ stop: (key, reason) => this.installation!.stop(key, reason) });
-    this.installation = createInstallationController({ journal, catalog: options.catalog, supervisor, guard: this.output, timeout: this.timeout,
+    this.installation = createInstallationController({ journal, gate, catalog: options.catalog, supervisor, guard: this.output, timeout: this.timeout,
       stagerFor: engine => {
         const stager = this.stagers.get(engine);
         if (!stager) throw new AgentRuntimeError('startup');
@@ -148,7 +151,7 @@ class RuntimeOwner {
     this.scheduler = createScheduler({ journal, installation: this.installation });
     this.server = createAgentServer({ credential: options.credential, journalAuthority, journal, installation: this.installation,
       liveMetrics: (key, operation) => supervisor.readLiveMetrics(key, operation),
-      outputs: createOutputSourceReader({ journal, readRange: readOutputRange }), absences: journal, capabilities: () => view.capabilities() });
+      outputs: createOutputSourceReader({ journal, gate, readRange: readOutputRange }), absences: journal, capabilities: () => view.capabilities() });
     this.server.addHook('onRequest', async () => {
       if (this.closed) throw new AgentHttpError(503, 'budget_unavailable', 'transport');
     });
@@ -173,6 +176,7 @@ class RuntimeOwner {
     if (this.scheduler) first.push(() => this.scheduler!.close());
     if (this.installation) first.push(() => this.installation!.close());
     for (const stager of this.stagers.values()) first.push(() => stager.close());
+    if (this.gate) first.push(() => this.gate!.close());
     return first;
   }
   private monitoringCloses(): Close[] {

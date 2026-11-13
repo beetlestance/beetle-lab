@@ -1,3 +1,4 @@
+import { gateFor } from '../producer-gate/fixtures.js';
 import { executionArtifacts } from '@beetle/contracts';
 import { createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
@@ -67,7 +68,7 @@ it('reopens the same physical source/closure and refuses stale selectors before 
   const e = await f.prepare(); const before = await e.reader.source(e.key, operation());
   const stored = await e.journal.readOutputSource(e.key); await f.close(e.journal);
   const journal = await f.open(e.path); const native = vi.fn(readOutputRange);
-  const reader = createOutputSourceReader({ journal, readRange: native }); const envelope = await reader.source(e.key, operation());
+  const reader = createOutputSourceReader({ journal, gate: gateFor(journal), readRange: native }); const envelope = await reader.source(e.key, operation());
   expect(envelope).toEqual(before); expect(await journal.journalAuthority()).toBe(before.manifest.binding.journalAuthority);
   expect(await journal.readOutputCollection(e.key)).toEqual(e.intent); expect(await journal.readOutputDelivery(e.key)).toEqual(e.closure);
   const request = selector(envelope, executionArtifacts(envelope.manifest.result)[0]!.artifactId);

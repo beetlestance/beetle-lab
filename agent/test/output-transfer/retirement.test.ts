@@ -1,0 +1,21 @@
+import { executionArtifacts } from '@beetle/contracts';
+import { expect, it } from 'vitest';
+import { deliveryFixture } from '../output-delivery/fixtures.js';
+import { operation, ranges, reader, request, track, turns, until } from './fixtures.js';
+const f = deliveryFixture();
+it.each(['result', 'quiet', 'close'] as const)('keeps actual source lease while original %s is held after local fencing', async held => {
+  const e = await f.ready(); await e.journal.closeOutputDelivery(e.receipt);
+  const artifact = executionArtifacts(e.source.manifest.result)[0]!;
+  const r = reader(e.journal, ranges(false)); const pending = track(r.service.chunk(e.key, request(e.receipt, artifact.artifactId), operation()));
+  await until(() => r.originals.length === 1); const work = r.originals[0]!;
+  const slot = r.gate.reserve(e.key); slot.fence(); let drained = false;
+  const draining = slot.drain().then(() => { drained = true; });
+  if (held !== 'result') work.result.resolve({ ok: true, value: new Uint8Array(Math.min(65536, artifact.bytes)) });
+  if (held !== 'quiet') work.quiet.resolve(); if (held !== 'close') work.closed.resolve();
+  await turns(); expect(drained).toBe(false); expect(r.gate.status().leases).toBe(1);
+  await expect(r.service.source(e.key, operation())).rejects.toMatchObject({ code: 'unavailable' });
+  if (held === 'result') work.result.resolve({ ok: true, value: new Uint8Array(Math.min(65536, artifact.bytes)) });
+  if (held === 'quiet') work.quiet.resolve(); if (held === 'close') work.closed.resolve();
+  await pending; await draining; expect(drained).toBe(true); expect(r.gate.status().leases).toBe(0);
+  expect(work.close).toHaveBeenCalledTimes(1); expect(() => slot.release()).toThrow('cleanup');
+});

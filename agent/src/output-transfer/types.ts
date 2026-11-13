@@ -1,3 +1,4 @@
+import type { ProducerGate } from '../producer-gate/index.js';
 import type { Owned, SourceChunk, SourceChunkRequest, SourceEnvelope } from '@beetle/contracts/output-source';
 import type { Scope } from '../admission/index.js';
 import type { Operation } from '../backends/docker/index.js';
@@ -15,7 +16,8 @@ export interface OutputSourceReader {
 }
 
 export interface OutputSourceReaderOptions {
-  readonly journal: Pick<Journal, 'readOutputSource' | 'readOutputDelivery' | 'get' | 'journalAuthority'>;
+  readonly journal: Pick<Journal, 'readOutputSource' | 'readOutputDelivery' | 'get' | 'journalAuthority' | 'retirements'>;
+  readonly gate: ProducerGate;
   /** Exact public native range owner; no engine/catalogue lookup or new IO pool. */
   readonly readRange: OutputRangeReader;
   readonly monotonicNow?: () => number;

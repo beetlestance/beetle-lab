@@ -66,7 +66,7 @@ Native live activation uses [trusted image capability](docs/decisions/014-live-m
 
 | Work | Required completion |
 | --- | --- |
-| Producer cleanup | [C1 namespace/control](docs/verification/staging-namespace.md) and [C2a durable intent](docs/verification/producer-retirement-store.md) locally verified; actual producer/read drain, persisted native plan and exact agent receipt remain; preserve all charges until settlement |
+| Producer cleanup | [C1 namespace/control](docs/verification/staging-namespace.md), [C2a durable intent](docs/verification/producer-retirement-store.md) and [C2b leases](docs/verification/producer-gate.md) locally verified; whole-producer barrier, persisted native plan and exact agent receipt remain; preserve all charges until settlement |
 | Purge/retention | Replay-safe tombstones, exact refunds, protected selection, immutable preview/apply and public progress/error controls |
 | Namespace deletion | Organisation/workspace/folder DELETE routes and controls with child/input/run/cleanup protection |
 | History parity | H1–H3 locally implemented; remaining native browser/platform and inventory-wide acceptance, with explicit legacy search differences |

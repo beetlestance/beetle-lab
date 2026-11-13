@@ -1,3 +1,4 @@
+import { gateFor } from '../producer-gate/fixtures.js';
 import { afterEach } from 'vitest';
 import { mkdtemp, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -61,13 +62,20 @@ export function fixture() {
       });
       if (timeoutMs !== 1000) await owner.admission({ kind: 'configure',
         configuration: { ...admissionConfiguration(), maxTimeoutMs: timeoutMs } });
-      const options: StagerOptions = { root: verified.value, profile, manifest, journal: owner,
+      const installed = await owner.stagingNamespace.read();
+      if (installed?.state !== 'bound') throw new Error('Missing test namespace');
+      const gate = gateFor(owner, installed.anchor.namespaceIdentity);
+      const options: StagerOptions = { gate, root: verified.value, profile, manifest, journal: owner,
         validation: { manifestId: validation(offer).manifestId, profileId: 'locked', schemaDigest: 'b'.repeat(64), catalogVersion: 1 },
         providers: { input: async () => stream(), secret: async () => Buffer.from('SYNTHETIC_SENTINEL') }, wallNow: () => now + 1 };
       offer.installedIdentity = deriveInstalledIdentity({ manifest, profile, identity: options.validation },
         value => createHash('sha256').update(value).digest('hex'));
       if (enqueue) { await journal.enqueue(owner, offer); await journal.admit(owner, offer); }
-      const create = (overrides: Partial<StagerOptions> = {}) => { const stager = new Stager({ ...options, ...overrides }); stagers.push(stager); return stager; };
+      const create = (overrides: Partial<StagerOptions> = {}) => {
+        const target = overrides.journal ?? owner;
+        const rebound = overrides.gate ?? (target === owner ? gate : gateFor(target, gate.namespaceIdentity));
+        const stager = new Stager({ ...options, ...overrides, gate: rebound }); stagers.push(stager); return stager;
+      };
       const prepare = (stager: Stager, target: Offer = offer, ms = 5000) => stager.prepare({ key: scope(target), operation: operation(ms) });
       return { rootPath, journalPath, configuration, transport, offer, owner, options, create, prepare };
     },

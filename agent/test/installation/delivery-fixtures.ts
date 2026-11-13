@@ -1,3 +1,4 @@
+import { gateFor } from '../producer-gate/fixtures.js';
 import { afterEach, vi } from 'vitest';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
@@ -15,13 +16,16 @@ export function entries(manager: Manager): Map<string, Entry> { return Reflect.g
 export function managers() {
   const owned: Manager[] = [];
   afterEach(async () => { await Promise.allSettled(owned.splice(0).map(manager => manager.close())); });
-  return (options: ConstructorParameters<typeof Manager>[0]) => { const manager = new Manager(options); owned.push(manager); return manager; };
+  return (options: ConstructorParameters<typeof Manager>[0]) => {
+    const gate = gateFor(options.journal, options.gate.namespaceIdentity);
+    const manager = new Manager({ ...options, gate }); owned.push(manager); return manager;
+  };
 }
 export function trapped(journal: Journal) {
   const trap = vi.fn((): never => { throw new Error('unexpected producer/catalogue/staging work'); });
   const supervisor = new Supervisor({ journal, backendFactory: trap, installationId: '00000000-0000-4000-8000-000000000010' });
   vi.spyOn(supervisor, 'actor').mockImplementation(trap); vi.spyOn(supervisor, 'retire').mockImplementation(trap);
-  return { journal, supervisor, catalog: { engines: [], preflightExport: trap, preflight: trap, resolve: trap }, stagerFor: trap,
+  return { journal, gate: gateFor(journal), supervisor, catalog: { engines: [], preflightExport: trap, preflight: trap, resolve: trap }, stagerFor: trap,
     guard: { watch: trap }, timeout: { watch: trap }, trap, wallNow: () => 100_010 };
 }
 /** Real files and seals; synthetic backend observations do not qualify native execution. */

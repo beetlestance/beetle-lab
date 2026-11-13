@@ -1,3 +1,4 @@
+import { gateFor } from '../producer-gate/fixtures.js';
 import { afterEach, expect } from 'vitest';
 import { createConfigSchema } from '@beetle/contracts/engine-config';
 import { createHash } from 'node:crypto';
@@ -38,7 +39,7 @@ export function fixture() {
       return engine;
     } };
     const stager = env.create({ wallNow: owner.time.wall });
-    const options: InstallationOptions = { journal: env.owner, catalog, supervisor: owner.manager,
+    const options: InstallationOptions = { gate: env.options.gate, journal: env.owner, catalog, supervisor: owner.manager,
       timeout: { watch: () => {
         let closed = false;
         return { status: () => ({ ready: !closed, closed, stopRequested: false, reason: null }),
@@ -52,7 +53,9 @@ export function fixture() {
       } },
       stagerFor: () => stager, wallNow: owner.time.wall };
     const create = (overrides: Partial<InstallationOptions> = {}) => {
-      const manager = createInstallationController({ ...options, ...overrides }); managers.push(manager); return manager;
+      const target = overrides.journal ?? options.journal;
+      const gate = overrides.gate ?? (target === options.journal ? options.gate : gateFor(target, options.gate.namespaceIdentity));
+      const manager = createInstallationController({ ...options, ...overrides, gate }); managers.push(manager); return manager;
     };
     const finish = async (manager: InstallationController, offer = env.offer) => {
       for (let i = 0; i < 12; i++) {

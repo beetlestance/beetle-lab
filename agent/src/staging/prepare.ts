@@ -1,3 +1,4 @@
+import type { ProducerLease } from '../producer-gate/index.js';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { encodeJson, validate, EXPORT_ASSIGNMENT_BYTES } from '@beetle/contracts';
@@ -20,12 +21,13 @@ export interface Work { readonly plan: RuntimePlan; readonly files: Files }
 export function createFiles(options: StagerOptions, boundary: Boundary, check: () => Promise<void>): Files {
   return new Files(rootIdentity(options.root), boundary, check);
 }
-export async function prepareFiles(input: { options: StagerOptions; request: PrepareRequest; boundary: Boundary;
+export async function prepareFiles(input: { lease: ProducerLease; options: StagerOptions; request: PrepareRequest; boundary: Boundary;
   ownFiles(files: Files): void }): Promise<RuntimePlan> {
-  const { options, request, boundary } = input;
+  const { options, request, boundary, lease } = input;
+  lease.check();
   const authorized = await authorize(options, request.key, boundary);
   boundary.bindWall(authorized.deadlineMs, options.wallNow ?? Date.now);
-  await eligibility(options, authorized, boundary);
+  await eligibility(options, authorized, boundary); lease.check();
   const name = runtimeName({ ...request.key, installationId: options.profile.installationId });
   const taskRoot = join(options.profile.stagingRoot, name);
   const staged = freeze({ input: join(taskRoot, 'input'), output: join(taskRoot, 'output'), secrets: join(taskRoot, 'secrets') });
@@ -35,7 +37,7 @@ export async function prepareFiles(input: { options: StagerOptions; request: Pre
   if (!prepared.ok || prepared.value.name !== name) throw new StagingError('invalid_input');
   const plan = prepared.value;
   checkPlan(plan, authorized, options);
-  const check = () => eligibility(options, authorized, boundary);
+  const check = async () => { lease.check(); await eligibility(options, authorized, boundary); lease.check(); };
   const files = createFiles(options, boundary, check); input.ownFiles(files);
   const namespaceIntent = { protocolVersion: 1 as const, original: { ...request.key, generation: 1 as const, intentDigest: authorized.offer.intentDigest },
     purpose: authorized.assignment ? 'standalone_export' as const : 'performance' as const,
@@ -48,8 +50,8 @@ export async function prepareFiles(input: { options: StagerOptions; request: Pre
   const directories = await files.directoryFacts({ task: taskRoot, input: staged.input, output: staged.output, secrets: staged.secrets });
   await boundary.wait(() => options.journal.stagingNamespace.commitTask({ intent: namespaceIntent, directories }));
   await check();
-  await stageInputs({ options, authorized, files, staged, boundary });
-  await stageSecrets({ options, authorized, files, staged, boundary });
+  await stageInputs({ options, authorized, files, staged, boundary, check });
+  await stageSecrets({ options, authorized, files, staged, boundary, check });
   const offerBytes = utf8(serializeStagedOffer(authorized.offer));
   const manifestBytes = utf8(encodeJson(options.manifest, stagingPolicy.manifestBytes));
   await files.file(staged.input, 'offer.json', bytes(offerBytes), authorized.reservation.staging.offerBytes);
@@ -68,11 +70,11 @@ function checkPlan(plan: RuntimePlan, authorized: Authorized, options: StagerOpt
     || labels['dev.beetle.generation'] !== String(authorized.authority.generation)
     || labels['dev.beetle.spec'] !== plan.specDigest) throw new StagingError('invalid_input');
 }
-interface StageInput { options: StagerOptions; authorized: Authorized; files: Files; staged: StagedRoots; boundary: Boundary }
+interface StageInput { check(): Promise<void>; options: StagerOptions; authorized: Authorized; files: Files; staged: StagedRoots; boundary: Boundary }
 async function stageInputs(input: StageInput): Promise<void> {
   const { options, authorized, files, staged, boundary } = input;
   for (const [index, reference] of authorized.offer.inputs.entries()) {
-    await eligibility(options, authorized, boundary);
+    await input.check();
     const request = Object.freeze({ authority: authorized.authority, input: reference, signal: boundary.signal });
     const source = await boundary.wait(() => options.providers.input(request));
     const hash = createHash('sha256');
@@ -84,7 +86,7 @@ async function stageSecrets(input: StageInput): Promise<void> {
   const { options, authorized, files, staged, boundary } = input;
   let total = 0;
   for (const reference of authorized.offer.secretReferences ?? []) {
-    await eligibility(options, authorized, boundary);
+    await input.check();
     const request = Object.freeze({ authority: authorized.authority, secret: reference, signal: boundary.signal });
     const raw = await boundary.wait(() => options.providers.secret(request));
     if (!(raw instanceof Uint8Array) || raw.byteLength > stagingPolicy.secretBytes
