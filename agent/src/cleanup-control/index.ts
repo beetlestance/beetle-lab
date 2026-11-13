@@ -10,3 +10,5 @@ export type { NativeCleanupReceipt } from './receipt.js';
 export { captureStoredCleanupPlan, cleanupPlanFrameBytes } from './stored-plan.js';
 export type { StoredCleanupPlan, JournalCleanupPlans, CleanupPlanKey } from './stored-plan.js';
 export type { JournalCleanupProgress } from './journal-progress.js';
+export type { StoredCleanupReceipt, JournalCleanupReceipts } from './journal-receipts.js';
+export { finalCleanupProgress, captureStoredCleanupReceipt } from './stored-receipt.js';

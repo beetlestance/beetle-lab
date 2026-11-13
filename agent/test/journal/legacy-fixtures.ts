@@ -2,12 +2,12 @@ import type { DatabaseSync } from 'node:sqlite';
 import { removeFutureExport } from './legacy-export.js';
 import { transaction } from '../../src/journal/sql.js';
 
-export const CURRENT_JOURNAL_SCHEMA = 19;
+export const CURRENT_JOURNAL_SCHEMA = 20;
 
 /** Remove only additive14 objects, retaining every prior byte and physical fact. */
 export function removeFutureAbsence(db: DatabaseSync): void {
   const version = db.prepare('PRAGMA user_version').get()?.user_version;
-  if ([19, 18, 17, 16, 15].includes(Number(version))) removeFutureExport(db);
+  if ([20, 19, 18, 17, 16, 15].includes(Number(version))) removeFutureExport(db);
   if (db.prepare('PRAGMA user_version').get()?.user_version !== 14
     || db.prepare('SELECT COUNT(*) AS n FROM output_absence_closures').get()?.n !== 0
     || db.prepare('SELECT COUNT(*) AS n FROM accepted_attempts WHERE absence_bytes!=0').get()?.n !== 0) {
@@ -37,7 +37,7 @@ const sourceTriggers = [
   'output_reservation_update', 'output_reservation_released', 'output_finished_release',
 ];
 function requireEmptyFuture(db: DatabaseSync): void {
-  if (db.prepare('PRAGMA user_version').get()?.user_version !== CURRENT_JOURNAL_SCHEMA) throw new Error('legacy fixture requires current schema19');
+  if (db.prepare('PRAGMA user_version').get()?.user_version !== CURRENT_JOURNAL_SCHEMA) throw new Error('legacy fixture requires current schema20');
   const stats = db.prepare(`SELECT COUNT(*) AS n, SUM(CASE WHEN id=1 AND held_count=0 AND held_output_bytes=0
     AND held_staging_bytes=0 AND retained_output_bytes=0 AND retained_staging_bytes=0 THEN 1 ELSE 0 END) AS valid
     FROM disk_retention_stats`).get();

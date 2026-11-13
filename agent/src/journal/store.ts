@@ -1,3 +1,5 @@
+import { CleanupReceiptStore } from './cleanup-receipts/store.js';
+import { cleanupReceiptOperation } from './cleanup-receipt-protocol.js';
 import { CleanupProgressStore } from './cleanup-progress/store.js';
 import { cleanupProgressOperation } from './cleanup-progress-protocol.js';
 import { CleanupPlanStore, cleanupPlanOperation } from './cleanup-plans/index.js';
@@ -29,6 +31,7 @@ export class Store {
   private readonly retirements: RetirementStore;
   private readonly cleanupPlans: CleanupPlanStore;
   private readonly cleanupProgress: CleanupProgressStore;
+  private readonly cleanupReceipts: CleanupReceiptStore;
   private readonly namespaces: NamespaceStore;
   private readonly admission: AdmissionStore;
   private readonly read: StatementSync;
@@ -36,6 +39,7 @@ export class Store {
   private readonly runnable: RunnableScan;
   private readonly outputs: OutputSources;
   constructor(private readonly db: DatabaseSync, private readonly quota = DEFAULT_QUOTA_BYTES) {
+    this.cleanupReceipts = new CleanupReceiptStore(db);
     this.cleanupProgress = new CleanupProgressStore(db);
     this.cleanupPlans = new CleanupPlanStore(db);
     this.namespaces = new NamespaceStore(db); this.retirements = new RetirementStore(db);
@@ -108,6 +112,7 @@ export class Store {
     throw new Failure('invalid_input');
   }
   private custodyCommand(command: Command): Value | undefined {
+    if (cleanupReceiptOperation(command)) return this.cleanupReceipts.execute(command);
     if (cleanupProgressOperation(command)) return this.cleanupProgress.execute(command);
     if (cleanupPlanOperation(command)) return this.cleanupPlans.execute(command);
     if (retirementOperation(command)) return this.retirements.execute(command);

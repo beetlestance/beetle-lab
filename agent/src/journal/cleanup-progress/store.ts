@@ -7,7 +7,7 @@ import { sourceScope } from '../output-source-input.js';
 import { Failure,transaction } from '../sql.js';
 import type { CleanupProgressOperation,CleanupProgressValue } from '../cleanup-progress-protocol.js';
 import { cleanupProgressOperation } from '../cleanup-progress-protocol.js';
-function read(db:DatabaseSync,plan:NativeCleanupPlan):CleanupProgress|null{
+export function readCleanupProgress(db:DatabaseSync,plan:NativeCleanupPlan):CleanupProgress|null{
  const row=db.prepare(`SELECT CASE WHEN length(CAST(progress_json AS BLOB))<=${cleanupControl.progressBytes} THEN progress_json END AS json,plan_identity,encoded_bytes,charged_bytes FROM output_cleanup_progress WHERE attempt_id=?`).get(plan.original.attemptId);
  if(!row)return null;try{
   if(typeof row.json!=='string')throw Error();const progress=captureCleanupProgress(JSON.parse(row.json) as unknown,plan);
@@ -16,12 +16,12 @@ function read(db:DatabaseSync,plan:NativeCleanupPlan):CleanupProgress|null{
  }catch{throw new Failure('unavailable');}
 }
 function update(db:DatabaseSync,plan:NativeCleanupPlan,next:CleanupProgress):CleanupProgress{
- const prior=read(db,plan);if(!prior||!cleanupProgressFollows(prior,next))throw new Failure('conflict');
+ const prior=readCleanupProgress(db,plan);if(!prior||!cleanupProgressFollows(prior,next))throw new Failure('conflict');
  const json=encodeCanonicalJson(next,cleanupControl.progressBytes);const bytes=Buffer.byteLength(json);
  db.prepare('UPDATE output_cleanup_progress SET progress_json=?,encoded_bytes=?,charged_bytes=? WHERE attempt_id=?').run(json,bytes,bytes+512,plan.original.attemptId);return next;
 }
 function begin(db:DatabaseSync,plan:NativeCleanupPlan,identity:string):CleanupProgress{
- let prior=read(db,plan);
+ let prior=readCleanupProgress(db,plan);
  if(!prior){prior=captureCleanupProgress({protocolVersion:1,planIdentity:identity,entryCount:plan.entries.length,removedCount:0,version:1,state:'prepared'},plan);
   const json=encodeCanonicalJson(prior,cleanupControl.progressBytes);const bytes=Buffer.byteLength(json);
   db.prepare('INSERT INTO output_cleanup_progress(attempt_id,plan_identity,progress_json,encoded_bytes,charged_bytes) VALUES(?,?,?,?,?)').run(plan.original.attemptId,identity,json,bytes,bytes+512);
@@ -41,7 +41,7 @@ export class CleanupProgressStore{
   let command:CleanupProgressOperation;try{command=capture(input);}catch{throw new Failure('invalid_input');}
   return transaction(this.db,()=>{
    const stored=eligibleStoredPlan(this.db,command.key,command.planIdentity);let progress:CleanupProgress|null;
-   if(command.kind==='cleanupProgressRead')progress=read(this.db,stored.plan);
+   if(command.kind==='cleanupProgressRead')progress=readCleanupProgress(this.db,stored.plan);
    else if(command.kind==='cleanupProgressBegin')progress=begin(this.db,stored.plan,stored.planIdentity);
    else{let next:CleanupProgress;try{next=captureCleanupProgress(JSON.parse(command.json) as unknown,stored.plan);}catch{throw new Failure('invalid_input');}progress=update(this.db,stored.plan,next);}
    return{key:command.key,planIdentity:stored.planIdentity,progress};

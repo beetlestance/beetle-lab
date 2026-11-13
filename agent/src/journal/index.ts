@@ -1,3 +1,5 @@
+import { createCleanupReceiptClient } from './cleanup-receipt-client.js';
+import type { JournalCleanupReceipts } from '../cleanup-control/index.js';
 import { createCleanupProgressClient } from './cleanup-progress-client.js';
 import type { JournalCleanupProgress } from '../cleanup-control/index.js';
 import { createCleanupPlanClient } from './cleanup-plan-client.js';
@@ -66,7 +68,7 @@ function validateOptions(options: JournalOptions): void {
   if (typeof path !== 'string' || !path || path === ':memory:' || path.length > 4096) throw new JournalError('invalid_input');
 }
 function largeOperation(operation: Operation): boolean {
-  return ['cleanupProgressRead', 'cleanupProgressBegin', 'cleanupProgressAdvance', 'cleanupPlanRead', 'cleanupPlanStore', 'outputCollectionBegin', 'outputCollectionRead', 'outputSourceCommit', 'outputSourceRead', 'outputSourceRelease', 'outputCollectionFailed',
+  return ['cleanupReceiptRead', 'cleanupReceiptCommit', 'cleanupProgressRead', 'cleanupProgressBegin', 'cleanupProgressAdvance', 'cleanupPlanRead', 'cleanupPlanStore', 'outputCollectionBegin', 'outputCollectionRead', 'outputSourceCommit', 'outputSourceRead', 'outputSourceRelease', 'outputCollectionFailed',
     'outputDeliveryClose', 'outputDeliveryRead', 'outputAbsenceClose', 'outputAbsenceRead'].includes(operation.kind)
     || operation.kind === 'offer' || operation.kind === 'cancelOriginal' || operation.kind === 'read' || operation.kind === 'readExportAssignment'
     || operation.kind === 'admission' && operation.request.kind === 'offer';
@@ -76,6 +78,7 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
   readonly retirements: JournalRetirements;
   readonly cleanupPlans: JournalCleanupPlans;
   readonly cleanupProgress: JournalCleanupProgress;
+  readonly cleanupReceipts: JournalCleanupReceipts;
   readonly stagingNamespace: StagingNamespaceJournal;
   private readonly worker: Worker;
   private readonly pending = new Map<number, Pending>();
@@ -91,6 +94,9 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
   private readonly ready: Promise<void>;
 
   private constructor(options: JournalOptions) {
+    this.cleanupReceipts = createCleanupReceiptClient({ send: operation => this.prepare(operation, true),
+      invalidReply: () => { this.fail('unavailable'); throw new JournalError('unavailable'); },
+      settleCarrier: () => this.retirements.settleCarrier() });
     this.cleanupProgress = createCleanupProgressClient({ send: operation => this.prepare(operation, true),
       invalidReply: () => { this.fail('unavailable'); throw new JournalError('unavailable'); },
       settleCarrier: () => this.retirements.settleCarrier() });

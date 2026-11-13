@@ -1,0 +1,8 @@
+# Immutable receipt metadata
+Journal020 additiveguardedrow <=4096canonicalbytes+512logicalallowance, existingC1
+reserve only. Storevalidatescurrenteligibleplan/files_absentprogress andexactcodec/
+digest/bytecounts; exactreplay, no replace/update/delete. Rawports metadataonly.
+Actualprovenance comesfromNativeReceipt finalization+NativeAbsenceObservation, not
+counterorrowpresence. Clientreservesexistinglargecredit/boundsclosedscopedreply.
+Workerfailureactualtermination beforecalleroriginalrelease. No refund/ACK/purge.
+Tests cleanup-receipts; syntheticlegacyhelperdropsonlyEMPTYfuturetable.

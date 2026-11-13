@@ -1,7 +1,7 @@
 # Agent output retirement and cleanup acknowledgement
 
-Status: proposed next contract; no cleanup endpoint, native removal or refund is
-implemented by this document. Scope: performance Run output. Standalone-export
+Status: phased contract. Private retirement/native removal/receipt boundaries are
+locally implemented; authenticated cleanup endpoint and refund remain pending. Scope: performance Run output. Standalone-export
 cleanup needs a separate purpose binding; it must not impersonate a Run.
 Owners: backend deletion intent, agent Journal, existing producer/read lifetimes,
 and one native staging/output namespace owner. [Task sequence](../../execution/output-retirement.md).
