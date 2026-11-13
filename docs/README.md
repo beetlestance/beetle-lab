@@ -6,6 +6,7 @@ released application until the rewrite is qualified.
 | Need | Read | Authority |
 | --- | --- | --- |
 | Agent execution/effort | [Execution plan](execution/README.md) | Work packages, model routing, locks and context packets |
+| Inspect protected retention | [Contract](design/lld/protected-retention.md) | Bounded rule implementation in progress; snapshot/API/UI pending |
 | Inspect output settlement | [Contract](design/lld/output-settlement.md), [agent owner](verification/agent-storage-settlement.md), [HTTP](verification/agent-settlement-http.md), [backend](verification/backend-storage-settlement.md), [driver](verification/settlement-driver.md), [native](verification/native-settlement.md), [local drain](verification/settlement-barrier.md), [values](verification/settlement-values.md), [rejected funding](verification/rejected-cleanup-funding.md) | Automatic admitted/unsent reconciliation; native source and no-task recovery qualified; public retention pending |
 | Inspect cleanup implementation progress | [Progress index](verification/output-retirement-progress.md) | Prerequisites, transport evidence and precise remaining cleanup boundaries |
 | Inspect agent crash recovery | [Evidence](verification/cleanup-agent-crash.md) | Actual container/mailbox crash and unlink-before-progress recovery; no refund |
