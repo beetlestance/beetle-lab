@@ -1,3 +1,9 @@
+import { HistoricalRuns } from '../historical-runs.js';
+import { Suites } from '../../../src/adapters/outbound/sqlite/suites.js';
+import { Entities } from '../../../src/adapters/outbound/sqlite/entities.js';
+import { Settings } from '../../../src/adapters/outbound/sqlite/settings.js';
+import { settingsFixture,observation } from '../fixture.js';
+import { runOptions } from '../runs-fixture.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { prior14 } from '../../exports/prior-schema.js';
 import { seedFoundation, enqueue } from '../execution-foundation-fixtures.js';
@@ -15,7 +21,12 @@ export function prior019(path: string) {
   const db = prior14(path);
   registerAbsenceValidation(db); registerHistoryValidation(db); registerSearchFold(db);
   for (const sql of [migration015, migration016, migration017, migration018, migration019]) transaction(db, () => db.exec(sql));
-  db.enableDefensive(true); db.exec('PRAGMA locking_mode=EXCLUSIVE;BEGIN EXCLUSIVE;COMMIT'); const value = enqueue(db, seedFoundation(db)); return { db, ...value };
+  db.enableDefensive(true); db.exec('PRAGMA locking_mode=EXCLUSIVE;BEGIN EXCLUSIVE;COMMIT'); const store = seedFoundation(db); const fixture = settingsFixture(); fixture.runtime.pool.storageBytes = 400000;
+  const historical = new HistoricalRuns(db,new Suites(db,new Entities(db)),
+    new Settings(db,{installation:fixture.chain.installation,runtime:observation(fixture.runtime)}),runOptions().runs!);
+  // Preserve receipt-first Store ownership while explicitly freezing historical admission.
+  Reflect.set(store,'runs',historical);
+  const value = enqueue(db, store); return { db, ...value };
 }
 export function graph(db: DatabaseSync) {
   return db.prepare('SELECT type,name,tbl_name,rootpage,sql FROM sqlite_schema ORDER BY type,name').all();

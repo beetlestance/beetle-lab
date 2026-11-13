@@ -46,6 +46,11 @@ export function storageFixture() {
   const path = () => join(root, `metadata-${++sequence}.sqlite`);
   async function open(dbPath = path(), options: Partial<MetadataOptions> = {}): Promise<Metadata> {
     const fixture = settingsFixture();
+    // Enqueued runs now own cleanup capacity; explicit storage fixtures remain exact.
+    if (options.runs && options.installation === undefined) {
+      fixture.chain.installation.values.pool.storageBytes = 10_000_000;
+      fixture.runtime.pool.storageBytes = 10_000_000;
+    }
     const handle = await openMetadata({ path: dbPath, workerUrl, installation: fixture.chain.installation,
       runtime: observation(fixture.runtime, Date.now(), options.runtimeTtlMs ?? 5000), ...options });
     handles.add(handle); return handle;

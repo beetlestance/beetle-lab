@@ -51,7 +51,7 @@ it('uses shared storage exactly once and retained output prevents later work aft
   f.policy(values => { values.pool.storageBytes = 140000; });
   const before = custody(f.db);
   expect(f.claims.claim(third)).toEqual({ kind: 'blocked', reason: 'storage_unavailable' });
-  expect(f.db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(262344);
+  expect(f.db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(327880);
   expect(custody(f.db)).toEqual(before);
 });
 it.each(['cancelled', 'closed'] as const)('refuses fresh %s Run without mutation', kind => {

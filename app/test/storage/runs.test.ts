@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
+import { METADATA_SCHEMA_VERSION } from '../../src/adapters/outbound/sqlite/schema.js';
 import { validate } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import { scope, seed, storageFixture, uuid, requestId, settingsCommand, command as namespaceCommand } from './fixture.js';
@@ -20,7 +21,7 @@ it('atomically persists run/attempt/outbox and replays original receipt after se
     schemaVersion: 2, requestId: requestId(), expectedVersion: 1, patch: { runDefaults: { budget: { cpuMillis: 90 } } } }));
   await fixture.close(metadata);
   const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
-  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
+  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
   for (const table of ['runs', 'attempts', 'dispatch_outbox']) expect(db.prepare(`SELECT count(*) AS n FROM ${table}`).get()?.n).toBe(1);
   const attempt = db.prepare('SELECT * FROM attempts').get()!; const offer = JSON.parse(String(attempt.offer_json)) as Offer;
   expect(validate('Offer', offer).ok).toBe(true);

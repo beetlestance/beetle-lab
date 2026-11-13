@@ -1,5 +1,4 @@
-import { reserveCleanupControl } from './cleanup-control/index.js';
-import { BACKEND_CLEANUP_CONTROL_BYTES } from '../../../ports/cleanup-control.js';
+import { reserveCleanupControl, missingCleanupControlBytes } from './cleanup-control/index.js';
 import type { DatabaseSync } from 'node:sqlite';
 import type { DispatchKey } from '../../../ports/dispatch.js';
 import { RUN_OUTPUT_METADATA_BYTES } from '../../../ports/dispatch.js';
@@ -18,7 +17,7 @@ export function reserveRunOutput(db: DatabaseSync, key: DispatchKey,
     key.runId, key.attempt.organizationId, key.attempt.workspaceId, key.attempt.intentDigest);
   requireRule(typeof row?.output_bytes === 'number' && typeof row.charged_bytes === 'number', 'not_found');
   const outputBytes = row.output_bytes + RUN_OUTPUT_METADATA_BYTES;
-  const requestedBytes = outputBytes + BACKEND_CLEANUP_CONTROL_BYTES;
+  const requestedBytes = outputBytes + missingCleanupControlBytes(db, {runId:key.runId,...key.attempt});
   requireRule(storageFits({ chargedBytes: row.charged_bytes, requestedBytes,
     allocationBytes: capacity.allocationBytes, reserveBytes: capacity.reserveBytes }), 'capacity_unavailable');
   db.prepare(`INSERT INTO attempt_output_allocations(attempt_id,run_id,organization_id,workspace_id,

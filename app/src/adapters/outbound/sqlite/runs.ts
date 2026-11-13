@@ -1,3 +1,4 @@
+import { reserveCleanupControl } from './cleanup-control/index.js';
 import {checkExecutionQueue} from './execution-queue.js';
 import {checkRevisionPins} from './revision-pins.js';
 import { insertExecutionIntent } from './execution-intents.js';
@@ -50,6 +51,11 @@ export class Runs {
     this.db.prepare(`INSERT INTO attempts(id,run_id,organization_id,workspace_id,ordinal,intent_digest,offer_json,registry_json,state,foundation_owned)
       VALUES(?,?,?,?,1,?,?,?,'offered',1)`).run(run.activeAttemptId, run.id, run.scope.organizationId,
       run.scope.workspaceId, intentDigest, offer, encodeJson(profile, 32768));
+    reserveCleanupControl(this.db, { runId: run.id, attemptId: run.activeAttemptId,
+      organizationId: run.scope.organizationId, workspaceId: run.scope.workspaceId }, () => {
+      const pool = this.settings.chain({ kind: 'installation' }).installation.values.pool;
+      return { allocationBytes: pool.storageBytes, reserveBytes: pool.freeSpaceReserveBytes };
+    });
     insertExecutionIntent(this.db, run, parsedOffer, profile);
     this.db.prepare('INSERT INTO dispatch_outbox(attempt_id,intent_digest) VALUES(?,?)').run(run.activeAttemptId, intentDigest);
   }

@@ -116,6 +116,7 @@ it('reports unpublished untracked diagnostic order zero with attempt tie continu
   expect(f.claims.claim(legacy)).toEqual({ kind: 'blocked', reason: 'untracked_intent' });
 });
 it('retains exactly 64 active original charges and refuses excess or inconsistent recovery sums', () => {
+  f.db.close(); f=claimsFixture(10000000);
   const keys = Array.from({ length: 66 }, (_, n) => f.add(1000 + n * 2));
   const pool = { cpuMillis: 10000, memoryBytes: 10000, pids: 10000, outputBytes: 10000,
     concurrency: 100, storageBytes: 10000000, freeSpaceReserveBytes: 0 };

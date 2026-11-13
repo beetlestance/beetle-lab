@@ -15,11 +15,15 @@ export interface DispatchFact {
   possible_delivery: number | null; first_delivery_at: string | null;
   record_id: string | null; execution_charged: number | null; acknowledged_generation: number | null;
   journal_authority: string | null; delivery_attempt_id: string | null; snapshot_present: number; output_id: string | null;
-  maximum_payload_bytes: number | null; metadata_bytes: number | null; charged_bytes: number | null;
+  storage_bytes: number; maximum_payload_bytes: number | null; metadata_bytes: number | null; charged_bytes: number | null;
 }
 const columns = `a.id attempt_id,a.run_id,a.organization_id,a.workspace_id,a.intent_digest,
  i.queue_order,i.profile_alias,i.registry_digest,i.cpu_millis,i.memory_bytes,i.pids,i.timeout_ms,
- i.output_bytes,i.staging_bytes,i.mode,r.state,(r.active_attempt_id=a.id) current_attempt,r.cancellation_requested,r.version,a.generation,a.foundation_owned,
+ i.output_bytes,i.staging_bytes,i.mode,
+ CAST(i.output_bytes AS REAL)+65536+CASE WHEN EXISTS(SELECT 1 FROM backend_cleanup_controls bc
+  WHERE bc.attempt_id=a.id AND bc.run_id=a.run_id AND bc.organization_id=a.organization_id
+  AND bc.workspace_id=a.workspace_id AND bc.policy_version=1 AND bc.reserved_bytes=65536)
+  THEN 0 ELSE 65536 END storage_bytes,r.state,(r.active_attempt_id=a.id) current_attempt,r.cancellation_requested,r.version,a.generation,a.foundation_owned,
  a.execution_intent_id attempt_marker,d.execution_intent_id outbox_marker,d.possible_delivery,d.first_delivery_at,
  e.attempt_id record_id,e.execution_charged,e.acknowledged_generation,e.delivery_attempt_id,
  CASE WHEN length(CAST(e.journal_authority AS BLOB))=36 THEN e.journal_authority ELSE NULL END journal_authority,

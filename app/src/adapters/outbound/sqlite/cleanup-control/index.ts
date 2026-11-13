@@ -8,6 +8,10 @@ function present(db:DatabaseSync,key:CleanupOriginal):boolean{
  return !!db.prepare(`SELECT 1 FROM backend_cleanup_controls WHERE attempt_id=? AND run_id=? AND organization_id=? AND workspace_id=?
   AND policy_version=1 AND reserved_bytes=?`).get(key.attemptId,key.runId,key.organizationId,key.workspaceId,BACKEND_CLEANUP_CONTROL_BYTES);
 }
+/** Shared admission arithmetic: already funded originals require no second allowance. */
+export function missingCleanupControlBytes(db:DatabaseSync,key:CleanupOriginal):number{
+ return present(db,key)?0:BACKEND_CLEANUP_CONTROL_BYTES;
+}
 /** Original transaction owns admission. Replay never depends on fresh capacity. */
 export function reserveCleanupControl(db:DatabaseSync,key:CleanupOriginal,capacity:()=>CleanupCapacity):void{
  if(!db.isTransaction)throw new StorageError('conflict');if(present(db,key))return;

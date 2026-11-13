@@ -36,3 +36,19 @@ History scalar joins include charged cleanup control once; no physical disk size
 inferred. Private source-bound check plans retain every failure and correction.
 Independent review accepted accounting, guards, fixture assumptions and scope. Native whole-chain
 cleanup remains separate; no user service or published image changed.
+
+C5a0 now funds each new Run at receipt-first enqueue, before execution intent/outbox
+publication. An insufficient installation pool rolls the entire enqueue back.
+Advisory discovery and claim add only missing cleanup control, preserving exact
+capacity for already funded originals. Legacy explicit top-up remains unchanged.
+Queued originals therefore consume65,536 bytes before dispatch; queue slots do not
+promise storage. Full-capacity positively unsent deletion reuses that allowance.
+
+Focused42cases across8files passed20.10s, including compiled-worker Run mutations,
+exact-capacity claim, enqueue failure/receipt replay, unsent deletion at full capacity
+and historical migration preservation. Types27.33s, lint8.70s, architecture6.56s,
+docs1.54s exited0. Initial failures preserved: two exploratory boundary fixtures;
+then12 failures for new queued charges, unsafe SQL arithmetic and historical seeds;
+then12 fixture runtime/installation consistency failures. Corrections preserve the
+resource workload, explicit capacities and real historical guards. This adds no
+refund, settlement, replay tombstone or public deletion behavior.

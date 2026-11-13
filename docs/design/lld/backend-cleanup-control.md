@@ -28,17 +28,23 @@ bytes =366<=384. No filename, artifact body, free-form error or config belongs h
 Tombstone use must independently prove its fixed bucket before C5 implementation.
 Do not add a logical consumer by silently consuming slack or hiding it in event payloads.
 
-For new delivery, reserve atomically with the output allocation before possible_delivery
-can become1. Check the combined payload+old metadata+cleanup charge against the same
-fresh effective claim capacity and reserve. Ledger insert checks safe arithmetic,
-original Run/attempt/scope, configured installation ceilings and available shared usage;
-its trigger applies the single charge. A later failed claim rolls back both charges.
+New Run enqueue reserves control atomically after its original attempt insert and
+before publishing its execution intent/outbox or receipt. Insufficient configured
+installation storage rolls enqueue back. This funds positively unsent cancellation
+before ordinary retained storage can fill the pool. Queue capacity does not promise
+storage capacity. Exact enqueue receipt replay needs no new allowance.
+For delivery, check payload+old metadata+only missing cleanup control against fresh
+effective claim capacity. Already funded originals need zero additional control bytes;
+legacy originals still need65,536. Both advisory eligibility and claim share this rule.
+Ledger insert checks safe arithmetic, original Run/attempt/scope, configured ceilings
+and shared usage; its trigger applies the single charge. A later failed claim rolls
+back new output charges while preserving an existing enqueue reservation.
 Existing output/finalization accounting remains unchanged. Exact replay reuses the
 first reservation independently of later lowered limits; replacement/mutation/deletion
 are forbidden until C5 provides a reviewed settlement transition.
 
 Migration preserves all old data/counters and creates no fictional reservation. Missing
-ledger means positively unreserved. Legacy and positively unsent originals require
+ledger means positively unreserved. Legacy originals, including old positively unsent cancellations, require
 explicit admission/top-up under current configured storage policy before deletion
 preparation, removal, or agent retirement. New Begin reserves before committing intent;
 resumed legacy intents use the private reserveControl operation. Its replay does not
