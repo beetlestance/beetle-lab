@@ -1,3 +1,5 @@
+import {runtimeAssociationObservationFacts} from '../../../src/backends/docker/index.js';
+import type {RuntimeAssociation,ObservedRuntimeAssociation} from '../../../src/runtime-association/index.js';
 import type { DockerReply, DockerRequest } from '../../../src/backends/docker/index.js';
 import { LiveDocker } from './mailbox-volume-fixtures.js';
 export const daemonId = 'synthetic-retirement-daemon';
@@ -14,4 +16,13 @@ export class RetiredDocker extends LiveDocker {
       body: this.state?.Id === match[1] ? this.state : null };
     return super.respond(input);
   }
+}
+
+/** Adapter-only synthetic persistence; durable Journal recovery has its own tests. */
+export function associationFixture(){
+ let stored:RuntimeAssociation|null=null;
+ return {read:async()=>stored,commit:async(observed:ObservedRuntimeAssociation)=>{
+  const facts=runtimeAssociationObservationFacts(observed);
+  stored={...facts,version:1,purpose:'performance',retirementRequestDigest:'a'.repeat(64),namespaceIdentity:'b'.repeat(64),taskNamespaceIdentity:'c'.repeat(64)};return stored;
+ }};
 }

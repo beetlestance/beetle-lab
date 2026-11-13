@@ -1,3 +1,4 @@
+import {RuntimeAssociationStore,runtimeAssociationOperation} from './runtime-associations/index.js';
 import { CleanupReceiptStore } from './cleanup-receipts/store.js';
 import { cleanupReceiptOperation } from './cleanup-receipt-protocol.js';
 import { CleanupProgressStore } from './cleanup-progress/store.js';
@@ -31,6 +32,7 @@ export class Store {
   private readonly retirements: RetirementStore;
   private readonly cleanupPlans: CleanupPlanStore;
   private readonly cleanupProgress: CleanupProgressStore;
+  private readonly runtimeAssociations:RuntimeAssociationStore;
   private readonly cleanupReceipts: CleanupReceiptStore;
   private readonly namespaces: NamespaceStore;
   private readonly admission: AdmissionStore;
@@ -39,6 +41,7 @@ export class Store {
   private readonly runnable: RunnableScan;
   private readonly outputs: OutputSources;
   constructor(private readonly db: DatabaseSync, private readonly quota = DEFAULT_QUOTA_BYTES) {
+    this.runtimeAssociations=new RuntimeAssociationStore(db);
     this.cleanupReceipts = new CleanupReceiptStore(db);
     this.cleanupProgress = new CleanupProgressStore(db);
     this.cleanupPlans = new CleanupPlanStore(db);
@@ -112,6 +115,7 @@ export class Store {
     throw new Failure('invalid_input');
   }
   private custodyCommand(command: Command): Value | undefined {
+    if(runtimeAssociationOperation(command))return this.runtimeAssociations.execute(command);
     if (cleanupReceiptOperation(command)) return this.cleanupReceipts.execute(command);
     if (cleanupProgressOperation(command)) return this.cleanupProgress.execute(command);
     if (cleanupPlanOperation(command)) return this.cleanupPlans.execute(command);

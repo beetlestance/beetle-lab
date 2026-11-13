@@ -8,7 +8,7 @@ it('keeps exact native integers beyond Number precision, immutable spelling and 
   const changed = { ...copy, entries: [{ path: '', kind: 'directory' as const, native: { ...directory, ino: '9007199254740996' } }] };
   expect(nativeCleanupPlanIdentity(changed)).not.toBe(nativeCleanupPlanIdentity(copy));
   for (const bad of [9007199254740992, '01', '-1', '1e3', '18446744073709551616']) expect(() => captureNativeDirectory({ ...directory, ino: bad })).toThrow();
-  expect(cleanupPayloadBytes).toBe(167936); expect(cleanupPayloadBytes).toBeLessThan(cleanupControl.reservedBytes);
+  expect(cleanupPayloadBytes).toBe(169984); expect(cleanupPayloadBytes).toBeLessThan(cleanupControl.reservedBytes);
 });
 it('rejects unknown effects, foreign tree structure, links, escapes and unsupported purposes', () => {
   const base = plan();

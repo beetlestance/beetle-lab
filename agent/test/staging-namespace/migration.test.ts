@@ -1,3 +1,4 @@
+import {JOURNAL_SCHEMA_VERSION} from '../../src/journal/schema.js';
 import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { admissionFixture, scope, reserved } from '../admission/fixtures.js';
@@ -17,7 +18,7 @@ it('preserves admitted predecessor data and charges without inventing old namesp
   await expect(journal.stagingNamespace.begin(rootFacts)).rejects.toMatchObject({ code: 'recovery_required' });
   await expect(f.admit(journal, job)).rejects.toMatchObject({ code: 'recovery_required' });
   await f.close(journal); db = new DatabaseSync(path);
-  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(20);
+  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(JOURNAL_SCHEMA_VERSION);
   expect(db.prepare('SELECT offer_json,canonical_json,spool_bytes,snapshot_bytes,quota_bytes,last_seq FROM accepted_attempts').get()).toEqual(row);
   expect(db.prepare('SELECT * FROM disk_holds').all()).toEqual(holds); expect(db.prepare('SELECT * FROM disk_retention_stats').all()).toEqual(stats);
   expect(db.prepare('SELECT cleanup_control_bytes,staging_namespace_identity FROM accepted_attempts').get()).toEqual({ cleanup_control_bytes: 0, staging_namespace_identity: null });

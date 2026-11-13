@@ -1,3 +1,5 @@
+import {captureRuntimeAssociationPersistence,restoreRetiredAssociation,persistRetiredAssociation} from './runtime-association.js';
+import type {RuntimeAssociationPersistence} from './runtime-association.js';
 import { captureRetiredRuntimeBinding } from './retirement-binding.js';
 import type { RetiredRuntimeBinding } from './retirement-binding.js';
 import { MailboxVolumeOwner } from './mailbox-volume.js';
@@ -180,15 +182,20 @@ export class DockerBackend {
   }
 
   /** C3 caller proves actual producer drain and exact released closure/ACK, not caller booleans. */
-  async removeRetired(plan: RuntimePlan, operation: Operation, input: RetiredRuntimeBinding): Promise<MutationResult<'removed'>> {
+  async removeRetired(plan: RuntimePlan, operation: Operation, input: RetiredRuntimeBinding, associations?:RuntimeAssociationPersistence): Promise<MutationResult<'removed'>> {
     const binding = captureRetiredRuntimeBinding(input); if (!binding) return rejected('invalid_input');
+    const persistence=captureRuntimeAssociationPersistence(associations);
     return this.run(plan, operation, async (entry, context) => {
       if (entry.readers !== 0) return rejected('cleanup_guard');
       if (entry.runtimeId && entry.runtimeId !== binding.runtimeId) return rejected('conflict');
       entry.retiredRuntimeId = binding.runtimeId; entry.runtimeId = binding.runtimeId;
       const before = this.current(entry, await this.observe(plan, context));
-      if (before.state === 'missing') return this.removeRetiredVolume(entry, context);
+      if (before.state === 'missing') {
+        await restoreRetiredAssociation(entry.volume,plan,binding,persistence);
+        return this.removeRetiredVolume(entry, context);
+      }
       if (!this.stopped(before)) return this.retiredObservationFailure(before);
+      if(!await persistRetiredAssociation(entry.volume,plan,binding,persistence))return rejected('cleanup_guard');
       const reply = await this.request({ ...context, method: 'DELETE',
         path: `/v1.47/containers/${binding.runtimeId}?force=false&v=false` });
       if (!reply.ok) return this.failedMutation(reply);

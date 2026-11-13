@@ -1,3 +1,4 @@
+import {JOURNAL_SCHEMA_VERSION} from '../../src/journal/schema.js';
 import { expect, it } from 'vitest';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeCanonicalJson } from '@beetle/contracts';
@@ -38,7 +39,7 @@ it('migrates actual schema16 additively preserving rows, schema roots, foreign k
   const original = db.prepare('SELECT * FROM accepted_attempts').all(); const held = db.prepare('SELECT * FROM disk_holds').all(); db.close();
   db = initialize(v.path);
   try {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(20);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(JOURNAL_SCHEMA_VERSION);
     for (const row of before) {
       if (typeof row.name !== 'string') throw new Error('Missing schema name');
       expect(db.prepare('SELECT name,type,sql,rootpage FROM sqlite_schema WHERE name=?').get(row.name)).toEqual(row);

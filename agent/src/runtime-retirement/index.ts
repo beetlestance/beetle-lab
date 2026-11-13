@@ -46,7 +46,9 @@ export class RuntimeRetirement {
       const daemonId = ownedDaemon(this.options);
       if (runtime) {
         owner.backend ??= this.options.backend(); check();
-        const result = await owner.backend.removeRetired(runtime.plan, operation, { runtimeId: runtime.runtimeId, daemonId }); check();
+        const associations=this.options.journal.runtimeAssociations;
+        const result = await owner.backend.removeRetired(runtime.plan, operation, { runtimeId: runtime.runtimeId, daemonId },
+          {read:()=>associations.read(intent),commit:observed=>associations.commit(intent,observed)}); check();
         if (result.outcome !== 'known') throw new RuntimeRetirementError('unresolved');
       } else await this.noRuntimeDaemon(operation, daemonId, check);
       check(); const facts: RuntimeAbsentFacts = { intent, daemonId, runtime: runtime

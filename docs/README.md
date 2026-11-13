@@ -7,6 +7,7 @@ released application until the rewrite is qualified.
 | --- | --- | --- |
 | Agent execution/effort | [Execution plan](execution/README.md) | Work packages, model routing, locks and context packets |
 | Inspect cleanup implementation progress | [Progress index](verification/output-retirement-progress.md) | Prerequisites, transport evidence and precise remaining cleanup boundaries |
+| Inspect cold runtime recovery | [Association](design/lld/runtime-association.md), [evidence](verification/runtime-association.md) | Durable exact mailbox association before deletion; fresh native checks still required |
 | Inspect automatic cleanup | [Driver](design/lld/output-deletion-runtime.md), [evidence](verification/cleanup-driver.md) | Bounded file/retirement turns and actual shared gateway; no settlement |
 | Inspect backend cleanup reservation | [Control contract](design/lld/backend-cleanup-control.md), [evidence](verification/backend-cleanup-control.md) | Dedicated policy1 charge before new delivery and explicit legacy top-up; no refund |
 | Inspect backend cleanup ACK storage | [ACK contract](design/lld/backend-retirement-ack.md), [evidence](verification/backend-retirement-ack.md) | Immutable exact metadata and guarded insertion; driver/native composition pending |

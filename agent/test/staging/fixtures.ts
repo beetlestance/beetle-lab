@@ -41,7 +41,7 @@ export function fixture() {
   });
   return {
     ...journal,
-    async environment(enqueue = true, timeoutMs = 1000) {
+    async environment(enqueue = true, timeoutMs = 1000,liveMetricMailbox=false) {
       const rootPath = await realpath(await mkdtemp(join(tmpdir(), 'beetle-staging-'))); paths.push(rootPath);
       const input = makeInput(); const offer = journal.job(); offer.secretReferences = [];
       offer.budget.timeoutMs = timeoutMs;
@@ -49,7 +49,7 @@ export function fixture() {
       offer.config.note = '🪲 café';
       const manifest = input.manifest; manifest.minimumBudget = { ...offer.budget };
       const user = `${process.getuid!()}:${process.getgid!()}`;
-      const profile = { ...input.profile, user, stagingRoot: rootPath, maximumBudget: { ...offer.budget } };
+      const profile = { ...input.profile, user, stagingRoot: rootPath, maximumBudget: { ...offer.budget },...(liveMetricMailbox?{liveMetricMailbox:true}:{}) };
       const configuration = { installationId: profile.installationId, stagingRoot: rootPath, expectedDaemonId: 'synthetic-daemon',
         agentContainer: 'synthetic-agent', agentImageId: `sha256:${'c'.repeat(64)}`, user };
       const transport = new Inspection(configuration);

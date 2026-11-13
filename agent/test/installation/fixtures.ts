@@ -15,10 +15,10 @@ export { operation, scope, deferred, validation };
 export function fixture() {
   const f = stagingFixture(); const managers: InstallationController[] = [];
   afterEach(async () => { await Promise.allSettled(managers.splice(0).map(manager => manager.close())); });
-  return { ...f, async setup(outputBytes?: number) {
+  return { ...f, async setup(outputBytes?: number,liveMetricMailbox=false) {
     // Nominal lifecycle setup is real filesystem I/O, not a one-second latency SLA.
     // Explicit staging deadline tests retain the shared fixture's short budgets.
-    const env = await f.environment(false, 10_000);
+    const env = await f.environment(false, 10_000,liveMetricMailbox);
     if (outputBytes !== undefined) {
       env.offer.budget.outputBytes = outputBytes;
       Reflect.set(env.options.profile.maximumBudget, 'outputBytes', outputBytes);

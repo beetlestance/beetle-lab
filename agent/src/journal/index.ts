@@ -1,3 +1,5 @@
+import {createRuntimeAssociationClient} from './runtime-association-client.js';
+import type {JournalRuntimeAssociations} from '../runtime-association/index.js';
 import { createCleanupReceiptClient } from './cleanup-receipt-client.js';
 import type { JournalCleanupReceipts } from '../cleanup-control/index.js';
 import { createCleanupProgressClient } from './cleanup-progress-client.js';
@@ -75,6 +77,7 @@ function largeOperation(operation: Operation): boolean {
 }
 
 export class Journal implements JournalOutputSources, JournalOutputDelivery, JournalOutputAbsence {
+  readonly runtimeAssociations:JournalRuntimeAssociations;
   readonly retirements: JournalRetirements;
   readonly cleanupPlans: JournalCleanupPlans;
   readonly cleanupProgress: JournalCleanupProgress;
@@ -94,6 +97,7 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
   private readonly ready: Promise<void>;
 
   private constructor(options: JournalOptions) {
+    this.runtimeAssociations=createRuntimeAssociationClient({send:operation=>this.prepare(operation),invalidReply:()=>{this.fail('unavailable');throw new JournalError('unavailable');},settleCarrier:()=>this.retirements.settleCarrier()});
     this.cleanupReceipts = createCleanupReceiptClient({ send: operation => this.prepare(operation, true),
       invalidReply: () => { this.fail('unavailable'); throw new JournalError('unavailable'); },
       settleCarrier: () => this.retirements.settleCarrier() });
@@ -360,7 +364,7 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
     this.readyReject(new JournalError(code));
     for (const pending of this.pending.values()) { clearTimeout(pending.timer); pending.reject(new JournalError(code)); }
     this.pending.clear();
-    void this.terminate();
+    void this.terminate().catch(()=>{});
   }
 
   private terminate(): Promise<number> {

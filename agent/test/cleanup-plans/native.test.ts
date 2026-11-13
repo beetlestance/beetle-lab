@@ -1,3 +1,4 @@
+import {JOURNAL_SCHEMA_VERSION} from '../../src/journal/schema.js';
 import { expect,it } from 'vitest';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeCanonicalJson } from '@beetle/contracts';
@@ -19,7 +20,7 @@ it('migrates schema17 and persists exact worker plan without changing previous r
  const before=rows(db);const schema=db.prepare("SELECT name,type,sql,rootpage FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all();db.close();
  const journal=await f.open(e.journalPath);const stored=await journal.cleanupPlans.store(e.plan);await journal.close();db=initialize(e.journalPath);
  try{
-  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(20);expect(rows(db)).toEqual(before);
+  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(JOURNAL_SCHEMA_VERSION);expect(rows(db)).toEqual(before);
   for(const row of schema)expect(db.prepare('SELECT name,type,sql,rootpage FROM sqlite_schema WHERE name=?').get(String(row.name))).toEqual(row);
   const actual=db.prepare('SELECT plan_identity,encoded_bytes,charged_bytes FROM output_cleanup_plans').get();
   expect(actual).toEqual({plan_identity:stored.planIdentity,encoded_bytes:Buffer.byteLength(encodeCanonicalJson(e.plan,cleanupControl.planBytes)),charged_bytes:Buffer.byteLength(encodeCanonicalJson(e.plan,cleanupControl.planBytes))+512});

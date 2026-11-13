@@ -1,3 +1,5 @@
+import {migration021} from './migration021.js';
+import {registerRuntimeAssociationValidation} from './runtime-associations/index.js';
 import { migration020 } from './migration020.js';
 import { registerCleanupReceiptValidation } from './cleanup-receipts/validation.js';
 import { migration019 } from './migration019.js';
@@ -24,6 +26,8 @@ import { migration012 } from './migration012.js';
 import { migration013 } from './migration013.js';
 import { migration014 } from './migration014.js';
 import { migration015 } from './migration015.js';
+
+export const JOURNAL_SCHEMA_VERSION=21;
 
 // Rebuild only the foundation's fixed sequence constraint. Copy immutable JSON and
 // row IDs verbatim, including original UUID spellings and durable cancel intent.
@@ -91,18 +95,19 @@ export function initialize(path: string): DatabaseSync {
   try {
     db.exec('PRAGMA busy_timeout=100; PRAGMA cache_size=-2048; PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; COMMIT;');
     const version = db.prepare('PRAGMA user_version').get()?.user_version;
-    if (typeof version !== 'number' || version > 20) throw new Failure('schema_newer');
+    if (typeof version !== 'number' || version > JOURNAL_SCHEMA_VERSION) throw new Failure('schema_newer');
     db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;');
     const authority = version === 0 ? randomUUID() : null;
-    registerNamespaceValidation(db); registerRetirementValidation(db); registerCleanupPlanValidation(db); registerCleanupProgressValidation(db); registerCleanupReceiptValidation(db);
-    if (version < 20) transaction(db, () => {
+    registerRuntimeAssociationValidation(db); registerNamespaceValidation(db); registerRetirementValidation(db); registerCleanupPlanValidation(db); registerCleanupProgressValidation(db); registerCleanupReceiptValidation(db);
+    if (version < JOURNAL_SCHEMA_VERSION) transaction(db, () => {
       migrateFoundation(db, version);
       if (version < 15) migrateOwnership(db, version, authority);
       if (version < 16) db.exec(migration016);
       if (version < 17) db.exec(migration017);
       if (version < 18) db.exec(migration018);
       if (version < 19) db.exec(migration019);
-      db.exec(migration020);
+      if(version<20)db.exec(migration020);
+      db.exec(migration021);
       if (db.prepare('PRAGMA foreign_key_check').get()) throw new Failure('unavailable');
     });
     // Samples and process-owned guard readiness are not valid startup authority.

@@ -31,11 +31,12 @@ retired path does not fabricate local creation/removal history to enter that API
 A matched original container can establish the mailbox association through existing
 volume verification. After original removal, the same retained backend may reconcile
 an uncertain delete and remove that verified mailbox non-force, confirming absence.
-A cold missing original plus an existing volume remains unresolved: matching names,
-labels and options cannot reconstruct the lost association. Missing original and
+A cold missing original plus an existing volume without a durable association remains
+unresolved: matching names, labels and options cannot reconstruct prior custody. Missing original and
 missing mailbox can establish absence only with the full positive authority chain.
-Persisting association before deletion for crash recovery belongs to the subsequent
-native-plan contract; this slice does not enable automatic/public cleanup.
+The [Journal association](runtime-association.md) now persists exact observed custody
+before deletion and restores it across cold recovery. Native checks still establish
+current absence; full C4 composition and public cleanup remain separately qualified.
 
 ## Lifetime, bounds and result
 
@@ -64,3 +65,6 @@ capabilities; operation snapshot/deadline/close races;64-entry bound; unknown-de
 reconciliation; retained versus cold mailbox association; private bootstrap composition.
 Real Docker evidence must name its leaf/composed scope explicitly. Full C3–C6 and
 public automatic cleanup remain pending.
+
+Cold recovery now uses [runtime association](runtime-association.md): exact stopped
+runtime/volume observation commits before container deletion; live checks remain required.

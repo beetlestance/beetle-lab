@@ -1,3 +1,4 @@
+import {JOURNAL_SCHEMA_VERSION} from '../../src/journal/schema.js';
 import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { cleanupControl } from '../../src/cleanup-control/index.js';
@@ -19,7 +20,7 @@ it('preflights without fencing, persists exact intent across lost reply/reopen a
   expect(await journal.retirements.begin(value.request)).toEqual(expected);
   await f.close(journal); const db = new DatabaseSync(value.path, { readOnly: true });
   try {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(20);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(JOURNAL_SCHEMA_VERSION);
     expect(db.prepare('SELECT cleanup_control_bytes FROM accepted_attempts').get()?.cleanup_control_bytes).toBe(cleanupControl.reservedBytes);
     expect(db.prepare('SELECT phase FROM disk_holds').get()?.phase).toBe('retained');
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);

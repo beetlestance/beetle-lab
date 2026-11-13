@@ -12,3 +12,6 @@ export type { MailboxArchiveRequest, MailboxArchiveReply } from './types.js';
 export type { ResourceReading } from './resource-types.js';
 
 export type { RetiredRuntimeBinding } from './retirement-binding.js';
+
+export {runtimeAssociationObservationFacts} from './runtime-association.js';
+export type {RuntimeAssociationPersistence} from './runtime-association.js';

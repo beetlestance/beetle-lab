@@ -3,7 +3,7 @@ Public entry index.ts owns version1 logical reserved buckets, exact bigint nativ
 facts, bounded performance plan/progress/receipt codecs and canonical identities.
 A valid codec value is neither native custody, permission to delete nor an ACK.
 No filesystem, SQL, transport, target execution or refunds live here.
-Reserve196608 logical bytes at admission; payload buckets total167936. Actual
+Reserve196608 logical bytes at admission; named buckets total169984, slack26624. Actual
 control data consumes its bucket inside that reserve, never a second charge.
 Plan<=512entries/32depth/4096UTF8pathbytes/128KiB. Parent directories precede
 children; removal progresses in reverse order, one synced/closed entry at a time.

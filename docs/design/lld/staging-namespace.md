@@ -70,8 +70,9 @@ singleton metadata; full physical disks may still fail writes and stay charged.
 | Progress | 8192 |
 | Cleanup receipt | 4096 |
 | Compact replay record | 4096 |
+| Runtime/mailbox association | 2048 |
 | Logical row/transaction allowance | 8192 |
-| Total buckets / reserved slack | 167936 / 28672 |
+| Total buckets / reserved slack | 169984 / 26624 |
 
 Quota calculation and SQL guards include the FULL reserved amount, so ordinary
 spool/projections cannot consume it. Control payloads consume their named buckets

@@ -1,3 +1,4 @@
+import {requireRuntimeAssociationResume} from './runtime-association.js';
 import { performance } from 'node:perf_hooks';
 import { encodeJson } from '@beetle/contracts';
 import { mailboxOptions } from './live-channel.js';
@@ -52,6 +53,7 @@ export class MailboxVolumeOwner {
     if (!this.matches(reply.body)) return rejected('conflict');
     this.seen = true; return ready();
   }
+  restoreAssociation(token:object):void{requireRuntimeAssociationResume(token,this);this.seen=true;}
   /** Caller has stopped/removed its container and drained all archive originals. */
   remove(operation: Operation): Promise<MutationResult<void>> { return this.removeOwned(operation, false); }
   /** A cold missing container cannot establish association from a matching volume name. */

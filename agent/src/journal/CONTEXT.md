@@ -9,13 +9,10 @@ the process retirement proof does not prove physical file absence. No refund API
 Every live quota includes spool, snapshot, checkpoint, hold, collection, source and delivery
 charges. ACK/prune releases event bytes only. Native free disk is independent.
 
-Migration011 validates at most 4096 bounded original scheduling records and preserves
-active and released originals. Unknown identity/staging, unsafe totals and quota debt
-fail the entire upgrade with prior schema/data intact. Current pool size is irrelevant
-to that conservative upgrade. Recover using the prior binary for cleanup or a
-consistent backup; never enlarge quotas, drop originals or infer missing zero bytes.
-Normal admission reads only scalar retention counters, 64 active reservations and
-100 queue candidates. SQL guards recompute only the bounded hold table.
+Migration011 preserves bounded original scheduling records and active/released
+ownership. Unsafe identity/staging/totals/debt fail upgrade atomically; never enlarge
+quotas or infer absent bytes. Admission reads scalar counters,64 active and100 queue
+candidates; SQL hold guards remain bounded. Startup readiness is process-local.
 
 Contract: [disk retention](../../../docs/design/lld/disk-retention.md).
 Scoped proof: `vitest run agent/test/disk-retention agent/test/admission --maxWorkers=1`.
@@ -36,3 +33,8 @@ Delivery discovery captures a finite upper ID and reads indexed released markers
 never source/Offer history. Producer quiescence and scheduler fairness remain callers'
 responsibility. Contract: docs/design/lld/output-delivery-closure.md.
 Focused proof: `vitest run agent/test/output-delivery --maxWorkers=1`.
+
+Schema021 retains exact runtime/mailbox association before container DELETE, in a
+named2048-byte cell inside unchanged C1 capacity. Private client accepts opaque
+Docker observations, and worker joins actual failed termination; it is not IO proof
+by itself. Contract: docs/design/lld/runtime-association.md.
