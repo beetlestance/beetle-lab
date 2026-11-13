@@ -1,4 +1,4 @@
-import { purgeOrder } from './purge-order.js';
+import { purgeOrder022 as purgeOrder } from './purge-order-022.js';
 const retained=[
  ['output_absence_closures','absence_delete','immutable output absence'],
  ['cancelled_originals','cancelled_originals_no_delete','immutable cancelled original'],

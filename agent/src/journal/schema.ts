@@ -1,3 +1,4 @@
+import { migration025 } from './migration025.js';
 import { migration024 } from './migration024.js';
 import { registerNoTaskReceipt } from './no-task-receipts/store.js';
 import { migration023 } from './migration023.js';
@@ -33,7 +34,7 @@ import { migration013 } from './migration013.js';
 import { migration014 } from './migration014.js';
 import { migration015 } from './migration015.js';
 
-export const JOURNAL_SCHEMA_VERSION=24;
+export const JOURNAL_SCHEMA_VERSION=25;
 
 // Rebuild only the foundation's fixed sequence constraint. Copy immutable JSON and
 // row IDs verbatim, including original UUID spellings and durable cancel intent.
@@ -136,7 +137,12 @@ function migrateCleanup(db:DatabaseSync,version:number):void{
       if (version < 19) db.exec(migration019);
       if(version<20)db.exec(migration020);
       if(version<21)db.exec(migration021);
+      migrateSettlementFunding(db,version);
+}
+
+function migrateSettlementFunding(db:DatabaseSync,version:number):void{
       if(version<22)db.exec(migration022);
       if(version<23)db.exec(migration023);
-      db.exec(migration024);
+      if(version<24)db.exec(migration024);
+      db.exec(migration025);
 }

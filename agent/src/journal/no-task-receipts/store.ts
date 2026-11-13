@@ -17,7 +17,7 @@ export function registerNoTaskReceipt(db:DatabaseSync):void{
   const permit=permits.get(db);return permit?.attemptId===attempt&&permit.json===json&&permit.digest===digest?1:0;
  });
 }
-function binding(db:DatabaseSync,input:unknown):NoTaskReceiptBinding{
+export function eligibleNoTaskReceiptBinding(db:DatabaseSync,input:unknown):NoTaskReceiptBinding{
  const request=captureOutputRetirementRequest(input);const facts=rejectedCandidate(db,request);
  if(!readRetirementIntent(db,retirementKey(request)))throw new Failure('conflict');
  const installed=readInstalledNamespace(db);if(installed?.state!=='bound')throw new Failure('conflict');
@@ -62,6 +62,6 @@ function captureBody(copy:NoTaskReceiptOperation){
 }
 export function executeNoTaskReceipt(db:DatabaseSync,input:NoTaskReceiptOperation&{id:number}):StoredNoTaskReceipt|null{
  let command:ReturnType<typeof capture>;try{command=capture(input);}catch{throw new Failure('invalid_input');}
- return transaction(db,()=>{const expected=binding(db,command.request);
+ return transaction(db,()=>{const expected=eligibleNoTaskReceiptBinding(db,command.request);
   return command.kind==='noTaskReceiptRead'?readNoTaskReceipt(db,expected):commit(db,expected,command.receipt);});
 }

@@ -195,3 +195,14 @@ retained input pins, lost committed replies and actual worker reopen. Exercise a
 native cleanup through authenticated HTTP and both compiled workers; prove exact
 logical credits once, stable tombstone replay and no repeated target execution.
 Preserve close ownership and failure evidence; do not repeat unrelated green lanes.
+
+## Rejected credit transfer
+
+The v2 tombstone records explicit16384 no-task control funding, actual old metadata
+charges and zero original disk/hold/C1 allocation. Its hash domain is separate; v1
+canonical bodies/hashes stay unchanged. Journal025 revalidates the funded exact intent
+and no-task receipt, then inserts4096 replay debt and purges exact original rows.
+The temporary counter drops16384 once; all hold counters and funding clock remain
+unchanged. Shared cleanup drain and actual carrier ownership still precede settlement.
+Historical022 trigger SQL is frozen; new receipt/control guards permit only exact
+private phases. Scope, stale proof, missing records and unknown ownership refuse.

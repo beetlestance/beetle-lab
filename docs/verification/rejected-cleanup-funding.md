@@ -66,3 +66,20 @@ close and actual issued-worker termination rejection, private SQL forgery/nested
 and committed worker receipt loss/reopen while exclusion stays held. Independent review
 found no blocker. These are portable filesystem/compiled-worker fixtures with a modeled
 daemon; full Linux Docker/HTTP qualification and rejected settlement remain pending.
+
+## Rejected storage settlement
+
+Journal025 atomically inserts a charged4096 v2 tombstone, purges the exact no-task
+receipt/control/original rows and removes exactly16384 temporary debt. Every disk-hold
+counter and the funding clock stay unchanged. Native ownership is never invented.
+V1 codec canonical bodies/hash domain remain unchanged after symbol-only extraction;
+historical migration022 SQL remains byte-identical through its frozen purge order.
+
+Evidence `.agent-work/rejected-credit-settlement/`:79 scoped cases passed;25 affected
+settlement cases passed after splitting bounded count validation for lint. Maximum-width
+v2 values fit3584+512. Types/lint/architecture/docs/build passed. Actual compiled-worker
+reply-loss/reopen, exact replay, late recreation refusal and unrelated charged hold
+preservation passed. Nested clock/hold/global/parent/replay/private-frame attacks roll
+back all originals and credits. Missing receipt and stale commitment refuse. Independent
+review found no blocker. Root/readiness wiring and composed native qualification remain
+pending; this private slice does not enable public rejected cleanup or retention.
