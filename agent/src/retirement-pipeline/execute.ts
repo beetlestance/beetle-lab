@@ -38,14 +38,14 @@ export async function executePipeline(context:PipelineExecution){
  const producer=await retireProducer(context);check(context);
  if(context.options.noTask){
   const selected=await metadata(context,()=>context.options.journal.retirements.select(context.request));check(context);
-  if(selected.funding==='rejected')return rejectedNoTask(context,producer);
+  if(selected.funding==='rejected'||selected.intent.task.state==='none')return retiredNoTask(context,producer);
  }
  const runtime=await context.options.runtime.retire(producer,context.operation);check(context);await ensurePlan(context,runtime);check(context);
  const final=await removeBatch(context,runtime);check(context);if(!final)return pipelineReply(context.request);
  const{options,operation,ports}=context;const receipt=await(ports?options.receipt.finalizeWithPorts(runtime,operation,ports.removal):options.receipt.finalize(runtime,operation));
  check(context);return pipelineReply(context.request,receipt);
 }
-async function rejectedNoTask(context:PipelineExecution,producer:ProducerBarrier){
+async function retiredNoTask(context:PipelineExecution,producer:ProducerBarrier){
  const{options,operation,entry,ports}=context;check(context);const owner=options.noTask;if(!owner)throw new RetirementPipelineError('unavailable');
  const work=ports?.noTask?owner.finalizeWithPorts(producer,operation,ports.noTask):owner.finalize(producer,operation);entry.native=work;
  const result=await work.result;await work.quiesced;

@@ -19,7 +19,7 @@ export function prepareRejectedSettlement(db:DatabaseSync,request:SettlementRequ
  const original=settlementOriginal(db,request.retirement);const{row,charges,offerDigest}=original;
  requireFact(row.quota_bytes-quotaUsed(row)>=16384&&rejectedCounters(db)[0]>=1);
  const counts=originalCounts(db,row.attempt_id,{rows:row.spool_rows,bytes:row.spool_bytes});
- for(const table of ['accepted_attempts','output_absence_closures','output_retirement_intents','rejected_cleanup_controls','rejected_cleanup_receipts'] as const)requireFact(counts.get(table)===1);
+ for(const table of ['accepted_attempts','output_absence_closures','output_retirement_intents','rejected_cleanup_controls','output_no_task_cleanup_receipts'] as const)requireFact(counts.get(table)===1);
  for(const table of ['reservations','disk_holds','task_staging_namespaces','runtime_cleanup_associations','output_cleanup_plans','output_cleanup_progress',
   'output_cleanup_receipts','output_sources','output_delivery_closures','output_collection_intents'] as const)requireFact(counts.get(table)===0);
  const tombstone=captureAgentTombstone({version:2,offerDigest,settlementRequestDigest:settlementRequestDigest(request,retirementDigest),reply,charges,

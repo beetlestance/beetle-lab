@@ -22,9 +22,11 @@ export class NoTaskDocker implements DockerTransport{
 export function fixture(){
  const f=stagingFixture();const owners:NoTaskReceipt[]=[];const producers:ProducerRetirement[]=[];
  afterEach(async()=>{await Promise.allSettled(owners.splice(0).map(owner=>owner.close()));await Promise.allSettled(producers.splice(0).map(owner=>owner.close()));});
- return{...f,async ready(){
-  const e=await f.environment(false);const key=scope(e.offer);await e.owner.cancelOriginal({offer:e.offer,now});
+ return{...f,async ready(mode:'rejected'|'admitted'='rejected'){
+  const e=await f.environment(false);const key=scope(e.offer);if(mode==='rejected')await e.owner.cancelOriginal({offer:e.offer,now});
+  else{await f.enqueue(e.owner,e.offer);await f.admit(e.owner,e.offer);await e.owner.admission({kind:'abortUnstarted',key});}
   const proof=await e.owner.closeOutputAbsence(key);if(!proof)throw Error('Missing rejected closure');const request=requestFor(proof);
+  await e.owner.acknowledge({protocolVersion:'1.0',...key,throughSeq:proof.finalAgentSeq});
   await e.owner.admission({kind:'observe',observation:observation(Date.now())});
   const producer=new ProducerRetirement({journal:e.owner.retirements,funding:e.owner.retirements,gate:e.options.gate,installation:{retireOutput:async()=>{}}});producers.push(producer);
   const work=producer.retire(request);const result=await work.result;await work.settled;if(!result.ok)throw Error('Missing producer barrier');

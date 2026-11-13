@@ -1,6 +1,5 @@
 import { encodeCanonicalJson,encodeJson } from '@beetle/contracts';
-import { captureOutputRetirementRequest,outputRetirementDigest } from '@beetle/contracts/output-retirement';
-import { retirementDigest } from '../retirement-values/index.js';
+import { retirementDigest,noTaskIdentity } from '../retirement-values/index.js';
 export const rejectedCleanupLimits=Object.freeze({
  version:1 as const,reservedBytes:16384 as const,maximumFunded:64,
  controlBodyBytes:1024,controlRowBytes:1536,intentBytes:4096,intentRowBytes:4608,
@@ -17,12 +16,9 @@ export interface RejectedControlBinding {readonly request:unknown;readonly names
 export class RejectedCleanupValueError extends Error {constructor(){super('Invalid rejected cleanup metadata');}}
 function requireValue(value:unknown):asserts value{if(!value)throw new RejectedCleanupValueError();}
 function binding(input:RejectedControlBinding){
- const request=captureOutputRetirementRequest(input.request);
- requireValue(request.closure.kind==='absence');
- requireValue(typeof input.namespaceIdentity==='string'&&/^[0-9a-f]{64}$/.test(input.namespaceIdentity));
- requireValue(typeof input.taskName==='string'&&/^[a-z0-9][a-z0-9_.-]{0,127}$/.test(input.taskName));
+ const native=noTaskIdentity(input);const request=native.request;
  return{version:1 as const,organizationId:request.organizationId,workspaceId:request.workspaceId,attemptId:request.attemptId,
-  generation:1 as const,intentDigest:request.intentDigest,requestDigest:outputRetirementDigest(request,retirementDigest),
+  generation:1 as const,intentDigest:request.intentDigest,requestDigest:native.requestDigest,
   namespaceIdentity:input.namespaceIdentity,taskName:input.taskName,reservedBytes:16384 as const};
 }
 /** Metadata equality only. Worker facts, prepaid capacity and native absence need separate owners. */

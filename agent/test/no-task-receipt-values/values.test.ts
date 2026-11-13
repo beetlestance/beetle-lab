@@ -7,6 +7,8 @@ const binding:NoTaskReceiptBinding={request,namespaceIdentity:'a'.repeat(64),tas
 it('owns a bounded immutable no-task commitment without synthetic prepared roles',()=>{
  const receipt=makeNoTaskReceipt(binding);expect(Buffer.byteLength(JSON.stringify(receipt))+512).toBeLessThanOrEqual(2560);
  expect(captureNoTaskReceipt(receipt,binding)).toEqual(receipt);expect(Object.isFrozen(receipt)).toBe(true);
+ expect(receipt.preparationIdentity).toBe('39e85549fb804b8c3a7a1d8358e82f0c4dc7dd3bdcb853b01f5179da92ac4d84');
+ expect(noTaskReceiptDigest(receipt)).toBe('45c0602311b936049b36750600643b3389c20b57aeaf2c39c666cf808788a14a');
  expect(receipt.preparationIdentity).toMatch(/^[a-f0-9]{64}$/);expect(receipt.preparationIdentity).not.toBe(noTaskReceiptDigest(receipt));
  const stored={receipt,receiptIdentity:noTaskReceiptDigest(receipt)};expect(captureStoredNoTaskReceipt(stored,binding)).toEqual(stored);
 });

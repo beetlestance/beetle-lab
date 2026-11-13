@@ -2,7 +2,7 @@
 
 Rejected cleanup now composes through Root, authenticated runner HTTP and both bounded
 backend discovery lanes. Full Linux Docker qualification remains pending. Low-quota
-originals stay protected; admitted abort-before-staging still needs its no-task branch.
+originals stay protected. Admitted abort-before-staging now has its distinct C1 branch.
 
 Journal023 adds a separate16384-byte control and O(1) count/bytes/clock singleton.
 Its fixed transaction proves the actual rejected/fresh-cancel closure, exact ACK and
@@ -100,3 +100,19 @@ compiled workers, late-open shutdown and backend no-refund on unavailable agent 
 Types/lint/architecture/docs/agent+API builds passed. Independent review found no blocker.
 Daemon responses are modeled; Linux Docker rejected qualification remains next, plus
 admitted never-started/no-staging coverage and protected public retention.
+
+## Admitted abort before staging
+
+Journal026 preserves pending receipt bodies/hashes/charges while renaming the table to
+output_no_task_cleanup_receipts. Positive C1 authority requires exact released/aborted
+never_started reservation, retained real hold, task.none, closure/ACK/intent and no
+competing task/runtime records. It uses the same native proof mechanics but its own
+existing C1 allowance; no rejected control is invented. Settlement uses unchanged v1
+real-hold transfer and leaves every rejected-control counter/clock untouched.
+
+Evidence `.agent-work/admitted-no-task/`:67 affected behavior cases passed, including
+both funding branches over authenticated TCP, actual manager drain, exact mixed-peer
+counter preservation, old025 pending receipt/rootpage/FK/trigger/body/hash/charge
+preservation and prepared/preparing refusal. Types/lint/architecture/docs/build passed;
+independent review found no blocker. Linux Docker qualification remains next. Unknown
+partial staging and old insufficient-quota originals remain protected.

@@ -16,9 +16,11 @@ import { NoTaskDocker } from '../no-task-receipt/fixtures.js';
 export function fixture(){
  const f=installationFixture();const closes:(()=>Promise<unknown>)[]=[];
  afterEach(async()=>{for(const close of closes.splice(0))await Promise.allSettled([close()]);});
- return{...f,async composed(){
-  const e=await f.setup();const manager=e.create();const key=scope(e.offer);await e.owner.cancelOriginal({offer:e.offer,now});
+ return{...f,async composed(mode:'rejected'|'admitted'='rejected'){
+  const e=await f.setup();const manager=e.create();const key=scope(e.offer);if(mode==='rejected')await e.owner.cancelOriginal({offer:e.offer,now});
+  else{await f.enqueue(e.owner,e.offer);await f.admit(e.owner,e.offer);await e.owner.admission({kind:'abortUnstarted',key});}
   const proof=await e.owner.closeOutputAbsence(key);if(!proof)throw Error('Missing closure');const request=requestFor(proof);
+  await e.owner.acknowledge({protocolVersion:'1.0',...key,throughSeq:proof.finalAgentSeq});
   await e.owner.admission({kind:'observe',observation:observation(Date.now())});
   const producer=new ProducerRetirement({journal:e.owner.retirements,funding:e.owner.retirements,gate:e.options.gate,installation:manager});
   const docker=new NoTaskDocker();const root=e.staging.root;const runtime=new RuntimeRetirement({journal:e.owner,root,catalog:e.catalog,transport:docker,backend:()=>new DockerBackend(docker)});

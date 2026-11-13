@@ -205,3 +205,9 @@ The temporary counter drops16384 once; all hold counters and funding clock remai
 unchanged. Shared cleanup drain and actual carrier ownership still precede settlement.
 Historical022 trigger SQL is frozen; new receipt/control guards permit only exact
 private phases. Scope, stale proof, missing records and unknown ownership refuse.
+
+Admitted abort-before-staging instead proves exact paid C1, released/aborted never_started
+reservation and real retained hold with task.none. Journal026 preserves/renames the
+no-task receipt table. Native proof remains mandatory; settlement uses the unchanged
+v1 real-hold transfer and never decrements rejected-control debt. Prepared and unknown
+tasks cannot use this no-task authority.

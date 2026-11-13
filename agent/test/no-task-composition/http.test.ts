@@ -9,8 +9,8 @@ import { post } from '../retirement-http/fixtures.js';
 import { fixture } from './fixtures.js';
 const f=fixture();const servers:FastifyInstance[]=[];const settlements:StorageSettlement[]=[];
 afterEach(async()=>{for(const server of servers.splice(0))await server.close();for(const service of settlements.splice(0))await service.close();});
-it('serves genuine rejected cleanup and permanent settlement replay over authenticated TCP',async()=>{
- const e=await f.composed();const service=new StorageSettlement({journal:e.owner});settlements.push(service);
+it.each(['rejected','admitted'] as const)('serves genuine %s no-task cleanup and permanent settlement replay over authenticated TCP',async mode=>{
+ const e=await f.composed(mode);const service=new StorageSettlement({journal:e.owner});settlements.push(service);
  const server=createAgentServer({journal:e.owner,journalAuthority:e.request.journalAuthority,credential:'S'.repeat(64),installation:e.manager,
   capabilities:async()=>{throw Error('Unexpected capabilities');},settlement:service,
   cleanup:{tick:(request,operation)=>e.pipeline.tickWithPorts(request,operation,e.ports)}});servers.push(server);

@@ -1,3 +1,5 @@
+import { runtimeName } from '../../backends/docker/index.js';
+import { eligibleAdmittedNoTask } from './admitted.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeCanonicalJson,encodeJson } from '@beetle/contracts';
 import { captureOutputRetirementRequest } from '@beetle/contracts/output-retirement';
@@ -7,7 +9,7 @@ import { rejectedCandidate } from '../rejected-controls/guard.js';
 import { readInstalledNamespace } from '../staging-namespace/installed.js';
 import { readRetirementIntent } from '../retirement/read.js';
 import { retirementKey } from '../retirement/eligibility.js';
-import { Failure,transaction } from '../sql.js';
+import { Failure,transaction,owner } from '../sql.js';
 import type { NoTaskReceiptOperation } from '../no-task-receipt-protocol.js';
 interface Permit {readonly attemptId:string;readonly json:string;readonly digest:string}
 const permits=new WeakMap<DatabaseSync,Permit>();
@@ -18,16 +20,17 @@ export function registerNoTaskReceipt(db:DatabaseSync):void{
  });
 }
 export function eligibleNoTaskReceiptBinding(db:DatabaseSync,input:unknown):NoTaskReceiptBinding{
- const request=captureOutputRetirementRequest(input);const facts=rejectedCandidate(db,request);
+ const request=captureOutputRetirementRequest(input);const row=owner(db,request);
+ const intent=row.cleanup_control_version===1?eligibleAdmittedNoTask(db,request):rejectedCandidate(db,request).intent;
  if(!readRetirementIntent(db,retirementKey(request)))throw new Failure('conflict');
  const installed=readInstalledNamespace(db);if(installed?.state!=='bound')throw new Failure('conflict');
- return{request,namespaceIdentity:facts.control.namespaceIdentity,taskName:facts.control.taskName,
+ return{request,namespaceIdentity:intent.namespaceIdentity,taskName:runtimeName({...request,installationId:installed.intent.root.installationId}),
   daemonId:installed.intent.root.daemonId,root:installed.intent.root.native,markerDigest:installed.anchor.marker.sha256};
 }
 export function readNoTaskReceipt(db:DatabaseSync,expected:NoTaskReceiptBinding):StoredNoTaskReceipt|null{
  const request=captureOutputRetirementRequest(expected.request);
  const row=db.prepare(`SELECT CASE WHEN length(CAST(receipt_json AS BLOB))<=2048 THEN receipt_json END json,
-  receipt_identity,charged_bytes FROM rejected_cleanup_receipts WHERE attempt_id=?`).get(request.attemptId);
+  receipt_identity,charged_bytes FROM output_no_task_cleanup_receipts WHERE attempt_id=?`).get(request.attemptId);
  if(!row)return null;
  try{
   if(typeof row.json!=='string'||row.charged_bytes!==Buffer.byteLength(row.json)+512)throw Error();
@@ -43,7 +46,7 @@ function commit(db:DatabaseSync,expected:NoTaskReceiptBinding,input:unknown):Sto
  const request=captureOutputRetirementRequest(expected.request);const json=encodeCanonicalJson(receipt,2048);
  permits.set(db,{attemptId:request.attemptId,json,digest});
  try{
-  const changed=db.prepare(`INSERT INTO rejected_cleanup_receipts(attempt_id,request_digest,receipt_identity,receipt_json,charged_bytes)
+  const changed=db.prepare(`INSERT INTO output_no_task_cleanup_receipts(attempt_id,request_digest,receipt_identity,receipt_json,charged_bytes)
    VALUES(?,?,?,?,?)`).run(request.attemptId,receipt.retirementRequestDigest,digest,json,Buffer.byteLength(json)+512).changes;
   if(changed!==1)throw new Failure('conflict');const stored=readNoTaskReceipt(db,expected);if(!stored)throw new Failure('unavailable');return stored;
  }finally{permits.delete(db);}

@@ -3,7 +3,7 @@ index.ts owns<=2origins beforecapture, scopedigestcoalescing, fixed30s budget an
 execute.ts namesproducer/runtime, plan andboundednativebatch phases. AwaitC2settled
 beforeC3; inventoryactualquiesced/cachedclose beforepersist. UpTo16steps thenpending;
 Prepared C1 uses NativeReceipt.finalize. Optional no-task owner uses positive worker
-funding selection, actual producer/installation drain and post-close native receipt;
+funding selection (rejected or paid C1 never-started/task.none), actual producer/installation drain and post-close native receipt;
 result/quiesced/cachedclose precede cleaned reply. Uncertain close retains pipeline.
 No backgroundloop/HTTP/backendACK/refund. Errors/deadlines/conflicts/corruptstateFAIL,
 notpending. resultmaywaitignoredabort original; settledrejectsfailures, notdrainproof.

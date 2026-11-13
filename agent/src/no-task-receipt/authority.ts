@@ -15,7 +15,7 @@ export function noTaskScope(options:NoTaskReceiptOptions,token:ProducerBarrier){
 }
 export async function currentNoTask(options:NoTaskReceiptOptions,token:ProducerBarrier,io:OutputIO){
  const scope=noTaskScope(options,token);const stored=await io.io(()=>options.journal.retirements.read(scope.key));
- const current=await io.io(()=>options.journal.retirements.preflightRejected(scope.intent.request));
+ const selected=await io.io(()=>options.journal.retirements.select(scope.intent.request));const current=selected.intent;
  const expected=encodeCanonicalJson(scope.intent,4096);
  requireInventory(encodeCanonicalJson(stored,4096)===expected&&encodeCanonicalJson(current,4096)===expected);
  return scope;

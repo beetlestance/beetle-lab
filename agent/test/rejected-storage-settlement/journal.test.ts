@@ -19,7 +19,7 @@ it('converts the actual temporary control into one charged anti-replay floor wit
   expect(db.prepare('SELECT original_count,charged_bytes FROM agent_replay_storage').get()).toMatchObject({original_count:1,charged_bytes:4096});
   expect(db.prepare('SELECT held_count,held_output_bytes,held_staging_bytes FROM disk_retention_stats').get()).toMatchObject({held_count:0,held_output_bytes:0,held_staging_bytes:0});
   expect(db.prepare('SELECT count(*) n FROM accepted_attempts').get()?.n).toBe(0);
-  expect(db.prepare('SELECT count(*) n FROM rejected_cleanup_receipts').get()?.n).toBe(0);
+  expect(db.prepare('SELECT count(*) n FROM output_no_task_cleanup_receipts').get()?.n).toBe(0);
   expect(db.prepare('SELECT count(*) n FROM rejected_cleanup_controls').get()?.n).toBe(0);
   expect(db.prepare('SELECT json_extract(tombstone_json,\'$.version\') v FROM retired_attempts').get()?.v).toBe(2);
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
