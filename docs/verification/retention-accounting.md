@@ -1,7 +1,7 @@
 # Retention snapshot accounting
 
 Status: private metadata reservation and durable workspace epochs implemented;
-apply, worker/public API and UI remain pending. No retention job
+worker/public API, completion pruning and UI remain pending. No retention job
 is enabled by this slice. [Contract](../design/lld/protected-retention.md).
 
 Backend025 creates empty owned tables/counters without backfilling old originals or
@@ -72,3 +72,23 @@ Focused tests cover11 successive windows with one live slot, live immutable repl
 stale/cross-workspace/forged cursors, positive source and unsent debt, unknown proof,
 existing cleanup and the indexed keyset path. Selection has no native effects and
 does not enable public Apply.
+
+## Atomic workspace Apply
+
+Apply preflights all captured members before the closed fixed executor begins any
+intent. Existing intent preparation and global child receipts are shared with normal
+Begin. Only exact child intent/file/receipt inserts and expected workspace epoch
+increments are authorised; unrelated owners are frozen. Actual rows/receipts and
+bounded SQLite sequence state are verified before storing initial progress and
+marking the snapshot applied. All failures roll back the whole batch.
+
+An admitted receipt means no cleanup or credit. Successful replay binds original
+scope/snapshot/request/canonical intent before expiry or current-policy checks.
+Changed reuse conflicts. Snapshot storage remains charged; progress starts admitted.
+Live batch request IDs cannot be reused for another metadata mutation.
+
+Thirteen focused Apply cases passed, including source-backed files, maximum100
+members, unchanged usage, replay after expiry/settings changes, nested global/peer
+mutations, raw sequence tampering and late-child/final-state rollback. The scoped
+regression lane, types, lint, architecture, docs and backend build passed. Independent
+review found no blocker. Public worker/TCP recovery and UI composition remain pending.

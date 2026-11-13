@@ -28,6 +28,11 @@ CREATE TABLE retention_snapshots (
  CHECK(epoch=json_extract(body_json,'$.epoch') AND captured_at=json_extract(body_json,'$.capturedAt') AND expires_at=json_extract(body_json,'$.expiresAt')),
  FOREIGN KEY(workspace_id,organization_id) REFERENCES workspaces(id,organization_id));
 CREATE INDEX retention_expiry ON retention_snapshots(expires_at,id);
+CREATE UNIQUE INDEX retention_apply_request ON retention_snapshots(workspace_id,json_extract(apply_json,'$.requestId')) WHERE apply_json IS NOT NULL;
+CREATE TRIGGER retention_batch_request BEFORE INSERT ON receipts WHEN EXISTS(
+ SELECT 1 FROM retention_snapshots s WHERE NEW.scope_key='workspace:'||s.organization_id||':'||s.workspace_id
+ AND json_extract(s.apply_json,'$.requestId')=NEW.request_id)
+ BEGIN SELECT RAISE(ABORT,'retention request already applied');END;
 CREATE TABLE retention_progress (
  snapshot_id TEXT NOT NULL REFERENCES retention_snapshots(id),ordinal INTEGER NOT NULL CHECK(typeof(ordinal)='integer' AND ordinal BETWEEN 0 AND 99),
  run_id TEXT NOT NULL CHECK(length(run_id)=36),deletion_id TEXT NOT NULL CHECK(length(deletion_id)=36),request_id TEXT NOT NULL CHECK(length(request_id)=36),
@@ -38,7 +43,8 @@ CREATE TRIGGER retention_epoch_insert BEFORE INSERT ON retention_workspace_epoch
  OR retention_insert_allowed('epoch',NEW.organization_id,NEW.workspace_id,NEW.workspace_id,NULL) IS NOT 1
  BEGIN SELECT RAISE(ABORT,'epoch requires paid reservation');END;
 CREATE TRIGGER retention_epoch_delete BEFORE DELETE ON retention_workspace_epochs BEGIN SELECT RAISE(ABORT,'permanent retention epoch');END;
-CREATE TRIGGER retention_epoch_update BEFORE UPDATE ON retention_workspace_epochs WHEN retention_metadata_active()=1
+CREATE TRIGGER retention_epoch_update BEFORE UPDATE ON retention_workspace_epochs WHEN
+ (retention_metadata_active()=1 AND retention_apply_epoch(OLD.organization_id,OLD.workspace_id,OLD.epoch,NEW.epoch) IS NOT 1)
  OR NEW.workspace_id IS NOT OLD.workspace_id OR NEW.organization_id IS NOT OLD.organization_id OR NEW.charged_bytes IS NOT OLD.charged_bytes
  OR NEW.epoch IS NOT OLD.epoch+1 OR (backend_settlement_active()=1 AND backend_settlement_epoch(OLD.organization_id,OLD.workspace_id,OLD.epoch,NEW.epoch) IS NOT 1)
  BEGIN SELECT RAISE(ABORT,'invalid retention epoch change');END;
@@ -46,7 +52,13 @@ CREATE TRIGGER retention_snapshot_insert BEFORE INSERT ON retention_snapshots WH
  OR EXISTS(SELECT 1 FROM retention_snapshots WHERE id=NEW.id OR (workspace_id=NEW.workspace_id AND request_id=NEW.request_id))
  OR retention_insert_allowed('snapshot',NEW.organization_id,NEW.workspace_id,NEW.id,NEW.body_json) IS NOT 1
  BEGIN SELECT RAISE(ABORT,'snapshot requires paid reservation');END;
-CREATE TRIGGER retention_snapshot_update BEFORE UPDATE ON retention_snapshots BEGIN SELECT RAISE(ABORT,'immutable retention snapshot');END;
+CREATE TRIGGER retention_snapshot_update BEFORE UPDATE ON retention_snapshots WHEN backend_settlement_active()=1
+ OR NEW.id IS NOT OLD.id OR NEW.organization_id IS NOT OLD.organization_id OR NEW.workspace_id IS NOT OLD.workspace_id
+ OR NEW.request_id IS NOT OLD.request_id OR NEW.intent_digest IS NOT OLD.intent_digest OR NEW.captured_at IS NOT OLD.captured_at
+ OR NEW.expires_at IS NOT OLD.expires_at OR NEW.epoch IS NOT OLD.epoch OR NEW.body_json IS NOT OLD.body_json OR NEW.charged_bytes IS NOT OLD.charged_bytes
+ OR OLD.state!='preview' OR NEW.state!='applied' OR OLD.apply_json IS NOT NULL OR NEW.apply_json IS NULL
+ OR retention_snapshot_apply(OLD.id,OLD.body_json,NEW.apply_json) IS NOT 1
+ BEGIN SELECT RAISE(ABORT,'immutable retention snapshot');END;
 CREATE TRIGGER retention_snapshot_delete BEFORE DELETE ON retention_snapshots WHEN backend_settlement_active()=1 OR
  retention_delete_allowed('snapshot',OLD.id,OLD.body_json,json_array(OLD.state,OLD.apply_json,OLD.charged_bytes)) IS NOT 1
  BEGIN SELECT RAISE(ABORT,'retained retention snapshot');END;
@@ -73,8 +85,20 @@ export function migrate025(db:DatabaseSync):void{
   if(typeof row.name!=='string'||!/^[a-z_]+$/.test(row.name))throw Error('Unexpected metadata owner');const table=row.name;
   if(table==='installation_storage_usage')continue;
   for(const event of ['INSERT','UPDATE','DELETE'])db.exec(`CREATE TRIGGER retention_funding_${table}_${event.toLowerCase()} BEFORE ${event} ON ${table}
-   WHEN retention_metadata_active()=1 BEGIN SELECT RAISE(ABORT,'outside retention reservation');END;`);
+   WHEN retention_metadata_active()=1${ownerException(table,event)} BEGIN SELECT RAISE(ABORT,'outside retention reservation');END;`);
  }
- for(const event of ['INSERT','UPDATE','DELETE'])db.exec(`CREATE TRIGGER retention_progress_${event.toLowerCase()} BEFORE ${event} ON retention_progress
-  BEGIN SELECT RAISE(ABORT,'retention progress owner pending');END;`);
+ db.exec(`CREATE TRIGGER retention_progress_insert BEFORE INSERT ON retention_progress WHEN backend_settlement_active()=1 OR
+  retention_progress_insert(json_array(NEW.snapshot_id,NEW.ordinal,NEW.run_id,NEW.deletion_id,NEW.request_id),NEW.body_json) IS NOT 1
+  BEGIN SELECT RAISE(ABORT,'retention progress requires actual apply');END;`);
+ for(const event of ['UPDATE','DELETE'])db.exec(`CREATE TRIGGER retention_progress_${event.toLowerCase()} BEFORE ${event} ON retention_progress
+  BEGIN SELECT RAISE(ABORT,'retained retention progress');END;`);
+}
+
+function ownerException(table:string,event:string):string{
+ if(event!=='INSERT')return '';
+ if(table==='output_deletion_intents')return ` AND retention_owner_write_allowed('intent',json_array(NEW.id,NEW.run_id,NEW.attempt_id,NEW.organization_id,NEW.workspace_id,NEW.request_id,NEW.run_version,
+  NEW.deletion_version,NEW.version,NEW.kind,NEW.requested_at,NEW.closure_digest,NEW.retained_payload_bytes,NEW.metadata_bytes,NEW.file_count,NEW.pending_files,NEW.namespace_identity),NULL) IS NOT 1`;
+ if(table==='output_deletion_files')return ` AND retention_owner_write_allowed('file',json_array(NEW.deletion_id,NEW.attempt_id,NEW.ordinal,NEW.original_version,NEW.version,NEW.namespace_identity,NEW.preparation_identity,NEW.absent),NULL) IS NOT 1`;
+ if(table==='receipts')return ` AND retention_owner_write_allowed('receipt',json_array(NEW.scope_key,NEW.request_id,NEW.digest),NEW.result_json) IS NOT 1`;
+ return '';
 }
