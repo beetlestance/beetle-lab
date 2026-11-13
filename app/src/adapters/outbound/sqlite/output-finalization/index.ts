@@ -1,5 +1,5 @@
 import { requireCurrentRun, checkFinalHeader, seedZeroCursor, requireRetention } from './facts.js';
-export { requireCurrentRun, checkFinalHeader, seedZeroCursor, requireRetention } from './facts.js';
+export { requireCurrentRun, checkFinalHeader, seedZeroCursor, requireRetention, finalEventsReady } from './facts.js';
 import type { DatabaseSync, SQLOutputValue } from 'node:sqlite';
 import type { OutputFinalizationReply, OutputFinalizationRequest } from '../../../../ports/output-finalization.js';
 import { readEnvelope, loadOutput } from '../output-custody/index.js';

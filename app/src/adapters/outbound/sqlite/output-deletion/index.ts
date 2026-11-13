@@ -1,3 +1,4 @@
+import { retirementRequest } from './retirement-request.js';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import type { DatabaseSync } from 'node:sqlite';
 import type { Run } from '@beetle/contracts/api';
@@ -39,6 +40,7 @@ export class OutputDeletions {
   }
   private change(operation: OutputDeletionOperation): OutputDeletionValue {
     switch (operation.kind) {
+      case 'getOutputRetirementRequest': return retirementRequest(this.db, this.runs, operation.key);
       case 'getOutputDeletion': return summary(this.db, operation.key);
       case 'getOutputDeletionFile': return file(this.db, operation.key);
       case 'recordOutputDeletionPlan': return this.plan(operation.request);

@@ -39,6 +39,10 @@ it('persists actual native preparation before unlink, reopens and replays absenc
       expect(await metadata.outputDeletions.recordAbsence(receipt)).toMatchObject({phase: 'absent', version: 3});
     }
     expect(await metadata.outputDeletions.get(key)).toMatchObject({stage: 'files_absent', absentCount: summary.fileCount, version: 1 + 2 * summary.fileCount});
+    const retirement = await metadata.outputDeletions.retirementRequest(key);
+    expect(retirement).toMatchObject({runId:key.runId,deletionId:key.id,attemptId:f.key.attempt.attemptId,closure:{kind:'source'}});
+    await storage.close(metadata); metadata = await storage.open(path, {runtime:null,runs:f.config});
+    expect(await metadata.outputDeletions.retirementRequest(key)).toEqual(retirement);
     expect(await metadata.outputDeletions.begin(original)).toEqual(summary);
     expect(await metadata.outputDeletions.scan({limit: 32})).toEqual({items: [], nextCursor: null});
     expect((await metadata.inputs.storage()).chargedBytes).toBe(initialCharge);

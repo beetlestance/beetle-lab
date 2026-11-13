@@ -1,3 +1,4 @@
+import { claimsFixture } from '../storage/dispatch-claim-fixtures.js';
 import { afterEach, expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { migration001, transaction } from '../../src/adapters/outbound/sqlite/schema.js';
@@ -14,7 +15,7 @@ import { migration011 } from '../../src/adapters/outbound/sqlite/migration011.js
 import { migration012 } from '../../src/adapters/outbound/sqlite/migration012.js';
 import { migration013 } from '../../src/adapters/outbound/sqlite/migration013.js';
 import { registerAbsenceValidation } from '../../src/adapters/outbound/sqlite/output-absence/values.js';
-import { seedFoundation, enqueue, reserveAndMark } from '../storage/execution-foundation-fixtures.js';
+import { seedFoundation, reserveAndMark } from '../storage/execution-foundation-fixtures.js';
 const handles: DatabaseSync[] = []; afterEach(() => {for (const db of handles.splice(0)) db.close();});
 function previous() {
   const db = new DatabaseSync(':memory:', {enableForeignKeyConstraints: true}); handles.push(db); registerAbsenceValidation(db);
@@ -23,8 +24,26 @@ function previous() {
   for (const step of [migration004,migration005,migration006,migration007]) db.exec(step); transaction(db, () => migrate008(db));
   for (const step of [migration009,migration010,migration011,migration012]) db.exec(step);
   expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(12);
-  const store = seedFoundation(db); const {key} = enqueue(db, store); transaction(db, () => reserveAndMark(db, key, 100000));
+  seedFoundation(db); seedHistoricalExecution(db);
   return db;
+}
+/** Copy a genuine queued original into the actual older schema through its guards.
+ * Today's enqueue API depends on newer tables and cannot run against schema12. */
+function seedHistoricalExecution(db:DatabaseSync):void {
+  const source=claimsFixture();
+  try {
+    const key=source.add();
+    transaction(db,()=>{
+      for(const table of ['runs','attempts','execution_intents','dispatch_outbox']){
+        const rows=source.db.prepare(`SELECT * FROM ${table} LIMIT 2`).all();expect(rows).toHaveLength(1);
+        const row=rows[0]!;
+        const columns=db.prepare(`PRAGMA table_info(${table})`).all().map(column=>String(column.name));
+        expect(columns.every(column=>Object.hasOwn(row,column))).toBe(true);
+        db.prepare(`INSERT INTO ${table}(${columns.join(',')}) VALUES(${columns.map(()=>'?').join(',')})`).run(...columns.map(column=>column==='execution_intent_id'?null:row[column]!));
+      }
+      reserveAndMark(db,key,100000);
+    });
+  }finally{source.db.close();}
 }
 function original(db: DatabaseSync) {
   const tables = ['runs','attempts','execution_intents','dispatch_outbox','execution_records','attempt_output_allocations','installation_storage_usage','receipts'];

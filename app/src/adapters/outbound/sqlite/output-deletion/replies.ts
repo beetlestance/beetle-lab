@@ -1,7 +1,8 @@
+import { captureOutputRetirementRequest, OUTPUT_RETIREMENT_REQUEST_BYTES } from '@beetle/contracts/output-retirement';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import { RUN_OUTPUT_METADATA_BYTES } from '../../../../ports/dispatch.js';
 import { validateApi } from '@beetle/contracts/api';
-import type { OutputDeletionOperation, OutputDeletionSummary, OutputDeletionFile, OutputDeletionValue, OutputDeletionFileKey } from '../../../../ports/output-deletion-metadata.js';
+import type { OutputDeletionKey, OutputDeletionOperation, OutputDeletionSummary, OutputDeletionFile, OutputDeletionValue, OutputDeletionFileKey } from '../../../../ports/output-deletion-metadata.js';
 import { requireRule } from '../../../../domain/namespaces/index.js';
 import { captureEventBinding } from '../../../../domain/events/index.js';
 import { decodeArtifact } from '../output-custody/index.js';
@@ -39,11 +40,13 @@ function bindFile(value: OutputDeletionFile, key: OutputDeletionFileKey): void {
     && binding.attempt.organizationId === key.scope.organizationId && binding.attempt.workspaceId === key.scope.workspaceId);
 }
 export function deletionReplyLimit(operation: OutputDeletionOperation): number {
+  if (operation.kind === 'getOutputRetirementRequest') return OUTPUT_RETIREMENT_REQUEST_BYTES;
   if (operation.kind === 'scanOutputDeletions') return 65536;
   return ['beginOutputDeletion', 'getOutputDeletion'].includes(operation.kind) ? 4096 : 8192;
 }
 export function captureDeletionReply(operation: OutputDeletionOperation, input: unknown): OutputDeletionValue {
   const copy = boundedCopy(input, deletionReplyLimit(operation));
+  if (operation.kind === 'getOutputRetirementRequest') return retirementReply(operation.key, copy);
   if (operation.kind === 'scanOutputDeletions') return pageReply(operation, copy);
   if (operation.kind === 'beginOutputDeletion' || operation.kind === 'getOutputDeletion') return summaryReply(operation, copy);
   const value = file(copy); bindFile(value, operation.kind === 'getOutputDeletionFile' ? operation.key : operation.request.key);
@@ -74,4 +77,10 @@ function pageReply(operation: Extract<OutputDeletionOperation, {kind: 'scanOutpu
   const nextCursor = input.nextCursor as string | null;
   if (nextCursor !== null) requireRule(position({limit: operation.query.limit, cursor: nextCursor}) > position(operation.query));
   return {items, nextCursor};
+}
+
+function retirementReply(key: OutputDeletionKey, input: unknown) {
+  const value = captureOutputRetirementRequest(input);
+  requireRule(value.runId === key.runId && value.deletionId === key.id && value.organizationId === key.scope.organizationId && value.workspaceId === key.scope.workspaceId);
+  return value;
 }

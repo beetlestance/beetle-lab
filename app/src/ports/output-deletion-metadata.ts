@@ -1,3 +1,4 @@
+import type { RetirementRequest as OutputRetirementRequest } from '@beetle/contracts/output-retirement';
 import type { WorkspaceScope } from '@beetle/contracts/api';
 import type { OutputFileRecord } from './output-bytes.js';
 import type { OutputDeletionRequest, OutputDeletionReceipt } from './output-deletion.js';
@@ -22,16 +23,19 @@ export interface OutputDeletionPage {readonly items: readonly OutputDeletionSumm
 export type OutputDeletionOperation =
   | {readonly kind: 'beginOutputDeletion'; readonly command: OutputDeletionCommand}
   | {readonly kind: 'getOutputDeletion'; readonly key: OutputDeletionKey}
+  | {readonly kind: 'getOutputRetirementRequest'; readonly key: OutputDeletionKey}
   | {readonly kind: 'getOutputDeletionFile'; readonly key: OutputDeletionFileKey}
   | {readonly kind: 'recordOutputDeletionPlan'; readonly request: OutputDeletionPlanWrite}
   | {readonly kind: 'recordOutputDeletionAbsence'; readonly request: OutputDeletionAbsenceWrite}
   | {readonly kind: 'scanOutputDeletions'; readonly query: OutputDeletionScan};
-export type OutputDeletionValue = OutputDeletionSummary | OutputDeletionFile | OutputDeletionPage;
+export type OutputDeletionValue = OutputRetirementRequest | OutputDeletionSummary | OutputDeletionFile | OutputDeletionPage;
 /** Progress only: preserve producer authority and ALL charges until a separate
  * reviewed retirement/purge/refund owner exists. Private native response input. */
 export interface OutputDeletionMetadata {
   begin(command: OutputDeletionCommand): Promise<OutputDeletionSummary>;
   get(key: OutputDeletionKey): Promise<OutputDeletionSummary>;
+  /** Exact retained original after all backend file receipts; unsent refuses. */
+  retirementRequest(key: OutputDeletionKey): Promise<OutputRetirementRequest>;
   getFile(key: OutputDeletionFileKey): Promise<OutputDeletionFile>;
   recordPlan(request: OutputDeletionPlanWrite): Promise<OutputDeletionFile>;
   recordAbsence(request: OutputDeletionAbsenceWrite): Promise<OutputDeletionFile>;
