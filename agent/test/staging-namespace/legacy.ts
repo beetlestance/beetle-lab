@@ -1,6 +1,8 @@
+import { asSchema16 } from '../retirement/legacy.js';
 import type { DatabaseSync } from 'node:sqlite';
 /** Recreate actual predecessor schema only in a task-owned fixture; retain all pre-C1 data. */
 export function asSchema15(db: DatabaseSync): void {
+  if (db.prepare('PRAGMA user_version').get()?.user_version === 17) asSchema16(db);
   for (const name of ['installed_namespace_initial', 'installed_namespace_immutable', 'installed_namespace_retained',
     'cleanup_control_initial', 'cleanup_control_budget', 'cleanup_control_before_admission',
     'task_namespace_initial', 'task_namespace_immutable', 'task_namespace_retained']) db.exec('DROP TRIGGER ' + name);

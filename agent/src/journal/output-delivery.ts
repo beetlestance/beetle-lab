@@ -43,6 +43,10 @@ function closeDelivery(db: DatabaseSync, receipt: SourceReceipt): OutputDelivery
     .run(receipt.key.attemptId, json, charge);
   return closure;
 }
+/** Caller owns the transaction; preserves the existing source/closure validation. */
+export function readOutputDeliveryAtomic(db: DatabaseSync, key: Scope): OutputDeliveryClosure | null {
+  return storedDelivery(db, readSourceState(db, key));
+}
 /** Trusted storage boundary only; a producer owner must establish quiescence separately. */
 export function executeOutputDelivery(db: DatabaseSync, input: OutputDeliveryOperation): OutputDeliveryClosure | null {
   let value: SourceReceipt | Readonly<Scope>;
@@ -50,5 +54,5 @@ export function executeOutputDelivery(db: DatabaseSync, input: OutputDeliveryOpe
     value = input.kind === 'outputDeliveryClose' ? copyReceipt(parseSourceJson(input.json, OUTPUT_DELIVERY_BYTES)) : sourceScope(input.key);
   } catch { throw new Failure('invalid_input'); }
   return transaction(db, () => input.kind === 'outputDeliveryClose' ? closeDelivery(db, value as SourceReceipt)
-    : storedDelivery(db, readSourceState(db, value as Scope)));
+    : readOutputDeliveryAtomic(db, value as Scope));
 }

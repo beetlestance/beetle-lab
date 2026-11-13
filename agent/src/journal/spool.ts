@@ -1,3 +1,4 @@
+import { assertProducerOpen } from './retirement-gate.js';
 import { requireEventPurpose } from './event-purpose.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { AGENT_EVENT_BYTES } from '../control-protocol/index.js';
@@ -33,6 +34,7 @@ export function appendAtomic(db: DatabaseSync, input: EventInput): AgentEvent {
     if (existing.canonical_json !== input.canonical) throw new Failure('conflict');
     return JSON.parse(existing.event_json as string) as AgentEvent;
   }
+  assertProducerOpen(db, input.key);
   if (input.sourceKey <= high) throw new Failure('expired_key');
   if (row.last_seq >= Number.MAX_SAFE_INTEGER - 1) throw new Failure('quota_exceeded');
   const { event, json } = encodedEvent(row, input);

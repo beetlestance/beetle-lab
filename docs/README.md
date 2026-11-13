@@ -13,6 +13,7 @@ released application until the rewrite is qualified.
 | Inspect embedded API/agent reference | [Reference evidence](verification/embedded-reference.md) | Generated schemas, binary guide, standalone instructions and source-image asset delivery |
 | Inspect implemented versus planned API routes | [Reference availability](verification/reference-availability.md) | Actual application registration checked against every JSON descriptor |
 | Inspect durable staging ownership | [Namespace](design/lld/staging-namespace.md), [evidence](verification/staging-namespace.md) | Installed/task anchors, startup gate and reserved capacity; cleanup remains separate |
+| Inspect durable retirement fencing | [Contract](design/lld/producer-retirement.md), [evidence](verification/producer-retirement-store.md) | Exact closure/ACK-bound immutable agent intent; actual producer/read drain remains separate |
 | Plan producer retirement and cleanup | [Contract](design/lld/output-retirement.md), [packets](execution/output-retirement.md) | Proposed physical ACK, durable namespace, replay-safe settlement and dependency order |
 | Inspect lifecycle/clock repair | [Repair evidence](verification/lifecycle-baseline-repair.md), [migration](design/lld/clock-reason-migration.md) | Identity races, exact stop cause, protected migration and matching components |
 | Inspect native output cleanup custody | [Close-failure custody](verification/output-close-custody.md) | Sticky rejected closes retain bounded native owners and slots |

@@ -1,3 +1,4 @@
+import { assertProducerOpen } from '../retirement-gate.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import { runtimeName } from '../../runtime-identity.js';
@@ -14,6 +15,7 @@ export function readTaskNamespace(db: DatabaseSync, key: TaskNamespaceKey): Task
     ...(row.anchor_json === null ? {} : { anchor: JSON.parse(String(row.anchor_json)) as unknown }) });
 }
 export function beginTaskNamespace(db: DatabaseSync, intent: TaskNamespaceIntent): TaskNamespaceState {
+  assertProducerOpen(db, intent.original);
   const original = owner(db, intent.original); assertCleanupControl(db, original);
   const installed = readInstalledNamespace(db);
   if (installed?.state !== 'bound' || intent.namespaceIdentity !== installed.anchor.namespaceIdentity) throw new Failure('recovery_required');
@@ -31,6 +33,7 @@ export function beginTaskNamespace(db: DatabaseSync, intent: TaskNamespaceIntent
   return { state: 'preparing', intent };
 }
 export function commitTaskNamespace(db: DatabaseSync, input: { intent: TaskNamespaceIntent; directories: TaskDirectoryFacts }): TaskNamespaceAnchor {
+  assertProducerOpen(db, input.intent.original);
   const state = readTaskNamespace(db, input.intent.original);
   if (!state || encodeCanonicalJson(state.intent, namespaceCaps.task) !== encodeCanonicalJson(input.intent, namespaceCaps.task)) throw new Failure('conflict');
   const original = owner(db, input.intent.original); assertCleanupControl(db, original);

@@ -1,3 +1,4 @@
+import { RetirementStore, retirementOperation } from './retirement/index.js';
 import { NamespaceStore, namespaceOperation } from './staging-namespace/index.js';
 import { readExport } from './export-assignment.js';
 import { readJournalAuthority } from './authority.js';
@@ -22,6 +23,7 @@ import { executeOutputDelivery, outputDeliveryOperation } from './output-deliver
 import { executeOutputAbsence, outputAbsenceOperation } from './output-absence.js';
 
 export class Store {
+  private readonly retirements: RetirementStore;
   private readonly namespaces: NamespaceStore;
   private readonly admission: AdmissionStore;
   private readonly read: StatementSync;
@@ -29,7 +31,7 @@ export class Store {
   private readonly runnable: RunnableScan;
   private readonly outputs: OutputSources;
   constructor(private readonly db: DatabaseSync, private readonly quota = DEFAULT_QUOTA_BYTES) {
-    this.namespaces = new NamespaceStore(db);
+    this.namespaces = new NamespaceStore(db); this.retirements = new RetirementStore(db);
     this.admission = new AdmissionStore(db, quota);
     this.runnable = new RunnableScan(db);
     this.outputs = new OutputSources(db);
@@ -92,14 +94,19 @@ export class Store {
       default: throw new Failure('invalid_input');
     }
   }
+  private allocationCommand(command: Command): Value {
+    if (command.kind === 'supervision') return supervise(this.db, command.request);
+    if (command.kind === 'admission') return this.admission.execute(command.request);
+    if (command.kind === 'cancelOriginal') return cancelOriginal(this.db, command, this.quota);
+    throw new Failure('invalid_input');
+  }
   execute(command: Command): Value {
+    if (retirementOperation(command)) return this.retirements.execute(command);
     if (namespaceOperation(command)) return this.namespaces.execute(command);
     if (outputAbsenceOperation(command)) return executeOutputAbsence(this.db, command);
     if (outputDeliveryOperation(command)) return executeOutputDelivery(this.db, command);
     if (outputSourceOperation(command)) return this.outputs.execute(command);
-    if (command.kind === 'supervision') return supervise(this.db, command.request);
-    if (command.kind === 'admission') return this.admission.execute(command.request);
-    if (command.kind === 'cancelOriginal') return cancelOriginal(this.db, command, this.quota);
+    if (['supervision', 'admission', 'cancelOriginal'].includes(command.kind)) return this.allocationCommand(command);
     if (['append', 'events', 'ack', 'prune', 'sources', 'checkpoint', 'wrapperBatch'].includes(command.kind)) return this.eventCommand(command);
     if (['authority', 'get', 'read', 'readExportAssignment', 'list', 'runnable'].includes(command.kind)) return this.readCommand(command);
     return this.lifecycleCommand(command);

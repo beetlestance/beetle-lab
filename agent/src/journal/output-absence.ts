@@ -72,9 +72,13 @@ function closeAbsence(db: DatabaseSync, key: Scope): Owned<OutputAbsence> | null
   db.prepare('INSERT INTO output_absence_closures(attempt_id,proof_json,charged_bytes) VALUES(?,?,?)').run(key.attemptId, json, charge);
   return proof;
 }
+/** Caller owns the transaction; no closure or native fact is created. */
+export function readOutputAbsenceAtomic(db: DatabaseSync, key: Scope): Owned<OutputAbsence> | null {
+  return stored(db, owner(db, key));
+}
 /** Trusted storage only: native retirement is established by the calling owner. */
 export function executeOutputAbsence(db: DatabaseSync, input: OutputAbsenceOperation): Owned<OutputAbsence> | null {
   let key: Scope;
   try { key = sourceScope(input.key); } catch { throw new Failure('invalid_input'); }
-  return transaction(db, () => input.kind === 'outputAbsenceClose' ? closeAbsence(db, key) : stored(db, owner(db, key)));
+  return transaction(db, () => input.kind === 'outputAbsenceClose' ? closeAbsence(db, key) : readOutputAbsenceAtomic(db, key));
 }

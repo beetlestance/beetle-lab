@@ -473,5 +473,30 @@
     "path": "export-v1/result.json",
     "schema": "StandaloneExportResult",
     "valid": true
+  },
+  {
+    "path": "valid/output-retirement-source.json",
+    "schema": "OutputRetirementRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/output-retirement-absence.json",
+    "schema": "OutputRetirementRequest",
+    "valid": true
+  },
+  {
+    "path": "invalid/output-retirement-purpose.json",
+    "schema": "OutputRetirementRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/output-retirement-path.json",
+    "schema": "OutputRetirementRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/output-retirement-generation.json",
+    "schema": "OutputRetirementRequest",
+    "valid": false
   }
 ]

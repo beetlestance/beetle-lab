@@ -1,3 +1,5 @@
+import { createRetirementClient } from './retirement-client.js';
+import type { JournalRetirements } from '../retirement-values/index.js';
 import { createStagingNamespaceClient } from './staging-namespace-client.js';
 import type { StagingNamespaceJournal } from '../staging-namespace/index.js';
 import { captureExport } from './export-assignment.js';
@@ -67,6 +69,7 @@ function largeOperation(operation: Operation): boolean {
 }
 
 export class Journal implements JournalOutputSources, JournalOutputDelivery, JournalOutputAbsence {
+  readonly retirements: JournalRetirements;
   readonly stagingNamespace: StagingNamespaceJournal;
   private readonly worker: Worker;
   private readonly pending = new Map<number, Pending>();
@@ -82,6 +85,9 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
   private readonly ready: Promise<void>;
 
   private constructor(options: JournalOptions) {
+    this.retirements = createRetirementClient({ send: operation => this.prepare(operation),
+      invalidReply: () => { throw new JournalError('unavailable'); },
+      settleCarrier: () => this.failed ? this.terminate().then(() => undefined) : Promise.resolve() });
     this.stagingNamespace = createStagingNamespaceClient({ send: operation => this.prepare(operation),
       invalidReply: () => { this.fail('unavailable'); throw new JournalError('unavailable'); } });
     this.limit = options.queueLimit ?? 32;

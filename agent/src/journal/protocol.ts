@@ -1,3 +1,4 @@
+import type { RetirementOperation, RetirementValue } from './retirement-protocol.js';
 import type { NamespaceOperation, NamespaceValue } from './staging-namespace-protocol.js';
 import type { Ack, AckReceipt, AgentEvent, AttemptSnapshot, EventBatch, Offer, StandaloneExportAssignment } from '@beetle/contracts';
 import type { WrapperBatch, WrapperCheckpoint } from '../control-protocol/index.js';
@@ -36,7 +37,7 @@ export interface PruneReceipt { pruned: number; snapshot: AttemptSnapshot }
 export interface EventInput {
   key: GenerationKey; source: 'wrapper' | 'agent'; sourceKey: number; json: string; canonical: string;
 }
-export type Operation = NamespaceOperation | OutputSourceOperation | OutputDeliveryOperation | OutputAbsenceOperation
+export type Operation = RetirementOperation | NamespaceOperation | OutputSourceOperation | OutputDeliveryOperation | OutputAbsenceOperation
   | { kind: 'authority' }
   | { kind: 'checkpoint'; key: GenerationKey }
   | { kind: 'wrapperBatch'; request: Readonly<WrapperBatch> }
@@ -53,7 +54,7 @@ export type Operation = NamespaceOperation | OutputSourceOperation | OutputDeliv
   | { kind: 'prune' | 'sources'; key: GenerationKey }
   | { kind: 'close' };
 export type Command = Operation & { id: number };
-export type Value = NamespaceValue | AttemptSnapshot | SnapshotPage | RunnablePage | Offer | StandaloneExportAssignment | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | CollectionIntent | PrivateSource | SourceReceipt | OutputDeliveryClosure | OutputAbsence | string | null;
+export type Value = RetirementValue | NamespaceValue | AttemptSnapshot | SnapshotPage | RunnablePage | Offer | StandaloneExportAssignment | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | CollectionIntent | PrivateSource | SourceReceipt | OutputDeliveryClosure | OutputAbsence | string | null;
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; id: number; ok: true; value: Value } |
   { kind: 'result'; id: number; ok: false; code: ErrorCode; recovery?: AttemptSnapshot };

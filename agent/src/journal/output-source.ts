@@ -1,3 +1,4 @@
+import { assertProducerOpen } from './retirement-gate.js';
 import { randomUUID } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import type { Reservation, Scope } from '../admission/index.js';
@@ -43,6 +44,7 @@ export class OutputSources {
     });
   }
   private begin(input: CollectionIntent): CollectionIntent {
+    assertProducerOpen(this.db, bindingKey(input.binding));
     const state = readSourceState(this.db, bindingKey(input.binding));
     if (state.intent) { requireSource(sameSource(state.intent.value, input), 'conflict'); return state.intent.value; }
     const current = matchOriginal(this.db, input); requireSource(current.reservation.status === 'charged', 'conflict');
@@ -53,6 +55,7 @@ export class OutputSources {
     return input;
   }
   private commit(input: PrivateSource): SourceReceipt {
+    assertProducerOpen(this.db, bindingKey(input.manifest.binding));
     const state = readSourceState(this.db, bindingKey(input.manifest.binding));
     if (state.source) { requireSource(sameSource(state.source, input), 'conflict'); return receiptForOutputSource(state.source, sourceHash); }
     requireSource(state.intent?.phase === 'pending' && state.reservation?.status === 'charged', 'conflict');

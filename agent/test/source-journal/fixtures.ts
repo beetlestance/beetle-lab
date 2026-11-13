@@ -2,7 +2,7 @@ import { afterEach } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { createHash } from 'node:crypto';
 import { sealEngineResult, encodeCanonicalJson } from '@beetle/contracts';
-import type { ControlEvent, EngineResult } from '@beetle/contracts';
+import type { ControlEvent, EngineResult, Offer } from '@beetle/contracts';
 import { initialize } from '../../src/journal/schema.js';
 import { Store } from '../../src/journal/store.js';
 import type { Journal } from '../../src/journal/index.js';
@@ -28,13 +28,14 @@ export function inspect(path: string) {
 export function sourceFixture() {
   const f = admissionFixture(); const databases = new Set<DatabaseSync>();
   afterEach(() => { for (const db of databases) db.close(); databases.clear(); });
-  async function seed(path = f.path()) {
+  async function seed(path = f.path(), beforeClaim?: (input: { journal: Journal; offer: Offer; specDigest: string }) => Promise<void>) {
     const journal = await f.configured(path); const offer = f.job(); offer.budget.outputBytes = 100_000;
     const config = configuration(); config.pool.outputBytes = 200_000; config.perRun.outputBytes = 200_000;
     const observed = observation(); observed.capacity.outputBytes = 200_000;
     await journal.admission({ kind: 'configure', configuration: config }); await journal.admission({ kind: 'observe', observation: { ...observed, observedAt: now + 1 } });
     await f.enqueue(journal, offer, now + 1); reserved(await f.admit(journal, offer, now + 1));
     const key = scope(offer); const draft = structuredClone(vectors.vectors[0]!.input) as Mutable<CollectedSource>;
+    if (beforeClaim) await beforeClaim({ journal, offer, specDigest: draft.binding.specDigest });
     const claim = await journal.admission({ kind: 'claimCreate', key, specDigest: draft.binding.specDigest });
     if (!('token' in claim)) throw new Error('Missing actual claim');
     const binding = { key, createToken: claim.token, specDigest: draft.binding.specDigest, runtimeId: 'synthetic-source-runtime' };

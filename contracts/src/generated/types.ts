@@ -23,6 +23,7 @@ import type { schema as OfferSchema } from './offer.inference.js';
 import type { schema as OutputAbsenceSchema } from './output-absence.inference.js';
 import type { schema as OutputManifestCoreSchema } from './output-manifest-core.inference.js';
 import type { schema as OutputManifestSchema } from './output-manifest.inference.js';
+import type { schema as OutputRetirementRequestSchema } from './output-retirement-request.inference.js';
 import type { schema as SourceBindingSchema } from './source-binding.inference.js';
 import type { schema as SourceChunkRequestSchema } from './source-chunk-request.inference.js';
 import type { schema as SourceChunkSchema } from './source-chunk.inference.js';
@@ -66,6 +67,7 @@ export type Offer = FromSchema<typeof OfferSchema, { references: [...typeof sche
 export type OutputAbsence = FromSchema<typeof OutputAbsenceSchema, { references: [...typeof schemas] }>;
 export type OutputManifestCore = FromSchema<typeof OutputManifestCoreSchema, { references: [...typeof schemas] }>;
 export type OutputManifest = FromSchema<typeof OutputManifestSchema, { references: [...typeof schemas] }>;
+export type OutputRetirementRequest = FromSchema<typeof OutputRetirementRequestSchema, { references: [...typeof schemas] }>;
 export type SourceBinding = FromSchema<typeof SourceBindingSchema, { references: [...typeof schemas] }>;
 export type SourceChunkRequest = FromSchema<typeof SourceChunkRequestSchema, { references: [...typeof schemas] }>;
 export type SourceChunk = FromSchema<typeof SourceChunkSchema, { references: [...typeof schemas] }>;
@@ -94,6 +96,7 @@ export interface ProtocolTypes {
   OutputAbsence: OutputAbsence;
   OutputManifestCore: OutputManifestCore;
   OutputManifest: OutputManifest;
+  OutputRetirementRequest: OutputRetirementRequest;
   SourceBinding: SourceBinding;
   SourceChunkRequest: SourceChunkRequest;
   SourceChunk: SourceChunk;
