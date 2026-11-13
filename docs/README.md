@@ -7,6 +7,7 @@ released application until the rewrite is qualified.
 | --- | --- | --- |
 | Agent execution/effort | [Execution plan](execution/README.md) | Work packages, model routing, locks and context packets |
 | Inspect cleanup implementation progress | [Progress index](verification/output-retirement-progress.md) | Prerequisites, transport evidence and precise remaining cleanup boundaries |
+| Inspect agent crash recovery | [Evidence](verification/cleanup-agent-crash.md) | Actual container/mailbox crash and unlink-before-progress recovery; no refund |
 | Inspect composed cleanup recovery | [Evidence](verification/cleanup-composed.md), [harness](../tools/qualification/native-application/retirement/README.md) | Actual HTTP/native/worker reply-loss recovery; hard agent crash remains pending |
 | Inspect cold runtime recovery | [Association](design/lld/runtime-association.md), [evidence](verification/runtime-association.md) | Durable exact mailbox association before deletion; fresh native checks still required |
 | Inspect automatic cleanup | [Driver](design/lld/output-deletion-runtime.md), [evidence](verification/cleanup-driver.md) | Bounded file/retirement turns and actual shared gateway; no settlement |

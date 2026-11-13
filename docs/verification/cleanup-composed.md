@@ -1,6 +1,6 @@
 # Composed cleanup recovery evidence
 
-Status: C4h2A locally accepted; hard agent-crash and full Linux backend remain pending.
+Status: C4h2A locally accepted; [agent crash recovery](cleanup-agent-crash.md) is now qualified separately. Linux backend remains unqualified.
 Baseb2aa5f6. [Driver](../design/lld/output-deletion-runtime.md),
 [association](../design/lld/runtime-association.md),
 [manual harness](../../tools/qualification/native-application/retirement/README.md).
@@ -49,5 +49,5 @@ The initial proxy regression exposed server-close/socket-close ordering; actual 
 are now awaited. Production cleanup gates were not relaxed.
 
 No public retention/delete, agent/backend settlement, tombstone or release claim follows.
-C4h2B must qualify hard agent crash between runtime and mailbox removal, native unlink
-recovery and remaining actor-reopen paths before complete C4 acceptance.
+C4h2B now qualifies [hard agent crash and native unlink recovery](cleanup-agent-crash.md).
+C5 settlement remains separate from these source-local C4 results.

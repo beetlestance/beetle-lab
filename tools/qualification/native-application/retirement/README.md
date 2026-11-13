@@ -27,3 +27,16 @@ agent overlay and unchanged reused engine can qualify behavior without proving a
 production image build. Host backend and Linux agent platforms are reported separately.
 Hard agent crashes, full Linux backend, amd64 and release qualification need separate
 accepted evidence. Focused proxy lifetime tests require ephemeral loopback permission.
+
+The separate `agent-crash.ts` command uses the same four arguments. It requires the
+coordinator-built private `.agent-work/docker-proxy.mjs` bundle. This task-only Linux
+proxy uses the existing config bind and the actual local Docker socket; only the
+captured observed runtime and mailbox may be deleted. One settled container DELETE
+reply is withheld to place a real hard agent crash before mailbox removal.
+
+An offline, original-scoped fault trigger then aborts the first file-step progress
+UPDATE after native unlink. It is removed before retry; production guards and rows
+remain unchanged. This qualifies that failed update and subsequent restart, rather
+than claiming a separately observed COMMIT-loss event. The command requires exact
+stored next-file absence with old progress, unchanged charges, final automatic ACK
+and complete proxy/task cleanup.

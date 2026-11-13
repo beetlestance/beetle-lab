@@ -22,7 +22,7 @@ const retirementOwner=owner+'retirement/';
 const retirementEntrypoints=new Set([
  'app/src/adapters/outbound/sqlite/index.js','app/src/application/output-deletion/index.js',
  'app/src/bootstrap/agent-runtime.js','app/src/ports/output-deletion-metadata.js',
- 'agent/src/staging-namespace/index.js',
+ 'agent/src/staging-namespace/index.js','agent/src/cleanup-control/index.js','app/src/bootstrap/output-runtime/index.js',
 ]);
 
 /** Cross-service qualification composes named entrypoints outside either service.

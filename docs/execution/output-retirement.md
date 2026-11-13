@@ -117,5 +117,8 @@ retirement discovery and the same sequential deletion child to the actual instal
 gateway. [Driver contract](../design/lld/output-deletion-runtime.md) and
 [evidence](../verification/cleanup-driver.md) distinguish mocks from native proof.
 Composed real native roots/authenticated HTTP/both compiled workers and cold recovery
-remain the next acceptance packet. Do not mark all C4 complete from isolated proofs.
-C5 settlement and C6 retention remain pending under the current goal.
+are locally accepted through [reply loss](../verification/cleanup-composed.md) and
+[agent crash/unlink recovery](../verification/cleanup-agent-crash.md). Exact platform
+and image-build limitations remain; these are not release qualification.
+Next: C5 settlement/tombstones, including a separate audit of positive unsent and
+never-admitted originals, then C6 protected public retention/delete.
