@@ -1,3 +1,4 @@
+import { mailboxVolumeName } from './live-channel.js';
 import {captureRuntimeAssociation} from '../../runtime-association/index.js';
 import type {RuntimeAssociation,RuntimeAssociationObservation,ObservedRuntimeAssociation} from '../../runtime-association/index.js';
 import type {RuntimePlan} from './prepare.js';
@@ -12,7 +13,7 @@ export function observeRuntimeAssociation(plan:RuntimePlan,binding:RetiredRuntim
  const labels=plan.spec.Labels;
  const original={organizationId:labels['dev.beetle.organization']!,workspaceId:labels['dev.beetle.workspace']!,attemptId:labels['dev.beetle.attempt']!,generation:1 as const,intentDigest:labels['dev.beetle.intent']!};
  const token=Object.freeze({}) as ObservedRuntimeAssociation;
- observations.set(token,Object.freeze({original:Object.freeze(original),daemonId:binding.daemonId,runtimeId:binding.runtimeId,specDigest:plan.specDigest,mailboxName:`${plan.name}-live`}));return token;
+ observations.set(token,Object.freeze({original:Object.freeze(original),daemonId:binding.daemonId,runtimeId:binding.runtimeId,specDigest:plan.specDigest,mailboxName:mailboxVolumeName(plan.name)}));return token;
 }
 /** Observation provenance only; not a mutable record constructor. */
 export function runtimeAssociationObservationFacts(token:ObservedRuntimeAssociation):RuntimeAssociationObservation{

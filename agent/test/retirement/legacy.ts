@@ -2,7 +2,7 @@ import { asSchema17 } from '../cleanup-plans/legacy.js';
 import type { DatabaseSync } from 'node:sqlite';
 /** Remove only additive017 objects from synthetic fixtures with no retirement intent. */
 export function asSchema16(db: DatabaseSync): void {
-  if ([18,19,20,21,22,23].includes(Number(db.prepare('PRAGMA user_version').get()?.user_version))) asSchema17(db);
+  if ([18,19,20,21,22,23,24].includes(Number(db.prepare('PRAGMA user_version').get()?.user_version))) asSchema17(db);
   if (db.prepare('PRAGMA user_version').get()?.user_version !== 17
     || db.prepare('SELECT COUNT(*) AS n FROM output_retirement_intents').get()?.n !== 0) throw new Error('Expected empty retirement schema17');
   const triggers = db.prepare("SELECT name FROM sqlite_schema WHERE type='trigger' AND name GLOB 'retirement_*'").all();

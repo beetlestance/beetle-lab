@@ -1,3 +1,5 @@
+import { createNoTaskReceiptClient } from './no-task-receipt-client.js';
+import type { JournalNoTaskReceipts } from './no-task-receipt-client.js';
 import { createSettlementClient } from './settlement-client.js';
 import type { JournalSettlements } from './settlement-client.js';
 import {createRuntimeAssociationClient} from './runtime-association-client.js';
@@ -88,6 +90,7 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
   readonly cleanupReceipts: JournalCleanupReceipts;
   readonly stagingNamespace: StagingNamespaceJournal;
   readonly settlements:JournalSettlements;
+  readonly noTaskReceipts:JournalNoTaskReceipts;
   private readonly worker: Worker;
   private readonly pending = new Map<number, Pending>();
   private readonly limit: number;
@@ -102,6 +105,7 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
   private readonly ready: Promise<void>;
 
   private constructor(options: JournalOptions) {
+    this.noTaskReceipts=createNoTaskReceiptClient({send:operation=>this.prepare(operation),invalidReply:()=>{this.fail('unavailable');throw new JournalError('unavailable');},settleCarrier:()=>this.retirements.settleCarrier(),owner:()=>this.retirements});
     this.settlements=createSettlementClient({send:operation=>this.prepare(operation,true),invalidReply:()=>{this.fail('unavailable');throw new JournalError('unavailable');},settleCarrier:()=>this.retirements.settleCarrier(),owner:()=>this.retirements});
     this.runtimeAssociations=createRuntimeAssociationClient({send:operation=>this.prepare(operation),invalidReply:()=>{this.fail('unavailable');throw new JournalError('unavailable');},settleCarrier:()=>this.retirements.settleCarrier()});
     this.cleanupReceipts = createCleanupReceiptClient({ send: operation => this.prepare(operation, true),

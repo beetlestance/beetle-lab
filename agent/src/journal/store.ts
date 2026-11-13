@@ -1,3 +1,5 @@
+import { executeNoTaskReceipt } from './no-task-receipts/store.js';
+import { noTaskReceiptOperation } from './no-task-receipt-protocol.js';
 import { SettlementStore } from './settlements/store.js';
 import { settlementOperation } from './settlement-protocol.js';
 import {RuntimeAssociationStore,runtimeAssociationOperation} from './runtime-associations/index.js';
@@ -129,6 +131,7 @@ export class Store {
     return undefined;
   }
   execute(command: Command): Value {
+    if(noTaskReceiptOperation(command))return executeNoTaskReceipt(this.db,command);
     const custody = this.custodyCommand(command); if (custody !== undefined) return custody;
     if (outputAbsenceOperation(command)) return executeOutputAbsence(this.db, command);
     if (outputDeliveryOperation(command)) return executeOutputDelivery(this.db, command);

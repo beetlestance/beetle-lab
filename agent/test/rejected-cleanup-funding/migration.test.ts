@@ -1,5 +1,5 @@
 import { expect,it } from 'vitest';
-import { initialize } from '../../src/journal/schema.js';
+import { initialize,JOURNAL_SCHEMA_VERSION } from '../../src/journal/schema.js';
 import { migration022 } from '../../src/journal/migration022.js';
 import { asSchema21 } from '../storage-settlement/legacy021.js';
 import { retirementFixture } from '../retirement/fixtures.js';
@@ -13,7 +13,7 @@ it('upgrades the actual schema22 objects preserving admitted debt and creating n
   const replay=db.prepare('SELECT * FROM agent_replay_storage').all();
   const intentTrigger=db.prepare("SELECT sql FROM sqlite_schema WHERE name='retirement_initial'").get()?.sql;
   db.close();db=initialize(v.path);
-  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(23);
+  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(JOURNAL_SCHEMA_VERSION);
   expect(db.prepare('SELECT * FROM accepted_attempts').all()).toEqual(original);
   expect(db.prepare('SELECT * FROM disk_holds').all()).toEqual(holds);
   expect(db.prepare('SELECT * FROM agent_replay_storage').all()).toEqual(replay);

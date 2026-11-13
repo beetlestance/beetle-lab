@@ -1,3 +1,4 @@
+import { noTaskReceiptActive } from '../no-task-receipts/store.js';
 import { rejectedFundingActive } from '../rejected-controls/guard.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeCanonicalJson } from '@beetle/contracts';
@@ -13,7 +14,7 @@ const permits=new WeakMap<DatabaseSync,Permit>();
 function same(left:unknown,right:unknown):boolean{return encodeCanonicalJson(left,512)===encodeCanonicalJson(right,512);}
 /** Non-deterministic process-local authorization. No caller can open a raw SQL permit. */
 export function registerSettlementGuard(db:DatabaseSync):void{
- db.function('agent_settlement_active',()=>permits.has(db)||rejectedFundingActive(db)?1:0);
+ db.function('agent_settlement_active',()=>permits.has(db)||rejectedFundingActive(db)||noTaskReceiptActive(db)?1:0);
  db.function('agent_settlement_insert_allowed',(attempt,json,digest)=>{
   const permit=permits.get(db);return permit?.phase==='insert'&&attempt===permit.prepared.request.retirement.attemptId
    &&json===permit.prepared.json&&digest===permit.prepared.digest?1:0;
@@ -41,7 +42,7 @@ function purge(db:DatabaseSync,permit:Permit):void{
 }
 /** Fixed no-callback transaction body; caller owns the same immediate transaction. */
 export function commitAgentSettlement(db:DatabaseSync,input:unknown){
- if(!db.isTransaction||permits.has(db))throw new Failure('conflict');const request=captureSettlementRequest(input);
+ if(!db.isTransaction||db.prepare('SELECT agent_settlement_active() active').get()?.active!==0)throw new Failure('conflict');const request=captureSettlementRequest(input);
  const replay=readStoredSettlement(db,request);if(replay)return settlementReply(replay,request);
  const prepared=prepareAgentSettlement(db,request);const counters=transferCounters(db,prepared.tombstone.disk);
  const permit:Permit={prepared,counters,phase:'insert'};permits.set(db,permit);

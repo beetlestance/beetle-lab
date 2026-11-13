@@ -43,3 +43,26 @@ Evidence `.agent-work/rejected-producer-ordering/`:40 original scoped cases and6
 rejected correction cases passed, including expiry/close while a failed carrier is held.
 Types/lint/architecture/docs/build passed. Independent review timing defect corrected.
 No Root/HTTP route uses the new rejected selection until native proof is implemented.
+
+## No-task native receipt
+
+Journal024 adds a separate immutable no-task receipt inside the prepaid allowance.
+The native owner requires the genuine producer barrier and exact funded rejected intent.
+It pins the verified root/marker and checks the deterministic task name absent, plus
+fresh daemon identity and exact container/mailbox absence. It repeats named checks
+after actual original handle closes, then refreshes funded authority before dispatch.
+Shared native/cleanup exclusion spans the receipt write and actual worker carrier.
+
+Opaque proof is bound to the same Journal and live owner; the client consumes it at
+actual dispatch. Deadline/shutdown stops new I/O. Failed native close or unknown worker
+termination retains strong ownership and exclusion. Every replay repeats native proof.
+The receipt invents no prepared roles, performs no unlink and returns no storage credit.
+
+Evidence `.agent-work/no-task-receipt/`:38 scoped behavior/migration cases passed;
+39 affected parser/migration/mailbox regressions passed after complexity refactoring.
+Types/lint/architecture/docs/build passed. Tests cover actual temporary root/marker
+handles, post-close replacement, cancellation/producer close/shutdown, sticky native
+close and actual issued-worker termination rejection, private SQL forgery/nested writes,
+and committed worker receipt loss/reopen while exclusion stays held. Independent review
+found no blocker. These are portable filesystem/compiled-worker fixtures with a modeled
+daemon; full Linux Docker/HTTP qualification and rejected settlement remain pending.

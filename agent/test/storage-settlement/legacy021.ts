@@ -16,7 +16,7 @@ function triggers(db:DatabaseSync){
 /** Synthetic empty-prefix projection only. Never discard settled replay identity/debt. */
 export function asSchema21(db:DatabaseSync):void{
  const version=db.prepare('PRAGMA user_version').get()?.user_version;if(version===21)return;
- if(![22,23].includes(Number(version))||db.prepare('SELECT 1 FROM retired_attempts LIMIT 1').get())throw Error('Cannot project settled replay identity');
+ if(![22,23,24].includes(Number(version))||db.prepare('SELECT 1 FROM retired_attempts LIMIT 1').get())throw Error('Cannot project settled replay identity');
  requireUnfundedPrefix(db,version);
  const prior=initializePrior021(':memory:');const current=initialize(':memory:');
  try{
@@ -27,7 +27,8 @@ export function asSchema21(db:DatabaseSync):void{
     if(!oldNames.has(row.name))db.exec(`DROP TRIGGER "${name}"`);
     else if(before?.sql!==row.sql){db.exec(`DROP TRIGGER "${name}"`);db.exec(String(before?.sql));}
    }
-   if(version===23)db.exec('DROP TABLE rejected_cleanup_controls;DROP TABLE rejected_cleanup_storage');
+   if(version===24)db.exec('DROP TABLE rejected_cleanup_receipts');
+   if(Number(version)>=23)db.exec('DROP TABLE rejected_cleanup_controls;DROP TABLE rejected_cleanup_storage');
    db.exec('DROP TABLE retired_attempts;DROP TABLE agent_replay_storage;PRAGMA user_version=21');
   });
  }finally{prior.close();current.close();}
@@ -44,12 +45,16 @@ export function verifyUnchangedThrough21(db:DatabaseSync,before:readonly Record<
  for(const row of before)expect(db.prepare('SELECT name,type,sql,rootpage FROM sqlite_schema WHERE name=?').get(String(row.name))).toEqual(row);
 }
 
-function requireUnfundedPrefix(db:DatabaseSync,version:unknown):void{
- if(version===23){
+function requireNoRejectedFunding(db:DatabaseSync,version:unknown):void{
+ if(version===24&&db.prepare('SELECT 1 FROM rejected_cleanup_receipts LIMIT 1').get())throw Error('Cannot project native rejected receipt');
+ if(Number(version)>=23){
   const temporary=db.prepare('SELECT original_count,charged_bytes,last_clock FROM rejected_cleanup_storage WHERE id=1').get();
   if(temporary?.original_count!==0||temporary.charged_bytes!==0||temporary.last_clock!==0
    ||db.prepare('SELECT 1 FROM rejected_cleanup_controls LIMIT 1').get())throw Error('Cannot project rejected cleanup funding');
  }
+ }
+function requireUnfundedPrefix(db:DatabaseSync,version:unknown):void{
+ requireNoRejectedFunding(db,version);
  const debt=db.prepare('SELECT original_count,charged_bytes FROM agent_replay_storage WHERE id=1').get();
  if(debt?.original_count!==0||debt.charged_bytes!==0)throw Error('Cannot project replay debt');
 

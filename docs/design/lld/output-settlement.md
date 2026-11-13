@@ -178,8 +178,11 @@ O(1) counters cap funded originals at64 and preserve the successful funding cloc
 All normal execution admission counts temporary debt. Exact funded replay bypasses
 fresh space checks; conflicting identity and quota reduction remain fenced. No C1 or
 hold is invented. Old1024-byte originals without enough quota stay protected.
-This ledger grants no native absence, cleanup receipt or refund; HTTP discovery remains
-protected until the separate no-task native owner and settlement version are qualified.
+Journal024 separately stores the no-task native receipt. Its owner validates the real
+root/marker, deterministic task/container/mailbox absence and producer drain, repeats
+named checks after native closes, and holds exclusion through opaque worker dispatch.
+Receipt replay repeats native proof. The receipt grants no refund; rejected HTTP
+discovery remains protected until settlement and composed native qualification finish.
 Standalone exports remain outside this performance settlement qualification.
 
 Local admitted-source native evidence: [settlement recovery](../../verification/native-settlement.md).

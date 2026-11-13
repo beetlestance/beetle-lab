@@ -1,3 +1,4 @@
+export { mailboxVolumeName } from './live-channel.js';
 export { DockerBackend } from './backend.js';
 export { prepareRuntime, runtimeName, RuntimePlan, isRuntimePlan } from './prepare.js';
 export { UnixDockerTransport, TRANSPORT_LIMITS } from './transport.js';

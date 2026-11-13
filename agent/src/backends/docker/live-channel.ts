@@ -1,5 +1,6 @@
 import type { DockerVolumeMount, InstallationProfile } from './types.js';
 const liveBytes = 131072;
+export function mailboxVolumeName(name:string):string{return `${name}-live`;}
 export function validTemporaryProfile(profile: InstallationProfile): boolean {
   if (!Number.isSafeInteger(profile.tmpfsBytes) || profile.tmpfsBytes < 4096 || profile.tmpfsBytes > 67108864) return false;
   if (profile.liveMetricMailbox === undefined || profile.liveMetricMailbox === false) return true;
@@ -11,7 +12,7 @@ export function temporaryMounts(profile: InstallationProfile): Readonly<Record<s
   return {'/tmp': `rw,noexec,nosuid,nodev,size=${bytes},mode=1777`};
 }
 export function mailboxMount(profile: InstallationProfile, name: string): DockerVolumeMount[] {
-  return profile.liveMetricMailbox ? [{Type: 'volume', Source: `${name}-live`, Target: '/beetle/live',
+  return profile.liveMetricMailbox ? [{Type: 'volume', Source: mailboxVolumeName(name), Target: '/beetle/live',
     ReadOnly: false, VolumeOptions: {NoCopy: true}}] : [];
 }
 export function mailboxOptions(user: string): Readonly<Record<string, string>> {

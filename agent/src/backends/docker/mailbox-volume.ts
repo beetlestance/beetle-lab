@@ -1,7 +1,7 @@
 import {requireRuntimeAssociationResume} from './runtime-association.js';
 import { performance } from 'node:perf_hooks';
 import { encodeJson } from '@beetle/contracts';
-import { mailboxOptions } from './live-channel.js';
+import { mailboxOptions,mailboxVolumeName } from './live-channel.js';
 import { record } from './inspect.js';
 import type { RuntimePlan } from './prepare.js';
 import type { DockerReply, DockerTransport, FailureReason, MutationResult, Operation } from './types.js';
@@ -18,7 +18,7 @@ export class MailboxVolumeOwner {
   private readonly labels: Readonly<Record<string, string>>;
   private readonly options: Readonly<Record<string, string>>;
   constructor(plan: RuntimePlan, private readonly transport: DockerTransport) {
-    this.name = `${plan.name}-live`;
+    this.name = mailboxVolumeName(plan.name);
     this.labels = {...plan.spec.Labels, 'dev.beetle.purpose': 'live-mailbox'};
     this.options = mailboxOptions(plan.spec.User);
   }

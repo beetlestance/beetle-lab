@@ -1,3 +1,5 @@
+import type { NoTaskReceiptOperation } from './no-task-receipt-protocol.js';
+import type { StoredNoTaskReceipt } from '../no-task-receipt-values/index.js';
 import type { SettlementOperation,SettlementValue } from './settlement-protocol.js';
 import type {RuntimeAssociationOperation,RuntimeAssociationValue} from './runtime-association-protocol.js';
 import type { CleanupReceiptOperation, CleanupReceiptValue } from './cleanup-receipt-protocol.js';
@@ -42,7 +44,7 @@ export interface PruneReceipt { pruned: number; snapshot: AttemptSnapshot }
 export interface EventInput {
   key: GenerationKey; source: 'wrapper' | 'agent'; sourceKey: number; json: string; canonical: string;
 }
-export type Operation = SettlementOperation | RuntimeAssociationOperation | CleanupReceiptOperation | CleanupProgressOperation | CleanupPlanOperation | RetirementOperation | NamespaceOperation | OutputSourceOperation | OutputDeliveryOperation | OutputAbsenceOperation
+export type Operation = NoTaskReceiptOperation | SettlementOperation | RuntimeAssociationOperation | CleanupReceiptOperation | CleanupProgressOperation | CleanupPlanOperation | RetirementOperation | NamespaceOperation | OutputSourceOperation | OutputDeliveryOperation | OutputAbsenceOperation
   | { kind: 'authority' }
   | { kind: 'checkpoint'; key: GenerationKey }
   | { kind: 'wrapperBatch'; request: Readonly<WrapperBatch> }
@@ -59,7 +61,7 @@ export type Operation = SettlementOperation | RuntimeAssociationOperation | Clea
   | { kind: 'prune' | 'sources'; key: GenerationKey }
   | { kind: 'close' };
 export type Command = Operation & { id: number };
-export type Value = SettlementValue | RuntimeAssociationValue | CleanupReceiptValue | CleanupProgressValue | CleanupPlanValue | RetirementValue | NamespaceValue | AttemptSnapshot | SnapshotPage | RunnablePage | Offer | StandaloneExportAssignment | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | CollectionIntent | PrivateSource | SourceReceipt | OutputDeliveryClosure | OutputAbsence | string | null;
+export type Value = StoredNoTaskReceipt | SettlementValue | RuntimeAssociationValue | CleanupReceiptValue | CleanupProgressValue | CleanupPlanValue | RetirementValue | NamespaceValue | AttemptSnapshot | SnapshotPage | RunnablePage | Offer | StandaloneExportAssignment | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | CollectionIntent | PrivateSource | SourceReceipt | OutputDeliveryClosure | OutputAbsence | string | null;
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; id: number; ok: true; value: Value } |
   { kind: 'result'; id: number; ok: false; code: ErrorCode; recovery?: AttemptSnapshot };

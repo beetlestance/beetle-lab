@@ -34,7 +34,7 @@ export function rejectedCandidate(db:DatabaseSync,input:unknown):Facts{
 }
 /** Fixed synchronous body only; caller owns the immediate transaction. No permit escapes. */
 export function fundRejectedIntent(db:DatabaseSync,input:unknown):RetirementIntent{
- if(!db.isTransaction||funding.has(db))throw new Failure('conflict');const facts=rejectedCandidate(db,input);
+ if(!db.isTransaction||db.prepare('SELECT agent_settlement_active() active').get()?.active!==0)throw new Failure('conflict');const facts=rejectedCandidate(db,input);
  if(readRetirementIntent(db,retirementKey(facts.request)))return facts.intent;
  const clock=requireRejectedCapacity(db,facts);const before=rejectedCounters(db);
  const frame:Funding={facts,before,clock,json:encodeCanonicalJson(facts.control,1024),intentJson:encodeCanonicalJson(facts.intent,4096),phase:'control'};
