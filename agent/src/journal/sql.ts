@@ -63,7 +63,7 @@ export function owner(db: DatabaseSync, key: AttemptKey & { generation?: number 
   const row = db.prepare(`SELECT ${columns} FROM accepted_attempts
     WHERE attempt_id=? AND organization_id=? AND workspace_id=?`)
     .get(key.attemptId, key.organizationId, key.workspaceId) as unknown as Row | undefined;
-  if (!row) throw new Failure('not_found');
+  if(!row){if(db.prepare('SELECT 1 FROM retired_attempts WHERE attempt_id=?').get(key.attemptId))throw new Failure('conflict');throw new Failure('not_found');}
   if (key.generation !== undefined && row.generation !== key.generation) throw new Failure('stale_generation');
   return row;
 }

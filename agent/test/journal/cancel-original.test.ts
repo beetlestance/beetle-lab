@@ -1,4 +1,4 @@
-import { DatabaseSync } from 'node:sqlite';
+import { registeredDatabase } from './registered-db.js';
 import { expect, it } from 'vitest';
 import { validate } from '@beetle/contracts';
 import { admissionFixture, now, scope } from '../admission/fixtures.js';
@@ -20,7 +20,7 @@ it('commits fresh refusal without admission/native facts and retains it across r
   expect(await journal.prune(scope(offer))).toEqual({ pruned: 0, snapshot: receipt });
   expect(await journal.listOpen({ limit: 1 })).toEqual({ snapshots: [receipt] });
   await f.close(journal);
-  const db = new DatabaseSync(path);
+  const db = registeredDatabase(path);
   try {
     expect(db.prepare('SELECT * FROM cancelled_originals').all()).toEqual([{ attempt_id: offer.attemptId, generation: 1 }]);
     for (const table of ['admission_queue', 'reservations', 'event_spool']) {
@@ -47,7 +47,7 @@ it.each(['cancel', 'put'] as const)('serializes racing %s first and never promot
   expect(final.admission).toEqual(first === 'cancel' ? rejected : undefined);
   expect(replies[1]).toEqual(final);
   await f.close(journal);
-  const db = new DatabaseSync(path);
+  const db = registeredDatabase(path);
   try { expect(db.prepare('SELECT count(*) AS n FROM cancelled_originals').get()?.n).toBe(first === 'cancel' ? 1 : 0); }
   finally { db.close(); }
 });
@@ -64,7 +64,7 @@ it.each(['cancel', 'offer'] as const)('races installed admission Offer with %s f
   await expect(journal.admission({ kind: 'claimCreate', key: scope(offer), specDigest: 'b'.repeat(64) }))
     .rejects.toMatchObject({ code: 'not_found' });
   await f.close(journal);
-  const db = new DatabaseSync(path);
+  const db = registeredDatabase(path);
   try {
     expect(db.prepare('SELECT count(*) AS n FROM admission_queue WHERE pending=1').get()?.n).toBe(0);
     expect(db.prepare('SELECT count(*) AS n FROM cancelled_originals').get()?.n).toBe(first === 'cancel' ? 1 : 0);
@@ -137,7 +137,7 @@ it('keeps clock rollback fencing and original first cause/grace through repeated
 it('keeps a historical unanchored cancellation unknown without granting new refusal or grace', async () => {
   const path = f.path(); let journal = await f.open(path); const offer = f.offer();
   await journal.immutableOffer(offer); await f.close(journal);
-  const db = new DatabaseSync(path);
+  const db = registeredDatabase(path);
   try { db.exec('UPDATE accepted_attempts SET cancel_requested=1'); } finally { db.close(); }
   journal = await f.open(path);
   expect(await journal.cancelOriginal({ offer, now })).not.toHaveProperty('admission');

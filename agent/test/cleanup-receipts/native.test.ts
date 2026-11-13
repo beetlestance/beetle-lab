@@ -1,3 +1,4 @@
+import { verifyUnchangedThrough21 } from '../storage-settlement/legacy021.js';
 import {JOURNAL_SCHEMA_VERSION} from '../../src/journal/schema.js';
 import { expect,it } from 'vitest';
 import { encodeCanonicalJson } from '@beetle/contracts';
@@ -12,10 +13,9 @@ it('migrates actual schema19, retaining all prior rows/rootpages/charges while a
  const e=await f.completed();const observed=await e.removal.stepWithProofAndPorts(e.token,operation(),e.ports);if(!observed.absence)throw Error('Missing actual native proof');
  const facts=nativeAbsenceFacts(observed.absence,{retirements:e.owner.retirements,plans:e.owner.cleanupPlans,progress:e.owner.cleanupProgress,receipts:e.owner.cleanupReceipts});
  await e.owner.close();let db=initialize(e.journalPath);asSchema19(db);const rows=Object.fromEntries(retained.map(table=>[table,db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()]));
- const schema=db.prepare("SELECT name,type,sql,rootpage FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all();db.close();
+ const schema=db.prepare("SELECT name,type,sql,rootpage FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all();verifyUnchangedThrough21(db,schema);db.close();
  const journal=await f.open(e.journalPath);const stored=await journal.cleanupReceipts.commit(e.plan,facts.receipt);await journal.close();db=initialize(e.journalPath);
  try{expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(JOURNAL_SCHEMA_VERSION);for(const table of retained)expect(db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).toEqual(rows[table]);
-  for(const row of schema)expect(db.prepare('SELECT name,type,sql,rootpage FROM sqlite_schema WHERE name=?').get(String(row.name))).toEqual(row);
   const json=encodeCanonicalJson(facts.receipt,cleanupControl.receiptBytes);expect(db.prepare('SELECT receipt_identity,encoded_bytes,charged_bytes FROM output_cleanup_receipts').get()).toEqual({receipt_identity:stored.receiptIdentity,encoded_bytes:Buffer.byteLength(json),charged_bytes:Buffer.byteLength(json)+512});
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
  }finally{db.close();}

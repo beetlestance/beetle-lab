@@ -1,0 +1,63 @@
+import { afterEach,expect,it } from 'vitest';
+import { writeFile,unlink,rmdir } from 'node:fs/promises';
+import { join } from 'node:path';
+import template from '../../../contracts/fixtures/valid/passed-result.json' with {type:'json'};
+import type { EngineResult } from '@beetle/contracts';
+import { captureOutputRetirementRequest } from '@beetle/contracts/output-retirement';
+import { cleanedReplyDigest } from '@beetle/contracts/output-settlement';
+import { configuration as poolConfiguration,observation as runtimeObservation } from '../admission/fixtures.js';
+import { fixture as installationFixture,scope } from '../installation/fixtures.js';
+import { seal } from '../output-collection/fixture.js';
+import { recoverRuntimePlan } from '../../src/installation/index.js';
+import { retirementRoot } from '../../src/staging/index.js';
+import { CONTROL_FILE } from '../../src/control-protocol/index.js';
+import { OUTPUT_RESULT_FILE } from '../../src/collection/output/index.js';
+import { ProducerRetirement } from '../../src/producer-retirement/index.js';
+import { RuntimeRetirement } from '../../src/runtime-retirement/index.js';
+import { TaskInventory } from '../../src/task-inventory/index.js';
+import { NativeRemoval } from '../../src/native-removal/index.js';
+import { NativeReceipt } from '../../src/native-receipt/index.js';
+import { RetirementPipeline } from '../../src/retirement-pipeline/index.js';
+import { cleanupAccess } from '../../src/cleanup-access/index.js';
+import { retirementDigest } from '../../src/retirement-values/index.js';
+import { portablePorts } from '../task-inventory/fixtures.js';
+import { RetiredDocker } from '../backends/docker/retired-fixtures.js';
+import { DockerBackend } from '../../src/backends/docker/index.js';
+import { payload } from '../backends/docker/fixtures.js';
+const f=installationFixture();const owners:{close():Promise<void>}[]=[];
+afterEach(async()=>{for(const owner of owners.splice(0))await owner.close();});
+const operation=()=>({deadline:performance.now()+10000});
+it('settles an actual staged source closure after checked collection and native cleanup',async()=>{
+ const e=await f.setup(200000);const config=poolConfiguration();
+ config.pool.outputBytes=400000;config.perRun.outputBytes=400000;config.maxTimeoutMs=e.offer.budget.timeoutMs;
+ const observed=runtimeObservation(e.time.wall());observed.capacity.outputBytes=400000;
+ await e.owner.admission({kind:'configure',configuration:config});await e.owner.admission({kind:'observe',observation:observed});
+ const manager=e.create();await e.accepted(manager);const key=scope(e.offer);
+ e.time.advance(1);await manager.drive(key,operation());
+ const reservation=await e.owner.admission({kind:'reservation',key});if(!('status'in reservation))throw Error('Missing reservation');
+ const plan=recoverRuntimePlan(e.catalog,e.offer,reservation);const output=join(retirementRoot(e.staging.root).directory,plan.name,'output');
+ const result=seal({...structuredClone(template),...key,artifacts:[]} as EngineResult);
+ const event={version:'1.0',...key,seq:1,phase:'seal',kind:'engine.result',observedAt:'2026-01-01T00:00:00Z',payload:result};
+ await writeFile(join(output,OUTPUT_RESULT_FILE),JSON.stringify(result),{mode:0o600});
+ await writeFile(join(output,CONTROL_FILE),JSON.stringify(event)+'\n',{mode:0o600});
+ expect(await e.finish(manager)).toEqual({kind:'released',collection:'finished'});
+ const delivery=await e.owner.readOutputDelivery(key);if(!delivery)throw Error('Missing actual source delivery');
+ await e.owner.acknowledge({protocolVersion:'1.0',...key,throughSeq:delivery.finalAgentSeq});
+ const request=captureOutputRetirementRequest({version:1,purpose:'performance',...key,intentDigest:e.offer.intentDigest,
+  journalAuthority:await e.owner.journalAuthority(),runId:'00000000-0000-4000-8000-000000000201',deletionId:'00000000-0000-4000-8000-000000000202',deletionVersion:1,
+  closure:{kind:'source',sourceDigest:delivery.receipt.sourceDigest,manifestDigest:delivery.receipt.manifestDigest,finalAgentSeq:delivery.finalAgentSeq}});
+ const producer=new ProducerRetirement({journal:e.owner.retirements,gate:e.options.gate,installation:manager});
+ const docker=new RetiredDocker(plan);docker.daemonId=e.configuration.expectedDaemonId;docker.state=payload(plan,'exited');
+ const runtime=new RuntimeRetirement({journal:e.owner,root:e.staging.root,catalog:e.catalog,transport:docker,backend:()=>new DockerBackend(docker)});
+ const inventory=new TaskInventory({journal:e.owner,root:e.staging.root});const removal=new NativeRemoval({journal:e.owner,root:e.staging.root});
+ const receipt=new NativeReceipt({journal:e.owner,root:e.staging.root,removal});
+ const pipeline=new RetirementPipeline({journal:e.owner,producer,runtime,inventory,removal,receipt});owners.push(pipeline,receipt,removal,inventory,runtime,producer);
+ const ports=portablePorts();const work=pipeline.tickWithPorts(request,operation(),{inventory:ports.ports,removal:{...ports.ports,unlink,rmdir}});
+ const cleaned=await work.result;await work.settled;expect(cleaned.state).toBe('cleaned');
+ const fence=cleanupAccess(e.owner.retirements).reserve(request);
+ try{
+  const observation=await fence.drain();const release={version:1,retirement:request,cleanupReplyDigest:cleanedReplyDigest(cleaned,request,retirementDigest)};
+  expect(await e.owner.settlements.settle(observation,release)).toMatchObject({state:'settled',chargedBytes:4096});
+  expect(await e.owner.settlements.retiredReply(request)).toEqual(cleaned);
+ }finally{fence.release();}
+});

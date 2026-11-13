@@ -1,5 +1,5 @@
+import { registeredDatabase } from './registered-db.js';
 import { writeFile } from 'node:fs/promises';
-import { DatabaseSync } from 'node:sqlite';
 import { pathToFileURL } from 'node:url';
 import { expect, it } from 'vitest';
 import { openJournal } from '../../src/journal/index.js';
@@ -9,7 +9,7 @@ import { journalFixture } from './fixtures.js';
 const f = journalFixture();
 const canonical = '12345678-1234-4abc-8def-123456789abc';
 function edit(path: string, sql: string): void {
-  const db = new DatabaseSync(path);
+  const db = registeredDatabase(path);
   try { db.exec(sql); } finally { db.close(); }
 }
 
@@ -20,7 +20,7 @@ it('returns only a canonical committed identity, stable on reopen and independen
   expect(await Promise.all(Array.from({ length: 16 }, () => journal.journalAuthority())))
     .toEqual(Array.from({ length: 16 }, () => authority));
   await f.close(journal);
-  const db = new DatabaseSync(path);
+  const db = registeredDatabase(path);
   try { expect(db.prepare('SELECT * FROM journal_authority').all()).toEqual([{ id: 1, authority }]); }
   finally { db.close(); }
   journal = await f.open(path); expect(await journal.journalAuthority()).toBe(authority);
@@ -59,7 +59,7 @@ it.each([
 });
 
 it('bounds raw corrupt-table reads and refuses duplicate or misplaced singleton rows', () => {
-  const db = new DatabaseSync(':memory:');
+  const db = registeredDatabase(':memory:');
   try {
     db.exec('CREATE TABLE journal_authority(id,authority)');
     const insert = db.prepare('INSERT INTO journal_authority VALUES (?,?)');

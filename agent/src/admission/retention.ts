@@ -4,16 +4,17 @@ export const DISK_HOLD_LIMIT = 4096;
 export const DISK_HOLD_METADATA_BYTES = 512;
 export const MAX_DISK_TOTAL = Number.MAX_SAFE_INTEGER;
 
-/** Bytes include only retained holds; heldCount includes both active and retained. */
+/** Hold bytes exclude permanent replay debt; heldCount counts active and retained holds. */
 export interface DiskRetention {
   readonly heldCount: number;
   readonly outputBytes: number;
   readonly stagingBytes: number;
+  readonly replayBytes: number;
 }
 /** Exact policy signature amendment; callers must supply durable retention facts. */
 export type AdmissionDecider = (candidate: Candidate, snapshot: AdmissionSnapshot, retention: DiskRetention) => Decision;
 
-const names = ['heldCount', 'outputBytes', 'stagingBytes'] as const;
+const names = ['heldCount', 'outputBytes', 'stagingBytes','replayBytes'] as const;
 function fields(input: unknown): object {
   if (input === null || typeof input !== 'object'
     || ![Object.prototype, null].includes(Object.getPrototypeOf(input) as object | null)) throw new Error();
@@ -35,7 +36,8 @@ export function captureDiskRetention(input: unknown): Readonly<DiskRetention> {
     const heldCount = scalar(original, 'heldCount');
     const outputBytes = scalar(original, 'outputBytes');
     const stagingBytes = scalar(original, 'stagingBytes');
+    const replayBytes = scalar(original, 'replayBytes');
     if (heldCount > DISK_HOLD_LIMIT || heldCount === 0 && (outputBytes !== 0 || stagingBytes !== 0)) throw new Error();
-    return Object.freeze({ heldCount, outputBytes, stagingBytes });
+    return Object.freeze({ heldCount, outputBytes, stagingBytes,replayBytes });
   } catch { throw new Error('invalid_input'); }
 }

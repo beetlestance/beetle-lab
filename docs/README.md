@@ -6,7 +6,7 @@ released application until the rewrite is qualified.
 | Need | Read | Authority |
 | --- | --- | --- |
 | Agent execution/effort | [Execution plan](execution/README.md) | Work packages, model routing, locks and context packets |
-| Inspect settlement contract | [Settlement](design/lld/output-settlement.md), [values](verification/settlement-values.md), [local barrier](verification/settlement-barrier.md) | Closed values and local drain; transactions, refunds and retention apply remain gated |
+| Inspect output settlement | [Contract](design/lld/output-settlement.md), [agent owner](verification/agent-storage-settlement.md), [local drain](verification/settlement-barrier.md), [values](verification/settlement-values.md) | Private admitted-agent transaction; runner transport, backend and public retention pending |
 | Inspect cleanup implementation progress | [Progress index](verification/output-retirement-progress.md) | Prerequisites, transport evidence and precise remaining cleanup boundaries |
 | Inspect agent crash recovery | [Evidence](verification/cleanup-agent-crash.md) | Actual container/mailbox crash and unlink-before-progress recovery; no refund |
 | Inspect composed cleanup recovery | [Evidence](verification/cleanup-composed.md), [harness](../tools/qualification/native-application/retirement/README.md) | Actual HTTP/native/worker reply-loss recovery; hard agent crash remains pending |

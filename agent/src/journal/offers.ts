@@ -1,3 +1,4 @@
+import { assertOfferNotRetired } from './settlements/rows.js';
 import { insertExport, requirePurpose } from './export-assignment.js';
 import { snapshot } from './snapshot.js';
 import type { DatabaseSync } from 'node:sqlite';
@@ -9,6 +10,7 @@ import type { Row } from './sql.js';
 export function offerAtomic(db: DatabaseSync, input: { json: string; canonical: string }, quota: number, assignment?: StandaloneExportAssignment): AttemptSnapshot {
   const offer = JSON.parse(input.json) as Offer;
   if (offerInput(offer).canonical !== input.canonical) throw new Failure('invalid_input');
+  assertOfferNotRetired(db,offer.attemptId);
   const existing = db.prepare(`SELECT ${columns},canonical_json FROM accepted_attempts WHERE attempt_id=?`)
     .get(offer.attemptId) as unknown as (Row & { canonical_json: string }) | undefined;
   if (existing) {

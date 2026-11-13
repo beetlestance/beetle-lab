@@ -31,7 +31,7 @@ it('keeps staging written before abort and transfers output and staging exactly 
   } finally { rmSync(root, { recursive: true, force: true }); }
   expect(stats(f.db)).toEqual({ id: 1, held_count: 1, held_output_bytes: 100, held_staging_bytes: original.staging.totalBytes,
     retained_output_bytes: 100, retained_staging_bytes: original.staging.totalBytes });
-  expect(diskRetention(f.db)).toEqual({ heldCount: 1, outputBytes: 100, stagingBytes: original.staging.totalBytes });
+  expect(diskRetention(f.db)).toEqual({ replayBytes:0, heldCount: 1, outputBytes: 100, stagingBytes: original.staging.totalBytes });
   expect(f.db.prepare('SELECT charged FROM reservations').get()?.charged).toBe(0);
   expect(f.db.prepare('SELECT phase FROM disk_holds').get()?.phase).toBe('retained');
 });
@@ -55,7 +55,7 @@ it('transfers both disk amounts on settled release, including failed collection 
   f.db.exec('DROP TRIGGER fail_release');
   const first = f.store.execute({ kind: 'release', evidence });
   expect(f.store.execute({ kind: 'release', evidence })).toEqual(first);
-  expect(diskRetention(f.db)).toEqual({ heldCount: 1, outputBytes: 100, stagingBytes: original.staging.totalBytes });
+  expect(diskRetention(f.db)).toEqual({ replayBytes:0, heldCount: 1, outputBytes: 100, stagingBytes: original.staging.totalBytes });
 });
 it('rolls back every reservation, hold, counter and charge on late admission and release failures', () => {
   const f = native(); const a = job(); f.enqueue(a);

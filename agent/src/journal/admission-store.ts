@@ -1,3 +1,4 @@
+import { assertOfferNotRetired } from './settlements/rows.js';
 import { reserveCleanupControl, assertCleanupControl } from './staging-namespace/index.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeJson } from '@beetle/contracts';
@@ -61,7 +62,7 @@ export class AdmissionStore {
       .run(encodeJson(next, 65_536)); return { stored: true };
   }
   private offer(request: Extract<AdmissionCommand, { kind: 'offer' }>): AdmissionValue {
-    const offer = request.offer;
+    const offer = request.offer;assertOfferNotRetired(this.db,offer.attemptId);
     const old = this.db.prepare('SELECT candidate_json,decision_json FROM admission_queue WHERE attempt_id=?').get(offer.attemptId);
     if (old) return this.replayOffer(request, old);
     const snapshot = settings(this.db, request.now);

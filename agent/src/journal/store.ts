@@ -1,3 +1,5 @@
+import { SettlementStore } from './settlements/store.js';
+import { settlementOperation } from './settlement-protocol.js';
 import {RuntimeAssociationStore,runtimeAssociationOperation} from './runtime-associations/index.js';
 import { CleanupReceiptStore } from './cleanup-receipts/store.js';
 import { cleanupReceiptOperation } from './cleanup-receipt-protocol.js';
@@ -29,6 +31,7 @@ import { executeOutputDelivery, outputDeliveryOperation } from './output-deliver
 import { executeOutputAbsence, outputAbsenceOperation } from './output-absence.js';
 
 export class Store {
+  private readonly settlements:SettlementStore;
   private readonly retirements: RetirementStore;
   private readonly cleanupPlans: CleanupPlanStore;
   private readonly cleanupProgress: CleanupProgressStore;
@@ -46,6 +49,7 @@ export class Store {
     this.cleanupProgress = new CleanupProgressStore(db);
     this.cleanupPlans = new CleanupPlanStore(db);
     this.namespaces = new NamespaceStore(db); this.retirements = new RetirementStore(db);
+    this.settlements=new SettlementStore(db);
     this.admission = new AdmissionStore(db, quota);
     this.runnable = new RunnableScan(db);
     this.outputs = new OutputSources(db);
@@ -115,6 +119,7 @@ export class Store {
     throw new Failure('invalid_input');
   }
   private custodyCommand(command: Command): Value | undefined {
+    if(settlementOperation(command))return this.settlements.execute(command);
     if(runtimeAssociationOperation(command))return this.runtimeAssociations.execute(command);
     if (cleanupReceiptOperation(command)) return this.cleanupReceipts.execute(command);
     if (cleanupProgressOperation(command)) return this.cleanupProgress.execute(command);

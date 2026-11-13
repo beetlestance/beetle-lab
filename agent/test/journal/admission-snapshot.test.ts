@@ -1,4 +1,5 @@
-import { DatabaseSync } from 'node:sqlite';
+import { registeredDatabase } from './registered-db.js';
+import type { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it, vi } from 'vitest';
 import { Store } from '../../src/journal/store.js';
 import type { Reservation } from '../../src/admission/index.js';
@@ -62,7 +63,7 @@ function oversizedReservation(db: DatabaseSync): string {
 describe('bounded durable admission storage validation', () => {
   it.each(corruption)('fails closed on %s', async (_name, change) => {
     const path = f.path(); const journal = await f.configured(path); const job = f.job(); await f.enqueue(journal, job);
-    await f.close(journal); const db = new DatabaseSync(path);
+    await f.close(journal); const db = registeredDatabase(path);
     try { change(db); } finally { db.close(); }
     const reopened = await f.open(path);
     await expect(reopened.get(scope(job))).rejects.toMatchObject({ code: 'unavailable' });
@@ -70,7 +71,7 @@ describe('bounded durable admission storage validation', () => {
   it.each(reservationCorruption)('fails closed on %s', async (_name, change) => {
     const path = f.path(); const journal = await f.configured(path); const job = f.job();
     await f.enqueue(journal, job); await f.admit(journal, job); await f.close(journal);
-    const db = new DatabaseSync(path); try { change(db); } finally { db.close(); }
+    const db = registeredDatabase(path); try { change(db); } finally { db.close(); }
     const reopened = await f.open(path);
     await expect(reopened.get(scope(job))).rejects.toMatchObject({ code: 'unavailable' });
   });
@@ -78,14 +79,14 @@ describe('bounded durable admission storage validation', () => {
     const path = f.path(); const journal = await f.configured(path); const job = f.job();
     await f.enqueue(journal, job); await f.admit(journal, job);
     const before = await journal.get(scope(job)); await f.close(journal);
-    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+    const db = registeredDatabase(path, { enableForeignKeyConstraints: true });
     try { assertReservationWriteDenied(db, change); } finally { db.close(); }
     const reopened = await f.open(path);
     expect(await reopened.get(scope(job))).toEqual(before);
   });
   it.each(['capacity_unknown', 'made_up', 'cancelled'])('rejects inconsistent durable refusal %s', async reason => {
     const path = f.path(); const journal = await f.configured(path); const job = f.job(); await f.enqueue(journal, job);
-    await f.close(journal); const db = new DatabaseSync(path);
+    await f.close(journal); const db = registeredDatabase(path);
     try { db.prepare('UPDATE admission_queue SET pending=0,decision_json=?').run(JSON.stringify({ kind: 'reject', reason })); }
     finally { db.close(); }
     const reopened = await f.open(path);
@@ -94,7 +95,7 @@ describe('bounded durable admission storage validation', () => {
   it.each(['candidate_json', 'decision_json', 'reservation_json'] as const)('caps %s UTF-8 bytes in SQLite before materialization', async column => {
     const path = f.path(); const journal = await f.configured(path); const job = f.job(); await f.enqueue(journal, job);
     if (column === 'reservation_json') await f.admit(journal, job);
-    await f.close(journal); const db = new DatabaseSync(path);
+    await f.close(journal); const db = registeredDatabase(path);
     const table = column === 'reservation_json' ? 'reservations' : 'admission_queue';
     const cap = column === 'candidate_json' ? 16384 : 512;
     const oversized = column === 'reservation_json' ? oversizedReservation(db) : JSON.stringify('🪲'.repeat(cap / 4));
@@ -121,7 +122,7 @@ describe('bounded durable admission storage validation', () => {
     const path = f.path(); const journal = await f.configured(path); const job = f.job();
     await f.enqueue(journal, job); await f.admit(journal, job);
     const before = await journal.get(scope(job)); await f.close(journal);
-    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+    const db = registeredDatabase(path, { enableForeignKeyConstraints: true });
     try {
       assertReservationWriteDenied(db, connection => {
         connection.prepare('UPDATE reservations SET reservation_json=?').run(oversizedReservation(connection));
@@ -133,7 +134,7 @@ describe('bounded durable admission storage validation', () => {
   it('keeps ordinary tracked GET/list/cancel reads compact without loading any Offer/config payload', async () => {
     const path = f.path(); const journal = await f.configured(path); const job = f.job();
     job.config.canary = 'private-config-canary'.repeat(10_000);
-    await f.enqueue(journal, job); await f.close(journal); const db = new DatabaseSync(path);
+    await f.enqueue(journal, job); await f.close(journal); const db = registeredDatabase(path);
     const original = db.prepare.bind(db); const selected: string[] = [];
     const spy = vi.spyOn(db, 'prepare').mockImplementation(sql => {
       const statement = original(sql);
@@ -166,7 +167,7 @@ describe('bounded durable admission storage validation', () => {
   ] satisfies [string, (value: Reservation) => void][])('fails read for corrupt %s proof', async (_name, change) => {
     const path = f.path(); const journal = await f.configured(path); const job = f.job();
     await f.enqueue(journal, job); await f.admit(journal, job); await releaseOriginal(journal, scope(job));
-    await f.close(journal); const db = new DatabaseSync(path);
+    await f.close(journal); const db = registeredDatabase(path);
     try { mutateReservation(db, change); } finally { db.close(); }
     const reopened = await f.open(path);
     await expect(reopened.get(scope(job))).rejects.toMatchObject({ code: 'unavailable' });
@@ -175,7 +176,7 @@ describe('bounded durable admission storage validation', () => {
     const path = f.path(); const journal = await f.configured(path); const job = f.job();
     await f.enqueue(journal, job); await f.admit(journal, job);
     const before = await journal.get(scope(job)); await f.close(journal);
-    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+    const db = registeredDatabase(path, { enableForeignKeyConstraints: true });
     try {
       assertReservationWriteDenied(db, connection => mutateReservation(connection, value => {
         value.status = 'released'; value.createToken = 'private-create'; value.specDigest = digest; value.runtimeId = 'private-runtime';

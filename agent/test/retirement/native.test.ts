@@ -1,3 +1,4 @@
+import { verifyUnchangedThrough21 } from '../storage-settlement/legacy021.js';
 import {JOURNAL_SCHEMA_VERSION} from '../../src/journal/schema.js';
 import { expect, it } from 'vitest';
 import type { DatabaseSync } from 'node:sqlite';
@@ -36,14 +37,11 @@ it('raw SQL requires exact closure/authority and refuses replacing, editing or d
 it('migrates actual schema16 additively preserving rows, schema roots, foreign keys and charged disk custody', async () => {
   const v = await f.ready(); await f.close(v.journal); let db = initialize(v.path); asSchema16(db);
   const before = db.prepare("SELECT name,type,sql,rootpage FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all();
-  const original = db.prepare('SELECT * FROM accepted_attempts').all(); const held = db.prepare('SELECT * FROM disk_holds').all(); db.close();
+  const original = db.prepare('SELECT * FROM accepted_attempts').all(); const held = db.prepare('SELECT * FROM disk_holds').all(); verifyUnchangedThrough21(db,before);db.close();
   db = initialize(v.path);
   try {
     expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(JOURNAL_SCHEMA_VERSION);
-    for (const row of before) {
-      if (typeof row.name !== 'string') throw new Error('Missing schema name');
-      expect(db.prepare('SELECT name,type,sql,rootpage FROM sqlite_schema WHERE name=?').get(row.name)).toEqual(row);
-    }
+
     expect(db.prepare('SELECT * FROM accepted_attempts').all()).toEqual(original);
     expect(db.prepare('SELECT * FROM disk_holds').all()).toEqual(held);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);

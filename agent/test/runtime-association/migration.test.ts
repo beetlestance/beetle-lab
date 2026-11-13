@@ -12,9 +12,11 @@ const f=fixture();
 function graph(db:DatabaseSync){return db.prepare("SELECT name,type,sql,rootpage FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all();}
 function rows(db:DatabaseSync){return ['accepted_attempts','reservations','disk_holds','disk_retention_stats','output_retirement_intents','task_staging_namespaces'].map(table=>({table,rows:db.prepare(`SELECT * FROM ${table} LIMIT 128`).all()}));}
 it('migrates a real schema20 prefix with unchanged prior rows, charges and guards and no invented association',async()=>{
- const e=await f.ready(true);await f.close(e.owner);let db=initialize(e.journalPath);asSchema20(db);const before=rows(db);const schema=graph(db);db.close();db=initialize(e.journalPath);
+ const e=await f.ready(true);await f.close(e.owner);let db=initialize(e.journalPath);asSchema20(db);const before=rows(db);const schema=graph(db);
+ transaction(db,()=>db.exec(migration021));
+ for(const item of schema)expect(graph(db).find(row=>row.name===item.name&&row.type===item.type)).toEqual(item);
+ db.close();db=initialize(e.journalPath);
  try{expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(JOURNAL_SCHEMA_VERSION);expect(rows(db)).toEqual(before);
-  for(const item of schema)expect(graph(db).find(row=>row.name===item.name&&row.type===item.type)).toEqual(item);
   expect(db.prepare('SELECT count(*) n FROM runtime_cleanup_associations').get()?.n).toBe(0);expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
  }finally{db.close();}
 });

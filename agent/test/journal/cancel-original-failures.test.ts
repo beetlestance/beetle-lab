@@ -1,4 +1,4 @@
-import { DatabaseSync } from 'node:sqlite';
+import { registeredDatabase } from './registered-db.js';
 import { expect, it } from 'vitest';
 import { initialize } from '../../src/journal/schema.js';
 import { cancelOriginal } from '../../src/journal/cancel-original.js';
@@ -8,11 +8,11 @@ import { admissionFixture, now, scope } from '../admission/fixtures.js';
 const f = admissionFixture();
 const invalidReservation = "INSERT INTO reservations(attempt_id,reservation_json,charged) SELECT attempt_id,'{}',1 FROM accepted_attempts";
 function edit(path: string, sql: string): void {
-  const db = new DatabaseSync(path);
+  const db = registeredDatabase(path);
   try { db.exec(sql); } finally { db.close(); }
 }
 function empty(path: string): void {
-  const db = new DatabaseSync(path);
+  const db = registeredDatabase(path);
   try {
     for (const table of ['accepted_attempts', 'supervision_clock', 'cancelled_originals', 'admission_queue', 'reservations', 'event_spool']) {
       expect(db.prepare(`SELECT * FROM ${table}`).all()).toEqual([]);
@@ -86,7 +86,7 @@ it.each([
 it('rejects reservation corruption beside a fresh marker before changing any native row or disk counter', async () => {
   const path = f.path(); const seed = await f.open(path);
   await seed.cancelOriginal({ offer: f.offer(), now }); await f.close(seed);
-  const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+  const db = registeredDatabase(path, { enableForeignKeyConstraints: true });
   try {
     const rows = () => ['accepted_attempts', 'supervision_clock', 'cancelled_originals', 'admission_queue',
       'reservations', 'event_spool', 'disk_holds', 'disk_retention_stats', 'sqlite_sequence']

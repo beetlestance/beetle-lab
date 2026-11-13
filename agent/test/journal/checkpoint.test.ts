@@ -1,4 +1,5 @@
-import { DatabaseSync } from 'node:sqlite';
+import { registeredDatabase } from './registered-db.js';
+import type { DatabaseSync } from 'node:sqlite';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { expect, it } from 'vitest';
@@ -15,7 +16,7 @@ function batch(events: ControlEvent[], expected: WrapperCheckpoint | null = null
     prefixSha256: createHash('sha256').update(bytes).digest('hex') }, events };
 }
 function edit<T>(path: string, operation: (db: DatabaseSync) => T): T {
-  const db = new DatabaseSync(path); try { return operation(db); } finally { db.close(); }
+  const db = registeredDatabase(path); try { return operation(db); } finally { db.close(); }
 }
 async function largeFrame(length: number): Promise<ControlEvent> {
   const payload = JSON.parse(await readFile('contracts/fixtures/valid/passed-result.json', 'utf8')) as EngineResult;

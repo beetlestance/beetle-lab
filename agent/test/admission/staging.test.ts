@@ -1,5 +1,5 @@
+import { registeredDatabase } from '../journal/registered-db.js';
 import { estimateStaging as sharedEstimate, serializeStagedOffer as sharedSerialize } from '@beetle/contracts';
-import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
 import { estimateStaging, serializeStagedOffer, stagingPolicy, supportedStaging } from '../../src/admission/index.js';
 import { admissionFixture, configuration, now, observation, reserved, scope } from './fixtures.js';
@@ -75,7 +75,7 @@ it('includes setup metadata in cross-org staging sums without relaxing productio
 
 it('rejects unpublished pending records missing the cost policy before reserving', async () => {
   const path = f.path(); let journal = await f.configured(path); const offer = f.job(); await f.enqueue(journal, offer);
-  await f.close(journal); const db = new DatabaseSync(path);
+  await f.close(journal); const db = registeredDatabase(path);
   try { db.exec("UPDATE admission_queue SET candidate_json=json_remove(candidate_json,'$.staging')"); }
   finally { db.close(); }
   journal = await f.open(path);

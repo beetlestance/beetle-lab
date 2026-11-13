@@ -31,6 +31,8 @@ async function removeBatch(context:PipelineExecution,runtime:RuntimeAbsent):Prom
  return false;
 }
 export async function executePipeline(context:PipelineExecution){
+ const replay=await metadata(context,()=>context.options.journal.settlements.retiredReply(context.request));check(context);
+ if(replay)return replay;
  const runtime=await retireRuntime(context);check(context);await ensurePlan(context,runtime);check(context);
  const final=await removeBatch(context,runtime);check(context);if(!final)return pipelineReply(context.request);
  const{options,operation,ports}=context;const receipt=await(ports?options.receipt.finalizeWithPorts(runtime,operation,ports.removal):options.receipt.finalize(runtime,operation));

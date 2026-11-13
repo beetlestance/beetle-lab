@@ -1,6 +1,6 @@
 # Output settlement
 
-Status: values and local ownership gate implemented; settlement transactions remain gated.
+Status: private admitted-agent settlement implemented; runner transport, backend settlement and public retention remain gated.
 Owning predecessors: [retirement](output-retirement.md),
 [backend control](backend-cleanup-control.md). Root owns migrations agent022/backend024.
 
@@ -93,6 +93,19 @@ ACK/agent-settlement identities, original retained payload/metadata/control amou
 refunded amount and permanent floor. Full configs, paths, errors and artifact bodies
 are excluded. Prove maximum complete canonical encoding plus logical row allowance
 within agent4096 and backend2560 before authoring their persistence migrations.
+
+## Implemented private agent owner
+
+Journal022 owns immutable replay rows and O(1) replay counters. Its client holds a
+carrier against the local fence through actual completion; failed termination does
+not release it. Worker eligibility reuses existing retirement/receipt interpretation.
+A private transaction frame matches exact original, table, canonical tombstone and
+counter deltas. It inserts the tombstone before fixed FK-order purge and rejects
+cross-original/global writes, unexpected residuals and foreign references. Full
+rollback includes replay identity, old records and both counter families.
+DiskRetention names replayBytes explicitly, independently of live heldCount.
+The pipeline's exact tombstone replay runs before any new native work. Details and
+remaining qualification: [agent evidence](../../verification/agent-storage-settlement.md).
 
 ## Separate protected branches
 

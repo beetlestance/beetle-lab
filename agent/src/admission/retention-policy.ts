@@ -6,7 +6,8 @@ import { resourceNames } from './types.js';
 export function retainedFit(candidate: Resources, active: Resources, pool: Resources, retention: DiskRetention): boolean {
   return resourceNames.every(name => {
     const retained = name === 'outputBytes' ? retention.outputBytes : name === 'stagingBytes' ? retention.stagingBytes : 0;
-    return retained <= pool[name] && active[name] <= pool[name] - retained
-      && candidate[name] <= pool[name] - retained - active[name];
+    const replay=name==='stagingBytes'?retention.replayBytes:0;
+    return replay<=pool[name]&&retained <= pool[name]-replay && active[name] <= pool[name]-replay-retained
+      && candidate[name] <= pool[name]-replay-retained-active[name];
   });
 }

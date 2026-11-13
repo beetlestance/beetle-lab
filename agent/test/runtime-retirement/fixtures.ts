@@ -14,8 +14,8 @@ export function fixture() {
     await Promise.allSettled(runtimes.splice(0).map(owner => owner.close()));
     await Promise.allSettled(producers.splice(0).map(owner => owner.close()));
   });
-  return { ...f, async ready(liveMetricMailbox=false,autoCloseRuntime=true) {
-    const e = await f.setup(undefined,liveMetricMailbox); const manager = e.create(); await e.accepted(manager); await e.finish(manager); const key = scope(e.offer);
+  return { ...f, async ready(liveMetricMailbox=false,autoCloseRuntime=true,originalId?:string) {
+    const e = await f.setup(undefined,liveMetricMailbox);if(originalId)e.offer.attemptId=originalId; const manager = e.create(); await e.accepted(manager); await e.finish(manager); const key = scope(e.offer);
     const proof = await e.owner.readOutputAbsence(key); if (!proof) throw new Error('Missing closure');
     await e.owner.acknowledge({ protocolVersion: '1.0', ...key, throughSeq: proof.finalAgentSeq });
     const coordinator = new ProducerRetirement({ journal: e.owner.retirements, gate: e.options.gate, installation: manager }); producers.push(coordinator);

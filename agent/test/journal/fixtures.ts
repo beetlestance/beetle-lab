@@ -42,6 +42,12 @@ export function journalFixture() {
         ...(spoolQuotaBytes === undefined ? {} : { spoolQuotaBytes }) });
       handles.add(journal); return journal;
     },
+    /** Task-only teardown after an independently joined native Worker termination.
+     * Does not repair or clear the Journal's deliberately sticky failed-close state. */
+    releaseTerminated(journal:Journal):void{
+      const worker=Reflect.get(journal,'worker') as {readonly threadId:number};
+      if(worker.threadId!==-1||!handles.delete(journal))throw Error('Fixture worker is not known terminated');
+    },
     async close(journal: Journal): Promise<void> { await journal.close(); handles.delete(journal); },
   };
 }

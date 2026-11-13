@@ -1,3 +1,4 @@
+import { verifyUnchangedThrough21 } from '../storage-settlement/legacy021.js';
 import {JOURNAL_SCHEMA_VERSION} from '../../src/journal/schema.js';
 import { expect,it } from 'vitest';
 import { encodeCanonicalJson } from '@beetle/contracts';
@@ -9,11 +10,10 @@ const f=fixture();
 it('adds schema19 without changing schema18 plans, retained rows, rootpages or control charges',async()=>{
  const e=await f.prepared();await e.inventory.persist(e.observed,{deadline:performance.now()+10000});await e.owner.close();let db=initialize(e.journalPath);asSchema18(db);
  const schema=db.prepare("SELECT name,type,sql,rootpage FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all();
- const plans=db.prepare('SELECT * FROM output_cleanup_plans').all();const accepted=db.prepare('SELECT * FROM accepted_attempts').all();const holds=db.prepare('SELECT * FROM disk_holds').all();db.close();
+ const plans=db.prepare('SELECT * FROM output_cleanup_plans').all();const accepted=db.prepare('SELECT * FROM accepted_attempts').all();const holds=db.prepare('SELECT * FROM disk_holds').all();verifyUnchangedThrough21(db,schema);db.close();
  const journal=await f.open(e.journalPath);expect(await journal.cleanupProgress.read(e.plan)).toBeNull();await journal.cleanupProgress.begin(e.plan);await journal.close();db=initialize(e.journalPath);
  try{expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(JOURNAL_SCHEMA_VERSION);expect(db.prepare('SELECT * FROM output_cleanup_plans').all()).toEqual(plans);
   expect(db.prepare('SELECT * FROM accepted_attempts').all()).toEqual(accepted);expect(db.prepare('SELECT * FROM disk_holds').all()).toEqual(holds);
-  for(const row of schema)expect(db.prepare('SELECT name,type,sql,rootpage FROM sqlite_schema WHERE name=?').get(String(row.name))).toEqual(row);
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
  }finally{db.close();}
 });

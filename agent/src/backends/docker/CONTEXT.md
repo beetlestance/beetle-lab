@@ -35,8 +35,6 @@ stop retains first absolute graceDeadline rounded up; HTTP timeout cannot shorte
 it. Observation expiry is unknown. stop/kill require stopped proof; remove requires
 sealed/applicationAcknowledged, force=false/v=false; archive originals must drain.
 Matched stop/kill works despite volume failure; reads/start/cleanup require ownership.
-sampleResources reads inspected running owners by full ID, one-shot stats with raw
-usage/null provenance; no mutation lane/revocation on failure. Exit137 is not OOM.
-Control HTTP retains actual request/response/socket close before slot release,
-including cancel/late response; destroy/timeout alone is not drain.
+sampleResources: inspected running ID, one-shot raw/null stats provenance; no mutation/revocation on failure. Exit137 is not OOM.
+Control HTTP retains request/response/socket actual close on success/cancel/late reply; destroy/timeout is not drain.
 Focused tests:agent/test/backends/docker; no Docker in unit lane.

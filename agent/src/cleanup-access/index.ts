@@ -13,7 +13,7 @@ export interface SettlementObservation {readonly [drained]:true}
 export interface SettlementFence {drain():Promise<SettlementObservation>;release():void}
 interface Lease {readonly done:Promise<void>;complete():void}
 interface Entry {readonly key:Scope;readonly leases:Set<Lease>;fence?:Fence}
-interface Fence {readonly digest:string;readonly request:RetirementRequest;drain?:Promise<SettlementObservation>;observation?:SettlementObservation}
+interface Fence {carrier?:boolean;readonly digest:string;readonly request:RetirementRequest;drain?:Promise<SettlementObservation>;observation?:SettlementObservation}
 interface Observation {readonly gate:CleanupAccess;readonly entry:Entry;readonly fence:Fence}
 const observations=new WeakMap<SettlementObservation,Observation>();
 const gates=new WeakMap<object,CleanupAccess>();
@@ -74,12 +74,17 @@ export class CleanupAccess {
     });return fence.drain;
    },
    release:()=>{
-    current();if(entry.leases.size)throw new CleanupAccessError('custody');
+    current();if(entry.leases.size||fence.carrier)throw new CleanupAccessError('custody');
     released=true;if(fence.observation)observations.delete(fence.observation);delete entry.fence;this.evict(entry);
    },
   });
  }
  status(){return Object.freeze({originals:this.entries.size,leases:this.leases,fences:[...this.entries.values()].filter(entry=>entry.fence).length});}
+ ownCarrier(input:SettlementObservation,owner:object,expected:unknown):CleanupLease{
+  this.assertDrained(input,owner,expected);const proof=observations.get(input)!;
+  if(proof.fence.carrier)throw new CleanupAccessError('capacity');proof.fence.carrier=true;
+  let released=false;return Object.freeze({release:()=>{if(released)return;released=true;delete proof.fence.carrier;}});
+ }
  assertDrained(input:SettlementObservation,owner:object,expected:unknown):RetirementRequest{
   const proof=observations.get(input);const request=captureOutputRetirementRequest(expected);
   if(owner!==this.owner||proof?.gate!==this||proof.entry.fence!==proof.fence||proof.entry.leases.size
@@ -89,4 +94,8 @@ export class CleanupAccess {
 }
 export function drainedSettlementFacts(input:SettlementObservation,owner:object,expected:unknown):RetirementRequest{
  return cleanupAccess(owner).assertDrained(input,owner,expected);
+}
+
+export function ownSettlementCarrier(input:SettlementObservation,owner:object,expected:unknown):CleanupLease{
+ return cleanupAccess(owner).ownCarrier(input,owner,expected);
 }

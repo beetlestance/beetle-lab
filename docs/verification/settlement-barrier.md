@@ -39,3 +39,9 @@ or user service and does not qualify an image, engine run or platform release.
 Independent review accepted the bounded lifecycle changes conditional on corrected
 gates; those gates passed. Durable tombstone checks and actual transaction recovery
 remain required before temporary fences may be released after compaction.
+
+A later docs-only context-note edit exceeded40 lines. Its failed check was initially
+misreported because a following successful Git check masked the shell exit. C5d
+corrects that note without removing its requirements and preserves both failed logs.
+The earlier functional/type/lint/architecture results above remain valid; final docs
+acceptance belongs to the corrected C5d source, not the original08262b9 tree.

@@ -18,7 +18,7 @@ export function portablePorts() {
 }
 export function fixture(){
  const f=runtimeFixture();const owners:TaskInventory[]=[];afterEach(async()=>{await Promise.allSettled(owners.map(owner=>owner.close()));});
- return{...f,async inventory(){const e=await f.ready();const token=await e.runtime.retire(e.producer,{deadline:performance.now()+10000});
+ return{...f,async inventory(originalId?:string){const e=await f.ready(false,true,originalId);const token=await e.runtime.retire(e.producer,{deadline:performance.now()+10000});
   const owner=new TaskInventory({journal:e.owner,root:e.staging.root});owners.push(owner);
   const root=retirementRoot(e.staging.root);const task=join(root.directory,e.plan.name);const p=portablePorts();
   return{...e,token,inventory:owner,task,root,...p,parent:dirname(task)};
