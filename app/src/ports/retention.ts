@@ -27,7 +27,13 @@ export interface ManualRunDeletionRequest {
  readonly requestId:string;readonly settingsId:string;readonly expectedVersion:number;
 }
 export interface ManualRunDeletionCommand {readonly id:string;readonly capturedAt:string;readonly request:ManualRunDeletionRequest}
+export interface RetentionBatchSummary {
+ readonly id:string;readonly scope:WorkspaceScope;readonly kind:'retention'|'manual';readonly state:'preview'|'applied'|'completed';
+ readonly capturedAt:string;readonly expiresAt:string;readonly completedAt:string|null;readonly candidateCount:number;
+}
+export interface RetentionBatchList {readonly scope:WorkspaceScope;readonly items:readonly RetentionBatchSummary[]}
 export interface RetentionMetadata extends WorkspaceRetentionStore {
+ list(scope:WorkspaceScope):Promise<RetentionBatchList>;
  previewRun(command:ManualRunDeletionCommand):Promise<RetentionSnapshot>;
  apply(command:WorkspaceRetentionApplyCommand):Promise<RetentionApplyReceipt>;
  get(key:RetentionStatusKey,now:number):Promise<RetentionStatus>;
@@ -35,7 +41,8 @@ export interface RetentionMetadata extends WorkspaceRetentionStore {
 }
 export type RetentionOperation=
  | {readonly kind:'previewWorkspaceRetention';readonly command:WorkspaceRetentionPreviewCommand}
+ | {readonly kind:'listWorkspaceRetention';readonly request:{readonly scope:WorkspaceScope}}
  | {readonly kind:'previewRunDeletion';readonly command:ManualRunDeletionCommand}
  | {readonly kind:'applyWorkspaceRetention';readonly command:WorkspaceRetentionApplyCommand}
  | {readonly kind:'getWorkspaceRetentionStatus'|'discardWorkspaceRetention';readonly request:{readonly key:RetentionStatusKey;readonly now:number}};
-export type RetentionValue=RetentionSnapshot|RetentionApplyReceipt|RetentionStatus|RetentionDiscardReceipt;
+export type RetentionValue=RetentionSnapshot|RetentionApplyReceipt|RetentionStatus|RetentionDiscardReceipt|RetentionBatchList;

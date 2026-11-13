@@ -205,6 +205,7 @@ export class Store {
   private retention(input:RetentionOperation):RetentionValue{
     const operation=captureRetentionOperation(input);
     switch(operation.kind){
+      case 'listWorkspaceRetention':return this.retentionProgress.list(operation.request.scope);
       case 'previewRunDeletion':return this.manualSnapshots.preview(operation.command);
       case 'previewWorkspaceRetention':return this.retentionSnapshots.preview(operation.command);
       case 'applyWorkspaceRetention':return this.retentionApplies.apply(operation.command);

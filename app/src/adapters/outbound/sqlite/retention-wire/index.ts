@@ -5,10 +5,11 @@ import type { RetentionMetadata,RetentionOperation,RetentionValue } from '../../
 import { requireFact } from '../retention-accounting/facts.js';
 import { captureManualCommand } from '../retention-manual/values.js';
 import { capturePreviewCommand,cursorSnapshot } from '../retention-selection/values.js';
+import { captureRetentionList } from './list.js';
 import { captureRetentionStatus } from './status.js';
 import { captureRetentionOperation } from './requests.js';
 export { retentionOperation,captureRetentionOperation } from './requests.js';
-export function retentionReplyLimit(operation:RetentionOperation):number{return operation.kind==='applyWorkspaceRetention'||operation.kind==='discardWorkspaceRetention'?2048:32768;}
+export function retentionReplyLimit(operation:RetentionOperation):number{return operation.kind==='listWorkspaceRetention'?8192:operation.kind==='applyWorkspaceRetention'||operation.kind==='discardWorkspaceRetention'?2048:32768;}
 function previewReply(operation:Extract<RetentionOperation,{kind:'previewWorkspaceRetention'}>,input:unknown){
  const snapshot=captureRetentionSnapshot(input);const command=capturePreviewCommand(operation.command);const request=command.request;
  requireFact(snapshot.kind==='retention'&&snapshot.requestId===request.requestId&&snapshot.intentDigest===command.intentDigest);
@@ -39,6 +40,7 @@ function discardReply(operation:Extract<RetentionOperation,{kind:'getWorkspaceRe
 export function captureRetentionReply(operation:RetentionOperation,input:unknown):RetentionValue{
  const original=captureRetentionOperation(operation);
  switch(original.kind){
+  case 'listWorkspaceRetention':return captureRetentionList(input,original.request.scope);
   case 'previewRunDeletion':return manualReply(original,input);
   case 'previewWorkspaceRetention':return previewReply(original,input);
   case 'applyWorkspaceRetention':return applyReply(original,input);
@@ -47,7 +49,7 @@ export function captureRetentionReply(operation:RetentionOperation,input:unknown
  }
 }
 export function retentionClient(call:(operation:RetentionOperation)=>Promise<unknown>):RetentionMetadata{
- const client:RetentionMetadata={previewRun:command=>call({kind:'previewRunDeletion',command}) as ReturnType<RetentionMetadata['previewRun']>,preview:command=>call({kind:'previewWorkspaceRetention',command}) as ReturnType<RetentionMetadata['preview']>,
+ const client:RetentionMetadata={list:scope=>call({kind:'listWorkspaceRetention',request:{scope}}) as ReturnType<RetentionMetadata['list']>,previewRun:command=>call({kind:'previewRunDeletion',command}) as ReturnType<RetentionMetadata['previewRun']>,preview:command=>call({kind:'previewWorkspaceRetention',command}) as ReturnType<RetentionMetadata['preview']>,
   apply:command=>call({kind:'applyWorkspaceRetention',command}) as ReturnType<RetentionMetadata['apply']>,
   get:(key,now)=>call({kind:'getWorkspaceRetentionStatus',request:{key,now}}) as ReturnType<RetentionMetadata['get']>,
   discard:(key,now)=>call({kind:'discardWorkspaceRetention',request:{key,now}}) as ReturnType<RetentionMetadata['discard']>};return Object.freeze(client);

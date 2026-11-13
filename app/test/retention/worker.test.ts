@@ -50,8 +50,9 @@ it('recovers a lost manual preview reply and applies its original immutable chil
  const pending=metadata.retention.previewRun(input);const lost=pending.then(()=>true,()=>false);await issued;await metadata.abort();expect(await lost).toBe(false);
  const reopened=await storage.open(path,{runtime:null,runs:f.config,installation});try{
   const snapshot=await reopened.retention.previewRun({...input,id:uuid(62000)});expect(snapshot.kind).toBe('manual');expect(snapshot.candidates).toHaveLength(1);
+  expect((await reopened.retention.list(scope)).items).toMatchObject([{id:snapshot.id,kind:'manual',state:'preview',candidateCount:1}]);
   expect((await reopened.inputs.storage()).chargedBytes).toBe(usage+131584);
   const apply={id:uuid(62001),appliedAt:'2026-11-14T12:01:00.000Z',request:{scope,requestId:uuid(62002),settingsId:snapshot.settings.workspace.id,expectedVersion:snapshot.settings.workspace.version,snapshotId:snapshot.id,snapshotVersion:1,page:{limit:1}}};
-  expect(await reopened.retention.apply(apply)).toMatchObject({state:'admitted',maximumCandidates:1});expect((await reopened.inputs.storage()).chargedBytes).toBe(usage+131584);
+  expect(await reopened.retention.apply(apply)).toMatchObject({state:'admitted',maximumCandidates:1});expect((await reopened.retention.list(scope)).items[0]?.state).toBe('applied');expect((await reopened.inputs.storage()).chargedBytes).toBe(usage+131584);
  }finally{await storage.close(reopened);}
 });
