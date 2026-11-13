@@ -62,6 +62,13 @@ Schema catalogue is complete, including runner common exactly once. Implementati
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/exports/{exportId}/cancel | implemented | ExportParams | none | CancelExportRequest | 200 | ExportJob |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/exports/profiles | implemented | WorkspaceParams | none | none | 200 | ExportProfiles |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/overview | implemented | WorkspaceParams | none | none | 200 | WorkspaceOverview |
+| POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/settings/retention-preview | implemented | WorkspaceParams | none | RetentionPreviewRequest | 200 | RetentionPreview |
+| POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/settings/retention-apply | implemented | WorkspaceParams | none | RetentionApplyRequest | 202 | RetentionApplyReceipt |
+| POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/deletion-preview | implemented | RunParams | none | ManualRunDeletionPreviewRequest | 200 | RetentionPreview |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/retention-batches | implemented | WorkspaceParams | none | none | 200 | RetentionBatchList |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/retention-batches/{snapshotId} | implemented | RetentionBatchParams | none | none | 200 | RetentionBatchStatus |
+| POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/retention-batches/{snapshotId}/discard | implemented | RetentionBatchParams | none | none | 200 | RetentionDiscardReceipt |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/retention-batches/{snapshotId}/preview | implemented | RetentionBatchParams | none | none | 200 | RetentionPreview |
 
 All errors use ApiError. UUID path parameters are validated before URL encoding.
 List queries require an integer limit 1–100 and optional opaque string cursor; HTTP query parsing belongs to the transport adapter.

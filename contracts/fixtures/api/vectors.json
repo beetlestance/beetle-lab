@@ -673,5 +673,30 @@
     "path": "valid/workspace-overview.json",
     "schema": "WorkspaceOverview",
     "valid": true
+  },
+  {
+    "path": "valid/retention-batch-params.json",
+    "schema": "RetentionBatchParams",
+    "valid": true
+  },
+  {
+    "path": "valid/manual-run-deletion-request.json",
+    "schema": "ManualRunDeletionPreviewRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/retention-batch-status.json",
+    "schema": "RetentionBatchStatus",
+    "valid": true
+  },
+  {
+    "path": "valid/retention-batch-list.json",
+    "schema": "RetentionBatchList",
+    "valid": true
+  },
+  {
+    "path": "valid/retention-discard-receipt.json",
+    "schema": "RetentionDiscardReceipt",
+    "valid": true
   }
 ]

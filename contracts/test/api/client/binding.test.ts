@@ -5,6 +5,7 @@ import { fixture } from '../fixtures.js';
 import { baseUrl, load, organizationId, params, reply } from './helpers.js';
 
 const files: Partial<Record<keyof ApiTypes, string>> = {
+  ManualRunDeletionPreviewRequest:'manual-run-deletion-request',RetentionBatchStatus:'retention-batch-status',RetentionBatchList:'retention-batch-list',RetentionDiscardReceipt:'retention-discard-receipt',
   WorkspaceOverview:'workspace-overview',
   ExportJob: 'export-job', ExportJobPage: 'export-job-page', ExportProfiles: 'export-profiles',
   CreateExportRequest: 'create-export', CancelExportRequest: 'cancel-export',
@@ -38,9 +39,19 @@ async function queryFixture(operation: ApiOperation) {
   return ['listRunEvents', 'listRunArtifacts', 'listRunMetricSeries'].includes(operation.name)
     ? { limit: 100 } : await load('page-query', 'PageQuery');
 }
+function bindRetention(operation:ApiOperation,input:Record<string,unknown>,body:Record<string,unknown>|undefined,response:Record<string,unknown>):void{
+  if(operation.name==='getWorkspaceRetentionPreview')response.scope={kind:'workspace',organizationId:(input.params as Record<string,string>).organizationId,workspaceId:(input.params as Record<string,string>).workspaceId};
+  if(['previewWorkspaceRetention','applyWorkspaceRetention','previewRunDeletion'].includes(operation.name)){
+   const owner={kind:'workspace',organizationId:(input.params as Record<string,string>).organizationId,workspaceId:(input.params as Record<string,string>).workspaceId};body!.scope=owner;response.scope=owner;
+   if(operation.name==='previewRunDeletion'){
+    response.kind='manual';response.scanned=1;response.protectedExclusions=[];
+    response.candidates=[{id:body!.runId,version:body!.expectedRunVersion,scope:owner,estimatedBytes:1024,reason:'manual'}];
+   }
+  }
+}
 async function exchange(operation: ApiOperation) {
   const input: Record<string, unknown> = {};
-  const parameterFiles = { OrganizationParams: 'organization', WorkspaceParams: 'workspace', FolderParams: 'folder',
+  const parameterFiles = { RetentionBatchParams:'retention-batch',OrganizationParams: 'organization', WorkspaceParams: 'workspace', FolderParams: 'folder',
     SuiteParams: 'suite', SuiteRevisionParams: 'suite-revision', InputParams: 'input', RunParams: 'run', RunAttemptParams: 'run-attempt', ExportParams: 'export' };
   if ('params' in operation) input.params = await fixture(`valid/${parameterFiles[operation.params]}-params.json`);
   if ('query' in operation) input.query = await queryFixture(operation);
@@ -48,6 +59,7 @@ async function exchange(operation: ApiOperation) {
   const response = await operationReply(operation);
   if (body) input.body = body;
   bindRevision(operation,input,body);
+  bindRetention(operation,input,body,response);
   if (operation.name.includes('InstallationRetention')) { body!.scope = { kind: 'installation' }; response.scope = body!.scope; }
   if (operation.response === 'DeletionReceipt') {
     const path = input.params as Record<string, string>;

@@ -1,6 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import type { Run } from '@beetle/contracts/api';
+import type { RetentionStatusKey } from '../../../../ports/retention.js';
 import type { RunKey } from '../../../../ports/runs.js';
 import type { RetentionSnapshot } from '../../../../domain/retention/index.js';
 import { transaction } from '../transaction.js';
@@ -15,6 +16,7 @@ type Command=ReturnType<typeof capturePreviewCommand>;
 /** One immutable workspace page. Root/worker composition owns this metadata service. */
 export class WorkspaceRetentionSnapshots {
  constructor(private readonly db:DatabaseSync,private readonly runs:{get(key:RunKey):Run}){}
+ get(key:RetentionStatusKey):RetentionSnapshot{return transaction(this.db,()=>snapshotById(this.db,key.scope,key.id).snapshot);}
  preview(input:unknown):RetentionSnapshot{
   const command=capturePreviewCommand(input);const now=Date.parse(command.capturedAt);
   // Separate maintenance commit preserves observed expiry even when selection later refuses.

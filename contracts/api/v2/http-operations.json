@@ -600,5 +600,78 @@
     "error": "ApiError",
     "params": "WorkspaceParams",
     "implementation": "implemented"
+  },
+  {
+    "name": "previewWorkspaceRetention",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/settings/retention-preview",
+    "response": "RetentionPreview",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "WorkspaceParams",
+    "implementation": "implemented",
+    "request": "RetentionPreviewRequest"
+  },
+  {
+    "name": "applyWorkspaceRetention",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/settings/retention-apply",
+    "response": "RetentionApplyReceipt",
+    "successStatus": 202,
+    "error": "ApiError",
+    "params": "WorkspaceParams",
+    "implementation": "implemented",
+    "request": "RetentionApplyRequest"
+  },
+  {
+    "name": "previewRunDeletion",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/deletion-preview",
+    "response": "RetentionPreview",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunParams",
+    "implementation": "implemented",
+    "request": "ManualRunDeletionPreviewRequest"
+  },
+  {
+    "name": "listWorkspaceRetention",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/retention-batches",
+    "response": "RetentionBatchList",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "WorkspaceParams",
+    "implementation": "implemented"
+  },
+  {
+    "name": "getWorkspaceRetentionStatus",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/retention-batches/{snapshotId}",
+    "response": "RetentionBatchStatus",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RetentionBatchParams",
+    "implementation": "implemented"
+  },
+  {
+    "name": "discardWorkspaceRetention",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/retention-batches/{snapshotId}/discard",
+    "response": "RetentionDiscardReceipt",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RetentionBatchParams",
+    "implementation": "implemented"
+  },
+  {
+    "name": "getWorkspaceRetentionPreview",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/retention-batches/{snapshotId}/preview",
+    "response": "RetentionPreview",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RetentionBatchParams",
+    "implementation": "implemented"
   }
 ]

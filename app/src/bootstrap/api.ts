@@ -1,3 +1,4 @@
+import { registerRetentionRoutes } from '../adapters/inbound/http/retention/index.js';
 import { openHistoryIndex } from './history-index.js';
 import type { RunHistoryIndexerState } from '../ports/run-history.js';
 import {registerOverviewRoute} from '../adapters/inbound/http/overview/index.js';
@@ -88,6 +89,7 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
       now: () => new Date().toISOString(), authorize: session.authorize });
     artifactHttp=downloadRoutes(server,store,agentRuntime,session.authorize);
     metricHttp = metricRoutes(server, store, agentRuntime, session.authorize);
+    registerRetentionRoutes(server,{store:store.retention,newId:randomUUID,now:()=>new Date().toISOString(),authorize:session.authorize});
     registerSettingsRoutes(server, { store: store.settings, reader: store, digest, authorize: session.authorize });
     if (inputRuntime) inputHttp = registerInputRoutes(server, { inputs: inputRuntime.inputs, newId: randomUUID, authorize: session.authorize });
     server.addHook('onClose', async () => {

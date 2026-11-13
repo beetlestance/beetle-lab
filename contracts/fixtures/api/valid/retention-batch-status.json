@@ -1,0 +1,29 @@
+{
+  "id": "00000000-0000-4000-8000-000000000021",
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "kind": "retention",
+  "state": "preview",
+  "capturedAt": "2026-11-14T12:00:00.000Z",
+  "expiresAt": "2026-11-14T12:15:00.000Z",
+  "completedAt": null,
+  "estimatedLogicalBytes": 65536,
+  "items": [
+    {
+      "runId": "00000000-0000-4000-8000-000000000005",
+      "runVersion": 1,
+      "deletionId": "00000000-0000-4000-8000-000000000042",
+      "phase": "preview",
+      "fileCount": null,
+      "preparedCount": null,
+      "absentCount": null,
+      "error": null,
+      "refundedLogicalBytes": 0
+    }
+  ],
+  "completedCount": 0,
+  "refundedLogicalBytes": 0
+}

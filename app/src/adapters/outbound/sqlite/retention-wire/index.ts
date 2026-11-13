@@ -40,6 +40,7 @@ function discardReply(operation:Extract<RetentionOperation,{kind:'getWorkspaceRe
 export function captureRetentionReply(operation:RetentionOperation,input:unknown):RetentionValue{
  const original=captureRetentionOperation(operation);
  switch(original.kind){
+  case 'getWorkspaceRetentionPreview':{const snapshot=captureRetentionSnapshot(input);const key=original.request.key;requireFact(snapshot.id===key.id&&snapshot.scope.organizationId===key.scope.organizationId&&snapshot.scope.workspaceId===key.scope.workspaceId);return snapshot;}
   case 'listWorkspaceRetention':return captureRetentionList(input,original.request.scope);
   case 'previewRunDeletion':return manualReply(original,input);
   case 'previewWorkspaceRetention':return previewReply(original,input);
@@ -49,7 +50,7 @@ export function captureRetentionReply(operation:RetentionOperation,input:unknown
  }
 }
 export function retentionClient(call:(operation:RetentionOperation)=>Promise<unknown>):RetentionMetadata{
- const client:RetentionMetadata={list:scope=>call({kind:'listWorkspaceRetention',request:{scope}}) as ReturnType<RetentionMetadata['list']>,previewRun:command=>call({kind:'previewRunDeletion',command}) as ReturnType<RetentionMetadata['previewRun']>,preview:command=>call({kind:'previewWorkspaceRetention',command}) as ReturnType<RetentionMetadata['preview']>,
+ const client:RetentionMetadata={getPreview:key=>call({kind:'getWorkspaceRetentionPreview',request:{key}}) as ReturnType<RetentionMetadata['getPreview']>,list:scope=>call({kind:'listWorkspaceRetention',request:{scope}}) as ReturnType<RetentionMetadata['list']>,previewRun:command=>call({kind:'previewRunDeletion',command}) as ReturnType<RetentionMetadata['previewRun']>,preview:command=>call({kind:'previewWorkspaceRetention',command}) as ReturnType<RetentionMetadata['preview']>,
   apply:command=>call({kind:'applyWorkspaceRetention',command}) as ReturnType<RetentionMetadata['apply']>,
   get:(key,now)=>call({kind:'getWorkspaceRetentionStatus',request:{key,now}}) as ReturnType<RetentionMetadata['get']>,
   discard:(key,now)=>call({kind:'discardWorkspaceRetention',request:{key,now}}) as ReturnType<RetentionMetadata['discard']>};return Object.freeze(client);

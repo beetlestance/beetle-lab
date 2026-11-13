@@ -6,9 +6,7 @@
     "OrganizationParams": {
       "type": "object",
       "properties": {
-        "organizationId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        }
+        "organizationId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"}
       },
       "required": [
         "organizationId"
@@ -18,12 +16,8 @@
     "WorkspaceParams": {
       "type": "object",
       "properties": {
-        "organizationId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "workspaceId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        }
+        "organizationId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "workspaceId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"}
       },
       "required": [
         "organizationId",
@@ -34,12 +28,8 @@
     "FolderParams": {
       "type": "object",
       "properties": {
-        "organizationId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "id": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        }
+        "organizationId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "id": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"}
       },
       "required": [
         "organizationId",
@@ -50,15 +40,9 @@
     "SuiteParams": {
       "type": "object",
       "properties": {
-        "organizationId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "workspaceId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "suiteId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        }
+        "organizationId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "workspaceId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "suiteId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"}
       },
       "required": [
         "organizationId",
@@ -70,15 +54,9 @@
     "SuiteRevisionParams": {
       "type": "object",
       "properties": {
-        "organizationId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "workspaceId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "revisionId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        }
+        "organizationId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "workspaceId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "revisionId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"}
       },
       "required": [
         "organizationId",
@@ -90,15 +68,9 @@
     "InputParams": {
       "type": "object",
       "properties": {
-        "organizationId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "workspaceId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "inputId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        }
+        "organizationId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "workspaceId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "inputId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"}
       },
       "required": [
         "organizationId",
@@ -110,15 +82,9 @@
     "RunParams": {
       "type": "object",
       "properties": {
-        "organizationId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "workspaceId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "runId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        }
+        "organizationId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "workspaceId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "runId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"}
       },
       "required": [
         "organizationId",
@@ -130,18 +96,10 @@
     "RunAttemptParams": {
       "type": "object",
       "properties": {
-        "organizationId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "workspaceId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "runId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "attemptId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        }
+        "organizationId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "workspaceId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "runId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "attemptId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"}
       },
       "required": [
         "organizationId",
@@ -154,21 +112,11 @@
     "RunArtifactParams": {
       "type": "object",
       "properties": {
-        "organizationId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "workspaceId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "runId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "attemptId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        },
-        "artifactId": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
-        }
+        "organizationId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "workspaceId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "runId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "attemptId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "artifactId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"}
       },
       "required": [
         "organizationId",
@@ -176,6 +124,20 @@
         "runId",
         "attemptId",
         "artifactId"
+      ],
+      "additionalProperties": false
+    },
+    "RetentionBatchParams": {
+      "type": "object",
+      "properties": {
+        "organizationId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "workspaceId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "snapshotId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"}
+      },
+      "required": [
+        "organizationId",
+        "workspaceId",
+        "snapshotId"
       ],
       "additionalProperties": false
     }

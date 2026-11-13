@@ -97,7 +97,7 @@ async function send<S extends object, E, N extends MessageName<S>>(options: Reso
   let response: Response;
   try {
     response = await fetchReply(options.fetch, url, {
-      method: call.method, headers: { ...options.headers, 'content-type': 'application/json' },
+      method: call.method, headers: { ...options.headers, ...(body.value === undefined ? {} : { 'content-type': 'application/json' }) },
       ...(body.value === undefined ? {} : { body: body.value }), signal, redirect: 'error',
     }, signal);
   } catch { return { ok: false, error: { kind: interrupted(signal, call.signal, 'transport') } }; }

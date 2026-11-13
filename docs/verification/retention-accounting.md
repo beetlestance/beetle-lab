@@ -91,7 +91,7 @@ Thirteen focused Apply cases passed, including source-backed files, maximum100
 members, unchanged usage, replay after expiry/settings changes, nested global/peer
 mutations, raw sequence tampering and late-child/final-state rollback. The scoped
 regression lane, types, lint, architecture, docs and backend build passed. Independent
-review found no blocker. Public worker/TCP recovery and UI composition remain pending.
+review found no blocker. Compiled-worker Apply reply-loss recovery is qualified; public HTTP/UI composition remains pending.
 
 ## Durable completion and metadata removal
 
@@ -113,3 +113,24 @@ progress-delete/completion-owner rollback. The scoped regression lane, types, li
 architecture, docs and backend build passed. Independent review found no blocker.
 An applied page remains charged until completion is observed; public composition
 will supply that observation. No native or physical-free-space claim is added.
+
+
+## Worker and manual selection
+
+Closed bounded worker calls expose workspace/manual previews, atomic Apply, scoped
+inventory, original preview recovery, status and acknowledgement. Manual deletion
+requires the same positive eligibility and exact Run version before reserving a
+single immutable candidate. All paths share the existing Apply and cleanup driver.
+Inventory is at most eight charged headers, with no inferred native progress.
+
+Real compiled workers recovered committed Apply/manual-preview reply loss across
+termination and reopen. A forged reply remained pending until actual termination
+joined. Scoped manual/quota/isolation and inventory cases, types, lint, architecture
+and backend build passed. Public workspace/manual routes and generated clients passed394 scoped behavior
+cases across34 files, including authenticated guards, cross-scope refusal, a dropped
+real TCP Apply response, fresh worker reopen/replay, original preview recovery,
+settlement-derived credit and explicit acknowledgement. Removed IDs refused further
+status/Apply/discard; no second credit was inferred. Client cases rejected forged
+identities, duplicates and false completion. Type checks, lint, architecture, docs,
+API generation and backend build passed; independent review found no blocker.
+Parent traversal, provisional UI and composed retention-native qualification remain.

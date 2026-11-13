@@ -47,3 +47,13 @@ it('never echoes a malformed configured base URL', () => {
   expect(error).toBeInstanceOf(Error);
   expect(String(error)).not.toContain('SYNTHETIC_URL_CANARY');
 });
+
+it('sends bodyless POST without a JSON content type and retains JSON framing for a body',async()=>{
+ const fetcher=vi.fn<typeof fetch>().mockImplementation(async()=>Response.json(await fixture('valid/capabilities.json')));
+ const transport=createWireTransport<ProtocolTypes,ProtocolError>({baseUrl,fetch:fetcher},registry);
+ expect((await transport.json({method:'POST',path:'/api/v2/synthetic',response:'Capabilities',successStatus:200})).ok).toBe(true);
+ expect(new Headers(fetcher.mock.calls[0]![1]?.headers).has('content-type')).toBe(false);
+ const body=await fixture('valid/capabilities.json');
+ expect((await transport.json({method:'POST',path:'/api/v2/synthetic',request:'Capabilities',body,response:'Capabilities',successStatus:200})).ok).toBe(true);
+ expect(new Headers(fetcher.mock.calls[1]![1]?.headers).get('content-type')).toBe('application/json');
+});

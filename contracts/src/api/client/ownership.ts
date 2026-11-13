@@ -1,3 +1,4 @@
+import { retentionResponseMatches,retentionRequestMatches } from './retention-ownership.js';
 import {workspaceOverviewMatches} from '../overview.js';
 import type {WorkspaceOverview} from '../generated/types.js';
 import { exportOwnership, exportRequestMatches } from './export-ownership.js';
@@ -48,7 +49,7 @@ function session(operation: ApiOperation): boolean {
 
 export function requestOwnership(operation: ApiOperation, input: PreparedInput): boolean {
   if (session(operation) || !input.body) return true;
-  return (operation.name !== 'compareRuns' || runComparisonRequestMatches(input.body as unknown as RunComparisonRequest))
+  return retentionRequestMatches(operation,input) && (operation.name !== 'compareRuns' || runComparisonRequestMatches(input.body as unknown as RunComparisonRequest))
     && exportRequestMatches(operation, input) && scopedBodyOwnership(operation, input);
 }
 function scopedBodyOwnership(operation: ApiOperation, input: PreparedInput): boolean {
@@ -109,6 +110,7 @@ function sourceAncestry(scope: SettingsScope, effective: EffectiveSettings): boo
 /** Structural validation precedes this route/body/result binding. Backend SQL authorization is independent. */
 export function responseOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
   if (session(operation)) return true;
+  const retentionMatch=retentionResponseMatches(operation,input,value);if(retentionMatch!==undefined)return retentionMatch;
   if(operation.response==='WorkspaceOverview')return workspaceOverviewMatches(value as WorkspaceOverview,{organizationId:input.params.organizationId!,workspaceId:input.params.workspaceId!});
   if (operation.response === 'RunComparisonSnapshot') return runComparisonSnapshotMatches(value as RunComparisonSnapshot, input.body as unknown as RunComparisonRequest);
   if (operation.response === 'LiveMetricSnapshot') return liveMetricScopeMatches((value as LiveMetricSnapshot).scope,
