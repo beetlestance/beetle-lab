@@ -1,3 +1,5 @@
+import { CleanupProgressStore } from './cleanup-progress/store.js';
+import { cleanupProgressOperation } from './cleanup-progress-protocol.js';
 import { CleanupPlanStore, cleanupPlanOperation } from './cleanup-plans/index.js';
 import { RetirementStore, retirementOperation } from './retirement/index.js';
 import { NamespaceStore, namespaceOperation } from './staging-namespace/index.js';
@@ -26,6 +28,7 @@ import { executeOutputAbsence, outputAbsenceOperation } from './output-absence.j
 export class Store {
   private readonly retirements: RetirementStore;
   private readonly cleanupPlans: CleanupPlanStore;
+  private readonly cleanupProgress: CleanupProgressStore;
   private readonly namespaces: NamespaceStore;
   private readonly admission: AdmissionStore;
   private readonly read: StatementSync;
@@ -33,6 +36,7 @@ export class Store {
   private readonly runnable: RunnableScan;
   private readonly outputs: OutputSources;
   constructor(private readonly db: DatabaseSync, private readonly quota = DEFAULT_QUOTA_BYTES) {
+    this.cleanupProgress = new CleanupProgressStore(db);
     this.cleanupPlans = new CleanupPlanStore(db);
     this.namespaces = new NamespaceStore(db); this.retirements = new RetirementStore(db);
     this.admission = new AdmissionStore(db, quota);
@@ -103,10 +107,15 @@ export class Store {
     if (command.kind === 'cancelOriginal') return cancelOriginal(this.db, command, this.quota);
     throw new Failure('invalid_input');
   }
-  execute(command: Command): Value {
+  private custodyCommand(command: Command): Value | undefined {
+    if (cleanupProgressOperation(command)) return this.cleanupProgress.execute(command);
     if (cleanupPlanOperation(command)) return this.cleanupPlans.execute(command);
     if (retirementOperation(command)) return this.retirements.execute(command);
     if (namespaceOperation(command)) return this.namespaces.execute(command);
+    return undefined;
+  }
+  execute(command: Command): Value {
+    const custody = this.custodyCommand(command); if (custody !== undefined) return custody;
     if (outputAbsenceOperation(command)) return executeOutputAbsence(this.db, command);
     if (outputDeliveryOperation(command)) return executeOutputDelivery(this.db, command);
     if (outputSourceOperation(command)) return this.outputs.execute(command);

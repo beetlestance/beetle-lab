@@ -1,0 +1,22 @@
+import { afterEach,expect,it } from 'vitest';
+import { fixture } from './fixtures.js';
+import { gateFor } from '../producer-gate/fixtures.js';
+import { controlled } from '../supervisor/fixtures.js';
+import { ProducerRetirement,producerBarrierFacts } from '../../src/producer-retirement/index.js';
+import { RuntimeRetirement } from '../../src/runtime-retirement/index.js';
+import { NativeRemoval } from '../../src/native-removal/index.js';
+import { DockerBackend } from '../../src/backends/docker/index.js';
+const f=fixture();const operation=()=>({deadline:performance.now()+10000});const closes:(()=>Promise<unknown>)[]=[];
+afterEach(async()=>{await Promise.allSettled(closes.splice(0).map(close=>close()));});
+it('reopens the same persisted partial plan through fresh genuine producer/runtime barriers without restaging or engine effects',async()=>{
+ const e=await f.ready();const request=producerBarrierFacts(e.producer,e.owner.retirements).intent.request;
+ expect((await e.removal.stepWithPorts(e.token,operation(),e.ports)).removedCount).toBe(1);const before=e.effects.length;
+ await e.removal.close();await e.inventory.close();await e.runtime.close();await e.coordinator.close();await e.manager.close();await e.owner.close();
+ const journal=await f.open(e.journalPath);const gate=gateFor(journal,e.root.namespaceIdentity);const supervisor=controlled(journal);
+ const manager=e.create({journal,gate,supervisor:supervisor.manager});const producer=new ProducerRetirement({journal:journal.retirements,gate,installation:manager});closes.push(()=>producer.close());
+ const work=producer.retire(request);const barrier=await work.result;await work.settled;expect(barrier.ok).toBe(true);if(!barrier.ok)throw Error('Missing fresh producer barrier');
+ const runtime=new RuntimeRetirement({journal,root:e.staging.root,catalog:e.catalog,transport:e.docker,backend:()=>new DockerBackend(e.docker)});closes.push(()=>runtime.close());
+ const token=await runtime.retire(barrier.value,operation());const removal=new NativeRemoval({journal,root:e.staging.root});closes.push(()=>removal.close());
+ const next=await removal.stepWithPorts(token,operation(),e.ports);expect(next.removedCount).toBe(2);expect(e.effects).toHaveLength(before+1);
+ expect(supervisor.backend.creates).toBe(0);expect(supervisor.backend.starts).toBe(0);expect((await journal.cleanupPlans.read(e.key))?.plan).toEqual(e.plan);
+});

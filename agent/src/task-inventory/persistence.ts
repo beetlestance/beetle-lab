@@ -1,7 +1,7 @@
-import { captureWindow, checkWindow } from '../runtime-retirement/window.js';
+import { captureWindow, checkWindow } from '../runtime-retirement/index.js';
 import type { Operation } from '../backends/docker/index.js';
 import type { StoredCleanupPlan } from '../cleanup-control/index.js';
-import { OutputFailure } from '../collection/output/ports.js';
+import { OutputFailure } from '../collection/output/index.js';
 import { observedPlan } from './observation.js';
 import type { TaskPlanObservation } from './observation.js';
 import type { InventoryAuthority } from './authority.js';

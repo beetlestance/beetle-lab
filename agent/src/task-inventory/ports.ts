@@ -1,6 +1,6 @@
 import { open, lstat, realpath, opendir } from 'node:fs/promises';
 import type { FileHandle } from 'node:fs/promises';
-import type { NativeClosable, OutputIO } from '../collection/output/ports.js';
+import type { NativeClosable, OutputIO } from '../collection/output/index.js';
 export interface InventoryDirectory extends NativeClosable { read(): Promise<{ readonly name: unknown } | null> }
 export interface InventoryPorts {
   readonly platform: string;

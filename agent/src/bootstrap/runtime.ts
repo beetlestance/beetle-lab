@@ -1,3 +1,4 @@
+import { NativeRemoval } from '../native-removal/index.js';
 import type { TaskPlanObservation } from '../task-inventory/index.js';
 import { TaskInventory } from '../task-inventory/index.js';
 import type { RuntimeAbsent } from '../runtime-retirement/index.js';
@@ -83,6 +84,7 @@ class RuntimeOwner {
   private retirement: ProducerRetirement | undefined;
   private retiredRuntime: RuntimeRetirement | undefined;
   private taskInventory: TaskInventory | undefined;
+  private nativeRemoval: NativeRemoval | undefined;
   private authorityState?: ServingState;
   private authorityCleanupUnknown = false;
   private journal?: Journal;
@@ -125,9 +127,10 @@ class RuntimeOwner {
     const retirement = Object.freeze({ retire: (input: unknown) => this.retirement!.retire(input), status: () => this.retirement!.status() });
     const retiredRuntime = Object.freeze({ retire: (producer: ProducerBarrier, operation: Operation) => this.retiredRuntime!.retire(producer, operation),
       status: () => this.retiredRuntime!.status() });
+    const nativeRemoval = Object.freeze({ step: (token: RuntimeAbsent, operation: Operation) => this.nativeRemoval!.step(token, operation), status: () => this.nativeRemoval!.status() });
     const taskInventory = Object.freeze({ persist: (token: TaskPlanObservation, operation: Operation) => this.taskInventory!.persist(token, operation), prepare: (token: RuntimeAbsent, operation: Operation) => this.taskInventory!.prepare(token, operation),
       status: () => this.taskInventory!.status() });
-    return Object.freeze({ server, initial, retirement, retiredRuntime, taskInventory, status: () => this.status(), close: () => this.close() });
+    return Object.freeze({ server, initial, retirement, retiredRuntime, taskInventory, nativeRemoval, status: () => this.status(), close: () => this.close() });
   }
   private openAuthority(path: string): ServingState {
     try { return this.authorityState = openServingState(path); }
@@ -162,6 +165,7 @@ class RuntimeOwner {
     this.retirement = new ProducerRetirement({ journal: journal.retirements, gate, installation: this.installation });
     this.retiredRuntime = new RuntimeRetirement({ journal, root, catalog: options.catalog, transport, backend: () => new DockerBackend(transport) });
     this.taskInventory = new TaskInventory({ journal, root });
+    this.nativeRemoval = new NativeRemoval({ journal, root });
     this.observer = createResourceObserver({ root, transport: options.transport, configuration });
     const view = new CapabilityView({ configuration, catalog: options.catalog, journalAuthority,
       published: () => this.closed ? null : this.publisher?.snapshot() ?? null });
@@ -198,11 +202,11 @@ class RuntimeOwner {
     return first;
   }
   private async closeRetirement(): Promise<void> {
-    const inventory = this.taskInventory ? await drain([() => this.taskInventory!.close()]) : true;
-    const runtime = this.retiredRuntime ? await drain([() => this.retiredRuntime!.close()]) : true;
-    const coordinator = this.retirement ? await drain([() => this.retirement!.close()]) : true;
-    const gate = this.gate ? await drain([() => this.gate!.close()]) : true;
-    if (!inventory || !runtime || !coordinator || !gate) throw new AgentRuntimeError('cleanup');
+    let closed = true;
+    for (const service of [this.nativeRemoval, this.taskInventory, this.retiredRuntime, this.retirement, this.gate]) {
+      if (service) closed = await drain([() => service.close()]) && closed;
+    }
+    if (!closed) throw new AgentRuntimeError('cleanup');
   }
   private monitoringCloses(): Close[] {
     const guards: Close[] = [];

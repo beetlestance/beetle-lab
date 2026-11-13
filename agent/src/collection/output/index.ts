@@ -6,3 +6,8 @@ import { startCollection } from './operation.js';
 import type { OutputCollectionOptions, OutputCollection } from './types.js';
 export { readOutputRange } from './range.js';
 export function collectOutputs(options: OutputCollectionOptions): OutputCollection { return startCollection(options); }
+
+/** Shared native adapters; callers retain the original lifetime and its close contract. */
+export { OutputLifetime } from './lifetime.js';
+export { nodePorts, OutputFailure } from './ports.js';
+export type { OutputIO, OutputPorts, NativeClosable } from './ports.js';

@@ -1,0 +1,9 @@
+# Monotonic cleanup progress metadata
+Journal019 additive row <=8192canonicalbytes+512logicalallowance inexistingC1reserve.
+store.ts requiresactualeligibleimmutableplan, BEGINcreatesprepared1 only; nativeowner
+FULLpresencechecks beforeexplicitcleaning0 advance. Exactreplay/onecount/versionstep
+throughcleanup-controlcodec. No resets/skips/rollback/delete. validation.ts ownsSQL
+purecodecguards. RawcounterstatecannotproveIO/receipt/ACK/refund.
+Client reservesexistinglargecarriercredit beforecapture, boundsclosedscopedreplies
+andexpectedplanidentity. Settlefailedworkerterminationbeforeoriginalrelease.
+Tests cleanup-progress/native-removal pluslegacyJournalmigrations.

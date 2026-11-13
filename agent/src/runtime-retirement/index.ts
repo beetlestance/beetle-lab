@@ -83,3 +83,5 @@ export class RuntimeRetirement {
     return this.closing;
   }
 }
+
+export { captureWindow, checkWindow } from './window.js';

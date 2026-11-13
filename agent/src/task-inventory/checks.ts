@@ -1,7 +1,7 @@
 import type { BigIntStats } from 'node:fs';
 import { captureNativeDirectory, captureNativeFile, cleanupControl } from '../cleanup-control/index.js';
 import type { CleanupEntry, NativeDirectoryFact } from '../cleanup-control/index.js';
-import { OutputFailure } from '../collection/output/ports.js';
+import { OutputFailure } from '../collection/output/index.js';
 export function requireInventory(condition: unknown): asserts condition { if (!condition) throw new OutputFailure('custody'); }
 export function sameNative(a: NativeDirectoryFact, b: NativeDirectoryFact): boolean {
   return a.dev === b.dev && a.ino === b.ino && a.uid === b.uid && a.gid === b.gid && a.mode === b.mode;

@@ -1,3 +1,4 @@
+import type { NativeRemoval } from '../native-removal/index.js';
 import type { TaskInventory } from '../task-inventory/index.js';
 import type { RuntimeRetirement } from '../runtime-retirement/index.js';
 import type { ProducerRetirement } from '../producer-retirement/index.js';
@@ -21,6 +22,7 @@ export interface AgentRuntimeOptions {
   readonly signal?: AbortSignal;
 }
 export interface AgentRuntime {
+  readonly nativeRemoval: Pick<NativeRemoval, 'step' | 'status'>;
   readonly taskInventory: Pick<TaskInventory, 'prepare' | 'persist' | 'status'>;
   readonly retiredRuntime: Pick<RuntimeRetirement, 'retire' | 'status'>;
   /** Private process-local port for later authenticated retirement composition; no route implied. */

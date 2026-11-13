@@ -2,15 +2,15 @@ import { mintObservation } from './observation.js';
 import type { TaskPlanObservation } from './observation.js';
 export type { TaskPlanObservation } from './observation.js';
 import { PlanPersistence } from './persistence.js';
-import { captureWindow } from '../runtime-retirement/window.js';
+import { captureWindow } from '../runtime-retirement/index.js';
 import type { RuntimeAbsent } from '../runtime-retirement/index.js';
 import type { Operation } from '../backends/docker/index.js';
 import { captureNativeCleanupPlan } from '../cleanup-control/index.js';
 import type { NativeCleanupPlan, CleanupEntry } from '../cleanup-control/index.js';
 import { nativeCustody, NativeCustodyError } from '../collection/native-custody/index.js';
-import { OutputLifetime } from '../collection/output/lifetime.js';
-import { nodePorts, OutputFailure } from '../collection/output/ports.js';
-import type { OutputIO } from '../collection/output/ports.js';
+import { OutputLifetime } from '../collection/output/index.js';
+import { nodePorts, OutputFailure } from '../collection/output/index.js';
+import type { OutputIO } from '../collection/output/index.js';
 import type { OutputCollectionReason } from '../collection/output/index.js';
 import { inventoryScope, inventoryAnchor } from './authority.js';
 import type { InventoryAuthority } from './authority.js';
@@ -82,3 +82,13 @@ export class TaskInventory {
     }); return this.closing;
   }
 }
+
+/** Trusted read-only native adapters for exact-plan replay; no deletion authority. */
+export { inventoryScope, inventoryAnchor } from './authority.js';
+export type { InventoryAuthority } from './authority.js';
+export { InventoryTree } from './tree.js';
+export { InventoryRoot } from './installation.js';
+export type { InventoryInstallation } from './installation.js';
+export { inventoryPorts } from './ports.js';
+export type { InventoryPorts } from './ports.js';
+export { entry, nativeFact, requireInventory, sameNative, signature } from './checks.js';

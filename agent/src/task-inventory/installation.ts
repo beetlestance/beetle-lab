@@ -5,7 +5,7 @@ import type { FileHandle } from 'node:fs/promises';
 import { namespaceCaps } from '../staging-namespace/index.js';
 import type { NamespaceMarker } from '../staging-namespace/index.js';
 import type { NativeDirectoryFact } from '../cleanup-control/index.js';
-import type { OutputIO } from '../collection/output/ports.js';
+import type { OutputIO } from '../collection/output/index.js';
 import type { InventoryPorts } from './ports.js';
 import { nativeFact, requireInventory, sameNative, signature } from './checks.js';
 export interface InventoryInstallation { readonly directory: string; readonly native: NativeDirectoryFact; readonly marker: NamespaceMarker }

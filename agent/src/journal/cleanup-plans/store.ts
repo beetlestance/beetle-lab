@@ -5,7 +5,7 @@ import type { NativeCleanupPlan, StoredCleanupPlan } from '../../cleanup-control
 import type { Scope } from '../../admission/index.js';
 import { sourceScope } from '../output-source-input.js';
 import { readRetirementIntent } from '../retirement/index.js';
-import { eligibleRetirement } from '../retirement/eligibility.js';
+import { eligibleRetirement } from '../retirement/index.js';
 import { readTaskNamespace } from '../staging-namespace/tasks.js';
 import { Failure, transaction } from '../sql.js';
 import type { CleanupPlanOperation, CleanupPlanValue } from '../cleanup-plan-protocol.js';
@@ -14,7 +14,7 @@ import { checkedText, matchesPlan } from './validation.js';
 export function planKey(plan: NativeCleanupPlan): Scope & {generation:1} {
   const { organizationId, workspaceId, attemptId, generation } = plan.original; return { organizationId, workspaceId, attemptId, generation };
 }
-function read(db: DatabaseSync, key: Scope): StoredCleanupPlan | null {
+export function readCleanupPlan(db: DatabaseSync, key: Scope): StoredCleanupPlan | null {
   readRetirementIntent(db, key);
   const row = db.prepare(`SELECT CASE WHEN length(CAST(plan_json AS BLOB))<=${cleanupControl.planBytes} THEN plan_json END AS json,
     CASE WHEN length(CAST(plan_identity AS BLOB))=64 THEN plan_identity END AS identity,
@@ -33,11 +33,15 @@ function store(db: DatabaseSync, plan: NativeCleanupPlan): StoredCleanupPlan {
   const eligible = eligibleRetirement(db, intent.request); const task = readTaskNamespace(db, key);
   if (encodeCanonicalJson(eligible, cleanupControl.intentBytes) !== encodeCanonicalJson(intent, cleanupControl.intentBytes)
     || task?.state !== 'prepared' || !matchesPlan(plan, intent, task.anchor)) throw new Failure('conflict');
-  const existing = read(db, key); const planIdentity = nativeCleanupPlanIdentity(plan);
+  const existing = readCleanupPlan(db, key); const planIdentity = nativeCleanupPlanIdentity(plan);
   if (existing) { if (existing.planIdentity !== planIdentity) throw new Failure('conflict'); return existing; }
   const json = encodeCanonicalJson(plan, cleanupControl.planBytes); const bytes = Buffer.byteLength(json);
   db.prepare('INSERT INTO output_cleanup_plans(attempt_id,plan_identity,plan_json,encoded_bytes,charged_bytes) VALUES(?,?,?,?,?)')
     .run(key.attemptId, planIdentity, json, bytes, bytes + 512); return { planIdentity, plan };
+}
+export function eligibleStoredPlan(db: DatabaseSync, key: Scope, identity: string): StoredCleanupPlan {
+  const stored = readCleanupPlan(db, key); if (!stored || stored.planIdentity !== identity) throw new Failure('conflict');
+  return store(db, stored.plan);
 }
 function command(input: CleanupPlanOperation & {id:number}): CleanupPlanOperation {
   const copy = JSON.parse(encodeJson(input, cleanupPlanFrameBytes)) as CleanupPlanOperation & {id:number};
@@ -54,7 +58,7 @@ export class CleanupPlanStore {
   execute(input: CleanupPlanOperation & {id:number}): CleanupPlanValue {
     let captured: CleanupPlanOperation;try{captured=command(input);}catch{throw new Failure('invalid_input');}
     return transaction(this.db,()=>{
-      if(captured.kind==='cleanupPlanRead')return{key:captured.key,stored:read(this.db,captured.key)};
+      if(captured.kind==='cleanupPlanRead')return{key:captured.key,stored:readCleanupPlan(this.db,captured.key)};
       const plan=captureNativeCleanupPlan(JSON.parse(captured.json) as unknown);return{key:planKey(plan),stored:store(this.db,plan)};
     });
   }

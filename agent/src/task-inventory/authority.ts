@@ -7,7 +7,7 @@ import type { Journal } from '../journal/index.js';
 import { captureTaskNamespaceState } from '../staging-namespace/index.js';
 import { runtimeName } from '../backends/docker/index.js';
 import { requireInventory } from './checks.js';
-import type { OutputIO } from '../collection/output/ports.js';
+import type { OutputIO } from '../collection/output/index.js';
 export interface InventoryAuthority { readonly journal: Journal; readonly root: VerifiedRoot }
 export function inventoryScope(options: InventoryAuthority, token: RuntimeAbsent) {
   const facts = runtimeAbsentFacts(token, options.journal.retirements); const root = retirementRoot(options.root);
