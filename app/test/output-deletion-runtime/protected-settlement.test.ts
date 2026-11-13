@@ -23,15 +23,15 @@ function ports(store:Store){
   read:async key=>store.execute({kind:'readBackendSettlement',key}) as Awaited<ReturnType<OutputSettlementMetadata['read']>>};
  return{metadata,settlements};
 }
-it('protects real never-admitted absence without either gateway dispatch or refund',async()=>{
+it('discovers rejected absence but preserves debt while agent cleanup is unavailable',async()=>{
  const f=retirementFixture();vi.useRealTimers();const source=absenceFixture({admission:{state:'rejected',reason:'per_run_ceiling'},reason:'budget_unavailable'});
  source.ready();source.finalize();const deletion=command(source);source.store.execute({kind:'beginOutputDeletion',command:deletion});const before=source.usage();
- const p=ports(source.store);const settleOutput=vi.fn(async():Promise<never>=>{throw Error('Protected original dispatched');});
+ const p=ports(source.store);f.gateway.retireOutput.mockResolvedValue({ok:false,error:{kind:'transport'}});const settleOutput=vi.fn(async():Promise<never>=>{throw Error('Protected original dispatched');});
  f.metadata.scan.mockResolvedValue({items:[],nextCursor:null});vi.useFakeTimers();
  const runtime=startOutputDeletionRuntime({...f.options,metadata:f.metadata,
   retirement:{metadata:p.metadata,gateway:f.gateway,digest:hash},settlement:{metadata:p.metadata,store:p.settlements,gateway:{settleOutput},digest:hash}});
  await vi.advanceTimersByTimeAsync(250);
- expect(f.gateway.retireOutput).not.toHaveBeenCalled();expect(settleOutput).not.toHaveBeenCalled();expect(f.onFailure).not.toHaveBeenCalled();
+ expect(f.gateway.retireOutput).toHaveBeenCalled();expect(settleOutput).not.toHaveBeenCalled();expect(f.onFailure).not.toHaveBeenCalled();
  expect(source.usage()).toBe(before);expect(source.db.prepare('SELECT count(*) n FROM output_deletion_intents').get()?.n).toBe(1);await runtime.close();
 });
 it('automatically settles actual unsent cancellation with no agent call',async()=>{

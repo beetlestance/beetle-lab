@@ -1,4 +1,4 @@
-import {admittedDeletion} from './readiness.js';
+import {agentRetirementReady} from './readiness.js';
 import type { DatabaseSync } from 'node:sqlite';
 import type { OutputDeletionPage,OutputDeletionScan } from '../../../../ports/output-deletion-metadata.js';
 import { StorageError } from '../protocol.js';
@@ -10,12 +10,12 @@ const eligible="pending_files=0 AND kind IN ('source','absence')";
 /** Capture physical candidates before ACK filtering: no unbounded anti-join walk. */
 export function scanRetirements(db:DatabaseSync,query:OutputDeletionScan):OutputDeletionPage{
  natural(query.limit,32,1);const position=window(db,query);
- const rows=db.prepare(`SELECT d.id,d.run_id,d.organization_id,d.workspace_id,d.sequence,${admittedDeletion} admitted,
+ const rows=db.prepare(`SELECT d.id,d.run_id,d.organization_id,d.workspace_id,d.sequence,${agentRetirementReady} agent_ready,
   EXISTS(SELECT 1 FROM backend_output_cleanup_acks a WHERE a.deletion_id=d.id) acked
   FROM output_deletion_intents d INDEXED BY output_deletion_retirable WHERE ${eligible} AND sequence>? AND sequence<=? ORDER BY sequence LIMIT ?`)
   .all(position.after,position.upper,query.limit+1);
  const selected=rows.slice(0,query.limit);const last=selected.at(-1);
- return {items:selected.filter(item=>item.acked===0&&item.admitted===1).map(item=>summary(db,{id:item.id as string,runId:item.run_id as string,
+ return {items:selected.filter(item=>item.acked===0&&item.agent_ready===1).map(item=>summary(db,{id:item.id as string,runId:item.run_id as string,
   scope:{kind:'workspace',organizationId:item.organization_id as string,workspaceId:item.workspace_id as string}})),
   nextCursor:rows.length>query.limit&&last?retirementCursor({installationId:position.installationId,upper:position.upper,after:last.sequence as number},query.limit):null};
 }

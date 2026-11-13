@@ -1,3 +1,4 @@
+import { NoTaskReceipt } from '../no-task-receipt/index.js';
 import { StorageSettlement } from '../storage-settlement/index.js';
 import { RetirementPipeline } from '../retirement-pipeline/index.js';
 import type { RetirementRequest } from '@beetle/contracts/output-retirement';
@@ -90,6 +91,7 @@ class RuntimeOwner {
   private taskInventory: TaskInventory | undefined;
   private nativeRemoval: NativeRemoval | undefined;
   private nativeReceipt: NativeReceipt | undefined;
+  private noTaskReceipt:NoTaskReceipt|undefined;
   private cleanup: RetirementPipeline | undefined;
   private settlement?: StorageSettlement;
   private authorityState?: ServingState;
@@ -171,12 +173,13 @@ class RuntimeOwner {
         if (!stager) throw new AgentRuntimeError('startup');
         return stager;
       } });
-    this.retirement = new ProducerRetirement({ journal: journal.retirements, gate, installation: this.installation });
+    this.retirement = new ProducerRetirement({ journal: journal.retirements, funding:journal.retirements,gate, installation: this.installation });
     this.retiredRuntime = new RuntimeRetirement({ journal, root, catalog: options.catalog, transport, backend: () => new DockerBackend(transport) });
     this.taskInventory = new TaskInventory({ journal, root });
     this.nativeRemoval = new NativeRemoval({ journal, root });
     this.nativeReceipt = new NativeReceipt({ journal, root, removal: this.nativeRemoval });
-    this.cleanup = new RetirementPipeline({ journal, producer: this.retirement, runtime: this.retiredRuntime, inventory: this.taskInventory, removal: this.nativeRemoval, receipt: this.nativeReceipt });
+    this.noTaskReceipt=new NoTaskReceipt({journal,root,transport});
+    this.cleanup = new RetirementPipeline({ journal, producer: this.retirement, runtime: this.retiredRuntime, inventory: this.taskInventory, removal: this.nativeRemoval, receipt: this.nativeReceipt,noTask:this.noTaskReceipt });
     this.settlement = new StorageSettlement({journal});
     this.observer = createResourceObserver({ root, transport: options.transport, configuration });
     const view = new CapabilityView({ configuration, catalog: options.catalog, journalAuthority,
@@ -196,7 +199,7 @@ class RuntimeOwner {
   }
   close(): Promise<void> {
     if (this.closing) return this.closing;
-    this.closed = true;this.settlement?.stop();
+    this.closed = true;this.settlement?.stop();this.noTaskReceipt?.stop();
     let resolve!: () => void; let reject!: (error: unknown) => void;
     this.closing = new Promise<void>((yes, no) => { resolve = yes; reject = no; });
     void this.shutdown().then(resolve, reject);
@@ -215,7 +218,7 @@ class RuntimeOwner {
   }
   private async closeRetirement(): Promise<void> {
     let closed = true;
-    for (const service of [this.settlement, this.cleanup, this.nativeReceipt, this.nativeRemoval, this.taskInventory, this.retiredRuntime, this.retirement, this.gate]) {
+    for (const service of [this.settlement, this.cleanup,this.noTaskReceipt, this.nativeReceipt, this.nativeRemoval, this.taskInventory, this.retiredRuntime, this.retirement, this.gate]) {
       if (service) closed = await drain([() => service.close()]) && closed;
     }
     if (!closed) throw new AgentRuntimeError('cleanup');

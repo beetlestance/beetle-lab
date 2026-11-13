@@ -20,11 +20,16 @@ function neverStarted(current: Reservation): void {
     throw new InstallationError('cleanup');
   }
 }
-async function releasedOwnership(options: InstallationOptions, key: ReturnType<typeof keyFor>, operation: Operation) {
-  const snapshot = await options.journal.get(key); checkBudget(operation);
+async function retirementOwnership(options: InstallationOptions, intent:RetirementIntent, operation: Operation) {
+  const key=keyFor(intent);const snapshot = await options.journal.get(key); checkBudget(operation);
+  if(snapshot.admission?.state==='rejected'){
+    const current=await options.journal.retirements.preflightRejected(intent.request);checkBudget(operation);
+    if(encodeCanonicalJson(current,4096)!==encodeCanonicalJson(intent,4096))throw new InstallationError('cleanup');
+    return{state:'rejected' as const};
+  }
   const current = await allocation(options.journal, key); checkBudget(operation);
   if (snapshot.admission?.state !== 'released' || current?.status !== 'released') throw new InstallationError('cleanup');
-  return { admission: snapshot.admission, current };
+  return { state:'released' as const,admission: snapshot.admission, current };
 }
 /** Exact stored intent authorizes fencing only; actual owned objects and stopped inspection establish drain. */
 export async function retireOutputOwners(input: { options: InstallationOptions; intent: RetirementIntent;
@@ -39,7 +44,9 @@ export async function retireOutputOwners(input: { options: InstallationOptions; 
     entry.retiring = true; entry.cancelled = true; entry.abort.abort();
     await retireNative(entry); checkBudget(operation);
   }
-  const { admission, current } = await releasedOwnership(options, key, operation); checkBudget(operation);
+  const ownership=await retirementOwnership(options,intent,operation);checkBudget(operation);
+  if(ownership.state==='rejected'){options.supervisor.assertNoActor(key);return;}
+  const{admission,current}=ownership;
   if (admission.disposition === 'never_started') {
     neverStarted(current); options.supervisor.assertNoActor(key); return;
   }

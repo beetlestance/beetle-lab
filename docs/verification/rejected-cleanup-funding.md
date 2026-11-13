@@ -1,7 +1,8 @@
 # Rejected cleanup funding
 
-Private ledger slice only. Rejected HTTP discovery, native absence proof and settlement
-remain protected until the next owner is implemented. No refund is enabled here.
+Rejected cleanup now composes through Root, authenticated runner HTTP and both bounded
+backend discovery lanes. Full Linux Docker qualification remains pending. Low-quota
+originals stay protected; admitted abort-before-staging still needs its no-task branch.
 
 Journal023 adds a separate16384-byte control and O(1) count/bytes/clock singleton.
 Its fixed transaction proves the actual rejected/fresh-cancel closure, exact ACK and
@@ -83,3 +84,19 @@ preservation passed. Nested clock/hold/global/parent/replay/private-frame attack
 back all originals and credits. Missing receipt and stale commitment refuse. Independent
 review found no blocker. Root/readiness wiring and composed native qualification remain
 pending; this private slice does not enable public rejected cleanup or retention.
+
+## Root and driver composition
+
+Root wires positive funding selection and the no-task native owner into retirement.
+Actual installation drain accepts rejected work only after exact funded revalidation
+and no-supervisor-actor checks. Pipeline/Root shutdown synchronously stops new no-task
+proof dispatch, joins actual late handles/carriers and retains unknown close custody.
+Both bounded backend discovery lanes include actual rejected absence; settlement still
+requires its exact stored cleanup ACK and matching agent settlement reply.
+
+Evidence `.agent-work/no-task-composition/`:99 affected cases passed, including actual
+installation controller, authenticated ephemeral TCP cleanup/settlement/permanent replay,
+compiled workers, late-open shutdown and backend no-refund on unavailable agent cleanup.
+Types/lint/architecture/docs/agent+API builds passed. Independent review found no blocker.
+Daemon responses are modeled; Linux Docker rejected qualification remains next, plus
+admitted never-started/no-staging coverage and protected public retention.

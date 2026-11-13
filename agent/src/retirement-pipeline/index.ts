@@ -35,7 +35,7 @@ export class RetirementPipeline{
  }
  private release(entry:PipelineEntry):void{entry.access?.release();this.entries.delete(entry);if(entry.id&&this.scopes.get(entry.id)===entry)this.scopes.delete(entry.id);}
  status(){return Object.freeze({retained:this.entries.size,closed:this.closed});}
- close():Promise<void>{if(this.closing)return this.closing;this.closed=true;this.closing=Promise.resolve().then(async()=>{
+ close():Promise<void>{if(this.closing)return this.closing;this.closed=true;this.options.noTask?.stop();this.closing=Promise.resolve().then(async()=>{
   await Promise.allSettled([...this.entries].map(entry=>entry.work?.settled));
   if(this.entries.size)throw new RetirementPipelineError('unavailable');});return this.closing;}
 }

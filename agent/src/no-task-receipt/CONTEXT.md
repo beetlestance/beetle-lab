@@ -8,6 +8,7 @@ absence precede actual native closes. Never unlink or synthesize prepared roles.
 An internal opaque observation binds the live owner and is consumed at worker dispatch.
 Shared cleanup/native exclusion remains held through receipt commit and actual carrier
 settlement; unknown close/termination retains ownership. Close revokes observations.
-No Root/HTTP routing, storage refund or permanent replay transfer in this slice.
+Root/pipeline stop synchronously revokes new proof dispatch before joining originals.
+Receipt ownership grants no storage refund; the separate settlement transaction does.
 
 Public protocol.ts is the Journal claim-only leaf; index.ts owns native composition.

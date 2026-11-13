@@ -145,9 +145,8 @@ Evidence: [backend settlement](../../verification/backend-storage-settlement.md)
 The existing serial cleanup runtime rotates file, retirement and settlement turns.
 Settlement discovery captures a physical sequence horizon and reads at most32+1 rows
 before readiness/ACK filtering. Its cursor binds installation, page size and semantic
-lane. Released absence includes admitted never-started work. Rejected no-admission
-originals are protected in both retirement and settlement discovery until separately
-funded authority exists. Source/absence use exact ACK-bound agent replies; unsent sends
+lane. Released absence includes admitted never-started work. Rejected absence participates in both discovery lanes; its actual agent funding,
+no-task receipt and exact settlement remain mandatory before credit. Source/absence use exact ACK-bound agent replies; unsent sends
 no agent call. Cancellation joins issued originals and preserves uncertain backend debt.
 
 A history job can outlive deletion. Its private metadata capability returns exact
@@ -167,8 +166,8 @@ control before work is published; preserved unfunded legacy rows need explicit t
 
 Sent never-admitted originals have no genuine retained disk hold and cannot borrow
 its staging credit. They need a separate positive no-reservation/no-native authority
-and explicit permanent replay funding rule. Until implemented, they remain charged/
-protected; a missing reservation or generic absence response is not that rule.
+and explicit permanent replay funding rule. The separate16KiB control now funds this
+branch; missing reservation or generic absence never authorizes it. Low-quota rows stay protected.
 The private rejected funding path reserves16384 bytes before writing its exact no-task
 retirement intent in the same immediate transaction. It requires the actual rejected
 closure, final ACK, bound installation, absent producer ownership and original quota.

@@ -43,3 +43,12 @@ it('includes positively unsent work without an agent ACK',()=>{
   expect((f.store.execute({kind:'scanOutputSettlements',query:{limit:32}}) as OutputDeletionPage).items[0]?.kind).toBe('unsent');
  }finally{f.db.close();}
 });
+it('discovers a positively rejected absence for retirement and requires its exact cleanup ACK before settlement discovery',()=>{
+ const f=absenceFixture({end:0,admission:{state:'rejected',reason:'per_run_ceiling'},reason:'budget_unavailable'});
+ f.ready();f.finalize();const deletion=command(f);f.store.execute({kind:'beginOutputDeletion',command:deletion});const key={scope,id:deletion.id,runId:f.key.runId};
+ expect((f.store.execute({kind:'scanOutputRetirements',query:{limit:32}}) as OutputDeletionPage).items).toHaveLength(1);
+ expect((f.store.execute({kind:'scanOutputSettlements',query:{limit:32}}) as OutputDeletionPage).items).toHaveLength(0);
+ const request=f.store.execute({kind:'getOutputRetirementRequest',key}) as RetirementRequest;
+ f.store.execute({kind:'recordOutputCleanupAck',request:{key,reply:cleaned(request)}});
+ expect((f.store.execute({kind:'scanOutputSettlements',query:{limit:32}}) as OutputDeletionPage).items).toHaveLength(1);
+});

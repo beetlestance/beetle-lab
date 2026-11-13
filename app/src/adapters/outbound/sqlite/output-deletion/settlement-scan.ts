@@ -1,4 +1,4 @@
-import {admittedDeletion} from './readiness.js';
+import {agentRetirementReady} from './readiness.js';
 import type { DatabaseSync } from 'node:sqlite';
 import type { OutputDeletionPage,OutputDeletionScan } from '../../../../ports/output-deletion-metadata.js';
 import { StorageError } from '../protocol.js';
@@ -10,7 +10,7 @@ export function scanSettlements(db:DatabaseSync,query:OutputDeletionScan):Output
  natural(query.limit,32,1);const position=window(db,query);
  const rows=db.prepare(`SELECT d.id,d.run_id,d.organization_id,d.workspace_id,d.sequence,
   d.pending_files=0 AND (d.kind='unsent' OR (EXISTS(SELECT 1 FROM backend_output_cleanup_acks a WHERE a.deletion_id=d.id)
-   AND ${admittedDeletion})) ready
+   AND ${agentRetirementReady})) ready
   FROM output_deletion_intents d WHERE sequence>? AND sequence<=? ORDER BY sequence LIMIT ?`).all(position.after,position.upper,query.limit+1);
  const selected=rows.slice(0,query.limit);const last=selected.at(-1);
  return{items:selected.filter(row=>row.ready===1).map(row=>summary(db,{id:row.id as string,runId:row.run_id as string,

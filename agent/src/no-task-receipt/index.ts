@@ -58,9 +58,9 @@ export class NoTaskReceipt {
   try{return await issue();}catch(error){try{await this.options.journal.retirements.settleCarrier();}catch{entry.uncertain=true;}throw error;}
  }
  status(){return Object.freeze({retained:this.entries.size,closed:this.closed});}
+ stop():void{this.closed=true;for(const entry of this.entries){entry.cancelled=true;entry.abort.abort();}}
  close():Promise<void>{
-  if(this.closing)return this.closing;this.closed=true;
-  for(const entry of this.entries){entry.cancelled=true;entry.abort.abort();}
+  if(this.closing)return this.closing;this.stop();
   this.closing=Promise.resolve().then(async()=>{
    const outcomes=await Promise.allSettled([...this.entries].map(entry=>entry.work!.close()));
    if(outcomes.some(value=>value.status==='rejected')||this.entries.size)throw new OutputFailure('io');
