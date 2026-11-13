@@ -11,7 +11,7 @@ export class RetentionProgress {
  discard(key:RetentionStatusKey,now:number){
   return transaction(this.db,()=>{
    const clock=commitRetentionClock(this.db,now);snapshotById(this.db,key.scope,key.id);commitRetentionDiscard(this.db,key.id,clock);
-   return Object.freeze({id:key.id,scope:key.scope,refundedLogicalBytes:131072});
+   return Object.freeze({id:key.id,scope:key.scope,refundedLogicalBytes:131072 as const});
   });
  }
  get(key:RetentionStatusKey,now:number):RetentionStatus{
@@ -19,7 +19,7 @@ export class RetentionProgress {
    const clock=commitRetentionClock(this.db,now);const observed=observeRetentionCompletion(this.db,this.runs,key,clock);const snapshot=observed.snapshot;
    const preview:RetentionStatusItem[]=snapshot.candidates.map(member=>({runId:member.id,runVersion:member.version,deletionId:member.deletionId,phase:'preview',
     fileCount:null,preparedCount:null,absentCount:null,error:null,refundedLogicalBytes:0}));
-   return{id:snapshot.id,scope:snapshot.scope,state:observed.state,capturedAt:snapshot.capturedAt,expiresAt:snapshot.expiresAt,completedAt:observed.completedAt,
+   return{id:snapshot.id,scope:snapshot.scope,kind:snapshot.kind,estimatedLogicalBytes:snapshot.candidates.reduce((n,member)=>n+member.estimatedBytes,0),state:observed.state,capturedAt:snapshot.capturedAt,expiresAt:snapshot.expiresAt,completedAt:observed.completedAt,
     items:observed.observation?.items??preview,completedCount:observed.observation?.completedCount??0,refundedLogicalBytes:observed.observation?.refundedLogicalBytes??0};
   });
  }

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { encodeJson, validatePrimitive } from '@beetle/contracts';
 import { validateApi } from '@beetle/contracts/api';
-import type { SettingsScope } from '@beetle/contracts/api';
+import type { SettingsScope,WorkspaceScope } from '@beetle/contracts/api';
 import { requireRule } from '../../../domain/namespaces/index.js';
 import { StorageError } from './protocol.js';
 export const MAX_MESSAGE_BYTES = 65536;
@@ -26,3 +26,5 @@ export function boundedCopy<T>(input: T, limit = MAX_MESSAGE_BYTES): T {
 export function checkedScope(scope: SettingsScope): void {
   requireRule(validateApi('SettingsScope', scope).ok);
 }
+
+export const normalizedScope=(scope:WorkspaceScope):WorkspaceScope=>({kind:'workspace',organizationId:lower(scope.organizationId),workspaceId:lower(scope.workspaceId)});

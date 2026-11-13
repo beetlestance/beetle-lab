@@ -1,3 +1,8 @@
+import { retentionOperation,captureRetentionOperation } from './retention-wire/index.js';
+import type { RetentionOperation,RetentionValue } from '../../../ports/retention.js';
+import { WorkspaceRetentionSnapshots } from './retention-selection/index.js';
+import { WorkspaceRetentionApplies } from './retention-apply/index.js';
+import { RetentionProgress } from './retention-progress/index.js';
 import { beginOutputDeletionWithReceipt } from './output-deletion-begin/index.js';
 import { readMutationReceipt,writeMutationReceipt } from './mutation-receipts.js';
 import { BackendSettlements,settlementOperation,captureSettlementOperation } from './backend-settlement/index.js';
@@ -50,6 +55,9 @@ export function safeCode(error: unknown): ErrorCode {
   return 'unavailable';
 }
 export class Store {
+  private readonly retentionSnapshots:WorkspaceRetentionSnapshots;
+  private readonly retentionApplies:WorkspaceRetentionApplies;
+  private readonly retentionProgress:RetentionProgress;
   private readonly historySummaries: HistorySummaries;
   private readonly localSessions: LocalSessions;
   private readonly deletions: OutputDeletions;
@@ -96,6 +104,7 @@ export class Store {
     this.exportOutputs=new ExportOutputs(db,this.exports.reads);
     this.runs = new Runs(db, this.suites, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
     this.runReads = new RunReads(db, this.suites);
+    this.retentionSnapshots=new WorkspaceRetentionSnapshots(db,this.runReads);this.retentionApplies=new WorkspaceRetentionApplies(db,this.runReads);this.retentionProgress=new RetentionProgress(db,this.runReads);
     this.overviews=new Overviews(db,this.suites);
     this.runArtifacts = new RunArtifacts(db, this.runReads);
     this.executions = new RunExecutions(db, this.runReads);
@@ -180,6 +189,7 @@ export class Store {
   }
   execute(operation: Operation): Value {
     assertSettlementConnection(this.db);
+    if(retentionOperation(operation))return this.retention(operation);
     if(settlementOperation(operation))return this.settlement(operation);
     if(exportOperation(operation))return this.exportOperation(operation);
     if (deletionOperation(operation)) return this.deletion(operation);
@@ -189,6 +199,15 @@ export class Store {
     if (['getRunEvents','getRunExecution','getRunResult'].includes(operation.kind)) return this.runRead(operation);
     if (historyOperation(operation)) return this.historySummaries.execute(operation);
     return this.executeOutput(operation);
+  }
+  private retention(input:RetentionOperation):RetentionValue{
+    const operation=captureRetentionOperation(input);
+    switch(operation.kind){
+      case 'previewWorkspaceRetention':return this.retentionSnapshots.preview(operation.command);
+      case 'applyWorkspaceRetention':return this.retentionApplies.apply(operation.command);
+      case 'getWorkspaceRetentionStatus':return this.retentionProgress.get(operation.request.key,operation.request.now);
+      case 'discardWorkspaceRetention':return this.retentionProgress.discard(operation.request.key,operation.request.now);
+    }
   }
   private executeOutput(operation:Operation):Value {
     if(outputOperation(operation))return this.outputs.execute(operation);

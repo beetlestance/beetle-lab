@@ -1,3 +1,4 @@
+import { retentionOperation,captureRetentionOperation,retentionReplyLimit } from './retention-wire/index.js';
 import { settlementOperation,captureSettlementOperation } from './backend-settlement/index.js';
 import { historyOperation, captureHistoryOperation } from './run-history/index.js';
 import {exportOperation,captureExportOperation,exportReplyLimit,exportRequestLimit} from './export-wire.js';
@@ -129,6 +130,7 @@ function checkedExtendedOperation(operation: Operation): boolean {
 }
 export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operation {
   try {
+    if(retentionOperation(input))return captureRetentionOperation(input);
     if (exportOperation(input)) return captureExportOperation(input);
     if (localSessionOperation(input)) return captureLocalSessionOperation(input);
     if (deletionOperation(input)) return captureDeletionOperation(input);
@@ -191,6 +193,7 @@ function dataProperty(value: unknown, key: string): unknown {
 }
 const fixedMessageLimits:Partial<Record<Operation['kind'],number>>={loadLocalSession:2048,saveLocalSession:2048,settleBackendOutput:2304,readBackendSettlement:2304};
 export function operationMessageLimit(operation: Operation): number {
+  if(retentionOperation(operation))return 12288;
   if (exportOperation(operation)) return exportRequestLimit(operation);
   const fixed=fixedMessageLimits[dataProperty(operation,'kind') as Operation['kind']];if(fixed!==undefined)return fixed;
   if (deletionOperation(operation)) return 12288;
@@ -198,6 +201,9 @@ export function operationMessageLimit(operation: Operation): number {
   if (outputOperation(operation)) return 79872;
   if (eventOperation(operation)) return eventRequestLimit(operation);
   if (dispatchOperation(operation)) return dispatchRequestLimit(operation);
+  return authoringMessageLimit(operation);
+}
+function authoringMessageLimit(operation:Operation):number{
   if (dataProperty(operation, 'kind') !== 'suite') return MAX_MESSAGE_BYTES;
   const command = dataProperty(operation, 'command');
   return dataProperty(command, 'kind') === 'createSuiteRevision' ? 2097152 : MAX_MESSAGE_BYTES;
@@ -205,6 +211,7 @@ export function operationMessageLimit(operation: Operation): number {
 
 /** One two-original allowance is shared by suites, Offers and event batches. */
 export function largeOperation(operation: Operation): boolean {
+  if(retentionOperation(operation))return true;
   if(dataProperty(operation,'kind')==='exportOutput'){
     const method=dataProperty(dataProperty(operation,'operation'),'method');return method==='adopt'||method==='source';
   }
@@ -212,12 +219,16 @@ export function largeOperation(operation: Operation): boolean {
 }
 const fixedReplyLimits: Partial<Record<Operation['kind'], number>> = { historySummary: 16384, getWorkspaceOverview: 32768, settleBackendOutput:1536,readBackendSettlement:1536 };
 export function operationReplyLimit(operation: Operation): number {
+  if(retentionOperation(operation))return retentionReplyLimit(operation);
   const fixed = fixedReplyLimits[operation.kind];
   if (fixed !== undefined) return fixed;
   if (exportOperation(operation)) return exportReplyLimit(operation);
   if (localSessionOperation(operation)) return 2048;
   if (deletionOperation(operation)) return deletionReplyLimit(operation);
   if (absenceOperation(operation) || finalizationOperation(operation)) return 4096;
+  return readReplyLimit(operation);
+}
+function readReplyLimit(operation:Operation):number{
   if (operation.kind === 'getRunArtifact') return 4096;
   if (runEventsOperation(operation)) return 262144;
   if (['listRunArtifacts', 'getRunResult'].includes(operation.kind)) return 73728;

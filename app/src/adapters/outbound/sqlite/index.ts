@@ -1,3 +1,5 @@
+import { retentionOperation,captureRetentionReply,retentionClient } from './retention-wire/index.js';
+import type { RetentionOperation,RetentionMetadata } from '../../../ports/retention.js';
 import { settlementOperation,captureSettlementValue } from './backend-settlement/index.js';
 import type { OutputSettlementMetadata,BackendSettlementOperation } from '../../../ports/output-settlement-metadata.js';
 import { captureHistoryReply, historyOperation } from './run-history/index.js';
@@ -63,7 +65,7 @@ export interface MetadataOptions extends Bootstrap {
   /** Includes in-flight work; maximum 64. Close has one reserved slot. */
   queueLimit?: number;
 }
-interface Pending { settlement?:BackendSettlementOperation; history?: HistoryOperation; exportJob?:ExportOperation; localSession?: LocalSessionOperation; deletion?: OutputDeletionOperation; resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
+interface Pending { retention?:RetentionOperation; settlement?:BackendSettlementOperation; history?: HistoryOperation; exportJob?:ExportOperation; localSession?: LocalSessionOperation; deletion?: OutputDeletionOperation; resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
   artifacts?: ArtifactReadOperation; absence?: AbsenceOperation; finalization?: FinalizationOperation; result?: RunKey; execution?: RunKey; runEvents?: RunEventsQuery; output?: OutputOperation; large: boolean; replyLimit: number; event?: EventOperation; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
 function validateLocation(options: MetadataOptions): void {
   if (typeof options.path !== 'string' || !options.path || options.path === ':memory:' || options.path.length > 4096 ||
@@ -133,6 +135,14 @@ export class Metadata {
     list:query=>this.call({kind:'listExports',query}) as ReturnType<ExportStore['list']>,
     profiles:scope=>this.call({kind:'getExportProfiles',scope}) as ReturnType<ExportStore['profiles']>,
   };
+  private async retentionCall(operation:RetentionOperation):Promise<Value>{
+    try{return await this.call(operation);}
+    catch(error){
+      if(this.failed){try{await this.terminate();}catch{return await new Promise<never>(()=>{});}}
+      throw error;
+    }
+  }
+  readonly retention:RetentionMetadata=retentionClient(operation=>this.retentionCall(operation));
   readonly localSessions: LocalSessionStore = {
     load: () => this.call({kind: 'loadLocalSession'}) as ReturnType<LocalSessionStore['load']>,
     save: (expectedVersion, session) => this.call({kind: 'saveLocalSession', expectedVersion, session}) as ReturnType<LocalSessionStore['save']>,
@@ -337,6 +347,7 @@ export class Metadata {
     pending.resolve(value);
   }
   private bindReadRequest(pending: Pending, operation: Operation): void {
+    if(retentionOperation(operation))pending.retention=operation;
     if(settlementOperation(operation))pending.settlement=operation;
     if (historyOperation(operation)) pending.history = operation;
     if(exportOperation(operation))pending.exportJob=operation;
@@ -346,6 +357,7 @@ export class Metadata {
     if (operation.kind === 'getRunResult') pending.result = operation.key;
   }
   private readReply(pending: Pending, value: unknown): Value | undefined {
+    if(pending.retention)return captureRetentionReply(pending.retention,value);
     if(pending.settlement)return captureSettlementValue(pending.settlement,value);
     if(pending.exportJob)return captureExportReply(pending.exportJob,value);
     if (pending.localSession) return captureLocalSessionReply(pending.localSession, value);

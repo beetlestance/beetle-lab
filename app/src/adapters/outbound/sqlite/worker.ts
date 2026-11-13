@@ -1,3 +1,4 @@
+import { retentionOperation,captureRetentionReply } from './retention-wire/index.js';
 import { settlementOperation,captureSettlementValue } from './backend-settlement/index.js';
 import {exportOperation,captureExportReply} from './export-wire.js';
 import { localSessionOperation, captureLocalSessionReply } from './local-session/index.js';
@@ -23,6 +24,7 @@ function commandId(message: unknown): unknown {
   return messageId;
 }
 function captureReply(operation: Operation, original: Value): Value {
+  if(retentionOperation(operation))return captureRetentionReply(operation,original);
   if(settlementOperation(operation))return captureSettlementValue(operation,original);
   if(exportOperation(operation))return captureExportReply(operation,original);
   if (localSessionOperation(operation)) return captureLocalSessionReply(operation, original);

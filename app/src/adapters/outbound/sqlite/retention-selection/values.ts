@@ -2,8 +2,7 @@ import { encodeJson } from '@beetle/contracts';
 import { validateApi } from '@beetle/contracts/api';
 import type { WorkspaceRetentionPreviewCommand,WorkspaceRetentionPreviewRequest } from '../../../../ports/retention.js';
 import { requireRule } from '../../../../domain/namespaces/index.js';
-import { normalizedScope } from '../suites.js';
-import { lower,sha256 } from '../input-values.js';
+import { lower,sha256,normalizedScope } from '../input-values.js';
 import { digestMutationIntent } from '../../../../application/namespaces/index.js';
 export function capturePreviewCommand(input:unknown):WorkspaceRetentionPreviewCommand&{readonly intentDigest:string}{
  const copy:unknown=JSON.parse(encodeJson(input,8192));requireRule(copy!==null&&typeof copy==='object'&&!Array.isArray(copy));

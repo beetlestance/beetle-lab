@@ -4,8 +4,7 @@ import type { RetentionApplyReceipt } from '@beetle/contracts/api';
 import type { WorkspaceRetentionApplyRequest } from '../../../../ports/retention.js';
 import { requireRule,immutableSnapshot,sameScope } from '../../../../domain/namespaces/index.js';
 import type { RetentionSnapshot } from '../../../../domain/retention/index.js';
-import { normalizedScope } from '../suites.js';
-import { lower,sha256 } from '../input-values.js';
+import { lower,sha256,normalizedScope } from '../input-values.js';
 import { digestMutationIntent } from '../../../../application/namespaces/index.js';
 export interface AppliedSnapshot {readonly version:1;readonly requestId:string;readonly intentDigest:string;readonly appliedAt:string;readonly receipt:RetentionApplyReceipt}
 function closed(value:unknown,names:readonly string[]):asserts value is Record<string,unknown>{

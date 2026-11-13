@@ -1,3 +1,4 @@
+import { normalizedScope } from './input-values.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeJson } from '@beetle/contracts';
 import { k6ConfigSchema } from '../execution-profiles/index.js';
@@ -13,8 +14,7 @@ interface SuiteRow { id: string; organization_id: string; workspace_id: string; 
  name: string; version: number; current_revision_id: string | null }
 interface RevisionRow { id: string; organization_id: string; workspace_id: string; suite_id: string;
  ordinal: number; digest: string; config_json: string; input_manifest_json: string }
-export const normalizedScope = (scope: WorkspaceScope): WorkspaceScope => ({ kind: 'workspace',
-  organizationId: lower(scope.organizationId), workspaceId: lower(scope.workspaceId) });
+export { normalizedScope } from './input-values.js';
 export class Suites {
   constructor(private readonly db: DatabaseSync, private readonly entities: Entities) {}
   workspace(scope: WorkspaceScope) {
