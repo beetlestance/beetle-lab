@@ -5,15 +5,16 @@ import { OutputFinalizations } from '../../src/adapters/outbound/sqlite/output-f
 import { EventCustody } from '../../src/adapters/outbound/sqlite/event-custody/index.js';
 import { OutputCustody } from '../../src/adapters/outbound/sqlite/output-custody/index.js';
 import { transaction } from '../../src/adapters/outbound/sqlite/schema.js';
+import type {PayloadOwner} from '../storage/output-payload-fixtures.js';
 import { payloadFixture } from '../storage/output-payload-fixtures.js';
 import { acknowledge, snapshotFor } from '../storage/execution-foundation-fixtures.js';
 import { hash } from '../storage/output-payload-fixtures.js';
 import { ack, request } from '../storage/events/fixtures.js';
 export { artifact } from '../storage/output-custody-fixtures.js';
 export { uuid, scope } from '../storage/fixture.js';
-interface Options { maximum?: number; events?: number; artifacts?: Artifact[]; result?: (value: EngineResult) => EngineResult }
+interface Options { owner?:PayloadOwner; storageBytes?:number; maximum?: number; events?: number; artifacts?: Artifact[]; result?: (value: EngineResult) => EngineResult }
 export function finalizationFixture(options: Options = {}) {
-  const count = options.events ?? 2; const f = payloadFixture(options.maximum ?? 10000, count !== 0);
+  const count = options.events ?? 2; const f = payloadFixture(options.maximum ?? 10000, count !== 0, options.storageBytes??400000,options.owner);
   const exitEvidence = { exitCode: 0, oomKilled: false, observedAt: '2026-01-01T00:01:00Z' };
   if (count === 0) transaction(f.db, () => acknowledge(f.db, f.key, snapshotFor(f.key, {
     state: 'exited', lastSeq: 0, exitEvidence, admission: { state: 'charged' } })));

@@ -108,13 +108,14 @@ failing evidence. Mark the partial state honestly; never lower a gate or grant
 cleanup/refund authority to obtain a passing milestone. UI redesign, additional
 engines and hosted IAM remain outside this sequence.
 
-## Next backend ACK packet
+## Current cleanup integration
 
-C4a wire values, C4b private pipeline, C4c authenticated runner endpoint, C4d retained
-backend request projection and C4e exact bounded gateway are locally verified.
-They do not connect the background driver or persist backend ACKs. Before assigning
-ACK implementation, read the [proposal](../design/lld/backend-retirement-ack.md) and
-resolve its explicit backend control-reservation audit. Freeze the private port,
-reserve the next backend migration ID, and keep SQL/protocol ownership together.
-Then implement immutable ACK storage, bounded files_absent discovery/driver wiring
-and composed lost-reply recovery; do not mark all C4 complete from separate mocks.
+C4a–C4e values, pipeline, transport, request projection and gateway are locally verified.
+C4f0 reserves a distinct cleanup-control cell before possible delivery; C4f1 stores
+one immutable exact cleaned ACK without refunds. C4g connects bounded independent
+retirement discovery and the same sequential deletion child to the actual installed
+gateway. [Driver contract](../design/lld/output-deletion-runtime.md) and
+[evidence](../verification/cleanup-driver.md) distinguish mocks from native proof.
+Composed real native roots/authenticated HTTP/both compiled workers and cold recovery
+remain the next acceptance packet. Do not mark all C4 complete from isolated proofs.
+C5 settlement and C6 retention remain pending under the current goal.

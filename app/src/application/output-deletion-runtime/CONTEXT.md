@@ -1,13 +1,16 @@
-# Backend file deletion driver
+# Backend deletion and retirement driver
 
-startOutputDeletionRuntime processes existing committed intents only. One sequential
-file step shares the installed native store/credits and bound metadata worker.
-Prepare result+settled precede plan persistence; remove consumes only persisted plan.
-No new intent, producer cleanup, pin release, tombstone, quota refund or public API.
-
-A bounded cursor/current intent/ordinal is advisory; metadata owns recovery. Close
-fences timers/admission and waits issued originals. Rejected native quiescence
-retains its job and remains pending after failure notification; it never permits
-parent namespace release. Busy native admission defers to a later finite pass.
-Contract: docs/design/lld/output-deletion-runtime.md.
-Checks: vitest run app/test/output-deletion-runtime and affected output-runtime.
+One sequential child alternates committed file progress and exact producer retirement.
+Shares installed native files, metadata and actual gateway; no new pool or refunds.
+Explicit fileOnly is isolated embedding; production requires real retirement wiring.
+Before effects reserveControl must positively admit the original. Known capacity
+refusal advances/defer. File discovery owns one intent/ordinal. Retirement discovery
+buffers<=32 physical candidates with independent installation/upper/after cursor;
+ACK-only pages advance and completed horizons wrap. Pending/transient replies defer;
+cleaned persists the exact immutable ACK. Permanent/unknown failures fence+notify.
+Each turn's fixed30s budget includes discovery. Actual native result+settled,
+gateway and metadata carrier originals remain owned through close. Failed worker
+termination keeps deletion calls pending and prevents parent namespace release.
+No selector, intent creation, settlement, tombstone or public API.
+Contract:docs/design/lld/output-deletion-runtime.md.
+Checks:vitest run app/test/output-deletion-runtime app/test/output-deletion/retirement-scan.

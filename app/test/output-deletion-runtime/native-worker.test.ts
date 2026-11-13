@@ -22,7 +22,7 @@ it('automatically deletes committed native files across lost plan and absence re
   const key={scope,id:summary.id,runId:summary.runId};const initial=await metadata.inputs.storage();
   const firstFile=await metadata.outputDeletions.getFile({...key,ordinal:0});
   const failedPlan=deferred<unknown>();let losePlan=true;
-  const first:OutputDeletionRuntimeOptions={metadata:{...metadata.outputDeletions,recordPlan:async request=>{
+  const first:OutputDeletionRuntimeOptions={fileOnly:true,metadata:{...metadata.outputDeletions,recordPlan:async request=>{
    const result=await metadata.outputDeletions.recordPlan(request);if(losePlan){losePlan=false;throw Error('Lost committed plan reply');}return result;
   }},files:f.files.store,freeSpaceReserveBytes:0,intervalMs:25,onFailure:async error=>{failedPlan.resolve(error);}};
   current=startOutputDeletionRuntime(first);await failedPlan.promise;await expect(current.close()).rejects.toThrow('Lost committed plan reply');current=undefined;
@@ -37,7 +37,7 @@ it('automatically deletes committed native files across lost plan and absence re
   await expect(stat(f.files.path(firstFile.record,true))).rejects.toMatchObject({code:'ENOENT'});
   await storage.close(metadata);await f.files.reopen();metadata=await storage.open(path,{runtime:null,runs:f.config});
   await f.files.store.close();parent.outputs.scan.mockResolvedValue({items:[],nextCursor:null});
-  current=await openOutputRuntime({...parent.options,dataRoot,deletions:metadata.outputDeletions});
+  current=await openOutputRuntime({...parent.options,dataRoot,fileOnlyDeletion:true,deletions:metadata.outputDeletions});
   let done=false;const deadline=performance.now()+10000;
   for(let calls=0;calls<200&&performance.now()<deadline;calls++){
    if((await metadata.outputDeletions.get(key)).stage==='files_absent'){done=true;break;}

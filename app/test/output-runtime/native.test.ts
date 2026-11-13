@@ -82,3 +82,11 @@ it.each(['read', 'adopt', 'finalize', 'observe', 'attempt', 'output'] as const)(
     await expect(openOutputRuntime({...f.options, dataRoot: root})).rejects.toThrow('Invalid output runtime value');
     await expect(lstat(join(root, 'outputs'))).rejects.toMatchObject({code: 'ENOENT'}); f.dispose();
   });
+
+it('requires retirement wiring before acquiring any native output namespace',async()=>{
+ const root=await directory();const f=fixture();const {fixture:deletionFixture}=await import('../output-deletion-runtime/fixture.js');const deletion=deletionFixture();
+ try{
+  await expect(openOutputRuntime({...f.options,dataRoot:root,deletions:deletion.metadata})).rejects.toThrow('mode');
+  await expect(lstat(join(root,'outputs'))).rejects.toMatchObject({code:'ENOENT'});
+ }finally{f.dispose();}
+});

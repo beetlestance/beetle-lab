@@ -25,3 +25,28 @@ export function deletionFile(input:OutputDeletionFile,key:OutputDeletionFileKey)
  else for(const value of [file.namespaceIdentity,file.preparationIdentity])safe(typeof value==='string'&&/^[a-f0-9]{64}$/.test(value));
  return file;
 }
+
+export function retirementPage(input:OutputDeletionPage):OutputDeletionPage{
+ const page=copy(input,65536);safe(Array.isArray(page.items)&&page.items.length<=32);
+ safe(page.nextCursor===null||typeof page.nextCursor==='string'&&page.nextCursor.length<=256);
+ const ids=new Set<string>();
+ for(const item of page.items){
+  safe(validateApi('WorkspaceScope',item.scope).ok&&validateApi('Uuid',item.id).ok&&validateApi('Uuid',item.runId).ok);
+  retirementSummary(item);
+  count(item.fileCount);count(item.absentCount);safe(item.absentCount===item.fileCount&&!ids.has(item.id));ids.add(item.id);
+ }
+ return page;
+}
+/** Only this explicit known refusal is a safe capacity deferral. */
+export function capacityRefusal(error:unknown):boolean{
+ if(typeof error!=='object'||error===null)return false;
+ return Object.getOwnPropertyDescriptor(error,'code')?.value==='capacity_unavailable';
+}
+export function sameDeletion(actual:OutputDeletionSummary,expected:OutputDeletionSummary):void{
+ for(const key of ['id','runId','kind','fileCount','deletionVersion'] as const)safe(actual[key]===expected[key]);
+ safe(encodeCanonicalJson(actual.scope,512)===encodeCanonicalJson(expected.scope,512));
+}
+
+function retirementSummary(item:OutputDeletionSummary):void{
+ safe(item.stage==='files_absent'&&item.deletionVersion===1&&(item.kind==='source'||item.kind==='absence'));
+}

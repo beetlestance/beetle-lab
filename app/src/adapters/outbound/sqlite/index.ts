@@ -135,17 +135,29 @@ export class Metadata {
     save: (expectedVersion, session) => this.call({kind: 'saveLocalSession', expectedVersion, session}) as ReturnType<LocalSessionStore['save']>,
   };
   readonly outputDeletions: OutputDeletionMetadata = {
-    begin: command => this.call({kind: 'beginOutputDeletion', command}) as ReturnType<OutputDeletionMetadata['begin']>,
-    get: key => this.call({kind: 'getOutputDeletion', key}) as ReturnType<OutputDeletionMetadata['get']>,
-    cleanupAck:key=>this.call({kind:'getOutputCleanupAck',key}) as ReturnType<OutputDeletionMetadata['cleanupAck']>,
-    recordCleanupAck:request=>this.call({kind:'recordOutputCleanupAck',request}) as ReturnType<OutputDeletionMetadata['recordCleanupAck']>,
-    reserveControl: key => this.call({kind:'reserveOutputCleanupControl',key}) as ReturnType<OutputDeletionMetadata['reserveControl']>,
-    retirementRequest: key => this.call({kind: 'getOutputRetirementRequest', key}) as ReturnType<OutputDeletionMetadata['retirementRequest']>,
-    getFile: key => this.call({kind: 'getOutputDeletionFile', key}) as ReturnType<OutputDeletionMetadata['getFile']>,
-    recordPlan: request => this.call({kind: 'recordOutputDeletionPlan', request}) as ReturnType<OutputDeletionMetadata['recordPlan']>,
-    recordAbsence: request => this.call({kind: 'recordOutputDeletionAbsence', request}) as ReturnType<OutputDeletionMetadata['recordAbsence']>,
-    scan: query => this.call({kind: 'scanOutputDeletions', query}) as ReturnType<OutputDeletionMetadata['scan']>,
+    begin: command => this.deletionCall({kind: 'beginOutputDeletion', command}) as ReturnType<OutputDeletionMetadata['begin']>,
+    get: key => this.deletionCall({kind: 'getOutputDeletion', key}) as ReturnType<OutputDeletionMetadata['get']>,
+    cleanupAck:key=>this.deletionCall({kind:'getOutputCleanupAck',key}) as ReturnType<OutputDeletionMetadata['cleanupAck']>,
+    recordCleanupAck:request=>this.deletionCall({kind:'recordOutputCleanupAck',request}) as ReturnType<OutputDeletionMetadata['recordCleanupAck']>,
+    reserveControl: key => this.deletionCall({kind:'reserveOutputCleanupControl',key}) as ReturnType<OutputDeletionMetadata['reserveControl']>,
+    retirementRequest: key => this.deletionCall({kind: 'getOutputRetirementRequest', key}) as ReturnType<OutputDeletionMetadata['retirementRequest']>,
+    getFile: key => this.deletionCall({kind: 'getOutputDeletionFile', key}) as ReturnType<OutputDeletionMetadata['getFile']>,
+    recordPlan: request => this.deletionCall({kind: 'recordOutputDeletionPlan', request}) as ReturnType<OutputDeletionMetadata['recordPlan']>,
+    recordAbsence: request => this.deletionCall({kind: 'recordOutputDeletionAbsence', request}) as ReturnType<OutputDeletionMetadata['recordAbsence']>,
+    scanRetirements:query=>this.deletionCall({kind:'scanOutputRetirements',query}) as ReturnType<OutputDeletionMetadata['scanRetirements']>,
+    scan: query => this.deletionCall({kind: 'scanOutputDeletions', query}) as ReturnType<OutputDeletionMetadata['scan']>,
   };
+  /** Failed replies do not settle the actual metadata carrier. */
+  private async deletionCall(operation:OutputDeletionOperation):Promise<Value>{
+    try{return await this.call(operation);}
+    catch(error){
+      if(this.failed){
+        try{await this.terminate();}
+        catch{return await new Promise<never>(()=>{});}
+      }
+      throw error;
+    }
+  }
   readonly absences: OutputAbsenceStore = {
     read: binding => this.call({ kind: 'absenceRead', binding }) as ReturnType<OutputAbsenceStore['read']>,
     adopt: request => this.call({ kind: 'absenceAdopt', request }) as ReturnType<OutputAbsenceStore['adopt']>,
@@ -334,7 +346,7 @@ export class Metadata {
     if (this.failed) return;
     this.failed = true; this.readyReject(new StorageError(code));
     for (const pending of this.pending.values()) { clearTimeout(pending.timer); pending.reject(new StorageError(code)); }
-    void this.terminate();
+    void this.terminate().catch(()=>{});
   }
   private terminate(): Promise<number> {
     this.terminationPromise ??= this.worker.terminate().then(code => { this.pending.clear(); return code; });

@@ -3,9 +3,9 @@ import type { OutputDeletionSummary, OutputDeletionFile } from '../../src/ports/
 import { finalizationFixture, artifact, uuid, scope } from '../output-finalization/fixture.js';
 import { hash } from '../storage/output-payload-fixtures.js';
 export { uuid, scope } from '../output-finalization/fixture.js';
-export function ready(count = 1) {
+export function ready(count = 1, owner?:NonNullable<Parameters<typeof finalizationFixture>[0]>['owner']) {
   const descriptors = Array.from({length: count}, (_, index) => ({...artifact, artifactId: uuid(1000 + index), relativePath: `artifact-${index}.bin`, bytes: 1}));
-  const f = finalizationFixture({artifacts: descriptors, maximum: 100000}); f.ready();
+  const f = finalizationFixture({artifacts: descriptors, maximum: 100000,...(owner?{owner,storageBytes:4000000}:{})}); f.ready();
   const rows = f.db.prepare('SELECT ordinal,slot_json FROM execution_output_slots ORDER BY ordinal').all();
   const update = f.db.prepare('UPDATE execution_output_slots SET slot_json=? WHERE ordinal=?');
   for (const row of rows) {

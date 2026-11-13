@@ -1,6 +1,6 @@
 # Backend cleanup ACK evidence
 
-Status: source-local immutable metadata ACK; driver/native composition remains pending.
+Status: source-local immutable metadata ACK; [driver](cleanup-driver.md) connected, full native recovery pending.
 Base0868e80. [Contract](../design/lld/backend-retirement-ack.md).
 
 The existing compiled metadata owner reuses actual C4d request derivation and stores

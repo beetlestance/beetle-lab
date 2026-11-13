@@ -7,7 +7,7 @@ import { requireRule } from '../../../../domain/namespaces/index.js';
 import { decodeArtifact } from '../output-custody/index.js';
 import { boundedCopy, sha256 } from '../input-values.js';
 import { closed, hash, natural, scope, uuid } from './values.js';
-const kinds = ['beginOutputDeletion', 'getOutputDeletion', 'getOutputRetirementRequest', 'reserveOutputCleanupControl', 'getOutputCleanupAck', 'recordOutputCleanupAck', 'getOutputDeletionFile', 'recordOutputDeletionPlan', 'recordOutputDeletionAbsence', 'scanOutputDeletions'];
+const kinds = ['beginOutputDeletion', 'getOutputDeletion', 'getOutputRetirementRequest', 'reserveOutputCleanupControl', 'getOutputCleanupAck', 'recordOutputCleanupAck', 'scanOutputRetirements', 'getOutputDeletionFile', 'recordOutputDeletionPlan', 'recordOutputDeletionAbsence', 'scanOutputDeletions'];
 export function deletionOperation(value: unknown): value is OutputDeletionOperation {
   const descriptor = value && typeof value === 'object' ? Object.getOwnPropertyDescriptor(value, 'kind') : undefined;
   return !!descriptor && 'value' in descriptor && kinds.includes(descriptor.value as string);
@@ -38,7 +38,7 @@ function captureWrite(kind: 'recordOutputDeletionPlan' | 'recordOutputDeletionAb
     : {kind: 'recordOutputDeletionPlan', request: {...owned, plan: nativePlan(value.plan) as OutputDeletionRequest}};
 }
 const property: Record<OutputDeletionOperation['kind'], string> = {beginOutputDeletion: 'command', getOutputDeletion: 'key', getOutputRetirementRequest: 'key', reserveOutputCleanupControl: 'key', getOutputCleanupAck:'key', recordOutputCleanupAck:'request', getOutputDeletionFile: 'key',
-  recordOutputDeletionPlan: 'request', recordOutputDeletionAbsence: 'request', scanOutputDeletions: 'query'};
+  recordOutputDeletionPlan: 'request', recordOutputDeletionAbsence: 'request', scanOutputDeletions: 'query', scanOutputRetirements:'query'};
 export function captureDeletionOperation(input: unknown): OutputDeletionOperation {
   const copy = boundedCopy(input, 12288) as OutputDeletionOperation & {messageId?: number}; requireRule(deletionOperation(copy));
   captureEnvelope(copy);
@@ -50,6 +50,7 @@ export function captureDeletionOperation(input: unknown): OutputDeletionOperatio
     case 'getOutputRetirementRequest':
     case 'getOutputDeletion': return {kind: copy.kind, key: key(copy.key)};
     case 'getOutputDeletionFile': return {kind: copy.kind, key: key(copy.key, true) as OutputDeletionFileKey};
+    case 'scanOutputRetirements':
     case 'scanOutputDeletions': return {kind: copy.kind, query: captureScan(copy.query)};
     default: return captureWrite(copy.kind, copy.request);
   }

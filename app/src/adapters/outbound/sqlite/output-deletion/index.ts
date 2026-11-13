@@ -1,3 +1,4 @@
+import { scanRetirements } from './retirement-scan.js';
 import { recordCleanupAck,readCleanupAck } from './acks.js';
 import { reserveCleanupControl } from '../cleanup-control/index.js';
 import type { CleanupCapacity } from '../cleanup-control/index.js';
@@ -42,22 +43,28 @@ export class OutputDeletions {
     const operation = captureDeletionOperation(input);
     return transaction(this.db, () => captureDeletionReply(operation, this.change(operation)));
   }
-  private change(operation: OutputDeletionOperation): OutputDeletionValue {
-    switch (operation.kind) {
+  private change(operation:OutputDeletionOperation):OutputDeletionValue{
+    if(isRead(operation))return this.read(operation);
+    switch(operation.kind){
       case 'reserveOutputCleanupControl': {
         const row=parent(this.db,operation.key);
         reserveCleanupControl(this.db,{runId:row.run_id as string,attemptId:row.attempt_id as string,organizationId:row.organization_id as string,workspaceId:row.workspace_id as string},this.capacity);
         return summary(this.db,operation.key);
       }
-      case 'getOutputCleanupAck': return readCleanupAck(this.db,this.runs,operation.key);
-      case 'recordOutputCleanupAck': return recordCleanupAck(this.db,this.runs,operation.request);
-      case 'getOutputRetirementRequest': return retirementRequest(this.db, this.runs, operation.key);
-      case 'getOutputDeletion': return summary(this.db, operation.key);
-      case 'getOutputDeletionFile': return file(this.db, operation.key);
-      case 'recordOutputDeletionPlan': return this.plan(operation.request);
-      case 'recordOutputDeletionAbsence': return this.absence(operation.request);
-      case 'scanOutputDeletions': return this.scan(operation.query);
-      default: throw new StorageError('invalid_input');
+      case 'recordOutputCleanupAck':return recordCleanupAck(this.db,this.runs,operation.request);
+      case 'recordOutputDeletionPlan':return this.plan(operation.request);
+      case 'recordOutputDeletionAbsence':return this.absence(operation.request);
+      default:throw new StorageError('invalid_input');
+    }
+  }
+  private read(operation:DeletionRead):OutputDeletionValue{
+    switch(operation.kind){
+      case 'getOutputCleanupAck':return readCleanupAck(this.db,this.runs,operation.key);
+      case 'getOutputRetirementRequest':return retirementRequest(this.db,this.runs,operation.key);
+      case 'getOutputDeletion':return summary(this.db,operation.key);
+      case 'getOutputDeletionFile':return file(this.db,operation.key);
+      case 'scanOutputDeletions':return this.scan(operation.query);
+      case 'scanOutputRetirements':return scanRetirements(this.db,operation.query);
     }
   }
   private plan(request: OutputDeletionPlanWrite): OutputDeletionFile {
@@ -98,4 +105,9 @@ export class OutputDeletions {
       scope: {kind: 'workspace', organizationId: row.organization_id as string, workspaceId: row.workspace_id as string}})),
       nextCursor: rows.length > query.limit && last ? cursor(last.sequence as number, query.limit) : null};
   }
+}
+
+type DeletionRead=Extract<OutputDeletionOperation,{kind:'getOutputCleanupAck'|'getOutputRetirementRequest'|'getOutputDeletion'|'getOutputDeletionFile'|'scanOutputDeletions'|'scanOutputRetirements'}>;
+function isRead(operation:OutputDeletionOperation):operation is DeletionRead{
+ return (['getOutputCleanupAck','getOutputRetirementRequest','getOutputDeletion','getOutputDeletionFile','scanOutputDeletions','scanOutputRetirements'] as readonly string[]).includes(operation.kind);
 }

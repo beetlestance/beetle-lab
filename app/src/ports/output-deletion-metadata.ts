@@ -34,7 +34,8 @@ export type OutputDeletionOperation =
   | {readonly kind: 'getOutputDeletionFile'; readonly key: OutputDeletionFileKey}
   | {readonly kind: 'recordOutputDeletionPlan'; readonly request: OutputDeletionPlanWrite}
   | {readonly kind: 'recordOutputDeletionAbsence'; readonly request: OutputDeletionAbsenceWrite}
-  | {readonly kind: 'scanOutputDeletions'; readonly query: OutputDeletionScan};
+  | {readonly kind: 'scanOutputDeletions'; readonly query: OutputDeletionScan}
+  | {readonly kind: 'scanOutputRetirements'; readonly query: OutputDeletionScan};
 export type OutputDeletionValue = OutputCleanupAck | OutputCleanupAckState | OutputRetirementRequest | OutputDeletionSummary | OutputDeletionFile | OutputDeletionPage;
 /** Progress only: preserve producer authority and ALL charges until a separate
  * reviewed retirement/purge/refund owner exists. Private native response input. */
@@ -51,4 +52,6 @@ export interface OutputDeletionMetadata {
   recordPlan(request: OutputDeletionPlanWrite): Promise<OutputDeletionFile>;
   recordAbsence(request: OutputDeletionAbsenceWrite): Promise<OutputDeletionFile>;
   scan(query: OutputDeletionScan): Promise<OutputDeletionPage>;
+  /** Bounded physical candidates; empty eligible pages may still advance cursor. */
+  scanRetirements(query:OutputDeletionScan):Promise<OutputDeletionPage>;
 }

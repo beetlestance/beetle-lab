@@ -2,7 +2,8 @@ import {OutputByteError} from '../../ports/output-bytes.js';
 import type {OutputFileJob} from '../../ports/output-bytes.js';
 import type {OutputDeletionSummary} from '../../ports/output-deletion-metadata.js';
 import type {OutputDeletionRuntime,OutputDeletionRuntimeOptions} from './types.js';
-import {deletionPage} from './values.js';
+import {deletionPage,capacityRefusal,sameDeletion} from './values.js';
+import {Retirements} from './retirements.js';
 import {deletionStep,check} from './step.js';
 export type {OutputDeletionRuntime,OutputDeletionRuntimeOptions,DeletionProgress} from './types.js';
 class Deletions implements OutputDeletionRuntime {
@@ -16,7 +17,9 @@ class Deletions implements OutputDeletionRuntime {
  private cursor:string|undefined;
  private current:{summary:OutputDeletionSummary;ordinal:number}|undefined;
  private native:OutputFileJob<unknown>|undefined;
- constructor(private readonly options:OutputDeletionRuntimeOptions){}
+ private readonly retirements:Retirements|undefined;
+ private retirementTurn=false;
+ constructor(private readonly options:OutputDeletionRuntimeOptions){this.retirements=options.retirement?new Retirements(options.retirement):undefined;}
  start():void{this.turn();}
  private turn():void{
   if(this.abort.signal.aborted)return;this.timer=undefined;
@@ -34,10 +37,20 @@ class Deletions implements OutputDeletionRuntime {
   if(this.abort.signal.aborted)return;
   const context={signal:this.abort.signal,deadline:performance.now()+30000,freeSpaceReserveBytes:this.options.freeSpaceReserveBytes};
   this.deadlineTimer=setTimeout(()=>this.fail(Error('Deletion deadline')),Math.max(0,context.deadline-performance.now()));
+  this.retirementTurn=!this.retirementTurn;
+  if(this.retirementTurn&&this.retirements){await this.retirements.step(context);return;}
+  await this.fileStep(context);
+ }
+ private async fileStep(context:Parameters<typeof check>[0]):Promise<void>{
   if(!this.current){
    const query={limit:1,...(this.cursor?{cursor:this.cursor}:{})};const page=deletionPage(await this.options.metadata.scan(query));
    if(this.abort.signal.aborted)return;check(context);this.cursor=page.nextCursor??undefined;
-   if(!page.items[0])return;this.current={summary:page.items[0],ordinal:0};
+   const candidate=page.items[0];if(!candidate)return;
+   let reserved:OutputDeletionSummary;
+   try{reserved=await this.options.metadata.reserveControl({scope:candidate.scope,id:candidate.id,runId:candidate.runId});}
+   catch(error){if(capacityRefusal(error))return;throw error;}
+   check(context);sameDeletion(reserved,candidate);if(reserved.stage==='files_absent')return;
+   this.current={summary:candidate,ordinal:0};
   }
   const {summary,ordinal}=this.current;this.current.ordinal++;
   if(this.current.ordinal===summary.fileCount)this.current=undefined;
@@ -72,8 +85,14 @@ export function startOutputDeletionRuntime(options:OutputDeletionRuntimeOptions)
  const interval=options.intervalMs??250;
  if(!Number.isSafeInteger(interval)||interval<25||interval>60000)throw Error('Invalid deletion interval');
  if(!Number.isSafeInteger(options.freeSpaceReserveBytes)||options.freeSpaceReserveBytes<0)throw Error('Invalid deletion reserve');
+ if(Boolean(options.fileOnly)===Boolean(options.retirement))throw Error('Explicit deletion mode required');
  const m=options.metadata;const f=options.files;
- const metadata=Object.freeze({scan:m.scan.bind(m),getFile:m.getFile.bind(m),recordPlan:m.recordPlan.bind(m),recordAbsence:m.recordAbsence.bind(m)});
+ const metadata=Object.freeze({reserveControl:m.reserveControl.bind(m),scan:m.scan.bind(m),getFile:m.getFile.bind(m),recordPlan:m.recordPlan.bind(m),recordAbsence:m.recordAbsence.bind(m)});
  const files=Object.freeze({prepareRemoval:f.prepareRemoval.bind(f),remove:f.remove.bind(f)});
- const runtime=new Deletions({...options,metadata,files});runtime.start();return runtime;
+ const runtime=new Deletions({...options,metadata,files,...captureRetirement(options)});runtime.start();return runtime;
+}
+function captureRetirement(options:OutputDeletionRuntimeOptions):Pick<OutputDeletionRuntimeOptions,'retirement'>{
+ const r=options.retirement;if(!r)return {};const rm=r.metadata;
+ return {retirement:Object.freeze({digest:r.digest,gateway:Object.freeze({retireOutput:r.gateway.retireOutput.bind(r.gateway)}),
+  metadata:Object.freeze({scanRetirements:rm.scanRetirements.bind(rm),reserveControl:rm.reserveControl.bind(rm),retirementRequest:rm.retirementRequest.bind(rm),recordCleanupAck:rm.recordCleanupAck.bind(rm)})})};
 }

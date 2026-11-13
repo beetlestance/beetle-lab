@@ -55,7 +55,9 @@ export async function openOutputRuntime(options: OutputRuntimeOptions): Promise<
     if(captured.exports)owner.own(startExportRuntime({...captured.exports,transfers,intervalMs:captured.intervalMs??250,
       onFailure:async error=>{owner.failedChild(error);}}));
     if(captured.deletions)owner.own(startOutputDeletionRuntime({metadata:captured.deletions,files,freeSpaceReserveBytes:captured.freeSpaceReserveBytes,
-      intervalMs:captured.intervalMs??250,onFailure:async error=>{owner.failedChild(error);}}));
+      intervalMs:captured.intervalMs??250,onFailure:async error=>{owner.failedChild(error);},
+      ...(captured.fileOnlyDeletion?{fileOnly:true as const}:{}),
+      ...(captured.retirement?{retirement:{...captured.retirement,digest:(value:string)=>createHash('sha256').update(value).digest('hex')}}:{})}));
     const read = files.read.bind(files);
     const publishedBytes = Object.freeze({read: (...args: Parameters<typeof read>) => {
       if (owner.state().status !== 'running') throw new OutputByteError('closed');
