@@ -1,3 +1,4 @@
+import {BACKEND_CLEANUP_CONTROL_BYTES} from '../../../app/src/ports/cleanup-control.js';
 import assert from 'node:assert/strict';
 import { constants } from 'node:fs';
 import { open } from 'node:fs/promises';
@@ -95,7 +96,9 @@ export async function inspectClosed(f: Fixture, run: Run, result: RunResultSnaps
     assert.equal(receipt.attempt_id, run.activeAttemptId); assert.equal(receipt.run_id, run.id);
     assert.equal(receipt.journal_authority, execution.journal_authority);
     assert.equal(receipt.journal_authority, envelope.manifest.binding.journalAuthority);
-    assert.equal(db.prepare('SELECT charged_bytes FROM installation_storage_usage WHERE id=1').get()!.charged_bytes, charge.charged);
+    const control=db.prepare('SELECT reserved_bytes FROM backend_cleanup_controls WHERE attempt_id=?').get(run.activeAttemptId);
+    assert.equal(control?.reserved_bytes,BACKEND_CLEANUP_CONTROL_BYTES);
+    assert.equal(db.prepare('SELECT charged_bytes FROM installation_storage_usage WHERE id=1').get()!.charged_bytes,charge.charged+BACKEND_CLEANUP_CONTROL_BYTES);
     return { offer: offer.value, receipt, charge, timing: artifacts.timing, artifacts: artifacts.entries, eventCount: events.length };
   } finally { db.close(); }
 }

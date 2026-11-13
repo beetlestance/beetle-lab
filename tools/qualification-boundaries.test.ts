@@ -22,3 +22,13 @@ it('admits only the reviewed standalone export composition entries and rejects p
   expect(boundaryIssues('engines/k6/wrapper/export/index.ts',['../../../../tools/qualification/native-application/export/fixture.js'])).toHaveLength(1);
   expect(boundaryIssues('tools/qualification/unreviewed/runner.ts',['../../../agent/src/collection/output/index.js'])).toHaveLength(1);
 });
+
+it('admits exact retirement composition owners while denying sibling/deep/reverse access',()=>{
+ const owner='tools/qualification/native-application/retirement/smoke.ts';
+ for(const path of ['app/src/adapters/outbound/sqlite/index.js','app/src/application/output-deletion/index.js','app/src/bootstrap/agent-runtime.js','agent/src/staging-namespace/index.js']){
+  expect(boundaryIssues(owner,[`../../../../${path}`])).toEqual([]);
+  expect(boundaryIssues('tools/qualification/native-application/other.ts',[`../../../${path}`])).toHaveLength(1);
+ }
+ expect(boundaryIssues(owner,['../../../../app/src/adapters/outbound/sqlite/output-deletion/acks.js'])).toHaveLength(1);
+ expect(boundaryIssues('app/src/bootstrap/api.ts',['../../../tools/qualification/native-application/retirement/smoke.js'])).toHaveLength(1);
+});

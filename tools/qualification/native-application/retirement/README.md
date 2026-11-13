@@ -1,0 +1,29 @@
+# Manual cleanup recovery check
+
+Run explicitly with current local images and matching compiled API/Journal workers:
+
+```sh
+node --import tsx tools/qualification/native-application/retirement/smoke.ts AGENT_IMAGE ENGINE_IMAGE 200 LOCAL_CONTEXT
+```
+
+Uses the existing task-owned public application fixture and one real k6 execution.
+After closing the public application, reopens the same compiled metadata worker and
+commits a private deletion intent. The existing production runtime performs cleanup.
+No product DELETE endpoint, registry or user installation is involved.
+
+Actual committed intent, file plan, absence and ACK replies are withheld; each worker
+terminates and reopens. A real TCP peer drops the first valid cleaned reply and binds
+the retry digest to the stored ACK. The proxy drains actual request/response/socket
+originals, bounds buffers/slots and fences cancellation/deadline before dispatch.
+
+Acceptance requires all retained charges unchanged, published files absent, actual
+engine/container volume absent, only the installed staging marker retained, one
+readiness/work request and verified task cleanup. Logs/evidence remain in the reported
+private temporary directory. Failures retain their evidence; never infer rollback
+from a missing reply or refund from a timeout.
+
+Source/image/worker identity must be recorded by the coordinator. A qualification
+agent overlay and unchanged reused engine can qualify behavior without proving a new
+production image build. Host backend and Linux agent platforms are reported separately.
+Hard agent crashes, full Linux backend, amd64 and release qualification need separate
+accepted evidence. Focused proxy lifetime tests require ephemeral loopback permission.

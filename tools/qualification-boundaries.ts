@@ -1,7 +1,7 @@
 const owner = 'tools/qualification/native-application/';
 const entrypoints = new Set([
   'app/src/bootstrap/api.js', 'app/src/bootstrap/configuration.js',
-  'app/src/ports/events.js',
+  'app/src/ports/events.js', 'app/src/ports/cleanup-control.js',
   'app/src/ports/run-metrics.js', 'app/src/application/run-live-metrics/index.js',
   'app/src/adapters/outbound/runner/index.js', 'app/src/adapters/outbound/sqlite/execution-binding/index.js',
   'app/test/run-live-metrics/fixtures.js', 'app/test/run-results/fixture.js',
@@ -18,11 +18,18 @@ const entrypoints = new Set([
   'agent/test/admission/fixtures.js',
 ]);
 
+const retirementOwner=owner+'retirement/';
+const retirementEntrypoints=new Set([
+ 'app/src/adapters/outbound/sqlite/index.js','app/src/application/output-deletion/index.js',
+ 'app/src/bootstrap/agent-runtime.js','app/src/ports/output-deletion-metadata.js',
+ 'agent/src/staging-namespace/index.js',
+]);
+
 /** Cross-service qualification composes named entrypoints outside either service.
  * Service implementations cannot consume the qualification owner in reverse.
  */
 export function qualificationBoundary(file: string, resolved: string): boolean | undefined {
   if (resolved.startsWith(owner) && /^(?:app|agent|web|engines)\//.test(file)) return false;
   if (!file.startsWith(owner) || !/^(?:app|agent|web|engines)\//.test(resolved)) return undefined;
-  return entrypoints.has(resolved);
+  return entrypoints.has(resolved)||(file.startsWith(retirementOwner)&&retirementEntrypoints.has(resolved));
 }
