@@ -244,9 +244,11 @@ export class DockerBackend {
     if (reply.status !== 200) return view({ state: 'unknown', reason: 'unavailable' });
     const checked = inspectEvidence(reply.body, plan);
     if (!checked.ok) return view({ state: 'unknown', reason: checked.reason });
+    // Positive container identity fences old404s before asynchronous volume work.
+    const observed = entry ? this.remember(entry, checked.value) : { state: 'unknown' as const, reason: 'overflow' as const };
+    if (observed.state === 'unknown') return view(observed);
     const volumeReason = await this.verifyVolume(entry, context, verifyVolume);
-    if (volumeReason) return view({state: 'unknown', reason: volumeReason});
-    return view(entry ? this.remember(entry, checked.value) : { state: 'unknown', reason: 'overflow' });
+    return view(volumeReason ? { state: 'unknown', reason: volumeReason } : observed);
   }
   private async verifyVolume(entry: Entry | undefined, context: Operation, required: boolean): Promise<FailureReason | undefined> {
     if (!entry?.volume || !required) return undefined;

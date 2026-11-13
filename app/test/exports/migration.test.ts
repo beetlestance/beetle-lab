@@ -17,8 +17,8 @@ it('rolls a late metadata015 collision back to actual schema14 without losing ex
   expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(14);expect(db.prepare('SELECT * FROM settings').all()).toEqual(before);
   expect(db.prepare("SELECT name FROM sqlite_schema WHERE name IN ('execution_orders','export_jobs','export_originals')").all()).toEqual([]);
   expect(db.prepare('SELECT * FROM export_artifacts').all()).toEqual([{canary:'retained'}]);db.exec('DROP TABLE export_artifacts');db.close();
-  db=initialize(path);expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(15);expect(db.prepare('SELECT * FROM settings').all()).toEqual(before);
+  db=initialize(path);expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(20);expect(db.prepare('SELECT * FROM settings').all()).toEqual(before);
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);db.close();
-  db=initialize(path);expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(15);expect(db.prepare('SELECT * FROM settings').all()).toEqual(before);db.close();
+  db=initialize(path);expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(20);expect(db.prepare('SELECT * FROM settings').all()).toEqual(before);db.close();
  }finally{await rm(root,{recursive:true,force:true});}
 });

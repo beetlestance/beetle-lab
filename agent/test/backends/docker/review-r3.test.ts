@@ -1,3 +1,4 @@
+import { liveFixture } from './mailbox-volume-fixtures.js';
 import { describe, expect, it } from 'vitest';
 import { DockerBackend } from '../../../src/backends/docker/index.js';
 import type { DockerReply } from '../../../src/backends/docker/index.js';
@@ -59,6 +60,32 @@ describe('absence observations belong to issue-time runtime identity', () => {
     expect(await backend.inspect(plan, operation())).toMatchObject({ id, state: 'created' });
     expect((await backend.dispatchStartOnce(plan, operation())).outcome).toBe('known');
     expect(docker.mutations().map(call => call.path)).toEqual([`/v1.47/containers/${id}/start`]);
+  });
+  it('retains discovered container identity while volume verification is held and then fails', async () => {
+    const { plan, docker } = liveFixture(); await new DockerBackend(docker).ensureCreated(plan, operation());
+    const backend = new DockerBackend(docker); const absentReply = deferred<DockerReply>();
+    const volumeReply = deferred<DockerReply>(); const absentReached = deferred<void>(); const volumeReached = deferred<void>();
+    let inspections = 0;
+    docker.intercept = input => {
+      if (input.path.endsWith('/json') && ++inspections === 1) { absentReached.resolve(); return absentReply.promise; }
+      if (input.path.startsWith('/v1.47/volumes/')) { volumeReached.resolve(); return volumeReply.promise; }
+      return undefined;
+    };
+    const absent = backend.inspect(plan, operation()); await absentReached.promise;
+    const present = backend.inspect(plan, operation());
+    try {
+      await volumeReached.promise; absentReply.resolve({ ok: true, status: 404, body: null });
+      expect(await absent).toEqual({ state: 'unknown', reason: 'unsafe_state' });
+      volumeReply.resolve({ ok: false, reason: 'unavailable', dispatched: true });
+      expect(await present).toEqual({ state: 'unknown', reason: 'unavailable' });
+      docker.intercept = undefined; docker.state = undefined; const before = docker.mutations();
+      expect(await backend.ensureCreated(plan, operation())).toEqual({ outcome: 'unknown', reason: 'unavailable' });
+      expect(docker.mutations()).toEqual(before);
+    } finally {
+      absentReply.resolve({ ok: true, status: 404, body: null });
+      volumeReply.resolve({ ok: false, reason: 'unavailable', dispatched: true });
+      await Promise.allSettled([absent, present]);
+    }
   });
   it.each(['created', 'exited'])('treats pre-discovery absence as unknown after %s adoption', async state => {
     const plan = makePlan(); const docker = new FakeDocker(plan); const backend = new DockerBackend(docker);

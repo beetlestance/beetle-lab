@@ -4,7 +4,7 @@ The released app still uses `npm start`. The rewrite includes namespace/settings
 suite/input authoring, authenticated run control, agent execution, durable results,
 event replay and sealed metric charts. Native backend/agent/k6 execution has local
 evidence; complete Docker/Compose installation and release qualification remain pending.
-Use Node24 and the locked development dependencies (`npm ci`).
+Use Node24.12+ and the locked development dependencies (`npm ci`).
 
 ## Create a private development installation
 

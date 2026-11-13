@@ -30,7 +30,7 @@ describe('installation fences and bounded intake', () => {
     const e = await f.setup(); let preparations = 0;
     const manager = e.create({ stagerFor() { preparations++; return e.stager; } });
     await e.accepted(manager); await manager.cancel(scope(e.offer));
-    await expect(manager.drive(scope(e.offer), operation())).rejects.toMatchObject({ reason: 'closed' });
+    expect(await manager.drive(scope(e.offer), operation())).toEqual({ kind: 'rejected', reason: 'cancelled' });
     expect(preparations).toBe(0); expect((await manager.inspect(scope(e.offer))).allocation).toBeNull();
   });
   it('cancel overtakes an issued admission and fences its late successful continuation', async () => {

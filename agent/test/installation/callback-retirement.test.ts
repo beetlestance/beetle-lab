@@ -35,6 +35,8 @@ it.each(['output', 'timeout'] as const)('retirement drains the issued %s private
     await (kind === 'output' ? entry.watchClosing : entry.timeoutClosing);
     expect(close).not.toHaveBeenCalled(); expect(entries(manager).size).toBe(1);
     cancellationGate.resolve(); await retirement;
-    expect(close).toHaveBeenCalledTimes(1); expect(entries(manager).size).toBe(0); expect(e.manager.size).toBe(0);
+    expect(close).toHaveBeenCalledTimes(1); expect([...entries(manager).values()]).toEqual([entry]); expect(e.manager.size).toBe(0);
+    // Native close alone cannot evict an original whose durable source/absence is unresolved.
+    expect(await e.owner.admission({ kind: 'reservation', key: scope(e.offer) })).toMatchObject({ status: 'charged' });
   } finally { callbackGate.resolve(); cancellationGate.resolve(); await Promise.allSettled([retirement]); }
 });

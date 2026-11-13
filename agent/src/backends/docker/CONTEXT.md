@@ -26,6 +26,7 @@ TAR permits one bounded PAX header and exact regular mailbox extent. Frame seman
 validation and active-plan authorization belong to the caller, not raw transport.
 ensureCreated never starts. <=64 non-evicted lifetime entries retain exact adopted
 runtime ID/history/claims; each404 is issue-ID-bound and rechecked before use.
+Retain positive identity before async volume verification; its failure cannot let old404s recreate work.
 No same-attempt recreation after observation; dispatchStartOnce is created-only,
 one dispatch; stale404 returns unknown, terminal/removal history wins over late IO.
 Persist start intent first. One exclusive supervisor/journal owns recovery,

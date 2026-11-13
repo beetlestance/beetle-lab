@@ -9,7 +9,7 @@
     "runner/v1/cancellation.schema.json": "4eb66b6d93f50ab262db4f145f9c312660659a9e960b43593c1642ee81fd872d",
     "runner/v1/capabilities.schema.json": "bf9dc6ad9ea6c86cca69b778d8b2f7b7a0dddf4bfa8db035d78faebe276d5663",
     "runner/v1/capacity-observation.schema.json": "3cfb70023a1f32f41e4e8731cd2e1ffda9367f0dd28a62c0dc5bb63ad3d3aa0c",
-    "runner/v1/common.schema.json": "2087962245fd73028f8707cea8a26809b3f94d6b412c8462c1eaf29fc8a32482",
+    "runner/v1/common.schema.json": "ca1c4f76da13f4a6d787d3bd3b7f5c8b9e441afff19fcfc33e70ca535f396659",
     "runner/v1/control-event.schema.json": "f3df74a8aacc8fd8b88b8a1075c349a6635d59bc883a9b50bd0125660e7f96db",
     "runner/v1/engine-manifest.schema.json": "4a47545c5294ef5742de8b42957609bb864512893a492544c723fcf1238ca722",
     "runner/v1/engine-result.schema.json": "5e527c42e7f1c014aec1b4fcb235a3399b63e6039b1bddf2c254ca2698b0d744",

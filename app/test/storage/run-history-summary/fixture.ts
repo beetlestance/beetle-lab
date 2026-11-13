@@ -1,3 +1,4 @@
+import { asSchema19 } from '../clock-reason/legacy019.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { pendingRunHistorySummary } from '@beetle/contracts/api';
 import type { RunHistorySummary } from '@beetle/contracts/api';
@@ -34,6 +35,7 @@ export function asSchema17(db: DatabaseSync): void {
 
 /** Remove only migration019 objects before testing earlier schema upgrades. */
 export function asSchema18(db: DatabaseSync): void {
+  asSchema19(db);
   for (const table of ['folders', 'suites']) {
     for (const event of ['insert', 'rename', 'delete']) db.exec('DROP TRIGGER ' + table + '_history_' + event);
   }

@@ -22,6 +22,11 @@ it.each(Object.entries(OUTPUT_REJECTION_REASONS))('enforces the single rejection
   expect(() => captureOutputAbsence({ ...proof(), admission: { state: 'rejected', reason },
     reason: mapped === 'setup_failed' ? 'artifact_incomplete' : 'setup_failed' })).toThrow();
 });
+it('preserves a durable clock-integrity reason in a never-started closure', () => {
+  const value = captureOutputAbsence({ ...proof(), admission: { state: 'released', disposition: 'never_started' }, reason: 'clock_integrity' });
+  expect(value.reason).toBe('clock_integrity');
+  expect(value.admission).toEqual({ state: 'released', disposition: 'never_started' });
+});
 it.each(['never_started', 'settled'])('accepts released %s facts without synthesizing a source', disposition => {
   expect(captureOutputAbsence({ ...proof(), admission: { state: 'released', disposition }, reason: 'artifact_incomplete' })
     .admission).toEqual({ state: 'released', disposition });

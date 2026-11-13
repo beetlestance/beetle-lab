@@ -668,5 +668,10 @@
     "path": "invalid/run-list-query-order.json",
     "schema": "RunListQuery",
     "valid": false
+  },
+  {
+    "path": "valid/workspace-overview.json",
+    "schema": "WorkspaceOverview",
+    "valid": true
   }
 ]

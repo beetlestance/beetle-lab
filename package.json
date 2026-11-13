@@ -35,7 +35,7 @@
     "smoke:agent:docker": "node --import tsx agent/test/container/smoke-agent.ts"
   },
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=24.12.0"
   },
   "dependencies": {
     "express": "4.22.3",

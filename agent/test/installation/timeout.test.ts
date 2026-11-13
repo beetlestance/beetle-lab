@@ -54,6 +54,8 @@ it('persists clock integrity without inventing a wall timestamp when local monot
   expect(await manager.drive(scope(e.offer), operation())).toMatchObject({ kind: 'released' });
   expect(await e.owner.supervision({ key: scope(e.offer), now: e.time.wall() }))
     .toMatchObject({ cancelReason: 'clock_integrity', clockFenced: true, immediateStop: true });
+  expect(await e.owner.readOutputAbsence(scope(e.offer))).toMatchObject({ reason: 'clock_integrity',
+    admission: { state: 'released', disposition: 'never_started' } });
   expect(e.backend.creates).toBe(0);
 });
 

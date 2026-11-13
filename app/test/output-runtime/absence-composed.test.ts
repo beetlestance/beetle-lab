@@ -17,6 +17,7 @@ import { loopback, send } from '../runner/fixtures.js';
 const storage = storageFixture();
 const cases: {mode: string; admission: OutputAbsence['admission']; reason: OutputAbsence['reason']}[] = [
   {mode: 'rejected', admission: {state: 'rejected', reason: 'unsupported_capability'}, reason: 'unsupported_capability'},
+  {mode: 'clock_integrity', admission: {state: 'released', disposition: 'never_started'}, reason: 'clock_integrity'},
   {mode: 'never_started', admission: {state: 'released', disposition: 'never_started'}, reason: 'setup_failed'},
   {mode: 'cancelled', admission: {state: 'released', disposition: 'never_started'}, reason: 'cancelled'},
   {mode: 'provisional', admission: {state: 'released', disposition: 'settled'}, reason: 'artifact_incomplete'},

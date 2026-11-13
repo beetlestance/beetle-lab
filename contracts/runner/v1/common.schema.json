@@ -32,12 +32,29 @@
     "secretReference": {
       "type": "object",
       "properties": {
-        "name": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/secretToken" },
-        "provider": { "enum": ["env", "mounted"] },
-        "reference": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/secretToken" },
-        "version": { "type": "string", "minLength": 1, "maxLength": 256 }
+        "name": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/secretToken"
+        },
+        "provider": {
+          "enum": [
+            "env",
+            "mounted"
+          ]
+        },
+        "reference": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/secretToken"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
       },
-      "required": ["name", "provider", "reference"],
+      "required": [
+        "name",
+        "provider",
+        "reference"
+      ],
       "additionalProperties": false
     },
     "budget": {
@@ -87,6 +104,7 @@
         "engine_crash",
         "memory_limit",
         "timeout",
+        "clock_integrity",
         "output_limit",
         "cancelled",
         "execution_lost",

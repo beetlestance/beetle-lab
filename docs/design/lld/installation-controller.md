@@ -41,6 +41,12 @@ must match the persisted specDigest and reconcile through tick, never restage or
 redispatch tests. Missing catalogue pins or uncertain dispatches remain charged.
 A released/aborted reservation reports durable status without another launch.
 
+A later drive of a durably cancelled, never-admitted original reports the exact
+rejected/cancelled progress without staging or launching it. This differs from a
+call rejected because the installation itself is closed. Native controller close
+alone cannot evict a still-charged original while source/absence reconciliation is
+unresolved; retain that same entry after all callback/cancellation originals drain.
+
 `cancel` persists clocked intent and fences an owned controller/preparation without
 waiting for the active drive lane to finish. The installation retains any original
 cancel/drain promise. `inspect` returns scoped journal/allocation observations for

@@ -38,6 +38,13 @@ The cancellation.requested control event records generic termination intent; it
 does not classify the run as user cancelled. Final application outcome must use
 verified result, runtime evidence and durable stop cause, never that event alone.
 
+The common runner reason enum includes clock_integrity. A source-free closure and
+backend final projection preserve that actual durable cause; they cannot substitute
+setup_failed to satisfy a stale validator. Generated runner/API registries must
+match. Older strict consumers may reject the added value, so qualify matching
+components together. [Migration020](clock-reason-migration.md) extends the stored
+Run reason constraint; no new route is introduced.
+
 This transaction proves intent, not stop success, irreversibly retired remote
 dispatch, artifact custody, application finalization or safe capacity release.
 Output/free-space scanning, guard freshness and measured stop latency are separate
