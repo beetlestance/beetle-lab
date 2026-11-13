@@ -1,3 +1,4 @@
+import { RetentionControls } from '../retention/index.js';
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
@@ -49,6 +50,7 @@ function SettingsView({ data }: { data: SettingsData }) {
     {'values' in data && <InstallationGroups data={data} open={open} busy={editor.busy} />}
     <Defaults data={data} open={open} busy={editor.busy} />
     <Retention data={data} open={open} busy={editor.busy} />
+    {scope.kind==='workspace'&&<RetentionControls key={`${scope.organizationId}/${scope.workspaceId}`} scope={scope}/>}
   </section>;
 }
 function Defaults({ data, open, busy }: { data: SettingsData; open: Open; busy: boolean }) {
@@ -100,7 +102,7 @@ function Retention({ data, open, busy }: { data: SettingsData; open: Open; busy:
   const actual = 'values' in data ? data.values.retention : data.overrides.retention;
   return <section><h2>Retention policy</h2><p>Effective: {retentionText(data.effective.retention.value)} · source: {data.effective.retention.source.kind}</p>
     <p>Actual {data.scope.kind === 'installation' ? 'value' : 'override'}: {actual ? retentionText(actual) : 'Inherited'}</p>
-    <p>Saving a policy does not delete existing data. Deletion preview and apply are not available here.</p>
+    <p>Saving a policy does not delete existing data. Preview and apply are explicit actions in workspace retention controls.</p>
     <p>Enabled retention requires at least one age, completed-run count or storage rule. Leave unused criteria blank.</p>
     <button disabled={busy} onClick={() => open('Edit retention policy', retentionFields(actual), values => ({ retention: parseRetention(values) }))}>Edit retention policy</button>
     {data.scope.kind !== 'installation' && <button disabled={busy} onClick={() => open('Inherit retention policy', [], () => ({ retention: null }))}>Inherit retention policy</button>}

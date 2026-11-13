@@ -1,3 +1,4 @@
+import { RetentionControls } from '../retention/index.js';
 import { RunLiveMetrics } from './live-metrics/index.js';
 import { RunReads } from './RunReads.js';
 import { RunMetrics } from './metrics/index.js';
@@ -33,6 +34,7 @@ export function RunDetail(scope: RunScope & { runId: string }) {
 }
 function RunSnapshot({ run, scope, runId }: { run: Run; scope: Run['scope']; runId: string }) {
   return <RunReads key={`${scope.organizationId}/${scope.workspaceId}/${runId}/${run.activeAttemptId}`}>
+    {terminal(run)&&run.outcome!=='pending'&&<RetentionControls key={`${runId}/${run.version}`} scope={scope} run={{id:runId,version:run.version}}/>}
     <dl className="run-facts">
       <div><dt>State</dt><dd>{run.state}</dd></div><div><dt>Outcome</dt><dd>{run.outcome}</dd></div>
       <div><dt>Engine validation</dt><dd>{run.validationStatus}</dd></div>

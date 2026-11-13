@@ -133,4 +133,14 @@ settlement-derived credit and explicit acknowledgement. Removed IDs refused furt
 status/Apply/discard; no second credit was inferred. Client cases rejected forged
 identities, duplicates and false completion. Type checks, lint, architecture, docs,
 API generation and backend build passed; independent review found no blocker.
-Parent traversal, provisional UI and composed retention-native qualification remain.
+Provisional workspace settings and terminal Run controls now expose inherited
+policy, immutable preview/continuation, explicit Apply, durable batch recovery,
+settlement-derived progress and explicit acknowledgement. Unknown mutations retain
+one UUID/body for explicit replay; retirement aborts and fences callbacks. Shared
+bounded read admission coordinates panels without increasing worker limits.
+
+327 affected UI/Run/settings cases passed. A test-fixture-only complexity correction
+passed its seven affected cases; web types, lint, architecture, docs and web build
+passed. Independent review found no blocker. Browser visual inspection was unavailable
+because no browser execution tool was exposed; no visual qualification is claimed.
+Parent traversal, driver diagnostics and composed retention-native qualification remain.

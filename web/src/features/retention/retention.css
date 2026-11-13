@@ -1,0 +1,5 @@
+.retention-panel { margin-block: var(--space-6); padding-block: var(--space-4); border-top: var(--border-width) solid var(--border); }
+.retention-panel button { margin: var(--space-1) var(--space-2) var(--space-1) 0; }
+.retention-panel table { width: 100%; border-collapse: collapse; text-align: left; }
+.retention-panel th, .retention-panel td { padding: var(--space-2); border-bottom: var(--border-width) solid var(--border); overflow-wrap: anywhere; }
+.retention-panel ul { padding-left: var(--space-6); overflow-wrap: anywhere; }
