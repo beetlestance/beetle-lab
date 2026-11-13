@@ -25,11 +25,18 @@ const retirementEntrypoints=new Set([
  'agent/src/staging-namespace/index.js','agent/src/cleanup-control/index.js','app/src/bootstrap/output-runtime/index.js',
 ]);
 
+// Linux seed composes production owners only in this reviewed setup entrypoint.
+const seedEntrypoints=new Set(['agent/src/bootstrap/configuration.js','agent/src/staging/index.js',
+ 'agent/src/guard/index.js','agent/src/timeout/index.js','agent/src/observation/index.js','agent/src/admission/index.js']);
+const storageEntrypoints=new Set(['agent/src/journal/schema.js','agent/src/settlement-values/index.js']);
+const exactEntrypoints=new Map([[retirementOwner+'no-task-seed.ts',seedEntrypoints],
+ [retirementOwner+'settlement-storage.ts',storageEntrypoints]]);
+
 /** Cross-service qualification composes named entrypoints outside either service.
  * Service implementations cannot consume the qualification owner in reverse.
  */
 export function qualificationBoundary(file: string, resolved: string): boolean | undefined {
   if (resolved.startsWith(owner) && /^(?:app|agent|web|engines)\//.test(file)) return false;
   if (!file.startsWith(owner) || !/^(?:app|agent|web|engines)\//.test(resolved)) return undefined;
-  return entrypoints.has(resolved)||(file.startsWith(retirementOwner)&&retirementEntrypoints.has(resolved));
+  return Boolean(exactEntrypoints.get(file)?.has(resolved))||entrypoints.has(resolved)||(file.startsWith(retirementOwner)&&retirementEntrypoints.has(resolved));
 }

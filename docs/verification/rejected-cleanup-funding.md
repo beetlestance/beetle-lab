@@ -1,8 +1,8 @@
 # Rejected cleanup funding
 
 Rejected cleanup now composes through Root, authenticated runner HTTP and both bounded
-backend discovery lanes. Full Linux Docker qualification remains pending. Low-quota
-originals stay protected. Admitted abort-before-staging now has its distinct C1 branch.
+backend discovery lanes. Linux arm64 no-task settlement/restart qualification passed
+for rejected and admitted-before-staging originals. Low-quota originals stay protected.
 
 Journal023 adds a separate16384-byte control and O(1) count/bytes/clock singleton.
 Its fixed transaction proves the actual rejected/fresh-cancel closure, exact ACK and
@@ -116,3 +116,35 @@ counter preservation, old025 pending receipt/rootpage/FK/trigger/body/hash/charg
 preservation and prepared/preparing refusal. Types/lint/architecture/docs/build passed;
 independent review found no blocker. Linux Docker qualification remains next. Unknown
 partial staging and old insufficient-quota originals remain protected.
+
+## Native no-task recovery
+
+The reviewed `no-task-smoke.ts` harness passed rejected and admitted modes against
+actual Linux arm64 Docker, authenticated runner HTTP and both compiled workers.
+A bounded proxy captures the backend’s actual immutable Offer without forwarding
+mutations; public cancellation and resumed production delivery finalize absence.
+Rejected setup uses normal cancel-original. Admitted setup explicitly uses a Linux
+helper with actual installation binding, native resource observation, guards and
+Journal policy admission, then aborts before staging. This is not evidence of
+admission through production HTTP. Every cleanup/settlement uses production Root.
+
+Both runs require exact cancelled/inconclusive/cancelled projection, null execution
+result, durable absence deletion admission, zero target requests and no engine/mailbox.
+The actual committed agent reply is dropped, backend debt remains unchanged, and
+agent restart replays the exact settlement. Backend commit reply loss then requires
+worker abort/reopen and the same credit once. Canonical request-bound tombstones
+prove rejected16384 funding with zero C1/hold/disk, or admitted C1196608, hold512 and
+the seeded16777216 output/132713 staging hold. Final replay floors are4096/2560.
+
+Private evidence: `.agent-work/native-no-task/`. Rejected/admitted native commands
+took12.7/13.4 seconds; actual scenario work8.3/11.5 seconds. Scoped proxy/boundary
+tests, types, lint, architecture, docs and both builds passed. Review corrected two
+assertion gaps. A retained initial harness failure wrongly required a nonnull execution
+result for a never-executed cancellation; its expectation was corrected and rerun.
+Qualification uses a source-bound agent overlay and unchanged verified engine; backend
+runs on Darwin. Full Linux backend, amd64 and production-image release remain separate.
+Each capture record retains two GET-forward errors during setup; the helper did not
+record their precise causes. Capture mutation failures and settlement-proxy failures
+were zero. These setup diagnostics are not evidence of absence or successful cleanup;
+all destructive authority comes from the later production proof and stored ACK.
+No user services, registry publication or user targets were involved.

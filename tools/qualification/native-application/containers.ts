@@ -1,3 +1,4 @@
+import { agentContainerArguments } from './agent-container.js';
 import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -25,15 +26,7 @@ if(++counts[key]>${maximumTargetRequests})process.exit(3);r.writeHead(key==='rea
   return agentOrigin(f.docker.run(['port', f.agent, '4312/tcp']));
 }
 async function createAgent(f: Fixture, control: string, configureAgent?: (path:string)=>Promise<void>): Promise<void> {
-  const mounts = ['staging', 'journal', 'inputs', 'config'].flatMap(name => ['--mount',
-    `type=bind,src=${join(f.root, name)},dst=${join(f.root, name)}${['inputs', 'config'].includes(name) ? ',readonly' : ''}`]);
-  f.docker.run(['create', '--pull', 'never', '--name', f.agent, '--label', `dev.beetle.qualification=${f.id}`, '--network', control,
-    '--publish', '127.0.0.1::4312', '--user', f.user, '--group-add', '0', '--read-only', '--cap-drop', 'ALL',
-    '--security-opt', 'no-new-privileges:true', '--cpus', '1', '--memory', '512m', '--pids-limit', '128',
-    '--log-driver', 'local', '--log-opt', 'max-size=1m', '--log-opt', 'max-file=2',
-    '--tmpfs', `/tmp:rw,nosuid,nodev,size=33554432,uid=${f.uid},gid=${f.gid}`, ...mounts,
-    '--mount', 'type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock',
-    '--env', `BEETLE_AGENT_CONFIG_FILE=${f.configPath}`, f.agentImage.Id]);
+  f.docker.run(agentContainerArguments(f,control));
   const actual = f.docker.json<Inspection[]>(['inspect', f.agent])[0]!; assert.equal(actual.Image, f.agentImage.Id);
   await saveConfiguration(f, actual.Image);
   const config = JSON.parse(await readFile(f.configPath, 'utf8')) as { listen: { host: string; port: number } };

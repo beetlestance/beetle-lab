@@ -57,3 +57,14 @@ are required. Failed close remains a failure. The peer's paused-retry exclusion 
 its own focused TCP test; native recovery need not happen to race that path.
 
 Local evidence and platform/branch limits: `docs/verification/native-settlement.md`.
+
+## Never-started recovery
+
+`no-task-smoke.ts rejected AGENT_IMAGE ENGINE_IMAGE 200 LOCAL_CONTEXT` and the same
+command with `admitted` qualify originals without native task creation. The admitted
+image must contain the bundled `no-task-seed.ts` setup helper. Setup captures the actual
+Offer, creates genuine policy admission/abort using Linux native guards, then restores
+the normal entrypoint. It grants no cleanup receipt or refund. Both modes require
+production absence finalization, cleanup, lost settlement replies and permanent replay.
+Exact branch funding is inspected in the bounded canonical durable tombstone.
+See [evidence](../../../../docs/verification/rejected-cleanup-funding.md) for limits.

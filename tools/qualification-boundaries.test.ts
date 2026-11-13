@@ -32,3 +32,12 @@ it('admits exact retirement composition owners while denying sibling/deep/revers
  expect(boundaryIssues(owner,['../../../../app/src/adapters/outbound/sqlite/output-deletion/acks.js'])).toHaveLength(1);
  expect(boundaryIssues('app/src/bootstrap/api.ts',['../../../tools/qualification/native-application/retirement/smoke.js'])).toHaveLength(1);
 });
+
+it('confines native seed and offline settlement checks to exact reviewed tools',()=>{
+ const prefix='tools/qualification/native-application/retirement/';
+ for(const [file,path] of [['no-task-seed.ts','agent/src/observation/index.js'],['settlement-storage.ts','agent/src/settlement-values/index.js']] as const){
+  expect(boundaryIssues(prefix+file,[`../../../../${path}`])).toEqual([]);
+  expect(boundaryIssues(prefix+'other.ts',[`../../../../${path}`])).toHaveLength(1);
+ }
+ expect(boundaryIssues(prefix+'no-task-seed.ts',['../../../../agent/src/journal/admission.ts'])).toHaveLength(1);
+});
