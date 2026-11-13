@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "purpose": "performance",
+  "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "workspaceId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+  "attemptId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+  "journalAuthority": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+  "runId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+  "deletionId": "ffffffff-ffff-4fff-8fff-ffffffffffff",
+  "generation": 1,
+  "intentDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+  "deletionVersion": 1,
+  "retirementVersion": 1,
+  "requestDigest": "39b5031ea89ee2c6196e565842e1622c503c11f4d309cec545900ee3d1426e0e",
+  "state": "cleaned",
+  "namespaceIdentity": "5555555555555555555555555555555555555555555555555555555555555555",
+  "preparationIdentity": "6666666666666666666666666666666666666666666666666666666666666666",
+  "cleanupReceiptDigest": "7777777777777777777777777777777777777777777777777777777777777777"
+}
