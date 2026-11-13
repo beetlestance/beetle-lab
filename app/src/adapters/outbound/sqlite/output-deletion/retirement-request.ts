@@ -1,3 +1,4 @@
+import { requireCleanupControl } from '../cleanup-control/index.js';
 import { captureOutputRetirementRequest } from '@beetle/contracts/output-retirement';
 import type { RetirementRequest as OutputRetirementRequest } from '@beetle/contracts/output-retirement';
 import type { DatabaseSync } from 'node:sqlite';
@@ -11,7 +12,7 @@ import { parent,summary,file } from './rows.js';
 import { captureDeletionReply } from './replies.js';
 /** Read under the existing deletion transaction; no registration or caller proof. */
 export function retirementRequest(db:DatabaseSync,runs:{get(key:RunKey):Run},key:OutputDeletionKey):OutputRetirementRequest{
- const row=parent(db,key);const progress=summary(db,key);
+ const row=parent(db,key); requireCleanupControl(db,{runId:row.run_id as string,attemptId:row.attempt_id as string,organizationId:row.organization_id as string,workspaceId:row.workspace_id as string});const progress=summary(db,key);
  if(progress.kind==='unsent'||progress.stage!=='files_absent')throw new StorageError('conflict');
  const facts=captureFacts(db,runs,{request:{scope:key.scope,runId:progress.runId,requestId:progress.requestId,expectedRunVersion:progress.runVersion}});
  if(!facts.retirement||facts.kind!==progress.kind||facts.closureDigest!==row.closure_digest||facts.run.activeAttemptId!==row.attempt_id

@@ -29,7 +29,7 @@ it.each([0, -1])('enforces exact shared manifest/artifact/event quota at delta %
   else { expect(f.adopt).toThrow(); expect(f.carrier()).toHaveLength(0); }
 });
 it('uses indexed finite upper discovery independent of physical release and cursor installation/lane', () => {
-  const f = fixture();
+  const f = fixture(10000,[],500000);
   const next = f.add(71, 'parallel', 100, 10000); transaction(f.db, () => {reserveAndMark(f.db, next); acknowledge(f.db, next);});
   f.release(f.key);
   const page = f.outputs.execute({kind: 'outputScan', query: {limit: 1}});

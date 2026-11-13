@@ -100,7 +100,10 @@ export class Store {
     this.dispatchClaims = new DispatchClaims(db, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 },bootstrap.exports);
     this.dispatchObservations = new DispatchObservations(db, this.runReads);
     this.localSessions = new LocalSessions(db);
-    this.deletions = new OutputDeletions(db, this.runReads);
+    this.deletions = new OutputDeletions(db, this.runReads,()=>{
+      const pool=this.settings.chain({kind:'installation'}).installation.values.pool;
+      return {allocationBytes:pool.storageBytes,reserveBytes:pool.freeSpaceReserveBytes};
+    });
     this.inputs = new Inputs(db, this.entities, this.settings);
     this.inputReads = new InputReads(db, this.entities);
     this.namespaces = new Namespaces(db, this.entities, this.settings);

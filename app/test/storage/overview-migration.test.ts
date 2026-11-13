@@ -1,3 +1,4 @@
+import { METADATA_SCHEMA_VERSION } from '../../src/adapters/outbound/sqlite/schema.js';
 import {migration002} from '../../src/adapters/outbound/sqlite/migration002.js';
 import {migrate003} from '../../src/adapters/outbound/sqlite/migration003.js';
 import {migration004} from '../../src/adapters/outbound/sqlite/migration004.js';
@@ -36,7 +37,7 @@ it('upgrades genuine source migration15 to16, preserves all tables/data and sele
  const tables=db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all().map(row=>String(row.name));
  const before=tables.map(table=>db.prepare(`SELECT * FROM "${table}"`).all());db.close();const upgraded=initialize(path);
  try{
-  expect(upgraded.prepare('PRAGMA user_version').get()?.user_version).toBe(20);
+  expect(upgraded.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
   expect(tables.map(table=>upgraded.prepare(`SELECT * FROM "${table}"`).all())).toEqual(before);expect(upgraded.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
   const plan=(extra:string)=>upgraded.prepare(`EXPLAIN QUERY PLAN SELECT id,suite_id,revision_id,requested_at,state,outcome FROM runs WHERE organization_id=? AND workspace_id=? ${extra} ORDER BY requested_at DESC,id DESC LIMIT 20`).all(uuid(1),uuid(2)).map(row=>row.detail).join(' ');
   expect(plan('')).toContain('runs_overview_recent');expect(plan("AND state='active'")).toContain('runs_overview_active');
@@ -47,5 +48,5 @@ it('rolls back an index-name collision at schema15 without changing prior data',
  const {path,db}=await prior();db.exec('CREATE INDEX runs_overview_active ON runs(id)');db.close();expect(()=>initialize(path)).toThrow();
  const priorDb=new DatabaseSync(path);expect(priorDb.prepare('PRAGMA user_version').get()?.user_version).toBe(15);
  expect(priorDb.prepare("SELECT name FROM sqlite_master WHERE name='runs_overview_recent'").get()).toBeUndefined();
- priorDb.exec('DROP INDEX runs_overview_active');priorDb.close();const upgraded=initialize(path);expect(upgraded.prepare('PRAGMA user_version').get()?.user_version).toBe(20);upgraded.close();
+ priorDb.exec('DROP INDEX runs_overview_active');priorDb.close();const upgraded=initialize(path);expect(upgraded.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);upgraded.close();
 });

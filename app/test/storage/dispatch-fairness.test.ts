@@ -47,7 +47,7 @@ it('ignores individually impossible isolated work without subtracting active occ
 });
 it('does not establish an isolation barrier for currently storage-blocked originals', () => {
   f.add(70, 'isolated', 100, 1000); const younger = f.add(71);
-  f.policy(values => { values.pool.storageBytes = 68000; });
+  f.policy(values => { values.pool.storageBytes = 68000+65536; });
   expect(f.claims.scan({ lane: 'queued', limit: 32 }).items[0]!.eligibility).toEqual({ kind: 'blocked', reason: 'storage_unavailable' });
   expect(f.claims.claim(younger).kind).toBe('claimed');
 });
@@ -81,9 +81,9 @@ it('retained input allowances share the same current quota and exact storage bou
   const key = f.add();
   f.store.execute({ kind: 'input', command: createInput(90, 10000) });
   const usage = Number(f.db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes);
-  f.policy(values => { values.pool.storageBytes = usage + 67635; });
+  f.policy(values => { values.pool.storageBytes = usage + 67635+65536; });
   expect(f.claims.claim(key)).toEqual({ kind: 'blocked', reason: 'storage_unavailable' });
-  f.policy(values => { values.pool.storageBytes = usage + 67636; });
+  f.policy(values => { values.pool.storageBytes = usage + 67636+65536; });
   expect(f.claims.claim(key).kind).toBe('claimed');
-  expect(f.db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(usage + 65636);
+  expect(f.db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(usage + 65636+65536);
 });

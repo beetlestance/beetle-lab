@@ -41,7 +41,7 @@ it('rejects wrong scope, missing references and contradictory or oversized snaps
 it('bounds charged ownership at64 without charging the65th output', () => {
   const db = initialize(':memory:');
   try {
-    const store = seedFoundation(db);
+    const store = seedFoundation(db,10000000);
     for (let i = 0; i < 64; i++) { const { key } = enqueue(db, store, 1000 + i); transaction(db, () => reserveAndMark(db, key)); }
     const before = db.prepare('SELECT charged_bytes FROM installation_storage_usage').get();
     const { key } = enqueue(db, store, 1064);

@@ -24,6 +24,7 @@ export type OutputDeletionOperation =
   | {readonly kind: 'beginOutputDeletion'; readonly command: OutputDeletionCommand}
   | {readonly kind: 'getOutputDeletion'; readonly key: OutputDeletionKey}
   | {readonly kind: 'getOutputRetirementRequest'; readonly key: OutputDeletionKey}
+  | {readonly kind: 'reserveOutputCleanupControl'; readonly key: OutputDeletionKey}
   | {readonly kind: 'getOutputDeletionFile'; readonly key: OutputDeletionFileKey}
   | {readonly kind: 'recordOutputDeletionPlan'; readonly request: OutputDeletionPlanWrite}
   | {readonly kind: 'recordOutputDeletionAbsence'; readonly request: OutputDeletionAbsenceWrite}
@@ -36,6 +37,8 @@ export interface OutputDeletionMetadata {
   get(key: OutputDeletionKey): Promise<OutputDeletionSummary>;
   /** Exact retained original after all backend file receipts; unsent refuses. */
   retirementRequest(key: OutputDeletionKey): Promise<OutputRetirementRequest>;
+  /** Explicit legacy top-up, before any further destructive work. */
+  reserveControl(key: OutputDeletionKey): Promise<OutputDeletionSummary>;
   getFile(key: OutputDeletionFileKey): Promise<OutputDeletionFile>;
   recordPlan(request: OutputDeletionPlanWrite): Promise<OutputDeletionFile>;
   recordAbsence(request: OutputDeletionAbsenceWrite): Promise<OutputDeletionFile>;

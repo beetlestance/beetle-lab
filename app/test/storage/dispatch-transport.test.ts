@@ -59,7 +59,7 @@ it('owns scan/read/claim/observe through the compiled worker and preserves repla
   try {
     expect(db.prepare('SELECT count(*) n FROM dispatch_outbox').get()?.n).toBe(0);
     expect(db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes)
-      .toBe(original.offer.budget.outputBytes + 65_536);
+      .toBe(original.offer.budget.outputBytes + 131_072);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
   } finally { db.close(); }
   metadata = await fixture.open(path, { ...options(), runtime: null, runs: { profiles: [], pendingLimit: 256 } });

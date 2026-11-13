@@ -59,7 +59,7 @@ it('accepts matched final admission only for execution release and retains outpu
     })).toThrow();
     expect(db.prepare('SELECT snapshot_json FROM execution_records').get()).toEqual(retained);
     expect(db.prepare('SELECT state FROM attempts').get()).toEqual(state);
-    expect(db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(offer.budget.outputBytes + 65536);
+    expect(db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(offer.budget.outputBytes + 131072);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
   } finally { db.close(); }
 });
@@ -93,7 +93,7 @@ it.each(finalProofCases)('retains original final admission $original against $re
     expect(validate('AttemptSnapshot', enriched).ok).toBe(true);
     db.prepare('UPDATE execution_records SET snapshot_json=?').run(JSON.stringify(enriched));
     expect(JSON.parse(String(db.prepare('SELECT snapshot_json FROM execution_records').get()?.snapshot_json))).toEqual(enriched);
-    expect(db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(offer.budget.outputBytes + 65536);
+    expect(db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(offer.budget.outputBytes + 131072);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
   } finally { db.close(); }
 });

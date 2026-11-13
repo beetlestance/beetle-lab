@@ -24,11 +24,11 @@ export function ack(binding: EventBinding, acknowledgedSeq: number) {
 
 const handles = new Set<ReturnType<typeof claimsFixture>>();
 afterEach(() => { for (const f of handles) f.db.close(); handles.clear(); });
-export function eventFixture(output = 10000) {
-  const f = claimsFixture(); handles.add(f);
+export function eventFixture(output = 10000, storageBytes=400000) {
+  const f = claimsFixture(storageBytes); handles.add(f);
   f.policy(values => { values.pool.outputBytes = 100000; values.perRunCeilings.outputBytes = 100000; });
   const runtime = observation(settingsFixture().runtime); runtime.ceilings.pool.outputBytes = 100000;
-  runtime.ceilings.perRun.outputBytes = 100000; runtime.ceilings.pool.storageBytes = 400000;
+  runtime.ceilings.perRun.outputBytes = 100000; runtime.ceilings.pool.storageBytes = storageBytes;
   f.store.execute({ kind: 'runtime', runtime });
   const key = f.add(70, 'parallel', 100, output);
   transaction(f.db, () => { reserveAndMark(f.db, key); acknowledge(f.db, key); });

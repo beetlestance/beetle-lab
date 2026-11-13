@@ -40,7 +40,7 @@ it('recovers a lost committed compiled-worker reply after reopening with exactly
     expect(db.prepare('SELECT count(*) n FROM execution_output_payloads').get()?.n).toBe(1);
     expect(db.prepare('SELECT sum(charged_bytes) bytes FROM attempt_output_allocations').get()?.bytes).toBe(75536);
     expect(db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes)
-      .toBe(75536 - replay.receipt.refundedBytes);
+      .toBe(141072 - replay.receipt.refundedBytes);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
   } finally { db.close(); }
   metadata = await storage.open(path, { runtime: null });

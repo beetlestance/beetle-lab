@@ -1,3 +1,5 @@
+import { reserveCleanupControl } from '../cleanup-control/index.js';
+import type { CleanupCapacity } from '../cleanup-control/index.js';
 import { retirementRequest } from './retirement-request.js';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import type { DatabaseSync } from 'node:sqlite';
@@ -19,11 +21,12 @@ export { deletionOperation, captureDeletionOperation } from './requests.js';
 export { captureDeletionReply, deletionReplyLimit } from './replies.js';
 /** Intent/progress only; existing source, receipt and charge authority is retained. */
 export class OutputDeletions {
-  constructor(private readonly db: DatabaseSync, private readonly runs: {get(key: RunKey): Run}) {}
+  constructor(private readonly db: DatabaseSync, private readonly runs: {get(key: RunKey): Run}, private readonly capacity:()=>CleanupCapacity) {}
   /** Participates in Store's shared receipt-first transaction; never a standalone mutation. */
   begin(input: OutputDeletionCommand): OutputDeletionSummary {
     const command = prepareOutputDeletion(input, sha256); const facts = captureFacts(this.db, this.runs, command); const run = facts.run;
     if (this.db.prepare('SELECT id FROM output_deletion_intents WHERE run_id=?').get(run.id)) throw new StorageError('conflict');
+    reserveCleanupControl(this.db,{runId:run.id,attemptId:run.activeAttemptId,organizationId:run.scope.organizationId,workspaceId:run.scope.workspaceId},this.capacity);
     this.db.prepare(`INSERT INTO output_deletion_intents(id,run_id,attempt_id,organization_id,workspace_id,request_id,run_version,
       deletion_version,version,kind,requested_at,closure_digest,retained_payload_bytes,metadata_bytes,file_count,pending_files)
       VALUES(?,?,?,?,?,?,?,1,1,?,?,?,?,?,?,?)`).run(lower(command.id), run.id, run.activeAttemptId, run.scope.organizationId, run.scope.workspaceId,
@@ -40,6 +43,11 @@ export class OutputDeletions {
   }
   private change(operation: OutputDeletionOperation): OutputDeletionValue {
     switch (operation.kind) {
+      case 'reserveOutputCleanupControl': {
+        const row=parent(this.db,operation.key);
+        reserveCleanupControl(this.db,{runId:row.run_id as string,attemptId:row.attempt_id as string,organizationId:row.organization_id as string,workspaceId:row.workspace_id as string},this.capacity);
+        return summary(this.db,operation.key);
+      }
       case 'getOutputRetirementRequest': return retirementRequest(this.db, this.runs, operation.key);
       case 'getOutputDeletion': return summary(this.db, operation.key);
       case 'getOutputDeletionFile': return file(this.db, operation.key);

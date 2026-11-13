@@ -7,6 +7,7 @@ released application until the rewrite is qualified.
 | --- | --- | --- |
 | Agent execution/effort | [Execution plan](execution/README.md) | Work packages, model routing, locks and context packets |
 | Inspect cleanup implementation progress | [Progress index](verification/output-retirement-progress.md) | Prerequisites, transport evidence and precise remaining cleanup boundaries |
+| Inspect backend cleanup reservation | [Control contract](design/lld/backend-cleanup-control.md), [evidence](verification/backend-cleanup-control.md) | Dedicated policy1 charge before new delivery and explicit legacy top-up; no refund |
 | Plan durable cleanup ACK storage | [Backend ACK proposal](design/lld/backend-retirement-ack.md) | Reservation audit, immutable progress and composed worker/native recovery prerequisites; not implemented |
 | Inspect cleanup runner calls | [Gateway contract](design/lld/retirement-gateway.md), [evidence](verification/retirement-gateway.md) | Shared bounded original HTTP and exact request-bound replies; no scheduler/ACK/refund |
 | Inspect backend cleanup requests | [Request projection](design/lld/backend-retirement-request.md), [evidence](verification/backend-retirement-request.md) | Committed retained original after all file receipts; no dispatch/ACK/refund |

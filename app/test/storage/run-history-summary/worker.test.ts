@@ -1,3 +1,4 @@
+import { METADATA_SCHEMA_VERSION } from '../../../src/adapters/outbound/sqlite/schema.js';
 import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { Worker } from 'node:worker_threads';
@@ -13,7 +14,7 @@ it('binds published scalar facts and preserves charges across actual worker comm
   const jobs = await metadata.historySummaries.scan({ nowMs: Date.now(), limit: 1 }); expect(jobs).toHaveLength(1);
   const job = jobs[0]!; const value = summary(job);
   const pending = await metadata.runs.listRuns({ scope, limit: 1 });
-  expect(pending.summaries[0]).toMatchObject({ availability: 'pending', retainedLogicalBytes: before, metadataAllowanceBytes: 65536 });
+  expect(pending.summaries[0]).toMatchObject({ availability: 'pending', retainedLogicalBytes: before, metadataAllowanceBytes: 131072 });
   for (const changed of [{ ...job, attemptId: uuid(98) }, { ...job, sourceDigest: 'f'.repeat(64) },
     { ...job, scope: { ...scope, workspaceId: uuid(98) } }]) {
     await expect(metadata.historySummaries.commit({ job: changed, summary: value })).rejects.toThrow();
@@ -22,7 +23,7 @@ it('binds published scalar facts and preserves charges across actual worker comm
   expect(await metadata.historySummaries.commit({ job, summary: value })).toEqual(value);
   expect(await metadata.historySummaries.commit({ job, summary: JSON.parse(encodeCanonicalJson(value, 2048)) as typeof value })).toEqual(value);
   const page = await metadata.runs.listRuns({ scope, limit: 1 });
-  expect(page.summaries[0]).toEqual({ ...value, retainedLogicalBytes: before, metadataAllowanceBytes: 65536 });
+  expect(page.summaries[0]).toEqual({ ...value, retainedLogicalBytes: before, metadataAllowanceBytes: 131072 });
   expect(await metadata.historySummaries.scan({ nowMs: Date.now(), limit: 16 })).toEqual([]);
   expect((await metadata.inputs.storage()).chargedBytes).toBe(before);
   await expect(metadata.historySummaries.commit({ job, summary: { ...value, requestCount: 5, requestsPerSecond: 2.5 } })).rejects.toMatchObject({ code: 'conflict' });
@@ -43,7 +44,7 @@ it('migrates retained v17 rows and uses the exact indexed due scan with replay-s
   await storage.close(metadata); const db = new DatabaseSync(path);
   const plan = db.prepare('EXPLAIN QUERY PLAN ' + historyScanSql).all(2000, 16).map(row => row.detail).join(' ');
   expect(plan).toContain('run_history_due'); expect(plan).not.toContain('TEMP B-TREE'); expect(plan).not.toContain('SCAN r');
-  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(20);
+  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]); db.close();
 });
 it('rejects forged or mutable raw SQL projections without changing accounting', () => {

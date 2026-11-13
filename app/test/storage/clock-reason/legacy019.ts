@@ -1,6 +1,8 @@
+import { asSchema20 } from '../cleanup-control/legacy020.js';
 import type { DatabaseSync } from 'node:sqlite';
 /** Synthetic inverse only: make the exact predecessor CHECK before history downgrade. */
 export function asSchema19(db: DatabaseSync): void {
+  asSchema20(db);
   if (db.prepare('PRAGMA user_version').get()?.user_version !== 20
     || db.prepare("SELECT 1 FROM runs WHERE reason='clock_integrity' LIMIT 1").get()) throw new Error('Fixture requires current schema without clock reasons');
   const row = db.prepare("SELECT sql FROM sqlite_schema WHERE type='table' AND name='runs'").get();

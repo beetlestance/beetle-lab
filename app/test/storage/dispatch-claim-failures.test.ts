@@ -94,7 +94,7 @@ it.each(['possible', 'acknowledged'] as const)('fences terminal untracked %s own
   const legacy = f.add(); const fresh = f.add(71);
   makeLegacy(f.db, legacy);
   if (kind === 'possible') {
-    f.db.exec('DROP TRIGGER outbox_requires_reservation');
+    f.db.exec('DROP TRIGGER cleanup_control_delivery; DROP TRIGGER outbox_requires_reservation');
     f.db.prepare("UPDATE dispatch_outbox SET possible_delivery=1,first_delivery_at='2026-11-09T00:00:00Z' WHERE attempt_id=?")
       .run(legacy.attempt.attemptId);
   } else {
@@ -134,6 +134,7 @@ it('retains exactly 64 active original charges and refuses excess or inconsisten
   expect(custody(f.db)).toEqual(before);
 });
 it('refuses a 65th charged recovery row before policy interpretation', () => {
+  f.db.close(); f=claimsFixture(10000000);
   const keys = Array.from({ length: 65 }, (_, n) => f.add(1000 + n * 2));
   f.db.exec('DROP TRIGGER execution_record_insert');
   f.db.exec('BEGIN IMMEDIATE');

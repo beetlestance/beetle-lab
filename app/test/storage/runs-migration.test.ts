@@ -5,7 +5,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { DatabaseSync } from 'node:sqlite';
-import { initialize, migration001 } from '../../src/adapters/outbound/sqlite/schema.js';
+import { initialize, migration001, METADATA_SCHEMA_VERSION } from '../../src/adapters/outbound/sqlite/schema.js';
 import { migration002 } from '../../src/adapters/outbound/sqlite/migration002.js';
 import { migrate003 } from '../../src/adapters/outbound/sqlite/migration003.js';
 import { Store } from '../../src/adapters/outbound/sqlite/store.js';
@@ -16,8 +16,10 @@ import { runCommand, runOptions } from './runs-fixture.js';
 let root = '';
 beforeEach(async () => { root = await mkdtemp(join(tmpdir(), 'beetle-run-migration-')); });
 afterEach(async () => { await rm(root, { recursive: true, force: true }); });
-function seed(db: DatabaseSync): Store {
-  const store = new Store(db, { installation: settingsFixture().chain.installation, runtime: observation(), ...runOptions() });
+function seed(db: DatabaseSync, storageBytes?:number): Store {
+  const installation=settingsFixture().chain.installation;if(storageBytes!==undefined)installation.values.pool.storageBytes=storageBytes;
+  const runtime=observation();runtime.ceilings.pool.storageBytes=Math.max(runtime.ceilings.pool.storageBytes,installation.values.pool.storageBytes);
+  const store = new Store(db, { installation, runtime, ...runOptions() });
   store.execute({ kind: 'namespace', command: command({ kind: 'createOrganization', id: uuid(1), request: {
     scope: { kind: 'installation' }, requestId: requestId(), name: 'Synthetic', slug: 'synthetic' } }) });
   store.execute({ kind: 'namespace', command: command({ kind: 'createWorkspace', id: uuid(2), rootFolderId: uuid(3), request: {
@@ -35,7 +37,7 @@ it('upgrades3 without changing prior namespace/settings/revision/receipt data an
   const path = join(root, 'upgrade.sqlite'); let db = prior(path); seed(db);
   const tables = ['organizations', 'workspaces', 'folders', 'settings', 'suites', 'suite_revisions', 'receipts'];
   const before = tables.map(table => db.prepare(`SELECT * FROM ${table}`).all()); db.close(); db = initialize(path);
-  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
+  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
   expect(tables.map(table => db.prepare(`SELECT * FROM ${table}`).all())).toEqual(before);
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]); db.close(); db = initialize(path);
   expect(db.prepare('SELECT count(*) AS n FROM runs').get()?.n).toBe(0); db.close();
@@ -52,7 +54,7 @@ it('rolls back late migration004 failure and preserves the prior schema/data bef
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]); db.close();
 });
 it('enforces active-attempt ownership, immutable intent and monotonic possible-delivery evidence', () => {
-  const db = initialize(join(root, 'ownership.sqlite')); const store = seed(db);
+  const db = initialize(join(root, 'ownership.sqlite')); const store = seed(db,200000);
   store.execute({ kind: 'run', command: runCommand(uuid(60), 70) }); store.execute({ kind: 'run', command: runCommand(uuid(60), 71) });
   expect(() => db.prepare('UPDATE runs SET active_attempt_id=? WHERE id=?').run(uuid(171), uuid(70))).toThrow();
   expect(() => db.prepare("UPDATE runs SET state='cancelled',outcome='inconclusive',cancellation_requested=1,reason=NULL WHERE id=?").run(uuid(70))).toThrow();
@@ -71,15 +73,15 @@ it('enforces active-attempt ownership, immutable intent and monotonic possible-d
 });
 it('rejects future schema without changing retained data', () => {
   const path = join(root, 'future.sqlite'); let db = new DatabaseSync(path);
-  db.exec("PRAGMA user_version=12; CREATE TABLE canary(value TEXT); INSERT INTO canary VALUES('synthetic');"); db.close();
+  db.exec(`PRAGMA user_version=${METADATA_SCHEMA_VERSION+1}; CREATE TABLE canary(value TEXT); INSERT INTO canary VALUES('synthetic');`); db.close();
   expect(() => initialize(path)).toThrow(); db = new DatabaseSync(path);
-  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(12);
+  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION+1);
   expect(db.prepare('SELECT * FROM canary').get()).toEqual({ value: 'synthetic' }); db.close();
 });
 it('retains possible-delivery evidence against deletion before an acknowledged generation', () => {
   const db = initialize(join(root, 'delete-fence.sqlite'));
   try {
-    const store = seed(db); store.execute({ kind: 'run', command: runCommand(uuid(60), 70) });
+    const store = seed(db,200000); store.execute({ kind: 'run', command: runCommand(uuid(60), 70) });
     const digest = String(db.prepare('SELECT intent_digest FROM attempts WHERE id=?').get(uuid(170))!.intent_digest);
     const key = { runId: uuid(70), attempt: { attemptId: uuid(170), organizationId: uuid(1), workspaceId: uuid(2), intentDigest: digest, generation: 1 as const } };
     transaction(db, () => reserveAndMark(db, key));

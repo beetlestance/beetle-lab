@@ -18,7 +18,7 @@ it.each(missingProof)('keeps intent pending without authoritative unsent proof: 
     case 'generation':
       f.db.exec('DROP TRIGGER attempts_owned_ack; UPDATE attempts SET generation=1'); break;
     case 'possible':
-      f.db.exec(`DROP TRIGGER outbox_requires_reservation;
+      f.db.exec(`DROP TRIGGER cleanup_control_delivery; DROP TRIGGER outbox_requires_reservation;
         UPDATE dispatch_outbox SET possible_delivery=1,first_delivery_at='2026-11-09T00:00:00Z'`); break;
     case 'attempt_marker':
       f.db.exec('DROP TRIGGER attempts_summary_marker; UPDATE attempts SET execution_intent_id=NULL'); break;

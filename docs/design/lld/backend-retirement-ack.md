@@ -35,7 +35,8 @@ Keep one projection authority, with shared/frozen definitions where SQL guards n
 
 ## Control reservation prerequisite
 
-A proposed canonical receipt allowance is4096 body bytes plus512 logical row bytes,
+The [dedicated cleanup reservation](backend-cleanup-control.md) owns the proposed
+receipt cell of4096 body bytes plus512 logical row bytes,
 with one cell per original. This is a proposed bound, not a measured SQLite/WAL quota.
 Before implementation, identify and review the actual reservation owner, immutable
 allowance and admission point for these bytes. Existing retained65,536-byte metadata

@@ -1,3 +1,4 @@
+import { METADATA_SCHEMA_VERSION } from '../../src/adapters/outbound/sqlite/schema.js';
 import { expect, it } from 'vitest';
 import { fixture, artifact } from './output-custody-fixtures.js';
 import { artifactsFixture, stageIdentity, writerId } from './output-artifacts-fixtures.js';
@@ -44,7 +45,7 @@ it('native guards permit exactly the four transitions and return mutable slots',
   f.update({...slot, v: 4, p: 'publishing'}); slot = f.raw();
   f.update({...slot, v: 5, p: 'published', i: 'f'.repeat(64), w: null});
   expect(f.outputs.execute({kind: 'outputLoad', binding: f.binding})).toMatchObject({version: 1, artifacts: [{version: 5, phase: 'published'}]});
-  expect(f.db.prepare('PRAGMA user_version').get()?.user_version).toBe(20);
+  expect(f.db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
 });
 it('retains native initial slot, token uniqueness and source immutability guards after migration010', () => {
   const f = fixture(10000, [artifact, {...artifact, artifactId: writerId}]); f.adopt();

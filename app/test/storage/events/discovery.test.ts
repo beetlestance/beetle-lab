@@ -4,7 +4,7 @@ import { eventFixture } from './fixtures.js';
 import { acknowledge, reserveAndMark } from '../execution-foundation-fixtures.js';
 import { transaction } from '../../../src/adapters/outbound/sqlite/schema.js';
 it('uses bounded indexed scalar scans, retains released originals and finishes its captured upper pass', () => {
-  const f = eventFixture();
+  const f = eventFixture(10000,10000000);
   function add(id: number) {
     const key = f.add(id, 'parallel', 100, 100);
     transaction(f.db, () => { reserveAndMark(f.db, key); acknowledge(f.db, key); });

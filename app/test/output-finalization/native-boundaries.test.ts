@@ -62,6 +62,6 @@ it('rejects unsafe accounting, missing/extra slots and corrupt publication ident
   expect(() => corrupt.finalize()).toThrow();
   for (const value of [missing, extra, corrupt]) {
     expect(value.db.prepare('SELECT count(*) n FROM execution_output_finalizations').get()?.n).toBe(0);
-    expect(value.usage()).toBe(75536);
+    expect(value.usage()).toBe(141072);
   }
 });

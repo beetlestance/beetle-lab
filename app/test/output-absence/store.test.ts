@@ -13,7 +13,7 @@ it('retains actual provisional result C+R, credits once and keeps original alloc
   const command = f.command(); const reply = f.finalize();
   expect(reply).toMatchObject({ kind: 'finalized', receipt: { retainedPayloadBytes: bytes, refundedBytes: 10000 - bytes,
     state: 'errored', outcome: 'inconclusive', validationStatus: 'pending', reason: 'artifact_incomplete' } });
-  expect(f.usage()).toBe(65536 + bytes); expect(f.usage()).toBe(before - (10000 - bytes));
+  expect(f.usage()).toBe(131072 + bytes); expect(f.usage()).toBe(before - (10000 - bytes));
   expect(f.db.prepare('SELECT * FROM attempt_output_allocations').get()).toEqual(allocation);
   expect(f.db.prepare('SELECT canonical_json FROM execution_output_payloads').get()?.canonical_json).toBe(encodeCanonicalJson(f.value, 65536));
   expect(f.absences.execute({ kind: 'absenceFinalize', request: { ...command, expectedRunVersion: 1 } })).toEqual(reply);

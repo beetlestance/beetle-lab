@@ -13,8 +13,9 @@ triggers. Add one attempt_output_allocations row per claimed original. No second
 usage counter and no subtraction of the same reservation twice. Atomic reserve and
 input creation serialize in the same immediate worker transaction owner.
 
-The initial charge is immutable Offer.budget.outputBytes plus 65536 bytes of output
-metadata allowance. Charge the declared maximum before possible delivery. Check safe
+The output allocation charge remains immutable Offer.budget.outputBytes plus65536
+bytes of output metadata allowance. New performance claims additionally reserve the
+separate [cleanup control allowance](backend-cleanup-control.md) of65536 before delivery. Charge the declared maximum before possible delivery. Check safe
 arithmetic and current usage + new charge +effective reserve <= effective allocation.
 Effective allocation is min(current installation storageBytes, fresh source storage
 ceiling); reserve is max(their freeSpaceReserveBytes). Use one shared storage-fit arithmetic owner

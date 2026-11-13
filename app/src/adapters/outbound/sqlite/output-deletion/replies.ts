@@ -42,13 +42,13 @@ function bindFile(value: OutputDeletionFile, key: OutputDeletionFileKey): void {
 export function deletionReplyLimit(operation: OutputDeletionOperation): number {
   if (operation.kind === 'getOutputRetirementRequest') return OUTPUT_RETIREMENT_REQUEST_BYTES;
   if (operation.kind === 'scanOutputDeletions') return 65536;
-  return ['beginOutputDeletion', 'getOutputDeletion'].includes(operation.kind) ? 4096 : 8192;
+  return ['beginOutputDeletion', 'getOutputDeletion', 'reserveOutputCleanupControl'].includes(operation.kind) ? 4096 : 8192;
 }
 export function captureDeletionReply(operation: OutputDeletionOperation, input: unknown): OutputDeletionValue {
   const copy = boundedCopy(input, deletionReplyLimit(operation));
   if (operation.kind === 'getOutputRetirementRequest') return retirementReply(operation.key, copy);
   if (operation.kind === 'scanOutputDeletions') return pageReply(operation, copy);
-  if (operation.kind === 'beginOutputDeletion' || operation.kind === 'getOutputDeletion') return summaryReply(operation, copy);
+  if (operation.kind === 'beginOutputDeletion' || operation.kind === 'getOutputDeletion' || operation.kind === 'reserveOutputCleanupControl') return summaryReply(operation, copy);
   const value = file(copy); bindFile(value, operation.kind === 'getOutputDeletionFile' ? operation.key : operation.request.key);
   if (operation.kind === 'recordOutputDeletionPlan') {requireRule(value.phase !== 'pending_preparation'); bindPlan(value, operation.request.plan);}
   if (operation.kind === 'recordOutputDeletionAbsence') {requireRule(value.phase === 'absent'); bindPlan(value, operation.request.receipt);}
@@ -62,10 +62,10 @@ function bindPlan(value: OutputDeletionFile, expected: {record: OutputDeletionFi
   requireRule(encodeCanonicalJson(actual, 8192) === encodeCanonicalJson(plan, 8192));
 }
 
-function summaryReply(operation: Extract<OutputDeletionOperation, {kind: 'beginOutputDeletion' | 'getOutputDeletion'}>, input: unknown): OutputDeletionSummary {
+function summaryReply(operation: Extract<OutputDeletionOperation, {kind: 'beginOutputDeletion' | 'getOutputDeletion' | 'reserveOutputCleanupControl'}>, input: unknown): OutputDeletionSummary {
   const value = summary(input); const key = operation.kind === 'beginOutputDeletion' ? operation.command.request : operation.key;
   requireRule(value.runId === uuid(key.runId) && value.scope.organizationId === scope(key.scope).organizationId && value.scope.workspaceId === scope(key.scope).workspaceId);
-  if (operation.kind === 'getOutputDeletion') requireRule(value.id === operation.key.id);
+  if (operation.kind !== 'beginOutputDeletion') requireRule(value.id === operation.key.id);
   else requireRule(value.requestId === operation.command.request.requestId.toLowerCase() && value.runVersion === operation.command.request.expectedRunVersion);
   return value;
 }

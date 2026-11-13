@@ -12,6 +12,7 @@ owns remaining work; [retirement contract](../design/lld/output-retirement.md) o
 | C3 bounded native ownership and inventory | [Custody](native-custody.md), [inventory](task-inventory.md) | Observation alone grants no unlink authority |
 | C3 immutable native plan and recoverable steps | [Plan](cleanup-plan-store.md), [removal](native-removal.md) | Partial/unknown outcomes stay charged |
 | C3 trusted durable native receipt | [Receipt](native-receipt.md) | Raw rows/counters do not prove IO |
+| C4 dedicated backend control reservation | [Control](backend-cleanup-control.md) | ACK/settlement remain separate; legacy top-up is explicit |
 | C4 exact wire values and local pipeline | [Wire](retirement-wire.md), [pipeline](retirement-pipeline.md) | No backend ACK or settlement |
 | C4 authenticated runner endpoint | [Transport](retirement-transport.md) | Real TCP uses synthetic Docker observations |
 | C4 committed backend request | [Projection](backend-retirement-request.md) | Read-only; no dispatch or ACK |

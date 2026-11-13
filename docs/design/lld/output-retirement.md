@@ -136,12 +136,16 @@ a new original. Full retained payload/spool must not make safe cleanup impossibl
 Charge actual metadata within that reservation; never enlarge quota on failure.
 Existing originals without a trustworthy reservation need an explicit conservative
 upgrade path, not guessed zero debt or an invented native plan. Admission changes
-must cover performance and export purpose without granting export cleanup authority.
+on the agent must cover performance and export purpose without granting export
+cleanup authority. The additional [backend control reservation](backend-cleanup-control.md)
+is performance-Run-only; standalone-export backend cleanup capacity remains unqualified.
 
 Persist the actual native receipt atomically with cleaned status. A lost COMMIT
 reply is recovered by the same immutable key. Keep the receipt and original identity
-available across backend retries/restart. Phase A preserves all disk holds, counters,
-source/absence/delivery metadata, events and replay authority. It performs no refund.
+available across backend retries/restart. Phase A preserves existing disk holds,
+source/absence/delivery metadata, events and replay authority, and never decrements
+existing charged components. Separately admitted backend control may increase usage
+without increasing quota ceilings. It performs no refund.
 
 ## Phase B: separate final settlement
 

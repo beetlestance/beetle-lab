@@ -29,3 +29,8 @@ Compose](compose-first-boot.md) are now locally verified, including the default
 offline profile. Published pull-install/release qualification remains.
 Automatic loopback browser sessions and optional CLI connect are implemented;
 packaged browser/image qualification remains. No service was redeployed by this audit.
+
+A source-bound backend accounting check reproduced27 pre-existing migration-fixture
+failures atba69e40. Two current-version expectations were repaired alongside the new
+policy;25 unrelated failures remain recorded in [control evidence](backend-cleanup-control.md).
+Local component passes do not establish a green full suite or R4 acceptance.

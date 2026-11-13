@@ -26,7 +26,11 @@ measurementSourceTimeMs and existing RunMetricCoverage. httpP95 reuses
 RunMetricPercentile, retaining histogram estimate/interval/scale, never an exact
 percentile claim. Ready can contain null fields when an individual metric is absent.
 Non-ready summaries have null metric/source fields. Logical storage facts remain
-independently observable. Published bytes require a verified published catalogue.
+independently observable. Retained logical bytes include the separately charged
+backend cleanup reserve; metadataAllowanceBytes sums output metadata and any charged
+cleanup control allowance. An unreserved legacy original has no charged cleanup
+allowance; this does not establish zero cleanup debt or cleanup permission.
+Published bytes require a verified published catalogue.
 
 testDurationMs is k6's measured state.testRunDurationMs ([native summary](https://grafana.com/docs/k6/latest/results-output/end-of-test/custom-summary/)), collected by the existing
 sole summary collector. Label it k6 test duration, not requested-to-stop, configured

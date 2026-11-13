@@ -48,7 +48,7 @@ it('carries all five methods through the compiled worker; snapshot sequence neve
   const db = new DatabaseSync(path);
   try {
     expect(db.prepare('SELECT count(*) n,sum(charged_bytes) bytes FROM run_events').get()).toMatchObject({ n: 100 });
-    expect(db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(165536);
+    expect(db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(231072);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
   } finally { db.close(); }
 });

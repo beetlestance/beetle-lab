@@ -16,10 +16,10 @@ import { request } from './events/fixtures.js';
 import { observation, settingsFixture } from './fixture.js';
 const handles = new Set<ReturnType<typeof claimsFixture>>();
 afterEach(() => { for (const f of handles) f.db.close(); handles.clear(); });
-function foundation(maximum: number, ack: boolean) {
-  const f = claimsFixture(); handles.add(f);
+function foundation(maximum: number, ack: boolean, storageBytes:number) {
+  const f = claimsFixture(storageBytes); handles.add(f);
   f.policy(values => { values.pool.outputBytes = 100000; values.perRunCeilings.outputBytes = 100000; });
-  const runtime = observation(settingsFixture().runtime); runtime.ceilings.pool.outputBytes = 100000; runtime.ceilings.perRun.outputBytes = 100000; runtime.ceilings.pool.storageBytes = 400000;
+  const runtime = observation(settingsFixture().runtime); runtime.ceilings.pool.outputBytes = 100000; runtime.ceilings.perRun.outputBytes = 100000; runtime.ceilings.pool.storageBytes = storageBytes;
   f.store.execute({ kind: 'runtime', runtime });
   const key = f.add(70, 'parallel', 100, maximum);
   transaction(f.db, () => { reserveAndMark(f.db, key); if (ack) acknowledge(f.db, key); });
@@ -37,8 +37,8 @@ import { snapshotFor } from './execution-foundation-fixtures.js';
 import { result } from '../domain/run-observation-fixtures.js';
 export const hash = (text: string): string => createHash('sha256').update(text).digest('hex');
 export const json = (value: unknown): string => encodeCanonicalJson(value, 73_728);
-export function payloadFixture(maximum = 10000, ack = true) {
-  const f = foundation(maximum, ack);
+export function payloadFixture(maximum = 10000, ack = true, storageBytes=400000) {
+  const f = foundation(maximum, ack, storageBytes);
   const observations = new DispatchObservations(f.db, new RunReads(f.db, new Suites(f.db, new Entities(f.db))));
   const { seal, ...body } = { ...result(), ...f.key.attempt, artifacts: [] }; const { intentDigest, ...scoped } = body; void intentDigest;
   const sealed = sealEngineResult(scoped, seal.sealedAt, hash); if (!sealed.ok) throw new Error('Invalid synthetic result');

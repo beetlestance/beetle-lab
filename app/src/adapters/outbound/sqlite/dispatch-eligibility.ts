@@ -1,3 +1,4 @@
+import { BACKEND_CLEANUP_CONTROL_BYTES } from '../../../ports/cleanup-control.js';
 import type {ExecutionResourceFact} from '../../../ports/execution-resources.js';
 import type {ExportConfiguration} from '../../../ports/exports.js';
 import {chargedExportResources,pendingExportResources} from './export-jobs/resources.js';
@@ -24,7 +25,7 @@ function safe(value: number): number {
 }
 function checkedCosts(row: ExecutionResourceFact): void {
   for (const key of [...costs, 'timeout_ms'] as const) if (safe(row[key]) === 0) throw new StorageError('unavailable');
-  safe(row.output_bytes + 65536);
+  safe(row.output_bytes + 65536 + BACKEND_CLEANUP_CONTROL_BYTES);
   if (!['parallel', 'isolated'].includes(row.mode)) throw new StorageError('unavailable');
 }
 /** Single policy owner for both advisory discovery and immediate authorization. */
@@ -71,7 +72,7 @@ export class DispatchEligibilityOwner {
     }
     if (costs.slice(0, 4).some(key => row[key] > this.pool(key))) return blocked('budget_unavailable');
     if (row.staging_bytes > Math.min(runtime.execution.stagingBytes, runtime.execution.perRunStagingBytes)) return blocked('staging_unavailable');
-    if (this.storage === null || !storageFits({ chargedBytes: this.usage, requestedBytes: row.storage_bytes ?? row.output_bytes + 65536,
+    if (this.storage === null || !storageFits({ chargedBytes: this.usage, requestedBytes: row.storage_bytes ?? row.output_bytes + 65536 + BACKEND_CLEANUP_CONTROL_BYTES,
       ...this.storage })) return blocked('storage_unavailable');
     return { kind: 'ready' };
   }

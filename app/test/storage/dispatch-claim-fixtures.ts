@@ -13,13 +13,13 @@ import { seedFoundation, enqueue, snapshotFor } from './execution-foundation-fix
 import { runCommand, runOptions, runRequest } from './runs-fixture.js';
 import { observation, settingsFixture, uuid, command, requestId } from './fixture.js';
 
-export function claimsFixture() {
+export function claimsFixture(storageBytes=400000) {
   const db = initialize(':memory:');
-  const store = seedFoundation(db);
+  const store = seedFoundation(db,storageBytes);
   const installation = settingsFixture().chain.installation;
-  installation.values.pool.storageBytes = 200000;
+  installation.values.pool.storageBytes = storageBytes;
   const runtime = observation(settingsFixture().runtime);
-  runtime.ceilings.pool.storageBytes = 400000;
+  runtime.ceilings.pool.storageBytes = storageBytes;
   const settings = new Settings(db, { installation, runtime });
   const config = runOptions(4096).runs!;
   const claims = new DispatchClaims(db, settings, config);

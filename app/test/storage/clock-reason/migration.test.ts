@@ -1,3 +1,4 @@
+import { METADATA_SCHEMA_VERSION } from '../../../src/adapters/outbound/sqlite/schema.js';
 import { HistorySummaries } from '../../../src/adapters/outbound/sqlite/run-history/index.js';
 import { asSchema19 } from './legacy019.js';
 import { published, summary } from '../run-history-summary/fixture.js';
@@ -28,7 +29,7 @@ it('upgrades real schema19 without touching rows, root pages, indexes, triggers,
   } finally { e.db.close(); }
   const reopened = initialize(path);
   try {
-    expect(reopened.prepare('PRAGMA user_version').get()?.user_version).toBe(20); expect(rows(reopened)).toEqual(before);
+    expect(reopened.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION); expect(rows(reopened).filter(row=>row.name!=='backend_cleanup_controls')).toEqual(before); expect(reopened.prepare('SELECT count(*) n FROM backend_cleanup_controls').get()?.n).toBe(0);
     protectedConnection(reopened); reopened.prepare("UPDATE runs SET reason='clock_integrity'").run();
     expect(reopened.prepare('SELECT reason FROM runs').get()?.reason).toBe('clock_integrity');
     expect(() => reopened.exec("UPDATE runs SET reason='invented_reason'")).toThrow();
@@ -47,7 +48,7 @@ it('rolls a late deferred COMMIT failure back to exact schema19 and rows with pr
   const reopened = new DatabaseSync(path, { defensive: true });
   try { expect(graph(reopened)).toEqual(schema); expect(rows(reopened)).toEqual(before); protectedConnection(reopened); }
   finally { reopened.close(); }
-  const retried = initialize(path); try { expect(retried.prepare('PRAGMA user_version').get()?.user_version).toBe(20); expect(rows(retried)).toEqual(before); }
+  const retried = initialize(path); try { expect(retried.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION); expect(rows(retried).filter(row=>row.name!=='backend_cleanup_controls')).toEqual(before); expect(retried.prepare('SELECT count(*) n FROM backend_cleanup_controls').get()?.n).toBe(0); }
   finally { retried.close(); }
 });
 it('rejects unexpected CHECK spelling before entering the privileged edit window', () => {

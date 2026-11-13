@@ -1,3 +1,4 @@
+import { requireCleanupControl } from '../cleanup-control/index.js';
 import type { DatabaseSync, SQLOutputValue } from 'node:sqlite';
 import type { OutputDeletionSummary, OutputDeletionFile, OutputDeletionKey, OutputDeletionFileKey } from '../../../../ports/output-deletion-metadata.js';
 import { loadOutput } from '../output-custody/index.js';
@@ -21,7 +22,7 @@ export function summary(db: DatabaseSync, key: OutputDeletionKey): OutputDeletio
     retainedPayloadBytes: row.retained_payload_bytes as number, metadataBytes: row.metadata_bytes as number, requestedAt: row.requested_at as string};
 }
 export function file(db: DatabaseSync, key: OutputDeletionFileKey): OutputDeletionFile {
-  const intent = parent(db, key); const row = db.prepare('SELECT * FROM output_deletion_files WHERE deletion_id=? AND ordinal=?').get(lower(key.id), key.ordinal);
+  const intent = parent(db, key); requireCleanupControl(db,{runId:intent.run_id as string,attemptId:intent.attempt_id as string,organizationId:intent.organization_id as string,workspaceId:intent.workspace_id as string}); const row = db.prepare('SELECT * FROM output_deletion_files WHERE deletion_id=? AND ordinal=?').get(lower(key.id), key.ordinal);
   if (!row) throw new StorageError('not_found');
   const owned = binding(db, intent.run_id as string, intent.attempt_id as string); const output = loadOutput(db, owned);
   if (output.kind !== 'adopted' || output.sourceDigest !== intent.closure_digest) throw new StorageError('unavailable');
