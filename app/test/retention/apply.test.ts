@@ -1,8 +1,7 @@
 import { it,expect } from 'vitest';
 import { WorkspaceRetentionApplies } from '../../src/adapters/outbound/sqlite/retention-apply/index.js';
-import { history,command,scope,uuid } from './selection-fixture.js';
-import { transaction } from '../../src/adapters/outbound/sqlite/schema.js';
-import { pruneRetentionSnapshots } from '../../src/adapters/outbound/sqlite/retention-accounting/index.js';
+import { selected } from './apply-fixture.js';
+import { command,scope,uuid } from './selection-fixture.js';
 import { cancelCommand } from '../storage/run-cancellation-fixtures.js';
 import { otherWorkspace } from './fixture.js';
 import { ready } from '../output-deletion/fixture.js';
@@ -10,11 +9,6 @@ import { WorkspaceRetentionSnapshots } from '../../src/adapters/outbound/sqlite/
 import { rows } from '../storage/clock-reason/fixtures.js';
 import { usage } from './fixture.js';
 const snapshot=(f:{db:Parameters<typeof rows>[0]})=>JSON.stringify(rows(f.db));
-function selected(count=3){
- const f=history(count);f.policy(values=>{values.retention={mode:'enabled',ageDays:1};});const page=f.retention.preview(command(f));
- const request={scope,requestId:uuid(50000),settingsId:page.settings.workspace.id,expectedVersion:page.settings.workspace.version,snapshotId:page.id,snapshotVersion:1,page:{limit:page.candidates.length}};
- const input={id:uuid(50001),appliedAt:'2026-11-14T12:01:00.000Z',request};return{...f,page,input,observe:()=>transaction(f.db,()=>pruneRetentionSnapshots(f.db,Date.parse(input.appliedAt))),apply:new WorkspaceRetentionApplies(f.db,f.reads)};
-}
 it('atomically admits every captured original without refund, then replays before stale/expiry checks',()=>{
  const f=selected();try{
   expect(f.page.candidates).toHaveLength(3);const before=usage(f.db);const receipt=f.apply.apply(f.input);

@@ -10,7 +10,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import type { Run } from '@beetle/contracts/api';
 import type { RunKey } from '../../../../ports/runs.js';
 import type { OutputDeletionCommand, OutputDeletionOperation, OutputDeletionSummary, OutputDeletionValue,
-  OutputDeletionPlanWrite, OutputDeletionAbsenceWrite, OutputDeletionFile, OutputDeletionScan } from '../../../../ports/output-deletion-metadata.js';
+  OutputDeletionPlanWrite, OutputDeletionAbsenceWrite, OutputDeletionFile, OutputDeletionScan, OutputDeletionKey } from '../../../../ports/output-deletion-metadata.js';
 import type { OutputDeletionRequest } from '../../../../ports/output-deletion.js';
 import { StorageError } from '../protocol.js';
 import { transaction } from '../transaction.js';
@@ -121,3 +121,10 @@ export function inspectOutputDeletionCandidate(db:DatabaseSync,runs:{get(key:Run
 }
 
 export { prepareInitialDeletion } from './initial.js';
+
+/** Caller owns the read transaction; no new IO, intent or cleanup evidence. */
+export function observeOutputDeletion(db:DatabaseSync,runs:{get(key:RunKey):Run},key:OutputDeletionKey){
+ if(!db.isTransaction)throw new StorageError('conflict');
+ const progress=captureDeletionReply({kind:'getOutputDeletion',key},summary(db,key)) as OutputDeletionSummary;
+ return{progress,ack:readCleanupAck(db,runs,key)};
+}

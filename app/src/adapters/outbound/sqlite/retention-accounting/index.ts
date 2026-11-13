@@ -18,8 +18,8 @@ export function reserveRetentionSnapshot(db:DatabaseSync,input:unknown,now:numbe
 
 /** Standalone maintenance transaction participant. All applied work stays charged/protected. */
 export function pruneRetentionSnapshots(db:DatabaseSync,now:number){
- const clock=commitRetentionClock(db,now);const rows=db.prepare("SELECT id FROM retention_snapshots WHERE state='preview' AND expires_at<=? ORDER BY expires_at,id LIMIT 8")
-  .all(new Date(clock).toISOString());let removed=0;
+ const clock=commitRetentionClock(db,now);const rows=db.prepare("SELECT id FROM retention_snapshots WHERE (state='preview' AND expires_at<=?) OR (state='completed' AND completed_at<=?) ORDER BY id LIMIT 8")
+  .all(new Date(clock).toISOString(),new Date(clock-900000).toISOString());let removed=0;
  for(const row of rows){requireFact(typeof row.id==='string','unavailable');if(commitRetentionExpiry(db,row.id,clock))removed++;}
  return Object.freeze({removed,refundedBytes:removed*131072,observedAtMs:clock});
 }

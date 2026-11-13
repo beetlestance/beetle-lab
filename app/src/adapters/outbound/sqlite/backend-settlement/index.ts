@@ -49,3 +49,6 @@ export class BackendSettlements {
 export { settlementOperation,captureSettlementOperation,captureSettlementValue } from './wire.js';
 
 export { retiredHistoryJob } from './rows.js';
+
+/** Fully validated permanent original, for scoped retention completion observation. */
+export { storedSettlement as readRetiredOutput } from './rows.js';

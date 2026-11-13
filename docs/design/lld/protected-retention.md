@@ -94,8 +94,11 @@ consumed or expired snapshot IDs
 refuse Apply; expiry cannot create another destructive identity. Unapplied expired
 snapshots can be removed in a bounded sweep of the eight owned slots and refund
 only their own exact metadata charge. Applied pages remain charged through pending
-or unknown cleanup, even beyond expiry. Completed pages may expire after their
-retained replay window. Run/agent permanent anti-replay floors remain independent.
+or unknown cleanup, even beyond expiry. Completion records the immutable first observed time from the persisted clock
+high-water mark after every member has its exact permanent settlement. Completed
+pages may expire15minutes after that observation; explicit acknowledgement may
+remove them sooner. Removal loses batch replay/status availability; missing IDs
+always refuse Apply. Run/agent permanent anti-replay floors remain independent.
 
 Apply progress retains each captured deletion identity. Reads distinguish admitted,
 backend-file progress, stored agent cleanup ACK, permanent settlement and unavailable

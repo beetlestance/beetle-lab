@@ -1,7 +1,7 @@
 # Retention snapshot accounting
 
 Status: private metadata reservation and durable workspace epochs implemented;
-worker/public API, completion pruning and UI remain pending. No retention job
+worker/public API and UI remain pending. No retention job
 is enabled by this slice. [Contract](../design/lld/protected-retention.md).
 
 Backend025 creates empty owned tables/counters without backfilling old originals or
@@ -92,3 +92,24 @@ members, unchanged usage, replay after expiry/settings changes, nested global/pe
 mutations, raw sequence tampering and late-child/final-state rollback. The scoped
 regression lane, types, lint, architecture, docs and backend build passed. Independent
 review found no blocker. Public worker/TCP recovery and UI composition remain pending.
+
+## Durable completion and metadata removal
+
+Status derives actual backend-file counts, stored cleanup ACK and validated permanent
+settlement for each captured child. It binds scope, deletion ID, original Run version
+and exact refund. Stored progress text never grants completion. Unknown/malformed
+evidence is blocked and retained. Partial settlement reports only its actual credit.
+
+A closed frame records the first observed completion time once, using the persisted
+clock. Completed status/Apply replay remains available for15minutes after observation.
+Expiry or explicit acknowledgement revalidates every permanent proof, then atomically
+deletes only owned progress/header records and refunds131072. Epoch512 and all run
+replay floors remain. Pending work cannot be discarded. Removed IDs refuse Apply;
+no membership or receipt is reconstructed from caller data.
+
+Progress/completion/expiry cases passed, including partial/source-file stages, proof
+version mismatch, phase forgery, exact observed time, completed-page credit and late
+progress-delete/completion-owner rollback. The scoped regression lane, types, lint,
+architecture, docs and backend build passed. Independent review found no blocker.
+An applied page remains charged until completion is observed; public composition
+will supply that observation. No native or physical-free-space claim is added.

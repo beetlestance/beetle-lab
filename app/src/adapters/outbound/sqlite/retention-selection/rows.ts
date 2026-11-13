@@ -7,11 +7,11 @@ import { requireFact } from '../retention-accounting/facts.js';
 import { StorageError } from '../protocol.js';
 import type { Header } from './facts.js';
 export function snapshotById(db:DatabaseSync,scope:WorkspaceScope,id:string){
- const row=db.prepare(`SELECT id,state,CASE WHEN length(CAST(body_json AS BLOB))<=32768 THEN body_json END body
+ const row=db.prepare(`SELECT id,state,completed_at,CASE WHEN length(CAST(apply_json AS BLOB))<=2048 THEN apply_json END applied,CASE WHEN length(CAST(body_json AS BLOB))<=32768 THEN body_json END body
   FROM retention_snapshots WHERE id=? AND organization_id=? AND workspace_id=?`).get(id,scope.organizationId,scope.workspaceId);
  if(!row)throw new StorageError('not_found');requireFact(typeof row.body==='string','unavailable');
  const snapshot=captureRetentionSnapshot(JSON.parse(row.body));
- requireFact(snapshot.id===row.id&&encodeCanonicalJson(snapshot,RETENTION_SNAPSHOT_BODY_BYTES)===row.body,'unavailable');return{snapshot,state:row.state};
+ requireFact(snapshot.id===row.id&&encodeCanonicalJson(snapshot,RETENTION_SNAPSHOT_BODY_BYTES)===row.body,'unavailable');return{snapshot,state:row.state,completedAt:row.completed_at,applyBody:row.applied,body:row.body};
 }
 export function previewHeaders(db:DatabaseSync,scope:WorkspaceScope,limit:number,cursor:RetentionSnapshot['cursor']){
  const after=cursor?' AND (requested_at,id)<(?,?)':'';const args=cursor?[cursor.requestedAt,cursor.id]:[];

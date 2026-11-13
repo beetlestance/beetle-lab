@@ -1,3 +1,5 @@
+import { prepareRetentionCompletion } from '../retention-progress/facts.js';
+import type { RetentionStatusKey } from '../../../../ports/retention.js';
 import { prepareRetentionApply } from '../retention-apply/facts.js';
 import type { captureApplyCommand } from '../retention-apply/values.js';
 import { childWriteAllowed } from '../retention-apply/authorize.js';
@@ -9,13 +11,15 @@ import type { RunKey } from '../../../../ports/runs.js';
 import { StorageError } from '../protocol.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { prepareReservation,requireFact } from '../retention-accounting/facts.js';
+import type { RemovalReason } from '../retention-accounting/expiry.js';
 import { prepareClock,prepareExpiry } from '../retention-accounting/expiry.js';
 type Prepared=ReturnType<typeof prepareReservation>;
 interface ReservationFrame {readonly kind:'reserve';readonly prepared:Prepared;phase:'epoch'|'snapshot'|'usage'|'storage'}
-interface ExpiryFrame {readonly kind:'expiry';readonly prepared:NonNullable<ReturnType<typeof prepareExpiry>>;phase:'delete'|'usage'|'storage'}
+interface ExpiryFrame {readonly kind:'expiry';readonly prepared:NonNullable<ReturnType<typeof prepareExpiry>>;phase:'progress_delete'|'delete'|'usage'|'storage'}
 interface ClockFrame {readonly kind:'clock';readonly prepared:ReturnType<typeof prepareClock>;phase:'storage'}
 interface ApplyFrame {readonly kind:'apply';readonly prepared:ReturnType<typeof prepareRetentionApply>;phase:'child'|'progress'|'applied';ordinal:number}
-type Frame=ReservationFrame|ExpiryFrame|ClockFrame|ApplyFrame;
+interface CompletionFrame {readonly kind:'completion';readonly prepared:Extract<ReturnType<typeof prepareRetentionCompletion>,{readonly ready:true}>;phase:'complete'}
+type Frame=ReservationFrame|ExpiryFrame|ClockFrame|ApplyFrame|CompletionFrame;
 const frames=new WeakMap<DatabaseSync,Frame>();const registered=new WeakSet<DatabaseSync>();
 function tuple(value:Prepared['before']){return JSON.stringify([1,value.epoch_count,value.snapshot_count,value.charged_bytes,value.clock_ms]);}
 interface Insert {readonly kind:unknown;readonly organization:unknown;readonly workspace:unknown;readonly id:unknown;readonly body:unknown}
@@ -28,11 +32,11 @@ function insertAllowed(db:DatabaseSync,input:Insert):number{
  if(input.kind==='epoch')return epochAllowed(f,input);
  return input.kind==='snapshot'&&f.phase==='snapshot'&&input.id===s.id&&input.body===f.prepared.body?1:0;
 }
-function usageAllowed(f:Exclude<Frame,ApplyFrame>,before:unknown,after:unknown):number{
+function usageAllowed(f:Exclude<Frame,ApplyFrame|CompletionFrame>,before:unknown,after:unknown):number{
  return f.phase==='usage'&&before===JSON.stringify([1,f.prepared.usage[0]])&&after===JSON.stringify([1,f.prepared.usage[1]])?1:0;
 }
 function counterAllowed(db:DatabaseSync,kind:unknown,before:unknown,after:unknown):number{
- const f=frames.get(db);if(!f||f.kind==='apply')return 0;
+ const f=frames.get(db);if(!f||f.kind==='apply'||f.kind==='completion')return 0;
  if(kind==='usage')return usageAllowed(f,before,after);
  return kind==='storage'&&f.phase==='storage'&&before===tuple(f.prepared.before)&&after===tuple(f.prepared.after)?1:0;
 }
@@ -49,6 +53,7 @@ export function registerRetentionAccounting(db:DatabaseSync):void{
  db.function('retention_apply_epoch',{deterministic:false},(organization,workspace,before,after)=>applyEpochAllowed(db,{organization,workspace,before,after}));
  db.function('retention_progress_insert',{deterministic:false},(binding,body)=>progressAllowed(db,binding,body));
  db.function('retention_snapshot_apply',{deterministic:false},(id,body,applied)=>snapshotApplyAllowed(db,{id,body,applied}));
+ db.function('retention_complete_snapshot',{deterministic:false},(id,body,applied,completedAt)=>completionAllowed(db,{id,body,applied,completedAt}));
  db.function('retention_counter_allowed',{deterministic:false},(kind,before,after)=>counterAllowed(db,kind,before,after));
  registered.add(db);
 }
@@ -75,7 +80,11 @@ export function commitRetentionReservation(db:DatabaseSync,input:unknown,now:num
 interface Removal {readonly kind:unknown;readonly id:unknown;readonly body:unknown;readonly binding:unknown}
 function deleteAllowed(db:DatabaseSync,input:Removal):number{
  const f=frames.get(db);if(f?.kind!=='expiry')return 0;const p=f.prepared;
+ if(input.kind==='progress')return progressDeleteAllowed(f,input);
  return f.phase==='delete'&&input.kind==='snapshot'&&input.id===p.snapshot.id&&input.body===p.body&&input.binding===p.binding?1:0;
+}
+function progressDeleteAllowed(f:ExpiryFrame,input:Removal):number{
+ return f.phase==='progress_delete'&&typeof input.binding==='string'&&typeof input.body==='string'&&f.prepared.progress.get(input.binding)===input.body?1:0;
 }
 function requireIdle(db:DatabaseSync):void{
  requireFact(registered.has(db)&&db.isTransaction&&!frames.has(db));requireFact(db.prepare('SELECT backend_settlement_active() n').get()?.n===0);
@@ -95,10 +104,11 @@ export function commitRetentionClock(db:DatabaseSync,now:number):number{
  try{writeCounters(db,f);return prepared.after.clock_ms;}finally{frames.delete(db);}
 }
 /** Expire only an exact, unapplied preview. Applied pages always remain protected here. */
-function removeRetentionPage(db:DatabaseSync,id:string,now:number,reason:'expiry'|'handoff'):boolean{
+function removeRetentionPage(db:DatabaseSync,id:string,now:number,reason:RemovalReason):boolean{
  requireIdle(db);const prepared=prepareExpiry(db,id,now,reason);if(!prepared)return false;
- const f:ExpiryFrame={kind:'expiry',prepared,phase:'delete'};frames.set(db,f);
+ const f:ExpiryFrame={kind:'expiry',prepared,phase:'progress_delete'};frames.set(db,f);
  try{
+  requireFact(db.prepare('DELETE FROM retention_progress WHERE snapshot_id=?').run(prepared.snapshot.id).changes===prepared.progress.size);f.phase='delete';
   requireFact(db.prepare('DELETE FROM retention_snapshots WHERE id=?').run(prepared.snapshot.id).changes===1);
   requireFact(!db.prepare('SELECT 1 FROM retention_snapshots WHERE id=?').get(prepared.snapshot.id));writeCounters(db,f);return true;
  }finally{frames.delete(db);}
@@ -141,3 +151,22 @@ export function commitWorkspaceRetentionApply(db:DatabaseSync,runs:{get(key:RunK
   verifyApplyTotals(db,prepared);return prepared.applied.receipt;
  }finally{frames.delete(db);}
 }
+
+function completionAllowed(db:DatabaseSync,input:{readonly id:unknown;readonly body:unknown;readonly applied:unknown;readonly completedAt:unknown}):number{
+ const f=frames.get(db);if(f?.kind!=='completion')return 0;const p=f.prepared;
+ return input.id===p.snapshot.id&&input.body===p.body&&input.applied===p.applyBody&&input.completedAt===p.completedAt?1:0;
+}
+/** Derive every member from permanent settlement, then record first observation once. */
+export function observeRetentionCompletion(db:DatabaseSync,runs:{get(key:RunKey):Run},key:RetentionStatusKey,now:number){
+ requireIdle(db);const prepared=prepareRetentionCompletion(db,runs,key,now);if(!prepared.ready)return prepared;
+ const f:CompletionFrame={kind:'completion',prepared,phase:'complete'};frames.set(db,f);
+ try{
+  requireFact(db.prepare("UPDATE retention_snapshots SET state='completed',completed_at=? WHERE id=? AND state='applied' AND completed_at IS NULL")
+   .run(prepared.completedAt,prepared.snapshot.id).changes===1);
+  const stored=db.prepare('SELECT state,completed_at FROM retention_snapshots WHERE id=?').get(prepared.snapshot.id);
+  requireFact(stored?.state==='completed'&&stored.completed_at===prepared.completedAt);return prepared;
+ }finally{frames.delete(db);}
+}
+
+/** Explicit acknowledgement drops only an unapplied preview or fully proved completed page. */
+export function commitRetentionDiscard(db:DatabaseSync,id:string,now:number):void{requireFact(removeRetentionPage(db,id,now,'discard'));}

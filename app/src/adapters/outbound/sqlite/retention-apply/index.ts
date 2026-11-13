@@ -16,7 +16,7 @@ export class WorkspaceRetentionApplies {
   return transaction(this.db,()=>{
    const stored=snapshotById(this.db,command.request.scope,command.request.snapshotId);
    const applied=this.db.prepare('SELECT apply_json FROM retention_snapshots WHERE id=?').get(stored.snapshot.id)?.apply_json;
-   if(stored.state==='applied'){
+   if(stored.state==='applied'||stored.state==='completed'){
     let original;try{requireFact(typeof applied==='string','unavailable');original=captureAppliedSnapshot(JSON.parse(applied),stored.snapshot);}catch{throw new StorageError('unavailable');}
     requireFact(original.requestId===command.request.requestId&&original.intentDigest===command.intentDigest);return original.receipt;
    }
