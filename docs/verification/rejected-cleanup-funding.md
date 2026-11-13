@@ -1,0 +1,31 @@
+# Rejected cleanup funding
+
+Private ledger slice only. Rejected HTTP discovery, native absence proof and settlement
+remain protected until the next owner is implemented. No refund is enabled here.
+
+Journal023 adds a separate16384-byte control and O(1) count/bytes/clock singleton.
+Its fixed transaction proves the actual rejected/fresh-cancel closure, exact ACK and
+bound installation, then funds the exact no-task retirement intent. It invents no
+admitted C1 or disk hold. Raw/nested writes cannot open the private process permit.
+
+Original quota and fresh known staging/native capacity must cover new funding.
+All normal admission counts temporary debt. Existing temporary promises count as
+future native writes; the successful funding clock prevents rollback reuse. Funded
+exact replay remains available after restart invalidates observations. Old low-quota
+originals stay protected; this is not universal cleanup support for old journals.
+
+Evidence retained privately under `.agent-work/rejected-cleanup-funding/`:
+
+- Lane2:96 affected cases passed; one schema-version fixture failed and was corrected.
+- Lane4: funding/migration corrections, Node types, lint, architecture, docs and agent
+  build passed. Unchanged passing behavior evidence from lane2 is retained.
+- Actual compiled-worker commit with withheld reply, joined termination and exact reopen.
+- Genuine rejection and fresh cancellation; stale capacity and low-quota refusal;
+  raw forgery, nested global/original/counter rollback, duplicate replacement, clock rollback.
+- Schema22-to23 preserves original/admitted hold/replay debt; no rejected backfill.
+- Independent review found two capacity/clock defects, both corrected and covered.
+
+Preserved failures include the initial replay scope bug, stale downgrade fixtures,
+complexity/import lint failures, and an overly broad selector that included HTTP tests
+which failed sandbox socket binding. No HTTP qualification is claimed by those tests.
+This slice used synthetic metadata/worker fixtures, no Docker or user service restart.

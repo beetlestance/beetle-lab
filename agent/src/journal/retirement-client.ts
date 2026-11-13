@@ -3,7 +3,7 @@ import { captureOutputRetirementRequest, OUTPUT_RETIREMENT_REQUEST_BYTES } from 
 import type { RetirementRequest } from '@beetle/contracts/output-retirement';
 import type { Scope } from '../admission/index.js';
 import { captureRetirementIntent } from '../retirement-values/index.js';
-import type { JournalRetirements } from '../retirement-values/index.js';
+import type { RetirementIntent,JournalRetirements } from '../retirement-values/index.js';
 import { cleanupControl } from '../cleanup-control/index.js';
 import { sourceScope } from './output-source-input.js';
 import type { RetirementOperation } from './retirement-protocol.js';
@@ -24,8 +24,12 @@ function sameScope(value: unknown, expected: Scope): void {
   const actual = sourceScope(value);
   if (encodeCanonicalJson(actual, 512) !== encodeCanonicalJson(expected, 512)) throw new Error('Retirement scope reply mismatch');
 }
-export function createRetirementClient(options: Options): JournalRetirements {
-  function request(kind: 'retirementPreflight' | 'retirementBegin', input: unknown) {
+export interface JournalRejectedFunding {
+ preflightRejected(input:unknown):Promise<RetirementIntent>;
+ fundRejected(input:unknown):Promise<RetirementIntent>;
+}
+export function createRetirementClient(options: Options): JournalRetirements & JournalRejectedFunding {
+  function request(kind: 'retirementPreflight' | 'retirementBegin' | 'rejectedCleanupPreflight' | 'rejectedCleanupFund', input: unknown) {
     let expected: RetirementRequest;
     return checked(options, options.send(() => ({ kind, json: encodeJson(expected = captureOutputRetirementRequest(input), OUTPUT_RETIREMENT_REQUEST_BYTES) })),
       value => captureRetirementIntent(value, expected));
@@ -38,6 +42,8 @@ export function createRetirementClient(options: Options): JournalRetirements {
         if (typeof row.open !== 'boolean') throw new Error(); return row.open;
       });
     },
+    preflightRejected:(input:unknown)=>request('rejectedCleanupPreflight',input),
+    fundRejected:(input:unknown)=>request('rejectedCleanupFund',input),
     preflight: (input: unknown) => request('retirementPreflight', input), begin: (input: unknown) => request('retirementBegin', input),
     read(input: Scope) {
       let expected: Scope;

@@ -169,6 +169,17 @@ Sent never-admitted originals have no genuine retained disk hold and cannot borr
 its staging credit. They need a separate positive no-reservation/no-native authority
 and explicit permanent replay funding rule. Until implemented, they remain charged/
 protected; a missing reservation or generic absence response is not that rule.
+The private rejected funding path reserves16384 bytes before writing its exact no-task
+retirement intent in the same immediate transaction. It requires the actual rejected
+closure, final ACK, bound installation, absent producer ownership and original quota.
+New funding counts all held staging, replay and existing temporary controls against a
+fresh known pool; native free capacity covers existing future cleanup writes too.
+O(1) counters cap funded originals at64 and preserve the successful funding clock.
+All normal execution admission counts temporary debt. Exact funded replay bypasses
+fresh space checks; conflicting identity and quota reduction remain fenced. No C1 or
+hold is invented. Old1024-byte originals without enough quota stay protected.
+This ledger grants no native absence, cleanup receipt or refund; HTTP discovery remains
+protected until the separate no-task native owner and settlement version are qualified.
 Standalone exports remain outside this performance settlement qualification.
 
 Local admitted-source native evidence: [settlement recovery](../../verification/native-settlement.md).

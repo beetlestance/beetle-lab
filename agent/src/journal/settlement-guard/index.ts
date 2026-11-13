@@ -1,3 +1,4 @@
+import { rejectedFundingActive } from '../rejected-controls/guard.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import { prepareAgentSettlement } from '../settlements/facts.js';
@@ -12,7 +13,7 @@ const permits=new WeakMap<DatabaseSync,Permit>();
 function same(left:unknown,right:unknown):boolean{return encodeCanonicalJson(left,512)===encodeCanonicalJson(right,512);}
 /** Non-deterministic process-local authorization. No caller can open a raw SQL permit. */
 export function registerSettlementGuard(db:DatabaseSync):void{
- db.function('agent_settlement_active',()=>permits.has(db)?1:0);
+ db.function('agent_settlement_active',()=>permits.has(db)||rejectedFundingActive(db)?1:0);
  db.function('agent_settlement_insert_allowed',(attempt,json,digest)=>{
   const permit=permits.get(db);return permit?.phase==='insert'&&attempt===permit.prepared.request.retirement.attemptId
    &&json===permit.prepared.json&&digest===permit.prepared.digest?1:0;

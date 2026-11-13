@@ -10,11 +10,12 @@ export interface DiskRetention {
   readonly outputBytes: number;
   readonly stagingBytes: number;
   readonly replayBytes: number;
+  readonly cleanupBytes: number;
 }
 /** Exact policy signature amendment; callers must supply durable retention facts. */
 export type AdmissionDecider = (candidate: Candidate, snapshot: AdmissionSnapshot, retention: DiskRetention) => Decision;
 
-const names = ['heldCount', 'outputBytes', 'stagingBytes','replayBytes'] as const;
+const names = ['heldCount', 'outputBytes', 'stagingBytes','replayBytes','cleanupBytes'] as const;
 function fields(input: unknown): object {
   if (input === null || typeof input !== 'object'
     || ![Object.prototype, null].includes(Object.getPrototypeOf(input) as object | null)) throw new Error();
@@ -37,7 +38,8 @@ export function captureDiskRetention(input: unknown): Readonly<DiskRetention> {
     const outputBytes = scalar(original, 'outputBytes');
     const stagingBytes = scalar(original, 'stagingBytes');
     const replayBytes = scalar(original, 'replayBytes');
+    const cleanupBytes=scalar(original,'cleanupBytes');
     if (heldCount > DISK_HOLD_LIMIT || heldCount === 0 && (outputBytes !== 0 || stagingBytes !== 0)) throw new Error();
-    return Object.freeze({ heldCount, outputBytes, stagingBytes,replayBytes });
+    return Object.freeze({ heldCount, outputBytes, stagingBytes,replayBytes,cleanupBytes });
   } catch { throw new Error('invalid_input'); }
 }

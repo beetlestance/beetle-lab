@@ -102,9 +102,11 @@ function capacityDecision(candidate: Candidate, snapshot: AdmissionSnapshot, poo
   if (fair.kind !== 'admit') return fair;
   if (retention.heldCount >= DISK_HOLD_LIMIT) return { kind: 'defer', reason: 'retention_capacity' };
   if (!retainedFit(candidate.resources, used, pool, retention)) return { kind: 'defer', reason: 'budget_unavailable' };
-  return nativeDiskDecision(used, candidate.resources, freeDiskBytes);
+  return nativeDiskDecision(used, candidate.resources, freeDiskBytes,retention.cleanupBytes);
 }
-function nativeDiskDecision(used: Resources, candidate: Resources, freeDiskBytes: number): Decision {
+function nativeDiskDecision(used: Resources, candidate: Resources, freeDiskBytes: number,cleanupBytes:number): Decision {
+  if(cleanupBytes>freeDiskBytes)return {kind:'defer',reason:'disk_unavailable'};
+  freeDiskBytes-=cleanupBytes;
   const disk = addResources(used, candidate);
   if (disk.outputBytes > freeDiskBytes || disk.stagingBytes > freeDiskBytes - disk.outputBytes) {
     return { kind: 'defer', reason: 'disk_unavailable' };

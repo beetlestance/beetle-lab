@@ -8,6 +8,7 @@ import { createCleanupProgressClient } from './cleanup-progress-client.js';
 import type { JournalCleanupProgress } from '../cleanup-control/index.js';
 import { createCleanupPlanClient } from './cleanup-plan-client.js';
 import type { JournalCleanupPlans } from '../cleanup-control/index.js';
+import type { JournalRejectedFunding } from './retirement-client.js';
 import { createRetirementClient } from './retirement-client.js';
 import type { JournalRetirements } from '../retirement-values/index.js';
 import { createStagingNamespaceClient } from './staging-namespace-client.js';
@@ -80,7 +81,7 @@ function largeOperation(operation: Operation): boolean {
 
 export class Journal implements JournalOutputSources, JournalOutputDelivery, JournalOutputAbsence {
   readonly runtimeAssociations:JournalRuntimeAssociations;
-  readonly retirements: JournalRetirements;
+  readonly retirements: JournalRetirements & JournalRejectedFunding;
   readonly cleanupPlans: JournalCleanupPlans;
   readonly cleanupProgress: JournalCleanupProgress;
   readonly cleanupReceipts: JournalCleanupReceipts;

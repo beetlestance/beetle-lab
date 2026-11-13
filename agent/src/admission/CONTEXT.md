@@ -12,8 +12,8 @@ dispatchAllowed:false. Binding already-created ownership remains possible after 
 Explicit config owns pool, per-run/time ceilings, manifest minimum including timeout,
 reserve/headroom, approved identities and finite observation TTL. Timeout never sums
 across attempts. Lower pools preserve retained debt and drain. Required `DiskRetention`
-adds retained output+staging to logical fit/fairness; only active jobs own CPU/isolation.
-Physical free disk covers active future writes plus overhead; retained files count once.
+adds retained output+staging, replay and temporary cleanup debt to logical fit/fairness; only active jobs own CPU/isolation.
+Physical free disk covers active future writes, temporary cleanup promises and overhead.
 `estimateStaging` pins complete setup charges/policy per reservation before I/O;
 unknown policy rejects new admission. See ../../../../docs/decisions/006-agent-staging.md.
 Profiles require cpu/memory/pids/timeout/output. Docker cannot supply timeout/output:
