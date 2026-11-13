@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { encodeCanonicalJson } from '@beetle/contracts';
+import { requireSnapshotBasis } from './basis.js';
 import type { Run } from '@beetle/contracts/api';
 import type { RetentionStatusKey } from '../../../../ports/retention.js';
 import type { RunKey } from '../../../../ports/runs.js';
@@ -40,8 +40,8 @@ export class WorkspaceRetentionSnapshots {
  private predecessor(command:Command,basis:ReturnType<typeof retentionBasis>):RetentionSnapshot|null{
   const request=command.request;if(!request.page.cursor)return null;
   const stored=snapshotById(this.db,request.scope,cursorSnapshot(request.page.cursor));const previous=stored.snapshot;
-  requireFact(stored.state==='preview'&&previous.kind==='retention'&&previous.hasMore&&Date.parse(previous.expiresAt)>Date.parse(command.capturedAt));
-  requireFact(previous.epoch===basis.epoch&&encodeCanonicalJson([previous.settings,previous.policy,previous.policySource],4096)===encodeCanonicalJson([basis.settings,basis.policy,basis.policySource],4096));return previous;
+  requireFact(stored.state==='preview'&&!previous.traversal&&previous.kind==='retention'&&previous.hasMore&&Date.parse(previous.expiresAt)>Date.parse(command.capturedAt));
+  requireSnapshotBasis(previous,basis);return previous;
  }
 }
 export { previewCursor } from './values.js';

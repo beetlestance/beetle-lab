@@ -10,7 +10,12 @@ export interface RetentionMember {
  readonly id:string;readonly version:number;readonly estimatedBytes:number;readonly reason:RetentionReason|'manual';
  readonly deletionId:string;readonly requestId:string;
 }
+export type ParentRetentionScope=Exclude<SettingsScope,WorkspaceScope>;
+export interface RetentionTraversalContext {
+ readonly scope:ParentRetentionScope;readonly horizon:WorkspaceScope;readonly nextWorkspace:WorkspaceScope|null;readonly previousSnapshotId:string|null;
+}
 export interface RetentionSnapshot {
+ readonly traversal?:RetentionTraversalContext;
  readonly version:1;readonly id:string;readonly kind:'retention'|'manual';readonly scope:WorkspaceScope;
  readonly requestId:string;readonly intentDigest:string;readonly capturedAt:string;readonly expiresAt:string;
  readonly settings:{readonly installation:RetentionSettingsPin;readonly organization:RetentionSettingsPin;readonly workspace:RetentionSettingsPin};

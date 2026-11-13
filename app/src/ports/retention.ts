@@ -1,5 +1,5 @@
 import type { RetentionPreviewRequest,RetentionApplyRequest,RetentionApplyReceipt,WorkspaceScope } from '@beetle/contracts/api';
-import type { RetentionSnapshot } from '../domain/retention/index.js';
+import type { ParentRetentionScope,RetentionSnapshot } from '../domain/retention/index.js';
 export type WorkspaceRetentionPreviewRequest=Omit<RetentionPreviewRequest,'scope'>&{readonly scope:WorkspaceScope};
 export interface WorkspaceRetentionPreviewCommand {readonly id:string;readonly capturedAt:string;readonly request:WorkspaceRetentionPreviewRequest}
 /** One bounded immutable page. This interface does not claim parent-scope traversal. */
@@ -48,3 +48,11 @@ export type RetentionOperation=
  | {readonly kind:'applyWorkspaceRetention';readonly command:WorkspaceRetentionApplyCommand}
  | {readonly kind:'getWorkspaceRetentionStatus'|'discardWorkspaceRetention';readonly request:{readonly key:RetentionStatusKey;readonly now:number}};
 export type RetentionValue=RetentionSnapshot|RetentionApplyReceipt|RetentionStatus|RetentionDiscardReceipt|RetentionBatchList;
+
+export type ParentRetentionPreviewRequest=Omit<RetentionPreviewRequest,'scope'>&{readonly scope:ParentRetentionScope};
+export interface ParentRetentionPreviewCommand {readonly id:string;readonly capturedAt:string;readonly request:ParentRetentionPreviewRequest}
+/** Explicitly live/partial, one independent workspace window. Empty result has no durable replay claim. */
+export interface ParentRetentionPage {
+ readonly scope:ParentRetentionScope;readonly requestId:string;readonly settingsId:string;readonly settingsVersion:number;readonly capturedAt:string;
+ readonly coverage:'live_partial';readonly durable:boolean;readonly workspace:RetentionSnapshot|null;readonly nextCursor:string|null;
+}

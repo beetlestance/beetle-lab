@@ -58,8 +58,9 @@ owner with captured stable request/deletion IDs. All revalidation precedes mutat
 capacity/protection/stale failure rolls back the whole admission. No network/native
 work occurs in this transaction. The existing bounded cleanup driver does the work.
 
-Exact successful Apply replay precedes current stale checks. The successful batch
-invalidates subsequent continuation; users preview the remaining history afresh.
+Exact successful Apply replay precedes current stale checks. A successful batch
+invalidates continuations depending on that workspace’s captured basis; users preview
+that workspace afresh. Already advanced workspaces retain independent prefixes.
 An admitted receipt means work was accepted, never that files or charges are gone.
 
 ## Snapshot storage contract
@@ -119,6 +120,31 @@ native jobs keep custody after cancellation or failed close.
    honest progress/errors and no optimistic freed-byte claims.
 5. One composed synthetic cleanup run, lost response/reopen and retention recovery.
 
-Backend migration025 is reserved for this owner. Agent schema/cleanup contracts do
+## Parent traversal boundary
+
+Installation/organisation preview returns one workspace preview per turn. Workspaces
+are ordered by (organisation ID, workspace ID), with a captured upper UUID horizon
+with one indexed horizon header initially and at most two traversal headers per turn. Every Run window still
+has its own100-header limit, settings/epoch and trusted workspace prefix.
+
+Coverage is explicitly live/partial. No membership epoch or installation-wide point
+in time is claimed: new workspaces inserted behind the cursor can be missed until a
+fresh scan. A missing next cursor means this live scan reached its horizon, not that
+all installation data satisfied the policy. Parent scope never combines budgets.
+
+A funded workspace snapshot carries the immutable parent scope, horizon, preceding
+snapshot identity and next-workspace hint. The cursor names that stored context;
+callers cannot provide prefixes or workspace positions. Continuation rechecks the
+preceding workspace epoch and every settings pin before continuing or advancing.
+The next workspace starts a zero prefix. Empty-page handoff atomically transfers
+context and funding; candidate-bearing/applied pages remain retained. Apply invalidates continuation for its affected workspace. Advancing to another
+workspace leaves that new prefix independent. Parent requests replay from live stored context.
+
+When no workspace remains, return an explicitly non-durable empty result, with no
+replay or continuation claim and no invented free parent header. Parent preview
+never implies parent-wide atomic application. Application always uses the existing
+explicit workspace Apply endpoint; unshipped parent Apply descriptors are retired.
+
+Migration025 is integrated; historical SQL and guards stay frozen. Agent schema/cleanup contracts do
 not change. Source-bound scoped checks and independent review precede integration;
 no user data, user target, registry publication or UI redesign is authorised here.

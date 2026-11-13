@@ -1,3 +1,4 @@
+import { captureTraversalContext } from './snapshot-traversal.js';
 import { encodeCanonicalJson,encodeJson } from '@beetle/contracts';
 import { validateApi } from '@beetle/contracts/api';
 import type { WorkspaceScope,SettingsScope } from '@beetle/contracts/api';
@@ -65,7 +66,8 @@ function bindReason(snapshot:RetentionSnapshot,item:RetentionMember):void{
 /** Bounded immutable data only. The metadata owner supplies settings/epoch/custody authority. */
 export function captureRetentionSnapshot(input:unknown):RetentionSnapshot{
  const value:unknown=JSON.parse(encodeJson(input,RETENTION_SNAPSHOT_BODY_BYTES));
- closed(value,['version','id','kind','scope','requestId','intentDigest','capturedAt','expiresAt','settings','policy','policySource','epoch','predecessorId','before','after','scanned','cursor','hasMore','candidates','exclusions']);
+ requireRule(value!==null&&typeof value==='object'&&!Array.isArray(value));
+ closed(value,['version','id','kind','scope','requestId','intentDigest','capturedAt','expiresAt','settings','policy','policySource','epoch','predecessorId','before','after','scanned','cursor','hasMore','candidates','exclusions',...(Object.hasOwn(value as object,'traversal')?['traversal']:[])]);
  requireRule(value.version===1&&(value.kind==='retention'||value.kind==='manual'));const target=scope(value.scope);
  requireRule(typeof value.intentDigest==='string'&&/^[0-9a-f]{64}$/.test(value.intentDigest));
  closed(value.settings,['installation','organization','workspace']);const policy=validateApi('RetentionPolicy',value.policy);requireRule(policy.ok);
@@ -74,7 +76,8 @@ export function captureRetentionSnapshot(input:unknown):RetentionSnapshot{
  const result:RetentionSnapshot={version:1,id:uuid(value.id),kind:value.kind,scope:target,requestId:uuid(value.requestId),intentDigest:value.intentDigest,
   capturedAt:timestamp(value.capturedAt),expiresAt:timestamp(value.expiresAt),settings:{installation:settingsPin(value.settings.installation),organization:settingsPin(value.settings.organization),workspace:settingsPin(value.settings.workspace)},
   policy:policy.value,policySource:policySource(value.policySource,target),epoch:value.epoch,predecessorId:nullableUuid(value.predecessorId),before:prefix(value.before),after:prefix(value.after),
-  scanned:value.scanned,cursor:cursor(value.cursor),hasMore:value.hasMore,candidates:value.candidates.map(member),exclusions:exclusions(value.exclusions)};
+  scanned:value.scanned,cursor:cursor(value.cursor),hasMore:value.hasMore,candidates:value.candidates.map(member),exclusions:exclusions(value.exclusions),...(Object.hasOwn(value,'traversal')?{traversal:captureTraversalContext(value.traversal,target,uuid(value.id),nullableUuid(value.predecessorId))}:{})};
+ if(result.traversal)requireRule(result.kind==='retention');
  encodeCanonicalJson(result,RETENTION_SNAPSHOT_BODY_BYTES);return immutableSnapshot(bind(result));
 }
 export function captureRetentionProgress(input:unknown):RetentionItemProgress{

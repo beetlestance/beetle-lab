@@ -44,3 +44,10 @@ describe('immutable retention snapshot representation',()=>{
    {phase:'blocked',preparedCount:0,absentCount:0,fileCount:0,error:'arbitrary log data'}])expect(()=>captureRetentionProgress(value)).toThrow();
  });
 });
+
+it('fits maximum-width immutable parent context without changing existing canonical snapshots',()=>{
+ const base=snapshot();const old=encodeCanonicalJson(captureRetentionSnapshot(base),32768);expect(JSON.parse(old)).not.toHaveProperty('traversal');
+ const traversal={scope:{kind:'installation'},horizon:{...base.scope,workspaceId:id(9999)},nextWorkspace:{...base.scope,workspaceId:id(999)},previousSnapshotId:base.predecessorId};
+ const stored=captureRetentionSnapshot({...base,traversal});expect(Buffer.byteLength(encodeCanonicalJson(stored,32768))).toBeLessThanOrEqual(32768);expect(Object.isFrozen(stored.traversal)).toBe(true);
+ for(const invalid of [{...traversal,scope:base.scope},{...traversal,horizon:{...base.scope,workspaceId:id(1)}},{...traversal,nextWorkspace:base.scope},{...traversal,previousSnapshotId:base.id},{...traversal,extra:true}])expect(()=>captureRetentionSnapshot({...base,traversal:invalid})).toThrow();
+});

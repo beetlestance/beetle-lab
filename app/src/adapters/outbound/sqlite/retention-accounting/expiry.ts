@@ -13,7 +13,7 @@ export function prepareClock(db:DatabaseSync,now:number){
 }
 function previewRemoval(snapshot:RetentionSnapshot,clock:number,reason:RemovalReason):boolean{
  if(reason==='expiry')return Date.parse(snapshot.expiresAt)<=clock;if(reason==='discard')return true;
- return snapshot.kind==='retention'&&snapshot.candidates.length===0&&snapshot.hasMore&&Date.parse(snapshot.expiresAt)>clock;
+ return snapshot.kind==='retention'&&snapshot.candidates.length===0&&(snapshot.hasMore||snapshot.traversal?.nextWorkspace!=null)&&Date.parse(snapshot.expiresAt)>clock;
 }
 function completedRemoval(completedAt:unknown,clock:number,reason:RemovalReason):boolean{
  requireFact(typeof completedAt==='string'&&completedAt.length===24,'unavailable');const parsed=Date.parse(completedAt);
