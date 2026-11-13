@@ -1,3 +1,4 @@
+import {settlementPosition} from './settlement-cursor.js';
 import { retirementPosition } from './retirement-cursor.js';
 import { captureCleanupAck,captureCleanupAckState } from './ack-values.js';
 import { captureOutputRetirementRequest, OUTPUT_RETIREMENT_REQUEST_BYTES } from '@beetle/contracts/output-retirement';
@@ -44,7 +45,7 @@ function bindFile(value: OutputDeletionFile, key: OutputDeletionFileKey): void {
 export function deletionReplyLimit(operation: OutputDeletionOperation): number {
   if(operation.kind==='getOutputCleanupAck'||operation.kind==='recordOutputCleanupAck')return 8192;
   if (operation.kind === 'getOutputRetirementRequest') return OUTPUT_RETIREMENT_REQUEST_BYTES;
-  if (operation.kind === 'scanOutputDeletions'||operation.kind==='scanOutputRetirements') return 65536;
+  if (operation.kind === 'scanOutputDeletions'||(['scanOutputRetirements','scanOutputSettlements'] as readonly string[]).includes(operation.kind)) return 65536;
   return ['beginOutputDeletion', 'getOutputDeletion', 'reserveOutputCleanupControl'].includes(operation.kind) ? 4096 : 8192;
 }
 export function captureDeletionReply(operation: OutputDeletionOperation, input: unknown): OutputDeletionValue {
@@ -52,7 +53,7 @@ export function captureDeletionReply(operation: OutputDeletionOperation, input: 
   if(operation.kind==='getOutputCleanupAck')return captureCleanupAckState(operation.key,copy);
   if(operation.kind==='recordOutputCleanupAck')return ackWriteReply(operation.request,copy);
   if (operation.kind === 'getOutputRetirementRequest') return retirementReply(operation.key, copy);
-  if(operation.kind==='scanOutputRetirements')return retirementPageReply(operation,copy);
+  if(finalScan(operation))return retirementPageReply(operation,copy);
   if (operation.kind === 'scanOutputDeletions') return pageReply(operation, copy);
   if (operation.kind === 'beginOutputDeletion' || operation.kind === 'getOutputDeletion' || operation.kind === 'reserveOutputCleanupControl') return summaryReply(operation, copy);
   return fileReply(operation,copy);
@@ -100,11 +101,15 @@ function fileReply(operation:Extract<OutputDeletionOperation,{kind:'getOutputDel
  return value;
 }
 
-function retirementPageReply(operation:Extract<OutputDeletionOperation,{kind:'scanOutputRetirements'}>,input:unknown):OutputDeletionPage{
+function finalScan(operation:OutputDeletionOperation):operation is Extract<OutputDeletionOperation,{kind:'scanOutputRetirements'|'scanOutputSettlements'}>{
+ return ['scanOutputRetirements','scanOutputSettlements'].includes(operation.kind);
+}
+function retirementPageReply(operation:Extract<OutputDeletionOperation,{kind:'scanOutputRetirements'|'scanOutputSettlements'}>,input:unknown):OutputDeletionPage{
  closed(input,['items','nextCursor']);requireRule(Array.isArray(input.items)&&input.items.length<=operation.query.limit);
- const items=(input.items as unknown[]).map(item=>summary(item));requireRule(items.every(item=>item.stage==='files_absent'&&item.kind!=='unsent')&&new Set(items.map(item=>item.id)).size===items.length);
+ const items=(input.items as unknown[]).map(item=>summary(item));requireRule(items.every(item=>item.stage==='files_absent'&&(operation.kind==='scanOutputSettlements'||item.kind!=='unsent'))&&new Set(items.map(item=>item.id)).size===items.length);
  requireRule(input.nextCursor===null||typeof input.nextCursor==='string');const nextCursor=input.nextCursor as string|null;
- if(nextCursor!==null){const after=retirementPosition({...operation.query,cursor:nextCursor})!;const before=retirementPosition(operation.query);
+ const position=operation.kind==='scanOutputSettlements'?settlementPosition:retirementPosition;
+ if(nextCursor!==null){const after=position({...operation.query,cursor:nextCursor})!;const before=position(operation.query);
   requireRule(after.after>(before?.after??0));if(before)requireRule(after.upper===before.upper&&after.installationId===before.installationId);
  }return {items,nextCursor};
 }

@@ -1,7 +1,8 @@
+import {retiredHistoryJob} from '../backend-settlement/index.js';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import type { DatabaseSync } from 'node:sqlite';
 import type { RunHistorySummary } from '@beetle/contracts/api';
-import type { RunHistoryJob } from '../../../../ports/run-history.js';
+import type { RunHistoryJob,HistoryJobRetirement } from '../../../../ports/run-history.js';
 import { transaction } from '../transaction.js';
 import { StorageError } from '../protocol.js';
 import { captureHistoryOperation, captureHistoryReply } from './wire.js';
@@ -25,17 +26,19 @@ function job(row: Row): RunHistoryJob {
 }
 export class HistorySummaries {
   constructor(private readonly db: DatabaseSync) {}
-  execute(input: HistoryOperation): RunHistoryJob[] | RunHistorySummary | null {
+  execute(input: HistoryOperation): RunHistoryJob[] | RunHistorySummary | HistoryJobRetirement | null {
     const operation = captureHistoryOperation(input);
     return transaction(this.db, () => captureHistoryReply(operation, this.apply(operation)));
   }
-  private apply({ operation }: HistoryOperation): RunHistoryJob[] | RunHistorySummary | null {
+  private apply({ operation }: HistoryOperation): RunHistoryJob[] | RunHistorySummary | HistoryJobRetirement | null {
     if (operation.method === 'scan') {
       return (this.db.prepare(historyScanSql)
         .all(operation.query.nowMs, operation.query.limit) as unknown as Row[]).map(job);
     }
+    if(operation.method==='retirement')return this.retirement(operation.request.job);
     const expected = operation.request.job;
     const row = this.current(expected);
+    if(!row){const retired=retiredHistoryJob(this.db,expected);if(retired)return retired;throw new StorageError('not_found');}
     if (operation.method === 'commit') return this.commit(expected, row, operation.request.summary);
     const dueMs = operation.request.dueMs;
     if (row.history_summary_json !== null) throw new StorageError('conflict');
@@ -44,10 +47,17 @@ export class HistorySummaries {
     this.db.prepare('UPDATE runs SET history_summary_due_ms=? WHERE id=?').run(dueMs, expected.id);
     return null;
   }
-  private current(expected: RunHistoryJob): Row {
+  private retirement(expected:RunHistoryJob):HistoryJobRetirement|null{
+    const retired=retiredHistoryJob(this.db,expected);if(retired)return retired;
+    const row=this.current(expected);if(!row)return null;
+    const pending=this.db.prepare(`SELECT 1 FROM output_deletion_intents WHERE run_id=? AND attempt_id=? AND organization_id=? AND workspace_id=?`)
+      .get(expected.id,expected.attemptId,expected.scope.organizationId,expected.scope.workspaceId);
+    return pending?{state:'deleting',id:expected.id,scope:expected.scope,attemptId:expected.attemptId}:null;
+  }
+  private current(expected: RunHistoryJob): Row | null {
     const row = this.db.prepare(facts + ' WHERE r.id=? AND r.organization_id=? AND r.workspace_id=?')
       .get(expected.id, expected.scope.organizationId, expected.scope.workspaceId) as unknown as Row | undefined;
-    if (!row) throw new StorageError('not_found');
+    if (!row) return null;
     if (!['finished', 'cancelled', 'errored'].includes(row.state)) throw new StorageError('conflict');
     const actual = job(row);
     if (actual.attemptId !== expected.attemptId || actual.manifestDigest !== expected.manifestDigest

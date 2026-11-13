@@ -1,7 +1,7 @@
 import {validate,encodeCanonicalJson} from '@beetle/contracts';
 import {captureOutputRetirementRequest,captureOutputRetirementReply} from '@beetle/contracts/output-retirement';
 import type {ClientResult} from '@beetle/contracts';
-import type {RetirementRequest,RetirementReply} from '@beetle/contracts/output-retirement';
+import type {RetirementRequest} from '@beetle/contracts/output-retirement';
 import type {OutputDeletionSummary} from '../../ports/output-deletion-metadata.js';
 import type {OutputFileContext} from '../../ports/output-bytes.js';
 import type {RetirementProgress} from './types.js';
@@ -25,7 +25,7 @@ export class Retirements {
   bindRequest(request,candidate);
   check(context);const result=await this.options.gateway.retireOutput(request,context.signal);check(context);
   if(!result.ok){
-   if(transient(result,request)){this.retryAt=performance.now()+this.delay;this.delay=Math.min(this.delay*2,30000);return;}
+   if(transportRetry(result,request)){this.retryAt=performance.now()+this.delay;this.delay=Math.min(this.delay*2,30000);return;}
    throw Error('Retirement gateway refused');
   }
   const reply=captureOutputRetirementReply(result.value,request,this.options.digest);
@@ -48,7 +48,7 @@ export class Retirements {
  }
 
 }
-function transient(result:Extract<ClientResult<RetirementReply>,{ok:false}>,request:RetirementRequest):boolean{
+export function transportRetry(result:Extract<ClientResult<unknown>,{ok:false}>,request:RetirementRequest):boolean{
  const error=result.error;
  if(error.kind==='transport'||error.kind==='timeout')return true;
  if(error.kind!=='protocol')return false;

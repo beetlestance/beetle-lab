@@ -1,3 +1,5 @@
+import type {OutputSettlementMetadata} from './output-settlement-metadata.js';
+import type {RunnerSettlementGateway} from './runner-settlement.js';
 import type {ExportArtifacts,ExportExecutionStore} from './exports.js';
 import type {RunnerExportGateway} from './export-runner.js';
 import type {OutputBinding} from '../domain/output-owner/index.js';
@@ -26,6 +28,7 @@ export interface OutputRuntime {
 export interface OutputRuntimeOptions {
   readonly deletions?:Pick<OutputDeletionMetadata,'scan'|'getFile'|'recordPlan'|'recordAbsence'|'reserveControl'>;
   readonly fileOnlyDeletion?:true;
+  readonly settlement?:{readonly metadata:Pick<OutputDeletionMetadata,'scanSettlements'|'reserveControl'|'retirementRequest'|'cleanupAck'>;readonly store:OutputSettlementMetadata;readonly gateway:RunnerSettlementGateway};
   readonly retirement?:{readonly metadata:Pick<OutputDeletionMetadata,'scanRetirements'|'reserveControl'|'retirementRequest'|'recordCleanupAck'>;readonly gateway:RunnerRetirementGateway};
   readonly exports?:{readonly executions:ExportExecutionStore;readonly outputs:ExportArtifacts;readonly gateway:Pick<RunnerExportGateway,'exportAttempt'|'output'>};
   readonly dataRoot: string;

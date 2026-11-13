@@ -9,7 +9,7 @@ export interface RunHistoryIndexOptions {
 }
 /** One original, no queue; expiry fences independently but never releases custody. */
 export function startRunHistoryIndexer(options: RunHistoryIndexOptions): RunHistoryIndexer {
-  const store = { scan: options.store.scan.bind(options.store), defer: options.store.defer.bind(options.store), commit: options.store.commit.bind(options.store) };
+  const store = { retirement:options.store.retirement.bind(options.store), scan: options.store.scan.bind(options.store), defer: options.store.defer.bind(options.store), commit: options.store.commit.bind(options.store) };
   const metrics = { readRunHistorySummary: options.metrics.readRunHistorySummary.bind(options.metrics) };
   const onFailure = options.onFailure; const interval = options.intervalMs ?? 1000;
   if (typeof onFailure !== 'function' || !Number.isSafeInteger(interval) || interval < 25 || interval > 60000) throw new Error('Invalid history index configuration');

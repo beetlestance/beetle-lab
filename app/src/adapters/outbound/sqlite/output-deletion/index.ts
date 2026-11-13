@@ -1,3 +1,4 @@
+import {scanSettlements} from './settlement-scan.js';
 import { scanRetirements } from './retirement-scan.js';
 import { recordCleanupAck,readCleanupAck } from './acks.js';
 import { reserveCleanupControl } from '../cleanup-control/index.js';
@@ -64,6 +65,7 @@ export class OutputDeletions {
       case 'getOutputDeletion':return summary(this.db,operation.key);
       case 'getOutputDeletionFile':return file(this.db,operation.key);
       case 'scanOutputDeletions':return this.scan(operation.query);
+      case 'scanOutputSettlements':return scanSettlements(this.db,operation.query);
       case 'scanOutputRetirements':return scanRetirements(this.db,operation.query);
     }
   }
@@ -107,9 +109,9 @@ export class OutputDeletions {
   }
 }
 
-type DeletionRead=Extract<OutputDeletionOperation,{kind:'getOutputCleanupAck'|'getOutputRetirementRequest'|'getOutputDeletion'|'getOutputDeletionFile'|'scanOutputDeletions'|'scanOutputRetirements'}>;
+type DeletionRead=Extract<OutputDeletionOperation,{kind:'getOutputCleanupAck'|'getOutputRetirementRequest'|'getOutputDeletion'|'getOutputDeletionFile'|'scanOutputDeletions'|'scanOutputRetirements'|'scanOutputSettlements'}>;
 function isRead(operation:OutputDeletionOperation):operation is DeletionRead{
- return (['getOutputCleanupAck','getOutputRetirementRequest','getOutputDeletion','getOutputDeletionFile','scanOutputDeletions','scanOutputRetirements'] as readonly string[]).includes(operation.kind);
+ return (['getOutputCleanupAck','getOutputRetirementRequest','getOutputDeletion','getOutputDeletionFile','scanOutputDeletions','scanOutputRetirements','scanOutputSettlements'] as readonly string[]).includes(operation.kind);
 }
 
 export { settlementProjection } from './settlement.js';

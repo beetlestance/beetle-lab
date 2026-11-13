@@ -26,13 +26,15 @@ export function deletionFile(input:OutputDeletionFile,key:OutputDeletionFileKey)
  return file;
 }
 
-export function retirementPage(input:OutputDeletionPage):OutputDeletionPage{
+export function retirementPage(input:OutputDeletionPage):OutputDeletionPage{return progressPage(input,false);}
+export function settlementPage(input:OutputDeletionPage):OutputDeletionPage{return progressPage(input,true);}
+function progressPage(input:OutputDeletionPage,unsent:boolean):OutputDeletionPage{
  const page=copy(input,65536);safe(Array.isArray(page.items)&&page.items.length<=32);
  safe(page.nextCursor===null||typeof page.nextCursor==='string'&&page.nextCursor.length<=256);
  const ids=new Set<string>();
  for(const item of page.items){
   safe(validateApi('WorkspaceScope',item.scope).ok&&validateApi('Uuid',item.id).ok&&validateApi('Uuid',item.runId).ok);
-  retirementSummary(item);
+  if(!unsent)retirementSummary(item);else safe(item.stage==='files_absent'&&item.deletionVersion===1);
   count(item.fileCount);count(item.absentCount);safe(item.absentCount===item.fileCount&&!ids.has(item.id));ids.add(item.id);
  }
  return page;

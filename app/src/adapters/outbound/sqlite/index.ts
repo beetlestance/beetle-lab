@@ -93,6 +93,7 @@ export class Metadata {
   private readyReject: (error: StorageError) => void = () => undefined;
   private readonly ready: Promise<void>;
   readonly historySummaries: RunHistoryStore = {
+    retirement:job=>this.historyCall({kind:'historySummary',operation:{method:'retirement',request:{job}}}) as ReturnType<RunHistoryStore['retirement']>,
     scan: query => this.historyCall({kind:'historySummary',operation:{method:'scan',query}}) as ReturnType<RunHistoryStore['scan']>,
     defer: request => this.historyCall({kind:'historySummary',operation:{method:'defer',request}}) as ReturnType<RunHistoryStore['defer']>,
     commit: request => this.historyCall({kind:'historySummary',operation:{method:'commit',request}}) as ReturnType<RunHistoryStore['commit']>,
@@ -157,6 +158,7 @@ export class Metadata {
     getFile: key => this.deletionCall({kind: 'getOutputDeletionFile', key}) as ReturnType<OutputDeletionMetadata['getFile']>,
     recordPlan: request => this.deletionCall({kind: 'recordOutputDeletionPlan', request}) as ReturnType<OutputDeletionMetadata['recordPlan']>,
     recordAbsence: request => this.deletionCall({kind: 'recordOutputDeletionAbsence', request}) as ReturnType<OutputDeletionMetadata['recordAbsence']>,
+    scanSettlements:query=>this.deletionCall({kind:'scanOutputSettlements',query}) as ReturnType<OutputDeletionMetadata['scanSettlements']>,
     scanRetirements:query=>this.deletionCall({kind:'scanOutputRetirements',query}) as ReturnType<OutputDeletionMetadata['scanRetirements']>,
     scan: query => this.deletionCall({kind: 'scanOutputDeletions', query}) as ReturnType<OutputDeletionMetadata['scan']>,
   };

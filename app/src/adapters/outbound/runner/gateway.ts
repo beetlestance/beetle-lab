@@ -1,3 +1,5 @@
+import {settleOutput} from './settlement.js';
+import type {RunnerSettlementGateway} from '../../../ports/runner-settlement.js';
 import {retireOutput} from './retirement.js';
 import type {RunnerRetirementGateway} from '../../../ports/runner-retirement.js';
 import type {RunnerExportGateway} from '../../../ports/export-runner.js';
@@ -30,10 +32,11 @@ function capture(loaded: LoadedAgentConfiguration): { origin: URL; token: string
 }
 
 /** Internal composition seam; public construction always uses real Node I/O. */
-export function openGateway(loaded: LoadedAgentConfiguration, io: NativeIo): RunnerLiveMetricGateway & RunnerExportGateway & RunnerRetirementGateway {
+export function openGateway(loaded: LoadedAgentConfiguration, io: NativeIo): RunnerLiveMetricGateway & RunnerExportGateway & RunnerRetirementGateway & RunnerSettlementGateway {
   const connection = { ...capture(loaded), credits: new CallCredits(), io };
   const client = createRunnerClient(createTransport(connection));
   return Object.freeze({
+    settleOutput:(request,signal)=>settleOutput(connection,request,signal),
     retireOutput:(request,signal)=>retireOutput(connection,request,signal),
     exportAttempt:identity=>createExportAttempt(connection,identity),
     liveMetrics: (identity, signal) => readLiveMetrics(connection, captureIdentity(identity), signal),
@@ -53,5 +56,5 @@ export function openGateway(loaded: LoadedAgentConfiguration, io: NativeIo): Run
       return Object.freeze(facade);
     },
     close: () => connection.credits.close(),
-  } satisfies RunnerLiveMetricGateway & RunnerExportGateway & RunnerRetirementGateway);
+  } satisfies RunnerLiveMetricGateway & RunnerExportGateway & RunnerRetirementGateway & RunnerSettlementGateway);
 }

@@ -1,6 +1,6 @@
 # Output settlement
 
-Status: admitted-agent transport and private backend settlement implemented; automatic settlement reconciliation and public retention remain gated.
+Status: automatic admitted/unsent settlement implemented; whole-chain native qualification and public retention remain gated.
 Owning predecessors: [retirement](output-retirement.md),
 [backend control](backend-cleanup-control.md). Root owns migrations agent022/backend024.
 
@@ -139,6 +139,24 @@ are purged. Global mutation receipts, authoring revisions/input pins, input blob
 name indexes remain unchanged; none receives a claimed credit. This is logical output
 settlement, not secure erasure of all historical configuration or SQLite/WAL blocks.
 Evidence: [backend settlement](../../verification/backend-storage-settlement.md).
+
+## Automatic reconciliation and derivative readers
+
+The existing serial cleanup runtime rotates file, retirement and settlement turns.
+Settlement discovery captures a physical sequence horizon and reads at most32+1 rows
+before readiness/ACK filtering. Its cursor binds installation, page size and semantic
+lane. Released absence includes admitted never-started work. Rejected no-admission
+originals are protected in both retirement and settlement discovery until separately
+funded authority exists. Source/absence use exact ACK-bound agent replies; unsent sends
+no agent call. Cancellation joins issued originals and preserves uncertain backend debt.
+
+A history job can outlive deletion. Its private metadata capability returns exact
+scope/Run/attempt `deleting` or validated permanent `retired` state. Deleting jobs defer
+30s without new metric reads, advancing the existing due index; retired jobs skip.
+Held projection errors recheck that positive capability. Stale commit/defer returns a
+retired marker only for the exact validated tombstone. Other missing/conflicting/unknown
+records remain errors. Neither marker grants native cleanup or accounting authority.
+Details: [reconciliation evidence](../../verification/settlement-driver.md).
 
 ## Separate protected branches
 

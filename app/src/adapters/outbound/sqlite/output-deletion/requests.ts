@@ -1,3 +1,4 @@
+import type {OutputDeletionScan} from '../../../../ports/output-deletion-metadata.js';
 import { encodeJson,validate } from '@beetle/contracts';
 import type { OutputDeletionOperation, OutputDeletionKey, OutputDeletionFileKey } from '../../../../ports/output-deletion-metadata.js';
 import type { OutputDeletionRequest, OutputDeletionReceipt } from '../../../../ports/output-deletion.js';
@@ -7,7 +8,7 @@ import { requireRule } from '../../../../domain/namespaces/index.js';
 import { decodeArtifact } from '../output-custody/index.js';
 import { boundedCopy, sha256 } from '../input-values.js';
 import { closed, hash, natural, scope, uuid } from './values.js';
-const kinds = ['beginOutputDeletion', 'getOutputDeletion', 'getOutputRetirementRequest', 'reserveOutputCleanupControl', 'getOutputCleanupAck', 'recordOutputCleanupAck', 'scanOutputRetirements', 'getOutputDeletionFile', 'recordOutputDeletionPlan', 'recordOutputDeletionAbsence', 'scanOutputDeletions'];
+const kinds = ['beginOutputDeletion', 'getOutputDeletion', 'getOutputRetirementRequest', 'reserveOutputCleanupControl', 'getOutputCleanupAck', 'recordOutputCleanupAck', 'scanOutputSettlements', 'scanOutputRetirements', 'getOutputDeletionFile', 'recordOutputDeletionPlan', 'recordOutputDeletionAbsence', 'scanOutputDeletions'];
 export function deletionOperation(value: unknown): value is OutputDeletionOperation {
   const descriptor = value && typeof value === 'object' ? Object.getOwnPropertyDescriptor(value, 'kind') : undefined;
   return !!descriptor && 'value' in descriptor && kinds.includes(descriptor.value as string);
@@ -38,10 +39,11 @@ function captureWrite(kind: 'recordOutputDeletionPlan' | 'recordOutputDeletionAb
     : {kind: 'recordOutputDeletionPlan', request: {...owned, plan: nativePlan(value.plan) as OutputDeletionRequest}};
 }
 const property: Record<OutputDeletionOperation['kind'], string> = {beginOutputDeletion: 'command', getOutputDeletion: 'key', getOutputRetirementRequest: 'key', reserveOutputCleanupControl: 'key', getOutputCleanupAck:'key', recordOutputCleanupAck:'request', getOutputDeletionFile: 'key',
-  recordOutputDeletionPlan: 'request', recordOutputDeletionAbsence: 'request', scanOutputDeletions: 'query', scanOutputRetirements:'query'};
+  recordOutputDeletionPlan: 'request', recordOutputDeletionAbsence: 'request', scanOutputDeletions: 'query', scanOutputRetirements:'query',scanOutputSettlements:'query'};
 export function captureDeletionOperation(input: unknown): OutputDeletionOperation {
   const copy = boundedCopy(input, 12288) as OutputDeletionOperation & {messageId?: number}; requireRule(deletionOperation(copy));
   captureEnvelope(copy);
+  if(isScan(copy))return{kind:copy.kind,query:captureScan(copy.query)};
   switch (copy.kind) {
     case 'beginOutputDeletion': return {kind: copy.kind, command: prepareOutputDeletion(copy.command, sha256)};
     case 'recordOutputCleanupAck': return captureAckWrite(copy.request);
@@ -50,8 +52,6 @@ export function captureDeletionOperation(input: unknown): OutputDeletionOperatio
     case 'getOutputRetirementRequest':
     case 'getOutputDeletion': return {kind: copy.kind, key: key(copy.key)};
     case 'getOutputDeletionFile': return {kind: copy.kind, key: key(copy.key, true) as OutputDeletionFileKey};
-    case 'scanOutputRetirements':
-    case 'scanOutputDeletions': return {kind: copy.kind, query: captureScan(copy.query)};
     default: return captureWrite(copy.kind, copy.request);
   }
 }
@@ -64,4 +64,8 @@ function captureAckWrite(input:unknown):Extract<OutputDeletionOperation,{kind:'r
 function captureEnvelope(copy:OutputDeletionOperation & {messageId?:number}):void{
  const hasMessageId=Object.hasOwn(copy,'messageId');closed(copy,['kind',property[copy.kind],...(hasMessageId?['messageId']:[])]);
  if(hasMessageId)natural(copy.messageId,Number.MAX_SAFE_INTEGER,1);
+}
+
+function isScan(operation:OutputDeletionOperation):operation is Extract<OutputDeletionOperation,{query:OutputDeletionScan}>{
+ return ['scanOutputSettlements','scanOutputRetirements','scanOutputDeletions'].includes(operation.kind);
 }

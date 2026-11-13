@@ -1,3 +1,4 @@
+import type {HistoryJobRetirement} from '../../../ports/run-history.js';
 import type { BackendSettlementOperation,BackendSettlementValue } from '../../../ports/output-settlement-metadata.js';
 import type { HistoryOperation } from '../../../ports/run-history.js';
 import type { RunHistoryJob } from '../../../ports/run-history.js';
@@ -90,7 +91,7 @@ export type Operation = BackendSettlementOperation | HistoryOperation | {kind:'g
   | { kind: 'getSettingsIdentity'; scope: SettingsScope }
   | { kind: 'runtime'; runtime: RuntimeObservation | null }
   | { kind: 'close' };
-export type Value = BackendSettlementValue | RunHistoryJob[] | RunHistorySummary | WorkspaceOverview | ExportValue | LocalSessionRecord | OutputDeletionValue | PublishedArtifactRead | RunExecutionSnapshot | OutputAbsenceState | OutputAbsenceFinalizationReply | OutputFinalizationReply | OutputFileRecord | OutputCustodyState | OutputPage | Owned<SourceEnvelope> | EventPage | EventCursorState | EventIngestResult | DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | RunResultSnapshot | RunEventPage | RunArtifactPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
+export type Value = HistoryJobRetirement | BackendSettlementValue | RunHistoryJob[] | RunHistorySummary | WorkspaceOverview | ExportValue | LocalSessionRecord | OutputDeletionValue | PublishedArtifactRead | RunExecutionSnapshot | OutputAbsenceState | OutputAbsenceFinalizationReply | OutputFinalizationReply | OutputFileRecord | OutputCustodyState | OutputPage | Owned<SourceEnvelope> | EventPage | EventCursorState | EventIngestResult | DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | RunResultSnapshot | RunEventPage | RunArtifactPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
 export type Command = Operation & { messageId: number };
 export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
   { kind: 'result'; messageId: number; ok: true; value: Value } |

@@ -47,3 +47,5 @@ export class BackendSettlements {
 }
 
 export { settlementOperation,captureSettlementOperation,captureSettlementValue } from './wire.js';
+
+export { retiredHistoryJob } from './rows.js';

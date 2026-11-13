@@ -1,3 +1,4 @@
+import type {RunHistoryJob,RetiredHistoryJob} from '../../../../ports/run-history.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import type { BackendSettlementWrite,BackendSettlementResult } from '../../../../ports/output-settlement-metadata.js';
@@ -31,4 +32,14 @@ export function replaySettlement(db:DatabaseSync,write:BackendSettlementWrite):B
   cleanupReplyDigest:t.cleanupReplyDigest,tombstoneDigest:t.agentTombstoneDigest};
  if(!Object.entries(expected).every(([field,value])=>Reflect.get(raw,field)===value))throw new StorageError('conflict');
  return result;
+}
+
+/** Scope/original-bound stale derivative job proof; no accounting or native authority. */
+export function retiredHistoryJob(db:DatabaseSync,job:RunHistoryJob):RetiredHistoryJob|null{
+ const row=db.prepare('SELECT deletion_id FROM backend_retired_runs WHERE run_id=? AND attempt_id=? AND organization_id=? AND workspace_id=?')
+  .get(job.id,job.attemptId,job.scope.organizationId,job.scope.workspaceId);
+ if(!row)return null;if(typeof row.deletion_id!=='string')throw new StorageError('unavailable');
+ const stored=storedSettlement(db,{scope:job.scope,id:row.deletion_id,runId:job.id});
+ if(!stored||stored.tombstone.attemptId!==job.attemptId)throw new StorageError('unavailable');
+ return{state:'retired',id:job.id,scope:job.scope,attemptId:job.attemptId};
 }

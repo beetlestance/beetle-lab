@@ -1,3 +1,4 @@
+import {Settlements} from './settlements.js';
 import {OutputByteError} from '../../ports/output-bytes.js';
 import type {OutputFileJob} from '../../ports/output-bytes.js';
 import type {OutputDeletionSummary} from '../../ports/output-deletion-metadata.js';
@@ -18,8 +19,8 @@ class Deletions implements OutputDeletionRuntime {
  private current:{summary:OutputDeletionSummary;ordinal:number}|undefined;
  private native:OutputFileJob<unknown>|undefined;
  private readonly retirements:Retirements|undefined;
- private retirementTurn=false;
- constructor(private readonly options:OutputDeletionRuntimeOptions){this.retirements=options.retirement?new Retirements(options.retirement):undefined;}
+ private turnNumber=0;private readonly settlements:Settlements|undefined;
+ constructor(private readonly options:OutputDeletionRuntimeOptions){this.settlements=options.settlement?new Settlements(options.settlement):undefined;this.retirements=options.retirement?new Retirements(options.retirement):undefined;}
  start():void{this.turn();}
  private turn():void{
   if(this.abort.signal.aborted)return;this.timer=undefined;
@@ -37,8 +38,9 @@ class Deletions implements OutputDeletionRuntime {
   if(this.abort.signal.aborted)return;
   const context={signal:this.abort.signal,deadline:performance.now()+30000,freeSpaceReserveBytes:this.options.freeSpaceReserveBytes};
   this.deadlineTimer=setTimeout(()=>this.fail(Error('Deletion deadline')),Math.max(0,context.deadline-performance.now()));
-  this.retirementTurn=!this.retirementTurn;
-  if(this.retirementTurn&&this.retirements){await this.retirements.step(context);return;}
+  this.turnNumber=(this.turnNumber+1)%(this.settlements?3:2);
+  if(this.turnNumber===2&&this.settlements){await this.settlements.step(context);return;}
+  if(this.turnNumber===1&&this.retirements){await this.retirements.step(context);return;}
   await this.fileStep(context);
  }
  private async fileStep(context:Parameters<typeof check>[0]):Promise<void>{
@@ -80,19 +82,27 @@ class Deletions implements OutputDeletionRuntime {
   if(this.failure)throw this.failure.error;
  }
 }
-/** Shares installed metadata/native owners; creates no intents and refunds no charge. */
+/** Shares installed owners; reconciles existing deletion intents and exact settlement. */
 export function startOutputDeletionRuntime(options:OutputDeletionRuntimeOptions):OutputDeletionRuntime{
  const interval=options.intervalMs??250;
  if(!Number.isSafeInteger(interval)||interval<25||interval>60000)throw Error('Invalid deletion interval');
  if(!Number.isSafeInteger(options.freeSpaceReserveBytes)||options.freeSpaceReserveBytes<0)throw Error('Invalid deletion reserve');
+ if(options.settlement&&!options.retirement)throw Error('Settlement requires retirement');
  if(Boolean(options.fileOnly)===Boolean(options.retirement))throw Error('Explicit deletion mode required');
  const m=options.metadata;const f=options.files;
  const metadata=Object.freeze({reserveControl:m.reserveControl.bind(m),scan:m.scan.bind(m),getFile:m.getFile.bind(m),recordPlan:m.recordPlan.bind(m),recordAbsence:m.recordAbsence.bind(m)});
  const files=Object.freeze({prepareRemoval:f.prepareRemoval.bind(f),remove:f.remove.bind(f)});
- const runtime=new Deletions({...options,metadata,files,...captureRetirement(options)});runtime.start();return runtime;
+ const runtime=new Deletions({...options,metadata,files,...captureRetirement(options),...captureSettlement(options)});runtime.start();return runtime;
 }
 function captureRetirement(options:OutputDeletionRuntimeOptions):Pick<OutputDeletionRuntimeOptions,'retirement'>{
  const r=options.retirement;if(!r)return {};const rm=r.metadata;
  return {retirement:Object.freeze({digest:r.digest,gateway:Object.freeze({retireOutput:r.gateway.retireOutput.bind(r.gateway)}),
   metadata:Object.freeze({scanRetirements:rm.scanRetirements.bind(rm),reserveControl:rm.reserveControl.bind(rm),retirementRequest:rm.retirementRequest.bind(rm),recordCleanupAck:rm.recordCleanupAck.bind(rm)})})};
+}
+
+function captureSettlement(options:OutputDeletionRuntimeOptions):Pick<OutputDeletionRuntimeOptions,'settlement'>{
+ const s=options.settlement;if(!s)return{};const m=s.metadata;
+ return{settlement:Object.freeze({digest:s.digest,gateway:Object.freeze({settleOutput:s.gateway.settleOutput.bind(s.gateway)}),
+  store:Object.freeze({settle:s.store.settle.bind(s.store),read:s.store.read.bind(s.store)}),
+  metadata:Object.freeze({scanSettlements:m.scanSettlements.bind(m),reserveControl:m.reserveControl.bind(m),retirementRequest:m.retirementRequest.bind(m),cleanupAck:m.cleanupAck.bind(m)})})};
 }

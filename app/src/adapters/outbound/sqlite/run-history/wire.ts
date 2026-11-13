@@ -1,6 +1,6 @@
 import { encodeCanonicalJson } from '@beetle/contracts';
 import { validateApi } from '@beetle/contracts/api';
-import type { RunHistoryJob, HistoryRequest, HistoryOperation } from '../../../../ports/run-history.js';
+import type { RunHistoryJob, HistoryJobRetirement, HistoryRequest, HistoryOperation } from '../../../../ports/run-history.js';
 import { boundedCopy, lower } from '../input-values.js';
 import { StorageError } from '../protocol.js';
 import { captureHistorySummary } from './values.js';
@@ -31,6 +31,7 @@ export function captureHistoryOperation(input: unknown): HistoryOperation {
   if (operation.method === 'scan') {
     captureScan(operation); return copy;
   }
+  if(operation.method==='retirement'){closed(operation,['method','request']);closed(operation.request,['job']);return{kind:copy.kind,operation:{method:'retirement',request:{job:captureHistoryJob(operation.request.job)}}};}
   requireValue(operation.method === 'defer' || operation.method === 'commit'); closed(operation, ['method', 'request']);
   const request = operation.request; const job = captureHistoryJob(request.job);
   if (operation.method === 'defer') {
@@ -46,13 +47,22 @@ function captureScan(operation: Extract<HistoryRequest, { method: 'scan' }>): vo
   closed(operation, ['method', 'query']); closed(operation.query, ['nowMs', 'limit']); time(operation.query.nowMs);
   requireValue(Number.isInteger(operation.query.limit) && operation.query.limit >= 1 && operation.query.limit <= 16);
 }
-export function captureHistoryReply(input: HistoryOperation, output: unknown): RunHistoryJob[] | null | ReturnType<typeof captureHistorySummary> {
-  const copy: unknown = boundedCopy(output, 16384); const operation = input.operation;
-  if (operation.method === 'defer') { requireValue(copy === null); return null; }
-  if (operation.method === 'commit') {
-    const summary = captureHistorySummary(copy);
-    requireValue(encodeCanonicalJson(summary, 2048) === encodeCanonicalJson(operation.request.summary, 2048)); return summary;
-  }
+export function captureHistoryReply(input:HistoryOperation,output:unknown):RunHistoryJob[]|HistoryJobRetirement|null|ReturnType<typeof captureHistorySummary>{
+ const copy:unknown=boundedCopy(output,16384);const operation=input.operation;
+ if(operation.method==='scan')return historyPage(operation,copy);
+ return historyWriteReply(operation,copy);
+}
+function historyWriteReply(operation:Exclude<HistoryRequest,{method:'scan'}>,copy:unknown){
+ const retired=retirementValue(operation.request.job,copy,operation.method==='retirement');if(retired)return retired;
+ if(operation.method==='retirement'||operation.method==='defer'){requireValue(copy===null);return null;}
+ const summary=captureHistorySummary(copy);
+ requireValue(encodeCanonicalJson(summary,2048)===encodeCanonicalJson(operation.request.summary,2048));return summary;
+}
+function retirementValue(job:RunHistoryJob,copy:unknown,deleting:boolean):HistoryJobRetirement|undefined{
+ if(!copy||typeof copy!=='object')return undefined;const state=Reflect.get(copy,'state');
+ if(state==='retired'||deleting&&state==='deleting')return retiredReply(job,copy);return undefined;
+}
+function historyPage(operation:Extract<HistoryRequest,{method:'scan'}>,copy:unknown):RunHistoryJob[]{
   requireValue(Array.isArray(copy) && copy.length <= operation.query.limit);
   const jobs = copy.map(captureHistoryJob); const ids = new Set<string>();
   let prior: RunHistoryJob | undefined;
@@ -62,4 +72,10 @@ export function captureHistoryReply(input: HistoryOperation, output: unknown): R
     prior = job;
   }
   return jobs;
+}
+
+function retiredReply(job:RunHistoryJob,input:object):HistoryJobRetirement{
+ closed(input,['state','id','scope','attemptId']);const row=input as HistoryJobRetirement;
+ requireValue(['retired','deleting'].includes(row.state)&&row.id===job.id&&row.attemptId===job.attemptId
+  &&encodeCanonicalJson(row.scope,512)===encodeCanonicalJson(job.scope,512));return row;
 }

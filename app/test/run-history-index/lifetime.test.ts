@@ -12,7 +12,7 @@ function setup(storePatch: Partial<RunHistoryStore> = {}, read: RunHistoryMetric
   vi.useFakeTimers({ toFake: ['Date', 'performance', 'setTimeout', 'clearTimeout'] });
   const scan = vi.fn(async () => [job]); const defer = vi.fn(async () => null); const commit = vi.fn(async (request: Parameters<RunHistoryStore['commit']>[0]) => request.summary);
   const onFailure = vi.fn(async () => undefined);
-  const owner = startRunHistoryIndexer({ store: { scan, defer, commit, ...storePatch }, metrics: { readRunHistorySummary: read }, onFailure }); owners.push(owner);
+  const owner = startRunHistoryIndexer({ store: { retirement:async()=>null, scan, defer, commit, ...storePatch }, metrics: { readRunHistorySummary: read }, onFailure }); owners.push(owner);
   return { owner, scan, defer, commit, read, onFailure };
 }
 it('expires independently during a held scan, retains admission/close, and ignores late success', async () => {
