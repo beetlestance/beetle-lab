@@ -63,13 +63,16 @@ An admitted receipt means work was accepted, never that files or charges are gon
 
 ## Snapshot storage contract
 
-Proposed logical reservation per page131072 bytes, maximum8 live pages globally.
+Logical reservation per page131072 bytes, maximum8 live pages globally.
+First preview in a workspace also charges a permanent512-byte epoch row. That row
+survives Run/snapshot purge; snapshot expiry never refunds it. No legacy row backfill.
 Reserve against actual authoritative installation charged usage and persisted
 storage allocation/free-space reserve in the same immediate transaction. No presumed
 free metadata allowance or invented runtime observation. Saturation fails explicitly;
 never evict an applied page that still owns unfinished cleanup progress.
 
-Representation budget to prove before schema acceptance:
+The strict snapshot/progress codecs and maximum-width tests establish this format
+budget. Persistence must enforce the same bounds before schema acceptance:
 
 | Representation | Upper bound |
 | --- | ---: |
