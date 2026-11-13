@@ -1,6 +1,6 @@
 # Actual producer retirement barrier
 
-Status: C2c locally verified; native Docker execution qualification pending.
+Status: C2c locally verified; matched Linux arm64 execution regression passed.
 Owner [contract](../design/lld/producer-retirement.md), following
 [durable intent](producer-retirement-store.md) and [shared leases](producer-gate.md).
 No cleanup endpoint, native inventory/removal, physical ACK or refund is enabled.
@@ -32,7 +32,7 @@ not native removal/absence authority. Shutdown drains coordinator before shared 
 ## Local evidence
 
 Basea90b675; branch feature/producer-retirement-barrier. Canonical ignored evidence
-will be archived at .agent-work/producer-retirement-c2c/. Frozen affected lifecycle
+is archived at .agent-work/producer-retirement-c2c/. Frozen affected lifecycle
 lane:492 tests in63 files passed (192.606s command), including controller, Supervisor,
 installation, bootstrap and new producer tests. Node types10.653s, lint6.714s,
 architecture6.223s and agent build0.617s exited0.
@@ -49,6 +49,21 @@ whole preflight/drain expiry, close/retry/reentrancy/capacity, genuine cold runt
 observations and private root composition. Model fixtures prove ordering only;
 real-port tests separately exercise Journal/Manager/Supervisor/native filesystem
 composition with a synthetic Docker backend. No hosted CI or release claim.
+
+## Native execution regression
+
+Code0332c0964c8a5d0f300dd9ced5d4367ad8f4473c built one matched Linux arm64 agent/
+engine pair in a task-owned builder capped2CPU/2GiB/cache1GiB. Builder removed.
+Agent image16.043s, engine image12.068s; native command13.159s, all exit0.
+Host backend Node26.7.0/darwin arm64; agent/engine use the pinned Linux images.
+One readiness/one work/zero unexpected requests, six artifacts, numeric4 history,
+metadata reopen and exact backend charge104376 passed. Fixture resource cleanup
+verified. Engine-log diagnostic unavailable is retained in evidence.
+
+This exercises real k6/controller/telemetry close and publication, not a native C3
+cleanup call or release/amd64 matrix. Private producer-barrier composition has
+separate real-port/model evidence above. No image was published or user service
+restarted. Qualification input hashes are rechecked before docs-only finalization.
 
 ## Remaining boundary
 
