@@ -10,7 +10,8 @@ it('recovers a dropped parent preview over real TCP, then admits its workspace o
  expect((await api.previewInstallationRetention({body:input.request})).ok).toBe(false);await server.close();await storage.close(metadata);
  const fresh=await storage.open(path,options);const reopened=http(fresh);const next=await client(reopened);try{
   const result=await next.previewInstallationRetention({body:input.request});expect(result.ok).toBe(true);if(!result.ok||!result.value.workspace)throw Error('Parent preview failed');const parent=result.value;const preview=parent.workspace!;
-  expect(parent.coverage).toBe('live_partial');expect(parent.durable).toBe(true);expect(parent.nextCursor).not.toBeNull();expect(preview.candidates).toHaveLength(2);expect(preview.scope).toEqual(scope);
+  expect(parent.coverage).toBe('live_partial');expect(parent.durable).toBe(true);expect(parent.nextCursor).not.toBeNull();expect(preview.candidates).toHaveLength(2);expect(preview.scope).toEqual(scope);expect(preview.nextCursor).toBeNull();
+  const recovered=await next.getWorkspaceRetentionPreview({params:{...params,snapshotId:preview.snapshotId}});expect(recovered.ok&&recovered.value.nextCursor).toBeNull();
   const body={scope,requestId:uuid(49000),settingsId:preview.settingsId,expectedVersion:preview.settingsVersion,snapshotId:preview.snapshotId,snapshotVersion:preview.version,page:{limit:preview.candidates.length}};
   expect((await next.applyWorkspaceRetention({params,body})).ok).toBe(true);const refused=await next.previewInstallationRetention({body:{...second.request,page:{limit:2,cursor:parent.nextCursor!}}});expect(refused.ok).toBe(false);
   const key={...params,snapshotId:preview.snapshotId};const progress=await next.getWorkspaceRetentionStatus({params:key});expect(progress.ok).toBe(true);if(!progress.ok)throw Error('Status failed');

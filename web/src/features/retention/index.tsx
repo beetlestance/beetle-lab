@@ -9,16 +9,16 @@ import { retentionKey,retentionParams } from './queries.js';
 import { RetentionBatch } from './Batch.js';
 import './retention.css';
 export interface ManualRun {readonly id:string;readonly version:number}
-export function RetentionControls({scope,run}:{scope:WorkspaceScope;run?:ManualRun}){
- const [open,setOpen]=useState(false);
+export function RetentionControls({scope,run,initialSnapshotId}:{scope:WorkspaceScope;run?:ManualRun;initialSnapshotId?:string}){
+ const [open,setOpen]=useState(initialSnapshotId!==undefined);
  return <section className="retention-panel" aria-label="Run retention">
   <button onClick={()=>setOpen(value=>!value)}>{open?'Close retention controls':run?'Delete this run…':'Manage run retention'}</button>
-  {open&&<ReadAdmission><RetentionWorkspace key={`${scope.organizationId}/${scope.workspaceId}/${run?.id??''}`} scope={scope} {...(run?{run}:{})}/></ReadAdmission>}
+  {open&&<ReadAdmission><RetentionWorkspace key={`${scope.organizationId}/${scope.workspaceId}/${run?.id??''}`} scope={scope} {...(run?{run}:{})} {...(initialSnapshotId?{initialSnapshotId}:{})}/></ReadAdmission>}
  </section>;
 }
-function RetentionWorkspace({scope,run}:{scope:WorkspaceScope;run?:ManualRun}){
+function RetentionWorkspace({scope,run,initialSnapshotId}:{scope:WorkspaceScope;run?:ManualRun;initialSnapshotId?:string}){
  const api=useApi();const client=useQueryClient();const identity=JSON.stringify(retentionKey(scope));const command=useRetentionCommand(identity);
- const [selected,setSelected]=useState<string|null>(null);const params=retentionParams(scope);const prefix=retentionKey(scope);
+ const [selected,setSelected]=useState<string|null>(initialSnapshotId??null);const params=retentionParams(scope);const prefix=retentionKey(scope);
  const settings=useQuery({queryKey:[...prefix,'settings'],queryFn:({signal})=>readResult(api.getWorkspaceSettings({params,signal}))});
  const batches=useQuery({queryKey:[...prefix,'batches'],queryFn:({signal})=>readResult(api.listWorkspaceRetention({params,signal}))});
  useEffect(()=>()=>{const queryKey=JSON.parse(identity) as string[];void client.cancelQueries({queryKey});client.removeQueries({queryKey});},[client,identity]);

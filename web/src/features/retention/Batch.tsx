@@ -1,3 +1,4 @@
+import { SnapshotSummary } from './Preview.js';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
 import type { RetentionPreview,RetentionBatchStatus,WorkspaceScope } from '@beetle/contracts/api';
 import { useApi,readResult } from '../../app/api.js';
@@ -27,16 +28,13 @@ function BatchView({scope,id,command,changed,selected,removed,preview,status}:Pr
   command.start(signal=>api.previewWorkspaceRetention({params,body,signal}),value=>{selected(value.snapshotId);changed();});
  }
  function discard(){command.start(signal=>api.discardWorkspaceRetention({params:{...params,snapshotId:id},signal}),()=>removed());}
- return <><p>Scanned {preview.scanned} runs. Estimated retained logical bytes: {preview.estimatedBytes}. Preview expires {preview.expiresAt}.</p>
-  <div className="settings-table-wrap"><table><caption>Immutable deletion candidates</caption><thead><tr><th>Run</th><th>Version</th><th>Reason</th><th>Estimated logical bytes</th></tr></thead>
-   <tbody>{preview.candidates.map(item=><tr key={item.id}><td>{item.id}</td><td>{item.version}</td><td>{item.reason}</td><td>{item.estimatedBytes}</td></tr>)}</tbody></table></div>
-  {preview.protectedExclusions.map(item=><p key={item.reason}>Protected {item.reason}: {item.count}; logical bytes {item.estimatedBytes===null?'unknown':item.estimatedBytes}.</p>)}
+ return <><SnapshotSummary preview={preview}/>
   {status.state==='preview'&&<><button disabled={command.blocked||expired||preview.candidates.length===0} onClick={apply}>Apply deletion of {preview.candidates.length} runs</button>
    {preview.nextCursor&&<button disabled={command.blocked||expired} onClick={next}>Preview next window</button>}
    {expired&&<p role="status">This preview expired. Discard it and start a fresh preview.</p>}
    <button disabled={command.blocked} onClick={discard}>Discard this preview</button></>}
   <Progress value={status}/>
-  {status.state==='completed'&&<><p>Acknowledgement removes this batch’s status and replay records. Permanent run replay protection remains.</p><button disabled={command.blocked} onClick={discard}>Acknowledge completed batch</button></>}
+  {status.state==='completed'&&<><p>Acknowledgement removes the saved batch and its status. Completed deletions remain final.</p><button disabled={command.blocked} onClick={discard}>Acknowledge completed batch</button></>}
  </>;
 }
 function Progress({value}:{value:RetentionBatchStatus}){

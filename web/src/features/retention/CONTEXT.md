@@ -26,3 +26,10 @@ Checks: scoped retention UI/lifetime and affected run/settings cases; types, lin
 architecture and web build. Browser visual inspection requires an available browser
 execution tool; no production service restart is authorised for these controls.
 Parent traversal and driver diagnostics are separate remaining owners.
+
+ParentRetentionControls in installation/org settings explicitly creates one live,
+partial traversal window. It retains the parent cursor/settings pin for continuation
+and an identical request on unknown outcome; no parent Apply exists. A scope-bound
+workspace link carries only the saved batch UUID. Workspace settings validate that
+query ID, recover preview/status and require explicit Apply. Empty parent responses
+are labelled non-durable; no installation-wide coverage or combined budget is shown.

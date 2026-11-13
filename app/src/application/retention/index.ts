@@ -8,7 +8,7 @@ export function retentionPreview(snapshot:RetentionSnapshot):RetentionPreview{
   policy:snapshot.policy,kind:snapshot.kind,capturedAt:snapshot.capturedAt,expiresAt:snapshot.expiresAt,scanned:snapshot.scanned,
   candidates:snapshot.candidates.map(member=>({id:member.id,version:member.version,scope:snapshot.scope,estimatedBytes:member.estimatedBytes,reason:member.reason})),
   estimatedBytes:snapshot.candidates.reduce((sum,member)=>sum+member.estimatedBytes,0),protectedExclusions:snapshot.exclusions.map(item=>({...item})),
-  nextCursor:snapshot.hasMore?btoa(snapshot.id):null};
+  nextCursor:snapshot.hasMore&&!snapshot.traversal?btoa(snapshot.id):null};
 }
 
 export function retentionTraversal(page:ParentRetentionPage):RetentionTraversalPage{

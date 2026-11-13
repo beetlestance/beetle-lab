@@ -133,7 +133,8 @@ fresh scan. A missing next cursor means this live scan reached its horizon, not 
 all installation data satisfied the policy. Parent scope never combines budgets.
 
 A funded workspace snapshot carries the immutable parent scope, horizon, preceding
-snapshot identity and next-workspace hint. The cursor names that stored context;
+snapshot identity and next-workspace hint. The parent envelope owns the cursor; traversal-owned workspace projections suppress
+their workspace continuation to avoid crossing cursor owners. The cursor names that stored context;
 callers cannot provide prefixes or workspace positions. Continuation rechecks the
 preceding workspace epoch and every settings pin before continuing or advancing.
 The next workspace starts a zero prefix. Empty-page handoff atomically transfers

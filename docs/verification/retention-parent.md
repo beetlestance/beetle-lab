@@ -30,5 +30,16 @@ The broader API lane passed397 cases before a new negative fixture expectation w
 corrected to allow the schema validator's bounded error details. Its affected case
 passed. A lint-only dispatcher/type-import correction passed201 affected cases;
 all types, lint, architecture, docs, generation and backend build passed.
-Independent core and public-boundary reviews found no blocker. Parent UI remains
-pending; this adds no new native-cleanup or physical-free-space qualification.
+Independent core and public-boundary reviews found no blocker.
+
+Provisional installation/org settings controls now expose this explicit scan, label
+live/partial and non-durable empty results, and retain cursor/pins and unknown-request
+identity. A validated batch link opens scoped workspace preview/status without a new
+preview or automatic Apply. Forty affected UI cases passed. Review caught a cursor
+ownership mismatch: parent-owned workspace projections now suppress workspace
+continuation, leaving the parent envelope as sole cursor owner. Actual TCP and
+workspace-link UI cases verify that fix and explicit Apply; their seven affected
+cases, all types, lint, architecture, docs, API and web builds passed. The reviewer
+confirmed the fix. No browser visual inspection or new native-cleanup/physical-free
+space qualification is claimed. Driver availability/errors and composed retention
+native recovery remain separate outstanding work.

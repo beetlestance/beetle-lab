@@ -1,3 +1,4 @@
+import { ParentRetentionControls } from '../retention/Parent.js';
 import { RetentionControls } from '../retention/index.js';
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,7 +9,7 @@ import { useEditor } from '../../components/Editor.js';
 import { QueryState } from '../../components/QueryState.js';
 import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
-import { routes } from '../../app/routes.js';
+import { routes,validId } from '../../app/routes.js';
 import { settingsIntent, settingsRead } from './intents.js';
 import type { SettingsData } from './intents.js';
 import { budgetLabels, integer, numericField, parseRetention, poolLabels, retentionFields, retentionText } from './fields.js';
@@ -36,6 +37,8 @@ function SettingsView({ data }: { data: SettingsData }) {
   const client = useQueryClient();
   const location = useLocation();
   const scope = data.scope;
+  const requestedBatch=new URLSearchParams(location.search).get('retentionBatch');
+  const batch=requestedBatch&&validId(requestedBatch)?requestedBatch:undefined;
   const refresh = () => client.invalidateQueries({ queryKey: scope.kind === 'installation' ? queryKeys.settings
     : scope.kind === 'organization' ? queryKeys.organizationSettings(scope.organizationId)
       : queryKeys.workspaceSettings(scope.organizationId, scope.workspaceId) });
@@ -50,7 +53,7 @@ function SettingsView({ data }: { data: SettingsData }) {
     {'values' in data && <InstallationGroups data={data} open={open} busy={editor.busy} />}
     <Defaults data={data} open={open} busy={editor.busy} />
     <Retention data={data} open={open} busy={editor.busy} />
-    {scope.kind==='workspace'&&<RetentionControls key={`${scope.organizationId}/${scope.workspaceId}`} scope={scope}/>}
+    {scope.kind==='workspace'?<RetentionControls key={`${scope.organizationId}/${scope.workspaceId}/${batch??''}`} scope={scope} {...(batch?{initialSnapshotId:batch}:{})}/>:<ParentRetentionControls key={JSON.stringify(scope)} scope={scope} settingsId={data.id} version={data.version}/>}
   </section>;
 }
 function Defaults({ data, open, busy }: { data: SettingsData; open: Open; busy: boolean }) {
