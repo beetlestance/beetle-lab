@@ -1,3 +1,4 @@
+import type { RetirementPipeline } from '../retirement-pipeline/index.js';
 import type { NativeReceipt } from '../native-receipt/index.js';
 import type { NativeRemoval } from '../native-removal/index.js';
 import type { TaskInventory } from '../task-inventory/index.js';
@@ -23,6 +24,7 @@ export interface AgentRuntimeOptions {
   readonly signal?: AbortSignal;
 }
 export interface AgentRuntime {
+  readonly cleanup: Pick<RetirementPipeline, 'tick' | 'status'>;
   readonly nativeReceipt: Pick<NativeReceipt, 'finalize' | 'status'>;
   readonly nativeRemoval: Pick<NativeRemoval, 'step' | 'status'>;
   readonly taskInventory: Pick<TaskInventory, 'prepare' | 'persist' | 'status'>;
