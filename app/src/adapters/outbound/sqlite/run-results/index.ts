@@ -3,7 +3,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import type { Run, RunResultSnapshot } from '@beetle/contracts/api';
 import type { RunKey } from '../../../../ports/runs.js';
 import { readEnvelope } from '../output-custody/index.js';
-import { transaction } from '../schema.js';
+import { transaction } from '../transaction.js';
 import { StorageError } from '../protocol.js';
 import { captureResultOperation, captureResultReply } from './wire.js';
 export { resultOperation, captureResultOperation, captureResultReply } from './wire.js';

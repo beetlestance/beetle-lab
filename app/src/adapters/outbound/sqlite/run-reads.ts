@@ -8,7 +8,7 @@ import { lower } from './input-values.js';
 import { normalizedScope } from './suites.js';
 import type { Suites } from './suites.js';
 import { prepareHistorySearch, historyKeys } from './run-search/index.js';
-import { transaction } from './schema.js';
+import { transaction } from './transaction.js';
 
 interface Row { snapshot_json: string; version: number; state: Run['state']; outcome: Run['outcome'];
   validation_status: Run['validationStatus']; active_attempt_id: string; cancellation_requested: number; reason: Run['reason'] }

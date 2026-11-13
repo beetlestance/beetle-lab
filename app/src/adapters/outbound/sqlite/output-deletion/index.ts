@@ -13,7 +13,7 @@ import type { OutputDeletionRequest } from '../../../../ports/output-deletion.js
 import { prepareOutputDeletion } from '../../../../application/output-deletion/index.js';
 import { StorageError } from '../protocol.js';
 import { lower, sha256 } from '../input-values.js';
-import { transaction } from '../schema.js';
+import { transaction } from '../transaction.js';
 import { captureFacts } from './facts.js';
 import { file, parent, summary } from './rows.js';
 import { captureDeletionOperation } from './requests.js';
@@ -111,3 +111,5 @@ type DeletionRead=Extract<OutputDeletionOperation,{kind:'getOutputCleanupAck'|'g
 function isRead(operation:OutputDeletionOperation):operation is DeletionRead{
  return (['getOutputCleanupAck','getOutputRetirementRequest','getOutputDeletion','getOutputDeletionFile','scanOutputDeletions','scanOutputRetirements'] as readonly string[]).includes(operation.kind);
 }
+
+export { settlementProjection } from './settlement.js';

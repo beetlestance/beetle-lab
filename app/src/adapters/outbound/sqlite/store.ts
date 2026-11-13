@@ -1,3 +1,5 @@
+import { BackendSettlements,settlementOperation,captureSettlementOperation } from './backend-settlement/index.js';
+import { assertSettlementConnection } from './backend-settlement-guard/index.js';
 import { HistorySummaries, historyOperation } from './run-history/index.js';
 import {Overviews} from './overview.js';
 import {exportOperation} from './export-wire.js';
@@ -32,7 +34,7 @@ import { Entities } from './entities.js';
 import { Namespaces } from './namespaces.js';
 import { Reads } from './reads.js';
 import { Settings } from './settings.js';
-import { transaction } from './schema.js';
+import { transaction } from './transaction.js';
 import { boundedCopy, lower, scopeKey, suiteOperation, operationMessageLimit } from './input.js';
 import { StorageError } from './protocol.js';
 import type { Bootstrap, ErrorCode, Operation, Value } from './protocol.js';
@@ -49,6 +51,7 @@ export class Store {
   private readonly historySummaries: HistorySummaries;
   private readonly localSessions: LocalSessions;
   private readonly deletions: OutputDeletions;
+  private readonly settlements: BackendSettlements;
   private readonly absences: OutputAbsences;
   private readonly finalizations: OutputFinalizations;
   private readonly executions: RunExecutions;
@@ -100,6 +103,7 @@ export class Store {
     this.dispatchClaims = new DispatchClaims(db, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 },bootstrap.exports);
     this.dispatchObservations = new DispatchObservations(db, this.runReads);
     this.localSessions = new LocalSessions(db);
+    this.settlements = new BackendSettlements(db,this.runReads);
     this.deletions = new OutputDeletions(db, this.runReads,()=>{
       const pool=this.settings.chain({kind:'installation'}).installation.values.pool;
       return {allocationBytes:pool.storageBytes,reserveBytes:pool.freeSpaceReserveBytes};
@@ -186,6 +190,8 @@ export class Store {
     return captured.kind === 'beginOutputDeletion' ? this.mutation(captured) : this.deletions.execute(captured);
   }
   execute(operation: Operation): Value {
+    assertSettlementConnection(this.db);
+    if(settlementOperation(operation))return this.settlement(operation);
     if(exportOperation(operation))return this.exportOperation(operation);
     if (deletionOperation(operation)) return this.deletion(operation);
     if (artifactReadOperation(operation)) return this.runArtifacts.execute(operation);
@@ -193,9 +199,15 @@ export class Store {
     if (finalizationOperation(operation)) return this.finalizations.execute(operation);
     if (['getRunEvents','getRunExecution','getRunResult'].includes(operation.kind)) return this.runRead(operation);
     if (historyOperation(operation)) return this.historySummaries.execute(operation);
-    if (outputOperation(operation)) return this.outputs.execute(operation);
-    if (eventOperation(operation)) return this.events.execute(operation);
+    return this.executeOutput(operation);
+  }
+  private executeOutput(operation:Operation):Value {
+    if(outputOperation(operation))return this.outputs.execute(operation);
+    if(eventOperation(operation))return this.events.execute(operation);
     return this.executeLegacy(operation);
+  }
+  private settlement(operation:Operation):Value {
+    const checked=captureSettlementOperation(operation);return checked.kind==='settleBackendOutput'?this.settlements.settle(checked.request):this.settlements.read(checked.key);
   }
   private runRead(operation:Operation):Value {
     switch(operation.kind){

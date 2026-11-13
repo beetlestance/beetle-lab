@@ -2,7 +2,7 @@ import { encodeCanonicalJson } from '@beetle/contracts';
 import type { DatabaseSync } from 'node:sqlite';
 import type { RunHistorySummary } from '@beetle/contracts/api';
 import type { RunHistoryJob } from '../../../../ports/run-history.js';
-import { transaction } from '../schema.js';
+import { transaction } from '../transaction.js';
 import { StorageError } from '../protocol.js';
 import { captureHistoryOperation, captureHistoryReply } from './wire.js';
 import type { HistoryOperation } from './wire.js';

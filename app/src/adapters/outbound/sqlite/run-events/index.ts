@@ -3,7 +3,7 @@ import { captureRunEventCursor, encodeRunEventCursor } from '@beetle/contracts/a
 import type { Run, RunEventPage } from '@beetle/contracts/api';
 import type { RunEventsQuery } from '../../../../ports/run-events.js';
 import type { RunKey } from '../../../../ports/runs.js';
-import { transaction } from '../schema.js';
+import { transaction } from '../transaction.js';
 import { StorageError } from '../protocol.js';
 import { captureRunEventsOperation, captureRunEventsReply } from './wire.js';
 export { runEventsOperation, captureRunEventsOperation, captureRunEventsReply } from './wire.js';

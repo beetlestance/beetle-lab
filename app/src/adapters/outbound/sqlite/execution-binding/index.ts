@@ -3,7 +3,7 @@ import type { Run } from '@beetle/contracts/api';
 import type { RunKey } from '../../../../ports/runs.js';
 import type { RunExecutionSnapshot } from '../../../../ports/run-live-metrics.js';
 import { readExecutionBinding } from './binding.js';
-import { transaction } from '../schema.js';
+import { transaction } from '../transaction.js';
 import { captureExecutionOperation, captureExecutionReply } from './wire.js';
 export { readExecutionBinding };
 export { captureExecutionOperation, captureExecutionReply, executionOperation } from './wire.js';

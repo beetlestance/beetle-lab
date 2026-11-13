@@ -5,7 +5,7 @@ import { captureSessionRecord, captureStoredSession } from '../../../../domain/l
 import { requireRule } from '../../../../domain/namespaces/index.js';
 import { boundedCopy } from '../input-values.js';
 import { StorageError } from '../protocol.js';
-import { transaction } from '../schema.js';
+import { transaction } from '../transaction.js';
 export function localSessionOperation(input: unknown): input is LocalSessionOperation {
   const descriptor = input && typeof input === 'object' ? Object.getOwnPropertyDescriptor(input, 'kind') : undefined;
   return !!descriptor && 'value' in descriptor && ['loadLocalSession','saveLocalSession'].includes(descriptor.value as string);

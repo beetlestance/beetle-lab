@@ -1,5 +1,5 @@
 import type {DatabaseSync} from 'node:sqlite';
-import {transaction} from '../schema.js';
+import {transaction} from '../transaction.js';
 import type {ExportReads} from './reads.js';
 import {ExportSources} from './source.js';
 import {adoptExportSource} from './custody.js';

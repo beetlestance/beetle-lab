@@ -1,3 +1,4 @@
+import { settlementOperation,captureSettlementOperation } from './backend-settlement/index.js';
 import { historyOperation, captureHistoryOperation } from './run-history/index.js';
 import {exportOperation,captureExportOperation,exportReplyLimit,exportRequestLimit} from './export-wire.js';
 import { localSessionOperation, captureLocalSessionOperation } from './local-session/index.js';
@@ -135,8 +136,12 @@ export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operati
     if (artifactReadOperation(input)) return captureArtifactReadOperation(input);
     if (runEventsOperation(input)) return captureRunEventsOperation(input);
   } catch {throw new StorageError('invalid_input');}
-  if (absenceOperation(input)) return checkedAbsenceOperation(input);
-  return checkedOutputOperation(input, runtimeTtlMs);
+  return checkedDeferredOperation(input,runtimeTtlMs);
+}
+function checkedDeferredOperation(input:Operation,runtimeTtlMs:number):Operation {
+  if(settlementOperation(input)){try{return captureSettlementOperation(input);}catch{throw new StorageError('invalid_input');}}
+  if(absenceOperation(input))return checkedAbsenceOperation(input);
+  return checkedOutputOperation(input,runtimeTtlMs);
 }
 function checkedAbsenceOperation(input: Operation): Operation {
   try { return captureAbsenceOperation(input); } catch { throw new StorageError('invalid_input'); }
@@ -184,9 +189,10 @@ function dataProperty(value: unknown, key: string): unknown {
   const descriptor = Object.getOwnPropertyDescriptor(value, key);
   return descriptor && 'value' in descriptor ? descriptor.value : undefined;
 }
+const fixedMessageLimits:Partial<Record<Operation['kind'],number>>={loadLocalSession:2048,saveLocalSession:2048,settleBackendOutput:2304,readBackendSettlement:2304};
 export function operationMessageLimit(operation: Operation): number {
   if (exportOperation(operation)) return exportRequestLimit(operation);
-  if (localSessionOperation(operation)) return 2048;
+  const fixed=fixedMessageLimits[dataProperty(operation,'kind') as Operation['kind']];if(fixed!==undefined)return fixed;
   if (deletionOperation(operation)) return 12288;
   if (compactOperation(operation)) return 4096;
   if (outputOperation(operation)) return 79872;
@@ -204,7 +210,7 @@ export function largeOperation(operation: Operation): boolean {
   }
   return suiteOperation(operation) || ['getExportOriginal','listExports','dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource', 'getRunResult', 'getRunEvents', 'listRunArtifacts'].includes(dataProperty(operation, 'kind') as string);
 }
-const fixedReplyLimits: Partial<Record<Operation['kind'], number>> = { historySummary: 16384, getWorkspaceOverview: 32768 };
+const fixedReplyLimits: Partial<Record<Operation['kind'], number>> = { historySummary: 16384, getWorkspaceOverview: 32768, settleBackendOutput:1536,readBackendSettlement:1536 };
 export function operationReplyLimit(operation: Operation): number {
   const fixed = fixedReplyLimits[operation.kind];
   if (fixed !== undefined) return fixed;

@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import type { OutputAdoptRequest, OutputCustodyState } from '../../../../ports/output-custody.js';
-import { transaction } from '../schema.js';
+import { transaction } from '../transaction.js';
 import { StorageError } from '../protocol.js';
 import { original, pins, readEnvelope } from './source.js';
 import { scanOutputs } from './scan.js';

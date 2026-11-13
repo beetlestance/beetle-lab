@@ -8,7 +8,7 @@ import type { EventBinding } from '../../../../ports/events.js';
 import { captureEventBinding } from '../../../../domain/events/index.js';
 import { readEnvelope, loadOutput } from '../output-custody/index.js';
 import { OutputAbsences } from '../output-absence/index.js';
-import { transaction } from '../schema.js';
+import { transaction } from '../transaction.js';
 import { StorageError } from '../protocol.js';
 import { captureArtifactReadOperation, captureArtifactReadReply } from './wire.js';
 import type { ArtifactReadOperation } from './wire.js';

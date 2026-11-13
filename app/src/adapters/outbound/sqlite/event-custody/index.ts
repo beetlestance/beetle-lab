@@ -5,7 +5,7 @@ import { EventBatchError, expiryCoverage, prepareEventBatch } from '../../../../
 import type { PreparedEventBatch } from '../../../../domain/events/index.js';
 import type { EventAckRequest, EventBinding, EventCursorState, EventIngestRequest, EventIngestResult,
   EventPage, EventProblem, EventProblemRequest, EventScan } from '../../../../ports/events.js';
-import { transaction } from '../schema.js';
+import { transaction } from '../transaction.js';
 import { StorageError } from '../protocol.js';
 import { captureEventOperation } from './wire.js';
 import type { EventOperation } from './wire.js';

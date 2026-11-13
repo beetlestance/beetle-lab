@@ -5,7 +5,7 @@ import type { EventBinding } from '../../../../ports/events.js';
 import type { OutputAbsenceState, OutputAbsenceFinalizeRequest, OutputAbsenceFinalizationReply } from '../../../../ports/output-absence.js';
 import { requireRetainedOriginal } from '../output-custody/index.js';
 import { requireCurrentRun, checkFinalHeader, seedZeroCursor, requireRetention } from '../output-finalization/index.js';
-import { transaction } from '../schema.js';
+import { transaction } from '../transaction.js';
 import { sha256 } from '../input-values.js';
 import { StorageError } from '../protocol.js';
 import { captureAbsenceOperation, captureAbsenceReply, captureAbsenceState } from './wire.js';

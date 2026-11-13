@@ -1,6 +1,6 @@
 # Output settlement
 
-Status: admitted-agent settlement and authenticated runner transport implemented; backend settlement and public retention remain gated.
+Status: admitted-agent transport and private backend settlement implemented; automatic settlement reconciliation and public retention remain gated.
 Owning predecessors: [retirement](output-retirement.md),
 [backend control](backend-cleanup-control.md). Root owns migrations agent022/backend024.
 
@@ -113,6 +113,32 @@ rollback includes replay identity, old records and both counter families.
 DiskRetention names replayBytes explicitly, independently of live heldCount.
 The pipeline's exact tombstone replay runs before any new native work. Details and
 remaining qualification: [agent evidence](../../verification/agent-storage-settlement.md).
+
+## Backend transaction and retained owners
+
+Backend024 derives the current terminal one-attempt original, zero outbox, no export
+links, every backend file receipt, retained closure/events and immutable cleaned ACK.
+The exact agent settlement reply binds that ACK before source/absence credit. Positive
+unsent uses its existing no-delivery witness and no agent reply. Permanent Run/attempt/
+deletion identities fence recreation, including case aliases. Reads/replay survive purge.
+
+One private synchronous permit inserts the tombstone, deletes the fixed original tables,
+then applies exact usage and replay-counter deltas. It refuses nested cross-original or
+global writes. Lifetime backend events use their own65536-row admission bound, with
+sentinel counts before projection. Payload/slot/file and scalar counts are separately
+bounded. No unbounded history sum computes permanent debt.
+
+The standalone transaction keeps foreign_keys enabled and defers the existing immediate
+attempt/intent cycle until enforced COMMIT. It never switches deferral off early. A
+failed COMMIT rolls back all originals, counters and replay identity. Unknown rollback
+or protection restoration poisons later Store commands and attempts native close once.
+Uncertain worker termination retains the private call rather than certifying settlement.
+
+Run snapshots, attempts, events, output custody, cleanup controls and execution orders
+are purged. Global mutation receipts, authoring revisions/input pins, input blobs and
+name indexes remain unchanged; none receives a claimed credit. This is logical output
+settlement, not secure erasure of all historical configuration or SQLite/WAL blocks.
+Evidence: [backend settlement](../../verification/backend-storage-settlement.md).
 
 ## Separate protected branches
 

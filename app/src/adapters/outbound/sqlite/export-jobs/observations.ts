@@ -7,7 +7,7 @@ import {mergeAttemptSnapshot} from '../../../../domain/attempt-observation/index
 import type {ExportReads} from './reads.js';
 import {control} from './originals.js';
 import {sha256} from '../input-values.js';
-import {transaction} from '../schema.js';
+import {transaction} from '../transaction.js';
 import {StorageError} from '../protocol.js';
 function projection(snapshot:AttemptSnapshot):{state:ExportJob['state'];reason:ExportJob['reason']}{
  if(snapshot.state==='lost')return {state:'unknown',reason:'execution_lost'};

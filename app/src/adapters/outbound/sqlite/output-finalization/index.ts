@@ -3,7 +3,7 @@ export { requireCurrentRun, checkFinalHeader, seedZeroCursor, requireRetention, 
 import type { DatabaseSync, SQLOutputValue } from 'node:sqlite';
 import type { OutputFinalizationReply, OutputFinalizationRequest } from '../../../../ports/output-finalization.js';
 import { readEnvelope, loadOutput } from '../output-custody/index.js';
-import { transaction } from '../schema.js';
+import { transaction } from '../transaction.js';
 import { StorageError } from '../protocol.js';
 import { captureFinalizationOperation, captureFinalizationReply } from './wire.js';
 import type { FinalizationOperation } from './wire.js';

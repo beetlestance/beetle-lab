@@ -5,7 +5,7 @@ import type {OverviewQuery} from '../../../ports/overview.js';
 import {checkedOverview,checkedOverviewQuery} from '../../../application/overview/index.js';
 import type {Suites} from './suites.js';
 import {normalizedScope} from './suites.js';
-import {transaction} from './schema.js';
+import {transaction} from './transaction.js';
 const hour=3600000;
 const scopeWhere='organization_id=? AND workspace_id=?';
 const summary='id,suite_id AS suiteId,revision_id AS revisionId,requested_at AS requestedAt,state,outcome';

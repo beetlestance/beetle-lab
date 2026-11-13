@@ -8,7 +8,7 @@ import type { DispatchKey, DispatchObservation, DispatchObservationRequest } fro
 import { checkedJournalAuthority, boundedCopy } from './input-values.js';
 import { captureDispatchKey } from './dispatch-values.js';
 import type { RunReads } from './run-reads.js';
-import { transaction } from './schema.js';
+import { transaction } from './transaction.js';
 import { previousSnapshot, persistSnapshot } from './output-payloads/index.js';
 
 interface RecordRow {

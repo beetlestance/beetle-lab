@@ -1,7 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { WorkspaceScope } from '@beetle/contracts/api';
 import { StorageError } from '../protocol.js';
-import { transaction } from '../schema.js';
+import { transaction } from '../transaction.js';
 interface Progress { folder_after: string; suite_after: string; folders_done: number; suites_done: number }
 /** One request advances at most16 documents, with durable checkpoints and no startup walk. */
 export function prepareNameSearch(db: DatabaseSync, scope: WorkspaceScope): void {

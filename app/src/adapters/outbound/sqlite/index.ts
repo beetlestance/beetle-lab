@@ -1,3 +1,5 @@
+import { settlementOperation,captureSettlementValue } from './backend-settlement/index.js';
+import type { OutputSettlementMetadata,BackendSettlementOperation } from '../../../ports/output-settlement-metadata.js';
 import { captureHistoryReply, historyOperation } from './run-history/index.js';
 import type { HistoryOperation } from './run-history/index.js';
 import type { RunHistoryStore } from '../../../ports/run-history.js';
@@ -61,7 +63,7 @@ export interface MetadataOptions extends Bootstrap {
   /** Includes in-flight work; maximum 64. Close has one reserved slot. */
   queueLimit?: number;
 }
-interface Pending { history?: HistoryOperation; exportJob?:ExportOperation; localSession?: LocalSessionOperation; deletion?: OutputDeletionOperation; resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
+interface Pending { settlement?:BackendSettlementOperation; history?: HistoryOperation; exportJob?:ExportOperation; localSession?: LocalSessionOperation; deletion?: OutputDeletionOperation; resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
   artifacts?: ArtifactReadOperation; absence?: AbsenceOperation; finalization?: FinalizationOperation; result?: RunKey; execution?: RunKey; runEvents?: RunEventsQuery; output?: OutputOperation; large: boolean; replyLimit: number; event?: EventOperation; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
 function validateLocation(options: MetadataOptions): void {
   if (typeof options.path !== 'string' || !options.path || options.path === ':memory:' || options.path.length > 4096 ||
@@ -134,6 +136,17 @@ export class Metadata {
     load: () => this.call({kind: 'loadLocalSession'}) as ReturnType<LocalSessionStore['load']>,
     save: (expectedVersion, session) => this.call({kind: 'saveLocalSession', expectedVersion, session}) as ReturnType<LocalSessionStore['save']>,
   };
+  readonly outputSettlements:OutputSettlementMetadata={
+    settle:request=>this.settlementCall({kind:'settleBackendOutput',request}) as ReturnType<OutputSettlementMetadata['settle']>,
+    read:key=>this.settlementCall({kind:'readBackendSettlement',key}) as ReturnType<OutputSettlementMetadata['read']>,
+  };
+  private async settlementCall(operation:BackendSettlementOperation):Promise<Value>{
+    try{return await this.call(operation);}
+    catch(error){
+      if(this.failed){try{await this.terminate();}catch{return await new Promise<never>(()=>{});}}
+      throw error;
+    }
+  }
   readonly outputDeletions: OutputDeletionMetadata = {
     begin: command => this.deletionCall({kind: 'beginOutputDeletion', command}) as ReturnType<OutputDeletionMetadata['begin']>,
     get: key => this.deletionCall({kind: 'getOutputDeletion', key}) as ReturnType<OutputDeletionMetadata['get']>,
@@ -322,6 +335,7 @@ export class Metadata {
     pending.resolve(value);
   }
   private bindReadRequest(pending: Pending, operation: Operation): void {
+    if(settlementOperation(operation))pending.settlement=operation;
     if (historyOperation(operation)) pending.history = operation;
     if(exportOperation(operation))pending.exportJob=operation;
     if (operation.kind === 'getRunExecution') pending.execution = operation.key;
@@ -330,6 +344,7 @@ export class Metadata {
     if (operation.kind === 'getRunResult') pending.result = operation.key;
   }
   private readReply(pending: Pending, value: unknown): Value | undefined {
+    if(pending.settlement)return captureSettlementValue(pending.settlement,value);
     if(pending.exportJob)return captureExportReply(pending.exportJob,value);
     if (pending.localSession) return captureLocalSessionReply(pending.localSession, value);
     if (pending.deletion) return captureDeletionReply(pending.deletion, value);

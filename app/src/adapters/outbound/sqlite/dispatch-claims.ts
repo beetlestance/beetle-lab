@@ -7,7 +7,7 @@ import type { RunConfiguration } from '../../../ports/runs.js';
 import { nextVersion, requireRule } from '../../../domain/namespaces/index.js';
 import { checkedRunConfiguration } from '../execution-profiles/index.js';
 import type { Settings } from './settings.js';
-import { transaction } from './schema.js';
+import { transaction } from './transaction.js';
 import { captureDispatchKey } from './dispatch-values.js';
 import { captureDispatchOfferReply } from './dispatch-offer-reply.js';
 import { boundedCopy } from './input-values.js';

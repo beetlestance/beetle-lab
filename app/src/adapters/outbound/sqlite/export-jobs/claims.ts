@@ -6,7 +6,7 @@ import type {Settings} from '../settings.js';
 import type {ExportReads} from './reads.js';
 import {DispatchEligibilityOwner} from '../dispatch-eligibility.js';
 import {pendingFacts} from '../dispatch-candidates.js';
-import {transaction} from '../schema.js';
+import {transaction} from '../transaction.js';
 import {original,control} from './originals.js';
 import {StorageError} from '../protocol.js';
 export class ExportClaims {
