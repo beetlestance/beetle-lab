@@ -1,3 +1,5 @@
+import { beginOutputDeletionWithReceipt } from './output-deletion-begin/index.js';
+import { readMutationReceipt,writeMutationReceipt } from './mutation-receipts.js';
 import { BackendSettlements,settlementOperation,captureSettlementOperation } from './backend-settlement/index.js';
 import { assertSettlementConnection } from './backend-settlement-guard/index.js';
 import { HistorySummaries, historyOperation } from './run-history/index.js';
@@ -35,7 +37,7 @@ import { Namespaces } from './namespaces.js';
 import { Reads } from './reads.js';
 import { Settings } from './settings.js';
 import { transaction } from './transaction.js';
-import { boundedCopy, lower, scopeKey, suiteOperation, operationMessageLimit } from './input.js';
+import { suiteOperation, operationMessageLimit } from './input.js';
 import { StorageError } from './protocol.js';
 import type { Bootstrap, ErrorCode, Operation, Value } from './protocol.js';
 
@@ -113,32 +115,19 @@ export class Store {
     this.namespaces = new Namespaces(db, this.entities, this.settings);
     this.reads = new Reads(db, this.entities);
   }
-  private mutation(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'exportJob' | 'beginOutputDeletion' }>): Value {
+  private mutation(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'exportJob' }>): Value {
     const command = operation.command;
     return transaction(this.db, () => {
-      const scope = scopeKey(command.request.scope);
-      const requestId = lower(command.request.requestId);
-      const receipt = this.db.prepare(`SELECT digest,
-        CASE WHEN length(CAST(result_json AS BLOB))<=? THEN result_json ELSE NULL END result_json
-        FROM receipts WHERE scope_key=? AND request_id=?`)
-        .get(operationMessageLimit(operation), scope, requestId);
-      if (receipt) {
-        if (receipt.digest !== command.intentDigest) throw new StorageError('conflict');
-        if (typeof receipt.result_json !== 'string') throw new StorageError('unavailable');
-        const value = JSON.parse(receipt.result_json) as Value;
-        return operation.kind === 'cancelRun' ? captureCancelRunReply(value, operation.command) : value;
+      const receipt=readMutationReceipt(this.db,command,operationMessageLimit(operation));
+      if(receipt.kind==='stored'){
+        const value=receipt.value as Value;return operation.kind==='cancelRun'?captureCancelRunReply(value,operation.command):value;
       }
-      const value = this.change(operation);
-      const copy = boundedCopy(value, operationMessageLimit(operation));
-      this.db.prepare('INSERT INTO receipts(scope_key,request_id,digest,result_json) VALUES (?,?,?,?)')
-        .run(scope, requestId, command.intentDigest, JSON.stringify(copy));
-      return copy;
+      return writeMutationReceipt(this.db,command,this.change(operation),operationMessageLimit(operation)) as Value;
     });
   }
-  private change(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'exportJob' | 'beginOutputDeletion' }>): Value {
+  private change(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'exportJob' }>): Value {
     switch (operation.kind) {
       case 'exportJob': return operation.command.kind==='createExport'?this.exports.create(operation.command):this.exports.cancel(operation.command);
-      case 'beginOutputDeletion': return this.deletions.begin(operation.command);
       case 'run': return this.runs.create(operation.command);
       case 'cancelRun': return this.runCancellations.cancel(operation.command);
       case 'input': return this.inputs.control(operation.command);
@@ -187,7 +176,7 @@ export class Store {
   }
   private deletion(operation: OutputDeletionOperation): Value {
     const captured = captureDeletionOperation(operation);
-    return captured.kind === 'beginOutputDeletion' ? this.mutation(captured) : this.deletions.execute(captured);
+    return captured.kind === 'beginOutputDeletion' ? transaction(this.db,()=>beginOutputDeletionWithReceipt(this.db,this.deletions,captured.command)) : this.deletions.execute(captured);
   }
   execute(operation: Operation): Value {
     assertSettlementConnection(this.db);

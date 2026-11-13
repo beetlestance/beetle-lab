@@ -1,3 +1,4 @@
+import { prepareInitialDeletion } from './initial.js';
 import {scanSettlements} from './settlement-scan.js';
 import { scanRetirements } from './retirement-scan.js';
 import { recordCleanupAck,readCleanupAck } from './acks.js';
@@ -11,9 +12,7 @@ import type { RunKey } from '../../../../ports/runs.js';
 import type { OutputDeletionCommand, OutputDeletionOperation, OutputDeletionSummary, OutputDeletionValue,
   OutputDeletionPlanWrite, OutputDeletionAbsenceWrite, OutputDeletionFile, OutputDeletionScan } from '../../../../ports/output-deletion-metadata.js';
 import type { OutputDeletionRequest } from '../../../../ports/output-deletion.js';
-import { prepareOutputDeletion } from '../../../../application/output-deletion/index.js';
 import { StorageError } from '../protocol.js';
-import { lower, sha256 } from '../input-values.js';
 import { transaction } from '../transaction.js';
 import { captureFacts } from './facts.js';
 import { file, parent, summary } from './rows.js';
@@ -27,17 +26,14 @@ export class OutputDeletions {
   constructor(private readonly db: DatabaseSync, private readonly runs: {get(key: RunKey): Run}, private readonly capacity:()=>CleanupCapacity) {}
   /** Participates in Store's shared receipt-first transaction; never a standalone mutation. */
   begin(input: OutputDeletionCommand): OutputDeletionSummary {
-    const command = prepareOutputDeletion(input, sha256); const facts = captureFacts(this.db, this.runs, command); const run = facts.run;
-    if (this.db.prepare('SELECT id FROM output_deletion_intents WHERE run_id=?').get(run.id)) throw new StorageError('conflict');
-    reserveCleanupControl(this.db,{runId:run.id,attemptId:run.activeAttemptId,organizationId:run.scope.organizationId,workspaceId:run.scope.workspaceId},this.capacity);
+    const prepared=prepareInitialDeletion(this.db,this.runs,input);const {command,original}=prepared;
+    reserveCleanupControl(this.db,original,this.capacity);
     this.db.prepare(`INSERT INTO output_deletion_intents(id,run_id,attempt_id,organization_id,workspace_id,request_id,run_version,
       deletion_version,version,kind,requested_at,closure_digest,retained_payload_bytes,metadata_bytes,file_count,pending_files)
-      VALUES(?,?,?,?,?,?,?,1,1,?,?,?,?,?,?,?)`).run(lower(command.id), run.id, run.activeAttemptId, run.scope.organizationId, run.scope.workspaceId,
-      lower(command.request.requestId), run.version, facts.kind, command.requestedAt, facts.closureDigest, facts.retainedPayloadBytes, facts.metadataBytes,
-      facts.versions.length, facts.versions.length);
-    const insert = this.db.prepare(`INSERT INTO output_deletion_files(deletion_id,attempt_id,ordinal,original_version,version,absent) VALUES(?,?,?,?,1,0)`);
-    facts.versions.forEach((version, ordinal) => insert.run(lower(command.id), run.activeAttemptId, ordinal, version));
-    const value = summary(this.db, {id: command.id, scope: run.scope, runId: run.id});
+      VALUES(?,?,?,?,?,?,?,1,1,?,?,?,?,?,?,?)`).run(...prepared.parameters);
+    const insert=this.db.prepare('INSERT INTO output_deletion_files(deletion_id,attempt_id,ordinal,original_version,version,absent) VALUES(?,?,?,?,1,0)');
+    for(const file of prepared.files)insert.run(...file.parameters);
+    const value = summary(this.db, {id: command.id, scope: command.request.scope, runId: original.runId});
     return captureDeletionReply({kind: 'beginOutputDeletion', command}, value) as OutputDeletionSummary;
   }
   execute(input: OutputDeletionOperation): OutputDeletionValue {
@@ -123,3 +119,5 @@ export function inspectOutputDeletionCandidate(db:DatabaseSync,runs:{get(key:Run
  const logicalBytes=facts.retainedPayloadBytes+facts.metadataBytes+65536;
  if(!Number.isSafeInteger(logicalBytes)||logicalBytes<65536)throw new StorageError('unavailable');return{kind:facts.kind,logicalBytes};
 }
+
+export { prepareInitialDeletion } from './initial.js';
