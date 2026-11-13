@@ -1,7 +1,9 @@
+import { asSchema21 } from '../../output-deletion/cleanup-ack/legacy021.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { transaction } from '../../../src/adapters/outbound/sqlite/schema.js';
 /** Synthetic predecessor projection for task-owned fixtures, never production recovery. */
 export function asSchema20(db:DatabaseSync):void{
+ asSchema21(db);
  const version=db.prepare('PRAGMA user_version').get()?.user_version;
  if(version===20)return;
  if(version!==21)throw Error('Expected policy1 fixture');

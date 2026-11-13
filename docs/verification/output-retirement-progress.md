@@ -17,10 +17,10 @@ owns remaining work; [retirement contract](../design/lld/output-retirement.md) o
 | C4 authenticated runner endpoint | [Transport](retirement-transport.md) | Real TCP uses synthetic Docker observations |
 | C4 committed backend request | [Projection](backend-retirement-request.md) | Read-only; no dispatch or ACK |
 | C4 exact bounded installation gateway | [Gateway](retirement-gateway.md) | No background driver or ACK storage |
+| C4 immutable backend ACK metadata | [ACK store](backend-retirement-ack.md) | Trusted gateway consumption/driver and composed recovery remain pending |
 
-Next: review the [backend ACK proposal](../design/lld/backend-retirement-ack.md), freeze
-its control reservation and private port, implement immutable ACK storage and bounded
-driver discovery, then qualify both compiled workers with actual native roots and
+Next: connect bounded driver discovery and trusted gateway ACK consumption,
+then qualify both compiled workers with actual native roots and
 authenticated HTTP through lost replies/reopen. Do not promote separate leaf/mocked
 successes to full C4 acceptance. C5 separately owns exact-once settlement/tombstones;
 C6 owns public retention and deletion. All existing charges remain until their owners

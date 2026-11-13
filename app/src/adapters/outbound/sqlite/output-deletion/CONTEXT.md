@@ -19,3 +19,7 @@ Matching replay does not advance counts. Committed intent fences new artifact re
 ALL old rows and charges remain. Files_absent only witnesses backend published
 files; producer retirement, purge and refunds require separate reviewed authority.
 Tests: app/test/output-deletion/{store,guards,boundary,migration,native-worker}.test.ts.
+
+ACK owner acks.ts reuses exact C4d request derivation; cleanup-ack-guard performs one
+fixed synchronous permit-bound INSERT. Canonicalbody<=4096+512row in policy1 ACKbucket.
+Read/replay immutable; pending/unsent refuse; no driver/refund/nativeproof implied.

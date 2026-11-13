@@ -1,3 +1,4 @@
+import { captureCleanupAck,captureCleanupAckState } from './ack-values.js';
 import { captureOutputRetirementRequest, OUTPUT_RETIREMENT_REQUEST_BYTES } from '@beetle/contracts/output-retirement';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import { RUN_OUTPUT_METADATA_BYTES } from '../../../../ports/dispatch.js';
@@ -40,19 +41,19 @@ function bindFile(value: OutputDeletionFile, key: OutputDeletionFileKey): void {
     && binding.attempt.organizationId === key.scope.organizationId && binding.attempt.workspaceId === key.scope.workspaceId);
 }
 export function deletionReplyLimit(operation: OutputDeletionOperation): number {
+  if(operation.kind==='getOutputCleanupAck'||operation.kind==='recordOutputCleanupAck')return 8192;
   if (operation.kind === 'getOutputRetirementRequest') return OUTPUT_RETIREMENT_REQUEST_BYTES;
   if (operation.kind === 'scanOutputDeletions') return 65536;
   return ['beginOutputDeletion', 'getOutputDeletion', 'reserveOutputCleanupControl'].includes(operation.kind) ? 4096 : 8192;
 }
 export function captureDeletionReply(operation: OutputDeletionOperation, input: unknown): OutputDeletionValue {
   const copy = boundedCopy(input, deletionReplyLimit(operation));
+  if(operation.kind==='getOutputCleanupAck')return captureCleanupAckState(operation.key,copy);
+  if(operation.kind==='recordOutputCleanupAck')return ackWriteReply(operation.request,copy);
   if (operation.kind === 'getOutputRetirementRequest') return retirementReply(operation.key, copy);
   if (operation.kind === 'scanOutputDeletions') return pageReply(operation, copy);
   if (operation.kind === 'beginOutputDeletion' || operation.kind === 'getOutputDeletion' || operation.kind === 'reserveOutputCleanupControl') return summaryReply(operation, copy);
-  const value = file(copy); bindFile(value, operation.kind === 'getOutputDeletionFile' ? operation.key : operation.request.key);
-  if (operation.kind === 'recordOutputDeletionPlan') {requireRule(value.phase !== 'pending_preparation'); bindPlan(value, operation.request.plan);}
-  if (operation.kind === 'recordOutputDeletionAbsence') {requireRule(value.phase === 'absent'); bindPlan(value, operation.request.receipt);}
-  return value;
+  return fileReply(operation,copy);
 }
 
 function bindPlan(value: OutputDeletionFile, expected: {record: OutputDeletionFile['record']; deletionId: string; deletionVersion: number; namespaceIdentity: string; preparationIdentity: string}): void {
@@ -83,4 +84,16 @@ function retirementReply(key: OutputDeletionKey, input: unknown) {
   const value = captureOutputRetirementRequest(input);
   requireRule(value.runId === key.runId && value.deletionId === key.id && value.organizationId === key.scope.organizationId && value.workspaceId === key.scope.workspaceId);
   return value;
+}
+
+function ackWriteReply(request:Extract<OutputDeletionOperation,{kind:'recordOutputCleanupAck'}>['request'],input:unknown){
+ const value=captureCleanupAck(request.key,input);
+ requireRule(encodeCanonicalJson(value.reply,4096)===encodeCanonicalJson(request.reply,4096));return value;
+}
+
+function fileReply(operation:Extract<OutputDeletionOperation,{kind:'getOutputDeletionFile'|'recordOutputDeletionPlan'|'recordOutputDeletionAbsence'}>,input:unknown):OutputDeletionFile{
+ const value=file(input);bindFile(value,operation.kind==='getOutputDeletionFile'?operation.key:operation.request.key);
+ if(operation.kind==='recordOutputDeletionPlan'){requireRule(value.phase!=='pending_preparation');bindPlan(value,operation.request.plan);}
+ if(operation.kind==='recordOutputDeletionAbsence'){requireRule(value.phase==='absent');bindPlan(value,operation.request.receipt);}
+ return value;
 }

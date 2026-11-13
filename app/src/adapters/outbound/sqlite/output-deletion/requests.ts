@@ -1,3 +1,4 @@
+import { encodeJson,validate } from '@beetle/contracts';
 import type { OutputDeletionOperation, OutputDeletionKey, OutputDeletionFileKey } from '../../../../ports/output-deletion-metadata.js';
 import type { OutputDeletionRequest, OutputDeletionReceipt } from '../../../../ports/output-deletion.js';
 import { prepareOutputDeletion } from '../../../../application/output-deletion/index.js';
@@ -6,7 +7,7 @@ import { requireRule } from '../../../../domain/namespaces/index.js';
 import { decodeArtifact } from '../output-custody/index.js';
 import { boundedCopy, sha256 } from '../input-values.js';
 import { closed, hash, natural, scope, uuid } from './values.js';
-const kinds = ['beginOutputDeletion', 'getOutputDeletion', 'getOutputRetirementRequest', 'reserveOutputCleanupControl', 'getOutputDeletionFile', 'recordOutputDeletionPlan', 'recordOutputDeletionAbsence', 'scanOutputDeletions'];
+const kinds = ['beginOutputDeletion', 'getOutputDeletion', 'getOutputRetirementRequest', 'reserveOutputCleanupControl', 'getOutputCleanupAck', 'recordOutputCleanupAck', 'getOutputDeletionFile', 'recordOutputDeletionPlan', 'recordOutputDeletionAbsence', 'scanOutputDeletions'];
 export function deletionOperation(value: unknown): value is OutputDeletionOperation {
   const descriptor = value && typeof value === 'object' ? Object.getOwnPropertyDescriptor(value, 'kind') : undefined;
   return !!descriptor && 'value' in descriptor && kinds.includes(descriptor.value as string);
@@ -36,14 +37,15 @@ function captureWrite(kind: 'recordOutputDeletionPlan' | 'recordOutputDeletionAb
   return absent ? {kind: 'recordOutputDeletionAbsence', request: {...owned, receipt: nativePlan(value.receipt, true) as OutputDeletionReceipt}}
     : {kind: 'recordOutputDeletionPlan', request: {...owned, plan: nativePlan(value.plan) as OutputDeletionRequest}};
 }
-const property: Record<OutputDeletionOperation['kind'], string> = {beginOutputDeletion: 'command', getOutputDeletion: 'key', getOutputRetirementRequest: 'key', reserveOutputCleanupControl: 'key', getOutputDeletionFile: 'key',
+const property: Record<OutputDeletionOperation['kind'], string> = {beginOutputDeletion: 'command', getOutputDeletion: 'key', getOutputRetirementRequest: 'key', reserveOutputCleanupControl: 'key', getOutputCleanupAck:'key', recordOutputCleanupAck:'request', getOutputDeletionFile: 'key',
   recordOutputDeletionPlan: 'request', recordOutputDeletionAbsence: 'request', scanOutputDeletions: 'query'};
 export function captureDeletionOperation(input: unknown): OutputDeletionOperation {
   const copy = boundedCopy(input, 12288) as OutputDeletionOperation & {messageId?: number}; requireRule(deletionOperation(copy));
-  closed(copy, ['kind', property[copy.kind], ...(Object.hasOwn(copy, 'messageId') ? ['messageId'] : [])]);
-  if (Object.hasOwn(copy, 'messageId')) natural(copy.messageId, Number.MAX_SAFE_INTEGER, 1);
+  captureEnvelope(copy);
   switch (copy.kind) {
     case 'beginOutputDeletion': return {kind: copy.kind, command: prepareOutputDeletion(copy.command, sha256)};
+    case 'recordOutputCleanupAck': return captureAckWrite(copy.request);
+    case 'getOutputCleanupAck':
     case 'reserveOutputCleanupControl':
     case 'getOutputRetirementRequest':
     case 'getOutputDeletion': return {kind: copy.kind, key: key(copy.key)};
@@ -51,4 +53,14 @@ export function captureDeletionOperation(input: unknown): OutputDeletionOperatio
     case 'scanOutputDeletions': return {kind: copy.kind, query: captureScan(copy.query)};
     default: return captureWrite(copy.kind, copy.request);
   }
+}
+
+function captureAckWrite(input:unknown):Extract<OutputDeletionOperation,{kind:'recordOutputCleanupAck'}>{
+ closed(input,['key','reply']);encodeJson(input.reply,4096);const reply=validate('OutputRetirementReply',input.reply);requireRule(reply.ok);
+ return {kind:'recordOutputCleanupAck',request:{key:key(input.key),reply:reply.value}};
+}
+
+function captureEnvelope(copy:OutputDeletionOperation & {messageId?:number}):void{
+ const hasMessageId=Object.hasOwn(copy,'messageId');closed(copy,['kind',property[copy.kind],...(hasMessageId?['messageId']:[])]);
+ if(hasMessageId)natural(copy.messageId,Number.MAX_SAFE_INTEGER,1);
 }

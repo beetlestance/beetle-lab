@@ -137,6 +137,8 @@ export class Metadata {
   readonly outputDeletions: OutputDeletionMetadata = {
     begin: command => this.call({kind: 'beginOutputDeletion', command}) as ReturnType<OutputDeletionMetadata['begin']>,
     get: key => this.call({kind: 'getOutputDeletion', key}) as ReturnType<OutputDeletionMetadata['get']>,
+    cleanupAck:key=>this.call({kind:'getOutputCleanupAck',key}) as ReturnType<OutputDeletionMetadata['cleanupAck']>,
+    recordCleanupAck:request=>this.call({kind:'recordOutputCleanupAck',request}) as ReturnType<OutputDeletionMetadata['recordCleanupAck']>,
     reserveControl: key => this.call({kind:'reserveOutputCleanupControl',key}) as ReturnType<OutputDeletionMetadata['reserveControl']>,
     retirementRequest: key => this.call({kind: 'getOutputRetirementRequest', key}) as ReturnType<OutputDeletionMetadata['retirementRequest']>,
     getFile: key => this.call({kind: 'getOutputDeletionFile', key}) as ReturnType<OutputDeletionMetadata['getFile']>,

@@ -1,6 +1,6 @@
 # Durable backend retirement ACK
 
-Status: proposed next implementation boundary; not storage/refund authority.
+Status: immutable ACK metadata implemented locally; driver/native composition pending.
 Parents: [retirement](output-retirement.md), [request projection](backend-retirement-request.md),
 [gateway](retirement-gateway.md), [output allocation](output-allocation.md).
 Owner: existing backend metadata worker and deletion driver; coordinator reserves
@@ -33,26 +33,38 @@ changed physical bindings, replacement and deletion. Use bounded pure wire valid
 and positive retained-row provenance; JSON shape or a matching hash alone is insufficient.
 Keep one projection authority, with shared/frozen definitions where SQL guards need it.
 
-## Control reservation prerequisite
+## Control reservation
 
-The [dedicated cleanup reservation](backend-cleanup-control.md) owns the proposed
-receipt cell of4096 body bytes plus512 logical row bytes,
-with one cell per original. This is a proposed bound, not a measured SQLite/WAL quota.
-Before implementation, identify and review the actual reservation owner, immutable
-allowance and admission point for these bytes. Existing retained65,536-byte metadata
-allowance must not be treated as proven spare capacity merely because it is charged.
-Audit overlapping control consumers before carving out a receipt cell; otherwise add
-an explicitly accounted reservation before destructive work. Do not allocate one
-unbounded receipt per retry, silently expand quota, create default-zero charges or
-refund old charges to make an ACK fit. Full control capacity must fail charged and
-recoverably before issuing new effects. Agent Journal and backend reservations remain
-separate authorities; one service cannot borrow the other's unused control bytes.
+The [dedicated backend control reserve](backend-cleanup-control.md) owns one ACK cell:
+<=4096 canonical body bytes plus512 logical row bytes, inside the separately charged
+policy1 allowance. Actual logical_bytes equals encoded body length+512. Record/replay
+never adds another charge or borrows an agent/old-output allowance. Missing policy1
+reservation refuses; legacy top-up must commit before any further effects.
 
-Phase A preserves every existing allocation, payload, source/absence finalization,
-event, replay identity and charge. If explicit additional control reservation is needed,
-revise and review the parent accounting contract first. ACK persistence itself performs
-no purge or refund. C5 separately owns exact-once settlement and compact anti-replay
-identity; a late Offer must remain unable to rerun after payload removal.
+Phase A preserves every existing allocation, payload, finalization, event and replay
+identity. ACK persistence does not decrement usage. C5 separately owns settlement and
+compact anti-replay identity, including a proof that its tombstone fits its own bucket.
+
+## Transaction-scoped insertion guard
+
+The existing immediate metadata transaction derives the expected request through C4d,
+validates the actual cleaned reply and creates one detached canonical body/digest/cost.
+The fixed synchronous INSERT installs those four scalars in a private per-DB permit
+only for the statement and clears them in finally. Nested insertion refuses. No
+callback, await or external permit setter extends this window.
+
+A nondeterministic SQLite function returns integer1 only for that exact deletion ID,
+body, digest and logical cost; otherwise0. Missing registration fails closed. The
+constant version1 and parent/control/file-custody constraints cover remaining inserted
+fields. SQL rejects raw insertion, replacement, updates and deletion. Rollback and a
+failed COMMIT leave no permit. One sequential worker owns at most one <=4096-byte body.
+
+This guard vouches for the trusted metadata operation's validated input. It does not
+authenticate HTTP or prove native IO; the driver must supply the actual gateway reply.
+Read/replay revalidates the stored canonical digest and exact original against retained
+rows. Missing ACK is an explicit metadata state, never evidence of rollback or absence.
+Record replies match the entire submitted reply at both worker boundaries; read replies
+are scoped observational metadata, not a caller-supplied refund capability.
 
 ## Driver and discovery boundary
 

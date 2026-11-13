@@ -1,3 +1,4 @@
+import { recordCleanupAck,readCleanupAck } from './acks.js';
 import { reserveCleanupControl } from '../cleanup-control/index.js';
 import type { CleanupCapacity } from '../cleanup-control/index.js';
 import { retirementRequest } from './retirement-request.js';
@@ -48,6 +49,8 @@ export class OutputDeletions {
         reserveCleanupControl(this.db,{runId:row.run_id as string,attemptId:row.attempt_id as string,organizationId:row.organization_id as string,workspaceId:row.workspace_id as string},this.capacity);
         return summary(this.db,operation.key);
       }
+      case 'getOutputCleanupAck': return readCleanupAck(this.db,this.runs,operation.key);
+      case 'recordOutputCleanupAck': return recordCleanupAck(this.db,this.runs,operation.request);
       case 'getOutputRetirementRequest': return retirementRequest(this.db, this.runs, operation.key);
       case 'getOutputDeletion': return summary(this.db, operation.key);
       case 'getOutputDeletionFile': return file(this.db, operation.key);
