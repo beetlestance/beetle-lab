@@ -20,6 +20,13 @@ export function boundRootNamespace(root: VerifiedRoot): InstalledNamespaceAnchor
 export function verifiedDaemonIdentity(root: VerifiedRoot): string {
   boundRootNamespace(root); return rootIdentity(root).configuration.expectedDaemonId;
 }
+/** Exact verified installation facts for retirement; exposes no mutable configuration. */
+export function retirementRoot(root: VerifiedRoot) {
+  const namespace = boundRootNamespace(root); const value = rootIdentity(root);
+  return Object.freeze({ namespaceIdentity: namespace.namespaceIdentity, installationId: value.configuration.installationId,
+    directory: value.configuration.stagingRoot, native: Object.freeze({ dev: value.dev.toString(), ino: value.ino.toString(),
+      uid: String(value.uid), gid: String(value.gid), mode: value.mode.toString() }), marker: Object.freeze({ ...namespace.marker }) });
+}
 export function rememberRootNamespace(root: VerifiedRoot, anchor: InstalledNamespaceAnchor): void {
   rootIdentity(root);
   const existing = namespaces.get(root);

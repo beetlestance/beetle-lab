@@ -1,8 +1,7 @@
-import type { FileHandle } from 'node:fs/promises';
 import { OUTPUT_COLLECTION_MAX_MS } from './types.js';
 import type { OutputCollectionReason } from './types.js';
 import { OutputFailure } from './ports.js';
-import type { OutputIO, OutputPorts } from './ports.js';
+import type { OutputIO, OutputPorts, NativeClosable } from './ports.js';
 
 interface Timing { readonly deadline: number; readonly signal?: AbortSignal }
 type Failure = { readonly ok: false; readonly reason: OutputCollectionReason };
@@ -25,8 +24,8 @@ export class OutputLifetime<T extends { readonly ok: true }> implements OutputIO
   private readonly closedOutcome: Promise<void>;
   private options: Timing | undefined;
   private state: OutputCollectionReason | undefined;
-  private readonly handles = new Set<FileHandle>();
-  private readonly closes = new Map<FileHandle, Promise<void>>();
+  private readonly handles = new Set<NativeClosable>();
+  private readonly closes = new Map<NativeClosable, Promise<void>>();
   constructor(private readonly ports: OutputPorts, private readonly release: () => void) {
     let finish!: (result: Outcome<T>) => void; let quiet!: () => void;
     let good!: () => void; let bad!: (error: OutputFailure) => void;
@@ -50,13 +49,13 @@ export class OutputLifetime<T extends { readonly ok: true }> implements OutputIO
   async io<T>(action: () => Promise<T>): Promise<T> {
     this.check(); const result = await action(); this.check(); return result;
   }
-  own(handle: FileHandle): void { this.handles.add(handle); }
-  private closeOne(handle: FileHandle): Promise<void> {
+  own(handle: NativeClosable): void { this.handles.add(handle); }
+  private closeOne(handle: NativeClosable): Promise<void> {
     let original = this.closes.get(handle);
     if (!original) { original = Promise.resolve().then(() => handle.close()); this.closes.set(handle, original); }
     return original;
   }
-  async closeHandles(handles: readonly FileHandle[]): Promise<void> {
+  async closeHandles(handles: readonly NativeClosable[]): Promise<void> {
     const outcomes = await Promise.allSettled(handles.map(handle => this.closeOne(handle)));
     if (outcomes.some(outcome => outcome.status === 'rejected')) throw new OutputFailure('io');
   }

@@ -1,3 +1,4 @@
+import type { TaskInventory } from '../task-inventory/index.js';
 import type { RuntimeRetirement } from '../runtime-retirement/index.js';
 import type { ProducerRetirement } from '../producer-retirement/index.js';
 import type { FastifyInstance } from 'fastify';
@@ -20,6 +21,7 @@ export interface AgentRuntimeOptions {
   readonly signal?: AbortSignal;
 }
 export interface AgentRuntime {
+  readonly taskInventory: Pick<TaskInventory, 'prepare' | 'status'>;
   readonly retiredRuntime: Pick<RuntimeRetirement, 'retire' | 'status'>;
   /** Private process-local port for later authenticated retirement composition; no route implied. */
   readonly retirement: Pick<ProducerRetirement, 'retire' | 'status'>;
