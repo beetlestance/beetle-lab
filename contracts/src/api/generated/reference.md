@@ -16,10 +16,8 @@ Schema catalogue is complete, including runner common exactly once. Implementati
 | PATCH | /api/v2/organizations/{organizationId}/settings | implemented | OrganizationParams | none | PatchOrganizationSettingsRequest | 200 | OrganizationSettings |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/settings | implemented | WorkspaceParams | none | none | 200 | WorkspaceSettings |
 | PATCH | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/settings | implemented | WorkspaceParams | none | PatchWorkspaceSettingsRequest | 200 | WorkspaceSettings |
-| POST | /api/v2/settings/retention-preview | planned | none | none | RetentionPreviewRequest | 200 | RetentionPreview |
-| POST | /api/v2/settings/retention-apply | planned | none | none | RetentionApplyRequest | 202 | RetentionApplyReceipt |
-| POST | /api/v2/organizations/{organizationId}/settings/retention-preview | planned | OrganizationParams | none | RetentionPreviewRequest | 200 | RetentionPreview |
-| POST | /api/v2/organizations/{organizationId}/settings/retention-apply | planned | OrganizationParams | none | RetentionApplyRequest | 202 | RetentionApplyReceipt |
+| POST | /api/v2/settings/retention-preview | implemented | none | none | RetentionPreviewRequest | 200 | RetentionTraversalPage |
+| POST | /api/v2/organizations/{organizationId}/settings/retention-preview | implemented | OrganizationParams | none | RetentionPreviewRequest | 200 | RetentionTraversalPage |
 | GET | /api/v2/organizations/{organizationId}/workspaces | implemented | OrganizationParams | PageQuery | none | 200 | WorkspacePage |
 | POST | /api/v2/organizations/{organizationId}/workspaces | implemented | OrganizationParams | none | CreateWorkspaceRequest | 201 | Workspace |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId} | implemented | WorkspaceParams | none | none | 200 | Workspace |

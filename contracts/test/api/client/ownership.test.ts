@@ -56,39 +56,35 @@ it('checks every page item as well as its envelope', async () => {
   expect(await client.listWorkspaces({ params: { organizationId }, query: { limit: 100 } })).toEqual({ ok: false, error: { kind: 'response' } });
 });
 
-it('requires installation retention scope and permits only the route organization or its workspace', async () => {
-  const body = await load('retention-preview-request', 'RetentionPreviewRequest');
-  const data = await load('retention-preview', 'RetentionPreview');
-  const fetcher = reply(data); const client = createApiClient({ baseUrl, fetch: fetcher });
-  expect(await client.previewInstallationRetention({ body })).toEqual({ ok: false, error: { kind: 'request' } });
-  expect(await client.previewOrganizationRetention({ params: { organizationId: otherId }, body })).toEqual({ ok: false, error: { kind: 'request' } });
-  expect(await client.previewOrganizationRetention({ params: { organizationId }, body: { ...body, scope: { kind: 'installation' } } })).toEqual({ ok: false, error: { kind: 'request' } });
-  expect(fetcher).not.toHaveBeenCalled();
-  const scope = { kind: 'workspace' as const, organizationId, workspaceId };
-  fetcher.mockResolvedValueOnce(Response.json({ ...data, scope }));
-  expect(await client.previewOrganizationRetention({ params: { organizationId }, body: { ...body, scope } })).toMatchObject({ ok: true });
+it('requires exact parent scope for installation and organization traversal',async()=>{
+ const body=await load('retention-preview-request','RetentionPreviewRequest');const data=await load('retention-traversal-page','RetentionTraversalPage');const fetcher=reply(data);const client=createApiClient({baseUrl,fetch:fetcher});
+ expect(await client.previewInstallationRetention({body})).toEqual({ok:false,error:{kind:'request'}});
+ expect(await client.previewOrganizationRetention({params:{organizationId:otherId},body})).toEqual({ok:false,error:{kind:'request'}});
+ expect(await client.previewOrganizationRetention({params:{organizationId},body:{...body,scope:{kind:'installation'}}})).toEqual({ok:false,error:{kind:'request'}});
+ expect(await client.previewOrganizationRetention({params:{organizationId},body:{...body,scope:{kind:'workspace',organizationId,workspaceId}}})).toEqual({ok:false,error:{kind:'request'}});
+ expect(fetcher).not.toHaveBeenCalled();expect(await client.previewOrganizationRetention({params:{organizationId},body})).toMatchObject({ok:true});
 });
 
 it('checks every retention candidate below its preview scope without reversing ancestry', async () => {
-  const body = await load('retention-preview-request', 'RetentionPreviewRequest');
-  const data = await load('retention-preview', 'RetentionPreview');
+  const body = await load('retention-preview-request', 'RetentionPreviewRequest');body.scope={kind:'workspace',organizationId,workspaceId};
+  const data = await load('retention-preview', 'RetentionPreview');data.scope=body.scope;
   const fetcher = reply({ ...data, candidates: [data.candidates[0], { ...data.candidates[0], scope: { kind: 'workspace', organizationId: otherId, workspaceId } }] });
   const client = createApiClient({ baseUrl, fetch: fetcher });
-  expect(await client.previewOrganizationRetention({ params: { organizationId }, body })).toEqual({ ok: false, error: { kind: 'response' } });
+  expect(await client.previewWorkspaceRetention({ params: { organizationId,workspaceId }, body })).toEqual({ ok: false, error: { kind: 'response' } });
   const scope = { kind: 'workspace' as const, organizationId, workspaceId: otherId };
   fetcher.mockResolvedValueOnce(Response.json({ ...data, scope }));
-  expect(await client.previewOrganizationRetention({ params: { organizationId }, body: { ...body, scope } })).toEqual({ ok: false, error: { kind: 'response' } });
+  expect(await client.previewWorkspaceRetention({ params: { organizationId,workspaceId:otherId }, body: { ...body, scope } })).toEqual({ ok: false, error: { kind: 'response' } });
 });
 
 it('binds retention response scope and intent/settings/snapshot identity', async () => {
-  const body = await load('retention-apply-request', 'RetentionApplyRequest');
-  const receipt = await load('retention-apply-receipt', 'RetentionApplyReceipt');
+  const body = await load('retention-apply-request', 'RetentionApplyRequest');body.scope={kind:'workspace',organizationId,workspaceId};
+  const receipt = await load('retention-apply-receipt', 'RetentionApplyReceipt');receipt.scope=body.scope;
   const fetcher = reply(receipt, 202); const client = createApiClient({ baseUrl, fetch: fetcher });
   const replacements = [{ requestId: otherId }, { settingsId: otherId }, { settingsVersion: 2 }, { snapshotId: otherId }, { snapshotVersion: 2 },
     { scope: { kind: 'organization', organizationId: otherId } }];
   for (const replacement of replacements) {
     fetcher.mockResolvedValueOnce(Response.json({ ...receipt, ...replacement }, { status: 202 }));
-    expect(await client.applyOrganizationRetention({ params: { organizationId }, body })).toEqual({ ok: false, error: { kind: 'response' } });
+    expect(await client.applyWorkspaceRetention({ params: { organizationId,workspaceId }, body })).toEqual({ ok: false, error: { kind: 'response' } });
   }
 });
 

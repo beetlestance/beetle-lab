@@ -1,3 +1,4 @@
+import type { RetentionTraversalPage } from '../../../src/api/index.js';
 import { it,expect,vi } from 'vitest';
 import { createApiClient } from '../../../src/api/index.js';
 import { fixture } from '../fixtures.js';
@@ -33,4 +34,16 @@ it('binds recovered preview and Apply receipt to snapshot identity and exact can
  const fetcher=reply({...receipt,scope:{kind:'workspace',...params},maximumCandidates:1},202);const client=createApiClient({baseUrl,fetch:fetcher});
  const request={...body,scope:{kind:'workspace',...params}} as Parameters<typeof client.applyWorkspaceRetention>[0]['body'];
  expect(await client.applyWorkspaceRetention({params,body:request})).toEqual({ok:false,error:{kind:'response'}});
+});
+
+it('binds parent traversal scope/intent and its workspace without granting global coverage or application',async()=>{
+ const body=await fixture('valid/retention-preview-request.json') as Parameters<ReturnType<typeof createApiClient>['previewOrganizationRetention']>[0]['body'];
+ const original=await fixture('valid/retention-traversal-page.json') as RetentionTraversalPage;const input={params:{organizationId:params.organizationId},body};
+ for(const forged of [{...original,durable:false},{...original,requestId:other},{...original,nextCursor:btoa(other)},
+  {...original,workspace:{...original.workspace!,scope:{kind:'workspace',organizationId:other,workspaceId:params.workspaceId}}},
+  {...original,workspace:{...original.workspace!,requestId:other}},{...original,coverage:'complete'}]){
+  expect(await createApiClient({baseUrl,fetch:reply(forged)}).previewOrganizationRetention(input)).toMatchObject({ok:false,error:{kind:'response'}});
+ }
+ const empty={...original,durable:false,workspace:null,nextCursor:null};expect((await createApiClient({baseUrl,fetch:reply(empty)}).previewOrganizationRetention(input)).ok).toBe(true);
+ expect(await createApiClient({baseUrl,fetch:reply({...empty,durable:true})}).previewOrganizationRetention(input)).toEqual({ok:false,error:{kind:'response'}});
 });

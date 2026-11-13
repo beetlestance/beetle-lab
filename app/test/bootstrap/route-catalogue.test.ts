@@ -14,7 +14,7 @@ it('matches all declared implementation statuses to the real configured applicat
   await app.server.ready();
   const mismatches=apiOperations.filter(operation=>app.server.hasRoute({method:operation.method,url:operation.path.replace(/\{([A-Za-z]+)\}/g,':$1')})!==(operation.implementation==='implemented'));
   expect(mismatches.map(operation=>operation.name)).toEqual([]);
-  expect(apiOperations.filter(operation=>operation.implementation==='planned').map(operation=>operation.name)).toEqual(["deleteOrganization", "previewInstallationRetention", "applyInstallationRetention", "previewOrganizationRetention", "applyOrganizationRetention", "deleteWorkspace", "deleteFolder"]);
+  expect(apiOperations.filter(operation=>operation.implementation==='planned').map(operation=>operation.name)).toEqual(["deleteOrganization", "deleteWorkspace", "deleteFolder"]);
  }finally{await app.close();}
 });
 it('refuses to register planned contract operations as implemented handlers',async()=>{

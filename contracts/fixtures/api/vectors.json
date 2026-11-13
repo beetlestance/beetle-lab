@@ -698,5 +698,10 @@
     "path": "valid/retention-discard-receipt.json",
     "schema": "RetentionDiscardReceipt",
     "valid": true
+  },
+  {
+    "path": "valid/retention-traversal-page.json",
+    "schema": "RetentionTraversalPage",
+    "valid": true
   }
 ]

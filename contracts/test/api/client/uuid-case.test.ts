@@ -73,13 +73,13 @@ it.each(['id', 'requestId'] as const)('compares deletion receipt %s case-insensi
 
 it.each(['requestId', 'settingsId', 'snapshotId'] as const)('compares retention receipt %s case-insensitively without rewriting it', async field => {
   const body = await load('retention-apply-request', 'RetentionApplyRequest');
-  body.scope = organization; body.requestId = ids.request; body.settingsId = ids.settings; body.snapshotId = ids.snapshot;
+  body.scope = workspace; body.requestId = ids.request; body.settingsId = ids.settings; body.snapshotId = ids.snapshot;
   const data = await load('retention-apply-receipt', 'RetentionApplyReceipt');
-  data.scope = organization; data.requestId = ids.request; data.settingsId = ids.settings; data.snapshotId = ids.snapshot;
+  data.scope = workspace; data.requestId = ids.request; data.settingsId = ids.settings; data.snapshotId = ids.snapshot;
   data[field] = data[field].toUpperCase();
   const original = structuredClone(body);
   const fetcher = reply(data, 202); const client = createApiClient({ baseUrl, fetch: fetcher });
-  expect(await client.applyOrganizationRetention({ params: { organizationId: ids.organization }, body })).toEqual({ ok: true, value: data });
+  expect(await client.applyWorkspaceRetention({ params: { organizationId: ids.organization,workspaceId:ids.workspace }, body })).toEqual({ ok: true, value: data });
   expect(JSON.parse(String(fetcher.mock.calls[0]![1]?.body))).toEqual(original);
   expect(body).toEqual(original);
 });
@@ -89,7 +89,7 @@ it('accepts mixed-case retention candidate workspace descendants', async () => {
   const data = await load('retention-preview', 'RetentionPreview'); data.scope = workspace;
   data.candidates[0]!.scope = { ...workspace, organizationId: ids.organization.toUpperCase(), workspaceId: ids.workspace.toUpperCase() };
   const fetcher = reply(data); const client = createApiClient({ baseUrl, fetch: fetcher });
-  expect(await client.previewOrganizationRetention({ params: { organizationId: ids.organization }, body })).toEqual({ ok: true, value: data });
+  expect(await client.previewWorkspaceRetention({ params: { organizationId: ids.organization,workspaceId:ids.workspace }, body })).toEqual({ ok: true, value: data });
 });
 
 it('accepts mixed-case effective organization/workspace source ancestors', async () => {

@@ -2,7 +2,7 @@ import type { FastifyInstance,onRequestAsyncHookHandler } from 'fastify';
 import type { WorkspaceScope } from '@beetle/contracts/api';
 import type { RetentionMetadata } from '../../../../ports/retention.js';
 import { requireRule,sameScope } from '../../../../domain/namespaces/index.js';
-import { retentionPreview } from '../../../../application/retention/index.js';
+import { retentionPreview,retentionTraversal } from '../../../../application/retention/index.js';
 import { registerApiOperation } from '../api-route.js';
 interface Options {
  readonly store:RetentionMetadata;readonly authorize:onRequestAsyncHookHandler;
@@ -17,6 +17,14 @@ export function registerRetentionRoutes(server:FastifyInstance,options:Options):
  const dependencies=Object.freeze({...options});const store=dependencies.store;
  server.register(async scoped=>{
   scoped.addHook('onRequest',dependencies.authorize);
+  registerApiOperation(scoped,'previewInstallationRetention',async({body})=>{
+   requireRule(body.scope.kind==='installation','not_found');
+   return retentionTraversal(await store.previewParent({id:dependencies.newId(),capturedAt:dependencies.now(),request:{...body,scope:{kind:'installation'}}}));
+  },{bodyLimit:12288});
+  registerApiOperation(scoped,'previewOrganizationRetention',async({params,body})=>{
+   const scope={kind:'organization' as const,organizationId:params.organizationId};requireRule(body.scope.kind==='organization'&&sameScope(scope,body.scope),'not_found');
+   return retentionTraversal(await store.previewParent({id:dependencies.newId(),capturedAt:dependencies.now(),request:{...body,scope}}));
+  },{bodyLimit:12288});
   registerApiOperation(scoped,'previewWorkspaceRetention',async({params,body})=>{
    requireRule(body.scope.kind==='workspace'&&sameScope(scope(params),body.scope),'not_found');
    return retentionPreview(await store.preview({id:dependencies.newId(),capturedAt:dependencies.now(),request:{...body,scope:scope(params)}}));

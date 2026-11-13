@@ -6,11 +6,7 @@ import { otherWorkspace,usage } from './fixture.js';
 import { command as namespaceCommand } from '../storage/fixture.js';
 import { ParentRetentionSnapshots } from '../../src/adapters/outbound/sqlite/retention-parent/index.js';
 import { WorkspaceRetentionApplies } from '../../src/adapters/outbound/sqlite/retention-apply/index.js';
-import type { ParentRetentionScope } from '../../src/domain/retention/index.js';
-function command(f:ReturnType<typeof history>,sequence=0,cursor?:string,owner:ParentRetentionScope={kind:'installation'}){
- const chain=f.settings.chain(owner);const pin=owner.kind==='installation'?chain.installation:chain.organization!;
- return{id:uuid(40000+sequence),capturedAt:'2026-11-14T12:00:00.000Z',request:{scope:owner,requestId:uuid(41000+sequence),settingsId:pin.id,expectedVersion:pin.version,page:{limit:2,...(cursor?{cursor}:{})}}};
-}
+import { parentCommand as command } from './parent-fixture.js';
 it('continues trusted Run prefixes then resets at the next workspace without combining budgets',()=>{
  const f=history(4);try{
   const other=otherWorkspace(f);f.policy(value=>{value.retention={mode:'enabled',completedRunCount:2};});const parent=new ParentRetentionSnapshots(f.db,f.reads);

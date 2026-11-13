@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/api/v2/retention-traversal",
+  "title": "ApiRetentionTraversal",
+  "$defs": {
+    "RetentionTraversalPage": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "anyOf": [
+            {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/InstallationScope"},
+            {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/OrganizationScope"}
+          ]
+        },
+        "requestId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "settingsId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "settingsVersion": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Version"},
+        "capturedAt": {"$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunTimestamp"},
+        "coverage": {"const": "live_partial"},
+        "durable": {"type": "boolean"},
+        "workspace": {
+          "anyOf": [
+            {"$ref": "https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionPreview"},
+            {"type": "null"}
+          ]
+        },
+        "nextCursor": {
+          "anyOf": [
+            {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/OpaqueCursor"},
+            {"type": "null"}
+          ]
+        }
+      },
+      "required": [
+        "scope",
+        "requestId",
+        "settingsId",
+        "settingsVersion",
+        "capturedAt",
+        "coverage",
+        "durable",
+        "workspace",
+        "nextCursor"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

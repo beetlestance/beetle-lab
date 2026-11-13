@@ -53,14 +53,18 @@ function previewWindow(value:RetentionPreview,input:PreparedInput):boolean{
  if(input.params.runId)return manualMatches(value,input);
  return value.kind==='retention'&&value.scanned<=(input.body!.page as {limit:number}).limit;
 }
-function preview(value:RetentionPreview,input:PreparedInput,target:WorkspaceScope):boolean{
+export function retentionPreviewValuesMatch(value:RetentionPreview,target:WorkspaceScope):boolean{
  if(!scope(value.scope as WorkspaceScope,target)||!lifetime(value))return false;
  if(!distinct(value.candidates.map(item=>item.id))||!value.candidates.every(item=>scope(item.scope,target)))return false;
  const total=value.candidates.reduce((sum,item)=>sum+item.estimatedBytes,0);
- if(!Number.isSafeInteger(total)||total!==value.estimatedBytes||!previewStructure(value))return false;
+ return Number.isSafeInteger(total)&&total===value.estimatedBytes&&previewStructure(value);
+}
+function preview(value:RetentionPreview,input:PreparedInput,target:WorkspaceScope):boolean{
+ if(!retentionPreviewValuesMatch(value,target))return false;
  if(!input.body)return uuid(value.snapshotId,input.params.snapshotId);
  return intentMatches(value,input)&&previewWindow(value,input);
 }
+
 function apply(reply:RetentionApplyReceipt,input:PreparedInput,target:WorkspaceScope):boolean{
  const body=input.body!;const page=body.page as {limit:number};
  return scope(reply.scope as WorkspaceScope,target)&&intentMatches(reply,input)&&uuid(reply.snapshotId,body.snapshotId)&&reply.snapshotVersion===body.snapshotVersion&&reply.maximumCandidates===page.limit;
@@ -80,5 +84,10 @@ export function retentionResponseMatches(operation:ApiOperation,input:PreparedIn
  }
 }
 export function retentionRequestMatches(operation:ApiOperation,input:PreparedInput):boolean{
- return operation.name!=='previewRunDeletion'||uuid(input.params.runId!,input.body!.runId);
+ switch(operation.name){
+  case 'previewInstallationRetention':return (input.body!.scope as {kind:string}).kind==='installation';
+  case 'previewOrganizationRetention':return (input.body!.scope as {kind:string}).kind==='organization';
+  case 'previewRunDeletion':return uuid(input.params.runId!,input.body!.runId);
+  default:return true;
+ }
 }

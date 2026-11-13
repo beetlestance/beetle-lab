@@ -33,6 +33,7 @@ export interface RetentionBatchSummary {
 }
 export interface RetentionBatchList {readonly scope:WorkspaceScope;readonly items:readonly RetentionBatchSummary[]}
 export interface RetentionMetadata extends WorkspaceRetentionStore {
+ previewParent(command:ParentRetentionPreviewCommand):Promise<ParentRetentionPage>;
  getPreview(key:RetentionStatusKey):Promise<RetentionSnapshot>;
  list(scope:WorkspaceScope):Promise<RetentionBatchList>;
  previewRun(command:ManualRunDeletionCommand):Promise<RetentionSnapshot>;
@@ -42,12 +43,13 @@ export interface RetentionMetadata extends WorkspaceRetentionStore {
 }
 export type RetentionOperation=
  | {readonly kind:'previewWorkspaceRetention';readonly command:WorkspaceRetentionPreviewCommand}
+ | {readonly kind:'previewParentRetention';readonly command:ParentRetentionPreviewCommand}
  | {readonly kind:'getWorkspaceRetentionPreview';readonly request:{readonly key:RetentionStatusKey}}
  | {readonly kind:'listWorkspaceRetention';readonly request:{readonly scope:WorkspaceScope}}
  | {readonly kind:'previewRunDeletion';readonly command:ManualRunDeletionCommand}
  | {readonly kind:'applyWorkspaceRetention';readonly command:WorkspaceRetentionApplyCommand}
  | {readonly kind:'getWorkspaceRetentionStatus'|'discardWorkspaceRetention';readonly request:{readonly key:RetentionStatusKey;readonly now:number}};
-export type RetentionValue=RetentionSnapshot|RetentionApplyReceipt|RetentionStatus|RetentionDiscardReceipt|RetentionBatchList;
+export type RetentionValue=RetentionSnapshot|RetentionApplyReceipt|RetentionStatus|RetentionDiscardReceipt|RetentionBatchList|ParentRetentionPage;
 
 export type ParentRetentionPreviewRequest=Omit<RetentionPreviewRequest,'scope'>&{readonly scope:ParentRetentionScope};
 export interface ParentRetentionPreviewCommand {readonly id:string;readonly capturedAt:string;readonly request:ParentRetentionPreviewRequest}

@@ -116,43 +116,22 @@
     "name": "previewInstallationRetention",
     "method": "POST",
     "path": "/api/v2/settings/retention-preview",
-    "response": "RetentionPreview",
+    "response": "RetentionTraversalPage",
     "successStatus": 200,
     "error": "ApiError",
     "request": "RetentionPreviewRequest",
-    "implementation": "planned"
-  },
-  {
-    "name": "applyInstallationRetention",
-    "method": "POST",
-    "path": "/api/v2/settings/retention-apply",
-    "response": "RetentionApplyReceipt",
-    "successStatus": 202,
-    "error": "ApiError",
-    "request": "RetentionApplyRequest",
-    "implementation": "planned"
+    "implementation": "implemented"
   },
   {
     "name": "previewOrganizationRetention",
     "method": "POST",
     "path": "/api/v2/organizations/{organizationId}/settings/retention-preview",
-    "response": "RetentionPreview",
+    "response": "RetentionTraversalPage",
     "successStatus": 200,
     "error": "ApiError",
     "request": "RetentionPreviewRequest",
     "params": "OrganizationParams",
-    "implementation": "planned"
-  },
-  {
-    "name": "applyOrganizationRetention",
-    "method": "POST",
-    "path": "/api/v2/organizations/{organizationId}/settings/retention-apply",
-    "response": "RetentionApplyReceipt",
-    "successStatus": 202,
-    "error": "ApiError",
-    "request": "RetentionApplyRequest",
-    "params": "OrganizationParams",
-    "implementation": "planned"
+    "implementation": "implemented"
   },
   {
     "name": "listWorkspaces",

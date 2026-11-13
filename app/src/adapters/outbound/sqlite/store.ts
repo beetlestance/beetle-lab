@@ -1,3 +1,4 @@
+import { ParentRetentionSnapshots } from './retention-parent/index.js';
 import { ManualRunDeletionSnapshots } from './retention-manual/index.js';
 import { retentionOperation,captureRetentionOperation } from './retention-wire/index.js';
 import type { RetentionOperation,RetentionValue } from '../../../ports/retention.js';
@@ -56,6 +57,7 @@ export function safeCode(error: unknown): ErrorCode {
   return 'unavailable';
 }
 export class Store {
+  private readonly parentSnapshots:ParentRetentionSnapshots;
   private readonly manualSnapshots:ManualRunDeletionSnapshots;
   private readonly retentionSnapshots:WorkspaceRetentionSnapshots;
   private readonly retentionApplies:WorkspaceRetentionApplies;
@@ -106,7 +108,7 @@ export class Store {
     this.exportOutputs=new ExportOutputs(db,this.exports.reads);
     this.runs = new Runs(db, this.suites, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
     this.runReads = new RunReads(db, this.suites);
-    this.manualSnapshots=new ManualRunDeletionSnapshots(db,this.runReads);this.retentionSnapshots=new WorkspaceRetentionSnapshots(db,this.runReads);this.retentionApplies=new WorkspaceRetentionApplies(db,this.runReads);this.retentionProgress=new RetentionProgress(db,this.runReads);
+    this.parentSnapshots=new ParentRetentionSnapshots(db,this.runReads);this.manualSnapshots=new ManualRunDeletionSnapshots(db,this.runReads);this.retentionSnapshots=new WorkspaceRetentionSnapshots(db,this.runReads);this.retentionApplies=new WorkspaceRetentionApplies(db,this.runReads);this.retentionProgress=new RetentionProgress(db,this.runReads);
     this.overviews=new Overviews(db,this.suites);
     this.runArtifacts = new RunArtifacts(db, this.runReads);
     this.executions = new RunExecutions(db, this.runReads);
@@ -205,6 +207,7 @@ export class Store {
   private retention(input:RetentionOperation):RetentionValue{
     const operation=captureRetentionOperation(input);
     switch(operation.kind){
+      case 'previewParentRetention':return this.parentSnapshots.preview(operation.command);
       case 'getWorkspaceRetentionPreview':return this.retentionSnapshots.get(operation.request.key);
       case 'listWorkspaceRetention':return this.retentionProgress.list(operation.request.scope);
       case 'previewRunDeletion':return this.manualSnapshots.preview(operation.command);

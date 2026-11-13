@@ -19,6 +19,7 @@ import { schema as ApiNamespace } from './namespace.js';
 import { schema as ApiOverview } from './overview.js';
 import { schema as ApiParameters } from './parameters.js';
 import { schema as ApiRetentionStatus } from './retention-status.js';
+import { schema as ApiRetentionTraversal } from './retention-traversal.js';
 import { schema as ApiRetention } from './retention.js';
 import { schema as ApiRunArtifacts } from './run-artifacts.js';
 import { schema as ApiRunComparison } from './run-comparison.js';
@@ -35,7 +36,7 @@ import { schema as ApiSettings } from './settings.js';
 import { schema as ApiSuiteRequests } from './suite-requests.js';
 import { schema as ApiSuite } from './suite.js';
 /** Complete reference closure; runner result schemas are shared, never copied. */
-export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiExportJobs, ApiInputRequests, ApiInput, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetentionStatus, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunHistory, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
+export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiExportJobs, ApiInputRequests, ApiInput, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetentionStatus, ApiRetentionTraversal, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunHistory, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -102,6 +103,7 @@ export const apiMessageSchemas = freezeSchema({
   RetentionBatchSummary: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention-status#/$defs/RetentionBatchSummary' },
   RetentionBatchList: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention-status#/$defs/RetentionBatchList' },
   RetentionDiscardReceipt: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention-status#/$defs/RetentionDiscardReceipt' },
+  RetentionTraversalPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention-traversal#/$defs/RetentionTraversalPage' },
   RetentionPreviewRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionPreviewRequest' },
   RetentionCandidate: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionCandidate' },
   ProtectedExclusion: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/ProtectedExclusion' },
