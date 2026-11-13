@@ -21,7 +21,7 @@ export interface AgentRuntimeOptions {
   readonly signal?: AbortSignal;
 }
 export interface AgentRuntime {
-  readonly taskInventory: Pick<TaskInventory, 'prepare' | 'status'>;
+  readonly taskInventory: Pick<TaskInventory, 'prepare' | 'persist' | 'status'>;
   readonly retiredRuntime: Pick<RuntimeRetirement, 'retire' | 'status'>;
   /** Private process-local port for later authenticated retirement composition; no route implied. */
   readonly retirement: Pick<ProducerRetirement, 'retire' | 'status'>;

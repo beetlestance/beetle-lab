@@ -1,3 +1,5 @@
+import { migration018 } from './migration018.js';
+import { registerCleanupPlanValidation } from './cleanup-plans/index.js';
 import { migration017 } from './migration017.js';
 import { registerRetirementValidation } from './retirement/index.js';
 import { migration016 } from './migration016.js';
@@ -85,15 +87,16 @@ export function initialize(path: string): DatabaseSync {
   try {
     db.exec('PRAGMA busy_timeout=100; PRAGMA cache_size=-2048; PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; COMMIT;');
     const version = db.prepare('PRAGMA user_version').get()?.user_version;
-    if (typeof version !== 'number' || version > 17) throw new Failure('schema_newer');
+    if (typeof version !== 'number' || version > 18) throw new Failure('schema_newer');
     db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;');
     const authority = version === 0 ? randomUUID() : null;
-    registerNamespaceValidation(db); registerRetirementValidation(db);
-    if (version < 17) transaction(db, () => {
+    registerNamespaceValidation(db); registerRetirementValidation(db); registerCleanupPlanValidation(db);
+    if (version < 18) transaction(db, () => {
       migrateFoundation(db, version);
       if (version < 15) migrateOwnership(db, version, authority);
       if (version < 16) db.exec(migration016);
-      db.exec(migration017);
+      if (version < 17) db.exec(migration017);
+      db.exec(migration018);
       if (db.prepare('PRAGMA foreign_key_check').get()) throw new Failure('unavailable');
     });
     // Samples and process-owned guard readiness are not valid startup authority.

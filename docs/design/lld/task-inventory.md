@@ -1,6 +1,6 @@
 # Bounded native task inventory
 
-Status: C3c read-only preparation locally implemented. No unlink, durable native plan,
+Status: C3c read-only preparation locally implemented. No unlink,
 cleanup receipt, ACK or refund. Parents: [runtime authority](runtime-retirement.md),
 [shared custody](native-custody.md), [namespace](staging-namespace.md),
 [plan values](cleanup-control.md) and [retirement](output-retirement.md).
@@ -58,7 +58,7 @@ Check descriptor identity and live directory/file size/mtime/ctime around reads;
 after original closes, recheck named installed root/marker and every inventoried
 entry. Other tasks may change installed-root child timestamps, so its durable native
 identity is checked without treating sibling changes as this task's mutation.
-Only after successful closes/final checks expose a canonical NativeCleanupPlan with
+Only after successful closes/final checks expose an opaque observation and a canonical NativeCleanupPlan with
 exact original, retirement digest and namespace/task identities. Values grant no IO
 permission. Native directories intentionally persist identity without mutable times.
 
@@ -66,7 +66,8 @@ Owned0700 namespace custody and actual producer/read retirement exclude legitima
 writers. A privileged host can still mutate concurrently; no atomic filesystem
 snapshot against that actor is claimed. Later destructive replay must first persist
 this exact plan and revalidate it; it cannot build a new empty-root plan after loss.
-No durable preparation state or deletion effect is added in this slice.
+[Plan storage](cleanup-plan-store.md) persists an opaque post-close observation;
+that metadata still grants no deletion effect.
 
 ## Acceptance and sources
 

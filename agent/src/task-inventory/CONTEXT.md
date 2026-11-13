@@ -8,5 +8,6 @@ native/path guards, reusing cleanup-control codecs. <=512/depth32/path4096/plan1
 30s, conservative71 concurrenthandles/1539cachedclose records. Closedmetadata bounded.
 OutputLifetime remains sole cachedclose owner (generic FileHandle/Dir interface).
 All auxiliaries owned, no asynciteration close. Failedclose retains scope/credit.
-No unlink/Journal018/ACK/refund; plan is observedvalue, not future removalpermission.
+observation.ts binds post-close provenance; persistence.ts owns bounded exactJournal018
+plan carriers. No unlink/ACK/refund; observed/storedplan is not future removalpermission.
 Tests task-inventory and native-check.ts; Linuxnativeleaf not fullcleanup qualification.

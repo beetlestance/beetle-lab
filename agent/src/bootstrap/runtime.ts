@@ -1,3 +1,4 @@
+import type { TaskPlanObservation } from '../task-inventory/index.js';
 import { TaskInventory } from '../task-inventory/index.js';
 import type { RuntimeAbsent } from '../runtime-retirement/index.js';
 import { RuntimeRetirement } from '../runtime-retirement/index.js';
@@ -124,7 +125,7 @@ class RuntimeOwner {
     const retirement = Object.freeze({ retire: (input: unknown) => this.retirement!.retire(input), status: () => this.retirement!.status() });
     const retiredRuntime = Object.freeze({ retire: (producer: ProducerBarrier, operation: Operation) => this.retiredRuntime!.retire(producer, operation),
       status: () => this.retiredRuntime!.status() });
-    const taskInventory = Object.freeze({ prepare: (token: RuntimeAbsent, operation: Operation) => this.taskInventory!.prepare(token, operation),
+    const taskInventory = Object.freeze({ persist: (token: TaskPlanObservation, operation: Operation) => this.taskInventory!.persist(token, operation), prepare: (token: RuntimeAbsent, operation: Operation) => this.taskInventory!.prepare(token, operation),
       status: () => this.taskInventory!.status() });
     return Object.freeze({ server, initial, retirement, retiredRuntime, taskInventory, status: () => this.status(), close: () => this.close() });
   }

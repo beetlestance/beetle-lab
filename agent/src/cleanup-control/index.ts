@@ -7,3 +7,5 @@ export { captureCleanupProgress, cleanupProgressFollows } from './progress.js';
 export type { CleanupProgress } from './progress.js';
 export { captureNativeCleanupReceipt, nativeCleanupReceiptIdentity } from './receipt.js';
 export type { NativeCleanupReceipt } from './receipt.js';
+export { captureStoredCleanupPlan, cleanupPlanFrameBytes } from './stored-plan.js';
+export type { StoredCleanupPlan, JournalCleanupPlans, CleanupPlanKey } from './stored-plan.js';
