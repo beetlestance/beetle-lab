@@ -1,6 +1,6 @@
 # Lifecycle baseline repair
 
-Status: scoped checks and bounded source review passed; matching-image qualification pending.
+Status: independently reviewed scoped checks, Node24 worker and native arm64 composition passed.
 Base:a7279ba, after [C1 namespace/control](staging-namespace.md).
 
 ## Reproduced behavior and correction
@@ -61,7 +61,14 @@ worker against a real019 database. It became ready, closed normally and committe
 passed. This886ms command qualifies the pinned runtime API rather than assuming
 local Node26 behavior. Worker input SHA256 is retained privately.
 
-Agent/API/engine/frontend builds passed. Matching-image arm64 composition is pending.
+Agent/API/engine/frontend builds passed. Source26b5750449fb9f3e746033ea7a3d44434fe8fb7b
+produced matching agent/engine images. Their native arm64 application→agent→k6
+composition passed in13.19s command time. One readiness and one work request,
+zero unexpected requests, six verified artifacts, numeric4 history summary and
+metadata reopen passed. Exact retained allocation and runtime CPU/RAM/PID controls
+were verified. The bounded builder and task containers/network were removed.
+Engine-log capture remains unavailable in the fixture diagnostics; its failure is
+retained, not clearance. User services were not restarted.
 The all-agent217-file C1 lane is reused for unaffected boundaries; no duplicate
 whole-suite run is implied. A context note exceeded40 lines and was shortened;
 its original docs-gate failure remains in the record.

@@ -1,7 +1,8 @@
 # Durable staging namespace and cleanup capacity
 
 Status: scoped local verification and native arm64 composition passed.
-Five reproduced baseline failures remain follow-up work; no full-suite/release claim.
+Five baseline failures were recorded at C1 acceptance; the [repair](lifecycle-baseline-repair.md)
+subsequently resolves them. No full-suite/release claim.
 Owner contracts: [namespace](../design/lld/staging-namespace.md),
 [control values](../design/lld/cleanup-control.md),
 [retirement](../design/lld/output-retirement.md).
@@ -47,7 +48,7 @@ over-broad test edit; the final six-test migration check restores the correct
 explicit migration014 version assertion. No production gate was weakened.
 
 Five failures in four unchanged lifecycle/backend files independently reproduce on
-clean44a95b8 (25-test baseline probe14.19s). They remain explicit next-packet work:
+clean44a95b8 (25-test baseline probe14.19s). They were queued and subsequently resolved by the linked repair:
 callback-retirement twice, cancellation-before-admission fencing, monotonic clock
 failure, and concurrent absence/discovery. This is scoped C1 evidence, not a green
 whole agent suite. The output-limit integration timed out in the broad lane and

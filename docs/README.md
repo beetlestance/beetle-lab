@@ -14,6 +14,7 @@ released application until the rewrite is qualified.
 | Inspect implemented versus planned API routes | [Reference availability](verification/reference-availability.md) | Actual application registration checked against every JSON descriptor |
 | Inspect durable staging ownership | [Namespace](design/lld/staging-namespace.md), [evidence](verification/staging-namespace.md) | Installed/task anchors, startup gate and reserved capacity; cleanup remains separate |
 | Plan producer retirement and cleanup | [Contract](design/lld/output-retirement.md), [packets](execution/output-retirement.md) | Proposed physical ACK, durable namespace, replay-safe settlement and dependency order |
+| Inspect lifecycle/clock repair | [Repair evidence](verification/lifecycle-baseline-repair.md), [migration](design/lld/clock-reason-migration.md) | Identity races, exact stop cause, protected migration and matching components |
 | Inspect native output cleanup custody | [Close-failure custody](verification/output-close-custody.md) | Sticky rejected closes retain bounded native owners and slots |
 | Inspect stored history summaries | [Summary evidence](verification/run-history-summary.md) | Verified scalar projection, provenance, bounded indexing and remaining qualification |
 | Inspect bounded history search | [Search evidence](verification/run-history-search.md) | Current names, scoped ID prefixes, bounded candidates and resumable indexing |
