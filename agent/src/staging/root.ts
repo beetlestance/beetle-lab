@@ -16,6 +16,10 @@ const namespaces = new WeakMap<VerifiedRoot, InstalledNamespaceAnchor>();
 export function boundRootNamespace(root: VerifiedRoot): InstalledNamespaceAnchor {
   const anchor = namespaces.get(root); if (!anchor) throw new StagingError('installation'); return anchor;
 }
+/** Bound verified installation authority, never caller-provided daemon metadata. */
+export function verifiedDaemonIdentity(root: VerifiedRoot): string {
+  boundRootNamespace(root); return rootIdentity(root).configuration.expectedDaemonId;
+}
 export function rememberRootNamespace(root: VerifiedRoot, anchor: InstalledNamespaceAnchor): void {
   rootIdentity(root);
   const existing = namespaces.get(root);

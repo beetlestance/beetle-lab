@@ -99,7 +99,7 @@ export class ProducerRetirement {
       await entry.slot.confirm(entry.intent); this.check(budget);
       await this.drain(entry, budget); this.check(budget);
       if (this.closed) throw new ProducerRetirementError('closed');
-      const token = mintBarrier(entry.intent, () => !this.closed); this.discard(entry);
+      const token = mintBarrier(entry.intent, this.options.journal, () => !this.closed); this.discard(entry);
       return Object.freeze({ ok: true, value: token });
     } catch (error) { if (!entry.issued || (entry.drained && !entry.sticky)) this.discard(entry); throw error; }
   }

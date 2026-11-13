@@ -66,7 +66,7 @@ export function fixture() {
       }
       throw new Error('synthetic attempt did not release');
     };
-    return { ...env, ...owner, engine, catalog, stager, options, create, finish,
+    return { ...env, ...owner, staging: env.options, engine, catalog, stager, options, create, finish,
       async accepted(manager: InstallationController, offer = env.offer) {
         expect((await manager.enqueue(offer)).accepted).toBe(true);
       } };

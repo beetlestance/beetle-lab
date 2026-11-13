@@ -4,3 +4,5 @@ export type { InstallationOptions, OfferAcceptance, DriveProgress, InstallationA
 import { Manager } from './manager.js';
 import type { InstallationOptions, InstallationController } from './types.js';
 export function createInstallationController(options: InstallationOptions): InstallationController { return new Manager(options); }
+
+export { recover as recoverRuntimePlan } from './recovery.js';

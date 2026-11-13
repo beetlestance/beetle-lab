@@ -1,3 +1,5 @@
+import { captureRetiredRuntimeBinding } from './retirement-binding.js';
+import type { RetiredRuntimeBinding } from './retirement-binding.js';
 import { MailboxVolumeOwner } from './mailbox-volume.js';
 import { performance } from 'node:perf_hooks';
 import { resourceReading, unknownResources } from './resources.js';
@@ -10,6 +12,7 @@ import type { CleanupEvidence, DockerReply, DockerRequest, DockerTransport, Fail
 
 interface Entry {
   readonly digest: string; readonly volume: MailboxVolumeOwner | undefined; volumeVerified: boolean; readers: number; removalClaimed: boolean; busy: boolean; createClaimed: boolean; creationSettled: boolean; startClaimed: boolean;
+  retiredRuntimeId: string | undefined;
   running: boolean; cpuNs: number | null; runtimeId: string | undefined; terminal: boolean; removed: boolean; graceDeadline: number | undefined;
 }
 interface Inspection {
@@ -98,6 +101,7 @@ export class DockerBackend {
 
   async ensureCreated(plan: RuntimePlan, operation: Operation): Promise<MutationResult<InspectEvidence>> {
     return this.run(plan, operation, async (entry, context) => {
+      if (entry.retiredRuntimeId) return rejected('start_fenced');
       const before = this.current(entry, await this.observe(plan, context));
       if (before.state !== 'missing') return this.existing(before);
       if (entry.createClaimed) return uncertain('unavailable');
@@ -175,6 +179,34 @@ export class DockerBackend {
     });
   }
 
+  /** C3 caller proves actual producer drain and exact released closure/ACK, not caller booleans. */
+  async removeRetired(plan: RuntimePlan, operation: Operation, input: RetiredRuntimeBinding): Promise<MutationResult<'removed'>> {
+    const binding = captureRetiredRuntimeBinding(input); if (!binding) return rejected('invalid_input');
+    return this.run(plan, operation, async (entry, context) => {
+      if (entry.readers !== 0) return rejected('cleanup_guard');
+      if (entry.runtimeId && entry.runtimeId !== binding.runtimeId) return rejected('conflict');
+      entry.retiredRuntimeId = binding.runtimeId; entry.runtimeId = binding.runtimeId;
+      const before = this.current(entry, await this.observe(plan, context));
+      if (before.state === 'missing') return this.removeRetiredVolume(entry, context);
+      if (!this.stopped(before)) return this.retiredObservationFailure(before);
+      const reply = await this.request({ ...context, method: 'DELETE',
+        path: `/v1.47/containers/${binding.runtimeId}?force=false&v=false` });
+      if (!reply.ok) return this.failedMutation(reply);
+      if (reply.status !== 204) return this.statusFailure(reply.status);
+      entry.removed = true; entry.terminal = true;
+      const after = this.current(entry, await this.observe(plan, context));
+      return after.state === 'missing' ? this.removeRetiredVolume(entry, context) : uncertain('unavailable');
+    }, binding.daemonId);
+  }
+  private retiredObservationFailure(before: Observation): MutationResult<'removed'> {
+    return before.state === 'unknown' ? uncertain('reason' in before ? before.reason : 'unsafe_state') : rejected('cleanup_guard');
+  }
+  private async removeRetiredVolume(entry: Entry, context: Operation): Promise<MutationResult<'removed'>> {
+    const result = await entry.volume?.removeRetired(context);
+    if (result && result.outcome !== 'known') return result;
+    entry.removed = true; entry.terminal = true; return known('removed');
+  }
+
   private terminate(plan: RuntimePlan, operation: Operation,
     action: (entry: Entry) => string | undefined): Promise<MutationResult<InspectEvidence>> {
     return this.run(plan, operation, async (entry, context) => {
@@ -199,7 +231,7 @@ export class DockerBackend {
       ...(operation.signal ? { signal: operation.signal } : {}) };
   }
   private async run<T>(plan: RuntimePlan, operation: Operation,
-    execute: (entry: Entry, context: Operation) => Promise<MutationResult<T>>): Promise<MutationResult<T>> {
+    execute: (entry: Entry, context: Operation) => Promise<MutationResult<T>>, daemonId?: string): Promise<MutationResult<T>> {
     const context = this.context(operation);
     if (!context || !isRuntimePlan(plan)) return rejected('invalid_input');
     if (this.active >= 64) return rejected('overflow');
@@ -208,7 +240,7 @@ export class DockerBackend {
     if (entry.busy) return rejected('start_fenced');
     entry.busy = true; this.active++;
     try {
-      const reason = await this.qualify(context, plan.spec.HostConfig.Runtime);
+      const reason = await this.qualify(context, plan.spec.HostConfig.Runtime, daemonId);
       return reason ? rejected(reason) : await execute(entry, context);
     } finally { entry.busy = false; this.active--; }
   }
@@ -219,18 +251,22 @@ export class DockerBackend {
     const entry: Entry = { digest: plan.specDigest,
       volume: plan.spec.HostConfig.Mounts.some(mount => mount.Type === 'volume') ? new MailboxVolumeOwner(plan, this.transport) : undefined,
       volumeVerified: false, readers: 0, removalClaimed: false, busy: false, createClaimed: false, creationSettled: false, startClaimed: false,
-      running: false, cpuNs: null, runtimeId: undefined, terminal: false, removed: false, graceDeadline: undefined };
+      retiredRuntimeId: undefined, running: false, cpuNs: null, runtimeId: undefined, terminal: false, removed: false, graceDeadline: undefined };
     this.entries.set(plan.name, entry);
     return entry;
   }
-  private async qualify(context: Operation, runtime: string): Promise<FailureReason | undefined> {
+  private async qualify(context: Operation, runtime: string, daemonId?: string): Promise<FailureReason | undefined> {
     const version = await this.request({ ...context, method: 'GET', path: '/version' });
     if (!version.ok) return version.reason;
     if (version.status !== 200) return 'unavailable';
     if (!compatibleVersion(version.body)) return 'unsupported';
     const info = await this.request({ ...context, method: 'GET', path: '/v1.47/info' });
+    return this.qualifyInfo(info, runtime, daemonId);
+  }
+  private qualifyInfo(info: DockerReply, runtime: string, daemonId?: string): FailureReason | undefined {
     if (!info.ok) return info.reason;
     if (info.status !== 200) return 'unavailable';
+    if (daemonId !== undefined && record(info.body)?.ID !== daemonId) return 'conflict';
     if (!supportedDaemon(info.body) || record(info.body)?.DefaultRuntime !== runtime) return 'unsupported';
     return undefined;
   }
@@ -238,9 +274,9 @@ export class DockerBackend {
     const entry = this.entries.get(plan.name);
     const runtimeIdAtIssue = entry?.runtimeId;
     const view = (observation: Observation): Inspection => ({ observation, runtimeIdAtIssue });
-    const reply = await this.request({ ...context, method: 'GET', path: `/v1.47/containers/${plan.name}/json` });
+    const reply = await this.request({ ...context, method: 'GET', path: this.observationPath(plan, entry) });
     if (!reply.ok) return view({ state: 'unknown', reason: reply.reason });
-    if (reply.status === 404) return view(this.absent(entry, runtimeIdAtIssue));
+    if (reply.status === 404) return view(await this.retiredMissing(plan, entry, context, runtimeIdAtIssue));
     if (reply.status !== 200) return view({ state: 'unknown', reason: 'unavailable' });
     const checked = inspectEvidence(reply.body, plan);
     if (!checked.ok) return view({ state: 'unknown', reason: checked.reason });
@@ -249,6 +285,15 @@ export class DockerBackend {
     if (observed.state === 'unknown') return view(observed);
     const volumeReason = await this.verifyVolume(entry, context, verifyVolume);
     return view(volumeReason ? { state: 'unknown', reason: volumeReason } : observed);
+  }
+  private observationPath(plan: RuntimePlan, entry: Entry | undefined): string { return `/v1.47/containers/${entry?.retiredRuntimeId ?? plan.name}/json`; }
+  private async retiredMissing(plan: RuntimePlan, entry: Entry | undefined, context: Operation, atIssue: string | undefined): Promise<Observation> {
+    if (entry?.retiredRuntimeId) {
+      const named = await this.request({ ...context, method: 'GET', path: `/v1.47/containers/${plan.name}/json` });
+      if (!named.ok) return { state: 'unknown', reason: named.reason };
+      if (named.status !== 404) return { state: 'unknown', reason: 'conflict' };
+    }
+    return this.absent(entry, atIssue);
   }
   private async verifyVolume(entry: Entry | undefined, context: Operation, required: boolean): Promise<FailureReason | undefined> {
     if (!entry?.volume || !required) return undefined;
@@ -260,20 +305,20 @@ export class DockerBackend {
     if (!entry) return { state: 'unknown', reason: 'overflow' };
     if (entry.runtimeId !== runtimeIdAtIssue) return { state: 'unknown', reason: 'unsafe_state' };
     entry.running = false;
-    if (runtimeIdAtIssue !== undefined) { entry.createClaimed = true; entry.startClaimed = true; entry.terminal = true; }
+    if (runtimeIdAtIssue !== undefined && !entry.retiredRuntimeId) { entry.createClaimed = true; entry.startClaimed = true; entry.terminal = true; }
     return { state: 'missing' };
   }
   private remember(entry: Entry, evidence: InspectEvidence): Observation {
     if (!this.retainIdentity(entry, evidence.id)) return { state: 'unknown', reason: 'conflict' };
     if (this.regressive(entry, evidence)) return { state: 'unknown', reason: 'unsafe_state' };
     entry.running = evidence.state === 'running';
-    if (evidence.state !== 'created') entry.startClaimed = true;
+    if (evidence.state !== 'created' && !entry.retiredRuntimeId) entry.startClaimed = true;
     if (evidence.state === 'exited') entry.terminal = true;
     return evidence;
   }
   private retainIdentity(entry: Entry, id: string): boolean {
     if (entry.removed || entry.runtimeId && entry.runtimeId !== id) return false;
-    entry.runtimeId ??= id; entry.createClaimed = true;
+    entry.runtimeId ??= id; if (!entry.retiredRuntimeId) entry.createClaimed = true;
     return true;
   }
   private createdId(body: unknown): string | undefined {
@@ -304,7 +349,7 @@ export class DockerBackend {
   private stopped(observation: Observation): observation is InspectEvidence & { state: 'created' | 'exited' } {
     return observation.state === 'created' || observation.state === 'exited';
   }
-  private startFenced(entry: Entry): boolean { return entry.startClaimed || entry.terminal || entry.removed; }
+  private startFenced(entry: Entry): boolean { return !!entry.retiredRuntimeId || entry.startClaimed || entry.terminal || entry.removed; }
   private existing(observation: Observation): MutationResult<InspectEvidence> {
     if (observation.state === 'unknown') return uncertain('reason' in observation ? observation.reason : 'unsafe_state');
     return 'id' in observation ? known(observation) : uncertain('conflict');

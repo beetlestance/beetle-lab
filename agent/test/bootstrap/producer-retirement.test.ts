@@ -48,3 +48,16 @@ it('waits actual held preflight on shutdown before closing the gate or Journal a
     const next = f.keep(await openAgentRuntime(e.options)); await next.initial; await next.close();
   } finally { vi.restoreAllMocks(); }
 });
+it('derives private never-started writer absence through the actual shared runtime owners without Docker mutations', async () => {
+  const e = await ready(); const opened = vi.spyOn(journals, 'openJournal');
+  try {
+    const runtime = f.keep(await openAgentRuntime(e.options)); await runtime.initial;
+    const journal = await opened.mock.results[0]!.value; const work = runtime.retirement.retire(e.request);
+    const result = await work.result; await work.settled; if (!result.ok) throw new Error('Missing producer token');
+    const absent = await runtime.retiredRuntime.retire(result.value, { deadline: performance.now() + 5000 });
+    const { runtimeAbsentFacts } = await import('../../src/runtime-retirement/index.js');
+    expect(runtimeAbsentFacts(absent, journal.retirements).runtime).toEqual({ kind: 'never_started' });
+    expect(e.daemon.mutations()).toHaveLength(0); await runtime.close();
+    expect(() => runtimeAbsentFacts(absent, journal.retirements)).toThrow('closed');
+  } finally { vi.restoreAllMocks(); }
+});

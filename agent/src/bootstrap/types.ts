@@ -1,3 +1,4 @@
+import type { RuntimeRetirement } from '../runtime-retirement/index.js';
 import type { ProducerRetirement } from '../producer-retirement/index.js';
 import type { FastifyInstance } from 'fastify';
 import type { PoolConfiguration } from '../admission/index.js';
@@ -19,6 +20,7 @@ export interface AgentRuntimeOptions {
   readonly signal?: AbortSignal;
 }
 export interface AgentRuntime {
+  readonly retiredRuntime: Pick<RuntimeRetirement, 'retire' | 'status'>;
   /** Private process-local port for later authenticated retirement composition; no route implied. */
   readonly retirement: Pick<ProducerRetirement, 'retire' | 'status'>;
   readonly server: FastifyInstance;

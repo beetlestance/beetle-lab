@@ -12,7 +12,7 @@ import { prepareFiles } from './prepare.js';
 import { rootIdentity, boundRootNamespace } from './root.js';
 import { StagingError } from './types.js';
 import type { StagerOptions, Preparation, PrepareRequest, StagingResult } from './types.js';
-export { verifyInstallation, boundRootNamespace } from './root.js';
+export { verifyInstallation, boundRootNamespace, verifiedDaemonIdentity } from './root.js';
 export type { VerifiedRoot } from './root.js';
 export { readRootSpace } from './space.js';
 export type { RootSpace } from './space.js';
