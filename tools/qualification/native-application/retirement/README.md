@@ -40,3 +40,20 @@ remain unchanged. This qualifies that failed update and subsequent restart, rath
 than claiming a separately observed COMMIT-loss event. The command requires exact
 stored next-file absence with old progress, unchanged charges, final automatic ACK
 and complete proxy/task cleanup.
+
+## Settlement recovery
+
+`settlement-smoke.ts` accepts the same four arguments with source-matched settlement
+agent/engine images and both compiled workers. It runs one real bounded k6 test,
+then normal Root cleanup and settlement. The peer drops the actual committed agent
+reply and blocks further settlement dispatch while unchanged backend debt is inspected.
+After agent restart, exact settlement/retirement replay is required. A backend commit
+reply is then withheld; actual worker abort/reopen must recover the same credit once.
+
+Offline inspections require a stopped agent or closed metadata owner. They verify
+original purge,4096/2560 replay floors, zero agent holds and FK consistency. Target
+counts, empty backend publication, installed marker only and no engine/mailbox resources
+are required. Failed close remains a failure. The peer's paused-retry exclusion has
+its own focused TCP test; native recovery need not happen to race that path.
+
+Local evidence and platform/branch limits: `docs/verification/native-settlement.md`.

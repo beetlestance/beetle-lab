@@ -1,6 +1,6 @@
 # Output settlement
 
-Status: automatic admitted/unsent settlement implemented; whole-chain native qualification and public retention remain gated.
+Status: automatic admitted/unsent settlement implemented; admitted-source native recovery qualified locally. Rejected no-admission funding and public retention remain gated.
 Owning predecessors: [retirement](output-retirement.md),
 [backend control](backend-cleanup-control.md). Root owns migrations agent022/backend024.
 
@@ -170,6 +170,8 @@ its staging credit. They need a separate positive no-reservation/no-native autho
 and explicit permanent replay funding rule. Until implemented, they remain charged/
 protected; a missing reservation or generic absence response is not that rule.
 Standalone exports remain outside this performance settlement qualification.
+
+Local admitted-source native evidence: [settlement recovery](../../verification/native-settlement.md).
 
 ## Qualification before public deletion
 
