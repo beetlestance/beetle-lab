@@ -32,3 +32,13 @@ it('accepts an exact immutable reply and rejects malformed records without grant
     invalidReply: () => { throw new Error('bad reply'); }, settleCarrier: async () => {} });
   const value = await client.begin(original); expect(value).toEqual(intent); expect(Object.isFrozen(value.request.closure)).toBe(true);
 });
+it('captures a closed funding selection and refuses unknown mode, extras and substituted original',async()=>{
+ let reply:unknown={funding:'rejected',intent};
+ const client=createRetirementClient({send:operation=>{operation();return Promise.resolve(reply);},
+  invalidReply:()=>{throw Error('bad selection');},settleCarrier:async()=>{}});
+ expect(await client.select(original)).toEqual(reply);
+ for(const value of [{funding:'unknown',intent},{funding:'rejected',intent,extra:true},
+  {funding:'rejected',intent:{...intent,request:{...original,attemptId:original.workspaceId}}}]){
+  reply=value;await expect(client.select(original)).rejects.toThrow('bad selection');
+ }
+});

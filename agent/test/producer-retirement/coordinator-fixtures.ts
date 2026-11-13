@@ -9,7 +9,7 @@ export const original = captureOutputRetirementRequest(request);
 export const metadata = (input: unknown): RetirementIntent => makeRetirementIntent({ request: captureOutputRetirementRequest(input),
   namespaceIdentity: 'a'.repeat(64), task: { state: 'none' } });
 /** Protocol/ownership model only; this fixture supplies no native producer evidence. */
-export function model(options: { budgetMs?: number; now?: () => number } = {}) {
+export function model(options: { budgetMs?: number; now?: () => number;rejected?:boolean } = {}) {
   const intent = metadata(original); const records = new Map<string, RetirementIntent>();
   const port: JournalRetirements = {
     isOpen: vi.fn(async key => !records.has(key.attemptId)), preflight: vi.fn(async input => metadata(input)),
@@ -18,8 +18,10 @@ export function model(options: { budgetMs?: number; now?: () => number } = {}) {
   };
   const gate = new ProducerGate({ journal: port, namespaceIdentity: intent.namespaceIdentity });
   const installation = { retireOutput: vi.fn(async () => {}) };
-  const coordinator = new ProducerRetirement({ journal: port, gate, installation,
+  const funding={select:vi.fn(async()=>({funding:'rejected' as const,intent})),
+    fundRejected:vi.fn(async(input:unknown)=>{const record=metadata(input);records.set(record.request.attemptId,record);return record;})};
+  const coordinator = new ProducerRetirement({ journal: port, gate, installation,...(options.rejected?{funding}:{}),
     ...(options.budgetMs === undefined ? {} : { budgetMs: options.budgetMs }), ...(options.now ? { monotonicNow: options.now } : {}) });
-  return { port, gate, installation, coordinator, intent, records, key: { organizationId: original.organizationId,
+  return { funding,port, gate, installation, coordinator, intent, records, key: { organizationId: original.organizationId,
     workspaceId: original.workspaceId, attemptId: original.attemptId, generation: 1 } };
 }

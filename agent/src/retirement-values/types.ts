@@ -8,6 +8,7 @@ export interface RetirementIntent {
   readonly request: RetirementRequest; readonly requestDigest: string;
   readonly namespaceIdentity: string; readonly task: RetirementTask;
 }
+export interface RetirementSelection {readonly funding:'admitted'|'rejected';readonly intent:RetirementIntent}
 export interface JournalRetirements {
   isOpen(key: Scope): Promise<boolean>;
   preflight(input: unknown): Promise<RetirementIntent>;

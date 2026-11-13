@@ -17,7 +17,7 @@ export { producerBarrierFacts } from './capability.js';
 export type { ProducerBarrier, BarrierFacts, ProducerRetirementOptions, RetirementWork, RetirementOutcome } from './types.js';
 interface Entry {
   readonly access:CleanupLease;readonly request: RetirementRequest; readonly digest: string; readonly slot: ProducerFence;
-  issued: boolean; sticky: boolean; starting: boolean; drained: boolean; intent?: RetirementIntent;
+  funding?:'admitted'|'rejected';issued: boolean; sticky: boolean; starting: boolean; drained: boolean; intent?: RetirementIntent;
   cycle?: { readonly work: RetirementWork; readonly budget: RetirementBudget; settled: boolean };
 }
 function keyFor(request: RetirementRequest) {
@@ -84,6 +84,7 @@ export class ProducerRetirement {
   }
   private discard(entry: Entry): void { entry.slot.release(); this.entries.delete(scopeId(entry.request)); entry.access.release(); }
   private async begin(entry: Entry, expected: RetirementIntent, budget: RetirementBudget): Promise<RetirementIntent> {
+    if(entry.funding==='rejected')return this.beginRejected(entry,expected,budget);
     const { journal } = this.options; entry.slot.fence(); entry.issued = true;
     try { return captureRetirementIntent(await journal.begin(entry.request), expected.request); }
     catch (original) {
@@ -93,12 +94,29 @@ export class ProducerRetirement {
       if (!observed) throw original; return captureRetirementIntent(observed, expected.request);
     }
   }
+  private async beginRejected(entry:Entry,expected:RetirementIntent,budget:RetirementBudget):Promise<RetirementIntent>{
+    const {journal,funding}=this.options;if(!funding)throw new ProducerRetirementError('conflict');
+    entry.issued=true;let intent:RetirementIntent;
+    try{intent=captureRetirementIntent(await funding.fundRejected(entry.request),expected.request);}
+    catch(original){
+      try{await journal.settleCarrier();}catch{entry.sticky=true;throw new ProducerRetirementError('cleanup');}
+      this.check(budget);const observed=await this.metadata(entry,()=>journal.read(keyFor(entry.request)));
+      if(!observed){entry.issued=false;throw original;}
+      intent=captureRetirementIntent(observed,expected.request);
+    }
+    entry.slot.fence();return intent;
+  }
   private check(budget: RetirementBudget): void {
     budget.check(); if (this.closed) throw new ProducerRetirementError('closed');
   }
+  private async selection(request:RetirementRequest){
+    if(this.options.funding)return this.options.funding.select(request);
+    return{funding:'admitted' as const,intent:await this.options.journal.preflight(request)};
+  }
   private async execute(entry: Entry, budget: RetirementBudget): Promise<RetirementOutcome> {
     try {
-      this.check(budget); const expected = captureRetirementIntent(await this.metadata(entry,()=>this.options.journal.preflight(entry.request)), entry.request); this.check(budget);
+      this.check(budget);const selected=await this.metadata(entry,()=>this.selection(entry.request));this.check(budget);
+      entry.funding=selected.funding;const expected=captureRetirementIntent(selected.intent,entry.request);
       if (expected.namespaceIdentity !== this.options.gate.namespaceIdentity) throw new ProducerRetirementError('conflict');
       entry.intent = await this.begin(entry, expected, budget); this.check(budget);
       await this.metadata(entry,()=>entry.slot.confirm(entry.intent!)); this.check(budget);

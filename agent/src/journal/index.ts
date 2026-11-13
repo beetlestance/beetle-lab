@@ -8,6 +8,7 @@ import { createCleanupProgressClient } from './cleanup-progress-client.js';
 import type { JournalCleanupProgress } from '../cleanup-control/index.js';
 import { createCleanupPlanClient } from './cleanup-plan-client.js';
 import type { JournalCleanupPlans } from '../cleanup-control/index.js';
+export type { JournalRejectedFunding } from './retirement-client.js';
 import type { JournalRejectedFunding } from './retirement-client.js';
 import { createRetirementClient } from './retirement-client.js';
 import type { JournalRetirements } from '../retirement-values/index.js';

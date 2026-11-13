@@ -3,7 +3,7 @@ import { captureOutputRetirementRequest, OUTPUT_RETIREMENT_REQUEST_BYTES } from 
 import type { RetirementRequest } from '@beetle/contracts/output-retirement';
 import type { Scope } from '../admission/index.js';
 import { captureRetirementIntent } from '../retirement-values/index.js';
-import type { RetirementIntent,JournalRetirements } from '../retirement-values/index.js';
+import type { RetirementIntent,RetirementSelection,JournalRetirements } from '../retirement-values/index.js';
 import { cleanupControl } from '../cleanup-control/index.js';
 import { sourceScope } from './output-source-input.js';
 import type { RetirementOperation } from './retirement-protocol.js';
@@ -25,6 +25,7 @@ function sameScope(value: unknown, expected: Scope): void {
   if (encodeCanonicalJson(actual, 512) !== encodeCanonicalJson(expected, 512)) throw new Error('Retirement scope reply mismatch');
 }
 export interface JournalRejectedFunding {
+ select(input:unknown):Promise<RetirementSelection>;
  preflightRejected(input:unknown):Promise<RetirementIntent>;
  fundRejected(input:unknown):Promise<RetirementIntent>;
 }
@@ -35,6 +36,13 @@ export function createRetirementClient(options: Options): JournalRetirements & J
       value => captureRetirementIntent(value, expected));
   }
   return Object.freeze({
+    select(input:unknown){
+      let expected:RetirementRequest;
+      return checked(options,options.send(()=>({kind:'retirementSelection',json:encodeJson(expected=captureOutputRetirementRequest(input),OUTPUT_RETIREMENT_REQUEST_BYTES)})),value=>{
+        const row=record(value,['funding','intent']);if(row.funding!=='admitted'&&row.funding!=='rejected')throw new Error();
+        return Object.freeze({funding:row.funding,intent:captureRetirementIntent(row.intent,expected)});
+      });
+    },
     isOpen(input: Scope) {
       let expected: Scope;
       return checked(options, options.send(() => ({ kind: 'retirementOpen', key: expected = sourceScope(input) })), value => {

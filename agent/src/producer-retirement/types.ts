@@ -1,3 +1,4 @@
+import type { JournalRejectedFunding } from '../journal/index.js';
 import type { RetirementIntent, JournalRetirements } from '../retirement-values/index.js';
 import type { ProducerGate } from '../producer-gate/index.js';
 import type { InstallationController } from '../installation/index.js';
@@ -17,6 +18,7 @@ export interface RetirementWork {
 }
 export interface ProducerRetirementOptions {
   readonly journal: JournalRetirements;
+  readonly funding?:Pick<JournalRejectedFunding,'select'|'fundRejected'>;
   readonly gate: ProducerGate;
   readonly installation: Pick<InstallationController, 'retireOutput'>;
   readonly monotonicNow?: () => number;

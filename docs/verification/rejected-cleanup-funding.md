@@ -29,3 +29,17 @@ Preserved failures include the initial replay scope bug, stale downgrade fixture
 complexity/import lint failures, and an overly broad selector that included HTTP tests
 which failed sandbox socket binding. No HTTP qualification is claimed by those tests.
 This slice used synthetic metadata/worker fixtures, no Docker or user service restart.
+
+## Producer ordering
+
+Private worker selection proves admitted/rejected eligibility before choosing funding.
+The producer coordinator reserves its slot first. Rejected funding commits before the
+local fence; known no-commit refusal releases an unfenced slot. Uncertain writes join
+the actual carrier and reconcile exact intent within the original budget. Deadline or
+shutdown prevents a new read; the entry stays owned for recovery. Actual gate and
+installation drain remain required before a producer-only token. Native proof is separate.
+
+Evidence `.agent-work/rejected-producer-ordering/`:40 original scoped cases and6
+rejected correction cases passed, including expiry/close while a failed carrier is held.
+Types/lint/architecture/docs/build passed. Independent review timing defect corrected.
+No Root/HTTP route uses the new rejected selection until native proof is implemented.
