@@ -1,3 +1,4 @@
+import type { RetirementIntent } from '../retirement-values/index.js';
 import type { ProducerGate } from '../producer-gate/index.js';
 import type { AttemptSnapshot } from '@beetle/contracts';
 import type { Decision, Reservation, Scope } from '../admission/index.js';
@@ -31,6 +32,8 @@ export interface InstallationAttempt {
   readonly allocation: Reservation | null;
 }
 export interface InstallationController {
+  /** Private exact-intent barrier: actual owners and readonly stopped-runtime inspection, no deletion/refund. */
+  retireOutput(intent: RetirementIntent, operation: Operation): Promise<void>;
   enqueue(input: unknown): Promise<OfferAcceptance>;
   enqueueExport(input: unknown): Promise<OfferAcceptance>;
   /** Atomically refuse a missing original or cancel an existing canonical receipt. */

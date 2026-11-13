@@ -83,6 +83,18 @@ export class Supervisor {
     actor.retire();
     this.actors.delete(identity(input.key));
   }
+  /** Actual controller shutdown must settle telemetry closes before forgetting the actor. */
+  async retireOwned(input: LaunchInput): Promise<void> {
+    const actor = this.actors.get(identity(input.key));
+    if (!actor || !sameScope(actor.input.key, input.key) || actor.input.plan.specDigest !== input.plan.specDigest) {
+      throw new SupervisorError('conflict');
+    }
+    await actor.retireOwned(); this.retire(input);
+  }
+  /** Positive never-started Journal evidence is insufficient while any actual actor remains. */
+  assertNoActor(key: Scope): void {
+    if (this.actors.has(identity(key))) throw new SupervisorError('conflict');
+  }
   /** Existing installation ownership and durable release bind this read-only native barrier. */
   async retireReleased(input: LaunchInput, operation: Operation): Promise<void> {
     const actor = this.actor(input);

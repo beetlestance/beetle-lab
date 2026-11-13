@@ -1,8 +1,7 @@
 # Durable producer and reader retirement
 
-Status: C2a durable metadata and C2b shared lease gate implemented locally. The
-C2c whole-producer barrier/coordinator below remains proposed. No cleanup endpoint,
-file removal, ACK or refund.
+Status: C2a durable metadata, C2b shared lease gate and C2c actual producer barrier
+implemented locally. No cleanup endpoint, file removal, ACK or refund.
 Parent [retirement](output-retirement.md), [namespace](staging-namespace.md) and
 [control capacity](cleanup-control.md). Root reserves agent Journal migration017.
 
@@ -67,7 +66,7 @@ credit. Shutdown waits actual leases; unknown cleanup refuses Journal/runtime ow
 release. A preflight reservation leaves intake open until its explicit fence. Exact
 positive confirmation rereads the immutable Journal intent before local eviction.
 
-C2c must add one fixed monotonic budget (<=30s) starts before preflight and covers begin,
+C2c applies one fixed monotonic budget (<=30s) starts before preflight and covers begin,
 reconciliation, producer/read drain and cold inspection. Expiry is observable as
 expired/fenced; it cannot release issued originals/credits or mint a late C3 token.
 Drain/cached-close ownership continues after expiry. A new budget is possible only
@@ -93,6 +92,21 @@ watch callbacks, cancellation chain and controller closes. A recovered original
 requires the existing Supervisor released-runtime retirement/inspection path;
 never create an empty controller as proof. Unknown/running/foreign runtime or
 rejected close remains unresolved. No target create/start retry occurs.
+
+InstallationController.retireOutput takes the exact immutable RetirementIntent and
+rereads it before fencing the actual existing Manager entry. It never creates an
+empty entry. A never-started release requires exact positive no-token/no-runtime
+facts and no remaining actual Supervisor actor. A settled release uses current
+readonly Supervisor inspection; a missing original catalogue/profile/spec remains
+unresolved. Controller shutdown awaits cached actual telemetry close before actor
+removal and fences old actor handles during that close.
+
+The private runtime.retirement port owns one coordinator per physical Journal and
+<=64 entries. Result expiry is distinct from issued promise settlement. Budget
+checks follow each awaited helper/read before another dispatch, including status
+reconciliation after carrier settlement. A known fully drained expired entry can
+evict without a token; retries use fresh stopped inspection. Failed/unknown custody
+stays owned. Runtime shutdown drains the coordinator before closing the shared gate.
 
 A successful process-local barrier binds exact request, namespace and task snapshot.
 It is an unforgeable local capability for C3 preconditions, not a serialized cleanup

@@ -4,7 +4,8 @@ Public Supervisor/LaunchActor own launch, reconcile, cancel, retirement and read
 One trusted composition owns the locked Journal, installation, genuine RuntimePlan
 and manager. Fresh backend per actor; <=64 actors, coalesced operations, no queue.
 Normalized identity collisions reject changed spelling/spec; durable claims survive
-manager eviction. Retirement fences old handles and refuses pending originals.
+manager eviction. Retirement fences old handles and refuses pending originals. Controller-owned
+retirement awaits actual cached telemetry closes before removing an actor.
 
 Reservation/Offer/plan binding validates before effects. Create claim precedes
 ensureCreated; exact runtime binding and durable clock/cancel reread precede the

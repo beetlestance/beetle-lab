@@ -1,3 +1,4 @@
+import type { ProducerRetirement } from '../producer-retirement/index.js';
 import type { FastifyInstance } from 'fastify';
 import type { PoolConfiguration } from '../admission/index.js';
 import type { DockerTransport } from '../backends/docker/index.js';
@@ -18,6 +19,8 @@ export interface AgentRuntimeOptions {
   readonly signal?: AbortSignal;
 }
 export interface AgentRuntime {
+  /** Private process-local port for later authenticated retirement composition; no route implied. */
+  readonly retirement: Pick<ProducerRetirement, 'retire' | 'status'>;
   readonly server: FastifyInstance;
   readonly initial: Promise<{ readonly ready: boolean }>;
   status(): { readonly ready: boolean; readonly closed: boolean; readonly retainedActors: number; readonly scheduler: SchedulerStatus };

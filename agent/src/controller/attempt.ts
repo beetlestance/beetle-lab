@@ -351,7 +351,7 @@ export class AttemptController {
       if (outcomes.some(result => result.status === 'rejected')) throw new ControllerError('cleanup');
       if (this.cleanupFailed) throw new ControllerError('cleanup');
       await this.finishShutdown();
-      if (this.actor) this.options.supervisor.retire(this.options.input);
+      if (this.actor) await this.options.supervisor.retireOwned(this.options.input);
       this.ownerMap.delete(this.ownerKey);
     });
     return this.closing;

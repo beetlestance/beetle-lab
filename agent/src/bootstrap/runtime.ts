@@ -1,3 +1,4 @@
+import { ProducerRetirement } from '../producer-retirement/index.js';
 import { ProducerGate } from '../producer-gate/index.js';
 import { installedLiveMetricApproval } from './live-metrics.js';
 import { performance } from 'node:perf_hooks';
@@ -73,6 +74,7 @@ function capture(input: AgentRuntimeOptions): AgentRuntimeOptions {
 /** One retained owner covers initialization, service originals and failed cleanup. */
 class RuntimeOwner {
   private gate: ProducerGate | undefined;
+  private retirement: ProducerRetirement | undefined;
   private authorityState?: ServingState;
   private authorityCleanupUnknown = false;
   private journal?: Journal;
@@ -112,7 +114,8 @@ class RuntimeOwner {
     this.check(options);
     this.output!.start(); this.timeout!.start(); this.publisher!.start(); this.scheduler!.start();
     const server = this.server!; const initial = this.publisher!.initial;
-    return Object.freeze({ server, initial, status: () => this.status(), close: () => this.close() });
+    const retirement = Object.freeze({ retire: (input: unknown) => this.retirement!.retire(input), status: () => this.retirement!.status() });
+    return Object.freeze({ server, initial, retirement, status: () => this.status(), close: () => this.close() });
   }
   private openAuthority(path: string): ServingState {
     try { return this.authorityState = openServingState(path); }
@@ -144,6 +147,7 @@ class RuntimeOwner {
         if (!stager) throw new AgentRuntimeError('startup');
         return stager;
       } });
+    this.retirement = new ProducerRetirement({ journal: journal.retirements, gate, installation: this.installation });
     this.observer = createResourceObserver({ root, transport: options.transport, configuration });
     const view = new CapabilityView({ configuration, catalog: options.catalog, journalAuthority,
       published: () => this.closed ? null : this.publisher?.snapshot() ?? null });
@@ -176,8 +180,13 @@ class RuntimeOwner {
     if (this.scheduler) first.push(() => this.scheduler!.close());
     if (this.installation) first.push(() => this.installation!.close());
     for (const stager of this.stagers.values()) first.push(() => stager.close());
-    if (this.gate) first.push(() => this.gate!.close());
+    if (this.gate) first.push(() => this.closeRetirement());
     return first;
+  }
+  private async closeRetirement(): Promise<void> {
+    const coordinator = this.retirement ? await drain([() => this.retirement!.close()]) : true;
+    const gate = this.gate ? await drain([() => this.gate!.close()]) : true;
+    if (!coordinator || !gate) throw new AgentRuntimeError('cleanup');
   }
   private monitoringCloses(): Close[] {
     const guards: Close[] = [];

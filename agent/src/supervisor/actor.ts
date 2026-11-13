@@ -46,6 +46,7 @@ export class LaunchActor {
   private disposition: LaunchState['launch'] = 'unclaimed';
   private retirement: Promise<void> | undefined;
   private retirementFailed = false;
+  private ownedRetirement: Promise<void> | undefined;
   private retirementReady = false;
   private retiring = false;
 
@@ -91,6 +92,17 @@ export class LaunchActor {
   }
   private hasPending(): boolean {
     return !!(this.inFlight || this.cancellationWrite || this.cancellation || this.resources?.pending || this.live.pending || this.evidence.hasPending);
+  }
+  /** Controller shutdown fences old actor handles before awaiting cached telemetry closes. */
+  retireOwned(): Promise<void> {
+    this.retiring = true;
+    this.ownedRetirement ??= Promise.resolve().then(async () => {
+      await this.closeTelemetry();
+      if (this.hasPending()) throw new SupervisorError('conflict');
+      this.retirementReady = true;
+    });
+    void this.ownedRetirement.catch(() => { this.retirementFailed = true; });
+    return this.ownedRetirement;
   }
   /** Fence public actor handles, drain originals, then inspect without producing new facts. */
   retireReleased(operation: Operation): Promise<void> {

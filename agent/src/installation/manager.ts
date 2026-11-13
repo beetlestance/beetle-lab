@@ -1,3 +1,6 @@
+import { retireOutputOwners } from './output-retirement.js';
+import { captureRetirementIntent } from '../retirement-values/index.js';
+import type { RetirementIntent } from '../retirement-values/index.js';
 import { ProducerGateError } from '../producer-gate/index.js';
 import type { ProducerLease } from '../producer-gate/index.js';
 import type { Offer, StandaloneExportAssignment } from '@beetle/contracts';
@@ -206,6 +209,14 @@ export class Manager implements InstallationController {
   }
   private closeWatch(entry: Entry): void {
     closeWatches(entry);
+  }
+  retireOutput(input: RetirementIntent, operation: Operation): Promise<void> {
+    return this.run(async () => {
+      const intent = captureRetirementIntent(input); const request = intent.request;
+      const key = { organizationId: request.organizationId, workspaceId: request.workspaceId, attemptId: request.attemptId, generation: request.generation };
+      const budget = budgetCopy(operation); this.open();
+      await retireOutputOwners({ options: this.options, intent, operation: budget, existing: () => this.entries.get(identity(key)) });
+    });
   }
   inspect(input: Scope): Promise<InstallationAttempt> {
     return this.run(async () => {

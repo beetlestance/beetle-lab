@@ -9,13 +9,13 @@ export async function inspectReleased(input: { journal: JournalPort; backend: Ba
   launch: LaunchInput; operation: Operation }): Promise<void> {
   const { journal, backend, launch, operation } = input;
   checkBudget(operation);
-  const snapshot = await journal.get(launch.key);
+  const snapshot = await journal.get(launch.key); checkBudget(operation);
   if (snapshot.admission?.state !== 'released' || snapshot.admission.disposition !== 'settled') {
     throw new SupervisorError('conflict');
   }
-  const current = await journal.admission({ kind: 'reservation', key: launch.key });
+  const current = await journal.admission({ kind: 'reservation', key: launch.key }); checkBudget(operation);
   if (!('status' in current)) throw new SupervisorError('conflict');
-  const offer = await journal.readOffer(launch.key);
+  const offer = await journal.readOffer(launch.key); checkBudget(operation);
   validateReleasedReservation(launch, current, offer);
   checkBudget(operation);
   const view = await inspect(backend, launch, operation);

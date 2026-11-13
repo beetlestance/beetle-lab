@@ -11,7 +11,7 @@ export type ControllerJournal = Pick<Journal, 'admission' | 'readOffer' | 'readE
 /** Trusted composition for one admitted, staged runtime; never browser options. */
 export interface AttemptControllerOptions {
   readonly journal: ControllerJournal;
-  readonly supervisor: Pick<Supervisor, 'actor' | 'retire'>;
+  readonly supervisor: Pick<Supervisor, 'actor' | 'retireOwned'>;
   readonly input: LaunchInput;
   readonly collectOutputs: OutputCollector;
   readonly wallNow?: () => number;
