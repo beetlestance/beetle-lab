@@ -498,5 +498,25 @@
     "path": "invalid/output-retirement-generation.json",
     "schema": "OutputRetirementRequest",
     "valid": false
+  },
+  {
+    "path": "valid/output-settlement-request.json",
+    "schema": "OutputSettlementRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/output-settlement-reply.json",
+    "schema": "OutputSettlementReply",
+    "valid": true
+  },
+  {
+    "path": "invalid/output-settlement-path.json",
+    "schema": "OutputSettlementRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/output-settlement-zero-floor.json",
+    "schema": "OutputSettlementReply",
+    "valid": false
   }
 ]

@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "retirement": {
+    "version": 1,
+    "purpose": "performance",
+    "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "workspaceId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    "attemptId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    "journalAuthority": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    "runId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    "deletionId": "ffffffff-ffff-4fff-8fff-ffffffffffff",
+    "generation": 1,
+    "intentDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+    "deletionVersion": 1,
+    "closure": {
+      "kind": "source",
+      "sourceDigest": "2222222222222222222222222222222222222222222222222222222222222222",
+      "manifestDigest": "3333333333333333333333333333333333333333333333333333333333333333",
+      "finalAgentSeq": 7
+    }
+  },
+  "cleanupReplyDigest": "2dd49c1227374d6ab6a91b78e6a5baeb018a7170c9e5636b7a0614e805de8297"
+}

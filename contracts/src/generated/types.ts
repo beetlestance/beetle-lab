@@ -25,6 +25,8 @@ import type { schema as OutputManifestCoreSchema } from './output-manifest-core.
 import type { schema as OutputManifestSchema } from './output-manifest.inference.js';
 import type { schema as OutputRetirementReplySchema } from './output-retirement-reply.inference.js';
 import type { schema as OutputRetirementRequestSchema } from './output-retirement-request.inference.js';
+import type { schema as OutputSettlementReplySchema } from './output-settlement-reply.inference.js';
+import type { schema as OutputSettlementRequestSchema } from './output-settlement-request.inference.js';
 import type { schema as SourceBindingSchema } from './source-binding.inference.js';
 import type { schema as SourceChunkRequestSchema } from './source-chunk-request.inference.js';
 import type { schema as SourceChunkSchema } from './source-chunk.inference.js';
@@ -70,6 +72,8 @@ export type OutputManifestCore = FromSchema<typeof OutputManifestCoreSchema, { r
 export type OutputManifest = FromSchema<typeof OutputManifestSchema, { references: [...typeof schemas] }>;
 export type OutputRetirementReply = FromSchema<typeof OutputRetirementReplySchema, { references: [...typeof schemas] }>;
 export type OutputRetirementRequest = FromSchema<typeof OutputRetirementRequestSchema, { references: [...typeof schemas] }>;
+export type OutputSettlementReply = FromSchema<typeof OutputSettlementReplySchema, { references: [...typeof schemas] }>;
+export type OutputSettlementRequest = FromSchema<typeof OutputSettlementRequestSchema, { references: [...typeof schemas] }>;
 export type SourceBinding = FromSchema<typeof SourceBindingSchema, { references: [...typeof schemas] }>;
 export type SourceChunkRequest = FromSchema<typeof SourceChunkRequestSchema, { references: [...typeof schemas] }>;
 export type SourceChunk = FromSchema<typeof SourceChunkSchema, { references: [...typeof schemas] }>;
@@ -100,6 +104,8 @@ export interface ProtocolTypes {
   OutputManifest: OutputManifest;
   OutputRetirementReply: OutputRetirementReply;
   OutputRetirementRequest: OutputRetirementRequest;
+  OutputSettlementReply: OutputSettlementReply;
+  OutputSettlementRequest: OutputSettlementRequest;
   SourceBinding: SourceBinding;
   SourceChunkRequest: SourceChunkRequest;
   SourceChunk: SourceChunk;

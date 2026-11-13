@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/runner/v1/output-settlement-request",
+  "title": "OutputSettlementRequest",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "retirement": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/output-retirement-request"
+    },
+    "cleanupReplyDigest": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+    }
+  },
+  "required": [
+    "version",
+    "retirement",
+    "cleanupReplyDigest"
+  ],
+  "additionalProperties": false
+}

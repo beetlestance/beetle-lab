@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/runner/v1/output-settlement-reply",
+  "title": "OutputSettlementReply",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "state": {
+      "const": "settled"
+    },
+    "requestDigest": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+    },
+    "cleanupReplyDigest": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+    },
+    "tombstoneDigest": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+    },
+    "chargedBytes": {
+      "const": 4096
+    }
+  },
+  "required": [
+    "version",
+    "state",
+    "requestDigest",
+    "cleanupReplyDigest",
+    "tombstoneDigest",
+    "chargedBytes"
+  ],
+  "additionalProperties": false
+}
