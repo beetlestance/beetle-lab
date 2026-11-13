@@ -21,6 +21,11 @@ export function registerBackendSettlement(db:DatabaseSync):void{
   const frame=active.get(db);const item=purgeOrder.find(value=>value[0]===table);
   return frame?.phase==='purge'&&frame.table===table&&item&&frame.prepared.ids[item[2]]===key?1:0;
  });
+ db.function('backend_settlement_epoch',{deterministic:false},(organization,workspace,before,after)=>{
+  const f=active.get(db);const epoch=f?.prepared.retentionEpoch;
+  return f?.phase==='purge'&&f.table==='runs'&&epoch&&organization===f.prepared.tombstone.organizationId
+   &&workspace===f.prepared.tombstone.workspaceId&&before===epoch.before&&after===epoch.after?1:0;
+ });
  db.function('backend_settlement_insert',{deterministic:false},(run,attempt,deletion,json,digest)=>{
   const f=active.get(db);return f?.phase==='insert'&&run===f.prepared.ids.run&&attempt===f.prepared.ids.attempt
    &&deletion===f.prepared.ids.deletion&&json===f.prepared.json&&digest===f.prepared.digest?1:0;
@@ -54,12 +59,17 @@ export function commitBackendSettlement(db:DatabaseSync,runs:{get(key:RunKey):Ru
    f.table=table;requireFact(db.prepare(`DELETE FROM ${table} WHERE ${column}=?`).run(prepared.ids[key]).changes===prepared.counts.get(table));
    requireFact(!db.prepare(`SELECT 1 FROM ${table} WHERE ${column}=? LIMIT 1`).get(prepared.ids[key]));
   }
-  delete f.table;f.phase='usage';
+  verifyRetainedEpoch(db,prepared);delete f.table;f.phase='usage';
   requireFact(db.prepare('UPDATE installation_storage_usage SET charged_bytes=? WHERE id=1 AND charged_bytes=?').run(f.usage[1],f.usage[0]).changes===1);
   f.phase='replay';
   requireFact(db.prepare('UPDATE backend_replay_storage SET original_count=original_count+1,charged_bytes=charged_bytes+2560 WHERE id=1').run().changes===1);
   return prepared;
  }finally{active.delete(db);}
+}
+function verifyRetainedEpoch(db:DatabaseSync,p:Prepared):void{
+ if(!p.retentionEpoch)return;
+ requireFact(db.prepare('SELECT epoch FROM retention_workspace_epochs WHERE organization_id=? AND workspace_id=?')
+  .get(p.tombstone.organizationId,p.tombstone.workspaceId)?.epoch===p.retentionEpoch.after);
 }
 /** Failed rollback/restoration poisons every later Store command, even if native close fails. */
 export function poisonSettlementConnection(db:DatabaseSync):never {

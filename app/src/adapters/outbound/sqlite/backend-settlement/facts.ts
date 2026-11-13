@@ -34,6 +34,12 @@ function agentBinding(facts:ReturnType<typeof settlementProjection>,rows:Map<Pur
  return request&&reply?{cleanupReplyDigest:request.cleanupReplyDigest,agentTombstoneDigest:reply.tombstoneDigest,
   settlementRequestDigest:settlementRequestDigest(request,sha256)}:{cleanupReplyDigest:null,agentTombstoneDigest:null,settlementRequestDigest:null};
 }
+function retainedEpoch(db:DatabaseSync,organizationId:string,workspaceId:string){
+ const row=db.prepare('SELECT epoch,charged_bytes FROM retention_workspace_epochs WHERE organization_id=? AND workspace_id=?').get(organizationId,workspaceId);
+ if(!row)return null;
+ requireFact(typeof row.epoch==='number'&&Number.isSafeInteger(row.epoch)&&row.epoch>=1&&row.epoch<Number.MAX_SAFE_INTEGER&&row.charged_bytes===512);
+ return{before:row.epoch,after:row.epoch+1};
+}
 /** Capture before any permit exists. The existing retained projection owns all cleanup evidence. */
 export function prepareBackendSettlement(db:DatabaseSync,runs:{get(key:RunKey):Run},write:BackendSettlementWrite){
  requireFact(db.isTransaction);
@@ -51,5 +57,5 @@ export function prepareBackendSettlement(db:DatabaseSync,runs:{get(key:RunKey):R
  const tombstone=captureBackendTombstone({version:1,organizationId:p.scope.organizationId,workspaceId:p.scope.workspaceId,runId:p.runId,
   attemptId:ids.attempt,deletionId:p.id,runVersion:p.runVersion,intentDigest:facts.intentDigest,closureDigest:facts.closureDigest,...credit,
   ...binding,refundedBytes:backendSettlementCredit(credit),chargedBytes:2560});
- return{ids,counts:rows,tombstone,json:encodeCanonicalJson(tombstone,2048),digest:backendTombstoneDigest(tombstone)};
+ return{ids,counts:rows,tombstone,retentionEpoch:retainedEpoch(db,tombstone.organizationId,tombstone.workspaceId),json:encodeCanonicalJson(tombstone,2048),digest:backendTombstoneDigest(tombstone)};
 }
