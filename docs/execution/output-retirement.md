@@ -107,3 +107,14 @@ If a packet reaches its work-session deadline, preserve the worktree/source and
 failing evidence. Mark the partial state honestly; never lower a gate or grant
 cleanup/refund authority to obtain a passing milestone. UI redesign, additional
 engines and hosted IAM remain outside this sequence.
+
+## Next backend ACK packet
+
+C4a wire values, C4b private pipeline, C4c authenticated runner endpoint, C4d retained
+backend request projection and C4e exact bounded gateway are locally verified.
+They do not connect the background driver or persist backend ACKs. Before assigning
+ACK implementation, read the [proposal](../design/lld/backend-retirement-ack.md) and
+resolve its explicit backend control-reservation audit. Freeze the private port,
+reserve the next backend migration ID, and keep SQL/protocol ownership together.
+Then implement immutable ACK storage, bounded files_absent discovery/driver wiring
+and composed lost-reply recovery; do not mark all C4 complete from separate mocks.
