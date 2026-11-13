@@ -1,3 +1,4 @@
+import { nativeCustody, NativeCustodyError } from '../native-custody/index.js';
 import { OutputFiles } from './files.js';
 import { OutputLifetime } from './lifetime.js';
 import { nodePorts, OutputFailure } from './ports.js';
@@ -5,18 +6,22 @@ import type { OutputPorts } from './ports.js';
 import { snapshotRange } from './range-budget.js';
 import type { OutputRange, OutputRangeOptions, OutputRangeResult } from './range-types.js';
 
-// Strong custody and native admission share one bounded owner set.
-const owners = new Set<OutputLifetime<Extract<OutputRangeResult, { ok: true }>>>();
 /** Private fault seam; range originals have an independent processwide bound. */
 export function startRange(input: OutputRangeOptions, ports: OutputPorts = nodePorts): OutputRange {
-  if (owners.size >= 2) {
+  const lease = nativeCustody.reserve('range');
+  if (!lease) {
     const closed = Promise.resolve();
     return { result: Promise.resolve({ ok: false, reason: 'busy' }), quiesced: closed, close: () => closed };
   }
-  const owner = new OutputLifetime<Extract<OutputRangeResult, { ok: true }>>(ports, () => { owners.delete(owner); });
-  owners.add(owner);
+  const owner = new OutputLifetime<Extract<OutputRangeResult, { ok: true }>>(ports, () => { lease.release(); });
+  lease.own(owner);
   let files: OutputFiles;
-  owner.start(() => snapshotRange(input), async options => {
+  owner.start(() => {
+    const options = snapshotRange(input);
+    try { lease.bind(options.root.directory); }
+    catch (error) { throw new OutputFailure(error instanceof NativeCustodyError && error.reason === 'busy' ? 'busy' : 'invalid_options'); }
+    return options;
+  }, async options => {
     files = new OutputFiles({ ...options.root, root: options.root }, ports, owner);
     const opened = await files.openOutput(options.artifact.relativePath);
     try {
