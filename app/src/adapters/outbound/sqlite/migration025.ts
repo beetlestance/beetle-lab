@@ -10,7 +10,7 @@ CREATE TABLE retention_storage (
  id INTEGER PRIMARY KEY CHECK(id=1),epoch_count INTEGER NOT NULL CHECK(typeof(epoch_count)='integer' AND epoch_count BETWEEN 0 AND 17592186044415),
  snapshot_count INTEGER NOT NULL CHECK(typeof(snapshot_count)='integer' AND snapshot_count BETWEEN 0 AND 8),
  charged_bytes INTEGER NOT NULL CHECK(typeof(charged_bytes)='integer' AND charged_bytes BETWEEN 0 AND 9007199254740991),
- clock_ms INTEGER NOT NULL CHECK(typeof(clock_ms)='integer' AND clock_ms BETWEEN 0 AND 8640000000000000),
+ clock_ms INTEGER NOT NULL CHECK(typeof(clock_ms)='integer' AND clock_ms BETWEEN 0 AND 253402300799999),
  CHECK(charged_bytes=epoch_count*512+snapshot_count*131072));
 INSERT INTO retention_storage VALUES(1,0,0,0,0);
 CREATE TABLE retention_snapshots (
@@ -47,7 +47,9 @@ CREATE TRIGGER retention_snapshot_insert BEFORE INSERT ON retention_snapshots WH
  OR retention_insert_allowed('snapshot',NEW.organization_id,NEW.workspace_id,NEW.id,NEW.body_json) IS NOT 1
  BEGIN SELECT RAISE(ABORT,'snapshot requires paid reservation');END;
 CREATE TRIGGER retention_snapshot_update BEFORE UPDATE ON retention_snapshots BEGIN SELECT RAISE(ABORT,'immutable retention snapshot');END;
-CREATE TRIGGER retention_snapshot_delete BEFORE DELETE ON retention_snapshots BEGIN SELECT RAISE(ABORT,'retained retention snapshot');END;
+CREATE TRIGGER retention_snapshot_delete BEFORE DELETE ON retention_snapshots WHEN backend_settlement_active()=1 OR
+ retention_delete_allowed('snapshot',OLD.id,OLD.body_json,json_array(OLD.state,OLD.apply_json,OLD.charged_bytes)) IS NOT 1
+ BEGIN SELECT RAISE(ABORT,'retained retention snapshot');END;
 CREATE TRIGGER retention_storage_insert BEFORE INSERT ON retention_storage BEGIN SELECT RAISE(ABORT,'retained retention counter');END;
 CREATE TRIGGER retention_storage_delete BEFORE DELETE ON retention_storage BEGIN SELECT RAISE(ABORT,'retained retention counter');END;
 CREATE TRIGGER retention_storage_update BEFORE UPDATE ON retention_storage WHEN backend_settlement_active()=1 OR

@@ -1,7 +1,7 @@
 # Retention snapshot accounting
 
 Status: private metadata reservation and durable workspace epochs implemented;
-selection, expiry/apply, worker/public API and UI remain pending. No retention job
+apply, worker/public API and UI remain pending. No retention job
 is enabled by this slice. [Contract](../design/lld/protected-retention.md).
 
 Backend025 creates empty owned tables/counters without backfilling old originals or
@@ -35,7 +35,40 @@ Scoped evidence retained privately under `.agent-work/retention-accounting/`:
 - Independent review found no blocker. Initial fixture capacity and unused-import/lint
   failures are retained; no production accounting failure was hidden.
 
-These are synthetic SQLite/compiled-build checks. No new public mutation, Docker run,
+These are synthetic SQLite tests and a backend build. No new public mutation, Docker run,
 registry publication, user-data deletion or hosted-access claim is made. Expiry and
 Apply must preserve charged unfinished progress, reject stale/expired membership and
 use the existing receipt-first Begin/cleanup driver before exposing this capability.
+
+## Preview expiry
+
+Maintenance persists the latest observed clock and processes at most8 owned previews.
+Only an exact unapplied expired page can be removed; its131072 charge is refunded
+once while the workspace epoch’s512 remains. Every applied page stays protected,
+even if progress is missing. Clock rollback cannot revive a consumed expiry.
+A failed late credit or nested different-page deletion rolls the whole operation back.
+
+Ten expiry/accounting cases and three migration cases passed, followed by types, lint,
+architecture, docs and backend build. Review found no blocker. The clock is limited
+to canonical24-character UTC dates so year10000 cannot break lexical expiry ordering.
+Applied completion pruning and public maintenance scheduling remain pending.
+
+## Workspace selection
+
+The private workspace selector uses the scoped requested-time/ID index, at most100
+evaluated Runs plus one header-only probe. Source/absence/unsent eligibility and
+funded cleanup control must agree with actual retained debt before candidacy. Active,
+unknown and cleanup-in-progress originals remain protected; unknown debt disables
+the older storage prefix. No Run pin affordance is introduced by this component.
+
+Continuations use only the scoped stored predecessor’s prefix/cursor and revalidate
+epoch, all settings versions, effective policy and source. A live request replay
+returns immutable membership before fresh settings/capacity checks. Continuation may
+atomically consume an empty, unapplied predecessor and fund its child; it never drops
+candidates or progress. This permits more than eight empty windows without exhaustion.
+Consumed/expired snapshot IDs cannot be applied. Parent traversal remains separate.
+
+Focused tests cover11 successive windows with one live slot, live immutable replay,
+stale/cross-workspace/forged cursors, positive source and unsent debt, unknown proof,
+existing cleanup and the indexed keyset path. Selection has no native effects and
+does not enable public Apply.

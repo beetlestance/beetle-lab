@@ -1,7 +1,7 @@
 import {scanSettlements} from './settlement-scan.js';
 import { scanRetirements } from './retirement-scan.js';
 import { recordCleanupAck,readCleanupAck } from './acks.js';
-import { reserveCleanupControl } from '../cleanup-control/index.js';
+import { reserveCleanupControl,requireCleanupControl } from '../cleanup-control/index.js';
 import type { CleanupCapacity } from '../cleanup-control/index.js';
 import { retirementRequest } from './retirement-request.js';
 import { encodeCanonicalJson } from '@beetle/contracts';
@@ -115,3 +115,11 @@ function isRead(operation:OutputDeletionOperation):operation is DeletionRead{
 }
 
 export { settlementProjection } from './settlement.js';
+
+/** Positive metadata-only eligibility; no Begin, native work or credit. */
+export function inspectOutputDeletionCandidate(db:DatabaseSync,runs:{get(key:RunKey):Run},request:OutputDeletionCommand['request']){
+ const facts=captureFacts(db,runs,{request});const run=facts.run;
+ requireCleanupControl(db,{runId:run.id,attemptId:run.activeAttemptId,organizationId:run.scope.organizationId,workspaceId:run.scope.workspaceId});
+ const logicalBytes=facts.retainedPayloadBytes+facts.metadataBytes+65536;
+ if(!Number.isSafeInteger(logicalBytes)||logicalBytes<65536)throw new StorageError('unavailable');return{kind:facts.kind,logicalBytes};
+}

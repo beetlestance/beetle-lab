@@ -13,7 +13,8 @@ Capture all three settings IDs/versions and the effective policy/source. Parent
 operations traverse workspaces with a bounded durable cursor; they must report
 continuation/partial coverage rather than combine workspace counts or budgets.
 
-One preview turn reads at most100 physical Run headers using a matching index.
+One preview turn evaluates at most100 Run headers using a matching index, plus
+one header-only existence probe.
 Carry completed count and retained logical bytes from the preceding window; browser
 counters are never trusted. Exact prefix state belongs to the stored previous page.
 A page may contain no candidates and still have a continuation. No OFFSET, unbounded
@@ -84,7 +85,12 @@ budget. Persistence must enforce the same bounds before schema acceptance:
 
 These are logical allowances, not SQLite file/page/WAL or secure-erasure guarantees.
 Boundary validators, SQL checks and maximum-width tests must enforce each bound.
-Preview requests replay within a15minute lifetime. Missing/expired snapshot IDs
+Live preview requests replay within a15minute lifetime. Explicit continuation may
+consume an empty unapplied predecessor, copying its stored prefix into the newly
+funded child in the same transaction. This bounds empty-history traversal to one
+slot. Candidate-bearing pages are never consumed by continuation. Consumed pages
+lose replay availability; a fresh preview still needs explicit Apply. Missing,
+consumed or expired snapshot IDs
 refuse Apply; expiry cannot create another destructive identity. Unapplied expired
 snapshots can be removed in a bounded sweep of the eight owned slots and refund
 only their own exact metadata charge. Applied pages remain charged through pending

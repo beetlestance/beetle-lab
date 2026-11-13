@@ -1,7 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import { captureRetentionSnapshot,RETENTION_SNAPSHOT_BODY_BYTES } from '../../../../domain/retention/index.js';
-import { commitRetentionReservation } from '../retention-accounting-guard/index.js';
+import { commitRetentionClock,commitRetentionExpiry,commitRetentionReservation } from '../retention-accounting-guard/index.js';
 import { accounting,requireFact } from './facts.js';
 /** Internal transaction participant; no selection, deletion or refund authority. */
 export function reserveRetentionSnapshot(db:DatabaseSync,input:unknown,now:number){
@@ -15,3 +15,13 @@ export function reserveRetentionSnapshot(db:DatabaseSync,input:unknown,now:numbe
  requireFact(stored.id===row.id&&stored.intentDigest===row.intent_digest&&encodeCanonicalJson(stored,RETENTION_SNAPSHOT_BODY_BYTES)===row.body,'unavailable');
  requireFact(Date.parse(stored.expiresAt)>Math.max(now,accounting(db).clock_ms));return stored;
 }
+
+/** Standalone maintenance transaction participant. All applied work stays charged/protected. */
+export function pruneRetentionSnapshots(db:DatabaseSync,now:number){
+ const clock=commitRetentionClock(db,now);const rows=db.prepare("SELECT id FROM retention_snapshots WHERE state='preview' AND expires_at<=? ORDER BY expires_at,id LIMIT 8")
+  .all(new Date(clock).toISOString());let removed=0;
+ for(const row of rows){requireFact(typeof row.id==='string','unavailable');if(commitRetentionExpiry(db,row.id,clock))removed++;}
+ return Object.freeze({removed,refundedBytes:removed*131072,observedAtMs:clock});
+}
+
+export { retentionBasis } from './facts.js';

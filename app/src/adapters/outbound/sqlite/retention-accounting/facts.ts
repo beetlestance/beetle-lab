@@ -23,17 +23,22 @@ function settings(db:DatabaseSync,scope:WorkspaceScope){
   return{pin:{id:row.id,version:row.version},body:body as Record<string,unknown>};
  });
 }
-function bindSettings(db:DatabaseSync,input:RetentionSnapshot){
- const [installation,organization,workspace]=settings(db,input.scope);requireFact(installation&&organization&&workspace);
+export function retentionBasis(db:DatabaseSync,scope:WorkspaceScope){
+ const [installation,organization,workspace]=settings(db,scope);requireFact(installation&&organization&&workspace);
  const expected={installation:installation.pin,organization:organization.pin,workspace:workspace.pin};
- requireFact(encodeCanonicalJson(expected,1024)===encodeCanonicalJson(input.settings,1024));
- const choices:[unknown,SettingsScope][]=[[workspace.body.retention,input.scope],[organization.body.retention,{kind:'organization',organizationId:input.scope.organizationId}],
+ const choices:[unknown,SettingsScope][]=[[workspace.body.retention,scope],[organization.body.retention,{kind:'organization',organizationId:scope.organizationId}],
   [installation.body.retention,{kind:'installation'}]];
  const selected=choices.find(([policy])=>policy!==undefined);requireFact(selected,'unavailable');
  const policy=validateApi('RetentionPolicy',selected[0]);requireFact(policy.ok,'unavailable');
- requireFact(encodeCanonicalJson(policy.value as RetentionPolicy,512)===encodeCanonicalJson(input.policy,512));
- requireFact(encodeCanonicalJson(selected[1],256)===encodeCanonicalJson(input.policySource,256));
- const pool=installation.body.pool;requireFact(pool&&typeof pool==='object'&&!Array.isArray(pool),'unavailable');return pool as Record<string,unknown>;
+ const pool=installation.body.pool;requireFact(pool&&typeof pool==='object'&&!Array.isArray(pool),'unavailable');const epoch=db.prepare('SELECT epoch FROM retention_workspace_epochs WHERE workspace_id=? AND organization_id=?').get(scope.workspaceId,scope.organizationId)?.epoch;
+ requireFact(epoch===undefined||typeof epoch==='number'&&Number.isSafeInteger(epoch)&&epoch>=1,'unavailable');
+ return{settings:expected,policy:policy.value as RetentionPolicy,policySource:selected[1],epoch:epoch===undefined?1:epoch,pool:pool as Record<string,unknown>};
+}
+function bindSettings(db:DatabaseSync,input:RetentionSnapshot){
+ const basis=retentionBasis(db,input.scope);
+ requireFact(encodeCanonicalJson(basis.settings,1024)===encodeCanonicalJson(input.settings,1024));
+ requireFact(encodeCanonicalJson(basis.policy,512)===encodeCanonicalJson(input.policy,512));
+ requireFact(encodeCanonicalJson(basis.policySource,256)===encodeCanonicalJson(input.policySource,256));return basis.pool;
 }
 export function prepareReservation(db:DatabaseSync,proposal:unknown,now:number){
  requireFact(db.isTransaction);const snapshot=captureRetentionSnapshot(proposal);const stats=accounting(db);

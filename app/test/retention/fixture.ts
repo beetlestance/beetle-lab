@@ -5,7 +5,7 @@ import type { RetentionSnapshot } from '../../src/domain/retention/index.js';
 import { reserveRetentionSnapshot } from '../../src/adapters/outbound/sqlite/retention-accounting/index.js';
 import { transaction } from '../../src/adapters/outbound/sqlite/schema.js';
 import { claimsFixture,custody } from '../storage/dispatch-claim-fixtures.js';
-import { scope,uuid } from '../storage/fixture.js';
+import { scope,uuid,command } from '../storage/fixture.js';
 export { uuid,scope,custody };
 export const now=Date.parse('2026-11-14T12:00:00.000Z');
 function sourceFor(chain:SettingsChain){
@@ -27,3 +27,10 @@ export function fixture(storageBytes=2_000_000){
  return{...f,proposal,reserve:(input=proposal(),clock=now)=>transaction(f.db,()=>reserveRetentionSnapshot(f.db,input,clock))};
 }
 export function usage(db:DatabaseSync){return db.prepare('SELECT charged_bytes FROM installation_storage_usage WHERE id=1').get()?.charged_bytes;}
+
+export function otherWorkspace(f:Pick<ReturnType<typeof claimsFixture>,'store'>){
+ const target={kind:'workspace' as const,organizationId:uuid(21),workspaceId:uuid(22)};
+ f.store.execute({kind:'namespace',command:command({kind:'createOrganization',id:uuid(21),request:{scope:{kind:'installation'},requestId:uuid(30000),name:'Other retention',slug:'other-retention'}})});
+ f.store.execute({kind:'namespace',command:command({kind:'createWorkspace',id:uuid(22),rootFolderId:uuid(23),request:{scope:{kind:'organization',organizationId:uuid(21)},requestId:uuid(30001),name:'Other retention'}})});
+ return target;
+}
