@@ -90,5 +90,13 @@
     "path": "/runner/v1/attempts/{attemptId}/source/absence",
     "response": "OutputAbsence",
     "successStatus": 200
+  },
+  {
+    "name": "retireOutput",
+    "method": "POST",
+    "path": "/runner/v1/attempts/{attemptId}/output-retirement",
+    "request": "OutputRetirementRequest",
+    "response": "OutputRetirementReply",
+    "successStatus": 200
   }
 ]

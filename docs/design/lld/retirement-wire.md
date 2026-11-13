@@ -1,6 +1,6 @@
 # Retirement request/reply wire values
 
-Status: C4a values implemented; no private route, backend ACK or settlement implied.
+Status: values and authenticated runner route implemented; backend ACK/settlement pending.
 Parents: [retirement](output-retirement.md), [producer](producer-retirement.md),
 [native receipt](native-receipt.md). Shared package: contracts/output-retirement.
 
@@ -33,11 +33,10 @@ the canonical digest; changing closure or original spelling does.
 
 The codec checks metadata, not authentication, actual IO, native quiescence or refund
 permission. Only trusted native finalization may produce cleaned, including replay;
-a stored row or valid JSON is never a shortcut. Future C4 transport must use existing
-credentials and expected-Journal-authority binding, match the exact committed backend
-deletion request after backend file receipts, and consume trusted finalization.
-No availability descriptor/route is registered by adding these schemas. Pending and
-cleaned HTTP status/carrier orchestration belong to the subsequent route contract.
+a stored row or valid JSON is never a shortcut. The [runner transport](retirement-transport.md) uses existing credentials, physical
+Journal binding and trusted finalization. Future backend consumption must match the
+exact committed deletion request after backend file receipts before accepting an ACK.
+Generated client shape validation alone is insufficient for that acceptance.
 
 Acceptance: schema/byte/closed shape; four fixed fixtures; independent digest vectors;
 all scope/authority/deletion mismatches; source/absence/final-sequence mutation;

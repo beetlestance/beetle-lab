@@ -1,3 +1,4 @@
+import type { RetirementPipeline } from '../retirement-pipeline/index.js';
 import type { Scope } from '../admission/index.js';
 import type { LiveMetricRead } from '../live-metrics/index.js';
 import type { Operation } from '../backends/docker/index.js';
@@ -8,6 +9,8 @@ import type { JournalOutputAbsence } from '../journal/index.js';
 import type { OutputSourceReader } from '../output-transfer/index.js';
 
 export interface AgentHttpOptions {
+  /** Explicit trusted pipeline; raw receipt rows cannot service this route. */
+  readonly cleanup?: Pick<RetirementPipeline, 'tick'>;
   /** Trusted mounted installation credential, never returned to the browser or engine. */
   readonly credential: string;
   /** Immutable UUID of the exclusively opened journal, bound before serving. */

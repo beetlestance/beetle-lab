@@ -6,6 +6,7 @@ released application until the rewrite is qualified.
 | Need | Read | Authority |
 | --- | --- | --- |
 | Agent execution/effort | [Execution plan](execution/README.md) | Work packages, model routing, locks and context packets |
+| Inspect runner cleanup transport | [Transport contract](design/lld/retirement-transport.md), [evidence](verification/retirement-transport.md) | Authenticated bounded runner HTTP; backend ACK and settlement pending |
 | Scope and implementation order | [PLAN](../PLAN.md) | Work sequencing |
 | UI redesign timing | [Decision012](decisions/012-ui-redesign-after-functional-rewrite.md) | Functional completion first; separate UI audit and redesign plan afterward |
 | Frontend/assets/SDK choices | [Discussion](design/frontend-decisions.md) | Options and unresolved decisions |
