@@ -1,6 +1,6 @@
 # Output settlement
 
-Status: admitted-performance contract under review; implementation remains gated.
+Status: values and local ownership gate implemented; settlement transactions remain gated.
 Owning predecessors: [retirement](output-retirement.md),
 [backend control](backend-cleanup-control.md). Root owns migrations agent022/backend024.
 
@@ -20,6 +20,14 @@ inventory, removal, receipt and cleanup-carrier work and drains their actual ori
 A persisted native receipt alone does not prove concurrent replay descriptors closed.
 Failed/uncertain drain retains its ownership and all charges; it grants no purge permit.
 The durable tombstone fences Offer, cancel, admission and producer paths before effects.
+
+The shared gate is keyed by the physical Journal.retirements port, with64 originals,
+256 leases and2 fences. Every cleanup service acquires at entry, including direct
+process methods and inventory persistence. Native operations retain their lease until
+actual close; failed metadata joins actual worker termination. Opaque drain observations
+bind owner and exact retirement request and remain valid only while the fence is held.
+HTTP control originals retain request/response/socket closure ownership before release.
+These implemented local rules grant no database eligibility or physical cleanup proof.
 
 Agent settlement atomically stores a permanent immutable replay tombstone, purges the
 covered original records, removes its retained disk hold, and transfers4096 logical

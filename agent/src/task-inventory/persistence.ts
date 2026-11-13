@@ -1,3 +1,5 @@
+import { cleanupAccess } from '../cleanup-access/index.js';
+import type { CleanupLease } from '../cleanup-access/index.js';
 import { captureWindow, checkWindow } from '../runtime-retirement/index.js';
 import type { Operation } from '../backends/docker/index.js';
 import type { StoredCleanupPlan } from '../cleanup-control/index.js';
@@ -15,9 +17,9 @@ export class PlanPersistence{
   if(this.closed)return Promise.reject(new OutputFailure('closed'));
   if(this.originals.size>=2)return Promise.reject(new OutputFailure('busy'));
   const owner:Original={uncertain:false};this.originals.add(owner);
-  let operation:Operation;let facts:ReturnType<typeof observedPlan>;
+  let access:CleanupLease;let operation:Operation;let facts:ReturnType<typeof observedPlan>;
   const read=()=>observedPlan(token,this.options.journal.retirements,this.options.journal.cleanupPlans);
-  try{operation=captureWindow(input);facts=read();}catch(error){this.originals.delete(owner);return Promise.reject(error);}
+  try{operation=captureWindow(input);facts=read();access=cleanupAccess(this.options.journal.retirements).acquire(facts.plan.original);}catch(error){this.originals.delete(owner);return Promise.reject(error);}
   const check=()=>{checkWindow(operation,this.closed);read();};
   const active=Promise.resolve().then(async()=>{
    check();let stored:StoredCleanupPlan;
@@ -29,7 +31,7 @@ export class PlanPersistence{
    }
    check();if(stored.planIdentity!==facts.planIdentity)throw new OutputFailure('custody');return stored;
   });owner.active=active;
-  void active.then(()=>this.originals.delete(owner),()=>{delete owner.active;if(!owner.uncertain)this.originals.delete(owner);});return active;
+  void active.then(()=>{this.originals.delete(owner);access.release();},()=>{delete owner.active;if(!owner.uncertain){this.originals.delete(owner);access.release();}});return active;
  }
  close():Promise<void>{
   if(this.closing)return this.closing;this.closed=true;

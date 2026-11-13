@@ -14,7 +14,7 @@ class SyntheticRequest extends EventEmitter {
   response: SyntheticResponse | undefined;
   constructor(readonly options: RequestOptions, readonly send: (request: SyntheticRequest) => void) { super(); }
   end(body: string): void { this.body = body; queueMicrotask(() => this.send(this)); }
-  destroy(): void { this.destroyed = true; }
+  destroy(): void { if(this.destroyed)return;this.destroyed = true;queueMicrotask(()=>this.emit('close')); }
   respond(status = 200): SyntheticResponse {
     const response = Object.assign(new PassThrough(), { statusCode: status, complete: true });
     this.response = response; this.emit('response', response as unknown as IncomingMessage);

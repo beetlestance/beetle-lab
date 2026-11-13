@@ -1,3 +1,4 @@
+import type { CleanupLease } from '../cleanup-access/index.js';
 import type { TaskInventoryOperation } from '../task-inventory/index.js';
 import type { Journal } from '../journal/index.js';
 import type { ProducerRetirement } from '../producer-retirement/index.js';
@@ -14,4 +15,4 @@ export interface PipelineWork{readonly result:Promise<RetirementReply>;
  readonly settled:Promise<void>}
 export class RetirementPipelineError extends Error{constructor(readonly reason:'invalid_input'|'capacity'|'conflict'|'closed'|'unavailable'){super(`Retirement pipeline ${reason}`);}}
 
-export interface PipelineEntry {uncertain:boolean;id?:string;digest?:string;work?:PipelineWork;native?:TaskInventoryOperation}
+export interface PipelineEntry {uncertain:boolean;access?:CleanupLease;id?:string;digest?:string;work?:PipelineWork;native?:TaskInventoryOperation}

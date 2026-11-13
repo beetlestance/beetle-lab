@@ -1,3 +1,5 @@
+import { cleanupAccess } from '../cleanup-access/index.js';
+import type { CleanupLease } from '../cleanup-access/index.js';
 import { mintNativeAbsence } from './absence.js';
 import type { NativeAbsenceObservation } from './absence.js';
 export { nativeAbsenceFacts } from './absence.js';
@@ -15,7 +17,7 @@ import { startNativeStep } from './operation.js';
 import type { NativeStep } from './types.js';
 import type { RemovalPorts } from './files.js';
 export interface NativeRemovalOutcome {readonly progress:CleanupProgress;readonly absence?:NativeAbsenceObservation}
-interface Entry{active?:Promise<NativeRemovalOutcome>;native?:NativeStep;uncertain:boolean}
+interface Entry{access:CleanupLease;active?:Promise<NativeRemovalOutcome>;native?:NativeStep;uncertain:boolean}
 const owners=new WeakMap<object,NativeRemoval>();
 /** Exactly one reverse-plan removal per call, serialized through actual carrier settlement. */
 export class NativeRemoval{
@@ -32,15 +34,15 @@ export class NativeRemoval{
  stepWithProof(token:RuntimeAbsent,input:Operation):Promise<NativeRemovalOutcome>{return this.start(token,input);}
  stepWithProofAndPorts(token:RuntimeAbsent,input:Operation,ports:RemovalPorts):Promise<NativeRemovalOutcome>{return this.start(token,input,ports);}
  private start(token:RuntimeAbsent,input:Operation,ports?:RemovalPorts):Promise<NativeRemovalOutcome>{
-  if(this.closed)return Promise.reject(new OutputFailure('closed'));let id:string;
-  try{id=encodeCanonicalJson(inventoryScope(this.options,token).facts.intent.request,4096);}catch(error){return Promise.reject(error);}
+  if(this.closed)return Promise.reject(new OutputFailure('closed'));let id:string;let key:ReturnType<typeof inventoryScope>['facts']['intent']['request'];
+  try{key=inventoryScope(this.options,token).facts.intent.request;cleanupAccess(this.options.journal.retirements).assertOpen(key);id=encodeCanonicalJson(key,4096);}catch(error){return Promise.reject(error);}
   const prior=this.entries.get(id);if(prior)return prior.active??Promise.reject(new OutputFailure('io'));
-  if(this.entries.size>=64)return Promise.reject(new OutputFailure('busy'));const owner:Entry={uncertain:false};this.entries.set(id,owner);
-  let operation:Operation;try{operation=captureWindow(input);}catch(error){this.entries.delete(id);return Promise.reject(error);}
+  if(this.entries.size>=64)return Promise.reject(new OutputFailure('busy'));const owner:Entry={access:cleanupAccess(this.options.journal.retirements).acquire(key),uncertain:false};this.entries.set(id,owner);
+  let operation:Operation;try{operation=captureWindow(input);}catch(error){this.entries.delete(id);owner.access.release();return Promise.reject(error);}
   const check=()=>{checkWindow(operation,this.closed);inventoryScope(this.options,token);};
   const active=Promise.resolve().then(async()=>{
    check();const io:OutputIO={check,own:()=>{throw new OutputFailure('io');},closeHandles:async()=>{throw new OutputFailure('io');},
-    io:async action=>{check();const value=await action();check();return value;}};
+    io:async action=>{check();const value=await this.metadata(action,owner);check();return value;}};
    const scope=await inventoryAnchor(this.options,token,io);check();const{organizationId,workspaceId,attemptId,generation}=scope.facts.intent.request;
    const stored=await this.metadata(()=>this.options.journal.cleanupPlans.read({organizationId,workspaceId,attemptId,generation}),owner);check();
    if(!stored||stored.plan.retirementRequestDigest!==scope.facts.intent.requestDigest||stored.plan.taskNamespaceIdentity!==scope.anchor.taskNamespaceIdentity)throw new OutputFailure('custody');
@@ -54,7 +56,7 @@ export class NativeRemoval{
     receipts:this.options.journal.cleanupReceipts,open:()=>!this.closed}):undefined;
    return{progress:advanced,...(absence?{absence}:{})};
   });owner.active=active;
-  void active.then(()=>this.entries.delete(id),()=>{delete owner.active;if(!owner.uncertain)this.entries.delete(id);});return active;
+  void active.then(()=>{this.entries.delete(id);owner.access.release();},()=>{delete owner.active;if(!owner.uncertain){this.entries.delete(id);owner.access.release();}});return active;
  }
  private async metadata<T>(issue:()=>Promise<T>,owner:Entry):Promise<T>{
   try{return await issue();}catch(error){try{await this.options.journal.cleanupProgress.settleCarrier();}catch{owner.uncertain=true;}throw error;}

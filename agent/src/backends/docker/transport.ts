@@ -1,6 +1,7 @@
+import { exchangeDockerOriginal } from './request-original.js';
 import { inspectionPath } from './inspection-paths.js';
 import { request as httpRequest } from 'node:http';
-import type { ClientRequest, IncomingMessage } from 'node:http';
+import type { IncomingMessage } from 'node:http';
 import { isAbsolute, normalize } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { encodeJson } from '@beetle/contracts';
@@ -67,37 +68,7 @@ export class UnixDockerTransport implements DockerTransport {
     finally { this.active--; }
   }
   private exchange(input: DockerRequest, body: string, remaining: number): Promise<DockerReply> {
-    return new Promise(resolve => {
-      let request: ClientRequest | undefined;
-      let response: IncomingMessage | undefined;
-      let dispatched = false;
-      let settled = false;
-      const finish = (reply: DockerReply) => {
-        if (settled) return;
-        if (performance.now() >= input.deadline) reply = { ok: false, reason: 'deadline', dispatched };
-        else if (input.signal?.aborted) reply = { ok: false, reason: 'aborted', dispatched };
-        settled = true; clearTimeout(timer); input.signal?.removeEventListener('abort', abort);
-        response?.destroy(); request?.destroy(); resolve(reply);
-      };
-      const fail = (reason: FailureReason) => finish({ ok: false, reason, dispatched });
-      const abort = () => fail('aborted');
-      const timer = setTimeout(() => fail('deadline'), remaining);
-      input.signal?.addEventListener('abort', abort, { once: true });
-      try {
-        request = this.factory({ socketPath: this.socketPath, method: input.method,
-          path: input.path, agent: false, maxHeaderSize: 16_384,
-          headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) } });
-        request.on('error', () => fail('unavailable'));
-        request.on('response', incoming => {
-          if (settled) { incoming.destroy(); return; }
-          response = incoming;
-          consume(incoming, reply => finish(reply), fail);
-        });
-        if (input.signal?.aborted) { abort(); return; }
-        dispatched = true;
-        request.end(body);
-      } catch { fail('unavailable'); }
-    });
+    return exchangeDockerOriginal({socketPath:this.socketPath,factory:this.factory,input,body,remaining,consume});
   }
 }
 

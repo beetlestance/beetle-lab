@@ -1,3 +1,4 @@
+import { cleanupAccess } from '../../src/cleanup-access/index.js';
 import { expect,it } from 'vitest';
 import { fixture,post } from './fixtures.js';
 import { captureOutputRetirementReply } from '@beetle/contracts/output-retirement';
@@ -19,4 +20,14 @@ it.each(['auth','scope','header-authority','body-authority','path','extra','size
  const body={...e.request,...(kind==='body-authority'?{journalAuthority:foreign}:{}),...(kind==='extra'?{path:'/wrong'}:{}),...(kind==='size'?{padding:'x'.repeat(4096)}:{})};
  const path=kind==='path'?`/runner/v1/attempts/${foreign}/output-retirement`:e.path;
  const response=await post(e.origin,path,headers,body).result;expect(response.status).toBeGreaterThanOrEqual(400);expect(e.calls()).toBe(0);expect(e.effects).toHaveLength(0);
+});
+
+it('reports a settlement fence as retryable transport capacity before native work',async()=>{
+ const e=await f.http();const fence=cleanupAccess(e.owner.retirements).reserve(e.request);
+ try{
+  await fence.drain();const opened=e.opened.length;const docker=e.docker.calls.length;
+  const response=await post(e.origin,e.path,e.headers,e.request).result;
+  expect(response.status).toBe(429);expect(JSON.parse(response.body)).toMatchObject({reason:'budget_unavailable',retry:'transport'});
+  expect(e.opened.length).toBe(opened);expect(e.docker.calls.length).toBe(docker);expect(e.effects).toHaveLength(0);
+ }finally{fence.release();}
 });

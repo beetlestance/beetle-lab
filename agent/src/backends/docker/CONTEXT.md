@@ -37,4 +37,6 @@ sealed/applicationAcknowledged, force=false/v=false; archive originals must drai
 Matched stop/kill works despite volume failure; reads/start/cleanup require ownership.
 sampleResources reads inspected running owners by full ID, one-shot stats with raw
 usage/null provenance; no mutation lane/revocation on failure. Exit137 is not OOM.
-Focused tests: scoped files in agent/test/backends/docker; no Docker in unit lane.
+Control HTTP retains actual request/response/socket close before slot release,
+including cancel/late response; destroy/timeout alone is not drain.
+Focused tests:agent/test/backends/docker; no Docker in unit lane.

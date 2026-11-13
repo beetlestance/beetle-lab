@@ -1,3 +1,4 @@
+import { cleanupAccess,CleanupAccessError } from '../cleanup-access/index.js';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import { captureOutputRetirementRequest,outputRetirementDigest } from '@beetle/contracts/output-retirement';
 import type { RetirementReply } from '@beetle/contracts/output-retirement';
@@ -22,15 +23,17 @@ export class RetirementPipeline{
   if(this.closed)return rejected(new RetirementPipelineError('closed'));if(this.entries.size>=2)return rejected(new RetirementPipelineError('capacity'));
   const entry:PipelineEntry={uncertain:false};this.entries.add(entry);let operation:Operation;let request:ReturnType<typeof captureOutputRetirementRequest>;
   try{operation=captureWindow(raw);request=captureOutputRetirementRequest(input);const{organizationId,workspaceId,attemptId,generation}=request;
+   cleanupAccess(this.options.journal.retirements).assertOpen({organizationId,workspaceId,attemptId,generation});
    entry.id=encodeCanonicalJson({organizationId,workspaceId,attemptId,generation},640);entry.digest=outputRetirementDigest(request,retirementDigest);
    const existing=this.scopes.get(entry.id);if(existing){this.entries.delete(entry);if(existing.digest!==entry.digest)throw new RetirementPipelineError('conflict');return existing.work??rejected(new RetirementPipelineError('capacity'));}
+   entry.access=cleanupAccess(this.options.journal.retirements).acquire({organizationId,workspaceId,attemptId,generation});
    this.scopes.set(entry.id,entry);
-  }catch(error){this.entries.delete(entry);return rejected(error instanceof RetirementPipelineError?error:new RetirementPipelineError('invalid_input'));}
+  }catch(error){this.entries.delete(entry);return rejected(error instanceof RetirementPipelineError?error:new RetirementPipelineError(error instanceof CleanupAccessError?'capacity':'invalid_input'));}
   const result=Promise.resolve().then(()=>executePipeline({options:this.options,request,operation,entry,closed:()=>this.closed,...(ports?{ports}:{})}));
   const settled=result.then(()=>undefined);void settled.catch(()=>undefined);const work=Object.freeze({result,settled});entry.work=work;
   void result.then(()=>this.release(entry),()=>{if(!entry.uncertain)this.release(entry);});return work;
  }
- private release(entry:PipelineEntry):void{this.entries.delete(entry);if(entry.id&&this.scopes.get(entry.id)===entry)this.scopes.delete(entry.id);}
+ private release(entry:PipelineEntry):void{entry.access?.release();this.entries.delete(entry);if(entry.id&&this.scopes.get(entry.id)===entry)this.scopes.delete(entry.id);}
  status(){return Object.freeze({retained:this.entries.size,closed:this.closed});}
  close():Promise<void>{if(this.closing)return this.closing;this.closed=true;this.closing=Promise.resolve().then(async()=>{
   await Promise.allSettled([...this.entries].map(entry=>entry.work?.settled));

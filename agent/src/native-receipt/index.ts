@@ -1,3 +1,5 @@
+import { cleanupAccess } from '../cleanup-access/index.js';
+import type { CleanupLease } from '../cleanup-access/index.js';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import { captureWindow,checkWindow } from '../runtime-retirement/index.js';
 import type { RuntimeAbsent } from '../runtime-retirement/index.js';
@@ -10,7 +12,7 @@ import type { StoredCleanupReceipt,NativeCleanupPlan,NativeCleanupReceipt } from
 import { OutputFailure } from '../collection/output/index.js';
 import type { RemovalPorts } from '../native-removal/index.js';
 interface Options extends InventoryAuthority{readonly removal:NativeRemoval}
-interface Entry{active?:Promise<StoredCleanupReceipt>;uncertain:boolean;proof?:NativeAbsenceObservation;request?:{plan:NativeCleanupPlan;receipt:NativeCleanupReceipt}}
+interface Entry{access:CleanupLease;active?:Promise<StoredCleanupReceipt>;uncertain:boolean;proof?:NativeAbsenceObservation;request?:{plan:NativeCleanupPlan;receipt:NativeCleanupReceipt}}
 const owners=new WeakMap<object,NativeReceipt>();
 /** Actual current native proof before every immutable receipt commit/replay; never a refund. */
 export class NativeReceipt{
@@ -21,10 +23,10 @@ export class NativeReceipt{
  finalizeWithPorts(token:RuntimeAbsent,input:Operation,ports?:RemovalPorts):Promise<StoredCleanupReceipt>{
   if(this.closed)return Promise.reject(new OutputFailure('closed'));let id:string;
   const scope=()=>inventoryScope(this.options,token);
-  try{id=encodeCanonicalJson(scope().facts.intent.request,4096);}catch(error){return Promise.reject(error);}
+  try{const request=scope().facts.intent.request;cleanupAccess(this.options.journal.retirements).assertOpen(request);id=encodeCanonicalJson(request,4096);}catch(error){return Promise.reject(error);}
   const prior=this.entries.get(id);if(prior)return prior.active??Promise.reject(new OutputFailure('busy'));
-  if(this.entries.size>=2)return Promise.reject(new OutputFailure('busy'));const owner:Entry={uncertain:false};this.entries.set(id,owner);
-  let operation:Operation;try{operation=captureWindow(input);}catch(error){this.entries.delete(id);return Promise.reject(error);}
+  if(this.entries.size>=2)return Promise.reject(new OutputFailure('busy'));const owner:Entry={access:cleanupAccess(this.options.journal.retirements).acquire(scope().facts.intent.request),uncertain:false};this.entries.set(id,owner);
+  let operation:Operation;try{operation=captureWindow(input);}catch(error){this.entries.delete(id);owner.access.release();return Promise.reject(error);}
   const check=()=>{checkWindow(operation,this.closed);scope();};
   const active=Promise.resolve().then(async()=>{
    check();const request=scope().facts.intent.request;const{organizationId,workspaceId,attemptId,generation}=request;
@@ -37,7 +39,7 @@ export class NativeReceipt{
    const result=await this.metadata(()=>journal.cleanupReceipts.commit(facts.plan,facts.receipt),owner);check();
    nativeAbsenceFacts(observed.absence,{retirements:journal.retirements,plans:journal.cleanupPlans,progress:journal.cleanupProgress,receipts:journal.cleanupReceipts});return result;
   });owner.active=active;
-  void active.then(()=>this.entries.delete(id),()=>{delete owner.active;if(!owner.uncertain)this.entries.delete(id);});return active;
+  void active.then(()=>{this.entries.delete(id);owner.access.release();},()=>{delete owner.active;if(!owner.uncertain){this.entries.delete(id);owner.access.release();}});return active;
  }
  private async metadata<T>(issue:()=>Promise<T>,owner:Entry):Promise<T>{try{return await issue();}catch(error){
   try{await this.options.journal.cleanupReceipts.settleCarrier();}catch{owner.uncertain=true;}throw error;

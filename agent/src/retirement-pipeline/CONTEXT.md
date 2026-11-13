@@ -8,3 +8,6 @@ notpending. resultmaywaitignoredabort original; settledrejectsfailures, notdrain
 Directownedfailedclose/unknowncarrierretainsentry; helperquarantinesremaininactual
 owners. Rootclosespipelinebeforehelperowners/Journal. Fullslotsrefusebeforetraps.
 Focusedtests retirement-pipeline; realJournal/files/fakeDocker scope, notnativeHTTP.
+
+Sharedcleanup-access lease spans actual pipeline lifetime; settlement fence refuses
+newticks as retryable capacity. Native helper entrypoints independently share thegate.

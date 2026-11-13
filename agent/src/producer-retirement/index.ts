@@ -1,3 +1,5 @@
+import { cleanupAccess } from '../cleanup-access/index.js';
+import type { CleanupLease } from '../cleanup-access/index.js';
 import { JournalError } from '../journal/index.js';
 import { performance } from 'node:perf_hooks';
 import { encodeCanonicalJson } from '@beetle/contracts';
@@ -14,7 +16,7 @@ export { ProducerRetirementError } from './types.js';
 export { producerBarrierFacts } from './capability.js';
 export type { ProducerBarrier, BarrierFacts, ProducerRetirementOptions, RetirementWork, RetirementOutcome } from './types.js';
 interface Entry {
-  readonly request: RetirementRequest; readonly digest: string; readonly slot: ProducerFence;
+  readonly access:CleanupLease;readonly request: RetirementRequest; readonly digest: string; readonly slot: ProducerFence;
   issued: boolean; sticky: boolean; starting: boolean; drained: boolean; intent?: RetirementIntent;
   cycle?: { readonly work: RetirementWork; readonly budget: RetirementBudget; settled: boolean };
 }
@@ -49,11 +51,14 @@ export class ProducerRetirement {
     if (this.closed) throw new ProducerRetirementError('closed');
     let request: RetirementRequest;
     try { request = captureOutputRetirementRequest(input); } catch { throw new ProducerRetirementError('invalid_input'); }
+    cleanupAccess(this.options.journal).assertOpen(keyFor(request));
     const id = scopeId(request); const digest = outputRetirementDigest(request, retirementDigest);
     const prior = this.entries.get(id);
     if (prior) return this.resume(prior, digest);
     if (this.entries.size >= 64) throw new ProducerRetirementError('capacity');
-    const entry: Entry = { request, digest, slot: this.options.gate.reserve(keyFor(request)), issued: false, sticky: false, starting: false, drained: false };
+    const access=cleanupAccess(this.options.journal).acquire(keyFor(request));let slot:ProducerFence;
+    try{slot=this.options.gate.reserve(keyFor(request));}catch(error){access.release();throw error;}
+    const entry: Entry = { access, request, digest, slot, issued: false, sticky: false, starting: false, drained: false };
     this.entries.set(id, entry); return this.start(entry);
   }
   private resume(prior: Entry, digest: string): RetirementWork {
@@ -77,7 +82,7 @@ export class ProducerRetirement {
     void original.finally(() => { budget.finish(); entry.cycle!.settled = true; settle(); });
     return work;
   }
-  private discard(entry: Entry): void { entry.slot.release(); this.entries.delete(scopeId(entry.request)); }
+  private discard(entry: Entry): void { entry.slot.release(); this.entries.delete(scopeId(entry.request)); entry.access.release(); }
   private async begin(entry: Entry, expected: RetirementIntent, budget: RetirementBudget): Promise<RetirementIntent> {
     const { journal } = this.options; entry.slot.fence(); entry.issued = true;
     try { return captureRetirementIntent(await journal.begin(entry.request), expected.request); }
@@ -93,15 +98,15 @@ export class ProducerRetirement {
   }
   private async execute(entry: Entry, budget: RetirementBudget): Promise<RetirementOutcome> {
     try {
-      this.check(budget); const expected = captureRetirementIntent(await this.options.journal.preflight(entry.request), entry.request); this.check(budget);
+      this.check(budget); const expected = captureRetirementIntent(await this.metadata(entry,()=>this.options.journal.preflight(entry.request)), entry.request); this.check(budget);
       if (expected.namespaceIdentity !== this.options.gate.namespaceIdentity) throw new ProducerRetirementError('conflict');
       entry.intent = await this.begin(entry, expected, budget); this.check(budget);
-      await entry.slot.confirm(entry.intent); this.check(budget);
+      await this.metadata(entry,()=>entry.slot.confirm(entry.intent!)); this.check(budget);
       await this.drain(entry, budget); this.check(budget);
       if (this.closed) throw new ProducerRetirementError('closed');
       const token = mintBarrier(entry.intent, this.options.journal, () => !this.closed); this.discard(entry);
       return Object.freeze({ ok: true, value: token });
-    } catch (error) { if (!entry.issued || (entry.drained && !entry.sticky)) this.discard(entry); throw error; }
+    } catch (error) { if (!entry.sticky&&(!entry.issued || entry.drained)) this.discard(entry); throw error; }
   }
   private async drain(entry: Entry, budget: RetirementBudget): Promise<void> {
     const gate = entry.slot.drain();
@@ -114,6 +119,12 @@ export class ProducerRetirement {
     }
     if (outcomes.some(outcome => outcome.status === 'rejected')) throw new ProducerRetirementError(entry.sticky ? 'cleanup' : 'unavailable');
     entry.drained = true;
+  }
+  private async metadata<T>(entry:Entry,issue:()=>Promise<T>):Promise<T>{
+    try{return await issue();}catch(error){
+      try{await this.options.journal.settleCarrier();}catch{entry.sticky=true;}
+      throw error;
+    }
   }
   close(): Promise<void> {
     if (this.closing) return this.closing; this.closed = true;

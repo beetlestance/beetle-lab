@@ -91,7 +91,7 @@ class Request extends EventEmitter {
   constructor(readonly input: RequestOptions, private readonly respond: (request: Request) => void) { super(); }
   destroyed = false;
   end(): void { queueMicrotask(() => this.respond(this)); }
-  destroy(): void { this.destroyed = true; }
+  destroy(): void { if(this.destroyed)return;this.destroyed = true;queueMicrotask(()=>this.emit('close')); }
   reply(body: string): void {
     const incoming = Object.assign(new PassThrough(), { statusCode: 200, complete: true });
     this.emit('response', incoming); incoming.end(body);
