@@ -1,3 +1,4 @@
+import { ManualRunDeletionSnapshots } from './retention-manual/index.js';
 import { retentionOperation,captureRetentionOperation } from './retention-wire/index.js';
 import type { RetentionOperation,RetentionValue } from '../../../ports/retention.js';
 import { WorkspaceRetentionSnapshots } from './retention-selection/index.js';
@@ -55,6 +56,7 @@ export function safeCode(error: unknown): ErrorCode {
   return 'unavailable';
 }
 export class Store {
+  private readonly manualSnapshots:ManualRunDeletionSnapshots;
   private readonly retentionSnapshots:WorkspaceRetentionSnapshots;
   private readonly retentionApplies:WorkspaceRetentionApplies;
   private readonly retentionProgress:RetentionProgress;
@@ -104,7 +106,7 @@ export class Store {
     this.exportOutputs=new ExportOutputs(db,this.exports.reads);
     this.runs = new Runs(db, this.suites, this.settings, bootstrap.runs ?? { profiles: [], pendingLimit: 256 });
     this.runReads = new RunReads(db, this.suites);
-    this.retentionSnapshots=new WorkspaceRetentionSnapshots(db,this.runReads);this.retentionApplies=new WorkspaceRetentionApplies(db,this.runReads);this.retentionProgress=new RetentionProgress(db,this.runReads);
+    this.manualSnapshots=new ManualRunDeletionSnapshots(db,this.runReads);this.retentionSnapshots=new WorkspaceRetentionSnapshots(db,this.runReads);this.retentionApplies=new WorkspaceRetentionApplies(db,this.runReads);this.retentionProgress=new RetentionProgress(db,this.runReads);
     this.overviews=new Overviews(db,this.suites);
     this.runArtifacts = new RunArtifacts(db, this.runReads);
     this.executions = new RunExecutions(db, this.runReads);
@@ -203,6 +205,7 @@ export class Store {
   private retention(input:RetentionOperation):RetentionValue{
     const operation=captureRetentionOperation(input);
     switch(operation.kind){
+      case 'previewRunDeletion':return this.manualSnapshots.preview(operation.command);
       case 'previewWorkspaceRetention':return this.retentionSnapshots.preview(operation.command);
       case 'applyWorkspaceRetention':return this.retentionApplies.apply(operation.command);
       case 'getWorkspaceRetentionStatus':return this.retentionProgress.get(operation.request.key,operation.request.now);

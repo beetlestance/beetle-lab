@@ -3,6 +3,7 @@ import { validateApi } from '@beetle/contracts/api';
 import { captureRetentionSnapshot } from '../../../../domain/retention/index.js';
 import type { RetentionMetadata,RetentionOperation,RetentionValue } from '../../../../ports/retention.js';
 import { requireFact } from '../retention-accounting/facts.js';
+import { captureManualCommand } from '../retention-manual/values.js';
 import { capturePreviewCommand,cursorSnapshot } from '../retention-selection/values.js';
 import { captureRetentionStatus } from './status.js';
 import { captureRetentionOperation } from './requests.js';
@@ -14,6 +15,13 @@ function previewReply(operation:Extract<RetentionOperation,{kind:'previewWorkspa
  requireFact(snapshot.scope.organizationId===request.scope.organizationId&&snapshot.scope.workspaceId===request.scope.workspaceId);
  requireFact(snapshot.settings.workspace.id===request.settingsId&&snapshot.settings.workspace.version===request.expectedVersion&&snapshot.scanned<=request.page.limit);
  requireFact(snapshot.predecessorId===(request.page.cursor?cursorSnapshot(request.page.cursor):null));return snapshot;
+}
+function manualReply(operation:Extract<RetentionOperation,{kind:'previewRunDeletion'}>,input:unknown){
+ const snapshot=captureRetentionSnapshot(input);const command=captureManualCommand(operation.command);const request=command.request;const child=snapshot.candidates[0];
+ requireFact(snapshot.kind==='manual'&&snapshot.requestId===request.requestId&&snapshot.intentDigest===command.intentDigest);
+ requireFact(snapshot.scope.organizationId===request.scope.organizationId&&snapshot.scope.workspaceId===request.scope.workspaceId);
+ requireFact(snapshot.settings.workspace.id===request.settingsId&&snapshot.settings.workspace.version===request.expectedVersion);
+ requireFact(child?.id===request.runId&&child.version===request.expectedRunVersion);return snapshot;
 }
 function applyReply(operation:Extract<RetentionOperation,{kind:'applyWorkspaceRetention'}>,input:unknown){
  const copy:unknown=JSON.parse(encodeJson(input,2048));const checked=validateApi('RetentionApplyReceipt',copy);requireFact(checked.ok);const receipt=checked.value;const request=operation.command.request;
@@ -31,6 +39,7 @@ function discardReply(operation:Extract<RetentionOperation,{kind:'getWorkspaceRe
 export function captureRetentionReply(operation:RetentionOperation,input:unknown):RetentionValue{
  const original=captureRetentionOperation(operation);
  switch(original.kind){
+  case 'previewRunDeletion':return manualReply(original,input);
   case 'previewWorkspaceRetention':return previewReply(original,input);
   case 'applyWorkspaceRetention':return applyReply(original,input);
   case 'getWorkspaceRetentionStatus':return captureRetentionStatus(input,original.request.key);
@@ -38,7 +47,7 @@ export function captureRetentionReply(operation:RetentionOperation,input:unknown
  }
 }
 export function retentionClient(call:(operation:RetentionOperation)=>Promise<unknown>):RetentionMetadata{
- const client:RetentionMetadata={preview:command=>call({kind:'previewWorkspaceRetention',command}) as ReturnType<RetentionMetadata['preview']>,
+ const client:RetentionMetadata={previewRun:command=>call({kind:'previewRunDeletion',command}) as ReturnType<RetentionMetadata['previewRun']>,preview:command=>call({kind:'previewWorkspaceRetention',command}) as ReturnType<RetentionMetadata['preview']>,
   apply:command=>call({kind:'applyWorkspaceRetention',command}) as ReturnType<RetentionMetadata['apply']>,
   get:(key,now)=>call({kind:'getWorkspaceRetentionStatus',request:{key,now}}) as ReturnType<RetentionMetadata['get']>,
   discard:(key,now)=>call({kind:'discardWorkspaceRetention',request:{key,now}}) as ReturnType<RetentionMetadata['discard']>};return Object.freeze(client);

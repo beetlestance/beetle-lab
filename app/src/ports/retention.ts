@@ -22,13 +22,20 @@ export interface RetentionStatus {
 }
 
 export interface RetentionDiscardReceipt {readonly id:string;readonly scope:WorkspaceScope;readonly refundedLogicalBytes:131072}
+export interface ManualRunDeletionRequest {
+ readonly scope:WorkspaceScope;readonly runId:string;readonly expectedRunVersion:number;
+ readonly requestId:string;readonly settingsId:string;readonly expectedVersion:number;
+}
+export interface ManualRunDeletionCommand {readonly id:string;readonly capturedAt:string;readonly request:ManualRunDeletionRequest}
 export interface RetentionMetadata extends WorkspaceRetentionStore {
+ previewRun(command:ManualRunDeletionCommand):Promise<RetentionSnapshot>;
  apply(command:WorkspaceRetentionApplyCommand):Promise<RetentionApplyReceipt>;
  get(key:RetentionStatusKey,now:number):Promise<RetentionStatus>;
  discard(key:RetentionStatusKey,now:number):Promise<RetentionDiscardReceipt>;
 }
 export type RetentionOperation=
  | {readonly kind:'previewWorkspaceRetention';readonly command:WorkspaceRetentionPreviewCommand}
+ | {readonly kind:'previewRunDeletion';readonly command:ManualRunDeletionCommand}
  | {readonly kind:'applyWorkspaceRetention';readonly command:WorkspaceRetentionApplyCommand}
  | {readonly kind:'getWorkspaceRetentionStatus'|'discardWorkspaceRetention';readonly request:{readonly key:RetentionStatusKey;readonly now:number}};
 export type RetentionValue=RetentionSnapshot|RetentionApplyReceipt|RetentionStatus|RetentionDiscardReceipt;

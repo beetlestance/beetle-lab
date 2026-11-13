@@ -1,5 +1,6 @@
 import { it,expect } from 'vitest';
 import type { Worker } from 'node:worker_threads';
+import { history,command } from './selection-fixture.js';
 import { selected } from './apply-fixture.js';
 import { storageFixture } from '../storage/fixture.js';
 import { scope,uuid } from './fixture.js';
@@ -35,4 +36,22 @@ it('keeps a rejected forged worker response owned until actual termination joins
  const result=pending.then(()=>{done=true;return true;},()=>{done=true;return false;});
  try{await received;await new Promise<void>(resolve=>setImmediate(resolve));expect(done).toBe(false);release();expect(await result).toBe(false);}
  finally{release();worker.terminate=terminate;await metadata.abort();}
+});
+
+it('recovers a lost manual preview reply and applies its original immutable child through compiled workers',async()=>{
+ const f=history(1);f.policy(values=>{values.retention={mode:'manual'};});const base=command(f);const row=f.db.prepare('SELECT id,version FROM runs LIMIT 1').get()!;
+ const {page,...request}=base.request;void page;
+ const input={...base,request:{...request,runId:String(row.id),expectedRunVersion:Number(row.version)}};
+ const path=storage.path();f.db.prepare('VACUUM INTO ?').run(path);const installation=f.settings.chain(scope).installation;const usage=Number(f.db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes);f.db.close();
+ const metadata=await storage.open(path,{runtime:null,runs:f.config,installation});let committed!:()=>void;const issued=new Promise<void>(resolve=>{committed=resolve;});const receive=Reflect.get(metadata,'receive') as (value:unknown)=>void;
+ Reflect.set(metadata,'receive',(message:unknown)=>{
+  if(message&&typeof message==='object'){const value=Reflect.get(message,'value');if(value&&typeof value==='object'&&Reflect.get(value,'kind')==='manual'){committed();return;}}receive.call(metadata,message);
+ });
+ const pending=metadata.retention.previewRun(input);const lost=pending.then(()=>true,()=>false);await issued;await metadata.abort();expect(await lost).toBe(false);
+ const reopened=await storage.open(path,{runtime:null,runs:f.config,installation});try{
+  const snapshot=await reopened.retention.previewRun({...input,id:uuid(62000)});expect(snapshot.kind).toBe('manual');expect(snapshot.candidates).toHaveLength(1);
+  expect((await reopened.inputs.storage()).chargedBytes).toBe(usage+131584);
+  const apply={id:uuid(62001),appliedAt:'2026-11-14T12:01:00.000Z',request:{scope,requestId:uuid(62002),settingsId:snapshot.settings.workspace.id,expectedVersion:snapshot.settings.workspace.version,snapshotId:snapshot.id,snapshotVersion:1,page:{limit:1}}};
+  expect(await reopened.retention.apply(apply)).toMatchObject({state:'admitted',maximumCandidates:1});expect((await reopened.inputs.storage()).chargedBytes).toBe(usage+131584);
+ }finally{await storage.close(reopened);}
 });
