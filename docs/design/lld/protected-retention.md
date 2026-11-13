@@ -108,6 +108,19 @@ successful deletion. Derive progress from bounded authoritative owners; any reta
 error uses a fixed code/phase, never arbitrary logs, paths or credentials. Existing
 native jobs keep custody after cancellation or failed close.
 
+## Driver availability
+
+Public detailed batch status adds an installation-wide advisory running/stopped/
+disabled/unknown state after its scoped metadata read. It comes from the actual
+installed output owner, with close/failure/drain flags taking priority. Getter
+failure or an unrecognised value means unknown; no raw errors, paths or identities
+are included. No logging RPC, retained diagnostic row or native failure-handling
+change is introduced. Counts and refunds remain exclusively metadata-derived.
+
+Running means the loop is available, not that this batch can progress or that the
+agent is reachable. This view does not explain individual capacity/funding refusals
+or preserve failure causes across restart. UI warnings must keep those limits clear.
+
 ## Delivery slices and acceptance
 
 1. Bounded pure rule windows: exact boundaries, protection, unknown storage, manual,

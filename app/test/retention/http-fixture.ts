@@ -1,6 +1,7 @@
 import { afterEach } from 'vitest';
 import type { FastifyInstance,FastifyRequest } from 'fastify';
 import { encodeJson } from '@beetle/contracts';
+import type { RetentionDriverState } from '@beetle/contracts/api';
 import { apiSchemas,createApiClient } from '@beetle/contracts/api';
 import type { Metadata } from '../../src/adapters/outbound/sqlite/index.js';
 import { createApiServer,ApiFault } from '../../src/adapters/inbound/http/api-errors.js';
@@ -12,12 +13,12 @@ const servers=new Set<FastifyInstance>();let sequence=65000;
 afterEach(async()=>{for(const server of servers)await server.close();servers.clear();});
 export const headers={authorization:'SYNTHETIC_RETENTION_SESSION'};
 export const authorize=async(request:FastifyRequest)=>{if(request.headers.authorization!==headers.authorization)throw new ApiFault('unpaired');};
-export function http(metadata:Metadata,dropApply:boolean|'parent'=false){
+export function http(metadata:Metadata,dropApply:boolean|'parent'=false,driverState?:()=>RetentionDriverState){
  const server=createApiServer({classify:classifyMetadataError});servers.add(server);configureSchemaCompilers(server,{schemas:apiSchemas,encodeJson});
  if(dropApply)server.addHook('onSend',async(request,_reply,payload)=>{
   if(request.url.endsWith('/retention-apply')&&dropApply===true||request.url==='/api/v2/settings/retention-preview'&&dropApply==='parent'){request.raw.socket.destroy();}return payload;
  });
- registerRetentionRoutes(server,{store:metadata.retention,newId:()=>uuid(++sequence),now:()=> '2026-11-14T12:01:00.000Z',authorize});
+ registerRetentionRoutes(server,{...(driverState?{driverState}:{}),store:metadata.retention,newId:()=>uuid(++sequence),now:()=> '2026-11-14T12:01:00.000Z',authorize});
  return server;
 }
 export async function client(server:FastifyInstance){

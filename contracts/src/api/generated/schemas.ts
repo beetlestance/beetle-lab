@@ -103,6 +103,7 @@ export const apiMessageSchemas = freezeSchema({
   RetentionBatchSummary: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention-status#/$defs/RetentionBatchSummary' },
   RetentionBatchList: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention-status#/$defs/RetentionBatchList' },
   RetentionDiscardReceipt: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention-status#/$defs/RetentionDiscardReceipt' },
+  RetentionDriverState: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention-status#/$defs/RetentionDriverState' },
   RetentionTraversalPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention-traversal#/$defs/RetentionTraversalPage' },
   RetentionPreviewRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionPreviewRequest' },
   RetentionCandidate: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionCandidate' },

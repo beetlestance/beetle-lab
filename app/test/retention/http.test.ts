@@ -17,7 +17,7 @@ it('recovers a lost real TCP Apply response through fresh workers and reports se
  expect((await api.applyWorkspaceRetention({params,body:apply})).ok).toBe(false);await server.close();await storage.close(metadata);
  const fresh=await storage.open(f.file,options);const reopened=http(fresh);const next=await client(reopened);const receipt=await next.applyWorkspaceRetention({params,body:apply});expect(receipt.ok).toBe(true);
  const listed=await next.listWorkspaceRetention({params});expect(listed.ok&&listed.value.items[0]?.state).toBe('applied');
- const key={...params,snapshotId};const recovered=await next.getWorkspaceRetentionPreview({params:key});expect(recovered.ok&&recovered.value).toEqual(preview.value);const status=await next.getWorkspaceRetentionStatus({params:key});expect(status.ok).toBe(true);if(!status.ok)throw Error('Status failed');expect(status.value.completedCount).toBe(0);
+ const key={...params,snapshotId};const recovered=await next.getWorkspaceRetentionPreview({params:key});expect(recovered.ok&&recovered.value).toEqual(preview.value);const status=await next.getWorkspaceRetentionStatus({params:key});expect(status.ok).toBe(true);if(!status.ok)throw Error('Status failed');expect(status.value.completedCount).toBe(0);expect(status.value.driverState).toBe('disabled');
  const refused=await next.discardWorkspaceRetention({params:key});expect(refused.ok).toBe(false);
  for(const item of status.value.items)await fresh.outputSettlements.settle({key:{scope,id:item.deletionId,runId:item.runId},agentReply:null});
  const done=await next.getWorkspaceRetentionStatus({params:key});expect(done.ok&&done.value.state).toBe('completed');expect(done.ok&&done.value.refundedLogicalBytes).toBe(3*(65536-2560));

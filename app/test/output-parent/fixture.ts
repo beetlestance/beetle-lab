@@ -9,6 +9,7 @@ export function outputOwnerFixture(start: ReturnType<typeof vi.fn>) {
   let notification: Promise<void> | undefined;
   let failure: { error: unknown } | undefined;
   const output: OutputRuntime = {
+    publishedBytes:{read:vi.fn(()=>{throw new Error('Unexpected synthetic published byte read');})},
     state: () => ({ status: 'running', active: 0, problem: null }),
     close: vi.fn(async () => {
       await notification;

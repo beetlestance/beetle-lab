@@ -41,5 +41,7 @@ continuation, leaving the parent envelope as sole cursor owner. Actual TCP and
 workspace-link UI cases verify that fix and explicit Apply; their seven affected
 cases, all types, lint, architecture, docs, API and web builds passed. The reviewer
 confirmed the fix. No browser visual inspection or new native-cleanup/physical-free
-space qualification is claimed. Driver availability/errors and composed retention
-native recovery remain separate outstanding work.
+space qualification is claimed. Driver availability is now exposed separately as an installation-wide advisory.
+Counts/refunds remain metadata-derived; the view cannot explain individual funding
+refusals or preserve historical causes across restart. Composed retention-native
+recovery remains outstanding.

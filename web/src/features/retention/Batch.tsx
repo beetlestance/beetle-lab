@@ -38,8 +38,13 @@ function BatchView({scope,id,command,changed,selected,removed,preview,status}:Pr
  </>;
 }
 function Progress({value}:{value:RetentionBatchStatus}){
- return <section aria-label="Deletion progress"><h4>{value.state}</h4><p>{value.completedCount} of {value.items.length} settled. Confirmed logical credit: {value.refundedLogicalBytes} bytes.</p>
+ return <section aria-label="Deletion progress"><h4>{value.state}</h4>{value.state!=='completed'&&<DriverAvailability state={value.driverState}/>} <p>{value.completedCount} of {value.items.length} settled. Confirmed logical credit: {value.refundedLogicalBytes} bytes.</p>
   {value.state==='applied'&&<p>Waiting for authoritative cleanup and settlement confirmation.</p>}
   <ul>{value.items.map(item=><li key={item.deletionId}>{item.runId}: {item.phase}; files absent {item.absentCount??'unknown'} of {item.fileCount??'unknown'}{item.error&&<strong role="alert"> — {item.error}</strong>}</li>)}</ul>
  </section>;
+}
+
+function DriverAvailability({state}:{state:RetentionBatchStatus['driverState']}){
+ const messages={running:null,stopped:'Automatic cleanup is stopped. Pending deletion and its storage charges remain protected.',disabled:'Automatic cleanup is not configured. Accepted deletion waits for an installed cleanup driver.',unknown:'Automatic cleanup availability is unknown. No completion or reclaimed space is assumed.'};
+ const message=messages[state];return message?<p role="alert">{message}</p>:null;
 }

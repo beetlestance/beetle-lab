@@ -1,3 +1,4 @@
+import type { RetentionDriverState } from '@beetle/contracts/api';
 import type {OutputBinding} from '../domain/output-owner/index.js';
 import type { RunnerLiveMetricGateway } from '../ports/run-live-metrics.js';
 import type { OutputByteStore } from '../ports/output-bytes.js';
@@ -18,6 +19,8 @@ export interface AgentRuntime {
   readonly liveMetrics?: RunnerLiveMetricGateway['liveMetrics'];
   readonly publishedBytes?: Pick<OutputByteStore<OutputBinding>, 'read'>;
   state(): RuntimePollerState;
+  /** Advisory installation-wide availability; never native completion authority. */
+  cleanupState():RetentionDriverState;
   close(): Promise<void>;
 }
 interface OwnerOptions {
@@ -38,6 +41,7 @@ class AgentOwners implements AgentRuntime {
   private poller: RuntimePoller | undefined;
   private delivery: DeliveryRuntime | undefined;
   private closeOutputs: OutputRuntime['close'] | undefined;
+  private outputState:OutputRuntime['state']|undefined;
   private closeDelivery: DeliveryRuntime['close'] | undefined;
   private readonly publish: RuntimePublisher;
   private readonly closeSource: CapacitySource['close'];
@@ -58,7 +62,7 @@ class AgentOwners implements AgentRuntime {
   async start(): Promise<void> {
     if (this.options.openOutputs) {
       const outputs = await this.options.openOutputs(error => this.failOutputs(error));
-      this.closeOutputs = outputs.close.bind(outputs);
+      this.closeOutputs = outputs.close.bind(outputs);this.outputState=outputs.state.bind(outputs);
       if (outputs.publishedBytes) {
         const read = outputs.publishedBytes.read.bind(outputs.publishedBytes);
         this.outputReadView = Object.freeze({read});
@@ -76,7 +80,7 @@ class AgentOwners implements AgentRuntime {
   handle(): AgentRuntime {
     if (this.outputFailure) throw this.outputFailure.error;
     return Object.freeze({ ...(this.options.liveMetrics ? {liveMetrics: ((identity, signal) => this.closed
-      ? Promise.resolve({ok: false, error: {kind: 'cancelled'}}) : this.options.liveMetrics!(identity, signal)) as RunnerLiveMetricGateway['liveMetrics']} : {}), ...(this.outputReadView ? {publishedBytes: this.outputReadView} : {}), state: () => this.state(), close: () => this.close() });
+      ? Promise.resolve({ok: false, error: {kind: 'cancelled'}}) : this.options.liveMetrics!(identity, signal)) as RunnerLiveMetricGateway['liveMetrics']} : {}), ...(this.outputReadView ? {publishedBytes: this.outputReadView} : {}), cleanupState:()=>this.cleanupState(), state: () => this.state(), close: () => this.close() });
   }
   private publishCapacity(observation: RuntimeObservation | null): Promise<boolean> {
     if (observation !== null && (this.deliveryFailed || this.outputFailure || this.producerFailure || this.closed)) return Promise.resolve(false);
@@ -128,6 +132,13 @@ class AgentOwners implements AgentRuntime {
     if (this.deliveryFailed) return Object.freeze({ ...state, status: 'failed', reason: 'dispatch_failure' });
     return state;
   }
+  cleanupState():RetentionDriverState{
+    if(!this.outputState)return'disabled';
+    if(this.outputsStopped())return'stopped';
+    try{const status=this.outputState().status;return status==='running'?'running':['failed','closed'].includes(status)?'stopped':'unknown';}
+    catch{return'unknown';}
+  }
+  private outputsStopped():boolean{return!!(this.closed||this.outputFailure||this.producerFailure||this.deliveryFailed||this.outputDrain);}
   close(): Promise<void> {
     if (this.closing) return this.closing;
     this.closed = true;

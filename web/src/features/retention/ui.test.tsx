@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach,expect,it } from 'vitest';
 import { cleanup,fireEvent,screen,waitFor } from '@testing-library/react';
-import { fixture,runId,preview as proposal,json,id } from './test-fixtures.js';
+import { fixture,runId,preview as proposal,json,id,status,ids } from './test-fixtures.js';
 import { deferred } from '../../app/test-fixtures.js';
 afterEach(cleanup);
 async function open(){fireEvent.click(screen.getByRole('button',{name:'Manage run retention'}));await screen.findByRole('button',{name:'Preview retention'});}
@@ -48,4 +48,12 @@ it('refuses expired Apply and allows explicit preview metadata discard',async()=
   if(request.path.endsWith('/retention-preview')){const capturedAt=new Date(Date.now()-900001).toISOString();const value={...proposal(request.body!),capturedAt,expiresAt:new Date(Date.parse(capturedAt)+900000).toISOString()};f.storePreview(value);return json(value);}return undefined;
  });f.mount();await open();expect(await preview()).toBeDisabled();await screen.findByText('This preview expired. Discard it and start a fresh preview.');
  fireEvent.click(screen.getByRole('button',{name:'Discard this preview'}));await screen.findByText('No saved batches.');expect(f.records.some(r=>r.path.endsWith('/retention-apply'))).toBe(false);
+});
+
+it('shows stopped installation-wide cleanup without inventing per-run failure or logical credit',async()=>{
+ const saved=proposal({requestId:ids.request,settingsId:ids.request,expectedVersion:1});
+ const f=fixture(request=>request.path.endsWith('/'+id)?json({...status(saved,'applied'),driverState:'stopped'}):undefined);f.storePreview(saved);f.mount();await open();
+ fireEvent.click(await screen.findByRole('button',{name:new RegExp('retention · preview · 1 candidates · '+id)}));
+ await screen.findByText('Automatic cleanup is stopped. Pending deletion and its storage charges remain protected.');
+ expect(screen.getByText('0 of 1 settled. Confirmed logical credit: 0 bytes.')).toBeInTheDocument();expect(screen.queryByRole('button',{name:'Acknowledge completed batch'})).not.toBeInTheDocument();expect(f.records.some(request=>request.method==='POST')).toBe(false);
 });

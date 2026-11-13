@@ -1,10 +1,12 @@
 import type { FastifyInstance,onRequestAsyncHookHandler } from 'fastify';
-import type { WorkspaceScope } from '@beetle/contracts/api';
+import { cleanupDriverState } from './driver-state.js';
+import type { RetentionDriverState,WorkspaceScope } from '@beetle/contracts/api';
 import type { RetentionMetadata } from '../../../../ports/retention.js';
 import { requireRule,sameScope } from '../../../../domain/namespaces/index.js';
 import { retentionPreview,retentionTraversal } from '../../../../application/retention/index.js';
 import { registerApiOperation } from '../api-route.js';
 interface Options {
+ readonly driverState?:()=>RetentionDriverState;
  readonly store:RetentionMetadata;readonly authorize:onRequestAsyncHookHandler;
  newId():string;now():string;
 }
@@ -39,7 +41,7 @@ export function registerRetentionRoutes(server:FastifyInstance,options:Options):
   },{bodyLimit:4096});
   registerApiOperation(scoped,'getWorkspaceRetentionPreview',async({params})=>retentionPreview(await store.getPreview({scope:scope(params),id:params.snapshotId.toLowerCase()})));
   registerApiOperation(scoped,'listWorkspaceRetention',async({params})=>{const value=await store.list(scope(params));return{...value,items:value.items.map(item=>({...item}))};});
-  registerApiOperation(scoped,'getWorkspaceRetentionStatus',async({params})=>{const value=await store.get({scope:scope(params),id:params.snapshotId.toLowerCase()},Date.parse(dependencies.now()));return{...value,items:value.items.map(item=>({...item}))};});
+  registerApiOperation(scoped,'getWorkspaceRetentionStatus',async({params})=>{const value=await store.get({scope:scope(params),id:params.snapshotId.toLowerCase()},Date.parse(dependencies.now()));return{...value,items:value.items.map(item=>({...item})),driverState:cleanupDriverState(dependencies.driverState)};});
   registerApiOperation(scoped,'discardWorkspaceRetention',async({params})=>store.discard({scope:scope(params),id:params.snapshotId.toLowerCase()},Date.parse(dependencies.now())));
  });
 }

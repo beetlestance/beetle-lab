@@ -42,7 +42,7 @@ export function fixture(intercept?:(request:RequestRecord)=>Response|Promise<Res
  }};
 }
 export function status(value:RetentionPreview,state:RetentionBatchStatus['state']):RetentionBatchStatus{
- const complete=state==='completed';return{id:value.snapshotId,scope,kind:value.kind,state,capturedAt:value.capturedAt,expiresAt:value.expiresAt,completedAt:complete?new Date().toISOString():null,estimatedLogicalBytes:value.estimatedBytes,
+ const complete=state==='completed';return{driverState:'running',id:value.snapshotId,scope,kind:value.kind,state,capturedAt:value.capturedAt,expiresAt:value.expiresAt,completedAt:complete?new Date().toISOString():null,estimatedLogicalBytes:value.estimatedBytes,
   completedCount:complete?1:0,refundedLogicalBytes:complete?62976:0,items:statusItems(value,state)};
 }
 

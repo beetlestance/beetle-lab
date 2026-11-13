@@ -143,4 +143,5 @@ bounded read admission coordinates panels without increasing worker limits.
 passed its seven affected cases; web types, lint, architecture, docs and web build
 passed. Independent review found no blocker. Browser visual inspection was unavailable
 because no browser execution tool was exposed; no visual qualification is claimed.
-Parent traversal, driver diagnostics and composed retention-native qualification remain.
+Parent traversal and advisory driver availability are qualified separately; composed
+retention-native qualification remains.

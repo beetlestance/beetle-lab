@@ -66,7 +66,8 @@
           "items": {"$ref": "https://beetle-lab.dev/contracts/api/v2/retention-status#/$defs/RetentionStatusItem"}
         },
         "completedCount": {"type": "integer", "minimum": 0, "maximum": 100},
-        "refundedLogicalBytes": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count"}
+        "refundedLogicalBytes": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count"},
+        "driverState": {"$ref": "https://beetle-lab.dev/contracts/api/v2/retention-status#/$defs/RetentionDriverState"}
       },
       "required": [
         "id",
@@ -79,7 +80,8 @@
         "estimatedLogicalBytes",
         "items",
         "completedCount",
-        "refundedLogicalBytes"
+        "refundedLogicalBytes",
+        "driverState"
       ],
       "additionalProperties": false
     },
@@ -141,6 +143,7 @@
         "refundedLogicalBytes"
       ],
       "additionalProperties": false
-    }
+    },
+    "RetentionDriverState": {"enum": ["running", "stopped", "disabled", "unknown"]}
   }
 }

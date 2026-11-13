@@ -91,6 +91,7 @@ export type RetentionBatchStatus = FromSchema<typeof S9.RetentionBatchStatus>;
 export type RetentionBatchSummary = FromSchema<typeof S9.RetentionBatchSummary>;
 export type RetentionBatchList = FromSchema<typeof S9.RetentionBatchList>;
 export type RetentionDiscardReceipt = FromSchema<typeof S9.RetentionDiscardReceipt>;
+export type RetentionDriverState = FromSchema<typeof S9.RetentionDriverState>;
 export type RetentionTraversalPage = FromSchema<typeof S10.RetentionTraversalPage>;
 export type RetentionPreviewRequest = FromSchema<typeof S11.RetentionPreviewRequest>;
 export type RetentionCandidate = FromSchema<typeof S11.RetentionCandidate>;
@@ -237,6 +238,7 @@ export interface ApiTypes {
   RetentionBatchSummary: RetentionBatchSummary;
   RetentionBatchList: RetentionBatchList;
   RetentionDiscardReceipt: RetentionDiscardReceipt;
+  RetentionDriverState: RetentionDriverState;
   RetentionTraversalPage: RetentionTraversalPage;
   RetentionPreviewRequest: RetentionPreviewRequest;
   RetentionCandidate: RetentionCandidate;

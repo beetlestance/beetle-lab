@@ -19,7 +19,7 @@
     "api/v2/namespace.schema.json": "3df14df2770cabaf1b04c70a44d453dad6ab1e7b0afe5699d6cae375ab2bec3f",
     "api/v2/overview.schema.json": "5e01c5a314eac309c6a28ea57287e89289deef973fa38966f9268f040f1e0780",
     "api/v2/parameters.schema.json": "9c7bccc0c31e8fb3eeafb6a1e46662184bd7cc01f6b794c4d041a6b5f8763910",
-    "api/v2/retention-status.schema.json": "a3153f64ba6240a5f06e6b239b53a3de5ae4b8b82fe26ddffdda3874c3f4f087",
+    "api/v2/retention-status.schema.json": "045cf98eb9dc2ead740a2780bda0b63dc3564f5e5b9c0bf49302efc8b3136ae3",
     "api/v2/retention-traversal.schema.json": "05fcec431cf1dd9348105c36da8cdfbef98e2b9a62d13c67ecb08777169aa65a",
     "api/v2/retention.schema.json": "c87ee28dbf6af3218dbca12c07bc151de906624bea8072c36ea5e7702dde4b90",
     "api/v2/run-artifacts.schema.json": "093708ae3c917b759125fc08a3dffc31c0978bb122472b824a67d59f4554a59e",

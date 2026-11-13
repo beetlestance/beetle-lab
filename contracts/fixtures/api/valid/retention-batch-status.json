@@ -25,5 +25,6 @@
     }
   ],
   "completedCount": 0,
-  "refundedLogicalBytes": 0
+  "refundedLogicalBytes": 0,
+  "driverState": "disabled"
 }
