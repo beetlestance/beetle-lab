@@ -7,7 +7,7 @@ import {validate} from '@beetle/contracts';
 const stateProgram="const f=require('node:fs'),c=require('node:crypto');const s=f.readFileSync('/proc/1/status','utf8');const token=f.readFileSync(process.argv[1]);if(token.length>128)process.exit(3);console.log(JSON.stringify({uid:/^Uid:\\s+(.+)$/m.exec(s)[1].trim().split(/\\s+/).map(Number),gid:/^Gid:\\s+(.+)$/m.exec(s)[1].trim().split(/\\s+/).map(Number),caps:/^CapEff:\\s+([a-f0-9]+)$/m.exec(s)[1],credential:c.createHash('sha256').update(token).digest('hex')}));";
 export function agentState(f:Fixture){
  const credentialFile=join(f.home,'data/config/agent-token');const state=serviceIdentity(f,f.agent);
- const reply=request(f.docker,{agent:f.agent,credentialFile,path:'/runner/v1/capabilities'});assert.equal(reply.status,200);const checked=validate('Capabilities',JSON.parse(reply.body));assert(checked.ok);
+ const reply=request(f.docker,{agent:f.agent,credentialFile,path:'/runner/v1/capabilities',user:'1000:1000'});assert.equal(reply.status,200);const checked=validate('Capabilities',JSON.parse(reply.body));assert(checked.ok);
  return {state,journalAuthority:checked.value.journalAuthority,installationId:checked.value.observation.installationId,engines:checked.value.engines};
 }
 /** Admission must reserve the actual shipped control-service ceilings. */

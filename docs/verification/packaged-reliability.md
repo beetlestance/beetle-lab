@@ -15,6 +15,19 @@ exception text, full stack paths, assertion values or session/credential fields.
 Real assertion/token and private-path canaries exercise this boundary. Raw details
 remain in private local evidence. More precise phases do not fix a startup failure.
 
+The next hosted outcome localized both failures to the authenticated agent probe.
+Compose declares root for the entrypoint, then permanently drops the service to
+1000:1000. A plain `docker exec` inherits the declaration, not PID1's dropped UID.
+On Linux, root without DAC capabilities cannot read the service's private credential.
+The probe now explicitly uses the independently asserted service identity.
+
+A real private-tmpfs Linux check reproduced default-probe refusal and authenticated
+HTTP 200 with UID1000 and zero effective capabilities. It used only synthetic data;
+its container was removed. No credential mode, capability or authentication changed.
+The corrected normal harness then passed the unchanged scanned de4f908 ARM64 stack
+in 47.530 s: eight artifacts, real k6/export, restart persistence and verified cleanup.
+Hosted confirmation remains separate; this does not resolve the original guard stop.
+
 ## Public read timeout
 
 An unmodified de4f908 run failed a public run read, although durable metadata later
