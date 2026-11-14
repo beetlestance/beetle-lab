@@ -17,11 +17,11 @@ No complete A01–A09 or R0–R4 release acceptance is inferred.
 | F04 | [Authoring](suite-authoring.md), [configuration/history summary](suite-overview.md) | Selected-view summaries local; catalogue placement deferred; packaged acceptance |
 | F05 | [Run controls](run-controls.md), [native app](native-application-k6.md) | Packaged target override/cancel and failure acceptance |
 | F06 | [Filters](run-history-query.md), [scalars](run-history-summary.md), [search](run-history-search.md), [exact suite](suite-overview.md) | Browser/platform acceptance; preserve documented search differences |
-| F07 | [Event reads](run-event-reads.md), [timeline](run-timeline-ui.md), [native diagnostics](../../engines/k6/wrapper/process/metrics.ts) | Lifecycle replay exists; native diagnostic text viewing/replay does not follow from it |
+| F07 | [Event reads](run-event-reads.md), [timeline](run-timeline-ui.md), [sanitized diagnostics](native-diagnostics.md) | Local final safe history implemented; original stderr replay/live native diagnostics unsupported; packaged acceptance |
 | F08 | [Native live metrics](native-live-metrics.md), [recorded metrics](run-metric-history.md) | Known-value full metric/browser/platform matrix |
 | F09 | [Suite compiler](../../engines/k6/compiler/suite/requests.ts), [archive](k6-metric-archive.md) | Endpoint-name/cardinality acceptance through packaged charts |
 | F10 | [Load advice](load-advice.md), [native warnings/configured guidance](k6-warning-guidance.md) | Packaged/browser/platform acceptance |
-| F11 | [Archive](k6-metric-archive.md), [result](run-result-read.md), [diagnostic reader](../../engines/k6/wrapper/process/metrics.ts) | Retained logs absent: bounded classified warning evidence is separate from raw logs; certify snapshot/redaction/replay |
+| F11 | [Archive](k6-metric-archive.md), [result](run-result-read.md), [safe diagnostic history](native-diagnostics.md) | Durable safe history implemented locally; full snapshot/redaction/replay/platform acceptance and raw/live limitation remain |
 | F12 | [Delivery](delivery-runtime.md), [authority](../design/lld/delivery-authority.md), [cleanup recovery](cleanup-agent-crash.md), [cold recovery](cold-recovery.md) | Cold historical restore and graceful backend restart local; full active-delivery crash/platform acceptance |
 | F13 | [Comparison service](run-comparison-service.md), [controls](run-comparison-controls.md) | Browser two/four-run selection, config/environment/chart acceptance |
 | F14 | [Reports](performance-reports.md), [controls](report-controls.md), [retention](native-retention.md) | Browser inline/save and full release deletion matrix |
@@ -77,7 +77,8 @@ before closing an ID. V14/V24 additionally require explicit applicability decisi
 ## Audit limits and next action
 
 Source inspection confirmed directory intake and diagnostic text gaps. Directory
-intake now has scoped checks; other reports retain their original evidence scope.
+intake and sanitized final diagnostic history now have scoped checks; reports retain
+their original evidence scope. Raw/live native diagnostic replay remains unsupported.
 Historical evidence remains bounded by its original inputs. In particular the25
 baseline failures recorded during cleanup-control work need exact-fixture triage;
 this audit does not assert a current failure count or green full suite.

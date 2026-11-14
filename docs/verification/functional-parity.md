@@ -12,7 +12,7 @@ This supersedes the earlier targeted checklist, not its source-bound evidence.
 | F02/N01 | Scoped list/create/rename/move and protected empty-only deletion | Nonempty recursive maintenance remains unsupported; packaged acceptance |
 | F03 | Single-file and bounded directory upload/read/delete, immutable input/revision pins | [Directory evidence](directory-inputs.md); packaged browser/platform acceptance |
 | F04 | Versioned suites, selected-revision target/schedule summary and exact-suite latest/full history | Catalogue placement remains provisional; packaged acceptance |
-| F07/F11 | Durable lifecycle events, metric archives and replay | Retained bounded native diagnostic text and log viewing/replay |
+| F07/F11 | Durable lifecycle events, metric archives and sanitized diagnostic history | [Safe diagnostic evidence](native-diagnostics.md); original stderr replay/live native diagnostics unsupported |
 | F10 | Observed drops, bounded native warning classification and configured single-arrival iteration-median guidance | Packaged/browser/platform acceptance; [warning evidence](k6-warning-guidance.md) |
 | F12 | Durable identity/reconciliation, native cleanup and cold historical restore | [Recovery evidence](cold-recovery.md); remaining active-delivery crash/platform matrix |
 | F19 | Rewrite source checks configured in CI | Matched rewrite-image smoke/publishing pipeline and release evidence |

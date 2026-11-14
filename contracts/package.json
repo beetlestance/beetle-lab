@@ -22,7 +22,8 @@
     "./output-retirement": "./src/output-retirement/index.ts",
     "./output-settlement": "./src/output-settlement/index.ts",
     "./k6-warnings": "./src/k6-warnings/index.ts",
-    "./recovery": "./src/recovery/index.ts"
+    "./recovery": "./src/recovery/index.ts",
+    "./k6-diagnostics": "./src/k6-diagnostics/index.ts"
   },
   "dependencies": {
     "ajv": "8.20.0",

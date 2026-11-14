@@ -9,8 +9,8 @@ const cleanups: (() => Promise<void>)[] = [];
 beforeEach(resetNative); afterEach(async () => {await Promise.all(cleanups.splice(0).map(clean => clean()));});
 it('pre-reserves warning bytes without increasing the existing minimum/build/history budget', () => {
   const minimum = 3044252; expect(() => reserveOutput(minimum - 1)).toThrow('output_limit');
-  const r = reserveOutput(minimum); expect(r.warnings).toBe(4096); expect(r.numeric + r.warnings).toBe(1048576);
-  expect(r.control + r.numeric + r.warnings + r.result + r.execution + r.reports).toBe(minimum);
+  const r = reserveOutput(minimum); expect(r.warnings).toBe(4096); expect(r.numeric + r.warnings + r.diagnostics).toBe(1048576);
+  expect(r.control + r.numeric + r.warnings + r.diagnostics + r.result + r.execution + r.reports).toBe(minimum);
   expect(r.history).toBe(65536); expect(r.result).toBe(65536);
 });
 it('seals warning evidence under the admitted descriptor/result limits and exact hash', async () => {

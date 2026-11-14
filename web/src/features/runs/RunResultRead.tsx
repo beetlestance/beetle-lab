@@ -1,3 +1,4 @@
+import { PublishedDiagnostics } from './diagnostics/index.js';
 import { RunWarnings } from './warnings/index.js';
 import { useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -53,6 +54,7 @@ function PublishedReports({view}: {view: ReturnType<typeof resultView>}) {
   const params = {organizationId: run.scope.organizationId, workspaceId: run.scope.workspaceId,
     runId: run.id, attemptId: run.activeAttemptId};
   return <>
+    <PublishedDiagnostics params={params} artifacts={result.artifacts} />
     {warnings.length === 0 && <p>Native warning evidence was not recorded for this run.</p>}
     {warnings.length > 1 && <p role="alert">Multiple warning artifacts were published; no warning evidence selected.</p>}
     {warnings.length === 1 && <RunWarnings params={{...params, artifactId: warnings[0]!.artifactId}} artifact={warnings[0]!} />}

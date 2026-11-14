@@ -538,5 +538,10 @@
     "path": "invalid/recovery-path.json",
     "schema": "RecoveryRecord",
     "valid": false
+  },
+  {
+    "path": "valid/k6-diagnostics.json",
+    "schema": "NativeDiagnosticArtifact",
+    "valid": true
   }
 ]

@@ -1,7 +1,7 @@
 # Engine native artifact custody
 
 Public entry index.ts. Owner docs/design/lld/export-script-custody.md.
-Artifacts owns fixed-name summary/numeric/target/report/native-script descriptors;
+Artifacts owns fixed-name summary/numeric/target/report/diagnostic/native-script descriptors;
 identity helpers and bounded hash reader are shared with the metric archive.
 No compiler, metrics interpreter, target calls, job admission or metadata here.
 

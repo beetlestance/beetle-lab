@@ -14,7 +14,7 @@ import type { StagedK6Options } from '../../wrapper/attempt/index.js';
 
 const native = vi.hoisted(() => ({ calls: 0, closes: 0, failed: false, discovery: false, missingMarker: false,
   closeFails: false, buildFails: false, summaryTamper: false, built: undefined as BuildInput | undefined,
-  warnings: false, summaryPadding: 0,
+  warnings: false, diagnostics: false, summaryPadding: 0,
   metricOffsets: undefined as readonly number[] | undefined, wallOffset: 0,
   blockBuild: undefined as Promise<void> | undefined, blockClose: undefined as Promise<void> | undefined }));
 export { native };
@@ -32,8 +32,8 @@ vi.mock('../../wrapper/process/index.js', () => ({ createNativeProcess: (input: 
     const raw = projected(native.built!);
     await writeFile(join(input.directory, 'beetle-evidence.json'), (native.summaryTamper ? raw + ' ' : raw)
       + ' '.repeat(native.summaryPadding), { mode: 0o600, flag: 'wx' });
-    return { ...(native.warnings ? {warnings: {coverage: 'complete' as const, insufficientVus: 1, highCardinality: 0, maxDuration: 0, otherWarnings: 0, discardedSegments: 0}} : {}), spawned: true, exitCode: native.failed || native.discovery ? 99 : 0, signal: null, cause: null,
-      metricBytes: bytes.length, diagnosticBytes: 0, collection: 'complete', state: 'stopped',
+    return { ...(native.diagnostics ? {diagnostics: {coverage: 'complete' as const, observedBytes: 60, observedRecords: 1, invalidSegments: 0, redactedRecords: 1, droppedRecords: 0, records: [{sequence: 1, level: 'error' as const, code: 'redacted' as const}]}} : {}), ...(native.warnings ? {warnings: {coverage: 'complete' as const, insufficientVus: 1, highCardinality: 0, maxDuration: 0, otherWarnings: 0, discardedSegments: 0}} : {}), spawned: true, exitCode: native.failed || native.discovery ? 99 : 0, signal: null, cause: null,
+      metricBytes: bytes.length, diagnosticBytes: native.diagnostics ? 60 : 0, collection: 'complete', state: 'stopped',
       stdioClosed: true, groupAbsent: true, quiescent: true };
   }, close: async () => { native.closes++; await native.blockClose; if (native.closeFails) throw new Error('SECRET_CLOSE_ERROR'); },
 }) }));
@@ -71,7 +71,7 @@ function projected(input: BuildInput): string {
 }
 export function resetNative(): void {
   Object.assign(native, { calls: 0, closes: 0, failed: false, discovery: false, missingMarker: false, closeFails: false,
-    buildFails: false, summaryTamper: false, warnings: false, summaryPadding: 0, metricOffsets: undefined, wallOffset: 0,
+    buildFails: false, summaryTamper: false, warnings: false, diagnostics: false, summaryPadding: 0, metricOffsets: undefined, wallOffset: 0,
     built: undefined, blockBuild: undefined, blockClose: undefined });
 }
 export async function fixture() {

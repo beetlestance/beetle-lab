@@ -1,3 +1,4 @@
+import { diagnosticArtifact } from '../diagnostics/index.js';
 import { warningArtifact } from '../warnings/index.js';
 import { renderPerformanceReports, ReportError } from '../../report/index.js';
 import { isAbsolute, resolve } from 'node:path';
@@ -241,10 +242,12 @@ class Attempt {
     const target = this.targetReport ? await this.artifacts!.target(this.targetReport, this.reservation!.target) : undefined;
     const evidence = warningArtifact(compiled, this.state.execution!, this.state.scope!);
     const warnings = evidence ? await this.artifacts!.warnings(evidence, this.reservation!.warnings) : undefined;
+    const diagnosticReport = diagnosticArtifact(this.state.execution!, {...this.state.scope!, generation: 1});
+    const diagnostics = diagnosticReport ? await this.artifacts!.diagnostics(diagnosticReport, this.reservation!.diagnostics) : undefined;
     const reports = this.reports(mapped);
-    const numericBytes = numericAllowance(this.reservation!, collectOutputBytes - artifactBytes(warnings) - historyWork.produced - artifactBytes(target) - reports.text.length - reports.csv.length, summary?.ok ? summary.evidence.rawBytes : 1_048_576);
+    const numericBytes = numericAllowance(this.reservation!, collectOutputBytes - artifactBytes(diagnostics) - artifactBytes(warnings) - historyWork.produced - artifactBytes(target) - reports.text.length - reports.csv.length, summary?.ok ? summary.evidence.rawBytes : 1_048_576);
     const artifacts: EngineResult['artifacts'] = [...historyWork.artifacts];
-    artifacts.push(...presentArtifacts(warnings, target));
+    artifacts.push(...presentArtifacts(warnings, diagnostics, target));
     if (summary?.ok) artifacts.push(await this.artifacts!.summary(summary.evidence));
     artifacts.push(await this.artifacts!.numeric(this.numericEvidence(mapped.diagnostics, history), numericBytes));
     const reportAllowance = this.reservation!.reports / 2;

@@ -1,3 +1,4 @@
+import {decodeK6Diagnostics, K6_DIAGNOSTIC_BYTES} from '@beetle/contracts/k6-diagnostics';
 /** Explicit task-owned public API -> real agent -> pinned k6 warning qualification. */
 import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
@@ -46,11 +47,25 @@ try {
   assert.deepEqual(report.configuration.arrival, {executor: 'constant-arrival-rate', peakIterationsPerSecond: 20, preAllocatedVUs: 1, maxVUs: 1});
   assert(report.iteration && report.iteration.count > 0); assert(report.iteration.estimate >= 400);
   evidence.warningArtifact = a; evidence.warningReport = report; evidence.run = observed.run;
+  const diagnostics = result.artifacts.filter(item => item.kind === 'k6-diagnostics'); assert.equal(diagnostics.length, 1);
+  const diagnostic = diagnostics[0]!; assert(diagnostic.bytes > 0 && diagnostic.bytes <= K6_DIAGNOSTIC_BYTES);
+  const diagnosticPath = runArtifactContentPath({...params, artifactId: diagnostic.artifactId});
+  const diagnosticResponse = await session.content(diagnosticPath); assert.equal(diagnosticResponse.status, 200);
+  const diagnosticBytes = await boundedBytes(diagnosticResponse, K6_DIAGNOSTIC_BYTES);
+  assert.equal(diagnosticBytes.length, diagnostic.bytes); assert.equal(digest(diagnosticBytes), diagnostic.sha256);
+  const diagnosticReport = decodeK6Diagnostics(diagnosticBytes); assert.deepEqual(diagnosticReport.scope, report.scope);
+  assert.equal(diagnosticReport.coverage, 'complete');
+  assert(diagnosticReport.records.some(record => record.code === 'insufficient-vus' && record.level === 'warning'));
+  evidence.diagnosticArtifact = diagnostic; evidence.diagnosticReport = diagnosticReport;
+
   await app.close(); app = undefined; evidence.physical = await inspectClosed(f, observed.run, observed.result);
   app = await openApplication(config.application); await app.server.listen({...config.listen});
   const reopened = await publicClient(app, origin); assert.deepEqual(value(await reopened.api.getRunResult({params: observed.params})), observed.result);
   const again = await reopened.content(runArtifactContentPath(params)); assert.equal(again.status, 200);
   assert.equal(digest(await boundedBytes(again)), a.sha256); evidence.reopened = true;
+  const diagnosticAgain = await reopened.content(diagnosticPath); assert.equal(diagnosticAgain.status, 200);
+  assert.equal(digest(await boundedBytes(diagnosticAgain, K6_DIAGNOSTIC_BYTES)), diagnostic.sha256);
+
   await app.close(); app = undefined;
   evidence.targetCounts = targetCounts(f, {ready: 1, work: report.iteration.count, unexpected: 0});
   evidence.status = 'passed';
@@ -66,8 +81,8 @@ try {
   console.log(JSON.stringify({status: evidence.status, directory: f.root, cleanupVerified: evidence.cleanupVerified, failure: evidence.failure}));
 }
 
-async function boundedBytes(response: Response): Promise<Uint8Array> {
-  assert(response.body); const reader = response.body.getReader(); const bytes = new Uint8Array(4096); let size = 0;
+async function boundedBytes(response: Response, maximum = 4096): Promise<Uint8Array> {
+  assert(response.body); const reader = response.body.getReader(); const bytes = new Uint8Array(maximum); let size = 0;
   try {
     for (let calls = 0; calls < 32; calls++) {
       const part = await reader.read(); if (part.done) return bytes.subarray(0, size);

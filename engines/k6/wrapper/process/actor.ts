@@ -228,7 +228,7 @@ export class ProcessActor implements NativeProcess {
   }
   private observation(noChild: boolean): ProcessObservation {
     return Object.freeze({ spawned: this.spawned, exitCode: this.exitCode, signal: this.exitSignal,
-      cause: this.cause, metricBytes: this.metrics.bytes, diagnosticBytes: this.metrics.diagnosticBytes, warnings: this.metrics.warnings.snapshot(),
+      cause: this.cause, metricBytes: this.metrics.bytes, diagnosticBytes: this.metrics.diagnosticBytes, warnings: this.metrics.warnings.snapshot(), diagnostics: this.metrics.warnings.history.snapshot(),
       collection: this.collectionComplete() ? 'complete' : 'partial',
       state: this.isStopped() ? 'stopped' : noChild ? 'not_started' : 'unknown', stdioClosed: this.stdioClosed,
       groupAbsent: this.groupAbsent, quiescent: this.quiescent(noChild) });

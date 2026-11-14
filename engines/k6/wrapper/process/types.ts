@@ -1,3 +1,4 @@
+import type { NativeDiagnostics } from '@beetle/contracts/k6-diagnostics';
 import type { NativeWarnings } from '@beetle/contracts/k6-warnings';
 import type { AttemptBudget } from '../../runtime/index.js';
 
@@ -23,6 +24,7 @@ export interface NativeProcessOptions {
 }
 export interface ProcessObservation {
   readonly warnings?: NativeWarnings;
+  readonly diagnostics?: NativeDiagnostics;
   readonly spawned: boolean;
   readonly exitCode: number | null;
   readonly signal: NodeJS.Signals | null;

@@ -20,6 +20,7 @@ import type { schema as StandaloneExportAssignmentSchema } from './export-assign
 import type { schema as StandaloneExportResultSchema } from './export-result.inference.js';
 import type { schema as InstalledIdentitySchema } from './installed-identity.inference.js';
 import type { schema as LoadWarningArtifactSchema } from './load-warning-artifact.inference.js';
+import type { schema as NativeDiagnosticArtifactSchema } from './native-diagnostic-artifact.inference.js';
 import type { schema as OfferSchema } from './offer.inference.js';
 import type { schema as OutputAbsenceSchema } from './output-absence.inference.js';
 import type { schema as OutputManifestCoreSchema } from './output-manifest-core.inference.js';
@@ -69,6 +70,7 @@ export type StandaloneExportAssignment = FromSchema<typeof StandaloneExportAssig
 export type StandaloneExportResult = FromSchema<typeof StandaloneExportResultSchema, { references: [...typeof schemas] }>;
 export type InstalledIdentity = FromSchema<typeof InstalledIdentitySchema, { references: [...typeof schemas] }>;
 export type LoadWarningArtifact = FromSchema<typeof LoadWarningArtifactSchema, { references: [...typeof schemas] }>;
+export type NativeDiagnosticArtifact = FromSchema<typeof NativeDiagnosticArtifactSchema, { references: [...typeof schemas] }>;
 export type Offer = FromSchema<typeof OfferSchema, { references: [...typeof schemas] }>;
 export type OutputAbsence = FromSchema<typeof OutputAbsenceSchema, { references: [...typeof schemas] }>;
 export type OutputManifestCore = FromSchema<typeof OutputManifestCoreSchema, { references: [...typeof schemas] }>;
@@ -103,6 +105,7 @@ export interface ProtocolTypes {
   StandaloneExportResult: StandaloneExportResult;
   InstalledIdentity: InstalledIdentity;
   LoadWarningArtifact: LoadWarningArtifact;
+  NativeDiagnosticArtifact: NativeDiagnosticArtifact;
   Offer: Offer;
   OutputAbsence: OutputAbsence;
   OutputManifestCore: OutputManifestCore;

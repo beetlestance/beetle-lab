@@ -62,6 +62,7 @@ released application until the rewrite is qualified.
 | Inspect byte-client and inventory evidence | [Input client](verification/input-client.md) | Scoped UI/client tests, compiled HTTP transfer and remaining browser work |
 | Inspect connected input controls | [Input controls](verification/input-controls.md) | Session ownership, upload/download, lost-ack recovery and remaining browser proof |
 | Inspect directory intake | [Directory inputs](verification/directory-inputs.md) | Bounded nested folders, sequential upload, explicit replay/skip and immutable replacement |
+| Inspect sanitized native diagnostics | [Contract](design/lld/native-diagnostics.md), [evidence](verification/native-diagnostics.md) | Fixed safe records, bounded artifact custody and manual verified history; raw/live stderr unsupported |
 | Inspect run intake boundary | [Run intake](verification/run-intake.md) | Reviewed command/SQLite enqueue, migration/recovery fences and remaining HTTP/dispatch work |
 | Inspect authenticated run API | [Run HTTP](verification/run-http.md) | Enqueue/detail/history, real TCP lost202/restart and remaining agent work |
 | Inspect executable capacity startup | [Backend startup](verification/backend-startup.md) | Actual private connection/publication, shutdown, full local gate and remaining execution work |

@@ -74,7 +74,7 @@ it('reserves exact finite output partitions without integer overflow', () => {
   const minimum = 3_044_252;
   expect(() => reserveOutput(minimum - 1)).toThrow('output_limit');
   const exact = reserveOutput(minimum); expect(Object.values(exact).every(Number.isSafeInteger)).toBe(true);
-  expect(exact.control + exact.numeric + exact.warnings + exact.result + exact.execution + exact.reports).toBe(minimum);
+  expect(exact.control + exact.numeric + exact.warnings + exact.diagnostics + exact.result + exact.execution + exact.reports).toBe(minimum);
   for (const value of [NaN, Infinity, -1, Number.MAX_SAFE_INTEGER + 1]) expect(() => reserveOutput(value)).toThrow('output_limit');
   expect(reserveOutput(Number.MAX_SAFE_INTEGER).build).toBe(89 * 1_048_576);
 });

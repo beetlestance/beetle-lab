@@ -1,16 +1,20 @@
+import { DiagnosticHistory } from './diagnostic-history.js';
+import type {DiagnosticRecord} from '@beetle/contracts/k6-diagnostics';
 import type { NativeWarnings } from '@beetle/contracts/k6-warnings';
 const LINE = 4096;
 /** Bounded transient parsing only; snapshots never include native strings. */
 export class WarningClassifier {
+  readonly history = new DiagnosticHistory();
   private readonly line = Buffer.alloc(LINE);
   private length = 0;
   private skipping = false;
   private finished = false;
   private partial = false;
   private readonly counts = {insufficientVus: 0, highCardinality: 0, maxDuration: 0, otherWarnings: 0, discardedSegments: 0};
-  private discard(): void { this.partial = true; this.counts.discardedSegments++; }
+  private discard(): void { this.partial = true; this.counts.discardedSegments++; this.history.record('unknown', 'invalid'); }
   push(bytes: Uint8Array): void {
     if (this.finished) return;
+    this.history.countBytes(bytes.length);
     if (bytes.length > 65536) { this.length = 0; this.skipping = true; this.discard(); return; }
     for (const byte of bytes) {
       if (byte === 10) {
@@ -33,21 +37,26 @@ export class WarningClassifier {
     } catch { this.discard(); }
   }
   private classify(level: unknown, msg: string): void {
-    if (level !== 'warning' && level !== 'warn') {
-      if (!['info', 'error', 'debug', 'trace', 'fatal', 'panic'].includes(String(level))) this.discard();
-      return;
+    if (level === 'warning' || level === 'warn') {
+      this.history.record('warning', this.warning(msg)); return;
     }
-    if (/^Insufficient VUs,/.test(msg)) this.counts.insufficientVus++;
-    else if (/high cardinality|too many time series/i.test(msg)) this.counts.highCardinality++;
-    else if (/maxDuration|maximum duration/i.test(msg)) this.counts.maxDuration++;
-    else { this.counts.otherWarnings++; this.partial = true; }
+    if (level === 'info' || level === 'error' || level === 'debug' || level === 'trace' || level === 'fatal' || level === 'panic') {
+      this.history.record(level, 'redacted'); return;
+    }
+    this.discard();
+  }
+  private warning(msg: string): DiagnosticRecord['code'] {
+    if (/^Insufficient VUs,/.test(msg)) {this.counts.insufficientVus++; return 'insufficient-vus';}
+    if (/high cardinality|too many time series/i.test(msg)) {this.counts.highCardinality++; return 'high-cardinality';}
+    if (/maxDuration|maximum duration/i.test(msg)) {this.counts.maxDuration++; return 'maximum-duration';}
+    this.counts.otherWarnings++; this.partial = true; return 'redacted';
   }
   finish(): void {
     if (this.finished) return;
     if (this.length || this.skipping) this.discard();
-    this.length = 0; this.line.fill(0); this.finished = true;
+    this.length = 0; this.line.fill(0); this.finished = true; this.history.finish(false);
   }
-  interrupt(): void { if (!this.finished) { this.partial = true; this.finish(); } }
+  interrupt(): void { if (!this.finished) { this.partial = true; this.history.finish(true); this.finish(); } }
   snapshot(): NativeWarnings {
     return Object.freeze({...this.counts, coverage: this.finished && !this.partial ? 'complete' : 'partial'});
   }

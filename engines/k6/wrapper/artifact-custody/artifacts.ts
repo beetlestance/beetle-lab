@@ -1,3 +1,4 @@
+import { captureK6Diagnostics } from '@beetle/contracts/k6-diagnostics';
 import { captureK6Warnings } from '@beetle/contracts/k6-warnings';
 import { captureTargetRuntimeReport } from '@beetle/contracts/target-runtime';
 import { constants } from 'node:fs';
@@ -131,6 +132,9 @@ export class Artifacts {
   }
   async warnings(value: unknown, allowance: number): Promise<Artifact> {
     return this.encoded(captureK6Warnings(value), allowance, 'k6-warnings.json', 'k6-warnings');
+  }
+  async diagnostics(value: unknown, allowance: number): Promise<Artifact> {
+    return this.encoded(captureK6Diagnostics(value), allowance, 'k6-diagnostics.json', 'k6-diagnostics');
   }
   async target(value: unknown, allowance: number): Promise<Artifact> {
     return this.encoded(captureTargetRuntimeReport(value), allowance, 'target-runtime.json', 'target-runtime');

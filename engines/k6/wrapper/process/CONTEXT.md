@@ -23,12 +23,12 @@ Descendants must stay in the group. Escaped sessions, container init/subreaper
 and OS cleanup require separate qualification.
 
 Metrics read available bytes up to64KiB with one awaited sink and no queue.
-The cap is not a minimum fill; a positive read at zero buffered bytes observes EOF.
 The pipe retains its Node high-water buffer; excessive injected buffering fails at
 8MiB. The required trusted sink must project/schema-check raw metric bytes, retain
 bounded data and honor its AbortSignal/deadline. Node pipe backpressure does not
 bound k6's Go SampleBuffer: native hard RAM containment/OOM qualification is needed.
-`metricBytes` counts admitted reads; stderr counts observed bytes and is discarded.
+`metricBytes` counts admitted reads; stderr has one bounded transient parser; only fixed diagnostic enums/counters are
+retained; raw messages are discarded. EOF/loss/redaction stay distinct.
 Transport quota is distinct from persisted output quota; limits make evidence partial.
 
 Run waiting is bounded through termination/drain; unknown observations retain late
