@@ -1,7 +1,10 @@
 # Public operation availability
 
-Status: reviewed local reference correction. Baseb70b33c; source is the commit
-containing this report. Contract: [embedded reference](../design/lld/embedded-reference.md).
+Status: original reviewed reference correction atb70b33c, reconciled through21aa880.
+Current source catalogue:62 JSON descriptors,59 implemented,3 planned namespace
+DELETE operations. Retention parent previews and workspace/manual controls are now
+implemented; unshipped parent Apply descriptors were retired. The original runtime
+registration fixture/evidence below belongs to its recorded source. Contract: [embedded reference](../design/lld/embedded-reference.md).
 
 Every generated JSON operation now declares implemented or planned. The generator
 rejects missing/unknown status. Planned schemas and client methods remain available
@@ -10,7 +13,7 @@ selected-operation guidance, downloadable Markdown/JSON and agent instructions
 carry the same status. Implemented describes a route in the standard configured
 application; local access, service setup and engine capability still apply.
 
-## Actual registration evidence
+## Original registration evidence
 
 The fixture opens the real application with its compiled metadata worker and
 private input directories, then checks every JSON descriptor against Fastify's
@@ -47,6 +50,8 @@ reviewer check lane ran.
 Registration is not endpoint outcome, engine execution or release qualification.
 The actual native HTTP asset test verifies source serving and fixed content bounds;
 no new Docker image was built or published. Running services were not redeployed.
-Namespace deletion and retention remain unimplemented. The parity checklist also
-now records missing history filters/sort/duration/storage presentation; this is a
-targeted source observation, not proof that all remaining feature IDs were audited.
+Namespace deletion remains unimplemented. Retention and history controls/scalars/
+search are now locally implemented; see [retention](retention-accounting.md),
+[parent traversal](retention-parent.md), [history](run-history-query.md) and the
+[full inventory audit](inventory-audit.md). Current totals are catalogue inspection,
+not a new actual registration test or release qualification.

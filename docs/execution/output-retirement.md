@@ -1,13 +1,15 @@
-# Producer cleanup: next implementation packets
+# Producer cleanup: completed implementation sequence
 
-Status: C1 locally verified; C2–C6 pending, no implemented cleanup or release acceptance.
-C1 evidence: [namespace](../verification/staging-namespace.md). Base44a95b8. Root owns integration, contracts/migrations and dependency files.
+Status: C1–C6 locally complete through21aa880. This records the dependency design
+used for the accepted work, not a remaining task list. Current evidence and limits:
+[progress index](../verification/output-retirement-progress.md). Release acceptance
+remains separate; [remaining packets](remaining-rewrite.md) own the next work.
 Contract: [retirement/cleanup acknowledgement](../design/lld/output-retirement.md).
 
-## Why this is next
+## Original sequencing rationale
 
 Backend file deletion already has actual persisted plans and absence receipts.
-The missing physical owner is agent staging/output, including stopped producer
+The original missing physical owner was agent staging/output, including stopped producer
 and source-reader originals. Failed native output closes now retain admission and
 strong custody. Preserve that prerequisite instead of treating rejected close as
 free capacity. The remaining sequence must keep every existing charge until its
@@ -120,5 +122,8 @@ Composed real native roots/authenticated HTTP/both compiled workers and cold rec
 are locally accepted through [reply loss](../verification/cleanup-composed.md) and
 [agent crash/unlink recovery](../verification/cleanup-agent-crash.md). Exact platform
 and image-build limitations remain; these are not release qualification.
-Next: C5 settlement/tombstones, including a separate audit of positive unsent and
-never-admitted originals, then C6 protected public retention/delete.
+C5 settlement/tombstones and positive unsent/never-admitted branches are now locally
+qualified; C6 protected workspace/manual and parent-preview API/UI are integrated.
+See [native settlement](../verification/native-settlement.md), [no-task evidence](../verification/rejected-cleanup-funding.md)
+and [native retention](../verification/native-retention.md) for exact scope.
+The packet acceptance requirements above remain invariants, not pending implementations.

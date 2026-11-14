@@ -1,6 +1,7 @@
 # Automatic cleanup driver evidence
 
-Status: local driver integration; full native/HTTP cross-service recovery remains pending.
+Status: local driver integration; later [composed native recovery](cleanup-composed.md)
+and [agent crash recovery](cleanup-agent-crash.md) are separately qualified.
 Basea222577. [Contract](../design/lld/output-deletion-runtime.md).
 
 Migration023 adds an eligibility partial index without changing data. Discovery reads

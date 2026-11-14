@@ -26,3 +26,7 @@ older control policy; it refuses if any committed ACK exists. Source application
 schema is22; Agent Journal remains a separate owner/version. No full-suite or native
 whole-chain success follows. The25 known unrelated baseline failures remain documented
 in [control evidence](backend-cleanup-control.md). User services and images unchanged.
+
+Later [driver](cleanup-driver.md), [composed recovery](cleanup-composed.md),
+[settlement](native-settlement.md) and [retention](native-retention.md) qualify the
+connected path within their stated limits. The failure count above is historical.

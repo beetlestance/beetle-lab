@@ -1,6 +1,7 @@
 # Runner retirement transport evidence
 
-Status: source-local authenticated runner HTTP verified; backend ACK/refund pending.
+Status: source-local authenticated runner HTTP verified. Later ACK, driver and
+settlement evidence is linked in the [progress index](output-retirement-progress.md).
 Base20f778b. [Contract](../design/lld/retirement-transport.md).
 
 The endpoint uses the actual Root pipeline and shared pre-body source-work ownership.

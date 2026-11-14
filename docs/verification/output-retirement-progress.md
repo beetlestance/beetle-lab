@@ -1,33 +1,37 @@
 # Output retirement progress
 
-Status: local prerequisite and transport evidence; full cleanup remains incomplete.
-This index records implementation scope. [Execution order](../execution/output-retirement.md)
-owns remaining work; [retirement contract](../design/lld/output-retirement.md) owns authority.
+Status: C1–C6 locally implemented and reviewed through21aa880. The cleanup goal’s
+ACK/driver, composed recovery, settlement and protected retention items are complete.
+[Contract](../design/lld/output-retirement.md) owns authority;
+[remaining rewrite packets](../execution/remaining-rewrite.md) own subsequent work.
+This is local functional completion, not full release qualification.
 
-| Boundary | Local evidence | Remaining limit |
+| Boundary | Local evidence | Retained limitation |
 | --- | --- | --- |
-| C1 installed/task identity and control | [Namespace](staging-namespace.md) | Native identity is not cleanup proof |
-| C2 durable intent and actual producer drain | [Intent](producer-retirement-store.md), [leases](producer-gate.md), [barrier](producer-retirement.md) | Failed drain remains owned |
-| C3 exact runtime removal | [Runtime](runtime-retirement.md) | Cold mailbox association gap stays unresolved |
-| C3 bounded native ownership and inventory | [Custody](native-custody.md), [inventory](task-inventory.md) | Observation alone grants no unlink authority |
-| C3 immutable native plan and recoverable steps | [Plan](cleanup-plan-store.md), [removal](native-removal.md) | Partial/unknown outcomes stay charged |
-| C3 trusted durable native receipt | [Receipt](native-receipt.md) | Raw rows/counters do not prove IO |
-| C4 dedicated backend control reservation | [Control](backend-cleanup-control.md) | ACK/settlement remain separate; legacy top-up is explicit |
-| C4 exact wire values and local pipeline | [Wire](retirement-wire.md), [pipeline](retirement-pipeline.md) | No backend ACK or settlement |
-| C4 authenticated runner endpoint | [Transport](retirement-transport.md) | Real TCP uses synthetic Docker observations |
-| C4 committed backend request | [Projection](backend-retirement-request.md) | Read-only; no dispatch or ACK |
-| C4 exact bounded installation gateway | [Gateway](retirement-gateway.md) | No background driver or ACK storage |
-| C4 immutable backend ACK metadata | [ACK store](backend-retirement-ack.md) | Trusted gateway consumption/driver and composed recovery remain pending |
+| C1 installed/task identity/control | [Namespace](staging-namespace.md) | Native identity alone is not cleanup proof |
+| C2 durable intent/producer drain | [Intent](producer-retirement-store.md), [leases](producer-gate.md), [barrier](producer-retirement.md) | Failed drain remains owned |
+| C3 exact runtime/association | [Runtime](runtime-retirement.md), [association](runtime-association.md) | Unknown native state refuses removal |
+| C3 native inventory/plan/removal/receipt | [Inventory](task-inventory.md), [plan](cleanup-plan-store.md), [removal](native-removal.md), [receipt](native-receipt.md) | Unknown entries/failed closes remain retained |
+| C4 backend control/ACK | [Reservation](backend-cleanup-control.md), [ACK](backend-retirement-ack.md) | Explicit legacy funding; ACK alone gives no credit |
+| C4 authenticated request/gateway/driver | [Transport](retirement-transport.md), [projection](backend-retirement-request.md), [gateway](retirement-gateway.md), [driver](cleanup-driver.md) | Shared bounded calls and original ownership remain enforced |
+| C4 composed reply-loss/crash | [Composition](cleanup-composed.md), [agent crash](cleanup-agent-crash.md) | Actual platform and overlay-image limits apply |
+| C5 exactly-once settlement | [Agent](agent-storage-settlement.md), [backend](backend-storage-settlement.md), [driver](settlement-driver.md), [native](native-settlement.md) | Permanent replay floors survive payload purge |
+| C5 absent/no-task originals | [Absence](output-absence.md), [rejected funding](rejected-cleanup-funding.md) | Positive original-bound proof; generic404/timeout is never absence |
+| C6 protected retention/delete | [Accounting/API/UI](retention-accounting.md), [parent traversal](retention-parent.md), [driver advisory](retention-driver-state.md), [native](native-retention.md) | Parent coverage live/partial; explicit workspace Apply; no Run-pin UI |
 
-Next: connect bounded driver discovery and trusted gateway ACK consumption,
-then qualify both compiled workers with actual native roots and
-authenticated HTTP through lost replies/reopen. Do not promote separate leaf/mocked
-successes to full C4 acceptance. C5 separately owns exact-once settlement/tombstones;
-C6 owns public retention and deletion. All existing charges remain until their owners
-have positive exact evidence.
+## Completion boundary
 
-Matched Linux arm64 images at0f0afbb passed one actual k6 application smoke in14.56s,
-including normal fixture resource cleanup. That test covers normal execution, not the
-output-retirement endpoint or full backend cleanup chain. Native amd64 execution,
-full crash/resource/release matrix and UI redesign remain separate work. Running user
-services and published images were unchanged during this bounded source session.
+Actual native roots, authenticated HTTP and both compiled workers recovered lost
+committed replies/reopen, with separate hard-agent-crash/unlink evidence. Settlement
+keeps permanent anti-replay identity and credits once. Retention adds immutable
+funded previews, stale/conflict checks, metadata-derived progress, completion replay
+and explicit acknowledgement. No metadata absence grants physical proof or credit.
+
+The final retention-native path ran one real k6 execution, verified exact debt
+transitions and cleaned its synthetic resources. Linux ARM64 agent/engine with a
+macOS backend and verified payload overlays is its precise environment. It does
+not qualify native AMD64, the Linux backend, final release recipes, packaged browser,
+soak/overhead or supported backup/restore. Those remain release/acceptance packets.
+
+Namespace deletion is separate from Run deletion and remains unimplemented.
+User services and published images were not changed by this cleanup goal.

@@ -1,8 +1,9 @@
 # Retention snapshot accounting
 
-Status: private metadata reservation and durable workspace epochs implemented;
-worker/public API and UI remain pending. No retention job
-is enabled by this slice. [Contract](../design/lld/protected-retention.md).
+Status: workspace/manual worker/public API and provisional UI are locally
+implemented through21aa880, with parent traversal and native recovery linked below.
+Sections record successive evidence scopes; early component passes alone granted
+no public mutation authority. [Contract](../design/lld/protected-retention.md).
 
 Backend025 creates empty owned tables/counters without backfilling old originals or
 claiming storage credit. A first preview pays131072 snapshot plus512 permanent epoch
@@ -51,7 +52,8 @@ A failed late credit or nested different-page deletion rolls the whole operation
 Ten expiry/accounting cases and three migration cases passed, followed by types, lint,
 architecture, docs and backend build. Review found no blocker. The clock is limited
 to canonical24-character UTC dates so year10000 cannot break lexical expiry ordering.
-Applied completion pruning and public maintenance scheduling remain pending.
+Applied completion pruning and bounded maintenance are now implemented in the
+completion/worker/public composition described below.
 
 ## Workspace selection
 
@@ -66,7 +68,8 @@ epoch, all settings versions, effective policy and source. A live request replay
 returns immutable membership before fresh settings/capacity checks. Continuation may
 atomically consume an empty, unapplied predecessor and fund its child; it never drops
 candidates or progress. This permits more than eight empty windows without exhaustion.
-Consumed/expired snapshot IDs cannot be applied. Parent traversal remains separate.
+Consumed/expired snapshot IDs cannot be applied. [Parent traversal](retention-parent.md)
+is separately qualified.
 
 Focused tests cover11 successive windows with one live slot, live immutable replay,
 stale/cross-workspace/forged cursors, positive source and unsent debt, unknown proof,
@@ -91,7 +94,8 @@ Thirteen focused Apply cases passed, including source-backed files, maximum100
 members, unchanged usage, replay after expiry/settings changes, nested global/peer
 mutations, raw sequence tampering and late-child/final-state rollback. The scoped
 regression lane, types, lint, architecture, docs and backend build passed. Independent
-review found no blocker. Compiled-worker Apply reply-loss recovery is qualified; public HTTP/UI composition remains pending.
+review found no blocker. Compiled-worker Apply reply-loss recovery and the later
+public HTTP/UI composition below are qualified locally.
 
 ## Durable completion and metadata removal
 
@@ -111,8 +115,8 @@ Progress/completion/expiry cases passed, including partial/source-file stages, p
 version mismatch, phase forgery, exact observed time, completed-page credit and late
 progress-delete/completion-owner rollback. The scoped regression lane, types, lint,
 architecture, docs and backend build passed. Independent review found no blocker.
-An applied page remains charged until completion is observed; public composition
-will supply that observation. No native or physical-free-space claim is added.
+An applied page remains charged until completion is observed; the public
+composition below supplies that observation. Logical credit is not a physical-free-space claim.
 
 
 ## Worker and manual selection

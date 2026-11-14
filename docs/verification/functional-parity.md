@@ -1,36 +1,34 @@
 # Remaining functional parity
 
-Status: targeted audit updated through2e51b67; not complete release acceptance.
-Authority: [feature inventory](../current-features.md) and
-[acceptance matrix](../verification.md). UI redesign remains a separate later task.
-This checklist records gaps that must not disappear behind broader feature labels.
+Status: inventory reconciliation at21aa880 plus this documentation-only audit.
+[Full inventory audit](inventory-audit.md) maps every F01–F34/N01–N02;
+[remaining packets](../execution/remaining-rewrite.md) own sequencing and exit criteria.
+This supersedes the earlier targeted checklist, not its source-bound evidence.
 
-| Inventory | Current source evidence | Required closure |
+| Inventory | Locally implemented | Remaining functional work |
 | --- | --- | --- |
-| F01 dashboard | [Workspace overview](workspace-overview.md) has exact scoped counts, hourly submission buckets and bounded recent/active links | Workspace slice locally verified; cross-workspace rollups and native browser qualification remain separate |
-| F02 namespace deletion | Generated descriptors exist, but the actual configured application has no organisation/workspace/folder DELETE routes or UI controls | Implement scoped, versioned deletion with child/input/run/cleanup protections; namespace listing/creation/rename do not establish deletion |
-| F06 history controls | [H1 controls](run-history-query.md) and [H2 summaries](run-history-summary.md) locally verify filters/order/cursors plus measured scalar/provenance columns and native arm64/restart; [H3 search](run-history-search.md) is locally verified with explicit legacy behavior differences | Complete the [history query/read-model packets](../design/lld/run-history-query.md), including remaining platform/browser qualification and inventory-wide acceptance |
-| F10 warnings | [Observed load guidance](load-advice.md) shows current-window/recorded drops and an explicit iteration-median VU heuristic | Consumer slice locally verified; native warning classification and configured-scenario guidance remain |
-| F16 command search | [Contextual command search](command-search.md) shares namespace list pages and supports keyboard/focus/scope retirement | Locally implemented; native browser qualification remains |
-| F17 embedded reference | [Reference/downloads](embedded-reference.md) use generated schemas, real binary route owners and a standalone agent skill; source-image HTTP verified | Locally implemented; broader browser/release qualification remains |
+| F01 | Workspace counts/activity/recent/active navigation | Cross-workspace overview |
+| F02/N01 | Scoped list/create/rename and folder moves | Protected organisation/workspace/folder deletion |
+| F03 | Single-file upload/read/delete, immutable input pins | Directory-tree intake; certify immutable replacement/revision workflow |
+| F04 | Explicit versioned suites and persisted editor/history | Catalogue target/duration/latest-run summary |
+| F07/F11 | Durable lifecycle events, metric archives and replay | Retained bounded native diagnostic text and log viewing/replay |
+| F10 | Observed drops and explicit iteration-median sizing heuristic | Native warning classification and configured-scenario guidance |
+| F12 | Durable identity/reconciliation and native cleanup recovery | Remaining active-delivery restart matrix and supported cold restore |
+| F19 | Rewrite source checks configured in CI | Matched rewrite-image smoke/publishing pipeline and release evidence |
 
-These are partial, targeted observations. They do not prove all other inventory
-items are complete, nor require copying the legacy visual layout. Close each item
-against its existing acceptance ID; audit the remaining inventory before R3 closes.
+F06 history filters/scalars/search, F13 comparison, F14 reports and protected Run
+deletion, F15 public exports, F16 command search and F17 generated references are
+locally implemented. Their packaged/browser/platform acceptance is still open;
+see individual evidence from the full inventory audit. Cleanup ACK/driver/recovery,
+settlement and protected retention completed through21aa880; they are no longer
+implementation backlog entries.
 
-Other known open work remains: producer retirement, final retention purge/refund
-(F14; [backend file driver](output-deletion-runtime.md) locally verified); delivery
-restart/cold-restore authority; packaged automation/browser qualification; and R4
-fresh/pull installs, native amd64/arm64, backup/restore, scans and bounded soak/
-measured overhead. Focused local component evidence does not close those gates.
+No feature or release group is accepted merely because a route, test or report
+exists. The acceptance audit records evidence limits and unclosed scenario mappings.
+The25 baseline failures in [control evidence](backend-cleanup-control.md) are a
+historical recorded result, not an assertion of today's failure count. Triage their
+exact fixtures before the next integrated gate; this prose pass reran no suite.
 
-[Public export jobs/download](public-standalone-export.md) and [ordinary source
-Compose](compose-first-boot.md) are now locally verified, including the default
-offline profile. Published pull-install/release qualification remains.
-Automatic loopback browser sessions and optional CLI connect are implemented;
-packaged browser/image qualification remains. No service was redeployed by this audit.
-
-A source-bound backend accounting check reproduced27 pre-existing migration-fixture
-failures atba69e40. Two current-version expectations were repaired alongside the new
-policy;25 unrelated failures remain recorded in [control evidence](backend-cleanup-control.md).
-Local component passes do not establish a green full suite or R4 acceptance.
+UI redesign remains a separate later audit/plan. Additional engines, hosted IAM,
+shared storage and test generation remain follow-on scope. No running service or
+published image was changed by this reconciliation.

@@ -42,7 +42,7 @@ model assignments, agent packets, concurrency and independent review.
 These are locally verified source capabilities. They do not establish hosted CI,
 final images or a qualified R0-R4 release. The [documentation map](docs/README.md)
 links evidence; the [parity checklist](docs/verification/functional-parity.md)
-records known gaps and still requires a full inventory acceptance audit.
+links the complete source/evidence inventory audit; final acceptance is still open.
 
 | Area | Locally integrated | Evidence |
 | --- | --- | --- |
@@ -55,10 +55,10 @@ records known gaps and still requires a full inventory acceptance audit.
 | Overview | Exact workspace counts, hourly submissions and bounded recent/active links | [Overview](docs/verification/workspace-overview.md) |
 | Load advice | Observed dropped iterations and explicit iteration-median VU heuristic | [Guidance](docs/verification/load-advice.md) |
 | Navigation/reference | Command search, API/config downloads and standalone agent instructions | [Search](docs/verification/command-search.md), [reference](docs/verification/embedded-reference.md) |
-| Deletion prerequisite | Persisted backend removal/absence plans; failed native closes retain owners/slots | [Backend driver](docs/verification/output-deletion-runtime.md), [native custody](docs/verification/output-close-custody.md) |
+| Cleanup/retention | Reserved ACK, automatic driver, native recovery, exact-once settlement/replay floors, protected preview/Apply/progress | [Cleanup index](docs/verification/output-retirement-progress.md), [retention recovery](docs/verification/native-retention.md) |
 
-[Operation availability](docs/verification/reference-availability.md) checks all57
-JSON descriptors against the configured application:50 registered,7 planned.
+[Operation availability](docs/verification/reference-availability.md) records the
+current62 JSON descriptors:59 implemented,3 planned namespace deletions.
 Registration does not prove runtime readiness or complete feature acceptance.
 Native live activation uses [trusted image capability](docs/decisions/014-live-metric-approval-authority.md).
 
@@ -66,19 +66,20 @@ Native live activation uses [trusted image capability](docs/decisions/014-live-m
 
 | Work | Required completion |
 | --- | --- |
-| Producer cleanup | [Prerequisite/transport progress](docs/verification/output-retirement-progress.md) locally verified; backend ACK/driver, composed recovery, settlement and retention remain; preserve charges until settlement |
-| Purge/retention | Replay-safe tombstones, exact refunds, protected selection, immutable preview/apply and public progress/error controls |
-| Namespace deletion | Organisation/workspace/folder DELETE routes and controls with child/input/run/cleanup protection |
-| History parity | H1–H3 locally implemented; remaining native browser/platform and inventory-wide acceptance, with explicit legacy search differences |
-| Warning guidance | Native warning classification and configured-scenario advice; the current heuristic is partial F10 |
-| Recovery | Remaining [delivery authority](docs/design/lld/delivery-authority.md) restart/cold-restore and actual supported backup/restore tooling |
-| Qualification | Final source/pull installs, matching images, browser/automation, native amd64/arm64, scans, bounded soak, overhead and rollback |
+| Namespace deletion | Scoped organisation/workspace/folder deletion and child/input/run/cleanup protection |
+| Input/config parity | Directory-tree upload, immutable replacement acceptance, suite target/duration/last-run summaries |
+| Diagnostics/warnings | Bounded retained/replayed diagnostics, native warning classification and configured-scenario advice |
+| Overview | Cross-workspace rollups; existing workspace overview is locally verified |
+| Recovery | Remaining delivery restart/cold-restore proof and supported cold backup/restore tooling |
+| Acceptance | Every F/N inventory ID and V failure case needs source-bound acceptance; resolve recorded failures |
+| Qualification | Final source/pull installs, matching images/CI, browser/automation, native amd64/arm64, scans, soak, overhead and rollback |
 
-The [next cleanup packets](docs/execution/output-retirement.md) are a reviewed
-proposal/handoff, not implemented cleanup authority. Positive unsent cancellations
-have their own no-agent branch; missing receipts/404 do not prove non-delivery.
-Workspace/cross-workspace acceptance and other feature IDs still need inventory
-fixtures; targeted checks do not prove every unlisted requirement complete.
+The [inventory audit](docs/verification/inventory-audit.md) covers all36 F/N IDs
+without promoting component evidence to release acceptance. The ordered
+[remaining backlog](docs/execution/remaining-rewrite.md) owns concrete exit conditions.
+Cleanup/settlement/protected retention are locally complete; their platform/image
+limits remain release work. Input/revision pins are preserved; no Run-pin UI is
+claimed. Parent retention is live/partial, with explicit workspace Apply.
 Functional closure remains separate from the deferred UI redesign.
 
 ## Local first-use corrections

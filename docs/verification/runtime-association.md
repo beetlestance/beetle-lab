@@ -1,6 +1,6 @@
 # Runtime/mailbox recovery evidence
 
-Status: source-local C4h1 primitive; full native chain qualification pending.
+Status: source-local C4h1 primitive; later composed native qualification is linked below.
 Base61c803a. [Contract](../design/lld/runtime-association.md).
 
 A genuine Docker-owner observation and actual compiled Journal worker commit precede
@@ -28,5 +28,6 @@ through task-owned capability replacement, and complexity responsibilities were 
 without raising gates. Evidence lives privately at .agent-work/cleanup-recovery-c4h1.
 
 No charge refund, tombstone, public retention/delete, release or user-service change.
-C4h still requires actual Linux roots/Docker/authenticated runner HTTP/both workers
-through composed crash points before C5 settlement can rely on the complete chain.
+Later [composed recovery](cleanup-composed.md) and [agent crash](cleanup-agent-crash.md)
+qualified the native chain; [settlement](native-settlement.md) and [retention](native-retention.md)
+record subsequent outcomes. Their platform/image limits remain applicable.
