@@ -9,7 +9,7 @@ import {captureK6Diagnostics} from '@beetle/contracts/k6-diagnostics';
 import {fixture} from './fixture.js';
 import {nativeOutcome} from './outcome.js';
 import {nativeFailure} from './failure.js';
-import {automaticClient,exportReady,readContent,hash} from './public.js';
+import {automaticClient,exportReady,readContent,hash,readReadyPublic} from './public.js';
 import {agentState,backendState,controlBudget,targetCounts,engines,cleanup} from './evidence.js';
 import {saveRevision,value,finished} from '../public-api.js';
 const f=await fixture(process.argv.slice(2));let installation:string|undefined;
@@ -55,7 +55,7 @@ try{
  evidence.phase='second-up';f.compose('up','-d','--no-build');
  // Explicit ready check also runs while serving owns the real Journal.
  const ready=f.compose('run','--rm','--no-deps','setup');assert.equal((JSON.parse(ready) as {status:string}).status,'unchanged');
- assert.deepEqual(value(await client.api.getWorkspaceSettings({params:saved.params})),changed);
+ assert.deepEqual(await readReadyPublic(signal=>client.api.getWorkspaceSettings({params:saved.params,signal})),changed);
  const afterUp=agentState(f);assert.equal(afterUp.state.credential,initial.state.credential);assert.equal(afterUp.journalAuthority,initial.journalAuthority);
  evidence.phase='restart';f.compose('restart','backend','agent');
  await waitAfterRestart(client);assert.deepEqual(value(await client.api.getBrowserSession()),client.session);assert.equal(client.cookieDigest(),cookie);

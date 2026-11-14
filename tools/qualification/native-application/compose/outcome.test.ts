@@ -28,6 +28,14 @@ it('rejects forged free-form diagnosis fields and source locations', () => {
   const encoded = JSON.stringify(nativeOutcome({diagnosis: {code: 'SECRET', site: {file: 'SECRET', line: 'SECRET', column: -1}}}));
   expect(encoded).not.toContain('SECRET'); expect(JSON.parse(encoded).diagnosis).toEqual({code: 'internal', site: null});
 });
+it('exposes only a bounded HTTP status from a public-read failure',()=>{
+ const error=new Error('Public API failure: protocol/503/SYNTHETIC_SECRET');
+ const encoded=JSON.stringify(nativeOutcome({diagnosis:nativeFailure(error)}));
+ expect(JSON.parse(encoded).diagnosis.publicStatus).toBe(503);expect(encoded).not.toContain('SYNTHETIC_SECRET');
+ for(const status of ['SYNTHETIC_SECRET',0,600,403.5]){
+  expect(nativeOutcome({diagnosis:{code:'public_api',publicStatus:status}}).diagnosis).not.toHaveProperty('publicStatus');
+ }
+});
 it('does not grant a public pass for failed cleanup or arbitrary status/phase strings', () => {
   expect(nativeOutcome({status: 'passed', cleanupVerified: false})).toMatchObject({status: 'failed', failure: 'qualification_failed'});
   const outcome = nativeOutcome({status: 'TOKEN', phase: 'TOKEN', architecture: 'TOKEN', revision: 'TOKEN'});

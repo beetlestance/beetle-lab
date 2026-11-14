@@ -28,6 +28,16 @@ The corrected normal harness then passed the unchanged scanned de4f908 ARM64 sta
 in 47.530 s: eight artifacts, real k6/export, restart persistence and verified cleanup.
 Hosted confirmation remains separate; this does not resolve the original guard stop.
 
+With the probe corrected, both hosted architectures passed ordinary k6 execution,
+artifact checks and offline export. Their next failure was a settings GET after
+the second Compose startup. That boundary now uses the existing bounded GET
+readiness owner before asserting the exact saved settings. No mutation is retried
+and no session is replaced. Authorization/scope refusal, invalid requests, caller
+cancellation and permanent errors still fail immediately; transient reads retain
+the 100-call/45-second cap, share one cancellation signal and reject late success.
+Public failures may include only a validated numeric HTTP status. Hosted proof of
+this correction is pending; no previous failure or transport-latency claim is erased.
+
 ## Public read timeout
 
 An unmodified de4f908 run failed a public run read, although durable metadata later

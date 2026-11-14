@@ -15,6 +15,12 @@ function code(error: Error): string {
   if (error.message === 'Public readiness deadline') return 'readiness';
   return 'internal';
 }
+function publicStatus(error:Error):number|null{
+  const match=/^(?:Public API failure: [a-z_]+\/|Unexpected authenticated readiness refusal: )([1-5][0-9]{2})\//.exec(error.message);
+  return match?Number(match[1]):null;
+}
 export function nativeFailure(error: unknown) {
-  return error instanceof Error ? {code: code(error), site: site(error)} : {code: 'internal', site: null};
+  if(!(error instanceof Error))return {code:'internal',site:null};
+  const status=publicStatus(error);
+  return {code:code(error),site:site(error),...(status===null?{}:{publicStatus:status})};
 }

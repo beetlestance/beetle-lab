@@ -17,7 +17,9 @@ function location(input: unknown) {
 }
 function diagnosis(input: unknown) {
   const value = input && typeof input === 'object' ? input as Record<string, unknown> : {};
-  return {code: member(value.code, nativeFailureCodes) ?? 'internal', site: location(value.site)};
+  const status=value.publicStatus;
+  const http=typeof status==='number'&&Number.isInteger(status)&&status>=100&&status<600?{publicStatus:status}:{};
+  return {code: member(value.code, nativeFailureCodes) ?? 'internal', site: location(value.site),...http};
 }
 function fixedImages(input: unknown): Readonly<Record<string, string | null>> {
   const source = input && typeof input === 'object' ? input as Readonly<Record<string, unknown>> : {};
