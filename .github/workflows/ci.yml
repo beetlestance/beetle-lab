@@ -16,10 +16,10 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  checks:
-    name: ci/checks
+  source:
+    name: ci/source
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -29,10 +29,59 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run test:legacy
-      - run: npm run verify:v2
+      - name: Check generated contracts, API and compiler
+        run: |
+          npm run check:contracts
+          npm run check:api
+          npm run check:k6
+      - run: npm run typecheck
+        env:
+          NODE_OPTIONS: --max-old-space-size=2048
+      - run: npm run lint
+      - run: npm run check:architecture
+      - run: npm run check:docs
+      - run: npm run build:web
       - run: npm run build:api
       - run: npm run smoke:api
       - run: npm run smoke:input-controls
+
+
+  tests:
+    name: ci/tests (${{ matrix.shard }}/6)
+    needs: source
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    env:
+      NODE_OPTIONS: --max-old-space-size=1024
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Run the assigned rewrite test shard
+        run: npm run test:v2 -- --shard=${{ matrix.shard }}/6 --reporter=default
+
+  checks:
+    name: ci/checks
+    if: ${{ always() }}
+    needs: [source, tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require successful source checks and every test shard
+        env:
+          SOURCE_RESULT: ${{ needs.source.result }}
+          TEST_RESULT: ${{ needs.tests.result }}
+        run: |
+          test "$SOURCE_RESULT" = success
+          test "$TEST_RESULT" = success
 
   container:
     name: ci/container
