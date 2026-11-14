@@ -1,5 +1,5 @@
-ARG NODE_IMAGE=node:24-alpine@sha256:a34ab6d7f6f4813f4d0c5469d74685604b962fbdbf5793a7bc7b4998ecb867c8
-ARG K6_IMAGE=grafana/k6:2.2.0@sha256:9bd01d6941fca969cb61bb57d2da5ee9b385fe2aa8881df3798c196564d6ace6
+ARG NODE_IMAGE=node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5
+ARG K6_IMAGE=grafana/k6:2.4.0@sha256:d41bb79cd8de5a7ad619b53570e3712633e8bff0937010a5c6c57a4747e7a276
 
 FROM scratch AS workspace-manifests
 COPY package.json package-lock.json /
@@ -40,9 +40,12 @@ RUN node -e "if (process.versions.node.split('.')[0] !== '24') throw new Error('
 FROM ${K6_IMAGE} AS native-k6
 
 FROM ${NODE_IMAGE} AS engine-base
+# Runtime uses bundled code and installed engine dependencies, never package managers.
+RUN rm -rf /usr/local/lib/node_modules/npm /opt/yarn-* \
+    /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/yarn /usr/local/bin/yarnpkg
 ARG VCS_REF=unknown
 LABEL org.opencontainers.image.source="https://github.com/beetlestance/beetle-lab" \
-      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.licenses="MIT AND AGPL-3.0" \
       org.opencontainers.image.revision=$VCS_REF
 WORKDIR /beetle
 ENV NODE_ENV=production
@@ -56,6 +59,7 @@ COPY --from=bundle /build/engines/k6/dist/bootstrap ./bootstrap
 COPY --from=bundle /build/engines/k6/dist/runtime ./runtime
 COPY --from=bundle /build/engines/k6/dist/plan ./plan
 COPY LICENSE ./LICENSE
+COPY engines/k6/licenses /usr/share/licenses/k6
 RUN mkdir -p input secrets output image \
     && printf '{}\n' > image/empty.json \
     && chmod 0444 image/empty.json \

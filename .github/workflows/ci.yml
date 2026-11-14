@@ -215,6 +215,24 @@ jobs:
             "beetle-candidate-installer:$CANDIDATE_REVISION" \
             "beetle-candidate-engine:$CANDIDATE_REVISION" \
             "beetle-candidate-export:$CANDIDATE_REVISION"
+      - name: Install pinned image scanner
+        run: bash scripts/install-ci-trivy.sh "$RUNNER_TEMP/beetle-trivy"
+      - name: Inventory dependencies and gate candidate image vulnerabilities
+        env:
+          CANDIDATE_REVISION: ${{ github.sha }}
+          CANDIDATE_ARCHITECTURE: ${{ matrix.arch }}
+        run: |
+          bash scripts/rewrite-supply-chain.sh "$CANDIDATE_REVISION" "$CANDIDATE_ARCHITECTURE" \
+            "$RUNNER_TEMP/beetle-trivy/trivy" "$RUNNER_TEMP/rewrite-supply-chain"
+      - name: Retain image identities, SBOMs, license and vulnerability reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rewrite-supply-chain-${{ matrix.arch }}-${{ github.sha }}
+          path: ${{ runner.temp }}/rewrite-supply-chain/*.*
+          if-no-files-found: warn
+          retention-days: 14
+          compression-level: 6
 
   container:
     name: ci/container

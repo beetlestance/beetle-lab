@@ -93,5 +93,5 @@ it('refuses a substituted numeric artifact and preserves it without declaring a 
 it('image profile contains only fixed mounted paths and installed pins', () => {
   const options = imageOptions(new AbortController().signal);
   expect([options.inputRoot, options.secretRoot, options.outputRoot]).toEqual(['/beetle/input', '/beetle/secrets', '/beetle/output']);
-  expect(options.installed.version).toBe('2.2.0'); expect(options.installed.configVersion).toBe(1);
+  expect(options.installed.version).toBe('2.4.0'); expect(options.installed.configVersion).toBe(1);
 });

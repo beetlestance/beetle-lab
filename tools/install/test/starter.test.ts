@@ -34,7 +34,7 @@ it('ships the actual schema and explicit nonexecutable image template', () => {
   const r = createStarterRequest(options); const manifest = r.engine.manifest;
   expect(r.engine).toMatchObject({ manifestId: 'k6-v1', profileId: 'k6-local', catalogVersion: 1, configVersion: 1, tmpfsBytes: 16777216 });
   expect(manifest).toEqual({
-    engineId: 'k6', engineVersion: '2.2.0', imageDigest: 'sha256:' + '0'.repeat(64), protocolVersion: '1.0',
+    engineId: 'k6', engineVersion: '2.4.0', imageDigest: 'sha256:' + '0'.repeat(64), protocolVersion: '1.0',
     protocolRange: { minimum: '1.0', maximum: '1.0' },
     schemas: { config: createK6ConfigSchema(digest).schemaId, result: 'https://beetle-lab.dev/contracts/runner/v1/engine-result' },
     capabilities: ['http'], supportedControls: ['cpu', 'memory', 'pids', 'timeout', 'output'],

@@ -1,0 +1,11 @@
+Beetle Lab code is MIT licensed. The bundled, unmodified k6 v2.4.0 binary is
+separately licensed under the GNU Affero General Public License, version 3.
+Its license is provided alongside this notice as k6.txt.
+
+Upstream project: https://github.com/grafana/k6
+Exact release: https://github.com/grafana/k6/releases/tag/v2.4.0
+Corresponding upstream source: https://github.com/grafana/k6/tree/v2.4.0
+Source archive: https://github.com/grafana/k6/archive/refs/tags/v2.4.0.tar.gz
+
+Image and production-dependency inventories describe additional third-party
+components; this notice does not relicense those components as MIT.
