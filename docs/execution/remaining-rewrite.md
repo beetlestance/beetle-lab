@@ -1,6 +1,6 @@
 # Remaining k6 rewrite packets
 
-Baseline:21aa880 plus the [inventory audit](../verification/inventory-audit.md).
+Baseline:4e2eba0 plus the [inventory audit](../verification/inventory-audit.md).
 Scope: finish R0–R4 k6 replacement. These are completion criteria, not a claim
 that each packet requires a new framework or that all existing evidence is stale.
 Cleanup ACK/driver/recovery/settlement/protected retention are locally complete.
@@ -11,7 +11,7 @@ No new Goal, push, registry publication or deployment is authorised by this page
 | Packet | Inventory | Deliverable and exit condition | Dependencies |
 | --- | --- | --- | --- |
 | B01 namespace deletion | F02,N01 | Locally implemented empty-only routes/controls, paid markers, protected references and exact replay; [evidence](../verification/namespace-deletion.md) | Nonempty recursive maintenance is not implemented |
-| B02 directory inputs | F03 | Bounded tree selection/intake preserving relative folders; explicit per-file progress/conflicts/recovery; certify immutable replacement flow and pinned originals; no destructive overwrite | Existing input transfer/publication; B01 only for destructive interactions |
+| B02 directory inputs | F03 | Locally implemented bounded tree intake with per-file progress, explicit conflicts/recovery and immutable replacement/pinned originals; [evidence](../verification/directory-inputs.md) | Packaged browser/platform acceptance remains; no overwrite/atomic rollback |
 | B03 suite summaries | F04,F06 | Locally implemented selected-revision target/schedule facts and latest/full exact-suite history; [evidence](../verification/suite-overview.md) | Catalogue placement deferred to UI redesign/read-model design; packaged acceptance remains |
 | B04 diagnostic custody | F07,F11 | Bounded, redacted native diagnostics with durable viewing/replay and explicit overflow/loss; preserve secret/cancellation/output-budget ownership | Review source, schema, storage charge and retention lifetime first |
 | B05 warning guidance | F10 | Locally implemented bounded native warning artifact and configured single-arrival guidance; [evidence](../verification/k6-warning-guidance.md) | Independent scalar-only capture; B04 raw diagnostic replay and packaged acceptance remain separate |

@@ -1,6 +1,7 @@
 # Rewrite inventory acceptance audit
 
-Audit baseline:21aa880. Documentation/source inspection only; no new runtime pass.
+Audit baseline:4e2eba0 with the scoped directory-input addition. This ledger
+reconciles source and recorded evidence; it does not claim a new full-suite pass.
 Authority: [inventory](../current-features.md), [acceptance](../verification.md).
 All34 F IDs and both N IDs are mapped below. Local evidence belongs to its recorded
 source/environment; this audit does not requalify it against every later change.
@@ -12,7 +13,7 @@ No complete A01–A09 or R0–R4 release acceptance is inferred.
 | --- | --- | --- |
 | F01 | [Workspace overview](workspace-overview.md), [organisation overview](organization-overview.md) | Packaged browser/platform acceptance |
 | F02 | [Namespace handlers](../../app/src/adapters/inbound/http/namespaces/index.ts), [availability](reference-availability.md) | [Empty-only DELETE](namespace-deletion.md) now local; packaged acceptance and explicit nonempty restriction |
-| F03 | [Input controls](input-controls.md), [upload](../../web/src/features/input-upload/index.tsx) | Directory intake; certify replacement via immutable inputs, not destructive overwrite |
+| F03 | [Input controls](input-controls.md), [directory intake and replacement](directory-inputs.md) | Bounded local tree intake/revision replacement implemented; packaged browser/platform acceptance |
 | F04 | [Authoring](suite-authoring.md), [configuration/history summary](suite-overview.md) | Selected-view summaries local; catalogue placement deferred; packaged acceptance |
 | F05 | [Run controls](run-controls.md), [native app](native-application-k6.md) | Packaged target override/cancel and failure acceptance |
 | F06 | [Filters](run-history-query.md), [scalars](run-history-summary.md), [search](run-history-search.md), [exact suite](suite-overview.md) | Browser/platform acceptance; preserve documented search differences |
@@ -21,13 +22,13 @@ No complete A01–A09 or R0–R4 release acceptance is inferred.
 | F09 | [Suite compiler](../../engines/k6/compiler/suite/requests.ts), [archive](k6-metric-archive.md) | Endpoint-name/cardinality acceptance through packaged charts |
 | F10 | [Load advice](load-advice.md), [native warnings/configured guidance](k6-warning-guidance.md) | Packaged/browser/platform acceptance |
 | F11 | [Archive](k6-metric-archive.md), [result](run-result-read.md), [diagnostic reader](../../engines/k6/wrapper/process/metrics.ts) | Retained logs absent: bounded classified warning evidence is separate from raw logs; certify snapshot/redaction/replay |
-| F12 | [Delivery](delivery-runtime.md), [authority](../design/lld/delivery-authority.md), [cleanup recovery](cleanup-agent-crash.md) | Full active-delivery restart and cold-restore acceptance, not orphan guessing |
+| F12 | [Delivery](delivery-runtime.md), [authority](../design/lld/delivery-authority.md), [cleanup recovery](cleanup-agent-crash.md), [cold recovery](cold-recovery.md) | Cold historical restore and graceful backend restart local; full active-delivery crash/platform acceptance |
 | F13 | [Comparison service](run-comparison-service.md), [controls](run-comparison-controls.md) | Browser two/four-run selection, config/environment/chart acceptance |
 | F14 | [Reports](performance-reports.md), [controls](report-controls.md), [retention](native-retention.md) | Browser inline/save and full release deletion matrix |
 | F15 | [Public export](public-standalone-export.md), [source Compose](compose-first-boot.md) | Packaged export failure/secret/capability and download acceptance |
 | F16 | [Command search](command-search.md), [shell](../../web/src/app) | Actual keyboard/themes/viewports/accessibility matrix |
 | F17 | [Embedded reference](embedded-reference.md), [availability](reference-availability.md) | Packaged docs/skill downloads and actual route-status acceptance |
-| F18 | [Source Compose](compose-first-boot.md), [recipes](container-recipes.md) | Matched current source/pull installs, persistence and both architectures |
+| F18 | [Source Compose](compose-first-boot.md), [recipes](container-recipes.md), [historical restore](cold-recovery.md) | Matched current source/pull installs, default-UID full cold backup, persistence and both architectures |
 | F19 | [CI workflow](../../.github/workflows/ci.yml) | Rewrite source checks exist; container/publish still target root legacy Dockerfile |
 
 ## Engine semantics and additions
@@ -61,21 +62,22 @@ before closing an ID. V14/V24 additionally require explicit applicability decisi
 | IDs | Existing evidence entrypoints | Outstanding proof |
 | --- | --- | --- |
 | V01,V22 | [Admission](staging-admission.md), [delivery](delivery-runtime.md) | Real shared-pool parallel/isolated pressure and no oversubscription |
-| V02,V03,V04,V12 | [Delivery](delivery-runtime.md), [authority](authority-foundations.md), [native recovery](native-settlement.md) | Remaining active-delivery phases, one load stream and supported restore |
+| V02,V03,V04,V12 | [Delivery](delivery-runtime.md), [authority](authority-foundations.md), [native recovery](native-settlement.md) | Remaining active-delivery crash phases and one load stream; historical restore has separate local evidence |
 | V05,V13 | [Cancellation](cancellation.md), [durable stop](durable-stop.md), [deadline](timeout-guard.md) | Packaged race/grace/useful-progress matrix |
 | V06,V07,V17 | [Agent runtime](agent-runtime.md), [engine image](engine-image.md), [resources](attempt-resources.md) | Native OOM/CPU/PIDs/descendants, accurate causes and doctor refusal |
 | V08,V09 | [Metric archive](k6-metric-archive.md), [distributions](k6-distributions.md), [input bounds](storage-intake.md) | Loaded flood/slow-reader/high-cardinality memory and cancellation |
 | V10,V15 | [File custody](output-files.md), [native retention](native-retention.md), [input controls](input-controls.md) | Full-disk/interrupted input/publication/delete; never repeat test side effects |
 | V11,V16 | [Outcome mapper](k6-outcomes.md), [native app](native-application-k6.md) | Final invalid-result, unexpected-route and secret-canary fixtures |
 | V14 | [Resource contract](../design/lld/resources-observability.md) | Audit claims: function spans cannot imply per-function RSS/CPU; no feature expansion |
-| V18 | [Source first boot](compose-first-boot.md), [authority](../design/lld/delivery-authority.md) | Pull install, supported consistent backup/restore and v2 rollback |
+| V18 | [Source first boot](compose-first-boot.md), [cold recovery](cold-recovery.md) | Cold historical tooling locally implemented; pull install, full default-UID/platform backup/restore and v2 rollback acceptance remain |
 | V19,V20 | [Namespace cases](../../app/test/domain/namespaces.test.ts), [retention](retention-parent.md), [comparison](run-comparison-service.md) | Complete wrong-org/cache/cursor/export and move-cycle matrix |
 | V21 | [Settings contract](../design/lld/organization-settings.md), [retention](retention-accounting.md) | Active snapshots, lower-ceiling draining and explicit purge acceptance |
 | V23,V24 | [Run HTTP](run-http.md), [resources](resource-observation.md), [capacity](capacity-wire.md) | Complete schema/response fixtures; measured idle/thermal support or explicit unsupported behavior |
 
 ## Audit limits and next action
 
-Source inspection found concrete gaps; existing tests/reports were read, not rerun.
+Source inspection confirmed directory intake and diagnostic text gaps. Directory
+intake now has scoped checks; other reports retain their original evidence scope.
 Historical evidence remains bounded by its original inputs. In particular the25
 baseline failures recorded during cleanup-control work need exact-fixture triage;
 this audit does not assert a current failure count or green full suite.

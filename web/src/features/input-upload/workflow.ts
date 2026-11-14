@@ -3,7 +3,7 @@ import type { ApiClient, CreateInputRequest, InputRecord, InputTransferClient,
 
 export type Phase = 'idle' | 'prepare' | 'replay-create' | 'refresh' | 'resume'
   | 'replay-seal' | 'publishing' | 'complete' | 'stopped';
-type Action = Exclude<Phase, 'idle' | 'publishing' | 'complete' | 'stopped'>;
+export type UploadAction = Exclude<Phase, 'idle' | 'publishing' | 'complete' | 'stopped'>;
 export interface UploadState {
   readonly phase: Phase;
   readonly busy: boolean;
@@ -48,7 +48,7 @@ export class UploadWorkflow {
     const scope = Object.freeze({ kind: 'workspace' as const,
       organizationId: this.options.workspace.scope.organizationId, workspaceId: this.options.workspace.id });
     this.intent = { file, metadata: Object.freeze({ name: name.trim(), folderId, scope, requestId: crypto.randomUUID() }) };
-    void this.run('prepare');
+    return this.run('prepare');
   }
   dispose() {
     this.departed = true;
@@ -70,7 +70,7 @@ export class UploadWorkflow {
       message: 'Local draft cleared. A partial backend input can remain; no backend data was deleted.' };
     this.options.changed(this.state);
   }
-  async run(action: Action) {
+  async run(action: UploadAction) {
     if (!this.canRun(action)) return;
     const controller = new AbortController();
     this.active = controller;
@@ -85,7 +85,7 @@ export class UploadWorkflow {
       this.finish();
     }
   }
-  private canRun(action: Action) {
+  private canRun(action: UploadAction) {
     if (!this.intent || this.state.busy || this.departed) return false;
     if (action === 'refresh') return !!this.intent.id;
     return action === this.state.phase || (action === 'prepare' && this.state.phase === 'idle');
@@ -96,7 +96,7 @@ export class UploadWorkflow {
     if (this.progressChanged) { this.progressChanged = false; this.options.invalidate(); }
     this.update({ busy: false });
   }
-  private async perform(action: Action, signal: AbortSignal) {
+  private async perform(action: UploadAction, signal: AbortSignal) {
     if (action === 'prepare') {
       await this.prepare(signal);
       await this.create(signal);
@@ -136,7 +136,12 @@ export class UploadWorkflow {
     this.recovery = 'replay-create';
     const reply = await this.options.api.createInput({ params: this.params(), body: intent.body, signal });
     this.check(signal);
-    if (!reply.ok) throw new Paused('replay-create', `${failed} Create may have taken effect. Replay uses the identical request.`);
+    if (!reply.ok) {
+      if (reply.error.protocol && ['conflict', 'invalid_value', 'not_found', 'forbidden', 'body_limit', 'malformed_request'].includes(reply.error.protocol.code)) {
+        throw new Paused('stopped', 'Input creation was refused. Existing inputs were not overwritten. Choose a different name or destination in a new draft.');
+      }
+      throw new Paused('replay-create', `${failed} Create may have taken effect. Replay uses the identical request.`);
+    }
     if (intent.id && intent.id !== reply.value.id) throw new Paused('stopped', 'Input identity changed. No further bytes will be sent.');
     intent.id = reply.value.id;
     this.bind(reply.value);

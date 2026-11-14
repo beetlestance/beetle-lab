@@ -1,3 +1,4 @@
+import { inputScopeKey } from './scope.js';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ApiClient, InputTransferClient, Workspace } from '@beetle/contracts/api';
@@ -6,15 +7,8 @@ import { queryKeys } from '../../app/queries.js';
 import { FolderPicker } from './FolderPicker.js';
 import { UploadWorkflow } from './workflow.js';
 import type { UploadState } from './workflow.js';
+import { UploadRecoveryActions } from './recovery.js';
 import './upload.css';
-
-const owners = new WeakMap<object, number>();
-let nextOwner = 0;
-function ownerId(owner: object) {
-  let id = owners.get(owner);
-  if (id === undefined) { id = ++nextOwner; owners.set(owner, id); }
-  return id;
-}
 
 /** Prepared bytes and request identities retire with their workspace or client. */
 export function UploadInput({ workspace }: { workspace: Workspace }) {
@@ -24,7 +18,7 @@ export function UploadInput({ workspace }: { workspace: Workspace }) {
     <h2>Upload input</h2><p>Input transfer is unavailable for this session.</p>
     <button disabled>Upload input</button>
   </section>;
-  const identity = `${workspace.scope.organizationId}:${workspace.id}:${ownerId(api)}:${ownerId(transfers)}`;
+  const identity = inputScopeKey(workspace, api, transfers);
   return <UploadScope key={identity} workspace={workspace} api={api} transfers={transfers} />;
 }
 
@@ -75,19 +69,8 @@ function UploadProgress({ state, workflow, discard }: {
     {state.record && <p className="number">Last confirmed: {state.record.state}, {state.record.offset} / {state.record.bytes} bytes</p>}
     {state.retained && <p>A partial backend input can remain after cancellation, departure, or clearing this local draft.</p>}
     <div className="actions">
-      {state.busy ? <button onClick={() => workflow?.cancel()}>Cancel upload</button> : <RecoveryActions state={state} workflow={workflow} />}
+      {state.busy ? <button onClick={() => workflow?.cancel()}>Cancel upload</button> : <UploadRecoveryActions state={state} run={action => {void workflow?.run(action);}} />}
       {state.retained && <button disabled={state.busy} onClick={discard}>{state.phase === 'complete' ? 'Clear completed draft' : 'Discard local draft'}</button>}
     </div>
   </div>;
-}
-
-function RecoveryActions({ state, workflow }: { state: UploadState; workflow: UploadWorkflow | null }) {
-  return <>
-    {state.phase === 'prepare' && <button onClick={() => void workflow?.run('prepare')}>Retry preparation</button>}
-    {state.phase === 'replay-create' && <button onClick={() => void workflow?.run('replay-create')}>Replay identical create</button>}
-    {state.phase === 'resume' && <button onClick={() => void workflow?.run('resume')}>Resume upload</button>}
-    {state.phase === 'replay-seal' && <button onClick={() => void workflow?.run('replay-seal')}>Replay identical seal</button>}
-    {state.record && <button onClick={() => void workflow?.run('refresh')}>Refresh upload status</button>}
-    {state.phase === 'refresh' && !state.record && <button onClick={() => void workflow?.run('refresh')}>Refresh upload status</button>}
-  </>;
 }

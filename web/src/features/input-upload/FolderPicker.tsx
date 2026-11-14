@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useId } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Workspace } from '@beetle/contracts/api';
 import { readResult, useApi } from '../../app/api.js';
@@ -9,10 +9,10 @@ export interface SelectedFolder { readonly id: string; readonly label: string }
 export function FolderPicker({ workspace, selected, select, disabled }: {
   workspace: Workspace; selected: SelectedFolder; select: (folder: SelectedFolder) => void; disabled: boolean;
 }) {
-  const api = useApi();
+  const id = useId(); const api = useApi();
   const cache = useQueryClient();
   const params = { organizationId: workspace.scope.organizationId, workspaceId: workspace.id };
-  const prefix = [...queryKeys.folders(params.organizationId, params.workspaceId), 'upload'];
+  const prefix = [...queryKeys.folders(params.organizationId, params.workspaceId), 'upload', id];
   const identity = JSON.stringify(prefix);
   const page = usePage(prefix);
   const query = useQuery({ queryKey: [...prefix, page.cursor], gcTime: 0, enabled: !disabled,
@@ -25,8 +25,8 @@ export function FolderPicker({ workspace, selected, select, disabled }: {
   const items = query.data?.items.filter(folder => folder.id !== workspace.rootFolderId) ?? [];
   const retained = selected.id !== workspace.rootFolderId && !items.some(folder => folder.id === selected.id);
   return <fieldset className="upload-folders" disabled={disabled}>
-    <label htmlFor="upload-folder">Destination folder</label>
-    <select id="upload-folder" value={selected.id} onChange={event => {
+    <label htmlFor={id}>Destination folder</label>
+    <select id={id} value={selected.id} onChange={event => {
       if (event.target.value === selected.id) return;
       const folder = items.find(item => item.id === event.target.value);
       select(folder ? { id: folder.id, label: folder.name } : { id: workspace.rootFolderId, label: 'Workspace root' });

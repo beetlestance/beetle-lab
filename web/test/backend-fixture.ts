@@ -1,10 +1,11 @@
+import { initializeBackendRecovery } from '../../app/src/bootstrap/recovery-control/index.js';
 import { offlineAgentFixture } from '../../tools/fixtures/backend-agent.js';
 import { spawn } from 'node:child_process';
 import type { ChildProcessByStdio } from 'node:child_process';
 import type { Readable } from 'node:stream';
 import { createServer } from 'node:net';
 import { once } from 'node:events';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -44,12 +45,13 @@ async function installation(root: string) {
   values.pool.storageBytes = 2_000_000; values.pool.freeSpaceReserveBytes = 1000;
   await mkdir(join(root, 'data'), { mode: 0o700 });
   const record = { id: randomUUID(), version: 1 as const, schemaVersion: 2 as const, scope: { kind: 'installation' as const }, values };
-  await writeFile(join(root, 'installation.json'), JSON.stringify(record), { mode: 0o600 }); return record;
+  await writeFile(join(root, 'installation.json'), JSON.stringify(record), { mode: 0o600 });
+  initializeBackendRecovery(join(root, 'data', 'recovery-control.sqlite'), record.id); return record;
 }
 async function serve(root: string, work: (origin: string, token: string) => Promise<void>): Promise<void> {
   const record = await installation(root); const agent = await offlineAgentFixture(root, record); const port = await ownedPort(); const origin = `http://127.0.0.1:${port}`;
   const child = spawn(process.execPath, ['app/dist/main.js'], { cwd: process.cwd(), env: {
-    BEETLE_AGENT_CONFIG_FILE: agent.path, PATH: process.env.PATH ?? '', BEETLE_CONFIG_FILE: join(root, 'installation.json'),
+    BEETLE_LOCAL_ACCESS: 'paired', BEETLE_AGENT_CONFIG_FILE: agent.path, PATH: process.env.PATH ?? '', BEETLE_CONFIG_FILE: join(root, 'installation.json'),
     BEETLE_DATA_DIR: join(root, 'data'), BEETLE_EXTERNAL_ORIGIN: origin, BEETLE_LISTEN_PORT: String(port),
   }, stdio: ['ignore', 'pipe', 'pipe'] });
   let closed = false;
@@ -67,7 +69,7 @@ async function serve(root: string, work: (origin: string, token: string) => Prom
 }
 /** Fresh private installation; no engine, target or shared database. */
 export async function withBackend(work: (origin: string, token: string) => Promise<void>): Promise<void> {
-  const root = await mkdtemp(join(tmpdir(), 'beetle-input-controls-'));
+  const root = await realpath(await mkdtemp(join(tmpdir(), 'beetle-input-controls-')));
   try { await serve(root, work); }
   finally { await rm(root, { recursive: true, force: true }); }
 }
