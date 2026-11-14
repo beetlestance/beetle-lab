@@ -14,15 +14,15 @@ const fixture = storageFixture();
 const servers: FastifyInstance[] = [];
 afterEach(async () => { await Promise.all(servers.splice(0).map(server => server.close())); });
 const auth = { authorization: 'SYNTHETIC_PAIRED_SESSION' };
-async function setup(newId?: () => string, readerOverride?: NamespaceReader) {
-  const metadata = await fixture.open();
+async function setup(newId?: () => string, readerOverride?: NamespaceReader, path?: string) {
+  const metadata = await fixture.open(path);
   let allocation = 40_000;
   const server = createApiServer({ classify: classifyMetadataError }); servers.push(server);
   configureSchemaCompilers(server, { schemas: apiSchemas, encodeJson });
   const authorize = vi.fn(async (request: FastifyRequest) => {
     if (request.headers.authorization !== auth.authorization) throw new ApiFault('unpaired');
   });
-  registerNamespaceRoutes(server, { store: metadata.namespaces, reader: readerOverride ?? metadata, digest,
+  registerNamespaceRoutes(server, { deletions: metadata.namespaceDeletions, store: metadata.namespaces, reader: readerOverride ?? metadata, digest,
     newId: newId ?? (() => uuid(++allocation)), authorize });
   async function org(name: string, slug: string): Promise<Organization> {
     const response = await server.inject({ method: 'POST', url: '/api/v2/organizations', headers: auth,
@@ -127,4 +127,35 @@ it('never publishes another scope when a broken reader mutates request authority
     const response = await server.inject({ url, headers: auth });
     expect(response.statusCode).toBe(404); expect(response.body).not.toContain(foreign.name);
   }
+});
+
+it('guards empty-only deletion and replays the exact response after the live namespace is gone',async()=>{
+ const {server,org,workspace}=await setup();const owner=await org('Delete team','delete-team');const project=await workspace(owner.id);
+ const url=`/api/v2/organizations/${owner.id}/workspaces/${project.id}`;
+ const payload={scope:project.scope,requestId:requestId(),expectedVersion:project.version};
+ expect((await server.inject({method:'DELETE',url,payload})).statusCode).toBe(401);
+ expect((await server.inject({method:'DELETE',url,headers:auth,payload:{...payload,expectedVersion:2}})).statusCode).toBe(409);
+ const first=await server.inject({method:'DELETE',url,headers:auth,payload});expect(first.statusCode).toBe(200);
+ const replay=await server.inject({method:'DELETE',url,headers:auth,payload});expect(replay.json()).toEqual(first.json());
+ expect((await server.inject({url,headers:auth})).statusCode).toBe(404);
+ const removed=await server.inject({method:'DELETE',url:`/api/v2/organizations/${owner.id}`,headers:auth,
+  payload:{scope:{kind:'installation'},requestId:requestId(),expectedVersion:owner.version}});
+ expect(removed.statusCode).toBe(200);
+});
+
+it('recovers a committed DELETE after TCP reply loss and compiled-worker reopen',async()=>{
+ const path=fixture.path();const first=await setup(undefined,undefined,path);let drop=false;let dropped=false;
+ first.server.addHook('onSend',async(request,reply,payload)=>{
+  if(drop&&request.method==='DELETE'){drop=false;dropped=true;reply.raw.destroy();}return payload;
+ });
+ const owner=await first.org('TCP delete','tcp-delete');const project=await first.workspace(owner.id);
+ const route=`/api/v2/organizations/${owner.id}/workspaces/${project.id}`;
+ const payload={scope:project.scope,requestId:requestId(),expectedVersion:project.version};
+ const address=await first.server.listen({host:'127.0.0.1',port:0});drop=true;
+ await expect(fetch(address+route,{method:'DELETE',headers:{...auth,'content-type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(2000)})).rejects.toThrow();
+ expect(dropped).toBe(true);await first.server.close();await fixture.close(first.metadata);
+ const second=await setup(undefined,undefined,path);
+ const replay=await second.server.inject({method:'DELETE',url:route,headers:auth,payload});expect(replay.statusCode).toBe(200);
+ expect(replay.json()).toMatchObject({id:project.id,version:2,state:'tombstoned',cleanup:'complete',requestId:payload.requestId});
+ expect((await second.metadata.inputs.storage()).chargedBytes).toBe(2048);
 });

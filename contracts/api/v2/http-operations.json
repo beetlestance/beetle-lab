@@ -49,7 +49,7 @@
     "error": "ApiError",
     "request": "DeleteOrganizationRequest",
     "params": "OrganizationParams",
-    "implementation": "planned"
+    "implementation": "implemented"
   },
   {
     "name": "getInstallationSettings",
@@ -185,7 +185,7 @@
     "error": "ApiError",
     "request": "DeleteWorkspaceRequest",
     "params": "WorkspaceParams",
-    "implementation": "planned"
+    "implementation": "implemented"
   },
   {
     "name": "listFolders",
@@ -229,7 +229,7 @@
     "error": "ApiError",
     "request": "DeleteFolderRequest",
     "params": "FolderParams",
-    "implementation": "planned"
+    "implementation": "implemented"
   },
   {
     "name": "openLocalBrowserSession",

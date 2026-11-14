@@ -9,7 +9,7 @@ Schema catalogue is complete, including runner common exactly once. Implementati
 | POST | /api/v2/organizations | implemented | none | none | CreateOrganizationRequest | 201 | Organization |
 | GET | /api/v2/organizations/{organizationId} | implemented | OrganizationParams | none | none | 200 | Organization |
 | PATCH | /api/v2/organizations/{organizationId} | implemented | OrganizationParams | none | PatchOrganizationRequest | 200 | Organization |
-| DELETE | /api/v2/organizations/{organizationId} | planned | OrganizationParams | none | DeleteOrganizationRequest | 200 | DeletionReceipt |
+| DELETE | /api/v2/organizations/{organizationId} | implemented | OrganizationParams | none | DeleteOrganizationRequest | 200 | DeletionReceipt |
 | GET | /api/v2/settings | implemented | none | none | none | 200 | InstallationSettings |
 | PATCH | /api/v2/settings | implemented | none | none | PatchInstallationSettingsRequest | 200 | InstallationSettings |
 | GET | /api/v2/organizations/{organizationId}/settings | implemented | OrganizationParams | none | none | 200 | OrganizationSettings |
@@ -22,11 +22,11 @@ Schema catalogue is complete, including runner common exactly once. Implementati
 | POST | /api/v2/organizations/{organizationId}/workspaces | implemented | OrganizationParams | none | CreateWorkspaceRequest | 201 | Workspace |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId} | implemented | WorkspaceParams | none | none | 200 | Workspace |
 | PATCH | /api/v2/organizations/{organizationId}/workspaces/{workspaceId} | implemented | WorkspaceParams | none | PatchWorkspaceRequest | 200 | Workspace |
-| DELETE | /api/v2/organizations/{organizationId}/workspaces/{workspaceId} | planned | WorkspaceParams | none | DeleteWorkspaceRequest | 200 | DeletionReceipt |
+| DELETE | /api/v2/organizations/{organizationId}/workspaces/{workspaceId} | implemented | WorkspaceParams | none | DeleteWorkspaceRequest | 200 | DeletionReceipt |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/folders | implemented | WorkspaceParams | PageQuery | none | 200 | FolderPage |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/folders | implemented | WorkspaceParams | none | CreateFolderRequest | 201 | Folder |
 | PATCH | /api/v2/organizations/{organizationId}/folders/{id} | implemented | FolderParams | none | PatchFolderRequest | 200 | Folder |
-| DELETE | /api/v2/organizations/{organizationId}/folders/{id} | planned | FolderParams | none | DeleteFolderRequest | 200 | DeletionReceipt |
+| DELETE | /api/v2/organizations/{organizationId}/folders/{id} | implemented | FolderParams | none | DeleteFolderRequest | 200 | DeletionReceipt |
 | POST | /api/v2/auth/local | implemented | none | none | OpenLocalBrowserRequest | 200 | BrowserSession |
 | POST | /api/v2/auth/pair | implemented | none | none | PairBrowserRequest | 200 | BrowserSession |
 | GET | /api/v2/auth/session | implemented | none | none | none | 200 | BrowserSession |

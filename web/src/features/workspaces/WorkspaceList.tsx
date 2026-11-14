@@ -1,3 +1,4 @@
+import { DeleteNamespace } from '../namespace-deletion/index.js';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
 import type { Workspace } from '@beetle/contracts/api';
@@ -34,7 +35,7 @@ export function WorkspaceList({ organizationId }: { organizationId: string }) {
       <ResourceTable title="Workspaces" headings={['Workspace', 'Version', 'Actions']} empty={!data.items.length}>
         {data.items.map(workspace => <tr key={workspace.id}>
           <th scope="row"><Link to={routes.workspace(organizationId, workspace.id)}>{workspace.name}</Link></th>
-          <td className="number">{workspace.version}</td><td><button disabled={editor.busy} aria-label={`Rename ${workspace.name}`} onClick={() => edit(workspace)}>Rename</button></td>
+          <td className="number">{workspace.version}</td><td><button disabled={editor.busy} aria-label={`Rename ${workspace.name}`} onClick={() => edit(workspace)}>Rename</button><DeleteNamespace target={{kind: 'workspace', entity: workspace}} refresh={refresh} /></td>
         </tr>)}
       </ResourceTable><Pagination page={page} next={data.nextCursor} />
     </>}</QueryState>

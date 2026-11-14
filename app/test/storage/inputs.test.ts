@@ -1,3 +1,4 @@
+import { initialize } from '../../src/adapters/outbound/sqlite/schema.js';
 import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import type { InputRecord } from '../../src/ports/inputs.js';
@@ -96,7 +97,7 @@ it('counts configured reserve once as headroom, accepts empty seals and checks a
   await expect(metadata.inputs.control(createInput(92, 0))).rejects.toMatchObject({ code: 'capacity_unavailable' });
   expect(await trustedPublish(metadata, a)).toMatchObject({ offset: 0, version: 3, state: 'published' });
   const path = fixture.path(); let huge = await fixture.open(path, inputOptions(Number.MAX_SAFE_INTEGER, 0)); await seed(huge); await fixture.close(huge);
-  const db = new DatabaseSync(path); db.prepare('UPDATE installation_storage_usage SET charged_bytes=?').run(Number.MAX_SAFE_INTEGER - 100); db.close();
+  const db = initialize(path); db.prepare('UPDATE installation_storage_usage SET charged_bytes=?').run(Number.MAX_SAFE_INTEGER - 100); db.close();
   huge = await fixture.open(path, { ...inputOptions(Number.MAX_SAFE_INTEGER, 0), runtime: null });
   await expect(huge.inputs.control(createInput(90, 0))).rejects.toMatchObject({ code: 'capacity_unavailable' });
   expect((await huge.inputs.storage()).chargedBytes).toBe(Number.MAX_SAFE_INTEGER - 100);

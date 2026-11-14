@@ -1,9 +1,11 @@
+import type { NamespaceDeletionStore } from '../../../../ports/namespace-deletion.js';
 import type { onRequestAsyncHookHandler } from 'fastify';
 import type { NamespaceStore } from '../../../../ports/namespaces.js';
 import type { NamespaceReader } from '../../../../ports/namespace-reader.js';
 import type { IntentDigest } from '../../../../application/namespaces/index.js';
 
 export interface NamespaceRouteOptions {
+  readonly deletions?: NamespaceDeletionStore;
   readonly store: NamespaceStore;
   readonly reader: NamespaceReader;
   readonly newId: () => string;

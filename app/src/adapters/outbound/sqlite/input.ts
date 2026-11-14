@@ -1,3 +1,4 @@
+import { captureNamespaceDeletionOperation } from './namespace-deletion/index.js';
 import { retentionOperation,captureRetentionOperation,retentionReplyLimit } from './retention-wire/index.js';
 import { settlementOperation,captureSettlementOperation } from './backend-settlement/index.js';
 import { historyOperation, captureHistoryOperation } from './run-history/index.js';
@@ -141,6 +142,7 @@ export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operati
   return checkedDeferredOperation(input,runtimeTtlMs);
 }
 function checkedDeferredOperation(input:Operation,runtimeTtlMs:number):Operation {
+  if(input.kind === 'deleteNamespace')return captureNamespaceDeletionOperation(input);
   if(settlementOperation(input)){try{return captureSettlementOperation(input);}catch{throw new StorageError('invalid_input');}}
   if(absenceOperation(input))return checkedAbsenceOperation(input);
   return checkedOutputOperation(input,runtimeTtlMs);
@@ -193,6 +195,7 @@ function dataProperty(value: unknown, key: string): unknown {
 }
 const fixedMessageLimits:Partial<Record<Operation['kind'],number>>={loadLocalSession:2048,saveLocalSession:2048,settleBackendOutput:2304,readBackendSettlement:2304};
 export function operationMessageLimit(operation: Operation): number {
+  if(operation.kind === 'deleteNamespace')return 4096;
   if(retentionOperation(operation))return 12288;
   if (exportOperation(operation)) return exportRequestLimit(operation);
   const fixed=fixedMessageLimits[dataProperty(operation,'kind') as Operation['kind']];if(fixed!==undefined)return fixed;
@@ -217,7 +220,7 @@ export function largeOperation(operation: Operation): boolean {
   }
   return suiteOperation(operation) || ['getExportOriginal','listExports','dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource', 'getRunResult', 'getRunEvents', 'listRunArtifacts'].includes(dataProperty(operation, 'kind') as string);
 }
-const fixedReplyLimits: Partial<Record<Operation['kind'], number>> = { historySummary: 16384, getWorkspaceOverview: 32768, settleBackendOutput:1536,readBackendSettlement:1536 };
+const fixedReplyLimits: Partial<Record<Operation['kind'], number>> = { deleteNamespace:2048, historySummary: 16384, getWorkspaceOverview: 32768, settleBackendOutput:1536,readBackendSettlement:1536 };
 export function operationReplyLimit(operation: Operation): number {
   if(retentionOperation(operation))return retentionReplyLimit(operation);
   const fixed = fixedReplyLimits[operation.kind];

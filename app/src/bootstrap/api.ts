@@ -81,7 +81,7 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     if (inputsDirectory !== undefined) inputRuntime = await openInputRuntime(inputsDirectory, store.inputs);
     if (agent) agentRuntime = await openAgentRuntime(agent, store);
     session.registerRoutes(server);
-    registerNamespaceRoutes(server, { store: store.namespaces, reader: store, newId: randomUUID,
+    registerNamespaceRoutes(server, { deletions: store.namespaceDeletions, store: store.namespaces, reader: store, newId: randomUUID,
       digest, authorize: session.authorize });
     registerSuiteRoutes(server, { store: store.suites, reader: store.suites, newId: randomUUID, digest, authorize: session.authorize });
     registerOverviewRoute(server,{reader:store.overview,authorize:session.authorize,now:()=>new Date().toISOString()});

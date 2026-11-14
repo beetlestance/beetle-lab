@@ -11,7 +11,7 @@ No complete A01–A09 or R0–R4 release acceptance is inferred.
 | ID | Source/evidence inspected | Closure still needed |
 | --- | --- | --- |
 | F01 | [Workspace overview](workspace-overview.md) | Cross-workspace overview; packaged browser |
-| F02 | [Namespace handlers](../../app/src/adapters/inbound/http/namespaces/index.ts), [availability](reference-availability.md) | Three protected DELETE handlers and controls |
+| F02 | [Namespace handlers](../../app/src/adapters/inbound/http/namespaces/index.ts), [availability](reference-availability.md) | [Empty-only DELETE](namespace-deletion.md) now local; packaged acceptance and explicit nonempty restriction |
 | F03 | [Input controls](input-controls.md), [upload](../../web/src/features/input-upload/index.tsx) | Directory intake; certify replacement via immutable inputs, not destructive overwrite |
 | F04 | [Authoring](suite-authoring.md), [suite catalogue](../../web/src/features/suites/index.tsx) | Catalogue currently has name/version/revision, not target/duration/latest run |
 | F05 | [Run controls](run-controls.md), [native app](native-application-k6.md) | Packaged target override/cancel and failure acceptance |
@@ -49,7 +49,7 @@ No complete A01–A09 or R0–R4 release acceptance is inferred.
 | F32 | [Target schema](../../contracts/runner/v1/target-runtime-report.schema.json), [views](target-observation-contract.md) | Supported field mapping and missing/sensor variants; no fabricated values |
 | F33 | [Summary implementation](../../web/src/features/runs/target-observations/summary.ts), [view evidence](target-observation-contract.md) | Packaged baseline/peak/final/cooldown and heuristic labels; legacy prose need not be copied |
 | F34 | [Rejection cases](../../engines/k6/test/suite/validation.test.ts), [scope decision](../../PLAN.md) | Retired deliberately; verify shell rejection and explain deferred typed tool steps |
-| N01 | [Namespace handlers](../../app/src/adapters/inbound/http/namespaces/index.ts), [settings contract](../design/lld/organization-settings.md) | Protected deletion and full cross-scope/move/cycle acceptance |
+| N01 | [Namespace handlers](../../app/src/adapters/inbound/http/namespaces/index.ts), [settings contract](../design/lld/organization-settings.md) | [Empty-only deletion](namespace-deletion.md) now local; full cross-scope/move/cycle acceptance |
 | N02 | [Settings UI](../../web/src/features/settings/index.tsx), [retention](retention-accounting.md), [parent scans](retention-parent.md) | Full inheritance/active-edit/capacity acceptance; no automatic purge or Run-pin affordance implied |
 
 ## Adversarial acceptance ledger

@@ -1,3 +1,4 @@
+import { deleteNamespaceRows } from './namespace-deletion/index.js';
 import { ParentRetentionSnapshots } from './retention-parent/index.js';
 import { ManualRunDeletionSnapshots } from './retention-manual/index.js';
 import { retentionOperation,captureRetentionOperation } from './retention-wire/index.js';
@@ -218,6 +219,7 @@ export class Store {
     }
   }
   private executeOutput(operation:Operation):Value {
+    if(operation.kind === 'deleteNamespace')return deleteNamespaceRows(this.db, operation.command, this.entities);
     if(outputOperation(operation))return this.outputs.execute(operation);
     if(eventOperation(operation))return this.events.execute(operation);
     return this.executeLegacy(operation);

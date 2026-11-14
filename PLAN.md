@@ -58,7 +58,7 @@ links the complete source/evidence inventory audit; final acceptance is still op
 | Cleanup/retention | Reserved ACK, automatic driver, native recovery, exact-once settlement/replay floors, protected preview/Apply/progress | [Cleanup index](docs/verification/output-retirement-progress.md), [retention recovery](docs/verification/native-retention.md) |
 
 [Operation availability](docs/verification/reference-availability.md) records the
-current62 JSON descriptors:59 implemented,3 planned namespace deletions.
+current62 JSON descriptors:62 implemented, including protected empty-only namespace deletion.
 Registration does not prove runtime readiness or complete feature acceptance.
 Native live activation uses [trusted image capability](docs/decisions/014-live-metric-approval-authority.md).
 
@@ -66,7 +66,7 @@ Native live activation uses [trusted image capability](docs/decisions/014-live-m
 
 | Work | Required completion |
 | --- | --- |
-| Namespace deletion | Scoped organisation/workspace/folder deletion and child/input/run/cleanup protection |
+| Namespace deletion | Empty-only deletion locally implemented; nonempty recursive maintenance unsupported; packaged acceptance remains |
 | Input/config parity | Directory-tree upload, immutable replacement acceptance, suite target/duration/last-run summaries |
 | Diagnostics/warnings | Bounded retained/replayed diagnostics, native warning classification and configured-scenario advice |
 | Overview | Cross-workspace rollups; existing workspace overview is locally verified |

@@ -1,3 +1,6 @@
+import { captureNamespaceDeletionReply } from './namespace-deletion/index.js';
+import type { NamespaceDeletionOperation } from './namespace-deletion/index.js';
+import type { NamespaceDeletionStore } from '../../../ports/namespace-deletion.js';
 import { retentionOperation,captureRetentionReply,retentionClient } from './retention-wire/index.js';
 import type { RetentionOperation,RetentionMetadata } from '../../../ports/retention.js';
 import { settlementOperation,captureSettlementValue } from './backend-settlement/index.js';
@@ -65,7 +68,7 @@ export interface MetadataOptions extends Bootstrap {
   /** Includes in-flight work; maximum 64. Close has one reserved slot. */
   queueLimit?: number;
 }
-interface Pending { retention?:RetentionOperation; settlement?:BackendSettlementOperation; history?: HistoryOperation; exportJob?:ExportOperation; localSession?: LocalSessionOperation; deletion?: OutputDeletionOperation; resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
+interface Pending { namespaceDeletion?:NamespaceDeletionOperation; retention?:RetentionOperation; settlement?:BackendSettlementOperation; history?: HistoryOperation; exportJob?:ExportOperation; localSession?: LocalSessionOperation; deletion?: OutputDeletionOperation; resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
   artifacts?: ArtifactReadOperation; absence?: AbsenceOperation; finalization?: FinalizationOperation; result?: RunKey; execution?: RunKey; runEvents?: RunEventsQuery; output?: OutputOperation; large: boolean; replyLimit: number; event?: EventOperation; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
 function validateLocation(options: MetadataOptions): void {
   if (typeof options.path !== 'string' || !options.path || options.path === ':memory:' || options.path.length > 4096 ||
@@ -249,6 +252,7 @@ export class Metadata {
     listSuites: query => this.call({ kind: 'listSuites', query }) as ReturnType<SuiteReader['listSuites']>,
     listRevisions: query => this.call({ kind: 'listRevisions', query }) as ReturnType<SuiteReader['listRevisions']>,
   };
+  readonly namespaceDeletions: NamespaceDeletionStore = {delete: command => this.call({kind: 'deleteNamespace', command}) as ReturnType<NamespaceDeletionStore['delete']>};
   readonly namespaces: NamespaceStore = { execute: command => this.call({ kind: 'namespace', command }) as
     ReturnType<NamespaceStore['execute']> };
   readonly settings: SettingsStore = { execute: command => this.call({ kind: 'settings', command }) as
@@ -338,7 +342,7 @@ export class Metadata {
   private resolve(reply: Extract<WorkerReply, { kind: 'result'; ok: true }>, pending: Pending): void {
     let value: Value;
     try {
-      value = pending.history ? captureHistoryReply(pending.history, reply.value) : this.readReply(pending, reply.value) ?? (pending.absence ? captureAbsenceReply(pending.absence, reply.value) : pending.finalization ? captureFinalizationReply(pending.finalization, reply.value) : pending.output ? captureOutputReply(pending.output, reply.value) : pending.event ? captureEventReply(pending.event, reply.value)
+      value = pending.history ? captureHistoryReply(pending.history, reply.value) : this.readDeletionReply(pending, reply.value) ?? (pending.absence ? captureAbsenceReply(pending.absence, reply.value) : pending.finalization ? captureFinalizationReply(pending.finalization, reply.value) : pending.output ? captureOutputReply(pending.output, reply.value) : pending.event ? captureEventReply(pending.event, reply.value)
         : pending.dispatch ? captureDispatchReply(pending.dispatch, reply.value)
         : pending.cancellation ? captureCancelRunReply(reply.value, pending.cancellation)
         : boundedCopy(reply.value, pending.replyLimit) as Value);
@@ -347,6 +351,7 @@ export class Metadata {
     pending.resolve(value);
   }
   private bindReadRequest(pending: Pending, operation: Operation): void {
+    if(operation.kind === 'deleteNamespace')pending.namespaceDeletion=operation;
     if(retentionOperation(operation))pending.retention=operation;
     if(settlementOperation(operation))pending.settlement=operation;
     if (historyOperation(operation)) pending.history = operation;
@@ -355,6 +360,10 @@ export class Metadata {
     if (artifactReadOperation(operation)) pending.artifacts = operation;
     if (operation.kind === 'getRunEvents') pending.runEvents = operation.query;
     if (operation.kind === 'getRunResult') pending.result = operation.key;
+  }
+  private readDeletionReply(pending: Pending, value: unknown): Value | undefined {
+    if(pending.namespaceDeletion)return captureNamespaceDeletionReply(pending.namespaceDeletion.command, value);
+    return this.readReply(pending, value);
   }
   private readReply(pending: Pending, value: unknown): Value | undefined {
     if(pending.retention)return captureRetentionReply(pending.retention,value);

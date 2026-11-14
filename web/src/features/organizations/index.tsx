@@ -1,3 +1,4 @@
+import { DeleteNamespace } from '../namespace-deletion/index.js';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
 import type { Organization } from '@beetle/contracts/api';
@@ -36,7 +37,7 @@ export function Organizations() {
       <ResourceTable title="Organizations" headings={['Organization', 'Slug', 'Version', 'Actions']} empty={!data.items.length}>
         {data.items.map(org => <tr key={org.id}>
           <th scope="row"><Link to={routes.organization(org.id)}>{org.name}</Link></th><td>{org.slug}</td><td className="number">{org.version}</td>
-          <td><button aria-label={`Rename ${org.name}`} disabled={editor.busy} onClick={() => edit(org)}>Rename</button></td>
+          <td><button aria-label={`Rename ${org.name}`} disabled={editor.busy} onClick={() => edit(org)}>Rename</button><DeleteNamespace target={{kind: 'organization', entity: org}} refresh={refresh} /></td>
         </tr>)}
       </ResourceTable><Pagination page={page} next={data.nextCursor} />
     </>}</QueryState>

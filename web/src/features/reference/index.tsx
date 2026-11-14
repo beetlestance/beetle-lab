@@ -18,10 +18,10 @@ export function Reference(){
   <p role="status">{page.items.length} of {page.total} matching operations.</p>
   {page.items.length===0?<p>No matching operations.</p>:<div className="table-scroll" tabIndex={0} role="region" aria-label="Public API operations">
    <table><caption>Generated public API operations</caption><thead><tr><th scope="col">Method</th><th scope="col">Route</th><th scope="col">Status</th><th scope="col">Success</th><th scope="col">Schema</th></tr></thead>
-    <tbody>{page.items.map(row=><tr key={row.name}><td>{row.method}</td><td><code>{row.path}</code></td><td>{row.implementation==='planned'?'Planned':'Implemented'}</td><td>{row.successStatus}</td>
+    <tbody>{page.items.map(row=><tr key={row.name}><td>{row.method}</td><td><code>{row.path}</code></td><td>{String(row.implementation)==='planned'?'Planned':'Implemented'}</td><td>{row.successStatus}</td>
      <td><button aria-label={`Inspect ${row.name}`} aria-pressed={row.name===operation?.name} onClick={()=>setSelected(row.name)}>Inspect</button></td></tr>)}</tbody></table></div>}
   {operation&&<section aria-label="Selected operation"><h2>{operation.name}</h2><p><code>{operation.method} {operation.path}</code> · HTTP {operation.successStatus}</p>
-   <p>{operation.implementation==='planned'?'Planned: this operation has schemas but is not implemented.':'Implemented in the standard configuration; local access, configured services and engine capabilities still apply.'}</p>
+   <p>{String(operation.implementation)==='planned'?'Planned: this operation has schemas but is not implemented.':'Implemented in the standard configuration; local access, configured services and engine capabilities still apply.'}</p>
    <p>Schema references ($ref) resolve against the downloaded catalogue. Requests also need the installation’s local session and mutation CSRF headers.</p>
    {(Object.keys(labels) as (keyof SchemaFields)[]).map(field=><SchemaSection key={`${operation.name}/${field}`} label={labels[field]} name={(operation as SchemaFields)[field]} />)}
   </section>}

@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { SettingsScope } from '@beetle/contracts/api';
-import { scopeKey,lower,boundedCopy } from './input.js';
+import { scopeKey,lower,boundedCopy } from './input-values.js';
 import { StorageError } from './protocol.js';
 interface Intent {readonly request:{readonly scope:SettingsScope;readonly requestId:string};readonly intentDigest:string}
 /** Shared receipt-first transaction participant. No caller callback or transaction commit. */

@@ -1,3 +1,4 @@
+import { namespaceDeletionRoutes } from './deletion.js';
 import type { FastifyInstance } from 'fastify';
 import { organizationRoutes } from './organizations.js';
 import { workspaceRoutes } from './workspaces.js';
@@ -14,5 +15,6 @@ export function registerNamespaceRoutes(server: FastifyInstance, options: Namesp
     organizationRoutes(scoped, dependencies);
     workspaceRoutes(scoped, dependencies);
     folderRoutes(scoped, dependencies);
+    namespaceDeletionRoutes(scoped, dependencies);
   });
 }

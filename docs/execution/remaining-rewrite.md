@@ -10,7 +10,7 @@ No new Goal, push, registry publication or deployment is authorised by this page
 
 | Packet | Inventory | Deliverable and exit condition | Dependencies |
 | --- | --- | --- | --- |
-| B01 namespace deletion | F02,N01 | Versioned scoped org/workspace/folder DELETE routes/controls; atomic refusals for protected children, inputs, runs and cleanup/replay ownership; exact retry and cross-scope/cycle tests | Review deletion semantics against retained epochs/tombstones before SQL |
+| B01 namespace deletion | F02,N01 | Locally implemented empty-only routes/controls, paid markers, protected references and exact replay; [evidence](../verification/namespace-deletion.md) | Nonempty recursive maintenance is not implemented |
 | B02 directory inputs | F03 | Bounded tree selection/intake preserving relative folders; explicit per-file progress/conflicts/recovery; certify immutable replacement flow and pinned originals; no destructive overwrite | Existing input transfer/publication; B01 only for destructive interactions |
 | B03 suite summaries | F04 | Bounded target/configured-duration/latest-run catalogue projection; unknowns explicit; no per-row config/result reads or false measured duration | Existing revision/history projection contracts |
 | B04 diagnostic custody | F07,F11 | Bounded, redacted native diagnostics with durable viewing/replay and explicit overflow/loss; preserve secret/cancellation/output-budget ownership | Review source, schema, storage charge and retention lifetime first |
@@ -18,9 +18,9 @@ No new Goal, push, registry publication or deployment is authorised by this page
 | B06 organisation overview | F01 | Scoped cross-workspace summary/recent/active views with bounded snapshot reads and explicit coverage/unknowns | Existing workspace overview; agree exact aggregation contract |
 | B07 recovery tooling | F12,F18 | Finish active-delivery restart cases; consistent bounded cold backup/restore, quiescence refusal, interrupted-restore startup fence, authority rotation and historical-only restored Runs | Delivery-authority contract; positive cleanup/settlement evidence already exists |
 
-B01 is the next ready implementation packet. Inspect funded retention epochs,
-permanent replay identities, references and deletion receipts before choosing
-empty-only versus cascading behavior; do not invent a cascade to satisfy a route.
+B01 uses explicit empty-only deletion, preserving epochs and replay identities.
+Current selected work continues with warnings and dashboard/history gaps.
+Never infer cascade authority from the existence of a DELETE route.
 B02–B06 are independent after their contracts freeze; B04→B05 is sequential.
 B07 has its own authority/state owner and must not share SQL edits with B01.
 Root implements directly by default, with required independent review for dangerous

@@ -1,8 +1,8 @@
 # Public operation availability
 
 Status: original reviewed reference correction atb70b33c, reconciled through21aa880.
-Current source catalogue:62 JSON descriptors,59 implemented,3 planned namespace
-DELETE operations. Retention parent previews and workspace/manual controls are now
+Current source catalogue:62 JSON descriptors,62 implemented. The empty-only
+namespace DELETE routes are now registered and locally verified; [evidence](namespace-deletion.md). Retention parent previews and workspace/manual controls are now
 implemented; unshipped parent Apply descriptors were retired. The original runtime
 registration fixture/evidence below belongs to its recorded source. Contract: [embedded reference](../design/lld/embedded-reference.md).
 
@@ -50,7 +50,7 @@ reviewer check lane ran.
 Registration is not endpoint outcome, engine execution or release qualification.
 The actual native HTTP asset test verifies source serving and fixed content bounds;
 no new Docker image was built or published. Running services were not redeployed.
-Namespace deletion remains unimplemented. Retention and history controls/scalars/
+Empty-only namespace deletion is now local. Retention and history controls/scalars/
 search are now locally implemented; see [retention](retention-accounting.md),
 [parent traversal](retention-parent.md), [history](run-history-query.md) and the
 [full inventory audit](inventory-audit.md). Current totals are catalogue inspection,

@@ -1,3 +1,4 @@
+import { DeleteNamespace } from '../namespace-deletion/index.js';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'react-router-dom';
 import type { Folder, Workspace } from '@beetle/contracts/api';
@@ -45,7 +46,7 @@ export function FolderList({ workspace }: { workspace: Workspace }) {
           <th scope="row">{folder.name}<small className="display-path">/{folder.displayPath.join('/')}</small></th>
           <td className="number identifier">{folder.id}</td><td className="number">{folder.version}</td>
           <td><div className="actions"><button disabled={editor.busy} aria-label={`Rename ${folder.name}`} onClick={() => edit(folder)}>Rename</button>
-            <button disabled={editor.busy || folder.id === workspace.rootFolderId} aria-label={`Move ${folder.name}`} onClick={() => edit(folder, true)}>Move</button></div></td>
+            <button disabled={editor.busy || folder.id === workspace.rootFolderId} aria-label={`Move ${folder.name}`} onClick={() => edit(folder, true)}>Move</button><DeleteNamespace target={{kind: 'folder', entity: folder}} refresh={refresh} disabled={folder.id === workspace.rootFolderId} /></div></td>
         </tr>)}
       </ResourceTable><Pagination page={page} next={data.nextCursor} />
     </>}</QueryState>

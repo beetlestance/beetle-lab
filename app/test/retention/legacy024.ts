@@ -1,7 +1,9 @@
+import {asSchema25} from '../storage/legacy025.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { transaction } from '../../src/adapters/outbound/sqlite/transaction.js';
 /** Synthetic empty-retention projection only; charged rows/epochs can never be rewound. */
 export function asSchema24(db:DatabaseSync):void{
+ if(db.prepare('PRAGMA user_version').get()?.user_version===26)asSchema25(db);
  const version=db.prepare('PRAGMA user_version').get()?.user_version;if(version===24)return;
  if(version!==25||db.prepare('SELECT 1 FROM retention_workspace_epochs LIMIT 1').get()||db.prepare('SELECT 1 FROM retention_snapshots LIMIT 1').get()
   ||db.prepare('SELECT 1 FROM retention_storage WHERE epoch_count<>0 OR snapshot_count<>0 OR charged_bytes<>0 OR clock_ms<>0').get())throw Error('Cannot project fixture with retention data');

@@ -57,8 +57,9 @@ uniqueness cannot admit duplicate root names. Start with maximum depth 8 and nam
 Move checks same workspace, target existence and acyclicity transactionally;
 optimistic versions reject conflicting moves. No cross-workspace moves in v2;
 explicit copy creates new identities later. Input manifests pin IDs/digests, not
-mutable display paths. Deletion refuses active/pinned dependencies and shows a
-bounded impact preview; recursive cleanup runs as admitted maintenance.
+mutable display paths. [Namespace deletion](namespace-deletion.md) initially permits empty scopes only
+and refuses retained dependencies. Recursive cleanup requires separately admitted
+maintenance and is not exposed by the empty-only DELETE controls.
 
 ## Settings ownership
 
