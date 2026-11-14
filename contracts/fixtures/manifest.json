@@ -518,5 +518,15 @@
     "path": "invalid/output-settlement-zero-floor.json",
     "schema": "OutputSettlementReply",
     "valid": false
+  },
+  {
+    "path": "valid/k6-warnings.json",
+    "schema": "LoadWarningArtifact",
+    "valid": true
+  },
+  {
+    "path": "invalid/k6-warnings-raw.json",
+    "schema": "LoadWarningArtifact",
+    "valid": false
   }
 ]

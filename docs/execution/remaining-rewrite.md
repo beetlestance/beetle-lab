@@ -14,14 +14,15 @@ No new Goal, push, registry publication or deployment is authorised by this page
 | B02 directory inputs | F03 | Bounded tree selection/intake preserving relative folders; explicit per-file progress/conflicts/recovery; certify immutable replacement flow and pinned originals; no destructive overwrite | Existing input transfer/publication; B01 only for destructive interactions |
 | B03 suite summaries | F04,F06 | Locally implemented selected-revision target/schedule facts and latest/full exact-suite history; [evidence](../verification/suite-overview.md) | Catalogue placement deferred to UI redesign/read-model design; packaged acceptance remains |
 | B04 diagnostic custody | F07,F11 | Bounded, redacted native diagnostics with durable viewing/replay and explicit overflow/loss; preserve secret/cancellation/output-budget ownership | Review source, schema, storage charge and retention lifetime first |
-| B05 warning guidance | F10 | Closed native-warning classification and configured-executor guidance; uncertainty/heuristic labels; no automatic config changes | B04 provides diagnostics; reuse existing observed-drop advice |
+| B05 warning guidance | F10 | Locally implemented bounded native warning artifact and configured single-arrival guidance; [evidence](../verification/k6-warning-guidance.md) | Independent scalar-only capture; B04 raw diagnostic replay and packaged acceptance remain separate |
 | B06 organisation overview | F01 | Locally implemented whole-organisation counts/activity and capped cross-workspace recent/active links; [evidence](../verification/organization-overview.md) | Packaged browser/platform acceptance remains |
 | B07 recovery tooling | F12,F18 | Finish active-delivery restart cases; consistent bounded cold backup/restore, quiescence refusal, interrupted-restore startup fence, authority rotation and historical-only restored Runs | Delivery-authority contract; positive cleanup/settlement evidence already exists |
 
 B01 uses explicit empty-only deletion, preserving epochs and replay identities.
-Current selected work continues with warnings and dashboard/history gaps.
+Selected namespace deletion, warning guidance and dashboard/history implementation is locally complete.
 Never infer cascade authority from the existence of a DELETE route.
-B02–B06 are independent after their contracts freeze; B04→B05 is sequential.
+B02–B06 have separate owners after contracts freeze; B05 captures scalar warnings
+without depending on B04 raw diagnostic retention.
 B07 has its own authority/state owner and must not share SQL edits with B01.
 Root implements directly by default, with required independent review for dangerous
 contracts. Do not spawn an idle pool. Keep one native/build/measurement lane.

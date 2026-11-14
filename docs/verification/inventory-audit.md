@@ -19,8 +19,8 @@ No complete A01–A09 or R0–R4 release acceptance is inferred.
 | F07 | [Event reads](run-event-reads.md), [timeline](run-timeline-ui.md), [native diagnostics](../../engines/k6/wrapper/process/metrics.ts) | Lifecycle replay exists; native diagnostic text viewing/replay does not follow from it |
 | F08 | [Native live metrics](native-live-metrics.md), [recorded metrics](run-metric-history.md) | Known-value full metric/browser/platform matrix |
 | F09 | [Suite compiler](../../engines/k6/compiler/suite/requests.ts), [archive](k6-metric-archive.md) | Endpoint-name/cardinality acceptance through packaged charts |
-| F10 | [Load advice](load-advice.md) | Raw warning classification and configured-executor advice |
-| F11 | [Archive](k6-metric-archive.md), [result](run-result-read.md), [diagnostic reader](../../engines/k6/wrapper/process/metrics.ts) | Retained logs absent: stderr only contributes a byte count; certify snapshot/redaction/replay |
+| F10 | [Load advice](load-advice.md), [native warnings/configured guidance](k6-warning-guidance.md) | Packaged/browser/platform acceptance |
+| F11 | [Archive](k6-metric-archive.md), [result](run-result-read.md), [diagnostic reader](../../engines/k6/wrapper/process/metrics.ts) | Retained logs absent: bounded classified warning evidence is separate from raw logs; certify snapshot/redaction/replay |
 | F12 | [Delivery](delivery-runtime.md), [authority](../design/lld/delivery-authority.md), [cleanup recovery](cleanup-agent-crash.md) | Full active-delivery restart and cold-restore acceptance, not orphan guessing |
 | F13 | [Comparison service](run-comparison-service.md), [controls](run-comparison-controls.md) | Browser two/four-run selection, config/environment/chart acceptance |
 | F14 | [Reports](performance-reports.md), [controls](report-controls.md), [retention](native-retention.md) | Browser inline/save and full release deletion matrix |

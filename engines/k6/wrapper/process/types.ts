@@ -1,3 +1,4 @@
+import type { NativeWarnings } from '@beetle/contracts/k6-warnings';
 import type { AttemptBudget } from '../../runtime/index.js';
 
 export type ProcessCause = 'cancelled' | 'closed' | 'deadline' | 'clock' | 'profile'
@@ -21,6 +22,7 @@ export interface NativeProcessOptions {
   readonly clock?: { wall: () => number; monotonic: () => number };
 }
 export interface ProcessObservation {
+  readonly warnings?: NativeWarnings;
   readonly spawned: boolean;
   readonly exitCode: number | null;
   readonly signal: NodeJS.Signals | null;

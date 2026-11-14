@@ -12,7 +12,7 @@ This supersedes the earlier targeted checklist, not its source-bound evidence.
 | F03 | Single-file upload/read/delete, immutable input pins | Directory-tree intake; certify immutable replacement/revision workflow |
 | F04 | Versioned suites, selected-revision target/schedule summary and exact-suite latest/full history | Catalogue placement remains provisional; packaged acceptance |
 | F07/F11 | Durable lifecycle events, metric archives and replay | Retained bounded native diagnostic text and log viewing/replay |
-| F10 | Observed drops and explicit iteration-median sizing heuristic | Native warning classification and configured-scenario guidance |
+| F10 | Observed drops, bounded native warning classification and configured single-arrival iteration-median guidance | Packaged/browser/platform acceptance; [warning evidence](k6-warning-guidance.md) |
 | F12 | Durable identity/reconciliation and native cleanup recovery | Remaining active-delivery restart matrix and supported cold restore |
 | F19 | Rewrite source checks configured in CI | Matched rewrite-image smoke/publishing pipeline and release evidence |
 

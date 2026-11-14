@@ -20,7 +20,8 @@
     "./api/reference": "./src/api/generated/reference.md",
     "./k6-history": "./src/k6-metrics/history.ts",
     "./output-retirement": "./src/output-retirement/index.ts",
-    "./output-settlement": "./src/output-settlement/index.ts"
+    "./output-settlement": "./src/output-settlement/index.ts",
+    "./k6-warnings": "./src/k6-warnings/index.ts"
   },
   "dependencies": {
     "ajv": "8.20.0",

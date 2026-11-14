@@ -20,3 +20,5 @@ export function compileLoadPlan(plan: ValidatedLoadPlan): Checked<CompiledLoadPl
     execution: { upperBoundMs: Math.max(...analysis.value.map(item => item.upperBoundMs)), scenarios: analysis.value },
     thresholds: thresholds.rules, discovery: thresholds.discovery } };
 }
+
+export { configuredArrivalGuidance } from './analysis.js';

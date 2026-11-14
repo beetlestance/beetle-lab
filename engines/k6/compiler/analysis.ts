@@ -1,5 +1,6 @@
-import type { Checked, ReadonlyLoadPlan, ReadonlyScenario, ScenarioExecution, ValidationIssue } from './types.js';
+import type { Checked, CompiledLoadPlan, ReadonlyLoadPlan, ReadonlyScenario, ScenarioExecution, ValidationIssue } from './types.js';
 
+import type { DeepReadonly } from '../plan/index.js';
 import { limits } from './limits.js';
 import { checkedRampStageCount } from './ramp.js';
 const units: Readonly<Record<string, number>> = { ms: 1, s: 1000, m: 60_000, h: 3_600_000 };
@@ -106,4 +107,31 @@ export function analyzeLoadPlan(plan: ReadonlyLoadPlan): Checked<ScenarioExecuti
   const scenarios = plan.scenarios.map((scenario, index) => scenarioTiming(scenario, index, issues));
   if (issues.length) return { ok: false, issues: Object.freeze(issues.slice(0, 16).map(issue => Object.freeze(issue))) };
   return { ok: true, value: scenarios };
+}
+
+/** Read compiled options using the canonical duration policy; never emit or mutate load. */
+export function configuredArrivalGuidance(plan: DeepReadonly<CompiledLoadPlan>) {
+  const scenarioCount = plan.execution.scenarios.length;
+  if (scenarioCount !== 1) return {scenarioCount, arrival: null};
+  const configured = Object.values(plan.options.scenarios)[0];
+  const executor = plan.execution.scenarios[0]!.executor;
+  if (!configured || (configured.executor !== 'constant-arrival-rate' && configured.executor !== 'ramping-arrival-rate')) return {scenarioCount, arrival: null};
+  const issues: ValidationIssue[] = [];
+  const unitMs = duration(configured.timeUnit, '/timeUnit', issues);
+  const peak = configured.executor === 'constant-arrival-rate' ? configured.rate
+    : Math.max(configured.startRate, ...configured.stages.map(stage => stage.target));
+  const peakIterationsPerSecond = peak * 1000 / unitMs;
+  const {preAllocatedVUs, maxVUs} = configured;
+  if (issues.length || !validArrivalNumbers(peakIterationsPerSecond, preAllocatedVUs, maxVUs)) return {scenarioCount, arrival: null};
+  if (!arrivalExecutor(executor)) return {scenarioCount, arrival: null};
+  return {scenarioCount, arrival: {executor, peakIterationsPerSecond, preAllocatedVUs, maxVUs}};
+}
+
+function validArrivalNumbers(rate: number, pre: number, max: number): boolean {
+  return Number.isFinite(rate) && rate > 0 && rate <= 1e9 && Number.isSafeInteger(pre)
+    && Number.isSafeInteger(max) && pre >= 0 && pre <= max && max <= 100000;
+}
+
+function arrivalExecutor(value: ScenarioExecution['executor']): value is 'constant-arrival-rate' | 'ramping-arrival-rate' | 'ramp-until' {
+  return ['constant-arrival-rate', 'ramping-arrival-rate', 'ramp-until'].includes(value);
 }

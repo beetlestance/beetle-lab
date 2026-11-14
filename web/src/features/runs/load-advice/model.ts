@@ -37,6 +37,10 @@ export function planning(rows:readonly RunMetricSeries[],coverage:Coverage,rateT
  const median=iterationMedian(rows);if(!median)return {status:'missing'};
  const rate=boundedDecimal(rateText,1000000);const headroom=boundedDecimal(headroomText,500);
  if(rate===null||rate===0||headroom===null)return {status:'input'};
+ return planningWithMedian(median,rate,headroom);
+}
+export function planningWithMedian(median:Median,rate:number,headroom:number):Plan{
+ if(!validBounds(median)||!Number.isFinite(rate)||rate<=0||rate>1e9||!Number.isFinite(headroom)||headroom<0||headroom>500)return {status:"input"};
  const raw=median.estimate/1000*rate*(1+headroom/100);const vus=Math.ceil(raw);
  if(!Number.isSafeInteger(vus)||vus<1)return {status:'overflow'};
  return {status:'ready',vus,median};

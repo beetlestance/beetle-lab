@@ -1,3 +1,4 @@
+import { captureK6Warnings } from '@beetle/contracts/k6-warnings';
 import { captureTargetRuntimeReport } from '@beetle/contracts/target-runtime';
 import { constants } from 'node:fs';
 import type { BigIntStats } from 'node:fs';
@@ -127,6 +128,9 @@ export class Artifacts {
   }
   async numeric(value: unknown, allowance = cap): Promise<Artifact> {
     return this.encoded(value, allowance, 'numeric-final.json', 'numeric-final');
+  }
+  async warnings(value: unknown, allowance: number): Promise<Artifact> {
+    return this.encoded(captureK6Warnings(value), allowance, 'k6-warnings.json', 'k6-warnings');
   }
   async target(value: unknown, allowance: number): Promise<Artifact> {
     return this.encoded(captureTargetRuntimeReport(value), allowance, 'target-runtime.json', 'target-runtime');

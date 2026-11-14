@@ -119,6 +119,7 @@ released application until the rewrite is qualified.
 | Inspect full admission evidence | [Observation publisher](verification/observation-publisher.md) | Actual resource/guard composition, independent revocation and draining writes |
 | Inspect installed runtime composition | [Agent runtime](verification/agent-runtime.md) | Verified startup, actual services, capability limits and retained shutdown ownership |
 | Inspect executable/provider packaging | [Agent executable](verification/agent-executable.md) | Private file intake, reviewed entrypoint, full gate and Linux arm64 fixture smoke |
+| Inspect native warnings and configured VU guidance | [Warning evidence](verification/k6-warning-guidance.md) | Bounded classified artifact, single-arrival guidance and real native API/reopen proof; raw diagnostic replay remains separate |
 | Inspect target artifact contract | [Shared report](verification/target-observation-contract.md) | Shared strict schema/codec and scoped target views; real-browser qualification pending |
 | Inspect large bodies and target observations | [Feature evidence](verification/large-bodies-target-observations.md) | Bounded body inputs, native serialization and separately scoped target samples |
 | Inspect first usable local source cut | [First-use evidence](verification/first-use.md) | Browser authoring, real k6 result/chart/history/download and remaining qualification |

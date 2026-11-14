@@ -9,7 +9,7 @@ describe('one-shot child lifecycle', () => {
     await flush(); h.child.start();
     expect(h.spawn).toHaveBeenCalledTimes(1);
     expect(h.spawn.mock.calls[0]).toEqual(['/owned/k6', ['run', '--no-usage-report', '--quiet', '--no-color',
-      '--address', '', '--log-output', 'none', '--config', '/owned/empty.json', '--out', 'json=-', '/owned/output/suite.js'],
+      '--address', '', '--log-output', 'stderr', '--log-format', 'json', '--config', '/owned/empty.json', '--out', 'json=-', '/owned/output/suite.js'],
     { cwd: '/owned/output', shell: false, detached: true, windowsHide: true,
       stdio: ['ignore', 'pipe', 'pipe'], env: { K6_NO_USAGE_REPORT: 'true', LANG: 'C', LC_ALL: 'C' } }]);
     h.child.stdout.end(); h.absent(); h.child.end(); h.child.finish();

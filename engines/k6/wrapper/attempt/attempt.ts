@@ -1,3 +1,4 @@
+import { warningArtifact } from '../warnings/index.js';
 import { renderPerformanceReports, ReportError } from '../../report/index.js';
 import { isAbsolute, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -33,6 +34,10 @@ type State = { -readonly [K in keyof StagedK6Receipt]: StagedK6Receipt[K] };
 type Quiet = Record<keyof StagedK6Receipt['quiescence'], Quiescence>;
 type MappedResult = Extract<K6ResultMapping, {ok: true}>;
 type MappingDiagnostics = Extract<K6ResultMapping, { ok: true }>['diagnostics'];
+function artifactBytes(value: EngineResult['artifacts'][number] | undefined): number {return value?.bytes ?? 0;}
+function presentArtifacts(...values: (EngineResult['artifacts'][number] | undefined)[]): EngineResult['artifacts'] {
+  return values.filter((value): value is EngineResult['artifacts'][number] => value !== undefined);
+}
 function path(value: string): boolean { return typeof value === 'string' && isAbsolute(value) && resolve(value) === value && !value.includes('\0'); }
 function validateOptions(input: StagedK6Options): void {
   const roots = [input.inputRoot, input.secretRoot, input.outputRoot];
@@ -227,17 +232,19 @@ class Attempt {
       terminalObservedAt: receipt.terminalObservedAt, orchestrationFailure: failure, orchestrationQuiescent: true,
       summary: receipt.summary?.ok ? receipt.summary.evidence : null, metrics: receipt.metrics, artifacts };
   }
-  private async collectArtifacts(mapped: MappedResult): Promise<EngineResult['artifacts']> {
+  private async collectArtifacts(mapped: MappedResult, compiled: CompiledInput): Promise<EngineResult['artifacts']> {
     this.stage = 'artifact'; this.quiet.artifacts = 'unknown';
     const summary = this.state.execution!.summary;
     const collectOutputBytes = this.input!.manifest.phases.find(phase => phase.phase === 'collect')!.outputBytes;
     const history = await this.archiveEvidence();
     const historyWork = this.archiveAccounting(history);
     const target = this.targetReport ? await this.artifacts!.target(this.targetReport, this.reservation!.target) : undefined;
+    const evidence = warningArtifact(compiled, this.state.execution!, this.state.scope!);
+    const warnings = evidence ? await this.artifacts!.warnings(evidence, this.reservation!.warnings) : undefined;
     const reports = this.reports(mapped);
-    const numericBytes = numericAllowance(this.reservation!, collectOutputBytes - historyWork.produced - (target?.bytes ?? 0) - reports.text.length - reports.csv.length, summary?.ok ? summary.evidence.rawBytes : 1_048_576);
+    const numericBytes = numericAllowance(this.reservation!, collectOutputBytes - artifactBytes(warnings) - historyWork.produced - artifactBytes(target) - reports.text.length - reports.csv.length, summary?.ok ? summary.evidence.rawBytes : 1_048_576);
     const artifacts: EngineResult['artifacts'] = [...historyWork.artifacts];
-    if (target) artifacts.push(target);
+    artifacts.push(...presentArtifacts(warnings, target));
     if (summary?.ok) artifacts.push(await this.artifacts!.summary(summary.evidence));
     artifacts.push(await this.artifacts!.numeric(this.numericEvidence(mapped.diagnostics, history), numericBytes));
     const reportAllowance = this.reservation!.reports / 2;
@@ -274,7 +281,7 @@ class Attempt {
   private async finishResult(compiled: CompiledInput): Promise<void> {
     this.stage = 'mapping'; this.fence.check();
     const initial = mapK6Result(this.evidence(compiled, [])); if (!initial.ok) this.fail('mapping');
-    const artifacts = await this.collectArtifacts(initial);
+    const artifacts = await this.collectArtifacts(initial, compiled);
     this.stage = 'seal'; await this.phases!.start('seal');
     await this.notifications.quiesce(); this.fence.check();
     const mapped = mapK6Result(this.evidence(compiled, artifacts)); if (!mapped.ok) this.fail('mapping');

@@ -1,3 +1,4 @@
+import { RunWarnings } from './warnings/index.js';
 import { useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Run } from '@beetle/contracts/api';
@@ -46,11 +47,15 @@ export function RunResultRead({ scope, runId, run, terminal }: {
 function PublishedReports({view}: {view: ReturnType<typeof resultView>}) {
   if (view.status !== 'ready') return null;
   const {result, run} = view;
+  const warnings = result.artifacts.filter(artifact => artifact.kind === 'k6-warnings');
   const targets = result.artifacts.filter(artifact => artifact.kind === 'target-runtime');
   const reports = result.artifacts.filter(artifact => artifact.kind === 'performance-report');
   const params = {organizationId: run.scope.organizationId, workspaceId: run.scope.workspaceId,
     runId: run.id, attemptId: run.activeAttemptId};
   return <>
+    {warnings.length === 0 && <p>Native warning evidence was not recorded for this run.</p>}
+    {warnings.length > 1 && <p role="alert">Multiple warning artifacts were published; no warning evidence selected.</p>}
+    {warnings.length === 1 && <RunWarnings params={{...params, artifactId: warnings[0]!.artifactId}} artifact={warnings[0]!} />}
     {reports.length > 1 && <p role="alert">Multiple performance reports were published; this view requires one report.</p>}
     {reports.length === 1 && <RunPerformanceReport params={{...params, artifactId: reports[0]!.artifactId}} artifact={reports[0]!} />}
     {targets.length > 1 && <p role="alert">Multiple target observation reports were published; this view requires one report.</p>}

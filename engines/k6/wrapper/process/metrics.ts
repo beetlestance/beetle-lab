@@ -1,3 +1,4 @@
+import { WarningClassifier } from './warnings.js';
 import type { Readable } from 'node:stream';
 import type { NativeProcessOptions, ProcessCause } from './types.js';
 
@@ -5,6 +6,7 @@ const CHUNK = 65_536;
 const RETAINED_LIMIT = 8_388_608;
 /** One read and one awaited delivery; no queue and no final materialization. */
 export class MetricStream {
+  readonly warnings = new WarningClassifier();
   bytes = 0;
   diagnosticBytes = 0;
   ended = false;
@@ -18,16 +20,19 @@ export class MetricStream {
     private readonly changed: () => void) {}
   attach(stdout: Readable, stderr: Readable): void {
     stdout.on('error', () => this.fail('stream'));
-    stderr.on('error', () => this.fail('stream'));
+    stderr.on('error', () => { this.warnings.interrupt(); this.fail('stream'); });
+    stderr.on('end', () => this.warnings.finish());
+    stderr.on('close', () => this.warnings.interrupt());
     stdout.on('end', () => { this.ended = true; this.changed(); });
     stdout.on('readable', () => this.read(stdout));
-    stderr.on('data', (bytes: Buffer) => this.diagnostic(bytes.length));
+    stderr.on('data', (bytes: Buffer) => this.diagnostic(bytes));
     if (this.stopped) { stdout.destroy(); stderr.destroy(); }
   }
-  private diagnostic(length: number): void {
+  private diagnostic(bytes: Buffer): void {
     if (this.stopped) return;
-    this.diagnosticBytes += length;
-    if (this.diagnosticBytes > this.input.maxDiagnosticBytes) this.fail('diagnostic_limit');
+    this.diagnosticBytes += bytes.length;
+    this.warnings.push(bytes);
+    if (this.diagnosticBytes > this.input.maxDiagnosticBytes) { this.warnings.interrupt(); this.fail('diagnostic_limit'); }
   }
   private read(stdout: Readable): void {
     if (this.stopped || this.pending || !this.decision()) return;
@@ -53,6 +58,6 @@ export class MetricStream {
       this.changed();
     });
   }
-  stop(): void { this.stopped = true; this.abort.abort(); }
+  stop(): void { this.warnings.interrupt(); this.stopped = true; this.abort.abort(); }
   async close(): Promise<void> { await this.issued; }
 }

@@ -12,7 +12,7 @@ export interface ProcessPorts {
 }
 export function fixedLaunch(input: NativeProcessOptions): { args: string[]; options: SpawnOptions } {
   return { args: ['run', '--no-usage-report', '--quiet', '--no-color', '--address', '',
-    '--log-output', 'none', '--config', input.emptyConfig, '--out', 'json=-', input.script],
+    '--log-output', 'stderr', '--log-format', 'json', '--config', input.emptyConfig, '--out', 'json=-', input.script],
   options: { cwd: input.directory, shell: false, detached: true, windowsHide: true,
     stdio: ['ignore', 'pipe', 'pipe'], env: { K6_NO_USAGE_REPORT: 'true', LANG: 'C', LC_ALL: 'C' } } };
 }
