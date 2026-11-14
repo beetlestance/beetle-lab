@@ -27,6 +27,10 @@ AdmissionStore and guards. An in-memory setup is copied using SQLite backup befo
 the real durable Journal races two admissions and an exact replay. The 4,096 hold
 count, retained charge and replay assertions remain; the test bound stays 20 s.
 This is concurrency evidence, not crash-durability evidence for each setup row.
+The first hosted rerun still exceeded 20 s during preparation. Saturated fixture
+creation now runs in a fatal, awaited 60 s `beforeAll` hook on a task-owned path;
+the durable race retains its 20 s bound. The hook is not an admission-performance
+or per-seed durability qualification. No rows, guards or assertions are removed.
 
 ## Scoped local evidence
 

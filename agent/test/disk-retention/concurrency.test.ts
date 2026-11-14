@@ -1,10 +1,15 @@
 import { DatabaseSync } from 'node:sqlite';
-import { expect, it } from 'vitest';
+import { beforeAll, expect, it } from 'vitest';
 import { admissionFixture, configuration, now, observation, reserved, scope } from '../admission/fixtures.js';
 import { seedHeldOriginals } from './held-fixtures.js';
 import { estimateStaging } from '../../src/admission/index.js';
 
 const f = admissionFixture();
+let saturatedPath: string;
+beforeAll(async () => {
+  saturatedPath = f.path();
+  await seedHeldOriginals(saturatedPath, 4095);
+}, 60_000); // Bounded fixture preparation; the durable race retains its 20s bound.
 it('serializes two competing last-byte admissions and preserves the winner across abort/lost reply/reopen', async () => {
   const path = f.path(); let journal = await f.configured(path); const old = f.job();
   await f.enqueue(journal, old); const original = reserved(await f.admit(journal, old));
@@ -34,7 +39,7 @@ it('serializes two competing last-byte admissions and preserves the winner acros
   } finally { db.close(); }
 });
 it('serializes the final native hold slot without a second charge on concurrent replay', async () => {
-  const path = f.path(); await seedHeldOriginals(path, 4095);
+  const path = saturatedPath;
   const journal = await f.configured(path); const config = configuration();
   config.pool.outputBytes = 1_000_000; config.pool.stagingBytes = 2_000_000_000;
   await journal.admission({ kind: 'configure', configuration: config });
