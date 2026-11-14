@@ -1,9 +1,10 @@
 import { offlineAgentFixture } from './agent-fixture.js';
+import { initializeBackendRecovery } from '../../src/bootstrap/recovery-control/index.js';
 import { spawn } from 'node:child_process';
 import type { ChildProcessByStdio } from 'node:child_process';
 import type { Readable } from 'node:stream';
 import { createServer } from 'node:net';
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, realpath, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { once } from 'node:events';
@@ -59,6 +60,7 @@ async function run(root: string, port: number): Promise<void> {
   const installation = settingsFixture().chain.installation;
   // The domain fixture's 10KB pool cannot hold one input's 64KB metadata charge.
   installation.values.pool.storageBytes = 2_000_000;
+  initializeBackendRecovery(join(root, 'data', 'recovery-control.sqlite'), installation.id);
   await writeFile(join(root, 'installation.json'), JSON.stringify(installation), { mode: 0o600 });
   const origin = `http://127.0.0.1:${port}`;
   const agent = await offlineAgentFixture(root, installation);
@@ -81,6 +83,6 @@ async function run(root: string, port: number): Promise<void> {
   }
 }
 const port = await ownedPort();
-const root = await mkdtemp(join(tmpdir(), 'beetle-api-smoke-'));
+const root = await realpath(await mkdtemp(join(tmpdir(), 'beetle-api-smoke-')));
 try { await run(root, port); }
 finally { await rm(root, { recursive: true, force: true }); }
