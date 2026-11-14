@@ -3,6 +3,10 @@ import {migration026} from '../../src/adapters/outbound/sqlite/migration026.js';
 import {transaction} from '../../src/adapters/outbound/sqlite/transaction.js';
 /** Test-only empty-new-owner projection. Never drops a retained deletion identity or charge. */
 export function asSchema25(db:DatabaseSync):void{
+ if(db.prepare('PRAGMA user_version').get()?.user_version===27){
+  if(db.prepare('SELECT 1 FROM namespace_deletions LIMIT 1').get())throw Error('Cannot project fixture with namespace deletion data');
+  transaction(db,()=>db.exec('DROP INDEX runs_org_overview_recent;DROP INDEX runs_org_overview_active;PRAGMA user_version=26'));
+ }
  const version=db.prepare('PRAGMA user_version').get()?.user_version;if(version===25)return;
  if(version!==26||db.prepare('SELECT 1 FROM namespace_deletions LIMIT 1').get())throw Error('Cannot project fixture with namespace deletion data');
  transaction(db,()=>{

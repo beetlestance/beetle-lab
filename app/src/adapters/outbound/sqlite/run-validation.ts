@@ -1,3 +1,4 @@
+import {checkedOrganizationOverviewQuery} from '../../../application/organization-overview/index.js';
 import {checkedOverviewQuery} from '../../../application/overview/index.js';
 import { runListPosition, validateApi } from '@beetle/contracts/api';
 import { prepareRunCommand, prepareCancelRunCommand } from '../../../application/runs/index.js';
@@ -7,6 +8,7 @@ import { sha256 } from './input-values.js';
 
 export function checkedRunOperation(operation: Operation): boolean {
   switch (operation.kind) {
+    case 'getOrganizationOverview': checkedOrganizationOverviewQuery(operation.query);return true;
     case 'getWorkspaceOverview': checkedOverviewQuery(operation.query);return true;
     case 'run':
       requireRule(prepareRunCommand(operation.command, sha256).intentDigest === operation.command.intentDigest); return true;

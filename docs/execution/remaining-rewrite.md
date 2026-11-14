@@ -15,7 +15,7 @@ No new Goal, push, registry publication or deployment is authorised by this page
 | B03 suite summaries | F04 | Bounded target/configured-duration/latest-run catalogue projection; unknowns explicit; no per-row config/result reads or false measured duration | Existing revision/history projection contracts |
 | B04 diagnostic custody | F07,F11 | Bounded, redacted native diagnostics with durable viewing/replay and explicit overflow/loss; preserve secret/cancellation/output-budget ownership | Review source, schema, storage charge and retention lifetime first |
 | B05 warning guidance | F10 | Closed native-warning classification and configured-executor guidance; uncertainty/heuristic labels; no automatic config changes | B04 provides diagnostics; reuse existing observed-drop advice |
-| B06 organisation overview | F01 | Scoped cross-workspace summary/recent/active views with bounded snapshot reads and explicit coverage/unknowns | Existing workspace overview; agree exact aggregation contract |
+| B06 organisation overview | F01 | Locally implemented whole-organisation counts/activity and capped cross-workspace recent/active links; [evidence](../verification/organization-overview.md) | Packaged browser/platform acceptance remains |
 | B07 recovery tooling | F12,F18 | Finish active-delivery restart cases; consistent bounded cold backup/restore, quiescence refusal, interrupted-restore startup fence, authority rotation and historical-only restored Runs | Delivery-authority contract; positive cleanup/settlement evidence already exists |
 
 B01 uses explicit empty-only deletion, preserving epochs and replay identities.

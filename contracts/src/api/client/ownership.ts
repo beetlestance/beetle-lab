@@ -1,8 +1,8 @@
 import { parentRetentionMatches } from './retention-parent.js';
 import type { RetentionTraversalPage } from '../generated/types.js';
 import { retentionResponseMatches,retentionRequestMatches } from './retention-ownership.js';
-import {workspaceOverviewMatches} from '../overview.js';
-import type {WorkspaceOverview} from '../generated/types.js';
+import {workspaceOverviewMatches,organizationOverviewMatches} from '../overview.js';
+import type {WorkspaceOverview,OrganizationOverview} from '../generated/types.js';
 import { exportOwnership, exportRequestMatches } from './export-ownership.js';
 import { runComparisonRequestMatches, runComparisonSnapshotMatches } from './comparison.js';
 import type { RunComparisonRequest, RunComparisonSnapshot } from '../generated/types.js';
@@ -118,7 +118,7 @@ function retentionOwnership(operation:ApiOperation,input:PreparedInput,value:unk
 export function responseOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
   if (session(operation)) return true;
   const retentionMatch=retentionOwnership(operation,input,value);if(retentionMatch!==undefined)return retentionMatch;
-  if(operation.response==='WorkspaceOverview')return workspaceOverviewMatches(value as WorkspaceOverview,{organizationId:input.params.organizationId!,workspaceId:input.params.workspaceId!});
+  const overview=overviewOwnership(operation,input,value);if(overview!==undefined)return overview;
   if (operation.response === 'RunComparisonSnapshot') return runComparisonSnapshotMatches(value as RunComparisonSnapshot, input.body as unknown as RunComparisonRequest);
   if (operation.response === 'LiveMetricSnapshot') return liveMetricScopeMatches((value as LiveMetricSnapshot).scope,
     {organizationId: input.params.organizationId!, workspaceId: input.params.workspaceId!, attemptId: input.params.attemptId!, generation: 1});
@@ -149,4 +149,10 @@ function revisionOwnership(operation: ApiOperation, input: PreparedInput, reply:
   if (!input.params.suiteId || !['SuiteRevision', 'SuiteRevisionPage'].includes(operation.response)) return true;
   if (!sameUuid(reply.suiteId, input.params.suiteId)) return false;
   return !reply.items || reply.items.every(item => sameUuid(item.suiteId, input.params.suiteId));
+}
+
+function overviewOwnership(operation:ApiOperation,input:PreparedInput,value:unknown):boolean|undefined{
+  if(operation.response==='OrganizationOverview')return organizationOverviewMatches(value as OrganizationOverview,{organizationId:input.params.organizationId!});
+  if(operation.response==='WorkspaceOverview')return workspaceOverviewMatches(value as WorkspaceOverview,{organizationId:input.params.organizationId!,workspaceId:input.params.workspaceId!});
+ return undefined;
 }

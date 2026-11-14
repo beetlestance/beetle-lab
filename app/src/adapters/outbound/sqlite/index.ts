@@ -1,3 +1,4 @@
+import {checkedOrganizationOverview,checkedOrganizationOverviewQuery} from '../../../application/organization-overview/index.js';
 import { captureNamespaceDeletionReply } from './namespace-deletion/index.js';
 import type { NamespaceDeletionOperation } from './namespace-deletion/index.js';
 import type { NamespaceDeletionStore } from '../../../ports/namespace-deletion.js';
@@ -9,7 +10,7 @@ import { captureHistoryReply, historyOperation } from './run-history/index.js';
 import type { HistoryOperation } from './run-history/index.js';
 import type { RunHistoryStore } from '../../../ports/run-history.js';
 import {checkedOverview,checkedOverviewQuery} from '../../../application/overview/index.js';
-import type {OverviewReader} from '../../../ports/overview.js';
+import type {OverviewReader,OrganizationOverviewReader} from '../../../ports/overview.js';
 import {exportOperation,captureExportReply} from './export-wire.js';
 import type {ExportOperation} from './export-wire.js';
 import type {ExportArtifacts,ExportExecutionStore,ExportStore} from '../../../ports/exports.js';
@@ -224,6 +225,7 @@ export class Metadata {
     confirmAck: request => this.call({ kind: 'eventConfirmAck', request }) as ReturnType<EventCustodyStore['confirmAck']>,
     recordProblem: request => this.call({ kind: 'eventProblem', request }) as ReturnType<EventCustodyStore['recordProblem']>,
   };
+  readonly organizationOverview:OrganizationOverviewReader={read:async input=>{const query=checkedOrganizationOverviewQuery(input);return checkedOrganizationOverview(await this.call({kind:'getOrganizationOverview',query}),query);}};
   readonly overview:OverviewReader={read:async input=>{const query=checkedOverviewQuery(input);const value=await this.call({kind:'getWorkspaceOverview',query});return checkedOverview(value,query);}};
   readonly runs: RunStore & RunReader & RunCancellationStore = {
     execute: command => this.call({ kind: 'run', command }) as ReturnType<RunStore['execute']>,

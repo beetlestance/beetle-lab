@@ -1,3 +1,4 @@
+import {migration027} from './migration027.js';
 import { migration026 } from './migration026.js';
 import { migrate025 } from './migration025.js';
 import { registerRetentionAccounting } from './retention-accounting-guard/index.js';
@@ -33,7 +34,7 @@ import { migration002 } from './migration002.js';
 import { DatabaseSync } from 'node:sqlite';
 import { StorageError } from './protocol.js';
 
-export const METADATA_SCHEMA_VERSION = 26;
+export const METADATA_SCHEMA_VERSION = 27;
 
 // Application migration 001; independent of the agent journal schema.
 export const migration001 = `
@@ -109,7 +110,7 @@ function applyMigrations(db: DatabaseSync, version: number): void {
   const steps: readonly (() => void)[] = [
     () => db.exec(migration001), () => db.exec(migration002), () => migrate003(db),
     () => db.exec(migration004), () => db.exec(migration005), () => db.exec(migration006),
-    () => db.exec(migration007), () => migrate008(db), () => db.exec(migration009), () => db.exec(migration010), () => db.exec(migration011), () => db.exec(migration012), () => db.exec(migration013), () => db.exec(migration014), () => db.exec(migration015), () => db.exec(migration016), () => db.exec(migration017), () => db.exec(migration018), () => db.exec(migration019), () => migrate020(db), () => db.exec(migration021), () => db.exec(migration022), () => db.exec(migration023), () => db.exec(migration024), () => migrate025(db), () => db.exec(migration026),
+    () => db.exec(migration007), () => migrate008(db), () => db.exec(migration009), () => db.exec(migration010), () => db.exec(migration011), () => db.exec(migration012), () => db.exec(migration013), () => db.exec(migration014), () => db.exec(migration015), () => db.exec(migration016), () => db.exec(migration017), () => db.exec(migration018), () => db.exec(migration019), () => migrate020(db), () => db.exec(migration021), () => db.exec(migration022), () => db.exec(migration023), () => db.exec(migration024), () => migrate025(db), () => db.exec(migration026), () => db.exec(migration027),
   ];
   steps.forEach((step, index) => { if (version <= index) transaction(db, step); });
 }

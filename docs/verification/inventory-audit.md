@@ -10,7 +10,7 @@ No complete A01–A09 or R0–R4 release acceptance is inferred.
 
 | ID | Source/evidence inspected | Closure still needed |
 | --- | --- | --- |
-| F01 | [Workspace overview](workspace-overview.md) | Cross-workspace overview; packaged browser |
+| F01 | [Workspace overview](workspace-overview.md), [organisation overview](organization-overview.md) | Packaged browser/platform acceptance |
 | F02 | [Namespace handlers](../../app/src/adapters/inbound/http/namespaces/index.ts), [availability](reference-availability.md) | [Empty-only DELETE](namespace-deletion.md) now local; packaged acceptance and explicit nonempty restriction |
 | F03 | [Input controls](input-controls.md), [upload](../../web/src/features/input-upload/index.tsx) | Directory intake; certify replacement via immutable inputs, not destructive overwrite |
 | F04 | [Authoring](suite-authoring.md), [suite catalogue](../../web/src/features/suites/index.tsx) | Catalogue currently has name/version/revision, not target/duration/latest run |

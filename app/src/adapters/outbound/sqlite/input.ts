@@ -220,7 +220,7 @@ export function largeOperation(operation: Operation): boolean {
   }
   return suiteOperation(operation) || ['getExportOriginal','listExports','dispatchReadOffer', 'eventIngest', 'outputAdopt', 'outputReadSource', 'getRunResult', 'getRunEvents', 'listRunArtifacts'].includes(dataProperty(operation, 'kind') as string);
 }
-const fixedReplyLimits: Partial<Record<Operation['kind'], number>> = { deleteNamespace:2048, historySummary: 16384, getWorkspaceOverview: 32768, settleBackendOutput:1536,readBackendSettlement:1536 };
+const fixedReplyLimits: Partial<Record<Operation['kind'], number>> = { getOrganizationOverview:32768, deleteNamespace:2048, historySummary: 16384, getWorkspaceOverview: 32768, settleBackendOutput:1536,readBackendSettlement:1536 };
 export function operationReplyLimit(operation: Operation): number {
   if(retentionOperation(operation))return retentionReplyLimit(operation);
   const fixed = fixedReplyLimits[operation.kind];
@@ -247,6 +247,6 @@ function payloadReplyLimit(operation: Operation): number {
 
 /** Fixed small control/read requests never use large payload envelopes. */
 function compactOperation(operation: Operation): boolean {
-  return ['getWorkspaceOverview', 'historySummary'].includes(dataProperty(operation,'kind') as string)||artifactReadOperation(operation) || runEventsOperation(operation) || absenceOperation(operation) || finalizationOperation(operation)
+  return ['getOrganizationOverview','getWorkspaceOverview', 'historySummary'].includes(dataProperty(operation,'kind') as string)||artifactReadOperation(operation) || runEventsOperation(operation) || absenceOperation(operation) || finalizationOperation(operation)
     || executionOperation(operation) || resultOperation(operation) || artifactOperation(operation);
 }

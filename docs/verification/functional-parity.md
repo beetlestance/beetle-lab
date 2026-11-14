@@ -7,7 +7,7 @@ This supersedes the earlier targeted checklist, not its source-bound evidence.
 
 | Inventory | Locally implemented | Remaining functional work |
 | --- | --- | --- |
-| F01 | Workspace counts/activity/recent/active navigation | Cross-workspace overview |
+| F01 | Workspace and organisation-wide counts/activity/recent/active navigation | Packaged browser/platform acceptance |
 | F02/N01 | Scoped list/create/rename/move and protected empty-only deletion | Nonempty recursive maintenance remains unsupported; packaged acceptance |
 | F03 | Single-file upload/read/delete, immutable input pins | Directory-tree intake; certify immutable replacement/revision workflow |
 | F04 | Explicit versioned suites and persisted editor/history | Catalogue target/duration/latest-run summary |

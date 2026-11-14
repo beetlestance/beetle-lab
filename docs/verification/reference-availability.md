@@ -1,7 +1,7 @@
 # Public operation availability
 
 Status: original reviewed reference correction atb70b33c, reconciled through21aa880.
-Current source catalogue:62 JSON descriptors,62 implemented. The empty-only
+Current source catalogue:63 JSON descriptors,63 implemented, including organisation overview. The empty-only
 namespace DELETE routes are now registered and locally verified; [evidence](namespace-deletion.md). Retention parent previews and workspace/manual controls are now
 implemented; unshipped parent Apply descriptors were retired. The original runtime
 registration fixture/evidence below belongs to its recorded source. Contract: [embedded reference](../design/lld/embedded-reference.md).

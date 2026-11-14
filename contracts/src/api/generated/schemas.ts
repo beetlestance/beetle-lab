@@ -88,6 +88,8 @@ export const apiMessageSchemas = freezeSchema({
   OverviewCounts: { $ref: 'https://beetle-lab.dev/contracts/api/v2/overview#/$defs/OverviewCounts' },
   OverviewBucket: { $ref: 'https://beetle-lab.dev/contracts/api/v2/overview#/$defs/OverviewBucket' },
   WorkspaceOverview: { $ref: 'https://beetle-lab.dev/contracts/api/v2/overview#/$defs/WorkspaceOverview' },
+  OrganizationOverviewRun: { $ref: 'https://beetle-lab.dev/contracts/api/v2/overview#/$defs/OrganizationOverviewRun' },
+  OrganizationOverview: { $ref: 'https://beetle-lab.dev/contracts/api/v2/overview#/$defs/OrganizationOverview' },
   OrganizationParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/OrganizationParams' },
   WorkspaceParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/WorkspaceParams' },
   FolderParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/FolderParams' },

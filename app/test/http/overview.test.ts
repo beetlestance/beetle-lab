@@ -1,7 +1,9 @@
+import organizationSnapshot from '../../../contracts/fixtures/api/valid/organization-overview.json';
+import {getOrganizationOverview} from '../../src/application/organization-overview/index.js';
 import {expect,it,vi} from 'vitest';
 import {encodeJson} from '@beetle/contracts';
 import {apiSchemas} from '@beetle/contracts/api';
-import type {WorkspaceOverview,BrowserSession} from '@beetle/contracts/api';
+import type {WorkspaceOverview,OrganizationOverview,BrowserSession} from '@beetle/contracts/api';
 import {createApiServer} from '../../src/adapters/inbound/http/api-errors.js';
 import {configureSchemaCompilers} from '../../src/adapters/inbound/http/schema-compilers.js';
 import {createLocalSession} from '../../src/adapters/inbound/http/session/index.js';
@@ -25,4 +27,11 @@ it('authorizes the fixed read, binds scope and trusted clock, and rejects foreig
   read.mockResolvedValue(value);const fixed=await server.inject({url:path+'?limit=10000&from=0',headers:{host,cookie}});
   expect(fixed.statusCode).toBe(200);expect(fixed.json()).toEqual(value);expect(read).toHaveBeenLastCalledWith({scope:value.scope,now:value.generatedAt});
  }finally{session.close();await server.close();}
+});
+
+it('keeps immutable organisation authority when a reader attempts to replace its scope',async()=>{
+ const value=structuredClone(organizationSnapshot) as OrganizationOverview;const foreign='00000000-0000-4000-8000-000000000099';
+ await expect(getOrganizationOverview({scope:{kind:'organization',organizationId:value.scope.organizationId},now:value.generatedAt},{
+  read:async query=>{expect(Reflect.set(query.scope,'organizationId',foreign)).toBe(false);return {...value,scope:{kind:'organization',organizationId:foreign}};},
+ })).rejects.toMatchObject({code:'not_found'});
 });

@@ -652,5 +652,15 @@
     "error": "ApiError",
     "params": "RetentionBatchParams",
     "implementation": "implemented"
+  },
+  {
+    "name": "getOrganizationOverview",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/overview",
+    "params": "OrganizationParams",
+    "response": "OrganizationOverview",
+    "successStatus": 200,
+    "error": "ApiError",
+    "implementation": "implemented"
   }
 ]

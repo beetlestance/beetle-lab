@@ -1,3 +1,4 @@
+import {OrganizationOverview} from '../organization-overview/index.js';
 import {WorkspaceOverview} from '../workspace-overview/index.js';
 import { lazy, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -28,7 +29,7 @@ export function OrganizationScope({ organizationId, workspaceId, view }: { organ
     <Link to={routes.organizationSettings(organizationId)}>Organization settings</Link>
     <div className="scope-label">Organization <span className="number">{organization.slug}</span></div>
     {workspaceId ? <WorkspaceScope key={workspaceId} organizationId={organizationId} workspaceId={workspaceId} {...(view ? { view } : {})} />
-      : <WorkspaceList organizationId={organizationId} />}
+      : <><OrganizationOverview key={organizationId} organizationId={organizationId} /><WorkspaceList organizationId={organizationId} /></>}
   </>}</QueryState>;
 }
 function WorkspaceScope({ organizationId, workspaceId, view }: { organizationId: string; workspaceId: string; view?: 'inputs' }) {

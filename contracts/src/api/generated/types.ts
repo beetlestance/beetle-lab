@@ -76,6 +76,8 @@ export type OverviewRun = FromSchema<typeof S7.OverviewRun>;
 export type OverviewCounts = FromSchema<typeof S7.OverviewCounts>;
 export type OverviewBucket = FromSchema<typeof S7.OverviewBucket>;
 export type WorkspaceOverview = FromSchema<typeof S7.WorkspaceOverview>;
+export type OrganizationOverviewRun = FromSchema<typeof S7.OrganizationOverviewRun>;
+export type OrganizationOverview = FromSchema<typeof S7.OrganizationOverview>;
 export type OrganizationParams = FromSchema<typeof S8.OrganizationParams>;
 export type WorkspaceParams = FromSchema<typeof S8.WorkspaceParams>;
 export type FolderParams = FromSchema<typeof S8.FolderParams>;
@@ -223,6 +225,8 @@ export interface ApiTypes {
   OverviewCounts: OverviewCounts;
   OverviewBucket: OverviewBucket;
   WorkspaceOverview: WorkspaceOverview;
+  OrganizationOverviewRun: OrganizationOverviewRun;
+  OrganizationOverview: OrganizationOverview;
   OrganizationParams: OrganizationParams;
   WorkspaceParams: WorkspaceParams;
   FolderParams: FolderParams;

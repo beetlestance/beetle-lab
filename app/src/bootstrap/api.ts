@@ -84,7 +84,7 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     registerNamespaceRoutes(server, { deletions: store.namespaceDeletions, store: store.namespaces, reader: store, newId: randomUUID,
       digest, authorize: session.authorize });
     registerSuiteRoutes(server, { store: store.suites, reader: store.suites, newId: randomUUID, digest, authorize: session.authorize });
-    registerOverviewRoute(server,{reader:store.overview,authorize:session.authorize,now:()=>new Date().toISOString()});
+    registerOverviewRoute(server,{reader:store.overview,organizationReader:store.organizationOverview,authorize:session.authorize,now:()=>new Date().toISOString()});
     registerRunRoutes(server, { store: store.runs, reader: store.runs, resultReader: store.results, eventReader: store.runEvents, newId: randomUUID, digest,
       now: () => new Date().toISOString(), authorize: session.authorize });
     artifactHttp=downloadRoutes(server,store,agentRuntime,session.authorize);

@@ -157,6 +157,7 @@ export class Store {
       case 'getRun': return this.runReads.get(operation.key);
       case 'listRuns': return this.runReads.list(operation.query);
       case 'getWorkspaceOverview':return this.overviews.read(operation.query);
+      case 'getOrganizationOverview':return this.overviews.readOrganization(operation.query);
       default: throw new StorageError('invalid_input');
     }
   }
@@ -256,7 +257,7 @@ export class Store {
     }
   }
   private executeLegacy(operation: Operation): Value {
-    if (['getWorkspaceOverview','run', 'cancelRun', 'getRun', 'listRuns', 'dispatchScan', 'dispatchReadOffer', 'dispatchClaim', 'dispatchObserve']
+    if (['getOrganizationOverview','getWorkspaceOverview','run', 'cancelRun', 'getRun', 'listRuns', 'dispatchScan', 'dispatchReadOffer', 'dispatchClaim', 'dispatchObserve']
       .includes(operation.kind)) return this.runOperation(operation);
     if (suiteOperation(operation)) return this.suiteOperation(operation);
     if (['getSettings', 'getSettingsIdentity', 'runtime', 'loadLocalSession', 'saveLocalSession'].includes(operation.kind)) return this.installationOperation(operation);

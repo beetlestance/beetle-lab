@@ -1,5 +1,5 @@
 import {expect,it} from 'vitest';
-import {DatabaseSync} from 'node:sqlite';
+import {initialize} from '../../src/adapters/outbound/sqlite/schema.js';
 import {scope,seed,storageFixture,uuid,digest,createFolder} from './fixture.js';
 import {append,createSuite} from './suites-fixture.js';
 import {runOptions,runRequest} from './runs-fixture.js';
@@ -10,7 +10,7 @@ it('reads whole-workspace scalar counts with bounded recent/active lists across 
  const revision=await append(metadata,await createSuite(metadata));
  const moments=['2026-11-11T11:59:59.999Z','2026-11-11T12:00:00.000Z','2026-11-11T12:59:59.999Z','2026-11-11T13:00:00.000Z',now,'2026-11-12T12:00:00.001Z'];
  for(let n=0;n<33;n++)await metadata.runs.execute(prepareRunCommand({kind:'createRun',id:uuid(500+n),attemptId:uuid(1500+n),requestedAt:moments[n]??'2026-11-12T11:00:00.000Z',request:runRequest(revision.id)},digest));
- await fixture.close(metadata);const db=new DatabaseSync(path);
+ await fixture.close(metadata);const db=initialize(path);
  db.prepare("UPDATE runs SET state='active' WHERE id>=? AND id<?").run(uuid(500),uuid(525));
  db.prepare("UPDATE runs SET state='finished',outcome='failed',validation_status='passed' WHERE id=?").run(uuid(525));
  db.prepare("UPDATE runs SET state='finished',outcome='passed',validation_status='passed' WHERE id=?").run(uuid(526));

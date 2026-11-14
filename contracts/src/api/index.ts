@@ -26,7 +26,7 @@ export { RUN_COMPARISON_BYTES } from './limits.js';
 export { runComparisonRequestMatches, runComparisonSnapshotMatches, comparisonFields, comparisonWarnings } from './client/comparison.js';
 export {EXPORT_CONTENT_ROUTE,exportContentPath} from './export-content.js';
 
-export {workspaceOverviewMatches} from './overview.js';
+export {workspaceOverviewMatches,organizationOverviewMatches} from './overview.js';
 
 export {normalizeRunListQuery,runListPosition,captureRunListCursor,encodeRunListCursor,compareRunListPosition,runListTimestamp} from './run-list.js';
 export type {NormalizedRunListQuery,RunListPosition} from './run-list.js';

@@ -67,6 +67,7 @@ Schema catalogue is complete, including runner common exactly once. Implementati
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/retention-batches/{snapshotId} | implemented | RetentionBatchParams | none | none | 200 | RetentionBatchStatus |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/retention-batches/{snapshotId}/discard | implemented | RetentionBatchParams | none | none | 200 | RetentionDiscardReceipt |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/retention-batches/{snapshotId}/preview | implemented | RetentionBatchParams | none | none | 200 | RetentionPreview |
+| GET | /api/v2/organizations/{organizationId}/overview | implemented | OrganizationParams | none | none | 200 | OrganizationOverview |
 
 All errors use ApiError. UUID path parameters are validated before URL encoding.
 List queries require an integer limit 1–100 and optional opaque string cursor; HTTP query parsing belongs to the transport adapter.
