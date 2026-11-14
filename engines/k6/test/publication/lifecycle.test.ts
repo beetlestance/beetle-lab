@@ -35,7 +35,7 @@ it('a blocked original write outlives cancelled result and keeps close/quiescenc
     void op.quiesced.then(() => { quiet = true; }); const closing = op.close();
     await Promise.resolve(); expect(quiet).toBe(false); expect(closed).toBe(0);
     gate.resolve(); await closing; expect(quiet).toBe(true); expect(closed).toBe(1);
-    expect(await readdir(options.directory)).not.toContain('engine-result.json');
+    expect(await readdir(options.directory)).toEqual(['engine-result.json']);
   } finally { gate.resolve(); await op.close(); await clean(options); }
 });
 it('a late descriptor from blocked open remains owned and is closed before quiescence', async () => {
@@ -62,7 +62,7 @@ it('the monotonic timeout cannot manufacture quiescence for a stalled write', as
     await entered.promise; const result = await op.result; expect(result).toMatchObject({ ok: false, code: 'deadline' });
     let quiet = false; void op.quiesced.then(() => { quiet = true; }); await Promise.resolve(); expect(quiet).toBe(false);
     gate.resolve(); await op.quiesced;
-    expect(await readdir(options.directory)).not.toContain('engine-result.json');
+    expect(await readdir(options.directory)).toEqual(['engine-result.json']);
   } finally { gate.resolve(); await op.close(); await clean(options); }
 });
 it.each(['rollback', 'invalid', 'throw'] as const)('sticky clock fence rejects %s during asynchronous IO', async kind => {
@@ -92,12 +92,11 @@ it('quiesced-observer close fences success at the final Promise.race publication
     expect(await readdir(options.directory)).toEqual(['engine-result.json']);
   } finally { await clean(options); }
 });
-it.each(['link', 'unlink'] as const)('late cancellation after %s preserves final output with unconfirmed publication', async step => {
+it.each(['file', 'directory'] as const)('late cancellation after %s sync leaves valid JSON with unconfirmed publication', async owner => {
   const options = await input(); const controller = new AbortController();
-  const io = { ...nodeIo,
-    link: async (source: string, target: string) => { await nodeIo.link(source, target); if (step === 'link') controller.abort(); },
-    unlink: async (path: string) => { await nodeIo.unlink(path); if (step === 'unlink') controller.abort(); },
-  };
+  const io=overrideFile(nodeIo,(file,directory)=>directory===(owner==='directory')?fileProxy(file,{
+    sync:async()=>{await file.sync();controller.abort();},
+  }):file);
   try {
     const op = createPublication({ ...options, signal: controller.signal }, io);
     expect(await op.result).toMatchObject({ ok: false, code: 'cancelled', publication: 'unconfirmed' }); await op.quiesced;

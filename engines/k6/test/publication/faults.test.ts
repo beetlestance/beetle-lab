@@ -1,5 +1,5 @@
 import type { BigIntStats } from 'node:fs';
-import { lstat, readdir } from 'node:fs/promises';
+import { lstat, readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { createPublication } from '../../wrapper/publication/operation.js';
@@ -12,8 +12,9 @@ it.each(['file', 'directory'] as const)('refuses success after %s fsync failure 
     const op = createPublication(options, io); expect(await op.result).toEqual({ ok: false, code: 'filesystem', publication: 'unconfirmed' });
     await op.quiesced;
     const names = await readdir(options.directory);
-    expect(names.includes('engine-result.json')).toBe(owner === 'directory');
+    expect(names).toEqual(['engine-result.json']);
     expect(names).toHaveLength(1);
+    expect(JSON.parse(await readFile(join(options.directory,'engine-result.json'),'utf8'))).toEqual(options.result);
   } finally { await clean(options); }
 });
 it.each(['file', 'directory', 'both'] as const)('retains original %s close failure and closes the other descriptor once', async owner => {
@@ -27,6 +28,7 @@ it.each(['file', 'directory', 'both'] as const)('retains original %s close failu
     await expect(op.quiesced).rejects.toThrow('Result publication failed');
     const first = op.close(); expect(op.close()).toBe(first); await expect(first).rejects.toThrow('Result publication failed');
     expect(counts).toEqual({ file: 1, directory: 1 });
+    expect(JSON.parse(await readFile(join(options.directory,'engine-result.json'),'utf8'))).toEqual(options.result);
   } finally { await clean(options); }
 });
 it('a synchronous parent-close throw cannot detach an outstanding original file-close promise', async () => {
@@ -65,14 +67,14 @@ it.each([
   ['owner', (stat: BigIntStats) => { stat.uid++; }], ['permissions', (stat: BigIntStats) => { stat.mode |= 0o044n; }],
   ['inode', (stat: BigIntStats) => { stat.ino++; }],
   ['changed high inode', (stat: BigIntStats) => { stat.ino = (1n << 60n) + 1n; }],
-] as const)('rejects changed file %s before final linking', async (_name, change) => {
+] as const)('rejects changed file %s before confirming publication', async (_name, change) => {
   const options = await input(); let calls = 0;
   const io = overrideFile(nodeIo, (file, directory) => directory ? file : fileProxy(file, { stat: async () => {
     const value = await file.stat(); if (++calls === 2) change(value); return value;
   } }));
   try {
     const op = createPublication(options, io); expect(await op.result).toMatchObject({ ok: false, code: 'integrity' }); await op.quiesced;
-    expect(await readdir(options.directory)).not.toContain('engine-result.json');
+    expect(await readdir(options.directory)).toEqual(['engine-result.json']);
   } finally { await clean(options); }
 });
 it('returns fixed error data when directory open is denied', async () => {
@@ -93,14 +95,15 @@ it.each([2, 3, 4])('checks named parent identity at publication checkpoint %s', 
     await op.quiesced;
   } finally { await clean(options); }
 });
-it('keeps one inode and both names if cancellation follows linking, without deleting the target', async () => {
+it('keeps one charged single-link output when cancellation follows file synchronization', async () => {
   const options = await input(); const controller = new AbortController();
-  const io = { ...nodeIo, link: async (source: string, target: string) => { await nodeIo.link(source, target); controller.abort(); } };
+  const io = overrideFile(nodeIo,(file,directory)=>directory?file:fileProxy(file,{
+    sync:async()=>{await file.sync();controller.abort();},
+  }));
   try {
     const op = createPublication({ ...options, signal: controller.signal }, io); expect(await op.result).toMatchObject({ ok: false, code: 'cancelled' });
     await op.quiesced;
-    const names = await readdir(options.directory); expect(names).toHaveLength(2);
-    const stats = await Promise.all(names.map(name => lstat(join(options.directory, name))));
-    expect(stats[0]!.ino).toBe(stats[1]!.ino); expect(stats[0]!.nlink).toBe(2);
+    const names = await readdir(options.directory); expect(names).toEqual(['engine-result.json']);
+    const stat=await lstat(join(options.directory,names[0]!));expect(stat.nlink).toBe(1);
   } finally { await clean(options); }
 });

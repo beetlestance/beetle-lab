@@ -61,3 +61,17 @@ these distinct failures into an unsupported resource-limit explanation.
 Next: use the closed hosted failure location to resolve startup, capture the
 failing read's proxy/backend timing, and obtain the actual guard stop branch before
 making an enforcement change. Preserve [release blockers](qualification-blockers.md).
+
+## Publisher/guard composition
+
+A separate deterministic reproduction held the result publisher's two-name hard
+link window open for a real output scan. Publication succeeded, but the scanner
+correctly rejected the alias as custody failure. This does not explain the original
+prepare-phase stop, which left no final result file.
+
+Result publication now exclusively creates one final pathname, with bounded writes,
+file fsync/close, named identity checks and parent fsync/close before success. The
+filename may appear early; successful publication and the reported control seal
+are completion authority. Failed/partial output remains charged and unconfirmed.
+The scanner's single-link rule is unchanged. Composed fault and native confirmation
+remain required before release; source-level correction alone is not qualification.

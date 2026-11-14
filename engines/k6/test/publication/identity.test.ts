@@ -8,21 +8,22 @@ import type { PublicationIo } from '../../wrapper/publication/ports.js';
 const highDevice = (1n << 61n) + 7n;
 const directoryInode = (1n << 58n) + 12n;
 const fileInode = (1n << 58n) + 28n;
-type Mutation = 'named-parent' | 'opened-parent' | 'opened-file' | 'pending' | 'final';
+type Mutation = 'named-parent' | 'opened-parent' | 'opened-file' | 'pre-flush-file' | 'post-flush-file';
 type Component = 'dev' | 'ino';
 function withIdentity(stat: BigIntStats, ino: bigint, change: boolean, component: Component): BigIntStats {
   return Object.assign(stat, { dev: highDevice + (change && component === 'dev' ? 1n : 0n),
     ino: ino + (change && component === 'ino' ? 1n : 0n) });
 }
 function highIdentities(directory: string, mutation?: Mutation, component: Component = 'ino'): PublicationIo {
-  let namedParents = 0; let openedParents = 0; let openedFiles = 0;
+  let namedParents = 0; let openedParents = 0; let openedFiles = 0; let namedFiles=0;
   return { ...nodeIo,
     lstat: async path => {
       const stat = await nodeIo.lstat(path);
       const ino = path === directory ? directoryInode : fileInode; let change = false;
       if (path === directory && ++namedParents === 2 && mutation === 'named-parent') change = true;
-      if (path.includes('.engine-result.json.pending-') && mutation === 'pending') change = true;
-      if (path.endsWith('/engine-result.json') && mutation === 'final') change = true;
+      if(path.endsWith('/engine-result.json')){namedFiles++;
+        if(namedFiles===1&&mutation==='pre-flush-file'||namedFiles===2&&mutation==='post-flush-file')change=true;
+      }
       return withIdentity(stat, ino, change, component);
     },
     open: async (path, flags, mode) => {
@@ -53,7 +54,7 @@ it('accepts stable exact64-bit device/inode identities while keeping public JSON
     expect(typeof result.bytes).toBe('number'); expect(() => JSON.stringify(result)).not.toThrow();
   } finally { await clean(options); }
 });
-it.each((['named-parent', 'opened-parent', 'opened-file', 'pending', 'final'] as const)
+it.each((['named-parent', 'opened-parent', 'opened-file', 'pre-flush-file', 'post-flush-file'] as const)
   .flatMap(mutation => (['dev', 'ino'] as const).map(component => ({ mutation, component }))))(
   'rejects adjacent high-bit $mutation $component differing by exactly1', async ({ mutation, component }) => {
     const options = await input();

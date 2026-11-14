@@ -1,6 +1,5 @@
 import { constants } from 'node:fs';
 import type { BigIntStats } from 'node:fs';
-import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { PublicationError } from './types.js';
 import type { Profile } from './profile.js';
@@ -21,10 +20,9 @@ function directory(stat: BigIntStats, uid: number): void {
 }
 export class Files {
   private parent: PublicationFile | undefined;
-  private pending: PublicationFile | undefined;
+  private output: PublicationFile | undefined;
   private parentIdentity: BigIntStats | undefined;
   private fileIdentity: BigIntStats | undefined;
-  private path: string | undefined;
   private readonly target: string;
   private fileClose: Promise<void> | undefined;
   private closing: Promise<void> | undefined;
@@ -39,10 +37,14 @@ export class Files {
     this.budget.check(); this.parentIdentity = await this.parent.stat(); this.budget.check();
     await this.checkDirectory();
     this.budget.check();
-    this.path = join(this.profile.directory, '.'+this.profile.relativePath+'.pending-' + randomUUID());
-    this.pending = await this.io.open(this.path, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL
-      | constants.O_NOFOLLOW | constants.O_NONBLOCK, 0o600);
-    this.budget.check(); this.fileIdentity = await this.pending.stat(); this.budget.check();
+    try {
+      this.output = await this.io.open(this.target, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL
+        | constants.O_NOFOLLOW | constants.O_NONBLOCK, 0o600);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'EEXIST') throw new PublicationError('exists');
+      throw error;
+    }
+    this.budget.check(); this.fileIdentity = await this.output.stat(); this.budget.check();
     file(this.fileIdentity, this.profile.uid, 0);
   }
   async write(): Promise<void> {
@@ -51,36 +53,26 @@ export class Files {
       this.budget.check();
       if (++calls > 128) throw new PublicationError('limit');
       const length = Math.min(65_536, this.profile.bytes.byteLength - offset);
-      const result = await this.pending!.write(this.profile.bytes, offset, length, offset);
+      const result = await this.output!.write(this.profile.bytes, offset, length, offset);
       this.budget.check();
       if (!Number.isInteger(result.bytesWritten) || result.bytesWritten < 1 || result.bytesWritten > length) throw new PublicationError('filesystem');
       offset += result.bytesWritten;
     }
-    const stat = await this.pending!.stat(); this.budget.check();
+    const stat = await this.output!.stat(); this.budget.check();
     file(stat, this.profile.uid, this.profile.bytes.byteLength);
     if (!same(stat, this.fileIdentity!)) throw new PublicationError('integrity');
-    await this.pending!.sync(); this.budget.check();
+    await this.output!.sync(); this.budget.check();
     await this.closeFile(); this.budget.check();
   }
   async publish(): Promise<void> {
-    const path = this.path;
-    if (!path) throw new PublicationError('integrity');
-    await this.checkDirectory();
-    const pending = await this.io.lstat(path); this.budget.check();
-    file(pending, this.profile.uid, this.profile.bytes.byteLength);
-    if (!same(pending, this.fileIdentity!)) throw new PublicationError('integrity');
-    try { await this.io.link(path, this.target); }
-    catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'EEXIST') throw new PublicationError('exists');
-      throw error;
-    }
-    this.budget.check();
-    await this.io.unlink(path); this.budget.check();
+    await this.checkDirectory(); await this.checkFile();
+    await this.checkDirectory(); await this.parent!.sync(); this.budget.check();
+    await this.checkFile(); await this.checkDirectory();
+  }
+  private async checkFile(): Promise<void> {
     const final = await this.io.lstat(this.target); this.budget.check();
     file(final, this.profile.uid, this.profile.bytes.byteLength);
     if (!same(final, this.fileIdentity!)) throw new PublicationError('integrity');
-    await this.checkDirectory(); await this.parent!.sync(); this.budget.check();
-    await this.checkDirectory();
   }
   private async checkDirectory(): Promise<void> {
     const named = await this.io.lstat(this.profile.directory); this.budget.check();
@@ -90,7 +82,7 @@ export class Files {
   }
   private closeFile(): Promise<void> {
     if (this.fileClose) return this.fileClose;
-    const handle = this.pending;
+    const handle = this.output;
     this.fileClose = Promise.resolve().then(() => handle?.close());
     return this.fileClose;
   }

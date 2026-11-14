@@ -1,4 +1,4 @@
-import { lstat, open, realpath, link, unlink } from 'node:fs/promises';
+import { lstat, open, realpath } from 'node:fs/promises';
 import type { BigIntStats } from 'node:fs';
 
 export interface PublicationFile {
@@ -12,11 +12,9 @@ export interface PublicationIo {
   lstat(path: string): Promise<BigIntStats>;
   realpath(path: string): Promise<string>;
   open(path: string, flags: number, mode?: number): Promise<PublicationFile>;
-  link(source: string, target: string): Promise<void>;
-  unlink(path: string): Promise<void>;
 }
 export const nodeIo: PublicationIo = Object.freeze({
-  lstat: (path: string) => lstat(path, { bigint: true }), realpath, link, unlink,
+  lstat: (path: string) => lstat(path, { bigint: true }), realpath,
   open: async (path: string, flags: number, mode?: number): Promise<PublicationFile> => {
     const file = await open(path, flags, mode);
     return Object.freeze({ stat: () => file.stat({ bigint: true }), sync: () => file.sync(), close: () => file.close(),

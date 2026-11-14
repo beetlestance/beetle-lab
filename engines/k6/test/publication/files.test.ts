@@ -42,7 +42,7 @@ it.each(['file', 'symlink'] as const)('never replaces an existing target %s', as
     await op.quiesced;
     expect(await readFile(path, 'utf8')).toBe(kind === 'file' ? 'original' : 'preserve');
     if (kind === 'symlink') expect(await readlink(path)).toBe(preserved);
-    expect((await readdir(options.directory)).filter(name => name.startsWith('.engine-result.json.pending-'))).toHaveLength(1);
+    expect((await readdir(options.directory)).filter(name => name.startsWith('.engine-result.json.pending-'))).toHaveLength(0);
   } finally { await clean(options); }
 });
 it('completes short writes without exceeding its bounded per-call window', async () => {
@@ -81,7 +81,7 @@ it.each([0, -1, 0.5, 1_048_577])('rejects impossible write progress %s without p
   const io = overrideFile(nodeIo, (file, directory) => directory ? file : fileProxy(file, { write: async () => ({ bytesWritten }) }));
   try {
     const op = createPublication(options, io); expect(await op.result).toMatchObject({ ok: false, code: 'filesystem' });
-    await op.quiesced; expect(await readdir(options.directory)).not.toContain('engine-result.json');
+    await op.quiesced; expect(await readdir(options.directory)).toEqual(['engine-result.json']);
   } finally { await clean(options); }
 });
 it('caps syscall work at128 short writes and preserves the bounded incomplete inode', async () => {
@@ -95,7 +95,7 @@ it('caps syscall work at128 short writes and preserves the bounded incomplete in
     expect((await lstat(join(options.directory, paths[0]!))).size).toBe(128);
   } finally { await clean(options); }
 });
-it('denies a writable or symlink directory before creating a pending file', async () => {
+it('denies a writable or symlink directory before creating an output file', async () => {
   const options = await input();
   try {
     await chmod(options.directory, 0o750);
@@ -103,8 +103,10 @@ it('denies a writable or symlink directory before creating a pending file', asyn
     expect(await readdir(options.directory)).toEqual([]);
   } finally { await clean(options); }
 });
-it.each(['EPERM', 'ENOSYS'])('does not fall back when exclusive hardlink fails with %s', async code => {
-  const options = await input(); const io = { ...nodeIo, link: async () => { throw Object.assign(new Error('private'), { code }); } };
+it.each(['EPERM', 'ENOSYS'])('does not fall back when exclusive file creation fails with %s', async code => {
+  const options = await input(); const io = { ...nodeIo, open: async (...args: Parameters<typeof nodeIo.open>) => {
+    if(args[2]!==undefined)throw Object.assign(new Error('private'),{code});return nodeIo.open(...args);
+  } };
   try {
     const op = createPublication(options, io); const result = await op.result; await op.quiesced;
     expect(result).toEqual({ ok: false, code: 'filesystem', publication: 'unconfirmed' });
