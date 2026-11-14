@@ -1,4 +1,5 @@
-const phases = new Set(['startup', 'ordinary-run', 'offline-export', 'second-up', 'restart', 'cleanup']);
+import {nativeFailureCodes, nativeFailureFiles} from './failure.js';
+const phases = new Set(['startup', 'compose-up', 'local-session', 'agent-readiness', 'control-reserve', 'ordinary-run', 'offline-export', 'second-up', 'restart', 'cleanup']);
 const architectures = new Set(['amd64', 'arm64']);
 const roles = ['frontend', 'backend', 'agent', 'installer', 'engine', 'offline'] as const;
 function member(value: unknown, allowed: ReadonlySet<string>): string | null {
@@ -6,6 +7,17 @@ function member(value: unknown, allowed: ReadonlySet<string>): string | null {
 }
 function matching(value: unknown, pattern: RegExp): string | null {
   return typeof value === 'string' && pattern.test(value) ? value : null;
+}
+function location(input: unknown) {
+  if (!input || typeof input !== 'object') return null;
+  const value = input as Record<string, unknown>; const file = member(value.file, nativeFailureFiles);
+  if (!file || !Number.isInteger(value.line) || !Number.isInteger(value.column)) return null;
+  const line = value.line as number; const column = value.column as number;
+  return line > 0 && line <= 9999 && column > 0 && column <= 9999 ? {file, line, column} : null;
+}
+function diagnosis(input: unknown) {
+  const value = input && typeof input === 'object' ? input as Record<string, unknown> : {};
+  return {code: member(value.code, nativeFailureCodes) ?? 'internal', site: location(value.site)};
 }
 function fixedImages(input: unknown): Readonly<Record<string, string | null>> {
   const source = input && typeof input === 'object' ? input as Readonly<Record<string, unknown>> : {};
@@ -26,5 +38,6 @@ export function nativeOutcome(evidence: Readonly<Record<string, unknown>>) {
     revision: matching(evidence.revision, /^[a-f0-9]{40}$/),
     architecture: member(evidence.architecture, architectures),
     cleanupVerified: clean, imageIds: fixedImages(evidence.imageIds),
+    diagnosis: passed ? null : diagnosis(evidence.diagnosis),
   } as const;
 }
