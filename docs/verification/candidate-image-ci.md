@@ -79,3 +79,6 @@ resource overhead remain qualification work. [Supply-chain work](rewrite-supply-
 records the newer candidate's scans and explicit native failure; immutable pull
 manifests and rewrite publication remain B10 delivery work.
 The [Browser packet](../execution/remaining-rewrite.md) and full UI redesign remain separate.
+
+[Qualified transport](rewrite-image-delivery.md) preserves exact executed/scanned
+images for later delivery, with active byte limits and no registry publication.

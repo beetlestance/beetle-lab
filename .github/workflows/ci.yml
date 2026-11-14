@@ -7,6 +7,12 @@ on:
     branches: [main, develop]
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      prepare_rewrite_delivery:
+        description: Preserve exact qualified rewrite images for later publication; does not publish
+        type: boolean
+        default: false
+        required: false
 
 permissions:
   contents: read
@@ -242,6 +248,28 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
           compression-level: 6
+      - name: Archive the exact qualified and scanned image IDs
+        if: ${{ inputs.prepare_rewrite_delivery == true }}
+        env:
+          CANDIDATE_REVISION: ${{ github.sha }}
+          CANDIDATE_ARCHITECTURE: ${{ matrix.arch }}
+        run: |
+          set -- "$RUNNER_TEMP"/beetle-compose-evidence-*/outcome.json
+          test "$#" = 1
+          test -f "$1"
+          node --import tsx tools/delivery/archive.ts "$CANDIDATE_REVISION" "$CANDIDATE_ARCHITECTURE" \
+            "$RUNNER_TEMP/rewrite-supply-chain" "$1" "$RUNNER_TEMP/rewrite-bundle"
+      - name: Retain exact qualified images for the delivery step
+        if: ${{ inputs.prepare_rewrite_delivery == true }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rewrite-images-${{ matrix.arch }}-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rewrite-bundle/bundle.json
+            ${{ runner.temp }}/rewrite-bundle/images.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
 
   container:
     name: ci/container
