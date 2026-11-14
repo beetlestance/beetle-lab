@@ -1,3 +1,4 @@
+import type {AttemptSnapshot} from '@beetle/contracts';
 import type {RunnerExportAttemptClient} from '../../ports/export-runner.js';
 import type {ExportControl,ExportKey} from '../../ports/exports.js';
 import type {ExportOutputBinding} from '../../domain/output-owner/index.js';
@@ -15,7 +16,14 @@ export async function reconcileExport(options:ExportRuntimeOptions,key:ExportKey
  if(!result.ok||signal.aborted)return;
  const job=await options.executions.observe({key,snapshot:result.value,journalAuthority:binding.journalAuthority});
  if(signal.aborted||job.state!=='publishing')return;
+ // Exited/result evidence can precede reservation release and final source custody.
+ // Rejections and never-started releases must still reach authenticated absence settlement.
+ if(!outputReady(result.value))return;
  await publish(options,binding,signal);
+}
+function outputReady(snapshot:AttemptSnapshot):boolean{
+ if(snapshot.admission?.state==='rejected')return true;
+ return snapshot.state==='exited'&&snapshot.admission?.state==='released';
 }
 async function publish(options:ExportRuntimeOptions,binding:ExportOutputBinding,signal:AbortSignal):Promise<void>{
  const work=options.transfers.transfer(binding,signal);
