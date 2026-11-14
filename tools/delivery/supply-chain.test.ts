@@ -38,14 +38,18 @@ if [ "$MODE" = gate ] && [ "$gate" = 1 ]; then exit 1; fi
   const calls = join(root, 'calls'); const output = join(root, 'reports');
   const run = () => spawnSync('bash', [script, revision, 'arm64', join(bin, 'scanner'), output], {
     env: {...process.env, PATH: `${bin}:${process.env.PATH ?? ''}`, MODE: mode, CALLS: calls},
-    encoding: 'utf8', timeout: 5000, maxBuffer: 65536,
+    // Twelve scans plus conversions/identity calls start separate mock shells.
+    // This bounds the test harness, not a product operation or scanner deadline.
+    encoding: 'utf8', timeout: 8000, maxBuffer: 65536,
   });
   return {run, output, calls};
 }
 it('scans immutable image IDs and emits all six SBOM and identity reports', async () => {
   const f = await fixture('pass'); const result = f.run(); expect(result.status, result.stderr).toBe(0);
   const calls = (await readFile(f.calls, 'utf8')).split('\n');
-  const scans = calls.filter(line => line.startsWith('image ')); expect(scans).toHaveLength(6);
+  const scans = calls.filter(line => line.startsWith('image ')); expect(scans).toHaveLength(12);
+  expect(scans.filter(line => line.includes('--scanners vuln '))).toHaveLength(6);
+  expect(scans.filter(line => line.includes('--scanners license '))).toHaveLength(6);
   for (const call of scans) {expect(call).toContain('--image-src docker'); expect(call.endsWith(imageId)).toBe(true);}
   for (const role of ['frontend', 'backend', 'agent', 'installer', 'engine', 'export']) {
     expect(await readFile(join(f.output, `${role}.cdx.json`), 'utf8')).toContain('{}');
@@ -54,7 +58,7 @@ it('scans immutable image IDs and emits all six SBOM and identity reports', asyn
 });
 it('retains a dependency audit failure while still inventorying every image', async () => {
   const f = await fixture('audit'); expect(f.run().status).toBe(1);
-  expect((await readFile(f.calls, 'utf8')).split('\n').filter(line => line.startsWith('image '))).toHaveLength(6);
+  expect((await readFile(f.calls, 'utf8')).split('\n').filter(line => line.startsWith('image '))).toHaveLength(12);
 });
 it('fails closed on scanner error and does not fabricate an SBOM', async () => {
   const f = await fixture('image'); expect(f.run().status).toBe(1);
@@ -62,7 +66,7 @@ it('fails closed on scanner error and does not fabricate an SBOM', async () => {
 });
 it('retains high-severity gate failure while collecting all six image inventories', async () => {
   const f = await fixture('gate'); expect(f.run().status).toBe(1);
-  expect((await readFile(f.calls, 'utf8')).split('\n').filter(line => line.startsWith('image '))).toHaveLength(6);
+  expect((await readFile(f.calls, 'utf8')).split('\n').filter(line => line.startsWith('image '))).toHaveLength(12);
   expect(await readFile(join(f.output, 'export.cdx.json'), 'utf8')).toContain('{}');
 });
 it('refuses a wrong-architecture image before scanning it', async () => {

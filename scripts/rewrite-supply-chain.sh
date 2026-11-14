@@ -19,7 +19,7 @@ export TRIVY_CACHE_DIR=${TRIVY_CACHE_DIR:-"$output/cache"}
 status=0
 # Bundled JavaScript is not reliably catalogued from images. Retain a separate
 # production dependency graph/audit; do not claim image scanning covers it.
-npm sbom --omit=dev --sbom-format=cyclonedx > "$output/source-dependencies.cdx.json"
+npm sbom --package-lock-only --omit=dev --sbom-format=cyclonedx > "$output/source-dependencies.cdx.json"
 npm audit --omit=dev --audit-level=high --json > "$output/source-audit.json" || status=1
 for role in frontend backend agent installer engine export; do
   image="$prefix-$role:$revision"
@@ -29,8 +29,13 @@ for role in frontend backend agent installer engine export; do
   [[ "$actualRevision/$os/$actualArchitecture" == "$revision/linux/$architecture" ]]
   docker image inspect "$imageId" > "$output/$role.identity.json"
   "$scanner" image --image-src docker --parallel 1 --timeout 5m \
-    --max-image-size 500MB --scanners vuln,license --list-all-pkgs \
+    --max-image-size 500MB --scanners vuln --list-all-pkgs \
     --format json --output "$output/$role.scan.json" "$imageId"
+  # License classifications are an inventory for review, not CVE severities.
+  # Keep them separate: convert's --scanners changes presentation, not exit logic.
+  "$scanner" image --image-src docker --parallel 1 --timeout 5m \
+    --max-image-size 500MB --scanners license --list-all-pkgs \
+    --format json --output "$output/$role.licenses.json" "$imageId"
   "$scanner" convert --format cyclonedx --output "$output/$role.cdx.json" "$output/$role.scan.json"
   "$scanner" convert --scanners vuln --severity HIGH,CRITICAL --exit-code 1 \
     --format table --output "$output/$role.gate.txt" "$output/$role.scan.json" || status=1

@@ -75,6 +75,7 @@ variant was render-checked, not qualified as a native upgrade. No user files wer
 rewritten.
 
 Native amd64 execution, cold-cache/repeated/flood controls, backup/restore and
-resource overhead remain qualification work. SBOM, dependency/image/license
-reports, immutable pull manifests and rewrite publication remain B10 delivery work.
+resource overhead remain qualification work. [Supply-chain work](rewrite-supply-chain.md)
+records the newer candidate's scans and explicit native failure; immutable pull
+manifests and rewrite publication remain B10 delivery work.
 The [Browser packet](../execution/remaining-rewrite.md) and full UI redesign remain separate.
