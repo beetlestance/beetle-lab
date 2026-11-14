@@ -11,6 +11,7 @@ export function runListStatement(input: RunList, suiteId?: string): { sql: strin
   const position = runListPosition(scope, query);
   const predicates = ['organization_id=?', 'workspace_id=?'];
   const values: SQLInputValue[] = [scope.organizationId, scope.workspaceId];
+  suiteId=suiteId??query.suiteId;
   if (suiteId !== undefined) { predicates.push('suite_id=?'); values.push(suiteId); }
   if (query.state !== undefined) { predicates.push('state=?'); values.push(query.state); }
   if (query.outcome !== undefined) { predicates.push('outcome=?'); values.push(query.outcome); }

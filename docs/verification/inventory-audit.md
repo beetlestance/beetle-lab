@@ -13,9 +13,9 @@ No complete A01–A09 or R0–R4 release acceptance is inferred.
 | F01 | [Workspace overview](workspace-overview.md), [organisation overview](organization-overview.md) | Packaged browser/platform acceptance |
 | F02 | [Namespace handlers](../../app/src/adapters/inbound/http/namespaces/index.ts), [availability](reference-availability.md) | [Empty-only DELETE](namespace-deletion.md) now local; packaged acceptance and explicit nonempty restriction |
 | F03 | [Input controls](input-controls.md), [upload](../../web/src/features/input-upload/index.tsx) | Directory intake; certify replacement via immutable inputs, not destructive overwrite |
-| F04 | [Authoring](suite-authoring.md), [suite catalogue](../../web/src/features/suites/index.tsx) | Catalogue currently has name/version/revision, not target/duration/latest run |
+| F04 | [Authoring](suite-authoring.md), [configuration/history summary](suite-overview.md) | Selected-view summaries local; catalogue placement deferred; packaged acceptance |
 | F05 | [Run controls](run-controls.md), [native app](native-application-k6.md) | Packaged target override/cancel and failure acceptance |
-| F06 | [Filters](run-history-query.md), [scalars](run-history-summary.md), [search](run-history-search.md) | Browser/platform acceptance; preserve documented search differences |
+| F06 | [Filters](run-history-query.md), [scalars](run-history-summary.md), [search](run-history-search.md), [exact suite](suite-overview.md) | Browser/platform acceptance; preserve documented search differences |
 | F07 | [Event reads](run-event-reads.md), [timeline](run-timeline-ui.md), [native diagnostics](../../engines/k6/wrapper/process/metrics.ts) | Lifecycle replay exists; native diagnostic text viewing/replay does not follow from it |
 | F08 | [Native live metrics](native-live-metrics.md), [recorded metrics](run-metric-history.md) | Known-value full metric/browser/platform matrix |
 | F09 | [Suite compiler](../../engines/k6/compiler/suite/requests.ts), [archive](k6-metric-archive.md) | Endpoint-name/cardinality acceptance through packaged charts |

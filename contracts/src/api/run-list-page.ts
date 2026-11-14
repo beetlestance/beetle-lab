@@ -7,6 +7,7 @@ function owns(row:Run,scope:WorkspaceScope):boolean{
 }
 function accepts(row:Run,query:NormalizedRunListQuery):boolean{
  return (query.state===undefined||row.state===query.state)&&(query.outcome===undefined||row.outcome===query.outcome)&&runListTimestamp(row.requestedAt)
+  &&(query.suiteId===undefined||row.suiteId.toLowerCase()===query.suiteId)
   &&(query.runIdPrefix===undefined||row.id.toLowerCase().startsWith(query.runIdPrefix));
 }
 function ordered(rows:readonly Run[],position:RunListPosition|null,scope:WorkspaceScope,query:NormalizedRunListQuery):boolean{

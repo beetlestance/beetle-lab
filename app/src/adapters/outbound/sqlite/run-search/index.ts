@@ -16,6 +16,7 @@ export function historyKeys(db: DatabaseSync, input: RunList): HistoryKey[] {
   const query = normalizeRunListQuery(inputPage(input));
   let result: HistoryKey[] = [];
   for (const id of matchingSuites(db, input.scope, input.name)) {
+    if(query.suiteId!==undefined&&id.toLowerCase()!==query.suiteId)continue;
     result = [...result, ...suiteKeys(db, input, id)].sort((a, b) => orderKeys(a, b, query.order)).slice(0, query.limit + 1);
   }
   return result;
@@ -32,12 +33,12 @@ function suiteKeys(db: DatabaseSync, input: RunList, suiteId?: string): HistoryK
   const statement = runListStatement(input, suiteId);
   return db.prepare(statement.sql).all(...statement.values) as unknown as HistoryKey[];
 }
-interface PrefixKey extends HistoryKey { state: string; outcome: string }
+interface PrefixKey extends HistoryKey { state: string; outcome: string; suite_id:string }
 /** Prefix bound applies before lifecycle/cursor filtering; pagination cannot hide overflow. */
 function prefixKeys(db: DatabaseSync, input: RunList): HistoryKey[] {
   const query = normalizeRunListQuery(inputPage(input));
   const prefix = query.runIdPrefix!;
-  const rows = db.prepare(`SELECT id,requested_at,state,outcome FROM runs INDEXED BY runs_page
+  const rows = db.prepare(`SELECT id,requested_at,state,outcome,suite_id FROM runs INDEXED BY runs_page
     WHERE organization_id=? AND workspace_id=? AND id>=? AND id<? ORDER BY id LIMIT 257`)
     .all(input.scope.organizationId, input.scope.workspaceId, prefix, prefix + '~') as unknown as PrefixKey[];
   if (rows.length > 256) throw new StorageError('search_too_broad');
@@ -46,6 +47,7 @@ function prefixKeys(db: DatabaseSync, input: RunList): HistoryKey[] {
     .sort((a, b) => orderKeys(a, b, query.order)).slice(0, query.limit + 1);
 }
 function accepts(row: PrefixKey, query: ReturnType<typeof normalizeRunListQuery>, position: ReturnType<typeof runListPosition>): boolean {
+  if(query.suiteId!==undefined&&row.suite_id.toLowerCase()!==query.suiteId)return false;
   if (query.state !== undefined && row.state !== query.state) return false;
   if (query.outcome !== undefined && row.outcome !== query.outcome) return false;
   if (position === null) return true;

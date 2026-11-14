@@ -1,9 +1,10 @@
+import {validateApi} from '@beetle/contracts/api';
 import { HistorySummaryCells } from './HistorySummaryCells.js';
 import { HistoryFilters } from './HistoryFilters.js';
 import type { HistoryFilter } from './HistoryFilters.js';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link,useLocation } from 'react-router-dom';
 import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
@@ -13,12 +14,16 @@ import { terminal } from './RunDetail.js';
 import type { RunScope } from './types.js';
 
 export function RunHistory(scope: RunScope) {
-  return <HistoryContext key={JSON.stringify(scope)} scope={scope} />;
+  const {search}=useLocation();if(search.length>2048)return <p role="alert">Invalid history context.</p>;
+  const ids=new URLSearchParams(search).getAll('suiteId');
+  if(ids.length>1||(ids.length===1&&!validateApi('Uuid',ids[0]).ok))return <p role="alert">Invalid suite history context.</p>;
+  const suiteId=ids[0]?.toLowerCase();
+  return <HistoryContext key={JSON.stringify([scope,suiteId])} scope={scope} {...(suiteId?{suiteId}:{})} />;
 }
-function HistoryContext({ scope }: { scope: RunScope }) {
-  const [context, setContext] = useState({ filters: { order: 'newest' } as HistoryFilter, epoch: 0 });
-  function apply(filters: HistoryFilter) { setContext(previous => ({ filters, epoch: previous.epoch + 1 })); }
-  return <><HistoryFilters applied={context.filters} apply={apply} />
+function HistoryContext({ scope,suiteId }: { scope: RunScope;suiteId?:string }) {
+  const [context, setContext] = useState({ filters: { order: 'newest',...(suiteId?{suiteId}:{}) } as HistoryFilter, epoch: 0 });
+  function apply(filters: HistoryFilter) { setContext(previous => ({ filters:{...filters,...(suiteId?{suiteId}:{})}, epoch: previous.epoch + 1 })); }
+  return <>{suiteId&&<p>History for suite <span className="number">{suiteId}</span>. <Link to={routes.runs(scope.organizationId,scope.workspaceId)}>All workspace history</Link></p>}<HistoryFilters applied={context.filters} apply={apply} />
     <HistoryPage key={context.epoch} scope={scope} filters={context.filters} /></>;
 }
 function HistoryPage({ scope, filters }: { scope: RunScope; filters: HistoryFilter }) {

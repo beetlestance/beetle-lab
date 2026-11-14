@@ -77,6 +77,7 @@ export function operationPath(operation: ApiOperation, input: PreparedInput): st
 }
 
 function appendRunQuery(query: URLSearchParams, input: NonNullable<PreparedInput['query']>): void {
+  if('suiteId' in input&&input.suiteId!==undefined)query.set('suiteId',input.suiteId);
   if ('state' in input && input.state !== undefined) query.set('state', input.state);
   if ('outcome' in input && input.outcome !== undefined) query.set('outcome', input.outcome);
   appendRunSearch(query, input);

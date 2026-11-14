@@ -8,7 +8,7 @@ export const queryKeys = {
   suitesPage:(org:string,workspace:string,cursor='')=>[...queryKeys.suites(org,workspace),cursor] as const,
   runsPage:(org:string,workspace:string,cursor='',query:RunListQuery={limit:100})=>{
     const q=normalizeRunListQuery(query);
-    return [...queryKeys.runs(org,workspace),'page',String(q.limit),q.state??'',q.outcome??'',q.order,q.name??'',q.runIdPrefix??'',cursor] as const;
+    return [...queryKeys.runs(org,workspace),'page',String(q.limit),q.state??'',q.outcome??'',q.order,q.name??'',q.runIdPrefix??'',q.suiteId??'',cursor] as const;
   },
   exports:(org:string,workspace:string)=>[...queryKeys.workspace(org,workspace),'exports'] as const,
   export:(org:string,workspace:string,id:string)=>[...queryKeys.exports(org,workspace),id.toLowerCase()] as const,

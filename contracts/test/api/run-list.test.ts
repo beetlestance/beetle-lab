@@ -46,3 +46,19 @@ it('checks strict tie ordering, filters, last cursor, short pages and continuati
   expect(runListPageMatches({ ...page, nextCursor: null }, scope, { ...query, cursor: cursor() })).toBe(false);
   expect(runListPageMatches({ scope, items: [older, run], summaries: [pendingRunHistorySummary(older), pendingRunHistorySummary(run)], nextCursor: null }, scope, { ...query, order: 'oldest' })).toBe(true);
 });
+it('binds v3 history cursors and replies to the exact suite without changing unfiltered encodings',async()=>{
+ const run=await fixture('valid/run.json') as Run;
+ const filtered=normalizeRunListQuery({limit:1,suiteId:run.suiteId.toUpperCase()});
+ const encoded=encodeRunListCursor({scope,query:filtered,requestedAt,id});
+ expect(JSON.parse(atob(encoded))[0]).toBe('run-page-v3');expect(encoded.length).toBeLessThanOrEqual(1024);
+ expect(captureRunListCursor(encoded).query.suiteId).toBe(run.suiteId.toLowerCase());
+ expect(()=>runListPosition(scope,{limit:1,suiteId:id,cursor:encoded})).toThrow();
+ expect(()=>runListPosition(scope,{limit:1,cursor:encoded})).toThrow();
+ const page={scope,items:[run],summaries:[pendingRunHistorySummary(run)],nextCursor:null};
+ expect(runListPageMatches(page,scope,filtered)).toBe(true);
+ expect(runListPageMatches(page,scope,{limit:1,suiteId:id})).toBe(false);
+ expect(JSON.parse(atob(cursor()))[0]).toBe('run-page-v1');
+ const searched=normalizeRunListQuery({limit:1,suiteId:run.suiteId,name:'Checkout'});
+ const next=encodeRunListCursor({scope,query:searched,requestedAt,id});
+ expect(runListPosition(scope,{...searched,cursor:next})?.query.name).toBe('checkout');
+});

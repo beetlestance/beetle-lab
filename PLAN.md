@@ -67,7 +67,7 @@ Native live activation uses [trusted image capability](docs/decisions/014-live-m
 | Work | Required completion |
 | --- | --- |
 | Namespace deletion | Empty-only deletion locally implemented; nonempty recursive maintenance unsupported; packaged acceptance remains |
-| Input/config parity | Directory-tree upload, immutable replacement acceptance, suite target/duration/last-run summaries |
+| Input/config parity | Directory-tree upload and immutable replacement acceptance remain; selected-revision summary/exact-suite history are locally implemented |
 | Diagnostics/warnings | Bounded retained/replayed diagnostics, native warning classification and configured-scenario advice |
 | Overview | Workspace and whole-organisation rollups locally implemented; packaged/platform acceptance remains |
 | Recovery | Remaining delivery restart/cold-restore proof and supported cold backup/restore tooling |

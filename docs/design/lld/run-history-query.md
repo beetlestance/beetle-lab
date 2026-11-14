@@ -103,3 +103,7 @@ backfill/readiness and work budgets, including deliberate legacy differences.
 H3 implements the linked bounded search contract. Current-name and UUID-prefix
 modes deliberately replace legacy path/ID substring behavior. Its verified scope
 and remaining browser/platform/release work live in the evidence report.
+
+Exact suiteId filtering and suite-bound v3 cursors extend this contract in
+[suite overview/history](suite-overview.md). Existing no-suite encodings and name/
+prefix bounds remain unchanged; ownership/cursor validation precedes name backfill.

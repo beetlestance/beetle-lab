@@ -1,6 +1,6 @@
 import { readHistorySummaries } from './run-history/index.js';
 import type { DatabaseSync } from 'node:sqlite';
-import { encodeRunListCursor, normalizeRunListQuery, runListPageMatches, validateApi } from '@beetle/contracts/api';
+import { encodeRunListCursor, normalizeRunListQuery, runListPageMatches, runListPosition, validateApi } from '@beetle/contracts/api';
 import type { Run, RunPage } from '@beetle/contracts/api';
 import type { RunKey, RunList } from '../../../ports/runs.js';
 import { requireRule } from '../../../domain/namespaces/index.js';
@@ -31,6 +31,8 @@ export class RunReads {
     const { scope: owner, ...page } = input;
     const query = normalizeRunListQuery(page);
     const scope = normalizedScope(owner);
+    runListPosition(scope,query);
+    if(query.suiteId!==undefined)this.suites.getSuite({scope,id:query.suiteId});
     const search = { scope, ...query };
     if (query.name !== undefined) { this.suites.workspace(scope); prepareHistorySearch(this.db, search); }
     return transaction(this.db, () => {

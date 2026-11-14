@@ -1,5 +1,6 @@
+import {initialize} from '../../../src/adapters/outbound/sqlite/schema.js';
+import {inputOptions} from '../inputs-fixture.js';
 import { expect, it } from 'vitest';
-import { DatabaseSync } from 'node:sqlite';
 import { scope, seed, storageFixture, uuid, createFolder, requestId } from '../fixture.js';
 import { append, createSuite, suiteCommand } from '../suites-fixture.js';
 import { runCommand, runOptions } from '../runs-fixture.js';
@@ -14,7 +15,7 @@ async function prepared(metadata: Metadata): Promise<void> {
   throw new Error('Backfill exceeded fixture document budget');
 }
 it('rejects oversized UUID prefixes before filters/cursors but pages the same many-run suite by name', async () => {
-  const metadata = await fixture.open(undefined, runOptions(512)); await seed(metadata);
+  const metadata = await fixture.open(undefined, {...runOptions(512),...inputOptions(20_000_000)}); await seed(metadata);
   const revision = await append(metadata, await createSuite(metadata, 50, scope, 'Many histories'));
   for (let id = 500; id < 758; id++) await metadata.runs.execute(runCommand(revision.id, id));
   const first = await metadata.runs.listRuns({ scope, limit: 1, name: 'histories' });
@@ -47,7 +48,7 @@ it('reports broad postings and folder/suite expansion instead of truncating; rar
 it('indexes name edits atomically with bounded postings and removes deleted owners', async () => {
   const path = fixture.path(); const metadata = await fixture.open(path, runOptions()); await seed(metadata);
   await createSuite(metadata, 50, scope, 'Repeated repeated repeated'); await fixture.close(metadata);
-  const db = new DatabaseSync(path); registerSearchFold(db);
+  const db = initialize(path); registerSearchFold(db);
   const before = db.prepare("SELECT COUNT(*) AS n FROM history_name_grams WHERE entity_id=?").get(uuid(50))?.n;
   expect(Number(before)).toBeLessThan(25);
   expect(() => db.prepare('UPDATE suites SET folded_name=? WHERE id=?').run('x'.repeat(4097), uuid(50))).toThrow();

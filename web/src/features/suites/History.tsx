@@ -1,3 +1,4 @@
+import {ConfigurationSummary} from '../suite-overview/index.js';
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Suite, SuiteRevision } from '@beetle/contracts/api';
@@ -44,7 +45,7 @@ export function SavedRevision({ revision }: { revision: SuiteRevision }) {
   return <article className="suite-editor"><h3>Revision {revision.ordinal}</h3>
     <p>Structural preflight: {revision.preflightStatus}. This does not indicate a successful run.</p>
     <p className="number">Revision ID: {revision.id}</p><p className="number">Digest: {revision.digest}</p>
-    <RunSavedRevision revision={revision} /><ExportSavedRevision revision={revision} />
+    <ConfigurationSummary revision={revision} /><RunSavedRevision revision={revision} /><ExportSavedRevision revision={revision} />
     <label>Saved configuration JSON<textarea readOnly value={draftText(revision.config)} /></label>
   </article>;
 }

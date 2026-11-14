@@ -17,7 +17,8 @@ export function normalizeRunListQuery(input: RunListQuery): NormalizedRunListQue
   if (!checked.ok) throw new Error('Invalid run list query');
   return { ...checked.value, order: checked.value.order ?? 'newest',
     ...(checked.value.name === undefined ? {} : { name: normalizeRunSearchName(checked.value.name) }),
-    ...(checked.value.runIdPrefix === undefined ? {} : { runIdPrefix: normalizeRunIdPrefix(checked.value.runIdPrefix) }) };
+    ...(checked.value.runIdPrefix === undefined ? {} : { runIdPrefix: normalizeRunIdPrefix(checked.value.runIdPrefix) }),
+    ...(checked.value.suiteId === undefined ? {} : {suiteId:checked.value.suiteId.toLowerCase()}) };
 }
 function scope(input: unknown): WorkspaceScope {
   const copy: unknown = JSON.parse(encodeJson(input, 512));
@@ -43,11 +44,11 @@ export function encodeRunListCursor(input: RunListPosition): string {
   const tuple = positionTuple({ ...copy, scope: owner, query }, search);
   const bytes = new TextEncoder().encode(JSON.stringify(tuple));
   const encoded = btoa(String.fromCharCode(...bytes)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
-  if (encoded.length > 512) throw new Error('Run list cursor limit');
+  if (encoded.length > (query.suiteId===undefined?512:1024)) throw new Error('Run list cursor limit');
   return encoded;
 }
 export function captureRunListCursor(input: string): RunListPosition {
-  if (typeof input !== 'string' || input.length > 512 || !/^[A-Za-z0-9_-]+$/.test(input)) {
+  if (typeof input !== 'string' || input.length > 1024 || !/^[A-Za-z0-9_-]+$/.test(input)) {
     throw new Error('Invalid run list cursor');
   }
   const tuple = decodePositionTuple(input);
@@ -59,7 +60,7 @@ export function captureRunListCursor(input: string): RunListPosition {
 }
 function identity(owner: WorkspaceScope, query: NormalizedRunListQuery): string {
   const s = scope(owner);
-  return JSON.stringify([s.organizationId, s.workspaceId, query.limit, query.state ?? null, query.outcome ?? null, query.order, query.name ?? null, query.runIdPrefix ?? null]);
+  return JSON.stringify([s.organizationId, s.workspaceId, query.limit, query.state ?? null, query.outcome ?? null, query.order, query.name ?? null, query.runIdPrefix ?? null,query.suiteId??null]);
 }
 /** Rejects legacy cursors and mismatched queries before repository/fetch work. */
 export function runListPosition(owner: WorkspaceScope, input: RunListQuery): RunListPosition | null {
@@ -78,9 +79,10 @@ export function compareRunListPosition(left: { requestedAt: string; id: string }
 
 function positionTuple(position: RunListPosition, search: boolean): unknown[] {
   const { scope: owner, query } = position;
-  const tuple: unknown[] = [search ? 'run-page-v2' : 'run-page-v1', owner.organizationId, owner.workspaceId,
+  const tuple: unknown[] = [query.suiteId!==undefined?'run-page-v3':search ? 'run-page-v2' : 'run-page-v1', owner.organizationId, owner.workspaceId,
     query.limit, query.state ?? null, query.outcome ?? null, query.order, position.requestedAt, position.id.toLowerCase()];
-  if (search) tuple.push(query.name ?? null, query.runIdPrefix ?? null);
+  if (search||query.suiteId!==undefined) tuple.push(query.name ?? null, query.runIdPrefix ?? null);
+  if(query.suiteId!==undefined)tuple.push(query.suiteId);
   return tuple;
 }
 function decodePositionTuple(input: string): unknown[] {
@@ -92,10 +94,12 @@ function decodePositionTuple(input: string): unknown[] {
 }
 function validTupleVersion(tuple: unknown[]): boolean {
   return (tuple.length === 9 && tuple[0] === 'run-page-v1')
-    || (tuple.length === 11 && tuple[0] === 'run-page-v2' && (tuple[9] !== null || tuple[10] !== null));
+    || (tuple.length === 11 && tuple[0] === 'run-page-v2' && (tuple[9] !== null || tuple[10] !== null))
+    || (tuple.length===12&&tuple[0]==='run-page-v3'&&typeof tuple[11]==='string');
 }
 function tupleQuery(tuple: unknown[]): NormalizedRunListQuery {
   return normalizeRunListQuery({ limit: tuple[3], order: tuple[6],
     ...(tuple[4] === null ? {} : { state: tuple[4] }), ...(tuple[5] === null ? {} : { outcome: tuple[5] }),
+    ...(tuple[11] == null ? {} : {suiteId:tuple[11]}),
     ...(tuple[9] == null ? {} : { name: tuple[9] }), ...(tuple[10] == null ? {} : { runIdPrefix: tuple[10] }) } as RunListQuery);
 }

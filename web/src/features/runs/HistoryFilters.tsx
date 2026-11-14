@@ -2,12 +2,12 @@ import { normalizeRunListQuery } from '@beetle/contracts/api';
 import { useState } from 'react';
 import type { RunListQuery } from '@beetle/contracts/api';
 
-export type HistoryFilter = Pick<RunListQuery, 'state' | 'outcome' | 'order' | 'name' | 'runIdPrefix'>;
+export type HistoryFilter = Pick<RunListQuery, 'state' | 'outcome' | 'order' | 'name' | 'runIdPrefix' | 'suiteId'>;
 const runStates = ['queued', 'dispatching', 'active', 'finalizing', 'finished', 'cancelled', 'errored'] as const;
 const outcomes = ["pending", "passed", "failed", "inconclusive"] as const;
 export function HistoryFilters({ applied, apply }: { applied: HistoryFilter; apply: (value: HistoryFilter) => void }) {
   const [draft, setDraft] = useState(applied);
-  const [mode, setMode] = useState<'name' | 'runIdPrefix'>('name');
+  const [mode, setMode] = useState<'name' | 'runIdPrefix' | 'suiteId'>('name');
   const [text, setText] = useState('');
   const [error, setError] = useState('');
   function submit() {

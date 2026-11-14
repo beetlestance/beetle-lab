@@ -1,3 +1,4 @@
+import {ConfigurationSummary,SuiteLatestRun} from '../suite-overview/index.js';
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -64,7 +65,7 @@ function SuiteContent({ suite, workspace, refresh }: { suite: Suite; workspace: 
   return <section className="content-section"><header className="section-header"><div><h1>{suite.name}</h1><p>Suite version {suite.version}</p></div>
     <button onClick={() => edit(true)} disabled={editing}>Edit suite metadata</button></header>
     {editing && <MetadataEditor suite={suite} workspace={workspace} refresh={refresh} close={() => edit(false)} />}
-    <CurrentDraft suite={suite} refresh={refresh} /><History suite={suite} />
+    <SuiteLatestRun key={suite.id} suite={suite} /><CurrentDraft suite={suite} refresh={refresh} /><History suite={suite} />
   </section>;
 }
 function CurrentDraft({ suite, refresh }: { suite: Suite; refresh: () => Promise<unknown> }) {
@@ -83,7 +84,7 @@ function CurrentDraft({ suite, refresh }: { suite: Suite; refresh: () => Promise
     void client.cancelQueries({ queryKey: key, type: 'inactive' }); client.removeQueries({ queryKey: key, type: 'inactive' });
   }, [client, params.organizationId, params.workspaceId, params.revisionId]);
   useEffect(() => { if (initial === undefined && query.data) setInitial(query.data); }, [initial, query.data]);
-  if (initial !== undefined) return <RevisionEditor suite={suite} {...(initial ? { initial } : {})} refresh={refresh} />;
+  if (initial !== undefined) return <>{query.data&&!query.isError&&<ConfigurationSummary revision={query.data} />}<RevisionEditor suite={suite} {...(initial ? { initial } : {})} refresh={refresh} /></>;
   // Once loaded, the editor owns its draft across version refreshes and conflicts.
   return <QueryState query={query}>{() => <p role="status">Preparing draft…</p>}</QueryState>;
 }

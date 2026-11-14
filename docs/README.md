@@ -52,6 +52,7 @@ released application until the rewrite is qualified.
 | Change a module | [Engineering rules](engineering.md) | Structure and contribution limits |
 | Prove a slice works | [Verification](verification.md) | Test IDs and evidence scope |
 | Inspect local foundation evidence | [Local report](verification/local-foundation.md) | Exact source, commands and outstanding qualification |
+| Inspect suite summaries and history | [Suite overview](verification/suite-overview.md) | Loaded-revision configuration facts, latest retained Run and exact suite-bound history |
 | Inspect persisted suite editing | [Suite authoring](verification/suite-authoring.md) | Full-size configs, immutable history, draft recovery and functional evidence limits |
 | Inspect persisted input/Offer intake | [Storage intake](verification/storage-intake.md) | Lifecycle/quota/pins, journal migration, client bounds and remaining byte/runtime work |
 | Inspect actual input publication | [Input publication](verification/input-publication.md) | Native files, lifecycle service, publisher/provider/Stager composition and remaining HTTP/UI work |

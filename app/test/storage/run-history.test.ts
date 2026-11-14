@@ -1,3 +1,4 @@
+import {initialize} from '../../src/adapters/outbound/sqlite/schema.js';
 import { METADATA_SCHEMA_VERSION } from '../../src/adapters/outbound/sqlite/schema.js';
 import { asSchema17 } from './run-history-summary/fixture.js';
 import { expect, it } from 'vitest';
@@ -79,7 +80,7 @@ it('reflects lifecycle membership changes between independent pages without movi
   const revision = await append(metadata, await createSuite(metadata));
   for (const id of [500, 501, 502]) await metadata.runs.execute(runCommand(revision.id, id));
   const first = await metadata.runs.listRuns({ scope, limit: 1, state: 'queued' }); expect(first.items[0]!.id).toBe(uuid(502));
-  await fixture.close(metadata); const db = new DatabaseSync(path); db.prepare("UPDATE runs SET state='active' WHERE id=?").run(uuid(501)); db.close();
+  await fixture.close(metadata); const db = initialize(path); db.prepare("UPDATE runs SET state='active' WHERE id=?").run(uuid(501)); db.close();
   metadata = await fixture.open(path, runOptions());
   const next = await metadata.runs.listRuns({ scope, limit: 1, state: 'queued', cursor: first.nextCursor! });
   expect(next.items.map(row => row.id)).toEqual([uuid(500)]); expect(next.nextCursor).toBeNull();
