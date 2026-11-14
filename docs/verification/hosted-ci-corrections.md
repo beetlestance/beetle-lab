@@ -42,6 +42,11 @@ were not reproduced locally and still require hosted confirmation.
 Independent review found no weakened assertion or manufactured row/guard proof.
 Types, lint, architecture, documentation and actionlint are checked separately.
 No product operation, guard or global test deadline is extended.
+The maximum-node Offer integration case alone has an explicit 20 s budget after
+two hosted 10 s timeouts. It still persists all 65,536 nodes through the compiled
+worker, exact replay and reopen; production RPC/startup deadlines and all byte,
+shape and digest assertions are unchanged. The depth case retains 10 s. This is
+functional boundary coverage, not a 10 s latency guarantee. Raw failures remain.
 
 ## Native scheduling and retained outcomes
 

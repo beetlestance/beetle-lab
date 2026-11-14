@@ -15,7 +15,7 @@ async function configure(journal: Journal): Promise<void> {
   await journal.admission({ kind: 'configure', configuration: pool });
   await journal.admission({ kind: 'observe', observation: observation() });
 }
-it.each(['nodes', 'depth'] as const)('persists exact original %s maximum through compiled journal worker, replay and reopen', async boundary => {
+for (const boundary of ['nodes', 'depth'] as const) it(`persists exact original ${boundary} maximum through compiled journal worker, replay and reopen`, async () => {
   const job = original(boundary); const request = command(job);
   const expected = JSON.stringify(job); const expectedConfig = JSON.stringify(job.config);
   expect(shape(job)[boundary]).toBe(boundary === 'nodes' ? 65_536 : 64);
@@ -42,7 +42,7 @@ it.each(['nodes', 'depth'] as const)('persists exact original %s maximum through
     expect(db.prepare('SELECT count(*) AS count FROM admission_queue').get()?.count).toBe(1);
   } finally { db.close(); }
   expect((await readFile(path)).byteLength).toBeGreaterThan(0);
-});
+}, boundary === 'nodes' ? 20_000 : 10_000); // Functional maximum-input round-trip, not a latency qualification.
 
 it('shares TWO original credits across admission, immutable Offer and read without posting the third', async () => {
   const journal = await f.open(); await configure(journal);
