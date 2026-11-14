@@ -17,7 +17,7 @@ export function starterPolicy(): Pick<ProvisionRequest, 'installationValues' | '
     agentPolicy: {
       pool: { cpuMillis: 2000, memoryBytes: 1024 * MiB, pids: 256, outputBytes: 128 * MiB, stagingBytes: 128 * MiB },
       perRun: { cpuMillis: 1000, memoryBytes: 512 * MiB, pids: 128, outputBytes: 64 * MiB, stagingBytes: 64 * MiB },
-      controlReserve: { cpuMillis: 600, memoryBytes: 576 * MiB, pids: 160, outputBytes: 0, stagingBytes: 0 }, headroom: { ...reserve }, maxConcurrent: 2,
+      controlReserve: { cpuMillis: 1350, memoryBytes: 576 * MiB, pids: 160, outputBytes: 0, stagingBytes: 0 }, headroom: { ...reserve }, maxConcurrent: 2,
       maxTimeoutMs: 300_000, observationTtlMs: 1000, requiredSensors: [],
     },
     engine: {

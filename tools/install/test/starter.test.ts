@@ -23,7 +23,7 @@ it('ships exact editable settings and admission policy independently of host cap
   expect(r.agentPolicy).toEqual({
     pool: { cpuMillis: 2000, memoryBytes: 1024 * MiB, pids: 256, outputBytes: 128 * MiB, stagingBytes: 128 * MiB },
     perRun: { cpuMillis: 1000, memoryBytes: 512 * MiB, pids: 128, outputBytes: 64 * MiB, stagingBytes: 64 * MiB },
-    controlReserve: { cpuMillis: 600, memoryBytes: 576 * MiB, pids: 160, outputBytes: 0, stagingBytes: 0 },
+    controlReserve: { cpuMillis: 1350, memoryBytes: 576 * MiB, pids: 160, outputBytes: 0, stagingBytes: 0 },
     headroom: { cpuMillis: 250, memoryBytes: 128 * MiB, pids: 16, outputBytes: 0, stagingBytes: 0 },
     maxConcurrent: 2, maxTimeoutMs: 300000, observationTtlMs: 1000, requiredSensors: [],
   });

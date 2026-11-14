@@ -10,6 +10,18 @@ export function agentState(f:Fixture){
  const reply=request(f.docker,{agent:f.agent,credentialFile,path:'/runner/v1/capabilities'});assert.equal(reply.status,200);const checked=validate('Capabilities',JSON.parse(reply.body));assert(checked.ok);
  return {state,journalAuthority:checked.value.journalAuthority,installationId:checked.value.observation.installationId,engines:checked.value.engines};
 }
+/** Admission must reserve the actual shipped control-service ceilings. */
+export function controlBudget(f:Fixture){
+ const ids=['frontend','backend','agent'].map(service=>f.compose('ps','-q',service));
+ for(const id of ids)assert(/^[a-f0-9]{64}$/.test(id));
+ const rows=f.docker.json<{HostConfig:{NanoCpus:number;Memory:number;PidsLimit:number}}[]>(['inspect',...ids]);
+ assert.equal(rows.length,3);
+ const total=rows.reduce((sum,row)=>({cpuMillis:sum.cpuMillis+row.HostConfig.NanoCpus/1000000,
+  memoryBytes:sum.memoryBytes+row.HostConfig.Memory,pids:sum.pids+row.HostConfig.PidsLimit}),{cpuMillis:0,memoryBytes:0,pids:0});
+ const program="const f=require('node:fs'),p=process.argv[1];if(f.statSync(p).size>131072)process.exit(3);console.log(JSON.stringify(JSON.parse(f.readFileSync(p,'utf8')).configuration.controlReserve));";
+ const reserve=f.docker.json(['exec','--user','1000:1000',f.agent,'node','-e',program,join(f.home,'data/config/agent.json')]);
+ assert.deepEqual(reserve,{...total,outputBytes:0,stagingBytes:0});return total;
+}
 export function targetCounts(f:Fixture){
  const id=f.compose('ps','-q','synthetic-target');assert(/^[a-f0-9]{64}$/.test(id));
  const program="fetch('http://127.0.0.1:8080/counts',{signal:AbortSignal.timeout(2000)}).then(r=>r.text()).then(s=>{if(s.length>256)process.exit(3);console.log(s)}).catch(()=>process.exit(2));";

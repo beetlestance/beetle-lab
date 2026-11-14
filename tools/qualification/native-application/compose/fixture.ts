@@ -7,14 +7,29 @@ import {composeProcesses} from './process.js';
 import type {Image,Daemon} from '../../../../agent/test/container/docker.js';
 import {Docker} from '../../../../agent/test/container/docker.js';
 import {ownedOrigin} from '../public-api.js';
+interface RevisionImage {Config:{Labels?:Readonly<Record<string,string>>}}
+export function imageRevision(images:readonly RevisionImage[],expected?:string):string{
+ const revision=images[0]?.Config.Labels?.['org.opencontainers.image.revision'];assert(revision&&/^[a-f0-9]{40}$/.test(revision));
+ for(const image of images)assert.equal(image.Config.Labels?.['org.opencontainers.image.revision'],revision);
+ if(expected!==undefined)assert.equal(revision,expected);
+ return revision;
+}
+export function nativeArchitecture(daemon:string,harness:string,expected?:string):string{
+ const architecture=daemon==='aarch64'?'arm64':daemon==='x86_64'?'amd64':daemon;
+ assert(['arm64','amd64'].includes(architecture));
+ assert.equal(harness==='x64'?'amd64':harness,architecture);
+ if(expected!==undefined)assert.equal(architecture,expected);
+ return architecture;
+}
 export async function fixture(argv:string[]){
  const [frontend,backend,agent,installer,engine,offline,context='default']=argv;
  assert(argv.length>=6&&argv.length<=7);for(const item of [frontend,backend,agent,installer,engine,offline])assert(item&&/^[a-zA-Z0-9][a-zA-Z0-9_./:@-]{0,255}$/.test(item));
  assert(/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/.test(context));
  const docker=new Docker(context,2);const info=docker.json<Daemon>(['info','--format','{{json .}}']);assert.equal(info.OSType,'linux');
- const architecture=info.Architecture==='aarch64'?'arm64':info.Architecture==='x86_64'?'amd64':info.Architecture;assert(['arm64','amd64'].includes(architecture));
- const inspected=docker.json<Image[]>(['image','inspect',frontend!,backend!,agent!,installer!,engine!,offline!]);
+ const architecture=nativeArchitecture(info.Architecture,process.arch,process.env.BEETLE_QUALIFICATION_ARCHITECTURE);
+ const inspected=docker.json<(Image&{Config:{Labels?:Record<string,string>}})[]>(['image','inspect',frontend!,backend!,agent!,installer!,engine!,offline!]);
  for(const image of inspected){assert.equal(image.Os,'linux');assert.equal(image.Architecture,architecture);}
+ assert.equal(inspected.length,6);const revision=imageRevision(inspected,process.env.BEETLE_QUALIFICATION_REVISION);
  const imageIds=Object.fromEntries(['frontend','backend','agent','installer','engine','offline'].map((name,index)=>[name,inspected[index]!.Id]));
  const root=await realpath(await mkdtemp(join(tmpdir(),'beetle-compose-evidence-')));
  const home=join(root,'home');const instance='qual-'+randomUUID().slice(0,8);const project='beetle-'+instance;const origin=await ownedOrigin();
@@ -28,6 +43,6 @@ export async function fixture(argv:string[]){
  const args=['compose','--project-name',project,'--env-file',envFile,'--file',resolve('docker-compose.yml'),'--file',override];
  const {compose,logs}=composeProcesses(context,args,root);
  const ids=()=>docker.run(['ps','-aq','--no-trunc','--filter',`label=com.docker.compose.project=${project}`]).split('\n').filter(Boolean);
- return {root,home,instance,project,origin,docker,compose,ids,logs,architecture,imageIds,daemonVersion:info.ServerVersion,agent:`beetle-${instance}-agent`,images:{frontend,backend,agent,installer,engine,offline}};
+ return {root,home,instance,project,origin,docker,compose,ids,logs,architecture,imageIds,revision,daemonVersion:info.ServerVersion,agent:`beetle-${instance}-agent`,images:{frontend,backend,agent,installer,engine,offline}};
 }
 export type Fixture=Awaited<ReturnType<typeof fixture>>;

@@ -83,8 +83,8 @@ jobs:
           test "$SOURCE_RESULT" = success
           test "$TEST_RESULT" = success
 
-  container:
-    name: ci/container
+  legacy-container:
+    name: ci/legacy-container
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -100,6 +100,136 @@ jobs:
           cache-to: type=gha,mode=max,scope=beetle-lab-amd64
       - name: Check HTTP API and execute k6 inside the image
         run: bash scripts/container-smoke.sh beetle-lab:smoke
+
+  rewrite-container:
+    name: ci/rewrite-container (${{ matrix.arch }})
+    needs: checks
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - {runner: ubuntu-24.04, arch: amd64}
+          - {runner: ubuntu-24.04-arm, arch: arm64}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        with:
+          driver-opts: |
+            cpu-period=100000
+            cpu-quota=200000
+            memory=2147483648
+            memory-swap=2147483648
+          buildkitd-config-inline: |
+            [worker.oci]
+              max-parallelism = 1
+      - name: Build candidate frontend
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: web/Dockerfile
+          target: frontend
+          load: true
+          push: false
+          tags: beetle-candidate-frontend:${{ github.sha }}
+          build-args: VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=rewrite-frontend-${{ matrix.arch }}
+          cache-to: type=gha,mode=min,scope=rewrite-frontend-${{ matrix.arch }}
+      - name: Build candidate backend
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: app/Dockerfile
+          target: backend
+          load: true
+          push: false
+          tags: beetle-candidate-backend:${{ github.sha }}
+          build-args: VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=rewrite-backend-${{ matrix.arch }}
+          cache-to: type=gha,mode=min,scope=rewrite-backend-${{ matrix.arch }}
+      - name: Build candidate agent
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: agent/Dockerfile
+          target: agent
+          load: true
+          push: false
+          tags: beetle-candidate-agent:${{ github.sha }}
+          build-args: VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=rewrite-agent-${{ matrix.arch }}
+          cache-to: type=gha,mode=min,scope=rewrite-agent-${{ matrix.arch }}
+      - name: Build candidate installer
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: tools/install/Dockerfile
+          target: installer
+          load: true
+          push: false
+          tags: beetle-candidate-installer:${{ github.sha }}
+          build-args: VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=rewrite-installer-${{ matrix.arch }}
+          cache-to: type=gha,mode=min,scope=rewrite-installer-${{ matrix.arch }}
+      - name: Build candidate engine
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: engines/k6/Dockerfile
+          target: engine
+          load: true
+          push: false
+          tags: beetle-candidate-engine:${{ github.sha }}
+          build-args: VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=rewrite-engine-${{ matrix.arch }}
+          cache-to: type=gha,mode=min,scope=rewrite-engine-${{ matrix.arch }}
+      - name: Build candidate export
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: engines/k6/Dockerfile
+          target: export-engine
+          load: true
+          push: false
+          tags: beetle-candidate-export:${{ github.sha }}
+          build-args: VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=rewrite-export-${{ matrix.arch }}
+          cache-to: type=gha,mode=min,scope=rewrite-export-${{ matrix.arch }}
+      - name: Qualify the matched candidate stack with isolated synthetic data
+        env:
+          CANDIDATE_REVISION: ${{ github.sha }}
+          BEETLE_QUALIFICATION_REVISION: ${{ github.sha }}
+          BEETLE_QUALIFICATION_ARCHITECTURE: ${{ matrix.arch }}
+        run: |
+          node --import tsx tools/qualification/native-application/compose/smoke.ts \
+            "beetle-candidate-frontend:$CANDIDATE_REVISION" \
+            "beetle-candidate-backend:$CANDIDATE_REVISION" \
+            "beetle-candidate-agent:$CANDIDATE_REVISION" \
+            "beetle-candidate-installer:$CANDIDATE_REVISION" \
+            "beetle-candidate-engine:$CANDIDATE_REVISION" \
+            "beetle-candidate-export:$CANDIDATE_REVISION"
+
+  container:
+    name: ci/container
+    if: ${{ always() }}
+    needs: [legacy-container, rewrite-container]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require legacy and rewrite image qualification
+        env:
+          LEGACY_RESULT: ${{ needs.legacy-container.result }}
+          REWRITE_RESULT: ${{ needs.rewrite-container.result }}
+        run: |
+          test "$LEGACY_RESULT" = success
+          test "$REWRITE_RESULT" = success
 
   publish:
     name: Publish container

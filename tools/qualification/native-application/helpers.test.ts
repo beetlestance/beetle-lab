@@ -1,3 +1,4 @@
+import {imageRevision,nativeArchitecture} from './compose/fixture.js';
 import { expect, it } from 'vitest';
 import { argumentsFor, agentOrigin } from './configuration.js';
 import { retainedCharge } from './evidence.js';
@@ -23,4 +24,31 @@ it('independently accounts retained event/manifest/artifact payload and preserve
     [Number.MAX_SAFE_INTEGER, 1, 0, Number.MAX_SAFE_INTEGER], [0, 0, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER]]) {
     expect(() => retainedCharge(input[0]!, input[1]!, input[2]!, input[3]!)).toThrow();
   }
+});
+
+const revisionImage=(revision:string)=>({Config:{Labels:{'org.opencontainers.image.revision':revision}}});
+it('qualifies only a shared immutable revision and binds an explicit expected checkout',()=>{
+ const revision='a'.repeat(40);const images=Array.from({length:6},()=>revisionImage(revision));
+ expect(imageRevision(images)).toBe(revision);expect(imageRevision(images,revision)).toBe(revision);
+ expect(()=>imageRevision(images,'b'.repeat(40))).toThrow();
+});
+it('rejects one mixed image even when the remaining revision labels match',()=>{
+ const images=Array.from({length:6},()=>revisionImage('a'.repeat(40)));images[4]=revisionImage('b'.repeat(40));
+ expect(()=>imageRevision(images)).toThrow();
+});
+it('refuses missing or mutable revision labels before creating qualification resources',()=>{
+ for(const images of [[],[{Config:{}}],[revisionImage('local')],[revisionImage('A'.repeat(40))]])expect(()=>imageRevision(images)).toThrow();
+});
+
+it('normalizes Node x64 and Docker amd64 aliases for native CI runners',()=>{
+ expect(nativeArchitecture('x86_64','x64','amd64')).toBe('amd64');
+ expect(nativeArchitecture('amd64','x64','amd64')).toBe('amd64');
+ expect(nativeArchitecture('aarch64','arm64','arm64')).toBe('arm64');
+ expect(nativeArchitecture('arm64','arm64')).toBe('arm64');
+});
+it('rejects cross-architecture, unsupported or wrong-matrix qualification',()=>{
+ expect(()=>nativeArchitecture('x86_64','arm64')).toThrow();
+ expect(()=>nativeArchitecture('aarch64','x64')).toThrow();
+ expect(()=>nativeArchitecture('arm64','arm64','amd64')).toThrow();
+ expect(()=>nativeArchitecture('s390x','s390x')).toThrow();
 });
