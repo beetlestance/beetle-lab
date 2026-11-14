@@ -1,3 +1,5 @@
+import { retainedSnapshotFunding } from './retention-storage.js';
+import type { RetentionKey } from './retention-storage.js';
 import { JOURNAL_SCHEMA_VERSION } from '../../../../agent/src/journal/schema.js';
 import { captureAgentTombstone,agentTombstoneDigest,AGENT_TOMBSTONE_JSON_BYTES } from '../../../../agent/src/settlement-values/index.js';
 import { encodeCanonicalJson } from '@beetle/contracts';
@@ -28,7 +30,7 @@ export function settledAgent(f:Fixture,observed:SettlementObservation){
   assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(),[]);return{tombstone:row,body:tombstone,replay:{...db.prepare('SELECT * FROM agent_replay_storage').get()},holds};
  }finally{db.close();}
 }
-export function settledBackend(path:string,runId:string,refundedBytes:number,before:number){
+export function settledBackend(path:string,runId:string,refundedBytes:number,before:number,retention?:RetentionKey){
  const db=new DatabaseSync(path,{readOnly:true});
  try{
   for(const table of ['runs','attempts','execution_records','execution_intents','backend_cleanup_controls','attempt_output_allocations',
@@ -36,7 +38,7 @@ export function settledBackend(path:string,runId:string,refundedBytes:number,bef
    const column=table==='runs'?'id':'run_id';assert.equal(db.prepare(`SELECT count(*) n FROM ${table} WHERE ${column}=?`).get(runId)?.n,0,table);
   }
   const usage=db.prepare('SELECT charged_bytes FROM installation_storage_usage WHERE id=1').get()?.charged_bytes;
-  assert.equal(usage,before-refundedBytes);assert.equal(usage,2560);
+  assert.equal(usage,before-refundedBytes);const funded=retainedSnapshotFunding(db,retention,runId,'settled');assert.equal(usage,2560+funded.chargedBytes);
   const row=db.prepare('SELECT charged_bytes,tombstone_digest FROM backend_retired_runs WHERE run_id=?').get(runId);assert.equal(row?.charged_bytes,2560);
   assert.deepEqual({...db.prepare('SELECT * FROM backend_replay_storage').get()},{id:1,original_count:1,charged_bytes:2560});
   assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(),[]);return{usage,tombstone:row};

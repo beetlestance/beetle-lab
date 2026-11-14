@@ -30,7 +30,11 @@ const seedEntrypoints=new Set(['agent/src/bootstrap/configuration.js','agent/src
  'agent/src/guard/index.js','agent/src/timeout/index.js','agent/src/observation/index.js','agent/src/admission/index.js']);
 const storageEntrypoints=new Set(['agent/src/journal/schema.js','agent/src/settlement-values/index.js']);
 const exactEntrypoints=new Map([[retirementOwner+'no-task-seed.ts',seedEntrypoints],
- [retirementOwner+'settlement-storage.ts',storageEntrypoints]]);
+ [retirementOwner+'settlement-storage.ts',storageEntrypoints],
+ [retirementOwner+'retention-storage.ts',new Set(['app/src/domain/retention/index.js'])],
+ [retirementOwner+'retention-storage.test.ts',new Set(['app/test/retention/selection-fixture.js',
+  'app/src/adapters/outbound/sqlite/retention-manual/index.js','app/src/adapters/outbound/sqlite/retention-apply/index.js',
+  'app/src/adapters/outbound/sqlite/retention-progress/index.js'])]]);
 
 /** Cross-service qualification composes named entrypoints outside either service.
  * Service implementations cannot consume the qualification owner in reverse.

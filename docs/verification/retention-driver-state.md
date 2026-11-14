@@ -21,4 +21,4 @@ found no blocker.
 Cases cover getter capture/replacement, failure before held close completes,
 disabled embedding, unknown/error sanitisation, authentication/scope before getter,
 unchanged credit/charges from advisory reads and actual partial settlement while
-stopped. This adds no new native qualification; native retention recovery remains.
+stopped. [Native retention recovery](native-retention.md) is qualified separately; its limits remain explicit.

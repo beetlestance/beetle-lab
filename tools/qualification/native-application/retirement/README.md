@@ -68,3 +68,15 @@ the normal entrypoint. It grants no cleanup receipt or refund. Both modes requir
 production absence finalization, cleanup, lost settlement replies and permanent replay.
 Exact branch funding is inspected in the bounded canonical durable tombstone.
 See [evidence](../../../../docs/verification/rejected-cleanup-funding.md) for limits.
+
+
+## Protected retention recovery
+
+`retention-smoke.ts` takes the same four arguments. It adds authenticated public
+manual preview and compiled-worker Apply to the actual settlement recovery flow.
+Its independent inspectors require the exact paid snapshot/epoch rows; no assumed
+metadata slack is subtracted. Completion, Apply replay, explicit acknowledgement
+and refusal after removal leave2560 backend replay bytes plus the permanent512-byte
+epoch; agent replay remains4096. Public workspace Apply HTTP is qualified separately.
+See [native retention evidence](../../../../docs/verification/native-retention.md)
+for current payload images, platform limits and actual accounting.

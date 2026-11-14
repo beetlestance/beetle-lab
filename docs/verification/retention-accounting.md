@@ -144,4 +144,4 @@ passed its seven affected cases; web types, lint, architecture, docs and web bui
 passed. Independent review found no blocker. Browser visual inspection was unavailable
 because no browser execution tool was exposed; no visual qualification is claimed.
 Parent traversal and advisory driver availability are qualified separately; composed
-retention-native qualification remains.
+[native retention recovery](native-retention.md) is qualified within its stated platform and embedding limits.

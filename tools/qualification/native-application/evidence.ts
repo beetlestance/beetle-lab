@@ -1,3 +1,5 @@
+import { retainedSnapshotFunding } from './retirement/retention-storage.js';
+import type { RetentionKey } from './retirement/retention-storage.js';
 import {BACKEND_CLEANUP_CONTROL_BYTES} from '../../../app/src/ports/cleanup-control.js';
 import assert from 'node:assert/strict';
 import { constants } from 'node:fs';
@@ -45,7 +47,7 @@ async function publishedBytes(path: string, expected: number): Promise<Buffer> {
   } finally { await handle.close(); }
 }
 /** Independent, bounded, read-only inspection after application close. */
-export async function inspectClosed(f: Fixture, run: Run, result: RunResultSnapshot) {
+export async function inspectClosed(f: Fixture, run: Run, result: RunResultSnapshot,retention?:RetentionKey) {
   const db = new DatabaseSync(join(f.root, 'backend/metadata.sqlite'), { readOnly: true });
   try {
     db.exec('PRAGMA query_only=ON; PRAGMA busy_timeout=1000;');
@@ -98,7 +100,8 @@ export async function inspectClosed(f: Fixture, run: Run, result: RunResultSnaps
     assert.equal(receipt.journal_authority, envelope.manifest.binding.journalAuthority);
     const control=db.prepare('SELECT reserved_bytes FROM backend_cleanup_controls WHERE attempt_id=?').get(run.activeAttemptId);
     assert.equal(control?.reserved_bytes,BACKEND_CLEANUP_CONTROL_BYTES);
-    assert.equal(db.prepare('SELECT charged_bytes FROM installation_storage_usage WHERE id=1').get()!.charged_bytes,charge.charged+BACKEND_CLEANUP_CONTROL_BYTES);
+    const funded=retainedSnapshotFunding(db,retention,run.id,'preview');if(funded.snapshot){assert.equal(funded.snapshot.candidates[0]!.version,run.version);assert.equal(funded.snapshot.candidates[0]!.estimatedBytes,charge.charged+BACKEND_CLEANUP_CONTROL_BYTES);}
+    assert.equal(db.prepare('SELECT charged_bytes FROM installation_storage_usage WHERE id=1').get()!.charged_bytes,charge.charged+BACKEND_CLEANUP_CONTROL_BYTES+funded.chargedBytes);
     return { offer: offer.value, receipt, charge, timing: artifacts.timing, artifacts: artifacts.entries, eventCount: events.length };
   } finally { db.close(); }
 }

@@ -43,5 +43,4 @@ cases, all types, lint, architecture, docs, API and web builds passed. The revie
 confirmed the fix. No browser visual inspection or new native-cleanup/physical-free
 space qualification is claimed. Driver availability is now exposed separately as an installation-wide advisory.
 Counts/refunds remain metadata-derived; the view cannot explain individual funding
-refusals or preserve historical causes across restart. Composed retention-native
-recovery remains outstanding.
+refusals or preserve historical causes across restart. [Composed retention-native recovery](native-retention.md) is qualified within its stated limits.
