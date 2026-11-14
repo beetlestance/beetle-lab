@@ -32,7 +32,7 @@ it('exhausts the bounded retry count without granting readiness',async()=>{
 });
 it.each([true,false])('honours the protocol retryable flag (%j) for a capacity refusal',async retryable=>{
  vi.useFakeTimers();let calls=0;
- const protocol={code:'capacity_unavailable' as const,message:'Capacity unavailable',retryable,requestId:'00000000-0000-4000-8000-000000000010',fields:[]};
+ const protocol={code:'capacity_unavailable' as const,message:'Capacity unavailable' as const,retryable,requestId:'00000000-0000-4000-8000-000000000010',fields:[]};
  const pending=readReadyPublic(async()=>++calls===1?{ok:false as const,error:{kind:'protocol' as const,status:503,protocol}}:{ok:true as const,value:'ready'});
  if(!retryable){await expect(pending).rejects.toThrow('Unexpected authenticated readiness refusal');expect(calls).toBe(1);return;}
  await vi.advanceTimersByTimeAsync(250);expect(await pending).toBe('ready');expect(calls).toBe(2);
