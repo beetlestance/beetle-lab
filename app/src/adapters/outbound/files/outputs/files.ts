@@ -1,4 +1,4 @@
-import { isExportOutput, outputOwnerId } from '../../../../domain/output-owner/index.js';
+import { outputLocation } from './paths.js';
 import type { OutputBinding } from '../../../../domain/output-owner/index.js';
 import type { BigIntStats } from 'node:fs';
 import type { OutputFileReceipt, OutputFileRecord } from '../../../../ports/output-bytes.js';
@@ -9,10 +9,7 @@ import { identity } from './identity.js';
 import { fail } from './errors.js';
 
 export async function locations(job: FileJob<unknown>, roots: Roots, record: OutputFileRecord<OutputBinding>, create: boolean): Promise<PhysicalPublication> {
-  const key = record.binding.key; const attempt = key.attempt;
-  const components = [attempt.organizationId, attempt.workspaceId, outputOwnerId(record.binding), attempt.attemptId];
-  if (isExportOutput(record.binding)) components.unshift('exports');
-  const name = {components, name: record.artifact.token};
+  const name = outputLocation(record);
   return { tree: job.tree, content: record.artifact,
     stage: await job.tree.location(roots.stage, name, create), destination: await job.tree.location(roots.published, name, create) };
 }

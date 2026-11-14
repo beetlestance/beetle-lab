@@ -16,7 +16,7 @@ No new Goal, push, registry publication or deployment is authorised by this page
 | B04 diagnostic custody | F07,F11 | Bounded, redacted native diagnostics with durable viewing/replay and explicit overflow/loss; preserve secret/cancellation/output-budget ownership | Review source, schema, storage charge and retention lifetime first |
 | B05 warning guidance | F10 | Locally implemented bounded native warning artifact and configured single-arrival guidance; [evidence](../verification/k6-warning-guidance.md) | Independent scalar-only capture; B04 raw diagnostic replay and packaged acceptance remain separate |
 | B06 organisation overview | F01 | Locally implemented whole-organisation counts/activity and capped cross-workspace recent/active links; [evidence](../verification/organization-overview.md) | Packaged browser/platform acceptance remains |
-| B07 recovery tooling | F12,F18 | Finish active-delivery restart cases; consistent bounded cold backup/restore, quiescence refusal, interrupted-restore startup fence, authority rotation and historical-only restored Runs | Delivery-authority contract; positive cleanup/settlement evidence already exists |
+| B07 recovery tooling | F12,F18 | Locally implemented cold archive, fresh-only historical restore/viewer and exact resume; [evidence](../verification/cold-recovery.md) | Full crash/platform/source-pull qualification remains; mutable/in-place restore unsupported by ADR016 |
 
 B01 uses explicit empty-only deletion, preserving epochs and replay identities.
 Selected namespace deletion, warning guidance and dashboard/history implementation is locally complete.

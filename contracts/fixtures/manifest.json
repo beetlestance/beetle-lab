@@ -528,5 +528,15 @@
     "path": "invalid/k6-warnings-raw.json",
     "schema": "LoadWarningArtifact",
     "valid": false
+  },
+  {
+    "path": "valid/recovery-header.json",
+    "schema": "RecoveryRecord",
+    "valid": true
+  },
+  {
+    "path": "invalid/recovery-path.json",
+    "schema": "RecoveryRecord",
+    "valid": false
   }
 ]

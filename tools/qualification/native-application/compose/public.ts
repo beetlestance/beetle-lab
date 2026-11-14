@@ -4,8 +4,8 @@ import {createApiClient} from '@beetle/contracts/api';
 import type {ApiClient,ApiClientResult,BrowserSession,ExportJob,ExportParams} from '@beetle/contracts/api';
 import {pause,value} from '../public-api.js';
 export const hash=(bytes:string|Uint8Array)=>createHash('sha256').update(bytes).digest('hex');
-/** Public frontend proxy only; cookie/CSRF are retained in memory, never evidence output. */
-export async function automaticClient(origin:string){
+/** Same-origin public TCP; cookie/CSRF are retained in memory, never evidence output. */
+export async function automaticSession(origin:string){
  let cookie='';let requests=0;
  const fetcher:typeof fetch=async(input,init)=>{
   const url=new URL(String(input));assert(url.origin===origin&&url.pathname.startsWith('/api/v2/')&&++requests<=256);
@@ -19,9 +19,12 @@ export async function automaticClient(origin:string){
  });
  const session=prior??value(await createApiClient({...options,headers:{'X-Beetle-Local':'1'}}).openLocalBrowserSession({body:{}}));assert(cookie);
  const api=createApiClient({...options,headers:{'X-Beetle-CSRF':session.csrfToken}});
- const installation=await readable(()=>api.getInstallationSettings());
- return {api,session,installation,requests:()=>requests,cookieDigest:()=>hash(cookie),content:(path:string,headers:Record<string,string>={})=>
+ return {api,session,requests:()=>requests,cookieDigest:()=>hash(cookie),content:(path:string,headers:Record<string,string>={})=>
   fetcher(new URL(path,origin),{headers,signal:AbortSignal.timeout(5000)})};
+}
+export async function automaticClient(origin: string) {
+ const client = await automaticSession(origin); const installation = await readable(() => client.api.getInstallationSettings());
+ return {...client, installation};
 }
 async function readable<T>(read:()=>Promise<ApiClientResult<T>>):Promise<T>{
  const deadline=performance.now()+45000;

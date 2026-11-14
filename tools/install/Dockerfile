@@ -12,6 +12,7 @@ RUN npm ci --ignore-scripts --include=optional
 COPY tsconfig.base.json tsconfig.node.json ./
 COPY tools/build-install.ts ./tools/build-install.ts
 COPY tools/install ./tools/install
+COPY tools/recovery ./tools/recovery
 COPY contracts/src ./contracts/src
 COPY contracts/engines ./contracts/engines
 COPY agent/src ./agent/src

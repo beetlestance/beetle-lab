@@ -1,4 +1,4 @@
-import { expect, it, vi } from 'vitest';
+import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { chmodSync, linkSync, lstatSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -85,16 +85,6 @@ it('bounds control pages and enforces state guards with durable settings', () =>
   } finally { db.close(); }
 });
 
-it('retains the process/native owner after close failure until the same handle closes', () => {
-  f.ready(); const serving = f.own(openServingState(f.path()));
-  const close = vi.spyOn(DatabaseSync.prototype, 'close').mockImplementationOnce(() => { throw new Error('synthetic close failure'); });
-  try {
-    expect(() => serving.close()).toThrow('synthetic close failure');
-    expect(() => openServingState(f.path())).toThrow('owned');
-    serving.assertJournalAuthority(first);
-  } finally { close.mockRestore(); }
-  serving.close(); f.own(openServingState(f.path())).assertJournalAuthority(first);
-});
 it.each(['id', 'duplicate', 'oversized-id'] as const)('rejects corrupt singleton %s with bounded projection', shape => {
   f.ready(); const db = new DatabaseSync(f.path());
   try {

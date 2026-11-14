@@ -2,6 +2,9 @@ import { build } from 'tsup';
 
 await build({ entry: {
   main: 'tools/install/cli.ts',
+  recovery: 'tools/recovery/cli.ts',
+  history: 'tools/recovery/history-container.ts',
+  'recovery-container': 'tools/recovery/container.ts',
   starter: 'tools/install/starter-cli.ts',
   local: 'tools/install/local-cli.ts',
   compose:'tools/install/compose/index.ts',

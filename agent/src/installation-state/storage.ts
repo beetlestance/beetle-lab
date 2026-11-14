@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { randomUUID } from 'node:crypto';
 import { capturedState, InstallationStateError } from './types.js';
 import type { State } from './types.js';
-import { pinFile, syncParent } from './files.js';
+import { ControlFiles } from './files.js';
 import { schema } from './schema.js';
 
 function translated(error: unknown): InstallationStateError {
@@ -19,32 +19,32 @@ function verifyPragmas(db: DatabaseSync): void {
     if (db.prepare(`PRAGMA ${name}`).get()?.[name] !== value) throw new InstallationStateError('recovery_required');
   }
 }
-let processOwner: { token: symbol; db?: DatabaseSync; file?: ReturnType<typeof pinFile> } | undefined;
+interface Owner {db?: DatabaseSync; file?: ControlFiles; closeState: 'open' | 'closed' | 'failed'; failure?: InstallationStateError}
+let processOwner: Owner | undefined;
 
 /** One tiny synchronous startup/control store; never used per job/event/sample. */
 export class ControlStore {
   private closed = false;
-  private constructor(private readonly db: DatabaseSync, private readonly file: ReturnType<typeof pinFile>, private readonly token: symbol) {}
+  private constructor(private readonly db: DatabaseSync, private readonly file: ControlFiles, private readonly owner: Owner) {}
   static open(path: string, create: boolean): ControlStore {
     if (processOwner !== undefined) throw new InstallationStateError('owned');
-    const token = Symbol(); processOwner = { token };
-    let file: ReturnType<typeof pinFile> | undefined; let db: DatabaseSync | undefined;
+    const owned: Owner = {closeState: 'open'}; processOwner = owned;
     try {
-      file = pinFile(path, create); processOwner.file = file;
-      db = new DatabaseSync(path, { timeout: 100 }); processOwner.db = db; file.check();
+      const file = new ControlFiles(path); owned.file = file; file.acquire(create);
+      const db = new DatabaseSync(path, { timeout: 100 }); owned.db = db; file.check();
       ControlStore.configure(db, create);
-      const owner = new ControlStore(db, file, token); owner.snapshot();
-      if (create) syncParent(path);
+      const owner = new ControlStore(db, file, owned); owner.snapshot();
+      if (create) file.syncParent();
       return owner;
     } catch (error) {
-      ControlStore.failedOpen(db, file, token, error);
+      ControlStore.failedOpen(owned, error);
       throw translated(error);
     }
   }
-  private static failedOpen(db: DatabaseSync | undefined, file: ReturnType<typeof pinFile> | undefined, token: symbol, error: unknown): void {
-    try { db?.close(); file?.close(); } catch { throw new InstallationStateError('unavailable'); }
-    if (error instanceof InstallationStateError && error.code === 'unavailable') return;
-    if (processOwner?.token === token) processOwner = undefined;
+  private static failedOpen(owned: Owner, error: unknown): never {
+    closeOwned(owned);
+    if (processOwner === owned) processOwner = undefined;
+    throw translated(error);
   }
   private static configure(db: DatabaseSync, create: boolean): void {
     if (db.prepare('PRAGMA journal_mode').get()?.journal_mode !== 'delete') throw new InstallationStateError('recovery_required');
@@ -63,6 +63,7 @@ export class ControlStore {
   }
   private check(): void {
     if (this.closed) throw new InstallationStateError('closed');
+    if (this.owner.closeState === 'failed') throw this.owner.failure;
     this.file.check();
   }
   snapshot(): Readonly<State> {
@@ -87,7 +88,15 @@ export class ControlStore {
   }
   close(): void {
     if (this.closed) return;
-    this.db.close(); this.file.close(); this.closed = true;
-    if (processOwner?.token === this.token) processOwner = undefined;
+    closeOwned(this.owner); this.closed = true;
+    if (processOwner === this.owner) processOwner = undefined;
   }
+}
+
+function closeOwned(owner: Owner): void {
+  if (owner.closeState === 'closed') return;
+  if (owner.closeState === 'failed') throw owner.failure;
+  owner.closeState = 'failed'; owner.failure = new InstallationStateError('unavailable');
+  try {owner.db?.close(); owner.file?.close();} catch {throw owner.failure;}
+  owner.closeState = 'closed';
 }

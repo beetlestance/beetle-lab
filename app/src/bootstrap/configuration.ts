@@ -98,7 +98,7 @@ export async function loadBackendConfiguration(environment: BackendEnvironment, 
   const record = await readInstallation(config);
   const directory = await dataDirectory(root);
   const connection = await agentConnection(agentConfig, record.id);
-  return Object.freeze({ listen, application: { externalOrigin, localAccess: localAccess as 'paired' | 'automatic',
+  return Object.freeze({ listen, application: { externalOrigin, recoveryControl: {path: join(directory, 'recovery-control.sqlite'), installationId: record.id}, localAccess: localAccess as 'paired' | 'automatic',
     inputsDirectory: join(directory, 'inputs'), agent: { connection, dataRoot: directory },
     metadata: { path: join(directory, 'metadata.sqlite'), workerUrl, installation: record, runtime: null } } });
 }

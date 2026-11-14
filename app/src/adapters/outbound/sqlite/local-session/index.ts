@@ -51,3 +51,5 @@ export class LocalSessions {
 function rejectRawNegativeVersion(input: unknown): void {
   if (input && typeof input === 'object') requireRule(!Object.is(Object.getOwnPropertyDescriptor(input, 'expectedVersion')?.value, -0));
 }
+
+export { localBrowserSessionSchema } from '../migration014.js';

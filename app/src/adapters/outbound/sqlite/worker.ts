@@ -1,3 +1,5 @@
+import { captureHistoricalIdentity } from './historical-native.js';
+import { validateHistoricalMode } from './historical.js';
 import { captureNamespaceDeletionReply } from './namespace-deletion/index.js';
 import { retentionOperation,captureRetentionReply } from './retention-wire/index.js';
 import { settlementOperation,captureSettlementValue } from './backend-settlement/index.js';
@@ -13,7 +15,7 @@ import { eventOperation, captureEventReply } from './event-custody/index.js';
 import { parentPort, workerData } from 'node:worker_threads';
 import { checkedBootstrap, checkedOperation, boundedCopy, operationReplyLimit } from './input.js';
 import { dispatchOperation, captureDispatchReply } from './dispatch-wire.js';
-import { initialize } from './schema.js';
+import { initialize, initializeHistorical } from './schema.js';
 import { Store, safeCode } from './store.js';
 import type { Bootstrap, Command, Reply, Operation, Value } from './protocol.js';
 
@@ -43,10 +45,11 @@ function start(): void {
   let store: Store;
   let runtimeTtlMs: number;
   try {
-    const data = workerData as { path: string; bootstrap: Bootstrap };
+    const data = workerData as { path: string; bootstrap: Bootstrap; readOnly?: true; historicalIdentity?: string };
+    validateHistoricalMode(data.readOnly, data.bootstrap.runtime); captureHistoricalIdentity(data.readOnly, data.historicalIdentity);
     const bootstrap = checkedBootstrap(data.bootstrap);
     runtimeTtlMs = bootstrap.runtimeTtlMs ?? 5000;
-    const db = initialize(data.path);
+    const db = data.readOnly ? initializeHistorical(data.path, data.historicalIdentity) : initialize(data.path);
     try { store = new Store(db, bootstrap); } catch (error) { db.close(); throw error; }
   } catch (error) {
     port?.postMessage({ kind: 'startup_error', code: safeCode(error) } satisfies Reply);

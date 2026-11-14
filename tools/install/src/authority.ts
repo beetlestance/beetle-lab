@@ -1,3 +1,5 @@
+import { initializeBackendRecovery, openBackendServing } from '../../../app/src/bootstrap/recovery-control/index.js';
+import type { BackendServingLease } from '../../../app/src/bootstrap/recovery-control/index.js';
 import { join } from 'node:path';
 import { installationStatePath, loadAgentConfiguration } from '../../../agent/src/bootstrap/index.js';
 import type { LoadedAgentConfiguration } from '../../../agent/src/bootstrap/index.js';
@@ -13,7 +15,7 @@ import { ProvisionError } from '../types.js';
 import type { PrivateFiles } from './files.js';
 
 const retained = new Set<object>();
-interface Owners { loaded?: LoadedAgentConfiguration; journal?: Journal; gate?: InitializingState | ServingState }
+interface Owners { backend?: BackendServingLease; loaded?: LoadedAgentConfiguration; journal?: Journal; gate?: InitializingState | ServingState }
 async function drain(owners: Owners): Promise<void> {
   const results = await Promise.allSettled([Promise.resolve().then(() => owners.loaded?.close()),
     Promise.resolve().then(() => owners.journal?.close())]);
@@ -22,7 +24,7 @@ async function drain(owners: Owners): Promise<void> {
   if (failures.length) {
     retained.add(owners); throw new ProvisionError('cleanup', { cause: new AggregateError(failures, 'Installation cleanup failed') });
   }
-  try { owners.gate?.close(); }
+  try { owners.backend?.close(); owners.gate?.close(); }
   catch (cause) { retained.add(owners); throw new ProvisionError('cleanup', { cause }); }
 }
 async function validateBackend(c: Captured, installationId: string): Promise<void> {
@@ -42,6 +44,9 @@ export async function authority(c: Captured, files: PrivateFiles, installationId
       throw new ProvisionError('recovery_required');
     }
     await validateBackend(c, installationId);
+    const backendGate = join(p.backendData, 'recovery-control.sqlite');
+    if (!expected) initializeBackendRecovery(backendGate, installationId);
+    owners.backend = openBackendServing(backendGate, installationId);
     check(c.context);
     const statePath = installationStatePath(runtime.journal.path);
     // Ready replay acquires exclusive serving authority before opening the journal.

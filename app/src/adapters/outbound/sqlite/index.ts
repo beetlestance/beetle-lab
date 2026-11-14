@@ -1,3 +1,5 @@
+import { validateOptions } from './options.js';
+import type { MetadataOptions } from './options.js';
 import {checkedOrganizationOverview,checkedOrganizationOverviewQuery} from '../../../application/organization-overview/index.js';
 import { captureNamespaceDeletionReply } from './namespace-deletion/index.js';
 import type { NamespaceDeletionOperation } from './namespace-deletion/index.js';
@@ -51,7 +53,7 @@ import type { NamespaceStore } from '../../../ports/namespaces.js';
 import type { NamespaceEntity } from '../../../ports/namespaces.js';
 import type { SettingsStore } from '../../../ports/settings.js';
 import type { SettingsIdentity } from '../../../ports/settings-reader.js';
-import { checkedBootstrap, checkedOperation, largeOperation, operationReplyLimit, boundedCopy } from './input.js';
+import { checkedOperation, largeOperation, operationReplyLimit, boundedCopy } from './input.js';
 import { dispatchOperation, captureDispatchReply } from './dispatch-wire.js';
 import type { DispatchOperation } from './dispatch-wire.js';
 import { captureWorkerReply } from './worker-reply.js';
@@ -62,29 +64,9 @@ export { StorageError } from './protocol.js';
 export type { RunConfiguration, RunProfilePin } from '../../../ports/runs.js';
 export type { Bootstrap, EntityKey, EntityPage, ErrorCode, ListQuery, RuntimeObservation, SettingsView } from './protocol.js';
 
-export interface MetadataOptions extends Bootstrap {
-  path: string;
-  /** Trusted matched compiled worker entrypoint supplied by the composition root. */
-  workerUrl: URL;
-  /** Includes in-flight work; maximum 64. Close has one reserved slot. */
-  queueLimit?: number;
-}
+export type { MetadataOptions } from './options.js';
 interface Pending { namespaceDeletion?:NamespaceDeletionOperation; retention?:RetentionOperation; settlement?:BackendSettlementOperation; history?: HistoryOperation; exportJob?:ExportOperation; localSession?: LocalSessionOperation; deletion?: OutputDeletionOperation; resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
   artifacts?: ArtifactReadOperation; absence?: AbsenceOperation; finalization?: FinalizationOperation; result?: RunKey; execution?: RunKey; runEvents?: RunEventsQuery; output?: OutputOperation; large: boolean; replyLimit: number; event?: EventOperation; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
-function validateLocation(options: MetadataOptions): void {
-  if (typeof options.path !== 'string' || !options.path || options.path === ':memory:' || options.path.length > 4096 ||
-    !(options.workerUrl instanceof URL) || options.workerUrl.protocol !== 'file:') throw new StorageError('invalid_input');
-}
-function validateOptions(options: MetadataOptions): Bootstrap {
-  const limit = options.queueLimit ?? 32;
-  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 64) throw new StorageError('invalid_input');
-  validateLocation(options);
-  try { return checkedBootstrap({ installation: options.installation, runtime: options.runtime,
-    ...(options.runs === undefined ? {} : { runs: options.runs }),
-    ...(options.exports === undefined ? {} : {exports:options.exports}), runtimeTtlMs: options.runtimeTtlMs ?? 5000 }); }
-  catch { throw new StorageError('invalid_input'); }
-}
-
 export class Metadata {
   private readonly worker: Worker;
   private readonly pending = new Map<number, Pending>();
@@ -264,7 +246,7 @@ export class Metadata {
     this.limit = options.queueLimit ?? 32;
     this.runtimeTtlMs = bootstrap.runtimeTtlMs ?? 5000;
     this.ready = new Promise((resolve, reject) => { this.readyResolve = resolve; this.readyReject = reject; });
-    this.worker = new Worker(options.workerUrl, { workerData: { path: options.path, bootstrap },
+    this.worker = new Worker(options.workerUrl, { workerData: { path: options.path, bootstrap, ...(options.readOnly ? {readOnly: true, historicalIdentity: options.historicalIdentity} : {}) },
       resourceLimits: { maxOldGenerationSizeMb: 128 } });
     this.worker.on('message', (reply: unknown) => this.receive(reply));
     this.worker.on('error', () => this.fail('unavailable'));

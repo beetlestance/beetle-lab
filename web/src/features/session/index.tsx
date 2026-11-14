@@ -15,6 +15,7 @@ export function SessionApp(options: SessionOptions) {
       <span>Local administrator · expires <time dateTime={state.session.expiresAt}>{state.session.expiresAt} UTC</time></span>
       <button onClick={gate.logout}>Sign out</button>
     </div>
+    {state.session.readOnly && <p role="status">Read-only restored history. Runs, settings and stored data cannot be changed.</p>}
     <App key={state.generation} apiClient={state.client} inputTransfers={state.transfers} />
   </>;
   return <main className="session-page" id="main" tabIndex={-1}>

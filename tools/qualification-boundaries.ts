@@ -1,6 +1,6 @@
 const owner = 'tools/qualification/native-application/';
 const entrypoints = new Set([
-  'app/src/bootstrap/api.js', 'app/src/bootstrap/configuration.js',
+  'app/src/bootstrap/api.js', 'app/src/bootstrap/recovery-control/index.js', 'app/src/bootstrap/configuration.js',
   'app/src/ports/events.js', 'app/src/ports/cleanup-control.js',
   'app/src/ports/run-metrics.js', 'app/src/application/run-live-metrics/index.js',
   'app/src/adapters/outbound/runner/index.js', 'app/src/adapters/outbound/sqlite/execution-binding/index.js',

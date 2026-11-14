@@ -1,3 +1,4 @@
+import { assertHistoricalRead } from './historical.js';
 import { deleteNamespaceRows } from './namespace-deletion/index.js';
 import { ParentRetentionSnapshots } from './retention-parent/index.js';
 import { ManualRunDeletionSnapshots } from './retention-manual/index.js';
@@ -194,6 +195,7 @@ export class Store {
     return captured.kind === 'beginOutputDeletion' ? transaction(this.db,()=>beginOutputDeletionWithReceipt(this.db,this.deletions,captured.command)) : this.deletions.execute(captured);
   }
   execute(operation: Operation): Value {
+    assertHistoricalRead(this.db, operation);
     assertSettlementConnection(this.db);
     if(retentionOperation(operation))return this.retention(operation);
     if(settlementOperation(operation))return this.settlement(operation);

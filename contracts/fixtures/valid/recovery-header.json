@@ -1,0 +1,23 @@
+{
+  "kind": "header",
+  "format": "beetle-cold-backup",
+  "version": 1,
+  "backupId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "installationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "createdAt": "2026-11-14T00:00:00Z",
+  "metadataSchema": 27,
+  "journalSchema": 26,
+  "images": [
+    "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  ],
+  "roles": {
+    "metadata": "backend/metadata.sqlite",
+    "journal": "agent/journal/journal.sqlite",
+    "installationConfig": "config/installation.json",
+    "agentConfig": "config/agent.json",
+    "inputs": null,
+    "outputs": null
+  },
+  "quiescence": "cold-terminal-only",
+  "journalAuthority": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+}

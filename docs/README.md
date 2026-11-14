@@ -45,6 +45,8 @@ released application until the rewrite is qualified.
 | Inspect dashboards | [Workspace overview](verification/workspace-overview.md), [organisation overview](verification/organization-overview.md) | Scoped counts/activity and capped recent/active links; whole-organisation workspace rollups |
 | Inspect observed k6 load guidance | [Load guidance](verification/load-advice.md) | Current-source drops, explicit iteration-based planning and missing-data limits |
 | Inspect keyboard/context navigation | [Command search](verification/command-search.md) | Shared scoped page queries, modal lifetime/keyboard checks and honest search bounds |
+| Back up and read restored history | [Runbook](recovery.md), [cold recovery](design/lld/cold-recovery.md) | Fresh-only restore, separate read-only viewer and explicit maintenance |
+| Inspect cold recovery design | [Cold recovery](design/lld/cold-recovery.md), [historical decision](decisions/016-historical-restore.md) | Fresh-only history, bounded copy and independent read-only fences; [local evidence](verification/cold-recovery.md); release qualification separate |
 | What exists today | [Feature inventory](current-features.md) | Source-grounded capability checklist |
 | System boundaries | [HLD](design/HLD.md) | Component ownership and deployment |
 | Implement a feature | [LLD index](design/LLD.md), then its owner spec | Wire formats, state and failure behavior |
@@ -100,6 +102,7 @@ released application until the rewrite is qualified.
 | Inspect matched observation transactions | [Dispatch observation](verification/dispatch-observation.md) | Atomic ACK/projection/release, original capacity lease and pending worker/runtime wiring |
 | Inspect execution storage foundation | [Execution storage](verification/execution-storage.md) | Immutable costs, ownership guards, shared quota and remaining dispatch work |
 | Inspect journal/control authority foundation | [Authority foundations](verification/authority-foundations.md) | Durable UUID/quarantine, control lease, startup/wire/backend binding, crash tests and integration limits |
+| Inspect backend offline/startup exclusion | [Control contract](design/lld/backend-recovery-control.md) | Exclusive backend lease complements agent gate; cold snapshot/restore still pending |
 | Review delivery restart/restore authority | [Delivery authority](design/lld/delivery-authority.md) | Accepted physical binding and cold restoration contract; implementation pending |
 | Implement durable delivery transactions | [Dispatch storage](design/lld/dispatch-storage.md), [output allocation](design/lld/output-allocation.md) | Private port, claim/observation atomics, bounded fairness and shared storage |
 | Merge agent snapshots in the backend | [Attempt observation](design/lld/attempt-observation.md) | Bounded pure identity/ordering merge before durable dispatch projection |

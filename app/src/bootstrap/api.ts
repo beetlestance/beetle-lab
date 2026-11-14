@@ -1,10 +1,14 @@
+import { applicationMode } from './historical.js';
+import type { HistoricalOptions } from './historical.js';
+import type { BackendServingLease } from './recovery-control/index.js';
+import { openBackendServing } from './recovery-control/index.js';
 import { registerRetentionRoutes } from '../adapters/inbound/http/retention/index.js';
 import { openHistoryIndex } from './history-index.js';
 import type { RunHistoryIndexerState } from '../ports/run-history.js';
 import {registerOverviewRoute} from '../adapters/inbound/http/overview/index.js';
 import {registerExportRoutes} from '../adapters/inbound/http/exports/index.js';
 import type { LocalSession } from '../adapters/inbound/http/session/index.js';
-import { captureLocalAccess, openApplicationSession } from './local-access.js';
+import { captureLocalAccess } from './local-access.js';
 import { createRunComparisonService } from '../application/run-comparison/index.js';
 import { registerRunComparisonRoutes } from '../adapters/inbound/http/run-comparison/index.js';
 import { createRunLiveMetricsService } from '../application/run-live-metrics/index.js';
@@ -38,6 +42,8 @@ import type { InputHttp } from '../adapters/inbound/http/inputs/index.js';
 
 export interface ApplicationOptions {
   readonly externalOrigin: string;
+  readonly historical?: HistoricalOptions;
+  readonly recoveryControl?: {readonly path: string; readonly installationId: string};
   readonly localAccess?: 'paired' | 'automatic';
   readonly metadata: MetadataOptions;
   readonly agent?: AgentRuntimeOptions;
@@ -58,11 +64,13 @@ const digest = (value: string): string => createHash('sha256').update(value, 'ut
 
 /** Local session, authoring and installation-owned input composition. */
 export async function openApplication(options: ApplicationOptions): Promise<Application> {
+  const mode = applicationMode(options);
   const { externalOrigin, metadata: metadataOptions, inputsDirectory, agent: requestedAgent } = options;
-  const localAccess = captureLocalAccess(options.localAccess);
+  captureLocalAccess(options.localAccess);
   captureLocalExternalOrigin(externalOrigin);
   const agent = requestedAgent === undefined ? undefined : captureAgentRuntime(requestedAgent, metadataOptions, inputsDirectory);
   const configuredMetadata = agentMetadata(metadataOptions, agent);
+  let recovery: BackendServingLease | undefined;
   let session: LocalSession | undefined;
   const closeSession = () => session?.close();
   const server = createApiServer({ classify: classifyMetadataError });
@@ -72,31 +80,31 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
   let artifactHttp: {close(): Promise<void>} | undefined;
   const closeArtifacts=()=>artifactHttp?.close();
   const closeMetrics = () => metricHttp?.close();
+  let historicalInputs: ReturnType<HistoricalOptions['openInputs']>;
+  const readView = () => mode.reads(agentRuntime);
   let inputRuntime: InputRuntime | undefined; let inputHttp: InputHttp | undefined;
   try {
+    mode.protect(server);
+    recovery = servingControl(options.recoveryControl);
     configureSchemaCompilers(server, { schemas: apiSchemas, encodeJson, maximumResponseBytes: API_MAXIMUM_JSON_BYTES });
     metadata = await openMetadata(configuredMetadata);
     const store = metadata;
-    session = await openApplicationSession(externalOrigin, localAccess, store.localSessions);
+    session = await mode.session(store.localSessions); historicalInputs = mode.inputs(store.inputs);
     if (inputsDirectory !== undefined) inputRuntime = await openInputRuntime(inputsDirectory, store.inputs);
     if (agent) agentRuntime = await openAgentRuntime(agent, store);
     session.registerRoutes(server);
-    registerNamespaceRoutes(server, { deletions: store.namespaceDeletions, store: store.namespaces, reader: store, newId: randomUUID,
-      digest, authorize: session.authorize });
-    registerSuiteRoutes(server, { store: store.suites, reader: store.suites, newId: randomUUID, digest, authorize: session.authorize });
-    registerOverviewRoute(server,{reader:store.overview,organizationReader:store.organizationOverview,authorize:session.authorize,now:()=>new Date().toISOString()});
-    registerRunRoutes(server, { store: store.runs, reader: store.runs, resultReader: store.results, eventReader: store.runEvents, newId: randomUUID, digest,
-      now: () => new Date().toISOString(), authorize: session.authorize });
-    artifactHttp=downloadRoutes(server,store,agentRuntime,session.authorize);
-    metricHttp = metricRoutes(server, store, agentRuntime, session.authorize);
+    registerAuthoring(server, store, session.authorize);
+    artifactHttp=downloadRoutes(server,store,readView(),session.authorize);
+    metricHttp = metricRoutes(server, store, readView(), session.authorize, mode.historical);
     registerRetentionRoutes(server,{driverState:()=>agentRuntime?.cleanupState()??'disabled',store:store.retention,newId:randomUUID,now:()=>new Date().toISOString(),authorize:session.authorize});
-    registerSettingsRoutes(server, { store: store.settings, reader: store, digest, authorize: session.authorize });
-    if (inputRuntime) inputHttp = registerInputRoutes(server, { inputs: inputRuntime.inputs, newId: randomUUID, authorize: session.authorize });
+    const inputs = readInputs(historicalInputs, inputRuntime);
+    if (inputs) inputHttp = registerInputRoutes(server, { inputs, newId: randomUUID, authorize: session.authorize });
     server.addHook('onClose', async () => {
       closeSession();
-      const readers = await Promise.allSettled([closeMetrics(), closeArtifacts()]);
+      const readers = await Promise.allSettled([Promise.resolve().then(() => inputHttp?.close()), closeMetrics(), closeArtifacts()]);
       const storage = await Promise.allSettled([closeApplicationStore(agentRuntime, inputRuntime, store)]);
       throwCloseFailures([...readers, ...storage]);
+      await historicalInputs?.close(); await mode.close(); recovery?.close();
     });
     let closing: Promise<void> | undefined;
     const close = (): Promise<void> => {
@@ -126,16 +134,18 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     const resources = await Promise.allSettled([Promise.resolve().then(() => inputHttp?.close()),
       Promise.resolve().then(() => agentRuntime?.close()), Promise.resolve().then(() => inputRuntime?.close()), Promise.resolve().then(() => server.close())]);
     const store = await Promise.allSettled([metadata?.abort()]);
-    throwCloseFailures([{ status: 'rejected', reason: error }, ...readers, ...resources, ...store]);
+    try {throwCloseFailures([...readers, ...resources, ...store]); await historicalInputs?.close(); await mode.close(); recovery?.close();}
+    catch (cleanup) {throwCloseFailures([{status: 'rejected', reason: error}, {status: 'rejected', reason: cleanup}]);}
     throw error;
   }
 }
-function metricRoutes(server: FastifyInstance, store: Metadata, agent: AgentRuntime | undefined, authorize: onRequestAsyncHookHandler) {
+type ReadView = Partial<Pick<AgentRuntime, 'publishedBytes' | 'liveMetrics'>>;
+function metricRoutes(server: FastifyInstance, store: Metadata, agent: ReadView | undefined, authorize: onRequestAsyncHookHandler, historical: boolean) {
   const historyService = createRunMetricsService({artifacts: store.runArtifacts,
     ...(agent?.publishedBytes ? {bytes: agent.publishedBytes} : {}),
     createDigest: () => {const hash = createHash('sha256'); return {update: bytes => {hash.update(bytes);}, hex: () => hash.digest('hex')};},
   });
-  const index = openHistoryIndex(store, agent?.publishedBytes, async problem => {
+  const index = openHistoryIndex(store, historical ? undefined : agent?.publishedBytes, async problem => {
     server.log.error({ code: 'history_summary_index_failure', problem }, 'History summary indexing failed');
   });
   const history = registerRunMetricRoutes(server, {authorize, service: historyService});
@@ -148,10 +158,27 @@ function metricRoutes(server: FastifyInstance, store: Metadata, agent: AgentRunt
   } };
 }
 
-function downloadRoutes(server:FastifyInstance,store:Metadata,agent:AgentRuntime|undefined,authorize:onRequestAsyncHookHandler){
+function downloadRoutes(server:FastifyInstance,store:Metadata,agent:ReadView|undefined,authorize:onRequestAsyncHookHandler){
  const bytes=agent?.publishedBytes;
  const runs=registerRunArtifactRoutes(server,{reader:store.runArtifacts,authorize,...(bytes?{bytes}:{})});
  const exports=registerExportRoutes(server,{store:store.exports,outputs:store.exportOutputs,newId:randomUUID,digest,
   now:()=>new Date().toISOString(),authorize,...(bytes?{bytes}:{})});
  return {close:async()=>{throwCloseFailures(await Promise.allSettled([runs.close(),exports.close()]));}};
+}
+
+function registerAuthoring(server: FastifyInstance, store: Metadata, authorize: onRequestAsyncHookHandler): void {
+    registerNamespaceRoutes(server, { deletions: store.namespaceDeletions, store: store.namespaces, reader: store, newId: randomUUID,
+      digest, authorize: authorize });
+    registerSuiteRoutes(server, { store: store.suites, reader: store.suites, newId: randomUUID, digest, authorize: authorize });
+    registerOverviewRoute(server,{reader:store.overview,organizationReader:store.organizationOverview,authorize:authorize,now:()=>new Date().toISOString()});
+    registerRunRoutes(server, { store: store.runs, reader: store.runs, resultReader: store.results, eventReader: store.runEvents, newId: randomUUID, digest,
+      now: () => new Date().toISOString(), authorize: authorize });
+    registerSettingsRoutes(server, { store: store.settings, reader: store, digest, authorize });
+}
+
+function servingControl(control: ApplicationOptions['recoveryControl']): BackendServingLease | undefined {
+  return control ? openBackendServing(control.path, control.installationId) : undefined;
+}
+function readInputs(history: ReturnType<HistoricalOptions['openInputs']>, runtime: InputRuntime | undefined) {
+  return history ?? runtime?.inputs;
 }

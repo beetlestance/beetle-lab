@@ -106,7 +106,7 @@ export function initialize(path: string): DatabaseSync {
     if (typeof version !== 'number' || version > JOURNAL_SCHEMA_VERSION) throw new Failure('schema_newer');
     db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;');
     const authority = version === 0 ? randomUUID() : null;
-    registerNoTaskReceipt(db);registerRejectedFunding(db);registerSettlementGuard(db);registerRuntimeAssociationValidation(db); registerNamespaceValidation(db); registerRetirementValidation(db); registerCleanupPlanValidation(db); registerCleanupProgressValidation(db); registerCleanupReceiptValidation(db);
+    registerJournalFunctions(db);
     if (version < JOURNAL_SCHEMA_VERSION) transaction(db, () => {
       migrateFoundation(db, version);
       if (version < 15) migrateOwnership(db, version, authority);
@@ -147,4 +147,12 @@ function migrateSettlementFunding(db:DatabaseSync,version:number):void{
       if(version<24)db.exec(migration024);
       if(version<25)db.exec(migration025);
       db.exec(migration026);
+}
+
+function registerJournalFunctions(db: DatabaseSync): void {
+  registerNoTaskReceipt(db);registerRejectedFunding(db);registerSettlementGuard(db);registerRuntimeAssociationValidation(db); registerNamespaceValidation(db); registerRetirementValidation(db); registerCleanupPlanValidation(db); registerCleanupProgressValidation(db); registerCleanupReceiptValidation(db);
+}
+export function prepareColdJournalCopy(db: DatabaseSync): void {
+  if (db.prepare('PRAGMA user_version').get()?.user_version !== JOURNAL_SCHEMA_VERSION) throw new Failure('schema_newer');
+  registerJournalFunctions(db);
 }

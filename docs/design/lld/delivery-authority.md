@@ -1,5 +1,9 @@
 # Delivery authority and supported recovery
 
+The first-release restore proposal below is superseded by
+[isolated read-only historical restoration](../../decisions/016-historical-restore.md).
+Intact restart authority and cold-backup quiescence requirements remain.
+
 Status: journal/control-store, startup and runner wire locally verified;
 backend binding/delivery locally verified against a synthetic peer;
 restore and native qualification remain pending.

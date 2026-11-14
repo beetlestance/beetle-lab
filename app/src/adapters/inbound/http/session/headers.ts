@@ -58,7 +58,7 @@ export function checkOrigin(headers: ReadonlyMap<string, readonly string[]>, ori
   if (singleHeader(headers, 'sec-fetch-site') === 'cross-site') throw new ApiFault('forbidden');
 }
 
-export function sessionCookie(headers: ReadonlyMap<string, readonly string[]>): string | undefined {
+export function sessionCookie(headers: ReadonlyMap<string, readonly string[]>, expectedName = 'beetle_session'): string | undefined {
   const text = singleHeader(headers, 'cookie');
   if (text === undefined) return undefined;
   if (text.length > 4096) throw new ApiFault('forbidden');
@@ -66,13 +66,18 @@ export function sessionCookie(headers: ReadonlyMap<string, readonly string[]>): 
   if (cookies.length > 64) throw new ApiFault('forbidden');
   let session: string | undefined;
   for (const cookie of cookies) {
-    const item = cookie.trim(); const equal = item.indexOf('=');
-    const name = item.slice(0, equal); const value = item.slice(equal + 1);
-    if (equal < 1 || !/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(name) ||
-      !/^[\x21\x23-\x2b\x2d-\x3a\x3c-\x5b\x5d-\x7e]*$/.test(value)) throw new ApiFault('forbidden');
-    if (name !== 'beetle_session') continue;
+    const {name, value} = cookiePair(cookie);
+    if (name !== expectedName) continue;
     if (session !== undefined) throw new ApiFault('forbidden');
     session = value;
   }
   return session;
+}
+
+function cookiePair(cookie: string): {name: string; value: string} {
+  const item = cookie.trim(); const equal = item.indexOf('=');
+  const name = item.slice(0, equal); const value = item.slice(equal + 1);
+  if (equal < 1 || !/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(name) ||
+    !/^[\x21\x23-\x2b\x2d-\x3a\x3c-\x5b\x5d-\x7e]*$/.test(value)) throw new ApiFault('forbidden');
+  return {name, value};
 }

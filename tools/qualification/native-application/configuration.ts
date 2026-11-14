@@ -1,3 +1,4 @@
+import { initializeBackendRecovery } from '../../../app/src/bootstrap/recovery-control/index.js';
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -21,6 +22,7 @@ export function agentOrigin(published: string): string {
 }
 export async function backendConfiguration(f: Fixture, origin: string, externalOrigin: string) {
   const dataRoot = join(f.root, 'backend'); await mkdir(dataRoot, { mode: 0o700 });
+  initializeBackendRecovery(join(dataRoot, 'recovery-control.sqlite'), f.id);
   const record = JSON.parse(await readFile(new URL('../../../contracts/fixtures/api/valid/installation-settings.json', import.meta.url), 'utf8'));
   delete record.effective;
   Object.assign(record, { id: f.id });

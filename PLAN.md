@@ -55,6 +55,7 @@ links the complete source/evidence inventory audit; final acceptance is still op
 | Overview | Exact workspace counts, hourly submissions and bounded recent/active links | [Overview](docs/verification/workspace-overview.md) |
 | Load advice | Observed dropped iterations and explicit iteration-median VU heuristic | [Guidance](docs/verification/load-advice.md) |
 | Navigation/reference | Command search, API/config downloads and standalone agent instructions | [Search](docs/verification/command-search.md), [reference](docs/verification/embedded-reference.md) |
+| Recovery | Cold archive, fresh-only read-only history, exact resume and separate viewer; locally verified runtime phases | [Recovery](docs/verification/cold-recovery.md) |
 | Cleanup/retention | Reserved ACK, automatic driver, native recovery, exact-once settlement/replay floors, protected preview/Apply/progress | [Cleanup index](docs/verification/output-retirement-progress.md), [retention recovery](docs/verification/native-retention.md) |
 
 [Operation availability](docs/verification/reference-availability.md) records the
@@ -70,7 +71,7 @@ Native live activation uses [trusted image capability](docs/decisions/014-live-m
 | Input/config parity | Directory-tree upload and immutable replacement acceptance remain; selected-revision summary/exact-suite history are locally implemented |
 | Diagnostics/warnings | Native warning classification/configured advice locally implemented; bounded raw diagnostic retention/replay remains |
 | Overview | Workspace and whole-organisation rollups locally implemented; packaged/platform acceptance remains |
-| Recovery | Remaining delivery restart/cold-restore proof and supported cold backup/restore tooling |
+| Recovery | Cold tooling locally implemented; remaining active-delivery/crash, native-platform and release qualification |
 | Acceptance | Every F/N inventory ID and V failure case needs source-bound acceptance; resolve recorded failures |
 | Qualification | Final source/pull installs, matching images/CI, browser/automation, native amd64/arm64, scans, soak, overhead and rollback |
 

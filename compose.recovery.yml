@@ -1,0 +1,42 @@
+# Offline maintenance only. Existing home must match the source installation.
+name: beetle-recovery-${BEETLE_INSTANCE:-local}
+x-maintenance: &maintenance
+  image: ${BEETLE_INSTALLER_IMAGE:-beetle-lab-installer:rewrite}
+  build: {context: ., dockerfile: tools/install/Dockerfile}
+  read_only: true
+  init: true
+  network_mode: none
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  cpus: 1
+  mem_limit: 256m
+  pids_limit: 64
+  stop_grace_period: 45s
+  logging: {driver: local, options: {max-size: 1m, max-file: "2"}}
+  tmpfs: ["/tmp:rw,noexec,nosuid,nodev,size=16777216"]
+  environment:
+    BEETLE_RECOVERY_HOME: ${BEETLE_HOME:-${PWD}/.beetle}
+    SQLITE_TMPDIR: ${BEETLE_HOME:-${PWD}/.beetle}
+x-home: &home
+  type: bind
+  source: ${BEETLE_HOME:-${PWD}/.beetle}
+  target: ${BEETLE_HOME:-${PWD}/.beetle}
+  bind: {create_host_path: false}
+services:
+  recovery:
+    <<: *maintenance
+    user: "1000:1000"
+    entrypoint: [node, /beetle/install/recovery.js]
+    volumes: [*home]
+  backup:
+    <<: *maintenance
+    user: "0:0"
+    cap_add: [SETUID, SETGID]
+    entrypoint: [node, /beetle/install/recovery-container.js]
+    volumes:
+      - *home
+      - type: bind
+        source: ${BEETLE_DOCKER_SOCKET:-/var/run/docker.sock}
+        target: /var/run/docker.sock
+        read_only: true
+        bind: {create_host_path: false}

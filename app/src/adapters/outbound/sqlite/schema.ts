@@ -1,3 +1,5 @@
+import { checkHistoricalNative } from './historical-native.js';
+import { markHistorical } from './historical.js';
 import {migration027} from './migration027.js';
 import { migration026 } from './migration026.js';
 import { migrate025 } from './migration025.js';
@@ -94,12 +96,7 @@ export function initialize(path: string): DatabaseSync {
     const version = db.prepare('PRAGMA user_version').get()?.user_version;
     if (typeof version !== 'number' || version > METADATA_SCHEMA_VERSION) throw new StorageError('schema_newer');
     db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; PRAGMA temp_store=MEMORY;');
-    registerBackendSettlement(db);
-    registerRetentionAccounting(db);
-    registerCleanupAckValidation(db);
-    registerAbsenceValidation(db);
-    registerHistoryValidation(db);
-    registerSearchFold(db);
+    registerConnection(db);
     applyMigrations(db, version);
     return db;
   } catch (error) { db.close(); throw error; }
@@ -113,4 +110,31 @@ function applyMigrations(db: DatabaseSync, version: number): void {
     () => db.exec(migration007), () => migrate008(db), () => db.exec(migration009), () => db.exec(migration010), () => db.exec(migration011), () => db.exec(migration012), () => db.exec(migration013), () => db.exec(migration014), () => db.exec(migration015), () => db.exec(migration016), () => db.exec(migration017), () => db.exec(migration018), () => db.exec(migration019), () => migrate020(db), () => db.exec(migration021), () => db.exec(migration022), () => db.exec(migration023), () => db.exec(migration024), () => migrate025(db), () => db.exec(migration026), () => db.exec(migration027),
   ];
   steps.forEach((step, index) => { if (version <= index) transaction(db, step); });
+}
+
+function registerConnection(db: DatabaseSync): void {
+    registerBackendSettlement(db);
+    registerRetentionAccounting(db);
+    registerCleanupAckValidation(db);
+    registerAbsenceValidation(db);
+    registerHistoryValidation(db);
+    registerSearchFold(db);
+}
+/** Exact-schema archive reads only: no initialization, migration, or authority repair. */
+export function initializeHistorical(path: string, expectedNativeIdentity?: string): DatabaseSync {
+  checkHistoricalNative(path, expectedNativeIdentity);
+  const db = new DatabaseSync(path, {readOnly: true, timeout: 100, enableForeignKeyConstraints: true, defensive: true});
+  try {
+    checkHistoricalNative(path, expectedNativeIdentity);
+    db.exec('PRAGMA busy_timeout=100; PRAGMA query_only=ON; PRAGMA cache_size=-2048; PRAGMA mmap_size=0; PRAGMA temp_store=MEMORY;');
+    if (db.prepare('PRAGMA user_version').get()?.user_version !== METADATA_SCHEMA_VERSION) throw new StorageError('schema_newer');
+    registerConnection(db); markHistorical(db); return db;
+  } catch (error) {db.close(); throw error;}
+}
+
+/** Offline copied database only. Registers real guards; never disables triggers. */
+export function scrubHistoricalCredentials(db: DatabaseSync): void {
+  if (db.prepare('PRAGMA user_version').get()?.user_version !== METADATA_SCHEMA_VERSION) throw new StorageError('schema_newer');
+  registerConnection(db);
+  db.exec('PRAGMA secure_delete=ON; PRAGMA temp_store=FILE; DELETE FROM local_browser_session; VACUUM;');
 }

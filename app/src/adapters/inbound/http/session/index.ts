@@ -13,6 +13,8 @@ import type { SessionClocks, Grant } from './state.js';
 export type { SessionClocks } from './state.js';
 export interface LocalSessionOptions {
   readonly externalOrigin: string;
+  readonly readOnly?: true;
+  readonly cookieName?: string;
   readonly automatic?: {readonly initial: LocalSessionRecord; readonly store: LocalSessionStore};
   /** Trusted test clocks only; cryptographic randomness is never injectable. */
   readonly clocks?: SessionClocks;
@@ -33,10 +35,10 @@ function routeSchema(name: OperationName) {
       response: { [operation.successStatus]: apiMessageSchemas[operation.response] } } };
 }
 function jsonObject(value: object): object { return JSON.parse(encodeJson(value, 1024)) as object; }
-function cookie(value: string, secure: boolean, clear = false): string {
-  return `beetle_session=${value}; Path=/api/v2/; HttpOnly; SameSite=Strict; Max-Age=${clear ? 0 : 28800}${secure ? '; Secure' : ''}`;
+function cookie(value: string, secure: boolean, name: string, clear = false): string {
+  return `${name}=${value}; Path=/api/v2/; HttpOnly; SameSite=Strict; Max-Age=${clear ? 0 : 28800}${secure ? '; Secure' : ''}`;
 }
-function requestCookie(request: FastifyRequest): string | undefined { return sessionCookie(requestHeaders(request)); }
+function requestCookie(request: FastifyRequest, name: string): string | undefined { return sessionCookie(requestHeaders(request), name); }
 function checkExchange(headers: ReadonlyMap<string, readonly string[]>, name: 'x-beetle-pair' | 'x-beetle-local'): void {
   const contentType = singleHeader(headers, 'content-type');
   if (singleHeader(headers, name) !== '1' ||
@@ -48,6 +50,8 @@ function checkExchange(headers: ReadonlyMap<string, readonly string[]>, name: 'x
  */
 export function createLocalSession(options: LocalSessionOptions): LocalSession {
   const origin = externalOrigin(options.externalOrigin);
+  const name = cookieName(options);
+  const view = (session: object) => jsonObject({...session, ...(options.readOnly ? {readOnly: true} : {}), ...(options.automatic ? {accessMode: 'automatic'} : {})});
   const authority = new SessionAuthority(options.clocks ?? { monotonicNow: () => performance.now(), wallNow: () => Date.now() });
   const automatic = options.automatic ? new AutomaticSessions(authority, options.automatic.store, options.automatic.initial) : undefined;
   const authenticate = (value: string | undefined, logoutReplay = false) => automatic ? automatic.authenticate(value, logoutReplay) : authority.authenticate(value);
@@ -59,7 +63,7 @@ export function createLocalSession(options: LocalSessionOptions): LocalSession {
     if (exchange) {
       admitExchange(exchange, headers, authority, automatic !== undefined); return;
     }
-    const view = authenticate(sessionCookie(headers), logoutReplay);
+    const view = authenticate(sessionCookie(headers, name), logoutReplay);
     if (mutation && !equalSecret(singleHeader(headers, 'x-beetle-csrf'), view.csrfToken)) throw new ApiFault('forbidden');
   };
   const authorize = guard();
@@ -67,21 +71,21 @@ export function createLocalSession(options: LocalSessionOptions): LocalSession {
     server.route({ ...routeSchema('openLocalBrowserSession'), onRequest: guard('local'), handler: async (_request, reply) => {
       let grant: Grant;
       try {grant = await automatic!.grant(); automatic!.authenticate(grant.cookie);} catch (error) {throw localAccessError(error);}
-      return reply.header('Set-Cookie', cookie(grant.cookie, origin.secure)).send(jsonObject({...grant.view, ...(automatic ? {accessMode: 'automatic'} : {})}));
+      return reply.header('Set-Cookie', cookie(grant.cookie, origin.secure, name)).send(view(grant.view));
     } });
     server.route({ ...routeSchema('pairBrowserSession'), onRequest: guard('pair'), handler: async (request, reply) => {
       const grant = authority.pair((request.body as PairBrowserRequest).bootstrapToken);
-      return reply.header('Set-Cookie', cookie(grant.cookie, origin.secure)).send(jsonObject({...grant.view, ...(automatic ? {accessMode: 'automatic'} : {})}));
+      return reply.header('Set-Cookie', cookie(grant.cookie, origin.secure, name)).send(view(grant.view));
     } });
     server.route({ ...routeSchema('getBrowserSession'), onRequest: authorize, handler: async request => {
-      return jsonObject({...authenticate(requestCookie(request)), ...(automatic ? {accessMode: 'automatic'} : {})});
+      return view(authenticate(requestCookie(request, name)));
     } });
     server.route({ ...routeSchema('logoutBrowserSession'), onRequest: guard(undefined, true), handler: async (request, reply) => {
       if (automatic) {
-        try {await automatic.logout(requestCookie(request)); automatic.confirmLogout();} catch (error) {throw localAccessError(error);}
+        try {await automatic.logout(requestCookie(request, name)); automatic.confirmLogout();} catch (error) {throw localAccessError(error);}
       }
-      else authority.logout(requestCookie(request));
-      return reply.header('Set-Cookie', cookie('', origin.secure, true)).send(jsonObject({ loggedOut: true }));
+      else authority.logout(requestCookie(request, name));
+      return reply.header('Set-Cookie', cookie('', origin.secure, name, true)).send(jsonObject({ loggedOut: true }));
     } });
   };
   return Object.freeze({ bootstrapToken: authority.bootstrapToken, authorize, registerRoutes, close: () => {automatic?.close(); authority.close();} });
@@ -98,4 +102,11 @@ function admitExchange(exchange: 'pair' | 'local', headers: ReadonlyMap<string, 
   if (exchange === 'local' && !automatic) throw new ApiFault('unpaired');
   if (exchange === 'pair' && automatic) throw new ApiFault('forbidden');
   try {authority.admitPair();} catch (error) {throw exchange === 'local' ? localAccessError(error) : error;}
+}
+
+function cookieName(options: LocalSessionOptions): string {
+  if (options.readOnly !== undefined && options.readOnly !== true) throw new TypeError('Invalid session mode');
+  if (!options.readOnly && options.cookieName !== undefined) throw new TypeError('Historical cookie only');
+  const name = options.cookieName ?? 'beetle_session';
+  if (!/^[a-z0-9_]{1,64}$/.test(name)) throw new TypeError('Invalid cookie name'); return name;
 }

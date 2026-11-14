@@ -42,6 +42,9 @@
             "automatic",
             "paired"
           ]
+        },
+        "readOnly": {
+          "const": true
         }
       },
       "required": [

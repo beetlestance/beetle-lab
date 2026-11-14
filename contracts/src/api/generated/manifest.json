@@ -30,7 +30,7 @@
     "api/v2/run-requests.schema.json": "cca0f5055cb131cd8db648b8b7f635ad5fb52eaf76fdfc2808f77b98015c155b",
     "api/v2/run-result.schema.json": "297cc10fe77e5ca7c2e9d11124a7e4abff461eaba85f3472d1e6a0f0f81d0829",
     "api/v2/run.schema.json": "10c9cbc4c0875de3cec1363c0d4183e9467100ba738e19fa974d152848fbc809",
-    "api/v2/session.schema.json": "dfc25263e96d4093b69bb2f0528ea0e6e3d780c2a348b5b2967ae8e8f23d163e",
+    "api/v2/session.schema.json": "edcd95fb6abcae38c5ce4ad622bfec9d9ed13527fe38d7e27c6add74d07abf40",
     "api/v2/settings-overrides.schema.json": "f4e1dae52fd4aa5b184d58aa02d5768459a9054c16bd03d5ea49a317b2660963",
     "api/v2/settings-values.schema.json": "2b5365e7ea50b421e7c6afe165874add2241294b78e59648c66f5ef8f774e2bc",
     "api/v2/settings.schema.json": "aaf9c415020b25b04bce515956e2077bb74f15614a04c137d6211a345c1ec2f8",
