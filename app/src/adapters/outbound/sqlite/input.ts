@@ -129,8 +129,12 @@ function checkedExtendedOperation(operation: Operation): boolean {
   if (suiteOperation(operation)) { checkedSuiteOperation(operation); return true; }
   return settingsRead(operation);
 }
+function checkedOperationKind(input: Operation): void {
+  if (typeof dataProperty(input, 'kind') !== 'string') throw new StorageError('invalid_input');
+}
 export function checkedOperation(input: Operation, runtimeTtlMs = 5000): Operation {
   try {
+    checkedOperationKind(input);
     if(retentionOperation(input))return captureRetentionOperation(input);
     if (exportOperation(input)) return captureExportOperation(input);
     if (localSessionOperation(input)) return captureLocalSessionOperation(input);
@@ -195,7 +199,7 @@ function dataProperty(value: unknown, key: string): unknown {
 }
 const fixedMessageLimits:Partial<Record<Operation['kind'],number>>={loadLocalSession:2048,saveLocalSession:2048,settleBackendOutput:2304,readBackendSettlement:2304};
 export function operationMessageLimit(operation: Operation): number {
-  if(operation.kind === 'deleteNamespace')return 4096;
+  if(dataProperty(operation, 'kind') === 'deleteNamespace')return 4096;
   if(retentionOperation(operation))return 12288;
   if (exportOperation(operation)) return exportRequestLimit(operation);
   const fixed=fixedMessageLimits[dataProperty(operation,'kind') as Operation['kind']];if(fixed!==undefined)return fixed;

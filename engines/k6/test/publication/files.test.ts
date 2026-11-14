@@ -42,7 +42,7 @@ it.each(['file', 'symlink'] as const)('never replaces an existing target %s', as
     await op.quiesced;
     expect(await readFile(path, 'utf8')).toBe(kind === 'file' ? 'original' : 'preserve');
     if (kind === 'symlink') expect(await readlink(path)).toBe(preserved);
-    expect((await readdir(options.directory)).filter(name => name.startsWith('.engine-result.pending-'))).toHaveLength(1);
+    expect((await readdir(options.directory)).filter(name => name.startsWith('.engine-result.json.pending-'))).toHaveLength(1);
   } finally { await clean(options); }
 });
 it('completes short writes without exceeding its bounded per-call window', async () => {

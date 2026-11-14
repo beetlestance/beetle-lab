@@ -27,8 +27,8 @@ at4e2eba0. They are no longer implementation backlog entries.
 No feature or release group is accepted merely because a route, test or report
 exists. The acceptance audit records evidence limits and unclosed scenario mappings.
 The old25 baseline-failure note is now [triaged](migration-fixtures.md) through exact
-historical and shared-consumer fixtures. A full integrated gate remains open; this
-is not a claim about the current whole-suite failure count.
+historical and shared-consumer fixtures. The [local combined gate](integrated-acceptance.md) now covers all 987 configured
+test files with reviewed corrections; packaged/native acceptance remains open.
 
 UI redesign remains a separate later audit/plan. Additional engines, hosted IAM,
 shared storage and test generation remain follow-on scope. No user service or

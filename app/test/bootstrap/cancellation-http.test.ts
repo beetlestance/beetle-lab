@@ -4,7 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { runFixture, client, savedSuite, value } from './run-fixture.js';
 import { settingsFixture } from '../storage/fixture.js';
 
-const fixture = runFixture();
+const fixture = runFixture(10_000_000);
 it('recovers a lost cancellation response over real HTTP and restart without fabricating execution', async () => {
   const first = await fixture.open(undefined, {}, true);
   const initial = await client(first.app, false, first.origin, true);

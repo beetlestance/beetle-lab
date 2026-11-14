@@ -24,6 +24,7 @@ released application until the rewrite is qualified.
 | Frontend/assets/SDK choices | [Discussion](design/frontend-decisions.md) | Options and unresolved decisions |
 | Audit inventory and failure coverage | [Inventory audit](verification/inventory-audit.md), [remaining packets](execution/remaining-rewrite.md) | Complete ID mapping and ordered exit conditions; no new execution evidence |
 | Audit unfinished product parity | [Remaining parity](verification/functional-parity.md) | All36 inventory IDs, concrete remaining packets and acceptance gaps; separate from UI redesign |
+| Inspect the local integrated gate | [Combined acceptance](verification/integrated-acceptance.md) | All 987 configured files, focused corrections and explicit packaged/native limits |
 | Inspect historical failure triage | [Migration fixtures](verification/migration-fixtures.md) | Exact old-schema seeds, current paid cleanup and preserved rollback/authority assertions |
 | Inspect embedded API/agent reference | [Reference evidence](verification/embedded-reference.md) | Generated schemas, binary guide, standalone instructions and source-image asset delivery |
 | Inspect implemented versus planned API routes | [Reference availability](verification/reference-availability.md) | Original runtime registration evidence and reconciled current catalogue totals |

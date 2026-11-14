@@ -5,7 +5,7 @@ describe('suite allocation and cardinality bounds', () => {
   it('rejects oversized config JSON and template/field/token limits', () => {
     const config = fixture(); config.requests[0]!.body = { kind: 'json', value: 'x'.repeat(1_048_577) };
     expect(validateSuiteConfig(config).ok).toBe(false);
-    config.requests[0]!.body = { kind: 'json', value: 'x'.repeat(4097) };
+    config.requests[0]!.body = { kind: 'json', value: '{{secret.auth}}' + 'x'.repeat(4097) };
     expect(validateAndCompileSuite(config, dependencies()).ok).toBe(false);
     config.requests[0]!.body = { kind: 'json', value: '{{secret.auth}}'.repeat(129) };
     expect(validateAndCompileSuite(config, dependencies()).ok).toBe(false);

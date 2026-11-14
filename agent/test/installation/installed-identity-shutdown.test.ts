@@ -1,5 +1,5 @@
+import {rawJournal} from '../journal/raw-connection.js';
 import { createHash } from 'node:crypto';
-import { DatabaseSync } from 'node:sqlite';
 import { readdir } from 'node:fs/promises';
 import { createConfigSchema } from '@beetle/contracts/engine-config';
 import { expect, it, vi } from 'vitest';
@@ -12,7 +12,7 @@ import { deferred, fixture, operation, scope } from './fixtures.js';
 const f = fixture();
 const turn = () => new Promise<void>(resolve => setImmediate(resolve));
 function persisted(path: string) {
-  const db = new DatabaseSync(path);
+  const db = rawJournal(path);
   try {
     return ['accepted_attempts', 'admission_queue', 'reservations', 'event_spool'].map(table =>
       db.prepare(`SELECT * FROM ${table}`).all());
@@ -32,7 +32,7 @@ async function inherited(binding: 'unbound' | 'changed') {
   const accepting = e.create({ catalog: initial }); await accepting.enqueue(offer); await accepting.close();
   await f.admit(e.owner, offer, e.time.wall()); await f.close(e.owner);
   if (binding === 'unbound') {
-    const db = new DatabaseSync(e.journalPath);
+    const db = rawJournal(e.journalPath);
     try {
       const row = db.prepare('SELECT offer_json FROM accepted_attempts').get()!;
       const old = JSON.parse(String(row.offer_json)) as Record<string, unknown>; delete old.installedIdentity;

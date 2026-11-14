@@ -1,5 +1,6 @@
 import {expect,it} from 'vitest';
 import {DatabaseSync} from 'node:sqlite';
+import {withRawGuards} from '../storage/raw-connection-fixture.js';
 import {storageFixture,seed,scope,uuid} from '../storage/fixture.js';
 import {createSuite,append,request} from '../storage/suites-fixture.js';
 import {runCommand} from '../storage/runs-fixture.js';
@@ -44,7 +45,7 @@ it('keeps polling compact even when the immutable assignment is unavailable, and
  const e=await setup();const job=await e.metadata.exports.create(createCommand(e.revision.id));const key={scope,id:job.id};
  expect((await e.metadata.exportExecutions.claim(key)).kind).toBe('claimed');await f.close(e.metadata);
  // A closed, deliberately corrupt private fixture; live ownership guards remain enabled in the test above.
- const db=new DatabaseSync(e.path);try{
+ const db=withRawGuards(new DatabaseSync(e.path));try{
   db.exec('DROP TRIGGER export_original_immutable');db.prepare("UPDATE export_originals SET assignment_json='{}' WHERE export_id=?").run(job.id);
  }finally{db.close();}
  const metadata=await f.open(e.path,e.config);

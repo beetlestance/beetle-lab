@@ -4,7 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { createApiClient } from '@beetle/contracts/api';
 import { runFixture, client, savedSuite, value } from './run-fixture.js';
 import { settingsFixture } from '../storage/fixture.js';
-const fixture = runFixture();
+const fixture = runFixture(10_000_000);
 it('serves bound history through actual application HTTP and compiled SQLite worker across reopen without execution', async () => {
   const first = await fixture.open(); const paired = await client(first.app); const saved = await savedSuite(paired.api);
   const submitted = [];

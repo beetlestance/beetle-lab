@@ -3,7 +3,7 @@ import {mkdtemp,rm} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {DatabaseSync} from 'node:sqlite';
-import {initialize} from '../../src/adapters/outbound/sqlite/schema.js';
+import {initialize,METADATA_SCHEMA_VERSION} from '../../src/adapters/outbound/sqlite/schema.js';
 import {settingsFixture} from '../storage/fixture.js';
 import {prior14} from './prior-schema.js';
 it('rolls a late metadata015 collision back to actual schema14 without losing existing data, then upgrades and reopens',async()=>{
@@ -17,8 +17,8 @@ it('rolls a late metadata015 collision back to actual schema14 without losing ex
   expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(14);expect(db.prepare('SELECT * FROM settings').all()).toEqual(before);
   expect(db.prepare("SELECT name FROM sqlite_schema WHERE name IN ('execution_orders','export_jobs','export_originals')").all()).toEqual([]);
   expect(db.prepare('SELECT * FROM export_artifacts').all()).toEqual([{canary:'retained'}]);db.exec('DROP TABLE export_artifacts');db.close();
-  db=initialize(path);expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(20);expect(db.prepare('SELECT * FROM settings').all()).toEqual(before);
+  db=initialize(path);expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);expect(db.prepare('SELECT * FROM settings').all()).toEqual(before);
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);db.close();
-  db=initialize(path);expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(20);expect(db.prepare('SELECT * FROM settings').all()).toEqual(before);db.close();
+  db=initialize(path);expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);expect(db.prepare('SELECT * FROM settings').all()).toEqual(before);db.close();
  }finally{await rm(root,{recursive:true,force:true});}
 });

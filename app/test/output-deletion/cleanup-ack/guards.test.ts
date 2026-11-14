@@ -1,3 +1,5 @@
+import { registerBackendSettlement } from '../../../src/adapters/outbound/sqlite/backend-settlement-guard/index.js';
+import { registerRetentionAccounting } from '../../../src/adapters/outbound/sqlite/retention-accounting-guard/index.js';
 import { transaction } from '../../../src/adapters/outbound/sqlite/schema.js';
 import { insertCleanupAck } from '../../../src/adapters/outbound/sqlite/cleanup-ack-guard/index.js';
 import { afterEach,expect,it } from 'vitest';
@@ -35,7 +37,7 @@ it('rejects nested trigger substitution inside a genuine permit window and rolls
 });
 it('missing callback registration on a raw connection fails closed',()=>{
  const f=fixture();const root=mkdtempSync(join(tmpdir(),'beetle-cleanup-ack-'));roots.push(root);const path=join(root,'metadata.sqlite');f.db.prepare('VACUUM INTO ?').run(path);
- const db=new DatabaseSync(path,{enableForeignKeyConstraints:true});try{expect(()=>db.prepare(insert).run(...values(f))).toThrow('backend_cleanup_ack_authorized');expect(db.prepare('SELECT count(*) n FROM backend_output_cleanup_acks').get()?.n).toBe(0);}finally{db.close();}
+ const db=new DatabaseSync(path,{enableForeignKeyConstraints:true});try{registerRetentionAccounting(db);registerBackendSettlement(db);expect(()=>db.prepare(insert).run(...values(f))).toThrow('backend_cleanup_ack_authorized');expect(db.prepare('SELECT count(*) n FROM backend_output_cleanup_acks').get()?.n).toBe(0);}finally{db.close();}
 });
 
 it('rejects reentrant trusted insertion without exposing or retaining the outer permit',()=>{

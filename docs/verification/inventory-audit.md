@@ -6,6 +6,8 @@ Authority: [inventory](../current-features.md), [acceptance](../verification.md)
 All34 F IDs and both N IDs are mapped below. Local evidence belongs to its recorded
 source/environment; this audit does not requalify it against every later change.
 No complete A01–A09 or R0–R4 release acceptance is inferred.
+The [combined local gate](integrated-acceptance.md) records bounded groups and
+reviewed corrections; packaged/native acceptance remains separate.
 
 ## Product and installation
 
@@ -74,6 +76,29 @@ before closing an ID. V14/V24 additionally require explicit applicability decisi
 | V21 | [Settings contract](../design/lld/organization-settings.md), [retention](retention-accounting.md) | Active snapshots, lower-ceiling draining and explicit purge acceptance |
 | V23,V24 | [Run HTTP](run-http.md), [resources](resource-observation.md), [capacity](capacity-wire.md) | Complete schema/response fixtures; measured idle/thermal support or explicit unsupported behavior |
 
+## Feature-group case entrypoints
+
+These current case paths complement the F01–F34/N01–N02 inventory above. They
+identify local checks, not release acceptance for an entire A group. Integrated
+results and unchanged-input reuse are recorded separately from packaged/native proof.
+
+| Group | Concrete local case entrypoints | Remaining composed proof |
+| --- | --- | --- |
+| A01 | [Namespace invariants](../../app/test/domain/namespaces.test.ts), [directory upload/replay](../../web/src/features/input-directory/workflow.test.ts), [settings](../../app/test/domain/settings.test.ts) | Packaged authoring/settings/retention; N01/N02 cross-scope lifecycle |
+| A02 | [Delivery loss/unknowns](../../app/test/delivery/failures.test.ts), [cancellation](../../app/test/bootstrap/cancellation-http.test.ts), [migration/replay](migration-fixtures.md) | Full active-phase native restart/cancel matrix; sanitized final diagnostics do not imply raw/live logs |
+| A03 | [Known numeric distributions](../../engines/k6/test/aggregation/distribution-integration.test.ts), [warnings](../../engines/k6/test/native-process/warnings.test.ts), [safe history](native-diagnostics.md) | Packaged chart known-value checks and native flood/slow-reader qualification |
+| A04 | [Comparison HTTP](../../app/test/bootstrap/run-comparison.test.ts), [four-run selection](../../web/src/features/runs/comparison/selection.test.ts), [report composition](../../web/src/features/runs/performance-report/integration.test.tsx) | Packaged save/hash/export, environment differences and deletion outcomes |
+| A05 | [Reference availability](reference-availability.md), [source first boot](compose-first-boot.md), [container recipes](container-recipes.md) | Real keyboard/themes/viewports and matched source/pull images; rewrite CI/publication evidence |
+| A06 | [Independent seven-executor option oracles](../../engines/k6/test/compiler/scenarios.test.ts), [native outcomes](k6-outcomes.md) | Native executor/delay/parallel/discovery matrix on both architectures |
+| A07 | [Unsafe config/shell rejection](../../engines/k6/test/suite/validation.test.ts), [runtime assertions](../../engines/k6/test/runtime/assertions.test.ts), [large bodies](large-bodies-target-observations.md) | Packaged datasets/methods/readiness and mounted/env-secret canaries |
+| A08 | [Missing/final/cooldown chronology](../../web/src/features/runs/target-observations/summary.test.ts), [scope contract](target-observation-contract.md) | Packaged target versus engine/null/sensor variants and heuristic labels |
+| A09 | [Rejects scripts/shell/paths/legacy aliases without values](../../engines/k6/test/suite/validation.test.ts), [scope decision](../../PLAN.md) | Verify packaged reference explains retired shell behavior; typed tool steps remain follow-on |
+
+V14 applies to claims: fixed phase timing and container/process resources cannot
+be described as per-function RSS/CPU. No new per-function measurement feature is
+required to close that assertion. V24 must retain unknown/unsupported sensor state;
+a build, CPU allocation or preferred-idle flag is not proof of thermal readiness.
+
 ## Audit limits and next action
 
 Source inspection confirmed directory intake and diagnostic text gaps. Directory
@@ -81,7 +106,8 @@ intake and sanitized final diagnostic history now have scoped checks; reports re
 their original evidence scope. Raw/live native diagnostic replay remains unsupported.
 Historical evidence remains bounded by its original inputs. The old cleanup-control
 baseline failures have now been [triaged with exact fixtures](migration-fixtures.md);
-this retires that recorded backlog, not the frozen integrated full gate.
+this retires that recorded backlog; the [local combined gate](integrated-acceptance.md)
+records subsequent full file coverage and focused corrections.
 
 Complete implementation gaps before a frozen integrated acceptance lane, then
 qualify matching release images. Use the [remaining packets](../execution/remaining-rewrite.md).

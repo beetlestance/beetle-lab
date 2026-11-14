@@ -1,7 +1,7 @@
+import {rawJournal} from '../journal/raw-connection.js';
 import { expect, it, vi } from 'vitest';
 import { chmod, link, lstat, mkdir, readdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
 import { runtimeName, RuntimePlan } from '../../src/backends/docker/index.js';
 import { serializeStagedOffer, estimateStaging } from '../../src/admission/index.js';
 import { scope, configuration, reserved } from '../admission/fixtures.js';
@@ -120,7 +120,7 @@ it('requires pinned staging policy and exact charge even for existing charged ro
   await f.enqueue(owner, e.offer); await f.admit(owner, e.offer);
   const original = reserved(await owner.admission({ kind: 'reservation', key: scope(e.offer) }));
   await f.close(owner);
-  const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+  const db = rawJournal(path, { enableForeignKeyConstraints: true });
   try {
     const rows = () => ['reservations', 'accepted_attempts', 'admission_queue', 'event_spool', 'supervision_clock',
       'disk_holds', 'disk_retention_stats', 'sqlite_sequence'].map(table => ({ table, rows: db.prepare(`SELECT * FROM ${table}`).all() }));

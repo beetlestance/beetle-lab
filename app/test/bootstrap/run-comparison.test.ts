@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { expect, it } from 'vitest';
 import { settingsFixture } from '../storage/fixture.js';
 import { runFixture, client, savedSuite, value } from './run-fixture.js';
-const fixture = runFixture();
+const fixture = runFixture(10_000_000);
 it('wires scoped read-only comparisons into the actual application and closes all shared owners', async () => {
   const {app} = await fixture.open();
   try {

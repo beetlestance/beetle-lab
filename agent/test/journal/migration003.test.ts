@@ -1,3 +1,4 @@
+import {rawJournal} from './raw-connection.js';
 import { CURRENT_JOURNAL_SCHEMA } from './legacy-fixtures.js';
 import { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
@@ -51,7 +52,7 @@ describe('transactional migration003 with foreign keys enabled', () => {
     await f.close(journal); const migrated = rows(path);
     expect(migrated.events).toEqual(original.events); expect(migrated.sequence).toBe(original.sequence);
     expect(migrated.attempts).toMatchObject(original.attempts);
-    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
+    const db = rawJournal(path, { enableForeignKeyConstraints: true });
     try {
       expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(CURRENT_JOURNAL_SCHEMA);
       expect(db.prepare('PRAGMA foreign_keys').get()?.foreign_keys).toBe(1);

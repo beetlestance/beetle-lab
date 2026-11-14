@@ -670,6 +670,11 @@
     "valid": false
   },
   {
+    "path": "valid/organization-overview.json",
+    "schema": "OrganizationOverview",
+    "valid": true
+  },
+  {
     "path": "valid/workspace-overview.json",
     "schema": "WorkspaceOverview",
     "valid": true

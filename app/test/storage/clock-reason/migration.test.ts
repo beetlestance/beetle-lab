@@ -17,6 +17,19 @@ function protectedConnection(db: DatabaseSync): void {
     expect(() => db.prepare('UPDATE sqlite_schema SET sql=sql WHERE 0')).toThrow('may not be modified');
   } finally { db.exec('PRAGMA writable_schema=OFF'); }
 }
+/** Full reopen runs later migrations too; preserve all prior rows and name every additive state. */
+function expectReopenedFacts(db: DatabaseSync, before: ReturnType<typeof rows>): void {
+  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
+  const priorNames = new Set(before.map(row => row.name)); const current = rows(db);
+  expect(current.filter(row => priorNames.has(row.name))).toEqual(before);
+  const empty = ['backend_cleanup_controls', 'backend_output_cleanup_acks', 'backend_retired_runs',
+    'namespace_deletions', 'retention_progress', 'retention_snapshots', 'retention_workspace_epochs'];
+  const expected = [...empty, 'backend_replay_storage', 'retention_storage'].sort();
+  expect(current.filter(row => !priorNames.has(row.name)).map(row => row.name)).toEqual(expected);
+  for (const table of empty) expect(db.prepare(`SELECT count(*) n FROM ${table}`).get()?.n).toBe(0);
+  expect(db.prepare('SELECT * FROM backend_replay_storage').all()).toEqual([{id: 1, original_count: 0, charged_bytes: 0}]);
+  expect(db.prepare('SELECT * FROM retention_storage').all()).toEqual([{id: 1, epoch_count: 0, snapshot_count: 0, charged_bytes: 0, clock_ms: 0}]);
+}
 it('upgrades real schema19 without touching rows, root pages, indexes, triggers, views or FKs, then reparses on reopen', () => {
   const path = f.path(); const e = prior019(path); const before = rows(e.db); const schema = graph(e.db);
   const version = Number(e.db.prepare('PRAGMA schema_version').get()?.schema_version);
@@ -29,7 +42,7 @@ it('upgrades real schema19 without touching rows, root pages, indexes, triggers,
   } finally { e.db.close(); }
   const reopened = initialize(path);
   try {
-    expect(reopened.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION); expect(rows(reopened).filter(row=>!['backend_cleanup_controls','backend_output_cleanup_acks','backend_retired_runs','backend_replay_storage'].includes(row.name))).toEqual(before); expect(reopened.prepare('SELECT count(*) n FROM backend_cleanup_controls').get()?.n).toBe(0); expect(reopened.prepare('SELECT count(*) n FROM backend_output_cleanup_acks').get()?.n).toBe(0);expect(reopened.prepare('SELECT count(*) n FROM backend_retired_runs').get()?.n).toBe(0);expect(reopened.prepare('SELECT charged_bytes FROM backend_replay_storage').get()?.charged_bytes).toBe(0);
+    expectReopenedFacts(reopened, before);
     protectedConnection(reopened); reopened.prepare("UPDATE runs SET reason='clock_integrity'").run();
     expect(reopened.prepare('SELECT reason FROM runs').get()?.reason).toBe('clock_integrity');
     expect(() => reopened.exec("UPDATE runs SET reason='invented_reason'")).toThrow();
@@ -48,7 +61,7 @@ it('rolls a late deferred COMMIT failure back to exact schema19 and rows with pr
   const reopened = new DatabaseSync(path, { defensive: true });
   try { expect(graph(reopened)).toEqual(schema); expect(rows(reopened)).toEqual(before); protectedConnection(reopened); }
   finally { reopened.close(); }
-  const retried = initialize(path); try { expect(retried.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION); expect(rows(retried).filter(row=>!['backend_cleanup_controls','backend_output_cleanup_acks','backend_retired_runs','backend_replay_storage'].includes(row.name))).toEqual(before); expect(retried.prepare('SELECT count(*) n FROM backend_cleanup_controls').get()?.n).toBe(0); expect(retried.prepare('SELECT count(*) n FROM backend_output_cleanup_acks').get()?.n).toBe(0);expect(retried.prepare('SELECT count(*) n FROM backend_retired_runs').get()?.n).toBe(0);expect(retried.prepare('SELECT charged_bytes FROM backend_replay_storage').get()?.charged_bytes).toBe(0); }
+  const retried = initialize(path); try { expectReopenedFacts(retried, before); }
   finally { retried.close(); }
 });
 it('rejects unexpected CHECK spelling before entering the privileged edit window', () => {

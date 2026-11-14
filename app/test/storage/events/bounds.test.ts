@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest';
 import { validate } from '@beetle/contracts';
 import { captureEventOperation, captureEventReply } from '../../../src/adapters/outbound/sqlite/event-custody/index.js';
-import { checkedOperation } from '../../../src/adapters/outbound/sqlite/input.js';
+import { checkedOperation, operationMessageLimit } from '../../../src/adapters/outbound/sqlite/input.js';
 import { ack, eventFixture, request } from './fixtures.js';
 import { large, grow } from './large-fixtures.js';
 it('preserves exact batch262144 and record66048 bounds independently of carrier nodes', () => {
@@ -43,7 +43,8 @@ it('rejects carrier/body accessors, extra fields and malformed compact replies w
   }
   const operation = { kind: 'eventIngest' as const, request: original };
   Object.defineProperty(operation, 'kind', { enumerable: true, get: getter });
-  expect(() => checkedOperation(operation)).toThrow(); expect(getter).not.toHaveBeenCalled();
+  expect(() => checkedOperation(operation)).toThrow('Storage invalid_input');
+  expect(operationMessageLimit(operation)).toBe(65_536); expect(getter).not.toHaveBeenCalled();
   const state = f.store.execute({ kind: 'eventLoad', binding: f.binding });
   for (const patch of [{ durableThrough: 1 }, { ackConfirmedThrough: 1 }, { retainedBytes: 1 },
     { coverage: 'partial' }, { blockedReason: 'cursor_expired' }, { retainedStartSeq: 3 }, { extra: true }]) {

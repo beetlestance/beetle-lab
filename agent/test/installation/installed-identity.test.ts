@@ -1,8 +1,8 @@
+import {rawJournal} from '../journal/raw-connection.js';
 import { createConfigSchema } from '@beetle/contracts/engine-config';
 import { createHash } from 'node:crypto';
 import { expect, it, vi } from 'vitest';
 import { configDigest } from '../../src/journal/index.js';
-import { DatabaseSync } from 'node:sqlite';
 import { readdir } from 'node:fs/promises';
 import { createEngineCatalog } from '../../src/catalog/index.js';
 import type { Catalog } from '../../src/catalog/index.js';
@@ -100,7 +100,7 @@ it('quarantines a cached staged plan before a controller takes ownership', async
 });
 
 function durable(path: string) {
-  const db = new DatabaseSync(path);
+  const db = rawJournal(path);
   try {
     return ['accepted_attempts', 'admission_queue', 'reservations', 'event_spool'].map(table =>
       db.prepare(`SELECT * FROM ${table}`).all());
@@ -116,7 +116,7 @@ it.each([
   if (state === 'claimed') await e.owner.admission({ kind: 'claimCreate', key: scope(e.job), specDigest: 'f'.repeat(64) });
   await f.close(e.owner);
   if (binding === 'unbound') {
-    const db = new DatabaseSync(e.journalPath);
+    const db = rawJournal(e.journalPath);
     try {
       const raw = db.prepare('SELECT offer_json FROM accepted_attempts').get()!;
       const offer = JSON.parse(String(raw.offer_json)) as Record<string, unknown>; delete offer.installedIdentity;

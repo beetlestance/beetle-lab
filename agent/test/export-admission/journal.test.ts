@@ -1,6 +1,6 @@
+import {rawJournal} from '../journal/raw-connection.js';
 import { bindSyntheticNamespace } from '../staging-namespace/model-fixtures.js';
 import { cleanupControl } from '../../src/cleanup-control/index.js';
-import { DatabaseSync } from 'node:sqlite';
 import { createHash } from 'node:crypto';
 import { expect, it } from 'vitest';
 import { createStandaloneExportAssignment, estimateStaging, validate } from '@beetle/contracts';
@@ -58,7 +58,7 @@ it('rejects secret declarations and old Offer envelope intake before durable mut
 it('SQL guards refuse replacement and late purpose attachment even with recursive triggers disabled',async()=>{
   const path=f.path();const journal=await configured(path);const value=assignment(job());await enqueue(journal,value);await f.admit(journal,value.offer);
   const priorPerformance=job(2);await journal.immutableOffer(priorPerformance);await f.close(journal);
-  const db=new DatabaseSync(path);try {
+  const db=rawJournal(path);try {
     db.exec('PRAGMA foreign_keys=ON; PRAGMA recursive_triggers=OFF');
     const read=()=>db.prepare('SELECT * FROM export_assignments WHERE attempt_id=?').get(value.offer.attemptId);
     const before=read();const reservation=db.prepare('SELECT reservation_json,charged FROM reservations WHERE attempt_id=?').get(value.offer.attemptId);
@@ -85,7 +85,7 @@ it('durably cancels a missing exact export before late admission without creatin
 it('reserves the same non-refundable logical cleanup capacity for an admitted export original', async () => {
   const path = f.path(); const journal = await configured(path); const value = assignment(job());
   await enqueue(journal, value); reserved(await f.admit(journal, value.offer)); await f.close(journal);
-  const db = new DatabaseSync(path);
+  const db = rawJournal(path);
   try {
     const row = db.prepare('SELECT cleanup_control_bytes,staging_namespace_identity,execution_purpose FROM accepted_attempts').get()!;
     expect(row.cleanup_control_bytes).toBe(cleanupControl.reservedBytes); expect(row.execution_purpose).toBe('standalone_export');

@@ -16,12 +16,16 @@ export function value<T>(result: ApiClientResult<T>): T {
   if (!result.ok) throw new Error(`Synthetic API failure: ${result.error.kind}/${result.error.status ?? 0}/${result.error.protocol?.code ?? "none"}`);
   return result.value;
 }
-export function runFixture() {
+export function runFixture(storageBytes?: number) {
   const storage = storageFixture(); const applications = new Set<Application>();
   afterEach(async () => { await Promise.all([...applications].map(app => app.close())); applications.clear(); });
   async function open(path = storage.path(), overrides: Partial<MetadataOptions> = {}, native = false) {
     const origin = native ? await ownedOrigin() : defaultOrigin;
     const settings = settingsFixture();
+    if (storageBytes !== undefined) {
+      settings.chain.installation.values.pool.storageBytes = storageBytes;
+      settings.runtime.pool.storageBytes = storageBytes;
+    }
     const app = await openApplication({ externalOrigin: origin, metadata: { path, workerUrl: storage.workerUrl(),
       installation: settings.chain.installation, runtime: observation(settings.runtime), ...runOptions(), ...overrides } });
     applications.add(app);

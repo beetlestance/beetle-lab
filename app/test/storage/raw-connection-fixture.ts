@@ -10,7 +10,10 @@ import {registerSearchFold} from '../../src/adapters/outbound/sqlite/run-search-
  * This proves SQLite transaction contention, not multi-worker product support.
  */
 export function rawConnection(path: string): DatabaseSync {
-  const db = new DatabaseSync(path, {enableForeignKeyConstraints: true, timeout: 0});
+  return withRawGuards(new DatabaseSync(path, {enableForeignKeyConstraints: true, timeout: 0}));
+}
+/** Preserve a raw test connection's own flags while registering real guard owners. */
+export function withRawGuards(db: DatabaseSync): DatabaseSync {
   try {
     registerBackendSettlement(db); registerRetentionAccounting(db); registerCleanupAckValidation(db);
     registerAbsenceValidation(db); registerHistoryValidation(db); registerSearchFold(db); return db;

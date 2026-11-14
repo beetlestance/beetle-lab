@@ -1,8 +1,9 @@
+import {rawJournal} from '../journal/raw-connection.js';
 import { createHash } from 'node:crypto';
 import { deriveInstalledIdentity } from '@beetle/contracts';
 import { expect, it, vi } from 'vitest';
 import { readdir } from 'node:fs/promises';
-import { DatabaseSync } from 'node:sqlite';
+import type { DatabaseSync } from 'node:sqlite';
 import type { Reservation } from '../../src/admission/index.js';
 import { reserved, scope } from '../admission/fixtures.js';
 import { fixture } from './fixtures.js';
@@ -33,7 +34,7 @@ it.each(guarded)('rejects native %s mutation with every row and retention counte
   const e = await f.environment();
   const original = reserved(await e.owner.admission({ kind: 'reservation', key: scope(e.offer) }));
   const malformed = structuredClone(original); mutations[kind](malformed); await f.close(e.owner);
-  const db = new DatabaseSync(e.journalPath, { enableForeignKeyConstraints: true });
+  const db = rawJournal(e.journalPath, { enableForeignKeyConstraints: true });
   try {
     const before = nativeRows(db);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
@@ -66,7 +67,7 @@ it.each(guarded)('rejects synthetic malformed %s Journal authority at the indepe
 });
 it.each(writable)('rejects writable %s corruption read through the reopened Journal before task I/O', async kind => {
   const e = await f.environment(); await f.close(e.owner);
-  const db = new DatabaseSync(e.journalPath);
+  const db = rawJournal(e.journalPath);
   try {
     const row = db.prepare('SELECT reservation_json FROM reservations').get()!;
     const reservation = JSON.parse(String(row.reservation_json)) as Reservation;

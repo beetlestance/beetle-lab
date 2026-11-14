@@ -1,3 +1,4 @@
+import {asSchema20} from '../../runtime-association/legacy.js';
 import { CURRENT_JOURNAL_SCHEMA } from '../legacy-fixtures.js';
 import { expect, it } from 'vitest';
 import type { DatabaseSync } from 'node:sqlite';
@@ -11,6 +12,7 @@ const f = absenceFixture();
 
 /** Downgrade only additive14 objects; historical migrations are exercised unchanged. */
 export function schema13(db: DatabaseSync): void {
+  asSchema20(db);
   transaction(db, () => {
     removeFutureAbsence(db);
   });

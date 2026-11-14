@@ -1,10 +1,12 @@
+import {RUN_OUTPUT_METADATA_BYTES} from '../../src/ports/dispatch.js';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { claimsFixture, custody } from './dispatch-claim-fixtures.js';
 import type { ClaimsFixture } from './dispatch-claim-fixtures.js';
 import { createInput } from './inputs-fixture.js';
 
 let f: ClaimsFixture;
-beforeEach(() => { vi.useFakeTimers(); f = claimsFixture(); });
+// Fund retained enqueue controls; explicit storage-bound cases set their own exact ceilings.
+beforeEach(() => { vi.useFakeTimers(); f = claimsFixture(4_000_000); });
 afterEach(() => { f.db.close(); vi.useRealTimers(); });
 it('enforces active isolated ownership installation-wide and requires zero active charges', () => {
   const isolated = f.add(70, 'isolated'); const parallel = f.addOther();
@@ -47,7 +49,8 @@ it('ignores individually impossible isolated work without subtracting active occ
 });
 it('does not establish an isolation barrier for currently storage-blocked originals', () => {
   f.add(70, 'isolated', 100, 1000); const younger = f.add(71);
-  f.policy(values => { values.pool.storageBytes = 68000+65536; });
+  const funded = Number(f.db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes);
+  f.policy(values => { values.pool.storageBytes = funded + 100 + RUN_OUTPUT_METADATA_BYTES + 2000; });
   expect(f.claims.scan({ lane: 'queued', limit: 32 }).items[0]!.eligibility).toEqual({ kind: 'blocked', reason: 'storage_unavailable' });
   expect(f.claims.claim(younger).kind).toBe('claimed');
 });
@@ -81,9 +84,9 @@ it('retained input allowances share the same current quota and exact storage bou
   const key = f.add();
   f.store.execute({ kind: 'input', command: createInput(90, 10000) });
   const usage = Number(f.db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes);
-  f.policy(values => { values.pool.storageBytes = usage + 67635+65536; });
+  f.policy(values => { values.pool.storageBytes = usage + 100 + RUN_OUTPUT_METADATA_BYTES + 2000 - 1; });
   expect(f.claims.claim(key)).toEqual({ kind: 'blocked', reason: 'storage_unavailable' });
-  f.policy(values => { values.pool.storageBytes = usage + 67636+65536; });
+  f.policy(values => { values.pool.storageBytes = usage + 100 + RUN_OUTPUT_METADATA_BYTES + 2000; });
   expect(f.claims.claim(key).kind).toBe('claimed');
-  expect(f.db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(usage + 65636+65536);
+  expect(f.db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(usage + 100 + RUN_OUTPUT_METADATA_BYTES);
 });

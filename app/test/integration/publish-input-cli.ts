@@ -2,7 +2,6 @@ import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { build } from 'tsup';
 import { validateApi } from '@beetle/contracts/api';
 import type { WorkspaceScope } from '@beetle/contracts/api';
 import { openMetadata } from '../../src/adapters/outbound/sqlite/index.js';
@@ -19,18 +18,15 @@ const assert = (condition: boolean): void => { if (!condition) throw new Error('
 /** Test-owned subprocess: real application publication, no Agent implementation import.
  * The caller owns the descriptor/temp root and checks output independently.
  */
-async function publish(descriptor: Descriptor): Promise<InputRecord> {
+async function publish(descriptor: Descriptor, workerFile: string): Promise<InputRecord> {
   assert(validateApi('WorkspaceScope', descriptor.scope).ok && validateApi('Uuid', descriptor.id).ok);
   const data = Buffer.from(descriptor.data, 'base64'); assert(data.byteLength <= 65_536 && digest(data) === descriptor.sha256);
   const base = join(descriptor.root, 'publisher');
   const stagingRoot = join(base, 'staging'); const publishedRoot = join(base, 'published');
   await mkdir(stagingRoot, { recursive: true, mode: 0o700 }); await mkdir(publishedRoot, { mode: 0o700 });
-  const outDir = join(base, 'worker');
-  await build({ entry: ['app/src/adapters/outbound/sqlite/worker.ts'], outDir, format: ['esm'], platform: 'node',
-    target: 'node24', bundle: true, noExternal: [/.*/], shims: true, removeNodeProtocol: false, splitting: false, silent: true });
   const installation = settingsFixture().chain.installation;
   installation.values.pool.storageBytes = 64 * 1024 * 1024;
-  const options = { path: join(base, 'metadata.sqlite'), workerUrl: pathToFileURL(join(outDir, 'worker.js')), installation, runtime: null };
+  const options = { path: join(base, 'metadata.sqlite'), workerUrl: pathToFileURL(workerFile), installation, runtime: null };
   const bytes = await openLocalInputBytes({ stagingRoot, publishedRoot });
   const metadata = await openMetadata(options);
   const inputs = createInputService({ store: metadata.inputs, bytes, digest });
@@ -69,4 +65,4 @@ async function publish(descriptor: Descriptor): Promise<InputRecord> {
   return published;
 }
 const descriptor = JSON.parse(await readFile(process.argv[2]!, 'utf8')) as Descriptor;
-process.stdout.write(JSON.stringify(await publish(descriptor)) + '\n');
+process.stdout.write(JSON.stringify(await publish(descriptor, process.argv[3]!)) + '\n');

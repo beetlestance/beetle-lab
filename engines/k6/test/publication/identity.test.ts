@@ -21,7 +21,7 @@ function highIdentities(directory: string, mutation?: Mutation, component: Compo
       const stat = await nodeIo.lstat(path);
       const ino = path === directory ? directoryInode : fileInode; let change = false;
       if (path === directory && ++namedParents === 2 && mutation === 'named-parent') change = true;
-      if (path.includes('.engine-result.pending-') && mutation === 'pending') change = true;
+      if (path.includes('.engine-result.json.pending-') && mutation === 'pending') change = true;
       if (path.endsWith('/engine-result.json') && mutation === 'final') change = true;
       return withIdentity(stat, ino, change, component);
     },

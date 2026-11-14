@@ -1,3 +1,4 @@
+import {initializeBackendRecovery} from '../../src/bootstrap/recovery-control/index.js';
 import { afterEach, expect, it } from 'vitest';
 import { createServer } from 'node:http';
 import { mkdir, readFile, realpath, stat, writeFile } from 'node:fs/promises';
@@ -17,10 +18,13 @@ afterEach(async () => {
 });
 const fixture = storageFixture();
 const externalOrigin = 'http://localhost:4310';
+let installationSequence = 0;
 async function setup(stalled = false, mutateInputPath = false) {
   const installation = settingsFixture().chain.installation;
   installation.values.supportedProfiles = ['standard'];
-  const dataRoot = await realpath(fixture.root());
+  const dataRoot = join(await realpath(fixture.root()), `installation-${++installationSequence}`);
+  await mkdir(dataRoot, {mode: 0o700});
+  initializeBackendRecovery(join(dataRoot, 'recovery-control.sqlite'), installation.id);
   await writeFile(join(dataRoot, 'installation.json'), JSON.stringify(installation), { mode: 0o600 });
   const template = JSON.parse(await readFile('contracts/fixtures/valid/capabilities.json', 'utf8')) as Capabilities;
   const requests: string[] = []; let requested!: () => void;

@@ -1,3 +1,4 @@
+import {asSchema20} from '../runtime-association/legacy.js';
 import { DatabaseSync } from 'node:sqlite';
 import { sealEngineResult } from '@beetle/contracts';
 import { captureCollectionIntent } from '../../src/output-source/index.js';
@@ -23,6 +24,7 @@ export function used(db: DatabaseSync): number {
 }
 /** A real current source fixture transformed into precisely historical schema12, with FKs on. */
 export function schema12(db: DatabaseSync): void {
+  asSchema20(db);
   transaction(db, () => {
     removeFutureAbsence(db);
     if (db.prepare('SELECT COUNT(*) AS n FROM output_delivery_closures').get()?.n !== 0

@@ -77,7 +77,9 @@ it('permits shared metric declarations in the plan while keeping runtime imports
 it('restricts offline installation to named public service entrypoints', () => {
   expect(boundaryIssues('tools/install/index.ts', ['../../agent/src/bootstrap/index.js'])).toEqual([]);
   expect(boundaryIssues('tools/install/index.ts', ['../../agent/src/journal/storage.js'])).toHaveLength(1);
-  expect(boundaryIssues('tools/install/index.ts', ['../../app/src/adapters/outbound/sqlite/index.js'])).toHaveLength(1);
+  expect(boundaryIssues('tools/install/index.ts', ['../../app/src/adapters/outbound/sqlite/index.js'])).toEqual([]);
+  expect(boundaryIssues('tools/install/index.ts', ['../../app/src/adapters/outbound/sqlite/store.js'])).toHaveLength(1);
+  expect(boundaryIssues('tools/other/index.ts', ['../../app/src/adapters/outbound/sqlite/index.js'])).toHaveLength(1);
   expect(boundaryIssues('app/src/bootstrap/api.ts', ['../../../tools/install/index.js'])).toHaveLength(1);
 });
 

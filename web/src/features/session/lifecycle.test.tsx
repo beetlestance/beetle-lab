@@ -6,6 +6,7 @@ import { apiError, browser, calls, deferred, json, namespace, org, pair, session
 import { BrowserSessionGate } from './session.js';
 import { ids } from '../../app/test-fixtures.js';
 import { routes } from '../../app/routes.js';
+import overview from '../../../../contracts/fixtures/api/valid/organization-overview.json';
 
 afterEach(cleanup);
 describe('session lifetime and uncertain writes', () => {
@@ -94,11 +95,15 @@ describe('session lifetime and uncertain writes', () => {
     const api = browser(record => {
       if (record.path.endsWith('/auth/session')) return json(session);
       if (record.path.endsWith('/auth/pair')) { paired = true; return json({ ...session, csrfToken: 'd'.repeat(43) }); }
+      if (record.path.endsWith('/overview')) return json({ ...overview, scope: { kind: 'organization', organizationId: ids.a } });
       if (paired) return namespace(record);
       if (record.method === 'POST') return rejection.promise;
       return record.path.includes('/workspaces?') ? oldWorkspace.promise : namespace(record);
     }, routes.organization(ids.a));
-    await waitFor(() => expect(api.records.filter(record => !record.path.includes('/auth/'))).toHaveLength(2));
+    await waitFor(() => expect(api.records.filter(record => !record.path.includes('/auth/')).map(record => record.path).sort()).toEqual([
+      `/api/v2/organizations/${ids.a}`, `/api/v2/organizations/${ids.a}/overview`,
+      `/api/v2/organizations/${ids.a}/workspaces?limit=100`,
+    ].sort()));
     fireEvent.click(await screen.findByRole('button', { name: 'Create workspace' }));
     fireEvent.change(screen.getByLabelText('Workspace name'), { target: { value: 'Possibly committed' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));

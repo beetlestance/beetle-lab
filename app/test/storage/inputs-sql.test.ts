@@ -1,3 +1,4 @@
+import {withRawGuards} from './raw-connection-fixture.js';
 import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import type { InputRecord } from '../../src/ports/inputs.js';
@@ -9,7 +10,7 @@ const fixture = storageFixture();
 it('enforces immutable lifecycle, safe progress, scoped identity, and no REPLACE resurrection with recursive triggers off', async () => {
   const path = fixture.path(); const metadata = await fixture.open(path, inputOptions()); await seed(metadata); await seed(metadata, 11, 12, 13);
   const input = await metadata.inputs.control(createInput()) as InputRecord; await fixture.close(metadata);
-  const db = new DatabaseSync(path, { enableForeignKeyConstraints: true }); db.exec('PRAGMA recursive_triggers=OFF');
+  const db = withRawGuards(new DatabaseSync(path, { enableForeignKeyConstraints: true })); db.exec('PRAGMA recursive_triggers=OFF');
   const before = db.prepare('SELECT * FROM input_blobs').get();
   const attacks = [
     "offset=13,version=2", "offset=-1,version=2", "offset=0.5,version=2", "offset=12,version=1",
@@ -46,7 +47,7 @@ it('enforces retained exact scoped pins independently and serializes direct dele
   const suite = await createSuite(metadata); const body = request();
   body.config.datasets = [{ id: 'data', kind: 'json', selection: 'byVu', input: { id: input.id, sha256: input.sha256, bytes: input.bytes } }];
   const revision = await append(metadata, suite, 60, body); await fixture.close(metadata);
-  const db = new DatabaseSync(path, { enableForeignKeyConstraints: true }); db.exec('PRAGMA recursive_triggers=OFF');
+  const db = withRawGuards(new DatabaseSync(path, { enableForeignKeyConstraints: true })); db.exec('PRAGMA recursive_triggers=OFF');
   const count = () => db.prepare('SELECT count(*) AS n FROM revision_input_pins').get()?.n;
   expect(count()).toBe(1);
   expect(() => db.exec('INSERT OR REPLACE INTO revision_input_pins SELECT * FROM revision_input_pins')).toThrow();

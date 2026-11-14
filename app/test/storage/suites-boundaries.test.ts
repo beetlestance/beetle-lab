@@ -1,3 +1,4 @@
+import {withRawGuards} from './raw-connection-fixture.js';
 import { registerSearchFold } from '../../src/adapters/outbound/sqlite/run-search-fold.js';
 import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
@@ -10,7 +11,7 @@ const fixture = storageFixture();
 it('rejects SQL replacement by existing revision identity or suite ordinal with recursive triggers disabled', async () => {
   const path = fixture.path(); const metadata = await fixture.open(path); await seed(metadata);
   const suite = await createSuite(metadata); const revision = await append(metadata, suite); await fixture.close(metadata);
-  const db = new DatabaseSync(path, { enableForeignKeyConstraints: true }); registerSearchFold(db);
+  const db = withRawGuards(new DatabaseSync(path, { enableForeignKeyConstraints: true })); registerSearchFold(db);
   try {
     db.exec('PRAGMA recursive_triggers=OFF');
     const replace = db.prepare(`INSERT OR REPLACE INTO suite_revisions
@@ -25,7 +26,7 @@ it('preserves the existing 1MiB reply budget for 100 Unicode suites and namespac
   const path = fixture.path(); let metadata = await fixture.open(path); await seed(metadata); await fixture.close(metadata);
   // This regression concerns reply transport. Seed valid page rows in one transaction,
   // rather than adding 200 fsync-heavy mutation receipts to unrelated lifecycle tests.
-  const db = new DatabaseSync(path, { enableForeignKeyConstraints: true }); registerSearchFold(db);
+  const db = withRawGuards(new DatabaseSync(path, { enableForeignKeyConstraints: true })); registerSearchFold(db);
   try {
     transaction(db, () => {
       for (let index = 0; index < 100; index++) {
@@ -63,7 +64,7 @@ it('enforces exact composite revision/folder ownership in SQL', async () => {
   const path = fixture.path(); const metadata = await fixture.open(path); await seed(metadata); await seed(metadata, 11, 12, 13);
   const suite = await createSuite(metadata); const other = await createSuite(metadata, 51);
   const revision = await append(metadata, suite); await fixture.close(metadata);
-  const db = new DatabaseSync(path, { enableForeignKeyConstraints: true }); registerSearchFold(db);
+  const db = withRawGuards(new DatabaseSync(path, { enableForeignKeyConstraints: true })); registerSearchFold(db);
   try {
     expect(() => db.prepare('UPDATE suites SET current_revision_id=? WHERE id=?').run(revision.id, other.id)).toThrow();
     expect(() => db.prepare('UPDATE suites SET folder_id=? WHERE id=?').run(uuid(13), suite.id)).toThrow();

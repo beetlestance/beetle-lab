@@ -1,3 +1,4 @@
+import {withRawGuards} from './raw-connection-fixture.js';
 import { registerSearchFold } from '../../src/adapters/outbound/sqlite/run-search-fold.js';
 import { describe, expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
@@ -24,7 +25,7 @@ describe('real SQLite atomicity and schema constraints', () => {
   });
   it('rolls back organization/override and workspace/root creation when receipt insertion fails', async () => {
     const path = fixture.path(); let metadata = await fixture.open(path); await fixture.close(metadata);
-    const db = new DatabaseSync(path); registerSearchFold(db);
+    const db = withRawGuards(new DatabaseSync(path)); registerSearchFold(db);
     db.exec("CREATE TRIGGER fail_receipt BEFORE INSERT ON receipts BEGIN SELECT RAISE(ABORT,'synthetic fault'); END;"); db.close();
     metadata = await fixture.open(path);
     const organization = command({ kind: 'createOrganization', id: uuid(1), request: {
@@ -56,7 +57,7 @@ describe('real SQLite atomicity and schema constraints', () => {
   it('rolls back settings value/version updates together with receipts and permits exact retry', async () => {
     const path = fixture.path(); let metadata = await fixture.open(path); await seed(metadata);
     const settings = await metadata.getSettings(scope); await fixture.close(metadata);
-    const db = new DatabaseSync(path); registerSearchFold(db);
+    const db = withRawGuards(new DatabaseSync(path)); registerSearchFold(db);
     db.exec("CREATE TRIGGER fail_receipt BEFORE INSERT ON receipts BEGIN SELECT RAISE(ABORT,'synthetic fault'); END;"); db.close();
     metadata = await fixture.open(path);
     const change = settingsCommand(settings.id, { schemaVersion: 2, scope, requestId: requestId(), expectedVersion: 1,
@@ -70,7 +71,7 @@ describe('real SQLite atomicity and schema constraints', () => {
   it('enforces composite foreign keys and a single genuine root independently of facade checks', async () => {
     const path = fixture.path(); const metadata = await fixture.open(path); await seed(metadata); await seed(metadata, 20, 21, 22);
     await fixture.close(metadata);
-    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true }); registerSearchFold(db);
+    const db = withRawGuards(new DatabaseSync(path, { enableForeignKeyConstraints: true })); registerSearchFold(db);
     try {
       const insert = db.prepare('INSERT INTO folders(id,organization_id,workspace_id,parent_id,version,name,folded_name) VALUES (?,?,?,?,1,?,?)');
       expect(() => insert.run(uuid(30), uuid(1), uuid(2), uuid(22), 'bad', 'bad')).toThrow();
@@ -85,7 +86,7 @@ describe('real SQLite atomicity and schema constraints', () => {
   it('rejects subtree evidence above its node cap without materializing the full tree', async () => {
     const path = fixture.path(); let metadata = await fixture.open(path); await seed(metadata); await createFolder(metadata, 4);
     await fixture.close(metadata);
-    const db = new DatabaseSync(path, { enableForeignKeyConstraints: true }); registerSearchFold(db);
+    const db = withRawGuards(new DatabaseSync(path, { enableForeignKeyConstraints: true })); registerSearchFold(db);
     db.prepare(`WITH RECURSIVE n(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM n WHERE i<10000)
       INSERT INTO folders(id,organization_id,workspace_id,parent_id,version,name,folded_name)
       SELECT printf('00000000-0000-4000-8001-%012d',i),?,?,?,1,'child'||i,'child'||i FROM n`)

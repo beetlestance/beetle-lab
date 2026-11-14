@@ -1,3 +1,4 @@
+import {prepareColdJournalCopy} from '../../src/journal/schema.js';
 import { expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { execFile } from 'node:child_process';
@@ -105,6 +106,7 @@ it.each(['reset', 'null', 'missing'] as const)('refuses %s journal authority bef
     await rename(e.journalPath, e.journalPath + '.retained');
     const fresh = await f.open(e.journalPath); await f.close(fresh);
   } else database(e.journalPath, db => {
+    prepareColdJournalCopy(db);
     if (damage === 'null') db.exec('DROP TRIGGER journal_authority_no_update; UPDATE journal_authority SET authority=NULL;');
     if (damage === 'missing') db.exec('DROP TRIGGER journal_authority_no_delete; DELETE FROM journal_authority;');
   });

@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react
 import { afterEach, describe, expect, it } from 'vitest';
 import { apiError, deferred, ids, json, mount, org, readNamespace, testClient, workspace } from './test-fixtures.js';
 import { routes } from './routes.js';
+import overview from '../../../contracts/fixtures/api/valid/organization-overview.json';
 
 afterEach(cleanup);
 describe('honest data and error states', () => {
@@ -41,8 +42,11 @@ describe('honest data and error states', () => {
     expect(api.records).toHaveLength(1);
   });
   it('rejects a wrong-organization workspace response through the real client', async () => {
-    const api = testClient(request => request.path.includes('/workspaces?')
-      ? json({ scope: workspace(ids.b).scope, items: [workspace(ids.b)], nextCursor: null }) : readNamespace(request));
+    const api = testClient(request => {
+      if (request.path.endsWith('/overview')) return json({ ...overview, scope: { kind: 'organization', organizationId: ids.a } });
+      return request.path.includes('/workspaces?')
+        ? json({ scope: workspace(ids.b).scope, items: [workspace(ids.b)], nextCursor: null }) : readNamespace(request);
+    });
     mount(api.client, routes.organization(ids.a));
     expect(await screen.findByRole('alert')).toHaveTextContent('unreadable response');
     expect(screen.queryByRole('link', { name: 'Same workspace' })).not.toBeInTheDocument();

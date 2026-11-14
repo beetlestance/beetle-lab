@@ -1,4 +1,5 @@
-import { expect, it } from 'vitest';
+import { build } from 'tsup';
+import { expect, it, vi } from 'vitest';
 import { lstat, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -18,6 +19,11 @@ it('initializes the actual loaded journal and ready gate, closes ownership, and 
   const journalDirectory = join(root, 'actual-configured-journal');
   const credentialFile = join(root, 'credential'); const inputRoot = join(root, 'inputs');
   try {
+    const outDir = join(root, 'compiled-worker');
+    await build({ entry: ['agent/src/journal/worker.ts'], outDir, format: ['esm'],
+      platform: 'node', target: 'node24', bundle: true, noExternal: [/.*/], shims: true,
+      removeNodeProtocol: false, splitting: false, silent: true });
+    vi.stubEnv('BEETLE_AGENT_WORKER_FILE', join(outDir, 'worker.js'));
     await mkdir(journalDirectory, { mode: 0o700 }); await mkdir(inputRoot, { mode: 0o700 });
     await writeFile(credentialFile, 'S'.repeat(64), { mode: 0o600 });
     const { profiles: omitted, ...pool } = configuration(); void omitted;
@@ -51,5 +57,5 @@ it('initializes the actual loaded journal and ready gate, closes ownership, and 
     await expect(initializeFreshInstallation({ configPath, uid, gid })).rejects.toThrow('initialization failed');
     const reopened = openServingState(actual.gatePath);
     try { expect(reopened.journalAuthority).toBe(actual.journalAuthority); } finally { reopened.close(); }
-  } finally { await rm(root, { recursive: true, force: true }); }
+  } finally { vi.unstubAllEnvs(); await rm(root, { recursive: true, force: true }); }
 });

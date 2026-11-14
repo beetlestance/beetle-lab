@@ -31,7 +31,7 @@ contracts. Do not spawn an idle pool. Keep one native/build/measurement lane.
 
 | Packet | Deliverable and exit condition | Depends on |
 | --- | --- | --- |
-| B08 acceptance closure | Map all36 F/N IDs, A01–A09 and V01–V24 to exact cases/evidence; historical fixture triage now local ([evidence](../verification/migration-fixtures.md)); one frozen integrated gate with honest unsupported/applicability decisions | Functional packets; audit is the starting ledger, not closure |
+| B08 acceptance closure | Map all 36 F/N IDs, A01–A09 and V01–V24 to exact cases/evidence; historical fixture triage now local ([evidence](../verification/migration-fixtures.md)); [combined local gate](../verification/integrated-acceptance.md) now covers all 987 files; packaged/native A/V gaps remain explicit | Functional packets; audit is the starting ledger, not closure |
 | B09 packaged browser/automation | Real fresh local session, authoring/inputs, execute/cancel/reconnect, metrics/history/compare/report/export/delete/settings; keyboard/themes/viewports, save/hash and cross-scope checks | Stable product and matching candidate images |
 | B10 rewrite delivery pipeline | CI builds/smokes separate frontend/backend/agent/k6/export/setup images; source/pull Compose use immutable matching identities; preserve existing gates; configure scans/SBOM/license evidence | Existing recipes/source Compose; hosted execution/publication needs applicable authority |
 | B11 release matrix | Native amd64/arm64 backend/agent/engines; enforced controls, bounded flood/soak, idle/loaded/telemetry overhead, disk failure and supported backup/restore/rollback; R0–R4 evidence signed off | B07–B10, actual native runners/tools |

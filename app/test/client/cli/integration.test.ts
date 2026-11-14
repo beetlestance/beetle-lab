@@ -22,6 +22,8 @@ function captures() {
 it('pairs over real TCP, enqueues/replays/cancels durable runs and compares them without frontend or engine execution', async () => {
   const root = await mkdtemp(join(tmpdir(), 'beetle-automation-http-')); roots.push(root);
   const origin = 'http://127.0.0.1:43127'; const settings = settingsFixture();
+  // Both queued originals must fund their durable cleanup controls.
+  settings.chain.installation.values.pool.storageBytes = 10_000_000; settings.runtime.pool.storageBytes = 10_000_000;
   const app = await openApplication({externalOrigin: origin, metadata: {path: storage.path(), workerUrl: storage.workerUrl(),
     installation: settings.chain.installation, runtime: observation(settings.runtime), ...runOptions()}});
   try {

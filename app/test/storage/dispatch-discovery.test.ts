@@ -4,7 +4,8 @@ import { claimsFixture } from './dispatch-claim-fixtures.js';
 import type { ClaimsFixture } from './dispatch-claim-fixtures.js';
 
 let f: ClaimsFixture;
-beforeEach(() => { vi.useFakeTimers(); f = claimsFixture(); });
+// Fund retained enqueue controls; explicit storage-bound cases set their own exact ceilings.
+beforeEach(() => { vi.useFakeTimers(); f = claimsFixture(4_000_000); });
 afterEach(() => { f.db.close(); vi.useRealTimers(); });
 it('captures a finite pass, exact per-item continuation, and excludes later appends', () => {
   const keys = [f.add(), f.add(71), f.add(72)];

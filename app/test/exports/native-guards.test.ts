@@ -1,5 +1,6 @@
 import {expect,it} from 'vitest';
 import {DatabaseSync} from 'node:sqlite';
+import {withRawGuards} from '../storage/raw-connection-fixture.js';
 import {encodeCanonicalJson} from '@beetle/contracts';
 import {storageFixture,seed,scope} from '../storage/fixture.js';
 import {createSuite,append,request} from '../storage/suites-fixture.js';
@@ -13,7 +14,7 @@ it('refuses native source insertion and credit release against a running snapsho
  const original=await metadata.exportExecutions.original(key);const source=sourceFixture(original,claim.control,Buffer.from('synthetic'));
  const {exportResult:unusedResult,...snapshot}=source.snapshot;void unusedResult;
  await metadata.exportExecutions.observe({key,journalAuthority:source.binding.journalAuthority,snapshot:{...snapshot,state:'running',phase:'execute',admission:{state:'charged'}}});
- await f.close(metadata);const db=new DatabaseSync(path);db.exec('PRAGMA foreign_keys=ON');
+ await f.close(metadata);const db=withRawGuards(new DatabaseSync(path));db.exec('PRAGMA foreign_keys=ON');
  try{
   const before=db.prepare('SELECT execution_charged,output_charged,version FROM export_jobs').get();
   const usage=db.prepare('SELECT charged_bytes FROM installation_storage_usage').get();const e=source.envelope;

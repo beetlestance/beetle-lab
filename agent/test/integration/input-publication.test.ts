@@ -1,23 +1,35 @@
+import {tmpdir} from 'node:os';
+import {build} from 'tsup';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createHash } from 'node:crypto';
-import { lstat, readFile, writeFile } from 'node:fs/promises';
+import { lstat, readFile, writeFile, mkdtemp, realpath, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { expect, it } from 'vitest';
+import { expect, it, beforeAll, afterAll } from 'vitest';
 import { validateApi } from '@beetle/contracts/api';
 import { openInstalledProviders } from '../../src/providers/index.js';
 import { fixture, data, hash } from '../staging/fixtures.js';
 import { scope } from '../admission/fixtures.js';
 
 const f = fixture(); const run = promisify(execFile);
+let helperRoot: string | undefined;
+beforeAll(async () => {
+  helperRoot = await realpath(await mkdtemp(join(tmpdir(), 'beetle-publication-bridge-')));
+  await build({entry: {publisher: 'app/test/integration/publish-input-cli.ts', worker: 'app/src/adapters/outbound/sqlite/worker.ts'},
+    outDir: helperRoot, format: ['esm'], platform: 'node', target: 'node24', bundle: true, noExternal: [/.*/],
+    shims: true, removeNodeProtocol: false, splitting: false, silent: true});
+}, 20000);
+afterAll(async () => {if (helperRoot) await rm(helperRoot, {recursive: true, force: true});});
+
 async function publish(e: Awaited<ReturnType<typeof f.environment>>, content: Uint8Array): Promise<string> {
   const input = { ...e.offer.inputs[0]!, bytes: content.byteLength, sha256: hash(content) }; e.offer.inputs = [input];
   const owner = { kind: 'workspace' as const, organizationId: e.offer.organizationId, workspaceId: e.offer.workspaceId };
   const descriptor = join(e.rootPath, 'publication.json');
   await writeFile(descriptor, JSON.stringify({ root: e.rootPath, scope: owner, id: input.id, sha256: input.sha256,
     data: Buffer.from(content).toString('base64') }), { mode: 0o600 });
-  const child = await run(process.execPath, ['--import', 'tsx', 'app/test/integration/publish-input-cli.ts', descriptor],
-    { maxBuffer: 8192, timeout: 5000 });
+  if (!helperRoot) throw new Error('Publication bridge is not built');
+  const child = await run(process.execPath, [join(helperRoot, 'publisher.js'), descriptor, join(helperRoot, 'worker.js')],
+    { maxBuffer: 8192, timeout: 5000 }).catch(bridgeFailure);
   const record: unknown = JSON.parse(child.stdout);
   expect(validateApi('InputRecord', record).ok).toBe(true);
   expect(record).toMatchObject({ scope: owner, id: input.id, bytes: content.byteLength,
@@ -60,3 +72,10 @@ it('rejects a changed published file through the real provider/Stager without st
     expect(e.transport.calls.every(call => call.method === 'GET')).toBe(true);
   } finally { await stager.close(); await providers.close(); }
 });
+
+function bridgeFailure(error: unknown): never {
+  if (error instanceof Error && 'stderr' in error && typeof error.stderr === 'string') {
+    throw new Error('Synthetic publication bridge failed: ' + error.stderr.slice(0, 8192), {cause: error});
+  }
+  throw error;
+}

@@ -5,7 +5,7 @@ import type { CreateRunRequest } from '@beetle/contracts/api';
 import { runFixture, client, savedSuite, value } from './run-fixture.js';
 import { settingsFixture } from '../storage/fixture.js';
 
-const fixture = runFixture();
+const fixture = runFixture(10_000_000);
 it('replays a lost successful enqueue across restart with exactly one persisted execution intent', async () => {
   const first = await fixture.open(undefined, {}, true);
   const initial = await client(first.app, true, first.origin);

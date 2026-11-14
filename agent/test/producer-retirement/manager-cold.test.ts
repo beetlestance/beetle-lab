@@ -1,4 +1,4 @@
-import * as budgets from '../../src/installation/budget.js';
+import * as recovery from '../../src/installation/recovery.js';
 import type { Manager } from '../../src/installation/manager.js';
 import { entries } from '../installation/delivery-fixtures.js';
 import { deferred } from '../output-transfer/fixtures.js';
@@ -46,16 +46,13 @@ it('does not issue later cold reservation/Offer/inspect calls after a held Super
 });
 
 it('checks the owner again when a close is queued between helper settlement and caller continuation', async () => {
-  const e = await completed(); const abort = new AbortController(); const check = budgets.checkBudget; let helperChecks = 0; let injected = false;
-  const offer = vi.spyOn(e.owner, 'readOffer');
-  const guard = vi.spyOn(budgets, 'checkBudget').mockImplementation(operation => {
-    check(operation);
-    if (new Error().stack?.includes('releasedOwnership') && ++helperChecks === 2) {
-      injected = true; queueMicrotask(() => abort.abort());
-    }
-  });
+  const e = await completed(); const abort = new AbortController();
+  const reservation = await recovery.allocation(e.owner, e.key); const held = deferred<typeof reservation>();
+  const entered = deferred<void>(); const offer = vi.spyOn(e.owner, 'readOffer');
+  const allocation = vi.spyOn(recovery, 'allocation').mockImplementationOnce(() => {entered.resolve(); return held.promise;});
+  const work = e.manager.retireOutput(e.intent, {...operation(), signal: abort.signal}); void work.catch(() => undefined);
   try {
-    await expect(e.manager.retireOutput(e.intent, { ...operation(), signal: abort.signal })).rejects.toMatchObject({ reason: 'closed' });
-    expect(injected).toBe(true); expect(offer).not.toHaveBeenCalled();
-  } finally { guard.mockRestore(); }
+    await entered.promise; held.resolve(reservation); queueMicrotask(() => abort.abort());
+    await expect(work).rejects.toMatchObject({reason: 'closed'}); expect(offer).not.toHaveBeenCalled();
+  } finally {held.resolve(reservation); await Promise.allSettled([work]); allocation.mockRestore();}
 });

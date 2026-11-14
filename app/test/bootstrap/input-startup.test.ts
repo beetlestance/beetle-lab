@@ -1,3 +1,4 @@
+import {initializeBackendRecovery} from '../../src/bootstrap/recovery-control/index.js';
 import { offlineAgentFixture } from './agent-fixture.js';
 import { afterEach, expect, it } from 'vitest';
 import { mkdir, realpath, writeFile } from 'node:fs/promises';
@@ -23,6 +24,7 @@ const base = `/api/v2/organizations/${scope.organizationId}/workspaces/${scope.w
 async function configuration() {
   const root = await realpath(fixture.root());
   const directory = join(root, `installation-${requestId()}`); await mkdir(directory, { mode: 0o700 });
+  initializeBackendRecovery(join(directory, 'recovery-control.sqlite'), inputOptions().installation.id);
   const config = join(directory, 'installation.json');
   await writeFile(config, JSON.stringify(inputOptions().installation), { mode: 0o600 });
   const agent = await offlineAgentFixture(directory, inputOptions().installation); agentCloses.push(agent.close);
