@@ -1,4 +1,6 @@
-import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { mkdtemp, readdir, rm, realpath } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import { attemptDeadline, setupDeadline, validateAttempt } from '../../runtime/attempt.js';
 import { buildRuntimeScript } from '../../build/index.js';
@@ -29,7 +31,7 @@ describe('private accepted attempt budget', () => {
     for (const missing of [undefined, {}, { deadlineMs: NaN }, { deadlineMs: '1500' }]) expect(() => setupDeadline(missing)).toThrow('deadline');
   });
   it('rejects invalid managed metadata before filesystem effects', async () => {
-    const directory = await mkdtemp('/private/tmp/w09-attempt-');
+    const directory = await mkdtemp(join(await realpath(tmpdir()), 'w09-attempt-'));
     try {
       await expect(buildRuntimeScript({ suite: compiled(configFor()), outputDirectory: directory,
         attempt: { mode: 'managed', timeoutMs: 1000 } as AttemptBudget })).rejects.toThrow('invalid_limits');

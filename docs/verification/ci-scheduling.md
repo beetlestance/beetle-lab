@@ -50,3 +50,6 @@ The [combined local acceptance](integrated-acceptance.md) remains the source tes
 evidence. This scheduling edit does not repeat that gate, establish hosted pass
 status, change branch rules or qualify release images. Required-check enforcement
 and a first real hosted run still need verification after authorised publication.
+
+[Hosted corrections](hosted-ci-corrections.md) records later fixture failures,
+native-job scheduling and the strengthened three-input container aggregate.

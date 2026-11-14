@@ -103,7 +103,7 @@ jobs:
 
   rewrite-container:
     name: ci/rewrite-container (${{ matrix.arch }})
-    needs: checks
+    needs: source
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     strategy:
@@ -207,6 +207,7 @@ jobs:
           CANDIDATE_REVISION: ${{ github.sha }}
           BEETLE_QUALIFICATION_REVISION: ${{ github.sha }}
           BEETLE_QUALIFICATION_ARCHITECTURE: ${{ matrix.arch }}
+          TMPDIR: ${{ runner.temp }}
         run: |
           node --import tsx tools/qualification/native-application/compose/smoke.ts \
             "beetle-candidate-frontend:$CANDIDATE_REVISION" \
@@ -215,6 +216,14 @@ jobs:
             "beetle-candidate-installer:$CANDIDATE_REVISION" \
             "beetle-candidate-engine:$CANDIDATE_REVISION" \
             "beetle-candidate-export:$CANDIDATE_REVISION"
+      - name: Retain native qualification outcome
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rewrite-native-${{ matrix.arch }}-${{ github.sha }}
+          path: ${{ runner.temp }}/beetle-compose-evidence-*/outcome.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: Install pinned image scanner
         run: bash scripts/install-ci-trivy.sh "$RUNNER_TEMP/beetle-trivy"
       - name: Inventory dependencies and gate candidate image vulnerabilities
@@ -237,15 +246,17 @@ jobs:
   container:
     name: ci/container
     if: ${{ always() }}
-    needs: [legacy-container, rewrite-container]
+    needs: [checks, legacy-container, rewrite-container]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Require legacy and rewrite image qualification
         env:
+          CHECK_RESULT: ${{ needs.checks.result }}
           LEGACY_RESULT: ${{ needs.legacy-container.result }}
           REWRITE_RESULT: ${{ needs.rewrite-container.result }}
         run: |
+          test "$CHECK_RESULT" = success
           test "$LEGACY_RESULT" = success
           test "$REWRITE_RESULT" = success
 

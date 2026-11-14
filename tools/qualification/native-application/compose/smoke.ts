@@ -7,6 +7,7 @@ import {exportContentPath,runArtifactContentPath} from '@beetle/contracts/api';
 import type {SuiteRevision} from '@beetle/contracts/api';
 import {captureK6Diagnostics} from '@beetle/contracts/k6-diagnostics';
 import {fixture} from './fixture.js';
+import {nativeOutcome} from './outcome.js';
 import {automaticClient,exportReady,readContent,hash} from './public.js';
 import {agentState,backendState,controlBudget,targetCounts,engines,cleanup} from './evidence.js';
 import {saveRevision,value,finished} from '../public-api.js';
@@ -69,7 +70,9 @@ try{
 }catch(error){evidence.status='failed';evidence.failure=error instanceof Error?`${error.name}: ${error.message}`.slice(0,1024):'Unknown native qualification failure';evidence.stack=error instanceof Error?error.stack?.slice(0,8192):undefined;process.exitCode=1;}
 finally{
  try{Object.assign(evidence,await cleanup(f,installation),{cleanupVerified:true});}catch(error){evidence.cleanupVerified=false;evidence.cleanupFailure=error instanceof Error?error.message:'Unknown cleanup failure';evidence.status='failed';process.exitCode=1;}
- await writeFile(join(f.root,'evidence.json'),JSON.stringify(evidence,null,2),{mode:0o600});console.log(JSON.stringify({status:evidence.status,root:f.root,revision:f.revision,architecture:f.architecture,imageIds:f.imageIds,controlReserve:evidence.controlReserve,runArtifacts:evidence.runArtifacts,diagnosticSha256:evidence.diagnosticSha256,targetCounts:evidence.targetCounts,failure:evidence.failure,cleanupVerified:evidence.cleanupVerified}));
+ await writeFile(join(f.root,'evidence.json'),JSON.stringify(evidence,null,2),{mode:0o600});
+ const outcome=nativeOutcome(evidence);await writeFile(join(f.root,'outcome.json'),JSON.stringify(outcome,null,2),{mode:0o600});
+ console.log(JSON.stringify({...outcome,root:f.root}));
 }
 async function waitAfterRestart(client:Awaited<ReturnType<typeof automaticClient>>):Promise<void>{
  const deadline=performance.now()+30000;

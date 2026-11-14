@@ -1,3 +1,4 @@
+import { tmpdir } from 'node:os';
 /** Manual owned-loopback native compatibility check; no container/resource qualification. */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -23,7 +24,7 @@ const version = execFileSync(binary, ['version'], { encoding: 'utf8', timeout: 5
 assert.match(version, /^k6 v2\.2\.0\b/);
 process.umask(0o077);
 for (const workloadStatus of [200, 500]) {
-  const directory = await mkdtemp('/private/tmp/beetle-native-phase-');
+  const directory = await mkdtemp(join(await realpath(tmpdir()), 'beetle-native-phase-'));
   const counts = { ready: 0, work: 0 };
   const server = createServer((request, response) => {
     if (request.url === '/ready') {

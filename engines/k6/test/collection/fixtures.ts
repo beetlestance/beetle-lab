@@ -1,4 +1,5 @@
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { mkdtemp, writeFile, rm, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import { compiled } from '../suite/fixtures.js';
 import { configFor } from '../runtime/fixtures.js';
@@ -6,7 +7,7 @@ import { summaryProjection } from '../../runtime/summary.js';
 import type { SummaryOptions } from '../../wrapper/collection/index.js';
 
 export async function fixture() {
-  const outputDirectory = await mkdtemp('/private/tmp/w09-summary-');
+  const outputDirectory = await mkdtemp(join(await realpath(tmpdir()), 'w09-summary-'));
   const config = configFor();
   config.loadPlan.slos = [
     { id: 'latency', metric: 'http_req_duration', stat: 'p95', operator: '<', value: 10 },

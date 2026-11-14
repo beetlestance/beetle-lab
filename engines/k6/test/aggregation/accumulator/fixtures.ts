@@ -2,9 +2,11 @@ import { MetricAccumulator, MetricStream, createK6MetricProfile } from '../../..
 import type { MetricAccumulatorOptions, MetricPoint, MetricWindow } from '../../../aggregation/index.js';
 import { compiled } from '../../suite/fixtures.js';
 export const signal = () => new AbortController().signal;
+// Point construction uses a fixed immutable fixture profile; compile it once,
+// rather than recompiling the entire suite for every point in long streams.
+const pointProfile = createK6MetricProfile(compiled());
 export const point = (metric = 'beetle_requests', value = 1, timeMs = 1000, tags: MetricPoint['tags'] = {}): MetricPoint => {
-  const profile = createK6MetricProfile(compiled());
-  const entry = profile.allowedSeries.find(item => item.metric === metric && item.scope !== 'prepare')!;
+  const entry = pointProfile.allowedSeries.find(item => item.metric === metric && item.scope !== 'prepare')!;
   return { metric, kind: entry.kind, value, timeMs, tags: { ...entry.tags, ...tags } };
 };
 export const marker = () => point('beetle_measure_started');

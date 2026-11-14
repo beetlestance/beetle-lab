@@ -1,4 +1,5 @@
-import { mkdtemp, readFile, readdir, rm, stat } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { mkdtemp, readFile, readdir, rm, stat, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildRuntimeScript } from '../../build/index.js';
@@ -62,7 +63,7 @@ describe('bounded metric and build boundaries', () => {
     expect(test.iterate().kind).toBe('execution');
   });
   it('streams bounded plan data and rejects excessive/cyclic data before writes', async () => {
-    const directory = await mkdtemp('/private/tmp/w09-serialize-');
+    const directory = await mkdtemp(join(await realpath(tmpdir()), 'w09-serialize-'));
     try {
       const path = join(directory, 'plan.json');
       await expect(writePlanData(path, { text: 'a'.repeat(65_537) })).rejects.toThrow('script_limit');
@@ -77,7 +78,7 @@ describe('bounded metric and build boundaries', () => {
     } finally { await rm(directory, { recursive: true, force: true }); }
   });
   it('builds the owned runtime source without compiler validators, Node modules or secret values', async () => {
-    const directory = await mkdtemp('/private/tmp/w09-build-');
+    const directory = await mkdtemp(join(await realpath(tmpdir()), 'w09-build-'));
     try {
       const suite = compiled(configFor());
       const output = await buildRuntimeScript({ suite, outputDirectory: directory, attempt: { mode: 'standalone', timeoutMs: 1000 } });

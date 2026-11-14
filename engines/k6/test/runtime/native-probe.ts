@@ -1,7 +1,8 @@
+import { tmpdir } from 'node:os';
 /** Manual inspect plus two no-network 1VU/1iteration native compatibility probes. */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile, realpath } from 'node:fs/promises';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'tsup';
@@ -12,7 +13,7 @@ import { configFor } from './fixtures.js';
 
 const binary = process.argv[2];
 if (!binary || !isAbsolute(binary)) throw new Error('Provide the installed absolute native k6 binary');
-const directory = await mkdtemp('/private/tmp/w09-native-');
+const directory = await mkdtemp(join(await realpath(tmpdir()), 'w09-native-'));
 const config = join(directory, 'empty-config.json');
 await writeFile(config, '{}\n');
 const bounded = { cwd: directory, env: { K6_NO_USAGE_REPORT: 'true' }, encoding: 'utf8' as const,

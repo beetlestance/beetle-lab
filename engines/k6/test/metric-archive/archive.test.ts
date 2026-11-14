@@ -1,3 +1,4 @@
+import { tmpdir } from 'node:os';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import * as fs from 'node:fs/promises';
@@ -19,7 +20,7 @@ beforeEach(() => { vi.mocked(fs.open).mockImplementation(realFs.open); });
 afterEach(async () => { vi.restoreAllMocks(); for (const cleanup of cleanups.splice(0).reverse()) await cleanup(); });
 function deferred() { let resolve!: () => void; const promise = new Promise<void>(yes => { resolve = yes; }); return { promise, resolve }; }
 async function fixture(allowance = 4_194_304) {
-  const root = await fs.mkdtemp('/private/tmp/beetle-metric-archive-');
+  const root = await fs.mkdtemp(join(await fs.realpath(tmpdir()), 'beetle-metric-archive-'));
   cleanups.push(() => realFs.rm(root, { recursive: true, force: true }));
   const fence = new AttemptFence({ wall: () => 100_000, monotonic: () => performance.now() }, new AbortController().signal, 30_000);
   cleanups.push(() => fence.dispose());

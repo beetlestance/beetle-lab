@@ -1,4 +1,6 @@
-import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { readFile, mkdtemp, rm, realpath } from 'node:fs/promises';
 import type { EngineResult } from '@beetle/contracts';
 import type { PublicationOptions } from '../../wrapper/publication/index.js';
 import { nodeIo } from '../../wrapper/publication/ports.js';
@@ -11,7 +13,7 @@ export type TestInput = { -readonly [K in keyof PublicationOptions]: Publication
 export async function input(): Promise<TestInput> {
   const result = await fixture();
   return { result, expectedScope: { organizationId: result.organizationId, workspaceId: result.workspaceId,
-    attemptId: result.attemptId, generation: result.generation }, directory: await mkdtemp('/private/tmp/beetle-publication-'),
+    attemptId: result.attemptId, generation: result.generation }, directory: await mkdtemp(join(await realpath(tmpdir()), 'beetle-publication-')),
     uid: process.getuid!(), maximumBytes: 1_048_576, deadlineMs: Date.now() + 10_000, timeoutMs: 5000 };
 }
 export async function clean(options: PublicationOptions): Promise<void> { await rm(options.directory, { recursive: true, force: true }); }

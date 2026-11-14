@@ -1,3 +1,4 @@
+import { tmpdir } from 'node:os';
 import * as fs from 'node:fs/promises';
 import { promises as realFs } from 'node:fs';
 import { join } from 'node:path';
@@ -15,7 +16,7 @@ vi.mock('node:fs/promises', async importOriginal => {
 const cleanup: (() => Promise<unknown> | void)[] = [];
 afterEach(async () => { vi.restoreAllMocks(); await Promise.all(cleanup.splice(0).map(work => work())); });
 async function setup() {
-  const directory = await fs.mkdtemp('/private/tmp/w09-attempt-custody-');
+  const directory = await fs.mkdtemp(join(await fs.realpath(tmpdir()), 'w09-attempt-custody-'));
   cleanup.push(() => fs.rm(directory, { recursive: true, force: true }));
   const fence = new AttemptFence({ wall: Date.now, monotonic: () => performance.now() }, new AbortController().signal, 5000);
   cleanup.push(() => fence.dispose());

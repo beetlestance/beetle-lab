@@ -6,6 +6,7 @@ not close them. Scope follows [remaining packets](../execution/remaining-rewrite
 | Blocker | Evidence and next required proof |
 | --- | --- |
 | Output-guard reliability at shipped control caps | An unmodified 9c326f4 Compose run stopped in prepare with `artifact_incomplete`; exit 137 / OOM false. Public run was cancelled/inconclusive. Capture the exact stop branch, last-known age, scan reason/duration and event-loop/throttling evidence under the same caps; resolve and qualify before release. |
+| Public polling on the updated candidate | A de4f908 Compose run failed on a public read timeout; durable k6 state was finished/passed and cleanup verified. Diagnose the bounded request failure; durable success alone does not qualify the public flow. |
 | Actual packaged browser | Browser control tool was unavailable in this session. No DOM/component or HTTP check substitutes for real browser keyboard/themes/viewports, lifecycle and cross-scope acceptance. |
 | Hosted native matrix | Both native architectures are configured; only local Linux/arm64 functional execution has been recorded for the current candidate. Hosted/native amd64 execution is unverified. |
 | Delivery and supply chain | Current images remain local. Scans, SBOM/license evidence, immutable matched pull references, anonymous access and authorised rewrite publication remain open. |

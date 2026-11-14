@@ -1,7 +1,8 @@
+import { tmpdir } from 'node:os';
 import {expect,it} from 'vitest';
 import {createServer,request} from 'node:http';
 import type {Server} from 'node:http';
-import {mkdtemp,readFile,rm} from 'node:fs/promises';
+import { mkdtemp, readFile, rm, realpath } from 'node:fs/promises';
 import {join} from 'node:path';
 import {runDockerProxy} from './docker-proxy.js';
 import {bounded} from './metadata.js';
@@ -11,7 +12,7 @@ function call(socketPath:string,path:string,method='GET'){
  const outgoing=request({socketPath,path,method,agent:false});const result=new Promise<{status:number;contentType:string|undefined}>((resolve,reject)=>{outgoing.once('error',reject);outgoing.once('response',response=>{response.resume();response.once('end',()=>resolve({status:response.statusCode!,contentType:response.headers['content-type']}));response.once('error',reject);});});outgoing.end();return {outgoing,result};
 }
 async function fixture(foreign=false){
- const root=await mkdtemp('/private/tmp/beetle-docker-proxy-');const upstreamSocketPath=join(root,'up.sock');const socketPath=join(root,'proxy.sock');const markerPath=join(root,'marker.json');let deletes=0;let finished=false;
+ const root=await mkdtemp(join(await realpath(tmpdir()), 'beetle-docker-proxy-'));const upstreamSocketPath=join(root,'up.sock');const socketPath=join(root,'proxy.sock');const markerPath=join(root,'marker.json');let deletes=0;let finished=false;
  const server=createServer((incoming,response)=>{response.setHeader('content-type','application/json');if(incoming.method==='DELETE'){deletes++;response.writeHead(204);response.end();response.once('finish',()=>{finished=true;});return;}
   response.end(JSON.stringify({Id:runtimeId,Name:`/${runtimeName}`,Config:{Labels:{'dev.beetle.installation':foreign?'foreign':installationId}}}));});
  await new Promise<void>(resolve=>server.listen(upstreamSocketPath,resolve));const proxy=await runDockerProxy({socketPath,upstreamSocketPath,markerPath,installationId,runtimeId,runtimeName});

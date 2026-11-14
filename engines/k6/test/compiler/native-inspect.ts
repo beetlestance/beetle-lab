@@ -1,8 +1,9 @@
+import { tmpdir } from 'node:os';
 /** Manual native option compatibility probe: inspect only, no execution or requests. */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, writeFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 import type { K6LoadOptions, Scenario } from '../../compiler/index.js';
 import { compiled, planWith, scenarios } from './fixtures.js';
@@ -10,7 +11,7 @@ import { compiled, planWith, scenarios } from './fixtures.js';
 interface Probe { name: string; options: K6LoadOptions; expectedExit: 0 | 104 }
 const binary = process.argv[2];
 if (!binary || !isAbsolute(binary)) throw new Error('Provide the installed absolute k6 binary path');
-const output = await mkdtemp('/private/tmp/w08-scenarios-r1-inspect-');
+const output = await mkdtemp(join(await realpath(tmpdir()), 'w08-scenarios-r1-inspect-'));
 const config = join(output, 'empty-config.json');
 await writeFile(config, '{}\n');
 const boundedProcess = { env: {}, encoding: 'utf8' as const, timeout: 10_000, maxBuffer: 65_536 };

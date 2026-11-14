@@ -1,4 +1,5 @@
-import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { mkdtemp, readFile, readdir, rm, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { writePlanData } from '../../build/serialize.js';
@@ -29,7 +30,7 @@ describe('compiled JSON body serialization depth', () => {
     const test = harness(suite);
     expect(test.iterate().kind).toBe('completed');
     expect(JSON.parse(test.requests[0]!.body!)).toEqual(nestedBody(32, 'one'));
-    const directory = await mkdtemp('/private/tmp/w09-r1-depth-');
+    const directory = await mkdtemp(join(await realpath(tmpdir()), 'w09-r1-depth-'));
     try {
       const path = join(directory, 'plan.json');
       await expect(writePlanData(path, suite)).resolves.toBe(Buffer.byteLength(JSON.stringify(suite)));
@@ -42,7 +43,7 @@ describe('compiled JSON body serialization depth', () => {
     expect(validateAndCompileSuite(config, dependencies())).toMatchObject({ ok: false, issues: [{ code: 'input_limit' }] });
   });
   it('rejects internal data one level beyond the derived depth104 before opening output', async () => {
-    const directory = await mkdtemp('/private/tmp/w09-r1-depth-overflow-');
+    const directory = await mkdtemp(join(await realpath(tmpdir()), 'w09-r1-depth-overflow-'));
     try {
       const path = join(directory, 'plan.json');
       await expect(writePlanData(path, nestedBody(105))).rejects.toThrow('script_limit');

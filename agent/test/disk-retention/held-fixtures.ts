@@ -1,10 +1,15 @@
 import { initialize } from '../../src/journal/schema.js';
+import { backup } from 'node:sqlite';
+import { chmod } from 'node:fs/promises';
 import { AdmissionStore } from '../../src/journal/admission-store.js';
 import { bindSyntheticStore } from '../staging-namespace/model-fixtures.js';
 import { configuration, job, now, observation, reserved, scope, validation } from './fixtures.js';
 /** Current metadata-only admitted/aborted originals; never adopt unanchored old history. */
-export function seedHeldOriginals(path: string, count: number): void {
-  const db = initialize(path);
+export async function seedHeldOriginals(path: string, count: number): Promise<void> {
+  // Capacity setup is not a crash/durability experiment. Exercise all real store
+  // commands and guards in memory, then persist their exact current-schema state.
+  // The test opens the copy through the real durable Journal for the racing calls.
+  const db = initialize(':memory:');
   try {
     bindSyntheticStore(db); const store = new AdmissionStore(db, 67_108_864);
     const config = configuration(); config.pool.outputBytes = 1_000_000; config.pool.stagingBytes = 2_000_000_000;
@@ -17,5 +22,6 @@ export function seedHeldOriginals(path: string, count: number): void {
       const released = reserved(store.execute({ kind: 'abortUnstarted', key: scope(offer) }));
       if (released.status !== 'released') throw new Error('Synthetic held original did not release runtime reservation');
     }
+    await backup(db, path); await chmod(path, 0o600);
   } finally { db.close(); }
 }

@@ -1,4 +1,5 @@
-import { mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { mkdtemp, readFile, readdir, rm, stat, writeFile, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { buildRuntimeScript } from '../../build/index.js';
@@ -7,7 +8,7 @@ import { readK6Summary } from '../../wrapper/collection/index.js';
 import { launch, measured, observation, setup, signal } from './fixtures.js';
 
 it('connects the real bounded builder, decoder, accumulator and filesystem summary collector around a synthetic native boundary', async () => {
-  const directory = await mkdtemp('/private/tmp/beetle-execution-composition-');
+  const directory = await mkdtemp(join(await realpath(tmpdir()), 'beetle-execution-composition-'));
   const f = setup();
   const layout = metricEvidenceLayout(f.options.compiled.suite);
   const metrics = Object.fromEntries(layout.metrics.map(metric => [metric.key, {

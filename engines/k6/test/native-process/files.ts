@@ -1,3 +1,4 @@
+import { tmpdir } from 'node:os';
 import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach } from 'vitest';
@@ -8,7 +9,7 @@ afterEach(async () => {
   await Promise.all(directories.splice(0).map(directory => rm(directory, { recursive: true, force: true })));
 });
 export async function ownedFiles(source = 'process.stdout.write("metric");'): Promise<ReturnType<typeof options>> {
-  const directory = await realpath(await mkdtemp('/private/tmp/w09-process-'));
+  const directory = await realpath(await mkdtemp(join(await realpath(tmpdir()), 'w09-process-')));
   directories.push(directory);
   const script = join(directory, 'suite.js'); const emptyConfig = join(directory, 'empty.json');
   await writeFile(script, source, { mode: 0o600 }); await writeFile(emptyConfig, '{}\n', { mode: 0o600 });
