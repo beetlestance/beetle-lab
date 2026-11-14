@@ -1,6 +1,6 @@
 # Rewrite inventory acceptance audit
 
-Audit baseline:4e2eba0 with the scoped directory-input addition. This ledger
+Audit baseline:0514b74 with directory inputs and sanitized diagnostic history. This ledger
 reconciles source and recorded evidence; it does not claim a new full-suite pass.
 Authority: [inventory](../current-features.md), [acceptance](../verification.md).
 All34 F IDs and both N IDs are mapped below. Local evidence belongs to its recorded
@@ -79,9 +79,9 @@ before closing an ID. V14/V24 additionally require explicit applicability decisi
 Source inspection confirmed directory intake and diagnostic text gaps. Directory
 intake and sanitized final diagnostic history now have scoped checks; reports retain
 their original evidence scope. Raw/live native diagnostic replay remains unsupported.
-Historical evidence remains bounded by its original inputs. In particular the25
-baseline failures recorded during cleanup-control work need exact-fixture triage;
-this audit does not assert a current failure count or green full suite.
+Historical evidence remains bounded by its original inputs. The old cleanup-control
+baseline failures have now been [triaged with exact fixtures](migration-fixtures.md);
+this retires that recorded backlog, not the frozen integrated full gate.
 
 Complete implementation gaps before a frozen integrated acceptance lane, then
 qualify matching release images. Use the [remaining packets](../execution/remaining-rewrite.md).

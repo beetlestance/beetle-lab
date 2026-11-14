@@ -1,5 +1,5 @@
+import {historicalRun} from './historical-run-fixture.js';
 import { DatabaseSync } from 'node:sqlite';
-import type { Run } from '@beetle/contracts/api';
 import { sealEngineResult } from '@beetle/contracts';
 import { migration001, transaction } from '../../src/adapters/outbound/sqlite/schema.js';
 import { migration002 } from '../../src/adapters/outbound/sqlite/migration002.js';
@@ -8,9 +8,8 @@ import { migration004 } from '../../src/adapters/outbound/sqlite/migration004.js
 import { migration005 } from '../../src/adapters/outbound/sqlite/migration005.js';
 import { migration006 } from '../../src/adapters/outbound/sqlite/migration006.js';
 import { migration007 } from '../../src/adapters/outbound/sqlite/migration007.js';
-import { reserveRunOutput } from '../../src/adapters/outbound/sqlite/output-reservations.js';
 import type { DispatchKey } from '../../src/ports/dispatch.js';
-import { acknowledge, reserveAndMark, seedFoundation, snapshotFor } from './execution-foundation-fixtures.js';
+import { reserveHistoricalOutput, acknowledge, reserveAndMark, seedFoundation, snapshotFor } from './execution-foundation-fixtures.js';
 import { runCommand, runRequest } from './runs-fixture.js';
 import { result } from '../domain/run-observation-fixtures.js';
 import { uuid, observation, settingsFixture } from './fixture.js';
@@ -26,7 +25,7 @@ export function legacyPayload(path: string, options: { bound?: boolean; maximum?
   const runtime = observation(settingsFixture().runtime); runtime.ceilings.pool.outputBytes = 100000; runtime.ceilings.perRun.outputBytes = 100000; runtime.ceilings.pool.storageBytes = 400000;
   store.execute({ kind: 'runtime', runtime });
   const request = runRequest(uuid(60)); request.budget.outputBytes = options.maximum ?? 10000;
-  const run = store.execute({ kind: 'run', command: runCommand(uuid(60), 70, request) }) as Run;
+  const run = historicalRun(db, runCommand(uuid(60), 70, request));
   const key: DispatchKey = { runId: run.id, attempt: { attemptId: run.activeAttemptId, organizationId: run.scope.organizationId,
     workspaceId: run.scope.workspaceId, intentDigest: String(db.prepare('SELECT intent_digest FROM attempts').get()?.intent_digest), generation: 1 } };
   const { seal, ...original } = result();
@@ -41,7 +40,7 @@ export function legacyPayload(path: string, options: { bound?: boolean; maximum?
       db.prepare(`INSERT INTO execution_records(attempt_id,queue_order,run_id,organization_id,workspace_id,intent_digest,
         delivery_attempt_id,output_attempt_id) SELECT attempt_id,queue_order,run_id,organization_id,workspace_id,intent_digest,
         attempt_id,attempt_id FROM execution_intents`).run();
-      reserveRunOutput(db, key, { allocationBytes: Number.MAX_SAFE_INTEGER, reserveBytes: 0 });
+      reserveHistoricalOutput(db, key, Number.MAX_SAFE_INTEGER);
       db.exec("UPDATE dispatch_outbox SET possible_delivery=1,first_delivery_at='2026-11-09T00:00:00.000Z'");
     }
     acknowledge(db, key, snapshot); db.exec('UPDATE execution_records SET execution_charged=0');
@@ -50,7 +49,12 @@ export function legacyPayload(path: string, options: { bound?: boolean; maximum?
   db.exec(migration007);
   return { db, key, snapshot };
 }
-export function oldFacts(db: DatabaseSync) {
+type OldFacts = Record<string, unknown>[][];
+/** Compare every original column; later added columns have separate expectations. */
+export function oldFacts(db: DatabaseSync, original?: OldFacts): OldFacts {
   return ['execution_records', 'attempt_output_allocations', 'installation_storage_usage', 'runs', 'attempts', 'dispatch_outbox',
-    'event_cursors', 'run_events'].map(table => db.prepare(`SELECT * FROM ${table}`).all());
+    'event_cursors', 'run_events', 'receipts'].map((table, index) => {
+      const prior = original?.[index]?.[0]; const columns = prior ? Object.keys(prior).join(',') : '*';
+      return db.prepare(`SELECT ${columns} FROM ${table}`).all();
+    });
 }

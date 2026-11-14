@@ -1,6 +1,6 @@
 # Remaining functional parity
 
-Status: reconciled at4e2eba0 with the directory-input implementation below.
+Status: reconciled at0514b74 with directory intake and sanitized diagnostic history.
 Local evidence remains scoped to its recorded source and environment.
 [Full inventory audit](inventory-audit.md) maps every F01–F34/N01–N02;
 [remaining packets](../execution/remaining-rewrite.md) own sequencing and exit criteria.
@@ -26,9 +26,9 @@ at4e2eba0. They are no longer implementation backlog entries.
 
 No feature or release group is accepted merely because a route, test or report
 exists. The acceptance audit records evidence limits and unclosed scenario mappings.
-The25 baseline failures in [control evidence](backend-cleanup-control.md) are a
-historical recorded result, not an assertion of today's failure count. Triage their
-exact fixtures before the next integrated gate; this prose pass reran no suite.
+The old25 baseline-failure note is now [triaged](migration-fixtures.md) through exact
+historical and shared-consumer fixtures. A full integrated gate remains open; this
+is not a claim about the current whole-suite failure count.
 
 UI redesign remains a separate later audit/plan. Additional engines, hosted IAM,
 shared storage and test generation remain follow-on scope. No user service or

@@ -3,14 +3,13 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { initialize, migration001, transaction } from '../../src/adapters/outbound/sqlite/schema.js';
+import { METADATA_SCHEMA_VERSION, initialize, migration001, transaction } from '../../src/adapters/outbound/sqlite/schema.js';
 import { migration002 } from '../../src/adapters/outbound/sqlite/migration002.js';
 import { migrate003 } from '../../src/adapters/outbound/sqlite/migration003.js';
 import { migration004 } from '../../src/adapters/outbound/sqlite/migration004.js';
 import { migration005 } from '../../src/adapters/outbound/sqlite/migration005.js';
 import { migration006 } from '../../src/adapters/outbound/sqlite/migration006.js';
-import { reserveRunOutput } from '../../src/adapters/outbound/sqlite/output-reservations.js';
-import { acknowledge, enqueue, reserveAndMark, seedFoundation } from './execution-foundation-fixtures.js';
+import { reserveHistoricalOutput, acknowledge, enqueue, reserveAndMark, seedFoundation } from './execution-foundation-fixtures.js';
 
 let root = '';
 beforeEach(async () => { root = await mkdtemp(join(tmpdir(), 'beetle-event-migration-')); });
@@ -28,7 +27,7 @@ function prior(path: string, bound = true, ack = true): DatabaseSync {
       db.prepare(`INSERT INTO execution_records(attempt_id,queue_order,run_id,organization_id,workspace_id,intent_digest,
         delivery_attempt_id,output_attempt_id) SELECT attempt_id,queue_order,run_id,organization_id,workspace_id,intent_digest,
         attempt_id,attempt_id FROM execution_intents WHERE attempt_id=?`).run(key.attempt.attemptId);
-      reserveRunOutput(db, key, { allocationBytes: Number.MAX_SAFE_INTEGER, reserveBytes: 0 });
+      reserveHistoricalOutput(db, key, Number.MAX_SAFE_INTEGER);
       db.exec("UPDATE dispatch_outbox SET possible_delivery=1,first_delivery_at='2026-11-09T00:00:00.000Z'");
     }
     if (ack) acknowledge(db, key);
@@ -45,7 +44,7 @@ it.each([true, false])('preserves actual schema6 ownership without claiming inge
   const old = retainedTables.map(table => ({ table, rows: db.prepare(`SELECT * FROM ${table}`).all() })); db.close();
   db = initialize(path);
   try {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
     for (const { table, rows } of old) {
       const columns = rows[0] ? Object.keys(rows[0]).join(',') : '*';
       expect(db.prepare(`SELECT ${columns} FROM ${table}`).all()).toEqual(rows);
@@ -85,7 +84,7 @@ it('rolls back a late schema007 failure without partial columns, indexes, counte
     db.exec('DROP TABLE run_events');
   } finally { db.close(); }
   db = initialize(path);
-  try { expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11); }
+  try { expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION); }
   finally { db.close(); }
 });
 

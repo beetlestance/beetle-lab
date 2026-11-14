@@ -52,3 +52,6 @@ then12 failures for new queued charges, unsafe SQL arithmetic and historical see
 then12 fixture runtime/installation consistency failures. Corrections preserve the
 resource workload, explicit capacities and real historical guards. This adds no
 refund, settlement, replay tombstone or public deletion behavior.
+
+Later [historical fixture triage](migration-fixtures.md) resolves the recorded
+baseline backlog with current scoped evidence; the original counts above remain historical.

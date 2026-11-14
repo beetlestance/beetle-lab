@@ -9,8 +9,7 @@ import { migration006 } from '../../src/adapters/outbound/sqlite/migration006.js
 import { migrate008 } from '../../src/adapters/outbound/sqlite/migration008.js';
 import { migration009 } from '../../src/adapters/outbound/sqlite/migration009.js';
 import { migration007 } from '../../src/adapters/outbound/sqlite/migration007.js';
-import { reserveRunOutput } from '../../src/adapters/outbound/sqlite/output-reservations.js';
-import { acknowledge, enqueue, seedFoundation } from './execution-foundation-fixtures.js';
+import { reserveHistoricalOutput, acknowledge, enqueue, seedFoundation } from './execution-foundation-fixtures.js';
 import type { EventBinding } from '../../src/ports/events.js';
 it('discovers migrated NULL authority in indexed output lane without inventing ownership', () => {
   const db = new DatabaseSync(':memory:', { enableForeignKeyConstraints: true });
@@ -21,7 +20,7 @@ it('discovers migrated NULL authority in indexed output lane without inventing o
       db.prepare(`INSERT INTO execution_records(attempt_id,queue_order,run_id,organization_id,workspace_id,intent_digest,
         delivery_attempt_id,output_attempt_id) SELECT attempt_id,queue_order,run_id,organization_id,workspace_id,intent_digest,
         attempt_id,attempt_id FROM execution_intents WHERE attempt_id=?`).run(key.attempt.attemptId);
-      reserveRunOutput(db, key, { allocationBytes: Number.MAX_SAFE_INTEGER, reserveBytes: 0 });
+      reserveHistoricalOutput(db, key, Number.MAX_SAFE_INTEGER);
       db.exec("UPDATE dispatch_outbox SET possible_delivery=1,first_delivery_at='2026-11-09T00:00:00.000Z'");
       acknowledge(db, key);
     });

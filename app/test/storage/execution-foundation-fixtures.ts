@@ -1,3 +1,4 @@
+import {historicalRun} from './historical-run-fixture.js';
 import type { DatabaseSync } from 'node:sqlite';
 import type { Offer, AttemptSnapshot } from '@beetle/contracts';
 import type { Run } from '@beetle/contracts/api';
@@ -21,7 +22,9 @@ export function seedFoundation(db: DatabaseSync, storageBytes=200000): Store {
   return store;
 }
 export function enqueue(db: DatabaseSync, store: Store, id = 70): { key: DispatchKey; offer: Offer; run: Run } {
-  const run = store.execute({ kind: 'run', command: runCommand(uuid(60), id) }) as Run;
+  const command = runCommand(uuid(60), id);
+  const version = Number(db.prepare('PRAGMA user_version').get()?.user_version);
+  const run = [5, 6, 7].includes(version) ? historicalRun(db, command) : store.execute({ kind: 'run', command }) as Run;
   const row = db.prepare('SELECT offer_json FROM attempts WHERE id=?').get(run.activeAttemptId)!;
   const offer = JSON.parse(String(row.offer_json)) as Offer;
   return { run, offer, key: { runId: run.id, attempt: { attemptId: offer.attemptId, organizationId: offer.organizationId,
@@ -51,7 +54,9 @@ export function acknowledge(db: DatabaseSync, key: DispatchKey, snapshot = snaps
 }
 
 /** Frozen pre-policy1 fixture seed; historical schemas cannot call today's admission. */
-function reserveHistoricalOutput(db:DatabaseSync,key:DispatchKey,capacity:number):void{
+export function reserveHistoricalOutput(db:DatabaseSync,key:DispatchKey,capacity:number):void{
+ const version=Number(db.prepare('PRAGMA user_version').get()?.user_version);
+ if(!db.isTransaction||version<5||version>=21)throw Error('Historical output seed requires a schema5–20 transaction');
  const row=db.prepare('SELECT output_bytes FROM execution_intents WHERE attempt_id=?').get(key.attempt.attemptId)!;
  const bytes=Number(row.output_bytes)+65536;
  const usage=Number(db.prepare('SELECT charged_bytes FROM installation_storage_usage WHERE id=1').get()?.charged_bytes);

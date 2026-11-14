@@ -1,3 +1,4 @@
+import {withMigratedCopy} from './historical-copy-fixture.js';
 import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { migration001, transaction } from '../../src/adapters/outbound/sqlite/schema.js';
@@ -12,9 +13,8 @@ import { Settings } from '../../src/adapters/outbound/sqlite/settings.js';
 import { RunReads } from '../../src/adapters/outbound/sqlite/run-reads.js';
 import { Suites } from '../../src/adapters/outbound/sqlite/suites.js';
 import { Entities } from '../../src/adapters/outbound/sqlite/entities.js';
-import { reserveRunOutput } from '../../src/adapters/outbound/sqlite/output-reservations.js';
 import { hasUntrackedOwnership } from '../../src/adapters/outbound/sqlite/execution-ownership.js';
-import { seedFoundation, enqueue, acknowledge, snapshotFor } from './execution-foundation-fixtures.js';
+import { reserveHistoricalOutput, seedFoundation, enqueue, acknowledge, snapshotFor } from './execution-foundation-fixtures.js';
 import { settingsFixture, observation } from './fixture.js';
 import { runOptions } from './runs-fixture.js';
 import { custody } from './dispatch-claim-fixtures.js';
@@ -28,7 +28,7 @@ function legacy() {
     db.prepare(`INSERT INTO execution_records(attempt_id,queue_order,run_id,organization_id,workspace_id,intent_digest,
       delivery_attempt_id,output_attempt_id) SELECT attempt_id,queue_order,run_id,organization_id,workspace_id,intent_digest,
       attempt_id,attempt_id FROM execution_intents WHERE attempt_id=?`).run(key.attempt.attemptId);
-    reserveRunOutput(db, key, { allocationBytes: Number.MAX_SAFE_INTEGER, reserveBytes: 0 });
+    reserveHistoricalOutput(db, key, Number.MAX_SAFE_INTEGER);
     db.prepare("UPDATE dispatch_outbox SET possible_delivery=1,first_delivery_at='2026-11-09T00:00:00.000Z'").run();
   });
   return { db, store, key };
@@ -52,16 +52,20 @@ it.each([false, true])('preserves actual v5 data and charge without adopting aut
     expect(db.prepare('SELECT journal_authority,execution_charged FROM execution_records').get())
       .toEqual({ journal_authority: null, execution_charged: 1 });
     expect(hasUntrackedOwnership(db)).toBe(true);
-    const settings = settingsFixture(); const runtime = observation(settings.runtime);
-    const claims = new DispatchClaims(db, new Settings(db, { installation: settings.chain.installation, runtime }), runOptions().runs!);
-    const reads = new RunReads(db, new Suites(db, new Entities(db)));
-    const observations = new DispatchObservations(db, reads);
-    const retained = custody(db);
-    expect(claims.claim(key)).toEqual({ kind: 'blocked', reason: 'ownership_unknown' });
-    expect(claims.claim(next)).toEqual({ kind: 'blocked', reason: 'ownership_unknown' });
-    expect(claims.scan({ lane: 'reconcile', limit: 1 }).items[0]?.eligibility)
-      .toEqual({ kind: 'blocked', reason: 'ownership_unknown' });
-    expect(() => observations.observe({ key, journalAuthority: runtime.journalAuthority, snapshot: snapshotFor(key) })).toThrow();
+    withMigratedCopy(db, current => {
+      const settings = settingsFixture(); const runtime = observation(settings.runtime);
+      const claims = new DispatchClaims(current, new Settings(current, { installation: settings.chain.installation, runtime }), runOptions().runs!);
+      const reads = new RunReads(current, new Suites(current, new Entities(current)));
+      const observations = new DispatchObservations(current, reads);
+      const retained = custody(current);
+      expect(claims.claim(key)).toEqual({ kind: 'blocked', reason: 'ownership_unknown' });
+      expect(claims.claim(next)).toEqual({ kind: 'blocked', reason: 'ownership_unknown' });
+      expect(claims.scan({ lane: 'reconcile', limit: 1 }).items[0]?.eligibility)
+        .toEqual({ kind: 'blocked', reason: 'ownership_unknown' });
+      expect(() => observations.observe({ key, journalAuthority: runtime.journalAuthority, snapshot: snapshotFor(key) })).toThrow();
+      expect(custody(current)).toEqual(retained);
+    });
+    const runtime = observation(settingsFixture().runtime); const retained = custody(db);
     expect(() => db.prepare('UPDATE execution_records SET journal_authority=?').run(runtime.journalAuthority)).toThrow();
     expect(() => db.exec('UPDATE execution_records SET execution_charged=0')).toThrow();
     expect(custody(db)).toEqual(retained);

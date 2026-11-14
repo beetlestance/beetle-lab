@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { prepareEventBatch } from '../../src/domain/events/index.js';
 import { request } from './events/fixtures.js';
-import { initialize } from '../../src/adapters/outbound/sqlite/schema.js';
+import { METADATA_SCHEMA_VERSION, initialize } from '../../src/adapters/outbound/sqlite/schema.js';
 import { DispatchObservations } from '../../src/adapters/outbound/sqlite/dispatch-observations.js';
 import { RunReads } from '../../src/adapters/outbound/sqlite/run-reads.js';
 import { Suites } from '../../src/adapters/outbound/sqlite/suites.js';
@@ -25,8 +25,9 @@ it('converts and reopens actual schema7 without duplicating result or changing r
   const before = oldFacts(old.db); old.db.close();
   let db = initialize(path);
   try {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
-    expect(oldFacts(db).slice(1)).toEqual(before.slice(1));
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
+    expect(oldFacts(db, before).slice(1)).toEqual(before.slice(1));
+    expect(db.prepare('SELECT history_summary_json,history_summary_due_ms FROM runs').get()).toEqual({history_summary_json: null, history_summary_due_ms: 0});
     const observations = new DispatchObservations(db, new RunReads(db, new Suites(db, new Entities(db))));
     expect(observations.observe({ key: old.key, journalAuthority: '33333333-3333-4333-8333-333333333333', snapshot: old.snapshot }).snapshot).toEqual(old.snapshot);
     const row = db.prepare('SELECT snapshot_json,result_observed,execution_charged FROM execution_records').get()!;
@@ -59,10 +60,10 @@ it('keeps an old unbound result-free header without relaxing its immutable autho
     expect(() => db.exec('UPDATE execution_records SET snapshot_json=snapshot_json')).toThrow('immutable delivery authority');
   } finally { db.close(); }
 });
-it('rejects future schema12 and preserves its version', () => {
-  const path = join(root, 'future.sqlite'); const db = new DatabaseSync(path); db.exec('PRAGMA user_version=12'); db.close();
+it('rejects future schema and preserves its version', () => {
+  const path = join(root, 'future.sqlite'); const db = new DatabaseSync(path); db.exec(`PRAGMA user_version=${METADATA_SCHEMA_VERSION + 1}`); db.close();
   expect(() => initialize(path)).toThrow(); const read = new DatabaseSync(path);
-  try { expect(read.prepare('PRAGMA user_version').get()?.user_version).toBe(12); } finally { read.close(); }
+  try { expect(read.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION + 1); } finally { read.close(); }
 });
 it.each(['padded', 'duplicate-key'] as const)('fails intact on a stored result-free %s header that the new reader would refuse', mode => {
   const path = join(root, 'raw-header.sqlite'); const old = legacyPayload(path, { body: false });

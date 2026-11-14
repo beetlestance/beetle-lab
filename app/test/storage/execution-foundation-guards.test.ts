@@ -1,3 +1,4 @@
+import {BACKEND_CLEANUP_CONTROL_BYTES} from '../../src/ports/cleanup-control.js';
 import { expect, it } from 'vitest';
 import { initialize, transaction } from '../../src/adapters/outbound/sqlite/schema.js';
 import { reserveRunOutput } from '../../src/adapters/outbound/sqlite/output-reservations.js';
@@ -10,7 +11,7 @@ it('requires all claim counterparts at commit and rolls back usage', () => {
     expect(() => db.exec("UPDATE dispatch_outbox SET possible_delivery=1,first_delivery_at='synthetic'")).toThrow();
     expect(() => transaction(db, () => insertRecord(db, key))).toThrow();
     expect(() => transaction(db, () => { insertRecord(db, key); reserveRunOutput(db, key, { allocationBytes: 1e9, reserveBytes: 0 }); })).toThrow();
-    expect(db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(0);
+    expect(db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(BACKEND_CLEANUP_CONTROL_BYTES);
     expect(db.prepare('SELECT count(*) n FROM execution_records').get()?.n).toBe(0);
     expect(() => reserveRunOutput(db, key, { allocationBytes: 1e9, reserveBytes: 0 })).toThrow();
     transaction(db, () => reserveAndMark(db, key));
@@ -45,8 +46,10 @@ it('bounds charged ownership at64 without charging the65th output', () => {
     for (let i = 0; i < 64; i++) { const { key } = enqueue(db, store, 1000 + i); transaction(db, () => reserveAndMark(db, key)); }
     const before = db.prepare('SELECT charged_bytes FROM installation_storage_usage').get();
     const { key } = enqueue(db, store, 1064);
+    const funded = db.prepare('SELECT charged_bytes FROM installation_storage_usage').get();
+    expect(Number(funded!.charged_bytes) - Number(before!.charged_bytes)).toBe(BACKEND_CLEANUP_CONTROL_BYTES);
     expect(() => transaction(db, () => reserveAndMark(db, key))).toThrow();
-    expect(db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()).toEqual(before);
+    expect(db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()).toEqual(funded);
   } finally { db.close(); }
 });
 it('rejects acknowledging and deleting an original whose delivery was never marked possible', () => {

@@ -1,3 +1,4 @@
+import {BACKEND_CLEANUP_CONTROL_BYTES} from '../../src/ports/cleanup-control.js';
 import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { migration001, initialize, transaction } from '../../src/adapters/outbound/sqlite/schema.js';
@@ -69,7 +70,7 @@ it('keeps unpublished legacy unavailable and atomically rolls back late005 failu
 it('keeps indexed ownership checks compact across large known terminal history', () => {
   const db = initialize(':memory:');
   try {
-    const store = seedFoundation(db);
+    const store = seedFoundation(db, 500 * BACKEND_CLEANUP_CONTROL_BYTES + 1000);
     for (let i = 0; i < 500; i++) {
       const { run } = enqueue(db, store, 10000 + i * 2);
       db.prepare("UPDATE runs SET state='errored',outcome='inconclusive',reason='execution_lost' WHERE id=?").run(run.id);

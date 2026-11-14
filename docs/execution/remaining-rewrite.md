@@ -1,6 +1,6 @@
 # Remaining k6 rewrite packets
 
-Baseline:4e2eba0 plus the [inventory audit](../verification/inventory-audit.md).
+Baseline:0514b74 plus the [inventory audit](../verification/inventory-audit.md).
 Scope: finish R0–R4 k6 replacement. These are completion criteria, not a claim
 that each packet requires a new framework or that all existing evidence is stale.
 Cleanup ACK/driver/recovery/settlement/protected retention are locally complete.
@@ -31,7 +31,7 @@ contracts. Do not spawn an idle pool. Keep one native/build/measurement lane.
 
 | Packet | Deliverable and exit condition | Depends on |
 | --- | --- | --- |
-| B08 acceptance closure | Map all36 F/N IDs, A01–A09 and V01–V24 to exact cases/evidence; triage historical failures and fix causes; one frozen integrated gate with honest unsupported/applicability decisions | Functional packets; audit is the starting ledger, not closure |
+| B08 acceptance closure | Map all36 F/N IDs, A01–A09 and V01–V24 to exact cases/evidence; historical fixture triage now local ([evidence](../verification/migration-fixtures.md)); one frozen integrated gate with honest unsupported/applicability decisions | Functional packets; audit is the starting ledger, not closure |
 | B09 packaged browser/automation | Real fresh local session, authoring/inputs, execute/cancel/reconnect, metrics/history/compare/report/export/delete/settings; keyboard/themes/viewports, save/hash and cross-scope checks | Stable product and matching candidate images |
 | B10 rewrite delivery pipeline | CI builds/smokes separate frontend/backend/agent/k6/export/setup images; source/pull Compose use immutable matching identities; preserve existing gates; configure scans/SBOM/license evidence | Existing recipes/source Compose; hosted execution/publication needs applicable authority |
 | B11 release matrix | Native amd64/arm64 backend/agent/engines; enforced controls, bounded flood/soak, idle/loaded/telemetry overhead, disk failure and supported backup/restore/rollback; R0–R4 evidence signed off | B07–B10, actual native runners/tools |
@@ -48,8 +48,8 @@ not close a Linux-backend/AMD64 release matrix. Browser DOM checks do not close 
 Use scoped cases while implementing. Freeze relevant inputs/checks before each
 integration; retain failed evidence and rerun only affected checks after corrections.
 Reuse reviewed native recovery rather than repeating it for documentation changes.
-B08 owns the eventual integrated full gate; a recorded old failure is not permission
-to skip it or assert its current count. No new time estimate follows from this audit.
+B08 owns the eventual integrated full gate; historical fixture triage does not
+replace it or assert its current whole-suite count. No new time estimate follows from this audit.
 
 Each task records base/dirty state, contract ownership, files, source identity,
 commands/exits/durations, review, limits and next ready packet. Remove its branch/

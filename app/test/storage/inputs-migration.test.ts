@@ -1,3 +1,4 @@
+import {METADATA_SCHEMA_VERSION} from '../../src/adapters/outbound/sqlite/schema.js';
 import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { legacyDatabase } from './inputs-migration-fixture.js';
@@ -26,7 +27,7 @@ it('migrates v2 with bounded historical pins, preserves immutable bytes/receipts
   expect(await metadata.namespaces.execute({ ...legacy.original, id: uuid(99) })).toEqual(legacy.organization);
   await fixture.close(metadata);
   const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
-  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
+  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
   expect(db.prepare('SELECT count(*) AS n FROM revision_input_pins').get()?.n).toBe(205);
   expect(db.prepare('SELECT config_json,input_manifest_json,digest FROM suite_revisions WHERE id=?').get(uuid(1001)))

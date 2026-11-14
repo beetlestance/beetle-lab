@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { sealEngineResult, verifyEngineResultSeal } from '@beetle/contracts';
 import type { Artifact } from '@beetle/contracts';
-import { initialize } from '../../src/adapters/outbound/sqlite/schema.js';
+import { METADATA_SCHEMA_VERSION, initialize } from '../../src/adapters/outbound/sqlite/schema.js';
 import { legacyPayload, oldFacts } from './output-payload-migration-fixtures.js';
 import { hash } from './output-payload-fixtures.js';
 let root = '';
@@ -46,7 +46,7 @@ it('migration preserves a normal old result with repeated field names across sep
   old.db.prepare('UPDATE execution_records SET snapshot_json=?').run(JSON.stringify(old.snapshot)); old.db.close();
   const db = initialize(path);
   try {
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(11);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
     expect(JSON.parse(String(db.prepare('SELECT canonical_json FROM execution_output_payloads').get()?.canonical_json))).toEqual(old.snapshot.result);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
   } finally { db.close(); }
