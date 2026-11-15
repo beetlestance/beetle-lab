@@ -2,7 +2,9 @@ import {execFileSync} from 'node:child_process';
 import {mkdir, writeFile, realpath} from 'node:fs/promises';
 import {isAbsolute, join, dirname, basename, resolve} from 'node:path';
 import {tmpdir} from 'node:os';
-import {archiveProducer} from '../producer.js';
+import {archiveProducer, ArchiveProducerError} from '../producer.js';
+import {nativeFailureRecord} from './native-failure.js';
+let phase = 'input';
 import {readDeliveryJson, readDeliveryBytes} from '../files.js';
 import {architectureIdentity, candidateRoles} from '../identity.js';
 import {capturePublishedPlan} from './value.js';
@@ -28,6 +30,8 @@ async function runNative(plan: RegistryPlan, refs: string[], images: Record<stri
       destination: log, maximumBytes: 262144});
     const owner = await nativeOwner(log); const arch = architectureIdentity(process.arch === 'x64' ? 'amd64' : process.arch);
     verifyNativeOutcome(await readDeliveryJson(join(owner.root, 'outcome.json')), plan, arch, images); failed = false;
+  } catch (error) {
+    await retainNativeFailure(log, output); throw error;
   } finally {
     if (failed) {
       // Never claim success/cleanup after a killed controller; still attempt owned cleanup.
@@ -39,6 +43,14 @@ async function runNative(plan: RegistryPlan, refs: string[], images: Record<stri
       } catch { /* Failure remains unqualified; private evidence stays for recovery. */ }
     }
   }
+}
+async function retainNativeFailure(log: string, output: string): Promise<void> {
+  try {
+    const owner = await nativeOwner(log);
+    const record = nativeFailureRecord(await readDeliveryJson(join(owner.root, 'outcome.json')));
+    await writeFile(join(output, 'native-failure.json'), JSON.stringify(record, null, 2), {flag: 'wx', mode: 0o600});
+    console.error(JSON.stringify(record));
+  } catch { console.error(JSON.stringify({diagnostic: 'native-outcome-unavailable'})); }
 }
 function argumentsFor(argv: string[]) {
   const [publication, environment, pull, output, extra] = argv;
@@ -67,9 +79,13 @@ async function main(): Promise<void> {
   if (hash(await readDeliveryBytes(resolve('docker-compose.yml'))) !== hash(sourceCompose)) throw Error('Native fixture Compose differs from distributed source');
   await mkdir(output, {mode: 0o700}); const config = join(output, 'empty-docker'); await mkdir(config, {mode: 0o700});
   await writeFile(join(config, 'config.json'), '{}', {flag: 'wx', mode: 0o600}); process.env.DOCKER_CONFIG = config;
+  phase = 'anonymous-pull';
   const images = await pullDefault(plan, refs, config, output);
+  phase = 'native-execution';
   await runNative(plan, refs, images, config, output);
+  phase = 'qualification-record';
   await writeFile(join(output, 'qualification.json'), JSON.stringify(expected, null, 2), {flag: 'wx', mode: 0o600});
   console.log(JSON.stringify({architecture, anonymousPull: true, nativeExecution: 'passed', cleanupVerified: true}));
 }
-main().catch(() => {console.error('Anonymous pulled native installation failed; no qualified marker was written.'); process.exitCode = 1;});
+main().catch(error => {console.error(JSON.stringify({status: 'failed', phase,
+  code: error instanceof ArchiveProducerError ? error.kind : 'installation'})); process.exitCode = 1;});

@@ -25,3 +25,6 @@ Sources are public before CI writes images. Optional local-releases workflow mod
 skips only installer-release publication, preserving both anonymous native gates.
 `delivery-run.ts` binds local finalization to the owned successful first manual run,
 three required gates and immutable ZIP IDs/digests; normal source gates stay intact.
+
+Failed pulled execution retains only a reprojected `native-failure.json` and fixed
+phase/producer code; raw errors/logs remain private. A diagnostic is not qualification.
