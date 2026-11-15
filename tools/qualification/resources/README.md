@@ -63,3 +63,11 @@ mailbox volumes and project networks. It never prunes or removes source director
 Only `public-outcome.json` is uploaded: fixed facts/identities/counts and sanitized
 source locations, with actual harness revision/dirty state. Raw logs, private
 exceptions, configuration, ownership files and database snapshots are excluded.
+
+The explicit `cold-recovery` profile supplies missing native AMD64 evidence while
+reusing accepted ARM proof. It anonymously pulls the six existing published roles,
+runs the300-second default-UID backup/history/resume packet, then independently
+cleans exact owned resources even after cancellation. Cleanup has a120-second
+result deadline plus bounded original calls and a four-minute step. Only the
+closed public outcome is uploaded; failure remains fatal. No build, publication,
+release/default change or unrelated source test repetition occurs in this mode.

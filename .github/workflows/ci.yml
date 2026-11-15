@@ -11,7 +11,7 @@ on:
       qualify_rewrite_profile:
         description: Read-only checks to run against qualify_rewrite_release
         type: choice
-        options: [kernel-controls, active-recovery]
+        options: [kernel-controls, active-recovery, cold-recovery]
         default: kernel-controls
         required: false
       qualify_rewrite_release:
