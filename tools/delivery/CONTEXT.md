@@ -23,3 +23,10 @@ HIGH/CRITICAL CVEs, including unfixed findings, and fails closed on scanner erro
 
 Registry publication, anonymous complete pulls and matched Compose installation
 require their own accepted evidence. Transport is not a release gate waiver.
+
+`references.ts` owns six nonce transport tags and binding-checked cleanup.
+`contents.ts` verifies role/config/manifest hash bindings; `bundle.ts` captures the
+closed v2 transfer record. Source image IDs, config digests and registry digests
+are distinct. `roundtrip.ts` requires the fresh private Linux vfs store created by
+`scripts/verify-rewrite-archive.sh`, imports, reexports and checks all six configs.
+Source stores are never pruned; raw daemon logs remain private.

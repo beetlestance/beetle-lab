@@ -259,6 +259,17 @@ jobs:
           test -f "$1"
           node --import tsx tools/delivery/archive.ts "$CANDIDATE_REVISION" "$CANDIDATE_ARCHITECTURE" \
             "$RUNNER_TEMP/rewrite-supply-chain" "$1" "$RUNNER_TEMP/rewrite-bundle"
+      - name: Restore all six images into a fresh isolated store
+        if: ${{ inputs.prepare_rewrite_delivery == true }}
+        run: scripts/verify-rewrite-archive.sh "$RUNNER_TEMP/rewrite-bundle" "$RUNNER_TEMP/rewrite-roundtrip"
+      - name: Retain isolated image restoration proof
+        if: ${{ inputs.prepare_rewrite_delivery == true }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rewrite-roundtrip-${{ matrix.arch }}-${{ github.sha }}
+          path: ${{ runner.temp }}/rewrite-roundtrip/roundtrip.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Retain exact qualified images for the delivery step
         if: ${{ inputs.prepare_rewrite_delivery == true }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
