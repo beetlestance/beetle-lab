@@ -45,7 +45,7 @@ async function phases({f, initial, installation, saved, results, progress, reser
       else assert.equal(after.work - before.work, 40);
       const result = {kind, fault, sameOriginal: true, generation: 1, workRequests: after.work - before.work, runState: run.state,
         outcome: run.outcome, runId: run.id, resourceStatus: 'pending', controlReserve: reserve};
-      results.push(result); Object.assign(result, {resourceStatus: 'passed', summaries: await summaries(client.api, run)});
+      results.push(result); Object.assign(result, {resourceStatus: 'passed', summaries: await summaries(client.api, run, rows => {Object.assign(result, {summaries: rows});})});
       settled.push(run);
     }
   return settled;

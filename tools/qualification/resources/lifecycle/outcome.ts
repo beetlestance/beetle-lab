@@ -21,7 +21,8 @@ function caseValue(input: Record<string, unknown>) {
   const final = row(summaries.at(-1));
   return {kind: kinds.find(kind => kind === input.kind) ?? null, sameOriginal: input.sameOriginal === true,
     workRequests: scalar(input.workRequests, 40), resourcesReported: input.resourceStatus === 'passed' && summaries.some(sampled),
-    resourceSummaries: summaries.length, finalSamples: scalar(final.samples), restarted: final.reason === 'restarted'};
+    resourceSummaries: summaries.length, finalReason: member(final.reason, ['unavailable', 'unsupported', 'invalid', 'counter_reset', 'restarted', 'clock']),
+    missedSamples: scalar(final.missedSamples), hasCpu: scalar(final.cpuMillis) !== null, hasMemory: scalar(final.peakMemoryBytes) !== null, hasPids: scalar(final.peakPids) !== null, finalSamples: scalar(final.samples), restarted: final.reason === 'restarted'};
 }
 function complete(cases: ReturnType<typeof caseValue>[], custody: Record<string, unknown>[], expected: readonly string[]) {
   return cases.length === expected.length && expected.every(kind => cases.filter(value => value.kind === kind).length === 1)

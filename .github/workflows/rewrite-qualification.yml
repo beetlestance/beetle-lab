@@ -78,6 +78,7 @@ jobs:
         if: ${{ inputs.profile == 'active-recovery' }}
         run: node --import tsx tools/qualification/resources/pull.ts "$RUNNER_TEMP/publication/publication.json" "$RUNNER_TEMP/pull" stack
       - name: Qualify active crashes and cancellation in separate fresh projects
+        id: lifecycle_qualification
         env:
           TMPDIR: ${{ runner.temp }}
         if: ${{ inputs.profile == 'active-recovery' }}
@@ -93,6 +94,7 @@ jobs:
           JS
           node --import tsx tools/check-runner/cli.ts "$RUNNER_TEMP/lifecycle-plan.json" "$RUNNER_TEMP/lifecycle-checks"
       - name: Independently remove only owned lifecycle resources
+        id: lifecycle_cleanup
         if: ${{ always() && inputs.profile == 'active-recovery' }}
         timeout-minutes: 7
         run: |
@@ -103,6 +105,32 @@ jobs:
             fi
           done
           exit "$failed"
+      - name: Diagnose native stats only after a failed lifecycle qualification
+        if: ${{ failure() && inputs.profile == 'active-recovery' && steps.lifecycle_qualification.outcome == 'failure' && steps.lifecycle_cleanup.outcome == 'success' }}
+        timeout-minutes: 2
+        run: |
+          node --input-type=module <<'JS'
+          import {writeFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          const root = process.env.RUNNER_TEMP;
+          writeFileSync(join(root, 'stats-diagnostic-plan.json'), JSON.stringify({cwd: process.cwd(), checks: [{id: 'diagnostic', timeoutMs: 90000,
+            argv: [process.execPath, '--import', 'tsx', 'tools/qualification/native-application/diagnostics/stats.ts', join(root, 'publication/publication.json'), join(root, 'stats-diagnostic')]}]}), {flag: 'wx', mode: 0o600});
+          JS
+          node --import tsx tools/check-runner/cli.ts "$RUNNER_TEMP/stats-diagnostic-plan.json" "$RUNNER_TEMP/stats-diagnostic-checks"
+      - name: Independently remove only owned diagnostic containers
+        if: ${{ always() && inputs.profile == 'active-recovery' }}
+        run: |
+          if [ -f "$RUNNER_TEMP/stats-diagnostic/owner.json" ]; then
+            node --import tsx tools/qualification/resources/cleanup.ts "$RUNNER_TEMP/stats-diagnostic/owner.json"
+          fi
+      - name: Retain only closed non-qualifying diagnostic facts
+        if: ${{ failure() && inputs.profile == 'active-recovery' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stats-diagnostic-${{ matrix.arch }}
+          path: ${{ runner.temp }}/stats-diagnostic/outcome.json
+          if-no-files-found: warn
+          retention-days: 7
       - name: Project safe lifecycle reports
         if: ${{ always() && inputs.profile == 'active-recovery' }}
         run: |

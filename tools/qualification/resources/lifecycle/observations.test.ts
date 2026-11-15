@@ -1,7 +1,8 @@
+import actualRun from '../../../../contracts/fixtures/api/valid/run.json' with {type: 'json'};
 import {describe, expect, it, vi} from 'vitest';
-import type {Run} from '@beetle/contracts/api';
+import type {Run, ApiClient} from '@beetle/contracts/api';
 import type {Fixture} from '../../native-application/compose/fixture.js';
-import {runtime, stopForCustody} from './observations.js';
+import {runtime, stopForCustody, summaries} from './observations.js';
 import {crash} from './active.js';
 import type {Client} from './active.js';
 import {configuration, qualificationCases} from './configuration.js';
@@ -79,4 +80,14 @@ describe('active recovery fault authority', () => {
     row.Image = 'sha256:' + 'd'.repeat(64);
     await expect(crash(f, {} as Client, 'backend', 0)).rejects.toThrow(); expect(docker.run).not.toHaveBeenCalled();
   });
+});
+
+it('retains actual unknown-resource evidence before the positive-sample oracle refuses qualification', async () => {
+  const payload = {source: 'docker-stats', scope: 'container', samples: 0, missedSamples: 20, reason: 'unavailable',
+    cpuMillis: null, peakMemoryBytes: null, peakPids: null, outputBytes: null, enforcedControls: ['cpu', 'memory', 'pids'], lastSampleAt: null};
+  const api = {listRunEvents: async () => ({ok: true, value: {generation: 1, blockedReason: null, nextCursor: null,
+    items: [{kind: 'resource.summary', payload}]}})} as unknown as ApiClient;
+  let captured: unknown;
+  await expect(summaries(api, actualRun as Run, rows => {captured = rows;})).rejects.toThrow();
+  expect(captured).toEqual([payload]);
 });

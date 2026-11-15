@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {join} from 'node:path';
-import type {Run, ApiClient} from '@beetle/contracts/api';
+import type {Run, ApiClient, RunEventPage} from '@beetle/contracts/api';
 import type {Fixture} from '../../native-application/compose/fixture.js';
 import {record, counter} from '../values.js';
 export function params(run: Run) {return {organizationId: run.scope.organizationId, workspaceId: run.scope.workspaceId, runId: run.id};}
@@ -43,10 +43,12 @@ export function ledger(f: Fixture, run: Run, installation: string) {
   const chargedBytes = counter(record(row.allocations[0]).charged_bytes); assert(chargedBytes > 0);
   return {executionReleased: true, originalAllocationChargedBytes: chargedBytes, exit: snapshot.exitEvidence};
 }
-export async function summaries(api: ApiClient, run: Run) {
+type ResourceSummary = Extract<RunEventPage['items'][number], {kind: 'resource.summary'}>['payload'];
+export async function summaries(api: ApiClient, run: Run, captured?: (rows: ResourceSummary[]) => void) {
   const result = await api.listRunEvents({params: params(run), query: {limit: 100}});
   assert(result.ok); const page = result.value; assert.equal(page.generation, 1); assert.equal(page.blockedReason, null); assert.equal(page.nextCursor, null);
   const rows = page.items.filter(event => event.kind === 'resource.summary').map(event => event.payload);
+  captured?.(rows);
   assert(rows.length > 0);
   assert(rows.some(row => row.samples > 0 && row.cpuMillis !== null && row.peakMemoryBytes !== null && row.peakPids !== null));
   for (const row of rows) {

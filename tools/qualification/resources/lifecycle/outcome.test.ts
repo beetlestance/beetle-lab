@@ -34,3 +34,9 @@ it('rejects contradictory counts and summary placeholders rather than promoting 
     {...cancellation, kind: 'agent', workRequests: 40}, original.results[1], original.results[1]]};
   expect(publicLifecycleOutcome(crashes).status).toBe('failed');
 });
+
+it('preserves unknown-sample diagnostics without promoting them to a measurement pass', () => {
+  const source = fixture(); const value = publicLifecycleOutcome({...source, status: 'failed', results: [{...source.results[0], resourceStatus: 'pending',
+    summaries: [{samples: 0, missedSamples: 20, reason: 'unavailable', cpuMillis: null, peakMemoryBytes: null, peakPids: null}]}, source.results[1]]});
+  expect(value.status).toBe('failed'); expect(value.cases[0]).toMatchObject({finalSamples: 0, missedSamples: 20, finalReason: 'unavailable', hasCpu: false});
+});
