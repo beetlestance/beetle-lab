@@ -4,7 +4,8 @@ import { runtimeName } from '../../../agent/src/backends/docker/index.js';
 import type { Fixture } from '../../../agent/test/container/fixture.js';
 interface Volume {Name: string; Driver: string; Scope: string; Options: Record<string, string>; Labels: Record<string, string>}
 /** Task-owned qualification cleanup only, after all matched containers are removed. */
-export function cleanupLiveVolumes(f: Fixture): number {
+export function cleanupLiveVolumes(f: {id: string; user: string; docker: Fixture['docker']}): number {
+  assert(validatePrimitive('uuid', f.id).ok);
   const names = f.docker.run(['volume', 'ls', '-q', '--filter', `label=dev.beetle.installation=${f.id}`]).split('\n').filter(Boolean);
   assert(names.length <= 4); let removed = 0;
   for (const name of names) {

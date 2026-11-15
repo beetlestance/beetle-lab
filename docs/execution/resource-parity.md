@@ -21,6 +21,13 @@ full suites/builds for prose or unchanged runtime inputs. Keep full private logs
 only safe closed reports in public evidence. Each packet freezes its budget before
 execution. Remove merged task trees/branches after preserving evidence.
 
+## Recorded progress
+
+[Q01](../verification/resource-controls.md) has native AMD64/ARM64 direct-kernel
+proof at clean harness68d9f989. [Q02a](../verification/active-recovery.md) has scoped
+packaged ARM64 active crash/cancel, emitted-resource and cold counter evidence.
+These are individual accepted scopes; Q02 overall and Q03–Q07 remain open.
+
 ## Q01 frozen scope
 
 Use the current public engine image, one native Linux container at a time, no

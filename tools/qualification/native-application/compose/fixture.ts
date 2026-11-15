@@ -21,7 +21,8 @@ export function nativeArchitecture(daemon:string,harness:string,expected?:string
  if(expected!==undefined)assert.equal(architecture,expected);
  return architecture;
 }
-export async function fixture(argv:string[]){
+export async function fixture(argv:string[], maximumTargetRequests=4){
+ assert(Number.isSafeInteger(maximumTargetRequests)&&maximumTargetRequests>=4&&maximumTargetRequests<=256);
  const [frontend,backend,agent,installer,engine,offline,context='default']=argv;
  assert(argv.length>=6&&argv.length<=7);for(const item of [frontend,backend,agent,installer,engine,offline])assert(item&&/^[a-zA-Z0-9][a-zA-Z0-9_./:@-]{0,255}$/.test(item));
  assert(/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/.test(context));
@@ -37,7 +38,7 @@ export async function fixture(argv:string[]){
   BEETLE_FRONTEND_IMAGE:frontend!,BEETLE_BACKEND_IMAGE:backend!,BEETLE_AGENT_IMAGE:agent!,BEETLE_INSTALLER_IMAGE:installer!,BEETLE_ENGINE_IMAGE:engine!,BEETLE_EXPORT_IMAGE:offline!,COMPOSE_PARALLEL_LIMIT:'1'};
  const envFile=join(root,'compose.env');await writeFile(envFile,Object.entries(environment).map(([key,value])=>`${key}='${value}'`).join('\n')+'\n',{mode:0o600});
  const override=join(root,'target.json');
- const program="const counts={ready:0,work:0,unexpected:0};require('node:http').createServer((q,r)=>{if(q.url==='/counts'){r.end(JSON.stringify(counts));return;}const key=q.url==='/ready'?'ready':q.url==='/work'?'work':'unexpected';if(++counts[key]>4)process.exit(3);r.writeHead(key==='unexpected'?404:200);r.end('ok');}).listen(8080,'0.0.0.0');";
+ const program="const counts={ready:0,work:0,unexpected:0};require('node:http').createServer((q,r)=>{if(q.url==='/counts'){r.end(JSON.stringify(counts));return;}const key=q.url==='/ready'?'ready':q.url==='/work'?'work':'unexpected';if(++counts[key]>"+maximumTargetRequests+")process.exit(3);r.writeHead(key==='unexpected'?404:200);r.end('ok');}).listen(8080,'0.0.0.0');";
  await writeFile(override,JSON.stringify({services:{'synthetic-target':{image:agent,user:'1000:1000',read_only:true,cap_drop:['ALL'],security_opt:['no-new-privileges:true'],
   cpus:0.25,mem_limit:'64m',pids_limit:32,entrypoint:['node','-e',program],networks:{targets:{aliases:['target']}}}}}),{mode:0o600});
  const args=['compose','--project-name',project,'--env-file',envFile,'--file',resolve('docker-compose.yml'),'--file',override];

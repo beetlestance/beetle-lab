@@ -1,6 +1,6 @@
 # Direct native kernel controls
 
-Q01 tool/ARM64 evidence, not full resource or installed-agent qualification.
+Q01 native AMD64/ARM64 kernel evidence; installed-agent qualification is separate.
 [The packet plan](../execution/resource-parity.md) and
 [harness](../../tools/qualification/resources/README.md) freeze the bounds.
 
@@ -35,10 +35,34 @@ Nine focused tests, Node types, changed lint, architecture and docs passed.
 Independent review caught and corrected Node x64/amd64 naming before execution;
 post-run review accepted only the recorded ARM64 direct-kernel scope.
 
+## Native hosted execution
+
+[CI43743270130](https://github.com/beetlestance/beetle-lab/actions/runs/43743270130)
+passed both native jobs at clean harness `68d9f989`, using the same public722
+engine index/platform/config bindings. No image rebuild/publication occurred.
+Both runners exposed four CPUs, Docker28.0.4 and kernel7.0.0-1017-azure.
+The recorded RAM ceilings were16,760,344,576bytes on AMD64 and16,715,923,456bytes
+on ARM64; the same VM-available safety precondition passed before every fault.
+
+| Probe | AMD64 | ARM64 |
+| --- | --- | --- |
+| CPU demand |8083ms,8,094,257us,81 throttled periods;100.14% onecore |8074ms,8,088,807us,81 periods;100.18% onecore |
+| Memory |OOMKilled true/137,512MiB/swap0 |Same authoritative OOM/control result |
+| PID refusal |121 children/current128,EAGAIN,maxevent1 |Same limit/refusal result |
+| Descendant shutdown |Three processes/nine tasks,2065ms forced stop/137 |Three processes/nine tasks,2056ms forced stop/137 |
+
+Both closed outcomes report passed/cleanupVerified; all four probe containers
+were removed on each runner. Only closed outcomes were uploaded. Release metadata,
+asset size/SHA and actual Git tag source were verified before the anonymous engine
+pull. Expected matrix architecture was checked before pull/container effects.
+
 ## Still outstanding
 
-Native AMD64, installed-agent exit causes/resource observations, reservations and
+Installed-agent exit causes, sampling accuracy and both-platform reservations and
 shared-pool scheduling, cancel/timeout progress, output flooding, overhead/soak,
 disk and recovery remain separate requirements. No V06/V07/V17 group is closed
 solely by this packet. The immutable image, ownership descriptor, source hashes,
 raw private logs, commands and closed outcome are retained in task evidence.
+
+[Active restart/cancellation](active-recovery.md) adds scoped packaged ARM64
+producer and reservation evidence; its limits remain explicit.
