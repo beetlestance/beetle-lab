@@ -111,3 +111,20 @@ registry write occurs in this step.
 Actual staging of run `43663602569` completed for AMD64 and ARM64: all eight ZIP
 digests, both inner archives and both six-image identity chains passed. The
 private complete staging record is retained for subsequent publication work.
+
+## Source and notice material
+
+The [source collector](../../tools/delivery/sources/README.md) binds all twelve
+staged inventories to fourteen OS source origins, exact Node/nginx versions and
+the k6 binary's observed commit. It retains complete pinned Alpine recipe trees,
+patches and SHA512 source inputs, three upstream archives, the candidate Git source
+and 160 unique production npm tarballs with SHA512 SRI. Full source packages keep
+their copyright/license files; image SBOMs and license inventories accompany them.
+No downloaded source is executed and tested image bytes are unchanged.
+
+Review caught missing recipe membership verification and unbounded report copies.
+Canonical Git tree checks and bounded no-follow/exclusive copies replaced them.
+The actual collector then verified 177 third-party source groups. Deterministic
+packing separately normalizes host owners/times and retains executable recipe
+modes and the verified sibling link. Registry source delivery still needs its own
+public readback proof; private source collection alone does not publish a release.

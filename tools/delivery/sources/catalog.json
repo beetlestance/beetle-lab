@@ -1,0 +1,1654 @@
+{
+  "format": "beetle-third-party-sources",
+  "version": 1,
+  "alpine": [
+    {
+      "origin": "alpine-base",
+      "version": "3.24.4",
+      "packageVersion": "3.24.4-r0",
+      "aportsCommit": "105b835acd9971b9770fb61f5a1ddcc133c180dc",
+      "recipeTree": "a3af2bd7d397d1907757514932ee7896f4fe63cd",
+      "remote": [],
+      "sourceChecksums": {},
+      "recipeFiles": [
+        {
+          "name": "APKBUILD",
+          "gitBlob": "0f4cb99560e69e1c60c568a84a4368ac6af362ca",
+          "bytes": 1507,
+          "mode": "100644"
+        }
+      ]
+    },
+    {
+      "origin": "alpine-baselayout",
+      "version": "3.7.2",
+      "aportsCommit": "60a7585bbab2fa0f762504eb617dbca90216e31f",
+      "remote": [
+        {
+          "name": "protocols-6.4",
+          "url": "https://salsa.debian.org/md/netbase/-/raw/v6.4/etc/protocols",
+          "sha512": "3a00083bcdf5a9e884c9d07877d52311e3d99e79cbee656e236ba06e08ba0dddb7ba76494fdc9dd1a826c48e197a790a69e6bb458e9df64832d6b5e904e9fd15",
+          "downloadUrl": "https://distfiles.alpinelinux.org/distfiles/v3.24/protocols-6.4"
+        },
+        {
+          "name": "services-6.4",
+          "url": "https://salsa.debian.org/md/netbase/-/raw/v6.4/etc/services",
+          "sha512": "47b0f3ee73af2d259bd206a026204be0ea25531a895a0b035a904b38fe5407bc3dd2beab7f8fcb3d760587e6159702ebdb9cbc4f508942befdf7f10c10c87888",
+          "downloadUrl": "https://distfiles.alpinelinux.org/distfiles/v3.24/services-6.4"
+        }
+      ],
+      "sourceChecksums": {
+        "crontab": "6e169c0975a1ad1ad871a863e8ee83f053de9ad0b58d94952efa4c28a8c221445d9e9732ad8b52832a50919c2f39aa965a929b3d5b3f9e62f169e2b2e0813d82",
+        "color_prompt.sh.disabled": "558071efdce2fe92afe4277006235b1a6368b070337c7567e5632a1a3fe531f87ca692eb36f3dda498d4d29d1f834fc8f7139f2985669ae3400b6d103d6f4c5e",
+        "20locale.sh": "03361d912cf29c127608697ee14bfa5972f82a5c475e653378ca5f7670cbd8183efc7c8c339ff046ff6537944fe00c4a732bb6b552aecaecd1214ed3e11bdf90",
+        "usr_merge_nag.sh": "a3783aaebd3df882c3b946cd79cfca5cbe5e830bbaf4347ca66c5af51c803db70684f5ae3fe91b34d966f43b3979074200ddfb0cad24e94e0cca3516acc9cecb",
+        "aliases.conf": "bfe947bdd69e7d93b32c8cb4e2cabe5717cb6c1e1f49a74015ac2cfb13e96d1f12c4be23ae93a1d61aaa3760d33a032fa9bd99f227fb21223a76b5f5908acc65",
+        "blacklist.conf": "b5a098097592612d244e03c295d660701c15deba25b6da6c32817d562a1c0b7e1c4f5ed260979780251b2e66a640324b1819469beb8cd2687a61fb789d81afd3",
+        "i386.conf": "49109d434b577563849c43dd8141961ca798dada74d4d3f49003dac1911f522c43438b8241fa254e4faacdd90058f4d39a7d69b1f493f6d57422c1f706547c95",
+        "group": "b5eb01165c714861e860f17c0156911ff882a9010306b7fc4cdb22251acf8b1c91a3fa1d44cc41cb3d9b50892e2f98f43da57b002c5c33200c1bf49c3d2d587d",
+        "inittab": "37d7b8348e604b12c055d9d7e79afb568ededea7153ff552c9f383cffd537d9c78cfd9facd612d2a6753fc626ff608a6d22d62637585a33166aa28f59fabed22",
+        "passwd": "f0d12f365839e7e262ec91e151119de7f2f253e9d0443157de4d52e183f421fbbb9eb0a83b9267a9ee850bebe41bff3c3cef553f9bda6e70d59a754a955be57d",
+        "profile": "4eb857ed59c2edb257636d2bf196989e514a273e9701e9f076c9ae8c1589b4898269180569960acf072c0981ec7ea54014fd230f014401d6bb92314285d1e6aa",
+        "protocols-6.4": "3a00083bcdf5a9e884c9d07877d52311e3d99e79cbee656e236ba06e08ba0dddb7ba76494fdc9dd1a826c48e197a790a69e6bb458e9df64832d6b5e904e9fd15",
+        "services-6.4": "47b0f3ee73af2d259bd206a026204be0ea25531a895a0b035a904b38fe5407bc3dd2beab7f8fcb3d760587e6159702ebdb9cbc4f508942befdf7f10c10c87888",
+        "hier.7": "1088668c3bad677c47ef772f2d3af6cd23edfe95c6aeb3b83434a4c767ceccda56b9ffe98a002de49c2642d08b6468c1491913d1c017ec457ca20f7bb7019550"
+      },
+      "recipeFiles": [
+        {
+          "name": "20locale.sh",
+          "gitBlob": "9b9fde51f510e8d4ddb79f3ea0423ec75efb9297",
+          "bytes": 97,
+          "mode": "100644"
+        },
+        {
+          "name": "APKBUILD",
+          "gitBlob": "d79c198a0a923f2781242b9553afaecd65d95afc",
+          "bytes": 8670,
+          "mode": "100644"
+        },
+        {
+          "name": "aliases.conf",
+          "gitBlob": "b1790179608c46f117fd36073e2316546ca08acd",
+          "bytes": 1545,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-baselayout.post-install",
+          "gitBlob": "88966d35c3327efc03e5d383fa577782ea256c5d",
+          "bytes": 453,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-baselayout.post-upgrade",
+          "gitBlob": "0e73fc07f3bfd966d5ed2e4be2a4838422dab0ed",
+          "bytes": 30,
+          "mode": "120000"
+        },
+        {
+          "name": "alpine-baselayout.pre-install",
+          "gitBlob": "fc0d0b9f5dab5ce07189ead013e0fb8a6fbc0bc8",
+          "bytes": 56,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-baselayout.pre-upgrade",
+          "gitBlob": "b89ad05a74debf8a6f6001b05526770feb40ee88",
+          "bytes": 944,
+          "mode": "100644"
+        },
+        {
+          "name": "blacklist.conf",
+          "gitBlob": "f14a1233af1c6160f3ed507283b09853ee8ad5ca",
+          "bytes": 2247,
+          "mode": "100644"
+        },
+        {
+          "name": "color_prompt.sh.disabled",
+          "gitBlob": "96e47891b31f72ed8f4073061ff48288a4d3cb7b",
+          "bytes": 447,
+          "mode": "100644"
+        },
+        {
+          "name": "crontab",
+          "gitBlob": "fd8acd8b9a27203f33bd213e9a38d975cbef8dcc",
+          "bytes": 283,
+          "mode": "100644"
+        },
+        {
+          "name": "group",
+          "gitBlob": "4a0d291366667f110e5f4d890c585f929fba517e",
+          "bytes": 510,
+          "mode": "100644"
+        },
+        {
+          "name": "hier.7",
+          "gitBlob": "7faad97aaf042a21cdf44b33d7aba1d60b512fb4",
+          "bytes": 6855,
+          "mode": "100644"
+        },
+        {
+          "name": "i386.conf",
+          "gitBlob": "b89459f1ef675fced8b3fcf97cca1a4ed0e55f01",
+          "bytes": 122,
+          "mode": "100644"
+        },
+        {
+          "name": "inittab",
+          "gitBlob": "5294b8f53b1c9946e66bf75b37644af6cd94cfb1",
+          "bytes": 570,
+          "mode": "100644"
+        },
+        {
+          "name": "passwd",
+          "gitBlob": "1130fa0b21cc1bf66f41206ffad4748ffe457af1",
+          "bytes": 702,
+          "mode": "100644"
+        },
+        {
+          "name": "profile",
+          "gitBlob": "fbc3ba0cd506424c1b67b1a2397aa1097803ad25",
+          "bytes": 547,
+          "mode": "100644"
+        },
+        {
+          "name": "usr_merge_nag.sh",
+          "gitBlob": "83ad6e5d9b869d17b7ac98f5b4d753fc6fa6d584",
+          "bytes": 677,
+          "mode": "100644"
+        }
+      ],
+      "packageVersion": "3.7.2-r1",
+      "recipeTree": "09b8f57d1c2c06a9360f84c6aa1f7cc1076e9ae6"
+    },
+    {
+      "origin": "alpine-keys",
+      "version": "2.6",
+      "packageVersion": "2.6-r0",
+      "aportsCommit": "b9f23becced4d7b3ccc0fa0f28530243ccd314a0",
+      "recipeTree": "ce77b3572b098dcdd3ce7a81e24aa4454f5448a5",
+      "remote": [],
+      "sourceChecksums": {
+        "alpine-devel@lists.alpinelinux.org-58199dcc.rsa.pub": "e4f9e314f8e506fba2cb3e599c6412a036ec37ce3a54990fc7d80a821d8728f40ee3b4aa8a15218d50341fa785d9ddf7c7471f45018c6a2065ab13664a1aa9e9",
+        "alpine-devel@lists.alpinelinux.org-616ae350.rsa.pub": "51a5ec21283fe218809b2325202e1f8c9b2551705db48254b9d48a04f4ed0075de51e9886c4704647ffb309fd32d9850d14013848a53038039e85011251fe1cc",
+        "alpine-devel@lists.alpinelinux.org-524d27bb.rsa.pub": "698fda502f70365a852de3c10636eadfc4f70a7a00f096581119aef665e248b787004ceef63f4c8cb18c6f88d18b8b1bd6b3c5d260e79e6d73a3cc09537b196e",
+        "alpine-devel@lists.alpinelinux.org-616adfeb.rsa.pub": "a98095a626f2dcbda73ffd8873ba2d609ee1d881f5da13b0eb3469ddd58b06440b4b0b2f791b037c88073e9a17c6dfc62dc1a4c8491bed871524d772ef04ad24",
+        "alpine-devel@lists.alpinelinux.org-616a9724.rsa.pub": "7aa5526a88519ae91f997bf914a9bd3d230b21c011587f155ce22c4bb94b70181b28590027eb555d96d1122dffb8242c1fb044228e99b4e9b7650fcf6f5121c7",
+        "alpine-devel@lists.alpinelinux.org-5243ef4b.rsa.pub": "e18e65ee911eb1f8ea869f758e8f2c94cf2ac254ee7ab90a3de1d47b94a547c2066214abf710da21910ebedc0153d05fd4fe579cc5ce24f46e0cfd29a02b1a68",
+        "alpine-devel@lists.alpinelinux.org-61666e3f.rsa.pub": "b89d825e6af73687339848817791b294e2404162e2e069d9212d76d4ee53d6216eb75421a07b02f9778ef57dbb27962b2436247264eea1a1d882967ca0c18724",
+        "alpine-devel@lists.alpinelinux.org-4a6a0840.rsa.pub": "2d4064cbe09ff958493ec86bcb925af9b7517825d1d9d8d00f2986201ad5952f986fea83d1e2c177e92130700bafa8c0bff61411b3cdb59a41e460ed719580a6",
+        "alpine-devel@lists.alpinelinux.org-5261cecb.rsa.pub": "721134f289ab1e7dde9158359906017daee40983199fe55f28206c8cdc46b8fcf177a36f270ce374b0eba5dbe01f68cbb3e385ae78a54bb0a2ed1e83a4d820a5",
+        "alpine-devel@lists.alpinelinux.org-6165ee59.rsa.pub": "8b9c2208c904c9f34d9d01d3d68b224208530e684265df214deb8c9e6b4b19633aa48a405e673249c9e93a8ee194a336e951cd82a4e27e5e66e85fdc5e0d495e",
+        "alpine-devel@lists.alpinelinux.org-58cbb476.rsa.pub": "bb5a3df8fac14a62d5936fb3722873fa6a121219b703cba955eb77de38c4384aeaf378fb9321a655e255f0be761e894e309b3789867279c1524dab6300cd8ef1",
+        "alpine-devel@lists.alpinelinux.org-616abc23.rsa.pub": "bad4da65221150a5d4cc6f63981e4dd203d40844d32e82c17f346eee5350e460e32d28f0e231a2b78d326ec32b898eec597d3787dae47dcacc9a9776d19fb4a1",
+        "alpine-devel@lists.alpinelinux.org-58e4f17d.rsa.pub": "0666389ca53121453578cd4bef5fd06e159e291164b3e3233e7d6521604f8bebd30caeef1663adcd5309e07278833402c8a92c33294ec0c5cada24dc47c8cc98",
+        "alpine-devel@lists.alpinelinux.org-616ac3bc.rsa.pub": "83fc29066f6073418ecf01176ce24c1c0e788508f3083a97691706e2c78323e53448060fb0d2abb8118a759570f1f0db9d39953c63fe26fe06da2be05dff393c",
+        "alpine-devel@lists.alpinelinux.org-5e69ca50.rsa.pub": "66ce9677e9c2a7961d5d7bc5b162ed3114a7aef6d01181073c1f42a9934966eecded2ec09deb210f5a389d434d1641ba35fe3abdd5246b2e97d5a5b26a945c5c",
+        "alpine-devel@lists.alpinelinux.org-60ac2099.rsa.pub": "34514100e502f449dcabe0aa550232c3330ed2f0b789b977eb228d4ac86afc93479474ac005914992a3b47c18ee3eb32ca27ccd0d392700a8f11f47d64a78969",
+        "alpine-devel@lists.alpinelinux.org-616db30d.rsa.pub": "7cea57204a50d72bddff201c509ccbf06773d87062a3ead0a206cc6e4a00e0960f52d21f7cee7aaec6a4abba7a697e2e2e7f630fa1ccef7ee2c33908fca18998",
+        "alpine-devel@lists.alpinelinux.org-66ba20fe.rsa.pub": "383ee8cdd7be983289ac7c31b3d6e8f11dd07008ec615503abad69ff69c96047434ec812a3778b6fe393ed59ff3ac3961a660b29a87febe85667c58493cb9e4b"
+      },
+      "recipeFiles": [
+        {
+          "name": "APKBUILD",
+          "gitBlob": "ce73c58e12d1687ca50e27c962c159aaf99e6180",
+          "bytes": 5259,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-4a6a0840.rsa.pub",
+          "gitBlob": "bb4bdc80fd10d0609f67076f05e17aafdff75415",
+          "bytes": 451,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-5243ef4b.rsa.pub",
+          "gitBlob": "6cbfad7441d0193d6f2f64dfb47797975bcc54b1",
+          "bytes": 451,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-524d27bb.rsa.pub",
+          "gitBlob": "1d34c93e37843fc494ae8d685d08665e844fecba",
+          "bytes": 451,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-5261cecb.rsa.pub",
+          "gitBlob": "83f0658e9ca16c4bad20a219318497313a45b7bb",
+          "bytes": 451,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-58199dcc.rsa.pub",
+          "gitBlob": "2b99a0d195116f2c7ba081747da873f9b74b07d4",
+          "bytes": 451,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-58cbb476.rsa.pub",
+          "gitBlob": "a9ead55ed05182378d50e40ff94f15eac1b40419",
+          "bytes": 451,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-58e4f17d.rsa.pub",
+          "gitBlob": "8f990949b9e70dd3be886664e5c4a41dc67c1ecb",
+          "bytes": 451,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-5e69ca50.rsa.pub",
+          "gitBlob": "097740ebd32935ed9b6b2f9e7bd227320fb4dabd",
+          "bytes": 451,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-60ac2099.rsa.pub",
+          "gitBlob": "2b8a4a93e060a3c03a2e482a0dc959aa06542282",
+          "bytes": 451,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-6165ee59.rsa.pub",
+          "gitBlob": "f2165aebadab1c1e43798f1278c3897d85f16da1",
+          "bytes": 800,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-61666e3f.rsa.pub",
+          "gitBlob": "aa63d81d6625e3b16d87db1946b69466f3bd2095",
+          "bytes": 800,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-616a9724.rsa.pub",
+          "gitBlob": "59c330e9f73cc10ae21bf94062711637141cf81b",
+          "bytes": 800,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-616abc23.rsa.pub",
+          "gitBlob": "915bc566b7429b7ee6ca06b0947163c49d496dda",
+          "bytes": 800,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-616ac3bc.rsa.pub",
+          "gitBlob": "1e49d246902b76996e4eefb52c7ae61cc09f45f9",
+          "bytes": 800,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-616adfeb.rsa.pub",
+          "gitBlob": "bb15efe96d7c95a0602b243ce0848aa42cf80020",
+          "bytes": 800,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-616ae350.rsa.pub",
+          "gitBlob": "0ecbccc2e4aea1d7394ace8f9a896b061a821453",
+          "bytes": 800,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-616db30d.rsa.pub",
+          "gitBlob": "ceffa3ace9c4454c8cde399732ecee535a13efac",
+          "bytes": 800,
+          "mode": "100644"
+        },
+        {
+          "name": "alpine-devel@lists.alpinelinux.org-66ba20fe.rsa.pub",
+          "gitBlob": "e8bb47600fed4bdace8a3c366cd3762aec119933",
+          "bytes": 800,
+          "mode": "100644"
+        }
+      ]
+    },
+    {
+      "origin": "apk-tools",
+      "version": "3.0.9",
+      "aportsCommit": "13685e8f2cf1c103cbba2fb9efcfcf19f4918df0",
+      "remote": [
+        {
+          "name": "apk-tools-v3.0.9.tar.gz",
+          "url": "https://gitlab.alpinelinux.org/alpine/apk-tools/-/archive/v3.0.9/apk-tools-v3.0.9.tar.gz",
+          "sha512": "933f9a3645e225a8e433951e57fce979d68a933b5cc066591f5da35c561c07ea476c0ada184fa81ab8eea1431f9b475735ad68c598072e26c0a74debf65a680f",
+          "downloadUrl": "https://distfiles.alpinelinux.org/distfiles/v3.24/apk-tools-v3.0.9.tar.gz"
+        }
+      ],
+      "sourceChecksums": {
+        "apk-tools-v3.0.9.tar.gz": "933f9a3645e225a8e433951e57fce979d68a933b5cc066591f5da35c561c07ea476c0ada184fa81ab8eea1431f9b475735ad68c598072e26c0a74debf65a680f",
+        "repo-hash-sha1.patch": "6f6442d73d994964d78f06433a611902cbb066a457f3532544278b1422aa0aa276ccec1f2438ea7e93a8a048d3fdbf72ccd9a79d210f44870fda467bc43cb9fd"
+      },
+      "recipeFiles": [
+        {
+          "name": "APKBUILD",
+          "gitBlob": "72465aaf6f71888d9ce866e1906e1b46838a044c",
+          "bytes": 3962,
+          "mode": "100644"
+        },
+        {
+          "name": "repo-hash-sha1.patch",
+          "gitBlob": "33ad944259835f90e0f7dd6b28f78f0f2daa1c89",
+          "bytes": 1245,
+          "mode": "100644"
+        }
+      ],
+      "packageVersion": "3.0.9-r0",
+      "recipeTree": "673ba2e9b8e6af2836712927054e750015130b4f"
+    },
+    {
+      "origin": "busybox",
+      "version": "1.37.0",
+      "aportsCommit": "c3ef5d10e6ef6528852c51f0564963e2f8c1be19",
+      "remote": [
+        {
+          "name": "busybox-1.37.0.tar.bz2",
+          "url": "https://busybox.net/downloads/busybox-1.37.0.tar.bz2",
+          "sha512": "ad8fd06f082699774f990a53d7a73b189ed404fe0a2166aff13eae4d9d8ee5c9239493befe949c98801fe7897520dbff3ed0224faa7205854ce4fa975e18467e",
+          "downloadUrl": "https://distfiles.alpinelinux.org/distfiles/v3.24/busybox-1.37.0.tar.bz2"
+        }
+      ],
+      "sourceChecksums": {
+        "busybox-1.37.0.tar.bz2": "ad8fd06f082699774f990a53d7a73b189ed404fe0a2166aff13eae4d9d8ee5c9239493befe949c98801fe7897520dbff3ed0224faa7205854ce4fa975e18467e",
+        "0001-wget-add-header-Accept.patch": "b148e37fc23d65ac011fa85142fcd645a55171593e889a86743b1557d9be05b6c39e8d0a798a536dfa29d17f71d6fb0b422f031128415b07ddec3c209ce93814",
+        "0002-adduser-default-to-sbin-nologin-as-shell-for-system-.patch": "c725043253cae924b989cfba739d024b172b20a300de63acd26d4ec0624a13b5ea4b07f53cf991c4991cb611454c70ebe5bdb8e1a8e62d5d5d7e2e3823bed2bf",
+        "0003-ash-add-built-in-BB_ASH_VERSION-variable.patch": "e9ba4f56bd0841f6b998f79aaf73a09c4096fec0f817594be294c12a03ba712f1103fb8b0716fcf2fb04f5dc9efa04aa6dc9b61150b3df00b302ab6f9608d313",
+        "0004-Avoid-redefined-warnings-when-buiding-with-utmps.patch": "c6acd1a4cbbc8b7b6c66b20c4cb958c12e887a43edbea35c0c4db3b4139afc5b4246058f503a5aaac0d05badffee93e6bf91111ad0cc856d9f5074baa7194df8",
+        "0005-libbb-sockaddr2str-ensure-only-printable-characters-.patch": "0c4eba3a6690b4989ced7f40a2f2369fe8ca97caa226838bde6412031290722d380a27203c67f8a2bfb3319590c67a0a108f8d8a04cff9add54085bdea520c25",
+        "0006-modinfo-add-k-option-for-kernel-version.patch": "68637265f28f73e1538045bb23f6a585248a73d60eb81b1fb75a67e9946b9f3928ebb6d8794976f724a6f0e0324748e3eafbf1dff5e1c78254200cb3acbc51cd",
+        "0007-nologin-Install-applet-to-sbin-instead-of-usr-sbin.patch": "6a0714d051dc29e39d62271c317455bb7d1b28117f60cdc3e887dddbb38df28ae5c17da8033b4250c1bed76f1e8e29b2c013e87f9d547a5bdf75c4b9433fc2bd",
+        "0008-pgrep-add-support-for-matching-against-UID-and-RUID.patch": "220da5e908ae3c6f836faf8549f5c610e74a76563103152f9d20e2b2ca1663ba7baf803067286684753a2c737427c5fcf317d7da60293412f601b4ca17e77e00",
+        "0009-properly-fix-wget-https-support.patch": "b4697696c2c44f5c2c2be167774784b87f45d7d1433db8ed040ae37a99d01275a2a0b79db7e6314636f76db0f7b69288f1f7d2fb96c097929524d49832ea0913",
+        "0010-fsck-resolve-LABEL-.-UUID-.-spec-to-device.patch": "16e490902496cfe199551432dd3cce480d20d79b98056b6fd5086a5b5a16ace0cda8357d8fb7bdc3e758273c3ec91e416f926c3e54dbeb54136c6853ce23bc7e",
+        "0011-nslookup-sanitize-all-printed-strings-with-printable.patch": "6671165e7dc3546b42edc7cf3304ddb755c707a7c7976bc544f7da6ad974c09bfa5e7cc2e83a98ece8e919808ae73199b19930d390c8ac34527f58f28ba836b6",
+        "0012-ash-exec-busybox.static.patch": "f2a44cf6903d6ecac3bd226b2abb2fbd692f883dc0d296df0a8d2c34350673c51f18d68bc9819d7badbab0541839f4e91361d85f014159af8e0fab82e324f84e",
+        "0013-app-location-for-cpio-vi-and-lspci.patch": "9788eed96fc490ea393e760657b8d8d7a09696e24515e30099dffe8c3d534a6018ca2cf17e689e8740438b2fdcc0c3ed67dc841e6c03f39322d12b60edc66a97",
+        "0014-udhcpc-set-default-discover-retries-to-5.patch": "52094fb50723d924feeb31b86d8b71143505b8d66f6b881c43859c1a346d5a52ef8fb5aa7806f1f1892cbd083b03fc294d1181761eef01ffb564717e121a2300",
+        "0015-ping-make-ping-work-without-root-privileges.patch": "dae2f3a137edcbf31e0afb8565f372a549ba67997c391e755a9f29b4c986219a9516b1e1be589fddf81f136d6c7700c91fb83c46aed74c018a58ab06ea2d0567",
+        "0016-fbsplash-support-console-switching.patch": "6ede756c01ce7fdcd02a38188a86f4cacff4066eb5032bbb716edf8d4eb3e437de767f04cd0ed8a3e915ee10270465be59248f72d2e7a15abc3d865feba0a361",
+        "0017-fbsplash-support-image-and-bar-alignment-and-positio.patch": "85209a0fb5368dfbb831095d381ec135313c26030f3eb4c5df8a40051fa6932e6b49a91965ea745b670efbc7a8e32707a08bfde36c923912f5e67fe2d6bbb1a5",
+        "0018-depmod-support-generating-kmod-binary-index-files.patch": "67a21b4754534b5faceee3da1c24e037e8e259924fd415cdfd5aabfff6c2bea3d15d58cd32c29359bf5b311e666ad1ff01a1ec043be1051ba359c52921449c18",
+        "0019-Add-flag-for-not-following-symlinks-when-recursing.patch": "b74cb8d9c635432f7a2205a91debf023cc4e5fcf5cf8b25e690711afaf24956f772aa70782f266a9b997e16069b828f993a015e93248842808a721e00a8530b7",
+        "0020-udhcpc-Don-t-background-if-n-is-given.patch": "95b82ac5cd0367c15008dd3568ffb68f6489065618fe3f5d04c30650a5492d1314374a3d83b5aeea078b003b43c1b856a0a1b52434fdfe0e3eb299fd44d16a59",
+        "0021-tests-fix-tarball-creation.patch": "65a62f6013d2ee55e0ba32836adf48fd572fe7f931b50bb56bf778673a5ea6883d85c08bda0df4b87f5181433a3663bd15d805f75cdef3974e355a05f5b13c70",
+        "0022-tests-musl-doesn-t-seem-to-recognize-UTC0-as-a-timez.patch": "99f3469a057040b38f4a66053109fb874bac7b4ec0481c515fe675c24ed8f99a89b756fce977ad122edff43aedf722ebdd7e7e475adb5edbae207fdcc4429b5d",
+        "0023-Hackfix-to-disable-HW-acceleration-for-MD5-SHA1-on-x.patch": "d82c99af216d8f4a90cf7dae78ca73ad348fa1c70cd50a65376a768a6426e87071e1036cc9c3ab3606986cc99886b4a4f53685d4f26f3aec20c0cb07df5a936a",
+        "0024-umount-Implement-O-option-to-unmount-by-mount-option.patch": "a67640383d0b02c1a1eb177543270776922c09bdf8ac442d5dfa16ba63b99cf31f105b8db4f5ca21413be1057e55cc4a42314143bea505027d3a36e7e7e786a9",
+        "0025-find-fix-xdev-depth-and-delete.patch": "e6aaa90843082ee01d4a0e14756399bbed386e6ff30ed853bb1420bc351a8a15b773be60d5f86f9a3ddbe5106e08e2b185b44e64a6ef210eb26b270dc32b211f",
+        "0026-awk.c-fix-CVE-2023-42366-bug-15874.patch": "e2c6367162b886654d64a1988e383c05e2792183265c3542d68e535daa5a9509c3e6a42b9aad0367a872fd494089a7b3911e8a438c47db16fbf21b656b030382",
+        "0027-awk-Mark-test-for-handling-of-start-of-word-pattern-.patch": "82b203472b8cdb790c15dbdb5374de45dbe2fcf926c16910b890540278d4ff6bb843fed3a8840a0eb6d340e0eac27ced0c2a4103d37848b51c61e94a3f0436da",
+        "0028-od-Skip-od-B-on-big-endian.patch": "711c92902f4d99863c0433e0670999a456c588cf8a1a4729678244d61607aa82269c1944942617650902ce242fbfe3f9d68593ae0a21e4c17bfc04470f4253ba",
+        "0029-ash-reject-unknown-long-options.patch": "d9625580bdfe7036e0a3e01c33ddffcc8c70737dfa031c9f97a5a45635910dbd5cf3ebb8d28256a10ee7a13efa1e396a93404099db7a5143adf924a953d4cbe7",
+        "0030-hexdump-Skip-a-single-test-on-big-endian-systems.patch": "3b9542d3ec24d9d3fd12b69f60ca1014b49240b92d8517e4467f62b0e266102a73cdac784766a5548a909e08a497c577b1e880604d1859eee18ac455d8bc56b2",
+        "0031-syslogd-fix-wrong-OPT_locallog-flag-detection.patch": "4c2b7d7c623b318087f20b0bef9140cfa3f83111bfc922bba50ddd16edb8844c848c8b93c5d31303b7f253673fbff8ccf3d4ab4b9dad52fde3e04744b0782170",
+        "0032-lineedit-fix-some-tab-completions-written-to-stdout.patch": "ac56a170a31f4329d00155a2a7d3950c4fe365e69e2e6b773a28fe3faa214a1330f0dd910bf0712453f033abc9e8465f9cec80f4e3e820a5d6ffafbf36e503e7",
+        "0033-lineedit-use-stdout-for-shell-history-builtin.patch": "82c328921c4034b561f31fe5da77fd1a03033911bb6f50383b59885b184e010bbf66065ce0d90e0bc138a7608a4a5b51cab5d3598f974ee600d06eb161d5b0c3",
+        "0034-adduser-remove-preconfigured-GECOS-full-name-field.patch": "04ed80099092bf6cafa293d13039184307197d5b71e2052a7b5650eed4364845cca3910e701e01c67a23dff7c9552506b682d553d6bdd7dfcbc7724e98595c4d",
+        "0035-cpio-map-F-to-file-long-option.patch": "8ea1f59ad19c4dc42d95af3a1e590180483689536dbd6932fd500e1f6bcbc1eb12b50e81b6ea26ea93297ce527d1aa850fbe0b23210a3db79039409392935242",
+        "0001-hexdump-fix-regression-with-n4-e-u.patch": "ac026f8b289d1431c46d51a8c512eb0184aa81de1c41971a87c99bcdc5c63c2d9abed412cad20d3032b480d87a52ee2602411149eb5f271fa9d051165a7b8188",
+        "0001-awk-fix-handling-of-literal-backslashes-in-replaceme.patch": "7165661f3972f1800faf8d263126e3f238bb26bb7891230dbaad2d085e49e2ababc555294ecefed9d8ff00d93c8c3963e786db796cf3d03d68bf9e0492305d0c",
+        "0001-tunctl-fix-segfault-on-ioctl-failure.patch": "9548603cbadf690ab31354642ab3f7bef1b9f696df6b661ea644548fb831b2f78a47a9b09b5489aa43da7061dcc6808864d130d053906f44090983f5cb3dc169",
+        "0001-init-add-support-for-separate-reboot-action.patch": "211d8a70b7e40d885e2961bb1a1143af3666901dd81c79d1a5b1ddb1d3c069bd1083417188e35513f9a678791d9cd2a08373c6151596a5162904131e489baf46",
+        "0001-blkdiscard-ship-link-to-sbin-instead-of-usr-bin.patch": "b8b408974dbcf803889786500d37970c3c3fc3ff7b651998616301691c29287e786ecca07a5b959ed31cf22b0c54b9da82385650c3961afb9f7c09233f46f864",
+        "0001-tar-fix-TOCTOU-symlink-race-condition.patch": "906d6c9ff1a9b911997f8ca9debfc07c48c7f5ac8eac51860b076e8483979ea175028f7207cbe878769e58213e8293ada155b03c9691077ce2f6a91820ab319a",
+        "0001-netstat-sanitize-process-names.patch": "bc6dcd9651f02da3d848e8c848b536fe412311f7bdc66ff65912a1aa175c96c8d5336e5a4e21f8a73b76438c9d1bae444736994ec460d5645917fa46273fff88",
+        "0001-tar-fix-16018-masking-of-potentially-malicious-tar-cpio-content.patch": "fa200c556a8b79506aa398e0d81eb2690726860ab15e48ba80c1680abab2a48e9093bf3c5a67dc5d8eef90a3e15e5a873a9eef1047cef0c031b233f8a211ee68",
+        "0001-mount-fix-parsing-proc-mounts-with-long-lines.patch": "626078b2d05c5821e5d23e8cb35c7bb5ea8bd76b54aa49a00844ab698d4b88b7084381b30fe5ce2e3796aa5f3559db16f0cc6a949d70a8725b153f2090999889",
+        "acpid.logrotate": "aa93095e20de88730f526c6f463cef711b290b9582cdbd8c1ba2bd290019150cbeaa7007c2e15f0362d5b9315dd63f60511878f0ea05e893f4fdfb4a54af3fb1",
+        "busyboxconfig": "b45b8a3e3433cb271035135904aa0376d70c397f291c63cd2d4fdf4848998a1e172b21eacbddbb6edf1d2207172318fa18e90646408b2562453d3f80a55c3274",
+        "busyboxconfig-extras": "2f6efba02078647137f0518284c60004bf28d29a77146d488f813c4db6971ccf6ec5157734c521516e6f3aa570c804fe3ed2c69c46a3ef8636c5f88758948eb7",
+        "bbsuid.c": "0becc2186d6c32fb0c401cf7bc0e46268b38ce8892db33be1daf40273024c1c02d518283f44086a313a2ccef34230a1d945ec148cc173f26e6aa9d88a7426e54",
+        "dad.if-up": "afc27da5f95bec3e3ccb5b1fcb5bd80a8317d8753e6c70cc0750d0875313e44bf2e487472c8499d7bbe5afba3e583c75548ccdcff4dcadc94bb791f53fb77ba3",
+        "ssl_client.c": "1c7c78afb274d1316725b22585452efd7de9a80ad326f099f25e34d0877c5d81ced579e2dc795314221e316f58071374f61ee22c6ffd34072266525f65d3614c",
+        "default.script": "6a34185447d48537317379181abc703f47f93f6a5399d8dcb33fcb0d9247c8659ef739b011ec9e16052505d9a5e4950d557d7f5a8236f5744be0b206390e9a10",
+        "udhcpc.conf": "5f9ff70f99a970e88460c0de81a6637d8a82252fba6715e259833f16ed8cbfc3440972b1fa454eb77dbbcd1e244774c96b4eef96f71a2b67a9039a0dd5e6fc1e",
+        "securetty": "38d6ce0dfff65ce7ec644f5d7aca70de943f4d5fb8820c772f5d945926b678de280f19831d3f3d0dc0dcda16812841748b57eaa745b784a5e216a59657afbd71",
+        "acpid-poweroff.sh": "95187d7f4f91a1be353d9c5922238da6ff1f688a1a7366678c10163c683ba7fd82b3fecc71e86e04197aa322322e0152a3cf86b4ceca19dd04e9a9c763fede2f",
+        "acpid.initd": "fcb532233fd7ba8cad302d037b88cff00ee8b96b37c90b34fc823479208cf7cdda48818c972ce2c4703b7283fd58e99ba8a724818f884f3b09eaa7e2d6ffad21",
+        "crond.confd": "34c6f3197064bb91619b899b28a201bd4d920b18bded3845440b2cb36dc6f16cabf447c96878349b16e46c30184cbe48bac00a01c5f7cf1be038c0b7136064c5",
+        "crond.initd": "0e8266b1bf1d533de7531f32b27c815db00378df6e9ee98232ba3b9cb4f3e1770db65290d338ac0745aca52dd99c3c128dde3fa81ed110dd02c4a298a2f62b1b",
+        "klogd.confd": "f9bf43b72142bbb4c0665c1268a3d91586ef8a057dfe64c53b6923815d2db1f669b8080a38311ad89cda0b783a8628700fc5414d834a21d8e48515760bb910f7",
+        "klogd.initd": "50b975ac94722e8584249a73b7f36134cb954ad19716b7f3437a6e2cde2a81465ef153b04a0b8e734fc7971320df71cd8c75e669bb4da86233c1991bc516260f",
+        "ntpd.confd": "b0ba67585f39d83320ed6de183d7463a0e163807b9f3dc6f0baa212236056f22aeb2c5399dfdcd54929eb5ae06a15714c2fed133b5888869ed9d9cf589cef843",
+        "ntpd.initd": "49d3b84e7f3fde1fe4f8d38e74fa175c55e6edd1c82e3e41c5ea368abdeea359207c984c644550bc6f96949e09cd4a8da6a473c495287a163a0248a9bb452411",
+        "rdate.confd": "11b2a71c38c87d95cd19307481b5f05d9aa980f1ee8348a90b14d698a78b5d0109974fef782ae6538177bcf8bb9fc9cd6f8e4a368ff6b6266276745f1394c2e0",
+        "rdate.initd": "a95d03564712803fc58c48534f2fbbf23dd8418ffd3a6a06f840e969627892eea518b4fe17f059850665fc056cedf972c26aee52c309805987fb5c59a710bd30",
+        "syslog.confd": "bf8173ee33a5d2b61cbdbc1b070e599a17a21e5433a0d8aa9beef71e4ac831304076af8e7e58dc594cdee61562329793afdc57af91e5496bf5fffb9b734a3d9c",
+        "syslog.initd": "a13a6add6f7fb10a3a2563391b6f8b68161249147e9f50e6d857c5689123f6d974368ce4f13b8d93312fa38d05f604d67c4c976d8a7eef301af50a3a6ad50c23",
+        "loadkmap.confd": "acbba3385fb2c416362eb9176f24146b617a2e394ee0e00b9eff89350f82468a5ab8396f4f52b0aaf03d341ac6150c73182e808fa3f29a2dc71c69271cdfb811",
+        "loadkmap.initd": "d01dcfcf721cd6cd7ec13c53108745f55c9d3427a6d5b394dd047d2327f48fd145c8364deaff24005723b168b5a33b6528abbcd5d1d8d2e61b37de78133ee4d7",
+        "watchdog.confd": "359af0a4a1841dd6557eaf3e71d39f0d7a2687bad6a8fc6ef436eccf72a40f85c6400a3b7880c7f64d8e460b6af8a0ff3dd5ffc3a4b1aa8eb0d8f7eaf99ee3e4",
+        "watchdog.initd": "53d19009e571dcd3920890c88da815709bfadfffc6946e2dec347d80291622475381a61e9b5cccc15f69f15c0778c192c0112a9f70f379205490b1924ad44a20",
+        "mdev.initd": "6ce0b2a8fe69cc7ea657c5b9076aba51c8f0beeaafa4a887d8673bcc9f9cf8ee40f4b07d2d901ec7a1a1e4f29c150c496559559e803595d0bd487dec56b530a2",
+        "dnsd.initd": "8af4a5652c418274c3f9ea2698d5026ebea78cd6cbd78e7779125d039aa5807fe92a44e70062b53fe6b830c3fe479f0e6d6ee4a61f37cf4814e895cf1b6ea215",
+        "httpd.initd": "b8ffad8394dee7c2613a047cc34d6b7d650b576c6c9c8427c1ecf9148ca57e4cb3ea9fbc13525f104dde8e30bc78fe3ad4747d534b55750f5c76e8f98368cd33",
+        "inetd.initd": "7b286eaba66a4c86366eec38cd94d8547a15bff72923456edf8c683d4e02bf55d85628adbdb7c1c44f3b16b545ea0ca238afa14a73fc1ade0c33ed7e9fcf2b49",
+        "udhcpd.initd": "4a8d1e924284fca730a262fedc3cb76b4f4689a6c650b0c5544b65eeab6cfd9e8eb91f448d9ebbba6efbb056695428c1b26e5eaeb7233bae090676d1789954cc"
+      },
+      "recipeFiles": [
+        {
+          "name": "0001-awk-fix-handling-of-literal-backslashes-in-replaceme.patch",
+          "gitBlob": "3ff61ace0646523576ff583ebdcece18c4563c38",
+          "bytes": 2187,
+          "mode": "100644"
+        },
+        {
+          "name": "0001-blkdiscard-ship-link-to-sbin-instead-of-usr-bin.patch",
+          "gitBlob": "a89dd69b39f0e08c9820b84e1d797c1123674d70",
+          "bytes": 1100,
+          "mode": "100644"
+        },
+        {
+          "name": "0001-hexdump-fix-regression-with-n4-e-u.patch",
+          "gitBlob": "8b714b2eb4858232ab8e3460d03e534f606ec723",
+          "bytes": 1619,
+          "mode": "100644"
+        },
+        {
+          "name": "0001-init-add-support-for-separate-reboot-action.patch",
+          "gitBlob": "fccb39f4927f579a93fe340267a17d4ab50de92a",
+          "bytes": 7263,
+          "mode": "100644"
+        },
+        {
+          "name": "0001-mount-fix-parsing-proc-mounts-with-long-lines.patch",
+          "gitBlob": "85e65967f3c6df4655cbe43faf04a523a21757f9",
+          "bytes": 2098,
+          "mode": "100644"
+        },
+        {
+          "name": "0001-netstat-sanitize-process-names.patch",
+          "gitBlob": "4d7adaf3410747cd0c624ebee46a71cc906d405d",
+          "bytes": 970,
+          "mode": "100644"
+        },
+        {
+          "name": "0001-tar-fix-16018-masking-of-potentially-malicious-tar-cpio-content.patch",
+          "gitBlob": "9ff81d3fb282e737022f2017b576b635b7ab085b",
+          "bytes": 3442,
+          "mode": "100644"
+        },
+        {
+          "name": "0001-tar-fix-TOCTOU-symlink-race-condition.patch",
+          "gitBlob": "4514d6df2a6d4a9762f312865dd6f2e7c66155c4",
+          "bytes": 1103,
+          "mode": "100644"
+        },
+        {
+          "name": "0001-tunctl-fix-segfault-on-ioctl-failure.patch",
+          "gitBlob": "d2b9e307eacdbc7a7a92e33c73d06e3d8e6ffc07",
+          "bytes": 1387,
+          "mode": "100644"
+        },
+        {
+          "name": "0001-wget-add-header-Accept.patch",
+          "gitBlob": "2b2ee3780a3ee8601581cec8762f60faf0b8e69e",
+          "bytes": 3158,
+          "mode": "100644"
+        },
+        {
+          "name": "0002-adduser-default-to-sbin-nologin-as-shell-for-system-.patch",
+          "gitBlob": "e6d8f6ace28b4305c85d97f76949f04299d2491f",
+          "bytes": 789,
+          "mode": "100644"
+        },
+        {
+          "name": "0003-ash-add-built-in-BB_ASH_VERSION-variable.patch",
+          "gitBlob": "5e397b2401ad2542d46017844159f095412fd1e1",
+          "bytes": 3423,
+          "mode": "100644"
+        },
+        {
+          "name": "0004-Avoid-redefined-warnings-when-buiding-with-utmps.patch",
+          "gitBlob": "c17164c85164405a24995096d7d2d6a42a972fea",
+          "bytes": 3226,
+          "mode": "100644"
+        },
+        {
+          "name": "0005-libbb-sockaddr2str-ensure-only-printable-characters-.patch",
+          "gitBlob": "1d37b08e2ebec463f338a31e984190f6823a643d",
+          "bytes": 1313,
+          "mode": "100644"
+        },
+        {
+          "name": "0006-modinfo-add-k-option-for-kernel-version.patch",
+          "gitBlob": "30f342cfdfb48c68504be1148cc4cb701610098d",
+          "bytes": 4906,
+          "mode": "100644"
+        },
+        {
+          "name": "0007-nologin-Install-applet-to-sbin-instead-of-usr-sbin.patch",
+          "gitBlob": "c0a1cb5bb43779455c1a07c3fb5551a0aee54e50",
+          "bytes": 1064,
+          "mode": "100644"
+        },
+        {
+          "name": "0008-pgrep-add-support-for-matching-against-UID-and-RUID.patch",
+          "gitBlob": "bb362304b4bb8c245a48eb7a6b66386d1b60c8e9",
+          "bytes": 4704,
+          "mode": "100644"
+        },
+        {
+          "name": "0009-properly-fix-wget-https-support.patch",
+          "gitBlob": "849bd15b01fce9004397b03e311ebc0b5b53ba41",
+          "bytes": 2560,
+          "mode": "100644"
+        },
+        {
+          "name": "0010-fsck-resolve-LABEL-.-UUID-.-spec-to-device.patch",
+          "gitBlob": "d5dc8b2e44463fddeddf147cf745abca875053a7",
+          "bytes": 1986,
+          "mode": "100644"
+        },
+        {
+          "name": "0011-nslookup-sanitize-all-printed-strings-with-printable.patch",
+          "gitBlob": "3263d61f2a3630875f4a66ee873da4a85edf7df1",
+          "bytes": 2412,
+          "mode": "100644"
+        },
+        {
+          "name": "0012-ash-exec-busybox.static.patch",
+          "gitBlob": "7d49daee94b5b757d1b13cff06a869d8b5bf7329",
+          "bytes": 841,
+          "mode": "100644"
+        },
+        {
+          "name": "0013-app-location-for-cpio-vi-and-lspci.patch",
+          "gitBlob": "b3ee65f19cf1682152bb7009f44cb91510c1edc4",
+          "bytes": 1730,
+          "mode": "100644"
+        },
+        {
+          "name": "0014-udhcpc-set-default-discover-retries-to-5.patch",
+          "gitBlob": "bab8bcd15f2c5b3e912974bddbb9e8be274f9b87",
+          "bytes": 2459,
+          "mode": "100644"
+        },
+        {
+          "name": "0015-ping-make-ping-work-without-root-privileges.patch",
+          "gitBlob": "fc75470021d48c5ad7f723acaf6bef446887fd48",
+          "bytes": 6389,
+          "mode": "100644"
+        },
+        {
+          "name": "0016-fbsplash-support-console-switching.patch",
+          "gitBlob": "8bba26a6d8379bf9198a5dc9a493ad75bf1ff35b",
+          "bytes": 5465,
+          "mode": "100644"
+        },
+        {
+          "name": "0017-fbsplash-support-image-and-bar-alignment-and-positio.patch",
+          "gitBlob": "bec3e08dd5509eabb974a60a33b1d871169f8149",
+          "bytes": 5655,
+          "mode": "100644"
+        },
+        {
+          "name": "0018-depmod-support-generating-kmod-binary-index-files.patch",
+          "gitBlob": "f37b637af3d94a784c6e1de3d60dd223ef11f59c",
+          "bytes": 14161,
+          "mode": "100644"
+        },
+        {
+          "name": "0019-Add-flag-for-not-following-symlinks-when-recursing.patch",
+          "gitBlob": "466bd5646750d677f028356bf0d59b78d4459c3b",
+          "bytes": 2471,
+          "mode": "100644"
+        },
+        {
+          "name": "0020-udhcpc-Don-t-background-if-n-is-given.patch",
+          "gitBlob": "eb76936fa85c891a7cfa02f6004112641915f25c",
+          "bytes": 3578,
+          "mode": "100644"
+        },
+        {
+          "name": "0021-tests-fix-tarball-creation.patch",
+          "gitBlob": "57a89693ae9e0c1e1f37dd7c2ea5ab572f0f730b",
+          "bytes": 1012,
+          "mode": "100644"
+        },
+        {
+          "name": "0022-tests-musl-doesn-t-seem-to-recognize-UTC0-as-a-timez.patch",
+          "gitBlob": "ee49449e7f362e3955e455c1f282e4af216ef218",
+          "bytes": 1258,
+          "mode": "100644"
+        },
+        {
+          "name": "0023-Hackfix-to-disable-HW-acceleration-for-MD5-SHA1-on-x.patch",
+          "gitBlob": "5bf2387d9352cd6ab3e340a57caa1daa9b652d78",
+          "bytes": 1731,
+          "mode": "100644"
+        },
+        {
+          "name": "0024-umount-Implement-O-option-to-unmount-by-mount-option.patch",
+          "gitBlob": "6110c04b29d7468abe4624acfab823a180ed626f",
+          "bytes": 6560,
+          "mode": "100644"
+        },
+        {
+          "name": "0025-find-fix-xdev-depth-and-delete.patch",
+          "gitBlob": "7363ea6df521e46b454018a7ac8027adf13a630f",
+          "bytes": 8172,
+          "mode": "100644"
+        },
+        {
+          "name": "0026-awk.c-fix-CVE-2023-42366-bug-15874.patch",
+          "gitBlob": "1e2bce7c2b142617e8f9c04684f03e1229599d44",
+          "bytes": 926,
+          "mode": "100644"
+        },
+        {
+          "name": "0027-awk-Mark-test-for-handling-of-start-of-word-pattern-.patch",
+          "gitBlob": "2c2931587f947d3c9d9afbd8a6294f90990adbfc",
+          "bytes": 1572,
+          "mode": "100644"
+        },
+        {
+          "name": "0028-od-Skip-od-B-on-big-endian.patch",
+          "gitBlob": "e2747465cc1bc2a4ce8c4b57225f9694f03e4559",
+          "bytes": 785,
+          "mode": "100644"
+        },
+        {
+          "name": "0029-ash-reject-unknown-long-options.patch",
+          "gitBlob": "49b8171bad19780b45bf1b9f66a815e015b04596",
+          "bytes": 1500,
+          "mode": "100644"
+        },
+        {
+          "name": "0030-hexdump-Skip-a-single-test-on-big-endian-systems.patch",
+          "gitBlob": "f1ba3bd7cc859f1fd4a3d66764a450b177531495",
+          "bytes": 1101,
+          "mode": "100644"
+        },
+        {
+          "name": "0031-syslogd-fix-wrong-OPT_locallog-flag-detection.patch",
+          "gitBlob": "efb1410b2280b68f6d39578d1ba9dd18b853bd7a",
+          "bytes": 1225,
+          "mode": "100644"
+        },
+        {
+          "name": "0032-lineedit-fix-some-tab-completions-written-to-stdout.patch",
+          "gitBlob": "c78be1d03cf9d1f1f1082dc328409c46d2ba767b",
+          "bytes": 1551,
+          "mode": "100644"
+        },
+        {
+          "name": "0033-lineedit-use-stdout-for-shell-history-builtin.patch",
+          "gitBlob": "e5238e3e8773c183f34e7126b583c35be6f2e214",
+          "bytes": 1499,
+          "mode": "100644"
+        },
+        {
+          "name": "0034-adduser-remove-preconfigured-GECOS-full-name-field.patch",
+          "gitBlob": "aeb47b83e248a27fd8450be5517331d525f246f8",
+          "bytes": 1602,
+          "mode": "100644"
+        },
+        {
+          "name": "0035-cpio-map-F-to-file-long-option.patch",
+          "gitBlob": "49e6ed2796c5b511595efa0ab57a5eae029385d2",
+          "bytes": 998,
+          "mode": "100644"
+        },
+        {
+          "name": "APKBUILD",
+          "gitBlob": "8b0ce27e089dcabb2b16b78c556ecc65a7c292cb",
+          "bytes": 24569,
+          "mode": "100644"
+        },
+        {
+          "name": "acpid-poweroff.sh",
+          "gitBlob": "7836c5a609795cfd99e7181416be5cf5c7f6b6fc",
+          "bytes": 19,
+          "mode": "100644"
+        },
+        {
+          "name": "acpid.initd",
+          "gitBlob": "ec31833ad7fa3e81591061d9062c4f160f439e68",
+          "bytes": 267,
+          "mode": "100644"
+        },
+        {
+          "name": "acpid.logrotate",
+          "gitBlob": "4cf5fdda97e154c56e55a1d75925fe361a35b2b9",
+          "bytes": 140,
+          "mode": "100644"
+        },
+        {
+          "name": "bbsuid.c",
+          "gitBlob": "24d0d7d3e3abe077b4cdc0615df066f7ca3b6462",
+          "bytes": 2182,
+          "mode": "100644"
+        },
+        {
+          "name": "busybox-extras.post-install",
+          "gitBlob": "dc663a554fd7a8fc1a3c1e15477fae249a399dee",
+          "bytes": 79,
+          "mode": "100644"
+        },
+        {
+          "name": "busybox-extras.pre-deinstall",
+          "gitBlob": "2634c6a31cb022233b8e111d3884e9a768c1f9b9",
+          "bytes": 195,
+          "mode": "100644"
+        },
+        {
+          "name": "busybox.post-install",
+          "gitBlob": "f575396bb1a66c0a4f07c838ee908fc08201cc2d",
+          "bytes": 335,
+          "mode": "100644"
+        },
+        {
+          "name": "busybox.post-upgrade",
+          "gitBlob": "5e3263c7cb6d1b9c32ce2e00a35efc488c922349",
+          "bytes": 1640,
+          "mode": "100644"
+        },
+        {
+          "name": "busybox.trigger",
+          "gitBlob": "4f80847e37adacf84a2ab7f6087fec4656e94647",
+          "bytes": 576,
+          "mode": "100644"
+        },
+        {
+          "name": "busyboxconfig",
+          "gitBlob": "f94784573735b83ad7129c92ef37c170a676bf8e",
+          "bytes": 31637,
+          "mode": "100644"
+        },
+        {
+          "name": "busyboxconfig-extras",
+          "gitBlob": "2345ed1f3d651132d13c7b5b0df7008d0e5583ec",
+          "bytes": 37893,
+          "mode": "100644"
+        },
+        {
+          "name": "crond.confd",
+          "gitBlob": "542af1ed1d75d417aafbe2b14741ef2ce0b3d645",
+          "bytes": 54,
+          "mode": "100644"
+        },
+        {
+          "name": "crond.initd",
+          "gitBlob": "992037210b694e3dd6a849fc2b97fd6351b4c61c",
+          "bytes": 204,
+          "mode": "100644"
+        },
+        {
+          "name": "dad.if-up",
+          "gitBlob": "7903822c8fd25941ea82c12b30ec7a90bf5b710b",
+          "bytes": 285,
+          "mode": "100644"
+        },
+        {
+          "name": "default.script",
+          "gitBlob": "9395587148be2bf89e0fc29cd882de485d7c6531",
+          "bytes": 4010,
+          "mode": "100644"
+        },
+        {
+          "name": "dnsd.initd",
+          "gitBlob": "42e4a34c13a96091c62ea81f6124125a08bddfb1",
+          "bytes": 198,
+          "mode": "100644"
+        },
+        {
+          "name": "httpd.initd",
+          "gitBlob": "bf9573052134f1aa6763fb7cb2c04325c4fb5496",
+          "bytes": 210,
+          "mode": "100644"
+        },
+        {
+          "name": "inetd.initd",
+          "gitBlob": "5ef7b395ff9b2b406ea3f081258bbe9b52251d43",
+          "bytes": 216,
+          "mode": "100644"
+        },
+        {
+          "name": "klogd.confd",
+          "gitBlob": "100deedaac53882975ef8f037f91abd5ab44b0b2",
+          "bytes": 14,
+          "mode": "100644"
+        },
+        {
+          "name": "klogd.initd",
+          "gitBlob": "274b7d969131d6c6ccc2282d9048d92c8a77a18e",
+          "bytes": 280,
+          "mode": "100644"
+        },
+        {
+          "name": "loadkmap.confd",
+          "gitBlob": "2bdbc0608c2a843dff2c498854b7095e1c4269dc",
+          "bytes": 111,
+          "mode": "100644"
+        },
+        {
+          "name": "loadkmap.initd",
+          "gitBlob": "8c6746e896230fddd427820a3977d1a592197155",
+          "bytes": 293,
+          "mode": "100644"
+        },
+        {
+          "name": "mdev.initd",
+          "gitBlob": "630d83777d61314f47cf2ecdf33c02cc54b23551",
+          "bytes": 745,
+          "mode": "100644"
+        },
+        {
+          "name": "ntpd.confd",
+          "gitBlob": "c5b4c1c1d435f7c360bc047dac623e3469912a13",
+          "bytes": 106,
+          "mode": "100644"
+        },
+        {
+          "name": "ntpd.initd",
+          "gitBlob": "17ca150e9e91db826f0080ed507357d307b67d3b",
+          "bytes": 305,
+          "mode": "100644"
+        },
+        {
+          "name": "rdate.confd",
+          "gitBlob": "03eadfdb1fbcba276898135d23b6d2da492038fa",
+          "bytes": 48,
+          "mode": "100644"
+        },
+        {
+          "name": "rdate.initd",
+          "gitBlob": "708429f17bb025adc6eba9638f182011f6867d71",
+          "bytes": 253,
+          "mode": "100644"
+        },
+        {
+          "name": "securetty",
+          "gitBlob": "f33a1c15c821d17233d2813606d69b6f3b523fa7",
+          "bytes": 156,
+          "mode": "100644"
+        },
+        {
+          "name": "ssl_client.c",
+          "gitBlob": "45c62a5c80b64f3ef212d76d7cdd11a14b3013b1",
+          "bytes": 3418,
+          "mode": "100644"
+        },
+        {
+          "name": "syslog.confd",
+          "gitBlob": "2f00667118c696126cdc6266f0a98c9dbd19e6ad",
+          "bytes": 18,
+          "mode": "100644"
+        },
+        {
+          "name": "syslog.initd",
+          "gitBlob": "3b20345d7065a89aeca61212f0c9d8f9d5357d59",
+          "bytes": 292,
+          "mode": "100644"
+        },
+        {
+          "name": "udhcpc.conf",
+          "gitBlob": "0407c553ffb5ab4ac52f9a14a4c2bddd1b4365c1",
+          "bytes": 287,
+          "mode": "100644"
+        },
+        {
+          "name": "udhcpd.initd",
+          "gitBlob": "e4dabd5b343f0fc717990a8d9372dec4d6846765",
+          "bytes": 202,
+          "mode": "100644"
+        },
+        {
+          "name": "watchdog.confd",
+          "gitBlob": "5cfd2c2cc40ae9a6d0cd96ac7d993d000b6a8564",
+          "bytes": 40,
+          "mode": "100644"
+        },
+        {
+          "name": "watchdog.initd",
+          "gitBlob": "d87210044a0d1c73908dc06ee34acc6613bb84a3",
+          "bytes": 315,
+          "mode": "100644"
+        }
+      ],
+      "packageVersion": "1.37.0-r31",
+      "recipeTree": "873d57bf7455f5634d3ddf2731ab13062986771d"
+    },
+    {
+      "origin": "ca-certificates",
+      "version": "20261020",
+      "aportsCommit": "e78f5987166c6ffbe23f6472e2e8f040298fe2da",
+      "remote": [
+        {
+          "name": "ca-certificates-20261020.tar.bz2",
+          "url": "https://gitlab.alpinelinux.org/alpine/ca-certificates/-/archive/20261020/ca-certificates-20261020.tar.bz2",
+          "sha512": "d28eb01751b1a914ffb5d8cb99e662f0a35a95148c21dcf98de1ab3108b54db9714a99472d07715023867f4f76a21f2a79a2bc1c7e9876ce5167fdd865ad2dd7",
+          "downloadUrl": "https://distfiles.alpinelinux.org/distfiles/v3.24/ca-certificates-20261020.tar.bz2"
+        }
+      ],
+      "sourceChecksums": {
+        "ca-certificates-20261020.tar.bz2": "d28eb01751b1a914ffb5d8cb99e662f0a35a95148c21dcf98de1ab3108b54db9714a99472d07715023867f4f76a21f2a79a2bc1c7e9876ce5167fdd865ad2dd7"
+      },
+      "recipeFiles": [
+        {
+          "name": "APKBUILD",
+          "gitBlob": "c76805bafbc2a5867c1fe67aa0437573022a36fd",
+          "bytes": 2520,
+          "mode": "100644"
+        },
+        {
+          "name": "ca-certificates.post-deinstall",
+          "gitBlob": "10d219f03f526641af8a366db975b010b3c260e1",
+          "bytes": 137,
+          "mode": "100644"
+        },
+        {
+          "name": "ca-certificates.trigger",
+          "gitBlob": "0ed2ac4980c97739fb6addfbf41a5700c6d286a1",
+          "bytes": 67,
+          "mode": "100644"
+        }
+      ],
+      "packageVersion": "20261020-r0",
+      "recipeTree": "cf049142e972ade53e9a4d9afbdaeb6b0a2cf277"
+    },
+    {
+      "origin": "gcc",
+      "version": "15.2.0",
+      "aportsCommit": "423a8ad043d07f2c7546c8ec3e2b0384cda360ae",
+      "remote": [
+        {
+          "name": "gcc-15.2.0.tar.xz",
+          "url": "https://gcc.gnu.org/pub/gcc/releases/gcc-15.2.0/gcc-15.2.0.tar.xz",
+          "sha512": "89047a2e07bd9da265b507b516ed3635adb17491c7f4f67cf090f0bd5b3fc7f2ee6e4cc4008beef7ca884b6b71dffe2bb652b21f01a702e17b468cca2d10b2de",
+          "downloadUrl": "https://distfiles.alpinelinux.org/distfiles/v3.24/gcc-15.2.0.tar.xz"
+        }
+      ],
+      "sourceChecksums": {
+        "gcc-15.2.0.tar.xz": "89047a2e07bd9da265b507b516ed3635adb17491c7f4f67cf090f0bd5b3fc7f2ee6e4cc4008beef7ca884b6b71dffe2bb652b21f01a702e17b468cca2d10b2de",
+        "0001-posix_memalign.patch": "fd5cebc5deb1d588583424acbc1b5a6d8d6f5b1bfa9f4bdbc082cfd406723f423d87011ee30e04ed18128a7ed8021cbfc9262becff5419125dc1afb6f407defa",
+        "0002-gcc-poison-system-directories.patch": "6634004cb9feea9ee0d063d6b6984d7db3b10c692b6139bb99169a4f2d74f0e10b5ca0ab31ce346ffef34b8eb9c3f536aa4d94bce1b27f8e0b8a9fc5cc4b7057",
+        "0003-specs-turn-on-Wl-z-now-by-default.patch": "37e089791dbcbad73af866b662cda611dc0970d93e28251c7a9aa898db3b96446654e8b778d7866eb8550ba7f4a57cf22e8514d562bfed0c66613e65550d9c85",
+        "0004-Turn-on-D_FORTIFY_SOURCE-2-by-default-for-C-C-ObjC-O.patch": "d4d5bfeb20a9fac968f37497d86d7eff4a9ac863e015dadbffae24c08236f5efde69b615d95191e2546672ce2d4b30d3627528c64a83fc64b715e8fa6fd4c372",
+        "0005-On-linux-targets-pass-as-needed-by-default-to-the-li.patch": "4806687c806154dd3d5423ea9ef1203db344dfb8fd21f3eb3543d9f05f4dc01aacc4f012f45db8e890eeddc7b1c75ec06a6b29e29a1ef7b9ec6f853d1854cfd0",
+        "0006-Enable-Wformat-and-Wformat-security-by-default.patch": "6b225df0dd76339b06d5efbe07edd6648391a7b9415a219041189c35c084ceffe8fb96b2660d60d62099e7afdfeb8e053622a2b6660d2e8a13adb924f4bc8c8a",
+        "0007-Enable-Wtrampolines-by-default.patch": "e419b7f20a74384bfb1ac792e3625f9bfe69f8031c2c0beb23f4015df9d48a6c6f107d89bea3c20fa56309b022637863c13e90c1565d027eb47c08154389b7a0",
+        "0008-gcc-disable-SSP-on-ffreestanding-nostdlib-and-nodefa.patch": "e6307eec09196900bcd2c0154a62d6694576b4da48a1cf901750b97b4603cd694c4daee2476c33bce09f10bee92a72749face835eb18fbf2c2a50aa1dd251572",
+        "0009-gcc-params-set-default-ssp-buffer-size-to-4.patch": "969797f99602c119e1632f0c5be02a566be5fb4c7e59affefb5eb6084a06b97120d99d5ee63fef0dab6c0278c7cecf1d8caa53521cc5b6622de2aaa7deabf86e",
+        "0010-Ensure-that-msgfmt-doesn-t-encounter-problems-during.patch": "c15f062790367c9e786a4933deec33931438680176ec752b172c2a0504463a23d588ead4350d32e474603750ceb130ba0ccadfcde601bcf8e2eabca5af8322d0",
+        "0011-Don-t-declare-asprintf-if-defined-as-a-macro.patch": "03a1012f1022cd68cf08440428e7d6cbf65ea2184e4a088a55976f34af627d80f42f15f713841ec9cbfc4afa39117d4fc384c3f27a4f9ad0ff3947bd45b71c4a",
+        "0012-libiberty-copy-PIC-objects-during-build-process.patch": "8f098de9fcf4bbece0923dc4a2acfc67cf751c1d5c007535c5d88b8637a4482c1a42d5721a2760127498e327f6983bbc865a592a8e0db9ef7efc0e36b6d4102f",
+        "0013-libgcc_s.patch": "bbe2b561b5288ca724af37353e17b413df8bf247bce724391e75373aee5cdcdb85e6489d51622c11f4041ed8f317278cf687aee14dfc8756398f03f1a796feb9",
+        "0014-nopie.patch": "ae34ca2bc5a53ed1c832651e3f6425ca29b5873f1e112b45613277fb9611693be41986d5879593f09149777e3e57d04ba17b142c43eaa990375d31e4e0b4adde",
+        "0015-ada-fix-shared-linking.patch": "2c91a1eadf7236efff42eb53037862a342807596e37c6cc3c270d25c2d89078bf8db68bb2e93e57a8ad39b3af825e33db72e2f48a6311951fff53776933bc48c",
+        "0016-build-fix-CXXFLAGS_FOR_BUILD-passing.patch": "1366d696a952ed35e5e56ab5bd1eba67e58a8ce752c0ef7e7fe4ad3eef44f25ce6016342d11add9548f9e719dc9ee0772064dda68784257a1a3234ae5957f3fb",
+        "0017-add-fortify-headers-paths.patch": "af739373285e89a4ab0000042b537ff7197b0b366019b56991008c43f3d2b76709d472841cda40e9fb61e6f0dacc0fe8c6b888abb31f393ec1a87acc1c0585b3",
+        "0018-Alpine-musl-package-provides-libssp_nonshared.a.-We-.patch": "c18f3eef4d7d6fcbfa64570edb71157a62dad1f3d7276f10fe3424e49caa33f57a0a5952f03189199472802a2dd966e4832789685a94911fe9a86bb1fd6c1d50",
+        "0019-DP-Use-push-state-pop-state-for-gold-as-well-when-li.patch": "341d39a40ffd896db152863c717798c6885bdde44c9ac645c5d099c2364cbd8f6f526f97cc98302c420682cb5d6d88bbe28d838c7141456f2ba5581f3edfd64f",
+        "0020-aarch64-disable-multilib-support.patch": "e603652f341909820789a2cec173b8e547ee607b040863f1745b998b8a69d51cb412a4ac55d2c9e3c5192cc298f6288f9dd48fa06fe53ba8f6b1cabbe61c997a",
+        "0021-s390x-disable-multilib-support.patch": "26819f3c3a5844c96cee89fc9766a4f8153e7bb22f6296c6c9fd6a13d45648e3f6c7059397ad7e5be66f55addc21054614b38f480b52a7c9a967cf389735644a",
+        "0022-ppc64-le-disable-multilib-support.patch": "8e6e6ed84c8cb39ecc35ad0986a91168fedbae2426c8ec1c83dec85a293777e0ec29eac13130193b1bdc2d98b6ffa180abf574dad70740d4720b4bfdab992ab8",
+        "0023-x86_64-disable-multilib-support.patch": "264eaa54a76ec5a12294d91ad2f995eddac9210a569ba85aef27176cb015354aa427840bb22f1e3ba2f7761f6f85cc98ddb3b00584b295c6a10a9770c59a2607",
+        "0024-riscv-disable-multilib-support.patch": "47a1a407298b6c259d7faff774f26e4843c9d3764362d74230e7d3f77c46ea8bb51211e09a66bb51c04a9f276ea5b07570fb52312fdb1d354c72a0343bc40c57",
+        "0025-always-build-libgcc_eh.a.patch": "b86fcf40e75861bdffb00069d3a0c9cec3fe8042d49d6ce2beae48ffeadccc576b8ab36e5a85421db5cffeb080a75f3a66dbcbb825d7f4462d40ec621964efe3",
+        "0026-ada-libgnarl-remove-use-of-glibc-specific-pthread_rw.patch": "1425543ce064bfd8e33d7e6e07f45cc16d94f156adcfe190c842722652d5ea0c9ba60f6a3e1b444bb0e5bc906ec4f9ca54720b306f274b441600b79bff47dc57",
+        "0027-ada-libgnarl-use-posix_openpt-instead-of-glibc-speci.patch": "b8851d0e7fc66201e323007f7c1d702ea8a0d0405aa5945621128ebfb93afd967ec8b3ab6fd4ea779ec10dca2a32e1797f7a2622124ccf8ace2a7596f66ff0bf",
+        "0028-ada-libgnarl-adaint-fix-sched.h-inclusion-for-musl.patch": "12b09a171d61406a2bfa10bb25398cee8c92676b12506afe7aace7028e94cbf8d7df25f62ff7af07e8ed471c6edd3ab7811fa51dfaf3a221a6b367858b1f032c",
+        "0029-configure-Add-enable-autolink-libatomic-use-in-LINK_.patch": "15bed06ee74a36e9f21f4b29d7bce9c4188769abb6391560e13ea6b165da51f5ae908e141de7510d3d7eec6b998d0fc53de1042fdb7bd056efa703d230a683b4",
+        "0030-configure-fix-detection-of-atomic-builtins-in-libato.patch": "4c5501256669fd33527a5394eaa4b84451ee341a943dd24a179b661d3c53ef70e87ed5d5f3e76c6c3f9cb79cb5d120ea40101278a7b9d04a55d9405e4cbf9796",
+        "0031-libstdc-do-not-throw-exceptions-for-non-C-locales-on.patch": "eecc77e2a9cf956fd752693ad7f8ff8253a7bb557e00564bb488bbc1deac895e63104cc1182a0bdd700e440763f4a72e29876f560e13e4f5e6de2a1d9438c2f6",
+        "0032-gdc-unconditionally-link-libgphobos-against-libucont.patch": "2b09f90d9cb417170060c8ce198bd4aa2e4ef163286c8f24f6e6c5a673ae80f5a883b078b1a5dd5fa71bc1502e08c886687072694da039eb82baa1ea1948ac2c",
+        "0033-druntime-link-against-libucontext-on-all-platforms.patch": "99c74242b6d79e6a814f1199b9fb0b56c6a43eb93e5d1a79b674cea750bb025363cdd1505d05cd2195a43c918831fa586c427556ee5bc826aa79cd82e7ee1c24",
+        "0034-libgnat-time_t-is-always-64-bit-on-musl-libc.patch": "4f8f7876bf8647cda47cbd2b145ff31efe2a7ac21c012c4134174f93482aad1fbab2592c66aacc3b05fccd1a694ff97511b794139db4aac719e243c114373240",
+        "0035-libphobos-do-not-use-LFS64-symbols.patch": "0069da1d8cb9adb9bab081a34fec680a9ebb1236e606a2497e4565e99bef434518a0f06474a9a1fdfa70811ed3da5d35ca95d267268328f2764bf41c50e924de",
+        "0036-libgo-fix-lfs64-use.patch": "1cbe85b63ef13bdf2804bfd3173998a6e86752d8ffc09d4cc75a9ba80b98aec5a04efa732bce97a2f50a90c84b92c442ca8f6639841fe7d6618f928ea65916a6",
+        "0037-loongarch-disable-multilib-support.patch": "98fcd5b893a1646edab961a5d00246151c47b449f8eca99c51f4026ffdb53f60b5b9f6426437c0a6411342da10db8983e20337a29cd46ed22b70e0478573ea30",
+        "0038-static-PIE-ensure-static-reaches-the-linker.patch": "1ad48e39dab351b7bb3e17d9b4b8b78e7de7c736e212638c9d6874b1dde0360dcfc85586c39f515fbd2a6d9910fedc4f0c6ad7ff652b10a5c288c47173671ec7",
+        "0039-except-Don-t-use-the-cached-value-of-the-gcc_except_.patch": "9f4c3fa0d17cfcd72626bdbaf51992ff3018f878d673ab19b9056047ee2630b581e5a5a4d4857444f08ba9bcdb0fc94f90dcda6180816e39690d1652843f0d8a",
+        "0040-ada-libgnat-use-stub-symbolic-module-name-functions.patch": "d166475e340c91bbb24cf257240aab37129b04f2609e5ce323b530ab83853a4c34c525e0072c15732717f1681db07e6b3b0a4d268720c31f460435ccf4c99b7f",
+        "0041-ada-libgnat-recognize-linux-musleabi-and-linux-muslg.patch": "c717764ef52c0226a23cbf434654cdefa6cbf38ec625648575d9143c5513b16d8914c25015db743033b8a46ac5b2c33ab75e1b67076128d67bb1319e5a83dd85",
+        "0042-libsanitizer-struct_sock_fprog_sz.patch": "5dd452a80c496a587a8826b04a4917045e4028631606e85cabd8e87e0460642d188a2156c4e0cf37a5d88e66ebd08a08393d48a6065045178c69eaba2edd063e",
+        "0001-tree-object-size.cc-Fix-assert-constant-offset-in-ch.patch": "c3b64b05332bd4dd7fad3fff3cacd4f9de0512943f1548c6f1205fab1a74c83622024f30471805f57d625198cc32f647b32172914528fd5605d0bf61cb0c3ff1",
+        "0001-LoongArch-Only-allow-valid-binary-op-when-optimize-c.patch": "e91873055550eba051d9297bec5c6acd27abb9ee6ce8911cdd04b5faf37d77b6b2a7607ec588d2863f13f14b48af9398cb4ac42443d8567bfa5037dc6bd50404"
+      },
+      "recipeFiles": [
+        {
+          "name": "0001-LoongArch-Only-allow-valid-binary-op-when-optimize-c.patch",
+          "gitBlob": "d10f4e51e62b9693797e6172be097286e7366e67",
+          "bytes": 4028,
+          "mode": "100644"
+        },
+        {
+          "name": "0001-posix_memalign.patch",
+          "gitBlob": "bbc2db9ca8cf758f088410b60b63c0138abba51b",
+          "bytes": 1435,
+          "mode": "100644"
+        },
+        {
+          "name": "0001-tree-object-size.cc-Fix-assert-constant-offset-in-ch.patch",
+          "gitBlob": "cc814d0d465bbb6e6c678cf0dd828a89540292ba",
+          "bytes": 2397,
+          "mode": "100644"
+        },
+        {
+          "name": "0002-gcc-poison-system-directories.patch",
+          "gitBlob": "de66b72d0d97f347fd7c140119b2a73c451073b9",
+          "bytes": 9509,
+          "mode": "100644"
+        },
+        {
+          "name": "0003-specs-turn-on-Wl-z-now-by-default.patch",
+          "gitBlob": "be6a3dc60b217b4ddfddbad05ab75d121bbb4e29",
+          "bytes": 1644,
+          "mode": "100644"
+        },
+        {
+          "name": "0004-Turn-on-D_FORTIFY_SOURCE-2-by-default-for-C-C-ObjC-O.patch",
+          "gitBlob": "cf5150f17fe2b8538f404479e23c1b37bd8817a3",
+          "bytes": 1774,
+          "mode": "100644"
+        },
+        {
+          "name": "0005-On-linux-targets-pass-as-needed-by-default-to-the-li.patch",
+          "gitBlob": "630e5f8ada9618b9b06468b24b0a780079a96961",
+          "bytes": 12097,
+          "mode": "100644"
+        },
+        {
+          "name": "0006-Enable-Wformat-and-Wformat-security-by-default.patch",
+          "gitBlob": "501b8de245ab9739ba846bd414e1622bdf6e30a2",
+          "bytes": 1437,
+          "mode": "100644"
+        },
+        {
+          "name": "0007-Enable-Wtrampolines-by-default.patch",
+          "gitBlob": "2179ff434d19e4661791e03183bd2c6ad6950a75",
+          "bytes": 743,
+          "mode": "100644"
+        },
+        {
+          "name": "0008-gcc-disable-SSP-on-ffreestanding-nostdlib-and-nodefa.patch",
+          "gitBlob": "d947fcc86b91eb2e7c51d7a408889767ac382838",
+          "bytes": 1253,
+          "mode": "100644"
+        },
+        {
+          "name": "0009-gcc-params-set-default-ssp-buffer-size-to-4.patch",
+          "gitBlob": "d0c159df89bb2e1e2c7dfe913fc53c6ab58fd1d6",
+          "bytes": 963,
+          "mode": "100644"
+        },
+        {
+          "name": "0010-Ensure-that-msgfmt-doesn-t-encounter-problems-during.patch",
+          "gitBlob": "3ee3ad168a58a9fc1c8d68eb691446a5e1f463da",
+          "bytes": 1771,
+          "mode": "100644"
+        },
+        {
+          "name": "0011-Don-t-declare-asprintf-if-defined-as-a-macro.patch",
+          "gitBlob": "2f12bd585a8a5fbb710d36e005931917c2d499f0",
+          "bytes": 895,
+          "mode": "100644"
+        },
+        {
+          "name": "0012-libiberty-copy-PIC-objects-during-build-process.patch",
+          "gitBlob": "e907d44c12283b9db72a82b5b9e875a6c90cc310",
+          "bytes": 716,
+          "mode": "100644"
+        },
+        {
+          "name": "0013-libgcc_s.patch",
+          "gitBlob": "7f0987263de74e5831dadf503c6e7571a7f4f5ee",
+          "bytes": 2143,
+          "mode": "100644"
+        },
+        {
+          "name": "0014-nopie.patch",
+          "gitBlob": "303c80d2a6255294d53896062376219bf8ffbe24",
+          "bytes": 2455,
+          "mode": "100644"
+        },
+        {
+          "name": "0015-ada-fix-shared-linking.patch",
+          "gitBlob": "09fbaa4d7241c0d25eddc726257e9d228ef714e6",
+          "bytes": 1614,
+          "mode": "100644"
+        },
+        {
+          "name": "0016-build-fix-CXXFLAGS_FOR_BUILD-passing.patch",
+          "gitBlob": "d7b8b1677efef9c5a0a57c5d1d8180ff213cda83",
+          "bytes": 696,
+          "mode": "100644"
+        },
+        {
+          "name": "0017-add-fortify-headers-paths.patch",
+          "gitBlob": "12e81eb8172a6051e2ea6716a6f436c99096ffc0",
+          "bytes": 821,
+          "mode": "100644"
+        },
+        {
+          "name": "0018-Alpine-musl-package-provides-libssp_nonshared.a.-We-.patch",
+          "gitBlob": "21e51a8250bb91e49ebe61c4553de78621f76460",
+          "bytes": 1204,
+          "mode": "100644"
+        },
+        {
+          "name": "0019-DP-Use-push-state-pop-state-for-gold-as-well-when-li.patch",
+          "gitBlob": "a0585d80e5aa7822f3a2a567d63e48973904b863",
+          "bytes": 3024,
+          "mode": "100644"
+        },
+        {
+          "name": "0020-aarch64-disable-multilib-support.patch",
+          "gitBlob": "5f250f594ae804ca80952f6370e3992538855889",
+          "bytes": 1044,
+          "mode": "100644"
+        },
+        {
+          "name": "0021-s390x-disable-multilib-support.patch",
+          "gitBlob": "e994c6979d7a0900814b9922de2f654563fcf343",
+          "bytes": 885,
+          "mode": "100644"
+        },
+        {
+          "name": "0022-ppc64-le-disable-multilib-support.patch",
+          "gitBlob": "229fce89b96303ea5af9879c58f8aa1eb9ff5c92",
+          "bytes": 3467,
+          "mode": "100644"
+        },
+        {
+          "name": "0023-x86_64-disable-multilib-support.patch",
+          "gitBlob": "2a56f0cd71c4c0531f9e727c32eb35c41d7c880b",
+          "bytes": 1066,
+          "mode": "100644"
+        },
+        {
+          "name": "0024-riscv-disable-multilib-support.patch",
+          "gitBlob": "b43715953c8882a4eb108cb77590912987ee51ff",
+          "bytes": 3506,
+          "mode": "100644"
+        },
+        {
+          "name": "0025-always-build-libgcc_eh.a.patch",
+          "gitBlob": "4246607270657ffdfd4b5a41edc2c3f61c898c92",
+          "bytes": 1616,
+          "mode": "100644"
+        },
+        {
+          "name": "0026-ada-libgnarl-remove-use-of-glibc-specific-pthread_rw.patch",
+          "gitBlob": "d5f15cbd043b7e642ae59428814a3a26fd4d417a",
+          "bytes": 2299,
+          "mode": "100644"
+        },
+        {
+          "name": "0027-ada-libgnarl-use-posix_openpt-instead-of-glibc-speci.patch",
+          "gitBlob": "cba042707803698e6a00bd74deb02eab7ad49aa9",
+          "bytes": 1790,
+          "mode": "100644"
+        },
+        {
+          "name": "0028-ada-libgnarl-adaint-fix-sched.h-inclusion-for-musl.patch",
+          "gitBlob": "5dca2c462acfc183f728d99f0ae7bc8a8aea2ccf",
+          "bytes": 1365,
+          "mode": "100644"
+        },
+        {
+          "name": "0029-configure-Add-enable-autolink-libatomic-use-in-LINK_.patch",
+          "gitBlob": "ceec7a739375a4c339ff0f86d3cdf30d3e4c4fd8",
+          "bytes": 9253,
+          "mode": "100644"
+        },
+        {
+          "name": "0030-configure-fix-detection-of-atomic-builtins-in-libato.patch",
+          "gitBlob": "f17da9cdb22b838d1c462e53d6000ffb942806ca",
+          "bytes": 2150,
+          "mode": "100644"
+        },
+        {
+          "name": "0031-libstdc-do-not-throw-exceptions-for-non-C-locales-on.patch",
+          "gitBlob": "5c5f63823d9a3e3f8e2370f9261fa3fa2e8ba18f",
+          "bytes": 941,
+          "mode": "100644"
+        },
+        {
+          "name": "0032-gdc-unconditionally-link-libgphobos-against-libucont.patch",
+          "gitBlob": "51171b4ad057220eddb49b586a74b6c77341284b",
+          "bytes": 827,
+          "mode": "100644"
+        },
+        {
+          "name": "0033-druntime-link-against-libucontext-on-all-platforms.patch",
+          "gitBlob": "d2c608a51a23c4a6083960a4bdc8620784e84297",
+          "bytes": 2056,
+          "mode": "100644"
+        },
+        {
+          "name": "0034-libgnat-time_t-is-always-64-bit-on-musl-libc.patch",
+          "gitBlob": "8f21b102951ac067599f244cf4e880c84b50bbac",
+          "bytes": 851,
+          "mode": "100644"
+        },
+        {
+          "name": "0035-libphobos-do-not-use-LFS64-symbols.patch",
+          "gitBlob": "89fc98ee602949e4807573e9a3e6c1400d3abf64",
+          "bytes": 1081,
+          "mode": "100644"
+        },
+        {
+          "name": "0036-libgo-fix-lfs64-use.patch",
+          "gitBlob": "f5a64d64473bbfa643b509d238865ff6464f670e",
+          "bytes": 6724,
+          "mode": "100644"
+        },
+        {
+          "name": "0037-loongarch-disable-multilib-support.patch",
+          "gitBlob": "f17391cdb249fc8b3e1019933ba32bac72f1890c",
+          "bytes": 1227,
+          "mode": "100644"
+        },
+        {
+          "name": "0038-static-PIE-ensure-static-reaches-the-linker.patch",
+          "gitBlob": "09162097520db7bb644728168cb96bdf76253f2a",
+          "bytes": 4030,
+          "mode": "100644"
+        },
+        {
+          "name": "0039-except-Don-t-use-the-cached-value-of-the-gcc_except_.patch",
+          "gitBlob": "b8a3620026a0d16d6a13871fa52c6afbe314c9be",
+          "bytes": 2830,
+          "mode": "100644"
+        },
+        {
+          "name": "0040-ada-libgnat-use-stub-symbolic-module-name-functions.patch",
+          "gitBlob": "901daa7df648aefd7c0dc3c30b6729a573c92dd6",
+          "bytes": 7320,
+          "mode": "100644"
+        },
+        {
+          "name": "0041-ada-libgnat-recognize-linux-musleabi-and-linux-muslg.patch",
+          "gitBlob": "617bab5d595947410e9351411ce2788b33363c72",
+          "bytes": 817,
+          "mode": "100644"
+        },
+        {
+          "name": "0042-libsanitizer-struct_sock_fprog_sz.patch",
+          "gitBlob": "5b7971d1ef538530a91a05866ff4e4a3d17e484a",
+          "bytes": 1345,
+          "mode": "100644"
+        },
+        {
+          "name": "APKBUILD",
+          "gitBlob": "56963453e7d741a190e1c3f249810f1e13959835",
+          "bytes": 31920,
+          "mode": "100644"
+        }
+      ],
+      "packageVersion": "15.2.0-r5",
+      "recipeTree": "f0d2c5afa42e2527e4456601614f35c63697606d"
+    },
+    {
+      "origin": "gettext",
+      "version": "1.0",
+      "aportsCommit": "a0b12dbf67fb047e79a1b76c6dfe6f2904d0d391",
+      "remote": [
+        {
+          "name": "gettext-1.0.tar.xz",
+          "url": "https://ftp.gnu.org/gnu/gettext/gettext-1.0.tar.xz",
+          "sha512": "fa657faf5685dae7121a9b0293d3308a3910a72b90943a7a493b88cf88e95f29c5758e1573320169fe9beac6f101ef76f4165a279a7f3294155d7a773e2fa09f",
+          "downloadUrl": "https://distfiles.alpinelinux.org/distfiles/v3.24/gettext-1.0.tar.xz"
+        }
+      ],
+      "sourceChecksums": {
+        "gettext-1.0.tar.xz": "fa657faf5685dae7121a9b0293d3308a3910a72b90943a7a493b88cf88e95f29c5758e1573320169fe9beac6f101ef76f4165a279a7f3294155d7a773e2fa09f",
+        "cwd.patch": "31796534e40c1569b08cf48e25375ca1d0f439df8aa0d24283769d52a290e28522760128f11f5bd04217605974ae1fdee9557ec189ed32b11b2a45b4af3b0f4a",
+        "skip-tests-musl.patch": "a16963f804ce4abe8480da211228f7b24a0715d6ef3ff7d5e5c58a1387d6c4260ee237864081b05b164f082ef199a592494ce691dd0c96c61978e4c451707c7a",
+        "skip-meaningless-pthread-rwlock-test.patch": "e426f3a3bc39193e0dbf8d51e0019e672ddcab07b277281a1912fd0ec6a3fea5eb59bc4daeed465e152c567b05d6c3b457e4bc415a8d36dd768725fb72daf817",
+        "skip-unicode-16-tests.patch": "54a7b3fcb82bfb2859e58032c31833dde23f2583551f430582a930e39b1b766cda4d339994f0de282b681a40c1965e77a2a1ad031ab3df2877c7c591fa780096"
+      },
+      "recipeFiles": [
+        {
+          "name": "APKBUILD",
+          "gitBlob": "9073071949d2d9b3204a4231ce8cc55ecfd5e06a",
+          "bytes": 3072,
+          "mode": "100644"
+        },
+        {
+          "name": "cwd.patch",
+          "gitBlob": "cebc626bc9afb7356bb06b722d375f518b392451",
+          "bytes": 361,
+          "mode": "100644"
+        },
+        {
+          "name": "skip-meaningless-pthread-rwlock-test.patch",
+          "gitBlob": "abe65cadf2ad6a4f91b76b806a1745804120c7e7",
+          "bytes": 522,
+          "mode": "100644"
+        },
+        {
+          "name": "skip-tests-musl.patch",
+          "gitBlob": "8b3e92141031337b9bd01a8712adc99a362d006e",
+          "bytes": 2214,
+          "mode": "100644"
+        },
+        {
+          "name": "skip-unicode-16-tests.patch",
+          "gitBlob": "f1c6dc67a1318ea5402ef7dae7aff9766d0959b5",
+          "bytes": 2822,
+          "mode": "100644"
+        }
+      ],
+      "packageVersion": "1.0-r0",
+      "recipeTree": "806802e00fe4a32978bf0a09263c9aea50a1a149"
+    },
+    {
+      "origin": "musl",
+      "version": "1.2.6",
+      "aportsCommit": "8f79d39391b46d6dbf1800fb68b8212a21d5ee2e",
+      "remote": [
+        {
+          "name": "musl-1.2.6.tar.gz",
+          "url": "https://musl.libc.org/releases/musl-1.2.6.tar.gz",
+          "sha512": "1adad96eddb3a2eb0cacb3e363b0046568925fcdd75cf8b0503f2139df1f693d64730779ca0ce8131b7624ab2d37f4247bb1d3393c523de6e30d2b1d7732555c",
+          "downloadUrl": "https://distfiles.alpinelinux.org/distfiles/v3.24/musl-1.2.6.tar.gz"
+        }
+      ],
+      "sourceChecksums": {
+        "musl-1.2.6.tar.gz": "1adad96eddb3a2eb0cacb3e363b0046568925fcdd75cf8b0503f2139df1f693d64730779ca0ce8131b7624ab2d37f4247bb1d3393c523de6e30d2b1d7732555c",
+        "handle-aux-at_base.patch": "a76f79b801497ad994746cf82bb6eaf86f9e1ae646e6819fbae8532a7f4eee53a96ac1d4e789ec8f66aea2a68027b0597f7a579b3369e01258da8accfce41370",
+        "0001-add-stub-for-pthread_mutexattr_setprioceiling.patch": "83ec0f774dbb5d4f4d4b917d149ea0ef609d028d18ae7624e90fedda6e3174c91ade93751bfd376adfa2848155110fc4dd02b6790363b98e5395c4787e8731e8",
+        "fix-loongarch64-zero-len-extcontext.patch": "6eae45aa82db69bc96386aedf3d1bfe83dfa0a7b4b824326c1c7e1bab31100d635ed0e8930c26a1694697fad59167a42e2b5f3a2ac51b07e36d85f047e268cff",
+        "CVE-2026-6042.patch": "f7849abeab0e4eab992a80464afa07b9c8aae5cee76040523b9dbc0931435f28ea8f5792b8a4a0cd6d608ac2f37e3225e89afcb3171a0a6df44450ed57cee83b",
+        "CVE-2026-40200.patch": "a64ab7688d1a85e560b5687783df482d2467a79a74400da5a1601382847d6b4e6a79b7529a8dc80c46ddda8dc2a812f2261557fc8ee98dc3bdf7322761bd6d9c",
+        "CVE-2026-107891.patch": "df73a35b9da531021ad5b1a6aad12b9d8d69de2bed7fc91b1156d9727476ab25c0d3c2341d60488152ee8ccbddb83786e91fff950cdb177b9b04673da98fdc4e",
+        "ldconfig": "29da5e89358103846a42987c2a5ff26ec131e29a6a7a714cd0e2941baf1f1e5cd9b1ee66f488c8e222135031bf2de507d7d05b037ab65c30482147dba63d2e52",
+        "__stack_chk_fail_local.c": "062bb49fa54839010acd4af113e20f7263dde1c8a2ca359b5fb2661ef9ed9d84a0f7c3bc10c25dcfa10bb3c5a4874588dff636ac43d5dbb3d748d75400756d0b",
+        "getconf.c": "0d80f37b34a35e3d14b012257c50862dfeb9d2c81139ea2dfa101d981d093b009b9fa450ba27a708ac59377a48626971dfc58e20a3799084a65777a0c32cbc7d",
+        "getent.c": "246e029350d4295147fe311108dcfb991ef130271b856040c1fb6a9955414f263d2a51f978b8ae91f52ff49705e8e4572b8f0e6939801fa854e3f095a67d3d64",
+        "iconv.c": "9d42d66fb1facce2b85dad919be5be819ee290bd26ca2db00982b2f8e055a0196290a008711cbe2b18ec9eee8d2270e3b3a4692c5a1b807013baa5c2b70a2bbf"
+      },
+      "recipeFiles": [
+        {
+          "name": "0001-add-stub-for-pthread_mutexattr_setprioceiling.patch",
+          "gitBlob": "0afb1fbc2e96c3f6a41d02635d64115184b8e614",
+          "bytes": 896,
+          "mode": "100644"
+        },
+        {
+          "name": "APKBUILD",
+          "gitBlob": "b729315a72d9060cc69ba9bddec53c0691c05158",
+          "bytes": 6495,
+          "mode": "100644"
+        },
+        {
+          "name": "CVE-2026-107891.patch",
+          "gitBlob": "2abae19db458c2b3e9b45281a6f4867347c7c26f",
+          "bytes": 5943,
+          "mode": "100644"
+        },
+        {
+          "name": "CVE-2026-40200.patch",
+          "gitBlob": "88298ca471d38b2c8861f817caf394a591fcdc26",
+          "bytes": 5594,
+          "mode": "100644"
+        },
+        {
+          "name": "CVE-2026-6042.patch",
+          "gitBlob": "4c52c0a3211ec70c5010bc6bce0446c183914380",
+          "bytes": 7506,
+          "mode": "100644"
+        },
+        {
+          "name": "__stack_chk_fail_local.c",
+          "gitBlob": "2b403a6e046fb288af4b3d16eda76980a599aea4",
+          "bytes": 133,
+          "mode": "100644"
+        },
+        {
+          "name": "fix-loongarch64-zero-len-extcontext.patch",
+          "gitBlob": "7955bddd4db379bdf668d80666a141cbf175c986",
+          "bytes": 738,
+          "mode": "100644"
+        },
+        {
+          "name": "getconf.c",
+          "gitBlob": "c4235242b0ef70bb7a99cb210a134d19c15dc0b9",
+          "bytes": 11614,
+          "mode": "100644"
+        },
+        {
+          "name": "getent.c",
+          "gitBlob": "bcc8b81c10bef1de5af8db7053dac48547c8e14d",
+          "bytes": 11656,
+          "mode": "100644"
+        },
+        {
+          "name": "handle-aux-at_base.patch",
+          "gitBlob": "7c9f2dc5fc05abaf82f2e7b59704862b325c0aab",
+          "bytes": 1214,
+          "mode": "100644"
+        },
+        {
+          "name": "iconv.c",
+          "gitBlob": "f5d5ce2aa730461df126cdf8bc8b084b4ebb881c",
+          "bytes": 2577,
+          "mode": "100644"
+        },
+        {
+          "name": "ldconfig",
+          "gitBlob": "9a6c05978d1bfae6871fb96a862dfd3e7bb9c326",
+          "bytes": 393,
+          "mode": "100644"
+        }
+      ],
+      "packageVersion": "1.2.6-r3",
+      "recipeTree": "91ac4452385f6c3e888fba5b4b085e905e58c4af"
+    },
+    {
+      "origin": "openssl",
+      "version": "3.5.9",
+      "packageVersion": "3.5.9-r0",
+      "aportsCommit": "29b9ec24b1b5b39aeef51fa2a044210e2ec5258e",
+      "recipeTree": "87e71869155271b587885c56de727da159296f96",
+      "remote": [
+        {
+          "name": "openssl-3.5.9.tar.gz",
+          "url": "https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz",
+          "sha512": "c4c8136fd2c98d13bb85a57bfb0def25c906f47f1fe97675cd114594944eab957b5b81a3e0f48826e1a0f093afff5e83766b539d49768f6db68310fd678d7de6",
+          "downloadUrl": "https://distfiles.alpinelinux.org/distfiles/v3.24/openssl-3.5.9.tar.gz"
+        }
+      ],
+      "sourceChecksums": {
+        "openssl-3.5.9.tar.gz": "c4c8136fd2c98d13bb85a57bfb0def25c906f47f1fe97675cd114594944eab957b5b81a3e0f48826e1a0f093afff5e83766b539d49768f6db68310fd678d7de6",
+        "auxv.patch": "b2541075148fd5af4552d34158deb1a325f5adced90626dc03fd126f47323cde949b15b2657523c34b26530b322312a43bd42ada7295b4f2dd1d3b5d11892c62"
+      },
+      "recipeFiles": [
+        {
+          "name": "APKBUILD",
+          "gitBlob": "6c7ac59fec9063a925a6ecac2b61d45cbe659f5b",
+          "bytes": 7297,
+          "mode": "100644"
+        },
+        {
+          "name": "auxv.patch",
+          "gitBlob": "7803ef811cc802650a1a3b3808899fb8202c7b34",
+          "bytes": 2013,
+          "mode": "100644"
+        },
+        {
+          "name": "openssl-fips.post-install",
+          "gitBlob": "463f0efbb085bea4fe893e7826f1a0fbf1da90b3",
+          "bytes": 231,
+          "mode": "100644"
+        }
+      ]
+    },
+    {
+      "origin": "pax-utils",
+      "version": "1.3.9",
+      "aportsCommit": "c61801eeacb3ffcd9c2025b09e402153bb93fb39",
+      "remote": [
+        {
+          "name": "pax-utils-1.3.9.tar.xz",
+          "url": "https://dev.gentoo.org/~sam/distfiles/app-misc/pax-utils/pax-utils-1.3.9.tar.xz",
+          "sha512": "96caf7f2087bedc7949db828d966835f7d691e29ef8177dee00605c10d433d4c5b5770a3d7f2e25e3c0218f5b9a6c6967669a3dea18cf138d6f0111d2bb5288b",
+          "downloadUrl": "https://distfiles.alpinelinux.org/distfiles/v3.24/pax-utils-1.3.9.tar.xz"
+        }
+      ],
+      "sourceChecksums": {
+        "pax-utils-1.3.9.tar.xz": "96caf7f2087bedc7949db828d966835f7d691e29ef8177dee00605c10d433d4c5b5770a3d7f2e25e3c0218f5b9a6c6967669a3dea18cf138d6f0111d2bb5288b"
+      },
+      "recipeFiles": [
+        {
+          "name": "APKBUILD",
+          "gitBlob": "5834ca11b5e341ffd4940624e7be1e9e6822ace7",
+          "bytes": 1568,
+          "mode": "100644"
+        }
+      ],
+      "packageVersion": "1.3.9-r1",
+      "recipeTree": "31c18cc6a9bc15bde7224e984c0173bde716e692"
+    },
+    {
+      "origin": "pcre2",
+      "version": "10.49",
+      "packageVersion": "10.49-r0",
+      "aportsCommit": "3d497cbb3217749c4fb85f90f3b6f7908b0c1f95",
+      "recipeTree": "1bc4ee59b319708e9aca8ddedac45c0617550cf0",
+      "remote": [
+        {
+          "name": "pcre2-10.49.tar.bz2",
+          "url": "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.49/pcre2-10.49.tar.bz2",
+          "sha512": "eb8351788a479cb24bcc263243d6a00d28cc7285f26901d7f6001826aba7f7171a5bb3e7c944725432df6f303c10a794fd3a398429483bf4c1104df3de159687",
+          "downloadUrl": "https://distfiles.alpinelinux.org/distfiles/v3.24/pcre2-10.49.tar.bz2"
+        }
+      ],
+      "sourceChecksums": {
+        "pcre2-10.49.tar.bz2": "eb8351788a479cb24bcc263243d6a00d28cc7285f26901d7f6001826aba7f7171a5bb3e7c944725432df6f303c10a794fd3a398429483bf4c1104df3de159687"
+      },
+      "recipeFiles": [
+        {
+          "name": "APKBUILD",
+          "gitBlob": "a6fc029f2fe909470eebfa97a1efe9969b0d4f84",
+          "bytes": 1871,
+          "mode": "100644"
+        }
+      ]
+    },
+    {
+      "origin": "tzdata",
+      "version": "2026f",
+      "packageVersion": "2026f-r0",
+      "aportsCommit": "63faba7f731ad47f4cd60d3ff34ff1aadd49c091",
+      "recipeTree": "8152e72979a93582fa93b8a43fd0ad6dc5e6f230",
+      "remote": [
+        {
+          "name": "tzcode2026f.tar.gz",
+          "url": "https://www.iana.org/time-zones/repository/releases/tzcode2026f.tar.gz",
+          "sha512": "eefcea60c37857214e1eba768d1bbd096de2a8f5afc9a776555552922cc174b32892d7442097b699b77efcba4d85649ed7d13e752ffdbcaad1050749c6c7b5aa",
+          "downloadUrl": "https://distfiles.alpinelinux.org/distfiles/v3.24/tzcode2026f.tar.gz"
+        },
+        {
+          "name": "tzdata2026f.tar.gz",
+          "url": "https://www.iana.org/time-zones/repository/releases/tzdata2026f.tar.gz",
+          "sha512": "26189803c8b3e903dcc467404e2feefb7d190cb1870249a23577ce31e9dcbf187e4704e0b45c8d1366d1c501bb5b53a2e80f8e2828b2163be15e532f6acab52d",
+          "downloadUrl": "https://distfiles.alpinelinux.org/distfiles/v3.24/tzdata2026f.tar.gz"
+        },
+        {
+          "name": "posixtz-0.5.tar.xz",
+          "url": "https://dev.alpinelinux.org/archive/posixtz/posixtz-0.5.tar.xz",
+          "sha512": "68dbaab9f4aef166ac2f2d40b49366527b840bebe17a47599fe38345835e4adb8a767910745ece9c384b57af815a871243c3e261a29f41d71f8054df3061b3fd",
+          "downloadUrl": "https://distfiles.alpinelinux.org/distfiles/v3.24/posixtz-0.5.tar.xz"
+        }
+      ],
+      "sourceChecksums": {
+        "tzcode2026f.tar.gz": "eefcea60c37857214e1eba768d1bbd096de2a8f5afc9a776555552922cc174b32892d7442097b699b77efcba4d85649ed7d13e752ffdbcaad1050749c6c7b5aa",
+        "tzdata2026f.tar.gz": "26189803c8b3e903dcc467404e2feefb7d190cb1870249a23577ce31e9dcbf187e4704e0b45c8d1366d1c501bb5b53a2e80f8e2828b2163be15e532f6acab52d",
+        "posixtz-0.5.tar.xz": "68dbaab9f4aef166ac2f2d40b49366527b840bebe17a47599fe38345835e4adb8a767910745ece9c384b57af815a871243c3e261a29f41d71f8054df3061b3fd",
+        "0001-posixtz-ensure-the-file-offset-we-pass-to-lseek-is-o.patch": "0f2a10ee2bb4007f57b59123d1a0b8ef6accf99e568f21537f0bb19f290fff46e24050f55f12569d7787be600e1b62aa790ea85a333153f3ea081a812c81b1b5",
+        "0002-fix-implicit-declaration-warnings-by-including-strin.patch": "fb322ab7867517ba39265d56d3576cbcea107c205d524e87015c1819bbb7361f7322232ee3b86ea9b8df2886e7e06a6424e3ac83b2006be290a33856c7d40ac4"
+      },
+      "recipeFiles": [
+        {
+          "name": "0001-posixtz-ensure-the-file-offset-we-pass-to-lseek-is-o.patch",
+          "gitBlob": "c4ae70b0755cfa062e3fa22c793a4e43ffc2d9bd",
+          "bytes": 810,
+          "mode": "100644"
+        },
+        {
+          "name": "0002-fix-implicit-declaration-warnings-by-including-strin.patch",
+          "gitBlob": "6f61b25b2d2cb7a75e8bb7d8088af2dcc72411d6",
+          "bytes": 699,
+          "mode": "100644"
+        },
+        {
+          "name": "APKBUILD",
+          "gitBlob": "3daed9164e4666c8965003281396e6843b7f2187",
+          "bytes": 2933,
+          "mode": "100644"
+        }
+      ]
+    },
+    {
+      "origin": "zlib",
+      "version": "1.3.2",
+      "packageVersion": "1.3.2-r1",
+      "aportsCommit": "0afa2da0e8c8051c6f8f64a7a388e5a259904245",
+      "recipeTree": "ae4a51fac23d738f9920db90fe1d8cf229450c0f",
+      "remote": [
+        {
+          "name": "zlib-1.3.2.tar.gz",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz",
+          "sha512": "70963771ea5d763614278a69b474f09b7d237ef8f53b675a10fe31d9923aeef601504b35d7ebd1b1e7f347e9ebb048e6b3b47fffdf137e7bdc7e8d5eb4ec4692",
+          "downloadUrl": "https://distfiles.alpinelinux.org/distfiles/v3.24/zlib-1.3.2.tar.gz"
+        }
+      ],
+      "sourceChecksums": {
+        "zlib-1.3.2.tar.gz": "70963771ea5d763614278a69b474f09b7d237ef8f53b675a10fe31d9923aeef601504b35d7ebd1b1e7f347e9ebb048e6b3b47fffdf137e7bdc7e8d5eb4ec4692",
+        "CVE-2026-85091.patch": "878888308a51296470f05eca59a79212314d4c9a26c19bbf70c1cb1b8d25eb42e0cce5a001acbe287268aa215c854cb5a9990ff62b7aefa9de221803d172957e"
+      },
+      "recipeFiles": [
+        {
+          "name": "APKBUILD",
+          "gitBlob": "b920acf55a1aa727b97cec465152f1c42cf6bdad",
+          "bytes": 1134,
+          "mode": "100644"
+        },
+        {
+          "name": "CVE-2026-85091.patch",
+          "gitBlob": "49f6b63108c2345f2a473705331cf901e367d585",
+          "bytes": 854,
+          "mode": "100644"
+        }
+      ]
+    }
+  ],
+  "upstream": [
+    {
+      "name": "node",
+      "version": "24.22.3",
+      "file": "node-v24.22.3.tar.xz",
+      "url": "https://nodejs.org/dist/v24.22.3/node-v24.22.3.tar.xz",
+      "sha256": "48ca3aa8a9b02133356922ef4fc80200e00598c80a4ef446f7c39a459222593d",
+      "bytes": 56764640
+    },
+    {
+      "name": "nginx",
+      "version": "1.30.6",
+      "file": "nginx-1.30.6.tar.gz",
+      "url": "https://nginx.org/download/nginx-1.30.6.tar.gz",
+      "sha256": "3cf46f5ed7504d460125866b7bea99fb357f31d887e2e63b35503310e9b8b6c8",
+      "bytes": 1331698
+    },
+    {
+      "name": "k6",
+      "version": "dd9395906d48437a8d7ab53e309afa47ad8d67e0",
+      "file": "k6-dd9395906d48437a8d7ab53e309afa47ad8d67e0.tar.gz",
+      "url": "https://api.github.com/repos/grafana/k6/tarball/dd9395906d48437a8d7ab53e309afa47ad8d67e0",
+      "sha256": "82e419a431b2936a00ecac30b50329b9dda62f18dfce5660db7d47c9ba6eed11",
+      "bytes": 11524093
+    }
+  ],
+  "k6Binary": {
+    "version": "2.4.0",
+    "revision": "dd9395906d48437a8d7ab53e309afa47ad8d67e0",
+    "baseImage": "grafana/k6:2.4.0@sha256:d41bb79cd8de5a7ad619b53570e3712633e8bff0937010a5c6c57a4747e7a276",
+    "observedArm64BinarySha256": "5cfc1260cfadb1f241486afb51037aad04713f9f713355bb3fa277133654375b"
+  }
+}
