@@ -39,7 +39,10 @@ contracts. Do not spawn an idle pool. Keep one native/build/measurement lane.
 B10 now has actual fully green hosted source/unit/native/scan/archive evidence
 from run `43663602569`, plus a separate qualified-delivery workflow. Its first
 delivery run `43677769395` failed GitHub source-release authorization before any
-registry write. Anonymous pull/install qualification remains pending. Legacy
+registry write. The owner then published sources through the existing local GitHub
+session. Delivery run `43682593954` published exact indexes and passed anonymous
+pulls/native Compose on both architectures. The local installer prerelease was then
+published and its assets passed anonymous byte/hash readback. Legacy
 publication/default tags remain separate; do not replace them from candidate proof.
 Both native Linux architectures passed the packaged API/run/export/restart flow.
 Actual Chromium on unmodified ARM64 images passed all twelve B09 functional phases

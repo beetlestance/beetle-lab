@@ -30,6 +30,7 @@ export async function completeDelivery(args: ReturnType<typeof argumentsFor>): P
   const release = await ensureRelease(api, releaseTag(plan), plan.revision,
     `Qualified rewrite candidate ${plan.revision}; source CI ${plan.sourceRunId}.\n\n` +
     'Anonymous image pulls and packaged execution passed on Linux AMD64 and ARM64. The UI is provisional.\n\n' +
+    'This is a qualification candidate, not full release sign-off: a historical prepare-phase guard stop and the broader resource/failure matrix remain open.\n\n' +
     'Download docker-compose.yml and beetle-lab.env into one directory, then run:\n\n' +
     '```sh\ndocker compose --env-file beetle-lab.env up -d\n```\n\nOpen http://127.0.0.1:4567.\n\n' +
     `Sources and notices: ${plan.sources.url}\n`);

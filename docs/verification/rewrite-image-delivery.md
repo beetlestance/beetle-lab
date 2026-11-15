@@ -1,7 +1,7 @@
 # Qualified image transport
 
-Scope: preserve exact tested/scanned candidates for later registry delivery.
-Publication, anonymous pull and a pull-based installation are not established here.
+Scope: preserve and deliver exact tested/scanned candidates. The accepted
+publication and installation results are recorded separately below.
 
 ## Authority and bounds
 
@@ -144,3 +144,25 @@ and six indexes. The owned OCI store and complete plan are retained privately.
 Empty command logs are explicitly allowed; payloads remain nonempty by default
 and every nonzero command exit still fails. Publication and anonymous install
 remain separate acceptance steps.
+
+## Existing-session publication
+
+The first delivery run `43677769395` staged sources and prepared all indexes, then
+GitHub refused source-release creation with HTTP 403 before registry writes.
+The candidate changes workflows relative to the default branch; GitHub release
+creation/update requires Workflows write, unavailable to the built-in Actions token.
+The owner chose the existing local GitHub session instead of adding a CI secret.
+
+The explicit local command revalidated the successful source run and published
+`rewrite-sources-ec080760784227c4fda8f4a9d677fdc171c00bb7-43663602569`.
+Its anonymous full source download matched 370,516,918 bytes and SHA256
+`888ed2655a0ecd72970e4a60e978b31d3c679992de71b10f18ce243d9ae6fac0`.
+No personal token was exported or installed in CI. Subsequent delivery run
+`43682593954`, tool revision `39859386`, used built-in CI credentials for image
+publication and retained both anonymous native jobs. It preserved all six planned
+index digests and verified their remote readback. Both fresh-store anonymous pulls
+and normal packaged native acceptance passed on AMD64 and ARM64, with fixture
+cleanup verified. The workflow completed successfully. The explicit local finalizer
+then verified the three required gates, immutable artifact ZIP hashes, exact plan
+and both native proofs before publishing the [installer prerelease](https://github.com/beetlestance/beetle-lab/releases/tag/rewrite-ec080760784227c4fda8f4a9d677fdc171c00bb7-43663602569).
+Anonymous full Compose/environment downloads matched their expected byte hashes.
