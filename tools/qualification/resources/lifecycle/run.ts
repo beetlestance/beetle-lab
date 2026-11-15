@@ -14,6 +14,7 @@ import {saveRevision, value} from '../../native-application/public-api.js';
 import {cleanupLiveVolumes} from '../../native-application/live-volumes.js';
 import {active, crash, terminal} from './active.js';
 import {counts, ledger, params, runtime, summaries, stopForCustody} from './observations.js';
+import {lifecycleFailure} from './diagnosis.js';
 import {configuration, qualificationCases} from './configuration.js';
 const roles = ['frontend', 'backend', 'agent', 'installer', 'engine', 'export'] as const;
 interface PhaseOptions {
@@ -75,20 +76,21 @@ async function main() {
   }
   await mkdir(output, {mode: 0o700});
   await writeFile(join(output, 'owner.json'), JSON.stringify({root: f.root, project: f.project, revision: f.revision, mode}), {flag: 'wx', mode: 0o600});
-  const results: unknown[] = []; let installation: string | undefined; let status = 'failed'; let phase = 'startup'; let cleanupVerified = false;
+  const results: unknown[] = []; let installation: string | undefined; let status = 'failed'; let phase = 'startup'; let cleanupVerified = false; let diagnosis: ReturnType<typeof lifecycleFailure> | null = null;
   try {
     f.compose('up', '-d', '--no-build'); const initial = await automaticClient(f.origin); installation = initial.installation.id;
+    await writeFile(join(output, 'installation-owner.json'), JSON.stringify({project: f.project, installationId: installation}), {flag: 'wx', mode: 0o600});
     assert.equal(agentState(f).installationId, installation); const reserve = controlBudget(f);
     const saved = await saveRevision(initial.api, {offer: {config}});
     const settled = await phases({f, initial, installation, saved, results, progress: next => {phase = next;}, reserve, kinds});
     phase = 'offline-custody'; custody(f, settled, installation, results);
     status = 'passed';
   } catch (error) {
-    process.exitCode = 1;
+    process.exitCode = 1; diagnosis = lifecycleFailure(error);
     await writeFile(join(output, 'failure-private.txt'), String(error instanceof Error ? error.stack : error).slice(0, 16384), {flag: 'wx', mode: 0o600});
   } finally {
     try {await teardown(f, installation); cleanupVerified = true;} catch {status = 'failed'; process.exitCode = 1;}
-    await writeFile(join(output, 'outcome.json'), JSON.stringify({format: 'beetle-active-recovery', version: 1, status, mode, phase, cleanupVerified,
+    await writeFile(join(output, 'outcome.json'), JSON.stringify({format: 'beetle-active-recovery', version: 1, status, mode, phase, cleanupVerified, diagnosis,
       revision: plan.revision, architecture: f.architecture, imageIds: f.imageIds, results,
       limits: ['Active-phase backend/agent crashes only; not every lifecycle phase', 'No synthetic OOM attribution, flood, soak, overhead or cold recovery proof']}, null, 2), {flag: 'wx', mode: 0o600});
     console.log(JSON.stringify({status, phase, cleanupVerified}));

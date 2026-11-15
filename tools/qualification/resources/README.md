@@ -46,3 +46,20 @@ pulls only the native engine anonymously with an empty Docker config, and runs
 these same probes on Linux AMD64 and ARM64. No images/releases are published.
 Only `outcome.json` is retained; private errors, logs and owner files are excluded.
 Failure or missing evidence stays failed. Normal CI and delivery defaults remain.
+
+The optional `qualify_rewrite_profile=active-recovery` runs two fresh installation
+profiles per native runner: crashes, then cancellation. It anonymously pulls the
+six already published roles; no build or publication occurs. The default kernel
+profile keeps its15-minute job ceiling. Active recovery has25 minutes overall,
+two sequential300-second checks, and independent cleanup on failure/interruption.
+Cleanup has a120-second result deadline per descriptor; original CLI calls remain
+bounded to60 seconds, and its workflow step is capped at seven minutes for both
+profiles. A late/uncertain cleanup cannot qualify a run.
+
+Ownership is saved before Compose, with installation identity saved before any
+offer. Cleanup validates exact project/revision/installation labels and bounded
+full IDs, stops/removes only those peers, then removes owned engines, validated
+mailbox volumes and project networks. It never prunes or removes source directories.
+Only `public-outcome.json` is uploaded: fixed facts/identities/counts and sanitized
+source locations, with actual harness revision/dirty state. Raw logs, private
+exceptions, configuration, ownership files and database snapshots are excluded.

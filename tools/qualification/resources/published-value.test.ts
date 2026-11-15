@@ -1,13 +1,18 @@
 import {describe, expect, it} from 'vitest';
 import {publicationFixture} from '../../delivery/registry/fixture.js';
 import {releaseTag} from '../../delivery/registry/value.js';
-import {qualificationTag, publicationAsset, qualificationPlan} from './published-value.js';
+import {qualificationTag, publicationAsset, qualificationPlan, qualificationRoles} from './published-value.js';
 import {qualificationArchitecture} from './values.js';
 const {plan} = publicationFixture(); const tag = releaseTag(plan);
 const asset = {name: 'publication.json', state: 'uploaded', size: 40, digest: 'sha256:' + 'b'.repeat(64)};
 const release = {tag_name: tag, draft: false, assets: [asset]};
 const publication = {format: 'beetle-published-candidate', version: 1, status: 'published', anonymousQualification: 'passed', plan};
 describe('read-only native qualification input', () => {
+  it('bounds image pulling to an explicit engine or six-role stack', () => {
+    expect(qualificationRoles('engine')).toEqual(['engine']);
+    expect(new Set(qualificationRoles('stack'))).toEqual(new Set(['frontend', 'backend', 'agent', 'installer', 'engine', 'export']));
+    expect(() => qualificationRoles('all')).toThrow();
+  });
   it('binds each native job to its declared matrix architecture before effects', () => {
     expect(qualificationArchitecture('x64', 'amd64')).toBe('amd64');
     expect(qualificationArchitecture('arm64', 'arm64')).toBe('arm64');

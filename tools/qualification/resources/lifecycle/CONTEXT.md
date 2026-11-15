@@ -28,3 +28,7 @@ Credential stays in-process; only validated capability identity/status is used.
 Default crashes and explicit cancel use separate fresh projects. Stock128MiB
 agent output pool holds two retained64MiB disk reservations; a third must wait. Never raise
 that limit or erase retained results merely to fit cancellation into one fixture.
+
+CI persists installation-owner.json before any offer. Independent cleanup.ts uses
+only bounded exact project/installation ownership; see ../README.md for deadlines.
+public.ts emits only the closed outcome projection and safe diagnostic locations.

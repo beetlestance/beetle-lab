@@ -1,3 +1,4 @@
+import {candidateRoles} from '../../delivery/identity.js';
 import {object} from '../../delivery/registry/descriptors.js';
 import {capturePublishedPlan, releaseTag} from '../../delivery/registry/value.js';
 export function qualificationTag(value: string): string {
@@ -22,4 +23,10 @@ export function qualificationPlan(input: unknown, tag: string) {
   qualificationTag(tag); const plan = capturePublishedPlan(input);
   if (object(input).anonymousQualification !== 'passed' || releaseTag(plan) !== tag) throw Error('Completed matching public candidate required');
   return plan;
+}
+
+export function qualificationRoles(mode: string) {
+  if (mode === 'engine') return ['engine'] as const;
+  if (mode === 'stack') return [...candidateRoles];
+  throw Error('Pull profile must be engine or stack');
 }

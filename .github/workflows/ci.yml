@@ -8,6 +8,12 @@ on:
     tags: ['v*']
   workflow_dispatch:
     inputs:
+      qualify_rewrite_profile:
+        description: Read-only checks to run against qualify_rewrite_release
+        type: choice
+        options: [kernel-controls, active-recovery]
+        default: kernel-controls
+        required: false
       qualify_rewrite_release:
         description: Read-only native qualification of an existing public rewrite release; empty runs normal CI
         type: string
@@ -68,6 +74,7 @@ jobs:
     uses: ./.github/workflows/rewrite-qualification.yml
     with:
       release: ${{ inputs.qualify_rewrite_release }}
+      profile: ${{ inputs.qualify_rewrite_profile || 'kernel-controls' }}
 
   source:
     name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '') && 'qualification/unused-source' || 'ci/source' }}
