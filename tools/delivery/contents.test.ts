@@ -1,7 +1,7 @@
 import {createHash} from 'node:crypto';
 import {expect,it} from 'vitest';
 import {candidateRoles} from './identity.js';
-import {archiveConfigs} from './contents.js';
+import {archiveConfigs,archiveLocalIds} from './contents.js';
 import {archiveReferences} from './references.js';
 import type {ImageReferences} from './references.js';
 const sha=(bytes:Buffer)=>'sha256:'+createHash('sha256').update(bytes).digest('hex');
@@ -34,4 +34,12 @@ it.each(['tag','config','source','platform','manifest'] as const)('refuses chang
  if(kind==='source')identity.images.frontend='sha256:'+'f'.repeat(64);
  if(kind==='manifest'){const row=f.manifests[0] as {digest:string};f.members.set('blobs/sha256/'+row.digest.slice(7),Buffer.from('{}'));}
  expect(()=>archiveConfigs(f.read,f.references,identity)).toThrow();
+});
+
+it('binds config and containerd manifest IDs per role without accepting foreign manifests',()=>{
+ const f=fixture();const ids=archiveLocalIds(f.read,f.references,{revision:f.revision,architecture:'arm64',images:f.images});
+ expect(ids.frontend.config).toBe(f.images.frontend);expect(ids.frontend.manifest).toBe((f.manifests[0] as {digest:string}).digest);
+ expect(ids.frontend.manifest).not.toBe(ids.backend.manifest);
+ const row=f.manifests[0] as {digest:string};f.members.set('blobs/sha256/'+row.digest.slice(7),Buffer.from('{}'));
+ expect(()=>archiveLocalIds(f.read,f.references,{revision:f.revision,architecture:'arm64',images:f.images})).toThrow('hash mismatch');
 });

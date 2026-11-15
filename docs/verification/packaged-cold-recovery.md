@@ -54,7 +54,14 @@ ScheduleBackup opens the destination and initialises sqlite3_backup before
 ScheduleWork; the binding invokes ScheduleBackup directly. This is a source-order
 prerequisite, not a substitute for packaged runtime execution.
 
-Native AMD64, fresh source-install recovery, interrupted operations, controlled
+Native Linux AMD64 passed the same default-UID packet in CI43758727985 at
+clean harness5221cd31, after anonymous native pulls of all six immutable72243a87
+roles. Cleanup passed. The closed report records13files/seven directories,
+1,504,731payload bytes,4,576manifest bytes and26,529downloaded bytes across all
+eight artifacts. Source/restored main-file preservation, mutation refusal,
+session persistence and exact resume all passed. ARM and AMD are separate proofs.
+
+Fresh source-install recovery, interrupted operations, controlled
 ENOSPC, foreign resume rejection, serving-purpose refusal and supported rollback
 still need their separate composed proofs. Unit/seam evidence remains scoped to
 those tests. No mutable restore adoption, full disk, soak or complete release

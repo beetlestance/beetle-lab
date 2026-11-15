@@ -51,3 +51,10 @@ function manifestIdentities(read: ArchiveMember): ReadonlyMap<string, string> {
   }
   return manifests;
 }
+
+/** Both daemon storage forms must bind to the same verified archive bytes. */
+export function archiveLocalIds(read: ArchiveMember, references: ImageReferences, identity: {revision: string; architecture: string; images: ImageReferences}) {
+  const configs = archiveConfigs(read, references, identity); const manifests = manifestIdentities(read);
+  return Object.fromEntries(candidateRoles.map(role => [role, {config: configs[role], manifest: manifests.get(configs[role])!}])) as
+    Record<keyof ImageReferences, {config: string; manifest: string}>;
+}

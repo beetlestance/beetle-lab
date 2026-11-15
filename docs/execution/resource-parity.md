@@ -27,9 +27,12 @@ execution. Remove merged task trees/branches after preserving evidence.
 proof at clean harness68d9f989. [Q02a](../verification/active-recovery.md) has scoped
 packaged ARM64 active crash/cancel, emitted-resource and cold counter evidence.
 Clean23bb8c82 native AMD64/ARM64 active profiles now pass in CI43756923411.
-[Q05a](../verification/packaged-cold-recovery.md) adds default-UID ARM packaged
-backup/history/resume proof. These are scoped results; Q02 overall and Q03–Q07
-remain open.
+[Q05a](../verification/packaged-cold-recovery.md) adds default-UID native ARM
+packaged backup/history/resume and AMD64 anonymous-pull proof (CI43758727985). These are scoped results; Q02 overall and Q03–Q07
+remain open. [Q04a](../verification/short-control-overhead.md) records accepted Node24 ARM
+short control latency and descriptive CPU/memory observations. Earlier Node26
+target misses remain recorded; uninterrupted readers, full overhead and Q04
+overall remain open.
 
 ## Q01 frozen scope
 
