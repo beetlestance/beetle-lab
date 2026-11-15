@@ -19,3 +19,9 @@ records bind both platforms to configs/indexes and verified fixture cleanup.
 `complete.ts` publishes the separate installation release only after both native
 records and anonymous remote readback. Never add assets to the source release
 after publishing it. See README.md and docs/verification/rewrite-image-delivery.md.
+
+`local.ts` uses an existing local gh session explicitly; never emulate CI variables.
+Sources are public before CI writes images. Optional local-releases workflow mode
+skips only installer-release publication, preserving both anonymous native gates.
+`delivery-run.ts` binds local finalization to the owned successful first manual run,
+three required gates and immutable ZIP IDs/digests; normal source gates stay intact.

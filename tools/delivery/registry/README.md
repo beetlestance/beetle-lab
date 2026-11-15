@@ -59,3 +59,26 @@ only to release-writing steps and only replaces the `gh` subprocess credential.
 Registry access and trusted artifact reads still use the built-in Actions token;
 native qualification receives neither release nor registry write credentials.
 Missing or refused release authority stops publication before registry writes.
+
+For an existing local GitHub session, avoid installing a release token in CI:
+
+```sh
+node --import tsx tools/delivery/registry/local.ts sources PLAN OUTPUT SOURCES
+```
+
+PLAN/SOURCES/OUTPUT are absolute paths; OUTPUT must be new. This validates the
+successful source CI run, publishes exact sources and verifies anonymous bytes.
+Dispatch delivery with `local_rewrite_releases=true`. CI still validates the public
+source release before image writes and runs both anonymous native jobs. It skips
+only the final GitHub installer-release job. Then publish locally:
+
+```sh
+node --import tsx tools/delivery/registry/local.ts complete PLAN OUTPUT RUN DELIVERY_SHA REGCTL
+```
+
+RUN and DELIVERY_SHA identify that successful delivery workflow, independently of
+the candidate source SHA. The command requires the owned first manual run and all
+three publication/native gates, checks immutable artifact ZIP digests and exact
+member whitelists, and matches both native records to the complete planned image
+identities. The shared finalizer checks anonymous registry identities and published
+installer bytes. Neither local command fakes CI context or exports a personal token.

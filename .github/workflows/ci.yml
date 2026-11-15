@@ -18,6 +18,11 @@ on:
         type: string
         default: ''
         required: false
+      local_rewrite_releases:
+        description: Publish GitHub releases locally using an existing authenticated session
+        type: boolean
+        default: false
+        required: false
       deliver_rewrite_revision:
         description: Exact full source revision belonging to the qualified run
         type: string
@@ -384,3 +389,4 @@ jobs:
     with:
       source_run_id: ${{ inputs.deliver_rewrite_run_id }}
       source_revision: ${{ inputs.deliver_rewrite_revision }}
+      local_releases: ${{ inputs.local_rewrite_releases == true }}

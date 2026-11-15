@@ -16,8 +16,7 @@ function argumentsFor(argv: string[]) {
     || ![publication, environment, amd64, arm64, output, executable].every(isAbsolute)) throw Error('Expected publication, environment, native proofs, new output and pinned tool');
   return {publication, environment, amd64, arm64, output, executable};
 }
-async function main(): Promise<void> {
-  const args = argumentsFor(process.argv.slice(2)); publicationCredentials();
+export async function completeDelivery(args: ReturnType<typeof argumentsFor>): Promise<void> {
   const plan = capturePublishedPlan(await readDeliveryJson(args.publication));
   const amd64 = await readDeliveryJson(args.amd64); const arm64 = await readDeliveryJson(args.arm64);
   verifyQualification(amd64, plan, 'amd64'); verifyQualification(arm64, plan, 'arm64');
@@ -56,4 +55,5 @@ async function main(): Promise<void> {
     url: `https://github.com/beetlestance/beetle-lab/releases/tag/${release.tag}`}, null, 2), {flag: 'wx', mode: 0o600});
   console.log(JSON.stringify({status: 'passed', native: ['amd64', 'arm64'], anonymousInstallerReadback: true}));
 }
-main().catch(() => {console.error('Candidate final delivery failed; public availability or native qualification is incomplete.'); process.exitCode = 1;});
+async function main(): Promise<void> { publicationCredentials(); await completeDelivery(argumentsFor(process.argv.slice(2))); }
+if (process.argv[1]?.endsWith('/complete.ts')) main().catch(() => {console.error('Candidate final delivery failed; public availability or native qualification is incomplete.'); process.exitCode = 1;});

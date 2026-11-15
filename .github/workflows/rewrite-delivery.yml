@@ -10,6 +10,10 @@ on:
         required: true
         type: string
 
+      local_releases:
+        required: false
+        type: boolean
+        default: false
     secrets:
       release_token:
         required: false
@@ -134,6 +138,7 @@ jobs:
           retention-days: 14
 
   delivery-complete:
+    if: ${{ !inputs.local_releases }}
     name: delivery/complete
     needs: [delivery-publish, delivery-native]
     runs-on: ubuntu-24.04

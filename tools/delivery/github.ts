@@ -16,7 +16,7 @@ async function github(path: string): Promise<unknown> {
 }
 /** No arbitrary URL, credential readback, registry permission or artifact-name download.
  * The CLI owns authenticated GitHub access; the caller receives only validated immutable IDs. */
-export async function readQualifiedRun(runId: number, revision: string, api: Api = github) {
+export async function readRunMetadata(runId: number, revision: string, api: Api = github) {
   if (!Number.isSafeInteger(runId) || runId < 1) throw Error('Invalid delivery run ID');
   revisionIdentity(revision);
   const results = await Promise.allSettled([
@@ -33,6 +33,9 @@ export async function readQualifiedRun(runId: number, revision: string, api: Api
   const identity = workflow as Record<string, unknown>;
   if (identity.path !== '.github/workflows/ci.yml' || identity.state !== 'active'
     || typeof identity.id !== 'number') throw Error('Delivery workflow identity mismatch');
-  return captureQualifiedRun({run: values[1], jobs: values[2], artifacts: values[3]},
-    {runId, revision, workflowId: identity.id});
+  return {run: values[1], jobs: values[2], artifacts: values[3], workflowId: identity.id};
+}
+export async function readQualifiedRun(runId: number, revision: string, api: Api = github) {
+  const metadata = await readRunMetadata(runId, revision, api);
+  return captureQualifiedRun(metadata, {runId, revision, workflowId: metadata.workflowId});
 }

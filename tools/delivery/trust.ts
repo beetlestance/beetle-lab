@@ -33,7 +33,7 @@ function repo(value: unknown): number {
 function succeeded(row: Record<string, unknown>): boolean {
   return row.status === 'completed' && row.conclusion === 'success';
 }
-function captureRun(input: unknown, expected: {runId: number; revision: string; workflowId: number}) {
+export function captureRun(input: unknown, expected: {runId: number; revision: string; workflowId: number}) {
   const run = record(input); const repositoryId = repo(run.repository);
   positive(expected.runId); positive(expected.workflowId); revisionIdentity(expected.revision);
   if (run.id !== expected.runId || run.workflow_id !== expected.workflowId || repo(run.head_repository) !== repositoryId
@@ -42,10 +42,10 @@ function captureRun(input: unknown, expected: {runId: number; revision: string; 
     || !succeeded(run)) throw Error('Unqualified delivery workflow run');
   return {runId: expected.runId, revision: expected.revision, workflowId: expected.workflowId, repositoryId};
 }
-function captureJobs(input: unknown, run: ReturnType<typeof captureRun>): void {
+export function captureJobs(input: unknown, run: ReturnType<typeof captureRun>, required: readonly string[] = gates): void {
   const page = record(input); const jobs = entries(page.jobs, 100);
   if (page.total_count !== jobs.length) throw Error('Incomplete delivery jobs');
-  for (const name of gates) {
+  for (const name of required) {
     const matches = jobs.filter(job => job.name === name);
     if (matches.length !== 1) throw Error('Missing or duplicate delivery gate');
     const job = matches[0]!;
@@ -58,7 +58,7 @@ function artifactOwner(value: unknown, run: ReturnType<typeof captureRun>): void
   if (owner.id !== run.runId || owner.repository_id !== run.repositoryId || owner.head_repository_id !== run.repositoryId
     || owner.head_branch !== branch || owner.head_sha !== run.revision) throw Error('Unqualified delivery artifact owner');
 }
-function captureArtifact(row: Record<string, unknown>, run: ReturnType<typeof captureRun>, name: string, maximum: number): QualifiedArtifact {
+export function captureArtifact(row: Record<string, unknown>, run: ReturnType<typeof captureRun>, name: string, maximum: number): QualifiedArtifact {
   artifactOwner(row.workflow_run, run); const bytes = positive(row.size_in_bytes);
   if (row.name !== name || row.expired !== false || bytes > maximum) throw Error('Unqualified delivery artifact');
   if (typeof row.digest !== 'string' || !/^sha256:[a-f0-9]{64}$/.test(row.digest)) throw Error('Artifact digest required');
