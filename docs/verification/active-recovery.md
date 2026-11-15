@@ -79,8 +79,17 @@ were recorded. No product runtime, schema, dependency or image build changed.
 
 ## Remaining qualification
 
-Native AMD64 and clean-checkout execution of both new profiles, other active
-lifecycle phases, shared/isolated pool admission, native OOM cause attribution,
-output flooding, telemetry overhead/soak, full disk and packaged cold backup/
-historical restore remain separate work. These observations do not close all
-V03/V06/V08 groups or qualify a complete release.
+Clean candidate `23bb8c82` passed both profiles on native Linux AMD64 and ARM64
+in CI43756923411. Each backend/agent crash retained the original attempt and40
+work requests. Cancel stopped after11 AMD64/10 ARM64 requests. All four reports
+verify cleanup and positive CPU/memory/PID samples with zero missed samples;
+agent restart summaries retain `restarted` provenance. This independently reviewed
+proof qualifies the immutable request binding for Docker stats whose response ID
+is omitted, and the tested active paths. It is source-built qualification, not a
+new publication or telemetry accuracy/overhead claim. Earlier failed native runs
+43751148704/43753698469 remain failed; their diagnostics identified the omitted ID.
+
+Other lifecycle phases, shared/isolated admission, native OOM attribution, flooding,
+telemetry overhead/soak and full disk remain open. Default-UID ARM cold recovery
+has [separate scoped proof](packaged-cold-recovery.md). These observations do not
+close all V03/V06/V08 groups or qualify a complete release.

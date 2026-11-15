@@ -26,7 +26,10 @@ execution. Remove merged task trees/branches after preserving evidence.
 [Q01](../verification/resource-controls.md) has native AMD64/ARM64 direct-kernel
 proof at clean harness68d9f989. [Q02a](../verification/active-recovery.md) has scoped
 packaged ARM64 active crash/cancel, emitted-resource and cold counter evidence.
-These are individual accepted scopes; Q02 overall and Q03–Q07 remain open.
+Clean23bb8c82 native AMD64/ARM64 active profiles now pass in CI43756923411.
+[Q05a](../verification/packaged-cold-recovery.md) adds default-UID ARM packaged
+backup/history/resume proof. These are scoped results; Q02 overall and Q03–Q07
+remain open.
 
 ## Q01 frozen scope
 
