@@ -34,6 +34,7 @@ Source stores are never pruned; raw daemon logs remain private.
 `trust.ts` requires the successful first manual CI attempt on rewrite/integration,
 all twelve source/unit/native/aggregate jobs and eight immutable run-bound ZIP
 identities. `github.ts` reads four fixed authenticated API paths, joins issued
-requests and refuses incomplete lists. `download.ts` verifies exact ZIP size/hash
-using the bounded producer. This does not waive inner archive/config, scans,
-restoration, source/notices, registry readback or anonymous-install acceptance.
+requests and refuses incomplete lists. `download.ts` verifies exact ZIP size/hash.
+`stage.ts` streams bounded whitelisted leaves; `staged.ts` matches both platforms
+against native/scan/bundle/restoration/config identities and archive hashes.
+Partial files, source/notices, registry and anonymous-install acceptance are separate.

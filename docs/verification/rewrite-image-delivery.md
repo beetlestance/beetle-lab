@@ -92,3 +92,22 @@ are distinct. Selection does not establish inner content or registry acceptance.
 The reader accepted fully green hosted run `43663602569` at `ec080760` and selected
 eight artifacts. An actual native AMD64 outcome ZIP (676 bytes) matched its
 GitHub artifact SHA256. No registry write occurred.
+
+## Bounded staging
+
+`tools/delivery/stage.ts RUN_ID FULL_SHA NEW_ABSOLUTE_DIRECTORY` revalidates the
+qualified run and downloads its immutable ZIP IDs. It checks ZIP hashes before
+listing exact permitted members. `unzip -p` streams only those members into
+independently chosen exclusive regular files; archive paths and symlink metadata
+are never restored. Reports have per-file bounds and a 50MiB aggregate ceiling.
+
+For each platform, the staged bundle must match all six native/scanned IDs and
+the successful isolated-store proof, including exact config identities and gzip
+hash. Bounded decompression verifies declared tar size and all six config/manifest
+hash chains. Only success for both platforms writes `staged.json`. Partial files
+remain private and cannot authorize publication. No Docker load, rebuild or
+registry write occurs in this step.
+
+Actual staging of run `43663602569` completed for AMD64 and ARM64: all eight ZIP
+digests, both inner archives and both six-image identity chains passed. The
+private complete staging record is retained for subsequent publication work.
