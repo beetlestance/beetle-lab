@@ -52,7 +52,8 @@ export async function deleteRun(page, run) {
   await page.goto(run); await page.getByRole('button', {name: 'Delete this run…', exact: true}).click();
   await page.getByRole('button', {name: 'Preview this run deletion', exact: true}).click();
   await page.getByRole('button', {name: 'Apply deletion of 1 runs', exact: true}).click();
-  await expect(page.getByRole('heading', {name: 'completed', exact: true})).toBeVisible({timeout: 60000});
+  // Native cleanup and transport backoff can outlast one 60-second browser wait.
+  await expect(page.getByRole('heading', {name: 'completed', exact: true})).toBeVisible({timeout: 180000});
   await page.getByRole('button', {name: 'Acknowledge completed batch', exact: true}).click();
   await page.reload(); await expect(page.getByText('Resource not found', {exact: true})).toBeVisible();
 }

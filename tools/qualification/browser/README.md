@@ -44,8 +44,10 @@ The synthetic target permits at most 128 requests per path. This does not qualif
 maximum load or resource enforcement. A full passing outcome is required; separate
 feature probes do not establish that this entire sequence passed.
 
-Current evidence: candidate `5ee8d12` passed the first eleven phases in a normal
-ARM64 run, but run deletion did not complete within 60 seconds. Mounted private
-diagnostic builds completed the sequence; they do not establish a normal pass.
-The deletion/settlement handoff remains under investigation. Do not interpret
-this harness being available as complete browser qualification.
+Current evidence: unmodified candidate `5ee8d12` completed all twelve phases on
+ARM64 in a private timed run, with verified cleanup. Deletion took 79 seconds,
+exceeding the original browser wait of 60 seconds. The harness now allows up to
+180 seconds for deletion, retaining every settlement, acknowledgment and 404
+assertion. Product deadlines and resource limits are unchanged. This latency is
+an observed limitation, not a performance target. The final normal harness pass
+with this wait is pending.
