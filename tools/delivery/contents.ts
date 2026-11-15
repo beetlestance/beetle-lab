@@ -29,25 +29,43 @@ export function archiveConfigs(read: ArchiveMember, references: ImageReferences,
   return Object.freeze(Object.fromEntries(candidateRoles.map(role => {
     const matching = entries.filter(entry => Array.isArray(entry.RepoTags) && entry.RepoTags.includes(references[role]));
     if (matching.length !== 1) throw Error('Missing or duplicate archive role');
+    const tags = matching[0]!.RepoTags as unknown[];
+    if (tags.length > 2 || tags.some(tag => tag !== references[role] && tag !== 'docker.io/' + references[role])) throw Error('Undeclared archive transport tag');
     const path = configPath(matching[0]!.Config); const bytes = read(path); const id = imageIdentity(digest(bytes));
     if (!path.includes(id.slice(7))) throw Error('Archive config hash mismatch');
     const config = object(JSON.parse(bytes.toString('utf8'))); const labels = object(object(config.config).Labels);
     if (config.os !== 'linux' || config.architecture !== identity.architecture || labels['org.opencontainers.image.revision'] !== identity.revision) throw Error('Archive config identity mismatch');
     const manifest = manifests.get(id);
-    if (!manifest || ![id, manifest].includes(identity.images[role])) throw Error('Archive source content identity mismatch');
+    if (!manifest) throw Error('Archive source content identity mismatch');
+    validateNames(manifest.annotations, references[role]);
+    if (![id, manifest.id].includes(identity.images[role])) throw Error('Archive source content identity mismatch');
     return [role, id];
   })) as Record<keyof ImageReferences, string>);
 }
 
-function manifestIdentities(read: ArchiveMember): ReadonlyMap<string, string> {
+function validateNames(input: unknown, reference: string): void {
+  if (input === undefined) return;
+  const annotations = object(input);
+  for (const key of Object.keys(annotations)) {
+    if (!['io.containerd.image.name', 'org.opencontainers.image.ref.name'].includes(key)) throw Error('Unsupported archive naming annotation');
+  }
+  const full = annotations['io.containerd.image.name'];
+  const ref = annotations['org.opencontainers.image.ref.name'];
+  const permitted = (value: unknown) => value === reference || value === 'docker.io/' + reference;
+  if (full !== undefined && !permitted(full)) throw Error('Undeclared archive OCI transport name');
+  // Docker's hybrid save uses a tag-only OCI ref only alongside its full containerd name.
+  if (ref !== undefined && !permitted(ref) && !(permitted(full) && ref === reference.slice(reference.lastIndexOf(':') + 1)))
+    throw Error('Undeclared archive OCI transport name');
+}
+function manifestIdentities(read: ArchiveMember) {
   const index = object(JSON.parse(read('index.json').toString('utf8')));
-  const rows = captureManifest(index.manifests); const manifests = new Map<string, string>();
+  const rows = captureManifest(index.manifests); const manifests = new Map<string, {id: string; annotations: unknown}>();
   for (const row of rows) {
     const id = imageIdentity(row.digest); const bytes = read('blobs/sha256/' + id.slice(7));
     if (digest(bytes) !== id) throw Error('Archive manifest hash mismatch');
     const manifest = object(JSON.parse(bytes.toString('utf8'))); const config = imageIdentity(object(manifest.config).digest);
     if (manifests.has(config)) throw Error('Duplicate archive config');
-    manifests.set(config, id);
+    manifests.set(config, {id, annotations: row.annotations});
   }
   return manifests;
 }
@@ -55,6 +73,6 @@ function manifestIdentities(read: ArchiveMember): ReadonlyMap<string, string> {
 /** Both daemon storage forms must bind to the same verified archive bytes. */
 export function archiveLocalIds(read: ArchiveMember, references: ImageReferences, identity: {revision: string; architecture: string; images: ImageReferences}) {
   const configs = archiveConfigs(read, references, identity); const manifests = manifestIdentities(read);
-  return Object.fromEntries(candidateRoles.map(role => [role, {config: configs[role], manifest: manifests.get(configs[role])!}])) as
+  return Object.fromEntries(candidateRoles.map(role => [role, {config: configs[role], manifest: manifests.get(configs[role])!.id}])) as
     Record<keyof ImageReferences, {config: string; manifest: string}>;
 }

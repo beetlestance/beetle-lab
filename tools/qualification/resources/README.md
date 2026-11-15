@@ -71,3 +71,13 @@ cleans exact owned resources even after cancellation. Cleanup has a120-second
 result deadline plus bounded original calls and a four-minute step. Only the
 closed public outcome is uploaded; failure remains fatal. No build, publication,
 release/default change or unrelated source test repetition occurs in this mode.
+
+For existing qualified source images, dispatch `CI` with only
+`qualify_rewrite_run_id` and its exact `qualify_rewrite_revision`. This read-only
+mode uses distinct native AMD64/ARM64 observation jobs, leaving normal twelve
+`ci/*` gates and delivery unchanged. Contents/actions read permissions select
+immutable run-bound ZIPs; all source gates and scans/native/roundtrip/content
+chains must verify. No images are rebuilt or published. The180-second short
+window and independent120-second cleanup keep their existing bounds. Only the
+closed public short-window report is uploaded; unavailable reads remain explicit.
+Virtual image bytes and VM facts are observed context, not installation minima.

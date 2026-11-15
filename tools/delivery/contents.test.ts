@@ -43,3 +43,34 @@ it('binds config and containerd manifest IDs per role without accepting foreign 
  const row=f.manifests[0] as {digest:string};f.members.set('blobs/sha256/'+row.digest.slice(7),Buffer.from('{}'));
  expect(()=>archiveLocalIds(f.read,f.references,{revision:f.revision,architecture:'arm64',images:f.images})).toThrow('hash mismatch');
 });
+
+it('confines restored tags to the declared nonce including its canonical Docker Hub spelling',()=>{
+ const f=fixture();const row=f.entries[0] as {RepoTags:string[]};row.RepoTags.push('docker.io/'+f.references.frontend);
+ f.members.set('manifest.json',Buffer.from(JSON.stringify(f.entries)));
+ expect(archiveConfigs(f.read,f.references,{revision:f.revision,architecture:'arm64',images:f.images})).toEqual(f.images);
+ row.RepoTags[1]='someone-else/service:latest';f.members.set('manifest.json',Buffer.from(JSON.stringify(f.entries)));
+ expect(()=>archiveConfigs(f.read,f.references,{revision:f.revision,architecture:'arm64',images:f.images})).toThrow('transport tag');
+});
+
+it.each(['io.containerd.image.name', 'org.opencontainers.image.ref.name'])('confines OCI %s annotations to each config-bound role', key=>{
+ const f=fixture();const row=f.manifests[0] as {digest:string;annotations?:Record<string,string>};
+ row.annotations={[key]:'docker.io/'+f.references.frontend};
+ f.members.set('index.json',Buffer.from(JSON.stringify({manifests:f.manifests})));
+ expect(archiveConfigs(f.read,f.references,{revision:f.revision,architecture:'arm64',images:f.images})).toEqual(f.images);
+ row.annotations[key]=f.references.backend;f.members.set('index.json',Buffer.from(JSON.stringify({manifests:f.manifests})));
+ expect(()=>archiveConfigs(f.read,f.references,{revision:f.revision,architecture:'arm64',images:f.images})).toThrow('OCI transport name');
+});
+it('rejects unsupported OCI naming annotations before archive restoration',()=>{
+ const f=fixture();(f.manifests[0] as {annotations?:Record<string,string>}).annotations={'other.registry.name':'foreign/service:latest'};
+ f.members.set('index.json',Buffer.from(JSON.stringify({manifests:f.manifests})));
+ expect(()=>archiveConfigs(f.read,f.references,{revision:f.revision,architecture:'arm64',images:f.images})).toThrow('Unsupported archive naming');
+});
+
+it('accepts the hybrid tag-only OCI ref only with its exact bound containerd name',()=>{
+ const f=fixture();const row=f.manifests[0] as {annotations?:Record<string,string>};
+ row.annotations={'io.containerd.image.name':'docker.io/'+f.references.frontend,'org.opencontainers.image.ref.name':'transport'};
+ const update=()=>f.members.set('index.json',Buffer.from(JSON.stringify({manifests:f.manifests})));update();
+ expect(archiveConfigs(f.read,f.references,{revision:f.revision,architecture:'arm64',images:f.images})).toEqual(f.images);
+ delete row.annotations['io.containerd.image.name'];update();
+ expect(()=>archiveConfigs(f.read,f.references,{revision:f.revision,architecture:'arm64',images:f.images})).toThrow('OCI transport name');
+});

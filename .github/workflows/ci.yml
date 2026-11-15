@@ -8,6 +8,16 @@ on:
     tags: ['v*']
   workflow_dispatch:
     inputs:
+      qualify_rewrite_run_id:
+        description: Read-only native short-control observations using images from a successful source CI run
+        type: string
+        default: ''
+        required: false
+      qualify_rewrite_revision:
+        description: Exact source revision belonging to qualify_rewrite_run_id
+        type: string
+        default: ''
+        required: false
       qualify_rewrite_profile:
         description: Read-only checks to run against qualify_rewrite_release
         type: choice
@@ -50,7 +60,7 @@ concurrency:
 jobs:
   manual-mode:
     name: qualification/manual-mode
-    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '') }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
@@ -58,17 +68,30 @@ jobs:
         env:
           DELIVERY: ${{ inputs.deliver_rewrite_run_id }}
           QUALIFY: ${{ inputs.qualify_rewrite_release }}
+          SOURCE_RUN: ${{ inputs.qualify_rewrite_run_id }}
+          SOURCE_REVISION: ${{ inputs.qualify_rewrite_revision }}
           REPOSITORY: ${{ github.repository }}
           REF: ${{ github.ref }}
         run: |
           test "$REPOSITORY" = beetlestance/beetle-lab
           test "$REF" = refs/heads/rewrite/integration
-          if [ -n "$DELIVERY" ]; then test -z "$QUALIFY"; else test -n "$QUALIFY"; fi
+          modes=0
+          for selected in "$DELIVERY" "$QUALIFY" "$SOURCE_RUN"; do
+            if [ -n "$selected" ]; then modes=$((modes + 1)); fi
+          done
+          test "$modes" -eq 1
+          if [ -n "$SOURCE_RUN" ]; then
+            test "${#SOURCE_RUN}" -le 16
+            case "$SOURCE_RUN" in *[!0-9]*) exit 1 ;; esac
+            test "$SOURCE_RUN" -gt 0
+            test "${#SOURCE_REVISION}" -eq 40
+            case "$SOURCE_REVISION" in *[!0-9a-f]*) exit 1 ;; esac
+          else test -z "$SOURCE_REVISION"; fi
 
   qualify-rewrite:
     name: qualification/published-kernel-controls
     needs: manual-mode
-    if: ${{ inputs.qualify_rewrite_release != '' && inputs.deliver_rewrite_run_id == '' }}
+    if: ${{ inputs.qualify_rewrite_release != '' && inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_run_id == '' && inputs.qualify_rewrite_revision == '' }}
     permissions:
       contents: read
     uses: ./.github/workflows/rewrite-qualification.yml
@@ -76,9 +99,21 @@ jobs:
       release: ${{ inputs.qualify_rewrite_release }}
       profile: ${{ inputs.qualify_rewrite_profile || 'kernel-controls' }}
 
+  observe-source:
+    name: qualification/source-observation
+    needs: manual-mode
+    if: ${{ inputs.qualify_rewrite_run_id != '' && inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' }}
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/rewrite-observation.yml
+    with:
+      source_run_id: ${{ inputs.qualify_rewrite_run_id }}
+      source_revision: ${{ inputs.qualify_rewrite_revision }}
+
   source:
-    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '') && 'qualification/unused-source' || 'ci/source' }}
-    if: ${{ inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' }}
+    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') && 'qualification/unused-source' || 'ci/source' }}
+    if: ${{ inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' && inputs.qualify_rewrite_run_id == '' && inputs.qualify_rewrite_revision == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -114,7 +149,7 @@ jobs:
 
 
   tests:
-    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '') && 'qualification/unused-tests' || 'ci/tests' }} (${{ matrix.shard }}/6)
+    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') && 'qualification/unused-tests' || 'ci/tests' }} (${{ matrix.shard }}/6)
     needs: source
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -136,8 +171,8 @@ jobs:
         run: npm run test:v2 -- --shard=${{ matrix.shard }}/6 --reporter=default
 
   checks:
-    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '') && 'qualification/unused-checks' || 'ci/checks' }}
-    if: ${{ always() && inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' }}
+    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') && 'qualification/unused-checks' || 'ci/checks' }}
+    if: ${{ always() && inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' && inputs.qualify_rewrite_run_id == '' && inputs.qualify_rewrite_revision == '' }}
     needs: [source, tests]
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -151,8 +186,8 @@ jobs:
           test "$TEST_RESULT" = success
 
   legacy-container:
-    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '') && 'qualification/unused-legacy' || 'ci/legacy-container' }}
-    if: ${{ inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' }}
+    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') && 'qualification/unused-legacy' || 'ci/legacy-container' }}
+    if: ${{ inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' && inputs.qualify_rewrite_run_id == '' && inputs.qualify_rewrite_revision == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -170,8 +205,8 @@ jobs:
         run: bash scripts/container-smoke.sh beetle-lab:smoke
 
   rewrite-container:
-    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '') && 'qualification/unused-native' || 'ci/rewrite-container' }} (${{ matrix.arch }})
-    if: ${{ inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' }}
+    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') && 'qualification/unused-native' || 'ci/rewrite-container' }} (${{ matrix.arch }})
+    if: ${{ inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' && inputs.qualify_rewrite_run_id == '' && inputs.qualify_rewrite_revision == '' }}
     needs: source
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
@@ -396,8 +431,8 @@ jobs:
           retention-days: 1
 
   container:
-    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '') && 'qualification/unused-container' || 'ci/container' }}
-    if: ${{ always() && inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' }}
+    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') && 'qualification/unused-container' || 'ci/container' }}
+    if: ${{ always() && inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' && inputs.qualify_rewrite_run_id == '' && inputs.qualify_rewrite_revision == '' }}
     needs: [checks, legacy-container, rewrite-container]
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -468,7 +503,7 @@ jobs:
     needs: manual-mode
     if: >-
       github.event_name == 'workflow_dispatch' && github.repository == 'beetlestance/beetle-lab' &&
-      github.ref == 'refs/heads/rewrite/integration' && inputs.deliver_rewrite_run_id != '' && inputs.qualify_rewrite_release == ''
+      github.ref == 'refs/heads/rewrite/integration' && inputs.deliver_rewrite_run_id != '' && inputs.qualify_rewrite_release == '' && inputs.qualify_rewrite_run_id == '' && inputs.qualify_rewrite_revision == ''
     permissions:
       contents: write
       packages: write

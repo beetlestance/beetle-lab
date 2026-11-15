@@ -7,6 +7,14 @@ import {composeProcesses} from './process.js';
 import type {Image,Daemon} from '../../../../agent/test/container/docker.js';
 import {Docker} from '../../../../agent/test/container/docker.js';
 import {ownedOrigin} from '../public-api.js';
+interface EnvironmentInput {readonly NCPU?: unknown; readonly MemTotal?: unknown; readonly KernelVersion?: unknown; readonly CgroupVersion?: unknown; readonly ServerVersion?: unknown}
+function positiveInteger(input: unknown) {return typeof input === 'number' && Number.isSafeInteger(input) && input > 0 ? input : null;}
+function version(input: unknown) {return typeof input === 'string' && /^[0-9][A-Za-z0-9.+_-]{0,63}$/.test(input) ? input : null;}
+/** Closed VM facts; absent/invalid values remain unknown, never zero capacity. */
+export function daemonEnvironment(info: EnvironmentInput) {
+ return {cpus: positiveInteger(info.NCPU), memoryBytes: positiveInteger(info.MemTotal), dockerVersion: version(info.ServerVersion),
+  kernelVersion: version(info.KernelVersion), cgroupVersion: info.CgroupVersion === '1' || info.CgroupVersion === '2' ? info.CgroupVersion : null};
+}
 interface RevisionImage {Config:{Labels?:Readonly<Record<string,string>>}}
 export function imageRevision(images:readonly RevisionImage[],expected?:string):string{
  const revision=images[0]?.Config.Labels?.['org.opencontainers.image.revision'];assert(revision&&/^[a-f0-9]{40}$/.test(revision));
@@ -26,7 +34,7 @@ export async function fixture(argv:string[], maximumTargetRequests=4){
  const [frontend,backend,agent,installer,engine,offline,context='default']=argv;
  assert(argv.length>=6&&argv.length<=7);for(const item of [frontend,backend,agent,installer,engine,offline])assert(item&&/^[a-zA-Z0-9][a-zA-Z0-9_./:@-]{0,255}$/.test(item));
  assert(/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/.test(context));
- const docker=new Docker(context,2);const info=docker.json<Daemon>(['info','--format','{{json .}}']);assert.equal(info.OSType,'linux');
+ const docker=new Docker(context,2);const info=docker.json<Daemon & EnvironmentInput>(['info','--format','{{json .}}']);assert.equal(info.OSType,'linux');
  const architecture=nativeArchitecture(info.Architecture,process.arch,process.env.BEETLE_QUALIFICATION_ARCHITECTURE);
  const inspected=docker.json<(Image&{Config:{Labels?:Record<string,string>}})[]>(['image','inspect',frontend!,backend!,agent!,installer!,engine!,offline!]);
  for(const image of inspected){assert.equal(image.Os,'linux');assert.equal(image.Architecture,architecture);}
@@ -44,6 +52,6 @@ export async function fixture(argv:string[], maximumTargetRequests=4){
  const args=['compose','--project-name',project,'--env-file',envFile,'--file',resolve('docker-compose.yml'),'--file',override];
  const {compose,logs}=composeProcesses(context,args,root);
  const ids=()=>docker.run(['ps','-aq','--no-trunc','--filter',`label=com.docker.compose.project=${project}`]).split('\n').filter(Boolean);
- return {root,home,instance,project,origin,docker,compose,ids,logs,architecture,imageIds,revision,daemonVersion:info.ServerVersion,agent:`beetle-${instance}-agent`,images:{frontend,backend,agent,installer,engine,offline}};
+ return {root,home,instance,project,origin,docker,compose,ids,logs,architecture,imageIds,revision,daemonVersion:info.ServerVersion,environment:daemonEnvironment(info),agent:`beetle-${instance}-agent`,images:{frontend,backend,agent,installer,engine,offline}};
 }
 export type Fixture=Awaited<ReturnType<typeof fixture>>;

@@ -52,6 +52,6 @@ try {
   try {await cleanup(f, installation); if (installation) cleanupLiveVolumes({id: installation, user: '1000:1000', docker: f.docker}); cleanupVerified = true;}
   catch {status = 'failed'; process.exitCode = 1;}
   await writeFile(join(output, 'outcome-private.json'), JSON.stringify({status, phase, cleanupVerified, sourceRevision: f.revision,
-    architecture: f.architecture, harnessNode: process.version, imageIds: f.imageIds, archiveIdentities: identities, imageSizes: roles.map((role, index) => ({role, bytes: images[index]!.Size})), results}, null, 2), {flag: 'wx', mode: 0o600});
+    architecture: f.architecture, harnessNode: process.version, environment: f.environment, imageIds: f.imageIds, archiveIdentities: identities, imageSizes: roles.map((role, index) => ({role, bytes: images[index]!.Size})), results}, null, 2), {flag: 'wx', mode: 0o600});
   console.log(JSON.stringify({status, phase, cleanupVerified}));
 }
