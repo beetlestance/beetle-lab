@@ -38,7 +38,8 @@ store, private socket/data/exec roots, networking disabled and bounded lifetime,
 CPU, memory and process count. It verifies all six references/config IDs, reexports
 and rechecks their exact config bytes, then stops the owned daemon group. The
 source daemon is never pruned or selected by this verifier. Hosted ARM64 run `43656926824` passed this restoration gate. Both native
-jobs in run `43663602569` also passed; its unit shards are still running.
+jobs in run `43663602569` also passed, along with all six unit shards and both
+aggregate gates.
 
 Source Docker IDs can be config or manifest digests depending on the store. The
 classic vfs round trip checks canonical config IDs; the outcome records both source

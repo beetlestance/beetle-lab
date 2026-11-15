@@ -1,27 +1,22 @@
 # Remaining qualification blockers
 
-These block rewrite release acceptance; implementation or a later passing run does
-not close them. Scope follows [remaining packets](../execution/remaining-rewrite.md).
+Scope follows [remaining packets](../execution/remaining-rewrite.md). Passing a
+newer candidate does not explain an earlier failure or complete the release matrix.
 
-| Blocker | Evidence and next required proof |
+| Area | Current evidence and remaining acceptance |
 | --- | --- |
-| Output-guard reliability at shipped control caps | An unmodified 9c326f4 Compose run stopped in prepare with `artifact_incomplete`; exit 137 / OOM false. Public run was cancelled/inconclusive. Capture the exact stop branch, last-known age, scan reason/duration and event-loop/throttling evidence under the same caps; resolve and qualify before release. |
-| Public polling on the updated candidate | A de4f908 Compose run failed on a public read timeout; durable k6 state was finished/passed and cleanup verified. Diagnose the bounded request failure; durable success alone does not qualify the public flow. |
-| Actual packaged browser | Browser control tool was unavailable in this session. No DOM/component or HTTP check substitutes for real browser keyboard/themes/viewports, lifecycle and cross-scope acceptance. |
-| Hosted native matrix | Both 6d0c4e9 native jobs built their images but failed startup; cleanup succeeded. [Investigation](packaged-reliability.md) distinguishes safe failure localization from acceptance. Earlier local Linux/arm64 proof retains its narrower scope. |
-| Delivery and supply chain | Current images remain local. Scans, SBOM/license evidence, immutable matched pull references, anonymous access and authorised rewrite publication remain open. |
+| Original output-guard prepare failure | The unmodified 9c326f4 run stopped with `artifact_incomplete`, exit 137 / OOM false. The exact scanner/clock/freshness branch was not retained. Diagnostic runs did not reproduce it. Keep this investigation open; do not relax predicates or infer a CPU-limit cause. |
+| Publisher/guard composition | A separate real-scanner reproduction exposed the publisher's temporary second hard link. Exclusive single-link publication fixes that custody violation. Red/green cases, independent review and newer native/browser success support this fix; it does not explain the earlier prepare failure. |
+| Hosted packaged native | Run [43663602569](https://github.com/beetlestance/beetle-lab/actions/runs/43663602569), revision `ec080760`, passed source, legacy, six unit shards, AMD64/ARM64 Compose execution, scans, isolated archive restoration and both aggregates. Anonymous registry execution remains separate. |
+| Packaged browser | Actual Chromium acceptance on unmodified 5ee8d1 ARM64 CI images passed all twelve functional phases with verified cleanup. Authoring, inputs/folders, run/cancel/reconnect, metrics, history/comparison, reports/exports, deletion and settings passed. The full keyboard/theme/viewport and abuse matrix remains separate; this was not a UI redesign. |
+| Public polling | Current hosted normal flows passed on both architectures. The earlier de4f908 read abort reproduced at the existing 2-second client bound; its historical underlying latency cause is unknown. Only validated retryable 503 capacity GETs use existing bounded readiness handling; mutations and content checks remain unchanged. |
+| Delivery and supply chain | Both architecture inventories passed HIGH/CRITICAL scans including unfixed findings, image/source SBOMs and dependency audit. Exact artifacts, sources and local OCI indexes were verified. Registry publication, anonymous native pulls and final installer publication require their actual delivery results. |
 | Full release matrix | Resource/abuse/soak, active-phase crash, full-disk and supported backup/restore/rollback cases retain their existing gaps. |
 
-The guard failure remains unexplained. Retained agent/backend records establish
-the initiating coarse stop reason and timings, not the particular scanner/clock/
-freshness branch. Independent review found no demonstrated interface defect.
-A diagnostic copy preserving all predicates later recorded seven known scans
-(about 2–46 ms) and one successful iteration. An untouched full stack subsequently
-passed in 49.039 s. Those observations do not establish sufficiency of the 250-millicore
-agent cap or erase the earlier failure. Do not increase guard deadlines or claim
-stability from a single green run.
+[Packaged reliability](packaged-reliability.md) distinguishes observed failures,
+reproductions and accepted fixes. [Image delivery](rewrite-image-delivery.md)
+records immutable transport and publication identities. Current native/browser
+passes establish their concrete flows, not long-duration guard stability.
 
-[Candidate image evidence](candidate-image-ci.md) records the narrower accepted
-functional behavior. Raw/live stderr replay is unsupported; sanitized final
-history is the implemented diagnostic feature. UI redesign and additional engines
-remain outside this functional/release qualification packet.
+Raw/live stderr replay remains unsupported; sanitized final history is implemented.
+UI redesign and additional engines remain outside this qualification packet.

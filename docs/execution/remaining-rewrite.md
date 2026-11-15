@@ -36,12 +36,15 @@ contracts. Do not spawn an idle pool. Keep one native/build/measurement lane.
 | B10 rewrite delivery pipeline | [Candidate native CI](../verification/candidate-image-ci.md) builds/smokes separate frontend/backend/agent/k6/export/setup images; source/pull Compose use immutable matching identities; preserve existing gates; configure scans/SBOM/license evidence | Existing recipes/source Compose; hosted execution/publication needs applicable authority |
 | B11 release matrix | [Guard reliability and other blockers](../verification/qualification-blockers.md); native amd64/arm64 backend/agent/engines; enforced controls, bounded flood/soak, idle/loaded/telemetry overhead, disk failure and supported backup/restore/rollback; R0–R4 evidence signed off | B07–B10, actual native runners/tools |
 
-B10 can be prepared alongside functional work; configuration does not prove hosted
-execution or anonymous pull. The existing CI source-check job covers the rewrite,
-but container smoke/publish still build the root legacy Dockerfile. Do not replace
-the published default before the candidate passes acceptance and release gates.
-Native ARM64 agent/engine with a macOS backend is valuable local evidence and does
-not close a Linux-backend/AMD64 release matrix. Browser DOM checks do not close B09.
+B10 now has actual fully green hosted source/unit/native/scan/archive evidence
+from run `43663602569`, plus a separate qualified-delivery workflow. Its first
+delivery run `43677769395` failed GitHub source-release authorization before any
+registry write. Anonymous pull/install qualification remains pending. Legacy
+publication/default tags remain separate; do not replace them from candidate proof.
+Both native Linux architectures passed the packaged API/run/export/restart flow.
+Actual Chromium on unmodified ARM64 images passed all twelve B09 functional phases
+with cleanup. Full keyboard/theme/viewport, cross-scope abuse and B11 resource/
+recovery cases still need their own evidence; native API checks do not cover them.
 
 ## Cost and verification discipline
 

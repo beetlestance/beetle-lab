@@ -1,8 +1,15 @@
 import {expect, it} from 'vitest';
 import {ensureRelease, ensureAsset, publishRelease} from './releases.js';
-import {parseGithubReply} from './github-api.js';
+import {parseGithubReply, releaseEnvironment} from './github-api.js';
 import type {GithubApi, GithubReply} from './github-api.js';
 const revision = 'a'.repeat(40); const tag = `rewrite-sources-${revision}-17`; const hash = 'b'.repeat(64);
+it('isolates an optional release credential to the GitHub subprocess environment', () => {
+  const original = {GH_TOKEN: 'synthetic-registry', BEETLE_RELEASE_TOKEN: 'synthetic-release', PATH: '/synthetic'};
+  expect(releaseEnvironment(original)).toEqual({GH_TOKEN: 'synthetic-release', PATH: '/synthetic'});
+  expect(original.GH_TOKEN).toBe('synthetic-registry');
+  expect(releaseEnvironment({GH_TOKEN: 'synthetic-registry', BEETLE_RELEASE_TOKEN: ''})).toEqual({GH_TOKEN: 'synthetic-registry'});
+  expect(() => releaseEnvironment({BEETLE_RELEASE_TOKEN: 'invalid\nsecret'})).toThrow('Invalid release credential');
+});
 function fixture() {
   let exists = false; let draft = true; const assets: Record<string, unknown>[] = []; const writes: string[] = [];
   const reply = (status: number, value: unknown): GithubReply => ({status, value, nextPage: false});

@@ -50,3 +50,12 @@ docker compose --env-file beetle-lab.env up -d
 The default UI is http://127.0.0.1:4567. Installation is qualified only when both
 native jobs and finalization succeed; a published candidate alone is insufficient.
 See [image delivery](../../../docs/verification/rewrite-image-delivery.md).
+
+GitHub release APIs require `Workflows: write` when a candidate changes workflows
+relative to the default branch; Actions' built-in token cannot obtain that scope.
+For that case, configure `BEETLE_RELEASE_TOKEN` as a repository secret restricted to
+this repository, with Contents/Workflows write permission. It is passed explicitly
+only to release-writing steps and only replaces the `gh` subprocess credential.
+Registry access and trusted artifact reads still use the built-in Actions token;
+native qualification receives neither release nor registry write credentials.
+Missing or refused release authority stops publication before registry writes.

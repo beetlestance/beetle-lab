@@ -379,6 +379,8 @@ jobs:
       packages: write
       actions: read
     uses: ./.github/workflows/rewrite-delivery.yml
+    secrets:
+      release_token: ${{ secrets.BEETLE_RELEASE_TOKEN }}
     with:
       source_run_id: ${{ inputs.deliver_rewrite_run_id }}
       source_revision: ${{ inputs.deliver_rewrite_revision }}

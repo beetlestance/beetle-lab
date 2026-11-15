@@ -35,8 +35,8 @@ readiness owner before asserting the exact saved settings. No mutation is retrie
 and no session is replaced. Authorization/scope refusal, invalid requests, caller
 cancellation and permanent errors still fail immediately; transient reads retain
 the 100-call/45-second cap, share one cancellation signal and reject late success.
-Public failures may include only a validated numeric HTTP status. Hosted proof of
-this correction is pending; no previous failure or transport-latency claim is erased.
+Public failures may include only a validated numeric HTTP status. Both native jobs in hosted run `43663602569` passed this boundary, ordinary k6,
+export, restart persistence and cleanup. Earlier failures remain retained.
 
 ## Public read timeout
 
@@ -58,9 +58,9 @@ diagnostic runs recorded 62 known scans, no stop, and verified cleanup. The fail
 public-read diagnostic likewise did not reproduce the guard stop. Do not merge
 these distinct failures into an unsupported resource-limit explanation.
 
-Next: use the closed hosted failure location to resolve startup, capture the
-failing read's proxy/backend timing, and obtain the actual guard stop branch before
-making an enforcement change. Preserve [release blockers](qualification-blockers.md).
+Hosted startup and current public-flow qualification passed in `43663602569`.
+The original guard investigation still needs its actual stop branch before an
+enforcement change. Preserve [release blockers](qualification-blockers.md).
 
 ## Publisher/guard composition
 
@@ -73,8 +73,9 @@ Result publication now exclusively creates one final pathname, with bounded writ
 file fsync/close, named identity checks and parent fsync/close before success. The
 filename may appear early; successful publication and the reported control seal
 are completion authority. Failed/partial output remains charged and unconfirmed.
-The scanner's single-link rule is unchanged. Composed fault and native confirmation
-remain required before release; source-level correction alone is not qualification.
+The scanner's single-link rule is unchanged. Composed red/green cases passed.
+Current both-architecture native flows and actual packaged-browser acceptance
+passed after the correction; the distinct original prepare failure remains open.
 
 ## Content availability qualification
 

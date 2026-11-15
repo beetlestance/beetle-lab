@@ -8,6 +8,12 @@ export interface GithubApi {request(method: 'GET' | 'POST' | 'PATCH', path: stri
 export class GithubDeliveryError extends Error {
   constructor(readonly status: number) {super('GitHub delivery operation unconfirmed');}
 }
+export function releaseEnvironment(environment: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const {BEETLE_RELEASE_TOKEN: token, ...owned} = environment;
+  if (token === undefined || token === '') return owned;
+  if (token.length > 4096 || /[\r\n\0]/.test(token)) throw Error('Invalid release credential input');
+  return {...owned, GH_TOKEN: token};
+}
 /** Fixed GitHub API host. Numeric status is retained; raw auth/error text is private. */
 export function parseGithubReply(stdout: string): GithubReply {
   const match = /^HTTP\/[0-9.]+\s+([1-5][0-9]{2})[^\n]*\r?\n/.exec(stdout);
@@ -28,7 +34,7 @@ export class GithubDelivery implements GithubApi {
       await writeFile(file, bytes, {flag: 'wx', mode: 0o600}); args.push('--input', file);
     }
     let stdout: string; let failed = false;
-    try {({stdout} = await execute('gh', args, {timeout: 20000, killSignal: 'SIGKILL', maxBuffer: 2 * 1024 ** 2, encoding: 'utf8'}));}
+    try {({stdout} = await execute('gh', args, {env: releaseEnvironment(process.env), timeout: 20000, killSignal: 'SIGKILL', maxBuffer: 2 * 1024 ** 2, encoding: 'utf8'}));}
     catch (error) {
       const failure = error as {stdout?: unknown};
       if (typeof failure.stdout !== 'string') throw new Error('GitHub delivery transport failed', {cause: error}); stdout = failure.stdout; failed = true;
@@ -39,7 +45,7 @@ export class GithubDelivery implements GithubApi {
   }
   async upload(tag: string, files: readonly string[]): Promise<void> {
     try {await execute('gh', ['release', 'upload', tag, ...files, '--repo', 'beetlestance/beetle-lab'],
-      {timeout: 120000, killSignal: 'SIGKILL', maxBuffer: 65536, encoding: 'utf8'});}
+      {env: releaseEnvironment(process.env), timeout: 120000, killSignal: 'SIGKILL', maxBuffer: 65536, encoding: 'utf8'});}
     catch {throw Error('GitHub delivery upload did not confirm completion');}
   }
 }

@@ -10,6 +10,10 @@ on:
         required: true
         type: string
 
+    secrets:
+      release_token:
+        required: false
+
 permissions:
   contents: read
 
@@ -68,6 +72,7 @@ jobs:
       - name: Publish sources, preserve image digests and verify all indexes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BEETLE_RELEASE_TOKEN: ${{ secrets.release_token }}
         run: >-
           node --import tsx tools/delivery/registry/publish.ts "$RUNNER_TEMP/rewrite-plan"
           "$RUNNER_TEMP/rewrite-sources" "$RUNNER_TEMP/rewrite-published" "$RUNNER_TEMP/beetle-regctl/regctl"
@@ -162,6 +167,7 @@ jobs:
       - name: Publish installer only after both native architectures qualify
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BEETLE_RELEASE_TOKEN: ${{ secrets.release_token }}
         run: >-
           node --import tsx tools/delivery/registry/complete.ts "$RUNNER_TEMP/published/publication.json"
           "$RUNNER_TEMP/published/beetle-lab.env" "$RUNNER_TEMP/anonymous-amd64/qualification.json"
