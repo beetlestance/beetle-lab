@@ -2,6 +2,8 @@ export const candidateRoles = ['frontend', 'backend', 'agent', 'installer', 'eng
 export type CandidateRole = typeof candidateRoles[number];
 export type Architecture = 'amd64' | 'arm64';
 export const maximumArchiveBytes = 3 * 1024 ** 3;
+/** GitHub's ZIP envelope is distinct from the bounded images.tar.gz payload. */
+export const maximumArtifactZipBytes = maximumArchiveBytes + 1024 ** 2;
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Candidate identity object required');
   return value as Record<string, unknown>;

@@ -30,3 +30,10 @@ closed v2 transfer record. Source image IDs, config digests and registry digests
 are distinct. `roundtrip.ts` requires the fresh private Linux vfs store created by
 `scripts/verify-rewrite-archive.sh`, imports, reexports and checks all six configs.
 Source stores are never pruned; raw daemon logs remain private.
+
+`trust.ts` requires the successful first manual CI attempt on rewrite/integration,
+all twelve source/unit/native/aggregate jobs and eight immutable run-bound ZIP
+identities. `github.ts` reads four fixed authenticated API paths, joins issued
+requests and refuses incomplete lists. `download.ts` verifies exact ZIP size/hash
+using the bounded producer. This does not waive inner archive/config, scans,
+restoration, source/notices, registry readback or anonymous-install acceptance.

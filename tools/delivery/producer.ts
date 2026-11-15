@@ -2,7 +2,7 @@ import {spawn} from 'node:child_process';
 import {constants, openSync, closeSync, createWriteStream} from 'node:fs';
 import {Transform} from 'node:stream';
 import {pipeline} from 'node:stream/promises';
-import {maximumArchiveBytes} from './identity.js';
+import {maximumArtifactZipBytes} from './identity.js';
 
 type Kind = 'limit' | 'timeout' | 'stderr' | 'spawn' | 'pipe' | 'exit' | 'empty';
 interface Exit {code: number | null; signal: NodeJS.Signals | null}
@@ -17,7 +17,7 @@ function bound(value: number, maximum: number): number {
 /** POSIX task-owned process group; failure never returns before the original close. */
 export async function archiveProducer(input: Input): Promise<number> {
   if (process.platform !== 'linux' && process.platform !== 'darwin') throw new Error('POSIX archive producer required');
-  const maximum = bound(input.maximumBytes, maximumArchiveBytes); const timeout = bound(input.timeoutMs ?? 120000, 120000);
+  const maximum = bound(input.maximumBytes, maximumArtifactZipBytes); const timeout = bound(input.timeoutMs ?? 120000, 120000);
   const descriptor = openSync(input.destination, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600);
   let child: ReturnType<typeof spawn>;
   try {child = spawn(input.executable, [...input.args], {detached: true, stdio: ['ignore', 'pipe', 'pipe']});}

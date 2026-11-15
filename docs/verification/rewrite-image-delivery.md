@@ -74,3 +74,21 @@ Docker config IDs as expected. No registry write occurred.
 Anonymous registry pulls and [remaining release blockers](qualification-blockers.md)
 still require their own results. Existing legacy publication and default tags remain
 unchanged; this packet does not publish images or a release.
+
+## Trusted run selection
+
+Delivery tooling reads four fixed authenticated GitHub API paths. It requires
+a completed successful first manual CI attempt on `rewrite/integration`, the
+exact repository/workflow/full revision, all twelve source/unit/native/aggregate
+jobs, and eight unique unexpired run-bound artifact IDs and SHA256 ZIP digests.
+Incomplete paginated lists, duplicate gates and skipped required jobs fail closed.
+
+Downloads select immutable IDs, use exclusive files and count bytes through the
+existing bounded process owner. The ZIP envelope ceiling is 3GiB plus 1MiB; inner
+archive creation and verification remain capped at 3GiB. Exact ZIP size/hash is
+checked before later processing. ZIP, inner gzip, config and manifest identities
+are distinct. Selection does not establish inner content or registry acceptance.
+
+The reader accepted fully green hosted run `43663602569` at `ec080760` and selected
+eight artifacts. An actual native AMD64 outcome ZIP (676 bytes) matched its
+GitHub artifact SHA256. No registry write occurred.
