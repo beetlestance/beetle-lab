@@ -49,5 +49,6 @@ ARM64 in a private timed run, with verified cleanup. Deletion took 79 seconds,
 exceeding the original browser wait of 60 seconds. The harness now allows up to
 180 seconds for deletion, retaining every settlement, acknowledgment and 404
 assertion. Product deadlines and resource limits are unchanged. This latency is
-an observed limitation, not a performance target. The final normal harness pass
-with this wait is pending.
+an observed limitation, not a performance target. The final normal harness passed all twelve phases with
+verified cleanup on `5ee8d12` ARM64. It used restored, hash-verified CI images;
+AMD64 browser execution remains separate from its accepted native API proof.
