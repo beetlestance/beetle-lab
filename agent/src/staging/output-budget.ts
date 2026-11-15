@@ -17,9 +17,11 @@ export function data(value: object, name: string): unknown {
 const aborted = Object.getOwnPropertyDescriptor(AbortSignal.prototype, 'aborted')!.get!;
 export function scanBudget(input: Operation): Operation {
   const deadline = data(input, 'deadline');
-  if (typeof deadline !== 'number' || !Number.isFinite(deadline)) throw new ScanFailure('invalid_input');
+  if (typeof deadline !== 'number' || !Number.isFinite(deadline) || deadline < 0) throw new ScanFailure('invalid_input');
   const remaining = deadline - performance.now();
-  if (remaining <= 0 || remaining > 30_000) throw new ScanFailure('invalid_input');
+  // Deferred dispatch can consume a valid sample's budget before native IO starts.
+  if (remaining <= 0) throw new ScanFailure('deadline');
+  if (remaining > 30_000) throw new ScanFailure('invalid_input');
   const descriptor = Object.getOwnPropertyDescriptor(input, 'signal');
   if (!descriptor) return { deadline };
   const signal = data(input, 'signal');

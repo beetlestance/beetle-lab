@@ -12,6 +12,8 @@ The service owns at most64 registrations and two original scans. A completion
 pump rotates over registrations without a pending queue; busy retries back off.
 The independent watchdog uses registration time until the first complete sample,
 then successful scan start time. Unknown samples never renew freshness.
+A well-formed sample budget that expires before scanner dispatch is `deadline`,
+not malformed input: it grants no scan/freshness and leaves the same TTL in force.
 
 Close fences callbacks and drains original scan/stop promises. Failed scanner
 cleanup or stop rejection retains the registration and refuses clean shutdown.
