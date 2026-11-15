@@ -1,0 +1,60 @@
+import {writeFile, readFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {chromium} from '@playwright/test';
+import {fixture} from '../native-application/compose/fixture.ts';
+import {cleanup} from '../native-application/compose/evidence.ts';
+import {automaticClient} from '../native-application/compose/public.ts';
+import {author} from './authoring.mjs';
+import {execute, results} from './results.mjs';
+import {inputs, settings, emptyFolder, directoryImport} from './inputs-settings.mjs';
+import {offlineExport} from './exports.mjs';
+import {historyComparison, cancelReconnect, deleteRun} from './lifecycle.mjs';
+import {cleanupBrowserInstallation} from './cleanup.mjs';
+/** Same six explicit source images and owned Compose fixture as native acceptance. */
+const f = await fixture(process.argv.slice(2));
+const outcome = {format: 'beetle-browser-outcome', version: 1, status: 'failed', revision: f.revision,
+  architecture: f.architecture, imageIds: f.imageIds, phase: 'startup', completed: /** @type {string[]} */ ([]), cleanupVerified: false};
+/** @type {import('@playwright/test').Browser | undefined} */ let browser;
+/** @type {import('@playwright/test').Page | undefined} */ let page;
+/** @type {string | undefined} */ let installation;
+/** @template T @param {string} name @param {() => Promise<T>} run */
+async function phase(name, run) {
+  outcome.phase = name; const value = await run(); outcome.completed.push(name); return value;
+}
+try {
+  // The browser sequence runs three small tests; retain a finite synthetic target request budget.
+  const target = join(f.root, 'target.json'); const override = JSON.parse(await readFile(target, 'utf8'));
+  const entry = override.services['synthetic-target'].entrypoint;
+  if (!entry[2].includes('if(++counts[key]>4)')) throw Error('Unexpected target fixture');
+  entry[2] = entry[2].replace('if(++counts[key]>4)', 'if(++counts[key]>128)');
+  await writeFile(target, JSON.stringify(override), {mode: 0o600});
+  f.compose('up', '-d', '--no-build'); installation = (await automaticClient(f.origin)).installation.id;
+  browser = await chromium.launch({headless: true}); const context = await browser.newContext({acceptDownloads: true});
+  const appPage = await context.newPage(); page = appPage; appPage.setDefaultTimeout(15000);
+  const authored = await phase('automatic-access-and-authoring', () => author(appPage, f.origin));
+  const run = await phase('run-execution', () => execute(appPage));
+  await phase('report-metrics-and-download', () => results(appPage, f.root));
+  await phase('history-comparison', () => historyComparison(appPage, authored, run));
+  await phase('input-roundtrip', () => inputs(appPage, authored.workspace, f.root));
+  await phase('directory-import', () => directoryImport(appPage, authored.workspace, f.root));
+  await phase('empty-folder-deletion', () => emptyFolder(appPage, authored.workspace));
+  await phase('settings-persistence', () => settings(appPage));
+  await phase('offline-export', () => offlineExport(appPage, authored.suite, f.root));
+  await phase('durable-run-reconnect', async () => {await appPage.goto(run); await results(appPage, f.root);});
+  await phase('active-metrics-reconnect-cancellation', () => cancelReconnect(appPage, authored));
+  await phase('run-deletion', () => deleteRun(appPage, run));
+  outcome.status = 'passed';
+} catch (error) {
+  process.exitCode = 1;
+  await writeFile(join(f.root, 'browser-error.txt'), String(error).slice(0,16384), {mode: 0o600});
+  if (page && !page.isClosed()) {
+    await writeFile(join(f.root, 'browser-body.txt'), (await page.locator('body').innerText()).slice(0,65536), {mode: 0o600});
+    await writeFile(join(f.root, 'browser-accessibility.txt'), (await page.locator('body').ariaSnapshot()).slice(0,65536), {mode: 0o600});
+  }
+} finally {
+  const closed = await cleanupBrowserInstallation(async () => {await browser?.close();}, () => cleanup(f, installation));
+  outcome.cleanupVerified = closed.cleanupVerified;
+  if (!closed.browserClosed || !closed.cleanupVerified) {outcome.status = 'failed'; process.exitCode = 1;}
+  await writeFile(join(f.root, 'browser-outcome.json'), JSON.stringify(outcome, null, 2), {mode: 0o600});
+  console.log(JSON.stringify({...outcome, root: f.root}));
+}

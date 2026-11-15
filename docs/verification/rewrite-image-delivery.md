@@ -37,8 +37,8 @@ Native CI restores the bundle into a new private Linux vfs daemon with an empty
 store, private socket/data/exec roots, networking disabled and bounded lifetime,
 CPU, memory and process count. It verifies all six references/config IDs, reexports
 and rechecks their exact config bytes, then stops the owned daemon group. The
-source daemon is never pruned or selected by this verifier. Actual hosted success
-of this new restoration gate is still pending.
+source daemon is never pruned or selected by this verifier. Hosted ARM64 run `43656926824` passed this restoration gate. Both native
+jobs in run `43663602569` also passed; its unit shards are still running.
 
 Source Docker IDs can be config or manifest digests depending on the store. The
 classic vfs round trip checks canonical config IDs; the outcome records both source
@@ -66,8 +66,11 @@ A hosted f111105 archive exposed a concrete defect: its legacy manifest listed
 six images but its OCI index named only one. Docker load exited successfully while
 registering only the installer. Earlier checksum-only proofs remain incomplete.
 The corrected local tagged archive contains six verified roles and config bindings;
-its isolated-store restoration still needs hosted proof. No registry write occurred.
+its isolated-store restoration passed on hosted ARM64. The matching archive
+was loaded on Docker Desktop, then all six configurations were reexported and
+checked against their canonical hashes. Manifest IDs differed from classic
+Docker config IDs as expected. No registry write occurred.
 
-Hosted restoration and [remaining release blockers](qualification-blockers.md)
+Anonymous registry pulls and [remaining release blockers](qualification-blockers.md)
 still require their own results. Existing legacy publication and default tags remain
 unchanged; this packet does not publish images or a release.
