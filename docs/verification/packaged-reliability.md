@@ -75,3 +75,17 @@ filename may appear early; successful publication and the reported control seal
 are completion authority. Failed/partial output remains charged and unconfirmed.
 The scanner's single-link rule is unchanged. Composed fault and native confirmation
 remain required before release; source-level correction alone is not qualification.
+
+## Content availability qualification
+
+The 5ee8d1 AMD64 run failed the content HTTP-status assertion during ordinary-run
+verification. Its closed result did not retain the actual HTTP status; do not
+claim that historical failure was a capacity refusal. Refused content reads now
+retain only a validated numeric status using the existing safe diagnosis path.
+
+Functional content GETs respect an explicit HTTP 503 `capacity_unavailable` reply
+only when its bounded API error validates and is retryable. The error body is
+limited to 4096 bytes/64 reads and its stream is cancelled/released. Existing
+45-second/100-call readiness bounds and the shared signal remain. Auth/conflict,
+malformed, oversized, fragmented and nonretryable refusals still fail immediately.
+No mutation is retried, request timeout extended or content/hash/scope check removed.

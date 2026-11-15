@@ -19,8 +19,8 @@ export async function automaticSession(origin:string){
  });
  const session=prior??value(await createApiClient({...options,headers:{'X-Beetle-Local':'1'}}).openLocalBrowserSession({body:{}}));assert(cookie);
  const api=createApiClient({...options,headers:{'X-Beetle-CSRF':session.csrfToken}});
- return {api,session,requests:()=>requests,cookieDigest:()=>hash(cookie),content:(path:string,headers:Record<string,string>={})=>
-  fetcher(new URL(path,origin),{headers,signal:AbortSignal.timeout(5000)})};
+ return {api,session,requests:()=>requests,cookieDigest:()=>hash(cookie),content:(path:string,headers:Record<string,string>={},signal?:AbortSignal)=>
+  fetcher(new URL(path,origin),{headers,signal:signal?AbortSignal.any([signal,AbortSignal.timeout(5000)]):AbortSignal.timeout(5000)})};
 }
 export async function automaticClient(origin: string) {
  const client = await automaticSession(origin); const installation = await readReadyPublic(signal => client.api.getInstallationSettings({signal}));
@@ -48,7 +48,8 @@ export async function exportReady(api:ApiClient,params:ExportParams):Promise<Exp
  }throw Error('Public export deadline');
 }
 export async function readContent(response:Response,maximum:number):Promise<Buffer>{
- assert.equal(response.status,200);assert(response.body);const reader=response.body.getReader();const chunks:Buffer[]=[];let bytes=0;
+ if(response.status!==200)value({ok:false,error:{kind:'response',status:response.status}});
+ assert(response.body);const reader=response.body.getReader();const chunks:Buffer[]=[];let bytes=0;
  for(let calls=0;calls<256;calls++){const part=await reader.read();if(part.done)return Buffer.concat(chunks,bytes);
   bytes+=part.value.length;if(bytes>maximum){await reader.cancel();throw Error('Content bound');}chunks.push(Buffer.from(part.value));}
  await reader.cancel();throw Error('Content fragment bound');
