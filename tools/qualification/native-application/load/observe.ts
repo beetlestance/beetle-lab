@@ -10,7 +10,7 @@ import type {Sample} from './measure.js';
 import {measuredCall} from './network.js';
 export interface Peer {readonly role: string; readonly id: string; readonly memory: number}
 interface Call {readonly id: number; readonly endpoint: 'settings' | 'run' | 'live'; readonly durationMs: number; readonly outcome: string; readonly status: number; readonly protocolCode: string | null}
-type Checkpoint = (input: {series: readonly (readonly Sample[])[]; calls: readonly Call[]; readFailures: number}) => void;
+type Checkpoint = (input: {series: readonly (readonly Sample[])[]; calls: readonly Call[]; readFailures: number; lastState?: string | null}) => void;
 interface Reader {readonly api: ApiClient; last?: LiveMetricSnapshot; frames: number; unavailable: number}
 function callOutcome(reply: ApiClientResult<unknown> | undefined) {
   if (!reply) return {outcome: 'thrown', status: 0, protocolCode: null};
@@ -74,13 +74,13 @@ interface LoadedOptions {readonly api: ApiClient; readonly subscribers: readonly
 export async function loaded(peers: readonly Peer[], transport: DockerTransport, options: LoadedOptions) {
   const {api, subscribers, queued, checkpoint} = options;
   assert.equal(subscribers.length, 3); const readers: Reader[] = subscribers.map(api => ({api, frames: 0, unavailable: 0}));
-  const measurements = window(peers, transport); const timings: Call[] = []; const start = performance.now(); let readFailures = 0;
+  const measurements = window(peers, transport); const timings: Call[] = []; const start = performance.now(); let readFailures = 0; let lastState: string | null = null;
   try {
     for (let calls = 0; calls < 100 && performance.now() - start < 90000; calls++) {
       await measurements.read();
       const reply = await timed(timings, 'run', () => api.getRun({params: {organizationId: queued.scope.organizationId, workspaceId: queued.scope.workspaceId, runId: queued.id}}));
       if (readFailed(reply)) {readFailures++; await pause(); await pause(); continue;}
-      const run = value(reply);
+      const run = value(reply); lastState = run.state;
       if (['finished', 'errored', 'cancelled'].includes(run.state)) {
         assert.equal(run.state, 'finished'); assert.equal(run.outcome, 'passed'); assert.equal(run.reason, null);
         assert(readers.every(reader => reader.frames >= 2));
@@ -91,5 +91,5 @@ export async function loaded(peers: readonly Peer[], transport: DockerTransport,
       await pause(); await pause();
     }
     throw Error('Bounded loaded window did not settle');
-  } finally {checkpoint({series: measurements.raw(), calls: timings, readFailures});}
+  } finally {checkpoint({series: measurements.raw(), calls: timings, readFailures, lastState});}
 }

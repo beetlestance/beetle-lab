@@ -6,9 +6,13 @@ import {isAbsolute} from 'node:path';
 import {readDeliveryJson} from '../../../delivery/files.js';
 import {qualificationArchitecture} from '../../resources/values.js';
 import {publicShortOutcome} from './outcome.js';
+import {publicShortFailure} from './failure.js';
 const [source, expectedRevision, destination, extra] = process.argv.slice(2);
 assert(source && expectedRevision && destination && isAbsolute(source) && isAbsolute(destination) && !extra);
-const value = publicShortOutcome(await readDeliveryJson(source), expectedRevision);
+const raw = await readDeliveryJson(source);
+let value: ReturnType<typeof publicShortOutcome> | ReturnType<typeof publicShortFailure>;
+try {value = publicShortOutcome(raw, expectedRevision);}
+catch {value = publicShortFailure(raw, expectedRevision);}
 assert.equal(value.architecture, qualificationArchitecture(process.arch, process.env.BEETLE_QUALIFICATION_ARCHITECTURE));
 assert.equal(value.harnessNode, process.version);
 const git = (args: string[]) => execFileSync('git', args, {timeout: 10000, maxBuffer: 65536, encoding: 'utf8'}).trim();

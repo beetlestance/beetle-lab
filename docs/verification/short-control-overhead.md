@@ -128,3 +128,18 @@ Private evidence: `.agent-work/short-control-arm/`, including frozen inputs,
 check plans/results, native outcomes and original ownership/log roots. A full
 latency pass,30-minute stream, flood/high-cardinality, repeated-growth/parallel,
 telemetry comparison and disk/rollback cases remain separate acceptance work.
+
+## Hosted observations atf075ea00
+
+[CI43774155621](https://github.com/beetlestance/beetle-lab/actions/runs/43774155621)
+reused the qualified23bb8c82 native archives, without builds or publication.
+AMD64 passed the strict short-window projection and independent cleanup: control
+settings p954.37ms/run4.83ms/post9.69ms; live99/129unavailable, successful-live
+p95120.97ms, reader fresh-frame counts9/3/2. This is scoped control-latency proof,
+not uninterrupted-reader availability. Runner:4CPU,16760344576bytes RAM,
+Docker28.0.4/kernel7.0.0-1017-azure/cgroup2.
+
+ARM64 failed after96.6s. The original success-only projection discarded its
+failure details; cause remains unknown. The next harness retains only fixed
+phase/source coordinates/counts/timings on failure and still exits unsuccessfully.
+Overall CI remains failed; AMD success does not qualify ARM or the full R4 gate.

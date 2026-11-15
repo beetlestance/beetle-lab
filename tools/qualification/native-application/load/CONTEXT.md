@@ -22,3 +22,6 @@ source CI run, reusing all12gate/scans/roundtrip/ZIP/content checks before loadi
 only declared nonce tags. No build/registry publication. public.ts is CI-only:
 clean matching Git head, Node24, successful execution and independent cleanup are
 required; fixed scope/counts/timings/VM facts only, never private source outputs.
+Failure projection retains only fixed diagnosis/phase and bounded call/sample
+facts; failed or invalid success input always reports failed and exits nonzero.
+No raw exception, API body, request config or private outcome is uploaded.

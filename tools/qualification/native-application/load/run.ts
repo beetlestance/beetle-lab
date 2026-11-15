@@ -13,6 +13,7 @@ import {counts} from '../../resources/lifecycle/observations.js';
 import {idle, loaded} from './observe.js';
 import {observeNetwork} from './network.js';
 import {candidate} from './candidate.js';
+import {shortFailure} from './failure.js';
 const [bundlePath, output, context = 'default', extra] = process.argv.slice(2);
 assert(bundlePath && output && isAbsolute(bundlePath) && isAbsolute(output) && !extra);
 const {f, roles, images, identities} = await candidate(bundlePath, context);
@@ -46,6 +47,7 @@ try {
   status = p95TargetMet ? 'passed' : 'target-missed'; if (!p95TargetMet) process.exitCode = 1;
   }, calls => {results.networkHeaders = calls;});
 } catch (error) {
+  results.failure = shortFailure(error);
   process.exitCode = 1; await writeFile(join(output, 'failure-private.txt'), String(error instanceof Error ? error.stack : error).slice(0, 16384), {flag: 'wx', mode: 0o600});
 } finally {
   let cleanupVerified = false;
