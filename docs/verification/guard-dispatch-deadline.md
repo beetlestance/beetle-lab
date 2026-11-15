@@ -34,4 +34,14 @@ and an immediate guard cancellation at a last-known age of 1492 ms. A subsequent
 control-reader `missing` was downstream of that stop. With only the classification
 corrected, the same delayed sample was a `deadline`, later samples recovered and
 the real k6 run passed. Both fixtures verified cleanup. These injected runs are
-causal fault evidence; normal changed-source native qualification remains separate.
+causal fault evidence. Normal changed-source native qualification then passed
+on both Linux architectures in [CI run 43684837244](https://github.com/beetlestance/beetle-lab/actions/runs/43684837244),
+revision `72243a87`: real k6/artifacts/export, repeat-up/restart, scans and isolated
+archive restoration. All six unit shards and both aggregate gates passed too.
+Actual Chromium acceptance against the public immutable `72243a87` images then
+passed all twelve functional phases in 206.6 seconds, with cleanup verified.
+Its six recorded image IDs match the planned ARM64 root/child/config identities.
+The same public images passed fresh anonymous pulls and normal native execution
+on AMD64 and ARM64 in delivery run `43688603429`. The first AMD64 delivery attempt
+failed without a retained phase; its cause remains unknown. The retry added safe
+harness diagnostics only and did not change image bytes, caps or assertions.

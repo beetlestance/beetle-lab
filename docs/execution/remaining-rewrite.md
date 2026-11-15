@@ -4,6 +4,8 @@ Baseline:0514b74 plus the [inventory audit](../verification/inventory-audit.md).
 Scope: finish R0–R4 k6 replacement. These are completion criteria, not a claim
 that each packet requires a new framework or that all existing evidence is stale.
 Cleanup ACK/driver/recovery/settlement/protected retention are locally complete.
+The [current qualification goal](../verification/goal-qualification.md) is complete:
+current public images passed functional browser and native/pull delivery checks.
 No new Goal, push, registry publication or deployment is authorised by this page.
 
 ## Functional implementation
@@ -36,13 +38,10 @@ contracts. Do not spawn an idle pool. Keep one native/build/measurement lane.
 | B10 rewrite delivery pipeline | [Candidate native CI](../verification/candidate-image-ci.md) builds/smokes separate frontend/backend/agent/k6/export/setup images; source/pull Compose use immutable matching identities; preserve existing gates; configure scans/SBOM/license evidence | Existing recipes/source Compose; hosted execution/publication needs applicable authority |
 | B11 release matrix | [Guard reliability and other blockers](../verification/qualification-blockers.md); native amd64/arm64 backend/agent/engines; enforced controls, bounded flood/soak, idle/loaded/telemetry overhead, disk failure and supported backup/restore/rollback; R0–R4 evidence signed off | B07–B10, actual native runners/tools |
 
-B10 now has actual fully green hosted source/unit/native/scan/archive evidence
-from run `43663602569`, plus a separate qualified-delivery workflow. Its first
-delivery run `43677769395` failed GitHub source-release authorization before any
-registry write. The owner then published sources through the existing local GitHub
-session. Delivery run `43682593954` published exact indexes and passed anonymous
-pulls/native Compose on both architectures. The local installer prerelease was then
-published and its assets passed anonymous byte/hash readback. Legacy
+B10's updated candidate passed source run `43684837244`, delivery `43688603429`
+and all twelve actual public-image browser phases. Existing local GitHub access
+published its matching installer, and anonymous asset byte/hash readback passed.
+See the [qualification audit](../verification/goal-qualification.md). Legacy
 publication/default tags remain separate; do not replace them from candidate proof.
 Both native Linux architectures passed the packaged API/run/export/restart flow.
 Actual Chromium on unmodified ARM64 images passed all twelve B09 functional phases
