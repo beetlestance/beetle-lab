@@ -36,3 +36,13 @@ Both architectures require actual native execution; no emulation claim is accept
 Each worker reads VM-scoped `/proc/meminfo` before its fault and requires at least
 1.5GiB available headroom. This is a qualification safety precondition, not a
 minimum installation tier or an inference from Docker VM total memory.
+
+For independent native CI, dispatch the registered `CI` workflow on
+`rewrite/integration` with only `qualify_rewrite_release` set to a public
+`rewrite-FULL_SHA-RUN_ID` installer tag. This mode skips ordinary source/build/
+delivery jobs under distinct names; it cannot satisfy the normal `ci/*` gates.
+It verifies the completed public asset's size/SHA and tag's source revision,
+pulls only the native engine anonymously with an empty Docker config, and runs
+these same probes on Linux AMD64 and ARM64. No images/releases are published.
+Only `outcome.json` is retained; private errors, logs and owner files are excluded.
+Failure or missing evidence stays failed. Normal CI and delivery defaults remain.

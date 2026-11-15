@@ -13,7 +13,7 @@ function annotatedTarget(target: Record<string, unknown>): string {
   if (target.type !== 'tag' || typeof target.sha !== 'string' || !/^[a-f0-9]{40}$/.test(target.sha)) throw Error('Release tag revision conflict');
   return target.sha;
 }
-async function verifyTag(api: GithubApi, tag: string, revision: string, missingAllowed = false): Promise<void> {
+export async function verifyTag(api: GithubApi, tag: string, revision: string, missingAllowed = false): Promise<void> {
   const current = await api.request('GET', `${repo}/git/ref/tags/${tag}`);
   if (missingAllowed && current.status === 404 && !current.nextPage) return;
   let value = object(accepted(current, 200));

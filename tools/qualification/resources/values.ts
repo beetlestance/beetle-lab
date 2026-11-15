@@ -32,3 +32,10 @@ export function pidEvidence(row: Record<string, unknown>) {
   const limitEvents = counter(after.max) - counter(before.max); assert(limitEvents > 0);
   return {children, current, limitEvents, refusal: 'EAGAIN'};
 }
+
+export function qualificationArchitecture(host: string, expected?: string): 'amd64' | 'arm64' {
+  const architecture = host === 'x64' ? 'amd64' : host;
+  assert(architecture === 'amd64' || architecture === 'arm64');
+  if (expected !== undefined) assert.equal(architecture, expected, 'Qualification matrix architecture mismatch');
+  return architecture;
+}

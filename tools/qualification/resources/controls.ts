@@ -9,7 +9,7 @@ import {capturePublishedPlan} from '../../delivery/registry/value.js';
 import {verifyLoadedImage} from '../../delivery/registry/native-value.js';
 import {programs} from './programs.js';
 import type {Case} from './programs.js';
-import {record, counter, programReport, cpuEvidence, pidEvidence} from './values.js';
+import {record, counter, programReport, cpuEvidence, pidEvidence, qualificationArchitecture} from './values.js';
 const cases = ['cpu', 'memory', 'pids', 'descendants'] as const;
 const limits = ['--cpus', '1', '--memory', '512m', '--memory-swap', '512m', '--pids-limit', '128', '--init=false',
   '--read-only', '--user', '1000:1000', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges:true', '--network', 'none',
@@ -98,7 +98,7 @@ function argumentsFor(argv: string[]) {
 async function main() {
   const {publication, output, context} = argumentsFor(process.argv.slice(2));
   const plan = capturePublishedPlan(await readDeliveryJson(publication));
-  const architecture = process.arch === 'x64' ? 'amd64' : process.arch; assert(['amd64', 'arm64'].includes(architecture));
+  const architecture = qualificationArchitecture(process.arch, process.env.BEETLE_QUALIFICATION_ARCHITECTURE);
   const engine = plan.images.find(row => row.role === 'engine')!;
   const platform = engine.platforms.find(row => row.architecture === architecture)!;
   const image = `${plan.repository}@${engine.index.digest}`; const allowed = [engine.index.digest, platform.digest, platform.config];
