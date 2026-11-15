@@ -9,7 +9,7 @@ function sourceBundle(input: unknown, revision: string) {
     || archive.name !== 'sources.tar.gz' || !Array.isArray(source.candidates) || source.candidates.length !== 2) throw Error('Completed candidate source bundle required');
   return {source, archive, candidates: source.candidates.map(object)};
 }
-function sourcePlatforms(candidates: readonly Record<string, unknown>[], bundles: readonly DeliveryBundle[]): void {
+function sourcePlatforms(candidates: readonly Record<string, unknown>[], bundles: readonly Pick<DeliveryBundle, 'architecture' | 'configs'>[]): void {
   for (const bundle of bundles) {
     const matches = candidates.filter(row => row.architecture === bundle.architecture);
     if (matches.length !== 1) throw Error('Source bundle platform missing');
@@ -17,11 +17,14 @@ function sourcePlatforms(candidates: readonly Record<string, unknown>[], bundles
     if (Object.keys(configs).length !== 6 || candidateRoles.some(role => configs[role] !== bundle.configs[role])) throw Error('Source bundle config binding mismatch');
   }
 }
-export async function registrySources(directory: string, bundles: readonly DeliveryBundle[]) {
+export function verifySourceMetadata(input: unknown, revision: string, bundles: readonly Pick<DeliveryBundle, 'architecture' | 'configs'>[]): void {
+  const captured = sourceBundle(input, revision); sourcePlatforms(captured.candidates, bundles);
+}
+export async function registrySources(directory: string, bundles: readonly DeliveryBundle[], sourceRunId: number) {
   const {source, archive, candidates} = sourceBundle(await readDeliveryJson(join(directory, 'source-bundle.json')), bundles[0]!.revision);
   sourcePlatforms(candidates, bundles);
   const actual = await deliveryDigest(join(directory, 'sources.tar.gz'), 640 * 1024 ** 2);
   if (actual.bytes !== archive.bytes || actual.sha256 !== archive.sha256) throw Error('Source bundle archive hash mismatch');
   return {bytes: actual.bytes, sha256: actual.sha256,
-    url: `https://github.com/beetlestance/beetle-lab/releases/download/rewrite-${source.revision}/sources-${actual.sha256}.tar.gz`};
+    url: `https://github.com/beetlestance/beetle-lab/releases/download/rewrite-sources-${source.revision}-${sourceRunId}/sources.tar.gz`};
 }

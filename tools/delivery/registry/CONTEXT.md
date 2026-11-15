@@ -1,13 +1,21 @@
-# Registry delivery preparation
+# Qualified registry delivery
 
-`tool.ts` verifies the pinned regctl binary and owns config/auth/call files.
-Default credentials are empty; never inherit a user's personal Docker helpers.
-`descriptors.ts` binds source OCI manifests to config/platform identities and
-requires exactly two native children per role index. Short transport tags collide.
-`plan.ts` imports by digest into one private OCI layout and writes a complete safe
-public plan only after all twelve configs and six role indexes verify.
-`sources.ts` checks source archive bytes and every platform's six config bindings.
+`plan.ts` imports twelve checked configs by OCI digest and creates six two-platform
+indexes. Tags include source SHA and qualifying run ID. `value.ts` validates the
+closed public plan; private layouts, auth/config files and logs are never uploaded.
+`tool.ts` verifies pinned regctl and owns its empty or explicit CI credentials.
 
-No registry writes or rebuilds in preparation. Do not upload private config,
-credential or command directories. A future writer must preserve digests, refuse
-conflicts, verify sources publicly first and qualify anonymous native installs.
+`publish.ts` requires the owned manual CI context and fresh successful source-run
+validation. `releases.ts` refuses tag/asset conflicts. `public-sources.ts` publishes
+and anonymously hashes sources before `remote.ts` writes any image. Remote copies
+preserve digests; existing conflicting tags fail closed. Only complete readback
+produces installation references. Owned writers are serialized; external registry
+administrators can still move tags, so installations use immutable digests.
+
+`pull.ts` proves all six anonymous pulls in a fresh private Linux vfs store.
+`native.ts` independently pulls with empty credentials and runs the native Compose
+acceptance against the candidate's identical Compose file. Closed qualification
+records bind both platforms to configs/indexes and verified fixture cleanup.
+`complete.ts` publishes the separate installation release only after both native
+records and anonymous remote readback. Never add assets to the source release
+after publishing it. See README.md and docs/verification/rewrite-image-delivery.md.

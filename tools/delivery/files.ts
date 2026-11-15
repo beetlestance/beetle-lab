@@ -3,7 +3,7 @@ import {open} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 
 /** Fixed metadata leaf; no symlinks, unbounded readFile or mutable parsing hooks. */
-export async function readDeliveryJson(path: string): Promise<unknown> {
+export async function readDeliveryBytes(path: string): Promise<Buffer> {
   const maximum = 262144; const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
     const info = await file.stat();
@@ -15,8 +15,11 @@ export async function readDeliveryJson(path: string): Promise<unknown> {
       offset += bytesRead;
     }
     if (offset > maximum) throw new Error('Delivery metadata bound');
-    return JSON.parse(buffer.subarray(0, offset).toString('utf8')) as unknown;
+    return buffer.subarray(0, offset);
   } finally {await file.close();}
+}
+export async function readDeliveryJson(path: string): Promise<unknown> {
+  return JSON.parse((await readDeliveryBytes(path)).toString('utf8')) as unknown;
 }
 export async function deliveryDigest(path: string, maximum: number) {
   const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);

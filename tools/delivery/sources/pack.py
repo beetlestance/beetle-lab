@@ -43,6 +43,17 @@ def metadata(archive, path, relative):
     return info
 
 
+def add_regular_file(archive, path, info):
+    descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    with os.fdopen(descriptor, "rb") as source:
+        info_stat = os.fstat(descriptor)
+        if not stat.S_ISREG(info_stat.st_mode) or info_stat.st_nlink != 1 or info_stat.st_size != info.size:
+            raise ValueError("Source file changed")
+        archive.addfile(info, source)
+        if os.fstat(descriptor).st_size != info.size:
+            raise ValueError("Source file changed")
+
+
 def main():
     if len(sys.argv) != 2:
         raise ValueError("Expected source payload directory")
@@ -61,14 +72,7 @@ def main():
                 if info.size > 200 * 1024**2 or total > 640 * 1024**2:
                     raise ValueError("Source tar input bound")
                 if info.isfile():
-                    descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
-                    with os.fdopen(descriptor, "rb") as source:
-                        info_stat = os.fstat(descriptor)
-                        if not stat.S_ISREG(info_stat.st_mode) or info_stat.st_nlink != 1 or info_stat.st_size != info.size:
-                            raise ValueError("Source file changed")
-                        archive.addfile(info, source)
-                        if os.fstat(descriptor).st_size != info.size:
-                            raise ValueError("Source file changed")
+                    add_regular_file(archive, path, info)
                 else:
                     archive.addfile(info)
 

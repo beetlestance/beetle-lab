@@ -45,7 +45,7 @@ async function main(): Promise<void> {
   const [staging, sourceDirectory, output, executable, extra] = process.argv.slice(2);
   if (!staging || !sourceDirectory || !output || !executable || extra
     || ![staging, sourceDirectory, output, executable].every(path => isAbsolute(path) && path.length <= 4096)) throw Error('Expected staged, source, new output and pinned tool absolute paths');
-  const inputs = await stagedInputs(staging); const sources = await registrySources(sourceDirectory, inputs.bundles);
+  const inputs = await stagedInputs(staging); const sources = await registrySources(sourceDirectory, inputs.bundles, inputs.runId);
   await mkdir(output, {mode: 0o700}); const tool = await RegistryTool.open(executable, join(output, 'private-tool'));
   const layout = join(output, 'layout'); const roles = await importPlatforms(tool, staging, layout, inputs.bundles);
   const images = [];
@@ -54,9 +54,10 @@ async function main(): Promise<void> {
     const children = roles[role].flatMap(image => ['--ref', `ocidir://${layout}@${image.digest}`]);
     await tool.command(['index', 'create', reference, ...children, '--annotation', `org.opencontainers.image.revision=${inputs.revision}`,
       '--annotation', 'org.opencontainers.image.source=https://github.com/beetlestance/beetle-lab',
-      '--annotation', `org.opencontainers.image.documentation=https://github.com/beetlestance/beetle-lab/releases/tag/rewrite-${inputs.revision}`]);
+      '--annotation', `org.opencontainers.image.documentation=https://github.com/beetlestance/beetle-lab/releases/tag/rewrite-${inputs.revision}-${inputs.runId}`,
+      '--annotation', `dev.beetlestance.sources=${sources.url}`]);
     const index = captureRoleIndex(await tool.raw(['manifest', 'get', reference, '--format', 'raw-body']), roles[role]);
-    images.push({role, tag: `rewrite-${inputs.revision}-${role}`, index, platforms: roles[role]});
+    images.push({role, tag: `rewrite-${inputs.revision}-${inputs.runId}-${role}`, index, platforms: roles[role]});
   }
   await writeFile(join(output, 'publication-plan.json'), JSON.stringify({format: 'beetle-registry-plan', version: 1,
     revision: inputs.revision, sourceRunId: inputs.runId, repository: 'ghcr.io/beetlestance/beetle-lab', sources, images}, null, 2), {flag: 'wx', mode: 0o600});

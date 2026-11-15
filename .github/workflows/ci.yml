@@ -13,6 +13,16 @@ on:
         type: boolean
         default: false
         required: false
+      deliver_rewrite_run_id:
+        description: Publish a successful qualified manual rewrite CI run; empty runs normal CI
+        type: string
+        default: ''
+        required: false
+      deliver_rewrite_revision:
+        description: Exact full source revision belonging to the qualified run
+        type: string
+        default: ''
+        required: false
 
 permissions:
   contents: read
@@ -23,7 +33,8 @@ concurrency:
 
 jobs:
   source:
-    name: ci/source
+    name: ${{ inputs.deliver_rewrite_run_id != '' && 'delivery/unused-source' || 'ci/source' }}
+    if: ${{ inputs.deliver_rewrite_run_id == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -59,7 +70,7 @@ jobs:
 
 
   tests:
-    name: ci/tests (${{ matrix.shard }}/6)
+    name: ${{ inputs.deliver_rewrite_run_id != '' && 'delivery/unused-tests' || 'ci/tests' }} (${{ matrix.shard }}/6)
     needs: source
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -81,8 +92,8 @@ jobs:
         run: npm run test:v2 -- --shard=${{ matrix.shard }}/6 --reporter=default
 
   checks:
-    name: ci/checks
-    if: ${{ always() }}
+    name: ${{ inputs.deliver_rewrite_run_id != '' && 'delivery/unused-checks' || 'ci/checks' }}
+    if: ${{ always() && inputs.deliver_rewrite_run_id == '' }}
     needs: [source, tests]
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -96,7 +107,8 @@ jobs:
           test "$TEST_RESULT" = success
 
   legacy-container:
-    name: ci/legacy-container
+    name: ${{ inputs.deliver_rewrite_run_id != '' && 'delivery/unused-legacy' || 'ci/legacy-container' }}
+    if: ${{ inputs.deliver_rewrite_run_id == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -114,7 +126,8 @@ jobs:
         run: bash scripts/container-smoke.sh beetle-lab:smoke
 
   rewrite-container:
-    name: ci/rewrite-container (${{ matrix.arch }})
+    name: ${{ inputs.deliver_rewrite_run_id != '' && 'delivery/unused-native' || 'ci/rewrite-container' }} (${{ matrix.arch }})
+    if: ${{ inputs.deliver_rewrite_run_id == '' }}
     needs: source
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
@@ -289,8 +302,8 @@ jobs:
           compression-level: 0
 
   container:
-    name: ci/container
-    if: ${{ always() }}
+    name: ${{ inputs.deliver_rewrite_run_id != '' && 'delivery/unused-container' || 'ci/container' }}
+    if: ${{ always() && inputs.deliver_rewrite_run_id == '' }}
     needs: [checks, legacy-container, rewrite-container]
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -354,3 +367,18 @@ jobs:
             type=gha,scope=beetle-lab-amd64
             type=gha,scope=beetle-lab-multiarch
           cache-to: type=gha,mode=max,scope=beetle-lab-multiarch
+
+
+  deliver-rewrite:
+    name: delivery/qualified-candidates
+    if: >-
+      github.event_name == 'workflow_dispatch' && github.repository == 'beetlestance/beetle-lab' &&
+      github.ref == 'refs/heads/rewrite/integration' && inputs.deliver_rewrite_run_id != ''
+    permissions:
+      contents: write
+      packages: write
+      actions: read
+    uses: ./.github/workflows/rewrite-delivery.yml
+    with:
+      source_run_id: ${{ inputs.deliver_rewrite_run_id }}
+      source_revision: ${{ inputs.deliver_rewrite_revision }}
