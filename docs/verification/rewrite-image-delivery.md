@@ -128,3 +128,18 @@ The actual collector then verified 177 third-party source groups. Deterministic
 packing separately normalizes host owners/times and retains executable recipe
 modes and the verified sibling link. Registry source delivery still needs its own
 public readback proof; private source collection alone does not publish a release.
+
+## Local immutable registry plan
+
+The [planner](../../tools/delivery/registry/README.md) uses pinned regctl 0.11.7
+with private empty credential/config paths. It imports original OCI manifests by
+digest, because all source archives repeat the short `transport` tag. It verifies
+all twelve original config/manifest identities and six exact two-platform indexes
+before writing a public-safe plan. Source archive bytes and all config bindings
+are checked again. No rebuild or registry write occurs.
+
+Actual local planning of candidate `ec080760` passed for twelve platform images
+and six indexes. The owned OCI store and complete plan are retained privately.
+Empty command logs are explicitly allowed; payloads remain nonempty by default
+and every nonzero command exit still fails. Publication and anonymous install
+remain separate acceptance steps.

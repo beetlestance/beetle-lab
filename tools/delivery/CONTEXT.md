@@ -37,4 +37,4 @@ identities. `github.ts` reads four fixed authenticated API paths, joins issued
 requests and refuses incomplete lists. `download.ts` verifies exact ZIP size/hash.
 `stage.ts` streams bounded whitelisted leaves; `staged.ts` matches both platforms
 against native/scan/bundle/restoration/config identities and archive hashes.
-Source/notices: sources/README.md. Partial files and registry/install gates remain separate.
+Sources: sources/README.md; local OCI plans: registry/README.md. Registry/install gates remain.

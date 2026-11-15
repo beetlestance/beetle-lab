@@ -9,10 +9,13 @@ interface Exit {code: number | null; signal: NodeJS.Signals | null}
 export class ArchiveProducerError extends Error {
   constructor(readonly kind: Kind, readonly exit: Exit) {super(`Archive producer ${kind}`);}
 }
-interface Input {executable: string; args: readonly string[]; destination: string; maximumBytes: number; timeoutMs?: number}
+interface Input {executable: string; args: readonly string[]; destination: string; maximumBytes: number; timeoutMs?: number; allowEmptyOutput?: boolean}
 function bound(value: number, maximum: number): number {
   if (!Number.isSafeInteger(value) || value <= 0 || value > maximum) throw new Error('Archive producer bound');
   return value;
+}
+function requireOutput(bytes: number, allowEmpty: boolean | undefined, exit: Exit): void {
+  if (!bytes && allowEmpty !== true) throw new ArchiveProducerError('empty', exit);
 }
 /** POSIX task-owned process group; failure never returns before the original close. */
 export async function archiveProducer(input: Input): Promise<number> {
@@ -50,7 +53,7 @@ export async function archiveProducer(input: Input): Promise<number> {
     const exit = await termination;
     if (failure) throw new ArchiveProducerError(failure, exit);
     if (exit.code !== 0 || exit.signal !== null) throw new ArchiveProducerError('exit', exit);
-    if (!bytes) throw new ArchiveProducerError('empty', exit);
+    requireOutput(bytes, input.allowEmptyOutput, exit);
     return bytes;
   } finally {clearTimeout(deadline); clearTimeout(killTimer);}
 }
