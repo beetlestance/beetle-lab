@@ -1,5 +1,5 @@
 import { record } from './inspect.js';
-import type { DockerReply } from './types.js';
+import type { DockerReply, DockerRequest } from './types.js';
 import type { ResourceReading } from './resource-types.js';
 
 export function unknownResources(reason: ResourceReading['reason']): ResourceReading {
@@ -34,12 +34,18 @@ function measurements(body: Record<string, unknown>, previous: ResourceCounter):
   return { cpuMillis: observedCpu.millis, memoryBytes: memory, pids,
     reason: observedCpu.reset ? 'counter_reset' : [cpu, memory, pids].includes(null) ? 'unsupported' : null };
 }
+export interface StatsRequestBinding {readonly id: string; readonly method: DockerRequest['method']; readonly path: string}
+function boundRequest(binding: StatsRequestBinding): boolean {
+  return /^[a-f0-9]{64}$/.test(binding.id) && binding.method === 'GET'
+    && binding.path === `/v1.47/containers/${binding.id}/stats?stream=false&one-shot=true`;
+}
 /** Docker API values are raw usage; no CLI cache subtraction or CPU rate estimation. */
-export function resourceReading(reply: DockerReply, id: string, previous: ResourceCounter): ResourceReading {
+export function resourceReading(reply: DockerReply, binding: StatsRequestBinding, previous: ResourceCounter): ResourceReading {
+  if (!boundRequest(binding)) return unknownResources('invalid');
   if (!reply.ok) return unknownResources(reply.reason === 'malformed' ? 'invalid' : 'unavailable');
   if ([400, 501].includes(reply.status)) return unknownResources('unsupported');
   if (reply.status !== 200) return unknownResources('unavailable');
   const body = record(reply.body);
-  if (!body || body.id !== id) return unknownResources('invalid');
+  if (!body || Object.hasOwn(body, 'id') && body.id !== binding.id) return unknownResources('invalid');
   return measurements(body, previous);
 }

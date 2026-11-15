@@ -55,10 +55,12 @@ export class DockerBackend {
     const id = entry.runtimeId!;
     this.active++;
     try {
-      const reply = await this.request({ ...context, deadline: Math.min(context.deadline, performance.now() + 1000),
-        method: 'GET', path: `/v1.47/containers/${id}/stats?stream=false&one-shot=true` });
+      const request = Object.freeze({ ...context, deadline: Math.min(context.deadline, performance.now() + 1000),
+        method: 'GET' as const, path: `/v1.47/containers/${id}/stats?stream=false&one-shot=true` });
+      const binding = Object.freeze({id, method: request.method, path: request.path});
+      const reply = await this.request(request);
       if (!this.resourceOwner(entry) || entry.runtimeId !== id) return unknownResources('unavailable');
-      return resourceReading(reply, id, entry);
+      return resourceReading(reply, binding, entry);
     } finally { this.active--; }
   }
 

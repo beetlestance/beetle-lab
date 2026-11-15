@@ -20,6 +20,15 @@ cpu_stats.cpu_usage.total_usage nanoseconds, converted to whole milliseconds;
 validate the original counter as a nonnegative safe integer before conversion.
 Memory is raw memory_stats.usage, not cache-subtracted working set. PIDs is
 pids_stats.current. Reject unsafe, negative, malformed or wrong-ID replies.
+Some compatible daemons omit the optional stats-body ID. The backend captures an
+immutable full64-character container ID, GET method and exact stats path/query
+before awaiting the original. This request binding plus unchanged inspected
+ownership before/after the reply authorizes decoding only an omitted ID. Any
+present wrong, shortened, null or malformed ID refuses; an unbound/wrong-method/
+wrong-path reply cannot update counters. No browser name or adoption is introduced.
+Docker28's [StatsResponse](https://github.com/moby/moby/blob/v28.0.4/api/types/container/stats.go#L142)
+marks the ID optional. The one-second deadline and all scalar bounds stay intact.
+
 Missing individual measurements are null, never zero. A failed read returns
 unknown values/reason; it cannot revoke runtime ownership or invent termination.
 Zero is valid only when actually observed. Keep the adapter's established original

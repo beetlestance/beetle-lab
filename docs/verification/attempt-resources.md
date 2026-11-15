@@ -51,3 +51,19 @@ task evidence. No full suite, build or new image qualification was run.
 Real daemon/cgroup measurements, native amd64/arm64, sensor variants and loaded
 sampling overhead remain unqualified. No browser rendering, real-engine resource
 accuracy, complete restart matrix, CI or release claim follows from these fixtures.
+
+## Native compatibility correction under qualification
+
+Runs43751148704 and43753698469 exposed a Docker28.0.4 compatibility defect on both
+native architectures: the API returned200 within2–13ms but omitted its optional
+body ID. The old reader rejected every reply as invalid; five emitted summaries
+per case truthfully contained no samples. The real workload/cancel guards were
+not changed to obtain measurements. Public source:
+[Docker28 StatsResponse](https://github.com/moby/moby/blob/v28.0.4/api/types/container/stats.go#L142).
+
+The correction captures an immutable full-ID/method/exact-query binding before
+dispatch and retains both inspected-owner guards. Only omission is tolerated;
+present wrong/short/null IDs or malformed bindings refuse without updating CPU
+history. Scalar validation and the one-second deadline are unchanged. Twenty-four
+focused decoder/adapter cases passed; changed-source packaged/native proof is
+pending. Earlier unmodified-image measurements do not qualify the corrected agent.

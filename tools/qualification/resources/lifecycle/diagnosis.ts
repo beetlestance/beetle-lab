@@ -1,9 +1,9 @@
 import {nativeFailure, nativeFailureCodes, nativeFailureFiles} from '../../native-application/compose/failure.js';
-const files = new Set([...nativeFailureFiles, 'active', 'observations', 'readiness', 'ownership', 'cleanup', 'run', 'configuration']);
+const files = new Set([...nativeFailureFiles, 'active', 'observations', 'readiness', 'ownership', 'cleanup', 'run', 'configuration', 'execution']);
 export function lifecycleFailure(error: unknown) {
   const known = nativeFailure(error);
   if (!(error instanceof Error)) return known;
-  const match = /resources\/lifecycle\/(active|observations|readiness|ownership|cleanup|run|configuration)\.(?:ts|js):(\d{1,4}):(\d{1,4})\b/.exec(error.stack ?? '');
+  const match = /resources\/lifecycle\/(active|observations|readiness|ownership|cleanup|run|configuration|execution)\.(?:ts|js):(\d{1,4}):(\d{1,4})\b/.exec(error.stack ?? '');
   return {...known, site: match ? {file: match[1]!, line: Number(match[2]), column: Number(match[3])} : known.site};
 }
 function row(input: unknown): Record<string, unknown> {
