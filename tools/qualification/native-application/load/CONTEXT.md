@@ -25,3 +25,5 @@ required; fixed scope/counts/timings/VM facts only, never private source outputs
 Failure projection retains only fixed diagnosis/phase and bounded call/sample
 facts; failed or invalid success input always reports failed and exits nonzero.
 No raw exception, API body, request config or private outcome is uploaded.
+Readers now use independent two-second settled UI cadence, not a shared burst
+barrier. Stop joins every original reader and stats request before cleanup.

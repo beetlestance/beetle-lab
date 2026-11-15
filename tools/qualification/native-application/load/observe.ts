@@ -8,9 +8,10 @@ import {value, pause} from '../public-api.js';
 import {sample, summarize, percentile} from './measure.js';
 import type {Sample} from './measure.js';
 import {measuredCall} from './network.js';
+import {pollLiveReader} from './poll.js';
 export interface Peer {readonly role: string; readonly id: string; readonly memory: number}
 interface Call {readonly id: number; readonly endpoint: 'settings' | 'run' | 'live'; readonly durationMs: number; readonly outcome: string; readonly status: number; readonly protocolCode: string | null}
-type Checkpoint = (input: {series: readonly (readonly Sample[])[]; calls: readonly Call[]; readFailures: number; lastState?: string | null}) => void;
+type Checkpoint = (input: {series: readonly (readonly Sample[])[]; calls: readonly Call[]; readFailures: number; lastState?: string | null; readers?: readonly {frames: number; unavailable: number}[]}) => void;
 interface Reader {readonly api: ApiClient; last?: LiveMetricSnapshot; frames: number; unavailable: number}
 function callOutcome(reply: ApiClientResult<unknown> | undefined) {
   if (!reply) return {outcome: 'thrown', status: 0, protocolCode: null};
@@ -49,7 +50,7 @@ async function frame(reader: Reader, run: Run, timings: Call[]) {
 function window(peers: readonly Peer[], transport: DockerTransport) {
   const series = peers.map((): Sample[] => []);
   return {
-    async read() {const rows = await Promise.all(peers.map(peer => sample(transport, peer.id))); rows.forEach((row, index) => {assert(series[index]!.length < 128); series[index]!.push(row);});},
+    async read() {const outcomes = await Promise.allSettled(peers.map(peer => sample(transport, peer.id))); const rows = outcomes.map(outcome => {if (outcome.status === 'rejected') throw outcome.reason; return outcome.value;}); rows.forEach((row, index) => {assert(series[index]!.length < 128); series[index]!.push(row);});},
     raw() {return series;},
     finish() {return peers.map((peer, index) => ({role: peer.role, id: peer.id, ...summarize(series[index]!, peer.memory)}));},
   };
@@ -74,22 +75,33 @@ interface LoadedOptions {readonly api: ApiClient; readonly subscribers: readonly
 export async function loaded(peers: readonly Peer[], transport: DockerTransport, options: LoadedOptions) {
   const {api, subscribers, queued, checkpoint} = options;
   assert.equal(subscribers.length, 3); const readers: Reader[] = subscribers.map(api => ({api, frames: 0, unavailable: 0}));
-  const measurements = window(peers, transport); const timings: Call[] = []; const start = performance.now(); let readFailures = 0; let lastState: string | null = null;
+  const measurements = window(peers, transport); const timings: Call[] = []; const start = performance.now(); let readFailures = 0;
+  let current: Run | undefined; let terminal: Run | undefined; let readerFailure: unknown; let lastState: string | null = null;
+  const stop = new AbortController();
+  const jobs = readers.map(reader => pollLiveReader(async () => {
+    if (current?.state === 'active') await frame(reader, current, timings);
+  }, stop.signal).catch(error => {readerFailure ??= error; stop.abort();}));
   try {
     for (let calls = 0; calls < 100 && performance.now() - start < 90000; calls++) {
+      if (readerFailure !== undefined) throw readerFailure;
       await measurements.read();
       const reply = await timed(timings, 'run', () => api.getRun({params: {organizationId: queued.scope.organizationId, workspaceId: queued.scope.workspaceId, runId: queued.id}}));
       if (readFailed(reply)) {readFailures++; await pause(); await pause(); continue;}
-      const run = value(reply); lastState = run.state;
-      if (['finished', 'errored', 'cancelled'].includes(run.state)) {
-        assert.equal(run.state, 'finished'); assert.equal(run.outcome, 'passed'); assert.equal(run.reason, null);
-        assert(readers.every(reader => reader.frames >= 2));
-        return {peers: measurements.finish(), apiCalls: timings.length, ...latency(timings), readFailures, elapsedMs: performance.now() - start,
-          run, readers: readers.map(reader => ({frames: reader.frames, unavailable: reader.unavailable}))};
+      current = value(reply); lastState = current.state;
+      if (['finished', 'errored', 'cancelled'].includes(current.state)) {
+        assert.equal(current.state, 'finished'); assert.equal(current.outcome, 'passed'); assert.equal(current.reason, null);
+        terminal = current; break;
       }
-      if (run.state === 'active') await Promise.all(readers.map(reader => frame(reader, run, timings)));
       await pause(); await pause();
     }
-    throw Error('Bounded loaded window did not settle');
-  } finally {checkpoint({series: measurements.raw(), calls: timings, readFailures, lastState});}
+    if (!terminal) throw Error('Bounded loaded window did not settle');
+  } finally {
+    stop.abort(); await Promise.allSettled(jobs);
+    checkpoint({series: measurements.raw(), calls: timings, readFailures, lastState,
+      readers: readers.map(reader => ({frames: reader.frames, unavailable: reader.unavailable}))});
+  }
+  if (readerFailure !== undefined) throw readerFailure;
+  assert(readers.every(reader => reader.frames >= 2));
+  return {peers: measurements.finish(), apiCalls: timings.length, ...latency(timings), readFailures, elapsedMs: performance.now() - start,
+    run: terminal, readers: readers.map(reader => ({frames: reader.frames, unavailable: reader.unavailable}))};
 }

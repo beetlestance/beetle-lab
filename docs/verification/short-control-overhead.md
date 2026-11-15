@@ -143,3 +143,13 @@ ARM64 failed after96.6s. The original success-only projection discarded its
 failure details; cause remains unknown. The next harness retains only fixed
 phase/source coordinates/counts/timings on failure and still exits unsuccessfully.
 Overall CI remains failed; AMD success does not qualify ARM or the full R4 gate.
+
+Diagnostic retry43775209762 retained failures on both architectures at the
+fresh-frame-per-reader assertion. Both attempts finished, all control reads
+succeeded and independent cleanup passed. Live refusals were101/129ARM and
+95/126AMD; this does not prove a server-latency or execution failure. The old
+fixture issued three readers together every500ms against two finite read slots.
+The corrected fixture uses each UI reader's independent two-second settled
+cadence, drains all original reads before cleanup, and retains reader counts on
+failure. Acceptance targets are unchanged; a new native run is required. This
+fixture mismatch is not retrospective proof of every earlier failure's cause.
