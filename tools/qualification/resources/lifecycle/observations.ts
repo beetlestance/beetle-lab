@@ -10,16 +10,26 @@ export function counts(f: Fixture) {
   const row = record(f.docker.json<unknown>(['exec', id, 'node', '-e', program]));
   return {ready: counter(row.ready), work: counter(row.work), unexpected: counter(row.unexpected)};
 }
-export function runtime(f: Fixture, run: Run, installation: string) {
+function originalId(f: Fixture, run: Run, installation: string) {
   const ids = f.docker.run(['ps', '-aq', '--no-trunc', '--filter', `label=dev.beetle.installation=${installation}`,
     '--filter', `label=dev.beetle.attempt=${run.activeAttemptId}`]).split('\n').filter(Boolean);
-  assert.equal(ids.length, 1); assert.match(ids[0]!, /^[a-f0-9]{64}$/);
-  const rows = f.docker.json<unknown[]>(['inspect', ids[0]!]); assert.equal(rows.length, 1); const row = record(rows[0]);
-  assert.equal(row.Id, ids[0]); assert.equal(row.Image, f.imageIds.engine);
+  assert(ids.length <= 1); const id = ids[0]; if (id !== undefined) assert.match(id, /^[a-f0-9]{64}$/); return id;
+}
+function inspectedRuntime(f: Fixture, run: Run, installation: string, id: string) {
+  const rows = f.docker.json<unknown[]>(['inspect', id]); assert.equal(rows.length, 1); const row = record(rows[0]);
+  assert.equal(row.Id, id); assert.equal(row.Image, f.imageIds.engine);
   const labels = record(record(row.Config).Labels); assert.equal(labels['dev.beetle.generation'], '1');
   assert.equal(labels['dev.beetle.attempt'], run.activeAttemptId); assert.equal(labels['dev.beetle.installation'], installation);
   const controls = record(row.HostConfig); assert.equal(controls.Memory, 536870912); assert.equal(controls.NanoCpus, 1000000000); assert.equal(controls.PidsLimit, 128);
-  return {id: ids[0]!, state: record(row.State)};
+  return {id, state: record(row.State)};
+}
+export function runtime(f: Fixture, run: Run, installation: string) {
+  const id = originalId(f, run, installation); assert(id); return inspectedRuntime(f, run, installation, id);
+}
+/** API active can precede native creation/start. Absence never establishes observation. */
+export function runningRuntime(f: Fixture, run: Run, installation: string) {
+  const id = originalId(f, run, installation); if (id === undefined) return null;
+  const captured = inspectedRuntime(f, run, installation, id); return captured.state.Running === true ? captured : null;
 }
 export function stopForCustody(f: Fixture) {
   f.compose('stop', 'backend');

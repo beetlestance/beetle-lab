@@ -8,7 +8,7 @@ import {automaticSession, readReadyPublic} from '../compose/public.js';
 import {cleanup, controlBudget, agentState} from '../compose/evidence.js';
 import {cleanupLiveVolumes} from '../live-volumes.js';
 import {saveRevision, value} from '../public-api.js';
-import {counts, runtime} from '../../resources/lifecycle/observations.js';
+import {counts, runningRuntime} from '../../resources/lifecycle/observations.js';
 import {idle} from '../load/observe.js';
 import {candidate} from '../load/candidate.js';
 import {advanced} from './advanced.js';
@@ -42,7 +42,7 @@ try {
   revisionId: saved.revision.id, engineProfile: 'k6-local', budget: settings.values.runDefaults.budget,
   executionPolicy: {mode: 'parallel', preferIdle: false}}}));
  phase = 'stream'; const observed = await longWindow({api: client.api, subscribers: subscribers.map(item => item.api), queued, peers, transport,
-  checkpoint: part => {results.streamPartial = part;}, onActive: run => {results.execution = runtime(f, run, installation!);}}); results.stream = observed;
+  checkpoint: part => {results.streamPartial = part;}, onActive: run => {const original = runningRuntime(f, run, installation!); if (!original) return false; results.execution = original; return true;}}); results.stream = observed;
  assert(results.execution);
  phase = 'final-drain'; results.final = await finalDrain(client, observed.run);
  const target = counts(f); assert.deepEqual(target, {ready: 1, work: 1830, unexpected: 0}); results.targetRequests = target;

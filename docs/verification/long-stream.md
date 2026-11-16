@@ -45,3 +45,17 @@ A bounded V2 compression correction and fresh native qualification are next.
 The8MiB lifetime wire budget,64KiB decoded frame,20-series subset and2s cadence
 must remain. CPU/memory, final drain and fresh-frame span require a new actual run;
 a faster in-memory replay cannot qualify the native thirty-minute requirement.
+
+## First matching V2 attempt
+
+Prepared source CI43793313636 atb48936d8 passed all12 gates and native image
+archives. ARM staging verified immutable ZIP/archive/config/manifest/scanner and
+isolated restoration proofs. The first actual V2 attempt then refused49.620s into
+the fixture: its API-active observation preceded native container creation, and
+the new strict original-capture assertion found no container. Both normal and
+independent cleanup passed. This does not qualify sustained V2 metrics or diagnose
+a producer failure. The qualifier now waits for an exact owned running original
+before starting its measured span; missing/stopped originals cannot start it,
+while identity/generation/image/CPU/memory/PID mismatches still reject. The33min
+window,30min active minimum and29min fresh-span gates are unchanged. A delayed
+capture regression and existing custody cases pass; new native execution is pending.

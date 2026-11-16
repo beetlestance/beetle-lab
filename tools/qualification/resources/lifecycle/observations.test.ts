@@ -2,7 +2,7 @@ import actualRun from '../../../../contracts/fixtures/api/valid/run.json' with {
 import {describe, expect, it, vi} from 'vitest';
 import type {Run, ApiClient} from '@beetle/contracts/api';
 import type {Fixture} from '../../native-application/compose/fixture.js';
-import {runtime, stopForCustody, summaries} from './observations.js';
+import {runtime, runningRuntime, stopForCustody, summaries} from './observations.js';
 import {crash} from './active.js';
 import type {Client} from './active.js';
 import {configuration, qualificationCases} from './configuration.js';
@@ -92,4 +92,15 @@ it('retains actual unknown-resource evidence before the positive-sample oracle r
   let captured: unknown;
   await expect(summaries(api, actualRun as Run, rows => {captured = rows;})).rejects.toThrow();
   expect(captured).toEqual([payload]);
+});
+
+it('waits for physical creation/start but never relaxes original identity or control checks', () => {
+ const labels = {'dev.beetle.attempt': 'attempt', 'dev.beetle.installation': 'installation', 'dev.beetle.generation': '1'};
+ const absent = fake(labels, ''); expect(runningRuntime(absent.f, run, 'installation')).toBeNull(); expect(absent.docker.json).not.toHaveBeenCalled();
+ expect(() => runtime(absent.f, run, 'installation')).toThrow();
+ const stopped = fake(labels); stopped.row.State.Running = false; expect(runningRuntime(stopped.f, run, 'installation')).toBeNull();
+ stopped.row.State.Running = true; expect(runningRuntime(stopped.f, run, 'installation')!.id).toBe(id);
+ stopped.row.HostConfig.Memory = 1; expect(() => runningRuntime(stopped.f, run, 'installation')).toThrow();
+ expect(() => runningRuntime(fake({...labels, 'dev.beetle.generation': '2'}).f, run, 'installation')).toThrow();
+ expect(() => runningRuntime(fake(labels, id + '\n' + id).f, run, 'installation')).toThrow();
 });

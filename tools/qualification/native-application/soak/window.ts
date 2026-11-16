@@ -10,7 +10,7 @@ import {latency, reader, timed} from './readers.js';
 import type {Timing} from './readers.js';
 interface Options {readonly api: ApiClient; readonly subscribers: readonly ApiClient[]; readonly queued: Run;
  readonly peers: readonly Peer[]; readonly transport: DockerTransport;
- readonly checkpoint: (part: unknown) => void; readonly onActive: (run: Run) => void}
+ readonly checkpoint: (part: unknown) => void; readonly onActive: (run: Run) => boolean}
 function observedSpan(start: number | undefined, end: number | undefined) {
  return start === undefined || end === undefined ? null : end - start;
 }
@@ -29,7 +29,7 @@ export async function longWindow(options: Options) {
  const jobs = [loop(2000, async () => {
   const reply = await timed(calls, 'run', () => api.getRun({params: {organizationId: queued.scope.organizationId, workspaceId: queued.scope.workspaceId, runId: queued.id}}));
   latest = value(reply); assert.equal(latest.activeAttemptId, queued.activeAttemptId);
-  if (latest.state === 'active') {if (activeAt === undefined) {activeAt = performance.now(); options.onActive(latest);}}
+  if (latest.state === 'active') {if (activeAt === undefined && options.onActive(latest)) activeAt = performance.now();}
   else if (activeAt !== undefined) activeEndedAt ??= performance.now();
   if (['finished', 'errored', 'cancelled'].includes(latest.state)) {terminal = latest; stop.abort();}
  }), loop(15000, async () => {
