@@ -29,3 +29,7 @@ Advanced provisioning records a fixed substage and exact known CLI error code
 when it fails. provision.ts uses the same60s local Docker command bound with
 64KiB output; raw stderr is neither retained in the public carrier nor uploaded.
 No installation deadline or performance gate is relaxed to diagnose a failure.
+
+Detached setup starts asynchronously. completedSetup waits on the exact project/
+source/image-bound installer original and requires exited0/OOMfalse before any
+advanced request write. No permission repair or installation deadline extension.

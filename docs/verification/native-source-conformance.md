@@ -45,3 +45,11 @@ performance acceptance targets remain unchanged while this cause is investigated
 Adding a workflow alone is not acceptance evidence. Synthetic
 cases do not establish general availability, process RSS, telemetry overhead,
 all scheduler races or compatibility with future schemas.
+
+The next diagnostic run43808805341 isolated failure to `write-request`, before
+the advanced installer CLI. Code review found a detached-start gap: the qualifier
+started the one-shot default setup with `up -d setup` and wrote immediately. The
+corrected qualifier waits for that exact project/revision/image-bound original
+to stop with exit0/OOMfalse before writing. Two focused guard cases pass; native
+retry remains necessary. No permission is repaired or deadline extended. The old
+write error's errno was not captured, so it is not retrospectively attributed.

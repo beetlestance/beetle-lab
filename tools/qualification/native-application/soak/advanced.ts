@@ -7,9 +7,10 @@ import {starterPolicy} from '../../../install/starter/policy.js';
 import {starterExport} from '../../../install/starter/export.js';
 import {longPolicy} from './policy.js';
 import {provisionCommand} from './provision.js';
+import {completedSetup} from './setup.js';
 /** Packaged bootstrap establishes an owned parent; the public advanced CLI owns fresh child data. */
 export async function advanced(f: Fixture, owner: string, context = 'default', progress: (stage: string) => void = () => undefined) {
- progress('bootstrap'); f.compose('up', '-d', '--no-build', 'setup');
+ progress('bootstrap'); f.compose('up', '-d', '--no-build', 'setup'); completedSetup(f);
  const home = join(f.home, 'long-profile'); const requestPath = join(f.home, 'long-request.json');
  const base = ['run', '--rm', '--pull', 'never', '--network', 'none', '--read-only', '--cap-drop', 'ALL',
   '--security-opt', 'no-new-privileges:true', '--cpus', '1', '--memory', '256m', '--memory-swap', '256m',
