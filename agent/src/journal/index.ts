@@ -362,12 +362,12 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
     if (reply.kind === 'startup_error') { this.fail(reply.code); return; }
     const pending = this.pending.get(reply.id);
     if (!pending) { this.fail('unavailable'); return; }
+    if (!reply.ok && reply.code === 'unavailable') { this.fail('unavailable'); return; }
     this.pending.delete(reply.id); this.watchProgress();
     if (pending.large) this.largePending--;
     if (reply.ok) pending.resolve(reply.value);
     else {
       pending.reject(new JournalError(reply.code, reply.recovery));
-      if (reply.code === 'unavailable') this.fail('unavailable');
     }
   }
 

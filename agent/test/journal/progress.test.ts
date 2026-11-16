@@ -63,3 +63,18 @@ it('projects unknown worker failure codes without logging submitted data',async(
   expect(JSON.parse(String(sink.mock.calls[0]?.[0]))).toMatchObject({component:'journal',code:'unavailable',pending:0});
  } finally {sink.mockRestore();}
 });
+
+it('identifies the failed operation before clearing its pending context',async()=>{
+ const entry=join(dirname(fileURLToPath(fixture.workerUrl())),'failed-reply.mjs');
+ await writeFile(entry,`import {parentPort} from 'node:worker_threads';parentPort.on('message',command=>{
+  if(command.id===1)parentPort.postMessage({kind:'result',id:1,ok:false,code:'unavailable'});
+ });parentPort.postMessage({kind:'ready'});`);
+ const journal=await openJournal({path:fixture.path(),workerUrl:pathToFileURL(entry)});
+ const sink=vi.spyOn(process.stderr,'write').mockImplementation(()=>true);
+ try {
+  const results=await Promise.allSettled([journal.journalAuthority(),journal.get(fixture.key())]);
+  expect(results.every(result=>result.status==='rejected')).toBe(true);
+  expect(JSON.parse(String(sink.mock.calls[0]?.[0]))).toMatchObject({component:'journal',pending:2,operation:'authority'});
+  await expect(journal.close()).rejects.toMatchObject({code:'unavailable'});
+ }finally{sink.mockRestore();await journal.abort();}
+});

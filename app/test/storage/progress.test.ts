@@ -49,3 +49,18 @@ it('renews on completion, not enqueue, and stays fenced when diagnostics throw',
     await expect(fixture.close(metadata)).rejects.toMatchObject({code:'unavailable'});
   } finally {sink.mockRestore();vi.useRealTimers();await metadata?.abort();}
 });
+
+it('names the failed operation rather than the next queued operation',async()=>{
+ const entry=join(fixture.root(),'failed-reply.mjs');
+ await writeFile(entry,`import {parentPort} from 'node:worker_threads';parentPort.on('message',command=>{
+  if(command.messageId===1)parentPort.postMessage({kind:'result',messageId:1,ok:false,code:'unavailable'});
+ });parentPort.postMessage({kind:'ready'});`);
+ const metadata=await fixture.open(undefined,{workerUrl:pathToFileURL(entry)});
+ const sink=vi.spyOn(process.stderr,'write').mockImplementation(()=>true);
+ try {
+  const results=await Promise.allSettled([metadata.updateRuntime(null),metadata.getSettingsIdentity({kind:'installation'})]);
+  expect(results.every(result=>result.status==='rejected')).toBe(true);
+  expect(JSON.parse(String(sink.mock.calls[0]?.[0]))).toMatchObject({component:'metadata',pending:2,operation:'runtime'});
+  await expect(metadata.close()).rejects.toMatchObject({code:'unavailable'});
+ }finally{sink.mockRestore();await metadata.abort();}
+});

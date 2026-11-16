@@ -320,9 +320,9 @@ export class Metadata {
     if (!pending) { this.fail('unavailable'); return; }
     if (reply.ok) this.resolve(reply, pending);
     else {
+      if (reply.code === 'unavailable') { this.fail('unavailable'); return; }
       this.release(reply.messageId);
       pending.reject(new StorageError(reply.code));
-      if (reply.code === 'unavailable') this.fail('unavailable');
     }
   }
   private resolve(reply: Extract<WorkerReply, { kind: 'result'; ok: true }>, pending: Pending): void {
