@@ -23,7 +23,25 @@ unpublished. Missing or malformed evidence produces a fixed failed marker.
 Execution failure, dirty/wrong harness or failed independent cleanup prevents a
 passing aggregate even if an individual private report claims success.
 
-This change provides the execution path. Native results must be linked after
-actual completion; adding a workflow alone is not acceptance evidence. Synthetic
+## Recorded AMD64 results
+
+Run [43806565190](https://github.com/beetlestance/beetle-lab/actions/runs/43806565190),
+harnessc3397cb4, verified sourceb48936d8: all six finite profiles passed. Times:
+executor/discovery95.987s, thresholds94.817s, failures94.337s,
+requests/data98.716s, shared admission105.609s, isolated admission127.997s.
+Each private report passed source/platform/runtime/outcome projection. Aggregate
+execution and independent cleanup both succeeded. The closed report is retained
+in `.agent-work/amd64-conformance/finite-public1` and as the native CI artifact.
+
+The long profile failed30.780s before sustained work. Its isolated retry,
+[43807854664](https://github.com/beetlestance/beetle-lab/actions/runs/43807854664),
+also failed in `advanced-provision`, with normal and independent cleanup passing.
+Neither establishes long-run stability or a runtime/stream failure. Subsequent
+harness diagnostics retain an allowlisted advanced substage and the installer
+CLI's fixed error classification, never raw stderr. Installation deadlines and
+performance acceptance targets remain unchanged while this cause is investigated.
+`long-amd64` selects only this failed profile; completed finite cases are reused.
+
+Adding a workflow alone is not acceptance evidence. Synthetic
 cases do not establish general availability, process RSS, telemetry overhead,
 all scheduler races or compatibility with future schemas.

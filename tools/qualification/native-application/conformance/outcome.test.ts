@@ -52,7 +52,7 @@ it('rejects unobserved placeholders and inconsistent CPU facts', () => {
  expect(() => publicCase(wrong, 'long-stream', revision)).toThrow();
 });
 it('retains only known failure phases, never arbitrary exception text or partial success', () => {
- const failed = {...base(), status: 'failed', phase: 'advanced-provision', error: canary};
+ const failed = {...base(), status: 'failed', phase: 'advanced-provision', results: {}, error: canary};
  expect(publicFailure(failed, 'long-stream', revision)).toMatchObject({status: 'failed', phase: 'advanced-provision', evidenceAvailable: true});
  expect(JSON.stringify(publicFailure({...failed, phase: canary}, 'long-stream', revision))).not.toContain(canary);
  expect(publicFailure({...failed, architecture: 'arm64'}, 'long-stream', revision).evidenceAvailable).toBe(false);

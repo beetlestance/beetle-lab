@@ -24,3 +24,8 @@ telemetry comparison. Raw outcomes/policy/error/logs remain private.
 
 On failure retain one last snapshot per reader, terminal/active-span facts and
 owned target counts before teardown; never retain a stream corpus of frames.
+
+Advanced provisioning records a fixed substage and exact known CLI error code
+when it fails. provision.ts uses the same60s local Docker command bound with
+64KiB output; raw stderr is neither retained in the public carrier nor uploaded.
+No installation deadline or performance gate is relaxed to diagnose a failure.

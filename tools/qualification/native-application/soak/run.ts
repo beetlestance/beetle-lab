@@ -12,6 +12,7 @@ import {counts, runningRuntime} from '../../resources/lifecycle/observations.js'
 import {idle} from '../load/observe.js';
 import {candidate} from '../load/candidate.js';
 import {advanced} from './advanced.js';
+import {AdvancedCommandError} from './provision.js';
 import {longConfiguration} from './policy.js';
 import {longWindow} from './window.js';
 import {finalDrain} from './final.js';
@@ -23,7 +24,7 @@ await writeFile(join(output, 'owner.json'), JSON.stringify({root: f.root, projec
 let installation: string | undefined; let status = 'failed'; let phase = 'advanced-provision';
 const results: Record<string, unknown> = {};
 try {
- const installed = await advanced(f, owner); f = installed.f; installation = installed.installationId;
+ const installed = await advanced(f, owner, context, stage => {results.advancedStage = stage;}); f = installed.f; installation = installed.installationId;
  await writeFile(join(output, 'installation-owner.json'), JSON.stringify({project: f.project, installationId: installation}), {flag: 'wx', mode: 0o600});
  await writeFile(join(output, 'advanced-policy-private.json'), JSON.stringify(installed.policy), {flag: 'wx', mode: 0o600});
  f.compose('up', '-d', '--no-build');
@@ -48,7 +49,7 @@ try {
  const target = counts(f); assert.deepEqual(target, {ready: 1, work: 1830, unexpected: 0}); results.targetRequests = target;
  phase = 'post-idle'; results.postIdle = await idle(peers, transport, client.api, part => {results.postIdlePartial = part;});
  status = 'passed';
-} catch (error) {process.exitCode = 1; await writeFile(join(output, 'failure-private.txt'), String(error instanceof Error ? error.stack : error).slice(0, 16384), {flag: 'wx', mode: 0o600});}
+} catch (error) {if (error instanceof AdvancedCommandError) results.advancedFailure = error.diagnosis; process.exitCode = 1; await writeFile(join(output, 'failure-private.txt'), String(error instanceof Error ? error.stack : error).slice(0, 16384), {flag: 'wx', mode: 0o600});}
 finally {
  if (results.targetRequests === undefined) {try {results.targetRequests = counts(f);} catch {results.targetCountsUnavailable = true;}}
  let cleanupVerified = false;
