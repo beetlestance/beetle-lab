@@ -70,7 +70,7 @@ function journalCopy(input: JournalOptions): JournalOptions {
 }
 function capture(input: AgentRuntimeOptions): AgentRuntimeOptions {
   const result: Record<string, unknown> = {};
-  for (const name of ['journal', 'installation', 'transport', 'catalog', 'configuration', 'providers', 'credential', 'minimumFreeBytes', 'signal']) {
+  for (const name of ['journal', 'installation', 'transport', 'catalog', 'configuration', 'providers', 'credential', 'minimumFreeBytes', 'signal', 'configurationCheck']) {
     const descriptor = Object.getOwnPropertyDescriptor(input, name);
     if (descriptor && !('value' in descriptor)) throw new AgentRuntimeError('startup');
     result[name] = descriptor?.value;
@@ -78,6 +78,7 @@ function capture(input: AgentRuntimeOptions): AgentRuntimeOptions {
   if (typeof result.minimumFreeBytes !== 'number' || !Number.isSafeInteger(result.minimumFreeBytes) || result.minimumFreeBytes < 0) {
     throw new AgentRuntimeError('startup');
   }
+  if (result.configurationCheck !== undefined && typeof result.configurationCheck !== 'function') throw new AgentRuntimeError('startup');
   const options = result as unknown as AgentRuntimeOptions;
   return Object.freeze({ ...options, journal: journalCopy(options.journal),
     installation: JSON.parse(encodeJson(options.installation, 4096)) as AgentRuntimeOptions['installation'],
@@ -112,6 +113,7 @@ class RuntimeOwner {
   async open(input: AgentRuntimeOptions): Promise<AgentRuntime> {
     const options = capture(input); this.check(options);
     const authorityState = this.openAuthority(installationStatePath(options.journal.path));
+    await options.configurationCheck?.();
     const verified = await verifyInstallation({ configuration: options.installation, transport: options.transport,
       operation: { deadline: performance.now() + 30_000, ...(options.signal ? { signal: options.signal } : {}) } });
     this.check(options);

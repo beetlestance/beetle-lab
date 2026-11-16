@@ -2,7 +2,7 @@ import { agentContainerArguments } from './agent-container.js';
 import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { saveConfiguration } from '../../../agent/test/container/fixture.js';
+import { saveConfiguration, sealConfiguration } from '../../../agent/test/container/fixture.js';
 import type { Fixture } from '../../../agent/test/container/fixture.js';
 import type { Inspection } from '../../../agent/test/container/docker.js';
 import { agentOrigin } from './configuration.js';
@@ -32,6 +32,7 @@ async function createAgent(f: Fixture, control: string, configureAgent?: (path:s
   const config = JSON.parse(await readFile(f.configPath, 'utf8')) as { listen: { host: string; port: number } };
   config.listen.host = '0.0.0.0'; await writeFile(f.configPath, JSON.stringify(config), { mode: 0o600 });
   await configureAgent?.(f.configPath);
+  await sealConfiguration(f);
   await initializeFreshInstallation(f);
   f.docker.run(['start', f.agent]);
 }

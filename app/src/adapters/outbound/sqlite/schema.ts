@@ -140,3 +140,10 @@ export function scrubHistoricalCredentials(db: DatabaseSync): void {
   registerConnection(db);
   db.exec('PRAGMA secure_delete=ON; PRAGMA temp_store=FILE; DELETE FROM local_browser_session; VACUUM;');
 }
+
+/** Existing exact-schema database under both offline startup leases. No migration or repair. */
+export function prepareColdMetadataChange(db: DatabaseSync): void {
+  if (db.prepare('PRAGMA user_version').get()?.user_version !== METADATA_SCHEMA_VERSION
+    || db.prepare('PRAGMA query_only').get()?.query_only !== 0) throw new StorageError('unavailable');
+  registerConnection(db);
+}

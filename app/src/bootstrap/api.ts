@@ -42,6 +42,7 @@ import { registerInputRoutes } from '../adapters/inbound/http/inputs/index.js';
 import type { InputHttp } from '../adapters/inbound/http/inputs/index.js';
 
 export interface ApplicationOptions {
+  readonly configurationCheck?: () => Promise<void>;
   readonly externalOrigin: string;
   readonly historical?: HistoricalOptions;
   readonly recoveryControl?: {readonly path: string; readonly installationId: string};
@@ -86,7 +87,7 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
   let inputRuntime: InputRuntime | undefined; let inputHttp: InputHttp | undefined;
   try {
     mode.protect(server);
-    recovery = servingControl(options.recoveryControl);
+    recovery = await servingControl(options);
     configureSchemaCompilers(server, { schemas: apiSchemas, encodeJson, maximumResponseBytes: API_MAXIMUM_JSON_BYTES });
     metadata = await openMetadata(configuredMetadata);
     const store = metadata;
@@ -178,8 +179,11 @@ function registerAuthoring(server: FastifyInstance, store: Metadata, authorize: 
     registerSettingsRoutes(server, { store: store.settings, reader: store, digest, authorize });
 }
 
-function servingControl(control: ApplicationOptions['recoveryControl']): BackendServingLease | undefined {
-  return control ? openBackendServing(control.path, control.installationId) : undefined;
+async function servingControl(options: ApplicationOptions): Promise<BackendServingLease | undefined> {
+  const control = options.recoveryControl;
+  const lease = control ? openBackendServing(control.path, control.installationId) : undefined;
+  try { await options.configurationCheck?.(); return lease; }
+  catch (error) { lease?.close(); throw error; }
 }
 function readInputs(history: ReturnType<HistoricalOptions['openInputs']>, runtime: InputRuntime | undefined) {
   return history ?? runtime?.inputs;

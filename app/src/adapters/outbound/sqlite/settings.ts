@@ -3,7 +3,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import type { SettingsScope, RunDefaults, WorkspaceScope } from '@beetle/contracts/api';
 import { resolveRunSettings, decideSettingsChange, resolveEffectiveSettings, validateInstallation } from '../../../domain/settings/index.js';
 import type { InstallationRecord, OrganizationRecord, WorkspaceRecord, SettingsRecord,
-  SettingsChain } from '../../../domain/settings/index.js';
+  SettingsChain, RuntimeCeilings } from '../../../domain/settings/index.js';
 import { immutableSnapshot, requireRule } from '../../../domain/namespaces/index.js';
 import type { SettingsCommand, SettingsChange } from '../../../ports/settings.js';
 import type { SettingsIdentity } from '../../../ports/settings-reader.js';
@@ -92,7 +92,15 @@ export class Settings {
     return { ...record, effective };
   }
   change(command: SettingsCommand): SettingsChange {
-    const change = decideSettingsChange(command, { chain: this.chain(command.request.scope), runtime: this.runtime.snapshot() });
+    return this.changeWithCeilings(command, this.runtime.snapshot());
+  }
+  /** Offline caller owns startup exclusion and has validated installed policy, not a host observation. */
+  changeOffline(command: SettingsCommand, ceilings: RuntimeCeilings): SettingsChange {
+    return this.changeWithCeilings(command, ceilings);
+  }
+  private changeWithCeilings(command: SettingsCommand,
+    runtime: RuntimeCeilings | null): SettingsChange {
+    const change = decideSettingsChange(command, { chain: this.chain(command.request.scope), runtime });
     const record = change.settings;
     const values = 'values' in record ? record.values : record.overrides;
     boundedCopy(values, 32768);

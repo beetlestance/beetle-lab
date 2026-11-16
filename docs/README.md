@@ -22,3 +22,5 @@ One rule has one owner. Keep current status in STATUS.md, architecture in HLD/LL
 and exact execution facts in linked evidence. Use historical documents when their
 specific source/platform record is needed; do not load the entire archive for a task.
 Authored pages stay within 180 lines, LLDs within 220, and CONTEXT.md within 40.
+
+[Installed run memory](installed-memory.md) describes the supported offline increase.

@@ -28,7 +28,7 @@ export async function fixture(docker: Docker, agentTag: string, engineTag: strin
   const id = randomUUID(); const agent = `beetle-agent-${id}`; const target = `beetle-target-${id}`;
   const network = `beetle-native-${id}`; const configPath = join(root, 'config', 'agent.json');
   const tokenPath = join(root, 'config', 'credential');
-  for (const [path, text] of [[configPath, '{}'], [tokenPath, randomBytes(48).toString('base64url')]]) {
+  for (const [path, text] of [[configPath, '{}'], [join(root, 'config/configuration-state.json'), JSON.stringify({version:1,phase:'initializing',installationId:id})], [tokenPath, randomBytes(48).toString('base64url')]]) {
     await writeFile(path!, text!, { mode: 0o600 }); await chown(path!, uid, gid);
   }
   const budget = { cpuMillis: 1000, memoryBytes: 536870912, pids: 128, timeoutMs: 30000, outputBytes: 16777216 };
@@ -69,4 +69,14 @@ export async function saveConfiguration(f: Fixture, agentImageId: string): Promi
       controlReserve: reserve, headroom: reserve, maxConcurrent: 1, maxTimeoutMs: 30000, observationTtlMs: 5000, requiredSensors: [] },
     providers: { inputRoot: join(f.root, 'inputs'), secretBindings: [] }, engines: [{ manifest: f.manifest, profile: f.profile,
       configVersion: 1, ...registrationLabels }], listen: { host: '127.0.0.1', port: 4312 } }), { mode: 0o600 });
+  await sealConfiguration(f);
+}
+
+
+/** Synthetic operator seals exactly the configuration that the bundled process will read. */
+export async function sealConfiguration(f: Fixture): Promise<void> {
+  const path = join(f.root, 'config/configuration-state.json');
+  await writeFile(path, JSON.stringify({version:1,phase:'ready',installationId:f.id,
+    configDigests:{'agent.json':digest(await readFile(f.configPath))}}), {mode:0o600});
+  await chown(path, f.uid, f.gid);
 }

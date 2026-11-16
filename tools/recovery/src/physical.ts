@@ -11,14 +11,13 @@ async function get(transport: DockerTransport, path: string, operation: Recovery
 }
 /** Read-only daemon facts under both offline leases; no stop/start/create fallback. */
 export async function inspectPhysical(input: {transport: DockerTransport; operation: RecoveryOperation;
-  installationId: string; daemonId: string; agentContainer: string; agentImage: string;
+  installationId: string; daemonId: string; agentContainer: string; agentImage: string; expectedAgentConfigPath?: string;
   matchRuntime: (input: {attemptId: string; organizationId: string; workspaceId: string; intentDigest: string; imageDigest: string}) => void}) {
   const {transport, operation} = input;
   const info = object(await get(transport, '/v1.47/info', operation));
   if (info.ID !== input.daemonId || !['linux'].includes(String(info.OSType))) throw new RecoveryError('not_cold');
   const agent = object(await get(transport, `/v1.47/containers/${encodeURIComponent(input.agentContainer)}/json`, operation));
-  if (agent.Image !== input.agentImage) throw new RecoveryError('not_cold');
-  stopped(object(agent.State));
+  stoppedAgent(agent, input);
   const filter = encodeURIComponent(JSON.stringify({label: [`dev.beetle.installation=${input.installationId}`]}));
   const engines = await get(transport, `/v1.47/containers/json?all=1&filters=${filter}`, operation);
   if (!Array.isArray(engines) || engines.length > 4096) throw new RecoveryError('not_cold');
@@ -50,4 +49,19 @@ async function inspectEngine(input: Parameters<typeof inspectPhysical>[0], summa
 
 function stopped(state: Record<string, unknown>): void {
   if (state.Status !== 'exited' || state.Running !== false || state.Restarting !== false || state.Dead !== false || state.Pid !== 0) throw new RecoveryError('not_cold');
+}
+
+function configuredAgent(agent: Record<string, unknown>, expectedPath: string): void {
+  const environment = object(agent.Config).Env;
+  if (!Array.isArray(environment) || environment.filter(value => typeof value === 'string'
+    && value.startsWith('BEETLE_AGENT_CONFIG_FILE=')).join() !== `BEETLE_AGENT_CONFIG_FILE=${expectedPath}`
+    || environment.some(value => typeof value === 'string' && value.startsWith('BEETLE_INSTALLATION_RECEIPT_FILE='))) {
+    throw new RecoveryError('not_cold');
+  }
+}
+
+function stoppedAgent(agent: Record<string, unknown>, input: Parameters<typeof inspectPhysical>[0]): void {
+  if (agent.Image !== input.agentImage) throw new RecoveryError('not_cold');
+  stopped(object(agent.State));
+  if (input.expectedAgentConfigPath) configuredAgent(agent, input.expectedAgentConfigPath);
 }

@@ -1,3 +1,5 @@
+import { selectInstalledConfiguration } from '@beetle/contracts/installation-generation';
+import { captureInstallationReceipt, receiptDigest } from './installation-receipt.js';
 import { loadAgentConfiguration } from './agent-configuration.js';
 import { constants } from 'node:fs';
 import { access, open, realpath, stat } from 'node:fs/promises';
@@ -15,6 +17,7 @@ export class BootstrapError extends Error {
 export interface BackendEnvironment {
   readonly BEETLE_LOCAL_ACCESS?: string;
   readonly BEETLE_CONFIG_FILE?: string;
+  readonly BEETLE_INSTALLATION_RECEIPT_FILE?: string;
   readonly BEETLE_AGENT_CONFIG_FILE?: string;
   readonly BEETLE_DATA_DIR?: string;
   readonly BEETLE_EXTERNAL_ORIGIN?: string;
@@ -29,7 +32,7 @@ function absolute(value: string | undefined): string {
   if (!value || value.length > 4096 || !isAbsolute(value)) throw new BootstrapError('configuration');
   return resolve(value);
 }
-function installation(value: unknown): InstallationRecord {
+export function captureInstallationRecord(value: unknown): InstallationRecord {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new BootstrapError('configuration');
   const record = value as Record<string, unknown>;
   if (Object.keys(record).some(key => !['id', 'version', 'schemaVersion', 'scope', 'values'].includes(key))
@@ -39,16 +42,18 @@ function installation(value: unknown): InstallationRecord {
   }
   return record as unknown as InstallationRecord;
 }
-async function readInstallation(path: string): Promise<InstallationRecord> {
+async function readInstallation(path: string, receipt: unknown): Promise<InstallationRecord> {
   try {
     const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
     let value: unknown;
     try {
       const info = await handle.stat();
       if (!info.isFile() || info.nlink !== 1 || info.size < 1 || info.size > 32_768 || (info.mode & 0o022)) throw new BootstrapError('configuration');
-      value = JSON.parse(await boundedText(handle)) as unknown;
+      const text = await boundedText(handle);
+      value = receipt === undefined ? JSON.parse(text) as unknown
+        : selectInstalledConfiguration(receipt, 'installation.json', text, receiptDigest);
     } finally { await handle.close(); }
-    return installation(value);
+    return captureInstallationRecord(value);
   } catch { throw new BootstrapError('configuration'); }
 }
 async function boundedText(handle: FileHandle): Promise<string> {
@@ -79,14 +84,14 @@ function listener(environment: BackendEnvironment): BackendConfiguration['listen
   if (port > 65535) throw new BootstrapError('listener');
   return Object.freeze({ host, port });
 }
-async function agentConnection(path: string, installationId: string) {
-  try { return await loadAgentConfiguration(path, installationId); }
+async function agentConnection(path: string, installationId: string, receipt: unknown) {
+  try { return await loadAgentConfiguration(path, installationId, receipt); }
   catch (error) { throw new BootstrapError('configuration', { cause: error }); }
 }
 /** Installation-owned config and private existing data root only. No guessed
  * machine capacity: actual source observations are published after startup.
  */
-export async function loadBackendConfiguration(environment: BackendEnvironment, workerUrl: URL): Promise<BackendConfiguration> {
+export async function loadBackendConfiguration(environment: BackendEnvironment, workerUrl: URL, offline?: { readonly baseline: true; readonly receipt?: unknown }): Promise<BackendConfiguration> {
   const listen = listener(environment);
   const localAccess = environment.BEETLE_LOCAL_ACCESS ?? 'automatic';
   if (!['paired','automatic'].includes(localAccess)) throw new BootstrapError('configuration');
@@ -95,10 +100,12 @@ export async function loadBackendConfiguration(environment: BackendEnvironment, 
   const root = absolute(environment.BEETLE_DATA_DIR);
   const externalOrigin = environment.BEETLE_EXTERNAL_ORIGIN;
   if (!externalOrigin || externalOrigin.length > 2048) throw new BootstrapError('configuration');
-  const record = await readInstallation(config);
+  const receipt = offline?.baseline ? { value: offline.receipt, assertCurrent: async () => undefined }
+    : await captureInstallationReceipt(config, environment.BEETLE_INSTALLATION_RECEIPT_FILE);
+  const record = await readInstallation(config, receipt.value);
   const directory = await dataDirectory(root);
-  const connection = await agentConnection(agentConfig, record.id);
-  return Object.freeze({ listen, application: { externalOrigin, recoveryControl: {path: join(directory, 'recovery-control.sqlite'), installationId: record.id}, localAccess: localAccess as 'paired' | 'automatic',
+  const connection = await agentConnection(agentConfig, record.id, receipt.value);
+  return Object.freeze({ listen, application: { externalOrigin, configurationCheck: receipt.assertCurrent, recoveryControl: {path: join(directory, 'recovery-control.sqlite'), installationId: record.id}, localAccess: localAccess as 'paired' | 'automatic',
     inputsDirectory: join(directory, 'inputs'), agent: { connection, dataRoot: directory },
     metadata: { path: join(directory, 'metadata.sqlite'), workerUrl, installation: record, runtime: null } } });
 }

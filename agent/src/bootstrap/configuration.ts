@@ -1,3 +1,5 @@
+import { selectInstalledConfiguration } from '@beetle/contracts/installation-generation';
+import { captureInstallationReceipt, receiptDigest } from './installation-receipt.js';
 import { constants } from 'node:fs';
 import { access, lstat, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -24,19 +26,25 @@ function configPath(environment: AgentEnvironment): string {
 }
 /** Private installation files only. No env interpolation, guessed images/capacity or secret defaults. */
 export async function loadAgentConfiguration(environment: AgentEnvironment, workerUrl: URL,
-  signal?: AbortSignal): Promise<LoadedAgentConfiguration> {
+  signal?: AbortSignal, offline?: { readonly baseline: true; readonly receipt?: unknown }): Promise<LoadedAgentConfiguration> {
   let providers: InstalledProviders | undefined;
   try {
     check(signal);
-    const content = await readPrivateFile(configPath(environment), 262_144, signal); check(signal);
-    const config = installedConfiguration(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(content)) as unknown);
+    const path = configPath(environment);
+    const receipt = offline?.baseline ? { value: offline.receipt, assertCurrent: async () => undefined }
+      : await captureInstallationReceipt(path, environment.BEETLE_INSTALLATION_RECEIPT_FILE);
+    const content = await readPrivateFile(path, 262_144, signal); check(signal);
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(content);
+    const selected = receipt.value === undefined ? JSON.parse(text) as unknown
+      : selectInstalledConfiguration(receipt.value, 'agent.json', text, receiptDigest);
+    const config = installedConfiguration(selected);
     const directory = await journalDirectory(config.journalDirectory); check(signal);
     const raw = await readPrivateFile(config.credentialFile, 128, signal); check(signal);
     const credential = new TextDecoder('utf-8', { fatal: true }).decode(raw); raw.fill(0);
     if (!/^[A-Za-z0-9_-]{43,128}$/u.test(credential)) throw new AgentConfigurationError();
     providers = await openInstalledProviders({ configuration: config.providers, environment }); check(signal);
     const owned = providers;
-    return Object.freeze({ runtime: { journal: { path: join(directory, 'journal.sqlite'), workerUrl },
+    return Object.freeze({ runtime: { configurationCheck: receipt.assertCurrent, journal: { path: join(directory, 'journal.sqlite'), workerUrl },
       installation: config.installation, transport: new UnixDockerTransport(config.dockerSocket), catalog: config.catalog,
       configuration: config.configuration, providers: owned, credential, minimumFreeBytes: config.minimumFreeBytes,
       ...(signal ? { signal } : {}) }, listen: Object.freeze(config.listen), close: () => owned.close() });

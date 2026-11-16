@@ -23,7 +23,8 @@
     "./output-settlement": "./src/output-settlement/index.ts",
     "./k6-warnings": "./src/k6-warnings/index.ts",
     "./recovery": "./src/recovery/index.ts",
-    "./k6-diagnostics": "./src/k6-diagnostics/index.ts"
+    "./k6-diagnostics": "./src/k6-diagnostics/index.ts",
+    "./installation-generation": "./src/installation-generation/index.ts"
   },
   "dependencies": {
     "ajv": "8.20.0",

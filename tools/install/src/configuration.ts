@@ -1,3 +1,9 @@
+import { selectInstalledConfiguration } from '@beetle/contracts/installation-generation';
+import { captureInstalledConfiguration } from '../../../agent/src/bootstrap/index.js';
+import { captureInstallationRecord } from '../../../app/src/bootstrap/configuration.js';
+import { capture, digest, requireInput } from './capture.js';
+import type { ConfigurationGeneration } from '@beetle/contracts/installation-generation';
+import type { ProvisionRequest } from '../types.js';
 import {configuredEngines,engineConfiguration} from './engines.js';
 import { join } from 'node:path';
 import type { ProvisionResult } from '../types.js';
@@ -33,4 +39,21 @@ export function configurations(c: Captured, installationId: string, facts: Facts
       engines: registrations.map(engineConfiguration),
       listen: { host: '0.0.0.0', port: Number(new URL(r.agentOrigin).port || 80) } },
   };
+}
+
+export const configurationStatePath = (root: string): string => join(root, 'config/configuration-state.json');
+
+/** Derive the committed policy through owning decoders; baseline request bindings stay unchanged. */
+export function generationRequest(c: Captured, receipt: {readonly generation?: ConfigurationGeneration},
+  baseline: {agent: string; installation: string}): ProvisionRequest {
+  if (!receipt.generation) return c.request;
+  const agent = captureInstalledConfiguration(selectInstalledConfiguration(receipt, 'agent.json', baseline.agent, digest));
+  const installation = captureInstallationRecord(selectInstalledConfiguration(receipt, 'installation.json', baseline.installation, digest));
+  const version = (id: string) => {
+    const engine = agent.catalog.engines.find(engine => engine.validation.profileId === id);
+    requireInput(engine !== undefined); return engine.validation.catalogVersion;
+  };
+  return capture({...c.request, installationValues:installation.values, agentPolicy:agent.configuration,
+    engine:{...c.request.engine, catalogVersion:version(c.request.engine.profileId)},
+    ...(c.request.exportEngine ? {exportEngine:{...c.request.exportEngine, catalogVersion:version(c.request.exportEngine.profileId)}} : {})}, c.context).request;
 }

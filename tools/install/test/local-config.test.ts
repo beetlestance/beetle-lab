@@ -44,6 +44,7 @@ it('recognizes ready receipt without opening serving authority or rewriting runt
     requestDigest: digest(canonical(JSON.parse(deployment(o).get('request.json')!))) };
   for (const name of Object.keys(receipt.configDigests)) await fs.writeFile(join(data, 'config', name), 'synthetic-config', { mode: 0o600 });
   await fs.writeFile(join(data, 'installation.json'), JSON.stringify(receipt), { mode: 0o600 });
+  await fs.writeFile(join(data, 'config/configuration-state.json'), JSON.stringify(receipt), { mode: 0o600 });
   await fs.writeFile(join(data, 'backend', 'synthetic-user-settings'), 'preserve', { mode: 0o600 });
   expect(await prepareLocalDeployment(o, operation())).toBe('local_unchanged_ready');
   expect(await fs.readFile(join(data, 'backend', 'synthetic-user-settings'), 'utf8')).toBe('preserve');

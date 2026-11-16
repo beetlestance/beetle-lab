@@ -2,6 +2,7 @@ import type { AgentRuntimeOptions } from './types.js';
 
 export interface AgentEnvironment extends Readonly<Record<string, string | undefined>> {
   readonly BEETLE_AGENT_CONFIG_FILE?: string;
+  readonly BEETLE_INSTALLATION_RECEIPT_FILE?: string;
 }
 export interface LoadedAgentConfiguration {
   readonly runtime: AgentRuntimeOptions;

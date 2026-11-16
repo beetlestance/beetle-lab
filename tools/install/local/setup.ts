@@ -1,3 +1,4 @@
+import { captureGeneration } from '@beetle/contracts/installation-generation';
 import { join, dirname } from 'node:path';
 import { validatePrimitive } from '@beetle/contracts';
 import { configNames } from '../src/configuration.js';
@@ -12,21 +13,29 @@ import type { Operation } from './files.js';
 function recovery(condition: unknown): asserts condition { if (!condition) throw new ProvisionError('recovery_required'); }
 function receiptDigests(raw: string, request: string): Record<string, unknown> {
   const receipt: unknown = JSON.parse(raw);
-  fields(receipt, ['version', 'operationId', 'installationId', 'requestDigest', 'phase', 'authority', 'configDigests']);
+  fields(receipt, ['version', 'operationId', 'installationId', 'requestDigest', 'phase', 'authority', 'configDigests', ...(Object.hasOwn(receipt as object, 'generation') ? ['generation'] : [])]);
   recovery(receipt.version === 1 && receipt.phase === 'ready' && receipt.requestDigest === digest(canonical(JSON.parse(request))));
   for (const id of [receipt.operationId, receipt.installationId, receipt.authority]) recovery(validatePrimitive('uuid', id).ok);
   fields(receipt.configDigests, configNames);
   for (const hash of Object.values(receipt.configDigests)) recovery(typeof hash === 'string' && /^[a-f0-9]{64}$/u.test(hash));
+  if (Object.hasOwn(receipt, 'generation')) captureGeneration(receipt.generation, String(receipt.installationId), String(receipt.requestDigest), digest);
   return receipt.configDigests;
 }
 async function installation(files: LocalFiles, root: string, request: string): Promise<'fresh' | 'ready'> {
   const names = await files.names(root, 4);
   if (names.length === 0) return 'fresh';
   recovery(names.length === 4 && ['installation.json', 'config', 'backend', 'agent'].every(name => names.includes(name)));
-  const hashes = receiptDigests(await files.read(join(root, 'installation.json')), request);
   for (const name of ['config', 'backend', 'agent']) await files.directory(join(root, name), false);
-  const config = join(root, 'config'); const actual = await files.names(config, configNames.length);
-  recovery(actual.length === configNames.length && configNames.every(name => actual.includes(name)));
+  const original = await files.read(join(root, 'installation.json'));
+  const hashes = receiptDigests(original, request);
+  const current = await files.read(join(root, 'config/configuration-state.json'));
+  const selectedHashes = receiptDigests(current, request);
+  recovery(canonical(hashes) === canonical(selectedHashes));
+  const selectedBase = JSON.parse(current) as Record<string, unknown>;
+  delete selectedBase.generation;
+  recovery(canonical(selectedBase) === canonical(JSON.parse(original)));
+  const config = join(root, 'config'); const actual = await files.names(config, configNames.length + 1);
+  recovery(actual.length === configNames.length + 1 && actual.includes('configuration-state.json') && configNames.every(name => actual.includes(name)));
   for (const name of configNames) recovery(digest(await files.read(join(config, name))) === hashes[name]);
   return 'ready';
 }

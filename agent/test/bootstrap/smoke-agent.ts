@@ -5,7 +5,7 @@ import { createServer, get } from 'node:http';
 import type { Server } from 'node:http';
 import type { Socket, AddressInfo } from 'node:net';
 import { mkdtemp, mkdir, readFile, realpath, rm, writeFile, chmod, chown } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
 import { setTimeout as pause } from 'node:timers/promises';
 import { createHash } from 'node:crypto';
 import { validate } from '@beetle/contracts';
@@ -34,7 +34,7 @@ function request(port: number, authenticated = true): Promise<{ status: number; 
 }
 function start(path: string) {
   const child = spawn(process.execPath, [resolve('agent/dist/main.js')], {
-    env: { PATH: process.env.PATH ?? '/usr/bin:/bin', BEETLE_AGENT_CONFIG_FILE: path }, stdio: ['ignore', 'pipe', 'pipe'] });
+    env: { PATH: process.env.PATH ?? '/usr/bin:/bin', BEETLE_AGENT_CONFIG_FILE: path, BEETLE_INSTALLATION_RECEIPT_FILE: join(dirname(path), 'receipt.json') }, stdio: ['ignore', 'pipe', 'pipe'] });
   let output = '';
   for (const stream of [child.stdout, child.stderr]) stream.on('data', (chunk: Buffer) => {
     output = (output + chunk.toString('utf8')).slice(-32_768);
@@ -76,6 +76,8 @@ async function files(root: string, port: number) {
         entrypoint: manifest.entrypoint, network: { profile: 'target-egress', name: 'beetle-smoke' }, tmpfsBytes: 1_048_576, maximumBudget: manifest.defaultBudget } }] };
   installedConfiguration(configuration);
   await writeFile(path, JSON.stringify(configuration), { mode: 0o600 });
+  await writeFile(join(root, 'receipt.json'), JSON.stringify({version: 1, phase: 'ready', installationId: installation.installationId,
+    configDigests: {'agent.json': createHash('sha256').update(JSON.stringify(configuration)).digest('hex')}}), {mode: 0o600});
   return { path, token, installation };
 }
 function daemon(root: string, installation: Awaited<ReturnType<typeof files>>['installation']) {

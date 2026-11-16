@@ -29,7 +29,7 @@ async function configuration() {
   await writeFile(config, JSON.stringify(inputOptions().installation), { mode: 0o600 });
   const agent = await offlineAgentFixture(directory, inputOptions().installation); agentCloses.push(agent.close);
   return loadBackendConfiguration({ BEETLE_LOCAL_ACCESS: 'paired', BEETLE_AGENT_CONFIG_FILE: agent.path, BEETLE_CONFIG_FILE: config, BEETLE_DATA_DIR: directory,
-    BEETLE_EXTERNAL_ORIGIN: origin }, fixture.workerUrl());
+    BEETLE_EXTERNAL_ORIGIN: origin }, fixture.workerUrl(), { baseline: true });
 }
 async function start(config: Awaited<ReturnType<typeof configuration>>) {
   const app = await openApplication(config.application); applications.add(app);

@@ -1,3 +1,5 @@
+import { selectInstalledConfiguration } from '@beetle/contracts/installation-generation';
+import { receiptDigest } from '../installation-receipt.js';
 import type { LoadedAgentConfiguration } from '../../ports/runner.js';
 import { AgentConfigurationError } from './error.js';
 import { PrivateFileReader } from './private-file.js';
@@ -8,13 +10,17 @@ import { configuration, token } from './validation.js';
 export function createAgentConfigurationLoader(files: FileOperations) {
   const reader = new PrivateFileReader(files);
   let active = false;
-  return async (path: string, installationId: string): Promise<LoadedAgentConfiguration> => {
+  return async (path: string, installationId: string, receipt?: unknown): Promise<LoadedAgentConfiguration> => {
     if (active || reader.failed) throw new AgentConfigurationError();
     active = true;
     try {
       const bytes = await reader.read(path, 65_536);
       let input: unknown;
-      try { input = JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes)) as unknown; }
+      try {
+        const text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
+        input = receipt === undefined ? JSON.parse(text) as unknown
+          : selectInstalledConfiguration(receipt, 'backend-agent.json', text, receiptDigest);
+      }
       finally { bytes.fill(0); }
       const captured = configuration(input, installationId);
       const credential = await reader.read(captured.tokenFile, 129);

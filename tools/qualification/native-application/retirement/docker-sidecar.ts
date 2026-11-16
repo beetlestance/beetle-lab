@@ -1,3 +1,4 @@
+import {sealConfiguration} from '../../../../agent/test/container/fixture.js';
 import assert from 'node:assert/strict';
 import {readFile,writeFile,copyFile,stat} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
@@ -17,7 +18,7 @@ export async function startDockerSidecar(f:Fixture,runtimeId:string){
   '--mount','type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock','--entrypoint','node',f.agentImage.Id,'/control/proxy.mjs',f.id,runtimeId,f.engine]);
  await waitFor(async()=>{try{return (await stat(socket)).isSocket();}catch{return false;}},'Docker proxy socket did not appear');
  const configInfo=await stat(f.configPath);assert(configInfo.size<=65536);const config=JSON.parse(await readFile(f.configPath,'utf8')) as {dockerSocket:string};
- assert.equal(config.dockerSocket,'/var/run/docker.sock');config.dockerSocket=socket;await writeFile(f.configPath,JSON.stringify(config),{mode:0o600});restartAgent(f);
+ assert.equal(config.dockerSocket,'/var/run/docker.sock');config.dockerSocket=socket;await writeFile(f.configPath,JSON.stringify(config),{mode:0o600});await sealConfiguration(f);restartAgent(f);
  return {name,async marker(){let result:unknown;await waitFor(async()=>{try{const path=join(f.root,'config','runtime-removed.json');assert((await stat(path)).size<=256);result=JSON.parse(await readFile(path,'utf8')) as unknown;return true;}catch{return false;}},'No settled Docker deletion marker');
    assert(result&&typeof result==='object');assert.equal(Reflect.get(result,'runtimeId'),runtimeId);assert.equal(Reflect.get(result,'installationId'),f.id);return result;
   },close(){f.docker.run(['stop','-t','10',name]);assert.equal(f.docker.json<{State:{ExitCode:number}}[]>(['inspect',name])[0]!.State.ExitCode,0);

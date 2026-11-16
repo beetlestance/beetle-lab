@@ -5,7 +5,7 @@ import type { BigIntStats, Dir } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { ProvisionError } from '../types.js';
 import type { Captured } from './capture.js';
-import { check } from './capture.js';
+import { check, canonical } from './capture.js';
 
 /** Private fault seam: production always uses native original promises. */
 export const native = { open: fs.open, lstat: fs.lstat, realpath: fs.realpath, mkdir: fs.mkdir,
@@ -21,7 +21,7 @@ interface Pin { handle: FileHandle; info: BigIntStats }
 export class PrivateFiles {
   private readonly pins = new Map<string, Pin>();
   private failedClose = false;
-  private receiptPin: BigIntStats | undefined;
+  private readonly receiptPins = new Map<string, BigIntStats>();
   constructor(readonly captured: Captured) {}
   get clean(): boolean { return !this.failedClose; }
   private owned(info: BigIntStats, directory: boolean): void {
@@ -90,7 +90,7 @@ export class PrivateFiles {
     const handle = await native.open(path, constants.O_RDONLY | constants.O_NONBLOCK | constants.O_NOFOLLOW);
     try {
       const info = await handle.stat({ bigint: true }); this.owned(info, false);
-      if (path === join(this.captured.request.root, 'installation.json')) this.receiptPin = info;
+      this.receiptPins.set(path, info);
       unsafe(info.size > 0n && info.size <= BigInt(maximum));
       const bytes = new Uint8Array(maximum + 1); let offset = 0;
       for (let count = 0; count < 64; count++) {
@@ -112,7 +112,7 @@ export class PrivateFiles {
     const handle = await native.open(path, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600);
     try {
       const original = await handle.stat({ bigint: true }); this.owned(original, false);
-      if (path === join(this.captured.request.root, 'installation.json')) this.receiptPin = original;
+      this.receiptPins.set(path, original);
       let offset = 0;
       for (let count = 0; count < 64 && offset < bytes.length; count++) {
         check(this.captured.context);
@@ -136,13 +136,25 @@ export class PrivateFiles {
     try { this.owned(await native.lstat(path, { bigint: true }), false); }
     catch (cause) { if (!optional || !absent(cause)) throw cause; }
   }
-  async ready(receipt: unknown, operationId: string): Promise<void> {
-    const root = this.captured.request.root; const target = join(root, 'installation.json');
+  private async stageReceipt(temporary: string, receipt: unknown, resume: boolean): Promise<void> {
+    if (resume) {
+      let existing: Uint8Array | undefined;
+      try { existing = await this.read(temporary); }
+      catch (error) { if (!absent(error)) throw error; }
+      if (existing) unsafe(canonical(JSON.parse(new TextDecoder('utf-8', {fatal:true}).decode(existing))) === canonical(receipt));
+      else await this.write(temporary, Buffer.from(canonical(receipt)));
+    } else await this.write(temporary, Buffer.from(JSON.stringify(receipt)));
+  }
+  async ready(receipt: unknown, operationId: string, target = join(this.captured.request.root, 'installation.json'), resume = false): Promise<void> {
+    unsafe(target === join(this.captured.request.root, 'installation.json')
+      || target === join(this.captured.request.root, 'config/configuration-state.json'));
+    const root = dirname(target);
     const temporary = join(root, `.installation-${operationId}`);
-    await this.write(temporary, Buffer.from(JSON.stringify(receipt))); await this.assertPins();
+    await this.stageReceipt(temporary, receipt, resume);
+    await this.assertPins();
     const original = this.pins.get(root)!.info;
     const current = await native.lstat(target, { bigint: true }); this.owned(current, false);
-    unsafe(current.ino === this.receiptPin?.ino && current.dev === this.receiptPin?.dev);
+    unsafe(current.ino === this.receiptPins.get(target)?.ino && current.dev === this.receiptPins.get(target)?.dev);
     // Ordinary originals drain before commit. Only receipt commit IO follows.
     await this.close(); check(this.captured.context);
     const commit = await native.open(root, constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW);

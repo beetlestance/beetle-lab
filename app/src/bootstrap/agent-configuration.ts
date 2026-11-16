@@ -6,6 +6,6 @@ const load = createAgentConfigurationLoader(nativeFiles);
 /** Captures private installation pins and token once; no environment/network/store effects.
  * Reads and closes settle before return. Failed close rejects and permanently fences intake.
  */
-export function loadAgentConfiguration(path: string, installationId: string): Promise<LoadedAgentConfiguration> {
-  return load(path, installationId);
+export function loadAgentConfiguration(path: string, installationId: string, receipt?: unknown): Promise<LoadedAgentConfiguration> {
+  return load(path, installationId, receipt);
 }

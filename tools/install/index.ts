@@ -1,13 +1,14 @@
+import { configurationNames } from '@beetle/contracts/installation-generation';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import type { ProvisionContext, ProvisionRequest, ProvisionResult } from './types.js';
 import { ProvisionError } from './types.js';
-import { capture, check, digest } from './src/capture.js';
+import { capture, check, digest, canonical } from './src/capture.js';
 import type { Captured } from './src/capture.js';
 import { PrivateFiles } from './src/files.js';
 import { inspect } from './src/inspection.js';
-import { configurations, configNames, directories, paths } from './src/configuration.js';
-import { authority } from './src/authority.js';
+import { configurations, configNames, directories, paths, configurationStatePath, generationRequest } from './src/configuration.js';
+import { authority, validateCommittedGeneration } from './src/authority.js';
 import { jsonBytes, readReceipt, verifyConfigs } from './src/receipt.js';
 import type { Receipt } from './src/receipt.js';
 export { ProvisionError } from './types.js';
@@ -44,22 +45,33 @@ async function create(c: Captured, files: PrivateFiles): Promise<ProvisionResult
   receipt.authority = await authority(c, files, installationId);
   await journalFiles(c, files, false);
   check(c.context); receipt.phase = 'ready';
+  await files.write(configurationStatePath(c.request.root), jsonBytes(receipt));
   await files.ready(receipt, operationId);
   return Object.freeze({ installationId, status: 'created', paths: paths(c.request.root) });
 }
 async function verifiedConfiguration(c:Captured,files:PrivateFiles):Promise<Receipt>{
+  await layout(c, files, false);
   const receipt = await readReceipt(c, files);
-  await layout(c, files, false); await verifyConfigs(c, files, receipt);
+  await verifyConfigs(c, files, receipt);
   const facts = await inspect(c);
   let expected: Record<string, unknown>;
-  try { expected = configurations(c, receipt.installationId, facts); }
+  try {
+    const decode = (value: Uint8Array) => new TextDecoder('utf-8',{fatal:true}).decode(value);
+    const active = receipt.generation ? capture(generationRequest(c,receipt,{
+      agent:decode(await files.read(paths(c.request.root).agent)),
+      installation:decode(await files.read(paths(c.request.root).installation)),
+    }),c.context) : c;
+    expected = configurations(active, receipt.installationId, facts);
+  }
   catch (cause) { throw new ProvisionError('recovery_required', { cause }); }
-  for (const [name, value] of Object.entries(expected)) {
-    if (digest(Buffer.from(jsonBytes(value)).toString('utf8')) !== receipt.configDigests[name]) {
-      throw new ProvisionError('recovery_required');
-    }
+  for (const name of configurationNames) {
+    const matches = receipt.generation
+      ? canonical(expected[name]) === canonical(receipt.generation.configurations[name])
+      : digest(Buffer.from(jsonBytes(expected[name])).toString('utf8')) === receipt.configDigests[name];
+    if (!matches) throw new ProvisionError('recovery_required');
   }
   await journalFiles(c, files, false);
+  if (receipt.generation) await validateCommittedGeneration(c, receipt.installationId);
   return receipt;
 }
 async function replay(c:Captured,files:PrivateFiles):Promise<ProvisionResult>{

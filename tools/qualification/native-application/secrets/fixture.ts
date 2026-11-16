@@ -14,17 +14,17 @@ export async function secretTarget(f: Fixture) {
 /** Copy the immutable default config to an explicit private operator override; never rewrite its receipt. */
 export async function bindSecrets(f: Fixture, scope: {organizationId: string; workspaceId: string}, canaries: readonly string[], owner: string) {
  assert(canaries.length === 2 && /^[a-f0-9-]{36}$/.test(owner));
- const original = join(f.home, 'data/config/agent.json'); const configured = join(f.home, `secrets-agent-${scope.workspaceId}.json`); const mounted = join(f.home, 'mounted-secret');
+ const original = join(f.home, 'data/config/agent.json'); const configured = join(f.home, `secrets-agent-${scope.workspaceId}.json`); const mounted = join(f.home, 'mounted-secret'); const receipt = configured + '.receipt.json';
  const bindings = [{...scope, name: 'environment', provider: 'env', reference: 'environment-ref', version: 'v1', source: 'BEETLE_TEST_SECRET'},
  {...scope, name: 'mounted', provider: 'mounted', reference: 'mounted-ref', version: 'v1', source: mounted}];
- const program = "const f=require('node:fs'),c=require('node:crypto');process.umask(0o077);const raw=f.readFileSync(process.argv[1]);if(raw.length>262144)process.exit(3);const config=JSON.parse(raw);const data=JSON.parse(f.readFileSync(0));config.providers.secretBindings=data.bindings;f.writeFileSync(process.argv[2],JSON.stringify(config),{flag:'wx',mode:0o600});if(f.existsSync(process.argv[3])){if(f.readFileSync(process.argv[3],'utf8')!==data.mounted)process.exit(4);}else f.writeFileSync(process.argv[3],data.mounted,{flag:'wx',mode:0o600});console.log(c.createHash('sha256').update(raw).digest('hex'));";
+ const program = "const f=require('node:fs'),c=require('node:crypto');process.umask(0o077);const raw=f.readFileSync(process.argv[1]);if(raw.length>262144)process.exit(3);const config=JSON.parse(raw);const data=JSON.parse(f.readFileSync(0));config.providers.secretBindings=data.bindings;const selected=JSON.stringify(config);f.writeFileSync(process.argv[2],selected,{flag:'wx',mode:0o600});f.writeFileSync(process.argv[4],JSON.stringify({version:1,phase:'ready',installationId:config.installation.installationId,configDigests:{'agent.json':c.createHash('sha256').update(selected).digest('hex')}}),{flag:'wx',mode:0o600});if(f.existsSync(process.argv[3])){if(f.readFileSync(process.argv[3],'utf8')!==data.mounted)process.exit(4);}else f.writeFileSync(process.argv[3],data.mounted,{flag:'wx',mode:0o600});console.log(c.createHash('sha256').update(raw).digest('hex'));";
  const before = f.docker.run(['run', '--rm', '--pull', 'never', '--network', 'none', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges:true',
  '--cpus', '.5', '--memory', '128m', '--memory-swap', '128m', '--pids-limit', '32', '--label', `dev.beetle.qualification=${owner}`, '--label', `com.docker.compose.project=${f.project}`, '--label', `org.opencontainers.image.revision=${f.revision}`, '--user', '1000:1000', '--mount', `type=bind,src=${f.home},dst=${f.home}`,
- '-i', '--entrypoint', 'node', f.images.installer!, '-e', program, original, configured, mounted], JSON.stringify({bindings, mounted: canaries[1]}));
+ '-i', '--entrypoint', 'node', f.images.installer!, '-e', program, original, configured, mounted, receipt], JSON.stringify({bindings, mounted: canaries[1]}));
  assert(/^[a-f0-9]{64}$/.test(before));
  const file = join(f.root, 'target.json'); const override = JSON.parse(await readFile(file, 'utf8')) as {services: Record<string, unknown>};
- override.services.agent = {environment: {BEETLE_AGENT_CONFIG_FILE: configured, BEETLE_TEST_SECRET: canaries[0]},
- volumes: [{type: 'bind', source: configured, target: configured, read_only: true}, {type: 'bind', source: mounted, target: mounted, read_only: true}]};
+ override.services.agent = {environment: {BEETLE_AGENT_CONFIG_FILE: configured, BEETLE_INSTALLATION_RECEIPT_FILE: receipt, BEETLE_TEST_SECRET: canaries[0]},
+ volumes: [{type: 'bind', source: configured, target: configured, read_only: true}, {type: 'bind', source: mounted, target: mounted, read_only: true}, {type: 'bind', source: receipt, target: receipt, read_only: true}]};
  await writeFile(file, JSON.stringify(override), {mode: 0o600});
  f.compose('up', '-d', '--no-build', '--no-deps', 'agent');
  return {defaultConfigSha256: before};

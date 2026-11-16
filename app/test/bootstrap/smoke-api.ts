@@ -1,10 +1,11 @@
+import { createHash } from 'node:crypto';
 import { offlineAgentFixture } from './agent-fixture.js';
 import { initializeBackendRecovery } from '../../src/bootstrap/recovery-control/index.js';
 import { spawn } from 'node:child_process';
 import type { ChildProcessByStdio } from 'node:child_process';
 import type { Readable } from 'node:stream';
 import { createServer } from 'node:net';
-import { mkdtemp, mkdir, realpath, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, realpath, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { once } from 'node:events';
@@ -64,8 +65,13 @@ async function run(root: string, port: number): Promise<void> {
   await writeFile(join(root, 'installation.json'), JSON.stringify(installation), { mode: 0o600 });
   const origin = `http://127.0.0.1:${port}`;
   const agent = await offlineAgentFixture(root, installation);
+  const receiptPath = join(root, 'receipt.json');
+  const hash = (value: string) => createHash('sha256').update(value).digest('hex');
+  await writeFile(receiptPath, JSON.stringify({version: 1, phase: 'ready', installationId: installation.id,
+    configDigests: {'installation.json': hash(JSON.stringify(installation)),
+      'backend-agent.json': hash(await readFile(agent.path, 'utf8'))}}), {mode: 0o600});
   const child = spawn(process.execPath, ['app/dist/main.js'], { cwd: process.cwd(), env: {
-    BEETLE_AGENT_CONFIG_FILE: agent.path, PATH: process.env.PATH ?? '', BEETLE_CONFIG_FILE: join(root, 'installation.json'),
+    BEETLE_INSTALLATION_RECEIPT_FILE: receiptPath, BEETLE_AGENT_CONFIG_FILE: agent.path, PATH: process.env.PATH ?? '', BEETLE_CONFIG_FILE: join(root, 'installation.json'),
     BEETLE_DATA_DIR: join(root, 'data'), BEETLE_EXTERNAL_ORIGIN: origin, BEETLE_LISTEN_PORT: String(port),
   }, stdio: ['ignore', 'pipe', 'pipe'] });
   let closed = false;

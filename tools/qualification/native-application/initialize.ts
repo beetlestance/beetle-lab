@@ -42,7 +42,7 @@ async function privateFiles(journalPath: string, owner: InitializationOptions): 
  * All providers/SQLite handles close before files are secured and Docker may start.
  */
 export async function initializeFreshInstallation(options: InitializationOptions) {
-  const loaded = await loadAgentConfiguration({ BEETLE_AGENT_CONFIG_FILE: options.configPath }, initializationWorkerUrl());
+  const loaded = await loadAgentConfiguration({ BEETLE_AGENT_CONFIG_FILE: options.configPath }, initializationWorkerUrl(), undefined, { baseline: true });
   let journal: Journal | undefined; let initializer: InitializingState | undefined;
   let journalAuthority: string | undefined;
   const failures: unknown[] = [];

@@ -1,7 +1,10 @@
 import { expect, it } from 'vitest';
 import { chmod, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { loadAgentConfiguration } from '../../src/bootstrap/index.js';
+import { loadAgentConfiguration as loadInstalledAgentConfiguration } from '../../src/bootstrap/index.js';
+import type { AgentEnvironment } from '../../src/bootstrap/index.js';
+const loadAgentConfiguration = (environment: AgentEnvironment, worker: URL, signal?: AbortSignal) =>
+  loadInstalledAgentConfiguration(environment, worker, signal, { baseline: true });
 import { installedConfiguration } from '../../src/bootstrap/installed-config.js';
 import { fixture, credential } from './fixtures.js';
 import { configurationFiles } from './configuration-fixtures.js';
