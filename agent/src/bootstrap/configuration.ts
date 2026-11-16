@@ -48,8 +48,8 @@ export async function loadAgentConfiguration(environment: AgentEnvironment, work
       installation: config.installation, transport: new UnixDockerTransport(config.dockerSocket), catalog: config.catalog,
       configuration: config.configuration, providers: owned, credential, minimumFreeBytes: config.minimumFreeBytes,
       ...(signal ? { signal } : {}) }, listen: Object.freeze(config.listen), close: () => owned.close() });
-  } catch {
+  } catch (error) {
     await providers?.close();
-    throw new AgentConfigurationError();
+    throw new AgentConfigurationError({cause: error});
   }
 }

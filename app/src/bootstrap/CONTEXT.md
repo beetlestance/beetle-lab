@@ -23,7 +23,8 @@ BEETLE_EXTERNAL_ORIGIN is required; normal listener defaults127.0.0.1:4311.
 uses private umask. Explicit0.0.0.0 is for the private backend container network.
 `npm run build:api` bundles main/worker separately; start:api runs that output.
 `npm run smoke:api` needs an owned loopback port and tests the built entrypoint.
-Artifact finalization and packaged proxy delivery remain work.
+Startup/shutdown diagnostics emit at most four allow-listed cause codes; no error
+text, stack, paths or configuration values enter these records.
 Check: npx vitest run app/test/bootstrap app/src/bootstrap/api.integration.test.ts --maxWorkers=1.
 
 `runtime-poller.ts` owns one sample/publication at a time and coalesces unknown

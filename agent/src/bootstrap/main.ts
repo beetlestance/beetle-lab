@@ -1,3 +1,4 @@
+import { reportFailure } from './failure.js';
 import { openAgentRuntime } from './index.js';
 import type { AgentRuntime } from './index.js';
 import { loadAgentConfiguration } from './configuration.js';
@@ -17,7 +18,7 @@ function stop(): Promise<void> {
   abort.abort();
   return closing;
 }
-function signal(): void { void stop().catch(() => { process.exitCode = 1; }); }
+function signal(): void { void stop().catch(error => { reportFailure('shutdown_failed', error); process.exitCode = 1; }); }
 process.once('SIGINT', signal); process.once('SIGTERM', signal);
 const loading = Promise.resolve().then(async () => {
   const loaded = await loadAgentConfiguration(process.env, new URL('./worker.js', import.meta.url), abort.signal);
@@ -28,8 +29,9 @@ const loading = Promise.resolve().then(async () => {
   await runtime.server.listen({ ...loaded.listen });
 });
 try { await loading; if (abort.signal.aborted) await stop(); }
-catch {
-  await stop().catch(() => undefined);
+catch (error) {
+  reportFailure('startup_failed', error);
+  await stop().catch(cleanup => { reportFailure('shutdown_failed', cleanup); });
   process.stderr.write('Beetle Lab agent startup failed. Check private installation configuration and runtime access.\n');
   process.exitCode = 1;
 }

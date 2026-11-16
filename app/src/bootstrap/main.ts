@@ -1,7 +1,8 @@
+import { reportFailure } from './failure.js';
 import { openApplication } from './api.js';
 import { loadBackendConfiguration } from './configuration.js';
 
-// This entrypoint is bundled beside worker.js; legacy npm start remains separate.
+// This entrypoint is bundled beside the metadata worker.
 process.umask(0o077);
 let application: Awaited<ReturnType<typeof openApplication>> | undefined;
 let stopping = false;
@@ -12,7 +13,7 @@ function stop(): Promise<void> {
   return shutdown;
 }
 function signal(): void {
-  void stop().catch(() => { process.exitCode = 1; });
+  void stop().catch(error => { reportFailure('shutdown_failed', error); process.exitCode = 1; });
 }
 process.once('SIGINT', signal);
 process.once('SIGTERM', signal);
@@ -29,8 +30,9 @@ try {
       else process.stdout.write(`Beetle Lab local startup token: ${application.bootstrapToken}\n`);
     }
   }
-} catch {
-  await stop().catch(() => undefined);
+} catch (error) {
+  reportFailure('startup_failed', error);
+  await stop().catch(cleanup => { reportFailure('shutdown_failed', cleanup); });
   process.stderr.write('Beetle Lab backend startup failed. Check installation configuration and storage.\n');
   process.exitCode = 1;
 }

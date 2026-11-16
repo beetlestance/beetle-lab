@@ -1,4 +1,5 @@
-import { chmod, mkdir, mkdtemp, realpath, rm, symlink, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { chmod, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFile } from 'node:child_process';
@@ -19,6 +20,10 @@ async function fixture() {
   const agentConfig = join(root, 'agent.json');
   await writeFile(agentConfig, JSON.stringify({ version: 1, origin: 'http://agent:4312', tokenFile,
     expectedInstallationId: installation.id, profiles: [pin()], storageAllocationBytes: 20000, freeSpaceReserveBytes: 2000 }), { mode: 0o600 });
+  const hash = (text: string) => createHash('sha256').update(text).digest('hex');
+  await writeFile(join(root, 'configuration-state.json'), JSON.stringify({version: 1, phase: 'ready',
+    installationId: installation.id, configDigests: {'installation.json': hash(JSON.stringify(installation)),
+      'backend-agent.json': hash(await readFile(agentConfig, 'utf8'))}}), {mode: 0o600});
   const environment = { BEETLE_AGENT_CONFIG_FILE: agentConfig, BEETLE_CONFIG_FILE: config, BEETLE_DATA_DIR: data, BEETLE_EXTERNAL_ORIGIN: 'http://localhost:4310' };
   return { root, config, agentConfig, tokenFile, data, installation, environment };
 }

@@ -25,3 +25,6 @@ Installed live approval selects k6 only from validated catalogue configuration
 and an opted-in profile with the assigned mailbox mount. It shares producer
 policy/epoch rules, retaining compact approval only; all profiles remain off.
 Private live HTTP is wired to existing Supervisor ownership, never actor creation.
+
+Startup/shutdown diagnostics expose at most four allow-listed cause codes, never
+error text, stack, paths or credentials. Diagnostic failure cannot block cleanup.

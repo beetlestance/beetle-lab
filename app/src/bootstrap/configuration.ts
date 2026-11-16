@@ -54,7 +54,7 @@ async function readInstallation(path: string, receipt: unknown): Promise<Install
         : selectInstalledConfiguration(receipt, 'installation.json', text, receiptDigest);
     } finally { await handle.close(); }
     return captureInstallationRecord(value);
-  } catch { throw new BootstrapError('configuration'); }
+  } catch (error) { throw new BootstrapError('configuration', {cause: error}); }
 }
 async function boundedText(handle: FileHandle): Promise<string> {
   const buffer = new Uint8Array(32_769);
@@ -74,7 +74,7 @@ async function dataDirectory(path: string): Promise<string> {
     if (!info.isDirectory() || info.uid !== process.getuid?.() || (info.mode & 0o077)) throw new BootstrapError('data_directory');
     await access(canonical, constants.R_OK | constants.W_OK | constants.X_OK);
     return canonical;
-  } catch { throw new BootstrapError('data_directory'); }
+  } catch (error) { throw new BootstrapError('data_directory', {cause: error}); }
 }
 function listener(environment: BackendEnvironment): BackendConfiguration['listen'] {
   const host = environment.BEETLE_LISTEN_HOST ?? '127.0.0.1';
@@ -101,7 +101,9 @@ export async function loadBackendConfiguration(environment: BackendEnvironment, 
   const externalOrigin = environment.BEETLE_EXTERNAL_ORIGIN;
   if (!externalOrigin || externalOrigin.length > 2048) throw new BootstrapError('configuration');
   const receipt = offline?.baseline ? { value: offline.receipt, assertCurrent: async () => undefined }
-    : await captureInstallationReceipt(config, environment.BEETLE_INSTALLATION_RECEIPT_FILE);
+    : await captureInstallationReceipt(config, environment.BEETLE_INSTALLATION_RECEIPT_FILE).catch(error => {
+      throw new BootstrapError('configuration', {cause: error});
+    });
   const record = await readInstallation(config, receipt.value);
   const directory = await dataDirectory(root);
   const connection = await agentConnection(agentConfig, record.id, receipt.value);
