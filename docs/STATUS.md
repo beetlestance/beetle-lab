@@ -25,7 +25,7 @@ are indexed in [HISTORY](HISTORY.md) and retain their original source/platform s
 | Storage and diagnostics | A five-second no-progress watchdog replaces per-enqueue timers; bounded slow FIFO bursts can drain. Fatal failures emit redacted component/reason/code diagnostics and remain sticky with no mutation retry. Focused source checks pass. Startup/shutdown failures now expose bounded allow-listed cause codes; native overload acceptance remains pending. |
 | Sampler confinement | Corrected by appending sampling paths under the configured target and checking origin before fetch. Regression tests cover scheme-looking paths; release acceptance remains open. |
 | Migration extension | Migration 026 now has its own version guard. Prior-025 upgrade coverage passes; adding a later migration still requires its own upgrade tests. Migration 015 already has a caller guard. |
-| Publishing | Manual release authority/protection needs review. Existing legacy registry images remain available; merging source did not withdraw them. |
+| Publishing | Environment-gated publishing and a fail-closed policy preflight are prepared. GitHub default-token/review settings still require approval and application. No replacement image was published; legacy registry images remain available. |
 | Qualification | Reconcile release criteria and hosted evidence. The retained local repeated-memory observation does not substitute for missing hosted qualification. |
 | Maintainability | Formatting, dense functions and database-row boundary validation need targeted work. A cast count alone does not prove every row is unchecked. |
 

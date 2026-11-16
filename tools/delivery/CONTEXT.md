@@ -1,13 +1,10 @@
 # Candidate delivery
 
-`identity.ts` validates bounded parsed metadata and binds exactly six immutable
-Docker image IDs to a passed/clean native outcome and the image scan identities.
-No tag or revision label alone establishes that the image was executed.
+`identity.ts` binds six immutable image IDs to clean native execution and scans.
+Tags and revision labels alone never establish execution.
 
-`archive.ts` is an explicit CLI: revision, architecture, absolute scan directory,
-absolute outcome JSON, new absolute output directory. It saves those IDs without
-rebuilding or registry access. JSON leaves are <=256KiB, single-link regular files;
-archives are <=3GiB, commands <=120s, reads/hashes are bounded/streaming.
+`archive.ts` saves exactly qualified image IDs without rebuilding or registry
+access. JSON leaves, archives, commands and streamed reads/hashes stay bounded.
 `producer.ts` counts output before writing, stops its owned POSIX process group
 on overflow/deadline, escalates TERM to KILL and joins actual close. Stderr is
 bounded without retaining its content. Both tar and compressed streams are capped;
@@ -21,8 +18,7 @@ inventories, image CycloneDX reports and source dependency inventory/audit. It f
 HIGH/CRITICAL CVEs, including unfixed findings, and fails closed on scanner errors.
 `scripts/install-ci-trivy.sh` pins official Trivy archive checksums for native Linux.
 
-Registry publication, anonymous complete pulls and matched Compose installation
-require their own accepted evidence. Transport is not a release gate waiver.
+Publication gates: [release approval](../../docs/release-approval.md).
 
 `references.ts` owns six nonce transport tags and binding-checked cleanup.
 `contents.ts` verifies role/config/manifest hash bindings; `bundle.ts` captures the
@@ -38,3 +34,7 @@ requests and refuses incomplete lists. `download.ts` verifies exact ZIP size/has
 `stage.ts` streams bounded whitelisted leaves; `staged.ts` matches both platforms
 against native/scan/bundle/restoration/config identities and archive hashes.
 Sources: sources/README.md; qualified publication/native installs: registry/README.md.
+
+`authority.ts` requires configured beetle-release reviewers and exactly the
+integration branch deployment rule. A read-only job checks this before either
+write job can enter the environment's GitHub approval gate; missing policy refuses.

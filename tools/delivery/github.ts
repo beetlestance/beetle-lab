@@ -1,3 +1,4 @@
+import {captureReleaseAuthority} from './authority.js';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {captureQualifiedRun} from './trust.js';
@@ -38,4 +39,17 @@ export async function readRunMetadata(runId: number, revision: string, api: Api 
 export async function readQualifiedRun(runId: number, revision: string, api: Api = github) {
   const metadata = await readRunMetadata(runId, revision, api);
   return captureQualifiedRun(metadata, {runId, revision, workflowId: metadata.workflowId});
+}
+
+/** Read-only and fixed endpoints; all issued requests settle before refusal. */
+export async function readReleaseAuthority(api: Api = github): Promise<void> {
+  const results = await Promise.allSettled([
+    api(`${repository}/environments/beetle-release`),
+    api(`${repository}/environments/beetle-release/deployment-branch-policies?per_page=100`),
+  ]);
+  const values = results.map(result => {
+    if (result.status === 'rejected') throw Error('Release approval policy unavailable');
+    return result.value;
+  });
+  captureReleaseAuthority(values[0], values[1]);
 }

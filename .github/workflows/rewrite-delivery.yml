@@ -22,7 +22,34 @@ permissions:
   contents: read
 
 jobs:
+  delivery-authority:
+    name: delivery/approval-policy
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.repository == 'beetlestance/beetle-lab' &&
+      github.ref == 'refs/heads/rewrite/integration' && inputs.source_run_id != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Refuse publication without configured release approval
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node --import tsx tools/delivery/authority-cli.ts
+
   delivery-publish:
+    needs: delivery-authority
+    environment: beetle-release
     name: delivery/publish
     if: >-
       github.event_name == 'workflow_dispatch' &&
@@ -146,6 +173,7 @@ jobs:
           retention-days: 14
 
   delivery-complete:
+    environment: beetle-release
     if: ${{ !inputs.local_releases }}
     name: delivery/complete
     needs: [delivery-publish, delivery-native]
