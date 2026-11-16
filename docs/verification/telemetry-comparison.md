@@ -78,3 +78,14 @@ timeout termination/join valid and avoids making private evidence world-readable
 Only the validated closed output is returned to the upload user's ownership.
 Container PID1/UID1000, resource limits and security settings are unchanged; host
 oracle UID is recorded separately. No normal-installation privilege claim follows.
+
+
+The next AMD trial43874643859 passed setup and one warm-up, then failed during
+the on-mode trial with an assertion; component drain and both cleanup checks
+succeeded. Its closed report does not establish which assertion failed. A focused
+regression independently reproduced a fixture bug: a legitimate bounded live-read
+`deadline` refusal was treated as fatal rather than counted unavailable. The
+fixture now counts that refusal while retaining the two-fresh-frames-per-reader
+and wall-time gates. Fixed source locations and bundle digest are retained for
+future failed-trial diagnosis without uploading raw exceptions. No cause is
+retroactively assigned to the earlier failed trial.

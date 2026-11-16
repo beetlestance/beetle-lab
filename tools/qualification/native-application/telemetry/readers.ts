@@ -9,7 +9,7 @@ export function readers(trial:Trial,key:Scope,enabled:boolean){
   try{while(!stop.signal.aborted){
    assert(++row.calls<=40);const result=await trial.supervisor.readLiveMetrics(key,{deadline:performance.now()+1000,signal:stop.signal});
    if(result.ok){if(result.frame.publishedSequence>row.lastPublished){row.frames++;row.lastPublished=result.frame.publishedSequence;}}
-   else{assert(['busy','unavailable','stale','aborted','closed'].includes(result.reason));row.unavailable++;}
+   else{assert(['busy','unavailable','stale','aborted','closed','deadline'].includes(result.reason));row.unavailable++;}
    await delay(2000,undefined,{signal:stop.signal}).catch(error=>{if(!stop.signal.aborted)throw error;});
   }}catch(error){failure??=error;stop.abort();}
  }):[];
