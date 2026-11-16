@@ -17,7 +17,7 @@ function check(value: unknown): Check {
   if (typeof entry.id !== 'string' || !/^[a-z][a-z0-9-]{0,39}$/.test(entry.id)) throw new Error('Invalid check id');
   const argv = argumentsList(entry.argv);
   if (typeof entry.timeoutMs !== 'number' || !Number.isInteger(entry.timeoutMs)
-    || entry.timeoutMs < 1 || entry.timeoutMs > 900000) throw new Error('Invalid timeout');
+    || entry.timeoutMs < 1 || entry.timeoutMs > 2160000) throw new Error('Invalid timeout');
   return {id: entry.id, argv: [...argv], timeoutMs: entry.timeoutMs};
 }
 /** Validate the entire plan before creating evidence or starting a command. */

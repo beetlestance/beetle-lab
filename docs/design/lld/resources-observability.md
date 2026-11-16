@@ -45,19 +45,19 @@ jobs, but age promotion prevents indefinite starvation. Requested isolated-mode
 locks are respected; ordinary performance jobs may run concurrently when allowed.
 No cron scheduling in the first release.
 
-## Proposed profiles
+## Initial profiles
 
-Values are starting fixtures to measure and tune before release, not inferred
-requirements of every real test. Resource requests may be overridden through UI settings within installation caps.
+Current Compose/starter values are explicit installation defaults, not inferred
+requirements of every real test. Later-engine rows remain proposals. Resource requests may be overridden through UI settings within installation caps.
 [Settings precedence](organization-settings.md) has one resolver; each accepted run
 stores its effective values. Raising a default never raises a hard installation cap.
 
 | Role/profile | CPU ceiling | Memory ceiling | PIDs | Other limits |
 | --- | --- | --- | --- | --- |
-| Frontend | 0.1 CPU | 64 MiB | 64 | Static files, bounded proxy buffers |
-| Backend | 0.5 CPU | 512 MiB | 128 | Bounded DB/HTTP/event queues |
-| Agent | 0.25 CPU | 256 MiB | 128 | Bounded supervisor and samples |
-| k6 default attempt | 1 CPU | 512 MiB | 128 | 10-minute wall, 1-GiB outputs |
+| Frontend | 0.1 CPU | 64 MiB | 32 | Static files, bounded proxy buffers |
+| Backend | 1 CPU | 256 MiB | 64 | Bounded DB/HTTP/event queues |
+| Agent | 0.25 CPU | 256 MiB | 64 | Bounded supervisor and samples |
+| k6 default attempt | 1 CPU | 512 MiB | 128 | 5-minute wall,64-MiB outputs |
 | Browser default attempt (later) | 1 CPU | 1.5 GiB | 512 | Explicit shared-memory profile |
 | Mutation default attempt (later) | 2 CPUs | 2 GiB | 512 | Per-project build/output budget |
 

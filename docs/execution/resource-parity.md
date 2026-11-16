@@ -32,7 +32,11 @@ packaged backup/history/resume and AMD64 anonymous-pull proof (CI43758727985). T
 remain open. [Q04a](../verification/short-control-overhead.md) records accepted Node24 ARM
 short control latency and descriptive CPU/memory observations. Earlier Node26
 target misses remain recorded; uninterrupted readers, full overhead and Q04
-overall remain open.
+overall remain open. [Native independent polling](../verification/short-control-overhead.md)
+now passes both architectures. The [actual long stream](../verification/long-stream.md)
+failed its fresh-frame-span gate; quota replay records a reproduced mechanism.
+[Browser interaction acceptance](../verification/browser-interactions.md) adds
+actual Chromium keyboard/theme/viewport/scope checks; broader matrices remain.
 
 ## Q01 frozen scope
 

@@ -153,3 +153,11 @@ The corrected fixture uses each UI reader's independent two-second settled
 cadence, drains all original reads before cleanup, and retains reader counts on
 failure. Acceptance targets are unchanged; a new native run is required. This
 fixture mismatch is not retrospective proof of every earlier failure's cause.
+
+The corrected independent-cadence harnessbbb956c3 passed both native jobs in
+[CI43776160378](https://github.com/beetlestance/beetle-lab/actions/runs/43776160378),
+with independent cleanup. ARM settings/run/post p956.84/9.69/10.96ms; successful
+live p95193.77ms,14/36unavailable, frames7/8/7. AMD controls8.83/8.81/7.24ms;
+successful live p95161.67ms,12/36unavailable, frames8/8/8. All40work counts and
+strict projection checks passed. These scoped results retain refusals and do not
+establish continuous availability, long-stream or full overhead qualification.

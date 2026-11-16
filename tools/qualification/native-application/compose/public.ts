@@ -5,10 +5,11 @@ import type {ApiClient,ApiClientFailure,ApiClientResult,BrowserSession,ExportJob
 import {pause,value} from '../public-api.js';
 export const hash=(bytes:string|Uint8Array)=>createHash('sha256').update(bytes).digest('hex');
 /** Same-origin public TCP; cookie/CSRF are retained in memory, never evidence output. */
-export async function automaticSession(origin:string, transport?: typeof fetch){
+export async function automaticSession(origin:string, transport?: typeof fetch, maximumRequests = 256){
+ assert(Number.isSafeInteger(maximumRequests) && maximumRequests >= 256 && maximumRequests <= 8192);
  let cookie='';let requests=0;
  const fetcher:typeof fetch=async(input,init)=>{
-  const url=new URL(String(input));assert(url.origin===origin&&url.pathname.startsWith('/api/v2/')&&++requests<=256);
+  const url=new URL(String(input));assert(url.origin===origin&&url.pathname.startsWith('/api/v2/')&&++requests<=maximumRequests);
   const headers=new Headers(init?.headers);headers.set('origin',origin);if(cookie)headers.set('cookie',cookie);
   const response=await (transport??fetch)(url,{...init,method:init?.method??'GET',headers,redirect:'error'});const received=response.headers.get('set-cookie');
   if(received){assert(received.length<=4096);cookie=received.split(';')[0]!;}return response;

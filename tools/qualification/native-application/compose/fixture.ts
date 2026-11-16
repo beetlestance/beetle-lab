@@ -30,7 +30,7 @@ export function nativeArchitecture(daemon:string,harness:string,expected?:string
  return architecture;
 }
 export async function fixture(argv:string[], maximumTargetRequests=4){
- assert(Number.isSafeInteger(maximumTargetRequests)&&maximumTargetRequests>=4&&maximumTargetRequests<=256);
+ assert(Number.isSafeInteger(maximumTargetRequests)&&maximumTargetRequests>=4&&maximumTargetRequests<=2048);
  const [frontend,backend,agent,installer,engine,offline,context='default']=argv;
  assert(argv.length>=6&&argv.length<=7);for(const item of [frontend,backend,agent,installer,engine,offline])assert(item&&/^[a-zA-Z0-9][a-zA-Z0-9_./:@-]{0,255}$/.test(item));
  assert(/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/.test(context));

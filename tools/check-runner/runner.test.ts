@@ -18,7 +18,8 @@ it('validates all checks before executing and rejects duplicate commands or ids'
   await expect(runChecks({cwd, checks: [first, {...first, id: 'second'}]}, output)).rejects.toThrow('Duplicate');
   await expect(stat(output)).rejects.toMatchObject({code: 'ENOENT'});
   expect(() => capturePlan({cwd, checks: [first, command('first', 'process.exit(1)')]})).toThrow('Duplicate');
-  expect(() => capturePlan({cwd, checks: [{...first, timeoutMs: 900001}]})).toThrow('timeout');
+  expect(() => capturePlan({cwd, checks: [{...first, timeoutMs: 2160001}]})).toThrow('timeout');
+  expect(capturePlan({cwd, checks: [{...first, timeoutMs: 2160000}]}).checks[0]!.timeoutMs).toBe(2160000);
 });
 it('runs argument vectors literally once and writes a truthful summary', async () => {
   const {cwd, output} = await fixture();

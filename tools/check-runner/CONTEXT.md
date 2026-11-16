@@ -14,3 +14,6 @@ A duplicate spelling of the same semantic command cannot be detected; this runne
 does not sandbox commands or replace review of a task's accepted check plan.
 CLI input is bounded to 64KiB. Logs/output directories must be task owned.
 Focused tests: tools/check-runner/runner.test.ts.
+
+Explicit per-command deadlines are bounded at36min to permit the authorised
+actual30min qualification. No default deadline or runtime execution budget changes.

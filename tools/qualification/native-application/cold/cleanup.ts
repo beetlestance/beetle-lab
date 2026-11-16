@@ -13,9 +13,10 @@ class CleanupDocker extends Docker {
     assert(performance.now() < deadline); const value = super.run(args, input); assert(performance.now() < deadline); return value;
   }
 }
-const [output, extra] = process.argv.slice(2); assert(output && isAbsolute(output) && !extra);
+const [output, context = 'default', extra] = process.argv.slice(2); assert(output && isAbsolute(output) && !extra);
+assert(/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/.test(context));
 const owner = coldOwner(await readDeliveryJson(join(output, 'owner.json')));
-const docker = new CleanupDocker('default', 2); const project = owner.project;
+const docker = new CleanupDocker(context, 2); const project = owner.project;
 const ids = boundedIds(docker.run(['ps', '-aq', '--no-trunc', '--filter', `label=com.docker.compose.project=${project}`]), 7);
 for (const id of ids) {
   const rows = docker.json<unknown[]>(['inspect', id]); assert.equal(rows.length, 1); const row = record(rows[0]); assert.equal(row.Id, id);
