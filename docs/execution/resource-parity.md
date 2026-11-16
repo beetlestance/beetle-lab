@@ -37,6 +37,9 @@ now passes both architectures. The [actual long stream](../verification/long-str
 failed its fresh-frame-span gate; quota replay records a reproduced mechanism.
 [Browser interaction acceptance](../verification/browser-interactions.md) adds
 actual Chromium keyboard/theme/viewport/scope checks; broader matrices remain.
+[Bounded full-storage input recovery](../verification/bounded-disk.md) adds native
+ARM tmpfs refusal/prefix recovery and same-intent deletion after explicit restart;
+other storage faults and platforms remain open.
 
 ## Q01 frozen scope
 

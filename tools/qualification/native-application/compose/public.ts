@@ -20,7 +20,7 @@ export async function automaticSession(origin:string, transport?: typeof fetch, 
  });
  const session=prior??value(await createApiClient({...options,headers:{'X-Beetle-Local':'1'}}).openLocalBrowserSession({body:{}}));assert(cookie);
  const api=createApiClient({...options,headers:{'X-Beetle-CSRF':session.csrfToken}});
- return {api,session,requests:()=>requests,cookieDigest:()=>hash(cookie),content:(path:string,headers:Record<string,string>={},signal?:AbortSignal)=>
+ return {api,session,transport:fetcher,requests:()=>requests,cookieDigest:()=>hash(cookie),content:(path:string,headers:Record<string,string>={},signal?:AbortSignal)=>
   fetcher(new URL(path,origin),{headers,signal:signal?AbortSignal.any([signal,AbortSignal.timeout(5000)]):AbortSignal.timeout(5000)})};
 }
 export async function automaticClient(origin: string, transport?: typeof fetch) {
