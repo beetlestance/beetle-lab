@@ -7,18 +7,20 @@ import {readDeliveryJson} from '../../../delivery/files.js';
 import {readLongReport} from '../soak/report.js';
 import {sourceCases} from './cases.js';
 import {publicCase} from './outcome.js';
+import {publicFailure} from './failure.js';
 const [root, revision, kind, destination, extra] = process.argv.slice(2);
 assert(root && revision && kind && destination && isAbsolute(root) && isAbsolute(destination) && !extra && /^[a-f0-9]{40}$/.test(revision));
 const selected = sourceCases(kind); let imageIds: Record<string, string> | undefined;
 const cases: unknown[] = []; let valid = true;
 for (const row of selected) {
+ let raw: unknown;
  try {
   const path = join(root, row.id, 'outcome-private.json');
-  const raw = await (kind === 'long-stream' ? readLongReport(path) : readDeliveryJson(path));
+  raw = await (kind === 'long-stream' ? readLongReport(path) : readDeliveryJson(path));
   const value = publicCase(raw, row.id, revision); assert.equal(value.harnessNode, process.version);
   if (imageIds) assert.deepEqual(value.imageIds, imageIds); else imageIds = value.imageIds;
   cases.push(value);
- } catch {valid = false; cases.push({id: row.id, status: 'failed', diagnosis: 'Missing, failed or invalid case evidence'});}
+ } catch {valid = false; cases.push(publicFailure(raw, row.id, revision));}
 }
 const git = (args: string[]) => execFileSync('git', args, {timeout: 10000, maxBuffer: 65536, encoding: 'utf8'}).trim();
 const harnessRevision = git(['rev-parse', 'HEAD']); assert.equal(harnessRevision, process.env.GITHUB_SHA);

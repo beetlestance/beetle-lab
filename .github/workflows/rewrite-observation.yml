@@ -75,7 +75,7 @@ jobs:
 
   missing-amd64:
     name: qualification/missing-amd64
-    if: ${{ inputs.profile == 'missing-amd64' && github.event_name == 'workflow_dispatch' && github.repository == 'beetlestance/beetle-lab' && github.ref == 'refs/heads/rewrite/integration' }}
+    if: ${{ (inputs.profile == 'missing-amd64' || inputs.profile == 'long-amd64') && github.event_name == 'workflow_dispatch' && github.repository == 'beetlestance/beetle-lab' && github.ref == 'refs/heads/rewrite/integration' }}
     permissions:
       contents: read
       actions: read
@@ -83,3 +83,4 @@ jobs:
     with:
       source_run_id: ${{ inputs.source_run_id }}
       source_revision: ${{ inputs.source_revision }}
+      profile: ${{ inputs.profile }}

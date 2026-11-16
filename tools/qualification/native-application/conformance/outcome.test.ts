@@ -1,5 +1,6 @@
 import {expect, it} from 'vitest';
 import {publicCase} from './outcome.js';
+import {publicFailure} from './failure.js';
 import {sourceCases} from './cases.js';
 const revision = 'a'.repeat(40); const canary = 'PRIVATE-CANARY';
 function base() {return {revision, architecture: 'amd64', harnessNode: 'v24.22.3', status: 'passed', phase: 'discovery-reached', cleanupVerified: true,
@@ -49,4 +50,11 @@ it('rejects unobserved placeholders and inconsistent CPU facts', () => {
  expect(() => publicCase(zero, 'long-stream', revision)).toThrow();
  const wrong = longFixture(); wrong.results.stream.peers[0]!.cpuOneCorePercent = 3;
  expect(() => publicCase(wrong, 'long-stream', revision)).toThrow();
+});
+it('retains only known failure phases, never arbitrary exception text or partial success', () => {
+ const failed = {...base(), status: 'failed', phase: 'advanced-provision', error: canary};
+ expect(publicFailure(failed, 'long-stream', revision)).toMatchObject({status: 'failed', phase: 'advanced-provision', evidenceAvailable: true});
+ expect(JSON.stringify(publicFailure({...failed, phase: canary}, 'long-stream', revision))).not.toContain(canary);
+ expect(publicFailure({...failed, architecture: 'arm64'}, 'long-stream', revision).evidenceAvailable).toBe(false);
+ expect(publicFailure(undefined, 'long-stream', revision).evidenceAvailable).toBe(false);
 });

@@ -16,7 +16,7 @@ on:
       qualify_source_profile:
         description: Source-archive profile; missing-amd64 runs remaining conformance and long-stream cases
         type: choice
-        options: [short-control, missing-amd64]
+        options: [short-control, missing-amd64, long-amd64]
         default: short-control
         required: false
       qualify_rewrite_revision:
@@ -88,7 +88,7 @@ jobs:
           done
           test "$modes" -eq 1
           if [ -n "$SOURCE_RUN" ]; then
-            case "$SOURCE_PROFILE" in short-control|missing-amd64) ;; *) exit 1 ;; esac
+            case "$SOURCE_PROFILE" in short-control|missing-amd64|long-amd64) ;; *) exit 1 ;; esac
             test "${#SOURCE_RUN}" -le 16
             case "$SOURCE_RUN" in *[!0-9]*) exit 1 ;; esac
             test "$SOURCE_RUN" -gt 0
