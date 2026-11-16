@@ -109,12 +109,12 @@ it('merges older admission enrichment independently of sequence without acknowle
   expect(db.prepare('PRAGMA table_info(execution_records)').all().map(row => row.name)).not.toContain('ack_seq');
 });
 
-it.each([false, true])('ORs durable cancellation intent with remote cancellation (local %s)', local => {
+it.each([false, true])('preserves backend user intent independently of a remote stop (local %s)', local => {
   if (local) db.exec('UPDATE runs SET cancellation_requested=1');
   const first = observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { cancelRequested: !local }) });
-  expect(first.run.cancellationRequested).toBe(true);
+  expect(first.run.cancellationRequested).toBe(local);
   const next = observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { lastSeq: 2 }) });
-  expect(next.run.cancellationRequested).toBe(true);
+  expect(next.run.cancellationRequested).toBe(local);
   expect(next.runChanged).toBe(false);
 });
 

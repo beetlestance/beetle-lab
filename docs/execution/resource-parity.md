@@ -125,3 +125,8 @@ This is not flood/slow-reader/cancel, aggregate custody or a leak-free plateau.
 reconciles current backend debt and agent retained holds against the stopped
 four-run data and32published/native artifact copies; no workload rerun. Full
 active/delete/general accounting and memory-plateau acceptance remain separate.
+
+[System-stop classification](../verification/system-stop-classification.md) fixes a
+real defect exposed by metric-pressure qualification: remote stop intent could
+become public user cancellation. The failed trial remains failed; output/slow-reader
+qualification and a new schema29 packaged candidate remain open.

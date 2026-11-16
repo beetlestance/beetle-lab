@@ -145,7 +145,7 @@ released application until the rewrite is qualified.
 | Inspect bounded k6 duration estimates | [Distribution evidence](verification/k6-distributions.md) | Immutable windows/final histograms, numeric v2 and resource qualification limits |
 | Inspect private standalone generation | [Admitted export](verification/admitted-standalone-export.md) | Native offline generation, exact replay/restart and verified script source; public jobs pending |
 | Inspect rejected and source-free settlement | [Output absence](verification/output-absence.md) | Native rejected intake, immutable proof/credit and affected real-k6 control; release matrix pending |
-| Inspect system stop handling | [Durable stop](verification/durable-stop.md) | First-cause attribution, urgent escalation, restart and original-write ownership |
+| Inspect system stop handling | [Durable stop](verification/durable-stop.md), [backend attribution](verification/system-stop-classification.md) | First-cause attribution, urgent escalation, restart and original-write ownership |
 | Inspect output monitoring | [Output guard](verification/output-guard.md) | Real filesystem sampling, freshness, launch fences and remaining native qualification |
 | Inspect deadline monitoring | [Timeout guard](verification/timeout-guard.md) | Original admission budget, independent polling, clock fencing and shutdown review |
 | Inspect engine image evidence | [k6 image](verification/engine-image.md) | Node24/Linux arm64 execution, cgroup settings and remaining qualification |

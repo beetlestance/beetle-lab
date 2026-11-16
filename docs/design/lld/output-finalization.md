@@ -60,8 +60,11 @@ exits0. Preserve the verified sealed outcome rather than treating exit0 as pass.
 
 After all custody/release/event gates, apply this precedence:
 
-- Persisted Run cancellation wins: cancelled/inconclusive/reason cancelled.
 - Confirmed wrapper OOM yields errored/inconclusive/reason memory_limit.
+- Verified wrapper timeout/output_limit/artifact_incomplete/clock_integrity yields
+  errored/inconclusive with that cause, provided physical exit facts are known.
+  Unknown exit facts stay pending, including when a later user request exists.
+- Otherwise persisted backend user cancellation wins: cancelled/inconclusive.
 - Otherwise missing/null wrapper exitCode or oomKilled stays pending exit_evidence,
   including when the sealed child reports error/lost. A sealed child cannot supply
   missing wrapper evidence. Unavailable-exit recovery closure is separate work.

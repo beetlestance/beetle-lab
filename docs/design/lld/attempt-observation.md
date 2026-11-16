@@ -55,7 +55,9 @@ never a terminal result, passed validation, event ACK or capacity-release mutati
 Resource release requires its separate durable transaction; settled release alone
 does not prove complete result/artifact evidence. Run.version increments only when
 the future transaction changes the public Run DTO, not every remote cursor change.
-Existing current run cancellation remains separately durable and must not be erased.
+Public Run cancellation remains backend-owned user intent. Never OR the remote
+stop-request flag into it: system stops set that same runner flag. The merged
+remote flag remains sticky only inside the retained attempt snapshot.
 
 Invalid input/conflicts throw the existing static invalid_value semantic error;
 no IDs, raw values or private exception messages escape. Inputs remain unchanged;

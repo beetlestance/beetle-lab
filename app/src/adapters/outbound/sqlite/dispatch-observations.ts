@@ -29,7 +29,7 @@ function captureRequest(input: DispatchObservationRequest): DispatchObservationR
 function project(run: Run, merged: Readonly<AttemptObservation>): Run {
   if (['finished', 'cancelled', 'errored'].includes(run.state)) return run;
   return { ...run, state: merged.runState, outcome: 'pending', validationStatus: 'pending',
-    cancellationRequested: run.cancellationRequested || merged.snapshot.cancelRequested };
+    cancellationRequested: run.cancellationRequested };
 }
 
 function projectionChanged(before: Run, after: Run): boolean {

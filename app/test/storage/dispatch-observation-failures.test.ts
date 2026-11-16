@@ -142,7 +142,7 @@ it('allows unchanged replay at maximum version but aborts changed DTO before ACK
   db.exec("UPDATE runs SET state='active'");
   const value = observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key) });
   expect(value).toMatchObject({ runChanged: false, run: { version: Number.MAX_SAFE_INTEGER } });
-  rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { lastSeq: 2, cancelRequested: true }) });
+  rejects({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { lastSeq: 2, state: 'exited' }) });
   expect(observations.observe({ journalAuthority: '33333333-3333-4333-8333-333333333333', key, snapshot: snapshotFor(key, { lastSeq: 2 }) })).toMatchObject({ runChanged: false });
 });
 

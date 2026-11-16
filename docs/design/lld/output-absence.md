@@ -75,7 +75,9 @@ collection uses a durable typed stop/exit reason, otherwise artifact_incomplete.
 Unknown diagnostics cannot upgrade unknown physical ownership into eligibility.
 
 Backend outcomes are cancelled or errored/inconclusive, never finished/passed.
-Persisted Run cancellation wins at commit. Without that intent, a proof whose sole
+A validated timeout/output_limit/artifact_incomplete/clock_integrity cause wins
+over a later user request. Otherwise persisted backend user cancellation wins at
+commit. The runner stop-request boolean is not user intent. Without user intent, a proof whose sole
 reason is cancelled remains pending execution until the matching observation/
 intent is reconciled. Validation remains pending; no provisional result grants
 source-backed validation or outcome authority in this path.

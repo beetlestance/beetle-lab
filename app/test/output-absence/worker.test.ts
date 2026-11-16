@@ -51,7 +51,7 @@ it.each(['cancel-first', 'finalize-first'] as const)('compiled cancellation seri
     await cancelled; await expect(finalizing).rejects.toMatchObject({ code: 'conflict' });
     const current = await metadata.runs.getRun({ id: f.key.runId, scope });
     expect(await metadata.absences.finalize({ ...original, expectedRunVersion: current.version })).toMatchObject({
-      kind: 'finalized', receipt: { state: 'cancelled', reason: 'cancelled', validationStatus: 'pending' } });
+      kind: 'finalized', receipt: { state: 'errored', reason: 'artifact_incomplete', validationStatus: 'pending' } });
   } else {
     const finalizing = metadata.absences.finalize(original); const cancelled = metadata.runs.cancel(cancel);
     expect(await finalizing).toMatchObject({ kind: 'finalized', receipt: { state: 'errored' } });
