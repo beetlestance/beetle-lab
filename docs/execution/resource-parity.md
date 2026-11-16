@@ -40,6 +40,9 @@ actual Chromium keyboard/theme/viewport/scope checks; broader matrices remain.
 [Bounded full-storage input recovery](../verification/bounded-disk.md) adds native
 ARM tmpfs refusal/prefix recovery and same-intent deletion after explicit restart;
 other storage faults and platforms remain open.
+[Native engine parity](../verification/native-engine-parity.md) adds scoped ARM
+six-executor, discovery, SLO, assertion and transport outcome proofs; remaining
+data/secret/operator/platform matrices stay open.
 
 ## Q01 frozen scope
 
