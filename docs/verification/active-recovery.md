@@ -113,3 +113,21 @@ the worker, then reopens the durable database for the unchanged10s behavior chec
 All no-follow-up/owner-cap/closure/cursor/sequence/FK assertions remain. The focused
 Node24 run passed all five cases in10.28s total; the66-call behavior took724ms.
 This is fixture preparation separation, not a production or global timeout change.
+
+
+## Later candidate and fixture window
+
+Source501a8b74 CI43867870066 AMD active crash profile failed after98.526s.
+The backend recovered in1.237s, with11physical requests at kill and24at readiness.
+The agent was ready200 after17.068s, but its original had reached all40requests;
+the strict unfinished-after-readiness oracle rejected the trial before original
+identity/terminal/resource assertions. Independent cleanup passed. No duplicate
+execution, startup cause or successful complete AMD profile is inferred.
+
+The reviewed next fixture keeps40iterations/one VU, exact original identity,
+unfinished-at-kill and unfinished-after-readiness gates. It uses1,000ms waits and
+45s scenario maximum instead of500ms/30s, under the same shipped60s attempt,
+1CPU/512MiB/PID128 and unchanged recovery/outer deadlines. This permits observing
+recovery during a longer workload; it does not demonstrate recovery before the
+shorter workload finishes. Earlier failure remains failed. No resource/control
+limit is increased and no user installation is restarted.

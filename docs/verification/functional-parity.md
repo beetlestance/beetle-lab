@@ -1,6 +1,7 @@
 # Remaining functional parity
 
-Status: reconciled througha47697c9; scoped native/browser evidence now linked.
+Current status: [final acceptance ledger](final-acceptance.md).
+The table below retains the earlier reconciliation througha47697c9; scoped native/browser evidence now linked.
 Local evidence remains scoped to its recorded source and environment.
 [Full inventory audit](inventory-audit.md) maps every F01–F34/N01–N02;
 [remaining packets](../execution/remaining-rewrite.md) own sequencing and exit criteria.
@@ -9,7 +10,7 @@ This supersedes the earlier targeted checklist, not its source-bound evidence.
 | Inventory | Locally implemented | Remaining functional work |
 | --- | --- | --- |
 | F01 | Workspace and organisation-wide counts/activity/recent/active navigation | Packaged browser/platform acceptance |
-| F02/N01 | Scoped list/create/rename/move and protected empty-only deletion | Nonempty recursive maintenance remains unsupported; packaged acceptance |
+| F02/N01 | Scoped list/create/rename/move, protected folder deletion and used-workspace retirement | Nonempty recursive maintenance remains unsupported; packaged acceptance |
 | F03 | Single-file and bounded directory upload/read/delete, immutable input/revision pins | [Directory evidence](directory-inputs.md); packaged browser/platform acceptance |
 | F04 | Versioned suites, selected-revision target/schedule summary and exact-suite latest/full history | Catalogue placement remains provisional; packaged acceptance |
 | F07/F11 | Durable lifecycle events, metric archives and sanitized diagnostic history | [Safe diagnostic evidence](native-diagnostics.md); original stderr replay/live native diagnostics unsupported |

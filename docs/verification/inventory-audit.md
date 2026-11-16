@@ -1,5 +1,8 @@
 # Rewrite inventory acceptance audit
 
+Current reconciliation: [final69-ID ledger](final-acceptance.md). Tables below
+retain the earlier audit and must not be read as the current remaining workload.
+
 Reconciled througha47697c9. Original implementation inventory baseline0514b74 is
 preserved; later scoped native/browser proofs are linked below. No new test run
 is claimed by this documentation reconciliation.

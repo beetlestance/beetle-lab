@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { NamespaceBinding, verifyInstallation } from '../../src/staging/index.js';
 import { namespaceCaps } from '../../src/staging-namespace/index.js';
 import { runtimeName } from '../../src/runtime-identity.js';
-import { fixture, Inspection, operation } from '../staging/fixtures.js';
+import { data, fixture, Inspection, operation } from '../staging/fixtures.js';
 import { scope } from '../admission/fixtures.js';
 const f = fixture();
 async function actualRoot(options: Parameters<typeof verifyInstallation>[0]) {
@@ -47,4 +47,23 @@ it('keeps partial task directory creation unadopted, charged and provider-free',
   expect(providers.input).not.toHaveBeenCalled(); expect(providers.secret).not.toHaveBeenCalled();
   expect(await readFile(join(root, 'canary'), 'utf8')).toBe('keep'); expect(await readdir(root)).toEqual(['canary']);
   expect(await e.owner.admission({ kind: 'reservation', key: scope(e.offer) })).toEqual(reservation);
+});
+
+it.each(['preparing','prepared'] as const)('reopens unfinished %s staging without adopting files, repeating providers or releasing its charge',async phase=>{
+ const e=await f.environment();const key={...scope(e.offer),generation:1 as const};
+ const root=join(e.rootPath,runtimeName({...key,installationId:e.options.profile.installationId}));
+ if(phase==='preparing'){await mkdir(root,{mode:0o700});await writeFile(join(root,'canary'),'keep',{mode:0o600});}
+ const first=e.create({providers:{...e.options.providers,input:async()=> (async function*(){yield data.subarray(0,2);throw Error('Synthetic interrupted input');})()}});
+ const attempt=e.prepare(first);expect((await attempt.result).ok).toBe(false);await attempt.quiesced;await first.close();
+ const namespace=await e.owner.stagingNamespace.readTask(key);expect(namespace?.state).toBe(phase);
+ const charge=await e.owner.admission({kind:'reservation',key});
+ const path=phase==='preparing'?join(root,'canary'):join(root,'input/input-000.bin');const bytes=await readFile(path);
+ expect(bytes.length).toBeGreaterThan(0);await f.close(e.owner);const reopened=await f.open(e.journalPath);
+ const providers={input:vi.fn(e.options.providers.input),secret:vi.fn(e.options.providers.secret)};
+ const retry=e.prepare(e.create({journal:reopened,providers}));
+ expect(await retry.result).toEqual({ok:false,reason:phase==='preparing'?'recovery_required':'reservation'});await retry.quiesced;
+ expect(providers.input).not.toHaveBeenCalled();expect(providers.secret).not.toHaveBeenCalled();
+ expect(await reopened.stagingNamespace.readTask(key)).toEqual(namespace);
+ expect(await reopened.admission({kind:'reservation',key})).toEqual(charge);expect(await readFile(path)).toEqual(bytes);
+ expect(e.transport.calls.every(call=>call.method==='GET')).toBe(true);
 });

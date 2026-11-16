@@ -8,8 +8,8 @@ export async function configuration() {
   const config = source.config; config.target = 'http://target:8080'; config.secrets = [];
   config.requests = [{id: 'get', name: 'Owned finite work', method: 'GET', path: '/work', query: {}, headers: {}, assertions: [{id: 'ok', kind: 'statusEq', value: 200, required: true}]}];
   config.readiness = {path: '/ready', attempts: 1, intervalMs: 0, timeoutMs: 1000, wallBudgetMs: 1000, expectedStatus: 200, assertions: []};
-  config.loadPlan = {version: 1, scenarios: [{id: 'main', name: 'Finite_original', executor: 'per-vu-iterations', vus: 1, iterations: 40, maxDuration: '30s', startTime: '0s', gracefulStop: '0s'}], slos: []};
-  config.selections = [{scenarioId: 'main', entries: [{requestId: 'get', weight: 1, wait: {durationMs: 500, jitterMs: 0}}]}];
+  config.loadPlan = {version: 1, scenarios: [{id: 'main', name: 'Finite_original', executor: 'per-vu-iterations', vus: 1, iterations: 40, maxDuration: '45s', startTime: '0s', gracefulStop: '0s'}], slos: []};
+  config.selections = [{scenarioId: 'main', entries: [{requestId: 'get', weight: 1, wait: {durationMs: 1000, jitterMs: 0}}]}];
   assert(createK6ConfigSchema(value => createHash('sha256').update(value).digest('hex')).validate(config), 'Finite native fixture must validate before Docker effects');
   return config;
 }
