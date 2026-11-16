@@ -67,10 +67,10 @@ Native live activation uses [trusted image capability](docs/decisions/014-live-m
 
 | Work | Required completion |
 | --- | --- |
-| Functional parity | All36 F/N IDs and A01–A09/V01–V24 are mapped in the [69-ID ledger](docs/verification/final-acceptance.md); final independent reconciliation remains |
-| Performance | AMD long live p95293.49ms exceeds250ms; repeated-run agent RSS stabilisation remains unproved. Gates are unchanged |
+| Functional parity | All36 F/N IDs and A01–A09/V01–V24 are mapped in the [69-ID ledger](docs/verification/final-acceptance.md); independent review found no additional behavioral gap; reconcile final latency evidence |
+| Performance | AMD long live p95293.49ms exceeds250ms; current four-run/32s-idle evidence observes no retained agent RSS growth. Gates are unchanged |
 | Current candidate | [cf44e96a](docs/verification/current-candidate-qualification.md) passed full CI/both-native image jobs, ARM schema29 cold history and composed browser retirement; it is not the published default |
-| Release acceptance | Close the performance blockers and final evidence review; retain exact image/schema/platform scope and documented limitations |
+| Release acceptance | Close the latency blocker and reconcile its evidence; retain exact image/schema/platform scope and documented limitations |
 
 The [remaining backlog](docs/execution/remaining-rewrite.md) and
 [qualification status](docs/verification/qualification-blockers.md) link concrete

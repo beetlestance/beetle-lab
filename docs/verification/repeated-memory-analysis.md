@@ -31,3 +31,35 @@ retained files, receipts and paid debt of the same stopped fixture. Intentional
 persistent history is separate from process RSS and must not be silently purged
 to improve the measurement. The later telemetry component benchmark uses another
 workload/assembly and cannot substitute for this installed-stack growth proof.
+
+## Current candidate with longer idle observation
+
+Candidatecf44e96a completed the same four400-request runs in292.969s on native
+ARM under stock64/256/256MiB service limits and the unchanged pool. Three sessions,
+all four histories/reservations and8MiB-per-run output budgets were retained. The
+only observation change was four existing8s post-idle windows instead of one;
+there was no purge, service restart, forced GC or higher resource limit.
+
+Each post-idle period has31–32 RSS points spanning31–32s. Medians below use
+only the final8s of each period; the first run remains warm-up.
+
+| Service | After warm-up | After run2 | After run3 | After run4 |
+| --- | ---: | ---: | ---: | ---: |
+| Frontend | 9.867 | 9.867 | 9.867 | 9.867 |
+| Backend | 157.635 | 145.928 | 146.828 | 144.590 |
+| Agent | 137.828 | 142.459 | 142.951 | 133.789 |
+
+Agent RSS declined after its middle-run increase without intervention; final
+RSS is below post-warm-up. No retained RSS growth was observed after this fixed
+four-run sequence with32s post-idle windows. This is not a universal leak-free
+guarantee. It does not identify
+the allocation/GC cause or retroactively change the earlier trial's result.
+All service RSS peaks remained below their declared ceilings. Physical work was
+1,600requests/four readiness calls,1,483 distinct query values and no unexpected
+requests. Artifact/numeric gates and normal/independent cleanup passed.
+
+The private source report, exact helper delta, reviewed packet, check-runner
+summary and cold derivation with report SHA remain under
+`.agent-work/current-candidate-memory`. Observer120s/128-point per-trial bounds
+and480s outer deadline were unchanged. Runtime inputs remained identical while
+the separate evidence-only commit7019c22a was integrated during this execution.

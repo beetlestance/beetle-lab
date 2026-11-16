@@ -21,6 +21,18 @@ full suites/builds for prose or unchanged runtime inputs. Keep full private logs
 only safe closed reports in public evidence. Each packet freezes its budget before
 execution. Remove merged task trees/branches after preserving evidence.
 
+## Current disposition
+
+[Independent69-ID reconciliation](../verification/final-acceptance.md) finds only
+one behavioral blocker: long live-read p95. [Current repeated memory](../verification/repeated-memory-analysis.md)
+observed no retained RSS growth after four runs with32s post-idle windows.
+[Both-native telemetry](../verification/telemetry-comparison.md) passes the5% target.
+[Currentcf44e96a](../verification/current-candidate-qualification.md) passed full
+CI, native image jobs, schema29 ARM cold/refusal and composed browser retirement.
+The records below preserve chronology; older pending-candidate/telemetry statements
+are superseded by this disposition. No failed original trial is promoted to a pass.
+Final latency evidence and its Q07 status reconciliation remain open.
+
 ## Recorded progress
 
 [Q01](../verification/resource-controls.md) has native AMD64/ARM64 direct-kernel

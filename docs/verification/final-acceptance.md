@@ -93,7 +93,7 @@ later exact-source CI are execution records; a test filename alone is not one.
 | V05 | [Stop races](../../agent/test/supervisor/stop-reason.test.ts), [lost cancel reply/restart](../../app/test/bootstrap/cancellation-http.test.ts), [stalled-reader cancel](flood-slow-cancellation.md) | Fixed grace, idempotent stop and responsive ACK; current system cause has candidate source/native composition. |
 | V06 | [Native CPU/OOM/PID](resource-controls.md), [cause correction](system-stop-classification.md) | Kernel controls both-native covered; changed public classification has current source/native composition. |
 | V07 | [Native descendant stop](resource-controls.md), [active release](active-recovery.md) | Owned descendants stop and execution debt releases only on evidence; covered. |
-| V08 | [Output flood/held reader](flood-slow-cancellation.md), [noisy stderr limit/drain](../../engines/k6/test/native-process/diagnostics.test.ts), [metric bounds](k6-metric-archive.md) | Explicit overflow, bounded writer capacity and cancel proof covered; repeated growth target separate/open. |
+| V08 | [Output flood/held reader](flood-slow-cancellation.md), [noisy stderr limit/drain](../../engines/k6/test/native-process/diagnostics.test.ts), [metric bounds](k6-metric-archive.md) | Explicit overflow, bounded writer capacity and cancel proof covered; [current four-run growth observation](repeated-memory-analysis.md) covered. |
 | V09 | [Repeated cardinality](bounded-repeated-load.md), [input bounds](storage-intake.md), [numeric distributions](k6-distributions.md) | Bounded labels/input and explicit completeness/histograms covered. |
 | V10 | [Bounded ENOSPC/recovery/delete replay](bounded-disk.md), [publication](output-files.md) | Actual full fixture storage, no missing published bytes, replay-safe recovery covered; host disk never filled. |
 | V11 | [Exit/composition](../../engines/k6/test/attempt/composition.test.ts), [completeness](../../engines/k6/test/result/completeness.test.ts) | Exit0 without valid required files cannot pass; covered. |
@@ -113,7 +113,10 @@ later exact-source CI are execution records; a test filename alone is not one.
 
 ## Remaining release blockers
 
-- Analyse AMD long live p95293.49ms against250ms and agent repeated-run growth
-  against the declared target. Neither miss is silently accepted or raised.
-- Independent final evidence review and reconcile old status pages. No new UI design,
+- AMD long live p95293.49ms still exceeds250ms. Current-candidate observation
+  remains queued; no miss is silently accepted or raised.
+- Independent review found no other unproved required behavior in the accepted
+  composition. [Current repeated memory](repeated-memory-analysis.md) closes the
+  bounded observed-growth concern, with no universal leak-free claim. Reconcile
+  the final latency result before claiming release acceptance. No new UI design,
   engine, IAM, legacy migration or arbitrary native permutation matrix is added.

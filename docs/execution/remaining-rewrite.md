@@ -23,8 +23,8 @@ No Goal, push, registry publication or deployment is authorised by this page.
 
 | Packet | Concrete exit condition |
 | --- | --- |
-| B11 performance | Resolve or explicitly obtain acceptance of AMD long live p95293.49ms versus250ms, and repeated-run agent RSS growth. Current-candidate long observation43883876529 follows changed workspace HTTP guard; do not duplicate queued work |
-| B08 final reconciliation | Independently review all36 F/N, nine A and24 V entries against authoritative source/native/browser evidence, reconcile stale status and record supported limitations; close B11 before claiming full R0–R4 acceptance |
+| B11 performance | Resolve or explicitly obtain acceptance of AMD long live p95293.49ms versus250ms, only; current four-run/32s-idle evidence observed no retained agent RSS growth. Current-candidate long observation43883876529 follows changed workspace HTTP guard; do not duplicate queued work |
+| B08 final reconciliation | Independent review of all36 F/N, nine A and24 V entries found no additional behavioral gap; reconcile final latency evidence and retain supported limitations; close B11 before claiming full R0–R4 acceptance |
 
 [Resource/parity](resource-parity.md) and [qualification status](../verification/qualification-blockers.md)
 link native CPU/OOM/PID/descendant controls, active recovery, bounded full disk,

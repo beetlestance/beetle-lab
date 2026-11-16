@@ -58,8 +58,10 @@ passed for each probe.
 ## Remaining acceptance
 
 [AMD telemetry](telemetry-comparison.md) now passes. The separate long-stream
-latency target and repeated-run memory stabilisation remain open. Current-candidate
+latency target remains open; [current repeated memory](repeated-memory-analysis.md)
+observes no retained RSS growth after the fixed four-run sequence. Current-candidate
 AMD long observation43883876529 is queued; its unchanged profile follows the new
 workspace guard on scoped HTTP reads. Do not infer a result from queue time.
-The [69-ID ledger](final-acceptance.md) retains these performance blockers and
-requires final independent reconciliation before release acceptance.
+Independent [69-ID review](final-acceptance.md) found no additional required
+behavior missing from the accepted composition. Resolve and reconcile latency
+before release acceptance.

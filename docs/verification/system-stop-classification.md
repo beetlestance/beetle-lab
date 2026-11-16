@@ -27,9 +27,13 @@ real worker cancellation ordering, native insertion guards, scope/custody checks
 unknown exits, OOM, replay, populated schema28 preservation and rollback. The
 updated observation/version tests retain their original chronology/atomicity gates.
 Independent review found no remaining blocker. Static checks are recorded with the
-integration commit; these local checks do not replace a new packaged candidate.
+integration commit. [Candidatecf44e96a](current-candidate-qualification.md) now
+passes all source shards and both-native image/API/active-recovery jobs. These
+compose with the unchanged native agent controls; every cause is not faulted anew
+on each architecture.
 
 Existing historical public flags may already conflate system/user stops. The
 migration does not infer their original intent or rewrite historical projections.
-A matching new candidate still needs native qualification before this correction
-is claimed as packaged behavior. Legacy/default images are unchanged.
+The current candidate composition supports this correction; exact known/unknown
+cause rules retain the source-bound failure oracles above. Legacy/default images
+are unchanged.
