@@ -33,4 +33,4 @@ async function main(){
  await atomic(marker,{phase:'finished',status},512);
  await atomic(path,privateReport({status,installationId:loaded.runtime.installation.installationId,agentPid:process.pid,agentUid:process.getuid!(),orderlyDrained:!hasUncertainOwners(),results,failure}),262144);
 }
-void main().catch(()=>{console.error('Qualification telemetry assembly failed');process.exitCode=1;});
+void main().catch(error=>{console.error('Qualification telemetry assembly failed');console.error(diagnosis(error));process.exitCode=1;});

@@ -61,3 +61,9 @@ the ARM5 measurement program; the accepted measurement inputs remain retained.
 
 Q04 remains open for native AMD comparison and the separate long-stream latency
 miss. [Repeated memory](repeated-memory-analysis.md) is an independent question.
+
+The first AMD trial, CI43866634905, failed after41.851s with independent cleanup
+successful. Its original closed projection contained no usable failure facts; the
+cause remains unknown. A follow-up retains only fixed failure phase/code hints and
+counts publicly, with bounded raw diagnostics kept private. This is a diagnostic
+correction, not evidence that AMD comparison passed.
