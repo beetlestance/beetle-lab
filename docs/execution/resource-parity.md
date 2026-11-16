@@ -88,3 +88,8 @@ minimum installation tier or an inference from Docker VM total memory.
 environment/mounted delivery, unbound workspace/no-engine and rebound comparison,
 with sixteen artifact canary audits and stock-pool accounting. Broader leakage
 and other-platform matrices remain separate.
+
+[AMD finite conformance](../verification/native-source-conformance.md) now passes
+executor/discovery, threshold/failure, rich requests/data and shared/isolated
+admission profiles. AMD long execution remains blocked before performance work
+in advanced provisioning; it is not a stream failure or a passing long proof.

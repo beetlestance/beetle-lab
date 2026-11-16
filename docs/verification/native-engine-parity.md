@@ -48,5 +48,4 @@ changes no runtime result, resource limit or supported outcome semantics.
 
 Two schema/outcome fixture tests, Node types, lint, architecture and docs pass.
 Independent review corrected the owner descriptor before native effects and cleared
-the outcome/counter correction. This packet does not close native AMD64, datasets,
-secrets, every assertion operator, target observers, flood, soak or all A04/A07.
+the outcome/counter correction. The [AMD finite profiles](native-source-conformance.md) subsequently passed these three cases on verifiedb48936d8 images. [Request/data/assertion evidence](native-request-data.md) and [ARM secrets](native-secrets.md) remain separate. This packet does not close target observers, flood, soak, every boundary or all A04/A07.

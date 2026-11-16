@@ -51,5 +51,5 @@ second unchanged60s polling window; shared polling remains concurrent. The outer
 Independent review required paired original reads to join through allSettled before
 propagating failure to teardown. A held-sibling regression verifies that custody;
 request ordering also has a focused test. Types, lint, architecture and docs pass.
-These cases do not close native AMD64, every offer-loss/crash/cancel race,
+The [AMD finite profiles](native-source-conformance.md) subsequently passed shared/isolated cases on verifiedb48936d8 images. These cases do not close every offer-loss/crash/cancel race,
 telemetry overhead, long/flood/repeated-growth or idle/thermal policy acceptance.

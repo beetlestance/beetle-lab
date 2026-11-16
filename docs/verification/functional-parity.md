@@ -1,6 +1,6 @@
 # Remaining functional parity
 
-Status: reconciled through4a4c6514; scoped native/browser evidence now linked.
+Status: reconciled througha47697c9; scoped native/browser evidence now linked.
 Local evidence remains scoped to its recorded source and environment.
 [Full inventory audit](inventory-audit.md) maps every F01–F34/N01–N02;
 [remaining packets](../execution/remaining-rewrite.md) own sequencing and exit criteria.
@@ -35,7 +35,7 @@ test files with reviewed corrections; packaged/native acceptance remains open.
 
 [Interaction acceptance](browser-interactions.md) adds actual keyboard, themes,
 reduced motion, three viewports and wrong-scope/cache404 checks. [Engine parity](native-engine-parity.md)
-adds ARM six-executor/discovery/SLO/assertion/transport outcomes. [Resource/parity](../execution/resource-parity.md)
+adds ARM six-executor/discovery/SLO/assertion/transport outcomes; [AMD finite profiles](native-source-conformance.md) now pass the corresponding cases. [ARM requests/data](native-request-data.md) and [secret resolution](native-secrets.md) add scoped native proofs. [Resource/parity](../execution/resource-parity.md)
 tracks remaining native fault/load/data/secret variants. These scoped passes do not
 close a feature group merely by association.
 

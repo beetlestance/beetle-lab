@@ -30,6 +30,6 @@ That trial remains failed. The positive fixture now requests2 iterations, matchi
 its declared caps; the intended20 physical requests and all controls are unchanged.
 This does not claim silent no-op semantics after selection exhaustion.
 
-Scope excludes native AMD64, secret providers/canaries, statistical weight/jitter
+The [AMD finite profile](native-source-conformance.md) passed the same request/data cases on verifiedb48936d8 images. Secrets have [separate ARM evidence](native-secrets.md). This request packet excludes statistical weight/jitter
 quality, every dataset bound and all A07 completion. This is sampled finite native
 conformance, not a claim about arbitrary requests or target applications.
