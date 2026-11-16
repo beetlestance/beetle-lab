@@ -1,3 +1,4 @@
+import { reportWorkerFailure } from './failure-diagnostic.js';
 import { validateOptions } from './options.js';
 import type { MetadataOptions } from './options.js';
 import {checkedOrganizationOverview,checkedOrganizationOverviewQuery} from '../../../application/organization-overview/index.js';
@@ -65,13 +66,14 @@ export type { RunConfiguration, RunProfilePin } from '../../../ports/runs.js';
 export type { Bootstrap, EntityKey, EntityPage, ErrorCode, ListQuery, RuntimeObservation, SettingsView } from './protocol.js';
 
 export type { MetadataOptions } from './options.js';
-interface Pending { namespaceDeletion?:NamespaceDeletionOperation; retention?:RetentionOperation; settlement?:BackendSettlementOperation; history?: HistoryOperation; exportJob?:ExportOperation; localSession?: LocalSessionOperation; deletion?: OutputDeletionOperation; resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
+interface Pending { namespaceDeletion?:NamespaceDeletionOperation; retention?:RetentionOperation; settlement?:BackendSettlementOperation; history?: HistoryOperation; exportJob?:ExportOperation; localSession?: LocalSessionOperation; deletion?: OutputDeletionOperation; resolve(value: Value): void; reject(error: StorageError): void; operation: Operation['kind'];
   artifacts?: ArtifactReadOperation; absence?: AbsenceOperation; finalization?: FinalizationOperation; result?: RunKey; execution?: RunKey; runEvents?: RunEventsQuery; output?: OutputOperation; large: boolean; replyLimit: number; event?: EventOperation; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
 export class Metadata {
   private readonly worker: Worker;
   private readonly pending = new Map<number, Pending>();
   private readonly limit: number;
   private readonly runtimeTtlMs: number;
+  private progressTimer: NodeJS.Timeout | undefined;
   private nextId = 0;
   private closing = false;
   private failed = false;
@@ -249,14 +251,14 @@ export class Metadata {
     this.worker = new Worker(options.workerUrl, { workerData: { path: options.path, bootstrap, ...(options.readOnly ? {readOnly: true, historicalIdentity: options.historicalIdentity} : {}) },
       resourceLimits: { maxOldGenerationSizeMb: 128 } });
     this.worker.on('message', (reply: unknown) => this.receive(reply));
-    this.worker.on('error', () => this.fail('unavailable'));
-    this.worker.on('exit', () => this.fail('unavailable'));
+    this.worker.on('error', () => this.fail('unavailable', 'worker_error'));
+    this.worker.on('exit', () => { if (!this.closing || this.pending.size) this.fail('unavailable', 'worker_exit'); });
   }
   static async open(options: MetadataOptions): Promise<Metadata> {
     const bootstrap = validateOptions(options);
     let metadata: Metadata;
     try { metadata = new Metadata(options, bootstrap); } catch { throw new StorageError('unavailable'); }
-    const timer = setTimeout(() => metadata.fail('unavailable'), 5000);
+    const timer = setTimeout(() => metadata.fail('unavailable', 'startup_timeout'), 5000);
     try { await metadata.ready; return metadata; }
     catch (error) { await metadata.terminate(); throw error; }
     finally { clearTimeout(timer); }
@@ -282,7 +284,7 @@ export class Metadata {
     return this.closePromise;
   }
   /** Pending writes may have committed; replay original intent after reopening. */
-  async abort(): Promise<void> { this.closing = true; this.fail('unavailable'); await this.terminate(); }
+  async abort(): Promise<void> { this.closing = true; this.fail('unavailable', 'abort'); await this.terminate(); }
   private call(operation: Operation): Promise<Value> {
     if (this.closing) return Promise.reject(new StorageError('closed'));
     if (this.failed) return Promise.reject(new StorageError('unavailable'));
@@ -298,14 +300,14 @@ export class Metadata {
     }
     const messageId = ++this.nextId;
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => this.fail('unavailable'), 5000);
-      this.pending.set(messageId, { resolve, reject, timer, large: largeOperation(operation),
+      this.pending.set(messageId, { resolve, reject, operation: operation.kind, large: largeOperation(operation),
         replyLimit: operationReplyLimit(operation), ...(localSessionOperation(operation) ? {localSession: operation} : {}), ...(deletionOperation(operation) ? {deletion: operation} : {}), ...(absenceOperation(operation) ? { absence: operation } : {}), ...(finalizationOperation(operation) ? { finalization: operation } : {}), ...(outputOperation(operation) ? { output: operation } : {}), ...(eventOperation(operation) ? { event: operation } : {}), ...(dispatchOperation(operation) ? { dispatch: operation } : {}),
 
         ...(operation.kind === 'cancelRun' ? { cancellation: operation.command } : {}) });
       const pending = this.pending.get(messageId)!;
       this.bindReadRequest(pending, operation);
-      try { this.worker.postMessage({ ...operation, messageId }); } catch { this.fail('unavailable'); }
+      this.watchProgress(false);
+      try { this.worker.postMessage({ ...operation, messageId }); } catch { this.fail('unavailable', 'post_failed'); }
     });
   }
   private receive(input: unknown): void {
@@ -318,7 +320,7 @@ export class Metadata {
     if (!pending) { this.fail('unavailable'); return; }
     if (reply.ok) this.resolve(reply, pending);
     else {
-      this.release(reply.messageId, pending);
+      this.release(reply.messageId);
       pending.reject(new StorageError(reply.code));
       if (reply.code === 'unavailable') this.fail('unavailable');
     }
@@ -331,7 +333,7 @@ export class Metadata {
         : pending.cancellation ? captureCancelRunReply(reply.value, pending.cancellation)
         : boundedCopy(reply.value, pending.replyLimit) as Value);
     } catch { this.fail('unavailable'); return; }
-    this.release(reply.messageId, pending);
+    this.release(reply.messageId);
     pending.resolve(value);
   }
   private bindReadRequest(pending: Pending, operation: Operation): void {
@@ -361,13 +363,23 @@ export class Metadata {
     if (pending.result) return captureResultReply(pending.result, value);
     return undefined;
   }
-  private release(messageId: number, pending: Pending): void {
-    this.pending.delete(messageId); clearTimeout(pending.timer);
+  private release(messageId: number): void {
+    this.pending.delete(messageId); this.watchProgress();
   }
-  private fail(code: ErrorCode): void {
+  /** Serial worker: every completion resets the bounded no-progress deadline. */
+  private watchProgress(reset = true): void {
+    if (!reset && this.progressTimer) return;
+    clearTimeout(this.progressTimer);
+    this.progressTimer = this.pending.size ? setTimeout(() => this.fail('unavailable', 'progress_timeout'), 5000) : undefined;
+  }
+  private fail(code: ErrorCode, reason = 'storage_failure'): void {
     if (this.failed) return;
-    this.failed = true; this.readyReject(new StorageError(code));
-    for (const pending of this.pending.values()) { clearTimeout(pending.timer); pending.reject(new StorageError(code)); }
+    clearTimeout(this.progressTimer);
+    this.failed = true;
+    reportWorkerFailure({reason, code, pending: this.pending.size,
+      operation: this.pending.values().next().value?.operation ?? null});
+    this.readyReject(new StorageError(code));
+    for (const pending of this.pending.values()) { pending.reject(new StorageError(code)); }
     void this.terminate().catch(()=>{});
   }
   private terminate(): Promise<number> {

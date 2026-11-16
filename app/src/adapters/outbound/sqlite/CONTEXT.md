@@ -24,7 +24,8 @@ Settings reductions retain charges; input admission counts payload+64KiB and one
 configured reserve. Private advances require exact versions and trusted byte service.
 Queue <=64(default32); suites/readOffer SHARE TWO originals; input64KiB/reply1MiB;
 revision2MiB/config1MiB, Offer reply2MiB+64KiB with fixed carrier; worker heap<=128MiB.
-SQLite cache2MiB/busy100ms; startup/command availability deadline5s.
+SQLite cache2MiB/busy100ms; startup5s, then5s without a completed worker reply.
+Bounded FIFO bursts can exceed5s total while progressing; no mutation retry.
 Close drains admitted FIFO work; close/abort await worker termination, including
 failure paths. Unknown outcomes never trigger automatic mutation retries.
 Migrations are transactional; legacy rows stay unadopted and indexed.\nRun history uses one scoped read snapshot, fixed covering indexes (migration017),\nlimit+1 time/UUID keys and a strict query-bound cursor; no native/metric reads.
@@ -37,4 +38,3 @@ charges input/output once. Private reserveRunOutput requires a caller transactio
 hasUntrackedOwnership uses partial indices, independent of Run state/Offer bytes.
 Digest owner: executionRegistryDigest uses prefix+newline+canonical profile bytes.
 Contracts: dispatch-storage.md/output-allocation.md. Storage fixtures prove no load.
-Check: `node node_modules/vitest/vitest.mjs run app/test/storage --maxWorkers=1`.

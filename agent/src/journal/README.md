@@ -108,7 +108,8 @@ These records survive pruning/ACK/restart and do not release capacity or certify
 runtime quiescence. Actors must combine absolute deadlines with local monotonic time;
 fenced clocks forbid new dispatch. On clock-integrity failure, emergency termination
 is distinct from normal five-second cancellation grace; never claim normal timing.
-Future versions refuse open. Startup/commands remain 5 seconds;
+Future versions refuse open. Startup is bounded to5s; the serial worker then has
+a5s no-completion watchdog. Healthy queued bursts may take longer overall;
 queue includes in-flight (default 32/max 64) plus close slot. Unknown commit outcome
 requires reconcile after reopen. close awaits exit; abort terminates pending work.
 Two original Offer/cancelOriginal writes/admissions/reads share a separate large-operation allowance,

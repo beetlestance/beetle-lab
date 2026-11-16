@@ -1,3 +1,4 @@
+import { reportWorkerFailure, captureFailureCode } from './failure-diagnostic.js';
 import { createNoTaskReceiptClient } from './no-task-receipt-client.js';
 import type { JournalNoTaskReceipts } from './no-task-receipt-client.js';
 import { createSettlementClient } from './settlement-client.js';
@@ -62,7 +63,7 @@ export interface JournalOptions {
   /** Per-attempt durable charge limit for new offers, 1024..64 MiB. */
   spoolQuotaBytes?: number;
 }
-interface Pending { resolve(value: Value): void; reject(error: JournalError): void; timer: NodeJS.Timeout; large: boolean }
+interface Pending { resolve(value: Value): void; reject(error: JournalError): void; operation: Operation['kind']; large: boolean }
 
 function validateQuota(quota: number): void {
   if (!Number.isSafeInteger(quota) || quota < 1024 || quota > DEFAULT_QUOTA_BYTES) throw new JournalError('invalid_input');
@@ -94,6 +95,7 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
   private readonly worker: Worker;
   private readonly pending = new Map<number, Pending>();
   private readonly limit: number;
+  private progressTimer: NodeJS.Timeout | undefined;
   private nextId = 0;
   private largePending = 0;
   private closing = false;
@@ -128,15 +130,15 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
       workerData: { path: options.path, spoolQuotaBytes: options.spoolQuotaBytes ?? DEFAULT_QUOTA_BYTES }, resourceLimits: { maxOldGenerationSizeMb: 128 },
     });
     this.worker.on('message', (reply: Reply) => this.receive(reply));
-    this.worker.on('error', () => this.fail('unavailable'));
-    this.worker.on('exit', () => this.fail('unavailable'));
+    this.worker.on('error', () => this.fail('unavailable', 'worker_error'));
+    this.worker.on('exit', () => { if (!this.closing || this.pending.size) this.fail('unavailable', 'worker_exit'); });
   }
 
   static async open(options: JournalOptions): Promise<Journal> {
     validateOptions(options);
     let journal: Journal;
     try { journal = new Journal(options); } catch { throw new JournalError('unavailable'); }
-    const timer = setTimeout(() => journal.fail('unavailable'), 5000);
+    const timer = setTimeout(() => journal.fail('unavailable', 'startup_timeout'), 5000);
     try { await journal.ready; return journal; }
     catch (error) { await journal.terminate(); throw error; }
     finally { clearTimeout(timer); }
@@ -287,7 +289,7 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
   }
 
   /** Immediate shutdown: pending writes have unknown commit outcome. */
-  async abort(): Promise<void> { this.closing = true; this.fail('unavailable'); await this.terminate(); }
+  async abort(): Promise<void> { this.closing = true; this.fail('unavailable', 'abort'); await this.terminate(); }
 
   private refusal(): ErrorCode | null {
     if (this.closing) return 'closed';
@@ -322,9 +324,9 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
     if (large) this.largePending++;
     const id = ++this.nextId;
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => this.fail('unavailable'), 5000);
-      this.pending.set(id, { resolve, reject, timer, large });
-      try { this.worker.postMessage({ ...operation, id }); } catch { this.fail('unavailable'); }
+      this.pending.set(id, { resolve, reject, operation: operation.kind, large });
+      this.watchProgress(false);
+      try { this.worker.postMessage({ ...operation, id }); } catch { this.fail('unavailable', 'post_failed'); }
     });
   }
   /** Call only after the owning producer barrier; worker captures the durable stream end. */
@@ -355,11 +357,12 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
   }
 
   private receive(reply: Reply): void {
+    if (this.failed) return;
     if (reply.kind === 'ready') { this.readyResolve(); return; }
     if (reply.kind === 'startup_error') { this.fail(reply.code); return; }
     const pending = this.pending.get(reply.id);
     if (!pending) { this.fail('unavailable'); return; }
-    this.pending.delete(reply.id); clearTimeout(pending.timer);
+    this.pending.delete(reply.id); this.watchProgress();
     if (pending.large) this.largePending--;
     if (reply.ok) pending.resolve(reply.value);
     else {
@@ -368,11 +371,21 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
     }
   }
 
-  private fail(code: ErrorCode): void {
+  /** Serial worker: every completion resets the bounded no-progress deadline. */
+  private watchProgress(reset = true): void {
+    if (!reset && this.progressTimer) return;
+    clearTimeout(this.progressTimer);
+    this.progressTimer = this.pending.size ? setTimeout(() => this.fail('unavailable', 'progress_timeout'), 5000) : undefined;
+  }
+  private fail(code: ErrorCode, reason = 'storage_failure'): void {
     if (this.failed) return;
+    clearTimeout(this.progressTimer);
     this.failed = true;
+    code = captureFailureCode(code);
+    reportWorkerFailure({reason, code, pending: this.pending.size,
+      operation: this.pending.values().next().value?.operation ?? null});
     this.readyReject(new JournalError(code));
-    for (const pending of this.pending.values()) { clearTimeout(pending.timer); pending.reject(new JournalError(code)); }
+    for (const pending of this.pending.values()) { pending.reject(new JournalError(code)); }
     this.pending.clear();
     void this.terminate().catch(()=>{});
   }
