@@ -115,3 +115,8 @@ report records8/28/8points per service and API p9512.94/138.76/11.79ms. This clo
 the short both-native RSS observation scope, not repeated growth or telemetry cost.
 [Used workspace retirement](../verification/workspace-retirement.md) corrects the
 user-approved F02 restriction locally; batch new candidate qualification remains.
+
+[Finite repeated cardinality](../verification/bounded-repeated-load.md) now passes
+four sequential ARM runs/1600physical requests with1487query values but19metric
+series/run,32hashed artifacts, bounded RSS and four original allocation rows.
+This is not flood/slow-reader/cancel, aggregate custody or a leak-free plateau.
