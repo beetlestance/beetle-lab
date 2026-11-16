@@ -45,8 +45,10 @@ See the [qualification audit](../verification/goal-qualification.md). Legacy
 publication/default tags remain separate; do not replace them from candidate proof.
 Both native Linux architectures passed the packaged API/run/export/restart flow.
 Actual Chromium on unmodified ARM64 images passed all twelve B09 functional phases
-with cleanup. Full keyboard/theme/viewport, cross-scope abuse and B11 resource/
-recovery cases still need their own evidence; native API checks do not cover them.
+with cleanup. [Keyboard/theme/viewport and browser wrong-scope/cache checks](../verification/browser-interactions.md)
+now passed separately. Broader abuse and B11 resource/recovery cases remain; native
+API checks do not cover browser behavior. [Resource/parity packets](resource-parity.md)
+record the later kernel/recovery/disk/engine proofs and remaining gaps.
 
 ## Cost and verification discipline
 

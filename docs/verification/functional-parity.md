@@ -1,6 +1,6 @@
 # Remaining functional parity
 
-Status: reconciled at0514b74 with directory intake and sanitized diagnostic history.
+Status: reconciled through4a4c6514; scoped native/browser evidence now linked.
 Local evidence remains scoped to its recorded source and environment.
 [Full inventory audit](inventory-audit.md) maps every F01–F34/N01–N02;
 [remaining packets](../execution/remaining-rewrite.md) own sequencing and exit criteria.
@@ -15,11 +15,14 @@ This supersedes the earlier targeted checklist, not its source-bound evidence.
 | F07/F11 | Durable lifecycle events, metric archives and sanitized diagnostic history | [Safe diagnostic evidence](native-diagnostics.md); original stderr replay/live native diagnostics unsupported |
 | F10 | Observed drops, bounded native warning classification and configured single-arrival iteration-median guidance | Packaged/browser/platform acceptance; [warning evidence](k6-warning-guidance.md) |
 | F12 | Durable identity/reconciliation, native cleanup and cold historical restore | [Recovery evidence](cold-recovery.md); remaining active-delivery crash/platform matrix |
-| F19 | Rewrite source checks configured in CI | Matched rewrite-image smoke/publishing pipeline and release evidence |
+| F19 | Rewrite source checks configured in CI | [Six-image native CI/public candidate delivery](goal-qualification.md) accepted; full R0–R4 release sign-off remains |
 
 F06 history filters/scalars/search, F13 comparison, F14 reports and protected Run
 deletion, F15 public exports, F16 command search and F17 generated references are
-locally implemented. Their packaged/browser/platform acceptance is still open;
+locally implemented. The [twelve-phase candidate proof](goal-qualification.md) covers selected history,
+comparison, report/deletion, export and settings flows. Interaction proof covers
+command/keyboard navigation. Reference/download acceptance and remaining variants
+stay in the audit;
 see individual evidence from the full inventory audit. Cleanup ACK/driver/recovery,
 settlement and protected retention completed through21aa880; cold recovery followed
 at4e2eba0. They are no longer implementation backlog entries.
@@ -29,6 +32,12 @@ exists. The acceptance audit records evidence limits and unclosed scenario mappi
 The old25 baseline-failure note is now [triaged](migration-fixtures.md) through exact
 historical and shared-consumer fixtures. The [local combined gate](integrated-acceptance.md) now covers all 987 configured
 test files with reviewed corrections; packaged/native acceptance remains open.
+
+[Interaction acceptance](browser-interactions.md) adds actual keyboard, themes,
+reduced motion, three viewports and wrong-scope/cache404 checks. [Engine parity](native-engine-parity.md)
+adds ARM six-executor/discovery/SLO/assertion/transport outcomes. [Resource/parity](../execution/resource-parity.md)
+tracks remaining native fault/load/data/secret variants. These scoped passes do not
+close a feature group merely by association.
 
 UI redesign remains a separate later audit/plan. Additional engines, hosted IAM,
 shared storage and test generation remain follow-on scope. No user service or
