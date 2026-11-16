@@ -1,4 +1,4 @@
-import { expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { JournalError } from '../../src/journal/index.js';
 import { operation } from './fixtures.js';
@@ -7,27 +7,37 @@ import { deferred, entries, managers, trapped } from './delivery-fixtures.js';
 import { closedHistory, historyCapacity } from './closed-source-fixtures.js';
 const f = sourceFixture(); const create = managers();
 
+describe('durably closed history beyond the owner cap', () => {
+let path = ''; const histories: Awaited<ReturnType<typeof closedHistory>>[] = [];
+beforeAll(async () => {
+  const seeded = await f.seed(); path = seeded.path;
+  try {
+    await historyCapacity(seeded);
+    for (let index = 2; index < 68; index++) histories.push(await closedHistory(f, seeded, index));
+  } finally { await f.close(seeded.journal); }
+}, 20000);
 it('late metadata calls retire more than 64 closed historical sources without any follow-up drive', async () => {
-  const e = await f.seed(); await historyCapacity(e); const options = trapped(e.journal); const manager = create(options);
-  const close = vi.spyOn(e.journal, 'closeOutputDelivery');
-  for (let index = 2; index < 68; index++) {
-    const h = await closedHistory(f, e, index); close.mockClear();
-    const cursors = await e.journal.sourceCursors(h.key);
+  const journal = await f.open(path); const options = trapped(journal); const manager = create(options);
+  const close = vi.spyOn(journal, 'closeOutputDelivery');
+  for (const [index, h] of histories.entries()) {
+    close.mockClear();
+    const cursors = await journal.sourceCursors(h.key);
     const calls = [() => manager.cancel(h.key), () => manager.stop(h.key, 'timeout'), () => manager.cancelOriginal(h.offer)];
     expect((await calls[index % calls.length]!()).cancelRequested).toBe(true);
     expect(entries(manager).size).toBe(0);
-    expect(await e.journal.readOutputDelivery(h.key)).toEqual(h.closure);
-    expect((await e.journal.get(h.key)).lastSeq).toBe(h.closure.finalAgentSeq);
-    expect(await e.journal.sourceCursors(h.key)).toEqual(cursors); expect(close).not.toHaveBeenCalled();
+    expect(await journal.readOutputDelivery(h.key)).toEqual(h.closure);
+    expect((await journal.get(h.key)).lastSeq).toBe(h.closure.finalAgentSeq);
+    expect(await journal.sourceCursors(h.key)).toEqual(cursors); expect(close).not.toHaveBeenCalled();
   }
   expect(options.trap).not.toHaveBeenCalled();
-  await manager.close(); await f.close(e.journal);
-  const db = new DatabaseSync(e.path, { readOnly: true });
+  await manager.close(); await f.close(journal);
+  const db = new DatabaseSync(path, { readOnly: true });
   try {
     expect(db.prepare('SELECT count(*) AS n FROM output_delivery_closures').get()?.n).toBe(66);
     expect(db.prepare('SELECT count(*) AS n FROM accepted_attempts WHERE delivery_pending=1').get()?.n).toBe(0);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
   } finally { db.close(); }
+});
 });
 it('late closed-source cleanup retains a concurrently held original and evicts only after its final lease', async () => {
   const e = await f.seed(); const h = await closedHistory(f, e, 2); const options = trapped(e.journal); const manager = create(options);

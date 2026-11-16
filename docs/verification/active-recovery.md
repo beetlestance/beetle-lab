@@ -105,3 +105,11 @@ The qualifier now retains one closed last recovery observation on failure
 Two storage-poller tests in the same run also exposed teardown ordering: pollers
 now close in test-local finally blocks before the storage fixture aborts handles.
 No runtime deadline, resource cap, readiness condition or pass gate was relaxed.
+
+Prepared source CI43790786956 at4a4c6514 passed both native image/archive jobs
+but one66-history integration test exceeded its generic10s case deadline. Its
+fixture now prepares all66 real Journal traces in a fatal20s setup hook, closes
+the worker, then reopens the durable database for the unchanged10s behavior check.
+All no-follow-up/owner-cap/closure/cursor/sequence/FK assertions remain. The focused
+Node24 run passed all five cases in10.28s total; the66-call behavior took724ms.
+This is fixture preparation separation, not a production or global timeout change.
