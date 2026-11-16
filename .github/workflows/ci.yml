@@ -60,7 +60,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}-${{ inputs.qualify_rewrite_run_id != '' && format('observe-{0}', inputs.qualify_source_profile || 'short-control') || 'source' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:

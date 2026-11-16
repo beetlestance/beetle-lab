@@ -53,3 +53,10 @@ and a first real hosted run still need verification after authorised publication
 
 [Hosted corrections](hosted-ci-corrections.md) records later fixture failures,
 native-job scheduling and the strengthened three-input container aggregate.
+
+
+Manual source-observation profiles use a concurrency group distinct from normal
+source/test/image CI, with one group per profile/ref. Normal branch/PR cancellation
+semantics and required check names are unchanged. This permits independent hosted
+qualification without one pending observation occupying the normal CI group; it
+does not claim a runner-capacity guarantee or add registry publication authority.
