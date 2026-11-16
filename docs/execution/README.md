@@ -5,6 +5,10 @@ for code rules. Architecture ownership remains in [HLD](../design/HLD.md).
 Original rewrite schedules, model assignments and task-hour estimates are
 [historical](../HISTORY.md), not instructions for current sessions.
 
+Continue the rewrite on `rewrite/integration`. Do not merge or promote it to
+`develop` or `main` without explicit user approval. Task completion and passing
+checks do not authorise promotion.
+
 For each task, record one observable outcome, exact base/dirty inputs, owned paths,
 required decisions and scoped checks. Use one task branch/worktree and preserve
 user services/data. Inspect branch rules and rebaseability before an expensive

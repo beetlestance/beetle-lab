@@ -29,13 +29,13 @@ are indexed in [HISTORY](HISTORY.md) and retain their original source/platform s
 | Qualification | Reconcile release criteria and hosted evidence. The retained local repeated-memory observation does not substitute for missing hosted qualification. |
 | Maintainability | Formatting, dense functions and database-row boundary validation need targeted work. A cast count alone does not prove every row is unchecked. |
 
-The legacy executable source and automatic publishing path were removed from main.
+The legacy executable source and automatic publishing path are removed in the rewrite.
 No replacement default image was promoted. Use source Compose; the old single-image
 `:latest` is not the supported rewrite installation recipe.
 
 ## Evidence boundaries
 
-Exact main source CI passed at 4fabd9fa; see [the evidence index](HISTORY.md).
+Historical source CI passed at 4fabd9fa; see [the evidence index](HISTORY.md).
 Recorded native Linux amd64/arm64 checks and the 30-minute stream remain useful
 within their original inputs. Neither a passing fixture nor a historical closeout
 establishes complete real-workload parity or readiness after unrelated changes.
