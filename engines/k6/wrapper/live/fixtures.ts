@@ -1,3 +1,4 @@
+import {gunzipSync} from 'node:zlib';
 import { createHash } from 'node:crypto';
 import { vi } from 'vitest';
 import { decodeLiveMetricSnapshot, type LiveMetricSnapshot } from '@beetle/contracts/api';
@@ -16,7 +17,7 @@ export function window(sequence: number): MetricWindow {
 export function fixture(overrides: Partial<LiveMetricPublisherOptions> = {}) {
   let now = 0; let wallOffset = 100000;
   const frames: LiveMetricSnapshot[] = [];
-  const write = vi.fn(async (bytes: Uint8Array) => {frames.push(decodeLiveMetricSnapshot(bytes, hash));});
+  const write = vi.fn(async (bytes: Uint8Array) => {frames.push(decodeLiveMetricSnapshot(gunzipSync(bytes, {maxOutputLength: 65536}), hash));});
   const close = vi.fn(async () => {});
   const options: LiveMetricPublisherOptions = {scope: {organizationId: '00000000-0000-4000-8000-000000000001',
     workspaceId: '00000000-0000-4000-8000-000000000002', attemptId: '00000000-0000-4000-8000-000000000003', generation: 1},

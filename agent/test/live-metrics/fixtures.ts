@@ -1,3 +1,4 @@
+import {gzipSync} from 'node:zlib';
 import { createHash } from 'node:crypto';
 import { encodeLiveMetricSnapshot, liveMetricSubsetText } from '@beetle/contracts/api';
 import type { LiveMetricSnapshot } from '@beetle/contracts/api';
@@ -15,7 +16,7 @@ export function frame(patch: Partial<LiveMetricSnapshot> = {}): LiveMetricSnapsh
     startTimeMs: 0, endTimeMs: 1000, upstreamCoverage: 'unknown', series: [], ...patch};
 }
 export function image(value: LiveMetricSnapshot, revision = value.publishedSequence): Uint8Array {
-  const body = encodeLiveMetricSnapshot(value, hash); const bytes = new Uint8Array(MAILBOX_BYTES);
+  const body = gzipSync(encodeLiveMetricSnapshot(value, hash)); const bytes = new Uint8Array(MAILBOX_BYTES);
   const header = encodeMailboxHeader({revision, length: body.length, digest: hash(body), committed: true});
   bytes.set(header); bytes.set(body, MAILBOX_HEADER_BYTES); bytes.set(header, MAILBOX_FOOTER_OFFSET); return bytes;
 }

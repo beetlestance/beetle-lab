@@ -1,5 +1,6 @@
+import {gunzipSync} from 'node:zlib';
 import { createHash } from 'node:crypto';
-import { captureMailboxImage } from '@beetle/contracts/live-mailbox';
+import { captureMailboxImage, MAILBOX_PAYLOAD_BYTES } from '@beetle/contracts/live-mailbox';
 import { captureLiveMetricSnapshot, decodeLiveMetricSnapshot, liveMetricScopeMatches, liveMetricSubsetText } from '@beetle/contracts/api';
 import type { LiveMetricSnapshot } from '@beetle/contracts/api';
 import type { LiveMetricApproval, LiveMetricReadFailure } from './types.js';
@@ -16,7 +17,7 @@ export function approvalSnapshot(input: LiveMetricApproval) {
   return {scope: frame.scope, producerEpoch: frame.producerEpoch, subsetDigest};
 }
 export function frameSnapshot(image: Uint8Array) {
-  const envelope = captureMailboxImage(image, hash); const frame = decodeLiveMetricSnapshot(envelope.frame, hash);
+  const envelope = captureMailboxImage(image, hash); const frame = decodeLiveMetricSnapshot(gunzipSync(envelope.frame, {maxOutputLength: MAILBOX_PAYLOAD_BYTES}), hash);
   if (frame.publishedSequence !== envelope.revision) throw new Error('ordering');
   return {frame, position: {revision: envelope.revision, source: frame.sourceSequence, start: frame.startTimeMs, end: frame.endTimeMs, captured: frame.capturedAtMs,
     published: frame.publishedAtMs, coalesced: frame.coalescedWindows, digest: hash(envelope.frame)}};

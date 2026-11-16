@@ -182,3 +182,18 @@ Use synthetic clocks and controlled sink; no Docker/native build/full-suite repe
 First core packet must not claim filesystem safety, runtime integration or live UI.
 Physical producer/agent tests and runner/public/browser connection follow before
 A03/V08/V09 feature acceptance; measured overhead remains separate qualification.
+
+## V2 private wire encoding
+
+The V2 trusted image marker `BEETLE_K6_LIVE_METRICS_V2=1` identifies gzip mailbox
+payloads. Public HTTP snapshots retain their existing JSON DTO/schema. Encode the
+complete validated snapshot, then gzip at fixed fast level with a64KiB compressed
+output cap. Lifetime billing uses those actual wire bytes; the sink separately
+charges all four header writes. The existing8MiB allocation/cadence/series caps
+remain. This preserves metric coverage while reducing repeated descriptor bytes.
+
+After fixed mailbox/envelope hash validation, the agent gunzips with a separate
+64KiB decoded maximum, then applies existing strict snapshot/approval/order/age
+checks. Malformed, oversized or plaintext payloads refuse; no old-wire fallback.
+Matching engine/agent images are required. Bounded zlib scratch is part of existing
+process caps; native CPU/memory and long-stream proof are required after this change.

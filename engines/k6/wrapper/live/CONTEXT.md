@@ -10,3 +10,6 @@ Stop fences synchronously, discards pending data, aborts hints and drains actual
 write then close originals. Cleanup failure remains fenced and observable.
 Caller must provide physical output accounting, approved subset and root custody.
 Focused checks: engines/k6/wrapper/live/*.test.ts.
+Private V2 mailbox payloads are gzip snapshots; public HTTP snapshots stay JSON.
+Encode/decode each cap64KiB independently. Charge actual compressed bytes before
+IO; sink also charges every header write. No byte/cadence/series limit is raised.

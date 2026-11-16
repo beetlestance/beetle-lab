@@ -1,3 +1,5 @@
+import {gzipSync, constants} from 'node:zlib';
+import {MAILBOX_PAYLOAD_BYTES} from '@beetle/contracts/live-mailbox';
 import { captureLiveMetricSnapshot, encodeLiveMetricSnapshot, type LiveMetricSnapshot } from '@beetle/contracts/api';
 import type { MetricWindow } from '@beetle/contracts/metrics';
 import { validClock, type CapturedOptions } from './options.js';
@@ -63,10 +65,11 @@ export class Publisher implements LiveMetricPublisher {
     const clock = this.readClock(); if (!clock) return;
     if (this.lastIssued !== undefined && clock.monotonic - this.lastIssued < 2000) {this.schedule(clock.monotonic); return;}
     let bytes: Uint8Array;
-    try {bytes = encodeLiveMetricSnapshot({...this.pending, publishedAtMs: clock.wall}, this.options.hash);}
+    try {bytes = gzipSync(encodeLiveMetricSnapshot({...this.pending, publishedAtMs: clock.wall}, this.options.hash),
+      {level: constants.Z_BEST_SPEED, maxOutputLength: MAILBOX_PAYLOAD_BYTES});}
     catch {this.fail('invalid_input'); return;}
-    if (this.issued >= Math.min(65536, 1 + Math.floor(this.options.timeoutMs / 2000))
-      || bytes.length > this.options.maximumProducedBytes - this.values.chargedBytes) {this.fail('quota'); return;}
+    if (!this.readClock()) return;
+    if (!this.fitsLifetimeBudget(bytes.length)) {this.fail('quota'); return;}
     const sequence = this.pending.publishedSequence; this.pending = undefined; this.issued++; this.lastIssued = clock.monotonic;
     this.values = {...this.values, writing: true, pending: false, chargedBytes: this.values.chargedBytes + bytes.length};
     const original = Promise.resolve().then(() => this.options.sink.write(bytes, this.controller.signal))
@@ -76,6 +79,10 @@ export class Publisher implements LiveMetricPublisher {
         if (this.values.status === 'open') {const current = this.readClock(); if (current) this.schedule(current.monotonic);}
       });
     this.original = original;
+  }
+  private fitsLifetimeBudget(bytes: number): boolean {
+    const maximumWrites = Math.min(65536, 1 + Math.floor(this.options.timeoutMs / 2000));
+    return this.issued < maximumWrites && bytes <= this.options.maximumProducedBytes - this.values.chargedBytes;
   }
   private fail(reason: LiveMetricFailure): void {
     this.values = {...this.values, status: 'failed', reason: this.values.reason ?? reason};

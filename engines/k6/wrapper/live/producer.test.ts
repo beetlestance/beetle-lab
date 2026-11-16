@@ -1,3 +1,4 @@
+import {gunzipSync} from 'node:zlib';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { decodeLiveMetricSnapshot } from '@beetle/contracts/api';
 import { DurationHistogram, projectMetricSeries } from '@beetle/contracts/metrics';
@@ -14,7 +15,7 @@ it('projects sparse windows, leaves gaps unsynthesized and never invokes sink IO
 });
 it('keeps one immutable original and one replaceable latest slot with exact coalescing', async () => {
   const held = deferred(); const frames: ReturnType<typeof decodeLiveMetricSnapshot>[] = [];
-  const write = vi.fn((bytes: Uint8Array) => {frames.push(decodeLiveMetricSnapshot(bytes, hash)); return frames.length === 1 ? held.promise : Promise.resolve();});
+  const write = vi.fn((bytes: Uint8Array) => {frames.push(decodeLiveMetricSnapshot(gunzipSync(bytes, {maxOutputLength: 65536}), hash)); return frames.length === 1 ? held.promise : Promise.resolve();});
   const f = fixture({sink: {write, close: async () => {}}}); f.publisher.accept(window(1)); await f.advance();
   f.publisher.accept(window(2)); f.publisher.accept(window(3)); await f.advance(5000);
   expect(write).toHaveBeenCalledTimes(1); expect(frames[0]).toMatchObject({sourceSequence: 1, coalescedWindows: 0});

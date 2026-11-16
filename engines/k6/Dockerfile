@@ -77,4 +77,4 @@ FROM engine-base AS export-engine
 ENTRYPOINT ["node", "/beetle/bootstrap/export-main.js"]
 
 FROM engine-base AS engine
-ENV BEETLE_K6_LIVE_METRICS_V1=1
+ENV BEETLE_K6_LIVE_METRICS_V2=1

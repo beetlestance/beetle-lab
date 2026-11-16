@@ -13,3 +13,6 @@ This component is not an authenticated route or runtime enablement. Supervisor n
 trusted installed policy; authenticated transport and activation remain pending;
 an approved image/digest alone does not authorize a self-declared subset/epoch.
 Checks: agent/test/live-metrics; Node types and changed lint.
+V2 mailbox payloads require gzip. Verify envelope extent/hash first, then gunzip
+with maxOutputLength65536 before the unchanged DTO/approval/freshness fences.
+No plaintext fallback; both compressed and decoded payloads remain hard bounded.
