@@ -45,7 +45,7 @@ export function publicSnapshot(input:unknown,componentInput:unknown,expected:{re
  const bundle=record(overlay.bundle);const bundleBytes=count(bundle.bytes,16777216);assert(bundleBytes>0);const targetSourceSha256=digest(source.targetSourceSha256);const flags=array(source.flags,2).map((value,index)=>{const item=record(value);const mode=index===0?'off':'on';assert.equal(item.mode,mode);
   assert.deepEqual(item.processOne,mode==='on'?{present:true,value:'1'}:{present:false,value:null});return {mode,processOne:mode==='on'?{present:true,value:'1'}:{present:false,value:null}};});
  const verified=array(component.results,10).map(trialFacts);
- return {harnessNode:row.harnessNode,nativeContainerOS:'linux',scope:'trusted component assembly; no installed off mode or backend HTTP overhead claim',measurementStatus:derived.targetMet?'passed':'target-missed',baseImageIds,
+ return {harnessNode:row.harnessNode,externalHarnessUid:row.harnessUid===undefined||row.harnessUid===null?null:count(row.harnessUid,4294967295),nativeContainerOS:'linux',scope:'trusted component assembly; no installed off mode or backend HTTP overhead claim',measurementStatus:derived.targetMet?'passed':'target-missed',baseImageIds,
   actualAgentOverlay:{id:overlayId,bundleBytes,bundleSha256:digest(bundle.sha256)},flags,targetSourceSha256,comparison:derived,verified,
   target:{ready:10,work:40000,unexpected:0},agentLimits:{cpuMillis:250,memoryBytes:268435456,pids:64},
   limits:['Synthetic fixed-work fixture only; summed RSS counts shared pages more than once','Unavailable live reads are retained; no uninterrupted availability or general thermal/growth claim']};

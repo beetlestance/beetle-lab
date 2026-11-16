@@ -39,14 +39,14 @@ jobs:
           writeFileSync(join(root,'telemetry-plan.json'),JSON.stringify({cwd:process.cwd(),checks:[{id:'telemetry',timeoutMs:600000,
             argv:[process.execPath,'--import','tsx','tools/qualification/native-application/telemetry/run.ts',join(root,'source-stage/images/bundle.json'),join(root,'telemetry')]}]}),{flag:'wx',mode:0o600});
           JS
-          node --import tsx tools/check-runner/cli.ts "$RUNNER_TEMP/telemetry-plan.json" "$RUNNER_TEMP/telemetry-checks"
+          sudo --preserve-env=TMPDIR,BEETLE_QUALIFICATION_ARCHITECTURE -- "$(command -v node)" --import tsx tools/check-runner/cli.ts "$RUNNER_TEMP/telemetry-plan.json" "$RUNNER_TEMP/telemetry-checks"
       - name: Independently remove only task-owned resources and aliases
         id: cleanup
         if: ${{ always() }}
         timeout-minutes: 4
         run: |
-          if [ -f "$RUNNER_TEMP/telemetry/owner.json" ]; then
-            node --import tsx tools/qualification/native-application/telemetry/cleanup.ts "$RUNNER_TEMP/telemetry"
+          if sudo test -f "$RUNNER_TEMP/telemetry/owner.json"; then
+            sudo -- "$(command -v node)" --import tsx tools/qualification/native-application/telemetry/cleanup.ts "$RUNNER_TEMP/telemetry"
           fi
       - name: Project only validated closed measurements
         if: ${{ always() }}
@@ -54,7 +54,17 @@ jobs:
           SOURCE_REVISION: ${{ inputs.source_revision }}
           BEETLE_TELEMETRY_EXECUTION: ${{ steps.execution.outcome }}
           BEETLE_TELEMETRY_CLEANUP: ${{ steps.cleanup.outcome }}
-        run: node --import tsx tools/qualification/native-application/telemetry/public.ts "$RUNNER_TEMP/telemetry" "$SOURCE_REVISION" "$RUNNER_TEMP/telemetry-public.json"
+        run: |
+          set +e
+          sudo --preserve-env=GITHUB_SHA,BEETLE_TELEMETRY_EXECUTION,BEETLE_TELEMETRY_CLEANUP -- env \
+            GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$GITHUB_WORKSPACE" \
+            "$(command -v node)" --import tsx tools/qualification/native-application/telemetry/public.ts "$RUNNER_TEMP/telemetry" "$SOURCE_REVISION" "$RUNNER_TEMP/telemetry-public.json"
+          projection_status=$?
+          set -e
+          if sudo test -f "$RUNNER_TEMP/telemetry-public.json"; then
+            sudo chown --no-dereference -- "$(id -u):$(id -g)" "$RUNNER_TEMP/telemetry-public.json"
+          fi
+          exit "$projection_status"
       - name: Retain only the closed comparison
         if: ${{ always() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

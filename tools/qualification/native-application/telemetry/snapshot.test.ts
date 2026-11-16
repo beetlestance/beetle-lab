@@ -3,6 +3,8 @@ import {fixture} from './snapshot-fixture.js';
 import {publicSnapshot} from './snapshot.js';
 it('recomputes closed facts and omits paths, installation IDs and arbitrary private fields',()=>{
  const f=fixture();const report=publicSnapshot(f.input,f.component,f.expected);expect(report.comparison.targetMet).toBe(true);
+ expect(report.externalHarnessUid).toBeNull();expect(publicSnapshot({...f.input,harnessUid:0},f.component,f.expected).externalHarnessUid).toBe(0);
+ expect(()=>publicSnapshot({...f.input,harnessUid:-1},f.component,f.expected)).toThrow();
  expect(report.verified).toHaveLength(10);expect(report.verified[0]!.artifacts).toHaveLength(8);
  const json=JSON.stringify(report);for(const value of ['NEVER-PUBLIC','/Users/private',f.expected.installationId,f.component.results[0]!.runtimeId])expect(json).not.toContain(value);
 });

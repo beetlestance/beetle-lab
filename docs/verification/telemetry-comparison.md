@@ -67,3 +67,14 @@ successful. Its original closed projection contained no usable failure facts; th
 cause remains unknown. A follow-up retains only fixed failure phase/code hints and
 counts publicly, with bounded raw diagnostics kept private. This is a diagnostic
 correction, not evidence that AMD comparison passed.
+
+
+The later AMD trial43872937301 reported setup/EACCES, zero trials, no component
+report and successful cleanup. The host oracle's reads of UID1000 private config
+and journal files were incompatible with the hosted runner's different UID.
+The corrected workflow runs its bounded check-runner/controller, independent
+cleanup and closed projector under the same privileged host identity. This keeps
+timeout termination/join valid and avoids making private evidence world-readable.
+Only the validated closed output is returned to the upload user's ownership.
+Container PID1/UID1000, resource limits and security settings are unchanged; host
+oracle UID is recorded separately. No normal-installation privilege claim follows.

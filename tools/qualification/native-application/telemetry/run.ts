@@ -53,6 +53,6 @@ try{
 finally{
  if(agentId){try{const logs=f.logs(agentId);results.agentLogs=logs.slice(-16384);}catch{results.agentLogsUnavailable=true;}}
  let cleanupVerified=false;try{await cleanup(f,installation);if(installation)cleanupLiveVolumes({id:installation,user:'1000:1000',docker:f.docker});built?.cleanup();cleanupVerified=true;}catch{status='failed';process.exitCode=1;}
- await writeFile(join(output,'outcome-private.json'),JSON.stringify({status,phase,cleanupVerified,sourceRevision:f.revision,architecture:f.architecture,baseImageIds:f.imageIds,harnessNode:process.version,harnessPlatform:process.platform,environment:f.environment,results},null,2),{flag:'wx',mode:0o600});
+ await writeFile(join(output,'outcome-private.json'),JSON.stringify({status,phase,cleanupVerified,sourceRevision:f.revision,architecture:f.architecture,baseImageIds:f.imageIds,harnessNode:process.version,harnessUid:process.getuid?.()??null,harnessPlatform:process.platform,environment:f.environment,results},null,2),{flag:'wx',mode:0o600});
  console.log(JSON.stringify({status,phase,cleanupVerified}));
 }
