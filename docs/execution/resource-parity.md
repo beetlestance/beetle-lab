@@ -34,7 +34,10 @@ short control latency and descriptive CPU/memory observations. Earlier Node26
 target misses remain recorded; uninterrupted readers, full overhead and Q04
 overall remain open. [Native independent polling](../verification/short-control-overhead.md)
 now passes both architectures. The [actual long stream](../verification/long-stream.md)
-failed its fresh-frame-span gate; quota replay records a reproduced mechanism.
+failed its V1 fresh-frame-span gate; quota replay records a reproduced mechanism.
+Later ARM V2 sustained-stream and separately recovered final-read proofs now pass
+their scoped gates; the original full trial remains failed at its collector, and
+post-idle growth/AMD64 long-run qualification stay open.
 [Browser interaction acceptance](../verification/browser-interactions.md) adds
 actual Chromium keyboard/theme/viewport/scope checks; broader matrices remain.
 [Bounded full-storage input recovery](../verification/bounded-disk.md) adds native

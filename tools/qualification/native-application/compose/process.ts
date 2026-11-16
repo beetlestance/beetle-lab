@@ -3,8 +3,8 @@ import {execFileSync,spawnSync} from 'node:child_process';
 import {writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 /** Task-only process diagnostics; no user configuration or credentials are printed. */
-export function composeProcesses(context:string,args:string[],root:string){
- const environment:NodeJS.ProcessEnv={...process.env,DOCKER_API_VERSION:'1.47'};
+export function composeProcesses(context:string,args:string[],root:string,variables:Readonly<Record<string,string>>={}){
+ const environment:NodeJS.ProcessEnv={...process.env,...variables,DOCKER_API_VERSION:'1.47'};
  delete environment.DOCKER_HOST;delete environment.DOCKER_CONTEXT;
  let sequence=0;
  const compose=(...command:string[])=>{

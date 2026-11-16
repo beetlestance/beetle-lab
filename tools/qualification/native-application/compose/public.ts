@@ -48,10 +48,13 @@ export async function exportReady(api:ApiClient,params:ExportParams):Promise<Exp
   const job=value(await api.getExport({params}));if(['ready','failed','cancelled'].includes(job.state)){assert.equal(job.state,'ready',job.reason??job.state);return job;}await pause();
  }throw Error('Public export deadline');
 }
-export async function readContent(response:Response,maximum:number):Promise<Buffer>{
- if(response.status!==200)value({ok:false,error:{kind:'response',status:response.status}});
+export async function readContent(response:Response,maximum:number,maximumReads=256):Promise<Buffer>{
  assert(response.body);const reader=response.body.getReader();const chunks:Buffer[]=[];let bytes=0;
- for(let calls=0;calls<256;calls++){const part=await reader.read();if(part.done)return Buffer.concat(chunks,bytes);
-  bytes+=part.value.length;if(bytes>maximum){await reader.cancel();throw Error('Content bound');}chunks.push(Buffer.from(part.value));}
- await reader.cancel();throw Error('Content fragment bound');
+ try{
+  assert(Number.isSafeInteger(maximumReads)&&maximumReads>=1&&maximumReads<=4096);
+  if(response.status!==200)value({ok:false,error:{kind:'response',status:response.status}});
+  for(let calls=0;calls<maximumReads;calls++){const part=await reader.read();if(part.done)return Buffer.concat(chunks,bytes);
+   bytes+=part.value.length;if(bytes>maximum)throw Error('Content bound');chunks.push(Buffer.from(part.value));}
+  throw Error('Content fragment bound');
+ }finally{try{await reader.cancel();}finally{reader.releaseLock();}}
 }

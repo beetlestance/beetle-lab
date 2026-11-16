@@ -15,7 +15,7 @@ export async function finalDrain(client: Awaited<ReturnType<typeof automaticSess
  for (const item of listed.items) {
   assert(item.bytes <= 16777216);
   const path = runArtifactContentPath({...terminal.params, attemptId: run.activeAttemptId, artifactId: item.artifactId});
-  const bytes = await readContent(await readyContent(signal => client.content(path, {}, signal)), 16777216);
+  const bytes = await readContent(await readyContent(signal => client.content(path, {}, signal)), 16777216, 4096);
   assert.equal(bytes.length, item.bytes); assert.equal(hash(bytes), item.sha256);
   artifacts.push({kind: item.kind, bytes: item.bytes, sha256: item.sha256});
  }

@@ -28,3 +28,8 @@ Independent source review found no remaining budget/integrity/decompression
 blocker. Matching-image CI and native long-run resource/freshness/final-drain
 qualification remain required. Existing publishedV1 bundles remain unchanged;
 this evidence does not publish or qualify a new public release.
+
+[Subsequent ARM evidence](long-stream.md) records1838s of actual V2 streaming with
+three readers, then a separately labelled replay verifying all eight final artifact
+hashes without repeating traffic. The original full trial failed its collector;
+its status is retained. AMD64 long-run and post-idle growth remain open.
