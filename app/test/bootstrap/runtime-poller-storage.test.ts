@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -7,8 +7,6 @@ import type { RuntimePoller } from '../../src/bootstrap/runtime-poller.js';
 import { createRuntimePublisher } from '../../src/bootstrap/runtime-publication.js';
 import type { CapacitySource } from '../../src/ports/runtime.js';
 import { observation, settingsFixture, storageFixture } from '../storage/fixture.js';
-const pollers: RuntimePoller[] = [];
-afterEach(async () => { for (const poller of pollers.splice(0)) await poller.close(); });
 const fixture = storageFixture();
 async function afterClock(previous: number): Promise<void> {
   for (let turn = 0; turn < 100 && Date.now() <= previous; turn++) await new Promise(resolve => setTimeout(resolve, 1));
@@ -24,11 +22,13 @@ it('recovers from a real cache bootstrap fence without repeatedly writing null',
   const sample = vi.fn<CapacitySource['sample']>().mockImplementation(async () => observation());
   sample.mockResolvedValueOnce(old);
   const publish = vi.fn(createRuntimePublisher(metadata)); const close = vi.fn().mockResolvedValue(undefined);
-  const poller = startRuntimePoller({ source: { sample, close }, publish, intervalMs: 25 }); pollers.push(poller);
-  await published(poller);
-  expect(await publish.mock.results[0]!.value).toBe(false);
-  expect(publish.mock.calls.every(([fact]) => fact !== null)).toBe(true);
-  expect((await metadata.getSettings({ kind: 'installation' })).version).toBe(1);
+  const poller = startRuntimePoller({ source: { sample, close }, publish, intervalMs: 25 });
+  try {
+    await published(poller);
+    expect(await publish.mock.results[0]!.value).toBe(false);
+    expect(publish.mock.calls.every(([fact]) => fact !== null)).toBe(true);
+    expect((await metadata.getSettings({ kind: 'installation' })).version).toBe(1);
+  } finally { await poller.close(); }
 });
 it('refuses source expiry across the real worker queue then publishes a genuinely newer sample', async () => {
   const entry = join(fixture.root(), 'source-expiry.mjs');
@@ -43,12 +43,14 @@ it('refuses source expiry across the real worker queue then publishes a genuinel
   let calls = 0;
   const sample: CapacitySource['sample'] = async () => observation(settingsFixture().runtime, Date.now(), ++calls === 1 ? 50 : 1000);
   const publish = vi.fn(createRuntimePublisher(metadata));
-  const poller = startRuntimePoller({ source: { sample, close: async () => undefined }, publish, intervalMs: 25 }); pollers.push(poller);
-  await published(poller);
-  expect(await publish.mock.results[0]!.value).toBe(false);
-  expect(publish.mock.calls[0]![0]!.expiresAtMs - publish.mock.calls[0]![0]!.observedAtMs).toBe(50);
-  expect(publish.mock.calls.every(([fact]) => fact !== null)).toBe(true);
-  expect((await metadata.getSettings({ kind: 'installation' })).version).toBe(1);
+  const poller = startRuntimePoller({ source: { sample, close: async () => undefined }, publish, intervalMs: 25 });
+  try {
+    await published(poller);
+    expect(await publish.mock.results[0]!.value).toBe(false);
+    expect(publish.mock.calls[0]![0]!.expiresAtMs - publish.mock.calls[0]![0]!.observedAtMs).toBe(50);
+    expect(publish.mock.calls.every(([fact]) => fact !== null)).toBe(true);
+    expect((await metadata.getSettings({ kind: 'installation' })).version).toBe(1);
+  } finally { await poller.close(); }
 });
 it('coalesces a real known-to-unknown transition while an old frame is refused before recovery', async () => {
   const metadata = await fixture.open(undefined, { runtime: null }); await afterClock(Date.now());
@@ -59,15 +61,17 @@ it('coalesces a real known-to-unknown transition while an old frame is refused b
     return calls === 2 ? null : observation();
   };
   const publish = vi.fn(createRuntimePublisher(metadata));
-  const poller = startRuntimePoller({ source: { sample, close: async () => undefined }, publish, intervalMs: 25 }); pollers.push(poller);
-  for (let turn = 0; turn < 100 && publish.mock.results.length < 4; turn++) await new Promise(resolve => setTimeout(resolve, 5));
-  await published(poller);
-  const earliest = publish.mock.results.slice(0, 4);
-  expect(await Promise.all(earliest.map(result => result.value))).toEqual([true, true, false, true]);
-  expect(publish.mock.calls.slice(0, 4).map(([fact]) => fact?.observedAtMs ?? null))
-    .toEqual([first.observedAtMs, null, first.observedAtMs, expect.any(Number)]);
-  expect(publish.mock.calls[3]![0]!.observedAtMs).toBeGreaterThan(first.observedAtMs);
-  expect(publish.mock.calls.filter(([fact]) => fact === null)).toHaveLength(1);
+  const poller = startRuntimePoller({ source: { sample, close: async () => undefined }, publish, intervalMs: 25 });
+  try {
+    for (let turn = 0; turn < 100 && publish.mock.results.length < 4; turn++) await new Promise(resolve => setTimeout(resolve, 5));
+    await published(poller);
+    const earliest = publish.mock.results.slice(0, 4);
+    expect(await Promise.all(earliest.map(result => result.value))).toEqual([true, true, false, true]);
+    expect(publish.mock.calls.slice(0, 4).map(([fact]) => fact?.observedAtMs ?? null))
+      .toEqual([first.observedAtMs, null, first.observedAtMs, expect.any(Number)]);
+    expect(publish.mock.calls[3]![0]!.observedAtMs).toBeGreaterThan(first.observedAtMs);
+    expect(publish.mock.calls.filter(([fact]) => fact === null)).toHaveLength(1);
+  } finally { await poller.close(); }
 });
 it('does not acknowledge a frame that the real worker revokes after clock rollback', async () => {
   const entry = join(fixture.root(), 'worker-rollback.mjs');

@@ -40,3 +40,14 @@ it('preserves unknown-sample diagnostics without promoting them to a measurement
     summaries: [{samples: 0, missedSamples: 20, reason: 'unavailable', cpuMillis: null, peakMemoryBytes: null, peakPids: null}]}, source.results[1]]});
   expect(value.status).toBe('failed'); expect(value.cases[0]).toMatchObject({finalSamples: 0, missedSamples: 20, finalReason: 'unavailable', hasCpu: false});
 });
+
+it('retains bounded failed recovery progress without granting case acceptance or leaking fields', () => {
+  const source = fixture();
+  const value = publicLifecycleOutcome({...source, status: 'failed', phase: 'agent', results: [{kind: 'agent',
+    recovery: {elapsedMs: 22000, progressAtAcknowledgedKill: 9, status: 200, ready: true, workAtReadiness: 40, secret: canary}}]});
+  expect(value.status).toBe('failed'); expect(value.cases[0]!.recovery).toEqual({elapsedMs: 22000, progressAtAcknowledgedKill: 9, status: 200, ready: true, workAtReadiness: 40});
+  expect(value.cases[0]!.sameOriginal).toBe(false); expect(JSON.stringify(value)).not.toContain(canary);
+  const invalid = publicLifecycleOutcome({...source, status: 'failed', results: [{kind: 'agent',
+    recovery: {elapsedMs: Infinity, progressAtAcknowledgedKill: -1, status: canary, ready: canary, workAtReadiness: 41}}]});
+  expect(invalid.cases[0]!.recovery).toEqual({elapsedMs: null, progressAtAcknowledgedKill: null, status: null, ready: false, workAtReadiness: null});
+});

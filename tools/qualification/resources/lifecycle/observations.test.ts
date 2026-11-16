@@ -37,7 +37,7 @@ describe('active recovery fault authority', () => {
   it('rejects completed work during fault dispatch preparation', async () => {
     const {f, docker, row} = fake({'com.docker.compose.project': 'owned', 'com.docker.compose.service': 'backend'});
     docker.json.mockReturnValueOnce([row]).mockReturnValueOnce({ready: 1, work: 40, unexpected: 0});
-    await expect(crash(f, {} as Client, 'backend', 0)).rejects.toThrow('Work completed before acknowledged crash');
+    await expect(crash(f, {} as Client, 'backend', 0, () => undefined)).rejects.toThrow('Work completed before acknowledged crash');
     expect(docker.run).toHaveBeenCalledExactlyOnceWith(['kill', '--signal', 'KILL', id]);
   });
   it('explicitly restarts only the same inspected service after acknowledged SIGKILL', async () => {
@@ -49,7 +49,7 @@ describe('active recovery fault authority', () => {
       .mockReturnValueOnce({ready: 1, work: 10, unexpected: 0});
     const session = {synthetic: true};
     const client = {session, api: {getBrowserSession: async () => ({ok: true, value: session})}} as unknown as Client;
-    expect(await crash(f, client, 'backend', 0)).toMatchObject({restart: 'explicit-same-service', progressAtAcknowledgedKill: 8});
+    expect(await crash(f, client, 'backend', 0, () => undefined)).toMatchObject({restart: 'explicit-same-service', progressAtAcknowledgedKill: 8});
     expect(docker.run.mock.calls).toEqual([[['kill', '--signal', 'KILL', id]], [['start', id]]]);
   });
   it('rejects work completed before recovered service readiness', async () => {
@@ -61,7 +61,9 @@ describe('active recovery fault authority', () => {
       .mockReturnValueOnce({ready: 1, work: 40, unexpected: 0});
     const session = {synthetic: true};
     const client = {session, api: {getBrowserSession: async () => ({ok: true, value: session})}} as unknown as Client;
-    await expect(crash(f, client, 'backend', 0)).rejects.toThrow('Original finished or reset before recovered service was ready');
+    const observe = vi.fn();
+    await expect(crash(f, client, 'backend', 0, observe)).rejects.toThrow('Original finished or reset before recovered service was ready');
+    expect(observe).toHaveBeenLastCalledWith({elapsedMs: expect.any(Number), progressAtAcknowledgedKill: 8, status: 200, ready: true, workAtReadiness: 40});
   });
   it('refuses custody reads while the verified serving backend is still running', () => {
     const {f, docker, row} = fake({'com.docker.compose.project': 'owned', 'com.docker.compose.service': 'backend'});
@@ -73,12 +75,12 @@ describe('active recovery fault authority', () => {
     for (const labels of [{'com.docker.compose.project': 'foreign', 'com.docker.compose.service': 'backend'},
       {'com.docker.compose.project': 'owned', 'com.docker.compose.service': 'agent'}]) {
       const {f, docker} = fake(labels);
-      await expect(crash(f, {} as Client, 'backend', 0)).rejects.toThrow();
+      await expect(crash(f, {} as Client, 'backend', 0, () => undefined)).rejects.toThrow();
       expect(docker.run).not.toHaveBeenCalled();
     }
     const {f, docker, row} = fake({'com.docker.compose.project': 'owned', 'com.docker.compose.service': 'backend'});
     row.Image = 'sha256:' + 'd'.repeat(64);
-    await expect(crash(f, {} as Client, 'backend', 0)).rejects.toThrow(); expect(docker.run).not.toHaveBeenCalled();
+    await expect(crash(f, {} as Client, 'backend', 0, () => undefined)).rejects.toThrow(); expect(docker.run).not.toHaveBeenCalled();
   });
 });
 

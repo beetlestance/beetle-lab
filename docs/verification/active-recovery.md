@@ -93,3 +93,15 @@ Other lifecycle phases, shared/isolated admission, native OOM attribution, flood
 telemetry overhead/soak and full disk remain open. Default-UID ARM cold recovery
 has [separate scoped proof](packaged-cold-recovery.md). These observations do not
 close all V03/V06/V08 groups or qualify a complete release.
+
+## Later source candidate refusal
+
+CI43785915920 at3df9d31c passed the AMD64 lifecycle and ARM64 backend-crash case,
+but ARM64 agent recovery reached readiness only after the original completed all
+40 work requests. Cleanup passed; active-recovery qualification did not. This
+report does not identify a runtime cause or invalidate the older scoped23bb proof.
+The qualifier now retains one closed last recovery observation on failure
+(elapsed time, HTTP status and work counts), preserving the same active oracle.
+Two storage-poller tests in the same run also exposed teardown ordering: pollers
+now close in test-local finally blocks before the storage fixture aborts handles.
+No runtime deadline, resource cap, readiness condition or pass gate was relaxed.

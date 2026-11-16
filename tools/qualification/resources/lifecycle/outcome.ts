@@ -18,8 +18,8 @@ function expectedWork(value: ReturnType<typeof caseValue>): boolean {
 }
 function caseValue(input: Record<string, unknown>) {
   const summaries = Array.isArray(input.summaries) && input.summaries.length <= 100 ? input.summaries : [];
-  const final = row(summaries.at(-1));
-  return {kind: kinds.find(kind => kind === input.kind) ?? null, sameOriginal: input.sameOriginal === true,
+  const final = row(summaries.at(-1)); const recovery = row(input.recovery);
+  return {recovery: {elapsedMs: scalar(recovery.elapsedMs, 600000), progressAtAcknowledgedKill: scalar(recovery.progressAtAcknowledgedKill, 40), status: scalar(recovery.status, 599), ready: recovery.ready === true, workAtReadiness: scalar(recovery.workAtReadiness, 40)}, kind: kinds.find(kind => kind === input.kind) ?? null, sameOriginal: input.sameOriginal === true,
     workRequests: scalar(input.workRequests, 40), resourcesReported: input.resourceStatus === 'passed' && summaries.some(sampled),
     resourceSummaries: summaries.length, finalReason: member(final.reason, ['unavailable', 'unsupported', 'invalid', 'counter_reset', 'restarted', 'clock']),
     missedSamples: scalar(final.missedSamples), hasCpu: scalar(final.cpuMillis) !== null, hasMemory: scalar(final.peakMemoryBytes) !== null, hasPids: scalar(final.peakPids) !== null, finalSamples: scalar(final.samples), restarted: final.reason === 'restarted'};

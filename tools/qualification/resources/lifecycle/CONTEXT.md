@@ -32,6 +32,7 @@ that limit or erase retained results merely to fit cancellation into one fixture
 CI persists installation-owner.json before any offer. Independent cleanup.ts uses
 only bounded exact project/installation ownership; see ../README.md for deadlines.
 public.ts emits only the closed outcome projection and safe diagnostic locations.
+Failed cases retain one bounded last recovery observation, never raw capabilities.
 
 Source-image CI uses the same execution.ts assertions through source-active.ts;
 Git head, expected revision and all six native image labels must agree. This is

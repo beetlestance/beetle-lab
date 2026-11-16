@@ -29,7 +29,8 @@ function service(f: Fixture, kind: 'agent' | 'backend') {
   assert.equal(record(row.State).Running, true);
   return {id, restartCount: counter(row.RestartCount), startedAt: record(row.State).StartedAt};
 }
-export async function crash(f: Fixture, client: Client, kind: 'agent' | 'backend', workBefore: number) {
+export interface RecoveryProgress {elapsedMs: number; progressAtAcknowledgedKill: number; status: number | null; ready: boolean; workAtReadiness: number | null}
+export async function crash(f: Fixture, client: Client, kind: 'agent' | 'backend', workBefore: number, observe: (fact: RecoveryProgress) => void) {
   const recoveryStarted = performance.now(); const before = service(f, kind); f.docker.run(['kill', '--signal', 'KILL', before.id]);
   const progressAtAcknowledgedKill = counts(f).work - workBefore;
   assert(progressAtAcknowledgedKill >= 8 && progressAtAcknowledgedKill < 40, 'Work completed before acknowledged crash');
@@ -46,9 +47,11 @@ export async function crash(f: Fixture, client: Client, kind: 'agent' | 'backend
     if (state.Running === true && state.StartedAt !== before.startedAt) {
       const ready = kind === 'backend' ? {ready: true, status: 200} : recoveredAgent(f, client.installation.id);
       lastReadinessStatus = ready.status;
+      const observed = {elapsedMs: Math.ceil(performance.now() - recoveryStarted), progressAtAcknowledgedKill, status: ready.status, ready: ready.ready, workAtReadiness: null as number | null};
+      observe(observed);
       if (!ready.ready) {await pause(); continue;}
       assert.deepEqual(await readReadyPublic(signal => client.api.getBrowserSession({signal})), client.session);
-      const workAtReadiness = counts(f).work - workBefore; assert(workAtReadiness >= progressAtAcknowledgedKill && workAtReadiness < 40, `Original finished or reset before recovered service was ready (HTTP ${lastReadinessStatus}, ${Math.ceil(performance.now() - recoveryStarted)}ms)`);
+      const workAtReadiness = counts(f).work - workBefore; observe({...observed, workAtReadiness}); assert(workAtReadiness >= progressAtAcknowledgedKill && workAtReadiness < 40, `Original finished or reset before recovered service was ready (HTTP ${lastReadinessStatus}, ${Math.ceil(performance.now() - recoveryStarted)}ms)`);
       return {signal: 'SIGKILL', restart, recoveryElapsedMs: Math.ceil(performance.now() - recoveryStarted), workAtReadiness, progressAtAcknowledgedKill, restartCountBefore: before.restartCount, restartCountAfter: counter(row.RestartCount), sameServiceContainer: true};
     }
     await pause();

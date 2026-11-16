@@ -30,17 +30,18 @@ async function phases({f, initial, installation, saved, results, progress, reser
       const queued = value(await client.api.createRun({params: saved.params, body: {scope: saved.scope, requestId: randomUUID(), revisionId: saved.revision.id,
         engineProfile: 'k6-local', budget: initial.installation.values.runDefaults.budget, executionPolicy: {mode: 'parallel', preferIdle: false}}}));
       const originalId = await active(f, client, queued, before.work);
+      const recovery = {}; const pending = {kind, recovery}; results.push(pending);
       let fault: unknown;
       if (kind === 'cancel') {value(await client.api.cancelRun({params: params(queued), body: {scope: saved.scope, requestId: randomUUID()}})); fault = {publicCancel: true};}
-      else fault = await crash(f, client, kind, before.work);
+      else fault = await crash(f, client, kind, before.work, fact => {Object.assign(recovery, fact);});
       const run = await terminal(client, queued, kind === 'cancel'); const closed = runtime(f, run, installation);
       assert.equal(closed.id, originalId); assert.equal(closed.state.Running, false); assert.equal(closed.state.OOMKilled, false);
       const after = counts(f); assert.equal(after.ready - before.ready, 1); assert.equal(after.unexpected, 0);
       if (kind === 'cancel') assert(after.work - before.work >= 8 && after.work - before.work < 40);
       else assert.equal(after.work - before.work, 40);
-      const result = {kind, fault, sameOriginal: true, generation: 1, workRequests: after.work - before.work, runState: run.state,
-        outcome: run.outcome, runId: run.id, resourceStatus: 'pending', controlReserve: reserve};
-      results.push(result); Object.assign(result, {resourceStatus: 'passed', summaries: await summaries(client.api, run, rows => {Object.assign(result, {summaries: rows});})});
+      const result = Object.assign(pending, {kind, fault, sameOriginal: true, generation: 1, workRequests: after.work - before.work, runState: run.state,
+        outcome: run.outcome, runId: run.id, resourceStatus: 'pending', controlReserve: reserve});
+      Object.assign(result, {resourceStatus: 'passed', summaries: await summaries(client.api, run, rows => {Object.assign(result, {summaries: rows});})});
       settled.push(run);
     }
   return settled;
