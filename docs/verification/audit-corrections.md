@@ -15,6 +15,7 @@ open. Private installation data, credentials and raw logs are not published here
 | Environment approval guard | `6c0ee23cc04a37fd04ba69ab28f0881336a33aa0` |
 | Settings row validation | `947b62e72b8bc44df431fd5384a10292313b0d99` |
 | Failed-operation diagnostic context | `5b94b31bf3fbcd47d759ff37c09b2f19d8f967a1` |
+| Packaged agent startup and preserved runtime causes | `8a38d15ad71e9563cecedc24d86c71a990dfc900` |
 
 Later commits retain earlier changes. Check results apply to their relevant source,
 fixtures and configuration; this table does not imply a full suite ran at each SHA.
@@ -63,6 +64,15 @@ After the final storage-context change, the composed local lane passed **58 test
 across storage progress/lifecycle, journal lifecycle/credits and settings-row cases.
 Node type checking, lint, architecture and documentation gates passed. Earlier
 feature corrections preserved failed check logs; only affected checks were repeated.
+
+The later bundle lane built the API, agent, engine and web, checked engine-runtime
+TypeScript, and passed both packaged API and agent entrypoint smoke checks.
+The agent fixture initially lacked required durable authority; it now initializes
+real journal/control owners before startup. Runtime errors retain their original
+cause, and fixed reason codes remain safe to log. Thirty startup/configuration/runtime
+tests passed; the final diagnostic helper correction passed its five focused tests
+and static gates. Normal CI now includes the agent smoke. Its Docker daemon is a
+fixture: these checks do not establish native container or target-workload acceptance.
 
 ## Remaining acceptance
 
