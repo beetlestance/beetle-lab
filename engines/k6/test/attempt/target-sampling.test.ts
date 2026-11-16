@@ -16,13 +16,17 @@ async function setup() {
   await f.save();return f;
 }
 it('publishes target observations as a separately scoped, hash-bound artifact under admitted output', async () => {
-  const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify({ rss: 1234, cpuPercent: 5 })));
+  const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify({ rss: 1234, cpuPercent: 5, gc: {count: 2, totalMs: 7, maxMs: 4, avgMs: 3.5} })));
   const f = await setup();const result = await f.run();expect(result.ok).toBe(true);expect(native.calls).toBe(1);
   const artifact = result.result!.artifacts.find(a => a.kind === 'target-runtime');expect(artifact).toBeDefined();
   const bytes = await readFile(join(f.outputRoot, artifact!.relativePath));expect(bytes.length).toBe(artifact!.bytes);
   expect(createHash('sha256').update(bytes).digest('hex')).toBe(artifact!.sha256);
   const report = JSON.parse(bytes.toString()) as {scope: string; samples: {phase: string; values: {rss: number; heapAlloc: null}}[]};
   expect(report.scope).toBe('target-reported');expect(report.samples[0]).toMatchObject({ phase: 'before', values: { rss: 1234, heapAlloc: null } });
+  expect(report.samples[0]).toMatchObject({values:{'gc.totalMs':7,'gc.maxMs':4,'gc.avgMs':3.5}});
+  const performance = result.result!.artifacts.find(a => a.kind === 'performance-report')!;
+  const text = await readFile(join(f.outputRoot, performance.relativePath), 'utf8');
+  expect(text).toContain('[Target runtime observations]');expect(text).toContain('Target cumulative GC time (ms): baseline=7.00');
   expect(fetch).toHaveBeenCalledWith(new URL('https://example.invalid/api/stats'), expect.objectContaining({ credentials: 'omit', redirect: 'error' }));
   const published = JSON.parse(await readFile(join(f.outputRoot, 'engine-result.json'), 'utf8')) as {artifacts: unknown[]};
   expect(published.artifacts).toContainEqual(artifact);expect((await lstat(join(f.outputRoot, artifact!.relativePath))).mode & 0o777).toBe(0o600);

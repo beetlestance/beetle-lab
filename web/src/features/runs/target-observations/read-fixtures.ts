@@ -7,7 +7,7 @@ export function report() {return captureTargetRuntimeReport(source);}
 /** Fixed SHA256 vectors, independently exercised through the native digest port. */
 export function hash(bytes: Uint8Array): string {
   const text = new TextDecoder().decode(bytes);
-  if (text === JSON.stringify(report())) return '283c895225767bd56ff7c67fa5395d0405c31472c0ced935681656d3c33c9a31';
+  if (text === JSON.stringify(report())) return '4c8aed8fc1d76b915a45d16457b7d7b73ae25c4c70dfdfc5df6c6eb86de36294';
   if (text === '{"version":2}') return '732322c128ed67841ef5aa42c7cd04ffcd74a61b2d17d710cd502b713d62930d';
   throw new Error('Unexpected digest fixture');
 }

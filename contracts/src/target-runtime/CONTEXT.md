@@ -3,11 +3,12 @@ Public capture/decode/encodeTargetRuntimeReport and immutable report/sample/type
 JSONSchema runner/v1/target-runtime-report owns fixed names, bounds and statuses;
 generated types supply engine and browser views. Do not duplicate metric-name lists.
 Target-reported readings are not engine cgroup measurements or hard-control proof.
-One report<=1MiB/256 samples, fixed32 metric keys; missing/invalid readings are null.
+One report<=1MiB/256 samples, 32 required metric keys plus optional active-handle/GC-millisecond readings; missing/invalid readings are null.
 Unavailable sample requires fixed reason and all-null values; ready reason is null.
 Missed counts unavailable attempts plus at most one retention refusal if limited.
 Capture rejects getters/prototype tricks, unknown keys, invalid/nonfinite/negative
 numbers, excess samples, malformed observations and contradictory status/reason.
 Decode bounds raw bytes and uses fatal UTF8; immutable detached output owns values.
-No baseline/leak assertion, unit conversion, target URL, headers or raw body here.
+Optional fields preserve decoding of earlier artifacts. No target URL, headers or raw body here.
+Summary helpers report observed changes; they never assert leak freedom.
 Checks: contracts/src/target-runtime/*.test.ts plus affected engine sampler cases.

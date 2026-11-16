@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
+import {captureTargetRuntimeReport} from '@beetle/contracts/target-runtime';
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, expect, it, vi } from 'vitest';
 import { validate } from '@beetle/contracts';
@@ -44,4 +45,15 @@ it('does not start artifact reads for a result outside the requested namespace',
   mount(current, false, {...current, scope: {...current.scope, organizationId: '00000000-0000-4000-8000-000000000009'}});
   await waitFor(() => expect(screen.queryByText('Loading result details…')).toBeNull());
   expect(screen.queryByRole('combobox')).toBeNull(); expect(read).not.toHaveBeenCalled();
+});
+
+it('renders old artifacts with missing additive keys as unavailable without plotting undefined values',async()=>{
+ const current=report();const additive=new Set(['activeHandles','gc.totalMs','gc.maxMs','gc.avgMs']);
+ const legacy={...current,samples:current.samples.map(sample=>({...sample,
+  values:Object.fromEntries(Object.keys(sample.values).filter(key=>!additive.has(key)).map(key=>[key,null]))}))};
+ vi.spyOn(targetReportReads,'read').mockResolvedValue(captureTargetRuntimeReport(legacy));mount(run());
+ const select=await screen.findByRole('combobox',{name:'Target metric'});expect(select).toHaveValue('rss');
+ fireEvent.change(select,{target:{value:'gc.totalMs'}});
+ expect(screen.getByText('No readings available for this metric.')).toBeInTheDocument();
+ expect(document.querySelector('svg')).not.toBeInTheDocument();expect(document.body.textContent).not.toMatch(/NaN|Infinity/);
 });

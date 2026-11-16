@@ -1,3 +1,4 @@
+import { targetReading } from '@beetle/contracts/target-runtime';
 import type { TargetMetricName, TargetRuntimeSample } from '@beetle/contracts/target-runtime';
 
 const LEFT = 40;
@@ -5,13 +6,9 @@ const RIGHT = 760;
 const TOP = 30;
 const BOTTOM = 180;
 
-function reading(sample: TargetRuntimeSample, metric: TargetMetricName): number | null {
-  const value = sample.values[metric];
-  return sample.status === 'ready' && value !== null ? value : null;
-}
 
 export function TargetObservationChart({samples, metric}: {samples: readonly TargetRuntimeSample[]; metric: TargetMetricName}) {
-  const values = samples.map(sample => reading(sample, metric));
+  const values = samples.map(sample => targetReading(sample, metric));
   const times = samples.map(sample => Date.parse(sample.observedAt));
   const measured = values.filter((value, index): value is number => value !== null && Number.isFinite(times[index]));
   if (measured.length === 0) return <NoReadings metric={metric} values={values} />;

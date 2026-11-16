@@ -137,6 +137,18 @@
         },
         "gc.duration": {
           "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "activeHandles": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "gc.totalMs": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "gc.maxMs": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
+        },
+        "gc.avgMs": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/reading"
         }
       },
       "required": [
@@ -344,6 +356,18 @@
                     "type": "null"
                   },
                   "gc.duration": {
+                    "type": "null"
+                  },
+                  "activeHandles": {
+                    "type": "null"
+                  },
+                  "gc.totalMs": {
+                    "type": "null"
+                  },
+                  "gc.maxMs": {
+                    "type": "null"
+                  },
+                  "gc.avgMs": {
                     "type": "null"
                   }
                 },

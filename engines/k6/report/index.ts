@@ -1,3 +1,5 @@
+import type { TargetRuntimeReport } from '@beetle/contracts/target-runtime';
+import { appendTargetReport } from './target.js';
 import { encodeJson, validate } from '@beetle/contracts';
 import type { EngineResult } from '@beetle/contracts';
 import type { MetricSnapshot } from '../aggregation/index.js';
@@ -7,7 +9,7 @@ import { csvCell, ReportError, ReportWriter } from './writer.js';
 export { ReportError } from './writer.js';
 
 export interface PerformanceReports {readonly text: Uint8Array; readonly csv: Uint8Array}
-interface Options {readonly result: K6ResultBody; readonly metrics: MetricSnapshot | null; readonly maximumBytes: number}
+interface Options {readonly result: K6ResultBody; readonly metrics: MetricSnapshot | null; readonly maximumBytes: number; readonly target?: TargetRuntimeReport}
 function capturedResult(input: K6ResultBody): EngineResult {
   const witness = JSON.parse(encodeJson({...input, seal: {sha256: '0'.repeat(64), sealedAt: '2000-01-01T00:00:00.000Z'}}, 1048576)) as unknown;
   const checked = validate('EngineResult', witness);
@@ -54,5 +56,6 @@ function render(options: Options): PerformanceReports {
       value.metric, value.kind, value.scope, value.tags.phase ?? null, value.tags.request ?? null, value.tags.assertion ?? null,
       value.unit, ...statistics(value.total)].map(csvCell).join(','));
   }
+  appendTargetReport(text, options.target);
   return Object.freeze({text: text.finish(), csv: csv.finish()});
 }

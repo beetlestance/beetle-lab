@@ -40,7 +40,11 @@
         "eventLoopDelay.p99": null,
         "eventLoopDelay.max": null,
         "gc.count": null,
-        "gc.duration": null
+        "gc.duration": null,
+        "activeHandles": null,
+        "gc.totalMs": null,
+        "gc.maxMs": null,
+        "gc.avgMs": null
       }
     }
   ],

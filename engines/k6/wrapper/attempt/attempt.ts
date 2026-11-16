@@ -261,7 +261,7 @@ class Attempt {
   }
   private reports(mapped: MappedResult) {
     try {return renderPerformanceReports({result: mapped.body, metrics: this.state.execution!.metrics,
-      maximumBytes: this.reservation!.reports / 2});}
+      maximumBytes: this.reservation!.reports / 2, ...(this.targetReport?{target:this.targetReport}:{})});}
     catch (error) {throw new AttemptError(error instanceof ReportError && error.code === 'output_limit' ? 'output_limit' : 'artifact');}
   }
   private archiveAccounting(history: ArchiveEvidence | null) {

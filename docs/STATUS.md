@@ -19,9 +19,9 @@ are indexed in [HISTORY](HISTORY.md) and retain their original source/platform s
 
 | Area | Gap |
 | --- | --- |
-| Report parity | The text export omits former target-memory/CPU/GC analysis sections. Data collection alone does not establish reporting parity. |
-| Target metrics | The sampler does not map legacy GC total/average/max fields; some target data is lost despite schema-based fixture passes. |
-| Capacity changes | Raising existing installed hard limits needs a supported lifecycle operation. UI budgets cannot override the installed policy. |
+| Report parity | Readable target-memory/CPU/GC sections are implemented with explicit missing values, chronology/reset checks and advisory interpretation. Native published-output acceptance remains pending. |
+| Target metrics | Explicit GC total/average/maximum millisecond fields and active handles are collected. Older artifacts remain decodable; source regression checks cover the real field names. Native evidence remains pending. |
+| Capacity changes | A resumable offline memory increase is implemented and applied locally at 1 GiB with preserved history. Native engine-limit proof is pending; retained output reservations currently block the verification run. Other installed-capacity changes still need support. |
 | Storage and diagnostics | Queue time counts toward the five-second worker deadline; failure is sticky. Reproduce overload and improve failure reporting while preserving uncertain-write safety. |
 | Sampler confinement | Corrected by appending sampling paths under the configured target and checking origin before fetch. Regression tests cover scheme-looking paths; release acceptance remains open. |
 | Migration extension | Migration 026 now has its own version guard. Prior-025 upgrade coverage passes; adding a later migration still requires its own upgrade tests. Migration 015 already has a caller guard. |

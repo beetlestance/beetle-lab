@@ -53,3 +53,14 @@ it('rejects accessor/prototype serialization without invoking arbitrary code', (
   const custom = fixture(); Object.setPrototypeOf(custom, {toJSON() {invoked = true; return {};}});
   expect(() => captureTargetRuntimeReport(custom)).toThrow(); expect(invoked).toBe(false);
 });
+
+it('decodes earlier artifacts without the additive GC/handle fields and keeps malformed new readings invalid', () => {
+  const source = fixture();
+  for (const key of ['activeHandles','gc.totalMs','gc.maxMs','gc.avgMs']) delete source.samples[0]!.values[key];
+  const legacy = captureTargetRuntimeReport(source);
+  expect(legacy.samples[0]!.values['gc.totalMs']).toBeUndefined();
+  source.samples[0]!.values['gc.totalMs'] = -1;
+  expect(() => captureTargetRuntimeReport(source)).toThrow();
+  source.samples[0]!.values['gc.totalMs'] = 1;source.samples[0]!.status='unavailable';source.samples[0]!.reason='timeout';source.missed=1;
+  expect(() => captureTargetRuntimeReport(source)).toThrow();
+});

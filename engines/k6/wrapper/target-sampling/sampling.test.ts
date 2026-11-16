@@ -11,6 +11,15 @@ function json(value: unknown): Response { return new Response(JSON.stringify(val
 afterEach(() => vi.useRealTimers());
 
 describe('target sampling observations', () => {
+  it('retains explicit GC millisecond fields and libuv handles without conflating them with Go goroutines', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () => json({activeHandles: 7, goroutines: 11,
+      gc: {count: 5, totalMs: 12.5, maxMs: 4, avgMs: 2.5}}));
+    const owner = await startTargetSampling(options(fetch, {config:{...config,cooldownMs:0}}));
+    try {
+      expect((await owner.finish()).samples[0]!.values).toMatchObject({activeHandles:7,goroutines:11,
+        'gc.count':5,'gc.duration':null,'gc.totalMs':12.5,'gc.maxMs':4,'gc.avgMs':2.5});
+    } finally {await owner.close();}
+  });
   it.each(['/http://169.254.169.254/metadata', '/https://outside.invalid/private', '/ftp://outside.invalid/file'])(
     'keeps scheme-looking sampling path %s on the configured target', async path => {
       const fetch = vi.fn<typeof globalThis.fetch>(async () => json({ rss: 1 }));
@@ -37,7 +46,7 @@ describe('target sampling observations', () => {
     expect(sample).toMatchObject({ phase: 'before', status: 'ready', reason: null,
       values: { rss: 42, heapAlloc: null, external: null, cpuPercent: null,
         'cppHeap.used_size': 7, 'eventLoopDelay.p99': 8, 'gc.count': 3, uptime: 0 } });
-    expect(Object.keys(sample.values)).toHaveLength(32);
+    expect(Object.keys(sample.values)).toHaveLength(36);
     expect(JSON.stringify(report)).not.toContain('never retain');
     expect(Object.isFrozen(report)).toBe(true);
     expect(Object.isFrozen(report.samples)).toBe(true);

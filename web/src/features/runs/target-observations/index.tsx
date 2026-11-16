@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import type { Artifact } from '@beetle/contracts';
 import type { RunArtifactParams } from '@beetle/contracts/api';
-import { targetMetricNames } from '@beetle/contracts/target-runtime';
+import { targetMetricNames, targetReading } from '@beetle/contracts/target-runtime';
 import type { TargetMetricName, TargetRuntimeReport } from '@beetle/contracts/target-runtime';
 import { useTargetReport } from './useReport.js';
 import type { TargetReportReads } from './read.js';
@@ -23,7 +23,7 @@ export function RunTargetObservations({params, artifact, reads}: {
   </section>;
 }
 function initialMetric(report: TargetRuntimeReport): TargetMetricName {
-  return targetMetricNames.find(name => report.samples.some(sample => sample.status === 'ready' && sample.values[name] !== null)) ?? 'rss';
+  return targetMetricNames.find(name => report.samples.some(sample => targetReading(sample, name) !== null)) ?? 'rss';
 }
 function Report({report}: {report: TargetRuntimeReport}) {
   const [metric, setMetric] = useState<TargetMetricName>(() => initialMetric(report));
