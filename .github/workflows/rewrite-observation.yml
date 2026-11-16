@@ -4,13 +4,14 @@ on:
     inputs:
       source_run_id: {type: string, required: true}
       source_revision: {type: string, required: true}
+      profile: {type: string, required: false, default: short-control}
 permissions:
   contents: read
   actions: read
 jobs:
   native-observation:
     name: qualification/source-control (${{ matrix.arch }})
-    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'beetlestance/beetle-lab' && github.ref == 'refs/heads/rewrite/integration' }}
+    if: ${{ inputs.profile == 'short-control' && github.event_name == 'workflow_dispatch' && github.repository == 'beetlestance/beetle-lab' && github.ref == 'refs/heads/rewrite/integration' }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     strategy:
@@ -71,3 +72,14 @@ jobs:
           path: ${{ runner.temp }}/short-control/public-outcome.json
           if-no-files-found: error
           retention-days: 7
+
+  missing-amd64:
+    name: qualification/missing-amd64
+    if: ${{ inputs.profile == 'missing-amd64' && github.event_name == 'workflow_dispatch' && github.repository == 'beetlestance/beetle-lab' && github.ref == 'refs/heads/rewrite/integration' }}
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/rewrite-conformance.yml
+    with:
+      source_run_id: ${{ inputs.source_run_id }}
+      source_revision: ${{ inputs.source_revision }}

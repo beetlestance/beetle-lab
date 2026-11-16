@@ -1,0 +1,79 @@
+name: Read-only missing native conformance
+on:
+  workflow_call:
+    inputs:
+      source_run_id: {type: string, required: true}
+      source_revision: {type: string, required: true}
+permissions:
+  contents: read
+  actions: read
+jobs:
+  native:
+    name: qualification/source-native (amd64, ${{ matrix.kind }})
+    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'beetlestance/beetle-lab' && github.ref == 'refs/heads/rewrite/integration' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        kind: [conformance, long-stream]
+    env:
+      BEETLE_QUALIFICATION_ARCHITECTURE: amd64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: {node-version: '24', cache: npm}
+      - run: npm ci --ignore-scripts
+      - name: Verify all twelve source gates and restore only the native archived images
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN: ${{ inputs.source_run_id }}
+          SOURCE_REVISION: ${{ inputs.source_revision }}
+        run: node --import tsx tools/qualification/native-application/load/stage.ts "$SOURCE_RUN" "$SOURCE_REVISION" "$RUNNER_TEMP/source-stage"
+      - name: Execute the finite missing native profile
+        id: execution
+        env:
+          TMPDIR: ${{ runner.temp }}
+          PROFILE: ${{ matrix.kind }}
+        run: |
+          node --import tsx tools/qualification/native-application/conformance/plan.ts "$RUNNER_TEMP/source-stage/images/bundle.json" "$RUNNER_TEMP/native-profile" "$PROFILE"
+          node --import tsx tools/check-runner/cli.ts "$RUNNER_TEMP/native-profile/plan.json" "$RUNNER_TEMP/native-checks"
+      - name: Independently remove every owned case
+        id: cleanup
+        if: ${{ always() }}
+        timeout-minutes: 15
+        env:
+          PROFILE: ${{ matrix.kind }}
+        run: |
+          node --input-type=module --import tsx <<'JS'
+          import {existsSync} from 'node:fs';
+          import {join} from 'node:path';
+          import {spawnSync} from 'node:child_process';
+          import {sourceCases} from './tools/qualification/native-application/conformance/cases.ts';
+          let failed = false;
+          for (const row of sourceCases(process.env.PROFILE)) {
+            const output = join(process.env.RUNNER_TEMP, 'native-profile', row.id);
+            if (!existsSync(join(output, 'owner.json'))) continue;
+            const result = spawnSync(process.execPath, ['--import', 'tsx', 'tools/qualification/native-application/cold/cleanup.ts', output], {timeout: 130000, stdio: 'inherit'});
+            if (result.error || result.status !== 0) failed = true;
+          }
+          if (failed) process.exitCode = 1;
+          JS
+      - name: Project only closed counts and outcome facts
+        if: ${{ always() }}
+        env:
+          PROFILE: ${{ matrix.kind }}
+          SOURCE_REVISION: ${{ inputs.source_revision }}
+          BEETLE_CONFORMANCE_EXECUTION: ${{ steps.execution.outcome }}
+          BEETLE_CONFORMANCE_CLEANUP: ${{ steps.cleanup.outcome }}
+        run: node --import tsx tools/qualification/native-application/conformance/public.ts "$RUNNER_TEMP/native-profile" "$SOURCE_REVISION" "$PROFILE" "$RUNNER_TEMP/native-public.json"
+      - name: Retain only the closed native profile report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-amd64-${{ matrix.kind }}
+          path: ${{ runner.temp }}/native-public.json
+          if-no-files-found: error
+          retention-days: 7
