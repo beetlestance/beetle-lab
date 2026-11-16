@@ -1,3 +1,4 @@
+import {gunzipSync} from 'node:zlib';
 import { createHash } from 'node:crypto';
 import { afterEach, expect, it, vi } from 'vitest';
 import { captureMailboxImage, MAILBOX_BYTES } from '@beetle/contracts/live-mailbox';
@@ -22,7 +23,7 @@ it('publishes an actual mailbox frame and charges extent plus every physical wri
   vi.useFakeTimers(); const input = liveInput(); const file = new MemoryMailbox(); const live = new AttemptLive();
   await live.start(input, async () => file);
   live.accept({startTimeMs: 0, endTimeMs: 1000, series: []}); await vi.advanceTimersByTimeAsync(0);
-  const image = captureMailboxImage(file.bytes, hash); const frame = decodeLiveMetricSnapshot(image.frame, hash);
+  const image = captureMailboxImage(file.bytes, hash); const frame = decodeLiveMetricSnapshot(gunzipSync(image.frame, {maxOutputLength: 65536}), hash);
   expect(frame.scope).toEqual(input.scope); expect(frame.subset).toEqual(attemptLiveSubset(input.suite));
   expect(frame.publishedSequence).toBe(image.revision); expect(frame.series).toEqual([]);
   const state = await live.close(); expect(state.quiescence).toBe('confirmed'); expect(file.closes).toBe(1);

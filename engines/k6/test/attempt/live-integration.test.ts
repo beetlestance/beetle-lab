@@ -1,3 +1,4 @@
+import {gunzipSync} from 'node:zlib';
 import { afterEach, beforeEach, expect, it } from 'vitest';
 import { setTimeout as delay } from 'node:timers/promises';
 import { readFile } from 'node:fs/promises';
@@ -18,7 +19,7 @@ it('publishes during actual measured window callbacks and drains before sealed h
   const receipt = await f.run({liveMetricMailbox: true, onWindow: async () => {await delay(0);}}, {openMailbox: async () => file});
   expect(receipt.ok).toBe(true); expect(file.produced).toBeGreaterThan(0); expect(file.closes).toBe(1);
   expect(receipt.liveMetrics).toMatchObject({status: 'closed', quiescence: 'confirmed', producedBytes: MAILBOX_BYTES + file.produced});
-  const frame = decodeLiveMetricSnapshot(captureMailboxImage(file.bytes, hash).frame, hash);
+  const frame = decodeLiveMetricSnapshot(gunzipSync(captureMailboxImage(file.bytes, hash).frame, {maxOutputLength: 65536}), hash);
   expect(frame.scope).toEqual(receipt.scope); expect(frame.series.some(row => row.metric === 'http_req_duration')).toBe(true);
   const events = (await readFile(join(f.outputRoot, 'control.ndjson'), 'utf8')).trim().split('\n').map(line => JSON.parse(line) as {kind: string; phase: string; payload: {outputBytes: number}});
   const execute = events.find(event => event.kind === 'phase.finished' && event.phase === 'execute');
