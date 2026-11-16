@@ -1,0 +1,65 @@
+name: Read-only native telemetry comparison
+on:
+  workflow_call:
+    inputs:
+      source_run_id: {type: string, required: true}
+      source_revision: {type: string, required: true}
+permissions:
+  contents: read
+  actions: read
+jobs:
+  native:
+    name: qualification/telemetry (amd64)
+    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'beetlestance/beetle-lab' && github.ref == 'refs/heads/rewrite/integration' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      BEETLE_QUALIFICATION_ARCHITECTURE: amd64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: {node-version: '24', cache: npm}
+      - run: npm ci --ignore-scripts
+      - name: Reuse only the qualified native source archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN: ${{ inputs.source_run_id }}
+          SOURCE_REVISION: ${{ inputs.source_revision }}
+        run: node --import tsx tools/qualification/native-application/load/stage.ts "$SOURCE_RUN" "$SOURCE_REVISION" "$RUNNER_TEMP/source-stage"
+      - name: Compare identical bounded telemetry fixtures
+        id: execution
+        env:
+          TMPDIR: ${{ runner.temp }}
+        run: |
+          node --input-type=module <<'JS'
+          import {writeFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          const root=process.env.RUNNER_TEMP;
+          writeFileSync(join(root,'telemetry-plan.json'),JSON.stringify({cwd:process.cwd(),checks:[{id:'telemetry',timeoutMs:600000,
+            argv:[process.execPath,'--import','tsx','tools/qualification/native-application/telemetry/run.ts',join(root,'source-stage/images/bundle.json'),join(root,'telemetry')]}]}),{flag:'wx',mode:0o600});
+          JS
+          node --import tsx tools/check-runner/cli.ts "$RUNNER_TEMP/telemetry-plan.json" "$RUNNER_TEMP/telemetry-checks"
+      - name: Independently remove only task-owned resources and aliases
+        id: cleanup
+        if: ${{ always() }}
+        timeout-minutes: 4
+        run: |
+          if [ -f "$RUNNER_TEMP/telemetry/owner.json" ]; then
+            node --import tsx tools/qualification/native-application/telemetry/cleanup.ts "$RUNNER_TEMP/telemetry"
+          fi
+      - name: Project only validated closed measurements
+        if: ${{ always() }}
+        env:
+          SOURCE_REVISION: ${{ inputs.source_revision }}
+          BEETLE_TELEMETRY_EXECUTION: ${{ steps.execution.outcome }}
+          BEETLE_TELEMETRY_CLEANUP: ${{ steps.cleanup.outcome }}
+        run: node --import tsx tools/qualification/native-application/telemetry/public.ts "$RUNNER_TEMP/telemetry" "$SOURCE_REVISION" "$RUNNER_TEMP/telemetry-public.json"
+      - name: Retain only the closed comparison
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: telemetry-amd64
+          path: ${{ runner.temp }}/telemetry-public.json
+          if-no-files-found: error
+          retention-days: 7

@@ -53,3 +53,14 @@ it('confines cold accounting reads to exact files while denying sibling, deeper 
  expect(boundaryIssues(prefix+'backend.ts',['../../../../app/src/adapters/outbound/sqlite/output-custody/index.js'])).toHaveLength(1);
  expect(boundaryIssues('app/src/bootstrap/api.ts',['../../../tools/qualification/native-application/accounting/backend.js'])).toHaveLength(1);
 });
+
+it('confines the telemetry off/on assembly to exact owners without new private or reverse access',()=>{
+ const prefix='tools/qualification/native-application/telemetry/';
+ for(const path of ['agent/src/guard/index.js','agent/src/producer-gate/index.js','agent/src/bootstrap/live-metrics.js']){
+  expect(boundaryIssues(prefix+'assembly.ts',[`../../../../${path}`])).toEqual([]);
+  expect(boundaryIssues(prefix+'other.ts',[`../../../../${path}`])).toHaveLength(1);
+ }
+ expect(boundaryIssues(prefix+'profile.ts',['../../../../agent/src/catalog/index.js'])).toEqual([]);
+ expect(boundaryIssues(prefix+'assembly.ts',['../../../../agent/src/guard/service.js'])).toHaveLength(1);
+ expect(boundaryIssues('agent/src/bootstrap/main.ts',['../../../tools/qualification/native-application/telemetry/assembly.js'])).toHaveLength(1);
+});

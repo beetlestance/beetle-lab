@@ -1,11 +1,11 @@
 import {expect,it} from 'vitest';
 import {DurationHistogram} from '@beetle/contracts/metrics';
 import {numeric,numericEvidence} from './numeric.js';
-function fixture(){
- const histogram=new DurationHistogram();for(let i=0;i<400;i++)histogram.record(1);
+function fixture(count=400){
+ const histogram=new DurationHistogram();for(let i=0;i<count;i++)histogram.record(1);
  return {totalsComplete:true,measurement:{complete:true,sourceTimeMs:1000},quantiles:'histogram-estimate',windowCoverage:{complete:true,latePoints:0,markerDelayDroppedBuckets:0},totals:[
-  {metric:'http_req_duration',kind:'trend',scope:'execute',tags:{},total:{kind:'trend',count:400,sum:400,min:1,max:1,mean:1,distribution:histogram.snapshot()}},
-  {metric:'http_reqs',kind:'counter',scope:'execute',tags:{},total:{kind:'counter',sum:400}}]};
+  {metric:'http_req_duration',kind:'trend',scope:'execute',tags:{},total:{kind:'trend',count,sum:count,min:1,max:1,mean:1,distribution:histogram.snapshot()}},
+  {metric:'http_reqs',kind:'counter',scope:'execute',tags:{},total:{kind:'counter',sum:count}}]};
 }
 it('requires complete, bounded final totals with exact request/histogram counts',()=>{
  expect(numeric(fixture())).toMatchObject({series:2,requestCount:400,durationCount:400,totalsComplete:true});
@@ -24,4 +24,9 @@ it('checks the actual version4 artifact envelope and exact attempt scope before 
  expect(()=>numericEvidence({...source,scope:{...scope,attemptId:'other'}},scope)).toThrow();
  expect(()=>numericEvidence({...source,version:3},scope)).toThrow();
  expect(()=>numericEvidence({...source,metrics:null},scope)).toThrow();
+});
+
+it('supports an explicit larger fixed-work oracle without changing the old default or accepting partial counts',()=>{
+ expect(numeric(fixture(4000),4000)).toMatchObject({requestCount:4000,durationCount:4000});
+ expect(()=>numeric(fixture(4000))).toThrow();expect(()=>numeric(fixture(),0)).toThrow();
 });

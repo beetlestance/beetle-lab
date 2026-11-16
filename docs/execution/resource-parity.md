@@ -135,3 +135,12 @@ qualification and a new schema29 packaged candidate remain open.
 now pass independently: actual output_limit at4MiB, and a real held content writer
 with capacity refusal,7ms cancel ACK/1.11s physical stop and unchanged oldartifact.
 This does not close repeated memory growth, telemetry overhead or the AMD latency miss.
+
+[Cold repeated-memory analysis](../verification/repeated-memory-analysis.md) reuses
+the accepted four-run samples: frontend flat, backend final RSS lower, agent
+post-warm-up median+1.15MiB. A strict zero-growth/leak-free claim remains unproved.
+
+[ARM telemetry comparison](../verification/telemetry-comparison.md) now passes
+ten identical-work trials with0.65% paired wall overhead against5%; actual
+agent CPU/RSS and unavailable readers remain explicit. Native AMD comparison and
+the independent long-stream latency target remain open.

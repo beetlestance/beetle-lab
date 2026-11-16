@@ -29,7 +29,18 @@ const retirementEntrypoints=new Set([
 const seedEntrypoints=new Set(['agent/src/bootstrap/configuration.js','agent/src/staging/index.js',
  'agent/src/guard/index.js','agent/src/timeout/index.js','agent/src/observation/index.js','agent/src/admission/index.js']);
 const storageEntrypoints=new Set(['agent/src/journal/schema.js','agent/src/settlement-values/index.js']);
-const exactEntrypoints=new Map([[retirementOwner+'no-task-seed.ts',seedEntrypoints],
+const exactEntrypoints=new Map([
+ // Trusted telemetry benchmark composes public owners; installed startup has no off mode.
+ [owner+'telemetry/assembly.ts',new Set(['agent/src/staging/index.js','agent/src/producer-gate/index.js',
+  'agent/src/guard/index.js','agent/src/timeout/index.js','agent/src/observation/index.js',
+  'agent/src/admission/index.js','agent/src/supervisor/index.js','agent/src/installation/index.js',
+  'agent/src/bootstrap/live-metrics.js'])],
+ [owner+'telemetry/profile.ts',new Set(['agent/src/catalog/index.js','agent/src/supervisor/index.js'])],
+ [owner+'telemetry/profile.test.ts',new Set(['agent/src/catalog/index.js'])],
+ [owner+'telemetry/readers.ts',new Set(['agent/src/admission/index.js'])],
+ [owner+'telemetry/startup.ts',new Set(['agent/src/staging/index.js','agent/src/observation/index.js'])],
+ [owner+'telemetry/main.ts',new Set(['agent/src/bootstrap/configuration.js'])],
+ [retirementOwner+'no-task-seed.ts',seedEntrypoints],
  [retirementOwner+'settlement-storage.ts',storageEntrypoints],
  [retirementOwner+'retention-storage.ts',new Set(['app/src/domain/retention/index.js'])],
  [retirementOwner+'retention-storage.test.ts',new Set(['app/test/retention/selection-fixture.js',
