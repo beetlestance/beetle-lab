@@ -8,8 +8,8 @@ Public commands verify intent/receipt; dispatch owns separate scan/read/claim/ob
 Domain decisions and original receipt writes commit atomically with public commands.
 `get({kind,scope,id})`, `list({kind,scope,limit,cursor?,parentFolderId?})` and
 `getSettings(scope)` expose API-derived namespace/settings values.
-Internal `getSettingsIdentity(scope)` reads only persisted UUID/scope, without
-effective/runtime resolution; PATCH can replay receipts after capacity expires.
+Settings rows validate UUID/scope/version/value schemas before projection. Identity
+reads validate scope/UUID only, preserving receipt replay without policy/runtime.
 Folder paths query <=9 ancestors. Subtree evidence uses a bounded iterative walk:
 <=10,000 queued/visited nodes, depth<8 edges, indexed remaining-budget+1 child
 queries before enqueue (<=10,000 child rows enumerated, including overflow).
@@ -36,5 +36,4 @@ attempt_output_allocations: scoped immutable maximum+65536/version1; no settleme
 Deferred claim links require record/output/possible delivery together; shared usage
 charges input/output once. Private reserveRunOutput requires a caller transaction.
 hasUntrackedOwnership uses partial indices, independent of Run state/Offer bytes.
-Digest owner: executionRegistryDigest uses prefix+newline+canonical profile bytes.
-Contracts: dispatch-storage.md/output-allocation.md. Storage fixtures prove no load.
+Contracts: domain-storage.md, dispatch-storage.md and output-allocation.md.

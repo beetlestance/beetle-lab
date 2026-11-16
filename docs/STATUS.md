@@ -27,7 +27,7 @@ are indexed in [HISTORY](HISTORY.md) and retain their original source/platform s
 | Migration extension | Migration 026 now has its own version guard. Prior-025 upgrade coverage passes; adding a later migration still requires its own upgrade tests. Migration 015 already has a caller guard. |
 | Publishing | Environment-gated publishing and a fail-closed policy preflight are prepared. GitHub default-token/review settings still require approval and application. No replacement image was published; legacy registry images remain available. |
 | Qualification | Reconcile release criteria and hosted evidence. The retained local repeated-memory observation does not substitute for missing hosted qualification. |
-| Maintainability | Formatting, dense functions and database-row boundary validation need targeted work. A cast count alone does not prove every row is unchecked. |
+| Maintainability | Persisted settings rows now validate identity/scope/version/value schemas; malformed-row and replay tests pass. This covers the touched settings boundary, not all SQLite rows. Broader formatting and dense functions remain targeted work. |
 
 The legacy executable source and automatic publishing path are removed in the rewrite.
 No replacement default image was promoted. Use source Compose; the old single-image

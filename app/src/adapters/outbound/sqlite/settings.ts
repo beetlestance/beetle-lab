@@ -1,3 +1,4 @@
+import {captureSettingsIdentity, captureSettingsRecord} from './settings-row.js';
 import { randomUUID } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import type { SettingsScope, RunDefaults, WorkspaceScope } from '@beetle/contracts/api';
@@ -11,8 +12,6 @@ import { lower, scopeKey, boundedCopy } from './input.js';
 import type { Bootstrap, RuntimeObservation, SettingsView } from './protocol.js';
 import { RuntimeCapacity } from './runtime.js';
 
-interface Row { id: string; version: number; kind: SettingsScope['kind']; organization_id: string | null;
-  workspace_id: string | null; value_json: string }
 export class Settings {
   private readonly runtime: RuntimeCapacity;
   constructor(private readonly db: DatabaseSync, bootstrap: Bootstrap) {
@@ -45,19 +44,13 @@ export class Settings {
     else this.insert({ ...common, scope });
   }
   private record(scope: SettingsScope): SettingsRecord {
-    const row = this.db.prepare('SELECT id,version,kind,organization_id,workspace_id,value_json FROM settings WHERE scope_key=?')
-      .get(scopeKey(scope)) as unknown as Row | undefined;
+    const row = this.db.prepare(`SELECT id,version,kind,organization_id,workspace_id,
+      CASE WHEN typeof(value_json)='text' AND length(CAST(value_json AS BLOB))<=32768
+        THEN value_json ELSE NULL END AS value_json FROM settings WHERE scope_key=?`).get(scopeKey(scope));
     requireRule(row !== undefined, 'not_found');
-    const common = { id: row.id, version: row.version, schemaVersion: 2 as const };
-    const value = JSON.parse(row.value_json) as InstallationRecord['values'] & OrganizationRecord['overrides'];
-    if (row.kind === 'installation') return { ...common, scope: { kind: 'installation' }, values: value };
-    requireRule(row.organization_id !== null);
-    if (row.kind === 'organization') return { ...common,
-      scope: { kind: 'organization', organizationId: row.organization_id }, overrides: value };
-    requireRule(row.workspace_id !== null);
-    return { ...common, scope: { kind: 'workspace', organizationId: row.organization_id,
-      workspaceId: row.workspace_id }, overrides: value };
+    return captureSettingsRecord(row, scope);
   }
+
   chain(scope: SettingsScope): SettingsChain {
     const installation = this.record({ kind: 'installation' }) as InstallationRecord;
     if (scope.kind === 'installation') return { installation };
@@ -75,15 +68,11 @@ export class Settings {
   }
   identity(scope: SettingsScope): SettingsIdentity {
     const row = this.db.prepare('SELECT id,kind,organization_id,workspace_id FROM settings WHERE scope_key=?')
-      .get(scopeKey(scope)) as unknown as Omit<Row, 'version' | 'value_json'> | undefined;
+      .get(scopeKey(scope));
     requireRule(row !== undefined, 'not_found');
-    if (row.kind === 'installation') return { id: row.id, scope: { kind: 'installation' } };
-    requireRule(row.organization_id !== null);
-    if (row.kind === 'organization') return { id: row.id,
-      scope: { kind: 'organization', organizationId: row.organization_id } };
-    requireRule(row.workspace_id !== null);
-    return { id: row.id, scope: { kind: 'workspace', organizationId: row.organization_id, workspaceId: row.workspace_id } };
+    return captureSettingsIdentity(row, scope);
   }
+
   get(scope: SettingsScope): SettingsView {
     const chain = this.chain(scope);
     const record = scope.kind === 'installation' ? chain.installation :
