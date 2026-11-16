@@ -1,7 +1,7 @@
 # Live output and free-space guard
 
 Status: implemented and independently reviewed component;
-[local evidence](../../verification/output-guard.md). Native enforcement is unqualified.
+[local evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/output-guard.md). Native enforcement is unqualified.
 
 ## Filesystem sample
 

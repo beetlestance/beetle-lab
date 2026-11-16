@@ -1,6 +1,6 @@
 # Admitted standalone export
 
-Status: private slice implemented and locally verified; [native evidence](../../verification/admitted-standalone-export.md). Public jobs remain pending.
+Status: private slice implemented and locally verified; [native evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/admitted-standalone-export.md). Public jobs remain pending.
 Owner: coordinator across shared purpose values, agent admission/staging/collection
 and fixed k6 image dispatch. Root reserves agent migration015 and root generation.
 Extends standalone-export-jobs.md; does not add a second execution supervisor.

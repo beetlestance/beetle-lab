@@ -1,6 +1,6 @@
 # Installed execution identity
 
-Status: implemented and [locally verified](../../verification/installed-binding.md).
+Status: implemented and [locally verified](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/installed-binding.md).
 Application dispatch remains pending. This unreleased runner
 protocol retains version1.0; before release its conformance corpus defines one
 required bound Offer, with no unpinned new-admission path.

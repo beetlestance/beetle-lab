@@ -1,6 +1,6 @@
 # k6 warning evidence and configured guidance
 
-Status: locally implemented; [source and native evidence](../../verification/k6-warning-guidance.md) record acceptance limits.
+Status: locally implemented; [source and native evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/k6-warning-guidance.md) record acceptance limits.
 Engine owns classification; shared contracts own the sealed artifact, and the
 browser consumes it through existing scoped content verification. No backend job,
 extra polling, public API route, metadata projection or new storage grant.

@@ -1,7 +1,7 @@
 # Full resource and guard observation publisher
 
 Status: implemented and independently reviewed component;
-[local evidence](../../verification/observation-publisher.md). Native qualification remains.
+[local evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/observation-publisher.md). Native qualification remains.
 Public entrypoint: `agent/src/observation/index.ts`.
 
 One publisher per journal composes the actual ResourceObserver, OutputGuard and

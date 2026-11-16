@@ -7,7 +7,7 @@ Intact restart authority and cold-backup quiescence requirements remain.
 Status: journal/control-store, startup and runner wire locally verified;
 backend binding/delivery locally verified against a synthetic peer;
 restore and native qualification remain pending.
-[Local foundation evidence](../../verification/authority-foundations.md).
+[Local foundation evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/authority-foundations.md).
 Owner: coordinator for the runner contract and migrations; agent journal for
 physical delivery authority; application dispatch for the immutable binding.
 [Dispatch storage](dispatch-storage.md) retains charge and original identity.

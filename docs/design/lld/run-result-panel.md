@@ -2,7 +2,7 @@
 
 Status: presentation component implemented and independently reviewed. Uses existing
 Run and EngineResult contracts and project theme tokens. See
-[component evidence](../../verification/run-result-panel.md). Backend result persistence/read
+[component evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/run-result-panel.md). Backend result persistence/read
 routes and real-engine/browser qualification remain separate required work.
 
 Public feature entry exports RunResultPanel and RunResultProps. Props in types.ts

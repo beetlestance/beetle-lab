@@ -51,11 +51,11 @@ npm test
 frontend developer server. Native image checks run in GitHub CI. Test fixtures
 use synthetic data and do not require an external production service.
 
-See the [documentation map](docs/README.md), [69-ID acceptance ledger](docs/verification/final-acceptance.md)
-and [finite qualification closeout](docs/verification/qualification-closeout.md).
-The functional rewrite is qualified within the recorded source/platform limits.
-A full UI redesign is separate work. Playwright, mutation testing, test generation
-and hosted IAM are follow-on phases.
+See the [documentation map](docs/README.md), [current status](docs/STATUS.md)
+and [acceptance ledger](docs/verification/final-acceptance.md). Known reporting,
+configuration and release-hardening gaps remain open. The app's API reference
+includes downloadable AI-agent instructions; an MCP server is not shipped.
+A full UI redesign, additional engines, test generation and hosted IAM are later work.
 
 ## License and attribution
 

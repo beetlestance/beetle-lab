@@ -1,7 +1,7 @@
 # Backend output payload carrier
 
 Status: implemented and independently reviewed as application migration008;
-[local evidence](../../verification/output-adoption.md) records its scope. Source
+[local evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/output-adoption.md) records its scope. Source
 adoption and terminal settlement have separate owners.
 This refines [output adoption](output-adoption.md), without changing public wire
 schemas or the pure attempt-observation merge.

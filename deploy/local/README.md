@@ -103,4 +103,4 @@ a2CPU/1GiB execution pool and manual retention; see
 
 This opt-in rewrite path is separate from released legacy Compose. Published image
 installation, native amd64 and full security/resource/recovery qualification remain
-separate checks. See [Compose evidence](../../docs/verification/compose-installation.md).
+separate checks. See [Compose evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/compose-installation.md).

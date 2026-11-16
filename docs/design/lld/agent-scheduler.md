@@ -1,7 +1,7 @@
 # Installation scheduling loop
 
 Status: implemented and independently reviewed component;
-[local evidence](../../verification/agent-scheduler.md). Actual bootstrap qualification remains.
+[local evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/agent-scheduler.md). Actual bootstrap qualification remains.
 
 The scheduler owns discovery and bounded original drive calls. The installation
 controller owns admission, preparation, execution and release. Scheduling an identity

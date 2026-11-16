@@ -1,7 +1,7 @@
 # Durable output collection intent
 
 Status: reviewed and locally implemented storage/controller components;
-[evidence](../../verification/controller-source-lifecycle.md). Extends [source commit](output-source-commit.md). This gate distinguishes interrupted source collection
+[evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/controller-source-lifecycle.md). Extends [source commit](output-source-commit.md). This gate distinguishes interrupted source collection
 from collection that never began. It does not establish file integrity or outcome.
 
 ## Before collecting

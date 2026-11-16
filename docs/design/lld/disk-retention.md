@@ -1,7 +1,7 @@
 # Agent disk retention accounting
 
 Status: journal/policy wiring independently reviewed and integrated; focused local
-checks passed. [Evidence](../../verification/disk-retention.md) records remaining
+checks passed. [Evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/disk-retention.md) records remaining
 full verification and qualification. Scope: logical disk promises retained after execution release.
 This is not a source manifest, deletion API or physical filesystem quota.
 

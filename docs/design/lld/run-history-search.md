@@ -1,6 +1,6 @@
 # Indexed history search
 
-Status: H3 locally verified; [evidence](../../verification/run-history-search.md).
+Status: H3 locally verified; [evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/run-history-search.md).
 Migration019 is owned by the coordinator.
 Owner: public RunListQuery/SQLite Run reader and scoped history controls.
 Parent: [history](run-history-query.md). No engine or native byte owner changes.

@@ -1,7 +1,7 @@
 # Installed execution runtime
 
 Status: implemented and independently reviewed component;
-[local evidence](../../verification/agent-runtime.md). This owns composition, not new lifecycle rules.
+[local evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/agent-runtime.md). This owns composition, not new lifecycle rules.
 Public entrypoint: `agent/src/bootstrap/index.ts`.
 
 One runtime per process owns the exclusively opened journal, installed Stagers,
@@ -71,5 +71,5 @@ Hold the gate through all original drains and native journal close; unknown clea
 retains the parent owner. The private control path is derived as the journal path
 plus `.authority.sqlite`, outside every file restoration may replace. Serving never
 initializes missing state. CLI/Compose first-install and cold-restore tooling remain
-pending; [local evidence](../../verification/authority-foundations.md) qualifies the
+pending; [local evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/authority-foundations.md) qualifies the
 implemented startup component, not that installation workflow.

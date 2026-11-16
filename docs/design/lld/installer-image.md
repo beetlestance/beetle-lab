@@ -1,7 +1,7 @@
 # Offline installer image packaging
 
 Status: image and CLI packaging locally verified; first-boot Compose wiring follows.
-See [evidence](../../verification/container-recipes.md).
+See [evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/container-recipes.md).
 Owning provisioning contract: [fresh installation](fresh-installation.md).
 
 ## Responsibility

@@ -49,7 +49,7 @@ docker compose --env-file beetle-lab.env up -d
 
 The default UI is http://127.0.0.1:4567. Installation is qualified only when both
 native jobs and finalization succeed; a published candidate alone is insufficient.
-See [image delivery](../../../docs/verification/rewrite-image-delivery.md).
+See [image delivery](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/rewrite-image-delivery.md).
 
 GitHub release APIs require `Workflows: write` when a candidate changes workflows
 relative to the default branch; Actions' built-in token cannot obtain that scope.

@@ -2,7 +2,7 @@
 
 Status: application migration020 implemented; qualification in progress.
 Owner: application SQLite initialization. [Stop cause](agent-stop.md),
-[absence](output-absence.md), [evidence](../../verification/lifecycle-baseline-repair.md).
+[absence](output-absence.md), [evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/lifecycle-baseline-repair.md).
 
 The runner reason catalog now admits clock_integrity, which existing supervision,
 absence derivation and native guards already emit. The migration004 runs.reason

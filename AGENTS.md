@@ -1,7 +1,8 @@
 # beetle-lab implementation rules
 
 Read the repository documentation map and assigned task packet first. This
-rewrite uses the accepted HLD/LLDs; current legacy source is a feature reference.
+rewrite uses the accepted HLD/LLDs. Read docs/STATUS.md for current gaps; legacy
+source and execution reports are preserved in Git, not maintained runnable paths.
 
 - One task, one worktree/branch, explicit file ownership. No nested delegation.
 - Workers do not push, merge, rebase, switch, reset, deploy, change rulesets or

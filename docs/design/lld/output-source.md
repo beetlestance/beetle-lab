@@ -4,7 +4,7 @@ The original proposal is superseded by the focused contracts below. This page
 preserves its decisions and navigation; it grants no additional API authority.
 Source values, Journal storage and controller lifecycle are implemented and reviewed
 locally. Transfer, backend publication and complete release qualification remain
-separate work; see [source evidence](../../verification/output-source-journal.md).
+separate work; see [source evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/output-source-journal.md).
 
 ## Settled decisions
 

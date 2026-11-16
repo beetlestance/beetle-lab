@@ -33,7 +33,7 @@ it in its own transaction. Cancellation withdraws only unissued waiters and inva
 minted observations synchronously, retaining actual native leases. It refuses withdrawal
 while a mutating carrier exists. Root stops unissued waits before joining shutdown.
 Every failed metadata carrier joins actual worker termination; rejected termination
-retains the entry/fence. Endpoint details: [evidence](../../verification/agent-settlement-http.md).
+retains the entry/fence. Endpoint details: [evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/agent-settlement-http.md).
 These implemented local rules grant no database eligibility or physical cleanup proof.
 
 Agent settlement atomically stores a permanent immutable replay tombstone, purges the
@@ -112,7 +112,7 @@ cross-original/global writes, unexpected residuals and foreign references. Full
 rollback includes replay identity, old records and both counter families.
 DiskRetention names replayBytes explicitly, independently of live heldCount.
 The pipeline's exact tombstone replay runs before any new native work. Details and
-remaining qualification: [agent evidence](../../verification/agent-storage-settlement.md).
+remaining qualification: [agent evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/agent-storage-settlement.md).
 
 ## Backend transaction and retained owners
 
@@ -138,7 +138,7 @@ Run snapshots, attempts, events, output custody, cleanup controls and execution 
 are purged. Global mutation receipts, authoring revisions/input pins, input blobs and
 name indexes remain unchanged; none receives a claimed credit. This is logical output
 settlement, not secure erasure of all historical configuration or SQLite/WAL blocks.
-Evidence: [backend settlement](../../verification/backend-storage-settlement.md).
+Evidence: [backend settlement](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/backend-storage-settlement.md).
 
 ## Automatic reconciliation and derivative readers
 
@@ -155,7 +155,7 @@ scope/Run/attempt `deleting` or validated permanent `retired` state. Deleting jo
 Held projection errors recheck that positive capability. Stale commit/defer returns a
 retired marker only for the exact validated tombstone. Other missing/conflicting/unknown
 records remain errors. Neither marker grants native cleanup or accounting authority.
-Details: [reconciliation evidence](../../verification/settlement-driver.md).
+Details: [reconciliation evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/settlement-driver.md).
 
 ## Separate protected branches
 
@@ -184,7 +184,7 @@ Receipt replay repeats native proof. The receipt grants no refund; rejected HTTP
 discovery remains protected until settlement and composed native qualification finish.
 Standalone exports remain outside this performance settlement qualification.
 
-Local admitted-source native evidence: [settlement recovery](../../verification/native-settlement.md).
+Local admitted-source native evidence: [settlement recovery](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/native-settlement.md).
 
 ## Qualification before public deletion
 

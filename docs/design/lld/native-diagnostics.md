@@ -1,7 +1,7 @@
 # Sanitized native diagnostic history
 
 Scope: F07/F11 safe final diagnostic history, separate from lifecycle-event replay
-and [warning guidance](../../verification/k6-warning-guidance.md). Original stderr
+and [warning guidance](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/k6-warning-guidance.md). Original stderr
 replay and live native diagnostic streaming remain unsupported.
 
 ## Secret boundary

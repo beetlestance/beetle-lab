@@ -1,7 +1,7 @@
 # Attempt timeout watchdog
 
 Status: implemented and independently reviewed component;
-[local evidence](../../verification/timeout-guard.md). No native stop-latency qualification claimed.
+[local evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/timeout-guard.md). No native stop-latency qualification claimed.
 The public contract lives in `agent/src/timeout/index.ts`.
 
 The watchdog requests typed timeout or clock_integrity stops independently of

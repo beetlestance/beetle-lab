@@ -1,6 +1,6 @@
 # Verified history summary projection
 
-Status: reviewed H2 implementation; [evidence](../../verification/run-history-summary.md).
+Status: reviewed H2 implementation; [evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/run-history-summary.md).
 Metadata migration018 and native arm64 production/restart are locally verified;
 release/platform/browser qualification remains separate.
 Parent: [history queries](run-history-query.md). H3 text search remains separate.

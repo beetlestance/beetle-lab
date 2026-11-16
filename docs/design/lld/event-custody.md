@@ -1,6 +1,6 @@
 # Durable event custody
 
-Status: implemented and locally verified; [evidence](../../verification/event-custody.md)
+Status: implemented and locally verified; [evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/event-custody.md)
 records source scope and remaining complete-engine/result qualification.
 Owner: application metadata worker; runtime orchestration shares the existing
 delivery owner and private gateway. This completes event transport custody before

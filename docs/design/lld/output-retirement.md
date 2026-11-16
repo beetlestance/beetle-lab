@@ -4,7 +4,7 @@ Status: phased contract. Private retirement/native removal/receipt boundaries ar
 locally implemented; authenticated cleanup endpoint and refund remain pending. Scope: performance Run output. Standalone-export
 cleanup needs a separate purpose binding; it must not impersonate a Run.
 Owners: backend deletion intent, agent Journal, existing producer/read lifetimes,
-and one native staging/output namespace owner. [Task sequence](../../execution/output-retirement.md).
+and one native staging/output namespace owner. [Task sequence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/execution/output-retirement.md).
 
 ## Existing boundaries and missing evidence
 
