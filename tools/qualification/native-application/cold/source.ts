@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {isAbsolute} from 'node:path';
+import {candidate} from '../load/candidate.js';
+import {legacyReader} from './legacy.js';
+import {executeCold} from './execute.js';
+const [bundlePath, publication, output, context = 'default', extra] = process.argv.slice(2);
+assert(bundlePath && publication && output && [bundlePath, publication, output].every(isAbsolute) && !extra && /^v24\./.test(process.version));
+const {f} = await candidate(bundlePath, context);
+const legacy = await legacyReader(publication, f);
+await executeCold({f, output, legacy});
