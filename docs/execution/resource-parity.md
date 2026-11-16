@@ -43,6 +43,9 @@ other storage faults and platforms remain open.
 [Native engine parity](../verification/native-engine-parity.md) adds scoped ARM
 six-executor, discovery, SLO, assertion and transport outcome proofs; remaining
 data/secret/operator/platform matrices stay open.
+[ARM native shared/isolated admission](../verification/native-parallel-admission.md)
+adds exact two-organisation overlap, third-request queue/cancel and isolated release
+proof under the stock pool; other platforms/races remain separate.
 
 ## Q01 frozen scope
 
