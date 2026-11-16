@@ -130,3 +130,8 @@ active/delete/general accounting and memory-plateau acceptance remain separate.
 real defect exposed by metric-pressure qualification: remote stop intent could
 become public user cancellation. The failed trial remains failed; output/slow-reader
 qualification and a new schema29 packaged candidate remain open.
+
+[Bounded ARM pressure and stalled-reader cancellation](../verification/flood-slow-cancellation.md)
+now pass independently: actual output_limit at4MiB, and a real held content writer
+with capacity refusal,7ms cancel ACK/1.11s physical stop and unchanged oldartifact.
+This does not close repeated memory growth, telemetry overhead or the AMD latency miss.
