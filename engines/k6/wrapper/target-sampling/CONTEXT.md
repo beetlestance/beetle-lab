@@ -2,6 +2,8 @@
 
 Public entrypoint: `startTargetSampling` and exported types in `index.ts`.
 Input is a compiler-validated target and optional sampling configuration.
+Sampling paths append under the target prefix; scheme-looking path segments cannot
+change the request origin. Redirects are refused.
 Effects: one original fetch/body at a time; baseline before return, interval
 observations, cooldown observations through finish, original drain through close.
 Report contains only fixed numeric keys and fixed status/reason codes; absent or

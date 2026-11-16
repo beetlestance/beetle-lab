@@ -146,7 +146,7 @@ function migrateSettlementFunding(db:DatabaseSync,version:number):void{
       if(version<23)db.exec(migration023);
       if(version<24)db.exec(migration024);
       if(version<25)db.exec(migration025);
-      db.exec(migration026);
+      if(version<26)db.exec(migration026);
 }
 
 function registerJournalFunctions(db: DatabaseSync): void {

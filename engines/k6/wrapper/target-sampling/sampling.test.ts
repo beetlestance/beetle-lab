@@ -11,6 +11,22 @@ function json(value: unknown): Response { return new Response(JSON.stringify(val
 afterEach(() => vi.useRealTimers());
 
 describe('target sampling observations', () => {
+  it.each(['/http://169.254.169.254/metadata', '/https://outside.invalid/private', '/ftp://outside.invalid/file'])(
+    'keeps scheme-looking sampling path %s on the configured target', async path => {
+      const fetch = vi.fn<typeof globalThis.fetch>(async () => json({ rss: 1 }));
+      const owner = await startTargetSampling(options(fetch, { config: { ...config, path, cooldownMs: 0 } }));
+      try {
+        expect((await owner.finish()).samples[0]).toMatchObject({ status: 'ready' });
+        expect(fetch).toHaveBeenCalled();
+        for (const [input] of fetch.mock.calls) {
+          expect(input).toBeInstanceOf(URL);
+          const url = input as URL;
+          expect(url.origin).toBe('http://synthetic.invalid');
+          expect(url.pathname).toBe(`/base${path}`);
+        }
+      } finally { await owner.close(); }
+    });
+
   it('keeps fixed finite numeric fields and missing values unknown, with frozen results', async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(async () => json({ rss: 42, heapAlloc: -1,
       external: '5', cpuPercent: null, cppHeap: { used_size: 7 }, eventLoopDelay: { p99: 8 },

@@ -48,7 +48,10 @@ async function readBody(response: Response, signal: AbortSignal): Promise<unknow
   }
 }
 async function request(options: TargetSamplingOptions, signal: AbortSignal): Promise<unknown> {
-  const url = new URL(options.config.path.replace(/^\//, ''), `${options.target.replace(/\/$/, '')}/`);
+  const base = new URL(`${options.target.replace(/\/$/, '')}/`);
+  // Append a path, rather than resolving a URL reference that may name a scheme.
+  const url = new URL(`${base.href}${options.config.path.replace(/^\//, '')}`);
+  if (url.origin !== base.origin || url.username || url.password) throw new ObservationFailure('transport');
   const response = await (options.fetch ?? globalThis.fetch)(url, {
     method: 'GET', redirect: 'error', credentials: 'omit', signal,
   });

@@ -23,8 +23,8 @@ are indexed in [HISTORY](HISTORY.md) and retain their original source/platform s
 | Target metrics | The sampler does not map legacy GC total/average/max fields; some target data is lost despite schema-based fixture passes. |
 | Capacity changes | Raising existing installed hard limits needs a supported lifecycle operation. UI budgets cannot override the installed policy. |
 | Storage and diagnostics | Queue time counts toward the five-second worker deadline; failure is sticky. Reproduce overload and improve failure reporting while preserving uncertain-write safety. |
-| Sampler confinement | An accepted path can construct a different-origin URL. Origin confinement needs correction. |
-| Migration extension | Journal migration 026 needs its own version guard before adding later migrations. Migration 015 already has a caller guard. |
+| Sampler confinement | Corrected by appending sampling paths under the configured target and checking origin before fetch. Regression tests cover scheme-looking paths; release acceptance remains open. |
+| Migration extension | Migration 026 now has its own version guard. Prior-025 upgrade coverage passes; adding a later migration still requires its own upgrade tests. Migration 015 already has a caller guard. |
 | Publishing | Manual release authority/protection needs review. Existing legacy registry images remain available; merging source did not withdraw them. |
 | Qualification | Reconcile release criteria and hosted evidence. The retained local repeated-memory observation does not substitute for missing hosted qualification. |
 | Maintainability | Formatting, dense functions and database-row boundary validation need targeted work. A cast count alone does not prove every row is unchecked. |
