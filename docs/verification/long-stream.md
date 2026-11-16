@@ -89,5 +89,31 @@ default256 remains unchanged. A separate private4MiB no-follow/single-link repor
 reader handles the retained timing report; delivery metadata remains capped256KiB.
 Three focused fragment/report tests, types, lint, architecture/docs and independent
 review accompany the correction. This combines sustained-stream and separately
-recovered final-byte evidence. Post-idle retained-growth and native AMD64 long-run
-qualification remain open; it does not establish full Q03/Q04 acceptance.
+recovered final-byte evidence. Post-idle retained-growth remained open after that ARM trial; it does not establish full Q03/Q04 acceptance. The subsequent AMD trial is recorded below.
+
+## Complete AMD64 V2 trial
+
+Run [43809506800](https://github.com/beetlestance/beetle-lab/actions/runs/43809506800),
+clean harnessb23bb9c6, verified sourceb48936d8, passed the complete maintained
+long profile: stream, final drain, post-idle observation and both cleanup gates.
+The fixed setup ordering waited for the exact one-shot installer to finish before
+advanced writes. Prior early failures and their unknown errno remain unchanged.
+Closed proof: `.agent-work/amd64-conformance/long-public4/native-public.json`.
+
+| Fact | Native AMD64 observation |
+| --- | --- |
+| Active span |1836001.65ms (30m36s) |
+| Reader new frames |841 /842 /843 |
+| Fresh-frame spans |1827909.29 /1829360.15 /1828875.59ms, each over30m |
+| Read refusals |20 /20 /19; no uninterrupted-availability claim |
+| Physical target |1ready /1830work /0unexpected |
+| Final artifacts |All eight declared byte counts and SHA256 values verified |
+| Run endpoint |947/947 successful, p95=6.59ms |
+| Live endpoint |2526/2585 successful; successful p95=293.49ms, all p95=293.32ms |
+
+The live endpoint **missed the250ms target**. This streaming/final-drain pass does
+not clear that separate Q04 target. Agent average CPU during the stream was22.79%
+of one core under its25% quota; backend9.61%, frontend0.08%. These are descriptive
+observations, not a proven causal profile. Post-idle Docker memory peaks were
+3674112/136110080/98594816bytes for frontend/backend/agent. They are not process
+RSS or repeated-run leak proof. No deadline, quota, cadence or target was raised.

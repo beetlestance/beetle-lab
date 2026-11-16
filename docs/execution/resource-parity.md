@@ -37,7 +37,7 @@ now passes both architectures. The [actual long stream](../verification/long-str
 failed its V1 fresh-frame-span gate; quota replay records a reproduced mechanism.
 Later ARM V2 sustained-stream and separately recovered final-read proofs now pass
 their scoped gates; the original full trial remains failed at its collector, and
-post-idle growth/AMD64 long-run qualification stay open.
+post-idle growth remained open after that ARM proof. A subsequent complete AMD long trial passed the streaming/drain gates; see the scoped update below.
 [Browser interaction acceptance](../verification/browser-interactions.md) adds
 actual Chromium keyboard/theme/viewport/scope checks; broader matrices remain.
 [Bounded full-storage input recovery](../verification/bounded-disk.md) adds native
@@ -91,8 +91,8 @@ and other-platform matrices remain separate.
 
 [AMD finite conformance](../verification/native-source-conformance.md) now passes
 executor/discovery, threshold/failure, rich requests/data and shared/isolated
-admission profiles. AMD long execution remains blocked before performance work
-in advanced provisioning; it is not a stream failure or a passing long proof.
+admission profiles. Earlier AMD long trials failed before performance work in advanced provisioning.
+The later complete streaming/drain pass and separate latency miss are linked below.
 
 [Short native ARM process RSS](../verification/control-process-rss.md) now has
 separate process-level evidence under service ceilings, with three readers and
@@ -102,3 +102,10 @@ API p95 gates. It does not close AMD RSS, retained growth or telemetry compariso
 now verify all32 fixed fields, zero/null mapping, before/during/after and advisory
 HTTP/JSON misses through a hash-bound artifact. Browser/sensor/platform variants
 remain separate.
+
+The [complete AMD V2 long profile](../verification/long-stream.md) now passes
+stream/final/post-idle/cleanup gates with1830physical work and eight verified
+artifacts. Live p95293.49ms misses the separate250ms Q04 target. RSS-only AMD
+trial43810739084 failed116.735s with independent cleanup; its first closed
+projection lacked usable failure facts. Preserve that failure while improving
+fixed diagnostic projection; do not infer an RSS or latency cause yet.

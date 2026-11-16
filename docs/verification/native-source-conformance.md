@@ -53,3 +53,8 @@ corrected qualifier waits for that exact project/revision/image-bound original
 to stop with exit0/OOMfalse before writing. Two focused guard cases pass; native
 retry remains necessary. No permission is repaired or deadline extended. The old
 write error's errno was not captured, so it is not retrospectively attributed.
+
+The completed [AMD long trial43809506800](long-stream.md) subsequently passed
+stream/final/post-idle and cleanup after the setup ordering correction. Its
+live p95 target missed293.49ms versus250ms; keep that separate from stream
+acceptance. Earlier failed trials remain failed.

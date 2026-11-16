@@ -1,4 +1,5 @@
 import {expect, it} from 'vitest';
+import {rssFailure} from '../rss/failure.js';
 import {AssertionError} from 'node:assert';
 import {publicShortFailure, shortFailure} from './failure.js';
 const revision = 'a'.repeat(40); const canary = 'PRIVATE-TOKEN-/private/secret.txt';
@@ -15,4 +16,9 @@ it('never promotes claimed success, malformed identities, unknown strings or for
   results: {failure: {code: canary, site: {file: canary, line: 1, column: 1}}}}, revision);
  expect(result).toMatchObject({status: 'failed', phase: null, architecture: null, harnessNode: null, sourceRevision: null, diagnosis: {code: 'internal', site: null}});
  expect(JSON.stringify(result)).not.toContain(canary);
+});
+it('retains fixed RSS failure coordinates without command or exception values', () => {
+ const error = new AssertionError({message: canary}); error.stack = canary + '\n at summarizeRss (/private/native-application/rss/observe.ts:35:7)';
+ const value = publicShortFailure({sourceRevision: revision, results: {failure: rssFailure(error)}}, revision);
+ expect(value.diagnosis.site).toEqual({file: 'rss-observe', line: 35, column: 7}); expect(JSON.stringify(value)).not.toContain(canary);
 });

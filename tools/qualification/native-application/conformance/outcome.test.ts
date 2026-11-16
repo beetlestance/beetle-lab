@@ -58,3 +58,8 @@ it('retains only known failure phases, never arbitrary exception text or partial
  expect(publicFailure({...failed, architecture: 'arm64'}, 'long-stream', revision).evidenceAvailable).toBe(false);
  expect(publicFailure(undefined, 'long-stream', revision).evidenceAvailable).toBe(false);
 });
+it('retains a target miss as failed evidence with bounded latency facts', () => {
+ const source = {...base(), status: 'target-missed', phase: 'post-idle', results: {loaded: {apiP95Ms: 300}, private: canary}};
+ const value = publicFailure(source, 'control-rss', revision); expect(value).toMatchObject({status: 'failed', evidenceAvailable: true, cleanupVerified: true});
+ expect(value.controlFailure!.windows[1]!.p95Ms).toBe(300); expect(JSON.stringify(value)).not.toContain(canary);
+});

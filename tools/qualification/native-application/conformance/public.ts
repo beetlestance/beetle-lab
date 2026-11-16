@@ -16,7 +16,7 @@ for (const row of selected) {
  let raw: unknown;
  try {
   const path = join(root, row.id, 'outcome-private.json');
-  raw = await (kind === 'long-stream' ? readLongReport(path) : readDeliveryJson(path));
+  raw = await (['long-stream', 'rss'].includes(kind) ? readLongReport(path) : readDeliveryJson(path));
   const value = publicCase(raw, row.id, revision); assert.equal(value.harnessNode, process.version);
   if (imageIds) assert.deepEqual(value.imageIds, imageIds); else imageIds = value.imageIds;
   cases.push(value);

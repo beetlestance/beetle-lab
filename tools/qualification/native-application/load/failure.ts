@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {nativeFailure, nativeFailureCodes} from '../compose/failure.js';
-const files = ['candidate', 'measure', 'observe', 'run', 'network', 'poll'];
+const files = ['candidate', 'measure', 'observe', 'run', 'network', 'poll', 'rss-capture', 'rss-observe', 'rss-run'];
 const phases = ['startup', 'idle', 'loaded', 'post-idle'];
 function row(input: unknown): Record<string, unknown> {return input && typeof input === 'object' && !Array.isArray(input) ? input as Record<string, unknown> : {};}
 function number(input: unknown, maximum: number): number | null {return typeof input === 'number' && Number.isFinite(input) && input >= 0 && input <= maximum ? input : null;}
@@ -34,6 +34,6 @@ export function publicShortFailure(input: unknown, expectedRevision: string) {
   architecture: member(source.architecture, ['amd64', 'arm64']),
   harnessNode: typeof source.harnessNode === 'string' && /^v24\.[0-9]+\.[0-9]+$/.test(source.harnessNode) ? source.harnessNode : null,
   phase: member(source.phase, phases), rawStatus: member(source.status, ['failed', 'target-missed', 'passed']), cleanupVerified: source.cleanupVerified === true,
-  diagnosis: diagnosis(results.failure), windows: ['idle', 'loaded', 'postIdle'].map(kind => ({kind, ...window(results[kind + 'Partial'])})),
+  diagnosis: diagnosis(results.failure), windows: ['idle', 'loaded', 'postIdle'].map(kind => ({kind, p95Ms: number(row(results[kind]).apiP95Ms, 120000), ...window(results[kind + 'Partial'])})),
   limits: ['Failed or incomplete observation; no qualification claim']};
 }
