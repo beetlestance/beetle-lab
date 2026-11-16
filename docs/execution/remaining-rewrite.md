@@ -1,68 +1,46 @@
 # Remaining k6 rewrite packets
 
-Baseline:0514b74 plus the [inventory audit](../verification/inventory-audit.md).
-Scope: finish R0–R4 k6 replacement. These are completion criteria, not a claim
-that each packet requires a new framework or that all existing evidence is stale.
-Cleanup ACK/driver/recovery/settlement/protected retention are locally complete.
-The [current qualification goal](../verification/goal-qualification.md) is complete:
-current public images passed functional browser and native/pull delivery checks.
-No new Goal, push, registry publication or deployment is authorised by this page.
+Scope: finish R0–R4 k6 replacement. The [69-ID acceptance ledger](../verification/final-acceptance.md)
+is the authoritative per-feature status; this page owns the next work sequence.
+Earlier component and public-image evidence retains its exact source/platform.
+No Goal, push, registry publication or deployment is authorised by this page.
 
-## Functional implementation
+## Completed implementation and scoped qualification
 
-| Packet | Inventory | Deliverable and exit condition | Dependencies |
-| --- | --- | --- | --- |
-| B01 namespace deletion | F02,N01 | Locally implemented empty-only routes/controls, paid markers, protected references and exact replay; [evidence](../verification/namespace-deletion.md) | Nonempty recursive maintenance is not implemented |
-| B02 directory inputs | F03 | Locally implemented bounded tree intake with per-file progress, explicit conflicts/recovery and immutable replacement/pinned originals; [evidence](../verification/directory-inputs.md) | Packaged browser/platform acceptance remains; no overwrite/atomic rollback |
-| B03 suite summaries | F04,F06 | Locally implemented selected-revision target/schedule facts and latest/full exact-suite history; [evidence](../verification/suite-overview.md) | Catalogue placement deferred to UI redesign/read-model design; packaged acceptance remains |
-| B04 diagnostic custody | F07,F11 | Locally implemented bounded sanitized final history, explicit capture loss/redaction and verified viewing; [evidence](../verification/native-diagnostics.md) | Original stderr replay/live native diagnostics unsupported; packaged/full secret/cancel/retention acceptance remains |
-| B05 warning guidance | F10 | Locally implemented bounded native warning artifact and configured single-arrival guidance; [evidence](../verification/k6-warning-guidance.md) | Independent scalar-only capture; B04 raw diagnostic replay and packaged acceptance remain separate |
-| B06 organisation overview | F01 | Locally implemented whole-organisation counts/activity and capped cross-workspace recent/active links; [evidence](../verification/organization-overview.md) | Packaged browser/platform acceptance remains |
-| B07 recovery tooling | F12,F18 | Locally implemented cold archive, fresh-only historical restore/viewer and exact resume; [evidence](../verification/cold-recovery.md) | Full crash/platform/source-pull qualification remains; mutable/in-place restore unsupported by ADR016 |
+| Packet | Evidence and supported limits |
+| --- | --- |
+| B01 namespace deletion | Empty organisation/folder deletion and used-workspace retirement implemented; [current candidate](../verification/current-candidate-qualification.md) has composed actual browser proof. No recursive folder deletion |
+| B02 directory inputs | Bounded tree intake, immutable replacement, conflict/recovery and pinned originals; [browser acceptance](../verification/goal-qualification.md). No overwrite/atomic rollback |
+| B03 suite summaries | Selected-revision facts and exact-suite history plus browser authoring/history proof. Catalogue redesign deferred |
+| B04 diagnostic custody | [Native sanitized final diagnostics](../verification/native-diagnostics.md), [secret canaries](../verification/native-secrets.md). Original/live stderr unsupported |
+| B05 warning guidance | [Native warning/configured guidance](../verification/k6-warning-guidance.md) plus source/UI cases; heuristic, no automatic capacity change |
+| B06 organisation overview | Whole-organisation rollups and scoped browser navigation; candidate retirement has additional proof |
+| B07 recovery tooling | Native active recovery, cold read-only history and exact restore-operation resume; [current schema29 ARM/old-reader refusal](../verification/current-candidate-qualification.md). Mutable restore unsupported |
+| B09 browser/automation | Twelve actual public-image functional phases plus keyboard/themes/viewports/cross-scope/download checks; candidate retirement proof is composed separately |
+| B10 image delivery | Public72243a87 both-native scans/SBOM/license, immutable publication, anonymous pulls/install; currentcf44e96a CI/archive qualification passed without publication |
 
-B01 uses explicit empty-only deletion, preserving epochs and replay identities.
-Selected namespace deletion, warning guidance and dashboard/history implementation is locally complete.
-Never infer cascade authority from the existence of a DELETE route.
-B02–B06 have separate owners after contracts freeze; B05 captures scalar warnings
-without depending on B04 raw diagnostic retention.
-B07 has its own authority/state owner and must not share SQL edits with B01.
-Root implements directly by default, with required independent review for dangerous
-contracts. Do not spawn an idle pool. Keep one native/build/measurement lane.
+## Remaining sequence
 
-## Acceptance and delivery
+| Packet | Concrete exit condition |
+| --- | --- |
+| B11 performance | Resolve or explicitly obtain acceptance of AMD long live p95293.49ms versus250ms, and repeated-run agent RSS growth. Current-candidate long observation43883876529 follows changed workspace HTTP guard; do not duplicate queued work |
+| B08 final reconciliation | Independently review all36 F/N, nine A and24 V entries against authoritative source/native/browser evidence, reconcile stale status and record supported limitations; close B11 before claiming full R0–R4 acceptance |
 
-| Packet | Deliverable and exit condition | Depends on |
-| --- | --- | --- |
-| B08 acceptance closure | Map all 36 F/N IDs, A01–A09 and V01–V24 to exact cases/evidence; historical fixture triage now local ([evidence](../verification/migration-fixtures.md)); [combined local gate](../verification/integrated-acceptance.md) now covers all 987 files; packaged/native A/V gaps remain explicit | Functional packets; audit is the starting ledger, not closure |
-| B09 packaged browser/automation | Real fresh local session, authoring/inputs, execute/cancel/reconnect, metrics/history/compare/report/export/delete/settings; keyboard/themes/viewports, save/hash and cross-scope checks | Stable product and matching candidate images |
-| B10 rewrite delivery pipeline | [Candidate native CI](../verification/candidate-image-ci.md) builds/smokes separate frontend/backend/agent/k6/export/setup images; source/pull Compose use immutable matching identities; preserve existing gates; configure scans/SBOM/license evidence | Existing recipes/source Compose; hosted execution/publication needs applicable authority |
-| B11 release matrix | [Guard reliability and other blockers](../verification/qualification-blockers.md); native amd64/arm64 backend/agent/engines; enforced controls, bounded flood/soak, idle/loaded/telemetry overhead, disk failure and supported backup/restore/rollback; R0–R4 evidence signed off | B07–B10, actual native runners/tools |
-
-B10's updated candidate passed source run `43684837244`, delivery `43688603429`
-and all twelve actual public-image browser phases. Existing local GitHub access
-published its matching installer, and anonymous asset byte/hash readback passed.
-See the [qualification audit](../verification/goal-qualification.md). Legacy
-publication/default tags remain separate; do not replace them from candidate proof.
-Both native Linux architectures passed the packaged API/run/export/restart flow.
-Actual Chromium on unmodified ARM64 images passed all twelve B09 functional phases
-with cleanup. [Keyboard/theme/viewport and browser wrong-scope/cache checks](../verification/browser-interactions.md)
-now passed separately. Broader abuse and B11 resource/recovery cases remain; native
-API checks do not cover browser behavior. [Resource/parity packets](resource-parity.md)
-record the later kernel/recovery/disk/engine proofs and remaining gaps.
+[Resource/parity](resource-parity.md) and [qualification status](../verification/qualification-blockers.md)
+link native CPU/OOM/PID/descendant controls, active recovery, bounded full disk,
+flood/slow-reader cancellation, long stream, cardinality, cold restore and both-native
+telemetry. A passing workload is not a leak-free proof. No numeric gate is raised
+or failed trial relabelled by documentation edits.
 
 ## Cost and verification discipline
 
-Use scoped cases while implementing. Freeze relevant inputs/checks before each
-integration; retain failed evidence and rerun only affected checks after corrections.
-Reuse reviewed native recovery rather than repeating it for documentation changes.
-B08 owns the eventual integrated full gate; historical fixture triage does not
-replace it or assert its current whole-suite count. No new time estimate follows from this audit.
-
-Each task records base/dirty state, contract ownership, files, source identity,
-commands/exits/durations, review, limits and next ready packet. Remove its branch/
-worktree after accepted local integration. Preserve user data/services and8080/8081.
-No target load, external publication or user-service restart is implied.
+Implement directly by default; required independent review applies to dangerous
+boundaries. Keep one local heavy lane, reuse exact relevant evidence and rerun only
+checks invalidated by corrections. No new native permutation matrix or qualification
+framework is required. Retain failure facts and exact source/platform/input identities.
+Remove merged clean task branches/worktrees and preserve user services/data8080/8081.
+Current candidate publication/default changes remain separate from qualification.
 
 After functional closure, separately audit and plan the full UI redesign.
 Playwright, mutation testing, case generation, PostgreSQL/S3 and hosted IAM remain
-R5–R7/follow-on scope; they do not block this k6 replacement release.
+follow-on scope; they do not block this k6 replacement release.

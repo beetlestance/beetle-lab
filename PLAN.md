@@ -67,37 +67,28 @@ Native live activation uses [trusted image capability](docs/decisions/014-live-m
 
 | Work | Required completion |
 | --- | --- |
-| Namespace deletion | Empty-only deletion locally implemented; nonempty recursive maintenance unsupported; packaged acceptance remains |
-| Input/config parity | Directory-tree upload and immutable replacement acceptance remain; selected-revision summary/exact-suite history are locally implemented |
-| Diagnostics/warnings | Native warning classification/configured advice locally implemented; bounded raw diagnostic retention/replay remains |
-| Overview | Workspace and whole-organisation rollups locally implemented; packaged/platform acceptance remains |
-| Recovery | Cold tooling locally implemented; remaining active-delivery/crash, native-platform and release qualification |
-| Acceptance | Every F/N inventory ID and V failure case needs source-bound acceptance; resolve recorded failures |
-| Qualification | Final source/pull installs, matching images/CI, browser/automation, native amd64/arm64, scans, soak, overhead and rollback |
+| Functional parity | All36 F/N IDs and A01–A09/V01–V24 are mapped in the [69-ID ledger](docs/verification/final-acceptance.md); final independent reconciliation remains |
+| Performance | AMD long live p95293.49ms exceeds250ms; repeated-run agent RSS stabilisation remains unproved. Gates are unchanged |
+| Current candidate | [cf44e96a](docs/verification/current-candidate-qualification.md) passed full CI/both-native image jobs, ARM schema29 cold history and composed browser retirement; it is not the published default |
+| Release acceptance | Close the performance blockers and final evidence review; retain exact image/schema/platform scope and documented limitations |
 
-The [inventory audit](docs/verification/inventory-audit.md) covers all36 F/N IDs
-without promoting component evidence to release acceptance. The ordered
-[remaining backlog](docs/execution/remaining-rewrite.md) owns concrete exit conditions.
-Cleanup/settlement/protected retention are locally complete; their platform/image
-limits remain release work. Input/revision pins are preserved; no Run-pin UI is
-claimed. Parent retention is live/partial, with explicit workspace Apply.
-Functional closure remains separate from the deferred UI redesign.
+The [remaining backlog](docs/execution/remaining-rewrite.md) and
+[qualification status](docs/verification/qualification-blockers.md) link concrete
+proof. Public72243a87 has both-native anonymous-pull delivery and actual browser
+acceptance; current candidate qualification is recorded separately. Original/live
+stderr replay, recursive folder deletion and mutable restore are unsupported.
+Input/revision pins remain; no Run-pin UI is claimed. The full UI redesign follows
+functional closure as a separate plan.
 
 ## Local first-use corrections
 
-- [Ordinary source Compose](docs/verification/compose-first-boot.md) now provisions
-  empty state, automatic access and both engines without the custom launcher.
-  Actual arm64 first boot, k6/export, second up and restart are locally verified;
-  published pull-install and the release matrix remain pending.
-- [Automatic local access](docs/verification/local-auto-session.md) is implemented:
-  loopback browser sessions need no token, persist for their remaining8h lifetime
-  across restart, and retain exact origin/CSRF checks. The paired profile is explicit;
-  final packaged-browser qualification remains pending.
-
-Large input bodies and the initial optional target collector are now locally verified;
-see [feature evidence](docs/verification/large-bodies-target-observations.md).
-Target observation views are locally implemented; packaged browser/native and
-release qualification remain pending.
+Ordinary source Compose provisions empty state and automatic loopback sessions
+without manual pairing. Public image-pull installation and packaged browser checks
+passed at their recorded identities. Sessions retain origin/CSRF checks and their
+remaining8h lifetime across restart; the paired profile remains explicit.
+Large-body and optional target-observation evidence is linked from the
+[69-ID ledger](docs/verification/final-acceptance.md), including the manual-reload
+limitation. These scoped passes do not close the remaining performance blockers.
 
 ## Delivery order
 

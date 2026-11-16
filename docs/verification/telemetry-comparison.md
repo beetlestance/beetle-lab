@@ -48,7 +48,7 @@ fixture cleanup neither refunds storage reservations nor proves retention.
 Native ARM trial completed in221.802s with normal and independent cleanup checks.
 The closed local projection was validated against original reports. Private raw
 reports and frozen input hashes remain outside public artifacts. Only a validated
-field whitelist is eligible for CI upload. AMD qualification remains pending.
+field whitelist is eligible for CI upload. Native AMD results follow below.
 
 ## Retained failures and reuse
 
@@ -59,7 +59,7 @@ to a whole-trial pass. Corrected packaging, catalog and report paths have focuse
 regressions. Final workflow/projection and report metadata edits do not change
 the ARM5 measurement program; the accepted measurement inputs remain retained.
 
-Q04 remains open for native AMD comparison and the separate long-stream latency
+Q04 remains open for the separate long-stream latency
 miss. [Repeated memory](repeated-memory-analysis.md) is an independent question.
 
 The first AMD trial, CI43866634905, failed after41.851s with independent cleanup
@@ -89,3 +89,20 @@ fixture now counts that refusal while retaining the two-fresh-frames-per-reader
 and wall-time gates. Fixed source locations and bundle digest are retained for
 future failed-trial diagnosis without uploading raw exceptions. No cause is
 retroactively assigned to the earlier failed trial.
+
+## Native AMD result
+
+[CI43877241094](https://github.com/beetlestance/beetle-lab/actions/runs/43877241094)
+passed all ten trials,40,000 physical requests and independent cleanup with clean
+harnessfeb0369e and sourceb48936d8 images. Four measured pairs were
+12,559/12,561;12,522/12,488;12,449/12,575;12,577/12,549ms (off/on).
+Summed wall times50,107/50,173ms give **0.132%** additional wall against5%.
+Mean per-trial agent CPU was23.582% off/23.769% on of one logical CPU; peak
+summed RSS141.523/141.273MiB. This does not prove negative memory overhead,
+spare CPU capacity or absence of leaks.
+
+The external hosted oracle ran as UID0; agent PID1 remained UID1000 with unchanged
+limits. This has the same component-assembly scope as ARM, not installed off-mode
+or backend HTTP proof. The accepted agent/contracts/engine sources, dependency
+lock and container recipes are unchanged in candidatecf44e96a. Earlier failures
+above remain failures with their original diagnostic limits.
