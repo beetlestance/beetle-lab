@@ -1,4 +1,5 @@
 export function sourceCases(kind: string) {
+ if (kind === 'rss') return [{id: 'control-rss', script: 'rss/run.ts', args: [] as string[], timeoutMs: 600000}];
  if (kind === 'long-stream') return [{id: 'long-stream', script: 'soak/run.ts', args: [] as string[], timeoutMs: 2160000}];
  if (kind !== 'conformance') throw Error('Unknown native source profile');
  return [

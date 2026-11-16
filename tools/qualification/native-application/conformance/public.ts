@@ -30,5 +30,5 @@ const independentCleanupVerified = process.env.BEETLE_CONFORMANCE_CLEANUP === 's
 const status = valid && !harnessDirty && executionSucceeded && independentCleanupVerified ? 'passed' : 'failed';
 await writeFile(destination, JSON.stringify({format: 'beetle-native-source-conformance', version: 1, status, profile: kind, sourceRevision: revision,
  architecture: 'amd64', harnessRevision, harnessDirty, executionSucceeded, independentCleanupVerified, cases,
- limits: ['Synthetic finite cases only; no general availability or telemetry overhead claim', 'Memory is Docker usage, not process RSS']}, null, 2), {flag: 'wx', mode: 0o600});
+ limits: ['Synthetic finite cases only; no general availability or telemetry overhead claim', 'Memory facts retain their Docker-usage or process-RSS scope']}, null, 2), {flag: 'wx', mode: 0o600});
 if (status !== 'passed') process.exitCode = 1;

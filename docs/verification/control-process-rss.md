@@ -37,3 +37,8 @@ Types, lint, architecture/docs and independent source review passed.
 Scope: one short ARM run. Post-idle RSS remained above the initial idle peak;
 no repeated-run plateau, no-retained-growth or telemetry off/on<=5% conclusion
 is inferred. AMD RSS and those separate Q04 measurements remain open.
+
+The read-only CI `rss-amd64` source profile selects this case alone, using the
+qualified source archive and independent cleanup. Its public projection validates
+ordered/bounded points, recomputes all nine summaries and retains the strict
+short-control latency/readers/work checks. Native AMD results are pending.

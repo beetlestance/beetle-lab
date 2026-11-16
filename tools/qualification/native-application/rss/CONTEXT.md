@@ -13,3 +13,8 @@ not unique physical memory or cgroup usage. No process ID/command is published.
 
 This is short RSS evidence, not a telemetry on/off comparison, retained-growth
 proof or a30-minute qualification. Preserve misses and private full reports.
+
+public.ts revalidates point bounds/roles/times and recomputes the nine summaries;
+CI projects them alongside the existing strict short-control outcome. rss-amd64
+selects only this missing native case; raw PID/command or private reports are never
+uploaded. Source staging and independent cleanup gates remain unchanged.
