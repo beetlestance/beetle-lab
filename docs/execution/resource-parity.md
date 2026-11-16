@@ -51,6 +51,9 @@ adds four file hashes, static route checks and shipped skill notices.
 [ARM source-candidate cold history](../verification/source-cold-history.md) adds
 foreign-resume conflict and verified older historical-reader compatibility; no
 mutable or future-incompatible rollback is implied.
+[ARM native request/data conformance](../verification/native-request-data.md) adds
+five methods, immutable bodies, CSV/JSON/inline/range coherence, all ten assertion
+operators and readiness retry; secrets and other-platform matrices remain open.
 
 ## Q01 frozen scope
 
