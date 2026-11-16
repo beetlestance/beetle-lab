@@ -43,12 +43,12 @@ it('never upgrades uncertain launch dispatches to stopped collection or released
 });
 it('does not release when outputs report failure before original IO quiesces', async () => {
   const e = await f.setupController(); await e.controller.launch(budget());
-  const quiet = deferred<void>(); let closeCalls = 0;
-  e.setOutput(() => ({ result: Promise.resolve({ ok: false, reason: 'integrity' }), quiesced: quiet.promise,
-    close: async () => { closeCalls++; await quiet.promise; } }));
+  const quiet = deferred<void>(); const started = deferred<void>(); let closeCalls = 0;
+  e.setOutput(() => { started.resolve(); return ({ result: Promise.resolve({ ok: false, reason: 'integrity' }), quiesced: quiet.promise,
+    close: async () => { closeCalls++; await quiet.promise; } }); });
   e.time.advance(1); e.backend.observation = e.backend.known('exited').value;
   const collecting = e.controller.tick(budget());
-  await new Promise(resolve => setTimeout(resolve, 25));
+  await started.promise;
   expect(e.collections).toHaveLength(1); expect(closeCalls).toBe(0);
   expect(reserved(await e.journal.admission({ kind: 'reservation', key: e.key })).status).toBe('charged');
   await expect(e.controller.tick(budget())).rejects.toMatchObject({ reason: 'busy' });

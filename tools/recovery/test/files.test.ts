@@ -1,3 +1,4 @@
+import {storageFixture} from '../../../app/test/storage/fixture.js';
 import * as fsSync from 'node:fs';
 import { constants } from 'node:fs';
 import { mkdtemp, realpath, rm, writeFile, readFile } from 'node:fs/promises';
@@ -8,6 +9,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { RecoveryIO } from '../src/io.js';
 import { copyFile } from '../src/files.js';
 import { copyDatabase } from '../src/database.js';
+const storage=storageFixture();
 const roots: string[] = [];
 afterEach(async () => {vi.restoreAllMocks(); await Promise.all(roots.splice(0).map(root => rm(root, {recursive: true, force: true})));});
 async function root() {const value = await realpath(await mkdtemp(join(tmpdir(), 'beetle-recovery-io-'))); roots.push(value); return value;}
@@ -32,16 +34,19 @@ it('keeps close originals held after cancellation and never releases on the abor
 });
 it('takes a consistent SQLite backup and removes active browser credentials only in the copy', async () => {
   const path = await root(); const source = join(path, 'source.sqlite'); const destination = join(path, 'copied.sqlite');
-  const db = new DatabaseSync(source); db.exec('CREATE TABLE local_browser_session(id,session_json); CREATE TABLE retained(id); INSERT INTO retained VALUES(7); PRAGMA user_version=27;');
-  db.prepare('INSERT INTO local_browser_session VALUES(1,?)').run('PRIVATE_COOKIE_CANARY'); db.close();
+  const metadata=await storage.open(source);
+  const session={cookie:'PRIVATE_COOKIE_CANARY'.padEnd(43,'x'),csrfToken:'b'.repeat(43),issuedAt:'2026-11-12T00:00:00.000Z',expiresAt:'2026-11-12T08:00:00.000Z'};
+  await metadata.localSessions.save(0,session);await storage.close(metadata);
+  const db = new DatabaseSync(source); db.exec('CREATE TABLE retained(id); INSERT INTO retained VALUES(7);');
+  db.close();
   const owner = io();
   try {
-    const receipt = await copyDatabase(owner, source, destination, 1048576, 'metadata'); expect(receipt.bytes).toBeGreaterThan(0);
+    const receipt = await copyDatabase(owner, source, destination, 4194304, 'metadata'); expect(receipt.bytes).toBeGreaterThan(0);
     const copied = new DatabaseSync(destination, {readOnly: true});
     try {expect(copied.prepare('SELECT id FROM retained').get()?.id).toBe(7); expect(copied.prepare('SELECT * FROM local_browser_session').all()).toEqual([]);}
     finally {copied.close();}
     const original = new DatabaseSync(source, {readOnly: true});
-    try {expect(original.prepare('SELECT session_json FROM local_browser_session').get()?.session_json).toBe('PRIVATE_COOKIE_CANARY');}
+    try {expect(JSON.parse(String(original.prepare('SELECT session_json FROM local_browser_session').get()?.session_json))).toEqual(session);}
     finally {original.close();}
   } finally {await owner.closeAll();}
 });

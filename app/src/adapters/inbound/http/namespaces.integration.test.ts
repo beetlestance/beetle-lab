@@ -129,7 +129,7 @@ it('never publishes another scope when a broken reader mutates request authority
   }
 });
 
-it('guards empty-only deletion and replays the exact response after the live namespace is gone',async()=>{
+it('retires a workspace with exact replay while retained safety records protect its organisation',async()=>{
  const {server,org,workspace}=await setup();const owner=await org('Delete team','delete-team');const project=await workspace(owner.id);
  const url=`/api/v2/organizations/${owner.id}/workspaces/${project.id}`;
  const payload={scope:project.scope,requestId:requestId(),expectedVersion:project.version};
@@ -140,7 +140,8 @@ it('guards empty-only deletion and replays the exact response after the live nam
  expect((await server.inject({url,headers:auth})).statusCode).toBe(404);
  const removed=await server.inject({method:'DELETE',url:`/api/v2/organizations/${owner.id}`,headers:auth,
   payload:{scope:{kind:'installation'},requestId:requestId(),expectedVersion:owner.version}});
- expect(removed.statusCode).toBe(200);
+ expect(removed.statusCode).toBe(409);
+ expect((await server.inject({url:`/api/v2/organizations/${owner.id}`,headers:auth})).statusCode).toBe(200);
 });
 
 it('recovers a committed DELETE after TCP reply loss and compiled-worker reopen',async()=>{

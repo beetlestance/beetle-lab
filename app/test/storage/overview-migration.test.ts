@@ -38,7 +38,7 @@ it('upgrades genuine source migration15 to16, preserves all tables/data and sele
  const before=tables.map(table=>db.prepare(`SELECT * FROM "${table}"`).all());db.close();const upgraded=initialize(path);
  try{
   expect(upgraded.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
-  expect(tables.map(table=>upgraded.prepare(`SELECT * FROM "${table}"`).all())).toEqual(before);expect(upgraded.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+  expect(tables.map(table=>upgraded.prepare(`SELECT * FROM "${table}"`).all())).toEqual(tables.map((table,index)=>table==='workspaces'?before[index]!.map(row=>({...row,retired:0})):before[index]));expect(upgraded.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
   const plan=(extra:string)=>upgraded.prepare(`EXPLAIN QUERY PLAN SELECT id,suite_id,revision_id,requested_at,state,outcome FROM runs WHERE organization_id=? AND workspace_id=? ${extra} ORDER BY requested_at DESC,id DESC LIMIT 20`).all(uuid(1),uuid(2)).map(row=>row.detail).join(' ');
   expect(plan('')).toContain('runs_overview_recent');expect(plan("AND state='active'")).toContain('runs_overview_active');
   expect(plan('')).not.toContain('TEMP B-TREE');expect(plan("AND state='active'")).not.toContain('TEMP B-TREE');

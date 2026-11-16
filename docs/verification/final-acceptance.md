@@ -18,7 +18,7 @@ workspace controls. Agent/contracts/k6, dependency lock and container recipes ar
 unchanged. Their recorded proofs are reused; this does not requalify changed
 backend/UI behavior. The new candidate must qualify those changes and fresh/cold
 schema29 operation. Source501a8b74 CI43867870066 has an AMD active-recovery failure;
-[reviewed workload correction](active-recovery.md) awaits qualification.
+[reviewed workload correction](active-recovery.md) and [schema29 fixture corrections](candidate-schema29-fixtures.md) await candidate qualification.
 
 Deterministic cases establish boundary/race semantics; actual native execution
 establishes supported Docker/k6 composition. A failure permutation does not require

@@ -21,7 +21,8 @@ function protectedConnection(db: DatabaseSync): void {
 function expectReopenedFacts(db: DatabaseSync, before: ReturnType<typeof rows>): void {
   expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
   const priorNames = new Set(before.map(row => row.name)); const current = rows(db);
-  expect(current.filter(row => priorNames.has(row.name))).toEqual(before);
+  expect(current.filter(row => priorNames.has(row.name))).toEqual(before.map(table=>table.name==='workspaces'
+    ? {...table,rows:table.rows.map(row=>({...row,retired:0}))}:table));
   const empty = ['backend_cleanup_controls', 'backend_output_cleanup_acks', 'backend_retired_runs',
     'namespace_deletions', 'retention_progress', 'retention_snapshots', 'retention_workspace_epochs'];
   const expected = [...empty, 'backend_replay_storage', 'retention_storage'].sort();
