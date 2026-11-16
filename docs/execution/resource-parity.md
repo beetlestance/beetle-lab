@@ -93,3 +93,7 @@ and other-platform matrices remain separate.
 executor/discovery, threshold/failure, rich requests/data and shared/isolated
 admission profiles. AMD long execution remains blocked before performance work
 in advanced provisioning; it is not a stream failure or a passing long proof.
+
+[Short native ARM process RSS](../verification/control-process-rss.md) now has
+separate process-level evidence under service ceilings, with three readers and
+API p95 gates. It does not close AMD RSS, retained growth or telemetry comparison.
