@@ -1,11 +1,12 @@
 # beetle-lab
 
-A testing workbench by Beetlestance. Currently supports configurable HTTP performance tests powered by k6, live metrics, saved reports, and run comparisons.
+A local testing workbench by Beetlestance, with configurable k6 performance tests,
+isolated execution, live metrics, durable results, comparison and reports.
 
-## Rewrite source checkout
+## Run locally
 
-On `rewrite/integration`, Docker Compose builds and starts the separate frontend,
-backend, agent and engine images:
+Docker Compose builds and starts separate frontend, backend, agent and engine
+images. Linux containers on amd64 and arm64 are supported.
 
 ```sh
 docker compose up --build -d
@@ -13,91 +14,50 @@ docker compose up --build -d
 
 Open http://127.0.0.1:4567. Local browser access is automatic. Private installation
 state, tests and results persist under `.beetle/`; keep that directory between
-starts. Use `docker compose down` to stop this installation. `BEETLE_HOME` can
-select another absolute canonical directory before the first start; an existing
-installation keeps its image pins and identity.
+starts. Stop the installation with `docker compose down`. `npm start` runs the
+same Compose startup command. The advanced recipe is `compose.rewrite.yml`.
 
-The source recipe requires Linux Docker containers (amd64 or arm64) and access to
-the Docker socket. [First-boot design](docs/design/lld/compose-first-boot.md) explains
-ownership and refusal of partial/conflicting state. This branch is still under
-qualification; the published `latest` image below is the previous application.
-Advanced configuration remains in `compose.rewrite.yml`; the old Compose recipe
-is retained as `compose.legacy.yml`.
+`BEETLE_HOME` can select another absolute canonical directory before the first
+start. Existing installations preserve image pins, identity and data. Changing
+installed static capacity is a separate lifecycle operation; editable run settings
+cannot exceed the installed engine policy. Docker socket access is a trusted local
+execution boundary. The UI port is loopback-only; backend and agent ports are private.
+For local Docker Desktop targets, use `http://host.docker.internal:PORT`.
 
-## Published application
+## Images and releases
 
-```sh
-docker run --rm -p 127.0.0.1:4567:4567 \
-  -v beetle-lab-data:/app/configs \
-  ghcr.io/beetlestance/beetle-lab:latest
-```
+The previous single-container application has been retired from source and CI.
+Previously published `ghcr.io/beetlestance/beetle-lab:latest` images contain that
+application; this change does not replace or revoke existing registry artifacts.
+Use source Compose above. Do not use the old single-container installation recipe.
 
-Open http://localhost:4567. Test configurations and results persist in the named volume. The app is intended for a trusted local environment and does not include authentication.
+Rewrite delivery builds six matching component images for both architectures,
+with native execution, vulnerability scans, SBOM/license reports and archive
+round-trip checks. Publication uses the explicit qualified-delivery workflow;
+ordinary pushes no longer publish the retired image. Immutable rewrite candidate
+releases remain separate from promoting a new public default.
 
-For local targets from Docker Desktop, use `http://host.docker.internal:PORT` in your config. Inside a container, `localhost` refers to that container.
+## Development and verification
 
-## Previous application development
-
-Install Node.js 22 or later and k6, then:
+Use Node.js24.12 or later for source development:
 
 ```sh
 npm ci
-npm run dev
-```
-
-Create a bucket in the UI and upload a JSON configuration:
-
-```json
-{
-  "target": "http://localhost:8080",
-  "executor": "shared-iterations",
-  "vus": 1,
-  "iterations": 10,
-  "maxDuration": "30s",
-  "thresholds": { "checks": ["rate==1"] },
-  "endpoints": [
-    { "name": "health", "path": "/health", "checks": { "status": 200 } }
-  ]
-}
-```
-
-See the built-in **Docs** and **Integrations** pages for scenarios, data sources, assertions, runtime sampling, and the HTTP/WebSocket API.
-
-```sh
 npm run check
 npm test
 ```
 
-The API tests run in a temporary directory and do not modify your configs or send load to external services.
+`npm run dev` starts Compose in the foreground; `npm run dev:web` runs the Vite
+frontend developer server. Native image checks run in GitHub CI. Test fixtures
+use synthetic data and do not require an external production service.
 
-## CI and container images
+See the [documentation map](docs/README.md), [69-ID acceptance ledger](docs/verification/final-acceptance.md)
+and [finite qualification closeout](docs/verification/qualification-closeout.md).
+The functional rewrite is qualified within the recorded source/platform limits.
+A full UI redesign is separate work. Playwright, mutation testing, test generation
+and hosted IAM are follow-on phases.
 
-GitHub Actions checks JavaScript syntax, runs API integration tests, builds the Docker image, and executes a small k6 smoke test against the container itself. Pull requests validate without publishing.
+## License and attribution
 
-Successful pushes publish Linux amd64 and arm64 images to `ghcr.io/beetlestance/beetle-lab`:
-
-- `main`: `latest`, `main`, and a commit SHA tag.
-- `develop`: `develop` and a commit SHA tag.
-- Version tags such as `v1.1.0`: `1.1.0`, `1.1`, and a commit SHA tag.
-
-Publishing uses the repository's built-in `GITHUB_TOKEN`; no Docker Hub credentials are needed. GHCR package visibility must be Public for anonymous pulls.
-
-## Scope
-
-Browser E2E, test generation, mutation testing, a dedicated CI CLI, and TypeScript migration are future work; the current execution engine is k6.
-
-## License
-
-[MIT](LICENSE). Bundled runtime dependencies retain their own licenses.
-
-
-## Attribution
-
-Originally developed by Beetlestance as beetle-lab.
-
-If you build a fork or derivative, a README credit is appreciated:
-
-> Based on [beetle-lab](https://github.com/beetlestance/beetle-lab) by Beetlestance.
-
-This README credit is optional. The copyright and license notice requirements
-in the [MIT License](LICENSE) apply.
+[MIT](LICENSE). Bundled dependencies retain their own licenses. README attribution
+is appreciated for forks: Based on beetle-lab by Beetlestance.

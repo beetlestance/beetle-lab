@@ -1,7 +1,7 @@
 # Documentation map
 
-The design describes a proposed rewrite. The root README describes the current
-released application until the rewrite is qualified.
+The root README describes the current Compose application. Historical legacy source
+links pin their original revision; qualification evidence retains its image/platform scope.
 
 | Need | Read | Authority |
 | --- | --- | --- |

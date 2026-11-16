@@ -71,7 +71,7 @@ Native live activation uses [trusted image capability](docs/decisions/014-live-m
 source/native/browser qualification and independent review. Current AMD long live
 p95193.16ms passes unchanged250ms; current repeated memory observes no retained
 RSS growth after four runs/32s idle, and both-native telemetry passes5%.
-Historical failures and supported limits remain explicit. Public/default72243a87
+Historical failures and supported limits remain explicit. Published rewrite candidate72243a87
 is unchanged; currentcf44e96a publication/default changes remain separate.
 Original/live stderr, recursive folder deletion and mutable restore are unsupported.
 The full UI redesign follows functional closure as a separate plan.

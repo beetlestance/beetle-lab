@@ -8,7 +8,7 @@ function fixture() {
   const run = {id: 17, workflow_id: 23, repository: repo, head_repository: {...repo},
     path: '.github/workflows/ci.yml', event: 'workflow_dispatch', head_branch: 'rewrite/integration',
     head_sha: expected.revision, run_attempt: 1, status: 'completed', conclusion: 'success'};
-  const names = ['ci/source', 'ci/legacy-container', 'ci/checks', 'ci/container',
+  const names = ['ci/source', 'ci/checks', 'ci/container',
     'ci/rewrite-container (amd64)', 'ci/rewrite-container (arm64)',
     ...Array.from({length: 6}, (_, index) => `ci/tests (${index + 1}/6)`)];
   const jobs = {total_count: names.length, jobs: names.map(name => ({name, run_id: 17,

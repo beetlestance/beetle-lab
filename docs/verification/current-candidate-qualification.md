@@ -4,7 +4,7 @@ Candidate `cf44e96ad658462047fdba51cc8858cf614571bd` passed
 [CI43872965435](https://github.com/beetlestance/beetle-lab/actions/runs/43872965435):
 all six test shards, source/legacy checks, both native image jobs and both
 aggregates. Immutable archives include scans, SBOM/license and round-trip checks.
-Publication was skipped. Public/default release72243a87 remains unchanged.
+Publication was skipped. Published rewrite candidate72243a87 remains unchanged.
 
 Harness `feb0369e` has identical app/web/agent/contracts/engine sources, lockfile
 and container inputs to this candidate; intervening changes affect qualification

@@ -2,7 +2,7 @@ import {revisionIdentity, maximumArtifactZipBytes} from './identity.js';
 
 const repository = 'beetlestance/beetle-lab';
 const branch = 'rewrite/integration';
-const gates = ['ci/source', 'ci/legacy-container', 'ci/checks', 'ci/container',
+const gates = ['ci/source', 'ci/checks', 'ci/container',
   'ci/rewrite-container (amd64)', 'ci/rewrite-container (arm64)',
   ...Array.from({length: 6}, (_, index) => `ci/tests (${index + 1}/6)`)];
 const kinds = ['images', 'native', 'supply-chain', 'roundtrip'] as const;

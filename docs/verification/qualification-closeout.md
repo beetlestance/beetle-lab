@@ -30,7 +30,7 @@ Original/live stderr, recursive folder deletion and automatic thermal readiness
 remain unsupported. Deferred UI redesign, engines, hosted IAM and legacy migration
 are outside this finite goal.
 
-Public/default release72243a87 is unchanged. Candidatecf44e96a has qualified
+Published rewrite candidate72243a87 is unchanged. Candidatecf44e96a has qualified
 immutable archives, scans/SBOM/license and native execution; it has not replaced
 the public default. New publication/default changes require their own authority.
 User services/data were preserved; faults used synthetic owned storage/containers,

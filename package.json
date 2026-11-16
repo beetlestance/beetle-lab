@@ -1,17 +1,16 @@
 {
   "name": "beetle-lab",
   "version": "1.1.0",
-  "description": "Local web UI for k6-based HTTP load testing. Upload a config JSON, run, watch live charts and logs.",
+  "description": "Local container-based testing workbench with isolated k6 engines.",
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
+    "start": "docker compose up --build -d",
+    "dev": "docker compose up --build",
     "dev:web": "vite --config web/vite.config.ts --host 127.0.0.1",
     "build:web": "vite build --config web/vite.config.ts",
-    "check": "node scripts/check.mjs",
-    "test": "npm run test:legacy && npm run test:v2",
-    "test:legacy": "node --test test/api.test.js",
+    "check": "npm run typecheck && npm run lint && npm run check:architecture && npm run check:docs",
+    "test": "npm run test:v2",
     "test:v2": "vitest run",
     "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p web/tsconfig.json --noEmit && tsc -p engines/k6/tsconfig.runtime.json --noEmit",
     "lint": "node --import tsx tools/lint.ts",
@@ -36,10 +35,6 @@
   },
   "engines": {
     "node": ">=24.12.0"
-  },
-  "dependencies": {
-    "express": "4.22.3",
-    "ws": "8.21.0"
   },
   "license": "MIT",
   "repository": {
