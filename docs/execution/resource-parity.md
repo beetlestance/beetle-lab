@@ -97,3 +97,8 @@ in advanced provisioning; it is not a stream failure or a passing long proof.
 [Short native ARM process RSS](../verification/control-process-rss.md) now has
 separate process-level evidence under service ceilings, with three readers and
 API p95 gates. It does not close AMD RSS, retained growth or telemetry comparison.
+
+[Native ARM target-reported observations](../verification/native-target-runtime.md)
+now verify all32 fixed fields, zero/null mapping, before/during/after and advisory
+HTTP/JSON misses through a hash-bound artifact. Browser/sensor/platform variants
+remain separate.
