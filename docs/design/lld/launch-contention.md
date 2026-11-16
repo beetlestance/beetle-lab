@@ -1,7 +1,7 @@
 # Launch intent under bounded journal reads
 
 Status: implemented, independently reviewed and locally verified; see
-[storage intake evidence](../../verification/storage-intake.md). Native stress and
+[storage intake evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/storage-intake.md). Native stress and
 latency remain unqualified.
 Owner seams: controller/supervisor private types, installation drive and their tests.
 Read [Offer bounds](runner-envelopes.md) for original-work credit ownership.

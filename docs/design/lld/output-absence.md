@@ -1,7 +1,7 @@
 # Source-free execution closure
 
 Status: integrated; native rejection and an affected real-k6 control are
-[locally verified](../../verification/output-absence.md). Complements
+[locally verified](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/output-absence.md). Complements
 [source settlement](output-finalization.md); it never manufactures a source receipt.
 Journal migration014 and application migration012 implement the storage contract.
 

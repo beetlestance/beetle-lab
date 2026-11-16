@@ -86,7 +86,7 @@ extended gateway with shared source credits and bounded native HTTP response rea
 Existing metadata attempt calls retain their facade; the separate output facade
 owns only source transfer, without a second connection or credit owner. Actual
 agent HTTP/service composition is covered by the scoped
-[native HTTP evidence](../../verification/output-source-http.md); backend adoption remains pending.
+[native HTTP evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/output-source-http.md); backend adoption remains pending.
 
 Canonical JSON chunks reuse the existing generated JSON gateway instead of a
 second binary client/pool. Their base64 overhead is explicit and bounded; measure

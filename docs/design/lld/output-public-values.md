@@ -39,5 +39,5 @@ The original extraction added no endpoint, migration or SDK publication.
 Subsequent [transport values](output-transfer.md) move structural binding/core/
 manifest/receipt/closure ownership to runner JSON schemas and generated aliases;
 shared semantic codecs remain the same owner of counts, seals and digest preimages.
-See [value evidence](../../verification/output-transfer-values.md). Actual native
+See [value evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/output-transfer-values.md). Actual native
 transport and backend publication remain separate pending implementations.

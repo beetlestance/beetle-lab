@@ -1,7 +1,7 @@
 # Suite authoring and immutable revisions
 
 Status: implemented and independently reviewed; application migration002 applied.
-Local functional evidence: [suite authoring](../../verification/suite-authoring.md).
+Local functional evidence: [suite authoring](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/suite-authoring.md).
 Owner seams: `app/src/ports/suites.ts`, generated API suite DTOs/operations.
 This adds real persisted authoring; execution/input publication follow separately.
 

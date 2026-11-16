@@ -1,6 +1,6 @@
 # Backend source adoption store
 
-Status: implemented and independently reviewed; [local evidence](../../verification/output-adoption.md)
+Status: implemented and independently reviewed; [local evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/output-adoption.md)
 records SQLite and compiled-worker limits. [Output adoption](output-adoption.md) owns accounting; [payload storage](output-payload.md)
 owns the single result/manifest body. Application migration009 implements this
 store; agent Journal migration numbers are independent. No artifact writer,

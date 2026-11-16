@@ -2,7 +2,7 @@
 
 Status: Journal storage, migration013 and indexed discovery are implemented and
 independently reviewed. Scheduler and Manager producer barriers are implemented
-and independently reviewed for the source-backed component. See [component evidence](../../verification/output-delivery-closure.md).
+and independently reviewed for the source-backed component. See [component evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/output-delivery-closure.md).
 Refines the producer
 barrier in [output transfer](output-transfer.md), using the existing immutable
 [source receipt](output-source-journal.md). It does not publish backend results.

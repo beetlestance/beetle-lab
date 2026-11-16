@@ -1,7 +1,7 @@
 # Retiring used workspaces
 
 Status: user-approved correction; locally implemented, candidate qualification pending.
-Evidence: [focused worker/application checks](../../verification/workspace-retirement.md).
+Evidence: [focused worker/application checks](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/workspace-retirement.md).
 Owner: namespace deletion, SQLite visibility boundary and public access composition.
 Public API request/receipt shapes stay unchanged. No recursive physical cleanup.
 

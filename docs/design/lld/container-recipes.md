@@ -1,7 +1,7 @@
 # Rewrite frontend and backend image recipes
 
 Status: component recipes locally verified; Compose/first-install wiring and release
-qualification remain separate. See [evidence](../../verification/container-recipes.md). Published legacy image defaults are preserved.
+qualification remain separate. See [evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/container-recipes.md). Published legacy image defaults are preserved.
 
 ## Ownership and build
 

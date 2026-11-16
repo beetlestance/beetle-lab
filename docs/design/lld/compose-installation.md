@@ -1,7 +1,7 @@
 # Explicit rewrite Compose installation
 
 Status: composition locally verified, separate from released legacy Compose.
-See [evidence](../../verification/compose-installation.md) for actual corrections/limits.
+See [evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/compose-installation.md) for actual corrections/limits.
 Depends on [starter](installation-starter.md), [provisioning](fresh-installation.md),
 [installer image](installer-image.md) and [service images](container-recipes.md).
 

@@ -2,7 +2,7 @@
 
 Status: client, private HTTP, journal migration008, remaining consumers and
 [launch contention](launch-contention.md) are integrated and locally verified;
-see [storage intake](../../verification/storage-intake.md). Full-size loader/compile
+see [storage intake](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/storage-intake.md). Full-size loader/compile
 passes; updated native containers and parallel stress remain unqualified.
 
 ## Independent limits

@@ -1,9 +1,9 @@
 # Scoped run history parity
 
-Status: H1 locally verified; [evidence](../../verification/run-history-query.md).
+Status: H1 locally verified; [evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/run-history-query.md).
 H2 summaries are locally verified, including native arm64/restart; H3 [indexed search](run-history-search.md) is locally verified.
 Owner: Run query/SQLite reader and existing scoped history UI.
-Inventory: F06; [remaining parity](../../verification/functional-parity.md).
+Inventory: F06; [remaining parity](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/functional-parity.md).
 
 ## Current gap
 

@@ -1,7 +1,7 @@
 # Input byte publication
 
 Status: metadata/migration003, application service and native byte publication are
-implemented and independently reviewed; see [local publication evidence](../../verification/input-publication.md).
+implemented and independently reviewed; see [local publication evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/input-publication.md).
 Guarded HTTP/startup is locally verified; browser transfer and input UI remain.
 Owners: application input service, sole metadata worker, local byte adapter.
 The [installed provider](installed-providers.md) owns agent reads; the

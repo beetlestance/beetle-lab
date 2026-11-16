@@ -72,6 +72,6 @@ replay the exact same request file to learn its receipt; do not create a new UUI
 The client performs no automatic mutation retries. Diagnostics omit raw server,
 filesystem and transport exceptions and never print credentials.
 
-Local scoped evidence: [automation checks](verification/automation-client.md).
+Local scoped evidence: [automation checks](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/automation-client.md).
 Container build/pull, CI orchestration and native engine qualification remain
 separate release checks. Standalone export and retention have their own owners.

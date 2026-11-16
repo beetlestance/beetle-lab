@@ -1,6 +1,6 @@
 # Namespace deletion
 
-Status: locally implemented; [evidence](../../verification/namespace-deletion.md).
+Status: locally implemented; [evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/namespace-deletion.md).
 Owner: namespace deletion application/SQLite participant and existing public DELETEs.
 This does not introduce recursive cleanup, change Run retention or imply freed bytes.
 

@@ -2,7 +2,7 @@
 
 Status: implemented and reviewed; bundled Linux arm64 fixture smoke passed.
 Baseline agent-controlled k6 execution passed on Linux arm64; Compose and the full
-architecture/fault matrix remain pending. See [native evidence](../../verification/native-agent-k6.md).
+architecture/fault matrix remain pending. See [native evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/native-agent-k6.md).
 The entrypoint is `agent/src/bootstrap/main.ts`; build ships main.js and worker.js
 together. The released application's entrypoint remains separate.
 
@@ -58,4 +58,4 @@ real private config/provider files, authenticated capabilities, abort/listen-fai
 and SIGTERM cleanup; image inspection and actual agent-controlled engine execution
 are separate native qualification. Both architectures, overhead, Compose and the
 complete application dispatch/finalization path remain required work.
-See [executable evidence](../../verification/agent-executable.md) for exact checks.
+See [executable evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/agent-executable.md) for exact checks.

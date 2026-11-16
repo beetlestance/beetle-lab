@@ -1,7 +1,7 @@
 # Durable attempt stop reason
 
 Status: implemented and independently reviewed component;
-[local evidence](../../verification/durable-stop.md). Output/timeout components have
+[local evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/durable-stop.md). Output/timeout components have
 separate evidence; complete runtime qualification remains.
 
 The private supervision transaction owns the first durable stop time and reason.

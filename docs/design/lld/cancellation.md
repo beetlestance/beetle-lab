@@ -1,7 +1,7 @@
 # Durable run cancellation
 
 Status: implemented and locally verified; native/browser qualification pending.
-Evidence: [durable cancellation](../../verification/cancellation.md).
+Evidence: [durable cancellation](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/cancellation.md).
 Owners: backend run command, delivery loop, agent journal/installation and scoped UI.
 This extends [run intake](run-intake.md), [dispatch storage](dispatch-storage.md)
 and [agent stop](agent-stop.md); their ownership and resource limits still apply.

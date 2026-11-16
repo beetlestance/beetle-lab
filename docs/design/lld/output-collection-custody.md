@@ -1,6 +1,6 @@
 # Collected output facts
 
-Status: implemented and locally verified; [evidence](../../verification/output-custody-facts.md)
+Status: implemented and locally verified; [evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/output-custody-facts.md)
 records scope and remaining composed checks. This private
 producer contract is the first step of [verified source](output-source.md), not a
 journal source receipt, HTTP manifest or publication API.

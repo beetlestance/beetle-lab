@@ -1,7 +1,7 @@
 # Installed input, secret and private-file intake
 
 Status: implemented, independently reviewed and integrated with the actual Stager
-and executable loader. See [evidence](../../verification/agent-executable.md).
+and executable loader. See [evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/agent-executable.md).
 Public entrypoint: `agent/src/providers/index.ts`. The executable owns this service
 outside the runtime composition and closes it alongside runtime shutdown.
 

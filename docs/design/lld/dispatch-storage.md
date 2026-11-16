@@ -131,7 +131,7 @@ Use the same eligibility owner for advisory scan and authoritative claim.
 authority bound atomically at first possible delivery and retained after ACK/outbox
 deletion. Claim replies and observations must carry/check that stored authority.
 Storage/RPC and the connected loop implement this binding;
-[local delivery evidence](../../verification/delivery-runtime.md) records the synthetic-peer
+[local delivery evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/delivery-runtime.md) records the synthetic-peer
 recovery scope. Actual agent/native recovery and release qualification remain pending.
 
 The runtime may hold ONE captured Offer between readOffer, compact claim and network

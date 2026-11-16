@@ -1,7 +1,7 @@
 # Durable staging namespace and cleanup capacity
 
 Status: C1 locally verified; no physical cleanup/ACK or refund authority.
-[Evidence](../../verification/staging-namespace.md). Parent: [retirement](output-retirement.md). Journal migration016 is implemented.
+[Evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/staging-namespace.md). Parent: [retirement](output-retirement.md). Journal migration016 is implemented.
 Owners: staging native originals, Journal namespace/control rows, RuntimeOwner gate.
 
 ## Installed custody
