@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "digestPrefix": "beetle-lab.output-retirement.v1\n",
+  "requests": {
+    "source": "f08e1f2a627aa6ff95739f7b3737efc31ba37fe8d0f98f80fc28051c1aef7cf3",
+    "absence": "39b5031ea89ee2c6196e565842e1622c503c11f4d309cec545900ee3d1426e0e"
+  }
+}

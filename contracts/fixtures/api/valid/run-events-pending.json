@@ -1,0 +1,18 @@
+{
+  "id": "00000000-0000-4000-8000-000000000005",
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "activeAttemptId": "00000000-0000-4000-8000-000000000006",
+  "generation": 1,
+  "afterSeq": 0,
+  "durableThrough": 0,
+  "coverage": "pending",
+  "blockedReason": null,
+  "retainedStartSeq": null,
+  "items": [],
+  "resumeCursor": "eyJvcmdhbml6YXRpb25JZCI6IjAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMSIsIndvcmtzcGFjZUlkIjoiMDAwMDAwMDAtMDAwMC00MDAwLTgwMDAtMDAwMDAwMDAwMDAyIiwicnVuSWQiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDUiLCJhdHRlbXB0SWQiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDYiLCJnZW5lcmF0aW9uIjoxLCJhZnRlclNlcSI6MH0",
+  "nextCursor": null
+}

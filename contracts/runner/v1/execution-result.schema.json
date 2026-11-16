@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/runner/v1/execution-result",
+  "title": "ExecutionResult",
+  "oneOf": [
+    {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/engine-result"
+    },
+    {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/export-result"
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+import { expect, it } from 'vitest';
+import { boundaryIssues } from './architecture.js';
+
+it('limits cross-service qualification to named entrypoints in its own tooling owner', () => {
+  const owner = 'tools/qualification/native-application/smoke-app.ts';
+  expect(boundaryIssues(owner, ['../../../app/src/bootstrap/api.js',
+    '../../../agent/src/bootstrap/index.js', '../../../agent/test/container/docker.js'])).toEqual([]);
+  expect(boundaryIssues(owner, ['../../../app/src/adapters/outbound/sqlite/metadata.js'])).toHaveLength(1);
+  expect(boundaryIssues('tools/other.ts', ['../agent/src/bootstrap/index.js'])).toHaveLength(1);
+  expect(boundaryIssues('app/test/container/probe.ts', ['../../../agent/src/bootstrap/index.js'])).toHaveLength(1);
+  expect(boundaryIssues('app/src/bootstrap/api.ts', ['../../../tools/qualification/native-application/smoke-app.js']))
+    .toHaveLength(1);
+  expect(boundaryIssues(owner, ['@beetle/agent'])).toHaveLength(1);
+});
+
+it('admits only the reviewed standalone export composition entries and rejects private/reverse imports',()=>{
+  const owner='tools/qualification/native-application/export/runner.test.ts';
+  expect(boundaryIssues(owner,['../../../../engines/k6/wrapper/export/index.js','../../../../agent/src/collection/output/index.js',
+    '../../../../engines/k6/compiler/suite/index.js','../../../../engines/k6/build/index.js','../../../../engines/k6/test/staged-input/fixtures.js'])).toEqual([]);
+  expect(boundaryIssues(owner,['../../../../engines/k6/wrapper/export/runner.js'])).toHaveLength(1);
+  expect(boundaryIssues(owner,['../../../../agent/src/collection/output/verify.js'])).toHaveLength(1);
+  expect(boundaryIssues('engines/k6/wrapper/export/index.ts',['../../../../tools/qualification/native-application/export/fixture.js'])).toHaveLength(1);
+  expect(boundaryIssues('tools/qualification/unreviewed/runner.ts',['../../../agent/src/collection/output/index.js'])).toHaveLength(1);
+});
+
+it('admits exact retirement composition owners while denying sibling/deep/reverse access',()=>{
+ const owner='tools/qualification/native-application/retirement/smoke.ts';
+ for(const path of ['app/src/adapters/outbound/sqlite/index.js','app/src/application/output-deletion/index.js','app/src/bootstrap/agent-runtime.js','agent/src/staging-namespace/index.js','agent/src/cleanup-control/index.js','app/src/bootstrap/output-runtime/index.js']){
+  expect(boundaryIssues(owner,[`../../../../${path}`])).toEqual([]);
+  expect(boundaryIssues('tools/qualification/native-application/other.ts',[`../../../${path}`])).toHaveLength(1);
+ }
+ expect(boundaryIssues(owner,['../../../../app/src/adapters/outbound/sqlite/output-deletion/acks.js'])).toHaveLength(1);
+ expect(boundaryIssues('app/src/bootstrap/api.ts',['../../../tools/qualification/native-application/retirement/smoke.js'])).toHaveLength(1);
+});
+
+it('confines native seed and offline settlement checks to exact reviewed tools',()=>{
+ const prefix='tools/qualification/native-application/retirement/';
+ for(const [file,path] of [['no-task-seed.ts','agent/src/observation/index.js'],['settlement-storage.ts','agent/src/settlement-values/index.js']] as const){
+  expect(boundaryIssues(prefix+file,[`../../../../${path}`])).toEqual([]);
+  expect(boundaryIssues(prefix+'other.ts',[`../../../../${path}`])).toHaveLength(1);
+ }
+ expect(boundaryIssues(prefix+'no-task-seed.ts',['../../../../agent/src/journal/admission.ts'])).toHaveLength(1);
+});
+
+it('confines cold accounting reads to exact files while denying sibling, deeper and reverse imports',()=>{
+ const prefix='tools/qualification/native-application/accounting/';
+ for(const path of ['app/src/adapters/outbound/sqlite/output-custody/load.js','app/src/adapters/outbound/sqlite/output-custody/source.js','app/src/adapters/outbound/files/outputs/paths.js']){
+  expect(boundaryIssues(prefix+'backend.ts',[`../../../../${path}`])).toEqual([]);
+  expect(boundaryIssues(prefix+'other.ts',[`../../../../${path}`])).toHaveLength(1);
+ }
+ for(const file of ['agent.ts','reconcile.ts'])expect(boundaryIssues(prefix+file,['../../../../agent/src/staging-namespace/index.js'])).toEqual([]);
+ expect(boundaryIssues(prefix+'agent.ts',['../../../../agent/src/staging-namespace/installed.js'])).toHaveLength(1);
+ expect(boundaryIssues(prefix+'backend.ts',['../../../../app/src/adapters/outbound/sqlite/output-custody/index.js'])).toHaveLength(1);
+ expect(boundaryIssues('app/src/bootstrap/api.ts',['../../../tools/qualification/native-application/accounting/backend.js'])).toHaveLength(1);
+});
+
+it('confines the telemetry off/on assembly to exact owners without new private or reverse access',()=>{
+ const prefix='tools/qualification/native-application/telemetry/';
+ for(const path of ['agent/src/guard/index.js','agent/src/producer-gate/index.js','agent/src/bootstrap/live-metrics.js']){
+  expect(boundaryIssues(prefix+'assembly.ts',[`../../../../${path}`])).toEqual([]);
+  expect(boundaryIssues(prefix+'other.ts',[`../../../../${path}`])).toHaveLength(1);
+ }
+ expect(boundaryIssues(prefix+'profile.ts',['../../../../agent/src/catalog/index.js'])).toEqual([]);
+ expect(boundaryIssues(prefix+'assembly.ts',['../../../../agent/src/guard/service.js'])).toHaveLength(1);
+ expect(boundaryIssues('agent/src/bootstrap/main.ts',['../../../tools/qualification/native-application/telemetry/assembly.js'])).toHaveLength(1);
+});

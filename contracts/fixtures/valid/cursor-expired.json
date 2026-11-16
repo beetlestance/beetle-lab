@@ -1,0 +1,14 @@
+{
+  "protocolVersion": "1.0",
+  "organizationId": "00000000-0000-4000-8000-000000000001",
+  "workspaceId": "00000000-0000-4000-8000-000000000002",
+  "attemptId": "00000000-0000-4000-8000-000000000003",
+  "reason": "cursor_expired",
+  "retry": "transport",
+  "issues": [],
+  "cursorRecovery": {
+    "retainedStartSeq": 2,
+    "snapshotAvailable": true,
+    "sealArtifactId": "00000000-0000-4000-8000-000000000004"
+  }
+}

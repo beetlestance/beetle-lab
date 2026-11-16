@@ -17,3 +17,24 @@ Dockerfile
 docker-compose.yml
 docker-compose.*.yml
 *.tgz
+# Local rewrite orchestration, generated outputs and isolated agent state.
+.agent-work
+.beetle
+**/.beetle
+.agent-output
+**/.agent-work
+**/.agent-output
+**/dist
+coverage
+*.tsbuildinfo
+
+# Local credential/agent state must never enter a remote build context.
+.aws
+.ssh
+.codex
+.agents
+**/.aws
+**/.ssh
+**/.codex
+**/.agents
+**/node_modules

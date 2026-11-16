@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": [
+      "node"
+    ],
+    "lib": [
+      "ES2023"
+    ]
+  },
+  "include": [
+    "app/**/*.ts",
+    "agent/**/*.ts",
+    "contracts/**/*.ts",
+    "engines/k6/**/*.ts",
+    "tools/**/*.ts",
+    "web/test/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/dist/**",
+    "engines/k6/runtime/**"
+  ]
+}

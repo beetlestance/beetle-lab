@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle.test/contracts/engines/k6/v1/assertions",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "required",
+        "kind",
+        "value"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "statusEq"
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 599
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "required",
+        "kind",
+        "value"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "statusFamily"
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "required",
+        "kind",
+        "value"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "bodyContains"
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "required",
+        "kind",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "headerExists"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "required",
+        "kind",
+        "name",
+        "value"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "headerEquals"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "value": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 4096
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "required",
+        "kind",
+        "name",
+        "value"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "headerContains"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "required",
+        "kind",
+        "path"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "jsonExists"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "required",
+        "kind",
+        "path",
+        "value"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "jsonEquals"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "value": {
+          "$ref": "https://beetle.test/contracts/engines/k6/v1/suite-common#/$defs/scalar"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "required",
+        "kind",
+        "path",
+        "value"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "jsonContains"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "required",
+        "kind",
+        "path",
+        "operator",
+        "value"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "jsonCompare"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "operator": {
+          "enum": [
+            "lt",
+            "lte",
+            "gt",
+            "gte"
+          ]
+        },
+        "value": {
+          "type": "number"
+        }
+      }
+    }
+  ]
+}

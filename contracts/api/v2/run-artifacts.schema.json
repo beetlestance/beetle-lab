@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/api/v2/run-artifacts",
+  "title": "ApiRunArtifacts",
+  "$defs": {
+    "RunArtifactPage": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+        },
+        "attemptId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "generation": {
+          "const": 1
+        },
+        "availability": {
+          "enum": [
+            "pending",
+            "ready",
+            "absent"
+          ]
+        },
+        "manifestDigest": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "items": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/artifact"
+          }
+        },
+        "nextCursor": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/OpaqueCursor"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "scope",
+        "attemptId",
+        "generation",
+        "availability",
+        "manifestDigest",
+        "items",
+        "nextCursor"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

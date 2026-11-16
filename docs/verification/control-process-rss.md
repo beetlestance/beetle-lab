@@ -1,0 +1,59 @@
+# Control-process RSS qualification
+
+Verified sourceb48936d8, native Linux ARM64, Node24.22.3. Trial passed80.201s;
+normal and independent cold cleanup both returned0. Frozen input hashes match.
+Private bounded evidence: `.agent-work/control-rss`, including plan and report.
+
+Observed VM:10CPUs,12526305280 bytes RAM, Docker29.9.3, Linuxkit7.0.14, cgroup2.
+No host minimum or generic installation requirement is inferred.
+
+Linux `ps` RSS is read through asynchronous bounded `docker top` calls outside
+frontend/backend/agent containers. No extra Node process is injected into them.
+Summed RSS counts shared resident pages more than once; it is distinct from
+cgroup memory usage and unique physical memory. PID/command data is discarded.
+
+| Phase | Frontend MiB | Backend MiB | Agent MiB | Samples per service |
+| --- | ---: | ---: | ---: | ---: |
+| idle | 9.91 | 153.21 | 129.54 | 7 |
+| loaded | 9.91 | 159.96 | 139.75 | 32 |
+| post-idle | 9.91 | 160.05 | 139.86 | 8 |
+
+Declared ceilings remain64/256/256MiB respectively. Each phase/service had
+at least two observations, and every observed sum stayed under its ceiling.
+A summed-RSS miss would be an observation-target miss, not evidence that the
+kernel failed to enforce a cgroup memory limit.
+
+The existing fixture ran1VU/40physical iterations with three independent
+settled-cadence readers. Target counts:1readiness/40work/0unexpected.
+API p95:11.39ms idle,106.13ms loaded,9.90ms post-idle. Reader fresh frames9/9/8;
+refusals2/2/4 remain recorded, so uninterrupted availability is not established.
+
+Observer bounds:128points/120s, three exact inspected container IDs,10s/64KiB
+per command. Sibling originals settle together; phase-crossing observations are
+discarded; the observer drains before cleanup. Three focused tests cover units,
+malformed/duplicate/oversized process facts and missing/over-ceiling observations.
+Types, lint, architecture/docs and independent source review passed.
+
+Scope: one short ARM run. Post-idle RSS remained above the initial idle peak;
+no repeated-run plateau, no-retained-growth or telemetry off/on<=5% conclusion
+is inferred. Repeated growth and telemetry comparison remain open.
+
+The read-only CI `rss-amd64` source profile selects this case alone, using the
+qualified source archive and independent cleanup. Its public projection validates
+ordered/bounded points, recomputes all nine summaries and retains the strict
+short-control latency/readers/work checks. Native AMD retry43814984061 passed using sourceb48936d8 and harnessb24afb13;
+execution and independent cleanup both succeeded. Private closed report:
+`.agent-work/control-rss/amd64-public2/native-public.json`.
+
+| AMD phase | Frontend MiB | Backend MiB | Agent MiB | Samples per service |
+| --- | ---: | ---: | ---: | ---: |
+| idle | 10.33 | 153.29 | 134.89 | 8 |
+| loaded | 10.35 | 158.15 | 141.48 | 28 |
+| post-idle | 10.33 | 158.70 | 141.81 | 8 |
+
+AMD API p95:12.94/138.76/11.79ms. Physical counts1ready/40work/0unexpected;
+reader frames8/9/9, refusals3/2/2. All RSS sums stayed under the same ceilings.
+The first AMD43810739084 failed116.735s with independent cleanup; its public
+projection lacked usable failure facts. The later diagnostic correction preserves
+failed target facts without weakening measurement gates. Its old failure cause
+remains unknown. Neither native short pass establishes a repeated-run plateau.

@@ -1,0 +1,55 @@
+import type { RetirementIntent } from '../retirement-values/index.js';
+import type { ProducerGate } from '../producer-gate/index.js';
+import type { AttemptSnapshot } from '@beetle/contracts';
+import type { Decision, Reservation, Scope } from '../admission/index.js';
+import type { Catalog, InstalledEngine } from '../catalog/index.js';
+import type { Operation } from '../backends/docker/index.js';
+import type { AttemptProgress } from '../controller/index.js';
+import type { Journal } from '../journal/index.js';
+import type { Stager } from '../staging/index.js';
+import type { Supervisor } from '../supervisor/index.js';
+import type { OutputGuard } from '../guard/index.js';
+import type { TimeoutGuard, TimeoutReason } from '../timeout/index.js';
+
+export interface InstallationOptions {
+  readonly gate: ProducerGate;
+  readonly journal: Journal;
+  readonly catalog: Catalog;
+  readonly supervisor: Supervisor;
+  readonly guard: Pick<OutputGuard, 'watch'>;
+  readonly timeout: Pick<TimeoutGuard, 'watch'>;
+  /** Trusted lookup of preconfigured, verified Stager services; never job-supplied paths/providers. */
+  stagerFor(engine: Readonly<InstalledEngine>): Pick<Stager, 'prepare'>;
+  readonly wallNow?: () => number;
+  readonly monotonicNow?: () => number;
+}
+export type OfferAcceptance = { readonly accepted: true; readonly snapshot: AttemptSnapshot }
+  | { readonly accepted: false; readonly decision: Exclude<Decision, { kind: 'admit' }> };
+export type DriveProgress = AttemptProgress | { readonly kind: 'deferred' | 'rejected'; readonly reason: string };
+export interface InstallationAttempt {
+  readonly snapshot: AttemptSnapshot;
+  /** Private app/installation observation; transport must never expose launch capabilities verbatim. */
+  readonly allocation: Reservation | null;
+}
+export interface InstallationController {
+  /** Private exact-intent barrier: actual owners and readonly stopped-runtime inspection, no deletion/refund. */
+  retireOutput(intent: RetirementIntent, operation: Operation): Promise<void>;
+  enqueue(input: unknown): Promise<OfferAcceptance>;
+  enqueueExport(input: unknown): Promise<OfferAcceptance>;
+  /** Atomically refuse a missing original or cancel an existing canonical receipt. */
+  cancelOriginal(input: unknown): Promise<AttemptSnapshot>;
+  cancelExportOriginal(input: unknown): Promise<AttemptSnapshot>;
+  drive(key: Scope, operation: Operation): Promise<DriveProgress>;
+  /** Persist intent and fence owned work; signalling/draining may remain outstanding. */
+  cancel(key: Scope): Promise<AttemptSnapshot>;
+  /** Private output guard stop; not a runner HTTP operation or a user cancellation. */
+  stop(key: Scope, reason: 'output_limit' | 'artifact_incomplete' | TimeoutReason): Promise<AttemptSnapshot>;
+  inspect(key: Scope): Promise<InstallationAttempt>;
+  /** Original preparation/driver/controller work is retained through shutdown. Journal ownership is external. */
+  close(): Promise<void>;
+}
+export type InstallationReason = 'invalid_input' | 'closed' | 'busy' | 'capacity' | 'journal'
+  | 'catalog' | 'staging' | 'controller' | 'clock' | 'cleanup';
+export class InstallationError extends Error {
+  constructor(readonly reason: InstallationReason) { super(`Installation controller ${reason}`); }
+}

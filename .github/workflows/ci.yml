@@ -7,93 +7,446 @@ on:
     branches: [main, develop]
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      qualify_rewrite_run_id:
+        description: Read-only native checks using images from a successful source CI run
+        type: string
+        default: ''
+        required: false
+      qualify_source_profile:
+        description: Source-archive profile; missing-amd64 runs remaining conformance and long-stream cases
+        type: choice
+        options: [short-control, missing-amd64, long-amd64, rss-amd64, telemetry-amd64]
+        default: short-control
+        required: false
+      qualify_rewrite_revision:
+        description: Exact source revision belonging to qualify_rewrite_run_id
+        type: string
+        default: ''
+        required: false
+      qualify_rewrite_profile:
+        description: Read-only checks to run against qualify_rewrite_release
+        type: choice
+        options: [kernel-controls, active-recovery, cold-recovery]
+        default: kernel-controls
+        required: false
+      qualify_rewrite_release:
+        description: Read-only native qualification of an existing public rewrite release; empty runs normal CI
+        type: string
+        default: ''
+        required: false
+      prepare_rewrite_delivery:
+        description: Preserve exact qualified rewrite images for later publication; does not publish
+        type: boolean
+        default: false
+        required: false
+      deliver_rewrite_run_id:
+        description: Publish a successful qualified manual rewrite CI run; empty runs normal CI
+        type: string
+        default: ''
+        required: false
+      local_rewrite_releases:
+        description: Publish GitHub releases locally using an existing authenticated session
+        type: boolean
+        default: false
+        required: false
+      deliver_rewrite_revision:
+        description: Exact full source revision belonging to the qualified run
+        type: string
+        default: ''
+        required: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}-${{ inputs.qualify_rewrite_run_id != '' && format('observe-{0}', inputs.qualify_source_profile || 'short-control') || 'source' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  checks:
-    name: ci/checks
+  manual-mode:
+    name: qualification/manual-mode
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require one manual mode on the authorized branch
+        env:
+          DELIVERY: ${{ inputs.deliver_rewrite_run_id }}
+          QUALIFY: ${{ inputs.qualify_rewrite_release }}
+          SOURCE_RUN: ${{ inputs.qualify_rewrite_run_id }}
+          SOURCE_REVISION: ${{ inputs.qualify_rewrite_revision }}
+          SOURCE_PROFILE: ${{ inputs.qualify_source_profile || 'short-control' }}
+          REPOSITORY: ${{ github.repository }}
+          REF: ${{ github.ref }}
+        run: |
+          test "$REPOSITORY" = beetlestance/beetle-lab
+          test "$REF" = refs/heads/rewrite/integration
+          modes=0
+          for selected in "$DELIVERY" "$QUALIFY" "$SOURCE_RUN"; do
+            if [ -n "$selected" ]; then modes=$((modes + 1)); fi
+          done
+          test "$modes" -eq 1
+          if [ -n "$SOURCE_RUN" ]; then
+            case "$SOURCE_PROFILE" in short-control|missing-amd64|long-amd64|rss-amd64|telemetry-amd64) ;; *) exit 1 ;; esac
+            test "${#SOURCE_RUN}" -le 16
+            case "$SOURCE_RUN" in *[!0-9]*) exit 1 ;; esac
+            test "$SOURCE_RUN" -gt 0
+            test "${#SOURCE_REVISION}" -eq 40
+            case "$SOURCE_REVISION" in *[!0-9a-f]*) exit 1 ;; esac
+          else test -z "$SOURCE_REVISION"; fi
+
+  qualify-rewrite:
+    name: qualification/published-kernel-controls
+    needs: manual-mode
+    if: ${{ inputs.qualify_rewrite_release != '' && inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_run_id == '' && inputs.qualify_rewrite_revision == '' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/rewrite-qualification.yml
+    with:
+      release: ${{ inputs.qualify_rewrite_release }}
+      profile: ${{ inputs.qualify_rewrite_profile || 'kernel-controls' }}
+
+  observe-source:
+    name: qualification/source-observation
+    needs: manual-mode
+    if: ${{ inputs.qualify_rewrite_run_id != '' && inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' }}
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/rewrite-observation.yml
+    with:
+      source_run_id: ${{ inputs.qualify_rewrite_run_id }}
+      source_revision: ${{ inputs.qualify_rewrite_revision }}
+      profile: ${{ inputs.qualify_source_profile || 'short-control' }}
+
+  source:
+    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') && 'qualification/unused-source' || 'ci/source' }}
+    if: ${{ inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' && inputs.qualify_rewrite_run_id == '' && inputs.qualify_rewrite_revision == '' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '22'
+          node-version: '24'
           cache: npm
       - run: npm ci
-      - run: npm run check
-      - run: npm test
+      - name: Check generated contracts, API and compiler
+        run: |
+          npm run check:contracts
+          npm run check:api
+          npm run check:k6
+      - run: npm run typecheck
+        env:
+          NODE_OPTIONS: --max-old-space-size=2048
+      - run: npm run lint
+      - run: npm run check:architecture
+      - run: npm run check:docs
+      - name: Check isolated browser acceptance tooling
+        run: |
+          npm ci --prefix tools/qualification/browser --ignore-scripts
+          npm run check --prefix tools/qualification/browser
+          npm run lint --prefix tools/qualification/browser
+          npm run test:cleanup --prefix tools/qualification/browser
+      - run: npm run build:web
+      - run: npm run build:api
+      - run: npm run smoke:api
+      - run: npm run smoke:input-controls
 
-  container:
-    name: ci/container
+
+  tests:
+    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') && 'qualification/unused-tests' || 'ci/tests' }} (${{ matrix.shard }}/6)
+    needs: source
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    env:
+      NODE_OPTIONS: --max-old-space-size=1024
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-      - name: Build smoke-test image
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          context: .
-          load: true
-          tags: beetle-lab:smoke
-          cache-from: type=gha,scope=beetle-lab-amd64
-          cache-to: type=gha,mode=max,scope=beetle-lab-amd64
-      - name: Check HTTP API and execute k6 inside the image
-        run: bash scripts/container-smoke.sh beetle-lab:smoke
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Run the assigned rewrite test shard
+        run: npm run test:v2 -- --shard=${{ matrix.shard }}/6 --reporter=default
 
-  publish:
-    name: Publish container
-    needs: [checks, container]
-    if: >-
-      github.event_name != 'pull_request' &&
-      github.repository == 'beetlestance/beetle-lab' &&
-      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))
+  checks:
+    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') && 'qualification/unused-checks' || 'ci/checks' }}
+    if: ${{ always() && inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' && inputs.qualify_rewrite_run_id == '' && inputs.qualify_rewrite_revision == '' }}
+    needs: [source, tests]
     runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require successful source checks and every test shard
+        env:
+          SOURCE_RESULT: ${{ needs.source.result }}
+          TEST_RESULT: ${{ needs.tests.result }}
+        run: |
+          test "$SOURCE_RESULT" = success
+          test "$TEST_RESULT" = success
+
+  rewrite-container:
+    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') && 'qualification/unused-native' || 'ci/rewrite-container' }} (${{ matrix.arch }})
+    if: ${{ inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' && inputs.qualify_rewrite_run_id == '' && inputs.qualify_rewrite_revision == '' }}
+    needs: source
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
-    permissions:
-      contents: read
-      packages: write
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - {runner: ubuntu-24.04, arch: amd64}
+          - {runner: ubuntu-24.04-arm, arch: arm64}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-      - name: Log in to GHCR
-        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Image tags and labels
-        id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
-        with:
-          images: ghcr.io/beetlestance/beetle-lab
-          flavor: latest=false
-          tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,format=long
-      - name: Publish amd64 and arm64 images
+          driver-opts: |
+            cpu-period=100000
+            cpu-quota=200000
+            memory=2147483648
+            memory-swap=2147483648
+          buildkitd-config-inline: |
+            [worker.oci]
+              max-parallelism = 1
+      - name: Build candidate frontend
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          annotations: ${{ steps.meta.outputs.annotations }}
-          provenance: mode=max
-          sbom: true
-          cache-from: |
-            type=gha,scope=beetle-lab-amd64
-            type=gha,scope=beetle-lab-multiarch
-          cache-to: type=gha,mode=max,scope=beetle-lab-multiarch
+          file: web/Dockerfile
+          target: frontend
+          load: true
+          push: false
+          tags: beetle-candidate-frontend:${{ github.sha }}
+          build-args: VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=rewrite-frontend-${{ matrix.arch }}
+          cache-to: type=gha,mode=min,scope=rewrite-frontend-${{ matrix.arch }}
+      - name: Build candidate backend
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: app/Dockerfile
+          target: backend
+          load: true
+          push: false
+          tags: beetle-candidate-backend:${{ github.sha }}
+          build-args: VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=rewrite-backend-${{ matrix.arch }}
+          cache-to: type=gha,mode=min,scope=rewrite-backend-${{ matrix.arch }}
+      - name: Build candidate agent
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: agent/Dockerfile
+          target: agent
+          load: true
+          push: false
+          tags: beetle-candidate-agent:${{ github.sha }}
+          build-args: VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=rewrite-agent-${{ matrix.arch }}
+          cache-to: type=gha,mode=min,scope=rewrite-agent-${{ matrix.arch }}
+      - name: Build candidate installer
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: tools/install/Dockerfile
+          target: installer
+          load: true
+          push: false
+          tags: beetle-candidate-installer:${{ github.sha }}
+          build-args: VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=rewrite-installer-${{ matrix.arch }}
+          cache-to: type=gha,mode=min,scope=rewrite-installer-${{ matrix.arch }}
+      - name: Build candidate engine
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: engines/k6/Dockerfile
+          target: engine
+          load: true
+          push: false
+          tags: beetle-candidate-engine:${{ github.sha }}
+          build-args: VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=rewrite-engine-${{ matrix.arch }}
+          cache-to: type=gha,mode=min,scope=rewrite-engine-${{ matrix.arch }}
+      - name: Build candidate export
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: engines/k6/Dockerfile
+          target: export-engine
+          load: true
+          push: false
+          tags: beetle-candidate-export:${{ github.sha }}
+          build-args: VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=rewrite-export-${{ matrix.arch }}
+          cache-to: type=gha,mode=min,scope=rewrite-export-${{ matrix.arch }}
+      - name: Qualify the matched candidate stack with isolated synthetic data
+        env:
+          CANDIDATE_REVISION: ${{ github.sha }}
+          BEETLE_QUALIFICATION_REVISION: ${{ github.sha }}
+          BEETLE_QUALIFICATION_ARCHITECTURE: ${{ matrix.arch }}
+          TMPDIR: ${{ runner.temp }}
+        run: |
+          node --import tsx tools/qualification/native-application/compose/smoke.ts \
+            "beetle-candidate-frontend:$CANDIDATE_REVISION" \
+            "beetle-candidate-backend:$CANDIDATE_REVISION" \
+            "beetle-candidate-agent:$CANDIDATE_REVISION" \
+            "beetle-candidate-installer:$CANDIDATE_REVISION" \
+            "beetle-candidate-engine:$CANDIDATE_REVISION" \
+            "beetle-candidate-export:$CANDIDATE_REVISION"
+      - name: Retain native qualification outcome
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rewrite-native-${{ matrix.arch }}-${{ github.sha }}
+          path: ${{ runner.temp }}/beetle-compose-evidence-*/outcome.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Install pinned image scanner
+        run: bash scripts/install-ci-trivy.sh "$RUNNER_TEMP/beetle-trivy"
+      - name: Inventory dependencies and gate candidate image vulnerabilities
+        env:
+          CANDIDATE_REVISION: ${{ github.sha }}
+          CANDIDATE_ARCHITECTURE: ${{ matrix.arch }}
+        run: |
+          bash scripts/rewrite-supply-chain.sh "$CANDIDATE_REVISION" "$CANDIDATE_ARCHITECTURE" \
+            "$RUNNER_TEMP/beetle-trivy/trivy" "$RUNNER_TEMP/rewrite-supply-chain"
+      - name: Retain image identities, SBOMs, license and vulnerability reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rewrite-supply-chain-${{ matrix.arch }}-${{ github.sha }}
+          path: ${{ runner.temp }}/rewrite-supply-chain/*.*
+          if-no-files-found: warn
+          retention-days: 14
+          compression-level: 6
+      - name: Archive the exact qualified and scanned image IDs
+        if: ${{ inputs.prepare_rewrite_delivery == true }}
+        env:
+          CANDIDATE_REVISION: ${{ github.sha }}
+          CANDIDATE_ARCHITECTURE: ${{ matrix.arch }}
+        run: |
+          set -- "$RUNNER_TEMP"/beetle-compose-evidence-*/outcome.json
+          test "$#" = 1
+          test -f "$1"
+          node --import tsx tools/delivery/archive.ts "$CANDIDATE_REVISION" "$CANDIDATE_ARCHITECTURE" \
+            "$RUNNER_TEMP/rewrite-supply-chain" "$1" "$RUNNER_TEMP/rewrite-bundle"
+      - name: Restore all six images into a fresh isolated store
+        if: ${{ inputs.prepare_rewrite_delivery == true }}
+        run: scripts/verify-rewrite-archive.sh "$RUNNER_TEMP/rewrite-bundle" "$RUNNER_TEMP/rewrite-roundtrip"
+      - name: Retain isolated image restoration proof
+        if: ${{ inputs.prepare_rewrite_delivery == true }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rewrite-roundtrip-${{ matrix.arch }}-${{ github.sha }}
+          path: ${{ runner.temp }}/rewrite-roundtrip/roundtrip.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Retain exact qualified images for the delivery step
+        if: ${{ inputs.prepare_rewrite_delivery == true }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rewrite-images-${{ matrix.arch }}-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rewrite-bundle/bundle.json
+            ${{ runner.temp }}/rewrite-bundle/images.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+      - name: Qualify native active lifecycle and real resource samples
+        id: native_lifecycle
+        env:
+          CANDIDATE_REVISION: ${{ github.sha }}
+          BEETLE_QUALIFICATION_REVISION: ${{ github.sha }}
+          BEETLE_QUALIFICATION_ARCHITECTURE: ${{ matrix.arch }}
+          TMPDIR: ${{ runner.temp }}
+        run: |
+          node --input-type=module <<'JS'
+          import {writeFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          const root = process.env.RUNNER_TEMP, revision = process.env.CANDIDATE_REVISION;
+          const images = ['frontend', 'backend', 'agent', 'installer', 'engine', 'export'].map(role => `beetle-candidate-${role}:${revision}`);
+          const checks = ['crashes', 'cancel'].map(mode => ({id: mode, timeoutMs: 300000,
+            argv: [process.execPath, '--import', 'tsx', 'tools/qualification/native-application/diagnostics/source-active.ts', join(root, 'source-active-' + mode), mode, ...images]}));
+          writeFileSync(join(root, 'source-active-plan.json'), JSON.stringify({cwd: process.cwd(), checks}), {flag: 'wx', mode: 0o600});
+          JS
+          node --import tsx tools/check-runner/cli.ts "$RUNNER_TEMP/source-active-plan.json" "$RUNNER_TEMP/source-active-checks"
+      - name: Independently clean native lifecycle fixtures
+        if: ${{ always() }}
+        timeout-minutes: 7
+        run: |
+          failed=0
+          for mode in crashes cancel; do
+            if [ -f "$RUNNER_TEMP/source-active-$mode/owner.json" ]; then
+              if ! node --import tsx tools/qualification/resources/lifecycle/cleanup.ts "$RUNNER_TEMP/source-active-$mode"; then failed=1; fi
+            fi
+          done
+          exit "$failed"
+      - name: Project closed native lifecycle evidence
+        if: ${{ !cancelled() }}
+        env:
+          BEETLE_QUALIFICATION_ARCHITECTURE: ${{ matrix.arch }}
+        run: |
+          failed=0
+          for mode in crashes cancel; do
+            if [ -f "$RUNNER_TEMP/source-active-$mode/outcome.json" ]; then
+              if ! node --import tsx tools/qualification/resources/lifecycle/public.ts "$RUNNER_TEMP/source-active-$mode/outcome.json" "$RUNNER_TEMP/source-active-$mode/public-outcome.json"; then failed=1; fi
+            fi
+          done
+          exit "$failed"
+      - name: Retain only closed native lifecycle evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rewrite-active-${{ matrix.arch }}-${{ github.sha }}
+          path: ${{ runner.temp }}/source-active-*/public-outcome.json
+          if-no-files-found: warn
+          retention-days: 1
+
+  container:
+    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') && 'qualification/unused-container' || 'ci/container' }}
+    if: ${{ always() && inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' && inputs.qualify_rewrite_run_id == '' && inputs.qualify_rewrite_revision == '' }}
+    needs: [checks, rewrite-container]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require rewrite image qualification
+        env:
+          CHECK_RESULT: ${{ needs.checks.result }}
+          REWRITE_RESULT: ${{ needs.rewrite-container.result }}
+        run: |
+          test "$CHECK_RESULT" = success
+          test "$REWRITE_RESULT" = success
+
+  deliver-rewrite:
+    name: delivery/qualified-candidates
+    needs: manual-mode
+    if: >-
+      github.event_name == 'workflow_dispatch' && github.repository == 'beetlestance/beetle-lab' &&
+      github.ref == 'refs/heads/rewrite/integration' && inputs.deliver_rewrite_run_id != '' && inputs.qualify_rewrite_release == '' && inputs.qualify_rewrite_run_id == '' && inputs.qualify_rewrite_revision == ''
+    permissions:
+      contents: write
+      packages: write
+      actions: read
+    uses: ./.github/workflows/rewrite-delivery.yml
+    secrets:
+      release_token: ${{ secrets.BEETLE_RELEASE_TOKEN }}
+    with:
+      source_run_id: ${{ inputs.deliver_rewrite_run_id }}
+      source_revision: ${{ inputs.deliver_rewrite_revision }}
+      local_releases: ${{ inputs.local_rewrite_releases == true }}

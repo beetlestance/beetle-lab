@@ -1,0 +1,13 @@
+.input-status { margin-top: var(--space-6); padding: var(--space-6); background: var(--surface); border: var(--border-width) solid var(--border-strong); }
+.input-status .section-header { margin-bottom: var(--space-4); }
+.input-metadata { display: grid; grid-template-columns: minmax(8rem, 1fr) minmax(0, 4fr); gap: var(--space-3) var(--space-4); }
+.input-metadata dt { font-weight: 600; }
+.input-metadata dd { margin: 0; overflow-wrap: anywhere; }
+.input-metadata progress { max-width: 100%; accent-color: var(--accent); }
+.input-deletion { display: grid; gap: var(--space-3); margin-top: var(--space-4); }
+.input-deletion .actions { margin-top: var(--space-3); }
+@media (max-width: 760px) {
+  .input-status { padding: var(--space-4); }
+  .input-metadata { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); }
+  .input-metadata dd { margin-bottom: var(--space-3); }
+}

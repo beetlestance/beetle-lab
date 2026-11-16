@@ -1,0 +1,14 @@
+{
+  "name": "@beetle/packaged-browser-acceptance",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "cd ../../.. && node --import tsx tools/qualification/browser/acceptance.mjs",
+    "check": "tsc --noEmit -p tsconfig.json",
+    "test:cleanup": "node --test cleanup.test.mjs",
+    "lint": "eslint --config eslint.config.mjs *.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1"
+  }
+}

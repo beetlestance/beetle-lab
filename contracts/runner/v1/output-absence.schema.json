@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/runner/v1/output-absence",
+  "title": "OutputAbsence",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "organizationId": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+    },
+    "workspaceId": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+    },
+    "attemptId": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+    },
+    "generation": {
+      "const": 1
+    },
+    "intentDigest": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/sha256"
+    },
+    "journalAuthority": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+    },
+    "finalAgentSeq": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "admission": {
+      "allOf": [
+        {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/attempt-admission"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "state": {
+              "enum": [
+                "rejected",
+                "released"
+              ]
+            }
+          },
+          "required": [
+            "state"
+          ]
+        }
+      ]
+    },
+    "reason": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/reason"
+    }
+  },
+  "required": [
+    "version",
+    "organizationId",
+    "workspaceId",
+    "attemptId",
+    "generation",
+    "intentDigest",
+    "journalAuthority",
+    "finalAgentSeq",
+    "admission",
+    "reason"
+  ],
+  "additionalProperties": false
+}

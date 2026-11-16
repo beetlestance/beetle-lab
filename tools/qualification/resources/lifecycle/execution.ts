@@ -1,0 +1,80 @@
+import assert from 'node:assert/strict';
+import {mkdir, writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {randomUUID} from 'node:crypto';
+import type {Run, SuiteRevision} from '@beetle/contracts/api';
+import type {Fixture} from '../../native-application/compose/fixture.js';
+import {automaticClient} from '../../native-application/compose/public.js';
+import {agentState, controlBudget, cleanup} from '../../native-application/compose/evidence.js';
+import {saveRevision, value} from '../../native-application/public-api.js';
+import {cleanupLiveVolumes} from '../../native-application/live-volumes.js';
+import {active, crash, terminal} from './active.js';
+import {counts, ledger, params, runtime, summaries, stopForCustody} from './observations.js';
+import {lifecycleFailure} from './diagnosis.js';
+import {qualificationCases} from './configuration.js';
+interface PhaseOptions {
+  f: Fixture;
+  initial: Awaited<ReturnType<typeof automaticClient>>;
+  installation: string;
+  saved: Awaited<ReturnType<typeof saveRevision>>;
+  results: unknown[];
+  progress: (phase: string) => void;
+  reserve: ReturnType<typeof controlBudget>;
+  kinds: ReturnType<typeof qualificationCases>;
+}
+async function phases({f, initial, installation, saved, results, progress, reserve, kinds}: PhaseOptions) {
+  const settled: Run[] = [];
+  for (const kind of kinds) {
+      progress(kind); const client = await automaticClient(f.origin); assert.equal(client.installation.id, installation);
+      const before = counts(f); assert.equal(before.unexpected, 0);
+      const queued = value(await client.api.createRun({params: saved.params, body: {scope: saved.scope, requestId: randomUUID(), revisionId: saved.revision.id,
+        engineProfile: 'k6-local', budget: initial.installation.values.runDefaults.budget, executionPolicy: {mode: 'parallel', preferIdle: false}}}));
+      const originalId = await active(f, client, queued, before.work);
+      const recovery = {}; const pending = {kind, recovery}; results.push(pending);
+      let fault: unknown;
+      if (kind === 'cancel') {value(await client.api.cancelRun({params: params(queued), body: {scope: saved.scope, requestId: randomUUID()}})); fault = {publicCancel: true};}
+      else fault = await crash(f, client, kind, before.work, fact => {Object.assign(recovery, fact);});
+      const run = await terminal(client, queued, kind === 'cancel'); const closed = runtime(f, run, installation);
+      assert.equal(closed.id, originalId); assert.equal(closed.state.Running, false); assert.equal(closed.state.OOMKilled, false);
+      const after = counts(f); assert.equal(after.ready - before.ready, 1); assert.equal(after.unexpected, 0);
+      if (kind === 'cancel') assert(after.work - before.work >= 8 && after.work - before.work < 40);
+      else assert.equal(after.work - before.work, 40);
+      const result = Object.assign(pending, {kind, fault, sameOriginal: true, generation: 1, workRequests: after.work - before.work, runState: run.state,
+        outcome: run.outcome, runId: run.id, resourceStatus: 'pending', controlReserve: reserve});
+      Object.assign(result, {resourceStatus: 'passed', summaries: await summaries(client.api, run, rows => {Object.assign(result, {summaries: rows});})});
+      settled.push(run);
+    }
+  return settled;
+}
+async function teardown(f: PhaseOptions['f'], installation?: string) {
+  await cleanup(f, installation);
+  if (installation) cleanupLiveVolumes({id: installation, user: '1000:1000', docker: f.docker});
+}
+function custody(f: PhaseOptions['f'], settled: Run[], installation: string, results: unknown[]) {
+  stopForCustody(f);
+  for (const run of settled) results.push({kind: 'custody', runId: run.id, ...ledger(f, run, installation)});
+}
+export async function executeLifecycle(options: {f: Fixture; config: SuiteRevision['config']; output: string; mode: string}) {
+  const {f, config, output, mode} = options; const kinds = qualificationCases(mode);
+  await mkdir(output, {mode: 0o700});
+  await writeFile(join(output, 'owner.json'), JSON.stringify({root: f.root, project: f.project, revision: f.revision, mode}), {flag: 'wx', mode: 0o600});
+  const results: unknown[] = []; let installation: string | undefined; let status = 'failed'; let phase = 'startup'; let cleanupVerified = false; let diagnosis: ReturnType<typeof lifecycleFailure> | null = null;
+  try {
+    f.compose('up', '-d', '--no-build'); const initial = await automaticClient(f.origin); installation = initial.installation.id;
+    await writeFile(join(output, 'installation-owner.json'), JSON.stringify({project: f.project, installationId: installation}), {flag: 'wx', mode: 0o600});
+    assert.equal(agentState(f).installationId, installation); const reserve = controlBudget(f);
+    const saved = await saveRevision(initial.api, {offer: {config}});
+    const settled = await phases({f, initial, installation, saved, results, progress: next => {phase = next;}, reserve, kinds});
+    phase = 'offline-custody'; custody(f, settled, installation, results);
+    status = 'passed';
+  } catch (error) {
+    process.exitCode = 1; diagnosis = lifecycleFailure(error);
+    await writeFile(join(output, 'failure-private.txt'), String(error instanceof Error ? error.stack : error).slice(0, 16384), {flag: 'wx', mode: 0o600});
+  } finally {
+    try {await teardown(f, installation); cleanupVerified = true;} catch {status = 'failed'; process.exitCode = 1;}
+    await writeFile(join(output, 'outcome.json'), JSON.stringify({format: 'beetle-active-recovery', version: 1, status, mode, phase, cleanupVerified, diagnosis,
+      revision: f.revision, architecture: f.architecture, imageIds: f.imageIds, results,
+      limits: ['Active-phase backend/agent crashes only; not every lifecycle phase', 'No synthetic OOM attribution, flood, soak, overhead or cold recovery proof']}, null, 2), {flag: 'wx', mode: 0o600});
+    console.log(JSON.stringify({status, phase, cleanupVerified}));
+  }
+}

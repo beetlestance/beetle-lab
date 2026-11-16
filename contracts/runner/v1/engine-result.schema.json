@@ -1,0 +1,280 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/runner/v1/engine-result",
+  "title": "EngineResult",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/result-evidence#/$defs/base"
+    },
+    {
+      "oneOf": [
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "properties": {
+                "outcome": {
+                  "const": "passed"
+                },
+                "execution": {
+                  "$ref": "https://beetle-lab.dev/contracts/runner/v1/result-execution#/$defs/completed"
+                },
+                "requiredAssertions": {
+                  "type": "object",
+                  "properties": {
+                    "required": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "passed": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "failed": {
+                      "const": 0
+                    },
+                    "unknown": {
+                      "const": 0
+                    }
+                  },
+                  "required": [
+                    "required",
+                    "passed",
+                    "failed",
+                    "unknown"
+                  ],
+                  "additionalProperties": false
+                },
+                "completeness": {
+                  "const": "complete"
+                }
+              },
+              "required": [
+                "outcome",
+                "execution",
+                "requiredAssertions",
+                "completeness"
+              ]
+            },
+            {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "const": "ordinary"
+                    },
+                    "thresholds": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/token"
+                          },
+                          "purpose": {
+                            "const": "slo"
+                          },
+                          "passed": {
+                            "const": true
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "purpose",
+                          "passed"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "maxItems": 256
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "thresholds"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "const": "discovery"
+                    },
+                    "thresholds": {
+                      "type": "array",
+                      "items": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/token"
+                              },
+                              "purpose": {
+                                "const": "slo"
+                              },
+                              "passed": {
+                                "const": true
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "purpose",
+                              "passed"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/token"
+                              },
+                              "purpose": {
+                                "const": "discovery"
+                              },
+                              "passed": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "purpose",
+                              "passed"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      "maxItems": 256
+                    },
+                    "expectedAbort": {
+                      "type": "object",
+                      "properties": {
+                        "ruleId": {
+                          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/token"
+                        },
+                        "reached": {
+                          "const": true
+                        }
+                      },
+                      "required": [
+                        "ruleId",
+                        "reached"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "thresholds",
+                    "expectedAbort"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "properties": {
+                "outcome": {
+                  "enum": [
+                    "failed",
+                    "inconclusive"
+                  ]
+                },
+                "execution": {
+                  "$ref": "https://beetle-lab.dev/contracts/runner/v1/result-execution#/$defs/any"
+                }
+              },
+              "required": [
+                "outcome",
+                "execution"
+              ]
+            },
+            {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "const": "ordinary"
+                    }
+                  },
+                  "required": [
+                    "mode"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "const": "discovery"
+                    },
+                    "expectedAbort": {
+                      "type": "object",
+                      "properties": {
+                        "ruleId": {
+                          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/token"
+                        },
+                        "reached": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "ruleId",
+                        "reached"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "expectedAbort"
+                  ]
+                }
+              ]
+            },
+            {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "outcome": {
+                      "const": "failed"
+                    },
+                    "execution": {
+                      "$ref": "https://beetle-lab.dev/contracts/runner/v1/result-execution#/$defs/completed"
+                    }
+                  },
+                  "required": [
+                    "outcome",
+                    "execution"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "outcome": {
+                      "const": "inconclusive"
+                    }
+                  },
+                  "required": [
+                    "outcome"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "unevaluatedProperties": false
+}

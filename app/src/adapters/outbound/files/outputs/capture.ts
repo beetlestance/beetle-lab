@@ -1,0 +1,102 @@
+import type { OutputBinding } from '../../../../domain/output-owner/index.js';
+import { types } from 'node:util';
+import { encodeJson, validatePrimitive } from '@beetle/contracts';
+import { captureOutputBinding, isExportOutput } from '../../../../domain/output-owner/index.js';
+import { OUTPUT_CHUNK_BYTES, OUTPUT_FILE_RECORD_BYTES } from '../../../../ports/output-bytes.js';
+import type { OutputFileRecord } from '../../../../ports/output-bytes.js';
+import type { OutputArtifactState } from '../../../../ports/output-custody.js';
+import { fail } from './errors.js';
+
+function data(input: object, name: string): unknown {
+  const descriptor = Object.getOwnPropertyDescriptor(input, name);
+  if (!descriptor?.enumerable || !('value' in descriptor)) fail('invalid_input');
+  return descriptor.value as unknown;
+}
+export function fields(input: unknown, names: readonly string[]): Record<string, unknown> {
+  if (input === null || typeof input !== 'object' || types.isProxy(input)) fail('invalid_input');
+  if (![Object.prototype, null].includes(Object.getPrototypeOf(input) as object | null)) fail('invalid_input');
+  const keys = Reflect.ownKeys(input);
+  if (keys.length !== names.length || keys.some(key => typeof key !== 'string' || !names.includes(key))) fail('invalid_input');
+  const values: Record<string, unknown> = {};
+  for (const name of names) {
+    values[name] = data(input, name);
+  }
+  return values;
+}
+const artifactFields = ['ordinal', 'artifactId', 'token', 'bytes', 'sha256', 'offset', 'phase', 'identity', 'writer', 'version'];
+export function uuid(value: unknown): value is string {
+  return typeof value === 'string' && /^[0-9a-f-]{36}$/.test(value) && validatePrimitive('uuid', value).ok;
+}
+function artifactId(value: unknown): value is string {
+  return typeof value === 'string' && /^[0-9a-f-]{36}$/i.test(value) && validatePrimitive('uuid', value).ok;
+}
+function hash(value: unknown): value is string { return typeof value === 'string' && /^[0-9a-f]{64}$/.test(value); }
+function integer(value: unknown, minimum = 0): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= minimum;
+}
+export function token(input: unknown): string {
+  const record = fields(input, ['binding', 'artifact']); const artifact = fields(record.artifact, artifactFields);
+  if (!uuid(artifact.token)) fail('invalid_input'); return artifact.token;
+}
+function artifact(input: unknown): OutputArtifactState {
+  const value = fields(input, artifactFields);
+  if (!artifactId(value.artifactId) || !uuid(value.token) || !hash(value.sha256)) fail('invalid_input');
+  if (![value.ordinal, value.bytes, value.offset].every(item => integer(item)) || !integer(value.version, 1)) fail('invalid_input');
+  if ((value.ordinal as number) > 127 || (value.offset as number) > (value.bytes as number)) fail('invalid_input');
+  artifactState(value);
+  return value as unknown as OutputArtifactState;
+}
+function artifactState(value: Record<string, unknown>): void {
+  if (typeof value.phase !== 'string' || !['transferring', 'publishing', 'published'].includes(value.phase)) fail('invalid_input');
+  if (value.identity !== null && !hash(value.identity)) fail('invalid_input');
+  if (value.writer !== null && !uuid(value.writer)) fail('invalid_input');
+  if (value.phase !== 'transferring' && value.offset !== value.bytes) fail('invalid_input');
+}
+function binding(input: unknown): OutputBinding {
+  if (input === null || typeof input !== 'object' || types.isProxy(input)) fail('invalid_input');
+  const tagged = Object.hasOwn(input, 'purpose');
+  const value = fields(input, tagged ? ['purpose', 'key', 'journalAuthority', 'expectation'] : ['key', 'journalAuthority']);
+  const key = fields(value.key, tagged ? ['exportId', 'attempt'] : ['runId', 'attempt']);
+  const attempt = fields(key.attempt, ['organizationId', 'workspaceId', 'attemptId', 'generation', 'intentDigest']);
+  requireNativeAttempt(attempt);
+  if (![value.journalAuthority, tagged ? key.exportId : key.runId].every(uuid)) fail('invalid_input');
+  if (tagged) {
+    const expectation = exportExpectationFields(value.expectation);
+    return captureOutputBinding({...value, key: {...key, attempt}, expectation});
+  }
+  return captureOutputBinding({...value, key: {...key, attempt}});
+}
+export function record(input: unknown): OutputFileRecord<OutputBinding> {
+  try {
+    const value = fields(input, ['binding', 'artifact']);
+    // Only validated primitive leaves and owned fixed-shape snapshots reach encoding.
+    const captured = { binding: binding(value.binding), artifact: artifact(value.artifact) };
+    return JSON.parse(encodeJson(captured, OUTPUT_FILE_RECORD_BYTES)) as OutputFileRecord<OutputBinding>;
+  } catch { fail('invalid_input'); }
+}
+const typedPrototype = Object.getPrototypeOf(Uint8Array.prototype) as object;
+const byteLength = Object.getOwnPropertyDescriptor(typedPrototype, 'byteLength')!.get!;
+export function chunk(input: unknown): Uint8Array {
+  if (!types.isUint8Array(input)) fail('invalid_input');
+  const length = Reflect.apply(byteLength, input, []) as number;
+  if (length < 1 || length > OUTPUT_CHUNK_BYTES) fail('invalid_input');
+  const captured = new Uint8Array(length); Uint8Array.prototype.set.call(captured, input); return captured;
+}
+
+/** Existing deletion metadata remains Run-owned until export retirement is wired. */
+export function runRecord(input: OutputFileRecord<OutputBinding>): OutputFileRecord {
+  if (isExportOutput(input.binding)) fail('invalid_input');
+  return {...input, binding: input.binding};
+}
+
+function exportExpectationFields(input: unknown): Record<string, unknown> {
+  const value = fields(input, ['exportId', 'attemptId', 'organizationId', 'workspaceId', 'assignmentDigest', 'maximumBuildBytes']);
+  if (![value.exportId, value.attemptId, value.organizationId, value.workspaceId].every(uuid)
+    || !hash(value.assignmentDigest) || !integer(value.maximumBuildBytes, 1)) fail('invalid_input');
+  return value;
+}
+
+function requireNativeAttempt(value: Record<string, unknown>): void {
+  if (![value.organizationId, value.workspaceId, value.attemptId].every(uuid)
+    || value.generation !== 1 || !hash(value.intentDigest)) fail('invalid_input');
+}

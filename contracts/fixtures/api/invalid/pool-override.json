@@ -1,0 +1,21 @@
+{
+  "requestId": "00000000-0000-4000-8000-000000000010",
+  "expectedVersion": 1,
+  "schemaVersion": 2,
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "patch": {
+    "pool": {
+      "cpuMillis": 4000,
+      "memoryBytes": 4294967296,
+      "pids": 512,
+      "outputBytes": 1073741824,
+      "concurrency": 2,
+      "storageBytes": 10737418240,
+      "freeSpaceReserveBytes": 1073741824
+    }
+  }
+}

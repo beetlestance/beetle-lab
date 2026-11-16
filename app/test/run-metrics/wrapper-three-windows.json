@@ -1,0 +1,44 @@
+{
+  "format": "wrapper-produced-metric-fixture-v1",
+  "scope": {
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002",
+    "attemptId": "00000000-0000-4000-8000-000000000170",
+    "generation": 1
+  },
+  "artifacts": [
+    {
+      "descriptor": {
+        "artifactId": "8e0b68f6-3ec3-473c-8e97-ef1c4c5ad77f",
+        "kind": "metric-windows",
+        "relativePath": "metric-windows.ndjson",
+        "bytes": 1554,
+        "sha256": "5321d3f0fc2594d3a48b1f8ce542a0d53fcfc94511d838d69c6191a36d124cb0",
+        "sealedAt": "2027-01-15T08:00:06.000Z"
+      },
+      "utf8": "{\"format\":\"beetle-k6-metric-windows\",\"version\":1,\"scope\":{\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\",\"attemptId\":\"00000000-0000-4000-8000-000000000170\",\"generation\":1},\"dataArtifactId\":\"8e0b68f6-3ec3-473c-8e97-ef1c4c5ad77f\"}\n{\"kind\":\"window\",\"sequence\":1,\"window\":{\"startTimeMs\":1800000000000,\"endTimeMs\":1800000001000,\"series\":[{\"metric\":\"http_req_duration\",\"kind\":\"trend\",\"tags\":{\"phase\":\"execute\",\"request\":\"r0\"},\"scope\":\"execute\",\"total\":{\"kind\":\"trend\",\"count\":1,\"sum\":3,\"min\":3,\"max\":3,\"mean\":3,\"distribution\":{\"format\":\"exponential-v1\",\"unit\":\"ms\",\"scale\":4,\"offset\":25,\"buckets\":[1],\"count\":1,\"zeroCount\":0,\"min\":3,\"max\":3}}}]}}\n{\"kind\":\"window\",\"sequence\":2,\"window\":{\"startTimeMs\":1800000003000,\"endTimeMs\":1800000004000,\"series\":[{\"metric\":\"http_req_duration\",\"kind\":\"trend\",\"tags\":{\"phase\":\"execute\",\"request\":\"r0\"},\"scope\":\"execute\",\"total\":{\"kind\":\"trend\",\"count\":1,\"sum\":3,\"min\":3,\"max\":3,\"mean\":3,\"distribution\":{\"format\":\"exponential-v1\",\"unit\":\"ms\",\"scale\":4,\"offset\":25,\"buckets\":[1],\"count\":1,\"zeroCount\":0,\"min\":3,\"max\":3}}}]}}\n{\"kind\":\"window\",\"sequence\":3,\"window\":{\"startTimeMs\":1800000006000,\"endTimeMs\":1800000007000,\"series\":[{\"metric\":\"http_req_duration\",\"kind\":\"trend\",\"tags\":{\"phase\":\"execute\",\"request\":\"r0\"},\"scope\":\"execute\",\"total\":{\"kind\":\"trend\",\"count\":1,\"sum\":3,\"min\":3,\"max\":3,\"mean\":3,\"distribution\":{\"format\":\"exponential-v1\",\"unit\":\"ms\",\"scale\":4,\"offset\":25,\"buckets\":[1],\"count\":1,\"zeroCount\":0,\"min\":3,\"max\":3}}}]}}\n{\"kind\":\"end\",\"windows\":3}\n"
+    },
+    {
+      "descriptor": {
+        "artifactId": "af2eb17f-de1e-40c9-a772-ed482ac7cd5b",
+        "kind": "metric-index",
+        "relativePath": "metric-index.ndjson",
+        "bytes": 699,
+        "sha256": "49b5d6d59b33dadd42dac5ee268d108ca3486470a98a2132a71ed7b72be8056e",
+        "sealedAt": "2027-01-15T08:00:06.000Z"
+      },
+      "utf8": "{\"format\":\"beetle-k6-metric-index\",\"version\":1,\"scope\":{\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\",\"attemptId\":\"00000000-0000-4000-8000-000000000170\",\"generation\":1},\"dataArtifactId\":\"8e0b68f6-3ec3-473c-8e97-ef1c4c5ad77f\"}\n{\"sequence\":1,\"startTimeMs\":1800000000000,\"endTimeMs\":1800000001000,\"offset\":291,\"length\":412}\n{\"sequence\":2,\"startTimeMs\":1800000003000,\"endTimeMs\":1800000004000,\"offset\":703,\"length\":412}\n{\"sequence\":3,\"startTimeMs\":1800000006000,\"endTimeMs\":1800000007000,\"offset\":1115,\"length\":412}\n{\"kind\":\"end\",\"windows\":3,\"dataBytes\":1554,\"dataSha256\":\"5321d3f0fc2594d3a48b1f8ce542a0d53fcfc94511d838d69c6191a36d124cb0\"}\n"
+    },
+    {
+      "descriptor": {
+        "artifactId": "f952b21b-be56-4107-93d2-92f413d20df6",
+        "kind": "numeric-final",
+        "relativePath": "numeric-final.json",
+        "bytes": 1067,
+        "sha256": "b45cc001fec6b14cf84e68d63cc61d7a61af491c611740b530beb90c30025d70",
+        "sealedAt": "2027-01-15T08:00:06.000Z"
+      },
+      "utf8": "{\"version\":3,\"scope\":{\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\",\"attemptId\":\"00000000-0000-4000-8000-000000000170\",\"generation\":1},\"metrics\":{\"totals\":[{\"metric\":\"http_req_duration\",\"kind\":\"trend\",\"tags\":{\"phase\":\"execute\",\"request\":\"r0\"},\"scope\":\"execute\",\"total\":{\"kind\":\"trend\",\"count\":3,\"sum\":9,\"min\":3,\"max\":3,\"mean\":3,\"distribution\":{\"format\":\"exponential-v1\",\"unit\":\"ms\",\"scale\":4,\"offset\":25,\"buckets\":[3],\"count\":3,\"zeroCount\":0,\"min\":3,\"max\":3}}}],\"totalsComplete\":true,\"measurement\":{\"complete\":true,\"sourceTimeMs\":1800000000000},\"windowCoverage\":{\"complete\":true,\"latePoints\":0,\"markerDelayDroppedBuckets\":0},\"quantiles\":\"histogram-estimate\"},\"diagnostics\":{\"windowCoverage\":{\"complete\":true,\"latePoints\":0,\"markerDelayDroppedBuckets\":0}},\"buildUsage\":{\"bytes\":29,\"peakBytes\":100},\"windowsRetained\":true,\"history\":{\"windows\":3,\"bytes\":2253,\"dataArtifactId\":\"8e0b68f6-3ec3-473c-8e97-ef1c4c5ad77f\",\"indexArtifactId\":\"af2eb17f-de1e-40c9-a772-ed482ac7cd5b\"},\"quantiles\":\"histogram-estimate\"}\n"
+    }
+  ]
+}

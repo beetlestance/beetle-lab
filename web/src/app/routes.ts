@@ -1,0 +1,33 @@
+import { validateApi } from '@beetle/contracts/api';
+
+export const routes = {
+  reference: '/reference',
+  runsPattern: '/organizations/:organizationId/workspaces/:workspaceId/runs',
+  comparisonPattern: '/organizations/:organizationId/workspaces/:workspaceId/runs/compare',
+  comparison: (org: string, workspace: string, ids: readonly string[]) => `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/runs/compare?runs=${ids.map(encodeURIComponent).join(',')}`,
+  runPattern: '/organizations/:organizationId/workspaces/:workspaceId/runs/:runId',
+  runs: (org: string, workspace: string) => `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/runs`,
+  run: (org: string, workspace: string, id: string) => `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/runs/${encodeURIComponent(id)}`,
+  inputsPattern: '/organizations/:organizationId/workspaces/:workspaceId/inputs',
+  inputs: (org: string, workspace: string) => `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/inputs`,
+  suitesPattern: '/organizations/:organizationId/workspaces/:workspaceId/suites',
+  suitePattern: '/organizations/:organizationId/workspaces/:workspaceId/suites/:suiteId',
+  suites: (org: string, workspace: string) => `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/suites`,
+  suite: (org: string, workspace: string, id: string) => `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/suites/${encodeURIComponent(id)}`,
+  organizations: '/',
+  settings: '/settings',
+  organizationSettingsPattern: '/organizations/:organizationId/settings',
+  workspaceSettingsPattern: '/organizations/:organizationId/workspaces/:workspaceId/settings',
+  organizationSettings: (id: string) => `/organizations/${encodeURIComponent(id)}/settings`,
+  workspaceSettings: (org: string, id: string) => `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(id)}/settings`,
+  organizationPattern: '/organizations/:organizationId',
+  workspacePattern: '/organizations/:organizationId/workspaces/:workspaceId',
+  organization: (organizationId: string) => `/organizations/${encodeURIComponent(organizationId)}`,
+  workspace: (organizationId: string, workspaceId: string) =>
+    `/organizations/${encodeURIComponent(organizationId)}/workspaces/${encodeURIComponent(workspaceId)}`,
+};
+export {referenceDownloads} from './reference-downloads.js';
+
+export function validId(value: string | undefined): value is string {
+  return validateApi('Uuid', value).ok;
+}

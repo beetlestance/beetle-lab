@@ -1,0 +1,11 @@
+{
+  "name": "@beetle/agent",
+  "version": "2.0.0-dev",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "@beetle/contracts": "*",
+    "fastify": "5.12.8"
+  }
+}

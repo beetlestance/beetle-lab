@@ -1,0 +1,5 @@
+.target-observations select { max-width: 100%; margin-block: .5rem; }
+.target-observations svg { display: block; width: 100%; height: auto; }
+.target-observation-line { stroke: currentColor; fill: none; stroke-width: 2; }
+.target-observation-axis { stroke: currentColor; stroke-width: 1; opacity: .5; }
+.target-observation-dot { fill: currentColor; }

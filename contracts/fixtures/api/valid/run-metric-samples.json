@@ -1,0 +1,121 @@
+{
+  "id": "00000000-0000-4000-8000-000000000005",
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "attemptId": "00000000-0000-4000-8000-000000000006",
+  "generation": 1,
+  "manifestDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "series": {
+    "ordinal": 0,
+    "metric": "http_req_duration",
+    "kind": "trend",
+    "scope": "execute",
+    "tags": {
+      "request": "r0"
+    },
+    "unit": "ms",
+    "total": {
+      "kind": "trend",
+      "count": 1,
+      "sum": 3,
+      "min": 3,
+      "max": 3,
+      "mean": 3,
+      "percentiles": {
+        "p50": {
+          "source": "histogram-estimate",
+          "scale": 4,
+          "estimate": 3,
+          "lower": 3,
+          "upper": 3
+        },
+        "p90": {
+          "source": "histogram-estimate",
+          "scale": 4,
+          "estimate": 3,
+          "lower": 3,
+          "upper": 3
+        },
+        "p95": {
+          "source": "histogram-estimate",
+          "scale": 4,
+          "estimate": 3,
+          "lower": 3,
+          "upper": 3
+        },
+        "p99": {
+          "source": "histogram-estimate",
+          "scale": 4,
+          "estimate": 3,
+          "lower": 3,
+          "upper": 3
+        }
+      }
+    }
+  },
+  "coverage": {
+    "complete": true,
+    "latePoints": 0,
+    "markerDelayDroppedBuckets": 0
+  },
+  "measurementSourceTimeMs": 1000,
+  "windows": 1,
+  "fromTimeMs": 0,
+  "toTimeMs": 8640000000000000,
+  "examined": 1,
+  "beforeWindow": 1,
+  "firstWindow": 1,
+  "span": {
+    "startTimeMs": 1000,
+    "endTimeMs": 2000
+  },
+  "items": [
+    {
+      "windowOrdinal": 1,
+      "startTimeMs": 1000,
+      "endTimeMs": 2000,
+      "value": {
+        "kind": "trend",
+        "count": 1,
+        "sum": 3,
+        "min": 3,
+        "max": 3,
+        "mean": 3,
+        "percentiles": {
+          "p50": {
+            "source": "histogram-estimate",
+            "scale": 4,
+            "estimate": 3,
+            "lower": 3,
+            "upper": 3
+          },
+          "p90": {
+            "source": "histogram-estimate",
+            "scale": 4,
+            "estimate": 3,
+            "lower": 3,
+            "upper": 3
+          },
+          "p95": {
+            "source": "histogram-estimate",
+            "scale": 4,
+            "estimate": 3,
+            "lower": 3,
+            "upper": 3
+          },
+          "p99": {
+            "source": "histogram-estimate",
+            "scale": 4,
+            "estimate": 3,
+            "lower": 3,
+            "upper": 3
+          }
+        }
+      }
+    }
+  ],
+  "nextCursor": null
+}

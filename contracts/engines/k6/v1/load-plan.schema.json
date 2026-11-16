@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle.test/contracts/engines/k6/v1/load-plan",
+  "title": "K6LoadPlan",
+  "description": "Load-plan component only; does not define requests, datasets, assertions or a runnable suite. Integer ms/s/m/h durations: workload and offset <=24h, grace <=1h, combined execution <=48h. The compiler enforces cross-field semantic limits.",
+  "type": "object", "additionalProperties": false,
+  "required": ["version", "scenarios", "slos"],
+  "properties": {
+    "version": { "const": 1 },
+    "scenarios": {
+      "type": "array", "minItems": 1, "maxItems": 64,
+      "items": { "$ref": "https://beetle.test/contracts/engines/k6/v1/scenarios" }
+    },
+    "slos": {
+      "type": "array", "maxItems": 128,
+      "items": { "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/rule" }
+    }
+  }
+}

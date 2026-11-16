@@ -1,0 +1,81 @@
+{
+  "protocolVersion": "1.0",
+  "engineId": "k6",
+  "engineVersion": "1.0.0",
+  "imageDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "protocolRange": {
+    "minimum": "1.0",
+    "maximum": "1.0"
+  },
+  "schemas": {
+    "config": "https://example.invalid/k6-config-v1",
+    "result": "https://beetle-lab.dev/contracts/runner/v1/engine-result"
+  },
+  "capabilities": [
+    "http"
+  ],
+  "supportedControls": [
+    "cpu",
+    "memory",
+    "pids",
+    "timeout",
+    "output"
+  ],
+  "defaultBudget": {
+    "cpuMillis": 1000,
+    "memoryBytes": 536870912,
+    "pids": 128,
+    "timeoutMs": 600000,
+    "outputBytes": 1073741824
+  },
+  "minimumBudget": {
+    "cpuMillis": 1000,
+    "memoryBytes": 536870912,
+    "pids": 128,
+    "timeoutMs": 600000,
+    "outputBytes": 1073741824
+  },
+  "backends": [
+    "docker"
+  ],
+  "network": {
+    "required": true,
+    "profile": "target-egress"
+  },
+  "phases": [
+    {
+      "phase": "validate",
+      "timeoutMs": 1000,
+      "workUnits": 100,
+      "outputBytes": 1024
+    },
+    {
+      "phase": "prepare",
+      "timeoutMs": 1000,
+      "workUnits": 100,
+      "outputBytes": 1024
+    },
+    {
+      "phase": "execute",
+      "timeoutMs": 1000,
+      "workUnits": 100,
+      "outputBytes": 1024
+    },
+    {
+      "phase": "collect",
+      "timeoutMs": 1000,
+      "workUnits": 100,
+      "outputBytes": 1024
+    },
+    {
+      "phase": "seal",
+      "timeoutMs": 1000,
+      "workUnits": 100,
+      "outputBytes": 1024
+    }
+  ],
+  "entrypoint": {
+    "executable": "beetle-wrapper",
+    "arguments": []
+  }
+}

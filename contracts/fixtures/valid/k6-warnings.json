@@ -1,0 +1,23 @@
+{
+  "format": "beetle-k6-warnings",
+  "version": 1,
+  "scope": {
+    "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "workspaceId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "attemptId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "generation": 1
+  },
+  "native": {
+    "coverage": "complete",
+    "insufficientVus": 0,
+    "highCardinality": 0,
+    "maxDuration": 0,
+    "otherWarnings": 0,
+    "discardedSegments": 0
+  },
+  "configuration": {
+    "scenarioCount": 1,
+    "arrival": null
+  },
+  "iteration": null
+}

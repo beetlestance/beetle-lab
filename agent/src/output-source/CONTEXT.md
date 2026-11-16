@@ -1,0 +1,28 @@
+# Private collected output source
+
+Object inputs must already be bounded application-owned producer carriers, or
+parsed from bounded serialized records. Native own-key reflection is not bounded
+for arbitrary foreign JS graphs. External original bytes must be capped before
+parse, and private request encoding before worker cloning. These provenance
+requirements do not remove any strict-shape, copy/encoding, node or depth gate.
+
+Contracts output-source owns public types, capture, errors, scalar/public rules
+and manifest hashing. This wrapper reuses that owner after checking all private
+facts before foreign digest callbacks. Native path/checkpoint/runtime/release
+validation stays here; public contracts import no agent or Node filesystem code.
+
+Pure value boundary for a verified source manifest, private file custody and
+durable collection intent. Contracts: docs/design/lld/output-source-commit.md and
+output-collection-intent.md. The four pure codecs capture closed owned inputs,
+validate local identity/chronology/custody relationships and verify content seals.
+Journal transactions, controller producers and transport remain separate work.
+
+Source digests describe content/custody, never pass/fail, publication, file absence
+or physical-release authority. Reuse existing JSON, result seal, root, checkpoint
+and identity owners. Capture closed owned values before hashing or worker issue.
+Respect separate public/private byte limits; raw result length is not canonical
+sealed content length. No native IO, catalogue lookup or engine invocation here.
+
+Digest vectors live in contracts/fixtures/output-source/v1.json. Focused codec
+tests validate failures and boundaries as well as those positive vectors.
+Focused command: vitest run agent/test/output-source --maxWorkers=1.
