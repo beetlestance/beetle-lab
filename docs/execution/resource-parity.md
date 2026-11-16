@@ -23,15 +23,13 @@ execution. Remove merged task trees/branches after preserving evidence.
 
 ## Current disposition
 
-[Independent69-ID reconciliation](../verification/final-acceptance.md) finds only
-one behavioral blocker: long live-read p95. [Current repeated memory](../verification/repeated-memory-analysis.md)
-observed no retained RSS growth after four runs with32s post-idle windows.
-[Both-native telemetry](../verification/telemetry-comparison.md) passes the5% target.
-[Currentcf44e96a](../verification/current-candidate-qualification.md) passed full
-CI, native image jobs, schema29 ARM cold/refusal and composed browser retirement.
-The records below preserve chronology; older pending-candidate/telemetry statements
-are superseded by this disposition. No failed original trial is promoted to a pass.
-Final latency evidence and its Q07 status reconciliation remain open.
+[Finite qualification closeout](../verification/qualification-closeout.md) records
+accepted Q01–Q07 composition and independent69-ID review. Current AMD long live
+p95193.16ms passes unchanged250ms; both-native telemetry passes5%; the current
+four-run sequence observes no retained RSS growth with32s post-idle windows.
+There is no universal availability/performance/leak-free guarantee. Historical
+progress below retains older pending statements and failures; the closeout owns
+current disposition. Publication/default changes remain separate.
 
 ## Recorded progress
 

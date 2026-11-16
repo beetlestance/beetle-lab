@@ -117,3 +117,31 @@ of one core under its25% quota; backend9.61%, frontend0.08%. These are descripti
 observations, not a proven causal profile. Post-idle Docker memory peaks were
 3674112/136110080/98594816bytes for frontend/backend/agent. They are not process
 RSS or repeated-run leak proof. No deadline, quota, cadence or target was raised.
+
+## Current candidate AMD64 target result
+
+[CI43883876529](https://github.com/beetlestance/beetle-lab/actions/runs/43883876529)
+completed the same maintained long profile against candidatecf44e96a, with clean
+harnessfeb0369e and native Linux AMD64. The closed artifact is
+`native-amd64-long-stream/native-public.json`; its SHA256 is
+35372953fe7422573b5d18f17f9e0a92bf7c5e855539b6adaf0794113d202590.
+
+| Fact | Current candidate observation |
+| --- | --- |
+| Active span |1,837,099.51ms (over30min) |
+| Three readers |861/865/859 new frames; fresh spans1,825,096/1,826,889/1,826,100ms |
+| Live endpoint |2,585/2,667 successful;82 unavailable; successful p95 **193.16ms**, all p95 **192.01ms** |
+| Run endpoint |936/936 successful; p95 **4.92ms** |
+| Physical work |1 readiness/1,830 work/0 unexpected |
+| Finalization |Eight artifacts with verified bytes/SHA256; terminal live unavailable |
+| Cleanup |Normal and independent checks passed |
+
+Both live p95 measurements pass the unchanged250ms target in this qualification
+fixture. Three readers do not establish uninterrupted availability: their longest
+new-frame gaps were6.28/4.29/6.10s, and refused reads remain explicit. Stock
+resource limits, deadlines, workload and reader cadence were unchanged. Mean
+agent CPU was19.32% of one logical CPU; this does not establish the cause of the
+earlier293.49ms result or a general performance guarantee. That earlier miss
+remains a miss. No speculative runtime change or duplicate run was used to close
+it. [Current repeated memory](repeated-memory-analysis.md) provides separate
+process-RSS evidence; Docker memory values here do not substitute for that proof.

@@ -55,13 +55,12 @@ and resumed name/data evidence, not one uninterrupted passing browser trial or a
 byte comparison of every retained row. Browser close and both cleanup checks
 passed for each probe.
 
-## Remaining acceptance
+## Final acceptance
 
-[AMD telemetry](telemetry-comparison.md) now passes. The separate long-stream
-latency target remains open; [current repeated memory](repeated-memory-analysis.md)
-observes no retained RSS growth after the fixed four-run sequence. Current-candidate
-AMD long observation43883876529 is queued; its unchanged profile follows the new
-workspace guard on scoped HTTP reads. Do not infer a result from queue time.
-Independent [69-ID review](final-acceptance.md) found no additional required
-behavior missing from the accepted composition. Resolve and reconcile latency
-before release acceptance.
+[AMD telemetry](telemetry-comparison.md), [current repeated memory](repeated-memory-analysis.md)
+and [current AMD long stream](long-stream.md) now have accepted scoped passes.
+The long profile measured successful live p95193.16ms against unchanged250ms;
+all three readers spanned over30min, with explicit unavailable reads. Independent
+[69-ID review](final-acceptance.md) found no additional required behavior missing
+from the accepted composition. [Closeout](qualification-closeout.md) records the
+finite goal disposition; publication/default changes remain separate.

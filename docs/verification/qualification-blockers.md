@@ -1,4 +1,4 @@
-# Qualification status and remaining blockers
+# Qualification status and historical blockers
 
 Scope follows [remaining packets](../execution/remaining-rewrite.md). Passing a
 newer candidate does not explain an earlier failure or complete the release matrix.
@@ -13,7 +13,7 @@ newer candidate does not explain an earlier failure or complete the release matr
 | Delivery and supply chain | Both architecture inventories passed HIGH/CRITICAL scans including unfixed findings, image/source SBOMs and dependency audit. Exact artifacts, sources and local OCI indexes were verified. Run `43688603429` published the exact indexes and passed fresh anonymous pulls and native Compose execution on both architectures. The local installer prerelease is public and its Compose/environment assets passed anonymous full-byte hash readback. This closes candidate delivery, not full release sign-off. |
 | Resource/failure progress | [Kernel controls](resource-controls.md) and [active recovery](active-recovery.md) have scoped native AMD64/ARM64 proof; [cold recovery](packaged-cold-recovery.md) has default-UID ARM and anonymous-pull AMD proof. [Short control observations](short-control-overhead.md) passed both native architectures with three independent readers. [Bounded ARM disk](bounded-disk.md) and [ARM engine outcomes](native-engine-parity.md) add scoped proofs. |
 | Current candidate | [Candidatecf44e96a](current-candidate-qualification.md) passed all twelve CI gates, including both native image jobs; ARM schema29 cold/history/resume, known-old-reader refusal and composed Chromium workspace retirement/name reuse passed within their stated scope. Candidate archives are not published/default. |
-| Remaining release matrix | [Both-native telemetry](telemetry-comparison.md) passes the5% component target. Separate AMD long live p95293.49ms still misses250ms, while [current repeated memory](repeated-memory-analysis.md) observes no retained RSS growth after the fixed four-run sequence. Current-candidate long observation43883876529 remains queued. Independent69-ID review found no additional behavioral gap; final latency evidence reconciliation remains open; see [ledger](final-acceptance.md). |
+| Final finite matrix | [Closeout](qualification-closeout.md) records accepted source/native/browser composition. [Current AMD long live p95193.16ms](long-stream.md) passes unchanged250ms, both-native component telemetry passes5%, and the fixed four-run sequence observes no retained RSS growth. Independent69-ID review found no remaining required behavioral gap. Publication/default changes remain separate. |
 
 [Packaged reliability](packaged-reliability.md) distinguishes observed failures,
 reproductions and accepted fixes. [Image delivery](rewrite-image-delivery.md)

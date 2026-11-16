@@ -19,18 +19,15 @@ No Goal, push, registry publication or deployment is authorised by this page.
 | B09 browser/automation | Twelve actual public-image functional phases plus keyboard/themes/viewports/cross-scope/download checks; candidate retirement proof is composed separately |
 | B10 image delivery | Public72243a87 both-native scans/SBOM/license, immutable publication, anonymous pulls/install; currentcf44e96a CI/archive qualification passed without publication |
 
-## Remaining sequence
+## Finite qualification disposition
 
-| Packet | Concrete exit condition |
-| --- | --- |
-| B11 performance | Resolve or explicitly obtain acceptance of AMD long live p95293.49ms versus250ms, only; current four-run/32s-idle evidence observed no retained agent RSS growth. Current-candidate long observation43883876529 follows changed workspace HTTP guard; do not duplicate queued work |
-| B08 final reconciliation | Independent review of all36 F/N, nine A and24 V entries found no additional behavioral gap; reconcile final latency evidence and retain supported limitations; close B11 before claiming full R0–R4 acceptance |
-
-[Resource/parity](resource-parity.md) and [qualification status](../verification/qualification-blockers.md)
-link native CPU/OOM/PID/descendant controls, active recovery, bounded full disk,
-flood/slow-reader cancellation, long stream, cardinality, cold restore and both-native
-telemetry. A passing workload is not a leak-free proof. No numeric gate is raised
-or failed trial relabelled by documentation edits.
+B11 performance and B08 reconciliation are complete within the
+[closeout](../verification/qualification-closeout.md)'s recorded source/platform
+boundaries. Current AMD long live p95193.16ms passes the unchanged250ms target;
+current four-run/32s-idle evidence observes no retained RSS growth. Both-native
+telemetry passes5%. Independent review of all69 IDs found no unproved required
+behavior after these results. Earlier misses remain failures, not relabelled passes.
+No new publication/default change follows automatically from qualification.
 
 ## Cost and verification discipline
 

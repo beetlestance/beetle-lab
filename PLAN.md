@@ -42,7 +42,8 @@ model assignments, agent packets, concurrency and independent review.
 These are locally verified source capabilities. They do not establish hosted CI,
 final images or a qualified R0-R4 release. The [documentation map](docs/README.md)
 links evidence; the [parity checklist](docs/verification/functional-parity.md)
-links the complete source/evidence inventory audit; final acceptance is still open.
+links the complete source/evidence inventory audit; finite acceptance is recorded in the
+[qualification closeout](docs/verification/qualification-closeout.md).
 
 | Area | Locally integrated | Evidence |
 | --- | --- | --- |
@@ -63,22 +64,17 @@ current63 JSON descriptors:63 implemented, including empty-only namespace deleti
 Registration does not prove runtime readiness or complete feature acceptance.
 Native live activation uses [trusted image capability](docs/decisions/014-live-metric-approval-authority.md).
 
-## Remaining before complete R0-R4 acceptance
+## R0–R4 qualification disposition
 
-| Work | Required completion |
-| --- | --- |
-| Functional parity | All36 F/N IDs and A01–A09/V01–V24 are mapped in the [69-ID ledger](docs/verification/final-acceptance.md); independent review found no additional behavioral gap; reconcile final latency evidence |
-| Performance | AMD long live p95293.49ms exceeds250ms; current four-run/32s-idle evidence observes no retained agent RSS growth. Gates are unchanged |
-| Current candidate | [cf44e96a](docs/verification/current-candidate-qualification.md) passed full CI/both-native image jobs, ARM schema29 cold history and composed browser retirement; it is not the published default |
-| Release acceptance | Close the latency blocker and reconcile its evidence; retain exact image/schema/platform scope and documented limitations |
-
-The [remaining backlog](docs/execution/remaining-rewrite.md) and
-[qualification status](docs/verification/qualification-blockers.md) link concrete
-proof. Public72243a87 has both-native anonymous-pull delivery and actual browser
-acceptance; current candidate qualification is recorded separately. Original/live
-stderr replay, recursive folder deletion and mutable restore are unsupported.
-Input/revision pins remain; no Run-pin UI is claimed. The full UI redesign follows
-functional closure as a separate plan.
+[Finite closeout](docs/verification/qualification-closeout.md) and the
+[69-ID ledger](docs/verification/final-acceptance.md) record complete scoped
+source/native/browser qualification and independent review. Current AMD long live
+p95193.16ms passes unchanged250ms; current repeated memory observes no retained
+RSS growth after four runs/32s idle, and both-native telemetry passes5%.
+Historical failures and supported limits remain explicit. Public/default72243a87
+is unchanged; currentcf44e96a publication/default changes remain separate.
+Original/live stderr, recursive folder deletion and mutable restore are unsupported.
+The full UI redesign follows functional closure as a separate plan.
 
 ## Local first-use corrections
 
@@ -88,7 +84,7 @@ passed at their recorded identities. Sessions retain origin/CSRF checks and thei
 remaining8h lifetime across restart; the paired profile remains explicit.
 Large-body and optional target-observation evidence is linked from the
 [69-ID ledger](docs/verification/final-acceptance.md), including the manual-reload
-limitation. These scoped passes do not close the remaining performance blockers.
+limitation. These proofs retain their exact source/platform boundaries in the closeout.
 
 ## Delivery order
 

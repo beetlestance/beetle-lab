@@ -1,7 +1,7 @@
 # Final rewrite acceptance ledger
 
 Authority: [36 product IDs](../current-features.md), [nine acceptance and24 adversarial IDs](../verification.md).
-This reconciliation includes candidatecf44e96a and harnessfeb0369e. **Release acceptance remains open.**
+This reconciliation includes candidatecf44e96a and harnessfeb0369e. **Finite R0–R4 qualification is complete; publication/default changes remain separate.**
 Earlier proofs retain their original source/platform. No new execution is claimed
 by editing this ledger. “Covered” below means the listed concrete behavior has
 source and recorded execution evidence; it does not mean every possible variant
@@ -38,7 +38,7 @@ later exact-source CI are execution records; a test filename alone is not one.
 | F05 | [Controls](run-controls.md), [browser run/cancel](goal-qualification.md), [native cancellation](active-recovery.md) | Start/override/stop, replay and reconnect covered; current system-stop cause covered by source cases and native candidate composition. |
 | F06 | [Query](run-history-query.md), [search](run-history-search.md), [summary](run-history-summary.md), [browser history](goal-qualification.md) | Paged scoped history and indexed summaries covered; documented bounded search semantics retained. |
 | F07 | [Event reads](run-event-reads.md), [timeline](run-timeline-ui.md), [diagnostics](native-diagnostics.md) | Durable event reconnect and sanitized final diagnostics covered. Original/live stderr is unsupported. |
-| F08 | [Live](native-live-metrics.md), [recorded](run-metric-history.md), [long stream](long-stream.md) | Metric functionality covered; Q04 AMD live p95 target remains missed. |
+| F08 | [Live](native-live-metrics.md), [recorded](run-metric-history.md), [long stream](long-stream.md) | Metric functionality and current AMD long p95193.16ms covered; earlier miss retained. |
 | F09 | [Archive](k6-metric-archive.md), [repeated cardinality](bounded-repeated-load.md), [metric history](run-metric-history.md) | Request-name series, bounded cardinality, numeric/histogram and chart projections covered. |
 | F10 | [Warnings](k6-warning-guidance.md), [load advice](load-advice.md), [UI cases](../../web/src/features/runs/load-advice/model.test.ts) | Native insufficient-VU artifact plus bounded classifier/UI cases; heuristic guidance, no automatic capacity change. |
 | F11 | [Durable results](run-result-read.md), [diagnostics](native-diagnostics.md), [secrets](native-secrets.md) | Hash-bound result/config references, numeric replay and sanitized history covered; no raw stderr replay. |
@@ -74,7 +74,7 @@ later exact-source CI are execution records; a test filename alone is not one.
 | --- | --- | --- |
 | A01 | F01–F04/N01–N02 above; [workspace retirement](workspace-retirement.md) | Covered at recorded sources; changed retirement has candidate proof. |
 | A02 | F05–F07/F11–F12; V02–V05/V11–V15 below | Lifecycle composition covered; changed cause/schema has current candidate proof. |
-| A03 | F08–F10/F30; [flood](flood-slow-cancellation.md), [known distributions](../../engines/k6/test/aggregation/distribution-integration.test.ts) | Functional numeric/warning proof covered; latency target separate/open. |
+| A03 | F08–F10/F30; [flood](flood-slow-cancellation.md), [known distributions](../../engines/k6/test/aggregation/distribution-integration.test.ts) | Functional numeric/warning proof covered; current native latency target covered. |
 | A04 | F13–F15; [comparison failures](../../app/test/run-comparison/failures.test.ts), [report composition](../../web/src/features/runs/performance-report/integration.test.tsx) | Four-run, environment, save/hash/download and capability-refusal composition covered. |
 | A05 | F16–F19, [browser interaction](browser-interactions.md), [reference downloads](browser-reference.md) | Existing install/browser pipeline covered; new candidate CI passed; publication remains separate. |
 | A06 | F20–F24, both-native engine runs plus compiled option/selector oracles | Covered without requiring a native run for every random seed. |
@@ -111,12 +111,12 @@ later exact-source CI are execution records; a test filename alone is not one.
 | V23 | [Schema bridge cases](../../app/src/adapters/inbound/http/schema-compilers.test.ts), [API contracts](reference-availability.md) | Strict2020-12 validation and response projection covered by fixtures/source CI; no silent request coercion. |
 | V24 | [Resource observations](resource-observation.md), [target missing sensors](native-target-runtime.md), [capacity contract](capacity-wire.md) | Unknown/source/freshness stays explicit; no automatic thermal readiness claim. |
 
-## Remaining release blockers
+## Qualification disposition
 
-- AMD long live p95293.49ms still exceeds250ms. Current-candidate observation
-  remains queued; no miss is silently accepted or raised.
-- Independent review found no other unproved required behavior in the accepted
-  composition. [Current repeated memory](repeated-memory-analysis.md) closes the
-  bounded observed-growth concern, with no universal leak-free claim. Reconcile
-  the final latency result before claiming release acceptance. No new UI design,
-  engine, IAM, legacy migration or arbitrary native permutation matrix is added.
+[Closeout](qualification-closeout.md) records complete finite R0–R4 acceptance
+within the limits above. Independent review found no additional required behavior
+missing from the composition. [Current AMD long trial](long-stream.md) passes the
+unchanged250ms target; [current repeated memory](repeated-memory-analysis.md)
+observes no retained RSS growth after the fixed four-run sequence. Earlier misses
+remain recorded; neither result is a universal availability/performance/leak-free
+guarantee. New publication/default changes remain separately authorised work.
