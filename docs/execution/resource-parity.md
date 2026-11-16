@@ -83,3 +83,8 @@ These kernel probes do not substitute for Q02's agent/ledger causality or Q03/Q0
 Each worker reads VM-scoped `/proc/meminfo` before its fault and requires at least
 1.5GiB available headroom. This is a qualification safety precondition, not a
 minimum installation tier or an inference from Docker VM total memory.
+
+[Native ARM secret resolution](../verification/native-secrets.md) now passes exact
+environment/mounted delivery, unbound workspace/no-engine and rebound comparison,
+with sixteen artifact canary audits and stock-pool accounting. Broader leakage
+and other-platform matrices remain separate.
