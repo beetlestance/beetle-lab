@@ -39,5 +39,7 @@ export interface AgentRuntime {
   close(): Promise<void>;
 }
 export class AgentRuntimeError extends Error {
-  constructor(readonly reason: 'busy' | 'startup' | 'recovery_required' | 'closed' | 'cleanup') { super(`Agent runtime ${reason}`); }
+  constructor(readonly reason: 'busy' | 'startup' | 'recovery_required' | 'closed' | 'cleanup', options?: ErrorOptions) {
+    super(`Agent runtime ${reason}`, options);
+  }
 }

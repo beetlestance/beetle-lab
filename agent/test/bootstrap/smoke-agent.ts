@@ -1,3 +1,7 @@
+import { pathToFileURL } from 'node:url';
+import { openJournal } from '../../src/journal/index.js';
+import { initializeInstallationState } from '../../src/installation-state/index.js';
+import { installationStatePath } from '../../src/bootstrap/index.js';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
@@ -52,6 +56,17 @@ async function waitForExit(child: ChildProcess, exited: Promise<number | null>):
   } catch (error) { child.kill('SIGKILL'); await exited.catch(() => undefined); throw error; }
   finally { clearTimeout(timer); }
 }
+async function initializeJournal(directory: string): Promise<void> {
+  const path = join(directory, 'journal.sqlite');
+  const initializer = initializeInstallationState(installationStatePath(path));
+  let journal: Awaited<ReturnType<typeof openJournal>> | undefined;
+  try {
+    journal = await openJournal({path, workerUrl: pathToFileURL(resolve('agent/dist/worker.js'))});
+    initializer.complete(await journal.journalAuthority());
+  } finally {
+    try {await journal?.close();} finally {initializer.close();}
+  }
+}
 async function files(root: string, port: number) {
   const user = `${process.getuid!()}:${process.getgid!()}`;
   const staging = join(root, 'staged'); const journal = join(root, 'journal'); const inputs = join(root, 'inputs');
@@ -78,6 +93,7 @@ async function files(root: string, port: number) {
   await writeFile(path, JSON.stringify(configuration), { mode: 0o600 });
   await writeFile(join(root, 'receipt.json'), JSON.stringify({version: 1, phase: 'ready', installationId: installation.installationId,
     configDigests: {'agent.json': createHash('sha256').update(JSON.stringify(configuration)).digest('hex')}}), {mode: 0o600});
+  await initializeJournal(journal);
   return { path, token, installation };
 }
 function daemon(root: string, installation: Awaited<ReturnType<typeof files>>['installation']) {

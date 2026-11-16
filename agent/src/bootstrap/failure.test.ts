@@ -1,3 +1,5 @@
+import {AgentRuntimeError} from './types.js';
+import {InstallationStateError} from '../installation-state/index.js';
 import { expect, it, vi } from 'vitest';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -44,3 +46,8 @@ it('wires a real startup failure through the executable without exposing supplie
   const lines=stderr.split('\n').filter(line=>line.startsWith('{'));
   expect(lines.map(line=>JSON.parse(line))).toContainEqual(expect.objectContaining({component:'agent',event:'startup_failed'}));
 },20000);
+
+it('reports a fixed runtime reason and its original authority cause',()=>{
+ const failure=new AgentRuntimeError('startup',{cause:new InstallationStateError('recovery_required')});
+ expect(failureCodes(failure)).toEqual(['startup','recovery_required']);
+});

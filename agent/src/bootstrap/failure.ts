@@ -1,5 +1,6 @@
 const knownCodes = new Set<unknown>([
   'configuration', 'data_directory', 'listener', 'invalid_input', 'conflict',
+  'busy', 'startup', 'cleanup',
   'not_found', 'queue_full', 'closed', 'unavailable', 'owned', 'schema_newer',
   'stale_generation', 'quota_exceeded', 'cursor_expired', 'expired_key', 'recovery_required',
   'EACCES', 'EPERM', 'ENOENT', 'ENOSPC', 'EIO', 'EBUSY', 'EADDRINUSE',
@@ -11,7 +12,7 @@ export function failureCodes(error: unknown): readonly string[] {
   try {
     while (error instanceof Error && codes.length < 4 && !seen.has(error)) {
       seen.add(error);
-      const code: unknown = Object.getOwnPropertyDescriptor(error, 'code')?.value;
+      const code = ownDiagnosticCode(error);
       codes.push(knownCodes.has(code) ? code as string : 'unknown');
       error = Object.getOwnPropertyDescriptor(error, 'cause')?.value;
     }
@@ -22,4 +23,9 @@ export function reportFailure(event: 'startup_failed' | 'shutdown_failed', error
   try {
     process.stderr.write(`${JSON.stringify({component: 'agent', event, codes: failureCodes(error)})}\n`);
   } catch { /* Diagnostics must not prevent cleanup or failure exit. */ }
+}
+
+function ownDiagnosticCode(error: Error): unknown {
+  return Object.getOwnPropertyDescriptor(error, 'code')?.value
+    ?? Object.getOwnPropertyDescriptor(error, 'reason')?.value;
 }

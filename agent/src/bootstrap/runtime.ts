@@ -249,6 +249,6 @@ export async function openAgentRuntime(options: AgentRuntimeOptions): Promise<Ag
   try { return await current.open(options); }
   catch (error) {
     await current.close();
-    throw new AgentRuntimeError(error instanceof NamespaceBindingError ? 'recovery_required' : 'startup');
+    throw new AgentRuntimeError(error instanceof NamespaceBindingError ? 'recovery_required' : 'startup', {cause:error});
   }
 }

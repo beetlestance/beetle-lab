@@ -130,3 +130,10 @@ await import(${JSON.stringify(f.workerUrl().href)});\n`, { mode: 0o600 });
   } finally { await writeFile(release, 'release', { mode: 0o600 }); await rejected; }
   const runtime = f.keep(await openAgentRuntime(e.options)); expect(await runtime.initial).toEqual({ ready: true }); await runtime.close();
 });
+
+it('preserves a failed installed-configuration check cause and releases startup ownership after clean drain',async()=>{
+ const e=await f.setup();const cause=Object.assign(new Error('CANARY'),{code:'ENOSPC'});
+ await expect(openAgentRuntime({...e.options,configurationCheck:async()=>{throw cause;}}))
+  .rejects.toMatchObject({reason:'startup',cause});
+ const runtime=f.keep(await openAgentRuntime(e.options));await runtime.close();
+});

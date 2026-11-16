@@ -152,6 +152,8 @@ jobs:
       - run: npm run build:web
       - run: npm run build:api
       - run: npm run smoke:api
+      - run: npm run build:agent
+      - run: npm run smoke:agent
       - run: npm run smoke:input-controls
 
 
