@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/runner/v1/event-envelope",
+  "title": "EventEnvelope",
+  "$defs": {
+    "envelope": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": "1.0"
+        },
+        "organizationId": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+        },
+        "workspaceId": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+        },
+        "attemptId": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "seq": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "phase": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/phase"
+        },
+        "observedAt": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/timestamp"
+        }
+      },
+      "required": [
+        "version",
+        "organizationId",
+        "workspaceId",
+        "attemptId",
+        "generation",
+        "seq",
+        "phase",
+        "observedAt"
+      ]
+    }
+  }
+}

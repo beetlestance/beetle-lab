@@ -1,0 +1,308 @@
+{
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "baselineRunId": "00000000-0000-4000-8000-000000000005",
+  "metric": {
+    "metric": "http_req_duration",
+    "kind": "trend",
+    "scope": "execute",
+    "tags": {
+      "phase": "execute",
+      "request": "r0"
+    }
+  },
+  "metricBinding": {
+    "requestId": "get",
+    "assertionId": null
+  },
+  "items": [
+    {
+      "run": {
+        "id": "00000000-0000-4000-8000-000000000005",
+        "scope": {
+          "kind": "workspace",
+          "organizationId": "00000000-0000-4000-8000-000000000001",
+          "workspaceId": "00000000-0000-4000-8000-000000000002"
+        },
+        "version": 1,
+        "suiteId": "00000000-0000-4000-8000-000000000003",
+        "revisionId": "00000000-0000-4000-8000-000000000004",
+        "revisionDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "requestedAt": "2026-11-09T00:00:00.000Z",
+        "state": "finished",
+        "outcome": "passed",
+        "validationStatus": "passed",
+        "activeAttemptId": "00000000-0000-4000-8000-000000000006",
+        "cancellationRequested": false,
+        "reason": null,
+        "engine": {
+          "id": "k6",
+          "profileId": "k6-local",
+          "imageDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "configVersion": 1
+        },
+        "budget": {
+          "cpuMillis": 1000,
+          "memoryBytes": 536870912,
+          "pids": 128,
+          "timeoutMs": 60000,
+          "outputBytes": 1048576
+        },
+        "executionPolicy": {
+          "mode": "parallel",
+          "preferIdle": false
+        },
+        "settingsVersions": {
+          "installation": 1,
+          "organization": 1,
+          "workspace": 1
+        }
+      },
+      "result": {
+        "outcome": "passed",
+        "completeness": "complete",
+        "execution": {
+          "status": "completed",
+          "exitCode": 0,
+          "stoppedAt": "2026-01-01T00:00:00Z"
+        },
+        "requiredAssertions": {
+          "required": 2,
+          "passed": 2,
+          "failed": 0,
+          "unknown": 0
+        },
+        "failedSloCount": 0,
+        "discoveryReached": null
+      },
+      "environment": {
+        "targetDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "inputsDigest": "2222222222222222222222222222222222222222222222222222222222222222",
+        "secretBindingsDigest": "3333333333333333333333333333333333333333333333333333333333333333",
+        "secretVersions": "known",
+        "targetSampler": "disabled",
+        "targetRevision": "unknown",
+        "contention": "unknown"
+      },
+      "differences": {
+        "fields": [],
+        "configChanges": [],
+        "limited": false
+      },
+      "warnings": [
+        "unknown_target_revision",
+        "unknown_contention",
+        "target_sampler_disabled"
+      ],
+      "metric": {
+        "availability": "ready",
+        "reason": null,
+        "series": {
+          "ordinal": 0,
+          "metric": "http_req_duration",
+          "kind": "trend",
+          "scope": "execute",
+          "tags": {
+            "phase": "execute",
+            "request": "r0"
+          },
+          "unit": "ms",
+          "total": {
+            "kind": "trend",
+            "count": 1,
+            "sum": 3,
+            "min": 3,
+            "max": 3,
+            "mean": 3,
+            "percentiles": {
+              "p50": {
+                "source": "histogram-estimate",
+                "scale": 4,
+                "estimate": 3,
+                "lower": 3,
+                "upper": 3
+              },
+              "p90": {
+                "source": "histogram-estimate",
+                "scale": 4,
+                "estimate": 3,
+                "lower": 3,
+                "upper": 3
+              },
+              "p95": {
+                "source": "histogram-estimate",
+                "scale": 4,
+                "estimate": 3,
+                "lower": 3,
+                "upper": 3
+              },
+              "p99": {
+                "source": "histogram-estimate",
+                "scale": 4,
+                "estimate": 3,
+                "lower": 3,
+                "upper": 3
+              }
+            }
+          }
+        },
+        "manifestDigest": "4444444444444444444444444444444444444444444444444444444444444444",
+        "measurementSourceTimeMs": 1800000000000,
+        "coverage": {
+          "complete": true,
+          "latePoints": 0,
+          "markerDelayDroppedBuckets": 0
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "00000000-0000-4000-8000-000000000007",
+        "scope": {
+          "kind": "workspace",
+          "organizationId": "00000000-0000-4000-8000-000000000001",
+          "workspaceId": "00000000-0000-4000-8000-000000000002"
+        },
+        "version": 1,
+        "suiteId": "00000000-0000-4000-8000-000000000003",
+        "revisionId": "00000000-0000-4000-8000-000000000009",
+        "revisionDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "requestedAt": "2026-11-09T00:00:00.000Z",
+        "state": "finished",
+        "outcome": "passed",
+        "validationStatus": "passed",
+        "activeAttemptId": "00000000-0000-4000-8000-000000000008",
+        "cancellationRequested": false,
+        "reason": null,
+        "engine": {
+          "id": "k6",
+          "profileId": "k6-local",
+          "imageDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "configVersion": 1
+        },
+        "budget": {
+          "cpuMillis": 1000,
+          "memoryBytes": 536870912,
+          "pids": 128,
+          "timeoutMs": 60000,
+          "outputBytes": 1048576
+        },
+        "executionPolicy": {
+          "mode": "parallel",
+          "preferIdle": false
+        },
+        "settingsVersions": {
+          "installation": 1,
+          "organization": 1,
+          "workspace": 1
+        }
+      },
+      "result": {
+        "outcome": "passed",
+        "completeness": "complete",
+        "execution": {
+          "status": "completed",
+          "exitCode": 0,
+          "stoppedAt": "2026-01-01T00:00:00Z"
+        },
+        "requiredAssertions": {
+          "required": 2,
+          "passed": 2,
+          "failed": 0,
+          "unknown": 0
+        },
+        "failedSloCount": 0,
+        "discoveryReached": null
+      },
+      "environment": {
+        "targetDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "inputsDigest": "2222222222222222222222222222222222222222222222222222222222222222",
+        "secretBindingsDigest": "3333333333333333333333333333333333333333333333333333333333333333",
+        "secretVersions": "known",
+        "targetSampler": "disabled",
+        "targetRevision": "unknown",
+        "contention": "unknown"
+      },
+      "differences": {
+        "fields": [
+          "revision"
+        ],
+        "configChanges": [
+          {
+            "path": "/requests",
+            "change": "changed"
+          }
+        ],
+        "limited": false
+      },
+      "warnings": [
+        "unknown_target_revision",
+        "unknown_contention",
+        "target_sampler_disabled"
+      ],
+      "metric": {
+        "availability": "ready",
+        "reason": null,
+        "series": {
+          "ordinal": 1,
+          "metric": "http_req_duration",
+          "kind": "trend",
+          "scope": "execute",
+          "tags": {
+            "phase": "execute",
+            "request": "r1"
+          },
+          "unit": "ms",
+          "total": {
+            "kind": "trend",
+            "count": 1,
+            "sum": 3,
+            "min": 3,
+            "max": 3,
+            "mean": 3,
+            "percentiles": {
+              "p50": {
+                "source": "histogram-estimate",
+                "scale": 4,
+                "estimate": 3,
+                "lower": 3,
+                "upper": 3
+              },
+              "p90": {
+                "source": "histogram-estimate",
+                "scale": 4,
+                "estimate": 3,
+                "lower": 3,
+                "upper": 3
+              },
+              "p95": {
+                "source": "histogram-estimate",
+                "scale": 4,
+                "estimate": 3,
+                "lower": 3,
+                "upper": 3
+              },
+              "p99": {
+                "source": "histogram-estimate",
+                "scale": 4,
+                "estimate": 3,
+                "lower": 3,
+                "upper": 3
+              }
+            }
+          }
+        },
+        "manifestDigest": "4444444444444444444444444444444444444444444444444444444444444444",
+        "measurementSourceTimeMs": 1800000000000,
+        "coverage": {
+          "complete": true,
+          "latePoints": 0,
+          "markerDelayDroppedBuckets": 0
+        }
+      }
+    }
+  ]
+}

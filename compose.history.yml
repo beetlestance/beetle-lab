@@ -1,0 +1,45 @@
+# Separate installation view: BEETLE_HISTORY_ROOT must be the final restored path.
+name: beetle-history-${BEETLE_HISTORY_INSTANCE:-local}
+x-runtime: &runtime
+  read_only: true
+  init: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  tmpfs: ["/tmp:rw,noexec,nosuid,nodev,size=16777216"]
+  pids_limit: 64
+  stop_grace_period: 45s
+  logging: {driver: local, options: {max-size: 1m, max-file: "2"}}
+services:
+  backend:
+    <<: *runtime
+    image: ${BEETLE_INSTALLER_IMAGE:-beetle-lab-installer:rewrite}
+    build: {context: ., dockerfile: tools/install/Dockerfile}
+    user: "${BEETLE_HISTORY_USER:-1000:1000}"
+    cpus: 0.5
+    mem_limit: 256m
+    entrypoint: [node, /beetle/install/history.js]
+    environment:
+      BEETLE_HISTORY_ROOT: ${BEETLE_HISTORY_ROOT:?Set the absolute restored history path}
+      BEETLE_HISTORY_EXTERNAL_ORIGIN: http://127.0.0.1:${BEETLE_HISTORY_PORT:-4568}
+      BEETLE_HISTORY_MAXIMUM_BYTES: ${BEETLE_HISTORY_MAXIMUM_BYTES:-1073741824}
+      BEETLE_HISTORY_MAXIMUM_ENTRIES: ${BEETLE_HISTORY_MAXIMUM_ENTRIES:-10000}
+      BEETLE_HISTORY_TIMEOUT_MS: ${BEETLE_HISTORY_TIMEOUT_MS:-600000}
+    volumes:
+      - type: bind
+        source: ${BEETLE_HISTORY_ROOT}
+        target: ${BEETLE_HISTORY_ROOT}
+        bind: {create_host_path: false}
+    networks: [history]
+  frontend:
+    <<: *runtime
+    image: ${BEETLE_FRONTEND_IMAGE:-beetle-lab-frontend:rewrite}
+    build: {context: ., dockerfile: web/Dockerfile, target: frontend}
+    user: "101:101"
+    cpus: 0.1
+    mem_limit: 64m
+    ports: ["127.0.0.1:${BEETLE_HISTORY_PORT:-4568}:8080"]
+    depends_on: [backend]
+    networks: [history, ingress]
+networks:
+  history: {internal: true}
+  ingress: {}

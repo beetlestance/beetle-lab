@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/api/v2/live-metrics",
+  "title": "LiveMetrics",
+  "$defs": {
+    "LiveMetricSelection": {
+      "type": "object",
+      "properties": {
+        "ordinal": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 19
+        },
+        "metric": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_:]*$"
+        },
+        "kind": {
+          "enum": [
+            "counter",
+            "rate",
+            "gauge",
+            "trend"
+          ]
+        },
+        "scope": {
+          "enum": [
+            "execute",
+            "engine"
+          ]
+        },
+        "tags": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricTags"
+        }
+      },
+      "required": [
+        "ordinal",
+        "metric",
+        "kind",
+        "scope",
+        "tags"
+      ],
+      "additionalProperties": false
+    },
+    "LiveMetricScope": {
+      "type": "object",
+      "properties": {
+        "organizationId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "workspaceId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "attemptId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "organizationId",
+        "workspaceId",
+        "attemptId",
+        "generation"
+      ],
+      "additionalProperties": false
+    },
+    "LiveMetricSubset": {
+      "type": "object",
+      "properties": {
+        "selected": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": {
+            "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveMetricSelection"
+          }
+        },
+        "excludedSeries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4600
+        }
+      },
+      "required": [
+        "selected",
+        "excludedSeries"
+      ],
+      "additionalProperties": false
+    },
+    "LiveMetricSnapshot": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveMetricScope"
+        },
+        "producerEpoch": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "subsetDigest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "subset": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveMetricSubset"
+        },
+        "sourceSequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "publishedSequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "coalescedWindows": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "capturedAtMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8640000000000000
+        },
+        "publishedAtMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8640000000000000
+        },
+        "startTimeMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8640000000000000
+        },
+        "endTimeMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8640000000000000
+        },
+        "upstreamCoverage": {
+          "const": "unknown"
+        },
+        "series": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "$ref": "https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricSeries"
+          }
+        }
+      },
+      "required": [
+        "version",
+        "scope",
+        "producerEpoch",
+        "subsetDigest",
+        "subset",
+        "sourceSequence",
+        "publishedSequence",
+        "coalescedWindows",
+        "capturedAtMs",
+        "publishedAtMs",
+        "startTimeMs",
+        "endTimeMs",
+        "upstreamCoverage",
+        "series"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "requestId": "00000000-0000-4000-8000-000000000010",
+  "expectedVersion": 1,
+  "schemaVersion": 2,
+  "scope": {
+    "kind": "installation"
+  },
+  "patch": {
+    "retention": {
+      "mode": "enabled",
+      "ageDays": 30
+    }
+  }
+}

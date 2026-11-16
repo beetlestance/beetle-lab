@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle.test/contracts/engines/k6/v1/compile-input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "engine",
+    "inputs"
+  ],
+  "properties": {
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "imageDigest"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "imageDigest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      }
+    },
+    "targetOverride": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ref",
+          "content"
+        ],
+        "properties": {
+          "ref": {
+            "$ref": "https://beetle.test/contracts/engines/k6/v1/suite-common#/$defs/input"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 8388608
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 128
+    }
+  }
+}

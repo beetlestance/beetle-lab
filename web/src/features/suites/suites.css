@@ -1,0 +1,8 @@
+.suite-editor { margin: var(--space-6) 0; padding: var(--space-6); border: var(--border-width) solid var(--border); background: var(--surface); }
+.suite-editor fieldset { display: grid; gap: var(--space-4); border: 0; min-width: 0; padding: var(--space-4) 0; }
+.suite-editor label { display: grid; gap: var(--space-2); margin: var(--space-3) 0; font-weight: 600; }
+.suite-editor input:not([type='radio']), .suite-editor textarea { width: 100%; padding: var(--space-3); color: var(--ink); background: var(--canvas); border: var(--border-width) solid var(--border-strong); }
+.suite-editor input { min-height: 44px; }
+.suite-editor textarea { min-height: 180px; resize: vertical; font-family: var(--mono); font-size: var(--text-body); }
+.suite-editor p { margin: var(--space-3) 0; overflow-wrap: anywhere; }
+.suite-config { margin-bottom: var(--space-4); }

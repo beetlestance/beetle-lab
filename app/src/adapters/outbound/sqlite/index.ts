@@ -1,0 +1,378 @@
+import { validateOptions } from './options.js';
+import type { MetadataOptions } from './options.js';
+import {checkedOrganizationOverview,checkedOrganizationOverviewQuery} from '../../../application/organization-overview/index.js';
+import { captureNamespaceDeletionReply } from './namespace-deletion/index.js';
+import type { NamespaceDeletionOperation } from './namespace-deletion/index.js';
+import type { NamespaceDeletionStore } from '../../../ports/namespace-deletion.js';
+import { retentionOperation,captureRetentionReply,retentionClient } from './retention-wire/index.js';
+import type { RetentionOperation,RetentionMetadata } from '../../../ports/retention.js';
+import { settlementOperation,captureSettlementValue } from './backend-settlement/index.js';
+import type { OutputSettlementMetadata,BackendSettlementOperation } from '../../../ports/output-settlement-metadata.js';
+import { captureHistoryReply, historyOperation } from './run-history/index.js';
+import type { HistoryOperation } from './run-history/index.js';
+import type { RunHistoryStore } from '../../../ports/run-history.js';
+import {checkedOverview,checkedOverviewQuery} from '../../../application/overview/index.js';
+import type {OverviewReader,OrganizationOverviewReader} from '../../../ports/overview.js';
+import {exportOperation,captureExportReply} from './export-wire.js';
+import type {ExportOperation} from './export-wire.js';
+import type {ExportArtifacts,ExportExecutionStore,ExportStore} from '../../../ports/exports.js';
+import { localSessionOperation, captureLocalSessionReply } from './local-session/index.js';
+import type { LocalSessionStore, LocalSessionOperation } from '../../../ports/local-session.js';
+import { deletionOperation, captureDeletionReply } from './output-deletion/index.js';
+import type { OutputDeletionMetadata, OutputDeletionOperation } from '../../../ports/output-deletion-metadata.js';
+import type { RunExecutionReader } from '../../../ports/run-live-metrics.js';
+import { captureExecutionReply } from './execution-binding/index.js';
+import { artifactReadOperation, captureArtifactReadReply } from './run-artifacts/index.js';
+import type { ArtifactReadOperation } from './run-artifacts/index.js';
+import type { RunArtifactsReader } from '../../../ports/run-artifacts.js';
+import { captureRunEventsReply } from './run-events/index.js';
+import type { RunEventReader, RunEventsQuery } from '../../../ports/run-events.js';
+import { absenceOperation, captureAbsenceReply } from './output-absence/index.js';
+import type { AbsenceOperation } from './output-absence/index.js';
+import type { OutputAbsenceStore } from '../../../ports/output-absence.js';
+import type { OutputFinalizations } from '../../../ports/output-finalization.js';
+import { finalizationOperation, captureFinalizationReply } from './output-finalization/index.js';
+import type { FinalizationOperation } from './output-finalization/index.js';
+import { captureResultReply } from './run-results/index.js';
+import type { RunResultReader } from '../../../ports/run-results.js';
+import type { RunKey } from '../../../ports/runs.js';
+import type { OutputArtifactStore } from '../../../ports/output-artifacts.js';
+import { outputOperation, captureOutputReply } from './output-custody/index.js';
+import type { OutputOperation } from './output-custody/index.js';
+import type { EventCustodyStore } from '../../../ports/events.js';
+import { eventOperation, captureEventReply } from './event-custody/index.js';
+import type { EventOperation } from './event-custody/index.js';
+import type { RunStore, RunReader, RunCancellationStore, CancelRunCommand } from '../../../ports/runs.js';
+import { captureCancelRunReply } from './run-cancellation-reply.js';
+import type { DispatchStore } from '../../../ports/dispatch.js';
+import type { InputStore } from '../../../ports/inputs.js';
+import type { SuiteStore, SuiteReader } from '../../../ports/suites.js';
+import { Worker } from 'node:worker_threads';
+import type { SettingsScope } from '@beetle/contracts/api';
+import type { NamespaceStore } from '../../../ports/namespaces.js';
+import type { NamespaceEntity } from '../../../ports/namespaces.js';
+import type { SettingsStore } from '../../../ports/settings.js';
+import type { SettingsIdentity } from '../../../ports/settings-reader.js';
+import { checkedOperation, largeOperation, operationReplyLimit, boundedCopy } from './input.js';
+import { dispatchOperation, captureDispatchReply } from './dispatch-wire.js';
+import type { DispatchOperation } from './dispatch-wire.js';
+import { captureWorkerReply } from './worker-reply.js';
+import type { WorkerReply } from './worker-reply.js';
+import { StorageError } from './protocol.js';
+import type { Bootstrap, EntityKey, EntityPage, ErrorCode, ListQuery, Operation, RuntimeObservation, SettingsView, Value } from './protocol.js';
+export { StorageError } from './protocol.js';
+export type { RunConfiguration, RunProfilePin } from '../../../ports/runs.js';
+export type { Bootstrap, EntityKey, EntityPage, ErrorCode, ListQuery, RuntimeObservation, SettingsView } from './protocol.js';
+
+export type { MetadataOptions } from './options.js';
+interface Pending { namespaceDeletion?:NamespaceDeletionOperation; retention?:RetentionOperation; settlement?:BackendSettlementOperation; history?: HistoryOperation; exportJob?:ExportOperation; localSession?: LocalSessionOperation; deletion?: OutputDeletionOperation; resolve(value: Value): void; reject(error: StorageError): void; timer: NodeJS.Timeout;
+  artifacts?: ArtifactReadOperation; absence?: AbsenceOperation; finalization?: FinalizationOperation; result?: RunKey; execution?: RunKey; runEvents?: RunEventsQuery; output?: OutputOperation; large: boolean; replyLimit: number; event?: EventOperation; dispatch?: DispatchOperation; cancellation?: CancelRunCommand }
+export class Metadata {
+  private readonly worker: Worker;
+  private readonly pending = new Map<number, Pending>();
+  private readonly limit: number;
+  private readonly runtimeTtlMs: number;
+  private nextId = 0;
+  private closing = false;
+  private failed = false;
+  private closePromise: Promise<void> | undefined;
+  private terminationPromise: Promise<number> | undefined;
+  private readyResolve: () => void = () => undefined;
+  private readyReject: (error: StorageError) => void = () => undefined;
+  private readonly ready: Promise<void>;
+  readonly historySummaries: RunHistoryStore = {
+    retirement:job=>this.historyCall({kind:'historySummary',operation:{method:'retirement',request:{job}}}) as ReturnType<RunHistoryStore['retirement']>,
+    scan: query => this.historyCall({kind:'historySummary',operation:{method:'scan',query}}) as ReturnType<RunHistoryStore['scan']>,
+    defer: request => this.historyCall({kind:'historySummary',operation:{method:'defer',request}}) as ReturnType<RunHistoryStore['defer']>,
+    commit: request => this.historyCall({kind:'historySummary',operation:{method:'commit',request}}) as ReturnType<RunHistoryStore['commit']>,
+  };
+  private async historyCall(operation: HistoryOperation): Promise<Value> {
+    try { return await this.call(operation); }
+    catch (error) {
+      if (this.failed) {
+        try { await this.terminate(); } catch (cleanup) { throw new AggregateError([error, cleanup], 'History carrier termination failed', { cause: cleanup }); }
+      }
+      throw error;
+    }
+  }
+  readonly exportOutputs:ExportArtifacts={
+    published:key=>this.call({kind:'exportOutput',operation:{method:'published',key}}) as ReturnType<ExportArtifacts['published']>,
+    settleAbsence:request=>this.call({kind:'exportOutput',operation:{method:'absence',request}}) as ReturnType<ExportArtifacts['settleAbsence']>,
+    load:binding=>this.call({kind:'exportOutput',operation:{method:'load',binding}}) as ReturnType<ExportArtifacts['load']>,
+    readSource:binding=>this.call({kind:'exportOutput',operation:{method:'source',binding}}) as ReturnType<ExportArtifacts['readSource']>,
+    adopt:request=>this.call({kind:'exportOutput',operation:{method:'adopt',request}}) as ReturnType<ExportArtifacts['adopt']>,
+    claimArtifact:request=>this.call({kind:'exportOutput',operation:{method:'artifact',operation:{kind:'outputClaimArtifact',request}}}) as ReturnType<ExportArtifacts['claimArtifact']>,
+    recordProgress:request=>this.call({kind:'exportOutput',operation:{method:'artifact',operation:{kind:'outputRecordProgress',request}}}) as ReturnType<ExportArtifacts['recordProgress']>,
+    beginPublication:request=>this.call({kind:'exportOutput',operation:{method:'artifact',operation:{kind:'outputBeginPublication',request}}}) as ReturnType<ExportArtifacts['beginPublication']>,
+    recordPublication:request=>this.call({kind:'exportOutput',operation:{method:'artifact',operation:{kind:'outputRecordPublication',request}}}) as ReturnType<ExportArtifacts['recordPublication']>,
+  };
+  readonly exportExecutions:ExportExecutionStore={
+    finalize:request=>this.call({kind:'finalizeExport',request}) as ReturnType<ExportExecutionStore['finalize']>,
+    scan:query=>this.call({kind:'scanExportJobs',query}) as ReturnType<ExportExecutionStore['scan']>,
+    original:key=>this.call({kind:'getExportOriginal',key}) as ReturnType<ExportExecutionStore['original']>,
+    control:key=>this.call({kind:'getExportControl',key}) as ReturnType<ExportExecutionStore['control']>,
+    claim:key=>this.call({kind:'claimExport',key}) as ReturnType<ExportExecutionStore['claim']>,
+    observe:request=>this.call({kind:'observeExport',request}) as ReturnType<ExportExecutionStore['observe']>,
+  };
+  readonly exports:ExportStore={
+    create:command=>this.call({kind:'exportJob',command}) as ReturnType<ExportStore['create']>,
+    cancel:command=>this.call({kind:'exportJob',command}) as ReturnType<ExportStore['cancel']>,
+    get:key=>this.call({kind:'getExport',key}) as ReturnType<ExportStore['get']>,
+    list:query=>this.call({kind:'listExports',query}) as ReturnType<ExportStore['list']>,
+    profiles:scope=>this.call({kind:'getExportProfiles',scope}) as ReturnType<ExportStore['profiles']>,
+  };
+  private async retentionCall(operation:RetentionOperation):Promise<Value>{
+    try{return await this.call(operation);}
+    catch(error){
+      if(this.failed){try{await this.terminate();}catch{return await new Promise<never>(()=>{});}}
+      throw error;
+    }
+  }
+  readonly retention:RetentionMetadata=retentionClient(operation=>this.retentionCall(operation));
+  readonly localSessions: LocalSessionStore = {
+    load: () => this.call({kind: 'loadLocalSession'}) as ReturnType<LocalSessionStore['load']>,
+    save: (expectedVersion, session) => this.call({kind: 'saveLocalSession', expectedVersion, session}) as ReturnType<LocalSessionStore['save']>,
+  };
+  readonly outputSettlements:OutputSettlementMetadata={
+    settle:request=>this.settlementCall({kind:'settleBackendOutput',request}) as ReturnType<OutputSettlementMetadata['settle']>,
+    read:key=>this.settlementCall({kind:'readBackendSettlement',key}) as ReturnType<OutputSettlementMetadata['read']>,
+  };
+  private async settlementCall(operation:BackendSettlementOperation):Promise<Value>{
+    try{return await this.call(operation);}
+    catch(error){
+      if(this.failed){try{await this.terminate();}catch{return await new Promise<never>(()=>{});}}
+      throw error;
+    }
+  }
+  readonly outputDeletions: OutputDeletionMetadata = {
+    begin: command => this.deletionCall({kind: 'beginOutputDeletion', command}) as ReturnType<OutputDeletionMetadata['begin']>,
+    get: key => this.deletionCall({kind: 'getOutputDeletion', key}) as ReturnType<OutputDeletionMetadata['get']>,
+    cleanupAck:key=>this.deletionCall({kind:'getOutputCleanupAck',key}) as ReturnType<OutputDeletionMetadata['cleanupAck']>,
+    recordCleanupAck:request=>this.deletionCall({kind:'recordOutputCleanupAck',request}) as ReturnType<OutputDeletionMetadata['recordCleanupAck']>,
+    reserveControl: key => this.deletionCall({kind:'reserveOutputCleanupControl',key}) as ReturnType<OutputDeletionMetadata['reserveControl']>,
+    retirementRequest: key => this.deletionCall({kind: 'getOutputRetirementRequest', key}) as ReturnType<OutputDeletionMetadata['retirementRequest']>,
+    getFile: key => this.deletionCall({kind: 'getOutputDeletionFile', key}) as ReturnType<OutputDeletionMetadata['getFile']>,
+    recordPlan: request => this.deletionCall({kind: 'recordOutputDeletionPlan', request}) as ReturnType<OutputDeletionMetadata['recordPlan']>,
+    recordAbsence: request => this.deletionCall({kind: 'recordOutputDeletionAbsence', request}) as ReturnType<OutputDeletionMetadata['recordAbsence']>,
+    scanSettlements:query=>this.deletionCall({kind:'scanOutputSettlements',query}) as ReturnType<OutputDeletionMetadata['scanSettlements']>,
+    scanRetirements:query=>this.deletionCall({kind:'scanOutputRetirements',query}) as ReturnType<OutputDeletionMetadata['scanRetirements']>,
+    scan: query => this.deletionCall({kind: 'scanOutputDeletions', query}) as ReturnType<OutputDeletionMetadata['scan']>,
+  };
+  /** Failed replies do not settle the actual metadata carrier. */
+  private async deletionCall(operation:OutputDeletionOperation):Promise<Value>{
+    try{return await this.call(operation);}
+    catch(error){
+      if(this.failed){
+        try{await this.terminate();}
+        catch{return await new Promise<never>(()=>{});}
+      }
+      throw error;
+    }
+  }
+  readonly absences: OutputAbsenceStore = {
+    read: binding => this.call({ kind: 'absenceRead', binding }) as ReturnType<OutputAbsenceStore['read']>,
+    adopt: request => this.call({ kind: 'absenceAdopt', request }) as ReturnType<OutputAbsenceStore['adopt']>,
+    finalize: request => this.call({ kind: 'absenceFinalize', request }) as ReturnType<OutputAbsenceStore['finalize']>,
+  };
+  readonly finalizations: OutputFinalizations = {
+    finalize: request => this.call({ kind: 'outputFinalize', request }) as ReturnType<OutputFinalizations['finalize']>,
+  };
+  readonly runEvents: RunEventReader = {
+    getRunEvents: query => this.call({ kind: 'getRunEvents', query }) as ReturnType<RunEventReader['getRunEvents']>,
+  };
+  readonly runArtifacts: RunArtifactsReader = {
+    listRunArtifacts: query => this.call({kind: 'listRunArtifacts', query}) as ReturnType<RunArtifactsReader['listRunArtifacts']>,
+    getRunArtifact: key => this.call({kind: 'getRunArtifact', key}) as ReturnType<RunArtifactsReader['getRunArtifact']>,
+  };
+  readonly executions: RunExecutionReader = {
+    getRunExecution: key => this.call({kind: 'getRunExecution', key}) as ReturnType<RunExecutionReader['getRunExecution']>,
+  };
+  readonly results: RunResultReader = {
+    getRunResult: key => this.call({ kind: 'getRunResult', key }) as ReturnType<RunResultReader['getRunResult']>,
+  };
+  readonly outputs: OutputArtifactStore = {
+    claimArtifact: request => this.call({kind: 'outputClaimArtifact', request}) as ReturnType<OutputArtifactStore['claimArtifact']>,
+    recordProgress: request => this.call({kind: 'outputRecordProgress', request}) as ReturnType<OutputArtifactStore['recordProgress']>,
+    beginPublication: request => this.call({kind: 'outputBeginPublication', request}) as ReturnType<OutputArtifactStore['beginPublication']>,
+    recordPublication: request => this.call({kind: 'outputRecordPublication', request}) as ReturnType<OutputArtifactStore['recordPublication']>,
+    scan: query => this.call({ kind: 'outputScan', query }) as ReturnType<OutputArtifactStore['scan']>,
+    load: binding => this.call({ kind: 'outputLoad', binding }) as ReturnType<OutputArtifactStore['load']>,
+    readSource: binding => this.call({ kind: 'outputReadSource', binding }) as ReturnType<OutputArtifactStore['readSource']>,
+    adopt: request => this.call({ kind: 'outputAdopt', request }) as ReturnType<OutputArtifactStore['adopt']>,
+  };
+  readonly events: EventCustodyStore = {
+    scan: query => this.call({ kind: 'eventScan', query }) as ReturnType<EventCustodyStore['scan']>,
+    load: binding => this.call({ kind: 'eventLoad', binding }) as ReturnType<EventCustodyStore['load']>,
+    ingest: request => this.call({ kind: 'eventIngest', request }) as ReturnType<EventCustodyStore['ingest']>,
+    confirmAck: request => this.call({ kind: 'eventConfirmAck', request }) as ReturnType<EventCustodyStore['confirmAck']>,
+    recordProblem: request => this.call({ kind: 'eventProblem', request }) as ReturnType<EventCustodyStore['recordProblem']>,
+  };
+  readonly organizationOverview:OrganizationOverviewReader={read:async input=>{const query=checkedOrganizationOverviewQuery(input);return checkedOrganizationOverview(await this.call({kind:'getOrganizationOverview',query}),query);}};
+  readonly overview:OverviewReader={read:async input=>{const query=checkedOverviewQuery(input);const value=await this.call({kind:'getWorkspaceOverview',query});return checkedOverview(value,query);}};
+  readonly runs: RunStore & RunReader & RunCancellationStore = {
+    execute: command => this.call({ kind: 'run', command }) as ReturnType<RunStore['execute']>,
+    getRun: key => this.call({ kind: 'getRun', key }) as ReturnType<RunReader['getRun']>,
+    listRuns: query => this.call({ kind: 'listRuns', query }) as ReturnType<RunReader['listRuns']>,
+    cancel: command => this.call({ kind: 'cancelRun', command }) as ReturnType<RunCancellationStore['cancel']>,
+  };
+  readonly dispatch: DispatchStore = {
+    scan: query => this.call({ kind: 'dispatchScan', query }) as ReturnType<DispatchStore['scan']>,
+    readOffer: key => this.call({ kind: 'dispatchReadOffer', key }) as ReturnType<DispatchStore['readOffer']>,
+    claim: key => this.call({ kind: 'dispatchClaim', key }) as ReturnType<DispatchStore['claim']>,
+    observe: request => this.call({ kind: 'dispatchObserve', request }) as ReturnType<DispatchStore['observe']>,
+  };
+  readonly inputs: InputStore = {
+    control: command => this.call({ kind: 'input', command }) as ReturnType<InputStore['control']>,
+    advance: command => this.call({ kind: 'advanceInput', command }) as ReturnType<InputStore['advance']>,
+    get: key => this.call({ kind: 'getInput', key }) as ReturnType<InputStore['get']>,
+    list: query => this.call({ kind: 'listInputs', query }) as ReturnType<InputStore['list']>,
+    recovery: query => this.call({ kind: 'recoverInputs', query }) as ReturnType<InputStore['recovery']>,
+    storage: () => this.call({ kind: 'inputStorage' }) as ReturnType<InputStore['storage']>,
+  };
+  readonly suites: SuiteStore & SuiteReader = {
+    execute: command => this.call({ kind: 'suite', command }) as ReturnType<SuiteStore['execute']>,
+    getSuite: key => this.call({ kind: 'getSuite', key }) as ReturnType<SuiteReader['getSuite']>,
+    getRevision: key => this.call({ kind: 'getRevision', key }) as ReturnType<SuiteReader['getRevision']>,
+    listSuites: query => this.call({ kind: 'listSuites', query }) as ReturnType<SuiteReader['listSuites']>,
+    listRevisions: query => this.call({ kind: 'listRevisions', query }) as ReturnType<SuiteReader['listRevisions']>,
+  };
+  readonly namespaceDeletions: NamespaceDeletionStore = {delete: command => this.call({kind: 'deleteNamespace', command}) as ReturnType<NamespaceDeletionStore['delete']>};
+  readonly namespaces: NamespaceStore = { execute: command => this.call({ kind: 'namespace', command }) as
+    ReturnType<NamespaceStore['execute']> };
+  readonly settings: SettingsStore = { execute: command => this.call({ kind: 'settings', command }) as
+    ReturnType<SettingsStore['execute']> };
+
+  private constructor(options: MetadataOptions, bootstrap: Bootstrap) {
+    this.limit = options.queueLimit ?? 32;
+    this.runtimeTtlMs = bootstrap.runtimeTtlMs ?? 5000;
+    this.ready = new Promise((resolve, reject) => { this.readyResolve = resolve; this.readyReject = reject; });
+    this.worker = new Worker(options.workerUrl, { workerData: { path: options.path, bootstrap, ...(options.readOnly ? {readOnly: true, historicalIdentity: options.historicalIdentity} : {}) },
+      resourceLimits: { maxOldGenerationSizeMb: 128 } });
+    this.worker.on('message', (reply: unknown) => this.receive(reply));
+    this.worker.on('error', () => this.fail('unavailable'));
+    this.worker.on('exit', () => this.fail('unavailable'));
+  }
+  static async open(options: MetadataOptions): Promise<Metadata> {
+    const bootstrap = validateOptions(options);
+    let metadata: Metadata;
+    try { metadata = new Metadata(options, bootstrap); } catch { throw new StorageError('unavailable'); }
+    const timer = setTimeout(() => metadata.fail('unavailable'), 5000);
+    try { await metadata.ready; return metadata; }
+    catch (error) { await metadata.terminate(); throw error; }
+    finally { clearTimeout(timer); }
+  }
+  get(key: EntityKey): Promise<NamespaceEntity> {
+    return this.call({ kind: 'get', key }) as Promise<NamespaceEntity>;
+  }
+  list(query: ListQuery): Promise<EntityPage> { return this.call({ kind: 'list', query }) as Promise<EntityPage>; }
+  getSettings(scope: SettingsScope): Promise<SettingsView> {
+    return this.call({ kind: 'getSettings', scope }) as Promise<SettingsView>;
+  }
+  /** Internal identity seam: does not resolve defaults or inspect runtime capacity. */
+  getSettingsIdentity(scope: SettingsScope): Promise<SettingsIdentity> {
+    return this.call({ kind: 'getSettingsIdentity', scope }) as Promise<SettingsIdentity>;
+  }
+  updateRuntime(runtime: RuntimeObservation | null): Promise<null> {
+    return this.call({ kind: 'runtime', runtime }) as Promise<null>;
+  }
+  close(): Promise<void> {
+    if (this.closePromise) return this.closePromise;
+    this.closing = true;
+    this.closePromise = this.send({ kind: 'close' }).then(() => undefined).finally(() => this.terminate());
+    return this.closePromise;
+  }
+  /** Pending writes may have committed; replay original intent after reopening. */
+  async abort(): Promise<void> { this.closing = true; this.fail('unavailable'); await this.terminate(); }
+  private call(operation: Operation): Promise<Value> {
+    if (this.closing) return Promise.reject(new StorageError('closed'));
+    if (this.failed) return Promise.reject(new StorageError('unavailable'));
+    if (this.pending.size >= this.limit) return Promise.reject(new StorageError('queue_full'));
+    if (largeOperation(operation) && [...this.pending.values()].filter(value => value.large).length >= 2) return Promise.reject(new StorageError('queue_full'));
+    try { return this.send(checkedOperation(operation, this.runtimeTtlMs)); }
+    catch { return Promise.reject(new StorageError('invalid_input')); }
+  }
+  private send(operation: Operation): Promise<Value> {
+    if (this.failed) return Promise.reject(new StorageError('unavailable'));
+    if (!Number.isSafeInteger(this.nextId) || this.nextId < 0 || this.nextId >= Number.MAX_SAFE_INTEGER) {
+      this.fail('unavailable'); return Promise.reject(new StorageError('unavailable'));
+    }
+    const messageId = ++this.nextId;
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => this.fail('unavailable'), 5000);
+      this.pending.set(messageId, { resolve, reject, timer, large: largeOperation(operation),
+        replyLimit: operationReplyLimit(operation), ...(localSessionOperation(operation) ? {localSession: operation} : {}), ...(deletionOperation(operation) ? {deletion: operation} : {}), ...(absenceOperation(operation) ? { absence: operation } : {}), ...(finalizationOperation(operation) ? { finalization: operation } : {}), ...(outputOperation(operation) ? { output: operation } : {}), ...(eventOperation(operation) ? { event: operation } : {}), ...(dispatchOperation(operation) ? { dispatch: operation } : {}),
+
+        ...(operation.kind === 'cancelRun' ? { cancellation: operation.command } : {}) });
+      const pending = this.pending.get(messageId)!;
+      this.bindReadRequest(pending, operation);
+      try { this.worker.postMessage({ ...operation, messageId }); } catch { this.fail('unavailable'); }
+    });
+  }
+  private receive(input: unknown): void {
+    if (this.failed) return;
+    let reply: WorkerReply;
+    try { reply = captureWorkerReply(input); } catch { this.fail('unavailable'); return; }
+    if (reply.kind === 'ready') { this.readyResolve(); return; }
+    if (reply.kind === 'startup_error') { this.fail(reply.code); return; }
+    const pending = this.pending.get(reply.messageId);
+    if (!pending) { this.fail('unavailable'); return; }
+    if (reply.ok) this.resolve(reply, pending);
+    else {
+      this.release(reply.messageId, pending);
+      pending.reject(new StorageError(reply.code));
+      if (reply.code === 'unavailable') this.fail('unavailable');
+    }
+  }
+  private resolve(reply: Extract<WorkerReply, { kind: 'result'; ok: true }>, pending: Pending): void {
+    let value: Value;
+    try {
+      value = pending.history ? captureHistoryReply(pending.history, reply.value) : this.readDeletionReply(pending, reply.value) ?? (pending.absence ? captureAbsenceReply(pending.absence, reply.value) : pending.finalization ? captureFinalizationReply(pending.finalization, reply.value) : pending.output ? captureOutputReply(pending.output, reply.value) : pending.event ? captureEventReply(pending.event, reply.value)
+        : pending.dispatch ? captureDispatchReply(pending.dispatch, reply.value)
+        : pending.cancellation ? captureCancelRunReply(reply.value, pending.cancellation)
+        : boundedCopy(reply.value, pending.replyLimit) as Value);
+    } catch { this.fail('unavailable'); return; }
+    this.release(reply.messageId, pending);
+    pending.resolve(value);
+  }
+  private bindReadRequest(pending: Pending, operation: Operation): void {
+    if(operation.kind === 'deleteNamespace')pending.namespaceDeletion=operation;
+    if(retentionOperation(operation))pending.retention=operation;
+    if(settlementOperation(operation))pending.settlement=operation;
+    if (historyOperation(operation)) pending.history = operation;
+    if(exportOperation(operation))pending.exportJob=operation;
+    if (operation.kind === 'getRunExecution') pending.execution = operation.key;
+    if (artifactReadOperation(operation)) pending.artifacts = operation;
+    if (operation.kind === 'getRunEvents') pending.runEvents = operation.query;
+    if (operation.kind === 'getRunResult') pending.result = operation.key;
+  }
+  private readDeletionReply(pending: Pending, value: unknown): Value | undefined {
+    if(pending.namespaceDeletion)return captureNamespaceDeletionReply(pending.namespaceDeletion.command, value);
+    return this.readReply(pending, value);
+  }
+  private readReply(pending: Pending, value: unknown): Value | undefined {
+    if(pending.retention)return captureRetentionReply(pending.retention,value);
+    if(pending.settlement)return captureSettlementValue(pending.settlement,value);
+    if(pending.exportJob)return captureExportReply(pending.exportJob,value);
+    if (pending.localSession) return captureLocalSessionReply(pending.localSession, value);
+    if (pending.deletion) return captureDeletionReply(pending.deletion, value);
+    if (pending.execution) return captureExecutionReply(pending.execution, value);
+    if (pending.artifacts) return captureArtifactReadReply(pending.artifacts, value);
+    if (pending.runEvents) return captureRunEventsReply(pending.runEvents, value);
+    if (pending.result) return captureResultReply(pending.result, value);
+    return undefined;
+  }
+  private release(messageId: number, pending: Pending): void {
+    this.pending.delete(messageId); clearTimeout(pending.timer);
+  }
+  private fail(code: ErrorCode): void {
+    if (this.failed) return;
+    this.failed = true; this.readyReject(new StorageError(code));
+    for (const pending of this.pending.values()) { clearTimeout(pending.timer); pending.reject(new StorageError(code)); }
+    void this.terminate().catch(()=>{});
+  }
+  private terminate(): Promise<number> {
+    this.terminationPromise ??= this.worker.terminate().then(code => { this.pending.clear(); return code; });
+    return this.terminationPromise;
+  }
+}
+export const openMetadata = Metadata.open;

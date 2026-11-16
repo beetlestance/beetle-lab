@@ -1,0 +1,777 @@
+{
+  "version": 1,
+  "intent": {
+    "version": 1,
+    "collectionId": "00000000-0000-4000-8000-000000000006",
+    "binding": {
+      "journalAuthority": "11111111-1111-4111-8111-111111111111",
+      "organizationId": "00000000-0000-4000-8000-000000000001",
+      "workspaceId": "00000000-0000-4000-8000-000000000002",
+      "attemptId": "00000000-0000-4000-8000-000000000003",
+      "generation": 1,
+      "intentDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+      "engine": {
+        "id": "k6",
+        "imageDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "configVersion": 1
+      },
+      "installedIdentity": {
+        "manifestId": "k6-v1",
+        "profileId": "local-🪲",
+        "catalogVersion": 1,
+        "manifestDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "profileDigest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "schemaDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "specDigest": "2222222222222222222222222222222222222222222222222222222222222222"
+    },
+    "root": {
+      "directory": "/synthetic/output/🪲",
+      "uid": 1000,
+      "device": "9007199254740993",
+      "inode": "18446744073709551615",
+      "modifiedNs": "1767225600000000000",
+      "changedNs": "1767225600000000000"
+    },
+    "checkpoint": {
+      "version": 1,
+      "dev": "9007199254740993",
+      "ino": "9007199254740994",
+      "offset": 4096,
+      "wrapperSeq": 1,
+      "prefixSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "lastBatchDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    },
+    "launch": {
+      "authority": "supervisor",
+      "key": {
+        "organizationId": "00000000-0000-4000-8000-000000000001",
+        "workspaceId": "00000000-0000-4000-8000-000000000002",
+        "attemptId": "00000000-0000-4000-8000-000000000003",
+        "generation": 1
+      },
+      "createToken": "3333333333333333333333333333333333333333333333333333333333333333",
+      "specDigest": "2222222222222222222222222222222222222222222222222222222222222222",
+      "runtimeId": "synthetic-runtime",
+      "epoch": 0,
+      "startToken": null,
+      "disposition": "retired",
+      "settledAt": 100001,
+      "evidenceId": "00000000-0000-4000-8000-000000000008"
+    },
+    "runtime": {
+      "state": "stopped",
+      "source": "supervisor",
+      "observedAt": 100002,
+      "evidenceId": "00000000-0000-4000-8000-000000000007"
+    },
+    "begunAt": 100003
+  },
+  "vectors": [
+    {
+      "name": "base",
+      "input": {
+        "collectionId": "00000000-0000-4000-8000-000000000006",
+        "binding": {
+          "journalAuthority": "11111111-1111-4111-8111-111111111111",
+          "organizationId": "00000000-0000-4000-8000-000000000001",
+          "workspaceId": "00000000-0000-4000-8000-000000000002",
+          "attemptId": "00000000-0000-4000-8000-000000000003",
+          "generation": 1,
+          "intentDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+          "engine": {
+            "id": "k6",
+            "imageDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configVersion": 1
+          },
+          "installedIdentity": {
+            "manifestId": "k6-v1",
+            "profileId": "local-🪲",
+            "catalogVersion": 1,
+            "manifestDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "profileDigest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "schemaDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "specDigest": "2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "collection": {
+          "ok": true,
+          "value": {
+            "protocolVersion": "1.0",
+            "organizationId": "00000000-0000-4000-8000-000000000001",
+            "workspaceId": "00000000-0000-4000-8000-000000000002",
+            "attemptId": "00000000-0000-4000-8000-000000000003",
+            "generation": 1,
+            "schemaId": "https://beetle-lab.dev/contracts/runner/v1/engine-result",
+            "engineId": "k6",
+            "mode": "ordinary",
+            "execution": {
+              "status": "completed",
+              "exitCode": 0,
+              "stoppedAt": "2026-01-01T00:00:00Z"
+            },
+            "outcome": "passed",
+            "requiredAssertions": {
+              "required": 2,
+              "passed": 2,
+              "failed": 0,
+              "unknown": 0
+            },
+            "thresholds": [
+              {
+                "id": "latency",
+                "purpose": "slo",
+                "passed": true
+              }
+            ],
+            "completeness": "complete",
+            "artifacts": [
+              {
+                "artifactId": "00000000-0000-4000-8000-000000000004",
+                "kind": "report",
+                "relativePath": "reports/result.json",
+                "bytes": 32,
+                "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sealedAt": "2026-01-01T00:00:00Z"
+              },
+              {
+                "artifactId": "00000000-0000-4000-8000-000000000005",
+                "kind": "report",
+                "relativePath": "reports/empty.json",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sealedAt": "2026-01-01T00:00:00Z"
+              }
+            ],
+            "seal": {
+              "sealedAt": "2026-01-01T00:00:00Z",
+              "sha256": "6504756b8fa37e36bab8c8d8d0e28d88cfc3ce97548259b98aeb9d4ff8adfe15"
+            }
+          },
+          "verifiedBytes": 5343,
+          "custody": {
+            "resultFileBytes": 1215,
+            "controlBytes": 4096,
+            "root": {
+              "directory": "/synthetic/output/🪲",
+              "uid": 1000,
+              "device": "9007199254740993",
+              "inode": "18446744073709551615",
+              "modifiedNs": "1767225600000000000",
+              "changedNs": "1767225600000000000"
+            }
+          }
+        },
+        "checkpoint": {
+          "version": 1,
+          "dev": "9007199254740993",
+          "ino": "9007199254740994",
+          "offset": 4096,
+          "wrapperSeq": 1,
+          "prefixSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "lastBatchDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        },
+        "release": {
+          "authority": "supervisor",
+          "key": {
+            "organizationId": "00000000-0000-4000-8000-000000000001",
+            "workspaceId": "00000000-0000-4000-8000-000000000002",
+            "attemptId": "00000000-0000-4000-8000-000000000003",
+            "generation": 1
+          },
+          "createToken": "3333333333333333333333333333333333333333333333333333333333333333",
+          "specDigest": "2222222222222222222222222222222222222222222222222222222222222222",
+          "runtimeId": "synthetic-runtime",
+          "runtime": {
+            "state": "stopped",
+            "source": "supervisor",
+            "observedAt": 100002,
+            "evidenceId": "00000000-0000-4000-8000-000000000007"
+          },
+          "collection": {
+            "state": "finished",
+            "observedAt": 100004,
+            "evidenceId": "00000000-0000-4000-8000-000000000006"
+          },
+          "launch": {
+            "epoch": 0,
+            "startToken": null,
+            "settlementId": "00000000-0000-4000-8000-000000000008"
+          }
+        }
+      },
+      "expected": {
+        "manifestPreimage": "beetle-lab.output-manifest.v1\n{\"binding\":{\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"engine\":{\"configVersion\":1,\"id\":\"k6\",\"imageDigest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"generation\":1,\"installedIdentity\":{\"catalogVersion\":1,\"manifestDigest\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"manifestId\":\"k6-v1\",\"profileDigest\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"profileId\":\"local-🪲\",\"schemaDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"},\"intentDigest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"journalAuthority\":\"11111111-1111-4111-8111-111111111111\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"specDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"controlBytes\":4096,\"result\":{\"artifacts\":[{\"artifactId\":\"00000000-0000-4000-8000-000000000004\",\"bytes\":32,\"kind\":\"report\",\"relativePath\":\"reports/result.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"artifactId\":\"00000000-0000-4000-8000-000000000005\",\"bytes\":0,\"kind\":\"report\",\"relativePath\":\"reports/empty.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}],\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"completeness\":\"complete\",\"engineId\":\"k6\",\"execution\":{\"exitCode\":0,\"status\":\"completed\",\"stoppedAt\":\"2026-01-01T00:00:00Z\"},\"generation\":1,\"mode\":\"ordinary\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"outcome\":\"passed\",\"protocolVersion\":\"1.0\",\"requiredAssertions\":{\"failed\":0,\"passed\":2,\"required\":2,\"unknown\":0},\"schemaId\":\"https://beetle-lab.dev/contracts/runner/v1/engine-result\",\"seal\":{\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"6504756b8fa37e36bab8c8d8d0e28d88cfc3ce97548259b98aeb9d4ff8adfe15\"},\"thresholds\":[{\"id\":\"latency\",\"passed\":true,\"purpose\":\"slo\"}],\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"resultFileBytes\":1215,\"verifiedBytes\":5343,\"version\":1}",
+        "manifestDigest": "a5bea240987558c5c54052d6265a4e749e8c03e690875b0742e6591c9fa350ab",
+        "sourcePreimage": "beetle-lab.output-source.v1\n{\"checkpoint\":{\"dev\":\"9007199254740993\",\"ino\":\"9007199254740994\",\"lastBatchDigest\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"offset\":4096,\"prefixSha256\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"version\":1,\"wrapperSeq\":1},\"manifest\":{\"binding\":{\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"engine\":{\"configVersion\":1,\"id\":\"k6\",\"imageDigest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"generation\":1,\"installedIdentity\":{\"catalogVersion\":1,\"manifestDigest\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"manifestId\":\"k6-v1\",\"profileDigest\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"profileId\":\"local-🪲\",\"schemaDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"},\"intentDigest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"journalAuthority\":\"11111111-1111-4111-8111-111111111111\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"specDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"controlBytes\":4096,\"manifestDigest\":\"a5bea240987558c5c54052d6265a4e749e8c03e690875b0742e6591c9fa350ab\",\"result\":{\"artifacts\":[{\"artifactId\":\"00000000-0000-4000-8000-000000000004\",\"bytes\":32,\"kind\":\"report\",\"relativePath\":\"reports/result.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"artifactId\":\"00000000-0000-4000-8000-000000000005\",\"bytes\":0,\"kind\":\"report\",\"relativePath\":\"reports/empty.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}],\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"completeness\":\"complete\",\"engineId\":\"k6\",\"execution\":{\"exitCode\":0,\"status\":\"completed\",\"stoppedAt\":\"2026-01-01T00:00:00Z\"},\"generation\":1,\"mode\":\"ordinary\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"outcome\":\"passed\",\"protocolVersion\":\"1.0\",\"requiredAssertions\":{\"failed\":0,\"passed\":2,\"required\":2,\"unknown\":0},\"schemaId\":\"https://beetle-lab.dev/contracts/runner/v1/engine-result\",\"seal\":{\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"6504756b8fa37e36bab8c8d8d0e28d88cfc3ce97548259b98aeb9d4ff8adfe15\"},\"thresholds\":[{\"id\":\"latency\",\"passed\":true,\"purpose\":\"slo\"}],\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"resultFileBytes\":1215,\"verifiedBytes\":5343,\"version\":1},\"release\":{\"authority\":\"supervisor\",\"collection\":{\"evidenceId\":\"00000000-0000-4000-8000-000000000006\",\"observedAt\":100004,\"state\":\"finished\"},\"createToken\":\"3333333333333333333333333333333333333333333333333333333333333333\",\"key\":{\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"generation\":1,\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"launch\":{\"epoch\":0,\"settlementId\":\"00000000-0000-4000-8000-000000000008\",\"startToken\":null},\"runtime\":{\"evidenceId\":\"00000000-0000-4000-8000-000000000007\",\"observedAt\":100002,\"source\":\"supervisor\",\"state\":\"stopped\"},\"runtimeId\":\"synthetic-runtime\",\"specDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\"},\"root\":{\"changedNs\":\"1767225600000000000\",\"device\":\"9007199254740993\",\"directory\":\"/synthetic/output/🪲\",\"inode\":\"18446744073709551615\",\"modifiedNs\":\"1767225600000000000\",\"uid\":1000},\"version\":1}",
+        "sourceDigest": "e4dfd94deea7af6494e019e2c24ce5d3922025a5ef654c4ee45045c76e6d8a70",
+        "manifestBytes": 2192,
+        "sourceBytes": 3493
+      }
+    },
+    {
+      "name": "object-key-order",
+      "input": {
+        "release": {
+          "launch": {
+            "settlementId": "00000000-0000-4000-8000-000000000008",
+            "startToken": null,
+            "epoch": 0
+          },
+          "collection": {
+            "evidenceId": "00000000-0000-4000-8000-000000000006",
+            "observedAt": 100004,
+            "state": "finished"
+          },
+          "runtime": {
+            "evidenceId": "00000000-0000-4000-8000-000000000007",
+            "observedAt": 100002,
+            "source": "supervisor",
+            "state": "stopped"
+          },
+          "runtimeId": "synthetic-runtime",
+          "specDigest": "2222222222222222222222222222222222222222222222222222222222222222",
+          "createToken": "3333333333333333333333333333333333333333333333333333333333333333",
+          "key": {
+            "generation": 1,
+            "attemptId": "00000000-0000-4000-8000-000000000003",
+            "workspaceId": "00000000-0000-4000-8000-000000000002",
+            "organizationId": "00000000-0000-4000-8000-000000000001"
+          },
+          "authority": "supervisor"
+        },
+        "checkpoint": {
+          "lastBatchDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "prefixSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "wrapperSeq": 1,
+          "offset": 4096,
+          "ino": "9007199254740994",
+          "dev": "9007199254740993",
+          "version": 1
+        },
+        "collection": {
+          "custody": {
+            "root": {
+              "changedNs": "1767225600000000000",
+              "modifiedNs": "1767225600000000000",
+              "inode": "18446744073709551615",
+              "device": "9007199254740993",
+              "uid": 1000,
+              "directory": "/synthetic/output/🪲"
+            },
+            "controlBytes": 4096,
+            "resultFileBytes": 1215
+          },
+          "verifiedBytes": 5343,
+          "value": {
+            "seal": {
+              "sha256": "6504756b8fa37e36bab8c8d8d0e28d88cfc3ce97548259b98aeb9d4ff8adfe15",
+              "sealedAt": "2026-01-01T00:00:00Z"
+            },
+            "artifacts": [
+              {
+                "sealedAt": "2026-01-01T00:00:00Z",
+                "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "bytes": 32,
+                "relativePath": "reports/result.json",
+                "kind": "report",
+                "artifactId": "00000000-0000-4000-8000-000000000004"
+              },
+              {
+                "sealedAt": "2026-01-01T00:00:00Z",
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "bytes": 0,
+                "relativePath": "reports/empty.json",
+                "kind": "report",
+                "artifactId": "00000000-0000-4000-8000-000000000005"
+              }
+            ],
+            "completeness": "complete",
+            "thresholds": [
+              {
+                "passed": true,
+                "purpose": "slo",
+                "id": "latency"
+              }
+            ],
+            "requiredAssertions": {
+              "unknown": 0,
+              "failed": 0,
+              "passed": 2,
+              "required": 2
+            },
+            "outcome": "passed",
+            "execution": {
+              "stoppedAt": "2026-01-01T00:00:00Z",
+              "exitCode": 0,
+              "status": "completed"
+            },
+            "mode": "ordinary",
+            "engineId": "k6",
+            "schemaId": "https://beetle-lab.dev/contracts/runner/v1/engine-result",
+            "generation": 1,
+            "attemptId": "00000000-0000-4000-8000-000000000003",
+            "workspaceId": "00000000-0000-4000-8000-000000000002",
+            "organizationId": "00000000-0000-4000-8000-000000000001",
+            "protocolVersion": "1.0"
+          },
+          "ok": true
+        },
+        "binding": {
+          "specDigest": "2222222222222222222222222222222222222222222222222222222222222222",
+          "installedIdentity": {
+            "schemaDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "profileDigest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "manifestDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "catalogVersion": 1,
+            "profileId": "local-🪲",
+            "manifestId": "k6-v1"
+          },
+          "engine": {
+            "configVersion": 1,
+            "imageDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "id": "k6"
+          },
+          "intentDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+          "generation": 1,
+          "attemptId": "00000000-0000-4000-8000-000000000003",
+          "workspaceId": "00000000-0000-4000-8000-000000000002",
+          "organizationId": "00000000-0000-4000-8000-000000000001",
+          "journalAuthority": "11111111-1111-4111-8111-111111111111"
+        },
+        "collectionId": "00000000-0000-4000-8000-000000000006"
+      },
+      "expected": {
+        "manifestPreimage": "beetle-lab.output-manifest.v1\n{\"binding\":{\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"engine\":{\"configVersion\":1,\"id\":\"k6\",\"imageDigest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"generation\":1,\"installedIdentity\":{\"catalogVersion\":1,\"manifestDigest\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"manifestId\":\"k6-v1\",\"profileDigest\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"profileId\":\"local-🪲\",\"schemaDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"},\"intentDigest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"journalAuthority\":\"11111111-1111-4111-8111-111111111111\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"specDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"controlBytes\":4096,\"result\":{\"artifacts\":[{\"artifactId\":\"00000000-0000-4000-8000-000000000004\",\"bytes\":32,\"kind\":\"report\",\"relativePath\":\"reports/result.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"artifactId\":\"00000000-0000-4000-8000-000000000005\",\"bytes\":0,\"kind\":\"report\",\"relativePath\":\"reports/empty.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}],\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"completeness\":\"complete\",\"engineId\":\"k6\",\"execution\":{\"exitCode\":0,\"status\":\"completed\",\"stoppedAt\":\"2026-01-01T00:00:00Z\"},\"generation\":1,\"mode\":\"ordinary\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"outcome\":\"passed\",\"protocolVersion\":\"1.0\",\"requiredAssertions\":{\"failed\":0,\"passed\":2,\"required\":2,\"unknown\":0},\"schemaId\":\"https://beetle-lab.dev/contracts/runner/v1/engine-result\",\"seal\":{\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"6504756b8fa37e36bab8c8d8d0e28d88cfc3ce97548259b98aeb9d4ff8adfe15\"},\"thresholds\":[{\"id\":\"latency\",\"passed\":true,\"purpose\":\"slo\"}],\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"resultFileBytes\":1215,\"verifiedBytes\":5343,\"version\":1}",
+        "manifestDigest": "a5bea240987558c5c54052d6265a4e749e8c03e690875b0742e6591c9fa350ab",
+        "sourcePreimage": "beetle-lab.output-source.v1\n{\"checkpoint\":{\"dev\":\"9007199254740993\",\"ino\":\"9007199254740994\",\"lastBatchDigest\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"offset\":4096,\"prefixSha256\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"version\":1,\"wrapperSeq\":1},\"manifest\":{\"binding\":{\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"engine\":{\"configVersion\":1,\"id\":\"k6\",\"imageDigest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"generation\":1,\"installedIdentity\":{\"catalogVersion\":1,\"manifestDigest\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"manifestId\":\"k6-v1\",\"profileDigest\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"profileId\":\"local-🪲\",\"schemaDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"},\"intentDigest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"journalAuthority\":\"11111111-1111-4111-8111-111111111111\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"specDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"controlBytes\":4096,\"manifestDigest\":\"a5bea240987558c5c54052d6265a4e749e8c03e690875b0742e6591c9fa350ab\",\"result\":{\"artifacts\":[{\"artifactId\":\"00000000-0000-4000-8000-000000000004\",\"bytes\":32,\"kind\":\"report\",\"relativePath\":\"reports/result.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"artifactId\":\"00000000-0000-4000-8000-000000000005\",\"bytes\":0,\"kind\":\"report\",\"relativePath\":\"reports/empty.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}],\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"completeness\":\"complete\",\"engineId\":\"k6\",\"execution\":{\"exitCode\":0,\"status\":\"completed\",\"stoppedAt\":\"2026-01-01T00:00:00Z\"},\"generation\":1,\"mode\":\"ordinary\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"outcome\":\"passed\",\"protocolVersion\":\"1.0\",\"requiredAssertions\":{\"failed\":0,\"passed\":2,\"required\":2,\"unknown\":0},\"schemaId\":\"https://beetle-lab.dev/contracts/runner/v1/engine-result\",\"seal\":{\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"6504756b8fa37e36bab8c8d8d0e28d88cfc3ce97548259b98aeb9d4ff8adfe15\"},\"thresholds\":[{\"id\":\"latency\",\"passed\":true,\"purpose\":\"slo\"}],\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"resultFileBytes\":1215,\"verifiedBytes\":5343,\"version\":1},\"release\":{\"authority\":\"supervisor\",\"collection\":{\"evidenceId\":\"00000000-0000-4000-8000-000000000006\",\"observedAt\":100004,\"state\":\"finished\"},\"createToken\":\"3333333333333333333333333333333333333333333333333333333333333333\",\"key\":{\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"generation\":1,\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"launch\":{\"epoch\":0,\"settlementId\":\"00000000-0000-4000-8000-000000000008\",\"startToken\":null},\"runtime\":{\"evidenceId\":\"00000000-0000-4000-8000-000000000007\",\"observedAt\":100002,\"source\":\"supervisor\",\"state\":\"stopped\"},\"runtimeId\":\"synthetic-runtime\",\"specDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\"},\"root\":{\"changedNs\":\"1767225600000000000\",\"device\":\"9007199254740993\",\"directory\":\"/synthetic/output/🪲\",\"inode\":\"18446744073709551615\",\"modifiedNs\":\"1767225600000000000\",\"uid\":1000},\"version\":1}",
+        "sourceDigest": "e4dfd94deea7af6494e019e2c24ce5d3922025a5ef654c4ee45045c76e6d8a70",
+        "manifestBytes": 2192,
+        "sourceBytes": 3493
+      }
+    },
+    {
+      "name": "private-root-change",
+      "input": {
+        "collectionId": "00000000-0000-4000-8000-000000000006",
+        "binding": {
+          "journalAuthority": "11111111-1111-4111-8111-111111111111",
+          "organizationId": "00000000-0000-4000-8000-000000000001",
+          "workspaceId": "00000000-0000-4000-8000-000000000002",
+          "attemptId": "00000000-0000-4000-8000-000000000003",
+          "generation": 1,
+          "intentDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+          "engine": {
+            "id": "k6",
+            "imageDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configVersion": 1
+          },
+          "installedIdentity": {
+            "manifestId": "k6-v1",
+            "profileId": "local-🪲",
+            "catalogVersion": 1,
+            "manifestDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "profileDigest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "schemaDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "specDigest": "2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "collection": {
+          "ok": true,
+          "value": {
+            "protocolVersion": "1.0",
+            "organizationId": "00000000-0000-4000-8000-000000000001",
+            "workspaceId": "00000000-0000-4000-8000-000000000002",
+            "attemptId": "00000000-0000-4000-8000-000000000003",
+            "generation": 1,
+            "schemaId": "https://beetle-lab.dev/contracts/runner/v1/engine-result",
+            "engineId": "k6",
+            "mode": "ordinary",
+            "execution": {
+              "status": "completed",
+              "exitCode": 0,
+              "stoppedAt": "2026-01-01T00:00:00Z"
+            },
+            "outcome": "passed",
+            "requiredAssertions": {
+              "required": 2,
+              "passed": 2,
+              "failed": 0,
+              "unknown": 0
+            },
+            "thresholds": [
+              {
+                "id": "latency",
+                "purpose": "slo",
+                "passed": true
+              }
+            ],
+            "completeness": "complete",
+            "artifacts": [
+              {
+                "artifactId": "00000000-0000-4000-8000-000000000004",
+                "kind": "report",
+                "relativePath": "reports/result.json",
+                "bytes": 32,
+                "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sealedAt": "2026-01-01T00:00:00Z"
+              },
+              {
+                "artifactId": "00000000-0000-4000-8000-000000000005",
+                "kind": "report",
+                "relativePath": "reports/empty.json",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sealedAt": "2026-01-01T00:00:00Z"
+              }
+            ],
+            "seal": {
+              "sealedAt": "2026-01-01T00:00:00Z",
+              "sha256": "6504756b8fa37e36bab8c8d8d0e28d88cfc3ce97548259b98aeb9d4ff8adfe15"
+            }
+          },
+          "verifiedBytes": 5343,
+          "custody": {
+            "resultFileBytes": 1215,
+            "controlBytes": 4096,
+            "root": {
+              "directory": "/synthetic/output/other-🪲",
+              "uid": 1000,
+              "device": "9007199254740993",
+              "inode": "18446744073709551615",
+              "modifiedNs": "1767225600000000000",
+              "changedNs": "1767225600000000000"
+            }
+          }
+        },
+        "checkpoint": {
+          "version": 1,
+          "dev": "9007199254740993",
+          "ino": "9007199254740994",
+          "offset": 4096,
+          "wrapperSeq": 1,
+          "prefixSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "lastBatchDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        },
+        "release": {
+          "authority": "supervisor",
+          "key": {
+            "organizationId": "00000000-0000-4000-8000-000000000001",
+            "workspaceId": "00000000-0000-4000-8000-000000000002",
+            "attemptId": "00000000-0000-4000-8000-000000000003",
+            "generation": 1
+          },
+          "createToken": "3333333333333333333333333333333333333333333333333333333333333333",
+          "specDigest": "2222222222222222222222222222222222222222222222222222222222222222",
+          "runtimeId": "synthetic-runtime",
+          "runtime": {
+            "state": "stopped",
+            "source": "supervisor",
+            "observedAt": 100002,
+            "evidenceId": "00000000-0000-4000-8000-000000000007"
+          },
+          "collection": {
+            "state": "finished",
+            "observedAt": 100004,
+            "evidenceId": "00000000-0000-4000-8000-000000000006"
+          },
+          "launch": {
+            "epoch": 0,
+            "startToken": null,
+            "settlementId": "00000000-0000-4000-8000-000000000008"
+          }
+        }
+      },
+      "expected": {
+        "manifestPreimage": "beetle-lab.output-manifest.v1\n{\"binding\":{\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"engine\":{\"configVersion\":1,\"id\":\"k6\",\"imageDigest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"generation\":1,\"installedIdentity\":{\"catalogVersion\":1,\"manifestDigest\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"manifestId\":\"k6-v1\",\"profileDigest\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"profileId\":\"local-🪲\",\"schemaDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"},\"intentDigest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"journalAuthority\":\"11111111-1111-4111-8111-111111111111\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"specDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"controlBytes\":4096,\"result\":{\"artifacts\":[{\"artifactId\":\"00000000-0000-4000-8000-000000000004\",\"bytes\":32,\"kind\":\"report\",\"relativePath\":\"reports/result.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"artifactId\":\"00000000-0000-4000-8000-000000000005\",\"bytes\":0,\"kind\":\"report\",\"relativePath\":\"reports/empty.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}],\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"completeness\":\"complete\",\"engineId\":\"k6\",\"execution\":{\"exitCode\":0,\"status\":\"completed\",\"stoppedAt\":\"2026-01-01T00:00:00Z\"},\"generation\":1,\"mode\":\"ordinary\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"outcome\":\"passed\",\"protocolVersion\":\"1.0\",\"requiredAssertions\":{\"failed\":0,\"passed\":2,\"required\":2,\"unknown\":0},\"schemaId\":\"https://beetle-lab.dev/contracts/runner/v1/engine-result\",\"seal\":{\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"6504756b8fa37e36bab8c8d8d0e28d88cfc3ce97548259b98aeb9d4ff8adfe15\"},\"thresholds\":[{\"id\":\"latency\",\"passed\":true,\"purpose\":\"slo\"}],\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"resultFileBytes\":1215,\"verifiedBytes\":5343,\"version\":1}",
+        "manifestDigest": "a5bea240987558c5c54052d6265a4e749e8c03e690875b0742e6591c9fa350ab",
+        "sourcePreimage": "beetle-lab.output-source.v1\n{\"checkpoint\":{\"dev\":\"9007199254740993\",\"ino\":\"9007199254740994\",\"lastBatchDigest\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"offset\":4096,\"prefixSha256\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"version\":1,\"wrapperSeq\":1},\"manifest\":{\"binding\":{\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"engine\":{\"configVersion\":1,\"id\":\"k6\",\"imageDigest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"generation\":1,\"installedIdentity\":{\"catalogVersion\":1,\"manifestDigest\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"manifestId\":\"k6-v1\",\"profileDigest\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"profileId\":\"local-🪲\",\"schemaDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"},\"intentDigest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"journalAuthority\":\"11111111-1111-4111-8111-111111111111\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"specDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"controlBytes\":4096,\"manifestDigest\":\"a5bea240987558c5c54052d6265a4e749e8c03e690875b0742e6591c9fa350ab\",\"result\":{\"artifacts\":[{\"artifactId\":\"00000000-0000-4000-8000-000000000004\",\"bytes\":32,\"kind\":\"report\",\"relativePath\":\"reports/result.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"artifactId\":\"00000000-0000-4000-8000-000000000005\",\"bytes\":0,\"kind\":\"report\",\"relativePath\":\"reports/empty.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}],\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"completeness\":\"complete\",\"engineId\":\"k6\",\"execution\":{\"exitCode\":0,\"status\":\"completed\",\"stoppedAt\":\"2026-01-01T00:00:00Z\"},\"generation\":1,\"mode\":\"ordinary\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"outcome\":\"passed\",\"protocolVersion\":\"1.0\",\"requiredAssertions\":{\"failed\":0,\"passed\":2,\"required\":2,\"unknown\":0},\"schemaId\":\"https://beetle-lab.dev/contracts/runner/v1/engine-result\",\"seal\":{\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"6504756b8fa37e36bab8c8d8d0e28d88cfc3ce97548259b98aeb9d4ff8adfe15\"},\"thresholds\":[{\"id\":\"latency\",\"passed\":true,\"purpose\":\"slo\"}],\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"resultFileBytes\":1215,\"verifiedBytes\":5343,\"version\":1},\"release\":{\"authority\":\"supervisor\",\"collection\":{\"evidenceId\":\"00000000-0000-4000-8000-000000000006\",\"observedAt\":100004,\"state\":\"finished\"},\"createToken\":\"3333333333333333333333333333333333333333333333333333333333333333\",\"key\":{\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"generation\":1,\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"launch\":{\"epoch\":0,\"settlementId\":\"00000000-0000-4000-8000-000000000008\",\"startToken\":null},\"runtime\":{\"evidenceId\":\"00000000-0000-4000-8000-000000000007\",\"observedAt\":100002,\"source\":\"supervisor\",\"state\":\"stopped\"},\"runtimeId\":\"synthetic-runtime\",\"specDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\"},\"root\":{\"changedNs\":\"1767225600000000000\",\"device\":\"9007199254740993\",\"directory\":\"/synthetic/output/other-🪲\",\"inode\":\"18446744073709551615\",\"modifiedNs\":\"1767225600000000000\",\"uid\":1000},\"version\":1}",
+        "sourceDigest": "1605d018b129556794931029559d81a8d3ba0d4a75b7d8ff7c5d8db5ea49e504",
+        "manifestBytes": 2192,
+        "sourceBytes": 3499
+      }
+    },
+    {
+      "name": "raw-result-whitespace",
+      "input": {
+        "collectionId": "00000000-0000-4000-8000-000000000006",
+        "binding": {
+          "journalAuthority": "11111111-1111-4111-8111-111111111111",
+          "organizationId": "00000000-0000-4000-8000-000000000001",
+          "workspaceId": "00000000-0000-4000-8000-000000000002",
+          "attemptId": "00000000-0000-4000-8000-000000000003",
+          "generation": 1,
+          "intentDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+          "engine": {
+            "id": "k6",
+            "imageDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configVersion": 1
+          },
+          "installedIdentity": {
+            "manifestId": "k6-v1",
+            "profileId": "local-🪲",
+            "catalogVersion": 1,
+            "manifestDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "profileDigest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "schemaDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "specDigest": "2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "collection": {
+          "ok": true,
+          "value": {
+            "protocolVersion": "1.0",
+            "organizationId": "00000000-0000-4000-8000-000000000001",
+            "workspaceId": "00000000-0000-4000-8000-000000000002",
+            "attemptId": "00000000-0000-4000-8000-000000000003",
+            "generation": 1,
+            "schemaId": "https://beetle-lab.dev/contracts/runner/v1/engine-result",
+            "engineId": "k6",
+            "mode": "ordinary",
+            "execution": {
+              "status": "completed",
+              "exitCode": 0,
+              "stoppedAt": "2026-01-01T00:00:00Z"
+            },
+            "outcome": "passed",
+            "requiredAssertions": {
+              "required": 2,
+              "passed": 2,
+              "failed": 0,
+              "unknown": 0
+            },
+            "thresholds": [
+              {
+                "id": "latency",
+                "purpose": "slo",
+                "passed": true
+              }
+            ],
+            "completeness": "complete",
+            "artifacts": [
+              {
+                "artifactId": "00000000-0000-4000-8000-000000000004",
+                "kind": "report",
+                "relativePath": "reports/result.json",
+                "bytes": 32,
+                "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sealedAt": "2026-01-01T00:00:00Z"
+              },
+              {
+                "artifactId": "00000000-0000-4000-8000-000000000005",
+                "kind": "report",
+                "relativePath": "reports/empty.json",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sealedAt": "2026-01-01T00:00:00Z"
+              }
+            ],
+            "seal": {
+              "sealedAt": "2026-01-01T00:00:00Z",
+              "sha256": "6504756b8fa37e36bab8c8d8d0e28d88cfc3ce97548259b98aeb9d4ff8adfe15"
+            }
+          },
+          "verifiedBytes": 5344,
+          "custody": {
+            "resultFileBytes": 1216,
+            "controlBytes": 4096,
+            "root": {
+              "directory": "/synthetic/output/🪲",
+              "uid": 1000,
+              "device": "9007199254740993",
+              "inode": "18446744073709551615",
+              "modifiedNs": "1767225600000000000",
+              "changedNs": "1767225600000000000"
+            }
+          }
+        },
+        "checkpoint": {
+          "version": 1,
+          "dev": "9007199254740993",
+          "ino": "9007199254740994",
+          "offset": 4096,
+          "wrapperSeq": 1,
+          "prefixSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "lastBatchDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        },
+        "release": {
+          "authority": "supervisor",
+          "key": {
+            "organizationId": "00000000-0000-4000-8000-000000000001",
+            "workspaceId": "00000000-0000-4000-8000-000000000002",
+            "attemptId": "00000000-0000-4000-8000-000000000003",
+            "generation": 1
+          },
+          "createToken": "3333333333333333333333333333333333333333333333333333333333333333",
+          "specDigest": "2222222222222222222222222222222222222222222222222222222222222222",
+          "runtimeId": "synthetic-runtime",
+          "runtime": {
+            "state": "stopped",
+            "source": "supervisor",
+            "observedAt": 100002,
+            "evidenceId": "00000000-0000-4000-8000-000000000007"
+          },
+          "collection": {
+            "state": "finished",
+            "observedAt": 100004,
+            "evidenceId": "00000000-0000-4000-8000-000000000006"
+          },
+          "launch": {
+            "epoch": 0,
+            "startToken": null,
+            "settlementId": "00000000-0000-4000-8000-000000000008"
+          }
+        }
+      },
+      "expected": {
+        "manifestPreimage": "beetle-lab.output-manifest.v1\n{\"binding\":{\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"engine\":{\"configVersion\":1,\"id\":\"k6\",\"imageDigest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"generation\":1,\"installedIdentity\":{\"catalogVersion\":1,\"manifestDigest\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"manifestId\":\"k6-v1\",\"profileDigest\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"profileId\":\"local-🪲\",\"schemaDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"},\"intentDigest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"journalAuthority\":\"11111111-1111-4111-8111-111111111111\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"specDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"controlBytes\":4096,\"result\":{\"artifacts\":[{\"artifactId\":\"00000000-0000-4000-8000-000000000004\",\"bytes\":32,\"kind\":\"report\",\"relativePath\":\"reports/result.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"artifactId\":\"00000000-0000-4000-8000-000000000005\",\"bytes\":0,\"kind\":\"report\",\"relativePath\":\"reports/empty.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}],\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"completeness\":\"complete\",\"engineId\":\"k6\",\"execution\":{\"exitCode\":0,\"status\":\"completed\",\"stoppedAt\":\"2026-01-01T00:00:00Z\"},\"generation\":1,\"mode\":\"ordinary\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"outcome\":\"passed\",\"protocolVersion\":\"1.0\",\"requiredAssertions\":{\"failed\":0,\"passed\":2,\"required\":2,\"unknown\":0},\"schemaId\":\"https://beetle-lab.dev/contracts/runner/v1/engine-result\",\"seal\":{\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"6504756b8fa37e36bab8c8d8d0e28d88cfc3ce97548259b98aeb9d4ff8adfe15\"},\"thresholds\":[{\"id\":\"latency\",\"passed\":true,\"purpose\":\"slo\"}],\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"resultFileBytes\":1216,\"verifiedBytes\":5344,\"version\":1}",
+        "manifestDigest": "ad0efd3aeebbe32248e2a0d2d0f97e830e0fc2337496d294e45105e62ab268b7",
+        "sourcePreimage": "beetle-lab.output-source.v1\n{\"checkpoint\":{\"dev\":\"9007199254740993\",\"ino\":\"9007199254740994\",\"lastBatchDigest\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"offset\":4096,\"prefixSha256\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"version\":1,\"wrapperSeq\":1},\"manifest\":{\"binding\":{\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"engine\":{\"configVersion\":1,\"id\":\"k6\",\"imageDigest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"generation\":1,\"installedIdentity\":{\"catalogVersion\":1,\"manifestDigest\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"manifestId\":\"k6-v1\",\"profileDigest\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"profileId\":\"local-🪲\",\"schemaDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"},\"intentDigest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"journalAuthority\":\"11111111-1111-4111-8111-111111111111\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"specDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"controlBytes\":4096,\"manifestDigest\":\"ad0efd3aeebbe32248e2a0d2d0f97e830e0fc2337496d294e45105e62ab268b7\",\"result\":{\"artifacts\":[{\"artifactId\":\"00000000-0000-4000-8000-000000000004\",\"bytes\":32,\"kind\":\"report\",\"relativePath\":\"reports/result.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"artifactId\":\"00000000-0000-4000-8000-000000000005\",\"bytes\":0,\"kind\":\"report\",\"relativePath\":\"reports/empty.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}],\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"completeness\":\"complete\",\"engineId\":\"k6\",\"execution\":{\"exitCode\":0,\"status\":\"completed\",\"stoppedAt\":\"2026-01-01T00:00:00Z\"},\"generation\":1,\"mode\":\"ordinary\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"outcome\":\"passed\",\"protocolVersion\":\"1.0\",\"requiredAssertions\":{\"failed\":0,\"passed\":2,\"required\":2,\"unknown\":0},\"schemaId\":\"https://beetle-lab.dev/contracts/runner/v1/engine-result\",\"seal\":{\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"6504756b8fa37e36bab8c8d8d0e28d88cfc3ce97548259b98aeb9d4ff8adfe15\"},\"thresholds\":[{\"id\":\"latency\",\"passed\":true,\"purpose\":\"slo\"}],\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"resultFileBytes\":1216,\"verifiedBytes\":5344,\"version\":1},\"release\":{\"authority\":\"supervisor\",\"collection\":{\"evidenceId\":\"00000000-0000-4000-8000-000000000006\",\"observedAt\":100004,\"state\":\"finished\"},\"createToken\":\"3333333333333333333333333333333333333333333333333333333333333333\",\"key\":{\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"generation\":1,\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"launch\":{\"epoch\":0,\"settlementId\":\"00000000-0000-4000-8000-000000000008\",\"startToken\":null},\"runtime\":{\"evidenceId\":\"00000000-0000-4000-8000-000000000007\",\"observedAt\":100002,\"source\":\"supervisor\",\"state\":\"stopped\"},\"runtimeId\":\"synthetic-runtime\",\"specDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\"},\"root\":{\"changedNs\":\"1767225600000000000\",\"device\":\"9007199254740993\",\"directory\":\"/synthetic/output/🪲\",\"inode\":\"18446744073709551615\",\"modifiedNs\":\"1767225600000000000\",\"uid\":1000},\"version\":1}",
+        "sourceDigest": "d35bb26079235c3b7ec8877e04aa88145d40b2b85f95484c7c74619eb008fa64",
+        "manifestBytes": 2192,
+        "sourceBytes": 3493
+      }
+    },
+    {
+      "name": "artifact-order",
+      "input": {
+        "collectionId": "00000000-0000-4000-8000-000000000006",
+        "binding": {
+          "journalAuthority": "11111111-1111-4111-8111-111111111111",
+          "organizationId": "00000000-0000-4000-8000-000000000001",
+          "workspaceId": "00000000-0000-4000-8000-000000000002",
+          "attemptId": "00000000-0000-4000-8000-000000000003",
+          "generation": 1,
+          "intentDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+          "engine": {
+            "id": "k6",
+            "imageDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configVersion": 1
+          },
+          "installedIdentity": {
+            "manifestId": "k6-v1",
+            "profileId": "local-🪲",
+            "catalogVersion": 1,
+            "manifestDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "profileDigest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "schemaDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "specDigest": "2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "collection": {
+          "ok": true,
+          "value": {
+            "protocolVersion": "1.0",
+            "organizationId": "00000000-0000-4000-8000-000000000001",
+            "workspaceId": "00000000-0000-4000-8000-000000000002",
+            "attemptId": "00000000-0000-4000-8000-000000000003",
+            "generation": 1,
+            "schemaId": "https://beetle-lab.dev/contracts/runner/v1/engine-result",
+            "engineId": "k6",
+            "mode": "ordinary",
+            "execution": {
+              "status": "completed",
+              "exitCode": 0,
+              "stoppedAt": "2026-01-01T00:00:00Z"
+            },
+            "outcome": "passed",
+            "requiredAssertions": {
+              "required": 2,
+              "passed": 2,
+              "failed": 0,
+              "unknown": 0
+            },
+            "thresholds": [
+              {
+                "id": "latency",
+                "purpose": "slo",
+                "passed": true
+              }
+            ],
+            "completeness": "complete",
+            "artifacts": [
+              {
+                "artifactId": "00000000-0000-4000-8000-000000000005",
+                "kind": "report",
+                "relativePath": "reports/empty.json",
+                "bytes": 0,
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sealedAt": "2026-01-01T00:00:00Z"
+              },
+              {
+                "artifactId": "00000000-0000-4000-8000-000000000004",
+                "kind": "report",
+                "relativePath": "reports/result.json",
+                "bytes": 32,
+                "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sealedAt": "2026-01-01T00:00:00Z"
+              }
+            ],
+            "seal": {
+              "sealedAt": "2026-01-01T00:00:00Z",
+              "sha256": "34e59e0a6bc12afc120668e2f7514d879d1898d984ae71449fe1576105afff07"
+            }
+          },
+          "verifiedBytes": 5343,
+          "custody": {
+            "resultFileBytes": 1215,
+            "controlBytes": 4096,
+            "root": {
+              "directory": "/synthetic/output/🪲",
+              "uid": 1000,
+              "device": "9007199254740993",
+              "inode": "18446744073709551615",
+              "modifiedNs": "1767225600000000000",
+              "changedNs": "1767225600000000000"
+            }
+          }
+        },
+        "checkpoint": {
+          "version": 1,
+          "dev": "9007199254740993",
+          "ino": "9007199254740994",
+          "offset": 4096,
+          "wrapperSeq": 1,
+          "prefixSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "lastBatchDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        },
+        "release": {
+          "authority": "supervisor",
+          "key": {
+            "organizationId": "00000000-0000-4000-8000-000000000001",
+            "workspaceId": "00000000-0000-4000-8000-000000000002",
+            "attemptId": "00000000-0000-4000-8000-000000000003",
+            "generation": 1
+          },
+          "createToken": "3333333333333333333333333333333333333333333333333333333333333333",
+          "specDigest": "2222222222222222222222222222222222222222222222222222222222222222",
+          "runtimeId": "synthetic-runtime",
+          "runtime": {
+            "state": "stopped",
+            "source": "supervisor",
+            "observedAt": 100002,
+            "evidenceId": "00000000-0000-4000-8000-000000000007"
+          },
+          "collection": {
+            "state": "finished",
+            "observedAt": 100004,
+            "evidenceId": "00000000-0000-4000-8000-000000000006"
+          },
+          "launch": {
+            "epoch": 0,
+            "startToken": null,
+            "settlementId": "00000000-0000-4000-8000-000000000008"
+          }
+        }
+      },
+      "expected": {
+        "manifestPreimage": "beetle-lab.output-manifest.v1\n{\"binding\":{\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"engine\":{\"configVersion\":1,\"id\":\"k6\",\"imageDigest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"generation\":1,\"installedIdentity\":{\"catalogVersion\":1,\"manifestDigest\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"manifestId\":\"k6-v1\",\"profileDigest\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"profileId\":\"local-🪲\",\"schemaDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"},\"intentDigest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"journalAuthority\":\"11111111-1111-4111-8111-111111111111\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"specDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"controlBytes\":4096,\"result\":{\"artifacts\":[{\"artifactId\":\"00000000-0000-4000-8000-000000000005\",\"bytes\":0,\"kind\":\"report\",\"relativePath\":\"reports/empty.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"},{\"artifactId\":\"00000000-0000-4000-8000-000000000004\",\"bytes\":32,\"kind\":\"report\",\"relativePath\":\"reports/result.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}],\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"completeness\":\"complete\",\"engineId\":\"k6\",\"execution\":{\"exitCode\":0,\"status\":\"completed\",\"stoppedAt\":\"2026-01-01T00:00:00Z\"},\"generation\":1,\"mode\":\"ordinary\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"outcome\":\"passed\",\"protocolVersion\":\"1.0\",\"requiredAssertions\":{\"failed\":0,\"passed\":2,\"required\":2,\"unknown\":0},\"schemaId\":\"https://beetle-lab.dev/contracts/runner/v1/engine-result\",\"seal\":{\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"34e59e0a6bc12afc120668e2f7514d879d1898d984ae71449fe1576105afff07\"},\"thresholds\":[{\"id\":\"latency\",\"passed\":true,\"purpose\":\"slo\"}],\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"resultFileBytes\":1215,\"verifiedBytes\":5343,\"version\":1}",
+        "manifestDigest": "f312ea3ad7197e78be7f443b861f565708c7a589cfde563f8caafddf52da18c8",
+        "sourcePreimage": "beetle-lab.output-source.v1\n{\"checkpoint\":{\"dev\":\"9007199254740993\",\"ino\":\"9007199254740994\",\"lastBatchDigest\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"offset\":4096,\"prefixSha256\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"version\":1,\"wrapperSeq\":1},\"manifest\":{\"binding\":{\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"engine\":{\"configVersion\":1,\"id\":\"k6\",\"imageDigest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"generation\":1,\"installedIdentity\":{\"catalogVersion\":1,\"manifestDigest\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"manifestId\":\"k6-v1\",\"profileDigest\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"profileId\":\"local-🪲\",\"schemaDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"},\"intentDigest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"journalAuthority\":\"11111111-1111-4111-8111-111111111111\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"specDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"controlBytes\":4096,\"manifestDigest\":\"f312ea3ad7197e78be7f443b861f565708c7a589cfde563f8caafddf52da18c8\",\"result\":{\"artifacts\":[{\"artifactId\":\"00000000-0000-4000-8000-000000000005\",\"bytes\":0,\"kind\":\"report\",\"relativePath\":\"reports/empty.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"},{\"artifactId\":\"00000000-0000-4000-8000-000000000004\",\"bytes\":32,\"kind\":\"report\",\"relativePath\":\"reports/result.json\",\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}],\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"completeness\":\"complete\",\"engineId\":\"k6\",\"execution\":{\"exitCode\":0,\"status\":\"completed\",\"stoppedAt\":\"2026-01-01T00:00:00Z\"},\"generation\":1,\"mode\":\"ordinary\",\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"outcome\":\"passed\",\"protocolVersion\":\"1.0\",\"requiredAssertions\":{\"failed\":0,\"passed\":2,\"required\":2,\"unknown\":0},\"schemaId\":\"https://beetle-lab.dev/contracts/runner/v1/engine-result\",\"seal\":{\"sealedAt\":\"2026-01-01T00:00:00Z\",\"sha256\":\"34e59e0a6bc12afc120668e2f7514d879d1898d984ae71449fe1576105afff07\"},\"thresholds\":[{\"id\":\"latency\",\"passed\":true,\"purpose\":\"slo\"}],\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"resultFileBytes\":1215,\"verifiedBytes\":5343,\"version\":1},\"release\":{\"authority\":\"supervisor\",\"collection\":{\"evidenceId\":\"00000000-0000-4000-8000-000000000006\",\"observedAt\":100004,\"state\":\"finished\"},\"createToken\":\"3333333333333333333333333333333333333333333333333333333333333333\",\"key\":{\"attemptId\":\"00000000-0000-4000-8000-000000000003\",\"generation\":1,\"organizationId\":\"00000000-0000-4000-8000-000000000001\",\"workspaceId\":\"00000000-0000-4000-8000-000000000002\"},\"launch\":{\"epoch\":0,\"settlementId\":\"00000000-0000-4000-8000-000000000008\",\"startToken\":null},\"runtime\":{\"evidenceId\":\"00000000-0000-4000-8000-000000000007\",\"observedAt\":100002,\"source\":\"supervisor\",\"state\":\"stopped\"},\"runtimeId\":\"synthetic-runtime\",\"specDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\"},\"root\":{\"changedNs\":\"1767225600000000000\",\"device\":\"9007199254740993\",\"directory\":\"/synthetic/output/🪲\",\"inode\":\"18446744073709551615\",\"modifiedNs\":\"1767225600000000000\",\"uid\":1000},\"version\":1}",
+        "sourceDigest": "3cafe1c9f68a839e4dc633eda48787df6c4d678d23fb2d42f3d2bbc0dec8000f",
+        "manifestBytes": 2192,
+        "sourceBytes": 3493
+      }
+    }
+  ]
+}

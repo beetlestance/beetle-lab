@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle.test/contracts/engines/k6/v1/requests",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "name",
+    "method",
+    "path",
+    "query",
+    "headers",
+    "assertions"
+  ],
+  "properties": {
+    "id": {
+      "$ref": "https://beetle.test/contracts/engines/k6/v1/common#/$defs/identifier"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "method": {
+      "enum": [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE"
+      ]
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "query": {
+      "$ref": "https://beetle.test/contracts/engines/k6/v1/suite-common#/$defs/fields"
+    },
+    "headers": {
+      "$ref": "https://beetle.test/contracts/engines/k6/v1/suite-common#/$defs/fields"
+    },
+    "body": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "value"
+          ],
+          "properties": {
+            "kind": {
+              "const": "json"
+            },
+            "value": {}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "input",
+            "format"
+          ],
+          "properties": {
+            "kind": {
+              "const": "input"
+            },
+            "input": {
+              "$ref": "https://beetle.test/contracts/engines/k6/v1/suite-common#/$defs/input"
+            },
+            "format": {
+              "enum": [
+                "text",
+                "json"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "assertions": {
+      "type": "array",
+      "items": {
+        "$ref": "https://beetle.test/contracts/engines/k6/v1/assertions"
+      },
+      "minItems": 0,
+      "maxItems": 64
+    }
+  }
+}

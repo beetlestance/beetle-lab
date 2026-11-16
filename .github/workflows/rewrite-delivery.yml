@@ -1,0 +1,194 @@
+name: Qualified rewrite delivery
+
+on:
+  workflow_call:
+    inputs:
+      source_run_id:
+        required: true
+        type: string
+      source_revision:
+        required: true
+        type: string
+
+      local_releases:
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      release_token:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  delivery-publish:
+    name: delivery/publish
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.repository == 'beetlestance/beetle-lab' &&
+      github.ref == 'refs/heads/rewrite/integration' && inputs.source_run_id != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    concurrency:
+      group: beetle-qualified-rewrite-publication
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      packages: write
+      actions: read
+    env:
+      DELIVERY_SOURCE_RUN: ${{ inputs.source_run_id }}
+      DELIVERY_SOURCE_REVISION: ${{ inputs.source_revision }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Install pinned registry client
+        run: bash scripts/install-ci-regctl.sh "$RUNNER_TEMP/beetle-regctl"
+      - name: Stage the exact qualified source artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          node --import tsx tools/delivery/stage.ts "$DELIVERY_SOURCE_RUN" "$DELIVERY_SOURCE_REVISION"
+          "$RUNNER_TEMP/rewrite-stage"
+      - name: Collect corresponding sources and notices
+        run: >-
+          node --import tsx tools/delivery/sources/collect.ts "$RUNNER_TEMP/rewrite-stage"
+          "$RUNNER_TEMP/rewrite-sources"
+      - name: Freeze the complete local registry plan
+        run: >-
+          node --import tsx tools/delivery/registry/plan.ts "$RUNNER_TEMP/rewrite-stage"
+          "$RUNNER_TEMP/rewrite-sources" "$RUNNER_TEMP/rewrite-plan" "$RUNNER_TEMP/beetle-regctl/regctl"
+      - name: Preserve the public-safe plan before registry writes
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rewrite-publication-plan-${{ inputs.source_revision }}-${{ inputs.source_run_id }}
+          path: ${{ runner.temp }}/rewrite-plan/publication-plan.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Publish sources, preserve image digests and verify all indexes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BEETLE_RELEASE_TOKEN: ${{ secrets.release_token }}
+        run: >-
+          node --import tsx tools/delivery/registry/publish.ts "$RUNNER_TEMP/rewrite-plan"
+          "$RUNNER_TEMP/rewrite-sources" "$RUNNER_TEMP/rewrite-published" "$RUNNER_TEMP/beetle-regctl/regctl"
+      - name: Retain only the closed publication and installer records
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rewrite-published-${{ inputs.source_revision }}-${{ inputs.source_run_id }}
+          path: |
+            ${{ runner.temp }}/rewrite-published/publication.json
+            ${{ runner.temp }}/rewrite-published/beetle-lab.env
+          if-no-files-found: error
+          retention-days: 14
+
+  delivery-native:
+    name: delivery/anonymous-native (${{ matrix.arch }})
+    needs: delivery-publish
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - {runner: ubuntu-24.04, arch: amd64}
+          - {runner: ubuntu-24.04-arm, arch: arm64}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: rewrite-published-${{ inputs.source_revision }}-${{ inputs.source_run_id }}
+          path: ${{ runner.temp }}/published
+      - name: Pull every image anonymously into a fresh private native store
+        run: bash scripts/verify-rewrite-pull.sh "$RUNNER_TEMP/published/publication.json" "$RUNNER_TEMP/anonymous-pull"
+      - name: Execute the normal packaged native acceptance with anonymous pulls
+        env:
+          BEETLE_QUALIFICATION_ARCHITECTURE: ${{ matrix.arch }}
+          BEETLE_QUALIFICATION_REVISION: ${{ inputs.source_revision }}
+        run: >-
+          node --import tsx tools/delivery/registry/native.ts "$RUNNER_TEMP/published/publication.json"
+          "$RUNNER_TEMP/published/beetle-lab.env" "$RUNNER_TEMP/anonymous-pull/pull.json"
+          "$RUNNER_TEMP/anonymous-native"
+      - name: Retain the closed native failure diagnostic
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rewrite-anonymous-failure-${{ matrix.arch }}-${{ inputs.source_revision }}-${{ inputs.source_run_id }}
+          path: ${{ runner.temp }}/anonymous-native/native-failure.json
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Retain only closed anonymous qualification records
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rewrite-anonymous-${{ matrix.arch }}-${{ inputs.source_revision }}-${{ inputs.source_run_id }}
+          path: ${{ runner.temp }}/anonymous-native/qualification.json
+          if-no-files-found: error
+          retention-days: 14
+
+  delivery-complete:
+    if: ${{ !inputs.local_releases }}
+    name: delivery/complete
+    needs: [delivery-publish, delivery-native]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: bash scripts/install-ci-regctl.sh "$RUNNER_TEMP/beetle-regctl"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: rewrite-published-${{ inputs.source_revision }}-${{ inputs.source_run_id }}
+          path: ${{ runner.temp }}/published
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: rewrite-anonymous-amd64-${{ inputs.source_revision }}-${{ inputs.source_run_id }}
+          path: ${{ runner.temp }}/anonymous-amd64
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: rewrite-anonymous-arm64-${{ inputs.source_revision }}-${{ inputs.source_run_id }}
+          path: ${{ runner.temp }}/anonymous-arm64
+      - name: Publish installer only after both native architectures qualify
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BEETLE_RELEASE_TOKEN: ${{ secrets.release_token }}
+        run: >-
+          node --import tsx tools/delivery/registry/complete.ts "$RUNNER_TEMP/published/publication.json"
+          "$RUNNER_TEMP/published/beetle-lab.env" "$RUNNER_TEMP/anonymous-amd64/qualification.json"
+          "$RUNNER_TEMP/anonymous-arm64/qualification.json" "$RUNNER_TEMP/rewrite-complete"
+          "$RUNNER_TEMP/beetle-regctl/regctl"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rewrite-delivery-${{ inputs.source_revision }}-${{ inputs.source_run_id }}
+          path: ${{ runner.temp }}/rewrite-complete/delivery.json
+          if-no-files-found: error
+          retention-days: 14

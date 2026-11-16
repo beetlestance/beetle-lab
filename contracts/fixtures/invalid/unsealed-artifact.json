@@ -1,0 +1,43 @@
+{
+  "protocolVersion": "1.0",
+  "organizationId": "00000000-0000-4000-8000-000000000001",
+  "workspaceId": "00000000-0000-4000-8000-000000000002",
+  "attemptId": "00000000-0000-4000-8000-000000000003",
+  "generation": 1,
+  "schemaId": "https://beetle-lab.dev/contracts/runner/v1/engine-result",
+  "engineId": "k6",
+  "mode": "ordinary",
+  "execution": {
+    "status": "completed",
+    "exitCode": 0,
+    "stoppedAt": "2026-01-01T00:00:00Z"
+  },
+  "outcome": "passed",
+  "requiredAssertions": {
+    "required": 2,
+    "passed": 2,
+    "failed": 0,
+    "unknown": 0
+  },
+  "thresholds": [
+    {
+      "id": "latency",
+      "purpose": "slo",
+      "passed": true
+    }
+  ],
+  "completeness": "complete",
+  "artifacts": [
+    {
+      "artifactId": "00000000-0000-4000-8000-000000000004",
+      "kind": "report",
+      "relativePath": "reports/result.json",
+      "bytes": 32,
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "seal": {
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sealedAt": "2026-01-01T00:00:00Z"
+  }
+}

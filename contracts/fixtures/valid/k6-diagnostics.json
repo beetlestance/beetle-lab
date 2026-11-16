@@ -1,0 +1,23 @@
+{
+  "format": "beetle-k6-diagnostics",
+  "version": 1,
+  "scope": {
+    "organizationId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "workspaceId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    "attemptId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    "generation": 1
+  },
+  "coverage": "complete",
+  "observedBytes": 60,
+  "invalidSegments": 0,
+  "redactedRecords": 1,
+  "droppedRecords": 0,
+  "records": [
+    {
+      "sequence": 1,
+      "level": "error",
+      "code": "redacted"
+    }
+  ],
+  "observedRecords": 1
+}

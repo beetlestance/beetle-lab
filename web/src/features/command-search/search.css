@@ -1,0 +1,6 @@
+.command-mask { position: fixed; inset: 0; z-index: 100; display: flex; align-items: flex-start; justify-content: center; padding: 8vh var(--space-4); background: rgb(0 0 0 / 45%); }
+.command-dialog { width: min(46rem, 100%); max-height: 80vh; overflow: auto; padding: var(--space-6); border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink); }
+.command-dialog input { width: 100%; }
+.command-dialog ul { list-style: none; margin: 0; padding: 0; }
+.command-dialog li a { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3); border-bottom: 1px solid var(--border); }
+.command-dialog li small { color: var(--muted); }

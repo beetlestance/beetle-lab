@@ -1,0 +1,18 @@
+{
+  "requestId": "00000000-0000-4000-8000-000000000010",
+  "expectedVersion": 1,
+  "schemaVersion": 2,
+  "scope": {
+    "kind": "organization",
+    "organizationId": "00000000-0000-4000-8000-000000000001"
+  },
+  "patch": {
+    "runDefaults": {
+      "budget": {
+        "cpuMillis": 500,
+        "timeoutMs": null
+      }
+    },
+    "retention": null
+  }
+}

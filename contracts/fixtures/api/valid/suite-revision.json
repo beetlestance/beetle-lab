@@ -1,0 +1,63 @@
+{
+  "id": "00000000-0000-4000-8000-000000000005",
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "suiteId": "00000000-0000-4000-8000-000000000003",
+  "ordinal": 1,
+  "engineId": "k6",
+  "configVersion": 1,
+  "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "preflightStatus": "passed",
+  "config": {
+    "version": 1,
+    "target": "http://target.invalid",
+    "requests": [
+      {
+        "id": "get",
+        "name": "Get",
+        "method": "GET",
+        "path": "/",
+        "query": {},
+        "headers": {},
+        "assertions": []
+      }
+    ],
+    "datasets": [],
+    "secrets": [],
+    "loadPlan": {
+      "version": 1,
+      "scenarios": [
+        {
+          "id": "main",
+          "name": "Main",
+          "executor": "per-vu-iterations",
+          "vus": 1,
+          "iterations": 1,
+          "startTime": "0s",
+          "gracefulStop": "0s",
+          "maxDuration": "1s"
+        }
+      ],
+      "slos": []
+    },
+    "selections": [
+      {
+        "scenarioId": "main",
+        "entries": [
+          {
+            "requestId": "get",
+            "weight": 1,
+            "wait": {
+              "durationMs": 0,
+              "jitterMs": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "inputManifest": []
+}

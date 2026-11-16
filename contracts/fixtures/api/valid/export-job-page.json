@@ -1,0 +1,55 @@
+{
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "items": [
+    {
+      "id": "00000000-0000-4000-8000-000000000005",
+      "scope": {
+        "kind": "workspace",
+        "organizationId": "00000000-0000-4000-8000-000000000001",
+        "workspaceId": "00000000-0000-4000-8000-000000000002"
+      },
+      "version": 1,
+      "suiteId": "00000000-0000-4000-8000-000000000003",
+      "revisionId": "00000000-0000-4000-8000-000000000004",
+      "revisionDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "requestedAt": "2026-11-09T00:00:00.000Z",
+      "state": "queued",
+      "activeAttemptId": "00000000-0000-4000-8000-000000000006",
+      "cancellationRequested": false,
+      "reason": null,
+      "engine": {
+        "id": "k6",
+        "profileId": "k6-export",
+        "imageDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "configVersion": 1
+      },
+      "budget": {
+        "cpuMillis": 1000,
+        "memoryBytes": 536870912,
+        "pids": 128,
+        "timeoutMs": 60000,
+        "outputBytes": 1048576
+      },
+      "executionPolicy": {
+        "mode": "parallel",
+        "preferIdle": false
+      },
+      "settingsVersions": {
+        "installation": 1,
+        "organization": 1,
+        "workspace": 1
+      },
+      "sourceProfileId": "k6-local",
+      "options": {
+        "scriptTimeoutMs": 180000,
+        "maximumBuildBytes": 262144
+      },
+      "artifact": null
+    }
+  ],
+  "nextCursor": null
+}

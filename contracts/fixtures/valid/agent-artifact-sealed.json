@@ -1,0 +1,21 @@
+{
+  "version": "1.0",
+  "organizationId": "00000000-0000-4000-8000-000000000001",
+  "workspaceId": "00000000-0000-4000-8000-000000000002",
+  "attemptId": "00000000-0000-4000-8000-000000000003",
+  "generation": 1,
+  "seq": 4,
+  "kind": "artifact.sealed",
+  "phase": "execute",
+  "observedAt": "2026-01-01T00:00:00Z",
+  "payload": {
+    "artifactId": "00000000-0000-4000-8000-000000000004",
+    "kind": "report",
+    "relativePath": "reports/result.json",
+    "bytes": 32,
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sealedAt": "2026-01-01T00:00:00Z"
+  },
+  "source": "wrapper",
+  "wrapperSeq": 4
+}

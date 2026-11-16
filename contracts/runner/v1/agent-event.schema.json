@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/runner/v1/agent-event",
+  "title": "AgentEvent",
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/event-envelope#/$defs/envelope"
+    },
+    {
+      "oneOf": [
+        {
+          "allOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/runner/v1/wrapper-events#/$defs/tagged"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "source": {
+                  "const": "wrapper"
+                },
+                "wrapperSeq": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "source",
+                "wrapperSeq"
+              ]
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/runner/v1/supervisor-events#/$defs/tagged"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "source": {
+                  "const": "agent"
+                }
+              },
+              "required": [
+                "source"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "unevaluatedProperties": false
+}

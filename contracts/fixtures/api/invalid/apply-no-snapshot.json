@@ -1,0 +1,13 @@
+{
+  "requestId": "00000000-0000-4000-8000-000000000012",
+  "expectedVersion": 1,
+  "scope": {
+    "kind": "organization",
+    "organizationId": "00000000-0000-4000-8000-000000000001"
+  },
+  "settingsId": "00000000-0000-4000-8000-000000000020",
+  "snapshotVersion": 1,
+  "page": {
+    "limit": 100
+  }
+}

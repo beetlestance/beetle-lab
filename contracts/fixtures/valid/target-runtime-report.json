@@ -1,0 +1,49 @@
+{
+  "format": "beetle-target-runtime",
+  "version": 1,
+  "scope": "target-reported",
+  "samples": [
+    {
+      "observedAt": "2026-01-01T00:00:00.000Z",
+      "phase": "before",
+      "status": "ready",
+      "reason": null,
+      "values": {
+        "heapAlloc": null,
+        "heapInuse": null,
+        "heapIdle": null,
+        "heapSys": null,
+        "heapReleased": null,
+        "heapObjects": null,
+        "stackInuse": null,
+        "rss": 1024,
+        "external": null,
+        "arrayBuffers": null,
+        "totalHeapSize": null,
+        "usedHeapSize": null,
+        "heapSizeLimit": null,
+        "mallocedMemory": null,
+        "peakMallocedMemory": null,
+        "goroutines": null,
+        "activeRequests": null,
+        "numCPU": null,
+        "totalMemory": null,
+        "freeMemory": null,
+        "uptime": null,
+        "cpuPercent": null,
+        "systemCpuPercent": null,
+        "uvThreadpoolSize": null,
+        "cppHeap.allocated_size": null,
+        "cppHeap.used_size": null,
+        "eventLoopDelay.mean": null,
+        "eventLoopDelay.p90": null,
+        "eventLoopDelay.p99": null,
+        "eventLoopDelay.max": null,
+        "gc.count": null,
+        "gc.duration": null
+      }
+    }
+  ],
+  "limited": false,
+  "missed": 0
+}

@@ -1,0 +1,17 @@
+{
+  "scope": {
+    "kind": "installation"
+  },
+  "items": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "version": 1,
+      "scope": {
+        "kind": "installation"
+      },
+      "name": "Synthetic company",
+      "slug": "synthetic-company"
+    }
+  ],
+  "nextCursor": "page_token_2"
+}

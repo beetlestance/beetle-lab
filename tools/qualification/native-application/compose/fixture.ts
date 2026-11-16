@@ -1,0 +1,57 @@
+import assert from 'node:assert/strict';
+import {writeFile,mkdtemp,realpath} from 'node:fs/promises';
+import {join,resolve} from 'node:path';
+import {tmpdir} from 'node:os';
+import {randomUUID} from 'node:crypto';
+import {composeProcesses} from './process.js';
+import type {Image,Daemon} from '../../../../agent/test/container/docker.js';
+import {Docker} from '../../../../agent/test/container/docker.js';
+import {ownedOrigin} from '../public-api.js';
+interface EnvironmentInput {readonly NCPU?: unknown; readonly MemTotal?: unknown; readonly KernelVersion?: unknown; readonly CgroupVersion?: unknown; readonly ServerVersion?: unknown}
+function positiveInteger(input: unknown) {return typeof input === 'number' && Number.isSafeInteger(input) && input > 0 ? input : null;}
+function version(input: unknown) {return typeof input === 'string' && /^[0-9][A-Za-z0-9.+_-]{0,63}$/.test(input) ? input : null;}
+/** Closed VM facts; absent/invalid values remain unknown, never zero capacity. */
+export function daemonEnvironment(info: EnvironmentInput) {
+ return {cpus: positiveInteger(info.NCPU), memoryBytes: positiveInteger(info.MemTotal), dockerVersion: version(info.ServerVersion),
+  kernelVersion: version(info.KernelVersion), cgroupVersion: info.CgroupVersion === '1' || info.CgroupVersion === '2' ? info.CgroupVersion : null};
+}
+interface RevisionImage {Config:{Labels?:Readonly<Record<string,string>>}}
+export function imageRevision(images:readonly RevisionImage[],expected?:string):string{
+ const revision=images[0]?.Config.Labels?.['org.opencontainers.image.revision'];assert(revision&&/^[a-f0-9]{40}$/.test(revision));
+ for(const image of images)assert.equal(image.Config.Labels?.['org.opencontainers.image.revision'],revision);
+ if(expected!==undefined)assert.equal(revision,expected);
+ return revision;
+}
+export function nativeArchitecture(daemon:string,harness:string,expected?:string):string{
+ const architecture=daemon==='aarch64'?'arm64':daemon==='x86_64'?'amd64':daemon;
+ assert(['arm64','amd64'].includes(architecture));
+ assert.equal(harness==='x64'?'amd64':harness,architecture);
+ if(expected!==undefined)assert.equal(architecture,expected);
+ return architecture;
+}
+export async function fixture(argv:string[], maximumTargetRequests=4){
+ assert(Number.isSafeInteger(maximumTargetRequests)&&maximumTargetRequests>=4&&maximumTargetRequests<=2048);
+ const [frontend,backend,agent,installer,engine,offline,context='default']=argv;
+ assert(argv.length>=6&&argv.length<=7);for(const item of [frontend,backend,agent,installer,engine,offline])assert(item&&/^[a-zA-Z0-9][a-zA-Z0-9_./:@-]{0,255}$/.test(item));
+ assert(/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/.test(context));
+ const docker=new Docker(context,2);const info=docker.json<Daemon & EnvironmentInput>(['info','--format','{{json .}}']);assert.equal(info.OSType,'linux');
+ const architecture=nativeArchitecture(info.Architecture,process.arch,process.env.BEETLE_QUALIFICATION_ARCHITECTURE);
+ const inspected=docker.json<(Image&{Config:{Labels?:Record<string,string>}})[]>(['image','inspect',frontend!,backend!,agent!,installer!,engine!,offline!]);
+ for(const image of inspected){assert.equal(image.Os,'linux');assert.equal(image.Architecture,architecture);}
+ assert.equal(inspected.length,6);const revision=imageRevision(inspected,process.env.BEETLE_QUALIFICATION_REVISION);
+ const imageIds=Object.fromEntries(['frontend','backend','agent','installer','engine','offline'].map((name,index)=>[name,inspected[index]!.Id]));
+ const root=await realpath(await mkdtemp(join(tmpdir(),'beetle-compose-evidence-')));
+ const home=join(root,'home');const instance='qual-'+randomUUID().slice(0,8);const project='beetle-'+instance;const origin=await ownedOrigin();
+ const environment={BEETLE_HOME:home,BEETLE_INSTANCE:instance,BEETLE_PORT:new URL(origin).port,
+  BEETLE_FRONTEND_IMAGE:frontend!,BEETLE_BACKEND_IMAGE:backend!,BEETLE_AGENT_IMAGE:agent!,BEETLE_INSTALLER_IMAGE:installer!,BEETLE_ENGINE_IMAGE:engine!,BEETLE_EXPORT_IMAGE:offline!,COMPOSE_PARALLEL_LIMIT:'1'};
+ const envFile=join(root,'compose.env');await writeFile(envFile,Object.entries(environment).map(([key,value])=>`${key}='${value}'`).join('\n')+'\n',{mode:0o600});
+ const override=join(root,'target.json');
+ const program="const counts={ready:0,work:0,unexpected:0};require('node:http').createServer((q,r)=>{if(q.url==='/counts'){r.end(JSON.stringify(counts));return;}const key=q.url==='/ready'?'ready':q.url==='/work'?'work':'unexpected';if(++counts[key]>"+maximumTargetRequests+")process.exit(3);r.writeHead(key==='unexpected'?404:200);r.end('ok');}).listen(8080,'0.0.0.0');";
+ await writeFile(override,JSON.stringify({services:{'synthetic-target':{image:agent,user:'1000:1000',read_only:true,cap_drop:['ALL'],security_opt:['no-new-privileges:true'],
+  cpus:0.25,mem_limit:'64m',pids_limit:32,entrypoint:['node','-e',program],networks:{targets:{aliases:['target']}}}}}),{mode:0o600});
+ const args=['compose','--project-name',project,'--env-file',envFile,'--file',resolve('docker-compose.yml'),'--file',override];
+ const {compose,logs}=composeProcesses(context,args,root);
+ const ids=()=>docker.run(['ps','-aq','--no-trunc','--filter',`label=com.docker.compose.project=${project}`]).split('\n').filter(Boolean);
+ return {root,home,instance,project,origin,docker,compose,ids,logs,architecture,imageIds,revision,daemonVersion:info.ServerVersion,environment:daemonEnvironment(info),agent:`beetle-${instance}-agent`,images:{frontend,backend,agent,installer,engine,offline}};
+}
+export type Fixture=Awaited<ReturnType<typeof fixture>>;

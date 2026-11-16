@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/api/v2/input-requests",
+  "title": "ApiInputRequests",
+  "$defs": {
+    "CreateInputRequest": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+        },
+        "requestId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "name": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name"
+        },
+        "folderId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8388608
+        }
+      },
+      "required": [
+        "scope",
+        "requestId",
+        "name",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false
+    },
+    "TransitionInputRequest": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+        },
+        "requestId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "expectedVersion": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Version"
+        }
+      },
+      "required": [
+        "scope",
+        "requestId",
+        "expectedVersion"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

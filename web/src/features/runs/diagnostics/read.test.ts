@@ -1,0 +1,26 @@
+import { expect, it, vi } from 'vitest';
+import source from '../../../../../contracts/fixtures/valid/k6-diagnostics.json' with {type: 'json'};
+import { DiagnosticReads } from './read.js';
+import { fixture } from '../target-observations/read-fixtures.js';
+async function hash(bytes: Uint8Array): Promise<string> {
+ const value = await crypto.subtle.digest('SHA-256', Uint8Array.from(bytes));
+ return Array.from(new Uint8Array(value), byte => byte.toString(16).padStart(2, '0')).join('');
+}
+async function setup(foreign = false) {
+  const f = fixture();
+  const report = structuredClone(source) as {scope: Record<string, string | number>};
+  report.scope = {organizationId: f.params.organizationId, workspaceId: f.params.workspaceId,
+    attemptId: foreign ? 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' : f.params.attemptId, generation: 1};
+  const bytes = new TextEncoder().encode(JSON.stringify(report));
+  const fetcher = vi.fn(async () => new Response(bytes));
+  const reads = new DiagnosticReads({fetch: fetcher, digest: async input => hash(input), monotonic: () => 0});
+  return {reads, fetcher, report, input: {...f.input, artifact: {...f.artifact, kind: 'k6-diagnostics', bytes: bytes.length, sha256: await hash(bytes)}}};
+}
+it('verifies scoped diagnostic bytes and rejects a valid foreign payload after integrity verification', async () => {
+  const f = await setup(); expect(await f.reads.read(f.input)).toEqual(f.report);
+  const other = await setup(true); await expect(other.reads.read(other.input)).rejects.toThrow('scope');
+});
+it('refuses over-cap metadata before issuing a fetch', async () => {
+  const f = await setup(); await expect(f.reads.read({...f.input, artifact: {...f.input.artifact, bytes: 32769}})).rejects.toThrow();
+  expect(f.fetcher).not.toHaveBeenCalled();
+});

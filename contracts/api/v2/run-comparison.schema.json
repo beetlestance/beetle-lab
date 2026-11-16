@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/api/v2/run-comparison",
+  "title": "ApiRunComparison",
+  "$defs": {
+    "RunComparisonRequest": {
+      "type": "object",
+      "properties": {
+        "scope": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"},
+        "runIds": {"type": "array", "minItems": 2, "maxItems": 4, "items": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"}, "uniqueItems": true},
+        "metric": {"anyOf": [{"$ref": "https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricKey"}, {"type": "null"}]}
+      },
+      "required": ["scope", "runIds", "metric"],
+      "additionalProperties": false
+    },
+    "RunComparisonBinding": {
+      "type": "object",
+      "properties": {
+        "requestId": {"anyOf": [{"$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/token"}, {"type": "null"}]},
+        "assertionId": {"anyOf": [{"$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/token"}, {"type": "null"}]}
+      },
+      "required": ["requestId", "assertionId"],
+      "additionalProperties": false
+    },
+    "RunComparisonResult": {
+      "type": "object",
+      "properties": {
+        "outcome": {"enum": ["passed", "failed", "inconclusive"]},
+        "completeness": {"enum": ["complete", "partial", "missing"]},
+        "execution": {"$ref": "https://beetle-lab.dev/contracts/runner/v1/result-execution#/$defs/any"},
+        "requiredAssertions": {"$ref": "https://beetle-lab.dev/contracts/runner/v1/result-evidence#/$defs/base/properties/requiredAssertions"},
+        "failedSloCount": {"type": "integer", "minimum": 0, "maximum": 256},
+        "discoveryReached": {"anyOf": [{"type": "boolean"}, {"type": "null"}]}
+      },
+      "required": ["outcome", "completeness", "execution", "requiredAssertions", "failedSloCount", "discoveryReached"],
+      "additionalProperties": false
+    },
+    "RunComparisonEnvironment": {
+      "type": "object",
+      "properties": {
+        "targetDigest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "inputsDigest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "secretBindingsDigest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "secretVersions": {"enum": ["known", "unknown"]},
+        "targetSampler": {"enum": ["configured", "disabled"]},
+        "targetRevision": {"const": "unknown"},
+        "contention": {"const": "unknown"}
+      },
+      "required": ["targetDigest", "inputsDigest", "secretBindingsDigest", "secretVersions", "targetSampler", "targetRevision", "contention"],
+      "additionalProperties": false
+    },
+    "RunComparisonConfigChange": {
+      "type": "object",
+      "properties": {
+        "path": {"type": "string", "maxLength": 512, "pattern": "^(/.*)?$"},
+        "change": {"enum": ["added", "removed", "changed"]}
+      },
+      "required": ["path", "change"],
+      "additionalProperties": false
+    },
+    "RunComparisonDifferences": {
+      "type": "object",
+      "properties": {
+        "fields": {"type": "array", "minItems": 0, "maxItems": 8, "items": {"enum": ["revision", "engine", "budget", "execution_policy", "target", "inputs", "secret_bindings", "settings"]}, "uniqueItems": true},
+        "configChanges": {"type": "array", "minItems": 0, "maxItems": 100, "items": {"$ref": "https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonConfigChange"}},
+        "limited": {"type": "boolean"}
+      },
+      "required": ["fields", "configChanges", "limited"],
+      "additionalProperties": false
+    },
+    "RunComparisonMetricRead": {
+      "type": "object",
+      "properties": {
+        "availability": {"enum": ["not_requested", "ready", "missing", "not_applicable", "unavailable"]},
+        "reason": {"enum": [null, "result_absent", "not_recorded", "unsupported_format", "source_absent", "not_observed", "logical_input_absent"]},
+        "series": {"anyOf": [{"$ref": "https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricSeries"}, {"type": "null"}]},
+        "manifestDigest": {"anyOf": [{"type": "string", "pattern": "^[a-f0-9]{64}$"}, {"type": "null"}]},
+        "measurementSourceTimeMs": {"anyOf": [{"type": "integer", "minimum": 0, "maximum": 8640000000000000}, {"type": "null"}]},
+        "coverage": {"anyOf": [{"$ref": "https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricCoverage"}, {"type": "null"}]}
+      },
+      "required": ["availability", "reason", "series", "manifestDigest", "measurementSourceTimeMs", "coverage"],
+      "additionalProperties": false
+    },
+    "RunComparisonItem": {
+      "type": "object",
+      "properties": {
+        "run": {"$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/Run"},
+        "result": {"anyOf": [{"$ref": "https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonResult"}, {"type": "null"}]},
+        "environment": {"$ref": "https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonEnvironment"},
+        "differences": {"$ref": "https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonDifferences"},
+        "warnings": {"type": "array", "minItems": 0, "maxItems": 9, "items": {"enum": ["unknown_secret_version", "unknown_target_revision", "unknown_contention", "target_sampler_disabled", "missing_result", "partial_result", "limited_config_diff", "metric_unavailable", "partial_metric_windows"]}, "uniqueItems": true},
+        "metric": {"$ref": "https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonMetricRead"}
+      },
+      "required": ["run", "result", "environment", "differences", "warnings", "metric"],
+      "additionalProperties": false
+    },
+    "RunComparisonSnapshot": {
+      "type": "object",
+      "properties": {
+        "scope": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"},
+        "baselineRunId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "metric": {"anyOf": [{"$ref": "https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricKey"}, {"type": "null"}]},
+        "metricBinding": {"anyOf": [{"$ref": "https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonBinding"}, {"type": "null"}]},
+        "items": {"type": "array", "minItems": 2, "maxItems": 4, "items": {"$ref": "https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonItem"}}
+      },
+      "required": ["scope", "baselineRunId", "metric", "metricBinding", "items"],
+      "additionalProperties": false
+    }
+  }
+}

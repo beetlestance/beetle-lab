@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "state": "settled",
+  "requestDigest": "a1984758d4983e426ac4a8d9893278b8339578bec7a07c9e6ae351aed44da005",
+  "cleanupReplyDigest": "2dd49c1227374d6ab6a91b78e6a5baeb018a7170c9e5636b7a0614e805de8297",
+  "tombstoneDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "chargedBytes": 4096
+}

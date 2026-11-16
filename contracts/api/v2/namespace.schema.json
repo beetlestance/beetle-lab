@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/api/v2/namespace",
+  "title": "ApiNamespace",
+  "$defs": {
+    "Organization": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" },
+        "version": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Version" },
+        "scope": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/InstallationScope" },
+        "name": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name" },
+        "slug": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }
+      },
+      "required": ["id", "version", "scope", "name", "slug"], "additionalProperties": false
+    },
+    "Workspace": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" },
+        "version": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Version" },
+        "scope": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/OrganizationScope" },
+        "name": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name" },
+        "rootFolderId": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" }
+      },
+      "required": ["id", "version", "scope", "name", "rootFolderId"], "additionalProperties": false
+    },
+    "Folder": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" },
+        "version": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Version" },
+        "scope": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope" },
+        "name": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name" },
+        "parentFolderId": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" }, { "type": "null" }] },
+        "displayPath": { "type": "array", "maxItems": 8, "items": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name" } }
+      },
+      "required": ["id", "version", "scope", "name", "parentFolderId", "displayPath"], "additionalProperties": false
+    },
+    "DeletionReceipt": {
+      "description": "A tombstone acknowledgement is not evidence that cleanup freed bytes.",
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" },
+        "version": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Version" },
+        "scope": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/SettingsScope" },
+        "requestId": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" },
+        "state": { "const": "tombstoned" },
+        "cleanup": { "enum": ["pending", "running", "complete", "failed"] }
+      },
+      "required": ["id", "version", "scope", "requestId", "state", "cleanup"], "additionalProperties": false
+    },
+    "OrganizationPage": {
+      "type": "object",
+      "properties": {
+        "scope": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/InstallationScope" },
+        "items": { "type": "array", "maxItems": 100, "items": { "$ref": "https://beetle-lab.dev/contracts/api/v2/namespace#/$defs/Organization" } },
+        "nextCursor": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/OpaqueCursor" }, { "type": "null" }] }
+      },
+      "required": ["scope", "items", "nextCursor"], "additionalProperties": false
+    },
+    "WorkspacePage": {
+      "type": "object",
+      "properties": {
+        "scope": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/OrganizationScope" },
+        "items": { "type": "array", "maxItems": 100, "items": { "$ref": "https://beetle-lab.dev/contracts/api/v2/namespace#/$defs/Workspace" } },
+        "nextCursor": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/OpaqueCursor" }, { "type": "null" }] }
+      },
+      "required": ["scope", "items", "nextCursor"], "additionalProperties": false
+    },
+    "FolderPage": {
+      "type": "object",
+      "properties": {
+        "scope": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope" },
+        "items": { "type": "array", "maxItems": 100, "items": { "$ref": "https://beetle-lab.dev/contracts/api/v2/namespace#/$defs/Folder" } },
+        "nextCursor": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/OpaqueCursor" }, { "type": "null" }] }
+      },
+      "required": ["scope", "items", "nextCursor"], "additionalProperties": false
+    }
+  }
+}

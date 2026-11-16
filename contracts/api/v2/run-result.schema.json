@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/api/v2/run-result",
+  "title": "ApiRunResult",
+  "$defs": {
+    "RunResultSnapshot": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+        },
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+        },
+        "activeAttemptId": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/uuid"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "https://beetle-lab.dev/contracts/runner/v1/engine-result"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "scope",
+        "activeAttemptId",
+        "result"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

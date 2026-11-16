@@ -1,0 +1,182 @@
+name: Read-only published rewrite qualification
+on:
+  workflow_call:
+    inputs:
+      release:
+        description: Existing public rewrite installer release tag
+        type: string
+        required: true
+      profile:
+        description: Bounded read-only qualification profile
+        type: string
+        default: kernel-controls
+permissions:
+  contents: read
+jobs:
+  native-qualification:
+    name: qualification/${{ inputs.profile }} (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: ${{ inputs.profile == 'active-recovery' && 25 || 15 }}
+    env:
+      BEETLE_QUALIFICATION_ARCHITECTURE: ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      # ARM cold proof already exists; this packet supplies only missing AMD64.
+      matrix: ${{ fromJSON(inputs.profile == 'cold-recovery' && '{"include":[{"runner":"ubuntu-24.04","arch":"amd64"}]}' || '{"include":[{"runner":"ubuntu-24.04","arch":"amd64"},{"runner":"ubuntu-24.04-arm","arch":"arm64"}]}') }}
+    steps:
+      - name: Validate the explicit qualification profile
+        env:
+          PROFILE: ${{ inputs.profile }}
+        run: |
+          case "$PROFILE" in kernel-controls|active-recovery|cold-recovery) ;; *) exit 1 ;; esac
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Verify the existing public release and immutable publication record
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE: ${{ inputs.release }}
+        run: node --import tsx tools/qualification/resources/published.ts "$RELEASE" "$RUNNER_TEMP/publication"
+      - name: Pull only the native engine anonymously
+        if: ${{ inputs.profile == 'kernel-controls' }}
+        run: node --import tsx tools/qualification/resources/pull.ts "$RUNNER_TEMP/publication/publication.json" "$RUNNER_TEMP/pull"
+      - name: Qualify bounded real kernel controls
+        if: ${{ inputs.profile == 'kernel-controls' }}
+        run: |
+          node --input-type=module <<'JS'
+          import {writeFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          const root = process.env.RUNNER_TEMP;
+          writeFileSync(join(root, 'kernel-plan.json'), JSON.stringify({cwd: process.cwd(), checks: [{id: 'kernel-controls',
+            argv: [process.execPath, '--import', 'tsx', 'tools/qualification/resources/controls.ts', join(root, 'publication/publication.json'), join(root, 'controls')], timeoutMs: 600000}]}), {flag: 'wx', mode: 0o600});
+          JS
+          node --import tsx tools/check-runner/cli.ts "$RUNNER_TEMP/kernel-plan.json" "$RUNNER_TEMP/kernel-checks"
+      - name: Independently remove only owned probe containers
+        if: ${{ always() && inputs.profile == 'kernel-controls' }}
+        run: |
+          if [ -f "$RUNNER_TEMP/controls/owner.json" ]; then
+            node --import tsx tools/qualification/resources/cleanup.ts "$RUNNER_TEMP/controls/owner.json"
+          fi
+      - name: Retain only the closed outcome
+        if: ${{ always() && inputs.profile == 'kernel-controls' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: kernel-controls-${{ matrix.arch }}
+          path: ${{ runner.temp }}/controls/outcome.json
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Pull the six native stack roles anonymously
+        if: ${{ inputs.profile == 'active-recovery' || inputs.profile == 'cold-recovery' }}
+        run: node --import tsx tools/qualification/resources/pull.ts "$RUNNER_TEMP/publication/publication.json" "$RUNNER_TEMP/pull" stack
+      - name: Qualify active crashes and cancellation in separate fresh projects
+        id: lifecycle_qualification
+        env:
+          TMPDIR: ${{ runner.temp }}
+        if: ${{ inputs.profile == 'active-recovery' }}
+        run: |
+          node --input-type=module <<'JS'
+          import {writeFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          const root = process.env.RUNNER_TEMP;
+          const checks = ['crashes', 'cancel'].map(mode => ({id: mode, timeoutMs: 300000,
+            argv: [process.execPath, '--import', 'tsx', 'tools/qualification/resources/lifecycle/run.ts',
+              join(root, 'publication/publication.json'), join(root, 'lifecycle-' + mode), 'default', mode]}));
+          writeFileSync(join(root, 'lifecycle-plan.json'), JSON.stringify({cwd: process.cwd(), checks}), {flag: 'wx', mode: 0o600});
+          JS
+          node --import tsx tools/check-runner/cli.ts "$RUNNER_TEMP/lifecycle-plan.json" "$RUNNER_TEMP/lifecycle-checks"
+      - name: Independently remove only owned lifecycle resources
+        id: lifecycle_cleanup
+        if: ${{ always() && inputs.profile == 'active-recovery' }}
+        timeout-minutes: 7
+        run: |
+          failed=0
+          for mode in crashes cancel; do
+            if [ -f "$RUNNER_TEMP/lifecycle-$mode/owner.json" ]; then
+              if ! node --import tsx tools/qualification/resources/lifecycle/cleanup.ts "$RUNNER_TEMP/lifecycle-$mode"; then failed=1; fi
+            fi
+          done
+          exit "$failed"
+      - name: Diagnose native stats only after a failed lifecycle qualification
+        if: ${{ failure() && inputs.profile == 'active-recovery' && steps.lifecycle_qualification.outcome == 'failure' && steps.lifecycle_cleanup.outcome == 'success' }}
+        timeout-minutes: 2
+        run: |
+          node --input-type=module <<'JS'
+          import {writeFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          const root = process.env.RUNNER_TEMP;
+          writeFileSync(join(root, 'stats-diagnostic-plan.json'), JSON.stringify({cwd: process.cwd(), checks: [{id: 'diagnostic', timeoutMs: 90000,
+            argv: [process.execPath, '--import', 'tsx', 'tools/qualification/native-application/diagnostics/stats.ts', join(root, 'publication/publication.json'), join(root, 'stats-diagnostic')]}]}), {flag: 'wx', mode: 0o600});
+          JS
+          node --import tsx tools/check-runner/cli.ts "$RUNNER_TEMP/stats-diagnostic-plan.json" "$RUNNER_TEMP/stats-diagnostic-checks"
+      - name: Independently remove only owned diagnostic containers
+        if: ${{ always() && inputs.profile == 'active-recovery' }}
+        run: |
+          if [ -f "$RUNNER_TEMP/stats-diagnostic/owner.json" ]; then
+            node --import tsx tools/qualification/resources/cleanup.ts "$RUNNER_TEMP/stats-diagnostic/owner.json"
+          fi
+      - name: Retain only closed non-qualifying diagnostic facts
+        if: ${{ failure() && inputs.profile == 'active-recovery' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stats-diagnostic-${{ matrix.arch }}
+          path: ${{ runner.temp }}/stats-diagnostic/outcome.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Project safe lifecycle reports
+        if: ${{ always() && inputs.profile == 'active-recovery' }}
+        run: |
+          failed=0
+          for mode in crashes cancel; do
+            if [ -f "$RUNNER_TEMP/lifecycle-$mode/outcome.json" ]; then
+              if ! node --import tsx tools/qualification/resources/lifecycle/public.ts "$RUNNER_TEMP/lifecycle-$mode/outcome.json" "$RUNNER_TEMP/lifecycle-$mode/public-outcome.json"; then failed=1; fi
+            else failed=1; fi
+          done
+          exit "$failed"
+      - name: Retain only safe lifecycle reports
+        if: ${{ always() && inputs.profile == 'active-recovery' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: active-recovery-${{ matrix.arch }}
+          path: ${{ runner.temp }}/lifecycle-*/public-outcome.json
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Qualify packaged default-UID cold backup and historical restore
+        if: ${{ inputs.profile == 'cold-recovery' }}
+        env:
+          TMPDIR: ${{ runner.temp }}
+        run: |
+          node --input-type=module <<'JS'
+          import {writeFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          const root = process.env.RUNNER_TEMP;
+          writeFileSync(join(root, 'cold-plan.json'), JSON.stringify({cwd: process.cwd(), checks: [{id: 'cold-recovery', timeoutMs: 300000,
+            argv: [process.execPath, '--import', 'tsx', 'tools/qualification/native-application/cold/run.ts',
+              join(root, 'publication/publication.json'), join(root, 'cold-recovery')]}]}), {flag: 'wx', mode: 0o600});
+          JS
+          node --import tsx tools/check-runner/cli.ts "$RUNNER_TEMP/cold-plan.json" "$RUNNER_TEMP/cold-checks"
+      - name: Independently remove only owned cold recovery resources
+        if: ${{ always() && inputs.profile == 'cold-recovery' }}
+        timeout-minutes: 4
+        run: |
+          if [ -f "$RUNNER_TEMP/cold-recovery/owner.json" ]; then
+            node --import tsx tools/qualification/native-application/cold/cleanup.ts "$RUNNER_TEMP/cold-recovery"
+          fi
+      - name: Project only closed cold recovery facts
+        if: ${{ always() && inputs.profile == 'cold-recovery' }}
+        run: node --import tsx tools/qualification/native-application/cold/public.ts "$RUNNER_TEMP/cold-recovery/outcome-private.json" "$RUNNER_TEMP/cold-recovery/public-outcome.json"
+      - name: Retain only safe cold recovery report
+        if: ${{ always() && inputs.profile == 'cold-recovery' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cold-recovery-${{ matrix.arch }}
+          path: ${{ runner.temp }}/cold-recovery/public-outcome.json
+          if-no-files-found: error
+          retention-days: 7

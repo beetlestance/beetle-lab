@@ -1,0 +1,712 @@
+[
+  {
+    "path": "valid/organization.json",
+    "schema": "Organization",
+    "valid": true
+  },
+  {
+    "path": "valid/workspace.json",
+    "schema": "Workspace",
+    "valid": true
+  },
+  {
+    "path": "valid/folder.json",
+    "schema": "Folder",
+    "valid": true
+  },
+  {
+    "path": "valid/root-folder.json",
+    "schema": "Folder",
+    "valid": true
+  },
+  {
+    "path": "valid/organization-page.json",
+    "schema": "OrganizationPage",
+    "valid": true
+  },
+  {
+    "path": "valid/workspace-page.json",
+    "schema": "WorkspacePage",
+    "valid": true
+  },
+  {
+    "path": "valid/folder-page.json",
+    "schema": "FolderPage",
+    "valid": true
+  },
+  {
+    "path": "valid/organization-params.json",
+    "schema": "OrganizationParams",
+    "valid": true
+  },
+  {
+    "path": "valid/workspace-params.json",
+    "schema": "WorkspaceParams",
+    "valid": true
+  },
+  {
+    "path": "valid/folder-params.json",
+    "schema": "FolderParams",
+    "valid": true
+  },
+  {
+    "path": "valid/page-query.json",
+    "schema": "PageQuery",
+    "valid": true
+  },
+  {
+    "path": "valid/create-organization.json",
+    "schema": "CreateOrganizationRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/patch-organization.json",
+    "schema": "PatchOrganizationRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/delete-organization.json",
+    "schema": "DeleteOrganizationRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/create-workspace.json",
+    "schema": "CreateWorkspaceRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/patch-workspace.json",
+    "schema": "PatchWorkspaceRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/delete-workspace.json",
+    "schema": "DeleteWorkspaceRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/create-folder.json",
+    "schema": "CreateFolderRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/patch-folder.json",
+    "schema": "PatchFolderRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/delete-folder.json",
+    "schema": "DeleteFolderRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/folder-move.json",
+    "schema": "PatchFolderRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/deletion-receipt.json",
+    "schema": "DeletionReceipt",
+    "valid": true
+  },
+  {
+    "path": "valid/installation-settings.json",
+    "schema": "InstallationSettings",
+    "valid": true
+  },
+  {
+    "path": "valid/patch-installation-settings.json",
+    "schema": "PatchInstallationSettingsRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/organization-settings.json",
+    "schema": "OrganizationSettings",
+    "valid": true
+  },
+  {
+    "path": "valid/patch-organization-settings.json",
+    "schema": "PatchOrganizationSettingsRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/workspace-settings.json",
+    "schema": "WorkspaceSettings",
+    "valid": true
+  },
+  {
+    "path": "valid/patch-workspace-settings.json",
+    "schema": "PatchWorkspaceSettingsRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/clear-settings-group.json",
+    "schema": "PatchWorkspaceSettingsRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/retention-preview-request.json",
+    "schema": "RetentionPreviewRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/retention-preview.json",
+    "schema": "RetentionPreview",
+    "valid": true
+  },
+  {
+    "path": "valid/manual-retention-preview.json",
+    "schema": "RetentionPreview",
+    "valid": true
+  },
+  {
+    "path": "valid/retention-apply-request.json",
+    "schema": "RetentionApplyRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/retention-apply-receipt.json",
+    "schema": "RetentionApplyReceipt",
+    "valid": true
+  },
+  {
+    "path": "valid/safe-error.json",
+    "schema": "ApiError",
+    "valid": true
+  },
+  {
+    "path": "invalid/uuid-empty.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/uuid-invalid.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/version-zero.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/unsafe-version.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/root-folder-null.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/scope-missing.json",
+    "schema": "Folder",
+    "valid": false
+  },
+  {
+    "path": "invalid/scope-wrong-kind.json",
+    "schema": "Folder",
+    "valid": false
+  },
+  {
+    "path": "invalid/scope-extra.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/unknown-secret-field.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/long-name.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/empty-name.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/control-name.json",
+    "schema": "Workspace",
+    "valid": false
+  },
+  {
+    "path": "invalid/delete-no-version.json",
+    "schema": "DeleteFolderRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/create-no-request-id.json",
+    "schema": "CreateWorkspaceRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/patch-no-change.json",
+    "schema": "PatchOrganizationRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/scope-null.json",
+    "schema": "CreateWorkspaceRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/numeric-api-cursor.json",
+    "schema": "PageQuery",
+    "valid": false
+  },
+  {
+    "path": "invalid/empty-api-cursor.json",
+    "schema": "PageQuery",
+    "valid": false
+  },
+  {
+    "path": "invalid/oversized-page.json",
+    "schema": "PageQuery",
+    "valid": false
+  },
+  {
+    "path": "invalid/string-limit.json",
+    "schema": "PageQuery",
+    "valid": false
+  },
+  {
+    "path": "invalid/zero-limit.json",
+    "schema": "PageQuery",
+    "valid": false
+  },
+  {
+    "path": "invalid/default-less-page.json",
+    "schema": "PageQuery",
+    "valid": false
+  },
+  {
+    "path": "invalid/empty-retention-rules.json",
+    "schema": "RetentionPolicy",
+    "valid": false
+  },
+  {
+    "path": "invalid/manual-retention-rule.json",
+    "schema": "RetentionPolicy",
+    "valid": false
+  },
+  {
+    "path": "invalid/disabled-auto-retention.json",
+    "schema": "RetentionPolicy",
+    "valid": false
+  },
+  {
+    "path": "invalid/unsafe-budget.json",
+    "schema": "Budget",
+    "valid": false
+  },
+  {
+    "path": "invalid/budget-string.json",
+    "schema": "Budget",
+    "valid": false
+  },
+  {
+    "path": "invalid/budget-secret.json",
+    "schema": "Budget",
+    "valid": false
+  },
+  {
+    "path": "invalid/pool-override.json",
+    "schema": "PatchWorkspaceSettingsRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/empty-settings-patch.json",
+    "schema": "PatchWorkspaceSettingsRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/secret-settings.json",
+    "schema": "PatchWorkspaceSettingsRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/installation-inherit.json",
+    "schema": "PatchInstallationSettingsRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/persisted-null-override.json",
+    "schema": "ScopedOverrides",
+    "valid": false
+  },
+  {
+    "path": "invalid/preview-unsafe-bytes.json",
+    "schema": "RetentionPreview",
+    "valid": false
+  },
+  {
+    "path": "invalid/preview-freed-bytes.json",
+    "schema": "RetentionPreview",
+    "valid": false
+  },
+  {
+    "path": "invalid/apply-unbounded-ids.json",
+    "schema": "RetentionApplyRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/apply-no-snapshot.json",
+    "schema": "RetentionApplyRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/apply-stale-invalid-version.json",
+    "schema": "RetentionApplyRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/unsafe-error-message.json",
+    "schema": "ApiError",
+    "valid": false
+  },
+  {
+    "path": "invalid/unsafe-error-path.json",
+    "schema": "ApiError",
+    "valid": false
+  },
+  {
+    "path": "invalid/unsafe-error-extra.json",
+    "schema": "ApiError",
+    "valid": false
+  },
+  {
+    "path": "valid/pair-browser-request.json",
+    "schema": "PairBrowserRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/browser-session.json",
+    "schema": "BrowserSession",
+    "valid": true
+  },
+  {
+    "path": "valid/logout-browser-request.json",
+    "schema": "LogoutBrowserRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/logout-browser-receipt.json",
+    "schema": "LogoutBrowserReceipt",
+    "valid": true
+  },
+  {
+    "path": "valid/suite.json",
+    "schema": "Suite",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-revision-summary.json",
+    "schema": "SuiteRevisionSummary",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-revision.json",
+    "schema": "SuiteRevision",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-page.json",
+    "schema": "SuitePage",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-revision-page.json",
+    "schema": "SuiteRevisionPage",
+    "valid": true
+  },
+  {
+    "path": "valid/create-suite.json",
+    "schema": "CreateSuiteRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/patch-suite.json",
+    "schema": "PatchSuiteRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/create-suite-revision.json",
+    "schema": "CreateSuiteRevisionRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-params.json",
+    "schema": "SuiteParams",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-revision-params.json",
+    "schema": "SuiteRevisionParams",
+    "valid": true
+  },
+  {
+    "path": "valid/input.json",
+    "schema": "InputRecord",
+    "valid": true
+  },
+  {
+    "path": "valid/input-receipt.json",
+    "schema": "InputReceipt",
+    "valid": true
+  },
+  {
+    "path": "valid/input-page.json",
+    "schema": "InputPage",
+    "valid": true
+  },
+  {
+    "path": "valid/create-input.json",
+    "schema": "CreateInputRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/transition-input.json",
+    "schema": "TransitionInputRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/input-params.json",
+    "schema": "InputParams",
+    "valid": true
+  },
+  {
+    "path": "invalid/input-too-large.json",
+    "schema": "CreateInputRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/input-path-leak.json",
+    "schema": "InputRecord",
+    "valid": false
+  },
+  {
+    "path": "invalid/input-unknown-state.json",
+    "schema": "InputRecord",
+    "valid": false
+  },
+  {
+    "path": "invalid/input-unsafe-reason.json",
+    "schema": "InputRecord",
+    "valid": false
+  },
+  {
+    "path": "invalid/input-old-acceptance.json",
+    "schema": "InputReceipt",
+    "valid": false
+  },
+  {
+    "path": "valid/create-run.json",
+    "schema": "CreateRunRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/run.json",
+    "schema": "Run",
+    "valid": true
+  },
+  {
+    "path": "valid/run-page.json",
+    "schema": "RunPage",
+    "valid": true
+  },
+  {
+    "path": "valid/run-params.json",
+    "schema": "RunParams",
+    "valid": true
+  },
+  {
+    "path": "valid/cancel-run.json",
+    "schema": "CancelRunRequest",
+    "valid": true
+  },
+  {
+    "path": "invalid/cancel-run-extra.json",
+    "schema": "CancelRunRequest",
+    "valid": false
+  },
+  {
+    "path": "valid/run-cancelling.json",
+    "schema": "Run",
+    "valid": true
+  },
+  {
+    "path": "valid/run-result-pending.json",
+    "schema": "RunResultSnapshot",
+    "valid": true
+  },
+  {
+    "path": "valid/run-events-pending.json",
+    "schema": "RunEventPage",
+    "valid": true
+  },
+  {
+    "path": "invalid/run-events-generation.json",
+    "schema": "RunEventPage",
+    "valid": false
+  },
+  {
+    "path": "valid/run-artifacts-pending.json",
+    "schema": "RunArtifactPage",
+    "valid": true
+  },
+  {
+    "path": "valid/run-attempt-params.json",
+    "schema": "RunAttemptParams",
+    "valid": true
+  },
+  {
+    "path": "valid/run-metric-series-pending.json",
+    "schema": "RunMetricSeriesPage",
+    "valid": true
+  },
+  {
+    "path": "valid/run-metric-samples.json",
+    "schema": "RunMetricSamplesPage",
+    "valid": true
+  },
+  {
+    "path": "valid/run-comparison-request.json",
+    "schema": "RunComparisonRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/run-comparison.json",
+    "schema": "RunComparisonSnapshot",
+    "valid": true
+  },
+  {
+    "path": "valid/run-comparison-selected-request.json",
+    "schema": "RunComparisonRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/run-comparison-selected.json",
+    "schema": "RunComparisonSnapshot",
+    "valid": true
+  },
+  {
+    "path": "invalid/run-comparison-five.json",
+    "schema": "RunComparisonRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/run-comparison-extra.json",
+    "schema": "RunComparisonRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/run-comparison-one.json",
+    "schema": "RunComparisonRequest",
+    "valid": false
+  },
+  {
+    "path": "valid/run-metric-samples-query.json",
+    "schema": "RunMetricSamplesQuery",
+    "valid": true
+  },
+  {
+    "path": "valid/live-metric-snapshot.json",
+    "schema": "LiveMetricSnapshot",
+    "valid": true
+  },
+  {
+    "path": "valid/open-local-browser-request.json",
+    "schema": "OpenLocalBrowserRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/export-job.json",
+    "schema": "ExportJob",
+    "valid": true
+  },
+  {
+    "path": "valid/export-job-page.json",
+    "schema": "ExportJobPage",
+    "valid": true
+  },
+  {
+    "path": "valid/export-profiles.json",
+    "schema": "ExportProfiles",
+    "valid": true
+  },
+  {
+    "path": "valid/create-export.json",
+    "schema": "CreateExportRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/cancel-export.json",
+    "schema": "CancelExportRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/export-params.json",
+    "schema": "ExportParams",
+    "valid": true
+  },
+  {
+    "path": "invalid/create-export-zero-build.json",
+    "schema": "CreateExportRequest",
+    "valid": false
+  },
+  {
+    "path": "valid/run-list-query.json",
+    "schema": "RunListQuery",
+    "valid": true
+  },
+  {
+    "path": "invalid/run-list-query-order.json",
+    "schema": "RunListQuery",
+    "valid": false
+  },
+  {
+    "path": "valid/organization-overview.json",
+    "schema": "OrganizationOverview",
+    "valid": true
+  },
+  {
+    "path": "valid/workspace-overview.json",
+    "schema": "WorkspaceOverview",
+    "valid": true
+  },
+  {
+    "path": "valid/retention-batch-params.json",
+    "schema": "RetentionBatchParams",
+    "valid": true
+  },
+  {
+    "path": "valid/manual-run-deletion-request.json",
+    "schema": "ManualRunDeletionPreviewRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/retention-batch-status.json",
+    "schema": "RetentionBatchStatus",
+    "valid": true
+  },
+  {
+    "path": "valid/retention-batch-list.json",
+    "schema": "RetentionBatchList",
+    "valid": true
+  },
+  {
+    "path": "valid/retention-discard-receipt.json",
+    "schema": "RetentionDiscardReceipt",
+    "valid": true
+  },
+  {
+    "path": "valid/retention-traversal-page.json",
+    "schema": "RetentionTraversalPage",
+    "valid": true
+  }
+]

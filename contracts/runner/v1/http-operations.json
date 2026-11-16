@@ -1,0 +1,110 @@
+[
+  {
+    "name": "capabilities",
+    "method": "GET",
+    "path": "/runner/v1/capabilities",
+    "response": "Capabilities",
+    "successStatus": 200
+  },
+  {
+    "name": "offer",
+    "method": "PUT",
+    "path": "/runner/v1/attempts/{attemptId}",
+    "request": "Offer",
+    "response": "AttemptSnapshot",
+    "successStatus": 202
+  },
+  {
+    "name": "offerExport",
+    "method": "PUT",
+    "path": "/runner/v1/attempts/{attemptId}/export",
+    "request": "StandaloneExportAssignment",
+    "response": "AttemptSnapshot",
+    "successStatus": 202
+  },
+  {
+    "name": "cancelExportOriginal",
+    "method": "POST",
+    "path": "/runner/v1/attempts/{attemptId}/export/cancel-original",
+    "request": "StandaloneExportAssignment",
+    "response": "AttemptSnapshot",
+    "successStatus": 200
+  },
+  {
+    "name": "snapshot",
+    "method": "GET",
+    "path": "/runner/v1/attempts/{attemptId}",
+    "response": "AttemptSnapshot",
+    "successStatus": 200
+  },
+  {
+    "name": "cancel",
+    "method": "POST",
+    "path": "/runner/v1/attempts/{attemptId}/cancel",
+    "request": "Cancellation",
+    "response": "AttemptSnapshot",
+    "successStatus": 200
+  },
+  {
+    "name": "cancelOriginal",
+    "method": "POST",
+    "path": "/runner/v1/attempts/{attemptId}/cancel-original",
+    "request": "Offer",
+    "response": "AttemptSnapshot",
+    "successStatus": 200
+  },
+  {
+    "name": "events",
+    "method": "GET",
+    "path": "/runner/v1/attempts/{attemptId}/events",
+    "response": "EventBatch",
+    "cursor": true,
+    "successStatus": 200
+  },
+  {
+    "name": "ack",
+    "method": "POST",
+    "path": "/runner/v1/attempts/{attemptId}/ack",
+    "request": "Ack",
+    "response": "AckReceipt",
+    "successStatus": 200
+  },
+  {
+    "name": "source",
+    "method": "GET",
+    "path": "/runner/v1/attempts/{attemptId}/source",
+    "response": "SourceEnvelope",
+    "successStatus": 200
+  },
+  {
+    "name": "sourceChunk",
+    "method": "POST",
+    "path": "/runner/v1/attempts/{attemptId}/source/chunk",
+    "request": "SourceChunkRequest",
+    "response": "SourceChunk",
+    "successStatus": 200
+  },
+  {
+    "name": "outputAbsence",
+    "method": "GET",
+    "path": "/runner/v1/attempts/{attemptId}/source/absence",
+    "response": "OutputAbsence",
+    "successStatus": 200
+  },
+  {
+    "name": "retireOutput",
+    "method": "POST",
+    "path": "/runner/v1/attempts/{attemptId}/output-retirement",
+    "request": "OutputRetirementRequest",
+    "response": "OutputRetirementReply",
+    "successStatus": 200
+  },
+  {
+    "name": "settleOutput",
+    "method": "POST",
+    "path": "/runner/v1/attempts/{attemptId}/output-settlement",
+    "request": "OutputSettlementRequest",
+    "response": "OutputSettlementReply",
+    "successStatus": 200
+  }
+]
