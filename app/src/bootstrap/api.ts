@@ -28,6 +28,7 @@ import { API_MAXIMUM_JSON_BYTES, apiSchemas } from '@beetle/contracts/api';
 import type { FastifyInstance, onRequestAsyncHookHandler } from 'fastify';
 import { createApiServer } from '../adapters/inbound/http/api-errors.js';
 import { configureSchemaCompilers } from '../adapters/inbound/http/schema-compilers.js';
+import {workspaceVisibility} from '../adapters/inbound/http/workspace-visibility.js';
 import { registerNamespaceRoutes } from '../adapters/inbound/http/namespaces/index.js';
 import { registerSettingsRoutes } from '../adapters/inbound/http/settings/index.js';
 import { captureLocalExternalOrigin } from '../adapters/inbound/http/session/index.js';
@@ -93,12 +94,13 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     if (inputsDirectory !== undefined) inputRuntime = await openInputRuntime(inputsDirectory, store.inputs);
     if (agent) agentRuntime = await openAgentRuntime(agent, store);
     session.registerRoutes(server);
-    registerAuthoring(server, store, session.authorize);
-    artifactHttp=downloadRoutes(server,store,readView(),session.authorize);
-    metricHttp = metricRoutes(server, store, readView(), session.authorize, mode.historical);
-    registerRetentionRoutes(server,{driverState:()=>agentRuntime?.cleanupState()??'disabled',store:store.retention,newId:randomUUID,now:()=>new Date().toISOString(),authorize:session.authorize});
+    const publicAuthorize = workspaceVisibility(session.authorize, store, mode.historical);
+    registerAuthoring(server, store, publicAuthorize);
+    artifactHttp=downloadRoutes(server,store,readView(),publicAuthorize);
+    metricHttp = metricRoutes(server, store, readView(), publicAuthorize, mode.historical);
+    registerRetentionRoutes(server,{driverState:()=>agentRuntime?.cleanupState()??'disabled',store:store.retention,newId:randomUUID,now:()=>new Date().toISOString(),authorize:publicAuthorize});
     const inputs = readInputs(historicalInputs, inputRuntime);
-    if (inputs) inputHttp = registerInputRoutes(server, { inputs, newId: randomUUID, authorize: session.authorize });
+    if (inputs) inputHttp = registerInputRoutes(server, { inputs, newId: randomUUID, authorize: publicAuthorize });
     server.addHook('onClose', async () => {
       closeSession();
       const readers = await Promise.allSettled([Promise.resolve().then(() => inputHttp?.close()), closeMetrics(), closeArtifacts()]);

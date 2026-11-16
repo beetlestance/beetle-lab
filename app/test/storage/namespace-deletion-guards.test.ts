@@ -12,11 +12,11 @@ function fixture() {
  return {db,store};
 }
 const deletion = () => prepareNamespaceDeletion({kind:'workspace',id:scope.workspaceId,request:{scope:{kind:'organization',organizationId:scope.organizationId},requestId:requestId(),expectedVersion:1}},digest);
-it('preserves retention snapshots/epochs, charges and root/settings on FK refusal',()=>{
+it('retires a used workspace without discarding paid retention snapshots/epochs or root/settings',()=>{
  const f=retentionFixture();try{
   f.reserve();const before=usage(f.db);
-  expect(()=>f.store.execute({kind:'deleteNamespace',command:deletion()})).toThrow();
-  expect(usage(f.db)).toBe(before);expect(f.db.prepare('SELECT count(*) n FROM namespace_deletions').get()?.n).toBe(0);
+  expect(f.store.execute({kind:'deleteNamespace',command:deletion()})).toMatchObject({state:'tombstoned'});
+  expect(usage(f.db)).toBe(Number(before)+2048);expect(f.db.prepare('SELECT count(*) n FROM namespace_deletions').get()?.n).toBe(1);
   expect(f.db.prepare('SELECT count(*) n FROM retention_workspace_epochs').get()?.n).toBe(1);
   expect(f.db.prepare('SELECT id FROM workspaces WHERE id=?').get(scope.workspaceId)?.id).toBe(scope.workspaceId);
  }finally{f.db.close();}
@@ -60,7 +60,7 @@ it('uses indexed scoped emptiness and foreign-key checks with unrelated folders 
   f.store.execute({kind:'namespace',command:command({kind:'createWorkspace',id:uuid(10),rootFolderId:uuid(11),request:{scope:{kind:'organization',organizationId:uuid(1)},requestId:requestId(),name:'Unrelated'}})});
   for(let i=0;i<200;i++)f.db.prepare('INSERT INTO folders VALUES(?,?,?,?,1,?,?)').run(uuid(4000+i),uuid(1),uuid(10),uuid(11),'Unrelated '+i,'unrelated '+i);
   const prepare=vi.spyOn(f.db,'prepare');f.store.execute({kind:'deleteNamespace',command:deletion()});
-  const query=prepare.mock.calls.map(row=>row[0]).find(sql=>sql.startsWith('SELECT (EXISTS'));prepare.mockRestore();
+  const query=prepare.mock.calls.map(row=>row[0]).find(sql=>sql.startsWith('SELECT retired,(EXISTS'));prepare.mockRestore();
   expect(query).toContain('organization_id=target.organization_id AND workspace_id=target.id');
   const probe=f.db.prepare('EXPLAIN QUERY PLAN '+query!).all(uuid(2));
   expect(probe.every(row=>!String(row.detail).includes('SCAN '))).toBe(true);
@@ -71,15 +71,13 @@ it('uses indexed scoped emptiness and foreign-key checks with unrelated folders 
  }finally{f.db.close();}
 });
 
-it('refuses a wide same-target namespace before marker insertion or parent DELETE',()=>{
+it('retires a wide retained namespace without deleting its child graph',()=>{
  const f=fixture();try{
   for(let i=0;i<500;i++)f.db.prepare('INSERT INTO folders VALUES(?,?,?,?,1,?,?)').run(uuid(6000+i),uuid(1),uuid(2),uuid(3),'Child '+i,'child '+i);
-  const prepare=vi.spyOn(f.db,'prepare');expect(()=>f.store.execute({kind:'deleteNamespace',command:deletion()})).toThrow('conflict');
-  expect(prepare.mock.calls.some(([sql])=>sql.startsWith('INSERT INTO namespace_deletions')||sql.startsWith('DELETE FROM'))).toBe(false);
-  prepare.mockRestore();expect(usage(f.db)).toBe(0);
-  const settingsId=f.db.prepare("SELECT id FROM settings WHERE kind='workspace'").get()?.id;
-  if(typeof settingsId!=='string')throw Error('Missing synthetic settings');
-  expect(()=>f.db.prepare("INSERT INTO namespace_deletions VALUES(?,'workspace',?,2,?,?,2048)").run(uuid(2),'organization:'+uuid(1),uuid(3),settingsId)).toThrow('namespace not empty');
-  expect(usage(f.db)).toBe(0);
+  const intent=deletion();expect(f.store.execute({kind:'deleteNamespace',command:intent})).toMatchObject({state:'tombstoned'});
+  expect(usage(f.db)).toBe(2048);expect(f.db.prepare('SELECT COUNT(*) n FROM folders WHERE workspace_id=?').get(uuid(2))?.n).toBe(501);
+  expect(f.db.prepare('SELECT retired FROM workspaces WHERE id=?').get(uuid(2))?.retired).toBe(1);
+  expect(f.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+  expect(f.store.execute({kind:'deleteNamespace',command:intent})).toMatchObject({state:'tombstoned'});
  }finally{f.db.close();}
 });

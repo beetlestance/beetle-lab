@@ -1,3 +1,4 @@
+import {requireVisibleWorkspace} from '../workspace-retirement/visibility.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { requireSnapshotBasis } from './basis.js';
 import type { Run } from '@beetle/contracts/api';
@@ -24,7 +25,7 @@ export class WorkspaceRetentionSnapshots {
   return transaction(this.db,()=>this.select(command,now));
  }
  private select(command:Command,now:number):RetentionSnapshot{
-  const db=this.db;const request=command.request;
+  const db=this.db;const request=command.request;requireVisibleWorkspace(db,request.scope);
   const replay=db.prepare('SELECT id,intent_digest FROM retention_snapshots WHERE organization_id=? AND workspace_id=? AND request_id=?')
    .get(request.scope.organizationId,request.scope.workspaceId,request.requestId);
   if(replay){requireFact(replay.intent_digest===command.intentDigest&&typeof replay.id==='string');const stored=snapshotById(db,request.scope,replay.id).snapshot;

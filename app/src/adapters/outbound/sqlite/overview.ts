@@ -4,6 +4,7 @@ import type {DatabaseSync} from 'node:sqlite';
 import type {WorkspaceOverview,OrganizationOverview,OverviewRun} from '@beetle/contracts/api';
 import type {OverviewQuery,OrganizationOverviewQuery} from '../../../ports/overview.js';
 import {checkedOverview,checkedOverviewQuery} from '../../../application/overview/index.js';
+import {isHistorical} from './historical.js';
 import type {Suites} from './suites.js';
 import {normalizedScope} from './suites.js';
 import {transaction} from './transaction.js';
@@ -19,8 +20,10 @@ export class Overviews{
   const query=checkedOrganizationOverviewQuery(input);return transaction(this.db,()=>checkedOrganizationOverview(this.snapshot(query),query));
  }
  private snapshot(query:OverviewQuery|OrganizationOverviewQuery){
-  const scope=this.scope(query);const args=scope.kind==='workspace'?[scope.organizationId,scope.workspaceId]:[scope.organizationId];
-  const scopeWhere=scope.kind==='workspace'?'organization_id=? AND workspace_id=?':'organization_id=?';
+  const scope=this.scope(query);const historical=isHistorical(this.db);
+  const args=scope.kind==='workspace'?[scope.organizationId,scope.workspaceId]:historical?[scope.organizationId]:[scope.organizationId,scope.organizationId];
+  const scopeWhere=scope.kind==='workspace'?'organization_id=? AND workspace_id=?':
+   'organization_id=?'+(historical?'':' AND workspace_id IN (SELECT id FROM workspaces INDEXED BY workspaces_visible WHERE retired=0 AND organization_id=?)');
   const now=Date.parse(query.now);const start=now-24*hour;const windowStart=new Date(start).toISOString();
   const counts=this.counts(args,scopeWhere,windowStart,query.now);
   const grouped=this.db.prepare(`SELECT CAST((unixepoch(requested_at,'subsec')*1000-?)/? AS INTEGER) AS bucket,COUNT(*) AS count FROM runs
@@ -29,7 +32,8 @@ export class Overviews{
   const recent=this.db.prepare(`SELECT ${summary}${scope.kind==='organization'?',workspace_id AS workspaceId':''} FROM runs WHERE ${scopeWhere} ORDER BY requested_at DESC,id DESC LIMIT 8`).all(...args) as unknown as OverviewRun[];
   const active=this.db.prepare(`SELECT ${summary}${scope.kind==='organization'?',workspace_id AS workspaceId':''} FROM runs WHERE ${scopeWhere} AND state='active' ORDER BY requested_at DESC,id DESC LIMIT 20`).all(...args) as unknown as OverviewRun[];
   return {scope,generatedAt:query.now,windowStart,counts,activity,recent,active,activeHasMore:counts.active>20,
-   ...(scope.kind==='organization'?{workspaces:this.db.prepare('SELECT COUNT(*) n FROM workspaces WHERE organization_id=?').get(scope.organizationId)!.n}:{})};
+   ...(scope.kind==='organization'?{workspaces:this.db.prepare(isHistorical(this.db)?'SELECT COUNT(*) n FROM workspaces WHERE organization_id=?':
+    'SELECT COUNT(*) n FROM workspaces INDEXED BY workspaces_visible WHERE retired=0 AND organization_id=?').get(scope.organizationId)!.n}:{})};
  }
  private scope(query:OverviewQuery|OrganizationOverviewQuery){
   if(query.scope.kind==='workspace'){this.suites.workspace(query.scope);return normalizedScope(query.scope);}

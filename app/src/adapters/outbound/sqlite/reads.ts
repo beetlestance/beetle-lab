@@ -1,3 +1,4 @@
+import {isHistorical} from './historical.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { requireRule } from '../../../domain/namespaces/index.js';
 import { folderEntity } from './entities.js';
@@ -38,7 +39,9 @@ export class Reads {
       .all(after, query.limit + 1) as unknown as { id: string }[];
     requireRule(scope.kind !== 'installation', 'not_found');
     this.entities.organization(scope.organizationId);
-    if (query.kind === 'workspace') return this.db.prepare('SELECT id FROM workspaces WHERE organization_id=? AND id>? ORDER BY id LIMIT ?')
+    if (query.kind === 'workspace') return this.db.prepare(isHistorical(this.db)
+      ? 'SELECT id FROM workspaces WHERE organization_id=? AND id>? ORDER BY id LIMIT ?'
+      : 'SELECT id FROM workspaces INDEXED BY workspaces_visible WHERE retired=0 AND organization_id=? AND id>? ORDER BY id LIMIT ?')
       .all(lower(scope.organizationId), after, query.limit + 1) as unknown as { id: string }[];
     requireRule(scope.kind === 'workspace', 'not_found');
     this.entities.workspace({ kind: 'organization', organizationId: scope.organizationId }, scope.workspaceId);

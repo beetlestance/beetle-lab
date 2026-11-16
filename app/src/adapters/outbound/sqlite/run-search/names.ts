@@ -5,10 +5,10 @@ import { StorageError } from '../protocol.js';
 interface Candidate { kind: 'suite' | 'folder'; entity_id: string }
 const budget = 256;
 export function workspaceNameMatches(db: DatabaseSync, scope: WorkspaceScope, name: string): boolean {
-  const row = db.prepare('SELECT folded_name FROM workspaces WHERE organization_id=? AND id=?')
-    .get(scope.organizationId, scope.workspaceId) as { folded_name: string } | undefined;
+  const row = db.prepare('SELECT name FROM workspaces WHERE organization_id=? AND id=?')
+    .get(scope.organizationId, scope.workspaceId) as { name: string } | undefined;
   if (!row) throw new StorageError('not_found');
-  return foldRunSearchName(row.folded_name).includes(name);
+  return foldRunSearchName(row.name).includes(name);
 }
 /** Select a complete bounded posting, then verify the entire literal against current names. */
 function candidates(db: DatabaseSync, scope: WorkspaceScope, name: string): Candidate[] {

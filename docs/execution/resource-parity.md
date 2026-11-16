@@ -96,7 +96,7 @@ The later complete streaming/drain pass and separate latency miss are linked bel
 
 [Short native ARM process RSS](../verification/control-process-rss.md) now has
 separate process-level evidence under service ceilings, with three readers and
-API p95 gates. It does not close AMD RSS, retained growth or telemetry comparison.
+API p95 gates. A subsequent AMD short RSS pass is recorded in the same evidence; retained growth and telemetry comparison stay open.
 
 [Native ARM target-reported observations](../verification/native-target-runtime.md)
 now verify all32 fixed fields, zero/null mapping, before/during/after and advisory
@@ -109,3 +109,9 @@ artifacts. Live p95293.49ms misses the separate250ms Q04 target. RSS-only AMD
 trial43810739084 failed116.735s with independent cleanup; its first closed
 projection lacked usable failure facts. Preserve that failure while improving
 fixed diagnostic projection; do not infer an RSS or latency cause yet.
+
+The targeted AMD RSS retry43814984061 passed with both cleanup checks; its closed
+report records8/28/8points per service and API p9512.94/138.76/11.79ms. This closes
+the short both-native RSS observation scope, not repeated growth or telemetry cost.
+[Used workspace retirement](../verification/workspace-retirement.md) corrects the
+user-approved F02 restriction locally; batch new candidate qualification remains.

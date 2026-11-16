@@ -1,4 +1,4 @@
-# Empty namespace deletion
+# Namespace deletion
 
 Status: locally implemented; [evidence](../../verification/namespace-deletion.md).
 Owner: namespace deletion application/SQLite participant and existing public DELETEs.
@@ -9,13 +9,11 @@ This does not introduce recursive cleanup, change Run retention or imply freed b
 Delete organisation/workspace/nonroot folder using its existing scoped request,
 expectedVersion and immutable requestId. Resolve scope before exposing existence;
 wrong owner returns not_found, stale version conflicts. Root-folder deletion refuses.
-Only empty namespaces can be deleted. Workspace may contain its automatic root and
-settings only. Any child folder, suite, input (including retained deleted metadata),
-Run, retention epoch/snapshot, settlement floor or other FK-protected owner refuses.
-Organisation must have no workspace. Folder must have no child/suite/input.
-Previously used workspaces can remain intentionally undeletable because replay and
-retention identities are permanent. Clear errors explain retained dependencies;
-no automatic cascade, reference pruning or refund is offered.
+Organisation/folder deletion remains empty-only. Organisation must have no
+workspace, including retained retired identities. Folder must have no child/suite/input.
+Used workspace deletion follows [workspace retirement](workspace-retirement.md):
+hide the workspace and its contents, retaining paid data and safety records.
+Active or unresolved work refuses retirement. No cascade or refund is offered.
 
 One BEGIN IMMEDIATE reads the shared receipt before the live entity. An exact old
 request replays its acknowledgement after deletion; changed reuse conflicts. Old
@@ -31,7 +29,8 @@ current installation storage minus free-space reserve before removal. No spare
 allowance or metadata refund is assumed. Full capacity refuses atomically.
 Marker/schema/request fields are bounded. SQL validates original owner/version/
 root/settings binding. Its insertion atomically charges and removes only the exact
-settings/root/entity; FK refusal rolls everything back. SQL and public creation
+settings/entity for organisation or folder; workspace retirement preserves its
+root/settings/entity. FK refusal rolls everything back. SQL and public creation
 reject reuse of deleted entity, root and settings IDs, including case aliases.
 Markers cannot be updated/replaced/deleted and have no expiry/refund.
 Existing global receipts stay retained; harmless history search metadata uses its
@@ -40,10 +39,10 @@ existing scoped delete/cascade rules. No old data is charged during migration.
 ## Responses and lifecycle
 
 DeletionReceipt version is old+1, state tombstoned, cleanup complete. Complete means
-empty namespace metadata removal only; it is not an output-cleanup or physical-free
+the contracted metadata removal or workspace visibility retirement only; it is not an output-cleanup or physical-free
 space proof. Validate receipt identity/scope/request/version at both worker edges.
 Unknown writes retain exact request identity for explicit retry; no automatic retry
-with a fresh version. UI confirmation displays empty-only protection and retires
+with a fresh version. UI confirmation displays the scope-specific protection and retires
 callbacks on scope/session change. Public guards run before body parsing.
 
 ## Acceptance

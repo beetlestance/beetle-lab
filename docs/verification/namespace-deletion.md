@@ -1,6 +1,7 @@
 # Empty namespace deletion evidence
 
-Status: reviewed local implementation based on58b46bf. [Contract](../design/lld/namespace-deletion.md).
+Historical scope: reviewed empty-only implementation based on58b46bf.
+Used workspace behavior is superseded by [retirement evidence](workspace-retirement.md). [Contract](../design/lld/namespace-deletion.md).
 Organisation/workspace/nonroot-folder DELETE routes and provisional list controls
 now use scoped versions, explicit confirmation and original retry identities.
 All62 public JSON descriptors have actual configured-application registration.

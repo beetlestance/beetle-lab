@@ -1,3 +1,4 @@
+import {requireVisibleMutation, visibleEntity} from './workspace-retirement/public.js';
 import { assertHistoricalRead } from './historical.js';
 import { deleteNamespaceRows } from './namespace-deletion/index.js';
 import { ParentRetentionSnapshots } from './retention-parent/index.js';
@@ -133,6 +134,7 @@ export class Store {
   private mutation(operation: Extract<Operation, { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'exportJob' }>): Value {
     const command = operation.command;
     return transaction(this.db, () => {
+      requireVisibleMutation(this.db, operation);
       const receipt=readMutationReceipt(this.db,command,operationMessageLimit(operation));
       if(receipt.kind==='stored'){
         const value=receipt.value as Value;return operation.kind==='cancelRun'?captureCancelRunReply(value,operation.command):value;
@@ -266,7 +268,7 @@ export class Store {
     if (['input', 'advanceInput', 'getInput', 'listInputs', 'recoverInputs', 'inputStorage'].includes(operation.kind)) return this.inputOperation(operation);
     switch (operation.kind) {
       case 'namespace': case 'settings': return this.mutation(operation);
-      case 'get': return this.entities.get(operation.key);
+      case 'get': return visibleEntity(this.db, this.entities, operation.key);
       case 'list': return this.reads.list(operation.query);
       case 'close': this.db.close(); return null;
       default: throw new StorageError('invalid_input');

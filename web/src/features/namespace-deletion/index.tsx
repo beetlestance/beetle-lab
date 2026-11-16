@@ -8,7 +8,9 @@ export function DeleteNamespace({target, refresh, disabled = false}: {target: Ta
   function open() {
     editor.open({title: `Delete ${target.kind}`, path: pathname,
       fields: [{name: 'confirmation', label: `Confirm deletion of ${target.entity.name}`, value: '', pattern: 'DELETE',
-        help: 'Type DELETE. Only empty namespaces can be removed. Retained data and protected dependencies prevent deletion.'}],
+        help: target.kind === 'workspace'
+          ? 'Type DELETE. This workspace and its contents disappear from normal navigation. Retained history still uses storage. Finish active work first.'
+          : 'Type DELETE. Only empty namespaces can be removed. Retained safety records and protected dependencies can prevent deletion.'}],
       submit: (_values, requestId) => {
         switch (target.kind) {
           case 'organization': return api.deleteOrganization({params: {organizationId: target.entity.id},

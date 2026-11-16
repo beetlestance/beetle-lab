@@ -1,3 +1,4 @@
+import {requireVisibleWorkspace} from '../workspace-retirement/visibility.js';
 import { requireEmptyNamespace } from './protection.js';
 import type { DatabaseSync } from 'node:sqlite';
 import type { DeletionReceipt, SettingsScope } from '@beetle/contracts/api';
@@ -13,6 +14,7 @@ import { reserveNamespaceMarker } from './marker.js';
 function remove(db: DatabaseSync, command: NamespaceDeletionCommand, entities: EntityLookup): DeletionReceipt {
   const {id,kind,request} = command;
   const entity = entities.get({kind, id, scope: request.scope});
+  if (kind === 'workspace' && request.scope.kind === 'organization') requireVisibleWorkspace(db, {kind: 'workspace', organizationId: request.scope.organizationId, workspaceId: id});
   requireRule(entity.version === request.expectedVersion, 'conflict');
   requireRule(entity.version < Number.MAX_SAFE_INTEGER, 'conflict');
   if ('parentFolderId' in entity) requireRule(entity.parentFolderId !== null, 'conflict');
@@ -24,6 +26,7 @@ function remove(db: DatabaseSync, command: NamespaceDeletionCommand, entities: E
 /** Any FK/receipt/funding failure rolls back namespace, settings, index and charge together. */
 export function deleteNamespaceRows(db: DatabaseSync, command: NamespaceDeletionCommand, entities: EntityLookup): DeletionReceipt {
   return transaction(db, () => {
+    if (command.kind === 'folder' && command.request.scope.kind === 'workspace') requireVisibleWorkspace(db, command.request.scope);
     const receipt = readMutationReceipt(db, command, 2048);
     if (receipt.kind === 'stored') return captureNamespaceDeletionReply(command, receipt.value);
     const value = remove(db, command, entities);

@@ -1,3 +1,4 @@
+import {requireVisibleWorkspace} from '../workspace-retirement/visibility.js';
 import type { DatabaseSync } from 'node:sqlite';
 import type { Run } from '@beetle/contracts/api';
 import type { RunKey } from '../../../../ports/runs.js';
@@ -30,9 +31,9 @@ export class ParentRetentionSnapshots {
   transaction(this.db,()=>pruneRetentionSnapshots(this.db,now));return transaction(this.db,()=>this.select(command,now));
  }
  private select(command:Command,now:number):ParentRetentionPage{
-  const db=this.db;const request=command.request;const replay=replayParent(db,command);if(replay)return page(replay);
+  const db=this.db;const request=command.request;const replay=replayParent(db,command);if(replay){requireVisibleWorkspace(db,replay.scope);return page(replay);}
   const pin=parentPin(db,request.scope);if(pin.id!==request.settingsId)throw new StorageError('not_found');requireFact(pin.version===request.expectedVersion);
-  const previous=previousParent(db,command);const window=parentWindow(db,request.scope,previous);
+  const previous=previousParent(db,command);if(previous)requireVisibleWorkspace(db,previous.scope);const window=parentWindow(db,request.scope,previous);
   if(!window)return{scope:request.scope,requestId:request.requestId,settingsId:pin.id,settingsVersion:pin.version,capturedAt:command.capturedAt,coverage:'live_partial',durable:false,workspace:null,nextCursor:null};
   const snapshot=this.snapshot(command,window,previous);
   if(previous?.candidates.length===0)commitRetentionHandoff(db,previous.id,now);

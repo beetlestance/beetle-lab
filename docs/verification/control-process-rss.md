@@ -36,9 +36,24 @@ Types, lint, architecture/docs and independent source review passed.
 
 Scope: one short ARM run. Post-idle RSS remained above the initial idle peak;
 no repeated-run plateau, no-retained-growth or telemetry off/on<=5% conclusion
-is inferred. AMD RSS and those separate Q04 measurements remain open.
+is inferred. Repeated growth and telemetry comparison remain open.
 
 The read-only CI `rss-amd64` source profile selects this case alone, using the
 qualified source archive and independent cleanup. Its public projection validates
 ordered/bounded points, recomputes all nine summaries and retains the strict
-short-control latency/readers/work checks. Native AMD results are pending.
+short-control latency/readers/work checks. Native AMD retry43814984061 passed using sourceb48936d8 and harnessb24afb13;
+execution and independent cleanup both succeeded. Private closed report:
+`.agent-work/control-rss/amd64-public2/native-public.json`.
+
+| AMD phase | Frontend MiB | Backend MiB | Agent MiB | Samples per service |
+| --- | ---: | ---: | ---: | ---: |
+| idle | 10.33 | 153.29 | 134.89 | 8 |
+| loaded | 10.35 | 158.15 | 141.48 | 28 |
+| post-idle | 10.33 | 158.70 | 141.81 | 8 |
+
+AMD API p95:12.94/138.76/11.79ms. Physical counts1ready/40work/0unexpected;
+reader frames8/9/9, refusals3/2/2. All RSS sums stayed under the same ceilings.
+The first AMD43810739084 failed116.735s with independent cleanup; its public
+projection lacked usable failure facts. The later diagnostic correction preserves
+failed target facts without weakening measurement gates. Its old failure cause
+remains unknown. Neither native short pass establishes a repeated-run plateau.

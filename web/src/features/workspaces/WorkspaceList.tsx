@@ -18,7 +18,8 @@ export function WorkspaceList({ organizationId }: { organizationId: string }) {
   const page = usePage(queryKeys.workspaces(organizationId));
   const query = useQuery({ queryKey: queryKeys.workspacesPage(organizationId,page.cursor),
     queryFn: ({ signal }) => readResult(api.listWorkspaces({ params: { organizationId }, query: page.query, signal })) });
-  const refresh = () => client.invalidateQueries({ queryKey: queryKeys.workspaces(organizationId) });
+  const refresh = () => Promise.all([client.invalidateQueries({queryKey: queryKeys.workspaces(organizationId)}),
+    client.invalidateQueries({queryKey: [...queryKeys.organization(organizationId), 'overview']})]);
   function edit(workspace?: Workspace) {
     editor.open({ title: workspace ? 'Rename workspace' : 'Create workspace', path: pathname,
       fields: [{ name: 'name', label: 'Workspace name', value: workspace?.name ?? '' }],

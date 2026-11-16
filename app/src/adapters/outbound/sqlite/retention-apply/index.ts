@@ -1,3 +1,4 @@
+import {requireVisibleWorkspace} from '../workspace-retirement/visibility.js';
 import type { DatabaseSync } from 'node:sqlite';
 import type { Run,RetentionApplyReceipt } from '@beetle/contracts/api';
 import type { RunKey } from '../../../../ports/runs.js';
@@ -20,6 +21,7 @@ export class WorkspaceRetentionApplies {
     let original;try{requireFact(typeof applied==='string','unavailable');original=captureAppliedSnapshot(JSON.parse(applied),stored.snapshot);}catch{throw new StorageError('unavailable');}
     requireFact(original.requestId===command.request.requestId&&original.intentDigest===command.intentDigest);return original.receipt;
    }
+   requireVisibleWorkspace(this.db, command.request.scope);
    return commitWorkspaceRetentionApply(this.db,this.runs,command);
   });
  }

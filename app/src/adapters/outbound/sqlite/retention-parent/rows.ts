@@ -11,14 +11,14 @@ export function parentPin(db:DatabaseSync,scope:ParentRetentionScope){
 }
 function workspace(row:Record<string,unknown>):WorkspaceScope{return{kind:'workspace',organizationId:uuid(row.organization_id),workspaceId:uuid(row.id)};}
 export function horizon(db:DatabaseSync,scope:ParentRetentionScope):WorkspaceScope|null{
- const where=scope.kind==='organization'?' WHERE organization_id=?':'';const args=scope.kind==='organization'?[scope.organizationId]:[];
- const row=db.prepare(`SELECT organization_id,id FROM workspaces INDEXED BY workspaces_page${where} ORDER BY organization_id DESC,id DESC LIMIT 1`).get(...args);return row?workspace(row):null;
+ const where=scope.kind==='organization'?' WHERE retired=0 AND organization_id=?':' WHERE retired=0';const args=scope.kind==='organization'?[scope.organizationId]:[];
+ const row=db.prepare(`SELECT organization_id,id FROM workspaces INDEXED BY workspaces_visible${where} ORDER BY organization_id DESC,id DESC LIMIT 1`).get(...args);return row?workspace(row):null;
 }
 /** One current workspace and one existence probe, using the namespace tuple index. */
 export function workspaceWindow(db:DatabaseSync,scope:ParentRetentionScope,last:WorkspaceScope,after:WorkspaceScope|null):readonly WorkspaceScope[]{
  const filter=scope.kind==='organization'?'organization_id=? AND ':'';const args=scope.kind==='organization'?[scope.organizationId]:[];
  const cursor=after?' AND (organization_id,id)>(?,?)':'';const prefix=after?[after.organizationId,after.workspaceId]:[];
- return db.prepare(`SELECT organization_id,id FROM workspaces INDEXED BY workspaces_page WHERE ${filter}(organization_id,id)<=(?,?)${cursor} ORDER BY organization_id,id LIMIT 2`)
+ return db.prepare(`SELECT organization_id,id FROM workspaces INDEXED BY workspaces_visible WHERE retired=0 AND ${filter}(organization_id,id)<=(?,?)${cursor} ORDER BY organization_id,id LIMIT 2`)
   .all(...args,last.organizationId,last.workspaceId,...prefix).map(workspace);
 }
 export function parentSnapshotHeaders(db:DatabaseSync,requestId?:string){
