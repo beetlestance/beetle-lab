@@ -29,7 +29,7 @@ sensor accuracy. The before point is not a steady-state baseline. Two focused
 schema/oracle cases and types/lint/architecture/docs passed with independent
 source review. Artifact facts were retained before verdict assertions.
 
-Remaining: actual browser target chart/comparison/download acceptance, native
+[Actual browser comparison/rows/reload acceptance](browser-target-runtime.md) now passes its explicit manual-read flow; automatic initial availability and download variants remain. Remaining: native
 AMD64 target sampling, wider timeout/body-limit/retention/cancellation variants.
 Existing component evidence covers those boundaries locally; this trial does not
 requalify every variant or close all F31–F33/A08/V24 claims.

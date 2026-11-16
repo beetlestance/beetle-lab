@@ -15,3 +15,9 @@ root/runtime dependencies are unchanged. One browser/Compose lane, no retries.
 Explicit Refresh/Reload buttons exercise user recovery, not hidden command retry.
 Raw browser failures/body text remain private; only the closed outcome is shareable.
 See README.md for installation, invocation and current coverage limitations.
+
+Optional target-runtime profile authors the sampler config through the JSON UI,
+executes one40-request owned test and checks actual zero/known/null comparisons,
+phase/reason rows, scope label, reload/reconnect and absence of thermal fields.
+It leaves functional/interaction/reference defaults unchanged and needs explicit
+private evidence output. Backend artifact/hash contract has separate native proof.

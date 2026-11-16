@@ -7,7 +7,7 @@ import {chromium} from '@playwright/test';
 import {fixture} from '../native-application/compose/fixture.ts';
 import {cleanup} from '../native-application/compose/evidence.ts';
 import {automaticClient} from '../native-application/compose/public.ts';
-import {author} from './authoring.mjs';
+import {author, revision} from './authoring.mjs';
 import {execute, results} from './results.mjs';
 import {inputs, settings, emptyFolder, directoryImport} from './inputs-settings.mjs';
 import {offlineExport} from './exports.mjs';
@@ -16,8 +16,11 @@ import {cleanupBrowserInstallation} from './cleanup.mjs';
 import {keyboard, themesAndViewports} from './interactions.mjs';
 import {crossScope} from './scope.mjs';
 import {reference} from './reference.mjs';
+import {targetRuntime} from './target-runtime.mjs';
+import {configuration as targetConfiguration} from '../native-application/target-runtime/config.ts';
+import {target as configureTarget, targetCounts} from '../native-application/target-runtime/target.ts';
 const profile = process.env.BEETLE_BROWSER_PROFILE ?? 'functional';
-if (!['functional', 'interaction', 'reference'].includes(profile)) throw Error('Unsupported browser profile');
+if (!['functional', 'interaction', 'reference', 'target-runtime'].includes(profile)) throw Error('Unsupported browser profile');
 const evidence = process.env.BEETLE_BROWSER_EVIDENCE;
 if (profile !== 'functional' && !evidence) throw Error('Selected profile requires an explicit evidence directory');
 if (evidence) {if (!isAbsolute(evidence)) throw Error('Absolute evidence directory required'); await mkdir(evidence, {mode: 0o700});}
@@ -40,10 +43,17 @@ try {
   if (!entry[2].includes('if(++counts[key]>4)')) throw Error('Unexpected target fixture');
   entry[2] = entry[2].replace('if(++counts[key]>4)', 'if(++counts[key]>128)');
   await writeFile(target, JSON.stringify(override), {mode: 0o600});
+  if (profile === 'target-runtime') await configureTarget(f);
   f.compose('up', '-d', '--no-build'); installation = (await automaticClient(f.origin)).installation.id;
   if (evidence) await writeFile(join(evidence, 'installation-owner.json'), JSON.stringify({project: f.project, installationId: installation}), {flag: 'wx', mode: 0o600});
   browser = await chromium.launch({headless: true}); const context = await browser.newContext({acceptDownloads: true});
   const appPage = await context.newPage(); page = appPage; appPage.setDefaultTimeout(15000);
+  /** @type {number[]} */ const contentStatuses = []; let contentOverflow = false;
+  if (profile === 'target-runtime') appPage.on('response', response => {
+    const url = new URL(response.url());
+    if (url.origin !== f.origin || !url.pathname.startsWith('/api/v2/') || !url.pathname.endsWith('/content')) return;
+    if (contentStatuses.length >= 64) {contentOverflow = true; return;} contentStatuses.push(response.status());
+  });
   const authored = await phase('automatic-access-and-authoring', () => author(appPage, f.origin));
   if (profile === 'interaction') {
     await phase('keyboard-navigation', () => keyboard(appPage, f.origin));
@@ -54,6 +64,14 @@ try {
     const resources = await phase('reference-and-downloads', () => reference(appPage, f));
     if (evidence) await writeFile(join(evidence, 'reference-outcome.json'), JSON.stringify(resources), {flag: 'wx', mode: 0o600});
     await phase('no-performance-work', async () => {assert.deepEqual(counts(f), {ready: 0, work: 0, unexpected: 0});});
+  } else if (profile === 'target-runtime') {
+    await phase('target-suite-revision', () => revision(appPage, targetConfiguration(), 2));
+    await phase('target-run-execution', () => execute(appPage));
+    const observed = targetCounts(f); assert.equal(observed.ready, 1); assert.equal(observed.work, 40); assert.equal(observed.unexpected, 0);
+    assert(Number.isSafeInteger(observed.runtime) && observed.runtime >= 6 && observed.runtime <= 32);
+    const result = await phase('target-observation-view', () => targetRuntime(appPage, observed.runtime));
+    assert.deepEqual(targetCounts(f), observed); assert(!contentOverflow); Object.assign(result, {contentStatuses});
+    if (evidence) await writeFile(join(evidence, 'target-view-outcome.json'), JSON.stringify(result), {flag: 'wx', mode: 0o600});
   } else {
   const run = await phase('run-execution', () => execute(appPage));
   await phase('report-metrics-and-download', () => results(appPage, f.root));

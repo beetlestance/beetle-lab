@@ -72,3 +72,8 @@ against exact shipped frontend file hashes/sizes, HEAD MIME/length/nosniff, miss
 asset404 and static POST405. It verifies an implemented settings GET, the skill's
 MIT and retired-shell notices, zero page-issued API operations during reference
 navigation, and zero performance target work. It is not an agent-model integration.
+
+`BEETLE_BROWSER_PROFILE=target-runtime` with an absolute
+`BEETLE_BROWSER_EVIDENCE` selects only target-report view acceptance. It authors
+a sampler revision and checks zeros, known/null values, phase rows and visible
+manual Reload/reconnect; it does not assert automatic initial availability.
