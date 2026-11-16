@@ -10,7 +10,7 @@ set. Their old progress statements do not describe current product readiness.
 | Current capabilities, gaps and release status | [Current status](STATUS.md) |
 | Product scope and delivery phases | [Plan](../PLAN.md) |
 | Existing feature inventory | [Historical inventory](current-features.md) |
-| Acceptance requirements and evidence links | [Acceptance ledger](verification/final-acceptance.md) |
+| Acceptance requirements and evidence links | [Acceptance ledger](verification/final-acceptance.md), [audit corrections](verification/audit-corrections.md) |
 | Architecture and owning contracts | [HLD](design/HLD.md), then the relevant LLD |
 | Code conventions | [Engineering](engineering.md), local CONTEXT.md |
 | Required checks and supported platform scope | [Verification](verification.md) |
