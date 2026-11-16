@@ -120,3 +120,8 @@ user-approved F02 restriction locally; batch new candidate qualification remains
 four sequential ARM runs/1600physical requests with1487query values but19metric
 series/run,32hashed artifacts, bounded RSS and four original allocation rows.
 This is not flood/slow-reader/cancel, aggregate custody or a leak-free plateau.
+
+[Cold repeated-fixture accounting](../verification/cold-repeated-accounting.md)
+reconciles current backend debt and agent retained holds against the stopped
+four-run data and32published/native artifact copies; no workload rerun. Full
+active/delete/general accounting and memory-plateau acceptance remain separate.

@@ -41,3 +41,15 @@ it('confines native seed and offline settlement checks to exact reviewed tools',
  }
  expect(boundaryIssues(prefix+'no-task-seed.ts',['../../../../agent/src/journal/admission.ts'])).toHaveLength(1);
 });
+
+it('confines cold accounting reads to exact files while denying sibling, deeper and reverse imports',()=>{
+ const prefix='tools/qualification/native-application/accounting/';
+ for(const path of ['app/src/adapters/outbound/sqlite/output-custody/load.js','app/src/adapters/outbound/sqlite/output-custody/source.js','app/src/adapters/outbound/files/outputs/paths.js']){
+  expect(boundaryIssues(prefix+'backend.ts',[`../../../../${path}`])).toEqual([]);
+  expect(boundaryIssues(prefix+'other.ts',[`../../../../${path}`])).toHaveLength(1);
+ }
+ for(const file of ['agent.ts','reconcile.ts'])expect(boundaryIssues(prefix+file,['../../../../agent/src/staging-namespace/index.js'])).toEqual([]);
+ expect(boundaryIssues(prefix+'agent.ts',['../../../../agent/src/staging-namespace/installed.js'])).toHaveLength(1);
+ expect(boundaryIssues(prefix+'backend.ts',['../../../../app/src/adapters/outbound/sqlite/output-custody/index.js'])).toHaveLength(1);
+ expect(boundaryIssues('app/src/bootstrap/api.ts',['../../../tools/qualification/native-application/accounting/backend.js'])).toHaveLength(1);
+});

@@ -34,7 +34,12 @@ const exactEntrypoints=new Map([[retirementOwner+'no-task-seed.ts',seedEntrypoin
  [retirementOwner+'retention-storage.ts',new Set(['app/src/domain/retention/index.js'])],
  [retirementOwner+'retention-storage.test.ts',new Set(['app/test/retention/selection-fixture.js',
   'app/src/adapters/outbound/sqlite/retention-manual/index.js','app/src/adapters/outbound/sqlite/retention-apply/index.js',
-  'app/src/adapters/outbound/sqlite/retention-progress/index.js'])]]);
+  'app/src/adapters/outbound/sqlite/retention-progress/index.js'])],
+ // Read-only cold accounting reuses custody verification without exposing a service API.
+ [owner+'accounting/backend.ts',new Set(['app/src/adapters/outbound/sqlite/output-custody/load.js',
+  'app/src/adapters/outbound/sqlite/output-custody/source.js','app/src/adapters/outbound/files/outputs/paths.js'])],
+ [owner+'accounting/agent.ts',new Set(['agent/src/staging-namespace/index.js'])],
+ [owner+'accounting/reconcile.ts',new Set(['agent/src/staging-namespace/index.js'])]]);
 
 /** Cross-service qualification composes named entrypoints outside either service.
  * Service implementations cannot consume the qualification owner in reverse.

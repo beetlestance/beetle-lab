@@ -41,7 +41,8 @@ After all four runs, the stopped, hash-checked metadata shows each original
 execution released with zero pending events and an original8,454,144-byte output
 allocation (8MiB+64KiB). Those immutable rows record the original allocation amounts; they
 do not independently prove current charged debt or refunds. Installation-wide
-file/accounting reconciliation remains open.
+[cold reconciliation](cold-repeated-accounting.md) subsequently checks this
+stopped fixture; active/delete/general accounting remains open.
 
 ## Preserved failures and corrections
 
