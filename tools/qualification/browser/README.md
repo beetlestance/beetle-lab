@@ -52,3 +52,16 @@ assertion. Product deadlines and resource limits are unchanged. This latency is
 an observed limitation, not a performance target. The final normal harness passed all twelve phases with
 verified cleanup on `5ee8d12` ARM64. It used restored, hash-verified CI images;
 AMD64 browser execution remains separate from its accepted native API proof.
+
+The separate `BEETLE_BROWSER_PROFILE=interaction` profile reuses authoring but
+runs only the remaining keyboard/appearance/scope checks. Set that environment
+variable and `BEETLE_BROWSER_EVIDENCE=ABSENT_ABSOLUTE_DIRECTORY` on the same
+explicit-image command above. Ownership is saved before Compose and the
+installation identity before authoring, so the existing native `cold/cleanup.ts`
+can independently clean exact owned resources after interruption. It tests skip-to-content,
+command shortcut/focus trapping/Escape/navigation, persistent light/dark/system
+preferences, reduced motion, controls at375/768/1440px, and real wrong-organisation
+404/cache isolation through visible navigation. It creates no performance runs.
+This is a finite functional matrix, not a complete accessibility certification.
+Keep it outside any exclusive resource measurement window. The default profile
+continues to require the original twelve functional phases.
