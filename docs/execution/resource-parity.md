@@ -46,6 +46,8 @@ data/secret/operator/platform matrices stay open.
 [ARM native shared/isolated admission](../verification/native-parallel-admission.md)
 adds exact two-organisation overlap, third-request queue/cancel and isolated release
 proof under the stock pool; other platforms/races remain separate.
+[Actual ARM reference/download acceptance](../verification/browser-reference.md)
+adds four file hashes, static route checks and shipped skill notices.
 
 ## Q01 frozen scope
 

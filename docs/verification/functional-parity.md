@@ -21,8 +21,8 @@ F06 history filters/scalars/search, F13 comparison, F14 reports and protected Ru
 deletion, F15 public exports, F16 command search and F17 generated references are
 locally implemented. The [twelve-phase candidate proof](goal-qualification.md) covers selected history,
 comparison, report/deletion, export and settings flows. Interaction proof covers
-command/keyboard navigation. Reference/download acceptance and remaining variants
-stay in the audit;
+command/keyboard navigation. [ARM reference/download acceptance](browser-reference.md) is now recorded; full
+operation availability and remaining variants stay in the audit;
 see individual evidence from the full inventory audit. Cleanup ACK/driver/recovery,
 settlement and protected retention completed through21aa880; cold recovery followed
 at4e2eba0. They are no longer implementation backlog entries.

@@ -15,10 +15,11 @@ import {historyComparison, cancelReconnect, deleteRun} from './lifecycle.mjs';
 import {cleanupBrowserInstallation} from './cleanup.mjs';
 import {keyboard, themesAndViewports} from './interactions.mjs';
 import {crossScope} from './scope.mjs';
+import {reference} from './reference.mjs';
 const profile = process.env.BEETLE_BROWSER_PROFILE ?? 'functional';
-if (!['functional', 'interaction'].includes(profile)) throw Error('Unsupported browser profile');
+if (!['functional', 'interaction', 'reference'].includes(profile)) throw Error('Unsupported browser profile');
 const evidence = process.env.BEETLE_BROWSER_EVIDENCE;
-if (profile === 'interaction' && !evidence) throw Error('Interaction profile requires an explicit evidence directory');
+if (profile !== 'functional' && !evidence) throw Error('Selected profile requires an explicit evidence directory');
 if (evidence) {if (!isAbsolute(evidence)) throw Error('Absolute evidence directory required'); await mkdir(evidence, {mode: 0o700});}
 /** Same six explicit source images and owned Compose fixture as native acceptance. */
 const f = await fixture(process.argv.slice(2));
@@ -48,6 +49,10 @@ try {
     await phase('keyboard-navigation', () => keyboard(appPage, f.origin));
     await phase('themes-viewports-reduced-motion', () => themesAndViewports(appPage, authored.workspace));
     await phase('cross-scope-cache-and-refusal', () => crossScope(appPage, authored));
+    await phase('no-performance-work', async () => {assert.deepEqual(counts(f), {ready: 0, work: 0, unexpected: 0});});
+  } else if (profile === 'reference') {
+    const resources = await phase('reference-and-downloads', () => reference(appPage, f));
+    if (evidence) await writeFile(join(evidence, 'reference-outcome.json'), JSON.stringify(resources), {flag: 'wx', mode: 0o600});
     await phase('no-performance-work', async () => {assert.deepEqual(counts(f), {ready: 0, work: 0, unexpected: 0});});
   } else {
   const run = await phase('run-execution', () => execute(appPage));

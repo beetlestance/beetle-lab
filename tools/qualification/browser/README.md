@@ -65,3 +65,10 @@ preferences, reduced motion, controls at375/768/1440px, and real wrong-organisat
 This is a finite functional matrix, not a complete accessibility certification.
 Keep it outside any exclusive resource measurement window. The default profile
 continues to require the original twelve functional phases.
+
+The optional `BEETLE_BROWSER_PROFILE=reference` requires its own evidence directory
+and checks visible filtering/operation/schema navigation, all four browser downloads
+against exact shipped frontend file hashes/sizes, HEAD MIME/length/nosniff, missing
+asset404 and static POST405. It verifies an implemented settings GET, the skill's
+MIT and retired-shell notices, zero page-issued API operations during reference
+navigation, and zero performance target work. It is not an agent-model integration.
