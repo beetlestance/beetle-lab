@@ -16,7 +16,7 @@ physical paths/ownership. Input/secrets binds are recursively read-only/rprivate
 output writable. Kernel>=5.12 and daemon evidence required; no RO downgrade.
 Secrets stay restricted; job config is staged, never forwarded as Docker flags.
 Inspect normalizes only known API 1.47 defaults/omissions; unknown overrides,
-nonempty default-ulimits and disabled/missing OOM killer fail.
+nonempty default-ulimits and disabled OOM killer fail: OomKillDisable false or null (Moby clears it when unsupported) passes; missing, true or nonboolean rejects.
 UnixDockerTransport uses explicit local socket/API 1.47, ordinary64 slots, JSON
 64 KiB request/1 MiB response/4096 fragments/16 KiB headers and one<=30 s deadline.
 Mailbox archive uses <=2 ordinary slots with control headroom, <=5 s, 96 KiB actual

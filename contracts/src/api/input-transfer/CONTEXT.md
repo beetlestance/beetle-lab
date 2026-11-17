@@ -3,6 +3,10 @@
 Public entrypoint: `createInputTransferClient`; public types live in the adjacent
 coordinator-owned `input-transfer-types.ts`. Configuration is trusted same-origin
 HTTP(S), with fixed session headers and a single deadline per operation.
+Requests and options are captured as plain own data (Object or null prototype, no
+accessors or unknown keys) without running getters (`snapshot.ts`). Preparation uses
+the native Blob `size` getter and `Blob.prototype.arrayBuffer`, never replaceable
+instance members (`preparation.ts`).
 
 Preparation uses native Blob read and SHA256 for up to 8 MiB, sharing both slots
 and retaining originals through abort. Returned content is caller-owned, uncached.

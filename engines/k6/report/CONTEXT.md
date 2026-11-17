@@ -8,7 +8,9 @@ No I/O, compiler, outcome inference, target sampling or secret/config resolution
 Uses shared metric capture/projection and histogram percentile bounds. At most 4600
 observed unique series; missing series/statistics are unknown, never zero. Outcome,
 assertion-definition units, discovery, result completeness and window coverage are
-separate. CSV text neutralizes spreadsheet formulas; numeric cells stay numeric.
+separate. CSV has one stable wide header, one summary row even with no series, one row
+per observed series (each binding attempt/generation/outcome/completeness/coverage)
+and a final LF. Text cells neutralize spreadsheet formulas; numeric cells stay numeric.
 Fixed failures invalid_input/output_limit contain no raw data. Overflow rejects the
 whole report; no truncation. Caller owns original signal/deadline, admitted collect
 bytes, exclusive file custody and result publication. The wrapper carves 512 KiB

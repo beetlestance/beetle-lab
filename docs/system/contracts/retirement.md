@@ -206,7 +206,7 @@ recovery reuses only an exactly matching record and still proves absence first.
 | Code | Reviewed |
 | --- | --- |
 | `contracts/src/output-retirement/` | `43a6df3cf8bc` |
-| `agent/src/cleanup-control/` | `8a08b85676a4` |
+| `agent/src/cleanup-control/` | `df348f0e5282` |
 | `agent/src/retirement-pipeline/` | `36636df26427` |
 | `agent/src/transport/retirement.ts` | `01fa56695d4b` |
 | `app/src/adapters/outbound/sqlite/output-deletion/` | `d41e9bdaf18f` |

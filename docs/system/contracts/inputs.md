@@ -214,5 +214,5 @@ use published inputs rather than inline configuration.
 | `app/src/application/inputs/` | `75ea44f39260` |
 | `app/src/adapters/inbound/http/inputs/` | `af13b1275902` |
 | `contracts/src/api/input-content.ts` | `b62f8df109dd` |
-| `contracts/src/api/input-transfer/` | `ea0000f0915b` |
+| `contracts/src/api/input-transfer/` | `e0ff1f2373f0` |
 | `engines/k6/compiler/suite/limits.ts` | `2196d65f1ff5` |

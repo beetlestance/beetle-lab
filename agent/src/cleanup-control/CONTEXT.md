@@ -7,6 +7,11 @@ Reserve196608 logical bytes at admission; named buckets total 169984, slack26624
 control data consumes its bucket inside that reserve, never a second charge.
 Plan<=512entries/32depth/4096UTF8pathbytes/128 KiB. Parent directories precede
 children; removal progresses in reverse order, one synced/closed entry at a time.
+plan.ts: root is the empty path, first and a directory; paths unique, strictly
+ordered by JS code units; no absolute/empty/./.. component, backslash, control or
+unpaired surrogate. facts.ts: canonical decimal strings only (uint64 dev/ino, ino>0;
+uint32 uid/gid/mode); directory or regular single-link file. All entries share the
+root dev/UID/GID with unique dev:ino pairs.
 Progress prepared1→cleaning2→one step per removed entry→files_absent. Receipt binds
 that final progress plus original/request/namespace/plan identity. Native owner,
 Journal persistence and replay-safe settlement remain separate required proofs.

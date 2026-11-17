@@ -9,5 +9,8 @@ No recursive/force. Directorymutabletimes differafterdeletions; nativeID/mode/ow
 Rootmissing onlylastturn orfiles_absent, sameinstalledmarker/nativeanchor mandatory.
 Failedclose stickycredit/entry; unknownmetadatacarrierretaineduntilactualsettlement.
 Journal 019 progressmetadata notIOproof. No receipt/ACK/refund/publicroute.
+Handles: conservative 71 open descriptors and 1650 retained cachedclose records per
+ordinary step; prepared runs two preflights under one lifetime (operation.ts), so
+3200 records, still 71 open. Not task-inventory's 1539; no RSS qualification.
 Tests native-removal,cleanup-progress andnative-check; portable/fullnativeleaf scopes
 areseparate. Privilegedhostleafmutationnotatomic; coldmailboxassociationgap remains.
