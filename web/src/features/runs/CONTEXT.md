@@ -38,3 +38,8 @@ RunReads admits one original detail read plus at most four waiting intents. Wait
 expires after five seconds or caller abort; retirement rejects queued intents.
 Original completion releases admission. Storage bounds and explicit HTTP errors
 remain unchanged; there are no automatic retries or mutation admission changes.
+RunDetail owns the run query, cancellation and header, then dispatches once per
+mount: nonterminal → `live/LiveRunView` (package D), terminal → `result/RunResultView`
+(package E). A run that ends while watched stays in the live view until it calls
+`showResult`, because switching remounts and re-reads. Both views currently render
+the shared pre-redesign `RunSnapshot`; `terminal()` lives in `terminal.ts`.
