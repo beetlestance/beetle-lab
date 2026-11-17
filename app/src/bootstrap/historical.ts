@@ -1,6 +1,7 @@
 import { openApplicationSession } from './local-access.js';
 import type { FastifyInstance } from 'fastify';
-import { apiOperations } from '@beetle/contracts/api';
+import { apiOperations, validateApi } from '@beetle/contracts/api';
+import type { RestoredBackup } from '@beetle/contracts/api';
 import { ApiFault } from '../adapters/inbound/http/api-errors.js';
 import type { LocalSessionStore } from '../ports/local-session.js';
 import type { InputStore } from '../ports/inputs.js';
@@ -12,6 +13,8 @@ export type HistoricalInputService = InputService;
 /** Trusted historical composition only; no configuration file can inject these ports. */
 export interface HistoricalOptions {
   readonly historyId: string;
+  /** Sealed manifest header: archive identity and the backup tool's creation time. */
+  readonly backup: { readonly backupId: string; readonly createdAt: string };
   readonly sessions: LocalSessionStore;
   readonly bytes: HistoricalOutputRead;
   readonly openInputs: (store: InputStore) => InputService | undefined;
@@ -38,7 +41,17 @@ export function captureHistorical(options: HistoricalApplication): HistoricalOpt
     throw new TypeError('Historical execution unavailable');
   if (!/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(history.historyId))
     throw new TypeError('Invalid historical identity');
+  restoredBackup(history.backup);
   return history;
+}
+/** Canonical UTC millisecond form of the sealed header time; an unparsable time refuses composition. */
+export function restoredBackup(backup: HistoricalOptions['backup']): RestoredBackup {
+  const time =
+    typeof backup?.createdAt === 'string' && backup.createdAt.length <= 64 ? Date.parse(backup.createdAt) : NaN;
+  if (!Number.isFinite(time)) throw new TypeError('Invalid historical backup');
+  const value = { backupId: String(backup.backupId).toLowerCase(), createdAt: new Date(time).toISOString() };
+  if (!validateApi('RestoredBackup', value).ok) throw new TypeError('Invalid historical backup');
+  return Object.freeze(value);
 }
 export function protectHistorical(server: FastifyInstance): void {
   const names = new Set(['openLocalBrowserSession', 'pairBrowserSession', 'logoutBrowserSession']);
@@ -67,7 +80,13 @@ export function applicationMode(options: HistoricalApplication) {
         options.externalOrigin,
         options.localAccess ?? 'paired',
         history?.sessions ?? store,
-        history ? { readOnly: true, cookieName: 'beetle_history_' + history.historyId.replaceAll('-', '') } : undefined,
+        history
+          ? {
+              readOnly: true,
+              cookieName: 'beetle_history_' + history.historyId.replaceAll('-', ''),
+              restoredBackup: restoredBackup(history.backup),
+            }
+          : undefined,
       ),
     inputs: (store: InputStore) => history?.openInputs(store),
     reads: (runtime: AgentRuntime | undefined) => (history ? { publishedBytes: history.bytes } : runtime),

@@ -118,6 +118,11 @@ mismatches, and never accepts a complete prefix before actual EOF.
   consumer backpressure and ancestor and file rechecks.
 - Historical reads return bytes only; they never grant execution, ACK, settlement,
   deletion, refund or replay authority.
+- `BrowserSession.restoredBackup` (`backupId`, `createdAt`) comes only from the
+  verified manifest header (digest bound by claim and attestation), never from restore
+  or open time. `createdAt` is the backup host's wall clock when the manifest header
+  was written, after copying, normalised to UTC milliseconds; an unparsable value
+  refuses the viewer. Serving sessions refuse the field.
 
 ## Failure handling
 

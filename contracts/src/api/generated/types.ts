@@ -143,6 +143,7 @@ export type RunPage = FromSchema<typeof S19.RunPage>;
 export type RunTimestamp = FromSchema<typeof S19.RunTimestamp>;
 export type PairBrowserRequest = FromSchema<typeof S20.PairBrowserRequest>;
 export type BrowserSession = FromSchema<typeof S20.BrowserSession>;
+export type RestoredBackup = FromSchema<typeof S20.RestoredBackup>;
 export type LogoutBrowserRequest = FromSchema<typeof S20.LogoutBrowserRequest>;
 export type LogoutBrowserReceipt = FromSchema<typeof S20.LogoutBrowserReceipt>;
 export type OpenLocalBrowserRequest = FromSchema<typeof S20.OpenLocalBrowserRequest>;
@@ -293,6 +294,7 @@ export interface ApiTypes {
   RunTimestamp: RunTimestamp;
   PairBrowserRequest: PairBrowserRequest;
   BrowserSession: BrowserSession;
+  RestoredBackup: RestoredBackup;
   LogoutBrowserRequest: LogoutBrowserRequest;
   LogoutBrowserReceipt: LogoutBrowserReceipt;
   OpenLocalBrowserRequest: OpenLocalBrowserRequest;
