@@ -48,8 +48,15 @@ read-only and Docker socket. Staging uses explicit rprivate propagation: the exi
 agent attestation requires an exact staging-root mount and rejects ancestor mounts.
 Backend mounts config read-only/backend state read-write. Frontend mounts neither.
 Shared positive uid/gid owns private files; only installer/agent get the explicit
-socket supplemental group. Socket read-only mount still grants powerful daemon
-access; this is a trusted installation boundary, not a hostile multiuser host.
+socket supplemental group. The read-only socket mount does not restrict Docker
+API mutations: a compromised agent retains Docker host-control authority. Root
+bootstrap prepares an empty installation and then adopts the runtime identity;
+the agent runs as UID/GID 1000 without retained capabilities. These identity checks
+do not make socket access a host security sandbox.
+
+Accepted review decision (17 November 2026): retain this trusted-agent model.
+Setup, agent code and installation administrators belong to the Docker host trust
+boundary. No constrained broker or rootless-daemon guarantee is implemented.
 No automatic recursive chown/repair or deletion of existing state.
 
 All service rootfs read-only; cap_drop ALL; no-new-privileges; finite /tmp/PID/CPU/

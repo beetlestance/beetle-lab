@@ -21,7 +21,14 @@ same Compose startup command. The advanced recipe is `compose.rewrite.yml`.
 start. Existing installations preserve image pins, identity and data. Changing
 installed static capacity is a separate lifecycle operation; editable run settings
 cannot exceed the installed engine policy. Docker socket access is a trusted
-installation execution boundary. The UI port is loopback-only; backend and agent ports are private.
+installation execution boundary. Setup and the agent are trusted with Docker host
+control: a read-only socket mount still permits Docker API mutations and is not
+a host security sandbox. Setup starts as root to prepare an empty installation;
+the agent bootstrap drops to UID/GID 1000 with no retained Linux capabilities.
+A compromised agent can still control the Docker host through its socket. Use an
+installation only with administrators and code you trust. No constrained Docker
+broker or rootless-daemon guarantee is shipped. The UI port is loopback-only;
+backend and agent ports are private.
 For targets running on the Docker Desktop host, use `http://host.docker.internal:PORT`.
 
 ## Run on a VPS
