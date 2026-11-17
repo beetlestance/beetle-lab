@@ -26,6 +26,10 @@ export function historicalInputs(
       check();
       return store.list(query);
     },
+    usage: async (query) => {
+      check();
+      return store.usage(query);
+    },
     read: async (key, range, sink, context) => {
       check();
       const record = await store.get(key);

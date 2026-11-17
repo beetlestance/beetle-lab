@@ -29,12 +29,12 @@ Bounded FIFO bursts can exceed 5 s total while progressing; no mutation retry.
 Close drains admitted FIFO work; close/abort await worker termination, including
 failure paths. Unknown outcomes never trigger automatic mutation retries.
 Migrations are transactional; legacy rows stay unadopted and indexed.\nRun history uses one scoped read snapshot, fixed covering indexes (migration 017),\nlimit+1 time/UUID keys and a strict query-bound cursor; no native/metric reads.
-Immutable indexed revision pins serialize with deletion; tombstone metadata stays charged.
+Immutable indexed pins serialize with deletion; tombstones stay charged; counts/shapes: input-metadata.md.
 execution_intents: order/identity/profile digest/budget/mode/policy 1 staging scalars.
 execution_records: immutable intent/order, charge, bounded snapshot/gen1/outbox custody.
 attempt_output_allocations: scoped immutable maximum+65536/version 1; no settlement.
 Deferred claim links require record/output/possible delivery together; shared usage
 charges input/output once. Private reserveRunOutput requires a caller transaction.
 hasUntrackedOwnership uses partial indices, independent of Run state/Offer bytes.
-Authoring (031): run_notes own noteVersion+same-transaction note grams; Run reads add note and durable runtime start/exit via run_events_runtime (<=4 rows); revisions stamp savedAt/savedBy.
-Contracts: docs/system/contracts/storage.md#metadata-worker, run-delivery.md#dispatch-storage, outputs-collection.md#storage-accounting (output allocation), authoring.md.
+Authoring (031): run_notes own noteVersion+same-transaction note grams; Run reads add note and durable runtime start/exit via run_events_runtime (<=4 rows); revisions stamp savedAt/savedBy. Listing (034): triggers keep suites.latest_* and suite_revision_run_counts; suite-list/ merges per-group index keysets in one read transaction.
+Contracts: docs/system/contracts/storage.md#metadata-worker, run-delivery.md#dispatch-storage, outputs-collection.md#storage-accounting (output allocation), authoring.md, suite-listing.md.

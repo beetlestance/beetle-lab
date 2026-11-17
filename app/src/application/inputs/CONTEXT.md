@@ -19,6 +19,11 @@ Recovery reads one page of at most 100, re-gets admitted rows, and counts custod
 reconciliation rather than upload completion. Restart at the beginning after a
 pass: state transitions may move work behind a cursor; page end proves no completion.
 
+After the publication commit, `measure` counts CSV/JSON rows and columns once from a
+verified read (`shape.ts` budget); failure leaves counts null and never undoes
+publication. A pinned-delete refusal is re-raised as `InputDependencyError` naming
+the first 10 blockers (`dependencies.ts`). Contract: docs/system/contracts/input-metadata.md.
+
 Focused check: `node_modules/.bin/vitest run app/test/application/inputs --maxWorkers=1`.
 The tests use real isolated metadata and controlled byte jobs. Native filesystem,
 HTTP composition and provider/Stager qualification belong to their owners.

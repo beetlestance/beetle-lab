@@ -28,7 +28,7 @@ export function deferred<T = void>() {
 export const turn = () => new Promise<void>(resolve => setImmediate(resolve));
 export function wrap(service: InputService, changes: Partial<InputService>): InputService {
   return { control: service.control.bind(service), append: service.append.bind(service), read: service.read.bind(service),
-    get: service.get.bind(service), list: service.list.bind(service), recover: service.recover.bind(service),
+    get: service.get.bind(service), list: service.list.bind(service), usage: service.usage.bind(service), recover: service.recover.bind(service),
     close: service.close.bind(service), ...changes };
 }
 let sequence = 0;

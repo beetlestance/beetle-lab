@@ -111,6 +111,11 @@ function record(input: unknown): InputRecord {
     'version',
     'state',
     'reason',
+    'createdAt',
+    'publishedAt',
+    'rowCount',
+    'columnCount',
+    'usedByCount',
   ]);
   data.scope = fields(data.scope, ['kind', 'organizationId', 'workspaceId']);
   const copy: unknown = JSON.parse(encodeJson(data, 4096));

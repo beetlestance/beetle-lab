@@ -180,7 +180,7 @@ ordering are in [run delivery](run-delivery.md).
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/adapters/outbound/sqlite/runs.ts` | `4bbd08d7ed31` |
+| `app/src/adapters/outbound/sqlite/runs.ts` | `37be7108b44f` |
 | `app/src/adapters/outbound/sqlite/run-cancellations.ts` | `60e439b897cb` |
 | `app/src/domain/runs/index.ts` | `a0f48647f5b4` |
 | `app/src/domain/attempt-observation/` | `35bf6874e6aa` |

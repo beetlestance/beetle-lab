@@ -78,7 +78,7 @@ feature; B and C coordinate `suites.test.tsx` through the coordinator.
 | Authoring metadata | Suite description; revision `savedAt`, `message`, `savedBy`; run notes in search; run start and finish | 031 |
 | Inputs | Added date; row and column counts; usage lookup and named delete blockers | 032 |
 | Pinning | [run-pinning](../proposed/run-pinning.md) | 033 |
-| Suite folders | [suite-folders](../proposed/suite-folders.md); revision run count | 034 |
+| Suite folders | [suite-folders](suite-folders.md); revision run count | 034 |
 | Installation status | Agent and host facts, image presence, slot holders and queue position | None (in-memory) |
 | Live extras | Live target runtime graphs (heap and RSS, CPU, event-loop delay), p95 attribution, backup date; no downloads while live | 036 if needed |
 

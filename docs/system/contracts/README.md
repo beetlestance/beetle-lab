@@ -28,8 +28,10 @@ rereads the contract, corrects it and runs `npm run docs:stamp -- <file>`.
 | Results, metrics, reports, comparison and live snapshots | [Results](results.md) |
 | Standalone k6 script export | [Exports](exports.md) |
 | Uploaded inputs and request bodies | [Inputs](inputs.md) |
+| Input times, row/column counts, usage and delete blockers | [Input metadata](input-metadata.md) |
 | Public `/api/v2` rules, authorisation, history and suites | [Public API](public-api.md) |
 | Suite descriptions, revision stamps, run notes and run times | [Authoring metadata](authoring.md) |
+| Folder summaries, suite filters, latest runs and revision run counts | [Suite listing](suite-listing.md) |
 | Browser scope, polling, bounds and truthful state | [Web UI](web-ui.md) |
 
 Layout, owners and dependency edges: [architecture](../../engineering/architecture.md).

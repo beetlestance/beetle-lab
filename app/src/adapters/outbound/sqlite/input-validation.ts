@@ -6,6 +6,8 @@ import type {
   InputList,
   InputRecoveryPage,
   InputAdvance,
+  InputShapeRecord,
+  InputUsageQuery,
 } from '../../../ports/inputs.js';
 import { INPUT_MAXIMUM_BYTES } from '../../../ports/inputs.js';
 import { digestMutationIntent } from '../../../application/namespaces/index.js';
@@ -79,6 +81,34 @@ function advance(command: InputAdvance): void {
     requireRule(command.kind === 'publishInput' || command.kind === 'deleteInputBytes');
   }
 }
+function usage(query: InputUsageQuery): void {
+  fields(query, ['key', 'limit', 'cursor']);
+  checkedInputKey(query.key);
+  requireRule(Number.isSafeInteger(query.limit) && query.limit >= 1 && query.limit <= 100);
+  if (query.cursor !== undefined) requireRule(typeof query.cursor === 'string' && query.cursor.length <= 1024);
+}
+const SHAPE_ROWS = 1_048_576;
+const SHAPE_COLUMNS = 1024;
+function shape(value: InputShapeRecord): void {
+  fields(value, ['key', 'sha256', 'bytes', 'rowCount', 'columnCount']);
+  checkedInputKey(value.key);
+  requireRule(typeof value.sha256 === 'string' && /^[a-f0-9]{64}$/.test(value.sha256));
+  requireRule(Number.isSafeInteger(value.bytes) && value.bytes >= 1 && value.bytes <= INPUT_MAXIMUM_BYTES);
+  const count = (n: number | null, low: number, high: number) =>
+    n === null || (Number.isSafeInteger(n) && n >= low && n <= high);
+  requireRule(count(value.rowCount, 0, SHAPE_ROWS) && count(value.columnCount, 1, SHAPE_COLUMNS));
+  requireRule(value.rowCount !== null || value.columnCount !== null);
+}
+export const INPUT_OPERATION_KINDS: readonly Operation['kind'][] = [
+  'input',
+  'advanceInput',
+  'getInput',
+  'listInputs',
+  'recoverInputs',
+  'inputStorage',
+  'listInputUsage',
+  'recordInputShape',
+];
 export function checkedInputOperation(operation: Operation): boolean {
   switch (operation.kind) {
     case 'input':
@@ -99,6 +129,12 @@ export function checkedInputOperation(operation: Operation): boolean {
       page(operation.query);
       return true;
     case 'inputStorage':
+      return true;
+    case 'listInputUsage':
+      usage(operation.query);
+      return true;
+    case 'recordInputShape':
+      shape(operation.shape);
       return true;
     default:
       return false;

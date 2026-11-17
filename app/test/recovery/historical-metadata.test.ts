@@ -12,6 +12,9 @@ it('reads namespaces/history through the real read-only worker and forbids priva
   expect(await archive.get({kind: 'organization', scope: {kind: 'installation'}, id: organization.id})).toEqual(organization);
   const scope = {kind: 'workspace' as const, organizationId: organization.id, workspaceId: workspace.id};
   expect((await archive.runs.listRuns({scope, limit: 10})).items).toEqual([]);
+  await expect(archive.inputs.usage({key: {scope, id: uuid(41)}, limit: 10})).rejects.toMatchObject({code: 'not_found'});
+  await expect(archive.inputs.recordShape({key: {scope, id: uuid(41)}, sha256: 'a'.repeat(64), bytes: 1, rowCount: 1, columnCount: 1}))
+    .rejects.toMatchObject({code: 'read_only'});
   await expect(archive.namespaces.execute(command({kind: 'createOrganization', id: uuid(40), request: {
     scope: {kind: 'installation'}, requestId: requestId(), name: 'Forbidden', slug: 'forbidden'}}))).rejects.toMatchObject({code: 'read_only'});
   await expect(archive.localSessions.load()).rejects.toMatchObject({code: 'read_only'});

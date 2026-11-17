@@ -22,6 +22,42 @@ export interface InputRecord extends InputKey {
   version: number;
   state: InputState;
   reason: InputFailure | null;
+  /** Worker-recorded wall time; null for rows created before migration 032. */
+  createdAt?: string | null;
+  /** Set once by the publishing to published transition; never inferred. */
+  publishedAt?: string | null;
+  /** Counted once from verified published bytes; null when not computed. */
+  rowCount?: number | null;
+  columnCount?: number | null;
+  /** Revisions whose immutable manifests pin this input, observed at read time. */
+  usedByCount?: number;
+}
+/** CSV header plus records, or a JSON array (columns only for uniform objects). */
+export interface InputShape {
+  rowCount: number | null;
+  columnCount: number | null;
+}
+export interface InputShapeRecord extends InputShape {
+  key: InputKey;
+  sha256: string;
+  bytes: number;
+}
+export interface RevisionDependency {
+  suiteId: string;
+  suiteName: string;
+  revisionId: string;
+  ordinal: number;
+  current: boolean;
+}
+export interface InputUsageQuery {
+  key: InputKey;
+  limit: number;
+  cursor?: string;
+}
+export interface InputUsagePage {
+  total: number;
+  items: RevisionDependency[];
+  nextCursor: string | null;
 }
 export interface InputCreateRequest {
   scope: WorkspaceScope;
@@ -90,4 +126,17 @@ export interface InputStore {
   /** Internal maintenance scan; bounded cursor, no HTTP route. */
   recovery(query: InputRecoveryPage): Promise<InputPage>;
   storage(): Promise<InputStorage>;
+  /** Pinning revisions in revision-ID order; total is the maintained pin count. */
+  usage(query: InputUsageQuery): Promise<InputUsagePage>;
+  /** Byte service only: one immutable shape per verified published input. */
+  recordShape(shape: InputShapeRecord): Promise<InputRecord>;
+}
+export const INPUT_DEPENDENCY_PREVIEW = 10;
+/** Deletion refused by retained revision pins: the first pins plus the exact total. */
+export class InputDependencyError extends Error {
+  readonly code = 'protected_dependency';
+  constructor(readonly dependencies: { total: number; items: RevisionDependency[] }) {
+    super('Input is pinned by saved revisions');
+    this.name = 'InputDependencyError';
+  }
 }

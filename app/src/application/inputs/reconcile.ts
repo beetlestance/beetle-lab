@@ -4,6 +4,8 @@ import type { InputRecord, InputStore } from '../../ports/inputs.js';
 import { requireRule } from '../../domain/namespaces/index.js';
 import type { Owner } from './ownership.js';
 import { checkedRecord } from './validation.js';
+import { shapeCounter, shapeKind } from './shape.js';
+import { contentSink } from './transfer.js';
 
 export interface Dependencies {
   store: InputStore;
@@ -54,7 +56,7 @@ export async function reconcile(deps: Dependencies, owner: Owner, record: InputR
     throw error;
   }
   if (record.state === 'publishing' || record.state === 'deleting') {
-    checkedRecord(
+    const next = checkedRecord(
       await deps.store.advance({
         kind: record.state === 'publishing' ? 'publishInput' : 'deleteInputBytes',
         key: { id: record.id, scope: record.scope },
@@ -62,8 +64,39 @@ export async function reconcile(deps: Dependencies, owner: Owner, record: InputR
       }),
       record,
     );
+    if (next.state === 'published') await measure(deps, owner, next);
   }
   return true;
+}
+/** Once, at publication: counts come only from a fully verified read of the published
+ * bytes. Any failure leaves the counts null; conclusive custody evidence still fences
+ * the input exactly as a content read would. Publication itself is already committed.
+ */
+export async function measure(deps: Dependencies, owner: Owner, record: InputRecord): Promise<void> {
+  const kind = shapeKind(record.name, record.bytes);
+  if (kind === null || record.state !== 'published') return;
+  const counter = shapeCounter(kind);
+  const consumer = contentSink(owner, { write: async (chunk) => counter.write(chunk) }, record.bytes);
+  try {
+    const reserve = await reserveBytes(deps.store, owner);
+    try {
+      await owner.job(
+        deps.bytes.read(record, { start: 0, endExclusive: record.bytes }, consumer, owner.context(reserve)),
+      );
+    } finally {
+      consumer.end();
+    }
+    await owner.drainCustody();
+    owner.check();
+    consumer.complete();
+  } catch (error) {
+    await custodyFailure(deps.store, owner, record, error).catch(() => undefined);
+    return;
+  }
+  const shape = counter.finish();
+  if (shape === null) return;
+  const key = { id: record.id, scope: record.scope };
+  await deps.store.recordShape({ key, sha256: record.sha256, bytes: record.bytes, ...shape }).catch(() => undefined);
 }
 
 async function nativeReconcile(

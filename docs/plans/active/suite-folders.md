@@ -1,7 +1,10 @@
 # Plan: folder-first Suites tab
 
-Status: proposed. Direction supported in review (2026-11-18) with the contract
-clarifications below; no contract changed yet. Design: Penpot "Screens" boards
+Status: active (2026-11-18). Backend and API shipped on the suite-folders branch
+with migration 034 (033 reserved); shipped behaviour is in
+[Suite listing](../../system/contracts/suite-listing.md). Remaining: the web
+Suites tab adopting `listSuites` filters and summaries, and `includeDescendants`
+(deferred). Design: Penpot "Screens" boards
 "Suites" (folder list) and "Suites / Folder" (one folder: status filter, engine
 filter, search, sort, 100-row pages).
 

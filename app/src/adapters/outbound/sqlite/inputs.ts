@@ -1,4 +1,4 @@
-import { inputRecord, inputColumns } from './input-row.js';
+import { inputRecord, inputColumns, inputSource } from './input-row.js';
 import { StorageError } from './protocol.js';
 import { storageFits } from '../../../domain/settings/index.js';
 import type { DatabaseSync } from 'node:sqlite';
@@ -8,6 +8,7 @@ import type {
   InputRecord,
   InputReceipt,
   InputAdvance,
+  InputShapeRecord,
   InputStorage,
 } from '../../../ports/inputs.js';
 import { INPUT_METADATA_CHARGE_BYTES } from '../../../ports/inputs.js';
@@ -22,11 +23,15 @@ export class Inputs {
     private readonly db: DatabaseSync,
     private readonly entities: Entities,
     private readonly settings: Settings,
+    private readonly now: () => string = () => new Date().toISOString(),
   ) {}
   get(key: InputKey): InputRecord {
     const { scope, id } = canonicalInputKey(key);
     const row = this.db
-      .prepare(`SELECT ${inputColumns} FROM input_blobs WHERE organization_id=? AND workspace_id=? AND id=?`)
+      .prepare(
+        `SELECT ${inputColumns} FROM ${inputSource()}
+        WHERE input_blobs.organization_id=? AND input_blobs.workspace_id=? AND input_blobs.id=?`,
+      )
       .get(scope.organizationId, scope.workspaceId, id);
     requireRule(row !== undefined, 'not_found');
     const result = inputRecord(row, scope);
@@ -50,7 +55,10 @@ export class Inputs {
     requireRule(previous.version === command.request.expectedVersion, 'conflict');
     if (command.kind === 'sealInput') {
       requireRule(previous.state === 'staging' && previous.offset === previous.bytes, 'conflict');
-    } else requireRule(['staging', 'publishing', 'published', 'failed'].includes(previous.state), 'conflict');
+    } else {
+      requireRule(['staging', 'publishing', 'published', 'failed'].includes(previous.state), 'conflict');
+      if (previous.usedByCount !== 0) throw new StorageError('protected_dependency');
+    }
     const state = command.kind === 'sealInput' ? 'publishing' : 'deleting';
     const column = command.kind === 'sealInput' ? 'seal_request_id' : 'delete_request_id';
     const version = nextVersion(previous.version);
@@ -90,8 +98,8 @@ export class Inputs {
     );
     this.db
       .prepare(
-        `INSERT INTO input_blobs(id,organization_id,workspace_id,folder_id,name,sha256,bytes,offset,version,state,create_request_id)
-      VALUES(?,?,?,?,?,?,?,0,1,'staging',?)`,
+        `INSERT INTO input_blobs(id,organization_id,workspace_id,folder_id,name,sha256,bytes,offset,version,state,
+        create_request_id,created_at) VALUES(?,?,?,?,?,?,?,0,1,'staging',?,?)`,
       )
       .run(
         key.id,
@@ -102,6 +110,7 @@ export class Inputs {
         request.sha256,
         request.bytes,
         lower(request.requestId),
+        this.now(),
       );
     return this.get(key);
   }
@@ -112,7 +121,7 @@ export class Inputs {
     const change = this.advanceChange(command, previous);
     this.db
       .prepare(
-        `UPDATE input_blobs SET state=?,offset=?,reason=?,version=?
+        `UPDATE input_blobs SET state=?,offset=?,reason=?,version=?,published_at=?
       WHERE organization_id=? AND workspace_id=? AND id=?`,
       )
       .run(
@@ -120,9 +129,32 @@ export class Inputs {
         change.offset,
         change.reason,
         nextVersion(previous.version),
+        command.kind === 'publishInput' ? this.now() : (previous.publishedAt ?? null),
         key.scope.organizationId,
         key.scope.workspaceId,
         key.id,
+      );
+    return this.get(key);
+  }
+  /** Insert-once; SQL guards bind the exact published identity and size. */
+  recordShape(shape: InputShapeRecord): InputRecord {
+    const key = canonicalInputKey(shape.key);
+    const previous = this.get(key);
+    requireRule(previous.state === 'published' && previous.sha256 === shape.sha256, 'conflict');
+    requireRule(
+      previous.bytes === shape.bytes && previous.rowCount === null && previous.columnCount === null,
+      'conflict',
+    );
+    this.db
+      .prepare('INSERT INTO input_shapes VALUES(?,?,?,?,?,?,?)')
+      .run(
+        key.scope.organizationId,
+        key.scope.workspaceId,
+        key.id,
+        shape.sha256,
+        shape.bytes,
+        shape.rowCount,
+        shape.columnCount,
       );
     return this.get(key);
   }

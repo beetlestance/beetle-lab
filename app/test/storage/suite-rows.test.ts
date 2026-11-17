@@ -32,6 +32,9 @@ function row() {
     digest: revision.digest,
     config_json: JSON.stringify(revision.config),
     input_manifest_json: JSON.stringify(revision.inputManifest),
+    saved_at: revision.savedAt,
+    message: revision.message,
+    saved_by: revision.savedBy,
     run_count: 0,
   };
 }
@@ -47,6 +50,7 @@ it('captures valid suite/revision rows with their existing wire values', () => {
         name: suite.name,
         version: suite.version,
         current_revision_id: suite.currentRevisionId,
+        description: suite.description,
       },
       { scope, id: suite.id },
     ),
@@ -100,10 +104,11 @@ it('bounds revision JSON before JavaScript parsing', () => {
   const db = new DatabaseSync(':memory:');
   try {
     db.exec(
-      'CREATE TABLE suite_revisions(id,organization_id,workspace_id,suite_id,ordinal,digest,config_json,input_manifest_json);' +
+      'CREATE TABLE suite_revisions(id,organization_id,workspace_id,suite_id,ordinal,digest,config_json,input_manifest_json,' +
+        'saved_at,message,saved_by);' +
         'CREATE TABLE suite_revision_run_counts(revision_id,run_count)',
     );
-    db.prepare('INSERT INTO suite_revisions VALUES(?,?,?,?,?,?,?,?)').run(
+    db.prepare('INSERT INTO suite_revisions VALUES(?,?,?,?,?,?,?,?,NULL,NULL,NULL)').run(
       revision.id,
       scope.organizationId,
       scope.workspaceId,

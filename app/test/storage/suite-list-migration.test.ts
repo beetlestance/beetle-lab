@@ -8,7 +8,7 @@ import {
   folderNewestSql,
   subfolderCountSql,
 } from '../../src/adapters/outbound/sqlite/suite-list/folders.js';
-import { asSchema30 } from './legacy030.js';
+import { asSchema32 } from './legacy030.js';
 import { suiteListFixture, time } from './suite-list-fixture.js';
 import { scope, uuid } from './fixture.js';
 
@@ -29,7 +29,7 @@ const derived = (f: ReturnType<typeof suiteListFixture>) => ({
   counts: f.db.prepare('SELECT revision_id,run_count FROM suite_revision_run_counts ORDER BY revision_id').all(),
 });
 
-it('upgrades schema30 rows: backfills latest retained Runs, groups and revision Run counts', () => {
+it('upgrades schema32 rows: backfills latest retained Runs, groups and revision Run counts', () => {
   const f = populated();
   try {
     const expected = derived(f);
@@ -40,7 +40,7 @@ it('upgrades schema30 rows: backfills latest retained Runs, groups and revision 
       { id: uuid(53), latest_run_id: null, latest_requested_at: '', latest_group: 'no_revision' },
     ]);
     const before = f.list({});
-    asSchema30(f.db);
+    asSchema32(f.db);
     const columns = f.db.prepare("SELECT name FROM pragma_table_info('suites') WHERE name LIKE 'latest%'").all();
     expect(columns).toEqual([]);
     transaction(f.db, () => f.db.exec(migration034));

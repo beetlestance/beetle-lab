@@ -41,7 +41,7 @@ export const migration034 = `
 ALTER TABLE suites ADD COLUMN latest_run_id TEXT CHECK(latest_run_id IS NULL OR
  (typeof(latest_run_id)='text' AND length(latest_run_id)=36 AND latest_run_id=lower(latest_run_id)));
 ALTER TABLE suites ADD COLUMN latest_requested_at TEXT NOT NULL DEFAULT '' CHECK(typeof(latest_requested_at)='text'
- AND length(latest_requested_at) IN (0,24));
+ AND length(latest_requested_at)<=64);
 ALTER TABLE suites ADD COLUMN latest_group TEXT NOT NULL DEFAULT 'no_revision' CHECK(
  latest_group IN ('in_progress','passed','failed','inconclusive','stopped','no_runs','no_revision')
  AND (latest_run_id IS NULL)=(latest_group IN ('no_runs','no_revision'))

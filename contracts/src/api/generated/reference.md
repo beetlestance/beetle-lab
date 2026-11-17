@@ -41,6 +41,7 @@ Schema catalogue is complete, including runner common exactly once. Implementati
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs | implemented | WorkspaceParams | none | CreateInputRequest | 201 | InputRecord |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs | implemented | WorkspaceParams | PageQuery | none | 200 | InputPage |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs/{inputId} | implemented | InputParams | none | none | 200 | InputRecord |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs/{inputId}/usage | implemented | InputParams | PageQuery | none | 200 | InputUsagePage |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs/{inputId}/seal | implemented | InputParams | none | TransitionInputRequest | 202 | InputReceipt |
 | DELETE | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs/{inputId} | implemented | InputParams | none | TransitionInputRequest | 202 | InputReceipt |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs | implemented | WorkspaceParams | none | CreateRunRequest | 202 | Run |

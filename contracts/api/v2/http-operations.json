@@ -378,6 +378,17 @@
     "implementation": "implemented"
   },
   {
+    "name": "listInputUsage",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs/{inputId}/usage",
+    "response": "InputUsagePage",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "InputParams",
+    "query": "PageQuery",
+    "implementation": "implemented"
+  },
+  {
     "name": "sealInput",
     "method": "POST",
     "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs/{inputId}/seal",
