@@ -67,9 +67,11 @@ refused. The whole command line is limited to 24 arguments.
 
 ## Request files
 
-Request files are JSON, at most 4 KiB, and must match the
-[API schemas](https://github.com/beetlestance/beetle-lab/blob/main/contracts/api/v2/http-operations.json)
-exactly. `scope` is always
+Request files are JSON, at most 4 KiB, and must match the API schemas exactly:
+in the app, **API reference** → **Download schema catalogue** (`public-api.json`)
+matches your installation, and the
+[source on GitHub](https://github.com/beetlestance/beetle-lab/blob/5b8e016c372131449d3a5fcf92e3574b1847534c/contracts/api/v2/http-operations.json) is pinned
+to revision `5b8e016c`. `scope` is always
 `{"kind": "workspace", "organizationId": UUID, "workspaceId": UUID}`.
 
 | Command | Fields |

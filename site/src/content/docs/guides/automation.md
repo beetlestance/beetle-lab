@@ -65,8 +65,11 @@ Every command needs `--endpoint`, `--origin` and `--session-file`. The
 | `cancel` | the same scope flags and `--request-file` | The cancellation receipt |
 | `compare` | `--request-file` | Two to four finished runs, baseline first |
 
-Request files are JSON, at most 4 KiB, shaped by the
-[generated API schemas](https://github.com/beetlestance/beetle-lab/blob/main/contracts/api/v2/http-operations.json).
+Request files are JSON, at most 4 KiB, shaped by the API schemas. Your
+installation's own copy is in the app: open **API reference** in the sidebar and
+choose **Download schema catalogue** (`public-api.json`). The
+[source schemas](https://github.com/beetlestance/beetle-lab/blob/5b8e016c372131449d3a5fcf92e3574b1847534c/contracts/api/v2/http-operations.json) are also
+on GitHub, pinned to revision `5b8e016c`.
 `run` and `cancel` requests carry a stable `requestId` that you choose. Creating
 suites and uploading large inputs stay in the UI and API.
 

@@ -8,9 +8,12 @@ sidebar:
 import ApiOperations from '../../../components/ApiOperations.astro';
 
 The UI is a client of the same JSON API you can call yourself, under `/api/v2` on
-the UI's address. The request and response shapes are published as
-[JSON schemas](https://github.com/beetlestance/beetle-lab/tree/main/contracts/api/v2);
-the operation list below is built from the same file that defines the server's
+the UI's address. The request and response shapes are JSON schemas: the app's
+**API reference** page offers them as one download, **Download schema catalogue**
+(`public-api.json`), matching your installation. The
+[source schemas](https://github.com/beetlestance/beetle-lab/tree/5b8e016c372131449d3a5fcf92e3574b1847534c/contracts/api/v2) are on GitHub, pinned to revision
+`5b8e016c`, which predates the 48-character limit on organisation names. The
+operation list below is built from the same file that defines the server's
 routes.
 
 ## Sign in
