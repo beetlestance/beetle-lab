@@ -4,6 +4,7 @@ export interface Row {
   seq: number;
   at: string;
   phase: Event['phase'];
+  kind: Event['kind'];
   text: string;
 }
 export interface Progress {
@@ -123,7 +124,7 @@ export function project(page: RunEventPage, previous?: Timeline, skipped = false
   for (const event of page.items) {
     if (event.seq <= data.through) continue;
     const text = event.source === 'wrapper' ? wrapperText(event) : agentText(event);
-    data.rows.push({ seq: event.seq, at: event.observedAt, phase: event.phase, text });
+    data.rows.push({ seq: event.seq, at: event.observedAt, phase: event.phase, kind: event.kind, text });
     data.progress = progressAfter(data.progress, event);
     if (event.kind === 'resource.summary') data.resources = resourceText(event.payload);
   }

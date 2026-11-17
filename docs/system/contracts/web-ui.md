@@ -144,6 +144,6 @@ filters keeps the suite context; an explicit workspace-history link clears it.
 | `web/src/app/routes.ts` | `981061144d55` |
 | `web/src/app/queries.ts` | `6d93596abdd5` |
 | `web/src/features/runs/timeline/read.ts` | `cbd57b66d9b4` |
-| `web/src/features/runs/timeline/projection.ts` | `cb3a47a3a977` |
+| `web/src/features/runs/timeline/projection.ts` | `e7e83db9f347` |
 | `web/src/features/command-search/model.ts` | `6d1867832757` |
 | `web/src/features/input-directory/plan.ts` | `f0ec22cf9b89` |
