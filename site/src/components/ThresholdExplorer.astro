@@ -1,0 +1,240 @@
+---
+// Threshold explorer: pick a metric, statistic, operator and value, and see whether
+// the rule holds against one fixed sample run. Rule fields follow
+// contracts/engines/k6/v1/common.schema.json ($defs.rule); the k6 threshold text and
+// the stop-rule inversion follow engines/k6/compiler/thresholds.ts.
+
+// A made-up run: 200 requests over 60 s, 3 of them failed. Seeded, so every build
+// shows the same numbers.
+const DURATION_S = 60;
+let seed = 7;
+const random = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+const latencies = Array.from({ length: 200 }, () => {
+  const normal = Math.sqrt(-2 * Math.log(random() || 1e-9)) * Math.cos(2 * Math.PI * random());
+  return Math.round(Math.exp(5.2 + 0.45 * normal) * 10) / 10;
+}).sort((a, b) => a - b);
+const failed = 3;
+
+// Percentiles interpolate linearly between neighbouring samples.
+const percentile = (p: number) => {
+  const i = (p / 100) * (latencies.length - 1);
+  const lo = latencies[Math.floor(i)];
+  const hi = latencies[Math.ceil(i)];
+  return lo + (hi - lo) * (i - Math.floor(i));
+};
+const round = (n: number) => Math.round(n * 1000) / 1000;
+const trend = {
+  avg: latencies.reduce((sum, v) => sum + v, 0) / latencies.length,
+  min: latencies[0],
+  max: latencies[latencies.length - 1],
+  med: percentile(50),
+  p50: percentile(50),
+  p90: percentile(90),
+  p95: percentile(95),
+  p99: percentile(99),
+};
+const metrics = {
+  http_req_duration: { kind: 'Trend', unit: 'ms', stats: Object.fromEntries(Object.entries(trend).map(([k, v]) => [k, round(v)])) },
+  http_req_failed: { kind: 'Rate', unit: '', stats: { rate: round(failed / latencies.length) } },
+  http_reqs: { kind: 'Counter', unit: '', stats: { count: latencies.length, rate: round(latencies.length / DURATION_S) } },
+};
+
+// Histogram of the latencies, 25 ms buckets up to 800 ms.
+const BUCKET = 25;
+const BUCKETS = 32;
+const counts = Array.from({ length: BUCKETS }, () => 0);
+for (const v of latencies) counts[Math.min(BUCKETS - 1, Math.floor(v / BUCKET))] += 1;
+const peak = Math.max(...counts);
+const W = 400;
+const H = 120;
+const barW = W / BUCKETS;
+---
+
+<figure class="bl-rule not-content" aria-label="Threshold explorer" data-metrics={JSON.stringify(metrics)} data-max={BUCKET * BUCKETS}>
+  <p class="bl-rule-sample">
+    Sample run: 200 requests over 60 s, 3 failed. Its statistics:
+  </p>
+  <dl class="bl-rule-stats">
+    {
+      Object.entries(metrics).flatMap(([name, metric]) =>
+        Object.entries(metric.stats).map(([stat, value]) => (
+          <div data-stat-row={`${name}.${stat}`}>
+            <dt><code>{name}</code> {stat}</dt>
+            <dd>{value}{metric.unit && ` ${metric.unit}`}</dd>
+          </div>
+        )),
+      )
+    }
+  </dl>
+  <div class="bl-rule-controls" hidden>
+    <label class="bl-rule-field">
+      <span>Rule kind</span>
+      <select data-kind>
+        <option value="slo">Pass or fail rule (slos)</option>
+        <option value="stop">Stop rule (ramp-until)</option>
+      </select>
+    </label>
+    <label class="bl-rule-field">
+      <span>metric</span>
+      <select data-metric>
+        {Object.entries(metrics).map(([name, metric]) => <option value={name}>{name} ({metric.kind})</option>)}
+      </select>
+    </label>
+    <label class="bl-rule-field">
+      <span>stat</span>
+      <select data-stat></select>
+    </label>
+    <label class="bl-rule-field">
+      <span>operator</span>
+      <select data-operator>
+        <option value="<">&lt;</option>
+        <option value="<=">&lt;=</option>
+        <option value=">">&gt;</option>
+        <option value=">=">&gt;=</option>
+      </select>
+    </label>
+    <label class="bl-rule-field">
+      <span>value</span>
+      <input data-value type="number" min="0" max="1000000000000" step="any" value="500" />
+    </label>
+  </div>
+  <div class="bl-rule-out" hidden>
+    <svg data-chart viewBox={`0 0 ${W} ${H + 16}`} role="img" aria-label={`Latency histogram of the sample in ${BUCKET} ms buckets, 0 to ${BUCKET * BUCKETS} ms; the last bar also holds slower requests`}>
+      {counts.map((count, i) => (
+        <rect class="bar" x={i * barW + 1} width={barW - 2} y={H - (count / peak) * (H - 8)} height={(count / peak) * (H - 8)} />
+      ))}
+      <line class="mark" data-mark x1="0" x2="0" y1="0" y2={H} />
+      <text class="axis" x="0" y={H + 14}>0 ms</text>
+      <text class="axis" x={W} y={H + 14} text-anchor="end">{BUCKET * BUCKETS} ms</text>
+    </svg>
+    <p class="bl-rule-threshold">k6 threshold: <code data-threshold></code></p>
+    <p class="bl-rule-verdict" data-verdict role="status"></p>
+    <details class="bl-rule-json">
+      <summary>Rule JSON</summary>
+      <pre data-json></pre>
+    </details>
+  </div>
+</figure>
+
+<script>
+  type Metric = { kind: string; unit: string; stats: Record<string, number> };
+  const INVERSE: Record<string, string> = { '>': '<=', '>=': '<', '<': '>=', '<=': '>' };
+  const compare = (a: number, op: string, b: number) =>
+    op === '<' ? a < b : op === '<=' ? a <= b : op === '>' ? a > b : a >= b;
+
+  for (const root of document.querySelectorAll<HTMLElement>('.bl-rule')) {
+    const metrics = JSON.parse(root.dataset.metrics!) as Record<string, Metric>;
+    const max = Number(root.dataset.max);
+    const q = <T extends Element>(s: string) => root.querySelector<T>(s)!;
+    const kind = q<HTMLSelectElement>('[data-kind]');
+    const metric = q<HTMLSelectElement>('[data-metric]');
+    const stat = q<HTMLSelectElement>('[data-stat]');
+    const operator = q<HTMLSelectElement>('[data-operator]');
+    const value = q<HTMLInputElement>('[data-value]');
+    const rows = [...root.querySelectorAll<HTMLElement>('[data-stat-row]')];
+
+    const fillStats = () => {
+      const previous = stat.value;
+      stat.replaceChildren(
+        ...Object.keys(metrics[metric.value].stats).map(name => new Option(name, name, false, name === previous)),
+      );
+      if (metric.value === 'http_req_duration' && !Object.hasOwn(metrics[metric.value].stats, previous)) stat.value = 'p95';
+    };
+
+    const draw = () => {
+      const m = metrics[metric.value];
+      const actual = m.stats[stat.value];
+      const raw = value.value.trim();
+      const limit = Number(raw);
+      const stop = kind.value === 'stop';
+      const op = operator.value;
+      const k6op = stop ? INVERSE[op] : op;
+      const k6stat = stat.value.startsWith('p') ? `p(${stat.value.slice(1)})` : stat.value;
+      rows.forEach(row => row.classList.toggle('lit', row.dataset.statRow === `${metric.value}.${stat.value}`));
+      const verdict = q<HTMLElement>('[data-verdict]');
+      const mark = q<SVGLineElement>('[data-mark]');
+      const valid = raw !== '' && Number.isFinite(limit) && limit >= 0 && limit <= 1e12;
+      mark.style.display = valid && m.kind === 'Trend' && limit <= max ? '' : 'none';
+      if (valid) {
+        const x = (limit / max) * 400;
+        mark.setAttribute('x1', String(x));
+        mark.setAttribute('x2', String(x));
+      }
+      q<HTMLElement>('.bl-rule-out svg').style.display = m.kind === 'Trend' ? '' : 'none';
+      if (!valid) {
+        q<HTMLElement>('[data-threshold]').textContent = '';
+        q<HTMLElement>('[data-json]').textContent = '';
+        verdict.className = 'bl-rule-verdict fail';
+        verdict.textContent = 'The value must be a number from 0 to 1,000,000,000,000.';
+        return;
+      }
+      q<HTMLElement>('[data-threshold]').textContent = `${metric.value}: ${k6stat}${k6op}${limit}`;
+      q<HTMLElement>('[data-json]').textContent = JSON.stringify(
+        { id: stop ? 'stop' : 'rule', metric: metric.value, stat: stat.value, operator: op, value: limit },
+        null,
+        2,
+      );
+      const shown = `${stat.value} = ${actual}${m.unit && ' ' + m.unit}`;
+      const holds = compare(actual, k6op, limit);
+      if (stop) {
+        verdict.className = 'bl-rule-verdict ' + (holds ? 'neutral' : 'pass');
+        verdict.textContent = holds
+          ? `${shown}, so the stop condition (${stat.value} ${op} ${limit}) is not reached. The ramp keeps raising load; ending at maxRate this way makes the run inconclusive.`
+          : `${shown}, so the stop condition (${stat.value} ${op} ${limit}) is reached. The threshold fails and k6 aborts the whole run, every scenario included. If nothing else failed, the run passes.`;
+      } else {
+        verdict.className = 'bl-rule-verdict ' + (holds ? 'pass' : 'fail');
+        verdict.textContent = holds
+          ? `${shown}, so the rule holds. If every other rule also holds and the evidence is complete, the run passes.`
+          : `${shown}, so the rule fails. The run keeps going to the end of its scenarios, then its outcome is failed.`;
+      }
+    };
+
+    root.querySelector<HTMLElement>('.bl-rule-controls')!.hidden = false;
+    root.querySelector<HTMLElement>('.bl-rule-out')!.hidden = false;
+    root.classList.add('is-enhanced');
+    metric.addEventListener('change', () => { fillStats(); draw(); });
+    for (const input of [kind, stat, operator]) input.addEventListener('change', draw);
+    value.addEventListener('input', draw);
+    fillStats();
+    stat.value = 'p95';
+    draw();
+  }
+</script>
+
+<style>
+  .bl-rule { margin-block: 1.5rem; padding: 1.25rem 1.5rem; background: var(--bl-surface); border-radius: var(--bl-radius); }
+  .bl-rule-sample { margin: 0 0 0.5rem; font-size: 0.9375rem; color: var(--sl-color-text); }
+  .bl-rule-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 0.25rem 1rem; margin: 0 0 1.25rem; font-size: 0.8125rem; }
+  .bl-rule-stats div { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.125rem 0.375rem; border-radius: var(--bl-radius-sm); }
+  .bl-rule-stats div.lit { background: var(--sl-color-accent-low); }
+  .bl-rule-stats dt { color: var(--sl-color-gray-2); }
+  .bl-rule-stats dt code { font-size: 0.75rem; }
+  .bl-rule-stats dd { margin: 0; font-family: var(--sl-font-mono); color: var(--sl-color-white); }
+  .bl-rule-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 0.625rem; margin-bottom: 1rem; }
+  .bl-rule-controls[hidden], .bl-rule-out[hidden] { display: none; }
+  .bl-rule-field { display: grid; gap: 0.25rem; font-size: 0.8125rem; color: var(--sl-color-gray-2); }
+  .bl-rule-field select, .bl-rule-field input {
+    font: inherit;
+    font-size: 0.9375rem;
+    font-family: var(--sl-font-mono);
+    padding: 0.375rem 0.5rem;
+    border-radius: var(--bl-radius-sm);
+    border: 1px solid var(--bl-raised);
+    background: var(--sl-color-black);
+    color: var(--sl-color-white);
+    width: 100%;
+  }
+  .bl-rule-field select:focus-visible, .bl-rule-field input:focus-visible { outline: 2px solid var(--sl-color-accent); outline-offset: 2px; }
+  .bl-rule-out svg { display: block; width: 100%; height: auto; max-height: 10rem; }
+  .bl-rule-out .bar { fill: var(--bl-track); }
+  .bl-rule-out .mark { stroke: var(--sl-color-accent); stroke-width: 2; }
+  .bl-rule-out .axis { fill: var(--sl-color-gray-2); font-size: 11px; font-family: var(--sl-font); }
+  .bl-rule-threshold { margin: 0.75rem 0 0; font-size: 0.875rem; color: var(--sl-color-gray-2); }
+  .bl-rule-verdict { margin: 0.5rem 0 0; padding: 0.625rem 0.75rem; border-radius: var(--bl-radius-sm); border-inline-start: 3px solid var(--sl-color-gray-4); background: var(--bl-zebra); font-size: 0.9375rem; color: var(--sl-color-text); }
+  .bl-rule-verdict.pass { border-color: var(--bl-pass); }
+  .bl-rule-verdict.fail { border-color: var(--bl-fail); }
+  .bl-rule-json { margin-top: 1rem; }
+  .bl-rule-json summary { cursor: pointer; font-size: 0.875rem; color: var(--sl-color-gray-1); }
+  .bl-rule-json pre { margin: 0.5rem 0 0; padding: 0.75rem 1rem; background: var(--bl-zebra); border-radius: var(--bl-radius-sm); font-family: var(--sl-font-mono); font-size: 0.8125rem; color: var(--bl-code); }
+  @media (max-width: 40rem) { .bl-rule { padding: 1rem; } }
+</style>

@@ -5,6 +5,8 @@ sidebar:
   order: 4
 ---
 
+import ThresholdExplorer from '../../../components/ThresholdExplorer.astro';
+
 A **rule** compares one statistic of one k6 metric with a fixed value. A suite's
 load plan uses rules in two ways:
 
@@ -52,6 +54,14 @@ Which statistic makes sense depends on the kind of k6 metric.
 
 Durations in k6 are in milliseconds, so `p95 < 500` on `http_req_duration` means
 the 95th percentile stayed under half a second.
+
+## Try a rule
+
+Pick a metric, a statistic and a limit, and see whether the rule holds against
+one made-up run. The explorer also shows the k6 threshold the rule compiles to;
+switch the rule kind to see how a stop rule is turned around.
+
+<ThresholdExplorer />
 
 ## Pass or fail rules
 
