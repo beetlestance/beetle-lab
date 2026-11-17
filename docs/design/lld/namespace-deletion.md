@@ -9,8 +9,9 @@ This does not introduce recursive cleanup, change Run retention or imply freed b
 Delete organisation/workspace/nonroot folder using its existing scoped request,
 expectedVersion and immutable requestId. Resolve scope before exposing existence;
 wrong owner returns not_found, stale version conflicts. Root-folder deletion refuses.
-Organisation/folder deletion remains empty-only. Organisation must have no
-workspace, including retained retired identities. Folder must have no child/suite/input.
+Folder deletion remains empty-only: no child/suite/input. Organisation deletion
+refuses while any workspace is active. With no workspace it removes the row; with
+only retired workspaces it follows [organisation retirement](workspace-retirement.md#organisation-retirement).
 Used workspace deletion follows [workspace retirement](workspace-retirement.md):
 hide the workspace and its contents, retaining paid data and safety records.
 Active or unresolved work refuses retirement. No cascade or refund is offered.
@@ -29,8 +30,8 @@ current installation storage minus free-space reserve before removal. No spare
 allowance or metadata refund is assumed. Full capacity refuses atomically.
 Marker/schema/request fields are bounded. SQL validates original owner/version/
 root/settings binding. Its insertion atomically charges and removes only the exact
-settings/entity for organisation or folder; workspace retirement preserves its
-root/settings/entity. FK refusal rolls everything back. SQL and public creation
+settings/entity for an empty organisation or folder; workspace and organisation
+retirement preserve root/settings/entity. FK refusal rolls everything back. SQL and public creation
 reject reuse of deleted entity, root and settings IDs, including case aliases.
 Markers cannot be updated/replaced/deleted and have no expiry/refund.
 Existing global receipts stay retained; harmless history search metadata uses its

@@ -34,13 +34,14 @@ it('refuses root, nonempty, foreign and stale deletions without changing storage
  }
  expect(await metadata.inputs.storage()).toEqual(before);expect((await metadata.get({kind:'folder',id:uuid(4),scope})).id).toBe(uuid(4));
 });
-it('retires a used workspace and keeps its suite and parent organisation dependencies',async()=>{
+it('retires a used workspace, then retires its parent organisation without removing dependencies',async()=>{
  const metadata=await fixture.open();await seed(metadata);await createSuite(metadata);
  const intent=workspace();expect((await metadata.namespaceDeletions.delete(intent)).state).toBe('tombstoned');
  await expect(metadata.get({kind:'workspace',id:uuid(2),scope:intent.request.scope})).rejects.toMatchObject({code:'not_found'});
  const org=prepareNamespaceDeletion({kind:'organization',id:uuid(1),request:{scope:{kind:'installation'},expectedVersion:1,requestId:requestId()}},digest);
- await expect(metadata.namespaceDeletions.delete(org)).rejects.toMatchObject({code:'conflict'});
- expect((await metadata.inputs.storage()).chargedBytes).toBe(2048);
+ expect((await metadata.namespaceDeletions.delete(org)).state).toBe('tombstoned');
+ await expect(metadata.get({kind:'organization',id:uuid(1),scope:{kind:'installation'}})).rejects.toMatchObject({code:'not_found'});
+ expect((await metadata.inputs.storage()).chargedBytes).toBe(4096);
 });
 it('keeps deletion and create receipts while refusing reuse of removed root/entity identities',async()=>{
  const metadata=await fixture.open();const created=await seed(metadata);await createFolder(metadata,4);
@@ -49,8 +50,9 @@ it('keeps deletion and create receipts while refusing reuse of removed root/enti
  await expect(metadata.namespaceDeletions.delete(prepareNamespaceDeletion({kind:'folder',id:intent.id,request:{scope,requestId:intent.request.requestId,expectedVersion:2}},digest))).rejects.toMatchObject({code:'conflict'});
  await metadata.namespaceDeletions.delete(workspace());
  await expect(metadata.namespaces.execute(command({kind:'createWorkspace',id:uuid(2),rootFolderId:uuid(30),request:{scope:created.workspace.scope,requestId:requestId(),name:'Again'}}))).rejects.toMatchObject({code:'conflict'});
- await expect(metadata.namespaceDeletions.delete(prepareNamespaceDeletion({kind:'organization',id:uuid(1),request:{scope:{kind:'installation'},requestId:requestId(),expectedVersion:1}},digest))).rejects.toMatchObject({code:'conflict'});
- expect((await metadata.inputs.storage()).chargedBytes).toBe(4096);
+ await metadata.namespaceDeletions.delete(prepareNamespaceDeletion({kind:'organization',id:uuid(1),request:{scope:{kind:'installation'},requestId:requestId(),expectedVersion:1}},digest));
+ await expect(metadata.namespaces.execute(command({kind:'createOrganization',id:uuid(1),request:{scope:{kind:'installation'},requestId:requestId(),name:'Again',slug:'again'}}))).rejects.toMatchObject({code:'conflict'});
+ expect((await metadata.inputs.storage()).chargedBytes).toBe(6144);
 });
 
 it('retains original create replay without resurrecting a deleted folder and protects input owners',async()=>{

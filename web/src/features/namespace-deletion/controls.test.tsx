@@ -13,7 +13,7 @@ it('confirms empty-only deletion and retries an unknown outcome with the identic
  });
  mount(api.client);
  const buttons=await screen.findAllByRole('button',{name:'Delete Same organization'});fireEvent.click(buttons[0]!);
- expect(screen.getByText(/Only empty namespaces/)).toBeVisible();
+ expect(screen.getByText(/Delete its workspaces first/)).toBeVisible();
  fireEvent.change(screen.getByLabelText('Confirm deletion of Same organization'),{target:{value:'DELETE'}});
  fireEvent.click(screen.getByRole('button',{name:'Save'}));
  fireEvent.click(await screen.findByRole('button',{name:'Retry identical request'}));

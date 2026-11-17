@@ -38,7 +38,7 @@ it('upgrades3 without changing prior namespace/settings/revision/receipt data an
   const tables = ['organizations', 'workspaces', 'folders', 'settings', 'suites', 'suite_revisions', 'receipts'];
   const before = tables.map(table => db.prepare(`SELECT * FROM ${table}`).all()); db.close(); db = initialize(path);
   expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
-  expect(tables.map(table => db.prepare(`SELECT * FROM ${table}`).all())).toEqual(tables.map((table,index)=>table==='workspaces'?before[index]!.map(row=>({...row,retired:0})):before[index]));
+  expect(tables.map(table => db.prepare(`SELECT * FROM ${table}`).all())).toEqual(tables.map((table,index)=>table==='workspaces'?before[index]!.map(row=>({...row,retired:0})):table==='organizations'?before[index]!.map(row=>({...row,retired:0,retired_slug:null})):before[index]));
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]); db.close(); db = initialize(path);
   expect(db.prepare('SELECT count(*) AS n FROM runs').get()?.n).toBe(0); db.close();
 });

@@ -12,8 +12,8 @@ It disappears from normal workspace lists, organisation aggregates and public
 workspace-scoped access. Its canonical name, root/settings, revisions, history,
 receipts, pins, replay floors and paid storage remain. Retirement frees no bytes.
 A new workspace UUID may reuse its visible name; the retired identity never revives.
-Normal organisation deletion still refuses retained workspace dependencies.
-Logical organisation retirement is outside this correction.
+Organisation deletion refuses while any workspace is active; see organisation
+retirement below once all are retired.
 
 Queued/active/unresolved execution or export work and unfinished input intake
 refuse retirement. Retained output holds/history are paid data, not active work.
@@ -57,6 +57,19 @@ Organisation overview/counts/recent activity exclude retired scope. Parent reten
 discovery skips it. Fresh previews and previously unissued Apply refuse it; exact
 already-applied maintenance originals can finish. Existing progress/ACK/settlement
 reads never depend on the public visibility check.
+
+## Organisation retirement
+
+Status: user-approved (2026-11-17); locally implemented on product/gaps, not qualified.
+Migration 030 adds an irreversible retired flag to organisations. DELETE of an
+organisation whose workspaces are all retired reserves the same 2048-byte marker
+and retires it: rows, settings, receipts and retired workspaces stay. The UNIQUE
+slug column becomes the private key char(1)||id; retired_slug keeps the canonical
+slug for historical reads, so a new organisation may reuse the slug.
+SQL rejects raw retirement, retired-row changes and new workspaces/settings under it.
+Public get/list/overview, org-scoped mutations and every organizationId HTTP route
+hide it; exact organisation DELETE replay keeps its ACK. Historical mode still reads it.
+An organisation that never had a workspace is still removed physically.
 
 ## Verification
 

@@ -1,5 +1,6 @@
 import { namespaceColumns, namespaceIdColumn, captureNamespaceId, captureFolderRow } from './namespace-rows.js';
 import { isHistorical } from './historical.js';
+import { requireVisibleOrganization } from './workspace-retirement/visibility.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { requireRule } from '../../../domain/namespaces/index.js';
 import { folderEntity } from './entities.js';
@@ -52,11 +53,16 @@ export class Reads {
     const scope = query.scope;
     if (query.kind === 'organization')
       return this.db
-        .prepare(`SELECT ${namespaceIdColumn} FROM organizations WHERE id>? ORDER BY organizations.id LIMIT ?`)
+        .prepare(
+          isHistorical(this.db)
+            ? `SELECT ${namespaceIdColumn} FROM organizations WHERE id>? ORDER BY organizations.id LIMIT ?`
+            : `SELECT ${namespaceIdColumn} FROM organizations INDEXED BY organizations_visible WHERE retired=0 AND id>? ORDER BY organizations.id LIMIT ?`,
+        )
         .all(after, query.limit + 1)
         .map(captureNamespaceId);
     requireRule(scope.kind !== 'installation', 'not_found');
     this.entities.organization(scope.organizationId);
+    requireVisibleOrganization(this.db, scope.organizationId);
     if (query.kind === 'workspace')
       return this.db
         .prepare(

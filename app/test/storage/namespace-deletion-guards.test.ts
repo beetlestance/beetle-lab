@@ -49,7 +49,7 @@ it('rejects raw deletion, forged binding, marker edits and recreation of entity/
   const org=command({kind:'createOrganization',id:scope.workspaceId,request:{scope:{kind:'installation'},requestId:requestId(),name:'Alias',slug:'alias'}});
   expect(()=>f.store.execute({kind:'namespace',command:org})).toThrow('deleted namespace identity');
   for(const id of [scope.workspaceId,uuid(3),String(settingsId)]){
-   expect(()=>f.db.prepare('INSERT INTO organizations VALUES(?,1,\'Alias\',\'alias\')').run(id.toUpperCase())).toThrow('deleted namespace identity');
+   expect(()=>f.db.prepare('INSERT INTO organizations(id,version,name,slug) VALUES(?,1,\'Alias\',\'alias\')').run(id.toUpperCase())).toThrow('deleted namespace identity');
   }
   expect(usage(f.db)).toBe(2048);expect(f.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
  }finally{f.db.close();}

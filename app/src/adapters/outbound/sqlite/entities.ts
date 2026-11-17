@@ -26,6 +26,15 @@ export function folderEntity(row: FolderRow, displayPath: string[]): Folder {
   };
 }
 
+/**
+ * A retired organisation's slug column holds the private key char(1)||id (migration 030);
+ * its canonical slug lives in retired_slug. SELECT * keeps older schema fixtures readable.
+ */
+function retiredSlug(db: DatabaseSync, row: Record<string, unknown>): Record<string, unknown> {
+  if (typeof row.slug !== 'string' || !row.slug.startsWith('\u0001')) return row;
+  const retired = db.prepare('SELECT * FROM organizations WHERE id=?').get(row.id as string);
+  return { ...row, slug: retired?.retired_slug };
+}
 export class Entities {
   constructor(private readonly db: DatabaseSync) {}
   organization(id: string): Organization {
@@ -33,7 +42,7 @@ export class Entities {
       .prepare(`SELECT ${namespaceColumns('organization')} FROM organizations WHERE id=?`)
       .get(lower(id));
     requireRule(row !== undefined, 'not_found');
-    return captureOrganization(row, id);
+    return captureOrganization(retiredSlug(this.db, row), id);
   }
   workspace(scope: SettingsScope, id: string): Workspace {
     requireRule(scope.kind === 'organization', 'not_found');

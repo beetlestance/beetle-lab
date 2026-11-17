@@ -129,7 +129,7 @@ it('never publishes another scope when a broken reader mutates request authority
   }
 });
 
-it('retires a workspace with exact replay while retained safety records protect its organisation',async()=>{
+it('retires a workspace with exact replay, then retires its organisation and frees the slug',async()=>{
  const {server,org,workspace}=await setup();const owner=await org('Delete team','delete-team');const project=await workspace(owner.id);
  const url=`/api/v2/organizations/${owner.id}/workspaces/${project.id}`;
  const payload={scope:project.scope,requestId:requestId(),expectedVersion:project.version};
@@ -138,10 +138,14 @@ it('retires a workspace with exact replay while retained safety records protect 
  const first=await server.inject({method:'DELETE',url,headers:auth,payload});expect(first.statusCode).toBe(200);
  const replay=await server.inject({method:'DELETE',url,headers:auth,payload});expect(replay.json()).toEqual(first.json());
  expect((await server.inject({url,headers:auth})).statusCode).toBe(404);
- const removed=await server.inject({method:'DELETE',url:`/api/v2/organizations/${owner.id}`,headers:auth,
-  payload:{scope:{kind:'installation'},requestId:requestId(),expectedVersion:owner.version}});
- expect(removed.statusCode).toBe(409);
- expect((await server.inject({url:`/api/v2/organizations/${owner.id}`,headers:auth})).statusCode).toBe(200);
+ const orgPayload={scope:{kind:'installation'},requestId:requestId(),expectedVersion:owner.version};
+ const removed=await server.inject({method:'DELETE',url:`/api/v2/organizations/${owner.id}`,headers:auth,payload:orgPayload});
+ expect(removed.statusCode).toBe(200);
+ const again=await server.inject({method:'DELETE',url:`/api/v2/organizations/${owner.id}`,headers:auth,payload:orgPayload});
+ expect(again.json()).toEqual(removed.json());
+ expect((await server.inject({url:`/api/v2/organizations/${owner.id}`,headers:auth})).statusCode).toBe(404);
+ expect((await server.inject({url:`/api/v2/organizations/${owner.id}/workspaces?limit=10`,headers:auth})).statusCode).toBe(404);
+ expect((await org('Delete team','delete-team')).slug).toBe('delete-team');
 });
 
 it('recovers a committed DELETE after TCP reply loss and compiled-worker reopen',async()=>{

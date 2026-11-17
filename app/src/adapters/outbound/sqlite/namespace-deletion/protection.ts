@@ -1,4 +1,4 @@
-import { requireRetirableWorkspace } from '../workspace-retirement/visibility.js';
+import { requireRetirableOrganization, requireRetirableWorkspace } from '../workspace-retirement/visibility.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { requireRule } from '../../../../domain/namespaces/index.js';
 type Kind = 'organization' | 'workspace' | 'folder';
@@ -30,6 +30,7 @@ export function namespaceProtectionSql(kind: Kind): string {
 }
 export function requireEmptyNamespace(db: DatabaseSync, kind: Kind, id: string): void {
   if (kind === 'workspace') return requireRetirableWorkspace(db, id);
+  if (kind === 'organization') return requireRetirableOrganization(db, id);
   const row = db
     .prepare(
       `SELECT (${namespaceProtectionSql(kind)}) protected FROM ${namespaceTables[kind]} target WHERE target.id=?`,

@@ -1,3 +1,4 @@
+import { requireVisibleOrganization } from './workspace-retirement/visibility.js';
 import {
   checkedOrganizationOverview,
   checkedOrganizationOverviewQuery,
@@ -96,6 +97,7 @@ export class Overviews {
     }
     const organizationId = query.scope.organizationId.toLowerCase();
     requireRule(!!this.db.prepare('SELECT 1 FROM organizations WHERE id=?').get(organizationId), 'not_found');
+    requireVisibleOrganization(this.db, organizationId);
     return { kind: 'organization' as const, organizationId };
   }
   private counts(args: string[], scopeWhere: string, from: string, to: string): WorkspaceOverview['counts'] {
