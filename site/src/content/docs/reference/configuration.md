@@ -7,10 +7,8 @@ sidebar:
 
 A revision's configuration is one JSON object of up to 1 MiB. Unknown fields are
 refused everywhere. Saving checks the structure; the engine checks the rest, such
-as cross-references, when a run is admitted. Your installation's schemas are in
-the app: **API reference** → **Download k6 configuration schemas**
-(`k6-config.json`). The [source schemas](https://github.com/beetlestance/beetle-lab/tree/5b8e016c372131449d3a5fcf92e3574b1847534c/contracts/engines/k6/v1)
-are on GitHub, pinned to revision `5b8e016c`.
+as cross-references, when a run is admitted. The app's **API reference** offers your installation's schemas as `k6-config.json`; the
+[source](https://github.com/beetlestance/beetle-lab/tree/5b8e016c372131449d3a5fcf92e3574b1847534c/contracts/engines/k6/v1) is pinned to revision `5b8e016c`.
 
 ## Top level
 

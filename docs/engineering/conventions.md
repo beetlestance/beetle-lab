@@ -45,7 +45,10 @@ just to pass. The first rewrite release starts with no unreviewed exceptions.
 Prose must separate words, numeric measurements and units. `check:docs` rejects
 known glued forms outside code, URLs and Markdown destinations. Keep identifiers
 and command examples in inline or fenced code; do not compress context notes into
-unreadable task shorthand.
+unreadable task shorthand. `check:site-docs` applies the same spacing rule to the
+user pages in `site/src/content` (`.md` and `.mdx`), plus a 180-line page limit,
+a `title` and `description` in each page's frontmatter, and no GitHub links on
+`main` or `develop`.
 
 ## Contracts and correctness
 

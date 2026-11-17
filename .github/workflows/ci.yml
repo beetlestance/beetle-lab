@@ -144,6 +144,7 @@ jobs:
       - run: npm run lint
       - run: npm run check:architecture
       - run: npm run check:docs
+      - run: npm run check:site-docs
       - name: Check isolated browser acceptance tooling
         run: |
           npm ci --prefix tools/qualification/browser --ignore-scripts
