@@ -3,7 +3,8 @@
 Status: active. Phases 0–6 delivered on `docs/restructure` (not yet integrated).
 The site in `site/` builds with valid links, is served at `/docs/` by the frontend
 image and is themed from the Penpot "Docs" page (home, guide, concept, reference,
-in-app and phone boards) using the Darkroom tokens. Phase 7 is open. The triage
+in-app and phone boards) using the Darkroom tokens. Phase 7 (quality pass) is done
+except the full image build. A coverage audit of Phase 2 is in progress. The triage
 below is kept as the record of where each former LLD went.
 Decision: [017](../../decisions/017-documentation-structure-and-delivery.md).
 
@@ -29,6 +30,12 @@ its inline scripts. Checked with the nginx config against a local container and 
 headless browser (no CSP violations, search works); the full image build has not
 been run. Diagrams are inline SVG themed by Starlight tokens, with motion removed
 under reduced-motion.
+
+Phases 5–7: concept pages for rules, workspaces, retention and security; guides
+for load shapes, datasets and self-hosting; reference pages for configuration, the
+automation client and the HTTP API (operations read from `http-operations.json`
+at build time); an interactive run walkthrough and load-shape builder; `llms.txt`;
+and a manual GitHub Pages workflow. Each page has a section breadcrumb and a lede.
 
 Phase 2 outcome: 16 contracts in `system/contracts/` (run lifecycle split into
 lifecycle and delivery; UI LLDs became the web UI contract), module map moved to
