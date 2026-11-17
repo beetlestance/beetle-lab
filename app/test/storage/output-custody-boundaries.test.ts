@@ -3,7 +3,12 @@ import { prepareOutputManifest } from '@beetle/contracts/output-source';
 import { fixture, artifact } from './output-custody-fixtures.js';
 import { hash, json } from './output-payload-fixtures.js';
 import { acknowledge, reserveAndMark } from './execution-foundation-fixtures.js';
+import type { DatabaseSync } from 'node:sqlite';
 import { transaction } from '../../src/adapters/outbound/sqlite/schema.js';
+import { OutputCustody } from '../../src/adapters/outbound/sqlite/output-custody/index.js';
+import { outputScanSql } from '../../src/adapters/outbound/sqlite/output-custody/scan.js';
+import { finalizationFixture } from '../output-finalization/fixture.js';
+import { absenceFixture } from '../output-absence/fixture.js';
 it.each(['engine', 'installed', 'intent', 'physical', 'scope'] as const)('refuses validly sealed manifest with wrong original %s', mode => {
   const f = fixture(); const {manifestDigest, ...core} = f.envelope.manifest; void manifestDigest;
   const binding = {...core.binding};
@@ -40,7 +45,18 @@ it('uses indexed finite upper discovery independent of physical release and curs
     .toMatchObject({items: [{kind: 'ready', binding: {key: next}}], nextCursor: null});
   const cursor = JSON.parse(Buffer.from(page.nextCursor, 'base64url').toString()) as {lane: string}; cursor.lane = 'events';
   expect(() => f.outputs.execute({kind: 'outputScan', query: {limit: 1, cursor: Buffer.from(JSON.stringify(cursor)).toString('base64url')}})).toThrow();
-  expect(f.db.prepare(`EXPLAIN QUERY PLAN SELECT attempt_id FROM execution_records INDEXED BY execution_output_pending
-    WHERE acknowledged_generation=1 AND output_pending=1 AND (queue_order,attempt_id)>(0,'') ORDER BY queue_order,attempt_id LIMIT 33`).all()
-    .some(row => String(row.detail).includes('execution_output_pending'))).toBe(true);
+  const plan = (sql: string) => f.db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all()
+    .map(row => String(row.detail));
+  for (const detail of [plan(outputScanSql.last), plan(outputScanSql.page)]) {
+    expect(detail.some(row => /USING (COVERING )?INDEX execution_event_pending\b/.test(row))).toBe(true);
+    expect(detail.some(row => /^SCAN execution_records$/.test(row) || row.includes('TEMP B-TREE'))).toBe(false);
+  }
+});
+it.each(['finalisation', 'absence closure'] as const)('removes the attempt from output discovery after %s', mode => {
+  const scan = (db: DatabaseSync) => new OutputCustody(db, 'synthetic-installation').execute({kind: 'outputScan', query: {limit: 32}});
+  const f = mode === 'finalisation' ? finalizationFixture() : absenceFixture(); f.ready();
+  expect(scan(f.db)).toMatchObject({items: [{kind: 'ready', binding: f.binding}], nextCursor: null});
+  expect(f.finalize()).toMatchObject({kind: 'finalized'});
+  expect(f.db.prepare('SELECT event_pending FROM execution_records').get()).toEqual({event_pending: 0});
+  expect(scan(f.db)).toEqual({items: [], nextCursor: null});
 });

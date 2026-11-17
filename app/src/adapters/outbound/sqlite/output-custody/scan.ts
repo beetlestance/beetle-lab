@@ -15,6 +15,14 @@ interface Cursor {
 }
 const condition = 'acknowledged_generation=1 AND event_pending=1';
 const columns = 'queue_order,attempt_id,run_id,organization_id,workspace_id,intent_digest,journal_authority';
+/** The exact prepared discovery statements; exported so tests can inspect their query plans. */
+export const outputScanSql = Object.freeze({
+  last: `SELECT queue_order,attempt_id FROM execution_records INDEXED BY execution_event_pending
+    WHERE ${condition} ORDER BY queue_order DESC,attempt_id DESC LIMIT 1`,
+  page: `SELECT ${columns} FROM execution_records INDEXED BY execution_event_pending
+    WHERE ${condition} AND (queue_order,attempt_id)>(?,?) AND (queue_order,attempt_id)<=(?,?)
+    ORDER BY queue_order,attempt_id LIMIT ?`,
+});
 function encode(value: Cursor): string {
   const result = Buffer.from(JSON.stringify({ lane: 'outputs', ...value })).toString('base64url');
   cursor(result);
@@ -56,23 +64,12 @@ function rowPosition(row: Record<string, SQLOutputValue>): Position {
 }
 export function scanOutputs(db: DatabaseSync, installation: string, query: EventScan): EventPage {
   scanQuery(query);
-  const last = db
-    .prepare(
-      `SELECT queue_order,attempt_id FROM execution_records INDEXED BY execution_event_pending
-    WHERE ${condition} ORDER BY queue_order DESC,attempt_id DESC LIMIT 1`,
-    )
-    .get();
+  const last = db.prepare(outputScanSql.last).get();
   const state: Cursor =
     query.cursor === undefined
       ? { installation, upper: last ? rowPosition(last) : [0, ''], after: [0, ''] }
       : decode(query.cursor, installation);
-  const rows = db
-    .prepare(
-      `SELECT ${columns} FROM execution_records INDEXED BY execution_event_pending
-    WHERE ${condition} AND (queue_order,attempt_id)>(?,?) AND (queue_order,attempt_id)<=(?,?)
-    ORDER BY queue_order,attempt_id LIMIT ?`,
-    )
-    .all(...state.after, ...state.upper, query.limit + 1);
+  const rows = db.prepare(outputScanSql.page).all(...state.after, ...state.upper, query.limit + 1);
   const items = rows.slice(0, query.limit).map((row) => {
     const at = rowPosition(row);
     const key = captureEventKey({
