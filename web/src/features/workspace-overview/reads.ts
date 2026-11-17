@@ -2,9 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 
-/** Installation status has no shared key yet (wave 0); scoped to the installation, never to a workspace. */
-export const installationStatusKey = ['installation', 'status'] as const;
-
 export function useWorkspaceOverview(organizationId: string, workspaceId: string) {
   const api = useApi();
   return useQuery({
@@ -52,7 +49,7 @@ export function usePublishedInputs(organizationId: string, workspaceId: string):
 export function useInstallationStatus() {
   const api = useApi();
   return useQuery({
-    queryKey: installationStatusKey,
+    queryKey: queryKeys.installationStatus,
     queryFn: ({ signal }) => readResult(api.getInstallationStatus({ signal })),
   });
 }

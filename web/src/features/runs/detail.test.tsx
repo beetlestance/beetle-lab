@@ -22,11 +22,11 @@ it.each(['finished', 'cancelled', 'errored'] as const)('stops polling on %s and 
     reason: state === 'finished' ? null : state === 'cancelled' ? 'cancelled' : 'execution_lost', cancellationRequested: state === 'cancelled' };
   const fixture = testClient(request => json(request.path.endsWith('/result') ? resultSnapshot(terminal) : terminal)); const view = mount(fixture.client, path);
   await screen.findByText(/No engine result was published, so thresholds are unavailable/);
-  // Run, result, own summary row, suite, revision and session: each read once, none polls.
+  // Run, result, own summary row, suite and revision: each read once, none polls; no session read.
   const reads = () => fixture.records.filter(record => !record.path.includes('/events?') && !record.path.includes('/artifacts?') && !record.path.includes('/metrics?'));
-  await waitFor(() => expect(reads()).toHaveLength(6));
+  await waitFor(() => expect(reads()).toHaveLength(5));
   await act(() => vi.advanceTimersByTimeAsync(6000));
-  expect(reads()).toHaveLength(6); view.unmount();
+  expect(reads()).toHaveLength(5); expect(fixture.records.some(record => record.path.endsWith('/auth/session'))).toBe(false); view.unmount();
 });
 it('polls nonterminal detail at two seconds then stops on the actual terminal result', async () => {
   vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });

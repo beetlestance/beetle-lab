@@ -12,6 +12,7 @@ feature's `CONTEXT.md`; the stack choice is [decision 019](../../decisions/019-f
 | Routes and route builders | `web/src/app/routes.ts`, the only source of in-app URLs |
 | Server state | One TanStack Query client; keys from `web/src/app/queries.ts`, nested organisation → workspace → run → attempt |
 | API access | The generated client from `contracts/`; no hand-written DTOs, no second client factory |
+| Session access | The session gate's one verified read, passed down as `SessionContext` (`web/src/app/session.tsx`: read-only and restored backup); features never read the session |
 | Input bytes | One byte client per paired session (`InputTransferContext`); see [inputs](inputs.md) |
 | Drafts, chart and form state | The feature that renders them; never in the query cache or browser storage |
 | Visual tokens and motion | `web/src/styles/tokens.css` (Darkroom and Scarab skins, bundled fonts, reduced-motion policy) and the primitives in `web/src/components/`; features add no palette or fonts |
@@ -109,7 +110,9 @@ and never resets an editor draft.
 ## Editors
 
 The suite form and JSON views share one lossless draft; switching never drops
-unknown fields. Invalid JSON stays editable but blocks conversion and saving. A
+unknown fields. The suite page tab, editor view (form, Run setup, JSON) and open
+request are URL state built by `routes.suitePage`, so deep links and back/forward
+switch views without touching the draft. Invalid JSON stays editable but blocks conversion and saving. A
 failed save keeps the draft; an unknown outcome offers replay of the identical
 request; a stale version offers a reload and never overwrites the newer revision.
 
@@ -141,8 +144,8 @@ filters keeps the suite context; an explicit workspace-history link clears it.
 
 | Code | Reviewed |
 | --- | --- |
-| `web/src/app/routes.ts` | `53e5232400d5` |
-| `web/src/app/queries.ts` | `6d93596abdd5` |
+| `web/src/app/routes.ts` | `28d257eb0f11` |
+| `web/src/app/queries.ts` | `31296c59bb64` |
 | `web/src/features/runs/timeline/read.ts` | `cbd57b66d9b4` |
 | `web/src/features/runs/timeline/projection.ts` | `e7e83db9f347` |
 | `web/src/features/command-search/model.ts` | `6d1867832757` |

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { EngineResult } from '@beetle/contracts';
 import type { Run } from '@beetle/contracts/api';
 import { Banner } from '../../../components/Banner.js';
+import { useSessionAccess } from '../../../app/session.js';
 import { Button } from '../../../components/Button.js';
 import { formatTime } from '../../run-results/format.js';
 import { RunMetrics } from '../metrics/index.js';
@@ -45,8 +46,7 @@ const sections = [
 function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | undefined }) {
   const reads = useResultReads(run);
   const [deleting, setDeleting] = useState(false);
-  const readOnly = reads.session?.readOnly ?? false;
-  const restored = reads.session?.restoredBackup ?? null;
+  const { readOnly, restoredBackup: restored } = useSessionAccess();
   const view = reads.result.view;
   const engine = view.status === 'ready' ? view.result : null;
   const { title, sentence } = headline(run, reads.suite?.name, reads.summary, engine);

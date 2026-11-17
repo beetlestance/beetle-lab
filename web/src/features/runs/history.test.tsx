@@ -26,6 +26,7 @@ it('pages opaque cursors with a 100 item bound and one suite-name read, no per-r
   expect(screen.getByText('Baseline')).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: 'Older' }));
   await screen.findByText('No more runs.');
+  expect(screen.getByRole('navigation', { name: 'Run pages' })).toHaveTextContent('Page 2');
   expect(fixture.records.filter(r => r.path.includes('/runs?'))[1]?.path).toContain('limit=100&cursor=' + cursor);
   fireEvent.click(screen.getByRole('button', { name: 'Newer' }));
   await runLink();

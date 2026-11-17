@@ -3,6 +3,8 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { Route, Routes, useParams, useLocation } from 'react-router-dom';
 import type { ApiClient, InputTransferClient } from '@beetle/contracts/api';
 import { ApiContext, InputTransferContext } from './api.js';
+import { SessionContext, writableSession } from './session.js';
+import type { SessionAccess } from './session.js';
 import { createQueryClient } from './queries.js';
 import { routes, validId } from './routes.js';
 import { EditorProvider } from '../components/Editor.js';
@@ -34,28 +36,38 @@ const Reference = lazy(() =>
 );
 
 /** Router is supplied by the host: BrowserRouter in production, MemoryRouter in tests. */
-export function App({ apiClient, inputTransfers }: { apiClient: ApiClient; inputTransfers?: InputTransferClient }) {
+export function App({
+  apiClient,
+  inputTransfers,
+  session = writableSession,
+}: {
+  apiClient: ApiClient;
+  inputTransfers?: InputTransferClient;
+  session?: SessionAccess | undefined;
+}) {
   const [client] = useState(createQueryClient);
   const commands = useCommandNavigation();
   const location = useLocation();
   return (
     <ApiContext.Provider value={apiClient}>
-      <InputTransferContext.Provider value={inputTransfers ?? null}>
-        <QueryClientProvider client={client}>
-          <div inert={commands.visible} aria-hidden={commands.visible || undefined}>
-            <ToastProvider>
-              <AppShell onSearch={commands.show}>
-                <EditorProvider>
-                  <Suspense fallback={<LoadingState label="Loading view…" />}>
-                    <AppRoutes />
-                  </Suspense>
-                </EditorProvider>
-              </AppShell>
-            </ToastProvider>
-          </div>
-          {commands.visible && <CommandPalette pathname={location.pathname} close={commands.close} />}
-        </QueryClientProvider>
-      </InputTransferContext.Provider>
+      <SessionContext.Provider value={session}>
+        <InputTransferContext.Provider value={inputTransfers ?? null}>
+          <QueryClientProvider client={client}>
+            <div inert={commands.visible} aria-hidden={commands.visible || undefined}>
+              <ToastProvider>
+                <AppShell onSearch={commands.show}>
+                  <EditorProvider>
+                    <Suspense fallback={<LoadingState label="Loading view…" />}>
+                      <AppRoutes />
+                    </Suspense>
+                  </EditorProvider>
+                </AppShell>
+              </ToastProvider>
+            </div>
+            {commands.visible && <CommandPalette pathname={location.pathname} close={commands.close} />}
+          </QueryClientProvider>
+        </InputTransferContext.Provider>
+      </SessionContext.Provider>
     </ApiContext.Provider>
   );
 }

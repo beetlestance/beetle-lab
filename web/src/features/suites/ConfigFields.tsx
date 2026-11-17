@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { SUITE_MAXIMUM_CONFIG_BYTES } from '@beetle/contracts/api';
+import type { SuiteEditorView } from '../../app/routes.js';
 import { SegmentedFilter } from '../../components/SegmentedFilter.js';
 import type { InputCatalog } from '../suite-editor/fields.js';
 import { AboutSection, LoadSection } from '../suite-editor/LoadSection.js';
 import { DatasetsSection, ThresholdsSection } from '../suite-editor/PassAndData.js';
+import { requestIndex, requestKey } from '../suite-editor/model.js';
 import { fieldId } from '../suite-editor/problems.js';
 import { RequestDetail } from '../suite-editor/RequestDetail.js';
 import { RequestsSection } from '../suite-editor/RequestsSection.js';
@@ -11,8 +13,8 @@ import { RunSetup } from '../suite-editor/RunSetup.js';
 import { formatDraft, parseDraft } from './draft.js';
 import type { Config } from './draft.js';
 
-export type EditorMode = 'form' | 'setup' | 'json';
-export type EditorView = { mode: EditorMode; request: number | null };
+/** The editor view as the URL holds it: `request` is a routes.suitePage request key. */
+export type EditorView = { mode: SuiteEditorView; request: string | null };
 
 type ConfigFieldsProps = {
   text: string;
@@ -42,13 +44,14 @@ type BodyProps = {
 
 /** The structured views: Run setup, one request, or every form section. */
 function StructuredView({ config, set, inputs, view, setView }: BodyProps) {
-  if (view.mode === 'setup') return <RunSetup config={config} set={set} />;
-  if (view.request !== null)
+  if (view.mode === 'run-setup') return <RunSetup config={config} set={set} />;
+  const request = requestIndex(config, view.request);
+  if (request !== null)
     return (
       <RequestDetail
         config={config}
         set={set}
-        index={view.request}
+        index={request}
         inputs={inputs}
         close={() => setView({ mode: 'form', request: null })}
       />
@@ -56,14 +59,14 @@ function StructuredView({ config, set, inputs, view, setView }: BodyProps) {
   return (
     <>
       <AboutSection config={config} set={set} />
-      <LoadSection config={config} set={set} openSetup={() => setView({ mode: 'setup', request: null })} />
+      <LoadSection config={config} set={set} openSetup={() => setView({ mode: 'run-setup', request: null })} />
       <RequestsSection
         config={config}
         set={set}
         inputs={inputs}
         open={(request, addCheck) => {
           if (addCheck) addBlankCheck(config, request, set);
-          setView({ mode: 'form', request });
+          setView({ mode: 'form', request: requestKey(config, request) });
         }}
       />
       <ThresholdsSection config={config} set={set} />
@@ -100,13 +103,13 @@ export function ConfigFields({ text, change, disabled, validity, inputs, view, s
   const structured = disabled || !!problem;
   return (
     <div className="suite-config">
-      <SegmentedFilter<EditorMode>
+      <SegmentedFilter<SuiteEditorView>
         label="Configuration editor mode"
         value={view.mode}
         onChange={(mode) => setView({ mode, request: null })}
         options={[
           { value: 'form', label: 'Form editor', disabled: structured },
-          { value: 'setup', label: 'Run setup', disabled: structured },
+          { value: 'run-setup', label: 'Run setup', disabled: structured },
           { value: 'json', label: 'Complete configuration JSON', disabled },
         ]}
       />

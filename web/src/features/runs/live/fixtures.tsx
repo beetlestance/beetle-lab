@@ -4,6 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 import type { LiveMetricSnapshot, Run, Suite, SuiteRevision } from '@beetle/contracts/api';
 import { ApiContext } from '../../../app/api.js';
 import { createQueryClient } from '../../../app/queries.js';
+import { SessionContext, writableSession } from '../../../app/session.js';
+import type { SessionAccess } from '../../../app/session.js';
 import { ids, json, testClient } from '../../../app/test-fixtures.js';
 import type { RequestRecord } from '../../../app/test-fixtures.js';
 import { frame as baseFrame, latest } from '../live-metrics/fixtures.js';
@@ -209,8 +211,6 @@ export function routesFor(current: () => Run, extra?: (request: RequestRecord) =
       const summary = revisionSummary();
       return json({ scope: summary.scope, suiteId, items: [summary], nextCursor: null });
     }
-    if (request.path.endsWith('/auth/session'))
-      return json({ scope: 'local-admin', expiresAt: '2026-11-20T12:00:00.000Z', csrfToken: 'B'.repeat(43) });
     if (request.path.includes('/events?')) return json(emptyEvents(current()));
     throw new Error(`Unexpected synthetic route ${request.path}`);
   });
@@ -219,14 +219,17 @@ export function routesFor(current: () => Run, extra?: (request: RequestRecord) =
 export function mountLive(
   client: ReturnType<typeof testClient>['client'],
   props: Partial<LiveRunViewProps> & { run: Run },
+  session: SessionAccess = writableSession,
 ) {
   const queryClient = createQueryClient();
   const ui = (next: Partial<LiveRunViewProps> & { run: Run }) => (
     <MemoryRouter>
       <ApiContext.Provider value={client}>
-        <QueryClientProvider client={queryClient}>
-          <LiveRunView scope={next.run.scope} runId={next.run.id} showResult={() => undefined} {...next} />
-        </QueryClientProvider>
+        <SessionContext.Provider value={session}>
+          <QueryClientProvider client={queryClient}>
+            <LiveRunView scope={next.run.scope} runId={next.run.id} showResult={() => undefined} {...next} />
+          </QueryClientProvider>
+        </SessionContext.Provider>
       </ApiContext.Provider>
     </MemoryRouter>
   );

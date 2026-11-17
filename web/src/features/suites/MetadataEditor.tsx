@@ -22,7 +22,7 @@ function useSuiteWrite(workspace: Workspace, suite: Suite | undefined, close: ()
     await client.invalidateQueries({ queryKey: queryKeys.suites(params.organizationId, params.workspaceId) });
     await client.invalidateQueries({ queryKey: queryKeys.folders(params.organizationId, params.workspaceId) });
     if (created.current)
-      void navigate(`${routes.suite(params.organizationId, params.workspaceId, created.current.id)}?tab=edit`);
+      void navigate(routes.suitePage(params.organizationId, params.workspaceId, created.current.id, { tab: 'edit' }));
     else close();
   };
   const write = useWrite<CreateSuiteRequest | PatchSuiteRequest>(async (body, signal) => {

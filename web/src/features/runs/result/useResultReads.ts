@@ -8,8 +8,8 @@ import { resultView } from '../../run-results/index.js';
 /**
  * Bounded reads for one terminal run, each under the scoped run key so leaving the
  * run removes them: engine result, the run's own history summary (one listRuns row
- * by exact ID), suite and saved revision (names and 031 stamps), and the browser
- * session (restored-history flag). None polls; the run is terminal.
+ * by exact ID), and suite and saved revision (names and 031 stamps). Session access
+ * comes from SessionContext. None polls; the run is terminal.
  */
 export function useResultReads(run: Run) {
   const api = useApi();
@@ -40,13 +40,9 @@ export function useResultReads(run: Run) {
     queryFn: ({ signal }) =>
       readResult(api.getSuiteRevision({ params: { ...params, revisionId: run.revisionId }, signal })),
   });
-  const session = useQuery({
-    queryKey: [...key, 'session'],
-    queryFn: ({ signal }) => readResult(api.getBrowserSession({ signal })),
-  });
   useEffect(
     () => () => {
-      for (const part of ['result', 'summary', 'suite', 'revision', 'session']) {
+      for (const part of ['result', 'summary', 'suite', 'revision']) {
         const queryKey = [...queryKeys.run(organizationId, workspaceId, run.id), part];
         void client.cancelQueries({ queryKey });
         client.removeQueries({ queryKey });
@@ -65,7 +61,6 @@ export function useResultReads(run: Run) {
     suite: suite.data,
     revision: revision.data,
     revisionQuery: revision,
-    session: session.data,
   } as const;
 }
 export type ResultReads = ReturnType<typeof useResultReads>;

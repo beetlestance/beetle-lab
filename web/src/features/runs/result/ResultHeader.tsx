@@ -129,7 +129,7 @@ function PinControl({ run }: { run: Run }) {
       {pin.reason === 'pin_limit' ? (
         <p role="alert" className="result-inline-error">
           256 runs are pinned in this workspace. Unpin one to pin this run.{' '}
-          <Link to={`${routes.runs(organizationId, workspaceId)}?pinned=true`}>See pinned runs</Link>
+          <Link to={routes.pinnedRuns(organizationId, workspaceId)}>See pinned runs</Link>
         </p>
       ) : pin.reason === 'cleanup_in_progress' ? (
         <p role="alert" className="result-inline-error">

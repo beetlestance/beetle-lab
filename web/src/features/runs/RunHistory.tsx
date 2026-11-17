@@ -9,7 +9,7 @@ import { routes } from '../../app/routes.js';
 import { Button, buttonClass } from '../../components/Button.js';
 import { QueryState } from '../../components/QueryState.js';
 import { EmptyState, LoadingState } from '../../components/States.js';
-import { usePage } from '../../components/Pagination.js';
+import { Pagination, usePage } from '../../components/Pagination.js';
 import { HistoryFilters, filtersActive } from './HistoryFilters.js';
 import type { HistoryFilter } from './HistoryFilters.js';
 import { HistoryTable } from './HistoryTable.js';
@@ -113,7 +113,9 @@ function HistoryPage({
                 caption={filtered ? 'Matching runs' : 'Workspace runs'}
               />
               {data.items.length === 0 && <p className="history-cell-note">No more runs.</p>}
-              <HistoryPager page={page} next={data.nextCursor} order={filters.order ?? 'newest'} />
+              {(page.hasBack || data.nextCursor) && (
+                <Pagination page={page} next={data.nextCursor} order={filters.order ?? 'newest'} label="Run pages" />
+              )}
             </>
           )
         }
@@ -194,34 +196,6 @@ function HistoryEmpty({ scope, filtered, reset }: { scope: RunScope; filtered: b
     </EmptyState>
   );
 }
-function HistoryPager({
-  page,
-  next,
-  order,
-}: {
-  page: ReturnType<typeof usePage>;
-  next: string | null;
-  order: 'newest' | 'oldest';
-}) {
-  if (!page.hasBack && !next) return null;
-  const [back, forward] = order === 'newest' ? ['Newer', 'Older'] : ['Older', 'Newer'];
-  return (
-    <nav className="history-pager" aria-label="Run pages">
-      <Button size="sm" disabled={!page.hasBack} onClick={page.back}>
-        {back}
-      </Button>
-      <Button
-        size="sm"
-        disabled={!next}
-        onClick={() => {
-          if (next) page.next(next);
-        }}
-      >
-        {forward}
-      </Button>
-    </nav>
-  );
-}
 
 function useHistoryPage(scope: RunScope, filters: HistoryFilter) {
   const api = useApi();
@@ -244,12 +218,8 @@ function useHistoryPage(scope: RunScope, filters: HistoryFilter) {
   const page = usePage(key);
   const applied = { ...page.query, ...filters };
   const query = useQuery({
-    // queryKeys.runsPage predates the pinned filter; only pinned pages get a suffix, so
-    // the unfiltered first page keeps the exact key command search shares.
-    queryKey: [
-      ...queryKeys.runsPage(scope.organizationId, scope.workspaceId, page.cursor, applied),
-      ...(applied.pinned ? ['pinned'] : []),
-    ],
+    // The unfiltered first page is the exact key command search and the overview share.
+    queryKey: queryKeys.runsPage(scope.organizationId, scope.workspaceId, page.cursor, applied),
     queryFn: ({ signal }) => readResult(api.listRuns({ params: scope, query: applied, signal })),
   });
   function refresh() {

@@ -4,21 +4,21 @@ import { routes } from '../../../app/routes.js';
 import { Badge } from '../../../components/Badge.js';
 import { Banner } from '../../../components/Banner.js';
 import { Dialog } from '../../../components/Dialog.js';
-import { useAttribution, useRestoredBackup, useRevisions } from './data.js';
+import { useSessionAccess } from '../../../app/session.js';
+import { useAttribution, useRevisions } from './data.js';
 import type { PlanRequest } from './plan.js';
 import { dateTime, ms, span } from './format.js';
 
 /** Read-only banner for a browser session opened on a restored backup. */
 export function RestoredBanner() {
-  const query = useRestoredBackup();
-  const session = query.data;
-  if (!session?.readOnly) return null;
+  const session = useSessionAccess();
+  const createdAt = session.restoredBackup?.createdAt ?? null;
+  if (!session.readOnly) return null;
   return (
     <Banner tone="history" live={false} title="Restored history">
-      {session.createdAt ? (
+      {createdAt ? (
         <>
-          Read-only view of the restored backup from{' '}
-          <time dateTime={session.createdAt}>{dateTime(session.createdAt)}</time>.
+          Read-only view of the restored backup from <time dateTime={createdAt}>{dateTime(createdAt)}</time>.
         </>
       ) : (
         'Read-only view of restored history.'

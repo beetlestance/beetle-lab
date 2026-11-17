@@ -2,12 +2,15 @@
 import '@testing-library/jest-dom/vitest';
 import { useState } from 'react';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
+import { createQueryClient } from '../app/queries.js';
 import { afterEach, expect, it, vi } from 'vitest';
 import { Button } from './Button.js';
 import { Dialog } from './Dialog.js';
 import { Checkbox, Select, TextInput } from './Fields.js';
 import { NotFound } from './NotFound.js';
+import { Pagination, usePage } from './Pagination.js';
 import { SegmentedFilter } from './SegmentedFilter.js';
 import { Table, Td } from './Table.js';
 import { Tabs } from './Tabs.js';
@@ -143,4 +146,42 @@ it('right-aligns numeric cells and renders not-found copy with its back link', (
   expect(screen.getByRole('cell', { name: '323 ms' })).toHaveClass('numeric');
   expect(screen.getByRole('heading', { name: "That run isn't here" })).toBeVisible();
   expect(screen.getByRole('link', { name: 'Back to runs' })).toHaveAttribute('href', '/runs');
+});
+
+function Pager({ order }: { order?: 'newest' | 'oldest' | undefined }) {
+  const page = usePage(['pager-test']);
+  return <Pagination page={page} next={`cursor-${page.position}`} order={order} />;
+}
+function mountPager(order?: 'newest' | 'oldest') {
+  return render(
+    <QueryClientProvider client={createQueryClient()}>
+      <Pager order={order} />
+    </QueryClientProvider>,
+  );
+}
+
+it('labels time-ordered pages Newer/Older in list order and shows the page position', () => {
+  mountPager('newest');
+  const pages = screen.getByRole('navigation', { name: 'Pages' });
+  expect(pages).toHaveTextContent('Page 1');
+  expect(screen.getByRole('button', { name: 'Newer' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Older' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Older' }));
+  expect(pages).toHaveTextContent('Page 3');
+  fireEvent.click(screen.getByRole('button', { name: 'Newer' }));
+  expect(pages).toHaveTextContent('Page 2');
+  cleanup();
+  mountPager('oldest');
+  expect(screen.getByRole('button', { name: 'Older' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Newer' }));
+  expect(screen.getByRole('navigation', { name: 'Pages' })).toHaveTextContent('Page 2');
+});
+
+it('keeps Back/Next for identifier-ordered lists and stops at the retained history', () => {
+  mountPager();
+  for (let index = 0; index < 25; index++) fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  expect(screen.getByRole('navigation', { name: 'Pages' })).toHaveTextContent('Page 26');
+  for (let index = 0; index < 20; index++) fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+  expect(screen.getByRole('navigation', { name: 'Pages' })).toHaveTextContent('Page 6');
+  expect(screen.getByRole('button', { name: 'Back' })).toBeDisabled();
 });

@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, it } from 'vitest';
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import type { InputRecord, Suite, SuiteRevision } from '@beetle/contracts/api';
 import { ids, json, mount, readNamespace, testClient } from '../../app/test-fixtures.js';
 import type { RequestRecord } from '../../app/test-fixtures.js';
+import { App } from '../../app/App.js';
 import { routes } from '../../app/routes.js';
 import { parseDraft, starter } from '../suites/draft.js';
 
@@ -129,4 +131,53 @@ it('discards edits back to the saved revision', async () => {
   fireEvent.click(discard);
   expect(target).toHaveValue('http://target.invalid');
   expect(discard).toBeDisabled();
+});
+
+function HistoryDriver() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  return (
+    <div>
+      <output aria-label="Current search">{location.search}</output>
+      <button onClick={() => void navigate(-1)}>History back</button>
+      <button onClick={() => void navigate(1)}>History forward</button>
+    </div>
+  );
+}
+function mountAt(initial: string) {
+  render(
+    <MemoryRouter initialEntries={[initial]}>
+      <HistoryDriver />
+      <App apiClient={testClient(reader()).client} />
+    </MemoryRouter>,
+  );
+}
+const search = () => screen.getByRole('status', { name: 'Current search' }).textContent;
+
+it('opens the request and Run setup views from deep links', async () => {
+  mountAt(routes.suitePage(ids.a, ids.workspace, suiteId, { tab: 'edit', view: 'form', request: 'get' }));
+  expect(await screen.findByRole('heading', { name: 'Request 1: Get' })).toBeInTheDocument();
+  cleanup();
+  mountAt(routes.suitePage(ids.a, ids.workspace, suiteId, { tab: 'edit', view: 'run-setup' }));
+  expect(await screen.findByRole('checkbox', { name: 'Wait until the target answers before starting load' })).toBeInTheDocument();
+});
+
+it('writes the editor view to the URL so back and forward move between views', async () => {
+  mountAt(path);
+  fireEvent.click(await screen.findByRole('button', { name: 'Add check to request 1' }));
+  await screen.findByRole('heading', { name: 'Request 1: Get' });
+  expect(search()).toBe('?tab=edit&request=get');
+  fireEvent.click(screen.getByRole('radio', { name: 'Run setup' }));
+  await screen.findByRole('checkbox', { name: 'Wait until the target answers before starting load' });
+  expect(search()).toBe('?tab=edit&view=run-setup');
+  openJson();
+  expect(search()).toBe('?tab=edit&view=json');
+  fireEvent.click(screen.getByRole('button', { name: 'History back' }));
+  expect(await screen.findByRole('checkbox', { name: 'Wait until the target answers before starting load' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'History back' }));
+  expect(await screen.findByRole('heading', { name: 'Request 1: Get' })).toBeInTheDocument();
+  // The check added before navigating is still in the draft.
+  expect(screen.getByRole('textbox', { name: 'Check 1 value' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'History forward' }));
+  expect(await screen.findByRole('checkbox', { name: 'Wait until the target answers before starting load' })).toBeInTheDocument();
 });
