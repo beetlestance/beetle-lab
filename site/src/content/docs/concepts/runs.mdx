@@ -5,6 +5,8 @@ sidebar:
   order: 2
 ---
 
+import RunReplay from '../../../components/RunReplay.astro';
+
 A **run** is one execution of one suite revision with one budget. It has a
 **state** (where it is), an **outcome** (what it proved) and a **validation
 status** (whether the engine accepted its configuration).
@@ -29,6 +31,14 @@ status** (whether the engine accepted its configuration).
 The last three are terminal: a run never leaves them. Everything else carries
 the outcome `pending`. A run can also be cancelled or error before it reaches
 `finalizing`.
+
+## Replay a run
+
+Step through a few sample runs to see how the run's state follows the agent's
+attempt, when the budget is reserved and released, and how the first stop cause
+decides how a run ends.
+
+<RunReplay />
 
 ## Outcomes
 
