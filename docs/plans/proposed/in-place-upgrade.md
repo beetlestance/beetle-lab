@@ -79,14 +79,14 @@ Release N declares exactly one predecessor release and its schema versions
 
 | State | Shows |
 | --- | --- |
-| Preflight | Current release and schema; the path rule (N−1 only); backup size estimate against free space; count of nonterminal runs, exports and cleanup items; "Prepare upgrade" |
+| Preflight | Current release and schema; the path rule (the next release only; the app does not know its number); backup size estimate against free space; count of nonterminal runs, exports and cleanup items; "Prepare upgrade" |
 | Blocked | Preflight found work in an unknown state, or not enough space; each blocker named with a link |
 | Draining | Admission closed banner on every page; live counts falling to zero; "Cancel upgrade" |
 | Ready | Drained; the exact host command to copy; admission stays closed |
-| Upgrading | Backend unreachable during an announced upgrade; the browser waits and polls |
+| Upgrading | Backend unreachable during an announced upgrade; the browser polls every 5 s and after 10 minutes says "Still offline" and names `setup upgrade status` |
 | Success | From → to, backup location, "Admission reopened" |
 | Reverted | Previous release restored, cause, admission reopened |
-| Recovery required | Shown by the host tool, and by the browser if it was open: backup path and the two recovery options |
+| Recovery required | Shown by the host tool only (no release can serve): failed step, backup path and the two recovery options |
 
 ## Evidence
 
