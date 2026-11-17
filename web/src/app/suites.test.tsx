@@ -11,7 +11,8 @@ afterEach(cleanup);
 const scope = { kind: 'workspace' as const, organizationId: ids.a, workspaceId: ids.workspace };
 const suiteId = '11111111-1111-4111-8111-111111111111';
 const revisionId = '22222222-2222-4222-8222-222222222222';
-const path = routes.suite(ids.a, ids.workspace, suiteId);
+// The editor lives on the suite's Edit tab (package B owns the tabs).
+const path = `${routes.suite(ids.a, ids.workspace, suiteId)}?tab=edit`;
 function suite(version = 1): Suite {
   return { id: suiteId, scope, name: 'Checkout', version, folderId: ids.root, currentRevisionId: null };
 }
@@ -44,17 +45,21 @@ describe('suite draft boundaries', () => {
     expect(() => draftText({ x: 'x'.repeat(1048576) })).toThrow();
   });
 });
-it('creates with the actual scoped root and supports paged folder selection without submitting', async () => {
+it('creates a k6 suite in the actual scoped root through the engine picker and opens its Edit tab', async () => {
   const fixture = testClient(request => request.method === 'POST' ? json(suite(), 201) : read(request));
   mount(fixture.client, routes.suites(ids.a, ids.workspace));
-  fireEvent.click(await screen.findByRole('button', { name: 'Create suite' }));
-  const name = screen.getByRole('textbox', { name: 'Suite name' });
+  fireEvent.click(await screen.findByRole('button', { name: 'New suite' }));
+  expect(screen.getByRole('dialog', { name: 'What should this suite run?' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Choose k6 load tests' }));
+  const name = await screen.findByRole('textbox', { name: 'Suite name' });
   await waitFor(() => expect(document.activeElement).toBe(name));
   fireEvent.change(name, { target: { value: 'Checkout' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Save suite' }));
-  await screen.findByText(/^Saved\.$/);
+  fireEvent.click(screen.getByRole('button', { name: 'Create suite' }));
+  await screen.findByText('Suite version 1');
   const body = fixture.records.find(record => record.method === 'POST')?.body;
   expect(body).toMatchObject({ name: 'Checkout', folderId: ids.root, scope });
+  expect(body).not.toHaveProperty('description');
+  expect(screen.getByRole('tab', { name: 'Edit' })).toHaveAttribute('aria-selected', 'true');
 });
 it('keeps invalid JSON editable and blocks form conversion and saving it', async () => {
   const fixture = testClient(read); mount(fixture.client, path);
@@ -128,12 +133,15 @@ it('appends history and reads an older immutable revision without writing a poin
     if (request.path.endsWith(`/revisions/${revisionId}`)) return json(older);
     return read(request);
   });
-  mount(fixture.client, path);
-  fireEvent.click(await screen.findByRole('button', { name: 'View revision 1' }));
-  const saved = await screen.findByRole('textbox', { name: 'Saved configuration JSON' });
-  expect(JSON.parse((saved as HTMLTextAreaElement).value)).toEqual(older.config);
+  mount(fixture.client, `${routes.suite(ids.a, ids.workspace, suiteId)}?tab=revisions`);
+  expect(await screen.findByRole('tab', { name: 'Revisions (2)' })).toHaveAttribute('aria-selected', 'true');
+  fireEvent.click(await screen.findByRole('button', { name: 'Changes from revision 1' }));
+  const changes = await screen.findByRole('list', { name: 'Changes in revision 2' });
+  expect(changes).toHaveTextContent('target: http://target.invalid to http://new.invalid');
+  expect(screen.getAllByRole('link', { name: 'View script' })[0]).toHaveAttribute('href', routes.suiteScript(ids.a, ids.workspace, suiteId, newerId));
   expect(fixture.records.every(record => record.method === 'GET')).toBe(true);
-  fireEvent.click(screen.getByRole('button', { name: 'JSON editor' }));
+  fireEvent.click(screen.getByRole('tab', { name: 'Edit' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'JSON editor' }));
   expect(JSON.parse((screen.getByRole('textbox', { name: 'Complete configuration JSON' }) as HTMLTextAreaElement).value)).toEqual(newer.config);
 });
 it('rejects wrong-scope suite replies through the generated client', async () => {
