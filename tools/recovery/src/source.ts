@@ -17,53 +17,144 @@ import type { RecoveryIO } from './io.js';
 import { RecoveryError } from './types.js';
 import { inspectPhysical } from './physical.js';
 const stranded = new Set<unknown>();
-export interface SourceContext {readonly agentWorkerUrl: URL; readonly metadataWorkerUrl: URL; readonly docker?: DockerTransport; readonly baseline?: true; readonly receipt?: unknown; readonly expectedAgentConfigPath?: string}
+export interface SourceContext {
+  readonly agentWorkerUrl: URL;
+  readonly metadataWorkerUrl: URL;
+  readonly docker?: DockerTransport;
+  readonly baseline?: true;
+  readonly receipt?: unknown;
+  readonly expectedAgentConfigPath?: string;
+}
 /** Leases are returned to the coordinator; close them only after every other owner drains. */
 export async function openColdSource(io: RecoveryIO, layout: SourceLayout, context: SourceContext) {
-  const p = sourcePaths(layout); await directory(io, p.root); await directory(io, p.backend);
-  const loaded = await io.acquire(() => loadAgentConfiguration({BEETLE_AGENT_CONFIG_FILE: p.agent}, context.agentWorkerUrl, io.operation.signal, context.baseline ? {baseline:true, receipt:context.receipt} : undefined), value => value.close());
-  const runtime = loaded.value.runtime;
-  relativePath(p.root, runtime.journal.path);
-  const backend = await io.issue(() => loadBackendConfiguration({BEETLE_CONFIG_FILE: p.installation, BEETLE_AGENT_CONFIG_FILE: p.backendConnection,
-    BEETLE_DATA_DIR: p.backend, BEETLE_EXTERNAL_ORIGIN: 'http://127.0.0.1:4311'}, context.metadataWorkerUrl, context.baseline ? {baseline:true, receipt:context.receipt} : undefined));
-  const installationId = backend.application.metadata.installation.id;
-  if (runtime.installation.installationId !== installationId) throw new RecoveryError('integrity');
+  const p = sourcePaths(layout);
+  const { loaded, runtime, backend, installationId } = await loadColdConfigurations(io, p, context);
   const backendLease = openBackendRecovery(join(p.backend, 'recovery-control.sqlite'), installationId);
   let agentLease: ReturnType<typeof openRestoringState> | undefined;
   try {
     if (backendLease.snapshot().phase !== 'ready') throw new RecoveryError('not_cold');
     agentLease = openRestoringState(installationStatePath(runtime.journal.path));
-    const state = agentLease.snapshot(); if (state.phase !== 'ready') throw new RecoveryError('not_cold');
-    for (const path of [p.metadata, runtime.journal.path]) {await directory(io, dirname(path)); regular(await io.issue(() => lstat(path, {bigint: true})), Number.MAX_SAFE_INTEGER, false);}
-    const metadataFile = await io.acquireFile(p.metadata, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
-    const metadataCustody = {path:p.metadata, file:metadataFile,
-      original:await io.issue(() => metadataFile.value.stat({bigint:true})), maximum:Number.MAX_SAFE_INTEGER};
+    const state = agentLease.snapshot();
+    if (state.phase !== 'ready') throw new RecoveryError('not_cold');
+    for (const path of [p.metadata, runtime.journal.path]) {
+      await directory(io, dirname(path));
+      regular(await io.issue(() => lstat(path, { bigint: true })), Number.MAX_SAFE_INTEGER, false);
+    }
+    const metadataFile = await io.acquireFile(
+      p.metadata,
+      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
+    );
+    const metadataCustody = {
+      path: p.metadata,
+      file: metadataFile,
+      original: await io.issue(() => metadataFile.value.stat({ bigint: true })),
+      maximum: Number.MAX_SAFE_INTEGER,
+    };
     checkDestination(metadataCustody);
-    const metadata = io.acquireSync(() => new DatabaseSync(p.metadata, {readOnly: true, timeout: 100, defensive: true}), db => db.close());
+    const metadata = io.acquireSync(
+      () => new DatabaseSync(p.metadata, { readOnly: true, timeout: 100, defensive: true }),
+      (db) => db.close(),
+    );
     checkDestination(metadataCustody);
-    const journal = io.acquireSync(() => new DatabaseSync(runtime.journal.path, {readOnly: true, timeout: 100, defensive: true}), db => db.close());
+    const journal = io.acquireSync(
+      () => new DatabaseSync(runtime.journal.path, { readOnly: true, timeout: 100, defensive: true }),
+      (db) => db.close(),
+    );
     metadata.value.exec('PRAGMA query_only=ON; PRAGMA cache_size=-2048; PRAGMA mmap_size=0;');
     journal.value.exec('PRAGMA query_only=ON; PRAGMA cache_size=-2048; PRAGMA mmap_size=0;');
-    const appFacts = inspectColdMetadata(metadata.value, installationId); const agentFacts = inspectColdJournal(journal.value, state.authority);
-    const physical = await inspectPhysical({transport: context.docker ?? runtime.transport, operation: io.operation, installationId,
-      daemonId: runtime.installation.expectedDaemonId, agentContainer: runtime.installation.agentContainer, agentImage: runtime.installation.agentImageId,
-      ...(context.expectedAgentConfigPath ? {expectedAgentConfigPath:context.expectedAgentConfigPath} : {}), matchRuntime: key => matchColdRuntime(journal.value, key)});
-    await io.close(metadata); await io.close(journal);
-    const images = [...new Set([runtime.installation.agentImageId, ...runtime.catalog.engines.map(engine => engine.profile.imageDigest)])];
-    const captured = {installationId, metadataSchema: appFacts.schema, journalSchema: agentFacts.schema,
-      journalAuthority: agentFacts.journalAuthority, images, physical, installation: backend.application.metadata.installation,
-      journal: runtime.journal.path, metadataOptions: backend.application.metadata};
+    const appFacts = inspectColdMetadata(metadata.value, installationId);
+    const agentFacts = inspectColdJournal(journal.value, state.authority);
+    const physical = await inspectSourceRuntime(io, context, runtime, journal.value, installationId);
+    await io.close(metadata);
+    await io.close(journal);
+    const images = [
+      ...new Set([
+        runtime.installation.agentImageId,
+        ...runtime.catalog.engines.map((engine) => engine.profile.imageDigest),
+      ]),
+    ];
+    const captured = {
+      installationId,
+      metadataSchema: appFacts.schema,
+      journalSchema: agentFacts.schema,
+      journalAuthority: agentFacts.journalAuthority,
+      images,
+      physical,
+      installation: backend.application.metadata.installation,
+      journal: runtime.journal.path,
+      metadataOptions: backend.application.metadata,
+    };
     await io.close(loaded);
-    return {captured, backendLease, agentLease, metadataCustody};
+    return { captured, backendLease, agentLease, metadataCustody };
   } catch (error) {
     // Do not release startup exclusion until original config/database owners settle.
     try {
       await io.closeAll();
       // Acquisition can have retained uncertain native custody internally. Keep the
       // already acquired backend lease until process exit when no agent lease returned.
-      if (!agentLease) {stranded.add(backendLease); throw new RecoveryError('cleanup');}
-      agentLease.close(); backendLease.close();
-    } catch {stranded.add({backendLease, agentLease, io}); throw new RecoveryError('cleanup');}
+      if (!agentLease) {
+        stranded.add(backendLease);
+        throw new RecoveryError('cleanup');
+      }
+      agentLease.close();
+      backendLease.close();
+    } catch {
+      stranded.add({ backendLease, agentLease, io });
+      throw new RecoveryError('cleanup');
+    }
     throw error;
   }
+}
+
+async function loadColdConfigurations(io: RecoveryIO, p: ReturnType<typeof sourcePaths>, context: SourceContext) {
+  await directory(io, p.root);
+  await directory(io, p.backend);
+  const loaded = await io.acquire(
+    () =>
+      loadAgentConfiguration(
+        { BEETLE_AGENT_CONFIG_FILE: p.agent },
+        context.agentWorkerUrl,
+        io.operation.signal,
+        context.baseline ? { baseline: true, receipt: context.receipt } : undefined,
+      ),
+    (value) => value.close(),
+  );
+  const runtime = loaded.value.runtime;
+  relativePath(p.root, runtime.journal.path);
+  const backend = await io.issue(() =>
+    loadBackendConfiguration(
+      {
+        BEETLE_CONFIG_FILE: p.installation,
+        BEETLE_AGENT_CONFIG_FILE: p.backendConnection,
+        BEETLE_DATA_DIR: p.backend,
+        BEETLE_EXTERNAL_ORIGIN: 'http://127.0.0.1:4311',
+      },
+      context.metadataWorkerUrl,
+      context.baseline ? { baseline: true, receipt: context.receipt } : undefined,
+    ),
+  );
+  const installationId = backend.application.metadata.installation.id;
+  if (runtime.installation.installationId !== installationId) throw new RecoveryError('integrity');
+
+  return { loaded, runtime, backend, installationId };
+}
+async function inspectSourceRuntime(
+  io: RecoveryIO,
+  context: SourceContext,
+  runtime: Awaited<ReturnType<typeof loadAgentConfiguration>>['runtime'],
+  journal: DatabaseSync,
+  installationId: string,
+) {
+  const physical = await inspectPhysical({
+    transport: context.docker ?? runtime.transport,
+    operation: io.operation,
+    installationId,
+    daemonId: runtime.installation.expectedDaemonId,
+    agentContainer: runtime.installation.agentContainer,
+    agentImage: runtime.installation.agentImageId,
+    ...(context.expectedAgentConfigPath ? { expectedAgentConfigPath: context.expectedAgentConfigPath } : {}),
+    matchRuntime: (key) => matchColdRuntime(journal, key),
+  });
+
+  return physical;
 }
