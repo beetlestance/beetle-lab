@@ -54,7 +54,8 @@ three working days end to end. Gated features add backend work first.
 
 ## File ownership in wave 1
 
-Per-board data, reuse and gaps are in [part 1](ui-packets.md) and [part 2](ui-packets-2.md).
+Per-board data, reuse and gaps are in [part 1](ui-packets.md), [part 2](ui-packets-2.md)
+and [part 3](ui-packets-3.md).
 
 | Package | Owns |
 | --- | --- |
