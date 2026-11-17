@@ -19,17 +19,9 @@ These levels are for organising work. They are not accounts or permissions.
 
 ## Finding your way in the app
 
-The app's address follows the same hierarchy, and the screens follow it too:
-
-- The sidebar links to **Organizations** (the list you start from),
-  **Installation settings** and the **API reference**.
-- An organisation's page shows its overview and its workspaces, with a link to
-  **Organization settings**.
-- A workspace's page shows its overview and folders, with links to **Workspace
-  settings**, **Suites**, **Inputs** and **Runs**.
-- **Search commands** at the top, or Ctrl+K (⌘K on a Mac), lists these pages
-  and lets you jump by name to a workspace of the organisation you are in, or to
-  a suite or run of the workspace you are in.
+The app follows the same hierarchy. You start from your organisations, open one
+to see its workspaces, and open a workspace to reach its folders, suites, inputs
+and runs. Settings exist at each level: installation, organisation and workspace.
 
 ## Organisations
 
