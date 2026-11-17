@@ -22,37 +22,53 @@ function freeze<T>(value: T): T {
   return value;
 }
 function validRoot(value: string): boolean {
-  return typeof value === 'string' && value.length <= 512 && isAbsolute(value)
-    && value !== '/' && normalize(value) === value && !value.split('/').includes('..')
-    && !Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127)
-    && !/(?:^|\/)(?:docker\.sock|containerd\.sock|proc|sys|dev|run|var\/run)(?:\/|$)/u.test(value);
+  return (
+    typeof value === 'string' &&
+    value.length <= 512 &&
+    isAbsolute(value) &&
+    value !== '/' &&
+    normalize(value) === value &&
+    !value.split('/').includes('..') &&
+    !Array.from(value).some((character) => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127) &&
+    !/(?:^|\/)(?:docker\.sock|containerd\.sock|proc|sys|dev|run|var\/run)(?:\/|$)/u.test(value)
+  );
 }
 function validProfile(profile: InstallationProfile): boolean {
   if (!validatePrimitive('uuid', profile.installationId).ok || !validRoot(profile.stagingRoot)) return false;
   if (!/^[1-9][0-9]{0,8}:[1-9][0-9]{0,8}$/u.test(profile.user)) return false;
   if (!validTemporaryProfile(profile)) return false;
-  return validImageBaseline(profile)
-    && budgetKeys.every(key => Number.isSafeInteger(profile.maximumBudget[key]) && profile.maximumBudget[key] > 0);
+  return (
+    validImageBaseline(profile) &&
+    budgetKeys.every((key) => Number.isSafeInteger(profile.maximumBudget[key]) && profile.maximumBudget[key] > 0)
+  );
 }
 function approved(offer: Offer, manifest: EngineManifest, profile: InstallationProfile): boolean {
   if (offer.engine.id !== manifest.engineId || offer.engine.imageDigest !== manifest.imageDigest) return false;
   if (manifest.imageDigest !== profile.imageDigest || !manifest.backends.includes('docker')) return false;
   if (!approvedEntryPoint(manifest, profile)) return false;
-  if (offer.requiredCapabilities.some(capability => !manifest.capabilities.includes(capability))) return false;
-  if (!['cpu', 'memory', 'pids'].every(control => manifest.supportedControls.includes(control as 'cpu'))) return false;
+  if (offer.requiredCapabilities.some((capability) => !manifest.capabilities.includes(capability))) return false;
+  if (!['cpu', 'memory', 'pids'].every((control) => manifest.supportedControls.includes(control as 'cpu')))
+    return false;
   if (!approvedNetwork(manifest, profile)) return false;
-  return budgetKeys.every(key => offer.budget[key] >= manifest.minimumBudget[key]
-    && offer.budget[key] <= profile.maximumBudget[key]);
+  return budgetKeys.every(
+    (key) => offer.budget[key] >= manifest.minimumBudget[key] && offer.budget[key] <= profile.maximumBudget[key],
+  );
 }
 function approvedEntryPoint(manifest: EngineManifest, profile: InstallationProfile): boolean {
-  return manifest.entrypoint.executable === profile.entrypoint.executable
-    && hash(manifest.entrypoint.arguments) === hash(profile.entrypoint.arguments);
+  return (
+    manifest.entrypoint.executable === profile.entrypoint.executable &&
+    hash(manifest.entrypoint.arguments) === hash(profile.entrypoint.arguments)
+  );
 }
 function approvedNetwork(manifest: EngineManifest, profile: InstallationProfile): boolean {
-  return profile.network.profile === manifest.network.profile
-    && !(manifest.network.required && profile.network.profile === 'none');
+  return (
+    profile.network.profile === manifest.network.profile &&
+    !(manifest.network.required && profile.network.profile === 'none')
+  );
 }
-function validGeneration(value: number): boolean { return Number.isSafeInteger(value) && value >= 1; }
+function validGeneration(value: number): boolean {
+  return Number.isSafeInteger(value) && value >= 1;
+}
 function networkName(profile: InstallationProfile): string | undefined {
   if (profile.network.profile === 'none') return profile.network.name === 'none' ? 'none' : undefined;
   if (profile.network.profile !== 'target-egress') return undefined;
@@ -65,9 +81,19 @@ function mounts(roots: StagedRoots, profile: InstallationProfile, name: string):
     const source = roots[key];
     if (key === 'secrets' && source === undefined) continue;
     if (source !== join(taskRoot, key) || !validRoot(source)) return undefined;
-    result.push({ Type: 'bind', Source: source, Target: `/beetle/${key}`,
-      ReadOnly: key !== 'output', BindOptions: { Propagation: 'rprivate', NonRecursive: false,
-        CreateMountpoint: false, ReadOnlyNonRecursive: false, ReadOnlyForceRecursive: key !== 'output' } });
+    result.push({
+      Type: 'bind',
+      Source: source,
+      Target: `/beetle/${key}`,
+      ReadOnly: key !== 'output',
+      BindOptions: {
+        Propagation: 'rprivate',
+        NonRecursive: false,
+        CreateMountpoint: false,
+        ReadOnlyNonRecursive: false,
+        ReadOnlyForceRecursive: key !== 'output',
+      },
+    });
   }
   return [...result, ...mailboxMount(profile, name)];
 }
@@ -79,7 +105,12 @@ export function isRuntimePlan(value: unknown): value is RuntimePlan {
   return value !== null && typeof value === 'object' && plans.has(value);
 }
 export class RuntimePlan {
-  private constructor(readonly name: string, readonly specDigest: string, readonly spec: CreateSpec, token: symbol) {
+  private constructor(
+    readonly name: string,
+    readonly specDigest: string,
+    readonly spec: CreateSpec,
+    token: symbol,
+  ) {
     if (token !== planToken) throw new Error('invalid_runtime_plan');
     plans.add(this);
     freeze(this);
@@ -89,8 +120,9 @@ export class RuntimePlan {
       const snapshot = prepareSnapshot(input);
       if (!snapshot.ok) return snapshot;
       return { ok: true, value: RuntimePlan.#create(snapshot.value.name, snapshot.value.spec) };
+    } catch {
+      return failure('invalid_input');
     }
-    catch { return failure('invalid_input'); }
   }
   static #create(name: string, spec: CreateSpec): RuntimePlan {
     const digest = hash(spec);
@@ -111,45 +143,115 @@ function prepareSnapshot(input: PrepareInput): Result<{ name: string; spec: Crea
   if (!validGeneration(input.generation)) return failure('invalid_input');
   if (input.requireHardOutputQuota) return failure('unsupported');
   if (!approved(offer.value, manifest.value, profile)) return failure('unsupported');
-  const environment=exportEnvironment(input.assignment,offer.value,manifest.value,profile);
+  const environment = exportEnvironment(input.assignment, offer.value, manifest.value, profile);
   const nanoCpus = offer.value.budget.cpuMillis * 1_000_000;
   if (!Number.isSafeInteger(nanoCpus)) return failure('unsupported');
   const name = runtimeName({ installationId: profile.installationId, ...offer.value, generation: input.generation });
   const boundMounts = mounts(staged, profile, name);
   const network = networkName(profile);
   if (!boundMounts || !network) return failure('invalid_input');
-  return { ok: true, value: { name,
-    spec: createSpec({ offer: offer.value, profile, generation: input.generation, boundMounts, nanoCpus, network, environment }) } };
+  return {
+    ok: true,
+    value: {
+      name,
+      spec: createSpec({
+        offer: offer.value,
+        profile,
+        generation: input.generation,
+        boundMounts,
+        nanoCpus,
+        network,
+        environment,
+      }),
+    },
+  };
 }
 
-function createSpec(input: { offer: Offer; profile: InstallationProfile; generation: number;
-  boundMounts: DockerMount[]; nanoCpus: number; network: string; environment: readonly string[] }): CreateSpec {
+interface CreateSpecInput {
+  offer: Offer;
+  profile: InstallationProfile;
+  generation: number;
+  boundMounts: DockerMount[];
+  nanoCpus: number;
+  network: string;
+  environment: readonly string[];
+}
+function createSpec(input: CreateSpecInput): CreateSpec {
   const { offer, profile } = input;
   return {
-    Image: profile.imageDigest, User: profile.user,
-    Entrypoint: [profile.entrypoint.executable], Cmd: [...profile.entrypoint.arguments],
-    Env: [...input.environment], Healthcheck: { Test: ['NONE'] }, StopSignal: 'SIGTERM',
-    WorkingDir: '/beetle/input', NetworkDisabled: input.network === 'none',
-    Labels: { 'dev.beetle.installation': normalizeIdentity(profile.installationId),
+    Image: profile.imageDigest,
+    User: profile.user,
+    Entrypoint: [profile.entrypoint.executable],
+    Cmd: [...profile.entrypoint.arguments],
+    Env: [...input.environment],
+    Healthcheck: { Test: ['NONE'] },
+    StopSignal: 'SIGTERM',
+    WorkingDir: '/beetle/input',
+    NetworkDisabled: input.network === 'none',
+    Labels: {
+      'dev.beetle.installation': normalizeIdentity(profile.installationId),
       'dev.beetle.organization': normalizeIdentity(offer.organizationId),
       'dev.beetle.workspace': normalizeIdentity(offer.workspaceId),
       'dev.beetle.attempt': normalizeIdentity(offer.attemptId),
-      'dev.beetle.generation': String(input.generation), 'dev.beetle.intent': offer.intentDigest },
-    HostConfig: { NanoCpus: input.nanoCpus, Memory: offer.budget.memoryBytes, MemorySwap: offer.budget.memoryBytes,
-      PidsLimit: offer.budget.pids, ReadonlyRootfs: true, Privileged: false, CapDrop: ['ALL'], CapAdd: [],
-      Runtime: profile.effectiveImage.defaultRuntime, OomKillDisable: false, Init: false,
+      'dev.beetle.generation': String(input.generation),
+      'dev.beetle.intent': offer.intentDigest,
+    },
+    HostConfig: {
+      NanoCpus: input.nanoCpus,
+      Memory: offer.budget.memoryBytes,
+      MemorySwap: offer.budget.memoryBytes,
+      PidsLimit: offer.budget.pids,
+      ReadonlyRootfs: true,
+      Privileged: false,
+      CapDrop: ['ALL'],
+      CapAdd: [],
+      Runtime: profile.effectiveImage.defaultRuntime,
+      OomKillDisable: false,
+      Init: false,
       ShmSize: profile.tmpfsBytes,
-      SecurityOpt: ['no-new-privileges:true'], NetworkMode: input.network,
-      PidMode: '', IpcMode: 'private', UTSMode: '', CgroupnsMode: 'private',
-      UsernsMode: '', GroupAdd: [], DeviceCgroupRules: [], Links: [], ExtraHosts: [], Dns: [], DnsOptions: [], DnsSearch: [],
-      Sysctls: {}, StorageOpt: {},
+      SecurityOpt: ['no-new-privileges:true'],
+      NetworkMode: input.network,
+      PidMode: '',
+      IpcMode: 'private',
+      UTSMode: '',
+      CgroupnsMode: 'private',
+      UsernsMode: '',
+      GroupAdd: [],
+      DeviceCgroupRules: [],
+      Links: [],
+      ExtraHosts: [],
+      Dns: [],
+      DnsOptions: [],
+      DnsSearch: [],
+      Sysctls: {},
+      StorageOpt: {},
       ReadonlyPaths: ['/proc/bus', '/proc/fs', '/proc/irq', '/proc/sys', '/proc/sysrq-trigger'],
-      MaskedPaths: ['/proc/acpi', '/proc/asound', '/proc/interrupts', '/proc/kcore', '/proc/keys', '/proc/latency_stats',
-        '/proc/timer_list', '/proc/timer_stats', '/proc/sched_debug', '/proc/scsi', '/sys/firmware', '/sys/devices/virtual/powercap'],
-      PublishAllPorts: false, PortBindings: {}, Devices: [], DeviceRequests: [], Binds: [], VolumesFrom: [],
-      RestartPolicy: { Name: 'no', MaximumRetryCount: 0 }, AutoRemove: false, Mounts: input.boundMounts,
+      MaskedPaths: [
+        '/proc/acpi',
+        '/proc/asound',
+        '/proc/interrupts',
+        '/proc/kcore',
+        '/proc/keys',
+        '/proc/latency_stats',
+        '/proc/timer_list',
+        '/proc/timer_stats',
+        '/proc/sched_debug',
+        '/proc/scsi',
+        '/sys/firmware',
+        '/sys/devices/virtual/powercap',
+      ],
+      PublishAllPorts: false,
+      PortBindings: {},
+      Devices: [],
+      DeviceRequests: [],
+      Binds: [],
+      VolumesFrom: [],
+      RestartPolicy: { Name: 'no', MaximumRetryCount: 0 },
+      AutoRemove: false,
+      Mounts: input.boundMounts,
       Tmpfs: temporaryMounts(profile),
-      LogConfig: { Type: 'none', Config: {} } },
+      LogConfig: { Type: 'none', Config: {} },
+    },
   };
 }
 
