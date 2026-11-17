@@ -8,16 +8,14 @@ integrated into `rewrite/integration` by the coordinating session.
 
 ## Status (2026-11-18)
 
-Waves 0 and 1 are merged into `rewrite/integration` (all six packages, A–F).
-Every gate passes on the merged head, including lint, `build:web` and the
-full web test set. Open:
+Waves 0 and 1 are merged into `rewrite/integration` (all six packages, A–F),
+with the wave-0 follow-ups (shared query keys, session access context, editor
+view URLs, shared pager) and the retention restyle. Every gate passes on the
+merged head, including lint, `build:web` and the full web test set. Open:
 
-- Wave 0 follow-ups: editor view sub-routes; shared query keys (installation
-  status, browser session, run queue, latency attribution, pinned runs page);
-  session read-only and restored-backup state through context; Newer/Older pager labels.
-- Package F: retention preview and progress restyle.
 - Wave 2: browser comparison against the board exports, phone and ultrawide,
-  keyboard and reduced motion. No package has been checked in a browser yet.
+  keyboard and reduced motion. No screen has been checked in a browser yet; it
+  needs a running local installation.
 - Data gaps each package hid rather than faked are listed in its CONTEXT.md and
   in the packets.
 
