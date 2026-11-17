@@ -51,11 +51,8 @@ export function emptyHistory(startedAt: string | null | undefined): LiveHistory 
 
 const cap = <T>(items: T[]) => (items.length > HISTORY_LIMIT ? items.slice(items.length - HISTORY_LIMIT) : items);
 
-export function appendFrame(history: LiveHistory, frame: LiveMetricSnapshot, figures: LiveFigures): LiveHistory {
-  const last = history.points.at(-1);
-  if (last && frame.publishedSequence <= last.sequence) return history;
-  const originMs = Number.isFinite(history.originMs) ? history.originMs : frame.startTimeMs;
-  const point: LivePoint = {
+function livePoint(frame: LiveMetricSnapshot, figures: LiveFigures, originMs: number): LivePoint {
+  return {
     t: frame.endTimeMs - originMs,
     sequence: frame.publishedSequence,
     rps: figures.rps,
@@ -66,19 +63,32 @@ export function appendFrame(history: LiveHistory, frame: LiveMetricSnapshot, fig
     vus: figures.vus,
     vusMax: figures.vusMax,
   };
+}
+
+/** Target samples newer than the last kept one; omitted samples mark a gap before the first. */
+function freshTarget(history: LiveHistory, frame: LiveMetricSnapshot, originMs: number): TargetPoint[] {
+  const block = frame.target;
+  if (!block) return [];
   const seen = history.target.at(-1)?.observedAtMs ?? -1;
-  const fresh = (frame.target?.samples ?? []).filter((s) => s.observedAtMs > seen);
-  const omitted = (frame.target?.omittedSamples ?? 0) > 0;
-  const target = fresh.map((sample, index) => ({
-    t: sample.observedAtMs - originMs,
-    observedAtMs: sample.observedAtMs,
-    gapBefore: index === 0 && omitted && history.target.length > 0,
-    status: sample.status,
-    values: sample.values,
-  }));
+  const gap = block.omittedSamples > 0 && history.target.length > 0;
+  return block.samples
+    .filter((s) => s.observedAtMs > seen)
+    .map((sample, index) => ({
+      t: sample.observedAtMs - originMs,
+      observedAtMs: sample.observedAtMs,
+      gapBefore: index === 0 && gap,
+      status: sample.status,
+      values: sample.values,
+    }));
+}
+
+export function appendFrame(history: LiveHistory, frame: LiveMetricSnapshot, figures: LiveFigures): LiveHistory {
+  const last = history.points.at(-1);
+  if (last && frame.publishedSequence <= last.sequence) return history;
+  const originMs = Number.isFinite(history.originMs) ? history.originMs : frame.startTimeMs;
   return {
-    points: cap([...history.points, point]),
-    target: cap([...history.target, ...target]),
+    points: cap([...history.points, livePoint(frame, figures, originMs)]),
+    target: cap([...history.target, ...freshTarget(history, frame, originMs)]),
     originMs,
     fromStart: history.fromStart,
     intervalMs: frame.target?.intervalMs ?? history.intervalMs,

@@ -8,24 +8,60 @@ import { clock, ms, reading, span, whole } from './format.js';
 
 type Domain = readonly [number, number];
 
+const lastT = (history: LiveHistory) => Math.max(history.points.at(-1)?.t ?? 0, history.target.at(-1)?.t ?? 0);
+const firstT = (history: LiveHistory) =>
+  Math.min(history.points[0]?.t ?? 0, history.target[0]?.t ?? Number.POSITIVE_INFINITY);
+
 /** The x domain: the planned run when known, otherwise the readings this page saw. */
 export function chartDomain(history: LiveHistory, plan: RunPlan): Domain {
-  const last = Math.max(history.points.at(-1)?.t ?? 0, history.target.at(-1)?.t ?? 0);
+  const last = lastT(history);
   if (history.fromStart && plan.totalMs !== null) return [0, Math.max(plan.totalMs, last)];
-  const first = Math.min(history.points[0]?.t ?? 0, history.target[0]?.t ?? Number.POSITIVE_INFINITY);
+  const first = firstT(history);
   return [first, Math.max(first + 1000, last)];
 }
 
+const warmStage = (plan: RunPlan) => (plan.stages.length > 2 ? plan.stages[0] : undefined);
+const drainStage = (plan: RunPlan) => plan.stages.find((stage) => stage.drain);
+
 function stageTicks(plan: RunPlan, domain: Domain, nowT: number | null) {
   const ticks = [{ at: domain[0], label: clock(domain[0]) }];
-  const warm = plan.stages.length > 2 ? plan.stages[0] : undefined;
+  const warm = warmStage(plan);
   if (warm) ticks.push({ at: warm.durationMs, label: `Warm up ends ${clock(warm.durationMs)}` });
   if (nowT !== null) ticks.push({ at: nowT, label: `now ${clock(nowT)}` });
-  const drain = plan.stages.find((stage) => stage.drain);
+  const drain = drainStage(plan);
   if (drain) ticks.push({ at: drain.startMs, label: `Drain ${clock(drain.startMs)}` });
   ticks.push({ at: domain[1], label: clock(domain[1]) });
   return ticks;
 }
+
+/** Warm-up and drain bands; only meaningful when the history starts at the run start. */
+function stageBands(history: LiveHistory, plan: RunPlan) {
+  if (!history.fromStart) return [];
+  const warm = warmStage(plan);
+  const drain = drainStage(plan);
+  return [
+    ...(warm ? [{ from: 0, to: warm.durationMs }] : []),
+    ...(drain ? [{ from: drain.startMs, to: drain.startMs + drain.durationMs }] : []),
+  ];
+}
+
+type WholeView = 'p95' | 'rps';
+
+function wholeSeries(view: WholeView, history: LiveHistory, slowest: boolean): ChartSeries {
+  if (view === 'rps')
+    return {
+      key: 'rps',
+      label: 'requests a second',
+      tone: 'amber',
+      area: true,
+      values: history.points.map((p) => p.rps),
+    };
+  const label = slowest ? 'p95, slowest endpoint' : 'p95';
+  return { key: 'p95', label, tone: 'amber', area: true, values: history.points.map((p) => p.p95) };
+}
+
+const wholeLimit = (view: WholeView, p95Limit: number | null) =>
+  view === 'p95' && p95Limit !== null ? { value: p95Limit, label: `Limit ${ms(p95Limit)}` } : undefined;
 
 export function WholeRun({
   history,
@@ -40,31 +76,13 @@ export function WholeRun({
   p95Limit: number | null;
   slowest: boolean;
 }) {
-  const [view, setView] = useState<'p95' | 'rps'>('p95');
+  const [view, setView] = useState<WholeView>('p95');
   const xs = history.points.map((p) => p.t);
-  const nowT = xs.at(-1) ?? null;
-  const warm = plan.stages.length > 2 ? plan.stages[0] : undefined;
-  const drain = plan.stages.find((stage) => stage.drain);
-  const bands = history.fromStart
-    ? [
-        ...(warm ? [{ from: 0, to: warm.durationMs }] : []),
-        ...(drain ? [{ from: drain.startMs, to: drain.startMs + drain.durationMs }] : []),
-      ]
-    : [];
-  const series: ChartSeries =
-    view === 'p95'
-      ? {
-          key: 'p95',
-          label: slowest ? 'p95, slowest endpoint' : 'p95',
-          tone: 'amber',
-          area: true,
-          values: history.points.map((p) => p.p95),
-        }
-      : { key: 'rps', label: 'requests a second', tone: 'amber', area: true, values: history.points.map((p) => p.rps) };
+  const p95 = view === 'p95';
   return (
     <section className="live-whole" aria-labelledby="live-whole">
       <header className="live-section-head">
-        <h2 id="live-whole">{view === 'p95' ? 'p95 latency' : 'Requests a second'}, whole run</h2>
+        <h2 id="live-whole">{p95 ? 'p95 latency' : 'Requests a second'}, whole run</h2>
         <SegmentedFilter
           label="Whole-run chart"
           value={view}
@@ -80,11 +98,11 @@ export function WholeRun({
         tall
         xs={xs}
         domain={domain}
-        series={[series]}
-        format={view === 'p95' ? ms : whole}
-        limit={view === 'p95' && p95Limit !== null ? { value: p95Limit, label: `Limit ${ms(p95Limit)}` } : undefined}
-        bands={bands}
-        ticks={history.fromStart ? stageTicks(plan, domain, nowT) : undefined}
+        series={[wholeSeries(view, history, slowest)]}
+        format={p95 ? ms : whole}
+        limit={wholeLimit(view, p95Limit)}
+        bands={stageBands(history, plan)}
+        ticks={history.fromStart ? stageTicks(plan, domain, xs.at(-1) ?? null) : undefined}
       />
     </section>
   );
@@ -144,6 +162,62 @@ const value = (point: TargetPoint, key: TargetKey) => (point.status === 'ready' 
 const has = (points: readonly TargetPoint[], keys: readonly TargetKey[]) =>
   points.some((p) => keys.some((key) => value(p, key) !== null));
 
+interface TargetChart {
+  title: string;
+  keys: TargetKey[];
+  series: ChartSeries[];
+}
+
+/** Heap and RSS, CPU, event-loop delay, handles (or goroutines); charts without any reading are left out. */
+function targetCharts(points: readonly TargetPoint[]): TargetChart[] {
+  const heap: TargetKey = has(points, ['usedHeapSize']) ? 'usedHeapSize' : 'heapAlloc';
+  const go = !has(points, ['activeHandles']);
+  const handles: TargetKey = go ? 'goroutines' : 'activeHandles';
+  const line = (key: TargetKey, label: string, tone: ChartSeries['tone'], area = false): ChartSeries => ({
+    key,
+    label,
+    tone,
+    area,
+    values: points.map((p) => value(p, key)),
+  });
+  const charts: TargetChart[] = [
+    { title: 'Heap and RSS', keys: [heap, 'rss'], series: [line(heap, 'heap', 'amber'), line('rss', 'RSS', 'info')] },
+    {
+      title: 'CPU',
+      keys: ['cpuPercent', 'systemCpuPercent'],
+      series: [line('cpuPercent', 'process %', 'amber'), line('systemCpuPercent', 'system %', 'mute')],
+    },
+    {
+      title: 'Event-loop delay',
+      keys: ['eventLoopDelay.mean', 'eventLoopDelay.p99', 'eventLoopDelay.max'],
+      series: [
+        line('eventLoopDelay.mean', 'mean', 'info'),
+        line('eventLoopDelay.p99', 'p99', 'amber'),
+        line('eventLoopDelay.max', 'max', 'violet'),
+      ],
+    },
+    {
+      title: go ? 'Goroutines' : 'Active handles',
+      keys: [handles],
+      series: [line(handles, go ? 'goroutines' : 'handles', 'ink', true)],
+    },
+  ];
+  return charts.filter((chart) => has(points, chart.keys));
+}
+
+function TargetNote({ history, origin }: { history: LiveHistory; origin: string | null }) {
+  const points = history.target;
+  const unavailable = points.filter((p) => p.status === 'unavailable').length;
+  return (
+    <p className="live-note">
+      Sampled{origin ? ` from ${origin}` : ''}
+      {history.intervalMs ? ` every ${span(history.intervalMs)}` : ''}. Values as the target reports them.
+      {unavailable > 0 && ` ${unavailable} readings unavailable.`}
+      {points.some((p) => p.gapBefore) && ' Breaks in a line are readings left out of the live feed.'}
+    </p>
+  );
+}
+
 /** Live target graphs from LiveMetricSnapshot.target; values are as the target reported them. */
 export function TargetRuntime({
   history,
@@ -157,15 +231,7 @@ export function TargetRuntime({
   const [hoverT, setHoverT] = useState<number | null>(null);
   const points = history.target;
   if (!points.length) return null;
-  const heap: TargetKey = has(points, ['usedHeapSize']) ? 'usedHeapSize' : 'heapAlloc';
-  const handles: TargetKey = has(points, ['activeHandles']) ? 'activeHandles' : 'goroutines';
-  const line = (key: TargetKey, label: string, tone: ChartSeries['tone'], area = false): ChartSeries => ({
-    key,
-    label,
-    tone,
-    area,
-    values: points.map((p) => value(p, key)),
-  });
+  const charts = targetCharts(points);
   const shared = {
     xs: points.map((p) => p.t),
     breaks: points.map((p) => p.gapBefore),
@@ -174,43 +240,11 @@ export function TargetRuntime({
     onHover: setHoverT,
     format: reading,
   };
-  const charts = [
-    {
-      title: 'Heap and RSS',
-      keys: [heap, 'rss'] as TargetKey[],
-      series: [line(heap, 'heap', 'amber'), line('rss', 'RSS', 'info')],
-    },
-    {
-      title: 'CPU',
-      keys: ['cpuPercent', 'systemCpuPercent'] as TargetKey[],
-      series: [line('cpuPercent', 'process %', 'amber'), line('systemCpuPercent', 'system %', 'mute')],
-    },
-    {
-      title: 'Event-loop delay',
-      keys: ['eventLoopDelay.mean', 'eventLoopDelay.p99', 'eventLoopDelay.max'] as TargetKey[],
-      series: [
-        line('eventLoopDelay.mean', 'mean', 'info'),
-        line('eventLoopDelay.p99', 'p99', 'amber'),
-        line('eventLoopDelay.max', 'max', 'violet'),
-      ],
-    },
-    {
-      title: handles === 'goroutines' ? 'Goroutines' : 'Active handles',
-      keys: [handles],
-      series: [line(handles, handles === 'goroutines' ? 'goroutines' : 'handles', 'ink', true)],
-    },
-  ].filter((chart) => has(points, chart.keys));
-  const unavailable = points.filter((p) => p.status === 'unavailable').length;
   return (
     <section className="live-grid-section" aria-labelledby="live-target">
       <header className="live-section-head">
         <h2 id="live-target">Target runtime</h2>
-        <p className="live-note">
-          Sampled{origin ? ` from ${origin}` : ''}
-          {history.intervalMs ? ` every ${span(history.intervalMs)}` : ''}. Values as the target reports them.
-          {unavailable > 0 && ` ${unavailable} readings unavailable.`}
-          {points.some((p) => p.gapBefore) && ' Breaks in a line are readings left out of the live feed.'}
-        </p>
+        <TargetNote history={history} origin={origin} />
       </header>
       {charts.length === 0 ? (
         <p className="live-note">The target has not reported a reading yet.</p>
