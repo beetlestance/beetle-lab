@@ -8,7 +8,7 @@ import { searchField } from './HistoryFilters.js';
 import { routes } from '../../app/routes.js';
 import { queryKeys } from '../../app/queries.js';
 afterEach(cleanup);
-const runReads = (records: { path: string }[]) => records.filter(record => record.path.includes('/runs?'));
+const runReads = <T extends { path: string }>(records: T[]) => records.filter(record => record.path.includes('/runs?'));
 function search(value: string) {
   const box = screen.getByRole('searchbox', { name: 'Search runs' });
   fireEvent.change(box, { target: { value } }); fireEvent.submit(box.closest('form')!);

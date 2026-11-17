@@ -20,10 +20,12 @@ it.each(['finished', 'cancelled', 'errored'] as const)('stops polling on %s and 
   const terminal: Run = { ...run(), state, outcome: 'inconclusive', validationStatus: state === 'finished' ? 'passed' : 'pending',
     reason: state === 'finished' ? null : state === 'cancelled' ? 'cancelled' : 'execution_lost', cancellationRequested: state === 'cancelled' };
   const fixture = testClient(request => json(request.path.endsWith('/result') ? resultSnapshot(terminal) : terminal)); const view = mount(fixture.client, path);
-  await screen.findAllByText(state); await screen.findByText(/Metrics and result artifacts are unavailable/);
-  expect(fixture.records.filter(record => !record.path.includes('/events?') && !record.path.includes('/artifacts?') && !record.path.includes('/metrics?'))).toHaveLength(2);
+  await screen.findByText(/No engine result was published, so thresholds are unavailable/);
+  // Run, result, own summary row, suite, revision and session: each read once, none polls.
+  const reads = () => fixture.records.filter(record => !record.path.includes('/events?') && !record.path.includes('/artifacts?') && !record.path.includes('/metrics?'));
+  await waitFor(() => expect(reads()).toHaveLength(6));
   await act(() => vi.advanceTimersByTimeAsync(6000));
-  expect(fixture.records.filter(record => !record.path.includes('/events?') && !record.path.includes('/artifacts?') && !record.path.includes('/metrics?'))).toHaveLength(2); view.unmount();
+  expect(reads()).toHaveLength(6); view.unmount();
 });
 it('polls nonterminal detail at two seconds then stops on the actual terminal result', async () => {
   vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });

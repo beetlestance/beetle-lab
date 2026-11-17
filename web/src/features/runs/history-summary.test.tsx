@@ -16,7 +16,7 @@ function measured(): RunHistorySummary {
     httpP95: { source: 'histogram-estimate', scale: 4, estimate: 10, lower: 9, upper: 11 },
     publishedArtifactBytes: 1536, retainedLogicalBytes: 67584, metadataAllowanceBytes: 65536 };
 }
-const runReads = (records: { path: string }[]) => records.filter(record => record.path.includes('/runs?'));
+const runReads = <T extends { path: string }>(records: T[]) => records.filter(record => record.path.includes('/runs?'));
 it('renders only verified stored scalars with honest rate, estimate and coverage in one run read', async () => {
   const page = historyPage([run()]); page.summaries = [measured()];
   const f = testClient(request => suiteNames(request.path) ?? json(page)); mount(f.client, routes.runs(ids.a, ids.workspace));

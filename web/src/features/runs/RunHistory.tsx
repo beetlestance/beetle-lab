@@ -20,15 +20,24 @@ import './history.css';
 export function RunHistory(scope: RunScope) {
   const { search } = useLocation();
   if (search.length > 2048) return <p role="alert">Invalid history context.</p>;
-  const ids = new URLSearchParams(search).getAll('suiteId');
+  const query = new URLSearchParams(search);
+  const ids = query.getAll('suiteId');
+  const pinned = query.get('pinned') === 'true';
   if (ids.length > 1 || (ids.length === 1 && !validateApi('Uuid', ids[0]).ok))
     return <p role="alert">Invalid suite history context.</p>;
   const suiteId = ids[0]?.toLowerCase();
-  return <HistoryContext key={JSON.stringify([scope, suiteId])} scope={scope} {...(suiteId ? { suiteId } : {})} />;
+  return (
+    <HistoryContext
+      key={JSON.stringify([scope, suiteId, pinned])}
+      scope={scope}
+      pinned={pinned}
+      {...(suiteId ? { suiteId } : {})}
+    />
+  );
 }
-function HistoryContext({ scope, suiteId }: { scope: RunScope; suiteId?: string }) {
+function HistoryContext({ scope, suiteId, pinned }: { scope: RunScope; suiteId?: string; pinned: boolean }) {
   const [context, setContext] = useState({
-    filters: { order: 'newest', ...(suiteId ? { suiteId } : {}) } as HistoryFilter,
+    filters: { order: 'newest', ...(suiteId ? { suiteId } : {}), ...(pinned ? { pinned: true } : {}) } as HistoryFilter,
     epoch: 0,
   });
   const suites = useSuiteNames(scope);

@@ -8,7 +8,7 @@ import { historyPage, ids, json, testClient, mount, run, deferred } from './test
 import { suiteNames } from './history-fixtures.js';
 afterEach(cleanup);
 const path = routes.runs(ids.a, ids.workspace);
-const runReads = (records: { path: string }[]) => records.filter(record => record.path.includes('/runs?'));
+const runReads = <T extends { path: string }>(records: T[]) => records.filter(record => record.path.includes('/runs?'));
 const param = (record: { path: string }, name: string) => new URL(record.path, 'http://localhost').searchParams.get(name);
 it('applies chips at once, fences old replies, resets selection and performs no row reads', async () => {
   const late = deferred<Response>();
