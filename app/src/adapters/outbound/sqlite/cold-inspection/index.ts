@@ -23,4 +23,4 @@ export function inspectColdMetadata(db: DatabaseSync, installationId: string) {
 
 export { scrubHistoricalCredentials } from '../schema.js';
 
-export { readColdSettings, applyColdMemoryChange } from './capacity.js';
+export { readColdSettings, applyColdMemoryChange, applyColdOutputPoolChange } from './capacity.js';

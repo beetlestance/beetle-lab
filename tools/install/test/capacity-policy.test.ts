@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { performance } from 'node:perf_hooks';
 import { createStarterRequest } from '../starter.js';
-import { planMemoryChange } from '../capacity/policy.js';
+import { planMemoryChange, planOutputPoolChange } from '../capacity/policy.js';
 import type { ProvisionContext } from '../types.js';
 import type { InstallationRecord } from '../../../app/src/domain/settings/index.js';
 const MiB = 1048576;
@@ -43,4 +43,27 @@ it('refuses a ceiling above the current persisted pool rather than silently enla
 it('refuses exhausted catalogue versions', () => {
   const f = fixture(); const request = { ...f.request, engine: { ...f.request.engine, catalogVersion: Number.MAX_SAFE_INTEGER } };
   expect(() => planMemoryChange(request, f.settings, 1024 * MiB, f.context)).toThrow();
+});
+
+it('grows aggregate output within the existing storage allocation and preserves a previously raised memory limit',()=>{
+ const f=fixture();const memory=planMemoryChange(f.request,f.settings,1024*MiB,f.context);
+ const settings={...f.settings,version:f.settings.version+1,values:structuredClone(memory.request.installationValues)};
+ settings.values.retention={mode:'enabled',completedRunCount:7};
+ const before=structuredClone({request:memory.request,settings});
+ const plan=planOutputPoolChange(memory.request,settings,512*MiB,f.context);
+ expect(plan.request.installationValues).toEqual({...settings.values,pool:{...settings.values.pool,outputBytes:512*MiB}});
+ expect(plan.request.agentPolicy).toEqual({...memory.request.agentPolicy,pool:{...memory.request.agentPolicy.pool,outputBytes:512*MiB}});
+ expect(plan.request.installationValues.perRunCeilings.memoryBytes).toBe(1024*MiB);
+ expect(plan.request.agentPolicy.perRun.memoryBytes).toBe(1024*MiB);
+ expect(plan.request.engine.catalogVersion).toBe(memory.request.engine.catalogVersion+1);
+ expect(plan.request.exportEngine?.catalogVersion).toBe(memory.request.exportEngine!.catalogVersion+1);
+ expect(plan.previousSettings).toEqual(settings);expect({request:memory.request,settings}).toEqual(before);
+});
+it.each([0,-1,64*MiB,128*MiB,2048*MiB,1.5,NaN,Infinity,Number.MAX_SAFE_INTEGER])(
+ 'refuses invalid/non-increasing output or output exceeding the existing storage allocation: %s',bytes=>{
+  const f=fixture();expect(()=>planOutputPoolChange(f.request,f.settings,bytes,f.context)).toThrow();
+ });
+it('refuses output increases that would consume the existing free-space reserve',()=>{
+ const f=fixture();f.settings.values.pool.storageBytes=700*MiB;
+ expect(()=>planOutputPoolChange(f.request,f.settings,512*MiB,f.context)).toThrow();
 });

@@ -1,4 +1,4 @@
-# Offline installed-memory change
+# Offline installed-capacity change
 
 `policy.ts` derives a detached grow-only request from current persisted settings
 and the committed provision request. It changes per-run/default memory and catalogue
@@ -14,3 +14,7 @@ Serving loaders recheck selector custody under their original startup leases.
 No startup bypass, host-capacity inference or historical identity rewrite is allowed.
 Contract: docs/design/lld/installed-memory-change.md.
 Focused checks: tools/install/test/capacity-policy.test.ts.
+
+Output-pool planning and the shared settings CAS are prepared. They grow only
+aggregate output within the existing storage/reserve; per-run budgets stay fixed.
+The resumable coordinator and CLI still need wiring before this operation is usable.
