@@ -5,10 +5,10 @@ import type { ChildProcessByStdio } from 'node:child_process';
 import type { Readable } from 'node:stream';
 import { createServer } from 'node:net';
 import { once } from 'node:events';
-import { mkdtemp, mkdir, realpath, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { validateApi } from '@beetle/contracts/api';
 import template from '../../contracts/fixtures/api/valid/installation-settings.json' with { type: 'json' };
 
@@ -50,8 +50,13 @@ async function installation(root: string) {
 }
 async function serve(root: string, work: (origin: string, token: string) => Promise<void>): Promise<void> {
   const record = await installation(root); const agent = await offlineAgentFixture(root, record); const port = await ownedPort(); const origin = `http://127.0.0.1:${port}`;
+  const receipt = join(root, 'receipt.json');
+  const hash = (text: string) => createHash('sha256').update(text).digest('hex');
+  await writeFile(receipt, JSON.stringify({version: 1, phase: 'ready', installationId: record.id,
+    configDigests: {'installation.json': hash(JSON.stringify(record)),
+      'backend-agent.json': hash(await readFile(agent.path, 'utf8'))}}), {mode: 0o600});
   const child = spawn(process.execPath, ['app/dist/main.js'], { cwd: process.cwd(), env: {
-    BEETLE_LOCAL_ACCESS: 'paired', BEETLE_AGENT_CONFIG_FILE: agent.path, PATH: process.env.PATH ?? '', BEETLE_CONFIG_FILE: join(root, 'installation.json'),
+    BEETLE_INSTALLATION_RECEIPT_FILE: receipt, BEETLE_LOCAL_ACCESS: 'paired', BEETLE_AGENT_CONFIG_FILE: agent.path, PATH: process.env.PATH ?? '', BEETLE_CONFIG_FILE: join(root, 'installation.json'),
     BEETLE_DATA_DIR: join(root, 'data'), BEETLE_EXTERNAL_ORIGIN: origin, BEETLE_LISTEN_PORT: String(port),
   }, stdio: ['ignore', 'pipe', 'pipe'] });
   let closed = false;
