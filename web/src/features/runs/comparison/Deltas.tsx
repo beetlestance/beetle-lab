@@ -31,18 +31,26 @@ const rows: readonly Row[] = [
 export function delta(kind: Row['delta'], base: number | null, value: number | null): string | null {
   if (base === null || value === null) return null;
   if (value === base) return 'same';
-  if (kind === 'points') {
-    const points = Math.round((value - base) * 10000) / 100;
-    return points === 0 ? 'same' : `${points > 0 ? '+' : '−'}${Math.abs(points)} pp`;
-  }
-  if (kind === 'duration') {
-    const text = formatDuration(Math.abs(value - base));
-    return text ? `${value > base ? '+' : '−'}${text}` : null;
-  }
-  if (base === 0) return null;
-  const percent = Math.round(((value - base) / base) * 100);
-  return percent === 0 ? 'same' : `${percent > 0 ? '+' : '−'}${Math.abs(percent)}%`;
+  return deltaOf[kind](base, value);
 }
+
+const sign = (difference: number) => (difference > 0 ? '+' : '−');
+
+const deltaOf: Record<Row['delta'], (base: number, value: number) => string | null> = {
+  points(base, value) {
+    const points = Math.round((value - base) * 10000) / 100;
+    return points === 0 ? 'same' : `${sign(points)}${Math.abs(points)} pp`;
+  },
+  duration(base, value) {
+    const text = formatDuration(Math.abs(value - base));
+    return text ? `${sign(value - base)}${text}` : null;
+  },
+  relative(base, value) {
+    if (base === 0) return null;
+    const percent = Math.round(((value - base) / base) * 100);
+    return percent === 0 ? 'same' : `${sign(percent)}${Math.abs(percent)}%`;
+  },
+};
 
 function summaryOf(summaries: Summaries | undefined, item: RunComparisonItem) {
   const value = summaries?.get(item.run.id.toLowerCase());

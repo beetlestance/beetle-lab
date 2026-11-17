@@ -91,62 +91,17 @@ function HistoryPage({
   const filtered = filtersActive(filters);
   return (
     <>
-      <div className="history-toolbar">
-        <p className="history-compare-hint" aria-live="polite">
-          {selected.length === 0
-            ? 'Tick two to four finished runs to compare them. The first you tick is the baseline.'
-            : `${selected.length} selected. The first is the baseline.`}
-        </p>
-        <div className="history-toolbar-actions">
-          {selected.length > 0 && (
-            <Button variant="text" size="sm" onClick={() => setSelected([])}>
-              Clear selection
-            </Button>
-          )}
-          {selected.length >= 2 ? (
-            <Link
-              className={buttonClass('primary', 'sm')}
-              to={routes.comparison(scope.organizationId, scope.workspaceId, selected)}
-            >
-              Compare {selected.length}
-            </Link>
-          ) : (
-            <Button variant="primary" size="sm" disabled>
-              Compare
-            </Button>
-          )}
-          <Button size="sm" onClick={refresh} disabled={query.isFetching}>
-            Refresh
-          </Button>
-        </div>
-      </div>
+      <HistoryToolbar
+        scope={scope}
+        selected={selected}
+        clear={() => setSelected([])}
+        refresh={refresh}
+        fetching={query.isFetching}
+      />
       <QueryState query={query} loading={<LoadingState variant="table" label="Loading runs…" rows={6} />}>
         {(data: RunPage) =>
           data.items.length === 0 && !page.hasBack ? (
-            filtered ? (
-              <EmptyState
-                compact
-                title="No runs match these filters"
-                actions={
-                  <Button size="sm" onClick={reset}>
-                    Reset filters
-                  </Button>
-                }
-              >
-                Search matches suite, folder and workspace names, run notes, or the start of a run ID.
-              </EmptyState>
-            ) : (
-              <EmptyState
-                title="No runs yet"
-                actions={
-                  <Link className={buttonClass('primary')} to={routes.suites(scope.organizationId, scope.workspaceId)}>
-                    Open suites
-                  </Link>
-                }
-              >
-                Runs appear here when you start one from a saved suite revision.
-              </EmptyState>
-            )
+            <HistoryEmpty scope={scope} filtered={filtered} reset={reset} />
           ) : (
             <>
               <HistoryTable
@@ -164,6 +119,79 @@ function HistoryPage({
         }
       </QueryState>
     </>
+  );
+}
+function HistoryToolbar({
+  scope,
+  selected,
+  clear,
+  refresh,
+  fetching,
+}: {
+  scope: RunScope;
+  selected: readonly string[];
+  clear(): void;
+  refresh(): void;
+  fetching: boolean;
+}) {
+  return (
+    <div className="history-toolbar">
+      <p className="history-compare-hint" aria-live="polite">
+        {selected.length === 0
+          ? 'Tick two to four finished runs to compare them. The first you tick is the baseline.'
+          : `${selected.length} selected. The first is the baseline.`}
+      </p>
+      <div className="history-toolbar-actions">
+        {selected.length > 0 && (
+          <Button variant="text" size="sm" onClick={clear}>
+            Clear selection
+          </Button>
+        )}
+        {selected.length >= 2 ? (
+          <Link
+            className={buttonClass('primary', 'sm')}
+            to={routes.comparison(scope.organizationId, scope.workspaceId, [...selected])}
+          >
+            Compare {selected.length}
+          </Link>
+        ) : (
+          <Button variant="primary" size="sm" disabled>
+            Compare
+          </Button>
+        )}
+        <Button size="sm" onClick={refresh} disabled={fetching}>
+          Refresh
+        </Button>
+      </div>
+    </div>
+  );
+}
+function HistoryEmpty({ scope, filtered, reset }: { scope: RunScope; filtered: boolean; reset(): void }) {
+  if (filtered)
+    return (
+      <EmptyState
+        compact
+        title="No runs match these filters"
+        actions={
+          <Button size="sm" onClick={reset}>
+            Reset filters
+          </Button>
+        }
+      >
+        Search matches suite, folder and workspace names, run notes, or the start of a run ID.
+      </EmptyState>
+    );
+  return (
+    <EmptyState
+      title="No runs yet"
+      actions={
+        <Link className={buttonClass('primary')} to={routes.suites(scope.organizationId, scope.workspaceId)}>
+          Open suites
+        </Link>
+      }
+    >
+      Runs appear here when you start one from a saved suite revision.
+    </EmptyState>
   );
 }
 function HistoryPager({

@@ -101,6 +101,21 @@ export function Thresholds({
   );
 }
 
+/** "Revision 3 of checkout, the latest": what is known of the revision this run used. */
+function revisionTitle(run: Run, suite: Suite | undefined, revision: SuiteRevision | undefined): string {
+  const name = revision ? `Revision ${revision.ordinal}` : 'Saved revision';
+  if (!suite) return name;
+  const latest = suite.currentRevisionId?.toLowerCase() === run.revisionId.toLowerCase();
+  return `${name} of ${suite.name}${latest ? ', the latest' : ''}`;
+}
+
+/** ", saved <time> by Meera: message" after the config digest; parts left out when unknown. */
+function savedLine(revision: SuiteRevision): string {
+  const by = revision.savedBy ? ` by ${revision.savedBy}` : '';
+  const saved = revision.savedAt ? `, saved ${formatTime(revision.savedAt)}${by}` : '';
+  return `${saved}${revision.message ? `: ${revision.message}` : ''}`;
+}
+
 export function ScriptVersion({
   run,
   suite,
@@ -113,24 +128,13 @@ export function ScriptVersion({
   failed: boolean;
 }) {
   const { organizationId, workspaceId } = run.scope;
-  const latest = suite ? suite.currentRevisionId?.toLowerCase() === run.revisionId.toLowerCase() : false;
-  const saved = revision?.savedAt
-    ? [`saved ${formatTime(revision.savedAt)}`, revision.savedBy ? `by ${revision.savedBy}` : null]
-        .filter(Boolean)
-        .join(' ')
-    : null;
   return (
     <section className="result-card result-script" aria-labelledby="result-script-title">
       <h2 id="result-script-title">Script version</h2>
-      <p>
-        {revision ? `Revision ${revision.ordinal}` : 'Saved revision'}
-        {suite ? ` of ${suite.name}` : ''}
-        {latest ? ', the latest' : ''}
-      </p>
+      <p>{revisionTitle(run, suite, revision)}</p>
       <p className="result-muted">
         Config <span className="number">{run.revisionDigest.slice(0, 8)}</span>
-        {saved ? `, ${saved}` : ''}
-        {revision?.message ? `: ${revision.message}` : ''}
+        {revision ? savedLine(revision) : ''}
       </p>
       {failed && <p className="result-muted">Revision details could not be loaded.</p>}
       <p className="result-muted">
