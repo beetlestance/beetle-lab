@@ -2,7 +2,7 @@ import { nodeFetch } from './http.js';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { encodeJson } from '@beetle/contracts';
-import { authenticatedClient, establishCredentials } from './auth.js';
+import { authenticatedAccess, establishCredentials } from './auth.js';
 import { execute } from './execute.js';
 import { ClientError } from './errors.js';
 import { parseOptions } from './options.js';
@@ -30,8 +30,8 @@ export async function runClient(argv: readonly string[], streams: ClientStreams,
       await streams.stdout.write(JSON.stringify(session) + '\n', AbortSignal.timeout(1000));
       return 0;
     }
-    const api = await authenticatedClient(options, fetcher);
-    const result = await execute({ options, api, signal: controller.signal, deadline, clock: waitClock });
+    const { api, content } = await authenticatedAccess(options, fetcher);
+    const result = await execute({ options, api, content, signal: controller.signal, deadline, clock: waitClock });
     await streams.stdout.write(encodeJson(result.value, 1048575) + '\n', AbortSignal.timeout(1000));
     return result.exit;
   } catch (cause) {

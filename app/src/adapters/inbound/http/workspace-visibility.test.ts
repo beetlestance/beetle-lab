@@ -32,3 +32,15 @@ it('skips visibility only for the exact registered workspace DELETE identity', a
   expect((await f.server.inject({method: 'GET', url})).statusCode).toBe(404); expect(f.authorize).toHaveBeenCalledTimes(3);
  } finally {await f.server.close();}
 });
+it('hides retired organisations on organisation-only routes but lets the exact organisation DELETE through', async () => {
+ const f = fixture(); const ack = {ok: true}; const orgRoute = '/api/v2/organizations/:organizationId';
+ f.server.delete(orgRoute, {onRequest: f.access}, async () => ack); f.server.get(orgRoute + '/settings', {onRequest: f.access}, async () => ack);
+ f.server.get('/api/v2/organizations', {onRequest: f.access}, async () => ack);
+ try {
+  expect((await f.server.inject({method: 'DELETE', url: `/api/v2/organizations/${org}`})).statusCode).toBe(200); expect(f.get).not.toHaveBeenCalled();
+  expect((await f.server.inject({method: 'GET', url: '/api/v2/organizations'})).statusCode).toBe(200); expect(f.get).not.toHaveBeenCalled();
+  expect((await f.server.inject({method: 'GET', url: `/api/v2/organizations/${org}/settings`})).statusCode).toBe(404);
+  expect(f.get).toHaveBeenCalledWith({kind: 'organization', id: org, scope: {kind: 'installation'}});
+  expect((await f.server.inject({method: 'GET', url: '/api/v2/organizations/not-a-uuid/settings'})).statusCode).toBe(400);
+ } finally {await f.server.close();}
+});

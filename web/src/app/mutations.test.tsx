@@ -170,6 +170,23 @@ describe('mutation identity and draft ownership', () => {
     await waitFor(() => expect(mutations(api.records)).toHaveLength(2));
     expect(mutations(api.records)[1]?.body?.expectedVersion).toBe(2);
   });
+  it('omits an unchanged legacy organization name longer than 48 characters on a slug change', async () => {
+    const legacy = { ...org(), name: 'L'.repeat(60) };
+    const api = testClient(request => {
+      if (request.method === 'PATCH') return json({ ...legacy, slug: 'edited-slug', version: 2 }, 200);
+      if (request.path.startsWith('/api/v2/organizations?')) return json({ scope: { kind: 'installation' }, items: [legacy], nextCursor: null });
+      return readNamespace(request);
+    });
+    mount(api.client);
+    fireEvent.click(await screen.findByRole('button', { name: `Rename ${legacy.name}` }));
+    expect(screen.getByLabelText('Organization name')).toHaveAttribute('maxLength', '48');
+    field('Organization slug', 'edited-slug');
+    save();
+    await screen.findByText('Changes saved.');
+    const body = mutations(api.records)[0]?.body;
+    expect(body).toMatchObject({ slug: 'edited-slug', expectedVersion: 1 });
+    expect(body).not.toHaveProperty('name');
+  });
   it('creates and renames an organization-scoped workspace', async () => {
     const api = testClient(request => request.method !== 'GET'
       ? json({ ...workspace(), name: String(request.body?.name), version: 4 }, request.method === 'POST' ? 201 : 200) : readNamespace(request));

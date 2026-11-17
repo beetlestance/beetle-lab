@@ -2,6 +2,7 @@ import { DeleteNamespace } from '../namespace-deletion/index.js';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
 import type { Organization } from '@beetle/contracts/api';
+import type { EditorField } from '../../components/Editor.js';
 import { useApi, readResult } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
@@ -9,6 +10,28 @@ import { useEditor } from '../../components/Editor.js';
 import { usePage, Pagination } from '../../components/Pagination.js';
 import { QueryState } from '../../components/QueryState.js';
 import { ResourceTable } from '../../components/ResourceTable.js';
+
+/** Mirrors contracts/api/v2/common OrganizationName. */
+const ORGANIZATION_NAME_MAX = 48;
+
+function organizationFields(org?: Organization): EditorField[] {
+  return [
+    {
+      name: 'name',
+      label: 'Organization name',
+      value: org?.name ?? '',
+      maxLength: ORGANIZATION_NAME_MAX,
+      help: `Up to ${ORGANIZATION_NAME_MAX} characters.`,
+    },
+    {
+      name: 'slug',
+      label: 'Organization slug',
+      value: org?.slug ?? '',
+      pattern: '[a-z0-9]+(-[a-z0-9]+)*',
+      help: 'Lowercase letters, numbers, and single hyphens.',
+    },
+  ];
+}
 
 export function Organizations() {
   const api = useApi();
@@ -25,24 +48,16 @@ export function Organizations() {
     editor.open({
       title: org ? 'Rename organization' : 'Create organization',
       path: pathname,
-      fields: [
-        { name: 'name', label: 'Organization name', value: org?.name ?? '' },
-        {
-          name: 'slug',
-          label: 'Organization slug',
-          value: org?.slug ?? '',
-          pattern: '[a-z0-9]+(-[a-z0-9]+)*',
-          help: 'Lowercase letters, numbers, and single hyphens.',
-        },
-      ],
+      fields: organizationFields(org),
       submit: (values, requestId) => {
         const body = { requestId, scope: { kind: 'installation' as const }, name: values.name!, slug: values.slug! };
-        return org
-          ? api.patchOrganization({
-              params: { organizationId: org.id },
-              body: { ...body, expectedVersion: org.version },
-            })
-          : api.createOrganization({ body });
+        if (!org) return api.createOrganization({ body });
+        // Omit an unchanged name so an organisation created before the 48-character limit can still change its slug.
+        const { name, ...rest } = body;
+        return api.patchOrganization({
+          params: { organizationId: org.id },
+          body: { ...rest, ...(name.trim() === org.name ? {} : { name }), expectedVersion: org.version },
+        });
       },
       refresh,
     });

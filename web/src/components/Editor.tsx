@@ -9,6 +9,7 @@ export interface EditorField {
   label: string;
   value: string;
   pattern?: string;
+  maxLength?: number;
   help?: string;
   required?: boolean;
   options?: readonly string[];
@@ -194,7 +195,7 @@ function EditorFields({
               value={values[field.name] ?? ''}
               autoFocus={index === 0}
               required={field.required ?? true}
-              maxLength={128}
+              maxLength={field.maxLength ?? 128}
               pattern={field.pattern}
               aria-describedby={field.help ? `${id}-${field.name}-help` : undefined}
               onChange={(event) => {

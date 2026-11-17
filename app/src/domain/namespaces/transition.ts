@@ -4,6 +4,7 @@ import {
   immutableSnapshot,
   nextVersion,
   normalizedName,
+  ORGANIZATION_NAME_MAX,
   requireRule,
   sameScope,
   sameUuid,
@@ -26,7 +27,11 @@ function organizationChange(
 ): NamespaceChange {
   const current = command.kind === 'patchOrganization' ? existing(command, evidence) : undefined;
   requireRule(current === undefined || 'slug' in current, 'not_found');
-  const name = normalizedName(command.request.name ?? (current as Organization).name);
+  // A new or changed name must fit the organisation limit; an unchanged legacy name (up to 128) is kept.
+  const name =
+    command.request.name === undefined
+      ? normalizedName((current as Organization).name)
+      : normalizedName(command.request.name, ORGANIZATION_NAME_MAX);
   const slug = validatedSlug(command.request.slug ?? (current as Organization).slug);
   return {
     entity: {

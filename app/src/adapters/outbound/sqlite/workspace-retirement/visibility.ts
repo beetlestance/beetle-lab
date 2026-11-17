@@ -26,3 +26,20 @@ export function requireRetirableWorkspace(db: DatabaseSync, id: string): void {
   if (!row || row.retired !== 0) throw new StorageError('not_found');
   if (row.busy !== 0) throw new StorageError('conflict');
 }
+/** Public organisation visibility; historical read-only mode keeps retired organisations readable. */
+export function requireVisibleOrganization(db: DatabaseSync, organizationId: string): void {
+  if (isHistorical(db)) return;
+  const row = db.prepare('SELECT * FROM organizations WHERE id=?').get(lower(organizationId));
+  if (!row || (row.retired !== undefined && row.retired !== 0)) throw new StorageError('not_found');
+}
+/** Organisation DELETE is allowed once every workspace is retired; rows are then retained (migration 030). */
+export function requireRetirableOrganization(db: DatabaseSync, id: string): void {
+  const row = db
+    .prepare(
+      `SELECT retired,EXISTS(SELECT 1 FROM workspaces INDEXED BY workspaces_visible
+       WHERE retired=0 AND organization_id=target.id LIMIT 1) active FROM organizations target WHERE target.id=?`,
+    )
+    .get(lower(id));
+  if (!row || row.retired !== 0) throw new StorageError('not_found');
+  if (row.active !== 0) throw new StorageError('conflict');
+}

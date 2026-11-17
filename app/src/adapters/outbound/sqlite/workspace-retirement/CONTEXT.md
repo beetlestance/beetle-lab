@@ -7,4 +7,6 @@ Private delivery/cleanup/settlement reads retain authority and paid storage.
 Busy indexed predicates refuse active Run/export, charged execution and input intake.
 Parent/manual/workspace retention previews and unissued Apply cannot mint authority.
 Historical read-only mode has distinct visibility and still rejects writes.
-Contract: docs/system/contracts/retirement.md. Root owns migration 028.
+Organisation retirement (migration 030) mirrors this: retired flag, private slug key,
+retired_slug for the canonical slug, organisation visibility checks.
+Contract: docs/system/contracts/namespaces.md. Root owns migrations 028 and 030.

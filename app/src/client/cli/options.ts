@@ -2,7 +2,17 @@ import { isIP } from 'node:net';
 import { isAbsolute } from 'node:path';
 import { validateApi } from '@beetle/contracts/api';
 import { ClientError } from './errors.js';
-export type Command = 'connect' | 'pair' | 'run' | 'status' | 'result' | 'cancel' | 'compare';
+export type Command =
+  | 'connect'
+  | 'pair'
+  | 'run'
+  | 'status'
+  | 'result'
+  | 'cancel'
+  | 'compare'
+  | 'export'
+  | 'export-status'
+  | 'export-download';
 export interface ClientOptions {
   readonly command: Command;
   readonly endpoint: string;
@@ -12,11 +22,24 @@ export interface ClientOptions {
   readonly requestFile?: string;
   readonly waitMs?: number;
   readonly run?: { readonly organizationId: string; readonly workspaceId: string; readonly runId: string };
+  readonly exportJob?: { readonly organizationId: string; readonly workspaceId: string; readonly exportId: string };
+  readonly outFile?: string;
 }
 const invalid = (): never => {
   throw new ClientError('invalid_input', 2);
 };
-const names = ['connect', 'pair', 'run', 'status', 'result', 'cancel', 'compare'] as const;
+const names = [
+  'connect',
+  'pair',
+  'run',
+  'status',
+  'result',
+  'cancel',
+  'compare',
+  'export',
+  'export-status',
+  'export-download',
+] as const;
 const extras: Record<Command, readonly string[]> = {
   connect: [],
   pair: ['token-file'],
@@ -25,6 +48,9 @@ const extras: Record<Command, readonly string[]> = {
   result: ['organization', 'workspace', 'run'],
   cancel: ['organization', 'workspace', 'run', 'request-file'],
   compare: ['request-file'],
+  export: ['request-file', 'wait-ms'],
+  'export-status': ['organization', 'workspace', 'export', 'wait-ms'],
+  'export-download': ['organization', 'workspace', 'export', 'out'],
 };
 function origin(value: string, local = false): string {
   try {
@@ -62,19 +88,29 @@ function file(values: Map<string, string>, key: string): string {
   if (!value || !isAbsolute(value) || value.includes('\0')) return invalid();
   return value;
 }
-function runScope(values: Map<string, string>) {
+function scoped(values: Map<string, string>, key: 'run' | 'export') {
   const organizationId = values.get('organization');
   const workspaceId = values.get('workspace');
-  const runId = values.get('run');
-  if (!validateApi('Uuid', organizationId).ok || !validateApi('Uuid', workspaceId).ok || !validateApi('Uuid', runId).ok)
+  const id = values.get(key);
+  if (!validateApi('Uuid', organizationId).ok || !validateApi('Uuid', workspaceId).ok || !validateApi('Uuid', id).ok)
     return invalid();
-  return Object.freeze({ organizationId: organizationId!, workspaceId: workspaceId!, runId: runId! });
+  return { organizationId: organizationId!, workspaceId: workspaceId!, id: id! };
+}
+function runScope(values: Map<string, string>) {
+  const { id, ...scope } = scoped(values, 'run');
+  return Object.freeze({ ...scope, runId: id });
+}
+function exportScope(values: Map<string, string>) {
+  const { id, ...scope } = scoped(values, 'export');
+  return Object.freeze({ ...scope, exportId: id });
 }
 function specificOptions(command: Command, values: Map<string, string>) {
   return {
     ...(command === 'pair' ? { tokenFile: file(values, 'token-file') } : {}),
-    ...(['run', 'cancel', 'compare'].includes(command) ? { requestFile: file(values, 'request-file') } : {}),
+    ...(['run', 'cancel', 'compare', 'export'].includes(command) ? { requestFile: file(values, 'request-file') } : {}),
     ...(['status', 'result', 'cancel'].includes(command) ? { run: runScope(values) } : {}),
+    ...(['export-status', 'export-download'].includes(command) ? { exportJob: exportScope(values) } : {}),
+    ...(command === 'export-download' ? { outFile: file(values, 'out') } : {}),
   };
 }
 function waiting(values: Map<string, string>) {

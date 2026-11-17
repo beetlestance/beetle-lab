@@ -17,7 +17,7 @@
       "type": "object", "allOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/namespace-requests#/$defs/MutationIntent" }],
       "properties": {
         "scope": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/InstallationScope" },
-        "name": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name" },
+        "name": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/OrganizationName" },
         "slug": { "$ref": "https://beetle-lab.dev/contracts/api/v2/namespace#/$defs/Organization/properties/slug" }
       },
       "required": ["scope", "name", "slug"], "unevaluatedProperties": false
@@ -26,7 +26,7 @@
       "type": "object", "allOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/namespace-requests#/$defs/VersionedIntent" }],
       "properties": {
         "scope": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/InstallationScope" },
-        "name": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name" },
+        "name": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/OrganizationName" },
         "slug": { "$ref": "https://beetle-lab.dev/contracts/api/v2/namespace#/$defs/Organization/properties/slug" }
       },
       "required": ["scope"], "minProperties": 4, "unevaluatedProperties": false

@@ -5,6 +5,7 @@ import { readFileBounded } from './files.js';
 import { clientFailure } from './auth.js';
 import type { ClientOptions } from './options.js';
 import { runExit, waitForRun, terminal } from './wait.js';
+import { downloadExport, exportExit, exportTerminal, waitForExport } from './exports.js';
 import type { WaitClock } from './wait.js';
 interface ExecutionInput {
   options: ClientOptions;
@@ -12,15 +13,16 @@ interface ExecutionInput {
   signal: AbortSignal;
   deadline: number;
   clock: WaitClock;
+  /** Authenticated byte-route reader; required only by export-download. */
+  content?: (path: string, signal: AbortSignal) => Promise<Response>;
 }
 interface Execution {
   readonly value: object;
   readonly exit: number;
 }
-async function request<N extends 'CreateRunRequest' | 'CancelRunRequest' | 'RunComparisonRequest'>(
-  options: ClientOptions,
-  name: N,
-): Promise<ApiTypes[N]> {
+async function request<
+  N extends 'CreateRunRequest' | 'CancelRunRequest' | 'RunComparisonRequest' | 'CreateExportRequest',
+>(options: ClientOptions, name: N): Promise<ApiTypes[N]> {
   let value: unknown;
   try {
     value = JSON.parse(await readFileBounded(options.requestFile!, 4096));
@@ -65,8 +67,51 @@ export async function execute(input: ExecutionInput): Promise<Execution> {
       return { value: result.value, exit: 0 };
     }
     default:
+      return executeExport(input);
+  }
+}
+
+async function executeExport(input: ExecutionInput): Promise<Execution> {
+  const { options, api, signal, clock, deadline } = input;
+  switch (options.command) {
+    case 'export':
+      return submitExport(input);
+    case 'export-status': {
+      const result = await api.getExport({ params: options.exportJob!, signal });
+      ensureReadBudget(input);
+      if (!result.ok) clientFailure(result.error);
+      const job =
+        options.waitMs === undefined
+          ? result.value
+          : await waitForExport({ api, job: result.value, signal, deadline, clock });
+      return { value: { export: job, waiting: !exportTerminal(job) }, exit: exportExit(job) };
+    }
+    case 'export-download':
+      if (!input.content) throw new ClientError('invalid_input', 2);
+      return downloadExport({
+        api,
+        content: input.content,
+        params: options.exportJob!,
+        outFile: options.outFile!,
+        signal,
+      });
+    default:
       throw new ClientError('invalid_input', 2);
   }
+}
+
+async function submitExport(input: ExecutionInput): Promise<Execution> {
+  const { options, api, signal, deadline, clock } = input;
+  const body = await request(options, 'CreateExportRequest');
+  ensureActive(signal);
+  const { organizationId, workspaceId } = body.scope;
+  const params = { organizationId, workspaceId, revisionId: body.revisionId };
+  const result = await api.createExport({ params, body, signal });
+  ensureMutationBudget(input, body.requestId);
+  if (!result.ok) clientFailure(result.error, body.requestId);
+  if (options.waitMs === undefined) return { value: { submitted: true, export: result.value }, exit: 0 };
+  const job = await waitForExport({ api, job: result.value, signal, deadline, clock });
+  return { value: { export: job, waiting: !exportTerminal(job) }, exit: exportExit(job) };
 }
 
 async function submit(input: ExecutionInput): Promise<Execution> {

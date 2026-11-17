@@ -32,6 +32,7 @@ export type Version = FromSchema<typeof S0.Version>;
 export type Count = FromSchema<typeof S0.Count>;
 export type PositiveInteger = FromSchema<typeof S0.PositiveInteger>;
 export type Name = FromSchema<typeof S0.Name>;
+export type OrganizationName = FromSchema<typeof S0.OrganizationName>;
 export type OpaqueCursor = FromSchema<typeof S0.OpaqueCursor>;
 export type PageQuery = FromSchema<typeof S0.PageQuery>;
 export type InstallationScope = FromSchema<typeof S0.InstallationScope>;
@@ -181,6 +182,7 @@ export interface ApiTypes {
   Count: Count;
   PositiveInteger: PositiveInteger;
   Name: Name;
+  OrganizationName: OrganizationName;
   OpaqueCursor: OpaqueCursor;
   PageQuery: PageQuery;
   InstallationScope: InstallationScope;

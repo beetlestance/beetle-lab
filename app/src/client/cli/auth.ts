@@ -58,17 +58,26 @@ async function credentials(options: ClientOptions): Promise<Credentials> {
 function headers(options: ClientOptions): Record<string, string> {
   return { host: new URL(options.origin).host, origin: options.origin };
 }
-export async function authenticatedClient(options: ClientOptions, fetcher = nodeFetch): Promise<ApiClient> {
+export interface AuthenticatedAccess {
+  readonly api: ApiClient;
+  /** One same-origin GET for a byte route the generated client does not model; no redirects or retries. */
+  readonly content: (path: string, signal: AbortSignal) => Promise<Response>;
+}
+export async function authenticatedAccess(options: ClientOptions, fetcher = nodeFetch): Promise<AuthenticatedAccess> {
   const grant = await credentials(options);
-  return createApiClient({
-    baseUrl: options.endpoint,
-    fetch: fetcher,
-    headers: {
-      ...headers(options),
-      cookie: `beetle_session=${grant.cookie}`,
-      'x-beetle-csrf': grant.session.csrfToken,
-    },
-  });
+  const session = {
+    ...headers(options),
+    cookie: `beetle_session=${grant.cookie}`,
+    'x-beetle-csrf': grant.session.csrfToken,
+  };
+  return {
+    api: createApiClient({ baseUrl: options.endpoint, fetch: fetcher, headers: session }),
+    content: (path, signal) =>
+      fetcher(new URL(path, options.endpoint), { method: 'GET', redirect: 'error', headers: session, signal }),
+  };
+}
+export async function authenticatedClient(options: ClientOptions, fetcher = nodeFetch): Promise<ApiClient> {
+  return (await authenticatedAccess(options, fetcher)).api;
 }
 /** One explicit grant; shared cookie/credential custody, no implicit retries. */
 export async function establishCredentials(
