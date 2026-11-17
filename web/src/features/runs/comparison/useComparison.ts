@@ -24,6 +24,66 @@ export type Summaries = ReadonlyMap<string, RunHistorySummary | null>;
 const comparisonAdmission = new ReadAdmission();
 const initial: Command = { metric: null, catalogue: true };
 const empty: View = { error: false, busy: true };
+type ComparedRun = RunComparisonSnapshot['items'][number]['run'];
+/** One admitted read: its client, scope, abort signal, and whether its result is still wanted. */
+interface ReadContext {
+  api: ReturnType<typeof useApi>;
+  params: { organizationId: string; workspaceId: string };
+  signal: AbortSignal;
+  alive: () => boolean;
+}
+
+/** Reads one comparison in order: snapshot, then catalogue, then first-load summaries. */
+async function readComparison(context: ReadContext, ids: readonly string[], command: Command) {
+  const { api, params, signal, alive } = context;
+  if (!alive()) return undefined;
+  const snapshot = await readResult(
+    api.compareRuns({
+      params,
+      body: { scope: { kind: 'workspace', ...params }, runIds: [...ids], metric: command.metric },
+      signal,
+    }),
+  );
+  if (!alive()) return undefined;
+  const page = command.catalogue ? await readCatalogue(context, snapshot, command.cursor) : undefined;
+  const firstLoad = command.catalogue && !command.cursor;
+  const read = firstLoad ? await readSummaries(context, snapshot) : undefined;
+  return { snapshot, page, read };
+}
+
+function readCatalogue({ api, params, signal }: ReadContext, snapshot: RunComparisonSnapshot, cursor?: string) {
+  const run = snapshot.items[0]!.run;
+  return readResult(
+    api.listRunMetricSeries({
+      params: { ...params, runId: run.id, attemptId: run.activeAttemptId },
+      query: { limit: 100, ...(cursor ? { cursor } : {}) },
+      signal,
+    }),
+  );
+}
+
+/** Sequential; stops as soon as the read is no longer wanted, and the caller then discards it. */
+async function readSummaries(context: ReadContext, snapshot: RunComparisonSnapshot) {
+  const read = new Map<string, RunHistorySummary | null>();
+  for (const item of snapshot.items) {
+    if (!context.alive()) break;
+    read.set(item.run.id.toLowerCase(), await summaryOf(context, item.run));
+  }
+  return read;
+}
+
+/** One run's stored history summary (one exact-ID row); a failure is only a gap. */
+async function summaryOf({ api, params, signal }: ReadContext, run: ComparedRun) {
+  try {
+    const page = await readResult(api.listRuns({ params, query: { limit: 1, runIdPrefix: run.id }, signal }));
+    const index = page.items.findIndex((item) => item.id.toLowerCase() === run.id.toLowerCase());
+    const value = index < 0 ? undefined : page.summaries[index];
+    return value && value.attemptId.toLowerCase() === run.activeAttemptId.toLowerCase() ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 /** One admission survives render/session/selection replacement and ignored aborts. */
 export function useComparison(scope: RunScope, ids: readonly string[]) {
   const api = useApi();
@@ -42,53 +102,16 @@ export function useComparison(scope: RunScope, ids: readonly string[]) {
     const controller = new AbortController();
     let current = true;
     let token: Parameters<ReadAdmission['retire']>[0] | undefined;
-    /** One run's stored history summary (one exact-ID row); a failure is only a gap. */
-    async function summaryOf(run: RunComparisonSnapshot['items'][number]['run'], signal: AbortSignal) {
-      try {
-        const params = { organizationId: scope.organizationId, workspaceId: scope.workspaceId };
-        const page = await readResult(api.listRuns({ params, query: { limit: 1, runIdPrefix: run.id }, signal }));
-        const index = page.items.findIndex((item) => item.id.toLowerCase() === run.id.toLowerCase());
-        const value = index < 0 ? undefined : page.summaries[index];
-        return value && value.attemptId.toLowerCase() === run.activeAttemptId.toLowerCase() ? value : null;
-      } catch {
-        return null;
-      }
-    }
     async function load() {
       await admission.whenIdle(controller.signal);
       if (!current) return;
+      const params = { organizationId: scope.organizationId, workspaceId: scope.workspaceId };
       const action = admission.run(async (owned) => {
-        if (!current || !owned.current) return;
-        const params = { organizationId: scope.organizationId, workspaceId: scope.workspaceId };
-        const snapshot = await readResult(
-          api.compareRuns({
-            params,
-            body: { scope: { kind: 'workspace', ...params }, runIds: [...ids], metric: command.metric },
-            signal: owned.signal,
-          }),
-        );
-        if (!current || !owned.current) return;
-        let page: RunMetricSeriesPage | undefined;
-        if (command.catalogue) {
-          const run = snapshot.items[0]!.run;
-          page = await readResult(
-            api.listRunMetricSeries({
-              params: { ...params, runId: run.id, attemptId: run.activeAttemptId },
-              query: { limit: 100, ...(command.cursor ? { cursor: command.cursor } : {}) },
-              signal: owned.signal,
-            }),
-          );
-        }
-        let read: Map<string, RunHistorySummary | null> | undefined;
-        if (command.catalogue && !command.cursor) {
-          read = new Map();
-          for (const item of snapshot.items) {
-            if (!current || !owned.current) return;
-            read.set(item.run.id.toLowerCase(), await summaryOf(item.run, owned.signal));
-          }
-        }
-        if (!current || !owned.current) return;
-        if (read) setSummaries({ owner: lease.owner, value: read });
+        const alive = () => current && owned.current;
+        const result = await readComparison({ api, params, signal: owned.signal, alive }, ids, command);
+        if (!result || !alive()) return;
+        if (result.read) setSummaries({ owner: lease.owner, value: result.read });
+        const { snapshot, page } = result;
         setSaved({ lease, view: { snapshot, ...(page ? { page } : {}), error: false, busy: false } });
       });
       if (!action) throw new Error('Comparison read busy');

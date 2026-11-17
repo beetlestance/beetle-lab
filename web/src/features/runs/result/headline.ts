@@ -36,21 +36,30 @@ export function spokenLength(ms: number | null): string | null {
   return seconds === 0 ? part(minutes, 'minute') : `${part(minutes, 'minute')} ${part(seconds, 'second')}`;
 }
 
-/** What the run held, from stored summary values only; unknown parts are left out. */
-function traffic(summary: RunHistorySummary | null): string[] {
-  if (!summary) return [];
-  const sentences: string[] = [];
+/** "Held 4 requests a second for 2 seconds." or "Ran for 2 seconds."; nothing without a length. */
+function heldSentence(summary: RunHistorySummary): string | null {
   const rps = formatNumber(summary.requestsPerSecond, 'integer');
   const length = spokenLength(summary.testDurationMs);
-  if (rps && length) sentences.push(`Held ${rps} requests a second for ${length}.`);
-  else if (length) sentences.push(`Ran for ${length}.`);
+  if (!length) return null;
+  return rps ? `Held ${rps} requests a second for ${length}.` : `Ran for ${length}.`;
+}
+
+/** "p95 was about 120 ms and 1% of requests failed."; either half alone is capitalised. */
+function qualitySentence(summary: RunHistorySummary): string | null {
   const p95 = summary.httpP95 ? `p95 was about ${formatNumber(summary.httpP95.estimate, 'integer')} ms` : null;
   const failed = formatPercent(summary.httpFailureRatio);
   const failedText = failed ? `${failed} of requests failed` : null;
-  if (p95 && failedText) sentences.push(`${p95} and ${failedText}.`);
-  else if (p95 ?? failedText) sentences.push(`${(p95 ?? failedText)!.replace(/^./, (c) => c.toUpperCase())}.`);
-  return sentences;
+  if (p95 && failedText) return `${p95} and ${failedText}.`;
+  const one = p95 ?? failedText;
+  return one ? `${one.replace(/^./, (c) => c.toUpperCase())}.` : null;
 }
+
+/** What the run held, from stored summary values only; unknown parts are left out. */
+function traffic(summary: RunHistorySummary | null): string[] {
+  if (!summary) return [];
+  return [heldSentence(summary), qualitySentence(summary)].filter((sentence): sentence is string => !!sentence);
+}
+
 function thresholdLine(result: EngineResult | null): string | null {
   if (!result || result.thresholds.length === 0) return null;
   const failed = result.thresholds.filter((threshold) => !threshold.passed);
@@ -61,60 +70,69 @@ function thresholdLine(result: EngineResult | null): string | null {
     : `${names.length} thresholds failed: ${names.slice(0, 3).join(', ')}${names.length > 3 ? '…' : ''}.`;
 }
 
+type Context = {
+  run: Run;
+  name: string;
+  length: string | null;
+  covered: string | null;
+  held: string[];
+  result: EngineResult | null;
+};
+type Headline = { title: string; sentence: string };
+const join = (...parts: (string | null | undefined)[]) => parts.filter(Boolean).join(' ');
+
+const headlines: Record<Variant, (context: Context) => Headline> = {
+  passed: ({ name, held, result }) => ({ title: `${name} passed`, sentence: join(...held, thresholdLine(result)) }),
+  failed: ({ name, held, result }) => ({ title: `${name} failed`, sentence: join(...held, thresholdLine(result)) }),
+  'not-judged': ({ name, held }) => ({
+    title: `${name} was not judged`,
+    sentence: join(...held, 'The engine did not reach a verdict.'),
+  }),
+  cancelled: ({ name, length, held }) => ({
+    title: length ? `${name} was cancelled after ${length}` : `${name} was cancelled`,
+    sentence: join(...held, 'Thresholds were not judged because the run stopped early.'),
+  }),
+  'out-of-memory': ({ run, name, covered }) => ({
+    title: `${name} ran out of memory`,
+    sentence: join(
+      `k6 went over its ${formatBytes(run.budget.memoryBytes)} memory limit and was stopped.`,
+      covered ? `Figures cover the first ${covered};` : 'Figures cover the run up to the stop;',
+      'thresholds were not judged on a partial run.',
+    ),
+  }),
+  'output-full': ({ run, name, covered }) => ({
+    title: `${name} filled its output`,
+    sentence: join(
+      `The run reached its ${formatBytes(run.budget.outputBytes)} output limit and was stopped at once.`,
+      covered ? `Figures cover the first ${covered}.` : null,
+    ),
+  }),
+  incomplete: ({ name, held }) => ({
+    title: `${name} results are incomplete`,
+    sentence: join(
+      ...held,
+      'The results archive could not be verified, so charts and endpoint detail may be unavailable.',
+    ),
+  }),
+  errored: ({ run, name, held }) => ({
+    title: `${name} errored`,
+    sentence: join(`The run stopped: ${reasonLabel(run.reason) ?? 'no reason was recorded'}.`, ...held),
+  }),
+  pending: ({ name }) => ({ title: `${name} is being finalized`, sentence: 'The outcome is pending.' }),
+};
+
 export function headline(
   run: Run,
   suiteName: string | undefined,
   summary: RunHistorySummary | null,
   result: EngineResult | null,
-): { title: string; sentence: string } {
-  const name = suiteName ?? 'This run';
-  const length = formatDuration(summary?.testDurationMs);
-  const covered = spokenLength(summary?.testDurationMs ?? null);
-  const held = traffic(summary);
-  const join = (...parts: (string | null | undefined)[]) => parts.filter(Boolean).join(' ');
-  switch (variantOf(run)) {
-    case 'passed':
-      return { title: `${name} passed`, sentence: join(...held, thresholdLine(result)) };
-    case 'failed':
-      return { title: `${name} failed`, sentence: join(...held, thresholdLine(result)) };
-    case 'not-judged':
-      return { title: `${name} was not judged`, sentence: join(...held, 'The engine did not reach a verdict.') };
-    case 'cancelled':
-      return {
-        title: length ? `${name} was cancelled after ${length}` : `${name} was cancelled`,
-        sentence: join(...held, 'Thresholds were not judged because the run stopped early.'),
-      };
-    case 'out-of-memory':
-      return {
-        title: `${name} ran out of memory`,
-        sentence: join(
-          `k6 went over its ${formatBytes(run.budget.memoryBytes)} memory limit and was stopped.`,
-          covered ? `Figures cover the first ${covered};` : 'Figures cover the run up to the stop;',
-          'thresholds were not judged on a partial run.',
-        ),
-      };
-    case 'output-full':
-      return {
-        title: `${name} filled its output`,
-        sentence: join(
-          `The run reached its ${formatBytes(run.budget.outputBytes)} output limit and was stopped at once.`,
-          covered ? `Figures cover the first ${covered}.` : null,
-        ),
-      };
-    case 'incomplete':
-      return {
-        title: `${name} results are incomplete`,
-        sentence: join(
-          ...held,
-          'The results archive could not be verified, so charts and endpoint detail may be unavailable.',
-        ),
-      };
-    case 'errored':
-      return {
-        title: `${name} errored`,
-        sentence: join(`The run stopped: ${reasonLabel(run.reason) ?? 'no reason was recorded'}.`, ...held),
-      };
-    case 'pending':
-      return { title: `${name} is being finalized`, sentence: 'The outcome is pending.' };
-  }
+): Headline {
+  return headlines[variantOf(run)]({
+    run,
+    name: suiteName ?? 'This run',
+    length: formatDuration(summary?.testDurationMs),
+    covered: spokenLength(summary?.testDurationMs ?? null),
+    held: traffic(summary),
+    result,
+  });
 }

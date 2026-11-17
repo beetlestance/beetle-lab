@@ -93,47 +93,8 @@ export function HistoryFilters({
         value={chipOf(applied)}
         onChange={(value) => commit({ ...withoutChip(applied), ...chips.find((chip) => chip.value === value)!.filter })}
       />
-      <form
-        role="search"
-        aria-label="Run history search"
-        className="history-search"
-        onSubmit={(event) => {
-          event.preventDefault();
-          submitSearch();
-        }}
-      >
-        <TextInput
-          label="Search runs"
-          hideLabel
-          type="search"
-          placeholder="Search by suite, run or note"
-          value={text}
-          maxLength={256}
-          error={error || undefined}
-          onChange={(event) => setText(event.target.value)}
-        />
-      </form>
-      {!suiteLocked && (
-        <Select
-          label="Suite"
-          hideLabel
-          loading={suites === undefined}
-          value={applied.suiteId ?? ''}
-          onChange={(event) => {
-            const next = { ...applied };
-            delete next.suiteId;
-            if (event.target.value) next.suiteId = event.target.value;
-            commit(next);
-          }}
-        >
-          <option value="">Every suite</option>
-          {suites?.map((suite) => (
-            <option key={suite.id} value={suite.id}>
-              {suite.name}
-            </option>
-          ))}
-        </Select>
-      )}
+      <SearchForm text={text} error={error} onText={setText} onSubmit={submitSearch} />
+      {!suiteLocked && <SuiteSelect applied={applied} suites={suites} commit={commit} />}
       <Select
         label="Sort"
         hideLabel
@@ -149,5 +110,72 @@ export function HistoryFilters({
         </Button>
       )}
     </div>
+  );
+}
+
+function SearchForm({
+  text,
+  error,
+  onText,
+  onSubmit,
+}: {
+  text: string;
+  error: string;
+  onText: (value: string) => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <form
+      role="search"
+      aria-label="Run history search"
+      className="history-search"
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit();
+      }}
+    >
+      <TextInput
+        label="Search runs"
+        hideLabel
+        type="search"
+        placeholder="Search by suite, run or note"
+        value={text}
+        maxLength={256}
+        error={error || undefined}
+        onChange={(event) => onText(event.target.value)}
+      />
+    </form>
+  );
+}
+
+function SuiteSelect({
+  applied,
+  suites,
+  commit,
+}: {
+  applied: HistoryFilter;
+  suites: readonly SuiteOption[] | undefined;
+  commit: (next: HistoryFilter) => void;
+}) {
+  return (
+    <Select
+      label="Suite"
+      hideLabel
+      loading={suites === undefined}
+      value={applied.suiteId ?? ''}
+      onChange={(event) => {
+        const next = { ...applied };
+        delete next.suiteId;
+        if (event.target.value) next.suiteId = event.target.value;
+        commit(next);
+      }}
+    >
+      <option value="">Every suite</option>
+      {suites?.map((suite) => (
+        <option key={suite.id} value={suite.id}>
+          {suite.name}
+        </option>
+      ))}
+    </Select>
   );
 }

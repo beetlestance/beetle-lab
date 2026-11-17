@@ -81,26 +81,29 @@ const reasons: Partial<Record<NonNullable<Run['reason']>, string>> = {
 };
 
 /** One label and tone for a run's application state and outcome; meaning is in the text. */
-export function runStatus(run: Pick<Run, 'state' | 'outcome' | 'reason'>): { label: string; tone: StatusTone } {
-  switch (run.state) {
-    case 'queued':
-    case 'dispatching':
-      return { label: 'Queued', tone: 'info' };
-    case 'active':
-      return { label: 'Running', tone: 'running' };
-    case 'finalizing':
-      return { label: 'Finalizing', tone: 'running' };
-    case 'cancelled':
-      return { label: 'Cancelled', tone: 'skipped' };
-    case 'errored':
-      return { label: (run.reason && reasons[run.reason]) ?? 'Errored', tone: 'fail' };
-    case 'finished':
-      if (run.outcome === 'passed') return { label: 'Passed', tone: 'pass' };
-      if (run.outcome === 'failed') return { label: 'Failed', tone: 'fail' };
-      if (run.outcome === 'inconclusive') return { label: 'Not judged', tone: 'neutral' };
-      return { label: 'Pending', tone: 'neutral' };
-  }
+export function runStatus(run: Pick<Run, 'state' | 'outcome' | 'reason'>): RunStatus {
+  if (run.state === 'errored') return { label: (run.reason && reasons[run.reason]) ?? 'Errored', tone: 'fail' };
+  if (run.state === 'finished') return outcomeStatus[run.outcome] ?? pendingStatus;
+  return stateStatus[run.state];
 }
+
+type RunStatus = { label: string; tone: StatusTone };
+
+const stateStatus: Record<Exclude<Run['state'], 'errored' | 'finished'>, RunStatus> = {
+  queued: { label: 'Queued', tone: 'info' },
+  dispatching: { label: 'Queued', tone: 'info' },
+  active: { label: 'Running', tone: 'running' },
+  finalizing: { label: 'Finalizing', tone: 'running' },
+  cancelled: { label: 'Cancelled', tone: 'skipped' },
+};
+
+const outcomeStatus: Partial<Record<Run['outcome'], RunStatus>> = {
+  passed: { label: 'Passed', tone: 'pass' },
+  failed: { label: 'Failed', tone: 'fail' },
+  inconclusive: { label: 'Not judged', tone: 'neutral' },
+};
+
+const pendingStatus: RunStatus = { label: 'Pending', tone: 'neutral' };
 
 export function reasonLabel(reason: Run['reason']): string | null {
   return reason ? (reasons[reason] ?? reason.replaceAll('_', ' ')) : null;
