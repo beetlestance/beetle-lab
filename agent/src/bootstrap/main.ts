@@ -1,3 +1,4 @@
+import {createStorageFailureExit} from './storage-failure.js';
 import { reportFailure } from './failure.js';
 import { openAgentRuntime } from './index.js';
 import type { AgentRuntime } from './index.js';
@@ -18,13 +19,15 @@ function stop(): Promise<void> {
   abort.abort();
   return closing;
 }
+const fatalStorage=createStorageFailureExit(stop);
+function storageFailure(error:unknown):void {fatalStorage(error);}
 function signal(): void { void stop().catch(error => { reportFailure('shutdown_failed', error); process.exitCode = 1; }); }
 process.once('SIGINT', signal); process.once('SIGTERM', signal);
 const loading = Promise.resolve().then(async () => {
   const loaded = await loadAgentConfiguration(process.env, new URL('./worker.js', import.meta.url), abort.signal);
   providerClose = loaded.close;
   if (abort.signal.aborted) return;
-  runtime = await openAgentRuntime(loaded.runtime);
+  runtime = await openAgentRuntime({...loaded.runtime,onStorageFailure:storageFailure});
   if (abort.signal.aborted) return;
   await runtime.server.listen({ ...loaded.listen });
 });

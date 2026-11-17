@@ -1,4 +1,5 @@
-import { reportWorkerFailure, captureFailureCode } from './failure-diagnostic.js';
+export * from './public-types.js';
+import { validateFailureObserver, notifyWorkerFailure, reportWorkerFailure, captureFailureCode } from './failure-diagnostic.js';
 import { createNoTaskReceiptClient } from './no-task-receipt-client.js';
 import type { JournalNoTaskReceipts } from './no-task-receipt-client.js';
 import { createSettlementClient } from './settlement-client.js';
@@ -11,7 +12,6 @@ import { createCleanupProgressClient } from './cleanup-progress-client.js';
 import type { JournalCleanupProgress } from '../cleanup-control/index.js';
 import { createCleanupPlanClient } from './cleanup-plan-client.js';
 import type { JournalCleanupPlans } from '../cleanup-control/index.js';
-export type { JournalRejectedFunding } from './retirement-client.js';
 import type { JournalRejectedFunding } from './retirement-client.js';
 import { createRetirementClient } from './retirement-client.js';
 import type { JournalRetirements } from '../retirement-values/index.js';
@@ -20,41 +20,34 @@ import type { StagingNamespaceJournal } from '../staging-namespace/index.js';
 import { captureExport } from './export-assignment.js';
 import { copyWrapperBatch } from '../control-protocol/index.js';
 import type { WrapperBatch, WrapperCheckpoint } from '../control-protocol/index.js';
-export type { WrapperBatch, WrapperCheckpoint, WrapperCursor } from '../control-protocol/index.js';
 import { isJournalAuthority } from './authority.js';
 import { Worker } from 'node:worker_threads';
 import type { Ack, AckReceipt, AgentEvent, AttemptSnapshot, ControlEvent, EventBatch, Offer, StandaloneExportAssignment } from '@beetle/contracts';
 import { ackInput, cursorInput, DEFAULT_QUOTA_BYTES, eventInput, generationKey } from './event-input.js';
 import { attemptKey, offerInput, pageInput, runnableInput } from './input.js';
 import type { RunnablePage, RunnableRequest } from './protocol.js';
-export type { RunnablePage, RunnableRequest } from './protocol.js';
 import type { AdmissionCommand, AdmissionValue, Reservation, Scope } from '../admission/index.js';
 import type { CollectionIntent, CollectedSource, PrivateSource, SourceReceipt } from '../output-source/index.js';
 import type { JournalOutputSources, OutputSourceOperation, FailedOutputCollection } from './output-source-protocol.js';
 import type { JournalOutputDelivery, OutputDeliveryClosure, OutputDeliveryOperation } from './output-delivery-protocol.js';
-export type { JournalOutputDelivery, OutputDeliveryClosure } from './output-delivery-protocol.js';
 import { OUTPUT_DELIVERY_BYTES } from './output-delivery-protocol.js';
 import { deliveryReply } from './delivery-input.js';
 import { captureOutputAbsence } from '@beetle/contracts/output-source';
 import type { OutputAbsence, Owned } from '@beetle/contracts/output-source';
 import type { JournalOutputAbsence, OutputAbsenceOperation } from './output-absence-protocol.js';
-export type { JournalOutputAbsence } from './output-absence-protocol.js';
-export type { JournalOutputSources, FailedOutputCollection } from './output-source-protocol.js';
 import { captureCollectionIntent, prepareOutputSource, receiptForOutputSource, copyReceipt, copyFailed,
   sourceHash, sourceJson, sourceCaps, sameSource, sourceScope, intentReply, sourceReply, reservationReply } from './output-source-input.js';
 import { admissionInput, isOfferCommand } from './admission-input.js';
 import { checkedSupervision } from './supervision.js';
 import { captureCancelledOriginal, captureCancelledExportOriginal } from './cancel-original-input.js';
 import type { SupervisionCommand, SupervisionState } from './protocol.js';
-export type { StopReason, SupervisionCommand, SupervisionState } from './protocol.js';
 import type { AttemptKey, ErrorCode, GenerationKey, Operation, PageRequest, PruneReceipt, Reply, SnapshotPage, SourceCursors, SupervisorInput, Value } from './protocol.js';
-export type { AttemptKey, ErrorCode, GenerationKey, PageRequest, PruneReceipt, SnapshotPage, SourceCursors, SupervisorInput } from './protocol.js';
-export { configDigest } from './admission-input.js';
 
 export class JournalError extends Error {
   constructor(readonly code: ErrorCode, readonly recovery?: AttemptSnapshot) { super(`Journal ${code}`); this.name = 'JournalError'; }
 }
 export interface JournalOptions {
+  readonly onFailure?:((error:JournalError)=>void)|undefined;
   path: string;
   /** Trusted packaging option: compiled worker entrypoint. */
   workerUrl?: URL;
@@ -69,6 +62,7 @@ function validateQuota(quota: number): void {
   if (!Number.isSafeInteger(quota) || quota < 1024 || quota > DEFAULT_QUOTA_BYTES) throw new JournalError('invalid_input');
 }
 function validateOptions(options: JournalOptions): void {
+  validateFailureObserver(options.onFailure,new JournalError('invalid_input'));
   const limit = options.queueLimit ?? 32;
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 64) throw new JournalError('invalid_input');
   const quota = options.spoolQuotaBytes ?? DEFAULT_QUOTA_BYTES;
@@ -100,6 +94,8 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
   private largePending = 0;
   private closing = false;
   private failed = false;
+  private readonly onFailure: ((error:JournalError)=>void)|undefined;
+  storageStatus():'ready'|'closing'|'unavailable'{return this.failed?'unavailable':this.closing?'closing':'ready';}
   private closePromise: Promise<void> | undefined;
   private terminationPromise: Promise<number> | undefined;
   private readyResolve: () => void = () => undefined;
@@ -124,6 +120,7 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
       settleCarrier: () => this.failed ? this.terminate().then(() => undefined) : Promise.resolve() });
     this.stagingNamespace = createStagingNamespaceClient({ send: operation => this.prepare(operation),
       invalidReply: () => { this.fail('unavailable'); throw new JournalError('unavailable'); } });
+    this.onFailure=options.onFailure?.bind(options);
     this.limit = options.queueLimit ?? 32;
     this.ready = new Promise((resolve, reject) => { this.readyResolve = resolve; this.readyReject = reject; });
     this.worker = new Worker(options.workerUrl ?? new URL('./worker.js', import.meta.url), {
@@ -388,6 +385,7 @@ export class Journal implements JournalOutputSources, JournalOutputDelivery, Jou
     for (const pending of this.pending.values()) { pending.reject(new JournalError(code)); }
     this.pending.clear();
     void this.terminate().catch(()=>{});
+    if(reason!=='abort')notifyWorkerFailure(this.onFailure,new JournalError(code));
   }
 
   private terminate(): Promise<number> {

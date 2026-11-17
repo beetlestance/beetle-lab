@@ -1,9 +1,11 @@
+import {validateFailureObserver} from './failure-diagnostic.js';
 import { captureHistoricalIdentity } from './historical-native.js';
 import { validateHistoricalMode } from './historical.js';
 import { checkedBootstrap } from './input.js';
 import { StorageError } from './protocol.js';
 import type { Bootstrap } from './protocol.js';
 export interface MetadataOptions extends Bootstrap {
+  readonly onFailure?:((error:StorageError)=>void)|undefined;
   readonly readOnly?: true;
   readonly historicalIdentity?: string;
   path: string;
@@ -17,6 +19,7 @@ function validateLocation(options: MetadataOptions): void {
     !(options.workerUrl instanceof URL) || options.workerUrl.protocol !== 'file:') throw new StorageError('invalid_input');
 }
 export function validateOptions(options: MetadataOptions): Bootstrap {
+  validateFailureObserver(options.onFailure,new StorageError('invalid_input'));
   const limit = options.queueLimit ?? 32;
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 64) throw new StorageError('invalid_input');
   validateLocation(options);

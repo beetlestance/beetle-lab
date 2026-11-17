@@ -76,7 +76,7 @@ async function dataDirectory(path: string): Promise<string> {
     return canonical;
   } catch (error) { throw new BootstrapError('data_directory', {cause: error}); }
 }
-function listener(environment: BackendEnvironment): BackendConfiguration['listen'] {
+export function listener(environment: BackendEnvironment): BackendConfiguration['listen'] {
   const host = environment.BEETLE_LISTEN_HOST ?? '127.0.0.1';
   const text = environment.BEETLE_LISTEN_PORT ?? '4311';
   if (!['127.0.0.1', '::1', '0.0.0.0'].includes(host) || !/^[1-9][0-9]{0,4}$/.test(text)) throw new BootstrapError('listener');

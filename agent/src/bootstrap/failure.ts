@@ -19,7 +19,7 @@ export function failureCodes(error: unknown): readonly string[] {
   } catch { /* Untrusted descriptors must not interrupt shutdown. */ }
   return codes.length ? codes : ['unknown'];
 }
-export function reportFailure(event: 'startup_failed' | 'shutdown_failed', error: unknown): void {
+export function reportFailure(event: 'startup_failed' | 'shutdown_failed' | 'storage_failed' | 'shutdown_deadline', error: unknown): void {
   try {
     process.stderr.write(`${JSON.stringify({component: 'agent', event, codes: failureCodes(error)})}\n`);
   } catch { /* Diagnostics must not prevent cleanup or failure exit. */ }

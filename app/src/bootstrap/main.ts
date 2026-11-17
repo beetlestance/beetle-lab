@@ -1,3 +1,4 @@
+import {createStorageFailureExit} from './storage-failure.js';
 import { reportFailure } from './failure.js';
 import { openApplication } from './api.js';
 import { loadBackendConfiguration } from './configuration.js';
@@ -5,13 +6,16 @@ import { loadBackendConfiguration } from './configuration.js';
 // This entrypoint is bundled beside the metadata worker.
 process.umask(0o077);
 let application: Awaited<ReturnType<typeof openApplication>> | undefined;
+let opening:Promise<Awaited<ReturnType<typeof openApplication>>>|undefined;
 let stopping = false;
 let shutdown: Promise<void> | undefined;
 function stop(): Promise<void> {
   stopping = true;
-  shutdown ??= Promise.resolve().then(async () => { await application?.close(); });
+  shutdown ??= Promise.resolve().then(async () => {await opening?.catch(()=>undefined);await application?.close();});
   return shutdown;
 }
+const fatalStorage=createStorageFailureExit(stop);
+function storageFailure(error:unknown):void {fatalStorage(error);}
 function signal(): void {
   void stop().catch(error => { reportFailure('shutdown_failed', error); process.exitCode = 1; });
 }
@@ -20,7 +24,8 @@ process.once('SIGTERM', signal);
 try {
   const options = await loadBackendConfiguration(process.env, new URL('./worker.js', import.meta.url));
   if (!stopping) {
-    application = await openApplication(options.application);
+    opening=openApplication({...options.application,onStorageFailure:storageFailure});
+    application=await opening;
     if (stopping) await application.close();
     else {
       // Fastify augments its listen options; retain our immutable configuration.

@@ -31,6 +31,6 @@ COPY app/package.json ./package.json
 COPY LICENSE ./LICENSE
 USER 1000:1000
 EXPOSE 4311
-HEALTHCHECK NONE
+HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=3 CMD ["node", "/beetle/backend/health.js"]
 STOPSIGNAL SIGTERM
 ENTRYPOINT ["node", "/beetle/backend/main.js"]

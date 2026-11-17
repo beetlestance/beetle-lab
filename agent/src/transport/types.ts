@@ -10,6 +10,7 @@ import type { JournalOutputAbsence } from '../journal/index.js';
 import type { OutputSourceReader } from '../output-transfer/index.js';
 
 export interface AgentHttpOptions {
+  readonly health?:()=> 'ready'|'closing'|'unavailable';
   readonly settlement?: Pick<StorageSettlement,'settle'>;
   /** Explicit trusted pipeline; raw receipt rows cannot service this route. */
   readonly cleanup?: Pick<RetirementPipeline, 'tick'>;

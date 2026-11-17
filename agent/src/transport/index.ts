@@ -1,3 +1,4 @@
+import {registerStorageHealth} from './storage-health.js';
 import { registerSettlement,settlementRoute } from './settlement.js';
 import { registerRetirement, retirementRoute } from './retirement.js';
 import { EXPORT_ASSIGNMENT_BYTES } from '@beetle/contracts';
@@ -59,6 +60,7 @@ function ingress(server: FastifyInstance, identity: RequestIdentity, operations:
   server.addHook('onRequest', async (request, reply) => {
     const kind = ingressRoute(request);
     if (kind === 'source' || kind === 'live') reply.header('Connection', 'close');
+    if(request.routeOptions.url==='/healthz')return;
     identity.capture(request);
     if (!kind) return;
     const scope = identity.key(request); query(request);
@@ -77,6 +79,7 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
   const server = Fastify({ logger: false, trustProxy: false, bodyLimit: HTTP_LIMITS.bytes, routerOptions: { querystringParser: parseQuery },
     requestTimeout: HTTP_LIMITS.requestMs, connectionTimeout: HTTP_LIMITS.requestMs, keepAliveTimeout: 5000 });
   server.server.maxConnections = HTTP_LIMITS.sockets;
+  if(options.health)registerStorageHealth(server,options.health);
   const operations = new RequestWork();
   const offers = new OfferIngress();
   ingress(server, identity, operations, offers);

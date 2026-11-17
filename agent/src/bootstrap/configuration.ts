@@ -24,20 +24,26 @@ function configPath(environment: AgentEnvironment): string {
   if (!descriptor || !('value' in descriptor)) throw new AgentConfigurationError();
   return absolutePath(descriptor.value);
 }
+/** Shared startup/probe configuration selection; never opens credential/providers/journal. */
+export async function readInstalledConfiguration(environment:AgentEnvironment,signal?:AbortSignal,
+  offline?:{readonly baseline:true;readonly receipt?:unknown}) {
+  const path = configPath(environment);
+  const receipt = offline?.baseline ? { value: offline.receipt, assertCurrent: async () => undefined }
+    : await captureInstallationReceipt(path, environment.BEETLE_INSTALLATION_RECEIPT_FILE);
+  const content = await readPrivateFile(path, 262_144, signal); check(signal);
+  const text = new TextDecoder('utf-8', { fatal: true }).decode(content);
+  const selected = receipt.value === undefined ? JSON.parse(text) as unknown
+    : selectInstalledConfiguration(receipt.value, 'agent.json', text, receiptDigest);
+  const config = installedConfiguration(selected);
+  return {config,receipt};
+}
 /** Private installation files only. No env interpolation, guessed images/capacity or secret defaults. */
 export async function loadAgentConfiguration(environment: AgentEnvironment, workerUrl: URL,
   signal?: AbortSignal, offline?: { readonly baseline: true; readonly receipt?: unknown }): Promise<LoadedAgentConfiguration> {
   let providers: InstalledProviders | undefined;
   try {
     check(signal);
-    const path = configPath(environment);
-    const receipt = offline?.baseline ? { value: offline.receipt, assertCurrent: async () => undefined }
-      : await captureInstallationReceipt(path, environment.BEETLE_INSTALLATION_RECEIPT_FILE);
-    const content = await readPrivateFile(path, 262_144, signal); check(signal);
-    const text = new TextDecoder('utf-8', { fatal: true }).decode(content);
-    const selected = receipt.value === undefined ? JSON.parse(text) as unknown
-      : selectInstalledConfiguration(receipt.value, 'agent.json', text, receiptDigest);
-    const config = installedConfiguration(selected);
+    const {config,receipt}=await readInstalledConfiguration(environment,signal,offline);
     const directory = await journalDirectory(config.journalDirectory); check(signal);
     const raw = await readPrivateFile(config.credentialFile, 128, signal); check(signal);
     const credential = new TextDecoder('utf-8', { fatal: true }).decode(raw); raw.fill(0);

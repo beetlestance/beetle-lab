@@ -1,3 +1,4 @@
+import {registerStorageHealth} from './storage-health.js';
 import { applicationMode } from './historical.js';
 import type { HistoricalOptions } from './historical.js';
 import type { BackendServingLease } from './recovery-control/index.js';
@@ -42,6 +43,7 @@ import { registerInputRoutes } from '../adapters/inbound/http/inputs/index.js';
 import type { InputHttp } from '../adapters/inbound/http/inputs/index.js';
 
 export interface ApplicationOptions {
+  readonly onStorageFailure?:(error:unknown)=>void;
   readonly configurationCheck?: () => Promise<void>;
   readonly externalOrigin: string;
   readonly historical?: HistoricalOptions;
@@ -89,7 +91,7 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
     mode.protect(server);
     recovery = await servingControl(options);
     configureSchemaCompilers(server, { schemas: apiSchemas, encodeJson, maximumResponseBytes: API_MAXIMUM_JSON_BYTES });
-    metadata = await openMetadata(configuredMetadata);
+    metadata = await openMetadata({...configuredMetadata,onFailure:options.onStorageFailure});
     const store = metadata;
     session = await mode.session(store.localSessions); historicalInputs = mode.inputs(store.inputs);
     if (inputsDirectory !== undefined) inputRuntime = await openInputRuntime(inputsDirectory, store.inputs);
@@ -125,6 +127,7 @@ export async function openApplication(options: ApplicationOptions): Promise<Appl
       }
       return closing;
     };
+    registerStorageHealth(server,()=>store.storageStatus()==='unavailable'?'unavailable':closing?'closing':store.storageStatus());
     await server.ready();
     return Object.freeze({ server, bootstrapToken: session.bootstrapToken,
       inputRecoveryState: () => inputRuntime?.recoveryState() ?? 'disabled',

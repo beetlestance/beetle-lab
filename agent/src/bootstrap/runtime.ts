@@ -68,9 +68,12 @@ function journalCopy(input: JournalOptions): JournalOptions {
   }
   return Object.freeze(result) as unknown as JournalOptions;
 }
+function validateStorageObserver(value:unknown):void {
+  if(value!==undefined&&typeof value!=='function')throw new AgentRuntimeError('startup');
+}
 function capture(input: AgentRuntimeOptions): AgentRuntimeOptions {
   const result: Record<string, unknown> = {};
-  for (const name of ['journal', 'installation', 'transport', 'catalog', 'configuration', 'providers', 'credential', 'minimumFreeBytes', 'signal', 'configurationCheck']) {
+  for (const name of ['journal', 'installation', 'transport', 'catalog', 'configuration', 'providers', 'credential', 'minimumFreeBytes', 'signal', 'configurationCheck','onStorageFailure']) {
     const descriptor = Object.getOwnPropertyDescriptor(input, name);
     if (descriptor && !('value' in descriptor)) throw new AgentRuntimeError('startup');
     result[name] = descriptor?.value;
@@ -78,6 +81,7 @@ function capture(input: AgentRuntimeOptions): AgentRuntimeOptions {
   if (typeof result.minimumFreeBytes !== 'number' || !Number.isSafeInteger(result.minimumFreeBytes) || result.minimumFreeBytes < 0) {
     throw new AgentRuntimeError('startup');
   }
+  validateStorageObserver(result.onStorageFailure);
   if (result.configurationCheck !== undefined && typeof result.configurationCheck !== 'function') throw new AgentRuntimeError('startup');
   const options = result as unknown as AgentRuntimeOptions;
   return Object.freeze({ ...options, journal: journalCopy(options.journal),
@@ -122,7 +126,7 @@ class RuntimeOwner {
       expectedDaemonId: options.installation.expectedDaemonId, operation: { deadline: performance.now() + 30_000,
         ...(options.signal ? { signal: options.signal } : {}) } })) throw new AgentRuntimeError('startup');
     this.check(options);
-    this.journal = await openJournal(options.journal); this.check(options);
+    this.journal = await openJournal({...options.journal,onFailure:options.onStorageFailure}); this.check(options);
     const authority = await this.journal.journalAuthority(); this.check(options);
     authorityState.assertJournalAuthority(authority);
     this.namespace = new NamespaceBinding({ root: verified.value, journal: this.journal.stagingNamespace, journalAuthority: authority,
@@ -189,10 +193,11 @@ class RuntimeOwner {
     this.publisher = createObservationPublisher({ journal, observer: this.observer, output: this.output, timeout: this.timeout });
     this.scheduler = createScheduler({ journal, installation: this.installation });
     this.server = createAgentServer({ settlement: this.settlement, cleanup: this.cleanup, credential: options.credential, journalAuthority, journal, installation: this.installation,
+      health:()=>journal.storageStatus()==='unavailable'?'unavailable':this.closed?'closing':journal.storageStatus(),
       liveMetrics: (key, operation) => supervisor.readLiveMetrics(key, operation),
       outputs: createOutputSourceReader({ journal, gate, readRange: readOutputRange }), absences: journal, capabilities: () => view.capabilities() });
-    this.server.addHook('onRequest', async () => {
-      if (this.closed) throw new AgentHttpError(503, 'budget_unavailable', 'transport');
+    this.server.addHook('onRequest', async request => {
+      if (this.closed&&request.routeOptions.url!=='/healthz') throw new AgentHttpError(503, 'budget_unavailable', 'transport');
     });
   }
   private status() {

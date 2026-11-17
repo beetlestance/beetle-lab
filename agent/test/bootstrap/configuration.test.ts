@@ -1,10 +1,11 @@
 import { expect, it } from 'vitest';
-import { chmod, symlink, writeFile } from 'node:fs/promises';
+import { chmod, symlink, writeFile, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadAgentConfiguration as loadInstalledAgentConfiguration } from '../../src/bootstrap/index.js';
 import type { AgentEnvironment } from '../../src/bootstrap/index.js';
 const loadAgentConfiguration = (environment: AgentEnvironment, worker: URL, signal?: AbortSignal) =>
   loadInstalledAgentConfiguration(environment, worker, signal, { baseline: true });
+import {readInstalledConfiguration} from '../../src/bootstrap/configuration.js';
 import { installedConfiguration } from '../../src/bootstrap/installed-config.js';
 import { fixture, credential } from './fixtures.js';
 import { configurationFiles } from './configuration-fixtures.js';
@@ -60,4 +61,11 @@ it('rejects unsafe journal storage and startup abort without creating a journal'
   await expect(loadAgentConfiguration({ BEETLE_AGENT_CONFIG_FILE: files.path }, f.workerUrl())).rejects.toThrow();
   await chmod(files.journal, 0o700);
   await expect(loadAgentConfiguration({ BEETLE_AGENT_CONFIG_FILE: files.path }, f.workerUrl(), AbortSignal.abort())).rejects.toThrow();
+});
+
+it.each(['127.0.0.1','::1'])('health configuration uses actual %s/nondefault listener without reading credentials',async host=>{
+  const e=await f.setup();const files=await configurationFiles(e.rootPath,e.options);
+  files.value.listen={host,port:4711};await files.save();await unlink(files.token);
+  const {config}=await readInstalledConfiguration({BEETLE_AGENT_CONFIG_FILE:files.path},undefined,{baseline:true});
+  expect(config.listen).toEqual({host,port:4711});
 });

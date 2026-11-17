@@ -13,6 +13,7 @@ import type { InstallationConfiguration, Providers } from '../staging/index.js';
 import type { SchedulerStatus } from '../scheduler/index.js';
 
 export interface AgentRuntimeOptions {
+  readonly onStorageFailure?:(error:unknown)=>void;
   readonly configurationCheck?: () => Promise<void>;
   readonly journal: JournalOptions;
   readonly installation: InstallationConfiguration;

@@ -75,3 +75,22 @@ A full UI redesign, additional engines, test generation and multi-user IAM are l
 
 [MIT](LICENSE). Bundled dependencies retain their own licenses. README attribution
 is appreciated for forks: Based on beetle-lab by Beetlestance.
+
+### Component health and storage failure
+
+Backend and agent expose `GET /healthz` and `HEAD /healthz` on their private control
+listeners. They return 200 only while their storage owner is ready, otherwise 503.
+These fixed responses contain no user data and require no credentials; other
+private agent routes still require authentication. Probes never enqueue SQL.
+
+A fatal storage worker failure fences commands, reports bounded diagnostic codes,
+and starts process shutdown. The process exits with status 1 after cleanup or at
+its 10-second deadline. Forced exit does not certify completed cleanup: normal
+journal recovery must resolve uncertain work after restart, without retrying writes.
+Compose already uses `restart: unless-stopped`; its probes now expose component
+health and frontend startup waits for backend health. Docker does not restart a
+container merely because a health probe fails.
+
+Image probes use the same listener configuration as startup, including nondefault
+ports and IPv6 loopback. Wildcard IPv4 is probed through IPv4 loopback. The agent
+probe drops bootstrap root privileges before connecting, just as its entrypoint does.

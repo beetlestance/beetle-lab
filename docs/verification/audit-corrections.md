@@ -148,3 +148,18 @@ full Chromium binary resolved test setup without changing the application.
 This covers functional report presentation and manual-read interactions. It does
 not certify responsive layout; long report lines can cause horizontal overflow,
 which remains in the separately deferred UI work. Private screenshots stay private.
+
+## Storage lifecycle and clock-skew follow-up
+
+The live-metric clock correction is `097e644d`: the agent supplies a remaining
+freshness budget and the backend consumes it with its own monotonic clock. Agent
+wall-clock offsets no longer invalidate fresh frames. Repeated frames cannot renew
+their expiry. The focused lanes passed 72 composed tests and 25 final review tests.
+
+The next source packet adds fatal-storage notifications, fixed private health
+responses, real process failure exits and image/Compose probes. Worker-failure
+health tests, faulty observers, IPv4/IPv6 listener probes and real child-process
+shutdown/deadline tests pass. Independent review accepted the source boundary;
+types, lint and architecture pass. These new packets are not deployed or included
+in the earlier native image qualification. Docker socket authority, broader row
+validation and repository formatting remain open review findings.

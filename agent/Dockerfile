@@ -29,5 +29,5 @@ ENV NODE_ENV=production
 COPY --from=bundle /build/agent/dist ./agent
 COPY LICENSE ./LICENSE
 USER 1000:1000
-HEALTHCHECK NONE
+HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=3 CMD ["node", "/beetle/agent/health.js"]
 ENTRYPOINT ["node", "/beetle/agent/main.js"]

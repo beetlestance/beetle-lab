@@ -1,4 +1,4 @@
-import { reportWorkerFailure } from './failure-diagnostic.js';
+import { reportWorkerFailure,notifyWorkerFailure } from './failure-diagnostic.js';
 import { validateOptions } from './options.js';
 import type { MetadataOptions } from './options.js';
 import {checkedOrganizationOverview,checkedOrganizationOverviewQuery} from '../../../application/organization-overview/index.js';
@@ -77,6 +77,8 @@ export class Metadata {
   private nextId = 0;
   private closing = false;
   private failed = false;
+  private readonly onFailure: ((error:StorageError)=>void)|undefined;
+  storageStatus():'ready'|'closing'|'unavailable'{return this.failed?'unavailable':this.closing?'closing':'ready';}
   private closePromise: Promise<void> | undefined;
   private terminationPromise: Promise<number> | undefined;
   private readyResolve: () => void = () => undefined;
@@ -245,6 +247,7 @@ export class Metadata {
     ReturnType<SettingsStore['execute']> };
 
   private constructor(options: MetadataOptions, bootstrap: Bootstrap) {
+    this.onFailure=options.onFailure?.bind(options);
     this.limit = options.queueLimit ?? 32;
     this.runtimeTtlMs = bootstrap.runtimeTtlMs ?? 5000;
     this.ready = new Promise((resolve, reject) => { this.readyResolve = resolve; this.readyReject = reject; });
@@ -381,6 +384,7 @@ export class Metadata {
     this.readyReject(new StorageError(code));
     for (const pending of this.pending.values()) { pending.reject(new StorageError(code)); }
     void this.terminate().catch(()=>{});
+    if(reason!=='abort')notifyWorkerFailure(this.onFailure,new StorageError(code));
   }
   private terminate(): Promise<number> {
     this.terminationPromise ??= this.worker.terminate().then(code => { this.pending.clear(); return code; });
