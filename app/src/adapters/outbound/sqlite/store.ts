@@ -30,6 +30,7 @@ import { RunResults } from './run-results/index.js';
 import { OutputCustody, outputOperation } from './output-custody/index.js';
 import { EventCustody, eventOperation } from './event-custody/index.js';
 import { Runs } from './runs.js';
+import { RunPins, runPinOperation } from './run-pins/index.js';
 import { RunCancellations } from './run-cancellations.js';
 import { captureCancelRunReply } from './run-cancellation-reply.js';
 import { DispatchClaims } from './dispatch-claims.js';
@@ -76,6 +77,7 @@ export class Store {
   private readonly exportOutputs: ExportOutputs;
   private readonly runs: Runs;
   private readonly runCancellations: RunCancellations;
+  private readonly runPins: RunPins;
   private readonly runReads: RunReads;
   private readonly overviews: Overviews;
   private readonly inputs: Inputs;
@@ -122,6 +124,7 @@ export class Store {
     this.results = new RunResults(db, this.runReads);
     this.runEvents = new RunEvents(db, this.runReads);
     this.runCancellations = new RunCancellations(db, this.runReads);
+    this.runPins = new RunPins(db, this.runReads);
     this.dispatchClaims = new DispatchClaims(
       db,
       this.settings,
@@ -288,6 +291,7 @@ export class Store {
   }
   private executeOutput(operation: Operation): Value {
     if (operation.kind === 'deleteNamespace') return deleteNamespaceRows(this.db, operation.command, this.entities);
+    if (runPinOperation(operation)) return this.runPins.execute(operation);
     if (outputOperation(operation)) return this.outputs.execute(operation);
     if (eventOperation(operation)) return this.events.execute(operation);
     return this.executeLegacy(operation);
@@ -299,16 +303,10 @@ export class Store {
       : this.settlements.read(checked.key);
   }
   private runRead(operation: Operation): Value {
-    switch (operation.kind) {
-      case 'getRunEvents':
-        return this.runEvents.get(operation.query);
-      case 'getRunExecution':
-        return this.executions.get(operation.key);
-      case 'getRunResult':
-        return this.results.get(operation.key);
-      default:
-        throw new StorageError('invalid_input');
-    }
+    if (operation.kind === 'getRunEvents') return this.runEvents.get(operation.query);
+    if (operation.kind === 'getRunExecution') return this.executions.get(operation.key);
+    if (operation.kind === 'getRunResult') return this.results.get(operation.key);
+    throw new StorageError('invalid_input');
   }
   private exportOperation(operation: ExportOperation): Value {
     switch (operation.kind) {

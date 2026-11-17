@@ -63,7 +63,7 @@ export class Runs {
     requireRule(validateApi('Run', run).ok);
     const offer = makeRunOffer(run, revision, profile);
     this.insert(run, offer, profile);
-    return run;
+    return { ...run, pinned: false };
   }
   private insert(run: Run, offer: string, profile: RunProfilePin): void {
     const parsedOffer = JSON.parse(offer) as Offer;

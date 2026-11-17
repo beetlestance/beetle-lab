@@ -1,9 +1,9 @@
 import type { FastifyInstance, onRequestAsyncHookHandler } from 'fastify';
 import type { WorkspaceScope } from '@beetle/contracts/api';
 import type { IntentDigest } from '../../../../application/namespaces/index.js';
-import { cancelRun, enqueueRun, getRun, listRuns } from '../../../../application/runs/index.js';
+import { cancelRun, enqueueRun, getRun, listRuns, pinRun } from '../../../../application/runs/index.js';
 import { requireRule, sameScope } from '../../../../domain/namespaces/index.js';
-import type { RunCancellationStore, RunReader, RunStore } from '../../../../ports/runs.js';
+import type { RunCancellationStore, RunPinStore, RunReader, RunStore } from '../../../../ports/runs.js';
 import type { RunResultReader } from '../../../../ports/run-results.js';
 import type { RunEventReader } from '../../../../ports/run-events.js';
 import { getEvents } from './events.js';
@@ -11,7 +11,7 @@ import { getResult } from './result.js';
 import { registerApiOperation } from '../api-route.js';
 
 interface Options {
-  store: RunStore & RunCancellationStore;
+  store: RunStore & RunCancellationStore & RunPinStore;
   reader: RunReader;
   newId(): string;
   digest: IntentDigest;
@@ -26,7 +26,7 @@ const scope = (params: { organizationId: string; workspaceId: string }): Workspa
   workspaceId: params.workspaceId,
 });
 
-/** Metadata enqueue/cancellation/read only; no direct dispatch or engine effects. */
+/** Metadata enqueue/cancellation/pin/read only; no direct dispatch or engine effects. */
 export function registerRunRoutes(server: FastifyInstance, options: Options): void {
   if (typeof options.authorize !== 'function') throw new Error('Run authorization guard required');
   server.register(async (scoped) => {
@@ -56,6 +56,20 @@ export function registerRunRoutes(server: FastifyInstance, options: Options): vo
       },
       { bodyLimit: 65536 },
     );
+    for (const name of ['pinRun', 'unpinRun'] as const)
+      registerApiOperation(
+        scoped,
+        name,
+        ({ params, body }) => {
+          requireRule(sameScope(scope(params), body.scope), 'not_found');
+          return pinRun({
+            operation: { kind: name, id: params.runId, requestedAt: options.now(), request: body },
+            digest: options.digest,
+            store: options.store,
+          });
+        },
+        { bodyLimit: 4096 },
+      );
     registerApiOperation(
       scoped,
       'createRun',

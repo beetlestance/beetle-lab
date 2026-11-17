@@ -12,7 +12,7 @@ const files: Partial<Record<keyof ApiTypes, string>> = {
   RunComparisonRequest: 'run-comparison-request', RunComparisonSnapshot: 'run-comparison',
   LiveMetricSnapshot: 'live-metric-snapshot', RunMetricSeriesPage: 'run-metric-series-pending', RunMetricSamplesPage: 'run-metric-samples',
   RunResultSnapshot: 'run-result-pending', RunEventPage: 'run-events-pending', RunArtifactPage: 'run-artifacts-pending',
-  Run: 'run', RunPage: 'run-page', CreateRunRequest: 'create-run', CancelRunRequest: 'cancel-run',
+  Run: 'run', RunPage: 'run-page', CreateRunRequest: 'create-run', CancelRunRequest: 'cancel-run', RunPinRequest: 'run-pin', RunPinReceipt: 'run-pin-receipt',
   InputRecord: 'input', InputReceipt: 'input-receipt', InputPage: 'input-page',
   CreateInputRequest: 'create-input', TransitionInputRequest: 'transition-input',
   Suite: 'suite', SuiteRevision: 'suite-revision', SuitePage: 'suite-page', SuiteRevisionPage: 'suite-revision-page',
@@ -30,7 +30,7 @@ const files: Partial<Record<keyof ApiTypes, string>> = {
   PatchWorkspaceSettingsRequest: 'patch-workspace-settings', RetentionPreviewRequest: 'retention-preview-request', RetentionApplyRequest: 'retention-apply-request',
 };
 async function operationReply(operation: ApiOperation): Promise<Record<string, unknown>> {
-  const file = operation.name === 'cancelRun' ? 'run-cancelling' : operation.name === 'cancelExport' ? 'export-cancelling' : files[operation.response];
+  const file = operation.name === 'cancelRun' ? 'run-cancelling' : operation.name === 'unpinRun' ? 'run-unpin-receipt' : operation.name === 'cancelExport' ? 'export-cancelling' : files[operation.response];
   return await fixture(`valid/${file}.json`) as Record<string, unknown>;
 }
 async function queryFixture(operation: ApiOperation) {

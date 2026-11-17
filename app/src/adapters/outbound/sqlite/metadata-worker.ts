@@ -60,7 +60,8 @@ import { eventOperation, captureEventReply } from './event-custody/index.js';
 
 import type { EventOperation } from './event-custody/index.js';
 
-import type { CancelRunCommand } from '../../../ports/runs.js';
+import type { CancelRunCommand, RunPinCommand } from '../../../ports/runs.js';
+import { checkedRunPinReceipt } from '../../../application/runs/index.js';
 
 import { captureCancelRunReply } from './run-cancellation-reply.js';
 
@@ -103,6 +104,7 @@ interface Pending {
   event?: EventOperation;
   dispatch?: DispatchOperation;
   cancellation?: CancelRunCommand;
+  pin?: RunPinCommand;
 }
 /** Owns the native metadata worker, bounded mailbox and physical termination. */
 export abstract class MetadataWorker {
@@ -211,8 +213,7 @@ export abstract class MetadataWorker {
         ...(outputOperation(operation) ? { output: operation } : {}),
         ...(eventOperation(operation) ? { event: operation } : {}),
         ...(dispatchOperation(operation) ? { dispatch: operation } : {}),
-
-        ...(operation.kind === 'cancelRun' ? { cancellation: operation.command } : {}),
+        ...commandBinding(operation),
       });
       const pending = this.pending.get(messageId)!;
       this.bindReadRequest(pending, operation);
@@ -274,9 +275,7 @@ export abstract class MetadataWorker {
                   ? captureEventReply(pending.event, reply.value)
                   : pending.dispatch
                     ? captureDispatchReply(pending.dispatch, reply.value)
-                    : pending.cancellation
-                      ? captureCancelRunReply(reply.value, pending.cancellation)
-                      : (boundedCopy(reply.value, pending.replyLimit) as Value)));
+                    : commandReply(pending, reply.value)));
     } catch {
       this.fail('unavailable');
       return;
@@ -354,4 +353,16 @@ export abstract class MetadataWorker {
     });
     return this.terminationPromise;
   }
+}
+
+/** Captures the command a mutation reply must answer. */
+function commandBinding(operation: Operation): Pick<Pending, 'cancellation' | 'pin'> {
+  if (operation.kind === 'cancelRun') return { cancellation: operation.command };
+  return operation.kind === 'runPin' ? { pin: operation.command } : {};
+}
+/** Mutation replies are rebound to their captured command; other replies stay bounded copies. */
+function commandReply(pending: Pending, value: unknown): Value {
+  if (pending.cancellation) return captureCancelRunReply(value, pending.cancellation);
+  if (pending.pin) return checkedRunPinReceipt(value, pending.pin);
+  return boundedCopy(value, pending.replyLimit) as Value;
 }

@@ -52,7 +52,7 @@ Missing data stays unknown, never zero.
 | Queue | default 32, maximum 64 including in-flight work; close keeps one slot |
 | Worker heap | ≤ 128 MiB |
 | Startup / stall | 5 s to start, then 5 s without a completed reply |
-| Schema | `user_version` 30; a newer database refuses with `schema_newer` |
+| Schema | `user_version` 33 (031 and 032 reserved); a newer database refuses with `schema_newer` |
 
 - No adapter opens a connection outside the worker. Write transactions are short:
   no HTTP, file publication or engine call happens inside one.
@@ -71,6 +71,7 @@ Missing data stays unknown, never zero.
 | Event ingest | `run_events` keys on attempt, generation and sequence behind `event_cursors`; one immediate transaction appends only a contiguous suffix (batch ≤ 100 records, 262144 bytes); a gap past retained agent history records `cursor_expired` with partial coverage; no ACK is sent inside the transaction (`event-custody/`, migration 007) |
 | Finalize | One immediate transaction requires settled release, published output slots, contiguous events and full acknowledgement, then inserts one immutable receipt that projects the terminal run (`output-finalization/`) |
 | Namespace deletion | One `BEGIN IMMEDIATE` owns receipt replay, quiescence and transition; organisation and folder delete only when empty; permanent 2048-byte markers fence identity reuse (`namespace-deletion/`) |
+| Run pin | One immediate transaction owns receipt replay, the terminal-state and admitted-removal checks and the 256-per-workspace `run_pins` count; triggers refuse a pin of a nonterminal or admitted run, a pin or unpin inside a retention frame or retired workspace, any pin update, and any removal intent for a pinned run; insert and delete advance the retention epoch (`run-pins/`, migration 033) |
 
 Raw samples and logs are chunked artifacts, never one metadata row per sample.
 List and history reads use fixed covering indexes and bounded cursors.
@@ -101,6 +102,15 @@ List and history reads use fixed covering indexes and bounded cursors.
   organisation or workspace, previewed and applied explicitly.
 - Active outputs reserve bytes. Insufficient storage blocks new admission; it never
   enables deletion. The bounded janitor excludes active and pinned results.
+- Retention selection is owned by [settlement](outputs-settlement.md#retention-selection).
+  Parent previews walk one workspace per turn with a captured horizon and never
+  combine budgets. `driverState` is advisory: `running` is loop availability, not
+  agent reach, progress or funding ([owner](../../../app/src/bootstrap/CONTEXT.md)).
+- Run pins (≤ 256 per workspace, terminal runs only) exclude a run from selection
+  and from manual delete. A run already admitted for removal cannot be pinned
+  (`cleanup_in_progress`). Pins stay with retained rows through workspace
+  retirement; restored history shows them read-only. Pin rows are not charged to
+  workspace storage.
 - Backups and restore follow
   [decision 016](../../decisions/016-historical-restore.md); a copied live
   database file is never treated as a backup.
@@ -148,8 +158,10 @@ metadata worker persists it (`local-session/`, migration 014). Shapes are in
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/adapters/outbound/sqlite/schema.ts` | `6a09ea823a1c` |
-| `app/src/adapters/outbound/sqlite/runs.ts` | `6cacb557eff1` |
+| `app/src/adapters/outbound/sqlite/schema.ts` | `9ff8cc1c7f72` |
+| `app/src/adapters/outbound/sqlite/runs.ts` | `09d2fba844cf` |
+| `app/src/adapters/outbound/sqlite/run-pins/` | `5b6f4e05f29b` |
+| `app/src/adapters/outbound/sqlite/migration033.ts` | `fc87dbbd4a35` |
 | `app/src/adapters/outbound/sqlite/mutation-receipts.ts` | `afeddcda3d25` |
 | `app/src/domain/attempt-observation/sequence.ts` | `a8b4b42df321` |
 | `app/src/bootstrap/private-roots.ts` | `f20ea87eecc9` |

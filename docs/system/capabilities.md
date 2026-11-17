@@ -8,7 +8,8 @@ measurements live in [evidence](../evidence/README.md).
 - Run/cancel, persisted results, metric history, comparison, reports and exports.
 - Public HTTP API, generated schemas and downloadable AI-agent instructions under
   `/reference`. An MCP server is not shipped.
-- Configurable run budgets within installed limits and explicit retention controls.
+- Configurable run budgets within installed limits and explicit retention controls;
+  run pinning protects up to 256 runs per workspace (API only; no UI yet).
 - Cold backup and fresh read-only historical restoration. General in-place upgrade,
   downgrade and mutable restore are not claimed.
 
@@ -23,4 +24,4 @@ The Docker host trust boundary is recorded in
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `a850381cb0fd` |
+| `contracts/api/v2/` | `7fe45e9a55b4` |

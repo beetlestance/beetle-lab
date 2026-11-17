@@ -14,5 +14,7 @@ unique IDs and exact workspace ownership. Invalid replies fail without retry.
 Cancellation captures a <=64 KiB command binding scope, run and request ID, calls
 RunCancellationStore once and validates intent/terminal acceptance. No agent call
 or physical stop/release is inferred. Store owns claim serialization and receipts.
+pin.ts: prepareRunPinCommand digests kind/run/request (never the server clock); pinRun
+calls RunPinStore once and checkedRunPinReceipt binds scope, run, request ID and direction.
 Contracts: docs/system/contracts/run-lifecycle.md. Checks: app/test/{runs,application/runs}
 and app/test/http/runs; Node TS and scoped lint.

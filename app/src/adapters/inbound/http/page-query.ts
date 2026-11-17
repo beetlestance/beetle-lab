@@ -60,6 +60,10 @@ export function decodeRunListQuery(
     const query = JSON.parse(encodeJson(rawFields(input), 4096)) as Record<string, unknown>;
     if (typeof query.limit !== 'string' || !/^(0|[1-9][0-9]*)$/.test(query.limit)) return { ok: false };
     query.limit = Number(query.limit);
+    if (query.pinned !== undefined) {
+      if (query.pinned !== 'true') return { ok: false };
+      query.pinned = true;
+    }
     const checked = validateApi('RunListQuery', query);
     return checked.ok ? checked : { ok: false };
   } catch {

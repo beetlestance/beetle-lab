@@ -107,4 +107,5 @@ function appendRunQuery(query: URLSearchParams, input: NonNullable<PreparedInput
 function appendRunSearch(query: URLSearchParams, input: NonNullable<PreparedInput['query']>): void {
   if ('name' in input && input.name !== undefined) query.set('name', input.name);
   if ('runIdPrefix' in input && input.runIdPrefix !== undefined) query.set('runIdPrefix', input.runIdPrefix);
+  if ('pinned' in input && input.pinned === true) query.set('pinned', 'true');
 }

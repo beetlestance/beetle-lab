@@ -540,6 +540,41 @@
     "valid": true
   },
   {
+    "path": "valid/run-pin.json",
+    "schema": "RunPinRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/run-pin-receipt.json",
+    "schema": "RunPinReceipt",
+    "valid": true
+  },
+  {
+    "path": "valid/run-unpin-receipt.json",
+    "schema": "RunPinReceipt",
+    "valid": true
+  },
+  {
+    "path": "invalid/run-pin-receipt-time.json",
+    "schema": "RunPinReceipt",
+    "valid": false
+  },
+  {
+    "path": "invalid/run-pin-receipt-missing-time.json",
+    "schema": "RunPinReceipt",
+    "valid": false
+  },
+  {
+    "path": "valid/pin-limit-error.json",
+    "schema": "ApiError",
+    "valid": true
+  },
+  {
+    "path": "invalid/run-list-query-pinned-false.json",
+    "schema": "RunListQuery",
+    "valid": false
+  },
+  {
     "path": "valid/run-result-pending.json",
     "schema": "RunResultSnapshot",
     "valid": true

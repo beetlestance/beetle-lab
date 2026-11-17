@@ -162,19 +162,19 @@ holding a file's token blocks its preparation and removal until the read physica
 
 `app/src/domain/retention` evaluates one workspace, newest first by `requestedAt` and ID, under the
 inherited installation → organisation → workspace policy (manual by default). Age, count and storage
-rules form a union; unknown completed bytes poison storage selection only. Active, protected, unknown
-or cleaning work is excluded. A preview reads at most 100 Run headers per page with a stored prefix.
+rules form a union; unknown completed bytes poison storage selection only. Active, pinned, protected,
+unknown or cleaning work is excluded (pinned Runs still count toward completed and storage figures).
 
-- A page reserves 131072 logical bytes, at most 8 live pages; the first preview in a workspace pays a
-  permanent 512-byte epoch row. Pages are immutable; a preview replays for 15 min. Full slots refuse a new
-  page and never evict an applied one (`app/src/adapters/outbound/sqlite/retention-accounting`).
+- A preview page reads ≤ 100 Run headers with a stored prefix and reserves 131072 logical bytes (≤ 8
+  live pages); the first preview in a workspace pays a permanent 512-byte epoch row. Pages are immutable;
+  a preview replays for 15 min. Full slots refuse a new page and never evict an applied one
+  (`app/src/adapters/outbound/sqlite/retention-accounting`).
 - Apply refuses missing, consumed or expired pages. An expired unapplied preview may be swept, refunding
   only its charge. An applied page stays charged until all members settle permanently, then expires 15 min
   after that is first observed or on acknowledgement; a Run vanishing unsettled is an error.
-- A workspace epoch advances on selection-relevant change; continuation and Apply reject epoch or
-  settings-version drift. Apply begins all ≤ 100 captured candidates or none via receipt-first Begin.
-- Parent previews walk one workspace per turn with a captured horizon and never combine budgets.
-- `driverState` is advisory: `running` is loop availability, not agent reach, progress or funding ([owner](../../../app/src/bootstrap/CONTEXT.md)).
+- A workspace epoch advances on selection-relevant change, including pin and unpin; continuation and
+  Apply reject epoch or settings-version drift. Apply begins all ≤ 100 captured candidates or none via
+  receipt-first Begin, rechecking pins in its admission transaction regardless of the epoch ([pins, parent previews, `driverState`](storage.md#retention-and-space)).
 
 ## Settlement
 
@@ -216,5 +216,5 @@ settles in the backend alone. Rejected never-admitted originals use a 16384-byte
 | `agent/src/journal/output-delivery-protocol.ts` | `23234170ace9` |
 | `app/src/adapters/outbound/sqlite/output-finalization/` | `00bfd0136812` |
 | `app/src/adapters/outbound/sqlite/output-absence/` | `0f2d925087dc` |
-| `app/src/adapters/outbound/sqlite/output-deletion/` | `d41e9bdaf18f` |
+| `app/src/adapters/outbound/sqlite/output-deletion/` | `9c4e8dc70ef4` |
 | `app/src/adapters/outbound/sqlite/backend-settlement/` | `7f81a1b56b08` |

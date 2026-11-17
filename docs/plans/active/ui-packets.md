@@ -22,7 +22,7 @@ export content `.../exports/:exportId/content`, input content `.../inputs/:input
   readiness, targetSampling.
 - **No agent or host status operation.** CPU, memory and disk usage, "image cached",
   host-reported capacity, run-slot holders and queue position are not available.
-- **No pinning.** It is gated (`docs/plans/proposed/run-pinning.md`). **No folder
+- **No pinning UI yet.** The API has shipped ([run-pinning](run-pinning.md)). **No folder
   summaries, suite last-run, suite search or sort.** Those are gated
   (`proposed/suite-folders.md`). `listSuites` and `listFolders` take only `PageQuery`.
 - **No pre-rendered script text.** A script exists only after `createExport` reaches

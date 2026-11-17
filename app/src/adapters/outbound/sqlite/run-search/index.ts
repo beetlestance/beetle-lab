@@ -8,12 +8,15 @@ import { StorageError } from '../protocol.js';
 import { runListStatement } from '../run-list-query.js';
 import { prepareNameSearch } from './backfill.js';
 import { matchingSuites, workspaceNameMatches } from './names.js';
+import { pinnedRunsSql } from '../run-pins/index.js';
+import { RUN_PIN_LIMIT } from '../migration033.js';
 export function prepareHistorySearch(db: DatabaseSync, input: RunList): void {
   if (input.name !== undefined && !workspaceNameMatches(db, input.scope, input.name))
     prepareNameSearch(db, input.scope);
 }
 /** Scalar selection only; caller owns one read transaction and bounded Run projection. */
 export function historyKeys(db: DatabaseSync, input: RunList): HistoryKey[] {
+  if (input.pinned === true) return pinnedKeys(db, input);
   if (input.runIdPrefix !== undefined) return prefixKeys(db, input);
   if (input.name === undefined || workspaceNameMatches(db, input.scope, input.name)) return suiteKeys(db, input);
   const query = normalizeRunListQuery(inputPage(input));
@@ -59,6 +62,30 @@ function prefixKeys(db: DatabaseSync, input: RunList): HistoryKey[] {
   if (rows.length > 256) throw new StorageError('search_too_broad');
   const position = runListPosition(input.scope, query);
   return rows
+    .filter((row) => accepts(row, query, position))
+    .sort((a, b) => orderKeys(a, b, query.order))
+    .slice(0, query.limit + 1);
+}
+/** Pinned rows are bounded by the workspace pin limit; every other filter applies in memory. */
+function pinnedKeys(db: DatabaseSync, input: RunList): HistoryKey[] {
+  const query = normalizeRunListQuery(inputPage(input));
+  const rows = db
+    .prepare(
+      `SELECT ${prefixKeyColumns} FROM runs WHERE organization_id=? AND workspace_id=? AND id IN (${pinnedRunsSql})
+    LIMIT ${RUN_PIN_LIMIT + 1}`,
+    )
+    .all(input.scope.organizationId, input.scope.workspaceId, input.scope.organizationId, input.scope.workspaceId)
+    .map(capturePrefixKey);
+  if (rows.length > RUN_PIN_LIMIT) throw new StorageError('unavailable');
+  const suites =
+    query.name === undefined || workspaceNameMatches(db, input.scope, query.name)
+      ? null
+      : new Set(matchingSuites(db, input.scope, query.name).map((id) => id.toLowerCase()));
+  const prefix = query.runIdPrefix;
+  const position = runListPosition(input.scope, query);
+  return rows
+    .filter((row) => prefix === undefined || row.id.toLowerCase().startsWith(prefix))
+    .filter((row) => suites === null || suites.has(row.suite_id.toLowerCase()))
     .filter((row) => accepts(row, query, position))
     .sort((a, b) => orderKeys(a, b, query.order))
     .slice(0, query.limit + 1);

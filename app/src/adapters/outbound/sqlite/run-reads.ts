@@ -10,6 +10,7 @@ import { normalizedScope } from './suites.js';
 import type { Suites } from './suites.js';
 import { prepareHistorySearch, historyKeys } from './run-search/index.js';
 import { transaction } from './transaction.js';
+import { runPinnedAt } from './run-pins/state.js';
 
 export class RunReads {
   constructor(
@@ -22,7 +23,9 @@ export class RunReads {
       .prepare(`SELECT ${runColumns} FROM runs WHERE organization_id=? AND workspace_id=? AND id=?`)
       .get(scope.organizationId, scope.workspaceId, lower(key.id));
     requireRule(row !== undefined, 'not_found');
-    return captureRunRow(row, { scope, id: key.id });
+    const run = captureRunRow(row, { scope, id: key.id });
+    const pinnedAt = runPinnedAt(this.db, scope, run.id);
+    return pinnedAt === null ? { ...run, pinned: false } : { ...run, pinned: true, pinnedAt };
   }
   list(input: RunList): RunPage {
     const { scope: owner, ...page } = input;

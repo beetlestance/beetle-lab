@@ -144,6 +144,12 @@
         },
         "settingsVersions": {
           "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunSettingsVersions"
+        },
+        "pinned": {
+          "type": "boolean"
+        },
+        "pinnedAt": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunTimestamp"
         }
       },
       "required": [
@@ -208,6 +214,62 @@
     },
     "RunTimestamp": {
       "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/timestamp"
+    },
+    "RunPinReceipt": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+            },
+            "scope": {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+            },
+            "requestId": {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+            },
+            "pinned": {
+              "const": true
+            },
+            "pinnedAt": {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunTimestamp"
+            }
+          },
+          "required": [
+            "id",
+            "scope",
+            "requestId",
+            "pinned",
+            "pinnedAt"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+            },
+            "scope": {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+            },
+            "requestId": {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+            },
+            "pinned": {
+              "const": false
+            }
+          },
+          "required": [
+            "id",
+            "scope",
+            "requestId",
+            "pinned"
+          ],
+          "additionalProperties": false
+        }
+      ]
     }
   }
 }

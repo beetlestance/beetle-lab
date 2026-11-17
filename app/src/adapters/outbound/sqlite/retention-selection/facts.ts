@@ -32,6 +32,7 @@ export function inspectRetentionFact(
     matchHeader(run, header);
     const logicalBytes = readHistorySummaries(db, scope, [run])[0]!.retainedLogicalBytes;
     if (!completed) return { ...base, logicalBytes, protection: 'none' };
+    if (run.pinned === true) return { ...base, logicalBytes, protection: 'pinned' };
     if (db.prepare('SELECT 1 FROM output_deletion_intents WHERE run_id=? LIMIT 1').get(run.id))
       return { ...base, logicalBytes, protection: 'cleanup_in_progress' };
     const eligible = inspectOutputDeletionCandidate(db, runs, {

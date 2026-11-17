@@ -305,6 +305,7 @@ const fixedMessageLimits: Partial<Record<Operation['kind'], number>> = {
   saveLocalSession: 2048,
   settleBackendOutput: 2304,
   readBackendSettlement: 2304,
+  runPin: 4096,
 };
 export function operationMessageLimit(operation: Operation): number {
   if (dataProperty(operation, 'kind') === 'deleteNamespace') return 4096;
@@ -354,6 +355,7 @@ const fixedReplyLimits: Partial<Record<Operation['kind'], number>> = {
   getWorkspaceOverview: 32768,
   settleBackendOutput: 1536,
   readBackendSettlement: 1536,
+  runPin: 2048,
 };
 export function operationReplyLimit(operation: Operation): number {
   if (retentionOperation(operation)) return retentionReplyLimit(operation);

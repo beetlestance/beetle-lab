@@ -150,6 +150,24 @@ the journal is corrupt, and the read fails closed (`agent/src/journal/fresh-refu
 The marker lives as long as its receipt, so pruning never lets the Offer be admitted
 later; an older receipt without admission facts stays unknown and never gains one.
 
+## Pinning
+
+`POST …/runs/{runId}/pin` and `…/unpin` (`RunPinRequest`: scope, `requestId`) return
+200 with a `RunPinReceipt` (`pinned`, and `pinnedAt` when pinned). The server clock
+stays outside the intent digest, so a replayed `requestId` returns the first receipt.
+
+| Case | Result |
+| --- | --- |
+| Pin a pinned run, unpin an unpinned run | No-op success with the current state |
+| Nonterminal run (including `finalizing`) | 409 `conflict`, reason `active` |
+| Run already admitted for removal | 409 `conflict`, reason `cleanup_in_progress` |
+| 256 pins already in the workspace | 409 `conflict`, reason `pin_limit` |
+| Manual delete of a pinned run | 409 `protected_dependency`, reason `pinned` |
+
+Reads return `pinned` and `pinnedAt`. Pin, unpin and removal admission serialize in
+one metadata write transaction ([storage](storage.md#atomic-operations)); historical
+mode refuses both routes with 403 and shows backup-time pins read-only.
+
 ## Stop reasons
 
 The agent supervision transaction stores the first stop cause: `cancelled`,
@@ -180,8 +198,10 @@ ordering are in [run delivery](run-delivery.md).
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/adapters/outbound/sqlite/runs.ts` | `6cacb557eff1` |
+| `app/src/adapters/outbound/sqlite/runs.ts` | `09d2fba844cf` |
 | `app/src/adapters/outbound/sqlite/run-cancellations.ts` | `60e439b897cb` |
+| `app/src/adapters/outbound/sqlite/run-pins/` | `5b6f4e05f29b` |
+| `app/src/application/runs/pin.ts` | `7883e8e6d0eb` |
 | `app/src/domain/runs/index.ts` | `a0f48647f5b4` |
 | `app/src/domain/attempt-observation/` | `35bf6874e6aa` |
 | `contracts/runner/v1/attempt-admission.schema.json` | `b63de455d6f6` |

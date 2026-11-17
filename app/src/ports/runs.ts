@@ -3,6 +3,8 @@ import type {
   CreateRunRequest,
   Run,
   RunPage,
+  RunPinReceipt,
+  RunPinRequest,
   RunListQuery,
   RunEngine,
   WorkspaceScope,
@@ -26,6 +28,17 @@ export interface CancelRunOperation {
 export type CancelRunCommand = CancelRunOperation & { intentDigest: string };
 export interface RunCancellationStore {
   cancel(command: CancelRunCommand): Promise<Run>;
+}
+/** Durable pin state change; wall time is outside the replayed intent. */
+export interface RunPinOperation {
+  kind: 'pinRun' | 'unpinRun';
+  id: string;
+  requestedAt: string;
+  request: RunPinRequest;
+}
+export type RunPinCommand = RunPinOperation & { intentDigest: string };
+export interface RunPinStore {
+  pin(command: RunPinCommand): Promise<RunPinReceipt>;
 }
 export interface RunKey {
   scope: WorkspaceScope;

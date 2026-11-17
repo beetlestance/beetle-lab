@@ -133,6 +133,7 @@ export type RunMetricSamplesQuery = FromSchema<typeof S16.RunMetricSamplesQuery>
 export type RunMetricSamplesPage = FromSchema<typeof S16.RunMetricSamplesPage>;
 export type CreateRunRequest = FromSchema<typeof S17.CreateRunRequest>;
 export type CancelRunRequest = FromSchema<typeof S17.CancelRunRequest>;
+export type RunPinRequest = FromSchema<typeof S17.RunPinRequest>;
 export type RunListQuery = FromSchema<typeof S17.RunListQuery>;
 export type RunResultSnapshot = FromSchema<typeof S18.RunResultSnapshot>;
 export type RunExecutionPolicy = FromSchema<typeof S19.RunExecutionPolicy>;
@@ -141,6 +142,7 @@ export type RunSettingsVersions = FromSchema<typeof S19.RunSettingsVersions>;
 export type Run = FromSchema<typeof S19.Run>;
 export type RunPage = FromSchema<typeof S19.RunPage>;
 export type RunTimestamp = FromSchema<typeof S19.RunTimestamp>;
+export type RunPinReceipt = FromSchema<typeof S19.RunPinReceipt>;
 export type PairBrowserRequest = FromSchema<typeof S20.PairBrowserRequest>;
 export type BrowserSession = FromSchema<typeof S20.BrowserSession>;
 export type LogoutBrowserRequest = FromSchema<typeof S20.LogoutBrowserRequest>;
@@ -283,6 +285,7 @@ export interface ApiTypes {
   RunMetricSamplesPage: RunMetricSamplesPage;
   CreateRunRequest: CreateRunRequest;
   CancelRunRequest: CancelRunRequest;
+  RunPinRequest: RunPinRequest;
   RunListQuery: RunListQuery;
   RunResultSnapshot: RunResultSnapshot;
   RunExecutionPolicy: RunExecutionPolicy;
@@ -291,6 +294,7 @@ export interface ApiTypes {
   Run: Run;
   RunPage: RunPage;
   RunTimestamp: RunTimestamp;
+  RunPinReceipt: RunPinReceipt;
   PairBrowserRequest: PairBrowserRequest;
   BrowserSession: BrowserSession;
   LogoutBrowserRequest: LogoutBrowserRequest;

@@ -36,7 +36,8 @@ routes; SQLite metadata enforces scope and versions.
 
 `ApiError` is `{code, message, retryable, requestId, fields}` with a fixed message per code
 (`api-errors.ts`); raw exceptions, config and environment values never appear. Responses are
-`no-store`.
+`no-store`. Only `conflict` and `protected_dependency` may add a fixed `reason` (`active`,
+`pinned`, `pin_limit`, `cleanup_in_progress`; [run pinning](run-lifecycle.md#pinning)).
 
 | Status | Codes |
 | --- | --- |
@@ -126,11 +127,11 @@ Routes: `GET`/`POST /suites`, `GET`/`PATCH /suites/{suiteId}`,
 ## Run history
 
 `listRuns` takes required `limit`, optional `state`, `outcome`, `order` (`newest` default,
-`oldest`), `suiteId`, and at most one of `name` or `runIdPrefix`. Codecs:
-`contracts/src/api/run-list.ts`, `run-search.ts`, `run-history-summary.ts`.
+`oldest`), `suiteId`, `pinned` (only `true`), and at most one of `name` or `runIdPrefix`.
+Codecs: `contracts/src/api/run-list.ts`, `run-search.ts`, `run-history-summary.ts`.
 
 - Order is keyset on `requestedAt` then run UUID, both in the chosen direction. The cursor
-  is canonical base64url (≤ 512 characters; ≤ 1024 with `suiteId`) encoding a versioned
+  is canonical base64url (≤ 512 characters; ≤ 1024 with `suiteId` or `pinned`) encoding a versioned
   tuple of scope, limit, filters, order, search fields and the last position. Any mismatch,
   alias or old UUID-only cursor rejects before storage. A short page has no next cursor.
 - Pages read one snapshot but not an immutable history: state, outcome and current-name
@@ -153,10 +154,9 @@ Routes: `GET`/`POST /suites`, `GET`/`PATCH /suites/{suiteId}`,
   never zero. Duration is k6's measured test-run duration; RPS is execute HTTP requests
   divided by it; p95 is a histogram estimate. Published bytes are the verified catalogue
   sum; retained logical and metadata bytes come from the current attempt allocation.
-- `application/run-history-index/` produces summaries: one turn every 1 s, 45 s deadline;
-  busy defers 1 s, unpublished sources and retirement in progress 30 s; integrity,
-  unavailable and deadline read failures persist `unavailable`; commits bind run, attempt,
-  manifest and artifact. Listing never reads metrics or configs per row.
+  Listing never reads metrics or configs per row ([producer](results.md#derived-presentation)).
+- `pinned=true` reads at most 257 pinned rows of the workspace, then applies the other
+  filters; its cursor is a distinct tuple version, so it never continues an unfiltered list.
 
 ## Run event reads
 
@@ -212,9 +212,9 @@ characters and shows at most 80 matches.
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `a850381cb0fd` |
-| `contracts/src/api/client/` | `7b847a42bf8b` |
-| `contracts/src/api/run-list.ts` | `f38d03bf42d6` |
-| `app/src/adapters/inbound/http/api-errors.ts` | `b65c10f58ea7` |
+| `contracts/api/v2/` | `7fe45e9a55b4` |
+| `contracts/src/api/client/` | `15f45a098574` |
+| `contracts/src/api/run-list.ts` | `1c4b7b193309` |
+| `app/src/adapters/inbound/http/api-errors.ts` | `50a08218f4fe` |
 | `app/src/adapters/inbound/http/session/` | `c0568c1eeb19` |
 | `app/src/client/cli/` | `c7eb756df145` |

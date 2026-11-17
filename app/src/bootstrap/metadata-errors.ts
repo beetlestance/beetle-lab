@@ -16,9 +16,25 @@ const codes = {
   unavailable: 'storage_unavailable',
   owned: 'storage_unavailable',
   schema_newer: 'storage_unavailable',
+  pin_limit: 'conflict',
+  run_active: 'conflict',
+  run_pinned: 'protected_dependency',
+  cleanup_in_progress: 'conflict',
 } as const satisfies Record<ErrorCode, ApiError['code']>;
+const reasons = {
+  pin_limit: 'pin_limit',
+  run_active: 'active',
+  run_pinned: 'pinned',
+  cleanup_in_progress: 'cleanup_in_progress',
+} as const satisfies Partial<Record<ErrorCode, NonNullable<ApiError['reason']>>>;
 
 /** Bootstrap bridges concrete storage errors; HTTP/use cases never import SQLite. */
 export function classifyMetadataError(error: unknown): ApiError['code'] | undefined {
   return error instanceof StorageError ? codes[error.code] : undefined;
+}
+
+/** Fixed protection reason for pin and removal refusals. */
+export function explainMetadataError(error: unknown): NonNullable<ApiError['reason']> | undefined {
+  if (!(error instanceof StorageError) || !Object.hasOwn(reasons, error.code)) return undefined;
+  return reasons[error.code as keyof typeof reasons];
 }

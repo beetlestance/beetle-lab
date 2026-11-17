@@ -38,6 +38,18 @@ export class ApiFault extends Error {
 export interface ApiErrorOptions {
   /** Composition maps concrete adapter errors without coupling HTTP to storage. */
   classify?: (error: unknown) => Code | undefined;
+  /** Optional fixed protection reason; only the closed contract values are emitted. */
+  explain?: (error: unknown) => Reason | undefined;
+}
+type Reason = NonNullable<ApiError['reason']>;
+const reasons: readonly Reason[] = ['active', 'pinned', 'pin_limit', 'cleanup_in_progress'];
+function reasonFor(error: unknown, explain: ApiErrorOptions['explain']): Reason | undefined {
+  try {
+    const reason = explain?.(error);
+    return reasons.includes(reason as Reason) ? reason : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function ownCode(error: unknown): unknown {
@@ -101,12 +113,15 @@ function codeFor(error: unknown, classify: ApiErrorOptions['classify']): Code {
   }
 }
 /** Fixed body factory for byte routes whose HTTP semantics require e.g.416. */
-export function apiErrorResponse(code: Code): { status: number; body: ApiError } {
+export function apiErrorResponse(code: Code, reason?: Reason): { status: number; body: ApiError } {
   const [status, message, retryable] = errors[code];
-  return { status, body: { code, message, retryable, requestId: randomUUID(), fields: [] } };
+  const body: ApiError = { code, message, retryable, requestId: randomUUID(), fields: [] };
+  return { status, body: reason === undefined ? body : { ...body, reason } };
 }
-function sendFailure(error: unknown, reply: FastifyReply, classify: ApiErrorOptions['classify']): FastifyReply {
-  const result = apiErrorResponse(codeFor(error, classify));
+function sendFailure(error: unknown, reply: FastifyReply, options: ApiErrorOptions): FastifyReply {
+  const code = codeFor(error, options.classify);
+  const reason = code === 'conflict' || code === 'protected_dependency' ? reasonFor(error, options.explain) : undefined;
+  const result = apiErrorResponse(code, reason);
   return reply.header('Cache-Control', 'no-store').code(result.status).type('application/json').send(result.body);
 }
 
@@ -122,7 +137,6 @@ export function createApiServer(options: ApiServerOptions = {}): FastifyInstance
   if (!Number.isSafeInteger(bodyLimit) || bodyLimit < 1 || bodyLimit > 1_048_576) {
     throw new RangeError('Invalid API body limit');
   }
-  const classify = options.classify;
   const server = Fastify({
     logger: false,
     bodyLimit,
@@ -130,7 +144,7 @@ export function createApiServer(options: ApiServerOptions = {}): FastifyInstance
     requestTimeout: 30_000,
     keepAliveTimeout: 5000,
     routerOptions: { maxParamLength: 128 },
-    frameworkErrors: (error, _request, reply) => sendFailure(error, reply, classify),
+    frameworkErrors: (error, _request, reply) => sendFailure(error, reply, options),
   });
   server.server.maxConnections = 64;
   server.server.headersTimeout = 5000;
@@ -143,9 +157,8 @@ export function createApiServer(options: ApiServerOptions = {}): FastifyInstance
  * idempotency intent, never infer that a retryable flag proves no write occurred.
  */
 export function configureApiErrors(server: FastifyInstance, options: ApiErrorOptions = {}): void {
-  const classify = options.classify;
   server.setErrorHandler((error, _request, reply) => {
-    return sendFailure(error, reply, classify);
+    return sendFailure(error, reply, options);
   });
   server.setNotFoundHandler((_request, reply) => {
     const result = apiErrorResponse('not_found');

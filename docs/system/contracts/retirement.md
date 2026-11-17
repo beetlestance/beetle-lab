@@ -5,6 +5,7 @@ removed its own published files; namespace deletion and workspace retirement are
 [namespaces](namespaces.md). The backend owns deletion intent, request projection, dispatch and ACK storage
 (`app/`); the agent owns producer fencing, runtime removal, native inventory, removal
 and the cleanup receipt (`agent/`). The wire values live in `contracts/src/output-retirement`.
+A pinned Run never gets a deletion intent: Begin refuses it with `run_pinned` ([storage](storage.md#retention-and-space)).
 
 ## Authority chain
 
@@ -209,4 +210,4 @@ recovery reuses only an exactly matching record and still proves absence first.
 | `agent/src/cleanup-control/` | `df348f0e5282` |
 | `agent/src/retirement-pipeline/` | `36636df26427` |
 | `agent/src/transport/retirement.ts` | `01fa56695d4b` |
-| `app/src/adapters/outbound/sqlite/output-deletion/` | `d41e9bdaf18f` |
+| `app/src/adapters/outbound/sqlite/output-deletion/` | `9c4e8dc70ef4` |

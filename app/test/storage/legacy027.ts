@@ -1,3 +1,4 @@
+import {withoutPins} from './legacy030.js';
 import assert from 'node:assert/strict';
 import type {DatabaseSync} from 'node:sqlite';
 import {initialize as prior023} from '../backend-settlement/prior023.js';
@@ -15,7 +16,8 @@ function graph(db:DatabaseSync){
  return db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY type,name").all();
 }
 /** Test-only projection of an exact shipped synthetic schema; no retired identity may be rewound. */
-export function asSchema27(db:DatabaseSync):void{
+export function asSchema27(db:DatabaseSync):void{withoutPins(db,()=>project(db));}
+function project(db:DatabaseSync):void{
  const version=Number(db.prepare('PRAGMA user_version').get()?.user_version);if(version===27)return;
  assert([28,29,30].includes(version),'Cannot project fixture to schema27');
  assert(!db.prepare('SELECT 1 FROM workspaces WHERE retired!=0 LIMIT 1').get(),'Cannot project fixture with retired workspace data');

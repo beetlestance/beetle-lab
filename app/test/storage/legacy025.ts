@@ -1,9 +1,11 @@
+import {withoutPins} from './legacy030.js';
 import {asSchema27} from './legacy027.js';
 import type {DatabaseSync} from 'node:sqlite';
 import {migration026} from '../../src/adapters/outbound/sqlite/migration026.js';
 import {transaction} from '../../src/adapters/outbound/sqlite/transaction.js';
 /** Test-only empty-new-owner projection. Never drops a retained deletion identity or charge. */
-export function asSchema25(db:DatabaseSync):void{
+export function asSchema25(db:DatabaseSync):void{withoutPins(db,()=>project(db));}
+function project(db:DatabaseSync):void{
  const initial=Number(db.prepare('PRAGMA user_version').get()?.user_version);if(initial===25)return;
  if(![26,27,28,29,30].includes(initial))throw Error('Cannot project fixture with namespace deletion data');
  if(db.prepare('SELECT 1 FROM namespace_deletions LIMIT 1').get())throw Error('Cannot project fixture with namespace deletion data');
