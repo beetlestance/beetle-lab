@@ -12,13 +12,14 @@ import {runtime} from '../../resources/lifecycle/observations.js';
 import {configuration, cases} from './config.js';
 import {target, ordinaryCounts} from './target.js';
 import {settled} from './result.js';
+import {parityFailure} from './failure.js';
 import {failureCounters} from './counters.js';
 const [bundlePath, output, context = 'default', profile = 'executors', extra] = process.argv.slice(2);
 assert(bundlePath && output && isAbsolute(bundlePath) && isAbsolute(output) && !extra && /^v24\./.test(process.version));
 const kinds = cases(profile); const {f} = await candidate(bundlePath, context, 512);
 await mkdir(output, {mode: 0o700});
 await writeFile(join(output, 'owner.json'), JSON.stringify({root: f.root, project: f.project, revision: f.revision, owner: randomUUID()}), {flag: 'wx', mode: 0o600});
-let installation: string | undefined; let status = 'failed'; let phase: string = 'startup'; const results: unknown[] = [];
+let installation: string | undefined; let status = 'failed'; let phase: string = 'startup'; const results: unknown[] = [];let failure: ReturnType<typeof parityFailure> | undefined;
 try {
  const counts = await target(f); f.compose('up', '-d', '--no-build'); const client = await automaticClient(f.origin);
  installation = client.installation.id;
@@ -46,13 +47,13 @@ try {
  }
  status = 'passed';
 } catch (error) {
- process.exitCode = 1;
+ failure=parityFailure(error);process.exitCode = 1;
  await writeFile(join(output, 'failure-private.txt'), String(error instanceof Error ? error.stack : error).slice(0, 16384), {flag: 'wx', mode: 0o600});
 } finally {
  let cleanupVerified = false;
  try {await cleanup(f, installation); if (installation) cleanupLiveVolumes({id: installation, user: '1000:1000', docker: f.docker}); cleanupVerified = true;}
  catch {status = 'failed'; process.exitCode = 1;}
  await writeFile(join(output, 'outcome-private.json'), JSON.stringify({status, phase, cleanupVerified, revision: f.revision, architecture: f.architecture,
-  imageIds: f.imageIds, harnessNode: process.version, profile, results}, null, 2), {flag: 'wx', mode: 0o600});
+  imageIds: f.imageIds, harnessNode: process.version, profile, results, failure}, null, 2), {flag: 'wx', mode: 0o600});
  console.log(JSON.stringify({status, phase, cleanupVerified}));
 }

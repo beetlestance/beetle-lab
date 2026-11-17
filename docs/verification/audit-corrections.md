@@ -1,7 +1,7 @@
 # Audit correction evidence
 
 Recorded 17 November 2026. This is scoped local source evidence, not a release
-certificate. Hosted CI and native qualification of the assembled candidate remain
+certificate. Candidate CI passed; broader native/resource qualification remains
 open. Private installation data, credentials and raw logs are not published here.
 
 ## Source identities
@@ -16,6 +16,7 @@ open. Private installation data, credentials and raw logs are not published here
 | Settings row validation | `947b62e72b8bc44df431fd5384a10292313b0d99` |
 | Failed-operation diagnostic context | `5b94b31bf3fbcd47d759ff37c09b2f19d8f967a1` |
 | Packaged agent startup and preserved runtime causes | `8a38d15ad71e9563cecedc24d86c71a990dfc900` |
+| Aggregate output-capacity coordination | `40c4a5c181a890434c1b540ad09acde7dea7b8db` |
 
 Later commits retain earlier changes. Check results apply to their relevant source,
 fixtures and configuration; this table does not imply a full suite ran at each SHA.
@@ -27,8 +28,11 @@ received independent review. Reviewers reused passing checks instead of rerunnin
 - **Memory:** the supported offline operation changed the existing installation
   from 512 MiB to 1 GiB. Backend/agent configuration agreed, settings advanced once,
   and existing history counts and a saved result digest remained unchanged.
-  The new engine container has not executed: retained output reservations fill
-  the separate output pool. This is not proof of native 1 GiB enforcement.
+  The approved output increase now raises that separate pool to 512 MiB inside
+  the unchanged 2 GiB storage allocation. The cold journal bytes and retained-hold
+  counters were identical before/after; prior result digests remained unchanged.
+  A local ARM64 workload passed with actual engine memory/swap each 1 GiB, no
+  OOM kill and exit zero. A sealed cold backup was retained before maintenance.
   See [operation contract](../installed-memory.md).
 - **Reports:** source tests cover explicit GC count/total/average/max readings,
   active handles, older artifacts, missing samples, chronology, target restarts,
@@ -36,7 +40,10 @@ received independent review. Reviewers reused passing checks instead of rerunnin
   Text reports now include target memory, CPU and GC sections. Sampled analysis
   remains advisory and does not change test outcomes or prove absence of leaks.
   The 78-test feature lane passed; later fixture/helper corrections passed their
-  affected UI/summary/publication checks. Current packaged/browser acceptance is open.
+  affected UI/summary/publication checks. The current local packaged workload
+  published 121 available target samples including GC fields; target JSON, text
+  report and CSV downloads matched their sizes and SHA-256 digests. Browser
+  acceptance remains open.
 - **Storage:** real SQLite workers drain 32 durable operations delayed 170 ms each,
   exceeding five seconds overall without false timeout. Queue overflow still
   refuses, close drains, and reopening preserves committed work. A five-second
@@ -78,13 +85,18 @@ fixture: these checks do not establish native container or target-workload accep
 
 1. Approve and apply the proposed GitHub token/reviewer settings, then verify the
    configured policy. Do not bypass its deployment gate.
-2. Resolve the separate retained-output capacity decision while preserving history.
-3. Run exact-source hosted CI and native candidate checks after source push approval.
-4. Execute the target workload with the 1 GiB container limit and verify current
-   target JSON, text downloads and browser details through the packaged application.
-5. Close required hosted resource evidence and publish only after explicit approval.
+2. Resolve the later hosted AMD64 conformance failure; retain its original evidence.
+3. Complete the running long-stream check and required hosted resource evidence.
+4. Verify browser presentation/download interactions for the packaged report.
+5. Publish only after explicit approval.
 
-Running services still use the locally built memory-change images. Subsequent
-report, storage, diagnostic and settings changes have not been deployed. No merge
+Running services use matching locally built candidate images, including the
+report, storage, diagnostic and settings changes. No merge
 to `develop` or `main`, ruleset alteration, registry promotion or deletion occurred
 during this correction batch.
+
+Candidate [CI 43996681055](https://github.com/beetlestance/beetle-lab/actions/runs/43996681055)
+passed all source, six test-shard and both native image jobs at `40c4a5c1`; eight
+archive identities were verified. No images were published. The subsequent
+[read-only observation](https://github.com/beetlestance/beetle-lab/actions/runs/44002956313)
+has a failed conformance job under diagnosis and an unfinished long-stream job.
