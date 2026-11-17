@@ -41,6 +41,6 @@ Owned by `app/src/adapters/outbound/sqlite/namespace-deletion` and `workspace-re
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/adapters/outbound/sqlite/namespace-deletion/` | `9a2881fbfa8e` |
-| `app/src/adapters/outbound/sqlite/workspace-retirement/` | `b29edc4bed46` |
-| `app/src/adapters/inbound/http/workspace-visibility.ts` | `b15cd03f4404` |
+| `app/src/adapters/outbound/sqlite/namespace-deletion/` | `e24232b1a98e` |
+| `app/src/adapters/outbound/sqlite/workspace-retirement/` | `e6c9478825c9` |
+| `app/src/adapters/inbound/http/workspace-visibility.ts` | `d5bd1ca8bb23` |

@@ -175,9 +175,9 @@ ordering are in [run delivery](run-delivery.md).
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/adapters/outbound/sqlite/runs.ts` | `76f9f2e1f090` |
-| `app/src/adapters/outbound/sqlite/run-cancellations.ts` | `e3b34c8799d8` |
-| `app/src/domain/runs/index.ts` | `46352f38f9d1` |
-| `app/src/domain/attempt-observation/` | `9433239f3b4b` |
+| `app/src/adapters/outbound/sqlite/runs.ts` | `6cacb557eff1` |
+| `app/src/adapters/outbound/sqlite/run-cancellations.ts` | `60e439b897cb` |
+| `app/src/domain/runs/index.ts` | `a0f48647f5b4` |
+| `app/src/domain/attempt-observation/` | `35bf6874e6aa` |
 | `contracts/runner/v1/attempt-admission.schema.json` | `b63de455d6f6` |
-| `agent/src/journal/cancel-original.ts` | `dfcab01d7d2d` |
+| `agent/src/journal/cancel-original.ts` | `21cddd6e5807` |

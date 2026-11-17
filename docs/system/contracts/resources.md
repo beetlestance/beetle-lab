@@ -191,9 +191,9 @@ stopped installation. Operator steps are in the guide.
 
 | Code | Reviewed |
 | --- | --- |
-| `agent/src/admission/` | `d67267efb692` |
-| `agent/src/observation/` | `fe42b397a5c9` |
-| `agent/src/bootstrap/capacity-observation.ts` | `249bcb8b37e8` |
-| `agent/src/timeout/` | `5e6078bb574f` |
-| `agent/src/telemetry/` | `66792f7b57f4` |
-| `tools/install/capacity/` | `b2a54f1df15e` |
+| `agent/src/admission/` | `bd455a020e45` |
+| `agent/src/observation/` | `79bfff964581` |
+| `agent/src/bootstrap/capacity-observation.ts` | `7df7bc6ad02f` |
+| `agent/src/timeout/` | `d08c24a94279` |
+| `agent/src/telemetry/` | `adae7a0b7973` |
+| `tools/install/capacity/` | `a5b94a418d02` |

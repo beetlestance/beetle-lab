@@ -148,9 +148,9 @@ metadata worker persists it (`local-session/`, migration 014). Shapes are in
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/adapters/outbound/sqlite/schema.ts` | `489db5b4392a` |
-| `app/src/adapters/outbound/sqlite/runs.ts` | `76f9f2e1f090` |
-| `app/src/adapters/outbound/sqlite/mutation-receipts.ts` | `adbf246823b4` |
-| `app/src/domain/attempt-observation/sequence.ts` | `3c5c2ec2762a` |
-| `app/src/bootstrap/private-roots.ts` | `d089fa895e89` |
-| `app/src/adapters/inbound/http/session/` | `2055033fbd21` |
+| `app/src/adapters/outbound/sqlite/schema.ts` | `32550259c459` |
+| `app/src/adapters/outbound/sqlite/runs.ts` | `6cacb557eff1` |
+| `app/src/adapters/outbound/sqlite/mutation-receipts.ts` | `afeddcda3d25` |
+| `app/src/domain/attempt-observation/sequence.ts` | `a8b4b42df321` |
+| `app/src/bootstrap/private-roots.ts` | `f20ea87eecc9` |
+| `app/src/adapters/inbound/http/session/` | `c0568c1eeb19` |

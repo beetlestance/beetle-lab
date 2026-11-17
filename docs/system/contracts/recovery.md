@@ -164,9 +164,9 @@ Test: `app/test/storage/clock-reason/migration.test.ts`.
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/bootstrap/recovery-control/` | `a9fad47c94b7` |
-| `contracts/src/recovery/` | `255a28a0461e` |
-| `tools/recovery/src/restore.ts` | `f24149c4d91f` |
-| `tools/recovery/src/backup.ts` | `c6dd718d3351` |
-| `tools/recovery/src/viewer/` | `867e51af7dc6` |
-| `app/src/adapters/outbound/sqlite/migration020.ts` | `6378495ff61b` |
+| `app/src/bootstrap/recovery-control/` | `11ff9036a2ef` |
+| `contracts/src/recovery/` | `29c0467d1e7e` |
+| `tools/recovery/src/restore.ts` | `c750dcfc2872` |
+| `tools/recovery/src/backup.ts` | `9162094ddc58` |
+| `tools/recovery/src/viewer/` | `5beee7f7f9b8` |
+| `app/src/adapters/outbound/sqlite/migration020.ts` | `904e1235fc9a` |

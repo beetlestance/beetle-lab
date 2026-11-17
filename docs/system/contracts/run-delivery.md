@@ -146,9 +146,9 @@ journal authority; acknowledged generation 1 and an output allocation are requir
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/ports/dispatch.ts` | `a52307942a0f` |
-| `app/src/ports/events.ts` | `b22c3db6a946` |
-| `app/src/adapters/outbound/sqlite/dispatch-claims.ts` | `4d9d6702ccec` |
-| `app/src/adapters/outbound/runner/delivery/` | `90a74de17b3b` |
-| `agent/src/scheduler/` | `d4e4c63b711b` |
-| `app/src/bootstrap/runtime-poller.ts` | `97bb60628e03` |
+| `app/src/ports/dispatch.ts` | `2866b93e0774` |
+| `app/src/ports/events.ts` | `6b1e3a6da027` |
+| `app/src/adapters/outbound/sqlite/dispatch-claims.ts` | `a93c47920f54` |
+| `app/src/adapters/outbound/runner/delivery/` | `d0bb503ece86` |
+| `agent/src/scheduler/` | `09e94ef48418` |
+| `app/src/bootstrap/runtime-poller.ts` | `d4493d903f21` |

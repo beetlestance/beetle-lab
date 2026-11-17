@@ -32,7 +32,11 @@ export async function anchorHash(path: string): Promise<string | undefined> {
   if (!info) return undefined;
   const files = info.isDirectory() ? (await sourceFiles(path, /./)).filter((file) => !/\.test\./.test(file)) : [path];
   const hash = createHash('sha256');
-  for (const file of files) hash.update(`${file}\0`).update(await readFile(file)).update('\0');
+  for (const file of files)
+    hash
+      .update(`${file}\0`)
+      .update(await readFile(file))
+      .update('\0');
   return hash.digest('hex').slice(0, 12);
 }
 
@@ -45,7 +49,9 @@ export async function anchorIssues(file: string, text: string): Promise<readonly
     const actual = await anchorHash(anchor.path);
     if (!actual) issues.push(`${file}:${anchor.line}: anchor ${anchor.path} does not exist`);
     else if (actual !== anchor.reviewed)
-      issues.push(`${file}:${anchor.line}: ${anchor.path} changed since review; reread the page, then run npm run docs:stamp -- ${file}`);
+      issues.push(
+        `${file}:${anchor.line}: ${anchor.path} changed since review; reread the page, then run npm run docs:stamp -- ${file}`,
+      );
   }
   return issues;
 }

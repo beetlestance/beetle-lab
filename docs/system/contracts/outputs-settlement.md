@@ -211,9 +211,9 @@ settles in the backend alone. Rejected never-admitted originals use a 16384-byte
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/src/output-source/` | `d32797703a20` |
+| `contracts/src/output-source/` | `dd6d7cd8f8e7` |
 | `agent/src/journal/output-delivery-protocol.ts` | `23234170ace9` |
-| `app/src/adapters/outbound/sqlite/output-finalization/` | `df83afd04c18` |
-| `app/src/adapters/outbound/sqlite/output-absence/` | `bd7025b7daeb` |
-| `app/src/adapters/outbound/sqlite/output-deletion/` | `eebe77ff17c8` |
-| `app/src/adapters/outbound/sqlite/backend-settlement/` | `bdbe22e13010` |
+| `app/src/adapters/outbound/sqlite/output-finalization/` | `00bfd0136812` |
+| `app/src/adapters/outbound/sqlite/output-absence/` | `0f2d925087dc` |
+| `app/src/adapters/outbound/sqlite/output-deletion/` | `d41e9bdaf18f` |
+| `app/src/adapters/outbound/sqlite/backend-settlement/` | `7f81a1b56b08` |

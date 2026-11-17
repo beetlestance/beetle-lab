@@ -210,8 +210,8 @@ Container removal requires a stopped, sealed and application-acknowledged attemp
 | Code | Reviewed |
 | --- | --- |
 | `contracts/runner/v1/` | `7487c41d088a` |
-| `agent/src/transport/` | `865afb5ba88a` |
-| `agent/src/journal/projection.ts` | `5c3654934a6a` |
-| `agent/src/controller/` | `557c5fde1f37` |
-| `agent/src/supervisor/time.ts` | `33d5537583b5` |
-| `app/src/adapters/outbound/runner/` | `0b264758e44f` |
+| `agent/src/transport/` | `344e0327f0ca` |
+| `agent/src/journal/projection.ts` | `7c77ac77f06a` |
+| `agent/src/controller/` | `230594aa2b66` |
+| `agent/src/supervisor/time.ts` | `9594485cfc76` |
+| `app/src/adapters/outbound/runner/` | `b4f590c85e3c` |

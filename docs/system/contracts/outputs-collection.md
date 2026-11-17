@@ -212,9 +212,9 @@ marker (change requires recovery); task directories are committed before any pro
 
 | Code | Reviewed |
 | --- | --- |
-| `agent/src/collection/` | `99495d3544f4` |
-| `agent/src/journal/output-source-protocol.ts` | `abf27b5726ea` |
-| `agent/src/transport/sources.ts` | `2d8d61a92c3b` |
-| `app/src/ports/output-bytes.ts` | `0fb052d91eac` |
-| `app/src/adapters/outbound/sqlite/output-artifacts/` | `d1a175d8859e` |
-| `agent/src/guard/` | `a02c2f2011b4` |
+| `agent/src/collection/` | `3ae922d42e26` |
+| `agent/src/journal/output-source-protocol.ts` | `3633d477b92c` |
+| `agent/src/transport/sources.ts` | `a1e3149482d3` |
+| `app/src/ports/output-bytes.ts` | `10c5f59ca356` |
+| `app/src/adapters/outbound/sqlite/output-artifacts/` | `b0175dc3d649` |
+| `agent/src/guard/` | `4b7dff6c413a` |

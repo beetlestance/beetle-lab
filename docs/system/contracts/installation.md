@@ -211,9 +211,9 @@ request alias never becomes an environment variable name or file path
 
 | Code | Reviewed |
 | --- | --- |
-| `tools/install/src/` | `0d3af2908e7d` |
-| `tools/install/compose/` | `89768e5217cd` |
-| `tools/install/starter/policy.ts` | `ee127d4b28f8` |
-| `agent/src/bootstrap/installed-config.ts` | `53714e02dd92` |
-| `agent/src/installation-state/` | `efb0a24925f9` |
-| `contracts/src/installed-identity.ts` | `83efc94b61d6` |
+| `tools/install/src/` | `9fe4e8822de1` |
+| `tools/install/compose/` | `cbe88d78f424` |
+| `tools/install/starter/policy.ts` | `05f116398b2b` |
+| `agent/src/bootstrap/installed-config.ts` | `1975e2348c51` |
+| `agent/src/installation-state/` | `0beedc07f9a0` |
+| `contracts/src/installed-identity.ts` | `564605f73a36` |
