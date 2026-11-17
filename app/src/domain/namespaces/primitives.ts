@@ -39,9 +39,12 @@ export function nextVersion(version: number): number {
   return version + 1;
 }
 
-export function normalizedName(value: string): string {
+/** Organisation names are short enough for the header switcher; existing longer names stay readable. */
+export const ORGANIZATION_NAME_MAX = 48;
+
+export function normalizedName(value: string, max = 128): string {
   const name = value.trim();
-  requireRule([...name].length >= 1 && [...name].length <= 128);
+  requireRule([...name].length >= 1 && [...name].length <= max);
   requireRule([...name].every((char) => char.charCodeAt(0) >= 32 && char.charCodeAt(0) !== 127));
   return name;
 }

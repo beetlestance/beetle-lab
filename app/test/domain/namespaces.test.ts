@@ -55,6 +55,18 @@ describe('namespace identity and atomic commands', () => {
     expect(normalizedName('../display only')).toBe('../display only');
   });
 
+  it('limits new organisation names to 48 characters and keeps an unchanged legacy name', () => {
+    const create = (name: string) => command({ kind: 'createOrganization', id: uuid(1),
+      request: { requestId: uuid(99), scope: { kind: 'installation' }, name, slug: 'team' } });
+    expect(decideNamespaceChange(create('x'.repeat(48)), {}).entity.name).toBe('x'.repeat(48));
+    expect(() => decideNamespaceChange(create('x'.repeat(49)), {})).toThrow(SemanticError);
+    const legacy = { ...organization, name: 'y'.repeat(128) };
+    const patch = (request: { name?: string; slug?: string }) => command({ kind: 'patchOrganization', id: uuid(1),
+      request: { requestId: uuid(98), scope: { kind: 'installation' }, expectedVersion: 1, ...request } });
+    expect(decideNamespaceChange(patch({ slug: 'renamed' }), { current: legacy }).entity.name).toBe(legacy.name);
+    expect(() => decideNamespaceChange(patch({ name: 'z'.repeat(49) }), { current: legacy })).toThrow(SemanticError);
+  });
+
   it('creates a real immutable root atomically with workspace', async () => {
     const fixture = atomicFixture({ organization });
     const operation: NamespaceOperation = { kind: 'createWorkspace', id: uuid(2), rootFolderId: uuid(3),

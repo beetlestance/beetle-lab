@@ -5,6 +5,7 @@ export {
   sameUuid,
   nextVersion,
   normalizedName,
+  ORGANIZATION_NAME_MAX,
   foldedName,
   validatedSlug,
   immutableSnapshot,

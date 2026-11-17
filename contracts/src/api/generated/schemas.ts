@@ -44,6 +44,7 @@ export const apiMessageSchemas = freezeSchema({
   Count: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count' },
   PositiveInteger: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/PositiveInteger' },
   Name: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name' },
+  OrganizationName: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/OrganizationName' },
   OpaqueCursor: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/OpaqueCursor' },
   PageQuery: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/PageQuery' },
   InstallationScope: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/InstallationScope' },
