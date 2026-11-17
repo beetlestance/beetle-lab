@@ -1,4 +1,4 @@
-import {bodyFor} from './request-body.js';
+import { bodyFor } from './request-body.js';
 import { validate } from '@beetle/contracts';
 import type { ClientResult, ProtocolName, ProtocolTypes, RunnerTransport } from '@beetle/contracts';
 import type { RunnerAttemptIdentity } from '../../../ports/runner.js';
@@ -16,13 +16,16 @@ export interface Connection {
   readonly io: NativeIo;
 }
 
-
 function expectedStatus(status: number, successStatus: number): boolean {
   return status === successStatus || (status >= 400 && status <= 599);
 }
 
-function reply<N extends ProtocolName>(call: Call & { response: N }, response: NativeResult, connection: Connection,
-  identity?: RunnerAttemptIdentity): ClientResult<ProtocolTypes[N]> {
+function reply<N extends ProtocolName>(
+  call: Call & { response: N },
+  response: NativeResult,
+  connection: Connection,
+  identity?: RunnerAttemptIdentity,
+): ClientResult<ProtocolTypes[N]> {
   if (!response.ok) return { ok: false, error: { kind: response.kind } };
   const status = response.status;
   // Redirects and unexpected success statuses can never become protocol replies.
@@ -42,8 +45,10 @@ function reply<N extends ProtocolName>(call: Call & { response: N }, response: N
   return checked;
 }
 
-export function protocolReply(response: Extract<NativeResult, { ok: true }>,
-  identity?: RunnerAttemptIdentity): ClientResult<never> {
+export function protocolReply(
+  response: Extract<NativeResult, { ok: true }>,
+  identity?: RunnerAttemptIdentity,
+): ClientResult<never> {
   const checked = validate('ProtocolError', response.value);
   if (!checked.ok || !identity || !matchesReply(checked.value, identity)) {
     return { ok: false, error: { kind: 'response', status: response.status } };
@@ -53,13 +58,27 @@ export function protocolReply(response: Extract<NativeResult, { ok: true }>,
 
 export function createTransport(connection: Connection, identity?: RunnerAttemptIdentity): RunnerTransport {
   return {
-    json: call => connection.credits.run(call.request === 'Offer' || call.request === 'StandaloneExportAssignment' ? 'offer' : 'ordinary', call.signal, async original => {
-      const body = bodyFor(call, identity);
-      if (!body.ok) return body;
-      const response = await nativeCall({ origin: connection.origin, method: call.method, path: call.path,
-        headers: { authorization: `Bearer ${connection.token}`, ...scopeHeaders(identity) },
-        body: body.value, signal: original.signal, responseBytes: 1_048_576 }, connection.io);
-      return reply(call, response, connection, identity);
-    }),
+    json: (call) =>
+      connection.credits.run(
+        call.request === 'Offer' || call.request === 'StandaloneExportAssignment' ? 'offer' : 'ordinary',
+        call.signal,
+        async (original) => {
+          const body = bodyFor(call, identity);
+          if (!body.ok) return body;
+          const response = await nativeCall(
+            {
+              origin: connection.origin,
+              method: call.method,
+              path: call.path,
+              headers: { authorization: `Bearer ${connection.token}`, ...scopeHeaders(identity) },
+              body: body.value,
+              signal: original.signal,
+              responseBytes: 1_048_576,
+            },
+            connection.io,
+          );
+          return reply(call, response, connection, identity);
+        },
+      ),
   };
 }

@@ -19,11 +19,20 @@ export interface DispatchKey {
   readonly runId: string;
   readonly attempt: AttemptIdentity & { generation: 1 };
 }
-export type DispatchBlockReason = 'capacity_unknown' | 'profile_unavailable' | 'per_run_ceiling' |
-  'budget_unavailable' | 'staging_unavailable' | 'storage_unavailable' | 'isolated' |
-  'isolated_predecessor' | 'not_queued' | 'untracked_intent' | 'ownership_unknown';
-export type DispatchEligibility = { readonly kind: 'ready' } |
-  { readonly kind: 'blocked'; readonly reason: DispatchBlockReason };
+export type DispatchBlockReason =
+  | 'capacity_unknown'
+  | 'profile_unavailable'
+  | 'per_run_ceiling'
+  | 'budget_unavailable'
+  | 'staging_unavailable'
+  | 'storage_unavailable'
+  | 'isolated'
+  | 'isolated_predecessor'
+  | 'not_queued'
+  | 'untracked_intent'
+  | 'ownership_unknown';
+export type DispatchEligibility =
+  { readonly kind: 'ready' } | { readonly kind: 'blocked'; readonly reason: DispatchBlockReason };
 export interface DispatchScan {
   readonly lane: 'queued' | 'reconcile';
   readonly limit: number;
@@ -40,10 +49,19 @@ export interface DispatchPage {
   readonly items: readonly DispatchCandidate[];
   readonly nextCursor: string | null;
 }
-export interface DispatchOffer { readonly key: DispatchKey; readonly offer: Offer }
-export type DispatchClaim = { readonly kind: 'claimed' | 'replay'; readonly key: DispatchKey; readonly journalAuthority: string } |
-  { readonly kind: 'acknowledged'; readonly journalAuthority: string } | { readonly kind: 'blocked'; readonly reason: DispatchBlockReason };
-export interface DispatchObservationRequest { readonly key: DispatchKey; readonly snapshot: unknown; readonly journalAuthority: string }
+export interface DispatchOffer {
+  readonly key: DispatchKey;
+  readonly offer: Offer;
+}
+export type DispatchClaim =
+  | { readonly kind: 'claimed' | 'replay'; readonly key: DispatchKey; readonly journalAuthority: string }
+  | { readonly kind: 'acknowledged'; readonly journalAuthority: string }
+  | { readonly kind: 'blocked'; readonly reason: DispatchBlockReason };
+export interface DispatchObservationRequest {
+  readonly key: DispatchKey;
+  readonly snapshot: unknown;
+  readonly journalAuthority: string;
+}
 export interface DispatchObservation {
   readonly run: Run;
   readonly snapshot: Readonly<AttemptSnapshot>;

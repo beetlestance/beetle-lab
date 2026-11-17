@@ -27,18 +27,19 @@ export interface OutputAbsenceFinalizeRequest {
   readonly proofDigest: string;
   readonly expectedRunVersion: number;
 }
-export type OutputAbsenceFinalizationReceipt = Omit<OutputFinalizationReceipt,
-  'sourceDigest' | 'manifestDigest' | 'state' | 'outcome' | 'reason' | 'validationStatus'> & {
+export type OutputAbsenceFinalizationReceipt = Omit<
+  OutputFinalizationReceipt,
+  'sourceDigest' | 'manifestDigest' | 'state' | 'outcome' | 'reason' | 'validationStatus'
+> & {
   readonly proofDigest: string;
   readonly state: 'cancelled' | 'errored';
   readonly outcome: 'inconclusive';
   readonly validationStatus: 'pending';
   readonly reason: NonNullable<OutputFinalizationReceipt['reason']>;
 };
-export type OutputAbsenceFinalizationReply = {
-  readonly kind: 'finalized';
-  readonly receipt: OutputAbsenceFinalizationReceipt;
-} | { readonly kind: 'pending'; readonly reason: 'proof' | 'execution' | 'events' };
+export type OutputAbsenceFinalizationReply =
+  | { readonly kind: 'finalized'; readonly receipt: OutputAbsenceFinalizationReceipt }
+  | { readonly kind: 'pending'; readonly reason: 'proof' | 'execution' | 'events' };
 /** Sibling custody/settlement, never a fabricated source or source receipt.
  * All operations use the existing ordinary worker lane and4096-byte bounds.
  */

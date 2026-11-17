@@ -28,9 +28,19 @@ export interface SummaryEvidence {
   readonly sha256: string;
   readonly nativeCollection: ProcessObservation['collection'];
 }
-export type SummaryCode = 'profile' | 'process' | 'filesystem' | 'integrity' | 'limit' | 'invalid'
-  | 'cancelled' | 'closed' | 'clock' | 'deadline';
-export type SummaryResult = { readonly ok: true; readonly evidence: SummaryEvidence }
+export type SummaryCode =
+  | 'profile'
+  | 'process'
+  | 'filesystem'
+  | 'integrity'
+  | 'limit'
+  | 'invalid'
+  | 'cancelled'
+  | 'closed'
+  | 'clock'
+  | 'deadline';
+export type SummaryResult =
+  | { readonly ok: true; readonly evidence: SummaryEvidence }
   | { readonly ok: false; readonly code: SummaryCode; readonly closeFailed: boolean };
 export interface SummaryCollection {
   readonly result: Promise<SummaryResult>;
@@ -38,5 +48,8 @@ export interface SummaryCollection {
   close(): Promise<void>;
 }
 export class SummaryError extends Error {
-  constructor(readonly code: SummaryCode) { super(code); this.name = 'SummaryError'; }
+  constructor(readonly code: SummaryCode) {
+    super(code);
+    this.name = 'SummaryError';
+  }
 }

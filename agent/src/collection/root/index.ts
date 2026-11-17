@@ -35,17 +35,32 @@ export function captureCollectionRootIdentity(input: unknown): Readonly<Collecti
   const value: Record<string, unknown> = {};
   for (const name of names) {
     const descriptor = Object.getOwnPropertyDescriptor(input, name);
-    valid(descriptor?.enumerable && 'value' in descriptor); value[name] = descriptor.value;
+    valid(descriptor?.enumerable && 'value' in descriptor);
+    value[name] = descriptor.value;
   }
   directory(value.directory);
-  valid(typeof value.uid === 'number' && Number.isSafeInteger(value.uid) && value.uid >= 0 && value.uid <= 4_294_967_295);
-  uint64(value.device); uint64(value.inode); nanoseconds(value.modifiedNs); nanoseconds(value.changedNs);
+  valid(
+    typeof value.uid === 'number' && Number.isSafeInteger(value.uid) && value.uid >= 0 && value.uid <= 4_294_967_295,
+  );
+  uint64(value.device);
+  uint64(value.inode);
+  nanoseconds(value.modifiedNs);
+  nanoseconds(value.changedNs);
   return Object.freeze(value) as unknown as Readonly<CollectionRootIdentity>;
 }
 
 /** Formats already checked native facts; establishes no filesystem custody itself. */
-export function snapshotRootIdentity(directory: string, uid: number,
-  stat: Pick<BigIntStats, 'dev' | 'ino' | 'mtimeNs' | 'ctimeNs'>): Readonly<CollectionRootIdentity> {
-  return Object.freeze({ directory, uid, device: stat.dev.toString(), inode: stat.ino.toString(),
-    modifiedNs: stat.mtimeNs.toString(), changedNs: stat.ctimeNs.toString() });
+export function snapshotRootIdentity(
+  directory: string,
+  uid: number,
+  stat: Pick<BigIntStats, 'dev' | 'ino' | 'mtimeNs' | 'ctimeNs'>,
+): Readonly<CollectionRootIdentity> {
+  return Object.freeze({
+    directory,
+    uid,
+    device: stat.dev.toString(),
+    inode: stat.ino.toString(),
+    modifiedNs: stat.mtimeNs.toString(),
+    changedNs: stat.ctimeNs.toString(),
+  });
 }

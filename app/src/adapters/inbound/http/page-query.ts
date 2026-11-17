@@ -29,12 +29,15 @@ export function decodePageQuery(input: unknown): PageQueryDecodeResult {
     query.limit = Number(query.limit);
     const checked = validateApi('PageQuery', query);
     return checked.ok ? checked : { ok: false };
-  } catch { return { ok: false }; }
+  } catch {
+    return { ok: false };
+  }
 }
 
 /** Canonical HTTP-only numeric decoding; the JSON client still requires numbers. */
-export function decodeMetricSamplesQuery(input: unknown):
-  { readonly ok: true; readonly value: RunMetricSamplesQuery } | { readonly ok: false } {
+export function decodeMetricSamplesQuery(
+  input: unknown,
+): { readonly ok: true; readonly value: RunMetricSamplesQuery } | { readonly ok: false } {
   try {
     const query = JSON.parse(encodeJson(rawFields(input), 4096)) as Record<string, unknown>;
     for (const key of ['limit', 'seriesOrdinal', 'fromTimeMs', 'toTimeMs']) {
@@ -44,17 +47,22 @@ export function decodeMetricSamplesQuery(input: unknown):
     }
     const checked = validateApi('RunMetricSamplesQuery', query);
     return checked.ok ? checked : { ok: false };
-  } catch { return { ok: false }; }
+  } catch {
+    return { ok: false };
+  }
 }
 
 /** Run-only fields stay strict; only the HTTP limit string is decoded. */
-export function decodeRunListQuery(input: unknown):
-  { readonly ok: true; readonly value: RunListQuery } | { readonly ok: false } {
+export function decodeRunListQuery(
+  input: unknown,
+): { readonly ok: true; readonly value: RunListQuery } | { readonly ok: false } {
   try {
     const query = JSON.parse(encodeJson(rawFields(input), 4096)) as Record<string, unknown>;
     if (typeof query.limit !== 'string' || !/^(0|[1-9][0-9]*)$/.test(query.limit)) return { ok: false };
     query.limit = Number(query.limit);
     const checked = validateApi('RunListQuery', query);
     return checked.ok ? checked : { ok: false };
-  } catch { return { ok: false }; }
+  } catch {
+    return { ok: false };
+  }
 }

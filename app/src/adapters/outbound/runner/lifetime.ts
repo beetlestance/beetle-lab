@@ -12,7 +12,9 @@ export interface OriginalCall {
   finish(): void;
 }
 
-interface PendingCall extends OriginalCall { start(caller?: AbortSignal): void }
+interface PendingCall extends OriginalCall {
+  start(caller?: AbortSignal): void;
+}
 
 /** Construct internal custody without observing caller-owned registration hooks. */
 function original(offer: boolean): PendingCall {
@@ -21,7 +23,9 @@ function original(offer: boolean): PendingCall {
   let caller: AbortSignal | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let complete!: () => void;
-  const done = new Promise<void>(resolve => { complete = resolve; });
+  const done = new Promise<void>((resolve) => {
+    complete = resolve;
+  });
   const stop = (reason: 'cancelled' | 'timeout') => {
     if (cause) return;
     cause = reason;
@@ -29,8 +33,12 @@ function original(offer: boolean): PendingCall {
   };
   const abort = () => stop('cancelled');
   return {
-    offer, signal: controller.signal, done, failure: () => cause, abort,
-    start: signal => {
+    offer,
+    signal: controller.signal,
+    done,
+    failure: () => cause,
+    abort,
+    start: (signal) => {
       // Brand-check without caller hooks before retaining a cleanup target.
       if (signal !== undefined) Reflect.apply(signalAborted, signal, []);
       caller = signal;
@@ -40,7 +48,11 @@ function original(offer: boolean): PendingCall {
     },
     finish: () => {
       clearTimeout(timer);
-      try { if (caller) Reflect.apply(removeListener, caller, ['abort', abort]); } finally { complete(); }
+      try {
+        if (caller) Reflect.apply(removeListener, caller, ['abort', abort]);
+      } finally {
+        complete();
+      }
     },
   };
 }
@@ -74,8 +86,11 @@ export class CallCredits {
     if (kind === 'live') this.live += delta;
   }
 
-  async run<T>(kind: 'offer' | 'ordinary' | 'source' | 'live', caller: AbortSignal | undefined,
-    work: (call: OriginalCall) => Promise<ClientResult<T>>): Promise<ClientResult<T>> {
+  async run<T>(
+    kind: 'offer' | 'ordinary' | 'source' | 'live',
+    caller: AbortSignal | undefined,
+    work: (call: OriginalCall) => Promise<ClientResult<T>>,
+  ): Promise<ClientResult<T>> {
     if (this.full(kind)) {
       return { ok: false, error: { kind: 'transport' } };
     }
@@ -100,7 +115,7 @@ export class CallCredits {
     if (this.closing) return this.closing;
     this.closed = true;
     const calls = [...this.calls];
-    this.closing = Promise.all(calls.map(call => call.done)).then(() => undefined);
+    this.closing = Promise.all(calls.map((call) => call.done)).then(() => undefined);
     for (const call of calls) call.abort();
     return this.closing;
   }

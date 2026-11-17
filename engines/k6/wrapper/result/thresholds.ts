@@ -14,9 +14,12 @@ function support(input: K6ResultInput, metric: EvidenceMetric, expression: strin
 }
 function sampled(input: K6ResultInput, metric: EvidenceMetric): boolean {
   switch (metric.kind) {
-    case 'counter': return counter(input.summary, metric.key) !== null;
-    case 'trend': return (counter(input.summary, metric.key) ?? 0) > 0;
-    case 'gauge': return input.summary?.metrics[metric.key]?.values.value !== undefined;
+    case 'counter':
+      return counter(input.summary, metric.key) !== null;
+    case 'trend':
+      return (counter(input.summary, metric.key) ?? 0) > 0;
+    case 'gauge':
+      return input.summary?.metrics[metric.key]?.values.value !== undefined;
     case 'rate': {
       const passes = countStat(input.summary, metric.key, 'passes');
       const fails = countStat(input.summary, metric.key, 'fails');
@@ -30,14 +33,21 @@ export function thresholdEvidence(input: K6ResultInput): ThresholdEvidence {
   const verdicts: ThresholdEvidence['verdicts'] = [];
   let complete = true;
   for (const rule of input.suite.loadPlan.thresholds) {
-    const metric = layout.metrics.find(item => item.key === rule.rule.metric);
-    const passed = metric && support(input, metric, rule.threshold) ? verdict(input.summary, metric.key, rule.threshold) : null;
+    const metric = layout.metrics.find((item) => item.key === rule.rule.metric);
+    const passed =
+      metric && support(input, metric, rule.threshold) ? verdict(input.summary, metric.key, rule.threshold) : null;
     if (passed === null) complete = false;
     else verdicts.push({ id: rule.id, purpose: rule.kind, passed });
   }
-  const discovery = input.suite.loadPlan.thresholds.filter(rule => rule.kind === 'discovery');
-  const reached = discovery.find(rule => verdicts.some(item => item.id === rule.id && item.purpose === 'discovery' && !item.passed));
+  const discovery = input.suite.loadPlan.thresholds.filter((rule) => rule.kind === 'discovery');
+  const reached = discovery.find((rule) =>
+    verdicts.some((item) => item.id === rule.id && item.purpose === 'discovery' && !item.passed),
+  );
   const selected = reached ?? discovery[0];
-  return { verdicts, complete, sloFailed: verdicts.some(item => item.purpose === 'slo' && !item.passed),
-    expectedAbort: selected ? { ruleId: selected.id, reached: reached !== undefined } : null };
+  return {
+    verdicts,
+    complete,
+    sloFailed: verdicts.some((item) => item.purpose === 'slo' && !item.passed),
+    expectedAbort: selected ? { ruleId: selected.id, reached: reached !== undefined } : null,
+  };
 }

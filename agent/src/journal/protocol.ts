@@ -1,13 +1,21 @@
 import type { NoTaskReceiptOperation } from './no-task-receipt-protocol.js';
 import type { StoredNoTaskReceipt } from '../no-task-receipt-values/index.js';
-import type { SettlementOperation,SettlementValue } from './settlement-protocol.js';
-import type {RuntimeAssociationOperation,RuntimeAssociationValue} from './runtime-association-protocol.js';
+import type { SettlementOperation, SettlementValue } from './settlement-protocol.js';
+import type { RuntimeAssociationOperation, RuntimeAssociationValue } from './runtime-association-protocol.js';
 import type { CleanupReceiptOperation, CleanupReceiptValue } from './cleanup-receipt-protocol.js';
 import type { CleanupProgressOperation, CleanupProgressValue } from './cleanup-progress-protocol.js';
 import type { CleanupPlanOperation, CleanupPlanValue } from './cleanup-plan-protocol.js';
 import type { RetirementOperation, RetirementValue } from './retirement-protocol.js';
 import type { NamespaceOperation, NamespaceValue } from './staging-namespace-protocol.js';
-import type { Ack, AckReceipt, AgentEvent, AttemptSnapshot, EventBatch, Offer, StandaloneExportAssignment } from '@beetle/contracts';
+import type {
+  Ack,
+  AckReceipt,
+  AgentEvent,
+  AttemptSnapshot,
+  EventBatch,
+  Offer,
+  StandaloneExportAssignment,
+} from '@beetle/contracts';
 import type { WrapperBatch, WrapperCheckpoint } from '../control-protocol/index.js';
 import type { AdmissionCommand, AdmissionValue } from '../admission/index.js';
 import type { CollectionIntent, PrivateSource, SourceReceipt } from '../output-source/index.js';
@@ -16,14 +24,36 @@ import type { OutputDeliveryOperation, OutputDeliveryClosure } from './output-de
 import type { OutputAbsence } from '@beetle/contracts/output-source';
 import type { OutputAbsenceOperation } from './output-absence-protocol.js';
 
-export type ErrorCode = 'invalid_input' | 'conflict' | 'not_found' | 'queue_full' |
-  'closed' | 'unavailable' | 'owned' | 'schema_newer' | 'stale_generation' |
-  'quota_exceeded' | 'cursor_expired' | 'expired_key' | 'recovery_required';
-export interface AttemptKey { attemptId: string; organizationId: string; workspaceId: string }
-export interface GenerationKey extends AttemptKey { generation: number }
+export type ErrorCode =
+  | 'invalid_input'
+  | 'conflict'
+  | 'not_found'
+  | 'queue_full'
+  | 'closed'
+  | 'unavailable'
+  | 'owned'
+  | 'schema_newer'
+  | 'stale_generation'
+  | 'quota_exceeded'
+  | 'cursor_expired'
+  | 'expired_key'
+  | 'recovery_required';
+export interface AttemptKey {
+  attemptId: string;
+  organizationId: string;
+  workspaceId: string;
+}
+export interface GenerationKey extends AttemptKey {
+  generation: number;
+}
 /** Private supervisor input. now is trusted wall-clock milliseconds, never job data. */
 export type StopReason = 'cancelled' | 'timeout' | 'output_limit' | 'artifact_incomplete' | 'clock_integrity';
-export interface SupervisionCommand { key: GenerationKey; now: number; cancel?: true; reason?: StopReason }
+export interface SupervisionCommand {
+  key: GenerationKey;
+  now: number;
+  cancel?: true;
+  reason?: StopReason;
+}
 export interface SupervisionState {
   clockHighWater: number;
   clockFenced: boolean;
@@ -33,25 +63,62 @@ export interface SupervisionState {
   immediateStop: boolean;
 }
 type WithoutSeq<T> = T extends unknown ? Omit<T, 'seq'> : never;
-export interface SupervisorInput { sourceOrdinal: number; event: WithoutSeq<Extract<AgentEvent, { source: 'agent' }>> }
-export interface SourceCursors { wrapperSeq: number; supervisorOrdinal: number }
-export interface PageRequest { limit: number; cursor?: number }
-export interface SnapshotPage { snapshots: AttemptSnapshot[]; cursor?: number }
-/** Private discovery. Each lane owns its cursor; delivery also pins a finite upper ID. */
-export interface RunnableRequest extends PageRequest { lane: 'charged' | 'queued' | 'delivery'; through?: number }
-export interface RunnablePage { attempts: GenerationKey[]; cursor?: number; through?: number }
-export interface PruneReceipt { pruned: number; snapshot: AttemptSnapshot }
-export interface EventInput {
-  key: GenerationKey; source: 'wrapper' | 'agent'; sourceKey: number; json: string; canonical: string;
+export interface SupervisorInput {
+  sourceOrdinal: number;
+  event: WithoutSeq<Extract<AgentEvent, { source: 'agent' }>>;
 }
-export type Operation = NoTaskReceiptOperation | SettlementOperation | RuntimeAssociationOperation | CleanupReceiptOperation | CleanupProgressOperation | CleanupPlanOperation | RetirementOperation | NamespaceOperation | OutputSourceOperation | OutputDeliveryOperation | OutputAbsenceOperation
+export interface SourceCursors {
+  wrapperSeq: number;
+  supervisorOrdinal: number;
+}
+export interface PageRequest {
+  limit: number;
+  cursor?: number;
+}
+export interface SnapshotPage {
+  snapshots: AttemptSnapshot[];
+  cursor?: number;
+}
+/** Private discovery. Each lane owns its cursor; delivery also pins a finite upper ID. */
+export interface RunnableRequest extends PageRequest {
+  lane: 'charged' | 'queued' | 'delivery';
+  through?: number;
+}
+export interface RunnablePage {
+  attempts: GenerationKey[];
+  cursor?: number;
+  through?: number;
+}
+export interface PruneReceipt {
+  pruned: number;
+  snapshot: AttemptSnapshot;
+}
+export interface EventInput {
+  key: GenerationKey;
+  source: 'wrapper' | 'agent';
+  sourceKey: number;
+  json: string;
+  canonical: string;
+}
+export type Operation =
+  | NoTaskReceiptOperation
+  | SettlementOperation
+  | RuntimeAssociationOperation
+  | CleanupReceiptOperation
+  | CleanupProgressOperation
+  | CleanupPlanOperation
+  | RetirementOperation
+  | NamespaceOperation
+  | OutputSourceOperation
+  | OutputDeliveryOperation
+  | OutputAbsenceOperation
   | { kind: 'authority' }
   | { kind: 'checkpoint'; key: GenerationKey }
   | { kind: 'wrapperBatch'; request: Readonly<WrapperBatch> }
   | { kind: 'supervision'; request: SupervisionCommand }
   | { kind: 'admission'; request: AdmissionCommand }
   | { kind: 'offer'; json: string; canonical: string }
-  | { kind: 'cancelOriginal'; json: string; canonical: string; now: number; assignment?:StandaloneExportAssignment }
+  | { kind: 'cancelOriginal'; json: string; canonical: string; now: number; assignment?: StandaloneExportAssignment }
   | { kind: 'get' | 'cancel' | 'read' | 'readExportAssignment'; key: AttemptKey }
   | { kind: 'list'; page: PageRequest }
   | { kind: 'runnable'; page: RunnableRequest }
@@ -61,7 +128,37 @@ export type Operation = NoTaskReceiptOperation | SettlementOperation | RuntimeAs
   | { kind: 'prune' | 'sources'; key: GenerationKey }
   | { kind: 'close' };
 export type Command = Operation & { id: number };
-export type Value = StoredNoTaskReceipt | SettlementValue | RuntimeAssociationValue | CleanupReceiptValue | CleanupProgressValue | CleanupPlanValue | RetirementValue | NamespaceValue | AttemptSnapshot | SnapshotPage | RunnablePage | Offer | StandaloneExportAssignment | AgentEvent | EventBatch | AckReceipt | PruneReceipt | SourceCursors | AdmissionValue | SupervisionState | WrapperCheckpoint | CollectionIntent | PrivateSource | SourceReceipt | OutputDeliveryClosure | OutputAbsence | string | null;
-export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
-  { kind: 'result'; id: number; ok: true; value: Value } |
-  { kind: 'result'; id: number; ok: false; code: ErrorCode; recovery?: AttemptSnapshot };
+export type Value =
+  | StoredNoTaskReceipt
+  | SettlementValue
+  | RuntimeAssociationValue
+  | CleanupReceiptValue
+  | CleanupProgressValue
+  | CleanupPlanValue
+  | RetirementValue
+  | NamespaceValue
+  | AttemptSnapshot
+  | SnapshotPage
+  | RunnablePage
+  | Offer
+  | StandaloneExportAssignment
+  | AgentEvent
+  | EventBatch
+  | AckReceipt
+  | PruneReceipt
+  | SourceCursors
+  | AdmissionValue
+  | SupervisionState
+  | WrapperCheckpoint
+  | CollectionIntent
+  | PrivateSource
+  | SourceReceipt
+  | OutputDeliveryClosure
+  | OutputAbsence
+  | string
+  | null;
+export type Reply =
+  | { kind: 'ready' }
+  | { kind: 'startup_error'; code: ErrorCode }
+  | { kind: 'result'; id: number; ok: true; value: Value }
+  | { kind: 'result'; id: number; ok: false; code: ErrorCode; recovery?: AttemptSnapshot };

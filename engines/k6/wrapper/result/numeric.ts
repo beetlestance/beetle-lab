@@ -16,9 +16,9 @@ export function sum(left: number, right: number): number {
   return value;
 }
 export function verdict(summary: SummaryEvidence | null, key: string, expression: string): boolean | null {
-  const matches = summary?.metrics[key]?.thresholds.filter(item => item.expression === expression) ?? [];
-  const values = matches.map(item => item.ok);
-  if (values.some(value => value !== null && typeof value !== 'boolean')) throw new Error('invalid_input');
-  if (values.some(value => value !== values[0])) throw new Error('invalid_input');
+  const matches = summary?.metrics[key]?.thresholds.filter((item) => item.expression === expression) ?? [];
+  const values = matches.map((item) => item.ok);
+  if (values.some((value) => value !== null && typeof value !== 'boolean')) throw new Error('invalid_input');
+  if (values.some((value) => value !== values[0])) throw new Error('invalid_input');
   return values[0] ?? null;
 }

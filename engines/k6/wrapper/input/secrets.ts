@@ -16,10 +16,15 @@ export function matchSecretReferences(config: ValidatedSuiteConfig, offer: Offer
   const actual = offer.secretReferences ?? [];
   if (actual.length !== prepared.value.length) return false;
   const names = new Set<string>();
-  return actual.every(reference => {
+  return actual.every((reference) => {
     if (names.has(reference.name)) return false;
     names.add(reference.name);
-    return prepared.value.some(expected => expected.name === reference.name && expected.provider === reference.provider
-      && expected.reference === reference.reference && expected.version === reference.version);
+    return prepared.value.some(
+      (expected) =>
+        expected.name === reference.name &&
+        expected.provider === reference.provider &&
+        expected.reference === reference.reference &&
+        expected.version === reference.version,
+    );
   });
 }

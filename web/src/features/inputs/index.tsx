@@ -29,38 +29,91 @@ function InventoryScope({ workspace, children, ...actions }: InventoryProps) {
   const identity = JSON.stringify(key);
   const page = usePage([...key, 'pages']);
   const [selected, select] = useState<string | null>(null);
-  const query = useQuery({ queryKey: [...key, 'pages', page.cursor], gcTime: 0,
-    queryFn: ({ signal }) => readResult(api.listInputs({ params, query: page.query, signal })) });
-  useEffect(() => () => {
-    const prefix = JSON.parse(identity) as string[];
-    void client.cancelQueries({ queryKey: prefix });
-    client.removeQueries({ queryKey: prefix });
-  }, [client, identity]);
-  return <section className="content-section input-inventory" aria-label="Input inventory">
-    <header className="section-header"><div><h1>Inputs</h1>
-      <p>Inspect input metadata and current status. Deletion is explicit and may require cleanup.</p></div>
-      <button disabled={query.isFetching} onClick={() => void query.refetch()}>Refresh input list</button>
-    </header>
-    {children}
-    <QueryState query={query}>{data => <>
-      <InputTable items={data.items} selected={selected} select={select} />
-      {!data.items.length && <p className="notice">No inputs in this workspace.</p>}
-      <Pagination page={page} next={data.nextCursor} />
-    </>}</QueryState>
-    {selected && <InputStatus key={selected} params={{ ...params, inputId: selected }} close={() => select(null)} {...actions} />}
-  </section>;
+  const query = useQuery({
+    queryKey: [...key, 'pages', page.cursor],
+    gcTime: 0,
+    queryFn: ({ signal }) => readResult(api.listInputs({ params, query: page.query, signal })),
+  });
+  useEffect(
+    () => () => {
+      const prefix = JSON.parse(identity) as string[];
+      void client.cancelQueries({ queryKey: prefix });
+      client.removeQueries({ queryKey: prefix });
+    },
+    [client, identity],
+  );
+  return (
+    <section className="content-section input-inventory" aria-label="Input inventory">
+      <header className="section-header">
+        <div>
+          <h1>Inputs</h1>
+          <p>Inspect input metadata and current status. Deletion is explicit and may require cleanup.</p>
+        </div>
+        <button disabled={query.isFetching} onClick={() => void query.refetch()}>
+          Refresh input list
+        </button>
+      </header>
+      {children}
+      <QueryState query={query}>
+        {(data) => (
+          <>
+            <InputTable items={data.items} selected={selected} select={select} />
+            {!data.items.length && <p className="notice">No inputs in this workspace.</p>}
+            <Pagination page={page} next={data.nextCursor} />
+          </>
+        )}
+      </QueryState>
+      {selected && (
+        <InputStatus key={selected} params={{ ...params, inputId: selected }} close={() => select(null)} {...actions} />
+      )}
+    </section>
+  );
 }
 
-function InputTable({ items, selected, select }: {
-  items: readonly InputRecord[]; selected: string | null; select: (id: string) => void;
+function InputTable({
+  items,
+  selected,
+  select,
+}: {
+  items: readonly InputRecord[];
+  selected: string | null;
+  select: (id: string) => void;
 }) {
-  return <div className="table-scroll"><table><caption className="sr-only">Workspace inputs</caption>
-    <thead><tr><th>Input</th><th>Listed state</th><th>Committed bytes</th><th>Version</th><th>Inspect</th></tr></thead>
-    <tbody>{items.map(input => <tr key={input.id}>
-      <th scope="row">{input.name}</th><td>{input.state}</td>
-      <td className="number">{input.offset} / {input.bytes}</td><td className="number">{input.version}</td>
-      <td><button disabled={selected !== null} onClick={() => select(input.id)}
-        aria-label={`Read current status for ${input.name}`}>Current status</button></td>
-    </tr>)}</tbody>
-  </table></div>;
+  return (
+    <div className="table-scroll">
+      <table>
+        <caption className="sr-only">Workspace inputs</caption>
+        <thead>
+          <tr>
+            <th>Input</th>
+            <th>Listed state</th>
+            <th>Committed bytes</th>
+            <th>Version</th>
+            <th>Inspect</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((input) => (
+            <tr key={input.id}>
+              <th scope="row">{input.name}</th>
+              <td>{input.state}</td>
+              <td className="number">
+                {input.offset} / {input.bytes}
+              </td>
+              <td className="number">{input.version}</td>
+              <td>
+                <button
+                  disabled={selected !== null}
+                  onClick={() => select(input.id)}
+                  aria-label={`Read current status for ${input.name}`}
+                >
+                  Current status
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }

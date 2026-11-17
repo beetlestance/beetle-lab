@@ -9,10 +9,16 @@ import { openStore } from './store.js';
  * mutations require adopted metadata records; removal requires a persisted native preparation plan. Close drains native jobs before lease release.
  */
 export function openLocalOutputBytes(options: {
-  stagingRoot: string; publishedRoot: string; leasePath: string; createLease: boolean;
-}): Promise<OutputByteStore<OutputBinding> & OutputDeletionStore> { return openStore(options); }
+  stagingRoot: string;
+  publishedRoot: string;
+  leasePath: string;
+  createLease: boolean;
+}): Promise<OutputByteStore<OutputBinding> & OutputDeletionStore> {
+  return openStore(options);
+}
 
 /** Managed relative publication path only; source IDs remain captured by the byte owner. */
 export function outputPublicationPath(input: unknown): string {
-  const location = outputLocation(record(input)); return [...location.components, location.name].join('/');
+  const location = outputLocation(record(input));
+  return [...location.components, location.name].join('/');
 }

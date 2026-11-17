@@ -12,13 +12,24 @@ export { createApiHttpTransport } from './http.js';
 export type { ApiHttpOptions, ApiTransport } from './http.js';
 export type { ApiClient, ApiClientFailure, ApiClientResult, ApiOperationInput } from './types.js';
 
-async function invoke(operation: ApiOperation, raw: unknown, transport: ApiTransport, maximum: number): Promise<ApiClientResult<ApiTypes[ApiOperation['response']]>> {
+async function invoke(
+  operation: ApiOperation,
+  raw: unknown,
+  transport: ApiTransport,
+  maximum: number,
+): Promise<ApiClientResult<ApiTypes[ApiOperation['response']]>> {
   const input = prepareInput(operation, raw, maximum);
   if (!input || !requestOwnership(operation, input)) return { ok: false, error: { kind: 'request' } };
-  const result = await transport.json({ method: operation.method, path: operationPath(operation, input),
-    response: operation.response, successStatus: operation.successStatus,
-    ...('request' in operation ? { request: operation.request, body: input.body } : {}), signal: input.signal });
-  if (result.ok && !responseOwnership(operation, input, result.value)) return { ok: false, error: { kind: 'response' } };
+  const result = await transport.json({
+    method: operation.method,
+    path: operationPath(operation, input),
+    response: operation.response,
+    successStatus: operation.successStatus,
+    ...('request' in operation ? { request: operation.request, body: input.body } : {}),
+    signal: input.signal,
+  });
+  if (result.ok && !responseOwnership(operation, input, result.value))
+    return { ok: false, error: { kind: 'response' } };
   return result;
 }
 
@@ -26,6 +37,12 @@ async function invoke(operation: ApiOperation, raw: unknown, transport: ApiTrans
 export function createApiClient(options: ApiHttpOptions): ApiClient {
   const transport = createApiHttpTransport(options);
   const maximum = options.maximumBytes ?? API_MAXIMUM_JSON_BYTES;
-  return Object.freeze(Object.fromEntries(apiOperations.map(operation => [operation.name,
-    (input: unknown) => invoke(operation, input, transport, maximum)]))) as ApiClient;
+  return Object.freeze(
+    Object.fromEntries(
+      apiOperations.map((operation) => [
+        operation.name,
+        (input: unknown) => invoke(operation, input, transport, maximum),
+      ]),
+    ),
+  ) as ApiClient;
 }

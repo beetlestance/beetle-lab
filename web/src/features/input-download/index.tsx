@@ -6,38 +6,79 @@ import './input-download.css';
 const MAX_BYTES = 8 * 1024 * 1024;
 const GENERAL_FAILURE = 'Could not download this input. Try again.';
 type Phase = 'idle' | 'pending' | 'cancelling' | 'cancelled' | 'ready' | 'error';
-interface Owner { active: boolean; controller: AbortController | null; url: string | null }
-interface State { owner: Owner; phase: Phase; error: string | null }
+interface Owner {
+  active: boolean;
+  controller: AbortController | null;
+  url: string | null;
+}
+interface State {
+  owner: Owner;
+  phase: Phase;
+  error: string | null;
+}
 
 export function InputDownload({ record }: { record: InputRecord }) {
   const client = useInputTransfers();
   if (!client || record.state !== 'published') return null;
   const filename = `input-${record.id.toLowerCase()}.bin`;
   if (!/^input-[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}\.bin$/.test(filename)) return null;
-  const identity = JSON.stringify([record.id, record.scope.kind, record.scope.organizationId,
-    record.scope.workspaceId, record.folderId, record.name, record.sha256, record.bytes,
-    record.offset, record.version, record.state, record.reason]);
+  const identity = JSON.stringify([
+    record.id,
+    record.scope.kind,
+    record.scope.organizationId,
+    record.scope.workspaceId,
+    record.folderId,
+    record.name,
+    record.sha256,
+    record.bytes,
+    record.offset,
+    record.version,
+    record.state,
+    record.reason,
+  ]);
   return <DownloadControl key={identity} record={record} client={client} filename={filename} />;
 }
 
-function DownloadControl({ record, client, filename }: {
-  record: InputRecord; client: InputTransferClient; filename: string;
+function DownloadControl({
+  record,
+  client,
+  filename,
+}: {
+  record: InputRecord;
+  client: InputTransferClient;
+  filename: string;
 }) {
   const download = useDownload(record, client);
   const pending = ['pending', 'cancelling'].includes(download.phase);
-  return <div className="input-download" role="group" aria-label="Download published input">
-    <div className="actions">
-      <button disabled={pending} onClick={() => void download.start()}>
-        {['error', 'cancelled'].includes(download.phase) ? 'Retry download' : 'Download input'}
-      </button>
-      {pending && <button disabled={download.phase === 'cancelling'} onClick={download.cancel}>Cancel download</button>}
-      {download.url && <a href={download.url} download={filename}>Save file</a>}
+  return (
+    <div className="input-download" role="group" aria-label="Download published input">
+      <div className="actions">
+        <button disabled={pending} onClick={() => void download.start()}>
+          {['error', 'cancelled'].includes(download.phase) ? 'Retry download' : 'Download input'}
+        </button>
+        {pending && (
+          <button disabled={download.phase === 'cancelling'} onClick={download.cancel}>
+            Cancel download
+          </button>
+        )}
+        {download.url && (
+          <a href={download.url} download={filename}>
+            Save file
+          </a>
+        )}
+      </div>
+      {pending && (
+        <p role="status">{download.phase === 'cancelling' ? 'Cancelling download…' : 'Verifying input download…'}</p>
+      )}
+      {download.phase === 'cancelled' && <p role="status">Download cancelled.</p>}
+      {download.phase === 'ready' && <p role="status">Verified input is ready to save.</p>}
+      {download.error && (
+        <p role="alert" className="notice error">
+          {download.error}
+        </p>
+      )}
     </div>
-    {pending && <p role="status">{download.phase === 'cancelling' ? 'Cancelling download…' : 'Verifying input download…'}</p>}
-    {download.phase === 'cancelled' && <p role="status">Download cancelled.</p>}
-    {download.phase === 'ready' && <p role="status">Verified input is ready to save.</p>}
-    {download.error && <p role="alert" className="notice error">{download.error}</p>}
-  </div>;
+  );
 }
 
 function useDownload(record: InputRecord, client: InputTransferClient) {
@@ -45,7 +86,11 @@ function useDownload(record: InputRecord, client: InputTransferClient) {
   const [state, setState] = useState<State>({ owner, phase: 'idle', error: null });
   useLayoutEffect(() => {
     owner.active = true;
-    return () => { owner.active = false; owner.controller?.abort(); revoke(owner); };
+    return () => {
+      owner.active = false;
+      owner.controller?.abort();
+      revoke(owner);
+    };
   }, [owner]);
   const update = (phase: Phase, error: string | null = null) => setState({ owner, phase, error });
   const start = async () => {
@@ -57,7 +102,10 @@ function useDownload(record: InputRecord, client: InputTransferClient) {
     try {
       const result = await client.download({ record, signal: controller.signal });
       if (!usable(owner, controller)) return;
-      if (!result.ok) { update('error', failureMessage(result.error)); return; }
+      if (!result.ok) {
+        update('error', failureMessage(result.error));
+        return;
+      }
       const blob = boundedBlob(result.value, record.bytes);
       owner.url = URL.createObjectURL(blob);
       update('ready');

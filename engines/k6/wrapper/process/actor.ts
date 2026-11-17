@@ -42,48 +42,81 @@ export class ProcessActor implements NativeProcess {
   private closing: Promise<void> | undefined;
   private readonly cancel = () => this.stop('cancelled');
 
-  constructor(input: NativeProcessOptions, private readonly ports: ProcessPorts) {
+  constructor(
+    input: NativeProcessOptions,
+    private readonly ports: ProcessPorts,
+  ) {
     this.input = snapshot(input);
     this.deadline = new Deadline(this.input);
-    this.metrics = new MetricStream(this.input, cause => this.stop(cause),
-      () => this.permitted(), () => this.check());
-    this.result = new Promise(resolve => { this.resolve = resolve; });
-    this.childDone = new Promise(resolve => { this.childResolve = resolve; });
+    this.metrics = new MetricStream(
+      this.input,
+      (cause) => this.stop(cause),
+      () => this.permitted(),
+      () => this.check(),
+    );
+    this.result = new Promise((resolve) => {
+      this.resolve = resolve;
+    });
+    this.childDone = new Promise((resolve) => {
+      this.childResolve = resolve;
+    });
   }
   run(): Promise<ProcessObservation> {
     if (this.started) return this.result;
     this.started = true;
-    if (this.closed) { this.stop('closed'); return this.result; }
+    if (this.closed) {
+      this.stop('closed');
+      return this.result;
+    }
     this.input.signal?.addEventListener('abort', this.cancel, { once: true });
-    if (this.input.signal?.aborted) { this.stop('cancelled'); return this.result; }
+    if (this.input.signal?.aborted) {
+      this.stop('cancelled');
+      return this.result;
+    }
     if (!this.permitted()) return this.result;
     if (!this.watch()) return this.result;
     this.profilePending = true;
     // Publish ownership before validation can synchronously reenter close/cancellation.
     let adopt!: (work: Promise<void>) => void;
-    this.work = new Promise(resolve => { adopt = resolve; });
+    this.work = new Promise((resolve) => {
+      adopt = resolve;
+    });
     adopt(this.prepare());
     return this.result;
   }
   private async prepare(): Promise<void> {
-    if (this.denied()) { this.profilePending = false; this.check(); return; }
+    if (this.denied()) {
+      this.profilePending = false;
+      this.check();
+      return;
+    }
     try {
       await this.ports.validate(this.input);
       this.profilePending = false;
       if (this.permitted()) this.launch();
-    } catch { this.profilePending = false; this.stop('profile'); }
-    finally { this.check(); }
+    } catch {
+      this.profilePending = false;
+      this.stop('profile');
+    } finally {
+      this.check();
+    }
   }
   private launch(): void {
     // Clock callbacks may reenter cancellation; their returned sample cannot override that fence.
     if (!this.permitted()) return;
-    this.spawnPending = true; this.issuingSpawn = true;
+    this.spawnPending = true;
+    this.issuingSpawn = true;
     try {
       const launch = fixedLaunch(this.input);
       this.child = this.ports.spawn(this.input.binary, launch.args, launch.options);
       this.bind(this.child);
-    } catch { this.spawnPending = false; this.stop('spawn'); }
-    finally { this.issuingSpawn = false; this.check(); }
+    } catch {
+      this.spawnPending = false;
+      this.stop('spawn');
+    } finally {
+      this.issuingSpawn = false;
+      this.check();
+    }
   }
   private bind(child: OwnedChild): void {
     child.once('spawn', () => this.onSpawn(child));
@@ -91,47 +124,76 @@ export class ProcessActor implements NativeProcess {
     child.once('exit', (code, signal) => this.onExit(code, signal));
     child.once('close', () => {
       this.stdioClosed = true;
-      if (!this.spawned) { this.spawnPending = false; this.stop('spawn'); }
+      if (!this.spawned) {
+        this.spawnPending = false;
+        this.stop('spawn');
+      }
       this.check();
     });
     this.metrics.attach(child.stdout, child.stderr);
     if (this.cause) this.destroyPipes();
   }
   private onSpawn(child: OwnedChild): void {
-    this.spawnPending = false; this.spawned = true;
+    this.spawnPending = false;
+    this.spawned = true;
     if (!Number.isSafeInteger(child.pid) || (child.pid ?? 0) <= 1) {
-      this.stop('child_error'); this.unknownAfterDrain(); return;
+      this.stop('child_error');
+      this.unknownAfterDrain();
+      return;
     }
     this.pid = child.pid;
-    clearTimeout(this.finishTimer); this.finishTimer = undefined;
+    clearTimeout(this.finishTimer);
+    this.finishTimer = undefined;
     if (!this.permitted()) this.terminate();
     this.check();
   }
   private onExit(code: number | null, signal: NodeJS.Signals | null): void {
-    this.exited = true; this.exitCode = code; this.exitSignal = signal;
+    this.exited = true;
+    this.exitCode = code;
+    this.exitSignal = signal;
     this.probe();
     if (!this.groupAbsent && this.pid !== undefined) this.stop('descendants');
-    if (!this.drainTimer && !this.termSent) this.drainTimer = setTimeout(() => {
-      this.stop('drain_timeout'); this.unknownAfterDrain();
-    }, this.input.drainTimeoutMs);
+    if (!this.drainTimer && !this.termSent)
+      this.drainTimer = setTimeout(() => {
+        this.stop('drain_timeout');
+        this.unknownAfterDrain();
+      }, this.input.drainTimeoutMs);
     this.check();
   }
   private permitted(): boolean {
     if (this.denied()) return false;
-    try { this.deadline.remaining(); return !this.denied(); }
-    catch (error) {
-      this.stop(error instanceof ProcessBoundaryError ? error.code : 'clock'); return false;
+    try {
+      this.deadline.remaining();
+      return !this.denied();
+    } catch (error) {
+      this.stop(error instanceof ProcessBoundaryError ? error.code : 'clock');
+      return false;
     }
   }
-  private denied(): boolean { return this.cause !== null || this.closed || this.settled; }
+  private denied(): boolean {
+    return this.cause !== null || this.closed || this.settled;
+  }
   private watch(): boolean {
     if (!this.permitted()) return false;
     let remaining: number;
-    try { remaining = this.deadline.remaining(); }
-    catch (error) { this.stop(error instanceof ProcessBoundaryError ? error.code : 'clock'); return false; }
+    try {
+      remaining = this.deadline.remaining();
+    } catch (error) {
+      this.stop(error instanceof ProcessBoundaryError ? error.code : 'clock');
+      return false;
+    }
     if (this.denied()) return false;
-    const timer = setTimeout(() => { this.wallTimer = undefined; this.watch(); }, Math.min(remaining, 50));
-    if (this.denied()) { clearTimeout(timer); return false; }
+    const timer = setTimeout(
+      () => {
+        this.wallTimer = undefined;
+        this.watch();
+      },
+      Math.min(remaining, 50),
+    );
+    if (this.denied()) {
+      clearTimeout(timer);
+      return false;
+    }
     this.wallTimer = timer;
     return true;
   }
@@ -144,7 +206,10 @@ export class ProcessActor implements NativeProcess {
     else if (this.pid === undefined || this.groupAbsent) this.unknownAfterDrain();
     this.check();
   }
-  private destroyPipes(): void { this.child?.stdout.destroy(); this.child?.stderr.destroy(); }
+  private destroyPipes(): void {
+    this.child?.stdout.destroy();
+    this.child?.stderr.destroy();
+  }
   private terminate(): void {
     if (this.pid === undefined || this.termSent || this.groupAbsent) return;
     this.termSent = true;
@@ -152,7 +217,9 @@ export class ProcessActor implements NativeProcess {
     // Production grace is fixed and cannot be extended by another cancellation or clock sample.
     this.killTimer = setTimeout(() => {
       this.killTimer = undefined;
-      this.signal('SIGKILL'); this.endCleanupAfterDrain(); this.poll();
+      this.signal('SIGKILL');
+      this.endCleanupAfterDrain();
+      this.poll();
     }, GRACE_MS);
     this.poll();
   }
@@ -167,20 +234,30 @@ export class ProcessActor implements NativeProcess {
   }
   private poll(): void {
     if (this.pollTimer || this.cleanupExpired) return;
-    this.probe(); this.check();
+    this.probe();
+    this.check();
     if (this.groupAbsent) return;
-    this.pollTimer = setTimeout(() => { this.pollTimer = undefined; this.poll(); }, 25);
+    this.pollTimer = setTimeout(() => {
+      this.pollTimer = undefined;
+      this.poll();
+    }, 25);
   }
   private unknownAfterDrain(): void {
     if (this.finishTimer || this.settled) return;
-    this.finishTimer = setTimeout(() => { this.finishTimer = undefined; this.finish(); }, this.input.drainTimeoutMs);
+    this.finishTimer = setTimeout(() => {
+      this.finishTimer = undefined;
+      this.finish();
+    }, this.input.drainTimeoutMs);
   }
   private endCleanupAfterDrain(): void {
     clearTimeout(this.finishTimer);
     this.finishTimer = setTimeout(() => {
-      this.finishTimer = undefined; this.cleanupExpired = true;
-      clearTimeout(this.pollTimer); this.pollTimer = undefined;
-      this.check(); this.finish();
+      this.finishTimer = undefined;
+      this.cleanupExpired = true;
+      clearTimeout(this.pollTimer);
+      this.pollTimer = undefined;
+      this.check();
+      this.finish();
     }, this.input.drainTimeoutMs);
   }
   private check(): void {
@@ -189,17 +266,27 @@ export class ProcessActor implements NativeProcess {
       this.checkPreparation();
       return;
     }
-    if (!this.spawned && this.stdioClosed) { this.childResolve(); this.finish(); return; }
+    if (!this.spawned && this.stdioClosed) {
+      this.childResolve();
+      this.finish();
+      return;
+    }
     if (this.isStopped()) {
       this.confirmStopped();
     }
   }
-  private checkPreparation(): void { if (!this.profilePending && this.cause) this.finish(); }
-  private isStopped(): boolean { return this.exited && this.stdioClosed && this.groupAbsent; }
+  private checkPreparation(): void {
+    if (!this.profilePending && this.cause) this.finish();
+  }
+  private isStopped(): boolean {
+    return this.exited && this.stdioClosed && this.groupAbsent;
+  }
   private confirmStopped(): void {
     this.childResolve();
-    clearTimeout(this.killTimer); this.killTimer = undefined;
-    clearTimeout(this.pollTimer); this.pollTimer = undefined;
+    clearTimeout(this.killTimer);
+    this.killTimer = undefined;
+    clearTimeout(this.pollTimer);
+    this.pollTimer = undefined;
     if (this.settled) this.clearTimers();
     if (!this.metrics.pending) this.finish();
     else if (this.cause) this.unknownAfterDrain();
@@ -220,27 +307,46 @@ export class ProcessActor implements NativeProcess {
   }
   private finalCause(): void {
     if (this.cause) return;
-    try { this.deadline.remaining(); }
-    catch (error) { this.cause ??= error instanceof ProcessBoundaryError ? error.code : 'clock'; }
+    try {
+      this.deadline.remaining();
+    } catch (error) {
+      this.cause ??= error instanceof ProcessBoundaryError ? error.code : 'clock';
+    }
   }
   private collectionComplete(): boolean {
     return !this.cause && this.isStopped() && this.metrics.ended && !this.metrics.pending;
   }
   private observation(noChild: boolean): ProcessObservation {
-    return Object.freeze({ spawned: this.spawned, exitCode: this.exitCode, signal: this.exitSignal,
-      cause: this.cause, metricBytes: this.metrics.bytes, diagnosticBytes: this.metrics.diagnosticBytes, warnings: this.metrics.warnings.snapshot(), diagnostics: this.metrics.warnings.history.snapshot(),
+    return Object.freeze({
+      spawned: this.spawned,
+      exitCode: this.exitCode,
+      signal: this.exitSignal,
+      cause: this.cause,
+      metricBytes: this.metrics.bytes,
+      diagnosticBytes: this.metrics.diagnosticBytes,
+      warnings: this.metrics.warnings.snapshot(),
+      diagnostics: this.metrics.warnings.history.snapshot(),
       collection: this.collectionComplete() ? 'complete' : 'partial',
-      state: this.isStopped() ? 'stopped' : noChild ? 'not_started' : 'unknown', stdioClosed: this.stdioClosed,
-      groupAbsent: this.groupAbsent, quiescent: this.quiescent(noChild) });
+      state: this.isStopped() ? 'stopped' : noChild ? 'not_started' : 'unknown',
+      stdioClosed: this.stdioClosed,
+      groupAbsent: this.groupAbsent,
+      quiescent: this.quiescent(noChild),
+    });
   }
   private quiescent(noChild: boolean): boolean {
     return (this.isStopped() || noChild) && !this.profilePending && !this.metrics.pending;
   }
   private clearTimers(): void {
-    clearTimeout(this.wallTimer); clearTimeout(this.killTimer); clearTimeout(this.finishTimer);
-    clearTimeout(this.drainTimer); clearTimeout(this.pollTimer);
-    this.wallTimer = undefined; this.killTimer = undefined; this.finishTimer = undefined;
-    this.drainTimer = undefined; this.pollTimer = undefined;
+    clearTimeout(this.wallTimer);
+    clearTimeout(this.killTimer);
+    clearTimeout(this.finishTimer);
+    clearTimeout(this.drainTimer);
+    clearTimeout(this.pollTimer);
+    this.wallTimer = undefined;
+    this.killTimer = undefined;
+    this.finishTimer = undefined;
+    this.drainTimer = undefined;
+    this.pollTimer = undefined;
   }
   close(): Promise<void> {
     if (this.closing) return this.closing;

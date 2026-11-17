@@ -1,8 +1,24 @@
 import { render } from '@testing-library/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
-import { pendingRunHistorySummary, captureRunEventCursor, encodeRunEventCursor, validateApi } from '@beetle/contracts/api';
-import type { RunPage, WorkspaceScope, RunMetricSeriesPage, RunArtifactPage, RunEventPage, CreateRunRequest, Run, RunResultSnapshot, SuiteRevision, WorkspaceSettings } from '@beetle/contracts/api';
+import {
+  pendingRunHistorySummary,
+  captureRunEventCursor,
+  encodeRunEventCursor,
+  validateApi,
+} from '@beetle/contracts/api';
+import type {
+  RunPage,
+  WorkspaceScope,
+  RunMetricSeriesPage,
+  RunArtifactPage,
+  RunEventPage,
+  CreateRunRequest,
+  Run,
+  RunResultSnapshot,
+  SuiteRevision,
+  WorkspaceSettings,
+} from '@beetle/contracts/api';
 import { ApiContext } from '../../app/api.js';
 import { createQueryClient } from '../../app/queries.js';
 import { ids, json, readNamespace, testClient as baseClient } from '../../app/test-fixtures.js';
@@ -14,70 +30,152 @@ export const revisionId = '22222222-2222-4222-8222-222222222222';
 export const suiteId = '33333333-3333-4333-8333-333333333333';
 export const budget = { cpuMillis: 1000, memoryBytes: 1024, pids: 10, timeoutMs: 100, outputBytes: 2048 };
 export function revision(organizationId = ids.a): SuiteRevision {
-  return { id: revisionId, scope: { ...scope, organizationId }, suiteId, ordinal: 2, engineId: 'k6', configVersion: 1,
-    digest: 'a'.repeat(64), config: { target: 'http://synthetic.invalid' }, inputManifest: [], preflightStatus: 'passed' };
+  return {
+    id: revisionId,
+    scope: { ...scope, organizationId },
+    suiteId,
+    ordinal: 2,
+    engineId: 'k6',
+    configVersion: 1,
+    digest: 'a'.repeat(64),
+    config: { target: 'http://synthetic.invalid' },
+    inputManifest: [],
+    preflightStatus: 'passed',
+  };
 }
 export function settings(organizationId = ids.a): WorkspaceSettings {
   const source = { kind: 'installation' as const };
-  return { id: ids.request, scope: { ...scope, organizationId }, version: 1, schemaVersion: 2, overrides: {},
-    effective: { runDefaults: { engineProfile: { value: 'k6', source, allowedValues: ['k6', 'k6-small'] },
-      budget: { cpuMillis: { value: 1000, source, allowedRange: { minimum: 1, maximum: 2000 } },
-        memoryBytes: { value: 1024, source, allowedRange: { minimum: 1, maximum: 4096 } },
-        pids: { value: 10, source, allowedRange: { minimum: 1, maximum: 100 } },
-        timeoutMs: { value: 100, source, allowedRange: { minimum: 1, maximum: 1000 } },
-        outputBytes: { value: 2048, source, allowedRange: { minimum: 1, maximum: 4096 } } } },
-      retention: { value: { mode: 'manual' }, source } } };
+  return {
+    id: ids.request,
+    scope: { ...scope, organizationId },
+    version: 1,
+    schemaVersion: 2,
+    overrides: {},
+    effective: {
+      runDefaults: {
+        engineProfile: { value: 'k6', source, allowedValues: ['k6', 'k6-small'] },
+        budget: {
+          cpuMillis: { value: 1000, source, allowedRange: { minimum: 1, maximum: 2000 } },
+          memoryBytes: { value: 1024, source, allowedRange: { minimum: 1, maximum: 4096 } },
+          pids: { value: 10, source, allowedRange: { minimum: 1, maximum: 100 } },
+          timeoutMs: { value: 100, source, allowedRange: { minimum: 1, maximum: 1000 } },
+          outputBytes: { value: 2048, source, allowedRange: { minimum: 1, maximum: 4096 } },
+        },
+      },
+      retention: { value: { mode: 'manual' }, source },
+    },
+  };
 }
 export function run(organizationId = ids.a): Run {
-  return { id: runId, scope: { ...scope, organizationId }, version: 1, suiteId, revisionId, revisionDigest: 'a'.repeat(64),
-    requestedAt: '2026-11-10T00:00:00.000Z', state: 'queued', outcome: 'pending', validationStatus: 'pending',
-    activeAttemptId: ids.request, cancellationRequested: false, reason: null,
+  return {
+    id: runId,
+    scope: { ...scope, organizationId },
+    version: 1,
+    suiteId,
+    revisionId,
+    revisionDigest: 'a'.repeat(64),
+    requestedAt: '2026-11-10T00:00:00.000Z',
+    state: 'queued',
+    outcome: 'pending',
+    validationStatus: 'pending',
+    activeAttemptId: ids.request,
+    cancellationRequested: false,
+    reason: null,
     engine: { id: 'k6', profileId: 'k6', imageDigest: `sha256:${'b'.repeat(64)}`, configVersion: 1 },
-    budget: { ...budget }, executionPolicy: { mode: 'parallel', preferIdle: false },
-    settingsVersions: { installation: 1, organization: 1, workspace: 1 } };
+    budget: { ...budget },
+    executionPolicy: { mode: 'parallel', preferIdle: false },
+    settingsVersions: { installation: 1, organization: 1, workspace: 1 },
+  };
 }
 export function resultSnapshot(current: Run = run()): RunResultSnapshot {
   return { id: current.id, scope: current.scope, activeAttemptId: current.activeAttemptId, result: null };
 }
 export function receipt(body: CreateRunRequest): Run {
-  return { ...run(body.scope.organizationId), revisionId: body.revisionId, engine: { ...run().engine, profileId: body.engineProfile },
-    budget: body.budget, executionPolicy: body.executionPolicy };
+  return {
+    ...run(body.scope.organizationId),
+    revisionId: body.revisionId,
+    engine: { ...run().engine, profileId: body.engineProfile },
+    budget: body.budget,
+    executionPolicy: body.executionPolicy,
+  };
 }
 function Location() {
-  const location = useLocation(); const navigate = useNavigate();
-  return <><output aria-label="Current route">{location.pathname}</output>
-    <button onClick={() => void navigate('/retired')}>Leave form</button></>;
+  const location = useLocation();
+  const navigate = useNavigate();
+  return (
+    <>
+      <output aria-label="Current route">{location.pathname}</output>
+      <button onClick={() => void navigate('/retired')}>Leave form</button>
+    </>
+  );
 }
 export function mountLauncher(client: ReturnType<typeof testClient>['client']) {
   const queryClient = createQueryClient();
   function Surface() {
     const location = useLocation();
-    return <>{location.pathname === '/' && <RunSavedRevision revision={revision()} />}<Location /></>;
+    return (
+      <>
+        {location.pathname === '/' && <RunSavedRevision revision={revision()} />}
+        <Location />
+      </>
+    );
   }
-  return { queryClient, ...render(<MemoryRouter><ApiContext.Provider value={client}><QueryClientProvider client={queryClient}>
-    <Surface />
-  </QueryClientProvider></ApiContext.Provider></MemoryRouter>) };
+  return {
+    queryClient,
+    ...render(
+      <MemoryRouter>
+        <ApiContext.Provider value={client}>
+          <QueryClientProvider client={queryClient}>
+            <Surface />
+          </QueryClientProvider>
+        </ApiContext.Provider>
+      </MemoryRouter>,
+    ),
+  };
 }
 export function runRead(request: Parameters<typeof readNamespace>[0]) {
   const organizationId = request.path.includes(ids.b) ? ids.b : ids.a;
   if (request.path.includes('/events?')) return json(emptyEvents(run(organizationId)));
-  if (request.path.includes('/runs?')) return json({ scope: { ...scope, organizationId }, items: [run(organizationId)], summaries: [pendingRunHistorySummary(run(organizationId))], nextCursor: null });
+  if (request.path.includes('/runs?'))
+    return json({
+      scope: { ...scope, organizationId },
+      items: [run(organizationId)],
+      summaries: [pendingRunHistorySummary(run(organizationId))],
+      nextCursor: null,
+    });
   if (request.path.endsWith(`/runs/${runId}`)) return json(run(organizationId));
   if (request.path.endsWith(`/runs/${runId}/result`)) return json(resultSnapshot(run(organizationId)));
   return readNamespace(request);
 }
 
 export function emptyEvents(current: Run = run(), afterSeq = 0): RunEventPage {
-  const resumeCursor = encodeRunEventCursor({ organizationId: current.scope.organizationId, workspaceId: current.scope.workspaceId, runId: current.id,
-    attemptId: current.activeAttemptId, generation: 1, afterSeq });
-  return { id: current.id, scope: current.scope, activeAttemptId: current.activeAttemptId, generation: 1,
-    afterSeq, durableThrough: afterSeq, coverage: afterSeq === 0 ? 'pending' : 'contiguous', blockedReason: null,
-    retainedStartSeq: null, items: [], resumeCursor, nextCursor: null };
+  const resumeCursor = encodeRunEventCursor({
+    organizationId: current.scope.organizationId,
+    workspaceId: current.scope.workspaceId,
+    runId: current.id,
+    attemptId: current.activeAttemptId,
+    generation: 1,
+    afterSeq,
+  });
+  return {
+    id: current.id,
+    scope: current.scope,
+    activeAttemptId: current.activeAttemptId,
+    generation: 1,
+    afterSeq,
+    durableThrough: afterSeq,
+    coverage: afterSeq === 0 ? 'pending' : 'contiguous',
+    blockedReason: null,
+    retainedStartSeq: null,
+    items: [],
+    resumeCursor,
+    nextCursor: null,
+  };
 }
 /** Existing run fixtures now expose a genuine empty event reader for the last Run read. */
 export function testClient(handler: Parameters<typeof baseClient>[0]) {
   const snapshots = new Map<string, Run>();
-  return baseClient(async request => {
+  return baseClient(async (request) => {
     const url = new URL(request.path, 'http://localhost');
     const metric = /^(.*)\/attempts\/([a-fA-F0-9-]{36})\/metrics$/.exec(url.pathname);
     if (request.method === 'GET' && metric) {
@@ -104,12 +202,28 @@ export function testClient(handler: Parameters<typeof baseClient>[0]) {
 }
 
 export function pendingArtifacts(current: Run = run(), attemptId = current.activeAttemptId): RunArtifactPage {
-  return { id: current.id, scope: current.scope, attemptId, generation: 1, availability: 'pending',
-    manifestDigest: null, items: [], nextCursor: null };
+  return {
+    id: current.id,
+    scope: current.scope,
+    attemptId,
+    generation: 1,
+    availability: 'pending',
+    manifestDigest: null,
+    items: [],
+    nextCursor: null,
+  };
 }
 
-async function captureRunRead({ request, response, url, snapshots }: {
-  request: Parameters<typeof readNamespace>[0]; response: Response; url: URL; snapshots: Map<string, Run>;
+async function captureRunRead({
+  request,
+  response,
+  url,
+  snapshots,
+}: {
+  request: Parameters<typeof readNamespace>[0];
+  response: Response;
+  url: URL;
+  snapshots: Map<string, Run>;
 }) {
   if (request.method !== 'GET' || !/\/runs\/[^/]+$/.test(url.pathname) || response.status !== 200) return;
   const checked = validateApi('Run', await response.clone().json());
@@ -117,8 +231,21 @@ async function captureRunRead({ request, response, url, snapshots }: {
 }
 
 export function pendingMetrics(current: Run = run(), attemptId = current.activeAttemptId): RunMetricSeriesPage {
-  return {id: current.id, scope: current.scope, attemptId, generation: 1, availability: 'pending', manifestDigest: null,
-    reason: null, windows: 0, totalSeries: 0, measurementSourceTimeMs: null, coverage: null, items: [], nextCursor: null};
+  return {
+    id: current.id,
+    scope: current.scope,
+    attemptId,
+    generation: 1,
+    availability: 'pending',
+    manifestDigest: null,
+    reason: null,
+    windows: 0,
+    totalSeries: 0,
+    measurementSourceTimeMs: null,
+    coverage: null,
+    items: [],
+    nextCursor: null,
+  };
 }
 
 export function historyPage(items: Run[], owner: WorkspaceScope = scope, nextCursor: string | null = null): RunPage {

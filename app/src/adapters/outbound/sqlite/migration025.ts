@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 /** No epoch backfill or free reservation: first preview pays its actual permanent row. */
-export const migration025=`
+export const migration025 = `
 CREATE TABLE retention_workspace_epochs (
  workspace_id TEXT PRIMARY KEY,organization_id TEXT NOT NULL,
  epoch INTEGER NOT NULL CHECK(typeof(epoch)='integer' AND epoch BETWEEN 1 AND 9007199254740991),
@@ -83,30 +83,39 @@ CREATE TRIGGER retention_deletion_insert AFTER INSERT ON output_deletion_intents
 PRAGMA user_version=25;
 `;
 /** Freeze pre-existing owners during the fixed reservation frame; no callbacks/IO occur. */
-export function migrate025(db:DatabaseSync):void{
- const tables=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name LIMIT 129").all();
- if(tables.length>128)throw Error('Unexpected metadata owner count');
- db.exec(migration025);
- for(const row of tables){
-  if(typeof row.name!=='string'||!/^[a-z_]+$/.test(row.name))throw Error('Unexpected metadata owner');const table=row.name;
-  if(table==='installation_storage_usage')continue;
-  for(const event of ['INSERT','UPDATE','DELETE'])db.exec(`CREATE TRIGGER retention_funding_${table}_${event.toLowerCase()} BEFORE ${event} ON ${table}
-   WHEN retention_metadata_active()=1${ownerException(table,event)} BEGIN SELECT RAISE(ABORT,'outside retention reservation');END;`);
- }
- db.exec(`CREATE TRIGGER retention_progress_insert BEFORE INSERT ON retention_progress WHEN backend_settlement_active()=1 OR NEW.issue_json IS NOT NULL OR
+export function migrate025(db: DatabaseSync): void {
+  const tables = db
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name LIMIT 129")
+    .all();
+  if (tables.length > 128) throw Error('Unexpected metadata owner count');
+  db.exec(migration025);
+  for (const row of tables) {
+    if (typeof row.name !== 'string' || !/^[a-z_]+$/.test(row.name)) throw Error('Unexpected metadata owner');
+    const table = row.name;
+    if (table === 'installation_storage_usage') continue;
+    for (const event of ['INSERT', 'UPDATE', 'DELETE'])
+      db.exec(`CREATE TRIGGER retention_funding_${table}_${event.toLowerCase()} BEFORE ${event} ON ${table}
+   WHEN retention_metadata_active()=1${ownerException(table, event)} BEGIN SELECT RAISE(ABORT,'outside retention reservation');END;`);
+  }
+  db.exec(`CREATE TRIGGER retention_progress_insert BEFORE INSERT ON retention_progress WHEN backend_settlement_active()=1 OR NEW.issue_json IS NOT NULL OR
   retention_progress_insert(json_array(NEW.snapshot_id,NEW.ordinal,NEW.run_id,NEW.deletion_id,NEW.request_id),NEW.body_json) IS NOT 1
   BEGIN SELECT RAISE(ABORT,'retention progress requires actual apply');END;`);
- db.exec(`CREATE TRIGGER retention_progress_update BEFORE UPDATE ON retention_progress BEGIN SELECT RAISE(ABORT,'retained retention progress');END;`);
- db.exec(`CREATE TRIGGER retention_progress_delete BEFORE DELETE ON retention_progress WHEN backend_settlement_active()=1 OR
+  db.exec(
+    `CREATE TRIGGER retention_progress_update BEFORE UPDATE ON retention_progress BEGIN SELECT RAISE(ABORT,'retained retention progress');END;`,
+  );
+  db.exec(`CREATE TRIGGER retention_progress_delete BEFORE DELETE ON retention_progress WHEN backend_settlement_active()=1 OR
   retention_delete_allowed('progress',OLD.snapshot_id,OLD.body_json,json_array(OLD.snapshot_id,OLD.ordinal,OLD.run_id,OLD.deletion_id,OLD.request_id,OLD.issue_json)) IS NOT 1
   BEGIN SELECT RAISE(ABORT,'retained retention progress');END;`);
 }
 
-function ownerException(table:string,event:string):string{
- if(event!=='INSERT')return '';
- if(table==='output_deletion_intents')return ` AND retention_owner_write_allowed('intent',json_array(NEW.id,NEW.run_id,NEW.attempt_id,NEW.organization_id,NEW.workspace_id,NEW.request_id,NEW.run_version,
+function ownerException(table: string, event: string): string {
+  if (event !== 'INSERT') return '';
+  if (table === 'output_deletion_intents')
+    return ` AND retention_owner_write_allowed('intent',json_array(NEW.id,NEW.run_id,NEW.attempt_id,NEW.organization_id,NEW.workspace_id,NEW.request_id,NEW.run_version,
   NEW.deletion_version,NEW.version,NEW.kind,NEW.requested_at,NEW.closure_digest,NEW.retained_payload_bytes,NEW.metadata_bytes,NEW.file_count,NEW.pending_files,NEW.namespace_identity),NULL) IS NOT 1`;
- if(table==='output_deletion_files')return ` AND retention_owner_write_allowed('file',json_array(NEW.deletion_id,NEW.attempt_id,NEW.ordinal,NEW.original_version,NEW.version,NEW.namespace_identity,NEW.preparation_identity,NEW.absent),NULL) IS NOT 1`;
- if(table==='receipts')return ` AND retention_owner_write_allowed('receipt',json_array(NEW.scope_key,NEW.request_id,NEW.digest),NEW.result_json) IS NOT 1`;
- return '';
+  if (table === 'output_deletion_files')
+    return ` AND retention_owner_write_allowed('file',json_array(NEW.deletion_id,NEW.attempt_id,NEW.ordinal,NEW.original_version,NEW.version,NEW.namespace_identity,NEW.preparation_identity,NEW.absent),NULL) IS NOT 1`;
+  if (table === 'receipts')
+    return ` AND retention_owner_write_allowed('receipt',json_array(NEW.scope_key,NEW.request_id,NEW.digest),NEW.result_json) IS NOT 1`;
+  return '';
 }

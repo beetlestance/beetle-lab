@@ -16,7 +16,9 @@ function clock(now: () => number): number {
     const value = now();
     if (!Number.isFinite(value) || value < 0 || value > Number.MAX_SAFE_INTEGER) throw new Error();
     return value;
-  } catch { throw new OutputTransferError('invalid_input'); }
+  } catch {
+    throw new OutputTransferError('invalid_input');
+  }
 }
 
 /** Owns a fresh per-request stop hint without racing away issued originals. */
@@ -29,13 +31,26 @@ export class Budget {
   private last: number;
   private readonly stop = () => this.controller.abort();
 
-  constructor(input: Operation, private readonly now: () => number) {
+  constructor(
+    input: Operation,
+    private readonly now: () => number,
+  ) {
     try {
-      const deadline = own(input, 'deadline'); const signal = own(input, 'signal'); const at = clock(now);
-      if (typeof deadline !== 'number' || !Number.isFinite(deadline) || deadline > Number.MAX_SAFE_INTEGER
-        || deadline - at > OUTPUT_COLLECTION_MAX_MS) throw new OutputTransferError('invalid_input');
+      const deadline = own(input, 'deadline');
+      const signal = own(input, 'signal');
+      const at = clock(now);
+      if (
+        typeof deadline !== 'number' ||
+        !Number.isFinite(deadline) ||
+        deadline > Number.MAX_SAFE_INTEGER ||
+        deadline - at > OUTPUT_COLLECTION_MAX_MS
+      )
+        throw new OutputTransferError('invalid_input');
       if (signal !== undefined) Reflect.apply(aborted, signal, []);
-      this.deadline = deadline; this.caller = signal as AbortSignal | undefined; this.last = at; this.signal = this.controller.signal;
+      this.deadline = deadline;
+      this.caller = signal as AbortSignal | undefined;
+      this.last = at;
+      this.signal = this.controller.signal;
       this.check();
       if (this.caller) Reflect.apply(listen, this.caller, ['abort', this.stop, { once: true }]);
       this.timer = setTimeout(this.stop, deadline - at);
@@ -47,8 +62,13 @@ export class Budget {
 
   check(): void {
     const at = clock(this.now);
-    if (at < this.last || at >= this.deadline || this.signal.aborted
-      || (this.caller !== undefined && Reflect.apply(aborted, this.caller, []))) throw new OutputTransferError('interrupted');
+    if (
+      at < this.last ||
+      at >= this.deadline ||
+      this.signal.aborted ||
+      (this.caller !== undefined && Reflect.apply(aborted, this.caller, []))
+    )
+      throw new OutputTransferError('interrupted');
     this.last = at;
   }
   finish(): void {

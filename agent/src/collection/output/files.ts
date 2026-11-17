@@ -8,9 +8,18 @@ import type { OutputRootIdentity } from './types.js';
 import { OutputFailure } from './ports.js';
 import type { OutputIO, OutputPorts } from './ports.js';
 
-interface Entry { readonly path: string; readonly stat: BigIntStats; readonly directory: boolean }
-interface OpenEntry extends Entry { readonly handle: FileHandle }
-export interface OpenOutput { readonly chain: readonly OpenEntry[]; readonly file: OpenEntry }
+interface Entry {
+  readonly path: string;
+  readonly stat: BigIntStats;
+  readonly directory: boolean;
+}
+interface OpenEntry extends Entry {
+  readonly handle: FileHandle;
+}
+export interface OpenOutput {
+  readonly chain: readonly OpenEntry[];
+  readonly file: OpenEntry;
+}
 function signature(stat: BigIntStats): string {
   return `${stat.dev}:${stat.ino}:${stat.size}:${stat.mtimeNs}:${stat.ctimeNs}`;
 }
@@ -25,18 +34,32 @@ export class OutputFiles {
   private readonly entries = new Map<string, Entry>();
   private readonly identities = new Set<string>();
   private root: OpenEntry | undefined;
-  constructor(private readonly options: { readonly directory: string; readonly uid: number; readonly root?: Readonly<OutputRootIdentity> },
-    private readonly ports: OutputPorts, private readonly io: OutputIO) {}
+  constructor(
+    private readonly options: {
+      readonly directory: string;
+      readonly uid: number;
+      readonly root?: Readonly<OutputRootIdentity>;
+    },
+    private readonly ports: OutputPorts,
+    private readonly io: OutputIO,
+  ) {}
   private async named(path: string, directory: boolean): Promise<BigIntStats> {
     const canonical = await this.io.io(() => this.ports.realpath(path));
     if (canonical !== path) throw new OutputFailure('custody');
     const stat = await this.io.io(() => this.ports.lstat(path, { bigint: true }));
-    metadata(stat, directory, this.options.uid); return stat;
+    metadata(stat, directory, this.options.uid);
+    return stat;
   }
   private async open(path: string, directory: boolean): Promise<OpenEntry> {
     const stat = await this.named(path, directory);
-    const flags = constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK | (directory ? constants.O_DIRECTORY : 0);
-    const handle = await this.io.io(() => this.ports.open(path, flags).then(value => { this.io.own(value); return value; }));
+    const flags =
+      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK | (directory ? constants.O_DIRECTORY : 0);
+    const handle = await this.io.io(() =>
+      this.ports.open(path, flags).then((value) => {
+        this.io.own(value);
+        return value;
+      }),
+    );
     const actual = await this.io.io(() => handle.stat({ bigint: true }));
     metadata(actual, directory, this.options.uid);
     if (signature(actual) !== signature(stat)) throw new OutputFailure('custody');
@@ -60,17 +83,24 @@ export class OutputFiles {
         if (actual[key] !== expected[key]) throw new OutputFailure('custody');
       }
     }
-    const chain: OpenEntry[] = [this.root]; const pieces = relativePath.split('/');
+    const chain: OpenEntry[] = [this.root];
+    const pieces = relativePath.split('/');
     let path = this.options.directory;
-    for (const piece of pieces.slice(0, -1)) { path = join(path, piece); chain.push(await this.open(path, true)); }
+    for (const piece of pieces.slice(0, -1)) {
+      path = join(path, piece);
+      chain.push(await this.open(path, true));
+    }
     const file = await this.open(join(path, pieces[pieces.length - 1]!), false);
-    const output = { chain, file }; await this.check(output); return output;
+    const output = { chain, file };
+    await this.check(output);
+    return output;
   }
   private async checkEntry(entry: OpenEntry): Promise<void> {
     const named = await this.named(entry.path, entry.directory);
     const actual = await this.io.io(() => entry.handle.stat({ bigint: true }));
     metadata(actual, entry.directory, this.options.uid);
-    if (signature(named) !== signature(entry.stat) || signature(actual) !== signature(entry.stat)) throw new OutputFailure('custody');
+    if (signature(named) !== signature(entry.stat) || signature(actual) !== signature(entry.stat))
+      throw new OutputFailure('custody');
   }
   async check(output: OpenOutput): Promise<void> {
     for (const entry of [...output.chain, output.file]) await this.checkEntry(entry);
@@ -85,12 +115,13 @@ export class OutputFiles {
   }
   async readResult(output: OpenOutput): Promise<Buffer> {
     if (output.file.stat.size > BigInt(OUTPUT_RESULT_BYTES)) throw new OutputFailure('result');
-    const buffer = Buffer.allocUnsafe(Number(output.file.stat.size)); let position = 0;
+    const buffer = Buffer.allocUnsafe(Number(output.file.stat.size));
+    let position = 0;
     while (position < buffer.length) position += await this.read(output, buffer, position, position);
     return buffer;
   }
   async closeOutput(output: OpenOutput): Promise<void> {
-    await this.io.closeHandles([...output.chain.slice(1).map(entry => entry.handle), output.file.handle]);
+    await this.io.closeHandles([...output.chain.slice(1).map((entry) => entry.handle), output.file.handle]);
   }
   async namedCheck(): Promise<void> {
     for (const entry of this.entries.values()) {

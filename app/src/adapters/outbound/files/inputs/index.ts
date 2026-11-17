@@ -13,5 +13,6 @@ export function openLocalInputBytes(options: { stagingRoot: string; publishedRoo
 }
 
 export function inputPublicationPath(record: InputRecord): string {
-  const value = capture(record); return [...value.components, value.sha256].join('/');
+  const value = capture(record);
+  return [...value.components, value.sha256].join('/');
 }

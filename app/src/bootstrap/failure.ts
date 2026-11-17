@@ -1,25 +1,56 @@
 const knownCodes = new Set<unknown>([
-  'configuration', 'data_directory', 'listener', 'invalid_input', 'conflict',
-  'not_found', 'queue_full', 'closed', 'unavailable', 'owned', 'schema_newer',
-  'stale_generation', 'quota_exceeded', 'cursor_expired', 'expired_key', 'recovery_required',
-  'EACCES', 'EPERM', 'ENOENT', 'ENOSPC', 'EIO', 'EBUSY', 'EADDRINUSE',
-  'ECONNREFUSED', 'ETIMEDOUT', 'EROFS', 'EMFILE', 'ENFILE',
+  'configuration',
+  'data_directory',
+  'listener',
+  'invalid_input',
+  'conflict',
+  'not_found',
+  'queue_full',
+  'closed',
+  'unavailable',
+  'owned',
+  'schema_newer',
+  'stale_generation',
+  'quota_exceeded',
+  'cursor_expired',
+  'expired_key',
+  'recovery_required',
+  'EACCES',
+  'EPERM',
+  'ENOENT',
+  'ENOSPC',
+  'EIO',
+  'EBUSY',
+  'EADDRINUSE',
+  'ECONNREFUSED',
+  'ETIMEDOUT',
+  'EROFS',
+  'EMFILE',
+  'ENFILE',
 ]);
 /** Error text and stacks can contain secrets; expose only bounded fixed codes. */
 export function failureCodes(error: unknown): readonly string[] {
-  const codes: string[] = []; const seen = new Set<Error>();
+  const codes: string[] = [];
+  const seen = new Set<Error>();
   try {
     while (error instanceof Error && codes.length < 4 && !seen.has(error)) {
       seen.add(error);
       const code: unknown = Object.getOwnPropertyDescriptor(error, 'code')?.value;
-      codes.push(knownCodes.has(code) ? code as string : 'unknown');
+      codes.push(knownCodes.has(code) ? (code as string) : 'unknown');
       error = Object.getOwnPropertyDescriptor(error, 'cause')?.value;
     }
-  } catch { /* Untrusted descriptors must not interrupt shutdown. */ }
+  } catch {
+    /* Untrusted descriptors must not interrupt shutdown. */
+  }
   return codes.length ? codes : ['unknown'];
 }
-export function reportFailure(event: 'startup_failed' | 'shutdown_failed' | 'storage_failed' | 'shutdown_deadline', error: unknown): void {
+export function reportFailure(
+  event: 'startup_failed' | 'shutdown_failed' | 'storage_failed' | 'shutdown_deadline',
+  error: unknown,
+): void {
   try {
-    process.stderr.write(`${JSON.stringify({component: 'backend', event, codes: failureCodes(error)})}\n`);
-  } catch { /* Diagnostics must not prevent cleanup or failure exit. */ }
+    process.stderr.write(`${JSON.stringify({ component: 'backend', event, codes: failureCodes(error) })}\n`);
+  } catch {
+    /* Diagnostics must not prevent cleanup or failure exit. */
+  }
 }

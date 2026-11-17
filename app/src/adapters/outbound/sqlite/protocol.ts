@@ -2,16 +2,16 @@ import type { OrganizationOverview } from '@beetle/contracts/api';
 import type { OrganizationOverviewQuery } from '../../../ports/overview.js';
 import type { NamespaceDeletionOperation } from '../../../ports/namespace-deletion.js';
 import type { DeletionReceipt } from '@beetle/contracts/api';
-import type { RetentionOperation,RetentionValue } from '../../../ports/retention.js';
-import type {HistoryJobRetirement} from '../../../ports/run-history.js';
-import type { BackendSettlementOperation,BackendSettlementValue } from '../../../ports/output-settlement-metadata.js';
+import type { RetentionOperation, RetentionValue } from '../../../ports/retention.js';
+import type { HistoryJobRetirement } from '../../../ports/run-history.js';
+import type { BackendSettlementOperation, BackendSettlementValue } from '../../../ports/output-settlement-metadata.js';
 import type { HistoryOperation } from '../../../ports/run-history.js';
 import type { RunHistoryJob } from '../../../ports/run-history.js';
 import type { RunHistorySummary } from '@beetle/contracts/api';
-import type {OverviewQuery} from '../../../ports/overview.js';
-import type {WorkspaceOverview} from '@beetle/contracts/api';
-import type {ExportOperation,ExportValue} from './export-jobs/protocol.js';
-import type {ExportConfiguration} from '../../../ports/exports.js';
+import type { OverviewQuery } from '../../../ports/overview.js';
+import type { WorkspaceOverview } from '@beetle/contracts/api';
+import type { ExportOperation, ExportValue } from './export-jobs/protocol.js';
+import type { ExportConfiguration } from '../../../ports/exports.js';
 import type { LocalSessionOperation, LocalSessionRecord } from '../../../ports/local-session.js';
 import type { OutputDeletionOperation, OutputDeletionValue } from '../../../ports/output-deletion-metadata.js';
 import type { RunExecutionSnapshot } from '../../../ports/run-live-metrics.js';
@@ -24,16 +24,49 @@ import type { OutputArtifactClaim, OutputArtifactProgress } from '../../../ports
 import type { OutputFileRecord } from '../../../ports/output-bytes.js';
 import type { Owned, SourceEnvelope } from '@beetle/contracts/output-source';
 import type { OutputAdoptRequest, OutputCustodyState, OutputPage } from '../../../ports/output-custody.js';
-import type { EventBinding, EventScan, EventPage, EventCursorState, EventIngestRequest, EventIngestResult, EventAckRequest, EventProblemRequest } from '../../../ports/events.js';
+import type {
+  EventBinding,
+  EventScan,
+  EventPage,
+  EventCursorState,
+  EventIngestRequest,
+  EventIngestResult,
+  EventAckRequest,
+  EventProblemRequest,
+} from '../../../ports/events.js';
 import type { RunConfiguration, RunCommand, CancelRunCommand, RunKey, RunList } from '../../../ports/runs.js';
-import type { DispatchKey, DispatchScan, DispatchObservationRequest, DispatchPage,
-  DispatchOffer, DispatchClaim, DispatchObservation } from '../../../ports/dispatch.js';
+import type {
+  DispatchKey,
+  DispatchScan,
+  DispatchObservationRequest,
+  DispatchPage,
+  DispatchOffer,
+  DispatchClaim,
+  DispatchObservation,
+} from '../../../ports/dispatch.js';
 import type { Run, RunPage, RunResultSnapshot, RunEventPage, RunArtifactPage } from '@beetle/contracts/api';
-import type { InputCommand, InputAdvance, InputKey, InputList, InputRecoveryPage, InputRecord, InputReceipt, InputPage, InputStorage } from '../../../ports/inputs.js';
+import type {
+  InputCommand,
+  InputAdvance,
+  InputKey,
+  InputList,
+  InputRecoveryPage,
+  InputRecord,
+  InputReceipt,
+  InputPage,
+  InputStorage,
+} from '../../../ports/inputs.js';
 import type { Suite, SuiteRevision, SuitePage, SuiteRevisionPage } from '@beetle/contracts/api';
 import type { SuiteCommand, SuiteKey, SuiteList, RevisionList } from '../../../ports/suites.js';
-import type { SettingsScope, Organization, Workspace, Folder, InstallationSettings,
-  OrganizationSettings, WorkspaceSettings } from '@beetle/contracts/api';
+import type {
+  SettingsScope,
+  Organization,
+  Workspace,
+  Folder,
+  InstallationSettings,
+  OrganizationSettings,
+  WorkspaceSettings,
+} from '@beetle/contracts/api';
 import type { NamespaceCommand } from '../../../ports/namespaces.js';
 import type { EntityKey, ListQuery, EntityPage } from '../../../ports/namespace-reader.js';
 export type { EntityKind, EntityKey, ListQuery, EntityPage } from '../../../ports/namespace-reader.js';
@@ -41,17 +74,42 @@ import type { SettingsCommand, SettingsChange } from '../../../ports/settings.js
 import type { SettingsIdentity } from '../../../ports/settings-reader.js';
 import type { InstallationRecord } from '../../../domain/settings/index.js';
 
-export const STORAGE_ERROR_CODES = Object.freeze(['invalid_input', 'invalid_value', 'not_found', 'conflict',
-  'capacity_unavailable', 'search_too_broad', 'search_indexing', 'queue_full', 'closed', 'unavailable', 'owned', 'schema_newer', 'read_only'] as const);
-export type ErrorCode = typeof STORAGE_ERROR_CODES[number];
+export const STORAGE_ERROR_CODES = Object.freeze([
+  'invalid_input',
+  'invalid_value',
+  'not_found',
+  'conflict',
+  'capacity_unavailable',
+  'search_too_broad',
+  'search_indexing',
+  'queue_full',
+  'closed',
+  'unavailable',
+  'owned',
+  'schema_newer',
+  'read_only',
+] as const);
+export type ErrorCode = (typeof STORAGE_ERROR_CODES)[number];
 export class StorageError extends Error {
-  constructor(readonly code: ErrorCode) { super(`Storage ${code}`); this.name = 'StorageError'; }
+  constructor(readonly code: ErrorCode) {
+    super(`Storage ${code}`);
+    this.name = 'StorageError';
+  }
 }
 import type { RuntimeObservation } from '../../../ports/runtime.js';
 export type { RuntimeObservation } from '../../../ports/runtime.js';
 export type SettingsView = InstallationSettings | OrganizationSettings | WorkspaceSettings;
-export type Operation = {kind:'getOrganizationOverview';query:OrganizationOverviewQuery} | NamespaceDeletionOperation | RetentionOperation | BackendSettlementOperation | HistoryOperation | {kind:'getWorkspaceOverview';query:OverviewQuery} | ExportOperation | LocalSessionOperation | OutputDeletionOperation | AbsenceOperation
-
+export type Operation =
+  | { kind: 'getOrganizationOverview'; query: OrganizationOverviewQuery }
+  | NamespaceDeletionOperation
+  | RetentionOperation
+  | BackendSettlementOperation
+  | HistoryOperation
+  | { kind: 'getWorkspaceOverview'; query: OverviewQuery }
+  | ExportOperation
+  | LocalSessionOperation
+  | OutputDeletionOperation
+  | AbsenceOperation
   | { kind: 'outputFinalize'; request: OutputFinalizationRequest }
   | { kind: 'outputClaimArtifact' | 'outputBeginPublication'; request: OutputArtifactClaim }
   | { kind: 'outputRecordProgress' | 'outputRecordPublication'; request: OutputArtifactProgress }
@@ -96,9 +154,65 @@ export type Operation = {kind:'getOrganizationOverview';query:OrganizationOvervi
   | { kind: 'getSettingsIdentity'; scope: SettingsScope }
   | { kind: 'runtime'; runtime: RuntimeObservation | null }
   | { kind: 'close' };
-export type Value = OrganizationOverview | DeletionReceipt | RetentionValue | HistoryJobRetirement | BackendSettlementValue | RunHistoryJob[] | RunHistorySummary | WorkspaceOverview | ExportValue | LocalSessionRecord | OutputDeletionValue | PublishedArtifactRead | RunExecutionSnapshot | OutputAbsenceState | OutputAbsenceFinalizationReply | OutputFinalizationReply | OutputFileRecord | OutputCustodyState | OutputPage | Owned<SourceEnvelope> | EventPage | EventCursorState | EventIngestResult | DispatchPage | DispatchOffer | DispatchClaim | DispatchObservation | Run | RunPage | RunResultSnapshot | RunEventPage | RunArtifactPage | InputRecord | InputReceipt | InputPage | InputStorage | Suite | SuiteRevision | SuitePage | SuiteRevisionPage | Organization | Workspace | Folder | SettingsChange | SettingsView | SettingsIdentity | EntityPage | null;
+export type Value =
+  | OrganizationOverview
+  | DeletionReceipt
+  | RetentionValue
+  | HistoryJobRetirement
+  | BackendSettlementValue
+  | RunHistoryJob[]
+  | RunHistorySummary
+  | WorkspaceOverview
+  | ExportValue
+  | LocalSessionRecord
+  | OutputDeletionValue
+  | PublishedArtifactRead
+  | RunExecutionSnapshot
+  | OutputAbsenceState
+  | OutputAbsenceFinalizationReply
+  | OutputFinalizationReply
+  | OutputFileRecord
+  | OutputCustodyState
+  | OutputPage
+  | Owned<SourceEnvelope>
+  | EventPage
+  | EventCursorState
+  | EventIngestResult
+  | DispatchPage
+  | DispatchOffer
+  | DispatchClaim
+  | DispatchObservation
+  | Run
+  | RunPage
+  | RunResultSnapshot
+  | RunEventPage
+  | RunArtifactPage
+  | InputRecord
+  | InputReceipt
+  | InputPage
+  | InputStorage
+  | Suite
+  | SuiteRevision
+  | SuitePage
+  | SuiteRevisionPage
+  | Organization
+  | Workspace
+  | Folder
+  | SettingsChange
+  | SettingsView
+  | SettingsIdentity
+  | EntityPage
+  | null;
 export type Command = Operation & { messageId: number };
-export type Reply = { kind: 'ready' } | { kind: 'startup_error'; code: ErrorCode } |
-  { kind: 'result'; messageId: number; ok: true; value: Value } |
-  { kind: 'result'; messageId: number; ok: false; code: ErrorCode };
-export interface Bootstrap { installation: InstallationRecord; runtime: RuntimeObservation | null; runtimeTtlMs?: number; runs?: RunConfiguration; exports?: ExportConfiguration }
+export type Reply =
+  | { kind: 'ready' }
+  | { kind: 'startup_error'; code: ErrorCode }
+  | { kind: 'result'; messageId: number; ok: true; value: Value }
+  | { kind: 'result'; messageId: number; ok: false; code: ErrorCode };
+export interface Bootstrap {
+  installation: InstallationRecord;
+  runtime: RuntimeObservation | null;
+  runtimeTtlMs?: number;
+  runs?: RunConfiguration;
+  exports?: ExportConfiguration;
+}

@@ -1,5 +1,6 @@
 import { boundedUniqueJson } from './output-payloads/index.js';
-const uuid = (path: string) => `(length(${path})=36 AND ${path}=lower(${path}) AND substr(${path},9,1)='-' AND substr(${path},14,1)='-' AND substr(${path},19,1)='-' AND substr(${path},24,1)='-' AND length(replace(${path},'-',''))=32 AND replace(${path},'-','') NOT GLOB '*[^0-9a-f]*')`;
+const uuid = (path: string) =>
+  `(length(${path})=36 AND ${path}=lower(${path}) AND substr(${path},9,1)='-' AND substr(${path},14,1)='-' AND substr(${path},19,1)='-' AND substr(${path},24,1)='-' AND length(replace(${path},'-',''))=32 AND replace(${path},'-','') NOT GLOB '*[^0-9a-f]*')`;
 const digest = (path: string) => `(length(${path})=64 AND ${path} NOT GLOB '*[^0-9a-f]*')`;
 export const migration009 = `
 ALTER TABLE execution_records ADD COLUMN output_pending INTEGER NOT NULL DEFAULT 1 CHECK(output_pending=1);

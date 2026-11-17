@@ -13,15 +13,31 @@ export function makeRunOffer(run: Run, revision: SuiteRevision, profile: RunProf
   requireRule(k6ConfigSchema.validate(revision.config));
   const secrets = prepareK6SecretReferences(revision.config.secrets);
   requireRule(secrets.ok);
-  const intent = { protocolVersion: '1.0' as const, organizationId: run.scope.organizationId,
-    workspaceId: run.scope.workspaceId, attemptId: run.activeAttemptId, engine: {
-      id: profile.engine.id, imageDigest: profile.engine.imageDigest, configVersion: profile.engine.configVersion },
+  const intent = {
+    protocolVersion: '1.0' as const,
+    organizationId: run.scope.organizationId,
+    workspaceId: run.scope.workspaceId,
+    attemptId: run.activeAttemptId,
+    engine: {
+      id: profile.engine.id,
+      imageDigest: profile.engine.imageDigest,
+      configVersion: profile.engine.configVersion,
+    },
     installedIdentity: profile.installedIdentity,
-    inputs: revision.inputManifest, budget: run.budget, executionPolicy: run.executionPolicy,
-    requiredCapabilities: profile.requiredCapabilities, secretReferences: secrets.value, config: revision.config };
-  const intentDigest = digestMutationIntent(intent, text => sha256(`beetle-lab.run-offer.v1\n${text}`));
-  const offer: Offer = { ...intent, requiredCapabilities: [...profile.requiredCapabilities],
-    secretReferences: [...secrets.value], intentDigest };
+    inputs: revision.inputManifest,
+    budget: run.budget,
+    executionPolicy: run.executionPolicy,
+    requiredCapabilities: profile.requiredCapabilities,
+    secretReferences: secrets.value,
+    config: revision.config,
+  };
+  const intentDigest = digestMutationIntent(intent, (text) => sha256(`beetle-lab.run-offer.v1\n${text}`));
+  const offer: Offer = {
+    ...intent,
+    requiredCapabilities: [...profile.requiredCapabilities],
+    secretReferences: [...secrets.value],
+    intentDigest,
+  };
   requireRule(validate('Offer', offer).ok);
   return encodeJson(offer, RUNNER_MAXIMUM_OFFER_BYTES);
 }

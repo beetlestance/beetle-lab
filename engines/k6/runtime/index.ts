@@ -1,4 +1,10 @@
-import { initialSelectionState, measureStartedMetric, metricLayout, selectDatasetRows, selectRequest } from '../plan/index.js';
+import {
+  initialSelectionState,
+  measureStartedMetric,
+  metricLayout,
+  selectDatasetRows,
+  selectRequest,
+} from '../plan/index.js';
 import type { SelectionState } from '../plan/index.js';
 import { runtimeLimits } from './bounds.js';
 import { recordAssertions, recordOutcome } from './evidence.js';
@@ -26,35 +32,46 @@ export function createRuntime(input: RuntimeInput): Runtime {
       if (ownerVu !== undefined && ownerVu !== position.vu) stop('selection');
       ownerVu = position.vu;
       return execute({ input, position, states, secret, limits, layout });
-    } catch (error) { return executionError(input, error); }
+    } catch (error) {
+      return executionError(input, error);
+    }
   };
-  return { iterate, prepare: deadlineMs => {
-    if (preparationConsumed) stop('preparation');
-    preparationConsumed = true;
-    try {
-      prepareReadiness({ ...input, limits, secret, layout, deadlineMs });
-      remaining(deadlineMs, input.adapters.now(), 1);
-      input.adapters.metric(measureStartedMetric, 1, {});
-    }
-    catch (error) {
-      const result = executionError(input, error);
-      stop(result.code === 'adapter' ? 'adapter' : 'preparation');
-    }
-  } };
+  return {
+    iterate,
+    prepare: (deadlineMs) => {
+      if (preparationConsumed) stop('preparation');
+      preparationConsumed = true;
+      try {
+        prepareReadiness({ ...input, limits, secret, layout, deadlineMs });
+        remaining(deadlineMs, input.adapters.now(), 1);
+        input.adapters.metric(measureStartedMetric, 1, {});
+      } catch (error) {
+        const result = executionError(input, error);
+        stop(result.code === 'adapter' ? 'adapter' : 'preparation');
+      }
+    },
+  };
 }
 function executionError(input: RuntimeInput, error: unknown): IterationResult {
-  let code = error instanceof RuntimeFailure ? error.code : 'adapter' as const;
-  try { input.adapters.metric('beetle_execution_failures', 1, {}); }
-  catch { code = 'adapter'; }
+  let code = error instanceof RuntimeFailure ? error.code : ('adapter' as const);
+  try {
+    input.adapters.metric('beetle_execution_failures', 1, {});
+  } catch {
+    code = 'adapter';
+  }
   return { kind: 'execution', code, requiredFailures: 0, optionalFailures: 0 };
 }
 interface Execution {
-  input: RuntimeInput; position: IterationPosition; states: Map<string, SelectionState>;
-  secret: (name: string) => string; limits: ReturnType<typeof runtimeLimits>; layout: ReturnType<typeof metricLayout>;
+  input: RuntimeInput;
+  position: IterationPosition;
+  states: Map<string, SelectionState>;
+  secret: (name: string) => string;
+  limits: ReturnType<typeof runtimeLimits>;
+  layout: ReturnType<typeof metricLayout>;
 }
 function choose(execution: Execution): { requestId: string; waitMs: number } {
   const { input, position, states } = execution;
-  const plan = input.suite.selections.find(plan => plan.scenarioId === position.scenarioId);
+  const plan = input.suite.selections.find((plan) => plan.scenarioId === position.scenarioId);
   if (!plan) return stop('selection');
   const initial = initialSelectionState(plan, position.vu);
   if (!initial.ok) return stop('selection');
@@ -71,12 +88,16 @@ function execute(execution: Execution): IterationResult {
   const selection = choose(execution);
   const rows = selectDatasetRows(input.suite.datasets, position, () => input.adapters.random());
   if (!rows.ok) return stop('selection');
-  const index = input.suite.requests.findIndex(request => request.id === selection.requestId);
+  const index = input.suite.requests.findIndex((request) => request.id === selection.requestId);
   const plan = input.suite.requests[index];
   if (!plan) return stop('selection');
-  const request = renderRequest({ target: input.suite.target, plan, label: layout.requests[index]!.label,
-    scope: { rows: new Map(rows.value.map(row => [row.datasetId, row.row])), secret: execution.secret },
-    timeoutMs: remaining(position.deadlineMs, input.adapters.now(), limits.requestTimeoutMs) });
+  const request = renderRequest({
+    target: input.suite.target,
+    plan,
+    label: layout.requests[index]!.label,
+    scope: { rows: new Map(rows.value.map((row) => [row.datasetId, row.row])), secret: execution.secret },
+    timeoutMs: remaining(position.deadlineMs, input.adapters.now(), limits.requestTimeoutMs),
+  });
   request.timeoutMs = remaining(position.deadlineMs, input.adapters.now(), limits.requestTimeoutMs);
   input.adapters.metric('beetle_requests', 1, { request: request.label });
   const outcome = send({ execution, request, index });
@@ -84,17 +105,32 @@ function execute(execution: Execution): IterationResult {
   if (selection.waitMs) input.adapters.sleep(remaining(position.deadlineMs, input.adapters.now(), selection.waitMs));
   return outcome;
 }
-function send({ execution, request, index }: { execution: Execution;
-  request: Parameters<RuntimeInput['adapters']['http']>[0]; index: number }): IterationResult {
+function send({
+  execution,
+  request,
+  index,
+}: {
+  execution: Execution;
+  request: Parameters<RuntimeInput['adapters']['http']>[0];
+  index: number;
+}): IterationResult {
   const { input, layout, limits } = execution;
   let response: ReturnType<RuntimeInput['adapters']['http']>;
-  try { response = input.adapters.http(request); }
-  catch { response = { status: 0, headers: {}, body: null, transportFailed: true }; }
+  try {
+    response = input.adapters.http(request);
+  } catch {
+    response = { status: 0, headers: {}, body: null, transportFailed: true };
+  }
   if (response.transportFailed) {
     input.adapters.metric('beetle_transport_failures', 1, {});
     return { kind: 'transport', requiredFailures: 0, optionalFailures: 0 };
   }
-  const checks = recordAssertions({ assertions: input.suite.requests[index]!.assertions,
-    labels: layout.requests[index]!.assertions, response, adapters: input.adapters, limits });
+  const checks = recordAssertions({
+    assertions: input.suite.requests[index]!.assertions,
+    labels: layout.requests[index]!.assertions,
+    response,
+    adapters: input.adapters,
+    limits,
+  });
   return recordOutcome(checks, input.adapters);
 }

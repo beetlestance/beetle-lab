@@ -3,7 +3,10 @@ const owners = new WeakMap<object, number>();
 let nextOwner = 0;
 function ownerId(owner: object) {
   let id = owners.get(owner);
-  if (id === undefined) { id = ++nextOwner; owners.set(owner, id); }
+  if (id === undefined) {
+    id = ++nextOwner;
+    owners.set(owner, id);
+  }
   return id;
 }
 

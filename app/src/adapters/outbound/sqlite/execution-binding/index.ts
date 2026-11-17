@@ -7,15 +7,20 @@ import { transaction } from '../transaction.js';
 import { captureExecutionOperation, captureExecutionReply } from './wire.js';
 export { readExecutionBinding };
 export { captureExecutionOperation, captureExecutionReply, executionOperation } from './wire.js';
-interface RunLookup {get(key: RunKey): Run}
+interface RunLookup {
+  get(key: RunKey): Run;
+}
 /** Read-only compact authority; no Offer payload, mutation, scan or current-capability substitution. */
 export class RunExecutions {
-  constructor(private readonly db: DatabaseSync, private readonly runs: RunLookup) {}
+  constructor(
+    private readonly db: DatabaseSync,
+    private readonly runs: RunLookup,
+  ) {}
   get(input: RunKey): RunExecutionSnapshot {
-    const {key} = captureExecutionOperation({kind: 'getRunExecution', key: input});
+    const { key } = captureExecutionOperation({ kind: 'getRunExecution', key: input });
     return transaction(this.db, () => {
       const run = this.runs.get(key);
-      return captureExecutionReply(key, {run, binding: readExecutionBinding(this.db, run, 'live')});
+      return captureExecutionReply(key, { run, binding: readExecutionBinding(this.db, run, 'live') });
     });
   }
 }

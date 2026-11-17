@@ -18,15 +18,24 @@ export function createAgentConfigurationLoader(files: FileOperations) {
       let input: unknown;
       try {
         const text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
-        input = receipt === undefined ? JSON.parse(text) as unknown
-          : selectInstalledConfiguration(receipt, 'backend-agent.json', text, receiptDigest);
+        input =
+          receipt === undefined
+            ? (JSON.parse(text) as unknown)
+            : selectInstalledConfiguration(receipt, 'backend-agent.json', text, receiptDigest);
+      } finally {
+        bytes.fill(0);
       }
-      finally { bytes.fill(0); }
       const captured = configuration(input, installationId);
       const credential = await reader.read(captured.tokenFile, 129);
-      try { return Object.freeze({ configuration: captured, token: token(credential) }); }
-      finally { credential.fill(0); }
-    } catch { throw new AgentConfigurationError(); }
-    finally { active = false; }
+      try {
+        return Object.freeze({ configuration: captured, token: token(credential) });
+      } finally {
+        credential.fill(0);
+      }
+    } catch {
+      throw new AgentConfigurationError();
+    } finally {
+      active = false;
+    }
   };
 }

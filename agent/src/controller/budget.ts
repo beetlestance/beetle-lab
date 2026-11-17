@@ -11,13 +11,16 @@ function field(input: ControllerBudget, name: keyof ControllerBudget): unknown {
 }
 export function budgetCopy(input: ControllerBudget): Readonly<ControllerBudget> {
   try {
-    const value = field(input, 'deadline'); const cancellation = field(input, 'signal');
+    const value = field(input, 'deadline');
+    const cancellation = field(input, 'signal');
     if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error();
     if (cancellation !== undefined && !(cancellation instanceof AbortSignal)) throw new Error();
     const now = performance.now();
     if (value <= now || value - now > OUTPUT_COLLECTION_MAX_MS) throw new Error();
     return Object.freeze({ deadline: value, ...(cancellation === undefined ? {} : { signal: cancellation }) });
-  } catch { throw new ControllerError('invalid_input'); }
+  } catch {
+    throw new ControllerError('invalid_input');
+  }
 }
 export function checkBudget(budget: ControllerBudget): void {
   if (budget.signal && Reflect.apply(aborted, budget.signal, [])) throw new ControllerError('cancelled');

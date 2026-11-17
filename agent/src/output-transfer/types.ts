@@ -16,7 +16,10 @@ export interface OutputSourceReader {
 }
 
 export interface OutputSourceReaderOptions {
-  readonly journal: Pick<Journal, 'readOutputSource' | 'readOutputDelivery' | 'get' | 'journalAuthority' | 'retirements'>;
+  readonly journal: Pick<
+    Journal,
+    'readOutputSource' | 'readOutputDelivery' | 'get' | 'journalAuthority' | 'retirements'
+  >;
   readonly gate: ProducerGate;
   /** Exact public native range owner; no engine/catalogue lookup or new IO pool. */
   readonly readRange: OutputRangeReader;

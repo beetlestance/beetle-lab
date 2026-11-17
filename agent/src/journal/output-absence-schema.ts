@@ -16,9 +16,27 @@ export const absenceTables = `
   );
   CREATE INDEX output_absence_pending ON accepted_attempts(id) WHERE absence_pending=1;
 `;
-const frozen = ['id', 'attempt_id', 'organization_id', 'workspace_id', 'generation', 'intent_digest',
-  'offer_json', 'canonical_json', 'state', 'phase', 'last_seq', 'wrapper_high', 'supervisor_high',
-  'result_json', 'exit_json', 'exit_facts_json', 'wrapper_checkpoint_json', 'snapshot_bytes', 'checkpoint_bytes'];
+const frozen = [
+  'id',
+  'attempt_id',
+  'organization_id',
+  'workspace_id',
+  'generation',
+  'intent_digest',
+  'offer_json',
+  'canonical_json',
+  'state',
+  'phase',
+  'last_seq',
+  'wrapper_high',
+  'supervisor_high',
+  'result_json',
+  'exit_json',
+  'exit_facts_json',
+  'wrapper_checkpoint_json',
+  'snapshot_bytes',
+  'checkpoint_bytes',
+];
 export const absenceParentGuards = `
   CREATE TRIGGER absence_parent_insert BEFORE INSERT ON accepted_attempts
     WHEN NEW.absence_bytes!=0 OR NEW.absence_pending!=0
@@ -28,7 +46,7 @@ export const absenceParentGuards = `
       OR NEW.spool_bytes+NEW.snapshot_bytes+NEW.checkpoint_bytes+NEW.hold_bytes+NEW.collection_bytes+NEW.source_bytes+NEW.delivery_bytes+NEW.absence_bytes>NEW.quota_bytes
       THEN RAISE(ABORT,'output absence quota') END;
     SELECT CASE WHEN EXISTS(SELECT 1 FROM output_absence_closures WHERE attempt_id=OLD.attempt_id)
-      AND (${frozen.map(name => `NEW.${name} IS NOT OLD.${name}`).join(' OR ')} OR NEW.absence_pending!=0)
+      AND (${frozen.map((name) => `NEW.${name} IS NOT OLD.${name}`).join(' OR ')} OR NEW.absence_pending!=0)
       THEN RAISE(ABORT,'closed output absence') END;
   END;
   CREATE TRIGGER absence_pending_update BEFORE UPDATE OF absence_pending ON accepted_attempts
@@ -73,7 +91,7 @@ function fence(table: string, columns: readonly string[]): string {
     BEGIN SELECT RAISE(ABORT,'closed output absence'); END;
     CREATE TRIGGER absence_${table}_update BEFORE UPDATE ON ${table}
     WHEN EXISTS(SELECT 1 FROM output_absence_closures WHERE attempt_id=OLD.attempt_id OR attempt_id=NEW.attempt_id)
-      AND (${columns.map(name => `NEW.${name} IS NOT OLD.${name}`).join(' OR ')})
+      AND (${columns.map((name) => `NEW.${name} IS NOT OLD.${name}`).join(' OR ')})
     BEGIN SELECT RAISE(ABORT,'closed output absence'); END;
     CREATE TRIGGER absence_${table}_delete BEFORE DELETE ON ${table}
     WHEN EXISTS(SELECT 1 FROM output_absence_closures WHERE attempt_id=OLD.attempt_id)
@@ -82,12 +100,26 @@ function fence(table: string, columns: readonly string[]): string {
 export const absenceFences = [
   fence('reservations', ['id', 'attempt_id', 'reservation_json', 'charged']),
   fence('admission_queue', ['id', 'attempt_id', 'candidate_json', 'decision_json', 'pending']),
-  fence('output_collection_intents', ['attempt_id', 'collection_id', 'intent_json', 'charged_bytes', 'phase', 'created_epoch']),
+  fence('output_collection_intents', [
+    'attempt_id',
+    'collection_id',
+    'intent_json',
+    'charged_bytes',
+    'phase',
+    'created_epoch',
+  ]),
   fence('output_sources', ['attempt_id', 'source_json', 'manifest_digest', 'source_digest', 'charged_bytes']),
   fence('output_delivery_closures', ['attempt_id', 'closure_json', 'charged_bytes']),
   fence('cancelled_originals', ['attempt_id', 'generation']),
 ].join('\n');
-export const absenceDebt = ['admission_queue', 'reservations', 'cancelled_originals'].map(table =>
-  ['INSERT', 'UPDATE'].map(event => `CREATE TRIGGER absence_debt_${table}_${event.toLowerCase()} AFTER ${event} ON ${table} BEGIN
+export const absenceDebt = ['admission_queue', 'reservations', 'cancelled_originals']
+  .map((table) =>
+    ['INSERT', 'UPDATE']
+      .map(
+        (event) => `CREATE TRIGGER absence_debt_${table}_${event.toLowerCase()} AFTER ${event} ON ${table} BEGIN
     UPDATE accepted_attempts SET absence_pending=${absencePending('accepted_attempts')} WHERE attempt_id=NEW.attempt_id;
-  END;`).join('\n')).join('\n');
+  END;`,
+      )
+      .join('\n'),
+  )
+  .join('\n');

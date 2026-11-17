@@ -5,9 +5,23 @@ import type { ControlReaderFactory } from '../collection/control/index.js';
 import type { OutputCollector } from '../collection/output/index.js';
 import type { Operation } from '../backends/docker/index.js';
 
-export type ControllerJournal = Pick<Journal, 'admission' | 'readOffer' | 'readExportAssignment' | 'get' | 'supervision'
-  | 'readWrapperCheckpoint' | 'commitWrapperBatch' | 'journalAuthority' | 'beginOutputCollection' | 'readOutputCollection'
-  | 'commitOutputSource' | 'readOutputSource' | 'releaseOutputSource' | 'failOutputCollection'>;
+export type ControllerJournal = Pick<
+  Journal,
+  | 'admission'
+  | 'readOffer'
+  | 'readExportAssignment'
+  | 'get'
+  | 'supervision'
+  | 'readWrapperCheckpoint'
+  | 'commitWrapperBatch'
+  | 'journalAuthority'
+  | 'beginOutputCollection'
+  | 'readOutputCollection'
+  | 'commitOutputSource'
+  | 'readOutputSource'
+  | 'releaseOutputSource'
+  | 'failOutputCollection'
+>;
 /** Trusted composition for one admitted, staged runtime; never browser options. */
 export interface AttemptControllerOptions {
   readonly journal: ControllerJournal;
@@ -23,7 +37,12 @@ export type AttemptProgress =
   | { readonly kind: 'deferred'; readonly reason: 'journal_busy' }
   | { readonly kind: 'runtime'; readonly state: LaunchState }
   | { readonly kind: 'control'; readonly events: number }
-  | { readonly kind: 'verifying'; readonly phase: 'restart' | 'final'; readonly verifiedBytes: number; readonly targetBytes: number }
+  | {
+      readonly kind: 'verifying';
+      readonly phase: 'restart' | 'final';
+      readonly verifiedBytes: number;
+      readonly targetBytes: number;
+    }
   | { readonly kind: 'awaiting_collection'; readonly reason: 'busy' }
   | { readonly kind: 'awaiting_release'; readonly collection: 'finished' | 'failed' }
   | { readonly kind: 'released'; readonly collection: 'finished' | 'failed' };
@@ -33,9 +52,11 @@ export interface CollectionObservation {
   readonly result?: Readonly<ExecutionResult>;
   readonly observedAt: number;
 }
-export type ControllerReason = 'invalid_input' | 'busy' | 'closed' | 'cancelled' | 'deadline'
-  | 'journal' | 'supervisor' | 'cleanup' | 'clock';
+export type ControllerReason =
+  'invalid_input' | 'busy' | 'closed' | 'cancelled' | 'deadline' | 'journal' | 'supervisor' | 'cleanup' | 'clock';
 export class ControllerError extends Error {
-  constructor(readonly reason: ControllerReason) { super(`Attempt controller ${reason}`); }
+  constructor(readonly reason: ControllerReason) {
+    super(`Attempt controller ${reason}`);
+  }
 }
 export type ControllerBudget = Operation;

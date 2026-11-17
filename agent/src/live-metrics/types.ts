@@ -10,9 +10,21 @@ export interface LiveMetricReaderOptions {
   readonly approval: LiveMetricApproval;
   /** This port owns the actual HTTP request/response originals through physical close. */
   read(operation: Operation): Promise<MailboxArchiveReply>;
-  readonly clock?: {wall(): number; monotonic(): number};
+  readonly clock?: { wall(): number; monotonic(): number };
 }
-export type LiveMetricReadFailure = 'invalid_input' | 'busy' | 'closed' | 'unavailable' | 'deadline'
-  | 'aborted' | 'scope' | 'epoch' | 'subset' | 'ordering' | 'stale' | 'clock';
-export type LiveMetricRead = {readonly ok: true; readonly frame: LiveMetricSnapshot; readonly freshUntilMonotonicMs: number}
-  | {readonly ok: false; readonly reason: LiveMetricReadFailure};
+export type LiveMetricReadFailure =
+  | 'invalid_input'
+  | 'busy'
+  | 'closed'
+  | 'unavailable'
+  | 'deadline'
+  | 'aborted'
+  | 'scope'
+  | 'epoch'
+  | 'subset'
+  | 'ordering'
+  | 'stale'
+  | 'clock';
+export type LiveMetricRead =
+  | { readonly ok: true; readonly frame: LiveMetricSnapshot; readonly freshUntilMonotonicMs: number }
+  | { readonly ok: false; readonly reason: LiveMetricReadFailure };

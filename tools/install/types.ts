@@ -20,13 +20,13 @@ export interface ProvisionRequest {
   readonly dockerSocket: string;
   readonly agentContainer: string;
   readonly agentImage: string;
-  readonly agentIdentity?:'socket-group-drop-v1';
+  readonly agentIdentity?: 'socket-group-drop-v1';
   readonly engineImage: string;
   readonly targetNetwork: string;
   readonly installationValues: InstallationValues;
   readonly agentPolicy: Omit<PoolConfiguration, 'profiles'>;
   readonly engine: ProvisionEngine;
-  readonly exportEngine?:ProvisionEngine & {readonly image:string;readonly sourceProfileId:string};
+  readonly exportEngine?: ProvisionEngine & { readonly image: string; readonly sourceProfileId: string };
 }
 export interface ProvisionContext {
   readonly docker: DockerTransport;
@@ -39,14 +39,31 @@ export interface ProvisionResult {
   readonly installationId: string;
   readonly status: 'created' | 'unchanged';
   readonly paths: Readonly<{
-    installation: string; backendAgent: string; agent: string; receipt: string;
-    backendData: string; agentJournal: string; agentStaging: string;
+    installation: string;
+    backendAgent: string;
+    agent: string;
+    receipt: string;
+    backendData: string;
+    agentJournal: string;
+    agentStaging: string;
   }>;
 }
-export type ProvisionErrorCode = 'invalid_input' | 'inspection' | 'unsafe_root' | 'conflict'
-  | 'recovery_required' | 'cancelled' | 'deadline' | 'io' | 'cleanup';
+export type ProvisionErrorCode =
+  | 'invalid_input'
+  | 'inspection'
+  | 'unsafe_root'
+  | 'conflict'
+  | 'recovery_required'
+  | 'cancelled'
+  | 'deadline'
+  | 'io'
+  | 'cleanup';
 export class ProvisionError extends Error {
-  constructor(readonly code: ProvisionErrorCode, options?: ErrorOptions) {
-    super('Installation provisioning failed', options); this.name = 'ProvisionError';
+  constructor(
+    readonly code: ProvisionErrorCode,
+    options?: ErrorOptions,
+  ) {
+    super('Installation provisioning failed', options);
+    this.name = 'ProvisionError';
   }
 }

@@ -13,31 +13,45 @@ interface RecoveryContext {
   guard(entry: Entry, budget: Operation): void;
   retire(entry: Entry, progress: DriveProgress): Promise<void>;
 }
-function knownController(entry: Entry): boolean { return Boolean(entry.controller) && !entry.sourceCheck && !entry.sourceReceipt; }
+function knownController(entry: Entry): boolean {
+  return Boolean(entry.controller) && !entry.sourceCheck && !entry.sourceReceipt;
+}
 
 /** A recreated owner reconciles durable custody before consulting current installs. */
-export async function recoverSource(context: RecoveryContext, entry: Entry, budget: Operation): Promise<SourceRecovery> {
+export async function recoverSource(
+  context: RecoveryContext,
+  entry: Entry,
+  budget: Operation,
+): Promise<SourceRecovery> {
   if (knownController(entry)) return { intent: null };
   const { journal } = context.options;
   try {
-    const source = await journal.readOutputSource(entry.key); context.guard(entry, budget);
+    const source = await journal.readOutputSource(entry.key);
+    context.guard(entry, budget);
     if (source) {
       rememberSource(entry, source);
-      const released = await journal.releaseOutputSource(entry.sourceReceipt!); context.guard(entry, budget);
-      if (released.status !== 'released'
-        || encodeCanonicalJson(released.releaseEvidence, 8192) !== encodeCanonicalJson(source.release, 8192)) throw new InstallationError('journal');
+      const released = await journal.releaseOutputSource(entry.sourceReceipt!);
+      context.guard(entry, budget);
+      if (
+        released.status !== 'released' ||
+        encodeCanonicalJson(released.releaseEvidence, 8192) !== encodeCanonicalJson(source.release, 8192)
+      )
+        throw new InstallationError('journal');
       entry.sourceReleased = true;
       const progress = { kind: 'released' as const, collection: 'finished' as const };
-      await context.retire(entry, progress); return { progress };
+      await context.retire(entry, progress);
+      return { progress };
     }
     entry.sourceCheck = false;
     if (entry.controller) return { intent: null };
-    const intent = await journal.readOutputCollection(entry.key); context.guard(entry, budget);
+    const intent = await journal.readOutputCollection(entry.key);
+    context.guard(entry, budget);
     return { intent };
   } catch (error) {
     if (entry.retiring) throw error;
     context.guard(entry, budget);
-    if (error instanceof JournalError && error.code === 'queue_full') return { progress: { kind: 'deferred', reason: 'journal_busy' } };
+    if (error instanceof JournalError && error.code === 'queue_full')
+      return { progress: { kind: 'deferred', reason: 'journal_busy' } };
     throw error;
   }
 }

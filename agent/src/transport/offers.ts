@@ -15,7 +15,9 @@ export class OfferIngress {
     if (this.closed) throw new AgentHttpError(503, 'execution_lost', 'transport');
     if (this.owners.size >= 2) throw new AgentHttpError(429, 'budget_unavailable', 'transport');
     let finish!: () => void;
-    const done = new Promise<void>(resolve => { finish = resolve; });
+    const done = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
     this.owners.set(request, { request, done, finish, issued: false });
     request.raw.once('aborted', () => this.releaseRequest(request));
     request.raw.once('close', () => {
@@ -31,8 +33,11 @@ export class OfferIngress {
     const owner = this.owners.get(request);
     if (this.closed || !owner) throw new AgentHttpError(503, 'execution_lost', 'transport');
     owner.issued = true;
-    try { return await operation(); }
-    finally { this.finish(owner); }
+    try {
+      return await operation();
+    } finally {
+      this.finish(owner);
+    }
   }
   close(): Promise<void> {
     this.closed = true;
@@ -44,10 +49,11 @@ export class OfferIngress {
         if (owner.request.raw.closed) this.releaseRequest(owner.request);
       }
     }
-    return Promise.all(pending.map(owner => owner.done)).then(() => undefined);
+    return Promise.all(pending.map((owner) => owner.done)).then(() => undefined);
   }
   private finish(owner: Owner): void {
     if (this.owners.get(owner.request) !== owner) return;
-    this.owners.delete(owner.request); owner.finish();
+    this.owners.delete(owner.request);
+    owner.finish();
   }
 }

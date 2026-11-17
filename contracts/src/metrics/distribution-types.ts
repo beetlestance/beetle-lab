@@ -20,7 +20,8 @@ export interface PercentileEstimate {
 }
 export class DistributionError extends Error {
   constructor(readonly code: 'invalid_distribution' | 'invalid_value' | 'overflow') {
-    super('Duration distribution rejected'); this.name = 'DistributionError';
+    super('Duration distribution rejected');
+    this.name = 'DistributionError';
   }
 }
 export function countSum(left: number, right: number): number {

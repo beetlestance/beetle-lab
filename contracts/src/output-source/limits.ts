@@ -4,5 +4,7 @@ export const OUTPUT_MANIFEST_BYTES = 73_728;
 
 export type OutputSourceErrorCode = 'invalid_input' | 'integrity' | 'digest_failed';
 export class OutputSourceError extends Error {
-  constructor(readonly code: OutputSourceErrorCode) { super(`Output source ${code}`); }
+  constructor(readonly code: OutputSourceErrorCode) {
+    super(`Output source ${code}`);
+  }
 }

@@ -1,5 +1,5 @@
 /** One bounded immutable receipt in the separately reserved backend ACK bucket. */
-export const migration022=`
+export const migration022 = `
 CREATE TABLE backend_output_cleanup_acks (
  deletion_id TEXT PRIMARY KEY CHECK(length(CAST(deletion_id AS BLOB))=36 AND deletion_id=lower(deletion_id)),
  version INTEGER NOT NULL CHECK(version=1),

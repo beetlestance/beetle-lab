@@ -19,19 +19,31 @@ export class RuntimeCapacity {
   }
   update(input: RuntimeObservation | null): null {
     const now = this.currentTime();
-    if (now === null) { requireRule(input === null); return null; }
+    if (now === null) {
+      requireRule(input === null);
+      return null;
+    }
     const observation = boundedCopy(input);
     checkedRuntime(observation, this.ttl);
     this.expire(now);
-    if (observation === null) { this.revoke(); return null; }
+    if (observation === null) {
+      this.revoke();
+      return null;
+    }
     if (observation.observedAtMs < this.sourceHighWater) {
-      this.revoke(); requireRule(false);
+      this.revoke();
+      requireRule(false);
     }
     requireRule(observation.observedAtMs > this.revokedThrough);
     if (observation.observedAtMs === this.sourceHighWater) {
-      const equal = this.observation !== null &&
-        encodeCanonicalJson(observation, MAX_MESSAGE_BYTES) === encodeCanonicalJson(this.observation, MAX_MESSAGE_BYTES);
-      if (!equal) { this.revoke(); requireRule(false); }
+      const equal =
+        this.observation !== null &&
+        encodeCanonicalJson(observation, MAX_MESSAGE_BYTES) ===
+          encodeCanonicalJson(this.observation, MAX_MESSAGE_BYTES);
+      if (!equal) {
+        this.revoke();
+        requireRule(false);
+      }
       return null;
     }
     this.sourceHighWater = observation.observedAtMs;
@@ -45,15 +57,19 @@ export class RuntimeCapacity {
   private currentTime(): number | null {
     const now = Date.now();
     if (!Number.isSafeInteger(now) || now < 0 || now > 8640000000000000 || now < this.previousNow) {
-      this.revoke(); return null;
+      this.revoke();
+      return null;
     }
     this.previousNow = now;
     return now;
   }
   private expire(now: number): void {
     const observation = this.observation;
-    if (observation !== null && (now < observation.observedAtMs || now >= observation.expiresAtMs ||
-      now - observation.observedAtMs >= this.ttl)) this.revoke();
+    if (
+      observation !== null &&
+      (now < observation.observedAtMs || now >= observation.expiresAtMs || now - observation.observedAtMs >= this.ttl)
+    )
+      this.revoke();
   }
   snapshot(): RuntimeCeilings | null {
     return this.currentObservation()?.ceilings ?? null;

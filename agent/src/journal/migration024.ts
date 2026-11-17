@@ -1,5 +1,5 @@
 /** Separate no-task receipt, prepaid by the existing rejected original control. */
-export const migration024=`
+export const migration024 = `
 CREATE TABLE rejected_cleanup_receipts(
  attempt_id TEXT PRIMARY KEY REFERENCES accepted_attempts(attempt_id),
  request_digest TEXT NOT NULL CHECK(typeof(request_digest)='text' AND length(request_digest)=64),

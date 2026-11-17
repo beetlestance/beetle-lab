@@ -1,4 +1,4 @@
-import {storedJson,storedText} from './row-values.js';
+import { storedJson, storedText } from './row-values.js';
 import { RUNNER_MAXIMUM_OFFER_BYTES, validate } from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import type { Row } from './attempt-row.js';
@@ -11,10 +11,10 @@ export const storedOfferColumns = [
 ].join(',');
 /** Validate the saved Offer itself, not just a newly submitted replay. */
 export function captureStoredOffer(input: unknown, canonical: unknown, row: Row): Offer {
-  const raw=storedJson(input,RUNNER_MAXIMUM_OFFER_BYTES);
-  const savedCanonical=storedText(canonical,RUNNER_MAXIMUM_OFFER_BYTES);
+  const raw = storedJson(input, RUNNER_MAXIMUM_OFFER_BYTES);
+  const savedCanonical = storedText(canonical, RUNNER_MAXIMUM_OFFER_BYTES);
   try {
-    const parsed = validate('Offer',raw);
+    const parsed = validate('Offer', raw);
     if (!parsed.ok) throw new Failure('unavailable');
     const offer = parsed.value;
     if (

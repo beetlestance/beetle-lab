@@ -1,5 +1,5 @@
-import {stoppedExportSource} from './evidence.js';
-export const exportCustodyGuards=`
+import { stoppedExportSource } from './evidence.js';
+export const exportCustodyGuards = `
 CREATE TRIGGER export_original_insert BEFORE INSERT ON export_originals BEGIN
  SELECT CASE WHEN EXISTS(SELECT 1 FROM export_originals WHERE export_id=NEW.export_id)
  OR NOT EXISTS(SELECT 1 FROM export_jobs j WHERE j.id=NEW.export_id AND j.assignment_digest=NEW.assignment_digest
@@ -37,7 +37,7 @@ CREATE TRIGGER export_source_insert BEFORE INSERT ON export_sources BEGIN
  OR EXISTS(SELECT 1 FROM export_absences WHERE export_id=NEW.export_id)
  OR NOT EXISTS(SELECT 1 FROM export_jobs j WHERE j.id=NEW.export_id AND j.assignment_digest=NEW.assignment_digest
  AND j.possible_delivery=1 AND j.journal_authority IS NOT NULL
- AND ${stoppedExportSource('j.snapshot_json','NEW.source_json','NEW.final_agent_seq')}
+ AND ${stoppedExportSource('j.snapshot_json', 'NEW.source_json', 'NEW.final_agent_seq')}
  AND json_extract(NEW.source_json,'$.manifest.manifestDigest')=NEW.manifest_digest
  AND json_extract(NEW.source_json,'$.sourceDigest')=NEW.source_digest
  AND json_extract(NEW.source_json,'$.closure.finalAgentSeq')=NEW.final_agent_seq

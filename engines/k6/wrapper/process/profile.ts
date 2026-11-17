@@ -15,10 +15,13 @@ export function snapshot(input: NativeProcessOptions): NativeProcessOptions {
     validatePaths(input);
     if (input.script !== join(input.directory, 'suite.js')) throw 0;
     positive(input.maxMetricStreamBytes, Number.MAX_SAFE_INTEGER);
-    positive(input.maxDiagnosticBytes, 65_536); positive(input.drainTimeoutMs, 1000);
+    positive(input.maxDiagnosticBytes, 65_536);
+    positive(input.drainTimeoutMs, 1000);
     const clock = input.clock && Object.freeze({ wall: input.clock.wall, monotonic: input.clock.monotonic });
     return Object.freeze({ ...input, attempt: Object.freeze(attempt), ...(clock ? { clock } : {}) });
-  } catch { throw new ProcessBoundaryError('profile'); }
+  } catch {
+    throw new ProcessBoundaryError('profile');
+  }
 }
 function validatePaths(input: NativeProcessOptions): void {
   for (const value of [input.binary, input.emptyConfig, input.directory, input.script]) {
@@ -29,7 +32,7 @@ function positive(value: number, max: number): void {
   if (!Number.isSafeInteger(value) || value < 1 || value > max) throw 0;
 }
 async function resolved(path: string): Promise<void> {
-  if (await realpath(path) !== path) throw 0;
+  if ((await realpath(path)) !== path) throw 0;
 }
 async function file(path: string, maximum: number, executable = false): Promise<void> {
   await resolved(path);
@@ -44,7 +47,9 @@ async function emptyConfig(path: string): Promise<void> {
     const buffer = Buffer.alloc(17);
     const read = await handle.read(buffer, 0, buffer.length, 0);
     if (buffer.subarray(0, read.bytesRead).toString('utf8').trim() !== '{}') throw 0;
-  } finally { await handle.close(); }
+  } finally {
+    await handle.close();
+  }
 }
 /** The caller supplies immutable image paths and a task-owned directory, without hostile replacement. */
 export async function validateProfile(input: NativeProcessOptions): Promise<void> {
@@ -55,10 +60,16 @@ export async function validateProfile(input: NativeProcessOptions): Promise<void
     await emptyConfig(input.emptyConfig);
     await ownedScript(input.script);
     if (dirname(input.script) !== input.directory) throw 0;
-    try { await lstat(join(input.directory, 'beetle-evidence.json')); }
-    catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return; throw error; }
+    try {
+      await lstat(join(input.directory, 'beetle-evidence.json'));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+      throw error;
+    }
     throw 0;
-  } catch { throw new ProcessBoundaryError('profile'); }
+  } catch {
+    throw new ProcessBoundaryError('profile');
+  }
 }
 async function ownedDirectory(path: string): Promise<void> {
   await resolved(path);

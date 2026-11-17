@@ -11,7 +11,10 @@ export interface TimeoutRequest {
   readonly sampledAt: number;
 }
 export interface TimeoutStatus {
-  readonly ready: boolean; readonly closed: boolean; readonly stopRequested: boolean; readonly reason: TimeoutReason | null;
+  readonly ready: boolean;
+  readonly closed: boolean;
+  readonly stopRequested: boolean;
+  readonly reason: TimeoutReason | null;
 }
 export interface TimeoutWatch {
   status(): TimeoutStatus;

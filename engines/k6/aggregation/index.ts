@@ -1,4 +1,9 @@
-export { DurationHistogram, mergeDistributions, distributionPercentile, DistributionError } from '@beetle/contracts/metrics';
+export {
+  DurationHistogram,
+  mergeDistributions,
+  distributionPercentile,
+  DistributionError,
+} from '@beetle/contracts/metrics';
 export type { DurationDistribution, DurationPercentile, PercentileEstimate } from '@beetle/contracts/metrics';
 import { Records } from './record.js';
 import { MetricStreamError } from './types.js';
@@ -13,8 +18,13 @@ export { MetricAccumulatorError } from './snapshot.js';
 export type { AccumulatorCode, NumericTotal, SeriesTotal, MetricWindow, MetricSnapshot } from './snapshot.js';
 const lineBytes = 65_536;
 const chunkBytes = 1_048_576;
-const intrinsicByteLength = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(Uint8Array.prototype) as object, 'byteLength')!.get!;
-function positive(value: number): boolean { return Number.isSafeInteger(value) && value >= 1; }
+const intrinsicByteLength = Object.getOwnPropertyDescriptor(
+  Object.getPrototypeOf(Uint8Array.prototype) as object,
+  'byteLength',
+)!.get!;
+function positive(value: number): boolean {
+  return Number.isSafeInteger(value) && value >= 1;
+}
 function snapshot(input: Uint8Array, remaining: number): Uint8Array {
   if (!(input instanceof Uint8Array)) throw new MetricStreamError('stream_limit');
   const size: unknown = intrinsicByteLength.call(input);
@@ -41,7 +51,8 @@ export class MetricStream {
     if (!positive(options.maximumBytes) || !positive(options.maximumRecords) || typeof options.point !== 'function') {
       throw new MetricStreamError('invalid_profile');
     }
-    this.options = Object.freeze({ ...options }); this.records = new Records(options);
+    this.options = Object.freeze({ ...options });
+    this.records = new Records(options);
   }
   private permitted(signal?: AbortSignal): void {
     if (this.poisoned) throw new MetricStreamError(this.poisoned);
@@ -57,10 +68,18 @@ export class MetricStream {
       this.bytes += chunk.byteLength;
       // Publish the flight before invoking any injected callback.
       const work = Promise.resolve().then(() => this.consume(chunk, signal));
-      this.flight = work.then(() => undefined, error => {
-        const code = error instanceof MetricStreamError ? error.code : 'sink_failed';
-        this.poisoned ??= code; throw new MetricStreamError(code);
-      }).finally(() => { this.flight = undefined; });
+      this.flight = work
+        .then(
+          () => undefined,
+          (error) => {
+            const code = error instanceof MetricStreamError ? error.code : 'sink_failed';
+            this.poisoned ??= code;
+            throw new MetricStreamError(code);
+          },
+        )
+        .finally(() => {
+          this.flight = undefined;
+        });
       return this.flight;
     } catch (error) {
       const failure = error instanceof MetricStreamError ? error : new MetricStreamError('invalid_record');
@@ -77,7 +96,8 @@ export class MetricStream {
       const end = found < 0 ? chunk.byteLength : found;
       const size = end - cursor;
       if (size > lineBytes - this.used) throw new MetricStreamError('line_limit');
-      this.frame.set(chunk.subarray(cursor, end), this.used); this.used += size;
+      this.frame.set(chunk.subarray(cursor, end), this.used);
+      this.used += size;
       cursor = end + 1;
       if (found >= 0) await this.record(signal);
     }
@@ -90,8 +110,11 @@ export class MetricStream {
     this.used = 0;
     if (point) {
       this.permitted(signal);
-      try { await this.options.point(point, signal); }
-      catch { throw new MetricStreamError(signal.aborted ? 'cancelled' : 'sink_failed'); }
+      try {
+        await this.options.point(point, signal);
+      } catch {
+        throw new MetricStreamError(signal.aborted ? 'cancelled' : 'sink_failed');
+      }
       this.permitted(signal);
     }
   }
@@ -99,14 +122,19 @@ export class MetricStream {
   finish(): Readonly<{ bytes: number; records: number }> {
     this.permitted();
     if (this.flight) throw new MetricStreamError('busy');
-    if (this.used) { this.poisoned = 'torn_record'; throw new MetricStreamError('torn_record'); }
+    if (this.used) {
+      this.poisoned = 'torn_record';
+      throw new MetricStreamError('torn_record');
+    }
     this.closed = true;
     return Object.freeze({ bytes: this.bytes, records: this.count });
   }
   /** A stalled issued sink remains outstanding; close does not invent quiescence. */
   close(): Promise<void> {
     this.closed = true;
-    this.closePromise ??= (this.flight ?? Promise.resolve()).finally(() => { this.frame.fill(0); });
+    this.closePromise ??= (this.flight ?? Promise.resolve()).finally(() => {
+      this.frame.fill(0);
+    });
     return this.closePromise;
   }
 }

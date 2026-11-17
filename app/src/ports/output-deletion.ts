@@ -10,7 +10,9 @@ export interface OutputDeletionRequest extends OutputDeletionIntent {
   readonly namespaceIdentity: string;
   readonly preparationIdentity: string;
 }
-export interface OutputDeletionReceipt extends OutputDeletionRequest {readonly phase: 'absent'}
+export interface OutputDeletionReceipt extends OutputDeletionRequest {
+  readonly phase: 'absent';
+}
 /** Same native instance/lease/token admission as OutputByteStore. A positive
  * receipt includes original closes and post-close namespace/absence checks.
  * Does not create deletion intent, mutate metadata or release storage charges.

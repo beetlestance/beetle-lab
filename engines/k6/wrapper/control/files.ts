@@ -23,21 +23,35 @@ export async function directoryPath(directory: string, io: JournalIo, operation:
   if (typeof directory !== 'string' || !isAbsolute(directory) || resolve(directory) !== directory) {
     throw new JournalError('untrusted_directory');
   }
-  const actual = await io.realpath(directory); operation.check();
-  const stat = await io.lstat(directory); operation.check();
-  if (actual !== directory || !stat.isDirectory() || stat.isSymbolicLink() || (stat.mode & 0o022) !== 0 ||
-      (process.getuid && stat.uid !== process.getuid())) throw new JournalError('untrusted_directory');
+  const actual = await io.realpath(directory);
+  operation.check();
+  const stat = await io.lstat(directory);
+  operation.check();
+  if (
+    actual !== directory ||
+    !stat.isDirectory() ||
+    stat.isSymbolicLink() ||
+    (stat.mode & 0o022) !== 0 ||
+    (process.getuid && stat.uid !== process.getuid())
+  )
+    throw new JournalError('untrusted_directory');
   return join(directory, 'control.ndjson');
 }
 
 export async function assertFile(file: JournalFile, operation: Operation): Promise<Stats> {
-  const stat = await file.stat(); operation.check();
-  if (!stat.isFile() || stat.nlink !== 1 || (stat.mode & 0o777) !== 0o600 ||
-      (process.getuid && stat.uid !== process.getuid())) throw new JournalError('unsafe_file');
+  const stat = await file.stat();
+  operation.check();
+  if (
+    !stat.isFile() ||
+    stat.nlink !== 1 ||
+    (stat.mode & 0o777) !== 0o600 ||
+    (process.getuid && stat.uid !== process.getuid())
+  )
+    throw new JournalError('unsafe_file');
   return stat;
 }
 
-export const freshFlags = constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL |
-  constants.O_NOFOLLOW | constants.O_NONBLOCK;
+export const freshFlags =
+  constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW | constants.O_NONBLOCK;
 export const readFlags = constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK;
 export const directoryFlags = constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW;

@@ -8,8 +8,8 @@ const port = parentPort;
 if (!port) throw new Error('Journal worker required');
 function startupCode(error: unknown): ErrorCode {
   if (error instanceof Failure) return error.code;
-  if (typeof error === 'object' && error !== null && 'errcode' in error &&
-    (error.errcode === 5 || error.errcode === 6)) return 'owned';
+  if (typeof error === 'object' && error !== null && 'errcode' in error && (error.errcode === 5 || error.errcode === 6))
+    return 'owned';
   return 'unavailable';
 }
 function start(): void {
@@ -17,7 +17,11 @@ function start(): void {
   try {
     const data = workerData as { path: string; spoolQuotaBytes: number };
     store = new Store(initialize(data.path), data.spoolQuotaBytes);
-  } catch (error) { port?.postMessage({ kind: 'startup_error', code: startupCode(error) } satisfies Reply); port?.close(); return; }
+  } catch (error) {
+    port?.postMessage({ kind: 'startup_error', code: startupCode(error) } satisfies Reply);
+    port?.close();
+    return;
+  }
   port?.on('message', (command: Command) => {
     try {
       const value = store.execute(command);
@@ -26,8 +30,13 @@ function start(): void {
     } catch (error) {
       const code = error instanceof Failure ? error.code : 'unavailable';
       const recovery = error instanceof Failure ? error.recovery : undefined;
-      port.postMessage({ kind: 'result', id: command.id, ok: false, code,
-        ...(recovery ? { recovery } : {}) } satisfies Reply);
+      port.postMessage({
+        kind: 'result',
+        id: command.id,
+        ok: false,
+        code,
+        ...(recovery ? { recovery } : {}),
+      } satisfies Reply);
     }
   });
   port?.postMessage({ kind: 'ready' } satisfies Reply);

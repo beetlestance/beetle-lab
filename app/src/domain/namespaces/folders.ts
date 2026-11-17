@@ -13,8 +13,10 @@ export interface FolderEvidence {
 
 export function checkedParentChain(scope: WorkspaceScope, evidence: FolderEvidence): readonly Folder[] {
   const { workspace, parentChain } = evidence;
-  requireRule(sameUuid(workspace.id, scope.workspaceId) &&
-    sameUuid(workspace.scope.organizationId, scope.organizationId), 'not_found');
+  requireRule(
+    sameUuid(workspace.id, scope.workspaceId) && sameUuid(workspace.scope.organizationId, scope.organizationId),
+    'not_found',
+  );
   requireRule(parentChain.length >= 1 && parentChain.length <= MAX_FOLDER_DEPTH);
   const seen = new Set<string>();
   parentChain.forEach((folder, index) => {
@@ -22,15 +24,21 @@ export function checkedParentChain(scope: WorkspaceScope, evidence: FolderEviden
     requireRule(!seen.has(folder.id.toLowerCase()));
     seen.add(folder.id.toLowerCase());
     const expectedParent = index === 0 ? null : parentChain[index - 1]?.id;
-    requireRule(expectedParent == null ? folder.parentFolderId === null :
-      folder.parentFolderId !== null && sameUuid(folder.parentFolderId, expectedParent));
+    requireRule(
+      expectedParent == null
+        ? folder.parentFolderId === null
+        : folder.parentFolderId !== null && sameUuid(folder.parentFolderId, expectedParent),
+    );
   });
   requireRule(sameUuid(parentChain[0]!.id, workspace.rootFolderId));
   return parentChain;
 }
 
 export function validateFolderPlacement(input: {
-  scope: WorkspaceScope; parentFolderId: string; moving?: Folder; evidence: FolderEvidence;
+  scope: WorkspaceScope;
+  parentFolderId: string;
+  moving?: Folder;
+  evidence: FolderEvidence;
 }): string[] {
   const { scope, parentFolderId, moving, evidence } = input;
   const chain = checkedParentChain(scope, evidence);
@@ -38,9 +46,9 @@ export function validateFolderPlacement(input: {
   if (moving) {
     requireRule(sameScope(moving.scope, scope), 'not_found');
     requireRule(!sameUuid(moving.id, evidence.workspace.rootFolderId) && moving.parentFolderId !== null);
-    requireRule(!chain.some(folder => sameUuid(folder.id, moving.id)));
+    requireRule(!chain.some((folder) => sameUuid(folder.id, moving.id)));
   }
   requireRule(Number.isSafeInteger(evidence.subtreeHeight) && evidence.subtreeHeight >= 0);
   requireRule(chain.length + 1 + evidence.subtreeHeight <= MAX_FOLDER_DEPTH);
-  return chain.map(folder => folder.name);
+  return chain.map((folder) => folder.name);
 }

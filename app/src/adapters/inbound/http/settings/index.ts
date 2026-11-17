@@ -17,19 +17,36 @@ export interface SettingsRouteOptions {
 export function registerSettingsRoutes(server: FastifyInstance, options: SettingsRouteOptions): void {
   if (typeof options.authorize !== 'function') throw new Error('Settings authorization guard required');
   const dependencies = Object.freeze({ ...options });
-  server.register(async scoped => {
+  server.register(async (scoped) => {
     scoped.addHook('onRequest', dependencies.authorize);
     registerApiOperation(scoped, 'getInstallationSettings', () =>
-      getSettings({ kind: 'installation' }, dependencies.reader));
+      getSettings({ kind: 'installation' }, dependencies.reader),
+    );
     registerApiOperation(scoped, 'patchInstallationSettings', ({ body }) =>
-      patchScopedSettings({ ...dependencies, scope: { kind: 'installation' }, request: body }));
+      patchScopedSettings({ ...dependencies, scope: { kind: 'installation' }, request: body }),
+    );
     registerApiOperation(scoped, 'getOrganizationSettings', ({ params }) =>
-      getSettings({ kind: 'organization', organizationId: params.organizationId }, dependencies.reader));
+      getSettings({ kind: 'organization', organizationId: params.organizationId }, dependencies.reader),
+    );
     registerApiOperation(scoped, 'patchOrganizationSettings', ({ params, body }) =>
-      patchScopedSettings({ ...dependencies, scope: { kind: 'organization', organizationId: params.organizationId }, request: body }));
-    registerApiOperation(scoped, 'getWorkspaceSettings', ({ params }) => getSettings({ kind: 'workspace',
-      organizationId: params.organizationId, workspaceId: params.workspaceId }, dependencies.reader));
-    registerApiOperation(scoped, 'patchWorkspaceSettings', ({ params, body }) => patchScopedSettings({
-      ...dependencies, scope: { kind: 'workspace', organizationId: params.organizationId, workspaceId: params.workspaceId }, request: body }));
+      patchScopedSettings({
+        ...dependencies,
+        scope: { kind: 'organization', organizationId: params.organizationId },
+        request: body,
+      }),
+    );
+    registerApiOperation(scoped, 'getWorkspaceSettings', ({ params }) =>
+      getSettings(
+        { kind: 'workspace', organizationId: params.organizationId, workspaceId: params.workspaceId },
+        dependencies.reader,
+      ),
+    );
+    registerApiOperation(scoped, 'patchWorkspaceSettings', ({ params, body }) =>
+      patchScopedSettings({
+        ...dependencies,
+        scope: { kind: 'workspace', organizationId: params.organizationId, workspaceId: params.workspaceId },
+        request: body,
+      }),
+    );
   });
 }

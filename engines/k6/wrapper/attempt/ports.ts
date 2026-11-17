@@ -7,5 +7,7 @@ export interface AttemptPorts {
   readonly openMailbox?: typeof openNativeMailbox;
   readonly clock: ExecutionClock;
 }
-export const productionPorts: AttemptPorts = Object.freeze({ execute: runCompiledK6,
-  clock: Object.freeze({ wall: Date.now, monotonic: performance.now.bind(performance) }) });
+export const productionPorts: AttemptPorts = Object.freeze({
+  execute: runCompiledK6,
+  clock: Object.freeze({ wall: Date.now, monotonic: performance.now.bind(performance) }),
+});

@@ -21,32 +21,57 @@ export interface RestoringState {
   complete(operationId: string, installedJournalAuthority: string): void;
   close(): void;
 }
-interface AcquiredState { readonly store: ControlStore; readonly state: Readonly<State> }
+interface AcquiredState {
+  readonly store: ControlStore;
+  readonly state: Readonly<State>;
+}
 function open(path: string, create: boolean, allowed: State['phase'][]): AcquiredState {
   const store = ControlStore.open(path, create);
   try {
     const state = store.snapshot();
     if (!allowed.includes(state.phase)) throw new InstallationStateError('recovery_required');
     return { store, state };
-  } catch (error) { store.close(); throw error; }
+  } catch (error) {
+    store.close();
+    throw error;
+  }
 }
 /** Opens a durable ready gate, exclusively held until the whole runtime drains. */
 export function openServingState(path: string): ServingState {
   const { store, state: initial } = open(path, false, ['ready']);
-  if (initial.phase !== 'ready') { store.close(); throw new InstallationStateError('recovery_required'); }
-  return Object.freeze({ journalAuthority: initial.authority,
+  if (initial.phase !== 'ready') {
+    store.close();
+    throw new InstallationStateError('recovery_required');
+  }
+  return Object.freeze({
+    journalAuthority: initial.authority,
     assertJournalAuthority: (actual: string) => {
-      authority(actual); const current = store.snapshot();
-      if (current.phase !== 'ready' || current.authority !== actual) throw new InstallationStateError('recovery_required');
-    }, close: () => store.close() });
+      authority(actual);
+      const current = store.snapshot();
+      if (current.phase !== 'ready' || current.authority !== actual)
+        throw new InstallationStateError('recovery_required');
+    },
+    close: () => store.close(),
+  });
 }
 function initialization({ store, state: initial }: AcquiredState): InitializingState {
-  if (initial.phase !== 'initializing') { store.close(); throw new InstallationStateError('recovery_required'); }
-  return Object.freeze({ operationId: initial.operationId,
+  if (initial.phase !== 'initializing') {
+    store.close();
+    throw new InstallationStateError('recovery_required');
+  }
+  return Object.freeze({
+    operationId: initial.operationId,
     complete: (journalAuthority: string) => {
       authority(journalAuthority);
-      store.transition('initializing', { phase: 'ready', operationId: null, authority: journalAuthority, pending: null });
-    }, close: () => store.close() });
+      store.transition('initializing', {
+        phase: 'ready',
+        operationId: null,
+        authority: journalAuthority,
+        pending: null,
+      });
+    },
+    close: () => store.close(),
+  });
 }
 /** Explicit new-installation operation; never called as fallback by serving startup. */
 export function initializeInstallationState(path: string): InitializingState {
@@ -64,17 +89,29 @@ export function openRestoringState(path: string): RestoringState {
     if (value.phase === 'initializing') throw new InstallationStateError('recovery_required');
     return value;
   };
-  return Object.freeze({ snapshot,
+  return Object.freeze({
+    snapshot,
     begin: (operationId: string) => {
-      authority(operationId); const current = snapshot();
+      authority(operationId);
+      const current = snapshot();
       if (current.phase !== 'ready') throw new InstallationStateError('recovery_required');
       const next = { phase: 'restoring' as const, operationId, authority: current.authority, pending: randomUUID() };
-      store.transition('ready', next); return Object.freeze(next);
-    }, complete: (operationId: string, installedJournalAuthority: string) => {
-      authority(operationId); authority(installedJournalAuthority); const current = snapshot();
-      if (current.phase !== 'restoring' || current.operationId !== operationId || current.pending !== installedJournalAuthority) {
+      store.transition('ready', next);
+      return Object.freeze(next);
+    },
+    complete: (operationId: string, installedJournalAuthority: string) => {
+      authority(operationId);
+      authority(installedJournalAuthority);
+      const current = snapshot();
+      if (
+        current.phase !== 'restoring' ||
+        current.operationId !== operationId ||
+        current.pending !== installedJournalAuthority
+      ) {
         throw new InstallationStateError('recovery_required');
       }
       store.transition('restoring', { phase: 'ready', operationId: null, authority: current.pending, pending: null });
-    }, close: () => store.close() });
+    },
+    close: () => store.close(),
+  });
 }

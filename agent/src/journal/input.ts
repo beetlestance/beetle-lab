@@ -1,4 +1,10 @@
-import { encodeCanonicalJson, encodeJson, RUNNER_MAXIMUM_OFFER_BYTES, validate, validatePrimitive } from '@beetle/contracts';
+import {
+  encodeCanonicalJson,
+  encodeJson,
+  RUNNER_MAXIMUM_OFFER_BYTES,
+  validate,
+  validatePrimitive,
+} from '@beetle/contracts';
 import type { Offer } from '@beetle/contracts';
 import type { AttemptKey, PageRequest, RunnableRequest } from './protocol.js';
 
@@ -21,28 +27,34 @@ export function offerInput(input: unknown): { json: string; canonical: string } 
 export function attemptKey(input: AttemptKey): AttemptKey {
   const copy = JSON.parse(encodeJson(input, 512)) as AttemptKey;
   const fields = [copy.attemptId, copy.organizationId, copy.workspaceId];
-  if (fields.some(value => !validatePrimitive('uuid', value).ok)) throw new Error('invalid_input');
+  if (fields.some((value) => !validatePrimitive('uuid', value).ok)) throw new Error('invalid_input');
   return { attemptId: copy.attemptId, organizationId: copy.organizationId, workspaceId: copy.workspaceId };
 }
 
 export function pageInput(input: PageRequest): PageRequest {
   const copy = JSON.parse(encodeJson(input, 128)) as PageRequest;
   if (!Number.isSafeInteger(copy.limit) || copy.limit < 1 || copy.limit > 100) throw new Error('invalid_input');
-  if (copy.cursor !== undefined && (!Number.isSafeInteger(copy.cursor) || copy.cursor < 0)) throw new Error('invalid_input');
+  if (copy.cursor !== undefined && (!Number.isSafeInteger(copy.cursor) || copy.cursor < 0))
+    throw new Error('invalid_input');
   return copy.cursor === undefined ? { limit: copy.limit } : { limit: copy.limit, cursor: copy.cursor };
 }
 
 function runnableBounds(copy: RunnableRequest): void {
   if (copy.lane === 'delivery') {
     if (copy.limit > 32) throw new Error('invalid_input');
-    if (copy.through !== undefined && (!Number.isSafeInteger(copy.through) || copy.through < 0)) throw new Error('invalid_input');
+    if (copy.through !== undefined && (!Number.isSafeInteger(copy.through) || copy.through < 0))
+      throw new Error('invalid_input');
   } else if (Object.hasOwn(copy, 'through')) throw new Error('invalid_input');
 }
 export function runnableInput(input: RunnableRequest): RunnableRequest {
   const copy = JSON.parse(encodeJson(input, 192)) as RunnableRequest;
   if (!['charged', 'queued', 'delivery'].includes(copy.lane)) throw new Error('invalid_input');
-  if (Object.keys(copy).some(key => !['lane', 'limit', 'cursor', 'through'].includes(key))) throw new Error('invalid_input');
+  if (Object.keys(copy).some((key) => !['lane', 'limit', 'cursor', 'through'].includes(key)))
+    throw new Error('invalid_input');
   runnableBounds(copy);
-  return { ...pageInput({ limit: copy.limit, ...(copy.cursor === undefined ? {} : { cursor: copy.cursor }) }), lane: copy.lane,
-    ...(copy.through === undefined ? {} : { through: copy.through }) };
+  return {
+    ...pageInput({ limit: copy.limit, ...(copy.cursor === undefined ? {} : { cursor: copy.cursor }) }),
+    lane: copy.lane,
+    ...(copy.through === undefined ? {} : { through: copy.through }),
+  };
 }

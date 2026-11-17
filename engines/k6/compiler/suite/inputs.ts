@@ -2,7 +2,10 @@ import { fail } from './failure.js';
 import { canonical, checkedDigest } from './identity.js';
 import { suiteLimits } from './limits.js';
 import type { Digest, InputRef, ValidatedCompileInput, ValidatedSuiteConfig } from './types.js';
-export interface LoadedInputs { content: ReadonlyMap<string, string>; refs: InputRef[] }
+export interface LoadedInputs {
+  content: ReadonlyMap<string, string>;
+  refs: InputRef[];
+}
 function references(config: ValidatedSuiteConfig): Map<string, InputRef> {
   const refs: InputRef[] = [];
   for (const dataset of config.datasets) if ('input' in dataset) refs.push(dataset.input);
@@ -32,11 +35,12 @@ export function loadInputs(config: ValidatedSuiteConfig, input: ValidatedCompile
     if (content.has(item.ref.id)) fail('conflicting_dependency', '/inputs');
     const ref = expected.get(item.ref.id);
     if (!ref || canonical(ref) !== canonical(item.ref)) fail('input_integrity', '/inputs');
-    const bytes = utf8Bytes(item.content); total += bytes;
+    const bytes = utf8Bytes(item.content);
+    total += bytes;
     if (total > suiteLimits.loadedBytes) fail('input_limit', '/inputs');
     if (bytes !== ref.bytes || checkedDigest(digest, item.content) !== ref.sha256) fail('input_integrity', '/inputs');
     content.set(ref.id, item.content);
   }
   if (content.size !== expected.size) fail('missing_dependency', '/inputs');
-  return { content, refs: [...expected.values()].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0) };
+  return { content, refs: [...expected.values()].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)) };
 }

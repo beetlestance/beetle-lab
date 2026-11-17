@@ -12,15 +12,23 @@ export async function getResult(key: RunKey, reader: RunResultReader | undefined
   if (!reader) throw new ApiFault('storage_unavailable');
   const original = await reader.getRunResult(key);
   let copy: unknown;
-  try { copy = JSON.parse(encodeJson(original, 73728)) as unknown; } catch { throw new ResponseContractError(); }
+  try {
+    copy = JSON.parse(encodeJson(original, 73728)) as unknown;
+  } catch {
+    throw new ResponseContractError();
+  }
   const checked = validateApi('RunResultSnapshot', copy);
   if (!checked.ok) throw new ResponseContractError();
   const value = checked.value;
   requireRule(value.id.toLowerCase() === key.id.toLowerCase() && sameScope(value.scope, key.scope), 'not_found');
   const result = value.result;
-  if (result !== null && (result.attemptId.toLowerCase() !== value.activeAttemptId.toLowerCase()
-    || result.organizationId.toLowerCase() !== value.scope.organizationId.toLowerCase()
-    || result.workspaceId.toLowerCase() !== value.scope.workspaceId.toLowerCase()
-    || result.generation !== 1)) throw new ResponseContractError();
+  if (
+    result !== null &&
+    (result.attemptId.toLowerCase() !== value.activeAttemptId.toLowerCase() ||
+      result.organizationId.toLowerCase() !== value.scope.organizationId.toLowerCase() ||
+      result.workspaceId.toLowerCase() !== value.scope.workspaceId.toLowerCase() ||
+      result.generation !== 1)
+  )
+    throw new ResponseContractError();
   return value;
 }

@@ -8,8 +8,11 @@ export interface RunnerOutputClient {
   /** Caller supplies the byte length from exactly one declared artifact in its
    * verified, matched envelope. This expectation is private, not a wire field.
    */
-  sourceChunk(request: SourceChunkRequest, artifactBytes: number,
-    signal?: AbortSignal): Promise<ClientResult<Owned<SourceChunk>>>;
+  sourceChunk(
+    request: SourceChunkRequest,
+    artifactBytes: number,
+    signal?: AbortSignal,
+  ): Promise<ClientResult<Owned<SourceChunk>>>;
 }
 
 /** Output facade shares the same installation connection and original-call owner. */

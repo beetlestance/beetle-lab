@@ -29,7 +29,9 @@ export interface StagedK6Receipt {
   readonly execution: ExecutionReceipt | null;
   readonly result: EngineResult | null;
   readonly publication: PublicationResult | null;
-  readonly quiescence: Readonly<Record<'input' | 'execution' | 'artifacts' | 'journal' | 'publication' | 'notifications', Quiescence>>;
+  readonly quiescence: Readonly<
+    Record<'input' | 'execution' | 'artifacts' | 'journal' | 'publication' | 'notifications', Quiescence>
+  >;
   readonly liveMetrics: AttemptLiveState;
   readonly notifications: 'complete' | 'disabled' | 'failed';
 }

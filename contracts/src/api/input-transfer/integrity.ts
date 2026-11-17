@@ -6,8 +6,8 @@ export async function hash(owner: Operation, body: Uint8Array<ArrayBuffer>): Pro
   owner.check();
   const bytes = new Uint8Array(value);
   if (bytes.length !== 32) throw new Error('digest');
-  return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 export async function digest(owner: Operation, body: Uint8Array<ArrayBuffer>, expected: string): Promise<void> {
-  if (await hash(owner, body) !== expected) throw new Error('integrity');
+  if ((await hash(owner, body)) !== expected) throw new Error('integrity');
 }

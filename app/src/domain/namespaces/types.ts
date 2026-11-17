@@ -1,6 +1,13 @@
 import type {
-  CreateFolderRequest, CreateOrganizationRequest, CreateWorkspaceRequest, Folder, Organization,
-  PatchFolderRequest, PatchOrganizationRequest, PatchWorkspaceRequest, Workspace,
+  CreateFolderRequest,
+  CreateOrganizationRequest,
+  CreateWorkspaceRequest,
+  Folder,
+  Organization,
+  PatchFolderRequest,
+  PatchOrganizationRequest,
+  PatchWorkspaceRequest,
+  Workspace,
 } from '@beetle/contracts/api';
 import type { FolderEvidence } from './folders.js';
 

@@ -12,17 +12,31 @@ export function sealable(input: K6ResultInput): boolean {
 }
 function causeReason(input: K6ResultInput): Reason | null {
   switch (input.process.cause) {
-    case null: return null;
-    case 'deadline': return 'timeout';
-    case 'profile': case 'spawn': return 'setup_failed';
-    case 'metric_limit': case 'diagnostic_limit': return 'output_limit';
-    case 'stream': case 'sink': return 'artifact_incomplete';
-    case 'clock': return 'invalid_protocol';
-    default: return 'engine_crash';
+    case null:
+      return null;
+    case 'deadline':
+      return 'timeout';
+    case 'profile':
+    case 'spawn':
+      return 'setup_failed';
+    case 'metric_limit':
+    case 'diagnostic_limit':
+      return 'output_limit';
+    case 'stream':
+    case 'sink':
+      return 'artifact_incomplete';
+    case 'clock':
+      return 'invalid_protocol';
+    default:
+      return 'engine_crash';
   }
 }
-export function execution(input: K6ResultInput, health: HealthEvidence, contradictory: boolean,
-  thresholds: ThresholdEvidence): Execution {
+export function execution(
+  input: K6ResultInput,
+  health: HealthEvidence,
+  contradictory: boolean,
+  thresholds: ThresholdEvidence,
+): Execution {
   const orchestration = orchestrationExecution(input);
   if (orchestration) return orchestration;
   const observation = { exitCode: input.process.exitCode, stoppedAt: input.terminalObservedAt };
@@ -30,8 +44,12 @@ export function execution(input: K6ResultInput, health: HealthEvidence, contradi
   const reason = errorReason(input, health, contradictory, thresholds);
   return reason ? { ...observation, status: 'error', reason } : { ...observation, status: 'completed' };
 }
-function errorReason(input: K6ResultInput, health: HealthEvidence, contradictory: boolean,
-  thresholds: ThresholdEvidence): Reason | null {
+function errorReason(
+  input: K6ResultInput,
+  health: HealthEvidence,
+  contradictory: boolean,
+  thresholds: ThresholdEvidence,
+): Reason | null {
   if (contradictory) return 'invalid_protocol';
   if (health.execution !== null && health.execution > 0) return 'engine_crash';
   const cause = causeReason(input);
@@ -42,11 +60,16 @@ function errorReason(input: K6ResultInput, health: HealthEvidence, contradictory
 function exitReason(input: K6ResultInput, health: HealthEvidence, thresholds: ThresholdEvidence): Reason | null {
   const code = input.process.exitCode;
   if (code === 0) return null;
-  const explained = thresholds.verdicts.some(item => !item.passed) || health.requiredFailure;
+  const explained = thresholds.verdicts.some((item) => !item.passed) || health.requiredFailure;
   return code === 99 && explained ? null : 'engine_crash';
 }
-export function outcome(input: { execution: Execution; assertions: AssertionEvidence; thresholds: ThresholdEvidence; health: HealthEvidence;
-  complete: boolean }): EngineResult['outcome'] {
+export function outcome(input: {
+  execution: Execution;
+  assertions: AssertionEvidence;
+  thresholds: ThresholdEvidence;
+  health: HealthEvidence;
+  complete: boolean;
+}): EngineResult['outcome'] {
   if (input.execution.status !== 'completed') return 'inconclusive';
   if (input.assertions.counts.failed > 0 || input.health.requiredFailure || input.thresholds.sloFailed) return 'failed';
   if (!input.complete) return 'inconclusive';

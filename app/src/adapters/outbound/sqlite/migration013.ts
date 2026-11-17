@@ -41,9 +41,9 @@ CREATE TRIGGER output_deletion_begin BEFORE INSERT ON output_deletion_intents BE
  AND r.active_attempt_id=NEW.attempt_id AND r.version=NEW.run_version AND r.state IN ('finished','cancelled','errored') AND r.outcome!='pending')
  THEN RAISE(ABORT,'deletion requires captured terminal original') END;
  SELECT CASE WHEN NOT ((NEW.kind='unsent' AND EXISTS(SELECT 1 FROM attempts a WHERE a.id=NEW.attempt_id AND ${unsentWitness}))
- OR (${settled('execution_output_finalizations','source','source_digest')}
+ OR (${settled('execution_output_finalizations', 'source', 'source_digest')}
  AND NEW.file_count=(SELECT count(*) FROM execution_output_slots WHERE attempt_id=NEW.attempt_id))
- OR (${settled('execution_output_absence_finalizations','absence','proof_digest')}))
+ OR (${settled('execution_output_absence_finalizations', 'absence', 'proof_digest')}))
  THEN RAISE(ABORT,'deletion requires settled custody') END;
 END;
 CREATE TRIGGER output_deletion_file_insert BEFORE INSERT ON output_deletion_files BEGIN

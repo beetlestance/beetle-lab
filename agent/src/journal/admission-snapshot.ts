@@ -24,8 +24,12 @@ function contractToken(value: unknown): boolean {
   return typeof value === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(value);
 }
 function sameScope(value: Scope, row: Row): void {
-  requireFact(value.attemptId === row.attempt_id && value.organizationId === row.organization_id
-    && value.workspaceId === row.workspace_id && value.generation === row.generation);
+  requireFact(
+    value.attemptId === row.attempt_id &&
+      value.organizationId === row.organization_id &&
+      value.workspaceId === row.workspace_id &&
+      value.generation === row.generation,
+  );
 }
 function parse(raw: unknown): unknown {
   requireFact(typeof raw === 'string');
@@ -40,15 +44,27 @@ function digest(value: unknown): boolean {
 function candidateBudget(item: Candidate): void {
   requireFact(item.resources && validResources(item.resources));
   keys(item.resources, resourceNames);
-  requireFact(resourceNames.every(name => item.resources[name] <= MAX_RESOURCE_VALUE));
+  requireFact(resourceNames.every((name) => item.resources[name] <= MAX_RESOURCE_VALUE));
   const budgetNames = ['cpuMillis', 'memoryBytes', 'pids', 'outputBytes', 'timeoutMs'] as const;
-  requireFact(item.budget); keys(item.budget, budgetNames);
-  requireFact(budgetNames.every(name => integer(item.budget[name]) && item.budget[name] > 0));
-  requireFact(budgetNames.filter(name => name !== 'timeoutMs').every(name => item.budget[name] === item.resources[name]));
+  requireFact(item.budget);
+  keys(item.budget, budgetNames);
+  requireFact(budgetNames.every((name) => integer(item.budget[name]) && item.budget[name] > 0));
+  requireFact(
+    budgetNames.filter((name) => name !== 'timeoutMs').every((name) => item.budget[name] === item.resources[name]),
+  );
   requireFact(supportedStaging(item.staging, item.resources.stagingBytes));
-  keys(item.staging, ['policyVersion', 'offerBytes', 'inputBytes', 'secretBytes', 'manifestBytes', 'metadataBytes', 'totalBytes', ...(item.assignment ? ['assignmentBytes'] : [])]);
+  keys(item.staging, [
+    'policyVersion',
+    'offerBytes',
+    'inputBytes',
+    'secretBytes',
+    'manifestBytes',
+    'metadataBytes',
+    'totalBytes',
+    ...(item.assignment ? ['assignmentBytes'] : []),
+  ]);
   if (item.assignment) {
-    keys(item.assignment,['purpose','assignmentDigest']);
+    keys(item.assignment, ['purpose', 'assignmentDigest']);
     requireFact(item.assignment.purpose === 'standalone_export' && digest(item.assignment.assignmentDigest));
     requireFact(integer(item.staging.assignmentBytes) && item.staging.assignmentBytes > 0);
   }
@@ -58,7 +74,11 @@ function candidateIdentity(item: Candidate): void {
   requireFact(engine && validation);
   keys(engine, ['id', 'imageDigest', 'configVersion']);
   keys(validation, ['manifestId', 'profileId', 'schemaDigest', 'configDigest', 'catalogVersion']);
-  requireFact(contractToken(engine.id) && typeof engine.imageDigest === 'string' && /^sha256:[a-f0-9]{64}$/.test(engine.imageDigest));
+  requireFact(
+    contractToken(engine.id) &&
+      typeof engine.imageDigest === 'string' &&
+      /^sha256:[a-f0-9]{64}$/.test(engine.imageDigest),
+  );
   requireFact(integer(engine.configVersion) && engine.configVersion > 0);
   requireFact(token(validation.manifestId) && token(validation.profileId));
   requireFact(digest(validation.schemaDigest) && digest(validation.configDigest));
@@ -66,45 +86,79 @@ function candidateIdentity(item: Candidate): void {
 }
 function queueCandidate(row: Row, raw: unknown): Candidate {
   const item = parse(raw) as Candidate;
-  requireFact(item && typeof item === 'object'); sameScope(item, row);
-  keys(item, ['attemptId', 'organizationId', 'workspaceId', 'generation', 'staging', 'resources', 'budget',
-    'mode', 'preferIdle', 'requiredCapabilities', 'engine', 'validation', 'queuedAt', 'order', ...(item.assignment ? ['assignment'] : [])]);
+  requireFact(item && typeof item === 'object');
+  sameScope(item, row);
+  keys(item, [
+    'attemptId',
+    'organizationId',
+    'workspaceId',
+    'generation',
+    'staging',
+    'resources',
+    'budget',
+    'mode',
+    'preferIdle',
+    'requiredCapabilities',
+    'engine',
+    'validation',
+    'queuedAt',
+    'order',
+    ...(item.assignment ? ['assignment'] : []),
+  ]);
   requireFact(item.queuedAt === null || integer(item.queuedAt));
   requireFact(item.order === 0 && typeof item.preferIdle === 'boolean');
   requireFact(item.mode === 'parallel' || item.mode === 'isolated');
   requireFact(Array.isArray(item.requiredCapabilities) && item.requiredCapabilities.length <= 64);
   requireFact(item.requiredCapabilities.every(contractToken));
-  candidateBudget(item); candidateIdentity(item);
+  candidateBudget(item);
+  candidateIdentity(item);
   return item;
 }
 function reservationShape(value: Reservation, candidate: Candidate): void {
   const { status, admittedAt } = value;
-  const privateFields = ['status', 'admittedAt', 'createToken', 'specDigest', 'runtimeId', 'startToken',
-    'launchEpoch', 'startClaimedAt', 'launchClosed', 'launchSettlement', 'aborted', 'releaseEvidence'];
+  const privateFields = [
+    'status',
+    'admittedAt',
+    'createToken',
+    'specDigest',
+    'runtimeId',
+    'startToken',
+    'launchEpoch',
+    'startClaimedAt',
+    'launchClosed',
+    'launchSettlement',
+    'aborted',
+    'releaseEvidence',
+  ];
   const stored = Object.fromEntries(Object.entries(value).filter(([name]) => !privateFields.includes(name)));
   requireFact(canonical(stored) === canonical(candidate));
   requireFact((status === 'charged' || status === 'released') && integer(admittedAt));
   requireFact(candidate.queuedAt === null || admittedAt >= candidate.queuedAt);
-  claimShape(value); launchShape(value);
+  claimShape(value);
+  launchShape(value);
 }
 function claimShape({ createToken, specDigest, runtimeId }: Reservation): void {
   requireFact(createToken === null || token(createToken));
-  requireFact(specDigest === null || typeof specDigest === 'string' && /^[a-f0-9]{64}$/.test(specDigest));
+  requireFact(specDigest === null || (typeof specDigest === 'string' && /^[a-f0-9]{64}$/.test(specDigest)));
   requireFact((createToken === null) === (specDigest === null));
-  requireFact(runtimeId === null || token(runtimeId) && createToken !== null);
+  requireFact(runtimeId === null || (token(runtimeId) && createToken !== null));
 }
 function launchShape(value: Reservation): void {
-  const { startToken, runtimeId, launchEpoch, startClaimedAt, admittedAt, launchClosed, aborted, launchSettlement } = value;
-  requireFact(startToken === null || token(startToken) && runtimeId !== null);
-  requireFact(startToken === null ? launchEpoch === 0 && startClaimedAt === null
-    : launchEpoch === 1 && integer(startClaimedAt) && startClaimedAt >= admittedAt);
+  const { startToken, runtimeId, launchEpoch, startClaimedAt, admittedAt, launchClosed, aborted, launchSettlement } =
+    value;
+  requireFact(startToken === null || (token(startToken) && runtimeId !== null));
+  requireFact(
+    startToken === null
+      ? launchEpoch === 0 && startClaimedAt === null
+      : launchEpoch === 1 && integer(startClaimedAt) && startClaimedAt >= admittedAt,
+  );
   requireFact(typeof launchClosed === 'boolean' && typeof aborted === 'boolean');
   requireFact(launchClosed === (aborted || launchSettlement !== null));
   dispositionShape(value);
 }
 function dispositionShape({ aborted, status, launchSettlement, releaseEvidence }: Reservation): void {
-  requireFact(!aborted || status === 'released' && launchSettlement === null && releaseEvidence === null);
-  requireFact(status !== 'charged' || releaseEvidence === null && !aborted);
+  requireFact(!aborted || (status === 'released' && launchSettlement === null && releaseEvidence === null));
+  requireFact(status !== 'charged' || (releaseEvidence === null && !aborted));
 }
 function reservationFact(value: Reservation, row: Row): AttemptAdmission {
   if (value.launchSettlement !== null) {
@@ -125,13 +179,21 @@ function reservationFact(value: Reservation, row: Row): AttemptAdmission {
 }
 function project(db: DatabaseSync, row: Row): AttemptAdmission | undefined {
   // SQLite bounds UTF-8 bytes before any payload crosses the native boundary.
-  const queue = db.prepare(`SELECT id,pending,
+  const queue = db
+    .prepare(
+      `SELECT id,pending,
     CASE WHEN length(CAST(candidate_json AS BLOB))<=16384 THEN candidate_json END AS candidate_json,
     CASE WHEN length(CAST(decision_json AS BLOB))<=512 THEN decision_json END AS decision_json,
-    decision_json IS NOT NULL AS has_decision FROM admission_queue WHERE attempt_id=?`).get(row.attempt_id);
-  const reserved = db.prepare(`SELECT charged,
+    decision_json IS NOT NULL AS has_decision FROM admission_queue WHERE attempt_id=?`,
+    )
+    .get(row.attempt_id);
+  const reserved = db
+    .prepare(
+      `SELECT charged,
     CASE WHEN length(CAST(reservation_json AS BLOB))<=32768 THEN reservation_json END AS reservation_json
-    FROM reservations WHERE attempt_id=?`).get(row.attempt_id);
+    FROM reservations WHERE attempt_id=?`,
+    )
+    .get(row.attempt_id);
   if (!queue && !reserved) return undefined;
   requireFact(queue && integer(queue.id) && queue.id > 0);
   const item = queueCandidate(row, queue.candidate_json);
@@ -146,7 +208,10 @@ function project(db: DatabaseSync, row: Row): AttemptAdmission | undefined {
   }
   return queueFact(queue, row);
 }
-function queueFact(queue: { pending?: unknown; has_decision?: unknown; decision_json?: unknown }, row: Row): AttemptAdmission {
+function queueFact(
+  queue: { pending?: unknown; has_decision?: unknown; decision_json?: unknown },
+  row: Row,
+): AttemptAdmission {
   if (queue.pending === 1) {
     requireFact(queue.has_decision === 0 && row.cancel_requested === 0);
     return { state: 'queued' };
@@ -162,6 +227,9 @@ function queueFact(queue: { pending?: unknown; has_decision?: unknown; decision_
 
 /** Stored corruption has no public fallback and grants no admission authority. */
 export function admissionSnapshot(db: DatabaseSync, row: Row): AttemptAdmission | undefined {
-  try { return freshRefusal(db, row) ?? project(db, row); }
-  catch { throw new Failure('unavailable'); }
+  try {
+    return freshRefusal(db, row) ?? project(db, row);
+  } catch {
+    throw new Failure('unavailable');
+  }
 }

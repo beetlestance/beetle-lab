@@ -3,12 +3,18 @@ import { OutputSourceError } from '@beetle/contracts/output-source';
 import { OutputTransferError } from '../../ports/output-transfer.js';
 import type { OutputTransferCode } from '../../ports/output-transfer.js';
 
-export function fail(code: OutputTransferCode): never { throw new OutputTransferError(code); }
+export function fail(code: OutputTransferCode): never {
+  throw new OutputTransferError(code);
+}
 export function requireTransfer(condition: unknown, code: OutputTransferCode = 'integrity'): asserts condition {
   if (!condition) fail(code);
 }
 export function safeError(error: unknown): OutputTransferError {
-  try { return classify(error); } catch { return new OutputTransferError('storage'); }
+  try {
+    return classify(error);
+  } catch {
+    return new OutputTransferError('storage');
+  }
 }
 function classify(error: unknown): OutputTransferError {
   if (error instanceof OutputTransferError) return transferError(error);
@@ -22,8 +28,19 @@ function classify(error: unknown): OutputTransferError {
   return new OutputTransferError('storage');
 }
 function transferError(error: OutputTransferError): OutputTransferError {
-  const codes: readonly OutputTransferCode[] = ['invalid_input', 'busy', 'closed', 'cancelled', 'source_unavailable',
-    'source_absent', 'transport', 'conflict', 'integrity', 'storage', 'cleanup'];
+  const codes: readonly OutputTransferCode[] = [
+    'invalid_input',
+    'busy',
+    'closed',
+    'cancelled',
+    'source_unavailable',
+    'source_absent',
+    'transport',
+    'conflict',
+    'integrity',
+    'storage',
+    'cleanup',
+  ];
   return new OutputTransferError(codes.includes(error.code) ? error.code : 'storage');
 }
 function metadataError(error: Error): OutputTransferError {
@@ -32,11 +49,18 @@ function metadataError(error: Error): OutputTransferError {
 }
 
 function byteError(error: OutputByteError): OutputTransferError {
-    switch (error.code) {
-      case 'busy': return new OutputTransferError('busy');
-      case 'cleanup': return new OutputTransferError('cleanup');
-      case 'cancelled': case 'deadline': return new OutputTransferError('cancelled');
-      case 'integrity': case 'custody_missing': return new OutputTransferError('integrity');
-      default: return new OutputTransferError('storage');
-    }
+  switch (error.code) {
+    case 'busy':
+      return new OutputTransferError('busy');
+    case 'cleanup':
+      return new OutputTransferError('cleanup');
+    case 'cancelled':
+    case 'deadline':
+      return new OutputTransferError('cancelled');
+    case 'integrity':
+    case 'custody_missing':
+      return new OutputTransferError('integrity');
+    default:
+      return new OutputTransferError('storage');
+  }
 }

@@ -1,5 +1,5 @@
 /** Preserve pending rejected receipts verbatim while adding genuine C1 never-started authority. */
-export const migration026=`
+export const migration026 = `
 ALTER TABLE rejected_cleanup_receipts RENAME TO output_no_task_cleanup_receipts;
 DROP TRIGGER no_task_receipt_retained;
 CREATE TRIGGER no_task_receipt_retained BEFORE DELETE ON output_no_task_cleanup_receipts

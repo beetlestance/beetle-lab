@@ -1,7 +1,25 @@
-const match = ['attempt_id','run_id','organization_id','workspace_id','intent_digest','journal_authority','generation',
-  'source_digest','manifest_digest','final_agent_seq','retained_payload_bytes','run_version','state','outcome','validation_status','reason']
-  .map(name => `v.${name} IS NEW.${name}`).join(' AND ');
-const finalized = (row = 'NEW') => `EXISTS(SELECT 1 FROM execution_output_finalizations WHERE attempt_id=${row}.attempt_id)`;
+const match = [
+  'attempt_id',
+  'run_id',
+  'organization_id',
+  'workspace_id',
+  'intent_digest',
+  'journal_authority',
+  'generation',
+  'source_digest',
+  'manifest_digest',
+  'final_agent_seq',
+  'retained_payload_bytes',
+  'run_version',
+  'state',
+  'outcome',
+  'validation_status',
+  'reason',
+]
+  .map((name) => `v.${name} IS NEW.${name}`)
+  .join(' AND ');
+const finalized = (row = 'NEW') =>
+  `EXISTS(SELECT 1 FROM execution_output_finalizations WHERE attempt_id=${row}.attempt_id)`;
 /** The receipt is the sole credit authority; no mutable allocation or applied flag. */
 export const finalizationGuards = `
 CREATE TRIGGER finalization_insert BEFORE INSERT ON execution_output_finalizations BEGIN

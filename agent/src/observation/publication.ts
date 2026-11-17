@@ -9,7 +9,11 @@ function freeze(value: unknown): void {
   Object.freeze(value);
 }
 /** Owns only the publisher's private copied observation, never the observer input. */
-export function publication(observation: RuntimeObservation, sampleStartedAtMs: number, ttlMs: number): PublishedObservation {
+export function publication(
+  observation: RuntimeObservation,
+  sampleStartedAtMs: number,
+  ttlMs: number,
+): PublishedObservation {
   const expiresAtMs = sampleStartedAtMs + ttlMs;
   if (!validWall(sampleStartedAtMs) || !validWall(expiresAtMs)) throw new Error('invalid_publication');
   const frame = { sampleStartedAtMs, expiresAtMs, observation };

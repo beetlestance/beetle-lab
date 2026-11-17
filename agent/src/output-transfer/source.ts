@@ -10,36 +10,56 @@ import { OutputTransferError } from './errors.js';
 
 const digest = (text: string): string => createHash('sha256').update(text, 'utf8').digest('hex');
 function matches(value: Readonly<Scope>, key: Readonly<Scope>): boolean {
-  return (['organizationId', 'workspaceId', 'attemptId', 'generation'] as const).every(field => value[field] === key[field]);
+  return (['organizationId', 'workspaceId', 'attemptId', 'generation'] as const).every(
+    (field) => value[field] === key[field],
+  );
 }
 function proveSource(source: PrivateSource, key: Readonly<Scope>, authority: string): void {
   try {
     const receipt = receiptForOutputSource(source, digest);
     if (receipt.journalAuthority !== authority || !matches(receipt.key, key)) throw new Error();
-  } catch { throw new OutputTransferError('unavailable'); }
+  } catch {
+    throw new OutputTransferError('unavailable');
+  }
 }
-function publicSource(source: PrivateSource,
-  closure: NonNullable<Awaited<ReturnType<OutputSourceReaderOptions['journal']['readOutputDelivery']>>>): Owned<SourceEnvelope> {
+function publicSource(
+  source: PrivateSource,
+  closure: NonNullable<Awaited<ReturnType<OutputSourceReaderOptions['journal']['readOutputDelivery']>>>,
+): Owned<SourceEnvelope> {
   try {
-    return verifySourceEnvelope({ version: 1, manifest: source.manifest, sourceDigest: source.sourceDigest, closure }, digest);
-  } catch { throw new OutputTransferError('unavailable'); }
+    return verifySourceEnvelope(
+      { version: 1, manifest: source.manifest, sourceDigest: source.sourceDigest, closure },
+      digest,
+    );
+  } catch {
+    throw new OutputTransferError('unavailable');
+  }
 }
 
-export async function readSource(journal: OutputSourceReaderOptions['journal'], key: Readonly<Scope>, budget: Budget)
-  : Promise<{ source: PrivateSource; envelope: Owned<SourceEnvelope> }> {
-  budget.check(); const authority = await journal.journalAuthority(); budget.check();
-  let source = await journal.readOutputSource(key); budget.check();
+export async function readSource(
+  journal: OutputSourceReaderOptions['journal'],
+  key: Readonly<Scope>,
+  budget: Budget,
+): Promise<{ source: PrivateSource; envelope: Owned<SourceEnvelope> }> {
+  budget.check();
+  const authority = await journal.journalAuthority();
+  budget.check();
+  let source = await journal.readOutputSource(key);
+  budget.check();
   if (source === null) {
-    const snapshot = await journal.get(key); budget.check();
+    const snapshot = await journal.get(key);
+    budget.check();
     if (!matches(snapshot, key)) throw new OutputTransferError('unavailable');
     const terminal = snapshot.admission?.state === 'released' || snapshot.admission?.state === 'rejected';
     if (!terminal) throw new OutputTransferError('pending');
     // Only absence observed after the terminal fact can prove source-free release.
-    source = await journal.readOutputSource(key); budget.check();
+    source = await journal.readOutputSource(key);
+    budget.check();
     if (source === null) throw new OutputTransferError('unavailable');
   }
   proveSource(source, key, authority);
-  const closure = await journal.readOutputDelivery(key); budget.check();
+  const closure = await journal.readOutputDelivery(key);
+  budget.check();
   if (closure === null) throw new OutputTransferError('pending');
   return { source, envelope: publicSource(source, closure) };
 }

@@ -1,5 +1,9 @@
-import { EVENT_MAX_RETAINED_BYTES, EVENT_MAX_RETAINED_ROWS, EVENT_RECORD_BYTES,
-  EVENT_ROW_ALLOWANCE } from '../../../domain/events/index.js';
+import {
+  EVENT_MAX_RETAINED_BYTES,
+  EVENT_MAX_RETAINED_ROWS,
+  EVENT_RECORD_BYTES,
+  EVENT_ROW_ALLOWANCE,
+} from '../../../domain/events/index.js';
 
 /** Durable contiguous events remain pending independently of CPU/RAM release. */
 export const migration007 = `

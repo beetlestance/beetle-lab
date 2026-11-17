@@ -1,13 +1,23 @@
 import { boundedUniqueJson } from './json.js';
 const resultPath = "CASE NEW.kind WHEN 'result' THEN '$' ELSE '$.result' END";
-const identity = (['organizationId', 'workspaceId', 'attemptId'] as const).map(field => {
-  const column = { organizationId: 'organization_id', workspaceId: 'workspace_id', attemptId: 'attempt_id' }[field];
-  return `json_extract(NEW.canonical_json,${resultPath}||'.${field}') IS e.${column}`;
-}).join(' AND ');
-const manifestBinding = (['organizationId', 'workspaceId', 'attemptId', 'intentDigest', 'journalAuthority'] as const).map(field => {
-  const column = { organizationId: 'organization_id', workspaceId: 'workspace_id', attemptId: 'attempt_id', intentDigest: 'intent_digest', journalAuthority: 'journal_authority' }[field];
-  return `json_extract(NEW.canonical_json,'$.binding.${field}') IS e.${column}`;
-}).join(' AND ');
+const identity = (['organizationId', 'workspaceId', 'attemptId'] as const)
+  .map((field) => {
+    const column = { organizationId: 'organization_id', workspaceId: 'workspace_id', attemptId: 'attempt_id' }[field];
+    return `json_extract(NEW.canonical_json,${resultPath}||'.${field}') IS e.${column}`;
+  })
+  .join(' AND ');
+const manifestBinding = (['organizationId', 'workspaceId', 'attemptId', 'intentDigest', 'journalAuthority'] as const)
+  .map((field) => {
+    const column = {
+      organizationId: 'organization_id',
+      workspaceId: 'workspace_id',
+      attemptId: 'attempt_id',
+      intentDigest: 'intent_digest',
+      journalAuthority: 'journal_authority',
+    }[field];
+    return `json_extract(NEW.canonical_json,'$.binding.${field}') IS e.${column}`;
+  })
+  .join(' AND ');
 function bodyGuard(): string {
   return `SELECT CASE WHEN NOT EXISTS(SELECT 1 FROM execution_records e JOIN attempt_output_allocations a ON a.attempt_id=e.attempt_id
    WHERE e.attempt_id=NEW.attempt_id AND e.journal_authority IS NOT NULL AND ${identity}

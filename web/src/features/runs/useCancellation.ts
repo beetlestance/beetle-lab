@@ -7,7 +7,8 @@ import type { RunScope } from './types.js';
 
 /** One retained cancellation intent; retirement fences callbacks, never proves stop. */
 export function useCancellation(scope: RunScope & { runId: string }) {
-  const api = useApi(); const client = useQueryClient();
+  const api = useApi();
+  const client = useQueryClient();
   const owner = useRef({ active: true, busy: false, controller: new AbortController() });
   const original = useRef<CancelRunRequest | null>(null);
   const [pending, setPending] = useState(false);
@@ -17,9 +18,16 @@ export function useCancellation(scope: RunScope & { runId: string }) {
   const { organizationId, workspaceId, runId } = scope;
   useEffect(() => {
     const current = { active: true, busy: false, controller: new AbortController() };
-    owner.current = current; original.current = null;
-    setPending(false); setUnknown(false); setAccepted(false); setMessage(null);
-    return () => { current.active = false; current.controller.abort(); };
+    owner.current = current;
+    original.current = null;
+    setPending(false);
+    setUnknown(false);
+    setAccepted(false);
+    setMessage(null);
+    return () => {
+      current.active = false;
+      current.controller.abort();
+    };
   }, [api, organizationId, workspaceId, runId]);
 
   async function request() {
@@ -27,16 +35,32 @@ export function useCancellation(scope: RunScope & { runId: string }) {
     if (!current.active || current.busy || accepted) return;
     original.current ??= { scope: { kind: 'workspace', organizationId, workspaceId }, requestId: crypto.randomUUID() };
     const body = original.current;
-    current.busy = true; current.controller = new AbortController();
-    setPending(true); setUnknown(false); setMessage(null);
+    current.busy = true;
+    current.controller = new AbortController();
+    setPending(true);
+    setUnknown(false);
+    setMessage(null);
     let reply;
-    try { reply = await api.cancelRun({ params: { organizationId, workspaceId, runId }, body, signal: current.controller.signal }); }
-    catch { reply = { ok: false as const, error: { kind: 'transport' as const } }; }
+    try {
+      reply = await api.cancelRun({
+        params: { organizationId, workspaceId, runId },
+        body,
+        signal: current.controller.signal,
+      });
+    } catch {
+      reply = { ok: false as const, error: { kind: 'transport' as const } };
+    }
     if (!current.active) return;
-    current.busy = false; setPending(false);
+    current.busy = false;
+    setPending(false);
     if (!reply.ok) {
-      const uncertain = unknownOutcome(reply.error); setUnknown(uncertain);
-      setMessage(uncertain ? 'Cancellation outcome is unknown. Refresh the run or retry the same request.' : errorMessage(reply.error));
+      const uncertain = unknownOutcome(reply.error);
+      setUnknown(uncertain);
+      setMessage(
+        uncertain
+          ? 'Cancellation outcome is unknown. Refresh the run or retry the same request.'
+          : errorMessage(reply.error),
+      );
       return;
     }
     setAccepted(true);

@@ -13,9 +13,10 @@ function scopedRecord(scope: SettingsScope, chain: SettingsChain): SettingsRecor
   return record;
 }
 
-function updatedChain(command: SettingsCommand, chain: SettingsChain): {
-  chain: SettingsChain; current: SettingsRecord; next: SettingsRecord;
-} {
+function updatedChain(
+  command: SettingsCommand,
+  chain: SettingsChain,
+): { chain: SettingsChain; current: SettingsRecord; next: SettingsRecord } {
   const { request } = command;
   const current = scopedRecord(request.scope, chain);
   requireRule(sameUuid(current.id, command.id), 'not_found');
@@ -32,8 +33,7 @@ function updatedChain(command: SettingsCommand, chain: SettingsChain): {
   const patch = request.patch as Extract<SettingsRequest, { scope: { kind: 'organization' | 'workspace' } }>['patch'];
   const next = { ...current, version, overrides: patchScopedOverrides(current.overrides, patch) };
   if (next.scope.kind === 'organization') {
-    return { current, next, chain: { installation: chain.installation,
-      organization: { ...next, scope: next.scope } } };
+    return { current, next, chain: { installation: chain.installation, organization: { ...next, scope: next.scope } } };
   }
   requireRule(next.scope.kind === 'workspace');
   return { current, next, chain: { ...chain, workspace: { ...next, scope: next.scope } } };
@@ -42,8 +42,10 @@ function updatedChain(command: SettingsCommand, chain: SettingsChain): {
 export function decideSettingsChange(command: SettingsCommand, evidence: SettingsEvidence): SettingsChange {
   const { chain, current, next } = updatedChain(command, evidence.chain);
   const effective = resolveEffectiveSettings({ scope: command.request.scope, chain, runtime: evidence.runtime });
-  const admission = 'values' in current && 'values' in next && poolLowered(current.values.pool, next.values.pool)
-    ? 'drain' : 'unchanged';
+  const admission =
+    'values' in current && 'values' in next && poolLowered(current.values.pool, next.values.pool)
+      ? 'drain'
+      : 'unchanged';
   const settings = { ...next, effective };
   return immutableSnapshot({ settings, admission });
 }

@@ -25,12 +25,16 @@ export class Boundary {
   private deadline: number;
   private wallCheck: (() => void) | undefined;
   constructor(operation: Operation) {
-    if (operation.signal !== undefined && !(operation.signal instanceof AbortSignal)) throw new StagingError('invalid_input');
+    if (operation.signal !== undefined && !(operation.signal instanceof AbortSignal))
+      throw new StagingError('invalid_input');
     if (!Number.isFinite(operation.deadline)) throw new StagingError('invalid_input');
     this.deadline = Math.min(operation.deadline, performance.now() + 30_000);
     this.external = operation.signal;
     this.signal = this.controller.signal;
-    this.timer = setTimeout(() => this.fail(new StagingError('deadline')), Math.max(0, this.deadline - performance.now()));
+    this.timer = setTimeout(
+      () => this.fail(new StagingError('deadline')),
+      Math.max(0, this.deadline - performance.now()),
+    );
     this.external?.addEventListener('abort', this.abort, { once: true });
     if (this.external?.aborted) this.abort();
   }
@@ -38,7 +42,10 @@ export class Boundary {
     let last = now();
     this.deadline = Math.min(this.deadline, performance.now() + Math.max(0, deadlineMs - last));
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => this.fail(new StagingError('deadline')), Math.max(0, this.deadline - performance.now()));
+    this.timer = setTimeout(
+      () => this.fail(new StagingError('deadline')),
+      Math.max(0, this.deadline - performance.now()),
+    );
     this.wallCheck = () => {
       const current = now();
       if (!Number.isSafeInteger(current) || current < last) this.fail(new StagingError('clock_fenced'));
@@ -52,7 +59,10 @@ export class Boundary {
     if (performance.now() >= this.deadline) this.fail(new StagingError('deadline'));
     if (this.failed) throw this.failed;
   }
-  fail(error: StagingError): void { this.failed ??= error; this.controller.abort(); }
+  fail(error: StagingError): void {
+    this.failed ??= error;
+    this.controller.abort();
+  }
   async wait<T>(issue: () => Promise<T>): Promise<T> {
     this.check();
     const work = issue();
@@ -65,12 +75,23 @@ export class Boundary {
     });
     try {
       const result = await Promise.race([work, stopped]);
-      this.pending = undefined; this.check(); return result;
-    } finally { this.signal.removeEventListener('abort', abort); }
+      this.pending = undefined;
+      this.check();
+      return result;
+    } finally {
+      this.signal.removeEventListener('abort', abort);
+    }
   }
   async drain(): Promise<void> {
-    try { await this.pending; } catch { /* Failure is already reflected in the result; await proves quiescence. */ }
+    try {
+      await this.pending;
+    } catch {
+      /* Failure is already reflected in the result; await proves quiescence. */
+    }
     this.pending = undefined;
   }
-  dispose(): void { clearTimeout(this.timer); this.external?.removeEventListener('abort', this.abort); }
+  dispose(): void {
+    clearTimeout(this.timer);
+    this.external?.removeEventListener('abort', this.abort);
+  }
 }

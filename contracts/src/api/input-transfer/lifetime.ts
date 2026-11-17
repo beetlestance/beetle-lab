@@ -16,7 +16,11 @@ export class Operation {
   private readonly onCaller = () => this.abort('cancelled');
   private readonly onAbort = () => this.cancel();
 
-  constructor() { this.done = new Promise(resolve => { this.resolve = resolve; }); }
+  constructor() {
+    this.done = new Promise((resolve) => {
+      this.resolve = resolve;
+    });
+  }
   start(caller: AbortSignal | undefined, timeout: number): void {
     this.controller.signal.addEventListener('abort', this.onAbort, { once: true });
     this.caller = caller;
@@ -29,7 +33,9 @@ export class Operation {
     this.cause = cause;
     this.controller.abort();
   }
-  check(): void { if (this.cause) throw new Error('interrupted'); }
+  check(): void {
+    if (this.cause) throw new Error('interrupted');
+  }
   failure(fallback: InputTransferFailure['kind']): InputTransferFailure {
     return { kind: this.cause ?? fallback };
   }
@@ -49,16 +55,29 @@ export class Operation {
     if (!this.reader || this.cancelling) return;
     this.cancelling = true;
     try {
-      this.cancellation = Promise.resolve(this.reader.cancel()).then(() => undefined, () => { this.cleanupFailed = true; });
-    } catch { this.cleanupFailed = true; }
+      this.cancellation = Promise.resolve(this.reader.cancel()).then(
+        () => undefined,
+        () => {
+          this.cleanupFailed = true;
+        },
+      );
+    } catch {
+      this.cleanupFailed = true;
+    }
   }
   async finish(success: boolean): Promise<void> {
     if (!success) this.cancel();
     if (this.cancellation) await this.cancellation;
-    try { this.reader?.releaseLock(); } catch { this.cleanupFailed = true; }
+    try {
+      this.reader?.releaseLock();
+    } catch {
+      this.cleanupFailed = true;
+    }
     if (this.timer !== undefined) clearTimeout(this.timer);
     this.caller?.removeEventListener('abort', this.onCaller);
     this.controller.signal.removeEventListener('abort', this.onAbort);
   }
-  retire(): void { this.resolve(); }
+  retire(): void {
+    this.resolve();
+  }
 }

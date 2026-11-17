@@ -1,8 +1,8 @@
 import { checkHistoricalNative } from './historical-native.js';
 import { markHistorical } from './historical.js';
-import {migration029} from './migration029.js';
-import {migration028} from './migration028.js';
-import {migration027} from './migration027.js';
+import { migration029 } from './migration029.js';
+import { migration028 } from './migration028.js';
+import { migration027 } from './migration027.js';
 import { migration026 } from './migration026.js';
 import { migrate025 } from './migration025.js';
 import { registerRetentionAccounting } from './retention-accounting-guard/index.js';
@@ -19,7 +19,7 @@ import { migration019 } from './migration019.js';
 import { migration018 } from './migration018.js';
 import { registerHistoryValidation } from './run-history/values.js';
 import { migration017 } from './migration017.js';
-import {migration016} from './migration016.js';
+import { migration016 } from './migration016.js';
 import { migration015 } from './migration015.js';
 import { migration014 } from './migration014.js';
 import { migration013 } from './migration013.js';
@@ -94,56 +94,106 @@ export { transaction } from './transaction.js';
 export function initialize(path: string): DatabaseSync {
   const db = new DatabaseSync(path, { timeout: 100, enableForeignKeyConstraints: true, defensive: true });
   try {
-    db.exec('PRAGMA busy_timeout=100; PRAGMA cache_size=-2048; PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; COMMIT;');
+    db.exec(
+      'PRAGMA busy_timeout=100; PRAGMA cache_size=-2048; PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; COMMIT;',
+    );
     const version = db.prepare('PRAGMA user_version').get()?.user_version;
     if (typeof version !== 'number' || version > METADATA_SCHEMA_VERSION) throw new StorageError('schema_newer');
     db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; PRAGMA temp_store=MEMORY;');
     registerConnection(db);
     applyMigrations(db, version);
     return db;
-  } catch (error) { db.close(); throw error; }
+  } catch (error) {
+    db.close();
+    throw error;
+  }
 }
 
 /** Each schema step retains its own atomic boundary and original version ordering. */
 function applyMigrations(db: DatabaseSync, version: number): void {
   const steps: readonly (() => void)[] = [
-    () => db.exec(migration001), () => db.exec(migration002), () => migrate003(db),
-    () => db.exec(migration004), () => db.exec(migration005), () => db.exec(migration006),
-    () => db.exec(migration007), () => migrate008(db), () => db.exec(migration009), () => db.exec(migration010), () => db.exec(migration011), () => db.exec(migration012), () => db.exec(migration013), () => db.exec(migration014), () => db.exec(migration015), () => db.exec(migration016), () => db.exec(migration017), () => db.exec(migration018), () => db.exec(migration019), () => migrate020(db), () => db.exec(migration021), () => db.exec(migration022), () => db.exec(migration023), () => db.exec(migration024), () => migrate025(db), () => db.exec(migration026), () => db.exec(migration027), () => db.exec(migration028), () => db.exec(migration029),
+    () => db.exec(migration001),
+    () => db.exec(migration002),
+    () => migrate003(db),
+    () => db.exec(migration004),
+    () => db.exec(migration005),
+    () => db.exec(migration006),
+    () => db.exec(migration007),
+    () => migrate008(db),
+    () => db.exec(migration009),
+    () => db.exec(migration010),
+    () => db.exec(migration011),
+    () => db.exec(migration012),
+    () => db.exec(migration013),
+    () => db.exec(migration014),
+    () => db.exec(migration015),
+    () => db.exec(migration016),
+    () => db.exec(migration017),
+    () => db.exec(migration018),
+    () => db.exec(migration019),
+    () => migrate020(db),
+    () => db.exec(migration021),
+    () => db.exec(migration022),
+    () => db.exec(migration023),
+    () => db.exec(migration024),
+    () => migrate025(db),
+    () => db.exec(migration026),
+    () => db.exec(migration027),
+    () => db.exec(migration028),
+    () => db.exec(migration029),
   ];
-  steps.forEach((step, index) => { if (version <= index) transaction(db, step); });
+  steps.forEach((step, index) => {
+    if (version <= index) transaction(db, step);
+  });
 }
 
 function registerConnection(db: DatabaseSync): void {
-    registerBackendSettlement(db);
-    registerRetentionAccounting(db);
-    registerCleanupAckValidation(db);
-    registerAbsenceValidation(db);
-    registerHistoryValidation(db);
-    registerSearchFold(db);
+  registerBackendSettlement(db);
+  registerRetentionAccounting(db);
+  registerCleanupAckValidation(db);
+  registerAbsenceValidation(db);
+  registerHistoryValidation(db);
+  registerSearchFold(db);
 }
 /** Exact-schema archive reads only: no initialization, migration, or authority repair. */
 export function initializeHistorical(path: string, expectedNativeIdentity?: string): DatabaseSync {
   checkHistoricalNative(path, expectedNativeIdentity);
-  const db = new DatabaseSync(path, {readOnly: true, timeout: 100, enableForeignKeyConstraints: true, defensive: true});
+  const db = new DatabaseSync(path, {
+    readOnly: true,
+    timeout: 100,
+    enableForeignKeyConstraints: true,
+    defensive: true,
+  });
   try {
     checkHistoricalNative(path, expectedNativeIdentity);
-    db.exec('PRAGMA busy_timeout=100; PRAGMA query_only=ON; PRAGMA cache_size=-2048; PRAGMA mmap_size=0; PRAGMA temp_store=MEMORY;');
-    if (db.prepare('PRAGMA user_version').get()?.user_version !== METADATA_SCHEMA_VERSION) throw new StorageError('schema_newer');
-    registerConnection(db); markHistorical(db); return db;
-  } catch (error) {db.close(); throw error;}
+    db.exec(
+      'PRAGMA busy_timeout=100; PRAGMA query_only=ON; PRAGMA cache_size=-2048; PRAGMA mmap_size=0; PRAGMA temp_store=MEMORY;',
+    );
+    if (db.prepare('PRAGMA user_version').get()?.user_version !== METADATA_SCHEMA_VERSION)
+      throw new StorageError('schema_newer');
+    registerConnection(db);
+    markHistorical(db);
+    return db;
+  } catch (error) {
+    db.close();
+    throw error;
+  }
 }
 
 /** Offline copied database only. Registers real guards; never disables triggers. */
 export function scrubHistoricalCredentials(db: DatabaseSync): void {
-  if (db.prepare('PRAGMA user_version').get()?.user_version !== METADATA_SCHEMA_VERSION) throw new StorageError('schema_newer');
+  if (db.prepare('PRAGMA user_version').get()?.user_version !== METADATA_SCHEMA_VERSION)
+    throw new StorageError('schema_newer');
   registerConnection(db);
   db.exec('PRAGMA secure_delete=ON; PRAGMA temp_store=FILE; DELETE FROM local_browser_session; VACUUM;');
 }
 
 /** Existing exact-schema database under both offline startup leases. No migration or repair. */
 export function prepareColdMetadataChange(db: DatabaseSync): void {
-  if (db.prepare('PRAGMA user_version').get()?.user_version !== METADATA_SCHEMA_VERSION
-    || db.prepare('PRAGMA query_only').get()?.query_only !== 0) throw new StorageError('unavailable');
+  if (
+    db.prepare('PRAGMA user_version').get()?.user_version !== METADATA_SCHEMA_VERSION ||
+    db.prepare('PRAGMA query_only').get()?.query_only !== 0
+  )
+    throw new StorageError('unavailable');
   registerConnection(db);
 }

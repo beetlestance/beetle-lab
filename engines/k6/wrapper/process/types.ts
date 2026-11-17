@@ -2,9 +2,20 @@ import type { NativeDiagnostics } from '@beetle/contracts/k6-diagnostics';
 import type { NativeWarnings } from '@beetle/contracts/k6-warnings';
 import type { AttemptBudget } from '../../runtime/index.js';
 
-export type ProcessCause = 'cancelled' | 'closed' | 'deadline' | 'clock' | 'profile'
-  | 'spawn' | 'child_error' | 'metric_limit' | 'diagnostic_limit' | 'stream' | 'sink'
-  | 'descendants' | 'drain_timeout';
+export type ProcessCause =
+  | 'cancelled'
+  | 'closed'
+  | 'deadline'
+  | 'clock'
+  | 'profile'
+  | 'spawn'
+  | 'child_error'
+  | 'metric_limit'
+  | 'diagnostic_limit'
+  | 'stream'
+  | 'sink'
+  | 'descendants'
+  | 'drain_timeout';
 export interface MetricDelivery {
   readonly signal: AbortSignal;
   readonly deadlineMs: number;
@@ -43,5 +54,8 @@ export interface NativeProcess {
   close(): Promise<void>;
 }
 export class ProcessBoundaryError extends Error {
-  constructor(readonly code: 'profile' | 'clock' | 'deadline') { super(code); this.name = 'ProcessBoundaryError'; }
+  constructor(readonly code: 'profile' | 'clock' | 'deadline') {
+    super(code);
+    this.name = 'ProcessBoundaryError';
+  }
 }

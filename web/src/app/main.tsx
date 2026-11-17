@@ -6,4 +6,8 @@ import '../styles/app.css';
 
 const element = document.getElementById('root');
 if (!element) throw new Error('Application root missing');
-createRoot(element).render(<BrowserRouter><SessionApp baseUrl={window.location.origin} /></BrowserRouter>);
+createRoot(element).render(
+  <BrowserRouter>
+    <SessionApp baseUrl={window.location.origin} />
+  </BrowserRouter>,
+);

@@ -1,21 +1,27 @@
-import {execFileSync} from 'node:child_process';
-import {createHash} from 'node:crypto';
-import {candidateRoles, imageIdentity} from './identity.js';
-import type {ImageReferences} from './references.js';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { candidateRoles, imageIdentity } from './identity.js';
+import type { ImageReferences } from './references.js';
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw Error('Archive metadata object required');
   return value as Record<string, unknown>;
 }
 export type ArchiveMember = (name: string) => Buffer;
 export function archiveMember(path: string): ArchiveMember {
-  return name => {
-    if (!/^(?:manifest\.json|index\.json|blobs\/sha256\/[a-f0-9]{64}|[a-f0-9]{64}\.json)$/.test(name)) throw Error('Invalid archive metadata member');
-    return execFileSync('tar', ['-xOf', path, name], {timeout: 15000, maxBuffer: 262144, stdio: ['ignore', 'pipe', 'pipe']});
+  return (name) => {
+    if (!/^(?:manifest\.json|index\.json|blobs\/sha256\/[a-f0-9]{64}|[a-f0-9]{64}\.json)$/.test(name))
+      throw Error('Invalid archive metadata member');
+    return execFileSync('tar', ['-xOf', path, name], {
+      timeout: 15000,
+      maxBuffer: 262144,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
   };
 }
 const digest = (bytes: Buffer) => 'sha256:' + createHash('sha256').update(bytes).digest('hex');
 function configPath(path: unknown): string {
-  if (typeof path !== 'string' || !/^(?:blobs\/sha256\/[a-f0-9]{64}|[a-f0-9]{64}\.json)$/.test(path)) throw Error('Invalid archive config');
+  if (typeof path !== 'string' || !/^(?:blobs\/sha256\/[a-f0-9]{64}|[a-f0-9]{64}\.json)$/.test(path))
+    throw Error('Invalid archive config');
   return path;
 }
 function captureManifest(value: unknown): Record<string, unknown>[] {
@@ -23,56 +29,89 @@ function captureManifest(value: unknown): Record<string, unknown>[] {
   return value.map(object);
 }
 /** Docker IDs, config digests and registry manifests are deliberately separate. */
-export function archiveConfigs(read: ArchiveMember, references: ImageReferences, identity: {revision: string; architecture: string; images: ImageReferences}): ImageReferences {
+export function archiveConfigs(
+  read: ArchiveMember,
+  references: ImageReferences,
+  identity: { revision: string; architecture: string; images: ImageReferences },
+): ImageReferences {
   const manifests = manifestIdentities(read);
   const entries = captureManifest(JSON.parse(read('manifest.json').toString('utf8')));
-  return Object.freeze(Object.fromEntries(candidateRoles.map(role => {
-    const matching = entries.filter(entry => Array.isArray(entry.RepoTags) && entry.RepoTags.includes(references[role]));
-    if (matching.length !== 1) throw Error('Missing or duplicate archive role');
-    const tags = matching[0]!.RepoTags as unknown[];
-    if (tags.length > 2 || tags.some(tag => tag !== references[role] && tag !== 'docker.io/' + references[role])) throw Error('Undeclared archive transport tag');
-    const path = configPath(matching[0]!.Config); const bytes = read(path); const id = imageIdentity(digest(bytes));
-    if (!path.includes(id.slice(7))) throw Error('Archive config hash mismatch');
-    const config = object(JSON.parse(bytes.toString('utf8'))); const labels = object(object(config.config).Labels);
-    if (config.os !== 'linux' || config.architecture !== identity.architecture || labels['org.opencontainers.image.revision'] !== identity.revision) throw Error('Archive config identity mismatch');
-    const manifest = manifests.get(id);
-    if (!manifest) throw Error('Archive source content identity mismatch');
-    validateNames(manifest.annotations, references[role]);
-    if (![id, manifest.id].includes(identity.images[role])) throw Error('Archive source content identity mismatch');
-    return [role, id];
-  })) as Record<keyof ImageReferences, string>);
+  return Object.freeze(
+    Object.fromEntries(
+      candidateRoles.map((role) => {
+        const matching = entries.filter(
+          (entry) => Array.isArray(entry.RepoTags) && entry.RepoTags.includes(references[role]),
+        );
+        if (matching.length !== 1) throw Error('Missing or duplicate archive role');
+        const tags = matching[0]!.RepoTags as unknown[];
+        if (tags.length > 2 || tags.some((tag) => tag !== references[role] && tag !== 'docker.io/' + references[role]))
+          throw Error('Undeclared archive transport tag');
+        const path = configPath(matching[0]!.Config);
+        const bytes = read(path);
+        const id = imageIdentity(digest(bytes));
+        if (!path.includes(id.slice(7))) throw Error('Archive config hash mismatch');
+        const config = object(JSON.parse(bytes.toString('utf8')));
+        const labels = object(object(config.config).Labels);
+        if (
+          config.os !== 'linux' ||
+          config.architecture !== identity.architecture ||
+          labels['org.opencontainers.image.revision'] !== identity.revision
+        )
+          throw Error('Archive config identity mismatch');
+        const manifest = manifests.get(id);
+        if (!manifest) throw Error('Archive source content identity mismatch');
+        validateNames(manifest.annotations, references[role]);
+        if (![id, manifest.id].includes(identity.images[role])) throw Error('Archive source content identity mismatch');
+        return [role, id];
+      }),
+    ) as Record<keyof ImageReferences, string>,
+  );
 }
 
 function validateNames(input: unknown, reference: string): void {
   if (input === undefined) return;
   const annotations = object(input);
   for (const key of Object.keys(annotations)) {
-    if (!['io.containerd.image.name', 'org.opencontainers.image.ref.name'].includes(key)) throw Error('Unsupported archive naming annotation');
+    if (!['io.containerd.image.name', 'org.opencontainers.image.ref.name'].includes(key))
+      throw Error('Unsupported archive naming annotation');
   }
   const full = annotations['io.containerd.image.name'];
   const ref = annotations['org.opencontainers.image.ref.name'];
   const permitted = (value: unknown) => value === reference || value === 'docker.io/' + reference;
   if (full !== undefined && !permitted(full)) throw Error('Undeclared archive OCI transport name');
   // Docker's hybrid save uses a tag-only OCI ref only alongside its full containerd name.
-  if (ref !== undefined && !permitted(ref) && !(permitted(full) && ref === reference.slice(reference.lastIndexOf(':') + 1)))
+  if (
+    ref !== undefined &&
+    !permitted(ref) &&
+    !(permitted(full) && ref === reference.slice(reference.lastIndexOf(':') + 1))
+  )
     throw Error('Undeclared archive OCI transport name');
 }
 function manifestIdentities(read: ArchiveMember) {
   const index = object(JSON.parse(read('index.json').toString('utf8')));
-  const rows = captureManifest(index.manifests); const manifests = new Map<string, {id: string; annotations: unknown}>();
+  const rows = captureManifest(index.manifests);
+  const manifests = new Map<string, { id: string; annotations: unknown }>();
   for (const row of rows) {
-    const id = imageIdentity(row.digest); const bytes = read('blobs/sha256/' + id.slice(7));
+    const id = imageIdentity(row.digest);
+    const bytes = read('blobs/sha256/' + id.slice(7));
     if (digest(bytes) !== id) throw Error('Archive manifest hash mismatch');
-    const manifest = object(JSON.parse(bytes.toString('utf8'))); const config = imageIdentity(object(manifest.config).digest);
+    const manifest = object(JSON.parse(bytes.toString('utf8')));
+    const config = imageIdentity(object(manifest.config).digest);
     if (manifests.has(config)) throw Error('Duplicate archive config');
-    manifests.set(config, {id, annotations: row.annotations});
+    manifests.set(config, { id, annotations: row.annotations });
   }
   return manifests;
 }
 
 /** Both daemon storage forms must bind to the same verified archive bytes. */
-export function archiveLocalIds(read: ArchiveMember, references: ImageReferences, identity: {revision: string; architecture: string; images: ImageReferences}) {
-  const configs = archiveConfigs(read, references, identity); const manifests = manifestIdentities(read);
-  return Object.fromEntries(candidateRoles.map(role => [role, {config: configs[role], manifest: manifests.get(configs[role])!.id}])) as
-    Record<keyof ImageReferences, {config: string; manifest: string}>;
+export function archiveLocalIds(
+  read: ArchiveMember,
+  references: ImageReferences,
+  identity: { revision: string; architecture: string; images: ImageReferences },
+) {
+  const configs = archiveConfigs(read, references, identity);
+  const manifests = manifestIdentities(read);
+  return Object.fromEntries(
+    candidateRoles.map((role) => [role, { config: configs[role], manifest: manifests.get(configs[role])!.id }]),
+  ) as Record<keyof ImageReferences, { config: string; manifest: string }>;
 }

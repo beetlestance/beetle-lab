@@ -1,8 +1,15 @@
-import type { ApiClient, CreateInputRequest, InputRecord, InputTransferClient,
-  PreparedInputBytes, TransitionInputRequest, Workspace } from '@beetle/contracts/api';
+import type {
+  ApiClient,
+  CreateInputRequest,
+  InputRecord,
+  InputTransferClient,
+  PreparedInputBytes,
+  TransitionInputRequest,
+  Workspace,
+} from '@beetle/contracts/api';
 
-export type Phase = 'idle' | 'prepare' | 'replay-create' | 'refresh' | 'resume'
-  | 'replay-seal' | 'publishing' | 'complete' | 'stopped';
+export type Phase =
+  'idle' | 'prepare' | 'replay-create' | 'refresh' | 'resume' | 'replay-seal' | 'publishing' | 'complete' | 'stopped';
 export type UploadAction = Exclude<Phase, 'idle' | 'publishing' | 'complete' | 'stopped'>;
 export interface UploadState {
   readonly phase: Phase;
@@ -27,7 +34,12 @@ interface Options {
   invalidate: () => void;
 }
 class Paused extends Error {
-  constructor(readonly phase: Phase, message: string) { super(message); }
+  constructor(
+    readonly phase: Phase,
+    message: string,
+  ) {
+    super(message);
+  }
 }
 const interrupted = 'Interrupted. The request may have taken effect; cancellation does not roll back backend data.';
 const failed = 'The operation could not be confirmed. The browser draft is retained.';
@@ -45,15 +57,24 @@ export class UploadWorkflow {
   start(file: File, name: string, folderId: string) {
     if (this.intent || this.state.busy || this.departed) return;
     if (file.size > 8 * 1024 * 1024 || !name.trim()) return;
-    const scope = Object.freeze({ kind: 'workspace' as const,
-      organizationId: this.options.workspace.scope.organizationId, workspaceId: this.options.workspace.id });
-    this.intent = { file, metadata: Object.freeze({ name: name.trim(), folderId, scope, requestId: crypto.randomUUID() }) };
+    const scope = Object.freeze({
+      kind: 'workspace' as const,
+      organizationId: this.options.workspace.scope.organizationId,
+      workspaceId: this.options.workspace.id,
+    });
+    this.intent = {
+      file,
+      metadata: Object.freeze({ name: name.trim(), folderId, scope, requestId: crypto.randomUUID() }),
+    };
     return this.run('prepare');
   }
   dispose() {
     this.departed = true;
     this.active?.abort();
-    if (this.intent) { delete this.intent.prepared; this.intent.file = undefined; }
+    if (this.intent) {
+      delete this.intent.prepared;
+      this.intent.file = undefined;
+    }
     this.intent = undefined;
     this.options.changed = () => undefined;
     this.options.invalidate = () => undefined;
@@ -66,8 +87,12 @@ export class UploadWorkflow {
   discard() {
     if (this.state.busy || this.departed) return;
     this.intent = undefined;
-    this.state = { phase: 'idle', busy: false, retained: false,
-      message: 'Browser draft cleared. A partial backend input can remain; no backend data was deleted.' };
+    this.state = {
+      phase: 'idle',
+      busy: false,
+      retained: false,
+      message: 'Browser draft cleared. A partial backend input can remain; no backend data was deleted.',
+    };
     this.options.changed(this.state);
   }
   async run(action: UploadAction) {
@@ -78,9 +103,12 @@ export class UploadWorkflow {
     try {
       await this.perform(action, controller.signal);
     } catch (error) {
-      if (!this.departed) this.update(error instanceof Paused
-        ? { phase: error.phase, message: error.message }
-        : { phase: this.recovery, message: controller.signal.aborted ? interrupted : failed });
+      if (!this.departed)
+        this.update(
+          error instanceof Paused
+            ? { phase: error.phase, message: error.message }
+            : { phase: this.recovery, message: controller.signal.aborted ? interrupted : failed },
+        );
     } finally {
       this.finish();
     }
@@ -93,7 +121,10 @@ export class UploadWorkflow {
   private finish() {
     this.active = undefined;
     if (this.departed) return;
-    if (this.progressChanged) { this.progressChanged = false; this.options.invalidate(); }
+    if (this.progressChanged) {
+      this.progressChanged = false;
+      this.options.invalidate();
+    }
     this.update({ busy: false });
   }
   private async perform(action: UploadAction, signal: AbortSignal) {
@@ -122,12 +153,21 @@ export class UploadWorkflow {
     this.recovery = 'prepare';
     const reply = await this.options.transfers.prepare({ file, signal });
     this.check(signal);
-    if (!reply.ok) throw new Paused('prepare', 'File preparation failed. Retry preparation explicitly or discard the draft.');
-    if (reply.value.content.byteLength !== file.size || reply.value.content.byteLength > 8388608
-      || !/^[a-f0-9]{64}$/.test(reply.value.sha256)) throw new Paused('stopped', 'Prepared file identity is invalid. Upload has stopped.');
+    if (!reply.ok)
+      throw new Paused('prepare', 'File preparation failed. Retry preparation explicitly or discard the draft.');
+    if (
+      reply.value.content.byteLength !== file.size ||
+      reply.value.content.byteLength > 8388608 ||
+      !/^[a-f0-9]{64}$/.test(reply.value.sha256)
+    )
+      throw new Paused('stopped', 'Prepared file identity is invalid. Upload has stopped.');
     intent.prepared = reply.value;
     intent.file = undefined;
-    intent.body = Object.freeze({ ...intent.metadata, sha256: reply.value.sha256, bytes: reply.value.content.byteLength });
+    intent.body = Object.freeze({
+      ...intent.metadata,
+      sha256: reply.value.sha256,
+      bytes: reply.value.content.byteLength,
+    });
   }
   private async create(signal: AbortSignal) {
     this.check(signal);
@@ -137,12 +177,21 @@ export class UploadWorkflow {
     const reply = await this.options.api.createInput({ params: this.params(), body: intent.body, signal });
     this.check(signal);
     if (!reply.ok) {
-      if (reply.error.protocol && ['conflict', 'invalid_value', 'not_found', 'forbidden', 'body_limit', 'malformed_request'].includes(reply.error.protocol.code)) {
-        throw new Paused('stopped', 'Input creation was refused. Existing inputs were not overwritten. Choose a different name or destination in a new draft.');
+      if (
+        reply.error.protocol &&
+        ['conflict', 'invalid_value', 'not_found', 'forbidden', 'body_limit', 'malformed_request'].includes(
+          reply.error.protocol.code,
+        )
+      ) {
+        throw new Paused(
+          'stopped',
+          'Input creation was refused. Existing inputs were not overwritten. Choose a different name or destination in a new draft.',
+        );
       }
       throw new Paused('replay-create', `${failed} Create may have taken effect. Replay uses the identical request.`);
     }
-    if (intent.id && intent.id !== reply.value.id) throw new Paused('stopped', 'Input identity changed. No further bytes will be sent.');
+    if (intent.id && intent.id !== reply.value.id)
+      throw new Paused('stopped', 'Input identity changed. No further bytes will be sent.');
     intent.id = reply.value.id;
     this.bind(reply.value);
     this.options.invalidate();
@@ -154,7 +203,8 @@ export class UploadWorkflow {
     this.recovery = 'refresh';
     const reply = await this.options.api.getInput({ params: { ...this.params(), inputId: intent.id }, signal });
     this.check(signal);
-    if (!reply.ok) throw new Paused('refresh', 'Current status could not be read. Refresh status explicitly before continuing.');
+    if (!reply.ok)
+      throw new Paused('refresh', 'Current status could not be read. Refresh status explicitly before continuing.');
     this.bind(reply.value);
     this.observe(reply.value);
   }
@@ -168,8 +218,14 @@ export class UploadWorkflow {
       deleted: 'The backend reports deleted. Upload has stopped.',
     };
     const phase = this.observedPhase(record);
-    this.update({ record, phase, message: phase === 'replay-seal'
-      ? 'Staging status confirmed. The original seal identity is retained; replay it explicitly.' : messages[record.state] });
+    this.update({
+      record,
+      phase,
+      message:
+        phase === 'replay-seal'
+          ? 'Staging status confirmed. The original seal identity is retained; replay it explicitly.'
+          : messages[record.state],
+    });
     if (record.state !== 'staging') this.options.invalidate();
   }
   private observedPhase(record: InputRecord): Phase {
@@ -189,8 +245,13 @@ export class UploadWorkflow {
       const chunk = intent.prepared.content.subarray(record.offset, record.offset + 65536);
       const reply = await this.options.transfers.append({ record, offset: record.offset, chunk, signal });
       this.check(signal);
-      if (!reply.ok) throw new Paused(reply.issued ? 'refresh' : 'resume', reply.issued
-        ? 'Chunk outcome is unknown. Read current status explicitly before Resume.' : `${failed} Resume is explicit.`);
+      if (!reply.ok)
+        throw new Paused(
+          reply.issued ? 'refresh' : 'resume',
+          reply.issued
+            ? 'Chunk outcome is unknown. Read current status explicitly before Resume.'
+            : `${failed} Resume is explicit.`,
+        );
       this.bind(reply.value);
       record = reply.value;
       this.update({ record });
@@ -206,24 +267,38 @@ export class UploadWorkflow {
     if (!intent.id || !intent.body || !record) throw new Paused('stopped', failed);
     if (!intent.seal) {
       if (record.state !== 'staging' || record.offset !== record.bytes) throw new Paused('refresh', failed);
-      intent.seal = Object.freeze({ requestId: crypto.randomUUID(), scope: intent.body.scope, expectedVersion: record.version });
+      intent.seal = Object.freeze({
+        requestId: crypto.randomUUID(),
+        scope: intent.body.scope,
+        expectedVersion: record.version,
+      });
     }
     this.recovery = 'replay-seal';
-    const reply = await this.options.api.sealInput({ params: { ...this.params(), inputId: intent.id }, body: intent.seal, signal });
+    const reply = await this.options.api.sealInput({
+      params: { ...this.params(), inputId: intent.id },
+      body: intent.seal,
+      signal,
+    });
     this.check(signal);
-    if (!reply.ok) throw new Paused('replay-seal', 'Seal outcome is unconfirmed. Replay keeps the identical request and version.');
+    if (!reply.ok)
+      throw new Paused('replay-seal', 'Seal outcome is unconfirmed. Replay keeps the identical request and version.');
     this.options.invalidate();
   }
   private bind(record: InputRecord) {
     const intent = this.required();
     const body = intent.body;
     if (!body || record.id !== intent.id) throw this.mismatch();
-    const scoped = record.scope.organizationId === body.scope.organizationId && record.scope.workspaceId === body.scope.workspaceId;
+    const scoped =
+      record.scope.organizationId === body.scope.organizationId && record.scope.workspaceId === body.scope.workspaceId;
     if (!scoped || !this.samePayload(record, body)) throw this.mismatch();
   }
   private samePayload(record: InputRecord, body: CreateInputRequest) {
-    return record.name === body.name && record.folderId === body.folderId
-      && record.sha256 === body.sha256 && record.bytes === body.bytes;
+    return (
+      record.name === body.name &&
+      record.folderId === body.folderId &&
+      record.sha256 === body.sha256 &&
+      record.bytes === body.bytes
+    );
   }
   private mismatch() {
     return new Paused('stopped', 'Input identity does not match this draft. No further bytes will be sent.');

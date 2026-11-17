@@ -13,10 +13,15 @@ export function storedFlag(input: unknown): 0 | 1 {
   return input;
 }
 
-export function storedText(input:unknown,maximum:number):string{
-  if(typeof input!=='string'||Buffer.byteLength(input)>maximum)throw new Failure('unavailable');return input;
+export function storedText(input: unknown, maximum: number): string {
+  if (typeof input !== 'string' || Buffer.byteLength(input) > maximum) throw new Failure('unavailable');
+  return input;
 }
-export function storedJson(input:unknown,maximum:number):unknown{
-  const text=storedText(input,maximum);
-  try{return JSON.parse(text) as unknown;}catch{throw new Failure('unavailable');}
+export function storedJson(input: unknown, maximum: number): unknown {
+  const text = storedText(input, maximum);
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    throw new Failure('unavailable');
+  }
 }

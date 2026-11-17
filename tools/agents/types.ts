@@ -1,5 +1,5 @@
 export const models = ['gpt-6.1-sol', 'gpt-6-luna', 'gpt-6-astra', 'inherit'] as const;
-export type AgentModel = typeof models[number];
+export type AgentModel = (typeof models)[number];
 export interface TaskPacket {
   packetVersion: 1;
   taskId: string;

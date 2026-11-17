@@ -9,9 +9,11 @@ import { copyReceipt, matchScope, sameSource, sourceJson } from './output-source
 export function copyDelivery(input: unknown): OutputDeliveryClosure {
   return checked(() => {
     const value = fields(capture(input, OUTPUT_DELIVERY_BYTES), 'version,receipt,finalAgentSeq');
-    requireInput(value.version === 1); integer(value.finalAgentSeq);
+    requireInput(value.version === 1);
+    integer(value.finalAgentSeq);
     const result = { version: 1 as const, receipt: copyReceipt(value.receipt), finalAgentSeq: value.finalAgentSeq };
-    sourceJson(result, OUTPUT_DELIVERY_BYTES); return Object.freeze(result);
+    sourceJson(result, OUTPUT_DELIVERY_BYTES);
+    return Object.freeze(result);
   });
 }
 export function deliveryReply(input: unknown, expected: Scope | SourceReceipt): OutputDeliveryClosure {

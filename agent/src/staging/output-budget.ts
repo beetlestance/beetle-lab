@@ -4,10 +4,14 @@ import { Boundary } from './bounds.js';
 import type { OutputScanReason } from './output-types.js';
 
 export class ScanFailure extends Error {
-  constructor(readonly reason: OutputScanReason) { super(`Output scan ${reason}`); }
+  constructor(readonly reason: OutputScanReason) {
+    super(`Output scan ${reason}`);
+  }
 }
 export class ScanLimit extends Error {
-  constructor(readonly reason: 'output' | 'disk') { super(`Output scan limit ${reason}`); }
+  constructor(readonly reason: 'output' | 'disk') {
+    super(`Output scan limit ${reason}`);
+  }
 }
 export function data(value: object, name: string): unknown {
   const descriptor = Object.getOwnPropertyDescriptor(value, name);
@@ -17,7 +21,8 @@ export function data(value: object, name: string): unknown {
 const aborted = Object.getOwnPropertyDescriptor(AbortSignal.prototype, 'aborted')!.get!;
 export function scanBudget(input: Operation): Operation {
   const deadline = data(input, 'deadline');
-  if (typeof deadline !== 'number' || !Number.isFinite(deadline) || deadline < 0) throw new ScanFailure('invalid_input');
+  if (typeof deadline !== 'number' || !Number.isFinite(deadline) || deadline < 0)
+    throw new ScanFailure('invalid_input');
   const remaining = deadline - performance.now();
   // Deferred dispatch can consume a valid sample's budget before native IO starts.
   if (remaining <= 0) throw new ScanFailure('deadline');
@@ -31,8 +36,16 @@ export function scanBudget(input: Operation): Operation {
 }
 export class ScanBoundary extends Boundary {
   private calls = 0;
-  private charge(): void { if (++this.calls > 2048) throw new ScanFailure('bounds'); }
+  private charge(): void {
+    if (++this.calls > 2048) throw new ScanFailure('bounds');
+  }
   /** Account for the future original close before issuing a directory open. */
-  reserveClose(): void { this.check(); this.charge(); }
-  override wait<T>(issue: () => Promise<T>): Promise<T> { this.charge(); return super.wait(issue); }
+  reserveClose(): void {
+    this.check();
+    this.charge();
+  }
+  override wait<T>(issue: () => Promise<T>): Promise<T> {
+    this.charge();
+    return super.wait(issue);
+  }
 }

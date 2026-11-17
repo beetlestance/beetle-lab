@@ -36,11 +36,21 @@ export interface OutputReadRequest<B extends OutputBinding = EventBinding> {
   readonly endExclusive: number;
   readonly sink: { write(bytes: Uint8Array): Promise<void> };
 }
-export type OutputByteErrorCode = 'invalid_input' | 'busy' | 'closed' | 'cancelled' |
-  'deadline' | 'custody_missing' | 'integrity' | 'io' | 'cleanup' | 'capacity_unavailable';
+export type OutputByteErrorCode =
+  | 'invalid_input'
+  | 'busy'
+  | 'closed'
+  | 'cancelled'
+  | 'deadline'
+  | 'custody_missing'
+  | 'integrity'
+  | 'io'
+  | 'cleanup'
+  | 'capacity_unavailable';
 export class OutputByteError extends Error {
   constructor(readonly code: OutputByteErrorCode) {
-    super('Output byte operation failed'); this.name = 'OutputByteError';
+    super('Output byte operation failed');
+    this.name = 'OutputByteError';
   }
 }
 /** Sole parent-owned namespace adapter, two jobs and one original per token.

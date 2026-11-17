@@ -1,4 +1,5 @@
-const safe = (name: string, minimum = 1) => `${name} INTEGER NOT NULL CHECK(typeof(${name})='integer' AND ${name} BETWEEN ${minimum} AND 9007199254740991)`;
+const safe = (name: string, minimum = 1) =>
+  `${name} INTEGER NOT NULL CHECK(typeof(${name})='integer' AND ${name} BETWEEN ${minimum} AND 9007199254740991)`;
 /** Compact enqueue facts and retained execution ownership; no history backfill. */
 export const executionSchema = `
 ALTER TABLE attempts ADD COLUMN foundation_owned INTEGER NOT NULL DEFAULT 0 CHECK(foundation_owned IN (0,1));
@@ -12,10 +13,10 @@ CREATE TABLE execution_intents (
  attempt_id TEXT NOT NULL UNIQUE, run_id TEXT NOT NULL, organization_id TEXT NOT NULL, workspace_id TEXT NOT NULL,
  intent_digest TEXT NOT NULL, profile_alias TEXT NOT NULL CHECK(length(profile_alias) BETWEEN 1 AND 128),
  registry_digest TEXT NOT NULL CHECK(length(registry_digest)=64 AND registry_digest NOT GLOB '*[^0-9a-f]*'),
- ${['cpu_millis','memory_bytes','pids','timeout_ms','output_bytes'].map(name => safe(name)).join(',\n ')},
+ ${['cpu_millis', 'memory_bytes', 'pids', 'timeout_ms', 'output_bytes'].map((name) => safe(name)).join(',\n ')},
  mode TEXT NOT NULL CHECK(mode IN ('parallel','isolated')), prefer_idle INTEGER NOT NULL CHECK(prefer_idle IN (0,1)),
  staging_policy INTEGER NOT NULL CHECK(staging_policy=1),
- ${['offer_bytes','input_bytes','secret_bytes','manifest_bytes','metadata_bytes','staging_bytes'].map(name => safe(name,0)).join(',\n ')},
+ ${['offer_bytes', 'input_bytes', 'secret_bytes', 'manifest_bytes', 'metadata_bytes', 'staging_bytes'].map((name) => safe(name, 0)).join(',\n ')},
  CHECK(offer_bytes BETWEEN 1 AND 2097152 AND secret_bytes<=1048576 AND manifest_bytes=65536 AND metadata_bytes=65536),
  CHECK(input_bytes<=9007199254740991-offer_bytes-secret_bytes-manifest_bytes-metadata_bytes),
  CHECK(staging_bytes=offer_bytes+input_bytes+secret_bytes+manifest_bytes+metadata_bytes),

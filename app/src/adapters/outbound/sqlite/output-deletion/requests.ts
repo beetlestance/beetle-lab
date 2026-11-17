@@ -1,6 +1,10 @@
-import type {OutputDeletionScan} from '../../../../ports/output-deletion-metadata.js';
-import { encodeJson,validate } from '@beetle/contracts';
-import type { OutputDeletionOperation, OutputDeletionKey, OutputDeletionFileKey } from '../../../../ports/output-deletion-metadata.js';
+import type { OutputDeletionScan } from '../../../../ports/output-deletion-metadata.js';
+import { encodeJson, validate } from '@beetle/contracts';
+import type {
+  OutputDeletionOperation,
+  OutputDeletionKey,
+  OutputDeletionFileKey,
+} from '../../../../ports/output-deletion-metadata.js';
 import type { OutputDeletionRequest, OutputDeletionReceipt } from '../../../../ports/output-deletion.js';
 import { prepareOutputDeletion } from '../../../../application/output-deletion/index.js';
 import { captureEventBinding } from '../../../../domain/events/index.js';
@@ -8,64 +12,143 @@ import { requireRule } from '../../../../domain/namespaces/index.js';
 import { decodeArtifact } from '../output-custody/index.js';
 import { boundedCopy, sha256 } from '../input-values.js';
 import { closed, hash, natural, scope, uuid } from './values.js';
-const kinds = ['beginOutputDeletion', 'getOutputDeletion', 'getOutputRetirementRequest', 'reserveOutputCleanupControl', 'getOutputCleanupAck', 'recordOutputCleanupAck', 'scanOutputSettlements', 'scanOutputRetirements', 'getOutputDeletionFile', 'recordOutputDeletionPlan', 'recordOutputDeletionAbsence', 'scanOutputDeletions'];
+const kinds = [
+  'beginOutputDeletion',
+  'getOutputDeletion',
+  'getOutputRetirementRequest',
+  'reserveOutputCleanupControl',
+  'getOutputCleanupAck',
+  'recordOutputCleanupAck',
+  'scanOutputSettlements',
+  'scanOutputRetirements',
+  'getOutputDeletionFile',
+  'recordOutputDeletionPlan',
+  'recordOutputDeletionAbsence',
+  'scanOutputDeletions',
+];
 export function deletionOperation(value: unknown): value is OutputDeletionOperation {
   const descriptor = value && typeof value === 'object' ? Object.getOwnPropertyDescriptor(value, 'kind') : undefined;
   return !!descriptor && 'value' in descriptor && kinds.includes(descriptor.value as string);
 }
 function key(value: unknown, file = false): OutputDeletionKey | OutputDeletionFileKey {
-  closed(value, file ? ['scope', 'id', 'runId', 'ordinal'] : ['scope', 'id', 'runId']); const base = {scope: scope(value.scope), id: uuid(value.id), runId: uuid(value.runId)};
-  if (!file) return base; natural(value.ordinal, 127); return {...base, ordinal: value.ordinal};
+  closed(value, file ? ['scope', 'id', 'runId', 'ordinal'] : ['scope', 'id', 'runId']);
+  const base = { scope: scope(value.scope), id: uuid(value.id), runId: uuid(value.runId) };
+  if (!file) return base;
+  natural(value.ordinal, 127);
+  return { ...base, ordinal: value.ordinal };
 }
 export function nativePlan(value: unknown, absent = false): OutputDeletionRequest | OutputDeletionReceipt {
-  closed(value, ['record', 'deletionId', 'deletionVersion', 'namespaceIdentity', 'preparationIdentity', ...(absent ? ['phase'] : [])]);
-  const deletionId = uuid(value.deletionId); requireRule(value.deletionVersion === 1);
-  hash(value.namespaceIdentity); hash(value.preparationIdentity); closed(value.record, ['binding', 'artifact']);
-  const record = {binding: captureEventBinding(value.record.binding), artifact: decodeArtifact(value.record.artifact)};
-  requireRule(record.artifact.phase === 'published' && record.artifact.writer === null && record.artifact.identity !== null && record.artifact.offset === record.artifact.bytes);
-  const plan = {record, deletionId, deletionVersion: 1 as const, namespaceIdentity: value.namespaceIdentity, preparationIdentity: value.preparationIdentity};
-  if (!absent) return plan; requireRule(value.phase === 'absent'); return {...plan, phase: 'absent'};
+  closed(value, [
+    'record',
+    'deletionId',
+    'deletionVersion',
+    'namespaceIdentity',
+    'preparationIdentity',
+    ...(absent ? ['phase'] : []),
+  ]);
+  const deletionId = uuid(value.deletionId);
+  requireRule(value.deletionVersion === 1);
+  hash(value.namespaceIdentity);
+  hash(value.preparationIdentity);
+  closed(value.record, ['binding', 'artifact']);
+  const record = {
+    binding: captureEventBinding(value.record.binding),
+    artifact: decodeArtifact(value.record.artifact),
+  };
+  requireRule(
+    record.artifact.phase === 'published' &&
+      record.artifact.writer === null &&
+      record.artifact.identity !== null &&
+      record.artifact.offset === record.artifact.bytes,
+  );
+  const plan = {
+    record,
+    deletionId,
+    deletionVersion: 1 as const,
+    namespaceIdentity: value.namespaceIdentity,
+    preparationIdentity: value.preparationIdentity,
+  };
+  if (!absent) return plan;
+  requireRule(value.phase === 'absent');
+  return { ...plan, phase: 'absent' };
 }
 function captureScan(value: unknown) {
   requireRule(value !== null && typeof value === 'object');
-  closed(value, Object.hasOwn(value, 'cursor') ? ['limit', 'cursor'] : ['limit']); natural(value.limit, 32, 1);
+  closed(value, Object.hasOwn(value, 'cursor') ? ['limit', 'cursor'] : ['limit']);
+  natural(value.limit, 32, 1);
   if (value.cursor !== undefined) requireRule(typeof value.cursor === 'string' && value.cursor.length <= 256);
-  return {limit: value.limit, ...(value.cursor === undefined ? {} : {cursor: value.cursor as string})};
+  return { limit: value.limit, ...(value.cursor === undefined ? {} : { cursor: value.cursor as string }) };
 }
-function captureWrite(kind: 'recordOutputDeletionPlan' | 'recordOutputDeletionAbsence', value: unknown): OutputDeletionOperation {
-  const absent = kind === 'recordOutputDeletionAbsence'; closed(value, ['key', 'expectedVersion', absent ? 'receipt' : 'plan']);
-  natural(value.expectedVersion, 3, 1); const owned = {key: key(value.key, true) as OutputDeletionFileKey, expectedVersion: value.expectedVersion};
-  return absent ? {kind: 'recordOutputDeletionAbsence', request: {...owned, receipt: nativePlan(value.receipt, true) as OutputDeletionReceipt}}
-    : {kind: 'recordOutputDeletionPlan', request: {...owned, plan: nativePlan(value.plan) as OutputDeletionRequest}};
+function captureWrite(
+  kind: 'recordOutputDeletionPlan' | 'recordOutputDeletionAbsence',
+  value: unknown,
+): OutputDeletionOperation {
+  const absent = kind === 'recordOutputDeletionAbsence';
+  closed(value, ['key', 'expectedVersion', absent ? 'receipt' : 'plan']);
+  natural(value.expectedVersion, 3, 1);
+  const owned = { key: key(value.key, true) as OutputDeletionFileKey, expectedVersion: value.expectedVersion };
+  return absent
+    ? {
+        kind: 'recordOutputDeletionAbsence',
+        request: { ...owned, receipt: nativePlan(value.receipt, true) as OutputDeletionReceipt },
+      }
+    : {
+        kind: 'recordOutputDeletionPlan',
+        request: { ...owned, plan: nativePlan(value.plan) as OutputDeletionRequest },
+      };
 }
-const property: Record<OutputDeletionOperation['kind'], string> = {beginOutputDeletion: 'command', getOutputDeletion: 'key', getOutputRetirementRequest: 'key', reserveOutputCleanupControl: 'key', getOutputCleanupAck:'key', recordOutputCleanupAck:'request', getOutputDeletionFile: 'key',
-  recordOutputDeletionPlan: 'request', recordOutputDeletionAbsence: 'request', scanOutputDeletions: 'query', scanOutputRetirements:'query',scanOutputSettlements:'query'};
+const property: Record<OutputDeletionOperation['kind'], string> = {
+  beginOutputDeletion: 'command',
+  getOutputDeletion: 'key',
+  getOutputRetirementRequest: 'key',
+  reserveOutputCleanupControl: 'key',
+  getOutputCleanupAck: 'key',
+  recordOutputCleanupAck: 'request',
+  getOutputDeletionFile: 'key',
+  recordOutputDeletionPlan: 'request',
+  recordOutputDeletionAbsence: 'request',
+  scanOutputDeletions: 'query',
+  scanOutputRetirements: 'query',
+  scanOutputSettlements: 'query',
+};
 export function captureDeletionOperation(input: unknown): OutputDeletionOperation {
-  const copy = boundedCopy(input, 12288) as OutputDeletionOperation & {messageId?: number}; requireRule(deletionOperation(copy));
+  const copy = boundedCopy(input, 12288) as OutputDeletionOperation & { messageId?: number };
+  requireRule(deletionOperation(copy));
   captureEnvelope(copy);
-  if(isScan(copy))return{kind:copy.kind,query:captureScan(copy.query)};
+  if (isScan(copy)) return { kind: copy.kind, query: captureScan(copy.query) };
   switch (copy.kind) {
-    case 'beginOutputDeletion': return {kind: copy.kind, command: prepareOutputDeletion(copy.command, sha256)};
-    case 'recordOutputCleanupAck': return captureAckWrite(copy.request);
+    case 'beginOutputDeletion':
+      return { kind: copy.kind, command: prepareOutputDeletion(copy.command, sha256) };
+    case 'recordOutputCleanupAck':
+      return captureAckWrite(copy.request);
     case 'getOutputCleanupAck':
     case 'reserveOutputCleanupControl':
     case 'getOutputRetirementRequest':
-    case 'getOutputDeletion': return {kind: copy.kind, key: key(copy.key)};
-    case 'getOutputDeletionFile': return {kind: copy.kind, key: key(copy.key, true) as OutputDeletionFileKey};
-    default: return captureWrite(copy.kind, copy.request);
+    case 'getOutputDeletion':
+      return { kind: copy.kind, key: key(copy.key) };
+    case 'getOutputDeletionFile':
+      return { kind: copy.kind, key: key(copy.key, true) as OutputDeletionFileKey };
+    default:
+      return captureWrite(copy.kind, copy.request);
   }
 }
 
-function captureAckWrite(input:unknown):Extract<OutputDeletionOperation,{kind:'recordOutputCleanupAck'}>{
- closed(input,['key','reply']);encodeJson(input.reply,4096);const reply=validate('OutputRetirementReply',input.reply);requireRule(reply.ok);
- return {kind:'recordOutputCleanupAck',request:{key:key(input.key),reply:reply.value}};
+function captureAckWrite(input: unknown): Extract<OutputDeletionOperation, { kind: 'recordOutputCleanupAck' }> {
+  closed(input, ['key', 'reply']);
+  encodeJson(input.reply, 4096);
+  const reply = validate('OutputRetirementReply', input.reply);
+  requireRule(reply.ok);
+  return { kind: 'recordOutputCleanupAck', request: { key: key(input.key), reply: reply.value } };
 }
 
-function captureEnvelope(copy:OutputDeletionOperation & {messageId?:number}):void{
- const hasMessageId=Object.hasOwn(copy,'messageId');closed(copy,['kind',property[copy.kind],...(hasMessageId?['messageId']:[])]);
- if(hasMessageId)natural(copy.messageId,Number.MAX_SAFE_INTEGER,1);
+function captureEnvelope(copy: OutputDeletionOperation & { messageId?: number }): void {
+  const hasMessageId = Object.hasOwn(copy, 'messageId');
+  closed(copy, ['kind', property[copy.kind], ...(hasMessageId ? ['messageId'] : [])]);
+  if (hasMessageId) natural(copy.messageId, Number.MAX_SAFE_INTEGER, 1);
 }
 
-function isScan(operation:OutputDeletionOperation):operation is Extract<OutputDeletionOperation,{query:OutputDeletionScan}>{
- return ['scanOutputSettlements','scanOutputRetirements','scanOutputDeletions'].includes(operation.kind);
+function isScan(
+  operation: OutputDeletionOperation,
+): operation is Extract<OutputDeletionOperation, { query: OutputDeletionScan }> {
+  return ['scanOutputSettlements', 'scanOutputRetirements', 'scanOutputDeletions'].includes(operation.kind);
 }

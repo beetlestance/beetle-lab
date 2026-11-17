@@ -39,7 +39,7 @@ export function readEvents(db: DatabaseSync, key: GenerationKey, after: number):
     )
     .all(row.attempt_id, row.generation, after)
     .map(captureEventLength);
-  if(lengths.some(event=>event.seq>row.last_seq))throw new Failure('unavailable');
+  if (lengths.some((event) => event.seq > row.last_seq)) throw new Failure('unavailable');
   requireContiguous(lengths, after + 1);
   if (!lengths.length && after < row.last_seq) throw new Failure('unavailable');
   let through = after;

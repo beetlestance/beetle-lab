@@ -11,17 +11,26 @@ export interface RunHistoryJob extends RunKey {
 export type RunHistoryProjection = RunHistoryMetrics;
 export interface RunHistoryMetricReader {
   /** Actual original through native result AND settlement, not an early caller race. */
-  readRunHistorySummary(key: RunKey & { attemptId: string }, context: { signal: AbortSignal; deadline: number }): Promise<RunHistoryProjection>;
+  readRunHistorySummary(
+    key: RunKey & { attemptId: string },
+    context: { signal: AbortSignal; deadline: number },
+  ): Promise<RunHistoryProjection>;
 }
 /** Original promises retain failed worker termination; shared store stays externally owned. */
-export interface RetiredHistoryJob {readonly state:'retired';readonly id:string;readonly scope:RunHistoryJob['scope'];readonly attemptId:string}
-export type HistoryJobRetirement=RetiredHistoryJob | (Omit<RetiredHistoryJob,'state'>&{readonly state:'deleting'});
+export interface RetiredHistoryJob {
+  readonly state: 'retired';
+  readonly id: string;
+  readonly scope: RunHistoryJob['scope'];
+  readonly attemptId: string;
+}
+export type HistoryJobRetirement =
+  RetiredHistoryJob | (Omit<RetiredHistoryJob, 'state'> & { readonly state: 'deleting' });
 export interface RunHistoryStore {
   /** Positive deletion/retirement metadata; null cannot excuse a missing record. */
-  retirement(job:RunHistoryJob):Promise<HistoryJobRetirement|null>;
+  retirement(job: RunHistoryJob): Promise<HistoryJobRetirement | null>;
   scan(query: { nowMs: number; limit: number }): Promise<RunHistoryJob[]>;
-  defer(request: { job: RunHistoryJob; dueMs: number }): Promise<null|RetiredHistoryJob>;
-  commit(request: { job: RunHistoryJob; summary: RunHistorySummary }): Promise<RunHistorySummary|RetiredHistoryJob>;
+  defer(request: { job: RunHistoryJob; dueMs: number }): Promise<null | RetiredHistoryJob>;
+  commit(request: { job: RunHistoryJob; summary: RunHistorySummary }): Promise<RunHistorySummary | RetiredHistoryJob>;
 }
 export interface RunHistoryIndexerState {
   readonly status: 'running' | 'failed' | 'closed';
@@ -33,7 +42,12 @@ export interface RunHistoryIndexer {
   close(): Promise<void>;
 }
 
-export type HistoryRequest = {method:'retirement';request:{job:RunHistoryJob}} | { method: 'scan'; query: Parameters<RunHistoryStore['scan']>[0] }
+export type HistoryRequest =
+  | { method: 'retirement'; request: { job: RunHistoryJob } }
+  | { method: 'scan'; query: Parameters<RunHistoryStore['scan']>[0] }
   | { method: 'defer'; request: Parameters<RunHistoryStore['defer']>[0] }
   | { method: 'commit'; request: Parameters<RunHistoryStore['commit']>[0] };
-export interface HistoryOperation { kind: 'historySummary'; operation: HistoryRequest }
+export interface HistoryOperation {
+  kind: 'historySummary';
+  operation: HistoryRequest;
+}

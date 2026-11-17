@@ -11,8 +11,8 @@ export interface OutputRangeOptions {
   readonly deadline: number;
   readonly signal?: AbortSignal;
 }
-export type OutputRangeResult = { readonly ok: true; readonly value: Uint8Array }
-  | { readonly ok: false; readonly reason: OutputCollectionReason };
+export type OutputRangeResult =
+  { readonly ok: true; readonly value: Uint8Array } | { readonly ok: false; readonly reason: OutputCollectionReason };
 export interface OutputRange {
   /** Success only after exact range/custody checks and all original closes. */
   readonly result: Promise<OutputRangeResult>;

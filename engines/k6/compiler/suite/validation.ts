@@ -6,8 +6,15 @@ import { freezeSchema } from '../schema-freeze.js';
 import { boundary, fail, rejected } from './failure.js';
 import { compileSuite } from './index.js';
 import { suiteLimits } from './limits.js';
-import type { CompileInput, CompiledSuite, DeepReadonly, Result, SuiteConfig,
-  ValidatedCompileInput, ValidatedSuiteConfig } from './types.js';
+import type {
+  CompileInput,
+  CompiledSuite,
+  DeepReadonly,
+  Result,
+  SuiteConfig,
+  ValidatedCompileInput,
+  ValidatedSuiteConfig,
+} from './types.js';
 const ajv = new Ajv2020({ strict: true, allErrors: false, ownProperties: true });
 for (const schema of schemas) ajv.addSchema(schema);
 const suiteValidator = ajv.getSchema<SuiteConfig>('https://beetle.test/contracts/engines/k6/v1/suite');
@@ -15,7 +22,9 @@ const inputValidator = ajv.getSchema<CompileInput>('https://beetle.test/contract
 if (!suiteValidator || !inputValidator) throw new Error('Missing shipped k6 suite schemas');
 const validateConfig = suiteValidator;
 const validateInput = inputValidator;
-export function sha256(value: string): string { return createHash('sha256').update(value, 'utf8').digest('hex'); }
+export function sha256(value: string): string {
+  return createHash('sha256').update(value, 'utf8').digest('hex');
+}
 export function validateSuiteConfig(input: unknown): Result<ValidatedSuiteConfig> {
   const snapshot = boundary(() => JSON.parse(encodeJson(input, suiteLimits.configBytes)) as unknown);
   if (!snapshot.ok) return snapshot;
@@ -23,8 +32,13 @@ export function validateSuiteConfig(input: unknown): Result<ValidatedSuiteConfig
   return { ok: true, value: freezeSchema(snapshot.value) as ValidatedSuiteConfig };
 }
 function properties(value: unknown, allowed: readonly string[]): Record<string, unknown> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)
-    || ![Object.prototype, null].includes(Object.getPrototypeOf(value) as object | null)) fail('invalid_json');
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    ![Object.prototype, null].includes(Object.getPrototypeOf(value) as object | null)
+  )
+    fail('invalid_json');
   const result: Record<string, unknown> = Object.create(null) as Record<string, unknown>;
   for (const name in value) {
     if (!Object.hasOwn(value, name)) continue;
@@ -47,9 +61,14 @@ function snapshotItem(value: unknown): { item: CompileInput['inputs'][number]; b
 function snapshotInput(value: unknown): unknown {
   const root = properties(value, ['engine', 'targetOverride', 'inputs']);
   const inputs = root.inputs;
-  if (!Array.isArray(inputs) || inputs.length > 128 || Object.getPrototypeOf(inputs) !== Array.prototype) fail('schema');
-  const metadata = JSON.parse(encodeJson({ engine: root.engine,
-    ...(root.targetOverride === undefined ? {} : { targetOverride: root.targetOverride }) }, suiteLimits.configBytes)) as object;
+  if (!Array.isArray(inputs) || inputs.length > 128 || Object.getPrototypeOf(inputs) !== Array.prototype)
+    fail('schema');
+  const metadata = JSON.parse(
+    encodeJson(
+      { engine: root.engine, ...(root.targetOverride === undefined ? {} : { targetOverride: root.targetOverride }) },
+      suiteLimits.configBytes,
+    ),
+  ) as object;
   let total = 0;
   const snapshots: CompileInput['inputs'] = [];
   for (let index = 0; index < inputs.length; index++) {
@@ -68,7 +87,8 @@ export function validateCompileInput(value: unknown): Result<ValidatedCompileInp
   if (!validateInput(snapshot.value)) return rejected('schema');
   const checked = snapshot.value as CompileInput;
   for (const item of checked.inputs) {
-    if (Buffer.byteLength(item.content, 'utf8') !== item.ref.bytes || sha256(item.content) !== item.ref.sha256) return rejected('input_integrity', '/inputs');
+    if (Buffer.byteLength(item.content, 'utf8') !== item.ref.bytes || sha256(item.content) !== item.ref.sha256)
+      return rejected('input_integrity', '/inputs');
   }
   return { ok: true, value: freezeSchema(checked) as unknown as ValidatedCompileInput };
 }

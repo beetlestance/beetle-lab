@@ -10,7 +10,7 @@ export type { NamespaceRouteOptions } from './types.js';
 export function registerNamespaceRoutes(server: FastifyInstance, options: NamespaceRouteOptions): void {
   if (typeof options.authorize !== 'function') throw new Error('Namespace authorization guard required');
   const dependencies = Object.freeze({ ...options });
-  server.register(async scoped => {
+  server.register(async (scoped) => {
     scoped.addHook('onRequest', dependencies.authorize);
     organizationRoutes(scoped, dependencies);
     workspaceRoutes(scoped, dependencies);

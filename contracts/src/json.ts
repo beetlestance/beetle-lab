@@ -1,4 +1,11 @@
-interface EncoderState { bytes: number; nodes: number; maximum: number; canonical: boolean; parts: string[]; ancestors: Set<object> }
+interface EncoderState {
+  bytes: number;
+  nodes: number;
+  maximum: number;
+  canonical: boolean;
+  parts: string[];
+  ancestors: Set<object>;
+}
 const utf8 = new TextEncoder();
 
 function append(state: EncoderState, part: string): void {
@@ -22,7 +29,8 @@ function objectKeys(state: EncoderState, value: object): string[] {
   return state.canonical ? keys.sort() : keys;
 }
 function object(state: EncoderState, value: object, depth: number): void {
-  if (![Object.prototype, null].includes(Object.getPrototypeOf(value) as object | null)) throw new Error('invalid_json');
+  if (![Object.prototype, null].includes(Object.getPrototypeOf(value) as object | null))
+    throw new Error('invalid_json');
   const keys = objectKeys(state, value);
   append(state, '{');
   let count = 0;
@@ -30,7 +38,8 @@ function object(state: EncoderState, value: object, depth: number): void {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
     if (!descriptor || !('value' in descriptor)) throw new Error('invalid_json');
     if (count++) append(state, ',');
-    append(state, JSON.stringify(key)); append(state, ':');
+    append(state, JSON.stringify(key));
+    append(state, ':');
     visit(state, descriptor.value, depth + 1);
   }
   append(state, '}');
@@ -58,7 +67,8 @@ function visit(state: EncoderState, value: unknown, depth: number): void {
 
 /** Bounds bytes, depth, node count and each collection; rejects non-JSON values. */
 function encode(input: unknown, maximumBytes: number, canonical: boolean): string {
-  if (!Number.isSafeInteger(maximumBytes) || maximumBytes < 1 || maximumBytes > 16_777_216) throw new Error('invalid_limit');
+  if (!Number.isSafeInteger(maximumBytes) || maximumBytes < 1 || maximumBytes > 16_777_216)
+    throw new Error('invalid_limit');
   const state: EncoderState = { bytes: 0, nodes: 0, maximum: maximumBytes, canonical, parts: [], ancestors: new Set() };
   visit(state, input, 0);
   return state.parts.join('');
@@ -78,13 +88,21 @@ function readChunk(reader: ReadableStreamDefaultReader<Uint8Array>, signal?: Abo
   if (!signal) return reader.read();
   if (signal.aborted) return Promise.reject(new Error('aborted'));
   return new Promise((resolve, reject) => {
-    const abort = () => { signal.removeEventListener('abort', abort); reject(new Error('aborted')); };
+    const abort = () => {
+      signal.removeEventListener('abort', abort);
+      reject(new Error('aborted'));
+    };
     signal.addEventListener('abort', abort, { once: true });
-    void reader.read().then(chunk => {
-      signal.removeEventListener('abort', abort); resolve(chunk);
-    }, error => {
-      signal.removeEventListener('abort', abort); reject(error);
-    });
+    void reader.read().then(
+      (chunk) => {
+        signal.removeEventListener('abort', abort);
+        resolve(chunk);
+      },
+      (error) => {
+        signal.removeEventListener('abort', abort);
+        reject(error);
+      },
+    );
     if (signal.aborted) abort();
   });
 }
@@ -100,12 +118,15 @@ export async function readJson(response: Response, maximumBytes: number, signal?
       const chunk = await readChunk(reader, signal);
       if (chunk.done) break;
       if (++fragments > 4096 || size + chunk.value.byteLength > maximumBytes) throw new Error('response_limit');
-      body.set(chunk.value, size); size += chunk.value.byteLength;
+      body.set(chunk.value, size);
+      size += chunk.value.byteLength;
     }
     return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(body.subarray(0, size))) as unknown;
   } catch (error) {
     // Cancellation is best-effort cleanup: a broken source must not hold the caller.
     void reader.cancel().catch(() => undefined);
     throw error;
-  } finally { reader.releaseLock(); }
+  } finally {
+    reader.releaseLock();
+  }
 }

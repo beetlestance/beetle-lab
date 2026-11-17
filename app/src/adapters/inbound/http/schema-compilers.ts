@@ -31,15 +31,23 @@ function responseText(input: unknown, encodeJson: SchemaCompilerOptions['encodeJ
     const text = encodeJson(input, limit);
     if (Buffer.byteLength(text, 'utf8') > limit) throw new ResponseContractError();
     return text;
-  } catch { throw new ResponseContractError(); }
+  } catch {
+    throw new ResponseContractError();
+  }
 }
 
 /** Configure before routes. Validates replies when Fastify invokes its JSON serializer. */
 export function configureSchemaCompilers(server: FastifyInstance, options: SchemaCompilerOptions): void {
   const maximum = responseLimit(options.maximumResponseBytes);
   const encodeJson = options.encodeJson;
-  const ajv = new Ajv2020({ strict: true, allErrors: false, validateFormats: true,
-    coerceTypes: false, useDefaults: false, removeAdditional: false });
+  const ajv = new Ajv2020({
+    strict: true,
+    allErrors: false,
+    validateFormats: true,
+    coerceTypes: false,
+    useDefaults: false,
+    removeAdditional: false,
+  });
   const addFormats = addFormatsModule as unknown as (instance: Ajv2020) => void;
   addFormats(ajv);
   for (const schema of options.schemas) ajv.addSchema(schema);
@@ -49,8 +57,11 @@ export function configureSchemaCompilers(server: FastifyInstance, options: Schem
     return (input: unknown): string => {
       const text = responseText(input, encodeJson, maximum);
       let json: unknown;
-      try { json = JSON.parse(text) as unknown; }
-      catch { throw new ResponseContractError(); }
+      try {
+        json = JSON.parse(text) as unknown;
+      } catch {
+        throw new ResponseContractError();
+      }
       if (!validate(json)) throw new ResponseContractError();
       return text;
     };

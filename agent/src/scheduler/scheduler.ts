@@ -5,7 +5,10 @@ import { SchedulerError } from './types.js';
 import type { Scheduler, SchedulerOptions, SchedulerStatus } from './types.js';
 
 const MAX_DRIVES = 64;
-interface Work { readonly abort: AbortController; readonly original: Promise<void> }
+interface Work {
+  readonly abort: AbortController;
+  readonly original: Promise<void>;
+}
 
 function timing(value: number, minimum: number, maximum: number): number {
   if (!Number.isSafeInteger(value) || value < minimum || value > maximum) throw new SchedulerError('invalid_input');
@@ -36,7 +39,8 @@ class Loop implements Scheduler {
   start(): void {
     if (this.closed) throw new SchedulerError('closed');
     if (this.running) return;
-    this.running = true; this.schedule(0);
+    this.running = true;
+    this.schedule(0);
   }
 
   status(): SchedulerStatus {
@@ -45,7 +49,8 @@ class Loop implements Scheduler {
 
   close(): Promise<void> {
     if (this.closing) return this.closing;
-    this.closed = true; this.running = false;
+    this.closed = true;
+    this.running = false;
     if (this.timer) clearTimeout(this.timer);
     // Cache ownership before abort listeners can synchronously reenter close.
     this.closing = Promise.resolve().then(() => this.drain());
@@ -56,7 +61,7 @@ class Loop implements Scheduler {
   private async drain(): Promise<void> {
     await this.pass;
     // A late scan cannot dispatch after closed; every original is now known.
-    await Promise.allSettled([...this.work.values()].map(work => work.original));
+    await Promise.allSettled([...this.work.values()].map((work) => work.original));
   }
 
   private schedule(delay: number): void {
@@ -64,10 +69,17 @@ class Loop implements Scheduler {
     this.timer = setTimeout(() => {
       this.timer = undefined;
       // Reserve the original lane before invoking even a synchronous/reentrant port.
-      this.pass = Promise.resolve().then(async () => { if (!this.closed) await this.scan(); })
-        .catch(() => { this.lastError = 'scan'; }).finally(() => {
-        this.pass = undefined; this.schedule(this.interval);
-      });
+      this.pass = Promise.resolve()
+        .then(async () => {
+          if (!this.closed) await this.scan();
+        })
+        .catch(() => {
+          this.lastError = 'scan';
+        })
+        .finally(() => {
+          this.pass = undefined;
+          this.schedule(this.interval);
+        });
     }, delay);
   }
 
@@ -86,7 +98,10 @@ class Loop implements Scheduler {
   }
 
   private dispatchCharged(attempts: readonly Scope[]): void {
-    if (attempts.length === 0) { this.chargedOffset = 0; return; }
+    if (attempts.length === 0) {
+      this.chargedOffset = 0;
+      return;
+    }
     const start = this.chargedOffset % attempts.length;
     for (let index = 0; index < attempts.length; index++) this.dispatch(attempts[(start + index) % attempts.length]!);
     // Rotate by one so transient journal saturation cannot always reject the same
@@ -101,20 +116,32 @@ class Loop implements Scheduler {
     let deadline: number;
     try {
       const now = (this.options.monotonicNow ?? (() => performance.now()))();
-      if (!Number.isFinite(now) || now < 0 || now > Number.MAX_SAFE_INTEGER - this.timeout) throw new SchedulerError('invalid_input');
+      if (!Number.isFinite(now) || now < 0 || now > Number.MAX_SAFE_INTEGER - this.timeout)
+        throw new SchedulerError('invalid_input');
       deadline = now + this.timeout;
-    } catch { this.lastError = 'clock'; return; }
+    } catch {
+      this.lastError = 'clock';
+      return;
+    }
     const abort = new AbortController();
     const timer = setTimeout(() => abort.abort(), this.timeout);
     // Enter ownership before the trusted service is invoked, including sync throws.
-    const original = Promise.resolve().then(async () => {
-      if (this.closed || abort.signal.aborted) return;
-      await this.options.installation.drive(key, { deadline, signal: abort.signal });
-    }).catch(() => { this.lastError = 'drive'; }).finally(() => {
-      clearTimeout(timer); this.work.delete(id);
-    });
+    const original = Promise.resolve()
+      .then(async () => {
+        if (this.closed || abort.signal.aborted) return;
+        await this.options.installation.drive(key, { deadline, signal: abort.signal });
+      })
+      .catch(() => {
+        this.lastError = 'drive';
+      })
+      .finally(() => {
+        clearTimeout(timer);
+        this.work.delete(id);
+      });
     this.work.set(id, { abort, original });
   }
 }
 
-export function createScheduler(options: SchedulerOptions): Scheduler { return new Loop(options); }
+export function createScheduler(options: SchedulerOptions): Scheduler {
+  return new Loop(options);
+}

@@ -14,23 +14,41 @@ export class Watch implements OutputWatch {
   scan: Promise<void> | undefined;
   stopOriginal?: Promise<void>;
   controller: AbortController | undefined;
-  constructor(readonly request: OutputWatchRequest, private readonly retire: () => void,
-    private readonly stopPort: (reason: GuardStopReason) => Promise<unknown>, private readonly refresh: () => void) {
-    this.initial = new Promise(resolve => { this.resolveInitial = resolve; });
+  constructor(
+    readonly request: OutputWatchRequest,
+    private readonly retire: () => void,
+    private readonly stopPort: (reason: GuardStopReason) => Promise<unknown>,
+    private readonly refresh: () => void,
+  ) {
+    this.initial = new Promise((resolve) => {
+      this.resolveInitial = resolve;
+    });
   }
   status(): OutputWatchStatus {
     this.refresh();
-    return { ready: !this.closed && !this.stopped && this.lastKnownAt !== null,
-      closed: this.closed, stopRequested: this.stopped, lastKnownAt: this.lastKnownAt };
+    return {
+      ready: !this.closed && !this.stopped && this.lastKnownAt !== null,
+      closed: this.closed,
+      stopRequested: this.stopped,
+      lastKnownAt: this.lastKnownAt,
+    };
   }
-  initialResult(ready: boolean): void { this.resolveInitial({ ready }); }
+  initialResult(ready: boolean): void {
+    this.resolveInitial({ ready });
+  }
   stop(reason: GuardStopReason): void {
     if (this.closed || this.stopped) return;
     this.stopped = true;
     this.initialResult(false);
     // Reserve the original before invoking a reentrant installation callback.
-    this.stopOriginal = Promise.resolve().then(() => this.stopPort(reason)).then(() => undefined,
-      () => { this.failed = true; });
+    this.stopOriginal = Promise.resolve()
+      .then(() => this.stopPort(reason))
+      .then(
+        () => undefined,
+        () => {
+          this.failed = true;
+        },
+      );
   }
   close(): Promise<void> {
     if (this.closing) return this.closing;

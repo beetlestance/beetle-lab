@@ -1,14 +1,42 @@
 const proof = (row = 'NEW') => `EXISTS(SELECT 1 FROM execution_output_absences WHERE attempt_id=${row}.attempt_id)`;
-const settled = (row = 'NEW') => `EXISTS(SELECT 1 FROM execution_output_absence_finalizations WHERE attempt_id=${row}.attempt_id)`;
-const match = ['attempt_id','run_id','organization_id','workspace_id','intent_digest','journal_authority','generation',
-  'proof_digest','final_agent_seq','retained_payload_bytes','run_version','state','outcome','validation_status','reason']
-  .map(name => `v.${name} IS NEW.${name}`).join(' AND ');
-const identity = ['organizationId','workspaceId','attemptId','intentDigest','journalAuthority'].map(field => {
-  const columns = { organizationId: 'organization_id', workspaceId: 'workspace_id', attemptId: 'attempt_id',
-    intentDigest: 'intent_digest', journalAuthority: 'journal_authority' };
-  return `json_extract(NEW.proof_json,'$.${field}') IS NEW.${columns[field as keyof typeof columns]}`;
-}).join(' AND ');
-const freeze = (table: string, action: string, condition: string) => `CREATE TRIGGER absence_${table}_${action.toLowerCase()}
+const settled = (row = 'NEW') =>
+  `EXISTS(SELECT 1 FROM execution_output_absence_finalizations WHERE attempt_id=${row}.attempt_id)`;
+const match = [
+  'attempt_id',
+  'run_id',
+  'organization_id',
+  'workspace_id',
+  'intent_digest',
+  'journal_authority',
+  'generation',
+  'proof_digest',
+  'final_agent_seq',
+  'retained_payload_bytes',
+  'run_version',
+  'state',
+  'outcome',
+  'validation_status',
+  'reason',
+]
+  .map((name) => `v.${name} IS NEW.${name}`)
+  .join(' AND ');
+const identity = ['organizationId', 'workspaceId', 'attemptId', 'intentDigest', 'journalAuthority']
+  .map((field) => {
+    const columns = {
+      organizationId: 'organization_id',
+      workspaceId: 'workspace_id',
+      attemptId: 'attempt_id',
+      intentDigest: 'intent_digest',
+      journalAuthority: 'journal_authority',
+    };
+    return `json_extract(NEW.proof_json,'$.${field}') IS NEW.${columns[field as keyof typeof columns]}`;
+  })
+  .join(' AND ');
+const freeze = (
+  table: string,
+  action: string,
+  condition: string,
+) => `CREATE TRIGGER absence_${table}_${action.toLowerCase()}
  BEFORE ${action} ON ${table} WHEN ${condition} BEGIN SELECT RAISE(ABORT,'closed absence custody'); END;`;
 export const absenceGuards = `
 CREATE TRIGGER absence_proof_insert BEFORE INSERT ON execution_output_absences BEGIN

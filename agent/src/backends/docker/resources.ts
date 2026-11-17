@@ -19,7 +19,9 @@ function counter(body: Record<string, unknown>, path: string[]): number | null |
   }
   return scalar(value);
 }
-export interface ResourceCounter { cpuNs: number | null }
+export interface ResourceCounter {
+  cpuNs: number | null;
+}
 function observeCpu(cpu: number | null, previous: ResourceCounter) {
   const reset = cpu !== null && previous.cpuNs !== null && cpu < previous.cpuNs;
   if (cpu !== null) previous.cpuNs = cpu;
@@ -31,21 +33,36 @@ function measurements(body: Record<string, unknown>, previous: ResourceCounter):
   const pids = counter(body, ['pids_stats', 'current']);
   if (cpu === 'invalid' || memory === 'invalid' || pids === 'invalid') return unknownResources('invalid');
   const observedCpu = observeCpu(cpu, previous);
-  return { cpuMillis: observedCpu.millis, memoryBytes: memory, pids,
-    reason: observedCpu.reset ? 'counter_reset' : [cpu, memory, pids].includes(null) ? 'unsupported' : null };
+  return {
+    cpuMillis: observedCpu.millis,
+    memoryBytes: memory,
+    pids,
+    reason: observedCpu.reset ? 'counter_reset' : [cpu, memory, pids].includes(null) ? 'unsupported' : null,
+  };
 }
-export interface StatsRequestBinding {readonly id: string; readonly method: DockerRequest['method']; readonly path: string}
+export interface StatsRequestBinding {
+  readonly id: string;
+  readonly method: DockerRequest['method'];
+  readonly path: string;
+}
 function boundRequest(binding: StatsRequestBinding): boolean {
-  return /^[a-f0-9]{64}$/.test(binding.id) && binding.method === 'GET'
-    && binding.path === `/v1.47/containers/${binding.id}/stats?stream=false&one-shot=true`;
+  return (
+    /^[a-f0-9]{64}$/.test(binding.id) &&
+    binding.method === 'GET' &&
+    binding.path === `/v1.47/containers/${binding.id}/stats?stream=false&one-shot=true`
+  );
 }
 /** Docker API values are raw usage; no CLI cache subtraction or CPU rate estimation. */
-export function resourceReading(reply: DockerReply, binding: StatsRequestBinding, previous: ResourceCounter): ResourceReading {
+export function resourceReading(
+  reply: DockerReply,
+  binding: StatsRequestBinding,
+  previous: ResourceCounter,
+): ResourceReading {
   if (!boundRequest(binding)) return unknownResources('invalid');
   if (!reply.ok) return unknownResources(reply.reason === 'malformed' ? 'invalid' : 'unavailable');
   if ([400, 501].includes(reply.status)) return unknownResources('unsupported');
   if (reply.status !== 200) return unknownResources('unavailable');
   const body = record(reply.body);
-  if (!body || Object.hasOwn(body, 'id') && body.id !== binding.id) return unknownResources('invalid');
+  if (!body || (Object.hasOwn(body, 'id') && body.id !== binding.id)) return unknownResources('invalid');
   return measurements(body, previous);
 }

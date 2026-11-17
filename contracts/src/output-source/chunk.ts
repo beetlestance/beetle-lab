@@ -17,7 +17,7 @@ function decodedBytes(text: string): number {
   const tail = alphabet.indexOf(text[end - 1]!);
   if (padding === 2) requireInput((tail & 15) === 0);
   if (padding === 1) requireInput((tail & 3) === 0);
-  return text.length / 4 * 3 - padding;
+  return (text.length / 4) * 3 - padding;
 }
 
 /** Input must already have bounded producer/parsed-byte provenance. */
@@ -25,18 +25,26 @@ export function captureSourceChunkRequest(input: unknown): Owned<SourceChunkRequ
   return checked(() => {
     const captured = capture(input, SOURCE_CHUNK_REQUEST_BYTES);
     canonical(captured, SOURCE_CHUNK_REQUEST_BYTES);
-    const result = validate('SourceChunkRequest', captured); requireInput(result.ok);
+    const result = validate('SourceChunkRequest', captured);
+    requireInput(result.ok);
     return freeze(result.value);
   });
 }
 
 /** Validate the exact requested range against its adopted manifest declaration. */
-export function verifySourceChunk(input: unknown, request: SourceChunkRequest, artifactBytes: number): Owned<SourceChunk> {
+export function verifySourceChunk(
+  input: unknown,
+  request: SourceChunkRequest,
+  artifactBytes: number,
+): Owned<SourceChunk> {
   return checked(() => {
-    const expected = captureSourceChunkRequest(request); integer(artifactBytes);
+    const expected = captureSourceChunkRequest(request);
+    integer(artifactBytes);
     requireInput(expected.offset <= artifactBytes);
-    const captured = capture(input, SOURCE_CHUNK_BYTES); canonical(captured, SOURCE_CHUNK_BYTES);
-    const result = validate('SourceChunk', captured); requireInput(result.ok);
+    const captured = capture(input, SOURCE_CHUNK_BYTES);
+    canonical(captured, SOURCE_CHUNK_BYTES);
+    const result = validate('SourceChunk', captured);
+    requireInput(result.ok);
     const value = result.value;
     for (const field of ['manifestDigest', 'sourceDigest', 'artifactId', 'offset'] as const) {
       requireInput(value[field] === expected[field]);

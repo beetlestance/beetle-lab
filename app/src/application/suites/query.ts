@@ -8,7 +8,8 @@ export function suiteSnapshot<T>(value: T, maximum = 2097152): T {
   return immutableSnapshot(JSON.parse(encodeJson(value, maximum)) as T);
 }
 export function checkedSuiteValue<N extends 'Suite' | 'SuiteRevision' | 'SuitePage' | 'SuiteRevisionPage'>(
-  name: N, input: unknown,
+  name: N,
+  input: unknown,
 ): ApiTypes[N] {
   const result = validateApi(name, suiteSnapshot(input));
   if (!result.ok) throw new Error('Invalid suite repository response');
@@ -42,11 +43,13 @@ function checkedPage(query: SuiteList | RevisionList, value: ApiTypes['SuitePage
 export async function listSuites(query: SuiteList, reader: SuiteReader) {
   const expected = suiteSnapshot(query, 2048);
   const value = checkedSuiteValue('SuitePage', await reader.listSuites(suiteSnapshot(expected, 2048)));
-  checkedPage(expected, value); return value;
+  checkedPage(expected, value);
+  return value;
 }
 export async function listRevisions(query: RevisionList, reader: SuiteReader) {
   const expected = suiteSnapshot(query, 2048);
   const value = checkedSuiteValue('SuiteRevisionPage', await reader.listRevisions(suiteSnapshot(expected, 2048)));
   requireRule(sameUuid(value.suiteId, expected.suiteId), 'not_found');
-  checkedPage(expected, value); return value;
+  checkedPage(expected, value);
+  return value;
 }

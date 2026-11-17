@@ -13,7 +13,7 @@ import type { InstallationConfiguration, Providers } from '../staging/index.js';
 import type { SchedulerStatus } from '../scheduler/index.js';
 
 export interface AgentRuntimeOptions {
-  readonly onStorageFailure?:(error:unknown)=>void;
+  readonly onStorageFailure?: (error: unknown) => void;
   readonly configurationCheck?: () => Promise<void>;
   readonly journal: JournalOptions;
   readonly installation: InstallationConfiguration;
@@ -35,12 +35,20 @@ export interface AgentRuntime {
   readonly retirement: Pick<ProducerRetirement, 'retire' | 'status'>;
   readonly server: FastifyInstance;
   readonly initial: Promise<{ readonly ready: boolean }>;
-  status(): { readonly ready: boolean; readonly closed: boolean; readonly retainedActors: number; readonly scheduler: SchedulerStatus };
+  status(): {
+    readonly ready: boolean;
+    readonly closed: boolean;
+    readonly retainedActors: number;
+    readonly scheduler: SchedulerStatus;
+  };
   /** Failed cleanup retains journal/process ownership; never certifies remote dispatch quiescence. */
   close(): Promise<void>;
 }
 export class AgentRuntimeError extends Error {
-  constructor(readonly reason: 'busy' | 'startup' | 'recovery_required' | 'closed' | 'cleanup', options?: ErrorOptions) {
+  constructor(
+    readonly reason: 'busy' | 'startup' | 'recovery_required' | 'closed' | 'cleanup',
+    options?: ErrorOptions,
+  ) {
     super(`Agent runtime ${reason}`, options);
   }
 }

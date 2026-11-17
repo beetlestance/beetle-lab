@@ -9,10 +9,11 @@ import type { CreateRunOperation, RunCommand } from '../../ports/runs.js';
 export function prepareRunCommand(operation: CreateRunOperation, digest: IntentDigest): RunCommand {
   const copy = JSON.parse(encodeJson(operation, 65536)) as CreateRunOperation & { intentDigest?: string };
   const fields = ['kind', 'id', 'attemptId', 'requestedAt', 'request', 'intentDigest'];
-  requireRule(Object.keys(copy).every(key => fields.includes(key)));
+  requireRule(Object.keys(copy).every((key) => fields.includes(key)));
   requireRule(copy.kind === 'createRun' && validateApi('CreateRunRequest', copy.request).ok);
-  requireRule(validateApi('Uuid', copy.id).ok && validateApi('Uuid', copy.attemptId).ok
-    && !sameUuid(copy.id, copy.attemptId));
+  requireRule(
+    validateApi('Uuid', copy.id).ok && validateApi('Uuid', copy.attemptId).ok && !sameUuid(copy.id, copy.attemptId),
+  );
   requireRule(validateApi('RunTimestamp', copy.requestedAt).ok);
   const intentDigest = digestMutationIntent({ kind: copy.kind, request: copy.request }, digest);
   requireRule(copy.intentDigest === undefined || copy.intentDigest === intentDigest);

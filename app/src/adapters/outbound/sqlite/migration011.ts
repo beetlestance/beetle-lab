@@ -1,6 +1,7 @@
 import { finalizationEvidence } from './output-finalization/evidence.js';
 import { finalizationGuards } from './output-finalization/guards.js';
-const safe = (name: string, min = 0) => `${name} INTEGER NOT NULL CHECK(typeof(${name})='integer' AND ${name} BETWEEN ${min} AND 9007199254740991)`;
+const safe = (name: string, min = 0) =>
+  `${name} INTEGER NOT NULL CHECK(typeof(${name})='integer' AND ${name} BETWEEN ${min} AND 9007199254740991)`;
 /** Credits preserve original allocations and their metadata charge. Any future
  * accounting reconstruction must subtract these immutable refunded_bytes.
  */

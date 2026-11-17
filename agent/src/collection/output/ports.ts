@@ -3,14 +3,20 @@ import { performance } from 'node:perf_hooks';
 import type { OutputCollectionReason } from './types.js';
 
 export class OutputFailure extends Error {
-  constructor(readonly reason: OutputCollectionReason) { super(`Output collection ${reason}`); }
+  constructor(readonly reason: OutputCollectionReason) {
+    super(`Output collection ${reason}`);
+  }
 }
 export interface OutputPorts {
-  readonly lstat: typeof lstat; readonly open: typeof open; readonly realpath: typeof realpath;
+  readonly lstat: typeof lstat;
+  readonly open: typeof open;
+  readonly realpath: typeof realpath;
   readonly now: () => number;
 }
 export const nodePorts: OutputPorts = { lstat, open, realpath, now: () => performance.now() };
-export interface NativeClosable { close(): Promise<void> }
+export interface NativeClosable {
+  close(): Promise<void>;
+}
 export interface OutputIO {
   check(): void;
   io<T>(action: () => Promise<T>): Promise<T>;

@@ -16,13 +16,19 @@ export class Windows {
   }
   add(point: MetricPoint): void {
     const start = Math.floor(point.timeMs / 1000) * 1000;
-    if (point.timeMs < this.highWater - 2000) { this.latePoints = checkedSum(this.latePoints, 1, true); return; }
+    if (point.timeMs < this.highWater - 2000) {
+      this.latePoints = checkedSum(this.latePoints, 1, true);
+      return;
+    }
     let bucket = this.buckets.get(start);
-    if (!bucket) { bucket = new Map(); this.buckets.set(start, bucket); }
+    if (!bucket) {
+      bucket = new Map();
+      this.buckets.set(start, bucket);
+    }
     accumulate(bucket, point, this.maximumSeries);
   }
   takeBefore(cutoff: number): MetricWindow | undefined {
-    const start = [...this.buckets.keys()].sort((left, right) => left - right).find(time => time < cutoff);
+    const start = [...this.buckets.keys()].sort((left, right) => left - right).find((time) => time < cutoff);
     if (start === undefined) return undefined;
     const bucket = this.buckets.get(start)!;
     this.buckets.delete(start);

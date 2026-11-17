@@ -1,23 +1,29 @@
 import { OUTPUT_REJECTION_REASONS } from '@beetle/contracts/output-source';
 
 const r = (path: string): string => `json_extract(r.reservation_json,'$.${path}')`;
-const integer = (path: string): string => `json_type(r.reservation_json,'$.${path}')='integer' AND ${r(path)} BETWEEN 0 AND 9007199254740991`;
-const token = (path: string): string => `json_type(r.reservation_json,'$.${path}')='text' AND length(CAST(${r(path)} AS BLOB)) BETWEEN 1 AND 128`;
+const integer = (path: string): string =>
+  `json_type(r.reservation_json,'$.${path}')='integer' AND ${r(path)} BETWEEN 0 AND 9007199254740991`;
+const token = (path: string): string =>
+  `json_type(r.reservation_json,'$.${path}')='text' AND length(CAST(${r(path)} AS BLOB)) BETWEEN 1 AND 128`;
 const q = (path: string): string => `json_extract(q.candidate_json,'$.${path}')`;
 const scope = ['attemptId', 'organizationId', 'workspaceId', 'generation'];
 const columns = ['attempt_id', 'organization_id', 'workspace_id', 'generation'];
-const bound = (expression: (path: string) => string): string => scope.map((name, i) => `${expression(name)} IS a.${columns[i]}`).join(' AND ');
-const releaseBinding = ['createToken', 'specDigest', 'runtimeId'].map(name =>
-  `${r(`releaseEvidence.${name}`)} IS ${r(name)} AND ${r(`launchSettlement.${name}`)} IS ${r(name)}`).join(' AND ');
-const reasons = Object.entries(OUTPUT_REJECTION_REASONS).map(([reason, outcome]) => `WHEN '${reason}' THEN '${outcome}'`).join(' ');
+const bound = (expression: (path: string) => string): string =>
+  scope.map((name, i) => `${expression(name)} IS a.${columns[i]}`).join(' AND ');
+const releaseBinding = ['createToken', 'specDigest', 'runtimeId']
+  .map((name) => `${r(`releaseEvidence.${name}`)} IS ${r(name)} AND ${r(`launchSettlement.${name}`)} IS ${r(name)}`)
+  .join(' AND ');
+const reasons = Object.entries(OUTPUT_REJECTION_REASONS)
+  .map(([reason, outcome]) => `WHEN '${reason}' THEN '${outcome}'`)
+  .join(' ');
 const rejection = `json_extract(q.decision_json,'$.reason')`;
 const neverStarted = `${r('aborted')}=1 AND ${r('createToken')} IS NULL AND ${r('startToken')} IS NULL
   AND ${r('specDigest')} IS NULL AND ${r('runtimeId')} IS NULL AND ${r('launchSettlement')} IS NULL
   AND ${r('releaseEvidence')} IS NULL AND ${r('launchEpoch')}=0 AND ${r('startClaimedAt')} IS NULL`;
 const settled = `${r('aborted')}=0 AND ${r('launchSettlement.authority')}='supervisor'
   AND ${r('launchSettlement.disposition')} IN ('retired','completed')
-  AND ${bound(name => r(`launchSettlement.key.${name}`))}
-  AND ${bound(name => r(`releaseEvidence.key.${name}`))} AND ${releaseBinding}
+  AND ${bound((name) => r(`launchSettlement.key.${name}`))}
+  AND ${bound((name) => r(`releaseEvidence.key.${name}`))} AND ${releaseBinding}
   AND ${token('createToken')} AND ${token('runtimeId')}
   AND length(${r('specDigest')})=64 AND ${r('specDigest')} NOT GLOB '*[^a-f0-9]*'
   AND ${r('launchEpoch')} IN (0,1)
@@ -43,16 +49,32 @@ const settled = `${r('aborted')}=0 AND ${r('launchSettlement.authority')}='super
     AND ${r('releaseEvidence.collection.evidenceId')}=i.collection_id
     AND ${r('releaseEvidence.collection.observedAt')}>=json_extract(i.intent_json,'$.begunAt')
     AND ${r('releaseEvidence.runtime')}=json_extract(i.intent_json,'$.runtime')))`;
-const zero = ['last_seq', 'retained_start_seq', 'acknowledged_seq', 'wrapper_high', 'supervisor_high',
-  'wrapper_expired', 'supervisor_expired', 'spool_bytes', 'spool_rows', 'snapshot_bytes', 'checkpoint_bytes']
-  .map(name => `a.${name}=0`).join(' AND ');
-const empty = ['phase', 'exit_json', 'exit_facts_json', 'result_json', 'wrapper_checkpoint_json'].map(name => `a.${name} IS NULL`).join(' AND ');
+const zero = [
+  'last_seq',
+  'retained_start_seq',
+  'acknowledged_seq',
+  'wrapper_high',
+  'supervisor_high',
+  'wrapper_expired',
+  'supervisor_expired',
+  'spool_bytes',
+  'spool_rows',
+  'snapshot_bytes',
+  'checkpoint_bytes',
+]
+  .map((name) => `a.${name}=0`)
+  .join(' AND ');
+const empty = ['phase', 'exit_json', 'exit_facts_json', 'result_json', 'wrapper_checkpoint_json']
+  .map((name) => `a.${name} IS NULL`)
+  .join(' AND ');
 const fresh = `c.generation=1 AND a.generation=1 AND a.cancel_requested=1 AND a.state='offered'
   AND ${zero} AND ${empty} AND q.attempt_id IS NULL AND r.attempt_id IS NULL
   AND NOT EXISTS(SELECT 1 FROM event_spool WHERE attempt_id=a.attempt_id)
   AND k.cancel_reason='cancelled' AND k.cancel_at BETWEEN 0 AND k.high_water`;
 const rejected = `r.attempt_id IS NULL AND q.pending=0 AND ${bound(q)}
-  AND json_extract(q.decision_json,'$.kind')='reject' AND ${rejection} IN (${Object.keys(OUTPUT_REJECTION_REASONS).map(x => `'${x}'`).join(',')})
+  AND json_extract(q.decision_json,'$.kind')='reject' AND ${rejection} IN (${Object.keys(OUTPUT_REJECTION_REASONS)
+    .map((x) => `'${x}'`)
+    .join(',')})
   AND (${rejection}!='cancelled' OR a.cancel_requested=1)`;
 const released = `r.charged=0 AND q.pending=0 AND q.decision_json IS NULL AND ${bound(q)} AND ${bound(r)}
   AND ${r('status')}='released' AND ${r('launchClosed')}=1 AND ${integer('admittedAt')}

@@ -3,7 +3,10 @@ import { ApiFault } from '../api-errors.js';
 import { RequestContext } from './context.js';
 
 export class RequestLifetimes {
-  constructor(private readonly limit = 64, private readonly lifetimeMs = 30_000) {}
+  constructor(
+    private readonly limit = 64,
+    private readonly lifetimeMs = 30_000,
+  ) {}
   private closed = false;
   private closing?: Promise<void>;
   private readonly active = new Set<RequestContext>();
@@ -13,7 +16,9 @@ export class RequestLifetimes {
     server.addHook('onRequest', async (request, reply) => {
       if (this.closed || this.active.size >= this.limit) throw new ApiFault('capacity_unavailable');
       const context = new RequestContext(request, reply, () => this.active.delete(context), this.lifetimeMs);
-      this.active.add(context); this.requests.set(request, context); this.signals.set(context.signal, context);
+      this.active.add(context);
+      this.requests.set(request, context);
+      this.signals.set(context.signal, context);
     });
     server.addHook('onSend', async (request, reply, payload) => {
       if (!request.raw.complete) reply.header('Connection', 'close');
@@ -43,7 +48,7 @@ export class RequestLifetimes {
     this.closed = true;
     const contexts = [...this.active];
     for (const context of contexts) context.destroy();
-    this.closing = Promise.all(contexts.map(context => context.drain())).then(() => undefined);
+    this.closing = Promise.all(contexts.map((context) => context.drain())).then(() => undefined);
     return this.closing;
   }
 }

@@ -2,19 +2,26 @@ import { bucketIndex } from './exponential.js';
 import { countSum, DistributionError } from './distribution-types.js';
 import type { DurationDistribution } from './distribution-types.js';
 const fields = ['format', 'unit', 'scale', 'offset', 'buckets', 'zeroCount', 'count', 'min', 'max'];
-function invalid(): never { throw new DistributionError('invalid_distribution'); }
+function invalid(): never {
+  throw new DistributionError('invalid_distribution');
+}
 function exactObject(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return invalid();
   const keys = Reflect.ownKeys(value);
-  if (keys.length !== fields.length || keys.some(key => typeof key !== 'string' || !fields.includes(key))) return invalid();
+  if (keys.length !== fields.length || keys.some((key) => typeof key !== 'string' || !fields.includes(key)))
+    return invalid();
   for (const key of fields) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key)!;
     if (!descriptor.enumerable || !Object.hasOwn(descriptor, 'value')) return invalid();
   }
   return value as Record<string, unknown>;
 }
-function safe(value: unknown): value is number { return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0; }
-function duration(value: unknown): value is number { return typeof value === 'number' && Number.isFinite(value) && value >= 0; }
+function safe(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+}
+function duration(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+}
 function header(value: Record<string, unknown>): void {
   if (value.format !== 'exponential-v1' || value.unit !== 'ms') invalid();
   const { scale, offset } = value;
@@ -22,7 +29,15 @@ function header(value: Record<string, unknown>): void {
   if (typeof offset !== 'number' || !Number.isInteger(offset)) return invalid();
 }
 function empty(value: DurationDistribution): void {
-  if (value.min !== null || value.max !== null || value.zeroCount || value.buckets.length || value.offset || value.scale !== 4) invalid();
+  if (
+    value.min !== null ||
+    value.max !== null ||
+    value.zeroCount ||
+    value.buckets.length ||
+    value.offset ||
+    value.scale !== 4
+  )
+    invalid();
 }
 function zeroOnly(value: DurationDistribution): void {
   if (value.max !== 0 || value.offset || value.scale !== 4) invalid();
@@ -37,10 +52,16 @@ function positiveExtrema(value: DurationDistribution): void {
 }
 function extrema(value: DurationDistribution): void {
   const { count, min, max, zeroCount, buckets } = value;
-  if (count === 0) { empty(value); return; }
+  if (count === 0) {
+    empty(value);
+    return;
+  }
   if (!duration(min) || !duration(max) || min > max) return invalid();
-  if ((min === 0) !== (zeroCount > 0)) return invalid();
-  if (!buckets.length) { zeroOnly(value); return; }
+  if ((min === 0) !== zeroCount > 0) return invalid();
+  if (!buckets.length) {
+    zeroOnly(value);
+    return;
+  }
   if (max === 0) invalid();
   positiveExtrema(value);
 }
@@ -67,7 +88,8 @@ function counts(value: Record<string, unknown>): void {
  * object (not a hostile reflective proxy). Check array length before count iteration. */
 export function validateDistribution(input: unknown): DurationDistribution {
   const value = exactObject(input);
-  header(value); counts(value);
+  header(value);
+  counts(value);
   const result = value as unknown as DurationDistribution;
   extrema(result);
   return result;

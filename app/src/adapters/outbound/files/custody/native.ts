@@ -20,9 +20,15 @@ export interface NativePort {
   write(handle: FileHandle, bytes: Uint8Array, position: number): Promise<number>;
 }
 export const nativePort: NativePort = {
-  open, lstat, realpath, mkdir, link, unlink, statfs,
-  close: handle => handle.close(),
-  sync: handle => handle.sync(),
+  open,
+  lstat,
+  realpath,
+  mkdir,
+  link,
+  unlink,
+  statfs,
+  close: (handle) => handle.close(),
+  sync: (handle) => handle.sync(),
   truncate: (handle, length) => handle.truncate(length),
   read: async (handle, bytes, position) => (await handle.read(bytes, 0, bytes.byteLength, position)).bytesRead,
   write: async (handle, bytes, position) => (await handle.write(bytes, 0, bytes.byteLength, position)).bytesWritten,
@@ -34,7 +40,11 @@ export const directoryFlags = readFlags | constants.O_DIRECTORY;
 
 /** Named absence only; callers own ancestor/lease checks around this operation. */
 export async function requireAbsent(port: NativePort, path: string): Promise<void> {
-  try {await port.lstat(path, {bigint: true});}
-  catch (cause) {if (errorCode(cause) === 'ENOENT') return; throw cause;}
+  try {
+    await port.lstat(path, { bigint: true });
+  } catch (cause) {
+    if (errorCode(cause) === 'ENOENT') return;
+    throw cause;
+  }
   fail('integrity');
 }

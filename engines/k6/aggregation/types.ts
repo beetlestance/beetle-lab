@@ -8,10 +8,24 @@ export interface MetricPoint {
   readonly timeMs: number;
   readonly tags: MetricTags;
 }
-export type MetricStreamCode = 'invalid_profile' | 'invalid_record' | 'unknown_metric' | 'invalid_labels'
-  | 'stream_limit' | 'record_limit' | 'line_limit' | 'torn_record' | 'cancelled' | 'closed' | 'busy' | 'sink_failed';
+export type MetricStreamCode =
+  | 'invalid_profile'
+  | 'invalid_record'
+  | 'unknown_metric'
+  | 'invalid_labels'
+  | 'stream_limit'
+  | 'record_limit'
+  | 'line_limit'
+  | 'torn_record'
+  | 'cancelled'
+  | 'closed'
+  | 'busy'
+  | 'sink_failed';
 export class MetricStreamError extends Error {
-  constructor(readonly code: MetricStreamCode) { super('Metric stream rejected'); this.name = 'MetricStreamError'; }
+  constructor(readonly code: MetricStreamCode) {
+    super('Metric stream rejected');
+    this.name = 'MetricStreamError';
+  }
 }
 export interface MetricStreamOptions {
   readonly metrics: readonly MetricDefinition[];

@@ -1,6 +1,7 @@
-import {namespaceProtectionSql,namespaceTables} from './namespace-deletion/protection.js';
+import { namespaceProtectionSql, namespaceTables } from './namespace-deletion/protection.js';
 /** Permanent bounded namespace identity, including generated root/settings IDs. No parent FK or refunds. */
-const identity = (value: string) => `EXISTS(SELECT 1 FROM namespace_deletions WHERE id=lower(${value}) OR root_id=lower(${value}) OR settings_id=lower(${value}))`;
+const identity = (value: string) =>
+  `EXISTS(SELECT 1 FROM namespace_deletions WHERE id=lower(${value}) OR root_id=lower(${value}) OR settings_id=lower(${value}))`;
 export const migration026 = `
 CREATE INDEX settings_namespace ON settings(organization_id,workspace_id,id);
 CREATE INDEX backend_retired_scope ON backend_retired_runs(organization_id,workspace_id,run_id);
@@ -23,9 +24,13 @@ CREATE TRIGGER namespace_marker_funding BEFORE INSERT ON namespace_deletions BEG
  AND u.charged_bytes+2048<=json_extract(s.value_json,'$.pool.storageBytes')-json_extract(s.value_json,'$.pool.freeSpaceReserveBytes'))
  THEN RAISE(ABORT,'namespace marker capacity') END; END;
 CREATE TRIGGER namespace_marker_binding BEFORE INSERT ON namespace_deletions BEGIN
- ${(['organization','workspace','folder'] as const).map(kind=>`SELECT CASE WHEN NEW.kind='${kind}' AND EXISTS(
+ ${(['organization', 'workspace', 'folder'] as const)
+   .map(
+     (kind) => `SELECT CASE WHEN NEW.kind='${kind}' AND EXISTS(
  SELECT 1 FROM ${namespaceTables[kind]} target WHERE target.id=NEW.id AND (${namespaceProtectionSql(kind)}))
- THEN RAISE(ABORT,'namespace not empty') END;`).join('\n')}
+ THEN RAISE(ABORT,'namespace not empty') END;`,
+   )
+   .join('\n')}
 
  SELECT CASE WHEN NOT (
  (NEW.kind='organization' AND NEW.scope_key='installation' AND NEW.root_id IS NULL AND EXISTS(
@@ -49,13 +54,28 @@ CREATE TRIGGER namespace_marker_charge AFTER INSERT ON namespace_deletions BEGIN
 END;
 CREATE TRIGGER namespace_marker_immutable BEFORE UPDATE ON namespace_deletions BEGIN SELECT RAISE(ABORT,'retained namespace identity'); END;
 CREATE TRIGGER namespace_marker_retained BEFORE DELETE ON namespace_deletions BEGIN SELECT RAISE(ABORT,'retained namespace identity'); END;
-${['organizations','workspaces','folders','settings'].map(table => `CREATE TRIGGER ${table}_deleted_identity BEFORE INSERT ON ${table}
- WHEN ${identity('NEW.id')} BEGIN SELECT RAISE(ABORT,'deleted namespace identity'); END;`).join('\n')}
-${['organizations','workspaces','folders','settings'].map(table => `CREATE TRIGGER ${table}_deleted_identity_update BEFORE UPDATE OF id ON ${table}
- WHEN ${identity('NEW.id')} BEGIN SELECT RAISE(ABORT,'deleted namespace identity'); END;`).join('\n')}
-${[['organizations','organization'],['workspaces','workspace']].map(([table,kind]) => `CREATE TRIGGER ${table}_delete_marker BEFORE DELETE ON ${table}
+${['organizations', 'workspaces', 'folders', 'settings']
+  .map(
+    (table) => `CREATE TRIGGER ${table}_deleted_identity BEFORE INSERT ON ${table}
+ WHEN ${identity('NEW.id')} BEGIN SELECT RAISE(ABORT,'deleted namespace identity'); END;`,
+  )
+  .join('\n')}
+${['organizations', 'workspaces', 'folders', 'settings']
+  .map(
+    (table) => `CREATE TRIGGER ${table}_deleted_identity_update BEFORE UPDATE OF id ON ${table}
+ WHEN ${identity('NEW.id')} BEGIN SELECT RAISE(ABORT,'deleted namespace identity'); END;`,
+  )
+  .join('\n')}
+${[
+  ['organizations', 'organization'],
+  ['workspaces', 'workspace'],
+]
+  .map(
+    ([table, kind]) => `CREATE TRIGGER ${table}_delete_marker BEFORE DELETE ON ${table}
  WHEN NOT EXISTS(SELECT 1 FROM namespace_deletions WHERE kind='${kind}' AND id=OLD.id AND version=OLD.version+1)
- BEGIN SELECT RAISE(ABORT,'namespace deletion marker required'); END;`).join('\n')}
+ BEGIN SELECT RAISE(ABORT,'namespace deletion marker required'); END;`,
+  )
+  .join('\n')}
 CREATE TRIGGER folders_delete_marker BEFORE DELETE ON folders
  WHEN NOT EXISTS(SELECT 1 FROM namespace_deletions WHERE (kind='folder' AND id=OLD.id AND version=OLD.version+1)
  OR (kind='workspace' AND root_id=OLD.id AND id=OLD.workspace_id)) BEGIN SELECT RAISE(ABORT,'namespace deletion marker required'); END;

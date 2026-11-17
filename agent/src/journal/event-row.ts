@@ -50,7 +50,7 @@ export function capturePruneEvent(input: unknown, owner: Row): PruneEventRow {
   return { ...lengths, source: row.source, source_key: sourceKey, charged_bytes: charged };
 }
 export function captureStoredEvent(input: unknown, key: GenerationKey, seq?: number): AgentEvent {
-  const raw=storedJson(input,AGENT_EVENT_BYTES);
+  const raw = storedJson(input, AGENT_EVENT_BYTES);
   const parsed = validate('AgentEvent', raw);
   if (!parsed.ok) throw new Failure('unavailable');
   const value = parsed.value;
@@ -73,7 +73,8 @@ export function captureSourceReplay(input: unknown, owner: Row, expected: EventI
     if (event.source === 'wrapper') {
       if (event.wrapperSeq !== expected.sourceKey) throw new Failure('unavailable');
       original.seq = expected.sourceKey;
-      delete original.wrapperSeq;delete original.source;
+      delete original.wrapperSeq;
+      delete original.source;
       copy = eventInput(original, 'wrapper');
     } else {
       delete original.seq;

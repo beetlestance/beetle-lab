@@ -4,8 +4,14 @@ import { EXPORT_ASSIGNMENT_BYTES } from './export-job/index.js';
 import type { Offer, StandaloneExportAssignment } from './generated/types.js';
 
 /** Private installation policy, pinned in each candidate/reservation before I/O. */
-export const stagingPolicy = Object.freeze({ version: 1 as const, offerBytes: RUNNER_MAXIMUM_OFFER_BYTES,
-  manifestBytes: 65_536, metadataBytes: 65_536, secretBytes: 65_536, aggregateSecretBytes: 1_048_576 });
+export const stagingPolicy = Object.freeze({
+  version: 1 as const,
+  offerBytes: RUNNER_MAXIMUM_OFFER_BYTES,
+  manifestBytes: 65_536,
+  metadataBytes: 65_536,
+  secretBytes: 65_536,
+  aggregateSecretBytes: 1_048_576,
+});
 export interface StagingEstimate {
   policyVersion: 1;
   offerBytes: number;
@@ -31,31 +37,58 @@ export function serializeStagedOffer(offer: Offer): string {
 /** Caller validates Offer first; this pure cost calculation performs no resolution or I/O. */
 export function estimateStaging(offer: Offer, assignment?: StandaloneExportAssignment): Readonly<StagingEstimate> {
   const offerBytes = new TextEncoder().encode(serializeStagedOffer(offer)).byteLength;
-  const assignmentBytes = assignment === undefined ? 0 : new TextEncoder().encode(encodeJson(assignment, EXPORT_ASSIGNMENT_BYTES)).byteLength;
+  const assignmentBytes =
+    assignment === undefined ? 0 : new TextEncoder().encode(encodeJson(assignment, EXPORT_ASSIGNMENT_BYTES)).byteLength;
   const inputBytes = offer.inputs.reduce((total, input) => add(total, input.bytes), 0);
   const secretCount = offer.secretReferences?.length ?? 0;
   if (!Number.isSafeInteger(secretCount) || secretCount > 64) throw new Error('Invalid staging size');
   const secretBytes = Math.min(secretCount * stagingPolicy.secretBytes, stagingPolicy.aggregateSecretBytes);
   const { manifestBytes, metadataBytes } = stagingPolicy;
-  const totalBytes = [offerBytes, secretBytes, manifestBytes, metadataBytes].reduce(add, add(inputBytes, assignmentBytes));
-  return Object.freeze({ policyVersion: stagingPolicy.version, offerBytes, ...(assignment ? {assignmentBytes} : {}), inputBytes,
-    secretBytes, manifestBytes, metadataBytes, totalBytes });
+  const totalBytes = [offerBytes, secretBytes, manifestBytes, metadataBytes].reduce(
+    add,
+    add(inputBytes, assignmentBytes),
+  );
+  return Object.freeze({
+    policyVersion: stagingPolicy.version,
+    offerBytes,
+    ...(assignment ? { assignmentBytes } : {}),
+    inputBytes,
+    secretBytes,
+    manifestBytes,
+    metadataBytes,
+    totalBytes,
+  });
 }
 
 /** Old unpublished queue records cannot authorize staging with an unaccounted policy. */
 export function supportedStaging(estimate: StagingEstimate | undefined, chargedBytes: number): boolean {
   if (!estimate || estimate.policyVersion !== stagingPolicy.version) return false;
-  const fixed = estimate.manifestBytes === stagingPolicy.manifestBytes && estimate.metadataBytes === stagingPolicy.metadataBytes;
+  const fixed =
+    estimate.manifestBytes === stagingPolicy.manifestBytes && estimate.metadataBytes === stagingPolicy.metadataBytes;
   try {
-    const total = [estimate.offerBytes, estimate.inputBytes, estimate.secretBytes,
-      estimate.manifestBytes, estimate.metadataBytes, assignmentSize(estimate.assignmentBytes)].reduce(add, 0);
-    return fixed && estimate.offerBytes <= stagingPolicy.offerBytes && estimate.secretBytes <= stagingPolicy.aggregateSecretBytes
-      && total === estimate.totalBytes && chargedBytes === total;
-  } catch { return false; }
+    const total = [
+      estimate.offerBytes,
+      estimate.inputBytes,
+      estimate.secretBytes,
+      estimate.manifestBytes,
+      estimate.metadataBytes,
+      assignmentSize(estimate.assignmentBytes),
+    ].reduce(add, 0);
+    return (
+      fixed &&
+      estimate.offerBytes <= stagingPolicy.offerBytes &&
+      estimate.secretBytes <= stagingPolicy.aggregateSecretBytes &&
+      total === estimate.totalBytes &&
+      chargedBytes === total
+    );
+  } catch {
+    return false;
+  }
 }
 
-function assignmentSize(input:number|undefined):number {
+function assignmentSize(input: number | undefined): number {
   if (input === undefined) return 0;
-  if (!Number.isSafeInteger(input) || input < 1 || input > EXPORT_ASSIGNMENT_BYTES) throw new Error('Invalid staging size');
+  if (!Number.isSafeInteger(input) || input < 1 || input > EXPORT_ASSIGNMENT_BYTES)
+    throw new Error('Invalid staging size');
   return input;
 }

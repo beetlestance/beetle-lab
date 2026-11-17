@@ -1,4 +1,4 @@
-import {HEADER_BYTES} from './output-payloads/index.js';
+import { HEADER_BYTES } from './output-payloads/index.js';
 import { checkedJournalAuthority } from './input-values.js';
 import { StorageError } from './protocol.js';
 import { storedRecord, storedInteger, storedFlag, storedUuid, storedTimestamp } from './stored-values.js';
@@ -61,8 +61,7 @@ function snapshot(input: unknown, bytes: number | null): string | null {
 }
 export function captureObservationRow(input: unknown): RecordRow {
   const row = storedRecord(input);
-  const bytes =
-    row.snapshot_bytes === null ? null : storedInteger(row.snapshot_bytes, 0, HEADER_BYTES);
+  const bytes = row.snapshot_bytes === null ? null : storedInteger(row.snapshot_bytes, 0, HEADER_BYTES);
   return {
     journal_authority: authority(row.journal_authority),
     snapshot_bytes: bytes,

@@ -8,5 +8,8 @@ export interface ExecutionPorts {
   readonly native: typeof createNativeProcess;
   readonly summary: typeof readK6Summary;
 }
-export const productionPorts: ExecutionPorts = Object.freeze({ build: buildRuntimeScript,
-  native: createNativeProcess, summary: readK6Summary });
+export const productionPorts: ExecutionPorts = Object.freeze({
+  build: buildRuntimeScript,
+  native: createNativeProcess,
+  summary: readK6Summary,
+});

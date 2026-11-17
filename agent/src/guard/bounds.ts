@@ -22,15 +22,33 @@ export function integer(value: unknown, minimum = 0, maximum = Number.MAX_SAFE_I
   return value;
 }
 export function optionsCopy(input: OutputGuardOptions): Required<OutputGuardOptions> {
-  const value = fields(input, ['root', 'minimumFreeBytes', 'intervalMs', 'ttlMs', 'sampleTimeoutMs', 'monotonicNow', 'stop']);
+  const value = fields(input, [
+    'root',
+    'minimumFreeBytes',
+    'intervalMs',
+    'ttlMs',
+    'sampleTimeoutMs',
+    'monotonicNow',
+    'stop',
+  ]);
   const intervalMs = integer(value.intervalMs ?? 250, 50, 5000);
   const ttlMs = integer(value.ttlMs ?? 2000, 100, 300000);
   const sampleTimeoutMs = integer(value.sampleTimeoutMs ?? 1000, 100, 30000);
-  if (ttlMs <= intervalMs || typeof value.stop !== 'function'
-    || (value.monotonicNow !== undefined && typeof value.monotonicNow !== 'function')) throw new GuardError('invalid_input');
-  return Object.freeze({ root: value.root as OutputGuardOptions['root'], minimumFreeBytes: integer(value.minimumFreeBytes), intervalMs, ttlMs,
-    sampleTimeoutMs, stop: value.stop as OutputGuardOptions['stop'],
-    monotonicNow: (value.monotonicNow ?? (() => performance.now())) as () => number });
+  if (
+    ttlMs <= intervalMs ||
+    typeof value.stop !== 'function' ||
+    (value.monotonicNow !== undefined && typeof value.monotonicNow !== 'function')
+  )
+    throw new GuardError('invalid_input');
+  return Object.freeze({
+    root: value.root as OutputGuardOptions['root'],
+    minimumFreeBytes: integer(value.minimumFreeBytes),
+    intervalMs,
+    ttlMs,
+    sampleTimeoutMs,
+    stop: value.stop as OutputGuardOptions['stop'],
+    monotonicNow: (value.monotonicNow ?? (() => performance.now())) as () => number,
+  });
 }
 export function requestCopy(input: OutputWatchRequest): OutputWatchRequest {
   const value = fields(input, ['key', 'plan', 'outputBytes']);
@@ -39,18 +57,35 @@ export function requestCopy(input: OutputWatchRequest): OutputWatchRequest {
   return Object.freeze({ key, plan: value.plan, outputBytes: integer(value.outputBytes, 1) });
 }
 export function resultCopy(input: OutputScanResult): OutputScanResult {
-  const value = fields(input, ['kind', 'reason', 'startedAt', 'logicalBytes', 'allocatedBytes', 'chargedBytes', 'freeBytes']);
+  const value = fields(input, [
+    'kind',
+    'reason',
+    'startedAt',
+    'logicalBytes',
+    'allocatedBytes',
+    'chargedBytes',
+    'freeBytes',
+  ]);
   if (value.kind === 'unknown') {
     const reasons = ['invalid_input', 'busy', 'cancelled', 'deadline', 'io', 'custody', 'bounds', 'cleanup'];
     if (!reasons.includes(value.reason as string)) throw new GuardError('invalid_input');
     return { kind: 'unknown', reason: value.reason as 'io' };
   }
-  if (typeof value.startedAt !== 'number' || !Number.isFinite(value.startedAt) || value.startedAt < 0) throw new GuardError('invalid_input');
+  if (typeof value.startedAt !== 'number' || !Number.isFinite(value.startedAt) || value.startedAt < 0)
+    throw new GuardError('invalid_input');
   if (value.kind === 'limit' && (value.reason === 'output' || value.reason === 'disk')) {
     return { kind: 'limit', startedAt: value.startedAt, reason: value.reason };
   }
   if (value.kind !== 'known') throw new GuardError('invalid_input');
-  return { kind: 'known', startedAt: value.startedAt, logicalBytes: integer(value.logicalBytes),
-    allocatedBytes: integer(value.allocatedBytes), chargedBytes: integer(value.chargedBytes), freeBytes: integer(value.freeBytes) };
+  return {
+    kind: 'known',
+    startedAt: value.startedAt,
+    logicalBytes: integer(value.logicalBytes),
+    allocatedBytes: integer(value.allocatedBytes),
+    chargedBytes: integer(value.chargedBytes),
+    freeBytes: integer(value.freeBytes),
+  };
 }
-export function identity(request: OutputWatchRequest): string { return JSON.stringify(request.key); }
+export function identity(request: OutputWatchRequest): string {
+  return JSON.stringify(request.key);
+}

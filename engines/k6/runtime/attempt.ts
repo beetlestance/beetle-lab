@@ -1,7 +1,7 @@
 import { stop } from './failure.js';
 
-export type AttemptBudget = { mode: 'managed'; timeoutMs: number; deadlineMs: number }
-  | { mode: 'standalone'; timeoutMs: number };
+export type AttemptBudget =
+  { mode: 'managed'; timeoutMs: number; deadlineMs: number } | { mode: 'standalone'; timeoutMs: number };
 function record(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
@@ -18,7 +18,8 @@ function closedKeys(value: Record<string, unknown>, mode: AttemptBudget['mode'])
 }
 /** Private trusted-launch options still fail closed at their serialization boundary. */
 export function validateAttempt(value: unknown): AttemptBudget {
-  if (!record(value) || !Object.hasOwn(value, 'mode') || !Object.hasOwn(value, 'timeoutMs')) return stop('invalid_limits');
+  if (!record(value) || !Object.hasOwn(value, 'mode') || !Object.hasOwn(value, 'timeoutMs'))
+    return stop('invalid_limits');
   const mode = attemptMode(value.mode);
   const timeoutMs = value.timeoutMs;
   if (!positive(timeoutMs, 172_800_000)) return stop('invalid_limits');

@@ -9,9 +9,12 @@ export function distributionPercentile(input: unknown, percentile: DurationPerce
   if (!count) return null;
   // Exact nearest-rank arithmetic, including populations at MAX_SAFE_INTEGER.
   const rank = Number((BigInt(count) * BigInt(percentile) + 99n) / 100n);
-  let lower = min!; let upper = max!;
-  if (rank <= zeroCount) { lower = 0; upper = 0; }
-  else if (min !== max) {
+  let lower = min!;
+  let upper = max!;
+  if (rank <= zeroCount) {
+    lower = 0;
+    upper = 0;
+  } else if (min !== max) {
     let cumulative = zeroCount;
     for (let index = 0; index < buckets.length; index++) {
       cumulative += buckets[index]!;

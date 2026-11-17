@@ -1,4 +1,8 @@
-import { OUTPUT_COLLECTION_INTENT_BYTES, OUTPUT_SOURCE_BYTES, OUTPUT_SOURCE_ROW_OVERHEAD } from '../output-source/index.js';
+import {
+  OUTPUT_COLLECTION_INTENT_BYTES,
+  OUTPUT_SOURCE_BYTES,
+  OUTPUT_SOURCE_ROW_OVERHEAD,
+} from '../output-source/index.js';
 
 export const outputSourceTables = `
   ALTER TABLE accepted_attempts ADD COLUMN collection_bytes INTEGER NOT NULL DEFAULT 0
@@ -29,7 +33,8 @@ export const outputSourceTables = `
   );
 `;
 
-const exactCharge = (table: string): string => `COALESCE((SELECT charged_bytes FROM ${table} WHERE attempt_id=OLD.attempt_id),0)`;
+const exactCharge = (table: string): string =>
+  `COALESCE((SELECT charged_bytes FROM ${table} WHERE attempt_id=OLD.attempt_id),0)`;
 export const outputParentGuards = `
   DROP TRIGGER disk_parent_update;
   CREATE TRIGGER disk_parent_update BEFORE UPDATE ON accepted_attempts BEGIN

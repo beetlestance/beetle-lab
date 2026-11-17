@@ -10,6 +10,8 @@ function canonical(segment: string, pattern: RegExp, image: boolean): boolean {
   try {
     const value = decodeURIComponent(segment);
     if (!pattern.test(value) || encodeURIComponent(value) !== segment) return false;
-    return !image || value.split('/').every(part => part.length > 0 && part !== '.' && part !== '..');
-  } catch { return false; }
+    return !image || value.split('/').every((part) => part.length > 0 && part !== '.' && part !== '..');
+  } catch {
+    return false;
+  }
 }

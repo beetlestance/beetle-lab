@@ -1,5 +1,5 @@
-import {namespaceProtectionSql} from './namespace-deletion/protection.js';
-import {workspaceBusySql} from './workspace-retirement/visibility.js';
+import { namespaceProtectionSql } from './namespace-deletion/protection.js';
+import { workspaceBusySql } from './workspace-retirement/visibility.js';
 /** Retain FK-linked originals; only public visibility and the private active-name key change. */
 export const migration028 = `
 ALTER TABLE workspaces ADD COLUMN retired INTEGER NOT NULL DEFAULT 0 CHECK(retired IN (0,1));
@@ -46,10 +46,14 @@ CREATE TRIGGER workspace_retire_binding BEFORE UPDATE OF retired,folded_name ON 
  SELECT 1 FROM namespace_deletions d WHERE d.kind='workspace' AND d.id=OLD.id AND d.version=OLD.version+1
  AND d.root_id=OLD.root_folder_id AND d.scope_key='organization:'||OLD.organization_id)))
  BEGIN SELECT RAISE(ABORT,'workspace retirement requires marker');END;
-${['folders','suites','suite_revisions','input_blobs','runs','export_jobs','execution_intents'].map(table => `
+${['folders', 'suites', 'suite_revisions', 'input_blobs', 'runs', 'export_jobs', 'execution_intents']
+  .map(
+    (table) => `
 CREATE TRIGGER ${table}_retired_workspace BEFORE INSERT ON ${table} WHEN EXISTS(
  SELECT 1 FROM workspaces w WHERE w.id=NEW.workspace_id AND w.organization_id=NEW.organization_id AND w.retired=1)
- BEGIN SELECT RAISE(ABORT,'retired workspace');END;`).join('\n')}
+ BEGIN SELECT RAISE(ABORT,'retired workspace');END;`,
+  )
+  .join('\n')}
 CREATE TRIGGER settings_retired_workspace_update BEFORE UPDATE ON settings WHEN OLD.kind='workspace' AND EXISTS(
  SELECT 1 FROM workspaces w WHERE w.id=OLD.workspace_id AND w.organization_id=OLD.organization_id AND w.retired=1)
  BEGIN SELECT RAISE(ABORT,'retained workspace settings');END;

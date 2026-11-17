@@ -16,13 +16,22 @@ function carrierValues(input: unknown): { key: unknown; offer: unknown } {
   return { key: key.value as unknown, offer: offer.value as unknown };
 }
 function requireExpected(key: DispatchKey, expected: DispatchKey): void {
-  requireRule(key.runId === expected.runId && key.attempt.attemptId === expected.attempt.attemptId
-    && key.attempt.organizationId === expected.attempt.organizationId && key.attempt.workspaceId === expected.attempt.workspaceId
-    && key.attempt.intentDigest === expected.attempt.intentDigest && key.attempt.generation === expected.attempt.generation);
+  requireRule(
+    key.runId === expected.runId &&
+      key.attempt.attemptId === expected.attempt.attemptId &&
+      key.attempt.organizationId === expected.attempt.organizationId &&
+      key.attempt.workspaceId === expected.attempt.workspaceId &&
+      key.attempt.intentDigest === expected.attempt.intentDigest &&
+      key.attempt.generation === expected.attempt.generation,
+  );
 }
 function requireOriginal(offer: Offer, key: DispatchKey): void {
-  requireRule(offer.attemptId === key.attempt.attemptId && offer.organizationId === key.attempt.organizationId
-    && offer.workspaceId === key.attempt.workspaceId && offer.intentDigest === key.attempt.intentDigest);
+  requireRule(
+    offer.attemptId === key.attempt.attemptId &&
+      offer.organizationId === key.attempt.organizationId &&
+      offer.workspaceId === key.attempt.workspaceId &&
+      offer.intentDigest === key.attempt.intentDigest,
+  );
 }
 /** Preserve original Offer caps; the fixed carrier adds nine nodes and one depth.
  * Capture each bounded subtree separately: a generic whole-carrier encoder would

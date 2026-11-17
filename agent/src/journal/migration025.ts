@@ -1,25 +1,30 @@
-const tables=['rejected_cleanup_receipts','rejected_cleanup_controls'] as const;
-const retained=tables.map(table=>{
- const name=table==='rejected_cleanup_receipts'?'no_task_receipt_retained':'rejected_control_retained';
- return `DROP TRIGGER ${name};CREATE TRIGGER ${name} BEFORE DELETE ON ${table}
+const tables = ['rejected_cleanup_receipts', 'rejected_cleanup_controls'] as const;
+const retained = tables
+  .map((table) => {
+    const name = table === 'rejected_cleanup_receipts' ? 'no_task_receipt_retained' : 'rejected_control_retained';
+    return `DROP TRIGGER ${name};CREATE TRIGGER ${name} BEFORE DELETE ON ${table}
  WHEN agent_settlement_delete_allowed(OLD.attempt_id,'${table}')!=1
  BEGIN SELECT RAISE(ABORT,'retained rejected cleanup'); END;`;
-}).join('\n');
-function insertPermit(table:typeof tables[number]):string{
- return table==='rejected_cleanup_controls'?"rejected_control_insert_allowed(NEW.attempt_id,NEW.control_json)":
-  "no_task_receipt_insert_allowed(NEW.attempt_id,NEW.receipt_json,NEW.receipt_identity)";
+  })
+  .join('\n');
+function insertPermit(table: (typeof tables)[number]): string {
+  return table === 'rejected_cleanup_controls'
+    ? 'rejected_control_insert_allowed(NEW.attempt_id,NEW.control_json)'
+    : 'no_task_receipt_insert_allowed(NEW.attempt_id,NEW.receipt_json,NEW.receipt_identity)';
 }
-const isolation=tables.flatMap(table=>[
- `CREATE TRIGGER settlement_${table}_insert BEFORE INSERT ON ${table} WHEN agent_settlement_active()=1 AND ${insertPermit(table)}!=1
+const isolation = tables
+  .flatMap((table) => [
+    `CREATE TRIGGER settlement_${table}_insert BEFORE INSERT ON ${table} WHEN agent_settlement_active()=1 AND ${insertPermit(table)}!=1
   BEGIN SELECT RAISE(ABORT,'settlement isolation'); END;`,
- `CREATE TRIGGER settlement_${table}_update BEFORE UPDATE ON ${table} WHEN agent_settlement_active()=1
+    `CREATE TRIGGER settlement_${table}_update BEFORE UPDATE ON ${table} WHEN agent_settlement_active()=1
   BEGIN SELECT RAISE(ABORT,'settlement isolation'); END;`,
- `CREATE TRIGGER settlement_${table}_delete BEFORE DELETE ON ${table} WHEN agent_settlement_active()=1
+    `CREATE TRIGGER settlement_${table}_delete BEFORE DELETE ON ${table} WHEN agent_settlement_active()=1
   AND agent_settlement_delete_allowed(OLD.attempt_id,'${table}')!=1
   BEGIN SELECT RAISE(ABORT,'settlement isolation'); END;`,
-]).join('\n');
+  ])
+  .join('\n');
 /** The permanent floor was prepaid: exact temporary-control transfer, no hold refund or backfill. */
-export const migration025=`
+export const migration025 = `
 ${retained}
 ${isolation}
 DROP TRIGGER rejected_stats_update;

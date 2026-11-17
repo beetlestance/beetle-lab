@@ -8,7 +8,11 @@ import type { Inspection } from '../../../agent/test/container/docker.js';
 import { agentOrigin } from './configuration.js';
 import { initializeFreshInstallation } from './initialize.js';
 
-export async function provision(f: Fixture, maximumTargetRequests = 4, configureAgent?: (path:string)=>Promise<void>): Promise<string> {
+export async function provision(
+  f: Fixture,
+  maximumTargetRequests = 4,
+  configureAgent?: (path: string) => Promise<void>,
+): Promise<string> {
   assert(Number.isSafeInteger(maximumTargetRequests) && maximumTargetRequests >= 1 && maximumTargetRequests <= 64);
   f.docker.run(['network', 'create', '--internal', '--label', `dev.beetle.qualification=${f.id}`, f.network]);
   const control = `beetle-control-${f.id}`;
@@ -18,19 +22,57 @@ if(q.url==='/counts'){r.end(JSON.stringify(counts));return;}
 const key=q.url==='/ready'?'ready':q.url==='/work'?'work':'unexpected';
 if(++counts[key]>${maximumTargetRequests})process.exit(3);r.writeHead(key==='ready'?200:key==='work'?${f.workStatus}:404);r.end('ok');
 }).listen(8080,'0.0.0.0');`;
-  f.docker.run(['run', '-d', '--pull', 'never', '--name', f.target, '--label', `dev.beetle.qualification=${f.id}`,
-    '--network', f.network, '--network-alias', 'target', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges:true',
-    '--cpus', '0.5', '--memory', '128m', '--pids-limit', '64', '--log-driver', 'local', '--log-opt', 'max-size=1m',
-    '--log-opt', 'max-file=2', '--entrypoint', 'node', f.agentImage.Id, '-e', program]);
+  f.docker.run([
+    'run',
+    '-d',
+    '--pull',
+    'never',
+    '--name',
+    f.target,
+    '--label',
+    `dev.beetle.qualification=${f.id}`,
+    '--network',
+    f.network,
+    '--network-alias',
+    'target',
+    '--read-only',
+    '--cap-drop',
+    'ALL',
+    '--security-opt',
+    'no-new-privileges:true',
+    '--cpus',
+    '0.5',
+    '--memory',
+    '128m',
+    '--pids-limit',
+    '64',
+    '--log-driver',
+    'local',
+    '--log-opt',
+    'max-size=1m',
+    '--log-opt',
+    'max-file=2',
+    '--entrypoint',
+    'node',
+    f.agentImage.Id,
+    '-e',
+    program,
+  ]);
   await createAgent(f, control, configureAgent);
   return agentOrigin(f.docker.run(['port', f.agent, '4312/tcp']));
 }
-async function createAgent(f: Fixture, control: string, configureAgent?: (path:string)=>Promise<void>): Promise<void> {
-  f.docker.run(agentContainerArguments(f,control));
-  const actual = f.docker.json<Inspection[]>(['inspect', f.agent])[0]!; assert.equal(actual.Image, f.agentImage.Id);
+async function createAgent(
+  f: Fixture,
+  control: string,
+  configureAgent?: (path: string) => Promise<void>,
+): Promise<void> {
+  f.docker.run(agentContainerArguments(f, control));
+  const actual = f.docker.json<Inspection[]>(['inspect', f.agent])[0]!;
+  assert.equal(actual.Image, f.agentImage.Id);
   await saveConfiguration(f, actual.Image);
   const config = JSON.parse(await readFile(f.configPath, 'utf8')) as { listen: { host: string; port: number } };
-  config.listen.host = '0.0.0.0'; await writeFile(f.configPath, JSON.stringify(config), { mode: 0o600 });
+  config.listen.host = '0.0.0.0';
+  await writeFile(f.configPath, JSON.stringify(config), { mode: 0o600 });
   await configureAgent?.(f.configPath);
   await sealConfiguration(f);
   await initializeFreshInstallation(f);
@@ -43,15 +85,26 @@ for(let calls=0;calls<16;calls++){const p=await reader.read();if(p.done){console
 bytes+=p.value.length;if(bytes>256){await reader.cancel();throw Error('counts limit');}text+=Buffer.from(p.value).toString();}
 await reader.cancel();throw Error('counts fragments');}).catch(()=>process.exit(2));`;
   const counts: unknown = JSON.parse(f.docker.run(['exec', f.target, 'node', '-e', program]));
-  assert.deepEqual(counts, expected); return counts;
+  assert.deepEqual(counts, expected);
+  return counts;
 }
 export async function captureLogs(f: Fixture): Promise<string[]> {
   const failures: string[] = [];
   for (const id of f.docker.ownedIds(f.id)) {
-    try { await writeFile(join(f.root, `container-${id}-inspect.json`), JSON.stringify(f.docker.json(['inspect', id]), null, 2), {mode: 0o600}); }
-    catch { failures.push(`inspect:${id}`); }
-    try { await writeFile(join(f.root, `container-${id}-logs.txt`), f.docker.logs(id), { mode: 0o600 }); }
-    catch { failures.push(`logs:${id}`); }
+    try {
+      await writeFile(
+        join(f.root, `container-${id}-inspect.json`),
+        JSON.stringify(f.docker.json(['inspect', id]), null, 2),
+        { mode: 0o600 },
+      );
+    } catch {
+      failures.push(`inspect:${id}`);
+    }
+    try {
+      await writeFile(join(f.root, `container-${id}-logs.txt`), f.docker.logs(id), { mode: 0o600 });
+    } catch {
+      failures.push(`logs:${id}`);
+    }
   }
   return failures;
 }

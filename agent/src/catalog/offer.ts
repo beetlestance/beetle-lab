@@ -19,7 +19,9 @@ export function offerSnapshot(input: unknown): Offer {
   try {
     const result = validate('Offer', snapshot<unknown>(input, RUNNER_MAXIMUM_OFFER_BYTES));
     if (result.ok) return result.value;
-  } catch { /* Boundary errors never expose input or validator diagnostics. */ }
+  } catch {
+    /* Boundary errors never expose input or validator diagnostics. */
+  }
   throw new CatalogError('invalid_offer');
 }
 export function selector(engine: Offer['engine']): string {
@@ -29,10 +31,17 @@ export function permitsRuntime(offer: Offer, engine: EngineRegistration): boolea
   const { profile, manifest } = engine;
   const name = runtimeName({ installationId: profile.installationId, ...offer, generation: 1 });
   const root = join(profile.stagingRoot, name);
-  return prepareRuntime({ offer, manifest, profile, generation: 1,
-    ...(manifest.schemas.result.endsWith('/export-result') ? {assignment:{purpose:'standalone_export' as const,assignmentDigest:'f'.repeat(64)}} : {}),
+  return prepareRuntime({
+    offer,
+    manifest,
+    profile,
+    generation: 1,
+    ...(manifest.schemas.result.endsWith('/export-result')
+      ? { assignment: { purpose: 'standalone_export' as const, assignmentDigest: 'f'.repeat(64) } }
+      : {}),
     requireHardOutputQuota: offer.requiredCapabilities.includes('hard-output-quota'),
-    staged: { input: join(root, 'input'), output: join(root, 'output'), secrets: join(root, 'secrets') } }).ok;
+    staged: { input: join(root, 'input'), output: join(root, 'output'), secrets: join(root, 'secrets') },
+  }).ok;
 }
 export function validateConfig(offer: Offer, engine: InstalledEngine): void {
   if (!engine.configSchema.validate(offer.config)) throw new CatalogError('invalid_config');
@@ -42,5 +51,6 @@ export function validateConfig(offer: Offer, engine: InstalledEngine): void {
   }
   // Native feasibility excludes payload bytes; the original is already validated.
   // Native guards consuming an omitted field must amend this private projection.
-  if (!permitsRuntime({ ...offer, budget, config: {}, inputs: [], secretReferences: [] }, engine)) throw new CatalogError('unapproved_engine');
+  if (!permitsRuntime({ ...offer, budget, config: {}, inputs: [], secretReferences: [] }, engine))
+    throw new CatalogError('unapproved_engine');
 }

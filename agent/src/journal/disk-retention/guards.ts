@@ -1,14 +1,22 @@
 import { DISK_HOLD_METADATA_BYTES, MAX_RESOURCE_VALUE } from '../../admission/index.js';
 
 const pinned = ['attemptId', 'organizationId', 'workspaceId', 'generation', 'resources', 'budget', 'staging'];
-const unchanged = pinned.map(name => `json_extract(NEW.reservation_json,'$.${name}') IS json_extract(OLD.reservation_json,'$.${name}')`).join(' AND ');
-const matchesCandidate = ['resources', 'budget', 'staging'].map(name =>
-  `json_extract(NEW.reservation_json,'$.${name}') IS json_extract(q.candidate_json,'$.${name}')`).join(' AND ');
+const unchanged = pinned
+  .map((name) => `json_extract(NEW.reservation_json,'$.${name}') IS json_extract(OLD.reservation_json,'$.${name}')`)
+  .join(' AND ');
+const matchesCandidate = ['resources', 'budget', 'staging']
+  .map((name) => `json_extract(NEW.reservation_json,'$.${name}') IS json_extract(q.candidate_json,'$.${name}')`)
+  .join(' AND ');
 const stagingFields = ['offerBytes', 'inputBytes', 'secretBytes', 'manifestBytes', 'metadataBytes'];
-const stagingInteger = stagingFields.map(name => `json_type(NEW.reservation_json,'$.staging.${name}')='integer'
-  AND json_extract(NEW.reservation_json,'$.staging.${name}') BETWEEN 0 AND ${MAX_RESOURCE_VALUE}`).join(' AND ');
-const stagingSum = stagingFields.map(name => `json_extract(NEW.reservation_json,'$.staging.${name}')`).join('+')
-  + "+COALESCE(json_extract(NEW.reservation_json,'$.staging.assignmentBytes'),0)";
+const stagingInteger = stagingFields
+  .map(
+    (name) => `json_type(NEW.reservation_json,'$.staging.${name}')='integer'
+  AND json_extract(NEW.reservation_json,'$.staging.${name}') BETWEEN 0 AND ${MAX_RESOURCE_VALUE}`,
+  )
+  .join(' AND ');
+const stagingSum =
+  stagingFields.map((name) => `json_extract(NEW.reservation_json,'$.staging.${name}')`).join('+') +
+  "+COALESCE(json_extract(NEW.reservation_json,'$.staging.assignmentBytes'),0)";
 
 /** Parent guards keep the immutable original and the hold's phase inseparable. */
 export const parentGuards = `

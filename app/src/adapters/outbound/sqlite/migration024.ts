@@ -1,7 +1,8 @@
 import { settlementGuards } from './backend-settlement/guards.js';
-const safe=(name:string)=>`${name} INTEGER NOT NULL CHECK(typeof(${name})='integer' AND ${name} BETWEEN 0 AND 9007199254740991)`;
+const safe = (name: string) =>
+  `${name} INTEGER NOT NULL CHECK(typeof(${name})='integer' AND ${name} BETWEEN 0 AND 9007199254740991)`;
 /** Permanent replay floors replace only positively settled original debt. No backfill. */
-export const migration024=`
+export const migration024 = `
 CREATE TABLE backend_retired_runs (
  run_id TEXT PRIMARY KEY CHECK(length(run_id)=36 AND run_id=lower(run_id)),
  attempt_id TEXT NOT NULL UNIQUE CHECK(length(attempt_id)=36 AND attempt_id=lower(attempt_id)),

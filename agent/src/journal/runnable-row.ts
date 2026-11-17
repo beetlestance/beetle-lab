@@ -12,7 +12,7 @@ export interface RunnableRow {
 export function runnableColumns(idAlias: 'a.' | 'r.' | 'q.'): string {
   // Raw INTEGER PRIMARY KEY preserves UNION index merging; range capture follows.
   return [
-    idAlias+'id',
+    idAlias + 'id',
     sqlTextColumn('attempt_id', 45, false, 'a.'),
     sqlTextColumn('organization_id', 45, false, 'a.'),
     sqlTextColumn('workspace_id', 45, false, 'a.'),
@@ -39,7 +39,7 @@ export function captureRunnableRows(
       attempt_id: uuid(row.attempt_id),
       organization_id: uuid(row.organization_id),
       workspace_id: uuid(row.workspace_id),
-      generation: storedInteger(row.generation, 1,1),
+      generation: storedInteger(row.generation, 1, 1),
     };
   });
 }

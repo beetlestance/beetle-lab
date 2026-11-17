@@ -7,8 +7,8 @@ import type { ProcessObservation } from '../process/index.js';
 
 type Unsealed<T> = T extends unknown ? Omit<T, 'seal'> : never;
 export type K6ResultBody = DeepReadonly<Unsealed<EngineResult>>;
-export type OrchestrationFailure = 'cancelled' | 'deadline' | 'clock' | 'profile' | 'build'
-  | 'native' | 'metrics' | 'summary' | 'cleanup' | 'closed';
+export type OrchestrationFailure =
+  'cancelled' | 'deadline' | 'clock' | 'profile' | 'build' | 'native' | 'metrics' | 'summary' | 'cleanup' | 'closed';
 export interface K6ResultInput {
   readonly suite: DeepReadonly<CompiledSuite>;
   readonly scope: JournalScope;
@@ -22,8 +22,12 @@ export interface K6ResultInput {
   readonly metrics: MetricSnapshot | null;
   readonly artifacts: readonly EngineResult['artifacts'][number][];
 }
-export type K6ResultMapping = Readonly<{ ok: true; body: K6ResultBody;
-  diagnostics: Readonly<{ windowCoverage: MetricSnapshot['windowCoverage'] | null }> }>
+export type K6ResultMapping =
+  | Readonly<{
+      ok: true;
+      body: K6ResultBody;
+      diagnostics: Readonly<{ windowCoverage: MetricSnapshot['windowCoverage'] | null }>;
+    }>
   | Readonly<{ ok: false; code: 'not_quiescent' | 'invalid_input' }>;
 export interface AssertionEvidence {
   readonly counts: EngineResult['requiredAssertions'];

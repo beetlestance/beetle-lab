@@ -1,6 +1,14 @@
 import type { ExportProfilePin } from './exports.js';
-import type { Ack, AckReceipt, AttemptSnapshot, Cancellation, Capabilities, ClientResult,
-  EventBatch, Offer } from '@beetle/contracts';
+import type {
+  Ack,
+  AckReceipt,
+  AttemptSnapshot,
+  Cancellation,
+  Capabilities,
+  ClientResult,
+  EventBatch,
+  Offer,
+} from '@beetle/contracts';
 import type { RunProfilePin } from './runs.js';
 
 /** Private installation file shape; bootstrap alone resolves tokenFile. */
@@ -14,7 +22,6 @@ export interface AgentConnectionConfiguration {
   readonly storageAllocationBytes: number;
   readonly freeSpaceReserveBytes: number;
 }
-
 
 /** Captured private file intake; token is never an API value. */
 export interface LoadedAgentConfiguration {

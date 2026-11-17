@@ -30,7 +30,8 @@ const errors = {
 export class ApiFault extends Error {
   readonly statusCode: number;
   constructor(readonly code: Code) {
-    super('API operation failed'); this.name = 'ApiFault';
+    super('API operation failed');
+    this.name = 'ApiFault';
     this.statusCode = knownCode(code) ? errors[code][0] : 500;
   }
 }
@@ -58,17 +59,27 @@ const frameworkCodes = new Map<string, Code>([
   ['FST_ERR_MAX_PARAM_LENGTH', 'malformed_request'],
 ]);
 const inputCodes = {
-  invalid_input: 'malformed_request', busy: 'capacity_unavailable', capacity_unavailable: 'capacity_unavailable',
-  closed: 'storage_unavailable', cancelled: 'storage_unavailable', custody_missing: 'storage_unavailable',
-  integrity: 'storage_unavailable', io: 'storage_unavailable', cleanup: 'storage_unavailable',
+  invalid_input: 'malformed_request',
+  busy: 'capacity_unavailable',
+  capacity_unavailable: 'capacity_unavailable',
+  closed: 'storage_unavailable',
+  cancelled: 'storage_unavailable',
+  custody_missing: 'storage_unavailable',
+  integrity: 'storage_unavailable',
+  io: 'storage_unavailable',
+  cleanup: 'storage_unavailable',
 } as const satisfies Record<InputByteErrorCode, Code>;
 function inputCode(code: unknown): Code {
   return typeof code === 'string' && Object.hasOwn(inputCodes, code)
-    ? inputCodes[code as InputByteErrorCode] : 'internal_error';
+    ? inputCodes[code as InputByteErrorCode]
+    : 'internal_error';
 }
 function metricCode(code: unknown): Code {
-  return code === 'invalid_input' ? 'malformed_request'
-    : code === 'busy' ? 'capacity_unavailable' : 'storage_unavailable';
+  return code === 'invalid_input'
+    ? 'malformed_request'
+    : code === 'busy'
+      ? 'capacity_unavailable'
+      : 'storage_unavailable';
 }
 function portCode(error: unknown, code: unknown): Code | undefined {
   if (error instanceof MetricReadError) return metricCode(code);
@@ -85,7 +96,9 @@ function codeFor(error: unknown, classify: ApiErrorOptions['classify']): Code {
     if (framework) return framework;
     const mapped = classify?.(error);
     return knownCode(mapped) ? mapped : 'internal_error';
-  } catch { return 'internal_error'; }
+  } catch {
+    return 'internal_error';
+  }
 }
 /** Fixed body factory for byte routes whose HTTP semantics require e.g.416. */
 export function apiErrorResponse(code: Code): { status: number; body: ApiError } {
@@ -97,7 +110,9 @@ function sendFailure(error: unknown, reply: FastifyReply, classify: ApiErrorOpti
   return reply.header('Cache-Control', 'no-store').code(result.status).type('application/json').send(result.body);
 }
 
-export interface ApiServerOptions extends ApiErrorOptions { bodyLimit?: number }
+export interface ApiServerOptions extends ApiErrorOptions {
+  bodyLimit?: number;
+}
 /** Constructor-level routing errors bypass setErrorHandler. Product bootstrap must
  * use this factory, then configure compilers/authentication before registering routes.
  * It creates no listener; binding/proxy/session policy remains bootstrap-owned.
@@ -108,9 +123,15 @@ export function createApiServer(options: ApiServerOptions = {}): FastifyInstance
     throw new RangeError('Invalid API body limit');
   }
   const classify = options.classify;
-  const server = Fastify({ logger: false, bodyLimit, connectionTimeout: 30_000, requestTimeout: 30_000,
-    keepAliveTimeout: 5000, routerOptions: { maxParamLength: 128 },
-    frameworkErrors: (error, _request, reply) => sendFailure(error, reply, classify) });
+  const server = Fastify({
+    logger: false,
+    bodyLimit,
+    connectionTimeout: 30_000,
+    requestTimeout: 30_000,
+    keepAliveTimeout: 5000,
+    routerOptions: { maxParamLength: 128 },
+    frameworkErrors: (error, _request, reply) => sendFailure(error, reply, classify),
+  });
   server.server.maxConnections = 64;
   server.server.headersTimeout = 5000;
   configureApiErrors(server, options);

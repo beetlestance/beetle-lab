@@ -1,9 +1,9 @@
-import {settleOutput} from './settlement.js';
-import type {RunnerSettlementGateway} from '../../../ports/runner-settlement.js';
-import {retireOutput} from './retirement.js';
-import type {RunnerRetirementGateway} from '../../../ports/runner-retirement.js';
-import type {RunnerExportGateway} from '../../../ports/export-runner.js';
-import {createExportAttempt} from './export-attempt.js';
+import { settleOutput } from './settlement.js';
+import type { RunnerSettlementGateway } from '../../../ports/runner-settlement.js';
+import { retireOutput } from './retirement.js';
+import type { RunnerRetirementGateway } from '../../../ports/runner-retirement.js';
+import type { RunnerExportGateway } from '../../../ports/export-runner.js';
+import { createExportAttempt } from './export-attempt.js';
 import { readLiveMetrics } from './live-metrics.js';
 import { createRunnerClient, validatePrimitive } from '@beetle/contracts';
 import type { LoadedAgentConfiguration, RunnerAttemptClient } from '../../../ports/runner.js';
@@ -28,27 +28,32 @@ function capture(loaded: LoadedAgentConfiguration): { origin: URL; token: string
     const installationId = loaded.configuration.expectedInstallationId;
     if (!/^[A-Za-z0-9_-]{43,128}$/.test(token) || !validatePrimitive('uuid', installationId).ok) throw new Error();
     return { origin, token, installationId };
-  } catch { throw new Error('Invalid runner connection'); }
+  } catch {
+    throw new Error('Invalid runner connection');
+  }
 }
 
 /** Internal composition seam; public construction always uses real Node I/O. */
-export function openGateway(loaded: LoadedAgentConfiguration, io: NativeIo): RunnerLiveMetricGateway & RunnerExportGateway & RunnerRetirementGateway & RunnerSettlementGateway {
+export function openGateway(
+  loaded: LoadedAgentConfiguration,
+  io: NativeIo,
+): RunnerLiveMetricGateway & RunnerExportGateway & RunnerRetirementGateway & RunnerSettlementGateway {
   const connection = { ...capture(loaded), credits: new CallCredits(), io };
   const client = createRunnerClient(createTransport(connection));
   return Object.freeze({
-    settleOutput:(request,signal)=>settleOutput(connection,request,signal),
-    retireOutput:(request,signal)=>retireOutput(connection,request,signal),
-    exportAttempt:identity=>createExportAttempt(connection,identity),
+    settleOutput: (request, signal) => settleOutput(connection, request, signal),
+    retireOutput: (request, signal) => retireOutput(connection, request, signal),
+    exportAttempt: (identity) => createExportAttempt(connection, identity),
     liveMetrics: (identity, signal) => readLiveMetrics(connection, captureIdentity(identity), signal),
     capabilities: (signal?: AbortSignal) => client.capabilities(signal),
-    output: identity => createSourceClient(connection, captureIdentity(identity)),
-    attempt: identity => {
+    output: (identity) => createSourceClient(connection, captureIdentity(identity)),
+    attempt: (identity) => {
       const captured = captureIdentity(identity);
       const scoped = createRunnerClient(createTransport(connection, captured));
       const facade: RunnerAttemptClient = {
         offer: (body, signal) => scoped.offer(captured.attemptId, body, signal),
         cancelOriginal: (body, signal) => scoped.cancelOriginal(captured.attemptId, body, signal),
-        snapshot: signal => scoped.snapshot(captured.attemptId, signal),
+        snapshot: (signal) => scoped.snapshot(captured.attemptId, signal),
         cancel: (body, signal) => scoped.cancel(captured.attemptId, body, signal),
         events: (after, signal) => scoped.events(captured.attemptId, after, signal),
         ack: (body, signal) => scoped.ack(captured.attemptId, body, signal),

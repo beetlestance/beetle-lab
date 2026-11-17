@@ -6,8 +6,8 @@ import { migration023 } from './migration023.js';
 import { registerRejectedFunding } from './rejected-controls/guard.js';
 import { migration022 } from './migration022.js';
 import { registerSettlementGuard } from './settlement-guard/index.js';
-import {migration021} from './migration021.js';
-import {registerRuntimeAssociationValidation} from './runtime-associations/index.js';
+import { migration021 } from './migration021.js';
+import { registerRuntimeAssociationValidation } from './runtime-associations/index.js';
 import { migration020 } from './migration020.js';
 import { registerCleanupReceiptValidation } from './cleanup-receipts/validation.js';
 import { migration019 } from './migration019.js';
@@ -35,7 +35,7 @@ import { migration013 } from './migration013.js';
 import { migration014 } from './migration014.js';
 import { migration015 } from './migration015.js';
 
-export const JOURNAL_SCHEMA_VERSION=26;
+export const JOURNAL_SCHEMA_VERSION = 26;
 
 // Rebuild only the foundation's fixed sequence constraint. Copy immutable JSON and
 // row IDs verbatim, including original UUID spellings and durable cancel intent.
@@ -101,58 +101,73 @@ function migrateOwnership(db: DatabaseSync, version: number, authority: string |
 export function initialize(path: string): DatabaseSync {
   const db = new DatabaseSync(path, { timeout: 100, enableForeignKeyConstraints: true });
   try {
-    db.exec('PRAGMA busy_timeout=100; PRAGMA cache_size=-2048; PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; COMMIT;');
+    db.exec(
+      'PRAGMA busy_timeout=100; PRAGMA cache_size=-2048; PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE; COMMIT;',
+    );
     const version = db.prepare('PRAGMA user_version').get()?.user_version;
     if (typeof version !== 'number' || version > JOURNAL_SCHEMA_VERSION) throw new Failure('schema_newer');
     db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;');
     const authority = version === 0 ? randomUUID() : null;
     registerJournalFunctions(db);
-    if (version < JOURNAL_SCHEMA_VERSION) transaction(db, () => {
-      migrateFoundation(db, version);
-      if (version < 15) migrateOwnership(db, version, authority);
-      migrateCleanup(db,version);
-      if (db.prepare('PRAGMA foreign_key_check').get()) throw new Failure('unavailable');
-    });
+    if (version < JOURNAL_SCHEMA_VERSION)
+      transaction(db, () => {
+        migrateFoundation(db, version);
+        if (version < 15) migrateOwnership(db, version, authority);
+        migrateCleanup(db, version);
+        if (db.prepare('PRAGMA foreign_key_check').get()) throw new Failure('unavailable');
+      });
     // Samples and process-owned guard readiness are not valid startup authority.
     // Preserve configurations, clocks, queue and charged ownership; require refresh.
     db.prepare('UPDATE admission_settings SET observation_json=NULL WHERE id=1').run();
     return db;
-  } catch (error) { db.close(); throw error; }
+  } catch (error) {
+    db.close();
+    throw error;
+  }
 }
 
 function migrateFoundation(db: DatabaseSync, version: number): void {
-      if (version === 0) db.exec(migration001);
-      if (version < 2) db.exec(migration002);
-      if (version < 3) db.exec(migration003);
-      if (version < 4) db.exec(migration004);
-      if (version < 5) db.exec(migration005);
-      if (version < 6) db.exec(migration006);
-      if (version < 7) db.exec(migration007);
-      if (version < 8) db.exec(migration008);
+  if (version === 0) db.exec(migration001);
+  if (version < 2) db.exec(migration002);
+  if (version < 3) db.exec(migration003);
+  if (version < 4) db.exec(migration004);
+  if (version < 5) db.exec(migration005);
+  if (version < 6) db.exec(migration006);
+  if (version < 7) db.exec(migration007);
+  if (version < 8) db.exec(migration008);
 }
 
-function migrateCleanup(db:DatabaseSync,version:number):void{
-      if (version < 16) db.exec(migration016);
-      if (version < 17) db.exec(migration017);
-      if (version < 18) db.exec(migration018);
-      if (version < 19) db.exec(migration019);
-      if(version<20)db.exec(migration020);
-      if(version<21)db.exec(migration021);
-      migrateSettlementFunding(db,version);
+function migrateCleanup(db: DatabaseSync, version: number): void {
+  if (version < 16) db.exec(migration016);
+  if (version < 17) db.exec(migration017);
+  if (version < 18) db.exec(migration018);
+  if (version < 19) db.exec(migration019);
+  if (version < 20) db.exec(migration020);
+  if (version < 21) db.exec(migration021);
+  migrateSettlementFunding(db, version);
 }
 
-function migrateSettlementFunding(db:DatabaseSync,version:number):void{
-      if(version<22)db.exec(migration022);
-      if(version<23)db.exec(migration023);
-      if(version<24)db.exec(migration024);
-      if(version<25)db.exec(migration025);
-      if(version<26)db.exec(migration026);
+function migrateSettlementFunding(db: DatabaseSync, version: number): void {
+  if (version < 22) db.exec(migration022);
+  if (version < 23) db.exec(migration023);
+  if (version < 24) db.exec(migration024);
+  if (version < 25) db.exec(migration025);
+  if (version < 26) db.exec(migration026);
 }
 
 function registerJournalFunctions(db: DatabaseSync): void {
-  registerNoTaskReceipt(db);registerRejectedFunding(db);registerSettlementGuard(db);registerRuntimeAssociationValidation(db); registerNamespaceValidation(db); registerRetirementValidation(db); registerCleanupPlanValidation(db); registerCleanupProgressValidation(db); registerCleanupReceiptValidation(db);
+  registerNoTaskReceipt(db);
+  registerRejectedFunding(db);
+  registerSettlementGuard(db);
+  registerRuntimeAssociationValidation(db);
+  registerNamespaceValidation(db);
+  registerRetirementValidation(db);
+  registerCleanupPlanValidation(db);
+  registerCleanupProgressValidation(db);
+  registerCleanupReceiptValidation(db);
 }
 export function prepareColdJournalCopy(db: DatabaseSync): void {
-  if (db.prepare('PRAGMA user_version').get()?.user_version !== JOURNAL_SCHEMA_VERSION) throw new Failure('schema_newer');
+  if (db.prepare('PRAGMA user_version').get()?.user_version !== JOURNAL_SCHEMA_VERSION)
+    throw new Failure('schema_newer');
   registerJournalFunctions(db);
 }

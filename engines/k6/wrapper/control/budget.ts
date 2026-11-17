@@ -24,15 +24,19 @@ export class Operation {
     let abort: (() => void) | undefined;
     const stop = new Promise<never>((_resolve, reject) => {
       const fail = (code: 'deadline' | 'cancelled') => {
-        this.stopped = new JournalError(code); reject(this.stopped);
+        this.stopped = new JournalError(code);
+        reject(this.stopped);
       };
       abort = () => fail('cancelled');
       this.budget.signal?.addEventListener('abort', abort, { once: true });
       timer = setTimeout(() => fail('deadline'), Math.max(0, this.budget.deadline - performance.now()));
       if (this.budget.signal?.aborted) abort();
     });
-    try { const result = await Promise.race([work, stop]); this.check(); return result; }
-    finally {
+    try {
+      const result = await Promise.race([work, stop]);
+      this.check();
+      return result;
+    } finally {
       clearTimeout(timer);
       if (abort) this.budget.signal?.removeEventListener('abort', abort);
     }

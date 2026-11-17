@@ -12,54 +12,83 @@ import { finalizationValue, requireValue, sameBinding, transferValue } from './v
 /** Private composition seam: production always supplies the real transfer/files owners. */
 export class OutputScheduler implements OutputRuntime {
   private readonly discover: ReturnType<typeof createEventDiscovery>;
-  private readonly active = new Map<EventBinding, {abort: AbortController; original: Promise<void>}>();
+  private readonly active = new Map<EventBinding, { abort: AbortController; original: Promise<void> }>();
   private timer: ReturnType<typeof setTimeout> | undefined;
   private scanner: Promise<void> | undefined;
   private closing?: Promise<void>;
   private transferClose?: Promise<void>;
-  private readonly children:{child:{close():Promise<void>};closing?:Promise<void>}[]=[];
+  private readonly children: { child: { close(): Promise<void> }; closing?: Promise<void> }[] = [];
   private notification?: Promise<void>;
   private stopped = false;
   private failed = false;
   private closed = false;
-  private failure?: {error: unknown};
+  private failure?: { error: unknown };
   private problem: OutputRuntimeState['problem'] = null;
-  constructor(private readonly options: OutputRuntimeOptions, private readonly transfers: OutputTransfers<OutputBinding>,
-    private readonly files: Pick<OutputByteStore, 'close'>) {
+  constructor(
+    private readonly options: OutputRuntimeOptions,
+    private readonly transfers: OutputTransfers<OutputBinding>,
+    private readonly files: Pick<OutputByteStore, 'close'>,
+  ) {
     this.discover = createEventDiscovery(options.outputs.scan);
   }
-  own(child:{close():Promise<void>}):void { if(this.children.length>=2||this.stopped)throw new Error('Output child ownership unavailable');this.children.push({child}); }
-  failedChild(error:unknown):void { this.fail(error); }
-  start(): void { this.turn(); }
+  own(child: { close(): Promise<void> }): void {
+    if (this.children.length >= 2 || this.stopped) throw new Error('Output child ownership unavailable');
+    this.children.push({ child });
+  }
+  failedChild(error: unknown): void {
+    this.fail(error);
+  }
+  start(): void {
+    this.turn();
+  }
   state(): OutputRuntimeState {
-    return Object.freeze({status: this.closed ? 'closed' : this.failed ? 'failed' : 'running',
-      active: this.active.size, problem: this.problem});
+    return Object.freeze({
+      status: this.closed ? 'closed' : this.failed ? 'failed' : 'running',
+      active: this.active.size,
+      problem: this.problem,
+    });
   }
   private fence(): void {
-    this.stopped = true; clearTimeout(this.timer); this.timer = undefined;
+    this.stopped = true;
+    clearTimeout(this.timer);
+    this.timer = undefined;
     for (const owner of this.active.values()) owner.abort.abort();
-    for(const owner of this.children){
-      if(!owner.closing){try{owner.closing=owner.child.close();}catch(error){owner.closing=Promise.reject(error);}}
-      void owner.closing.catch(error=>this.fail(error));
+    for (const owner of this.children) {
+      if (!owner.closing) {
+        try {
+          owner.closing = owner.child.close();
+        } catch (error) {
+          owner.closing = Promise.reject(error);
+        }
+      }
+      void owner.closing.catch((error) => this.fail(error));
     }
     this.transferClose ??= this.transfers.close();
-    void this.transferClose.catch(error => this.fail(error));
+    void this.transferClose.catch((error) => this.fail(error));
   }
   private fail(error: unknown): void {
     if (this.failed) return;
-    this.failed = true; this.failure = {error}; this.problem = 'operation_failure'; this.fence();
-    this.notification = Promise.resolve().then(() => this.options.onFailure(error)).catch(notification => {
-      this.problem = 'failure_notification';
-      this.failure = {error: new AggregateError([error, notification], 'Output failure notification failed')};
-    });
+    this.failed = true;
+    this.failure = { error };
+    this.problem = 'operation_failure';
+    this.fence();
+    this.notification = Promise.resolve()
+      .then(() => this.options.onFailure(error))
+      .catch((notification) => {
+        this.problem = 'failure_notification';
+        this.failure = { error: new AggregateError([error, notification], 'Output failure notification failed') };
+      });
   }
   private turn(): void {
     if (this.stopped) return;
     this.timer = undefined;
-    const scan = Promise.resolve().then(() => this.scan()).catch(error => this.fail(error)).finally(() => {
-      this.scanner = undefined;
-      if (!this.stopped) this.timer = setTimeout(() => this.turn(), this.options.intervalMs ?? 250);
-    });
+    const scan = Promise.resolve()
+      .then(() => this.scan())
+      .catch((error) => this.fail(error))
+      .finally(() => {
+        this.scanner = undefined;
+        if (!this.stopped) this.timer = setTimeout(() => this.turn(), this.options.intervalMs ?? 250);
+      });
     this.scanner = scan;
   }
   private async scan(): Promise<void> {
@@ -67,16 +96,21 @@ export class OutputScheduler implements OutputRuntime {
     const candidate = await this.discover();
     if (this.stopped || !candidate) return;
     const binding = candidate.binding;
-    if ([...this.active.keys()].some(value => sameBinding(value, binding))) return;
+    if ([...this.active.keys()].some((value) => sameBinding(value, binding))) return;
     const abort = new AbortController();
-    const original = Promise.resolve().then(() => this.run(binding, abort.signal)).catch(error => this.fail(error))
+    const original = Promise.resolve()
+      .then(() => this.run(binding, abort.signal))
+      .catch((error) => this.fail(error))
       .finally(() => this.active.delete(binding));
-    this.active.set(binding, {abort, original});
+    this.active.set(binding, { abort, original });
   }
   private transferFailure(error: unknown): void {
     if (error instanceof OutputTransferError) {
       if (error.code === 'busy' || (this.stopped && ['cancelled', 'closed'].includes(error.code))) return;
-      if (error.code === 'transport' || error.code === 'source_unavailable') { this.problem = error.code; return; }
+      if (error.code === 'transport' || error.code === 'source_unavailable') {
+        this.problem = error.code;
+        return;
+      }
     }
     this.fail(error);
   }
@@ -85,47 +119,79 @@ export class OutputScheduler implements OutputRuntime {
     const job = this.transfers.transfer(binding, signal);
     let outcome: OutputTransferOutcome | undefined;
     let absent = false;
-    const result = job.result.then(value => { outcome = transferValue(value, binding); }).catch(error => {
-      if (error instanceof OutputTransferError && error.code === 'source_absent') absent = true;
-      else this.transferFailure(error);
-    });
-    const settled = job.settled.catch(error => this.fail(error));
+    const result = job.result
+      .then((value) => {
+        outcome = transferValue(value, binding);
+      })
+      .catch((error) => {
+        if (error instanceof OutputTransferError && error.code === 'source_absent') absent = true;
+        else this.transferFailure(error);
+      });
+    const settled = job.settled.catch((error) => this.fail(error));
     await Promise.all([result, settled]);
     if (this.stopped) return;
     if (absent) {
-      try { await handoffAbsence(this.options, binding, signal); }
-      catch (error) { this.transferFailure(error); }
+      try {
+        await handoffAbsence(this.options, binding, signal);
+      } catch (error) {
+        this.transferFailure(error);
+      }
       return;
     }
     if (outcome?.kind !== 'published') return;
     await this.finalizeSource(binding, outcome);
   }
-  private async finalizeSource(binding: EventBinding, outcome: Extract<OutputTransferOutcome, {kind: 'published'}>): Promise<void> {
+  private async finalizeSource(
+    binding: EventBinding,
+    outcome: Extract<OutputTransferOutcome, { kind: 'published' }>,
+  ): Promise<void> {
     const attempt = binding.key.attempt;
-    const run = await getRun({id: binding.key.runId, scope: {kind: 'workspace',
-      organizationId: attempt.organizationId, workspaceId: attempt.workspaceId}}, this.options.runs);
+    const run = await getRun(
+      {
+        id: binding.key.runId,
+        scope: { kind: 'workspace', organizationId: attempt.organizationId, workspaceId: attempt.workspaceId },
+      },
+      this.options.runs,
+    );
     requireValue(run.activeAttemptId === attempt.attemptId);
     if (this.stopped) return;
-    const request = {binding, sourceDigest: outcome.sourceDigest, manifestDigest: outcome.manifestDigest, expectedRunVersion: run.version};
-    try { finalizationValue(await this.options.finalizations.finalize(request), request, run); }
-    catch (error) {
+    const request = {
+      binding,
+      sourceDigest: outcome.sourceDigest,
+      manifestDigest: outcome.manifestDigest,
+      expectedRunVersion: run.version,
+    };
+    try {
+      finalizationValue(await this.options.finalizations.finalize(request), request, run);
+    } catch (error) {
       if (error instanceof Error && Object.getOwnPropertyDescriptor(error, 'code')?.value === 'conflict') return;
       throw error;
     }
   }
   close(): Promise<void> {
     if (this.closing) return this.closing;
-    this.closed = true; this.fence();
-    this.closing = this.drain(); return this.closing;
+    this.closed = true;
+    this.fence();
+    this.closing = this.drain();
+    return this.closing;
   }
   private async drain(): Promise<void> {
-    const originals = await Promise.allSettled([this.scanner, this.transferClose, ...this.children.map(owner=>owner.closing),
-      ...[...this.active.values()].map(owner => owner.original)]);
+    const originals = await Promise.allSettled([
+      this.scanner,
+      this.transferClose,
+      ...this.children.map((owner) => owner.closing),
+      ...[...this.active.values()].map((owner) => owner.original),
+    ]);
     // Never release the lease before producer, scanner, Run and finalization originals retire.
-    let nativeError: {error: unknown} | undefined;
-    try { await this.files.close(); } catch (error) { nativeError = {error}; this.fail(error); }
+    let nativeError: { error: unknown } | undefined;
+    try {
+      await this.files.close();
+    } catch (error) {
+      nativeError = { error };
+      this.fail(error);
+    }
     await this.notification;
-    const rejected = originals.find(value => value.status === 'rejected');
+    const rejected = originals.find((value) => value.status === 'rejected');
     if (this.failure) throw this.failure.error;
     if (nativeError) throw nativeError.error;
     if (rejected?.status === 'rejected') throw rejected.reason;

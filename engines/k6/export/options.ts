@@ -12,13 +12,24 @@ function own(input: object, name: keyof StandaloneExportInput): unknown {
 function compiled(value: unknown): DeepReadonly<CompiledSuite> {
   if (!value || typeof value !== 'object' || !Object.isFrozen(value)) throw new Error('export_suite');
   const suite = value as DeepReadonly<CompiledSuite>;
-  if (suite.component !== 'k6-suite' || suite.compilerVersion !== '1.0' || suite.schemaVersion !== 1
-    || !suite.identity || !Array.isArray(suite.identity.secrets)) throw new Error('export_suite');
+  if (
+    suite.component !== 'k6-suite' ||
+    suite.compilerVersion !== '1.0' ||
+    suite.schemaVersion !== 1 ||
+    !suite.identity ||
+    !Array.isArray(suite.identity.secrets)
+  )
+    throw new Error('export_suite');
   return suite;
 }
 function directory(value: unknown): string {
-  if (typeof value !== 'string' || value.length === 0 || value.includes('\0')
-    || Buffer.byteLength(value, 'utf8') > 4096) throw new Error('export_options');
+  if (
+    typeof value !== 'string' ||
+    value.length === 0 ||
+    value.includes('\0') ||
+    Buffer.byteLength(value, 'utf8') > 4096
+  )
+    throw new Error('export_options');
   return value;
 }
 function allowance(value: unknown): number {
@@ -26,7 +37,7 @@ function allowance(value: unknown): number {
   return value;
 }
 /** Trusted compiler output remains owned; only supplied scalar options are captured here. */
-export function captureOptions(input: StandaloneExportInput): Readonly<BuildInput & {maximumBuildBytes: number}> {
+export function captureOptions(input: StandaloneExportInput): Readonly<BuildInput & { maximumBuildBytes: number }> {
   try {
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('export_options');
     const suite = compiled(own(input, 'suite'));
@@ -35,5 +46,7 @@ export function captureOptions(input: StandaloneExportInput): Readonly<BuildInpu
     const maximumBuildBytes = allowance(own(input, 'maximumBuildBytes'));
     const attempt = Object.freeze(validateAttempt({ mode: 'standalone', timeoutMs }));
     return Object.freeze({ suite, outputDirectory, attempt, maximumBuildBytes });
-  } catch { throw new StandaloneExportError('invalid_input'); }
+  } catch {
+    throw new StandaloneExportError('invalid_input');
+  }
 }

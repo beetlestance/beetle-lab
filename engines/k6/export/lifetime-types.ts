@@ -6,7 +6,9 @@ export interface StandaloneBuildInput extends StandaloneExportInput {
 }
 export type StandaloneBuildCode = StandaloneExportCode | 'cancelled' | 'closed' | 'deadline' | 'clock_fenced';
 export class StandaloneBuildError extends Error {
-  constructor(readonly code: StandaloneBuildCode) {super('Standalone build rejected');}
+  constructor(readonly code: StandaloneBuildCode) {
+    super('Standalone build rejected');
+  }
 }
 export interface StandaloneBuildOperation {
   readonly result: Promise<StandaloneExportOutput>;

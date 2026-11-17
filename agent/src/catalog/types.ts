@@ -22,11 +22,18 @@ export interface PreflightOffer {
 export interface Catalog {
   readonly engines: readonly Readonly<InstalledEngine>[];
   preflight(input: unknown): PreflightOffer;
-  preflightExport(input: unknown): PreflightOffer & {readonly assignment: StandaloneExportAssignment};
+  preflightExport(input: unknown): PreflightOffer & { readonly assignment: StandaloneExportAssignment };
   /** Recovery resolves exact persisted identity; never silently upgrades. */
-  resolve(offer: Offer, validation: ValidationIdentity, assignment?: StandaloneExportAssignment | null): Readonly<InstalledEngine>;
+  resolve(
+    offer: Offer,
+    validation: ValidationIdentity,
+    assignment?: StandaloneExportAssignment | null,
+  ): Readonly<InstalledEngine>;
 }
-export type CatalogReason = 'invalid_registration' | 'invalid_offer' | 'unapproved_engine' | 'invalid_config' | 'identity';
+export type CatalogReason =
+  'invalid_registration' | 'invalid_offer' | 'unapproved_engine' | 'invalid_config' | 'identity';
 export class CatalogError extends Error {
-  constructor(readonly reason: CatalogReason) { super(`Engine catalog ${reason}`); }
+  constructor(readonly reason: CatalogReason) {
+    super(`Engine catalog ${reason}`);
+  }
 }

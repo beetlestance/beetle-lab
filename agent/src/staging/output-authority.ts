@@ -24,13 +24,24 @@ function labels(spec: CreateSpec, expected: Record<string, string>): boolean {
   return Object.entries(expected).every(([key, value]) => spec.Labels[key] === value);
 }
 function limits(raw: Pick<OutputScanRequest, 'outputBytes' | 'minimumFreeBytes'>): void {
-  if (!integer(raw.outputBytes, MAX_RESOURCE_VALUE) || raw.outputBytes === 0
-    || !integer(raw.minimumFreeBytes, Number.MAX_SAFE_INTEGER)) throw new ScanFailure('invalid_input');
+  if (
+    !integer(raw.outputBytes, MAX_RESOURCE_VALUE) ||
+    raw.outputBytes === 0 ||
+    !integer(raw.minimumFreeBytes, Number.MAX_SAFE_INTEGER)
+  )
+    throw new ScanFailure('invalid_input');
 }
 export function outputAuthority(root: VerifiedRoot, input: OutputScanRequest): OutputAuthority {
-  const identity = rootIdentity(root); const config = identity.configuration;
-  const raw = snapshot({ key: data(input, 'key'), outputBytes: data(input, 'outputBytes'),
-    minimumFreeBytes: data(input, 'minimumFreeBytes') }, 2048) as Pick<OutputScanRequest, 'key' | 'outputBytes' | 'minimumFreeBytes'>;
+  const identity = rootIdentity(root);
+  const config = identity.configuration;
+  const raw = snapshot(
+    {
+      key: data(input, 'key'),
+      outputBytes: data(input, 'outputBytes'),
+      minimumFreeBytes: data(input, 'minimumFreeBytes'),
+    },
+    2048,
+  ) as Pick<OutputScanRequest, 'key' | 'outputBytes' | 'minimumFreeBytes'>;
   const key = scopeSnapshot(raw.key);
   limits(raw);
   const plan = data(input, 'plan');
@@ -39,10 +50,28 @@ export function outputAuthority(root: VerifiedRoot, input: OutputScanRequest): O
   const name = runtimeName({ ...key, installationId: config.installationId });
   const directory = join(config.stagingRoot, name, 'output');
   if (data(plan, 'name') !== name || spec.User !== config.user) throw new ScanFailure('invalid_input');
-  if (!labels(spec, { 'dev.beetle.installation': config.installationId.toLowerCase(),
-    'dev.beetle.organization': key.organizationId.toLowerCase(), 'dev.beetle.workspace': key.workspaceId.toLowerCase(),
-    'dev.beetle.attempt': key.attemptId.toLowerCase(), 'dev.beetle.generation': String(key.generation) })) throw new ScanFailure('invalid_input');
-  const mounts = spec.HostConfig.Mounts.filter(mount => mount.Target === '/beetle/output');
-  if (mounts.length !== 1 || mounts[0]?.Type !== 'bind' || mounts[0].Source !== directory || mounts[0].ReadOnly !== false) throw new ScanFailure('invalid_input');
-  return Object.freeze({ identity, directory, outputBytes: BigInt(raw.outputBytes), minimumFreeBytes: raw.minimumFreeBytes });
+  if (
+    !labels(spec, {
+      'dev.beetle.installation': config.installationId.toLowerCase(),
+      'dev.beetle.organization': key.organizationId.toLowerCase(),
+      'dev.beetle.workspace': key.workspaceId.toLowerCase(),
+      'dev.beetle.attempt': key.attemptId.toLowerCase(),
+      'dev.beetle.generation': String(key.generation),
+    })
+  )
+    throw new ScanFailure('invalid_input');
+  const mounts = spec.HostConfig.Mounts.filter((mount) => mount.Target === '/beetle/output');
+  if (
+    mounts.length !== 1 ||
+    mounts[0]?.Type !== 'bind' ||
+    mounts[0].Source !== directory ||
+    mounts[0].ReadOnly !== false
+  )
+    throw new ScanFailure('invalid_input');
+  return Object.freeze({
+    identity,
+    directory,
+    outputBytes: BigInt(raw.outputBytes),
+    minimumFreeBytes: raw.minimumFreeBytes,
+  });
 }

@@ -1,6 +1,6 @@
-import { retainedDeleteGuards,settlementIsolation,settlementGlobalIsolation } from './settlements/delete-guards.js';
+import { retainedDeleteGuards, settlementIsolation, settlementGlobalIsolation } from './settlements/delete-guards.js';
 /** No backfill/refund: pre-existing originals keep all charges until actual settlement. */
-export const migration022=`
+export const migration022 = `
 CREATE TABLE retired_attempts(
  attempt_id TEXT PRIMARY KEY COLLATE NOCASE,
  organization_id TEXT NOT NULL,workspace_id TEXT NOT NULL,

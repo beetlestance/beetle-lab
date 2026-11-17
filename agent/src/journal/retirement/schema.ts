@@ -58,8 +58,10 @@ function preventInsert(table: string, column: string): string {
  BEGIN SELECT RAISE(ABORT,'retired producer'); END;`;
 }
 export const retirementFences = [
-  preventInsert('reservations', 'attempt_id'), preventInsert('task_staging_namespaces', 'attempt_id'),
-  preventInsert('output_collection_intents', 'attempt_id'), preventInsert('output_sources', 'attempt_id'),
+  preventInsert('reservations', 'attempt_id'),
+  preventInsert('task_staging_namespaces', 'attempt_id'),
+  preventInsert('output_collection_intents', 'attempt_id'),
+  preventInsert('output_sources', 'attempt_id'),
   preventInsert('event_spool', 'attempt_id'),
   `CREATE TRIGGER retirement_reservation_update BEFORE UPDATE ON reservations WHEN ${fenced('OLD', 'attempt_id')}
    AND (NEW.charged IS NOT OLD.charged OR NEW.reservation_json IS NOT OLD.reservation_json)

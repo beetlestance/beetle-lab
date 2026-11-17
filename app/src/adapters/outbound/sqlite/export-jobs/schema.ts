@@ -1,7 +1,8 @@
-import {EXPORT_ASSIGNMENT_BYTES} from '@beetle/contracts';
-export const EXPORT_METADATA_BYTES=3*1048576;
-const safe=(name:string,minimum=0)=>`${name} INTEGER NOT NULL CHECK(typeof(${name})='integer' AND ${name} BETWEEN ${minimum} AND 9007199254740991)`;
-export const exportSchema=`
+import { EXPORT_ASSIGNMENT_BYTES } from '@beetle/contracts';
+export const EXPORT_METADATA_BYTES = 3 * 1048576;
+const safe = (name: string, minimum = 0) =>
+  `${name} INTEGER NOT NULL CHECK(typeof(${name})='integer' AND ${name} BETWEEN ${minimum} AND 9007199254740991)`;
+export const exportSchema = `
 CREATE TABLE export_jobs (
  id TEXT PRIMARY KEY CHECK(id=lower(id)),organization_id TEXT NOT NULL,workspace_id TEXT NOT NULL,
  suite_id TEXT NOT NULL,revision_id TEXT NOT NULL,attempt_id TEXT NOT NULL UNIQUE,queue_order INTEGER NOT NULL UNIQUE,
@@ -11,7 +12,7 @@ CREATE TABLE export_jobs (
  source_profile TEXT NOT NULL,registry_digest TEXT NOT NULL CHECK(length(registry_digest)=64 AND registry_digest NOT GLOB '*[^0-9a-f]*'),
  assignment_digest TEXT NOT NULL CHECK(length(assignment_digest)=64 AND assignment_digest NOT GLOB '*[^0-9a-f]*'),
  intent_json TEXT NOT NULL CHECK(json_valid(intent_json) AND length(CAST(intent_json AS BLOB)) BETWEEN 1 AND 32768),
- ${['cpu_millis','memory_bytes','pids','timeout_ms','output_bytes','staging_bytes'].map(name=>safe(name,1)).join(',\n ')},
+ ${['cpu_millis', 'memory_bytes', 'pids', 'timeout_ms', 'output_bytes', 'staging_bytes'].map((name) => safe(name, 1)).join(',\n ')},
  mode TEXT NOT NULL CHECK(mode IN ('parallel','isolated')),
  maximum_build_bytes INTEGER NOT NULL CHECK(typeof(maximum_build_bytes)='integer' AND maximum_build_bytes BETWEEN 1 AND 67108864),
  version INTEGER NOT NULL CHECK(typeof(version)='integer' AND version BETWEEN 1 AND 9007199254740991),
@@ -70,7 +71,7 @@ CREATE TABLE export_artifacts (
  ${safe('offset')},
  phase TEXT NOT NULL CHECK(phase IN ('transferring','publishing','published')),
  identity TEXT CHECK(identity IS NULL OR (length(identity)=64 AND identity NOT GLOB '*[^0-9a-f]*')),
- writer TEXT CHECK(writer IS NULL OR length(writer)=36),${safe('version',1)},
+ writer TEXT CHECK(writer IS NULL OR length(writer)=36),${safe('version', 1)},
  CHECK(offset<=bytes),CHECK(phase='transferring' OR (offset=bytes AND identity IS NOT NULL)),
  CHECK(phase!='publishing' OR writer IS NOT NULL),CHECK(phase!='published' OR writer IS NULL));
 `;

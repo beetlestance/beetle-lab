@@ -7,16 +7,26 @@ import { PhysicalFile } from '../custody/index.js';
 import type { Roots } from '../custody/index.js';
 import { fail } from './job.js';
 
-export async function read(tree: Directories, roots: Roots, input: CapturedInput,
-  response: { range: InputContentRange; sink: InputContentSink }): Promise<void> {
-  requireState(input, 'published'); validateRange(response.range, input.bytes);
+export async function read(
+  tree: Directories,
+  roots: Roots,
+  input: CapturedInput,
+  response: { range: InputContentRange; sink: InputContentSink },
+): Promise<void> {
+  requireState(input, 'published');
+  validateRange(response.range, input.bytes);
   const location = await tree.location(roots.published, { components: input.components, name: input.sha256 }, false);
-  const file = await PhysicalFile.open(tree, location, false); if (!file) fail('custody_missing');
-  file.requireLinks(1n); await file.verifyContent(input);
+  const file = await PhysicalFile.open(tree, location, false);
+  if (!file) fail('custody_missing');
+  file.requireLinks(1n);
+  await file.verifyContent(input);
   let position = response.range.start;
   while (position < response.range.endExclusive) {
     const bytes = await file.read(position, Math.min(INPUT_CHUNK_BYTES, response.range.endExclusive - position));
-    await response.sink.write(bytes); tree.owner.check(); await file.verify(); position += bytes.byteLength;
+    await response.sink.write(bytes);
+    tree.owner.check();
+    await file.verify();
+    position += bytes.byteLength;
   }
   await file.verify();
 }

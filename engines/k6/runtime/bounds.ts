@@ -1,9 +1,14 @@
 import { stop } from './failure.js';
 import type { RuntimeLimits } from './types.js';
 
-export const defaultLimits: Readonly<RuntimeLimits> = Object.freeze({ responseProcessingBytes: 1_048_576,
-  responseJsonNodes: 65_536, responseJsonDepth: 32, secretBytes: 65_536,
-  aggregateSecretBytes: 1_048_576, requestTimeoutMs: 30_000 });
+export const defaultLimits: Readonly<RuntimeLimits> = Object.freeze({
+  responseProcessingBytes: 1_048_576,
+  responseJsonNodes: 65_536,
+  responseJsonDepth: 32,
+  secretBytes: 65_536,
+  aggregateSecretBytes: 1_048_576,
+  requestTimeoutMs: 30_000,
+});
 export function runtimeLimits(input: Partial<RuntimeLimits> = {}): RuntimeLimits {
   const result = { ...defaultLimits, ...input };
   for (const [key, value] of Object.entries(result)) {
@@ -28,17 +33,26 @@ export class BoundedText {
   private pending = '';
   private bytes = 0;
   private chars = 0;
-  constructor(private readonly maxBytes: number, private readonly maxChars = Infinity) {}
+  constructor(
+    private readonly maxBytes: number,
+    private readonly maxChars = Infinity,
+  ) {}
   append(value: string): void {
     if (value.length > this.maxChars - this.chars) stop('request_limit');
     const bytes = utf8Bytes(value, this.maxBytes - this.bytes);
-    this.bytes += bytes; this.chars += value.length;
+    this.bytes += bytes;
+    this.chars += value.length;
     for (let offset = 0; offset < value.length; offset += 1024) {
       this.pending += value.slice(offset, offset + 1024);
-      if (this.pending.length >= 1024) { this.parts.push(this.pending); this.pending = ''; }
+      if (this.pending.length >= 1024) {
+        this.parts.push(this.pending);
+        this.pending = '';
+      }
     }
   }
-  finish(): string { return this.parts.join('') + this.pending; }
+  finish(): string {
+    return this.parts.join('') + this.pending;
+  }
 }
 export function quoted(writer: BoundedText, value: string): void {
   writer.append('"');

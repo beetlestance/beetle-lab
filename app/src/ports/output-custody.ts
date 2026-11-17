@@ -23,18 +23,17 @@ export interface OutputArtifactState {
   readonly writer: string | null;
   readonly version: number;
 }
-export type OutputCustodyState<B extends OutputBinding = EventBinding> = {
-  readonly kind: 'pending';
-  readonly binding: B;
-} | {
-  readonly kind: 'adopted';
-  readonly binding: B;
-  readonly manifestDigest: string;
-  readonly sourceDigest: string;
-  readonly finalAgentSeq: number;
-  readonly version: number;
-  readonly artifacts: readonly OutputArtifactState[];
-};
+export type OutputCustodyState<B extends OutputBinding = EventBinding> =
+  | { readonly kind: 'pending'; readonly binding: B }
+  | {
+      readonly kind: 'adopted';
+      readonly binding: B;
+      readonly manifestDigest: string;
+      readonly sourceDigest: string;
+      readonly finalAgentSeq: number;
+      readonly version: number;
+      readonly artifacts: readonly OutputArtifactState[];
+    };
 export interface OutputPage {
   readonly items: readonly EventCandidate[];
   readonly nextCursor: string | null;

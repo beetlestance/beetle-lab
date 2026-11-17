@@ -19,7 +19,9 @@ function field(input: unknown, name: string): unknown {
   requireValid(descriptor && 'value' in descriptor);
   return descriptor.value;
 }
-function positive(input: unknown): boolean { return Number.isSafeInteger(input) && (input as number) > 0; }
+function positive(input: unknown): boolean {
+  return Number.isSafeInteger(input) && (input as number) > 0;
+}
 function identity(input: Omit<ValidationIdentity, 'configDigest'>): void {
   requireValid(input && typeof input === 'object' && !Array.isArray(input));
   requireValid(Object.keys(input).sort().join(',') === 'catalogVersion,manifestId,profileId,schemaDigest');
@@ -29,13 +31,29 @@ function identity(input: Omit<ValidationIdentity, 'configDigest'>): void {
   requireValid(typeof input.schemaDigest === 'string' && /^[a-f0-9]{64}$/.test(input.schemaDigest));
   requireValid(positive(input.catalogVersion));
 }
-function probe(engine: EngineRegistration & Pick<InstalledEngine, 'installedIdentity'>, budget: Offer['budget']): Offer {
-  return { installedIdentity: engine.installedIdentity, protocolVersion: '1.0', organizationId: '00000000-0000-4000-8000-000000000001',
-    workspaceId: '00000000-0000-4000-8000-000000000002', attemptId: '00000000-0000-4000-8000-000000000003',
-    intentDigest: '0'.repeat(64), engine: { id: engine.manifest.engineId,
-      imageDigest: engine.manifest.imageDigest, configVersion: engine.configVersion }, inputs: [], budget,
-    executionPolicy: { mode: 'parallel', preferIdle: false }, requiredCapabilities: engine.manifest.schemas.result.endsWith('/export-result') ? ['standalone-export-v1'] : [],
-    secretReferences: [], config: {} };
+function probe(
+  engine: EngineRegistration & Pick<InstalledEngine, 'installedIdentity'>,
+  budget: Offer['budget'],
+): Offer {
+  return {
+    installedIdentity: engine.installedIdentity,
+    protocolVersion: '1.0',
+    organizationId: '00000000-0000-4000-8000-000000000001',
+    workspaceId: '00000000-0000-4000-8000-000000000002',
+    attemptId: '00000000-0000-4000-8000-000000000003',
+    intentDigest: '0'.repeat(64),
+    engine: {
+      id: engine.manifest.engineId,
+      imageDigest: engine.manifest.imageDigest,
+      configVersion: engine.configVersion,
+    },
+    inputs: [],
+    budget,
+    executionPolicy: { mode: 'parallel', preferIdle: false },
+    requiredCapabilities: engine.manifest.schemas.result.endsWith('/export-result') ? ['standalone-export-v1'] : [],
+    secretReferences: [],
+    config: {},
+  };
 }
 function registration(input: unknown): InstalledEngine {
   const configSchema: unknown = field(input, 'configSchema');
@@ -46,34 +64,71 @@ function registration(input: unknown): InstalledEngine {
   const configVersion = field(input, 'configVersion');
   requireValid(positive(configVersion) && validate('EngineManifest', manifest).ok);
   identity(validation);
-  requireValid(manifest.schemas.config === configSchema.schemaId && validation.schemaDigest === configSchema.schemaDigest);
-  requireValid(['cpu', 'memory', 'pids', 'timeout', 'output'].every(control => manifest.supportedControls.includes(control as 'cpu')));
-  const installedIdentity = deriveInstalledIdentity({ manifest, profile, identity: validation },
-    value => createHash('sha256').update(value).digest('hex'));
-  const engine = { manifest, profile, validation, installedIdentity, configVersion: configVersion as number, configSchema };
+  requireValid(
+    manifest.schemas.config === configSchema.schemaId && validation.schemaDigest === configSchema.schemaDigest,
+  );
+  requireValid(
+    ['cpu', 'memory', 'pids', 'timeout', 'output'].every((control) =>
+      manifest.supportedControls.includes(control as 'cpu'),
+    ),
+  );
+  const installedIdentity = deriveInstalledIdentity({ manifest, profile, identity: validation }, (value) =>
+    createHash('sha256').update(value).digest('hex'),
+  );
+  const engine = {
+    manifest,
+    profile,
+    validation,
+    installedIdentity,
+    configVersion: configVersion as number,
+    configSchema,
+  };
   requireValid(permitsRuntime(probe(engine, manifest.minimumBudget), engine));
   requireValid(permitsRuntime(probe(engine, manifest.defaultBudget), engine));
-  requireValid(budgetKeys.every(key => manifest.defaultBudget[key] >= manifest.minimumBudget[key]));
-  return freeze({ ...engine, approved: { ...validation, engineId: manifest.engineId, imageDigest: manifest.imageDigest,
-    configVersion: engine.configVersion, minimum: { ...manifest.minimumBudget, stagingBytes: 0 },
-    capabilities: [...manifest.capabilities], controls: [...manifest.supportedControls] } });
+  requireValid(budgetKeys.every((key) => manifest.defaultBudget[key] >= manifest.minimumBudget[key]));
+  return freeze({
+    ...engine,
+    approved: {
+      ...validation,
+      engineId: manifest.engineId,
+      imageDigest: manifest.imageDigest,
+      configVersion: engine.configVersion,
+      minimum: { ...manifest.minimumBudget, stagingBytes: 0 },
+      capabilities: [...manifest.capabilities],
+      controls: [...manifest.supportedControls],
+    },
+  });
 }
 function consistent(engines: readonly InstalledEngine[]): void {
-  const first = engines[0]; requireValid(first);
-  const selectors = new Set<string>(); const identities = new Set<string>();
+  const first = engines[0];
+  requireValid(first);
+  const selectors = new Set<string>();
+  const identities = new Set<string>();
   for (const engine of engines) {
     const { profile, validation } = engine;
-    requireValid(profile.installationId === first.profile.installationId && profile.stagingRoot === first.profile.stagingRoot
-      && profile.user === first.profile.user);
-    const key = selector({ id: engine.manifest.engineId, imageDigest: engine.manifest.imageDigest, configVersion: engine.configVersion });
+    requireValid(
+      profile.installationId === first.profile.installationId &&
+        profile.stagingRoot === first.profile.stagingRoot &&
+        profile.user === first.profile.user,
+    );
+    const key = selector({
+      id: engine.manifest.engineId,
+      imageDigest: engine.manifest.imageDigest,
+      configVersion: engine.configVersion,
+    });
     const id = JSON.stringify([validation.manifestId, validation.profileId, validation.catalogVersion]);
-    requireValid(!selectors.has(key) && !identities.has(id)); selectors.add(key); identities.add(id);
+    requireValid(!selectors.has(key) && !identities.has(id));
+    selectors.add(key);
+    identities.add(id);
   }
 }
 export function installedRegistrations(input: readonly EngineRegistration[]): readonly InstalledEngine[] {
   try {
     requireValid(Array.isArray(input) && input.length > 0 && input.length <= MAX_ENGINE_PROFILES);
     const engines = Array.from({ length: input.length }, (_, index) => registration(field(input, String(index))));
-    consistent(engines); return Object.freeze(engines);
-  } catch { throw new CatalogError('invalid_registration'); }
+    consistent(engines);
+    return Object.freeze(engines);
+  } catch {
+    throw new CatalogError('invalid_registration');
+  }
 }

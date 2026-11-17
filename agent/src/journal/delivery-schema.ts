@@ -16,7 +16,8 @@ export const deliveryTables = `
   );
   CREATE INDEX output_delivery_pending ON accepted_attempts(id) WHERE delivery_pending=1;
 `;
-const exactCharge = (table: string): string => `COALESCE((SELECT charged_bytes FROM ${table} WHERE attempt_id=OLD.attempt_id),0)`;
+const exactCharge = (table: string): string =>
+  `COALESCE((SELECT charged_bytes FROM ${table} WHERE attempt_id=OLD.attempt_id),0)`;
 const pending = `CASE WHEN EXISTS(SELECT 1 FROM output_sources WHERE attempt_id=OLD.attempt_id)
   AND NOT EXISTS(SELECT 1 FROM output_delivery_closures WHERE attempt_id=OLD.attempt_id) THEN 1 ELSE 0 END`;
 export const deliveryParentGuards = `
@@ -55,8 +56,12 @@ function jsonEqual(left: string, right: string): string {
   const values = (input: string) => `SELECT fullkey,type,atom FROM json_tree(${input})`;
   return `(NOT EXISTS(${values(left)} EXCEPT ${values(right)}) AND NOT EXISTS(${values(right)} EXCEPT ${values(left)}))`;
 }
-const receiptScope = ['organizationId', 'workspaceId', 'attemptId', 'generation'].map((name, index) =>
-  `json_extract(NEW.closure_json,'$.receipt.key.${name}') IS a.${['organization_id', 'workspace_id', 'attempt_id', 'generation'][index]}`).join(' AND ');
+const receiptScope = ['organizationId', 'workspaceId', 'attemptId', 'generation']
+  .map(
+    (name, index) =>
+      `json_extract(NEW.closure_json,'$.receipt.key.${name}') IS a.${['organization_id', 'workspace_id', 'attempt_id', 'generation'][index]}`,
+  )
+  .join(' AND ');
 export const deliveryGuards = `
   CREATE TRIGGER delivery_insert BEFORE INSERT ON output_delivery_closures BEGIN
     SELECT CASE WHEN typeof(NEW.closure_json)!='text' OR length(CAST(NEW.closure_json AS BLOB)) NOT BETWEEN 1 AND ${OUTPUT_DELIVERY_BYTES}

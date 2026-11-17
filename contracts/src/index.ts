@@ -10,16 +10,41 @@ export { RUNNER_MAXIMUM_CONFIG_BYTES, RUNNER_MAXIMUM_OFFER_BYTES } from './limit
 export { engineResultSealPreimage, resultSealPrefix, sealEngineResult, verifyEngineResultSeal } from './result-seal.js';
 export type { ResultDigest, ResultSeal } from './result-seal.js';
 
-export { deriveInstalledIdentity, installedDescriptorDigest, sameInstalledIdentity, InstalledIdentityError, installedManifestPrefix, installedProfilePrefix } from './installed-identity.js';
+export {
+  deriveInstalledIdentity,
+  installedDescriptorDigest,
+  sameInstalledIdentity,
+  InstalledIdentityError,
+  installedManifestPrefix,
+  installedProfilePrefix,
+} from './installed-identity.js';
 export type { InstalledIdentityInput, InstalledLabels } from './installed-identity.js';
 
 export { stagingPolicy, serializeStagedOffer, estimateStaging, supportedStaging } from './staging.js';
 export type { StagingEstimate } from './staging.js';
 export { artifactDownload } from './artifact-download.js';
 
-export { createStandaloneExportAssignment, captureStandaloneExportAssignment, exportAssignmentPrefix,
-  sealStandaloneExportResult, verifyStandaloneExportResultSeal, standaloneExportResultSealPreimage,
-  captureStandaloneExportResult, captureExportResultForExpectation, captureExportExpectation, exportExpectation, exportResultPrefix, ExportContractError,
-  EXPORT_ASSIGNMENT_BYTES, EXPORT_RESULT_BYTES, EXPORT_CONTROL_BYTES } from './export-job/index.js';
+export {
+  createStandaloneExportAssignment,
+  captureStandaloneExportAssignment,
+  exportAssignmentPrefix,
+  sealStandaloneExportResult,
+  verifyStandaloneExportResultSeal,
+  standaloneExportResultSealPreimage,
+  captureStandaloneExportResult,
+  captureExportResultForExpectation,
+  captureExportExpectation,
+  exportExpectation,
+  exportResultPrefix,
+  ExportContractError,
+  EXPORT_ASSIGNMENT_BYTES,
+  EXPORT_RESULT_BYTES,
+  EXPORT_CONTROL_BYTES,
+} from './export-job/index.js';
 export type { ExportContractCode, ExportResultExpectation } from './export-job/index.js';
-export { executionArtifacts, executionEngineId, isExportResult, verifyExecutionResultSeal } from './execution-result.js';
+export {
+  executionArtifacts,
+  executionEngineId,
+  isExportResult,
+  verifyExecutionResultSeal,
+} from './execution-result.js';

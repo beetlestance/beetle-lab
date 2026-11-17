@@ -20,8 +20,11 @@ function disposition(error: ClientFailure, original: OutputBinding, pending: boo
   const value = error.protocol;
   if (!value) fail('transport');
   if (error.status !== 409 || value.attemptId !== original.key.attempt.attemptId) fail('transport');
-  check(value.organizationId === original.key.attempt.organizationId
-    && value.workspaceId === original.key.attempt.workspaceId, 'transport');
+  check(
+    value.organizationId === original.key.attempt.organizationId &&
+      value.workspaceId === original.key.attempt.workspaceId,
+    'transport',
+  );
   if (value.reason === 'source_unavailable' && value.retry === 'never') fail('source_unavailable');
   if (pending) return initialSourceDisposition(value);
   fail('transport');
@@ -29,29 +32,47 @@ function disposition(error: ClientFailure, original: OutputBinding, pending: boo
 function initialSourceDisposition(value: NonNullable<ClientFailure['protocol']>): null {
   if (value.reason === 'source_pending' && value.retry === 'transport') return null;
   if (value.reason === 'source_absent' && value.retry === 'never') {
-    check(validate('ProtocolError', value).ok, 'transport'); fail('source_absent');
+    check(validate('ProtocolError', value).ok, 'transport');
+    fail('source_absent');
   }
   fail('transport');
 }
-export function client(options: OutputTransferOptions<OutputBinding>, owner: TransferOwner, original: OutputBinding): RunnerOutputClient {
+export function client(
+  options: OutputTransferOptions<OutputBinding>,
+  owner: TransferOwner,
+  original: OutputBinding,
+): RunnerOutputClient {
   owner.check();
-  const output = options.gateway.output({...original.key.attempt, journalAuthority: original.journalAuthority});
-  owner.check(); return output;
+  const output = options.gateway.output({ ...original.key.attempt, journalAuthority: original.journalAuthority });
+  owner.check();
+  return output;
 }
-export async function loadSource(options: OutputTransferOptions<OutputBinding>, owner: TransferOwner, original: OutputBinding): Promise<{
-  source: Owned<SourceEnvelope>; state: Extract<OutputCustodyState<OutputBinding>, {kind: 'adopted'}>;
+export async function loadSource(
+  options: OutputTransferOptions<OutputBinding>,
+  owner: TransferOwner,
+  original: OutputBinding,
+): Promise<{
+  source: Owned<SourceEnvelope>;
+  state: Extract<OutputCustodyState<OutputBinding>, { kind: 'adopted' }>;
 } | null> {
   let retained = state(await owner.call(() => options.metadata.load(original)), original);
   if (retained.kind === 'pending') {
     const output = client(options, owner, original);
     const reply = await owner.call(() => output.source(owner.controller.signal));
-    const remote = sourceReply(reply, original, true); if (remote === null) return null;
+    const remote = sourceReply(reply, original, true);
+    if (remote === null) return null;
     const captured = envelope(remote, original, options.digest);
-    retained = state(await owner.call(() => options.metadata.adopt({binding: original, envelope: captured})), original);
-    check(retained.kind === 'adopted'); matchedState(retained, captured);
+    retained = state(
+      await owner.call(() => options.metadata.adopt({ binding: original, envelope: captured })),
+      original,
+    );
+    check(retained.kind === 'adopted');
+    matchedState(retained, captured);
   }
   check(retained.kind === 'adopted');
-  const local = await owner.call(() => options.metadata.readSource(original)); check(local !== null);
-  const source = envelope(local, original, options.digest); matchedState(retained, source);
-  return {source, state: retained};
+  const local = await owner.call(() => options.metadata.readSource(original));
+  check(local !== null);
+  const source = envelope(local, original, options.digest);
+  matchedState(retained, source);
+  return { source, state: retained };
 }

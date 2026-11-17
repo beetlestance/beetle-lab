@@ -6,8 +6,12 @@ import { AgentHttpError } from './types.js';
 import type { HttpScope } from './types.js';
 
 function authority(value: unknown): value is string {
-  return typeof value === 'string' && value.length === 36 && value === value.toLowerCase()
-    && validatePrimitive('uuid', value).ok;
+  return (
+    typeof value === 'string' &&
+    value.length === 36 &&
+    value === value.toLowerCase() &&
+    validatePrimitive('uuid', value).ok
+  );
 }
 /** Captured installation authority and request identities, before any service effect. */
 export class RequestIdentity {
@@ -23,18 +27,25 @@ export class RequestIdentity {
     const raw = authenticate(request, this.credential);
     if ((request.raw.url?.length ?? 0) > 2048) throw new AgentHttpError(414, 'invalid_protocol');
     if (request.routeOptions.url === '/runner/v1/capabilities') return;
-    const scope = scopeFromHeaders(raw); this.scopes.set(request, scope);
+    const scope = scopeFromHeaders(raw);
+    this.scopes.set(request, scope);
     if (!request.routeOptions.url?.startsWith('/runner/v1/attempts/:attemptId')) return;
     this.scopes.set(request, Object.freeze({ ...scope, attemptId: attemptId(request.params) }));
     const expected = raw.get('x-beetle-journal-authority');
     if (!authority(expected)) throw new AgentHttpError(400, 'invalid_protocol');
     if (expected !== this.journalAuthority) throw new AgentHttpError(409, 'authority_mismatch');
   }
-  scope(request: FastifyRequest): HttpScope | undefined { return this.scopes.get(request); }
+  scope(request: FastifyRequest): HttpScope | undefined {
+    return this.scopes.get(request);
+  }
   key(request: FastifyRequest): GenerationKey {
     const scope = this.scopes.get(request);
     if (!scope?.attemptId) throw new AgentHttpError(403, 'invalid_protocol');
-    return { organizationId: scope.organizationId, workspaceId: scope.workspaceId,
-      generation: scope.generation, attemptId: scope.attemptId };
+    return {
+      organizationId: scope.organizationId,
+      workspaceId: scope.workspaceId,
+      generation: scope.generation,
+      attemptId: scope.attemptId,
+    };
   }
 }

@@ -15,5 +15,7 @@ export interface ResourceObserver {
   close(): Promise<void>;
 }
 export class ObserverError extends Error {
-  constructor(readonly reason: 'invalid_input' | 'busy' | 'closed') { super(`Resource observer ${reason}`); }
+  constructor(readonly reason: 'invalid_input' | 'busy' | 'closed') {
+    super(`Resource observer ${reason}`);
+  }
 }

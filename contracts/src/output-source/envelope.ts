@@ -12,7 +12,8 @@ export function verifySourceEnvelope(input: unknown, digest: ResultDigest): Owne
   return checked(() => {
     const captured = capture(input, SOURCE_ENVELOPE_BYTES);
     canonical(captured, SOURCE_ENVELOPE_BYTES);
-    const result = validate('SourceEnvelope', captured); requireInput(result.ok);
+    const result = validate('SourceEnvelope', captured);
+    requireInput(result.ok);
     const value = result.value;
     const manifest = verifyOutputManifest(value.manifest, digest);
     const receipt = value.closure.receipt;

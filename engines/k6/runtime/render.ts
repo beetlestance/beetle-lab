@@ -3,7 +3,10 @@ import { BoundedText, quoted, utf8Bytes } from './bounds.js';
 import { stop } from './failure.js';
 import type { HttpRequest } from './types.js';
 
-export interface RenderScope { rows: ReadonlyMap<string, Row>; secret(name: string): string }
+export interface RenderScope {
+  rows: ReadonlyMap<string, Row>;
+  secret(name: string): string;
+}
 function controls(value: string, maximum = 31): boolean {
   for (const character of value) {
     const code = character.charCodeAt(0);
@@ -28,17 +31,33 @@ export function renderTemplate(plan: DeepReadonly<TemplatePlan>, scope: RenderSc
 function relativePath(value: string): void {
   if (!value.startsWith('/') || value.startsWith('//') || /[\\?#]/.test(value) || controls(value, 32)) stop('path');
   let decoded: string;
-  try { decoded = decodeURIComponent(value); } catch { return stop('path'); }
-  if (decoded.startsWith('//') || /[\\?#]/.test(decoded) || controls(decoded, 32)
-    || decoded.split('/').some(segment => segment === '.' || segment === '..')) stop('path');
+  try {
+    decoded = decodeURIComponent(value);
+  } catch {
+    return stop('path');
+  }
+  if (
+    decoded.startsWith('//') ||
+    /[\\?#]/.test(decoded) ||
+    controls(decoded, 32) ||
+    decoded.split('/').some((segment) => segment === '.' || segment === '..')
+  )
+    stop('path');
 }
 function encoded(output: BoundedText, value: string): void {
   for (const character of value) {
-    try { output.append(encodeURIComponent(character)); } catch { return stop('path'); }
+    try {
+      output.append(encodeURIComponent(character));
+    } catch {
+      return stop('path');
+    }
   }
 }
 function bodyNode(output: BoundedText, node: DeepReadonly<BodyNode>, scope: RenderScope): void {
-  if (node.kind === 'template') { quoted(output, renderTemplate(node.template, scope)); return; }
+  if (node.kind === 'template') {
+    quoted(output, renderTemplate(node.template, scope));
+    return;
+  }
   if (node.kind === 'scalar') {
     if (typeof node.value === 'string') quoted(output, node.value);
     else output.append(String(node.value));
@@ -46,13 +65,19 @@ function bodyNode(output: BoundedText, node: DeepReadonly<BodyNode>, scope: Rend
   }
   if (node.kind === 'array') {
     output.append('[');
-    node.items.forEach((item, index) => { if (index) output.append(','); bodyNode(output, item, scope); });
-    output.append(']'); return;
+    node.items.forEach((item, index) => {
+      if (index) output.append(',');
+      bodyNode(output, item, scope);
+    });
+    output.append(']');
+    return;
   }
   output.append('{');
   node.entries.forEach((entry, index) => {
     if (index) output.append(',');
-    quoted(output, entry.key); output.append(':'); bodyNode(output, entry.value, scope);
+    quoted(output, entry.key);
+    output.append(':');
+    bodyNode(output, entry.value, scope);
   });
   output.append('}');
 }
@@ -61,8 +86,7 @@ function body(plan: DeepReadonly<RequestPlan>, scope: RenderScope): string | nul
   const output = new BoundedText(plan.serialization.bodyBytes);
   if (plan.body.kind === 'input' && plan.body.format === 'text') {
     output.append('literal' in plan.body ? plan.body.literal : renderTemplate(plan.body.value, scope));
-  }
-  else bodyNode(output, plan.body.value, scope);
+  } else bodyNode(output, plan.body.value, scope);
   return output.finish();
 }
 function headers(plan: DeepReadonly<RequestPlan>, scope: RenderScope): Record<string, string> {
@@ -75,22 +99,43 @@ function headers(plan: DeepReadonly<RequestPlan>, scope: RenderScope): Record<st
     result[name] = value;
   };
   for (const header of plan.headers) add(header.name, renderTemplate(header.value, scope));
-  if (plan.body && !(plan.body.kind === 'input' && plan.body.format === 'text')
-    && !Object.keys(result).some(name => name.toLowerCase() === 'content-type')) add('Content-Type', 'application/json');
+  if (
+    plan.body &&
+    !(plan.body.kind === 'input' && plan.body.format === 'text') &&
+    !Object.keys(result).some((name) => name.toLowerCase() === 'content-type')
+  )
+    add('Content-Type', 'application/json');
   return result;
 }
 export function retainBody(assertions: DeepReadonly<RequestPlan['assertions']>): boolean {
-  return assertions.some(assertion => assertion.kind === 'bodyContains' || assertion.kind.startsWith('json'));
+  return assertions.some((assertion) => assertion.kind === 'bodyContains' || assertion.kind.startsWith('json'));
 }
-export function renderRequest(input: { target: string; plan: DeepReadonly<RequestPlan>; scope: RenderScope; timeoutMs: number; label: string }): HttpRequest {
+export function renderRequest(input: {
+  target: string;
+  plan: DeepReadonly<RequestPlan>;
+  scope: RenderScope;
+  timeoutMs: number;
+  label: string;
+}): HttpRequest {
   const { plan, scope } = input;
   const output = new BoundedText(plan.serialization.urlBytes);
   output.append(input.target);
-  const path = renderTemplate(plan.path, scope); relativePath(path); output.append(path);
+  const path = renderTemplate(plan.path, scope);
+  relativePath(path);
+  output.append(path);
   plan.query.forEach((query, index) => {
-    output.append(index ? '&' : '?'); encoded(output, query.name); output.append('=');
+    output.append(index ? '&' : '?');
+    encoded(output, query.name);
+    output.append('=');
     encoded(output, renderTemplate(query.value, scope));
   });
-  return { method: plan.method, url: output.finish(), headers: headers(plan, scope), body: body(plan, scope),
-    timeoutMs: input.timeoutMs, label: input.label, responseType: retainBody(plan.assertions) ? 'text' : 'none' };
+  return {
+    method: plan.method,
+    url: output.finish(),
+    headers: headers(plan, scope),
+    body: body(plan, scope),
+    timeoutMs: input.timeoutMs,
+    label: input.label,
+    responseType: retainBody(plan.assertions) ? 'text' : 'none',
+  };
 }

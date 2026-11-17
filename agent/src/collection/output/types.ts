@@ -7,8 +7,18 @@ export const OUTPUT_RESULT_BYTES = 1_048_576;
 export const OUTPUT_READ_BYTES = 65_536;
 export const OUTPUT_CUSTODY_BYTES = 32_768;
 export const OUTPUT_COLLECTION_MAX_MS = 300_000;
-export type OutputCollectionReason = 'invalid_options' | 'busy' | 'closed' | 'cancelled' | 'deadline'
-  | 'io' | 'missing' | 'custody' | 'integrity' | 'result' | 'output_limit';
+export type OutputCollectionReason =
+  | 'invalid_options'
+  | 'busy'
+  | 'closed'
+  | 'cancelled'
+  | 'deadline'
+  | 'io'
+  | 'missing'
+  | 'custody'
+  | 'integrity'
+  | 'result'
+  | 'output_limit';
 export interface OutputCollectionOptions {
   readonly directory: string;
   readonly uid: number;
@@ -32,7 +42,12 @@ export interface OutputCustody {
   readonly root: Readonly<OutputRootIdentity>;
 }
 export type OutputCollectionResult<T extends ExecutionResult = ExecutionResult> =
-  | { readonly ok: true; readonly value: Readonly<T>; readonly verifiedBytes: number; readonly custody: Readonly<OutputCustody> }
+  | {
+      readonly ok: true;
+      readonly value: Readonly<T>;
+      readonly verifiedBytes: number;
+      readonly custody: Readonly<OutputCustody>;
+    }
   | { readonly ok: false; readonly reason: OutputCollectionReason };
 export interface OutputCollection {
   /** Success is published only after all original closes succeed and the final budget fence. */

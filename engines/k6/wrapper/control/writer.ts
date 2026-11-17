@@ -23,7 +23,9 @@ interface AppendFlight {
 }
 function createFlight(): AppendFlight {
   let finish!: () => void;
-  const quiesced = new Promise<void>(resolve => { finish = resolve; });
+  const quiesced = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
   return { quiesced, finish };
 }
 
@@ -34,8 +36,11 @@ class Writer implements ControlWriter {
   private closing = false;
   private inFlight: AppendFlight | undefined;
   private closePromise: Promise<void> | undefined;
-  constructor(private readonly file: JournalFile, private readonly scope: JournalScope,
-    private readonly quota: number) {}
+  constructor(
+    private readonly file: JournalFile,
+    private readonly scope: JournalScope,
+    private readonly quota: number,
+  ) {}
 
   async append(draft: ControlDraft, budget: OperationBudget): Promise<ControlEvent> {
     if (this.closing) throw new JournalError('closed');
@@ -47,40 +52,55 @@ class Writer implements ControlWriter {
     if (this.bytes + prepared.bytes.length > this.quota) throw new JournalError('quota_limit');
     operation.check();
     // Claim admission before issuing I/O; quiescence never releases admission.
-    const flight = createFlight(); this.inFlight = flight;
+    const flight = createFlight();
+    this.inFlight = flight;
     try {
       const event = await operation.wait(this.persist(prepared, operation, flight));
       operation.check();
       if (this.closing) throw new JournalError('closed');
-      this.bytes += prepared.bytes.length; this.seq++;
+      this.bytes += prepared.bytes.length;
+      this.seq++;
       // No await separates the public success decision and admission release.
       this.inFlight = undefined;
       return event;
+    } catch (error) {
+      this.poisoned = true;
+      throw safeError(error);
     }
-    catch (error) { this.poisoned = true; throw safeError(error); }
   }
 
-  private async persist(prepared: ReturnType<typeof frame>, operation: Operation,
-    flight: AppendFlight): Promise<ControlEvent> {
+  private async persist(
+    prepared: ReturnType<typeof frame>,
+    operation: Operation,
+    flight: AppendFlight,
+  ): Promise<ControlEvent> {
     try {
       let offset = 0;
       while (offset < prepared.bytes.length) {
         operation.check();
-        const { bytesWritten } = await this.file.write(prepared.bytes, offset,
-          prepared.bytes.length - offset, this.bytes + offset);
+        const { bytesWritten } = await this.file.write(
+          prepared.bytes,
+          offset,
+          prepared.bytes.length - offset,
+          this.bytes + offset,
+        );
         operation.check();
         if (!Number.isInteger(bytesWritten) || bytesWritten < 1 || bytesWritten > prepared.bytes.length - offset) {
           throw new JournalError('io_failure');
         }
         offset += bytesWritten;
       }
-      await this.file.sync(); operation.check();
+      await this.file.sync();
+      operation.check();
       if (this.closing) throw new JournalError('closed');
       return prepared.event;
     } catch (error) {
       // Poison before persistence rejects or quiescence wakes another caller.
-      this.poisoned = true; throw safeError(error);
-    } finally { flight.finish(); }
+      this.poisoned = true;
+      throw safeError(error);
+    } finally {
+      flight.finish();
+    }
   }
 
   close(): Promise<void> {
@@ -91,7 +111,11 @@ class Writer implements ControlWriter {
   private async finishClose(): Promise<void> {
     // Append callers receive the failure. Cleanup still waits for the issued I/O.
     await this.inFlight?.quiesced;
-    try { await this.file.close(); } catch { throw new JournalError('io_failure'); }
+    try {
+      await this.file.close();
+    } catch {
+      throw new JournalError('io_failure');
+    }
   }
 }
 
@@ -101,23 +125,35 @@ async function initialize(options: WriterOptions, scope: JournalScope, operation
   let parent: JournalFile | undefined;
   let ready = false;
   try {
-    const path = await directoryPath(options.directory, io, operation); operation.check();
-    try { file = await io.open(path, freshFlags, 0o600); }
-    catch (error) {
+    const path = await directoryPath(options.directory, io, operation);
+    operation.check();
+    try {
+      file = await io.open(path, freshFlags, 0o600);
+    } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'EEXIST') throw new JournalError('already_exists');
       throw error;
     }
-    operation.check(); await assertFile(file, operation); operation.check();
-    await file.sync(); operation.check();
-    parent = await io.open(options.directory, directoryFlags); operation.check();
-    await parent.sync(); operation.check();
-    const parentToClose = parent; parent = undefined;
-    await parentToClose.close(); operation.check();
+    operation.check();
+    await assertFile(file, operation);
+    operation.check();
+    await file.sync();
+    operation.check();
+    parent = await io.open(options.directory, directoryFlags);
+    operation.check();
+    await parent.sync();
+    operation.check();
+    const parentToClose = parent;
+    parent = undefined;
+    await parentToClose.close();
+    operation.check();
     ready = true;
     return new Writer(file, scope, options.quotaBytes);
   } finally {
-    try { if (parent) await parent.close(); }
-    finally { if (file && !ready) await file.close(); }
+    try {
+      if (parent) await parent.close();
+    } finally {
+      if (file && !ready) await file.close();
+    }
   }
 }
 
@@ -127,13 +163,23 @@ export async function createControlWriter(options: WriterOptions, budget: Operat
   if (!Number.isSafeInteger(quota) || quota < 1024 || quota > FILE_BYTES) throw new JournalError('invalid_options');
   const operation = new Operation(budget);
   // Capture trusted options before any await; later caller mutation has no authority.
-  const frozen = Object.freeze({ directory: options.directory, scope, quotaBytes: quota,
-    io: options.io ?? nodeJournalIo });
+  const frozen = Object.freeze({
+    directory: options.directory,
+    scope,
+    quotaBytes: quota,
+    io: options.io ?? nodeJournalIo,
+  });
   const work = initialize(frozen, scope, operation);
-  try { return await operation.wait(work); }
-  catch (error) {
+  try {
+    return await operation.wait(work);
+  } catch (error) {
     // Cover deadline expiry between initialization's final check and handoff.
-    void work.then(writer => writer.close(), () => undefined).catch(() => undefined);
+    void work
+      .then(
+        (writer) => writer.close(),
+        () => undefined,
+      )
+      .catch(() => undefined);
     throw safeError(error);
   }
 }

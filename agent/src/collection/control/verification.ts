@@ -14,7 +14,11 @@ export class Verification {
   private count = 0;
   private last = -1;
   private offset = 0;
-  constructor(readonly phase: 'restart' | 'final', private readonly target: Readonly<WrapperCursor>, stat: BigIntStats) {
+  constructor(
+    readonly phase: 'restart' | 'final',
+    private readonly target: Readonly<WrapperCursor>,
+    stat: BigIntStats,
+  ) {
     this.pinned = signature(stat);
   }
   matches(stat: BigIntStats): void {
@@ -22,13 +26,20 @@ export class Verification {
   }
   private consume(bytes: Buffer): void {
     if (bytes.length === 0) throw new ControlReadError('corruption');
-    this.hash.update(bytes); this.offset += bytes.length;
-    for (const byte of bytes) { if (byte === 10) this.count++; }
+    this.hash.update(bytes);
+    this.offset += bytes.length;
+    for (const byte of bytes) {
+      if (byte === 10) this.count++;
+    }
     this.last = bytes[bytes.length - 1]!;
   }
   private finish(): Hash {
     const boundary = this.target.offset === 0 ? this.last === -1 : this.last === 10;
-    if (!boundary || this.count !== this.target.wrapperSeq || this.hash.copy().digest('hex') !== this.target.prefixSha256) {
+    if (
+      !boundary ||
+      this.count !== this.target.wrapperSeq ||
+      this.hash.copy().digest('hex') !== this.target.prefixSha256
+    ) {
       throw new ControlReadError('corruption');
     }
     return this.hash;
@@ -41,8 +52,8 @@ export class Verification {
       this.consume(bytes);
     }
     this.matches(await custody.check(op));
-    if (this.offset < this.target.offset) return { kind: 'verifying', phase: this.phase,
-      verifiedBytes: this.offset, targetBytes: this.target.offset };
+    if (this.offset < this.target.offset)
+      return { kind: 'verifying', phase: this.phase, verifiedBytes: this.offset, targetBytes: this.target.offset };
     return this.finish();
   }
 }

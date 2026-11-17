@@ -12,19 +12,22 @@ function settledChronology(value: Reservation, input: LaunchSettlement): void {
   if (value.launchSettlement && input.settledAt <= value.launchSettlement.settledAt) throw new Failure('conflict');
 }
 export function settleLaunch(db: DatabaseSync, input: LaunchSettlement): Reservation {
-  const value = reservation(db, input.key); requireLaunchBinding(value, input);
+  const value = reservation(db, input.key);
+  requireLaunchBinding(value, input);
   const existing = value.launchSettlement;
   if (existing) {
     if (canonical(existing) === canonical(input)) return value;
     if (existing.disposition !== 'unknown') throw new Failure('conflict');
   }
-  active(value); settledChronology(value, input);
+  active(value);
+  settledChronology(value, input);
   // A trusted definitive assertion means every create/start dispatch has quiesced
   // and its capability is retired. This persistence boundary cannot observe that.
   return saveReservation(db, { ...value, launchClosed: true, launchSettlement: input });
 }
 export function requireLaunchBinding(value: Reservation, input: LaunchSettlement): void {
-  binding(value, input); currentLaunch(value, input);
+  binding(value, input);
+  currentLaunch(value, input);
   if (value.runtimeId !== input.runtimeId) throw new Failure('conflict');
   if (input.settledAt < (value.startClaimedAt ?? value.admittedAt)) throw new Failure('invalid_input');
 }
@@ -39,7 +42,8 @@ function releaseChronology(value: Reservation, input: ReleaseEvidence): void {
   }
 }
 export function releaseSettled(db: DatabaseSync, evidence: ReleaseEvidence): Reservation {
-  const value = reservation(db, evidence.key); requireSettledRelease(value, evidence);
+  const value = reservation(db, evidence.key);
+  requireSettledRelease(value, evidence);
   if (value.releaseEvidence) {
     if (canonical(value.releaseEvidence) !== canonical(evidence)) throw new Failure('conflict');
     return value;

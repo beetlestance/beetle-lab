@@ -17,12 +17,19 @@ export class RuntimeEvidence {
   private issued: Pending | undefined;
   private flushing: Promise<void> | undefined;
   private sealed = false;
-  constructor(private readonly journal: JournalPort, private readonly key: Scope) {}
-  get hasPending(): boolean { return Boolean(this.pending.length || this.resource || this.issued || this.flushing); }
-  get lifecyclePending(): boolean {
-    return this.pending.length > 0 || this.issued !== undefined && this.issued.event.kind !== 'resource.summary';
+  constructor(
+    private readonly journal: JournalPort,
+    private readonly key: Scope,
+  ) {}
+  get hasPending(): boolean {
+    return Boolean(this.pending.length || this.resource || this.issued || this.flushing);
   }
-  get resourceWaiting(): boolean { return this.resource !== undefined; }
+  get lifecyclePending(): boolean {
+    return this.pending.length > 0 || (this.issued !== undefined && this.issued.event.kind !== 'resource.summary');
+  }
+  get resourceWaiting(): boolean {
+    return this.resource !== undefined;
+  }
   summarize(payload: ResourceSummary, now: number): void {
     if (this.sealed) return;
     Object.freeze(payload.enforcedControls);
@@ -33,11 +40,19 @@ export class RuntimeEvidence {
     this.captured.add(event.kind);
     this.pending.push({ event: this.freeze(event) });
   }
-  private freeze(event: Draft): Draft { Object.freeze(event.payload); return Object.freeze(event); }
+  private freeze(event: Draft): Draft {
+    Object.freeze(event.payload);
+    return Object.freeze(event);
+  }
   flush(lifecycleOnly = false): Promise<void> {
     if (this.flushing) return this.flushing;
-    const work = Promise.resolve().then(() => this.drain(lifecycleOnly)).finally(() => { this.flushing = undefined; });
-    this.flushing = work; return work;
+    const work = Promise.resolve()
+      .then(() => this.drain(lifecycleOnly))
+      .finally(() => {
+        this.flushing = undefined;
+      });
+    this.flushing = work;
+    return work;
   }
   private next(): Pending | undefined {
     // An issued uncertain append always replays first. Exit follows the final summary.
@@ -47,7 +62,8 @@ export class RuntimeEvidence {
       this.issued = this.pending.shift();
       if (lifecycle.event.kind === 'runtime.exited') this.sealed = true;
     } else {
-      this.issued = this.resource; this.resource = undefined;
+      this.issued = this.resource;
+      this.resource = undefined;
     }
     return this.issued;
   }
@@ -79,30 +95,55 @@ export class RuntimeEvidence {
     else this.pending.unshift(pending);
   }
   cancelled(requestedAt: number, now: number): void {
-    this.capture({ ...this.base(now), kind: 'cancellation.requested',
-      payload: { requestedAt: new Date(requestedAt).toISOString() } });
+    this.capture({
+      ...this.base(now),
+      kind: 'cancellation.requested',
+      payload: { requestedAt: new Date(requestedAt).toISOString() },
+    });
   }
   observe(observation: Observation, now: number, cause: LaunchState['cancellation']): void {
     const event = this.event(observation, now, cause);
     if (event) this.capture(event);
   }
   private base(now: number) {
-    return { version: '1.0' as const, ...this.key, source: 'agent' as const,
-      phase: 'execute' as const, observedAt: new Date(now).toISOString() };
+    return {
+      version: '1.0' as const,
+      ...this.key,
+      source: 'agent' as const,
+      phase: 'execute' as const,
+      observedAt: new Date(now).toISOString(),
+    };
   }
-  private event(observation: Observation, now: number, cause: LaunchState['cancellation']): Extract<Draft, { kind: LifecycleKind }> | undefined {
+  private event(
+    observation: Observation,
+    now: number,
+    cause: LaunchState['cancellation'],
+  ): Extract<Draft, { kind: LifecycleKind }> | undefined {
     const base = this.base(now);
-    if (observation.state === 'missing') return { ...base, kind: 'execution.lost',
-      payload: { reason: 'execution_lost', lastObservedAt: base.observedAt } };
+    if (observation.state === 'missing')
+      return {
+        ...base,
+        kind: 'execution.lost',
+        payload: { reason: 'execution_lost', lastObservedAt: base.observedAt },
+      };
     if (!('id' in observation)) return undefined;
-    if (observation.state === 'running') return { ...base, kind: 'runtime.started', payload: { runtimeId: observation.id } };
+    if (observation.state === 'running')
+      return { ...base, kind: 'runtime.started', payload: { runtimeId: observation.id } };
     if (observation.state !== 'exited') return undefined;
-    return { ...base, kind: 'runtime.exited', payload: { exitCode: observation.exitCode,
-      oomKilled: observation.oomKilled, observedAt: base.observedAt,
-      ...(observation.oomKilled ? { reason: 'memory_limit' as const } : this.exitCause(cause)) } };
+    return {
+      ...base,
+      kind: 'runtime.exited',
+      payload: {
+        exitCode: observation.exitCode,
+        oomKilled: observation.oomKilled,
+        observedAt: base.observedAt,
+        ...(observation.oomKilled ? { reason: 'memory_limit' as const } : this.exitCause(cause)),
+      },
+    };
   }
   private exitCause(cause: LaunchState['cancellation']) {
-    if (cause === 'cancelled' || cause === 'timeout' || cause === 'output_limit' || cause === 'artifact_incomplete') return { reason: cause };
+    if (cause === 'cancelled' || cause === 'timeout' || cause === 'output_limit' || cause === 'artifact_incomplete')
+      return { reason: cause };
     // The wire has no clock_integrity reason. The actor reports it separately.
     return {};
   }

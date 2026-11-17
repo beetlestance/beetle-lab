@@ -6,19 +6,27 @@ import { queryKeys } from '../../../app/queries.js';
 import { readTimeline } from './read.js';
 import type { Timeline } from './projection.js';
 export function useTimeline(run: Run, isTerminal: boolean) {
-  const api = useApi(); const client = useQueryClient();
+  const api = useApi();
+  const client = useQueryClient();
   const { organizationId, workspaceId } = run.scope;
-  const runId = run.id; const attemptId = run.activeAttemptId;
-  const owner = useMemo(() => ({ scope: { kind: 'workspace' as const, organizationId, workspaceId },
-    runId, attemptId, active: true }), [api, organizationId, workspaceId, runId, attemptId]);
+  const runId = run.id;
+  const attemptId = run.activeAttemptId;
+  const owner = useMemo(
+    () => ({ scope: { kind: 'workspace' as const, organizationId, workspaceId }, runId, attemptId, active: true }),
+    [api, organizationId, workspaceId, runId, attemptId],
+  );
   const queryKey = queryKeys.runEvents(organizationId, workspaceId, runId, attemptId);
   const [finalStarted, setFinalStarted] = useState(false);
-  const query = useQuery({ queryKey,
+  const query = useQuery({
+    queryKey,
     queryFn: ({ signal }) => readTimeline({ api, owner, signal, previous: client.getQueryData<Timeline>(queryKey) }),
-    refetchInterval: query => {
+    refetchInterval: (query) => {
       if (query.state.status === 'error') return false;
       return !isTerminal || (finalStarted && query.state.data?.backlog) ? 2000 : false;
-    }, refetchIntervalInBackground: false, structuralSharing: false });
+    },
+    refetchIntervalInBackground: false,
+    structuralSharing: false,
+  });
   useEffect(() => {
     owner.active = true;
     return () => {

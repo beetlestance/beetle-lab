@@ -1,5 +1,5 @@
 /** Explicit2048-byte cell inside already reserved C1 control capacity; no new charge. */
-export const migration021=`
+export const migration021 = `
 CREATE TABLE runtime_cleanup_associations(
  attempt_id TEXT PRIMARY KEY REFERENCES output_retirement_intents(attempt_id),
  association_json TEXT NOT NULL CHECK(typeof(association_json)='text' AND length(CAST(association_json AS BLOB))<=1536),

@@ -6,10 +6,15 @@ const RIGHT = 760;
 const TOP = 30;
 const BOTTOM = 180;
 
-
-export function TargetObservationChart({samples, metric}: {samples: readonly TargetRuntimeSample[]; metric: TargetMetricName}) {
-  const values = samples.map(sample => targetReading(sample, metric));
-  const times = samples.map(sample => Date.parse(sample.observedAt));
+export function TargetObservationChart({
+  samples,
+  metric,
+}: {
+  samples: readonly TargetRuntimeSample[];
+  metric: TargetMetricName;
+}) {
+  const values = samples.map((sample) => targetReading(sample, metric));
+  const times = samples.map((sample) => Date.parse(sample.observedAt));
   const measured = values.filter((value, index): value is number => value !== null && Number.isFinite(times[index]));
   if (measured.length === 0) return <NoReadings metric={metric} values={values} />;
   const finiteTimes = times.filter(Number.isFinite);
@@ -20,45 +25,78 @@ export function TargetObservationChart({samples, metric}: {samples: readonly Tar
   const y = (value: number) => BOTTOM - (maxValue === 0 ? 0 : value / maxValue) * (BOTTOM - TOP);
   const paths: string[] = [];
   let path = '';
-  const flush = () => {if (path) paths.push(path); path = '';};
-  let previous: {phase: TargetRuntimeSample['phase']; time: number} | undefined;
+  const flush = () => {
+    if (path) paths.push(path);
+    path = '';
+  };
+  let previous: { phase: TargetRuntimeSample['phase']; time: number } | undefined;
   for (const [index, sample] of samples.entries()) {
-    const value = values[index]; const time = times[index];
-    if (value == null || time === undefined || !Number.isFinite(time)) {flush(); previous = undefined; continue;}
+    const value = values[index];
+    const time = times[index];
+    if (value == null || time === undefined || !Number.isFinite(time)) {
+      flush();
+      previous = undefined;
+      continue;
+    }
     if (segmentBreak(previous, sample, time)) flush();
     path += `${path ? ' L' : 'M'}${x(time)},${y(value)}`;
-    previous = {phase: sample.phase, time};
+    previous = { phase: sample.phase, time };
   }
   if (path) paths.push(path);
 
-  return <section aria-label={`Target-reported ${metric}`}>
-    <h3>Target-reported {metric}</h3>
-    <TimestampNotice missing={finiteTimes.length < times.length} />
-    <svg viewBox="0 0 800 220" role="img" aria-label={`Target-reported ${metric} observations over time`}>
-      <line x1={LEFT} y1={BOTTOM} x2={RIGHT} y2={BOTTOM} className="target-observation-axis" />
-      {paths.map((data, index) => <path key={index} d={data} className="target-observation-line" />)}
-      {samples.map((sample, index) => {
-        const value = values[index];
-        const time = times[index];
-        if (value == null || time === undefined || !Number.isFinite(time)) return null;
-        const label = `${sample.observedAt} · ${sample.phase} · target-reported ${metric}: ${value}`;
-        return <circle key={`${sample.observedAt}-${index}`} cx={x(time)} cy={y(value)} r="3" className="target-observation-dot">
-          <title>{label}</title>
-        </circle>;
-      })}
-    </svg>
-  </section>;
+  return (
+    <section aria-label={`Target-reported ${metric}`}>
+      <h3>Target-reported {metric}</h3>
+      <TimestampNotice missing={finiteTimes.length < times.length} />
+      <svg viewBox="0 0 800 220" role="img" aria-label={`Target-reported ${metric} observations over time`}>
+        <line x1={LEFT} y1={BOTTOM} x2={RIGHT} y2={BOTTOM} className="target-observation-axis" />
+        {paths.map((data, index) => (
+          <path key={index} d={data} className="target-observation-line" />
+        ))}
+        {samples.map((sample, index) => {
+          const value = values[index];
+          const time = times[index];
+          if (value == null || time === undefined || !Number.isFinite(time)) return null;
+          const label = `${sample.observedAt} · ${sample.phase} · target-reported ${metric}: ${value}`;
+          return (
+            <circle
+              key={`${sample.observedAt}-${index}`}
+              cx={x(time)}
+              cy={y(value)}
+              r="3"
+              className="target-observation-dot"
+            >
+              <title>{label}</title>
+            </circle>
+          );
+        })}
+      </svg>
+    </section>
+  );
 }
 
-function segmentBreak(previous: {phase: TargetRuntimeSample['phase']; time: number} | undefined,
-  sample: TargetRuntimeSample, time: number): boolean {
+function segmentBreak(
+  previous: { phase: TargetRuntimeSample['phase']; time: number } | undefined,
+  sample: TargetRuntimeSample,
+  time: number,
+): boolean {
   return previous !== undefined && (previous.phase !== sample.phase || time <= previous.time);
 }
 
-function NoReadings({metric, values}: {metric: TargetMetricName; values: readonly (number | null)[]}) {
-  return <section aria-label={`Target-reported ${metric}`}><h3>Target-reported {metric}</h3>
-    <p role="status">{values.some(value => value !== null) ? 'Readings have no plottable observation timestamps.' : 'No readings available for this metric.'}</p></section>;
+function NoReadings({ metric, values }: { metric: TargetMetricName; values: readonly (number | null)[] }) {
+  return (
+    <section aria-label={`Target-reported ${metric}`}>
+      <h3>Target-reported {metric}</h3>
+      <p role="status">
+        {values.some((value) => value !== null)
+          ? 'Readings have no plottable observation timestamps.'
+          : 'No readings available for this metric.'}
+      </p>
+    </section>
+  );
 }
-function TimestampNotice({missing}: {missing: boolean}) {
-  return missing ? <p role="status">Some observation timestamps cannot be plotted; raw values remain in the observation table.</p> : null;
+function TimestampNotice({ missing }: { missing: boolean }) {
+  return missing ? (
+    <p role="status">Some observation timestamps cannot be plotted; raw values remain in the observation table.</p>
+  ) : null;
 }

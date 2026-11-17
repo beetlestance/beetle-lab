@@ -21,47 +21,60 @@ async function proof(options: OutputRuntimeOptions, binding: EventBinding, signa
   const retained = await options.absences.read(binding);
   if (signal.aborted) return null;
   if (retained !== null) return absenceState(retained, binding);
-  const identity = {...binding.key.attempt, journalAuthority: binding.journalAuthority};
+  const identity = { ...binding.key.attempt, journalAuthority: binding.journalAuthority };
   const client = options.gateway.output(identity);
   requireValue(typeof client.absence === 'function');
   const reply = await client.absence(signal);
   if (signal.aborted) return null;
   const closure = captureOutputAbsence(remoteValue(reply), identity);
-  const state = absenceState(await options.absences.adopt({binding, closure}), binding);
+  const state = absenceState(await options.absences.adopt({ binding, closure }), binding);
   requireValue(encodeCanonicalJson(state.closure, 2048) === encodeCanonicalJson(closure, 2048));
   return state;
 }
 async function refresh(options: OutputRuntimeOptions, binding: EventBinding, signal: AbortSignal): Promise<void> {
-  const client = options.gateway.attempt({...binding.key.attempt, journalAuthority: binding.journalAuthority});
+  const client = options.gateway.attempt({ ...binding.key.attempt, journalAuthority: binding.journalAuthority });
   requireValue(typeof client.snapshot === 'function');
   const reply = await client.snapshot(signal);
   if (signal.aborted) return;
   const snapshot = boundSnapshot(remoteValue(reply), binding);
   // Physical authority comes from the same bound authenticated gateway, not JSON.
-  observationValue(await options.observations.observe({key: binding.key, journalAuthority: binding.journalAuthority, snapshot}), binding);
+  observationValue(
+    await options.observations.observe({ key: binding.key, journalAuthority: binding.journalAuthority, snapshot }),
+    binding,
+  );
 }
-async function finalize(options: OutputRuntimeOptions, request: OutputAbsenceFinalizeRequest,
-  state: OutputAbsenceState, run: Run): Promise<'execution' | 'done'> {
+async function finalize(
+  options: OutputRuntimeOptions,
+  request: OutputAbsenceFinalizeRequest,
+  state: OutputAbsenceState,
+  run: Run,
+): Promise<'execution' | 'done'> {
   let reply;
-  try { reply = await options.absences.finalize(request); }
-  catch (error) {
+  try {
+    reply = await options.absences.finalize(request);
+  } catch (error) {
     if (error instanceof Error && Object.getOwnPropertyDescriptor(error, 'code')?.value === 'conflict') return 'done';
     throw error;
   }
   return absenceFinalization(reply, request, state, run);
 }
 /** Runs only after the initial source_absent transfer and both originals retire. */
-export async function handoffAbsence(options: OutputRuntimeOptions, binding: EventBinding,
-  signal: AbortSignal): Promise<void> {
+export async function handoffAbsence(
+  options: OutputRuntimeOptions,
+  binding: EventBinding,
+  signal: AbortSignal,
+): Promise<void> {
   const state = await proof(options, binding, signal);
   if (signal.aborted || !state) return;
   const identity = binding.key.attempt;
-  const runKey = {id: binding.key.runId, scope: {kind: 'workspace' as const,
-    organizationId: identity.organizationId, workspaceId: identity.workspaceId}};
+  const runKey = {
+    id: binding.key.runId,
+    scope: { kind: 'workspace' as const, organizationId: identity.organizationId, workspaceId: identity.workspaceId },
+  };
   let run = await getRun(runKey, options.runs);
   requireValue(run.activeAttemptId === identity.attemptId);
   if (signal.aborted) return;
-  let request = {binding, proofDigest: state.proofDigest, expectedRunVersion: run.version};
+  let request = { binding, proofDigest: state.proofDigest, expectedRunVersion: run.version };
   const result = await finalize(options, request, state, run);
   if (signal.aborted || result !== 'execution') return;
   await refresh(options, binding, signal);
@@ -69,6 +82,6 @@ export async function handoffAbsence(options: OutputRuntimeOptions, binding: Eve
   run = await getRun(runKey, options.runs);
   requireValue(run.activeAttemptId === identity.attemptId);
   if (signal.aborted) return;
-  request = {...request, expectedRunVersion: run.version};
+  request = { ...request, expectedRunVersion: run.version };
   await finalize(options, request, state, run);
 }

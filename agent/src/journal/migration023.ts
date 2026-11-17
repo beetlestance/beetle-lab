@@ -1,15 +1,27 @@
 import { retirementTables } from './retirement/schema.js';
 // Preserve the historical migration literal; only the new migration replaces its trigger.
-const start=retirementTables.indexOf('CREATE TRIGGER retirement_initial ');
-const end=retirementTables.indexOf('CREATE TRIGGER retirement_immutable ');
-const original=retirementTables.slice(start,end);
-const initial=original.replace('BEFORE INSERT ON output_retirement_intents BEGIN',
- `BEFORE INSERT ON output_retirement_intents WHEN rejected_intent_insert_allowed(NEW.attempt_id,NEW.intent_json)!=1 BEGIN`);
-const charges=['spool_bytes','snapshot_bytes','checkpoint_bytes','hold_bytes','collection_bytes','source_bytes','delivery_bytes','absence_bytes','cleanup_control_bytes'];
+const start = retirementTables.indexOf('CREATE TRIGGER retirement_initial ');
+const end = retirementTables.indexOf('CREATE TRIGGER retirement_immutable ');
+const original = retirementTables.slice(start, end);
+const initial = original.replace(
+  'BEFORE INSERT ON output_retirement_intents BEGIN',
+  `BEFORE INSERT ON output_retirement_intents WHEN rejected_intent_insert_allowed(NEW.attempt_id,NEW.intent_json)!=1 BEGIN`,
+);
+const charges = [
+  'spool_bytes',
+  'snapshot_bytes',
+  'checkpoint_bytes',
+  'hold_bytes',
+  'collection_bytes',
+  'source_bytes',
+  'delivery_bytes',
+  'absence_bytes',
+  'cleanup_control_bytes',
+];
 // Each component is already bounded by quota_bytes; subtraction avoids summing unsafe input.
-const remaining=charges.reduce((expression,name)=>`(${expression}-NEW.${name})`,'NEW.quota_bytes');
+const remaining = charges.reduce((expression, name) => `(${expression}-NEW.${name})`, 'NEW.quota_bytes');
 /** New controls have no backfill and cannot be fabricated by raw SQL or an admitted C1 branch. */
-export const migration023=`
+export const migration023 = `
 CREATE TABLE rejected_cleanup_storage(
  id INTEGER PRIMARY KEY CHECK(id=1),
  original_count INTEGER NOT NULL CHECK(typeof(original_count)='integer' AND original_count BETWEEN 0 AND 64),

@@ -3,8 +3,10 @@ import type { AttemptAdmission } from '@beetle/contracts';
 import { requireRule } from '../namespaces/index.js';
 
 /** The branch order is independent of event sequence and receipt time. */
-export function mergeAdmission(previous: AttemptAdmission | undefined,
-  incoming: AttemptAdmission | undefined): AttemptAdmission | undefined {
+export function mergeAdmission(
+  previous: AttemptAdmission | undefined,
+  incoming: AttemptAdmission | undefined,
+): AttemptAdmission | undefined {
   if (previous === undefined) return incoming;
   if (incoming === undefined) return previous;
   if (encodeCanonicalJson(previous, 1024) === encodeCanonicalJson(incoming, 1024)) return previous;

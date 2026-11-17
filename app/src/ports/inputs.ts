@@ -9,17 +9,32 @@ export const INPUT_CHUNK_BYTES = 65_536;
 export const INPUT_METADATA_CHARGE_BYTES = 65_536;
 export type InputState = 'staging' | 'publishing' | 'published' | 'deleting' | 'deleted' | 'failed';
 export type InputFailure = 'custody_missing' | 'integrity' | 'io' | 'unverified_legacy';
-export interface InputKey { scope: WorkspaceScope; id: string }
+export interface InputKey {
+  scope: WorkspaceScope;
+  id: string;
+}
 export interface InputRecord extends InputKey {
-  name: string; folderId: string; sha256: string; bytes: number;
-  offset: number; version: number; state: InputState; reason: InputFailure | null;
+  name: string;
+  folderId: string;
+  sha256: string;
+  bytes: number;
+  offset: number;
+  version: number;
+  state: InputState;
+  reason: InputFailure | null;
 }
 export interface InputCreateRequest {
-  scope: WorkspaceScope; requestId: string; name: string; folderId?: string;
-  sha256: string; bytes: number;
+  scope: WorkspaceScope;
+  requestId: string;
+  name: string;
+  folderId?: string;
+  sha256: string;
+  bytes: number;
 }
 export interface InputTransitionRequest {
-  scope: WorkspaceScope; requestId: string; expectedVersion: number;
+  scope: WorkspaceScope;
+  requestId: string;
+  expectedVersion: number;
 }
 export type InputControl =
   | { kind: 'createInput'; id: string; request: InputCreateRequest }
@@ -27,22 +42,34 @@ export type InputControl =
 export type InputCommand = InputControl & { intentDigest: string };
 /** Acceptance only; actual custody is read from the latest record. */
 export interface InputReceipt extends InputKey {
-  requestId: string; operation: 'seal' | 'delete'; acceptedVersion: number;
+  requestId: string;
+  operation: 'seal' | 'delete';
+  acceptedVersion: number;
 }
 export type InputControlResult = InputRecord | InputReceipt;
 export type InputAdvance =
   | { kind: 'commitInputOffset'; key: InputKey; expectedVersion: number; offset: number }
   | { kind: 'publishInput' | 'deleteInputBytes'; key: InputKey; expectedVersion: number }
   | { kind: 'failInput'; key: InputKey; expectedVersion: number; reason: InputFailure };
-export interface InputList { scope: WorkspaceScope; limit: number; cursor?: string }
+export interface InputList {
+  scope: WorkspaceScope;
+  limit: number;
+  cursor?: string;
+}
 export interface InputRecoveryPage {
-  limit: number; cursor?: string;
+  limit: number;
+  cursor?: string;
   /** Indexed publishing/deleting maintenance; omitted retains the full custody scan. */
   mode?: 'pending';
 }
-export interface InputPage { items: InputRecord[]; nextCursor: string | null }
+export interface InputPage {
+  items: InputRecord[];
+  nextCursor: string | null;
+}
 export interface InputStorage {
-  chargedBytes: number; allocationBytes: number; freeSpaceReserveBytes: number;
+  chargedBytes: number;
+  allocationBytes: number;
+  freeSpaceReserveBytes: number;
 }
 /** Shared receipts precede state/version checks; canonical intent excludes create
  * allocations and includes transition route IDs. One intent of each kind per input.

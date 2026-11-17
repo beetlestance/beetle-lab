@@ -1,16 +1,20 @@
 import { BACKEND_CLEANUP_CONTROL_BYTES } from '../../../ports/cleanup-control.js';
-const safe=(name:string)=>`${name} INTEGER NOT NULL CHECK(typeof(${name})='integer' AND ${name} BETWEEN 0 AND 9007199254740991)`;
-const owned=(row='NEW')=>`EXISTS(SELECT 1 FROM backend_cleanup_controls c WHERE c.attempt_id=${row}.attempt_id
+const safe = (name: string) =>
+  `${name} INTEGER NOT NULL CHECK(typeof(${name})='integer' AND ${name} BETWEEN 0 AND 9007199254740991)`;
+const owned = (row = 'NEW') => `EXISTS(SELECT 1 FROM backend_cleanup_controls c WHERE c.attempt_id=${row}.attempt_id
  AND c.run_id=${row}.run_id AND c.organization_id=${row}.organization_id AND c.workspace_id=${row}.workspace_id)`;
-const identity=(name:string)=>`${name} TEXT NOT NULL CHECK(length(CAST(${name} AS BLOB))=36 AND ${name}=lower(${name}))`;
-const intentFits=(r:string)=>`length(CAST(${r}.request_id AS BLOB))=36 AND length(CAST(${r}.requested_at AS BLOB))=24
+const identity = (name: string) =>
+  `${name} TEXT NOT NULL CHECK(length(CAST(${name} AS BLOB))=36 AND ${name}=lower(${name}))`;
+const intentFits = (
+  r: string,
+) => `length(CAST(${r}.request_id AS BLOB))=36 AND length(CAST(${r}.requested_at AS BLOB))=24
  AND typeof(${r}.run_version)='integer' AND ${r}.run_version BETWEEN 1 AND 9007199254740991`;
-const fileFits=`length(CAST(NEW.deletion_id AS BLOB))=36 AND length(CAST(NEW.attempt_id AS BLOB))=36
+const fileFits = `length(CAST(NEW.deletion_id AS BLOB))=36 AND length(CAST(NEW.attempt_id AS BLOB))=36
  AND typeof(NEW.original_version)='integer' AND NEW.original_version BETWEEN 1 AND 9007199254740991`;
-const fileCost=`length(CAST(json_array(NEW.deletion_id,NEW.attempt_id,NEW.ordinal,NEW.original_version,NEW.version,
+const fileCost = `length(CAST(json_array(NEW.deletion_id,NEW.attempt_id,NEW.ordinal,NEW.original_version,NEW.version,
  NEW.namespace_identity,NEW.preparation_identity,NEW.absent) AS BLOB))+128`;
 /** Dedicated backend reservation; existing rows/counters remain unchanged. */
-export const migration021=`
+export const migration021 = `
 CREATE TABLE backend_cleanup_controls (
  ${identity('attempt_id')},${identity('run_id')},${identity('organization_id')},${identity('workspace_id')},
  policy_version INTEGER NOT NULL CHECK(policy_version=1),reserved_bytes INTEGER NOT NULL CHECK(reserved_bytes=${BACKEND_CLEANUP_CONTROL_BYTES}),
@@ -36,12 +40,19 @@ CREATE TRIGGER cleanup_control_delivery BEFORE UPDATE OF possible_delivery ON di
  THEN RAISE(ABORT,'delivery requires cleanup control') END; END;
 CREATE TRIGGER cleanup_control_deletion BEFORE INSERT ON output_deletion_intents WHEN NOT(${owned()} AND ${intentFits('NEW')})
  BEGIN SELECT RAISE(ABORT,'deletion requires cleanup control'); END;
-${['INSERT','UPDATE'].map((event,index)=>`CREATE TRIGGER cleanup_control_${index===0?'file_insert':'file'} BEFORE ${event} ON output_deletion_files BEGIN
+${['INSERT', 'UPDATE']
+  .map(
+    (
+      event,
+      index,
+    ) => `CREATE TRIGGER cleanup_control_${index === 0 ? 'file_insert' : 'file'} BEFORE ${event} ON output_deletion_files BEGIN
  SELECT CASE WHEN NOT(${fileFits}) OR NOT EXISTS(
  SELECT 1 FROM backend_cleanup_controls c WHERE c.attempt_id=NEW.attempt_id AND EXISTS(
  SELECT 1 FROM output_deletion_intents d WHERE d.id=NEW.deletion_id AND d.run_id=c.run_id
  AND d.organization_id=c.organization_id AND d.workspace_id=c.workspace_id))
  THEN RAISE(ABORT,'file progress requires cleanup control') END;
- SELECT CASE WHEN ${fileCost}>384 THEN RAISE(ABORT,'cleanup file budget') END; END;`).join('\n')}
+ SELECT CASE WHEN ${fileCost}>384 THEN RAISE(ABORT,'cleanup file budget') END; END;`,
+  )
+  .join('\n')}
 PRAGMA user_version=21;
 `;

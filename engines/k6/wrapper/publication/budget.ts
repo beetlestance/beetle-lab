@@ -10,9 +10,13 @@ export class Budget {
   private reason: PublicationError | undefined;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private reject!: (reason: PublicationError) => void;
-  private readonly fence = new Promise<never>((_, reject) => { this.reject = reject; });
+  private readonly fence = new Promise<never>((_, reject) => {
+    this.reject = reject;
+  });
   private readonly abort = () => this.stop('cancelled');
-  constructor(private readonly profile: Profile) { void this.fence.catch(() => undefined); }
+  constructor(private readonly profile: Profile) {
+    void this.fence.catch(() => undefined);
+  }
   start(): void {
     const now = this.check();
     this.monoDeadline = performance.now() + Math.min(this.profile.timeoutMs, this.profile.deadlineMs - now);
@@ -26,22 +30,39 @@ export class Budget {
   check(): number {
     this.active();
     let now: number;
-    try { now = this.profile.wallNow(); }
-    catch { this.stop('clock'); throw this.reason; }
+    try {
+      now = this.profile.wallNow();
+    } catch {
+      this.stop('clock');
+      throw this.reason;
+    }
     this.active();
-    if (!Number.isSafeInteger(now) || now < 0 || now < this.highWater || now > 8_640_000_000_000_000) this.stop('clock');
+    if (!Number.isSafeInteger(now) || now < 0 || now < this.highWater || now > 8_640_000_000_000_000)
+      this.stop('clock');
     this.highWater = now;
     if (now >= this.profile.deadlineMs || performance.now() >= this.monoDeadline) this.stop('deadline');
-    this.active(); return now;
+    this.active();
+    return now;
   }
   stop(code: PublicationCode): void {
     if (code === 'cancelled' || !this.reason) this.reason = new PublicationError(code);
-    this.reject(this.reason!); clearTimeout(this.timer);
+    this.reject(this.reason!);
+    clearTimeout(this.timer);
   }
-  race<T>(work: Promise<T>): Promise<T> { return Promise.race([work, this.fence]); }
+  race<T>(work: Promise<T>): Promise<T> {
+    return Promise.race([work, this.fence]);
+  }
   private tick(): void {
-    try { this.check(); } catch { return; }
-    this.timer = setTimeout(() => this.tick(), 10); this.timer.unref();
+    try {
+      this.check();
+    } catch {
+      return;
+    }
+    this.timer = setTimeout(() => this.tick(), 10);
+    this.timer.unref();
   }
-  dispose(): void { clearTimeout(this.timer); this.profile.signal?.removeEventListener('abort', this.abort); }
+  dispose(): void {
+    clearTimeout(this.timer);
+    this.profile.signal?.removeEventListener('abort', this.abort);
+  }
 }

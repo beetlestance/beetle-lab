@@ -24,13 +24,9 @@ export interface OutputFinalizationReceipt {
   readonly validationStatus: Run['validationStatus'];
   readonly reason: Run['reason'];
 }
-export type OutputFinalizationReply = {
-  readonly kind: 'finalized';
-  readonly receipt: OutputFinalizationReceipt;
-} | {
-  readonly kind: 'pending';
-  readonly reason: 'source' | 'execution' | 'events' | 'artifacts' | 'exit_evidence';
-};
+export type OutputFinalizationReply =
+  | { readonly kind: 'finalized'; readonly receipt: OutputFinalizationReceipt }
+  | { readonly kind: 'pending'; readonly reason: 'source' | 'execution' | 'events' | 'artifacts' | 'exit_evidence' };
 /** One immediate metadata transaction. Matching committed receipts precede version
  * checks on retry. No file/network work, engine retry, source deletion or purge.
  */

@@ -22,5 +22,7 @@ export interface Scheduler {
   close(): Promise<void>;
 }
 export class SchedulerError extends Error {
-  constructor(readonly reason: 'invalid_input' | 'closed') { super(`Scheduler ${reason}`); }
+  constructor(readonly reason: 'invalid_input' | 'closed') {
+    super(`Scheduler ${reason}`);
+  }
 }

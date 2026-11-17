@@ -18,6 +18,7 @@ export interface RunComparisonService {
 }
 export class ComparisonError extends Error {
   constructor(readonly code: 'invalid_input' | 'conflict' | 'busy' | 'closed' | 'unavailable') {
-    super('Run comparison unavailable'); this.name = 'ComparisonError';
+    super('Run comparison unavailable');
+    this.name = 'ComparisonError';
   }
 }

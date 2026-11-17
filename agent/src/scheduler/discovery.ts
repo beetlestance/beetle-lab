@@ -24,14 +24,19 @@ export class Discovery {
   private deliveryCursor: number | undefined;
   private deliveryThrough: number | undefined;
   nextPass(): readonly RunnableRequest['lane'][] {
-    const start = this.first; this.first = (start + 1) % lanes.length;
+    const start = this.first;
+    this.first = (start + 1) % lanes.length;
     return lanes.map((_, index) => lanes[(start + index) % lanes.length]!);
   }
   request(lane: RunnableRequest['lane'], available: number): RunnableRequest {
     if (lane === 'charged') return Object.freeze({ lane, limit: 100 });
     const cursor = lane === 'delivery' ? this.deliveryCursor : this.queuedCursor;
-    return Object.freeze({ lane, limit: Math.min(32, available), ...(cursor === undefined ? {} : { cursor }),
-      ...(lane === 'delivery' && this.deliveryThrough !== undefined ? { through: this.deliveryThrough } : {}) });
+    return Object.freeze({
+      lane,
+      limit: Math.min(32, available),
+      ...(cursor === undefined ? {} : { cursor }),
+      ...(lane === 'delivery' && this.deliveryThrough !== undefined ? { through: this.deliveryThrough } : {}),
+    });
   }
   validate(request: RunnableRequest, page: RunnablePage): readonly Scope[] {
     requirePage(Array.isArray(page.attempts));
@@ -40,7 +45,7 @@ export class Discovery {
     else continuation(request, page);
     if (request.lane === 'delivery') delivery(request, page);
     else requirePage(page.through === undefined);
-    return Object.freeze(Array.from(page.attempts, key => copyControlScope(key)));
+    return Object.freeze(Array.from(page.attempts, (key) => copyControlScope(key)));
   }
   considered(request: RunnableRequest, page: RunnablePage): void {
     if (request.lane === 'queued') this.queuedCursor = page.cursor;

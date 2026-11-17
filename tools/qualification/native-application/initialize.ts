@@ -20,20 +20,35 @@ export function initializationWorkerUrl(): URL {
 async function privateFiles(journalPath: string, owner: InitializationOptions): Promise<void> {
   const gatePath = installationStatePath(journalPath);
   const required = new Set([basename(journalPath), basename(gatePath)]);
-  const allowed = new Set([...required, `${basename(journalPath)}-wal`, `${basename(journalPath)}-shm`, `${basename(gatePath)}-journal`]);
-  const directory = await opendir(dirname(journalPath)); let count = 0;
+  const allowed = new Set([
+    ...required,
+    `${basename(journalPath)}-wal`,
+    `${basename(journalPath)}-shm`,
+    `${basename(gatePath)}-journal`,
+  ]);
+  const directory = await opendir(dirname(journalPath));
+  let count = 0;
   for await (const entry of directory) {
     assert(++count <= 5 && allowed.has(entry.name), 'Unexpected fresh installation files');
-    const file = await open(join(dirname(journalPath), entry.name), constants.O_RDWR | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+    const file = await open(
+      join(dirname(journalPath), entry.name),
+      constants.O_RDWR | constants.O_NOFOLLOW | constants.O_NONBLOCK,
+    );
     try {
       const original = await file.stat();
-      assert(original.isFile() && original.nlink === 1 && original.uid === process.getuid?.() && original.size <= 16_777_216);
+      assert(
+        original.isFile() && original.nlink === 1 && original.uid === process.getuid?.() && original.size <= 16_777_216,
+      );
       await file.chmod(0o600);
       if (original.uid !== owner.uid || original.gid !== owner.gid) await file.chown(owner.uid, owner.gid);
       const actual = await file.stat();
-      assert.equal(actual.uid, owner.uid); assert.equal(actual.gid, owner.gid); assert.equal(actual.mode & 0o777, 0o600);
+      assert.equal(actual.uid, owner.uid);
+      assert.equal(actual.gid, owner.gid);
+      assert.equal(actual.mode & 0o777, 0o600);
       required.delete(entry.name);
-    } finally { await file.close(); }
+    } finally {
+      await file.close();
+    }
   }
   assert.equal(required.size, 0, 'Fresh journal and ready gate must both exist');
 }
@@ -42,8 +57,14 @@ async function privateFiles(journalPath: string, owner: InitializationOptions): 
  * All providers/SQLite handles close before files are secured and Docker may start.
  */
 export async function initializeFreshInstallation(options: InitializationOptions) {
-  const loaded = await loadAgentConfiguration({ BEETLE_AGENT_CONFIG_FILE: options.configPath }, initializationWorkerUrl(), undefined, { baseline: true });
-  let journal: Journal | undefined; let initializer: InitializingState | undefined;
+  const loaded = await loadAgentConfiguration(
+    { BEETLE_AGENT_CONFIG_FILE: options.configPath },
+    initializationWorkerUrl(),
+    undefined,
+    { baseline: true },
+  );
+  let journal: Journal | undefined;
+  let initializer: InitializingState | undefined;
   let journalAuthority: string | undefined;
   const failures: unknown[] = [];
   const journalPath = loaded.runtime.journal.path;
@@ -51,16 +72,23 @@ export async function initializeFreshInstallation(options: InitializationOptions
     assert.equal(loaded.runtime.installation.user, `${options.uid}:${options.gid}`);
     const parent = await lstat(dirname(journalPath));
     assert(parent.isDirectory() && !parent.isSymbolicLink() && (parent.mode & 0o777) === 0o700);
-    assert.equal(parent.uid, options.uid); assert.equal(parent.gid, options.gid);
+    assert.equal(parent.uid, options.uid);
+    assert.equal(parent.gid, options.gid);
     journal = await openJournal(loaded.runtime.journal);
     journalAuthority = await journal.journalAuthority();
     initializer = initializeInstallationState(installationStatePath(journalPath));
     initializer.complete(journalAuthority);
-  } catch (error) { failures.push(error); }
-  const closed = await Promise.allSettled([Promise.resolve().then(() => initializer?.close()),
-    Promise.resolve().then(() => journal?.close()), Promise.resolve().then(() => loaded.close())]);
+  } catch (error) {
+    failures.push(error);
+  }
+  const closed = await Promise.allSettled([
+    Promise.resolve().then(() => initializer?.close()),
+    Promise.resolve().then(() => journal?.close()),
+    Promise.resolve().then(() => loaded.close()),
+  ]);
   for (const result of closed) if (result.status === 'rejected') failures.push(result.reason);
   if (failures.length) throw new AggregateError(failures, 'Fresh qualification installation initialization failed');
-  assert(journalAuthority); await privateFiles(journalPath, options);
+  assert(journalAuthority);
+  await privateFiles(journalPath, options);
   return { journalPath, journalAuthority, gatePath: installationStatePath(journalPath) };
 }

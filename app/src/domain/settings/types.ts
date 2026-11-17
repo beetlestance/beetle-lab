@@ -1,12 +1,16 @@
 import type {
-  InstallationSettings, OrganizationSettings, PatchInstallationSettingsRequest,
-  PatchOrganizationSettingsRequest, PatchWorkspaceSettingsRequest, WorkspaceSettings,
+  InstallationSettings,
+  OrganizationSettings,
+  PatchInstallationSettingsRequest,
+  PatchOrganizationSettingsRequest,
+  PatchWorkspaceSettingsRequest,
+  WorkspaceSettings,
 } from '@beetle/contracts/api';
 import type { RuntimeCeilings } from './validation.js';
 import type { SettingsChain } from './resolve.js';
 
-export type SettingsRequest = PatchInstallationSettingsRequest |
-  PatchOrganizationSettingsRequest | PatchWorkspaceSettingsRequest;
+export type SettingsRequest =
+  PatchInstallationSettingsRequest | PatchOrganizationSettingsRequest | PatchWorkspaceSettingsRequest;
 export interface SettingsCommand {
   kind: 'patchSettings';
   id: string;

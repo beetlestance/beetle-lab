@@ -1,6 +1,12 @@
 import type { ReleaseEvidence, Reservation, Scope } from '../admission/index.js';
-import type { CollectionIntent, CollectedSource, Owned, PrivateSource, SourceReceipt,
-  StoppedRuntime } from '../output-source/index.js';
+import type {
+  CollectionIntent,
+  CollectedSource,
+  Owned,
+  PrivateSource,
+  SourceReceipt,
+  StoppedRuntime,
+} from '../output-source/index.js';
 
 export const FAILED_OUTPUT_COLLECTION_BYTES = 8192;
 export interface FailedOutputCollection {

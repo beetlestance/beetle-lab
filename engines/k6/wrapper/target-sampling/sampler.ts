@@ -1,6 +1,11 @@
 import { observe } from './observation.js';
-import type { TargetSamplingOptions, TargetSamplingOwner, TargetSamplingPhase,
-  TargetSamplingReport, TargetSamplingSample } from './types.js';
+import type {
+  TargetSamplingOptions,
+  TargetSamplingOwner,
+  TargetSamplingPhase,
+  TargetSamplingReport,
+  TargetSamplingSample,
+} from './types.js';
 
 export class Sampler implements TargetSamplingOwner {
   private readonly controller = new AbortController();
@@ -23,11 +28,18 @@ export class Sampler implements TargetSamplingOwner {
     if (options.signal.aborted) this.stop();
   }
   async start(): Promise<void> {
-    try { await this.sample(); }
-    catch (error) { this.stop(); this.options.signal.removeEventListener('abort', this.abort); throw error; }
+    try {
+      await this.sample();
+    } catch (error) {
+      this.stop();
+      this.options.signal.removeEventListener('abort', this.abort);
+      throw error;
+    }
     this.phase = 'during';
-    this.loop = this.run().catch(error => {
-      this.failure = error; this.failed = true; this.stop();
+    this.loop = this.run().catch((error) => {
+      this.failure = error;
+      this.failed = true;
+      this.stop();
     });
   }
   finish(): Promise<TargetSamplingReport> {
@@ -47,8 +59,14 @@ export class Sampler implements TargetSamplingOwner {
       if (this.options.config.cooldownMs === 0) this.stop();
     }
     await this.drain();
-    return Object.freeze({ format: 'beetle-target-runtime', version: 1, scope: 'target-reported',
-      samples: Object.freeze([...this.samples]), limited: this.limited, missed: this.missed });
+    return Object.freeze({
+      format: 'beetle-target-runtime',
+      version: 1,
+      scope: 'target-reported',
+      samples: Object.freeze([...this.samples]),
+      limited: this.limited,
+      missed: this.missed,
+    });
   }
   private stop(): void {
     this.controller.abort();
@@ -67,8 +85,12 @@ export class Sampler implements TargetSamplingOwner {
     }
   }
   private delay(): Promise<void> {
-    return new Promise(resolve => {
-      const done = () => { clearTimeout(timer); this.wake = undefined; resolve(); };
+    return new Promise((resolve) => {
+      const done = () => {
+        clearTimeout(timer);
+        this.wake = undefined;
+        resolve();
+      };
       const timer = setTimeout(done, this.options.config.intervalMs);
       this.wake = done;
     });

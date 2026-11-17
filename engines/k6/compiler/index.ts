@@ -15,10 +15,20 @@ export function compileLoadPlan(plan: ValidatedLoadPlan): Checked<CompiledLoadPl
     scenarios[scenario.name] = result.value;
   }
   const thresholds = compileThresholds(plan);
-  return { ok: true, value: { component: 'k6-load-plan', version: plan.version,
-    options: { scenarios, thresholds: thresholds.options },
-    execution: { upperBoundMs: Math.max(...analysis.value.map(item => item.upperBoundMs)), scenarios: analysis.value },
-    thresholds: thresholds.rules, discovery: thresholds.discovery } };
+  return {
+    ok: true,
+    value: {
+      component: 'k6-load-plan',
+      version: plan.version,
+      options: { scenarios, thresholds: thresholds.options },
+      execution: {
+        upperBoundMs: Math.max(...analysis.value.map((item) => item.upperBoundMs)),
+        scenarios: analysis.value,
+      },
+      thresholds: thresholds.rules,
+      discovery: thresholds.discovery,
+    },
+  };
 }
 
 export { configuredArrivalGuidance } from './analysis.js';

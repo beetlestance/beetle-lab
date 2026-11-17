@@ -17,26 +17,38 @@ function architecture(value: unknown): 'arm64' | 'amd64' {
   if (value === 'x86_64' || value === 'amd64') return 'amd64';
   throw new Error('Unsupported installed architecture');
 }
-function matches(image: Record<string, unknown>, engine: Readonly<InstalledEngine>, info: Record<string, unknown>): boolean {
+function matches(
+  image: Record<string, unknown>,
+  engine: Readonly<InstalledEngine>,
+  info: Record<string, unknown>,
+): boolean {
   const config = record(image.Config);
   const environment = config.Env ?? [];
   const volumes = config.Volumes;
   if (volumes !== undefined && volumes !== null && Object.keys(record(volumes)).length !== 0) return false;
-  return image.Id === engine.profile.imageDigest && image.Os === 'linux'
-    && architecture(image.Architecture) === architecture(info.Architecture)
-    && info.DefaultRuntime === engine.profile.effectiveImage.defaultRuntime
-    && encodeJson(environment, 16_384) === encodeJson(engine.profile.effectiveImage.environment, 16_384);
+  return (
+    image.Id === engine.profile.imageDigest &&
+    image.Os === 'linux' &&
+    architecture(image.Architecture) === architecture(info.Architecture) &&
+    info.DefaultRuntime === engine.profile.effectiveImage.defaultRuntime &&
+    encodeJson(environment, 16_384) === encodeJson(engine.profile.effectiveImage.environment, 16_384)
+  );
 }
 /** Read-only installed image pins. Never pulls, tags, mutates or starts an image. */
 export async function verifyInstalledImages(input: {
-  catalog: Catalog; transport: DockerTransport; expectedDaemonId: string; operation: Operation;
+  catalog: Catalog;
+  transport: DockerTransport;
+  expectedDaemonId: string;
+  operation: Operation;
 }): Promise<boolean> {
   try {
     const { operation, transport } = input;
     const request = async (path: string) => {
-      if (operation.signal?.aborted || performance.now() >= operation.deadline) throw new Error('Installation inspection expired');
+      if (operation.signal?.aborted || performance.now() >= operation.deadline)
+        throw new Error('Installation inspection expired');
       const reply = await transport.request({ ...operation, method: 'GET', path });
-      if (operation.signal?.aborted || performance.now() >= operation.deadline) throw new Error('Installation inspection expired');
+      if (operation.signal?.aborted || performance.now() >= operation.deadline)
+        throw new Error('Installation inspection expired');
       return body(reply);
     };
     const info = await request('/v1.47/info');
@@ -46,5 +58,7 @@ export async function verifyInstalledImages(input: {
       if (operation.signal?.aborted || !matches(image, engine, info)) return false;
     }
     return true;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }

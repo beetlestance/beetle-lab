@@ -6,7 +6,7 @@ import { checkedRun, checkedRunPage, runSnapshot } from './response.js';
 
 function expectedKey(key: RunKey): RunKey {
   const copy = runSnapshot(key, 2048);
-  requireRule(Object.keys(copy).every(field => ['scope', 'id'].includes(field)));
+  requireRule(Object.keys(copy).every((field) => ['scope', 'id'].includes(field)));
   requireRule(validateApi('WorkspaceScope', copy.scope).ok && validateApi('Uuid', copy.id).ok);
   return copy;
 }
@@ -15,7 +15,11 @@ function expectedQuery(query: RunList): RunList {
   const copy = runSnapshot(query, 2048);
   const { scope, ...page } = copy;
   requireRule(validateApi('WorkspaceScope', scope).ok && validateApi('RunListQuery', page).ok);
-  try { runListPosition(scope, page); } catch { requireRule(false); }
+  try {
+    runListPosition(scope, page);
+  } catch {
+    requireRule(false);
+  }
   const normalized = normalizeRunListQuery(page);
   return { scope, ...normalized };
 }

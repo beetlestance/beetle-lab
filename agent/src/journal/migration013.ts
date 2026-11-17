@@ -5,7 +5,9 @@ import { Failure } from './sql.js';
 
 /** Only mark bounded existing source obligations; never manufacture closure authority. */
 export function migration013(db: DatabaseSync): void {
-  const sources = db.prepare(`SELECT attempt_id FROM output_sources ORDER BY attempt_id LIMIT ${DISK_HOLD_LIMIT + 1}`).all();
+  const sources = db
+    .prepare(`SELECT attempt_id FROM output_sources ORDER BY attempt_id LIMIT ${DISK_HOLD_LIMIT + 1}`)
+    .all();
   if (sources.length > DISK_HOLD_LIMIT) throw new Failure('unavailable');
   db.exec(deliveryTables);
   db.exec(deliveryParentGuards);

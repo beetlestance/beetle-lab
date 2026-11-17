@@ -9,10 +9,16 @@ export const CONTROL_BATCH_BYTES = 262_144;
 export const CONTROL_BATCH_EVENTS = 100;
 export type ControlScope = Pick<ControlEvent, 'organizationId' | 'workspaceId' | 'attemptId' | 'generation'>;
 export interface WrapperCursor {
-  readonly version: 1; readonly dev: string; readonly ino: string;
-  readonly offset: number; readonly wrapperSeq: number; readonly prefixSha256: string;
+  readonly version: 1;
+  readonly dev: string;
+  readonly ino: string;
+  readonly offset: number;
+  readonly wrapperSeq: number;
+  readonly prefixSha256: string;
 }
-export interface WrapperCheckpoint extends WrapperCursor { readonly lastBatchDigest: string }
+export interface WrapperCheckpoint extends WrapperCursor {
+  readonly lastBatchDigest: string;
+}
 export interface WrapperBatch {
   readonly key: Readonly<ControlScope>;
   readonly expected: Readonly<WrapperCheckpoint> | null;

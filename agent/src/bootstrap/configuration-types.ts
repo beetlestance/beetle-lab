@@ -12,5 +12,7 @@ export interface LoadedAgentConfiguration {
 }
 export class AgentConfigurationError extends Error {
   readonly code = 'configuration';
-  constructor(options?: ErrorOptions) { super('Agent installation configuration is invalid', options); }
+  constructor(options?: ErrorOptions) {
+    super('Agent installation configuration is invalid', options);
+  }
 }

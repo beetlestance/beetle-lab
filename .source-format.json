@@ -1,0 +1,24 @@
+{
+  "roots": [
+    "app/src",
+    "agent/src",
+    "contracts/src",
+    "web",
+    "engines/k6",
+    "tools"
+  ],
+  "generated": [
+    "contracts/src/api/generated/",
+    "contracts/src/generated/",
+    "engines/k6/compiler/generated/"
+  ],
+  "nonProductionSegments": [
+    "test",
+    "tests",
+    "fixtures"
+  ],
+  "configFiles": [
+    "eslint.config.js",
+    "vitest.config.ts"
+  ]
+}

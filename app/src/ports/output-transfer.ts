@@ -5,19 +5,19 @@ import type { OutputArtifactStore } from './output-artifacts.js';
 import type { OutputByteStore } from './output-bytes.js';
 import type { RunnerOutputGateway } from './output-source.js';
 
-export type OutputTransferOutcome<B extends OutputBinding = EventBinding> = { readonly kind: 'pending' } | {
-  readonly kind: 'published';
-  readonly binding: B;
-  readonly manifestDigest: string;
-  readonly sourceDigest: string;
-};
+export type OutputTransferOutcome<B extends OutputBinding = EventBinding> =
+  | { readonly kind: 'pending' }
+  | { readonly kind: 'published'; readonly binding: B; readonly manifestDigest: string; readonly sourceDigest: string };
 export interface OutputTransferJob<B extends OutputBinding = EventBinding> {
   readonly result: Promise<OutputTransferOutcome<B>>;
   /** Unknown native close retains this original and its credit. */
   readonly settled: Promise<void>;
 }
 export interface OutputTransferOptions<B extends OutputBinding = EventBinding> {
-  readonly metadata: Pick<OutputArtifactStore<B>, 'load' | 'readSource' | 'adopt' | 'claimArtifact' | 'recordProgress' | 'beginPublication' | 'recordPublication'>;
+  readonly metadata: Pick<
+    OutputArtifactStore<B>,
+    'load' | 'readSource' | 'adopt' | 'claimArtifact' | 'recordProgress' | 'beginPublication' | 'recordPublication'
+  >;
   readonly gateway: Pick<RunnerOutputGateway, 'output'>;
   readonly files: Pick<OutputByteStore<B>, 'prepare' | 'append' | 'publish'>;
   readonly freeSpaceReserveBytes: number;
@@ -26,11 +26,22 @@ export interface OutputTransferOptions<B extends OutputBinding = EventBinding> {
   /** Trusted content codec; required for purpose-bound export result verification. */
   readonly digest?: ResultDigest;
 }
-export type OutputTransferCode = 'invalid_input' | 'busy' | 'closed' | 'cancelled' |
-  'source_unavailable' | 'source_absent' | 'transport' | 'conflict' | 'integrity' | 'storage' | 'cleanup';
+export type OutputTransferCode =
+  | 'invalid_input'
+  | 'busy'
+  | 'closed'
+  | 'cancelled'
+  | 'source_unavailable'
+  | 'source_absent'
+  | 'transport'
+  | 'conflict'
+  | 'integrity'
+  | 'storage'
+  | 'cleanup';
 export class OutputTransferError extends Error {
   constructor(readonly code: OutputTransferCode) {
-    super('Output transfer failed'); this.name = 'OutputTransferError';
+    super('Output transfer failed');
+    this.name = 'OutputTransferError';
   }
 }
 /** One parent owner per byte-store instance. No engine execution, result projection,

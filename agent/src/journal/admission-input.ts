@@ -1,35 +1,75 @@
 import { createHash } from 'node:crypto';
 import { encodeJson, RUNNER_MAXIMUM_CONFIG_BYTES, validatePrimitive } from '@beetle/contracts';
-import type { AdmissionCommand, ApprovedProfile, LaunchSettlement, PoolConfiguration, Resources, RuntimeObservation, Scope, ValidationIdentity } from '../admission/index.js';
-import { addResources, resourceNames, validResources, MAX_ENGINE_PROFILES, MAX_RESOURCE_VALUE } from '../admission/index.js';
+import type {
+  AdmissionCommand,
+  ApprovedProfile,
+  LaunchSettlement,
+  PoolConfiguration,
+  Resources,
+  RuntimeObservation,
+  Scope,
+  ValidationIdentity,
+} from '../admission/index.js';
+import {
+  addResources,
+  resourceNames,
+  validResources,
+  MAX_ENGINE_PROFILES,
+  MAX_RESOURCE_VALUE,
+} from '../admission/index.js';
 import { canonical } from './input.js';
 import { captureAdmissionOffer } from './admission-offer.js';
 
-function requireValid(condition: unknown): asserts condition { if (!condition) throw new Error('invalid_input'); }
+function requireValid(condition: unknown): asserts condition {
+  if (!condition) throw new Error('invalid_input');
+}
 function integer(value: number, maximum = Number.MAX_SAFE_INTEGER): boolean {
   return Number.isSafeInteger(value) && value >= 0 && value <= maximum;
 }
-function text(value: string): boolean { return typeof value === 'string' && value.length > 0 && value.length <= 128; }
-function digest(value: string): boolean { return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value); }
-function strings(value: string[]): boolean { return Array.isArray(value) && value.length <= 64 && value.every(text); }
+function text(value: string): boolean {
+  return typeof value === 'string' && value.length > 0 && value.length <= 128;
+}
+function digest(value: string): boolean {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+}
+function strings(value: string[]): boolean {
+  return Array.isArray(value) && value.length <= 64 && value.every(text);
+}
 function resources(value: Resources): void {
   requireValid(value && validResources(value));
-  requireValid(resourceNames.every(name => integer(value[name], MAX_RESOURCE_VALUE)));
+  requireValid(resourceNames.every((name) => integer(value[name], MAX_RESOURCE_VALUE)));
 }
 function scope(key: Scope): void {
-  requireValid(key && [key.attemptId, key.organizationId, key.workspaceId].every(value => validatePrimitive('uuid', value).ok));
+  requireValid(
+    key && [key.attemptId, key.organizationId, key.workspaceId].every((value) => validatePrimitive('uuid', value).ok),
+  );
   requireValid(integer(key.generation) && key.generation > 0);
 }
 function identity(value: ValidationIdentity): void {
   requireValid(value && text(value.manifestId) && text(value.profileId));
-  requireValid(digest(value.schemaDigest) && digest(value.configDigest) && integer(value.catalogVersion) && value.catalogVersion > 0);
+  requireValid(
+    digest(value.schemaDigest) &&
+      digest(value.configDigest) &&
+      integer(value.catalogVersion) &&
+      value.catalogVersion > 0,
+  );
 }
 function profile(value: ApprovedProfile): void {
   requireValid(value && text(value.manifestId) && text(value.profileId) && text(value.engineId));
-  requireValid(typeof value.imageDigest === 'string' && /^sha256:[a-f0-9]{64}$/.test(value.imageDigest) && digest(value.schemaDigest));
-  requireValid(integer(value.configVersion) && value.configVersion > 0 && integer(value.catalogVersion) && value.catalogVersion > 0);
-  profileMinimum(value); requireValid(strings(value.capabilities) && strings(value.controls));
-  requireValid(['cpu', 'memory', 'pids', 'timeout', 'output'].every(control => value.controls.includes(control)));
+  requireValid(
+    typeof value.imageDigest === 'string' &&
+      /^sha256:[a-f0-9]{64}$/.test(value.imageDigest) &&
+      digest(value.schemaDigest),
+  );
+  requireValid(
+    integer(value.configVersion) &&
+      value.configVersion > 0 &&
+      integer(value.catalogVersion) &&
+      value.catalogVersion > 0,
+  );
+  profileMinimum(value);
+  requireValid(strings(value.capabilities) && strings(value.controls));
+  requireValid(['cpu', 'memory', 'pids', 'timeout', 'output'].every((control) => value.controls.includes(control)));
 }
 function profileMinimum(value: ApprovedProfile): void {
   resources(value.minimum);
@@ -42,31 +82,50 @@ function configuration(value: PoolConfiguration): void {
   requireValid(integer(value.maxConcurrent, 64) && value.maxConcurrent > 0);
   requireValid(integer(value.maxTimeoutMs) && value.maxTimeoutMs > 0);
   requireValid(integer(value.observationTtlMs, 300_000) && value.observationTtlMs > 0);
-  requireValid(Array.isArray(value.profiles) && value.profiles.length > 0 && value.profiles.length <= MAX_ENGINE_PROFILES);
+  requireValid(
+    Array.isArray(value.profiles) && value.profiles.length > 0 && value.profiles.length <= MAX_ENGINE_PROFILES,
+  );
   value.profiles.forEach(profile);
   requireValid(Array.isArray(value.requiredSensors) && value.requiredSensors.length <= 2);
-  requireValid(value.requiredSensors.every(sensor => sensor === 'idle' || sensor === 'thermal'));
+  requireValid(value.requiredSensors.every((sensor) => sensor === 'idle' || sensor === 'thermal'));
   thermalConfiguration(value);
 }
 function thermalConfiguration(value: PoolConfiguration): void {
   if (!value.thermal) return;
-  requireValid(Number.isFinite(value.thermal.maximumCelsius) && value.thermal.maximumCelsius >= -100 && value.thermal.maximumCelsius <= 300);
+  requireValid(
+    Number.isFinite(value.thermal.maximumCelsius) &&
+      value.thermal.maximumCelsius >= -100 &&
+      value.thermal.maximumCelsius <= 300,
+  );
   requireValid(text(value.thermal.source) && integer(value.thermal.configuredAt));
 }
 function observation(value: RuntimeObservation): void {
   requireValid(value && text(value.source) && integer(value.observedAt));
   requireValid(value.status === 'known' || value.status === 'unknown');
-  resources(value.capacity); requireValid(integer(value.freeDiskBytes) && strings(value.controls));
+  resources(value.capacity);
+  requireValid(integer(value.freeDiskBytes) && strings(value.controls));
   provenance(value);
-  idleObservation(value); thermalObservation(value); guardObservation(value);
+  idleObservation(value);
+  thermalObservation(value);
+  guardObservation(value);
 }
 function provenance(value: RuntimeObservation): void {
   const sources = value.capacityProvenance;
   requireValid(sources && typeof sources === 'object');
-  requireValid(['cpuMillis', 'memoryBytes'].every(key => ['docker-info', 'synthetic', 'unavailable'].includes(sources[key as 'cpuMillis'])));
-  requireValid(['pids', 'outputBytes', 'stagingBytes'].every(key => ['configured-policy', 'synthetic'].includes(sources[key as 'pids'])));
+  requireValid(
+    ['cpuMillis', 'memoryBytes'].every((key) =>
+      ['docker-info', 'synthetic', 'unavailable'].includes(sources[key as 'cpuMillis']),
+    ),
+  );
+  requireValid(
+    ['pids', 'outputBytes', 'stagingBytes'].every((key) =>
+      ['configured-policy', 'synthetic'].includes(sources[key as 'pids']),
+    ),
+  );
   requireValid(['statfs', 'synthetic', 'unavailable'].includes(value.diskSource) && value.physicalPidCapacity === null);
-  requireValid(value.daemonId === null || typeof value.daemonId === 'string' && /^[A-Za-z0-9:._-]{1,128}$/u.test(value.daemonId));
+  requireValid(
+    value.daemonId === null || (typeof value.daemonId === 'string' && /^[A-Za-z0-9:._-]{1,128}$/u.test(value.daemonId)),
+  );
   if (value.status === 'known') {
     requireValid(value.daemonId !== null && value.diskSource !== 'unavailable');
     requireValid(sources.cpuMillis !== 'unavailable' && sources.memoryBytes !== 'unavailable');
@@ -76,7 +135,7 @@ function guardObservation(value: RuntimeObservation): void {
   if (!value.guards) return;
   requireValid(value.guards.source === 'supervisor' && integer(value.guards.observedAt));
   requireValid(Array.isArray(value.guards.controls) && value.guards.controls.length <= 2);
-  requireValid(value.guards.controls.every(control => control === 'timeout' || control === 'output'));
+  requireValid(value.guards.controls.every((control) => control === 'timeout' || control === 'output'));
 }
 function idleObservation(value: RuntimeObservation): void {
   if (value.idle) {
@@ -87,17 +146,25 @@ function idleObservation(value: RuntimeObservation): void {
 function thermalObservation(value: RuntimeObservation): void {
   if (value.thermal) {
     requireValid(text(value.thermal.source) && integer(value.thermal.observedAt));
-    requireValid(value.thermal.celsius === null || (Number.isFinite(value.thermal.celsius) && value.thermal.celsius >= -100 && value.thermal.celsius <= 300));
+    requireValid(
+      value.thermal.celsius === null ||
+        (Number.isFinite(value.thermal.celsius) && value.thermal.celsius >= -100 && value.thermal.celsius <= 300),
+    );
   }
 }
 function release(input: Extract<AdmissionCommand, { kind: 'release' }>): void {
-  const value = input.evidence; requireValid(value && value.authority === 'supervisor'); scope(value.key);
+  const value = input.evidence;
+  requireValid(value && value.authority === 'supervisor');
+  scope(value.key);
   requireValid(text(value.createToken) && digest(value.specDigest) && text(value.runtimeId));
   requireValid(value.runtime && ['stopped', 'absent'].includes(value.runtime.state));
-  requireValid(value.runtime.source === 'supervisor' && integer(value.runtime.observedAt) && text(value.runtime.evidenceId));
+  requireValid(
+    value.runtime.source === 'supervisor' && integer(value.runtime.observedAt) && text(value.runtime.evidenceId),
+  );
   requireValid(value.collection && ['finished', 'failed'].includes(value.collection.state));
   requireValid(integer(value.collection.observedAt) && text(value.collection.evidenceId));
-  requireValid(value.launch); launchIdentity(value.launch);
+  requireValid(value.launch);
+  launchIdentity(value.launch);
   requireValid(text(value.launch.settlementId));
 }
 function launchIdentity(value: { epoch: number; startToken: string | null }): void {
@@ -105,22 +172,35 @@ function launchIdentity(value: { epoch: number; startToken: string | null }): vo
   requireValid(value.epoch === 0 ? value.startToken === null : text(value.startToken as string));
 }
 function settlement(value: LaunchSettlement): void {
-  requireValid(value && value.authority === 'supervisor'); scope(value.key);
+  requireValid(value && value.authority === 'supervisor');
+  scope(value.key);
   requireValid(text(value.createToken) && digest(value.specDigest) && text(value.runtimeId));
-  launchIdentity(value); requireValid(['completed', 'retired', 'unknown'].includes(value.disposition));
+  launchIdentity(value);
+  requireValid(['completed', 'retired', 'unknown'].includes(value.disposition));
   requireValid(integer(value.settledAt, 8_640_000_000_000_000) && text(value.evidenceId));
   if (value.epoch === 0) requireValid(value.disposition !== 'completed');
 }
 function ownership(input: AdmissionCommand): void {
   if ('key' in input) scope(input.key);
   switch (input.kind) {
-    case 'admit': admitInput(input); return;
-    case 'claimCreate': requireValid(digest(input.specDigest)); return;
-    case 'claimStart': requireValid(integer(input.now, 8_640_000_000_000_000)); bindingInput(input); return;
+    case 'admit':
+      admitInput(input);
+      return;
+    case 'claimCreate':
+      requireValid(digest(input.specDigest));
+      return;
+    case 'claimStart':
+      requireValid(integer(input.now, 8_640_000_000_000_000));
+      bindingInput(input);
+      return;
     case 'bindRuntime':
-      bindingInput(input); return;
-    case 'reservation': case 'abortUnstarted': return;
-    default: throw new Error('invalid_input');
+      bindingInput(input);
+      return;
+    case 'reservation':
+    case 'abortUnstarted':
+      return;
+    default:
+      throw new Error('invalid_input');
   }
 }
 function bindingInput(input: { createToken: string; specDigest: string; runtimeId: string }): void {
@@ -144,12 +224,23 @@ export function admissionInput(input: AdmissionCommand): AdmissionCommand {
   const copy = JSON.parse(encodeJson(input, 65_536)) as AdmissionCommand;
   requireValid(copy && typeof copy === 'object');
   switch (copy.kind) {
-    case 'configure': configuration(copy.configuration); break;
-    case 'observe': observation(copy.observation); break;
-    case 'reservations': admissionPage(copy); break;
-    case 'release': release(copy); break;
-    case 'settleLaunch': settlement(copy.settlement); break;
-    default: ownership(copy);
+    case 'configure':
+      configuration(copy.configuration);
+      break;
+    case 'observe':
+      observation(copy.observation);
+      break;
+    case 'reservations':
+      admissionPage(copy);
+      break;
+    case 'release':
+      release(copy);
+      break;
+    case 'settleLaunch':
+      settlement(copy.settlement);
+      break;
+    default:
+      ownership(copy);
   }
   encodeJson(copy, 65_536);
   return copy;

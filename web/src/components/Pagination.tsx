@@ -14,16 +14,31 @@ export function usePage(queryPrefix: readonly string[]) {
   return {
     query: { limit: 100, ...(state.cursor ? { cursor: state.cursor } : {}) },
     cursor: state.cursor ?? '',
-    back: () => setState({ ...(state.history.at(-1) ? { cursor: state.history.at(-1)! } : {}), history: state.history.slice(0, -1) }),
+    back: () =>
+      setState({
+        ...(state.history.at(-1) ? { cursor: state.history.at(-1)! } : {}),
+        history: state.history.slice(0, -1),
+      }),
     next: (cursor: string) => setState({ cursor, history: [...state.history, state.cursor].slice(-20) }),
     hasBack: state.history.length > 0,
     reset: () => setState({ history: [] }),
   };
 }
 export function Pagination({ page, next }: { page: ReturnType<typeof usePage>; next: string | null }) {
-  return <nav className="pagination" aria-label="Pages">
-    <button disabled={!page.hasBack} onClick={page.back}>Back</button>
-    <span>Up to 100 items per page</span>
-    <button disabled={!next} onClick={() => { if (next) page.next(next); }}>Next</button>
-  </nav>;
+  return (
+    <nav className="pagination" aria-label="Pages">
+      <button disabled={!page.hasBack} onClick={page.back}>
+        Back
+      </button>
+      <span>Up to 100 items per page</span>
+      <button
+        disabled={!next}
+        onClick={() => {
+          if (next) page.next(next);
+        }}
+      >
+        Next
+      </button>
+    </nav>
+  );
 }

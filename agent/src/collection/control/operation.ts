@@ -22,12 +22,21 @@ export class Operation {
   bytes = 0;
   calls = 0;
   constructor(private readonly ports: ReaderPorts) {
-    let finish!: (value: ControlReadResult) => void; let quiet!: () => void;
-    const result = new Promise<ControlReadResult>(resolve => { finish = resolve; });
-    const quiesced = new Promise<void>(resolve => { quiet = resolve; });
-    this.finish = finish; this.quiet = quiet; this.operation = { result, quiesced };
+    let finish!: (value: ControlReadResult) => void;
+    let quiet!: () => void;
+    const result = new Promise<ControlReadResult>((resolve) => {
+      finish = resolve;
+    });
+    const quiesced = new Promise<void>((resolve) => {
+      quiet = resolve;
+    });
+    this.finish = finish;
+    this.quiet = quiet;
+    this.operation = { result, quiesced };
   }
-  get budget(): ControlReadBudget { return this.currentBudget!; }
+  get budget(): ControlReadBudget {
+    return this.currentBudget!;
+  }
   private guard(): void {
     if (this.closed) throw new ControlReadError('closed');
     if (this.cancelled) throw new ControlReadError('cancelled');
@@ -36,37 +45,72 @@ export class Operation {
   check(): void {
     this.guard();
     if (this.budget.signal && Reflect.apply(aborted, this.budget.signal, [])) this.cancelled = true;
-    this.guard(); const now = this.ports.now(); this.guard();
+    this.guard();
+    const now = this.ports.now();
+    this.guard();
     if (now >= this.budget.deadline) throw new ControlReadError('deadline');
   }
-  stop(): void { this.closed = true; this.finish({ ok: false, reason: 'closed' }); }
+  stop(): void {
+    this.closed = true;
+    this.finish({ ok: false, reason: 'closed' });
+  }
   async io<T>(action: () => Promise<T>): Promise<T> {
-    this.check(); const value = await action(); this.check(); return value;
+    this.check();
+    const value = await action();
+    this.check();
+    return value;
   }
   run(input: ControlReadBudget, work: () => Promise<ControlReadValue>, settled: () => void): void {
-    const budget = snapshotBudget(input); this.currentBudget = budget ?? undefined;
-    void Promise.resolve().then(() => this.execute(budget, work)).then(outcome => {
-      settled(); this.quiet(); this.finish(outcome);
-    });
+    const budget = snapshotBudget(input);
+    this.currentBudget = budget ?? undefined;
+    void Promise.resolve()
+      .then(() => this.execute(budget, work))
+      .then((outcome) => {
+        settled();
+        this.quiet();
+        this.finish(outcome);
+      });
   }
-  private async execute(budget: ControlReadBudget | null, work: () => Promise<ControlReadValue>): Promise<ControlReadResult> {
-    let timeout: ReturnType<typeof setTimeout> | undefined; let signal: AbortSignal | undefined;
+  private async execute(
+    budget: ControlReadBudget | null,
+    work: () => Promise<ControlReadValue>,
+  ): Promise<ControlReadResult> {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    let signal: AbortSignal | undefined;
     let outcome: ControlReadResult;
-    const abort = () => { this.cancelled = true; this.finish({ ok: false, reason: 'cancelled' }); };
+    const abort = () => {
+      this.cancelled = true;
+      this.finish({ ok: false, reason: 'cancelled' });
+    };
     try {
-      this.guard(); if (!budget) throw new ControlReadError('invalid_options');
-      const now = this.ports.now(); this.guard();
+      this.guard();
+      if (!budget) throw new ControlReadError('invalid_options');
+      const now = this.ports.now();
+      this.guard();
       if (!validDeadline(budget.deadline, now)) throw new ControlReadError('invalid_options');
-      this.check(); signal = budget.signal;
+      this.check();
+      signal = budget.signal;
       if (signal) Reflect.apply(listen, signal, ['abort', abort, { once: true }]);
       this.check();
-      timeout = setTimeout(() => { this.expired = true; this.finish({ ok: false, reason: 'deadline' }); },
-        Math.max(0, budget.deadline - now));
-      const value = await work(); this.check(); outcome = { ok: true, value };
-    } catch (error) { outcome = failure(error); }
+      timeout = setTimeout(
+        () => {
+          this.expired = true;
+          this.finish({ ok: false, reason: 'deadline' });
+        },
+        Math.max(0, budget.deadline - now),
+      );
+      const value = await work();
+      this.check();
+      outcome = { ok: true, value };
+    } catch (error) {
+      outcome = failure(error);
+    }
     clearTimeout(timeout);
-    try { if (signal) Reflect.apply(unlisten, signal, ['abort', abort]); }
-    catch (error) { outcome = failure(error); }
+    try {
+      if (signal) Reflect.apply(unlisten, signal, ['abort', abort]);
+    } catch (error) {
+      outcome = failure(error);
+    }
     return outcome;
   }
 }
@@ -81,11 +125,13 @@ function dataValue(input: ControlReadBudget, key: keyof ControlReadBudget): unkn
 }
 export function snapshotBudget(input: ControlReadBudget): ControlReadBudget | null {
   try {
-    const deadline = dataValue(input, 'deadline'); const stopped = dataValue(input, 'stopped');
+    const deadline = dataValue(input, 'deadline');
+    const stopped = dataValue(input, 'stopped');
     const signal = dataValue(input, 'signal');
-    if (typeof deadline !== 'number' || !Number.isFinite(deadline)
-      || typeof stopped !== 'boolean') return null;
+    if (typeof deadline !== 'number' || !Number.isFinite(deadline) || typeof stopped !== 'boolean') return null;
     if (signal !== undefined && !(signal instanceof AbortSignal)) return null;
     return Object.freeze({ deadline, stopped, ...(signal === undefined ? {} : { signal }) });
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }

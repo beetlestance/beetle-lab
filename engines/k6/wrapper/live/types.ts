@@ -7,7 +7,10 @@ export interface LiveMetricSink {
   write(bytes: Uint8Array, signal: AbortSignal): Promise<void>;
   close(): Promise<void>;
 }
-export interface LiveMetricClock { wall(): number; monotonic(): number }
+export interface LiveMetricClock {
+  wall(): number;
+  monotonic(): number;
+}
 export interface LiveMetricPublisherOptions {
   readonly scope: LiveMetricScope;
   readonly producerEpoch: string;
@@ -44,5 +47,8 @@ export interface LiveMetricPublisher {
   close(): Promise<LiveMetricCloseResult>;
 }
 export class LiveMetricPublisherError extends Error {
-  constructor(readonly code: 'invalid_options') { super('Live metric publisher rejected'); this.name = 'LiveMetricPublisherError'; }
+  constructor(readonly code: 'invalid_options') {
+    super('Live metric publisher rejected');
+    this.name = 'LiveMetricPublisherError';
+  }
 }

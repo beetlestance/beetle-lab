@@ -23,7 +23,8 @@ export interface InstallationOptions {
   readonly wallNow?: () => number;
   readonly monotonicNow?: () => number;
 }
-export type OfferAcceptance = { readonly accepted: true; readonly snapshot: AttemptSnapshot }
+export type OfferAcceptance =
+  | { readonly accepted: true; readonly snapshot: AttemptSnapshot }
   | { readonly accepted: false; readonly decision: Exclude<Decision, { kind: 'admit' }> };
 export type DriveProgress = AttemptProgress | { readonly kind: 'deferred' | 'rejected'; readonly reason: string };
 export interface InstallationAttempt {
@@ -48,8 +49,19 @@ export interface InstallationController {
   /** Original preparation/driver/controller work is retained through shutdown. Journal ownership is external. */
   close(): Promise<void>;
 }
-export type InstallationReason = 'invalid_input' | 'closed' | 'busy' | 'capacity' | 'journal'
-  | 'catalog' | 'staging' | 'controller' | 'clock' | 'cleanup';
+export type InstallationReason =
+  | 'invalid_input'
+  | 'closed'
+  | 'busy'
+  | 'capacity'
+  | 'journal'
+  | 'catalog'
+  | 'staging'
+  | 'controller'
+  | 'clock'
+  | 'cleanup';
 export class InstallationError extends Error {
-  constructor(readonly reason: InstallationReason) { super(`Installation controller ${reason}`); }
+  constructor(readonly reason: InstallationReason) {
+    super(`Installation controller ${reason}`);
+  }
 }

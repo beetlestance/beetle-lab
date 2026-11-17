@@ -21,7 +21,10 @@ export class OutputGuardService implements OutputGuard {
   private scanTimer?: ReturnType<typeof setTimeout>;
   private watchdog?: ReturnType<typeof setInterval>;
   private closing?: Promise<void>;
-  constructor(options: OutputGuardOptions, private readonly scan: Scanner) {
+  constructor(
+    options: OutputGuardOptions,
+    private readonly scan: Scanner,
+  ) {
     this.options = optionsCopy(options);
     if (typeof scan !== 'function') throw new GuardError('invalid_input');
   }
@@ -37,8 +40,11 @@ export class OutputGuardService implements OutputGuard {
     if (this.closed) throw new GuardError('closed');
     if (this.accepting) throw new GuardError('capacity');
     this.accepting = true;
-    try { return this.admit(input); }
-    finally { this.accepting = false; }
+    try {
+      return this.admit(input);
+    } finally {
+      this.accepting = false;
+    }
   }
   private admit(input: OutputWatchRequest): OutputWatch {
     if (this.closed) throw new GuardError('closed');
@@ -47,12 +53,19 @@ export class OutputGuardService implements OutputGuard {
     const id = identity(request);
     const existing = this.watches.get(id);
     if (existing) {
-      if (existing.request.plan !== request.plan || existing.request.outputBytes !== request.outputBytes) throw new GuardError('conflict');
+      if (existing.request.plan !== request.plan || existing.request.outputBytes !== request.outputBytes)
+        throw new GuardError('conflict');
       return existing;
     }
     if (this.watches.size >= 64) throw new GuardError('capacity');
-    const watch = new Watch(request, () => { this.watches.delete(id); }, reason => this.options.stop(request.key, reason),
-      () => this.checkFreshness());
+    const watch = new Watch(
+      request,
+      () => {
+        this.watches.delete(id);
+      },
+      (reason) => this.options.stop(request.key, reason),
+      () => this.checkFreshness(),
+    );
     this.watches.set(id, watch);
     watch.registeredAt = this.now();
     if (this.clockFailed) watch.stop('artifact_incomplete');
@@ -61,8 +74,16 @@ export class OutputGuardService implements OutputGuard {
   }
   status(): OutputGuardStatus {
     this.checkFreshness();
-    return { running: this.running, closed: this.closed, watched: this.watches.size,
-      ready: this.running && !this.closed && !this.clockFailed && [...this.watches.values()].every(watch => !watch.closed && !watch.stopped && watch.lastKnownAt !== null) };
+    return {
+      running: this.running,
+      closed: this.closed,
+      watched: this.watches.size,
+      ready:
+        this.running &&
+        !this.closed &&
+        !this.clockFailed &&
+        [...this.watches.values()].every((watch) => !watch.closed && !watch.stopped && watch.lastKnownAt !== null),
+    };
   }
   close(): Promise<void> {
     if (this.closing) return this.closing;
@@ -72,16 +93,22 @@ export class OutputGuardService implements OutputGuard {
     clearInterval(this.watchdog);
     let resolve!: () => void;
     let reject!: (reason: unknown) => void;
-    this.closing = new Promise<void>((done, fail) => { resolve = done; reject = fail; });
-    void Promise.allSettled([...this.watches.values()].map(watch => watch.close())).then(results => {
-      if (results.some(result => result.status === 'rejected')) reject(new GuardError('cleanup'));
+    this.closing = new Promise<void>((done, fail) => {
+      resolve = done;
+      reject = fail;
+    });
+    void Promise.allSettled([...this.watches.values()].map((watch) => watch.close())).then((results) => {
+      if (results.some((result) => result.status === 'rejected')) reject(new GuardError('cleanup'));
       else resolve();
     });
     return this.closing;
   }
   private now(): number | null {
     if (this.clockFailed) return null;
-    if (this.readingTime) { this.failClock(); return null; }
+    if (this.readingTime) {
+      this.failClock();
+      return null;
+    }
     this.readingTime = true;
     try {
       const value = this.options.monotonicNow();
@@ -92,7 +119,9 @@ export class OutputGuardService implements OutputGuard {
     } catch {
       this.failClock();
       return null;
-    } finally { this.readingTime = false; }
+    } finally {
+      this.readingTime = false;
+    }
   }
   private failClock(): void {
     this.clockFailed = true;
@@ -110,7 +139,11 @@ export class OutputGuardService implements OutputGuard {
   private pump(): void {
     if (this.pumping || !this.running || this.closed || this.clockFailed) return;
     this.pumping = true;
-    try { this.fill(); } finally { this.pumping = false; }
+    try {
+      this.fill();
+    } finally {
+      this.pumping = false;
+    }
     clearTimeout(this.scanTimer);
     if (this.running && !this.closed) this.scanTimer = setTimeout(() => this.pump(), this.options.intervalMs);
   }
@@ -130,25 +163,36 @@ export class OutputGuardService implements OutputGuard {
     const controller = new AbortController();
     watch.controller = controller;
     // Defer foreign code until the original is owned by both registry and watch.
-    watch.scan = Promise.resolve().then(async () => {
-      const timeout = setTimeout(() => controller.abort(), this.options.sampleTimeoutMs);
-      try {
-        if (watch.closed || this.closed) return;
-        const request = Object.freeze({ ...watch.request, minimumFreeBytes: this.options.minimumFreeBytes });
-        const raw = await this.scan(request, { deadline: startedAt + this.options.sampleTimeoutMs, signal: controller.signal });
-        let result: OutputScanResult;
-        try { result = resultCopy(raw); }
-        catch { result = { kind: 'unknown', reason: 'invalid_input' }; }
-        if (controller.signal.aborted && result.kind !== 'unknown') result = { kind: 'unknown', reason: 'deadline' };
-        this.complete(watch, result, startedAt);
-      } catch { this.complete(watch, { kind: 'unknown', reason: 'io' }, startedAt); }
-      finally { clearTimeout(timeout); }
-    }).then(() => {
-      watch.scan = undefined;
-      watch.controller = undefined;
-      this.active--;
-      this.pump();
-    });
+    watch.scan = Promise.resolve()
+      .then(async () => {
+        const timeout = setTimeout(() => controller.abort(), this.options.sampleTimeoutMs);
+        try {
+          if (watch.closed || this.closed) return;
+          const request = Object.freeze({ ...watch.request, minimumFreeBytes: this.options.minimumFreeBytes });
+          const raw = await this.scan(request, {
+            deadline: startedAt + this.options.sampleTimeoutMs,
+            signal: controller.signal,
+          });
+          let result: OutputScanResult;
+          try {
+            result = resultCopy(raw);
+          } catch {
+            result = { kind: 'unknown', reason: 'invalid_input' };
+          }
+          if (controller.signal.aborted && result.kind !== 'unknown') result = { kind: 'unknown', reason: 'deadline' };
+          this.complete(watch, result, startedAt);
+        } catch {
+          this.complete(watch, { kind: 'unknown', reason: 'io' }, startedAt);
+        } finally {
+          clearTimeout(timeout);
+        }
+      })
+      .then(() => {
+        watch.scan = undefined;
+        watch.controller = undefined;
+        this.active--;
+        this.pump();
+      });
   }
   private complete(watch: Watch, result: OutputScanResult, startedAt: number): void {
     if (result.kind === 'unknown' && result.reason === 'cleanup') watch.failed = true;
@@ -156,12 +200,23 @@ export class OutputGuardService implements OutputGuard {
     const now = this.now();
     if (now === null || this.fenced(watch)) return;
     watch.due = now + this.options.intervalMs;
-    if (result.kind === 'unknown') { this.unknown(watch, result.reason); return; }
-    if (!this.validTime(result.startedAt, startedAt, now)) { this.unknown(watch, 'invalid_input'); return; }
-    if (result.kind === 'limit') { this.limit(watch, result.reason === 'disk'); return; }
+    if (result.kind === 'unknown') {
+      this.unknown(watch, result.reason);
+      return;
+    }
+    if (!this.validTime(result.startedAt, startedAt, now)) {
+      this.unknown(watch, 'invalid_input');
+      return;
+    }
+    if (result.kind === 'limit') {
+      this.limit(watch, result.reason === 'disk');
+      return;
+    }
     this.known(watch, result);
   }
-  private fenced(watch: Watch): boolean { return watch.closed || watch.stopped || this.closed; }
+  private fenced(watch: Watch): boolean {
+    return watch.closed || watch.stopped || this.closed;
+  }
   private validTime(at: number, start: number, now: number): boolean {
     return at >= start && at <= now && now - at < this.options.ttlMs;
   }
@@ -175,7 +230,10 @@ export class OutputGuardService implements OutputGuard {
   }
   private known(watch: Watch, result: Extract<OutputScanResult, { kind: 'known' }>): void {
     const disk = result.freeBytes <= this.options.minimumFreeBytes;
-    if (result.chargedBytes > watch.request.outputBytes || disk) { this.limit(watch, disk); return; }
+    if (result.chargedBytes > watch.request.outputBytes || disk) {
+      this.limit(watch, disk);
+      return;
+    }
     watch.lastKnownAt = result.startedAt;
     watch.initialResult(true);
   }

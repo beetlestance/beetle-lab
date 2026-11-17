@@ -1,60 +1,136 @@
-import type { RetentionPreviewRequest,RetentionApplyRequest,RetentionApplyReceipt,WorkspaceScope } from '@beetle/contracts/api';
-import type { ParentRetentionScope,RetentionSnapshot } from '../domain/retention/index.js';
-export type WorkspaceRetentionPreviewRequest=Omit<RetentionPreviewRequest,'scope'>&{readonly scope:WorkspaceScope};
-export interface WorkspaceRetentionPreviewCommand {readonly id:string;readonly capturedAt:string;readonly request:WorkspaceRetentionPreviewRequest}
+import type {
+  RetentionPreviewRequest,
+  RetentionApplyRequest,
+  RetentionApplyReceipt,
+  WorkspaceScope,
+} from '@beetle/contracts/api';
+import type { ParentRetentionScope, RetentionSnapshot } from '../domain/retention/index.js';
+export type WorkspaceRetentionPreviewRequest = Omit<RetentionPreviewRequest, 'scope'> & {
+  readonly scope: WorkspaceScope;
+};
+export interface WorkspaceRetentionPreviewCommand {
+  readonly id: string;
+  readonly capturedAt: string;
+  readonly request: WorkspaceRetentionPreviewRequest;
+}
 /** One bounded immutable page. This interface does not claim parent-scope traversal. */
-export interface WorkspaceRetentionStore {preview(command:WorkspaceRetentionPreviewCommand):Promise<RetentionSnapshot>}
+export interface WorkspaceRetentionStore {
+  preview(command: WorkspaceRetentionPreviewCommand): Promise<RetentionSnapshot>;
+}
 
-export type WorkspaceRetentionApplyRequest=Omit<RetentionApplyRequest,'scope'>&{readonly scope:WorkspaceScope};
-export interface WorkspaceRetentionApplyCommand {readonly id:string;readonly appliedAt:string;readonly request:WorkspaceRetentionApplyRequest}
+export type WorkspaceRetentionApplyRequest = Omit<RetentionApplyRequest, 'scope'> & { readonly scope: WorkspaceScope };
+export interface WorkspaceRetentionApplyCommand {
+  readonly id: string;
+  readonly appliedAt: string;
+  readonly request: WorkspaceRetentionApplyRequest;
+}
 
-export interface RetentionStatusKey {readonly scope:WorkspaceScope;readonly id:string}
+export interface RetentionStatusKey {
+  readonly scope: WorkspaceScope;
+  readonly id: string;
+}
 export interface RetentionStatusItem {
- readonly runId:string;readonly runVersion:number;readonly deletionId:string;
- readonly phase:'preview'|'admitted'|'backend_files'|'agent_cleanup'|'settling'|'settled'|'blocked';
- readonly fileCount:number|null;readonly preparedCount:number|null;readonly absentCount:number|null;
- readonly error:null|'unavailable'|'conflict'|'capacity_unavailable'|'cleanup_failed';readonly refundedLogicalBytes:number;
+  readonly runId: string;
+  readonly runVersion: number;
+  readonly deletionId: string;
+  readonly phase: 'preview' | 'admitted' | 'backend_files' | 'agent_cleanup' | 'settling' | 'settled' | 'blocked';
+  readonly fileCount: number | null;
+  readonly preparedCount: number | null;
+  readonly absentCount: number | null;
+  readonly error: null | 'unavailable' | 'conflict' | 'capacity_unavailable' | 'cleanup_failed';
+  readonly refundedLogicalBytes: number;
 }
 export interface RetentionStatus {
- readonly id:string;readonly scope:WorkspaceScope;readonly kind:'retention'|'manual';readonly estimatedLogicalBytes:number;readonly state:'preview'|'applied'|'completed';
- readonly capturedAt:string;readonly expiresAt:string;readonly completedAt:string|null;
- readonly items:readonly RetentionStatusItem[];readonly completedCount:number;readonly refundedLogicalBytes:number;
+  readonly id: string;
+  readonly scope: WorkspaceScope;
+  readonly kind: 'retention' | 'manual';
+  readonly estimatedLogicalBytes: number;
+  readonly state: 'preview' | 'applied' | 'completed';
+  readonly capturedAt: string;
+  readonly expiresAt: string;
+  readonly completedAt: string | null;
+  readonly items: readonly RetentionStatusItem[];
+  readonly completedCount: number;
+  readonly refundedLogicalBytes: number;
 }
 
-export interface RetentionDiscardReceipt {readonly id:string;readonly scope:WorkspaceScope;readonly refundedLogicalBytes:131072}
+export interface RetentionDiscardReceipt {
+  readonly id: string;
+  readonly scope: WorkspaceScope;
+  readonly refundedLogicalBytes: 131072;
+}
 export interface ManualRunDeletionRequest {
- readonly scope:WorkspaceScope;readonly runId:string;readonly expectedRunVersion:number;
- readonly requestId:string;readonly settingsId:string;readonly expectedVersion:number;
+  readonly scope: WorkspaceScope;
+  readonly runId: string;
+  readonly expectedRunVersion: number;
+  readonly requestId: string;
+  readonly settingsId: string;
+  readonly expectedVersion: number;
 }
-export interface ManualRunDeletionCommand {readonly id:string;readonly capturedAt:string;readonly request:ManualRunDeletionRequest}
+export interface ManualRunDeletionCommand {
+  readonly id: string;
+  readonly capturedAt: string;
+  readonly request: ManualRunDeletionRequest;
+}
 export interface RetentionBatchSummary {
- readonly id:string;readonly scope:WorkspaceScope;readonly kind:'retention'|'manual';readonly state:'preview'|'applied'|'completed';
- readonly capturedAt:string;readonly expiresAt:string;readonly completedAt:string|null;readonly candidateCount:number;
+  readonly id: string;
+  readonly scope: WorkspaceScope;
+  readonly kind: 'retention' | 'manual';
+  readonly state: 'preview' | 'applied' | 'completed';
+  readonly capturedAt: string;
+  readonly expiresAt: string;
+  readonly completedAt: string | null;
+  readonly candidateCount: number;
 }
-export interface RetentionBatchList {readonly scope:WorkspaceScope;readonly items:readonly RetentionBatchSummary[]}
+export interface RetentionBatchList {
+  readonly scope: WorkspaceScope;
+  readonly items: readonly RetentionBatchSummary[];
+}
 export interface RetentionMetadata extends WorkspaceRetentionStore {
- previewParent(command:ParentRetentionPreviewCommand):Promise<ParentRetentionPage>;
- getPreview(key:RetentionStatusKey):Promise<RetentionSnapshot>;
- list(scope:WorkspaceScope):Promise<RetentionBatchList>;
- previewRun(command:ManualRunDeletionCommand):Promise<RetentionSnapshot>;
- apply(command:WorkspaceRetentionApplyCommand):Promise<RetentionApplyReceipt>;
- get(key:RetentionStatusKey,now:number):Promise<RetentionStatus>;
- discard(key:RetentionStatusKey,now:number):Promise<RetentionDiscardReceipt>;
+  previewParent(command: ParentRetentionPreviewCommand): Promise<ParentRetentionPage>;
+  getPreview(key: RetentionStatusKey): Promise<RetentionSnapshot>;
+  list(scope: WorkspaceScope): Promise<RetentionBatchList>;
+  previewRun(command: ManualRunDeletionCommand): Promise<RetentionSnapshot>;
+  apply(command: WorkspaceRetentionApplyCommand): Promise<RetentionApplyReceipt>;
+  get(key: RetentionStatusKey, now: number): Promise<RetentionStatus>;
+  discard(key: RetentionStatusKey, now: number): Promise<RetentionDiscardReceipt>;
 }
-export type RetentionOperation=
- | {readonly kind:'previewWorkspaceRetention';readonly command:WorkspaceRetentionPreviewCommand}
- | {readonly kind:'previewParentRetention';readonly command:ParentRetentionPreviewCommand}
- | {readonly kind:'getWorkspaceRetentionPreview';readonly request:{readonly key:RetentionStatusKey}}
- | {readonly kind:'listWorkspaceRetention';readonly request:{readonly scope:WorkspaceScope}}
- | {readonly kind:'previewRunDeletion';readonly command:ManualRunDeletionCommand}
- | {readonly kind:'applyWorkspaceRetention';readonly command:WorkspaceRetentionApplyCommand}
- | {readonly kind:'getWorkspaceRetentionStatus'|'discardWorkspaceRetention';readonly request:{readonly key:RetentionStatusKey;readonly now:number}};
-export type RetentionValue=RetentionSnapshot|RetentionApplyReceipt|RetentionStatus|RetentionDiscardReceipt|RetentionBatchList|ParentRetentionPage;
+export type RetentionOperation =
+  | { readonly kind: 'previewWorkspaceRetention'; readonly command: WorkspaceRetentionPreviewCommand }
+  | { readonly kind: 'previewParentRetention'; readonly command: ParentRetentionPreviewCommand }
+  | { readonly kind: 'getWorkspaceRetentionPreview'; readonly request: { readonly key: RetentionStatusKey } }
+  | { readonly kind: 'listWorkspaceRetention'; readonly request: { readonly scope: WorkspaceScope } }
+  | { readonly kind: 'previewRunDeletion'; readonly command: ManualRunDeletionCommand }
+  | { readonly kind: 'applyWorkspaceRetention'; readonly command: WorkspaceRetentionApplyCommand }
+  | {
+      readonly kind: 'getWorkspaceRetentionStatus' | 'discardWorkspaceRetention';
+      readonly request: { readonly key: RetentionStatusKey; readonly now: number };
+    };
+export type RetentionValue =
+  | RetentionSnapshot
+  | RetentionApplyReceipt
+  | RetentionStatus
+  | RetentionDiscardReceipt
+  | RetentionBatchList
+  | ParentRetentionPage;
 
-export type ParentRetentionPreviewRequest=Omit<RetentionPreviewRequest,'scope'>&{readonly scope:ParentRetentionScope};
-export interface ParentRetentionPreviewCommand {readonly id:string;readonly capturedAt:string;readonly request:ParentRetentionPreviewRequest}
+export type ParentRetentionPreviewRequest = Omit<RetentionPreviewRequest, 'scope'> & {
+  readonly scope: ParentRetentionScope;
+};
+export interface ParentRetentionPreviewCommand {
+  readonly id: string;
+  readonly capturedAt: string;
+  readonly request: ParentRetentionPreviewRequest;
+}
 /** Explicitly live/partial, one independent workspace window. Empty result has no durable replay claim. */
 export interface ParentRetentionPage {
- readonly scope:ParentRetentionScope;readonly requestId:string;readonly settingsId:string;readonly settingsVersion:number;readonly capturedAt:string;
- readonly coverage:'live_partial';readonly durable:boolean;readonly workspace:RetentionSnapshot|null;readonly nextCursor:string|null;
+  readonly scope: ParentRetentionScope;
+  readonly requestId: string;
+  readonly settingsId: string;
+  readonly settingsVersion: number;
+  readonly capturedAt: string;
+  readonly coverage: 'live_partial';
+  readonly durable: boolean;
+  readonly workspace: RetentionSnapshot | null;
+  readonly nextCursor: string | null;
 }

@@ -23,8 +23,13 @@ export interface PublisherOptions {
   readonly monotonicNow?: () => number;
 }
 export interface PublisherStatus {
-  readonly ready: boolean; readonly running: boolean; readonly closed: boolean; readonly failed: boolean;
-  readonly sampling: boolean; readonly publishing: boolean; readonly lastKnownAt: number | null;
+  readonly ready: boolean;
+  readonly running: boolean;
+  readonly closed: boolean;
+  readonly failed: boolean;
+  readonly sampling: boolean;
+  readonly publishing: boolean;
+  readonly lastKnownAt: number | null;
 }
 export interface ObservationPublisher {
   /** First committed fresh known observation, or false on initial failure/expiry/close. */
@@ -37,5 +42,7 @@ export interface ObservationPublisher {
   close(): Promise<void>;
 }
 export class PublisherError extends Error {
-  constructor(readonly reason: 'invalid_input' | 'busy' | 'closed' | 'cleanup') { super(`Observation publisher ${reason}`); }
+  constructor(readonly reason: 'invalid_input' | 'busy' | 'closed' | 'cleanup') {
+    super(`Observation publisher ${reason}`);
+  }
 }

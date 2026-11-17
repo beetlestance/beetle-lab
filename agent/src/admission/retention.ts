@@ -13,17 +13,29 @@ export interface DiskRetention {
   readonly cleanupBytes: number;
 }
 /** Exact policy signature amendment; callers must supply durable retention facts. */
-export type AdmissionDecider = (candidate: Candidate, snapshot: AdmissionSnapshot, retention: DiskRetention) => Decision;
+export type AdmissionDecider = (
+  candidate: Candidate,
+  snapshot: AdmissionSnapshot,
+  retention: DiskRetention,
+) => Decision;
 
-const names = ['heldCount', 'outputBytes', 'stagingBytes','replayBytes','cleanupBytes'] as const;
+const names = ['heldCount', 'outputBytes', 'stagingBytes', 'replayBytes', 'cleanupBytes'] as const;
 function fields(input: unknown): object {
-  if (input === null || typeof input !== 'object'
-    || ![Object.prototype, null].includes(Object.getPrototypeOf(input) as object | null)) throw new Error();
+  if (
+    input === null ||
+    typeof input !== 'object' ||
+    ![Object.prototype, null].includes(Object.getPrototypeOf(input) as object | null)
+  )
+    throw new Error();
   const keys = Reflect.ownKeys(input);
-  if (keys.length !== names.length || keys.some(key => typeof key !== 'string' || !names.includes(key as typeof names[number]))) throw new Error();
+  if (
+    keys.length !== names.length ||
+    keys.some((key) => typeof key !== 'string' || !names.includes(key as (typeof names)[number]))
+  )
+    throw new Error();
   return input;
 }
-function scalar(input: object, name: typeof names[number]): number {
+function scalar(input: object, name: (typeof names)[number]): number {
   const field = Object.getOwnPropertyDescriptor(input, name);
   if (!field?.enumerable || !('value' in field)) throw new Error();
   const value: unknown = field.value;
@@ -38,8 +50,11 @@ export function captureDiskRetention(input: unknown): Readonly<DiskRetention> {
     const outputBytes = scalar(original, 'outputBytes');
     const stagingBytes = scalar(original, 'stagingBytes');
     const replayBytes = scalar(original, 'replayBytes');
-    const cleanupBytes=scalar(original,'cleanupBytes');
-    if (heldCount > DISK_HOLD_LIMIT || heldCount === 0 && (outputBytes !== 0 || stagingBytes !== 0)) throw new Error();
-    return Object.freeze({ heldCount, outputBytes, stagingBytes,replayBytes,cleanupBytes });
-  } catch { throw new Error('invalid_input'); }
+    const cleanupBytes = scalar(original, 'cleanupBytes');
+    if (heldCount > DISK_HOLD_LIMIT || (heldCount === 0 && (outputBytes !== 0 || stagingBytes !== 0)))
+      throw new Error();
+    return Object.freeze({ heldCount, outputBytes, stagingBytes, replayBytes, cleanupBytes });
+  } catch {
+    throw new Error('invalid_input');
+  }
 }

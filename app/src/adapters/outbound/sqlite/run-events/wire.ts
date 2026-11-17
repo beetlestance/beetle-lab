@@ -13,15 +13,34 @@ export function runEventsOperation(input: unknown): input is RunEventsOperation 
 }
 export function captureRunEventsOperation(input: unknown): RunEventsOperation {
   const copy = boundedCopy(input, 4096) as RunEventsOperation & { messageId?: number };
-  requireRule(runEventsOperation(copy) && Object.keys(copy).every(key => ['kind', 'query', 'messageId'].includes(key)));
+  requireRule(
+    runEventsOperation(copy) && Object.keys(copy).every((key) => ['kind', 'query', 'messageId'].includes(key)),
+  );
   if (Object.hasOwn(copy, 'messageId')) requireRule(Number.isSafeInteger(copy.messageId) && copy.messageId! > 0);
   const q = copy.query;
-  requireRule(q !== null && typeof q === 'object' && Object.keys(q).every(key => ['scope', 'id', 'limit', 'cursor'].includes(key)));
-  requireRule(validateApi('WorkspaceScope', q.scope).ok && validateApi('Uuid', q.id).ok
-    && validateApi('PageQuery', { limit: q.limit, ...(q.cursor === undefined ? {} : { cursor: q.cursor }) }).ok);
-  return { kind: 'getRunEvents', query: { id: lower(q.id), scope: { kind: 'workspace',
-    organizationId: lower(q.scope.organizationId), workspaceId: lower(q.scope.workspaceId) }, limit: q.limit,
-  ...(q.cursor === undefined ? {} : { cursor: q.cursor }) } };
+  requireRule(
+    q !== null &&
+      typeof q === 'object' &&
+      Object.keys(q).every((key) => ['scope', 'id', 'limit', 'cursor'].includes(key)),
+  );
+  requireRule(
+    validateApi('WorkspaceScope', q.scope).ok &&
+      validateApi('Uuid', q.id).ok &&
+      validateApi('PageQuery', { limit: q.limit, ...(q.cursor === undefined ? {} : { cursor: q.cursor }) }).ok,
+  );
+  return {
+    kind: 'getRunEvents',
+    query: {
+      id: lower(q.id),
+      scope: {
+        kind: 'workspace',
+        organizationId: lower(q.scope.organizationId),
+        workspaceId: lower(q.scope.workspaceId),
+      },
+      limit: q.limit,
+      ...(q.cursor === undefined ? {} : { cursor: q.cursor }),
+    },
+  };
 }
 export function captureRunEventsReply(query: RunEventsQuery, input: unknown): RunEventPage {
   const checked = validateApi('RunEventPage', boundedCopy(input, 262144));

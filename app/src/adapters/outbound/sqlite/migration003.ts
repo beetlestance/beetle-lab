@@ -48,14 +48,32 @@ CREATE TABLE revision_input_pins (
  REFERENCES input_blobs(organization_id,workspace_id,id,sha256,bytes));
 CREATE INDEX input_pins_lookup ON revision_input_pins(organization_id,workspace_id,input_id);
 `;
-interface Revision { id: string; organization_id: string; workspace_id: string; input_manifest_json: string }
-interface Pin { id: string; sha256: string; bytes: number }
+interface Revision {
+  id: string;
+  organization_id: string;
+  workspace_id: string;
+  input_manifest_json: string;
+}
+interface Pin {
+  id: string;
+  sha256: string;
+  bytes: number;
+}
 function backfillPin(db: DatabaseSync, row: Revision, value: Pin, insert: ReturnType<DatabaseSync['prepare']>): void {
-  if (!value || typeof value.id !== 'string' || typeof value.sha256 !== 'string' || !Number.isSafeInteger(value.bytes)) {
+  if (
+    !value ||
+    typeof value.id !== 'string' ||
+    typeof value.sha256 !== 'string' ||
+    !Number.isSafeInteger(value.bytes)
+  ) {
     throw new StorageError('unavailable');
   }
-  const input = db.prepare(`SELECT state FROM input_blobs WHERE organization_id=? AND workspace_id=?
-    AND id=? AND sha256=? AND bytes=?`).get(row.organization_id, row.workspace_id, value.id, value.sha256, value.bytes);
+  const input = db
+    .prepare(
+      `SELECT state FROM input_blobs WHERE organization_id=? AND workspace_id=?
+    AND id=? AND sha256=? AND bytes=?`,
+    )
+    .get(row.organization_id, row.workspace_id, value.id, value.sha256, value.bytes);
   if (input?.state !== 'publishing') throw new StorageError('unavailable');
   insert.run(row.id, row.organization_id, row.workspace_id, value.id, value.sha256, value.bytes);
 }
@@ -63,8 +81,12 @@ function backfill(db: DatabaseSync): void {
   let after = '';
   const insert = db.prepare('INSERT INTO revision_input_pins VALUES(?,?,?,?,?,?)');
   for (;;) {
-    const rows = db.prepare(`SELECT id,organization_id,workspace_id,input_manifest_json FROM suite_revisions
-      WHERE id>? ORDER BY id LIMIT 100`).all(after) as unknown as Revision[];
+    const rows = db
+      .prepare(
+        `SELECT id,organization_id,workspace_id,input_manifest_json FROM suite_revisions
+      WHERE id>? ORDER BY id LIMIT 100`,
+      )
+      .all(after) as unknown as Revision[];
     for (const row of rows) {
       const manifest: unknown = JSON.parse(row.input_manifest_json);
       if (!Array.isArray(manifest) || manifest.length > 1024) throw new StorageError('unavailable');

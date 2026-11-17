@@ -20,15 +20,19 @@ export async function openInputRuntime(directory: string, store: InputStore): Pr
   const inputs = createInputService({ store, bytes, digest });
   const maintenance = new InputMaintenance(inputs);
   let closing: Promise<void> | undefined;
-  return Object.freeze({ inputs, recoveryState: () => maintenance.state,
+  return Object.freeze({
+    inputs,
+    recoveryState: () => maintenance.state,
     close: (): Promise<void> => {
       if (!closing) {
         // Start both before waiting: aborted scheduling cannot retire native originals.
-        const scheduled = maintenance.close(); const custody = inputs.close();
-        closing = Promise.allSettled([scheduled, custody]).then(results => {
+        const scheduled = maintenance.close();
+        const custody = inputs.close();
+        closing = Promise.allSettled([scheduled, custody]).then((results) => {
           for (const result of results) if (result.status === 'rejected') throw result.reason;
         });
       }
       return closing;
-    } });
+    },
+  });
 }

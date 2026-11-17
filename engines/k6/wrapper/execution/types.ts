@@ -13,10 +13,21 @@ export interface ExecutionLimits {
   readonly drainTimeoutMs: number;
   readonly collectionTimeoutMs: number;
 }
-export interface ExecutionClock { readonly wall: () => number; readonly monotonic: () => number }
+export interface ExecutionClock {
+  readonly wall: () => number;
+  readonly monotonic: () => number;
+}
 export type BuildUsage = Readonly<Pick<BuildOutput, 'bytes' | 'peakBytes'>>;
-export interface MeasurementReceipt { readonly sourceTimeMs: number; readonly observedAt: string; readonly build: BuildUsage }
-export interface CollectionReceipt { readonly observedAt: string; readonly terminalObservedAt: string; readonly build: BuildUsage }
+export interface MeasurementReceipt {
+  readonly sourceTimeMs: number;
+  readonly observedAt: string;
+  readonly build: BuildUsage;
+}
+export interface CollectionReceipt {
+  readonly observedAt: string;
+  readonly terminalObservedAt: string;
+  readonly build: BuildUsage;
+}
 export interface ExecutionOptions {
   readonly compiled: CompiledInput;
   readonly binary: string;
@@ -31,9 +42,10 @@ export interface ExecutionOptions {
   readonly signal?: AbortSignal;
   readonly clock?: ExecutionClock;
 }
-export type ExecutionCode = 'profile' | 'build' | 'native' | 'metrics' | 'summary'
-  | 'cancelled' | 'deadline' | 'clock' | 'closed' | 'cleanup';
-export type MetricFailure = Readonly<{ source: 'decoder'; code: MetricStreamError['code'] }>
+export type ExecutionCode =
+  'profile' | 'build' | 'native' | 'metrics' | 'summary' | 'cancelled' | 'deadline' | 'clock' | 'closed' | 'cleanup';
+export type MetricFailure =
+  | Readonly<{ source: 'decoder'; code: MetricStreamError['code'] }>
   | Readonly<{ source: 'accumulator'; code: AccumulatorCode }>
   | Readonly<{ source: 'callback'; code: 'sink_failed' }>
   | Readonly<{ source: 'composition'; code: 'byte_count' }>;
@@ -47,8 +59,8 @@ export interface ExecutionEvidence {
   readonly metricFailure: MetricFailure | null;
 }
 /** ok records complete pipeline collection, never a test outcome. */
-export type ExecutionReceipt = ExecutionEvidence & ({ readonly ok: true }
-  | { readonly ok: false; readonly code: ExecutionCode });
+export type ExecutionReceipt = ExecutionEvidence &
+  ({ readonly ok: true } | { readonly ok: false; readonly code: ExecutionCode });
 export interface ExecutionOperation {
   readonly result: Promise<ExecutionReceipt>;
   /** Latest actual facts after original cleanup settles; preserves the first result outcome. */
@@ -58,5 +70,8 @@ export interface ExecutionOperation {
   close(): Promise<void>;
 }
 export class ExecutionError extends Error {
-  constructor(readonly code: ExecutionCode) { super('Native execution boundary rejected'); this.name = 'ExecutionError'; }
+  constructor(readonly code: ExecutionCode) {
+    super('Native execution boundary rejected');
+    this.name = 'ExecutionError';
+  }
 }

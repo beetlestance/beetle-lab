@@ -1,13 +1,18 @@
 import type {
-  BudgetOverrides, InstallationPatch, InstallationValues, RunDefaultOverrides,
-  RunDefaultOverridePatch, ScopedOverridePatch, ScopedOverrides,
+  BudgetOverrides,
+  InstallationPatch,
+  InstallationValues,
+  RunDefaultOverrides,
+  RunDefaultOverridePatch,
+  ScopedOverridePatch,
+  ScopedOverrides,
 } from '@beetle/contracts/api';
 import { immutableSnapshot } from '../namespaces/index.js';
 import { budgetKeys } from './validation.js';
 
 function patchBudget(current: BudgetOverrides, patch: NonNullable<RunDefaultOverridePatch['budget']>): BudgetOverrides {
   const result = { ...current };
-  budgetKeys.forEach(key => {
+  budgetKeys.forEach((key) => {
     if (patch[key] === null) delete result[key];
     else if (patch[key] !== undefined) result[key] = patch[key];
   });

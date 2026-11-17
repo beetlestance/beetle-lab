@@ -14,14 +14,16 @@ export class CapacityLease {
   time(): number {
     const now = this.wall();
     if (!Number.isSafeInteger(now) || now < 0 || now > 8640000000000000 || now < this.highWall) {
-      this.revoke(); throw new CapacityError();
+      this.revoke();
+      throw new CapacityError();
     }
     this.highWall = now;
     if (this.result !== null && now >= this.result.expiresAtMs) this.revoke();
     return now;
   }
   revoke(source = -1): null {
-    this.result = null; this.fingerprint = undefined;
+    this.result = null;
+    this.fingerprint = undefined;
     this.highSource = Math.max(this.highSource, source);
     this.revokedThrough = Math.max(this.revokedThrough, this.highSource, this.revoked ? -1 : this.highWall);
     this.revoked = true;
@@ -30,19 +32,27 @@ export class CapacityLease {
   accept(source: number, fingerprint: string, candidate: RuntimeObservation): RuntimeObservation {
     const now = this.time();
     if (source < this.highSource || source <= this.revokedThrough || now >= candidate.expiresAtMs) {
-      this.revoke(); throw new CapacityError();
+      this.revoke();
+      throw new CapacityError();
     }
     if (source === this.highSource) return this.replay(fingerprint, candidate);
-    this.highSource = source; this.fingerprint = fingerprint;
-    this.result = candidate; this.revoked = false;
+    this.highSource = source;
+    this.fingerprint = fingerprint;
+    this.result = candidate;
+    this.revoked = false;
     return structuredClone(candidate);
   }
   private replay(fingerprint: string, candidate: RuntimeObservation): RuntimeObservation {
     const result = this.result;
-    if (result === null || this.fingerprint !== fingerprint || result.journalAuthority !== candidate.journalAuthority ||
+    if (
+      result === null ||
+      this.fingerprint !== fingerprint ||
+      result.journalAuthority !== candidate.journalAuthority ||
       encodeCanonicalJson({ ceilings: result.ceilings, execution: result.execution }, 8192) !==
-        encodeCanonicalJson({ ceilings: candidate.ceilings, execution: candidate.execution }, 8192)) {
-      this.revoke(); throw new CapacityError();
+        encodeCanonicalJson({ ceilings: candidate.ceilings, execution: candidate.execution }, 8192)
+    ) {
+      this.revoke();
+      throw new CapacityError();
     }
     return structuredClone(result);
   }

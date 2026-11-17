@@ -10,9 +10,10 @@ import { checkedRun, runSnapshot } from './response.js';
 /** Capture a bounded monotonic intent; receipt replay binds the run, never a clock. */
 export function prepareCancelRunCommand(operation: CancelRunOperation, digest: IntentDigest): CancelRunCommand {
   const copy = JSON.parse(encodeJson(operation, 65536)) as CancelRunOperation & { intentDigest?: string };
-  requireRule(Object.keys(copy).every(key => ['kind', 'id', 'request', 'intentDigest'].includes(key)));
-  requireRule(copy.kind === 'cancelRun' && validateApi('Uuid', copy.id).ok
-    && validateApi('CancelRunRequest', copy.request).ok);
+  requireRule(Object.keys(copy).every((key) => ['kind', 'id', 'request', 'intentDigest'].includes(key)));
+  requireRule(
+    copy.kind === 'cancelRun' && validateApi('Uuid', copy.id).ok && validateApi('CancelRunRequest', copy.request).ok,
+  );
   const { kind, id, request } = copy;
   const intentDigest = digestMutationIntent({ kind, id, request }, digest);
   requireRule(copy.intentDigest === undefined || copy.intentDigest === intentDigest);
@@ -23,7 +24,9 @@ export function prepareCancelRunCommand(operation: CancelRunOperation, digest: I
 
 /** Acceptance means durable intent or an already terminal run, not confirmed stop. */
 export async function cancelRun(input: {
-  operation: CancelRunOperation; digest: IntentDigest; store: RunCancellationStore;
+  operation: CancelRunOperation;
+  digest: IntentDigest;
+  store: RunCancellationStore;
 }): Promise<Run> {
   const expected = prepareCancelRunCommand(input.operation, input.digest);
   const value = checkedRun(await input.store.cancel(runSnapshot(expected)));

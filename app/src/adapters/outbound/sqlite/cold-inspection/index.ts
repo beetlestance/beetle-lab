@@ -14,11 +14,19 @@ const pending = [
 ];
 /** Offline caller owns both startup leases and the read-only connection. No repair/refund. */
 export function inspectColdMetadata(db: DatabaseSync, installationId: string) {
-  if (db.prepare('PRAGMA query_only').get()?.query_only !== 1 || db.prepare('PRAGMA user_version').get()?.user_version !== METADATA_SCHEMA_VERSION) throw new StorageError('unavailable');
-  const row = db.prepare("SELECT CASE WHEN length(CAST(id AS BLOB))=36 THEN id END id FROM settings WHERE scope_key='installation' LIMIT 2").all();
+  if (
+    db.prepare('PRAGMA query_only').get()?.query_only !== 1 ||
+    db.prepare('PRAGMA user_version').get()?.user_version !== METADATA_SCHEMA_VERSION
+  )
+    throw new StorageError('unavailable');
+  const row = db
+    .prepare(
+      "SELECT CASE WHEN length(CAST(id AS BLOB))=36 THEN id END id FROM settings WHERE scope_key='installation' LIMIT 2",
+    )
+    .all();
   if (row.length !== 1 || row[0]?.id !== installationId) throw new StorageError('conflict');
   for (const sql of pending) if (db.prepare(sql).get()) throw new StorageError('conflict');
-  return Object.freeze({schema: METADATA_SCHEMA_VERSION, installationId, quiescence: 'cold-terminal-only' as const});
+  return Object.freeze({ schema: METADATA_SCHEMA_VERSION, installationId, quiescence: 'cold-terminal-only' as const });
 }
 
 export { scrubHistoricalCredentials } from '../schema.js';

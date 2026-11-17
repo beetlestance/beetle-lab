@@ -1,4 +1,9 @@
-import { DISK_HOLD_LIMIT, DISK_HOLD_METADATA_BYTES, MAX_DISK_TOTAL, MAX_RESOURCE_VALUE } from '../../admission/index.js';
+import {
+  DISK_HOLD_LIMIT,
+  DISK_HOLD_METADATA_BYTES,
+  MAX_DISK_TOTAL,
+  MAX_RESOURCE_VALUE,
+} from '../../admission/index.js';
 
 export const tables = `
   ALTER TABLE accepted_attempts ADD COLUMN hold_bytes INTEGER NOT NULL DEFAULT 0

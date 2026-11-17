@@ -14,18 +14,30 @@ function busy(): OutputCollection {
 }
 /** Private fault seam; the public collector always supplies production Node ports. */
 export function startCollection(input: OutputCollectionOptions, ports: OutputPorts = nodePorts): OutputCollection {
-  const lease = nativeCustody.reserve('collection'); if (!lease) return busy();
-  const owner = new OutputLifetime<Extract<OutputCollectionResult, { ok: true }>>(ports, () => { lease.release(); });
+  const lease = nativeCustody.reserve('collection');
+  if (!lease) return busy();
+  const owner = new OutputLifetime<Extract<OutputCollectionResult, { ok: true }>>(ports, () => {
+    lease.release();
+  });
   lease.own(owner);
   let files: OutputFiles;
-  owner.start(() => {
-    const options = snapshotOptions(input);
-    try { lease.bind(options.directory); }
-    catch (error) { throw new OutputFailure(error instanceof NativeCustodyError && error.reason === 'busy' ? 'busy' : 'invalid_options'); }
-    return options;
-  }, async options => {
-    files = new OutputFiles(options, ports, owner);
-    return { ok: true, ...await verifyOutputs(options, files, owner) };
-  }, () => files.namedCheck());
+  owner.start(
+    () => {
+      const options = snapshotOptions(input);
+      try {
+        lease.bind(options.directory);
+      } catch (error) {
+        throw new OutputFailure(
+          error instanceof NativeCustodyError && error.reason === 'busy' ? 'busy' : 'invalid_options',
+        );
+      }
+      return options;
+    },
+    async (options) => {
+      files = new OutputFiles(options, ports, owner);
+      return { ok: true, ...(await verifyOutputs(options, files, owner)) };
+    },
+    () => files.namedCheck(),
+  );
   return owner.public;
 }

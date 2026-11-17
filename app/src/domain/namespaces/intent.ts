@@ -6,9 +6,13 @@ import type { NamespaceOperation } from './types.js';
  */
 export function projectNamespaceIntent(operation: NamespaceOperation) {
   switch (operation.kind) {
-    case 'createOrganization': case 'createWorkspace': case 'createFolder':
+    case 'createOrganization':
+    case 'createWorkspace':
+    case 'createFolder':
       return immutableSnapshot({ kind: operation.kind, request: operation.request });
-    case 'patchOrganization': case 'patchWorkspace': case 'patchFolder':
+    case 'patchOrganization':
+    case 'patchWorkspace':
+    case 'patchFolder':
       return immutableSnapshot({ kind: operation.kind, id: operation.id, request: operation.request });
   }
 }

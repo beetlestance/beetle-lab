@@ -1,6 +1,20 @@
-import type {DockerReply} from '../../../../agent/src/backends/docker/index.js';
-const reasons = new Set(['invalid_input', 'unsupported', 'conflict', 'unavailable', 'deadline', 'aborted', 'request_limit',
-  'response_limit', 'malformed', 'overflow', 'start_fenced', 'unsafe_state', 'cleanup_guard', 'rejected']);
+import type { DockerReply } from '../../../../agent/src/backends/docker/index.js';
+const reasons = new Set([
+  'invalid_input',
+  'unsupported',
+  'conflict',
+  'unavailable',
+  'deadline',
+  'aborted',
+  'request_limit',
+  'response_limit',
+  'malformed',
+  'overflow',
+  'start_fenced',
+  'unsafe_state',
+  'cleanup_guard',
+  'rejected',
+]);
 export const diagnosticProgram = 'setTimeout(()=>{},15000)';
 function counter(input: unknown, keys: readonly string[]): number | null {
   let value = input;
@@ -16,11 +30,17 @@ function status(reply: DockerReply): number | null {
 }
 /** Fixed scalar diagnosis; raw Docker replies and arbitrary error strings stay private. */
 export function diagnosticFacts(reply: DockerReply, id: string) {
-  const raw = reply.ok && reply.body && typeof reply.body === 'object' ? reply.body as Record<string, unknown> : {};
+  const raw = reply.ok && reply.body && typeof reply.body === 'object' ? (reply.body as Record<string, unknown>) : {};
   const source = raw.id === id ? raw : {};
   const transportReason = reply.ok ? null : reasons.has(reply.reason) ? reply.reason : 'unavailable';
-  return {ok: reply.ok, status: status(reply), transportReason, idPresent: typeof raw.id === 'string', idMatches: raw.id === id,
+  return {
+    ok: reply.ok,
+    status: status(reply),
+    transportReason,
+    idPresent: typeof raw.id === 'string',
+    idMatches: raw.id === id,
     rawCpuNanoseconds: counter(source, ['cpu_stats', 'cpu_usage', 'total_usage']),
     rawMemoryBytes: counter(source, ['memory_stats', 'usage']),
-    rawPids: counter(source, ['pids_stats', 'current'])};
+    rawPids: counter(source, ['pids_stats', 'current']),
+  };
 }

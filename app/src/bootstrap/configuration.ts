@@ -10,8 +10,12 @@ import type { InstallationRecord } from '../domain/settings/index.js';
 import type { ApplicationOptions } from './api.js';
 
 export class BootstrapError extends Error {
-  constructor(readonly code: 'configuration' | 'data_directory' | 'listener', options?: ErrorOptions) {
-    super('Backend startup failed', options); this.name = 'BootstrapError';
+  constructor(
+    readonly code: 'configuration' | 'data_directory' | 'listener',
+    options?: ErrorOptions,
+  ) {
+    super('Backend startup failed', options);
+    this.name = 'BootstrapError';
   }
 }
 export interface BackendEnvironment {
@@ -35,9 +39,14 @@ function absolute(value: string | undefined): string {
 export function captureInstallationRecord(value: unknown): InstallationRecord {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new BootstrapError('configuration');
   const record = value as Record<string, unknown>;
-  if (Object.keys(record).some(key => !['id', 'version', 'schemaVersion', 'scope', 'values'].includes(key))
-    || record.version !== 1 || record.schemaVersion !== 2 || !validateApi('Uuid', record.id).ok
-    || !validateApi('InstallationScope', record.scope).ok || !validateApi('InstallationValues', record.values).ok) {
+  if (
+    Object.keys(record).some((key) => !['id', 'version', 'schemaVersion', 'scope', 'values'].includes(key)) ||
+    record.version !== 1 ||
+    record.schemaVersion !== 2 ||
+    !validateApi('Uuid', record.id).ok ||
+    !validateApi('InstallationScope', record.scope).ok ||
+    !validateApi('InstallationValues', record.values).ok
+  ) {
     throw new BootstrapError('configuration');
   }
   return record as unknown as InstallationRecord;
@@ -48,13 +57,20 @@ async function readInstallation(path: string, receipt: unknown): Promise<Install
     let value: unknown;
     try {
       const info = await handle.stat();
-      if (!info.isFile() || info.nlink !== 1 || info.size < 1 || info.size > 32_768 || (info.mode & 0o022)) throw new BootstrapError('configuration');
+      if (!info.isFile() || info.nlink !== 1 || info.size < 1 || info.size > 32_768 || info.mode & 0o022)
+        throw new BootstrapError('configuration');
       const text = await boundedText(handle);
-      value = receipt === undefined ? JSON.parse(text) as unknown
-        : selectInstalledConfiguration(receipt, 'installation.json', text, receiptDigest);
-    } finally { await handle.close(); }
+      value =
+        receipt === undefined
+          ? (JSON.parse(text) as unknown)
+          : selectInstalledConfiguration(receipt, 'installation.json', text, receiptDigest);
+    } finally {
+      await handle.close();
+    }
     return captureInstallationRecord(value);
-  } catch (error) { throw new BootstrapError('configuration', {cause: error}); }
+  } catch (error) {
+    throw new BootstrapError('configuration', { cause: error });
+  }
 }
 async function boundedText(handle: FileHandle): Promise<string> {
   const buffer = new Uint8Array(32_769);
@@ -71,43 +87,64 @@ async function dataDirectory(path: string): Promise<string> {
   try {
     const canonical = await realpath(path);
     const info = await stat(canonical);
-    if (!info.isDirectory() || info.uid !== process.getuid?.() || (info.mode & 0o077)) throw new BootstrapError('data_directory');
+    if (!info.isDirectory() || info.uid !== process.getuid?.() || info.mode & 0o077)
+      throw new BootstrapError('data_directory');
     await access(canonical, constants.R_OK | constants.W_OK | constants.X_OK);
     return canonical;
-  } catch (error) { throw new BootstrapError('data_directory', {cause: error}); }
+  } catch (error) {
+    throw new BootstrapError('data_directory', { cause: error });
+  }
 }
 export function listener(environment: BackendEnvironment): BackendConfiguration['listen'] {
   const host = environment.BEETLE_LISTEN_HOST ?? '127.0.0.1';
   const text = environment.BEETLE_LISTEN_PORT ?? '4311';
-  if (!['127.0.0.1', '::1', '0.0.0.0'].includes(host) || !/^[1-9][0-9]{0,4}$/.test(text)) throw new BootstrapError('listener');
+  if (!['127.0.0.1', '::1', '0.0.0.0'].includes(host) || !/^[1-9][0-9]{0,4}$/.test(text))
+    throw new BootstrapError('listener');
   const port = Number(text);
   if (port > 65535) throw new BootstrapError('listener');
   return Object.freeze({ host, port });
 }
 async function agentConnection(path: string, installationId: string, receipt: unknown) {
-  try { return await loadAgentConfiguration(path, installationId, receipt); }
-  catch (error) { throw new BootstrapError('configuration', { cause: error }); }
+  try {
+    return await loadAgentConfiguration(path, installationId, receipt);
+  } catch (error) {
+    throw new BootstrapError('configuration', { cause: error });
+  }
 }
 /** Installation-owned config and private existing data root only. No guessed
  * machine capacity: actual source observations are published after startup.
  */
-export async function loadBackendConfiguration(environment: BackendEnvironment, workerUrl: URL, offline?: { readonly baseline: true; readonly receipt?: unknown }): Promise<BackendConfiguration> {
+export async function loadBackendConfiguration(
+  environment: BackendEnvironment,
+  workerUrl: URL,
+  offline?: { readonly baseline: true; readonly receipt?: unknown },
+): Promise<BackendConfiguration> {
   const listen = listener(environment);
   const localAccess = environment.BEETLE_LOCAL_ACCESS ?? 'automatic';
-  if (!['paired','automatic'].includes(localAccess)) throw new BootstrapError('configuration');
+  if (!['paired', 'automatic'].includes(localAccess)) throw new BootstrapError('configuration');
   const config = absolute(environment.BEETLE_CONFIG_FILE);
   const agentConfig = absolute(environment.BEETLE_AGENT_CONFIG_FILE);
   const root = absolute(environment.BEETLE_DATA_DIR);
   const externalOrigin = environment.BEETLE_EXTERNAL_ORIGIN;
   if (!externalOrigin || externalOrigin.length > 2048) throw new BootstrapError('configuration');
-  const receipt = offline?.baseline ? { value: offline.receipt, assertCurrent: async () => undefined }
-    : await captureInstallationReceipt(config, environment.BEETLE_INSTALLATION_RECEIPT_FILE).catch(error => {
-      throw new BootstrapError('configuration', {cause: error});
-    });
+  const receipt = offline?.baseline
+    ? { value: offline.receipt, assertCurrent: async () => undefined }
+    : await captureInstallationReceipt(config, environment.BEETLE_INSTALLATION_RECEIPT_FILE).catch((error) => {
+        throw new BootstrapError('configuration', { cause: error });
+      });
   const record = await readInstallation(config, receipt.value);
   const directory = await dataDirectory(root);
   const connection = await agentConnection(agentConfig, record.id, receipt.value);
-  return Object.freeze({ listen, application: { externalOrigin, configurationCheck: receipt.assertCurrent, recoveryControl: {path: join(directory, 'recovery-control.sqlite'), installationId: record.id}, localAccess: localAccess as 'paired' | 'automatic',
-    inputsDirectory: join(directory, 'inputs'), agent: { connection, dataRoot: directory },
-    metadata: { path: join(directory, 'metadata.sqlite'), workerUrl, installation: record, runtime: null } } });
+  return Object.freeze({
+    listen,
+    application: {
+      externalOrigin,
+      configurationCheck: receipt.assertCurrent,
+      recoveryControl: { path: join(directory, 'recovery-control.sqlite'), installationId: record.id },
+      localAccess: localAccess as 'paired' | 'automatic',
+      inputsDirectory: join(directory, 'inputs'),
+      agent: { connection, dataRoot: directory },
+      metadata: { path: join(directory, 'metadata.sqlite'), workerUrl, installation: record, runtime: null },
+    },
+  });
 }

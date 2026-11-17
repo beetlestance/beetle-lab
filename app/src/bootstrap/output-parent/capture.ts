@@ -11,27 +11,52 @@ export type DeliveryMetadata = Pick<Metadata, 'dispatch' | 'events' | 'updateRun
 export function captureDeliveryMetadata(metadata: DeliveryMetadata): DeliveryMetadata {
   const { dispatch, events, runs } = metadata;
   return Object.freeze({
-    dispatch: Object.freeze({ scan: dispatch.scan.bind(dispatch), readOffer: dispatch.readOffer.bind(dispatch),
-      claim: dispatch.claim.bind(dispatch), observe: dispatch.observe.bind(dispatch) }),
-    events: Object.freeze({ scan: events.scan.bind(events), load: events.load.bind(events), ingest: events.ingest.bind(events),
-      confirmAck: events.confirmAck.bind(events), recordProblem: events.recordProblem.bind(events) }),
-    runs: Object.freeze({ getRun: runs.getRun.bind(runs) }), updateRuntime: metadata.updateRuntime.bind(metadata),
+    dispatch: Object.freeze({
+      scan: dispatch.scan.bind(dispatch),
+      readOffer: dispatch.readOffer.bind(dispatch),
+      claim: dispatch.claim.bind(dispatch),
+      observe: dispatch.observe.bind(dispatch),
+    }),
+    events: Object.freeze({
+      scan: events.scan.bind(events),
+      load: events.load.bind(events),
+      ingest: events.ingest.bind(events),
+      confirmAck: events.confirmAck.bind(events),
+      recordProblem: events.recordProblem.bind(events),
+    }),
+    runs: Object.freeze({ getRun: runs.getRun.bind(runs) }),
+    updateRuntime: metadata.updateRuntime.bind(metadata),
   });
 }
 
-export function captureOutputMetadata(metadata: Pick<Metadata, 'outputs' | 'finalizations' | 'absences' | 'dispatch' | 'runs'>):
-Pick<OutputRuntimeOptions, 'outputs' | 'finalizations' | 'absences' | 'observations' | 'runs'> {
+export function captureOutputMetadata(
+  metadata: Pick<Metadata, 'outputs' | 'finalizations' | 'absences' | 'dispatch' | 'runs'>,
+): Pick<OutputRuntimeOptions, 'outputs' | 'finalizations' | 'absences' | 'observations' | 'runs'> {
   const { outputs, finalizations, absences, dispatch, runs } = metadata;
-  if (typeof absences?.read !== 'function' || typeof absences.adopt !== 'function'
-    || typeof absences.finalize !== 'function' || typeof dispatch?.observe !== 'function') {
+  if (
+    typeof absences?.read !== 'function' ||
+    typeof absences.adopt !== 'function' ||
+    typeof absences.finalize !== 'function' ||
+    typeof dispatch?.observe !== 'function'
+  ) {
     throw new Error('Missing output absence capability');
   }
   return Object.freeze({
-    outputs: Object.freeze({ scan: outputs.scan.bind(outputs), load: outputs.load.bind(outputs),
-      readSource: outputs.readSource.bind(outputs), adopt: outputs.adopt.bind(outputs),
-      claimArtifact: outputs.claimArtifact.bind(outputs), recordProgress: outputs.recordProgress.bind(outputs),
-      beginPublication: outputs.beginPublication.bind(outputs), recordPublication: outputs.recordPublication.bind(outputs) }),
-    absences: Object.freeze({ read: absences.read.bind(absences), adopt: absences.adopt.bind(absences), finalize: absences.finalize.bind(absences) }),
+    outputs: Object.freeze({
+      scan: outputs.scan.bind(outputs),
+      load: outputs.load.bind(outputs),
+      readSource: outputs.readSource.bind(outputs),
+      adopt: outputs.adopt.bind(outputs),
+      claimArtifact: outputs.claimArtifact.bind(outputs),
+      recordProgress: outputs.recordProgress.bind(outputs),
+      beginPublication: outputs.beginPublication.bind(outputs),
+      recordPublication: outputs.recordPublication.bind(outputs),
+    }),
+    absences: Object.freeze({
+      read: absences.read.bind(absences),
+      adopt: absences.adopt.bind(absences),
+      finalize: absences.finalize.bind(absences),
+    }),
     observations: Object.freeze({ observe: dispatch.observe.bind(dispatch) }),
     finalizations: Object.freeze({ finalize: finalizations.finalize.bind(finalizations) }),
     runs: Object.freeze({ getRun: runs.getRun.bind(runs) }),
@@ -39,6 +64,9 @@ Pick<OutputRuntimeOptions, 'outputs' | 'finalizations' | 'absences' | 'observati
 }
 
 export function captureGateway(gateway: RunnerGateway): RunnerGateway {
-  return Object.freeze({ capabilities: gateway.capabilities.bind(gateway),
-    attempt: gateway.attempt.bind(gateway), close: gateway.close.bind(gateway) });
+  return Object.freeze({
+    capabilities: gateway.capabilities.bind(gateway),
+    attempt: gateway.attempt.bind(gateway),
+    close: gateway.close.bind(gateway),
+  });
 }

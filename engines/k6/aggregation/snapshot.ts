@@ -1,12 +1,24 @@
 import type { DurationHistogram, NumericTotal, SeriesTotal } from '@beetle/contracts/metrics';
 export type { NumericTotal, SeriesTotal, MetricWindow } from '@beetle/contracts/metrics';
 
-export type AccumulatorCode = 'invalid_profile' | 'invalid_point' | 'series_limit' | 'overflow'
-  | 'measurement' | 'cancelled' | 'closed' | 'busy' | 'sink_failed';
+export type AccumulatorCode =
+  | 'invalid_profile'
+  | 'invalid_point'
+  | 'series_limit'
+  | 'overflow'
+  | 'measurement'
+  | 'cancelled'
+  | 'closed'
+  | 'busy'
+  | 'sink_failed';
 export class MetricAccumulatorError extends Error {
-  constructor(readonly code: AccumulatorCode) { super('Metric accumulator rejected'); this.name = 'MetricAccumulatorError'; }
+  constructor(readonly code: AccumulatorCode) {
+    super('Metric accumulator rejected');
+    this.name = 'MetricAccumulatorError';
+  }
 }
-export type AccumulatedTotal = Exclude<NumericTotal, { kind: 'trend' }>
+export type AccumulatedTotal =
+  | Exclude<NumericTotal, { kind: 'trend' }>
   | (Omit<Extract<NumericTotal, { kind: 'trend' }>, 'distribution'> & { readonly distribution: DurationHistogram });
 export type AccumulatedSeries = Omit<SeriesTotal, 'total'> & { readonly total: AccumulatedTotal };
 export interface MetricSnapshot {
@@ -17,9 +29,11 @@ export interface MetricSnapshot {
   readonly quantiles: 'histogram-estimate';
 }
 export function seriesSnapshot(series: ReadonlyMap<string, AccumulatedSeries>): readonly SeriesTotal[] {
-  return Object.freeze([...series.values()].map(value => Object.freeze({
-    ...value, tags: Object.freeze({ ...value.tags }), total: snapshotTotal(value.total),
-  })));
+  return Object.freeze(
+    [...series.values()].map((value) =>
+      Object.freeze({ ...value, tags: Object.freeze({ ...value.tags }), total: snapshotTotal(value.total) }),
+    ),
+  );
 }
 
 function snapshotTotal(total: AccumulatedSeries['total']): NumericTotal {

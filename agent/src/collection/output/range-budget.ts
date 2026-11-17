@@ -38,10 +38,22 @@ export function snapshotRange(input: OutputRangeOptions): OutputRangeOptions {
   try {
     const root = captureCollectionRootIdentity(own(input, 'root'));
     const declaration = artifact(own(input, 'artifact'));
-    const offset = own(input, 'offset'); const length = own(input, 'length');
-    const deadline = own(input, 'deadline'); const stop = signal(own(input, 'signal'));
-    if (!integer(offset, declaration.bytes) || !integer(length, OUTPUT_READ_BYTES, 1)) throw new OutputFailure('invalid_options');
+    const offset = own(input, 'offset');
+    const length = own(input, 'length');
+    const deadline = own(input, 'deadline');
+    const stop = signal(own(input, 'signal'));
+    if (!integer(offset, declaration.bytes) || !integer(length, OUTPUT_READ_BYTES, 1))
+      throw new OutputFailure('invalid_options');
     if (typeof deadline !== 'number' || !Number.isFinite(deadline)) throw new OutputFailure('invalid_options');
-    return Object.freeze({ root, artifact: declaration, offset, length, deadline, ...(stop === undefined ? {} : { signal: stop }) });
-  } catch { throw new OutputFailure('invalid_options'); }
+    return Object.freeze({
+      root,
+      artifact: declaration,
+      offset,
+      length,
+      deadline,
+      ...(stop === undefined ? {} : { signal: stop }),
+    });
+  } catch {
+    throw new OutputFailure('invalid_options');
+  }
 }

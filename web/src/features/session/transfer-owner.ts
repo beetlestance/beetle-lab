@@ -19,10 +19,16 @@ export class SessionTransferOwner {
     if (this.client) throw new Error('A transfer session is already active');
     const client = this.factory(options);
     this.client = client;
-    const abort = () => { if (this.client === client) this.retire(); };
+    const abort = () => {
+      if (this.client === client) this.retire();
+    };
     signal.addEventListener('abort', abort, { once: true });
     this.detach = () => signal.removeEventListener('abort', abort);
-    if (signal.aborted) { this.retire(); await this.draining; return undefined; }
+    if (signal.aborted) {
+      this.retire();
+      await this.draining;
+      return undefined;
+    }
     return client;
   }
 
@@ -30,13 +36,23 @@ export class SessionTransferOwner {
     const client = this.client;
     if (!client) return this.draining;
     this.client = undefined;
-    this.detach?.(); this.detach = undefined;
-    let resolve!: () => void; let reject!: (error: unknown) => void;
+    this.detach?.();
+    this.detach = undefined;
+    let resolve!: () => void;
+    let reject!: (error: unknown) => void;
     // Register before close: abort callbacks may synchronously reenter the gate.
-    this.draining = new Promise<void>((yes, no) => { resolve = yes; reject = no; });
-    void this.draining.catch(() => { /* Retain rejection for the next open/retire caller. */ });
-    try { void Promise.resolve(client.close()).then(resolve, reject); }
-    catch (error) { reject(error); }
+    this.draining = new Promise<void>((yes, no) => {
+      resolve = yes;
+      reject = no;
+    });
+    void this.draining.catch(() => {
+      /* Retain rejection for the next open/retire caller. */
+    });
+    try {
+      void Promise.resolve(client.close()).then(resolve, reject);
+    } catch (error) {
+      reject(error);
+    }
     return this.draining;
   }
 }

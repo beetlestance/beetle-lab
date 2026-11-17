@@ -2,7 +2,10 @@ const bits = new DataView(new ArrayBuffer(8));
 /** Extract the exact binary exponent and normalized significand, including subnormals. */
 function parts(value: number): { exponent: number; mantissa: number } {
   let adjustment = 0;
-  if (value < 2 ** -1022) { value *= 2 ** 52; adjustment = -52; }
+  if (value < 2 ** -1022) {
+    value *= 2 ** 52;
+    adjustment = -52;
+  }
   bits.setFloat64(0, value);
   const high = bits.getUint32(0);
   const exponent = ((high >>> 20) & 2047) - 1023 + adjustment;
@@ -23,7 +26,8 @@ export function bucketIndex(value: number, scale: number): number {
   if (scale <= 0) return Math.floor((exponent - Number(mantissa === 1)) / 2 ** -scale);
   const width = 2 ** scale;
   if (mantissa === 1) return exponent * width - 1;
-  let low = 1; let high = width;
+  let low = 1;
+  let high = width;
   while (low < high) {
     const middle = Math.floor((low + high) / 2);
     if (belowEdge(mantissa, middle, width)) high = middle;

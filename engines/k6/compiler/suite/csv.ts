@@ -1,14 +1,25 @@
 import { fail } from './failure.js';
 import { suiteLimits } from './limits.js';
-interface CsvState { rows: string[][]; row: string[]; cell: string[]; quoted: boolean; closed: boolean; cells: number; maximumCells: number }
+interface CsvState {
+  rows: string[][];
+  row: string[];
+  cell: string[];
+  quoted: boolean;
+  closed: boolean;
+  cells: number;
+  maximumCells: number;
+}
 function pushCell(state: CsvState): void {
   if (state.row.length >= suiteLimits.columns || ++state.cells > state.maximumCells) fail('input_limit');
-  state.row.push(state.cell.join('')); state.cell = []; state.closed = false;
+  state.row.push(state.cell.join(''));
+  state.cell = [];
+  state.closed = false;
 }
 function pushRow(state: CsvState): void {
   pushCell(state);
   if (state.rows.length >= suiteLimits.rows + 1) fail('input_limit');
-  state.rows.push(state.row); state.row = [];
+  state.rows.push(state.row);
+  state.row = [];
 }
 function append(state: CsvState, char: string): void {
   if (state.cell.length + char.length > suiteLimits.cellChars) fail('input_limit');
@@ -25,8 +36,13 @@ function unquoted(state: CsvState, char: string): void {
 }
 function quotedChar(state: CsvState, char: string, next: string | undefined): boolean {
   if (char !== '"') append(state, char);
-  else if (next === '"') { append(state, '"'); return true; }
-  else { state.quoted = false; state.closed = true; }
+  else if (next === '"') {
+    append(state, '"');
+    return true;
+  } else {
+    state.quoted = false;
+    state.closed = true;
+  }
   return false;
 }
 function finishCsv(state: CsvState): string[][] {

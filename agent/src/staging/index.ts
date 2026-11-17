@@ -19,10 +19,23 @@ export type { RootSpace } from './space.js';
 export type { OutputScanRequest, OutputScanResult, OutputScanReason } from './output-types.js';
 export { scanOutput } from './output-scan.js';
 export { StagingError } from './types.js';
-export type { Authority, Providers, InputRequest, SecretRequest, InstallationConfiguration, VerifyInput,
-  StagerOptions, Preparation, PrepareRequest, StagingReason, StagingResult } from './types.js';
+export type {
+  Authority,
+  Providers,
+  InputRequest,
+  SecretRequest,
+  InstallationConfiguration,
+  VerifyInput,
+  StagerOptions,
+  Preparation,
+  PrepareRequest,
+  StagingReason,
+  StagingResult,
+} from './types.js';
 
-function gateReason(error: ProducerGateError): 'busy' | 'reservation' { return error.reason === 'capacity' ? 'busy' : 'reservation'; }
+function gateReason(error: ProducerGateError): 'busy' | 'reservation' {
+  return error.reason === 'capacity' ? 'busy' : 'reservation';
+}
 function errorReason(error: unknown): 'busy' | 'reservation' | 'io' {
   if (error instanceof ProducerGateError) return gateReason(error);
   return error instanceof JournalError && error.code === 'queue_full' ? 'busy' : 'io';
@@ -38,54 +51,100 @@ export class Stager {
   private readonly running = new Set<Promise<void>>();
   private closed = false;
   constructor(options: StagerOptions) {
-    const identity = rootIdentity(options.root); const namespace = boundRootNamespace(options.root);
+    const identity = rootIdentity(options.root);
+    const namespace = boundRootNamespace(options.root);
     options.gate.assertOwner(options.journal.retirements);
     if (options.gate.namespaceIdentity !== namespace.namespaceIdentity) throw new StagingError('installation');
     const profile = snapshot(options.profile, 65_536);
-    if (identity.configuration.installationId.toLowerCase() !== profile.installationId.toLowerCase()
-      || identity.configuration.stagingRoot !== profile.stagingRoot || identity.configuration.user !== profile.user) throw new StagingError('installation');
-    const providers = Object.freeze({ input: options.providers.input.bind(options.providers),
-      secret: options.providers.secret.bind(options.providers) });
-    const manifest = snapshot(options.manifest, 65_536); const validation = validationSnapshot(options.validation);
+    if (
+      identity.configuration.installationId.toLowerCase() !== profile.installationId.toLowerCase() ||
+      identity.configuration.stagingRoot !== profile.stagingRoot ||
+      identity.configuration.user !== profile.user
+    )
+      throw new StagingError('installation');
+    const providers = Object.freeze({
+      input: options.providers.input.bind(options.providers),
+      secret: options.providers.secret.bind(options.providers),
+    });
+    const manifest = snapshot(options.manifest, 65_536);
+    const validation = validationSnapshot(options.validation);
     this.options = Object.freeze({ ...options, providers, profile, manifest, validation });
   }
   prepare(input: PrepareRequest): Preparation {
     if (this.closed) return rejected('closed');
     if (active >= 2) return rejected('busy');
-    let boundary: Boundary; let request: PrepareRequest; let lease: ProducerLease | undefined;
+    let boundary: Boundary;
+    let request: PrepareRequest;
+    let lease: ProducerLease | undefined;
     try {
-      request = { key: scopeSnapshot(input.key), operation: { deadline: input.operation.deadline,
-        ...(input.operation.signal ? { signal: input.operation.signal } : {}) } };
-      lease = this.options.gate.acquire(request.key); boundary = new Boundary(request.operation);
+      request = {
+        key: scopeSnapshot(input.key),
+        operation: {
+          deadline: input.operation.deadline,
+          ...(input.operation.signal ? { signal: input.operation.signal } : {}),
+        },
+      };
+      lease = this.options.gate.acquire(request.key);
+      boundary = new Boundary(request.operation);
     } catch (error) {
-      lease?.finish(); const reason = error instanceof ProducerGateError ? gateReason(error) : 'invalid_input';
+      lease?.finish();
+      const reason = error instanceof ProducerGateError ? gateReason(error) : 'invalid_input';
       return { result: Promise.resolve({ ok: false, reason }), quiesced: Promise.resolve() };
     }
     active++;
     let resolve: (result: StagingResult<RuntimePlan>) => void = () => undefined;
-    const result = new Promise<StagingResult<RuntimePlan>>(done => { resolve = done; });
-    const quiesced = lease.issue(() => ({ owner: this, quiesced: this.run(request, boundary, resolve, lease) })).quiesced; this.running.add(quiesced);
+    const result = new Promise<StagingResult<RuntimePlan>>((done) => {
+      resolve = done;
+    });
+    const quiesced = lease.issue(() => ({
+      owner: this,
+      quiesced: this.run(request, boundary, resolve, lease),
+    })).quiesced;
+    this.running.add(quiesced);
     void quiesced.then(() => this.running.delete(quiesced));
     return Object.freeze({ result, quiesced });
   }
   /** No cancellation/release authority. A stalled issued operation deliberately keeps this pending. */
-  async close(): Promise<void> { this.closed = true; await Promise.all(this.running); }
-  private async run(request: PrepareRequest, boundary: Boundary, resolve: (result: StagingResult<RuntimePlan>) => void, lease: ProducerLease): Promise<void> {
+  async close(): Promise<void> {
+    this.closed = true;
+    await Promise.all(this.running);
+  }
+  private async run(
+    request: PrepareRequest,
+    boundary: Boundary,
+    resolve: (result: StagingResult<RuntimePlan>) => void,
+    lease: ProducerLease,
+  ): Promise<void> {
     let files: Files | undefined;
     try {
-      await lease.ready(); boundary.check();
-      const plan = await prepareFiles({ lease, options: this.options, request, boundary, ownFiles: owned => { files = owned; } });
-      boundary.check(); resolve({ ok: true, value: plan });
+      await lease.ready();
+      boundary.check();
+      const plan = await prepareFiles({
+        lease,
+        options: this.options,
+        request,
+        boundary,
+        ownFiles: (owned) => {
+          files = owned;
+        },
+      });
+      boundary.check();
+      resolve({ ok: true, value: plan });
     } catch (error) {
       const failure = error instanceof StagingError ? error : new StagingError(errorReason(error));
-      boundary.fail(failure); resolve({ ok: false, reason: failure.reason });
-    }
-    finally {
+      boundary.fail(failure);
+      resolve({ ok: false, reason: failure.reason });
+    } finally {
       await boundary.drain();
       // A failed close is unknown kernel work: it cannot establish a quiescent boundary.
-      try { await files?.close(); }
-      catch { await new Promise<never>(() => undefined); }
-      boundary.dispose(); lease.finish(); active--;
+      try {
+        await files?.close();
+      } catch {
+        await new Promise<never>(() => undefined);
+      }
+      boundary.dispose();
+      lease.finish();
+      active--;
     }
   }
 }

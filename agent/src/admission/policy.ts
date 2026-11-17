@@ -1,4 +1,11 @@
-import type { AdmissionSnapshot, ApprovedProfile, Candidate, Decision, Resources, RuntimeObservation } from './types.js';
+import type {
+  AdmissionSnapshot,
+  ApprovedProfile,
+  Candidate,
+  Decision,
+  Resources,
+  RuntimeObservation,
+} from './types.js';
 import { addResources, effectivePool, fits, zeroResources } from './resources.js';
 import { supportedStaging } from './staging.js';
 import { captureDiskRetention, DISK_HOLD_LIMIT } from './retention.js';
@@ -8,28 +15,41 @@ import { retainedFit } from './retention-policy.js';
 export const PROMOTION_MS = 30_000;
 export const MAX_SCAN = 100;
 export function approvedProfile(candidate: Candidate, profiles: ApprovedProfile[]): ApprovedProfile | undefined {
-  return profiles.find(profile => profile.manifestId === candidate.validation.manifestId &&
-    profile.profileId === candidate.validation.profileId && profile.schemaDigest === candidate.validation.schemaDigest &&
-    profile.catalogVersion === candidate.validation.catalogVersion && profile.engineId === candidate.engine.id &&
-    profile.imageDigest === candidate.engine.imageDigest && profile.configVersion === candidate.engine.configVersion);
+  return profiles.find(
+    (profile) =>
+      profile.manifestId === candidate.validation.manifestId &&
+      profile.profileId === candidate.validation.profileId &&
+      profile.schemaDigest === candidate.validation.schemaDigest &&
+      profile.catalogVersion === candidate.validation.catalogVersion &&
+      profile.engineId === candidate.engine.id &&
+      profile.imageDigest === candidate.engine.imageDigest &&
+      profile.configVersion === candidate.engine.configVersion,
+  );
 }
 export function validateCandidate(candidate: Candidate, snapshot: AdmissionSnapshot): Decision {
-  if (!supportedStaging(candidate.staging, candidate.resources.stagingBytes)) return { kind: 'reject', reason: 'staging_policy' };
-  if (candidate.requiredCapabilities.includes('hard-output-quota')) return { kind: 'reject', reason: 'unsupported_capability' };
+  if (!supportedStaging(candidate.staging, candidate.resources.stagingBytes))
+    return { kind: 'reject', reason: 'staging_policy' };
+  if (candidate.requiredCapabilities.includes('hard-output-quota'))
+    return { kind: 'reject', reason: 'unsupported_capability' };
   const profile = approvedProfile(candidate, snapshot.configuration.profiles);
   if (!profile) return { kind: 'reject', reason: 'unapproved_profile' };
   if (belowMinimum(candidate, profile)) return { kind: 'reject', reason: 'below_manifest_minimum' };
   if (!fits(candidate.resources, snapshot.configuration.perRun)) return { kind: 'reject', reason: 'per_run_ceiling' };
-  if (candidate.budget.timeoutMs > snapshot.configuration.maxTimeoutMs) return { kind: 'reject', reason: 'timeout_ceiling' };
+  if (candidate.budget.timeoutMs > snapshot.configuration.maxTimeoutMs)
+    return { kind: 'reject', reason: 'timeout_ceiling' };
   if (!fits(candidate.resources, snapshot.configuration.pool)) return { kind: 'reject', reason: 'impossible_request' };
-  if (candidate.requiredCapabilities.some(capability => !profile.capabilities.includes(capability))) {
+  if (candidate.requiredCapabilities.some((capability) => !profile.capabilities.includes(capability))) {
     return { kind: 'reject', reason: 'unsupported_capability' };
   }
   return { kind: 'admit' };
 }
 function belowMinimum(candidate: Candidate, profile: ApprovedProfile): boolean {
-  return !Number.isSafeInteger(profile.minimum.timeoutMs) || profile.minimum.timeoutMs <= 0 ||
-    !fits(profile.minimum, candidate.resources) || candidate.budget.timeoutMs < profile.minimum.timeoutMs;
+  return (
+    !Number.isSafeInteger(profile.minimum.timeoutMs) ||
+    profile.minimum.timeoutMs <= 0 ||
+    !fits(profile.minimum, candidate.resources) ||
+    candidate.budget.timeoutMs < profile.minimum.timeoutMs
+  );
 }
 function fresh(timestamp: number, snapshot: AdmissionSnapshot): boolean {
   return timestamp <= snapshot.now && snapshot.now - timestamp <= snapshot.configuration.observationTtlMs;
@@ -37,7 +57,8 @@ function fresh(timestamp: number, snapshot: AdmissionSnapshot): boolean {
 function idleDecision(candidate: Candidate, observation: RuntimeObservation, snapshot: AdmissionSnapshot): Decision {
   const idle = observation.idle;
   const knownIdle = idle && fresh(idle.observedAt, snapshot) && idle.value !== null;
-  if (snapshot.configuration.requiredSensors.includes('idle') && !knownIdle) return { kind: 'defer', reason: 'idle_unknown' };
+  if (snapshot.configuration.requiredSensors.includes('idle') && !knownIdle)
+    return { kind: 'defer', reason: 'idle_unknown' };
   if (candidate.preferIdle && knownIdle && idle.value === false) return { kind: 'defer', reason: 'runtime_busy' };
   return { kind: 'admit' };
 }
@@ -51,7 +72,13 @@ function thermalDecision(observation: RuntimeObservation, snapshot: AdmissionSna
   }
   return { kind: 'admit' };
 }
-function fairness(candidate: Candidate, snapshot: AdmissionSnapshot, pool: Resources, used: Resources, retention: DiskRetention): Decision {
+function fairness(
+  candidate: Candidate,
+  snapshot: AdmissionSnapshot,
+  pool: Resources,
+  used: Resources,
+  retention: DiskRetention,
+): Decision {
   for (const older of snapshot.queue.slice(0, MAX_SCAN)) {
     if (older.order >= candidate.order) break;
     if (validateCandidate(older, snapshot).kind !== 'admit' || !fits(older.resources, pool)) continue;
@@ -86,15 +113,23 @@ function controlDecision(candidate: Candidate, observation: RuntimeObservation, 
   const profile = approvedProfile(candidate, snapshot.configuration.profiles);
   const guards = observation.guards;
   if (!guards || !fresh(guards.observedAt, snapshot)) return { kind: 'reject', reason: 'controls_unavailable' };
-  const runtime = observation.controls.filter(control => control !== 'timeout' && control !== 'output');
+  const runtime = observation.controls.filter((control) => control !== 'timeout' && control !== 'output');
   const supported = new Set([...runtime, ...guards.controls]);
-  if (profile?.controls.some(control => !supported.has(control))) return { kind: 'reject', reason: 'controls_unavailable' };
+  if (profile?.controls.some((control) => !supported.has(control)))
+    return { kind: 'reject', reason: 'controls_unavailable' };
   return { kind: 'admit' };
 }
-function capacityDecision(candidate: Candidate, snapshot: AdmissionSnapshot, pool: Resources, freeDiskBytes: number, retention: DiskRetention): Decision {
-  const active = snapshot.reservations.filter(item => item.status === 'charged');
-  if (active.length >= snapshot.configuration.maxConcurrent || active.length >= 64) return { kind: 'defer', reason: 'concurrency' };
-  if (active.some(item => item.mode === 'isolated') || (candidate.mode === 'isolated' && active.length > 0)) {
+function capacityDecision(
+  candidate: Candidate,
+  snapshot: AdmissionSnapshot,
+  pool: Resources,
+  freeDiskBytes: number,
+  retention: DiskRetention,
+): Decision {
+  const active = snapshot.reservations.filter((item) => item.status === 'charged');
+  if (active.length >= snapshot.configuration.maxConcurrent || active.length >= 64)
+    return { kind: 'defer', reason: 'concurrency' };
+  if (active.some((item) => item.mode === 'isolated') || (candidate.mode === 'isolated' && active.length > 0)) {
     return { kind: 'defer', reason: 'isolated' };
   }
   const used = active.reduce((sum, item) => addResources(sum, item.resources), zeroResources());
@@ -102,11 +137,16 @@ function capacityDecision(candidate: Candidate, snapshot: AdmissionSnapshot, poo
   if (fair.kind !== 'admit') return fair;
   if (retention.heldCount >= DISK_HOLD_LIMIT) return { kind: 'defer', reason: 'retention_capacity' };
   if (!retainedFit(candidate.resources, used, pool, retention)) return { kind: 'defer', reason: 'budget_unavailable' };
-  return nativeDiskDecision(used, candidate.resources, freeDiskBytes,retention.cleanupBytes);
+  return nativeDiskDecision(used, candidate.resources, freeDiskBytes, retention.cleanupBytes);
 }
-function nativeDiskDecision(used: Resources, candidate: Resources, freeDiskBytes: number,cleanupBytes:number): Decision {
-  if(cleanupBytes>freeDiskBytes)return {kind:'defer',reason:'disk_unavailable'};
-  freeDiskBytes-=cleanupBytes;
+function nativeDiskDecision(
+  used: Resources,
+  candidate: Resources,
+  freeDiskBytes: number,
+  cleanupBytes: number,
+): Decision {
+  if (cleanupBytes > freeDiskBytes) return { kind: 'defer', reason: 'disk_unavailable' };
+  freeDiskBytes -= cleanupBytes;
   const disk = addResources(used, candidate);
   if (disk.outputBytes > freeDiskBytes || disk.stagingBytes > freeDiskBytes - disk.outputBytes) {
     return { kind: 'defer', reason: 'disk_unavailable' };

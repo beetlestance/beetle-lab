@@ -2,10 +2,25 @@ import type { CompiledSuite, DeepReadonly } from '../plan/index.js';
 import { metricEvidenceLayout } from '../plan/index.js';
 import { BoundedText, quoted } from './bounds.js';
 
-const stats = ['count', 'rate', 'value', 'avg', 'min', 'max', 'med', 'p(50)', 'p(90)', 'p(95)', 'p(99)', 'passes', 'fails'];
+const stats = [
+  'count',
+  'rate',
+  'value',
+  'avg',
+  'min',
+  'max',
+  'med',
+  'p(50)',
+  'p(90)',
+  'p(95)',
+  'p(99)',
+  'passes',
+  'fails',
+];
 function property(value: unknown, key: string): unknown {
   return value !== null && typeof value === 'object' && Object.hasOwn(value, key)
-    ? (value as Record<string, unknown>)[key] : undefined;
+    ? (value as Record<string, unknown>)[key]
+    : undefined;
 }
 function values(output: BoundedText, metric: unknown): void {
   output.append('{');
@@ -14,7 +29,10 @@ function values(output: BoundedText, metric: unknown): void {
   for (const key of stats) {
     const number = property(value, key);
     if (typeof number !== 'number' || !Number.isFinite(number)) continue;
-    output.append(separator); quoted(output, key); output.append(':' + String(number)); separator = ',';
+    output.append(separator);
+    quoted(output, key);
+    output.append(':' + String(number));
+    separator = ',';
   }
   output.append('}');
 }
@@ -24,7 +42,8 @@ function thresholdEvidence(output: BoundedText, metric: unknown, expressions: re
   expressions.forEach((expression, index) => {
     if (index) output.append(',');
     const ok = property(property(thresholds, expression), 'ok');
-    output.append('{"expression":'); quoted(output, expression);
+    output.append('{"expression":');
+    quoted(output, expression);
     output.append(',"ok":' + (typeof ok === 'boolean' ? String(ok) : 'null') + '}');
   });
   output.append(']');
@@ -40,12 +59,22 @@ export function summaryProjection(suite: DeepReadonly<CompiledSuite>, data: unkn
   let separator = '';
   for (const entry of layout.metrics) {
     const metric = property(metrics, entry.nativeKey);
-    output.append(separator); quoted(output, entry.key); output.append(':{"nativeKey":');
-    quoted(output, entry.nativeKey); output.append(',"scope":'); quoted(output, entry.scope);
+    output.append(separator);
+    quoted(output, entry.key);
+    output.append(':{"nativeKey":');
+    quoted(output, entry.nativeKey);
+    output.append(',"scope":');
+    quoted(output, entry.scope);
     output.append(',"provenance":' + JSON.stringify(entry.provenance) + ',"values":');
-    values(output, metric); output.append(',"thresholds":');
-    thresholdEvidence(output, metric, entry.thresholds.map(rule => rule.threshold));
-    output.append('}'); separator = ',';
+    values(output, metric);
+    output.append(',"thresholds":');
+    thresholdEvidence(
+      output,
+      metric,
+      entry.thresholds.map((rule) => rule.threshold),
+    );
+    output.append('}');
+    separator = ',';
   }
   output.append('}}\n');
   return output.finish();

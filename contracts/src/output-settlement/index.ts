@@ -12,7 +12,9 @@ export const SETTLEMENT_REPLY_BYTES = 512;
 export const AGENT_REPLAY_BYTES = 4096;
 const prefix = 'beetle-lab.output-settlement.v1\n';
 export class OutputSettlementValueError extends Error {
-  constructor() { super('Invalid output settlement value'); }
+  constructor() {
+    super('Invalid output settlement value');
+  }
 }
 function hash(value: string, digest: ResultDigest): string {
   const result = digest(value);
@@ -21,7 +23,10 @@ function hash(value: string, digest: ResultDigest): string {
 }
 /** Finite metadata only; a validated release instruction is not native cleanup proof. */
 export function captureSettlementRequest(input: unknown): SettlementRequest {
-  const checked = validate('OutputSettlementRequest', JSON.parse(encodeJson(input, SETTLEMENT_REQUEST_BYTES)) as unknown);
+  const checked = validate(
+    'OutputSettlementRequest',
+    JSON.parse(encodeJson(input, SETTLEMENT_REQUEST_BYTES)) as unknown,
+  );
   if (!checked.ok) throw new OutputSettlementValueError();
   return Object.freeze({ ...checked.value, retirement: captureOutputRetirementRequest(checked.value.retirement) });
 }
@@ -37,7 +42,10 @@ export function captureSettlementReply(input: unknown, expected: unknown, digest
   const checked = validate('OutputSettlementReply', JSON.parse(encodeJson(input, SETTLEMENT_REPLY_BYTES)) as unknown);
   if (!checked.ok) throw new OutputSettlementValueError();
   const request = captureSettlementRequest(expected);
-  if (checked.value.requestDigest !== settlementRequestDigest(request, digest)
-    || checked.value.cleanupReplyDigest !== request.cleanupReplyDigest) throw new OutputSettlementValueError();
+  if (
+    checked.value.requestDigest !== settlementRequestDigest(request, digest) ||
+    checked.value.cleanupReplyDigest !== request.cleanupReplyDigest
+  )
+    throw new OutputSettlementValueError();
   return Object.freeze(checked.value);
 }

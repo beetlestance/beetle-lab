@@ -1,7 +1,7 @@
-import {exportSchema} from './export-jobs/schema.js';
-import {exportGuards} from './export-jobs/guards.js';
+import { exportSchema } from './export-jobs/schema.js';
+import { exportGuards } from './export-jobs/guards.js';
 /** Independent export jobs share order/storage policy, never a synthetic Run. */
-export const migration015=`
+export const migration015 = `
 CREATE TABLE execution_orders (
  queue_order INTEGER PRIMARY KEY AUTOINCREMENT CHECK(queue_order BETWEEN 1 AND 9007199254740991),
  purpose TEXT NOT NULL CHECK(purpose IN ('performance','standalone_export')),attempt_id TEXT NOT NULL UNIQUE);

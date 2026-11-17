@@ -28,7 +28,10 @@ export interface PreparedEventBatch {
   readonly retainedStartSeq: number;
   readonly records: readonly EventRecord[];
 }
-export type EventBatchFailure = 'invalid_binding' | 'invalid_batch' | 'identity_mismatch' | 'sequence_gap' | 'cursor_expired';
+export type EventBatchFailure =
+  'invalid_binding' | 'invalid_batch' | 'identity_mismatch' | 'sequence_gap' | 'cursor_expired';
 export class EventBatchError extends Error {
-  constructor(readonly code: EventBatchFailure) { super(`Event batch ${code}`); }
+  constructor(readonly code: EventBatchFailure) {
+    super(`Event batch ${code}`);
+  }
 }

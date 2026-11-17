@@ -40,7 +40,8 @@ function entrypoint(suite: DeepReadonly<CompiledSuite>, attempt: AttemptBudget):
     `export function handleSummary(data) { return { 'beetle-evidence.json': summaryProjection(suite, data) }; }`,
   ];
   for (let index = 0; index < suite.loadPlan.execution.scenarios.length; index++) {
-    if (suite.loadPlan.execution.scenarios[index]!.entrypoint !== `loadScenario${index}`) throw new Error('script_entrypoint');
+    if (suite.loadPlan.execution.scenarios[index]!.entrypoint !== `loadScenario${index}`)
+      throw new Error('script_entrypoint');
     imports.push(`export function loadScenario${index}(data) { nativeIteration(runtime, suite, ${index}, data); }`);
   }
   return imports.join('\n');
@@ -48,30 +49,52 @@ function entrypoint(suite: DeepReadonly<CompiledSuite>, attempt: AttemptBudget):
 function approvedInput(path: string, staging: string): boolean {
   const absolute = resolve(path);
   const owner = relative(engineRoot, absolute).replaceAll('\\', '/');
-  return absolute === policySource || absolute === join(staging, 'entry.ts') || absolute === join(staging, 'plan.json')
-    || owner.startsWith('runtime/') || owner.startsWith('plan/');
+  return (
+    absolute === policySource ||
+    absolute === join(staging, 'entry.ts') ||
+    absolute === join(staging, 'plan.json') ||
+    owner.startsWith('runtime/') ||
+    owner.startsWith('plan/')
+  );
 }
 function admitBundleBytes(files: readonly { contents: Uint8Array }[], maximumBytes: number): void {
   if (files.length !== 1) throw new Error('script_provenance');
   if (files[0]!.contents.byteLength > Math.min(scriptCap, maximumBytes)) throw new Error('script_limit');
 }
 async function freshScript(path: string): Promise<void> {
-  try { await lstat(path); }
-  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return; throw error; }
+  try {
+    await lstat(path);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+    throw error;
+  }
   throw new Error('script_exists');
 }
 async function bundle(staging: string, maximumBytes: number): Promise<string> {
   const output = join(staging, 'bundle', 'suite.js');
-  const result = await build({ entryPoints: [join(staging, 'entry.ts')], outfile: output,
-    format: 'esm', platform: 'neutral', target: 'es2020', bundle: true, splitting: false,
-    minify: true, sourcemap: false, write: false, logLevel: 'silent', metafile: true,
-    external: nativeExternals, charset: 'utf8',
+  const result = await build({
+    entryPoints: [join(staging, 'entry.ts')],
+    outfile: output,
+    format: 'esm',
+    platform: 'neutral',
+    target: 'es2020',
+    bundle: true,
+    splitting: false,
+    minify: true,
+    sourcemap: false,
+    write: false,
+    logLevel: 'silent',
+    metafile: true,
+    external: nativeExternals,
+    charset: 'utf8',
   });
   admitBundleBytes(result.outputFiles, maximumBytes);
   if (result.outputFiles[0]!.path !== output) throw new Error('script_provenance');
-  for (const path of Object.keys(result.metafile.inputs)) if (!approvedInput(path, staging)) throw new Error('script_dependency');
+  for (const path of Object.keys(result.metafile.inputs))
+    if (!approvedInput(path, staging)) throw new Error('script_dependency');
   for (const generated of Object.values(result.metafile.outputs)) {
-    for (const imported of generated.imports) if (!nativeExternals.includes(imported.path)) throw new Error('script_dependency');
+    for (const imported of generated.imports)
+      if (!nativeExternals.includes(imported.path)) throw new Error('script_dependency');
   }
   await mkdir(dirname(output));
   await writeFile(output, result.outputFiles[0]!.contents, { flag: 'wx', mode: 0o600 });
@@ -85,7 +108,11 @@ export interface BuildInput {
   /** Caller-reserved logical file bytes, including simultaneous plan/entry/bundle scratch. */
   readonly maximumBuildBytes?: number;
 }
-export interface BuildOutput { readonly scriptPath: string; readonly bytes: number; readonly peakBytes: number }
+export interface BuildOutput {
+  readonly scriptPath: string;
+  readonly bytes: number;
+  readonly peakBytes: number;
+}
 export async function buildRuntimeScript(input: BuildInput): Promise<BuildOutput> {
   const attempt = validateAttempt(input.attempt);
   metricLayout(input.suite);
@@ -105,6 +132,9 @@ export async function buildRuntimeScript(input: BuildInput): Promise<BuildOutput
     const scriptPath = join(input.outputDirectory, 'suite.js');
     await rename(output, scriptPath);
     return { scriptPath, bytes, peakBytes: entryBytes + planBytes + bytes };
-  } catch { throw new Error('script_build_failed'); }
-  finally { await rm(staging, { recursive: true, force: true }); }
+  } catch {
+    throw new Error('script_build_failed');
+  } finally {
+    await rm(staging, { recursive: true, force: true });
+  }
 }

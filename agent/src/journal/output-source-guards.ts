@@ -6,28 +6,42 @@ const immutable = (table: string, prefix: string): string => `
     BEGIN SELECT RAISE(ABORT,'immutable output source'); END;`;
 const pinned = ['organizationId', 'workspaceId', 'attemptId', 'generation', 'intentDigest'];
 const parentNames = ['organization_id', 'workspace_id', 'attempt_id', 'generation', 'intent_digest'];
-const bindingMatches = pinned.map((name, index) => `json_extract(NEW.intent_json,'$.binding.${name}') IS a.${parentNames[index]}`).join(' AND ');
-const intentTimes = ['begunAt', 'runtime.observedAt', 'launch.settledAt'].map(name =>
-  `json_type(NEW.intent_json,'$.${name}')='integer' AND json_extract(NEW.intent_json,'$.${name}') BETWEEN 0 AND ${name === 'launch.settledAt' ? 8_640_000_000_000_000 : Number.MAX_SAFE_INTEGER}`).join(' AND ');
+const bindingMatches = pinned
+  .map((name, index) => `json_extract(NEW.intent_json,'$.binding.${name}') IS a.${parentNames[index]}`)
+  .join(' AND ');
+const intentTimes = ['begunAt', 'runtime.observedAt', 'launch.settledAt']
+  .map(
+    (name) =>
+      `json_type(NEW.intent_json,'$.${name}')='integer' AND json_extract(NEW.intent_json,'$.${name}') BETWEEN 0 AND ${name === 'launch.settledAt' ? 8_640_000_000_000_000 : Number.MAX_SAFE_INTEGER}`,
+  )
+  .join(' AND ');
 function jsonEqual(left: string, right: string): string {
   const values = (input: string) => `SELECT fullkey,type,atom FROM json_tree(${input})`;
   return `(NOT EXISTS(${values(left)} EXCEPT ${values(right)}) AND NOT EXISTS(${values(right)} EXCEPT ${values(left)}))`;
 }
 function releaseRelation(release: string, intent: string): string {
-  const scope = ['organizationId', 'workspaceId', 'attemptId', 'generation'].map(name =>
-    `json_extract(${release},'$.key.${name}') IS json_extract(${intent},'$.binding.${name}')`);
-  const binding = ['createToken', 'specDigest', 'runtimeId'].map(name =>
-    `json_extract(${release},'$.${name}') IS json_extract(${intent},'$.launch.${name}')`);
-  const launch = ['epoch', 'startToken'].map(name =>
-    `json_extract(${release},'$.launch.${name}') IS json_extract(${intent},'$.launch.${name}')`);
-  return [`json_extract(${release},'$.authority')='supervisor'`,
-    `json_extract(${release},'$.runtime.state')='stopped'`, `json_extract(${release},'$.runtime.source')='supervisor'`,
-    ...scope, ...binding, ...launch,
+  const scope = ['organizationId', 'workspaceId', 'attemptId', 'generation'].map(
+    (name) => `json_extract(${release},'$.key.${name}') IS json_extract(${intent},'$.binding.${name}')`,
+  );
+  const binding = ['createToken', 'specDigest', 'runtimeId'].map(
+    (name) => `json_extract(${release},'$.${name}') IS json_extract(${intent},'$.launch.${name}')`,
+  );
+  const launch = ['epoch', 'startToken'].map(
+    (name) => `json_extract(${release},'$.launch.${name}') IS json_extract(${intent},'$.launch.${name}')`,
+  );
+  return [
+    `json_extract(${release},'$.authority')='supervisor'`,
+    `json_extract(${release},'$.runtime.state')='stopped'`,
+    `json_extract(${release},'$.runtime.source')='supervisor'`,
+    ...scope,
+    ...binding,
+    ...launch,
     `json_extract(${release},'$.launch.settlementId') IS json_extract(${intent},'$.launch.evidenceId')`,
     `json_type(${release},'$.collection.observedAt')='integer'`,
     `json_extract(${release},'$.collection.observedAt') BETWEEN 0 AND ${Number.MAX_SAFE_INTEGER}`,
     `json_extract(${release},'$.collection.observedAt')>=json_extract(${intent},'$.begunAt')`,
-    jsonEqual(`json_extract(${release},'$.runtime')`, `json_extract(${intent},'$.runtime')`)].join(' AND ');
+    jsonEqual(`json_extract(${release},'$.runtime')`, `json_extract(${intent},'$.runtime')`),
+  ].join(' AND ');
 }
 
 export const outputSourceGuards = `

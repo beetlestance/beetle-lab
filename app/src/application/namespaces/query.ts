@@ -1,7 +1,15 @@
 import { encodeJson } from '@beetle/contracts';
 import { validateApi } from '@beetle/contracts/api';
-import type { ApiTypes, Folder, FolderPage, Organization, OrganizationPage, SettingsScope,
-  Workspace, WorkspacePage } from '@beetle/contracts/api';
+import type {
+  ApiTypes,
+  Folder,
+  FolderPage,
+  Organization,
+  OrganizationPage,
+  SettingsScope,
+  Workspace,
+  WorkspacePage,
+} from '@beetle/contracts/api';
 import { immutableSnapshot, requireRule, sameScope, sameUuid } from '../../domain/namespaces/index.js';
 import type { EntityKey, EntityKind, ListQuery, NamespaceReader } from '../../ports/namespace-reader.js';
 
@@ -12,8 +20,11 @@ const pageSchema = { organization: 'OrganizationPage', workspace: 'WorkspacePage
 const ownerKind = { organization: 'installation', workspace: 'organization', folder: 'workspace' } as const;
 
 function authority<T>(input: T): T {
-  try { return immutableSnapshot(JSON.parse(encodeJson(input, 2048)) as T); }
-  catch { throw new Error('Invalid namespace query'); }
+  try {
+    return immutableSnapshot(JSON.parse(encodeJson(input, 2048)) as T);
+  } catch {
+    throw new Error('Invalid namespace query');
+  }
 }
 
 /** A broken effect adapter is an internal failure, not missing user data. */
@@ -27,11 +38,16 @@ function checked<N extends keyof ApiTypes>(name: N, input: unknown, scope?: Sett
     }
     const value = validateApi(name, snapshot);
     if (value.ok) return value.value;
-  } catch { /* Convert non-JSON/proxy/oversize adapter results to a fixed error. */ }
+  } catch {
+    /* Convert non-JSON/proxy/oversize adapter results to a fixed error. */
+  }
   throw new Error('Invalid namespace repository response');
 }
 
-export async function getNamespace<K extends EntityKind>(key: EntityKey<K>, reader: NamespaceReader): Promise<Entities[K]> {
+export async function getNamespace<K extends EntityKind>(
+  key: EntityKey<K>,
+  reader: NamespaceReader,
+): Promise<Entities[K]> {
   const expected = authority(key);
   requireRule(expected.scope.kind === ownerKind[expected.kind], 'not_found');
   const value = checked(entitySchema[expected.kind], await reader.get(authority(expected)));
@@ -40,7 +56,10 @@ export async function getNamespace<K extends EntityKind>(key: EntityKey<K>, read
   return immutableSnapshot(value) as Entities[K];
 }
 
-export async function listNamespaces<K extends EntityKind>(query: ListQuery<K>, reader: NamespaceReader): Promise<Pages[K]> {
+export async function listNamespaces<K extends EntityKind>(
+  query: ListQuery<K>,
+  reader: NamespaceReader,
+): Promise<Pages[K]> {
   const expected = authority(query);
   requireRule(expected.scope.kind === ownerKind[expected.kind], 'not_found');
   const result = await reader.list(authority(expected));

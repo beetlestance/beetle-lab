@@ -1,8 +1,31 @@
-import {stoppedExportSource} from './evidence.js';
-import {exportCustodyGuards} from './custody-guards.js';
-const immutable=['id','organization_id','workspace_id','suite_id','revision_id','attempt_id','queue_order','source_profile','registry_digest',
- 'assignment_digest','original_id','intent_digest','input_count','intent_json','cpu_millis','memory_bytes','pids','timeout_ms','output_bytes','staging_bytes','mode','maximum_build_bytes','metadata_charged'];
-export const exportGuards=`
+import { stoppedExportSource } from './evidence.js';
+import { exportCustodyGuards } from './custody-guards.js';
+const immutable = [
+  'id',
+  'organization_id',
+  'workspace_id',
+  'suite_id',
+  'revision_id',
+  'attempt_id',
+  'queue_order',
+  'source_profile',
+  'registry_digest',
+  'assignment_digest',
+  'original_id',
+  'intent_digest',
+  'input_count',
+  'intent_json',
+  'cpu_millis',
+  'memory_bytes',
+  'pids',
+  'timeout_ms',
+  'output_bytes',
+  'staging_bytes',
+  'mode',
+  'maximum_build_bytes',
+  'metadata_charged',
+];
+export const exportGuards = `
 CREATE TRIGGER exports_insert BEFORE INSERT ON export_jobs BEGIN
  SELECT CASE WHEN EXISTS(SELECT 1 FROM export_jobs WHERE id=NEW.id OR attempt_id=NEW.attempt_id)
  THEN RAISE(ABORT,'retained export identity') END;
@@ -37,7 +60,7 @@ CREATE TRIGGER exports_progress BEFORE UPDATE ON export_jobs BEGIN
  SELECT 1 FROM export_sources s JOIN export_artifacts a ON a.export_id=s.export_id WHERE s.export_id=NEW.id
  AND json_extract(s.source_json,'$.manifest.result.status')='succeeded' AND a.phase='published'
  AND a.offset=a.bytes AND a.writer IS NULL AND a.identity IS NOT NULL AND NEW.output_charged=a.bytes
- AND NEW.reason IS NULL AND ${stoppedExportSource('NEW.snapshot_json','s.source_json','s.final_agent_seq')}))
+ AND NEW.reason IS NULL AND ${stoppedExportSource('NEW.snapshot_json', 's.source_json', 's.final_agent_seq')}))
  THEN RAISE(ABORT,'export publication missing') END;
  SELECT CASE WHEN NEW.state IN ('failed','cancelled') AND NEW.possible_delivery=1 AND (NEW.execution_charged!=0 OR NEW.output_charged!=0
  OR NOT EXISTS(SELECT 1 FROM export_sources s WHERE s.export_id=NEW.id
@@ -46,7 +69,7 @@ CREATE TRIGGER exports_progress BEFORE UPDATE ON export_jobs BEGIN
  THEN RAISE(ABORT,'export terminal custody missing') END;
  SELECT CASE WHEN NEW.execution_charged=0 AND OLD.execution_charged=1
  AND NOT EXISTS(SELECT 1 FROM export_sources s WHERE s.export_id=NEW.id
- AND ${stoppedExportSource('NEW.snapshot_json','s.source_json','s.final_agent_seq')})
+ AND ${stoppedExportSource('NEW.snapshot_json', 's.source_json', 's.final_agent_seq')})
  AND NOT EXISTS(SELECT 1 FROM export_absences WHERE export_id=NEW.id) THEN RAISE(ABORT,'export release custody missing') END;
 END;
 CREATE TRIGGER exports_delivery BEFORE UPDATE OF possible_delivery ON export_jobs WHEN OLD.possible_delivery=0 AND NEW.possible_delivery=1 BEGIN

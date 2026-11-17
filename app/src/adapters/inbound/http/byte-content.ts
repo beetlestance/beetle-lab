@@ -9,7 +9,8 @@ function bounds(first: string, last: string, size: number): InputContentRange | 
   }
   const start = Number(first);
   const endExclusive = last === '' ? size : Math.min(size, Number(last) + 1);
-  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(endExclusive) || start >= endExclusive || start >= size) return false;
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(endExclusive) || start >= endExclusive || start >= size)
+    return false;
   return { start, endExclusive };
 }
 export function selectRange(text: string | undefined, size: number): InputContentRange | undefined | false {
@@ -31,30 +32,53 @@ export function header(request: FastifyRequest, name: string): string | undefine
 /** Both the original write callback and drain (when needed) must finish. */
 export function writeContent(reply: FastifyReply, chunk: Uint8Array, signal: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
-    let callbackDone = false; let drained = false; let done = false; let failure: Error | undefined;
+    let callbackDone = false;
+    let drained = false;
+    let done = false;
+    let failure: Error | undefined;
     const cleanup = () => {
-      reply.raw.removeListener('error', fail); reply.raw.removeListener('close', closed);
-      reply.raw.removeListener('drain', drain); signal.removeEventListener('abort', closed);
+      reply.raw.removeListener('error', fail);
+      reply.raw.removeListener('close', closed);
+      reply.raw.removeListener('drain', drain);
+      signal.removeEventListener('abort', closed);
     };
     const complete = () => {
       if (done || !callbackDone || !drained) return;
-      done = true; cleanup();
-      if (failure) reject(failure); else resolve();
+      done = true;
+      cleanup();
+      if (failure) reject(failure);
+      else resolve();
     };
-    const fail = (error: Error) => { failure ??= error; drained = true; complete(); };
+    const fail = (error: Error) => {
+      failure ??= error;
+      drained = true;
+      complete();
+    };
     const closed = () => fail(new ApiFault('storage_unavailable'));
-    const drain = () => { drained = true; complete(); };
-    reply.raw.once('error', fail); reply.raw.once('close', closed);
+    const drain = () => {
+      drained = true;
+      complete();
+    };
+    reply.raw.once('error', fail);
+    reply.raw.once('close', closed);
     signal.addEventListener('abort', closed, { once: true });
-    if (signal.aborted || reply.raw.destroyed) { callbackDone = true; closed(); return; }
+    if (signal.aborted || reply.raw.destroyed) {
+      callbackDone = true;
+      closed();
+      return;
+    }
     try {
-      const accepted = reply.raw.write(chunk, error => {
+      const accepted = reply.raw.write(chunk, (error) => {
         callbackDone = true;
-        if (error) fail(error); else complete();
+        if (error) fail(error);
+        else complete();
       });
       if (accepted) drained = true;
       else if (!failure) reply.raw.once('drain', drain);
-    } catch { callbackDone = true; fail(new ApiFault('storage_unavailable')); }
+    } catch {
+      callbackDone = true;
+      fail(new ApiFault('storage_unavailable'));
+    }
     complete();
   });
 }

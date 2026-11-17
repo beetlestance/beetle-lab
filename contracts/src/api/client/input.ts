@@ -1,4 +1,4 @@
-import {normalizeRunListQuery,runListPosition} from '../run-list.js';
+import { normalizeRunListQuery, runListPosition } from '../run-list.js';
 import { encodeJson } from '../../json.js';
 import type { ApiOperation } from '../generated/operations.js';
 import type { ApiTypes } from '../generated/types.js';
@@ -12,12 +12,21 @@ export interface PreparedInput {
 }
 
 function allowedFields(operation: ApiOperation): string[] {
-  return ['signal', ...('params' in operation ? ['params'] : []),
-    ...('query' in operation ? ['query'] : []), ...('request' in operation ? ['body'] : [])];
+  return [
+    'signal',
+    ...('params' in operation ? ['params'] : []),
+    ...('query' in operation ? ['query'] : []),
+    ...('request' in operation ? ['body'] : []),
+  ];
 }
 function fields(operation: ApiOperation, input: unknown): Record<string, unknown> {
   if (input === undefined) return {};
-  if (!input || typeof input !== 'object' || ![Object.prototype, null].includes(Object.getPrototypeOf(input) as object | null)) throw new Error('input');
+  if (
+    !input ||
+    typeof input !== 'object' ||
+    ![Object.prototype, null].includes(Object.getPrototypeOf(input) as object | null)
+  )
+    throw new Error('input');
   const result: Record<string, unknown> = {};
   const allowed = allowedFields(operation);
   for (const key of Reflect.ownKeys(input)) {
@@ -52,18 +61,29 @@ export function prepareInput(operation: ApiOperation, input: unknown, maximum: n
     if (!validateFields(operation, snapshot)) return undefined;
     const prepared: PreparedInput = { params: (snapshot.params ?? {}) as Record<string, string> };
     if ('query' in operation) prepared.query = snapshot.query as NonNullable<PreparedInput['query']>;
-    if(operation.name==='listRuns'){
-      prepared.query=normalizeRunListQuery(snapshot.query as ApiTypes['RunListQuery']);
-      runListPosition({kind:'workspace',organizationId:prepared.params.organizationId!,workspaceId:prepared.params.workspaceId!},prepared.query);
+    if (operation.name === 'listRuns') {
+      prepared.query = normalizeRunListQuery(snapshot.query as ApiTypes['RunListQuery']);
+      runListPosition(
+        {
+          kind: 'workspace',
+          organizationId: prepared.params.organizationId!,
+          workspaceId: prepared.params.workspaceId!,
+        },
+        prepared.query,
+      );
     }
     if ('request' in operation) prepared.body = snapshot.body as Record<string, unknown>;
     if (signal !== undefined) prepared.signal = signal;
     return prepared;
-  } catch { return undefined; }
+  } catch {
+    return undefined;
+  }
 }
 
 export function operationPath(operation: ApiOperation, input: PreparedInput): string {
-  const path = operation.path.replace(/\{([^}]+)\}/g, (_match, name: string) => encodeURIComponent(input.params[name]!));
+  const path = operation.path.replace(/\{([^}]+)\}/g, (_match, name: string) =>
+    encodeURIComponent(input.params[name]!),
+  );
   if (!input.query) return path;
   const query = new URLSearchParams({ limit: String(input.query.limit) });
   if (input.query.cursor !== undefined) query.set('cursor', input.query.cursor);
@@ -77,7 +97,7 @@ export function operationPath(operation: ApiOperation, input: PreparedInput): st
 }
 
 function appendRunQuery(query: URLSearchParams, input: NonNullable<PreparedInput['query']>): void {
-  if('suiteId' in input&&input.suiteId!==undefined)query.set('suiteId',input.suiteId);
+  if ('suiteId' in input && input.suiteId !== undefined) query.set('suiteId', input.suiteId);
   if ('state' in input && input.state !== undefined) query.set('state', input.state);
   if ('outcome' in input && input.outcome !== undefined) query.set('outcome', input.outcome);
   appendRunSearch(query, input);

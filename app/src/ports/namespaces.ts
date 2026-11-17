@@ -1,6 +1,11 @@
 import type { NamespaceCommand, NamespaceEntity } from '../domain/namespaces/index.js';
-export type { NamespaceCommand, NamespaceEntity, NamespaceOperation, NamespaceEvidence, NamespaceChange }
-  from '../domain/namespaces/index.js';
+export type {
+  NamespaceCommand,
+  NamespaceEntity,
+  NamespaceOperation,
+  NamespaceEvidence,
+  NamespaceChange,
+} from '../domain/namespaces/index.js';
 
 /**
  * One short future metadata transaction owns read/decide/check/write/receipt.

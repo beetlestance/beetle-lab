@@ -14,14 +14,27 @@ export function historyProjection(publication: Publication): RunHistoryProjectio
   const publishedArtifactBytes = page.availability === 'ready' ? artifactBytes(page.items) : null;
   const archive = publication.archive;
   if (!archive) return { ...base, publishedArtifactBytes, availability: unavailable(publication) };
-  const artifact = page.items.find(item => item.kind === 'numeric-final');
+  const artifact = page.items.find((item) => item.kind === 'numeric-final');
   if (!artifact || !page.manifestDigest) return fail();
   const numeric = archive.numeric;
   const totals = httpTotals(numeric.totals);
-  return { ...base, ...totals, availability: 'ready', publishedArtifactBytes,
-    testDurationMs: numeric.testDurationMs, requestsPerSecond: k6RequestsPerSecond(totals.requestCount, numeric.testDurationMs),
-    source: { generation: 1, manifestDigest: page.manifestDigest, numericArtifactId: artifact.artifactId,
-      numericSha256: artifact.sha256, numericVersion: numeric.version, measurementSourceTimeMs: numeric.sourceTimeMs, coverage: numeric.coverage } };
+  return {
+    ...base,
+    ...totals,
+    availability: 'ready',
+    publishedArtifactBytes,
+    testDurationMs: numeric.testDurationMs,
+    requestsPerSecond: k6RequestsPerSecond(totals.requestCount, numeric.testDurationMs),
+    source: {
+      generation: 1,
+      manifestDigest: page.manifestDigest,
+      numericArtifactId: artifact.artifactId,
+      numericSha256: artifact.sha256,
+      numericVersion: numeric.version,
+      measurementSourceTimeMs: numeric.sourceTimeMs,
+      coverage: numeric.coverage,
+    },
+  };
 }
 function artifactBytes(items: Publication['page']['items']): number {
   const bytes = items.reduce((sum, item) => sum + item.bytes, 0);
@@ -38,12 +51,23 @@ function unavailable(p: Publication): RunHistoryProjection['availability'] {
 export function captureHistoryKey(input: unknown): RunKey & { attemptId: string } {
   try {
     const copy = JSON.parse(encodeJson(input, 4096)) as RunKey & { attemptId: string };
-    if (!copy || Object.keys(copy).length !== 3 || Object.keys(copy).some(key => !['id', 'scope', 'attemptId'].includes(key))) throw new Error('shape');
+    if (
+      !copy ||
+      Object.keys(copy).length !== 3 ||
+      Object.keys(copy).some((key) => !['id', 'scope', 'attemptId'].includes(key))
+    )
+      throw new Error('shape');
     return copy;
-  } catch { throw new MetricReadError('invalid_input'); }
+  } catch {
+    throw new MetricReadError('invalid_input');
+  }
 }
 
 function httpTotals(input: Parameters<typeof summarizeK6HttpTotals>[0]) {
-  try { return summarizeK6HttpTotals(input); }
-  catch (error) { if (error instanceof K6HttpSummaryError || error instanceof DistributionError) return fail(); throw error; }
+  try {
+    return summarizeK6HttpTotals(input);
+  } catch (error) {
+    if (error instanceof K6HttpSummaryError || error instanceof DistributionError) return fail();
+    throw error;
+  }
 }

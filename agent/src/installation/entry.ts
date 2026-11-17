@@ -10,7 +10,11 @@ import type { DriveProgress } from './types.js';
 import type { SourceReceipt, FinishedRelease } from '../output-source/index.js';
 import type { OutputDeliveryClosure } from '../journal/index.js';
 import type { OutputAbsence, Owned } from '@beetle/contracts/output-source';
-export interface EntryLease { readonly entry: Entry; readonly done: Promise<void>; finish(): void }
+export interface EntryLease {
+  readonly entry: Entry;
+  readonly done: Promise<void>;
+  finish(): void;
+}
 export interface Entry {
   readonly leases: Set<EntryLease>;
   retiring: boolean;
@@ -44,12 +48,28 @@ export interface Entry {
   cleanupFailed: boolean;
 }
 export function scopeCopy(input: Scope): Readonly<Scope> {
-  try { return copyControlScope(input); } catch { throw new InstallationError('invalid_input'); }
+  try {
+    return copyControlScope(input);
+  } catch {
+    throw new InstallationError('invalid_input');
+  }
 }
 export function identity(key: Scope): string {
   return [key.organizationId, key.workspaceId, key.attemptId, key.generation].join('/').toLowerCase();
 }
 export function createEntry(key: Readonly<Scope>): Entry {
-  return { key, abort: new AbortController(), leases: new Set(), retiring: false, sourceCheck: false, sourceReleased: false,
-    users: 0, version: 0, cancelled: false, fresh: false, prepared: false, cleanupFailed: false };
+  return {
+    key,
+    abort: new AbortController(),
+    leases: new Set(),
+    retiring: false,
+    sourceCheck: false,
+    sourceReleased: false,
+    users: 0,
+    version: 0,
+    cancelled: false,
+    fresh: false,
+    prepared: false,
+    cleanupFailed: false,
+  };
 }

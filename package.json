@@ -9,14 +9,14 @@
     "dev": "docker compose up --build",
     "dev:web": "vite --config web/vite.config.ts --host 127.0.0.1",
     "build:web": "vite build --config web/vite.config.ts",
-    "check": "npm run typecheck && npm run lint && npm run check:architecture && npm run check:docs",
+    "check": "npm run typecheck && npm run format:check && npm run lint && npm run check:architecture && npm run check:docs",
     "test": "npm run test:v2",
     "test:v2": "vitest run",
     "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p web/tsconfig.json --noEmit && tsc -p engines/k6/tsconfig.runtime.json --noEmit",
     "lint": "node --import tsx tools/lint.ts",
     "check:architecture": "node --import tsx tools/check-architecture.ts",
     "check:docs": "node --import tsx tools/check-docs.ts",
-    "verify:v2": "npm run check:contracts && npm run check:api && npm run check:k6 && npm run typecheck && npm run lint && npm run check:architecture && npm run check:docs && npm run build:web && npm run test:v2",
+    "verify:v2": "npm run check:contracts && npm run check:api && npm run check:k6 && npm run typecheck && npm run format:check && npm run lint && npm run check:architecture && npm run check:docs && npm run build:web && npm run test:v2",
     "generate:contracts": "node --import tsx contracts/scripts/generate.ts",
     "check:contracts": "node --import tsx contracts/scripts/generate.ts --check",
     "generate:api": "node --import tsx contracts/scripts/generate-api.ts",
@@ -31,7 +31,9 @@
     "smoke:api": "node --import tsx app/test/bootstrap/smoke-api.ts",
     "smoke:input-controls": "node --import tsx web/test/smoke-input-controls.ts",
     "build:k6": "node --import tsx tools/build-k6.ts",
-    "smoke:agent:docker": "node --import tsx agent/test/container/smoke-agent.ts"
+    "smoke:agent:docker": "node --import tsx agent/test/container/smoke-agent.ts",
+    "format": "node --import tsx tools/format.ts --write",
+    "format:check": "node --import tsx tools/format.ts --check"
   },
   "engines": {
     "node": ">=24.12.0"
@@ -50,11 +52,13 @@
   ],
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@stylistic/eslint-plugin": "6.0.1",
     "@types/node": "24.19.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "eslint": "10.14.0",
     "jsdom": "31.0.0",
+    "prettier": "3.10.1",
     "tsup": "9.0.0",
     "tsx": "4.23.15",
     "typescript": "6.0.3",

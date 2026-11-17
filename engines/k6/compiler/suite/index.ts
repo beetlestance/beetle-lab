@@ -23,16 +23,21 @@ function unique(items: readonly { readonly id: string }[]): void {
   }
 }
 function validateNames(config: ValidatedSuiteConfig): void {
-  unique(config.requests); unique(config.datasets);
+  unique(config.requests);
+  unique(config.datasets);
   const names = new Set<string>();
   for (const secret of config.secrets) {
     if (names.has(secret.name) || unsafeNames.has(secret.name)) fail('duplicate_name', '/secrets');
     names.add(secret.name);
   }
-  if (new Set(config.requests.map(request => request.name)).size !== config.requests.length) fail('duplicate_name', '/requests');
+  if (new Set(config.requests.map((request) => request.name)).size !== config.requests.length)
+    fail('duplicate_name', '/requests');
 }
 /** Pure compiler. digest must be trusted SHA-256; all input content is immutable and integrity checked. */
-export function compileSuite(config: ValidatedSuiteConfig, options: CompileOptions): Result<DeepReadonly<CompiledSuite>> {
+export function compileSuite(
+  config: ValidatedSuiteConfig,
+  options: CompileOptions,
+): Result<DeepReadonly<CompiledSuite>> {
   const loadPlan = compileLoadPlan(config.loadPlan as ValidatedLoadPlan);
   if (!loadPlan.ok) return loadPlan;
   return boundary(() => {
@@ -44,23 +49,43 @@ export function compileSuite(config: ValidatedSuiteConfig, options: CompileOptio
     const target = compileTarget(options.input.targetOverride ?? config.target);
     // Validate the stored target even when an explicit override takes precedence.
     compileTarget(config.target);
-    const result: CompiledSuite = { component: 'k6-suite', compilerVersion: '1.0', schemaVersion: 1,
-      loadPlan: loadPlan.value, target, datasets, requests: compileRequests(config, loaded.content, scope, expansion),
-      selections: compileSelections(config), identity: {
-        digest: '', engine: { ...options.input.engine }, inputs: loaded.refs.map(ref => ({ ...ref })),
-        secrets: config.secrets.map(secret => ({ ...secret })),
-        reproducibility: config.secrets.some(secret => !secret.version) ? 'unknown' : 'pinned',
-      } };
+    const result: CompiledSuite = {
+      component: 'k6-suite',
+      compilerVersion: '1.0',
+      schemaVersion: 1,
+      loadPlan: loadPlan.value,
+      target,
+      datasets,
+      requests: compileRequests(config, loaded.content, scope, expansion),
+      selections: compileSelections(config),
+      identity: {
+        digest: '',
+        engine: { ...options.input.engine },
+        inputs: loaded.refs.map((ref) => ({ ...ref })),
+        secrets: config.secrets.map((secret) => ({ ...secret })),
+        reproducibility: config.secrets.some((secret) => !secret.version) ? 'unknown' : 'pinned',
+      },
+    };
     const readiness = compileReadiness(config, scope);
     if (readiness) result.readiness = readiness;
     if (config.targetSampling) {
       const sampling = config.targetSampling;
-      if (!safeRelativePath(sampling.path) || sampling.timeoutMs > sampling.intervalMs) fail('target', '/targetSampling');
+      if (!safeRelativePath(sampling.path) || sampling.timeoutMs > sampling.intervalMs)
+        fail('target', '/targetSampling');
       result.targetSampling = { ...sampling };
     }
     metricLayout(result);
-    result.identity.digest = checkedDigest(options.digest, canonical({ compilerVersion: result.compilerVersion,
-      schemaVersion: result.schemaVersion, config, target, engine: options.input.engine, inputs: loaded.refs }));
+    result.identity.digest = checkedDigest(
+      options.digest,
+      canonical({
+        compilerVersion: result.compilerVersion,
+        schemaVersion: result.schemaVersion,
+        config,
+        target,
+        engine: options.input.engine,
+        inputs: loaded.refs,
+      }),
+    );
     return freezeSchema(result);
   });
 }

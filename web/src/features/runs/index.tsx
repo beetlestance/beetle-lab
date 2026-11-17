@@ -10,24 +10,33 @@ import './runs.css';
 export { RunSavedRevision } from './RunSavedRevision.js';
 
 export function Runs(props: RunScope & { runId?: string }) {
-  if (!validId(props.organizationId) || !validId(props.workspaceId)
-    || (props.runId !== undefined && !validId(props.runId))) return <h1>Page not found</h1>;
+  if (
+    !validId(props.organizationId) ||
+    !validId(props.workspaceId) ||
+    (props.runId !== undefined && !validId(props.runId))
+  )
+    return <h1>Page not found</h1>;
   return <ScopedRuns key={`${props.organizationId}/${props.workspaceId}/${props.runId ?? ''}`} {...props} />;
 }
 function ScopedRuns({ organizationId, workspaceId, runId }: RunScope & { runId?: string }) {
   const client = useQueryClient();
-  useEffect(() => () => {
-    const queryKey = queryKeys.runs(organizationId, workspaceId);
-    void client.cancelQueries({ queryKey });
-    client.removeQueries({ queryKey });
-  }, [client, organizationId, workspaceId]);
+  useEffect(
+    () => () => {
+      const queryKey = queryKeys.runs(organizationId, workspaceId);
+      void client.cancelQueries({ queryKey });
+      client.removeQueries({ queryKey });
+    },
+    [client, organizationId, workspaceId],
+  );
   const scope = { organizationId, workspaceId };
-  return <section className="content-section runs-page">
-    <nav className="breadcrumbs" aria-label="Breadcrumb">
-      <Link to={routes.workspace(organizationId, workspaceId)}>Workspace</Link>
-      <Link to={routes.suites(organizationId, workspaceId)}>Suites</Link>
-      <Link to={routes.runs(organizationId, workspaceId)}>Runs</Link>
-    </nav>
-    {runId ? <RunDetail {...scope} runId={runId} /> : <RunHistory {...scope} />}
-  </section>;
+  return (
+    <section className="content-section runs-page">
+      <nav className="breadcrumbs" aria-label="Breadcrumb">
+        <Link to={routes.workspace(organizationId, workspaceId)}>Workspace</Link>
+        <Link to={routes.suites(organizationId, workspaceId)}>Suites</Link>
+        <Link to={routes.runs(organizationId, workspaceId)}>Runs</Link>
+      </nav>
+      {runId ? <RunDetail {...scope} runId={runId} /> : <RunHistory {...scope} />}
+    </section>
+  );
 }

@@ -1,1 +1,4 @@
-export interface RunScope { organizationId: string; workspaceId: string }
+export interface RunScope {
+  organizationId: string;
+  workspaceId: string;
+}

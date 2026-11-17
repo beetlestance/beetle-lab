@@ -10,19 +10,26 @@ export class Watch implements TimeoutWatch {
   private closing?: Promise<void>;
   readonly absolute: number;
   readonly deadline: number;
-  constructor(readonly request: Readonly<TimeoutRequest>, private readonly owner: {
-    ready(): boolean;
-    check(): void;
-    stop(reason: TimeoutReason): Promise<unknown>;
-    retire(): void;
-  }) {
+  constructor(
+    readonly request: Readonly<TimeoutRequest>,
+    private readonly owner: {
+      ready(): boolean;
+      check(): void;
+      stop(reason: TimeoutReason): Promise<unknown>;
+      retire(): void;
+    },
+  ) {
     this.absolute = request.admittedAt + request.timeoutMs;
     this.deadline = request.sampledAt + Math.max(0, this.absolute - request.clockHighWater);
   }
   status(): TimeoutStatus {
     this.owner.check();
-    return { ready: this.owner.ready() && !this.closed && !this.stopped,
-      closed: this.closed, stopRequested: this.stopped, reason: this.reason };
+    return {
+      ready: this.owner.ready() && !this.closed && !this.stopped,
+      closed: this.closed,
+      stopRequested: this.stopped,
+      reason: this.reason,
+    };
   }
   stop(reason: TimeoutReason): void {
     if (this.closed || (this.stopped && (reason !== 'clock_integrity' || this.reason === 'clock_integrity'))) return;
@@ -30,8 +37,8 @@ export class Watch implements TimeoutWatch {
     this.reason = reason;
     const previous = this.original;
     const next = Promise.resolve().then(() => this.owner.stop(reason));
-    this.original = Promise.allSettled([previous, next]).then(results => {
-      if (results.some(result => result.status === 'rejected')) this.failed = true;
+    this.original = Promise.allSettled([previous, next]).then((results) => {
+      if (results.some((result) => result.status === 'rejected')) this.failed = true;
     });
   }
   close(): Promise<void> {

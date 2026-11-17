@@ -12,9 +12,15 @@ export class CapabilityView {
   private readonly configuration: PoolConfiguration;
   private readonly policyDigest: string;
   private readonly journalAuthority: string;
-  constructor(private readonly options: {
-    configuration: PoolConfiguration; catalog: Catalog; journalAuthority: string; published(): PublishedObservation | null; wallNow?: () => number;
-  }) {
+  constructor(
+    private readonly options: {
+      configuration: PoolConfiguration;
+      catalog: Catalog;
+      journalAuthority: string;
+      published(): PublishedObservation | null;
+      wallNow?: () => number;
+    },
+  ) {
     const id = options.journalAuthority;
     if (typeof id !== 'string' || id.length !== 36 || id !== id.toLowerCase() || !validatePrimitive('uuid', id).ok) {
       throw new AgentHttpError(503, 'authority_mismatch');
@@ -28,21 +34,49 @@ export class CapabilityView {
     if (!frame) throw new AgentHttpError(503, 'budget_unavailable', 'transport');
     const latest = frame.observation;
     if (latest.status !== 'known' || !latest.guards) throw new AgentHttpError(503, 'budget_unavailable', 'transport');
-    const configuration = this.configuration; const { catalog } = this.options;
+    const configuration = this.configuration;
+    const { catalog } = this.options;
     const overhead = addResources(configuration.controlReserve, configuration.headroom);
     const pool = effectivePool(configuration.pool, latest.capacity, overhead);
     const limit = configuration.perRun;
-    const capacity = { cpuMillis: Math.min(pool.cpuMillis, limit.cpuMillis), memoryBytes: Math.min(pool.memoryBytes, limit.memoryBytes),
-      pids: Math.min(pool.pids, limit.pids), outputBytes: Math.min(pool.outputBytes, limit.outputBytes), timeoutMs: configuration.maxTimeoutMs };
-    if (Object.values(capacity).some(value => value < 1)) throw new AgentHttpError(503, 'budget_unavailable', 'transport');
-    return { protocolVersion: '1.0', protocolVersions: ['1.0'], journalAuthority: this.journalAuthority,
-      capacity, observation: capacityObservation({ frame, configuration, pool,
-        installationId: catalog.engines[0]!.profile.installationId, policyDigest: this.policyDigest },
-      (this.options.wallNow ?? Date.now)()),
-      supportedControls: [...latest.controls.filter((control): control is 'cpu' | 'memory' | 'pids' =>
-        ['cpu', 'memory', 'pids'].includes(control)), ...latest.guards.controls],
-      engines: catalog.engines.map(engine => ({ id: engine.manifest.engineId, version: engine.manifest.engineVersion,
-        imageDigest: engine.profile.imageDigest, configVersion: engine.configVersion,
-        installedIdentity: engine.installedIdentity, capabilities: [...engine.manifest.capabilities] })) };
+    const capacity = {
+      cpuMillis: Math.min(pool.cpuMillis, limit.cpuMillis),
+      memoryBytes: Math.min(pool.memoryBytes, limit.memoryBytes),
+      pids: Math.min(pool.pids, limit.pids),
+      outputBytes: Math.min(pool.outputBytes, limit.outputBytes),
+      timeoutMs: configuration.maxTimeoutMs,
+    };
+    if (Object.values(capacity).some((value) => value < 1))
+      throw new AgentHttpError(503, 'budget_unavailable', 'transport');
+    return {
+      protocolVersion: '1.0',
+      protocolVersions: ['1.0'],
+      journalAuthority: this.journalAuthority,
+      capacity,
+      observation: capacityObservation(
+        {
+          frame,
+          configuration,
+          pool,
+          installationId: catalog.engines[0]!.profile.installationId,
+          policyDigest: this.policyDigest,
+        },
+        (this.options.wallNow ?? Date.now)(),
+      ),
+      supportedControls: [
+        ...latest.controls.filter((control): control is 'cpu' | 'memory' | 'pids' =>
+          ['cpu', 'memory', 'pids'].includes(control),
+        ),
+        ...latest.guards.controls,
+      ],
+      engines: catalog.engines.map((engine) => ({
+        id: engine.manifest.engineId,
+        version: engine.manifest.engineVersion,
+        imageDigest: engine.profile.imageDigest,
+        configVersion: engine.configVersion,
+        installedIdentity: engine.installedIdentity,
+        capabilities: [...engine.manifest.capabilities],
+      })),
+    };
   }
 }

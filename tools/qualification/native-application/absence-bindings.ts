@@ -5,8 +5,13 @@ import type { OutputAbsence } from '@beetle/contracts/output-source';
 type Row = Record<string, SQLOutputValue>;
 type Scope = Pick<OutputAbsence, 'attemptId' | 'organizationId' | 'workspaceId'>;
 function scopedRow(row: Row, proof: Scope, runId: string) {
-  for (const [column, expected] of Object.entries({ attempt_id: proof.attemptId, run_id: runId,
-    organization_id: proof.organizationId, workspace_id: proof.workspaceId })) assert.equal(row[column], expected, column);
+  for (const [column, expected] of Object.entries({
+    attempt_id: proof.attemptId,
+    run_id: runId,
+    organization_id: proof.organizationId,
+    workspace_id: proof.workspaceId,
+  }))
+    assert.equal(row[column], expected, column);
 }
 /** Check relational ownership independently of the embedded snapshot and its FKs. */
 export function executionBinding(row: Row, proof: OutputAbsence, runId: string) {

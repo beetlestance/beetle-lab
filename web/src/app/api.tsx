@@ -4,7 +4,9 @@ export { ApiFailure, readResult, unknownOutcome, errorMessage } from './errors.j
 
 export const ApiContext = createContext<ApiClient | null>(null);
 export const InputTransferContext = createContext<InputTransferClient | null>(null);
-export function useInputTransfers(): InputTransferClient | null { return useContext(InputTransferContext); }
+export function useInputTransfers(): InputTransferClient | null {
+  return useContext(InputTransferContext);
+}
 export function useApi(): ApiClient {
   const client = useContext(ApiContext);
   if (!client) throw new Error('API provider required');

@@ -9,19 +9,25 @@ const availableKiB=Number(/^MemAvailable:\s+(\d+) kB$/m.exec(bounded('/proc/memi
 if(!Number.isSafeInteger(availableKiB)||availableKiB<1572864)throw Error('qualification VM headroom below 1.5GiB');
 function report(kind,fields){process.stdout.write(JSON.stringify({kind,node:process.version,platform:process.platform,architecture:process.arch==='x64'?'amd64':process.arch,uid:process.getuid(),controls:controls(),security:security(),vmMemoryAvailableKiB:availableKiB,...fields})+'\n');}
 `;
-export const cpu = kernel + String.raw`
+export const cpu =
+  kernel +
+  String.raw`
 const {Worker}=require('node:worker_threads');
 const before=counters('cpu.stat');const at=performance.now();
 const workers=Array.from({length:4},()=>new Worker('for(;;){}',{eval:true}));
 setTimeout(async()=>{await Promise.all(workers.map(w=>w.terminate()));report('cpu',{elapsedMs:performance.now()-at,before,after:counters('cpu.stat')});},8000);
 `;
-export const memory = kernel + String.raw`
+export const memory =
+  kernel +
+  String.raw`
 report('memory-start',{events:counters('memory.events')});
 const blocks=[];let allocated=0;
 const timer=setInterval(()=>{blocks.push(Buffer.alloc(4*1024*1024,1));allocated+=4*1024*1024;
 if(allocated>=768*1024*1024){clearInterval(timer);report('memory-not-enforced',{allocated});process.exitCode=3;}},20);
 `;
-export const pids = kernel + String.raw`
+export const pids =
+  kernel +
+  String.raw`
 const {spawn}=require('node:child_process');
 const children=[];const before=counters('pids.events');
 async function main(){let refusal=null;try{
@@ -31,7 +37,9 @@ report('pids',{children:children.length,refusal,current:Number(text('pids.curren
 }finally{for(const value of children)value.child.kill('SIGKILL');await Promise.all(children.map(value=>value.closed));}}
 main().catch(()=>{process.stderr.write('pid fixture failed\n');process.exitCode=2;});
 `;
-export const descendants = kernel + String.raw`
+export const descendants =
+  kernel +
+  String.raw`
 const {spawn}=require('node:child_process');
 process.on('SIGTERM',()=>{});
 const baselineProcesses=text('cgroup.procs').split('\n').filter(Boolean).length;
@@ -40,5 +48,5 @@ child.on('error',()=>{process.stderr.write('descendant fixture failed\n');proces
 child.once('spawn',()=>setTimeout(()=>report('descendants-ready',{current:Number(text('pids.current')),baselineProcesses,processes:text('cgroup.procs').split('\n').filter(Boolean).length}),250));
 setTimeout(()=>process.exit(3),55000);
 `;
-export const programs = {cpu, memory, pids, descendants} as const;
+export const programs = { cpu, memory, pids, descendants } as const;
 export type Case = keyof typeof programs;

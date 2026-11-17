@@ -1,6 +1,13 @@
 import type { ResultDigest, ExecutionResult } from '@beetle/contracts';
 import type { Owned, SourceBinding, PublicManifest, SourceReceipt } from '@beetle/contracts/output-source';
-export type { Owned, SourceScope, SourceBinding, PublicCore, PublicManifest, SourceReceipt } from '@beetle/contracts/output-source';
+export type {
+  Owned,
+  SourceScope,
+  SourceBinding,
+  PublicCore,
+  PublicManifest,
+  SourceReceipt,
+} from '@beetle/contracts/output-source';
 import type { LaunchSettlement, ReleaseEvidence } from '../admission/index.js';
 import type { OutputCollectionResult, OutputRootIdentity } from '../collection/output/index.js';
 import type { WrapperCheckpoint } from '../control-protocol/index.js';
@@ -18,7 +25,9 @@ export interface PrivateCore<T extends ExecutionResult = ExecutionResult> {
   readonly checkpoint: Readonly<WrapperCheckpoint>;
   readonly release: FinishedRelease;
 }
-export interface PrivateSource<T extends ExecutionResult = ExecutionResult> extends PrivateCore<T> { readonly sourceDigest: string }
+export interface PrivateSource<T extends ExecutionResult = ExecutionResult> extends PrivateCore<T> {
+  readonly sourceDigest: string;
+}
 export interface CollectedSource<T extends ExecutionResult = ExecutionResult> {
   readonly collectionId: string;
   readonly binding: SourceBinding;

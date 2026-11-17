@@ -6,12 +6,19 @@ import { isAbsolute, join } from 'node:path';
 import type { Budget } from './budget.js';
 import { InputError } from './types.js';
 
-interface Directory { readonly path: string; readonly dev: number; readonly ino: number }
+interface Directory {
+  readonly path: string;
+  readonly dev: number;
+  readonly ino: number;
+}
 /** Sequential IO; at most one file descriptor or bounded directory iterator is issued. */
 export class Files {
   private readonly roots = new Map<string, Directory>();
   private readonly handles = new Map<FileHandle, Promise<void> | undefined>();
-  constructor(private readonly budget: Budget, private readonly uid: number) {}
+  constructor(
+    private readonly budget: Budget,
+    private readonly uid: number,
+  ) {}
   async root(path: string): Promise<void> {
     if (!isAbsolute(path) || !Number.isSafeInteger(this.uid) || this.uid < 0) throw new InputError('filesystem');
     const canonical = await this.budget.wait(() => realpath(path));
@@ -24,30 +31,50 @@ export class Files {
     const expected = this.roots.get(path);
     if (!expected) throw new InputError('filesystem');
     const stat = await this.budget.wait(() => lstat(path));
-    if (!stat.isDirectory() || stat.isSymbolicLink() || stat.uid !== this.uid
-      || stat.dev !== expected.dev || stat.ino !== expected.ino
-      || await this.budget.wait(() => realpath(path)) !== path) throw new InputError('filesystem');
+    if (
+      !stat.isDirectory() ||
+      stat.isSymbolicLink() ||
+      stat.uid !== this.uid ||
+      stat.dev !== expected.dev ||
+      stat.ino !== expected.ino ||
+      (await this.budget.wait(() => realpath(path))) !== path
+    )
+      throw new InputError('filesystem');
   }
   private regular(stat: Stats, limit: number): void {
-    if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.uid !== this.uid
-      || !Number.isSafeInteger(stat.size) || stat.size < 0 || stat.size > limit) throw new InputError('filesystem');
+    if (
+      !stat.isFile() ||
+      stat.isSymbolicLink() ||
+      stat.nlink !== 1 ||
+      stat.uid !== this.uid ||
+      !Number.isSafeInteger(stat.size) ||
+      stat.size < 0 ||
+      stat.size > limit
+    )
+      throw new InputError('filesystem');
   }
   async stat(root: string, name: string, limit: number): Promise<number> {
     await this.parent(root);
     const stat = await this.budget.wait(() => lstat(join(root, name)));
-    this.regular(stat, limit); return stat.size;
+    this.regular(stat, limit);
+    return stat.size;
   }
   async entries(root: string, expected: readonly string[]): Promise<void> {
     await this.parent(root);
-    const directory = await this.budget.wait(() => opendir(root, { bufferSize: 1 }).then(dir => {
-      this.directory = dir; this.directoryClose = undefined; return dir;
-    }));
+    const directory = await this.budget.wait(() =>
+      opendir(root, { bufferSize: 1 }).then((dir) => {
+        this.directory = dir;
+        this.directoryClose = undefined;
+        return dir;
+      }),
+    );
     const remaining = new Set(expected);
     for (let index = 0; index <= expected.length; index++) {
       const item = await this.budget.wait(() => directory.read());
       if (!item) {
         if (remaining.size) throw new InputError('binding');
-        await this.budget.wait(() => this.closeDirectory()); return;
+        await this.budget.wait(() => this.closeDirectory());
+        return;
       }
       if (!remaining.delete(item.name)) throw new InputError('binding');
     }
@@ -56,18 +83,28 @@ export class Files {
   private directory: Awaited<ReturnType<typeof opendir>> | undefined;
   private directoryClose: Promise<void> | undefined;
   private closeDirectory(): Promise<void> {
-    this.directoryClose ??= Promise.resolve().then(() => this.directory!.close()).then(() => { this.directory = undefined; });
+    this.directoryClose ??= Promise.resolve()
+      .then(() => this.directory!.close())
+      .then(() => {
+        this.directory = undefined;
+      });
     return this.directoryClose;
   }
   async read(root: string, name: string, maximum: number): Promise<Uint8Array> {
     await this.parent(root);
     const path = join(root, name);
-    const before = await this.budget.wait(() => lstat(path)); this.regular(before, maximum);
-    const handle = await this.budget.wait(() => open(path, constants.O_RDONLY | constants.O_NOFOLLOW).then(fd => {
-      this.handles.set(fd, undefined); return fd;
-    }));
-    const stat = await this.budget.wait(() => handle.stat()); this.regular(stat, maximum);
-    if (stat.dev !== before.dev || stat.ino !== before.ino || stat.size !== before.size) throw new InputError('filesystem');
+    const before = await this.budget.wait(() => lstat(path));
+    this.regular(before, maximum);
+    const handle = await this.budget.wait(() =>
+      open(path, constants.O_RDONLY | constants.O_NOFOLLOW).then((fd) => {
+        this.handles.set(fd, undefined);
+        return fd;
+      }),
+    );
+    const stat = await this.budget.wait(() => handle.stat());
+    this.regular(stat, maximum);
+    if (stat.dev !== before.dev || stat.ino !== before.ino || stat.size !== before.size)
+      throw new InputError('filesystem');
     const bytes = await this.content(handle, stat.size);
     await this.verifyRead({ handle, root, path, stat, maximum });
     await this.budget.wait(() => this.closeHandle(handle));
@@ -83,28 +120,44 @@ export class Files {
       size += next.bytesRead;
     }
     const extra = new Uint8Array(1);
-    if ((await this.budget.wait(() => handle.read(extra, 0, 1, size))).bytesRead !== 0) throw new InputError('input_limit');
+    if ((await this.budget.wait(() => handle.read(extra, 0, 1, size))).bytesRead !== 0)
+      throw new InputError('input_limit');
     return bytes;
   }
-  private async verifyRead(input: { handle: FileHandle; root: string; path: string; stat: Stats; maximum: number }): Promise<void> {
+  private async verifyRead(input: {
+    handle: FileHandle;
+    root: string;
+    path: string;
+    stat: Stats;
+    maximum: number;
+  }): Promise<void> {
     const { handle, root, path, stat, maximum } = input;
-    const after = await this.budget.wait(() => handle.stat()); this.regular(after, maximum);
-    if (after.size !== stat.size || after.dev !== stat.dev || after.ino !== stat.ino) throw new InputError('input_integrity');
+    const after = await this.budget.wait(() => handle.stat());
+    this.regular(after, maximum);
+    if (after.size !== stat.size || after.dev !== stat.dev || after.ino !== stat.ino)
+      throw new InputError('input_integrity');
     await this.parent(root);
-    const named = await this.budget.wait(() => lstat(path)); this.regular(named, maximum);
-    if (named.dev !== stat.dev || named.ino !== stat.ino || named.size !== stat.size) throw new InputError('filesystem');
+    const named = await this.budget.wait(() => lstat(path));
+    this.regular(named, maximum);
+    if (named.dev !== stat.dev || named.ino !== stat.ino || named.size !== stat.size)
+      throw new InputError('filesystem');
   }
   private closeHandle(handle: FileHandle): Promise<void> {
     const previous = this.handles.get(handle);
     if (previous) return previous;
-    const closing = Promise.resolve().then(() => handle.close()).then(() => { this.handles.delete(handle); });
-    this.handles.set(handle, closing); return closing;
+    const closing = Promise.resolve()
+      .then(() => handle.close())
+      .then(() => {
+        this.handles.delete(handle);
+      });
+    this.handles.set(handle, closing);
+    return closing;
   }
   async close(): Promise<void> {
     const outcomes = await Promise.allSettled([
       ...(this.directory ? [this.closeDirectory()] : []),
-      ...Array.from(this.handles.keys(), handle => this.closeHandle(handle)),
+      ...Array.from(this.handles.keys(), (handle) => this.closeHandle(handle)),
     ]);
-    if (outcomes.some(outcome => outcome.status === 'rejected')) throw new InputError('filesystem');
+    if (outcomes.some((outcome) => outcome.status === 'rejected')) throw new InputError('filesystem');
   }
 }

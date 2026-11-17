@@ -28,7 +28,8 @@ export interface DriveContext {
 const failed: DriveProgress = { kind: 'released', collection: 'failed' };
 async function abort(context: DriveContext, entry: Entry): Promise<DriveProgress> {
   await context.options.journal.admission({ kind: 'abortUnstarted', key: entry.key });
-  await context.retire(entry, failed); return failed;
+  await context.retire(entry, failed);
+  return failed;
 }
 function executionGuard(context: DriveContext, entry: Entry, budget: Operation): void {
   context.guard(entry, budget);
@@ -36,15 +37,25 @@ function executionGuard(context: DriveContext, entry: Entry, budget: Operation):
 }
 async function admit(context: DriveContext, entry: Entry, budget: Operation): Promise<Reservation | DriveProgress> {
   const { journal } = context.options;
-  const cursors = await journal.sourceCursors(entry.key); executionGuard(context, entry, budget);
-  const now = context.now(); executionGuard(context, entry, budget);
-  const value = await journal.admission({ kind: 'admit', key: entry.key,
-    sourceOrdinal: cursors.supervisorOrdinal + 1, now });
+  const cursors = await journal.sourceCursors(entry.key);
+  executionGuard(context, entry, budget);
+  const now = context.now();
+  executionGuard(context, entry, budget);
+  const value = await journal.admission({
+    kind: 'admit',
+    key: entry.key,
+    sourceOrdinal: cursors.supervisorOrdinal + 1,
+    now,
+  });
   // A successful original admission remains owned even if cancellation overtook it.
-  if ('status' in value) { entry.fresh = true; return value; }
+  if ('status' in value) {
+    entry.fresh = true;
+    return value;
+  }
   if ('kind' in value && value.kind === 'reject') {
     const progress = { kind: 'rejected' as const, reason: value.reason };
-    await context.retire(entry, progress); return progress;
+    await context.retire(entry, progress);
+    return progress;
   }
   executionGuard(context, entry, budget);
   return admissionProgress(value);
@@ -56,54 +67,92 @@ function admissionProgress(value: AdmissionValue): DriveProgress {
   }
   throw new InstallationError('journal');
 }
-async function stage(context: DriveContext, entry: Entry, offer: Offer, current: Reservation,
-  budget: Operation): Promise<RuntimePlan | DriveProgress> {
+async function stage(
+  context: DriveContext,
+  entry: Entry,
+  offer: Offer,
+  current: Reservation,
+  budget: Operation,
+): Promise<RuntimePlan | DriveProgress> {
   if (entry.prepared) throw new InstallationError('cleanup');
   if (!context.acquireStage()) return { kind: 'deferred', reason: 'staging_busy' };
   try {
     executionGuard(context, entry, budget);
     let engine: ReturnType<InstallationOptions['catalog']['resolve']>;
-    try { engine = context.options.catalog.resolve(offer, current.validation, await context.options.journal.readExportAssignment(entry.key)); }
-    catch {
+    try {
+      engine = context.options.catalog.resolve(
+        offer,
+        current.validation,
+        await context.options.journal.readExportAssignment(entry.key),
+      );
+    } catch {
       const progress = { kind: 'rejected' as const, reason: 'installed_identity' };
-      await context.retire(entry, progress); return progress;
+      await context.retire(entry, progress);
+      return progress;
     }
-    const stager = context.options.stagerFor(engine); executionGuard(context, entry, budget);
+    const stager = context.options.stagerFor(engine);
+    executionGuard(context, entry, budget);
     entry.prepared = true;
     const signal = budget.signal ? AbortSignal.any([budget.signal, entry.abort.signal]) : entry.abort.signal;
     entry.preparation = stager.prepare({ key: entry.key, operation: { deadline: budget.deadline, signal } });
     const outcomes = await Promise.allSettled([entry.preparation.result, entry.preparation.quiesced]);
-    if (outcomes.some(value => value.status === 'rejected')) {
-      entry.cleanupFailed = true; throw new InstallationError('cleanup');
+    if (outcomes.some((value) => value.status === 'rejected')) {
+      entry.cleanupFailed = true;
+      throw new InstallationError('cleanup');
     }
     const result = outcomes[0];
     if (result.status !== 'fulfilled') throw new InstallationError('cleanup');
     if (!result.value.ok) {
-      if (result.value.reason === 'busy') { entry.prepared = false; return { kind: 'deferred', reason: 'staging_busy' }; }
+      if (result.value.reason === 'busy') {
+        entry.prepared = false;
+        return { kind: 'deferred', reason: 'staging_busy' };
+      }
       return abort(context, entry);
     }
-    try { executionGuard(context, entry, budget); } catch { return abort(context, entry); }
+    try {
+      executionGuard(context, entry, budget);
+    } catch {
+      return abort(context, entry);
+    }
     return result.value.value;
-  } finally { context.releaseStage(); }
+  } finally {
+    context.releaseStage();
+  }
 }
-async function planFor(context: DriveContext, entry: Entry, offer: Offer | undefined, current: Reservation,
-  budget: Operation): Promise<RuntimePlan | DriveProgress> {
+async function planFor(
+  context: DriveContext,
+  entry: Entry,
+  offer: Offer | undefined,
+  current: Reservation,
+  budget: Operation,
+): Promise<RuntimePlan | DriveProgress> {
   if (entry.plan) return entry.plan;
   if (!offer) throw new InstallationError('journal');
-  const prepared = current.createToken ? recover(context.options.catalog, offer, current, await context.options.journal.readExportAssignment(entry.key))
+  const prepared = current.createToken
+    ? recover(context.options.catalog, offer, current, await context.options.journal.readExportAssignment(entry.key))
     : await stage(context, entry, offer, current, budget);
   if (!('kind' in prepared)) entry.plan = prepared;
   return prepared;
 }
 function controllerFor(context: DriveContext, entry: Entry, plan: RuntimePlan) {
-  return createAttemptController({ journal: context.options.journal, supervisor: context.options.supervisor,
-    input: { key: entry.key, plan }, collectOutputs, ...(context.options.wallNow ? { wallNow: context.options.wallNow } : {}) });
+  return createAttemptController({
+    journal: context.options.journal,
+    supervisor: context.options.supervisor,
+    input: { key: entry.key, plan },
+    collectOutputs,
+    ...(context.options.wallNow ? { wallNow: context.options.wallNow } : {}),
+  });
 }
 function unstartedWithoutWatch(entry: Entry, current: Reservation, ready: boolean): boolean {
   return !ready && !current.createToken && !entry.controller;
 }
-async function controllerStep(context: DriveContext, entry: Entry, offer: Offer | undefined, current: Reservation,
-  budget: Operation): Promise<DriveProgress> {
+async function controllerStep(
+  context: DriveContext,
+  entry: Entry,
+  offer: Offer | undefined,
+  current: Reservation,
+  budget: Operation,
+): Promise<DriveProgress> {
   let launch = false;
   const timely = await ensureTimeoutWatch(context, entry, current, budget);
   if (unstartedWithoutWatch(entry, current, timely)) return abort(context, entry);
@@ -119,7 +168,9 @@ async function controllerStep(context: DriveContext, entry: Entry, offer: Offer 
   context.guard(entry, budget);
   if (entry.cancelled) {
     entry.cancellation ??= entry.controller.cancel();
-    void entry.cancellation.catch(() => { entry.cleanupFailed = true; });
+    void entry.cancellation.catch(() => {
+      entry.cleanupFailed = true;
+    });
     launch = false;
   }
   const progress = await (launch ? entry.controller.launch(budget) : entry.controller.tick(budget));
@@ -128,8 +179,9 @@ async function controllerStep(context: DriveContext, entry: Entry, offer: Offer 
   return progress;
 }
 async function availableOffer(context: DriveContext, entry: Entry, budget: Operation): Promise<Offer | null> {
-  try { return await context.options.journal.readOffer(entry.key); }
-  catch (error) {
+  try {
+    return await context.options.journal.readOffer(entry.key);
+  } catch (error) {
     context.guard(entry, budget);
     if (error instanceof JournalError && error.code === 'queue_full') return null;
     throw error;
@@ -140,8 +192,14 @@ export async function drive(context: DriveContext, entry: Entry, budget: Operati
   context.guard(entry, budget);
   const recovery = await recoverSource(context, entry, budget);
   if ('progress' in recovery) return recovery.progress;
-  const absence = await recoverAbsence({ journal: context.options.journal, entry, budget, intent: recovery.intent,
-    guard: (owner, operation) => context.guard(owner, operation), retire: (owner, value) => context.retire(owner, value) });
+  const absence = await recoverAbsence({
+    journal: context.options.journal,
+    entry,
+    budget,
+    intent: recovery.intent,
+    guard: (owner, operation) => context.guard(owner, operation),
+    retire: (owner, value) => context.retire(owner, value),
+  });
   if (absence) return absence;
   const offer = entry.controller ? undefined : await availableOffer(context, entry, budget);
   context.guard(entry, budget);
@@ -154,13 +212,26 @@ export async function drive(context: DriveContext, entry: Entry, budget: Operati
   context.guard(entry, budget);
   return controllerStep(context, entry, offer, current, budget);
 }
-async function retireReleased(context: DriveContext, entry: Entry, current: Reservation): Promise<DriveProgress | null> {
+async function retireReleased(
+  context: DriveContext,
+  entry: Entry,
+  current: Reservation,
+): Promise<DriveProgress | null> {
   if (current.status !== 'released') return null;
-  const progress = { kind: 'released' as const, collection: current.releaseEvidence?.collection.state ?? 'failed' as const };
-  await context.retire(entry, progress); return progress;
+  const progress = {
+    kind: 'released' as const,
+    collection: current.releaseEvidence?.collection.state ?? ('failed' as const),
+  };
+  await context.retire(entry, progress);
+  return progress;
 }
-async function reservationFor(context: DriveContext, entry: Entry, offer: Offer | undefined, budget: Operation,
-  intent: CollectionIntent | null): Promise<Reservation | DriveProgress> {
+async function reservationFor(
+  context: DriveContext,
+  entry: Entry,
+  offer: Offer | undefined,
+  budget: Operation,
+  intent: CollectionIntent | null,
+): Promise<Reservation | DriveProgress> {
   const current = await boundReservation(context, entry, offer, intent);
   if (current && !('status' in current)) return current;
   context.guard(entry, budget);
@@ -170,28 +241,41 @@ async function reservationFor(context: DriveContext, entry: Entry, offer: Offer 
   return admit(context, entry, budget);
 }
 
-function abandoned(entry: Entry): boolean { return !entry.fresh || entry.cancelled; }
+function abandoned(entry: Entry): boolean {
+  return !entry.fresh || entry.cancelled;
+}
 function pendingReservation(intent: CollectionIntent | null, current: Reservation | null): void {
   if (intent && !current?.createToken) throw new InstallationError('journal');
 }
 
-async function boundReservation(context: DriveContext, entry: Entry, offer: Offer | undefined,
-  intent: CollectionIntent | null): Promise<Reservation | DriveProgress | null> {
+async function boundReservation(
+  context: DriveContext,
+  entry: Entry,
+  offer: Offer | undefined,
+  intent: CollectionIntent | null,
+): Promise<Reservation | DriveProgress | null> {
   const current = await allocation(context.options.journal, entry.key);
   // A controller keeps its original bound plan and remains responsible for settlement.
   if (entry.controller || current?.status === 'released') return current;
   pendingReservation(intent, current);
   try {
     if (!offer) throw new InstallationError('catalog');
-    if (current) context.options.catalog.resolve(offer, current.validation, await context.options.journal.readExportAssignment(entry.key));
+    if (current)
+      context.options.catalog.resolve(
+        offer,
+        current.validation,
+        await context.options.journal.readExportAssignment(entry.key),
+      );
     else {
-      const assignment=await context.options.journal.readExportAssignment(entry.key);
-      if (assignment) context.options.catalog.preflightExport(assignment); else context.options.catalog.preflight(offer);
+      const assignment = await context.options.journal.readExportAssignment(entry.key);
+      if (assignment) context.options.catalog.preflightExport(assignment);
+      else context.options.catalog.preflight(offer);
     }
   } catch {
     if (intent) throw new InstallationError('catalog');
     const progress = { kind: 'rejected' as const, reason: 'installed_identity' };
-    await context.retire(entry, progress); return progress;
+    await context.retire(entry, progress);
+    return progress;
   }
   return current;
 }

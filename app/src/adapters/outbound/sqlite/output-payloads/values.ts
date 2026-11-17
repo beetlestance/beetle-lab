@@ -11,12 +11,16 @@ export function requirePayload(condition: unknown): asserts condition {
 }
 export function splitSnapshot(snapshot: AttemptSnapshot) {
   const { result, ...header } = snapshot;
-  return { header: encodeCanonicalJson(header, HEADER_BYTES), result: result === undefined ? null : encodeCanonicalJson(result, RESULT_BYTES) };
+  return {
+    header: encodeCanonicalJson(header, HEADER_BYTES),
+    result: result === undefined ? null : encodeCanonicalJson(result, RESULT_BYTES),
+  };
 }
 export function payloadResult(kind: unknown, json: unknown): EngineResult {
   requirePayload(typeof json === 'string');
   const value: unknown = JSON.parse(json);
   requirePayload(kind === 'result' || kind === 'manifest');
-  const result = validate('EngineResult', kind === 'manifest' ? verifyOutputManifest(value, sha256).result : value); requirePayload(result.ok);
+  const result = validate('EngineResult', kind === 'manifest' ? verifyOutputManifest(value, sha256).result : value);
+  requirePayload(result.ok);
   return result.value;
 }

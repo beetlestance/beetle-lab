@@ -11,7 +11,8 @@ export async function bytes(owner: Operation, maximum: number, exact: boolean): 
   while (true) {
     const next = await owner.read();
     if (next.done) break;
-    if (++reads > maximum + 1 || !(next.value instanceof Uint8Array) || size + next.value.byteLength > maximum) throw new Error('body_limit');
+    if (++reads > maximum + 1 || !(next.value instanceof Uint8Array) || size + next.value.byteLength > maximum)
+      throw new Error('body_limit');
     output.set(next.value, size);
     size += next.value.byteLength;
   }
@@ -19,14 +20,19 @@ export async function bytes(owner: Operation, maximum: number, exact: boolean): 
   return exact ? output : output.subarray(0, size);
 }
 export async function json(owner: Operation, response: Response): Promise<unknown> {
-  if (response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json') throw new Error('content_type');
+  if (response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json')
+    throw new Error('content_type');
   const body = await bytes(owner, 65_536, false);
   return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(body)) as unknown;
 }
 function immutableMatches(actual: InputRecord, expected: InputRecord): boolean {
   const immutable = ['id', 'folderId', 'name', 'sha256', 'bytes'] as const;
-  return immutable.every(key => actual[key] === expected[key]) && actual.scope.kind === expected.scope.kind &&
-    actual.scope.organizationId === expected.scope.organizationId && actual.scope.workspaceId === expected.scope.workspaceId;
+  return (
+    immutable.every((key) => actual[key] === expected[key]) &&
+    actual.scope.kind === expected.scope.kind &&
+    actual.scope.organizationId === expected.scope.organizationId &&
+    actual.scope.workspaceId === expected.scope.workspaceId
+  );
 }
 export function acknowledgement(request: Intent, value: unknown): InputRecord {
   const checked = validateApi('InputRecord', value);
@@ -35,18 +41,28 @@ export function acknowledgement(request: Intent, value: unknown): InputRecord {
   const expected = request.record;
   if (!immutableMatches(actual, expected)) throw new Error('binding');
   const fresh = request.offset === expected.offset;
-  if (actual.state !== 'staging' || actual.reason !== null || actual.offset !== (fresh ? expected.offset + request.chunk!.length : expected.offset) ||
-    actual.version !== expected.version + (fresh ? 1 : 0)) throw new Error('progress');
+  if (
+    actual.state !== 'staging' ||
+    actual.reason !== null ||
+    actual.offset !== (fresh ? expected.offset + request.chunk!.length : expected.offset) ||
+    actual.version !== expected.version + (fresh ? 1 : 0)
+  )
+    throw new Error('progress');
   return actual;
 }
 export async function protocol(owner: Operation, response: Response): Promise<InputTransferResult<never>> {
   const checked = validateApi('ApiError', await json(owner, response));
-  return checked.ok ? { ok: false, issued: owner.issued, error: { kind: 'protocol', status: response.status, protocol: checked.value } }
+  return checked.ok
+    ? { ok: false, issued: owner.issued, error: { kind: 'protocol', status: response.status, protocol: checked.value } }
     : { ok: false, issued: owner.issued, error: { kind: 'response', status: response.status } };
 }
 export function downloadHeaders(response: Response, record: InputRecord): void {
   const headers = response.headers;
-  if (headers.get('content-type')?.toLowerCase() !== 'application/octet-stream' || headers.get('etag') !== `"${record.sha256}"`) throw new Error('headers');
+  if (
+    headers.get('content-type')?.toLowerCase() !== 'application/octet-stream' ||
+    headers.get('etag') !== `"${record.sha256}"`
+  )
+    throw new Error('headers');
   const encoding = headers.get('content-encoding');
   if (encoding !== null && encoding.toLowerCase() !== 'identity') throw new Error('encoding');
   const length = headers.get('content-length');

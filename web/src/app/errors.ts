@@ -1,7 +1,9 @@
 import type { ApiClientFailure, ApiClientResult } from '@beetle/contracts/api';
 
 export class ApiFailure extends Error {
-  constructor(readonly failure: ApiClientFailure) { super(errorMessage(failure)); }
+  constructor(readonly failure: ApiClientFailure) {
+    super(errorMessage(failure));
+  }
 }
 export async function readResult<T>(result: Promise<ApiClientResult<T>>): Promise<T> {
   const reply = await result;

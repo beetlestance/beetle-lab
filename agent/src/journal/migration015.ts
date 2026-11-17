@@ -60,16 +60,23 @@ export function migration015(db: DatabaseSync): void {
     WHEN json_extract(NEW.reservation_json,'$.assignment') IS NOT json_extract(OLD.reservation_json,'$.assignment')
     BEGIN SELECT RAISE(ABORT,'immutable_export_reservation'); END;
   PRAGMA user_version=15;`);
-  const insert=parentGuards.match(/CREATE TRIGGER disk_reservation_insert BEFORE INSERT ON reservations BEGIN[\s\S]*?\n {2}END;/u)?.[0];
+  const insert = parentGuards.match(
+    /CREATE TRIGGER disk_reservation_insert BEFORE INSERT ON reservations BEGIN[\s\S]*?\n {2}END;/u,
+  )?.[0];
   if (!insert) throw new Failure('unavailable');
-  db.exec('DROP TRIGGER disk_reservation_insert');db.exec(insert);
+  db.exec('DROP TRIGGER disk_reservation_insert');
+  db.exec(insert);
   upgradeSourceResultGuards(db);
 }
 function upgradeSourceResultGuards(db: DatabaseSync): void {
-  for (const name of ['output_intent_validate','output_source_validate']) {
-    const row=db.prepare("SELECT CASE WHEN length(CAST(sql AS BLOB))<=65536 THEN sql END AS sql FROM sqlite_master WHERE type='trigger' AND name=?").get(name);
+  for (const name of ['output_intent_validate', 'output_source_validate']) {
+    const row = db
+      .prepare(
+        "SELECT CASE WHEN length(CAST(sql AS BLOB))<=65536 THEN sql END AS sql FROM sqlite_master WHERE type='trigger' AND name=?",
+      )
+      .get(name);
     if (typeof row?.sql !== 'string' || !row.sql.includes('a.result_json')) throw new Failure('unavailable');
-    db.exec('DROP TRIGGER '+name);
-    db.exec(row.sql.replaceAll('a.result_json','COALESCE(a.export_result_json,a.result_json)'));
+    db.exec('DROP TRIGGER ' + name);
+    db.exec(row.sql.replaceAll('a.result_json', 'COALESCE(a.export_result_json,a.result_json)'));
   }
 }

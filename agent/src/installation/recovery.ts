@@ -18,12 +18,25 @@ export async function allocation(journal: Journal, key: Scope): Promise<Reservat
     throw error;
   }
 }
-export function recover(catalog: Catalog, offer: Offer, current: Reservation, assignment?: StandaloneExportAssignment | null): RuntimePlan {
-  const engine = catalog.resolve(offer, current.validation,assignment);
+export function recover(
+  catalog: Catalog,
+  offer: Offer,
+  current: Reservation,
+  assignment?: StandaloneExportAssignment | null,
+): RuntimePlan {
+  const engine = catalog.resolve(offer, current.validation, assignment);
   const name = runtimeName({ ...current, installationId: engine.profile.installationId });
   const root = join(engine.profile.stagingRoot, name);
-  const plan = prepareRuntime({ offer, manifest: engine.manifest, profile: engine.profile,
-    generation: current.generation, ...(assignment ? {assignment:{purpose:'standalone_export',assignmentDigest:assignment.assignmentDigest}} : {}), staged: { input: join(root, 'input'), output: join(root, 'output'), secrets: join(root, 'secrets') } });
+  const plan = prepareRuntime({
+    offer,
+    manifest: engine.manifest,
+    profile: engine.profile,
+    generation: current.generation,
+    ...(assignment
+      ? { assignment: { purpose: 'standalone_export', assignmentDigest: assignment.assignmentDigest } }
+      : {}),
+    staged: { input: join(root, 'input'), output: join(root, 'output'), secrets: join(root, 'secrets') },
+  });
   if (!plan.ok || plan.value.specDigest !== current.specDigest) throw new InstallationError('catalog');
   return plan.value;
 }

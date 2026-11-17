@@ -15,8 +15,14 @@ export function absenceProgress(snapshot: AttemptSnapshot | null): DriveProgress
 }
 
 /** Indexed debt and committed replay bypass current catalogue/staging availability. */
-export async function recoverAbsence(input: { journal: Journal; entry: Entry; budget: Operation; intent: CollectionIntent | null;
-  guard(entry: Entry, budget: Operation): void; retire(entry: Entry, progress: DriveProgress): Promise<void> }): Promise<DriveProgress | null> {
+export async function recoverAbsence(input: {
+  journal: Journal;
+  entry: Entry;
+  budget: Operation;
+  intent: CollectionIntent | null;
+  guard(entry: Entry, budget: Operation): void;
+  retire(entry: Entry, progress: DriveProgress): Promise<void>;
+}): Promise<DriveProgress | null> {
   if (input.entry.controller || input.intent) return null;
   const progress = absenceProgress(await input.journal.get(input.entry.key));
   input.guard(input.entry, input.budget);
@@ -25,7 +31,11 @@ export async function recoverAbsence(input: { journal: Journal; entry: Entry; bu
 }
 
 /** Called only after retireNative. An empty recovered owner cannot retire an earlier runtime. */
-export async function reconcileAbsence(journal: Journal, entry: Entry, retireReleased: () => Promise<void>): Promise<boolean> {
+export async function reconcileAbsence(
+  journal: Journal,
+  entry: Entry,
+  retireReleased: () => Promise<void>,
+): Promise<boolean> {
   await entry.absenceAttempt?.catch(() => undefined);
   if (await journal.readOutputAbsence(entry.key)) return true;
   const snapshot = await journal.get(entry.key);
@@ -33,11 +43,13 @@ export async function reconcileAbsence(journal: Journal, entry: Entry, retireRel
   if (snapshot.admission?.state === 'released' && snapshot.admission.disposition === 'settled' && !entry.controller) {
     entry.absenceNative ??= retireReleased();
     const original = entry.absenceNative;
-    void original.catch(() => { if (entry.absenceNative === original) delete entry.absenceNative; });
+    void original.catch(() => {
+      if (entry.absenceNative === original) delete entry.absenceNative;
+    });
     await original;
   }
   entry.absenceAttempt = journal.closeOutputAbsence(entry.key);
   void entry.absenceAttempt.catch(() => undefined);
-  if (!await entry.absenceAttempt) throw new InstallationError('cleanup');
+  if (!(await entry.absenceAttempt)) throw new InstallationError('cleanup');
   return true;
 }

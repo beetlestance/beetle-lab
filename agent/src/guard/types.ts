@@ -3,9 +3,16 @@ import type { RuntimePlan } from '../backends/docker/index.js';
 import type { VerifiedRoot } from '../staging/index.js';
 
 export type GuardStopReason = 'output_limit' | 'artifact_incomplete';
-export interface OutputWatchRequest { readonly key: Scope; readonly plan: RuntimePlan; readonly outputBytes: number }
+export interface OutputWatchRequest {
+  readonly key: Scope;
+  readonly plan: RuntimePlan;
+  readonly outputBytes: number;
+}
 export interface OutputWatchStatus {
-  readonly ready: boolean; readonly closed: boolean; readonly stopRequested: boolean; readonly lastKnownAt: number | null;
+  readonly ready: boolean;
+  readonly closed: boolean;
+  readonly stopRequested: boolean;
+  readonly lastKnownAt: number | null;
 }
 export interface OutputWatch {
   readonly initial: Promise<{ readonly ready: boolean }>;
@@ -13,7 +20,12 @@ export interface OutputWatch {
   /** Fences callbacks and waits for original scans/stop requests; never certifies runtime exit. */
   close(): Promise<void>;
 }
-export interface OutputGuardStatus { readonly ready: boolean; readonly running: boolean; readonly closed: boolean; readonly watched: number }
+export interface OutputGuardStatus {
+  readonly ready: boolean;
+  readonly running: boolean;
+  readonly closed: boolean;
+  readonly watched: number;
+}
 export interface OutputGuard {
   start(): void;
   watch(request: OutputWatchRequest): OutputWatch;
@@ -31,5 +43,7 @@ export interface OutputGuardOptions {
   stop(key: Scope, reason: GuardStopReason): Promise<unknown>;
 }
 export class GuardError extends Error {
-  constructor(readonly reason: 'invalid_input' | 'closed' | 'capacity' | 'conflict' | 'cleanup') { super(`Output guard ${reason}`); }
+  constructor(readonly reason: 'invalid_input' | 'closed' | 'capacity' | 'conflict' | 'cleanup') {
+    super(`Output guard ${reason}`);
+  }
 }

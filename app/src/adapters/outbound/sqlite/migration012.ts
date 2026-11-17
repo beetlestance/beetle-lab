@@ -1,6 +1,7 @@
 import { absenceEvidence } from './output-absence/evidence.js';
 import { absenceGuards } from './output-absence/guards.js';
-const safe = (name: string, min = 0) => `${name} INTEGER NOT NULL CHECK(typeof(${name})='integer' AND ${name} BETWEEN ${min} AND 9007199254740991)`;
+const safe = (name: string, min = 0) =>
+  `${name} INTEGER NOT NULL CHECK(typeof(${name})='integer' AND ${name} BETWEEN ${min} AND 9007199254740991)`;
 /** Sibling authority preserves the source receipt FK and original allocation. */
 export const migration012 = `
 CREATE TABLE execution_output_absences (

@@ -1,8 +1,14 @@
 import type { DispatchKey } from './dispatch.js';
 import { EVENT_BATCH_BYTES } from '../domain/events/index.js';
 import type { EventBatchInput, EventBinding } from '../domain/events/index.js';
-export { EVENT_BATCH_BYTES, EVENT_BATCH_COUNT, EVENT_RECORD_BYTES, EVENT_ROW_ALLOWANCE,
-  EVENT_MAX_RETAINED_BYTES, EVENT_MAX_RETAINED_ROWS } from '../domain/events/index.js';
+export {
+  EVENT_BATCH_BYTES,
+  EVENT_BATCH_COUNT,
+  EVENT_RECORD_BYTES,
+  EVENT_ROW_ALLOWANCE,
+  EVENT_MAX_RETAINED_BYTES,
+  EVENT_MAX_RETAINED_ROWS,
+} from '../domain/events/index.js';
 export type { EventBinding } from '../domain/events/index.js';
 
 export const EVENT_COMMAND_BYTES = EVENT_BATCH_BYTES + 4096;
@@ -23,13 +29,22 @@ export interface EventCursorState {
   readonly retainedBytes: number;
   readonly eventCount: number;
 }
-interface EventPosition { readonly order: number; readonly after: string }
-export type EventCandidate = EventPosition & (
-  { readonly kind: 'ready'; readonly binding: EventBinding }
-  | { readonly kind: 'unbound'; readonly key: DispatchKey }
-);
-export interface EventScan { readonly limit: number; readonly cursor?: string }
-export interface EventPage { readonly items: readonly EventCandidate[]; readonly nextCursor: string | null }
+interface EventPosition {
+  readonly order: number;
+  readonly after: string;
+}
+export type EventCandidate = EventPosition &
+  (
+    { readonly kind: 'ready'; readonly binding: EventBinding } | { readonly kind: 'unbound'; readonly key: DispatchKey }
+  );
+export interface EventScan {
+  readonly limit: number;
+  readonly cursor?: string;
+}
+export interface EventPage {
+  readonly items: readonly EventCandidate[];
+  readonly nextCursor: string | null;
+}
 export type EventIngestRequest = EventBatchInput;
 export interface EventIngestResult {
   readonly state: EventCursorState;

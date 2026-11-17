@@ -2,7 +2,9 @@ import type { Scope } from '../admission/index.js';
 import type { JournalRetirements, RetirementIntent } from '../retirement-values/index.js';
 export type ProducerGateReason = 'invalid_input' | 'owner' | 'capacity' | 'retired' | 'closed' | 'cleanup';
 export class ProducerGateError extends Error {
-  constructor(readonly reason: ProducerGateReason) { super(`Producer gate ${reason}`); }
+  constructor(readonly reason: ProducerGateReason) {
+    super(`Producer gate ${reason}`);
+  }
 }
 export interface ProducerLease {
   readonly key: Readonly<Scope>;
@@ -22,4 +24,7 @@ export interface ProducerFence {
   drain(): Promise<void>;
   release(): void;
 }
-export interface GateOptions { readonly journal: JournalRetirements; readonly namespaceIdentity: string }
+export interface GateOptions {
+  readonly journal: JournalRetirements;
+  readonly namespaceIdentity: string;
+}

@@ -14,15 +14,19 @@ export function registerInputRoutes(server: FastifyInstance, options: InputRoute
     throw new TypeError('Input route dependencies required');
   }
   const owners = new RequestLifetimes();
-  server.register(async scoped => {
+  server.register(async (scoped) => {
     owners.register(scoped);
     scoped.addHook('onRequest', options.authorize);
-    scoped.addHook('onRequest', async request => {
+    scoped.addHook('onRequest', async (request) => {
       routeParams(request);
       const url = request.routeOptions.url ?? '';
-      if (url.endsWith('/chunks')) { chunkOffset(request); uploadHeaders(request); }
-      else if (url.endsWith('/content')) { noQuery(request); contentHeaders(request); }
-      else if (!(request.method === 'GET' && url.endsWith('/inputs'))) noQuery(request);
+      if (url.endsWith('/chunks')) {
+        chunkOffset(request);
+        uploadHeaders(request);
+      } else if (url.endsWith('/content')) {
+        noQuery(request);
+        contentHeaders(request);
+      } else if (!(request.method === 'GET' && url.endsWith('/inputs'))) noQuery(request);
     });
     registerJson(scoped, options, owners);
     registerUpload(scoped, options, owners);

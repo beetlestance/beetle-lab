@@ -8,7 +8,12 @@ export function captureLocalAccess(value: unknown): 'paired' | 'automatic' {
   throw new TypeError('Invalid local access profile');
 }
 /** The metadata owner is already open/exclusive before credential restoration. */
-export async function openApplicationSession(externalOrigin: string, mode: 'paired' | 'automatic', store: LocalSessionStore, historical?: Pick<LocalSessionOptions, 'readOnly' | 'cookieName'>) {
-  const automatic = mode === 'automatic' ? {initial: await store.load(), store} : undefined;
-  return createLocalSession({...historical, externalOrigin, ...(automatic ? {automatic} : {})});
+export async function openApplicationSession(
+  externalOrigin: string,
+  mode: 'paired' | 'automatic',
+  store: LocalSessionStore,
+  historical?: Pick<LocalSessionOptions, 'readOnly' | 'cookieName'>,
+) {
+  const automatic = mode === 'automatic' ? { initial: await store.load(), store } : undefined;
+  return createLocalSession({ ...historical, externalOrigin, ...(automatic ? { automatic } : {}) });
 }

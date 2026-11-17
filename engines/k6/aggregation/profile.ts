@@ -13,23 +13,25 @@ export interface K6MetricProfile {
   readonly allowedSeries: readonly AllowedMetricSeries[];
 }
 const trusted = new WeakSet<K6MetricProfile>();
-export function isK6MetricProfile(profile: K6MetricProfile): boolean { return trusted.has(profile); }
+export function isK6MetricProfile(profile: K6MetricProfile): boolean {
+  return trusted.has(profile);
+}
 
 /** Snapshot the public compiler layout; native points never extend this catalogue. */
 export function createK6MetricProfile(suite: DeepReadonly<CompiledSuite>): K6MetricProfile {
   const layout = metricLayout(suite);
   const evidence = metricEvidenceLayout(suite);
   const requests = layout.requests.map(({ id, label }) => Object.freeze({ id, label }));
-  const assertions = layout.requests.flatMap(request => request.assertions);
+  const assertions = layout.requests.flatMap((request) => request.assertions);
   if (layout.readiness) assertions.push(...layout.readiness.assertions);
-  const requestLabels = requests.map(request => request.label);
+  const requestLabels = requests.map((request) => request.label);
   if (layout.readiness) requestLabels.push(layout.readiness.label);
   const profile: K6MetricProfile = Object.freeze({
-    metrics: Object.freeze(metricDefinitions.map(metric => Object.freeze({ ...metric }))),
+    metrics: Object.freeze(metricDefinitions.map((metric) => Object.freeze({ ...metric }))),
     requests: Object.freeze(requests),
-    assertions: Object.freeze(assertions.map(assertion => Object.freeze({ ...assertion }))),
+    assertions: Object.freeze(assertions.map((assertion) => Object.freeze({ ...assertion }))),
     requestLabels: Object.freeze(requestLabels),
-    assertionLabels: Object.freeze(assertions.map(assertion => assertion.label)),
+    assertionLabels: Object.freeze(assertions.map((assertion) => assertion.label)),
     ...(layout.readiness ? { readinessLabel: layout.readiness.label } : {}),
     maximumSeries: evidence.series.length,
     allowedSeries: evidence.series,
