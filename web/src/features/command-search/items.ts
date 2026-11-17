@@ -4,6 +4,7 @@ import { useApi, readResult } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
 import type { CommandItem } from './model.js';
+import { runStatus, shortId } from '../workspace-overview/format.js';
 export interface CommandGroup {
   name: string;
   active: boolean;
@@ -83,12 +84,15 @@ export function useCommandItems(organizationId: string, workspaceId?: string): C
     group<Run>(
       'runs',
       runs,
-      (row) => ({
-        id: 'run:' + row.id,
-        label: 'Run ' + row.id,
-        description: 'Last loaded state: ' + row.state,
-        path: routes.run(org, workspace, row.id),
-      }),
+      (row) => {
+        const suiteName = suites.isError ? undefined : suites.data?.items.find((item) => item.id === row.suiteId)?.name;
+        return {
+          id: 'run:' + row.id,
+          label: `Run ${shortId(row.id)}${suiteName ? ', ' + suiteName : ''}`,
+          description: runStatus(row.state, row.outcome).label,
+          path: routes.run(org, workspace, row.id),
+        };
+      },
       !!workspaceId,
     ),
   ];

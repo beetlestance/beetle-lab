@@ -16,7 +16,7 @@ it('shares the exact pending list original and preserves the remaining observer 
 });
 it('rejects wrong-owner pages, keeps navigation available and retries only on explicit request',async()=>{
  let fixed=false;const f=testClient(request=>request.path.includes('/workspaces?')&&!fixed?json({scope:{kind:'organization',organizationId:ids.b},items:[{...workspace(ids.b),name:'Foreign workspace'}],nextCursor:null}):read(request));
- mount(f.client,routes.organization(ids.a));await screen.findByRole('alert');const before=f.records.filter(row=>row.path.includes('/workspaces?')).length;const dialog=await open();
+ mount(f.client,routes.organization(ids.a));await screen.findByText(/unreadable response/);const before=f.records.filter(row=>row.path.includes('/workspaces?')).length;const dialog=await open();
  expect(await within(dialog).findByText('Recent workspaces could not be loaded.')).toBeVisible();expect(within(dialog).queryByText('Foreign workspace')).not.toBeInTheDocument();
  expect(f.records.filter(row=>row.path.includes('/workspaces?'))).toHaveLength(before);fixed=true;fireEvent.click(within(dialog).getByRole('button',{name:'Retry recent workspaces'}));
  expect(await within(dialog).findByRole('link',{name:/Same workspace/})).toHaveAttribute('href',routes.workspace(ids.a,ids.workspace));
@@ -34,7 +34,9 @@ it('shows more-page and unavailable groups without turning failed reads into emp
  const f=testClient(request=>request.path.includes('/suites?')?json(fullSuitePage()):request.path.includes('/runs?')?json(apiError('storage_unavailable'),503):read(request));
  mount(f.client,routes.workspace(ids.a,ids.workspace));await screen.findByRole('heading',{name:'Folders'});const dialog=await open();
  expect(await within(dialog).findByText('More suites are available in the list view.')).toBeVisible();expect(await within(dialog).findByText('Recent runs could not be loaded.')).toBeVisible();
- const reads=f.records.length;fireEvent.change(within(dialog).getByRole('searchbox'),{target:{value:'Shared'}});await waitFor(()=>expect(within(dialog).getAllByRole('link')).toHaveLength(1));expect(f.records).toHaveLength(reads);
+ const reads=f.records.length;fireEvent.change(within(dialog).getByRole('searchbox'),{target:{value:'Shared'}});await waitFor(()=>expect(within(dialog).getAllByRole('link')).toHaveLength(2));expect(f.records).toHaveLength(reads);
+ const [found,start]=within(dialog).getAllByRole('link');expect(found).toHaveTextContent('Shared suiteSuite');expect(start).toHaveTextContent('Start Shared suiteAction');
+ expect(start).toHaveAttribute('href',found!.getAttribute('href'));
 });
 it('shares only the identical unfiltered history first page with command search', async () => {
  const held=deferred<Response>();const f=testClient(request=>request.path.includes('/runs?')?held.promise:read(request));

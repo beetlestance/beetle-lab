@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { matching, navigation, searchContext } from './model.js';
 import type { CommandItem, SearchContext } from './model.js';
@@ -7,6 +8,7 @@ import type { CommandGroup } from './items.js';
 import { commandKeys } from './keyboard.js';
 import './search.css';
 export { useCommandNavigation } from './controller.js';
+const RESULT_LIMIT = 40;
 export function CommandPalette({ pathname, close }: { pathname: string; close: (navigate?: boolean) => void }) {
   const context = searchContext(pathname);
   return context.organizationId ? (
@@ -27,15 +29,23 @@ function ScopedPalette({
   const groups = useCommandItems(organizationId, context.workspaceId);
   return <Palette context={context} groups={groups} close={close} />;
 }
+/**
+ * A typed query that names a suite also offers "Start <suite>", which opens the
+ * suite where its Start run control lives (navigation only, nothing starts here).
+ */
+export function withActions(items: readonly CommandItem[], query: string): CommandItem[] {
+  if (!query.trim()) return items.slice(0, RESULT_LIMIT);
+  return items
+    .flatMap((item) =>
+      item.id.startsWith('suite:')
+        ? [item, { id: 'start:' + item.id, label: 'Start ' + item.label, description: 'Action', path: item.path }]
+        : [item],
+    )
+    .slice(0, RESULT_LIMIT);
+}
 type PaletteProps = { context: SearchContext; groups: CommandGroup[]; close: (navigate?: boolean) => void };
-function Palette({ context, groups, close }: PaletteProps) {
-  const heading = useId();
-  const search = useId();
-  const dialog = useRef<HTMLDivElement>(null);
-  const input = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState('');
-  const navigate = useNavigate();
-  const matches = matching([...navigation(context), ...groups.flatMap((group) => group.items)], query);
+/** Keeps focus inside the dialog: initial focus, outside focus, and a refreshed group removing the focused link. */
+function useFocusInside(dialog: RefObject<HTMLDivElement | null>, input: RefObject<HTMLInputElement | null>) {
   useEffect(() => {
     input.current?.focus();
     const focus = (event: FocusEvent) => {
@@ -43,11 +53,37 @@ function Palette({ context, groups, close }: PaletteProps) {
     };
     document.addEventListener('focusin', focus);
     return () => document.removeEventListener('focusin', focus);
-  }, []);
-  // A refreshed group can remove the focused link without firing focusin.
+  }, [dialog, input]);
   useEffect(() => {
     if (dialog.current && !dialog.current.contains(document.activeElement)) input.current?.focus();
   });
+}
+function MatchNotes({ shown, total }: { shown: number; total: number }) {
+  return (
+    <>
+      <p role="status" className="sr-only">
+        {shown} of {total} matches.
+      </p>
+      {!total && <p className="command-empty">No matching commands or loaded items.</p>}
+      {total > shown && (
+        <p className="command-note">
+          Showing {shown} of {total} matches. Type more to narrow them.
+        </p>
+      )}
+    </>
+  );
+}
+function Palette({ context, groups, close }: PaletteProps) {
+  const heading = useId();
+  const search = useId();
+  const hint = useId();
+  const dialog = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState('');
+  const navigate = useNavigate();
+  const matches = matching([...navigation(context), ...groups.flatMap((group) => group.items)], query);
+  const results = withActions(matches.items, query);
+  useFocusInside(dialog, input);
   const pick = (item: CommandItem | undefined) => {
     if (item) {
       close(true);
@@ -68,67 +104,100 @@ function Palette({ context, groups, close }: PaletteProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={heading}
+        aria-describedby={hint}
         onKeyDown={(event) => {
           if (dialog.current && input.current)
             commandKeys(
               event,
               dialog.current,
               input.current,
-              () => pick(matches.items[0]),
+              () => pick(results[0]),
               () => close(),
             );
         }}
       >
-        <header className="section-header">
-          <h2 id={heading}>Search commands</h2>
-          <button onClick={() => close()} aria-label="Close command search">
-            Close
-          </button>
-        </header>
-        <label htmlFor={search}>Search commands and recent items</label>
+        <h2 id={heading} className="sr-only">
+          Search commands
+        </h2>
+        <label htmlFor={search} className="sr-only">
+          Search commands and recent items
+        </label>
         <input
           ref={input}
           data-command-input
           id={search}
           type="search"
+          className="command-input"
+          placeholder="Search suites, runs and pages"
+          autoComplete="off"
           maxLength={128}
           value={query}
           onChange={(event) => setQuery(event.target.value.slice(0, 128))}
         />
-        <p>Navigation only. Search covers the first 100 items per current scope; showing at most 40 matches.</p>
-        <p role="status">
-          {matches.items.length} of {matches.total} matches.
-        </p>
+        <CommandResults items={results} query={query} close={close} />
+        <MatchNotes shown={matches.items.length} total={matches.total} />
         <CommandGroups groups={groups} />
-        <CommandResults items={matches.items} close={close} />
-        {!matches.total && <p>No matching commands or loaded items.</p>}
+        <p id={hint} className="command-hint">
+          <span aria-hidden="true">↑↓</span> to move, Enter to open, Esc to close. Searches the first 100 items of each
+          list here.
+        </p>
       </div>
     </div>
   );
 }
 
 function CommandGroups({ groups }: { groups: CommandGroup[] }) {
+  const notes = groups.filter((group) => group.active && (group.loading || group.error || group.more));
+  if (!notes.length) return null;
+  return (
+    <div className="command-groups">
+      {notes.map((group) => (
+        <div key={group.name} className="command-group">
+          {group.loading && <p role="status">Loading {group.name}…</p>}
+          {group.error && <p role="alert">Recent {group.name} could not be loaded.</p>}
+          {group.more && <p>More {group.name} are available in the list view.</p>}
+          {group.error && (
+            <button
+              type="button"
+              className="command-retry"
+              disabled={group.loading}
+              onClick={() => void group.refresh()}
+            >
+              Retry recent {group.name}
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** The label with the first case-insensitive match of the query in bold. */
+function Highlight({ text, query }: { text: string; query: string }) {
+  const needle = query.trim().toLowerCase();
+  const at = needle ? text.toLowerCase().indexOf(needle) : -1;
+  if (at < 0) return <>{text}</>;
   return (
     <>
-      {groups
-        .filter((group) => group.active)
-        .map((group) => (
-          <div key={group.name}>
-            {group.loading && <p role="status">Loading {group.name}…</p>}
-            {group.error && <p role="alert">Recent {group.name} could not be loaded.</p>}
-            {group.more && <p>More {group.name} are available in the list view.</p>}
-            <button disabled={group.loading} onClick={() => void group.refresh()}>
-              {group.error ? 'Retry' : 'Refresh'} recent {group.name}
-            </button>
-          </div>
-        ))}
+      {text.slice(0, at)}
+      <strong>{text.slice(at, at + needle.length)}</strong>
+      {text.slice(at + needle.length)}
     </>
   );
 }
-function CommandResults({ items, close }: { items: CommandItem[]; close(navigate?: boolean): void }) {
+
+function CommandResults({
+  items,
+  query,
+  close,
+}: {
+  items: CommandItem[];
+  query: string;
+  close(navigate?: boolean): void;
+}) {
   return (
     <nav aria-label="Command search results">
-      <ul>
+      <ul className="command-results" role="list">
         {items.map((item) => (
           <li key={item.id}>
             <Link
@@ -139,7 +208,9 @@ function CommandResults({ items, close }: { items: CommandItem[]; close(navigate
                   close(true);
               }}
             >
-              {item.label}
+              <span className="command-label">
+                <Highlight text={item.label} query={query} />
+              </span>
               <small>{item.description}</small>
             </Link>
           </li>
