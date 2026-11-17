@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
+import { EmptyState } from './States.js';
+import './primitives.css';
 
+/** Legacy list table used by namespace screens; new code uses Table with typed columns. */
 export function ResourceTable({
   title,
   headings,
@@ -13,14 +16,13 @@ export function ResourceTable({
 }) {
   if (empty)
     return (
-      <div className="notice">
-        <h2>No {title.toLowerCase()} yet</h2>
-        <p>Create one to get started.</p>
-      </div>
+      <EmptyState compact title={`No ${title.toLowerCase()} yet`}>
+        Create one to get started.
+      </EmptyState>
     );
   return (
-    <div className="table-scroll">
-      <table>
+    <div className="data-table-scroll">
+      <table className="data-table">
         <caption className="sr-only">{title}</caption>
         <thead>
           <tr>
