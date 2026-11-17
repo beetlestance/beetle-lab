@@ -14,7 +14,7 @@
     "api/v2/export-jobs.schema.json": "616c0f0620a4dc78e345dc99e53e9ff03a575d35486b8c9afc8ba502ab965f0b",
     "api/v2/input-requests.schema.json": "e5970ad4ad54d9f229436e83b6e8cededa3eccab878554f2896c19c927de3897",
     "api/v2/input.schema.json": "4aac5c976cdd5a6a5dd377092573728489a2ec7c8200a68faa9292a209fadc74",
-    "api/v2/live-metrics.schema.json": "6a49b5baacf5442bf81a206c66f41e7a66010b3514aae1bc1ae58055dc6cb887",
+    "api/v2/live-metrics.schema.json": "901425518db875389482dc998200c35c0468e23aa9161b85ad7fdb2cba398421",
     "api/v2/namespace-requests.schema.json": "6a913fb93f867d4c311d60a2613b11d712b1a70a20442ae6a9262fffcd9ece42",
     "api/v2/namespace.schema.json": "3df14df2770cabaf1b04c70a44d453dad6ab1e7b0afe5699d6cae375ab2bec3f",
     "api/v2/overview.schema.json": "b13dd647d38d8b5fa9b04203df88131d96ac20ca10d6b485d207766627d95bb3",

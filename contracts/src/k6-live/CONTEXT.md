@@ -17,3 +17,4 @@ Checks: approval.test.ts and engine raw/compiled parity plus attempt publisher c
 
 K6_LIVE_METRIC_IMAGE_ENV names the versioned trusted image marker shared by
 packaging/install inspection. It is not a user configuration field or new wire DTO.
+targetIntervalMs comes only from source.targetSampling (validated config), else null.

@@ -23,7 +23,7 @@ export function installedLiveMetricApproval(catalog: Catalog): LiveMetricApprova
     if (engine.manifest.engineId !== 'k6' || engine.profile.liveMetricMailbox !== true) return undefined;
     const { organizationId, workspaceId, attemptId, generation } = input.key;
     return createK6LiveApproval({
-      source: validated.config as unknown as K6MetricShape,
+      source: validated.config as unknown as K6MetricShape & { targetSampling?: { intervalMs: number } | null },
       scope: { organizationId, workspaceId, attemptId, generation },
       assignment: { specDigest: input.plan.specDigest, intentDigest: validated.intentDigest },
       hash: (value) => createHash('sha256').update(value).digest('hex'),

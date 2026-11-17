@@ -114,7 +114,8 @@ Advisory only; never a verdict input and never a substitute for sealed history.
 | Budget | ≤ min(8 MiB, total/8, execute/8), taken from history; the 65792 B extent and every write are charged to execute |
 | Agent read | ≤ 5 s, two of the 32 shared transport credits; capture, window end and publication ≤ 6 s old, never future; returns `X-Beetle-Live-Fresh-For-Ms` ≤ 6000; a missing, malformed or exhausted header makes the snapshot unavailable |
 | Backend | `…/metrics/live`, resolves scope, run and active attempt before and after IO; ≤ 64 KiB reply; 5 s lifetime |
-| Browser | polls the visible selected active attempt every 2 s after the previous read settles; switches to sealed history at terminal state |
+| Target readings | optional `target` only when `targetSampling` is configured: ≤ 8 newest `before`/`during` samples of 12 fixed target-reported keys (null = unknown), ascending, none after `publishedAtMs` or older than 8 × interval + 5 s; `omittedSamples` counts those dropped for that frame; the interval comes from approval (agent refuses any other as `target`); read synchronously at publication; a block that cannot be read or fit is dropped (`targetOmittedFrames`), never the metrics |
+| Browser | polls the visible selected active attempt every 2 s after the previous read settles; switches to sealed history at terminal state; may keep target samples by `observedAtMs` (≤ 256, the artifact cap) for the run chart, showing each sample's own age |
 
 Freshness is compared only on the agent's wall clock; each hop subtracts its own
 monotonic elapsed time, so clock offsets between services never extend the 6 s age.
@@ -200,5 +201,5 @@ a failed revocation keeps ownership and rejects close.
 | `engines/k6/wrapper/attempt/archive/` | `94df1cb0c1a2` |
 | `app/src/application/run-metrics/` | `dcd16994160c` |
 | `app/src/application/run-comparison/` | `cddffebb9dee` |
-| `contracts/src/k6-live/` | `2d0d9eb2c0d8` |
-| `agent/src/live-metrics/` | `d042e8ca9260` |
+| `contracts/src/k6-live/` | `af95720d0dff` |
+| `agent/src/live-metrics/` | `189726d263eb` |

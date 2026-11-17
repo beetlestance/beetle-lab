@@ -1,5 +1,6 @@
 import type { LiveMetricHash, LiveMetricScope, LiveMetricSubset } from '@beetle/contracts/api';
 import type { MetricWindow } from '@beetle/contracts/metrics';
+import type { TargetRuntimeSample } from '@beetle/contracts/target-runtime';
 
 export type LiveMetricFailure = 'invalid_input' | 'clock' | 'quota' | 'deadline' | 'sink' | 'cleanup';
 /** Trusted port: write/close promises own the actual originals through settlement. */
@@ -11,6 +12,11 @@ export interface LiveMetricClock {
   wall(): number;
   monotonic(): number;
 }
+/** Trusted in-process target sampler view; read synchronously at publication, never awaited. */
+export interface LiveTargetSource {
+  readonly intervalMs: number;
+  recent(limit: number): readonly TargetRuntimeSample[];
+}
 export interface LiveMetricPublisherOptions {
   readonly scope: LiveMetricScope;
   readonly producerEpoch: string;
@@ -21,6 +27,8 @@ export interface LiveMetricPublisherOptions {
   readonly sink: LiveMetricSink;
   readonly clock?: LiveMetricClock;
   readonly signal?: AbortSignal;
+  /** Present only when the approved configuration samples the target. */
+  readonly target?: LiveTargetSource;
 }
 export interface LiveMetricPublisherState {
   readonly status: 'open' | 'stopping' | 'closed' | 'failed';
@@ -30,6 +38,8 @@ export interface LiveMetricPublisherState {
   readonly coalescedWindows: number;
   readonly discardedOnStop: 0 | 1;
   readonly pending: boolean;
+  /** Frames whose target block was dropped to stay inside the frame bound. */
+  readonly targetOmittedFrames: number;
   readonly writing: boolean;
   /** Conservative full-buffer charge made before each write, not measured disk bytes. */
   readonly chargedBytes: number;

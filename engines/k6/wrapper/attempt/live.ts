@@ -6,7 +6,7 @@ import { MAILBOX_BYTES } from '@beetle/contracts/live-mailbox';
 import type { MetricWindow } from '../../aggregation/index.js';
 import type { CompiledInput } from '../input/index.js';
 import { createLiveMetricPublisher } from '../live/index.js';
-import type { LiveMetricPublisher } from '../live/index.js';
+import type { LiveMetricPublisher, LiveTargetSource } from '../live/index.js';
 import { createMailboxSink, NativeMailboxError, openNativeMailbox } from '../live-mailbox/index.js';
 import type { MailboxFile, MailboxSink } from '../live-mailbox/index.js';
 import type { ExecutionClock } from '../execution/index.js';
@@ -26,6 +26,8 @@ interface Input {
   readonly timeoutMs: number;
   readonly signal: AbortSignal;
   readonly clock: ExecutionClock;
+  /** Running target sampler; its interval is taken from the approval, not from this source. */
+  readonly target?: Pick<LiveTargetSource, 'recent'>;
 }
 const hash = (value: string | Uint8Array): string => createHash('sha256').update(value).digest('hex');
 /** Trusted default subset is derived from the same approved catalogue as the parser. */
@@ -78,8 +80,13 @@ export class AttemptLive {
         hash,
         maximumProducedBytes: input.maximumBytes - MAILBOX_BYTES,
       });
+      const { targetIntervalMs, ...frame } = approval;
+      const target = input.target;
       this.publisher = createLiveMetricPublisher({
-        ...approval,
+        ...frame,
+        ...(target && targetIntervalMs !== null
+          ? { target: { intervalMs: targetIntervalMs, recent: (limit: number) => target.recent(limit) } }
+          : {}),
         hash,
         timeoutMs: input.timeoutMs,
         maximumProducedBytes: input.maximumBytes - MAILBOX_BYTES,

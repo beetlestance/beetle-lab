@@ -18,8 +18,12 @@ export interface TargetSamplingOptions {
   readonly config: TargetSamplingConfig;
   readonly signal: AbortSignal;
   readonly fetch?: typeof globalThis.fetch;
+  /** Wall clock shared with the attempt (and live frames); defaults to Date.now. */
+  readonly wall?: () => number;
 }
 export interface TargetSamplingOwner {
+  /** Newest retained samples (at most `limit`, oldest first); frozen copies, no IO. */
+  recent(limit: number): readonly TargetRuntimeReport['samples'][number][];
   finish(): Promise<TargetRuntimeReport>;
   close(): Promise<void>;
 }

@@ -20,7 +20,8 @@ it('assigns a stable validated producer UUID and approved frozen subset before a
   expect(approval.subset.selected.every(row => ['execute', 'engine'].includes(row.scope) && row.tags.phase !== 'prepare')).toBe(true);
   expect(Object.isFrozen(approval.subset.selected[0]?.tags)).toBe(true); expect(Object.isFrozen(approval.scope)).toBe(true);
   source.scope.generation = 2; source.source.requests[0]!.id = 'changed'; expect(approval.scope.generation).toBe(1);
-  expect(() => captureLiveMetricSnapshot({version: 1, ...approval, subsetDigest: hash(liveMetricSubsetText(approval.subset)),
+  const {targetIntervalMs, ...frameApproval} = approval; expect(targetIntervalMs).toBeNull();
+  expect(() => captureLiveMetricSnapshot({version: 1, ...frameApproval, subsetDigest: hash(liveMetricSubsetText(approval.subset)),
     sourceSequence: 1, publishedSequence: 1, coalescedWindows: 0, capturedAtMs: 1000, publishedAtMs: 1000,
     startTimeMs: 0, endTimeMs: 1000, upstreamCoverage: 'unknown', series: []}, hash)).not.toThrow();
 });
@@ -41,4 +42,12 @@ it('rejects invalid scope, assignment and hash capabilities with fixed errors', 
   expect(() => createK6LiveApproval({...base, assignment: {...base.assignment, specDigest: 'invalid'}})).toThrow('K6 live approval rejected');
   expect(() => createK6LiveApproval({...base, scope: {...base.scope, generation: 0}})).toThrow();
   expect(() => createK6LiveApproval({...base, hash: () => 'invalid'})).toThrow();
+});
+
+it('takes the target interval only from the validated source configuration', () => {
+  const base = input();
+  expect(createK6LiveApproval({...base, source: {...base.source, targetSampling: {intervalMs: 2000}}}).targetIntervalMs).toBe(2000);
+  expect(createK6LiveApproval({...base, source: {...base.source, targetSampling: null}}).targetIntervalMs).toBeNull();
+  for (const intervalMs of [999, 60001, 1500.5])
+    expect(() => createK6LiveApproval({...base, source: {...base.source, targetSampling: {intervalMs}}})).toThrow('K6 live approval rejected');
 });

@@ -5,6 +5,12 @@ import { validateApi } from './validate.js';
 import type { LiveMetricScope, LiveMetricSnapshot, LiveMetricSubset } from './generated/types.js';
 
 export const LIVE_METRIC_FRAME_BYTES = 65_536;
+/** Newest target samples carried per frame; older ones are the browser's to keep. */
+export const LIVE_TARGET_SAMPLES = 8;
+/** A carried target sample is at most this old relative to the frame's publication time. */
+export function liveTargetLookbackMs(intervalMs: number): number {
+  return LIVE_TARGET_SAMPLES * intervalMs + 5000;
+}
 export type LiveMetricHash = (canonicalSubset: string) => string;
 export class LiveMetricError extends Error {
   constructor(readonly code: 'invalid_subset' | 'invalid_snapshot') {
@@ -64,6 +70,20 @@ function seriesMatch(value: LiveMetricSnapshot): boolean {
     );
   });
 }
+/** Ascending, never after publication, inside the lookback; unavailable readings are all null. */
+function targetMatch(value: LiveMetricSnapshot): boolean {
+  const target = value.target;
+  if (!target) return true;
+  const oldest = value.publishedAtMs - liveTargetLookbackMs(target.intervalMs);
+  return target.samples.every(
+    (sample, index) =>
+      sample.observedAtMs <= value.publishedAtMs &&
+      sample.observedAtMs >= oldest &&
+      (index === 0 || sample.observedAtMs > target.samples[index - 1]!.observedAtMs) &&
+      (index === 0 || sample.phase === 'during' || target.samples[index - 1]!.phase === 'before') &&
+      (sample.status === 'ready' || Object.values(sample.values).every((reading) => reading === null)),
+  );
+}
 /** Hostile JSON boundary; the caller supplies its trusted synchronous SHA256 implementation. */
 export function captureLiveMetricSnapshot(input: unknown, hash: LiveMetricHash): LiveMetricSnapshot {
   try {
@@ -77,7 +97,8 @@ export function captureLiveMetricSnapshot(input: unknown, hash: LiveMetricHash):
         value.endTimeMs - value.startTimeMs === 1000 &&
         value.publishedAtMs >= value.capturedAtMs &&
         value.subsetDigest === hash(liveMetricSubsetText(subset)) &&
-        seriesMatch(value),
+        seriesMatch(value) &&
+        targetMatch(value),
       'invalid_snapshot',
     );
     return { ...value, subset };

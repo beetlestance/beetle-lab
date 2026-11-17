@@ -110,7 +110,7 @@ export async function observe(
   }, options.config.timeoutMs);
   signal.addEventListener('abort', abort, { once: true });
   if (signal.aborted) abort();
-  const observedAt = new Date().toISOString();
+  const observedAt = new Date((options.wall ?? Date.now)()).toISOString();
   try {
     if (controller.signal.aborted) throw new ObservationFailure('cancelled');
     const source = await request(options, controller.signal);
