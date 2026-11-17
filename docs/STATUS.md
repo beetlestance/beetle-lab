@@ -25,7 +25,7 @@ are indexed in [HISTORY](HISTORY.md) and retain their original source/platform s
 | Storage and diagnostics | Real-worker slow-burst, overload, stall and uncertain-write tests pass for the no-progress watchdog and redacted diagnostics. Current packaged workload and hosted stream/conformance checks pass. Native filesystem-stall injection is not claimed. |
 | Sampler confinement | Corrected by appending sampling paths under the configured target and checking origin before fetch. Regression tests cover scheme-looking paths; release acceptance remains open. |
 | Migration extension | Migration 026 now has its own version guard. Prior-025 upgrade coverage passes; adding a later migration still requires its own upgrade tests. Migration 015 already has a caller guard. |
-| Publishing | Environment-gated publishing and a fail-closed policy preflight are prepared. GitHub default-token/review settings still require approval and application. No replacement image was published; legacy registry images remain available. |
+| Publishing | Release protections are applied and the read-only guard passes: default workflow token read-only, no Actions PR approvals, and akshay253101 review required for the integration-only beetle-release environment. No replacement image was published; legacy registry images remain available. |
 | Qualification | Source CI and both native image jobs pass at 40c4a5c1. Hosted conformance, 30-minute stream and four-run memory/latency evidence pass within their finite scopes; see [measurements](verification/audit-corrections.md). The original conformance failure remains unexplained. |
 | Maintainability | Targeted settings rows validate identity/scope/version/value schemas; malformed-row and original-receipt replay cases pass. This does not certify all SQLite rows or whole-repository formatting. |
 
@@ -39,7 +39,7 @@ Historical source CI passed at 4fabd9fa; see [the evidence index](HISTORY.md).
 Recorded native Linux amd64/arm64 checks and the 30-minute stream remain useful
 within their original inputs. Neither a passing fixture nor a historical closeout
 establishes complete real-workload parity or readiness after unrelated changes.
-Browser presentation and unapplied release protections keep acceptance open.
+Browser presentation remains open. Release protections are applied; publication still requires explicit authorisation.
 
 ## Separate scope
 

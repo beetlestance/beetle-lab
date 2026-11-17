@@ -2,7 +2,7 @@
 
 Recorded 17 November 2026. This is scoped local source evidence, not a release
 certificate. Candidate CI and the scoped native/resource qualifications below passed.
-Browser presentation and release-policy application remain open. Private installation data, credentials and raw logs are not published here.
+Browser presentation remains open; approved release protections are applied. Private installation data, credentials and raw logs are not published here.
 
 ## Source identities
 
@@ -62,9 +62,12 @@ received independent review. Reviewers reused passing checks instead of rerunnin
   nine focused row cases passed after review additions. Other row owners are not
   certified by this targeted correction.
 - **Release authority:** 40 authority/GitHub/trust tests passed. The read-only
-  live guard refused the currently missing release environment. Both publishing
-  jobs reference the approval environment. Administrator settings are prepared,
-  not applied; source commits alone cannot configure GitHub policy.
+  live guard originally refused the missing release environment. Both publishing
+  jobs reference the approval environment. After explicit user approval, repository
+  defaults are read-only, Actions cannot approve PRs, and `beetle-release` requires
+  `akshay253101` review with exactly the `rewrite/integration` branch rule. Fresh
+  API reads match the requested settings and the live guard passes. Main/develop
+  heads remain unchanged; no publication was performed.
   See [release approval](../release-approval.md).
 
 After the final storage-context change, the composed local lane passed **58 tests**
@@ -83,11 +86,9 @@ fixture: these checks do not establish native container or target-workload accep
 
 ## Remaining acceptance
 
-1. Approve and apply the proposed GitHub token/reviewer settings, then verify the
-   configured policy. Do not bypass its deployment gate.
-2. Verify browser presentation/download interactions for the packaged report.
-3. Retain the unexplained original conformance failure; a later pass is not its cause.
-4. Publish only after explicit approval.
+1. Verify browser presentation/download interactions for the packaged report.
+2. Retain the unexplained original conformance failure; a later pass is not its cause.
+3. Publish only after explicit approval and the configured GitHub review gate.
 
 Running services use matching locally built candidate images, including the
 report, storage, diagnostic and settings changes. No merge

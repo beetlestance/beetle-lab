@@ -96,6 +96,7 @@ Release acceptance remains open under [STATUS](../STATUS.md). Historical passes
 remain valid only for their recorded inputs and claims. Recent [audit corrections](audit-corrections.md) have scoped local source evidence.
 Current packaged reports, actual 1 GiB engine enforcement and hosted finite
 resource cases pass under the [recorded scope](audit-corrections.md). Browser
-presentation and unapplied release protections remain open. The original hosted
+presentation remains open. Release protections are now applied and verified;
+publication still requires explicit authorisation. The original hosted
 conformance failure is preserved as unexplained; its later instrumented pass does
 not establish its cause.
