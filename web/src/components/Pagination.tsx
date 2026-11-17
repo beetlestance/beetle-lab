@@ -2,11 +2,18 @@ import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from './Button.js';
 
-// Retain at most 20 previous pages; Back stops at that explicit history boundary.
+/**
+ * Keyset paging over one list. Retains at most 20 previous cursors; going back stops
+ * at that explicit history boundary. `position` is the 1-based page number counted
+ * from the first page, exact because back never passes the retained boundary.
+ */
 export function usePage(queryPrefix: readonly string[]) {
   const client = useQueryClient();
   const prefixIdentity = JSON.stringify(queryPrefix);
-  const [state, setState] = useState<{ cursor?: string; history: (string | undefined)[] }>({ history: [] });
+  const [state, setState] = useState<{ cursor?: string; history: (string | undefined)[]; position: number }>({
+    history: [],
+    position: 1,
+  });
   useEffect(() => {
     // The newly observed page survives; prior pages cannot accumulate until GC.
     const prefix = JSON.parse(prefixIdentity) as string[];
@@ -19,19 +26,39 @@ export function usePage(queryPrefix: readonly string[]) {
       setState({
         ...(state.history.at(-1) ? { cursor: state.history.at(-1)! } : {}),
         history: state.history.slice(0, -1),
+        position: Math.max(1, state.position - 1),
       }),
-    next: (cursor: string) => setState({ cursor, history: [...state.history, state.cursor].slice(-20) }),
+    next: (cursor: string) =>
+      setState({ cursor, history: [...state.history, state.cursor].slice(-20), position: state.position + 1 }),
     hasBack: state.history.length > 0,
-    reset: () => setState({ history: [] }),
+    position: state.position,
+    reset: () => setState({ history: [], position: 1 }),
   };
 }
-export function Pagination({ page, next }: { page: ReturnType<typeof usePage>; next: string | null }) {
+/**
+ * Pager for one keyset list. Lists in time order pass `order` and get Newer/Older in
+ * that direction; lists in identifier order (no time meaning) keep Back/Next, so the
+ * labels never claim an order the list does not have. Shows the page position; the
+ * total is unknown for keyset pages and is never shown.
+ */
+export function Pagination({
+  page,
+  next,
+  order,
+  label = 'Pages',
+}: {
+  page: ReturnType<typeof usePage>;
+  next: string | null;
+  order?: 'newest' | 'oldest' | undefined;
+  label?: string | undefined;
+}) {
+  const [back, forward] = !order ? ['Back', 'Next'] : order === 'newest' ? ['Newer', 'Older'] : ['Older', 'Newer'];
   return (
-    <nav className="pagination" aria-label="Pages">
+    <nav className="pagination" aria-label={label}>
       <Button size="sm" disabled={!page.hasBack} onClick={page.back}>
-        Back
+        {back}
       </Button>
-      <span>Up to 100 items per page</span>
+      <span aria-live="polite">Page {page.position} · up to 100 items per page</span>
       <Button
         size="sm"
         disabled={!next}
@@ -39,7 +66,7 @@ export function Pagination({ page, next }: { page: ReturnType<typeof usePage>; n
           if (next) page.next(next);
         }}
       >
-        Next
+        {forward}
       </Button>
     </nav>
   );

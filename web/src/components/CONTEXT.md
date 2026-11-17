@@ -26,6 +26,9 @@ unconverted features; new code uses the new tokens. Optional props accept undefi
   variant inline|page|table|cards, rows. QueryState wraps both plus Retry.
 - NotFound: kind page|organization|workspace|suite|script|run|input, back {to,label},
   reason. App's invalid-route page uses kind page; features reuse the other kinds.
+- Pagination + usePage: keyset pages of 100, 20 retained back cursors, 1-based
+  `position` (no total). `order` newest|oldest gives Newer/Older in list order; lists
+  in identifier order omit it and keep Back/Next. `label` names the nav.
 - Toast: ToastProvider in App; `useToast().show(message)`, five seconds, three max.
 - ThemeSwitch: Darkroom/Scarab, stored as `beetle.theme`, sets html data-theme.
 Shell (app/shell): AppShell takes onSearch and activeRuns (Workspaces badge, unwired
