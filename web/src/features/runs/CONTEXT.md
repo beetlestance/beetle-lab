@@ -30,11 +30,11 @@ Check: `node node_modules/vitest/vitest.mjs run web/src/features/runs --maxWorke
 ExecutionActivity is composed through timeline/index; it owns one bounded projected
 activity query per scoped active attempt. See timeline/CONTEXT.md for read limits,
 retirement, useful progress and terminal drain behavior.
-RunArtifacts is composed through artifacts/index for bounded published inventory
-and browser-owned UUID-only downloads. See artifacts/CONTEXT.md for read lifetime,
-paging and transfer ownership; result declarations alone still grant no links.
-RunMetrics uses metrics/index for one catalogue and bounded chart views; see its CONTEXT.md.
+RunArtifacts (artifacts/index: bounded inventory, UUID-only downloads) and RunMetrics
+(metrics/index: one catalogue, bounded charts) document their reads in their own
+CONTEXT.md; result declarations alone still grant no links.
 RunReads admits one original detail read plus at most four waiting intents. Waiting
 expires after five seconds or caller abort; retirement rejects queued intents.
 Original completion releases admission. Storage bounds and explicit HTTP errors
 remain unchanged; there are no automatic retries or mutation admission changes.
+RunDetail dispatches once per mount to live/ (D) or result/ (E); see live/CONTEXT.md.

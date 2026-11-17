@@ -48,7 +48,10 @@ it('always provisions the actual output factory with installation metadata and a
   held.resolve(f.output); const runtime = await runtimeOpening;
   try {
     expect(mocks.gateway).toHaveBeenCalledOnce();
-    expect(mocks.source).toHaveBeenCalledWith({ dataRoot: options.dataRoot, configuration: options.connection.configuration, gateway });
+    expect(mocks.source).toHaveBeenCalledWith({ dataRoot: options.dataRoot, configuration: options.connection.configuration, gateway,
+      status: expect.objectContaining({ record: expect.any(Function) }) });
+    expect(runtime.agentStatus?.()).toMatchObject({ last: null, lastFacts: null,
+      engines: options.connection.configuration.profiles.map(profile => ({ profileId: profile.engine.profileId, imageDigest: profile.engine.imageDigest })) });
     expect(Object.isFrozen(f.options()?.gateway)).toBe(true);
   } finally { await runtime.close(); await fixture.close(metadata); }
 });

@@ -464,6 +464,17 @@
     "implementation": "implemented"
   },
   {
+    "name": "setRunNote",
+    "method": "PATCH",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/note",
+    "response": "Run",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunParams",
+    "request": "SetRunNoteRequest",
+    "implementation": "implemented"
+  },
+  {
     "name": "listRunEvents",
     "method": "GET",
     "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/events",
@@ -505,6 +516,16 @@
     "error": "ApiError",
     "params": "RunAttemptParams",
     "query": "RunMetricSamplesQuery",
+    "implementation": "implemented"
+  },
+  {
+    "name": "getRunLatencyAttribution",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics/latency-attribution",
+    "response": "RunLatencyAttribution",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunAttemptParams",
     "implementation": "implemented"
   },
   {
@@ -672,6 +693,25 @@
     "response": "OrganizationOverview",
     "successStatus": 200,
     "error": "ApiError",
+    "implementation": "implemented"
+  },
+  {
+    "name": "getInstallationStatus",
+    "method": "GET",
+    "path": "/api/v2/installation/status",
+    "response": "InstallationStatus",
+    "successStatus": 200,
+    "error": "ApiError",
+    "implementation": "implemented"
+  },
+  {
+    "name": "getRunQueue",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/queue",
+    "response": "RunQueueStatus",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunParams",
     "implementation": "implemented"
   }
 ]

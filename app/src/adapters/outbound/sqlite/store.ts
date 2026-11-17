@@ -1,5 +1,5 @@
 export { safeCode } from './safe-code.js';
-import { requireVisibleMutation, visibleEntity } from './workspace-retirement/public.js';
+import { requireVisibleMutation, visibleEntity, type Mutation } from './workspace-retirement/public.js';
 import { assertHistoricalRead } from './historical.js';
 import { deleteNamespaceRows } from './namespace-deletion/index.js';
 import { ParentRetentionSnapshots } from './retention-parent/index.js';
@@ -31,15 +31,15 @@ import { OutputCustody, outputOperation } from './output-custody/index.js';
 import { EventCustody, eventOperation } from './event-custody/index.js';
 import { Runs } from './runs.js';
 import { RunCancellations } from './run-cancellations.js';
+import { RunNotes } from './run-notes.js';
 import { captureCancelRunReply } from './run-cancellation-reply.js';
 import { DispatchClaims } from './dispatch-claims.js';
 import { DispatchObservations } from './dispatch-observations.js';
-import { dispatchOperation } from './dispatch-wire.js';
-import type { DispatchOperation } from './dispatch-wire.js';
+import { dispatchOperation, type DispatchOperation } from './dispatch-wire.js';
 import { RunReads } from './run-reads.js';
+import { readInstallationStatus, statusOperation } from './installation-status/index.js';
 import { Inputs } from './inputs.js';
 import { InputReads } from './input-reads.js';
-import { InputUsageReads } from './input-usage.js';
 import { INPUT_OPERATION_KINDS } from './input-validation.js';
 import { Suites } from './suites.js';
 import { SuiteReads } from './suite-reads.js';
@@ -51,10 +51,6 @@ import { Settings } from './settings.js';
 import { transaction } from './transaction.js';
 import { suiteOperation, operationMessageLimit } from './input.js';
 import { StorageError, type Bootstrap, type Operation, type Value } from './protocol.js';
-type Mutation = Extract<
-  Operation,
-  { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'exportJob' }
->;
 export class Store {
   private readonly parentSnapshots: ParentRetentionSnapshots;
   private readonly manualSnapshots: ManualRunDeletionSnapshots;
@@ -81,11 +77,11 @@ export class Store {
   private readonly exportOutputs: ExportOutputs;
   private readonly runs: Runs;
   private readonly runCancellations: RunCancellations;
+  private readonly runNotes: RunNotes;
   private readonly runReads: RunReads;
   private readonly overviews: Overviews;
   private readonly inputs: Inputs;
   private readonly inputReads: InputReads;
-  private readonly inputUsage: InputUsageReads;
   private readonly suites: Suites;
   private readonly suiteReads: SuiteReads;
   private readonly entities: Entities;
@@ -102,7 +98,7 @@ export class Store {
     this.outputs = new OutputCustody(db, bootstrap.installation.id);
     this.events = new EventCustody(db, bootstrap.installation.id);
     this.entities = new Entities(db);
-    this.suites = new Suites(db, this.entities);
+    this.suites = new Suites(db, this.entities, () => this.settings.administratorName());
     this.suiteReads = new SuiteReads(db, this.suites);
     this.settings = transaction(db, () => new Settings(db, bootstrap));
     this.exports = new ExportJobs(db, this.suites, this.settings, {
@@ -128,6 +124,7 @@ export class Store {
     this.results = new RunResults(db, this.runReads);
     this.runEvents = new RunEvents(db, this.runReads);
     this.runCancellations = new RunCancellations(db, this.runReads);
+    this.runNotes = new RunNotes(db, this.runReads);
     this.dispatchClaims = new DispatchClaims(
       db,
       this.settings,
@@ -143,7 +140,6 @@ export class Store {
     });
     this.inputs = new Inputs(db, this.entities, this.settings);
     this.inputReads = new InputReads(db, this.entities);
-    this.inputUsage = new InputUsageReads(db, this.entities);
     this.namespaces = new Namespaces(db, this.entities, this.settings);
     this.reads = new Reads(db, this.entities);
   }
@@ -169,6 +165,8 @@ export class Store {
         return this.runs.create(operation.command);
       case 'cancelRun':
         return this.runCancellations.cancel(operation.command);
+      case 'runNote':
+        return this.runNotes.set(operation.command);
       case 'input':
         return this.inputs.control(operation.command);
       case 'suite':
@@ -184,6 +182,7 @@ export class Store {
     switch (operation.kind) {
       case 'run':
       case 'cancelRun':
+      case 'runNote':
         return this.mutation(operation);
       case 'getRun':
         return this.runReads.get(operation.key);
@@ -226,7 +225,7 @@ export class Store {
       case 'inputStorage':
         return this.inputs.storage();
       case 'listInputUsage':
-        return this.inputUsage.usage(operation.query);
+        return this.inputReads.usage(operation.query);
       case 'recordInputShape':
         return transaction(this.db, () => this.inputs.recordShape(operation.shape));
       default:
@@ -291,13 +290,13 @@ export class Store {
     if (operation.kind === 'deleteNamespace') return deleteNamespaceRows(this.db, operation.command, this.entities);
     if (outputOperation(operation)) return this.outputs.execute(operation);
     if (eventOperation(operation)) return this.events.execute(operation);
+    if (statusOperation(operation)) return readInstallationStatus(this.db, this.settings, this.runReads, operation);
     return this.executeLegacy(operation);
   }
   private settlement(operation: Operation): Value {
     const checked = captureSettlementOperation(operation);
-    return checked.kind === 'settleBackendOutput'
-      ? this.settlements.settle(checked.request)
-      : this.settlements.read(checked.key);
+    if (checked.kind === 'settleBackendOutput') return this.settlements.settle(checked.request);
+    return this.settlements.read(checked.key);
   }
   private runRead(operation: Operation): Value {
     switch (operation.kind) {
@@ -355,6 +354,7 @@ export class Store {
         'getWorkspaceOverview',
         'run',
         'cancelRun',
+        'runNote',
         'getRun',
         'listRuns',
         'dispatchScan',

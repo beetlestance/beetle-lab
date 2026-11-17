@@ -13,6 +13,8 @@ export interface K6LiveApproval {
   readonly scope: LiveMetricScope;
   readonly producerEpoch: string;
   readonly subset: LiveMetricSubset;
+  /** Validated config `targetSampling.intervalMs`, or null when the suite samples no target. */
+  readonly targetIntervalMs: number | null;
 }
 export class K6LiveApprovalError extends Error {
   constructor() {
@@ -35,16 +37,32 @@ const priorities = [
   'data_received',
   'beetle_assertion_failures',
 ];
+/** Endpoint rows a live table can show: duration (count, p50, p95) and failure rate per request. */
+export const K6_LIVE_ENDPOINT_ROWS = 6;
 /** Same catalogue as parser/runtime; prepare/control remain excluded from live selection. */
 export function k6LiveSubset(source: K6MetricShape): LiveMetricSubset {
   const approved = k6MetricCatalogue(k6MetricLayout(source));
   const eligible = approved.filter(
     (item) => (item.scope === 'execute' || item.scope === 'engine') && item.tags.phase !== 'prepare',
   );
-  const preferred = priorities.flatMap((metric) => {
-    const row = eligible.find((item) => item.metric === metric);
-    return row ? [row] : [];
-  });
+  const endpoints = [...new Set(eligible.flatMap((item) => (item.tags.request ? [item.tags.request] : [])))];
+  const rows = endpoints.slice(0, K6_LIVE_ENDPOINT_ROWS).flatMap((request) =>
+    ['http_req_duration', 'http_req_failed'].flatMap((metric) => {
+      const row = eligible.find(
+        (item) => item.metric === metric && item.tags.request === request && !item.tags.assertion,
+      );
+      return row ? [row] : [];
+    }),
+  );
+  const preferred = [
+    ...rows,
+    ...priorities.flatMap((metric) => {
+      const row = rows.some((item) => item.metric === metric)
+        ? undefined
+        : eligible.find((item) => item.metric === metric);
+      return row ? [row] : [];
+    }),
+  ];
   const selected = [...preferred, ...eligible.filter((item) => !preferred.includes(item))]
     .slice(0, 20)
     .map((item, ordinal) => ({ ...item, ordinal }));
@@ -58,7 +76,7 @@ export function k6LiveSubset(source: K6MetricShape): LiveMetricSubset {
 }
 /** One durably single-start logical producer per unique launch. This UUID is not authentication. */
 export function createK6LiveApproval(input: {
-  source: K6MetricShape;
+  source: K6MetricShape & { readonly targetSampling?: { readonly intervalMs: number } | null };
   scope: LiveMetricScope;
   assignment: K6LiveAssignment;
   hash: LiveMetricHash;
@@ -105,7 +123,12 @@ export function createK6LiveApproval(input: {
       ),
     );
     const producerEpoch = epoch(digest);
-    return Object.freeze({ scope: Object.freeze(scope), producerEpoch, subset });
+    return Object.freeze({
+      scope: Object.freeze(scope),
+      producerEpoch,
+      subset,
+      targetIntervalMs: targetInterval(input.source.targetSampling),
+    });
   } catch {
     throw new K6LiveApprovalError();
   }
@@ -121,6 +144,13 @@ function epoch(digest: string): string {
   return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20)}`;
 }
 
+function targetInterval(value: unknown): number | null {
+  if (value === undefined || value === null) return null;
+  const interval = (value as { intervalMs?: unknown }).intervalMs;
+  if (typeof interval !== 'number' || !Number.isInteger(interval) || interval < 1000 || interval > 60000)
+    throw new K6LiveApprovalError();
+  return interval;
+}
 function fingerprint(value: unknown): value is string {
   return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 }

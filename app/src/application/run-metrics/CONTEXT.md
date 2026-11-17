@@ -17,3 +17,7 @@ Lookup shares their one physical admission; no pagination/corpus or second parse
 readRunHistorySummary shares that same parser/actual-original lane and returns
 compact v3/v4 source-bound scalars. Native4 timing comes from the sole collector;
 HTTP request distributions merge through the shared k6 projector.
+reader.getRunLatencyAttribution (latency.ts + pure rise.ts) streams the whole data
+artifact once with full SHA (<=3600 windows, <=32 MiB, <=64 request labels) and
+applies the fixed p95-rise definition in results.md "Derived presentation"; any
+insufficiency is a fixed reason with rise null, never a guess.

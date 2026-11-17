@@ -42,6 +42,10 @@ export class Sampler implements TargetSamplingOwner {
       this.stop();
     });
   }
+  recent(limit: number): readonly TargetSamplingSample[] {
+    const count = Number.isInteger(limit) && limit > 0 ? Math.min(limit, 256) : 0;
+    return Object.freeze(count ? this.samples.slice(-count) : []);
+  }
   finish(): Promise<TargetSamplingReport> {
     this.finishing ??= this.finishOnce();
     return this.finishing;

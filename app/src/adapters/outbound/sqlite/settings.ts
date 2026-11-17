@@ -46,6 +46,11 @@ export class Settings {
     const installation = immutableSnapshot(this.record({ kind: 'installation' }) as InstallationRecord);
     return Object.freeze({ installation, runtime: this.runtime.currentObservation() });
   }
+  /** The single administrator's current display name; absent means "Administrator". */
+  administratorName(): string {
+    const record = this.record({ kind: 'installation' }) as InstallationRecord;
+    return record.values.administratorName ?? 'Administrator';
+  }
   insert(record: SettingsRecord): void {
     const scope = record.scope;
     const organization = scope.kind === 'installation' ? null : lower(scope.organizationId);

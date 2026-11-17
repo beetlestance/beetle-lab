@@ -1,5 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
+import { InputUsageReads } from './input-usage.js';
 import type { InputList, InputRecoveryPage, InputPage, InputState } from '../../../ports/inputs.js';
+import type { InputUsagePage, InputUsageQuery } from '../../../ports/inputs.js';
 import { requireRule } from '../../../domain/namespaces/index.js';
 import { boundedCopy, lower, scopeKey, sha256, uuid } from './input.js';
 import { inputRecord, inputColumns, inputSource } from './input-row.js';
@@ -43,6 +45,10 @@ export class InputReads {
     private readonly db: DatabaseSync,
     private readonly entities: Entities,
   ) {}
+  /** Revisions pinning one input; see input-usage.ts for the index-backed page. */
+  usage(query: InputUsageQuery): InputUsagePage {
+    return new InputUsageReads(this.db, this.entities).usage(query);
+  }
   list(query: Query): InputPage {
     const after = continuation(query);
     let rows: InputRecord[];

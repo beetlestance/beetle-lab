@@ -13,7 +13,7 @@ EditorProvider retains one draft across navigation and snapshots mutation intent
 Unknown results allow identical replay; editing begins a new request ID.
 Settings routes lazy-load one feature; settings query keys include full scope.
 Parent saves invalidate descendant effective settings; null removes scoped overrides.
-Theme is the only persisted browser preference; no credentials are stored.
+The Darkroom or Scarab skin is the only persisted browser preference; no credentials.
 SessionApp also supplies InputTransferClient through InputTransferContext. Omitted
 transfer clients in composition tests cannot produce enabled transfer controls.
 Check: npx --no-install vitest run web/src --maxWorkers=2.

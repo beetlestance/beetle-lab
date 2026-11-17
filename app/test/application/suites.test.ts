@@ -10,7 +10,7 @@ it('binds full intent and route identity, excludes CREATE allocations and snapsh
   const command = prepareSuiteCommand(operation, digest);
   expect(prepareSuiteCommand({ ...operation, id: uuid(51) }, digest).intentDigest).toBe(command.intentDigest);
   expect(prepareSuiteCommand({ ...operation, request: { ...operation.request, name: 'Changed' } }, digest).intentDigest).not.toBe(command.intentDigest);
-  const revision = { kind: 'createSuiteRevision' as const, id: uuid(60), suiteId: suite.id, request: request() };
+  const revision = { kind: 'createSuiteRevision' as const,savedAt:'2026-11-10T00:00:00.000Z', id: uuid(60), suiteId: suite.id, request: request() };
   expect(prepareSuiteCommand(revision, digest).intentDigest).not.toBe(prepareSuiteCommand({ ...revision, suiteId: uuid(51) }, digest).intentDigest);
   expect(prepareSuiteCommand({ ...revision, id: uuid(61) }, digest).intentDigest).toBe(prepareSuiteCommand(revision, digest).intentDigest);
   let invoked = false; const accessor = Object.defineProperty({ ...operation }, 'request', { enumerable: true, get() { invoked = true; return operation.request; } });
@@ -36,6 +36,6 @@ it('retains authority across broken reader mutations and binds revision page ide
 it('rejects revision receipt output bound to another suite', async () => {
   const revision: SuiteRevision = { id: uuid(60), scope, suiteId: uuid(51), ordinal: 1, engineId: 'k6', configVersion: 1,
     preflightStatus: 'passed', digest: 'a'.repeat(64), config: request().config, inputManifest: [] };
-  await expect(mutateSuite({ operation: { kind: 'createSuiteRevision', id: uuid(60), suiteId: suite.id, request: request() },
+  await expect(mutateSuite({ operation: { kind: 'createSuiteRevision',savedAt:'2026-11-10T00:00:00.000Z', id: uuid(60), suiteId: suite.id, request: request() },
     digest, store: { execute: async () => revision } })).rejects.toMatchObject({ code: 'not_found' });
 });

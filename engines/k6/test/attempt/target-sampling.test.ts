@@ -53,7 +53,8 @@ it('starts collection with a fresh timestamp after nonzero target cooldown', asy
   const actual = targetSampling.startTargetSampling;
   vi.spyOn(targetSampling, 'startTargetSampling').mockImplementation(async options => {
     const owner = await actual(options);
-    return { finish: async () => { const report = await owner.finish(); native.wallOffset = 100; return report; },
+    return { recent: (limit: number) => owner.recent(limit),
+      finish: async () => { const report = await owner.finish(); native.wallOffset = 100; return report; },
       close: () => owner.close() };
   });
   const f = await setup();(f.offer.config as SuiteConfig).targetSampling!.cooldownMs = 25;await f.save();

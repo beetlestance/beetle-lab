@@ -4,6 +4,7 @@ import { migration002 } from '../../src/adapters/outbound/sqlite/migration002.js
 import { Store } from '../../src/adapters/outbound/sqlite/store.js';
 import { command, observation, requestId, scope, settingsFixture, uuid } from './fixture.js';
 import { request, suiteCommand } from './suites-fixture.js';
+import { withCurrentWrites } from './legacy030.js';
 
 export function legacyDatabase(path: string, count = 1) {
   const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });
@@ -14,7 +15,7 @@ export function legacyDatabase(path: string, count = 1) {
   const organization = store.execute({ kind: 'namespace', command: original });
   store.execute({ kind: 'namespace', command: command({ kind: 'createWorkspace', id: uuid(2), rootFolderId: uuid(3), request: {
     requestId: requestId(), scope: { kind: 'organization', organizationId: uuid(1) }, name: 'Legacy Workspace' } }) });
-  store.execute({ kind: 'suite', command: suiteCommand({ kind: 'createSuite', id: uuid(50), request: { scope, requestId: requestId(), name: 'Legacy Suite' } }) });
+  withCurrentWrites(db, () => store.execute({ kind: 'suite', command: suiteCommand({ kind: 'createSuite', id: uuid(50), request: { scope, requestId: requestId(), name: 'Legacy Suite' } }) }));
   const pin = { id: uuid(90), sha256: 'a'.repeat(64), bytes: 12 };
   db.prepare('INSERT INTO input_blobs VALUES(?,?,?,?,?,?)').run(pin.id, scope.organizationId, scope.workspaceId, pin.sha256, pin.bytes, 'published');
   db.prepare('INSERT INTO input_blobs VALUES(?,?,?,?,?,?)').run(uuid(91), scope.organizationId, scope.workspaceId, 'b'.repeat(64), 7, 'staging');

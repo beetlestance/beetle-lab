@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { apiError, deferred, ids, json, mount, org, readNamespace, testClient, workspace } from './test-fixtures.js';
 import { routes } from './routes.js';
@@ -61,11 +61,13 @@ describe('honest data and error states', () => {
     localStorage.clear();
     const api = testClient(readNamespace);
     mount(api.client);
-    fireEvent.change(screen.getByLabelText('Theme'), { target: { value: 'dark' } });
-    await waitFor(() => expect(document.documentElement).toHaveAttribute('data-theme', 'dark'));
-    expect(localStorage.getItem('beetle.theme')).toBe('dark');
+    const theme = screen.getByRole('radiogroup', { name: 'Theme' });
+    expect(within(theme).getByRole('radio', { name: 'Darkroom' })).toBeChecked();
+    fireEvent.click(within(theme).getByRole('radio', { name: 'Scarab' }));
+    await waitFor(() => expect(document.documentElement).toHaveAttribute('data-theme', 'scarab'));
+    expect(localStorage.getItem('beetle.theme')).toBe('scarab');
     expect(localStorage.length).toBe(1);
-    fireEvent.change(screen.getByLabelText('Theme'), { target: { value: 'light' } });
-    expect(document.documentElement).toHaveAttribute('data-theme', 'light');
+    fireEvent.click(within(theme).getByRole('radio', { name: 'Darkroom' }));
+    expect(document.documentElement).toHaveAttribute('data-theme', 'darkroom');
   });
 });

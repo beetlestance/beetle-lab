@@ -12,7 +12,14 @@ import type {
 export type SuiteOperation =
   | { kind: 'createSuite'; id: string; request: CreateSuiteRequest }
   | { kind: 'patchSuite'; id: string; request: PatchSuiteRequest }
-  | { kind: 'createSuiteRevision'; id: string; suiteId: string; request: CreateSuiteRevisionRequest };
+  | {
+      kind: 'createSuiteRevision';
+      id: string;
+      suiteId: string;
+      /** Server clock at acceptance; excluded from intent like other allocations. */
+      savedAt: string;
+      request: CreateSuiteRevisionRequest;
+    };
 export type SuiteCommand = SuiteOperation & { intentDigest: string };
 export interface SuiteKey {
   scope: WorkspaceScope;
@@ -34,6 +41,7 @@ export interface RevisionList extends SuiteList {
  * Use the shared receipt namespace so cross-operation requestId reuse conflicts.
  * Input pins derive from the shared k6 config; exact published scope/hash/size must
  * match inside the same transaction. Metadata declarations are not published bytes.
+ * Revisions snapshot `savedAt`, optional `message` and the administrator name.
  */
 export interface SuiteStore {
   execute(command: SuiteCommand): Promise<Suite | SuiteRevision>;

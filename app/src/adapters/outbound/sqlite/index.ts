@@ -28,8 +28,9 @@ import type { OutputFinalizations } from '../../../ports/output-finalization.js'
 import type { RunResultReader } from '../../../ports/run-results.js';
 import type { OutputArtifactStore } from '../../../ports/output-artifacts.js';
 import type { EventCustodyStore } from '../../../ports/events.js';
-import type { RunStore, RunReader, RunCancellationStore } from '../../../ports/runs.js';
+import type { RunStore, RunReader, RunCancellationStore, RunNoteStore } from '../../../ports/runs.js';
 import type { DispatchStore } from '../../../ports/dispatch.js';
+import type { InstallationStatusReader } from '../../../ports/installation-status.js';
 import type { InputStore } from '../../../ports/inputs.js';
 import type { SuiteStore, SuiteReader } from '../../../ports/suites.js';
 import type { SettingsScope } from '@beetle/contracts/api';
@@ -280,11 +281,17 @@ export class Metadata extends MetadataWorker {
     },
   };
 
-  readonly runs: RunStore & RunReader & RunCancellationStore = {
+  readonly runs: RunStore & RunReader & RunCancellationStore & RunNoteStore = {
     execute: (command) => this.call({ kind: 'run', command }) as ReturnType<RunStore['execute']>,
     getRun: (key) => this.call({ kind: 'getRun', key }) as ReturnType<RunReader['getRun']>,
     listRuns: (query) => this.call({ kind: 'listRuns', query }) as ReturnType<RunReader['listRuns']>,
     cancel: (command) => this.call({ kind: 'cancelRun', command }) as ReturnType<RunCancellationStore['cancel']>,
+    setNote: (command) => this.call({ kind: 'runNote', command }) as ReturnType<RunNoteStore['setNote']>,
+  };
+
+  readonly installationStatus: InstallationStatusReader = {
+    poolUsage: () => this.call({ kind: 'getPoolUsage' }) as ReturnType<InstallationStatusReader['poolUsage']>,
+    runQueue: (key) => this.call({ kind: 'getRunQueue', key }) as ReturnType<InstallationStatusReader['runQueue']>,
   };
 
   readonly dispatch: DispatchStore = {

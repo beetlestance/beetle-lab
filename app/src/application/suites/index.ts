@@ -18,6 +18,7 @@ export function prepareSuiteCommand(operation: SuiteOperation, digest: IntentDig
     createSuiteRevision: 'CreateSuiteRevisionRequest',
   } as const;
   requireRule(validateApi(names[copy.kind], copy.request).ok);
+  if (copy.kind === 'createSuiteRevision') requireRule(validateApi('RunTimestamp', copy.savedAt).ok);
   const route =
     copy.kind === 'patchSuite' ? { id: copy.id } : copy.kind === 'createSuiteRevision' ? { suiteId: copy.suiteId } : {};
   return immutableSnapshot({

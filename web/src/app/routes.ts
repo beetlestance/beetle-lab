@@ -2,6 +2,7 @@ import { validateApi } from '@beetle/contracts/api';
 
 export const routes = {
   reference: '/reference',
+  engines: '/engines',
   runsPattern: '/organizations/:organizationId/workspaces/:workspaceId/runs',
   comparisonPattern: '/organizations/:organizationId/workspaces/:workspaceId/runs/compare',
   comparison: (org: string, workspace: string, ids: readonly string[]) =>
@@ -20,6 +21,10 @@ export const routes = {
     `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/suites`,
   suite: (org: string, workspace: string, id: string) =>
     `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/suites/${encodeURIComponent(id)}`,
+  suiteScriptPattern:
+    '/organizations/:organizationId/workspaces/:workspaceId/suites/:suiteId/revisions/:revisionId/script',
+  suiteScript: (org: string, workspace: string, suite: string, revision: string) =>
+    `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/suites/${encodeURIComponent(suite)}/revisions/${encodeURIComponent(revision)}/script`,
   organizations: '/',
   settings: '/settings',
   organizationSettingsPattern: '/organizations/:organizationId/settings',

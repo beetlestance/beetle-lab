@@ -24,7 +24,8 @@ function add(left: number | null, right: number): number {
   if (!Number.isSafeInteger(value) || value < 0) throw new K6HttpSummaryError();
   return value;
 }
-function executeRequest(series: SeriesTotal): boolean {
+/** Execute-phase native HTTP request series (rN label, no assertion tag). */
+export function isK6ExecuteRequest(series: SeriesTotal): boolean {
   return (
     series.scope === 'execute' &&
     series.tags.phase === 'execute' &&
@@ -60,7 +61,7 @@ export function summarizeK6HttpTotals(series: readonly SeriesTotal[]): K6HttpSum
     const identity = metricSeriesIdentity(item);
     if (seen.has(identity)) throw new K6HttpSummaryError();
     seen.add(identity);
-    if (executeRequest(item)) accumulate(totals, item);
+    if (isK6ExecuteRequest(item)) accumulate(totals, item);
   }
   return {
     requestCount: totals.requestCount,

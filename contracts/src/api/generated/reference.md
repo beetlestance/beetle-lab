@@ -49,10 +49,12 @@ Schema catalogue is complete, including runner common exactly once. Implementati
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId} | implemented | RunParams | none | none | 200 | Run |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/result | implemented | RunParams | none | none | 200 | RunResultSnapshot |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/cancel | implemented | RunParams | none | CancelRunRequest | 202 | Run |
+| PATCH | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/note | implemented | RunParams | none | SetRunNoteRequest | 200 | Run |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/events | implemented | RunParams | PageQuery | none | 200 | RunEventPage |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/artifacts | implemented | RunAttemptParams | PageQuery | none | 200 | RunArtifactPage |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics | implemented | RunAttemptParams | PageQuery | none | 200 | RunMetricSeriesPage |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics/samples | implemented | RunAttemptParams | RunMetricSamplesQuery | none | 200 | RunMetricSamplesPage |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics/latency-attribution | implemented | RunAttemptParams | none | none | 200 | RunLatencyAttribution |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics/live | implemented | RunAttemptParams | none | none | 200 | LiveMetricSnapshot |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/comparisons | implemented | WorkspaceParams | none | RunComparisonRequest | 200 | RunComparisonSnapshot |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/revisions/{revisionId}/exports | implemented | SuiteRevisionParams | none | CreateExportRequest | 202 | ExportJob |
@@ -69,6 +71,8 @@ Schema catalogue is complete, including runner common exactly once. Implementati
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/retention-batches/{snapshotId}/discard | implemented | RetentionBatchParams | none | none | 200 | RetentionDiscardReceipt |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/retention-batches/{snapshotId}/preview | implemented | RetentionBatchParams | none | none | 200 | RetentionPreview |
 | GET | /api/v2/organizations/{organizationId}/overview | implemented | OrganizationParams | none | none | 200 | OrganizationOverview |
+| GET | /api/v2/installation/status | implemented | none | none | none | 200 | InstallationStatus |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/queue | implemented | RunParams | none | none | 200 | RunQueueStatus |
 
 All errors use ApiError. UUID path parameters are validated before URL encoding.
 List queries require an integer limit 1–100 and optional opaque string cursor; HTTP query parsing belongs to the transport adapter.

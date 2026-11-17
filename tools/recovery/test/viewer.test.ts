@@ -27,7 +27,8 @@ it('opens real worker-backed historical HTTP with separate persistent auth, no m
   const headers = {host: '127.0.0.1:43129', origin, 'content-type': 'application/json', 'x-beetle-local': '1'};
   try {
     const opened = await app.server.inject({method: 'POST', url: '/api/v2/auth/local', headers, payload: {}});
-    expect(opened.statusCode).toBe(200); expect(opened.json()).toMatchObject({readOnly: true, accessMode: 'automatic'});
+    expect(opened.statusCode).toBe(200); expect(opened.json()).toMatchObject({readOnly: true, accessMode: 'automatic',
+      restoredBackup: {backupId: header.backupId, createdAt: '2026-11-14T00:00:00.000Z'}});
     const setCookie = opened.headers['set-cookie']; const cookie = (Array.isArray(setCookie) ? setCookie[0]! : setCookie!).split(';')[0]!;
     expect(cookie).toMatch(/^beetle_history_[a-f0-9]{32}=/); const auth = {...headers, cookie, 'x-beetle-csrf': opened.json<{csrfToken: string}>().csrfToken};
     expect((await app.server.inject({url: '/api/v2/organizations?limit=100', headers: auth})).statusCode).toBe(200);

@@ -33,6 +33,8 @@ const reads = new Set<Operation['kind']>([
   'inputStorage',
   'getExport',
   'listExports',
+  'getPoolUsage',
+  'getRunQueue',
 ]);
 /** Deny by default before any private worker mutation or original/replay lookup. */
 export function assertHistoricalRead(db: DatabaseSync, operation: Operation): void {

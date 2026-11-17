@@ -43,6 +43,7 @@ export function capacityObservation(
     provenance: { ...raw.capacityProvenance },
     diskSource: raw.diskSource,
     freeStagingDiskBytes: raw.freeDiskBytes,
+    ...daemonCapacity(raw),
     physicalPidCapacity: raw.physicalPidCapacity,
     runtimeControls: raw.controls.filter((control) => ['cpu', 'memory', 'pids'].includes(control)),
     guards: { source: guards.source, observedAtMs: guards.observedAt, controls: [...guards.controls] },
@@ -66,6 +67,14 @@ export function capacityObservation(
   const checked = validate('CapacityObservation', value);
   if (!checked.ok) unavailable();
   return checked.value;
+}
+/** Additive 1.0 field: raw daemon/VM totals only when Docker info measured both. */
+function daemonCapacity(raw: PublishedObservation['observation']) {
+  const measured =
+    raw.capacityProvenance.cpuMillis === 'docker-info' && raw.capacityProvenance.memoryBytes === 'docker-info';
+  return measured
+    ? { daemonCapacity: { cpuMillis: raw.capacity.cpuMillis, memoryBytes: raw.capacity.memoryBytes } }
+    : {};
 }
 function sourceGuards(frame: PublishedObservation, expiresAtMs: number, now: number) {
   const raw = frame.observation;

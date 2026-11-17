@@ -99,3 +99,17 @@ it('clamps repeated frames to a forward wall-clock step without renewing monoton
  f.clock(6000,200);expect(await f.reader.read(f.operation())).toMatchObject({ok:true,freshUntilMonotonicMs:1100});
  await f.reader.close();
 });
+
+it('accepts target readings only at the trusted approved interval, never from the frame alone', async () => {
+  const values = {rss: 1, heapAlloc: null, heapInuse: null, usedHeapSize: null, totalHeapSize: null, cpuPercent: null, systemCpuPercent: null,
+    'eventLoopDelay.mean': null, 'eventLoopDelay.p99': null, 'eventLoopDelay.max': null, activeHandles: null, goroutines: null};
+  const target = {scope: 'target-reported' as const, intervalMs: 1000, omittedSamples: 0,
+    samples: [{observedAtMs: 900, phase: 'during' as const, status: 'ready' as const, values}]};
+  for (const [approved, expected] of [[undefined, 'target'], [2000, 'target'], [1000, null]] as const) {
+    const f = fixture(approved); f.set({ok: true, status: 200, image: image(frame({target}))});
+    const read = await f.reader.read(f.operation());
+    if (expected) expect(read).toEqual({ok: false, reason: expected});
+    else expect(read).toMatchObject({ok: true, frame: {target}});
+    await f.reader.close();
+  }
+});

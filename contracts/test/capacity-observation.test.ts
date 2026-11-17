@@ -34,3 +34,14 @@ it('leaves clock freshness and cross-field authority to the receiver instead of 
   // Archived or inconsistent timestamps can be structurally valid; the adapter must reject their use.
   expect(validate('CapacityObservation', { ...checked.value, expiresAtMs: checked.value.sampleStartedAtMs }).ok).toBe(true);
 });
+
+it('accepts the additive 1.0 daemonCapacity field only as a closed pair of positive measured totals', async () => {
+  const checked = validate('CapacityObservation', await fixture('valid/capacity-observation.json'));
+  if (!checked.ok) throw new Error('Invalid fixture');
+  const value = checked.value;
+  expect(validate('CapacityObservation', { ...value, daemonCapacity: { cpuMillis: 8000, memoryBytes: 17179869184 } }).ok).toBe(true);
+  for (const daemonCapacity of [null, {}, { cpuMillis: 8000 }, { cpuMillis: 0, memoryBytes: 1 },
+    { cpuMillis: 1, memoryBytes: 1, usedMillis: 1 }, { cpuMillis: 1.5, memoryBytes: 1 }]) {
+    expect(validate('CapacityObservation', { ...value, daemonCapacity }).ok, JSON.stringify(daemonCapacity)).toBe(false);
+  }
+});

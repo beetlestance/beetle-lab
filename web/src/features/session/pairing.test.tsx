@@ -41,7 +41,7 @@ describe('typed browser pairing boundary', () => {
     expect(api.records.every(record => !record.path.includes(token))).toBe(true);
     expect(document.body).not.toHaveTextContent(token);
     expect(localStorage.length).toBe(1);
-    expect(localStorage.getItem('beetle.theme')).toBe('system');
+    expect(localStorage.getItem('beetle.theme')).toBe('darkroom');
     expect(sessionStorage.length).toBe(0);
   });
   it('clears the input immediately and never retains the token after rejected pairing', async () => {

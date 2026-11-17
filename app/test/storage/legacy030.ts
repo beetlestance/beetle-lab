@@ -1,43 +1,88 @@
 import assert from 'node:assert/strict';
-import type {DatabaseSync} from 'node:sqlite';
-import {initialize as prior023} from '../backend-settlement/prior023.js';
-import {migration024} from '../../src/adapters/outbound/sqlite/migration024.js';
-import {migrate025} from '../../src/adapters/outbound/sqlite/migration025.js';
-import {migration026} from '../../src/adapters/outbound/sqlite/migration026.js';
-import {migration027} from '../../src/adapters/outbound/sqlite/migration027.js';
-import {migration028} from '../../src/adapters/outbound/sqlite/migration028.js';
-import {migration029} from '../../src/adapters/outbound/sqlite/migration029.js';
-import {migration030} from '../../src/adapters/outbound/sqlite/migration030.js';
-import {migration032} from '../../src/adapters/outbound/sqlite/migration032.js';
-import {registerBackendSettlement} from '../../src/adapters/outbound/sqlite/backend-settlement-guard/index.js';
-import {registerRetentionAccounting} from '../../src/adapters/outbound/sqlite/retention-accounting-guard/index.js';
-import {transaction} from '../../src/adapters/outbound/sqlite/transaction.js';
-function graph(db:DatabaseSync){
- return db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY type,name").all();
+import type { DatabaseSync } from 'node:sqlite';
+import { migration031 } from '../../src/adapters/outbound/sqlite/migration031.js';
+import { migration032 } from '../../src/adapters/outbound/sqlite/migration032.js';
+import { transaction } from '../../src/adapters/outbound/sqlite/transaction.js';
+
+const version = (db: DatabaseSync) => Number(db.prepare('PRAGMA user_version').get()?.user_version);
+const graph = (db: DatabaseSync) =>
+  db.prepare('SELECT type,name,tbl_name,sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY type,name').all();
+const exists = (db: DatabaseSync, type: string, name: string) =>
+  db.prepare('SELECT 1 FROM sqlite_schema WHERE type=? AND name=?').get(type, name) !== undefined;
+/** Exact migration003 text, so the restored index matches the shipped predecessor graph. */
+const pinLookup = 'CREATE INDEX input_pins_lookup ON revision_input_pins(organization_id,workspace_id,input_id)';
+
+/** Removes exactly the migration031 objects; the caller owns the transaction and the version. */
+function dropAuthoring(db: DatabaseSync): void {
+  db.exec(`DROP TRIGGER run_notes_history_update;DROP TRIGGER run_notes_history_insert;DROP INDEX history_note_owner;
+  DROP TABLE history_note_grams;DROP TRIGGER run_notes_retained;DROP TRIGGER run_notes_next;DROP TRIGGER run_notes_first;
+  DROP TABLE run_notes;DROP TRIGGER revisions_metadata_insert;DROP INDEX IF EXISTS run_events_runtime;
+  ALTER TABLE suite_revisions DROP COLUMN saved_by;ALTER TABLE suite_revisions DROP COLUMN message;
+  ALTER TABLE suite_revisions DROP COLUMN saved_at;ALTER TABLE suites DROP COLUMN description;`);
 }
-/** Test-only projection of schema32 to the shipped schema30; recorded input metadata is never discarded. */
-export function asSchema30(db:DatabaseSync):void{
- const version=Number(db.prepare('PRAGMA user_version').get()?.user_version);if(version===30)return;
- assert.equal(version,32,'Cannot project fixture to schema30');
- assert(!db.prepare('SELECT 1 FROM input_blobs WHERE created_at IS NOT NULL OR published_at IS NOT NULL LIMIT 1').get(),'Cannot project fixture with input times');
- assert(!db.prepare('SELECT 1 FROM input_shapes LIMIT 1').get(),'Cannot project fixture with input shapes');
- const reference=prior023(':memory:');registerBackendSettlement(reference);registerRetentionAccounting(reference);
- try{
-  transaction(reference,()=>reference.exec(migration024));transaction(reference,()=>migrate025(reference));
-  for(const sql of [migration026,migration027,migration028,migration029,migration030])transaction(reference,()=>reference.exec(sql));
-  const target=graph(reference);transaction(reference,()=>reference.exec(migration032));
-  assert.deepEqual(graph(db),graph(reference),'Synthetic fixture schema differs from shipped source');
-  const current=graph(db);const wanted=new Map(target.map(row=>[row.name,row]));
-  transaction(db,()=>{
-   for(const row of current){
-    if(row.type==='table'||wanted.get(row.name)?.sql===row.sql)continue;
-    assert(typeof row.name==='string'&&/^[a-z_]+$/.test(row.name));assert(['trigger','index'].includes(String(row.type)));
-    db.exec(`DROP ${row.type} ${row.name}`);
-   }
-   for(const row of target)if(row.type!=='table'&&!current.some(value=>value.name===row.name&&value.sql===row.sql))db.exec(String(row.sql));
-   db.exec('DROP TABLE input_shapes;DROP TABLE input_usage_counts');
-   db.exec('ALTER TABLE input_blobs DROP COLUMN published_at;ALTER TABLE input_blobs DROP COLUMN created_at');
-   db.exec('PRAGMA user_version=30');assert.deepEqual(graph(db),target);assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(),[]);
+/** Removes exactly the migration032 objects and restores the 003 pin index; caller owns transaction and version. */
+function dropInputMetadata(db: DatabaseSync): void {
+  db.exec(`DROP TRIGGER input_usage_count;DROP TRIGGER input_usage_counts_no_delete;DROP TRIGGER input_usage_counts_update;
+  DROP TRIGGER input_usage_counts_insert;DROP TABLE input_usage_counts;DROP INDEX input_pins_usage;${pinLookup};
+  DROP TRIGGER input_shapes_no_delete;DROP TRIGGER input_shapes_no_update;DROP TRIGGER input_shapes_insert;
+  DROP TABLE input_shapes;DROP TRIGGER inputs_times_update;DROP TRIGGER inputs_times_insert;
+  ALTER TABLE input_blobs DROP COLUMN published_at;ALTER TABLE input_blobs DROP COLUMN created_at;`);
+}
+/** Recorded input facts can never be rewound; derived usage counts are dropped with their table. */
+function assertNoInputMetadata(db: DatabaseSync): void {
+  assert(
+    !db.prepare('SELECT 1 FROM input_blobs WHERE created_at IS NOT NULL OR published_at IS NOT NULL LIMIT 1').get(),
+    'Cannot project fixture with input times',
+  );
+  assert(!db.prepare('SELECT 1 FROM input_shapes LIMIT 1').get(), 'Cannot project fixture with input shapes');
+}
+/**
+ * Test-only projection of a synthetic schema31/32 fixture to schema30. Authored notes,
+ * descriptions, messages and input facts can never be rewound; server-stamped
+ * savedAt/savedBy did not exist before 031, so they are dropped with their columns.
+ * Every refusal happens before any fixture mutation.
+ */
+export function asSchema30(db: DatabaseSync): void {
+  const initial = version(db);
+  if (initial === 30) return;
+  assert(initial === 31 || initial === 32, 'Cannot project fixture to schema30');
+  assert(!db.prepare('SELECT 1 FROM run_notes LIMIT 1').get(), 'Cannot project fixture with run notes');
+  assert(!db.prepare('SELECT 1 FROM suites WHERE description IS NOT NULL LIMIT 1').get(), 'Cannot project descriptions');
+  assert(!db.prepare('SELECT 1 FROM suite_revisions WHERE message IS NOT NULL LIMIT 1').get(), 'Cannot project messages');
+  if (initial === 32) assertNoInputMetadata(db);
+  transaction(db, () => {
+    if (initial === 32) dropInputMetadata(db);
+    dropAuthoring(db);
+    db.exec('PRAGMA user_version=30');
+    assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
   });
- }finally{reference.close();}
+}
+/**
+ * Lets current Store code seed a populated predecessor schema: migration031/032 objects
+ * exist only while `seed` runs, then the exact predecessor graph and version return.
+ * Seeded revisions and inputs lose their stamped metadata exactly as a real predecessor
+ * lacked it; seeded shapes are refused. 032 is added only where its pin tables exist.
+ */
+export function withCurrentWrites<T>(db: DatabaseSync, seed: () => T): T {
+  const initial = version(db);
+  if (initial >= 32 || exists(db, 'table', 'input_shapes')) return seed();
+  const authoring = !(initial >= 31 || exists(db, 'table', 'run_notes'));
+  const inputs = exists(db, 'index', 'input_pins_lookup');
+  const before = graph(db);
+  const ddl = exists(db, 'table', 'run_events') ? migration031 : migration031.replace(/CREATE INDEX run_events_runtime[^;]*;/, '');
+  transaction(db, () => {
+    if (authoring) db.exec(ddl);
+    if (inputs) db.exec(migration032);
+    db.exec(`PRAGMA user_version=${initial};`);
+  });
+  const result = seed();
+  if (authoring) assert(!db.prepare('SELECT 1 FROM run_notes LIMIT 1').get(), 'Predecessor seed cannot hold run notes');
+  if (inputs) assert(!db.prepare('SELECT 1 FROM input_shapes LIMIT 1').get(), 'Predecessor seed cannot hold input shapes');
+  transaction(db, () => {
+    if (inputs) dropInputMetadata(db);
+    if (authoring) dropAuthoring(db);
+    db.exec(`PRAGMA user_version=${initial}`);
+  });
+  assert.deepEqual(graph(db), before, 'Predecessor schema changed while seeding');
+  return result;
 }

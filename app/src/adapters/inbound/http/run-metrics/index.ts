@@ -55,6 +55,20 @@ export function registerRunMetricRoutes(server: FastifyInstance, options: Option
       },
       { signalFor: (request) => owners.forRequest(request).signal },
     );
+    registerApiOperation(
+      routes,
+      'getRunLatencyAttribution',
+      ({ params, signal }) => {
+        const owner = owners.forSignal(signal);
+        return owner.run(() =>
+          options.service.reader.getRunLatencyAttribution(
+            { id: params.runId.toLowerCase(), scope: scope(params), attemptId: params.attemptId.toLowerCase() },
+            owner,
+          ),
+        );
+      },
+      { signalFor: (request) => owners.forRequest(request).signal },
+    );
   });
   let closing: Promise<void> | undefined;
   return Object.freeze({

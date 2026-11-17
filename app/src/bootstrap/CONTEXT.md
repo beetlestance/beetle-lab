@@ -34,5 +34,6 @@ automatic delivery. Fatal errors fence work; shutdown owns both loop originals
 before the gateway and metadata. `cleanupState` gives retention its advisory
 driverState from in-memory loop/failure flags: `running` means only loop availability,
 not agent reachability, batch progress or funding; it names no refusal cause and no
-failure cause survives a restart. Contract:
+failure cause survives a restart. `agentStatus` exposes the in-memory status board fed by the
+capacity source (application/installation-status); it is informational only. Contract:
 [Runtime polling](../../../docs/system/contracts/run-delivery.md#agent-scheduling-and-capacity-polling).

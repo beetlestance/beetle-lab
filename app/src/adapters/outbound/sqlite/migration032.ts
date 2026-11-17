@@ -3,7 +3,6 @@
  * no shape: nothing is inferred from custody state. Times are written once by the
  * metadata worker; shapes are written once after verified publication; usage counts
  * equal the immutable revision pins and are maintained only by the pin trigger.
- * Number 031 is reserved for the authoring-metadata lane.
  */
 const sameInput = (alias: string) =>
   `organization_id=${alias}.organization_id AND workspace_id=${alias}.workspace_id AND input_id=${alias}.input_id`;

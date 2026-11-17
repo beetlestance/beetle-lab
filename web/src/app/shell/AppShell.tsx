@@ -1,0 +1,104 @@
+import { useRef, useState } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { routes } from '../routes.js';
+import { navItems, shellScope } from '../navigation.js';
+import { ThemeSwitch } from '../../components/ThemeSwitch.js';
+import { BeetleMark } from './BeetleMark.js';
+import { ScopeSwitcher } from './ScopeSwitcher.js';
+import './shell.css';
+
+export type AppShellProps = {
+  children: ReactNode;
+  /** Opens command search; the shell's Search entry and ⌘K both call it. */
+  onSearch: () => void;
+  /** Active runs for the Workspaces badge. Omitted when unknown: no badge, never zero. */
+  activeRuns?: number | undefined;
+};
+
+/** Header from every Penpot board plus the phone menu sheet ("Phone / Menu open"). */
+export function AppShell({ children, onSearch, activeRuns }: AppShellProps) {
+  const { pathname } = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const [lastPath, setLastPath] = useState(pathname);
+  if (lastPath !== pathname) {
+    setLastPath(pathname);
+    setMenuOpen(false);
+  }
+  const onMenuKey = (event: KeyboardEvent) => {
+    if (event.key !== 'Escape' || !menuOpen) return;
+    setMenuOpen(false);
+    menuButton.current?.focus();
+  };
+  return (
+    <div className="shell" data-menu-open={menuOpen || undefined}>
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
+      <header className="shell-header" onKeyDown={onMenuKey}>
+        <Link className="shell-brand" to={routes.organizations} aria-label="Beetle Lab home">
+          <BeetleMark />
+          <span className="shell-brand-name">Beetle Lab</span>
+        </Link>
+        <ScopeSwitcher scope={shellScope(pathname)} />
+        <button
+          ref={menuButton}
+          type="button"
+          className="btn btn-secondary btn-sm shell-menu-button"
+          aria-expanded={menuOpen}
+          aria-controls="shell-menu"
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          {menuOpen ? 'Close' : 'Menu'}
+        </button>
+        <div className="shell-menu" id="shell-menu">
+          <ShellNav pathname={pathname} activeRuns={activeRuns} />
+          <div className="shell-tools">
+            <button
+              type="button"
+              className="btn btn-sm shell-search"
+              aria-label="Search commands"
+              aria-haspopup="dialog"
+              aria-keyshortcuts="Control+K Meta+K"
+              onClick={onSearch}
+            >
+              Search
+              <kbd aria-hidden="true">⌘K</kbd>
+            </button>
+            <ThemeSwitch className="shell-theme" />
+          </div>
+        </div>
+      </header>
+      <main id="main" tabIndex={-1} className="shell-main">
+        {children}
+      </main>
+    </div>
+  );
+}
+
+function ShellNav({ pathname, activeRuns }: { pathname: string; activeRuns: number | undefined }) {
+  return (
+    <nav aria-label="Main navigation" className="shell-nav">
+      <ul role="list">
+        {navItems(pathname).map((item) => (
+          <li key={item.key}>
+            <Link to={item.to} aria-current={item.current ? 'page' : undefined}>
+              {item.label}
+              {item.key === 'workspaces' && activeRuns !== undefined && activeRuns > 0 && (
+                <span className="shell-nav-badge">
+                  <span className="sr-only">, </span>
+                  {activeRuns}
+                  <span className="sr-only"> running</span>
+                  <span className="shell-nav-running" aria-hidden="true">
+                    running
+                  </span>
+                </span>
+              )}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}

@@ -1,6 +1,7 @@
 import { checkHistoricalNative } from './historical-native.js';
 import { markHistorical } from './historical.js';
 import { migration032 } from './migration032.js';
+import { migration031 } from './migration031.js';
 import { migration030 } from './migration030.js';
 import { migration029 } from './migration029.js';
 import { migration028 } from './migration028.js';
@@ -144,7 +145,7 @@ function applyMigrations(db: DatabaseSync, version: number): void {
     () => db.exec(migration028),
     () => db.exec(migration029),
     () => db.exec(migration030),
-    // 031 is reserved for the authoring-metadata lane; it is inserted before this step at merge.
+    () => db.exec(migration031),
     () => db.exec(migration032),
   ];
   steps.forEach((step, index) => {

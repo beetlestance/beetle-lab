@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, useSyncExternalStore } from 'react';
 import { App } from '../../app/App.js';
-import { ThemePicker } from '../../components/ThemePicker.js';
+import { ThemeSwitch } from '../../components/ThemeSwitch.js';
 import { BrowserSessionGate } from './session.js';
 import type { SessionOptions } from './session.js';
 import './session.css';
@@ -40,7 +40,7 @@ export function SessionApp(options: SessionOptions) {
         {(state.kind === 'unavailable' || state.kind === 'unpaired') && (
           <button onClick={gate.check}>Check session status</button>
         )}
-        <ThemePicker />
+        <ThemeSwitch />
       </section>
     </main>
   );

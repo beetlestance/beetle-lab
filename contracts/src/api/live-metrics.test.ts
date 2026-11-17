@@ -93,3 +93,31 @@ it.each(['identity', 'duplicate', 'unit', 'kind'] as const)('rejects invalid sel
   if (kind === 'kind') f.series[0]!.kind = 'rate';
   expect(() => captureLiveMetricSnapshot(f, hash)).toThrow(expect.objectContaining({code: 'invalid_snapshot'}));
 });
+
+function targetFrame() {
+  const values = {rss: 1, heapAlloc: null, heapInuse: null, usedHeapSize: 0, totalHeapSize: null, cpuPercent: 5, systemCpuPercent: null,
+    'eventLoopDelay.mean': null, 'eventLoopDelay.p99': null, 'eventLoopDelay.max': null, activeHandles: null, goroutines: null};
+  return {...fixture(), target: {scope: 'target-reported' as const, intervalMs: 1000, omittedSamples: 0, samples: [
+    {observedAtMs: 3000, phase: 'before' as 'before' | 'during', status: 'ready' as 'ready' | 'unavailable', values: {...values}},
+    {observedAtMs: 4100, phase: 'during' as 'before' | 'during', status: 'ready' as 'ready' | 'unavailable', values: {...values}}]}};
+}
+type TargetFrame = ReturnType<typeof targetFrame>;
+it('round-trips bounded target readings and keeps explicit zero and null', () => {
+  const f = targetFrame(); const captured = decodeLiveMetricSnapshot(encodeLiveMetricSnapshot(f, hash), hash);
+  expect(captured.target).toEqual(f.target); expect(captured.target!.samples[0]!.values.usedHeapSize).toBe(0);
+  expect(captured.target!.samples[0]!.values.heapAlloc).toBeNull();
+});
+it.each([
+  ['a future sample', (f: TargetFrame) => {f.target.samples[1]!.observedAtMs = 4101;}],
+  ['a sample beyond the lookback', (f: TargetFrame) => {f.target.samples[0]!.observedAtMs = 4100 - (8 * 1000 + 5000) - 1;}],
+  ['non-ascending samples', (f: TargetFrame) => {f.target.samples[1]!.observedAtMs = 3000;}],
+  ['before after during', (f: TargetFrame) => {f.target.samples[0]!.phase = 'during'; f.target.samples[1]!.phase = 'before';}],
+  ['an unavailable sample with a value', (f: TargetFrame) => {f.target.samples[1]!.status = 'unavailable';}],
+  ['more than eight samples', (f: TargetFrame) => {f.target.samples = Array.from({length: 9}, (_, i) => ({...f.target.samples[1]!, observedAtMs: 4000 + i}));}],
+  ['an unknown reading', (f: TargetFrame) => {Object.assign(f.target.samples[0]!.values, {secret: 1});}],
+  ['a negative reading', (f: TargetFrame) => {Object.assign(f.target.samples[0]!.values, {rss: -1});}],
+  ['an interval out of range', (f: TargetFrame) => {f.target.intervalMs = 999;}],
+])('rejects target readings with %s', (_name, mutate) => {
+  const f = targetFrame(); mutate(f);
+  expect(() => captureLiveMetricSnapshot(f, hash)).toThrow(expect.objectContaining({code: 'invalid_snapshot'}));
+});

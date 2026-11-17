@@ -80,5 +80,5 @@ returned unchanged; the store decision stays authoritative.
 | --- | --- |
 | `app/src/application/inputs/shape.ts` | `6353d2a6697d` |
 | `app/src/application/inputs/dependencies.ts` | `a1572a1cd7b4` |
-| `app/src/adapters/outbound/sqlite/migration032.ts` | `b1809e633276` |
+| `app/src/adapters/outbound/sqlite/migration032.ts` | `dc3df90bc722` |
 | `app/src/adapters/outbound/sqlite/input-usage.ts` | `0a3924115432` |

@@ -4,6 +4,7 @@ import type { HistoricalOptions } from './historical.js';
 import type { BackendServingLease } from './recovery-control/index.js';
 import { openBackendServing } from './recovery-control/index.js';
 import { registerRetentionRoutes } from '../adapters/inbound/http/retention/index.js';
+import { registerInstallationStatusRoutes } from '../adapters/inbound/http/installation-status/index.js';
 import { openHistoryIndex } from './history-index.js';
 import type { RunHistoryIndexerState } from '../ports/run-history.js';
 import { registerOverviewRoute } from '../adapters/inbound/http/overview/index.js';
@@ -137,6 +138,12 @@ class ApplicationOwner {
         newId: randomUUID,
         now: () => new Date().toISOString(),
         authorize: publicAuthorize,
+      });
+      registerInstallationStatusRoutes(this.server, {
+        reader: store.installationStatus,
+        agent: () => this.agentRuntime?.agentStatus?.() ?? null,
+        authorize: publicAuthorize,
+        nowMs: () => Date.now(),
       });
       const inputs = readInputs(this.historicalInputs, this.inputRuntime);
       if (inputs)
@@ -311,6 +318,7 @@ function registerAuthoring(server: FastifyInstance, store: Metadata, authorize: 
     reader: store.suites,
     newId: randomUUID,
     digest,
+    now: () => new Date().toISOString(),
     authorize: authorize,
   });
   registerOverviewRoute(server, {

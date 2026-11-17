@@ -8,6 +8,7 @@ import { migration027 } from '../../src/adapters/outbound/sqlite/migration027.js
 import { migration028 } from '../../src/adapters/outbound/sqlite/migration028.js';
 import { migration029 } from '../../src/adapters/outbound/sqlite/migration029.js';
 import { migration030 } from '../../src/adapters/outbound/sqlite/migration030.js';
+import { migration031 } from '../../src/adapters/outbound/sqlite/migration031.js';
 import { migration032 } from '../../src/adapters/outbound/sqlite/migration032.js';
 import { inputUsageSql } from '../../src/adapters/outbound/sqlite/input-usage.js';
 import { registerBackendSettlement } from '../../src/adapters/outbound/sqlite/backend-settlement-guard/index.js';
@@ -34,7 +35,7 @@ function input(db: DatabaseSync, id: string, state: 'staging' | 'published', sha
 function pin(db: DatabaseSync, revision: string, id: string, sha = hash(7)): void {
   db.prepare('INSERT INTO revision_input_pins VALUES(?,?,?,?,?,?)').run(revision, org, ws, id, sha, 12);
 }
-function prior030(): DatabaseSync {
+function prior031(): DatabaseSync {
   const db = prior023(':memory:');
   registerBackendSettlement(db);
   registerRetentionAccounting(db);
@@ -47,6 +48,7 @@ function prior030(): DatabaseSync {
   input(db, uuid(801), 'published');
   input(db, uuid(802), 'staging', hash(8));
   pin(db, uuid(60), uuid(801));
+  transaction(db, () => db.exec(migration031));
   return db;
 }
 const addedColumns = new Set(['created_at', 'published_at']);
@@ -61,8 +63,8 @@ function originalRows(db: DatabaseSync) {
     );
 }
 
-it('upgrades populated schema030 with null times, no shapes and exact backfilled usage counts', () => {
-  const db = prior030();
+it('upgrades populated schema031 with null times, no shapes and exact backfilled usage counts', () => {
+  const db = prior031();
   try {
     const before = rows(db);
     transaction(db, () => db.exec(migration032));
@@ -85,8 +87,8 @@ it('upgrades populated schema030 with null times, no shapes and exact backfilled
   }
 });
 
-it('rolls a late name collision back to the exact populated schema030', () => {
-  const db = prior030();
+it('rolls a late name collision back to the exact populated schema031', () => {
+  const db = prior031();
   try {
     db.exec('CREATE TRIGGER input_usage_count AFTER INSERT ON suites BEGIN SELECT 1; END');
     const before = rows(db);
@@ -94,14 +96,14 @@ it('rolls a late name collision back to the exact populated schema030', () => {
     expect(() => transaction(db, () => db.exec(migration032))).toThrow();
     expect(rows(db)).toEqual(before);
     expect(graph(db)).toEqual(schema);
-    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(30);
+    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(31);
   } finally {
     db.close();
   }
 });
 
 it('guards times, shapes and maintained usage counts in SQL', () => {
-  const db = prior030();
+  const db = prior031();
   try {
     transaction(db, () => db.exec(migration032));
     const fail = (sql: string, ...args: (string | number | null)[]) => expect(() => db.prepare(sql).run(...args)).toThrow();
@@ -139,7 +141,7 @@ it('guards times, shapes and maintained usage counts in SQL', () => {
 });
 
 it('drives the real usage statement from the covering pin index without a sort', () => {
-  const db = prior030();
+  const db = prior031();
   try {
     transaction(db, () => db.exec(migration032));
     const plan = db
