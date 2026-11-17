@@ -42,7 +42,9 @@ and a manual GitHub Pages workflow. Each page has a section breadcrumb and a led
 After the merge: a sample run replay on the runs page, a threshold explorer on the
 rules page and a note on app navigation on the workspaces page. Not done: D2
 diagrams (no D2 binary without a global install) and links from the app to the
-matching docs pages (the app has no `/docs` link yet).
+matching docs pages (the app has no `/docs` link yet). The Penpot design is the UI
+target and has a Docs entry in its header, so plan those links against that
+header, not the current sidebar, which will be replaced.
 
 Phase 2 outcome: 17 contracts in `system/contracts/` (run lifecycle split into
 lifecycle and delivery; UI LLDs became the web UI contract), module map moved to
