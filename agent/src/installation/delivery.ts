@@ -8,20 +8,26 @@ import type { Entry } from './entry.js';
 import { InstallationError } from './types.js';
 
 const digest = (text: string): string => createHash('sha256').update(text).digest('hex');
-const same = (left: unknown, right: unknown): boolean => encodeCanonicalJson(left, 8192) === encodeCanonicalJson(right, 8192);
+const same = (left: unknown, right: unknown): boolean =>
+  encodeCanonicalJson(left, 8192) === encodeCanonicalJson(right, 8192);
 export function rememberSource(entry: Entry, source: PrivateSource): void {
   const receipt = receiptForOutputSource(source, digest);
   if (entry.sourceReceipt && !same(entry.sourceReceipt, receipt)) throw new InstallationError('journal');
-  entry.sourceReceipt = receipt; entry.sourceRelease = source.release; entry.sourceCheck = false;
+  entry.sourceReceipt = receipt;
+  entry.sourceRelease = source.release;
+  entry.sourceCheck = false;
 }
 /** Validate this composition's exact receipt as well as the Journal's typed reply. */
 function closure(input: unknown, entry: Entry): OutputDeliveryClosure {
   try {
     const value = fields(capture(input, 1024), 'version,receipt,finalAgentSeq');
-    requireInput(value.version === 1); integer(value.finalAgentSeq);
+    requireInput(value.version === 1);
+    integer(value.finalAgentSeq);
     requireInput(same(value.receipt, entry.sourceReceipt));
     return value as unknown as OutputDeliveryClosure;
-  } catch { throw new InstallationError('journal'); }
+  } catch {
+    throw new InstallationError('journal');
+  }
 }
 export async function releaseStoredSource(journal: Journal, entry: Entry): Promise<boolean> {
   if (!entry.sourceReceipt) {
@@ -31,7 +37,8 @@ export async function releaseStoredSource(journal: Journal, entry: Entry): Promi
   }
   if (entry.sourceReleased) return true;
   const released = await journal.releaseOutputSource(entry.sourceReceipt!);
-  if (released.status !== 'released' || !same(released.releaseEvidence, entry.sourceRelease)) throw new InstallationError('journal');
+  if (released.status !== 'released' || !same(released.releaseEvidence, entry.sourceRelease))
+    throw new InstallationError('journal');
   entry.sourceReleased = true;
   return true;
 }
@@ -39,7 +46,10 @@ export async function releaseStoredSource(journal: Journal, entry: Entry): Promi
 export async function reconcileDelivery(journal: Journal, entry: Entry): Promise<void> {
   await entry.deliveryAttempt?.catch(() => undefined);
   const stored = await journal.readOutputDelivery(entry.key);
-  if (stored !== null) { closure(stored, entry); return; }
+  if (stored !== null) {
+    closure(stored, entry);
+    return;
+  }
   entry.deliveryAttempt = journal.closeOutputDelivery(entry.sourceReceipt!);
   void entry.deliveryAttempt.catch(() => undefined);
   closure(await entry.deliveryAttempt, entry);
@@ -49,5 +59,18 @@ export async function reconcileDelivery(journal: Journal, entry: Entry): Promise
 export async function readClosedDelivery(journal: Journal, entry: Entry): Promise<boolean> {
   const stored = await journal.readOutputDelivery(entry.key);
   if (stored === null) return false;
-  closure(stored, entry); return true;
+  closure(stored, entry);
+  return true;
+}
+
+export async function sourceCommitted(journal: Journal, entry: Entry): Promise<boolean> {
+  if (entry.sourceReceipt) return true;
+  entry.sourceCheck = true;
+  const source = await journal.readOutputSource(entry.key);
+  if (source) {
+    rememberSource(entry, source);
+    return true;
+  }
+  entry.sourceCheck = false;
+  return false;
 }

@@ -165,3 +165,14 @@ it('binds nested engine results to their durable attempt owner',()=>{
   expect(captureAttemptRow({...base,result_json:JSON.stringify(result)}).result_json).toBe(JSON.stringify(result));
   expect(()=>captureAttemptRow({...base,result_json:JSON.stringify({...result,workspaceId:'00000000-0000-4000-8000-000000000099'})})).toThrowError();
 });
+
+it('accepts accumulated exit facts without a timestamp while retaining the immutable public witness', () => {
+  const witness = {exitCode: null, oomKilled: null, observedAt: '2026-01-01T00:00:00Z'};
+  const facts = {exitCode: 0, oomKilled: false};
+  const row = {...base, state: 'exited', exit_json: JSON.stringify(witness), exit_facts_json: JSON.stringify(facts)};
+  expect(captureAttemptRow(row)).toEqual(row);
+  for (const corrupt of [{exitCode: '0', oomKilled: false}, {exitCode: 0}, {...facts, observedAt: witness.observedAt}, {...facts, reason: 'invalid'}]) {
+    expect(() => captureAttemptRow({...row, exit_facts_json: JSON.stringify(corrupt)})).toThrowError();
+  }
+  expect(() => captureAttemptRow({...row, exit_json: null})).toThrowError();
+});

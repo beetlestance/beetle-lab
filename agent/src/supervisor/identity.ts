@@ -1,28 +1,45 @@
 import { validatePrimitive } from '@beetle/contracts';
-import { isRuntimePlan, runtimeName } from '../backends/docker/index.js';
-import type { RuntimePlan } from '../backends/docker/index.js';
-import type { Reservation, Scope } from '../admission/index.js';
-import type { LaunchInput, OfferAuthority } from './types.js';
-import { SupervisorError } from './types.js';
+import { isRuntimePlan, runtimeName, type RuntimePlan } from '../backends/docker/index.js';
+import type { Reservation, Scope, AdmissionValue } from '../admission/index.js';
+import { type LaunchInput, type OfferAuthority, SupervisorError } from './types.js';
 
 export function identity(key: Scope): string {
   return [key.organizationId, key.workspaceId, key.attemptId, key.generation].join('/').toLowerCase();
 }
 export function sameScope(left: Scope, right: Scope): boolean {
-  return left.organizationId === right.organizationId && left.workspaceId === right.workspaceId
-    && left.attemptId === right.attemptId && left.generation === right.generation;
+  return (
+    left.organizationId === right.organizationId &&
+    left.workspaceId === right.workspaceId &&
+    left.attemptId === right.attemptId &&
+    left.generation === right.generation
+  );
 }
 export function validateInput(input: LaunchInput, installationId: string): void {
   const { key, plan } = input;
-  if (![key.organizationId, key.workspaceId, key.attemptId, installationId].every(value => validatePrimitive('uuid', value).ok)
-    || !Number.isSafeInteger(key.generation) || key.generation < 1 || !isRuntimePlan(plan)) {
+  if (
+    ![key.organizationId, key.workspaceId, key.attemptId, installationId].every(
+      (value) => validatePrimitive('uuid', value).ok,
+    ) ||
+    !Number.isSafeInteger(key.generation) ||
+    key.generation < 1 ||
+    !isRuntimePlan(plan)
+  ) {
     throw new SupervisorError('invalid_input');
   }
   const labels = plan.spec.Labels;
-  const expected = { installation: installationId.toLowerCase(), organization: key.organizationId.toLowerCase(),
-    workspace: key.workspaceId.toLowerCase(), attempt: key.attemptId.toLowerCase(), generation: String(key.generation), spec: plan.specDigest };
-  if (Object.entries(expected).some(([name, value]) => labels[`dev.beetle.${name}`] !== value)
-    || plan.name !== runtimeName({ ...key, installationId })) throw new SupervisorError('conflict');
+  const expected = {
+    installation: installationId.toLowerCase(),
+    organization: key.organizationId.toLowerCase(),
+    workspace: key.workspaceId.toLowerCase(),
+    attempt: key.attemptId.toLowerCase(),
+    generation: String(key.generation),
+    spec: plan.specDigest,
+  };
+  if (
+    Object.entries(expected).some(([name, value]) => labels[`dev.beetle.${name}`] !== value) ||
+    plan.name !== runtimeName({ ...key, installationId })
+  )
+    throw new SupervisorError('conflict');
 }
 export function validateReservation(input: LaunchInput, reservation: Reservation, offer: OfferAuthority): void {
   if (reservation.status !== 'charged' || reservation.aborted) throw new SupervisorError('conflict');
@@ -30,26 +47,61 @@ export function validateReservation(input: LaunchInput, reservation: Reservation
 }
 /** Journal.get separately verifies definitive launch and release witnesses. */
 export function validateReleasedReservation(input: LaunchInput, reservation: Reservation, offer: OfferAuthority): void {
-  if (reservation.status !== 'released' || reservation.aborted || !reservation.runtimeId
-    || !reservation.createToken || !reservation.launchClosed || !reservation.launchSettlement || !reservation.releaseEvidence) {
+  if (
+    reservation.status !== 'released' ||
+    reservation.aborted ||
+    !reservation.runtimeId ||
+    !reservation.createToken ||
+    !reservation.launchClosed ||
+    !reservation.launchSettlement ||
+    !reservation.releaseEvidence
+  ) {
     throw new SupervisorError('conflict');
   }
   validateBinding(input, reservation, offer);
 }
 function validateBinding(input: LaunchInput, reservation: Reservation, offer: OfferAuthority): void {
   const { key, plan } = input;
-  if (!sameScope(key, reservation) || !sameScope(key, { ...offer, generation: key.generation })) throw new SupervisorError('conflict');
-  if (reservation.specDigest !== null && reservation.specDigest !== plan.specDigest) throw new SupervisorError('conflict');
-  if (offer.intentDigest !== plan.spec.Labels['dev.beetle.intent'] || offer.engine.imageDigest !== plan.spec.Image
-    || !sameBudget(offer, reservation)) throw new SupervisorError('conflict');
+  if (!sameScope(key, reservation) || !sameScope(key, { ...offer, generation: key.generation }))
+    throw new SupervisorError('conflict');
+  if (reservation.specDigest !== null && reservation.specDigest !== plan.specDigest)
+    throw new SupervisorError('conflict');
+  if (
+    offer.intentDigest !== plan.spec.Labels['dev.beetle.intent'] ||
+    offer.engine.imageDigest !== plan.spec.Image ||
+    !sameBudget(offer, reservation)
+  )
+    throw new SupervisorError('conflict');
   validateControls(plan, offer);
 }
 function validateControls(plan: RuntimePlan, offer: OfferAuthority): void {
   const host = plan.spec.HostConfig;
-  if (host.NanoCpus !== offer.budget.cpuMillis * 1_000_000 || host.Memory !== offer.budget.memoryBytes
-    || host.PidsLimit !== offer.budget.pids) throw new SupervisorError('conflict');
+  if (
+    host.NanoCpus !== offer.budget.cpuMillis * 1_000_000 ||
+    host.Memory !== offer.budget.memoryBytes ||
+    host.PidsLimit !== offer.budget.pids
+  )
+    throw new SupervisorError('conflict');
 }
 function sameBudget(offer: OfferAuthority, reservation: Reservation): boolean {
-  return (['cpuMillis', 'memoryBytes', 'pids', 'timeoutMs', 'outputBytes'] as const)
-    .every(name => offer.budget[name] === reservation.budget[name]);
+  return (['cpuMillis', 'memoryBytes', 'pids', 'timeoutMs', 'outputBytes'] as const).every(
+    (name) => offer.budget[name] === reservation.budget[name],
+  );
+}
+export function reservation(value: AdmissionValue): Reservation {
+  if (!('status' in value)) throw new SupervisorError('conflict');
+  return value;
+}
+export function claim(value: AdmissionValue) {
+  if (!('dispatchAllowed' in value)) throw new SupervisorError('conflict');
+  return value;
+}
+export function launchBinding(input: LaunchInput, value: Reservation) {
+  if (!value.createToken || !value.runtimeId) throw new SupervisorError('conflict');
+  return {
+    key: input.key,
+    createToken: value.createToken,
+    specDigest: input.plan.specDigest,
+    runtimeId: value.runtimeId,
+  };
 }

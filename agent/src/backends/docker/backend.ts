@@ -1,29 +1,46 @@
-import {captureRuntimeAssociationPersistence,restoreRetiredAssociation,persistRetiredAssociation} from './runtime-association.js';
-import type {RuntimeAssociationPersistence} from './runtime-association.js';
+import { qualifyDaemon, requestDocker } from './daemon-client.js';
+import {
+  createEntry,
+  absent,
+  remember,
+  retainIdentity,
+  createdId,
+  current,
+  stopped,
+  startFenced,
+  existing,
+  failedMutation,
+  statusFailure,
+  operationContext,
+  rejected,
+  uncertain,
+  known,
+} from './runtime-state.js';
+import type { Entry, Inspection } from './runtime-state.js';
+import {
+  captureRuntimeAssociationPersistence,
+  restoreRetiredAssociation,
+  persistRetiredAssociation,
+} from './runtime-association.js';
+import type { RuntimeAssociationPersistence } from './runtime-association.js';
 import { captureRetiredRuntimeBinding } from './retirement-binding.js';
 import type { RetiredRuntimeBinding } from './retirement-binding.js';
-import { MailboxVolumeOwner } from './mailbox-volume.js';
 import { performance } from 'node:perf_hooks';
 import { resourceReading, unknownResources } from './resources.js';
 import type { ResourceReading } from './resource-types.js';
 import { isRuntimePlan } from './prepare.js';
 import type { RuntimePlan } from './prepare.js';
-import { compatibleVersion, containerId, inspectEvidence, record, supportedDaemon } from './inspect.js';
-import type { CleanupEvidence, DockerReply, DockerRequest, DockerTransport, FailureReason,
-  InspectEvidence, MailboxArchiveReply, MutationResult, Observation, Operation } from './types.js';
-
-interface Entry {
-  readonly digest: string; readonly volume: MailboxVolumeOwner | undefined; volumeVerified: boolean; readers: number; removalClaimed: boolean; busy: boolean; createClaimed: boolean; creationSettled: boolean; startClaimed: boolean;
-  retiredRuntimeId: string | undefined;
-  running: boolean; cpuNs: number | null; runtimeId: string | undefined; terminal: boolean; removed: boolean; graceDeadline: number | undefined;
-}
-interface Inspection {
-  readonly observation: Observation;
-  readonly runtimeIdAtIssue: string | undefined;
-}
-const rejected = <T>(reason: FailureReason): MutationResult<T> => ({ outcome: 'rejected', reason });
-const uncertain = <T>(reason: FailureReason): MutationResult<T> => ({ outcome: 'unknown', reason });
-const known = <T>(value: T): MutationResult<T> => ({ outcome: 'known', value });
+import { inspectEvidence } from './inspect.js';
+import type {
+  CleanupEvidence,
+  DockerTransport,
+  FailureReason,
+  InspectEvidence,
+  MailboxArchiveReply,
+  MutationResult,
+  Observation,
+  Operation,
+} from './types.js';
 
 /** Private adapter: lifetime fences are bounded and never evicted. Durable claims belong to the supervisor. */
 export class DockerBackend {
@@ -32,21 +49,23 @@ export class DockerBackend {
   constructor(private readonly transport: DockerTransport) {}
 
   async inspect(plan: RuntimePlan, operation: Operation): Promise<Observation> {
-    const context = this.context(operation);
+    const context = operationContext(operation);
     if (!context || !isRuntimePlan(plan)) return { state: 'unknown', reason: 'invalid_input' };
     if (this.active >= 64) return { state: 'unknown', reason: 'overflow' };
     const entry = this.entry(plan);
     if (typeof entry === 'string') return { state: 'unknown', reason: entry };
     this.active++;
     try {
-      const reason = await this.qualify(context, plan.spec.HostConfig.Runtime);
-      return reason ? { state: 'unknown', reason } : this.current(entry, await this.observe(plan, context));
-    } finally { this.active--; }
+      const reason = await qualifyDaemon(this.transport, context, plan.spec.HostConfig.Runtime);
+      return reason ? { state: 'unknown', reason } : current(entry, await this.observe(plan, context));
+    } finally {
+      this.active--;
+    }
   }
 
   /** Reads only an existing inspected owner; never acquires a mutation lane. */
   async sampleResources(plan: RuntimePlan, operation: Operation): Promise<ResourceReading> {
-    const context = this.context(operation);
+    const context = operationContext(operation);
     if (!context || !isRuntimePlan(plan)) return unknownResources('invalid');
     const entry = this.entries.get(plan.name);
     if (!entry || entry.digest !== plan.specDigest) return unknownResources('invalid');
@@ -55,43 +74,60 @@ export class DockerBackend {
     const id = entry.runtimeId!;
     this.active++;
     try {
-      const request = Object.freeze({ ...context, deadline: Math.min(context.deadline, performance.now() + 1000),
-        method: 'GET' as const, path: `/v1.47/containers/${id}/stats?stream=false&one-shot=true` });
-      const binding = Object.freeze({id, method: request.method, path: request.path});
-      const reply = await this.request(request);
+      const request = Object.freeze({
+        ...context,
+        deadline: Math.min(context.deadline, performance.now() + 1000),
+        method: 'GET' as const,
+        path: `/v1.47/containers/${id}/stats?stream=false&one-shot=true`,
+      });
+      const binding = Object.freeze({ id, method: request.method, path: request.path });
+      const reply = await requestDocker(this.transport, request);
       if (!this.resourceOwner(entry) || entry.runtimeId !== id) return unknownResources('unavailable');
       return resourceReading(reply, binding, entry);
-    } finally { this.active--; }
+    } finally {
+      this.active--;
+    }
   }
 
   /** Active-plan read; ownership and telemetry credit survive actual HTTP close. */
   async readMailbox(plan: RuntimePlan, operation: Operation): Promise<MailboxArchiveReply> {
-    const context = this.context(operation);
-    if (!context || !isRuntimePlan(plan)) return {ok: false, reason: 'invalid_input', dispatched: false};
+    const context = operationContext(operation);
+    if (!context || !isRuntimePlan(plan)) return { ok: false, reason: 'invalid_input', dispatched: false };
     const entry = this.mailboxOwner(plan);
     const read = this.transport.readMailboxArchive?.bind(this.transport);
     if (!entry || !read) {
-      return {ok: false, reason: 'unavailable', dispatched: false};
+      return { ok: false, reason: 'unavailable', dispatched: false };
     }
-    if (entry.readers || this.active >= 62) return {ok: false, reason: 'overflow', dispatched: false};
-    const id = entry.runtimeId!; entry.readers++; this.active++;
+    if (entry.readers || this.active >= 62) return { ok: false, reason: 'overflow', dispatched: false };
+    const id = entry.runtimeId!;
+    entry.readers++;
+    this.active++;
     try {
-      const reply = await read({...context, containerId: id});
-      if (!this.currentMailbox(entry, id)) return {ok: false, reason: 'unsafe_state', dispatched: true};
+      const reply = await read({ ...context, containerId: id });
+      if (!this.currentMailbox(entry, id)) return { ok: false, reason: 'unsafe_state', dispatched: true };
       return reply;
-    } catch {return {ok: false, reason: 'unavailable', dispatched: true};}
-    finally {entry.readers--; this.active--;}
+    } catch {
+      return { ok: false, reason: 'unavailable', dispatched: true };
+    } finally {
+      entry.readers--;
+      this.active--;
+    }
   }
-  private currentMailbox(entry: Entry, id: string): boolean {return entry.volumeVerified && this.resourceOwner(entry) && entry.runtimeId === id;}
+  private currentMailbox(entry: Entry, id: string): boolean {
+    return entry.volumeVerified && this.resourceOwner(entry) && entry.runtimeId === id;
+  }
   private mailboxOwner(plan: RuntimePlan): Entry | undefined {
     const entry = this.entries.get(plan.name);
-    return entry && entry.digest === plan.specDigest && entry.volumeVerified && this.resourceOwner(entry) ? entry : undefined;
+    return entry && entry.digest === plan.specDigest && entry.volumeVerified && this.resourceOwner(entry)
+      ? entry
+      : undefined;
   }
   private removeOrphan(entry: Entry, context: Operation): Promise<MutationResult<'removed'>> {
     if (!entry.removalClaimed && !(entry.volume && entry.createClaimed && entry.creationSettled)) {
       return Promise.resolve(rejected('cleanup_guard'));
     }
-    entry.removed = true; entry.terminal = true;
+    entry.removed = true;
+    entry.terminal = true;
     return this.removeVolume(entry, context);
   }
   private async removeVolume(entry: Entry, context: Operation): Promise<MutationResult<'removed'>> {
@@ -106,8 +142,8 @@ export class DockerBackend {
   async ensureCreated(plan: RuntimePlan, operation: Operation): Promise<MutationResult<InspectEvidence>> {
     return this.run(plan, operation, async (entry, context) => {
       if (entry.retiredRuntimeId) return rejected('start_fenced');
-      const before = this.current(entry, await this.observe(plan, context));
-      if (before.state !== 'missing') return this.existing(before);
+      const before = current(entry, await this.observe(plan, context));
+      if (before.state !== 'missing') return existing(before);
       if (entry.createClaimed) return uncertain('unavailable');
       const volume = await entry.volume?.prepare(context);
       if (volume && volume.outcome !== 'known') return volume;
@@ -116,34 +152,46 @@ export class DockerBackend {
     });
   }
 
-  private async createContainer(plan: RuntimePlan, entry: Entry, context: Operation): Promise<MutationResult<InspectEvidence>> {
-    const created = await this.request({ ...context, method: 'POST',
-      path: `/v1.47/containers/create?name=${plan.name}`, body: plan.spec });
+  private async createContainer(
+    plan: RuntimePlan,
+    entry: Entry,
+    context: Operation,
+  ): Promise<MutationResult<InspectEvidence>> {
+    const created = await requestDocker(this.transport, {
+      ...context,
+      method: 'POST',
+      path: `/v1.47/containers/create?name=${plan.name}`,
+      body: plan.spec,
+    });
     entry.creationSettled = created.ok || !created.dispatched;
-    if (!created.ok) return this.failedMutation(created);
-    if (created.status === 409) return this.existing(this.current(entry, await this.observe(plan, context)));
-    if (created.status !== 201) return this.statusFailure(created.status);
-    const id = this.createdId(created.body);
+    if (!created.ok) return failedMutation(created);
+    if (created.status === 409) return existing(current(entry, await this.observe(plan, context)));
+    if (created.status !== 201) return statusFailure(created.status);
+    const id = createdId(created.body);
     if (!id) return uncertain('malformed');
-    if (!this.retainIdentity(entry, id)) return uncertain('conflict');
-    const after = this.current(entry, await this.observe(plan, context));
+    if (!retainIdentity(entry, id)) return uncertain('conflict');
+    const after = current(entry, await this.observe(plan, context));
     if (!('id' in after) || after.id !== id) return uncertain('conflict');
     return known(after);
   }
 
   async dispatchStartOnce(plan: RuntimePlan, operation: Operation): Promise<MutationResult<InspectEvidence>> {
     return this.run(plan, operation, async (entry, context) => {
-      if (this.startFenced(entry)) return rejected('start_fenced');
-      const before = this.current(entry, await this.observe(plan, context));
-      if (before.state === 'unknown') return this.existing(before);
+      if (startFenced(entry)) return rejected('start_fenced');
+      const before = current(entry, await this.observe(plan, context));
+      if (before.state === 'unknown') return existing(before);
       if (before.state !== 'created') return rejected('unsafe_state');
-      if (this.startFenced(entry)) return rejected('start_fenced');
+      if (startFenced(entry)) return rejected('start_fenced');
       // Set before dispatch; even an uncertain response must never permit another start.
       entry.startClaimed = true;
-      const reply = await this.request({ ...context, method: 'POST', path: `/v1.47/containers/${before.id}/start` });
-      if (!reply.ok) return this.failedMutation(reply);
-      if (![204, 304].includes(reply.status)) return this.statusFailure(reply.status);
-      const after = this.current(entry, await this.observe(plan, context));
+      const reply = await requestDocker(this.transport, {
+        ...context,
+        method: 'POST',
+        path: `/v1.47/containers/${before.id}/start`,
+      });
+      if (!reply.ok) return failedMutation(reply);
+      if (![204, 304].includes(reply.status)) return statusFailure(reply.status);
+      const after = current(entry, await this.observe(plan, context));
       if (!('id' in after) || after.id !== before.id) return uncertain('unavailable');
       if (!['running', 'exited'].includes(after.state)) return uncertain('unsafe_state');
       return known(after);
@@ -155,7 +203,7 @@ export class DockerBackend {
     const entry = this.entry(plan);
     if (typeof entry === 'string') return rejected(entry);
     entry.graceDeadline ??= graceDeadline;
-    return this.terminate(plan, operation, entry => {
+    return this.terminate(plan, operation, (entry) => {
       const seconds = Math.max(0, Math.ceil(((entry.graceDeadline ?? graceDeadline) - performance.now()) / 1000));
       return Number.isSafeInteger(seconds) && seconds <= 2_147_483_647 ? `stop?t=${seconds}` : undefined;
     });
@@ -168,205 +216,182 @@ export class DockerBackend {
   async remove(plan: RuntimePlan, operation: Operation, evidence: CleanupEvidence): Promise<MutationResult<'removed'>> {
     if (evidence?.sealed !== true || evidence.applicationAcknowledged !== true) return rejected('cleanup_guard');
     return this.run(plan, operation, async (entry, context) => {
-      const before = this.current(entry, await this.observe(plan, context));
+      const before = current(entry, await this.observe(plan, context));
       if (entry.readers !== 0) return rejected('cleanup_guard');
       if (before.state === 'missing') return this.removeOrphan(entry, context);
-      if (!this.stopped(before)) return rejected('cleanup_guard');
+      if (!stopped(before)) return rejected('cleanup_guard');
       entry.removalClaimed = true;
-      const reply = await this.request({ ...context, method: 'DELETE',
-        path: `/v1.47/containers/${before.id}?force=false&v=false` });
-      if (!reply.ok) return this.failedMutation(reply);
-      if (reply.status !== 204) return this.statusFailure(reply.status);
-      entry.removed = true; entry.terminal = true;
-      const after = this.current(entry, await this.observe(plan, context));
+      const reply = await requestDocker(this.transport, {
+        ...context,
+        method: 'DELETE',
+        path: `/v1.47/containers/${before.id}?force=false&v=false`,
+      });
+      if (!reply.ok) return failedMutation(reply);
+      if (reply.status !== 204) return statusFailure(reply.status);
+      entry.removed = true;
+      entry.terminal = true;
+      const after = current(entry, await this.observe(plan, context));
       return after.state === 'missing' ? this.removeVolume(entry, context) : uncertain('unavailable');
     });
   }
 
   /** C3 caller proves actual producer drain and exact released closure/ACK, not caller booleans. */
-  async removeRetired(plan: RuntimePlan, operation: Operation, input: RetiredRuntimeBinding, associations?:RuntimeAssociationPersistence): Promise<MutationResult<'removed'>> {
-    const binding = captureRetiredRuntimeBinding(input); if (!binding) return rejected('invalid_input');
-    const persistence=captureRuntimeAssociationPersistence(associations);
-    return this.run(plan, operation, async (entry, context) => {
-      if (entry.readers !== 0) return rejected('cleanup_guard');
-      if (entry.runtimeId && entry.runtimeId !== binding.runtimeId) return rejected('conflict');
-      entry.retiredRuntimeId = binding.runtimeId; entry.runtimeId = binding.runtimeId;
-      const before = this.current(entry, await this.observe(plan, context));
-      if (before.state === 'missing') {
-        await restoreRetiredAssociation(entry.volume,plan,binding,persistence);
-        return this.removeRetiredVolume(entry, context);
-      }
-      if (!this.stopped(before)) return this.retiredObservationFailure(before);
-      if(!await persistRetiredAssociation(entry.volume,plan,binding,persistence))return rejected('cleanup_guard');
-      const reply = await this.request({ ...context, method: 'DELETE',
-        path: `/v1.47/containers/${binding.runtimeId}?force=false&v=false` });
-      if (!reply.ok) return this.failedMutation(reply);
-      if (reply.status !== 204) return this.statusFailure(reply.status);
-      entry.removed = true; entry.terminal = true;
-      const after = this.current(entry, await this.observe(plan, context));
-      return after.state === 'missing' ? this.removeRetiredVolume(entry, context) : uncertain('unavailable');
-    }, binding.daemonId);
+  async removeRetired(
+    plan: RuntimePlan,
+    operation: Operation,
+    input: RetiredRuntimeBinding,
+    associations?: RuntimeAssociationPersistence,
+  ): Promise<MutationResult<'removed'>> {
+    const binding = captureRetiredRuntimeBinding(input);
+    if (!binding) return rejected('invalid_input');
+    const persistence = captureRuntimeAssociationPersistence(associations);
+    return this.run(
+      plan,
+      operation,
+      async (entry, context) => {
+        if (entry.readers !== 0) return rejected('cleanup_guard');
+        if (entry.runtimeId && entry.runtimeId !== binding.runtimeId) return rejected('conflict');
+        entry.retiredRuntimeId = binding.runtimeId;
+        entry.runtimeId = binding.runtimeId;
+        const before = current(entry, await this.observe(plan, context));
+        if (before.state === 'missing') {
+          await restoreRetiredAssociation(entry.volume, plan, binding, persistence);
+          return this.removeRetiredVolume(entry, context);
+        }
+        if (!stopped(before)) return this.retiredObservationFailure(before);
+        if (!(await persistRetiredAssociation(entry.volume, plan, binding, persistence)))
+          return rejected('cleanup_guard');
+        const reply = await requestDocker(this.transport, {
+          ...context,
+          method: 'DELETE',
+          path: `/v1.47/containers/${binding.runtimeId}?force=false&v=false`,
+        });
+        if (!reply.ok) return failedMutation(reply);
+        if (reply.status !== 204) return statusFailure(reply.status);
+        entry.removed = true;
+        entry.terminal = true;
+        const after = current(entry, await this.observe(plan, context));
+        return after.state === 'missing' ? this.removeRetiredVolume(entry, context) : uncertain('unavailable');
+      },
+      binding.daemonId,
+    );
   }
   private retiredObservationFailure(before: Observation): MutationResult<'removed'> {
-    return before.state === 'unknown' ? uncertain('reason' in before ? before.reason : 'unsafe_state') : rejected('cleanup_guard');
+    return before.state === 'unknown'
+      ? uncertain('reason' in before ? before.reason : 'unsafe_state')
+      : rejected('cleanup_guard');
   }
   private async removeRetiredVolume(entry: Entry, context: Operation): Promise<MutationResult<'removed'>> {
     const result = await entry.volume?.removeRetired(context);
     if (result && result.outcome !== 'known') return result;
-    entry.removed = true; entry.terminal = true; return known('removed');
+    entry.removed = true;
+    entry.terminal = true;
+    return known('removed');
   }
 
-  private terminate(plan: RuntimePlan, operation: Operation,
-    action: (entry: Entry) => string | undefined): Promise<MutationResult<InspectEvidence>> {
+  private terminate(
+    plan: RuntimePlan,
+    operation: Operation,
+    action: (entry: Entry) => string | undefined,
+  ): Promise<MutationResult<InspectEvidence>> {
     return this.run(plan, operation, async (entry, context) => {
-      const before = this.current(entry, await this.observe(plan, context, false));
-      if (this.stopped(before)) return known(before);
-      if (before.state === 'unknown') return this.existing(before);
+      const before = current(entry, await this.observe(plan, context, false));
+      if (stopped(before)) return known(before);
+      if (before.state === 'unknown') return existing(before);
       if (before.state !== 'running' && before.state !== 'restarting') return rejected('unsafe_state');
       const suffix = action(entry);
       if (!suffix) return rejected('unsupported');
-      const reply = await this.request({ ...context, method: 'POST',
-        path: `/v1.47/containers/${before.id}/${suffix}` });
-      if (!reply.ok) return this.failedMutation(reply);
-      if (![204, 304, 409].includes(reply.status)) return this.statusFailure(reply.status);
-      const after = this.current(entry, await this.observe(plan, context, false));
-      return this.stopped(after) && after.id === before.id ? known(after) : uncertain('unsafe_state');
+      const reply = await requestDocker(this.transport, {
+        ...context,
+        method: 'POST',
+        path: `/v1.47/containers/${before.id}/${suffix}`,
+      });
+      if (!reply.ok) return failedMutation(reply);
+      if (![204, 304, 409].includes(reply.status)) return statusFailure(reply.status);
+      const after = current(entry, await this.observe(plan, context, false));
+      return stopped(after) && after.id === before.id ? known(after) : uncertain('unsafe_state');
     });
   }
-
-  private context(operation: Operation): Operation | undefined {
-    if (!operation || !Number.isFinite(operation.deadline)) return undefined;
-    return { deadline: Math.min(operation.deadline, performance.now() + 30_000),
-      ...(operation.signal ? { signal: operation.signal } : {}) };
-  }
-  private async run<T>(plan: RuntimePlan, operation: Operation,
-    execute: (entry: Entry, context: Operation) => Promise<MutationResult<T>>, daemonId?: string): Promise<MutationResult<T>> {
-    const context = this.context(operation);
+  private async run<T>(
+    plan: RuntimePlan,
+    operation: Operation,
+    execute: (entry: Entry, context: Operation) => Promise<MutationResult<T>>,
+    daemonId?: string,
+  ): Promise<MutationResult<T>> {
+    const context = operationContext(operation);
     if (!context || !isRuntimePlan(plan)) return rejected('invalid_input');
     if (this.active >= 64) return rejected('overflow');
     const entry = this.entry(plan);
     if (typeof entry === 'string') return rejected(entry);
     if (entry.busy) return rejected('start_fenced');
-    entry.busy = true; this.active++;
+    entry.busy = true;
+    this.active++;
     try {
-      const reason = await this.qualify(context, plan.spec.HostConfig.Runtime, daemonId);
+      const reason = await qualifyDaemon(this.transport, context, plan.spec.HostConfig.Runtime, daemonId);
       return reason ? rejected(reason) : await execute(entry, context);
-    } finally { entry.busy = false; this.active--; }
+    } finally {
+      entry.busy = false;
+      this.active--;
+    }
   }
   private entry(plan: RuntimePlan): Entry | FailureReason {
     const existing = this.entries.get(plan.name);
     if (existing) return existing.digest === plan.specDigest ? existing : 'conflict';
     if (this.entries.size >= 64) return 'overflow';
-    const entry: Entry = { digest: plan.specDigest,
-      volume: plan.spec.HostConfig.Mounts.some(mount => mount.Type === 'volume') ? new MailboxVolumeOwner(plan, this.transport) : undefined,
-      volumeVerified: false, readers: 0, removalClaimed: false, busy: false, createClaimed: false, creationSettled: false, startClaimed: false,
-      retiredRuntimeId: undefined, running: false, cpuNs: null, runtimeId: undefined, terminal: false, removed: false, graceDeadline: undefined };
+    const entry = createEntry(plan, this.transport);
     this.entries.set(plan.name, entry);
     return entry;
-  }
-  private async qualify(context: Operation, runtime: string, daemonId?: string): Promise<FailureReason | undefined> {
-    const version = await this.request({ ...context, method: 'GET', path: '/version' });
-    if (!version.ok) return version.reason;
-    if (version.status !== 200) return 'unavailable';
-    if (!compatibleVersion(version.body)) return 'unsupported';
-    const info = await this.request({ ...context, method: 'GET', path: '/v1.47/info' });
-    return this.qualifyInfo(info, runtime, daemonId);
-  }
-  private qualifyInfo(info: DockerReply, runtime: string, daemonId?: string): FailureReason | undefined {
-    if (!info.ok) return info.reason;
-    if (info.status !== 200) return 'unavailable';
-    if (daemonId !== undefined && record(info.body)?.ID !== daemonId) return 'conflict';
-    if (!supportedDaemon(info.body) || record(info.body)?.DefaultRuntime !== runtime) return 'unsupported';
-    return undefined;
   }
   private async observe(plan: RuntimePlan, context: Operation, verifyVolume = true): Promise<Inspection> {
     const entry = this.entries.get(plan.name);
     const runtimeIdAtIssue = entry?.runtimeId;
     const view = (observation: Observation): Inspection => ({ observation, runtimeIdAtIssue });
-    const reply = await this.request({ ...context, method: 'GET', path: this.observationPath(plan, entry) });
+    const reply = await requestDocker(this.transport, {
+      ...context,
+      method: 'GET',
+      path: this.observationPath(plan, entry),
+    });
     if (!reply.ok) return view({ state: 'unknown', reason: reply.reason });
     if (reply.status === 404) return view(await this.retiredMissing(plan, entry, context, runtimeIdAtIssue));
     if (reply.status !== 200) return view({ state: 'unknown', reason: 'unavailable' });
     const checked = inspectEvidence(reply.body, plan);
     if (!checked.ok) return view({ state: 'unknown', reason: checked.reason });
     // Positive container identity fences old404s before asynchronous volume work.
-    const observed = entry ? this.remember(entry, checked.value) : { state: 'unknown' as const, reason: 'overflow' as const };
+    const observed = entry
+      ? remember(entry, checked.value)
+      : { state: 'unknown' as const, reason: 'overflow' as const };
     if (observed.state === 'unknown') return view(observed);
     const volumeReason = await this.verifyVolume(entry, context, verifyVolume);
     return view(volumeReason ? { state: 'unknown', reason: volumeReason } : observed);
   }
-  private observationPath(plan: RuntimePlan, entry: Entry | undefined): string { return `/v1.47/containers/${entry?.retiredRuntimeId ?? plan.name}/json`; }
-  private async retiredMissing(plan: RuntimePlan, entry: Entry | undefined, context: Operation, atIssue: string | undefined): Promise<Observation> {
+  private observationPath(plan: RuntimePlan, entry: Entry | undefined): string {
+    return `/v1.47/containers/${entry?.retiredRuntimeId ?? plan.name}/json`;
+  }
+  private async retiredMissing(
+    plan: RuntimePlan,
+    entry: Entry | undefined,
+    context: Operation,
+    atIssue: string | undefined,
+  ): Promise<Observation> {
     if (entry?.retiredRuntimeId) {
-      const named = await this.request({ ...context, method: 'GET', path: `/v1.47/containers/${plan.name}/json` });
+      const named = await requestDocker(this.transport, {
+        ...context,
+        method: 'GET',
+        path: `/v1.47/containers/${plan.name}/json`,
+      });
       if (!named.ok) return { state: 'unknown', reason: named.reason };
       if (named.status !== 404) return { state: 'unknown', reason: 'conflict' };
     }
-    return this.absent(entry, atIssue);
+    return absent(entry, atIssue);
   }
-  private async verifyVolume(entry: Entry | undefined, context: Operation, required: boolean): Promise<FailureReason | undefined> {
+  private async verifyVolume(
+    entry: Entry | undefined,
+    context: Operation,
+    required: boolean,
+  ): Promise<FailureReason | undefined> {
     if (!entry?.volume || !required) return undefined;
     const volume = await entry.volume.verify(context);
     entry.volumeVerified = volume.outcome === 'known';
     return volume.outcome === 'known' ? undefined : volume.reason;
-  }
-  private absent(entry: Entry | undefined, runtimeIdAtIssue: string | undefined): Observation {
-    if (!entry) return { state: 'unknown', reason: 'overflow' };
-    if (entry.runtimeId !== runtimeIdAtIssue) return { state: 'unknown', reason: 'unsafe_state' };
-    entry.running = false;
-    if (runtimeIdAtIssue !== undefined && !entry.retiredRuntimeId) { entry.createClaimed = true; entry.startClaimed = true; entry.terminal = true; }
-    return { state: 'missing' };
-  }
-  private remember(entry: Entry, evidence: InspectEvidence): Observation {
-    if (!this.retainIdentity(entry, evidence.id)) return { state: 'unknown', reason: 'conflict' };
-    if (this.regressive(entry, evidence)) return { state: 'unknown', reason: 'unsafe_state' };
-    entry.running = evidence.state === 'running';
-    if (evidence.state !== 'created' && !entry.retiredRuntimeId) entry.startClaimed = true;
-    if (evidence.state === 'exited') entry.terminal = true;
-    return evidence;
-  }
-  private retainIdentity(entry: Entry, id: string): boolean {
-    if (entry.removed || entry.runtimeId && entry.runtimeId !== id) return false;
-    entry.runtimeId ??= id; if (!entry.retiredRuntimeId) entry.createClaimed = true;
-    return true;
-  }
-  private createdId(body: unknown): string | undefined {
-    const id = record(body)?.Id;
-    return containerId(id) ? id : undefined;
-  }
-  private regressive(entry: Entry, evidence: InspectEvidence): boolean {
-    return entry.terminal && evidence.state !== 'exited' || entry.startClaimed && evidence.state === 'created';
-  }
-  private current(entry: Entry, view: Inspection): Observation {
-    const { observation, runtimeIdAtIssue } = view;
-    if (observation.state === 'missing' && entry.runtimeId !== runtimeIdAtIssue) return { state: 'unknown', reason: 'unsafe_state' };
-    if (!('id' in observation)) return observation;
-    if (entry.removed || entry.runtimeId !== observation.id) return { state: 'unknown', reason: 'conflict' };
-    return this.regressive(entry, observation) ? { state: 'unknown', reason: 'unsafe_state' } : observation;
-  }
-  private async request(input: DockerRequest): Promise<DockerReply> {
-    if (input.signal?.aborted) return { ok: false, reason: 'aborted', dispatched: false };
-    if (performance.now() >= input.deadline) return { ok: false, reason: 'deadline', dispatched: false };
-    try {
-      const reply = await this.transport.request(input);
-      if (input.signal?.aborted) return { ok: false, reason: 'aborted', dispatched: true };
-      if (performance.now() >= input.deadline) return { ok: false, reason: 'deadline', dispatched: true };
-      return reply;
-    }
-    catch { return { ok: false, reason: 'unavailable', dispatched: true }; }
-  }
-  private stopped(observation: Observation): observation is InspectEvidence & { state: 'created' | 'exited' } {
-    return observation.state === 'created' || observation.state === 'exited';
-  }
-  private startFenced(entry: Entry): boolean { return !!entry.retiredRuntimeId || entry.startClaimed || entry.terminal || entry.removed; }
-  private existing(observation: Observation): MutationResult<InspectEvidence> {
-    if (observation.state === 'unknown') return uncertain('reason' in observation ? observation.reason : 'unsafe_state');
-    return 'id' in observation ? known(observation) : uncertain('conflict');
-  }
-  private failedMutation(reply: Extract<DockerReply, { ok: false }>): MutationResult<never> {
-    return reply.dispatched ? uncertain(reply.reason) : rejected(reply.reason);
-  }
-  private statusFailure(status: number): MutationResult<never> {
-    return [400, 401, 403, 404, 409].includes(status) ? rejected('rejected') : uncertain('unavailable');
   }
 }

@@ -1,10 +1,7 @@
 import { retireOutputOwners } from './output-retirement.js';
-import { captureRetirementIntent } from '../retirement-values/index.js';
-import type { RetirementIntent } from '../retirement-values/index.js';
-import { ProducerGateError } from '../producer-gate/index.js';
-import type { ProducerLease } from '../producer-gate/index.js';
-import type { Offer, StandaloneExportAssignment } from '@beetle/contracts';
-import type { AttemptSnapshot } from '@beetle/contracts';
+import { captureRetirementIntent, type RetirementIntent } from '../retirement-values/index.js';
+import { ProducerGateError, type ProducerLease } from '../producer-gate/index.js';
+import type { Offer, StandaloneExportAssignment, AttemptSnapshot } from '@beetle/contracts';
 import type { Scope } from '../admission/index.js';
 import type { Operation } from '../backends/docker/index.js';
 import type { StopReason } from '../journal/index.js';
@@ -21,11 +18,17 @@ import type { DriveContext } from './drive.js';
 import { acquireLease } from './leases.js';
 import type { EntryLease } from './leases.js';
 import { closeWatches, retireNative } from './retirement.js';
-import { readClosedDelivery, reconcileDelivery, releaseStoredSource, rememberSource } from './delivery.js';
+import { readClosedDelivery, reconcileDelivery, releaseStoredSource, sourceCommitted } from './delivery.js';
 import { enqueue, enqueueExport } from './enqueue.js';
 import { structuralOffer, structuralExport } from './offer.js';
 import { InstallationError } from './types.js';
-import type { DriveProgress, InstallationAttempt, InstallationController, InstallationOptions, OfferAcceptance } from './types.js';
+import type {
+  DriveProgress,
+  InstallationAttempt,
+  InstallationController,
+  InstallationOptions,
+  OfferAcceptance,
+} from './types.js';
 const owners = new WeakMap<InstallationOptions['journal'], Manager>();
 /** Installation lifetime, bounded operation custody and generation ownership. */
 export class Manager implements InstallationController {
@@ -39,31 +42,50 @@ export class Manager implements InstallationController {
   constructor(options: InstallationOptions) {
     options.gate.assertOwner(options.journal.retirements);
     if (owners.has(options.journal)) throw new InstallationError('busy');
-    this.options = Object.freeze({ ...options }); owners.set(options.journal, this);
+    this.options = Object.freeze({ ...options });
+    owners.set(options.journal, this);
   }
   now(): number {
     const now = (this.options.wallNow ?? Date.now)();
-    if (!Number.isSafeInteger(now) || now < this.wallHigh || now > 8_640_000_000_000_000) throw new InstallationError('clock');
-    this.wallHigh = now; return now;
+    if (!Number.isSafeInteger(now) || now < this.wallHigh || now > 8_640_000_000_000_000)
+      throw new InstallationError('clock');
+    this.wallHigh = now;
+    return now;
   }
-  open(): void { if (this.closed) throw new InstallationError('closed'); }
+  open(): void {
+    if (this.closed) throw new InstallationError('closed');
+  }
   guard(_entry: Entry, budget: Operation): void {
-    this.open(); checkBudget(budget);
+    this.open();
+    checkBudget(budget);
     if (_entry.retiring) throw new InstallationError('busy');
   }
-  acquireStage(): boolean { if (this.stages >= 2) return false; this.stages++; return true; }
-  releaseStage(): void { this.stages--; }
+  acquireStage(): boolean {
+    if (this.stages >= 2) return false;
+    this.stages++;
+    return true;
+  }
+  releaseStage(): void {
+    this.stages--;
+  }
   private entry(key: Readonly<Scope>): Entry {
-    const id = identity(key); const existing = this.entries.get(id);
+    const id = identity(key);
+    const existing = this.entries.get(id);
     if (existing) return existing;
     if (this.entries.size >= 64) throw new InstallationError('capacity');
-    const entry = createEntry(key); this.entries.set(id, entry); return entry;
+    const entry = createEntry(key);
+    this.entries.set(id, entry);
+    return entry;
   }
   private async releaseLease(entry: Entry, lease: EntryLease): Promise<void> {
     entry.users--;
     lease.finish();
-    await releaseProvisional({ journal: this.options.journal, entries: this.entries, entry,
-      retire: () => this.retire(entry) });
+    await releaseProvisional({
+      journal: this.options.journal,
+      entries: this.entries,
+      entry,
+      retire: () => this.retire(entry),
+    });
     await this.releaseClosedSource(entry);
   }
   private async releaseClosedSource(entry: Entry): Promise<void> {
@@ -76,57 +98,101 @@ export class Manager implements InstallationController {
     }
   }
   private driveContext(caller: EntryLease, budget: Operation, producer: ProducerLease): DriveContext {
-    return { options: this.options, now: () => this.now(), guard: (entry, budget) => { producer.check(); this.guard(entry, budget); },
-      acquireStage: () => this.acquireStage(), releaseStage: () => this.releaseStage(),
+    return {
+      options: this.options,
+      now: () => this.now(),
+      guard: (entry, budget) => {
+        producer.check();
+        this.guard(entry, budget);
+      },
+      acquireStage: () => this.acquireStage(),
+      releaseStage: () => this.releaseStage(),
       retire: (entry, progress) => this.retire(entry, caller, progress, budget),
-      stopGuard: entry => this.stopGuard(entry), stopTimeout: (entry, reason) => this.stopTimeout(entry, reason) };
-  }
-  private async sourceCommitted(entry: Entry): Promise<boolean> {
-    if (entry.sourceReceipt) return true;
-    entry.sourceCheck = true;
-    const source = await this.options.journal.readOutputSource(entry.key);
-    if (source) { rememberSource(entry, source); return true; }
-    entry.sourceCheck = false; return false;
+      stopGuard: (entry) => this.stopGuard(entry),
+      stopTimeout: (entry, reason) => this.stopTimeout(entry, reason),
+    };
   }
   /** Reserve before touching caller objects, proxies, providers or clocks. */
   private run<T>(operation: () => Promise<T>): Promise<T> {
     if (this.closed) return Promise.reject(new InstallationError('closed'));
     if (this.work.size >= 64) return Promise.reject(new InstallationError('busy'));
-    let resolve!: (value: T) => void; let reject!: (error: unknown) => void;
-    const result = new Promise<T>((yes, no) => { resolve = yes; reject = no; });
+    let resolve!: (value: T) => void;
+    let reject!: (error: unknown) => void;
+    const result = new Promise<T>((yes, no) => {
+      resolve = yes;
+      reject = no;
+    });
     this.work.add(result);
     let original: Promise<T>;
-    try { original = operation(); } catch (error) { original = Promise.reject(error); }
-    void original.then(value => {
-      this.work.delete(result); resolve(value);
-    }, error => { this.work.delete(result); reject(error); });
+    try {
+      original = operation();
+    } catch (error) {
+      original = Promise.reject(error);
+    }
+    void original.then(
+      (value) => {
+        this.work.delete(result);
+        resolve(value);
+      },
+      (error) => {
+        this.work.delete(result);
+        reject(error);
+      },
+    );
     return result;
   }
-  enqueue(input: unknown): Promise<OfferAcceptance> { return this.run(() => enqueue(this, input)); }
-  enqueueExport(input: unknown): Promise<OfferAcceptance> {return this.run(()=>enqueueExport(this,input));}
-  cancelOriginal(input: unknown): Promise<AttemptSnapshot> {return this.run(()=>this.cancelledOriginal(structuralOffer(input)));}
-  cancelExportOriginal(input: unknown): Promise<AttemptSnapshot> {
-    return this.run(()=>{const assignment=structuralExport(input);return this.cancelledOriginal(assignment.offer,assignment);});
+  enqueue(input: unknown): Promise<OfferAcceptance> {
+    return this.run(() => enqueue(this, input));
   }
-  private async cancelledOriginal(offer:Offer,assignment?:StandaloneExportAssignment):Promise<AttemptSnapshot> {
-    const key=scopeCopy({organizationId:offer.organizationId,workspaceId:offer.workspaceId,attemptId:offer.attemptId,generation:1});
-    this.open();const entry=this.entry(key);const lease=acquireLease(entry);
+  enqueueExport(input: unknown): Promise<OfferAcceptance> {
+    return this.run(() => enqueueExport(this, input));
+  }
+  cancelOriginal(input: unknown): Promise<AttemptSnapshot> {
+    return this.run(() => this.cancelledOriginal(structuralOffer(input)));
+  }
+  cancelExportOriginal(input: unknown): Promise<AttemptSnapshot> {
+    return this.run(() => {
+      const assignment = structuralExport(input);
+      return this.cancelledOriginal(assignment.offer, assignment);
+    });
+  }
+  private async cancelledOriginal(offer: Offer, assignment?: StandaloneExportAssignment): Promise<AttemptSnapshot> {
+    const key = scopeCopy({
+      organizationId: offer.organizationId,
+      workspaceId: offer.workspaceId,
+      attemptId: offer.attemptId,
+      generation: 1,
+    });
+    this.open();
+    const entry = this.entry(key);
+    const lease = acquireLease(entry);
     try {
-      const now=this.now();const snapshot=assignment ? await this.options.journal.cancelExportOriginal({assignment,now})
-        : await this.options.journal.cancelOriginal({offer,now});
-      entry.cancelled=true;if (!await this.sourceCommitted(entry)) this.signal(entry);return snapshot;
-    } finally {await this.releaseLease(entry,lease);}
+      const now = this.now();
+      const snapshot = assignment
+        ? await this.options.journal.cancelExportOriginal({ assignment, now })
+        : await this.options.journal.cancelOriginal({ offer, now });
+      entry.cancelled = true;
+      if (!(await sourceCommitted(this.options.journal, entry))) this.signal(entry);
+      return snapshot;
+    } finally {
+      await this.releaseLease(entry, lease);
+    }
   }
   private async releaseDrive(entry: Entry, lease: EntryLease, producer: ProducerLease): Promise<void> {
     try {
       await this.releaseLease(entry, lease);
-      if (entry.cleanupFailed) producer.poison(); else producer.finish();
-    } catch (error) { producer.poison(); throw error; }
+      if (entry.cleanupFailed) producer.poison();
+      else producer.finish();
+    } catch (error) {
+      producer.poison();
+      throw error;
+    }
   }
   private driveLease(key: Readonly<Scope>) {
     let producer: ProducerLease;
-    try { producer = this.options.gate.acquire(key); }
-    catch (error) {
+    try {
+      producer = this.options.gate.acquire(key);
+    } catch (error) {
       if (error instanceof ProducerGateError) {
         const reason = error.reason === 'capacity' || error.reason === 'cleanup' ? error.reason : 'closed';
         throw new InstallationError(reason);
@@ -134,38 +200,59 @@ export class Manager implements InstallationController {
       throw error;
     }
     try {
-      const entry = this.entry(key); if (entry.active) throw new InstallationError('busy');
+      const entry = this.entry(key);
+      if (entry.active) throw new InstallationError('busy');
       return { entry, lease: acquireLease(entry, true), producer };
-    } catch (error) { producer.finish(); throw error; }
+    } catch (error) {
+      producer.finish();
+      throw error;
+    }
   }
   drive(input: Scope, operation: Operation): Promise<DriveProgress> {
     return this.run(async () => {
-      const key = scopeCopy(input); this.open();
+      const key = scopeCopy(input);
+      this.open();
       const { entry, lease, producer } = this.driveLease(key);
       // Reserve the lane before reading the caller's budget descriptors.
-      let resolve!: (value: DriveProgress) => void; let reject!: (error: unknown) => void;
-      const active = new Promise<DriveProgress>((yes, no) => { resolve = yes; reject = no; });
-      entry.active = active; producer.issue(() => ({ owner: this, active }));
+      let resolve!: (value: DriveProgress) => void;
+      let reject!: (error: unknown) => void;
+      const active = new Promise<DriveProgress>((yes, no) => {
+        resolve = yes;
+        reject = no;
+      });
+      entry.active = active;
+      producer.issue(() => ({ owner: this, active }));
       try {
         const budget = budgetCopy(operation);
-        void Promise.resolve().then(async () => {
-          await producer.ready(); this.open();
-          if (entry.retiring || entry.sourceReceipt) {
-            const progress = entry.retirementProgress ?? (entry.sourceReceipt ? { kind: 'released' as const, collection: 'finished' as const } : null);
-            if (!progress) throw new InstallationError('cleanup');
-            await this.retire(entry, lease, progress, budget); return progress;
-          }
-          return drive(this.driveContext(lease, budget, producer), entry, budget);
-        }).then(resolve, reject);
-      } catch (error) { reject(error); }
-      try { return await active; } finally {
+        void Promise.resolve()
+          .then(async () => {
+            await producer.ready();
+            this.open();
+            if (entry.retiring || entry.sourceReceipt) {
+              const progress =
+                entry.retirementProgress ??
+                (entry.sourceReceipt ? { kind: 'released' as const, collection: 'finished' as const } : null);
+              if (!progress) throw new InstallationError('cleanup');
+              await this.retire(entry, lease, progress, budget);
+              return progress;
+            }
+            return drive(this.driveContext(lease, budget, producer), entry, budget);
+          })
+          .then(resolve, reject);
+      } catch (error) {
+        reject(error);
+      }
+      try {
+        return await active;
+      } finally {
         delete entry.active;
         await this.releaseDrive(entry, lease, producer);
       }
     });
   }
   private signal(entry: Entry, reason: StopReason = 'cancelled'): Promise<void> {
-    entry.cancelled = true; entry.abort.abort();
+    entry.cancelled = true;
+    entry.abort.abort();
     if (entry.fresh && !entry.controller) this.closeWatch(entry);
     if (!entry.controller) return Promise.resolve();
     const urgent = ['output_limit', 'artifact_incomplete', 'clock_integrity'].includes(reason);
@@ -173,23 +260,28 @@ export class Manager implements InstallationController {
     entry.urgentStop ||= urgent;
     const previous = entry.cancellation;
     const operation = entry.controller.cancel(reason);
-    entry.cancellation = Promise.allSettled([previous, operation]).then(outcomes => {
-      if (outcomes.some(value => value.status === 'rejected')) throw new InstallationError('cleanup');
+    entry.cancellation = Promise.allSettled([previous, operation]).then((outcomes) => {
+      if (outcomes.some((value) => value.status === 'rejected')) throw new InstallationError('cleanup');
     });
     // Handle rejection immediately while retaining the original for shutdown.
-    void entry.cancellation.catch(() => { entry.cleanupFailed = true; });
+    void entry.cancellation.catch(() => {
+      entry.cleanupFailed = true;
+    });
     return entry.cancellation;
   }
   cancel(input: Scope): Promise<AttemptSnapshot> {
     return this.requestStop(input, 'cancelled');
   }
   stop(input: Scope, reason: 'output_limit' | 'artifact_incomplete' | TimeoutReason): Promise<AttemptSnapshot> {
-    if (!['output_limit', 'artifact_incomplete', 'timeout', 'clock_integrity'].includes(reason)) return Promise.reject(new InstallationError('invalid_input'));
+    if (!['output_limit', 'artifact_incomplete', 'timeout', 'clock_integrity'].includes(reason))
+      return Promise.reject(new InstallationError('invalid_input'));
     return this.requestStop(input, reason);
   }
   private requestStop(input: Scope, reason: StopReason): Promise<AttemptSnapshot> {
     return this.run(async () => {
-      const key = scopeCopy(input); this.open(); const entry = this.entry(key);
+      const key = scopeCopy(input);
+      this.open();
+      const entry = this.entry(key);
       const lease = acquireLease(entry);
       try {
         await this.requestIntent(entry, reason);
@@ -199,28 +291,46 @@ export class Manager implements InstallationController {
       }
     });
   }
-  stopGuard(entry: Entry): Promise<void> { return this.requestIntent(entry, 'artifact_incomplete'); }
-  stopTimeout(entry: Entry, reason: TimeoutReason | 'artifact_incomplete'): Promise<void> { return this.requestIntent(entry, reason); }
+  stopGuard(entry: Entry): Promise<void> {
+    return this.requestIntent(entry, 'artifact_incomplete');
+  }
+  stopTimeout(entry: Entry, reason: TimeoutReason | 'artifact_incomplete'): Promise<void> {
+    return this.requestIntent(entry, reason);
+  }
   private async requestIntent(entry: Entry, reason: StopReason): Promise<void> {
     entry.cancelled = true;
-    const now = reason === 'clock_integrity' ? 0 : this.now(); this.open();
+    const now = reason === 'clock_integrity' ? 0 : this.now();
+    this.open();
     await this.options.journal.supervision({ key: entry.key, now, cancel: true, reason });
-    if (!await this.sourceCommitted(entry)) this.signal(entry, reason);
+    if (!(await sourceCommitted(this.options.journal, entry))) this.signal(entry, reason);
   }
   private closeWatch(entry: Entry): void {
     closeWatches(entry);
   }
   retireOutput(input: RetirementIntent, operation: Operation): Promise<void> {
     return this.run(async () => {
-      const intent = captureRetirementIntent(input); const request = intent.request;
-      const key = { organizationId: request.organizationId, workspaceId: request.workspaceId, attemptId: request.attemptId, generation: request.generation };
-      const budget = budgetCopy(operation); this.open();
-      await retireOutputOwners({ options: this.options, intent, operation: budget, existing: () => this.entries.get(identity(key)) });
+      const intent = captureRetirementIntent(input);
+      const request = intent.request;
+      const key = {
+        organizationId: request.organizationId,
+        workspaceId: request.workspaceId,
+        attemptId: request.attemptId,
+        generation: request.generation,
+      };
+      const budget = budgetCopy(operation);
+      this.open();
+      await retireOutputOwners({
+        options: this.options,
+        intent,
+        operation: budget,
+        existing: () => this.entries.get(identity(key)),
+      });
     });
   }
   inspect(input: Scope): Promise<InstallationAttempt> {
     return this.run(async () => {
-      const key = scopeCopy(input); this.open();
+      const key = scopeCopy(input);
+      this.open();
       const snapshot = await this.options.journal.get(key);
       return { snapshot, allocation: await allocation(this.options.journal, key) };
     });
@@ -233,7 +343,7 @@ export class Manager implements InstallationController {
       this.entries.delete(identity(entry.key));
     } else {
       const closed = await reconcileAbsence(this.options.journal, entry, () => this.retireReleased(entry, operation));
-      if (closed || !await allocation(this.options.journal, entry.key)) this.entries.delete(identity(entry.key));
+      if (closed || !(await allocation(this.options.journal, entry.key))) this.entries.delete(identity(entry.key));
     }
   }
   private async retireReleased(entry: Entry, operation?: Operation): Promise<void> {
@@ -258,10 +368,11 @@ export class Manager implements InstallationController {
     }
   }
   private async drainEntries(): Promise<boolean> {
-    const entries = [...this.entries.values()]; let failed = false;
+    const entries = [...this.entries.values()];
+    let failed = false;
     for (let index = 0; index < entries.length; index += 2) {
-      const outcomes = await Promise.allSettled(entries.slice(index, index + 2).map(entry => this.drain(entry)));
-      if (outcomes.some(value => value.status === 'rejected')) failed = true;
+      const outcomes = await Promise.allSettled(entries.slice(index, index + 2).map((entry) => this.drain(entry)));
+      if (outcomes.some((value) => value.status === 'rejected')) failed = true;
     }
     return failed;
   }
@@ -272,7 +383,9 @@ export class Manager implements InstallationController {
     this.closing = Promise.resolve().then(async () => {
       const entries = [...this.entries.values()];
       for (const entry of entries) {
-        entry.retiring = true; entry.cancelled = true; entry.abort.abort();
+        entry.retiring = true;
+        entry.cancelled = true;
+        entry.abort.abort();
         this.closeWatch(entry);
       }
       const work = await Promise.allSettled([...this.work]);

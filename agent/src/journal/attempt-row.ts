@@ -1,4 +1,4 @@
-import {storedJson as json} from './row-values.js';
+import { storedJson as json } from './row-values.js';
 import { validate } from '@beetle/contracts';
 import type { AttemptSnapshot } from '@beetle/contracts';
 import { copyWrapperCheckpoint } from '../control-protocol/index.js';
@@ -62,7 +62,7 @@ export function snapshot(row: Row): AttemptSnapshot {
   };
   const result = validate('AttemptSnapshot', candidate);
   if (!result.ok) throw new Failure('unavailable');
-  bindResults(row,result.value);
+  bindResults(row, result.value);
   return result.value;
 }
 
@@ -92,13 +92,33 @@ const flags = ['cancel_requested', 'delivery_pending', 'absence_pending', 'clean
 function integer(value: unknown): boolean {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 }
-function privateFacts(row: Row): void {
+function exitFacts(row: Row, captured: AttemptSnapshot): void {
+  if (row.exit_facts_json !== null) {
+    const facts = json(row.exit_facts_json, 1024);
+    if (
+      !facts ||
+      typeof facts !== 'object' ||
+      Array.isArray(facts) ||
+      !captured.exitEvidence ||
+      Object.keys(facts).some((name) => !['exitCode', 'oomKilled', 'reason'].includes(name))
+    )
+      throw new Failure('unavailable');
+    // Accumulated facts deliberately omit time; the immutable public witness owns it.
+    snapshot({
+      ...row,
+      result_json: null,
+      export_result_json: null,
+      exit_json: JSON.stringify({ ...facts, observedAt: captured.exitEvidence.observedAt }),
+    });
+  }
+}
+function privateFacts(row: Row, captured: AttemptSnapshot): void {
   if (
     row.staging_namespace_identity !== null &&
     (typeof row.staging_namespace_identity !== 'string' || !/^[a-f0-9]{64}$/.test(row.staging_namespace_identity))
   )
     throw new Failure('unavailable');
-  if (row.exit_facts_json !== null) snapshot({ ...row, exit_json: row.exit_facts_json });
+  exitFacts(row, captured);
   if (row.wrapper_checkpoint_json !== null) {
     try {
       copyWrapperCheckpoint(json(row.wrapper_checkpoint_json, 1024));
@@ -123,16 +143,21 @@ export function captureAttemptRow(input: unknown): Row {
   if (fields.execution_purpose !== 'performance' && fields.execution_purpose !== 'standalone_export')
     throw new Failure('unavailable');
   const row = input as Row;
-  snapshot(row);
-  privateFacts(row);
+  const captured = snapshot(row);
+  privateFacts(row, captured);
   sequences(row);
   return row;
 }
 
-function bindResults(row:Row,value:AttemptSnapshot):void {
-  for(const result of [value.result,value.exportResult]){
-    if(result===undefined)continue;
-    if(result.attemptId!==row.attempt_id||result.organizationId!==row.organization_id
-      ||result.workspaceId!==row.workspace_id||result.generation!==row.generation)throw new Failure('unavailable');
+function bindResults(row: Row, value: AttemptSnapshot): void {
+  for (const result of [value.result, value.exportResult]) {
+    if (result === undefined) continue;
+    if (
+      result.attemptId !== row.attempt_id ||
+      result.organizationId !== row.organization_id ||
+      result.workspaceId !== row.workspace_id ||
+      result.generation !== row.generation
+    )
+      throw new Failure('unavailable');
   }
 }
