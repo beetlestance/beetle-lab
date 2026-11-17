@@ -1,117 +1,153 @@
 import { normalizeRunListQuery } from '@beetle/contracts/api';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { RunListQuery } from '@beetle/contracts/api';
+import { Button } from '../../components/Button.js';
+import { Select, TextInput } from '../../components/Fields.js';
+import { SegmentedFilter } from '../../components/SegmentedFilter.js';
 
-export type HistoryFilter = Pick<RunListQuery, 'state' | 'outcome' | 'order' | 'name' | 'runIdPrefix' | 'suiteId'>;
-const runStates = ['queued', 'dispatching', 'active', 'finalizing', 'finished', 'cancelled', 'errored'] as const;
-const outcomes = ['pending', 'passed', 'failed', 'inconclusive'] as const;
-export function HistoryFilters({ applied, apply }: { applied: HistoryFilter; apply: (value: HistoryFilter) => void }) {
-  const [draft, setDraft] = useState(applied);
-  const [mode, setMode] = useState<'name' | 'runIdPrefix' | 'suiteId'>('name');
-  const [text, setText] = useState('');
-  const [error, setError] = useState('');
-  function submit() {
-    try {
-      const value = { ...draft };
-      delete value.name;
-      delete value.runIdPrefix;
-      if (text.trim()) value[mode] = text;
-      const normalized = normalizeRunListQuery({ limit: 100, ...value });
-      const filters: Partial<RunListQuery> = { ...normalized };
-      delete filters.limit;
-      setError('');
-      apply(filters);
-    } catch {
-      setError(
-        'Enter a name of at least 3 characters (64 UTF-8 bytes maximum), or a run ID prefix of at least 8 characters.',
-      );
-    }
-  }
-  function edit(field: 'state' | 'outcome', value: string) {
-    const next = { ...draft };
-    delete next[field];
-    if (field === 'state' && value) next.state = value as NonNullable<HistoryFilter['state']>;
-    if (field === 'outcome' && value) next.outcome = value as NonNullable<HistoryFilter['outcome']>;
-    setDraft(next);
-  }
-  function reset() {
-    const value = { order: 'newest' as const };
-    setDraft(value);
-    setText('');
-    setError('');
-    setMode('name');
-    apply(value);
-  }
-  return (
-    <form
-      aria-label="History filters"
-      onSubmit={(event) => {
-        event.preventDefault();
-        submit();
-      }}
-    >
-      <StateFilters draft={draft} edit={edit} />
-      <label>
-        Order{' '}
-        <select
-          value={draft.order ?? 'newest'}
-          onChange={(event) => setDraft({ ...draft, order: event.target.value as NonNullable<HistoryFilter['order']> })}
-        >
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-        </select>
-      </label>
-      <label>
-        Search by{' '}
-        <select value={mode} onChange={(event) => setMode(event.target.value as typeof mode)}>
-          <option value="name">Current names</option>
-          <option value="runIdPrefix">Run ID prefix</option>
-        </select>
-      </label>
-      <label>
-        History search <input value={text} maxLength={256} onChange={(event) => setText(event.target.value)} />
-      </label>
-      {error && <p role="alert">{error}</p>}
-      <p>
-        Names match a current workspace, suite or ancestor folder name. Run IDs match from the beginning. Path
-        separators between names are not searched. Refine a search reported as too broad.
-      </p>
-      <button type="submit">Apply filters</button>
-      <button type="button" onClick={reset}>
-        Reset filters
-      </button>
-      <p>State and outcome membership can change while runs progress. Refresh starts at the first page.</p>
-    </form>
-  );
+export type HistoryFilter = Pick<
+  RunListQuery,
+  'state' | 'outcome' | 'order' | 'name' | 'runIdPrefix' | 'suiteId' | 'pinned'
+>;
+export type HistoryChip = 'all' | 'running' | 'passed' | 'failed' | 'cancelled' | 'pinned';
+const chips: readonly { value: HistoryChip; label: string; filter: Partial<HistoryFilter> }[] = [
+  { value: 'all', label: 'All', filter: {} },
+  { value: 'running', label: 'Running', filter: { state: 'active' } },
+  { value: 'passed', label: 'Passed', filter: { outcome: 'passed' } },
+  { value: 'failed', label: 'Failed', filter: { outcome: 'failed' } },
+  { value: 'cancelled', label: 'Cancelled', filter: { state: 'cancelled' } },
+  { value: 'pinned', label: 'Pinned', filter: { pinned: true } },
+];
+export function chipOf(filter: HistoryFilter): HistoryChip {
+  if (filter.pinned) return 'pinned';
+  if (filter.state === 'active') return 'running';
+  if (filter.state === 'cancelled') return 'cancelled';
+  if (filter.outcome === 'passed') return 'passed';
+  if (filter.outcome === 'failed') return 'failed';
+  return 'all';
+}
+/** Eight or more hex characters (and dashes) search run IDs; anything else searches names and notes. */
+export function searchField(text: string): 'name' | 'runIdPrefix' {
+  return /^[0-9a-f-]{8,36}$/i.test(text.trim()) && /[0-9a-f]{8}/i.test(text.trim()) ? 'runIdPrefix' : 'name';
+}
+export type SuiteOption = { id: string; name: string };
+export function filtersActive(filter: HistoryFilter): boolean {
+  return chipOf(filter) !== 'all' || filter.name !== undefined || filter.runIdPrefix !== undefined;
 }
 
-function StateFilters({
-  draft,
-  edit,
+/**
+ * Chips, suite and sort apply at once; search applies on Enter. The suite choice is
+ * hidden when the page is already bound to one suite through its address.
+ */
+export function HistoryFilters({
+  applied,
+  apply,
+  suites,
+  suiteLocked,
 }: {
-  draft: HistoryFilter;
-  edit(field: 'state' | 'outcome', value: string): void;
+  applied: HistoryFilter;
+  apply: (value: HistoryFilter) => void;
+  suites: readonly SuiteOption[] | undefined;
+  suiteLocked: boolean;
 }) {
+  const [text, setText] = useState(applied.name ?? applied.runIdPrefix ?? '');
+  const [error, setError] = useState('');
+  const searching = applied.name !== undefined || applied.runIdPrefix !== undefined;
+  useEffect(() => {
+    if (!searching) setText('');
+  }, [searching]);
+  function commit(next: HistoryFilter) {
+    try {
+      const normalized: Partial<RunListQuery> = { ...normalizeRunListQuery({ limit: 100, ...next }) };
+      delete normalized.limit;
+      setError('');
+      apply(normalized as HistoryFilter);
+    } catch {
+      setError('Enter at least 3 characters (64 bytes maximum), or a run ID prefix of at least 8 characters.');
+    }
+  }
+  function withoutChip(filter: HistoryFilter): HistoryFilter {
+    const next = { ...filter };
+    delete next.state;
+    delete next.outcome;
+    delete next.pinned;
+    return next;
+  }
+  function submitSearch() {
+    const next = { ...applied };
+    delete next.name;
+    delete next.runIdPrefix;
+    if (text.trim()) next[searchField(text)] = text;
+    commit(next);
+  }
+  function reset() {
+    setText('');
+    setError('');
+    apply({ order: 'newest', ...(suiteLocked && applied.suiteId ? { suiteId: applied.suiteId } : {}) });
+  }
   return (
-    <>
-      <label>
-        State{' '}
-        <select value={draft.state ?? ''} onChange={(event) => edit('state', event.target.value)}>
-          <option value="">All states</option>
-          {runStates.map((state) => (
-            <option key={state}>{state}</option>
+    <div className="history-filters">
+      <SegmentedFilter
+        label="Run state"
+        options={chips.map(({ value, label }) => ({ value, label }))}
+        value={chipOf(applied)}
+        onChange={(value) => commit({ ...withoutChip(applied), ...chips.find((chip) => chip.value === value)!.filter })}
+      />
+      <form
+        role="search"
+        aria-label="Run history search"
+        className="history-search"
+        onSubmit={(event) => {
+          event.preventDefault();
+          submitSearch();
+        }}
+      >
+        <TextInput
+          label="Search runs"
+          hideLabel
+          type="search"
+          placeholder="Search by suite, run or note"
+          value={text}
+          maxLength={256}
+          error={error || undefined}
+          onChange={(event) => setText(event.target.value)}
+        />
+      </form>
+      {!suiteLocked && (
+        <Select
+          label="Suite"
+          hideLabel
+          loading={suites === undefined}
+          value={applied.suiteId ?? ''}
+          onChange={(event) => {
+            const next = { ...applied };
+            delete next.suiteId;
+            if (event.target.value) next.suiteId = event.target.value;
+            commit(next);
+          }}
+        >
+          <option value="">Every suite</option>
+          {suites?.map((suite) => (
+            <option key={suite.id} value={suite.id}>
+              {suite.name}
+            </option>
           ))}
-        </select>
-      </label>
-      <label>
-        Outcome{' '}
-        <select value={draft.outcome ?? ''} onChange={(event) => edit('outcome', event.target.value)}>
-          <option value="">All outcomes</option>
-          {outcomes.map((outcome) => (
-            <option key={outcome}>{outcome}</option>
-          ))}
-        </select>
-      </label>
-    </>
+        </Select>
+      )}
+      <Select
+        label="Sort"
+        hideLabel
+        value={applied.order ?? 'newest'}
+        onChange={(event) => commit({ ...applied, order: event.target.value as NonNullable<HistoryFilter['order']> })}
+      >
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+      </Select>
+      {filtersActive(applied) && (
+        <Button variant="text" size="sm" onClick={reset}>
+          Reset filters
+        </Button>
+      )}
+    </div>
   );
 }

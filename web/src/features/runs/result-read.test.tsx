@@ -9,7 +9,7 @@ import type { Run, RunResultSnapshot } from '@beetle/contracts/api';
 import passed from '../../../../contracts/fixtures/valid/passed-result.json' with { type: 'json' };
 import { ApiContext } from '../../app/api.js';
 import { createQueryClient, queryKeys } from '../../app/queries.js';
-import { Runs } from './index.js';
+import { SnapshotDetail } from './snapshot-harness.js';
 import { apiError, deferred, ids, json, resultSnapshot, run, runId, testClient } from './test-fixtures.js';
 
 afterEach(() => { cleanup(); vi.useRealTimers(); });
@@ -23,7 +23,7 @@ function evidence(current = run(), relativePath = 'reports/current.json'): RunRe
 function mountDetail(api: ReturnType<typeof testClient>['client'], initial = run()) {
   const client = createQueryClient();
   const surface = (current: Run) => <MemoryRouter><ApiContext.Provider value={api}><QueryClientProvider client={client}>
-    <Runs organizationId={current.scope.organizationId} workspaceId={current.scope.workspaceId} runId={current.id} />
+    <SnapshotDetail organizationId={current.scope.organizationId} workspaceId={current.scope.workspaceId} runId={current.id} />
   </QueryClientProvider></ApiContext.Provider></MemoryRouter>;
   const view = render(surface(initial));
   return { ...view, client, select: (current: Run) => view.rerender(surface(current)) };

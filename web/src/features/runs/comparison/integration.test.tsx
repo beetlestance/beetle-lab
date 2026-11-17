@@ -26,7 +26,7 @@ it('compares outcomes/provenance then sequences selected per-run charts by actua
   await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(2));
   expect(maximum).toBe(1);
   const paths = fixture.records.map(record => record.path);
-  expect(paths).toHaveLength(5); expect(paths[0]).toMatch(/comparisons$/); expect(paths[1]).toMatch(/metrics\?limit=100$/);
+  expect(paths).toHaveLength(7); expect(paths.filter(path => path.includes('/runs?limit=1&runIdPrefix='))).toHaveLength(2); expect(paths[0]).toMatch(/comparisons$/); expect(paths[1]).toMatch(/metrics\?limit=100$/);
   expect(paths.slice(3).join(' ')).toContain('seriesOrdinal=2'); expect(paths.slice(3).join(' ')).toContain('seriesOrdinal=3');
   expect(screen.getByText(/independent vertical scale/)).toBeVisible();
 });
@@ -35,7 +35,7 @@ it('stops on failure and only refreshes manually', async () => {
   const fixture = testClient(request => failed ? json(apiError('storage_unavailable'), 503) : json(request.path.endsWith('/comparisons') ? snapshot() : catalogue()));
   mountComparison(fixture.client); await screen.findByRole('alert'); expect(fixture.records).toHaveLength(1);
   failed = false; fireEvent.click(screen.getByRole('button', {name: 'Refresh comparison'}));
-  await screen.findByLabelText('Baseline metric'); expect(fixture.records).toHaveLength(3);
+  await screen.findByLabelText('Baseline metric'); expect(fixture.records).toHaveLength(5);
 });
 it('rejects invalid URL before issuing any client read', async () => {
   const fixture = testClient(() => {throw new Error('Unexpected read');});
@@ -65,7 +65,7 @@ it('renders four bounded independent charts and never fans out beyond selected r
   mountComparison(fixture.client, false, routes.comparison(scope.organizationId, scope.workspaceId, ids));
   await screen.findByLabelText('Baseline metric'); fireEvent.change(screen.getByLabelText('Baseline metric'), {target: {value: '0'}});
   await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(4));
-  expect(fixture.records).toHaveLength(7); expect(fixture.records.filter(record => record.path.includes('/samples?'))).toHaveLength(4);
+  expect(fixture.records).toHaveLength(11); expect(fixture.records.filter(record => record.path.includes('/samples?'))).toHaveLength(4);
 });
 it('keeps missing peer measurements explicit without substituting zero or requesting samples', async () => {
   const fixture = testClient(request => {

@@ -1,182 +1,142 @@
-import { useId, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { validateApi } from '@beetle/contracts/api';
-import type {
-  RunComparisonItem,
-  RunComparisonMetricRead,
-  RunMetricKey,
-  RunMetricSeriesPage,
-} from '@beetle/contracts/api';
 import { routes } from '../../../app/routes.js';
+import { Badge, Status } from '../../../components/Badge.js';
+import { Button, buttonClass } from '../../../components/Button.js';
+import { runStatus, shortId } from '../../run-results/format.js';
 import type { RunScope } from '../types.js';
-import { SamplesView, evidence, valueNumber } from '../metrics/index.js';
-import type { ReadAdmission } from '../metrics/index.js';
+import { ComparisonDeltas, WhatWasDifferent } from './Deltas.js';
+import { ComparisonFacts } from './Facts.js';
+import { ComparedMetric, MetricSelection } from './Metric.js';
 import { comparisonRunIds } from './selection.js';
 import { useComparison } from './useComparison.js';
-import { ComparisonFacts } from './Facts.js';
+import './comparison.css';
+
 export function RunComparison(scope: RunScope) {
   const { search } = useLocation();
+  if (!new URLSearchParams(search).has('runs')) return <CompareEmpty scope={scope} />;
   const ids = comparisonRunIds(search);
   if (!ids)
     return (
-      <section>
+      <section className="compare">
         <h1>Invalid comparison</h1>
         <p>Select two to four distinct runs in workspace history.</p>
+        <Link className={buttonClass('secondary')} to={routes.runs(scope.organizationId, scope.workspaceId)}>
+          Go to runs
+        </Link>
       </section>
     );
   return <Comparison scope={scope} ids={ids} />;
 }
+
+/** Compare / Empty: no runs were picked. */
+function CompareEmpty({ scope }: { scope: RunScope }) {
+  return (
+    <section className="compare compare-empty">
+      <h1>Pick runs to compare</h1>
+      <p>
+        Tick two to four finished runs in Runs. The first one is the baseline, and every other run shows how far it
+        moved from it.
+      </p>
+      <Link className={buttonClass('primary')} to={routes.runs(scope.organizationId, scope.workspaceId)}>
+        Go to runs
+      </Link>
+      <p className="compare-muted">Only finished runs can be compared. A running one joins when it ends.</p>
+    </section>
+  );
+}
+
 function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
   const state = useComparison(scope, ids);
   const snapshot = state.view.snapshot;
+  const { organizationId, workspaceId } = scope;
   return (
-    <section>
-      <header className="section-header">
-        <h1>Compare runs</h1>
-        <button disabled={state.busy} onClick={state.retry}>
-          Refresh comparison
-        </button>
+    <section className="compare">
+      <header className="compare-head">
+        <div>
+          <h1>Compare runs</h1>
+          <p className="compare-lede">
+            {ids.length} runs, baseline <span className="number">{shortId(ids[0]!)}</span>. Differences describe
+            recorded evidence, not a statistical comparability verdict.
+          </p>
+        </div>
+        <div className="compare-head-actions">
+          <Link className={buttonClass('text', 'sm')} to={routes.runs(organizationId, workspaceId)}>
+            Back to run history
+          </Link>
+          <Button size="sm" disabled={state.busy} onClick={state.retry}>
+            Refresh comparison
+          </Button>
+        </div>
       </header>
-      <Link to={routes.runs(scope.organizationId, scope.workspaceId)}>Back to run history</Link>
-      <p>
-        The first selected run is the baseline. Differences describe recorded evidence, not a statistical comparability
-        verdict.
-      </p>
       {state.view.busy && <p role="status">Loading comparison…</p>}
       {state.view.error && <p role="alert">Comparison could not be loaded. Use Refresh comparison to retry.</p>}
       {snapshot && (
         <>
-          {state.view.page ? (
-            <MetricSelection page={state.view.page} busy={state.busy} select={state.select} next={state.page} />
-          ) : (
-            <button disabled={state.busy} onClick={() => state.page()}>
-              Choose another metric
-            </button>
-          )}
-          {snapshot.metricBinding && (
-            <p>
-              Logical request: {snapshot.metricBinding.requestId ?? 'aggregate'}; assertion:{' '}
-              {snapshot.metricBinding.assertionId ?? 'none'}.
+          <ul className="compare-runs" aria-label="Compared runs">
+            {snapshot.items.map((item, index) => {
+              const status = runStatus(item.run);
+              const others = ids.filter((id) => id !== item.run.id.toLowerCase());
+              return (
+                <li key={item.run.id} className="compare-run">
+                  <Status tone={status.tone}>{status.label}</Status>
+                  <Link to={routes.run(organizationId, workspaceId, item.run.id)} className="number">
+                    {shortId(item.run.id)}
+                    <span className="sr-only">, run {item.run.id}</span>
+                  </Link>
+                  {index === 0 ? (
+                    <Badge tone="amber">Baseline</Badge>
+                  ) : (
+                    <Link
+                      className={buttonClass('text', 'sm')}
+                      to={routes.comparison(organizationId, workspaceId, [item.run.id.toLowerCase(), ...others])}
+                      aria-label={`Make ${shortId(item.run.id)} the baseline`}
+                    >
+                      Make baseline
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <ComparisonDeltas items={snapshot.items} summaries={state.summaries} />
+          <section className="compare-section" aria-labelledby="compare-different">
+            <h2 id="compare-different">What was different</h2>
+            <WhatWasDifferent items={snapshot.items} />
+          </section>
+          <section className="compare-section" aria-labelledby="compare-metric">
+            <h2 id="compare-metric">One metric, per run</h2>
+            {state.view.page ? (
+              <MetricSelection page={state.view.page} busy={state.busy} select={state.select} next={state.page} />
+            ) : (
+              <Button size="sm" disabled={state.busy} onClick={() => state.page()}>
+                Choose another metric
+              </Button>
+            )}
+            {snapshot.metricBinding && (
+              <p>
+                Logical request: {snapshot.metricBinding.requestId ?? 'aggregate'}; assertion:{' '}
+                {snapshot.metricBinding.assertionId ?? 'none'}.
+              </p>
+            )}
+            <p className="compare-muted">
+              Charts use each run’s own UTC source time and independent vertical scale; timelines are not aligned.
             </p>
-          )}
-          <p>Charts use each run’s own UTC source time and independent vertical scale; timelines are not aligned.</p>
+          </section>
           {snapshot.items.map((item, index) => (
-            <article key={item.run.id}>
+            <article key={item.run.id} className="compare-section">
               <h2>
                 {index === 0 ? 'Baseline' : `Run ${index + 1}`}:{' '}
-                <Link to={routes.run(scope.organizationId, scope.workspaceId, item.run.id)}>{item.run.id}</Link>
+                <Link to={routes.run(organizationId, workspaceId, item.run.id)}>{item.run.id}</Link>
               </h2>
-              <ComparisonFacts item={item} />
               <ComparedMetric item={item} admission={state.admission} />
+              <details className="compare-evidence">
+                <summary>Recorded evidence and fingerprints</summary>
+                <ComparisonFacts item={item} />
+              </details>
             </article>
           ))}
         </>
       )}
     </section>
-  );
-}
-function MetricSelection({
-  page,
-  busy,
-  select,
-  next,
-}: {
-  page: RunMetricSeriesPage;
-  busy: boolean;
-  select: (metric: RunMetricKey) => void;
-  next: (cursor?: string) => void;
-}) {
-  const id = useId();
-  return (
-    <section>
-      <label htmlFor={id}>Baseline metric</label>
-      <select
-        id={id}
-        value=""
-        disabled={busy || page.availability !== 'ready'}
-        onChange={(event) => {
-          const series = page.items.find((item) => String(item.ordinal) === event.target.value);
-          if (!series) return;
-          const checked = validateApi('RunMetricKey', {
-            metric: series.metric,
-            kind: series.kind,
-            scope: series.scope,
-            tags: series.tags,
-          });
-          if (checked.ok) select(checked.value);
-        }}
-      >
-        <option value="">Choose a recorded series</option>
-        {page.items
-          .filter((series) => series.tags.phase !== 'prepare')
-          .map((series) => (
-            <option key={series.ordinal} value={series.ordinal}>
-              {series.metric} · {series.scope} · {series.tags.request ?? 'aggregate'} {series.tags.assertion ?? ''}
-            </option>
-          ))}
-      </select>
-      {page.availability !== 'ready' && (
-        <p role="status">
-          Baseline metric catalogue: {page.availability}
-          {page.reason ? ` (${page.reason})` : ''}. Refresh manually to check again.
-        </p>
-      )}
-      {page.availability === 'ready' && page.items.length === 0 && <p>No recorded series.</p>}
-      {page.nextCursor && (
-        <button disabled={busy} onClick={() => next(page.nextCursor ?? undefined)}>
-          Next metric page
-        </button>
-      )}
-    </section>
-  );
-}
-function ComparedMetric({ item, admission }: { item: RunComparisonItem; admission: ReadAdmission }) {
-  const read = item.metric;
-  const series = read.series;
-  const source = useMemo(
-    () => ({
-      id: item.run.id,
-      scope: item.run.scope,
-      attemptId: item.run.activeAttemptId,
-      manifestDigest: read.manifestDigest,
-    }),
-    [item],
-  );
-  if (read.availability !== 'ready' || !series || read.manifestDigest === null)
-    return (
-      <p>
-        Metric: {read.availability}
-        {read.reason ? ` (${read.reason})` : ''}.
-      </p>
-    );
-  return (
-    <section>
-      <h3>
-        {series.metric} · {series.scope}
-      </h3>
-      <p>
-        Actual series {series.ordinal}; request {series.tags.request ?? 'aggregate'}; assertion{' '}
-        {series.tags.assertion ?? 'none'}.
-      </p>
-      <p>
-        Whole-run total: {valueNumber(series.total) ?? 'No samples'} {series.unit}. {evidence(series.total)}.
-      </p>
-      <MetricSource read={read} />
-      <SamplesView page={source} series={series} admission={admission} range={undefined} />
-    </section>
-  );
-}
-
-function MetricSource({ read }: { read: RunComparisonMetricRead }) {
-  return (
-    <>
-      <p>
-        Source manifest: <code>{read.manifestDigest}</code>
-      </p>
-      <p>
-        Source marker: {read.measurementSourceTimeMs} ms; coverage {read.coverage?.complete ? 'complete' : 'partial'};
-        late points {read.coverage?.latePoints}; delayed buckets omitted {read.coverage?.markerDelayDroppedBuckets}.
-      </p>
-    </>
   );
 }

@@ -1,21 +1,10 @@
 import type { RunHistorySummary } from '@beetle/contracts/api';
-const number = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
-const unknown = 'Unknown';
-function numeric(value: number | null, suffix = ''): string {
-  return value === null ? unknown : number.format(value) + suffix;
-}
-function failure(value: RunHistorySummary): string {
-  if (value.httpFailures === null || value.httpSamples === null) return unknown;
-  return (
-    number.format(value.httpFailures) +
-    ' / ' +
-    number.format(value.httpSamples) +
-    ' (' +
-    (value.httpFailureRatio === null ? 'ratio unknown' : number.format(value.httpFailureRatio * 100) + '%') +
-    ')'
-  );
-}
-function status(value: RunHistorySummary): string | null {
+import { Td } from '../../components/Table.js';
+import { formatDuration, formatNumber, formatPercent } from '../run-results/format.js';
+
+const unknown = '—';
+/** Why a summary has no numbers; null when it is ready with complete coverage. */
+export function summaryStatus(value: RunHistorySummary): string | null {
   if (value.availability === 'ready') return value.source?.coverage.complete ? null : 'Partial window coverage';
   return {
     pending: 'Index pending',
@@ -24,41 +13,48 @@ function status(value: RunHistorySummary): string | null {
     unavailable: 'Unavailable',
   }[value.availability];
 }
+function Unknown({ label }: { label: string }) {
+  return <span aria-label={label}>{unknown}</span>;
+}
+/** Stored summary cells only: measured values, missing stays unknown, never zero. */
 export function HistorySummaryCells({ value }: { value: RunHistorySummary }) {
   const p95 = value.httpP95;
-  const state = status(value);
+  const state = summaryStatus(value);
+  const length = formatDuration(value.testDurationMs);
+  const rps = formatNumber(value.requestsPerSecond, 'integer');
+  const failed = formatPercent(value.httpFailureRatio);
   return (
     <>
-      <td>
-        {numeric(value.testDurationMs === null ? null : value.testDurationMs / 1000, ' s')}
-        {state && <span className="display-path">{state}</span>}
-      </td>
-      <td>{numeric(value.requestCount)}</td>
-      <td title="Execute HTTP requests divided by the k6-reported test duration. This is an observed average, not the configured arrival rate.">
-        {numeric(value.requestsPerSecond, ' req/s')}
-      </td>
-      <td
+      <Td numeric title="k6-reported test duration">
+        {length ?? <Unknown label="Length unknown" />}
+        {state && <span className="history-cell-note">{state}</span>}
+      </Td>
+      <Td
+        numeric
+        title="Execute HTTP requests divided by the k6-reported test duration. This is an observed average, not the configured arrival rate."
+      >
+        {rps ?? <Unknown label="Request rate unknown" />}
+      </Td>
+      <Td
+        numeric
         title={
           p95
-            ? 'Histogram estimate between ' + number.format(p95.lower) + ' and ' + number.format(p95.upper) + ' ms'
+            ? `Histogram estimate between ${formatNumber(p95.lower)} and ${formatNumber(p95.upper)} ms`
             : 'No recorded HTTP duration samples'
         }
       >
-        {p95 ? '≈ ' + numeric(p95.estimate, ' ms') : unknown}
-      </td>
-      <td title="HTTP failed samples, separately from assertion failures and overall test outcome">{failure(value)}</td>
-      <td title="Original verified published artifact bytes; not current filesystem allocation">
-        {numeric(value.publishedArtifactBytes, ' B')}
-      </td>
-      <td
+        {p95 ? `≈ ${formatNumber(p95.estimate, 'integer')} ms` : <Unknown label="p95 unknown" />}
+      </Td>
+      <Td
+        numeric
         title={
-          'Current retained logical allowance, including ' +
-          numeric(value.metadataAllowanceBytes, ' B') +
-          ' metadata; not physical disk use'
+          value.httpFailures !== null && value.httpSamples !== null
+            ? `${formatNumber(value.httpFailures, 'integer')} of ${formatNumber(value.httpSamples, 'integer')} HTTP samples failed; assertion failures are separate`
+            : 'HTTP failed samples, separately from assertion failures and overall test outcome'
         }
       >
-        {numeric(value.retainedLogicalBytes, ' B')}
-      </td>
+        {failed ?? <Unknown label="Failed share unknown" />}
+      </Td>
     </>
   );
 }

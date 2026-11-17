@@ -1,6 +1,6 @@
 # Scoped run result presentation
 
-Public entry exports RunResultPanel and root-owned RunResultProps. Existing validated
+Public entry exports RunResultPanel, resultView/ResultView, root-owned RunResultProps. Existing validated
 Run and EngineResult DTOs remain authoritative for their own fields; no fetch/client
 or result/metrics interpreter lives here. The pure view fences expected scope/run,
 active attempt/engine/generation before reading evidence counts or artifact metadata.

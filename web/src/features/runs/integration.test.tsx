@@ -63,7 +63,7 @@ it('fences late creation after switching organization with identical workspace a
   await act(async () => late.resolve(queued(write?.body)));
   expect(screen.queryByRole('heading', { name: 'Run detail' })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('link', { name: 'Runs' }));
-  expect(await screen.findByRole('link', { name: runId })).toHaveAttribute('href', routes.run(ids.b, ids.workspace, runId));
+  expect(await screen.findByRole('link', { name: new RegExp(runId) })).toHaveAttribute('href', routes.run(ids.b, ids.workspace, runId));
 });
 const session: BrowserSession = { scope: 'local-admin', expiresAt: '2027-01-01T00:00:00.000Z', csrfToken: 'c'.repeat(43) };
 function paired(handler: (request: RequestRecord) => Response | Promise<Response>, initial = path) {
@@ -106,6 +106,6 @@ it('keeps history readable without requesting unavailable settings or capacity',
     if (request.path.endsWith('/settings') || request.path.endsWith('/capacity')) throw new Error('Unavailable synthetic prerequisite');
     return runRead(request);
   });
-  mount(fixture.client, routes.runs(ids.a, ids.workspace)); await screen.findByRole('link', { name: runId });
-  expect(fixture.records).toHaveLength(1);
+  mount(fixture.client, routes.runs(ids.a, ids.workspace)); await screen.findByRole('link', { name: new RegExp(runId) });
+  expect(fixture.records.filter(record => !record.path.includes('/suites?'))).toHaveLength(1);
 });

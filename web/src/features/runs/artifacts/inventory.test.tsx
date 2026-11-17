@@ -6,7 +6,7 @@ import { runArtifactContentPath } from '@beetle/contracts/api';
 import { artifact, artifactId, apiError, cursor, deferred, emptyEvents, json, mountArtifacts, page, resultSnapshot, run, testClient } from './fixtures.js';
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
-it('composes published descriptors in real RunDetail with browser-owned UUID links and no byte request or completion state', async () => {
+it('composes published descriptors in the shared run body with browser-owned UUID links and no byte request or completion state', async () => {
   const fixture = testClient(request => {
     if (request.path.includes('/artifacts?')) return json(page());
     if (request.path.endsWith('/result')) return json(resultSnapshot());
@@ -19,8 +19,8 @@ it('composes published descriptors in real RunDetail with browser-owned UUID lin
   expect(link).toHaveAttribute('href', runArtifactContentPath({ organizationId: current.scope.organizationId,
     workspaceId: current.scope.workspaceId, runId: current.id, attemptId: current.activeAttemptId, artifactId }));
   expect(link).toHaveAttribute('download', `artifact-${artifactId}.bin`);
-  expect(screen.getByText('9007199254740991')).toBeVisible();
-  expect(screen.getByText('b'.repeat(64))).toBeVisible();
+  expect(screen.getByTitle('9007199254740991 bytes')).toHaveTextContent('8,192 TB');
+  expect(screen.getByTitle(`SHA-256 ${'b'.repeat(64)}`)).toHaveTextContent('bbbbbbbbbbbb…');
   expect(screen.getByText(/Download progress and cancellation are handled by your browser/)).toBeVisible();
   // jsdom cannot save a file; prevent its unsupported navigation after checking native anchor behavior.
   link.addEventListener('click', event => event.preventDefault(), { once: true });

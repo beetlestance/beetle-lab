@@ -1,6 +1,6 @@
 # Published run artifacts
 
-Public entry: `RunArtifacts({run, terminal})`. The caller selects scoped Run and
+Public entry: `RunArtifacts({run, terminal, heading?})` (Run result / Artifacts). The caller selects scoped Run and
 requested attempt; the internal keyed surface retires on identity changes.
 Generated listRunArtifacts owns schema, cursor, manifest and scope validation.
 One queryKeys.runArtifacts entry retains only the current <=100 descriptor page.
@@ -14,5 +14,8 @@ Relative paths are text; shared artifactDownload sets fixed UUID names and safe
 txt/CSV/JSON extensions for known kinds, bin otherwise; no engine filenames.
 Browser owns bytes, save/progress/cancel; links create no completion state or byte
 client/cache. Already-issued native transfers remain browser/server owned.
+Table: File / What it holds (static map by kind) / Size / Verify and open.
+ArtifactViewer (Overlay / Artifact viewer) opens text kinds up to 1 MiB through
+the shared VerifiedArtifactReads; content shows only after size and SHA-256 match.
 Checks: node ../../../node_modules/vitest/vitest.mjs run
 web/src/features/runs/artifacts --maxWorkers=1 (from assigned worktree root).

@@ -3,11 +3,11 @@
 Public entries: `Runs({organizationId, workspaceId, runId?})` and
 `RunSavedRevision({revision})`. Only immutable saved revisions can launch runs.
 Generated ApiClient owns request/response validation and scope bindings.
-History retains bounded query-bound keyset pages through the shared Pagination owner.
-HistoryFilters applies exact state/outcome/order explicitly; context changes reset
-pagination and selection. Refresh starts page one; comparison persists across pages.
-HistorySummaryCells consumes ordered stored summaries only: measured units, missing
-values/coverage, histogram estimates and logical-versus-published byte provenance.
+History keeps bounded keyset pages (usePage, Newer/Older). Chips (no counts), pinned
+(own cache suffix), suite, sort apply at once; search on Enter sends 8+ hex characters as
+runIdPrefix, else name (names and notes). Changes reset paging/selection.
+HistorySuites reads one listSuites page (100) for row names and the suite filter;
+HistorySummaryCells shows stored summaries only, missing values unknown (—).
 Details poll every two seconds while nonterminal, stop on errors/terminal states,
 and suspend interval work when hidden. Unmount cancels/removes scoped run queries.
 Submission fetches effective settings only after explicit opening; form state
@@ -37,4 +37,4 @@ RunReads admits one original detail read plus at most four waiting intents. Wait
 expires after five seconds or caller abort; retirement rejects queued intents.
 Original completion releases admission. Storage bounds and explicit HTTP errors
 remain unchanged; there are no automatic retries or mutation admission changes.
-RunDetail dispatches once per mount to live/ (D) or result/ (E); see live/CONTEXT.md.
+RunDetail dispatches once per mount to live/ (D) or result/ (E); see their CONTEXT.md.

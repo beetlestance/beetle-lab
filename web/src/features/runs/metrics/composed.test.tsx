@@ -6,11 +6,11 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { ApiContext } from '../../../app/api.js';
 import { createQueryClient } from '../../../app/queries.js';
-import { RunDetail } from '../RunDetail.js';
+import { SnapshotDetail } from '../snapshot-harness.js';
 import { emptyEvents, pendingArtifacts, resultSnapshot, run } from '../test-fixtures.js';
 import { json, page, samples, testClient } from './fixtures.js';
 afterEach(cleanup);
-it('composes one selectable metric chart in actual RunDetail through the generated client', async () => {
+it('composes one selectable metric chart in the shared run body through the generated client', async () => {
   const current = run();
   const f = testClient(request => {
     const url = new URL(request.path, 'http://localhost');
@@ -23,7 +23,7 @@ it('composes one selectable metric chart in actual RunDetail through the generat
     throw new Error('Unexpected composed metric fixture route');
   });
   render(<MemoryRouter><ApiContext.Provider value={f.client}><QueryClientProvider client={createQueryClient()}>
-    <RunDetail organizationId={current.scope.organizationId} workspaceId={current.scope.workspaceId} runId={current.id} />
+    <SnapshotDetail organizationId={current.scope.organizationId} workspaceId={current.scope.workspaceId} runId={current.id} />
   </QueryClientProvider></ApiContext.Provider></MemoryRouter>);
   expect(await screen.findByRole('img')).toHaveAccessibleName(/http_reqs source window chart/);
   expect(screen.getByRole('combobox')).toHaveValue('0');

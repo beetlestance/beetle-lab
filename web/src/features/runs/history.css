@@ -1,0 +1,97 @@
+/* Penpot "Runs" board: header, filter row, compare toolbar, table, pager. */
+.history {
+  display: grid;
+  gap: var(--s-20);
+}
+.history-header h1 {
+  margin: 0;
+  font-size: var(--fs-3xl);
+  line-height: var(--lh-heading);
+}
+.history-lede {
+  margin: var(--s-6) 0 0;
+  color: var(--mute);
+}
+.history-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-12);
+}
+.history-search {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.history-filters .field {
+  min-width: 160px;
+}
+.history-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-12);
+}
+.history-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-8);
+}
+.history-compare-hint {
+  margin: 0;
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
+.history-table th.history-run {
+  font-weight: inherit;
+  text-align: left;
+  min-width: 14rem;
+}
+.history-run-link {
+  color: var(--ink);
+  text-decoration: none;
+}
+.history-run-link:hover .history-suite {
+  text-decoration: underline;
+}
+.history-id {
+  color: var(--mute);
+}
+.history-run .badge {
+  margin-inline-start: var(--s-8);
+}
+.history-note,
+.history-cell-note {
+  display: block;
+  margin-top: var(--s-2);
+  color: var(--dim);
+  font-size: var(--fs-xs);
+  overflow-wrap: anywhere;
+}
+.history-note {
+  max-width: 36ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.history-check {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--amber);
+}
+.history-table tr[aria-selected='true'] td,
+.history-table tr[aria-selected='true'] th {
+  background: var(--selection);
+}
+.history-pager {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-8);
+}
+@media (max-width: 760px) {
+  .history-filters .field,
+  .history-search {
+    flex: 1 1 100%;
+  }
+}

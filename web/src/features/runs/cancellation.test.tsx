@@ -61,7 +61,7 @@ it('retires an outstanding cancellation without allowing its late reply to resto
 it('does not offer cancellation for completed history', async () => {
   const fixture = testClient(request => request.path.endsWith(`/runs/${runId}`)
     ? json({ ...run(), state: 'finished', outcome: 'passed', validationStatus: 'passed' }) : runRead(request));
-  mount(fixture.client, path); await screen.findByText('finished');
+  mount(fixture.client, path); await screen.findByRole('heading', { name: /passed$/ });
   expect(screen.queryByRole('button', { name: 'Cancel run' })).not.toBeInTheDocument();
   expect(fixture.records.filter(record => record.method === 'POST')).toHaveLength(0);
 });
