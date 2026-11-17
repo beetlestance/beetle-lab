@@ -23,6 +23,8 @@ it('serves exact wrapper history through native publication, actual metadata, au
     expect(older.ok && older.value.items.map(p => p.windowOrdinal)).toEqual([1]);
     const range = await http.client.getRunMetricSamples({params, query: {seriesOrdinal: 0, limit: 100, fromTimeMs: 1800000001000, toTimeMs: 1800000006000}});
     expect(range.ok && range.value.items.map(p => p.windowOrdinal)).toEqual([2]);
+    const attribution = await http.client.getRunLatencyAttribution({params});
+    expect(attribution).toMatchObject({ok: true, value: {windows: 3, rise: null, reason: 'too_few_windows'}});
     expect(f.facts()).toEqual(before);
     const url = `${http.origin}/api/v2/organizations/${params.organizationId}/workspaces/${params.workspaceId}/runs/${params.runId}/attempts/${params.attemptId}/metrics`;
     expect((await fetch(url + '?limit=100')).status).toBe(401);

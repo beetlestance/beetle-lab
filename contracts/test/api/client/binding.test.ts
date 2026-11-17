@@ -10,7 +10,7 @@ const files: Partial<Record<keyof ApiTypes, string>> = {
   ExportJob: 'export-job', ExportJobPage: 'export-job-page', ExportProfiles: 'export-profiles',
   CreateExportRequest: 'create-export', CancelExportRequest: 'cancel-export',
   RunComparisonRequest: 'run-comparison-request', RunComparisonSnapshot: 'run-comparison',
-  LiveMetricSnapshot: 'live-metric-snapshot', RunMetricSeriesPage: 'run-metric-series-pending', RunMetricSamplesPage: 'run-metric-samples',
+  LiveMetricSnapshot: 'live-metric-snapshot', RunMetricSeriesPage: 'run-metric-series-pending', RunMetricSamplesPage: 'run-metric-samples', RunLatencyAttribution: 'run-latency-attribution',
   RunResultSnapshot: 'run-result-pending', RunEventPage: 'run-events-pending', RunArtifactPage: 'run-artifacts-pending',
   Run: 'run', RunPage: 'run-page', CreateRunRequest: 'create-run', CancelRunRequest: 'cancel-run',
   InputRecord: 'input', InputReceipt: 'input-receipt', InputPage: 'input-page',

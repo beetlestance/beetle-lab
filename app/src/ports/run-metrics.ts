@@ -1,5 +1,11 @@
 import type { RunHistoryMetricReader } from './run-history.js';
-import type { RunMetricKey, RunMetricSeries, RunMetricSeriesPage, RunMetricSamplesPage } from '@beetle/contracts/api';
+import type {
+  RunLatencyAttribution,
+  RunMetricKey,
+  RunMetricSeries,
+  RunMetricSeriesPage,
+  RunMetricSamplesPage,
+} from '@beetle/contracts/api';
 import type { RunKey } from './runs.js';
 import type { RunArtifactsReader } from './run-artifacts.js';
 import type { OutputByteStore } from './output-bytes.js';
@@ -22,6 +28,11 @@ export interface RunMetricSamplesQuery extends RunMetricSeriesQuery {
 export interface RunMetricsReader {
   listRunMetricSeries(query: RunMetricSeriesQuery, context: MetricReadContext): Promise<RunMetricSeriesPage>;
   getRunMetricSamples(query: RunMetricSamplesQuery, context: MetricReadContext): Promise<RunMetricSamplesPage>;
+  /** Derived p95-rise attribution from the whole published history; rise is null when not stated. */
+  getRunLatencyAttribution(
+    query: RunKey & { readonly attemptId: string },
+    context: MetricReadContext,
+  ): Promise<RunLatencyAttribution>;
 }
 export interface RunMetricsService extends RunMetricLookupReader, RunHistoryMetricReader {
   readonly reader: RunMetricsReader;

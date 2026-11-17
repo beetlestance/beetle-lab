@@ -68,7 +68,8 @@ marks publication or outcome (`app/src/adapters/inbound/http/runs/result.ts`).
 
 ## Historical metric reads
 
-`…/attempts/{attemptId}/metrics` lists series; `…/metrics/samples` reads one ordinal.
+`…/attempts/{attemptId}/metrics` lists series; `…/metrics/samples` reads one ordinal;
+`…/metrics/latency-attribution` derives one p95 rise (see Derived presentation).
 A read for an earlier attempt uses that attempt's own published artefacts, never the
 Run's current engine or head pins.
 
@@ -136,6 +137,7 @@ profile; a suite or Offer cannot.
 | Performance report (`engines/k6/report`) | text and CSV derived from the mapped result and admitted numeric snapshot, never from configuration, target URLs, headers, request bodies, datasets or secrets; ≤ 4600 series; overflow rejects the whole report with `output_limit`; blank CSV cells mean unavailable; leading formula characters neutralised; no rate recomputation or percentile averaging |
 | k6 warnings (`engines/k6/wrapper/process/warnings.ts`) | classifier keeps ≤ 4096 B per line, ≤ 65536 B per chunk; counts insufficient VUs, high cardinality, max duration and other; unknown or discarded input makes coverage `partial`; counters count log records, not incidents or dropped iterations, and a zero under partial coverage proves nothing; an arrival hint appears only for a single arrival-rate scenario, and its median comes only from the execute-scoped global `iteration_duration` trend, never request latency; no raw message, URL or request data persisted |
 | Target runtime (`engines/k6/wrapper/target-sampling`) | one fetch at a time, `redirect: error`, no credentials, ≤ 64 KiB per body; interval 1000..60000 ms, timeout 100..5000 ms (≤ interval), cooldown 0..60000 ms inside execute; stops and marks `limited` at 256 samples or 1 MiB; the path is relative under the compiled target, with no query or fragment and no segment that changes the origin; a failed reading only marks that sample unavailable, but failing to write, verify or seal `target-runtime.json` fails the execution |
+| Latency attribution (`…/metrics/latency-attribution`, `app/src/application/run-metrics/rise.ts`) | from the published 1 s windows only, in one SHA-verified pass (≤ 3600 windows, data ≤ 32 MiB, ≤ 64 request labels, else `too_large`; incomplete coverage is `incomplete_coverage`); window p95 = p95 of the merged execute `http_req_duration{request=rN}` distributions, counted only with ≥ 20 samples; baseline = median of counted p95 in the first third of windows (≥ 10, and ≥ 30 windows overall, else `too_few_windows`); elevated = p95 ≥ 1.5 × baseline and above it; the rise is the longest run of time-adjacent elevated windows (≥ 5, else `no_rise`; earliest wins a tie) with its span, peak and baseline; per request, excess = Σ count × (p95 − that request's own first-third median, ≥ 3 windows)⁺, and `endpoint` names the `rN` label only when it holds more than half of the total excess; a request without its own baseline, or no majority, leaves `endpoint` null; `rN` is the k6 catalogue label (index N in the revision's request order) |
 | Load advice (`web/src/features/runs/load-advice`) | dropped load needs one execute `dropped_iterations` counter with empty tags; planning needs complete coverage and one execute `iteration_duration` trend; VUs = ceil(median s × rate × (1 + headroom/100)); inputs ≤ 16 characters, rate ≤ 1000000, headroom 0..500 % (default 20 %) |
 
 Warnings and target readings are advisory; they never change assertions or
@@ -199,7 +201,7 @@ a failed revocation keeps ownership and rejects close.
 | --- | --- |
 | `engines/k6/wrapper/attempt/reservation.ts` | `f10b08b3c4fd` |
 | `engines/k6/wrapper/attempt/archive/` | `94df1cb0c1a2` |
-| `app/src/application/run-metrics/` | `dcd16994160c` |
+| `app/src/application/run-metrics/` | `4d172ed61554` |
 | `app/src/application/run-comparison/` | `cddffebb9dee` |
 | `contracts/src/k6-live/` | `324516855159` |
 | `agent/src/live-metrics/` | `189726d263eb` |

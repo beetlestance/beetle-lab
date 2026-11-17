@@ -52,6 +52,7 @@ Schema catalogue is complete, including runner common exactly once. Implementati
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/artifacts | implemented | RunAttemptParams | PageQuery | none | 200 | RunArtifactPage |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics | implemented | RunAttemptParams | PageQuery | none | 200 | RunMetricSeriesPage |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics/samples | implemented | RunAttemptParams | RunMetricSamplesQuery | none | 200 | RunMetricSamplesPage |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics/latency-attribution | implemented | RunAttemptParams | none | none | 200 | RunLatencyAttribution |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics/live | implemented | RunAttemptParams | none | none | 200 | LiveMetricSnapshot |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/comparisons | implemented | WorkspaceParams | none | RunComparisonRequest | 200 | RunComparisonSnapshot |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/revisions/{revisionId}/exports | implemented | SuiteRevisionParams | none | CreateExportRequest | 202 | ExportJob |

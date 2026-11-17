@@ -240,6 +240,60 @@
         "nextCursor"
       ],
       "additionalProperties": false
+    },
+    "RunLatencyEndpoint": {
+      "type": "object",
+      "properties": {
+        "request": {"type": "string", "pattern": "^r[0-9]{1,3}$"},
+        "share": {"type": "number", "minimum": 0.5, "maximum": 1},
+        "peakP95Ms": {"type": "number", "minimum": 0, "maximum": 1.7976931348623157e+308}
+      },
+      "required": ["request", "share", "peakP95Ms"],
+      "additionalProperties": false
+    },
+    "RunLatencyRise": {
+      "type": "object",
+      "properties": {
+        "startTimeMs": {"type": "integer", "minimum": 0, "maximum": 8640000000000000},
+        "endTimeMs": {"type": "integer", "minimum": 0, "maximum": 8640000000000000},
+        "windows": {"type": "integer", "minimum": 5, "maximum": 3600},
+        "baselineP95Ms": {"type": "number", "minimum": 0, "maximum": 1.7976931348623157e+308},
+        "peakP95Ms": {"type": "number", "minimum": 0, "maximum": 1.7976931348623157e+308},
+        "endpoint": {"anyOf": [{"$ref": "https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunLatencyEndpoint"}, {"type": "null"}]}
+      },
+      "required": ["startTimeMs", "endTimeMs", "windows", "baselineP95Ms", "peakP95Ms", "endpoint"],
+      "additionalProperties": false
+    },
+    "RunLatencyAttribution": {
+      "type": "object",
+      "properties": {
+        "id": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "scope": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"},
+        "attemptId": {"$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"},
+        "generation": {"const": 1},
+        "manifestDigest": {"anyOf": [{"type": "string", "pattern": "^[a-f0-9]{64}$"}, {"type": "null"}]},
+        "windows": {"type": "integer", "minimum": 0, "maximum": 65536},
+        "rise": {"anyOf": [{"$ref": "https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunLatencyRise"}, {"type": "null"}]},
+        "reason": {
+          "anyOf": [
+            {
+              "enum": [
+                "pending",
+                "not_recorded",
+                "unsupported_format",
+                "unavailable",
+                "incomplete_coverage",
+                "too_large",
+                "too_few_windows",
+                "no_rise"
+              ]
+            },
+            {"type": "null"}
+          ]
+        }
+      },
+      "required": ["id", "scope", "attemptId", "generation", "manifestDigest", "windows", "rise", "reason"],
+      "additionalProperties": false
     }
   }
 }

@@ -41,7 +41,7 @@ function artifactBytes(items: Publication['page']['items']): number {
   if (!Number.isSafeInteger(bytes)) return fail();
   return bytes;
 }
-function unavailable(p: Publication): RunHistoryProjection['availability'] {
+export function unavailable(p: Publication): RunHistoryProjection['availability'] {
   if (p.page.availability === 'pending') return 'pending';
   if (p.reason === 'unsupported_format') return 'unsupported_format';
   if (p.page.availability === 'absent' || p.reason === 'not_recorded') return 'not_recorded';

@@ -26,7 +26,7 @@
     "api/v2/run-comparison.schema.json": "fecf3d989b05378210f1166b8a9e9a90f2601ac9e32e61cc3aadaca50a5a63f9",
     "api/v2/run-events.schema.json": "1e9f5d24aaac78ff7909396ef2d056c3c963891d7874e4cee45052c545b21dbf",
     "api/v2/run-history.schema.json": "82d784f10985ba7e92ad9966d9867ed2b01a660d4554839f8b11c9bdca90a526",
-    "api/v2/run-metrics.schema.json": "9f2baca42bebc9ec6e7925cde24013c26c5a29d2eab32890b1feb7090c30155c",
+    "api/v2/run-metrics.schema.json": "e1a2e86a2e404007f50d6bd29591d3e09b03b4197a02921540d635d65e21ae59",
     "api/v2/run-requests.schema.json": "cca0f5055cb131cd8db648b8b7f635ad5fb52eaf76fdfc2808f77b98015c155b",
     "api/v2/run-result.schema.json": "297cc10fe77e5ca7c2e9d11124a7e4abff461eaba85f3472d1e6a0f0f81d0829",
     "api/v2/run.schema.json": "10c9cbc4c0875de3cec1363c0d4183e9467100ba738e19fa974d152848fbc809",
@@ -37,7 +37,7 @@
     "api/v2/suite-requests.schema.json": "793032e02eb16c0c4f13b87eebaa556d7d7df2efbb522e16078d9a9202708431",
     "api/v2/suite.schema.json": "c90e5d43bc41061a0d80701d0b172764faf9fa44b7b4463349aac452f1cd4dbf"
   },
-  "operationsSha256": "712500ed3e60b6c847ea011070085258bb19a7df7476b4639f1856ebf65a1bda",
+  "operationsSha256": "da42436e0931dc265a2539bc814494b6d6ac54c5067205add3a034313aee533b",
   "outputs": [
     "common.inference.ts",
     "common.ts",

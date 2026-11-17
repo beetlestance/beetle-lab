@@ -27,7 +27,7 @@ export function fixture(targetIntervalMs?: number | null) {
   let wall = 1000; let monotonic = 0; const initial = frame();
   let reply: MailboxArchiveReply = {ok: true, status: 200, image: image(initial)};
   let calls = 0; let port: ((operation: Operation) => Promise<MailboxArchiveReply>) | undefined;
-  const reader = new LiveMetricReader({approval: {scope: initial.scope, producerEpoch: initial.producerEpoch, subset: initial.subset, targetIntervalMs},
+  const reader = new LiveMetricReader({approval: {scope: initial.scope, producerEpoch: initial.producerEpoch, subset: initial.subset, targetIntervalMs: targetIntervalMs ?? null},
     clock: {wall: () => wall, monotonic: () => monotonic}, read: async operation => {calls++; return port ? port(operation) : reply;}});
   return {reader, initial, calls: () => calls, operation: (): Operation => ({deadline: monotonic + 5000}),
     clock(nextWall: number, nextMono = monotonic) {wall = nextWall; monotonic = nextMono;},

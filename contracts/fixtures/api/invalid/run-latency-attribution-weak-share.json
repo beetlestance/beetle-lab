@@ -1,0 +1,21 @@
+{
+  "id": "00000000-0000-4000-8000-000000000005",
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "attemptId": "00000000-0000-4000-8000-000000000006",
+  "generation": 1,
+  "manifestDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "windows": 120,
+  "rise": {
+    "startTimeMs": 1800000060000,
+    "endTimeMs": 1800000090000,
+    "windows": 30,
+    "baselineP95Ms": 42.5,
+    "peakP95Ms": 180.25,
+    "endpoint": { "request": "r2", "share": 0.3, "peakP95Ms": 240.5 }
+  },
+  "reason": null
+}
