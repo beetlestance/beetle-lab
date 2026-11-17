@@ -10,7 +10,7 @@ Owned by `app/src/adapters/outbound/sqlite/namespace-deletion` and `workspace-re
 
 | Target | Rule |
 | --- | --- |
-| Organisation | Empty only: no workspace, including retired ones |
+| Organisation | Refused while any workspace is active. No workspace: removed. Only retired workspaces: retired, like a workspace, and its slug freed |
 | Folder (non-root) | Empty only: no child, suite or input; root folder refuses |
 | Workspace | Retired: hidden but retained with name, root, settings, history, receipts, pins and paid storage |
 
@@ -22,14 +22,18 @@ Owned by `app/src/adapters/outbound/sqlite/namespace-deletion` and `workspace-re
   including case aliases, can never be reused. No marker expiry or refund.
 - Migration 028 adds an irreversible retired flag and moves the private unique name
   key to a reserved value, so a new workspace UUID may reuse the visible name.
+- Migration 030 does the same for organisations: `retired`, with the canonical slug
+  moved to `retired_slug` and the unique slug key set to `char(1)||id`, so a new
+  organisation may reuse the slug. Its settings, receipts and retired workspaces stay;
+  SQL rejects new workspaces or settings changes under it. Historical mode still reads it.
 - Active or unresolved Run/export work and unfinished input intake refuse retirement;
   already-issued private work keeps its authority, new mutation and unissued Apply do not.
-- Workspace-scoped HTTP routes check visibility after authorisation, before body
-  work (`app/src/adapters/inbound/http/workspace-visibility.ts`), except the exact
-  workspace DELETE, so a replay still gets its original acknowledgement; the historical
+- Workspace- and organisation-scoped HTTP routes check visibility after authorisation,
+  before body work (`app/src/adapters/inbound/http/workspace-visibility.ts`), except the
+  exact workspace or organisation DELETE, so a replay still gets its original acknowledgement; the historical
   viewer uses its own read-only authority. SQL is the final guard.
-- Overviews, counts, recent activity and retention discovery exclude a retired
-  workspace; private delivery, cleanup and settlement reads skip the visibility check.
+- Organisation lists and overviews, counts, recent activity and retention discovery
+  exclude a retired organisation or workspace; private delivery, cleanup and settlement reads skip the visibility check.
   "Cleanup complete" means visibility or metadata retirement, never freed bytes.
 
 ## Related
@@ -41,6 +45,6 @@ Owned by `app/src/adapters/outbound/sqlite/namespace-deletion` and `workspace-re
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/adapters/outbound/sqlite/namespace-deletion/` | `e24232b1a98e` |
-| `app/src/adapters/outbound/sqlite/workspace-retirement/` | `e6c9478825c9` |
-| `app/src/adapters/inbound/http/workspace-visibility.ts` | `d5bd1ca8bb23` |
+| `app/src/adapters/outbound/sqlite/namespace-deletion/` | `1fbaf1299023` |
+| `app/src/adapters/outbound/sqlite/workspace-retirement/` | `e0d70f7a95dd` |
+| `app/src/adapters/inbound/http/workspace-visibility.ts` | `89d870a75696` |

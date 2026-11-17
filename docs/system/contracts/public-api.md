@@ -79,7 +79,8 @@ inputs. Folders group; they never grant permissions or create agents.
   parent returns scoped 404. Composite foreign keys enforce parent consistency;
   the client (`contracts/src/api/client/`) also checks every item's ownership.
 - Folders: UUID plus `parentId` in one workspace; the root is a real folder and
-  the only one with a null parent. Names are 1 to 128 characters, unique
+  the only one with a null parent. Names are 1 to 128 characters (organisation
+  names 1 to 48), unique
   among siblings by folded name; depth is at most 8 (`domain/namespaces/`).
   Moves stay in the workspace, check acyclicity transactionally and compare
   versions. Deletion of a namespace accepts empty scopes only.
@@ -174,22 +175,22 @@ Routes: `GET`/`POST /suites`, `GET`/`PATCH /suites/{suiteId}`,
 ## Automation client
 
 `app/dist/automation.js` in the backend image (entry `app/src/client/cli/main.ts`)
-uses only this API: `connect`, `pair`, `run`, `status`, `result`, `cancel`,
-`compare`. See the [automation guide](../../../site/src/content/docs/guides/automation.md) for usage.
+uses only this API: `connect`, `pair`, `run`, `status`, `result`, `cancel`, `compare`,
+`export`, `export-status`, `export-download` ([guide](../../../site/src/content/docs/guides/automation.md)).
 
-- Request files are closed wire schemas ≤ 4 KiB with caller-owned `requestId`;
-  mutations are issued once and an unknown outcome prints the `requestId` for
-  explicit replay. Session files are exclusive, 0600, owner-only, single-link,
-  ≤ 4 KiB and bound to endpoint and origin.
-- `--wait-ms` 1 to 3,600,000; sequential reads every 2 s, at most 1801. Waiting
-  never cancels a run or extends its budget.
+- Request files are closed wire schemas ≤ 4 KiB with caller-owned `requestId`; mutations
+  are issued once and an unknown outcome prints the `requestId` for explicit replay.
+  Session files are exclusive, 0600, owner-only, single-link, ≤ 4 KiB, bound to endpoint and origin.
+- `--wait-ms` 1 to 3,600,000; reads every 2 s, at most 1801; never cancels or extends.
+  `export-download` needs a ready job, writes `--out` new (`O_EXCL|O_NOFOLLOW`, 0600)
+  and removes only its own file on a size, SHA-256 or I/O failure. No `validate` yet.
 
 | Exit | Meaning |
 | --- | --- |
-| 0 | passed, acknowledged submission or successful read |
-| 1, 4 | failed; cancelled |
+| 0 | passed, acknowledged submission, successful read or ready export |
+| 1, 4 | failed; cancelled (run or export) |
 | 2 | invalid input or local file error |
-| 3 | inconclusive, transport or invalid reply, unknown mutation outcome |
+| 3 | inconclusive, failed or unknown export, transport or invalid reply, unknown mutation outcome |
 | 5 | still pending at the deadline, unavailable (including an unpaired or forbidden session), interrupted |
 
 ## Embedded reference
@@ -211,9 +212,9 @@ characters and shows at most 80 matches.
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `c4d55ae80f49` |
+| `contracts/api/v2/` | `a850381cb0fd` |
 | `contracts/src/api/client/` | `7b847a42bf8b` |
 | `contracts/src/api/run-list.ts` | `f38d03bf42d6` |
 | `app/src/adapters/inbound/http/api-errors.ts` | `b65c10f58ea7` |
 | `app/src/adapters/inbound/http/session/` | `c0568c1eeb19` |
-| `app/src/client/cli/` | `39a720c10647` |
+| `app/src/client/cli/` | `c7eb756df145` |

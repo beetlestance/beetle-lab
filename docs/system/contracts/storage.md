@@ -52,7 +52,7 @@ Missing data stays unknown, never zero.
 | Queue | default 32, maximum 64 including in-flight work; close keeps one slot |
 | Worker heap | ≤ 128 MiB |
 | Startup / stall | 5 s to start, then 5 s without a completed reply |
-| Schema | `user_version` 29; a newer database refuses with `schema_newer` |
+| Schema | `user_version` 30; a newer database refuses with `schema_newer` |
 
 - No adapter opens a connection outside the worker. Write transactions are short:
   no HTTP, file publication or engine call happens inside one.
@@ -148,7 +148,7 @@ metadata worker persists it (`local-session/`, migration 014). Shapes are in
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/adapters/outbound/sqlite/schema.ts` | `32550259c459` |
+| `app/src/adapters/outbound/sqlite/schema.ts` | `6a09ea823a1c` |
 | `app/src/adapters/outbound/sqlite/runs.ts` | `6cacb557eff1` |
 | `app/src/adapters/outbound/sqlite/mutation-receipts.ts` | `afeddcda3d25` |
 | `app/src/domain/attempt-observation/sequence.ts` | `a8b4b42df321` |

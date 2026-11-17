@@ -9,6 +9,13 @@ These limits are built in. Run budgets and capacity are separate: they are
 settings, inherited from installation to organisation to workspace; see
 [Organisations and workspaces](/concepts/workspaces/).
 
+## Names
+
+| Limit | Value |
+| --- | --- |
+| Organisation name | 48 characters |
+| Workspace, folder and suite name | 128 characters |
+
 ## Suites
 
 | Limit | Value |

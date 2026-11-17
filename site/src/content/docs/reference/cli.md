@@ -26,8 +26,11 @@ node /beetle/backend/automation.js COMMAND --endpoint URL --origin URL \
 | `result` | Reads a run's result | `--organization`, `--workspace`, `--run` |
 | `cancel` | Asks for a run to be cancelled | `--organization`, `--workspace`, `--run`, `--request-file` |
 | `compare` | Compares two to four runs | `--request-file` |
+| `export` | Asks for a standalone k6 script of a saved suite revision, and optionally waits | `--request-file`, optional `--wait-ms` |
+| `export-status` | Reads an export, and optionally waits for it to finish | `--organization`, `--workspace`, `--export`, optional `--wait-ms` |
+| `export-download` | Writes a ready export's script to a new file and checks its size and SHA-256 | `--organization`, `--workspace`, `--export`, `--out` |
 
-`validate` and `export` commands do not exist yet. Creating suites and uploading
+A `validate` command does not exist yet. Creating suites and uploading
 inputs are done in the UI or the HTTP API.
 
 ## Flags
@@ -147,3 +150,8 @@ The client makes each change once and never retries. If it cannot tell whether a
 
 Exit codes for runs come from the run's state and declared outcome; the client
 never works out an outcome from metrics.
+
+For exports: 0 means the script is ready (or was downloaded and verified), 3 means
+the export failed or its state is unknown, 4 means it was cancelled and 5 means it
+is still being prepared. `export-download` never overwrites an existing file and
+deletes a partial file if its size or SHA-256 does not match; that is also exit 3.

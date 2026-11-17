@@ -42,5 +42,7 @@ scope. Physical reclamation is left to output retention and settlement.
 
 ## Review triggers
 
-Revisit if logical organisation retirement is added, or if retained retired
+Organisation retirement was added on 2026-11-17 (migration 030; see
+[namespaces](../system/contracts/namespaces.md)): an organisation whose workspaces are
+all retired is retired the same way. Revisit if retained retired
 workspaces become a material share of installation storage.
