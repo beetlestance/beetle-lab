@@ -1,17 +1,48 @@
 import { OrganizationOverview } from '../organization-overview/index.js';
 import { WorkspaceOverview } from '../workspace-overview/index.js';
 import { lazy, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import { useApi, readResult } from '../../app/api.js';
+import type { UseQueryResult } from '@tanstack/react-query';
+import { ApiFailure, useApi, readResult } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
+import { NotFound } from '../../components/NotFound.js';
+import type { NotFoundKind } from '../../components/NotFound.js';
 import { QueryState } from '../../components/QueryState.js';
+import { LoadingState } from '../../components/States.js';
+import { NavTabs } from '../../components/Tabs.js';
 import { WorkspaceList } from './WorkspaceList.js';
 import { FolderList } from './FolderList.js';
 const WorkspaceInputs = lazy(() =>
   import('../input-screen/index.js').then((module) => ({ default: module.WorkspaceInputs })),
 );
+
+/** A missing scope is not found, never an empty dashboard. */
+export function isNotFound(error: unknown): boolean {
+  return error instanceof ApiFailure && (error.failure.protocol?.code === 'not_found' || error.failure.status === 404);
+}
+
+function ScopeState<T>({
+  query,
+  kind,
+  back,
+  loading,
+  children,
+}: {
+  query: UseQueryResult<T>;
+  kind: NotFoundKind;
+  back: { to: string; label: string };
+  loading?: ReactNode;
+  children: (data: T) => ReactNode;
+}) {
+  if (query.isError && isNotFound(query.error)) return <NotFound kind={kind} back={back} />;
+  return (
+    <QueryState query={query} loading={loading}>
+      {children}
+    </QueryState>
+  );
+}
 
 export function OrganizationScope({
   organizationId,
@@ -37,34 +68,28 @@ export function OrganizationScope({
     [client, organizationId],
   );
   return (
-    <QueryState query={org}>
-      {(organization) => (
-        <>
-          <nav className="breadcrumbs" aria-label="Breadcrumb">
-            <Link to={routes.organizations}>Organizations</Link>
-            <span aria-hidden="true">/</span>
-            <Link to={routes.organization(organizationId)}>{organization.name}</Link>
-          </nav>
-          <Link to={routes.organizationSettings(organizationId)}>Organization settings</Link>
-          <div className="scope-label">
-            Organization <span className="number">{organization.slug}</span>
-          </div>
-          {workspaceId ? (
-            <WorkspaceScope
-              key={workspaceId}
-              organizationId={organizationId}
-              workspaceId={workspaceId}
-              {...(view ? { view } : {})}
-            />
-          ) : (
-            <>
-              <OrganizationOverview key={organizationId} organizationId={organizationId} />
-              <WorkspaceList organizationId={organizationId} />
-            </>
-          )}
-        </>
-      )}
-    </QueryState>
+    <ScopeState
+      query={org}
+      kind="organization"
+      back={{ to: routes.organizations, label: 'Back to organizations' }}
+      loading={<LoadingState variant="page" label="Loading organization…" />}
+    >
+      {(organization) =>
+        workspaceId ? (
+          <WorkspaceScope
+            key={workspaceId}
+            organizationId={organizationId}
+            workspaceId={workspaceId}
+            {...(view ? { view } : {})}
+          />
+        ) : (
+          <>
+            <OrganizationOverview key={organizationId} organization={organization} />
+            <WorkspaceList organizationId={organizationId} organizationName={organization.name} />
+          </>
+        )
+      }
+    </ScopeState>
   );
 }
 function WorkspaceScope({
@@ -90,28 +115,42 @@ function WorkspaceScope({
     [client, organizationId, workspaceId],
   );
   return (
-    <QueryState query={workspace}>
+    <ScopeState
+      query={workspace}
+      kind="workspace"
+      back={{ to: routes.organization(organizationId), label: 'Back to workspaces' }}
+      loading={<LoadingState variant="page" label="Loading workspace…" />}
+    >
       {(data) => (
-        <>
-          <nav className="actions" aria-label="Workspace navigation">
-            <Link to={routes.workspaceSettings(organizationId, workspaceId)}>Workspace settings</Link>
-            <Link to={routes.suites(organizationId, workspaceId)}>Suites</Link>
-            <Link to={routes.inputs(organizationId, workspaceId)}>Inputs</Link>
-            <Link to={routes.runs(organizationId, workspaceId)}>Runs</Link>
-          </nav>
-          <p className="workspace-label">
-            Workspace <strong>{data.name}</strong>
-          </p>
+        <div className="workspace-page">
+          <NavTabs
+            label="Workspace navigation"
+            items={[
+              { to: routes.suites(organizationId, workspaceId), label: 'Suites', current: false },
+              { to: routes.runs(organizationId, workspaceId), label: 'Runs', current: false },
+              { to: routes.inputs(organizationId, workspaceId), label: 'Inputs', current: view === 'inputs' },
+              {
+                to: routes.workspaceSettings(organizationId, workspaceId),
+                label: 'Workspace settings',
+                current: false,
+              },
+            ]}
+          />
           {view === 'inputs' ? (
-            <WorkspaceInputs workspace={data} />
+            <>
+              <p className="workspace-label">
+                Workspace <strong>{data.name}</strong>
+              </p>
+              <WorkspaceInputs workspace={data} />
+            </>
           ) : (
             <>
-              <WorkspaceOverview organizationId={organizationId} workspaceId={workspaceId} />
+              <WorkspaceOverview organizationId={organizationId} workspaceId={workspaceId} workspaceName={data.name} />
               <FolderList workspace={data} />
             </>
           )}
-        </>
+        </div>
       )}
-    </QueryState>
+    </ScopeState>
   );
 }

@@ -15,7 +15,7 @@ export function FolderList({ workspace }: { workspace: Workspace }) {
     <section className="content-section">
       <header className="section-header">
         <div>
-          <h1>Folders</h1>
+          <h2>Folders</h2>
           <p>A paged index of folders in {workspace.name}.</p>
         </div>
         <button className="primary" disabled={editor.busy} onClick={() => edit()}>

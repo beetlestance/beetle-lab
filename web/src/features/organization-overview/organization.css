@@ -1,0 +1,33 @@
+/* Penpot "Organization" (+ Empty, Loading). Hero type and section heads come from overview.css. */
+.organization-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--s-24);
+  flex-wrap: wrap;
+  margin-bottom: var(--s-48);
+}
+.organization-unavailable {
+  display: grid;
+  gap: var(--s-10);
+  justify-items: start;
+}
+.organization-workspaces .data-table th[scope='row'] a {
+  color: var(--ink);
+  font-weight: 500;
+}
+.organization-last-run {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--s-12);
+  align-items: baseline;
+}
+.organization-row-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .organization-hero {
+    margin-bottom: var(--s-32);
+  }
+}
