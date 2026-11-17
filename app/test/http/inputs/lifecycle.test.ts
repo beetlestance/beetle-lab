@@ -86,7 +86,16 @@ it('protects real retained revision pins and fences a changed-byte retry', async
   await appendRevision(app.metadata, suite, 60, body);
   const removed = await app.server.inject({ method: 'DELETE', url: `${base}/${record.id}`, headers: app.headers,
     payload: { scope, requestId: requestId(), expectedVersion: record.version } });
-  expect(removed.statusCode).toBe(409); expect(removed.json().code).toBe('conflict');
+  expect(removed.statusCode).toBe(409); expect(removed.json()).toMatchObject({ code: 'protected_dependency',
+    dependencies: { total: 1, items: [{ suiteId: suite.id, suiteName: suite.name, revisionId: uuid(60), ordinal: 1, current: true }] } });
+  const usage = await app.server.inject({ method: 'GET', url: `${base}/${record.id}/usage?limit=1`, headers: app.headers });
+  expect(usage.statusCode).toBe(200);
+  expect(usage.json()).toEqual({ scope, inputId: record.id, total: 1, nextCursor: null,
+    items: [{ suiteId: suite.id, suiteName: suite.name, revisionId: uuid(60), ordinal: 1, current: true }] });
+  const tampered = await app.server.inject({ method: 'GET', url: `${base}/${record.id}/usage?limit=1&cursor=e30`, headers: app.headers });
+  expect(tampered.statusCode).toBe(400); expect(tampered.json().code).toBe('malformed_request');
+  const listed = await app.server.inject({ method: 'GET', url: `${base}/${record.id}`, headers: app.headers });
+  expect(listed.json()).toMatchObject({ usedByCount: 1, rowCount: null, columnCount: null, publishedAt: expect.any(String) });
   const staged = await create(app, 'abc');
   const upload = (payload: string) => app.server.inject({ method: 'PUT', url: `${base}/${staged.record.id}/chunks?offset=0`,
     headers: { ...app.headers, 'content-type': 'application/octet-stream' }, payload });

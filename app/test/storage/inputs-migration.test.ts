@@ -23,7 +23,7 @@ it('migrates v2 with bounded historical pins, preserves immutable bytes/receipts
   const suite = await metadata.suites.getSuite({ scope, id: uuid(50) }); const body = request(2);
   body.config.datasets = [{ id: 'data', kind: 'json', selection: 'byVu', input: legacy.pin }];
   await expect(append(metadata, suite, 2000, body)).rejects.toMatchObject({ code: 'not_found' });
-  await expect(metadata.inputs.control(transition(oldPublished, 'deleteInput'))).rejects.toMatchObject({ code: 'conflict' });
+  await expect(metadata.inputs.control(transition(oldPublished, 'deleteInput'))).rejects.toMatchObject({ code: 'protected_dependency' });
   expect(await metadata.namespaces.execute({ ...legacy.original, id: uuid(99) })).toEqual(legacy.organization);
   await fixture.close(metadata);
   const db = new DatabaseSync(path, { enableForeignKeyConstraints: true });

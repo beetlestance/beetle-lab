@@ -18,6 +18,7 @@ selects the workspace root folder) and an immutable expected SHA-256 and size.
 | --- | --- | --- |
 | `POST` (create), `GET` (page) | generated JSON operation | 201 staging record / 200 page |
 | `GET /{id}` | generated JSON operation | 200 authoritative record |
+| `GET /{id}/usage` | generated JSON operation | 200 pinning revisions ([metadata](input-metadata.md)) |
 | `PUT /{id}/chunks?offset=N` | byte route | 200 latest `InputRecord` |
 | `POST /{id}/seal`, `DELETE /{id}` | generated JSON operation | 202 `InputReceipt` |
 | `GET /{id}/content` | byte route, published inputs only | 200 or 206 |
@@ -101,9 +102,10 @@ secret or content.
 - The only reconstructible case is `publishing` with `bytes = offset = 0` and the
   empty SHA-256. Committed prefixes and published or deleted files are never
   synthesised from metadata.
-- Delete atomically requires no retained revision pins and blocks new pins. It
-  removes only the two derived names (private, same UID, single link, or the
-  proven alias), flushes parents, then commits `deleted` and releases the payload
+- Delete atomically requires no retained revision pins (else 409
+  `protected_dependency` naming the first blockers) and blocks new pins. It removes
+  only the two derived names (private, same UID, single link, or the proven alias),
+  flushes parents, then commits `deleted` and releases the payload
   charge. Unknown cleanup keeps the charge. Retention is manual; abandoned
   uploads need explicit deletion.
 - Layout: a canonical private root, `inputRoot/organisation/workspace/inputId/sha256`
@@ -210,9 +212,9 @@ use published inputs rather than inline configuration.
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/ports/inputs.ts` | `8e7186d9dcec` |
-| `app/src/application/inputs/` | `75ea44f39260` |
-| `app/src/adapters/inbound/http/inputs/` | `af13b1275902` |
+| `app/src/ports/inputs.ts` | `7d3f925424a0` |
+| `app/src/application/inputs/` | `7c9cb5e4008e` |
+| `app/src/adapters/inbound/http/inputs/` | `bd6041beb047` |
 | `contracts/src/api/input-content.ts` | `b62f8df109dd` |
-| `contracts/src/api/input-transfer/` | `e0ff1f2373f0` |
+| `contracts/src/api/input-transfer/` | `09d9ef68653c` |
 | `engines/k6/compiler/suite/limits.ts` | `2196d65f1ff5` |

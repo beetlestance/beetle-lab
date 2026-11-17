@@ -9,7 +9,7 @@ vi.mock('../../src/bootstrap/input-runtime.js', () => ({
   openInputRuntime: async () => {
     const unexpected = async (): Promise<never> => { throw new Error('Unexpected input operation'); };
     const inputs: InputService = { control: unexpected, append: unexpected, read: unexpected,
-      get: unexpected, list: unexpected, recover: unexpected, close: unexpected };
+      get: unexpected, list: unexpected, usage: unexpected, recover: unexpected, close: unexpected };
     return { inputs, recoveryState: () => 'failed' as const, close: runtime.close };
   },
 }));

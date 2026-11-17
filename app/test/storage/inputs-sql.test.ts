@@ -61,7 +61,7 @@ it('enforces retained exact scoped pins independently and serializes direct dele
     .run(uuid(99), input.id)).toThrow();
   expect(count()).toBe(1); expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]); db.close();
   const reopened = await fixture.open(path, { ...inputOptions(), runtime: null });
-  await expect(reopened.inputs.control(transition(input, 'deleteInput'))).rejects.toMatchObject({ code: 'conflict' });
+  await expect(reopened.inputs.control(transition(input, 'deleteInput'))).rejects.toMatchObject({ code: 'protected_dependency' });
 });
 it('rolls back lifecycle/payload charges when shared receipt persistence fails', async () => {
   const path = fixture.path(); let metadata = await fixture.open(path, inputOptions()); await seed(metadata); await fixture.close(metadata);

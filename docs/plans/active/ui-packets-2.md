@@ -63,9 +63,9 @@ Reuse level: **high** (almost every section has a feature module).
 
 | Board | Shows / actions | API | Reuse | Gaps → fallback |
 |---|---|---|---|---|
-| Inputs | "5 files, 9.0 MB"; Upload files; Add a sample file; folder segmented control; table: file, folder/type/rows/columns/kind, status (Ready, Stopped at 61%), used by suites, size, added date; Download, Delete, Resume | `listInputs` (name, folderId, bytes, offset, state, reason), `createInput`/`sealInput`/`deleteInput`, input content route, `listFolders` | `features/inputs` (`InputInventory`, `InputStatus`, `useDeletion`), `input-upload` (resume/recovery), `input-download`, `input-directory`, `input-screen` | **Used by: no reverse index** → hide the column. **CSV rows/columns, "Request body" kind: none** → show the extension only. **Added date: none** → hide. **"Add a sample file": no feature** → hide. Totals only when the page is complete. |
-| Inputs / Empty | copy, upload, limits | – | same | Sample file → hide |
-| Overlay / Delete input / In use | "Used by steady-1.2k Revisions 4 and 5" | `deleteInput` → ApiError `protected_dependency` | `inputs/useDeletion.ts` | **The list of revisions using it is missing** → generic "used by saved revisions" without names. |
+| Inputs | "5 files, 9.0 MB"; Upload files; Add a sample file; folder segmented control; table: file, folder/type/rows/columns/kind, status (Ready, Stopped at 61%), used by suites, size, added date; Download, Delete, Resume | `listInputs` (name, folderId, bytes, offset, state, reason, `createdAt`, `publishedAt`, `rowCount`, `columnCount`, `usedByCount`), `listInputUsage`, `createInput`/`sealInput`/`deleteInput` (409 `protected_dependency` with `dependencies`), input content route, `listFolders` | `features/inputs` (`InputInventory`, `InputStatus`, `useDeletion`), `input-upload` (resume/recovery), `input-download`, `input-directory`, `input-screen` | Used by → `usedByCount`, names via `listInputUsage` (paged) and the delete refusal's `dependencies` (first 10 + total). Rows/columns → `rowCount`/`columnCount` (CSV/JSON only; `null` means not measured → show the extension). Added → `createdAt` (`publishedAt` once ready); `null` on legacy inputs → show nothing. **"Request body" kind: none** → extension only. "Add a sample file": client-generated sample through the normal upload ([packets 3](ui-packets-3.md)). Totals only when the page is complete. |
+| Inputs / Empty | copy, upload, limits | – | same | Sample file → client-generated sample, normal upload ([packets 3](ui-packets-3.md)) |
+| Overlay / Delete input / In use | "Used by steady-1.2k Revisions 4 and 5" | `deleteInput` → ApiError `protected_dependency` with `dependencies` {total, items ≤ 10: suite, revision ordinal, current} | `inputs/useDeletion.ts` | Name the listed revisions; "and N more" from `total`. Without `dependencies` → generic "used by saved revisions". |
 | Engines | k6 installed (runs, pass/fail, result shows); 5 planned with sample bars | installation `supportedProfiles`; `getExportProfiles` | – | Planned cards are static copy (OK, labelled). Installed list from profiles. |
 | Settings (org), / Installation, / Workspace, / Loading | Scope tabs; per setting: value, "Inherited from X"/"Set here"/"Inherit instead"/"Will inherit, not saved"; save bar "1 unsaved change", Discard, Save | `get/patch{Installation,Organization,Workspace}Settings`; `NumericEffectiveLeaf.source/allowedRange` | `features/settings` (`fields.ts`, `intents.ts`), `components/Editor` | none |
 | Settings / Installation / Capacity | Runs at once, pool memory/CPU/procs/output, storage kept; "Host reports 10 CPUs, 32 GB memory and 412 GB free disk" | `InstallationValues.pool` (PoolCapacity) + patch | `settings` | **Host-reported capacity:** `getInstallationStatus` `host`/`disk` (lane: installation status); omit unmeasured fields. |
@@ -99,8 +99,8 @@ Reuse level: **high** for settings and retention; medium for inputs.
   `getRunQueue` (installation status lane).
 - Suite description, revision message/author/date/run count (Suite header,
   Revisions, Script picker): need revision metadata fields.
-- Inputs "Used by", Delete input / In use names: need an input→revision reverse
-  lookup. Inputs rows/columns/added date: need input metadata.
+- Inputs "Used by", Delete input / In use names, rows/columns/added date: provided
+  by the input metadata lane (migration 032, `listInputUsage`).
 - Live "Report/Metrics so far" downloads: dropped from the design.
 - Run notes (Runs search, Compare "Note"): need a note field.
 - Delete organization "deleted on" list: needs tombstoned workspaces listed.

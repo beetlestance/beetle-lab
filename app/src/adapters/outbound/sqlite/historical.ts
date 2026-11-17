@@ -29,6 +29,7 @@ const reads = new Set<Operation['kind']>([
   'listRevisions',
   'getInput',
   'listInputs',
+  'listInputUsage',
   'inputStorage',
   'getExport',
   'listExports',

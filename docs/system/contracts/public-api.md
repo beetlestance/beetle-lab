@@ -35,8 +35,8 @@ routes; SQLite metadata enforces scope and versions.
 ### Errors
 
 `ApiError` is `{code, message, retryable, requestId, fields}` with a fixed message per code
-(`api-errors.ts`); raw exceptions, config and environment values never appear. Responses are
-`no-store`.
+(`api-errors.ts`); raw exceptions, config and environment values never appear. Only a validated
+input delete refusal adds bounded `dependencies` ([input metadata](input-metadata.md)). `no-store`.
 
 | Status | Codes |
 | --- | --- |
@@ -212,9 +212,9 @@ characters and shows at most 80 matches.
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `64d1da819a62` |
+| `contracts/api/v2/` | `4ccfa14872b6` |
 | `contracts/src/api/client/` | `7b847a42bf8b` |
 | `contracts/src/api/run-list.ts` | `f38d03bf42d6` |
-| `app/src/adapters/inbound/http/api-errors.ts` | `b65c10f58ea7` |
+| `app/src/adapters/inbound/http/api-errors.ts` | `61b0f8879a03` |
 | `app/src/adapters/inbound/http/session/` | `328af44f81f3` |
 | `app/src/client/cli/` | `c7eb756df145` |

@@ -111,9 +111,9 @@ it('serializes historical revision pins and deletion intent in the same worker',
   expect(race[0]?.status).toBe('fulfilled');
   const current = await metadata.suites.getSuite({ scope, id: suite.id });
   await append(metadata, current, 61, request(2));
-  await expect(metadata.inputs.control(transition(input, 'deleteInput'))).rejects.toMatchObject({ code: 'conflict' });
+  await expect(metadata.inputs.control(transition(input, 'deleteInput'))).rejects.toMatchObject({ code: 'protected_dependency' });
   await fixture.close(metadata); metadata = await fixture.open(path, { ...inputOptions(), runtime: null });
-  await expect(metadata.inputs.control(transition(input, 'deleteInput'))).rejects.toMatchObject({ code: 'conflict' });
+  await expect(metadata.inputs.control(transition(input, 'deleteInput'))).rejects.toMatchObject({ code: 'protected_dependency' });
   const other = await trustedPublish(metadata, await metadata.inputs.control(createInput(91)) as InputRecord);
   await metadata.inputs.control(transition(other, 'deleteInput'));
   const latest = await metadata.suites.getSuite({ scope, id: suite.id }); const blocked = request(latest.version);
@@ -122,7 +122,7 @@ it('serializes historical revision pins and deletion intent in the same worker',
   await fixture.close(metadata); const db = new DatabaseSync(path);
   expect(db.prepare('SELECT count(*) AS n FROM revision_input_pins').get()?.n).toBe(1);
   expect(db.prepare('EXPLAIN QUERY PLAN SELECT 1 FROM revision_input_pins WHERE organization_id=? AND workspace_id=? AND input_id=?')
-    .all(scope.organizationId, scope.workspaceId, input.id)).toEqual(expect.arrayContaining([expect.objectContaining({ detail: expect.stringContaining('input_pins_lookup') })])); db.close();
+    .all(scope.organizationId, scope.workspaceId, input.id)).toEqual(expect.arrayContaining([expect.objectContaining({ detail: expect.stringContaining('input_pins_usage') })])); db.close();
 });
 it('bounds scoped lists and recovery with query-bound cursors', async () => {
   const metadata = await fixture.open(undefined, inputOptions()); await seed(metadata); await seed(metadata, 11, 12, 13);

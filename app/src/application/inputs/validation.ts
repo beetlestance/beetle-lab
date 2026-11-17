@@ -90,9 +90,21 @@ export function pageSnapshot<T extends InputList | InputRecoveryPage>(value: T, 
     });
   return copy;
 }
+const recordFields = ['id', 'scope', 'name', 'folderId', 'sha256', 'bytes', 'offset', 'version', 'state', 'reason'];
+const factFields = ['createdAt', 'publishedAt', 'rowCount', 'columnCount', 'usedByCount'];
+/** Read-only facts: optional for older stores, validated by the shared contract when present. */
+function checkedFacts(copy: InputRecord): void {
+  const facts = Object.fromEntries(
+    factFields.filter((name) => Object.hasOwn(copy, name)).map((name) => [name, copy[name as keyof InputRecord]]),
+  );
+  if (!Object.keys(facts).length) return;
+  const { id, scope, name, folderId, sha256, bytes, offset, version, state, reason } = copy;
+  const record = { id, scope, name, folderId, sha256, bytes, offset, version, state, reason, ...facts };
+  requireRule(validateApi('InputRecord', record).ok);
+}
 export function checkedRecord(value: InputRecord, key?: InputKey): InputRecord {
   const copy = snapshot(value);
-  fields(copy, ['id', 'scope', 'name', 'folderId', 'sha256', 'bytes', 'offset', 'version', 'state', 'reason']);
+  fields(copy, [...recordFields, ...factFields]);
   const identity = keySnapshot({ id: copy.id, scope: copy.scope });
   uuid(copy.folderId);
   normalizedName(copy.name);
@@ -105,6 +117,7 @@ export function checkedRecord(value: InputRecord, key?: InputKey): InputRecord {
     copy.reason === null || ['custody_missing', 'integrity', 'io', 'unverified_legacy'].includes(copy.reason),
   );
   requireRule(!['published', 'publishing'].includes(copy.state) || copy.offset === copy.bytes);
+  checkedFacts(copy);
   if (key) requireRule(sameUuid(identity.id, key.id) && sameScope(identity.scope, key.scope), 'not_found');
   return snapshot({ ...copy, ...identity });
 }

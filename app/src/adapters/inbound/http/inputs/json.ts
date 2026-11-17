@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { encodeJson } from '@beetle/contracts';
 import type { InputReceipt, WorkspaceScope } from '@beetle/contracts/api';
 import { requireRule, sameScope } from '../../../../domain/namespaces/index.js';
-import type { InputControl, InputPage } from '../../../../ports/inputs.js';
+import type { InputControl, InputPage, InputUsagePage } from '../../../../ports/inputs.js';
 import { registerApiOperation } from '../api-route.js';
 import { ResponseContractError } from '../schema-compilers.js';
 import type { RequestLifetimes } from './lifetime.js';
@@ -16,6 +16,13 @@ function matchScope(route: WorkspaceScope, body: WorkspaceScope): void {
 function pageSnapshot(value: InputPage): InputPage {
   try {
     return JSON.parse(encodeJson(value, 1_048_576)) as InputPage;
+  } catch {
+    throw new ResponseContractError();
+  }
+}
+function usageSnapshot(value: InputUsagePage): InputUsagePage {
+  try {
+    return JSON.parse(encodeJson(value, 262_144)) as InputUsagePage;
   } catch {
     throw new ResponseContractError();
   }
@@ -57,6 +64,18 @@ export function registerJson(server: FastifyInstance, options: InputRouteOptions
     async ({ params, signal }) => {
       const owner = owners.forSignal(signal);
       return checkedRecord(await owner.run(() => options.inputs.get({ scope: scope(params), id: params.inputId })));
+    },
+    routeOptions,
+  );
+  registerApiOperation(
+    server,
+    'listInputUsage',
+    async ({ params, query, signal }) => {
+      const owner = owners.forSignal(signal);
+      const routeScope = scope(params);
+      const key = { scope: routeScope, id: params.inputId };
+      const page = await owner.run(() => options.inputs.usage({ key, ...query }));
+      return { scope: routeScope, inputId: params.inputId.toLowerCase(), ...usageSnapshot(page) };
     },
     routeOptions,
   );

@@ -40,6 +40,7 @@ import { RunReads } from './run-reads.js';
 import { readInstallationStatus, statusOperation } from './installation-status/index.js';
 import { Inputs } from './inputs.js';
 import { InputReads } from './input-reads.js';
+import { INPUT_OPERATION_KINDS } from './input-validation.js';
 import { Suites } from './suites.js';
 import { SuiteReads } from './suite-reads.js';
 import type { DatabaseSync } from 'node:sqlite';
@@ -50,7 +51,6 @@ import { Settings } from './settings.js';
 import { transaction } from './transaction.js';
 import { suiteOperation, operationMessageLimit } from './input.js';
 import { StorageError, type Bootstrap, type Operation, type Value } from './protocol.js';
-
 export class Store {
   private readonly parentSnapshots: ParentRetentionSnapshots;
   private readonly manualSnapshots: ManualRunDeletionSnapshots;
@@ -224,6 +224,10 @@ export class Store {
         return this.inputReads.list(operation.query);
       case 'inputStorage':
         return this.inputs.storage();
+      case 'listInputUsage':
+        return this.inputReads.usage(operation.query);
+      case 'recordInputShape':
+        return transaction(this.db, () => this.inputs.recordShape(operation.shape));
       default:
         throw new StorageError('invalid_input');
     }
@@ -365,8 +369,7 @@ export class Store {
       ['getSettings', 'getSettingsIdentity', 'runtime', 'loadLocalSession', 'saveLocalSession'].includes(operation.kind)
     )
       return this.installationOperation(operation);
-    if (['input', 'advanceInput', 'getInput', 'listInputs', 'recoverInputs', 'inputStorage'].includes(operation.kind))
-      return this.inputOperation(operation);
+    if (INPUT_OPERATION_KINDS.includes(operation.kind)) return this.inputOperation(operation);
     switch (operation.kind) {
       case 'namespace':
       case 'settings':

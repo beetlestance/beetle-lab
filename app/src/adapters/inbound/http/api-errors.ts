@@ -5,6 +5,8 @@ import type { FastifyInstance, FastifyReply } from 'fastify';
 import type { ApiError } from '@beetle/contracts/api';
 import { SemanticError } from '../../../domain/namespaces/index.js';
 import { InputByteError } from '../../../ports/input-bytes.js';
+import { InputDependencyError } from '../../../ports/inputs.js';
+import { validateApi } from '@beetle/contracts/api';
 import type { InputByteErrorCode } from '../../../ports/input-bytes.js';
 
 type Code = ApiError['code'];
@@ -84,6 +86,7 @@ function metricCode(code: unknown): Code {
 function portCode(error: unknown, code: unknown): Code | undefined {
   if (error instanceof MetricReadError) return metricCode(code);
   if (error instanceof InputByteError) return inputCode(code);
+  if (error instanceof InputDependencyError) return 'protected_dependency';
   return undefined;
 }
 function codeFor(error: unknown, classify: ApiErrorOptions['classify']): Code {
@@ -105,8 +108,22 @@ export function apiErrorResponse(code: Code): { status: number; body: ApiError }
   const [status, message, retryable] = errors[code];
   return { status, body: { code, message, retryable, requestId: randomUUID(), fields: [] } };
 }
+/** Only a schema-valid bounded blocker list is echoed; anything else keeps the fixed body. */
+function dependencies(error: unknown): Pick<ApiError, 'dependencies'> {
+  if (!(error instanceof InputDependencyError)) return {};
+  try {
+    const checked = validateApi('ProtectedDependencies', JSON.parse(JSON.stringify(error.dependencies)));
+    return checked.ok ? { dependencies: checked.value } : {};
+  } catch {
+    return {};
+  }
+}
 function sendFailure(error: unknown, reply: FastifyReply, classify: ApiErrorOptions['classify']): FastifyReply {
-  const result = apiErrorResponse(codeFor(error, classify));
+  const failure = apiErrorResponse(codeFor(error, classify));
+  const result =
+    failure.body.code === 'protected_dependency'
+      ? { ...failure, body: { ...failure.body, ...dependencies(error) } }
+      : failure;
   return reply.header('Cache-Control', 'no-store').code(result.status).type('application/json').send(result.body);
 }
 

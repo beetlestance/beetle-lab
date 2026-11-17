@@ -34,6 +34,7 @@ it('replaces through a newly named input and revision while old revisions and qu
     expect(oldRun.revisionId).toBe(first.id);
     const chunks: Uint8Array[] = []; await service.read(key(original), undefined, {write: async bytes => {chunks.push(bytes);}});
     expect(Buffer.concat(chunks).toString()).toBe('abc');
-    await expect(service.control(transition(original, 'deleteInput'))).rejects.toMatchObject({code: 'conflict'});
+    await expect(service.control(transition(original, 'deleteInput'))).rejects.toMatchObject({code: 'protected_dependency',
+      dependencies: {total: 1, items: [expect.objectContaining({current: false, ordinal: 1})]}});
   } finally {await service.close();}
 });

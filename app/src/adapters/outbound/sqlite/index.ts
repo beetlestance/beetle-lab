@@ -308,6 +308,8 @@ export class Metadata extends MetadataWorker {
     list: (query) => this.call({ kind: 'listInputs', query }) as ReturnType<InputStore['list']>,
     recovery: (query) => this.call({ kind: 'recoverInputs', query }) as ReturnType<InputStore['recovery']>,
     storage: () => this.call({ kind: 'inputStorage' }) as ReturnType<InputStore['storage']>,
+    usage: (query) => this.call({ kind: 'listInputUsage', query }) as ReturnType<InputStore['usage']>,
+    recordShape: (shape) => this.call({ kind: 'recordInputShape', shape }) as ReturnType<InputStore['recordShape']>,
   };
 
   readonly suites: SuiteStore & SuiteReader = {

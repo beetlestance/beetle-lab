@@ -66,8 +66,9 @@ it('fences bytes behind actual revision pins and serializes read/delete ownershi
   const body = request(); body.config.datasets = [{ id: 'data', kind: 'json', selection: 'byVu', input: { id: published.id, sha256: published.sha256, bytes: published.bytes } }];
   await appendRevision(metadata, suite, 60, body);
   const remove = vi.spyOn(model.bytes, 'remove');
-  await expect(service.control(transition(published, 'deleteInput'))).rejects.toMatchObject({ code: 'conflict' });
-  expect(remove).not.toHaveBeenCalled(); expect(await service.get(key(original))).toEqual(published);
+  await expect(service.control(transition(published, 'deleteInput'))).rejects.toMatchObject({ code: 'protected_dependency',
+    dependencies: { total: 1, items: [{ suiteId: suite.id, suiteName: suite.name, revisionId: uuid(60), ordinal: 1, current: true }] } });
+  expect(remove).not.toHaveBeenCalled(); expect(await service.get(key(original))).toEqual({ ...published, usedByCount: 1 });
   const gate = deferred<void>(); const entered = deferred<void>();
   const reading = service.read(key(original), undefined, { write: async () => { entered.resolve(); await gate.promise; } });
   await entered.promise;

@@ -48,6 +48,28 @@
         { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope" }
       ]
     },
+    "RevisionDependency": {
+      "type": "object",
+      "properties": {
+        "suiteId": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" },
+        "suiteName": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name" },
+        "revisionId": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" },
+        "ordinal": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/PositiveInteger" },
+        "current": { "type": "boolean" }
+      },
+      "required": ["suiteId", "suiteName", "revisionId", "ordinal", "current"], "additionalProperties": false
+    },
+    "ProtectedDependencies": {
+      "type": "object",
+      "properties": {
+        "total": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "items": {
+          "type": "array", "minItems": 1, "maxItems": 10,
+          "items": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/RevisionDependency" }
+        }
+      },
+      "required": ["total", "items"], "additionalProperties": false
+    },
     "ApiError": {
       "type": "object",
       "properties": {
@@ -65,7 +87,8 @@
             },
             "required": ["path", "code"], "additionalProperties": false
           }
-        }
+        },
+        "dependencies": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/ProtectedDependencies" }
       },
       "required": ["code", "message", "retryable", "requestId", "fields"], "additionalProperties": false
     }

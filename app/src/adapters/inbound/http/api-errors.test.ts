@@ -9,6 +9,7 @@ import { registerApiOperation } from './api-route.js';
 import { ApiFault, createApiServer } from './api-errors.js';
 import type { ApiErrorOptions } from './api-errors.js';
 import { InputByteError } from '../../../ports/input-bytes.js';
+import { InputDependencyError } from '../../../ports/inputs.js';
 
 const canary = 'SYNTHETIC_PRIVATE_EXCEPTION_CANARY';
 const uuid = '00000000-0000-4000-8000-000000000001';
@@ -41,6 +42,17 @@ it.each([
   const value = check(result.statusCode, result.body, code);
   const again = await app.inject('/failure');
   expect(again.json().requestId).not.toBe(value.requestId);
+});
+
+it('names bounded delete blockers only after contract validation', async () => {
+  const app = server();
+  const item = { suiteId: uuid, suiteName: 'Checkout', revisionId: uuid, ordinal: 2, current: true };
+  app.get('/blocked', async () => { throw new InputDependencyError({ total: 12, items: [item] }); });
+  app.get('/invalid', async () => { throw new InputDependencyError({ total: 1, items: [{ ...item, suiteName: canary.repeat(40) }] }); });
+  const blocked = await app.inject('/blocked'); expect(blocked.statusCode).toBe(409);
+  expect(check(blocked.statusCode, blocked.body, 'protected_dependency').dependencies).toEqual({ total: 12, items: [item] });
+  const invalid = await app.inject('/invalid'); expect(invalid.statusCode).toBe(409);
+  expect(check(invalid.statusCode, invalid.body, 'protected_dependency').dependencies).toBeUndefined();
 });
 
 it('prevents caching failures that occur before auth route hooks can run', async () => {
