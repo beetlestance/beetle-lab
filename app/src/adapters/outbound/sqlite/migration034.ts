@@ -21,7 +21,7 @@ const abort = (reason: string) => `BEGIN SELECT RAISE(ABORT,'${reason}');END;`;
  * reservation frames freeze the new count table like every other pre-existing owner. */
 const guards = `DROP TRIGGER settlement_suites_update;
 CREATE TRIGGER settlement_suites_update BEFORE UPDATE OF
- id,organization_id,workspace_id,folder_id,name,folded_name,version,current_revision_id ON suites
+ id,organization_id,workspace_id,folder_id,name,folded_name,version,current_revision_id,description ON suites
  WHEN backend_settlement_active()=1 ${abort('outside settlement ownership')}
 CREATE TRIGGER settlement_suites_latest BEFORE UPDATE OF latest_run_id,latest_requested_at,latest_group ON suites
  WHEN backend_settlement_active()=1 AND backend_settlement_delete('runs',OLD.latest_run_id) IS NOT 1

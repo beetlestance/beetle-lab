@@ -11,6 +11,7 @@ import type { OutputRuntimeOptions } from '../ports/output-runtime.js';
 import { openOutputRuntime } from './output-runtime/index.js';
 import { captureDeliveryMetadata, captureOutputMetadata, captureGateway } from './output-parent/capture.js';
 import type { AgentRuntime } from './agent-owners.js';
+import { AgentStatusBoard } from '../application/installation-status/index.js';
 export type { AgentRuntime } from './agent-owners.js';
 
 export interface AgentRuntimeOptions {
@@ -75,9 +76,15 @@ export async function openAgentRuntime(options: AgentRuntimeOptions, metadata: M
       return Object.freeze({ snapshot: client.snapshot.bind(client) });
     },
   });
+  const board = new AgentStatusBoard(
+    configuration.profiles.map((profile) => ({
+      profileId: profile.engine.profileId,
+      imageDigest: profile.engine.imageDigest,
+    })),
+  );
   let source: CapacitySource;
   try {
-    source = await openCapacitySource({ dataRoot, configuration, gateway });
+    source = await openCapacitySource({ dataRoot, configuration, gateway, status: board });
   } catch (error) {
     try {
       await capturedGateway.close();
@@ -86,7 +93,7 @@ export async function openAgentRuntime(options: AgentRuntimeOptions, metadata: M
     }
     throw error;
   }
-  return openAgentOwners({
+  const runtime = await openAgentOwners({
     liveMetrics: gateway.liveMetrics.bind(gateway),
     source,
     gateway: capturedGateway,
@@ -110,4 +117,5 @@ export async function openAgentRuntime(options: AgentRuntimeOptions, metadata: M
       return outputs;
     },
   });
+  return Object.freeze({ ...runtime, agentStatus: () => board.snapshot() });
 }

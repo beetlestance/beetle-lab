@@ -35,10 +35,17 @@ export function captureOptions(options: LiveMetricPublisherOptions) {
       : { wall: () => Date.now(), monotonic: () => performance.now() };
     const initial = { wall: clock.wall(), monotonic: clock.monotonic() };
     if (!validClock(initial)) throw new Error();
-    return { frame, hash, sink, clock, initial, timeoutMs, maximumProducedBytes, signal: options.signal };
+    const target = captureTarget(options.target);
+    return { frame, hash, sink, clock, initial, timeoutMs, maximumProducedBytes, signal: options.signal, target };
   } catch {
     throw new LiveMetricPublisherError('invalid_options');
   }
+}
+function captureTarget(target: LiveMetricPublisherOptions['target']) {
+  if (target === undefined) return undefined;
+  const intervalMs = target.intervalMs;
+  if (!Number.isInteger(intervalMs) || intervalMs < 1000 || intervalMs > 60000) throw new Error();
+  return Object.freeze({ intervalMs, recent: target.recent.bind(target) });
 }
 function validateBudget(options: LiveMetricPublisherOptions): void {
   if (!Number.isInteger(options.timeoutMs) || options.timeoutMs < 1 || options.timeoutMs > 172800000) throw new Error();

@@ -7,10 +7,11 @@ import { baseUrl, load, organizationId, params, reply } from './helpers.js';
 const files: Partial<Record<keyof ApiTypes, string>> = {
   RetentionTraversalPage:'retention-traversal-page',ManualRunDeletionPreviewRequest:'manual-run-deletion-request',RetentionBatchStatus:'retention-batch-status',RetentionBatchList:'retention-batch-list',RetentionDiscardReceipt:'retention-discard-receipt',
   OrganizationOverview:'organization-overview', WorkspaceOverview:'workspace-overview',
+  InstallationStatus: 'installation-status', RunQueueStatus: 'run-queue',
   ExportJob: 'export-job', ExportJobPage: 'export-job-page', ExportProfiles: 'export-profiles',
   CreateExportRequest: 'create-export', CancelExportRequest: 'cancel-export',
   RunComparisonRequest: 'run-comparison-request', RunComparisonSnapshot: 'run-comparison',
-  LiveMetricSnapshot: 'live-metric-snapshot', RunMetricSeriesPage: 'run-metric-series-pending', RunMetricSamplesPage: 'run-metric-samples',
+  LiveMetricSnapshot: 'live-metric-snapshot', RunMetricSeriesPage: 'run-metric-series-pending', RunMetricSamplesPage: 'run-metric-samples', RunLatencyAttribution: 'run-latency-attribution',
   RunResultSnapshot: 'run-result-pending', RunEventPage: 'run-events-pending', RunArtifactPage: 'run-artifacts-pending',
   Run: 'run', RunPage: 'run-page', CreateRunRequest: 'create-run', CancelRunRequest: 'cancel-run',
   InputRecord: 'input', InputReceipt: 'input-receipt', InputPage: 'input-page',

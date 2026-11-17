@@ -1,5 +1,6 @@
 import type { RuntimeCeilings } from '../domain/settings/index.js';
 import type { AgentConnectionConfiguration, RunnerGateway } from './runner.js';
+import type { AgentStatusRecorder } from './installation-status.js';
 
 /** Private combined capacity fact: absolute source expiry is never receipt time. */
 export interface RuntimeObservation {
@@ -21,4 +22,6 @@ export interface CapacitySourceOptions {
   readonly dataRoot: string;
   readonly configuration: AgentConnectionConfiguration;
   readonly gateway: RunnerGateway;
+  /** Optional informational sink; it never affects the lease or dispatch authority. */
+  readonly status?: AgentStatusRecorder;
 }

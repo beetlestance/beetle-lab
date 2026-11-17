@@ -30,6 +30,16 @@
               "type": "null"
             }
           ]
+        },
+        "description": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteDescription"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -69,6 +79,36 @@
         },
         "preflightStatus": {
           "const": "passed"
+        },
+        "savedAt": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunTimestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "message": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/suite#/$defs/RevisionMessage"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "savedBy": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "runCount": {
           "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count"
@@ -144,6 +184,36 @@
             ],
             "additionalProperties": false
           }
+        },
+        "savedAt": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunTimestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "message": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/suite#/$defs/RevisionMessage"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "savedBy": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "runCount": {
           "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count"
@@ -311,6 +381,18 @@
         "latestRun"
       ],
       "additionalProperties": false
+    },
+    "SuiteDescription": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 280,
+      "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+    },
+    "RevisionMessage": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 280,
+      "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
     }
   }
 }

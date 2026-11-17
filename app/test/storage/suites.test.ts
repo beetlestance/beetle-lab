@@ -83,7 +83,7 @@ it('accepts full one MiB UTF8 configuration and rejects oversized, unsafe and de
   const accessor = Object.defineProperty({ ...operation }, 'request', { enumerable: true, get() { invoked = true; throw new Error('private'); } });
   await expect(metadata.suites.execute(accessor)).rejects.toMatchObject({ code: 'invalid_input' }); expect(invoked).toBe(false);
   const deep: Record<string, unknown> = {}; let node = deep; for (let i = 0; i < 70; i++) { node.child = {}; node = node.child as Record<string, unknown>; }
-  expect(() => suiteCommand({ kind: 'createSuiteRevision', id: uuid(71), suiteId: suite.id, request: { ...request(2), config: deep } })).toThrow();
+  expect(() => suiteCommand({ kind: 'createSuiteRevision',savedAt:'2026-11-10T00:00:00.000Z', id: uuid(71), suiteId: suite.id, request: { ...request(2), config: deep } })).toThrow();
 });
 it('migrates v1 preserving settings, namespace rows and receipt replay', async () => {
   const path = fixture.path(); const db = new DatabaseSync(path, { enableForeignKeyConstraints: true }); db.exec(migration001);

@@ -1,0 +1,244 @@
+/* App shell from the Penpot header: 70 px row, content gutter 80 px at 1440,
+   content up to 2000 px wide (ultrawide), 16 px gutter and a menu sheet on phones. */
+.shell {
+  --shell-pad: max(var(--gutter), calc((100vw - var(--content-max)) / 2));
+  min-height: 100dvh;
+  background: var(--bg);
+}
+.skip-link {
+  position: fixed;
+  top: var(--s-8);
+  left: var(--s-8);
+  z-index: 60;
+  padding: var(--s-10) var(--s-14);
+  border-radius: var(--r-md);
+  background: var(--amber);
+  color: var(--on-amber);
+  transform: translateY(-200%);
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.shell-header {
+  display: flex;
+  align-items: center;
+  gap: var(--s-28);
+  min-height: 70px;
+  padding: var(--s-16) var(--shell-pad);
+  margin-top: var(--s-8);
+}
+.shell-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-10);
+  color: var(--ink);
+  font-size: var(--fs-base);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.shell-brand:hover {
+  color: var(--ink);
+}
+.shell-mark {
+  flex: none;
+}
+.shell-scope {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-8);
+  min-height: var(--control-md);
+  max-width: 240px;
+  padding: 0 var(--s-12);
+  border-radius: var(--r-md);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: var(--fs-base);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.shell-scope:hover {
+  color: var(--ink);
+  background: var(--line);
+}
+.shell-scope-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shell-scope-caret {
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
+.shell-menu {
+  display: flex;
+  align-items: center;
+  gap: var(--s-24);
+  flex: 1;
+  min-width: 0;
+}
+.shell-menu-button {
+  display: none;
+}
+
+.shell-nav ul {
+  display: flex;
+  gap: var(--s-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.shell-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-6);
+  min-height: var(--control-md);
+  padding: var(--s-6) var(--s-10);
+  border-radius: var(--r-sm);
+  color: var(--mute);
+  font-size: var(--fs-base);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out);
+}
+.shell-nav a:hover {
+  color: var(--ink);
+  background: var(--tab-hover);
+}
+.shell-nav a[aria-current='page'] {
+  color: var(--ink);
+  background: var(--line);
+}
+.shell-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-6);
+  color: var(--amber);
+  font-size: var(--fs-sm);
+}
+.shell-nav-badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amber);
+}
+.shell-nav-running {
+  display: none;
+}
+
+.shell-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--s-12);
+  margin-left: auto;
+}
+.shell-search {
+  background: var(--panel);
+  font-size: var(--fs-md);
+  font-weight: 400;
+  gap: var(--s-10);
+  min-height: var(--control-md);
+}
+.shell-search kbd {
+  padding: 1px var(--s-6);
+  border-radius: var(--r-xs);
+  background: var(--line);
+  color: var(--mute);
+  font: 400 var(--fs-sm) / 20px var(--font-sans);
+}
+
+.shell-main {
+  padding: var(--s-40) var(--shell-pad) 96px;
+}
+.shell-main:focus {
+  outline: none;
+}
+
+@media (max-width: 1100px) {
+  .shell-header {
+    gap: var(--s-16);
+  }
+  .shell-menu {
+    gap: var(--s-12);
+  }
+  .shell-search kbd {
+    display: none;
+  }
+}
+
+/* Phone: logo, scope switcher and a Menu button; the menu opens as a sheet. */
+@media (max-width: 760px) {
+  .shell-header {
+    position: relative;
+    flex-wrap: wrap;
+    gap: var(--s-10);
+    min-height: 56px;
+    padding: var(--s-10) var(--s-16);
+    margin-top: var(--s-4);
+  }
+  .shell-brand-name {
+    display: none;
+  }
+  .shell-menu-button {
+    display: inline-flex;
+    margin-left: auto;
+  }
+  .shell-menu {
+    display: none;
+  }
+  .shell[data-menu-open] .shell-menu {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s-2);
+    flex-basis: 100%;
+    margin-top: var(--s-18);
+    padding: var(--s-8) var(--s-8) var(--s-12);
+    border-radius: var(--r-lg);
+    background: var(--panel);
+    animation: rise-in var(--motion-base) var(--ease-out);
+  }
+  .shell-nav ul {
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+  .shell-nav a {
+    display: flex;
+    min-height: 48px;
+    padding: var(--s-12);
+    border-radius: var(--r-md);
+  }
+  .shell-nav-badge {
+    margin-left: auto;
+    font-size: var(--fs-md);
+  }
+  .shell-nav-badge::before {
+    display: none;
+  }
+  .shell-nav-running {
+    display: inline;
+  }
+  .shell-tools {
+    justify-content: space-between;
+    margin: var(--s-6) 0 0;
+    padding: var(--s-8) var(--s-4) 0;
+    border-top: 1px solid var(--line);
+  }
+  .shell-search {
+    background: transparent;
+  }
+  .shell-search kbd {
+    display: inline;
+  }
+  .shell[data-menu-open] .shell-main {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+  .shell-main {
+    padding: var(--s-16) var(--s-16) var(--s-64);
+  }
+}

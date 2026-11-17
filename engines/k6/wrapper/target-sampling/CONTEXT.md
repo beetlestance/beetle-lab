@@ -17,3 +17,5 @@ Spec: `docs/system/contracts/results.md`.
 Cleanup rejection propagates through finish/close; advisory observations require
 confirmed original cleanup.
 Focused check: `node node_modules/vitest/vitest.mjs run engines/k6/wrapper/target-sampling`.
+recent(limit) returns frozen newest retained samples for the live publisher (no IO).
+Observation time uses the injected attempt wall clock shared with live frames.

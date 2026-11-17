@@ -156,6 +156,9 @@
           "items": {
             "$ref": "https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricSeries"
           }
+        },
+        "target": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetReadings"
         }
       },
       "required": [
@@ -173,6 +176,138 @@
         "endTimeMs",
         "upstreamCoverage",
         "series"
+      ],
+      "additionalProperties": false
+    },
+    "LiveTargetReading": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.7976931348623157e+308
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "LiveTargetValues": {
+      "type": "object",
+      "properties": {
+        "rss": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetReading"
+        },
+        "heapAlloc": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetReading"
+        },
+        "heapInuse": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetReading"
+        },
+        "usedHeapSize": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetReading"
+        },
+        "totalHeapSize": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetReading"
+        },
+        "cpuPercent": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetReading"
+        },
+        "systemCpuPercent": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetReading"
+        },
+        "eventLoopDelay.mean": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetReading"
+        },
+        "eventLoopDelay.p99": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetReading"
+        },
+        "eventLoopDelay.max": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetReading"
+        },
+        "activeHandles": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetReading"
+        },
+        "goroutines": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetReading"
+        }
+      },
+      "required": [
+        "rss",
+        "heapAlloc",
+        "heapInuse",
+        "usedHeapSize",
+        "totalHeapSize",
+        "cpuPercent",
+        "systemCpuPercent",
+        "eventLoopDelay.mean",
+        "eventLoopDelay.p99",
+        "eventLoopDelay.max",
+        "activeHandles",
+        "goroutines"
+      ],
+      "additionalProperties": false
+    },
+    "LiveTargetSample": {
+      "type": "object",
+      "properties": {
+        "observedAtMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8640000000000000
+        },
+        "phase": {
+          "enum": [
+            "before",
+            "during"
+          ]
+        },
+        "status": {
+          "enum": [
+            "ready",
+            "unavailable"
+          ]
+        },
+        "values": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetValues"
+        }
+      },
+      "required": [
+        "observedAtMs",
+        "phase",
+        "status",
+        "values"
+      ],
+      "additionalProperties": false
+    },
+    "LiveTargetReadings": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "const": "target-reported"
+        },
+        "intervalMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 60000
+        },
+        "samples": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetSample"
+          }
+        },
+        "omittedSamples": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 257
+        }
+      },
+      "required": [
+        "scope",
+        "intervalMs",
+        "samples",
+        "omittedSamples"
       ],
       "additionalProperties": false
     }

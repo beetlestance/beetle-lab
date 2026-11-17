@@ -8,6 +8,7 @@ import { StorageError } from '../protocol.js';
 import { runListStatement } from '../run-list-query.js';
 import { prepareNameSearch } from './backfill.js';
 import { matchingSuites, workspaceNameMatches } from './names.js';
+import { noteRunKeys } from './notes.js';
 export function prepareHistorySearch(db: DatabaseSync, input: RunList): void {
   if (input.name !== undefined && !workspaceNameMatches(db, input.scope, input.name))
     prepareNameSearch(db, input.scope);
@@ -17,14 +18,22 @@ export function historyKeys(db: DatabaseSync, input: RunList): HistoryKey[] {
   if (input.runIdPrefix !== undefined) return prefixKeys(db, input);
   if (input.name === undefined || workspaceNameMatches(db, input.scope, input.name)) return suiteKeys(db, input);
   const query = normalizeRunListQuery(inputPage(input));
-  let result: HistoryKey[] = [];
-  for (const id of matchingSuites(db, input.scope, input.name)) {
+  const position = runListPosition(input.scope, query);
+  const suites = matchingSuites(db, input.scope, input.name);
+  let result = top(
+    noteRunKeys(db, input.scope, input.name).filter((row) => accepts(row, query, position)),
+    query,
+  );
+  for (const id of suites) {
     if (query.suiteId !== undefined && id.toLowerCase() !== query.suiteId) continue;
-    result = [...result, ...suiteKeys(db, input, id)]
-      .sort((a, b) => orderKeys(a, b, query.order))
-      .slice(0, query.limit + 1);
+    result = top([...result, ...suiteKeys(db, input, id)], query);
   }
   return result;
+}
+/** A run matching both its suite path and its note appears once. */
+function top(keys: readonly HistoryKey[], query: ReturnType<typeof normalizeRunListQuery>): HistoryKey[] {
+  const unique = new Map(keys.map((key) => [key.id, { id: key.id, requested_at: key.requested_at }]));
+  return [...unique.values()].sort((a, b) => orderKeys(a, b, query.order)).slice(0, query.limit + 1);
 }
 function inputPage(input: RunList) {
   const page = { ...input } as Partial<RunList>;
@@ -58,10 +67,10 @@ function prefixKeys(db: DatabaseSync, input: RunList): HistoryKey[] {
     .map(capturePrefixKey);
   if (rows.length > 256) throw new StorageError('search_too_broad');
   const position = runListPosition(input.scope, query);
-  return rows
-    .filter((row) => accepts(row, query, position))
-    .sort((a, b) => orderKeys(a, b, query.order))
-    .slice(0, query.limit + 1);
+  return top(
+    rows.filter((row) => accepts(row, query, position)),
+    query,
+  );
 }
 function accepts(
   row: PrefixKey,

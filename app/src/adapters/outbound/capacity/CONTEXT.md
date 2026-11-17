@@ -16,3 +16,5 @@ Focused checks: npx vitest run app/test/capacity --maxWorkers=1
 
 The required journalAuthority comes from the same validated frame as the lease;
 equal-source replay cannot substitute another physical journal.
+Optional status recorder (status.ts) receives checked facts or unreachable/unavailable
+outcomes; its faults never change the lease, and nothing is recorded after close/abort.

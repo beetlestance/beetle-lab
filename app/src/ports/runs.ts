@@ -1,6 +1,7 @@
 import type {
   CancelRunRequest,
   CreateRunRequest,
+  SetRunNoteRequest,
   Run,
   RunPage,
   RunListQuery,
@@ -26,6 +27,16 @@ export interface CancelRunOperation {
 export type CancelRunCommand = CancelRunOperation & { intentDigest: string };
 export interface RunCancellationStore {
   cancel(command: CancelRunCommand): Promise<Run>;
+}
+/** Replaces the run's optional note when `expectedNoteVersion` is current; lifecycle stays untouched. */
+export interface SetRunNoteOperation {
+  kind: 'setRunNote';
+  id: string;
+  request: SetRunNoteRequest;
+}
+export type SetRunNoteCommand = SetRunNoteOperation & { intentDigest: string };
+export interface RunNoteStore {
+  setNote(command: SetRunNoteCommand): Promise<Run>;
 }
 export interface RunKey {
   scope: WorkspaceScope;

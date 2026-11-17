@@ -54,7 +54,8 @@ three working days end to end. Gated features add backend work first.
 
 ## File ownership in wave 1
 
-Per-board data, reuse and gaps are in [part 1](ui-packets.md) and [part 2](ui-packets-2.md).
+Per-board data, reuse and gaps are in [part 1](ui-packets.md), [part 2](ui-packets-2.md)
+and [part 3](ui-packets-3.md).
 
 | Package | Owns |
 | --- | --- |
@@ -78,8 +79,8 @@ feature; B and C coordinate `suites.test.tsx` through the coordinator.
 | Inputs | Added date; row and column counts; usage lookup and named delete blockers | 032 |
 | Pinning | [run-pinning](../proposed/run-pinning.md) | 033 |
 | Suite folders | [suite-folders](../proposed/suite-folders.md); revision run count | 034 |
-| Installation status | Agent and host facts, image presence, slot holders and queue position | 035 if needed |
-| Live extras | Live target readings, provisional downloads, p95 attribution, backup date | 036 if needed |
+| Installation status | Agent and host facts, image presence, slot holders and queue position | None (in-memory) |
+| Live extras | Live target runtime graphs (heap and RSS, CPU, event-loop delay), p95 attribution, backup date; no downloads while live | 036 if needed |
 
 Upgrade follows separately. Wave-1 UI packages build against these fields once
 each lane merges, and hide them until then.

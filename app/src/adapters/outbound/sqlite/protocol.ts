@@ -9,6 +9,8 @@ import type { HistoryOperation } from '../../../ports/run-history.js';
 import type { RunHistoryJob } from '../../../ports/run-history.js';
 import type { RunHistorySummary } from '@beetle/contracts/api';
 import type { OverviewQuery } from '../../../ports/overview.js';
+import type { PoolUsageFacts, RunQueueFacts } from '../../../ports/installation-status.js';
+import type { StatusOperation } from './installation-status/wire.js';
 import type { WorkspaceOverview } from '@beetle/contracts/api';
 import type { ExportOperation, ExportValue } from './export-jobs/protocol.js';
 import type { ExportConfiguration } from '../../../ports/exports.js';
@@ -34,7 +36,14 @@ import type {
   EventAckRequest,
   EventProblemRequest,
 } from '../../../ports/events.js';
-import type { RunConfiguration, RunCommand, CancelRunCommand, RunKey, RunList } from '../../../ports/runs.js';
+import type {
+  RunConfiguration,
+  RunCommand,
+  CancelRunCommand,
+  SetRunNoteCommand,
+  RunKey,
+  RunList,
+} from '../../../ports/runs.js';
 import type {
   DispatchKey,
   DispatchScan,
@@ -128,10 +137,12 @@ export type Operation =
   | { kind: 'dispatchObserve'; request: DispatchObservationRequest }
   | { kind: 'run'; command: RunCommand }
   | { kind: 'cancelRun'; command: CancelRunCommand }
+  | { kind: 'runNote'; command: SetRunNoteCommand }
   | { kind: 'getRun'; key: RunKey }
   | { kind: 'getRunResult'; key: RunKey }
   | { kind: 'getRunExecution'; key: RunKey }
   | { kind: 'getRunEvents'; query: RunEventsQuery }
+  | StatusOperation
   | { kind: 'listRunArtifacts'; query: RunArtifactListQuery }
   | { kind: 'getRunArtifact'; key: RunArtifactKey }
   | { kind: 'listRuns'; query: RunList }
@@ -186,6 +197,8 @@ export type Value =
   | RunPage
   | RunResultSnapshot
   | RunEventPage
+  | PoolUsageFacts
+  | RunQueueFacts
   | RunArtifactPage
   | InputRecord
   | InputReceipt

@@ -14,7 +14,7 @@ feature's `CONTEXT.md`; the stack choice is [decision 019](../../decisions/019-f
 | API access | The generated client from `contracts/`; no hand-written DTOs, no second client factory |
 | Input bytes | One byte client per paired session (`InputTransferContext`); see [inputs](inputs.md) |
 | Drafts, chart and form state | The feature that renders them; never in the query cache or browser storage |
-| Visual tokens and motion | Existing theme tokens and the reduced-motion policy; features add no palette or fonts |
+| Visual tokens and motion | `web/src/styles/tokens.css` (Darkroom and Scarab skins, bundled fonts, reduced-motion policy) and the primitives in `web/src/components/`; features add no palette or fonts |
 
 ## Scope and lifetime
 
@@ -141,7 +141,7 @@ filters keeps the suite context; an explicit workspace-history link clears it.
 
 | Code | Reviewed |
 | --- | --- |
-| `web/src/app/routes.ts` | `1345f6ce7294` |
+| `web/src/app/routes.ts` | `981061144d55` |
 | `web/src/app/queries.ts` | `6d93596abdd5` |
 | `web/src/features/runs/timeline/read.ts` | `cbd57b66d9b4` |
 | `web/src/features/runs/timeline/projection.ts` | `cb3a47a3a977` |

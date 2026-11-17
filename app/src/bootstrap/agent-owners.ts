@@ -3,6 +3,7 @@ import type { OutputBinding } from '../domain/output-owner/index.js';
 import type { RunnerLiveMetricGateway } from '../ports/run-live-metrics.js';
 import type { OutputByteStore } from '../ports/output-bytes.js';
 import type { CapacitySource, RuntimeObservation } from '../ports/runtime.js';
+import type { AgentStatusView } from '../ports/installation-status.js';
 import type { RunnerGateway } from '../ports/runner.js';
 import type { DeliveryRuntime } from '../ports/delivery.js';
 import type { OutputRuntime } from '../ports/output-runtime.js';
@@ -18,6 +19,8 @@ import { throwCloseFailures } from './application-close.js';
 export interface AgentRuntime {
   readonly liveMetrics?: RunnerLiveMetricGateway['liveMetrics'];
   readonly publishedBytes?: Pick<OutputByteStore<OutputBinding>, 'read'>;
+  /** In-memory last capacity sample outcome; informational, never dispatch authority. */
+  readonly agentStatus?: () => AgentStatusView;
   state(): RuntimePollerState;
   /** Advisory installation-wide availability; never native completion authority. */
   cleanupState(): RetentionDriverState;

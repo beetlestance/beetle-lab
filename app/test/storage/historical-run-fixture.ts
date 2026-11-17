@@ -12,6 +12,7 @@ import {executionRegistryDigest} from '../../src/adapters/outbound/sqlite/execut
 import {writeMutationReceipt} from '../../src/adapters/outbound/sqlite/mutation-receipts.js';
 import {observation, settingsFixture} from './fixture.js';
 import {runOptions} from './runs-fixture.js';
+import {withCurrentWrites} from './legacy030.js';
 
 /** Test-only row seed for actual schemas5–7, copied from7739937's insertion shape.
  * Not admission: no queue/capacity/replay eligibility assertion may use this seed.
@@ -26,7 +27,7 @@ export function historicalRun(db: DatabaseSync, command: RunCommand): Run {
   // Explicit historical test capacity, independent of today's host observation.
   const runtime = {...fixture.runtime, pool: {...values.pool}, perRun: {...values.perRunCeilings}, supportedProfiles: [...values.supportedProfiles]};
   const settings = new Settings(db, {installation: fixture.chain.installation, runtime: observation(runtime)});
-  const revision = new Suites(db, new Entities(db)).getRevision({scope: command.request.scope, id: command.request.revisionId}, 'omit');
+  const revision = withCurrentWrites(db, () => new Suites(db, new Entities(db)).getRevision({scope: command.request.scope, id: command.request.revisionId}, 'omit'));
   const resolved = settings.resolveRun(command.request.scope, {engineProfile: command.request.engineProfile, budget: command.request.budget});
   const profile = runOptions().runs!.profiles[0]!;
   const run: Run = {id: command.id, scope: command.request.scope, version: 1, suiteId: revision.suiteId,

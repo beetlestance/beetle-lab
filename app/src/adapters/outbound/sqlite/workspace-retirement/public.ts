@@ -3,9 +3,9 @@ import type { Operation } from '../protocol.js';
 import type { EntityKey } from '../protocol.js';
 import type { Entities } from '../entities.js';
 import { requireVisibleOrganization, requireVisibleWorkspace } from './visibility.js';
-type Mutation = Extract<
+export type Mutation = Extract<
   Operation,
-  { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'exportJob' }
+  { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'runNote' | 'exportJob' }
 >;
 /** Fence new public work before an ordinary old mutation receipt can return authority. */
 export function requireVisibleMutation(db: DatabaseSync, operation: Mutation): void {

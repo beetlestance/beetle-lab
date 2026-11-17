@@ -59,6 +59,8 @@ export {
 
 export {
   LIVE_METRIC_FRAME_BYTES,
+  LIVE_TARGET_SAMPLES,
+  liveTargetLookbackMs,
   LiveMetricError,
   captureLiveMetricSubset,
   liveMetricSubsetText,

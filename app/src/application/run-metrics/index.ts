@@ -26,6 +26,7 @@ import { ArchiveIO } from './io.js';
 import { MetricReadOperation as Operation } from '../metric-read-lifetime/index.js';
 import { descriptor, fail } from './values.js';
 import { samples } from './samples.js';
+import { latencyAttribution } from './latency.js';
 function unavailable(q: RunMetricSeriesQuery, p: Publication): RunMetricSeriesPage {
   if (q.cursor !== undefined) throw new SemanticError('invalid_value');
   return { ...metricSource(q, p), items: [], nextCursor: null };
@@ -122,6 +123,12 @@ export function createRunMetricsService(options: RunMetricServiceOptions): RunMe
           if (!validateApi('RunMetricSamplesPage', value).ok || !runMetricSamplesPageMatches(value, query))
             return fail();
           return value;
+        });
+      },
+      getRunLatencyAttribution(q: RunKey & { attemptId: string }, c: MetricReadContext) {
+        return lane.run({ ...q, limit: 1 }, c, async (captured, p, io) => {
+          const value = await latencyAttribution(captured, p, io);
+          return validateApi('RunLatencyAttribution', value).ok ? value : fail();
         });
       },
     }),

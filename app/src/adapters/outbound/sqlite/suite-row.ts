@@ -17,31 +17,41 @@ const identityColumns: readonly [string, number, boolean][] = [
   ['workspace_id', 45, false],
 ];
 export const suiteColumns =
-  columns([...identityColumns, ['folder_id', 45, false], ['name', 512, false], ['current_revision_id', 45, true]]) +
+  columns([
+    ...identityColumns,
+    ['folder_id', 45, false],
+    ['name', 512, false],
+    ['current_revision_id', 45, true],
+    ['description', 1120, true],
+  ]) +
   ',' +
   sqlIntegerColumn('version');
 /** Retained Runs per revision: one primary-key probe of the trigger-maintained count. */
 const runCountColumn = `(SELECT CASE WHEN typeof(c.run_count)='integer' AND c.run_count BETWEEN 0 AND 9007199254740991
  THEN c.run_count END FROM suite_revision_run_counts c WHERE c.revision_id=suite_revisions.id) AS run_count`;
-export const revisionSummaryColumns =
-  columns([...identityColumns, ['suite_id', 45, false], ['digest', 64, false]]) +
+const revisionBaseColumns =
+  columns([
+    ...identityColumns,
+    ['suite_id', 45, false],
+    ['digest', 64, false],
+    ['saved_at', 64, true],
+    ['message', 1120, true],
+    ['saved_by', 512, true],
+  ]) +
   ',' +
-  sqlIntegerColumn('ordinal') +
-  ',' +
-  runCountColumn;
+  sqlIntegerColumn('ordinal');
+export const revisionSummaryColumns = revisionBaseColumns + ',' + runCountColumn;
 const contentColumns = columns([
   ['config_json', 2097152, false],
   ['input_manifest_json', 65536, false],
 ]);
 export const revisionColumns = revisionSummaryColumns + ',' + contentColumns;
-const uncountedColumns =
-  columns([...identityColumns, ['suite_id', 45, false], ['digest', 64, false]]) + ',' + sqlIntegerColumn('ordinal');
 /** `stored`: public reads. `new`: inserted in this transaction, so no Run references it yet.
  * `omit`: internal content reads (Run/export intake) that never return the revision. */
 export type RevisionRunCount = 'stored' | 'new' | 'omit';
 export function revisionProjection(count: RevisionRunCount): string {
   if (count === 'stored') return revisionColumns;
-  return `${uncountedColumns},${count === 'new' ? '0 AS run_count,' : ''}${contentColumns}`;
+  return `${revisionBaseColumns},${count === 'new' ? '0 AS run_count,' : ''}${contentColumns}`;
 }
 function record(input: unknown): Record<string, unknown> {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new StorageError('unavailable');
@@ -59,6 +69,7 @@ export function captureSuiteRow(input: unknown, key: SuiteKey): Suite {
     folderId: row.folder_id,
     version: row.version,
     currentRevisionId: row.current_revision_id,
+    description: row.description,
   });
   if (!parsed.ok || !sameScope(parsed.value.scope, key.scope) || parsed.value.id !== key.id.toLowerCase())
     throw new StorageError('unavailable');
@@ -75,6 +86,9 @@ export function captureRevisionSummary(input: unknown, scope: WorkspaceScope, su
     engineId: 'k6',
     configVersion: 1,
     preflightStatus: 'passed',
+    savedAt: row.saved_at,
+    message: row.message,
+    savedBy: row.saved_by,
     ...(row.run_count === undefined ? {} : { runCount: row.run_count }),
   });
   if (!parsed.ok || !sameScope(parsed.value.scope, scope)) throw new StorageError('unavailable');

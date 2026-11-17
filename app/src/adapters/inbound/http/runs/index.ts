@@ -1,9 +1,9 @@
 import type { FastifyInstance, onRequestAsyncHookHandler } from 'fastify';
 import type { WorkspaceScope } from '@beetle/contracts/api';
 import type { IntentDigest } from '../../../../application/namespaces/index.js';
-import { cancelRun, enqueueRun, getRun, listRuns } from '../../../../application/runs/index.js';
+import { cancelRun, enqueueRun, getRun, listRuns, setRunNote } from '../../../../application/runs/index.js';
 import { requireRule, sameScope } from '../../../../domain/namespaces/index.js';
-import type { RunCancellationStore, RunReader, RunStore } from '../../../../ports/runs.js';
+import type { RunCancellationStore, RunNoteStore, RunReader, RunStore } from '../../../../ports/runs.js';
 import type { RunResultReader } from '../../../../ports/run-results.js';
 import type { RunEventReader } from '../../../../ports/run-events.js';
 import { getEvents } from './events.js';
@@ -11,7 +11,7 @@ import { getResult } from './result.js';
 import { registerApiOperation } from '../api-route.js';
 
 interface Options {
-  store: RunStore & RunCancellationStore;
+  store: RunStore & RunCancellationStore & RunNoteStore;
   reader: RunReader;
   newId(): string;
   digest: IntentDigest;
@@ -50,6 +50,19 @@ export function registerRunRoutes(server: FastifyInstance, options: Options): vo
         requireRule(sameScope(scope(params), body.scope), 'not_found');
         return cancelRun({
           operation: { kind: 'cancelRun', id: params.runId, request: body },
+          digest: options.digest,
+          store: options.store,
+        });
+      },
+      { bodyLimit: 65536 },
+    );
+    registerApiOperation(
+      scoped,
+      'setRunNote',
+      ({ params, body }) => {
+        requireRule(sameScope(scope(params), body.scope), 'not_found');
+        return setRunNote({
+          operation: { kind: 'setRunNote', id: params.runId, request: body },
           digest: options.digest,
           store: options.store,
         });

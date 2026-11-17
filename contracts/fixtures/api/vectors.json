@@ -575,6 +575,16 @@
     "valid": true
   },
   {
+    "path": "valid/run-latency-attribution.json",
+    "schema": "RunLatencyAttribution",
+    "valid": true
+  },
+  {
+    "path": "invalid/run-latency-attribution-weak-share.json",
+    "schema": "RunLatencyAttribution",
+    "valid": false
+  },
+  {
     "path": "valid/run-comparison-request.json",
     "schema": "RunComparisonRequest",
     "valid": true
@@ -680,6 +690,26 @@
     "valid": true
   },
   {
+    "path": "valid/installation-status.json",
+    "schema": "InstallationStatus",
+    "valid": true
+  },
+  {
+    "path": "invalid/installation-status-fabricated-unknown.json",
+    "schema": "InstallationStatus",
+    "valid": false
+  },
+  {
+    "path": "valid/run-queue.json",
+    "schema": "RunQueueStatus",
+    "valid": true
+  },
+  {
+    "path": "invalid/run-queue-other-workspace-named.json",
+    "schema": "RunQueueStatus",
+    "valid": false
+  },
+  {
     "path": "valid/retention-batch-params.json",
     "schema": "RetentionBatchParams",
     "valid": true
@@ -707,6 +737,61 @@
   {
     "path": "valid/retention-traversal-page.json",
     "schema": "RetentionTraversalPage",
+    "valid": true
+  },
+  {
+    "path": "valid/set-run-note.json",
+    "schema": "SetRunNoteRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/clear-run-note.json",
+    "schema": "SetRunNoteRequest",
+    "valid": true
+  },
+  {
+    "path": "invalid/set-run-note-long.json",
+    "schema": "SetRunNoteRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/set-run-note-unversioned.json",
+    "schema": "SetRunNoteRequest",
+    "valid": false
+  },
+  {
+    "path": "valid/run-annotated.json",
+    "schema": "Run",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-described.json",
+    "schema": "Suite",
+    "valid": true
+  },
+  {
+    "path": "invalid/suite-description-long.json",
+    "schema": "Suite",
+    "valid": false
+  },
+  {
+    "path": "valid/patch-suite-description.json",
+    "schema": "PatchSuiteRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-revision-summary-stamped.json",
+    "schema": "SuiteRevisionSummary",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-revision-summary-legacy.json",
+    "schema": "SuiteRevisionSummary",
+    "valid": true
+  },
+  {
+    "path": "valid/patch-installation-administrator.json",
+    "schema": "PatchInstallationSettingsRequest",
     "valid": true
   },
   {

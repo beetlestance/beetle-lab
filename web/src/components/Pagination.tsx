@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { Button } from './Button.js';
 
 // Retain at most 20 previous pages; Back stops at that explicit history boundary.
 export function usePage(queryPrefix: readonly string[]) {
@@ -27,18 +28,19 @@ export function usePage(queryPrefix: readonly string[]) {
 export function Pagination({ page, next }: { page: ReturnType<typeof usePage>; next: string | null }) {
   return (
     <nav className="pagination" aria-label="Pages">
-      <button disabled={!page.hasBack} onClick={page.back}>
+      <Button size="sm" disabled={!page.hasBack} onClick={page.back}>
         Back
-      </button>
+      </Button>
       <span>Up to 100 items per page</span>
-      <button
+      <Button
+        size="sm"
         disabled={!next}
         onClick={() => {
           if (next) page.next(next);
         }}
       >
         Next
-      </button>
+      </Button>
     </nav>
   );
 }

@@ -9,11 +9,16 @@ import {transaction} from '../../src/adapters/outbound/sqlite/transaction.js';
 import {migration028} from '../../src/adapters/outbound/sqlite/migration028.js';
 import {migration029} from '../../src/adapters/outbound/sqlite/migration029.js';
 import {migration030} from '../../src/adapters/outbound/sqlite/migration030.js';
+import {migration031} from '../../src/adapters/outbound/sqlite/migration031.js';
 import {migration034} from '../../src/adapters/outbound/sqlite/migration034.js';
+/** Projection drops server-stamped revision metadata that no predecessor could hold. */
+function unstamped(tables:ReturnType<typeof rows>){
+ return tables.map(table=>table.name==='suite_revisions'?{...table,rows:table.rows.map(row=>({...row,saved_at:null,saved_by:null}))}:table);
+}
 it('round-trips an exact synthetic predecessor without changing original rows, receipts or charge',()=>{
  const f=workspaceFixture();try{
-  const before=rows(f.db);asSchema27(f.db);expect(f.db.prepare('PRAGMA user_version').get()?.user_version).toBe(27);
-  transaction(f.db,()=>f.db.exec(migration028));transaction(f.db,()=>f.db.exec(migration029));transaction(f.db,()=>f.db.exec(migration030));transaction(f.db,()=>f.db.exec(migration034));
+  const before=unstamped(rows(f.db));asSchema27(f.db);expect(f.db.prepare('PRAGMA user_version').get()?.user_version).toBe(27);
+  transaction(f.db,()=>f.db.exec(migration028));transaction(f.db,()=>f.db.exec(migration029));transaction(f.db,()=>f.db.exec(migration030));transaction(f.db,()=>f.db.exec(migration031));transaction(f.db,()=>f.db.exec(migration034));
   expect(rows(f.db)).toEqual(before);expect(f.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
  }finally{f.db.close();}
 });

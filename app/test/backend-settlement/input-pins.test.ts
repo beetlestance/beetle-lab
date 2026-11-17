@@ -12,7 +12,7 @@ it('keeps real published input metadata, authoring pins and their entire indepen
  input=f.store.execute({kind:'advanceInput',command:{kind:'publishInput',key,expectedVersion:accepted.acceptedVersion}}) as InputRecord;
  // Trusted publication metadata seam; this accounting test makes no byte-custody claim.
  const body=request(2);body.config.datasets=[{id:'data',kind:'json',selection:'byVu',input:{id:input.id,sha256:input.sha256,bytes:input.bytes}}];
- f.store.execute({kind:'suite',command:suiteCommand({kind:'createSuiteRevision',id:uuid(61),suiteId:uuid(50),request:body})});
+ f.store.execute({kind:'suite',command:suiteCommand({kind:'createSuiteRevision',savedAt:'2026-11-10T00:00:00.000Z',id:uuid(61),suiteId:uuid(50),request:body})});
  const pins=f.db.prepare('SELECT * FROM revision_input_pins').all();expect(pins).toHaveLength(1);
  const before=f.usage();const result=f.settle();expect(f.db.prepare('SELECT * FROM revision_input_pins').all()).toEqual(pins);
  expect(f.db.prepare('SELECT state FROM input_blobs WHERE id=?').get(input.id)?.state).toBe('published');

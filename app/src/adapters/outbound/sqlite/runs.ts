@@ -63,7 +63,8 @@ export class Runs {
     requireRule(validateApi('Run', run).ok);
     const offer = makeRunOffer(run, revision, profile);
     this.insert(run, offer, profile);
-    return run;
+    // The persisted snapshot stays pure intent; the response carries the fresh read annotations.
+    return { ...run, note: null, noteVersion: 0, startedAt: null, finishedAt: null };
   }
   private insert(run: Run, offer: string, profile: RunProfilePin): void {
     const parsedOffer = JSON.parse(offer) as Offer;

@@ -31,7 +31,7 @@ export function suiteListFixture(): {
       store.execute({ kind: 'suite', command: suiteCommand({ kind: 'createSuite', id: uuid(id),
         request: { scope, requestId: requestId(), name, folderId: uuid(folder) } }) });
       if (revision !== undefined)
-        store.execute({ kind: 'suite', command: suiteCommand({ kind: 'createSuiteRevision', id: uuid(revision),
+        store.execute({ kind: 'suite', command: suiteCommand({ kind: 'createSuiteRevision', savedAt: time(0), id: uuid(revision),
           suiteId: uuid(id), request: request() }) });
     },
     run(revision, id, minute) {

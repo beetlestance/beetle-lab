@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { ids, json, mount, testClient, deferred } from './test-fixtures.js';
 import { settings, orgScope, workspaceScope } from '../features/settings/test-fixtures.js';
 import { routes } from './routes.js';
@@ -41,7 +41,7 @@ describe('settings scope reads and values', () => {
     const api = testClient(request => request.path.endsWith('/settings') ? reply.promise : json({ scope: { kind: 'installation' }, items: [], nextCursor: null }));
     mount(api.client, routes.settings);
     await waitFor(() => expect(api.records).toHaveLength(1));
-    fireEvent.click(screen.getByRole('link', { name: /Organizations/ }));
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Main navigation' })).getByRole('link', { name: 'Overview' }));
     await waitFor(() => expect(api.records[0]?.signal?.aborted).toBe(true));
     reply.resolve(json(settings()));
     await screen.findByRole('heading', { name: 'Organizations' });

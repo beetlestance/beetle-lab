@@ -67,7 +67,8 @@
         "perRunCeilings": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget" },
         "supportedProfiles": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/InstallationValues/properties/supportedProfiles" },
         "runDefaults": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/RunDefaults" },
-        "retention": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/RetentionPolicy" }
+        "retention": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/RetentionPolicy" },
+        "administratorName": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/AdministratorName" }
       },
       "additionalProperties": false
     }

@@ -16,3 +16,5 @@ Checks: agent/test/live-metrics; Node types and changed lint.
 V2 mailbox payloads require gzip. Verify envelope extent/hash first, then gunzip
 with maxOutputLength65536 before the unchanged DTO/approval/freshness fences.
 No plaintext fallback; both compressed and decoded payloads remain hard bounded.
+A frame `target` block must match approval.targetIntervalMs (from the validated
+config), else `target`; shape/age/order checks live in the shared snapshot codec.

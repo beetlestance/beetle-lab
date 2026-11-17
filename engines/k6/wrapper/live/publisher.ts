@@ -4,6 +4,7 @@ import { captureLiveMetricSnapshot, encodeLiveMetricSnapshot, type LiveMetricSna
 import type { MetricWindow } from '@beetle/contracts/metrics';
 import { validClock, type CapturedOptions } from './options.js';
 import { projectWindow } from './project.js';
+import { liveTargetReadings } from './target.js';
 import type {
   LiveMetricPublisher,
   LiveMetricPublisherState,
@@ -20,6 +21,7 @@ export class Publisher implements LiveMetricPublisher {
     coalescedWindows: 0,
     discardedOnStop: 0,
     pending: false,
+    targetOmittedFrames: 0,
     writing: false,
     chargedBytes: 0,
   };
@@ -111,13 +113,8 @@ export class Publisher implements LiveMetricPublisher {
       this.schedule(clock.monotonic);
       return;
     }
-    let bytes: Uint8Array;
-    try {
-      bytes = gzipSync(encodeLiveMetricSnapshot({ ...this.pending, publishedAtMs: clock.wall }, this.options.hash), {
-        level: constants.Z_BEST_SPEED,
-        maxOutputLength: MAILBOX_PAYLOAD_BYTES,
-      });
-    } catch {
+    const bytes = this.encode({ ...this.pending, publishedAtMs: clock.wall });
+    if (!bytes) {
       this.fail('invalid_input');
       return;
     }
@@ -153,6 +150,35 @@ export class Publisher implements LiveMetricPublisher {
         }
       });
     this.original = original;
+  }
+  /** Target readings are advisory: a block that cannot fit or validate is dropped, never the metrics. */
+  private encode(frame: LiveMetricSnapshot): Uint8Array | undefined {
+    const target = this.targetBlock(frame.publishedAtMs);
+    if (target) {
+      const bytes = this.compress({ ...frame, target });
+      if (bytes) return bytes;
+      this.values = { ...this.values, targetOmittedFrames: this.values.targetOmittedFrames + 1 };
+    }
+    return this.compress(frame);
+  }
+  private targetBlock(publishedAtMs: number): LiveMetricSnapshot['target'] {
+    if (!this.options.target) return undefined;
+    try {
+      return liveTargetReadings(this.options.target, publishedAtMs);
+    } catch {
+      this.values = { ...this.values, targetOmittedFrames: this.values.targetOmittedFrames + 1 };
+      return undefined;
+    }
+  }
+  private compress(frame: LiveMetricSnapshot): Uint8Array | undefined {
+    try {
+      return gzipSync(encodeLiveMetricSnapshot(frame, this.options.hash), {
+        level: constants.Z_BEST_SPEED,
+        maxOutputLength: MAILBOX_PAYLOAD_BYTES,
+      });
+    } catch {
+      return undefined;
+    }
   }
   private fitsLifetimeBudget(bytes: number): boolean {
     const maximumWrites = Math.min(65536, 1 + Math.floor(this.options.timeoutMs / 2000));
