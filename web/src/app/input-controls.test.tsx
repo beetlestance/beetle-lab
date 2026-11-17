@@ -63,11 +63,13 @@ function model() {
 it('paired session supplies upload/download controls and expiry retires their verified file', async () => {
   const data = model(); factory.create.mockReturnValue(data.client);
   browser(data.http, routes.inputs(ids.a, ids.workspace));
+  fireEvent.click(await screen.findByRole('button', { name: 'Upload files' }));
   fireEvent.change(await screen.findByLabelText('Input file'), { target: { files: [new File(['abc'], 'owned.bin')] } });
   fireEvent.change(screen.getByLabelText('Input name'), { target: { value: 'Connected input' } });
   fireEvent.click(screen.getByRole('button', { name: 'Upload input' }));
   expect(await screen.findByText('Upload complete. Published status is confirmed.')).toBeTruthy();
   expect(data.client.prepare).toHaveBeenCalledTimes(1); expect(data.client.append).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole('button', { name: 'Close upload' }));
   fireEvent.click(await screen.findByRole('button', { name: 'Read current status for Connected input' }));
   fireEvent.click(await screen.findByRole('button', { name: 'Download input' }));
   const save = await screen.findByRole('link', { name: 'Save file' });

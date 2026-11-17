@@ -1,17 +1,21 @@
 import { inputScopeKey } from './scope.js';
-import { useEffect, useId, useRef, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useId, useState } from 'react';
 import type { ApiClient, InputTransferClient, Workspace } from '@beetle/contracts/api';
 import { useApi, useInputTransfers } from '../../app/api.js';
-import { queryKeys } from '../../app/queries.js';
 import { FolderPicker } from './FolderPicker.js';
-import { UploadWorkflow } from './workflow.js';
-import type { UploadState } from './workflow.js';
+import type { UploadState, UploadWorkflow } from './workflow.js';
+import { useUploadOwner } from './useUploadOwner.js';
 import { UploadRecoveryActions } from './recovery.js';
+import { Button } from '../../components/Button.js';
+import { Dialog } from '../../components/Dialog.js';
+import type { ReactNode } from 'react';
 import './upload.css';
 
-/** Prepared bytes and request identities retire with their workspace or client. */
-export function UploadInput({ workspace }: { workspace: Workspace }) {
+/**
+ * Prepared bytes and request identities retire with their workspace or client.
+ * With `onClose` the form is Overlay / Upload input; closing it retires the draft.
+ */
+export function UploadInput({ workspace, onClose }: { workspace: Workspace; onClose?: () => void }) {
   const api = useApi();
   const transfers = useInputTransfers();
   if (!transfers)
@@ -23,38 +27,51 @@ export function UploadInput({ workspace }: { workspace: Workspace }) {
       </section>
     );
   const identity = inputScopeKey(workspace, api, transfers);
-  return <UploadScope key={identity} workspace={workspace} api={api} transfers={transfers} />;
+  return (
+    <UploadScope
+      key={identity}
+      workspace={workspace}
+      api={api}
+      transfers={transfers}
+      {...(onClose ? { onClose } : {})}
+    />
+  );
 }
 
-type UploadScopeProps = { workspace: Workspace; api: ApiClient; transfers: InputTransferClient };
-function UploadScope({ workspace, api, transfers }: UploadScopeProps) {
-  const cache = useQueryClient();
+function Frame({ onClose, busy, children }: { onClose?: () => void; busy: boolean; children: ReactNode }) {
+  if (!onClose)
+    return (
+      <section className="input-upload content-section" aria-label="Upload input">
+        <header>
+          <h2>Upload input</h2>
+        </header>
+        {children}
+      </section>
+    );
+  return (
+    <Dialog
+      title="Upload input"
+      onClose={onClose}
+      dismissible={!busy}
+      actions={
+        <Button variant="text" disabled={busy} onClick={onClose}>
+          Close upload
+        </Button>
+      }
+    >
+      <div className="input-upload input-upload-dialog">{children}</div>
+    </Dialog>
+  );
+}
+
+type UploadScopeProps = { workspace: Workspace; api: ApiClient; transfers: InputTransferClient; onClose?: () => void };
+function UploadScope({ workspace, api, transfers, onClose }: UploadScopeProps) {
   const formId = useId();
-  const [initialWorkspace] = useState(workspace);
   const [name, setName] = useState('');
   const [file, setFile] = useState<File>();
   const [folder, selectFolder] = useState({ id: workspace.rootFolderId, label: 'Workspace root' });
-  const [state, setState] = useState<UploadState>({ phase: 'idle', busy: false, retained: false, message: '' });
   const [generation, setGeneration] = useState(0);
-  const workflow = useRef<UploadWorkflow | null>(null);
-  useEffect(() => {
-    const owner = new UploadWorkflow({
-      api,
-      transfers,
-      workspace: initialWorkspace,
-      changed: setState,
-      invalidate: () => {
-        void cache.invalidateQueries({
-          queryKey: queryKeys.inputs(initialWorkspace.scope.organizationId, initialWorkspace.id),
-        });
-      },
-    });
-    workflow.current = owner;
-    return () => {
-      owner.dispose();
-      workflow.current = null;
-    };
-  }, [api, transfers, initialWorkspace, cache]);
+  const { state, workflow } = useUploadOwner(api, transfers, workspace);
   function discard() {
     workflow.current?.discard();
     setFile(undefined);
@@ -62,13 +79,11 @@ function UploadScope({ workspace, api, transfers }: UploadScopeProps) {
     setGeneration((value) => value + 1);
   }
   return (
-    <section className="input-upload content-section" aria-label="Upload input">
-      <header>
-        <h2>Upload input</h2>
-        <p>
-          Choose one file up to 8 MiB. The draft stays in memory and retires when you leave this workspace or session.
-        </p>
-      </header>
+    <Frame busy={state.busy} {...(onClose ? { onClose } : {})}>
+      <p className="upload-lede">
+        Choose one file up to 8 MiB. The draft stays in memory and retires when you close this, leave this workspace or
+        end the session.
+      </p>
       <form
         id={formId}
         onSubmit={(event) => {
@@ -78,7 +93,16 @@ function UploadScope({ workspace, api, transfers }: UploadScopeProps) {
       >
         <fieldset className="upload-fields" disabled={state.retained}>
           <label htmlFor="upload-file">Input file</label>
-          <input key={generation} id="upload-file" type="file" onChange={(event) => setFile(event.target.files?.[0])} />
+          <input
+            key={generation}
+            id="upload-file"
+            type="file"
+            onChange={(event) => {
+              const chosen = event.target.files?.[0];
+              setFile(chosen);
+              if (chosen && !name.trim()) setName(chosen.name.slice(0, 128));
+            }}
+          />
           <label htmlFor="upload-name">Input name</label>
           <input id="upload-name" maxLength={200} value={name} onChange={(event) => setName(event.target.value)} />
         </fieldset>
@@ -90,17 +114,17 @@ function UploadScope({ workspace, api, transfers }: UploadScopeProps) {
       </form>
       <FolderPicker workspace={workspace} selected={folder} select={selectFolder} disabled={state.retained} />
       {!state.retained && (
-        <button
-          className="primary"
+        <Button
+          variant="primary"
           type="submit"
           form={formId}
           disabled={!file || !name.trim() || file.size > 8 * 1024 * 1024}
         >
           Upload input
-        </button>
+        </Button>
       )}
       <UploadProgress state={state} workflow={workflow.current} discard={discard} />
-    </section>
+    </Frame>
   );
 }
 

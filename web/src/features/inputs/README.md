@@ -1,6 +1,15 @@
 # Input inventory
 
-Public entrypoint: `InputInventory({ workspace: Workspace, renderActions? })`.
+Public entrypoint: `InputInventory({ workspace: Workspace, renderActions?, actions? })`.
+Penpot "Inputs" (+Empty), "Inputs / Detail" and "Overlay / Delete input / In use".
+`actions(context)` renders header and empty-state actions; context carries the
+listed items and whether the page is the whole inventory. Totals ("5 files, 9.0
+MB") and folder filtering appear only for a complete inventory. Rows show the 032
+fields: rows/columns (omitted when `null`), used-by count, added date
+(`publishedAt` else `createdAt`; `null` shows nothing). Folder names come from one
+folder page read only when an input sits outside the root. A used input's detail
+reads `listInputUsage` ten at a time. The delete refusal names the blockers from
+`ApiError.dependencies` and counts the rest from `total`.
 Optional children render after its heading and before the index, for scoped controls.
 Uses the generated JSON API, shared input query keys and existing Beetle tokens.
 Retains one page of at most 100 rows and at most 20 previous page cursors.

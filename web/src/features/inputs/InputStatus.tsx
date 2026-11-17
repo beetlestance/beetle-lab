@@ -3,9 +3,14 @@ import type { ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryResult } from '@tanstack/react-query';
 import type { InputParams, InputRecord } from '@beetle/contracts/api';
-import { ApiFailure, errorMessage, readResult, useApi } from '../../app/api.js';
+import { ApiFailure, readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
+import { Status } from '../../components/Badge.js';
+import { Button } from '../../components/Button.js';
 import { QueryState } from '../../components/QueryState.js';
+import { DeletionDialog, DeletionRefusal } from './DeletionDialog.js';
+import { InputUsage } from './Usage.js';
+import { formatBytes, formatDate, inputStatus, plural } from './format.js';
 import { useDeletion } from './useDeletion.js';
 
 export function InputStatus({
@@ -54,19 +59,26 @@ export function InputStatus({
   return (
     <section className="input-status" aria-label="Current input status">
       <header className="section-header">
-        <h2>Current input status</h2>
+        <h2>{query.data?.name ?? 'Current input status'}</h2>
         <div className="actions">
-          <button disabled={query.isFetching} onClick={() => void query.refetch()}>
+          <Button size="sm" disabled={query.isFetching} onClick={() => void query.refetch()}>
             Refresh current status
-          </button>
-          <button disabled={deletion.phase === 'pending' || (deletion.locked && !deleted)} onClick={close}>
+          </Button>
+          <Button
+            size="sm"
+            variant="text"
+            disabled={deletion.phase === 'pending' || (deletion.locked && !deleted)}
+            onClick={close}
+          >
             Close current status
-          </button>
+          </Button>
         </div>
       </header>
       <StatusRead query={query} deletion={deletion} />
       <CurrentActions query={query} record={actionRecord} pending={deletion.phase === 'pending'} {...actions} />
+      {query.data && !!query.data.usedByCount && <InputUsage params={params} count={query.data.usedByCount} />}
       <DeletionStatus deletion={deletion} deleted={deleted} />
+      <DeletionDialog deletion={deletion} record={query.data} />
     </section>
   );
 }
@@ -103,30 +115,62 @@ function StatusRead({
   return (
     <>
       {query.isError && (
-        <p role="alert" className="notice error">
+        <p role="alert" className="banner banner-danger">
           {query.error instanceof ApiFailure ? query.error.message : 'Could not refresh current status.'} Showing the
           last read status.
         </p>
       )}
       <InputMetadata input={input} />
       {deletion.phase === 'idle' && (
-        <button disabled={blocked} onClick={() => deletion.prepare(input)}>
+        <Button variant="danger" size="sm" disabled={blocked} onClick={() => deletion.prepare(input)}>
           Delete input
-        </button>
+        </Button>
       )}
     </>
   );
 }
 
 function InputMetadata({ input }: { input: InputRecord }) {
+  const status = inputStatus(input);
+  const added = formatDate(input.createdAt);
+  const published = formatDate(input.publishedAt);
   return (
     <dl className="input-metadata">
       <dt>Name</dt>
       <dd>{input.name}</dd>
-      <dt>State</dt>
-      <dd>{input.state}</dd>
+      <dt>Status</dt>
+      <dd>
+        <Status tone={status.tone}>{status.label}</Status>
+      </dd>
       <dt>Size</dt>
-      <dd className="number">{input.bytes} bytes</dd>
+      <dd className="number">
+        {formatBytes(input.bytes)}
+        {input.bytes >= 1000 && <span className="muted"> ({input.bytes.toLocaleString('en-US')} bytes)</span>}
+      </dd>
+      {typeof input.rowCount === 'number' && (
+        <>
+          <dt>Rows</dt>
+          <dd className="number">{plural(input.rowCount, 'row')}</dd>
+        </>
+      )}
+      {typeof input.columnCount === 'number' && (
+        <>
+          <dt>Columns</dt>
+          <dd className="number">{plural(input.columnCount, 'column')}</dd>
+        </>
+      )}
+      {added && (
+        <>
+          <dt>Added</dt>
+          <dd>{added}</dd>
+        </>
+      )}
+      {published && (
+        <>
+          <dt>Published</dt>
+          <dd>{published}</dd>
+        </>
+      )}
       <dt>Committed progress</dt>
       <dd>
         <progress aria-label="Committed input bytes" max={input.bytes || 1} value={input.offset} />
@@ -169,56 +213,24 @@ const reasonText = {
 } as const;
 
 function DeletionStatus({ deletion, deleted }: { deletion: ReturnType<typeof useDeletion>; deleted: boolean }) {
-  const { phase, intent } = deletion;
+  const { phase, failure } = deletion;
+  if (phase === 'idle' || phase === 'confirm' || phase === 'pending' || phase === 'rejected') return null;
   return (
     <div className="input-deletion">
-      {phase === 'confirm' && (
-        <div role="group" aria-label="Confirm input deletion" className="notice">
-          <p>
-            Delete this input at version {intent?.body.expectedVersion}? Retained suite revisions may prevent deletion.
-          </p>
-          <div className="actions">
-            <button onClick={() => void deletion.submit()}>Confirm deletion</button>
-            <button onClick={deletion.discard}>Cancel deletion</button>
-          </div>
-        </div>
-      )}
-      {phase === 'pending' && <p role="status">Submitting deletion…</p>}
       {deletion.accepted && (
         <p role="status">Deletion accepted (202). Current status determines whether cleanup has finished.</p>
       )}
-      <DeletionFailure deletion={deletion} />
-      <ReplayDeletion deletion={deletion} deleted={deleted} />
+      {failure && <DeletionRefusal failure={failure} unknown={phase === 'unknown'} />}
+      {!deleted && (
+        <div className="actions">
+          <Button size="sm" onClick={() => void deletion.submit()}>
+            Replay identical deletion
+          </Button>
+        </div>
+      )}
       {deletion.locked && !deleted && (
         <p>Keep this status panel open to retain the deletion request. Refresh status or replay explicitly.</p>
       )}
-    </div>
-  );
-}
-
-function DeletionFailure({ deletion }: { deletion: ReturnType<typeof useDeletion> }) {
-  const { failure, phase } = deletion;
-  if (!failure) return null;
-  return (
-    <div role="alert" className="notice error">
-      <p>{errorMessage(failure)}</p>
-      {failure.protocol?.code === 'protected_dependency' && (
-        <p>Retained references protect this input from deletion.</p>
-      )}
-      {failure.protocol?.code === 'conflict' && (
-        <p>The version or deletion intent conflicts. Refresh current status before deciding what to do.</p>
-      )}
-      {phase === 'unknown' && <p>The request outcome is unknown. Its original identity and version are retained.</p>}
-    </div>
-  );
-}
-
-function ReplayDeletion({ deletion, deleted }: { deletion: ReturnType<typeof useDeletion>; deleted: boolean }) {
-  if (deleted || !['unknown', 'accepted', 'rejected'].includes(deletion.phase)) return null;
-  return (
-    <div className="actions">
-      <button onClick={() => void deletion.submit()}>Replay identical deletion</button>
-      {deletion.phase === 'rejected' && <button onClick={deletion.discard}>Clear rejected deletion</button>}
     </div>
   );
 }

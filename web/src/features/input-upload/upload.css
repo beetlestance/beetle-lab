@@ -1,12 +1,66 @@
-.input-upload { padding: var(--space-6); margin-bottom: var(--space-8); border: var(--border-width) solid var(--border); background: var(--surface); }
-.input-upload header p, .upload-progress > p { max-width: 72ch; }
-.input-upload header { margin-bottom: var(--space-4); }
-.input-upload form, .upload-fields, .upload-folders, .upload-progress { display: grid; gap: var(--space-3); }
-.upload-fields, .upload-folders { min-width: 0; border: 0; padding: 0; margin: 0; }
-.input-upload label { font-weight: 600; }
-.input-upload input, .input-upload select { width: 100%; min-height: 44px; padding: var(--space-2); border: var(--border-width) solid var(--border-strong); background: var(--canvas); }
-.input-upload form > button { justify-self: start; }
-.input-upload > .upload-folders { margin: var(--space-4) 0; }
-.upload-progress { margin-top: var(--space-4); }
-.upload-progress p { overflow-wrap: anywhere; }
-.upload-folders .notice button { margin-left: var(--space-3); }
+.input-upload {
+  padding: var(--s-24);
+  margin-bottom: var(--s-32);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+}
+.input-upload-dialog {
+  padding: 0;
+  margin: 0;
+  background: none;
+}
+.input-upload header p,
+.upload-progress > p,
+.upload-lede {
+  max-width: 72ch;
+  color: var(--mute);
+}
+.input-upload header,
+.upload-lede {
+  margin-bottom: var(--s-16);
+}
+.input-upload form,
+.upload-fields,
+.upload-folders,
+.upload-progress {
+  display: grid;
+  gap: var(--s-10);
+}
+.upload-fields,
+.upload-folders {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.input-upload label {
+  font-size: var(--fs-sm);
+  color: var(--mute);
+}
+.input-upload input,
+.input-upload select {
+  width: 100%;
+  min-height: 40px;
+  padding: var(--s-8) var(--s-12);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--field);
+  color: var(--ink);
+  font: inherit;
+}
+.input-upload form > button {
+  justify-self: start;
+}
+.input-upload > .upload-folders,
+.input-upload-dialog > .upload-folders {
+  margin: var(--s-16) 0;
+}
+.upload-progress {
+  margin-top: var(--s-16);
+}
+.upload-progress p {
+  overflow-wrap: anywhere;
+}
+.upload-folders .notice button {
+  margin-left: var(--s-12);
+}
