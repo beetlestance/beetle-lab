@@ -168,5 +168,5 @@ Test: `app/test/storage/clock-reason/migration.test.ts`.
 | `contracts/src/recovery/` | `29c0467d1e7e` |
 | `tools/recovery/src/restore.ts` | `c750dcfc2872` |
 | `tools/recovery/src/backup.ts` | `9162094ddc58` |
-| `tools/recovery/src/viewer/` | `5beee7f7f9b8` |
+| `tools/recovery/src/viewer/` | `4ea972735bb8` |
 | `app/src/adapters/outbound/sqlite/migration020.ts` | `904e1235fc9a` |

@@ -53,6 +53,49 @@
             "io",
             "unverified_legacy"
           ]
+        },
+        "createdAt": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "publishedAt": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rowCount": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "columnCount": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "usedByCount": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count"
         }
       },
       "required": [
@@ -128,6 +171,45 @@
       },
       "required": [
         "scope",
+        "items",
+        "nextCursor"
+      ],
+      "additionalProperties": false
+    },
+    "InputUsagePage": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+        },
+        "inputId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "total": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count"
+        },
+        "items": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/RevisionDependency"
+          }
+        },
+        "nextCursor": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/OpaqueCursor"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "scope",
+        "inputId",
+        "total",
         "items",
         "nextCursor"
       ],

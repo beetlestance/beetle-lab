@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
-import { inputRecord, inputColumns } from '../../src/adapters/outbound/sqlite/input-row.js';
+import { inputRecord, inputColumns, inputSource } from '../../src/adapters/outbound/sqlite/input-row.js';
 import { scope, seed, storageFixture, uuid } from './fixture.js';
 import { createInput, inputOptions } from './inputs-fixture.js';
 import { rawConnection } from './raw-connection-fixture.js';
@@ -44,9 +44,11 @@ it('bounds input text and refuses a corrupt nullable reason without materializin
   const db = new DatabaseSync(':memory:');
   try {
     db.exec(
-      'CREATE TABLE input_blobs(id,organization_id,workspace_id,folder_id,name,sha256,bytes,offset,version,state,reason)',
+      `CREATE TABLE input_blobs(id,organization_id,workspace_id,folder_id,name,sha256,bytes,offset,version,state,reason,
+      created_at,published_at); CREATE TABLE input_shapes(organization_id,workspace_id,input_id,row_count,column_count);
+      CREATE TABLE input_usage_counts(organization_id,workspace_id,input_id,revisions);`,
     );
-    db.prepare('INSERT INTO input_blobs VALUES(?,?,?,?,?,?,?,?,?,?,?)').run(
+    db.prepare('INSERT INTO input_blobs VALUES(?,?,?,?,?,?,?,?,?,?,?,NULL,NULL)').run(
       valid.id,
       valid.organization_id,
       valid.workspace_id,
@@ -59,7 +61,7 @@ it('bounds input text and refuses a corrupt nullable reason without materializin
       'staging',
       Buffer.from('io'),
     );
-    const row = db.prepare(`SELECT ${inputColumns} FROM input_blobs`).get();
+    const row = db.prepare(`SELECT ${inputColumns} FROM ${inputSource()}`).get();
     expect(row?.name).toBeNull();
     expect(row?.reason).toBe('');
     expect(() => inputRecord(row, scope)).toThrow();

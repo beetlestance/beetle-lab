@@ -23,9 +23,10 @@ function expectReopenedFacts(db: DatabaseSync, before: ReturnType<typeof rows>):
   const priorNames = new Set(before.map(row => row.name)); const current = rows(db);
   expect(current.filter(row => priorNames.has(row.name))).toEqual(before.map(table=>table.name==='workspaces'
     ? {...table,rows:table.rows.map(row=>({...row,retired:0}))}:table.name==='organizations'
-    ? {...table,rows:table.rows.map(row=>({...row,retired:0,retired_slug:null}))}:table));
-  const empty = ['backend_cleanup_controls', 'backend_output_cleanup_acks', 'backend_retired_runs',
-    'namespace_deletions', 'retention_progress', 'retention_snapshots', 'retention_workspace_epochs'];
+    ? {...table,rows:table.rows.map(row=>({...row,retired:0,retired_slug:null}))}:table.name==='input_blobs'
+    ? {...table,rows:table.rows.map(row=>({...row,created_at:null,published_at:null}))}:table));
+  const empty = ['backend_cleanup_controls', 'backend_output_cleanup_acks', 'backend_retired_runs', 'input_shapes',
+    'input_usage_counts', 'namespace_deletions', 'retention_progress', 'retention_snapshots', 'retention_workspace_epochs'];
   const expected = [...empty, 'backend_replay_storage', 'retention_storage'].sort();
   expect(current.filter(row => !priorNames.has(row.name)).map(row => row.name)).toEqual(expected);
   for (const table of empty) expect(db.prepare(`SELECT count(*) n FROM ${table}`).get()?.n).toBe(0);

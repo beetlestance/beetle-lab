@@ -16,6 +16,7 @@ const codes = {
   unavailable: 'storage_unavailable',
   owned: 'storage_unavailable',
   schema_newer: 'storage_unavailable',
+  protected_dependency: 'protected_dependency',
 } as const satisfies Record<ErrorCode, ApiError['code']>;
 
 /** Bootstrap bridges concrete storage errors; HTTP/use cases never import SQLite. */

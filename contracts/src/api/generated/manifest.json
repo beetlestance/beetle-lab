@@ -10,10 +10,10 @@
     "runner/v1/event-envelope.schema.json": "bae38be39e49c90793ffa73bb514f5bed15139a1dc14e3a15e34c93ad8f6e7b3",
     "runner/v1/wrapper-events.schema.json": "3a9dfb19a15dee2d5a05d0d6036f644bb43102f72e36e2fcf91280da52edd1bc",
     "runner/v1/supervisor-events.schema.json": "c55be82182f18875f3902b106a1c6d14655dda64e9f70509d5126fb7b2e2d62a",
-    "api/v2/common.schema.json": "35a117012548bf40160b348d58837552e2b2ca56aab62deae8cb3e990f8f3bd3",
+    "api/v2/common.schema.json": "a37e5263bf924c7e3ffd759aed843064e668057660ab032613186c5c4758d89f",
     "api/v2/export-jobs.schema.json": "616c0f0620a4dc78e345dc99e53e9ff03a575d35486b8c9afc8ba502ab965f0b",
     "api/v2/input-requests.schema.json": "e5970ad4ad54d9f229436e83b6e8cededa3eccab878554f2896c19c927de3897",
-    "api/v2/input.schema.json": "4aac5c976cdd5a6a5dd377092573728489a2ec7c8200a68faa9292a209fadc74",
+    "api/v2/input.schema.json": "f514537351425f79cb013907cd830c812465d369b7dea14788bbf75fd49578fd",
     "api/v2/live-metrics.schema.json": "6a49b5baacf5442bf81a206c66f41e7a66010b3514aae1bc1ae58055dc6cb887",
     "api/v2/namespace-requests.schema.json": "6a913fb93f867d4c311d60a2613b11d712b1a70a20442ae6a9262fffcd9ece42",
     "api/v2/namespace.schema.json": "3df14df2770cabaf1b04c70a44d453dad6ab1e7b0afe5699d6cae375ab2bec3f",
@@ -37,7 +37,7 @@
     "api/v2/suite-requests.schema.json": "793032e02eb16c0c4f13b87eebaa556d7d7df2efbb522e16078d9a9202708431",
     "api/v2/suite.schema.json": "c90e5d43bc41061a0d80701d0b172764faf9fa44b7b4463349aac452f1cd4dbf"
   },
-  "operationsSha256": "712500ed3e60b6c847ea011070085258bb19a7df7476b4639f1856ebf65a1bda",
+  "operationsSha256": "9ef266ec83abd42ec9ba3ee3d9ca29b5bb7718bb1402270c5d1032ea53dfb3b5",
   "outputs": [
     "common.inference.ts",
     "common.ts",

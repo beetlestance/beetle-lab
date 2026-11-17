@@ -11,6 +11,8 @@ import type {
   InputPage,
   InputRecord,
   InputRecoveryPage,
+  InputUsagePage,
+  InputUsageQuery,
 } from '../../ports/inputs.js';
 import type { InputOperationContext, InputRecoveryResult, InputService } from '../../ports/input-service.js';
 import { Ownership } from './ownership.js';
@@ -28,6 +30,7 @@ import {
 import { custodyFailure, reconcile, reserveBytes } from './reconcile.js';
 import type { Dependencies } from './reconcile.js';
 import { chunkSource, contentSink } from './transfer.js';
+import { checkedUsagePage, namedRefusal } from './dependencies.js';
 
 function createAcceptance(
   value: InputControlResult,
@@ -101,7 +104,10 @@ class Service implements InputService {
       if (captured.kind === 'createInput') return acceptance(await this.deps.store.control(captured), captured);
       const key = keySnapshot({ scope: captured.request.scope, id: captured.id });
       return this.owned(key, signal, async (owner) => {
-        const result = acceptance(await this.deps.store.control(captured), captured);
+        const result = acceptance(
+          await this.deps.store.control(captured).catch((error: unknown) => namedRefusal(this.deps.store, key, error)),
+          captured,
+        );
         // Only a known acceptance authorizes observation and optional work. No control retry.
         try {
           owner.check();
@@ -229,6 +235,14 @@ class Service implements InputService {
   async get(key: InputKey): Promise<InputRecord> {
     const copy = keySnapshot(key);
     return this.ownership.call(() => this.current(copy));
+  }
+  async usage(query: InputUsageQuery): Promise<InputUsagePage> {
+    const key = keySnapshot(query.key);
+    requireRule(Object.keys(query).every((field) => ['key', 'limit', 'cursor'].includes(field)));
+    requireRule(Number.isSafeInteger(query.limit) && query.limit >= 1 && query.limit <= 100);
+    requireRule(query.cursor === undefined || (typeof query.cursor === 'string' && query.cursor.length <= 512));
+    const copy = { key, limit: query.limit, ...(query.cursor === undefined ? {} : { cursor: query.cursor }) };
+    return this.ownership.call(async () => checkedUsagePage(await this.deps.store.usage(copy), copy));
   }
   async list(query: InputList): Promise<InputPage> {
     const copy = pageSnapshot(query, true);

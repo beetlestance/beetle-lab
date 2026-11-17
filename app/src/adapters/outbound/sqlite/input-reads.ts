@@ -2,7 +2,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import type { InputList, InputRecoveryPage, InputPage, InputState } from '../../../ports/inputs.js';
 import { requireRule } from '../../../domain/namespaces/index.js';
 import { boundedCopy, lower, scopeKey, sha256, uuid } from './input.js';
-import { inputRecord, inputColumns } from './input-row.js';
+import { inputRecord, inputColumns, inputSource } from './input-row.js';
 import type { InputRecord } from '../../../ports/inputs.js';
 import type { Entities } from './entities.js';
 import { StorageError } from './protocol.js';
@@ -51,8 +51,8 @@ export class InputReads {
       this.entities.workspace({ kind: 'organization', organizationId: scope.organizationId }, scope.workspaceId);
       rows = this.db
         .prepare(
-          `SELECT ${inputColumns} FROM input_blobs WHERE organization_id=? AND workspace_id=? AND id>?
-        ORDER BY input_blobs.id LIMIT ?`,
+          `SELECT ${inputColumns} FROM ${inputSource()} WHERE input_blobs.organization_id=?
+        AND input_blobs.workspace_id=? AND input_blobs.id>? ORDER BY input_blobs.id LIMIT ?`,
         )
         .all(lower(scope.organizationId), lower(scope.workspaceId), after[0]!, query.limit + 1)
         .map((row) => inputRecord(row, scope));
@@ -75,8 +75,9 @@ export class InputReads {
     const states = recoveryStates(query);
     return this.db
       .prepare(
-        `SELECT ${inputColumns} FROM input_blobs INDEXED BY inputs_recovery
-      WHERE state IN (${states.map(() => '?').join(',')}) AND (state,organization_id,workspace_id,id)>(?,?,?,?)
+        `SELECT ${inputColumns} FROM ${inputSource('INDEXED BY inputs_recovery')}
+      WHERE input_blobs.state IN (${states.map(() => '?').join(',')})
+      AND (input_blobs.state,input_blobs.organization_id,input_blobs.workspace_id,input_blobs.id)>(?,?,?,?)
       ORDER BY input_blobs.state,input_blobs.organization_id,input_blobs.workspace_id,input_blobs.id LIMIT ?`,
       )
       .all(...states, ...after, query.limit + 1)

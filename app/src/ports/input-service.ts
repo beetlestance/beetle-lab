@@ -6,6 +6,8 @@ import type {
   InputPage,
   InputRecord,
   InputRecoveryPage,
+  InputUsagePage,
+  InputUsageQuery,
 } from './inputs.js';
 import type { InputChunkSource, InputContentRange, InputContentSink } from './input-bytes.js';
 
@@ -39,6 +41,8 @@ export interface InputService {
   ): Promise<InputRecord>;
   get(key: InputKey): Promise<InputRecord>;
   list(query: InputList): Promise<InputPage>;
+  /** Revisions whose manifests pin the input: one bounded page plus the exact total. */
+  usage(query: InputUsageQuery): Promise<InputUsagePage>;
   /** One bounded page; admission and state are rechecked for every item. */
   recover(query: InputRecoveryPage, context?: InputOperationContext): Promise<InputRecoveryResult>;
   /** Synchronously fences intake; cannot report drained while any custody remains. */

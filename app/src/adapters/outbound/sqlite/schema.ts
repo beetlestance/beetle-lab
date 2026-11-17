@@ -1,5 +1,6 @@
 import { checkHistoricalNative } from './historical-native.js';
 import { markHistorical } from './historical.js';
+import { migration032 } from './migration032.js';
 import { migration030 } from './migration030.js';
 import { migration029 } from './migration029.js';
 import { migration028 } from './migration028.js';
@@ -39,7 +40,7 @@ import { migration002 } from './migration002.js';
 import { DatabaseSync } from 'node:sqlite';
 import { StorageError } from './protocol.js';
 
-export const METADATA_SCHEMA_VERSION = 30;
+export const METADATA_SCHEMA_VERSION = 32;
 
 // Application migration 001; independent of the agent journal schema.
 export const migration001 = `
@@ -143,6 +144,8 @@ function applyMigrations(db: DatabaseSync, version: number): void {
     () => db.exec(migration028),
     () => db.exec(migration029),
     () => db.exec(migration030),
+    // 031 is reserved for the authoring-metadata lane; it is inserted before this step at merge.
+    () => db.exec(migration032),
   ];
   steps.forEach((step, index) => {
     if (version <= index) transaction(db, step);

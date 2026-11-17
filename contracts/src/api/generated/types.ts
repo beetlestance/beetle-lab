@@ -39,6 +39,8 @@ export type InstallationScope = FromSchema<typeof S0.InstallationScope>;
 export type OrganizationScope = FromSchema<typeof S0.OrganizationScope>;
 export type WorkspaceScope = FromSchema<typeof S0.WorkspaceScope>;
 export type SettingsScope = FromSchema<typeof S0.SettingsScope>;
+export type RevisionDependency = FromSchema<typeof S0.RevisionDependency>;
+export type ProtectedDependencies = FromSchema<typeof S0.ProtectedDependencies>;
 export type ApiError = FromSchema<typeof S0.ApiError>;
 export type StandaloneExportOptions = FromSchema<typeof S1.StandaloneExportOptions>;
 export type CreateExportRequest = FromSchema<typeof S1.CreateExportRequest>;
@@ -53,6 +55,7 @@ export type TransitionInputRequest = FromSchema<typeof S2.TransitionInputRequest
 export type InputRecord = FromSchema<typeof S3.InputRecord>;
 export type InputReceipt = FromSchema<typeof S3.InputReceipt>;
 export type InputPage = FromSchema<typeof S3.InputPage>;
+export type InputUsagePage = FromSchema<typeof S3.InputUsagePage>;
 export type LiveMetricSelection = FromSchema<typeof S4.LiveMetricSelection>;
 export type LiveMetricScope = FromSchema<typeof S4.LiveMetricScope>;
 export type LiveMetricSubset = FromSchema<typeof S4.LiveMetricSubset>;
@@ -189,6 +192,8 @@ export interface ApiTypes {
   OrganizationScope: OrganizationScope;
   WorkspaceScope: WorkspaceScope;
   SettingsScope: SettingsScope;
+  RevisionDependency: RevisionDependency;
+  ProtectedDependencies: ProtectedDependencies;
   ApiError: ApiError;
   StandaloneExportOptions: StandaloneExportOptions;
   CreateExportRequest: CreateExportRequest;
@@ -203,6 +208,7 @@ export interface ApiTypes {
   InputRecord: InputRecord;
   InputReceipt: InputReceipt;
   InputPage: InputPage;
+  InputUsagePage: InputUsagePage;
   LiveMetricSelection: LiveMetricSelection;
   LiveMetricScope: LiveMetricScope;
   LiveMetricSubset: LiveMetricSubset;

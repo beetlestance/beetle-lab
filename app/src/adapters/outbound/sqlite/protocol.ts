@@ -55,6 +55,9 @@ import type {
   InputReceipt,
   InputPage,
   InputStorage,
+  InputShapeRecord,
+  InputUsagePage,
+  InputUsageQuery,
 } from '../../../ports/inputs.js';
 import type { Suite, SuiteRevision, SuitePage, SuiteRevisionPage } from '@beetle/contracts/api';
 import type { SuiteCommand, SuiteKey, SuiteList, RevisionList } from '../../../ports/suites.js';
@@ -88,6 +91,7 @@ export const STORAGE_ERROR_CODES = Object.freeze([
   'owned',
   'schema_newer',
   'read_only',
+  'protected_dependency',
 ] as const);
 export type ErrorCode = (typeof STORAGE_ERROR_CODES)[number];
 export class StorageError extends Error {
@@ -141,6 +145,8 @@ export type Operation =
   | { kind: 'listInputs'; query: InputList }
   | { kind: 'recoverInputs'; query: InputRecoveryPage }
   | { kind: 'inputStorage' }
+  | { kind: 'listInputUsage'; query: InputUsageQuery }
+  | { kind: 'recordInputShape'; shape: InputShapeRecord }
   | { kind: 'suite'; command: SuiteCommand }
   | { kind: 'getSuite'; key: SuiteKey }
   | { kind: 'getRevision'; key: SuiteKey }
@@ -191,6 +197,7 @@ export type Value =
   | InputReceipt
   | InputPage
   | InputStorage
+  | InputUsagePage
   | Suite
   | SuiteRevision
   | SuitePage

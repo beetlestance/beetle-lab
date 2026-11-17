@@ -39,6 +39,8 @@ import type { DispatchOperation } from './dispatch-wire.js';
 import { RunReads } from './run-reads.js';
 import { Inputs } from './inputs.js';
 import { InputReads } from './input-reads.js';
+import { InputUsageReads } from './input-usage.js';
+import { INPUT_OPERATION_KINDS } from './input-validation.js';
 import { Suites } from './suites.js';
 import { SuiteReads } from './suite-reads.js';
 import type { DatabaseSync } from 'node:sqlite';
@@ -49,7 +51,10 @@ import { Settings } from './settings.js';
 import { transaction } from './transaction.js';
 import { suiteOperation, operationMessageLimit } from './input.js';
 import { StorageError, type Bootstrap, type Operation, type Value } from './protocol.js';
-
+type Mutation = Extract<
+  Operation,
+  { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'exportJob' }
+>;
 export class Store {
   private readonly parentSnapshots: ParentRetentionSnapshots;
   private readonly manualSnapshots: ManualRunDeletionSnapshots;
@@ -80,6 +85,7 @@ export class Store {
   private readonly overviews: Overviews;
   private readonly inputs: Inputs;
   private readonly inputReads: InputReads;
+  private readonly inputUsage: InputUsageReads;
   private readonly suites: Suites;
   private readonly suiteReads: SuiteReads;
   private readonly entities: Entities;
@@ -137,15 +143,11 @@ export class Store {
     });
     this.inputs = new Inputs(db, this.entities, this.settings);
     this.inputReads = new InputReads(db, this.entities);
+    this.inputUsage = new InputUsageReads(db, this.entities);
     this.namespaces = new Namespaces(db, this.entities, this.settings);
     this.reads = new Reads(db, this.entities);
   }
-  private mutation(
-    operation: Extract<
-      Operation,
-      { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'exportJob' }
-    >,
-  ): Value {
+  private mutation(operation: Mutation): Value {
     const command = operation.command;
     return transaction(this.db, () => {
       requireVisibleMutation(this.db, operation);
@@ -157,12 +159,7 @@ export class Store {
       return writeMutationReceipt(this.db, command, this.change(operation), operationMessageLimit(operation)) as Value;
     });
   }
-  private change(
-    operation: Extract<
-      Operation,
-      { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'exportJob' }
-    >,
-  ): Value {
+  private change(operation: Mutation): Value {
     switch (operation.kind) {
       case 'exportJob':
         return operation.command.kind === 'createExport'
@@ -228,6 +225,10 @@ export class Store {
         return this.inputReads.list(operation.query);
       case 'inputStorage':
         return this.inputs.storage();
+      case 'listInputUsage':
+        return this.inputUsage.usage(operation.query);
+      case 'recordInputShape':
+        return transaction(this.db, () => this.inputs.recordShape(operation.shape));
       default:
         throw new StorageError('invalid_input');
     }
@@ -368,8 +369,7 @@ export class Store {
       ['getSettings', 'getSettingsIdentity', 'runtime', 'loadLocalSession', 'saveLocalSession'].includes(operation.kind)
     )
       return this.installationOperation(operation);
-    if (['input', 'advanceInput', 'getInput', 'listInputs', 'recoverInputs', 'inputStorage'].includes(operation.kind))
-      return this.inputOperation(operation);
+    if (INPUT_OPERATION_KINDS.includes(operation.kind)) return this.inputOperation(operation);
     switch (operation.kind) {
       case 'namespace':
       case 'settings':
