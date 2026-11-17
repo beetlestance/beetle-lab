@@ -95,6 +95,7 @@ it('retains published input bytes, revision pins and control receipts through re
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
  }finally{db.close();}
  metadata=await fixture.open(path,{...inputOptions(),readOnly:true,runtime:null});
- expect(await metadata.inputs.get({scope,id:input.id})).toEqual(input);
+ // Captured before the revision pinned it; the retained pin stays counted after retirement.
+ expect(await metadata.inputs.get({scope,id:input.id})).toEqual({...input,usedByCount:1});
  expect(await metadata.suites.getRevision({scope,id:revision.id})).toEqual(revision);
 });

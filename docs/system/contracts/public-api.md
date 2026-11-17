@@ -73,12 +73,12 @@ invitations or SSO, and organisation views are not access control.
 Installation → organisation → workspace → optional nested folders → suites and
 inputs. Folders group; they never grant permissions or create agents.
 
-- Installation routes: organisations, installation settings, auth; the rest
-  sit under `/organizations/{organizationId}`.
+- Installation routes: organisations, installation settings, auth; the rest sit under `/organizations/{organizationId}`.
 - Repository methods require scope; an object UUID alone is insufficient. The
   route resolves scope, never ambient state. Wrong organisation, workspace or
   parent returns scoped 404. Composite foreign keys enforce parent consistency;
-  the client (`contracts/src/api/client/`) also checks every item's ownership.
+  the client (`contracts/src/api/client/`) also checks every item's ownership
+  (input usage rows carry no scope: the page scope and `inputId` must match the route).
 - Folders: UUID plus `parentId` in one workspace; the root is a real folder and
   the only one with a null parent. Names are 1 to 128 characters (organisation
   names 1 to 48), unique
@@ -213,7 +213,7 @@ characters and shows at most 80 matches.
 | Code | Reviewed |
 | --- | --- |
 | `contracts/api/v2/` | `5205748c6609` |
-| `contracts/src/api/client/` | `15f45a098574` |
+| `contracts/src/api/client/` | `0cae152dc3c3` |
 | `contracts/src/api/run-list.ts` | `1c4b7b193309` |
 | `app/src/adapters/inbound/http/api-errors.ts` | `65b76bd7fd69` |
 | `app/src/adapters/inbound/http/session/` | `328af44f81f3` |

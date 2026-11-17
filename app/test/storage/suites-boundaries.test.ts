@@ -15,7 +15,7 @@ it('rejects SQL replacement by existing revision identity or suite ordinal with 
   try {
     db.exec('PRAGMA recursive_triggers=OFF');
     const replace = db.prepare(`INSERT OR REPLACE INTO suite_revisions
-      SELECT ?,suite_id,organization_id,workspace_id,ordinal,?,config_json,input_manifest_json FROM suite_revisions WHERE id=?`);
+      SELECT ?,suite_id,organization_id,workspace_id,ordinal,?,config_json,input_manifest_json,saved_at,message,saved_by FROM suite_revisions WHERE id=?`);
     for (const id of [revision.id, uuid(99)]) expect(() => replace.run(id, 'b'.repeat(64), revision.id)).toThrow();
     expect(db.prepare('SELECT digest FROM suite_revisions WHERE id=?').get(revision.id)?.digest).toBe(revision.digest);
     expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
@@ -33,7 +33,7 @@ it('preserves the existing 1MiB reply budget for 100 Unicode suites and namespac
         const name = '🪲'.repeat(125) + String(index).padStart(3, '0');
         expect(validateApi('CreateSuiteRequest', { scope, requestId: requestId(), name }).ok).toBe(true);
         const fold = name.normalize('NFKC').toLowerCase();
-        db.prepare('INSERT INTO suites VALUES (?,?,?,?,?,?,1,NULL)').run(uuid(1000 + index), scope.organizationId, scope.workspaceId, uuid(3), name, fold);
+        db.prepare('INSERT INTO suites VALUES (?,?,?,?,?,?,1,NULL,NULL)').run(uuid(1000 + index), scope.organizationId, scope.workspaceId, uuid(3), name, fold);
         db.prepare('INSERT INTO folders VALUES (?,?,?,?,1,?,?)').run(uuid(2000 + index), scope.organizationId, scope.workspaceId, uuid(3), name, fold);
       }
     });

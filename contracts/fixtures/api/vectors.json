@@ -465,6 +465,11 @@
     "valid": true
   },
   {
+    "path": "valid/input-usage-page.json",
+    "schema": "InputUsagePage",
+    "valid": true
+  },
+  {
     "path": "valid/create-input.json",
     "schema": "CreateInputRequest",
     "valid": true

@@ -1,0 +1,19 @@
+{
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "inputId": "00000000-0000-4000-8000-000000000003",
+  "total": 1,
+  "items": [
+    {
+      "suiteId": "00000000-0000-4000-8000-000000000004",
+      "suiteName": "Checkout",
+      "revisionId": "00000000-0000-4000-8000-000000000006",
+      "ordinal": 1,
+      "current": true
+    }
+  ],
+  "nextCursor": null
+}

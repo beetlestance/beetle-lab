@@ -2,7 +2,7 @@ import { parentRetentionMatches } from './retention-parent.js';
 import type { RetentionTraversalPage } from '../generated/types.js';
 import { retentionResponseMatches, retentionRequestMatches } from './retention-ownership.js';
 import { workspaceOverviewMatches, organizationOverviewMatches } from '../overview.js';
-import type { WorkspaceOverview, OrganizationOverview } from '../generated/types.js';
+import type { WorkspaceOverview, OrganizationOverview, InputUsagePage } from '../generated/types.js';
 import { exportOwnership, exportRequestMatches } from './export-ownership.js';
 import { runComparisonRequestMatches, runComparisonSnapshotMatches } from './comparison.js';
 import type { RunComparisonRequest, RunComparisonSnapshot } from '../generated/types.js';
@@ -217,7 +217,12 @@ function revisionOwnership(operation: ApiOperation, input: PreparedInput, reply:
   return !reply.items || reply.items.every((item) => sameUuid(item.suiteId, input.params.suiteId));
 }
 
+/** Fixed-shape replies whose rows carry no scope: overviews and input usage (revision references only). */
 function overviewOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean | undefined {
+  if (operation.response === 'InputUsagePage') {
+    const page = value as InputUsagePage;
+    return equal(routeOwner(input), page.scope) && sameUuid(page.inputId, input.params.inputId);
+  }
   if (operation.response === 'OrganizationOverview')
     return organizationOverviewMatches(value as OrganizationOverview, { organizationId: input.params.organizationId! });
   if (operation.response === 'WorkspaceOverview')
