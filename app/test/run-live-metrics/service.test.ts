@@ -1,9 +1,7 @@
 import { expect, it, vi } from 'vitest';
 import { createRunLiveMetricsService } from '../../src/application/run-live-metrics/index.js';
 import { RunExecutions } from '../../src/adapters/outbound/sqlite/execution-binding/index.js';
-import type { RunExecutionReader, RunExecutionSnapshot, RunnerLiveMetricGateway } from '../../src/ports/run-live-metrics.js';
-import type { ClientResult } from '@beetle/contracts';
-import type { LiveMetricSnapshot } from '@beetle/contracts/api';
+import type { RunExecutionReader, RunExecutionSnapshot, RunnerLiveMetricGateway,LiveMetricReply } from '../../src/ports/run-live-metrics.js';
 import { frame, hash, deferred } from './fixtures.js';
 import { fixture, keyFor, uuid } from '../run-results/fixture.js';
 function setup() {
@@ -13,10 +11,10 @@ function setup() {
   const now = Date.now(); const {organizationId, workspaceId, attemptId, generation} = f.key.attempt;
   const value = frame({scope: {organizationId, workspaceId, attemptId, generation},
     capturedAtMs: now, publishedAtMs: now, startTimeMs: now - 1000, endTimeMs: now});
-  const remote = vi.fn<RunnerLiveMetricGateway['liveMetrics']>(async () => ({ok: true, value}));
-  let wall = now;
-  const service = createRunLiveMetricsService({executions: {getRunExecution: read}, gateway: {liveMetrics: remote}, hash, wall: () => wall});
-  return {read, remote, service, value, snapshot, setWall: (value: number) => {wall = value;}, query: {...key, attemptId},
+  const remote = vi.fn<RunnerLiveMetricGateway['liveMetrics']>(async () => ({ok: true, value,freshUntilMonotonicMs:6000}));
+  let monotonic=0;
+  const service = createRunLiveMetricsService({executions: {getRunExecution: read}, gateway: {liveMetrics: remote}, hash, monotonic:()=>monotonic});
+  return {read, remote, service, value, snapshot, setMonotonic:(value:number)=>{monotonic=value;}, query: {...key, attemptId},
     context: () => ({signal: new AbortController().signal, deadline: performance.now() + 5000})};
 }
 it('resolves and rechecks exact durable authority around one remote read', async () => {
@@ -46,7 +44,7 @@ it('rejects a reply after run completion or physical authority change', async ()
   await expect(e.service.reader.getRunLiveMetrics(e.query, e.context())).rejects.toThrow(); await e.service.close();
 });
 it('retains two original reads after caller abort and drains them on close', async () => {
-  const e = setup(); const gate = deferred<ClientResult<LiveMetricSnapshot>>(); e.remote.mockImplementation(() => gate.promise);
+  const e = setup(); const gate = deferred<LiveMetricReply>(); e.remote.mockImplementation(() => gate.promise);
   const abort = new AbortController(); const one = e.service.reader.getRunLiveMetrics(e.query, {...e.context(), signal: abort.signal});
   const two = e.service.reader.getRunLiveMetrics(e.query, e.context());
   const firstFailure = expect(one).rejects.toThrow(); const secondFailure = expect(two).rejects.toThrow();
@@ -54,7 +52,7 @@ it('retains two original reads after caller abort and drains them on close', asy
   await expect(e.service.reader.getRunLiveMetrics(e.query, e.context())).rejects.toMatchObject({code: 'busy'});
   let closed = false; const closing = e.service.close().then(() => {closed = true;});
   await secondFailure; expect(closed).toBe(false);
-  gate.resolve({ok: true, value: e.value}); await closing;
+  gate.resolve({ok: true, value: e.value,freshUntilMonotonicMs:6000}); await closing;
   expect(e.read).toHaveBeenCalledTimes(2);
 });
 it('does not issue remote work after an aborted original metadata read finally settles', async () => {
@@ -68,8 +66,17 @@ it('does not issue remote work after an aborted original metadata read finally s
 it.each(['stale', 'rollback'] as const)('rechecks freshness after the final metadata original: %s', async cause => {
   const e = setup();
   e.read.mockResolvedValueOnce(e.snapshot).mockImplementationOnce(async () => {
-    e.setWall(e.value.capturedAtMs + (cause === 'stale' ? 6001 : -1)); return e.snapshot;
+    e.setMonotonic(cause==='stale'?6001:-1); return e.snapshot;
   });
   await expect(e.service.reader.getRunLiveMetrics(e.query, e.context())).rejects.toThrow();
   expect(e.remote).toHaveBeenCalledTimes(1); await e.service.close();
+});
+
+it.each([-30000,30000])('keeps source UTC when the agent clock is offset by %ims',async offset=>{
+ const e=setup();for(const key of ['capturedAtMs','publishedAtMs','startTimeMs','endTimeMs'] as const)e.value[key]+=offset;
+ expect(await e.service.reader.getRunLiveMetrics(e.query,e.context())).toEqual(e.value);await e.service.close();
+});
+it.each([undefined,NaN,Infinity,0,-1,6001])('rejects a missing or invalid monotonic freshness budget: %s',async expires=>{
+ const e=setup();e.remote.mockResolvedValue({ok:true,value:e.value,freshUntilMonotonicMs:expires!});
+ await expect(e.service.reader.getRunLiveMetrics(e.query,e.context())).rejects.toThrow();await e.service.close();
 });

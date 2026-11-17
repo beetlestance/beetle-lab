@@ -68,10 +68,11 @@ export class LiveMetricReader {
     const final = this.boundary(budget); if (final) return failed(final);
     const rejection = frameRejection({...snapshot, previous: this.previous, approval: this.approval, wall: this.lastWall});
     if (rejection) return failed(rejection);
-    if (this.previous?.revision === snapshot.position.revision) {
-      if (this.lastMono > this.staleAt) return failed('stale');
-    } else this.staleAt = this.lastMono + 6000 - (this.lastWall - sourceTime(snapshot.frame));
-    this.previous = snapshot.position; return {ok: true, frame: snapshot.frame};
+    const sourceExpiry=this.lastMono+6000-(this.lastWall-sourceTime(snapshot.frame));
+    this.staleAt=this.previous?.revision===snapshot.position.revision?Math.min(this.staleAt,sourceExpiry):sourceExpiry;
+    const freshForMs=Math.floor(this.staleAt-this.lastMono);
+    if(freshForMs<=0||freshForMs>6000)return failed('stale');
+    this.previous = snapshot.position; return {ok: true, frame: snapshot.frame, freshUntilMonotonicMs:this.staleAt};
   }
 }
 function validOperation(input: Operation): boolean {

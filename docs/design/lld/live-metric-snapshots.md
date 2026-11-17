@@ -197,3 +197,19 @@ After fixed mailbox/envelope hash validation, the agent gunzips with a separate
 checks. Malformed, oversized or plaintext payloads refuse; no old-wire fallback.
 Matching engine/agent images are required. Bounded zlib scratch is part of existing
 process caps; native CPU/memory and long-stream proof are required after this change.
+
+## Freshness across agent and backend clocks
+
+Source UTC timestamps remain unchanged. Only the agent compares frame timestamps
+with its wall clock; its monotonic expiry prevents repeated reads renewing a frame.
+The private agent response carries `X-Beetle-Live-Fresh-For-Ms`, a positive integer
+of at most 6000, derived from the remaining agent-process monotonic lifetime after
+encoding. Missing, malformed or exhausted budgets fail closed.
+
+The adapter subtracts the complete original request lifetime through physical
+socket close using its own monotonic clock. Its internal gateway reply carries a
+receiver-process monotonic expiry; that value never crosses HTTP. Application
+composition supplies the same process clock and rechecks expiry after the final
+execution-authority read. The public snapshot schema stays unchanged. Wall-clock
+offsets between services cannot invalidate fresh data or extend its six-second age
+budget. Cancellation, scope/hash checks and physical-close custody remain required.

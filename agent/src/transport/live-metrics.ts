@@ -1,3 +1,4 @@
+import {performance} from 'node:perf_hooks';
 import { createHash } from 'node:crypto';
 import { captureLiveMetricSnapshot, encodeLiveMetricSnapshot, liveMetricScopeMatches } from '@beetle/contracts/api';
 import type { LiveMetricScope } from '@beetle/contracts/api';
@@ -18,14 +19,18 @@ export function registerLiveMetrics(server: FastifyInstance, options: {
     }
   }}, async (request, reply) => {
     const scope = options.identity.key(request);
-    const bytes = await options.operations.live(request, async budget => {
+    const response = await options.operations.live(request, async budget => {
       if (!options.read) throw new AgentHttpError(503, 'execution_lost', 'transport');
       const value = await options.read(scope, budget);
       if (!value.ok) throw new AgentHttpError(value.reason === 'busy' ? 429 : 503,
         value.reason === 'busy' ? 'budget_unavailable' : 'execution_lost', 'transport');
-      return encodeReply(value.frame, scope);
+      if(!Number.isFinite(value.freshUntilMonotonicMs))throw new AgentHttpError(503,'execution_lost','transport');
+      return {bytes:encodeReply(value.frame,scope),freshUntilMonotonicMs:value.freshUntilMonotonicMs};
     });
-    reply.header('Cache-Control', 'no-store').type('application/json').send(Buffer.from(bytes));
+    const freshForMs=Math.floor(response.freshUntilMonotonicMs-performance.now());
+    if(freshForMs<=0||freshForMs>6000)throw new AgentHttpError(503,'execution_lost','transport');
+    reply.header('X-Beetle-Live-Fresh-For-Ms',String(freshForMs));
+    reply.header('Cache-Control', 'no-store').type('application/json').send(Buffer.from(response.bytes));
     return reply;
   });
 }

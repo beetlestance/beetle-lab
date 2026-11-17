@@ -14,5 +14,5 @@ export interface LiveMetricReaderOptions {
 }
 export type LiveMetricReadFailure = 'invalid_input' | 'busy' | 'closed' | 'unavailable' | 'deadline'
   | 'aborted' | 'scope' | 'epoch' | 'subset' | 'ordering' | 'stale' | 'clock';
-export type LiveMetricRead = {readonly ok: true; readonly frame: LiveMetricSnapshot}
+export type LiveMetricRead = {readonly ok: true; readonly frame: LiveMetricSnapshot; readonly freshUntilMonotonicMs: number}
   | {readonly ok: false; readonly reason: LiveMetricReadFailure};

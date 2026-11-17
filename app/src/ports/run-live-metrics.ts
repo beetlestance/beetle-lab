@@ -6,9 +6,12 @@ import type { ClientResult } from '@beetle/contracts';
 import type { LiveMetricSnapshot } from '@beetle/contracts/api';
 import type { RunnerAttemptIdentity } from './runner.js';
 import type { RunnerOutputAbsenceGateway } from './output-absence.js';
+/** Receiver-process monotonic deadline derived from the agent freshness budget. */
+export type LiveMetricReply={readonly ok:true;readonly value:LiveMetricSnapshot;readonly freshUntilMonotonicMs:number}
+ | Extract<ClientResult<LiveMetricSnapshot>,{ok:false}>;
 /** Same installation gateway and original-call pool; no separate connection owner. */
 export interface RunnerLiveMetricGateway extends RunnerOutputAbsenceGateway {
-  liveMetrics(identity: RunnerAttemptIdentity, signal?: AbortSignal): Promise<ClientResult<LiveMetricSnapshot>>;
+  liveMetrics(identity: RunnerAttemptIdentity, signal?: AbortSignal): Promise<LiveMetricReply>;
 }
 
 /** One scoped read transaction captures the current run and physical execution binding. */

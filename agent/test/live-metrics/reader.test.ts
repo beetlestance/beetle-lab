@@ -4,9 +4,9 @@ import type { MailboxArchiveReply } from '../../src/backends/docker/index.js';
 import { deferred, fixture, frame, hash, image } from './fixtures.js';
 import { liveMetricSubsetText } from '@beetle/contracts/api';
 it('accepts matching frames while unchanged polls preserve the producer freshness', async () => {
-  const f = fixture(); expect(await f.reader.read(f.operation())).toEqual({ok: true, frame: f.initial});
-  f.clock(7000); expect((await f.reader.read(f.operation())).ok).toBe(true);
-  f.clock(7001); expect(await f.reader.read(f.operation())).toEqual({ok: false, reason: 'stale'}); await f.reader.close();
+  const f = fixture(); expect(await f.reader.read(f.operation())).toMatchObject({ok: true, frame: f.initial});
+  f.clock(6999); expect((await f.reader.read(f.operation())).ok).toBe(true);
+  f.clock(7000); expect(await f.reader.read(f.operation())).toEqual({ok: false, reason: 'stale'}); await f.reader.close();
 });
 it.each(['scope', 'epoch', 'subset'] as const)('rejects a self-declared %s outside trusted approval', async mismatch => {
   const f = fixture(); let value = frame();
@@ -85,4 +85,17 @@ it.each([
 it('expires an unchanged frame monotonically even if the wall clock freezes', async () => {
   const f = fixture(); expect((await f.reader.read(f.operation())).ok).toBe(true);
   f.clock(1000, 6001); expect(await f.reader.read(f.operation())).toEqual({ok: false, reason: 'stale'}); await f.reader.close();
+});
+
+it('retains the source monotonic expiry without renewing it on repeated reads',async()=>{
+ const f=fixture();const first=await f.reader.read(f.operation());expect(first).toMatchObject({ok:true,freshUntilMonotonicMs:6000});
+ f.clock(1000,2000);expect(await f.reader.read(f.operation())).toMatchObject({ok:true,freshUntilMonotonicMs:6000});
+ f.clock(1000,6000);expect(await f.reader.read(f.operation())).toEqual({ok:false,reason:'stale'});await f.reader.close();
+});
+
+it('clamps repeated frames to a forward wall-clock step without renewing monotonic lifetime',async()=>{
+ const f=fixture();expect(await f.reader.read(f.operation())).toMatchObject({ok:true,freshUntilMonotonicMs:6000});
+ f.clock(6000,100);expect(await f.reader.read(f.operation())).toMatchObject({ok:true,freshUntilMonotonicMs:1100});
+ f.clock(6000,200);expect(await f.reader.read(f.operation())).toMatchObject({ok:true,freshUntilMonotonicMs:1100});
+ await f.reader.close();
 });

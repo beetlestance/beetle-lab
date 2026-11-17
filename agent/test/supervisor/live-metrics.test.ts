@@ -30,7 +30,7 @@ it('reads only an existing running owner approved from its validated immutable o
   expect(await e.manager.readLiveMetrics(e.input.key, e.operation())).toEqual({ok: false, reason: 'unavailable'});
   await actor.launch(); await actor.tick();
   expect(e.approve).toHaveBeenCalledTimes(1); expect(e.approve).toHaveBeenCalledWith(e.offer, e.input);
-  expect(await e.manager.readLiveMetrics(e.input.key, e.operation())).toEqual({ok: true, frame: e.value});
+  expect(await e.manager.readLiveMetrics(e.input.key, e.operation())).toMatchObject({ok: true, frame: e.value});
   expect(await e.manager.readLiveMetrics({...e.input.key, generation: 2}, e.operation())).toEqual({ok: false, reason: 'unavailable'});
   expect(e.backend.starts).toBe(1); await e.manager.closeTelemetry();
 });

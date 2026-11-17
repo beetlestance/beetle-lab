@@ -24,7 +24,7 @@ export interface NativeInput {
   readonly signal: AbortSignal;
   readonly responseBytes: number;
 }
-export type NativeResult = { ok: true; status: number; value: unknown }
+export type NativeResult = { ok: true; status: number; value: unknown; liveFreshForMs?: string }
   | { ok: false; kind: 'transport' | 'response' };
 
 function pinnedOptions(input: NativeInput, address: Address): RequestOptions {
@@ -104,7 +104,9 @@ function ownResponse(owner: SocketOwner, response: IncomingMessage,
   response.on('error', callbacks.fail);
   response.once('aborted', callbacks.fail);
   receiveJson(response, responseBytes, value => {
-    owner.result = { ok: true, status: response.statusCode ?? 0, value };
+    const freshForMs=response.headers['x-beetle-live-fresh-for-ms'];
+    owner.result = {ok:true,status:response.statusCode??0,value,
+      ...(typeof freshForMs==='string'?{liveFreshForMs:freshForMs}:{})};
     callbacks.stop();
   }, callbacks.fail);
 }

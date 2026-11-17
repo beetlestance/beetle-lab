@@ -6,7 +6,7 @@ import { sourceFixture } from './source-fixture.js';
 const f = sourceFixture();
 async function setup() {
   let value = frame();
-  const read = vi.fn<NonNullable<AgentHttpOptions['liveMetrics']>>(async () => ({ok: true, frame: value}));
+  const read = vi.fn<NonNullable<AgentHttpOptions['liveMetrics']>>(async () => ({ok: true, freshUntilMonotonicMs:performance.now()+6000, frame: value}));
   const e = await f.server(false, read); value = frame({scope: e.key});
   return {...e, value, read, live: e.path.replace('/source', '/live-metrics')};
 }
@@ -16,6 +16,8 @@ it('serves the bounded canonical snapshot with scoped authority, no-store and a 
   expect(response.statusCode).toBe(200); expect(response.json()).toEqual(e.value);
   expect(Buffer.byteLength(response.body)).toBeLessThanOrEqual(65536);
   expect(response.headers).toMatchObject({'cache-control': 'no-store', connection: 'close'});
+  expect(Number(response.headers['x-beetle-live-fresh-for-ms'])).toBeGreaterThan(0);
+  expect(Number(response.headers['x-beetle-live-fresh-for-ms'])).toBeLessThanOrEqual(6000);
   expect(e.read).toHaveBeenCalledTimes(1);
   const [key, budget] = e.read.mock.calls[0]!;
   expect(key).toEqual(e.key); expect(budget.deadline).toBeGreaterThan(started);
@@ -49,13 +51,24 @@ it('reports absent service, busy and unavailable reads without disclosing except
 });
 it('rejects scope mismatch, invalid digest and hostile frame getters before encoding a response', async () => {
   const e = await setup();
-  e.read.mockResolvedValueOnce({ok: true, frame: {...e.value, scope: {...e.key, generation: 2}}});
-  e.read.mockResolvedValueOnce({ok: true, frame: {...e.value, subsetDigest: 'f'.repeat(64)}});
+  e.read.mockResolvedValueOnce({ok: true, freshUntilMonotonicMs:performance.now()+6000, frame: {...e.value, scope: {...e.key, generation: 2}}});
+  e.read.mockResolvedValueOnce({ok: true, freshUntilMonotonicMs:performance.now()+6000, frame: {...e.value, subsetDigest: 'f'.repeat(64)}});
   const hostile = {...e.value}; Object.defineProperty(hostile, 'subset', {get() {throw new Error('PRIVATE_SENTINEL');}});
-  e.read.mockResolvedValueOnce({ok: true, frame: hostile});
+  e.read.mockResolvedValueOnce({ok: true, freshUntilMonotonicMs:performance.now()+6000, frame: hostile});
   for (let index = 0; index < 3; index++) {
     const response = await e.server.inject({url: e.live, headers: e.headers});
     expect(response.statusCode).toBe(503); expect(response.body).not.toContain('PRIVATE_SENTINEL');
     await new Promise(resolve => setImmediate(resolve));
   }
+});
+
+it.each([0,-1,600000,NaN])('refuses an invalid source freshness budget: %s',async freshForMs=>{
+ const e=await setup();e.read.mockResolvedValue({ok:true,frame:e.value,freshUntilMonotonicMs:performance.now()+freshForMs});
+ const response=await e.server.inject({url:e.live,headers:e.headers});expect(response.statusCode).toBe(503);
+});
+
+it('advertises only the reduced remaining source lifetime',async()=>{
+ const e=await setup();e.read.mockResolvedValue({ok:true,frame:e.value,freshUntilMonotonicMs:performance.now()+1000});
+ const response=await e.server.inject({url:e.live,headers:e.headers});expect(response.statusCode).toBe(200);
+ const budget=Number(response.headers['x-beetle-live-fresh-for-ms']);expect(budget).toBeGreaterThan(0);expect(budget).toBeLessThanOrEqual(1000);
 });

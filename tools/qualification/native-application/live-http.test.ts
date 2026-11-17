@@ -10,11 +10,11 @@ import { loaded } from '../../../app/test/runner/fixtures.js';
 import { httpFixture } from '../../../app/test/http/run-metrics/fixture.js';
 const history: RunMetricsService = {readRunHistorySummary: async () => { throw new Error('Unexpected synthetic history indexing'); }, lookupRunMetricSeries: async () => {throw new Error('Unexpected metric lookup');},reader: {listRunMetricSeries: async () => {throw new Error('unused');},
   getRunMetricSamples: async () => {throw new Error('unused');}}, close: async () => {}};
-it('carries a scoped live frame through actual private agent HTTP, gateway, SQL binding and authenticated public TCP', async () => {
+it.each([-30000,30000])('carries a clock-offset scoped live frame (%ims) through actual private agent HTTP, gateway, SQL binding and authenticated public TCP', async offset => {
   const f = fixture(); f.observe({state: 'running', phase: 'execute', lastSeq: 2});
   const key = keyFor(f.key.runId); const read = vi.fn(async () => {
-    const now = Date.now(); const {organizationId, workspaceId, attemptId, generation} = f.key.attempt;
-    return {ok: true as const, frame: frame({scope: {organizationId, workspaceId, attemptId, generation},
+    const now = Date.now()+offset; const {organizationId, workspaceId, attemptId, generation} = f.key.attempt;
+    return {ok: true as const, freshUntilMonotonicMs:performance.now()+6000, frame: frame({scope: {organizationId, workspaceId, attemptId, generation},
       capturedAtMs: now, publishedAtMs: now, startTimeMs: now - 1000, endTimeMs: now})};
   });
   const unused = async (): Promise<never> => {throw new Error('unused');};
@@ -24,7 +24,7 @@ it('carries a scoped live frame through actual private agent HTTP, gateway, SQL 
   await agent.listen({host: '127.0.0.1', port: 0}); const address = agent.server.address();
   if (!address || typeof address === 'string') throw new Error('missing private loopback');
   const connection = loaded(`http://127.0.0.1:${address.port}`); const gateway = createRunnerGateway({...connection, token: 'S'.repeat(64)});
-  const service = createRunLiveMetricsService({executions: {getRunExecution: async key => new RunExecutions(f.db, f.reads).get(key)}, gateway, hash});
+  const service = createRunLiveMetricsService({executions: {getRunExecution: async key => new RunExecutions(f.db, f.reads).get(key)}, gateway, hash,monotonic:()=>performance.now()});
   let http: Awaited<ReturnType<typeof httpFixture>> | undefined;
   try {
     http = await httpFixture(history, service); const before = f.facts();

@@ -1,3 +1,4 @@
+import {performance} from 'node:perf_hooks';
 import { expect, it, vi } from 'vitest';
 import type { AgentHttpOptions } from '../../src/transport/index.js';
 import type { LiveMetricRead } from '../../src/live-metrics/index.js';
@@ -6,7 +7,7 @@ import { deferred, sourceFixture } from './source-fixture.js';
 const f = sourceFixture();
 async function setup() {
   let value = frame();
-  const read = vi.fn<NonNullable<AgentHttpOptions['liveMetrics']>>(async () => ({ok: true, frame: value}));
+  const read = vi.fn<NonNullable<AgentHttpOptions['liveMetrics']>>(async () => ({ok: true, freshUntilMonotonicMs:performance.now()+6000, frame: value}));
   const e = await f.server(false, read); value = frame({scope: e.key});
   return {...e, read, value, live: e.path.replace('/source', '/live-metrics')};
 }
@@ -22,9 +23,9 @@ it('retains two timed-out originals without consuming source-transfer or control
     expect((await e.server.inject({url: e.path, headers: e.headers})).statusCode).toBe(200);
     expect((await e.server.inject({url: '/runner/v1/capabilities', headers: e.headers})).statusCode).toBe(200);
     expect(e.read).toHaveBeenCalledTimes(2);
-  } finally {gate.resolve({ok: true, frame: e.value});}
+  } finally {gate.resolve({ok: true, freshUntilMonotonicMs:performance.now()+6000, frame: e.value});}
   await new Promise(resolve => setImmediate(resolve));
-  e.read.mockResolvedValue({ok: true, frame: e.value});
+  e.read.mockResolvedValue({ok: true, freshUntilMonotonicMs:performance.now()+6000, frame: e.value});
   expect((await e.server.inject({url: e.live, headers: e.headers})).statusCode).toBe(200);
 });
 it('retains credits after service completion until actual response writes and socket close', async () => {
@@ -49,7 +50,7 @@ it('drains an ignored-abort live service before server shutdown', async () => {
   await expect.poll(() => e.read.mock.calls[0]![1].signal?.aborted).toBe(true);
   let closed = false; const closing = e.server.close().then(() => {closed = true;});
   await new Promise(resolve => setImmediate(resolve)); expect(closed).toBe(false);
-  gate.resolve({ok: true, frame: e.value}); await closing; expect(closed).toBe(true);
+  gate.resolve({ok: true, freshUntilMonotonicMs:performance.now()+6000, frame: e.value}); await closing; expect(closed).toBe(true);
 });
 
 it('never issues a delayed handler after its pre-service socket disconnects', async () => {

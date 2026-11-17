@@ -21,7 +21,7 @@ it('accepts a valid snapshot at exactly the decoded64KiB limit with scope and se
  const decoded = Buffer.concat([frame, Buffer.alloc(MAILBOX_PAYLOAD_BYTES - frame.length, 0x20)]);
  expect(decoded.length).toBe(MAILBOX_PAYLOAD_BYTES);
  f.set({ok: true, status: 200, image: wire(gzipSync(decoded))});
- expect(await f.reader.read(f.operation())).toEqual({ok: true, frame: f.initial}); await f.reader.close();
+ expect(await f.reader.read(f.operation())).toMatchObject({ok: true, frame: f.initial}); await f.reader.close();
 });
 it('retains the compressed-envelope hash fence even for an otherwise valid frame', async () => {
  const f = fixture(); const bytes = wire(gzipSync(encodeLiveMetricSnapshot(f.initial, hash))); bytes[MAILBOX_HEADER_BYTES + 12] = bytes[MAILBOX_HEADER_BYTES + 12]! ^ 1;

@@ -8,7 +8,7 @@ import { MetricReadError } from '../../ports/run-metrics.js';
 import { captureEventBinding } from '../../domain/events/index.js';
 import { SemanticError } from '../../domain/namespaces/index.js';
 import { MetricReadOperation } from '../metric-read-lifetime/index.js';
-interface Options {executions: RunExecutionReader; gateway?: Pick<RunnerLiveMetricGateway, 'liveMetrics'>; hash: LiveMetricHash; wall?(): number}
+interface Options {executions: RunExecutionReader; gateway?: Pick<RunnerLiveMetricGateway, 'liveMetrics'>; hash: LiveMetricHash; monotonic(): number}
 function querySnapshot(input: unknown): RunLiveMetricQuery {
   const q = JSON.parse(encodeJson(input, 4096)) as RunLiveMetricQuery;
   if (!q || Object.keys(q).sort().join(',') !== 'attemptId,id,scope'
@@ -31,26 +31,29 @@ function authority(input: RunExecutionSnapshot, q: RunLiveMetricQuery) {
     || attempt.workspaceId !== q.scope.workspaceId || attempt.attemptId !== q.attemptId) throw new MetricReadError('unavailable');
   return binding;
 }
-function assertFresh(frame: LiveMetricSnapshot, expected: LiveMetricSnapshot['scope'], start: number, now: number): void {
-  if (!liveMetricScopeMatches(frame.scope, expected) || !Number.isSafeInteger(start) || !Number.isSafeInteger(now) || now < start
-    || [frame.capturedAtMs, frame.publishedAtMs, frame.endTimeMs].some(time => time > now || now - time > 6000)) throw new MetricReadError('unavailable');
+function assertFresh(frame:LiveMetricSnapshot,expected:LiveMetricSnapshot['scope'],expires:number,now:number):void {
+  if(!liveMetricScopeMatches(frame.scope,expected)||!Number.isFinite(expires)||!Number.isFinite(now)||now<0
+    ||expires<=now||expires-now>6000||frame.publishedAtMs-Math.min(frame.capturedAtMs,frame.endTimeMs)>6000)throw new MetricReadError('unavailable');
 }
 /** Two finite originals; no corpus, background loop, mutation or retry. */
 export function createRunLiveMetricsService(options: Options): RunLiveMetricsService {
   const read = options.executions.getRunExecution.bind(options.executions);
-  const remote = options.gateway?.liveMetrics.bind(options.gateway); const hash = options.hash; const wall = options.wall ?? Date.now;
+  const remote = options.gateway?.liveMetrics.bind(options.gateway); const hash = options.hash; const monotonic=options.monotonic.bind(options);
   const active = new Map<MetricReadOperation, Promise<unknown>>(); let closed = false; let closing: Promise<void> | undefined;
   async function capture(q: RunLiveMetricQuery, owner: MetricReadOperation): Promise<LiveMetricSnapshot> {
     owner.check(); const before = authority(await read({id: q.id, scope: q.scope}), q); owner.check();
     if (!remote) throw new MetricReadError('unavailable');
-    const start = wall(); const result = await remote({...before.key.attempt, journalAuthority: before.journalAuthority}, owner.signal); owner.check();
+    const result = await remote({...before.key.attempt, journalAuthority: before.journalAuthority}, owner.signal); owner.check();
     if (!result.ok) throw new MetricReadError('unavailable');
     const frame = captureLiveMetricSnapshot(result.value, hash);
+    const receivedMonotonic=monotonic();
     const expected = {...before.key.attempt};
-    assertFresh(frame, expected, start, wall());
+    assertFresh(frame,expected,result.freshUntilMonotonicMs,receivedMonotonic);
     const after = authority(await read({id: q.id, scope: q.scope}), q); owner.check();
     if (encodeCanonicalJson(after, 1024) !== encodeCanonicalJson(before, 1024)) throw new MetricReadError('unavailable');
-    assertFresh(frame, expected, start, wall());
+    const finalMonotonic=monotonic();
+    if(finalMonotonic<receivedMonotonic)throw new MetricReadError('unavailable');
+    assertFresh(frame,expected,result.freshUntilMonotonicMs,finalMonotonic);
     return frame;
   }
   return Object.freeze({reader: Object.freeze({getRunLiveMetrics(input: RunLiveMetricQuery, context: MetricReadContext) {

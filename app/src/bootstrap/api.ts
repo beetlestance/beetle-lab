@@ -155,7 +155,7 @@ function metricRoutes(server: FastifyInstance, store: Metadata, agent: ReadView 
   const comparisons = registerRunComparisonRoutes(server, {authorize, service: createRunComparisonService({runs: store.runs,
     results: store.results, suites: store.suites, metrics: historyService, digest})});
   const live = registerRunLiveMetricRoutes(server, {authorize, service: createRunLiveMetricsService({executions: store.executions,
-    ...(agent?.liveMetrics ? {gateway: {liveMetrics: agent.liveMetrics}} : {}), hash: digest})});
+    ...(agent?.liveMetrics ? {gateway: {liveMetrics: agent.liveMetrics}} : {}), hash: digest,monotonic:()=>performance.now()})});
   return { historySummaryState: index.state, close: async () => {
     throwCloseFailures(await Promise.allSettled([index.close(), history.close(), live.close(), comparisons.close()]));
   } };
