@@ -27,11 +27,11 @@ function environment(api: ApiClient) {
 it('discards the actual retired scope cache while retaining the new scoped history', async () => {
   const fixture = testClient(runRead); const { client, Frame } = environment(fixture.client);
   const view = render(<Frame><Runs organizationId={ids.a} workspaceId={ids.workspace} /></Frame>);
-  await screen.findByRole('link', { name: runId });
-  const old = queryKeys.runs(ids.a, ids.workspace); const current = queryKeys.runs(ids.b, ids.workspace);
+  await screen.findByRole('link', { name: new RegExp(runId) });
+  const old = [...queryKeys.runs(ids.a, ids.workspace), 'page']; const current = [...queryKeys.runs(ids.b, ids.workspace), 'page'];
   expect(client.getQueryCache().findAll({ queryKey: old })).toHaveLength(1);
   view.rerender(<Frame><Runs organizationId={ids.b} workspaceId={ids.workspace} /></Frame>);
-  await waitFor(() => expect(screen.getByRole('link', { name: runId }))
+  await waitFor(() => expect(screen.getByRole('link', { name: new RegExp(runId) }))
     .toHaveAttribute('href', routes.run(ids.b, ids.workspace, runId)));
   expect(client.getQueryCache().findAll({ queryKey: old })).toHaveLength(0);
   expect(client.getQueryCache().findAll({ queryKey: current })).toHaveLength(1);
