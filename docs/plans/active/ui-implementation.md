@@ -69,3 +69,17 @@ Wave 0 makes `RunDetail` a state dispatcher into `live/` and `result/` and owns
 the shared not-found component. Shared app tests (`suites.test.tsx`,
 `settings*.test.tsx`, `inputs*.test.tsx`) belong to the package that owns the
 feature; B and C coordinate `suites.test.tsx` through the coordinator.
+
+## Backend wave (decided 2026-11-18: implement, do not drop UI)
+
+| Lane | Scope | Migration |
+| --- | --- | --- |
+| Authoring metadata | Suite description; revision `savedAt`, `message`, `savedBy`; run notes in search; run start and finish | 031 |
+| Inputs | Added date; row and column counts; usage lookup and named delete blockers | 032 |
+| Pinning | [run-pinning](../proposed/run-pinning.md) | 033 |
+| Suite folders | [suite-folders](../proposed/suite-folders.md); revision run count | 034 |
+| Installation status | Agent and host facts, image presence, slot holders and queue position | 035 if needed |
+| Live extras | Live target readings, provisional downloads, p95 attribution, backup date | 036 if needed |
+
+Upgrade follows separately. Wave-1 UI packages build against these fields once
+each lane merges, and hide them until then.
