@@ -10,7 +10,8 @@ Only task-labeled containers/networks/volumes; preserve user services and roots.
 Entry:smoke.ts; source/image/worker hashes and evidence retained by coordinator.
 Docker image recipe, amd64, agent hard crash and Linux backend remain separate.
 Tests:proxy.test.ts + tools/qualification-boundaries.test.ts.
-Contract/evidence:docs/verification/cleanup-composed.md.
+Contract: docs/system/contracts/retirement.md; past evidence:
+`git show 427ebd09^:docs/verification/cleanup-composed.md`.
 C4h2B agent-crash.ts uses exact-runtime Docker Unix proxy and one offline original-
 scoped first-file UPDATE-abort trigger. Both are qualification-only. Dedicated proxy
 entry uses umask0177; private parent700 is checked, avoiding shared-socket chmod.

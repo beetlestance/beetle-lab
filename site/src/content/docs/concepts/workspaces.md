@@ -51,7 +51,20 @@ folders to group suites and inputs, up to 8 levels deep.
 - Suites and folders can move between folders, but only within the same
   workspace.
 
-Folders only group. They never grant access or change how runs execute.
+A common layout is one folder per service, with a subfolder per kind of test:
+
+```text
+checkout-team            (workspace)
+├── checkout-api
+│   ├── smoke
+│   └── capacity
+└── catalog-api
+    └── endurance
+```
+
+Folders only group. They never grant access or change how runs execute. Inputs
+are shared across the whole workspace, so a suite in `checkout-api` can use a
+dataset stored under `catalog-api`.
 
 ## Settings and inheritance
 

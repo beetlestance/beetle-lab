@@ -18,7 +18,7 @@ acceptance against the candidate's identical Compose file. Closed qualification
 records bind both platforms to configs/indexes and verified fixture cleanup.
 `complete.ts` publishes the separate installation release only after both native
 records and anonymous remote readback. Never add assets to the source release
-after publishing it. See README.md and docs/verification/rewrite-image-delivery.md.
+after publishing it. See README.md; past evidence: `git show 427ebd09^:docs/verification/rewrite-image-delivery.md`.
 
 `local.ts` uses an existing local gh session explicitly; never emulate CI variables.
 Sources are public before CI writes images. Optional local-releases workflow mode

@@ -9,7 +9,8 @@ image build/pull or user-service mutation. A single heavy lane owns these probes
 `values.ts` rejects unsupported controls/security, unsafe counters, missing throttle
 or PID-limit evidence; configuration alone is not pressure qualification.
 
-Read README.md and docs/execution/resource-parity.md before execution. Obtain
+Read README.md and docs/system/contracts/resources.md before execution (old plan:
+`git show 427ebd09^:docs/execution/resource-parity.md`). Obtain
 independent review before faults. Native platform, source/digest, effective controls,
 measurements, status and cleanup must all be captured. A failed/late/unclean probe
 never qualifies. Raw diagnostics stay private. These are kernel proofs, not agent
