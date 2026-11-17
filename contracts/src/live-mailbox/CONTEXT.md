@@ -8,5 +8,5 @@ claim: caller additionally validates the existing frame, scope, epoch and subset
 and requires envelope revision == frame publication sequence.
 The returned frame borrows a bounded image; callers must not mutate/recycle its
 backing store until validation/response encoding ends. No accumulated frame cache.
-Ownership/admission/transport contract: decision013 and live-metric-snapshots LLD.
+Ownership/admission/transport contract: decision 013 and docs/system/contracts/results.md.
 Focused tests: contracts/src/live-mailbox/mailbox.test.ts.

@@ -80,10 +80,15 @@ function spaceProse(text: string): string {
     .replace(/\bp(99\.9|99|95|90|50)(?=\d)/g, 'p$1 ')
     .replace(/\b(base|based)(?=[a-f\d]{7,40}\b)/gi, '$1 ')
     .replace(wordBeforeNumber, '$1 ')
-    .replace(/\b(\d[\d,]*(?:\.\d+)?)(ms|s|KiB|MiB|GiB|TiB|bytes|seconds|minutes|hours|PIDs|VUs)\b/g, '$1 $2');
+    // Any word glued to a measured quantity; bare seconds only up to two digits (not "404s").
+    .replace(/([A-Za-z]{2,})(?=(?:\d[\d,]*(?:\.\d+)?(?:ms|KiB|MiB|GiB|TiB|KB|MB|GB)|\d{1,2}(?:\.\d+)?s)\b)/g, '$1 ')
+    .replace(/\b(\d[\d,]*(?:\.\d+)?)(ms|KiB|MiB|GiB|TiB|bytes|seconds|minutes|hours|PIDs|VUs)\b/g, '$1 $2')
+    // Bare seconds: short or decimal values only, so plurals such as "404s" stay.
+    .replace(/\b(\d{1,2}(?:\.\d+)?|\d[\d,]*\.\d+)(s)\b/g, '$1 $2');
 }
 function lineSpacing(line: string): string {
-  const protectedSpan = /(`+).*?\1|\]\([^)]*\)|https?:\/\/[^\s<>]+/g;
+  // Code, link destinations, URLs and whole commit hashes (which may start with a prose word such as "a").
+  const protectedSpan = /(`+).*?\1|\]\([^)]*\)|https?:\/\/[^\s<>]+|\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b/g;
   let cursor = 0;
   let result = '';
   for (const match of line.matchAll(protectedSpan)) {

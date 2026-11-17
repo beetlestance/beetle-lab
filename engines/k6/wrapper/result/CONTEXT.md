@@ -31,7 +31,7 @@ and force partial/missing inconclusive evidence; missing/malformed fields reject
 
 Evidence is copied through the shared bounded JSON encoder (4 MiB/depth 64/nodes 65536/
 collection4096); accepted expanded compiler IR is reused, not copied. Result output
-is bounded to1MiB and schema checked with an internal placeholder seal which is
+is bounded to 1 MiB and schema checked with an internal placeholder seal which is
 stripped before return. The generic seal codec later owns content hashing.
 Trusted artifact metadata does not establish file existence/integrity/custody.
 This mapper neither authenticates producers, persists/seals output nor releases

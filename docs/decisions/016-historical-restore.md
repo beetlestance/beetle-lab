@@ -2,7 +2,7 @@
 
 Status: accepted. The user chose read-only restored history for the first release.
 This supersedes the in-place restore proposal in
-[delivery authority](../design/lld/delivery-authority.md).
+[delivery authority](../system/contracts/installation.md#journal-authority).
 
 A cold backup still requires both real offline leases, current logical/native
 quiescence and a bounded consistent snapshot of metadata, journal, inputs and
@@ -27,6 +27,6 @@ copy or uncertain close cannot publish a ready attestation.
 This avoids erasing post-backup deletion/mutation receipts and avoids treating copied
 inode or journal-authority anchors as current native custody. A future writable
 installation uses a fresh identity and root; mutable/in-place restoration needs a
-separate reviewed design. See [cold recovery](../design/lld/cold-recovery.md) for implementation boundaries
-and the [runbook](../recovery.md) for candidate commands. Release qualification
+separate reviewed design. See [cold recovery](../system/contracts/recovery.md) for implementation boundaries
+and the [runbook](../../site/src/content/docs/guides/backup-and-restore.md) for candidate commands. Release qualification
 remains separate from this decision.

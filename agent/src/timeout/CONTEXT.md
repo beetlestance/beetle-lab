@@ -14,6 +14,6 @@ once to clock_integrity; both originals drain. Stop rejection retains the
 failed owner and rejects close. Closing fences callbacks and drains originals.
 Supervisor dispatch-time checks and lifecycle ownership remain separate.
 
-Contract: `docs/design/lld/timeout-guard.md`.
+Contract: `docs/system/contracts/resources.md`.
 Checks: `npx --no-install vitest run agent/test/timeout --maxWorkers=1`;
 `npx --no-install eslint agent/src/timeout agent/test/timeout`.

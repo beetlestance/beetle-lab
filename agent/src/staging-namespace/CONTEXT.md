@@ -6,6 +6,6 @@ above that mount are per-start native responsibility. Keep immutable nonce marke
 identity/content; no mtime/ctime authority or marker adoption without durable intent.
 Task anchors bind exact original/purpose/namespace/spec and four native directory
 facts. Captured facts precede provider writes and never rebind an old original.
-Caps: root8KiB, intent12KiB, anchor16KiB, singleton32KiB, marker1KiB, task8KiB
+Caps: root 8 KiB, intent 12 KiB, anchor 16 KiB, singleton 32 KiB, marker 1 KiB, task 8 KiB
 including512logical row allowance. Native inode/device values remain decimal strings.
-Owner docs/design/lld/staging-namespace.md; native owner staging; SQL owner journal.
+Owner docs/system/contracts/outputs-collection.md; native owner staging; SQL owner journal.

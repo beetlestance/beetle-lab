@@ -2,7 +2,7 @@
 Public createRunComparisonService accepts scoped run/result/revision readers, shared
 metric lookup and digest provider. compare returns the ACTUAL original promise;
 HTTP owns its fast cancellation race and retains that promise through settlement.
-One active comparison, no queue/cache, whole30s context. Close fences and drains.
+One active comparison, no queue/cache, whole 30 s context. Close fences and drains.
 Capture2..4 distinct canonical terminal runs, immutable config pins and sealed
 result scopes. Reconcile full Run, full revision and result-seal identity after IO.
 Configs remain transient <=1 MiB each; no config values leave this owner.

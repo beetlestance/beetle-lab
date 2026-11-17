@@ -25,8 +25,8 @@ Readiness HTTP uses one bounded process in the healthy backend peer; repeated
 probes never inject Node processes into the recovering quarter-core agent.
 Credential stays in-process; only validated capability identity/status is used.
 
-Default crashes and explicit cancel use separate fresh projects. Stock128MiB
-agent output pool holds two retained64MiB disk reservations; a third must wait. Never raise
+Default crashes and explicit cancel use separate fresh projects. Stock 128 MiB
+agent output pool holds two retained 64 MiB disk reservations; a third must wait. Never raise
 that limit or erase retained results merely to fit cancellation into one fixture.
 
 CI persists installation-owner.json before any offer. Independent cleanup.ts uses

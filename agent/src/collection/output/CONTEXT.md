@@ -31,7 +31,7 @@ quiesced is settlement only; success needs successful closes and final stop fenc
 Focused checks: Vitest agent/test/output-collection and output-range --maxWorkers=1,
 Node TS and scoped ESLint. Real temp files and private fault ports exercise custody.
 Successful collection also returns shared immutable private root identity and actual
-result/control byte facts, bounded to32KiB, after original closes and final checks.
+result/control byte facts, bounded to 32 KiB, after original closes and final checks.
 `readOutputRange` captures one stored root and declared artifact, with a fresh
 bounded deadline and safe offset/length. Its independent two slots remain reserved
 through original quiescence. It shares OutputLifetime and OutputFiles custody with

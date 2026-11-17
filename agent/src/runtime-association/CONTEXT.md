@@ -6,4 +6,4 @@ Docker privately mints observations after full stopped-runtime/volume inspection
 Journal client accepts only opaque observations; raw store does not infer IO.
 Read/replay rebind exact retained retirement. Backend cold resume still proves live
 volume metadata, original ID/name absence and nonforce removal confirmation.
-Contract docs/design/lld/runtime-association.md; tests agent/test/runtime-association.
+Contract docs/system/contracts/execution-protocol.md; tests agent/test/runtime-association.

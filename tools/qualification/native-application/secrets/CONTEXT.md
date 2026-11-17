@@ -12,7 +12,7 @@ override files are private evidence and must never be uploaded. Fixed audit
 failures contain no actual canary. Cross-workspace reuse of identical names/versions must error before managed
 engine creation and leave physical ready/work counts unchanged.
 
-Three originals use an explicit32MiB output budget each (96 MiB total retained
-within the stock128MiB pool); CPU/RAM/PID and all installation gates remain stock.
+Three originals use an explicit 32 MiB output budget each (96 MiB total retained
+within the stock 128 MiB pool); CPU/RAM/PID and all installation gates remain stock.
 A released no-container setup failure still retains its output hold. Preserve
 that debt and history; never enlarge the pool or silently refund it for the test.

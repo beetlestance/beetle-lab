@@ -1,7 +1,7 @@
 # Storage settlement
 
 Process-local coordinator for authenticated agent compaction. Read
-`docs/design/lld/output-settlement.md` before changing ownership.
+`docs/system/contracts/outputs-settlement.md` before changing ownership.
 
 Two entries are reserved before input capture/preflight. Read-only eligibility
 precedes the shared local fence; the transaction independently revalidates it.

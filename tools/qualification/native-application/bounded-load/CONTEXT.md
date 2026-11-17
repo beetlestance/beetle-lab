@@ -1,9 +1,9 @@
 # Bounded cardinality and repeated memory
 Four sequential 4VU x100 iterations,150 ms waits,three reused live-reader sessions.
-Each8MiB output budget fits the unchanged stock pool with history retained.
+Each 8 MiB output budget fits the unchanged stock pool with history retained.
 Synthetic boundedURL target:400work requests pertrial,unexpected routes refuse.
 Final artifacts retain existing digest/extent/read caps and numeric oracles.
-Each trial observes fixed 32 s post-idle using four8s idle windows. Final8s median
+Each trial observes fixed 32 s post-idle using four 8 s idle windows. Final 8 s median
 summed processRSS compares trial0(warm-up) to trial3 for backend/agent: growth<=0.
 Every loaded APIp95<=250 ms. Target misses remain failed with measured facts.
 Control container IDs/start times/restart counts and installation settings stay

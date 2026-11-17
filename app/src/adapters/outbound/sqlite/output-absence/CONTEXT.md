@@ -12,7 +12,8 @@ custody. Finalization replays its immutable receipt before checking current Run
 version; otherwise it requires exact header end/admission, released execution,
 contiguous full-ACK events and retained actual provisional result bytes.
 The insertion trigger alone credits P-(C+R), projects an inconclusive terminal Run
-and closes event discovery. Persisted cancellation wins; validation stays pending.
+and closes event discovery. A system cause (timeout, output_limit, artifact_incomplete,
+clock_integrity) wins, then persisted cancellation; validation stays pending.
 Older headers remain pending for an explicit runtime dispatch.observe refresh.
 Native guards fence later writes; late full ACK is read-only across both families.
 No remote IO, synthesized observation, engine retry, files or deletion occurs.

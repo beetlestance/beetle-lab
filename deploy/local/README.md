@@ -99,7 +99,7 @@ Only the frontend publishes a loopback port. Backend/agent remain private; do no
 publish the agent or Docker socket. Starter defaults describe policy ceilings,
 not detected machine capacity or measured stack overhead. Initial defaults allow
 a 2CPU/1 GiB execution pool and manual retention; see
-[starter policy](../../docs/design/lld/installation-starter.md).
+[starter policy](../../docs/system/contracts/installation.md#starter-policy).
 
 This opt-in rewrite path is separate from released legacy Compose. Published image
 installation, native amd64 and full security/resource/recovery qualification remain

@@ -22,4 +22,8 @@ Acknowledged stop intent and successful watch close do not certify runtime exit.
 Focused checks: `npx --no-install vitest run agent/test/guard --maxWorkers=1`,
 `npx --no-install eslint agent/src/guard agent/test/guard`, and
 `npx --no-install tsc -p tsconfig.node.json --noEmit`.
-See `docs/design/lld/output-guard.md` for limits and qualification requirements.
+See `docs/system/contracts/outputs-collection.md` for limits and qualification requirements.
+
+Limits: per scan 256 entries, depth 8, 2048 filesystem calls, 512-byte relative paths
+(`agent/src/staging/output-tree.ts`, `output-budget.ts`). Interval 250 ms (50–5000),
+TTL 2000 ms (100–300000, above interval), sample timeout 1000 ms (100–30000).

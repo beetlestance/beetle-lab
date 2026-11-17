@@ -1,0 +1,337 @@
+---
+// Interactive load-shape builder: pick an executor, edit its fields, see the shape
+// over time and the scenario JSON for the suite's load plan. Bounds follow
+// contracts/engines/k6/v1/{scenarios,common}.schema.json.
+---
+
+<figure class="bl-shape not-content" aria-label="Load-shape builder">
+  <noscript><p class="bl-shape-off">Turn on JavaScript to use the load-shape builder.</p></noscript>
+  <div class="bl-shape-presets" role="group" aria-label="Start from">
+    <button type="button" data-preset="steady">Steady users</button>
+    <button type="button" data-preset="ramp">Ramp up and hold</button>
+    <button type="button" data-preset="rate">Fixed request rate</button>
+    <button type="button" data-preset="spike">Spike</button>
+    <button type="button" data-preset="limit">Find the limit</button>
+  </div>
+  <div class="bl-shape-grid">
+    <div class="bl-shape-form">
+      <label class="bl-field">
+        <span>Executor</span>
+        <select data-executor>
+          <option value="constant-vus">constant-vus</option>
+          <option value="ramping-vus">ramping-vus</option>
+          <option value="constant-arrival-rate">constant-arrival-rate</option>
+          <option value="ramping-arrival-rate">ramping-arrival-rate</option>
+          <option value="ramp-until">ramp-until</option>
+          <option value="shared-iterations">shared-iterations</option>
+          <option value="per-vu-iterations">per-vu-iterations</option>
+        </select>
+      </label>
+      <div data-fields></div>
+      <div data-stages></div>
+    </div>
+    <div class="bl-shape-out">
+      <p class="bl-shape-explain" data-explain></p>
+      <svg data-chart viewBox="0 0 400 220" role="img" aria-label="Load over time"></svg>
+      <dl class="bl-shape-facts" data-facts></dl>
+      <p class="bl-shape-error" data-error role="status"></p>
+    </div>
+  </div>
+  <details class="bl-shape-json">
+    <summary>Scenario JSON</summary>
+    <pre data-json></pre>
+  </details>
+</figure>
+
+<script>
+  type Stage = { duration: number; target: number };
+  type State = Record<string, number | string> & { executor: string; stages: Stage[] };
+
+  const FIELDS: Record<string, [string, string, number, number][]> = {
+    'constant-vus': [['vus', 'VUs', 1, 100000], ['duration', 'Duration (s)', 1, 86400]],
+    'ramping-vus': [['startVUs', 'Start VUs', 0, 100000], ['gracefulRampDown', 'Graceful ramp-down (s)', 0, 3600]],
+    'constant-arrival-rate': [
+      ['rate', 'Iterations per time unit', 1, 1000000], ['timeUnit', 'Time unit (s)', 1, 3600],
+      ['duration', 'Duration (s)', 1, 86400], ['preAllocatedVUs', 'Pre-allocated VUs', 1, 100000],
+      ['maxVUs', 'Max VUs', 1, 100000],
+    ],
+    'ramping-arrival-rate': [
+      ['startRate', 'Start rate', 1, 1000000], ['timeUnit', 'Time unit (s)', 1, 3600],
+      ['preAllocatedVUs', 'Pre-allocated VUs', 1, 100000], ['maxVUs', 'Max VUs', 1, 100000],
+    ],
+    'ramp-until': [
+      ['startRate', 'Start rate', 1, 1000000], ['maxRate', 'Max rate', 1, 1000000],
+      ['stepRate', 'Step rate', 1, 1000000], ['stepDuration', 'Step duration (s)', 1, 86400],
+      ['timeUnit', 'Time unit (s)', 1, 3600], ['preAllocatedVUs', 'Pre-allocated VUs', 1, 100000],
+      ['maxVUs', 'Max VUs', 1, 100000], ['p95', 'Stop when p95 latency over (ms)', 1, 600000],
+    ],
+    'shared-iterations': [['iterations', 'Iterations in total', 1, 1e9], ['vus', 'VUs', 1, 100000], ['maxDuration', 'Max duration (s)', 1, 86400]],
+    'per-vu-iterations': [['iterations', 'Iterations per VU', 1, 1e9], ['vus', 'VUs', 1, 100000], ['maxDuration', 'Max duration (s)', 1, 86400]],
+  };
+  const STAGED = new Set(['ramping-vus', 'ramping-arrival-rate']);
+  const RATE = new Set(['constant-arrival-rate', 'ramping-arrival-rate', 'ramp-until']);
+  const EXPLAIN: Record<string, string> = {
+    'constant-vus': 'A fixed number of virtual users loop through the requests for the whole duration. Throughput follows how fast your service answers.',
+    'ramping-vus': 'The number of virtual users moves linearly from one stage target to the next.',
+    'constant-arrival-rate': 'k6 starts iterations at a fixed rate, whatever your service’s latency. VUs are allocated to keep up, up to the maximum.',
+    'ramping-arrival-rate': 'The iteration rate moves linearly between stage targets. Use it when you know the traffic you need to serve.',
+    'ramp-until': 'The rate climbs by the step rate over each step duration until the stop rule fires or the maximum is reached. Reaching the maximum without the rule firing makes the run inconclusive.',
+    'shared-iterations': 'The VUs share a fixed number of iterations and stop when they are done, or at the maximum duration.',
+    'per-vu-iterations': 'Each VU runs the same number of iterations and stops when done, or at the maximum duration.',
+  };
+  const PRESETS: Record<string, Partial<State>> = {
+    steady: { executor: 'constant-vus', vus: 20, duration: 300 },
+    ramp: { executor: 'ramping-vus', startVUs: 0, gracefulRampDown: 30, stages: [{ duration: 60, target: 50 }, { duration: 240, target: 50 }, { duration: 30, target: 0 }] },
+    rate: { executor: 'constant-arrival-rate', rate: 100, timeUnit: 1, duration: 300, preAllocatedVUs: 50, maxVUs: 200 },
+    spike: { executor: 'ramping-arrival-rate', startRate: 20, timeUnit: 1, preAllocatedVUs: 50, maxVUs: 500, stages: [{ duration: 60, target: 20 }, { duration: 10, target: 400 }, { duration: 60, target: 400 }, { duration: 10, target: 20 }, { duration: 60, target: 20 }] },
+    limit: { executor: 'ramp-until', startRate: 10, maxRate: 200, stepRate: 20, stepDuration: 30, timeUnit: 1, preAllocatedVUs: 50, maxVUs: 1000, p95: 500 },
+  };
+  const DEFAULTS: State = {
+    executor: 'constant-vus', vus: 20, duration: 300, startVUs: 0, gracefulRampDown: 30,
+    rate: 100, timeUnit: 1, preAllocatedVUs: 50, maxVUs: 200, startRate: 10, maxRate: 200,
+    stepRate: 20, stepDuration: 30, p95: 500, iterations: 1000, maxDuration: 600,
+    stages: [{ duration: 60, target: 50 }, { duration: 240, target: 50 }, { duration: 30, target: 0 }],
+  };
+
+  const dur = (s: number) => (s === 0 ? "0s" : s % 3600 === 0 ? `${s / 3600}h` : s % 60 === 0 ? `${s / 60}m` : `${s}s`);
+  const human = (s: number) => {
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+    return [h && `${h} h`, m && `${m} min`, r && `${r} s`].filter(Boolean).join(' ') || '0 s';
+  };
+  const fmt = (n: number) => Math.round(n).toLocaleString('en-GB');
+  const el = <K extends keyof HTMLElementTagNameMap>(tag: K, props: Record<string, string> = {}, text?: string) => {
+    const node = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) node.setAttribute(k, v);
+    if (text !== undefined) node.textContent = text;
+    return node;
+  };
+  const svgEl = (tag: string, attrs: Record<string, string | number>) => {
+    const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, String(v));
+    return node;
+  };
+
+  /** Points (seconds, value) describing the target over time. */
+  function shape(s: State): { points: [number, number][]; end: number; note?: string } {
+    const n = (k: string) => Number(s[k]);
+    switch (s.executor) {
+      case 'constant-vus': return { points: [[0, n('vus')], [n('duration'), n('vus')]], end: n('duration') };
+      case 'constant-arrival-rate': return { points: [[0, n('rate')], [n('duration'), n('rate')]], end: n('duration') };
+      case 'ramping-vus':
+      case 'ramping-arrival-rate': {
+        let t = 0;
+        const points: [number, number][] = [[0, n(s.executor === 'ramping-vus' ? 'startVUs' : 'startRate')]];
+        for (const stage of s.stages) { t += stage.duration; points.push([t, stage.target]); }
+        return { points, end: t };
+      }
+      case 'ramp-until': {
+        const count = Math.max(1, Math.ceil((n('maxRate') - n('startRate')) / n('stepRate')));
+        const points: [number, number][] = [[0, n('startRate')]];
+        for (let i = 0; i < count; i++) points.push([(i + 1) * n('stepDuration'), Math.min(n('maxRate'), n('startRate') + (i + 1) * n('stepRate'))]);
+        return { points, end: count * n('stepDuration'), note: `Stops early when p95 latency > ${fmt(n('p95'))} ms` };
+      }
+      default: return { points: [[0, n('vus')], [n('maxDuration'), n('vus')]], end: n('maxDuration'), note: 'Ends sooner when the iterations are done' };
+    }
+  }
+
+  function problems(s: State): string[] {
+    const out: string[] = [];
+    for (const [key, label, min, max] of FIELDS[s.executor]) {
+      const v = Number(s[key]);
+      if (!Number.isInteger(v) || v < min || v > max) out.push(`${label} must be a whole number from ${fmt(min)} to ${fmt(max)}.`);
+    }
+    if (STAGED.has(s.executor)) {
+      const minTarget = s.executor === 'ramping-vus' ? 0 : 1;
+      if (s.stages.some(st => !Number.isInteger(st.duration) || st.duration < 0 || st.duration > 86400)) out.push('Stage durations must be from 0 to 86,400 s.');
+      if (s.stages.some(st => !Number.isInteger(st.target) || st.target < minTarget || st.target > (minTarget ? 1000000 : 100000))) out.push(`Stage targets must be whole numbers of at least ${minTarget}.`);
+    }
+    if (RATE.has(s.executor) && Number(s.maxVUs) < Number(s.preAllocatedVUs)) out.push('Max VUs should be at least the pre-allocated VUs.');
+    if (s.executor === 'ramp-until') {
+      if (Number(s.maxRate) < Number(s.startRate)) out.push('Max rate must be at least the start rate.');
+      else if (Math.ceil((Number(s.maxRate) - Number(s.startRate)) / Number(s.stepRate)) > 128) out.push('That is more than 128 steps; raise the step rate.');
+    }
+    if (shape(s).end > 86400) out.push('The workload must fit in 24 hours.');
+    return out;
+  }
+
+  function scenario(s: State) {
+    const n = (k: string) => Number(s[k]);
+    const base = { id: 'main', name: 'main', startTime: '0s', gracefulStop: '30s', executor: s.executor };
+    const stages = () => s.stages.map(st => ({ duration: dur(st.duration), target: st.target }));
+    switch (s.executor) {
+      case 'constant-vus': return { ...base, vus: n('vus'), duration: dur(n('duration')) };
+      case 'ramping-vus': return { ...base, startVUs: n('startVUs'), stages: stages(), gracefulRampDown: dur(n('gracefulRampDown')) };
+      case 'constant-arrival-rate': return { ...base, rate: n('rate'), timeUnit: dur(n('timeUnit')), duration: dur(n('duration')), preAllocatedVUs: n('preAllocatedVUs'), maxVUs: n('maxVUs') };
+      case 'ramping-arrival-rate': return { ...base, startRate: n('startRate'), timeUnit: dur(n('timeUnit')), stages: stages(), preAllocatedVUs: n('preAllocatedVUs'), maxVUs: n('maxVUs') };
+      case 'ramp-until': return { ...base, startRate: n('startRate'), maxRate: n('maxRate'), stepRate: n('stepRate'), stepDuration: dur(n('stepDuration')), timeUnit: dur(n('timeUnit')), preAllocatedVUs: n('preAllocatedVUs'), maxVUs: n('maxVUs'),
+        stopRule: { id: 'latency_limit', metric: 'http_req_duration', stat: 'p95', operator: '>', value: n('p95') } };
+      default: return { ...base, iterations: n('iterations'), vus: n('vus'), maxDuration: dur(n('maxDuration')) };
+    }
+  }
+
+  for (const root of document.querySelectorAll<HTMLElement>('.bl-shape')) {
+    root.classList.add('is-enhanced');
+    const state: State = structuredClone(DEFAULTS);
+    const q = <T extends Element>(sel: string) => root.querySelector<T>(sel)!;
+    const select = q<HTMLSelectElement>('[data-executor]');
+    const fields = q<HTMLElement>('[data-fields]');
+    const stagesBox = q<HTMLElement>('[data-stages]');
+    const chart = q<SVGSVGElement>('[data-chart]');
+
+    const numberInput = (label: string, value: number, min: number, max: number, onInput: (v: number) => void) => {
+      const wrap = el('label', { class: 'bl-field' });
+      wrap.append(el('span', {}, label));
+      const input = el('input', { type: 'number', inputmode: 'numeric', min: String(min), max: String(max), step: '1', value: String(value) });
+      input.addEventListener('input', () => { onInput(input.valueAsNumber); draw(); });
+      wrap.append(input);
+      return wrap;
+    };
+
+    function buildForm() {
+      select.value = state.executor;
+      fields.replaceChildren(...FIELDS[state.executor].map(([key, label, min, max]) =>
+        numberInput(label, Number(state[key]), min, max, v => (state[key] = v))));
+      stagesBox.replaceChildren();
+      if (!STAGED.has(state.executor)) return;
+      const unit = state.executor === 'ramping-vus' ? 'VUs' : 'rate';
+      stagesBox.append(el('p', { class: 'bl-stages-head' }, 'Stages'));
+      state.stages.forEach((stage, i) => {
+        const row = el('div', { class: 'bl-stage' });
+        row.append(
+          numberInput(`Stage ${i + 1} (s)`, stage.duration, 0, 86400, v => (stage.duration = v)),
+          numberInput(`Target ${unit}`, stage.target, 0, 1000000, v => (stage.target = v)),
+        );
+        const remove = el('button', { type: 'button', class: 'bl-stage-remove', 'aria-label': `Remove stage ${i + 1}` }, '×');
+        remove.disabled = state.stages.length === 1;
+        remove.addEventListener('click', () => { state.stages.splice(i, 1); buildForm(); draw(); });
+        row.append(remove);
+        stagesBox.append(row);
+      });
+      const add = el('button', { type: 'button', class: 'bl-stage-add' }, 'Add stage');
+      add.disabled = state.stages.length >= 8;
+      add.addEventListener('click', () => { state.stages.push({ duration: 60, target: state.stages.at(-1)?.target ?? 10 }); buildForm(); draw(); });
+      stagesBox.append(add);
+    }
+
+    function draw() {
+      const issues = problems(state);
+      q<HTMLElement>('[data-explain]').textContent = EXPLAIN[state.executor];
+      q<HTMLElement>('[data-error]').textContent = issues.join(' ');
+      const { points, end, note } = shape(state);
+      const W = 400, H = 220, L = 44, R = 10, T = 20, B = 26;
+      const peak = Math.max(1, ...points.map(p => p[1]));
+      const span = Math.max(1, end);
+      const x = (t: number) => L + (t / span) * (W - L - R);
+      const y = (v: number) => H - B - (v / (peak * 1.1)) * (H - T - B);
+      chart.replaceChildren();
+      for (let i = 0; i <= 4; i++) {
+        const v = (peak * 1.1 * i) / 4;
+        chart.append(svgEl('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), class: 'grid' }));
+        const label = svgEl('text', { x: L - 8, y: y(v) + 4, class: 'axis', 'text-anchor': 'end' });
+        label.textContent = fmt(v);
+        chart.append(label);
+      }
+      for (const t of [0, span / 2, span]) {
+        const label = svgEl('text', { x: x(t), y: H - 8, class: 'axis', 'text-anchor': t === 0 ? 'start' : t === span ? 'end' : 'middle' });
+        label.textContent = human(Math.round(t));
+        chart.append(label);
+      }
+      const line = points.map(([t, v], i) => `${i ? 'L' : 'M'}${x(t).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+      if (!issues.length) {
+        chart.append(svgEl('path', { d: `${line} L${x(end).toFixed(1)} ${y(0)} L${x(0)} ${y(0)} Z`, class: 'area' }));
+        chart.append(svgEl('path', { d: line, class: 'line' }));
+      }
+      const unit = RATE.has(state.executor) ? `iterations per ${dur(Number(state.timeUnit))}` : 'VUs';
+      const yLabel = svgEl('text', { x: L, y: 10, class: 'axis' });
+      yLabel.textContent = unit;
+      chart.append(yLabel);
+
+      const facts: [string, string][] = [['Workload', human(end)], ['Peak', `${fmt(peak)} ${unit}`]];
+      if (note) facts.push(['Note', note]);
+      if (RATE.has(state.executor)) {
+        let total = 0;
+        for (let i = 1; i < points.length; i++) total += ((points[i][1] + points[i - 1][1]) / 2) * (points[i][0] - points[i - 1][0]);
+        if (state.executor.startsWith('constant')) total = Number(state.rate) * end;
+        facts.push([state.executor === 'ramp-until' ? 'Iterations if never stopped' : 'Iterations', `about ${fmt(total / Number(state.timeUnit))}`]);
+      } else if (state.executor === 'shared-iterations') facts.push(['Iterations', fmt(Number(state.iterations))]);
+      else if (state.executor === 'per-vu-iterations') facts.push(['Iterations', fmt(Number(state.iterations) * Number(state.vus))]);
+      q<HTMLElement>('[data-facts]').replaceChildren(...facts.flatMap(([k, v]) => [el('dt', {}, k), el('dd', {}, v)]));
+      q<HTMLElement>('[data-json]').textContent = JSON.stringify(scenario(state), null, 2);
+    }
+
+    select.addEventListener('change', () => { state.executor = select.value; buildForm(); draw(); });
+    root.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach(button => button.addEventListener('click', () => {
+      Object.assign(state, structuredClone(DEFAULTS), structuredClone(PRESETS[button.dataset.preset!]));
+      root.querySelectorAll('[data-preset]').forEach(b => b.setAttribute('aria-pressed', String(b === button)));
+      buildForm(); draw();
+    }));
+    root.querySelector<HTMLButtonElement>('[data-preset="ramp"]')!.click();
+  }
+</script>
+
+<style>
+  .bl-shape { margin-block: 1.5rem; padding: 1.25rem 1.5rem; background: var(--bl-surface); border-radius: var(--bl-radius); }
+  .bl-shape:not(.is-enhanced) > :not(noscript) { display: none; }
+  .bl-shape-off { margin: 0; color: var(--sl-color-gray-2); }
+  .bl-shape-presets { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem; }
+  .bl-shape :global(button) {
+    font: inherit;
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--bl-radius-sm);
+    border: 1px solid var(--bl-raised);
+    background: transparent;
+    color: var(--sl-color-white);
+    cursor: pointer;
+  }
+  .bl-shape :global(button:hover:not(:disabled)) { border-color: var(--sl-color-gray-4); }
+  .bl-shape :global(button[aria-pressed='true']) { background: var(--sl-color-accent); border-color: var(--sl-color-accent); color: var(--bl-accent-ink); }
+  .bl-shape :global(button:disabled) { opacity: 0.4; cursor: default; }
+  .bl-shape :global(button:focus-visible), .bl-shape :global(input:focus-visible), .bl-shape select:focus-visible { outline: 2px solid var(--sl-color-accent); outline-offset: 2px; }
+  .bl-shape-grid { display: grid; grid-template-columns: minmax(13rem, 17rem) 1fr; gap: 1.5rem; align-items: start; }
+  .bl-shape-form :global(.bl-field) { display: grid; gap: 0.25rem; margin-bottom: 0.625rem; font-size: 0.8125rem; color: var(--sl-color-gray-2); }
+  .bl-shape-form :global(input), .bl-shape-form select {
+    font: inherit;
+    font-size: 0.9375rem;
+    font-family: var(--sl-font-mono);
+    padding: 0.375rem 0.5rem;
+    border-radius: var(--bl-radius-sm);
+    border: 1px solid var(--bl-raised);
+    background: var(--sl-color-black);
+    color: var(--sl-color-white);
+    width: 100%;
+  }
+  .bl-shape-form :global(.bl-stages-head) { margin: 0.75rem 0 0.375rem; font-size: 0.8125rem; font-weight: 500; color: var(--sl-color-gray-1); }
+  .bl-shape-form :global(.bl-stage) { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.5rem; align-items: end; }
+  .bl-shape-form :global(.bl-stage .bl-field span) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bl-shape-form :global(.bl-stage-remove) { margin-bottom: 0.625rem; padding: 0.375rem 0.625rem; }
+  .bl-shape-explain { margin: 0 0 0.75rem; font-size: 0.9375rem; color: var(--sl-color-text); }
+  .bl-shape-out svg { display: block; width: 100%; height: auto; }
+  .bl-shape-out :global(.grid) { stroke: var(--bl-track); stroke-width: 1; }
+  .bl-shape-out :global(.axis) { fill: var(--sl-color-gray-2); font-size: 12px; font-family: var(--sl-font); }
+  .bl-shape-out :global(.area) { fill: var(--sl-color-accent-low); }
+  .bl-shape-out :global(.line) { fill: none; stroke: var(--sl-color-accent); stroke-width: 2; stroke-linejoin: round; }
+  .bl-shape-facts { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; margin: 0.75rem 0 0; font-size: 0.875rem; }
+  .bl-shape-facts :global(dt) { color: var(--sl-color-gray-2); }
+  .bl-shape-facts :global(dd) { margin: 0; color: var(--sl-color-white); }
+  .bl-shape-error { margin: 0.5rem 0 0; font-size: 0.875rem; color: var(--bl-fail); }
+  .bl-shape-error:empty { display: none; }
+  .bl-shape-json { margin-top: 1rem; }
+  .bl-shape-json summary { cursor: pointer; font-size: 0.875rem; color: var(--sl-color-gray-1); }
+  .bl-shape-json pre {
+    margin: 0.5rem 0 0;
+    padding: 0.75rem 1rem;
+    max-height: 18rem;
+    overflow: auto;
+    background: var(--bl-zebra);
+    border-radius: var(--bl-radius-sm);
+    font-family: var(--sl-font-mono);
+    font-size: 0.8125rem;
+    color: var(--bl-code);
+  }
+  @media (max-width: 50rem) {
+    .bl-shape { padding: 1rem; }
+    .bl-shape-grid { grid-template-columns: 1fr; }
+    .bl-shape-out { order: -1; }
+  }
+</style>

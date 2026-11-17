@@ -1,0 +1,223 @@
+/* Beetle Lab docs theme, from the Penpot "Docs" page and the Darkroom skin
+   tokens (primitives / theme/darkroom). The light theme is derived from the
+   same hues; the design system itself defines dark skins only. */
+
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/jetbrains-mono';
+
+:root {
+  --sl-font: 'Geist Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sl-font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, monospace;
+  --sl-content-width: 45rem;
+  --sl-sidebar-width: 18.5rem;
+  --sl-nav-height: 4.375rem;
+  --bl-radius: 10px;
+  --bl-radius-sm: 7px;
+}
+
+/* Darkroom: palette.darkroom.* */
+:root,
+::backdrop {
+  --sl-color-accent-low: #3a2c17;
+  --sl-color-accent: #f2a541;
+  --sl-color-accent-high: #f7c98a;
+  --sl-color-white: #ece4d6;
+  --sl-color-gray-1: #e2d9ca;
+  --sl-color-gray-2: #a99f90;
+  --sl-color-gray-3: #8a8072;
+  --sl-color-gray-4: #5c544a;
+  --sl-color-gray-5: #3b342d;
+  --sl-color-gray-6: #211e1a;
+  --sl-color-black: #161412;
+  --sl-color-bg-nav: #161412;
+  --sl-color-bg-sidebar: #161412;
+  --sl-color-hairline: #2b2722;
+  --sl-color-hairline-light: #2b2722;
+  --sl-color-hairline-shade: #161412;
+  --sl-color-text-accent: #f2a541;
+  --sl-color-bg-inline-code: #2b2722;
+  --sl-color-text: #e2d9ca;
+  --bl-surface: #211e1a;
+  --bl-zebra: #1c1916;
+  --bl-raised: #2b2722;
+  --bl-track: #2f2a25;
+  --bl-code: #e9c68f;
+  --bl-pass: #9fcf8a;
+  --bl-fail: #ff7f6b;
+  --bl-info: #8db4e8;
+  --bl-accent-ink: #1d1408;
+}
+
+:root[data-theme='light'],
+[data-theme='light'] ::backdrop {
+  --sl-color-accent-low: #f6e3c6;
+  --sl-color-accent: #a86c22;
+  --sl-color-accent-high: #6e4410;
+  --sl-color-white: #211e1a;
+  --sl-color-gray-1: #2b2722;
+  --sl-color-gray-2: #5f574c;
+  --sl-color-gray-3: #7c7366;
+  --sl-color-gray-4: #a99f90;
+  --sl-color-gray-5: #d8cfc0;
+  --sl-color-gray-6: #ede6da;
+  --sl-color-gray-7: #f4efe6;
+  --sl-color-black: #f9f6f0;
+  --sl-color-bg-nav: #f9f6f0;
+  --sl-color-bg-sidebar: #f9f6f0;
+  --sl-color-hairline: #e3dbcd;
+  --sl-color-hairline-light: #e3dbcd;
+  --sl-color-hairline-shade: #f9f6f0;
+  --sl-color-text-accent: #8a5718;
+  --sl-color-bg-inline-code: #ede6da;
+  --sl-color-text: #2b2722;
+  --bl-surface: #f1ebe0;
+  --bl-zebra: #f5f0e8;
+  --bl-raised: #e6ddce;
+  --bl-track: #e3dbcd;
+  --bl-code: #8a5718;
+  --bl-pass: #3f7d2c;
+  --bl-fail: #b3402f;
+  --bl-info: #2f5f9a;
+  --bl-accent-ink: #fff8ee;
+}
+
+body { font-feature-settings: 'ss01'; }
+
+/* Header: no rule under it, as in the app. */
+.header { border-bottom: 0; }
+.site-title { font-size: 1rem; font-weight: 500; color: var(--sl-color-white); gap: .625rem; }
+.site-title img { height: 1.375rem; width: auto; }
+.site-title::after {
+  content: 'Docs';
+  font-size: .8125rem;
+  font-weight: 400;
+  color: var(--sl-color-gray-2);
+  background: var(--bl-raised);
+  border-radius: 6px;
+  padding: .125rem .5rem;
+}
+
+/* Sidebar: muted group labels, a quiet active row with an accent dot. */
+#starlight__sidebar .group-label .large,
+#starlight__sidebar summary .large {
+  font-size: .8125rem;
+  font-weight: 500;
+  color: var(--sl-color-gray-2);
+}
+#starlight__sidebar a {
+  color: var(--sl-color-gray-2);
+  font-size: .9375rem;
+  border-radius: var(--bl-radius-sm);
+  padding-block: .375rem;
+}
+#starlight__sidebar a:hover { color: var(--sl-color-white); }
+#starlight__sidebar a[aria-current='page'],
+#starlight__sidebar a[aria-current='page']:hover,
+#starlight__sidebar a[aria-current='page']:focus {
+  color: var(--sl-color-white);
+  background: var(--bl-surface);
+  font-weight: 400;
+}
+#starlight__sidebar a[aria-current='page']::before {
+  content: '';
+  display: inline-block;
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: 50%;
+  background: var(--sl-color-accent);
+  margin-inline-end: .5rem;
+  vertical-align: middle;
+}
+
+/* Page title and lede. */
+.content-panel h1#_top { font-size: 2.375rem; font-weight: 500; letter-spacing: -0.025em; line-height: 1.1; }
+.sl-markdown-content h2 { font-size: 1.5rem; font-weight: 500; letter-spacing: -0.008em; }
+.sl-markdown-content h3 { font-size: 1.1875rem; font-weight: 500; }
+.content-panel { border-top: 0; }
+
+/* Inline code is coloured, not boxed. */
+.sl-markdown-content :not(pre) > code {
+  background: transparent;
+  color: var(--bl-code);
+  padding: 0;
+  font-size: .875em;
+}
+
+/* Asides: surface card with a coloured mark. */
+.starlight-aside {
+  background: var(--bl-surface);
+  border: 1px solid var(--bl-raised);
+  border-radius: var(--bl-radius);
+  padding: 1rem 1.25rem 1rem 1.5rem;
+  position: relative;
+}
+.starlight-aside::before {
+  content: '';
+  position: absolute;
+  inset-block: 1rem;
+  inset-inline-start: 1.25rem;
+  inline-size: 3px;
+  border-radius: 2px;
+  background: var(--sl-color-asides-border);
+}
+.starlight-aside > * { padding-inline-start: 1rem; }
+.starlight-aside__title { font-size: .9375rem; font-weight: 600; }
+.starlight-aside__icon { display: none; }
+.starlight-aside--note { --sl-color-asides-border: var(--bl-info); --sl-color-asides-text-accent: var(--bl-info); background: var(--bl-surface); }
+.starlight-aside--tip { --sl-color-asides-border: var(--bl-pass); --sl-color-asides-text-accent: var(--bl-pass); background: var(--bl-surface); }
+.starlight-aside--caution { --sl-color-asides-border: var(--sl-color-accent); --sl-color-asides-text-accent: var(--sl-color-accent); background: var(--bl-surface); }
+.starlight-aside--danger { --sl-color-asides-border: var(--bl-fail); --sl-color-asides-text-accent: var(--bl-fail); background: var(--bl-surface); }
+
+/* Tables: rows are rounded surface strips, as in the app's run tables. */
+.sl-markdown-content table:not(:where(.not-content *)) {
+  display: table;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 4px;
+  font-size: .9375rem;
+}
+.sl-markdown-content th:not(:where(.not-content *)) {
+  border: 0;
+  background: transparent;
+  color: var(--sl-color-gray-2);
+  font-size: .8125rem;
+  font-weight: 500;
+  padding: 0 .875rem .25rem;
+}
+.sl-markdown-content td:not(:where(.not-content *)) {
+  border: 0;
+  background: var(--bl-surface);
+  padding: .6875rem .875rem;
+  vertical-align: top;
+}
+.sl-markdown-content tr:nth-child(even) td:not(:where(.not-content *)) { background: var(--bl-zebra); }
+.sl-markdown-content td:first-child { border-start-start-radius: var(--bl-radius-sm); border-end-start-radius: var(--bl-radius-sm); }
+.sl-markdown-content td:last-child { border-start-end-radius: var(--bl-radius-sm); border-end-end-radius: var(--bl-radius-sm); }
+
+/* Table of contents: a thin rail with the current entry in accent. */
+starlight-toc h2, mobile-starlight-toc h2 { font-size: .8125rem; font-weight: 500; color: var(--sl-color-gray-2); }
+starlight-toc a { border-inline-start: 2px solid var(--sl-color-hairline); padding-inline-start: .625rem; color: var(--sl-color-gray-2); }
+starlight-toc a[aria-current='true'] { border-color: var(--sl-color-accent); color: var(--sl-color-white); }
+
+/* Previous and next. */
+.pagination-links a {
+  border: 1px solid var(--bl-raised);
+  border-radius: var(--bl-radius);
+  box-shadow: none;
+}
+.pagination-links a:hover { border-color: var(--sl-color-gray-4); }
+.pagination-links .link-title { font-size: 1.0625rem; font-weight: 500; color: var(--sl-color-white); }
+
+/* Buttons on the home page. */
+.sl-link-button.primary { background: var(--sl-color-accent); color: var(--bl-accent-ink); border-color: var(--sl-color-accent); border-radius: var(--bl-radius-sm); font-weight: 500; }
+.sl-link-button.minimal, .sl-link-button.secondary { border: 1px solid var(--bl-raised); border-radius: var(--bl-radius-sm); color: var(--sl-color-white); }
+
+/* Search button matches the app's search control. */
+site-search button[data-open-modal] { background: var(--bl-surface); border: 0; border-radius: var(--bl-radius-sm); }
+
+/* Inline code never breaks at its hyphens; on narrow screens wide tables scroll instead. */
+.sl-markdown-content :not(pre) > code { white-space: nowrap; }
+@media (max-width: 50rem) {
+  .sl-markdown-content table:not(:where(.not-content *)) { display: block; overflow-x: auto; }
+  .sl-markdown-content td:not(:where(.not-content *)) { min-width: 7.5rem; }
+}

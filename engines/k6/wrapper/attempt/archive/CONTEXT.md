@@ -14,5 +14,5 @@ Close fences intake and drains active originals; cleanup failure stays failed.
 Only complete metric processing receives sealed history descriptors. Failed
 processing closes partial local files and numeric-final reports no retained pair.
 No lifecycle spool change, new ACK/result authority or public sample route.
-Contract: docs/design/lld/k6-metric-archive.md. Focused checks:
+Contract: docs/system/contracts/results.md. Focused checks:
 vitest run engines/k6/test/metric-archive engines/k6/test/attempt.

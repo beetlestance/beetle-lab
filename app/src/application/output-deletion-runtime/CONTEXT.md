@@ -12,11 +12,11 @@ Each turn's fixed 30 s budget includes discovery. Actual native result+settled,
 gateway and metadata carrier originals remain owned through close. Failed worker
 termination keeps deletion calls pending and prevents parent namespace release.
 No selector, intent creation, settlement, tombstone or public API.
-Contract:docs/design/lld/output-deletion-runtime.md.
+Contract:docs/system/contracts/outputs-settlement.md.
 Checks:vitest run app/test/output-deletion-runtime app/test/output-deletion/retirement-scan.
 
 C5 settlement adds a third serial turn, explicit Root capabilities and separate bounded
 physical discovery. Agent delivery uncertainty keeps backend debt; unsent never calls
-agent. Rejected no-admission branches remain protected in both discovery lanes.
-Contract: docs/design/lld/output-settlement.md. Actual native chain qualification is
+agent. Released and rejected absences qualify for both lanes (sqlite/output-deletion/readiness.ts).
+Contract: docs/system/contracts/outputs-settlement.md. Actual native chain qualification is
 separate from scoped gateway/driver tests.

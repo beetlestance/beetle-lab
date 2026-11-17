@@ -8,4 +8,4 @@ Pendingrejectsclosurefields; codecs grantnoIO/auth/refund. No routes/nativepaths
 Backend IDs are first-committed claims, not an agent Offer→Run mapping.
 Use one shared digest prefix with a trusted injected hasher; preserve original UUID
 spelling. Shape validity grants no retirement or native permission.
-Owner docs/design/lld/retirement-wire.md; focused contracts/test/output-retirement.
+Owner docs/system/contracts/retirement.md; focused contracts/test/output-retirement.

@@ -108,7 +108,7 @@ These records survive pruning/ACK/restart and do not release capacity or certify
 runtime quiescence. Actors must combine absolute deadlines with local monotonic time;
 fenced clocks forbid new dispatch. On clock-integrity failure, emergency termination
 is distinct from normal five-second cancellation grace; never claim normal timing.
-Future versions refuse open. Startup is bounded to5s; the serial worker then has
+Future versions refuse open. Startup is bounded to 5 s; the serial worker then has
 a 5 s no-completion watchdog. Healthy queued bursts may take longer overall;
 queue includes in-flight (default 32/max 64) plus close slot. Unknown commit outcome
 requires reconcile after reopen. close awaits exit; abort terminates pending work.
@@ -120,7 +120,7 @@ not abort an unstarted charged attempt. Engine concurrency retains its admission
 Migration 008 preserves the parent/four-child FK graph and all three identity high waters
 while widening only Offer/canonical storage. Staging policy 1 keeps exact existing charges.
 Private supervision reason and migration 007 preserve first stop attribution plus
-sticky immediate escalation independently. See [durable stops](../../../docs/design/lld/agent-stop.md).
+sticky immediate escalation independently. See [durable stops](../../../docs/system/contracts/run-lifecycle.md#stop-reasons).
 Historical cancellations with unknown cause stay unknown/fenced, never relabelled.
 Scoped checks (NODE_OPTIONS=--max-old-space-size=1024):
 `npx --no-install vitest run agent/test/journal --maxWorkers=2`

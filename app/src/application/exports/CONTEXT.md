@@ -7,4 +7,4 @@ intent; current reads never seed from stale replay receipts. No compiler or engi
 effects occur here. ExportStore owns durable transactions; export-runtime owns
 private reconciliation through the one shared installed gateway and output owner.
 
-Checks: app/test/exports. Contract: docs/design/lld/export-publication.md.
+Checks: app/test/exports. Contract: docs/system/contracts/exports.md.

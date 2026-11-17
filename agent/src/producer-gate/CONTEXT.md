@@ -9,4 +9,4 @@ poisons a lease; rejection cannot free its slot or the corresponding service cre
 Cached close waits actual leases; failures retain Journal/runtime ownership.
 No timer/abort/reply substitutes for actual drain. Journal and native lifetime owners
 remain responsible for their own originals; future coordinator composes these ports.
-Owner docs/design/lld/producer-retirement.md. Focused agent/test/producer-gate.
+Owner docs/system/contracts/retirement.md. Focused agent/test/producer-gate.

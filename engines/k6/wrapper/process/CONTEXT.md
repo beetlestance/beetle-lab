@@ -22,7 +22,7 @@ Confirmed group absence retires its PID; exit/stdio closure remain separate.
 Descendants must stay in the group. Escaped sessions, container init/subreaper
 and OS cleanup require separate qualification.
 
-Metrics read available bytes up to64KiB with one awaited sink and no queue.
+Metrics read available bytes up to 64 KiB with one awaited sink and no queue.
 The pipe retains its Node high-water buffer; excessive injected buffering fails at
 8 MiB. The required trusted sink must project/schema-check raw metric bytes, retain
 bounded data and honor its AbortSignal/deadline. Node pipe backpressure does not

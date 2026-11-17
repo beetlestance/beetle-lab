@@ -35,6 +35,6 @@ Journal closure; no owner is evicted while required closure remains pending.
 Cold settled debt additionally drains/fences the Supervisor actor and performs a
 read-only exact stopped-runtime inspection; it emits no events or late stop cause.
 Unknown inspection/native close stays unresolved; metadata retries retain completion.
-Contracts: `docs/design/lld/output-{delivery-closure,absence}.md`,
-`docs/design/lld/installation-controller.md` and `types.ts`.
+Contracts: `docs/system/contracts/outputs-settlement.md`,
+`docs/system/contracts/installation.md` and `types.ts`.
 Focused checks: installation tests and affected Node typecheck.

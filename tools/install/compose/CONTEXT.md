@@ -11,5 +11,5 @@ recursive permission repair, token replacement or authority fallback is allowed.
 
 The lock outlives file originals and cleanup. Root capabilities are used only to
 prepare empty directories and drop privileges; existing non-root startup follows.
-Contract: docs/design/lld/compose-first-boot.md.
+Contract: docs/system/contracts/installation.md.
 Checks: tools/install/test/compose*.test.ts and explicit native Compose qualification.

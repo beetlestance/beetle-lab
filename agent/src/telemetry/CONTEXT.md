@@ -16,6 +16,6 @@ The supervisor evidence owner serializes durable lifecycle/resource ordinals;
 the monitor never writes Journal or starts/stops containers. Exit drains sampling
 and final publication before stopped state can authorize source collection.
 
-Contract: docs/design/lld/attempt-resources.md.
+Contract: docs/system/contracts/resources.md.
 Tests: vitest run agent/test/telemetry agent/test/supervisor/resources.test.ts.
 Synthetic fixtures establish bounds/ownership, not native overhead qualification.

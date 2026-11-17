@@ -16,5 +16,5 @@ bindings requiring conversion fail intact. Header/payload SELECTs bound returned
 text in SQLite before parsing. This is storage only: no authenticated source
 adoption, artifact files, terminal settlement, publication or deletion port.
 
-Contract: docs/design/lld/output-payload.md.
+Contract: docs/system/contracts/outputs-settlement.md.
 Focused checks: app/test/storage/output-payload*.test.ts; affected Node TypeScript.

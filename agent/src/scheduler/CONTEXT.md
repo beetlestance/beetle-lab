@@ -1,6 +1,6 @@
 # Scheduler boundary
 
-Public entrypoint: index.ts. Read docs/design/lld/agent-scheduler.md before changes.
+Public entrypoint: index.ts. Read docs/system/contracts/run-delivery.md before changes.
 One poll loop rotates the first charged/delivery/queued lane on each pass. Charged
 identities retain their existing rotating order. Delivery/queued pages each use
 at most min(32,remaining original slots). Delivery cursor/finite through are separate

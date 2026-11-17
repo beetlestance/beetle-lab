@@ -5,4 +5,4 @@ stored task metadata snapshot, never paths, native drain, current absence or an 
 Task preparing/no-task states grant no cleanup permission. Exact original spelling
 and authoritative request digest survive replay; no quota/refund logic lives here.
 Carrier settlement follows the original command and retains failed-worker termination.
-Owner docs/design/lld/producer-retirement.md; Journal 017 and local gate compose later.
+Owner docs/system/contracts/retirement.md; Journal 017 and local gate compose later.

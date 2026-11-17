@@ -18,12 +18,22 @@ COPY web ./web
 COPY LICENSE ./LICENSE
 RUN npm run build:web
 
+FROM --platform=$BUILDPLATFORM ${NODE_IMAGE} AS docs
+WORKDIR /build/site
+COPY site/package.json site/package-lock.json ./
+RUN npm ci --ignore-scripts --include=optional
+COPY site ./
+# The API reference page reads the operation catalogue at build time.
+COPY contracts/api/v2/http-operations.json /build/contracts/api/v2/http-operations.json
+RUN npm run build
+
 FROM ${NGINX_IMAGE} AS frontend
 ARG VCS_REF=unknown
 LABEL org.opencontainers.image.source="https://github.com/beetlestance/beetle-lab" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.revision=$VCS_REF
 COPY --from=bundle /build/web/dist /usr/share/nginx/html
+COPY --from=docs /build/site/dist /usr/share/nginx/html/docs
 COPY web/container/nginx.conf /etc/nginx/nginx.conf
 COPY LICENSE /usr/share/licenses/beetle-lab/LICENSE
 USER 101:101

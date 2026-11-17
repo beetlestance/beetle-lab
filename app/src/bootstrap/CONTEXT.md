@@ -32,4 +32,4 @@ periods; `runtime-publication.ts` preserves explicit SQLite refusal versus failu
 `agent-runtime.ts` and `agent-owners.ts` wire one shared gateway, capacity and
 automatic delivery. Fatal errors fence work; shutdown owns both loop originals
 before the gateway and metadata. Contract:
-[Runtime polling](../../../docs/design/lld/runtime-polling.md).
+[Runtime polling](../../../docs/system/contracts/run-delivery.md#agent-scheduling-and-capacity-polling).

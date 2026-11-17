@@ -16,4 +16,4 @@ Bounds: one batch, 100 records/262144 bytes, compact state4096 bytes; pure owner
 validates event identities, ordering and canonical record bounds. No event backlog.
 
 Check: `vitest run app/test/event-delivery --maxWorkers=1` from repository root.
-Authority: `docs/design/lld/event-custody.md`, `app/src/ports/events.ts`.
+Authority: `docs/system/contracts/run-delivery.md`, `app/src/ports/events.ts`.

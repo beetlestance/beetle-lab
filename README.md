@@ -73,8 +73,8 @@ npm test
 frontend developer server. Native image checks run in GitHub CI. Test fixtures
 use synthetic data and do not require an external production service.
 
-See the [documentation map](docs/README.md), [current status](docs/STATUS.md)
-and [acceptance ledger](docs/verification/final-acceptance.md). Release publication
+See the [documentation map](docs/README.md), [current status](docs/plans/backlog.md)
+and [acceptance ledger](docs/evidence/acceptance-ledger.md). Release publication
 and the UI redesign remain separate work. The app's API reference includes downloadable AI-agent instructions; an MCP server is not shipped.
 A full UI redesign, additional engines, test generation and multi-user IAM are later work.
 

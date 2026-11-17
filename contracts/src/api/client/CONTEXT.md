@@ -33,4 +33,4 @@ app/src/adapters/inbound/http/page-query.test.ts --maxWorkers=2`;
 Comparison requests reject case-folded duplicate run IDs. Response checks bind
 ordered terminal runs, baseline/selection/source/summary, exact warning/difference
 policies and262144 encoded bytes. Logical aliases are resolved by the application,
-not inferred by the client. See docs/design/lld/run-comparison.md.
+not inferred by the client. See docs/system/contracts/results.md.

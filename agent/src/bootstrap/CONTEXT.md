@@ -17,7 +17,7 @@ and observer closes. Journal closes only after all cleanup succeeds. Failure ret
 the process owner/journal; another runtime cannot hide uncertain ownership.
 Executable still owns listening and transport lifetime; no artifact deletion ACK.
 
-Contract: docs/design/lld/agent-runtime.md.
+Contract: docs/system/contracts/execution-protocol.md.
 Checks: npx --no-install vitest run agent/test/bootstrap --maxWorkers=1;
 npx --no-install eslint agent/src/bootstrap agent/test/bootstrap.
 
@@ -28,3 +28,9 @@ Private live HTTP is wired to existing Supervisor ownership, never actor creatio
 
 Startup/shutdown diagnostics expose at most four allow-listed cause codes, never
 error text, stack, paths or credentials. Diagnostic failure cannot block cleanup.
+
+Startup order: reserve the single process owner, then check installation root,
+daemon binding, installed images and the ready authority gate against the journal
+UUID before opening the journal; then start guards, the publisher, then the
+scheduler. Ready to admit only after the publisher commits an observation. At most
+one failed runtime owner is kept.

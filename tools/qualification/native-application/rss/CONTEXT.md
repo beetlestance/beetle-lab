@@ -19,6 +19,6 @@ CI projects them alongside the existing strict short-control outcome. rss-amd64
 selects only this missing native case; raw PID/command or private reports are never
 uploaded. Source staging and independent cleanup gates remain unchanged.
 
-Failure reports use the private4MiB no-follow reader (timings may exceed delivery
+Failure reports use the private 4 MiB no-follow reader (timings may exceed delivery
 metadata's256KiB). Target-missed remains failed and retains bounded latency and
 fixed source coordinates; no raw exception or point data is uploaded on failure.

@@ -1,0 +1,85 @@
+---
+title: Load shapes
+description: Choose how load is applied over time, from a steady set of users to a ramp that finds your service's limit.
+sidebar:
+  order: 5
+---
+
+import LoadShape from '../../../components/LoadShape.astro';
+
+A suite's load plan holds one or more **scenarios**. Each scenario uses one k6
+**executor**, which decides how load is applied over time. Try the shapes below;
+the builder shows the shape, what it adds up to and the scenario as it appears in
+the suite configuration.
+
+<LoadShape />
+
+## Users or rate
+
+Executors come in two families, and the choice matters more than the numbers.
+
+| Family | Executors | You set | Throughput |
+| --- | --- | --- | --- |
+| Virtual users | `constant-vus`, `ramping-vus` | How many users loop at once | Falls when your service slows down |
+| Arrival rate | `constant-arrival-rate`, `ramping-arrival-rate`, `ramp-until` | How many iterations start per time unit | Held, whatever the latency |
+| Fixed work | `shared-iterations`, `per-vu-iterations` | How many iterations to run | Whatever the users manage |
+
+With virtual users, a slow service gets fewer requests, so a slowdown can hide
+itself. With an arrival rate, requests keep coming at the rate you asked for, which
+is closer to real traffic from many independent clients. Use users to model a known
+number of people working through a flow, and a rate to check a traffic target.
+
+## Give an arrival rate enough users
+
+An arrival-rate executor starts iterations on schedule, and each one needs a free
+virtual user. `preAllocatedVUs` are ready at the start; k6 adds more up to `maxVUs`
+when it needs them. If it runs out, iterations are dropped, the run records an
+insufficient-VUs warning, and the result page can
+[suggest a number that would keep up](/concepts/results/#load-advice).
+
+## Find the limit with `ramp-until`
+
+`ramp-until` starts at `startRate` and climbs by `stepRate` over each
+`stepDuration` until it reaches `maxRate`. Its **stop rule** names the condition that means "this
+is too much", for example p95 latency above 500 ms. When the rule fires, every
+scenario in the run stops.
+
+- If the rule fires, the run has found the rate at which your service crossed it.
+- If the rate reaches `maxRate` first, the run is **inconclusive**: it did not find
+  the limit. Raise `maxRate` and run again.
+
+A ramp can have at most 128 steps. Stop rules are written like pass and fail
+rules; see [Pass and fail rules](/concepts/rules/).
+
+## Timing fields
+
+| Field | Applies to | Meaning |
+| --- | --- | --- |
+| `startTime` | All | Delay before the scenario starts, from the start of the run |
+| `gracefulStop` | All | Time iterations still running at the end get to finish |
+| `gracefulRampDown` | `ramping-vus` | Time a user removed by a stage gets to finish its iteration |
+| `duration`, `maxDuration` | Constant and fixed-work executors | How long the scenario runs, at least 1 s |
+| `timeUnit` | Arrival-rate executors | The period a rate is counted over, such as `1s` or `1m` |
+
+Durations are whole numbers with a unit: `500ms`, `30s`, `5m`, `2h`.
+
+## Several scenarios
+
+Scenarios in one plan run at the same time. Use `startTime` to stagger them, for
+example a steady background load with a spike that starts five minutes in. Each
+scenario chooses which requests it sends, with weights, in the suite's selections;
+see [Suite configuration](/reference/configuration/).
+
+## Limits
+
+| Limit | Value |
+| --- | --- |
+| Scenarios per plan | 64 |
+| Stages per scenario | 128 |
+| One scenario's workload, and its start offset | 24 h each |
+| Graceful stop or ramp-down | 1 h |
+| Whole run, including offsets and grace | 48 h |
+| VUs | 100,000 |
+| Rate | 1,000,000 per time unit |
+
+Other limits are listed in [Limits](/reference/limits/).

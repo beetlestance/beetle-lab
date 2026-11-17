@@ -10,5 +10,5 @@ readHistorySummaries joins compact facts/allocations for <=100 selected Run rows
 under the caller's read transaction. Logical allowance subtracts only existing
 source/absence receipt refunds; published bytes remain historical catalogue facts.
 Wire originals retain failed-worker termination; the shared store stays externally
-owned. Owning contract: docs/design/lld/run-history-summary.md.
+owned. Owning contract: docs/system/contracts/public-api.md.
 Focused tests: app/test/storage/run-history-summary and history indexing fixtures.

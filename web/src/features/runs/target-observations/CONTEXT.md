@@ -4,12 +4,12 @@ RunResultRead reuses resultView identity checks and rejects multiple target repo
 there is no second metadata request/poll or engine-path selector.
 TargetReportReads uses shared browser artifact admission (two across report kinds), no queue/retry/corpus, a 5 s
 fetch/body/hash/decode lifetime, fixed same-origin UUID routes and strict metadata.
-Exact actual bytes and SHA256 precede the shared1MiB/256sample report codec.
+Exact actual bytes and SHA256 precede the shared 1 MiB/256sample report codec.
 Browser fetch, body read/cancel/closed, lock release and digest originals settle
 before admission returns. Abort is a hint; uncooperative originals retain credit.
 useTargetReport fences by API session/scope/run/attempt/artifact and effect lease;
 old values retire during render, old completions cannot publish, retries are manual.
-A separate5s display watchdog retires hung originals without refunding credits.
+A separate 5 s display watchdog retires hung originals without refunding credits.
 StrictMode cleanup retires an abandoned effect before it issues a service call.
 Summary keeps actual zero, explicit missing values, observed during peak and LAST
 after reading. Missing final data never falls back to an earlier known sample.

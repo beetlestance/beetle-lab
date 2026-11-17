@@ -1,6 +1,6 @@
 # Resource observation boundary
 
-Entrypoint index.ts. Read resources-observability LLD and admission CONTEXT first.
+Entrypoint index.ts. Read contracts/resources.md and admission CONTEXT first.
 One original sample; opaque verified root/statfs + pinned read-only Docker baseline.
 CPU/RAM are daemon/VM totals. PID/output/staging are configured aggregate policies;
 physical aggregate PID capacity remains unknown. No idle/thermal/guard invention.
@@ -16,5 +16,5 @@ Close fences callbacks, drains originals and publishes final unknown revocation.
 External bootstrap still owns observer/guard/transport/journal shutdown.
 snapshot() exposes one frozen acknowledged frame, original sample wall start and
 expiry; reads cannot refresh its lease or expose pending resource results.
-Publisher contract: docs/design/lld/observation-publisher.md.
+Publisher contract: docs/system/contracts/results.md.
 Checks: npx --no-install vitest run agent/test/observation agent/test/integration/observation-publisher.test.ts --maxWorkers=2.

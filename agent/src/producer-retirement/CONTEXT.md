@@ -11,5 +11,5 @@ Public result expiry is separate from attempt promise settlement; failed cleanup
 still retains original owners. Cached close refuses unresolved custody.
 Success mints an opaque process-local producer-quiescence token; close revokes it.
 C3 separately validates current native ownership/removal permission. No HTTP route,
-file deletion, physical ACK, purge or refund. Owner producer-retirement LLD.
+file deletion, physical ACK, purge or refund. Contract: retirement.md.
 Focused tests agent/test/producer-retirement; real ports/bootstrap qualification.
