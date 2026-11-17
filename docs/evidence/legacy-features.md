@@ -5,7 +5,7 @@ Method: read routes, runner, k6 driver and browser implementations. This records
 source behavior, not a claim that every feature has release-level test evidence.
 
 R = required in the replacement k6 release. C = intentionally changed design.
-L = later scope. IDs link implementation tasks to [verification](verification.md).
+L = later scope. IDs link implementation tasks to [verification](../engineering/verification.md).
 
 ## Implemented capabilities
 
@@ -28,8 +28,8 @@ L = later scope. IDs link implementation tasks to [verification](verification.md
 | F15 | Download a standalone k6 script from a run config and payloads | [server.js](https://github.com/beetlestance/beetle-lab/blob/af8802e4/server.js) | R: one shared compiler; no copied runtime |
 | F16 | Dark/light themes, persistent shell, breadcrumbs, command search | [shell.js](https://github.com/beetlestance/beetle-lab/blob/af8802e4/public/js/shell.js) | R: accessible and responsive |
 | F17 | Built-in docs, HTTP API reference and downloadable agent skill text | [docs.js](https://github.com/beetlestance/beetle-lab/blob/af8802e4/public/js/docs.js), [integrations.js](https://github.com/beetlestance/beetle-lab/blob/af8802e4/public/js/integrations.js) | R: generated from owned contracts |
-| F18 | Docker/Compose installation; persistent local user data | [Dockerfile](https://github.com/beetlestance/beetle-lab/blob/af8802e4/Dockerfile), [docker-compose.yml](../docker-compose.yml) | R: separate app/agent/engine images |
-| F19 | CI syntax/API tests, image smoke test and multi-architecture publishing | [ci.yml](../.github/workflows/ci.yml) | R: stronger gates in verification spec |
+| F18 | Docker/Compose installation; persistent local user data | [Dockerfile](https://github.com/beetlestance/beetle-lab/blob/af8802e4/Dockerfile), [docker-compose.yml](../../docker-compose.yml) | R: separate app/agent/engine images |
+| F19 | CI syntax/API tests, image smoke test and multi-architecture publishing | [ci.yml](../../.github/workflows/ci.yml) | R: stronger gates in verification spec |
 
 ## k6 configuration and analysis
 
@@ -85,12 +85,12 @@ or a TypeScript extension alone does not resolve them.
 
 | ID | Capability | Owner |
 | --- | --- | --- |
-| N01 | Organisation -> workspace -> optional folders; scoped views and queries | [Organisation/settings LLD](design/lld/organization-settings.md) |
-| N02 | UI-editable run defaults, capacity and retention with safe inheritance | [Organisation/settings LLD](design/lld/organization-settings.md) |
+| N01 | Organisation -> workspace -> optional folders; scoped views and queries | [Organisation/settings LLD](../design/lld/organization-settings.md) |
+| N02 | UI-editable run defaults, capacity and retention with safe inheritance | [Organisation/settings LLD](../design/lld/organization-settings.md) |
 
 These are new requirements, not capabilities found in the current source. A second
 user-proposed feature is deliberately unspecified until discussion after the rewrite.
 
 Legacy runtime source links above are pinned toaf8802e4, before retirement. They
 are historical parity references, not supported execution paths. Current supported
-behavior and its limits are recorded in the [final ledger](verification/final-acceptance.md).
+behavior and its limits are recorded in the [final ledger](acceptance-ledger.md).

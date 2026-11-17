@@ -7,7 +7,7 @@ no network/capabilities. Published image/native identity is checked before effec
 Ownership is saved before create; independent cleanup remains label-scoped.
 
 Three sequential GETs use the approved bounded Unix transport and exact new ID:
-1 s,2 s,1 s. The2s call is diagnostic only; the producer's1s deadline is unchanged.
+1 s,2 s,1 s. The 2 s call is diagnostic only; the producer's1s deadline is unchanged.
 Only scalar status/timing/identity presence and safe raw CPU/memory/PID counters
 leave the reply. Missing/foreign/malformed data stays null; raw errors and Docker
 responses are excluded. This is not an accuracy or resource-qualification oracle.

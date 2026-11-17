@@ -75,15 +75,15 @@ runtimeState is bounded publication diagnostics, not permission to dispatch.
 ## Original HTTP custody
 
 Use the Node HTTP adapter with no redirects, automatic retries, proxies, cookies,
-keepalive pool or response decompression. Bound headers to16KiB/32 fields. Reuse
+keepalive pool or response decompression. Bound headers to 16 KiB/32 fields. Reuse
 shared bounded JSON encoding and generated validators rather than a second schema
-implementation. Offer request maximum is the shared2MiB envelope; ordinary requests
+implementation. Offer request maximum is the shared 2 MiB envelope; ordinary requests
 <=64 KiB and responses <=1 MiB, with <=4096 received fragments. Refuse conflicting or
 invalid lengths/encoding, excess bytes, incomplete EOF and unexpected status.
 
 Retain at most two original Offer calls and eight ordinary calls, with no waiting
 queue. Saturation is a typed transport failure before request serialization/network
-issue. Logical deadline is5000ms; abort/close destroys owned requests but retains
+issue. Logical deadline is 5000 ms; abort/close destroys owned requests but retains
 credit and the original promise until native custody settles. DNS resolution is
 an owned bounded original too: await its actual completion after abort, never start
 a request from a late result, and use only the selected result for that request.

@@ -1,9 +1,9 @@
 # Task execution
 
-Use [STATUS](../STATUS.md) for open product work and [engineering](../engineering.md)
-for code rules. Architecture ownership remains in [HLD](../design/HLD.md).
+Use the [backlog](../plans/backlog.md) for open product work and [engineering](conventions.md)
+for code rules. Architecture ownership remains in the [system overview](../system/overview.md).
 Original rewrite schedules, model assignments and task-hour estimates are
-[historical](../HISTORY.md), not instructions for current sessions.
+[historical](../evidence/README.md), not instructions for current sessions.
 
 Continue the rewrite on `rewrite/integration`. Do not merge or promote it to
 `develop` or `main` without explicit user approval. Task completion and passing

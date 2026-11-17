@@ -44,7 +44,7 @@ the actual serialized32768-byte limit including envelope/newline. Fixed enums an
 
 ## Publication and display
 
-Reserve32KiB before execution from the existing 1 MiB numeric/warning partition:
+Reserve 32 KiB before execution from the existing 1 MiB numeric/warning partition:
 numeric1011712 + warnings4096 + diagnostics32768. Minimum admitted output, build,
 history/control/result reservations remain unchanged. Collection reserves both
 artifacts and deducts produced bytes once before numeric allowance. No raw files

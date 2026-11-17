@@ -10,7 +10,7 @@ Abort retains ignored originals and late-body cancellation through actual cleanu
 The shared responseBody owns stream cancellation/closed/lock cleanup; retained
 artifact reads keep exact-length verification through their thin adapter.
 
-Poll only after the prior original settles, then wait2s. Waiting visibility resumes
+Poll only after the prior original settles, then wait 2 s. Waiting visibility resumes
 have a five-second display watchdog and one replaceable wake callback, not a queue.
 Scalar position checks ordering and altered repeats; unchanged frames cannot renew
 monotonic expiry if wall time freezes. Only the latest20-series window is displayed;

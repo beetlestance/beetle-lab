@@ -1,6 +1,8 @@
 # Plan: documentation restructure
 
-Status: active. Phase 0 delivered; awaiting approval of the triage below.
+Status: active. Phases 0 and 1 delivered on `docs/restructure`; phase 2 awaits
+approval of the triage below. Phase 2 also rewrites backlog rows that record
+measurements as remaining work, moving the measurements to `evidence/`.
 Decision: [017](../../decisions/017-documentation-structure-and-delivery.md).
 
 ## Phases

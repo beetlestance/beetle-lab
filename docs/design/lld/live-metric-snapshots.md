@@ -136,7 +136,7 @@ approval from a frame. Shared k6 policy and existing staged launch fields now su
 assignment; existing actors now own approved readers. Authenticated private transport
 is wired with physical original custody. Scoped backend and visible browser reads are wired; fresh installs enable the
 profile only from the versioned inspected image marker.
-Reader age bounds capture, source-window end and publication to6s with no future
+Reader age bounds capture, source-window end and publication to 6 s with no future
 timestamps. Unchanged revisions retain a monotonic expiry even if wall time freezes.
 New revisions cannot overlap/regress source windows or captured/publication times.
 
@@ -170,7 +170,7 @@ starts after measured-phase transition and drains before collect starts; report
 these bytes in execute completion. A safe advisory failure leaves the test outcome
 alone. Failed native/publisher cleanup prevents sealing. Receipt.liveMetrics reports
 status/reason/produced bytes/quiescence separately from the authoritative verdict.
-Original phase/global remaining time bounds publication, without the per-IO60s cap.
+Original phase/global remaining time bounds publication, without the per-IO 60 s cap.
 
 ## Focused acceptance
 

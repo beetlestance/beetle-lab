@@ -15,8 +15,8 @@ All options are closed, unique, bounded strings; no positional ambiguity, URL
 credentials, paths/query/fragments on endpoint, redirects or environment expansion.
 Host/Origin bind the configured external origin, including private Compose access.
 Node fetch does not preserve an overridden Host. A closed Node HTTP(S) adapter
-therefore preserves that authority, refuses redirects/upgrades, caps headers16KiB
-and bodies4KiB, and uses a 64 KiB byte-sized response queue under existing bounded
+therefore preserves that authority, refuses redirects/upgrades, caps headers 16 KiB
+and bodies 4 KiB, and uses a 64 KiB byte-sized response queue under existing bounded
 wire validation. Abort destroys the request/body. Endpoint and origin are captured in credentials and must match subsequent commands.
 
 | Command | Additional input | Behavior |
@@ -58,7 +58,7 @@ in tests. Fixed public diagnostics never contain paths, URLs, config or exceptio
 
 Successful records use bounded encoded JSON (<=1 MiB) on stdout. Pair prints only
 {paired:true}; connect prints only {connected:true}; credentials never appear there. Error JSON is bounded/fixed on stderr.
-Write output once with a separate1s output budget; handle backpressure/failure
+Write output once with a separate 1 s output budget; handle backpressure/failure
 explicitly and retain stream error ownership through failed-write callback/error
 ordering. Native file IO originals drain before returning, even beyond cancellation. Capture signals
 and remove listeners on completion; abort only HTTP/wait, never implicitly cancel

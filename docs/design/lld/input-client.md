@@ -60,7 +60,7 @@ Reject size>8 MiB before reading. Retain the original buffer read and native dig
 through cancellation/close, check exact actual length and abort between originals.
 Return the bounded bytes only after digest success. Do not cache prepared content.
 
-The UI retains one prepared upload intent, taking synchronous64KiB subarrays for
+The UI retains one prepared upload intent, taking synchronous 64 KiB subarrays for
 append rather than starting unowned per-chunk File reads. Caller retention is outside
 the client's active buffers; abandoning a view cannot release an active preparation
 slot early. Session replacement drains the old client before creating another.

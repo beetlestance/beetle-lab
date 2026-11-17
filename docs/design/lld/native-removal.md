@@ -54,7 +54,7 @@ post-close result can advance one progress version/count. The final step produce
 files_absent progress; it is not a physical cleanup receipt.
 
 Each operation reuses shared cleanup admission/exclusion, inventory512/depth 32/path4096/
-plan128KiB bounds and bounded byte enumeration/fdinfo reads. Conservative handle
+plan 128 KiB bounds and bounded byte enumeration/fdinfo reads. Conservative handle
 bounds are71 simultaneously open and1650 retained cached-close records per step,
 including prepared revalidation plus removal parents/auxiliaries. The initial
 prepared transition performs two sequential inventories, so its retained close-record

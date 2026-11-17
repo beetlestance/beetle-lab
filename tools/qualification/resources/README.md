@@ -20,13 +20,13 @@ PID growth stops after at most 160 small children and must observe both EAGAIN a
 a cgroup limit event. Every issued child is reaped. A final case holds two actual
 descendants, ignores TERM and requires bounded forced namespace shutdown.
 
-Each case has a 60 s result deadline; issued CLI originals remain bounded to60s,
+Each case has a 60 s result deadline; issued CLI originals remain bounded to 60 s,
 and cleanup can outlive that deadline. No late result passes. Outer supervision
 uses the existing check runner with600s and bounded logs. Save the owner descriptor
 before the first container; if a controller is externally killed, inspect only that
 descriptor's exact ownership label. Never prune. Cleanup failure prevents a pass.
 
-CPU reports a one-core denominator and permits one100ms cgroup period plus 50 ms
+CPU reports a one-core denominator and permits one 100 ms cgroup period plus 50 ms
 accounting tolerance. This is not a throughput minimum or the telemetry5% target.
 All container logs/errors are private; `outcome.json` contains the closed result.
 Direct kernel evidence does not establish installed-agent cause attribution,

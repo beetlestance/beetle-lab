@@ -11,6 +11,6 @@ assertion-definition units, discovery, result completeness and window coverage a
 separate. CSV text neutralizes spreadsheet formulas; numeric cells stay numeric.
 Fixed failures invalid_input/output_limit contain no raw data. Overflow rejects the
 whole report; no truncation. Caller owns original signal/deadline, admitted collect
-bytes, exclusive file custody and result publication. The wrapper carves512KiB
+bytes, exclusive file custody and result publication. The wrapper carves 512 KiB
 from existing total/collect ceilings and uses Artifacts for verified output files.
 Checks: engines/k6/test/report and affected attempt tests; Node types/lint.

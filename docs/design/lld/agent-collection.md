@@ -7,9 +7,9 @@ Scope: private single-agent single-host profile; public lifecycle remains in
 ## Durable control intake (single-host profile)
 
 `control.ndjson` contains UTF-8 `ControlEvent` frames with LF, at most 64 KiB per
-frame, 65536 records and64MiB total. Agent enrichment has512 additional bytes;
+frame, 65536 records and 64 MiB total. Agent enrichment has512 additional bytes;
 public event batches remain at most 100 records/256 KiB including their envelope.
-The agent reader must bound each pass to256KiB actual reads/eight read calls,
+The agent reader must bound each pass to 256 KiB actual reads/eight read calls,
 one frame/read window and one pending immutable batch. It must not rescan the
 entire journal on every poll. Live torn tails wait; stopped torn tails fail.
 

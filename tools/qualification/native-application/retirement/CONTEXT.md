@@ -4,7 +4,7 @@ actual compiled backend worker/private committed deletion and production Root.
 Hold actual committed intent/plan/absence/ACK replies, terminate worker, reopen.
 Actual TCP proxy drops one valid cleaned reply; exact digest replay required.
 All files/runtime/volume absent and all charges retained before task cleanup.
-Proxy bounds8forwards/16sockets,3072request/4096retirement/1MiBother reply, absolute10s.
+Proxy bounds8forwards/16sockets,3072request/4096retirement/1MiBother reply, absolute 10 s.
 Retains request/response/socket originals; cancellation/deadline fenced before dispatch.
 Only task-labeled containers/networks/volumes; preserve user services and roots.
 Entry:smoke.ts; source/image/worker hashes and evidence retained by coordinator.

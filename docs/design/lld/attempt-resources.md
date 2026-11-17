@@ -38,7 +38,7 @@ request deadlines, cancellation and response bounds. No host/target CPU claims.
 
 A focused agent/telemetry owner retains one original read, latest coalesced sample,
 counters and sampled maxima per active actor, at most 64 actors. Sampling interval
-is1s; journal publication interval 5 s, plus one final retained observation on runtime
+is 1 s; journal publication interval 5 s, plus one final retained observation on runtime
 exit. Share a two-original sampling admission across the supervisor; refuse excess
 without a queue and count missed observations. A sample deadline is at most 1 s.
 Never place stats IO in the create/start/kill/cancel critical path. Start sampling

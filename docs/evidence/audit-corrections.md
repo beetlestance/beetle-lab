@@ -33,7 +33,7 @@ received independent review. Reviewers reused passing checks instead of rerunnin
   counters were identical before/after; prior result digests remained unchanged.
   A local ARM64 workload passed with actual engine memory/swap each 1 GiB, no
   OOM kill and exit zero. A sealed cold backup was retained before maintenance.
-  See [operation contract](../installed-memory.md).
+  See [operation contract](../guides/change-capacity.md).
 - **Reports:** source tests cover explicit GC count/total/average/max readings,
   active handles, older artifacts, missing samples, chronology, target restarts,
   visible counter resets, overflow and owned attempt-to-artifact/text publication.
@@ -68,7 +68,7 @@ received independent review. Reviewers reused passing checks instead of rerunnin
   `akshay253101` review with exactly the `rewrite/integration` branch rule. Fresh
   API reads match the requested settings and the live guard passes. Main/develop
   heads remain unchanged; no publication was performed.
-  See [release approval](../release-approval.md).
+  See [release approval](../engineering/release.md).
 
 After the final storage-context change, the composed local lane passed **58 tests**
 across storage progress/lifecycle, journal lifecycle/credits and settings-row cases.
@@ -135,7 +135,7 @@ A cached Playwright image ran Chromium146 in a fresh unprivileged container and
 context against the existing real ARM64 run, without a personal browser profile,
 Docker socket, new performance run or app configuration change. A container-local
 loopback relay preserved the normal frontend Host/Origin/session handling.
-The bounded check passed in12.87 seconds with1GiB/1CPU/256 PIDs and owned cleanup.
+The bounded check passed in12.87 seconds with 1 GiB/1CPU/256 PIDs and owned cleanup.
 
 Seven metric selections verify847 displayed sample values and28 summary values,
 including RSS,CPU,explicit GC fields and unavailable values. Rendered report text

@@ -1,19 +1,9 @@
-# Current product and release status
+# Backlog
 
-This is the current status owner. The acceptance ledger is an implementation and
-evidence inventory, not a blanket release certificate. Historical progress reports
-are indexed in [HISTORY](HISTORY.md) and retain their original source/platform scope.
-
-## Available
-
-- Docker Compose starts separate frontend, backend, agent and k6 engine containers.
-- Administrator browser sessions, organisations/workspaces, suites and immutable inputs.
-- Run/cancel, persisted results, metric history, comparison, reports and exports.
-- Public HTTP API, generated schemas and downloadable AI-agent instructions under
-  `/reference`. An MCP server is not shipped.
-- Configurable run budgets within installed limits and explicit retention controls.
-- Cold backup and fresh read-only historical restoration. General in-place upgrade,
-  downgrade and mutable restore are not claimed.
+Status: active. Open product and release work. Current behaviour is described in
+[capabilities](../system/capabilities.md); the acceptance ledger is an evidence
+inventory, not a release certificate. Historical reports are indexed in
+[evidence](../evidence/README.md).
 
 ## Open work
 
@@ -26,16 +16,12 @@ are indexed in [HISTORY](HISTORY.md) and retain their original source/platform s
 | Sampler confinement | Corrected by appending sampling paths under the configured target and checking origin before fetch. Regression tests cover scheme-looking paths; release acceptance remains open. |
 | Migration extension | Migration 026 now has its own version guard. Prior-025 upgrade coverage passes; adding a later migration still requires its own upgrade tests. Migration 015 already has a caller guard. |
 | Publishing | Release protections are applied and the read-only guard passes: default workflow token read-only, no Actions PR approvals, and akshay253101 review required for the integration-only beetle-release environment. No replacement image was published; legacy registry images remain available. |
-| Qualification | Source CI and both native image jobs pass at 40c4a5c1. Hosted conformance, 30-minute stream and four-run memory/latency evidence pass within their finite scopes; see [measurements](verification/audit-corrections.md). The original conformance failure remains unexplained. |
+| Qualification | Source CI and both native image jobs pass at 40c4a5c1. Hosted conformance, 30-minute stream and four-run memory/latency evidence pass within their finite scopes; see [measurements](../evidence/audit-corrections.md). The original conformance failure remains unexplained. |
 | Maintainability | Targeted settings rows validate identity/scope/version/value schemas; malformed-row and original-receipt replay cases pass. This does not certify all SQLite rows or whole-repository formatting. |
-
-The legacy executable source and automatic publishing path are removed in the rewrite.
-No replacement default image was promoted. Use source Compose; the old single-image
-`:latest` is not the supported rewrite installation recipe.
 
 ## Evidence boundaries
 
-Historical source CI passed at 4fabd9fa; see [the evidence index](HISTORY.md).
+Historical source CI passed at 4fabd9fa; see [the evidence index](../evidence/README.md).
 Recorded native Linux amd64/arm64 checks and the 30-minute stream remain useful
 within their original inputs. Neither a passing fixture nor a historical closeout
 establishes complete real-workload parity or readiness after unrelated changes.

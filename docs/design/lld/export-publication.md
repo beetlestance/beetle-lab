@@ -7,7 +7,7 @@ Metadata migration 015 owns these rows; agent Journal 015 is a separate DB.
 
 Export intent/outbox/allocation/source/publication records are separate from Runs.
 Do not create a synthetic Run or put an export UUID into an EventBinding.runId.
-Reserve3MiB bounded metadata per job and payload maximum before delivery.
+Reserve 3 MiB bounded metadata per job and payload maximum before delivery.
 Capture revision/config/input pins, settings versions, installed export profile and
 complete assignment in one receipt-first transaction. Exact replay precedes current
 eligibility; cancellation is monotonic and cannot erase uncertain delivery.

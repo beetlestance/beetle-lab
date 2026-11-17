@@ -10,7 +10,7 @@ it emits untagged `beetle_measure_started=1`, including readiness-disabled runs.
 The native metric timestamp is source correlation; buffered receipt is retrospective,
 not a durable pre-load handshake. Missing/duplicate markers are not complete evidence.
 Private attempts are managed `{timeoutMs,deadlineMs}` or standalone `{timeoutMs}`,
-with explicit mode and timeout1ms..48h. Managed absolute deadlines include earlier
+with explicit mode and timeout 1 ms..48h. Managed absolute deadlines include earlier
 prepare/init elapsed; setup also clamps to the accepted timeout. Standalone starts
 one fresh deadline at setup, before readiness; pre-setup init and OS enforcement
 are excluded. Setup returns only that number to all VUs. Missing setup data fails

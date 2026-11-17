@@ -1,5 +1,5 @@
 # Native cleanup receipt
-index.ts owns oneperJournal <=2coalescedfinalizationoriginals andfixed30s budget.
+index.ts owns oneperJournal <=2coalescedfinalizationoriginals andfixed 30 s budget.
 RequiresgenuineRuntimeAbsent/C1root/storedplan/files_absent, thenALWAYSrealnative
 stepWithProof(NOOP/currentabsence) beforecommit/replay. OpaqueWeakMap authenticates
 samephysicalports/liveRuntime/nativeowner/exactcapturedplan/finalprogress.

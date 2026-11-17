@@ -22,10 +22,10 @@ Rollback-time updates are discarded; a persistent high-water source-time fence
 requires a genuinely later observation before recovery. Queueing never refreshes age.
 Settings reductions retain charges; input admission counts payload+64 KiB and one
 configured reserve. Private advances require exact versions and trusted byte service.
-Queue <=64(default32); suites/readOffer SHARE TWO originals; input64KiB/reply1MiB;
-revision2MiB/config 1 MiB, Offer reply2MiB+64 KiB with fixed carrier; worker heap<=128 MiB.
-SQLite cache2MiB/busy100ms; startup5s, then5s without a completed worker reply.
-Bounded FIFO bursts can exceed5s total while progressing; no mutation retry.
+Queue <=64(default32); suites/readOffer SHARE TWO originals; input 64 KiB/reply 1 MiB;
+revision 2 MiB/config 1 MiB, Offer reply 2 MiB+64 KiB with fixed carrier; worker heap<=128 MiB.
+SQLite cache 2 MiB/busy 100 ms; startup 5 s, then 5 s without a completed worker reply.
+Bounded FIFO bursts can exceed 5 s total while progressing; no mutation retry.
 Close drains admitted FIFO work; close/abort await worker termination, including
 failure paths. Unknown outcomes never trigger automatic mutation retries.
 Migrations are transactional; legacy rows stay unadopted and indexed.\nRun history uses one scoped read snapshot, fixed covering indexes (migration 017),\nlimit+1 time/UUID keys and a strict query-bound cursor; no native/metric reads.

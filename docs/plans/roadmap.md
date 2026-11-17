@@ -1,10 +1,11 @@
-# Beetle Lab implementation plan
+# Roadmap
 
-Current implementation and release gaps are owned by [STATUS](docs/STATUS.md).
-[Feature inventory](docs/current-features.md) records the original capabilities;
-[acceptance requirements](docs/verification/final-acceptance.md) retain all 69 IDs.
+Status: active. Delivery phases and accepted direction. Open gaps are owned by the
+[backlog](backlog.md); current behaviour by [capabilities](../system/capabilities.md).
+[Feature inventory](../evidence/legacy-features.md) records the original capabilities;
+[acceptance requirements](../evidence/acceptance-ledger.md) retain all 69 IDs.
 Historical task estimates and execution reports are indexed in
-[HISTORY](docs/HISTORY.md). A previous closeout is not blanket release acceptance.
+[HISTORY](../evidence/README.md). A previous closeout is not blanket release acceptance.
 
 ## Accepted direction
 
@@ -34,13 +35,13 @@ when implementing supported resource or installation changes.
 
 R0–R3 have substantial implementation. Known parity, configuration and hardening
 gaps remain, and R4 release acceptance is open. The current backlog is maintained
-once in STATUS.md. A functional report or resource-control gap is not UI polish.
+once in the [backlog](backlog.md). A functional report or resource-control gap is not UI polish.
 The full UI redesign follows a separate audit and plan.
 
 ## Ownership and scope
 
-[HLD](docs/design/HLD.md) and focused LLDs own architectural contracts;
-[engineering](docs/engineering.md) owns implementation conventions;
-[verification](docs/verification.md) owns required checks and evidence rules.
+The [system overview](../system/overview.md) and focused contracts own architecture;
+[engineering](../engineering/conventions.md) owns implementation conventions;
+[verification](../engineering/verification.md) owns required checks and evidence rules.
 Use one task owner per shared boundary and preserve the agreed failure/resource
 invariants. Do not introduce another framework merely to close a bounded defect.

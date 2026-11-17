@@ -85,7 +85,7 @@ source/publication/terminal/cleanup facts. Equal replay is idempotent, conflicti
 or stale binding rejects. A lost successful commit reply cannot cause another
 engine execution. Missing/corrupt data cannot become a ready summary.
 
-Summaries are bounded control metadata within the existing retained64KiB logical
+Summaries are bounded control metadata within the existing retained 64 KiB logical
 output-metadata policy. They are not event/artifact payload, an extra installation
 charge or a claim about actual SQLite/WAL/filesystem allocation. At most one
 <=2048-byte projection exists per retained Run; unclaimed runs keep pending values.
@@ -130,7 +130,7 @@ chart admission. Aggregate new physical concurrency is explicitly one extra
 bounded read; no per-row concurrency. Retain the original through metadata/native
 result AND settlement, including abort/deadline/close failure.
 
-A pending unpublished source defers the same key30s, preserving fairness and
+A pending unpublished source defers the same key 30 s, preserving fairness and
 unknown data without claiming absence. Busy defers briefly; format/absence become
 explicit terminal projection states; failed integrity/native reads become unavailable.
 Scheduling/storage failures remain surfaced through the existing bootstrap failure

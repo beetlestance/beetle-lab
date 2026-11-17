@@ -115,7 +115,7 @@ Unknown ownership, links, special files, nested mounts, replaced ancestors, over
 or incomplete enumeration refuses preparation. Preserve unrelated installation data.
 
 Proposed per-task bounds:512 entries, depth 32,4096 UTF-8 path bytes,128 KiB serialized
-plan,64 KiB read windows and30s per issued operation. Bounds must include directory
+plan,64 KiB read windows and 30 s per issued operation. Bounds must include directory
 reads, stat/open/unlink/fsync/close, plan serialization and recovery discovery.
 The plan stores exact native facts and expected namespace changes; metadata persists
 it before unlink. Resume uses that same plan and progress after lost replies.

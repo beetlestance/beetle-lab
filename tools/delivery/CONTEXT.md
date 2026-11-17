@@ -18,7 +18,7 @@ inventories, image CycloneDX reports and source dependency inventory/audit. It f
 HIGH/CRITICAL CVEs, including unfixed findings, and fails closed on scanner errors.
 `scripts/install-ci-trivy.sh` pins official Trivy archive checksums for native Linux.
 
-Publication gates: [release approval](../../docs/release-approval.md).
+Publication gates: [release approval](../../docs/engineering/release.md).
 
 `references.ts` owns six nonce transport tags and binding-checked cleanup.
 `contents.ts` verifies role/config/manifest hash bindings; `bundle.ts` captures the

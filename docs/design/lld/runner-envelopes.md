@@ -9,7 +9,7 @@ passes; updated native containers and parallel stress remain unqualified.
 
 `contracts/src/limits.ts` owns RUNNER_MAXIMUM_CONFIG_BYTES=1048576 and
 RUNNER_MAXIMUM_OFFER_BYTES=2097152. Limits measure UTF8 JSON bytes, not JS string
-length. Config remains1MiB while the larger envelope holds identity, references,
+length. Config remains 1 MiB while the larger envelope holds identity, references,
 budget and execution policy. Preserve JSON depth/node/collection bounds.
 The already-parsed shared Offer validator checks the independent config byte bound
 after structural schema validation, with fixed safe issues. This is structural
@@ -23,7 +23,7 @@ smaller limits must remain effective. Do not widen the generic wire/API transpor
 default for this purpose. Raw HTTP/staged file size and normalized serialized JSON
 are separate checks; whitespace/escaped Unicode do not increase normalized rights.
 The wire registry snapshots shipped request-specific overrides at construction;
-only the runner Offer selects2MiB. Response bounds retain their existing default.
+only the runner Offer selects 2 MiB. Response bounds retain their existing default.
 An explicit caller maximum restricts both response intake and any request override.
 
 ## Propagation and ownership
@@ -32,7 +32,7 @@ Required consumers: runner client; private HTTP parser/request snapshot; catalog
 installation enqueue; journal immutable snapshot/admission command/SQL read;
 staging serialization and exact cost; Docker preparation; actual engine input loader.
 Retain independent config/schema/compiler bounds. Admission commands containing an
-Offer allow its2MiB plus bounded control overhead; non-Offer commands retain64KiB.
+Offer allow its 2 MiB plus bounded control overhead; non-Offer commands retain 64 KiB.
 Explicitly bound canonical stored JSON too; do not assume character counts equal
 bytes. Reordered-key dedup still binds complete original intent and secret references.
 
@@ -42,7 +42,7 @@ original enqueue completion even if the response/socket aborts. Parse/auth/413
 failures without an enqueue original release exactly once. Close fences intake and
 drains originals; it cannot certify cleanup from response completion alone.
 Bound queued/in-flight large journal requests independently of its total 32/64
-request count and128MiB worker heap; cancellation/unknown commit cannot drop the
+request count and 128 MiB worker heap; cancellation/unknown commit cannot drop the
 original owner. Demonstrate the retained-byte bound, not just a successful small run.
 Known pre-issue readOffer queue_full must defer installation drive or return Stager
 busy before file/provider work; it cannot abort a legitimate parallel run. Preserve
@@ -53,7 +53,7 @@ do not add automatic execution retries or reduce active-engine concurrency to tw
 
 Keep applied migrations unchanged. In one FK-enforced transaction shadow-copy
 accepted_attempts plus its four direct children: event_spool, admission_queue,
-reservations and supervision_clock. Change only the two Offer/canonical2MiB checks.
+reservations and supervision_clock. Change only the two Offer/canonical 2 MiB checks.
 Preserve every projection/checkpoint/cursor/charge/cancel field and indexes/uniqueness.
 Drop children before old parent; rename shadow parent before shadow children.
 Save and restore all three AUTOINCREMENT high waters, including missing sequence
@@ -75,7 +75,7 @@ over, escaped characters and invalid JSON structure. They do not qualify consume
 An actual full-size k6 case must pass runner client -> private HTTP -> catalogue ->
 installation/journal -> reopen -> Stager -> openStagedInput/compile, with independent
 byte/hash expectations. Oversize config rejects before durable acceptance or provider
-effects; raw2MiB HTTP acceptance/2 MiB+1 rejection and oversized staged files are tested
+effects; raw 2 MiB HTTP acceptance/2 MiB+1 rejection and oversized staged files are tested
 separately. Preserve scoped identity, original replay and changed-intent conflict.
 
 Migration tests use an independent literal v7 fixture with all children populated,

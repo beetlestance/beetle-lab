@@ -40,7 +40,7 @@ One installation guard has explicit start/close, at most 64 watches, one origina
 scan/watch and no shadow job queue. Public factory binds the real scanner; a private
 constructor seam may supply a scanner for controlled tests. Options contain the
 verified root, disk reserve, timing, trusted clock and typed installation stop port.
-Default interval 250 ms, TTL2000ms, sample timeout1000ms; interval 50..5000,
+Default interval 250 ms, TTL 2000 ms, sample timeout 1000 ms; interval 50..5000,
 TTL100..300000 and sample timeout100..30000 are validated, with TTL>interval.
 
 watch returns initial ready/failed, current status and cached close. Reserve ownership

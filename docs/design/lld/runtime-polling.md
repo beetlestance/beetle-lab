@@ -10,7 +10,7 @@ startRuntimePoller({source,publish,intervalMs?}) starts one immediate asynchrono
 iteration. Default interval 250 ms, allowed25..60000 ms. Schedule the next tick only
 after the original sample and original publication settle. No overlapping calls,
 waiting queue, detached retries or Promise.race drainage. Capture port methods and
-configuration once. Bound private observation copies to64KiB before publication.
+configuration once. Bound private observation copies to 64 KiB before publication.
 
 RuntimePublisher returns true only for accepted cache publication; false is an
 explicit observation refusal. The concrete SQLite bridge maps invalid_input and

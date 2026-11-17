@@ -46,7 +46,7 @@ budgets and bounded artifact metadata; staging and interrupted transfer stay cha
 canonical event bytes+128 per unique row, <=min(original payload allowance,64 MiB)
 and<=65536 rows. It consumes this same allowance; no second installation charge or
 ACK refund is created. Future artifact/report adoption must subtract retained
-control usage and account for copies before accepting bytes. The metadata64KiB
+control usage and account for copies before accepting bytes. The metadata 64 KiB
 allowance covers bounded cursor/diagnostics; it cannot hide event payload storage.
 
 A future separately frozen artifact/finalization transaction may settle the reserved

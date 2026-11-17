@@ -39,7 +39,7 @@ with output_limit; invalid input has a fixed safe code. No truncation or partial
 success. The two outputs and their bounded projection buffers are transient work,
 not permission to retain unlimited memory or disk.
 
-The existing output partition carves512KiB for both reports from the accepted
+The existing output partition carves 512 KiB for both reports from the accepted
 attempt total, reducing available build/history space. The collect-phase partition
 reserves the same ceiling in addition to summary, numeric and final-drain space.
 No configured total/phase budget is automatically increased. An insufficient
@@ -59,7 +59,7 @@ multiple reports show an explicit ambiguity error. The browser verifies <=256 Ki
 exact file length/SHA256 and fatal UTF-8 before rendering plain text. No report
 HTML, second metric renderer or browser-side outcome inference is used. The shared
 artifact reader owns two originals across target/performance kinds and a 5 s whole
-read. A session/scope/attempt/artifact display lease and independent5s UI watchdog
+read. A session/scope/attempt/artifact display lease and independent 5 s UI watchdog
 retire stale results without releasing unsettled originals. Retry is explicit.
 Safe fixed-UUID text/CSV/JSON attachment links reuse the existing artifact routes.
 Actual browser display/save qualification remains pending.

@@ -166,7 +166,7 @@ control before work is published; preserved unfunded legacy rows need explicit t
 
 Sent never-admitted originals have no genuine retained disk hold and cannot borrow
 its staging credit. They need a separate positive no-reservation/no-native authority
-and explicit permanent replay funding rule. The separate16KiB control now funds this
+and explicit permanent replay funding rule. The separate 16 KiB control now funds this
 branch; missing reservation or generic absence never authorizes it. Low-quota rows stay protected.
 The private rejected funding path reserves16384 bytes before writing its exact no-task
 retirement intent in the same immediate transaction. It requires the actual rejected

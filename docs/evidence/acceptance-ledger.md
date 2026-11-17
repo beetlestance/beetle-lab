@@ -1,10 +1,10 @@
 # Final rewrite acceptance ledger
 
-Authority: [36 product IDs](../current-features.md) and [nine acceptance plus 24 adversarial IDs](../verification.md).
-Current gaps are owned by [STATUS](../STATUS.md). This ledger retains requirements
+Authority: [36 product IDs](legacy-features.md) and [nine acceptance plus 24 adversarial IDs](../engineering/verification.md).
+Current gaps are owned by [STATUS](../plans/backlog.md). This ledger retains requirements
 and recorded evidence; its older coverage statements are not blanket release
 acceptance. Linked reports are historical source/platform records. Local receipts
-cannot substitute for required hosted evidence. See [HISTORY](../HISTORY.md).
+cannot substitute for required hosted evidence. See [HISTORY](README.md).
 
 ## Product IDs
 
@@ -92,7 +92,7 @@ cannot substitute for required hosted evidence. See [HISTORY](../HISTORY.md).
 
 ## Qualification disposition
 
-Release acceptance remains open under [STATUS](../STATUS.md). Historical passes
+Release acceptance remains open under [STATUS](../plans/backlog.md). Historical passes
 remain valid only for their recorded inputs and claims. Recent [audit corrections](audit-corrections.md) have scoped local source evidence.
 Current packaged reports, actual 1 GiB engine enforcement and hosted finite
 resource cases and isolated-browser report/download/reload checks pass under the

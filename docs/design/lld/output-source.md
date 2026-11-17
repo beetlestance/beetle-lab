@@ -16,7 +16,7 @@ JSON cannot prove process lifetime or native quiescence.
 
 Public manifest identity excludes private paths and runtime/create/start evidence.
 Separate digest domains cover public content and complete private source custody.
-Raw result files may be1MiB while canonical journaled EngineResult remains65536
+Raw result files may be 1 MiB while canonical journaled EngineResult remains65536
 bytes. Exact source/intent requests survive ambiguous commit replies. Pending
 collection after owner recreation never becomes failed solely from timeout or
 source absence; recovery must preserve pinned roots and avoid target execution.

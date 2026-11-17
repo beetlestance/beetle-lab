@@ -3,7 +3,7 @@
 The working set no longer contains chronological rewrite task reports. Their
 complete contents, failed trials and links are preserved at immutable revision
 `4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc` before this cleanup. These records are historical evidence, not
-current status; use [STATUS](STATUS.md) for open work and supported limitations.
+current status; use the [backlog](../plans/backlog.md) for open work and supported limitations.
 
 | Record | Immutable source |
 | --- | --- |

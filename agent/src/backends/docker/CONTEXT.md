@@ -5,7 +5,7 @@ minimum/install ceilings and manifest-matching entrypoint. InstallationProfile i
 trusted: installation UUID, immutable image, numeric non-root UID:GID, approved
 none/beetle-* network, bounded temporary allocation, absolute stagingRoot, ceilings.
 Live mailbox opt-in is trusted install metadata, never job/browser config. Its
-local-driver tmpfs volume uses NoCopy and exact per-plan labels/options; its128KiB
+local-driver tmpfs volume uses NoCopy and exact per-plan labels/options; its 128 KiB
 comes from /tmp. No default profile enables it. Cold missing orphans without
 creation-settlement proof remain charged; durable recovery precedes enablement.
 effectiveImage pins imageDigest/defaultRuntime/public environment (64 unique entries,

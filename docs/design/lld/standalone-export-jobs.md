@@ -49,7 +49,7 @@ A different budget/source/identity/options produces a different assignment.
 The digest is content integrity, never admission or authentication proof.
 
 maximumBuildBytes is1..64 MiB and includes simultaneous compiler plan/entry/script
-scratch through the existing builder. Reserve another8KiB result and64KiB control
+scratch through the existing builder. Reserve another 8 KiB result and 64 KiB control
 inside Offer.outputBytes; no capacity is invented. Whole-job timeout bounds this
 build task. scriptTimeoutMs is separately1..172,800,000 ms, matching the existing
 standalone runtime validator; it limits the downloaded test when run externally.

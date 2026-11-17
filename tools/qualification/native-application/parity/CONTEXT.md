@@ -2,7 +2,7 @@
 
 run.ts BUNDLE NEW_ABSOLUTE_OUTPUT [CONTEXT] [executors|thresholds|failures].
 Use an already qualified immutable source archive; no image builds/publication.
-Each profile has at most two retained runs, preserving stock128MiB agent pool.
+Each profile has at most two retained runs, preserving stock 128 MiB agent pool.
 Only synthetic loopback target ports and exact owned Compose resources.
 Outer 600 s; each run 90 s/200public polls, target512requests total/128per route.
 All six ordinary executors share one run; delayed per-VU work is counted separately.

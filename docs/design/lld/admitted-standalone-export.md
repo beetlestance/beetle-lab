@@ -18,7 +18,7 @@ this durable record, never a request-selected codec. No post-admission attachmen
 Reuse shared reservation, capacity, queue policy and physical supervisor. Staging
 reserves both exact offer.json and assignment.json bytes, fixed manifest/metadata,
 all pinned inputs and original output allowance. That allowance already includes
-compiler scratch/script plus 8 KiB result and64KiB control. No secret resolution for
+compiler scratch/script plus 8 KiB result and 64 KiB control. No secret resolution for
 export; reject declarations before admission effects. Failed/unknown work stays
 charged until original physical stop and native collection/retirement proof.
 

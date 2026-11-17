@@ -32,7 +32,7 @@ columns, 10000 external rows/dataset, 250000 materialized cells; 8 MiB/input and
 32 MiB loaded/expanded uses (repeated refs count again), body value nodes 65536 (roots
 included, keys excluded); external JSON preflight admits against remaining nodes;
 cells/templates <=4096 chars, <=128 tokens; JSON depth 32. Request serialization
-limits: URL/header64KiB, body8MiB; runtime must enforce before allocation.
+limits: URL/header 64 KiB, body 8 MiB; runtime must enforce before allocation.
 Secret refs contain name/provider/locator/optional opaque version; no value/hash.
 Unversioned secret identity marks reproducibility unknown. Compiler identity pins
 config/effective target/compiler/schema/engine versions/image/input manifests.

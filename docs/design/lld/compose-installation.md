@@ -60,10 +60,10 @@ boundary. No constrained broker or rootless-daemon guarantee is implemented.
 No automatic recursive chown/repair or deletion of existing state.
 
 All service rootfs read-only; cap_drop ALL; no-new-privileges; finite /tmp/PID/CPU/
-memory/log limits; graceful stop bounds. Backend/agent each CPU0.25,memory256MiB,
-PID 64; frontend CPU0.1,memory64MiB,PID 32. These hard caps sum to starter control
-reserve CPU600/memory576MiB/PID 160. They are not measured stack overhead claims.
-Installer is offline, bounded CPU1,memory256MiB,PID 64. Native engine limits remain
+memory/log limits; graceful stop bounds. Backend/agent each CPU0.25,memory 256 MiB,
+PID 64; frontend CPU0.1,memory 64 MiB,PID 32. These hard caps sum to starter control
+reserve CPU600/memory 576 MiB/PID 160. They are not measured stack overhead claims.
+Installer is offline, bounded CPU1,memory 256 MiB,PID 64. Native engine limits remain
 owned by admission/profile and per-attempt Docker spec, not Compose engine service.
 No automatic process backend fallback or sensor availability claim.
 

@@ -46,7 +46,7 @@ Directories require0700; regular single-link files allow0400 staged input or0600
 output. Require all four original role anchors, and inventory the complete task.
 
 Keep at most 512 entries including task root, depth 32,4096 UTF-8 bytes per relative
-path and128KiB complete canonical plan. Check limits before overflowing child opens.
+path and 128 KiB complete canonical plan. Check limits before overflowing child opens.
 DFS retains both FileHandle and Dir per ancestor: conservative maximum71 simultaneous
 handles including auxiliaries, and1539 retained cached-close records per operation.
 Closed metadata/path storage stays bounded by those counts; four owner slots alone

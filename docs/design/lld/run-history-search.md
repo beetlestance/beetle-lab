@@ -72,7 +72,7 @@ prefixes receive the same bound. This cap never applies to name-mode Run totals.
 
 A deterministic SQLite function calls the shared search fold/tokenizer; it is
 registered before migration and used by triggers and backfill. Its <=4094 unique
-three-scalar terms serialize below128KiB. SQLite triggers maintain source-name postings atomically with
+three-scalar terms serialize below 128 KiB. SQLite triggers maintain source-name postings atomically with
 the namespace mutation. Moves change ancestry/folder membership at query time;
 no Run-row cascade or source config read. Folded index documents have a hard4096-
 scalar bound; an oversized write fails atomically rather than silently truncating.

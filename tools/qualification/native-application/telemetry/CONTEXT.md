@@ -15,13 +15,13 @@ Same env token entrypoint (image-pinnedPATH; absolute executable paths are
 invalid in the manifest schema) in both trusted manifests/profiles; off unsetsimageflag,
 onsets1. Pin exact changed descriptors. Verify actualPID1 environment, notConfig.Env
 or dockerexecchild env. No arbitrary realcredentials/datasets/shell scripts.
-One target10ms response,1request/4assertions,4VU×1000iterations/max 30 s, no sleep;
+One target 10 ms response,1request/4assertions,4VU×1000iterations/max 30 s, no sleep;
 4000physical work/run,10runs (2warmups +4balancedoff/on pairs),target<=45000work.
-Ten8MiB requests retain80MiB paidoutput under 128MiBpool; no purge/poolincrease.
+Ten 8 MiB requests retain 80 MiB paidoutput under 128MiBpool; no purge/poolincrease.
 Measure actualDockerStartedAt→FinishedAt; completeequivalentfinalcounts/artifacts,
 all under conservative512KiBcommonartifactcap<ONhistoryquota orpairinvalid. ExternalagentCPU/RSS observeridenticalboth.
 Report allpairs, walltarget<=5%miss analysedneverraised. No backendHTTPcostclaim.
-Parentmarker30s/startupready10s; outer 480 s, boundedsourcebuild/logs/report/requests, exactownerdescriptorbeforeeffects.
+Parentmarker 30 s/startupready 10 s; outer 480 s, boundedsourcebuild/logs/report/requests, exactownerdescriptorbeforeeffects.
 Drain everyoriginal; normal+independentcleanup. Aftereachcase, recheckfullID/
 installation/attempt/generation/image andstoppedstate, thenremoveexactcontainer
 force=false andsameowned livevolume afterbindingverification; retainnativeoutput

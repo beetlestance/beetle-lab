@@ -52,7 +52,7 @@ Bind every cursor to scope, requested attempt, manifest, lane and selection/rang
 No replay across a different selection or silent cursor recovery.
 
 Sample pages start at the newest selected windows and move backwards. Examine at
-most limit index entries; if their contiguous data range exceeds8MiB, keep the
+most limit index entries; if their contiguous data range exceeds 8 MiB, keep the
 newest suffix that fits. Points within a reply stay ascending. A selected series
 may be absent from an examined window; advance the cursor anyway, never scan an
 entire run to manufacture a full point page. A window overlaps the requested range
@@ -106,7 +106,7 @@ partial view has an explicit limit notice and older/latest navigation; replace
 views rather than accumulate a run corpus or cursor-keyed caches. Page/series/scope/
 attempt/session changes retire late reads. Manual operations never overlap.
 
-Pending catalogue polls2s only while visible; ready/absent/unavailable/error stop.
+Pending catalogue polls 2 s only while visible; ready/absent/unavailable/error stop.
 Do not infer publication from terminal Run state; retain terminal-refresh ownership.
 Draw real source gaps, never interpolate missing points as zero or smooth across
 them. Trend default is estimated p95 with bounds/scale available; label source and

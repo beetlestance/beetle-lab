@@ -1,7 +1,8 @@
 # beetle-lab implementation rules
 
-Read the repository documentation map and assigned task packet first. This
-rewrite uses the accepted HLD/LLDs. Read docs/STATUS.md for current gaps; legacy
+Read the repository documentation map (docs/README.md) and assigned task packet
+first. Architecture lives in docs/system/ and the remaining LLDs; open gaps live in
+docs/plans/backlog.md. A plan never describes current behaviour; legacy
 source and execution reports are preserved in Git, not maintained runnable paths.
 
 - One task, one worktree/branch, explicit file ownership. No nested delegation.
@@ -28,4 +29,4 @@ Required inherited parent policy: no push without explicit authorization; no
 repeat heavy build/test when relevant exact-commit CI already exists; preserve
 user data and Git metadata; bounded task-owned caches; no global dependencies.
 
-See docs/engineering.md, docs/verification.md and docs/execution/ for details.
+See docs/engineering/ (conventions, verification, workflow, release) for details.

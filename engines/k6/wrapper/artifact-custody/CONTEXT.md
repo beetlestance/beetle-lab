@@ -5,7 +5,7 @@ Artifacts owns fixed-name summary/numeric/target/report/diagnostic/native-script
 identity helpers and bounded hash reader are shared with the metric archive.
 No compiler, metrics interpreter, target calls, job admission or metadata here.
 
-One64KiB hash scratch buffer, positional progress<=ceil(bytes/64 KiB)+32+EOF;
+One 64 KiB hash scratch buffer, positional progress<=ceil(bytes/64 KiB)+32+EOF;
 caller limit<=256 MiB, script limit 64 MiB. Hash alone proves no file/root custody.
 Strict canonical0700 root, owned0600 regular single-link file, stable inode/length/
 stat, two hashes, sync and original closes precede named file/root reconciliation.

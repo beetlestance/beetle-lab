@@ -49,7 +49,7 @@ descriptor capture, original subtree validation, exact identity and byte account
 for SQL, worker producer and parent consumer. Never reapply the original-root JSON
 cap to those carriers or widen the generic codec. Two original slots bound count;
 stored text, encoder parts/string, parsed copies and native clones need their own
-bounded accounting and qualification; they are not exactly2MiB resident memory.
+bounded accounting and qualification; they are not exactly 2 MiB resident memory.
 
 claim(key) has a compact request/reply <=64 KiB. claimed and replay permit PUT of
 that same original; acknowledged forbids a new PUT; blocked carries a typed reason.

@@ -1,6 +1,6 @@
 # Module and build ownership
 
-Status: proposed source layout. Size/responsibility gates: [engineering](../../engineering.md).
+Status: proposed source layout. Size/responsibility gates: [engineering](../../engineering/conventions.md).
 This is the implementation navigation map, not a requirement to create empty files.
 Create a module when its first behavior and tests land.
 

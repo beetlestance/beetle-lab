@@ -23,15 +23,15 @@ Source metadata and permanent mutation/deletion receipts remain unchanged.
 
 Canonical NDJSON records use strict relative paths, parent-before-child order,
 unique entries, SHA-256 lengths/digests and an exact terminal count. The manifest is
-at most 32 MiB, each line8KiB,100000 entries,8 MiB aggregate path text and depth 32.
+at most 32 MiB, each line 8 KiB,100000 entries,8 MiB aggregate path text and depth 32.
 Caller limits can be smaller. The byte limit covers logical archive payload,
-manifest and a 64 KiB control allowance; restore reserves another8KiB for its claim.
+manifest and a 64 KiB control allowance; restore reserves another 8 KiB for its claim.
 It is not a filesystem-wide disk quota. SQLite normalization/compaction needs
 additional temporary disk, bounded by the copied database size and its native
 journal/work space. Insufficient space fails the operation; it never reports a
 complete archive or refunds execution storage.
 
-File I/O uses64KiB buffers, bounded partial writes and at most 16 original resources
+File I/O uses 64 KiB buffers, bounded partial writes and at most 16 original resources
 per maintenance operation. Discovery charges pending sibling names and paths before
 recursion. Deadline/abort stops further work after an issued original settles.
 An uncertain original close is sticky, retains its owner and fences new operations;

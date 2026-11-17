@@ -71,7 +71,7 @@ unmount. No URL, save link or success indicator after failure, abort or a late r
 Use a generated ASCII input-<UUID>.bin filename. A Download input action may prepare
 the verified result, then expose a Save file link; explicit user activation keeps
 native browser download behavior. No automatic navigation or unbounded timers.
-Browser Blob copies and caller-owned ready bytes are bounded by8MiB per control,
+Browser Blob copies and caller-owned ready bytes are bounded by 8 MiB per control,
 additional to client/crypto buffers; this is not a measured process RSS claim.
 Safe fixed failure text covers busy/closed/transport/protocol failures; never echo
 exception text or server content. Retry is explicit and performs a new read only.

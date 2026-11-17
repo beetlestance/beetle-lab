@@ -13,7 +13,7 @@ No caller path becomes native permission. Export cleanup needs a separate purpos
 contract; reserving its capacity does not enable these performance operations.
 
 At most 512 entries include the root. At most 32 relative path levels,4096 UTF-8 bytes
-per path and128KiB complete canonical JSON. Root is the empty path, first and a
+per path and 128 KiB complete canonical JSON. Root is the empty path, first and a
 directory. Paths are unique, strictly lexically ordered by JS code units; each
 parent must already be a directory. No absolute/empty component, dot/dotdot,
 backslash, controls or unpaired surrogate. Both decoded shape and complete output
@@ -29,7 +29,7 @@ A well-formed plan is not evidence that any native observation happened.
 
 Canonical SHA256 identifies the exact stored plan. Persist it before unlink;
 resume that same plan, not a reconstructed empty-root plan or generic ENOENT.
-Current proposed native windows remain64KiB and30s per issued operation. Over-bound
+Current proposed native windows remain 64 KiB and 30 s per issued operation. Over-bound
 work stays pending/charged. Qualify the supported actual generated layout against
 these same bounds; never silently enlarge them after admission.
 

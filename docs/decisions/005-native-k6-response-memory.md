@@ -26,4 +26,4 @@ owner. Remove this narrow exception when an upstream pre-buffer limit or a
 qualified bounded transport can preserve the required HTTP measurement semantics.
 Export documentation must state external memory-control requirements explicitly.
 
-This is recorded in the [exception registry](../engineering-exceptions.md).
+This is recorded in the [exception registry](../engineering/exceptions.md).

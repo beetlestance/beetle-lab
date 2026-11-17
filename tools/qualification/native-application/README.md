@@ -20,6 +20,6 @@ A generic artifact-integrity check does not replace those assertions.
 
 The old standalone live/restart smoke programs were superseded by the maintained
 paths above; their original source and execution records are in
-[Git history](../../../docs/HISTORY.md). Retain useful manual qualifiers even when
+[Git history](../../../docs/evidence/README.md). Retain useful manual qualifiers even when
 they have no static caller; lack of an import alone is not evidence of dead code.
 Use exact source/image/config identities and normal plus independent cleanup.

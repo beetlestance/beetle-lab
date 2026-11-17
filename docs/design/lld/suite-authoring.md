@@ -42,9 +42,9 @@ declared version; do not resolve, substitute or hash environment/mounted bytes.
 
 Config JSON retains the existing 1 MiB allowance, including non-ASCII byte accounting.
 Canonical config serialization and shared schema validation precede persistence.
-API revision mutation/detail and worker envelopes allow2MiB for config plus identity,
-pins and receipts; other command inputs retain64KiB. Existing nonrevision replies
-retain their separate1MiB budget. List pages contain at most
+API revision mutation/detail and worker envelopes allow 2 MiB for config plus identity,
+pins and receipts; other command inputs retain 64 KiB. Existing nonrevision replies
+retain their separate 1 MiB budget. List pages contain at most
 100 suite/revision summaries; revision lists omit config/inputManifest. Full revision
 reads are individual. Byte/depth/property and safe integer checks remain enforced
 by the existing bounded JSON encoder; no raw JSON.stringify before intake bounds.
@@ -64,7 +64,7 @@ are disabled; UPDATE/DELETE triggers alone are insufficient.
 The input_blobs table records scoped id/hash/bytes and staging/published state
 for future byte-publication ownership; no generic metadata-register writer is exposed.
 Rebuild the existing receipts table with result_json<=2 MiB, preserving its rows
-and shared(scope_key,request_id) identity; namespace/settings commands remain64KiB.
+and shared(scope_key,request_id) identity; namespace/settings commands remain 64 KiB.
 Fresh/v1 reopen must preserve existing organisations, settings and receipts.
 
 Intent hashes canonical sorted-key JSON of kind, route identity and full request.

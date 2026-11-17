@@ -3,7 +3,7 @@ Public LiveMetricReader; construction requires a trusted compile/launch approval
 (scope, producer UUID, exact subset). Never learn approval from a received frame.
 The read port resolves only after actual request/response close. Reader retains
 one original through cancel/close; close fences synchronously. No retry/queue.
-Hard5s budget covers preflight/read/decode/final return. Shared mailbox and frame
+Hard 5 s budget covers preflight/read/decode/final return. Shared mailbox and frame
 codecs enforce extent/hash/shape/size/identity; revision equals publishedSequence.
 Expected scope/epoch/subset are mandatory. Capture/source/published age<=6 s; no future timestamp.
 Scalar revision/source/end/time/coalescing/digest state fences regressions and

@@ -25,7 +25,7 @@ settlement. Completed requires known local create/start; recovery cannot infer i
 
 Composition ticks every 100 ms, including after failures. Backend calls cap 30 s and
 launch consumes remaining execution time. Resource/live telemetry share two
-original slots. Resource cadence is1s reads/5 s publication; live reads cap 5 s.
+original slots. Resource cadence is 1 s reads/5 s publication; live reads cap 5 s.
 Installed bootstrap requires resource capability and drains before Journal close.
 readLiveMetrics uses an existing running actor only, never creates or launches.
 Installed policy approves once after Offer/reservation validation; rejection is

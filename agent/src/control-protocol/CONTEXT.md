@@ -2,8 +2,8 @@
 
 Pure agent-internal DTOs/copies, shared by reader and journal; no engine imports.
 Scope text is exact; UUIDs remain verbatim. Cursor identity uses canonical unsigned
-64-bit decimal strings, never lossy numbers. File64MiB/65536frames; LF frame64KiB.
-Agent enrichment has an additional512bytes; public batches remain256KiB.
+64-bit decimal strings, never lossy numbers. File 64 MiB/65536frames; LF frame 64 KiB.
+Agent enrichment has an additional512bytes; public batches remain 256 KiB.
 One batch1..100events, complete encoded request<=256 KiB, scoped contiguous sequences.
 Next cursor grows; same identity; no caller-controlled digest of the current batch.
 Journal owns canonical SHA256 of {key,expected,next,events} and commits its returned

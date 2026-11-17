@@ -49,4 +49,4 @@ the pool, host VM, control containers or reserves. Existing workspace overrides
 remain effective; select a 1 GiB run budget where a workspace overrides the default.
 Ready output confirms committed configuration. Verify agent readiness after restart;
 normal startup installs the policy and obtains fresh observations before admission.
-See [the transaction contract](design/lld/installed-memory-change.md).
+See [the transaction contract](../design/lld/installed-memory-change.md).

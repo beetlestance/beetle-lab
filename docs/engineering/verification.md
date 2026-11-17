@@ -72,7 +72,7 @@ establish real Docker, platform or k6 behavior.
 
 ## Resource qualification
 
-Use the fixture and proposed targets in [resources](design/lld/resources-observability.md).
+Use the fixture and proposed targets in [resources](../design/lld/resources-observability.md).
 Measure frontend/backend/agent/attempt scopes independently, including idle/loaded
 stack overhead, user-selected pool sizes, parallel and isolated modes, telemetry off/on,
 repeated runs, final drain, export, cancellation and post-run idle memory. Exercise

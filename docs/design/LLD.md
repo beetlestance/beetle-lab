@@ -1,6 +1,6 @@
 # Low-level design map
 
-Status: v2 design with partially implemented contracts and components; [PLAN](../../PLAN.md) records current coverage.
+Status: v2 design with partially implemented contracts and components; [PLAN](../plans/roadmap.md) records current coverage.
 The owning document below must be updated before its implementation changes.
 
 | Implementing | Read | Includes |
@@ -87,8 +87,8 @@ The owning document below must be updated before its implementation changes.
 | Export build lifetime | [Build lifetime](lld/standalone-build-lifetime.md) | Sticky deadline/cancellation and retained opaque builder; physical stop and admission remain parent-owned |
 | Standalone script component | [Engine export](lld/standalone-export.md) | Shared compiler/runtime builder and explicit secret refusal |
 
-Cross-cutting implementation limits live in [engineering](../engineering.md).
-Acceptance scenarios live in [verification](../verification.md). Read both for
+Cross-cutting implementation limits live in [engineering](../engineering/conventions.md).
+Acceptance scenarios live in [verification](../engineering/verification.md). Read both for
 any new component; do not duplicate their rules into every feature specification.
 
 ## Contract vocabulary

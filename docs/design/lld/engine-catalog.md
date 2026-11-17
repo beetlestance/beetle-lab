@@ -13,7 +13,7 @@ registrations use the same installation, staging root and UID policy.
 ConfigSchema snapshots at most 16 trusted schemas/256 KiB, selects a root present in
 that bundle and compiles strict synchronous JSON Schema 2020-12 validation. It does
 not coerce, insert defaults or remove unknown fields. Configuration input is bounded
-to1MiB and copied before validation; accessors/non-JSON values reject. The descriptor
+to 1 MiB and copied before validation; accessors/non-JSON values reject. The descriptor
 is immutable and runtime-branded. Its digest covers UTF-8 of:
 
 ```text
@@ -31,7 +31,7 @@ staging allowance remains owned by admission. Unknown engine/image/config versio
 and unsupported capabilities reject before queueing. An offer cannot choose a path,
 entrypoint, Docker flag, schema bundle or validator.
 
-`preflight` returns one immutable Offer bounded to2MiB, its exact installed engine and
+`preflight` returns one immutable Offer bounded to 2 MiB, its exact installed engine and
 ValidationIdentity including configDigest. It validates the runner envelope,
 engine-specific structure, approved runtime feasibility and capabilities. It reads
 no datasets, resolves no secrets and performs no I/O or semantic compilation.

@@ -70,7 +70,7 @@ Use one service/request original, no queue/cache (one active comparison per
 installation; admission is retained through physical settlement). Read at most four scoped Runs,
 results and pinned revisions, sequentially; at most four metric lookups. Bound
 revision bytes to existing 1 MiB configs/envelopes and transient four-run work; do
-not send configs to the browser. A whole30s caller deadline covers metadata,
+not send configs to the browser. A whole 30 s caller deadline covers metadata,
 projection and final reconciliation. Internal metric lookup and comparison both return their actual original
 promises; the HTTP owner supplies the fast cancellation race and retains the
 original until metadata/native settlement. The shared metric owner remains exclusive. Abort/close fence new calls and await issued

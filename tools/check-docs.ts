@@ -1,10 +1,10 @@
 import { proseSpacingIssues } from './doc-spacing.js';
+import { folderIssues } from './doc-folders.js';
 import { readFile, access } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { sourceFiles } from './source-files.js';
 const roots = ['docs', 'app', 'agent', 'contracts', 'web', 'engines/k6', 'tools'];
 const files = [
-  'PLAN.md',
   'README.md',
   'AGENTS.md',
   ...(await Promise.all(roots.map((root) => sourceFiles(root, /\.md$/)))).flat(),
@@ -14,6 +14,7 @@ for (const file of files) {
   const text = await readFile(file, 'utf8');
   for (const issue of proseSpacingIssues(text))
     failures.push(`${file}:${issue.line}: missing space in prose word/number or unit`);
+  failures.push(...folderIssues(file, text));
   const limit = file.includes('/decisions/')
     ? 80
     : file.endsWith('/CONTEXT.md')

@@ -14,7 +14,7 @@ local-session guard. No default authentication, storage writer or filesystem ada
 Register after shipped schema compilers. Bootstrap retains the returned close owner.
 No fake upload routes when the byte service is absent.
 
-The generated five JSON operations use registerApiOperation with64KiB body bounds.
+The generated five JSON operations use registerApiOperation with 64 KiB body bounds.
 The adapter's optional signalFor supplies this transport owner's captured signal;
 other routes retain their current defaults. Scope/path equality precedes service
 control, and list replies add the route's workspace scope to the private page.
@@ -79,7 +79,7 @@ remain in metadata and Content-Range; the completion marker stays under this own
 
 The server factory bounds64 sockets,30 s request/socket timeouts,5 s headers/keepalive.
 The input transport additionally owns at most 64 active request contexts, no waiters.
-Each captures one30s deadline and abort controller before parsing. A context owns
+Each captures one 30 s deadline and abort controller before parsing. A context owns
 its source/sink and issued service promise independently of response completion.
 Timeout/disconnect fences future work and interrupts its owned network stream;
 it cannot retire a still-issued service/native original. No detached retry timers.

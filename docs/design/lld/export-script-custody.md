@@ -19,9 +19,9 @@ The outer job-root identity must also remain the same after native work.
 
 Existing summaries, numeric/target/report artifacts retain their exact descriptor
 kinds/paths and verification. Metric archive uses the same bounded file-hash reader.
-One64KiB scratch buffer, positional reads, <=ceil(bytes/64 KiB)+32 calls plus one
+One 64 KiB scratch buffer, positional reads, <=ceil(bytes/64 KiB)+32 calls plus one
 EOF probe per pass. Refuse short/stalled/invalid counts or non-EOF. Caller-specific
-byte limit<=256 MiB preserves existing archive allowance; script limit remains64MiB.
+byte limit<=256 MiB preserves existing archive allowance; script limit remains 64 MiB.
 Check the owning synchronous fence before/after every issued read. Hashing alone
 proves no file ownership, publication, admission or global memory bound.
 

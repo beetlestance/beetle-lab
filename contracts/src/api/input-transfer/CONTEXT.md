@@ -4,11 +4,11 @@ Public entrypoint: `createInputTransferClient`; public types live in the adjacen
 coordinator-owned `input-transfer-types.ts`. Configuration is trusted same-origin
 HTTP(S), with fixed session headers and a single deadline per operation.
 
-Preparation uses native Blob read and SHA256 for up to8MiB, sharing both slots
+Preparation uses native Blob read and SHA256 for up to 8 MiB, sharing both slots
 and retaining originals through abort. Returned content is caller-owned, uncached.
-Append snapshots up to64KiB and binds the acknowledgement to immutable metadata
-and exact progress. Full downloads preallocate up to8MiB, require successful EOF,
-and verify native SHA256 before returning bytes. JSON responses are capped64KiB.
+Append snapshots up to 64 KiB and binds the acknowledgement to immutable metadata
+and exact progress. Full downloads preallocate up to 8 MiB, require successful EOF,
+and verify native SHA256 before returning bytes. JSON responses are capped 64 KiB.
 
 Two operation carriers bound admission without a queue. Abort fences dependent
 work; original fetch/read/cancel/digest work retains its carrier until settlement.

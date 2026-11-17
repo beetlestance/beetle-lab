@@ -102,13 +102,13 @@ This is programmatic configuration; executable installed-profile loading and the
 agent capacity/identity bridge still need integration.
 
 The one worker builds an Offer synchronously from bounded saved configuration;
-create/get commands stay64KiB and pages remain within existing 1 MiB replies. No full
+create/get commands stay 64 KiB and pages remain within existing 1 MiB replies. No full
 Offer is returned to the parent yet. A future outbox read must reserve the declared
-two large-original slots before exposing2MiB replies. Enqueue does not imply that
+two large-original slots before exposing 2 MiB replies. Enqueue does not imply that
 this unimplemented dispatch transport has been qualified.
 
 Shared `prepareK6SecretReferences` owns the <=64 alias translation in contracts;
-the engine wrapper delegates to it. Its128KiB serialization bound accommodates
+the engine wrapper delegates to it. Its 128 KiB serialization bound accommodates
 maximum escaped versions. It resolves no values. Application preflight rejects
 unsupported providers/paths before persisting a new Offer.
 
@@ -163,6 +163,6 @@ HTTP public registration is `registerRunRoutes(server, options)`, with options
 `{store,reader,newId,digest,now,authorize}`. `now()` is a trusted ISO timestamp
 provider; `newId()` supplies two distinct allocations. Require an onRequest guard
 before parsing/validation and reuse generated operations/schema/page decoding.
-Enqueue has64KiB body limit, requires exact route/body workspace ownership and
+Enqueue has 64 KiB body limit, requires exact route/body workspace ownership and
 returns202 only after the store settles. Queries are observational. No cancel,
 retry, reconciliation or execution is implied by these three routes.

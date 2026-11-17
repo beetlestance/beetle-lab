@@ -32,30 +32,30 @@ Coordinator owns build scripts/Dockerfile/Compose, public contract and integrati
 These are editable initial policy values, not discovered available resources or
 qualified minimum hardware. No automatic adoption of idle host cores or sensors.
 
-- Pool: CPU2000 millicores, memory1GiB, PID 256, output128MiB, concurrency2,
-  retained storage2GiB, disk reserve256MiB.
-- Per run ceiling/default: CPU1000 millicores, memory512MiB, PID 128,
-  timeout300000ms, output64MiB. Profile k6-local. Retention manual.
-- Agent admission pool matches CPU/memory/PIDs/output; staging128MiB. Per-run
-  staging64MiB. Control reserve CPU600/memory576MiB/PID 160; output/staging0.
-  This matches Compose caps: backend/agent each CPU250,memory256MiB,PID 64;
-  frontend CPU100,memory64MiB,PID 32. These are hard ceilings, not idle measurements.
-  Headroom CPU250/memory128MiB/PID 16; output/staging0. MaxConcurrent2,
-  MaxTimeout300000ms, observationTtl1000ms, requiredSensors[].
+- Pool: CPU2000 millicores, memory 1 GiB, PID 256, output 128 MiB, concurrency2,
+  retained storage 2 GiB, disk reserve 256 MiB.
+- Per run ceiling/default: CPU1000 millicores, memory 512 MiB, PID 128,
+  timeout 300000 ms, output 64 MiB. Profile k6-local. Retention manual.
+- Agent admission pool matches CPU/memory/PIDs/output; staging 128 MiB. Per-run
+  staging 64 MiB. Control reserve CPU600/memory 576 MiB/PID 160; output/staging0.
+  This matches Compose caps: backend/agent each CPU250,memory 256 MiB,PID 64;
+  frontend CPU100,memory 64 MiB,PID 32. These are hard ceilings, not idle measurements.
+  Headroom CPU250/memory 128 MiB/PID 16; output/staging0. MaxConcurrent2,
+  MaxTimeout 300000 ms, observationTtl 1000 ms, requiredSensors[].
 - k6 image template version 2.2.0, protocol 1.0 range1.0..1.0, http capability,
   Docker backend, target-egress network, cpu/memory/pids/timeout/output controls.
   Actual config schema ID comes from createK6ConfigSchema; result schema is the
   shipped EngineResult ID. node /beetle/bootstrap/main.js, no shell command.
-  Default budget matches per-run default; minimum CPU1000/memory512MiB/PID 128,
-  timeout1ms/output1byte. Placeholder imageDigest sha256 followed by64 zeros is
+  Default budget matches per-run default; minimum CPU1000/memory 512 MiB/PID 128,
+  timeout 1 ms/output1byte. Placeholder imageDigest sha256 followed by64 zeros is
   replaced only by actual provisioning inspection; it is not an executable pin.
   Five phases validate/prepare/execute/collect/seal: workUnits100 each.
-  Prepare and execute use the default budget timeout300000ms: native k6 JSON
+  Prepare and execute use the default budget timeout 300000 ms: native k6 JSON
   buffering can delay the measurement-start marker during low-volume runs.
-  Execute output is64MiB; other phase output is4MiB. Validate/collect/seal
-  timeouts are5000ms. The overall Offer deadline and
+  Execute output is 64 MiB; other phase output is 4 MiB. Validate/collect/seal
+  timeouts are 5000 ms. The overall Offer deadline and
   admitted output ceiling still apply; phase ceilings never grant extra resources. Manifest ID k6-v1/profile k6-local/catalog1/config 1;
-  tmpfs16MiB. No fabricated image digest after provisioning.
+  tmpfs 16 MiB. No fabricated image digest after provisioning.
 
 Settings can be edited in the generated private request before first provisioning.
 Existing installation settings UI remains the application owner afterward; changing

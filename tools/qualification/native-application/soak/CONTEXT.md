@@ -7,8 +7,8 @@ through the packaged public CLI underUID1000, inside a private child of the norm
 bootstrap-owned parent. Existing installed identities are never edited in place.
 Stock service/attempt resource caps, pools, headroom and control reserve remain.
 
-OneVU1830iterations with1s waits/31minmax. Three independent live readers poll2s
-AFTER their own original settles; one control loop polls2s, external Docker stats
+OneVU1830iterations with 1 s waits/31minmax. Three independent live readers poll 2 s
+AFTER their own original settles; one control loop polls 2 s, external Docker stats
 15 s/max 128samples. Bounded8192call durations and request counts; one last frame
 per reader. No injected observer inside control services during the stream.
 All originals/loops drain before result and cleanup. Actual fresh frames must span
@@ -26,7 +26,7 @@ On failure retain one last snapshot per reader, terminal/active-span facts and
 owned target counts before teardown; never retain a stream corpus of frames.
 
 Advanced provisioning records a fixed substage and exact known CLI error code
-when it fails. provision.ts uses the same60s local Docker command bound with
+when it fails. provision.ts uses the same 60 s local Docker command bound with
 64 KiB output; raw stderr is neither retained in the public carrier nor uploaded.
 No installation deadline or performance gate is relaxed to diagnose a failure.
 

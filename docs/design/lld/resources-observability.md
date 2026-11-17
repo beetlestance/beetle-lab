@@ -186,7 +186,7 @@ Compare telemetry enabled/disabled on identical fixtures; target <= 5% additiona
 wall time and report agent CPU/RSS overhead separately. A miss requires analysis,
 not a silent target increase. Stress zero-room admission, host pressure, noisy
 logs, high cardinality, slow readers, stalled artifacts, disk exhaustion, OOM,
-restart and leaked child cleanup. See [verification](../../verification.md).
+restart and leaked child cleanup. See [verification](../../engineering/verification.md).
 
 Sources: [Docker limits](https://docs.docker.com/engine/containers/resource_constraints/),
 [Docker stats](https://docs.docker.com/reference/cli/docker/container/stats/),

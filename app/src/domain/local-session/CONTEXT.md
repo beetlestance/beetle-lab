@@ -5,5 +5,5 @@ Port: app/src/ports/local-session.ts; owner docs/design/lld/local-session.md.
 Closed JSON snapshots, fixed 43-character secrets, distinct cookie/CSRF,
 canonical UTC and exactly8h absolute lifetime; safe monotonic record versions.
 No authorization, clock, SQL, transport, logging or side effects.
-Bound record2KiB/session1KiB. SQLite and HTTP session owner consume this boundary.
+Bound record 2 KiB/session 1 KiB. SQLite and HTTP session owner consume this boundary.
 Focused tests: app/test/local-session/worker.test.ts and HTTP/session/automatic.test.ts.

@@ -38,7 +38,7 @@ excluded only through an explicit generator manifest with reproducible output an
 source maps/provenance; never mark handwritten code generated to bypass a gate.
 
 Exceptions name exact symbol, reason, owner, review date and removal condition in
-the [exception registry](engineering-exceptions.md). No blanket exclusions or baseline inherited from v1.
+the [exception registry](exceptions.md). No blanket exclusions or baseline inherited from v1.
 Prefer changing the design before accepting an exception; never lower a threshold
 just to pass. The first rewrite release starts with no unreviewed exceptions.
 
@@ -71,7 +71,7 @@ comes from isolation; shared-process function measurements must state limitation
 Every collection, cache, serializer and tail buffer has an explicit limit and
 failure/backpressure behavior. Test finalization and export as carefully as the
 steady-state stream; a bounded read followed by full materialization is unbounded.
-See the [resource contract](design/lld/resources-observability.md).
+See the [resource contract](../design/lld/resources-observability.md).
 
 ## Agent-sized work
 
@@ -94,11 +94,12 @@ without adding production dependencies on fixture code.
 
 ## Documentation discipline
 
-HLD owns boundaries; each LLD owns one contract; PLAN owns pending work. Decision
-files own durable reasons and rejected alternatives. Verification reports own
-measurements; link them instead of copying test counts into architecture docs.
-When a decision is settled, preserve its reasoning in a short record. When a plan
-closes, remove its work list without deleting durable rationale.
+Folders own one kind of fact ([decision 017](../decisions/017-documentation-structure-and-delivery.md)):
+`system/` current behaviour, `plans/` future work, `decisions/` reasons and rejected
+alternatives, `evidence/` measurements at a named commit. Link evidence instead of
+copying test counts into `system/`. When a plan ships, move behaviour to `system/`,
+reasoning to a decision and measurements to `evidence/`, then delete the plan.
+`check:docs` enforces the folder rules.
 
 Generated references stay separate and indexed. Check internal links, page size,
 required contract fields and stale API/schema output in CI. A source edit touching

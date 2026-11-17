@@ -52,7 +52,7 @@ and that profile invalidates its session on restart.
 | compare | --request-file | Two through four terminal runs, baseline first |
 
 All commands require endpoint, origin and session-file. Request JSON uses the
-[generated API schemas](../contracts/api/v2/http-operations.json); run/cancel include
+[generated API schemas](../../contracts/api/v2/http-operations.json); run/cancel include
 an explicit stable requestId. Request files are at most 4 KiB. Suite/revision creation
 and large input upload remain existing API/UI operations. This client does not yet
 claim a validate or script-export command. Engine preflight still occurs under

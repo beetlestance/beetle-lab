@@ -10,12 +10,12 @@ or resource samples alone never grant output/timeout readiness. Public options a
 trusted composition ports, not caller-supplied job data or serialized capabilities.
 The publisher owns no lifecycle, reservation, configuration or deletion mutation.
 
-One interval defaults to250ms (10..5000). Sample timeout defaults to1000ms
-(10..30000); freshness TTL defaults to2000ms (100..300000), strictly greater than
+One interval defaults to 250 ms (10..5000). Sample timeout defaults to 1000 ms
+(10..30000); freshness TTL defaults to 2000 ms (100..300000), strictly greater than
 interval and sample timeout. At most one original sample and one original journal
 write run independently, with one bounded pending observation. No waiting queue,
 overlapping sample retry, detached original or retained observation history.
-Input options use fixed known data fields; sample snapshots are bounded to16KiB.
+Input options use fixed known data fields; sample snapshots are bounded to 16 KiB.
 Unknown pending observations take priority over known candidates.
 
 Each sample records local monotonic and wall time BEFORE invoking the observer.
@@ -63,7 +63,7 @@ wall start plus this publisher's TTL. Neither acknowledgement nor reads renew it
 Reject expiry overflow and revoke when either monotonic age or wall expiry elapses.
 Invalid final frame size/expiry fails before a known write and retains failure.
 
-Keep at most one deeply frozen committed frame, bounded to16KiB including metadata.
+Keep at most one deeply frozen committed frame, bounded to 16 KiB including metadata.
 Return it only after stored:true at the current eligible epoch. Pending samples or
 writes cannot upgrade an older committed frame. Guard/clock failure, expiry,
 stored:false, invalidation and close make the projection unavailable immediately;

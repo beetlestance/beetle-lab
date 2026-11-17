@@ -1,12 +1,12 @@
-# High-level design
+# System overview
 
-Status: proposed v2 architecture. Scope and sequence: [PLAN](../../PLAN.md).
-Wire behavior is owned by the [LLD](LLD.md), not repeated here.
+Scope and sequence: [roadmap](../plans/roadmap.md).
+Wire behavior is owned by the [LLD](../design/LLD.md), not repeated here.
 
 ## Product boundary
 
 A self-hosted testing workbench and headless CI client. The first rewrite release
-reimplements the k6 capabilities in [the inventory](../current-features.md).
+reimplements the k6 capabilities in [the inventory](../evidence/legacy-features.md).
 Future engines may use any language behind a versioned runner contract.
 
 Normal installation uses Dockerfiles/Compose or pulled images, targeting
@@ -133,13 +133,13 @@ Unknown totals, unsupported sensors and sampled peaks remain labeled.
 Fresh v2 data root and major-version image tags; no legacy data migration is needed.
 Organisation -> workspace -> optional folders scopes every suite, input and result.
 These are installation namespaces, not user membership or security-tenancy claims. See
-[organisation/settings](lld/organization-settings.md) for isolation and inheritance. Store redacted configuration and secret-version references,
+[organisation/settings](../design/lld/organization-settings.md) for isolation and inheritance. Store redacted configuration and secret-version references,
 not resolved credentials. Engines receive only run-scoped inputs/outputs. The UI
 has no Docker socket. No private infrastructure dependency enters public images.
 
 Retain files by declared quotas/retention. Publish artifact references only after
 checksum verification. Artifact and metadata updates are reconciled explicitly;
-there is no cross-store transaction. See [storage LLD](lld/domain-storage.md).
+there is no cross-store transaction. See [storage LLD](../design/lld/domain-storage.md).
 
 ## Extension and deployment profiles
 

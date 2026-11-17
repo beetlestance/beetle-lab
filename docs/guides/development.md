@@ -8,9 +8,9 @@ Use Node 24.12+ and the locked development dependencies (`npm ci`).
 
 ## Create a private development installation
 
-The explicit [fresh provisioner](design/lld/fresh-installation.md) creates coherent
+The explicit [fresh provisioner](../design/lld/fresh-installation.md) creates coherent
 private backend/agent configuration, token, Journal and authority gate. Supply an
-owned private request file matching [ProvisionRequest](../tools/install/types.ts):
+owned private request file matching [ProvisionRequest](../../tools/install/types.ts):
 settings/policy/manifest are explicit, and the named images/network must already
 exist. Provisioning performs read-only Docker inspection and creates no containers.
 It never guesses host capacity or resets an interrupted/existing installation.
@@ -63,7 +63,7 @@ Config must be regular, single-linked, 32 KiB or smaller and not group/other wri
 Startup creates private `inputs/staging` and `inputs/published` children. Existing
 unsafe roots are rejected. Pending publication/deletion is recovered in bounded
 background pages; ordinary published inputs are not periodically rehashed.
-The workspace Inputs view supports one browser-selected file up to8MiB, explicit recovery
+The workspace Inputs view supports one browser-selected file up to 8 MiB, explicit recovery
 after interruption, and verified download from selected current published status.
 Upload drafts remain in memory and retire on workspace/session departure; partial
 backend inputs can remain for explicit inspection/deletion.
