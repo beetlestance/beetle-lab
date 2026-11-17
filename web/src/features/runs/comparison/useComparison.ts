@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { RunComparisonSnapshot, RunMetricKey, RunMetricSeriesPage } from '@beetle/contracts/api';
+import type {
+  RunComparisonSnapshot,
+  RunHistorySummary,
+  RunMetricKey,
+  RunMetricSeriesPage,
+} from '@beetle/contracts/api';
 import { readResult, useApi } from '../../../app/api.js';
 import { ReadAdmission } from '../metrics/index.js';
 import type { RunScope } from '../types.js';
@@ -14,6 +19,7 @@ interface View {
   error: boolean;
   busy: boolean;
 }
+export type Summaries = ReadonlyMap<string, RunHistorySummary | null>;
 // Physical admission outlives routes and sessions; it retains no result cache.
 const comparisonAdmission = new ReadAdmission();
 const initial: Command = { metric: null, catalogue: true };
@@ -29,11 +35,25 @@ export function useComparison(scope: RunScope, ids: readonly string[]) {
   const [saved, setSaved] = useState<{ lease: typeof lease; view: View }>();
   const [busy, setBusy] = useState(admission.busy);
   const view = saved?.lease === lease ? saved.view : empty;
+  // Whole-run summaries are read with the first catalogue load and kept per selection.
+  const [summaries, setSummaries] = useState<{ owner: object; value: Summaries }>();
   useEffect(() => admission.subscribe(() => setBusy(admission.busy)), [admission]);
   useEffect(() => {
     const controller = new AbortController();
     let current = true;
     let token: Parameters<ReadAdmission['retire']>[0] | undefined;
+    /** One run's stored history summary (one exact-ID row); a failure is only a gap. */
+    async function summaryOf(run: RunComparisonSnapshot['items'][number]['run'], signal: AbortSignal) {
+      try {
+        const params = { organizationId: scope.organizationId, workspaceId: scope.workspaceId };
+        const page = await readResult(api.listRuns({ params, query: { limit: 1, runIdPrefix: run.id }, signal }));
+        const index = page.items.findIndex((item) => item.id.toLowerCase() === run.id.toLowerCase());
+        const value = index < 0 ? undefined : page.summaries[index];
+        return value && value.attemptId.toLowerCase() === run.activeAttemptId.toLowerCase() ? value : null;
+      } catch {
+        return null;
+      }
+    }
     async function load() {
       await admission.whenIdle(controller.signal);
       if (!current) return;
@@ -59,8 +79,17 @@ export function useComparison(scope: RunScope, ids: readonly string[]) {
             }),
           );
         }
-        if (current && owned.current)
-          setSaved({ lease, view: { snapshot, ...(page ? { page } : {}), error: false, busy: false } });
+        let read: Map<string, RunHistorySummary | null> | undefined;
+        if (command.catalogue && !command.cursor) {
+          read = new Map();
+          for (const item of snapshot.items) {
+            if (!current || !owned.current) return;
+            read.set(item.run.id.toLowerCase(), await summaryOf(item.run, owned.signal));
+          }
+        }
+        if (!current || !owned.current) return;
+        if (read) setSummaries({ owner: lease.owner, value: read });
+        setSaved({ lease, view: { snapshot, ...(page ? { page } : {}), error: false, busy: false } });
       });
       if (!action) throw new Error('Comparison read busy');
       token = action.token;
@@ -87,5 +116,6 @@ export function useComparison(scope: RunScope, ids: readonly string[]) {
   function retry() {
     setChoice({ owner, command: { ...command } });
   }
-  return { view, admission, busy: busy || view.busy, select, page, retry };
+  const summary = summaries?.owner === owner ? summaries.value : undefined;
+  return { view, summaries: summary, admission, busy: busy || view.busy, select, page, retry };
 }
