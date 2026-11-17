@@ -137,6 +137,7 @@ cause codes, never paths or secrets.
 | A new empty journal persists one random authority UUID; missing or malformed authority in an existing journal is recovery, never initialization | `agent/src/journal/` |
 | Control store: separate SQLite outside backup paths, EXCLUSIVE locking, `synchronous=EXTRA`, 16 pages of 4096 bytes, 64 KiB cache, no mmap | `agent/src/installation-state/storage.ts` |
 | `openServingState` accepts only `ready` and binds the opened journal's UUID before any execution owner starts; the serving facade has no mutators | `agent/src/installation-state/` |
+| UUID equality cannot detect a substituted older same-UUID journal, journal-only rewind or whole-machine rollback; those are outside supported recovery | `agent/src/installation-state/index.ts` |
 | Capabilities publish `journalAuthority`; the backend persists it with the first possible delivery, before PUT; the binding is immutable | `app/src/adapters/outbound/runner/` |
 | Expected authority travels in `x-beetle-journal-authority`, outside the Offer | `agent/src/transport/request-identity.ts` |
 | Mismatch returns 409 `authority_mismatch`; a missing, duplicate or malformed header is 400 `invalid_protocol`; the agent's own capabilities self-check failing is 503 `authority_mismatch`; only an authenticated current-authority 404 `attempt_not_found` permits re-offer of the same original | `agent/src/transport/` |

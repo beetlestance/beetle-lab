@@ -114,6 +114,11 @@ reasons fail closed; a final fact may arrive first.
   and launch closure recorded. `settled` requires definitive launch settlement plus
   runtime stopped or absent and collection finished or failed.
 - Timeout, 404, terminal events, snapshot state or cancellation alone never release.
+- A final policy refusal (`agent/src/journal/admission-refusal.ts`) atomically stores the
+  original Offer and a closed queue row with its decision before returning: no pending
+  slot, reservation, event, staging or launch. The snapshot reader validates both before
+  commit, so an unrepresentable fact or later write failure rolls back both. A candidate
+  that cannot be projected is rejected without being persisted.
 - A rejected Offer replay cannot re-enqueue; pending-queue cancellation is a final
   rejection; cancelling a charged reservation stays charged until release.
 - Release is about execution admission only; it never proves result completeness

@@ -174,6 +174,7 @@ or cleaning work is excluded. A preview reads at most 100 Run headers per page w
 - A workspace epoch advances on selection-relevant change; continuation and Apply reject epoch or
   settings-version drift. Apply begins all ≤ 100 captured candidates or none via receipt-first Begin.
 - Parent previews walk one workspace per turn with a captured horizon and never combine budgets.
+- `driverState` is advisory: `running` means loop availability, not agent reachability, batch progress or funding.
 
 ## Settlement
 

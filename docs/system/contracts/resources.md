@@ -108,6 +108,9 @@ owns no lifecycle transition and certifies neither termination nor release.
   rejects close. Close fences callbacks and drains every original; unknown stop
   mutations are never retried. No watch authorizes deletion or capacity release.
 - Fresh guard publication requires output AND timeout readiness together.
+- The poll interval and grace are not an end-to-end stop bound: event-loop starvation, bounded
+  journal intake, held create/start/stop originals and serial supervisor ownership can delay
+  the actual signal. Full-pool stop latency and overshoot need native measurement.
 
 ## Per-attempt telemetry
 
