@@ -75,12 +75,12 @@ function InventoryScope({ workspace, children, actions, renderActions }: Invento
         {(data) =>
           data.items.length === 0 && !page.hasBack ? (
             <EmptyState
-              title="No inputs in this workspace."
+              title="No input files yet"
               actions={actions?.(context)}
-              note="CSV and JSON files show row and column counts once published."
+              note="Up to 8 MiB a file, sent in 64 KiB pieces, so a dropped connection can resume where it stopped."
             >
-              Inputs are data files your suites read, such as user lists or request bodies. Each file can be up to 8
-              MiB.
+              Inputs are the files a suite reads: CSV rows to vary each request, and JSON bodies to send. Upload them
+              once and every suite in this workspace can use them.
             </EmptyState>
           ) : (
             <>
@@ -118,5 +118,5 @@ function summary(context: InventoryContext, loaded: boolean): string {
   const live = context.items.filter((item) => item.state !== 'deleted');
   if (!context.complete) return `${plural(live.length, 'file')} on this page.`;
   const bytes = live.reduce((total, item) => total + item.bytes, 0);
-  return `${plural(live.length, 'file')}, ${formatBytes(bytes)}.`;
+  return `${plural(live.length, 'file')}, ${formatBytes(bytes)} in all. Suites read CSV rows and JSON bodies from here.`;
 }

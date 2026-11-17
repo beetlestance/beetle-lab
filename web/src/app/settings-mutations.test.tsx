@@ -23,7 +23,7 @@ describe('settings save bar', () => {
     change('CPU per run', '1.3');
     expect(within(row('CPU per run')).getByText('Changed here, not saved yet')).toBeVisible();
     expect(screen.getByText('1 unsaved change in this workspace.')).toBeVisible();
-    save('this workspace'); await screen.findByText('Changes saved.');
+    save('this workspace'); await screen.findByText(/^Saved\. New runs in/);
     expect(api.records.find(record => record.method === 'PATCH')).toMatchObject({
       path: `/api/v2/organizations/${ids.a}/workspaces/${ids.workspace}/settings`,
       body: { scope: workspaceScope, patch: { runDefaults: { budget: { cpuMillis: 1300 } } } },
@@ -35,7 +35,7 @@ describe('settings save bar', () => {
     await screen.findByLabelText('Remove finished runs older than');
     change('Remove finished runs older than', '30'); save('this organization');
     await screen.findByText('Invalid value');
-    expect(screen.queryByText('Changes saved.')).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Saved\./)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Retry identical request' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save this organization' })).toBeEnabled();
   });
@@ -45,7 +45,7 @@ describe('settings save bar', () => {
     expect(await screen.findByLabelText('CPU per run')).toHaveValue('1');
     expect(within(row('CPU per run')).getByText('Inherited from installation')).toBeVisible();
     change('CPU per run', '1.5'); save('this organization');
-    await screen.findByText('Changes saved.');
+    await screen.findByText(/^Saved\. New runs in/);
     expect(patches(api.records)[0]?.body).toMatchObject({ expectedVersion: 1, schemaVersion: 2,
       scope: orgScope, patch: { runDefaults: { budget: { cpuMillis: 1500 } } } });
     expect(api.records.filter(record => record.method === 'GET' && record.path.endsWith('/settings'))).toHaveLength(2);
@@ -61,14 +61,14 @@ describe('settings save bar', () => {
     fireEvent.click(within(row('Processes per run')).getByRole('button', { name: 'Undo' }));
     fireEvent.click(within(row('Engine for new runs')).getByRole('button', { name: 'Inherit instead' }));
     expect(within(row('Engine for new runs')).getByText('Will inherit, not saved yet')).toBeVisible();
-    save('this organization'); await screen.findByText('Changes saved.');
+    save('this organization'); await screen.findByText(/^Saved\. New runs in/);
     expect(patches(api.records)[0]?.body?.patch).toEqual({ runDefaults: { engineProfile: null } });
   });
   it('replaces a complete installation group while leaving other groups omitted', async () => {
     const api = testClient(request => request.path.endsWith('/status') ? json(apiError('storage_unavailable'), 503) : json(settings()));
     mount(api.client, routes.settings);
     fireEvent.click(await screen.findByRole('radio', { name: 'Shared capacity' }));
-    change('Disk always left free', '0.000000002'); save('installation'); await screen.findByText('Changes saved.');
+    change('Disk always left free', '0.000000002'); save('installation'); await screen.findByText(/^Saved\. New runs in/);
     expect(patches(api.records)[0]?.body?.patch).toEqual({ pool: { cpuMillis: 2000, memoryBytes: 4096, pids: 100, outputBytes: 4096, concurrency: 2, storageBytes: 10000, freeSpaceReserveBytes: 2 } });
     expect(screen.getByText('What the host reports could not be read.')).toBeVisible();
   });
@@ -76,19 +76,19 @@ describe('settings save bar', () => {
     const api = testClient(() => json(settings()));
     mount(api.client, routes.settings);
     change(await screen.findByRole('heading', { name: 'Administrator name' }).then(() => 'Administrator name'), 'Meera');
-    save('installation'); await screen.findByText('Changes saved.');
+    save('installation'); await screen.findByText(/^Saved\. New runs in/);
     expect(patches(api.records)[0]?.body?.patch).toEqual({ administratorName: 'Meera' });
   });
   it('rejects out-of-range and malformed values before transport', async () => {
     const api = testClient(() => json(settings(orgScope))); mount(api.client, routes.organizationSettings(ids.a));
     await screen.findByLabelText('CPU per run');
     change('CPU per run', '3');
-    expect(screen.getByText('Enter 0.001 to 2 CPUs.')).toBeVisible();
+    expect(screen.getByText('Must be from 0.001 to 2 CPUs. That is the range allowed here.')).toBeVisible();
     expect(within(row('CPU per run')).getByText('Not saved: fix this value first')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Save this organization' })).toBeDisabled();
     change('CPU per run', '1'); change('Remove finished runs older than', 'soon');
-    expect(screen.getByText('Enter 1 to 365000 days, or Off.')).toBeVisible();
-    change('Remove finished runs older than', '4'); save('this organization'); await screen.findByText('Changes saved.');
+    expect(screen.getByText('Must be from 1 to 365000 days, or Off.')).toBeVisible();
+    change('Remove finished runs older than', '4'); save('this organization'); await screen.findByText(/^Saved\. New runs in/);
     expect(patches(api.records)).toHaveLength(1);
     expect(patches(api.records)[0]?.body?.patch).toEqual({ runDefaults: { budget: { cpuMillis: 1000 } }, retention: { mode: 'enabled', ageDays: 4 } });
   });
@@ -115,8 +115,8 @@ describe('settings save bar', () => {
     const api = testClient(request => request.method === 'PATCH' ? json(apiError('conflict'), 409) : json(settings(orgScope, version)));
     mount(api.client, routes.organizationSettings(ids.a));
     await screen.findByLabelText('CPU per run'); change('CPU per run', '1.5'); save('this organization');
-    const dialog = await screen.findByRole('alertdialog', { name: 'Changed elsewhere' }); version = 2;
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Refresh latest version' }));
+    const dialog = await screen.findByRole('alertdialog', { name: 'Settings changed since you opened them' }); version = 2;
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Reload settings' }));
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
     expect(screen.getByLabelText('CPU per run')).toHaveValue('1.5');
     await waitFor(() => expect(api.records.filter(record => record.method === 'GET' && record.path.endsWith('/settings'))).toHaveLength(2));

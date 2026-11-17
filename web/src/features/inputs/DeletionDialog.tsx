@@ -37,7 +37,7 @@ export function DeletionDialog({ deletion, record }: { deletion: Deletion; recor
 
 function dialogCopy(deletion: Deletion, name: string) {
   if (deletion.failure?.protocol?.code === 'protected_dependency')
-    return { title: `${name} is in use`, description: undefined };
+    return { title: `${name} is used by saved revisions`, description: undefined };
   return {
     title: `Delete ${name}?`,
     description: (
@@ -79,8 +79,12 @@ export function DeletionRefusal({ failure, unknown = false }: { failure: ApiClie
     <Banner tone="danger" title={errorMessage(failure)}>
       {code === 'protected_dependency' && (
         <>
-          <p>Retained references protect this input from deletion.</p>
+          <p>
+            Saved revisions never change, so the inputs they name stay with them. This file can&apos;t be deleted while
+            any revision uses it.
+          </p>
           {dependencies ? <DependencyList dependencies={dependencies} /> : <p>It is used by saved suite revisions.</p>}
+          <p>To stop using it, upload a new file and save a new revision that names it. The old revisions keep it.</p>
         </>
       )}
       {code === 'conflict' && (

@@ -36,7 +36,7 @@ it('lists 032 metadata, omits unmeasured values and totals only a complete inven
   const api = testClient(() => page([ready, legacy]));
   mount(api.client);
   const table = await screen.findByRole('table', { name: 'Workspace inputs' });
-  expect(screen.getByText('2 files, 9.0 MB.')).toBeVisible();
+  expect(screen.getByText('2 files, 9.0 MB in all. Suites read CSV rows and JSON bodies from here.')).toBeVisible();
   const [, first, second] = within(table).getAllByRole('row');
   expect(first).toHaveTextContent('CSV · 1,200 rows · 4 columns');
   expect(first).toHaveTextContent('Ready');
@@ -110,7 +110,7 @@ it('names the delete blockers from the refusal and counts the rest', async () =>
   fireEvent.click(await screen.findByRole('button', { name: 'Delete input' }));
   const dialog = screen.getByRole('alertdialog', { name: 'Delete users.csv?' });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Confirm deletion' }));
-  const inUse = await screen.findByRole('alertdialog', { name: 'users.csv is in use' });
+  const inUse = await screen.findByRole('alertdialog', { name: 'users.csv is used by saved revisions' });
   const list = within(inUse).getByRole('list', { name: 'Used by' });
   expect(list).toHaveTextContent('steady-1.2k Revisions 4 and 5 · current revision');
   expect(inUse).toHaveTextContent('…and 2 more saved revisions.');

@@ -27,7 +27,7 @@ export function SaveBar({
   const message =
     count === 0
       ? state.phase === 'saved'
-        ? 'Changes saved.'
+        ? `Saved. New runs in ${name} use these values; runs already started keep theirs.`
         : 'No unsaved changes.'
       : invalid > 0
         ? `${changes(count)} in ${name}. Fix ${invalid === 1 ? 'the marked value' : 'the marked values'} to save.`
@@ -61,7 +61,7 @@ export function SaveFailure({ state, onReplay }: { state: SavePhase; onReplay: (
   return (
     <Banner
       tone="danger"
-      title={unknown ? 'Beetle did not confirm the save.' : 'Not saved.'}
+      title={unknown ? 'Beetle did not confirm the save.' : 'Couldn’t save. Nothing was changed.'}
       actions={
         unknown && (
           <Button size="sm" onClick={onReplay}>
@@ -80,34 +80,30 @@ export function SaveFailure({ state, onReplay }: { state: SavePhase; onReplay: (
 export function ChangedElsewhere({
   name,
   count,
-  onRefresh,
-  onDiscard,
+  onReload,
   onClose,
 }: {
   name: string;
   count: number;
-  onRefresh: () => void;
-  onDiscard: () => void;
+  onReload: () => void;
   onClose: () => void;
 }) {
   return (
     <Dialog
-      title="Changed elsewhere"
+      title="Settings changed since you opened them"
       role="alertdialog"
       onClose={onClose}
-      description={`Settings for ${name} were saved somewhere else after this page read them, so your ${changes(count)} ${count === 1 ? 'was' : 'were'} not saved.`}
+      description={`Someone saved ${name} settings after this page read them. Your ${changes(count)} ${count === 1 ? 'was' : 'were'} kept here; reload to see theirs, then save yours again.`}
       actions={
         <>
-          <Button variant="text" onClick={onDiscard}>
-            Discard my changes
+          <Button variant="text" onClick={onClose}>
+            Keep editing
           </Button>
-          <Button variant="primary" onClick={onRefresh}>
-            Refresh latest version
+          <Button variant="primary" onClick={onReload}>
+            Reload settings
           </Button>
         </>
       }
-    >
-      <p>Refreshing keeps your changes on top of the latest values. Check them, then save again.</p>
-    </Dialog>
+    />
   );
 }

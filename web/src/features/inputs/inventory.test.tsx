@@ -34,7 +34,7 @@ it('presents list failure without retry loops and explicitly retries into an emp
   expect(await screen.findByRole('alert')).toHaveTextContent('Storage unavailable');
   expect(api.records).toHaveLength(1);
   fireEvent.click(screen.getByRole('button', { name: 'Retry loading' }));
-  expect(await screen.findByText('No inputs in this workspace.')).toBeVisible();
+  expect(await screen.findByText('No input files yet')).toBeVisible();
   expect(api.records).toHaveLength(2);
   expect(screen.queryByRole('table')).not.toBeInTheDocument();
 });

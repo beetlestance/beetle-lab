@@ -25,7 +25,7 @@ it.each(['installation', 'organization'] as const)('%s save invalidates affected
   </QueryClientProvider></ApiContext.Provider></MemoryRouter>);
   fireEvent.change(await screen.findByLabelText('Remove finished runs older than'), { target: { value: '30' } });
   fireEvent.click(screen.getByRole('button', { name: kind === 'installation' ? 'Save installation' : 'Save this organization' }));
-  await screen.findByText('Changes saved.');
+  await screen.findByText(/^Saved\. New runs in/);
   expect(client.getQueryState(descendant)?.isInvalidated).toBe(true);
   expect(client.getQueryState(foreign)?.isInvalidated).toBe(kind === 'installation');
   client.clear();

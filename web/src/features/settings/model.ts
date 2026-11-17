@@ -158,7 +158,8 @@ function parseRetentionDays(data: SettingsData, text: string): Parsed {
   if (text === '' || text.toLowerCase() === 'off')
     return { ok: true, value: Object.keys(rest).length > 0 ? { mode: 'enabled', ...rest } : { mode: 'manual' } };
   const days = fromUnit(text, units.days);
-  if (days === undefined || days < 1 || days > 365_000) return { ok: false, error: 'Enter 1 to 365000 days, or Off.' };
+  if (days === undefined || days < 1 || days > 365_000)
+    return { ok: false, error: 'Must be from 1 to 365000 days, or Off.' };
   return { ok: true, value: { mode: 'enabled', ...rest, ageDays: days } };
 }
 

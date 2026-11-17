@@ -31,9 +31,9 @@ it('confirms empty-only deletion and retries an unknown outcome with the identic
  });
  mount(api.client);
  const buttons=await screen.findAllByRole('button',{name:'Delete Same organization'});fireEvent.click(buttons[0]!);
- const dialog=screen.getByRole('alertdialog',{name:'Retire Same organization?'});
- expect(within(dialog).getByText(/Retire its workspaces first/)).toBeVisible();
- const confirm=within(dialog).getByRole('button',{name:'Retire organization'});expect(confirm).toBeDisabled();
+ const dialog=screen.getByRole('alertdialog',{name:'Delete Same organization?'});
+ expect(within(dialog).getByText(/Delete its workspaces first/)).toBeVisible();
+ const confirm=within(dialog).getByRole('button',{name:'Delete Same organization'});expect(confirm).toBeDisabled();
  fireEvent.change(within(dialog).getByLabelText('Type Same organization to confirm'),{target:{value:'Same org'}});expect(confirm).toBeDisabled();
  fireEvent.change(within(dialog).getByLabelText('Type Same organization to confirm'),{target:{value:'Same organization'}});
  fireEvent.click(confirm);
@@ -56,9 +56,9 @@ it('explains retained workspace contents, removes the acknowledged list entry an
  });
  mount(api.client,`/organizations/${ids.a}`);
  fireEvent.click(await screen.findByRole('button',{name:'Delete Same workspace'}));
- expect(screen.getByText(/their storage is not freed/)).toBeVisible();
+ expect(screen.getByText(/so deleting it frees no space/)).toBeVisible();
  fireEvent.change(screen.getByLabelText('Type Same workspace to confirm'),{target:{value:'Same workspace'}});
- fireEvent.click(screen.getByRole('button',{name:'Retire workspace'}));
+ fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button',{name:'Delete Same workspace'}));
  await waitFor(()=>expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
  expect(screen.queryByRole('link',{name:'Same workspace'})).not.toBeInTheDocument();expect(overviewReads).toBeGreaterThanOrEqual(2);
 });
@@ -68,9 +68,9 @@ it('shows a refusal as returned and keeps the confirmation open without replay',
  mount(api.client,`/organizations/${ids.a}`);
  fireEvent.click(await screen.findByRole('button',{name:'Delete Same workspace'}));
  fireEvent.change(screen.getByLabelText('Type Same workspace to confirm'),{target:{value:'Same workspace'}});
- fireEvent.click(screen.getByRole('button',{name:'Retire workspace'}));
+ fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button',{name:'Delete Same workspace'}));
  expect(await screen.findByText('Version or intent conflict')).toBeVisible();
- expect(screen.getByText('Retire was refused.')).toBeVisible();
+ expect(screen.getByRole('alertdialog',{name:"Same workspace can't be deleted yet"})).toBeVisible();
  expect(screen.queryByRole('button',{name:'Retry identical request'})).not.toBeInTheDocument();
  expect(api.records.filter(x=>x.method==='DELETE')).toHaveLength(1);
 });

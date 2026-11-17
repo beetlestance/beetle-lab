@@ -129,8 +129,7 @@ function SettingsView({ data }: { data: SettingsData }) {
           name={name}
           count={count}
           onClose={save.reset}
-          onDiscard={form.discard}
-          onRefresh={() => void form.refresh().then(save.reset)}
+          onReload={() => void form.refresh().then(save.reset)}
         />
       )}
       {!capacity && <Retention data={data} />}

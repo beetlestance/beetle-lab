@@ -122,5 +122,5 @@ export function fromUnit(text: string, unit: Unit): number | undefined {
 }
 
 export function rangeText(minimum: number, maximum: number, unit: Unit): string {
-  return `Enter ${toUnit(minimum, unit)} to ${toUnit(maximum, unit)} ${unit.label}.`;
+  return `Must be from ${toUnit(minimum, unit)} to ${toUnit(maximum, unit)} ${unit.label}. That is the range allowed here.`;
 }

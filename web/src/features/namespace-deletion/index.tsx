@@ -34,7 +34,7 @@ export function DeleteNamespace({
           onClose={() => setOpen(false)}
           onDone={() => {
             setOpen(false);
-            toast.show(`${target.entity.name} is ${target.kind === 'folder' ? 'deleted' : 'retired'}.`);
+            toast.show(`${target.entity.name} is deleted.`);
             void refresh();
           }}
         />

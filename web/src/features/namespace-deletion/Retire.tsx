@@ -50,6 +50,7 @@ export function RetireWorkspace({ organizationId, workspaceId }: { organizationI
       {open && workspace && (
         <ConfirmDeletion
           target={{ kind: 'workspace', entity: workspace }}
+          mode="retire"
           onClose={() => setOpen(false)}
           onDone={() => {
             toast.show(`${workspace.name} is retired.`);
