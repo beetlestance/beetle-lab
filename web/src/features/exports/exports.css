@@ -1,0 +1,60 @@
+/* Overlay / Export script and the Exports workspace tab. */
+.export-steps {
+  display: grid;
+  gap: var(--s-12);
+  margin: var(--s-16) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.export-step {
+  display: grid;
+  grid-template-columns: var(--s-20) auto 1fr;
+  align-items: baseline;
+  gap: var(--s-10);
+  color: var(--mute);
+}
+.export-step-done,
+.export-step-current {
+  color: var(--ink);
+}
+.export-step-current .export-step-mark {
+  color: var(--amber);
+}
+.export-step-done .export-step-mark {
+  color: var(--green);
+}
+.export-step-time {
+  justify-self: end;
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
+.export-facts {
+  display: grid;
+  gap: var(--s-8);
+  margin: 0 0 var(--s-16);
+}
+.export-facts > div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: var(--s-12);
+}
+.export-facts dt {
+  color: var(--mute);
+}
+.export-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.export-facts code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+.exports-intro {
+  margin: 0 0 var(--s-16);
+  color: var(--mute);
+}
+.exports-sub {
+  display: block;
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
