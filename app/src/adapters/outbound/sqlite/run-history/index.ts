@@ -1,8 +1,11 @@
-import {retiredHistoryJob} from '../backend-settlement/index.js';
+import { captureHistoryJobRow } from './rows.js';
+import type { JobRow as Row } from './rows.js';
+import { sqlTextColumn, sqlIntegerColumn } from '../sql-columns.js';
+import { retiredHistoryJob } from '../backend-settlement/index.js';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import type { DatabaseSync } from 'node:sqlite';
 import type { RunHistorySummary } from '@beetle/contracts/api';
-import type { RunHistoryJob,HistoryJobRetirement } from '../../../../ports/run-history.js';
+import type { RunHistoryJob, HistoryJobRetirement } from '../../../../ports/run-history.js';
 import { transaction } from '../transaction.js';
 import { StorageError } from '../protocol.js';
 import { captureHistoryOperation, captureHistoryReply } from './wire.js';
@@ -10,19 +13,36 @@ import type { HistoryOperation } from './wire.js';
 export { captureHistoryOperation, captureHistoryReply, historyOperation } from './wire.js';
 export type { HistoryOperation } from './wire.js';
 export { readHistorySummaries } from './reads.js';
-interface Row { state: string; id: string; organization_id: string; workspace_id: string; active_attempt_id: string; history_summary_due_ms: number;
-  history_summary_json: string | null; manifest_digest: string | null; source_digest: string | null; proof_digest: string | null }
-const facts = `SELECT r.id,r.organization_id,r.workspace_id,r.active_attempt_id,r.state,r.history_summary_due_ms,r.history_summary_json,
- f.manifest_digest,f.source_digest,z.proof_digest FROM runs r
+const factColumns = [
+  sqlTextColumn('id', 45, false, 'r.'),
+  sqlTextColumn('organization_id', 45, false, 'r.'),
+  sqlTextColumn('workspace_id', 45, false, 'r.'),
+  sqlTextColumn('active_attempt_id', 45, false, 'r.'),
+  sqlTextColumn('state', 64, false, 'r.'),
+  sqlIntegerColumn('history_summary_due_ms', false, 'r.'),
+  sqlTextColumn('history_summary_json', 2048, true, 'r.'),
+  sqlTextColumn('manifest_digest', 64, true, 'f.'),
+  sqlTextColumn('source_digest', 64, true, 'f.'),
+  sqlTextColumn('proof_digest', 64, true, 'z.'),
+].join(',');
+const facts = `SELECT ${factColumns} FROM runs r
  LEFT JOIN execution_output_finalizations f ON f.attempt_id=r.active_attempt_id
  LEFT JOIN execution_output_absence_finalizations z ON z.attempt_id=r.active_attempt_id`;
-export const historyScanSql = facts.replace('FROM runs r', 'FROM runs r INDEXED BY run_history_due') + `
+export const historyScanSql =
+  facts.replace('FROM runs r', 'FROM runs r INDEXED BY run_history_due') +
+  `
         WHERE r.state IN ('finished','cancelled','errored') AND r.history_summary_json IS NULL
         AND r.history_summary_due_ms<=? ORDER BY r.history_summary_due_ms,r.id LIMIT ?`;
 function job(row: Row): RunHistoryJob {
-  return { id: row.id, scope: { kind: 'workspace', organizationId: row.organization_id, workspaceId: row.workspace_id },
-    attemptId: row.active_attempt_id, manifestDigest: row.manifest_digest, sourceDigest: row.source_digest,
-    absenceProofDigest: row.proof_digest, expectedDueMs: row.history_summary_due_ms };
+  return {
+    id: row.id,
+    scope: { kind: 'workspace', organizationId: row.organization_id, workspaceId: row.workspace_id },
+    attemptId: row.active_attempt_id,
+    manifestDigest: row.manifest_digest,
+    sourceDigest: row.source_digest,
+    absenceProofDigest: row.proof_digest,
+    expectedDueMs: row.history_summary_due_ms,
+  };
 }
 export class HistorySummaries {
   constructor(private readonly db: DatabaseSync) {}
@@ -32,13 +52,20 @@ export class HistorySummaries {
   }
   private apply({ operation }: HistoryOperation): RunHistoryJob[] | RunHistorySummary | HistoryJobRetirement | null {
     if (operation.method === 'scan') {
-      return (this.db.prepare(historyScanSql)
-        .all(operation.query.nowMs, operation.query.limit) as unknown as Row[]).map(job);
+      return this.db
+        .prepare(historyScanSql)
+        .all(operation.query.nowMs, operation.query.limit)
+        .map(captureHistoryJobRow)
+        .map(job);
     }
-    if(operation.method==='retirement')return this.retirement(operation.request.job);
+    if (operation.method === 'retirement') return this.retirement(operation.request.job);
     const expected = operation.request.job;
     const row = this.current(expected);
-    if(!row){const retired=retiredHistoryJob(this.db,expected);if(retired)return retired;throw new StorageError('not_found');}
+    if (!row) {
+      const retired = retiredHistoryJob(this.db, expected);
+      if (retired) return retired;
+      throw new StorageError('not_found');
+    }
     if (operation.method === 'commit') return this.commit(expected, row, operation.request.summary);
     const dueMs = operation.request.dueMs;
     if (row.history_summary_json !== null) throw new StorageError('conflict');
@@ -47,22 +74,36 @@ export class HistorySummaries {
     this.db.prepare('UPDATE runs SET history_summary_due_ms=? WHERE id=?').run(dueMs, expected.id);
     return null;
   }
-  private retirement(expected:RunHistoryJob):HistoryJobRetirement|null{
-    const retired=retiredHistoryJob(this.db,expected);if(retired)return retired;
-    const row=this.current(expected);if(!row)return null;
-    const pending=this.db.prepare(`SELECT 1 FROM output_deletion_intents WHERE run_id=? AND attempt_id=? AND organization_id=? AND workspace_id=?`)
-      .get(expected.id,expected.attemptId,expected.scope.organizationId,expected.scope.workspaceId);
-    return pending?{state:'deleting',id:expected.id,scope:expected.scope,attemptId:expected.attemptId}:null;
+  private retirement(expected: RunHistoryJob): HistoryJobRetirement | null {
+    const retired = retiredHistoryJob(this.db, expected);
+    if (retired) return retired;
+    const row = this.current(expected);
+    if (!row) return null;
+    const pending = this.db
+      .prepare(
+        `SELECT 1 FROM output_deletion_intents WHERE run_id=? AND attempt_id=? AND organization_id=? AND workspace_id=?`,
+      )
+      .get(expected.id, expected.attemptId, expected.scope.organizationId, expected.scope.workspaceId);
+    return pending
+      ? { state: 'deleting', id: expected.id, scope: expected.scope, attemptId: expected.attemptId }
+      : null;
   }
   private current(expected: RunHistoryJob): Row | null {
-    const row = this.db.prepare(facts + ' WHERE r.id=? AND r.organization_id=? AND r.workspace_id=?')
-      .get(expected.id, expected.scope.organizationId, expected.scope.workspaceId) as unknown as Row | undefined;
+    const row = this.db
+      .prepare(facts + ' WHERE r.id=? AND r.organization_id=? AND r.workspace_id=?')
+      .get(expected.id, expected.scope.organizationId, expected.scope.workspaceId);
     if (!row) return null;
-    if (!['finished', 'cancelled', 'errored'].includes(row.state)) throw new StorageError('conflict');
-    const actual = job(row);
-    if (actual.attemptId !== expected.attemptId || actual.manifestDigest !== expected.manifestDigest
-      || actual.sourceDigest !== expected.sourceDigest || actual.absenceProofDigest !== expected.absenceProofDigest) throw new StorageError('conflict');
-    return row;
+    const captured = captureHistoryJobRow(row);
+    if (!['finished', 'cancelled', 'errored'].includes(captured.state)) throw new StorageError('conflict');
+    const actual = job(captured);
+    if (
+      actual.attemptId !== expected.attemptId ||
+      actual.manifestDigest !== expected.manifestDigest ||
+      actual.sourceDigest !== expected.sourceDigest ||
+      actual.absenceProofDigest !== expected.absenceProofDigest
+    )
+      throw new StorageError('conflict');
+    return captured;
   }
   private commit(expected: RunHistoryJob, row: Row, summary: RunHistorySummary): RunHistorySummary {
     const text = encodeCanonicalJson(summary, 2048);

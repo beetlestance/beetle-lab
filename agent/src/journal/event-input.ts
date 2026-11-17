@@ -5,11 +5,16 @@ import { attemptKey, canonical } from './input.js';
 import type { EventInput, GenerationKey } from './protocol.js';
 
 export const MAX_SUPERVISOR_INPUT_BYTES = 65_536;
+export const EVENT_ROW_OVERHEAD_BYTES = 256;
 export const MAX_BATCH_BYTES = 262_144;
 export const DEFAULT_QUOTA_BYTES = 67_108_864;
 export function eventKey(input: GenerationKey): GenerationKey {
-  return { attemptId: input.attemptId, organizationId: input.organizationId,
-    workspaceId: input.workspaceId, generation: input.generation };
+  return {
+    attemptId: input.attemptId,
+    organizationId: input.organizationId,
+    workspaceId: input.workspaceId,
+    generation: input.generation,
+  };
 }
 export function generationKey(input: GenerationKey): GenerationKey {
   const copy = JSON.parse(encodeJson(input, 640)) as GenerationKey;
@@ -31,19 +36,31 @@ function supervisorDraft(copy: unknown): { event: Record<string, unknown>; ordin
   return { event: event as Record<string, unknown>, ordinal };
 }
 export function eventInput(input: unknown, source: 'wrapper' | 'agent'): EventInput {
-  const copy: unknown = JSON.parse(encodeJson(input, source === 'wrapper' ? CONTROL_FRAME_BYTES - 1 : MAX_SUPERVISOR_INPUT_BYTES));
+  const copy: unknown = JSON.parse(
+    encodeJson(input, source === 'wrapper' ? CONTROL_FRAME_BYTES - 1 : MAX_SUPERVISOR_INPUT_BYTES),
+  );
   if (source === 'wrapper') {
     const result = validate('ControlEvent', copy);
     if (!result.ok) throw new Error('invalid_input');
     const event: ControlEvent = result.value;
-    return { key: generationKey(eventKey(event)), source, sourceKey: event.seq,
-      json: JSON.stringify(event), canonical: canonical(event) };
+    return {
+      key: generationKey(eventKey(event)),
+      source,
+      sourceKey: event.seq,
+      json: JSON.stringify(event),
+      canonical: canonical(event),
+    };
   }
   const { event, ordinal } = supervisorDraft(copy);
   const result = validate('AgentEvent', { ...event, seq: 1 });
   if (!result.ok || result.value.source !== 'agent') throw new Error('invalid_input');
-  return { key: generationKey(eventKey(result.value)), source, sourceKey: ordinal,
-    json: JSON.stringify(event), canonical: canonical(copy) };
+  return {
+    key: generationKey(eventKey(result.value)),
+    source,
+    sourceKey: ordinal,
+    json: JSON.stringify(event),
+    canonical: canonical(copy),
+  };
 }
 export function ackInput(input: unknown): Ack {
   const copy: unknown = JSON.parse(encodeJson(input, 1024));

@@ -1,52 +1,78 @@
+import { captureSearchCandidate, captureSearchDocument, captureSearchName, documentColumns } from './rows.js';
+import type { SearchCandidate as Candidate } from './rows.js';
+import { captureNamespaceId, namespaceIdColumn } from '../namespace-rows.js';
+import { sqlTextColumn } from '../sql-columns.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { foldRunSearchName, runSearchTerms } from '@beetle/contracts/api';
 import type { WorkspaceScope } from '@beetle/contracts/api';
 import { StorageError } from '../protocol.js';
-interface Candidate { kind: 'suite' | 'folder'; entity_id: string }
 const budget = 256;
 export function workspaceNameMatches(db: DatabaseSync, scope: WorkspaceScope, name: string): boolean {
-  const row = db.prepare('SELECT name FROM workspaces WHERE organization_id=? AND id=?')
-    .get(scope.organizationId, scope.workspaceId) as { name: string } | undefined;
+  const row = db
+    .prepare(`SELECT ${sqlTextColumn('name', 512)} FROM workspaces WHERE organization_id=? AND id=?`)
+    .get(scope.organizationId, scope.workspaceId);
   if (!row) throw new StorageError('not_found');
-  return foldRunSearchName(row.name).includes(name);
+  return foldRunSearchName(captureSearchName(row.name)).includes(name);
 }
 /** Select a complete bounded posting, then verify the entire literal against current names. */
 function candidates(db: DatabaseSync, scope: WorkspaceScope, name: string): Candidate[] {
   for (const term of runSearchTerms(name)) {
-    const rows = db.prepare(`SELECT kind,entity_id FROM history_name_grams
-      WHERE organization_id=? AND workspace_id=? AND term=? ORDER BY kind,entity_id LIMIT ?`)
-      .all(scope.organizationId, scope.workspaceId, term, budget + 1) as unknown as Candidate[];
+    const rows = db
+      .prepare(
+        `SELECT ${sqlTextColumn('kind', 8)},${sqlTextColumn('entity_id', 45)} FROM history_name_grams
+      WHERE organization_id=? AND workspace_id=? AND term=? ORDER BY history_name_grams.kind,history_name_grams.entity_id LIMIT ?`,
+      )
+      .all(scope.organizationId, scope.workspaceId, term, budget + 1)
+      .map(captureSearchCandidate);
     if (rows.length > budget) continue;
-    return rows.filter(row => {
+    return rows.filter((row) => {
       const table = row.kind === 'suite' ? 'suites' : 'folders';
-      const current = db.prepare(`SELECT folded_name FROM ${table} WHERE organization_id=? AND workspace_id=? AND id=?`)
-        .get(scope.organizationId, scope.workspaceId, row.entity_id) as { folded_name: string } | undefined;
-      return current !== undefined && foldRunSearchName(current.folded_name).includes(name);
+      const current = db
+        .prepare(`SELECT ${documentColumns} FROM ${table} WHERE organization_id=? AND workspace_id=? AND id=?`)
+        .get(scope.organizationId, scope.workspaceId, row.entity_id);
+      return current !== undefined && foldRunSearchName(captureSearchDocument(current).folded_name).includes(name);
     });
   }
   throw new StorageError('search_too_broad');
 }
 function addBounded(set: Set<string>, ids: readonly string[]): void {
-  for (const id of ids) { set.add(id); if (set.size > budget) throw new StorageError('search_too_broad'); }
+  for (const id of ids) {
+    set.add(id);
+    if (set.size > budget) throw new StorageError('search_too_broad');
+  }
 }
 /** Current folder ancestry expands through covering indexes; no denormalized Run paths. */
 export function matchingSuites(db: DatabaseSync, scope: WorkspaceScope, name: string): string[] {
   const matched = candidates(db, scope, name);
-  const suites = new Set(matched.filter(row => row.kind === 'suite').map(row => row.entity_id));
-  const folders = new Set(matched.filter(row => row.kind === 'folder').map(row => row.entity_id));
+  const suites = new Set(matched.filter((row) => row.kind === 'suite').map((row) => row.entity_id));
+  const folders = new Set(matched.filter((row) => row.kind === 'folder').map((row) => row.entity_id));
   const queue = [...folders];
   for (let head = 0; head < queue.length; head++) {
     const id = queue[head]!;
-    const children = db.prepare(`SELECT id FROM folders INDEXED BY folders_children
-      WHERE organization_id=? AND workspace_id=? AND parent_id=? ORDER BY id LIMIT ?`)
-      .all(scope.organizationId, scope.workspaceId, id, budget + 1) as unknown as { id: string }[];
+    const children = db
+      .prepare(
+        `SELECT ${namespaceIdColumn} FROM folders INDEXED BY folders_children
+      WHERE organization_id=? AND workspace_id=? AND parent_id=? ORDER BY folders.id LIMIT ?`,
+      )
+      .all(scope.organizationId, scope.workspaceId, id, budget + 1)
+      .map(captureNamespaceId);
     const old = new Set(folders);
-    addBounded(folders, children.map(row => row.id));
-    queue.push(...children.filter(row => !old.has(row.id)).map(row => row.id));
-    const contained = db.prepare(`SELECT id FROM suites INDEXED BY suites_history_folder
-      WHERE organization_id=? AND workspace_id=? AND folder_id=? ORDER BY id LIMIT ?`)
-      .all(scope.organizationId, scope.workspaceId, id, budget + 1) as unknown as { id: string }[];
-    addBounded(suites, contained.map(row => row.id));
+    addBounded(
+      folders,
+      children.map((row) => row.id),
+    );
+    queue.push(...children.filter((row) => !old.has(row.id)).map((row) => row.id));
+    const contained = db
+      .prepare(
+        `SELECT ${namespaceIdColumn} FROM suites INDEXED BY suites_history_folder
+      WHERE organization_id=? AND workspace_id=? AND folder_id=? ORDER BY suites.id LIMIT ?`,
+      )
+      .all(scope.organizationId, scope.workspaceId, id, budget + 1)
+      .map(captureNamespaceId);
+    addBounded(
+      suites,
+      contained.map((row) => row.id),
+    );
   }
   return [...suites];
 }

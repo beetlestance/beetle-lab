@@ -1,3 +1,4 @@
+import { historyKeyColumns } from './run-search/rows.js';
 import type { SQLInputValue } from 'node:sqlite';
 import { normalizeRunListQuery, runListPosition } from '@beetle/contracts/api';
 import type { RunList } from '../../../ports/runs.js';
@@ -11,19 +12,32 @@ export function runListStatement(input: RunList, suiteId?: string): { sql: strin
   const position = runListPosition(scope, query);
   const predicates = ['organization_id=?', 'workspace_id=?'];
   const values: SQLInputValue[] = [scope.organizationId, scope.workspaceId];
-  suiteId=suiteId??query.suiteId;
-  if (suiteId !== undefined) { predicates.push('suite_id=?'); values.push(suiteId); }
-  if (query.state !== undefined) { predicates.push('state=?'); values.push(query.state); }
-  if (query.outcome !== undefined) { predicates.push('outcome=?'); values.push(query.outcome); }
+  suiteId = suiteId ?? query.suiteId;
+  if (suiteId !== undefined) {
+    predicates.push('suite_id=?');
+    values.push(suiteId);
+  }
+  if (query.state !== undefined) {
+    predicates.push('state=?');
+    values.push(query.state);
+  }
+  if (query.outcome !== undefined) {
+    predicates.push('outcome=?');
+    values.push(query.outcome);
+  }
   const direction = query.order === 'newest' ? 'DESC' : 'ASC';
   if (position) {
     predicates.push(query.order === 'newest' ? '(requested_at,id)<(?,?)' : '(requested_at,id)>(?,?)');
     values.push(position.requestedAt, position.id);
   }
   const base = historyIndex(query.state !== undefined, query.outcome !== undefined);
-  const index = suiteId === undefined ? base : suiteHistoryIndex(query.state !== undefined, query.outcome !== undefined);
+  const index =
+    suiteId === undefined ? base : suiteHistoryIndex(query.state !== undefined, query.outcome !== undefined);
   values.push(query.limit + 1);
-  return { sql: `SELECT id,requested_at FROM runs INDEXED BY ${index} WHERE ${predicates.join(' AND ')} ORDER BY requested_at ${direction},id ${direction} LIMIT ?`, values };
+  return {
+    sql: `SELECT ${historyKeyColumns} FROM runs INDEXED BY ${index} WHERE ${predicates.join(' AND ')} ORDER BY runs.requested_at ${direction},runs.id ${direction} LIMIT ?`,
+    values,
+  };
 }
 
 function historyIndex(state: boolean, outcome: boolean): string {

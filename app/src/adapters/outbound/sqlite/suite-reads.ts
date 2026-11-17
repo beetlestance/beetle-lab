@@ -45,7 +45,7 @@ export class SuiteReads {
     const rows = this.db
       .prepare(
         `SELECT ${revision ? revisionSummaryColumns : namespaceIdColumn} FROM ${table} WHERE organization_id=? AND workspace_id=?
-      ${revision ? 'AND suite_id=?' : ''} AND id>? ORDER BY id LIMIT ?`,
+      ${revision ? 'AND suite_id=?' : ''} AND id>? ORDER BY ${table}.id LIMIT ?`,
       )
       .all(...args)
       .map((row) => (revision ? captureRevisionSummary(row, query.scope, query.suiteId) : captureNamespaceId(row)));

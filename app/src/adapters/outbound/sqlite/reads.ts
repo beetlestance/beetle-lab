@@ -52,7 +52,7 @@ export class Reads {
     const scope = query.scope;
     if (query.kind === 'organization')
       return this.db
-        .prepare(`SELECT ${namespaceIdColumn} FROM organizations WHERE id>? ORDER BY id LIMIT ?`)
+        .prepare(`SELECT ${namespaceIdColumn} FROM organizations WHERE id>? ORDER BY organizations.id LIMIT ?`)
         .all(after, query.limit + 1)
         .map(captureNamespaceId);
     requireRule(scope.kind !== 'installation', 'not_found');
@@ -61,8 +61,8 @@ export class Reads {
       return this.db
         .prepare(
           isHistorical(this.db)
-            ? `SELECT ${namespaceIdColumn} FROM workspaces WHERE organization_id=? AND id>? ORDER BY id LIMIT ?`
-            : `SELECT ${namespaceIdColumn} FROM workspaces INDEXED BY workspaces_visible WHERE retired=0 AND organization_id=? AND id>? ORDER BY id LIMIT ?`,
+            ? `SELECT ${namespaceIdColumn} FROM workspaces WHERE organization_id=? AND id>? ORDER BY workspaces.id LIMIT ?`
+            : `SELECT ${namespaceIdColumn} FROM workspaces INDEXED BY workspaces_visible WHERE retired=0 AND organization_id=? AND id>? ORDER BY workspaces.id LIMIT ?`,
         )
         .all(lower(scope.organizationId), after, query.limit + 1)
         .map(captureNamespaceId);
@@ -72,7 +72,7 @@ export class Reads {
       return this.db
         .prepare(
           `SELECT ${namespaceColumns('folder')}
-      FROM folders WHERE organization_id=? AND workspace_id=? AND id>? ORDER BY id LIMIT ?`,
+      FROM folders WHERE organization_id=? AND workspace_id=? AND id>? ORDER BY folders.id LIMIT ?`,
         )
         .all(lower(scope.organizationId), lower(scope.workspaceId), after, query.limit + 1)
         .map((row) => captureFolderRow(row, scope));
@@ -80,7 +80,7 @@ export class Reads {
     return this.db
       .prepare(
         `SELECT ${namespaceColumns('folder')} FROM folders
-      WHERE organization_id=? AND workspace_id=? AND parent_id=? AND id>? ORDER BY id LIMIT ?`,
+      WHERE organization_id=? AND workspace_id=? AND parent_id=? AND id>? ORDER BY folders.id LIMIT ?`,
       )
       .all(lower(scope.organizationId), lower(scope.workspaceId), lower(query.parentFolderId), after, query.limit + 1)
       .map((row) => captureFolderRow(row, scope));

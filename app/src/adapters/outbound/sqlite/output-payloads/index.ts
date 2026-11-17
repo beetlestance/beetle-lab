@@ -1,3 +1,4 @@
+export {HEADER_BYTES} from './values.js';
 export { boundedUniqueJson } from './json.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeCanonicalJson } from '@beetle/contracts';

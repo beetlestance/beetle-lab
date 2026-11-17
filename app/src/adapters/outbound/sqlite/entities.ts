@@ -91,7 +91,7 @@ export class Entities {
     const queue = [{ id: root.id, depth: 0 }];
     const seen = new Set([root.id]);
     const children = this.db.prepare(`SELECT ${namespaceIdColumn} FROM folders INDEXED BY folders_children
-      WHERE organization_id=? AND workspace_id=? AND parent_id=? ORDER BY id LIMIT ?`);
+      WHERE organization_id=? AND workspace_id=? AND parent_id=? ORDER BY folders.id LIMIT ?`);
     let height = 0;
     for (let head = 0; head < queue.length; head++) {
       const node = queue[head]!;

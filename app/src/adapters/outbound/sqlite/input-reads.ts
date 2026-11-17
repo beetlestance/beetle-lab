@@ -52,7 +52,7 @@ export class InputReads {
       rows = this.db
         .prepare(
           `SELECT ${inputColumns} FROM input_blobs WHERE organization_id=? AND workspace_id=? AND id>?
-        ORDER BY id LIMIT ?`,
+        ORDER BY input_blobs.id LIMIT ?`,
         )
         .all(lower(scope.organizationId), lower(scope.workspaceId), after[0]!, query.limit + 1)
         .map((row) => inputRecord(row, scope));
@@ -77,7 +77,7 @@ export class InputReads {
       .prepare(
         `SELECT ${inputColumns} FROM input_blobs INDEXED BY inputs_recovery
       WHERE state IN (${states.map(() => '?').join(',')}) AND (state,organization_id,workspace_id,id)>(?,?,?,?)
-      ORDER BY state,organization_id,workspace_id,id LIMIT ?`,
+      ORDER BY input_blobs.state,input_blobs.organization_id,input_blobs.workspace_id,input_blobs.id LIMIT ?`,
       )
       .all(...states, ...after, query.limit + 1)
       .map((row) => inputRecord(row));
