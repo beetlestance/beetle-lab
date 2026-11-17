@@ -1,8 +1,8 @@
 # Audit correction evidence
 
 Recorded 17 November 2026. This is scoped local source evidence, not a release
-certificate. Candidate CI passed; broader native/resource qualification remains
-open. Private installation data, credentials and raw logs are not published here.
+certificate. Candidate CI and the scoped native/resource qualifications below passed.
+Browser presentation and release-policy application remain open. Private installation data, credentials and raw logs are not published here.
 
 ## Source identities
 
@@ -85,10 +85,9 @@ fixture: these checks do not establish native container or target-workload accep
 
 1. Approve and apply the proposed GitHub token/reviewer settings, then verify the
    configured policy. Do not bypass its deployment gate.
-2. Resolve the later hosted AMD64 conformance failure; retain its original evidence.
-3. Complete the running long-stream check and required hosted resource evidence.
-4. Verify browser presentation/download interactions for the packaged report.
-5. Publish only after explicit approval.
+2. Verify browser presentation/download interactions for the packaged report.
+3. Retain the unexplained original conformance failure; a later pass is not its cause.
+4. Publish only after explicit approval.
 
 Running services use matching locally built candidate images, including the
 report, storage, diagnostic and settings changes. No merge
@@ -99,4 +98,32 @@ Candidate [CI 43996681055](https://github.com/beetlestance/beetle-lab/actions/ru
 passed all source, six test-shard and both native image jobs at `40c4a5c1`; eight
 archive identities were verified. No images were published. The subsequent
 [read-only observation](https://github.com/beetlestance/beetle-lab/actions/runs/44002956313)
-has a failed conformance job under diagnosis and an unfinished long-stream job.
+contains a failed conformance job and a successful long-stream job. The failed
+case was not reproduced by the separately instrumented six-case conformance run;
+its original cause remains unknown. Fixed, redacted failure locations are retained
+for future native conformance failures.
+
+## Hosted finite resource evidence
+
+All cases below use runtime source `40c4a5c1` and matching six-image identities.
+They reuse the qualified archives; no runtime rebuild or publication occurred.
+Execution, source/harness identity and independent cleanup were checked from the
+closed artifacts. No tests were rerun merely to review these measurements.
+
+| Case | Harness / run | Observed result |
+| --- | --- | --- |
+| Six engine/request/admission cases | `4e3adfc3`, [44004323095](https://github.com/beetlestance/beetle-lab/actions/runs/44004323095) | All six pass; original failure above remains unexplained. |
+| Long stream | `40c4a5c1`, [44002956313](https://github.com/beetlestance/beetle-lab/actions/runs/44002956313) | 1,836 seconds active; three fresh-reader spans over 1,823 seconds; live-read p95 111.02 ms including unavailable responses, 111.51 ms for successes. |
+| Four retained runs | `59a00083`, [44005995328](https://github.com/beetlestance/beetle-lab/actions/runs/44005995328) | Live p95 107.5–196.2 ms; backend/agent final RSS below warm-up by 12.19/5.64 MiB. |
+
+The long component retained 51 unavailable responses among 2,696 live reads.
+Its whole workflow remains failed because of the separate original conformance job.
+The four-run case uses fixed 32-second post-idle windows and compares final
+8-second median summed process RSS after warm-up and after the fourth run.
+Every pooled and live-specific p95 stays below the unchanged 250 ms target;
+final RSS growth stays below the unchanged zero-byte target for both processes.
+All four results retain their original 8 MiB output plus 64 KiB cleanup allocations,
+and every run's eight final artifacts were verified. Settings, container identities,
+start times and caps stayed unchanged; no forced GC, restart, history purge or pool
+increase was used. This closes these finite blockers, not a universal leak-free or
+uninterrupted-availability guarantee. Private evidence and local backup are retained.

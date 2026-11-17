@@ -19,15 +19,15 @@ are indexed in [HISTORY](HISTORY.md) and retain their original source/platform s
 
 | Area | Gap |
 | --- | --- |
-| Report parity | Readable target-memory/CPU/GC sections are implemented with explicit missing values, chronology/reset checks and advisory interpretation. A local ARM64 packaged workload passed with digest-verified target JSON, text and CSV; browser acceptance remains pending. |
-| Target metrics | Explicit GC total/average/maximum millisecond fields and active handles are collected. Older artifacts remain decodable; source regression checks cover the real field names. A local ARM64 workload recorded all 121 samples, including explicit GC fields; broader hosted acceptance remains pending. |
-| Capacity changes | Resumable memory and aggregate-output increases are implemented with source checks. Memory is applied locally at 1 GiB with preserved history. The approved output increase is applied locally at 512 MiB, preserving the 1 GiB memory and 2 GiB storage allocations, retained holds and prior results. A passing ARM64 workload proves the actual 1 GiB engine limit and packaged reports. |
-| Storage and diagnostics | A five-second no-progress watchdog replaces per-enqueue timers; bounded slow FIFO bursts can drain. Fatal failures emit redacted component/reason/code diagnostics and remain sticky with no mutation retry. Focused source checks pass. Startup/shutdown failures now expose bounded allow-listed cause codes; native overload acceptance remains pending. |
+| Report parity | Readable memory/CPU/GC reports pass source and packaged ARM64 checks. Independent comparisons matched 36 numeric points and three GC calculations; browser presentation remains open. |
+| Target metrics | The real packaged workload published all 121 target samples, including GC total/average/maximum millisecond fields. Older artifact compatibility and explicit missing values remain covered. |
+| Capacity changes | Supported memory/output increases are applied locally at 1 GiB/512 MiB inside the unchanged 2 GiB storage allocation. History and held reservations were preserved; an actual engine run passed at the 1 GiB limit. |
+| Storage and diagnostics | Real-worker slow-burst, overload, stall and uncertain-write tests pass for the no-progress watchdog and redacted diagnostics. Current packaged workload and hosted stream/conformance checks pass. Native filesystem-stall injection is not claimed. |
 | Sampler confinement | Corrected by appending sampling paths under the configured target and checking origin before fetch. Regression tests cover scheme-looking paths; release acceptance remains open. |
 | Migration extension | Migration 026 now has its own version guard. Prior-025 upgrade coverage passes; adding a later migration still requires its own upgrade tests. Migration 015 already has a caller guard. |
 | Publishing | Environment-gated publishing and a fail-closed policy preflight are prepared. GitHub default-token/review settings still require approval and application. No replacement image was published; legacy registry images remain available. |
-| Qualification | Exact-source CI passed at 40c4a5c1, including native AMD64/ARM64 jobs and eight verified candidate artifact identities. Later read-only AMD64 conformance has a failure under diagnosis; its long-stream job is still running. The retained local repeated-memory observation does not substitute for required hosted resource qualification. |
-| Maintainability | Persisted settings rows now validate identity/scope/version/value schemas; malformed-row and replay tests pass. This covers the touched settings boundary, not all SQLite rows. Broader formatting and dense functions remain targeted work. |
+| Qualification | Source CI and both native image jobs pass at 40c4a5c1. Hosted conformance, 30-minute stream and four-run memory/latency evidence pass within their finite scopes; see [measurements](verification/audit-corrections.md). The original conformance failure remains unexplained. |
+| Maintainability | Targeted settings rows validate identity/scope/version/value schemas; malformed-row and original-receipt replay cases pass. This does not certify all SQLite rows or whole-repository formatting. |
 
 The legacy executable source and automatic publishing path are removed in the rewrite.
 No replacement default image was promoted. Use source Compose; the old single-image
@@ -39,7 +39,7 @@ Historical source CI passed at 4fabd9fa; see [the evidence index](HISTORY.md).
 Recorded native Linux amd64/arm64 checks and the 30-minute stream remain useful
 within their original inputs. Neither a passing fixture nor a historical closeout
 establishes complete real-workload parity or readiness after unrelated changes.
-Known report and configuration gaps keep release acceptance open.
+Browser presentation and unapplied release protections keep acceptance open.
 
 ## Separate scope
 
