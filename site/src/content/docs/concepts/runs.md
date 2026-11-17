@@ -21,8 +21,14 @@ status** (whether the engine accepted its configuration).
 | `cancelled` | Stopped at your request, with its output accounted for |
 | `errored` | Could not produce a trustworthy result |
 
+<figure class="bl-states" aria-label="Run states: queued, dispatching, active and finalizing lead to finished, cancelled or errored.">
+<ol class="path"><li><span class="bl-chip">queued</span></li><li><span class="bl-chip">dispatching</span></li><li><span class="bl-chip active">active</span></li><li><span class="bl-chip">finalizing</span></li></ol>
+<ol class="end"><li><span class="bl-chip pass">finished</span></li><li><span class="bl-chip">cancelled</span></li><li><span class="bl-chip fail">errored</span></li></ol>
+</figure>
+
 The last three are terminal: a run never leaves them. Everything else carries
-the outcome `pending`.
+the outcome `pending`. A run can also be cancelled or error before it reaches
+`finalizing`.
 
 ## Outcomes
 

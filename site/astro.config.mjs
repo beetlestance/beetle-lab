@@ -21,11 +21,31 @@ export default defineConfig({
       styleDirective: { resources: ["'self'", "'unsafe-inline'"] },
     },
   },
+  // Never inline assets as data: URLs; the CSP allows fonts and images from 'self' only.
+  vite: { build: { assetsInlineLimit: 0 } },
   markdown: { processor: unified({ remarkPlugins: [remarkBaseLinks(base)] }) },
   integrations: [
     starlight({
       title: 'Beetle Lab',
-      customCss: ['./src/styles/custom.css'],
+      logo: { light: './src/assets/logo-light.svg', dark: './src/assets/logo.svg', alt: '' },
+      customCss: ['./src/styles/theme.css', './src/styles/custom.css'],
+      expressiveCode: {
+        themes: ['vitesse-dark', 'vitesse-light'],
+        styleOverrides: {
+          borderRadius: '10px',
+          borderColor: 'transparent',
+          codeFontFamily: 'var(--sl-font-mono)',
+          codeFontSize: '0.8125rem',
+          codeBackground: 'var(--bl-surface)',
+          uiFontFamily: 'var(--sl-font)',
+          frames: {
+            editorTabBarBackground: 'var(--bl-zebra)',
+            terminalTitlebarBackground: 'var(--bl-zebra)',
+            terminalBackground: 'var(--bl-surface)',
+            frameBoxShadowCssValue: 'none',
+          },
+        },
+      },
       description: 'Self-hosted k6 performance testing with isolated execution and trustworthy results.',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/beetlestance/beetle-lab' }],
       plugins: [starlightLinksValidator({ errorOnLocalLinks: false, errorOnRelativeLinks: false })],

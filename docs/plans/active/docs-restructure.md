@@ -1,9 +1,9 @@
 # Plan: documentation restructure
 
-Status: active. Phases 0–2 delivered on `docs/restructure` (not yet integrated);
-phases 4–6 started: a Starlight site in `site/` builds with valid links, is
-served at `/docs/` by the frontend image, has limits and troubleshooting pages and
-its first animated diagram. Phase 3 (Penpot design) and phase 7 are open. The triage
+Status: active. Phases 0–6 delivered on `docs/restructure` (not yet integrated).
+The site in `site/` builds with valid links, is served at `/docs/` by the frontend
+image and is themed from the Penpot "Docs" page (home, guide, concept, reference,
+in-app and phone boards) using the Darkroom tokens. Phase 7 is open. The triage
 below is kept as the record of where each former LLD went.
 Decision: [017](../../decisions/017-documentation-structure-and-delivery.md).
 
