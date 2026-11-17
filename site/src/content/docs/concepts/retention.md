@@ -83,8 +83,12 @@ the files are gone. A failed or interrupted deletion therefore never frees space
 that is still used on disk. Estimated sizes in a preview are not freed space.
 
 :::note
-Cleanup space is reserved in advance when a run is queued, so a full disk cannot
-stop a deletion from finishing.
+When a run is queued, and again when the agent admits it, a small amount of
+storage is set aside in Beetle Lab's own accounting for deleting it later, so run
+outputs that fill the storage pool cannot block a deletion. This is bookkeeping, not space held on the disk: Beetle Lab
+does not preallocate disk or database space for it, and a host disk that is
+really full can still stop a deletion from finishing. Keep free disk space on the
+host.
 :::
 
 ## When storage is full
