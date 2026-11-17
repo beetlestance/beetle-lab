@@ -1,11 +1,13 @@
 # Plan: documentation restructure
 
-Status: active. Phases 0–6 delivered on `docs/restructure` (not yet integrated).
-The site in `site/` builds with valid links, is served at `/docs/` by the frontend
-image and is themed from the Penpot "Docs" page (home, guide, concept, reference,
-in-app and phone boards) using the Darkroom tokens. Phase 7 (quality pass) is done
-except the full image build. A coverage audit of Phase 2 compared every deleted LLD
-with the contracts and code and restored the lost rules (namespace deletion now has
+Status: active. Phases 0–7 are merged into `rewrite/integration` (merge
+6eb081e7), and the site builds with valid links on the merged branch. The only
+outstanding check is the full frontend image build (`web/Dockerfile`), which
+waits for CI after an authorised push; the plan stays here until that passes.
+The site in `site/` is served at `/docs/` by the frontend image and is themed
+from the Penpot "Docs" page (home, guide, concept, reference, in-app and phone
+boards) using the Darkroom tokens. A coverage audit of Phase 2 compared every
+deleted LLD with the contracts and code and restored the lost rules (namespace deletion now has
 its own `namespaces.md`). The triage below is kept as the record of where each former LLD went.
 Decision: [017](../../decisions/017-documentation-structure-and-delivery.md).
 
@@ -29,7 +31,7 @@ the development guide. The frontend image builds the site in a `docs` stage;
 nginx serves it at `/docs/`, and each page carries a hash-based CSP meta tag for
 its inline scripts. Checked with the nginx config against a local container and a
 headless browser (no CSP violations, search works); the full image build has not
-been run. Diagrams are inline SVG themed by Starlight tokens, with motion removed
+been run locally and waits for CI. Diagrams are inline SVG themed by Starlight tokens, with motion removed
 under reduced-motion.
 
 Phases 5–7: concept pages for rules, workspaces, retention and security; guides
@@ -138,9 +140,9 @@ Members of each group:
 - Condensing 11,780 lines into about 15 contracts of at most 220 lines each is
   a three- to fivefold reduction. If a group cannot fit without losing invariants
   tests rely on, it splits into a second contract rather than dropping them.
-- Codex commits on `rewrite/integration` concurrently. This work runs on
-  `docs/restructure` in its own worktree; integration needs approval and a
-  rebase over any documentation Codex changed meanwhile.
+- Codex commits on `rewrite/integration` concurrently. This work ran on
+  `docs/restructure` in its own worktree and was merged after approval; later
+  documentation changes land on `rewrite/integration` directly.
 - Five LLDs have no inbound links: backend-recovery-control,
   live-metric-snapshots, output-range, protected-retention and run-result-panel.
   They are merged like the others, not deleted for that reason alone.
