@@ -43,7 +43,7 @@ export function claimsFixture(storageBytes=400000) {
       scope: { kind: 'organization', organizationId: uuid(21) }, requestId: requestId(), name: 'Other synthetic' } }) });
     store.execute({ kind: 'suite', command: suiteCommand({ kind: 'createSuite', id: uuid(51), request: {
       scope, requestId: requestId(), name: 'Other synthetic' } }) });
-    store.execute({ kind: 'suite', command: suiteCommand({ kind: 'createSuiteRevision', id: uuid(61), suiteId: uuid(51),
+    store.execute({ kind: 'suite', command: suiteCommand({ kind: 'createSuiteRevision',savedAt:'2026-11-10T00:00:00.000Z', id: uuid(61), suiteId: uuid(51),
       request: { ...request(), scope } }) });
     const create = { ...runRequest(uuid(61)), scope };
     const run = store.execute({ kind: 'run', command: runCommand(uuid(61), 72, create) }) as Run;

@@ -9,6 +9,8 @@ interface Options {
   reader: SuiteReader;
   newId(): string;
   digest(value: string): string;
+  /** Server clock for revision `savedAt`; excluded from the replayed intent. */
+  now(): string;
   authorize: onRequestAsyncHookHandler;
 }
 const scope = (params: { organizationId: string; workspaceId: string }): WorkspaceScope => ({
@@ -44,7 +46,13 @@ export function registerSuiteRoutes(server: FastifyInstance, options: Options): 
     registerApiOperation(scoped, 'createSuiteRevision', ({ params, body }) => {
       requireRule(sameScope(scope(params), body.scope), 'not_found');
       return mutateSuite({
-        operation: { kind: 'createSuiteRevision', id: options.newId(), suiteId: params.suiteId, request: body },
+        operation: {
+          kind: 'createSuiteRevision',
+          id: options.newId(),
+          suiteId: params.suiteId,
+          savedAt: options.now(),
+          request: body,
+        },
         ...options,
       });
     });

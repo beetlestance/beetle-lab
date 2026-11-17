@@ -1,5 +1,5 @@
 export { safeCode } from './safe-code.js';
-import { requireVisibleMutation, visibleEntity } from './workspace-retirement/public.js';
+import { requireVisibleMutation, visibleEntity, type Mutation } from './workspace-retirement/public.js';
 import { assertHistoricalRead } from './historical.js';
 import { deleteNamespaceRows } from './namespace-deletion/index.js';
 import { ParentRetentionSnapshots } from './retention-parent/index.js';
@@ -31,6 +31,7 @@ import { OutputCustody, outputOperation } from './output-custody/index.js';
 import { EventCustody, eventOperation } from './event-custody/index.js';
 import { Runs } from './runs.js';
 import { RunCancellations } from './run-cancellations.js';
+import { RunNotes } from './run-notes.js';
 import { captureCancelRunReply } from './run-cancellation-reply.js';
 import { DispatchClaims } from './dispatch-claims.js';
 import { DispatchObservations } from './dispatch-observations.js';
@@ -76,6 +77,7 @@ export class Store {
   private readonly exportOutputs: ExportOutputs;
   private readonly runs: Runs;
   private readonly runCancellations: RunCancellations;
+  private readonly runNotes: RunNotes;
   private readonly runReads: RunReads;
   private readonly overviews: Overviews;
   private readonly inputs: Inputs;
@@ -96,7 +98,7 @@ export class Store {
     this.outputs = new OutputCustody(db, bootstrap.installation.id);
     this.events = new EventCustody(db, bootstrap.installation.id);
     this.entities = new Entities(db);
-    this.suites = new Suites(db, this.entities);
+    this.suites = new Suites(db, this.entities, () => this.settings.administratorName());
     this.suiteReads = new SuiteReads(db, this.suites);
     this.settings = transaction(db, () => new Settings(db, bootstrap));
     this.exports = new ExportJobs(db, this.suites, this.settings, {
@@ -122,6 +124,7 @@ export class Store {
     this.results = new RunResults(db, this.runReads);
     this.runEvents = new RunEvents(db, this.runReads);
     this.runCancellations = new RunCancellations(db, this.runReads);
+    this.runNotes = new RunNotes(db, this.runReads);
     this.dispatchClaims = new DispatchClaims(
       db,
       this.settings,
@@ -140,12 +143,7 @@ export class Store {
     this.namespaces = new Namespaces(db, this.entities, this.settings);
     this.reads = new Reads(db, this.entities);
   }
-  private mutation(
-    operation: Extract<
-      Operation,
-      { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'exportJob' }
-    >,
-  ): Value {
+  private mutation(operation: Mutation): Value {
     const command = operation.command;
     return transaction(this.db, () => {
       requireVisibleMutation(this.db, operation);
@@ -157,12 +155,7 @@ export class Store {
       return writeMutationReceipt(this.db, command, this.change(operation), operationMessageLimit(operation)) as Value;
     });
   }
-  private change(
-    operation: Extract<
-      Operation,
-      { kind: 'namespace' | 'settings' | 'suite' | 'input' | 'run' | 'cancelRun' | 'exportJob' }
-    >,
-  ): Value {
+  private change(operation: Mutation): Value {
     switch (operation.kind) {
       case 'exportJob':
         return operation.command.kind === 'createExport'
@@ -172,6 +165,8 @@ export class Store {
         return this.runs.create(operation.command);
       case 'cancelRun':
         return this.runCancellations.cancel(operation.command);
+      case 'runNote':
+        return this.runNotes.set(operation.command);
       case 'input':
         return this.inputs.control(operation.command);
       case 'suite':
@@ -187,6 +182,7 @@ export class Store {
     switch (operation.kind) {
       case 'run':
       case 'cancelRun':
+      case 'runNote':
         return this.mutation(operation);
       case 'getRun':
         return this.runReads.get(operation.key);
@@ -354,6 +350,7 @@ export class Store {
         'getWorkspaceOverview',
         'run',
         'cancelRun',
+        'runNote',
         'getRun',
         'listRuns',
         'dispatchScan',

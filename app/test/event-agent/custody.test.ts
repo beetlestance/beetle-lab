@@ -43,7 +43,7 @@ it('collects actual Journal events over agent TCP, durably ACKs, and retains exa
   await collect(metadata, peer.gateway, binding);
   expect(await metadata.events.load(binding)).toEqual(stored);
   expect((await peer.traffic()).requests).toEqual([eventsPath(binding, 0), ackPath(binding), eventsPath(binding, 2)]);
-  expect(await metadata.runs.getRun({ id: binding.key.runId, scope })).toEqual(runBefore);
+  expect(await metadata.runs.getRun({ id: binding.key.runId, scope })).toEqual({ ...runBefore, startedAt: '2026-01-01T00:00:00Z' }); // derived read only
   await peer.close(); await backend.close(metadata);
   const journalState = await journal.inspect(); await journals.close(journal);
   const persisted = inspectBackend(f.path);
@@ -89,7 +89,7 @@ it('loses an applied real ACK response, prunes, and reopens both original paths 
   expect(resumed.receipts).toMatchObject([{ acknowledgedSeq: 2 }]);
   expect(resumed.observations).toHaveLength(1); expect(resumed.observations[0]).toEqual(observations[0]);
   expect(await metadata.events.load(binding)).toEqual({ ...stored, ackConfirmedThrough: 2 });
-  expect(await metadata.runs.getRun({ id: binding.key.runId, scope })).toEqual(runBefore);
+  expect(await metadata.runs.getRun({ id: binding.key.runId, scope })).toEqual({ ...runBefore, startedAt: '2026-01-01T00:00:00Z' }); // derived read only
   expect(await metadata.dispatch.claim(binding.key)).toEqual({ kind: 'acknowledged', journalAuthority: binding.journalAuthority });
   await peer.close(); await backend.close(metadata);
   const afterJournal = await journal.inspect(); await journals.close(journal);

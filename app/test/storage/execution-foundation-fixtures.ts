@@ -8,7 +8,11 @@ import { reserveRunOutput } from '../../src/adapters/outbound/sqlite/output-rese
 import { command, observation, settingsFixture, uuid, scope, requestId } from './fixture.js';
 import { suiteCommand, request } from './suites-fixture.js';
 import { runCommand, runOptions } from './runs-fixture.js';
+import { withCurrentWrites } from './legacy030.js';
 export function seedFoundation(db: DatabaseSync, storageBytes=200000): Store {
+  return withCurrentWrites(db, () => seedCurrent(db, storageBytes));
+}
+function seedCurrent(db: DatabaseSync, storageBytes: number): Store {
   const fixture = settingsFixture();
   fixture.chain.installation.values.pool.storageBytes = storageBytes;
   fixture.runtime.pool.storageBytes = Math.max(400000,storageBytes);
@@ -18,13 +22,13 @@ export function seedFoundation(db: DatabaseSync, storageBytes=200000): Store {
   store.execute({ kind: 'namespace', command: command({ kind: 'createWorkspace', id: uuid(2), rootFolderId: uuid(3), request: {
     scope: { kind: 'organization', organizationId: uuid(1) }, requestId: requestId(), name: 'Synthetic' } }) });
   store.execute({ kind: 'suite', command: suiteCommand({ kind: 'createSuite', id: uuid(50), request: { scope, requestId: requestId(), name: 'Synthetic' } }) });
-  store.execute({ kind: 'suite', command: suiteCommand({ kind: 'createSuiteRevision', id: uuid(60), suiteId: uuid(50), request: request() }) });
+  store.execute({ kind: 'suite', command: suiteCommand({ kind: 'createSuiteRevision',savedAt:'2026-11-10T00:00:00.000Z', id: uuid(60), suiteId: uuid(50), request: request() }) });
   return store;
 }
 export function enqueue(db: DatabaseSync, store: Store, id = 70): { key: DispatchKey; offer: Offer; run: Run } {
   const command = runCommand(uuid(60), id);
   const version = Number(db.prepare('PRAGMA user_version').get()?.user_version);
-  const run = [5, 6, 7].includes(version) ? historicalRun(db, command) : store.execute({ kind: 'run', command }) as Run;
+  const run = withCurrentWrites(db, () => [5, 6, 7].includes(version) ? historicalRun(db, command) : store.execute({ kind: 'run', command }) as Run);
   const row = db.prepare('SELECT offer_json FROM attempts WHERE id=?').get(run.activeAttemptId)!;
   const offer = JSON.parse(String(row.offer_json)) as Offer;
   return { run, offer, key: { runId: run.id, attempt: { attemptId: offer.attemptId, organizationId: offer.organizationId,

@@ -13,10 +13,14 @@ import { command, observation, settingsFixture, uuid, scope, requestId } from '.
 import { suiteCommand, request } from './suites-fixture.js';
 import { runCommand, runOptions } from './runs-fixture.js';
 
+import { withCurrentWrites } from './legacy030.js';
 let root = '';
 beforeEach(async () => { root = await mkdtemp(join(tmpdir(), 'beetle-run-migration-')); });
 afterEach(async () => { await rm(root, { recursive: true, force: true }); });
 function seed(db: DatabaseSync, storageBytes?:number): Store {
+  return withCurrentWrites(db, () => seedCurrent(db, storageBytes));
+}
+function seedCurrent(db: DatabaseSync, storageBytes?:number): Store {
   const installation=settingsFixture().chain.installation;if(storageBytes!==undefined)installation.values.pool.storageBytes=storageBytes;
   const runtime=observation();runtime.ceilings.pool.storageBytes=Math.max(runtime.ceilings.pool.storageBytes,installation.values.pool.storageBytes);
   const store = new Store(db, { installation, runtime, ...runOptions() });
@@ -26,7 +30,7 @@ function seed(db: DatabaseSync, storageBytes?:number): Store {
     scope: { kind: 'organization', organizationId: uuid(1) }, requestId: requestId(), name: 'Synthetic' } }) });
   store.execute({ kind: 'suite', command: suiteCommand({ kind: 'createSuite', id: uuid(50), request: {
     scope, requestId: requestId(), name: 'Synthetic' } }) });
-  store.execute({ kind: 'suite', command: suiteCommand({ kind: 'createSuiteRevision', id: uuid(60), suiteId: uuid(50), request: request() }) });
+  store.execute({ kind: 'suite', command: suiteCommand({ kind: 'createSuiteRevision',savedAt:'2026-11-10T00:00:00.000Z', id: uuid(60), suiteId: uuid(50), request: request() }) });
   return store;
 }
 function prior(path: string): DatabaseSync {
@@ -38,7 +42,7 @@ it('upgrades3 without changing prior namespace/settings/revision/receipt data an
   const tables = ['organizations', 'workspaces', 'folders', 'settings', 'suites', 'suite_revisions', 'receipts'];
   const before = tables.map(table => db.prepare(`SELECT * FROM ${table}`).all()); db.close(); db = initialize(path);
   expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
-  expect(tables.map(table => db.prepare(`SELECT * FROM ${table}`).all())).toEqual(tables.map((table,index)=>table==='workspaces'?before[index]!.map(row=>({...row,retired:0})):table==='organizations'?before[index]!.map(row=>({...row,retired:0,retired_slug:null})):before[index]));
+  expect(tables.map(table => db.prepare(`SELECT * FROM ${table}`).all())).toEqual(tables.map((table,index)=>table==='workspaces'?before[index]!.map(row=>({...row,retired:0})):table==='organizations'?before[index]!.map(row=>({...row,retired:0,retired_slug:null})):table==='suites'?before[index]!.map(row=>({...row,description:null})):table==='suite_revisions'?before[index]!.map(row=>({...row,saved_at:null,message:null,saved_by:null})):before[index]));
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]); db.close(); db = initialize(path);
   expect(db.prepare('SELECT count(*) AS n FROM runs').get()?.n).toBe(0); db.close();
 });

@@ -1,5 +1,6 @@
 import { captureRunRow, runColumns } from './run-row.js';
 import { readHistorySummaries } from './run-history/index.js';
+import { readRunAnnotations } from './run-annotations.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeRunListCursor, normalizeRunListQuery, runListPageMatches, runListPosition } from '@beetle/contracts/api';
 import type { Run, RunPage } from '@beetle/contracts/api';
@@ -22,7 +23,8 @@ export class RunReads {
       .prepare(`SELECT ${runColumns} FROM runs WHERE organization_id=? AND workspace_id=? AND id=?`)
       .get(scope.organizationId, scope.workspaceId, lower(key.id));
     requireRule(row !== undefined, 'not_found');
-    return captureRunRow(row, { scope, id: key.id });
+    const owner = { id: lower(key.id), scope, activeAttemptId: String(row.active_attempt_id) };
+    return captureRunRow(row, { scope, id: key.id }, readRunAnnotations(this.db, owner));
   }
   list(input: RunList): RunPage {
     const { scope: owner, ...page } = input;

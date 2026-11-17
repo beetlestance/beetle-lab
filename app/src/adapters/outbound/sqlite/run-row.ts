@@ -2,6 +2,7 @@ import { sqlTextColumn, sqlIntegerColumn } from './sql-columns.js';
 import { validateApi } from '@beetle/contracts/api';
 import type { Run } from '@beetle/contracts/api';
 import type { RunKey } from '../../../ports/runs.js';
+import type { RunAnnotations } from './run-annotations.js';
 import { StorageError } from './protocol.js';
 const textColumns: [string, number, boolean][] = [
   ['snapshot_json', 65536, false],
@@ -28,7 +29,8 @@ function initialRun(input: unknown): Run {
   if (!parsed.ok) throw new StorageError('unavailable');
   return parsed.value;
 }
-export function captureRunRow(input: unknown, key: RunKey): Run {
+/** Annotations (note, runtime times) come from separate durable rows, never the snapshot. */
+export function captureRunRow(input: unknown, key: RunKey, annotations?: RunAnnotations): Run {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new StorageError('unavailable');
   const row = input as Record<string, unknown>;
   const initial = initialRun(row.snapshot_json);
@@ -42,6 +44,7 @@ export function captureRunRow(input: unknown, key: RunKey): Run {
     activeAttemptId: row.active_attempt_id,
     cancellationRequested: row.cancellation_requested === 1,
     reason: row.reason,
+    ...annotations,
   });
   if (!parsed.ok) throw new StorageError('unavailable');
   const run = parsed.value;

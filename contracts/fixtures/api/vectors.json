@@ -738,5 +738,60 @@
     "path": "valid/retention-traversal-page.json",
     "schema": "RetentionTraversalPage",
     "valid": true
+  },
+  {
+    "path": "valid/set-run-note.json",
+    "schema": "SetRunNoteRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/clear-run-note.json",
+    "schema": "SetRunNoteRequest",
+    "valid": true
+  },
+  {
+    "path": "invalid/set-run-note-long.json",
+    "schema": "SetRunNoteRequest",
+    "valid": false
+  },
+  {
+    "path": "invalid/set-run-note-unversioned.json",
+    "schema": "SetRunNoteRequest",
+    "valid": false
+  },
+  {
+    "path": "valid/run-annotated.json",
+    "schema": "Run",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-described.json",
+    "schema": "Suite",
+    "valid": true
+  },
+  {
+    "path": "invalid/suite-description-long.json",
+    "schema": "Suite",
+    "valid": false
+  },
+  {
+    "path": "valid/patch-suite-description.json",
+    "schema": "PatchSuiteRequest",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-revision-summary-stamped.json",
+    "schema": "SuiteRevisionSummary",
+    "valid": true
+  },
+  {
+    "path": "valid/suite-revision-summary-legacy.json",
+    "schema": "SuiteRevisionSummary",
+    "valid": true
+  },
+  {
+    "path": "valid/patch-installation-administrator.json",
+    "schema": "PatchInstallationSettingsRequest",
+    "valid": true
   }
 ]

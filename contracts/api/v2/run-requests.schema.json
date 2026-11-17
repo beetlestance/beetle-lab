@@ -51,6 +51,37 @@
       ],
       "additionalProperties": false
     },
+    "SetRunNoteRequest": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+        },
+        "requestId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "expectedNoteVersion": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunNote"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "scope",
+        "requestId",
+        "expectedNoteVersion",
+        "note"
+      ],
+      "additionalProperties": false
+    },
     "RunListQuery": {
       "type": "object",
       "properties": {

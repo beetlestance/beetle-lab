@@ -318,6 +318,7 @@ function registerAuthoring(server: FastifyInstance, store: Metadata, authorize: 
     reader: store.suites,
     newId: randomUUID,
     digest,
+    now: () => new Date().toISOString(),
     authorize: authorize,
   });
   registerOverviewRoute(server, {

@@ -144,6 +144,39 @@
         },
         "settingsVersions": {
           "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunSettingsVersions"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunNote"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "noteVersion": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count"
+        },
+        "startedAt": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunTimestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "finishedAt": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunTimestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -208,6 +241,12 @@
     },
     "RunTimestamp": {
       "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/timestamp"
+    },
+    "RunNote": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
     }
   }
 }

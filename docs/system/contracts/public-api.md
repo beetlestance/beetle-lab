@@ -107,9 +107,9 @@ at acceptance and never changed afterwards.
 Routes: `GET`/`POST /suites`, `GET`/`PATCH /suites/{suiteId}`,
 `GET`/`POST /suites/{suiteId}/revisions`, `GET /revisions/{revisionId}`.
 
-- A suite starts at version 1 with `currentRevisionId: null`. PATCH changes
-  name or folder (same workspace) with `expectedVersion`; names are unique per
-  folder by folded name.
+- A suite starts at version 1 with `currentRevisionId: null`. PATCH changes name, folder
+  (same workspace) or description with `expectedVersion`; names are unique per folder by
+  folded name. Descriptions, revision stamps, run notes and times: [Authoring](authoring.md).
 - Creating a revision requires the current suite version, `engineId: k6`,
   `configVersion: 1` and a complete config ≤ 1 MiB. It atomically appends an
   immutable revision, increments the suite version and moves
@@ -137,7 +137,7 @@ Routes: `GET`/`POST /suites`, `GET`/`PATCH /suites/{suiteId}`,
   membership can change between pages. Refresh starts again.
 - `name` is trimmed, NFKC-folded, lowercased and folded again: 3 or more scalars, ≤ 64 UTF-8
   bytes, no controls. It matches a substring of the current workspace, suite or ancestor
-  folder name (never a joined path). `runIdPrefix` is 8 to 36 characters of UUID layout,
+  folder name (never a joined path) or of the run's current note. `runIdPrefix` is 8 to 36 characters of UUID layout,
   matched from the start.
 - Search budgets (`adapters/outbound/sqlite/run-search/`): at most 62 trigrams, 257 postings
   read per term, 256 folders and 256 suites, 257 prefix candidates. Overflow is 422
@@ -212,7 +212,7 @@ characters and shows at most 80 matches.
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `0eed9bea9450` |
+| `contracts/api/v2/` | `64d1da819a62` |
 | `contracts/src/api/client/` | `7b847a42bf8b` |
 | `contracts/src/api/run-list.ts` | `f38d03bf42d6` |
 | `app/src/adapters/inbound/http/api-errors.ts` | `b65c10f58ea7` |
