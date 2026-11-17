@@ -12,7 +12,7 @@ async function setup(){
 }
 it('owns keyboard focus, traps Tab/arrows, and restores the invoker on Escape',async()=>{
  const f=await setup();fireEvent.keyDown(window,{key:'k',ctrlKey:true});const dialog=await screen.findByRole('dialog',{name:'Search commands'});
- const input=within(dialog).getByRole('searchbox');expect(input).toHaveFocus();expect(document.querySelector('.app-shell')!.parentElement).toHaveAttribute('inert');
+ const input=within(dialog).getByRole('searchbox');expect(input).toHaveFocus();expect(document.querySelector('.shell')!.parentElement).toHaveAttribute('inert');
  f.trigger.focus();expect(input).toHaveFocus();const links=within(dialog).getAllByRole('link');
  fireEvent.keyDown(input,{key:'ArrowDown'});expect(links[0]).toHaveFocus();fireEvent.keyDown(links[0]!,{key:'ArrowUp'});expect(links.at(-1)).toHaveFocus();
  fireEvent.keyDown(links.at(-1)!,{key:'Tab'});const close=within(dialog).getByRole('button',{name:'Close command search'});expect(close).toHaveFocus();
