@@ -4,17 +4,22 @@ import { captureCapabilities, captureConfiguration, ceilings, checkFrame, requir
 import { CapacityError, pinDisk } from './disk.js';
 import type { BackendDisk, DiskPort } from './disk.js';
 import { CapacityLease } from './lease.js';
+import { StatusReport, agentFacts, failureKind } from './status.js';
 
 class Source implements CapacitySource {
   private active: { promise: Promise<RuntimeObservation | null>; abort: AbortController } | undefined;
   private closed = false;
   private closing: Promise<void> | undefined;
+  private readonly pins: string[];
   constructor(
     private readonly disk: BackendDisk,
     private readonly configuration: AgentConnectionConfiguration,
     private readonly gateway: RunnerGateway,
     private readonly lease: CapacityLease,
-  ) {}
+    private readonly report: StatusReport,
+  ) {
+    this.pins = configuration.profiles.map((pin) => pin.engine.imageDigest);
+  }
   sample(signal?: AbortSignal): Promise<RuntimeObservation | null> {
     if (this.closed || this.active !== undefined) return Promise.resolve(null);
     const abort = new AbortController();
@@ -38,11 +43,13 @@ class Source implements CapacitySource {
       if (this.closed || signal.aborted) throw new CapacityError();
     };
     let source = -1;
+    let failure: 'unreachable' | 'unavailable' | null = 'unavailable';
     try {
       check();
       const started = this.lease.time();
       const reply = await this.gateway.capabilities(signal);
       check();
+      if (!reply.ok) failure = failureKind(reply.error);
       requireCapacity(reply.ok);
       const { frame, fingerprint } = captureCapabilities(reply.value);
       checkFrame(frame, this.configuration, this.lease.time());
@@ -51,8 +58,10 @@ class Source implements CapacitySource {
       const now = this.lease.time();
       checkFrame(frame, this.configuration, now);
       check();
-      requireCapacity(disk.available > this.configuration.freeSpaceReserveBytes);
       const observedAtMs = Math.min(started, frame.observation.sampleStartedAtMs);
+      failure = null;
+      this.report.ready(agentFacts(frame, disk, observedAtMs, this.pins));
+      requireCapacity(disk.available > this.configuration.freeSpaceReserveBytes);
       const expiresAtMs = Math.min(frame.observation.expiresAtMs, observedAtMs + 1000);
       requireCapacity(now < expiresAtMs);
       return this.lease.accept(frame.observation.sampleStartedAtMs, fingerprint, {
@@ -66,6 +75,7 @@ class Source implements CapacitySource {
         },
       });
     } catch {
+      if (failure !== null && !this.closed && !signal.aborted) this.report.failed(failure);
       return this.lease.revoke(source);
     }
   }
@@ -90,7 +100,14 @@ export async function openSource(
 ): Promise<CapacitySource> {
   try {
     const configuration = captureConfiguration(options.configuration);
-    return new Source(await pinDisk(options.dataRoot, disk), configuration, options.gateway, new CapacityLease(wall));
+    const report = new StatusReport(options.status, wall);
+    return new Source(
+      await pinDisk(options.dataRoot, disk),
+      configuration,
+      options.gateway,
+      new CapacityLease(wall),
+      report,
+    );
   } catch {
     throw new CapacityError();
   }

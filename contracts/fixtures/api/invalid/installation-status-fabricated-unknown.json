@@ -1,0 +1,30 @@
+{
+  "scope": { "kind": "installation" },
+  "generatedAt": "2026-01-01T00:00:05.000Z",
+  "agent": { "state": "unreachable", "lastSeenAt": null, "checkedAt": "2026-01-01T00:00:04.000Z" },
+  "host": {
+    "source": "docker-daemon",
+    "cpuCores": { "status": "unknown", "value": 8 },
+    "memoryTotalBytes": { "status": "unknown", "value": null },
+    "cpuUsedMillis": { "status": "not_measured", "value": null },
+    "memoryAvailableBytes": { "status": "not_measured", "value": null }
+  },
+  "disk": {
+    "backendFreeBytes": { "status": "unknown", "value": null },
+    "backendTotalBytes": { "status": "unknown", "value": null },
+    "stagingFreeBytes": { "status": "unknown", "value": null },
+    "freeSpaceReserveBytes": 0,
+    "storageAllocationBytes": 0,
+    "storageChargedBytes": 0
+  },
+  "engines": [],
+  "pool": {
+    "slots": { "used": 0, "runs": 0, "exports": 0, "configured": 1, "effective": null },
+    "reservedCpuMillis": 0,
+    "reservedMemoryBytes": 0,
+    "poolCpuMillis": null,
+    "poolMemoryBytes": null,
+    "queuedRuns": 0,
+    "queuedExports": 0
+  }
+}

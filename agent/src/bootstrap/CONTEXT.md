@@ -10,6 +10,7 @@ created; HTTP routes and backend publication require their own integration evide
 
 capabilities.ts keeps one informational actual observation, clipped by configured
 policy and reserve/headroom. This is not admission authority or a reservation.
+capacity-observation.ts adds optional 1.0 daemonCapacity (raw Docker-info totals) only when both were measured.
 
 Startup aborts fence continuations after originals settle. Shutdown starts intake,
 publication, scheduling, installation and staging drains independently, then guard

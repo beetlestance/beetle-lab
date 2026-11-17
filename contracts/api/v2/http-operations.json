@@ -662,5 +662,24 @@
     "successStatus": 200,
     "error": "ApiError",
     "implementation": "implemented"
+  },
+  {
+    "name": "getInstallationStatus",
+    "method": "GET",
+    "path": "/api/v2/installation/status",
+    "response": "InstallationStatus",
+    "successStatus": 200,
+    "error": "ApiError",
+    "implementation": "implemented"
+  },
+  {
+    "name": "getRunQueue",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/queue",
+    "response": "RunQueueStatus",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunParams",
+    "implementation": "implemented"
   }
 ]

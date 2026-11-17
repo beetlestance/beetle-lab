@@ -13,6 +13,7 @@ import { schema as ApiCommon } from './common.js';
 import { schema as ApiExportJobs } from './export-jobs.js';
 import { schema as ApiInputRequests } from './input-requests.js';
 import { schema as ApiInput } from './input.js';
+import { schema as ApiInstallationStatus } from './installation-status.js';
 import { schema as LiveMetrics } from './live-metrics.js';
 import { schema as ApiNamespaceRequests } from './namespace-requests.js';
 import { schema as ApiNamespace } from './namespace.js';
@@ -36,7 +37,7 @@ import { schema as ApiSettings } from './settings.js';
 import { schema as ApiSuiteRequests } from './suite-requests.js';
 import { schema as ApiSuite } from './suite.js';
 /** Complete reference closure; runner result schemas are shared, never copied. */
-export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiExportJobs, ApiInputRequests, ApiInput, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetentionStatus, ApiRetentionTraversal, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunHistory, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
+export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiExportJobs, ApiInputRequests, ApiInput, ApiInstallationStatus, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetentionStatus, ApiRetentionTraversal, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunHistory, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -65,6 +66,20 @@ export const apiMessageSchemas = freezeSchema({
   InputRecord: { $ref: 'https://beetle-lab.dev/contracts/api/v2/input#/$defs/InputRecord' },
   InputReceipt: { $ref: 'https://beetle-lab.dev/contracts/api/v2/input#/$defs/InputReceipt' },
   InputPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/input#/$defs/InputPage' },
+  MeasuredQuantity: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/MeasuredQuantity' },
+  UnmeasuredQuantity: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/UnmeasuredQuantity' },
+  StatusQuantity: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/StatusQuantity' },
+  OptionalTimestamp: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/OptionalTimestamp' },
+  OptionalPositive: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/OptionalPositive' },
+  AgentReachability: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/AgentReachability' },
+  HostFacts: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/HostFacts' },
+  DiskFacts: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/DiskFacts' },
+  EngineImageStatus: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/EngineImageStatus' },
+  SlotUsage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/SlotUsage' },
+  PoolUsage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/PoolUsage' },
+  InstallationStatus: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/InstallationStatus' },
+  RunSlotHolder: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/RunSlotHolder' },
+  RunQueueStatus: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/RunQueueStatus' },
   LiveMetricSelection: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveMetricSelection' },
   LiveMetricScope: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveMetricScope' },
   LiveMetricSubset: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveMetricSubset' },

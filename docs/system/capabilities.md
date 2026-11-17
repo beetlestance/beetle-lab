@@ -9,6 +9,8 @@ measurements live in [evidence](../evidence/README.md).
 - Public HTTP API, generated schemas and downloadable AI-agent instructions under
   `/reference`. An MCP server is not shipped.
 - Configurable run budgets within installed limits and explicit retention controls.
+- Read-only installation status (agent reachability, measured host facts, image presence,
+  pool usage) and run queue position; CPU use and available memory are not measured.
 - Cold backup and fresh read-only historical restoration. General in-place upgrade,
   downgrade and mutable restore are not claimed.
 
@@ -23,4 +25,4 @@ The Docker host trust boundary is recorded in
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `a850381cb0fd` |
+| `contracts/api/v2/` | `046a52ce1410` |

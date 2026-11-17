@@ -15,6 +15,7 @@ import { artifactOperation } from './output-artifacts/index.js';
 import { outputOperation, captureOutputOperation, outputReplyLimit } from './output-custody/index.js';
 import { eventOperation, captureEventOperation, eventRequestLimit, eventReplyLimit } from './event-custody/index.js';
 import { checkedRunOperation } from './run-validation.js';
+import { statusOperation } from './installation-status/wire.js';
 import {
   captureDispatchOperation,
   dispatchOperation,
@@ -352,6 +353,8 @@ const fixedReplyLimits: Partial<Record<Operation['kind'], number>> = {
   deleteNamespace: 2048,
   historySummary: 16384,
   getWorkspaceOverview: 32768,
+  getPoolUsage: 4096,
+  getRunQueue: 16384,
   settleBackendOutput: 1536,
   readBackendSettlement: 1536,
 };
@@ -385,6 +388,7 @@ function compactOperation(operation: Operation): boolean {
     ['getOrganizationOverview', 'getWorkspaceOverview', 'historySummary'].includes(
       dataProperty(operation, 'kind') as string,
     ) ||
+    statusOperation(operation) ||
     artifactReadOperation(operation) ||
     runEventsOperation(operation) ||
     absenceOperation(operation) ||
