@@ -46,7 +46,7 @@ export function useQueue(run: Run, enabled: boolean) {
   const api = useApi();
   const params = { ...workspace(run), runId: run.id };
   return useQuery({
-    queryKey: [...queryKeys.run(params.organizationId, params.workspaceId, run.id), 'queue'],
+    queryKey: queryKeys.runQueue(params.organizationId, params.workspaceId, run.id),
     queryFn: ({ signal }) => readResult(api.getRunQueue({ params, signal })),
     enabled,
     refetchInterval: (query) => (enabled && query.state.status !== 'error' ? 2000 : false),
@@ -59,11 +59,7 @@ export function useAttribution(run: Run, enabled: boolean) {
   const api = useApi();
   const params = { ...workspace(run), runId: run.id, attemptId: run.activeAttemptId };
   return useQuery({
-    queryKey: [
-      ...queryKeys.run(params.organizationId, params.workspaceId, run.id),
-      'latency-attribution',
-      run.activeAttemptId.toLowerCase(),
-    ],
+    queryKey: queryKeys.runLatencyAttribution(params.organizationId, params.workspaceId, run.id, run.activeAttemptId),
     queryFn: ({ signal }) => readResult(api.getRunLatencyAttribution({ params, signal })),
     enabled,
     staleTime: Number.POSITIVE_INFINITY,
@@ -77,7 +73,7 @@ export function useAttribution(run: Run, enabled: boolean) {
 export function useRestoredBackup() {
   const api = useApi();
   return useQuery({
-    queryKey: ['session', 'restored-backup'],
+    queryKey: queryKeys.browserSession,
     queryFn: async ({ signal }) => {
       const session = await readResult(api.getBrowserSession({ signal }));
       return { readOnly: session.readOnly === true, createdAt: session.restoredBackup?.createdAt ?? null };

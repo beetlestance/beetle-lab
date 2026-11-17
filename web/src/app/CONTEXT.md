@@ -3,8 +3,9 @@
 App accepts an ApiClient and host Router; production main mounts SessionApp with
 the same-origin URL. The session feature verifies access before App mounts and
 retires its requests, cache and editor state on session transitions.
-One QueryClient per App; queryKeys owns scoped resource identities and routes owns
-URLs. `shell/WorkspaceTabs` is the one workspace section bar (Suites, Runs, Inputs,
+One QueryClient per App; queryKeys owns scoped resource identities (including
+installationStatus, browserSession, runQueue, runLatencyAttribution, pinned runsPage)
+and routes owns URLs. `shell/WorkspaceTabs` is the one workspace section bar (Suites, Runs, Inputs,
 Exports, Workspace settings). UUID validation precedes every route-scoped read. No router data loaders.
 No automatic retry, prefetch, previous-scope placeholder data, or fake API fallback.
 Each list retains one active page; inactive prior pages are removed on navigation.

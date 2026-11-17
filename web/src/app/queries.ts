@@ -18,6 +18,7 @@ export const queryKeys = {
       q.name ?? '',
       q.runIdPrefix ?? '',
       q.suiteId ?? '',
+      q.pinned === true ? 'pinned' : '',
       cursor,
     ] as const;
   },
@@ -30,6 +31,9 @@ export const queryKeys = {
     [...queryKeys.run(org, workspace, run), 'artifacts', attempt.toLowerCase()] as const,
   runEvents: (org: string, workspace: string, run: string, attempt: string) =>
     [...queryKeys.run(org, workspace, run), 'events', attempt.toLowerCase()] as const,
+  runQueue: (org: string, workspace: string, run: string) => [...queryKeys.run(org, workspace, run), 'queue'] as const,
+  runLatencyAttribution: (org: string, workspace: string, run: string, attempt: string) =>
+    [...queryKeys.run(org, workspace, run), 'latency-attribution', attempt.toLowerCase()] as const,
   runs: (org: string, workspace: string) => [...queryKeys.workspace(org, workspace), 'runs'] as const,
   run: (org: string, workspace: string, id: string) => [...queryKeys.runs(org, workspace), id.toLowerCase()] as const,
   inputs: (org: string, workspace: string) => [...queryKeys.workspace(org, workspace), 'inputs'] as const,
@@ -42,6 +46,10 @@ export const queryKeys = {
     [...queryKeys.suite(org, workspace, id), 'revisions'] as const,
   suiteRevision: (org: string, workspace: string, id: string) =>
     [...queryKeys.workspace(org, workspace), 'revision', id.toLowerCase()] as const,
+  /** Installation-wide; never scoped to a workspace. */
+  installationStatus: ['installation', 'status'] as const,
+  /** Read-only and restored-backup markers of the browser session (no CSRF token). */
+  browserSession: ['session', 'browser'] as const,
   settings: ['settings'] as const,
   installationSettings: ['settings', 'installation'] as const,
   organizationSettings: (id: string) => ['settings', 'organization', id.toLowerCase()] as const,

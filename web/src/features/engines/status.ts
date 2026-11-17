@@ -2,22 +2,20 @@ import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InstallationStatus } from '@beetle/contracts/api';
 import { readResult, useApi } from '../../app/api.js';
+import { queryKeys } from '../../app/queries.js';
 
-/** Installation status (035): agent reachability, host and disk facts, engine images, pool use. */
-export const installationStatusKey = ['installation', 'status'] as const;
-
-/** One read per mount; unmount cancels and removes it. No polling. */
+/** Installation status (035), one read per mount; unmount cancels and removes it. No polling. */
 export function useInstallationStatus() {
   const api = useApi();
   const client = useQueryClient();
   const query = useQuery({
-    queryKey: installationStatusKey,
+    queryKey: queryKeys.installationStatus,
     queryFn: ({ signal }) => readResult(api.getInstallationStatus({ signal })),
   });
   useEffect(
     () => () => {
-      void client.cancelQueries({ queryKey: installationStatusKey, exact: true });
-      client.removeQueries({ queryKey: installationStatusKey, exact: true });
+      void client.cancelQueries({ queryKey: queryKeys.installationStatus, exact: true });
+      client.removeQueries({ queryKey: queryKeys.installationStatus, exact: true });
     },
     [client],
   );

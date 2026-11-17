@@ -244,12 +244,8 @@ function useHistoryPage(scope: RunScope, filters: HistoryFilter) {
   const page = usePage(key);
   const applied = { ...page.query, ...filters };
   const query = useQuery({
-    // queryKeys.runsPage predates the pinned filter; only pinned pages get a suffix, so
-    // the unfiltered first page keeps the exact key command search shares.
-    queryKey: [
-      ...queryKeys.runsPage(scope.organizationId, scope.workspaceId, page.cursor, applied),
-      ...(applied.pinned ? ['pinned'] : []),
-    ],
+    // The unfiltered first page is the exact key command search and the overview share.
+    queryKey: queryKeys.runsPage(scope.organizationId, scope.workspaceId, page.cursor, applied),
     queryFn: ({ signal }) => readResult(api.listRuns({ params: scope, query: applied, signal })),
   });
   function refresh() {
