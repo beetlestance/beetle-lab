@@ -16,12 +16,29 @@ function finished(patch: Partial<Run> = {}): Run {
   return { ...run(), state: 'finished', outcome: 'passed', validationStatus: 'passed', ...patch };
 }
 function summary(current: Run): RunHistorySummary {
-  return { ...pendingRunHistorySummary(current), availability: 'ready', source: { generation: 1,
-    manifestDigest: 'a'.repeat(64), numericArtifactId: ids.request, numericSha256: 'b'.repeat(64), numericVersion: 4,
-    measurementSourceTimeMs: 1000, coverage: { complete: true, latePoints: 0, markerDelayDroppedBuckets: 0 } },
-    testDurationMs: 2000, requestCount: 8, requestsPerSecond: 4, httpFailures: 2, httpSamples: 8, httpFailureRatio: 0.25,
+  return {
+    ...pendingRunHistorySummary(current),
+    availability: 'ready',
+    source: {
+      generation: 1,
+      manifestDigest: 'a'.repeat(64),
+      numericArtifactId: ids.request,
+      numericSha256: 'b'.repeat(64),
+      numericVersion: 4,
+      measurementSourceTimeMs: 1000,
+      coverage: { complete: true, latePoints: 0, markerDelayDroppedBuckets: 0 },
+    },
+    testDurationMs: 2000,
+    requestCount: 8,
+    requestsPerSecond: 4,
+    httpFailures: 2,
+    httpSamples: 8,
+    httpFailureRatio: 0.25,
     httpP95: { source: 'histogram-estimate', scale: 4, estimate: 10, lower: 9, upper: 11 },
-    publishedArtifactBytes: 1536, retainedLogicalBytes: 67584, metadataAllowanceBytes: 65536 };
+    publishedArtifactBytes: 1536,
+    retainedLogicalBytes: 67584,
+    metadataAllowanceBytes: 65536,
+  };
 }
 /** Routes the result view's bounded reads; `extra` answers writes and overrides. */
 function fixture(current: Run, extra: (request: Request) => Response | undefined = () => undefined) {
@@ -30,10 +47,10 @@ function fixture(current: Run, extra: (request: Request) => Response | undefined
     const answer = extra(request);
     if (answer) return answer;
     if (request.path.endsWith('/result')) return json(resultSnapshot(latest));
-    if (request.path.includes('/runs?')) return json({ scope: latest.scope, items: [latest], summaries: [summary(latest)], nextCursor: null });
+    if (request.path.includes('/runs?'))
+      return json({ scope: latest.scope, items: [latest], summaries: [summary(latest)], nextCursor: null });
     if (request.path.includes('/suites/')) return json({ ...suite(), name: 'checkout-steady' });
     if (request.path.includes('/revisions/')) return json(revision());
-    if (request.path.endsWith('/auth/session')) return json(apiError('internal_error'), 500);
     return json(latest);
   });
   return { ...client, set: (next: Run) => (latest = next) };
@@ -56,8 +73,13 @@ it('shows the verdict title, whole-run tiles and actions for a passed run', asyn
 it('pins from the receipt, shows the toast and re-reads the run', async () => {
   const f = fixture(finished(), (request) => {
     if (request.path.endsWith('/pin'))
-      return json({ id: runId, scope: finished().scope, requestId: (request.body as { requestId: string }).requestId,
-        pinned: true, pinnedAt: '2026-11-18T10:00:00.000Z' });
+      return json({
+        id: runId,
+        scope: finished().scope,
+        requestId: (request.body as { requestId: string }).requestId,
+        pinned: true,
+        pinnedAt: '2026-11-18T10:00:00.000Z',
+      });
     return undefined;
   });
   mount(f.client, path);
@@ -82,27 +104,24 @@ it.each([
   const button = screen.getByRole('button', { name: 'Pin this run' });
   expect(button).toHaveAttribute('aria-pressed', 'false');
   if (reason === 'pin_limit')
-    expect(screen.getByRole('link', { name: 'See pinned runs' })).toHaveAttribute('href', expect.stringContaining('pinned=true'));
+    expect(screen.getByRole('link', { name: 'See pinned runs' })).toHaveAttribute(
+      'href',
+      expect.stringContaining('pinned=true'),
+    );
   else expect(button).toBeDisabled();
 });
 
 it('hides every action in a restored read-only session and shows the history banner', async () => {
-  const f = fixture(finished(), (request) =>
-    request.path.endsWith('/auth/session')
-      ? json({
-          scope: 'local-admin',
-          expiresAt: '2027-01-01T00:00:00.000Z',
-          csrfToken: 'c'.repeat(43),
-          readOnly: true,
-          restoredBackup: { backupId: ids.request, createdAt: '2026-11-12T02:00:00.000Z' },
-        })
-      : undefined,
-  );
-  mount(f.client, path);
+  const f = fixture(finished());
+  mount(f.client, path, {
+    readOnly: true,
+    restoredBackup: { backupId: ids.request, createdAt: '2026-11-12T02:00:00.000Z' },
+  });
   expect(await screen.findByText(/You are looking at a restored backup from/)).toBeVisible();
   expect(screen.getByText('Read-only history: actions are unavailable.')).toBeVisible();
   expect(screen.queryByRole('button', { name: 'Run again' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Add a note' })).not.toBeInTheDocument();
+  expect(f.records.some((record) => record.path.endsWith('/auth/session'))).toBe(false);
 });
 
 it('saves a note with its version and explains a stale-version conflict', async () => {
@@ -133,7 +152,9 @@ it('saves a note with its version and explains a stale-version conflict', async 
 it('starts the same revision again with the run budget and policy', async () => {
   const current = finished();
   const f = fixture(current, (request) =>
-    request.method === 'POST' && request.path.endsWith('/runs') ? json({ ...run(), id: ids.request, state: 'queued' }, 201) : undefined,
+    request.method === 'POST' && request.path.endsWith('/runs')
+      ? json({ ...run(), id: ids.request, state: 'queued' }, 201)
+      : undefined,
   );
   mount(f.client, path);
   fireEvent.click(await screen.findByRole('button', { name: 'Run again' }));

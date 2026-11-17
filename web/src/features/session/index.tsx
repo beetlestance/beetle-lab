@@ -1,5 +1,6 @@
 import { useEffect, useId, useState, useSyncExternalStore } from 'react';
 import { App } from '../../app/App.js';
+import { sessionAccess } from '../../app/session.js';
 import { ThemeSwitch } from '../../components/ThemeSwitch.js';
 import { BrowserSessionGate } from './session.js';
 import type { SessionOptions } from './session.js';
@@ -25,7 +26,12 @@ export function SessionApp(options: SessionOptions) {
         {state.session.readOnly && (
           <p role="status">Read-only restored history. Runs, settings and stored data cannot be changed.</p>
         )}
-        <App key={state.generation} apiClient={state.client} inputTransfers={state.transfers} />
+        <App
+          key={state.generation}
+          apiClient={state.client}
+          inputTransfers={state.transfers}
+          session={sessionAccess(state.session)}
+        />
       </>
     );
   return (

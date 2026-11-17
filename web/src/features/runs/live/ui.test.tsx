@@ -7,7 +7,8 @@ import { LiveMetricReads } from '../live-metrics/read.js';
 import { ids, json, liveFrame, liveRun, mountLive, routesFor, suiteId } from './fixtures.js';
 
 /** A run that started 5 min 16 s ago: inside the steady stage. */
-const recent = (patch: Partial<Run> = {}) => liveRun({ startedAt: new Date(Date.now() - 316_000).toISOString(), ...patch });
+const recent = (patch: Partial<Run> = {}) =>
+  liveRun({ startedAt: new Date(Date.now() - 316_000).toISOString(), ...patch });
 
 beforeEach(() => vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible'));
 afterEach(() => {
@@ -17,7 +18,9 @@ afterEach(() => {
 
 async function running(current: Run = recent()) {
   let sequence = 0;
-  const read = vi.spyOn(LiveMetricReads.prototype, 'read').mockImplementation(async () => liveFrame(current, ++sequence));
+  const read = vi
+    .spyOn(LiveMetricReads.prototype, 'read')
+    .mockImplementation(async () => liveFrame(current, ++sequence));
   const fixture = routesFor(() => current);
   const view = mountLive(fixture.client, { run: current });
   await screen.findByRole('heading', { name: 'Holding 1,200 a second' });
@@ -85,7 +88,13 @@ it('shows reconnecting with stale figures and retries at once', async () => {
 it('cancels from the header through the shared owner and then shows cancelling', async () => {
   const current = recent();
   vi.spyOn(LiveMetricReads.prototype, 'read').mockImplementation(async () => liveFrame(current, 1));
-  const cancel = { pending: false, unknown: false, accepted: false, message: null, request: vi.fn(async () => undefined) };
+  const cancel = {
+    pending: false,
+    unknown: false,
+    accepted: false,
+    message: null,
+    request: vi.fn(async () => undefined),
+  };
   const view = mountLive(routesFor(() => current).client, { run: current, cancel });
   await screen.findByRole('heading', { name: 'Holding 1,200 a second' });
   fireEvent.click(screen.getByRole('button', { name: 'Cancel run' }));
@@ -135,7 +144,9 @@ it('keeps the compare action disabled with an explanation, and lists script vers
   expect(compare).toHaveAccessibleDescription(/once this one has finished/);
   fireEvent.click(screen.getByRole('button', { name: 'Script' }));
   const dialog = await screen.findByRole('dialog', { name: 'Script versions' });
-  expect(await within(dialog).findByRole('link', { name: /Revision 4/ })).toHaveTextContent(/This run.*Latest.*3 runs · by Meera/);
+  expect(await within(dialog).findByRole('link', { name: /Revision 4/ })).toHaveTextContent(
+    /This run.*Latest.*3 runs · by Meera/,
+  );
 });
 
 it('ends with a hand-off and the p95-rise line mapped to the request name', async () => {
@@ -153,13 +164,25 @@ it('ends with a hand-off and the p95-rise line mapped to the request name', asyn
     generation: 1,
     manifestDigest: 'c'.repeat(64),
     windows: 120,
-    rise: { startTimeMs: 60_000, endTimeMs: 90_000, windows: 30, baselineP95Ms: 42.5, peakP95Ms: 180.25, endpoint: { request: 'r0', share: 0.82, peakP95Ms: 240.5 } },
+    rise: {
+      startTimeMs: 60_000,
+      endTimeMs: 90_000,
+      windows: 30,
+      baselineP95Ms: 42.5,
+      peakP95Ms: 180.25,
+      endpoint: { request: 'r0', share: 0.82, peakP95Ms: 240.5 },
+    },
     reason: null,
   };
-  const handler = routesFor(() => ended, (request) => (request.path.endsWith('/latency-attribution') ? json(rise) : undefined));
+  const handler = routesFor(
+    () => ended,
+    (request) => (request.path.endsWith('/latency-attribution') ? json(rise) : undefined),
+  );
   view.unmount();
   mountLive(handler.client, { run: ended, showResult });
-  expect(await screen.findByText('p95 rose for about 30 s, from 42.5 ms to 180 ms, mostly POST /checkout.')).toBeVisible();
+  expect(
+    await screen.findByText('p95 rose for about 30 s, from 42.5 ms to 180 ms, mostly POST /checkout.'),
+  ).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: 'Open result' }));
   expect(showResult).toHaveBeenCalledTimes(1);
 });
@@ -169,20 +192,23 @@ it('shows the restored-backup banner from the session and hides cancel', async (
   const fixture = routesFor(
     () => current,
     (request) => {
-      if (request.path.endsWith('/auth/session'))
-        return json({
-          scope: 'local-admin',
-          expiresAt: '2026-11-20T12:00:00.000Z',
-          csrfToken: 'B'.repeat(43),
-          readOnly: true,
-          restoredBackup: { backupId: ids.request, createdAt: '2026-11-12T02:00:00.000Z' },
-        });
       if (request.path.endsWith('/queue')) return new Response(null, { status: 503 });
       return undefined;
     },
   );
-  const cancel = { pending: false, unknown: false, accepted: false, message: null, request: vi.fn(async () => undefined) };
-  mountLive(fixture.client, { run: current, cancel });
+  const cancel = {
+    pending: false,
+    unknown: false,
+    accepted: false,
+    message: null,
+    request: vi.fn(async () => undefined),
+  };
+  mountLive(
+    fixture.client,
+    { run: current, cancel },
+    { readOnly: true, restoredBackup: { backupId: ids.request, createdAt: '2026-11-12T02:00:00.000Z' } },
+  );
   expect(await screen.findByText(/Read-only view of the restored backup from/)).toHaveTextContent('12 Nov');
   expect(screen.queryByRole('button', { name: 'Cancel run' })).not.toBeInTheDocument();
+  expect(fixture.records.some((record) => record.path.endsWith('/auth/session'))).toBe(false);
 });

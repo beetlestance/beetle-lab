@@ -5,7 +5,8 @@ terminal run. It wraps its own RunReads admission and owns no polling.
 
 Reads (useResultReads), each under the scoped run key and removed on unmount:
 engine result for the active attempt, the run's own history summary (one listRuns
-row by exact ID, limit 1), suite, saved revision and the browser session.
+row by exact ID, limit 1), suite and saved revision. Read-only and restored-backup
+state come from useSessionAccess (app/session.tsx), not a session read.
 
 - headline.ts: variant (passed, failed, not judged, cancelled, out of memory,
   output full, incomplete, errored, pending) and the title and sentence. Sentence

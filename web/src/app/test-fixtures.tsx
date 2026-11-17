@@ -3,6 +3,7 @@ import type { ApiError, Folder, Organization, Workspace } from '@beetle/contract
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import { render } from '@testing-library/react';
 import { App } from './App.js';
+import type { SessionAccess } from './session.js';
 import { routes } from './routes.js';
 
 export const ids = {
@@ -99,11 +100,11 @@ function NavigationDriver() {
     </div>
   );
 }
-export function mount(client: ReturnType<typeof testClient>['client'], initial = '/') {
+export function mount(client: ReturnType<typeof testClient>['client'], initial = '/', session?: SessionAccess) {
   return render(
     <MemoryRouter initialEntries={[initial]}>
       <NavigationDriver />
-      <App apiClient={client} />
+      <App apiClient={client} session={session} />
     </MemoryRouter>,
   );
 }

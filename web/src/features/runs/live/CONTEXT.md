@@ -20,5 +20,5 @@ this page opened" without a start time). Target runtime charts use
 `LiveMetricSnapshot.target` values as reported (units are not documented).
 Optional `cancel` takes RunDetail's cancellation owner; there is no second owner.
 The p95-rise line reads getRunLatencyAttribution only once terminal. The
-restored-backup banner reads getBrowserSession directly and keeps only the flags.
+restored-backup banner and Cancel use useSessionAccess (app/session.tsx); no session read.
 No report or metrics downloads while live. Tests: model.test.ts, ui.test.tsx.

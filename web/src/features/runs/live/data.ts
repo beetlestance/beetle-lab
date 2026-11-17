@@ -6,8 +6,8 @@ import { queryKeys } from '../../../app/queries.js';
 /**
  * Reads the live view adds next to RunDetail's polled run: the saved revision
  * (stages, thresholds, request names), the suite (name, latest revision), the
- * queue while waiting, the p95-rise attribution once sealed, and the restored
- * backup date. All go through the generated client; none retry automatically.
+ * queue while waiting and the p95-rise attribution once sealed. Session access
+ * (read-only, restored backup) comes from SessionContext, not a read. All go through the generated client; none retry automatically.
  */
 const workspace = (run: Run) => ({ organizationId: run.scope.organizationId, workspaceId: run.scope.workspaceId });
 
@@ -62,22 +62,6 @@ export function useAttribution(run: Run, enabled: boolean) {
     queryKey: queryKeys.runLatencyAttribution(params.organizationId, params.workspaceId, run.id, run.activeAttemptId),
     queryFn: ({ signal }) => readResult(api.getRunLatencyAttribution({ params, signal })),
     enabled,
-    staleTime: Number.POSITIVE_INFINITY,
-  });
-}
-
-/**
- * The read-only and restored-backup markers of the current browser session. Only
- * those are kept in the cache; the session's CSRF token is dropped here.
- */
-export function useRestoredBackup() {
-  const api = useApi();
-  return useQuery({
-    queryKey: queryKeys.browserSession,
-    queryFn: async ({ signal }) => {
-      const session = await readResult(api.getBrowserSession({ signal }));
-      return { readOnly: session.readOnly === true, createdAt: session.restoredBackup?.createdAt ?? null };
-    },
     staleTime: Number.POSITIVE_INFINITY,
   });
 }

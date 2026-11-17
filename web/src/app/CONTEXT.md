@@ -4,7 +4,7 @@ App accepts an ApiClient and host Router; production main mounts SessionApp with
 the same-origin URL. The session feature verifies access before App mounts and
 retires its requests, cache and editor state on session transitions.
 One QueryClient per App; queryKeys owns scoped resource identities (including
-installationStatus, browserSession, runQueue, runLatencyAttribution, pinned runsPage)
+installationStatus, runQueue, runLatencyAttribution, pinned runsPage)
 and routes owns URLs. `shell/WorkspaceTabs` is the one workspace section bar (Suites, Runs, Inputs,
 Exports, Workspace settings). UUID validation precedes every route-scoped read. No router data loaders.
 No automatic retry, prefetch, previous-scope placeholder data, or fake API fallback.
@@ -18,4 +18,7 @@ Parent saves invalidate descendant effective settings; null removes scoped overr
 The Darkroom or Scarab skin is the only persisted browser preference; no credentials.
 SessionApp also supplies InputTransferClient through InputTransferContext. Omitted
 transfer clients in composition tests cannot produce enabled transfer controls.
+SessionContext (app/session.tsx) carries the verified session's readOnly and
+restoredBackup; SessionApp supplies them from its one session read and features use
+useSessionAccess, never getBrowserSession. App without a session prop is writable.
 Check: npx --no-install vitest run web/src --maxWorkers=2.

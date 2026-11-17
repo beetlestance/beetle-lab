@@ -6,7 +6,8 @@ import { EndedBanner, StallBanner } from './Banners.js';
 import { WholeRun, MetricsGrid, TargetRuntime, chartDomain } from './Charts.js';
 import { headlineOf, sentenceOf, statusOf } from './copy.js';
 import type { Phase } from './copy.js';
-import { useRestoredBackup, useRevision, useSuite } from './data.js';
+import { useSessionAccess } from '../../../app/session.js';
+import { useRevision, useSuite } from './data.js';
 import { RestoredBanner, ScriptPicker } from './Extras.js';
 import { LiveFeed } from './Feed.js';
 import { clock, shortId } from './format.js';
@@ -105,7 +106,7 @@ function RunHeader(props: {
   onScript: () => void;
 }) {
   const { run, plan, stream, at } = props;
-  const session = useRestoredBackup();
+  const session = useSessionAccess();
   const suiteName = props.suite?.name ?? null;
   const stage = at.elapsedMs === null ? null : stageAt(plan, at.elapsedMs);
   return (
@@ -118,7 +119,7 @@ function RunHeader(props: {
       status={{ ...statusOf(stream.phase, run), note: pauseNote(stream.paused, at.stoppedAtMs) }}
       stream={stream.streaming && stream.latest ? { paused: stream.paused, toggle: stream.togglePause } : null}
       cancel={props.cancel}
-      readOnly={session.data?.readOnly === true}
+      readOnly={session.readOnly}
       onScript={props.onScript}
     />
   );

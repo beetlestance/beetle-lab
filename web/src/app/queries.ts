@@ -48,8 +48,6 @@ export const queryKeys = {
     [...queryKeys.workspace(org, workspace), 'revision', id.toLowerCase()] as const,
   /** Installation-wide; never scoped to a workspace. */
   installationStatus: ['installation', 'status'] as const,
-  /** Read-only and restored-backup markers of the browser session (no CSRF token). */
-  browserSession: ['session', 'browser'] as const,
   settings: ['settings'] as const,
   installationSettings: ['settings', 'installation'] as const,
   organizationSettings: (id: string) => ['settings', 'organization', id.toLowerCase()] as const,
