@@ -73,6 +73,8 @@ export type DeletionReceipt = FromSchema<typeof S6.DeletionReceipt>;
 export type OrganizationPage = FromSchema<typeof S6.OrganizationPage>;
 export type WorkspacePage = FromSchema<typeof S6.WorkspacePage>;
 export type FolderPage = FromSchema<typeof S6.FolderPage>;
+export type FolderGroupCounts = FromSchema<typeof S6.FolderGroupCounts>;
+export type FolderSummary = FromSchema<typeof S6.FolderSummary>;
 export type OverviewRun = FromSchema<typeof S7.OverviewRun>;
 export type OverviewCounts = FromSchema<typeof S7.OverviewCounts>;
 export type OverviewBucket = FromSchema<typeof S7.OverviewBucket>;
@@ -170,11 +172,15 @@ export type PatchWorkspaceSettingsRequest = FromSchema<typeof S23.PatchWorkspace
 export type CreateSuiteRequest = FromSchema<typeof S24.CreateSuiteRequest>;
 export type PatchSuiteRequest = FromSchema<typeof S24.PatchSuiteRequest>;
 export type CreateSuiteRevisionRequest = FromSchema<typeof S24.CreateSuiteRevisionRequest>;
+export type SuiteListQuery = FromSchema<typeof S24.SuiteListQuery>;
 export type Suite = FromSchema<typeof S25.Suite>;
 export type SuiteRevisionSummary = FromSchema<typeof S25.SuiteRevisionSummary>;
 export type SuiteRevision = FromSchema<typeof S25.SuiteRevision>;
 export type SuitePage = FromSchema<typeof S25.SuitePage>;
 export type SuiteRevisionPage = FromSchema<typeof S25.SuiteRevisionPage>;
+export type SuiteGroup = FromSchema<typeof S25.SuiteGroup>;
+export type SuiteLatestRun = FromSchema<typeof S25.SuiteLatestRun>;
+export type SuiteListSummary = FromSchema<typeof S25.SuiteListSummary>;
 export interface ApiTypes {
   Uuid: Uuid;
   Budget: Budget;
@@ -223,6 +229,8 @@ export interface ApiTypes {
   OrganizationPage: OrganizationPage;
   WorkspacePage: WorkspacePage;
   FolderPage: FolderPage;
+  FolderGroupCounts: FolderGroupCounts;
+  FolderSummary: FolderSummary;
   OverviewRun: OverviewRun;
   OverviewCounts: OverviewCounts;
   OverviewBucket: OverviewBucket;
@@ -320,9 +328,13 @@ export interface ApiTypes {
   CreateSuiteRequest: CreateSuiteRequest;
   PatchSuiteRequest: PatchSuiteRequest;
   CreateSuiteRevisionRequest: CreateSuiteRevisionRequest;
+  SuiteListQuery: SuiteListQuery;
   Suite: Suite;
   SuiteRevisionSummary: SuiteRevisionSummary;
   SuiteRevision: SuiteRevision;
   SuitePage: SuitePage;
   SuiteRevisionPage: SuiteRevisionPage;
+  SuiteGroup: SuiteGroup;
+  SuiteLatestRun: SuiteLatestRun;
+  SuiteListSummary: SuiteListSummary;
 }

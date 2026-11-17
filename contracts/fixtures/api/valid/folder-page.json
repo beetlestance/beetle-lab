@@ -20,5 +20,27 @@
       ]
     }
   ],
-  "nextCursor": "page_token_2"
+  "nextCursor": "page_token_2",
+  "summaries": [
+    {
+      "folderId": "00000000-0000-4000-8000-000000000004",
+      "suiteCount": 2,
+      "subfolderCount": 1,
+      "groups": {
+        "in_progress": 0,
+        "passed": 0,
+        "failed": 1,
+        "inconclusive": 0,
+        "stopped": 0,
+        "no_runs": 1
+      },
+      "latestRun": {
+        "suiteId": "00000000-0000-4000-8000-000000000005",
+        "runId": "00000000-0000-4000-8000-000000000006",
+        "state": "finished",
+        "outcome": "failed",
+        "requestedAt": "2026-11-09T00:00:00.000Z"
+      }
+    }
+  ]
 }

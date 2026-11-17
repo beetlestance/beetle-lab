@@ -19,6 +19,8 @@ import type { RunArtifactPage } from '../generated/types.js';
 import { runEventPageMatches } from './run-event-ownership.js';
 import type { RunEventPage } from '../generated/types.js';
 import { runOwnership } from './run-ownership.js';
+import { folderPageSummariesMatch, suiteListPageMatches } from '../suite-list-page.js';
+import type { FolderPage, SuiteListQuery, SuitePage, WorkspaceScope } from '../generated/types.js';
 
 function sameUuid(left: unknown, right: unknown): boolean {
   return typeof left === 'string' && typeof right === 'string' && left.toLowerCase() === right.toLowerCase();
@@ -191,7 +193,17 @@ export function responseOwnership(operation: ApiOperation, input: PreparedInput,
       scope: routeOwner(input) as RunMetricSamplesPage['scope'],
       ...input.query!,
     });
-  return genericResponseOwnership(operation, input, value as OwnedReply);
+  return ownedReply(operation, input, value);
+}
+function ownedReply(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
+  return genericResponseOwnership(operation, input, value as OwnedReply) && listingOwnership(operation, input, value);
+}
+/** Suite rows and folder summaries carry derived facts bound to the query and items. */
+function listingOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
+  if (operation.response === 'FolderPage') return folderPageSummariesMatch(value as FolderPage);
+  if (operation.response !== 'SuitePage') return true;
+  const owner = routeOwner(input) as WorkspaceScope;
+  return suiteListPageMatches(value as SuitePage, owner, input.query as unknown as SuiteListQuery);
 }
 function genericResponseOwnership(operation: ApiOperation, input: PreparedInput, reply: OwnedReply): boolean {
   if (!equal(expectedOwner(operation, input), reply.scope) || !identityMatches(operation, input, reply)) return false;

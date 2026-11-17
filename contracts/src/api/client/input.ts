@@ -1,4 +1,5 @@
 import { normalizeRunListQuery, runListPosition } from '../run-list.js';
+import { normalizeSuiteListQuery, suiteListPosition } from '../suite-list.js';
 import { encodeJson } from '../../json.js';
 import type { ApiOperation } from '../generated/operations.js';
 import type { ApiTypes } from '../generated/types.js';
@@ -6,7 +7,8 @@ import { validateApi } from '../validate.js';
 
 export interface PreparedInput {
   params: Record<string, string>;
-  query?: ApiTypes['PageQuery'] | ApiTypes['RunMetricSamplesQuery'] | ApiTypes['RunListQuery'];
+  query?:
+    ApiTypes['PageQuery'] | ApiTypes['RunMetricSamplesQuery'] | ApiTypes['RunListQuery'] | ApiTypes['SuiteListQuery'];
   body?: Record<string, unknown>;
   signal?: AbortSignal;
 }
@@ -61,22 +63,29 @@ export function prepareInput(operation: ApiOperation, input: unknown, maximum: n
     if (!validateFields(operation, snapshot)) return undefined;
     const prepared: PreparedInput = { params: (snapshot.params ?? {}) as Record<string, string> };
     if ('query' in operation) prepared.query = snapshot.query as NonNullable<PreparedInput['query']>;
-    if (operation.name === 'listRuns') {
-      prepared.query = normalizeRunListQuery(snapshot.query as ApiTypes['RunListQuery']);
-      runListPosition(
-        {
-          kind: 'workspace',
-          organizationId: prepared.params.organizationId!,
-          workspaceId: prepared.params.workspaceId!,
-        },
-        prepared.query,
-      );
-    }
+    normalizeListQuery(operation, prepared);
     if ('request' in operation) prepared.body = snapshot.body as Record<string, unknown>;
     if (signal !== undefined) prepared.signal = signal;
     return prepared;
   } catch {
     return undefined;
+  }
+}
+
+/** Listing cursors are bound to scope and filters before any request is sent. */
+function normalizeListQuery(operation: ApiOperation, prepared: PreparedInput): void {
+  const owner = {
+    kind: 'workspace' as const,
+    organizationId: prepared.params.organizationId!,
+    workspaceId: prepared.params.workspaceId!,
+  };
+  if (operation.name === 'listRuns') {
+    prepared.query = normalizeRunListQuery(prepared.query as ApiTypes['RunListQuery']);
+    runListPosition(owner, prepared.query);
+  }
+  if (operation.name === 'listSuites') {
+    prepared.query = normalizeSuiteListQuery(prepared.query as ApiTypes['SuiteListQuery']);
+    suiteListPosition(owner, prepared.query);
   }
 }
 
@@ -96,7 +105,14 @@ export function operationPath(operation: ApiOperation, input: PreparedInput): st
   return `${path}?${query.toString()}`;
 }
 
+function appendSuiteQuery(query: URLSearchParams, input: NonNullable<PreparedInput['query']>): void {
+  if ('folderId' in input && input.folderId !== undefined) query.set('folderId', input.folderId);
+  if ('group' in input && input.group !== undefined) query.set('group', input.group);
+  if ('engineId' in input && input.engineId !== undefined) query.set('engineId', input.engineId);
+}
+
 function appendRunQuery(query: URLSearchParams, input: NonNullable<PreparedInput['query']>): void {
+  appendSuiteQuery(query, input);
   if ('suiteId' in input && input.suiteId !== undefined) query.set('suiteId', input.suiteId);
   if ('state' in input && input.state !== undefined) query.set('state', input.state);
   if ('outcome' in input && input.outcome !== undefined) query.set('outcome', input.outcome);

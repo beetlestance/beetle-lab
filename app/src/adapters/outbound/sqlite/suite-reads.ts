@@ -1,5 +1,4 @@
 import { captureRevisionSummary, revisionSummaryColumns } from './suite-row.js';
-import { captureNamespaceId, namespaceIdColumn } from './namespace-rows.js';
 import { StorageError } from './protocol.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { normalizedScope } from './suites.js';
@@ -7,11 +6,12 @@ import type { SuiteList, RevisionList } from '../../../ports/suites.js';
 import { requireRule } from '../../../domain/namespaces/index.js';
 import { lower, scopeKey, sha256, boundedCopy, uuid } from './input.js';
 import type { Suites } from './suites.js';
+import { SuiteListReads } from './suite-list/index.js';
 
-function identity(query: SuiteList | RevisionList): string {
-  return sha256(JSON.stringify([scopeKey(query.scope), query.limit, 'suiteId' in query ? lower(query.suiteId) : null]));
+function identity(query: RevisionList): string {
+  return sha256(JSON.stringify([scopeKey(query.scope), query.limit, lower(query.suiteId)]));
 }
-function after(query: SuiteList | RevisionList): string {
+function after(query: RevisionList): string {
   if (query.cursor === undefined) return '';
   try {
     const value = boundedCopy(
@@ -26,46 +26,36 @@ function after(query: SuiteList | RevisionList): string {
   }
 }
 export class SuiteReads {
+  private readonly listing: SuiteListReads;
   constructor(
     private readonly db: DatabaseSync,
     private readonly suites: Suites,
-  ) {}
+  ) {
+    this.listing = new SuiteListReads(db, suites);
+  }
   list(query: SuiteList | RevisionList) {
+    if (!('suiteId' in query)) return this.listing.list(query);
     this.suites.workspace(query.scope);
-    const revision = 'suiteId' in query;
-    if (revision) this.suites.getSuite({ scope: query.scope, id: query.suiteId });
-    const table = revision ? 'suite_revisions' : 'suites';
-    const args = [
-      lower(query.scope.organizationId),
-      lower(query.scope.workspaceId),
-      ...(revision ? [lower(query.suiteId)] : []),
-      after(query),
-      query.limit + 1,
-    ];
+    this.suites.getSuite({ scope: query.scope, id: query.suiteId });
     const rows = this.db
       .prepare(
-        `SELECT ${revision ? revisionSummaryColumns : namespaceIdColumn} FROM ${table} WHERE organization_id=? AND workspace_id=?
-      ${revision ? 'AND suite_id=?' : ''} AND id>? ORDER BY ${table}.id LIMIT ?`,
+        `SELECT ${revisionSummaryColumns} FROM suite_revisions WHERE organization_id=? AND workspace_id=?
+      AND suite_id=? AND id>? ORDER BY suite_revisions.id LIMIT ?`,
       )
-      .all(...args)
-      .map((row) => (revision ? captureRevisionSummary(row, query.scope, query.suiteId) : captureNamespaceId(row)));
-    const selected = rows.slice(0, query.limit);
-    const items = selected.map((row) => {
-      const key = { scope: query.scope, id: row.id };
-      if (!revision) return this.suites.getSuite(key);
-      if (!('suiteId' in row)) throw new StorageError('unavailable');
-      return row;
-    });
-    const last = selected.at(-1);
+      .all(
+        lower(query.scope.organizationId),
+        lower(query.scope.workspaceId),
+        lower(query.suiteId),
+        after(query),
+        query.limit + 1,
+      )
+      .map((row) => captureRevisionSummary(row, query.scope, query.suiteId));
+    const items = rows.slice(0, query.limit);
+    const last = items.at(-1);
     const nextCursor =
       rows.length > query.limit && last
         ? Buffer.from(JSON.stringify({ identity: identity(query), after: last.id })).toString('base64url')
         : null;
-    return {
-      scope: normalizedScope(query.scope),
-      ...(revision ? { suiteId: lower(query.suiteId) } : {}),
-      items,
-      nextCursor,
-    };
+    return { scope: normalizedScope(query.scope), suiteId: lower(query.suiteId), items, nextCursor };
   }
 }

@@ -6,6 +6,7 @@ import type {
   SuiteRevision,
   SuitePage,
   SuiteRevisionPage,
+  SuiteListQuery,
   WorkspaceScope,
 } from '@beetle/contracts/api';
 
@@ -18,12 +19,14 @@ export interface SuiteKey {
   scope: WorkspaceScope;
   id: string;
 }
-export interface SuiteList {
+interface ScopedPage {
   scope: WorkspaceScope;
   limit: number;
   cursor?: string;
 }
-export interface RevisionList extends SuiteList {
+/** Folder-first listing; filters and order follow `SuiteListQuery` (docs/system/contracts/suite-listing.md). */
+export type SuiteList = ScopedPage & Omit<SuiteListQuery, 'limit' | 'cursor'>;
+export interface RevisionList extends ScopedPage {
   suiteId: string;
 }
 

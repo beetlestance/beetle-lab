@@ -5,7 +5,7 @@ import {transaction} from '../../src/adapters/outbound/sqlite/transaction.js';
 /** Test-only empty-new-owner projection. Never drops a retained deletion identity or charge. */
 export function asSchema25(db:DatabaseSync):void{
  const initial=Number(db.prepare('PRAGMA user_version').get()?.user_version);if(initial===25)return;
- if(![26,27,28,29,30].includes(initial))throw Error('Cannot project fixture with namespace deletion data');
+ if(![26,27,28,29,30,34].includes(initial))throw Error('Cannot project fixture with namespace deletion data');
  if(db.prepare('SELECT 1 FROM namespace_deletions LIMIT 1').get())throw Error('Cannot project fixture with namespace deletion data');
  if(initial>=28)asSchema27(db);
  if(db.prepare('PRAGMA user_version').get()?.user_version===27){

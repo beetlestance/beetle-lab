@@ -11,15 +11,17 @@ import {migration030} from '../../src/adapters/outbound/sqlite/migration030.js';
 import {registerBackendSettlement} from '../../src/adapters/outbound/sqlite/backend-settlement-guard/index.js';
 import {registerRetentionAccounting} from '../../src/adapters/outbound/sqlite/retention-accounting-guard/index.js';
 import {transaction} from '../../src/adapters/outbound/sqlite/transaction.js';
+import {asSchema30} from './legacy030.js';
 function graph(db:DatabaseSync){
  return db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY type,name").all();
 }
 /** Test-only projection of an exact shipped synthetic schema; no retired identity may be rewound. */
 export function asSchema27(db:DatabaseSync):void{
- const version=Number(db.prepare('PRAGMA user_version').get()?.user_version);if(version===27)return;
- assert([28,29,30].includes(version),'Cannot project fixture to schema27');
+ const initial=Number(db.prepare('PRAGMA user_version').get()?.user_version);if(initial===27)return;
+ assert([28,29,30,34].includes(initial),'Cannot project fixture to schema27');
  assert(!db.prepare('SELECT 1 FROM workspaces WHERE retired!=0 LIMIT 1').get(),'Cannot project fixture with retired workspace data');
- if(version===30)assert(!db.prepare('SELECT 1 FROM organizations WHERE retired!=0 LIMIT 1').get(),'Cannot project fixture with retired organization data');
+ if(initial>=30)assert(!db.prepare('SELECT 1 FROM organizations WHERE retired!=0 LIMIT 1').get(),'Cannot project fixture with retired organization data');
+ if(initial===34)asSchema30(db);const version=Number(db.prepare('PRAGMA user_version').get()?.user_version);
  const reference=prior023(':memory:');registerBackendSettlement(reference);registerRetentionAccounting(reference);
  try{
   transaction(reference,()=>reference.exec(migration024));transaction(reference,()=>migrate025(reference));

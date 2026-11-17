@@ -18,5 +18,13 @@
       "currentRevisionId": null
     }
   ],
-  "nextCursor": null
+  "nextCursor": null,
+  "summaries": [
+    {
+      "suiteId": "00000000-0000-4000-8000-000000000003",
+      "engineId": null,
+      "group": "no_runs",
+      "latestRun": null
+    }
+  ]
 }

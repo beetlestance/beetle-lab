@@ -31,7 +31,7 @@ Schema catalogue is complete, including runner common exactly once. Implementati
 | POST | /api/v2/auth/pair | implemented | none | none | PairBrowserRequest | 200 | BrowserSession |
 | GET | /api/v2/auth/session | implemented | none | none | none | 200 | BrowserSession |
 | POST | /api/v2/auth/logout | implemented | none | none | LogoutBrowserRequest | 200 | LogoutBrowserReceipt |
-| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites | implemented | WorkspaceParams | PageQuery | none | 200 | SuitePage |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites | implemented | WorkspaceParams | SuiteListQuery | none | 200 | SuitePage |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites | implemented | WorkspaceParams | none | CreateSuiteRequest | 201 | Suite |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites/{suiteId} | implemented | SuiteParams | none | none | 200 | Suite |
 | PATCH | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/suites/{suiteId} | implemented | SuiteParams | none | PatchSuiteRequest | 200 | Suite |

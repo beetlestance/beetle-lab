@@ -17,16 +17,24 @@ function protectedConnection(db: DatabaseSync): void {
     expect(() => db.prepare('UPDATE sqlite_schema SET sql=sql WHERE 0')).toThrow('may not be modified');
   } finally { db.exec('PRAGMA writable_schema=OFF'); }
 }
+/** Migration 034 derives each suite's latest retained Run from the preserved runs. */
+function latestRun(db: DatabaseSync, suiteId: string) {
+  const run = db.prepare('SELECT id,requested_at,state,outcome FROM runs WHERE suite_id=? ORDER BY requested_at DESC,id DESC LIMIT 1').get(suiteId);
+  if (!run) return { latest_run_id: null, latest_requested_at: '', latest_group: 'no_runs' };
+  const group = ['queued','dispatching','active','finalizing'].includes(String(run.state)) ? 'in_progress' : run.state === 'finished' ? run.outcome : 'stopped';
+  return { latest_run_id: run.id, latest_requested_at: run.requested_at, latest_group: group };
+}
 /** Full reopen runs later migrations too; preserve all prior rows and name every additive state. */
 function expectReopenedFacts(db: DatabaseSync, before: ReturnType<typeof rows>): void {
   expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
   const priorNames = new Set(before.map(row => row.name)); const current = rows(db);
   expect(current.filter(row => priorNames.has(row.name))).toEqual(before.map(table=>table.name==='workspaces'
     ? {...table,rows:table.rows.map(row=>({...row,retired:0}))}:table.name==='organizations'
-    ? {...table,rows:table.rows.map(row=>({...row,retired:0,retired_slug:null}))}:table));
+    ? {...table,rows:table.rows.map(row=>({...row,retired:0,retired_slug:null}))}:table.name==='suites'
+    ? {...table,rows:table.rows.map(row=>({...row,...latestRun(db,String(row.id))}))}:table));
   const empty = ['backend_cleanup_controls', 'backend_output_cleanup_acks', 'backend_retired_runs',
     'namespace_deletions', 'retention_progress', 'retention_snapshots', 'retention_workspace_epochs'];
-  const expected = [...empty, 'backend_replay_storage', 'retention_storage'].sort();
+  const expected = [...empty, 'backend_replay_storage', 'retention_storage', 'suite_revision_run_counts'].sort();
   expect(current.filter(row => !priorNames.has(row.name)).map(row => row.name)).toEqual(expected);
   for (const table of empty) expect(db.prepare(`SELECT count(*) n FROM ${table}`).get()?.n).toBe(0);
   expect(db.prepare('SELECT * FROM backend_replay_storage').all()).toEqual([{id: 1, original_count: 0, charged_bytes: 0}]);

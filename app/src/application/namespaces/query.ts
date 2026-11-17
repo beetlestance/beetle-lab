@@ -1,5 +1,5 @@
 import { encodeJson } from '@beetle/contracts';
-import { validateApi } from '@beetle/contracts/api';
+import { folderPageSummariesMatch, validateApi } from '@beetle/contracts/api';
 import type {
   ApiTypes,
   Folder,
@@ -72,5 +72,7 @@ export async function listNamespaces<K extends EntityKind>(
     if (ids.has(id)) throw new Error('Invalid namespace repository response');
     ids.add(id);
   }
+  if ('summaries' in value && !folderPageSummariesMatch(value))
+    throw new Error('Invalid namespace repository response');
   return immutableSnapshot(value) as Pages[K];
 }

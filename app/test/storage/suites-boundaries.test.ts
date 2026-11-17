@@ -33,7 +33,7 @@ it('preserves the existing 1MiB reply budget for 100 Unicode suites and namespac
         const name = '🪲'.repeat(125) + String(index).padStart(3, '0');
         expect(validateApi('CreateSuiteRequest', { scope, requestId: requestId(), name }).ok).toBe(true);
         const fold = name.normalize('NFKC').toLowerCase();
-        db.prepare('INSERT INTO suites VALUES (?,?,?,?,?,?,1,NULL)').run(uuid(1000 + index), scope.organizationId, scope.workspaceId, uuid(3), name, fold);
+        db.prepare('INSERT INTO suites(id,organization_id,workspace_id,folder_id,name,folded_name,version,current_revision_id) VALUES (?,?,?,?,?,?,1,NULL)').run(uuid(1000 + index), scope.organizationId, scope.workspaceId, uuid(3), name, fold);
         db.prepare('INSERT INTO folders VALUES (?,?,?,?,1,?,?)').run(uuid(2000 + index), scope.organizationId, scope.workspaceId, uuid(3), name, fold);
       }
     });
@@ -58,7 +58,9 @@ it('binds page cursors to scope, suite and limit and rejects malformed continuat
   await expect(metadata.suites.listSuites({ scope: foreign, limit: 1, cursor: page.nextCursor! }))
     .rejects.toMatchObject({ code: 'invalid_input' });
   await expect(metadata.suites.listSuites({ scope, limit: 1, cursor: 'not-json' })).rejects.toMatchObject({ code: 'invalid_input' });
-  expect((await metadata.suites.listSuites({ scope, limit: 1, cursor: page.nextCursor! })).items).toEqual([other]);
+  // Default recent_run order: neither suite has a Run, so suite UUID descending.
+  expect(page.items).toEqual([other]);
+  expect((await metadata.suites.listSuites({ scope, limit: 1, cursor: page.nextCursor! })).items.map(item => item.id)).toEqual([suite.id]);
 });
 it('enforces exact composite revision/folder ownership in SQL', async () => {
   const path = fixture.path(); const metadata = await fixture.open(path); await seed(metadata); await seed(metadata, 11, 12, 13);

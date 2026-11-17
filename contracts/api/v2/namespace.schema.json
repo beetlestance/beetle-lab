@@ -73,9 +73,33 @@
       "properties": {
         "scope": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope" },
         "items": { "type": "array", "maxItems": 100, "items": { "$ref": "https://beetle-lab.dev/contracts/api/v2/namespace#/$defs/Folder" } },
-        "nextCursor": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/OpaqueCursor" }, { "type": "null" }] }
+        "nextCursor": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/OpaqueCursor" }, { "type": "null" }] },
+        "summaries": { "type": "array", "maxItems": 100, "items": { "$ref": "https://beetle-lab.dev/contracts/api/v2/namespace#/$defs/FolderSummary" } }
       },
       "required": ["scope", "items", "nextCursor"], "additionalProperties": false
+    },
+    "FolderGroupCounts": {
+      "type": "object",
+      "properties": {
+        "in_progress": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count" },
+        "passed": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count" },
+        "failed": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count" },
+        "inconclusive": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count" },
+        "stopped": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count" },
+        "no_runs": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count" }
+      },
+      "required": ["in_progress", "passed", "failed", "inconclusive", "stopped", "no_runs"], "additionalProperties": false
+    },
+    "FolderSummary": {
+      "type": "object",
+      "properties": {
+        "folderId": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" },
+        "suiteCount": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count" },
+        "subfolderCount": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count" },
+        "groups": { "$ref": "https://beetle-lab.dev/contracts/api/v2/namespace#/$defs/FolderGroupCounts" },
+        "latestRun": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteLatestRun" }, { "type": "null" }] }
+      },
+      "required": ["folderId", "suiteCount", "subfolderCount", "groups", "latestRun"], "additionalProperties": false
     }
   }
 }
