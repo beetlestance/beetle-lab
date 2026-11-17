@@ -278,7 +278,7 @@
     "successStatus": 200,
     "error": "ApiError",
     "params": "WorkspaceParams",
-    "query": "PageQuery",
+    "query": "SuiteListQuery",
     "implementation": "implemented"
   },
   {

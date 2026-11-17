@@ -1,5 +1,5 @@
 import { encodeJson } from '@beetle/contracts';
-import { validateApi } from '@beetle/contracts/api';
+import { normalizeSuiteListQuery, suiteListPageMatches, suiteListPosition, validateApi } from '@beetle/contracts/api';
 import type { ApiTypes } from '@beetle/contracts/api';
 import { immutableSnapshot, requireRule, sameScope, sameUuid } from '../../domain/namespaces/index.js';
 import type { SuiteKey, SuiteList, RevisionList, SuiteReader } from '../../ports/suites.js';
@@ -40,10 +40,24 @@ function checkedPage(query: SuiteList | RevisionList, value: ApiTypes['SuitePage
     ids.add(item.id.toLowerCase());
   }
 }
+/** Rejects malformed filters and foreign or mismatched cursors before repository work. */
+function expectedSuiteList(query: SuiteList): SuiteList {
+  const copy = suiteSnapshot(query, 2048);
+  const { scope, ...page } = copy;
+  requireRule(validateApi('WorkspaceScope', scope).ok && validateApi('SuiteListQuery', page).ok);
+  try {
+    suiteListPosition(scope, page);
+  } catch {
+    requireRule(false);
+  }
+  return { scope, ...normalizeSuiteListQuery(page) };
+}
 export async function listSuites(query: SuiteList, reader: SuiteReader) {
-  const expected = suiteSnapshot(query, 2048);
+  const expected = expectedSuiteList(query);
   const value = checkedSuiteValue('SuitePage', await reader.listSuites(suiteSnapshot(expected, 2048)));
   checkedPage(expected, value);
+  const { scope, ...page } = expected;
+  if (!suiteListPageMatches(value, scope, page)) throw new Error('Invalid suite repository page');
   return value;
 }
 export async function listRevisions(query: RevisionList, reader: SuiteReader) {

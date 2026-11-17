@@ -36,5 +36,5 @@ execution_records: immutable intent/order, charge, bounded snapshot/gen1/outbox 
 attempt_output_allocations: scoped immutable maximum+65536/version 1; no settlement.
 Deferred claim links need record/output/possible delivery together; usage charges input/output once.
 Private reserveRunOutput requires a caller transaction; hasUntrackedOwnership uses partial indices, independent of Run state/Offer bytes.
-Authoring (031): run_notes own noteVersion+same-transaction note grams; Run reads add note and durable runtime start/exit via run_events_runtime (<=4 rows); revisions stamp savedAt/savedBy.
-Contracts: docs/system/contracts/storage.md#metadata-worker, run-delivery.md#dispatch-storage, outputs-collection.md#storage-accounting (output allocation), authoring.md.
+Authoring (031): run_notes own noteVersion+same-transaction note grams; Run reads add note and durable runtime start/exit via run_events_runtime (<=4 rows); revisions stamp savedAt/savedBy. Listing (034): triggers keep suites.latest_* and suite_revision_run_counts; suite-list/ merges per-group index keysets in one read transaction.
+Contracts: docs/system/contracts/storage.md#metadata-worker, run-delivery.md#dispatch-storage, outputs-collection.md#storage-accounting (output allocation), authoring.md, suite-listing.md.

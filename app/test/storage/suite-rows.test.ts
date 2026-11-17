@@ -35,6 +35,7 @@ function row() {
     saved_at: revision.savedAt,
     message: revision.message,
     saved_by: revision.savedBy,
+    run_count: 0,
   };
 }
 it('captures valid suite/revision rows with their existing wire values', () => {
@@ -64,6 +65,8 @@ it.each([
   { ordinal: 9007199254740992 },
   { digest: 'invalid' },
   { digest: Buffer.from('a'.repeat(64)) },
+  { run_count: null },
+  { run_count: -1 },
 ])('refuses corrupt revision summary %j', (amendment) => {
   expect(() => captureRevisionSummary({ ...row(), ...amendment }, scope, suite.id)).toThrow();
 });
@@ -101,7 +104,9 @@ it('bounds revision JSON before JavaScript parsing', () => {
   const db = new DatabaseSync(':memory:');
   try {
     db.exec(
-      'CREATE TABLE suite_revisions(id,organization_id,workspace_id,suite_id,ordinal,digest,config_json,input_manifest_json,saved_at,message,saved_by)',
+      'CREATE TABLE suite_revisions(id,organization_id,workspace_id,suite_id,ordinal,digest,config_json,input_manifest_json,' +
+        'saved_at,message,saved_by);' +
+        'CREATE TABLE suite_revision_run_counts(revision_id,run_count)',
     );
     db.prepare('INSERT INTO suite_revisions VALUES(?,?,?,?,?,?,?,?,NULL,NULL,NULL)').run(
       revision.id,

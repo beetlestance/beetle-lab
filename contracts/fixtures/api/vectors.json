@@ -833,5 +833,20 @@
     "path": "valid/patch-installation-administrator.json",
     "schema": "PatchInstallationSettingsRequest",
     "valid": true
+  },
+  {
+    "path": "valid/suite-list-query.json",
+    "schema": "SuiteListQuery",
+    "valid": true
+  },
+  {
+    "path": "invalid/suite-list-query-name.json",
+    "schema": "SuiteListQuery",
+    "valid": false
+  },
+  {
+    "path": "invalid/suite-list-query-group.json",
+    "schema": "SuiteListQuery",
+    "valid": false
   }
 ]

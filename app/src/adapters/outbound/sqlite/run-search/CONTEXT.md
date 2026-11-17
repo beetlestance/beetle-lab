@@ -9,4 +9,5 @@ Note postings (history_note_grams): first term <=256 runs selects candidates, ea
 verified against its current note; merged/deduped with suite keys; no backfill.
 Missing readiness returns search_indexing, broad search search_too_broad.
 No native/config/metric IO, credentials or engine imports.
-Owner: docs/system/contracts/public-api.md, authoring.md. Tests: app/test/storage/run-search/.
+matchingSuiteNames serves suite-list search: kind='suite' postings only, <=256 suites.
+Owner: docs/system/contracts/public-api.md, authoring.md, suite-listing.md. Tests: app/test/storage/run-search/.

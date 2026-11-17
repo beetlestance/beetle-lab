@@ -26,7 +26,10 @@ export const suiteColumns =
   ]) +
   ',' +
   sqlIntegerColumn('version');
-export const revisionSummaryColumns =
+/** Retained Runs per revision: one primary-key probe of the trigger-maintained count. */
+const runCountColumn = `(SELECT CASE WHEN typeof(c.run_count)='integer' AND c.run_count BETWEEN 0 AND 9007199254740991
+ THEN c.run_count END FROM suite_revision_run_counts c WHERE c.revision_id=suite_revisions.id) AS run_count`;
+const revisionBaseColumns =
   columns([
     ...identityColumns,
     ['suite_id', 45, false],
@@ -37,13 +40,19 @@ export const revisionSummaryColumns =
   ]) +
   ',' +
   sqlIntegerColumn('ordinal');
-export const revisionColumns =
-  revisionSummaryColumns +
-  ',' +
-  columns([
-    ['config_json', 2097152, false],
-    ['input_manifest_json', 65536, false],
-  ]);
+export const revisionSummaryColumns = revisionBaseColumns + ',' + runCountColumn;
+const contentColumns = columns([
+  ['config_json', 2097152, false],
+  ['input_manifest_json', 65536, false],
+]);
+export const revisionColumns = revisionSummaryColumns + ',' + contentColumns;
+/** `stored`: public reads. `new`: inserted in this transaction, so no Run references it yet.
+ * `omit`: internal content reads (Run/export intake) that never return the revision. */
+export type RevisionRunCount = 'stored' | 'new' | 'omit';
+export function revisionProjection(count: RevisionRunCount): string {
+  if (count === 'stored') return revisionColumns;
+  return `${revisionBaseColumns},${count === 'new' ? '0 AS run_count,' : ''}${contentColumns}`;
+}
 function record(input: unknown): Record<string, unknown> {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new StorageError('unavailable');
   return input as Record<string, unknown>;
@@ -80,6 +89,7 @@ export function captureRevisionSummary(input: unknown, scope: WorkspaceScope, su
     savedAt: row.saved_at,
     message: row.message,
     savedBy: row.saved_by,
+    ...(row.run_count === undefined ? {} : { runCount: row.run_count }),
   });
   if (!parsed.ok || !sameScope(parsed.value.scope, scope)) throw new StorageError('unavailable');
   if (suiteId !== undefined && parsed.value.suiteId !== suiteId.toLowerCase()) throw new StorageError('unavailable');

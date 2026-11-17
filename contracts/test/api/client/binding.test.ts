@@ -9,11 +9,11 @@ const files: Partial<Record<keyof ApiTypes, string>> = {
   OrganizationOverview:'organization-overview', WorkspaceOverview:'workspace-overview',
   InstallationStatus: 'installation-status', RunQueueStatus: 'run-queue',
   ExportJob: 'export-job', ExportJobPage: 'export-job-page', ExportProfiles: 'export-profiles',
-  CreateExportRequest: 'create-export', CancelExportRequest: 'cancel-export',
+  CreateExportRequest: 'create-export', CancelExportRequest: 'cancel-export', SetRunNoteRequest: 'set-run-note',
   RunComparisonRequest: 'run-comparison-request', RunComparisonSnapshot: 'run-comparison',
   LiveMetricSnapshot: 'live-metric-snapshot', RunMetricSeriesPage: 'run-metric-series-pending', RunMetricSamplesPage: 'run-metric-samples', RunLatencyAttribution: 'run-latency-attribution',
   RunResultSnapshot: 'run-result-pending', RunEventPage: 'run-events-pending', RunArtifactPage: 'run-artifacts-pending',
-  Run: 'run', RunPage: 'run-page', CreateRunRequest: 'create-run', CancelRunRequest: 'cancel-run', RunPinRequest: 'run-pin', RunPinReceipt: 'run-pin-receipt', SetRunNoteRequest: 'set-run-note',
+  Run: 'run', RunPage: 'run-page', CreateRunRequest: 'create-run', CancelRunRequest: 'cancel-run', RunPinRequest: 'run-pin', RunPinReceipt: 'run-pin-receipt',
   InputRecord: 'input', InputReceipt: 'input-receipt', InputPage: 'input-page', InputUsagePage: 'input-usage-page',
   CreateInputRequest: 'create-input', TransitionInputRequest: 'transition-input',
   Suite: 'suite', SuiteRevision: 'suite-revision', SuitePage: 'suite-page', SuiteRevisionPage: 'suite-revision-page',
@@ -35,7 +35,7 @@ async function operationReply(operation: ApiOperation): Promise<Record<string, u
   return await fixture(`valid/${file}.json`) as Record<string, unknown>;
 }
 async function queryFixture(operation: ApiOperation) {
-  if (operation.name === 'listRuns') return { limit: 100 };
+  if (operation.name === 'listRuns' || operation.name === 'listSuites') return { limit: 100 };
   if (operation.name === 'getRunMetricSamples') return {limit: 100, seriesOrdinal: 0};
   return ['listRunEvents', 'listRunArtifacts', 'listRunMetricSeries'].includes(operation.name)
     ? { limit: 100 } : await load('page-query', 'PageQuery');

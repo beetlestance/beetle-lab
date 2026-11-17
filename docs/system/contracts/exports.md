@@ -138,6 +138,6 @@ path, clock timeout or current capability creates physical authority.
 | `contracts/src/export-job/` | `ee5dbee9e357` |
 | `app/src/application/exports/` | `8b2b5f2a79e4` |
 | `app/src/application/export-runtime/` | `23cbf619a3fc` |
-| `app/src/adapters/outbound/sqlite/export-jobs/` | `049b41000861` |
+| `app/src/adapters/outbound/sqlite/export-jobs/` | `20252909c7da` |
 | `engines/k6/export/` | `120bf16f289c` |
 | `agent/src/journal/migration015.ts` | `e43499b5bd89` |

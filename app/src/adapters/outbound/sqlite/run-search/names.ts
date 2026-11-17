@@ -15,12 +15,13 @@ export function workspaceNameMatches(db: DatabaseSync, scope: WorkspaceScope, na
   return foldRunSearchName(captureSearchName(row.name)).includes(name);
 }
 /** Select a complete bounded posting, then verify the entire literal against current names. */
-function candidates(db: DatabaseSync, scope: WorkspaceScope, name: string): Candidate[] {
+function candidates(db: DatabaseSync, scope: WorkspaceScope, name: string, suitesOnly = false): Candidate[] {
   for (const term of runSearchTerms(name)) {
     const rows = db
       .prepare(
         `SELECT ${sqlTextColumn('kind', 8)},${sqlTextColumn('entity_id', 45)} FROM history_name_grams
-      WHERE organization_id=? AND workspace_id=? AND term=? ORDER BY history_name_grams.kind,history_name_grams.entity_id LIMIT ?`,
+      WHERE organization_id=? AND workspace_id=? AND term=? ${suitesOnly ? "AND kind='suite'" : ''}
+      ORDER BY history_name_grams.kind,history_name_grams.entity_id LIMIT ?`,
       )
       .all(scope.organizationId, scope.workspaceId, term, budget + 1)
       .map(captureSearchCandidate);
@@ -34,6 +35,10 @@ function candidates(db: DatabaseSync, scope: WorkspaceScope, name: string): Cand
     });
   }
   throw new StorageError('search_too_broad');
+}
+/** Suite-name-only search: same postings, folding and budget; folder names never match. */
+export function matchingSuiteNames(db: DatabaseSync, scope: WorkspaceScope, name: string): string[] {
+  return candidates(db, scope, name, true).map((row) => row.entity_id);
 }
 function addBounded(set: Set<string>, ids: readonly string[]): void {
   for (const id of ids) {

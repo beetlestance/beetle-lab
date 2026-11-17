@@ -101,6 +101,41 @@
         "config"
       ],
       "additionalProperties": false
+    },
+    "SuiteListQuery": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/PageQuery/properties/limit"
+        },
+        "cursor": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/OpaqueCursor"
+        },
+        "folderId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "group": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteGroup"
+        },
+        "engineId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteRevisionSummary/properties/engineId"
+        },
+        "order": {
+          "enum": [
+            "recent_run",
+            "name"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 64
+        }
+      },
+      "required": [
+        "limit"
+      ],
+      "additionalProperties": false
     }
   }
 }

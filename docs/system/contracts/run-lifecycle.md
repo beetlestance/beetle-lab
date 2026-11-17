@@ -198,7 +198,7 @@ ordering are in [run delivery](run-delivery.md).
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/adapters/outbound/sqlite/runs.ts` | `26bd5226a6b3` |
+| `app/src/adapters/outbound/sqlite/runs.ts` | `99df71d3c3ce` |
 | `app/src/adapters/outbound/sqlite/run-cancellations.ts` | `60e439b897cb` |
 | `app/src/adapters/outbound/sqlite/run-pins/` | `5b6f4e05f29b` |
 | `app/src/application/runs/pin.ts` | `7883e8e6d0eb` |

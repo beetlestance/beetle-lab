@@ -1,4 +1,5 @@
-import { captureSuiteRow, captureRevisionRow, suiteColumns, revisionColumns } from './suite-row.js';
+import { captureSuiteRow, captureRevisionRow, suiteColumns, revisionProjection } from './suite-row.js';
+import type { RevisionRunCount } from './suite-row.js';
 import { normalizedScope } from './input-values.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeJson } from '@beetle/contracts';
@@ -35,10 +36,11 @@ export class Suites {
     requireRule(row !== undefined, 'not_found');
     return captureSuiteRow(row, { scope, id: key.id });
   }
-  getRevision(key: SuiteKey): SuiteRevision {
+  getRevision(key: SuiteKey, count: RevisionRunCount = 'stored'): SuiteRevision {
     const scope = normalizedScope(key.scope);
+    const projection = revisionProjection(count);
     const row = this.db
-      .prepare(`SELECT ${revisionColumns} FROM suite_revisions WHERE organization_id=? AND workspace_id=? AND id=?`)
+      .prepare(`SELECT ${projection} FROM suite_revisions WHERE organization_id=? AND workspace_id=? AND id=?`)
       .get(scope.organizationId, scope.workspaceId, lower(key.id));
     requireRule(row !== undefined, 'not_found');
     return captureRevisionRow(row, { scope, id: key.id });
@@ -119,6 +121,6 @@ export class Suites {
     this.db
       .prepare('UPDATE suites SET current_revision_id=?,version=? WHERE id=?')
       .run(lower(command.id), nextVersion(suite.version), suite.id);
-    return this.getRevision({ scope, id: command.id });
+    return this.getRevision({ scope, id: command.id }, 'new');
   }
 }

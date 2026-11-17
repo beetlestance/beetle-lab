@@ -17,7 +17,7 @@
     "api/v2/installation-status.schema.json": "c1807d78775968025708ba0684beb157108d6d8414d24d1d59c59e0e29dfa9ff",
     "api/v2/live-metrics.schema.json": "901425518db875389482dc998200c35c0468e23aa9161b85ad7fdb2cba398421",
     "api/v2/namespace-requests.schema.json": "6a913fb93f867d4c311d60a2613b11d712b1a70a20442ae6a9262fffcd9ece42",
-    "api/v2/namespace.schema.json": "3df14df2770cabaf1b04c70a44d453dad6ab1e7b0afe5699d6cae375ab2bec3f",
+    "api/v2/namespace.schema.json": "4ce1cd57b1ee27819a417a624cf81177b0998112e84712bd69e3cfb3adce8594",
     "api/v2/overview.schema.json": "b13dd647d38d8b5fa9b04203df88131d96ac20ca10d6b485d207766627d95bb3",
     "api/v2/parameters.schema.json": "9c7bccc0c31e8fb3eeafb6a1e46662184bd7cc01f6b794c4d041a6b5f8763910",
     "api/v2/retention-status.schema.json": "045cf98eb9dc2ead740a2780bda0b63dc3564f5e5b9c0bf49302efc8b3136ae3",
@@ -35,10 +35,10 @@
     "api/v2/settings-overrides.schema.json": "940f93d1591c4b562fef35248a6e3e11b79d436358bd0b740c5b63bfc6e9d088",
     "api/v2/settings-values.schema.json": "d5c9c083c702041f2f7ebbbb291aa0694bf01b3cf8d07ec1696cfebd6694c269",
     "api/v2/settings.schema.json": "aaf9c415020b25b04bce515956e2077bb74f15614a04c137d6211a345c1ec2f8",
-    "api/v2/suite-requests.schema.json": "38a3d2bd76f5d39cbe4fae4b9190d919f9ec31b27271484c38088aad41101907",
-    "api/v2/suite.schema.json": "3773c790a17667b4ce62890b726a7a4c88cc038d59b3c3fe1e76edc9db06d582"
+    "api/v2/suite-requests.schema.json": "ee49835acb6b7f24d91e6b980b1ce76d1b0a8a7254a8d4d10c5845f1f9fa3f1b",
+    "api/v2/suite.schema.json": "54b45a621c0b41df4cb2e1a0dcb5306814768ab1c13a94f694fe9b1f82c784c0"
   },
-  "operationsSha256": "bd0b786e340855e278870fa0773d8750acd2d0980017621f2393309037c3c71d",
+  "operationsSha256": "9408145defbe9bd0b880339b66f8671d4fcea672a6d84f2907ce135c3f22cd9c",
   "outputs": [
     "common.inference.ts",
     "common.ts",

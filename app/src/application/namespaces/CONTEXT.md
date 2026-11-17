@@ -12,6 +12,7 @@ Wrong owner/identity returns not_found; malformed, duplicate or oversized adapte
 results are internal contract failures. Pages cannot exceed the requested limit.
 Returned DTOs are frozen isolated copies, never a mutable cache of another scope.
 
+folderPageSummariesMatch checks FolderPage.summaries align 1:1 with listed folders (suite-listing.md).
 Only reader/writer ports perform I/O. Node identity and SHA-256 effects are injected;
 HTTP/authentication, SQLite transactions and serialization stay with their owners.
 Focused checks: app/test/domain/namespace-queries.test.ts and namespace mutation

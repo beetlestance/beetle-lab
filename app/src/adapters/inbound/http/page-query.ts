@@ -1,6 +1,6 @@
 import { encodeJson } from '@beetle/contracts';
 import { validateApi } from '@beetle/contracts/api';
-import type { RunMetricSamplesQuery, RunListQuery, PageQuery } from '@beetle/contracts/api';
+import type { ApiTypes, RunMetricSamplesQuery, PageQuery } from '@beetle/contracts/api';
 
 export type PageQueryDecodeResult = { readonly ok: true; readonly value: PageQuery } | { readonly ok: false };
 
@@ -52,21 +52,25 @@ export function decodeMetricSamplesQuery(
   }
 }
 
-/** Run-only fields stay strict; only the HTTP limit string is decoded. */
-export function decodeRunListQuery(
+/** Listing fields stay strict; only the HTTP limit string is decoded. */
+function decodeLimited<N extends 'RunListQuery' | 'SuiteListQuery'>(
+  name: N,
   input: unknown,
-): { readonly ok: true; readonly value: RunListQuery } | { readonly ok: false } {
+): { readonly ok: true; readonly value: ApiTypes[N] } | { readonly ok: false } {
   try {
     const query = JSON.parse(encodeJson(rawFields(input), 4096)) as Record<string, unknown>;
     if (typeof query.limit !== 'string' || !/^(0|[1-9][0-9]*)$/.test(query.limit)) return { ok: false };
     query.limit = Number(query.limit);
+    // Only RunListQuery declares `pinned`; any other listing still rejects it by schema.
     if (query.pinned !== undefined) {
       if (query.pinned !== 'true') return { ok: false };
       query.pinned = true;
     }
-    const checked = validateApi('RunListQuery', query);
-    return checked.ok ? checked : { ok: false };
+    const checked = validateApi(name, query);
+    return checked.ok ? { ok: true, value: checked.value } : { ok: false };
   } catch {
     return { ok: false };
   }
 }
+export const decodeRunListQuery = (input: unknown) => decodeLimited('RunListQuery', input);
+export const decodeSuiteListQuery = (input: unknown) => decodeLimited('SuiteListQuery', input);

@@ -8,6 +8,8 @@ import type { Entities } from './entities.js';
 import { boundedCopy, lower, scopeKey, sha256, uuid } from './input.js';
 import type { EntityPage, ListQuery } from './protocol.js';
 import { StorageError } from './protocol.js';
+import { transaction } from './transaction.js';
+import { folderSummaries } from './suite-list/index.js';
 
 function queryIdentity(query: ListQuery): string {
   return sha256(
@@ -39,6 +41,24 @@ export class Reads {
   ) {}
   list(query: ListQuery): EntityPage {
     const after = continuation(query);
+    if (query.kind !== 'folder') return this.page(query, after);
+    /** Folder items and their suite summaries come from one read transaction. */
+    return transaction(this.db, () => {
+      const page = this.page(query, after);
+      const scope = query.scope;
+      requireRule(scope.kind === 'workspace', 'not_found');
+      const owner = { ...scope, organizationId: lower(scope.organizationId), workspaceId: lower(scope.workspaceId) };
+      return {
+        ...page,
+        summaries: folderSummaries(
+          this.db,
+          owner,
+          page.items.map((item) => item.id.toLowerCase()),
+        ),
+      };
+    });
+  }
+  private page(query: ListQuery, after: string): EntityPage {
     const rows = this.rows(query, after);
     const selected = rows.slice(0, query.limit);
     const items = this.items(query, selected);

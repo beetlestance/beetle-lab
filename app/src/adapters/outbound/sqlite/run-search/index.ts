@@ -111,3 +111,5 @@ function accepts(
   const comparison = compareRunListPosition({ requestedAt: row.requested_at, id: row.id }, position);
   return query.order === 'newest' ? comparison < 0 : comparison > 0;
 }
+export { prepareNameSearch } from './backfill.js';
+export { matchingSuiteNames } from './names.js';

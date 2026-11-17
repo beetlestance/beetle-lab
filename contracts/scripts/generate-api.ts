@@ -85,7 +85,14 @@ function typeOutput(types: Message[]): string {
   return banner + `import type { FromSchema } from 'json-schema-to-ts';\n` + bySource.map((file, index) =>
     `import type { projections as S${index} } from './${file.replace('.schema.json', '.inference.js')}';`).join('\n')
     + '\n' + types.map(message => `export type ${message.name} = FromSchema<typeof S${bySource.indexOf(message.source.file)}.${message.name}>;`).join('\n')
-    + '\nexport interface ApiTypes {\n' + types.map(message => `  ${message.name}: ${message.name};`).join('\n') + '\n}\n';
+    + '\nexport interface ApiTypes {\n' + apiTypeRows(types) + '\n}\n';
+}
+/** Several members per line keep the generated module under the 400-line module cap. */
+function apiTypeRows(types: Message[], perRow = 4): string {
+  const rows: string[] = [];
+  for (let index = 0; index < types.length; index += perRow)
+    rows.push('  ' + types.slice(index, index + perRow).map(message => `${message.name}: ${message.name};`).join(' '));
+  return rows.join('\n');
 }
 
 function reference(operations: Operation[]): string {

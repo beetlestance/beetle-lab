@@ -144,11 +144,12 @@ function checkedSettings(operation: Extract<Operation, { kind: 'settings' }>): v
   requireRule(prepareSettingsCommand({ ...command, digest: sha256 }).intentDigest === command.intentDigest);
 }
 function checkedSuiteList(operation: Extract<Operation, { kind: 'listSuites' | 'listRevisions' }>): void {
-  const query = operation.query;
-  requireRule(validateApi('WorkspaceScope', query.scope).ok);
-  requireRule(Number.isSafeInteger(query.limit) && query.limit >= 1 && query.limit <= 100);
-  if (query.cursor !== undefined) requireRule(typeof query.cursor === 'string' && query.cursor.length <= 1024);
+  const { scope, ...page } = operation.query;
+  requireRule(validateApi('WorkspaceScope', scope).ok);
+  requireRule(Number.isSafeInteger(page.limit) && page.limit >= 1 && page.limit <= 100);
+  if (page.cursor !== undefined) requireRule(typeof page.cursor === 'string' && page.cursor.length <= 1024);
   if (operation.kind === 'listRevisions') uuid(operation.query.suiteId);
+  else requireRule(validateApi('SuiteListQuery', page).ok);
 }
 function checkedSuiteOperation(operation: Operation): void {
   switch (operation.kind) {
@@ -274,7 +275,6 @@ function checkedCommonOperation(input: Operation, runtimeTtlMs: number): Operati
     case 'list':
       checkedList(operation.query);
       break;
-
     case 'runtime':
       checkedRuntime(operation.runtime, runtimeTtlMs);
       break;

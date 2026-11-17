@@ -27,7 +27,7 @@ export function historicalRun(db: DatabaseSync, command: RunCommand): Run {
   // Explicit historical test capacity, independent of today's host observation.
   const runtime = {...fixture.runtime, pool: {...values.pool}, perRun: {...values.perRunCeilings}, supportedProfiles: [...values.supportedProfiles]};
   const settings = new Settings(db, {installation: fixture.chain.installation, runtime: observation(runtime)});
-  const revision = withCurrentWrites(db, () => new Suites(db, new Entities(db)).getRevision({scope: command.request.scope, id: command.request.revisionId}));
+  const revision = withCurrentWrites(db, () => new Suites(db, new Entities(db)).getRevision({scope: command.request.scope, id: command.request.revisionId}, 'omit'));
   const resolved = settings.resolveRun(command.request.scope, {engineProfile: command.request.engineProfile, budget: command.request.budget});
   const profile = runOptions().runs!.profiles[0]!;
   const run: Run = {id: command.id, scope: command.request.scope, version: 1, suiteId: revision.suiteId,

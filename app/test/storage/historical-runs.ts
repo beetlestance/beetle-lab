@@ -24,7 +24,7 @@ export class HistoricalRuns {
     private readonly settings: Settings, config: RunConfiguration) { this.config = checkedRunConfiguration(config); }
   create(command: RunCommand): Run {
     const scope = normalizedScope(command.request.scope); this.suites.workspace(scope);
-    const revision = this.suites.getRevision({ scope, id: command.request.revisionId });
+    const revision = this.suites.getRevision({ scope, id: command.request.revisionId }, 'omit');
     checkRevisionPins(this.db,revision);
     const resolved = this.settings.resolveRun(scope, { engineProfile: command.request.engineProfile, budget: command.request.budget });
     const profile = this.config.profiles.find(pin => pin.engine.profileId === resolved.defaults.engineProfile);

@@ -59,13 +59,18 @@ it('rolls a late name collision back to the exact populated predecessor',()=>{
   expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(32);
  }finally{db.close();}
 });
+/** The serving path also applies 034, whose latest-Run columns and revision Run counts are derived. */
+function retained(tables:ReturnType<typeof rows>){
+ return tables.filter(table=>!['run_pins','suite_revision_run_counts'].includes(table.name)).map(table=>table.name==='suites'
+  ?{...table,rows:table.rows.map(row=>Object.fromEntries(Object.entries(row).filter(([key])=>!key.startsWith('latest_'))))}:table);
+}
 it('opens a populated schema032 file through the serving migration path',()=>{
  const directory=mkdtempSync(join(tmpdir(),'run-pins-'));const path=join(directory,'metadata.sqlite');
  try{
   const source=prior032();const before=rows(source);try{source.prepare('VACUUM INTO ?').run(path);}finally{source.close();}
   const db=initialize(path);try{
    expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
-   expect(rows(db).filter(table=>table.name!=='run_pins')).toEqual(before);
+   expect(retained(rows(db))).toEqual(before);
   }finally{db.close();}
  }finally{rmSync(directory,{recursive:true,force:true});}
 });

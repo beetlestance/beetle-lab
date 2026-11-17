@@ -31,7 +31,7 @@ export class Runs {
   create(command: RunCommand): Run {
     const scope = normalizedScope(command.request.scope);
     this.suites.workspace(scope);
-    const revision = this.suites.getRevision({ scope, id: command.request.revisionId });
+    const revision = this.suites.getRevision({ scope, id: command.request.revisionId }, 'omit');
     checkRevisionPins(this.db, revision);
     const resolved = this.settings.resolveRun(scope, {
       engineProfile: command.request.engineProfile,

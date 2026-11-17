@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { encodeJson } from '@beetle/contracts';
 import { API_MAXIMUM_JSON_BYTES, apiMessageSchemas, apiOperations } from '@beetle/contracts/api';
 import type { ApiOperation, ApiOperationInput, ApiTypes } from '@beetle/contracts/api';
-import { decodePageQuery, decodeMetricSamplesQuery, decodeRunListQuery } from './page-query.js';
+import { decodePageQuery, decodeMetricSamplesQuery, decodeRunListQuery, decodeSuiteListQuery } from './page-query.js';
 import { ResponseContractError } from './schema-compilers.js';
 import { ApiFault } from './api-errors.js';
 
@@ -82,7 +82,9 @@ export function registerApiOperation<N extends ApiOperation['name']>(
             ? decodeMetricSamplesQuery(request.query)
             : operation.query === 'RunListQuery'
               ? decodeRunListQuery(request.query)
-              : decodePageQuery(request.query);
+              : operation.query === 'SuiteListQuery'
+                ? decodeSuiteListQuery(request.query)
+                : decodePageQuery(request.query);
         if (!decoded.ok) throw new ApiFault('malformed_request');
         request.query = decoded.value;
       }

@@ -34,7 +34,7 @@ export class ExportJobs {
     requireRule(this.db.isTransaction, 'conflict');
     const scope = normalizedScope(command.request.scope);
     this.suites.workspace(scope);
-    const revision = this.suites.getRevision({ scope, id: command.request.revisionId });
+    const revision = this.suites.getRevision({ scope, id: command.request.revisionId }, 'omit');
     checkRevisionPins(this.db, revision);
     const pin = this.configuration.profiles.find((entry) => entry.sourceProfileId === command.request.engineProfile);
     requireRule(pin !== undefined, 'capacity_unavailable');
