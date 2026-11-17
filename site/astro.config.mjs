@@ -7,7 +7,8 @@ import { cspInlineHashes } from './csp-inline-hashes.mjs';
 import { remarkBaseLinks } from './remark-base-links.mjs';
 
 // In the app the docs are served under /docs; the public build sets DOCS_SITE and DOCS_BASE.
-const base = process.env.DOCS_BASE ?? '/docs';
+// An empty DOCS_BASE (a site at the root of its domain) means '/'.
+const base = process.env.DOCS_BASE === undefined ? '/docs' : process.env.DOCS_BASE || '/';
 
 export default defineConfig({
   site: process.env.DOCS_SITE,

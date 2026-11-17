@@ -52,7 +52,8 @@ once, and in this profile the session ends when the backend restarts.
 
 ## Commands
 
-Every command needs `--endpoint`, `--origin` and `--session-file`.
+Every command needs `--endpoint`, `--origin` and `--session-file`. The
+[automation client reference](/reference/cli/) lists every flag and request field.
 
 | Command | Additional flags | Prints |
 | --- | --- | --- |

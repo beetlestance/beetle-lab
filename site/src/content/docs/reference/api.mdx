@@ -1,0 +1,74 @@
+---
+title: HTTP API
+description: The JSON API the UI and the automation client use, its conventions, errors and every operation.
+sidebar:
+  order: 5
+---
+
+import ApiOperations from '../../../components/ApiOperations.astro';
+
+The UI is a client of the same JSON API you can call yourself, under `/api/v2` on
+the UI's address. The request and response shapes are published as
+[JSON schemas](https://github.com/beetlestance/beetle-lab/tree/main/contracts/api/v2);
+the operation list below is built from the same file that defines the server's
+routes.
+
+## Sign in
+
+The API accepts only a browser-style session from a loopback address.
+
+- `POST /api/v2/auth/local` signs in on a default installation. On a paired
+  installation, `POST /api/v2/auth/pair` exchanges the one-time startup token,
+  which is valid for 15 minutes.
+- Either one sets an HttpOnly cookie that lasts at most 8 hours. Sign-in
+  exchanges are limited to 5 a minute.
+- Every change needs the CSRF check, and the `Host` and `Origin` must be the
+  installation's own loopback address. There is no CORS.
+
+The [automation client](/guides/automation/) handles all of this for you.
+
+## Conventions
+
+- **Scope.** Installation-level routes cover organisations, settings and sign-in.
+  Everything else sits under `/organizations/{organizationId}`, and most of it
+  under a workspace. An ID from another organisation or workspace returns 404.
+- **Lists** take a required `limit` from 1 to 100 and an opaque `cursor` for the
+  next page.
+- **Changes** carry a `requestId` you choose. Repeating the same request returns
+  the original result; reusing the ID for a different change conflicts. Changes to
+  existing objects also carry the `expectedVersion` you last read.
+- **202 Accepted** means the work was recorded, not finished. Read the object to
+  follow it. A new run starts with `validationStatus: pending`; a configuration the
+  engine rejects later ends the run as errored instead of failing the request.
+- **Strict input.** Unknown fields, type coercion and defaults are rejected. JSON
+  bodies are limited to 1 MiB, or 2 MiB for a suite revision.
+- **Updates** are read by polling: run events and live metrics have read routes;
+  there is no streaming endpoint.
+
+File content (input upload and download, artifact and export content) uses
+separate byte routes that are not listed here.
+
+## Errors
+
+Errors are `{code, message, retryable, requestId, fields}`. The message is fixed
+for each code and never contains internal details.
+
+| Status | Codes |
+| --- | --- |
+| 400 | `malformed_request` |
+| 401, 403 | `unpaired`, `forbidden` |
+| 404 | `not_found`, including anything outside your scope |
+| 409 | `conflict`, `cursor_expired`, `protected_dependency` |
+| 413 | `body_limit` |
+| 422 | `invalid_value`, `search_too_broad` |
+| 429 | `rate_limited` (retry later) |
+| 500 | `internal_error` |
+| 503 | `capacity_unavailable`, `storage_unavailable`, `search_indexing` (retry later) |
+
+## Operations
+
+`/…/{organizationId}` stands for `/organizations/{organizationId}` and
+`/…/{workspaceId}` for `/organizations/{organizationId}/workspaces/{workspaceId}`.
+Paths are relative to `/api/v2`.
+
+<ApiOperations />

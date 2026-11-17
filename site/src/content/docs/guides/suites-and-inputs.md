@@ -59,6 +59,6 @@ exported as a standalone script.
 
 ## Settings that shape runs
 
-Run budgets, capacity and retention are set at installation, organisation and
-workspace level, each narrowing the one above. A run's budget must fit the
-effective settings and the installed engine's ceilings.
+Run budgets and retention are set at installation, organisation and workspace
+level; the most specific value wins. A run's budget must still fit the
+installation's ceilings; see [Organisations and workspaces](/concepts/workspaces/).

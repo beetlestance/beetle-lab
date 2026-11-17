@@ -23,6 +23,8 @@ WORKDIR /build/site
 COPY site/package.json site/package-lock.json ./
 RUN npm ci --ignore-scripts --include=optional
 COPY site ./
+# The API reference page reads the operation catalogue at build time.
+COPY contracts/api/v2/http-operations.json /build/contracts/api/v2/http-operations.json
 RUN npm run build
 
 FROM ${NGINX_IMAGE} AS frontend

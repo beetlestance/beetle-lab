@@ -6,7 +6,8 @@ sidebar:
 ---
 
 These limits are built in. Run budgets and capacity are separate: they are
-settings, narrowed from installation to organisation to workspace.
+settings, inherited from installation to organisation to workspace; see
+[Organisations and workspaces](/concepts/workspaces/).
 
 ## Suites
 

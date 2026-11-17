@@ -1,0 +1,62 @@
+---
+title: How it works
+description: The four containers, and what happens between clicking Run and seeing a result.
+sidebar:
+  order: 1
+---
+
+import PartsFlow from '../../../components/PartsFlow.astro';
+import RunWalkthrough from '../../../components/RunWalkthrough.astro';
+
+Beetle Lab splits a load test into parts that each own one job, so that a
+crashed engine, a full disk or a restart never turns into a wrong result.
+
+## The parts
+
+<PartsFlow />
+
+| Part | Owns | Never does |
+| --- | --- | --- |
+| Frontend | The UI, served as static files, and forwarding of `/api/` | Business logic or storage |
+| Backend | Organisations, suites, inputs, runs, results and reports in SQLite | Start containers or interpret raw metrics |
+| Agent | Machine capacity, admission, engine containers and a durable journal | Accept requests from the browser |
+| k6 engine | Compiling the suite, running k6, collecting and sealing results | Talk to the backend or keep anything after the run |
+
+The backend and the agent keep separate stores and never share a transaction.
+Each step between them is recorded before it is acknowledged, so after a restart
+both sides can tell exactly what happened and resume without repeating work.
+
+## From Run to result
+
+<RunWalkthrough />
+
+Every phase has its own time, work and output budget, so a stuck phase ends the
+run instead of hanging it.
+
+## What gets measured
+
+Beetle Lab keeps three kinds of numbers apart, and labels them so:
+
+- **Target performance**: what k6 observed from your service, such as request
+  durations and error rates.
+- **Engine resources**: CPU time, peak memory and processes of the engine
+  container, reported by the agent.
+- **Target runtime readings**: optional figures your service reports about itself,
+  such as memory and garbage collection, sampled during the run.
+
+A number that was not collected is shown as unknown, never as zero.
+
+## Trust and security
+
+Beetle Lab is built for **one trusted administrator** on a machine they control.
+Only the frontend publishes a port, on loopback, and engine containers run
+hardened and without the Docker socket. The agent does hold the socket, so a
+compromised agent could control the host. Read
+[Trust and security](/concepts/security/) before you install it.
+
+## Limits that are on purpose
+
+- One installation, one administrator, one machine.
+- Docker is the only execution backend; k6 is the only engine.
+- Images are never pulled during a run, so a measurement never includes a
+  download.

@@ -1,0 +1,114 @@
+---
+title: Organisations and workspaces
+description: How organisations, workspaces and folders hold your suites, inputs and runs, and how settings are inherited between them.
+sidebar:
+  order: 5
+---
+
+Everything you create in Beetle Lab sits in a fixed hierarchy:
+
+```text
+Installation
+└── Organisation
+    └── Workspace
+        └── Folders (optional, nested)
+            └── Suites and inputs
+```
+
+These levels are for organising work. They are not accounts or permissions.
+
+## Organisations
+
+An **organisation** is the top level you create. It has a name and a **slug**:
+lowercase letters and digits in groups joined by single hyphens, up to 128
+characters. An organisation holds workspaces and can override some settings for
+all of them.
+
+## Workspaces
+
+A **workspace** is where the work happens. Everything below belongs to exactly
+one workspace:
+
+| What | Notes |
+| --- | --- |
+| Suites | With all their revisions |
+| Inputs | Datasets and request bodies; see [Suites and inputs](/guides/suites-and-inputs/) |
+| Runs | With their results and files |
+| Settings overrides | Run defaults and retention for this workspace |
+
+A run keeps the workspace of the suite it ran. Moving a suite to another folder
+never changes its existing runs. Runs can only be compared with other runs in the
+same workspace.
+
+## Folders
+
+Each workspace has a **root folder**, created with it. Below it you can nest
+folders to group suites and inputs, up to 8 levels deep.
+
+- Folder names are 1 to 128 characters and unique among their siblings,
+  ignoring case.
+- Suite names are unique within their folder, ignoring case.
+- Suites and folders can move between folders, but only within the same
+  workspace.
+
+Folders only group. They never grant access or change how runs execute.
+
+## Settings and inheritance
+
+The installation holds a complete set of settings. The organisation and the
+workspace store only the values you override; anything you leave unset is
+inherited from the level above.
+
+| Setting | Installation | Organisation | Workspace |
+| --- | --- | --- | --- |
+| Execution pool and output space | Set | No | No |
+| Per-run ceilings | Set | No | No |
+| Supported engine profiles | Set | No | No |
+| Default engine profile | Set | Override | Override |
+| Default run budget: CPU, memory, processes, time limit, output | Set | Override | Override |
+| Retention policy | Set | Override | Override |
+
+The most specific value wins: a workspace override beats the organisation's,
+which beats the installation's. Each budget value is overridden on its own, so a
+workspace can change the memory budget and still inherit the time limit.
+Retention is one policy and is replaced as a whole.
+
+Overrides cannot escape the installation's limits:
+
+- Every budget value must lie between 1 and the installation's per-run ceiling.
+- The engine profile must be one the installation supports.
+- A value out of range is refused. Nothing is silently clamped.
+
+The settings page shows each effective value together with the level it comes
+from. Removing an override makes the level inherit again.
+
+### When settings apply
+
+A suite revision and a single run can also set their own budget, within the same
+ceilings. The final values are fixed when the run is accepted. Changing settings
+later never alters a run that is already queued or finished.
+
+## Deleting
+
+| What | Rule |
+| --- | --- |
+| Organisation | Only when it has no workspaces, counting retired ones |
+| Folder | Only when it is empty; the root folder cannot be deleted |
+| Workspace | Retired: hidden, with its data kept |
+
+Deleting a workspace **retires** it. A retired workspace disappears from lists and
+can no longer be opened, but its suites, runs and files stay on disk and still use
+their space. You can create a new workspace with the same name; the retired one
+never comes back. A workspace with an active run, export or unfinished upload
+cannot be deleted until that work ends. Because retired workspaces still count, an
+organisation that has ever had a workspace cannot be deleted.
+
+To free the space a workspace uses, delete its runs first. See
+[Retention and deleting](/concepts/retention/).
+
+## One administrator
+
+An installation has one administrator. There are no user accounts, roles,
+invitations or single sign-on, and organisations and workspaces do not restrict
+who can see what. Anyone who can use the UI can use every organisation. See
+[Trust and security](/concepts/security/).

@@ -85,7 +85,7 @@ lower run budgets in settings; raising the installed ceilings is a separate
   tests and control engine containers.
 - The agent has access to the Docker socket, which means control of the Docker
   host. Install it only where you trust the administrator and the test code. See
-  [trust and security](/concepts/how-it-works/#trust-and-security).
+  [trust and security](/concepts/security/).
 - Back up with the [backup and restore](/guides/backup-and-restore/) procedure,
   not by copying `.beetle/` while it runs.
 

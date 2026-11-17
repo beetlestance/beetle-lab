@@ -1,0 +1,104 @@
+---
+title: Retention and deleting
+description: Which retention settings exist, what deleting removes, and why space returns only after the backend and the agent both confirm.
+sidebar:
+  order: 6
+---
+
+Run results and files stay until you delete them. You can delete one run at a
+time, or set a **retention policy** that selects old runs for you. Either way,
+nothing is deleted until you review the list and apply it.
+
+## Retention policy
+
+A retention policy is either `manual` or `enabled`.
+
+| Mode | Effect |
+| --- | --- |
+| `manual` | Selects nothing. This is the default. |
+| `enabled` | Selects runs by one or more of the rules below |
+
+| Rule | Field | Selects |
+| --- | --- | --- |
+| Age | `ageDays`, 1 to 365,000 | Runs requested more than this many days ago |
+| Count | `completedRunCount` | Completed runs beyond this many of the newest |
+| Storage | `storageBytes` | Completed runs beyond the newest ones that fit in this many bytes |
+
+An enabled policy needs at least one rule. When it has several, a run that any
+rule selects is a candidate. Retention works per workspace, newest run first.
+
+The policy is set at installation, organisation or workspace level and inherited
+like other settings; see [Organisations and workspaces](/concepts/workspaces/). It
+is one setting, so a workspace override replaces the whole policy, not single
+rules.
+
+## Preview, then apply
+
+Retention never runs on its own. In a workspace's settings:
+
+1. **Preview.** Beetle Lab captures a page of up to 100 candidate runs, each with
+   its estimated size and the rule that selected it. It also lists how many runs
+   it left out, and why.
+2. **Apply.** You confirm that exact page. Only the runs shown are deleted.
+
+A preview expires. An expired preview cannot be applied; take a new one. Before
+deleting each run, Beetle Lab checks again that it is still a safe candidate.
+
+At organisation and installation level, the preview walks through the workspaces
+one at a time and links to each. Applying always happens in a workspace.
+
+## What is never selected
+
+| Left out | Why |
+| --- | --- |
+| Active runs | Only completed runs (`finished`, `cancelled` or `errored`) can be deleted |
+| Runs already being cleaned up | Their deletion is already under way |
+| Runs whose size cannot be confirmed | Shown as unknown rather than guessed |
+
+Completed runs that are left out still count towards the count and storage rules.
+They are kept, but they use part of the allowance.
+
+## Deleting one run
+
+From a completed run's page you can delete just that run. It goes through the same
+preview and apply steps, and the same checks.
+
+## What deleting removes
+
+Deleting a run removes its result and the rest of its artefacts from disk, then
+returns their space to the installation. The work happens in steps, and the
+status shows which one each run has reached:
+
+| Phase | Meaning |
+| --- | --- |
+| `admitted` | Accepted for deletion; nothing removed yet |
+| `backend_files` | The backend is removing its copy of the files |
+| `agent_cleanup` | The agent is removing its own copy and confirming it is gone |
+| `settling` | Both sides have confirmed; the space is being returned |
+| `settled` | Done; the space is available again |
+| `blocked` | Cleanup could not continue; the status gives a reason |
+
+Space returns only after **both** the backend and the agent have confirmed that
+the files are gone. A failed or interrupted deletion therefore never frees space
+that is still used on disk. Estimated sizes in a preview are not freed space.
+
+:::note
+Cleanup space is reserved in advance when a run is queued, so a full disk cannot
+stop a deletion from finishing.
+:::
+
+## When storage is full
+
+Running out of output space stops new runs from being admitted. It never
+deletes anything by itself. Free space by deleting runs or applying retention, or
+add space; see [Change capacity](/guides/change-capacity/).
+
+## Things that are kept
+
+- **Workspaces.** Deleting a workspace only hides it. Its runs and files stay and
+  keep their space. Delete its runs first if you need the space back.
+- **Inputs in use.** An input that a suite revision uses is pinned and cannot be
+  deleted until no revision needs it.
+- **Suite revisions.** Revisions are immutable and are not removed by retention.
+
+See [Runs](/concepts/runs/) for how deleting relates to a run's lifecycle.

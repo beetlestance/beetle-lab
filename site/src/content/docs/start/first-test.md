@@ -15,8 +15,8 @@ one of each from the home page. Workspaces can hold folders, so you can group
 suites by service or team later.
 
 Settings such as run budgets and retention are inherited: installation, then
-organisation, then workspace. Each level can only narrow what the level above
-allows.
+organisation, then workspace. The most specific value wins, within the
+installation's limits; see [Organisations and workspaces](/concepts/workspaces/).
 
 ## 2. Write a suite
 

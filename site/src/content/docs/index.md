@@ -54,5 +54,5 @@ hero:
 </nav>
 
 Beetle Lab is open source under the MIT licence. It is built for one trusted
-administrator; read the [security model](/concepts/how-it-works/#trust-and-security)
+administrator; read the [security model](/concepts/security/)
 before you install it on a shared machine.
