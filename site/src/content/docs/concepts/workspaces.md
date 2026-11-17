@@ -17,6 +17,20 @@ Installation
 
 These levels are for organising work. They are not accounts or permissions.
 
+## Finding your way in the app
+
+The app's address follows the same hierarchy, and the screens follow it too:
+
+- The sidebar links to **Organizations** (the list you start from),
+  **Installation settings** and the **API reference**.
+- An organisation's page shows its overview and its workspaces, with a link to
+  **Organization settings**.
+- A workspace's page shows its overview and folders, with links to **Workspace
+  settings**, **Suites**, **Inputs** and **Runs**.
+- **Search commands** at the top, or Ctrl+K (⌘K on a Mac), lists these pages
+  and lets you jump by name to a workspace of the organisation you are in, or to
+  a suite or run of the workspace you are in.
+
 ## Organisations
 
 An **organisation** is the top level you create. It has a name and a **slug**:
@@ -105,7 +119,7 @@ later never alters a run that is already queued or finished.
 
 | What | Rule |
 | --- | --- |
-| Organisation | Only when it has no workspaces, counting retired ones |
+| Organisation | Refused while any workspace is active; retired if all its workspaces are retired |
 | Folder | Only when it is empty; the root folder cannot be deleted |
 | Workspace | Retired: hidden, with its data kept |
 
@@ -113,8 +127,11 @@ Deleting a workspace **retires** it. A retired workspace disappears from lists a
 can no longer be opened, but its suites, runs and files stay on disk and still use
 their space. You can create a new workspace with the same name; the retired one
 never comes back. A workspace with an active run, export or unfinished upload
-cannot be deleted until that work ends. Because retired workspaces still count, an
-organisation that has ever had a workspace cannot be deleted.
+cannot be deleted until that work ends.
+
+An organisation with no workspaces at all is removed. One whose workspaces are all
+retired is **retired** the same way: it disappears from lists, its settings and
+retired workspaces are kept, and its slug becomes free for a new organisation.
 
 To free the space a workspace uses, delete its runs first. See
 [Retention and deleting](/concepts/retention/).
