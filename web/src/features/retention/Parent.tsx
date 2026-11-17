@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { SettingsScope, WorkspaceScope, RetentionTraversalPage, RetentionPreview } from '@beetle/contracts/api';
 import { useApi } from '../../app/api.js';
+import { Banner } from '../../components/Banner.js';
+import { Button, buttonClass } from '../../components/Button.js';
 import { routes } from '../../app/routes.js';
 import { useRetentionCommand } from './useCommand.js';
-import { SnapshotSummary } from './Preview.js';
+import { PreviewIntro, SnapshotSummary } from './Preview.js';
 import './retention.css';
 interface Props {
   readonly scope: Exclude<SettingsScope, WorkspaceScope>;
@@ -15,9 +17,9 @@ export function ParentRetentionControls(props: Props) {
   const [open, setOpen] = useState(false);
   return (
     <section className="retention-panel" aria-label="Workspace retention traversal">
-      <button onClick={() => setOpen((value) => !value)}>
+      <Button onClick={() => setOpen((value) => !value)}>
         {open ? 'Close workspace traversal' : 'Manage workspace retention'}
-      </button>
+      </Button>
       {open && <ParentScan key={JSON.stringify(props.scope)} {...props} />}
     </section>
   );
@@ -52,9 +54,9 @@ function ParentScan({ scope, settingsId, version }: Props) {
         This is a live, partial scan. Each workspace keeps its own policy and budget. New workspaces may require a fresh
         scan.
       </p>
-      <button disabled={command.blocked} onClick={() => preview()}>
+      <Button variant="primary" disabled={command.blocked} onClick={() => preview()}>
         {page ? 'Start fresh workspace scan' : 'Preview workspaces'}
-      </button>
+      </Button>
       {page && (
         <>
           <p>Coverage: live / partial · captured {page.capturedAt}.</p>
@@ -64,23 +66,27 @@ function ParentScan({ scope, settingsId, version }: Props) {
             <p>No workspace remains in this scan. This empty result is not stored and has no replay guarantee.</p>
           )}
           {page.nextCursor ? (
-            <button disabled={command.blocked} onClick={() => preview(true)}>
+            <Button disabled={command.blocked} onClick={() => preview(true)}>
               Preview next workspace window
-            </button>
+            </Button>
           ) : (
             <p>The scan reached its horizon. This does not establish complete coverage.</p>
           )}
         </>
       )}
       {command.message && (
-        <div role="alert">
-          <p>{command.message}</p>
-          {command.unknown && (
-            <button disabled={command.pending} onClick={command.retry}>
-              Retry identical traversal request
-            </button>
-          )}
-        </div>
+        <Banner
+          tone="danger"
+          actions={
+            command.unknown && (
+              <Button loading={command.pending} loadingLabel="Retrying…" onClick={command.retry}>
+                Retry identical traversal request
+              </Button>
+            )
+          }
+        >
+          {command.message}
+        </Banner>
       )}
       <p>
         Apply each captured batch explicitly in its workspace. Applying a batch can make its remaining workspace cursor
@@ -96,11 +102,14 @@ function WorkspacePreview({ preview }: { preview: RetentionPreview }) {
     `?retentionBatch=${preview.snapshotId}`;
   return (
     <>
-      <p>
+      <p className="retention-muted">
         Workspace {preview.scope.workspaceId} · batch {preview.snapshotId}
       </p>
+      <PreviewIntro preview={preview} />
       <SnapshotSummary preview={preview} />
-      <Link to={path}>Open batch in workspace</Link>
+      <Link className={buttonClass('secondary', 'sm')} to={path}>
+        Open batch in workspace
+      </Link>
     </>
   );
 }

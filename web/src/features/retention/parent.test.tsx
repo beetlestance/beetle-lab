@@ -22,7 +22,7 @@ it('opens explicitly, labels live partial coverage and links to the exact worksp
  const f=testClient(request=>json(page(request.body!)));mountParent(f.client);expect(f.records).toHaveLength(0);
  fireEvent.click(screen.getByRole('button',{name:'Manage workspace retention'}));expect(f.records).toHaveLength(0);fireEvent.click(screen.getByRole('button',{name:'Preview workspaces'}));
  const link=await screen.findByRole('link',{name:'Open batch in workspace'});expect(link).toHaveAttribute('href',routes.workspaceSettings(scope.organizationId,scope.workspaceId)+'?retentionBatch='+id);
- expect(screen.getByText(/Coverage: live \/ partial/)).toBeInTheDocument();expect(screen.queryByRole('button',{name:/Apply deletion/})).not.toBeInTheDocument();expect(f.records).toHaveLength(1);expect(f.records[0]!.path).toBe('/api/v2/settings/retention-preview');
+ expect(screen.getByText(/Coverage: live \/ partial/)).toBeInTheDocument();expect(screen.queryByRole('button',{name:/Remove \d/})).not.toBeInTheDocument();expect(f.records).toHaveLength(1);expect(f.records[0]!.path).toBe('/api/v2/settings/retention-preview');
 });
 it('continues the stored cursor and original settings pin despite a background settings update',async()=>{
  const f=testClient(request=>json(page(request.body!)));const view=mountParent(f.client);fireEvent.click(screen.getByRole('button',{name:'Manage workspace retention'}));fireEvent.click(screen.getByRole('button',{name:'Preview workspaces'}));
@@ -40,6 +40,6 @@ it('does not present a non-durable empty result as stored work or completion',as
 });
 it('opens a linked workspace batch from durable reads without creating another preview or Apply',async()=>{
  const f=fixture();f.storePreview({...preview({scope,requestId:ids.request,settingsId:ids.request,expectedVersion:1}),scanned:100,nextCursor:null});mount(f.client,routes.workspaceSettings(scope.organizationId,scope.workspaceId)+'?retentionBatch='+id);
- await screen.findByRole('button',{name:'Apply deletion of 1 runs'});expect(f.records.some(request=>request.method==='POST')).toBe(false);expect(screen.getByRole('region',{name:'Selected retention batch'})).toBeInTheDocument();expect(screen.queryByRole('button',{name:'Preview next window'})).not.toBeInTheDocument();
- fireEvent.click(screen.getByRole('button',{name:'Apply deletion of 1 runs'}));await screen.findByText('Waiting for authoritative cleanup and settlement confirmation.');expect(f.records.filter(request=>request.path.endsWith('/retention-apply'))).toHaveLength(1);
+ await screen.findByRole('button',{name:'Remove 1 run'});expect(f.records.some(request=>request.method==='POST')).toBe(false);expect(screen.getByRole('region',{name:'Selected retention batch'})).toBeInTheDocument();expect(screen.queryByRole('button',{name:'Preview next window'})).not.toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Remove 1 run'}));await screen.findByText('Waiting for authoritative cleanup and settlement confirmation.');expect(f.records.filter(request=>request.path.endsWith('/retention-apply'))).toHaveLength(1);
 });

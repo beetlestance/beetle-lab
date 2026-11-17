@@ -1,4 +1,8 @@
-import { SnapshotSummary } from './Preview.js';
+import { PreviewIntro, SnapshotSummary } from './Preview.js';
+import { Progress } from './Progress.js';
+import { clock, runs, shortId } from './format.js';
+import { Banner } from '../../components/Banner.js';
+import { Button } from '../../components/Button.js';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { RetentionPreview, RetentionBatchStatus, WorkspaceScope } from '@beetle/contracts/api';
 import { useApi, readResult } from '../../app/api.js';
@@ -30,17 +34,23 @@ export function RetentionBatch(props: Props) {
     refetchIntervalInBackground: false,
   });
   return (
-    <section aria-label="Selected retention batch">
-      <h3>Batch {props.id}</h3>
-      <button
-        disabled={preview.isFetching || status.isFetching}
-        onClick={() => {
-          void preview.refetch();
-          void status.refetch();
-        }}
-      >
-        Refresh batch
-      </button>
+    <section className="retention-batch" aria-label="Selected retention batch">
+      <div className="retention-batch-bar">
+        <span className="retention-muted" title={props.id}>
+          Batch {shortId(props.id)}
+        </span>
+        <Button
+          variant="text"
+          size="sm"
+          disabled={preview.isFetching || status.isFetching}
+          onClick={() => {
+            void preview.refetch();
+            void status.refetch();
+          }}
+        >
+          Refresh batch
+        </Button>
+      </div>
       <QueryState query={preview}>
         {(value) => (
           <QueryState query={status}>
@@ -98,66 +108,72 @@ function BatchView({ scope, id, command, changed, selected, removed, preview, st
       () => removed(),
     );
   }
+  if (status.state === 'preview')
+    return (
+      <PreviewActions
+        preview={preview}
+        command={command}
+        expired={expired}
+        apply={apply}
+        next={next}
+        discard={discard}
+      />
+    );
   return (
     <>
-      <SnapshotSummary preview={preview} />
-      {status.state === 'preview' && (
-        <>
-          <button disabled={command.blocked || expired || preview.candidates.length === 0} onClick={apply}>
-            Apply deletion of {preview.candidates.length} runs
-          </button>
-          {preview.nextCursor && (
-            <button disabled={command.blocked || expired} onClick={next}>
-              Preview next window
-            </button>
-          )}
-          {expired && <p role="status">This preview expired. Discard it and start a fresh preview.</p>}
-          <button disabled={command.blocked} onClick={discard}>
-            Discard this preview
-          </button>
-        </>
-      )}
-      <Progress value={status} />
+      <Progress value={status} preview={preview} />
       {status.state === 'completed' && (
-        <>
-          <p>Acknowledgement removes the saved batch and its status. Completed deletions remain final.</p>
-          <button disabled={command.blocked} onClick={discard}>
+        <div className="retention-actions">
+          <p className="retention-note">
+            Acknowledgement removes the saved batch and its status. Completed deletions remain final.
+          </p>
+          <Button disabled={command.blocked} onClick={discard}>
             Acknowledge completed batch
-          </button>
-        </>
+          </Button>
+        </div>
       )}
     </>
   );
 }
-function Progress({ value }: { value: RetentionBatchStatus }) {
-  return (
-    <section aria-label="Deletion progress">
-      <h4>{value.state}</h4>
-      {value.state !== 'completed' && <DriverAvailability state={value.driverState} />}{' '}
-      <p>
-        {value.completedCount} of {value.items.length} settled. Confirmed logical credit: {value.refundedLogicalBytes}{' '}
-        bytes.
-      </p>
-      {value.state === 'applied' && <p>Waiting for authoritative cleanup and settlement confirmation.</p>}
-      <ul>
-        {value.items.map((item) => (
-          <li key={item.deletionId}>
-            {item.runId}: {item.phase}; files absent {item.absentCount ?? 'unknown'} of {item.fileCount ?? 'unknown'}
-            {item.error && <strong role="alert"> — {item.error}</strong>}
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
 
-function DriverAvailability({ state }: { state: RetentionBatchStatus['driverState'] }) {
-  const messages = {
-    running: null,
-    stopped: 'Automatic cleanup is stopped. Pending deletion and its storage charges remain protected.',
-    disabled: 'Automatic cleanup is not configured. Accepted deletion waits for an installed cleanup driver.',
-    unknown: 'Automatic cleanup availability is unknown. No completion or reclaimed space is assumed.',
-  };
-  const message = messages[state];
-  return message ? <p role="alert">{message}</p> : null;
+interface PreviewActionsProps {
+  preview: RetentionPreview;
+  command: RetentionCommand;
+  expired: boolean;
+  apply(): void;
+  next(): void;
+  discard(): void;
+}
+function PreviewActions({ preview, command, expired, apply, next, discard }: PreviewActionsProps) {
+  const count = preview.candidates.length;
+  const manual = preview.kind === 'manual' && count === 1;
+  return (
+    <>
+      <PreviewIntro preview={preview} />
+      <SnapshotSummary preview={preview} />
+      <p className="retention-note">
+        Apply removes only the runs listed here. If the selection changes after {clock(preview.capturedAt)}, for example
+        a run is pinned, Apply is refused and nothing is removed; start a fresh preview.
+      </p>
+      {expired && <Banner tone="warning">This preview expired. Discard it and start a fresh preview.</Banner>}
+      <div className="retention-actions">
+        {preview.nextCursor && (
+          <Button disabled={command.blocked || expired} onClick={next}>
+            Preview next window
+          </Button>
+        )}
+        <Button variant="text" disabled={command.blocked} onClick={discard}>
+          Discard preview
+        </Button>
+        <Button
+          variant="danger"
+          disabled={command.blocked || expired || count === 0}
+          loading={command.pending}
+          onClick={apply}
+        >
+          {manual ? `Delete run ${shortId(preview.candidates[0]!.id)}` : `Remove ${runs(count)}`}
+        </Button>
+      </div>
+    </>
+  );
 }

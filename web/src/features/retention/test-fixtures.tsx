@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 import type { RetentionPreview, RetentionBatchStatus, RetentionApplyReceipt } from '@beetle/contracts/api';
 import { ApiContext } from '../../app/api.js';
 import { createQueryClient } from '../../app/queries.js';
@@ -121,7 +122,9 @@ export function fixture(intercept?: (request: RequestRecord) => Response | Promi
       const view = render(
         <ApiContext.Provider value={f.client}>
           <QueryClientProvider client={client}>
-            <RetentionControls scope={scope} {...(run ? { run } : {})} />
+            <MemoryRouter>
+              <RetentionControls scope={scope} {...(run ? { run } : {})} />
+            </MemoryRouter>
           </QueryClientProvider>
         </ApiContext.Provider>,
       );

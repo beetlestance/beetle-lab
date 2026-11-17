@@ -1,8 +1,11 @@
 # Protected retention controls
 
-Public entry RetentionControls({scope, run?}); workspace settings and terminal Run
-views open it explicitly. Collapsed controls perform no extra reads. Existing styles
-are retained; this is functional UI, not the deferred redesign.
+Penpot "Settings / Workspace / Retention preview" and "… / Retention progress".
+Public entry RetentionControls({scope, run?, initialSnapshotId?}); workspace settings
+and runs/result DeleteRun open it explicitly. Collapsed controls perform no reads.
+Preview.tsx: heading, rule sentence, stat cards, first seven candidates then "…and N
+more", "Never removed by this preview". Progress.tsx: removed count/bar, stage table,
+one danger banner per blocked run (link to the run). Batches.tsx: saved batches.
 
 Generated ApiClient owns closed schemas and route/request/reply binding. Every
 mutation captures one request body/UUID; unknown outcomes permit only explicit
@@ -10,26 +13,26 @@ identical replay. Scope/API retirement aborts and fences callbacks without imply
 rollback. Backend originals and cleanup ownership remain authoritative.
 
 One bounded shared ReadAdmission serialises exposed API read promises, at most four
-waiting intents with a five-second deadline. It does not strengthen underlying
-fetch cancellation. Run views share their existing gate; standalone settings get
-an owned gate. Unmount cancels/removes scoped retention queries.
+waiting intents with a five-second deadline. Run views share their gate; standalone
+settings get an owned gate. Unmount cancels/removes scoped retention queries.
 
-Batch inventory is at most eight. Original previews recover immutable settings,
-membership and continuation; Apply admits the exact displayed nonempty batch.
-Expired previews cannot Apply. Continuation selects the newly committed page.
-Status polls while applied and visible, stops on errors/completion. Unknown bytes
-stay unknown. Counts/credit come only from status, with no optimistic deletion or
-physical-free-space claim. Explicit acknowledgement removes replay/status records;
-a missing response/ID cannot fabricate acknowledgement or another refund.
+Batch inventory is at most eight. Apply admits the exact displayed nonempty batch;
+any selection drift refuses the whole Apply (all or none). Expired previews cannot
+Apply. Continuation selects the newly committed page. Status polls while applied and
+visible. Counts and credit come only from status; "would free" is the logical byte
+estimate, credit is "returned to the storage budget", never physical free space.
+Explicit acknowledgement removes replay/status records.
 
-Checks: scoped retention UI/lifetime and affected run/settings cases; types, lint,
-architecture and web build. Browser visual inspection requires an available browser
-execution tool; no production service restart is authorised for these controls.
-Parent traversal and driver diagnostics are separate remaining owners.
+Not shown (no API field): candidate suite and finish time (a getRun per row would
+exceed the read gate), applied-at time, freed bytes per saved batch, discarded
+batches (gone from the list), a dedicated retention route/breadcrumb (app-owned).
+"Open diagnostics" opens the run page; no diagnostics deep link exists.
 
-ParentRetentionControls in installation/org settings explicitly creates one live,
-partial traversal window. It retains the parent cursor/settings pin for continuation
-and an identical request on unknown outcome; no parent Apply exists. A scope-bound
-workspace link carries only the saved batch UUID. Workspace settings validate that
-query ID, recover preview/status and require explicit Apply. Empty parent responses
-are labelled non-durable; no installation-wide coverage or combined budget is shown.
+ParentRetentionControls in installation/org settings creates one live, partial
+traversal window; it keeps the parent cursor/settings pin and an identical request
+on unknown outcome; no parent Apply. The workspace link carries only the batch UUID;
+workspace settings validate it, recover preview/status and require explicit Apply.
+Empty parent responses are labelled non-durable; no installation-wide coverage.
+
+Check: vitest run web/src/features/retention web/src/features/settings
+web/src/features/runs/result web/src/app/settings*.test.tsx.

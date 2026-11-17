@@ -1,5 +1,182 @@
-.retention-panel { margin-block: var(--space-6); padding-block: var(--space-4); border-top: var(--border-width) solid var(--border); }
-.retention-panel button { margin: var(--space-1) var(--space-2) var(--space-1) 0; }
-.retention-panel table { width: 100%; border-collapse: collapse; text-align: left; }
-.retention-panel th, .retention-panel td { padding: var(--space-2); border-bottom: var(--border-width) solid var(--border); overflow-wrap: anywhere; }
-.retention-panel ul { padding-left: var(--space-6); overflow-wrap: anywhere; }
+.retention-panel {
+  display: grid;
+  gap: var(--s-16);
+  justify-items: start;
+  margin-block: var(--s-24);
+  padding-block: var(--s-16);
+  border-top: 1px solid var(--line);
+}
+.retention-panel > * {
+  justify-self: stretch;
+}
+.retention-panel > .btn {
+  justify-self: start;
+}
+.retention-intro {
+  display: grid;
+  gap: var(--s-8);
+}
+.retention-intro h2 {
+  font-size: var(--fs-2xl);
+  line-height: var(--lh-heading);
+}
+.retention-intro h3 {
+  font-size: var(--fs-3xl);
+  line-height: var(--lh-heading);
+  font-weight: 500;
+}
+.retention-intro p {
+  max-width: 80ch;
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+}
+.retention-start {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-16);
+  align-items: center;
+  justify-content: space-between;
+}
+.retention-muted,
+.retention-note {
+  color: var(--mute);
+}
+.retention-note {
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+}
+.retention-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--s-10);
+  margin: 0;
+}
+.retention-stat {
+  display: grid;
+  gap: var(--s-6);
+  align-content: start;
+  padding: var(--s-16) var(--s-18);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--panel);
+}
+.retention-stat dt {
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
+.retention-stat dd {
+  margin: 0;
+  font-size: var(--fs-2xl);
+  font-variant-numeric: tabular-nums;
+}
+.retention-stat .retention-stat-pass {
+  color: var(--green);
+}
+.retention-stat .retention-stat-note {
+  color: var(--dim);
+  font-size: var(--fs-xs);
+}
+.retention-run {
+  font-family: var(--font-mono);
+}
+.retention-table td {
+  overflow-wrap: anywhere;
+}
+.retention-protected {
+  display: grid;
+  gap: var(--s-10);
+  padding: var(--s-16) var(--s-18);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+.retention-protected h4 {
+  color: var(--mute);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+.retention-protected ul {
+  display: grid;
+  gap: var(--s-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.retention-protected li {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 5fr);
+  gap: var(--s-16);
+  font-size: var(--fs-md);
+}
+.retention-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-12);
+  align-items: center;
+  justify-content: flex-end;
+}
+.retention-batch,
+.retention-progress,
+.retention-saved {
+  display: grid;
+  gap: var(--s-16);
+}
+.retention-batch-bar {
+  display: flex;
+  gap: var(--s-12);
+  align-items: center;
+  justify-content: space-between;
+}
+.retention-batch-bar h3 {
+  font-size: var(--fs-xl);
+  font-weight: 500;
+}
+.retention-meter {
+  display: grid;
+  gap: var(--s-10);
+}
+.retention-meter p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-8);
+  justify-content: space-between;
+  font-variant-numeric: tabular-nums;
+}
+.retention-meter strong {
+  font-weight: 500;
+}
+.retention-meter progress {
+  appearance: none;
+  width: 100%;
+  height: var(--s-6);
+  border: 0;
+  border-radius: var(--r-xs);
+  background: var(--data-track);
+  overflow: hidden;
+}
+.retention-meter progress::-webkit-progress-bar {
+  background: var(--data-track);
+}
+.retention-meter progress::-webkit-progress-value {
+  background: var(--green);
+}
+.retention-meter progress::-moz-progress-bar {
+  background: var(--green);
+}
+.retention-stage-pass {
+  color: var(--green);
+}
+.retention-stage-fail {
+  color: var(--red);
+}
+@media (max-width: 760px) {
+  .retention-protected li {
+    grid-template-columns: 1fr;
+    gap: var(--s-2);
+  }
+  .retention-actions {
+    justify-content: stretch;
+  }
+  .retention-actions .btn {
+    flex: 1 1 auto;
+  }
+}
