@@ -468,7 +468,7 @@ ul.tabs {
   display: grid;
   place-items: center;
   padding: var(--s-16);
-  background: rgb(0 0 0 / 55%);
+  background: var(--scrim);
   animation: fade-in var(--motion-base) var(--ease-out);
 }
 .dialog {

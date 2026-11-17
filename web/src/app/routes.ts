@@ -15,6 +15,9 @@ export const routes = {
   inputsPattern: '/organizations/:organizationId/workspaces/:workspaceId/inputs',
   inputs: (org: string, workspace: string) =>
     `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/inputs`,
+  exportsPattern: '/organizations/:organizationId/workspaces/:workspaceId/exports',
+  exports: (org: string, workspace: string) =>
+    `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/exports`,
   suitesPattern: '/organizations/:organizationId/workspaces/:workspaceId/suites',
   suitePattern: '/organizations/:organizationId/workspaces/:workspaceId/suites/:suiteId',
   suites: (org: string, workspace: string) =>

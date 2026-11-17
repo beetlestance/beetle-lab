@@ -69,6 +69,7 @@ function AppRoutes() {
       <Route path={routes.runsPattern} element={<RunsRoute />} />
       <Route path={routes.runPattern} element={<RunsRoute />} />
       <Route path={routes.inputsPattern} element={<ScopeRoute view="inputs" />} />
+      <Route path={routes.exportsPattern} element={<ScopeRoute view="exports" />} />
       <Route path={routes.suitesPattern} element={<SuitesRoute />} />
       <Route path={routes.suitePattern} element={<SuitesRoute />} />
       <Route path={routes.suiteScriptPattern} element={<SuiteScriptRoute />} />
@@ -83,12 +84,12 @@ function AppRoutes() {
   );
 }
 
-function ScopeRoute({ view }: { view?: 'inputs' }) {
+function ScopeRoute({ view }: { view?: 'inputs' | 'exports' }) {
   const { organizationId, workspaceId } = useParams();
   if (
     !validId(organizationId) ||
     (workspaceId !== undefined && !validId(workspaceId)) ||
-    (view === 'inputs' && !validId(workspaceId))
+    (view !== undefined && !validId(workspaceId))
   )
     return <InvalidRoute />;
   return (

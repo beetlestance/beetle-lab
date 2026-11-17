@@ -25,8 +25,8 @@ Checks: web/src/features/exports/*.test.tsx.
   installed profile and the default options.
 - `scriptText.ts` reads a ready script once: one bounded GET of exactly the
   published bytes, SHA-256 checked, strict UTF-8.
-- `ExportsTable.tsx` (`WorkspaceExports`) is the Exports workspace tab; it is not
-  mounted until wave 0 adds a route or tab. Suite names come from one page of 100
+- `ExportsTable.tsx` (`WorkspaceExports`) is the Exports workspace tab, mounted at
+  `routes.exports` through the workspace scope route. Suite names come from one page of 100
   suites; revision ordinals from at most 32 reads.
 
 Checks: `dialog.test.tsx`.

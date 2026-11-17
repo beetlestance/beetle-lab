@@ -1,22 +1,10 @@
 import { useEffect, useState } from 'react';
 import type { FolderSummary, SuiteGroup, Workspace } from '@beetle/contracts/api';
-import { routes } from '../../app/routes.js';
-import { NavTabs } from '../../components/Tabs.js';
+import { WorkspaceTabs as SharedTabs } from '../../app/shell/WorkspaceTabs.js';
 
 /** Workspace section tabs shown on the Suites boards; Suites is current. */
 export function WorkspaceTabs({ workspace }: { workspace: Workspace }) {
-  const org = workspace.scope.organizationId;
-  return (
-    <NavTabs
-      label="Workspace sections"
-      items={[
-        { to: routes.suites(org, workspace.id), label: 'Suites', current: true },
-        { to: routes.runs(org, workspace.id), label: 'Runs', current: false },
-        { to: routes.inputs(org, workspace.id), label: 'Inputs', current: false },
-        { to: routes.workspaceSettings(org, workspace.id), label: 'Settings', current: false },
-      ]}
-    />
-  );
+  return <SharedTabs organizationId={workspace.scope.organizationId} workspaceId={workspace.id} current="suites" />;
 }
 export function useDebounced<T>(value: T, ms = 300): T {
   const [current, setCurrent] = useState(value);

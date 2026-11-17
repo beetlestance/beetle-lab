@@ -114,6 +114,8 @@
 }
 
 :root {
+  /* Backdrop behind dialogs and overlays (same in both skins) */
+  --scrim: rgb(0 0 0 / 55%);
   --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
   /* Type scale (font.size.*) */
   --fs-xs: 12px;

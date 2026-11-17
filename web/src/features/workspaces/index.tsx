@@ -11,7 +11,8 @@ import { NotFound } from '../../components/NotFound.js';
 import type { NotFoundKind } from '../../components/NotFound.js';
 import { QueryState } from '../../components/QueryState.js';
 import { LoadingState } from '../../components/States.js';
-import { NavTabs } from '../../components/Tabs.js';
+import { WorkspaceTabs } from '../../app/shell/WorkspaceTabs.js';
+import { WorkspaceExports } from '../exports/ExportsTable.js';
 import { WorkspaceList } from './WorkspaceList.js';
 import { FolderList } from './FolderList.js';
 const WorkspaceInputs = lazy(() =>
@@ -51,7 +52,7 @@ export function OrganizationScope({
 }: {
   organizationId: string;
   workspaceId?: string;
-  view?: 'inputs';
+  view?: 'inputs' | 'exports' | undefined;
 }) {
   const api = useApi();
   const client = useQueryClient();
@@ -99,7 +100,7 @@ function WorkspaceScope({
 }: {
   organizationId: string;
   workspaceId: string;
-  view?: 'inputs';
+  view?: 'inputs' | 'exports' | undefined;
 }) {
   const api = useApi();
   const client = useQueryClient();
@@ -123,20 +124,14 @@ function WorkspaceScope({
     >
       {(data) => (
         <div className="workspace-page">
-          <NavTabs
-            label="Workspace navigation"
-            items={[
-              { to: routes.suites(organizationId, workspaceId), label: 'Suites', current: false },
-              { to: routes.runs(organizationId, workspaceId), label: 'Runs', current: false },
-              { to: routes.inputs(organizationId, workspaceId), label: 'Inputs', current: view === 'inputs' },
-              {
-                to: routes.workspaceSettings(organizationId, workspaceId),
-                label: 'Workspace settings',
-                current: false,
-              },
-            ]}
+          <WorkspaceTabs
+            organizationId={organizationId}
+            workspaceId={workspaceId}
+            current={view === 'inputs' ? 'inputs' : view === 'exports' ? 'exports' : 'overview'}
           />
-          {view === 'inputs' ? (
+          {view === 'exports' ? (
+            <WorkspaceExports organizationId={organizationId} workspaceId={workspaceId} />
+          ) : view === 'inputs' ? (
             <>
               <p className="workspace-label">
                 Workspace <strong>{data.name}</strong>

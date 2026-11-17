@@ -7,7 +7,7 @@
   align-items: flex-start;
   justify-content: center;
   padding: 96px var(--s-16) var(--s-16);
-  background: rgb(0 0 0 / 55%);
+  background: var(--scrim);
 }
 .command-dialog {
   display: grid;
