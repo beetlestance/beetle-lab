@@ -27,11 +27,17 @@ export function parseDraft(text: string): Config {
 export function draftText(value: unknown) {
   return encodeJson(value, SUITE_MAXIMUM_CONFIG_BYTES);
 }
+/** Indented text for the editor; falls back to compact text when indentation would pass the byte limit. */
+export function formatDraft(value: unknown): string {
+  const compact = draftText(value);
+  const pretty = JSON.stringify(value, null, 2);
+  return new TextEncoder().encode(pretty).byteLength <= SUITE_MAXIMUM_CONFIG_BYTES ? pretty : compact;
+}
 export function updatePart(text: string, key: string, value: unknown): string {
   return draftText({ ...parseDraft(text), [key]: value });
 }
 export function starter(): string {
-  return draftText({
+  return formatDraft({
     version: 1,
     target: 'http://target.invalid',
     requests: [{ id: 'get', name: 'Get', method: 'GET', path: '/', query: {}, headers: {}, assertions: [] }],

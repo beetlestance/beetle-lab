@@ -1,0 +1,142 @@
+/* Script / revision N, with Changes (side by side) and One column. */
+.script-page {
+  display: grid;
+  gap: var(--s-16);
+  min-width: 0;
+}
+.script-crumbs a {
+  color: var(--mute);
+}
+.script-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-16);
+}
+.script-header h1 {
+  margin: 0;
+}
+.script-message,
+.script-meta {
+  margin: var(--s-6) 0 0;
+}
+.script-meta,
+.script-note {
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
+.script-note {
+  margin: var(--s-8) 0;
+}
+.script-note code,
+.script-lines code,
+.diff-text code {
+  font-family: var(--font-mono);
+}
+.script-actions,
+.script-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--s-12);
+}
+.script-toolbar {
+  justify-content: space-between;
+  margin-bottom: var(--s-16);
+}
+.script-source,
+.diff-scroll {
+  max-height: 640px;
+  overflow: auto;
+  border-radius: var(--r-xl);
+  background: var(--panel);
+}
+.script-lines {
+  margin: 0;
+  padding: var(--s-16) var(--s-16) var(--s-16) var(--s-48);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  white-space: pre;
+}
+.script-lines li::marker {
+  color: var(--dim);
+  font-family: var(--font-mono);
+}
+.script-diff-summary {
+  margin: 0;
+  font-weight: 500;
+}
+.script-bullets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-8);
+  margin: var(--s-12) 0;
+  padding: 0;
+  list-style: none;
+}
+.script-bullets li {
+  padding: var(--s-4) var(--s-10);
+  border-radius: var(--r-sm);
+  background: var(--chip-strong);
+  font-size: var(--fs-sm);
+}
+.diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+.diff-split {
+  table-layout: fixed;
+}
+.diff-number,
+.diff-mark {
+  width: 48px;
+  padding: 0 var(--s-8);
+  color: var(--dim);
+  font-family: var(--font-mono);
+  text-align: right;
+  user-select: none;
+}
+.diff-mark {
+  width: 24px;
+  text-align: center;
+}
+.diff-text {
+  padding: 0 var(--s-12);
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.diff-add .diff-text,
+.diff-text.diff-add {
+  background: var(--data-area);
+}
+.diff-del .diff-text,
+.diff-text.diff-del {
+  background: var(--danger-bg);
+}
+.diff-unified .diff-add .diff-mark {
+  color: var(--green);
+}
+.diff-unified .diff-del .diff-mark {
+  color: var(--red);
+}
+.diff-fold td {
+  padding: var(--s-4) var(--s-12);
+  border-block: 1px solid var(--line);
+}
+.diff-fold button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--mute);
+  font: inherit;
+  cursor: pointer;
+}
+@media (max-width: 600px) {
+  .script-actions {
+    width: 100%;
+  }
+}

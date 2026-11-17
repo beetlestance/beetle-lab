@@ -1,0 +1,321 @@
+/* Suite / Edit: form cards on the left, save panel on the right; one column (panel below) under 1100px. */
+.suite-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: var(--s-32);
+  align-items: start;
+  margin-top: var(--s-24);
+}
+.suite-editor-side {
+  position: sticky;
+  top: var(--s-24);
+}
+.suite-config {
+  display: grid;
+  gap: var(--s-24);
+}
+.suite-config > .segmented {
+  justify-self: start;
+}
+.editor-sections {
+  display: grid;
+  gap: var(--s-24);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.editor-card,
+.save-panel {
+  display: grid;
+  gap: var(--s-16);
+  min-width: 0;
+  padding: var(--s-20) var(--s-20) var(--s-24);
+  border-radius: var(--r-xl);
+  background: var(--panel);
+}
+.editor-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-12);
+}
+.editor-card h3,
+.save-panel h2 {
+  margin: 0;
+  font-size: var(--fs-xl);
+  font-weight: 500;
+}
+.editor-note {
+  margin: 0;
+  color: var(--mute);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--s-12);
+  align-items: end;
+}
+.field-row.four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.request-list,
+.editor-list {
+  display: grid;
+  gap: var(--s-16);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.request-row {
+  display: grid;
+  gap: var(--s-12);
+  padding-bottom: var(--s-16);
+  border-bottom: 1px solid var(--line);
+}
+.request-row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.request-fields {
+  grid-template-columns: 96px minmax(0, 2.4fr) 76px minmax(0, 1.1fr) auto;
+}
+.threshold-row {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+.dataset-row {
+  grid-template-columns: minmax(0, 2.4fr) minmax(0, 1.2fr) auto;
+}
+.pair-row,
+.stage-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+.check-row {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+.mix-row {
+  grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(0, 1fr));
+}
+.mix-name {
+  align-self: center;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+.row-actions {
+  display: flex;
+  gap: var(--s-4);
+}
+.editor-rows {
+  display: grid;
+  gap: var(--s-12);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.editor-rows legend {
+  margin-bottom: var(--s-8);
+  color: var(--ink);
+  font-size: var(--fs-base);
+  font-weight: 500;
+}
+.editor-rows > .btn,
+.scenario-block > .btn {
+  justify-self: start;
+}
+.scenario-block {
+  display: grid;
+  gap: var(--s-12);
+  padding-bottom: var(--s-16);
+  border-bottom: 1px solid var(--line);
+}
+.check-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-6);
+  padding: var(--s-4) var(--s-10);
+  border-radius: var(--r-sm);
+  background: var(--chip-strong);
+  font-size: var(--fs-sm);
+}
+.chip-note {
+  color: var(--mute);
+}
+.chip-remove {
+  padding: 0 var(--s-2);
+  border: 0;
+  background: none;
+  color: var(--mute);
+  font: inherit;
+  cursor: pointer;
+}
+.chip-remove:hover {
+  color: var(--ink);
+}
+.code-input {
+  min-height: 160px;
+  padding: var(--s-10);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  resize: vertical;
+}
+.config-json {
+  min-height: 560px;
+}
+.value-palette ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-8);
+  margin: var(--s-8) 0;
+  padding: 0;
+  list-style: none;
+}
+.value-palette code {
+  padding: var(--s-2) var(--s-6);
+  border-radius: var(--r-xs);
+  background: var(--field);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+.load-chart {
+  display: grid;
+  gap: var(--s-8);
+  margin: 0;
+}
+.load-chart svg {
+  width: 100%;
+  height: 72px;
+}
+.load-chart-area {
+  fill: var(--data-area);
+}
+.load-chart-line {
+  fill: none;
+  stroke: var(--amber);
+  stroke-width: 1.5;
+}
+.load-phases {
+  display: flex;
+  gap: var(--s-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+  color: var(--mute);
+}
+.load-phases li {
+  display: grid;
+  gap: var(--s-6);
+  min-width: 0;
+}
+.load-phase-tape {
+  order: 2;
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--data-track);
+}
+.load-chart figcaption {
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
+.load-chart figcaption .number {
+  color: var(--ink);
+}
+.save-panel .field {
+  margin-top: var(--s-4);
+}
+.save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-12);
+}
+.save-done {
+  margin: 0;
+  color: var(--green);
+  font-size: var(--fs-sm);
+}
+.save-problems,
+.save-unknown {
+  display: grid;
+  gap: var(--s-8);
+  padding: var(--s-12);
+  border: 1px solid var(--danger-line);
+  border-radius: var(--r-md);
+  background: var(--danger-bg);
+  font-size: var(--fs-sm);
+}
+.save-unknown p,
+.save-problems ul {
+  margin: 0;
+}
+.save-problems-title {
+  margin: 0;
+  color: var(--red);
+  font-weight: 500;
+}
+.save-problems ul {
+  display: grid;
+  gap: var(--s-4);
+  padding-left: var(--s-16);
+}
+.problem-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
+@media (max-width: 1100px) {
+  .suite-editor-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .suite-editor-side {
+    position: static;
+  }
+  .field-row.four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .request-fields {
+    grid-template-columns: 96px minmax(0, 1fr) 76px;
+  }
+  .request-fields > :nth-child(4) {
+    grid-column: 1 / 3;
+  }
+  .mix-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .mix-name {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 600px) {
+  .field-row.four,
+  .request-fields,
+  .threshold-row,
+  .dataset-row,
+  .pair-row,
+  .stage-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .request-fields > :nth-child(4) {
+    grid-column: auto;
+  }
+}
