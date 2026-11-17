@@ -6,7 +6,7 @@ import { runArtifactContentPath } from '@beetle/contracts/api';
 import { artifact, artifactId, apiError, cursor, deferred, emptyEvents, json, mountArtifacts, page, resultSnapshot, run, testClient } from './fixtures.js';
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
-it('composes published descriptors in real RunDetail with browser-owned UUID links and no byte request or completion state', async () => {
+it('composes published descriptors in the shared run body with browser-owned UUID links and no byte request or completion state', async () => {
   const fixture = testClient(request => {
     if (request.path.includes('/artifacts?')) return json(page());
     if (request.path.endsWith('/result')) return json(resultSnapshot());
