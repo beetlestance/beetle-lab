@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, it } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { validateApi } from '@beetle/contracts/api';
 import type { BrowserSession, Suite } from '@beetle/contracts/api';
@@ -10,7 +10,8 @@ import { routes } from '../../app/routes.js';
 import { ids, json, testClient, mount, settings, revision, suiteId, revisionId, scope, runRead, receipt, runId, deferred, budget, apiError } from './test-fixtures.js';
 import type { RequestRecord } from '../../app/test-fixtures.js';
 afterEach(cleanup);
-const path = routes.suite(ids.a, ids.workspace, suiteId);
+// The draft editor (Target URL) is on the Edit tab; Start run launches the saved revision from the header.
+const path = `${routes.suite(ids.a, ids.workspace, suiteId)}?tab=edit`;
 function suiteRead(request: RequestRecord) {
   const organizationId = request.path.includes(ids.b) ? ids.b : ids.a;
   const saved = revision(organizationId);
@@ -25,9 +26,10 @@ function suiteRead(request: RequestRecord) {
   return runRead(request);
 }
 async function submitSaved() {
-  fireEvent.click(await screen.findByRole('button', { name: 'View revision 2' }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Run saved revision' }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Submit run' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Start run' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Start Same suite' });
+  await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Start run' })).toBeEnabled());
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Start run' }));
 }
 function queued(body: unknown) {
   const checked = validateApi('CreateRunRequest', body);
