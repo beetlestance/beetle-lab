@@ -10,8 +10,9 @@ row by exact ID, limit 1), suite, saved revision and the browser session.
 - headline.ts: variant (passed, failed, not judged, cancelled, out of memory,
   output full, incomplete, errored, pending) and the title and sentence. Sentence
   figures come only from the stored summary; unknown parts are left out.
-- ResultHeader: status, Run again (createRun with the run's revision, profile,
-  budget and policy), Pin (usePin), Delete run. Read-only sessions hide actions.
+- ResultHeader: page h1, status, Refresh run (from RunDetail), Run again (createRun
+  with the run's revision, profile, budget and policy), Pin, Delete run. Read-only
+  sessions hide every action except Refresh run.
 - usePin: pinRun/unpinRun from the receipt only, never optimistic; toast, then
   re-reads the run and history pages. pin_limit and cleanup_in_progress explained.
 - RunNote: setRunNote with expectedNoteVersion; conflict re-reads the run.

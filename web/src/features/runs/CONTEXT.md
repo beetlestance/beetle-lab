@@ -37,4 +37,4 @@ RunReads admits one original detail read plus at most four waiting intents. Wait
 expires after five seconds or caller abort; retirement rejects queued intents.
 Original completion releases admission. Storage bounds and explicit HTTP errors
 remain unchanged; there are no automatic retries or mutation admission changes.
-RunDetail dispatches once per mount to live/ (D) or result/ (E); see their CONTEXT.md.
+RunDetail dispatches once to live/ (h1, Cancel) or result/ (h1, Refresh run); see both.

@@ -17,22 +17,32 @@ export function ResultHeader({
   sentence,
   readOnly,
   onDelete,
+  refresh,
 }: {
   run: Run;
   title: string;
   sentence: string;
   readOnly: boolean;
   onDelete(): void;
+  /** RunDetail's run re-read; available even in read-only history. */
+  refresh?: { readonly run: () => void; readonly busy: boolean } | undefined;
 }) {
   const status = runStatus(run);
   return (
     <header className="result-head">
       <div className="result-head-main">
-        <h2 className="result-title">{title}</h2>
+        <h1 className="result-title">{title}</h1>
         {sentence && <p className="result-sentence">{sentence}</p>}
       </div>
       <div className="result-head-side">
-        <Status tone={status.tone}>{status.label}</Status>
+        <div className="result-row">
+          <Status tone={status.tone}>{status.label}</Status>
+          {refresh && (
+            <Button variant="text" size="sm" onClick={refresh.run} disabled={refresh.busy}>
+              Refresh run
+            </Button>
+          )}
+        </div>
         {readOnly ? (
           <p className="result-readonly-note">Read-only history: actions are unavailable.</p>
         ) : (

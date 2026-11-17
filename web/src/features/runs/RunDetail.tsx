@@ -4,12 +4,12 @@ import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { QueryState } from '../../components/QueryState.js';
 import type { RunScope } from './types.js';
-import { RunCancellation } from './RunCancellation.js';
 import { useCancellation } from './useCancellation.js';
 import { terminal } from './terminal.js';
 import type { RunSnapshotProps } from './RunSnapshot.js';
 import { LiveRunView } from './live/index.js';
 import { RunResultView } from './result/index.js';
+import type { RefreshControl } from './result/index.js';
 
 export { terminal };
 export function RunDetail(scope: RunScope & { runId: string }) {
@@ -21,27 +21,30 @@ export function RunDetail(scope: RunScope & { runId: string }) {
     refetchInterval: (query) => (terminal(query.state.data) || query.state.status === 'error' ? false : 2000),
     refetchIntervalInBackground: false,
   });
+  const refresh = { run: () => void query.refetch(), busy: query.isFetching };
   return (
     <>
-      <header className="section-header">
-        <div>
-          <h1>Run detail</h1>
-          <p className="number">{scope.runId}</p>
-        </div>
-        <button onClick={() => void query.refetch()} disabled={query.isFetching}>
-          Refresh run
-        </button>
-      </header>
+      {query.data === undefined && (
+        // Until the run is read, this is the page title; each phase view then owns it.
+        <header className="section-header">
+          <div>
+            <h1>Run detail</h1>
+            <p className="number">{scope.runId}</p>
+          </div>
+          <button onClick={refresh.run} disabled={refresh.busy}>
+            Refresh run
+          </button>
+        </header>
+      )}
       <QueryState query={query}>
         {(run) => (
-          <>
-            <RunCancellation run={run} cancel={cancellation} />
-            <RunView
-              run={run}
-              scope={{ kind: 'workspace', organizationId: scope.organizationId, workspaceId: scope.workspaceId }}
-              runId={scope.runId}
-            />
-          </>
+          <RunView
+            run={run}
+            scope={{ kind: 'workspace', organizationId: scope.organizationId, workspaceId: scope.workspaceId }}
+            runId={scope.runId}
+            cancel={cancellation}
+            refresh={refresh}
+          />
         )}
       </QueryState>
     </>
@@ -53,13 +56,18 @@ export function RunDetail(scope: RunScope & { runId: string }) {
  * opens the live view, a terminal run the result view. A run that ends while
  * watched stays in the live view (which then shows the terminal state) until the
  * live view calls `showResult`; switching remounts and re-reads, so the live view
- * owns that hand-off.
+ * owns that hand-off. The live header owns the h1 and Cancel; the result header owns
+ * the h1 and Refresh run. Terminal runs get no cancellation control.
  */
-function RunView(props: RunSnapshotProps) {
+function RunView({
+  cancel,
+  refresh,
+  ...props
+}: RunSnapshotProps & { cancel: ReturnType<typeof useCancellation>; refresh: RefreshControl }) {
   const [phase, setPhase] = useState<'live' | 'result'>(() => (terminal(props.run) ? 'result' : 'live'));
   return phase === 'result' ? (
-    <RunResultView {...props} />
+    <RunResultView {...props} refresh={refresh} />
   ) : (
-    <LiveRunView {...props} showResult={() => setPhase('result')} />
+    <LiveRunView {...props} cancel={cancel} showResult={() => setPhase('result')} />
   );
 }

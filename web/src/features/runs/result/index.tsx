@@ -20,10 +20,13 @@ import './result.css';
  * Run result view (Penpot "Run result" boards and their variants) for a terminal
  * run. RunDetail chooses it once; it owns its reads under the scoped run key.
  */
-export function RunResultView({ run, scope, runId }: RunSnapshotProps) {
+/** RunDetail's run re-read, shown as Refresh run beside the result title. */
+export type RefreshControl = { readonly run: () => void; readonly busy: boolean };
+
+export function RunResultView({ run, scope, runId, refresh }: RunSnapshotProps & { refresh?: RefreshControl }) {
   return (
     <RunReads key={`${scope.organizationId}/${scope.workspaceId}/${runId}/${run.activeAttemptId}`}>
-      <ResultBody run={{ ...run, scope, id: runId }} />
+      <ResultBody run={{ ...run, scope, id: runId }} refresh={refresh} />
     </RunReads>
   );
 }
@@ -36,7 +39,7 @@ const sections = [
   ['report', 'Report'],
 ] as const;
 
-function ResultBody({ run }: { run: Run }) {
+function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | undefined }) {
   const reads = useResultReads(run);
   const [deleting, setDeleting] = useState(false);
   const readOnly = reads.session?.readOnly ?? false;
@@ -63,6 +66,7 @@ function ResultBody({ run }: { run: Run }) {
         sentence={sentence}
         readOnly={readOnly}
         onDelete={() => setDeleting(true)}
+        refresh={refresh}
       />
       <nav className="result-nav" aria-label="Result sections">
         {sections.map(([id, label]) => (
