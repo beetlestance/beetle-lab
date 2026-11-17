@@ -86,9 +86,12 @@ once (`app/test/delivery/failures.test.ts`, `fairness.test.ts`).
 journal authority; acknowledged generation 1 and an output allocation are required.
 
 - Discovery keeps acknowledged originals after charge release, terminal Run or
-  outbox removal until output finalization clears the obligation
-  (`event_pending`). Unbound legacy records appear as `unbound`, never with
-  invented bindings. Paging is keyset with a captured upper position.
+  outbox removal until output finalization or absence closure clears the obligation
+  (`event_pending`, index `execution_event_pending`). Unbound legacy records appear
+  as `unbound`, never with invented bindings. Paging is keyset with a captured upper
+  position. Output adoption discovery (`output-custody/scan.ts`) uses the same
+  obligation, index and keyset on its own `outputs` cursor lane; migration 009's
+  `output_pending` is constantly 1 and its index serves no scan.
 - One event turn selects one attempt: load state, confirm any outstanding ACK,
   GET from `durableThrough`, validate, ingest, then ACK only the committed prefix.
 - Batches hold at most 100 events and 262144 bytes, each event at most 66048
