@@ -19,7 +19,7 @@ are indexed in [HISTORY](HISTORY.md) and retain their original source/platform s
 
 | Area | Gap |
 | --- | --- |
-| Report parity | Readable memory/CPU/GC reports pass source and packaged ARM64 checks. Independent comparisons matched 36 numeric points and three GC calculations; browser presentation remains open. |
+| Report parity | Readable memory/CPU/GC reports pass source and packaged ARM64 checks. Independent comparisons matched 36 numeric points and three GC calculations. Isolated Playwright verifies actual displayed values, downloads and reloads. |
 | Target metrics | The real packaged workload published all 121 target samples, including GC total/average/maximum millisecond fields. Older artifact compatibility and explicit missing values remain covered. |
 | Capacity changes | Supported memory/output increases are applied locally at 1 GiB/512 MiB inside the unchanged 2 GiB storage allocation. History and held reservations were preserved; an actual engine run passed at the 1 GiB limit. |
 | Storage and diagnostics | Real-worker slow-burst, overload, stall and uncertain-write tests pass for the no-progress watchdog and redacted diagnostics. Current packaged workload and hosted stream/conformance checks pass. Native filesystem-stall injection is not claimed. |
@@ -39,10 +39,13 @@ Historical source CI passed at 4fabd9fa; see [the evidence index](HISTORY.md).
 Recorded native Linux amd64/arm64 checks and the 30-minute stream remain useful
 within their original inputs. Neither a passing fixture nor a historical closeout
 establishes complete real-workload parity or readiness after unrelated changes.
-Browser presentation remains open. Release protections are applied; publication still requires explicit authorisation.
+Scoped browser functionality passes in an isolated Playwright container. Release
+protections are applied; publication still requires explicit authorisation.
 
 ## Separate scope
 
 A full UI redesign, additional engines, generated test cases, shared PostgreSQL/S3
 storage and hosted IAM are later phases. Report content and basic configuration
-usability are functional work, not deferred visual polish.
+usability are functional work, not deferred visual polish. Long report lines can
+produce horizontal page overflow; that known presentation defect remains in the
+deferred UI work, and responsive visual quality is not certified by these checks.

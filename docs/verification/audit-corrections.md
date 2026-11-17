@@ -2,7 +2,7 @@
 
 Recorded 17 November 2026. This is scoped local source evidence, not a release
 certificate. Candidate CI and the scoped native/resource qualifications below passed.
-Browser presentation remains open; approved release protections are applied. Private installation data, credentials and raw logs are not published here.
+Scoped isolated-browser checks pass; approved release protections are applied. Private installation data, credentials and raw logs are not published here.
 
 ## Source identities
 
@@ -42,8 +42,8 @@ received independent review. Reviewers reused passing checks instead of rerunnin
   The 78-test feature lane passed; later fixture/helper corrections passed their
   affected UI/summary/publication checks. The current local packaged workload
   published 121 available target samples including GC fields; target JSON, text
-  report and CSV downloads matched their sizes and SHA-256 digests. Browser
-  acceptance remains open.
+  report and CSV downloads matched their sizes and SHA-256 digests. The isolated
+  browser checks below confirm actual presentation and download interactions.
 - **Storage:** real SQLite workers drain 32 durable operations delayed 170 ms each,
   exceeding five seconds overall without false timeout. Queue overflow still
   refuses, close drains, and reopening preserves committed work. A five-second
@@ -84,11 +84,11 @@ tests passed; the final diagnostic helper correction passed its five focused tes
 and static gates. Normal CI now includes the agent smoke. Its Docker daemon is a
 fixture: these checks do not establish native container or target-workload acceptance.
 
-## Remaining acceptance
+## Release decisions and limits
 
-1. Verify browser presentation/download interactions for the packaged report.
-2. Retain the unexplained original conformance failure; a later pass is not its cause.
-3. Publish only after explicit approval and the configured GitHub review gate.
+Retain the unexplained original conformance failure; a later pass is not its cause.
+Publish only after explicit approval and the configured GitHub review gate.
+The scoped non-UI corrections have accepted evidence; this is not release approval.
 
 Running services use matching locally built candidate images, including the
 report, storage, diagnostic and settings changes. No merge
@@ -128,3 +128,23 @@ and every run's eight final artifacts were verified. Settings, container identit
 start times and caps stayed unchanged; no forced GC, restart, history purge or pool
 increase was used. This closes these finite blockers, not a universal leak-free or
 uninterrupted-availability guarantee. Private evidence and local backup are retained.
+
+## Isolated browser acceptance
+
+A cached Playwright image ran Chromium146 in a fresh unprivileged container and
+context against the existing real ARM64 run, without a personal browser profile,
+Docker socket, new performance run or app configuration change. A container-local
+loopback relay preserved the normal frontend Host/Origin/session handling.
+The bounded check passed in12.87seconds with1GiB/1CPU/256PIDs and owned cleanup.
+
+Seven metric selections verify847 displayed sample values and28 summary values,
+including RSS,CPU,explicit GC fields and unavailable values. Rendered report text
+matches the published digest. Four actual UI downloads verify bytes/SHA-256:
+the text link and inventory text/targetJSON/CSV links. Explicit report reload and
+browser reconnect preserve values, with no page JavaScript errors. GC/text
+screenshots were inspected; runtime image IDs match the accepted40c4a5c1 images.
+The initial missing-headless-shell attempt is retained; selecting the existing
+full Chromium binary resolved test setup without changing the application.
+This covers functional report presentation and manual-read interactions. It does
+not certify responsive layout; long report lines can cause horizontal overflow,
+which remains in the separately deferred UI work. Private screenshots stay private.
