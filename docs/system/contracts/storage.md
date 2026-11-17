@@ -136,7 +136,7 @@ metadata worker persists it (`local-session/`, migration 014). Shapes are in
 - [Overview](../overview.md)
 - [Installation](installation.md), [Resources](resources.md)
 - [Decision 015: automatic local access](../../decisions/015-automatic-local-access.md)
-- [Backup and restore guide](../../guides/backup-and-restore.md)
+- [Backup and restore guide](../../../site/src/content/docs/guides/backup-and-restore.md)
 
 ## Anchors
 

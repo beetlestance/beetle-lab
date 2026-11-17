@@ -1,0 +1,85 @@
+---
+title: Runs
+description: What a run's state, outcome and validation status mean, how cancellation works, and why a run sometimes waits.
+sidebar:
+  order: 2
+---
+
+A **run** is one execution of one suite revision with one budget. It has a
+**state** (where it is), an **outcome** (what it proved) and a **validation
+status** (whether the engine accepted its configuration).
+
+## States
+
+| State | Meaning |
+| --- | --- |
+| `queued` | Recorded and waiting for the agent |
+| `dispatching` | Offered to the agent, not yet admitted |
+| `active` | Admitted; preparing, running, stopping or collecting |
+| `finalizing` | The engine has stopped; output is being verified and transferred |
+| `finished` | Ended with a verified result |
+| `cancelled` | Stopped at your request, with its output accounted for |
+| `errored` | Could not produce a trustworthy result |
+
+The last three are terminal: a run never leaves them. Everything else carries
+the outcome `pending`.
+
+## Outcomes
+
+| Outcome | Meaning |
+| --- | --- |
+| `passed` | Every pass or fail rule held, and the result was sealed and verified |
+| `failed` | At least one rule failed, with complete evidence |
+| `inconclusive` | The evidence cannot decide, for example a `ramp-until` scenario reached its maximum without its stop rule firing, or data is missing |
+
+An engine reporting success does not make a run pass. The outcome comes from the
+sealed result together with the evidence of how the engine stopped. A cancelled
+or errored run is never shown as passed.
+
+## Validation status
+
+Saving a suite checks its structure. Full validation happens when the agent
+admits the run, against the exact engine and schema that will run it. Until then
+the run shows `validationStatus: pending`. A configuration the engine rejects
+ends the run as errored with the reason `invalid_config`; it does not surface as
+an error on the request that queued it.
+
+## Why a run waits
+
+The agent admits a run only when its whole budget fits:
+
+- **Capacity.** CPU, memory, processes and output space must be free. Runs that
+  already hold a reservation keep it until their output is settled.
+- **Isolation.** An isolated run waits until nothing else is running, and
+  nothing else starts while it runs. Export jobs count too.
+- **Queue limit.** The installation caps how many runs and export jobs can be
+  waiting at once; beyond that, starting a run is refused with a clear reason.
+
+The run page shows the current reason while it waits.
+
+## Cancelling
+
+Cancel is a request, recorded immediately and safe to repeat. What happens next
+depends on how far the run got:
+
+| When you cancel | Result |
+| --- | --- |
+| Before it was offered | Cancelled at once; nothing ran |
+| Offered but not admitted | The agent refuses it; cancelled |
+| Running | The engine is asked to stop, then given 5 s before it is forced |
+| Already finishing | The run ends with its real outcome; cancel was too late |
+
+"Cancellation requested" is not the same as stopped. The run turns `cancelled`
+only after the engine has exited and its output is safe.
+
+## Retrying
+
+There is no automatic retry. Each run has exactly one attempt. To try again,
+start a new run; both stay in history so you can compare them.
+
+## Deleting
+
+Deleting a run removes its results and files from disk and returns the space to
+the installation. Space is only returned after both the backend and the agent have
+confirmed the files are gone, so a failed deletion never frees space that is still
+used. Retention settings can delete old runs for you.

@@ -33,7 +33,7 @@ received independent review. Reviewers reused passing checks instead of rerunnin
   counters were identical before/after; prior result digests remained unchanged.
   A local ARM64 workload passed with actual engine memory/swap each 1 GiB, no
   OOM kill and exit zero. A sealed cold backup was retained before maintenance.
-  See [operation contract](../guides/change-capacity.md).
+  See [operation contract](../../site/src/content/docs/guides/change-capacity.md).
 - **Reports:** source tests cover explicit GC count/total/average/max readings,
   active handles, older artifacts, missing samples, chronology, target restarts,
   visible counter resets, overflow and owned attempt-to-artifact/text publication.

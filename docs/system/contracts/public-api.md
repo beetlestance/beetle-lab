@@ -174,7 +174,7 @@ default, `oldest`), `suiteId`, and at most one of `name` or `runIdPrefix`. Codec
 
 `app/dist/automation.js` in the backend image (entry `app/src/client/cli/main.ts`)
 uses only this API: `connect`, `pair`, `run`, `status`, `result`, `cancel`,
-`compare`. See the [automation guide](../../guides/automation.md) for usage.
+`compare`. See the [automation guide](../../../site/src/content/docs/guides/automation.md) for usage.
 
 - Request files are closed wire schemas ≤ 4 KiB with caller-owned `requestId`;
   mutations are issued once and an unknown outcome prints the `requestId` for

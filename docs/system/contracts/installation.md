@@ -205,7 +205,7 @@ delete or `mkdir`. Failed close keeps its lease forever and refuses clean close.
 ## Related
 
 - Decisions [015](../../decisions/015-automatic-local-access.md), [016](../../decisions/016-historical-restore.md), [018](../../decisions/018-docker-host-trust-boundary.md)
-- [Development guide](../../guides/development.md), [backup and restore](../../guides/backup-and-restore.md)
+- [Development guide](../../guides/development.md), [backup and restore](../../../site/src/content/docs/guides/backup-and-restore.md)
 - [Resources](resources.md), [Storage](storage.md)
 
 ## Anchors

@@ -173,7 +173,7 @@ stopped installation. Operator steps are in the guide.
 ## Related
 
 - [Overview](../overview.md)
-- [Change installed capacity](../../guides/change-capacity.md)
+- [Change installed capacity](../../../site/src/content/docs/guides/change-capacity.md)
 - [Agent staging](../../decisions/006-agent-staging.md)
 - [Native k6 response memory](../../decisions/005-native-k6-response-memory.md)
 - [Installation](installation.md)

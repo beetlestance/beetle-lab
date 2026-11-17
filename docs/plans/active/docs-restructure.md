@@ -1,7 +1,8 @@
 # Plan: documentation restructure
 
 Status: active. Phases 0–2 delivered on `docs/restructure` (not yet integrated);
-phases 3–7 await decisions on generator, diagrams, hosting and scope. The triage
+phase 4 started: a Starlight site in `site/` builds with valid links. Phase 3
+(Penpot design) and phases 5–7 are open. The triage
 below is kept as the record of where each former LLD went.
 Decision: [017](../../decisions/017-documentation-structure-and-delivery.md).
 
@@ -12,7 +13,16 @@ Decision: [017](../../decisions/017-documentation-structure-and-delivery.md).
 | 0 | Decisions 017 and 018; LLD triage (this page) | `check:docs` |
 | 1 | New folders, loose files moved, STATUS and PLAN split, links fixed, folder rules and a general prose-spacing rule in `check-docs` | `check:docs` |
 | 2 | LLDs consolidated into contracts, `CONTEXT.md` and decisions; anchor stamps on `system/` | `check:docs`, typecheck unchanged |
-| 3–7 | User-facing site, designed first in Penpot | Separate approval |
+| 3 | Site design in Penpot: home, guide, concept, reference, in-app variant | Design review |
+| 4 | Starlight site in `site/`, served at `/docs` in the frontend image and as a public build | `npm run build` in `site/` (links validated) |
+| 5 | Remaining user pages: troubleshooting, limits, reference | Site build |
+| 6 | Diagrams and animated SVGs | Site build, reduced-motion check |
+| 7 | Quality pass against the design | Review |
+
+Phase 4 so far: `site/` has its own `package.json` and lockfile outside the root
+workspace. User guides for automation, capacity and backup moved from
+`docs/guides/` into the site and were rewritten for users; `docs/guides/` keeps
+the development guide. Serving it from the frontend image is not done yet.
 
 Phase 2 outcome: 16 contracts in `system/contracts/` (run lifecycle split into
 lifecycle and delivery; UI LLDs became the web UI contract), module map moved to

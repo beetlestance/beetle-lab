@@ -28,5 +28,5 @@ This avoids erasing post-backup deletion/mutation receipts and avoids treating c
 inode or journal-authority anchors as current native custody. A future writable
 installation uses a fresh identity and root; mutable/in-place restoration needs a
 separate reviewed design. See [cold recovery](../system/contracts/recovery.md) for implementation boundaries
-and the [runbook](../guides/backup-and-restore.md) for candidate commands. Release qualification
+and the [runbook](../../site/src/content/docs/guides/backup-and-restore.md) for candidate commands. Release qualification
 remains separate from this decision.

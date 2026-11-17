@@ -154,7 +154,7 @@ Test: `app/test/storage/clock-reason/migration.test.ts`.
 
 ## Related
 
-- [Backup and restored history guide](../../guides/backup-and-restore.md)
+- [Backup and restored history guide](../../../site/src/content/docs/guides/backup-and-restore.md)
 - [Decision 016: historical restore](../../decisions/016-historical-restore.md)
 - [Retirement](retirement.md)
 

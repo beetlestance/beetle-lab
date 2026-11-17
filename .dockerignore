@@ -38,3 +38,6 @@ coverage
 **/.codex
 **/.agents
 **/node_modules
+# User documentation site: dependencies and build caches are rebuilt in the image.
+site/node_modules
+site/.astro

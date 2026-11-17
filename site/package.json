@@ -1,0 +1,23 @@
+{
+  "name": "@beetle/docs-site",
+  "private": true,
+  "type": "module",
+  "description": "User-facing Beetle Lab documentation, served in the app at /docs and as a public site.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/markdown-remark": "7.3.9",
+    "@astrojs/starlight": "0.42.8",
+    "astro": "7.4.5",
+    "unist-util-visit": "5.0.0"
+  },
+  "devDependencies": {
+    "starlight-links-validator": "0.27.0"
+  },
+  "engines": {
+    "node": ">=24.12.0"
+  }
+}

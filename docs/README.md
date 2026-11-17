@@ -25,8 +25,8 @@ Each folder answers one question and owns its facts once
 | Required checks and platform scope | [Verification](engineering/verification.md) |
 | Task execution and handoff | [Workflow](engineering/workflow.md) |
 | Publishing | [Release](engineering/release.md) |
-| Public automation | [Automation](guides/automation.md); API reference and skill download in the app |
-| Capacity and backups | [Change capacity](guides/change-capacity.md), [backup and restore](guides/backup-and-restore.md) |
+| Public automation | [Automation](../site/src/content/docs/guides/automation.md); API reference and skill download in the app |
+| Capacity and backups | [Change capacity](../site/src/content/docs/guides/change-capacity.md), [backup and restore](../site/src/content/docs/guides/backup-and-restore.md) |
 | Acceptance and historical proofs | [Acceptance ledger](evidence/acceptance-ledger.md), [evidence index](evidence/README.md) |
 
 Authored pages stay within 180 lines, contracts within 220, decisions within 80 and

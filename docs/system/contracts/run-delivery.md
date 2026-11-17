@@ -131,7 +131,7 @@ journal authority; acknowledged generation 1 and an output allocation are requir
 
 - [Run lifecycle](run-lifecycle.md)
 - [Decision 018: Docker host trust boundary](../../decisions/018-docker-host-trust-boundary.md)
-- [Change capacity guide](../../guides/change-capacity.md)
+- [Change capacity guide](../../../site/src/content/docs/guides/change-capacity.md)
 - [System overview](../overview.md)
 
 ## Anchors
