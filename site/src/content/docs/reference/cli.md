@@ -30,8 +30,8 @@ node /beetle/backend/automation.js COMMAND --endpoint URL --origin URL \
 | `export-status` | Reads an export, and optionally waits for it to finish | `--organization`, `--workspace`, `--export`, optional `--wait-ms` |
 | `export-download` | Writes a ready export's script to a new file and checks its size and SHA-256 | `--organization`, `--workspace`, `--export`, `--out` |
 
-A `validate` command does not exist yet. Creating suites and uploading
-inputs are done in the UI or the HTTP API.
+A `validate` command does not exist yet. Creating suites and uploading inputs are
+done in the UI or the HTTP API.
 
 ## Flags
 
@@ -43,6 +43,8 @@ inputs are done in the UI or the HTTP API.
 | `--token-file` | Absolute path of a file holding the one-time startup token |
 | `--request-file` | Absolute path of a JSON request file |
 | `--organization`, `--workspace`, `--run` | UUIDs of the run's organisation, workspace and run |
+| `--export` | UUID of the export, with `--organization` and `--workspace` |
+| `--out` | Absolute path of a new file for `export-download`; see [Exit codes](#exit-codes) |
 | `--wait-ms` | Whole milliseconds to wait, 1 to 3,600,000 |
 | `--json` | Accepted and ignored; output is always JSON |
 
@@ -79,6 +81,7 @@ to revision `5b8e016c`. `scope` is always
 | `run` | `scope`, `requestId`, `revisionId`, `engineProfile`, `budget`, `executionPolicy` |
 | `cancel` | `scope`, `requestId` |
 | `compare` | `scope`, `runIds` (2 to 4 different runs), `metric` (a metric key or `null`) |
+| `export` | `scope`, `requestId`, `revisionId`, `engineProfile`, `budget`, `executionPolicy`, and `options` with both `scriptTimeoutMs` (1 to 172,800,000) and `maximumBuildBytes` (1 to 67,108,864) |
 
 `budget` has `cpuMillis`, `memoryBytes`, `pids`, `timeoutMs` and `outputBytes`, and
 must fit your settings. `engineProfile` is one of the profiles your settings
@@ -102,7 +105,17 @@ A `cancel` request. Its `scope` must match `--organization` and `--workspace`:
  "requestId":"2f1e0d9c-8b7a-4695-a483-72615f4e3d2c"}
 ```
 
-Choose a new `requestId` for each new run or cancellation, and keep it with the
+An `export` request:
+
+```json
+{"scope":{"kind":"workspace","organizationId":"0b9f3c1e-6c1a-4d5e-9f00-2a7d3c4b5e61","workspaceId":"5d2e8f40-1b3c-4a6d-8e9f-0c1d2e3f4a5b"},
+ "requestId":"4a3b2c1d-0e9f-48a7-b6c5-d4e3f2a1b0c9","revisionId":"9e8d7c6b-5a49-4382-9716-0a1b2c3d4e5f",
+ "engineProfile":"k6-local",
+ "budget":{"cpuMillis":1000,"memoryBytes":536870912,"pids":128,"timeoutMs":300000,"outputBytes":67108864},
+ "executionPolicy":{"mode":"parallel","preferIdle":false},"options":{"scriptTimeoutMs":600000,"maximumBuildBytes":16777216}}
+```
+
+Choose a new `requestId` for each new run, cancellation or export, and keep it with the
 file. Sending the same file again replays the original request instead of making
 a new one.
 
@@ -119,6 +132,9 @@ Each command prints one JSON line on standard output when it succeeds.
 | `result` | The result snapshot, or `null` if the run has none |
 | `cancel` | The cancellation receipt |
 | `compare` | The comparison, baseline first |
+| `export` without `--wait-ms` | `{"submitted":true,"export":EXPORT}` |
+| `export` with `--wait-ms`, `export-status` | `{"export":EXPORT,"waiting":BOOLEAN}` |
+| `export-download` | `{"downloaded":true,"exportId":ID,"name":"suite.js","bytes":N,"sha256":HEX}` |
 
 A run has ended when its state is `finished`, `cancelled` or `errored`. A
 cancellation receipt records your request; use `status` to see the run end.
@@ -153,7 +169,12 @@ The client makes each change once and never retries. If it cannot tell whether a
 Exit codes for runs come from the run's state and declared outcome; the client
 never works out an outcome from metrics.
 
-For exports: 0 means the script is ready (or was downloaded and verified), 3 means
-the export failed or its state is unknown, 4 means it was cancelled and 5 means it
-is still being prepared. `export-download` never overwrites an existing file and
-deletes a partial file if its size or SHA-256 does not match; that is also exit 3.
+### Exports
+
+Exit codes: 0 the script is ready (or downloaded and verified), 3 the export failed
+or its state is unknown, 4 cancelled, 5 still being prepared or session refused.
+`export-download` creates `--out` as a new `0600` file and does not follow a
+symbolic link there; if the path exists, nothing is written and it exits 2. The
+script is checked against the published size (at most 64 MiB) and SHA-256 as it
+is written; on any failure the client removes the partial file it created and exits
+3, so a file left at `--out` always matches.
