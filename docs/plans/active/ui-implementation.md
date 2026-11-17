@@ -2,7 +2,7 @@
 
 Status: active (2026-11-18). The Penpot "Screens" page is the target; the
 current UI and layout do not constrain it. Rules in
-[web UI](../system/contracts/web-ui.md) still hold (truthful state, scope,
+[web UI](../../system/contracts/web-ui.md) still hold (truthful state, scope,
 bounded reads, generated client only). Work runs in parallel worktrees and is
 integrated into `rewrite/integration` by the coordinating session.
 
