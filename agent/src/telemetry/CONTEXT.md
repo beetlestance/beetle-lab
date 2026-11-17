@@ -2,8 +2,8 @@
 
 `index.ts` exposes internal monitor/admission composition and summary type.
 Supervisor owns at most 64 monitors and shares two original read slots, no queue.
-Ticks drive 1s sampling/5s summary cadence. Each monitor retains one original,
-constant-size aggregate and an original deadline timer capped at 1s.
+Ticks drive 1 s sampling/5 s summary cadence. Each monitor retains one original,
+constant-size aggregate and an original deadline timer capped at 1 s.
 Cancellation/exit aborts new sampling; close retains ignored-abort originals.
 No timers survive completion; no monitor closes transport or Journal.
 

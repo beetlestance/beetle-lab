@@ -54,7 +54,7 @@ releases remain separate from promoting a new public default.
 
 ## Development and verification
 
-Use Node.js24.12 or later for source development:
+Use Node.js 24.12 or later for source development:
 
 ```sh
 npm ci

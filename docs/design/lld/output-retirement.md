@@ -26,7 +26,7 @@ A newly configured empty root cannot manufacture custody for retained data.
 
 | Durable state | Permitted progress | Forbidden inference |
 | --- | --- | --- |
-| Captured deletion | Backend files_absent; preserve exact original closure | Terminal state or generic404 is not agent absence |
+| Captured deletion | Backend files_absent; preserve exact original closure | Terminal state or generic 404 is not agent absence |
 | Retiring | Immutable Journal intent fences future source reads/producer work | A caller timeout does not drain an issued original |
 | Prepared | Persist actual native namespace/inventory/removal commitments | A digest recomputed from paths is not native custody |
 | Cleaning | Replay that exact plan; record bounded per-entry progress | Missing entry without its plan is not fresh absence proof |
@@ -49,8 +49,8 @@ The backend constructs the request only from its committed deletion row after al
 captured backend file receipts. Browser/HTTP callers cannot supply native proof.
 The agent receives no path, filename, amount-to-refund or artifact list from it.
 
-The closed request contains protocol version1, performance purpose, canonical
-organisation/workspace/Run/attempt/deletion UUIDs, generation1, intentDigest,
+The closed request contains protocol version 1, performance purpose, canonical
+organisation/workspace/Run/attempt/deletion UUIDs, generation 1, intentDigest,
 journalAuthority, immutable deletionVersion1, closure kind and closure digest,
 and finalAgentSeq. For source, reuse the exact SourceReceipt identity/digests;
 for absence, reuse the verified absence closure identity and proof digest. The
@@ -63,7 +63,7 @@ A successful reply binds the entire request identity plus retirementVersion1,
 namespaceIdentity, preparationIdentity and cleanupReceiptDigest. It exposes no
 native paths, raw logs, secrets or config. The digest identifies a committed receipt,
 not cryptographic proof of IO. Trust is the authenticated producer/Journal/native
-owner chain. Both request and reply are capped at4096 encoded bytes before cloning,
+owner chain. Both request and reply are capped at 4096 encoded bytes before cloning,
 body allocation and parse. Add exact schemas/vectors before the private runner
 route; never overload cancellation, delivery ACK or source absence routes.
 
@@ -114,8 +114,8 @@ existing no-follow file/ancestor verification and cached original-close ownershi
 Unknown ownership, links, special files, nested mounts, replaced ancestors, overflow
 or incomplete enumeration refuses preparation. Preserve unrelated installation data.
 
-Proposed per-task bounds:512 entries, depth32,4096 UTF-8 path bytes,128KiB serialized
-plan,64KiB read windows and30s per issued operation. Bounds must include directory
+Proposed per-task bounds:512 entries, depth 32,4096 UTF-8 path bytes,128 KiB serialized
+plan,64 KiB read windows and30s per issued operation. Bounds must include directory
 reads, stat/open/unlink/fsync/close, plan serialization and recovery discovery.
 The plan stores exact native facts and expected namespace changes; metadata persists
 it before unlink. Resume uses that same plan and progress after lost replies.

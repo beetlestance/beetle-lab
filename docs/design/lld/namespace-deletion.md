@@ -22,7 +22,7 @@ No transaction callback, native effect or external service crosses the worker.
 
 ## Permanent identity and funding
 
-Migration026 adds an immutable marker independent of parent FKs. It records fixed
+Migration 026 adds an immutable marker independent of parent FKs. It records fixed
 kind/id/scope/version plus original root/settings IDs. Its maximum logical charge
 is2048 bytes, including the bounded acknowledgement/row allowance, paid against
 current installation storage minus free-space reserve before removal. No spare

@@ -56,7 +56,7 @@ definitions. Shared public value types alias generated structures with recursive
 readonly ownership. Existing manifest preimages/result seal/caps are unchanged;
 shared verifySourceEnvelope delegates verifyOutputManifest and matches receipt
 scope/authority/digests to that manifest and opaque source identity. Gateway must
-also compare the exact retained original scope/generation1/intent/physical UUID;
+also compare the exact retained original scope/generation 1/intent/physical UUID;
 its generic recursive identity matcher alone is insufficient.
 
 SourceChunkRequest is closed {version:1, manifestDigest, sourceDigest, artifactId,
@@ -129,7 +129,7 @@ The native source read owns one bounded buffer and encoded reply; serialization 
 bounded before response copy. Native client response limits are operation-specific
 before Content-Length admission, buffer allocation, reads and JSON.parse:75776 for
 envelope,90112 for chunk. Apply1024 before server body parse/client encoding.
-Existing1MiB generic limits do not establish these source limits. Disconnect/deadline is a stop hint and cannot drop
+Existing 1 MiB generic limits do not establish these source limits. Disconnect/deadline is a stop hint and cannot drop
 issued reads, closes or credits. Server shutdown fences intake and drains original
 service work; backend gateway close retains its existing native-drain semantics.
 No source deletion/retention refund or finalization ACK endpoint is introduced by

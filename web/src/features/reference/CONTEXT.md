@@ -3,8 +3,8 @@
 Reference is a read-only route; catalogue.ts uses the generated public operation
 and schema registry. Implementation status is source-owned; planned rows have
 contracts but no shipped handler. Registration coverage is checked by the actual app. It resolves only included schema IDs/pointers, never fetches
-an arbitrary schema URL. Query128chars, displayed80routes, inline schema64KiB
-source/256KiB pretty; limit/error states remain explicit.
+an arbitrary schema URL. Query128chars, displayed80routes, inline schema 64 KiB
+source/256 KiB pretty; limit/error states remain explicit.
 
 web/scripts/reference-assets.ts serves/emits the same fixed public resources in
 Vite dev/build. Generated route reference is exported by contracts/api/reference;

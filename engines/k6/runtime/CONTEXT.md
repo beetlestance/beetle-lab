@@ -17,8 +17,8 @@ are excluded. Setup returns only that number to all VUs. Missing setup data fail
 closed. Scenarios clamp accepted duration/grace timing to this shared deadline.
 
 Public `native-entry.ts` composes native adapters/options/summary. Init reads only `/beetle/secrets/<declared-name>`;
-trusted staging must cap files before native `open` buffers them. Limits: 64KiB
-per secret, 1MiB total. Values stay in private closures and request use.
+trusted staging must cap files before native `open` buffers them. Limits: 64 KiB
+per secret, 1 MiB total. Values stay in private closures and request use.
 `options.ts` registers required/execution failure thresholds and bounded evidence
 submetrics. Native system tags are disabled; deterministic rN/aN labels admit at
 most 200 assigned label maps, including the aggregate. HTTP status failures retain
@@ -26,8 +26,8 @@ native http_req_failed semantics; assertion and transport classifications differ
 Redirects are disabled in v1. `throw:true` prevents native request-warning logs;
 the runtime catches and replaces transport errors with fixed classifications.
 Bodies default to responseType none. Body/JSON assertions opt into retained text.
-Stock k6 buffers retained bodies before JS. The default 1MiB/max8MiB processing
-cap, plus 65536 JSON nodes/depth32, applies after native buffering; it is NOT a
+Stock k6 buffers retained bodies before JS. The default 1 MiB/max 8 MiB processing
+cap, plus 65536 JSON nodes/depth 32, applies after native buffering; it is NOT a
 download cap. Product execution requires a hard engine RAM limit: oversized native
 buffering may OOM that engine and cannot establish success. No native heap/HTTP
 limit or Docker qualification is claimed by these unit/native compatibility checks.

@@ -1,6 +1,6 @@
 # One durable native removal step
 
-Status: C3e private single-step removal locally implemented. Journal019 progress.
+Status: C3e private single-step removal locally implemented. Journal 019 progress.
 Parents: [plan storage](cleanup-plan-store.md), [inventory](task-inventory.md),
 [retirement](output-retirement.md) and [runtime authority](runtime-retirement.md).
 No public route, physical receipt, backend ACK or quota refund.
@@ -11,20 +11,20 @@ One coordinator per physical Journal accepts a genuine current RuntimeAbsent and
 verified root. Reread exact retirement eligibility/prepared task metadata and the
 same immutable stored plan. Match scope, namespace/task and retirement request;
 never invent a new plan from the current directory or accept a caller path/cursor.
-At most64 scoped entries; exact concurrent calls share their actual original promise.
+At most 64 scoped entries; exact concurrent calls share their actual original promise.
 Capture one fixed <=30second budget before awaits. Scope/capability/budget checks
 follow foreign reads and precede every subsequent native/metadata effect.
 
-Journal019 adds one bounded progress row per stored plan. Canonical progress <=8192
+Journal 019 adds one bounded progress row per stored plan. Canonical progress <=8192
 bytes and encodedBytes+512 logical row charge use the existing reserved buckets.
 No prior row, spool/hold charge or ceiling changes. Shape/plan/count/version and
 monotonic transition guards reuse the cleanup-control codec. Update/delete of plan
 identity, skipped/rolled-back transitions and progress deletion refuse; exact replay
 is allowed. Raw progress is metadata, never proof of filesystem work.
 
-Begin persists prepared/version1/count0 only. Under the shared cleanup lease, verify
+Begin persists prepared/version 1/count 0 only. Under the shared cleanup lease, verify
 COMPLETE current prepared inventory against the persisted plan, with no missing
-entry allowed. Only then commit cleaning/version2/count0. Strictly repeat the
+entry allowed. Only then commit cleaning/version 2/count 0. Strictly repeat the
 presence check under that same lease before the first effect. A disappearance in
 this fresh continuation refuses; it is not reclassified as an earlier uncertain unlink.
 After a crash with cleaning already committed, its durable state authorizes recovery
@@ -53,7 +53,7 @@ parent identities, installed marker and exact leaf absence. Only that successful
 post-close result can advance one progress version/count. The final step produces
 files_absent progress; it is not a physical cleanup receipt.
 
-Each operation reuses shared cleanup admission/exclusion, inventory512/depth32/path4096/
+Each operation reuses shared cleanup admission/exclusion, inventory512/depth 32/path4096/
 plan128KiB bounds and bounded byte enumeration/fdinfo reads. Conservative handle
 bounds are71 simultaneously open and1650 retained cached-close records per step,
 including prepared revalidation plus removal parents/auxiliaries. The initial

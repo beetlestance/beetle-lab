@@ -21,7 +21,7 @@ Already-issued delivery/cleanup/settlement/maintenance keeps its original privat
 authority; a new user mutation or unissued retention Apply cannot acquire it.
 
 One BEGIN IMMEDIATE reads the exact deletion receipt first, checks scoped identity,
-expected version and quiescence, reserves the existing2048-byte marker and retires
+expected version and quiescence, reserves the existing 2048-byte marker and retires
 the workspace. Exact DELETE replay returns the original acknowledgement; changed
 intent conflicts. A fresh request for an already retired workspace is not_found.
 No receipt, file, pin, epoch, snapshot or counter is pruned or refunded.
@@ -29,7 +29,7 @@ Cleanup complete means logical visibility retirement, not physical deletion.
 
 ## Storage invariant
 
-Migration028 adds an irreversible private retired flag. Keep the existing private folded_name UNIQUE key without rebuilding FK-linked
+Migration 028 adds an irreversible private retired flag. Keep the existing private folded_name UNIQUE key without rebuilding FK-linked
 workspace rows. It is the active-name key: active rows use canonical folded names.
 Retirement switches only this private uniqueness key to char(1)||UUID and sets retired=1.
 Public name validation excludes control characters; ordinary names cannot claim

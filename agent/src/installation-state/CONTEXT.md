@@ -9,7 +9,7 @@ A restored authority is planned durably before data replacement; only exact
 operation/installed-authority completion makes the gate ready again.
 This component does not verify physical quiescence, copy data, initialize the
 main journal or wire actual bootstrap. Its offline caller must prove those facts.
-Synchronous store is bounded to16x4096-byte pages,64KiB cache, no mmap, one row and
+Synchronous store is bounded to16x4096-byte pages,64 KiB cache, no mmap, one row and
 short scalar projections. EXCLUSIVE locking and synchronous EXTRA retain startup
 ownership and rollback-journal durability; hardware/OS qualification is separate.
 No state file is deleted on errors. Failed close retains process ownership.

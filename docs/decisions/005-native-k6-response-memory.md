@@ -16,7 +16,7 @@ Do not copy response bodies into logs, control events or default artifacts.
 
 The supported product runs each engine under its declared hard RAM limit. A large
 native buffer may cause that engine to fail; it cannot establish a passing test.
-OOM classification requires runtime evidence, not exit137 alone. Qualification
+OOM classification requires runtime evidence, not exit 137 alone. Qualification
 must exercise large and compressed responses plus failure isolation. Native host
 fixtures do not prove the container guarantee.
 

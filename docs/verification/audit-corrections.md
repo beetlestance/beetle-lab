@@ -135,7 +135,7 @@ A cached Playwright image ran Chromium146 in a fresh unprivileged container and
 context against the existing real ARM64 run, without a personal browser profile,
 Docker socket, new performance run or app configuration change. A container-local
 loopback relay preserved the normal frontend Host/Origin/session handling.
-The bounded check passed in12.87seconds with1GiB/1CPU/256PIDs and owned cleanup.
+The bounded check passed in12.87 seconds with1GiB/1CPU/256 PIDs and owned cleanup.
 
 Seven metric selections verify847 displayed sample values and28 summary values,
 including RSS,CPU,explicit GC fields and unavailable values. Rendered report text

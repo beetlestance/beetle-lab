@@ -4,7 +4,7 @@
 One worker transaction re-reads settings/observations, 100 projected candidates and
 64 charged reservations globally; reservation/event/state commit atomically using
 supervisor sourceOrdinal. Quota/ordinal/SQL faults roll back; pending=1024, pages=100.
-FIFO permits small-job bypass for 30s, then drains for the oldest feasible job;
+FIFO permits small-job bypass for 30 s, then drains for the oldest feasible job;
 unknown legacy age promotes immediately after revalidation. Cancel atomically
 retires pending metadata and blocks first create/start grants; existing replay is
 dispatchAllowed:false. Binding already-created ownership remains possible after cancel.

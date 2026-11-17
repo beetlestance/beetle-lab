@@ -8,7 +8,7 @@ access. JSON leaves, archives, commands and streamed reads/hashes stay bounded.
 `producer.ts` counts output before writing, stops its owned POSIX process group
 on overflow/deadline, escalates TERM to KILL and joins actual close. Stderr is
 bounded without retaining its content. Both tar and compressed streams are capped;
-peak partial payload is <=6GiB plus bounded metadata/filesystem overhead.
+peak partial payload is <=6 GiB plus bounded metadata/filesystem overhead.
 It publishes a versioned bundle only after successful save/compression/hash.
 Partial outputs are private and cannot authorize publication. Existing output
 directories are refused. Credentials and installation files never enter bundles.

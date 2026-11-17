@@ -12,7 +12,7 @@ engine metric interpreter, download URL, credential or mutation is introduced.
 
 Before showing any run/result content, require expected organization/workspace and
 runId match Run.scope/id. Result must additionally match activeAttemptId, scope,
-engine ID and generation1. Stale cross-scope/run/attempt data is hidden immediately
+engine ID and generation 1. Stale cross-scope/run/attempt data is hidden immediately
 on rerender, including artifact count/names/reasons; never keep a previous value as
 an invented successful replacement. Use fixed unavailable/error/loading text.
 

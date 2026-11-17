@@ -39,7 +39,7 @@ are tested explicitly where available; no mutation is retried automatically.
 The sequence covers automatic access, authoring, run/result/report/warning reads,
 metrics, content hashes, history comparison, input roundtrip and directory import,
 settings, offline export, live reconnect/cancellation and explicit run/folder deletion.
-Each small run requests 8MiB output; the one-VU live case is capped at 45 seconds.
+Each small run requests 8 MiB output; the one-VU live case is capped at 45 seconds.
 The synthetic target permits at most 128 requests per path. This does not qualify
 maximum load or resource enforcement. A full passing outcome is required; separate
 feature probes do not establish that this entire sequence passed.
@@ -60,7 +60,7 @@ explicit-image command above. Ownership is saved before Compose and the
 installation identity before authoring, so the existing native `cold/cleanup.ts`
 can independently clean exact owned resources after interruption. It tests skip-to-content,
 command shortcut/focus trapping/Escape/navigation, persistent light/dark/system
-preferences, reduced motion, controls at375/768/1440px, and real wrong-organisation
+preferences, reduced motion, controls at 375/768/1440px, and real wrong-organisation
 404/cache isolation through visible navigation. It creates no performance runs.
 This is a finite functional matrix, not a complete accessibility certification.
 Keep it outside any exclusive resource measurement window. The default profile

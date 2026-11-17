@@ -9,7 +9,7 @@ registers admittedAt/timeoutMs/high-water/fence before staging. Deadlines never
 restart. Wall and monotonic ceilings both apply; invalid clocks fail closed.
 Stop acknowledgement means intent only, not runtime exit or release.
 
-At most64 watches, one interval, no pending queue. One timeout stop may escalate
+At most 64 watches, one interval, no pending queue. One timeout stop may escalate
 once to clock_integrity; both originals drain. Stop rejection retains the
 failed owner and rejects close. Closing fences callbacks and drains originals.
 Supervisor dispatch-time checks and lifecycle ownership remain separate.

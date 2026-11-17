@@ -6,5 +6,5 @@ samephysicalports/liveRuntime/nativeowner/exactcapturedplan/finalprogress.
 No rawrow/counter/boolean grantsIOproof. Failednativeclose blocksreceipt evenafter
 oldproof. Holdrequest/proof throughactualworkertermination; no timeoutrelease or
 compensation. Rootclosesreceipt beforeNativeRemoval andupstreamowners.
-Journal020 rowpresence=cleanedmetadata only. Existingreserve, no refund/purge/ACK.
+Journal 020 rowpresence=cleanedmetadata only. Existingreserve, no refund/purge/ACK.
 Tests cleanup-receipts plusNativeRemoval/Journalmigrations; no publicroute.

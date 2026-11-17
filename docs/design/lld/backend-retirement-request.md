@@ -18,7 +18,7 @@ it keeps its separate no-agent settlement branch. Missing/contradictory evidence
 fails rather than synthesizing a request from an active agent registration.
 
 Require the exact captured file count and original slot versions, and one committed
-absent record per ordinal with the parent's fixed namespace. At most128 records are
+absent record per ordinal with the parent's fixed namespace. At most 128 records are
 inspected through existing typed file capture. A zero pending counter alone is not
 sufficient. A source with zero artifacts is distinct from an unsent attempt.
 

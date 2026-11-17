@@ -54,9 +54,9 @@ revision, engine image/profile, accepted budget/policy, target, inputs, secret
 references and settings versions. Differences are facts, not an automatic claim
 that runs are or are not scientifically comparable.
 
-Config diffs carry at most100 changed JSON pointers per non-baseline run, with
+Config diffs carry at most 100 changed JSON pointers per non-baseline run, with
 added/removed/changed and an explicit limited flag. No config values, headers,
-bodies, target URLs, secret locators or raw exceptions are returned. Use at most65536 visited nodes and4096 pending pairs per peer, depth64 and512
+bodies, target URLs, secret locators or raw exceptions are returned. Use at most 65536 visited nodes and4096 pending pairs per peer, depth 64 and512
 encoded bytes per pointer; a pointer that cannot be represented safely must be
 reported as a limited parent/root change, never truncated into a different path.
 Equal pinned revisions skip traversal only after bounded canonical config/input
@@ -69,7 +69,7 @@ have fixed warnings. Do not hide missing data or a limited diff.
 Use one service/request original, no queue/cache (one active comparison per
 installation; admission is retained through physical settlement). Read at most four scoped Runs,
 results and pinned revisions, sequentially; at most four metric lookups. Bound
-revision bytes to existing1MiB configs/envelopes and transient four-run work; do
+revision bytes to existing 1 MiB configs/envelopes and transient four-run work; do
 not send configs to the browser. A whole30s caller deadline covers metadata,
 projection and final reconciliation. Internal metric lookup and comparison both return their actual original
 promises; the HTTP owner supplies the fast cancellation race and retains the

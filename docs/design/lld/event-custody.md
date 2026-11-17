@@ -9,7 +9,7 @@ the separately owned artifact/result finalization work.
 ## Authority and discovery
 
 `EventBinding` in `app/src/ports/events.ts` contains the exact DispatchKey and
-stored journal UUID. Require retained execution identity, acknowledged generation1
+stored journal UUID. Require retained execution identity, acknowledged generation 1
 and immutable output allocation before ingest/ACK confirmation. Scope, run, attempt,
 digest, generation and physical authority must agree in every operation and reply.
 Never replace authority using current capabilities or adopt old NULL bindings.
@@ -24,7 +24,7 @@ bindings. No Offer/history scan or bulk event backfill is permitted.
 
 Use keyset `(queue_order,attempt_id)` and an index covering the pending obligation.
 Capture an upper position for each finite pass; query at most limit+1 scalar rows
-before interpretation. Page limit1..32, page<=65536 bytes, installation/lane-bound
+before interpretation. Page limit 1..32, page<=65536 bytes, installation/lane-bound
 cursor<=1024 bytes. Each item has an after cursor preserving unread successors.
 Continuous later arrivals cannot extend a captured pass or starve old obligations.
 
@@ -69,12 +69,12 @@ after is checked against stored durableThrough inside the ingest transaction.
 
 ## Durable transaction and replay
 
-Coordinator reserves application migration007 for event rows, cursor/counters,
+Coordinator reserves application migration 007 for event rows, cursor/counters,
 obligation index and allocation guards. SQL rows FK-bind to retained execution and
 output allocation. Legacy NULL journal authority stays fenced. Older binaries
-reject schema7; failed migration preserves prior schema/data/foreign keys.
+reject schema 7; failed migration preserves prior schema/data/foreign keys.
 
-One BEGIN IMMEDIATE validates binding and captured batch, then compares at most100
+One BEGIN IMMEDIATE validates binding and captured batch, then compares at most 100
 existing replay records and appends only the exact next contiguous suffix. Reject
 after>durableThrough. Equal duplicates are harmless and consume no additional
 bytes/rows. A conflicting duplicate rejects all inserts/cursor/counter changes.
@@ -98,7 +98,7 @@ Events consume a retained-control subledger within the original immutable output
 payload allowance. Charge canonical UTF-8 bytes+128 per unique row, with total
 <=min(maximum_payload_bytes,67108864) and<=65536 rows. This fixed row allowance is
 logical accounting, not measured SQLite/index/WAL usage. Cursor/diagnostics fit
-the existing64KiB metadata allowance. Physical backing-store reserve remains separate.
+the existing 64 KiB metadata allowance. Physical backing-store reserve remains separate.
 No second installation usage charge and no per-ACK refund is created. The complete
 original output allocation stays charged. Future artifact/report adoption must
 subtract this retained-control usage from the same payload allowance and account
@@ -114,7 +114,7 @@ and deadlines remain responsible for physical execution limits.
 recordProblem binds the same original and after<=durableThrough; it never advances
 either cursor. Typed problems are cursor_expired, quota_exhausted, missing_receipt
 and replay_conflict. Missing/expired information must come from a matched private
-reply under the stored UUID, not generic404/authority mismatch. cursor_expired
+reply under the stored UUID, not generic 404/authority mismatch. cursor_expired
 requires retainedStartSeq>after+1; use overflow-safe differences and the shared
 expiryCoverage helper. In the problem transaction compare against the CURRENT
 durableThrough: if retainedStartSeq<=durableThrough+1, local history covers the

@@ -8,7 +8,7 @@ Inputs are an absolute canonical private JSON path and installation UUID. Output
 is a deeply frozen configuration plus captured bearer token. Intake reads files;
 it performs no environment discovery, network request, secret resolution or write.
 
-JSON is bounded to 64KiB, token to 129 bytes, reads to 64 native calls per file,
+JSON is bounded to 64 KiB, token to 129 bytes, reads to 64 native calls per file,
 and profiles to 1..32. Files must be canonical, UID-owned, private, single-link
 regular files with stable path/handle identity and metadata. The token permits
 43..128 bearer characters and one optional terminal LF.

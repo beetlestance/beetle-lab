@@ -13,7 +13,7 @@ Capture all three settings IDs/versions and the effective policy/source. Parent
 operations traverse workspaces with a bounded durable cursor; they must report
 continuation/partial coverage rather than combine workspace counts or budgets.
 
-One preview turn evaluates at most100 Run headers using a matching index, plus
+One preview turn evaluates at most 100 Run headers using a matching index, plus
 one header-only existence probe.
 Carry completed count and retained logical bytes from the preceding window; browser
 counters are never trusted. Exact prefix state belongs to the stored previous page.
@@ -53,7 +53,7 @@ epoch, every candidate version and authoritative eligibility before any Begin.
 
 Pages are immutable once committed. Candidate IDs/versions/membership/reasons and
 estimated bytes cannot be edited by Apply. One successful application atomically
-begins all captured candidates, at most100, using the existing receipt-first Begin
+begins all captured candidates, at most 100, using the existing receipt-first Begin
 owner with captured stable request/deletion IDs. All revalidation precedes mutation;
 capacity/protection/stale failure rolls back the whole admission. No network/native
 work occurs in this transaction. The existing bounded cleanup driver does the work.
@@ -65,7 +65,7 @@ An admitted receipt means work was accepted, never that files or charges are gon
 
 ## Snapshot storage contract
 
-Logical reservation per page131072 bytes, maximum8 live pages globally.
+Logical reservation per page 131072 bytes, maximum8 live pages globally.
 First preview in a workspace also charges a permanent512-byte epoch row. That row
 survives Run/snapshot purge; snapshot expiry never refunds it. No legacy row backfill.
 Reserve against actual authoritative installation charged usage and persisted
@@ -79,14 +79,14 @@ budget. Persistence must enforce the same bounds before schema acceptance:
 | Representation | Upper bound |
 | --- | ---: |
 | Canonical policy/settings/member snapshot body |32768 |
-| At most100 progress rows,256 body+512 row allowance each |76800 |
+| At most 100 progress rows,256 body+512 row allowance each |76800 |
 | Snapshot header, cursor and request/reply allowances |8192 |
 | Total |117760 |
 | Reserved logical bytes |131072 |
 
 These are logical allowances, not SQLite file/page/WAL or secure-erasure guarantees.
 Boundary validators, SQL checks and maximum-width tests must enforce each bound.
-Live preview requests replay within a15minute lifetime. Explicit continuation may
+Live preview requests replay within a 15minute lifetime. Explicit continuation may
 consume an empty unapplied predecessor, copying its stored prefix into the newly
 funded child in the same transaction. This bounds empty-history traversal to one
 slot. Candidate-bearing pages are never consumed by continuation. Consumed pages
@@ -159,6 +159,6 @@ replay or continuation claim and no invented free parent header. Parent preview
 never implies parent-wide atomic application. Application always uses the existing
 explicit workspace Apply endpoint; unshipped parent Apply descriptors are retired.
 
-Migration025 is integrated; historical SQL and guards stay frozen. Agent schema/cleanup contracts do
+Migration 025 is integrated; historical SQL and guards stay frozen. Agent schema/cleanup contracts do
 not change. Source-bound scoped checks and independent review precede integration;
 no user data, user target, registry publication or UI redesign is authorised here.

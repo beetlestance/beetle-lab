@@ -112,7 +112,7 @@ A recovered pending intent whose collection fails or times out stays pending,
 charged and visibly errored. It cannot use the uninterrupted-owner failed-close
 path: created_epoch differs after Journal recreation. This conservative rule is
 necessary because the pre-collection gate cannot prove a previous collector never
-succeeded. No TTL, generic404 or elapsed execution deadline grants release.
+succeeded. No TTL, generic 404 or elapsed execution deadline grants release.
 Pending intent + source conflict/corruption also stays charged and unavailable.
 
 Absent source + absent intent means this protocol never began source collection,

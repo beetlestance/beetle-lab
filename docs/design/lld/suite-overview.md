@@ -7,7 +7,7 @@ The later UI redesign can change placement after a separately budgeted read mode
 
 Target origin is parsed from the configured HTTP(S) target, excluding credentials,
 path/query/fragment. Missing/invalid/unprojectable source is unknown; do not resolve
-secrets, inputs or inherited runtime defaults. Show at most8 configured scenario
+secrets, inputs or inherited runtime defaults. Show at most 8 configured scenario
 summaries, with explicit remaining count. Copy only closed executor and literal
 workload/max/step durations or stage count. These are configuration fields, not
 measured time or a second compiler’s derived whole-run duration. Keep offsets/grace
@@ -17,14 +17,14 @@ No config mutation, extra revision read, new persistent projection or storage gr
 RunListQuery adds an optional exact suiteId. Resolve it under the requested
 workspace before reading; foreign/missing suites refuse. Existing suite/time/state/
 outcome indexes provide keyset order. Name and suite filters intersect, and prefix
-search retains its existing256-candidate workspace cap before other filters.
+search retains its existing 256-candidate workspace cap before other filters.
 Client reply guards require every returned Run’s suite identity to match.
 
 No-suite cursors preserve existing encoding. Suite-filtered cursors use v3 and
 bind the normal query plus canonical suite ID; changing/forging it refuses before
-repository reads. V3 has a1024-character cap; old encodings retain512. No OFFSET.
+repository reads. V3 has a 1024-character cap; old encodings retain512. No OFFSET.
 
-The selected suite shows the latest retained submitted Run through a limit1 query,
+The selected suite shows the latest retained submitted Run through a limit 1 query,
 with explicit scope/state/outcome and link. No retained runs does not mean never run.
 A link opens full history with validated bounded suiteId URL context. Resetting
 ordinary filters keeps that context; an explicit workspace-history link clears it.

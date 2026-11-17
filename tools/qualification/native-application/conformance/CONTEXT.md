@@ -23,5 +23,5 @@ source/architecture binding. Unknown phase/error/config fields never pass throug
 `conformance-amd64` selects only finite conformance without repeating the stream.
 Engine failures retain only fixed error category/source coordinates/HTTP status.
 
-`repeated-memory-amd64` runs four fixed trials; 250ms/zero-growth targets stay strict.
+`repeated-memory-amd64` runs four fixed trials; 250 ms/zero-growth targets stay strict.
 Its failure projection keeps closed measurements without claiming partial success.

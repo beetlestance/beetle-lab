@@ -10,7 +10,7 @@ and output_pending history remain unchanged; metadata charge stays retained.
 The native evidence view is point-filtered by attempt; correlated event/slot reads
 use their existing keys. SQL derives the terminal projection once, independently
 of sealed child and wrapper exits. Persisted cancellation wins after custody.
-Requests and replies are closed and capped at4096 bytes; no source body is copied
+Requests and replies are closed and capped at 4096 bytes; no source body is copied
 into the receipt. Matching replay precedes expected-version checks.
 
 No file/network IO, engine retry, deletion, retention or source-free closure.

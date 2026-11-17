@@ -4,14 +4,14 @@ Status: implemented and independently reviewed component; actual installation
 startup/runtime qualification remains.
 Scope: trusted installation, not a schema-upload API or engine marketplace.
 
-An installation registers at most32 pinned engine/profile/config-version combinations.
+An installation registers at most 32 pinned engine/profile/config-version combinations.
 Registration supplies a manifest, approved Docker profile, positive config version,
 validation identity and opaque ConfigSchema created by the shared contract adapter.
 Arbitrary validator callbacks and remote schema resolution are unsupported. All
 registrations use the same installation, staging root and UID policy.
 
-ConfigSchema snapshots at most16 trusted schemas/256KiB, selects a root present in
-that bundle and compiles strict synchronous JSON Schema2020-12 validation. It does
+ConfigSchema snapshots at most 16 trusted schemas/256 KiB, selects a root present in
+that bundle and compiles strict synchronous JSON Schema 2020-12 validation. It does
 not coerce, insert defaults or remove unknown fields. Configuration input is bounded
 to1MiB and copied before validation; accessors/non-JSON values reject. The descriptor
 is immutable and runtime-branded. Its digest covers UTF-8 of:

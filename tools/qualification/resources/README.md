@@ -12,21 +12,21 @@ An optional final local Docker context defaults to `default`. Image revision,
 native platform and immutable root/child/config identities are checked before
 work. The fixture does not pull/build images or select a user's installation.
 
-Four sequential synthetic cases use the shipped attempt caps: one CPU, 512MiB,
-no swap, PID128, read-only root, no capabilities, no new privileges and no network.
+Four sequential synthetic cases use the shipped attempt caps: one CPU, 512 MiB,
+no swap, PID 128, read-only root, no capabilities, no new privileges and no network.
 CPU burns four workers for eight seconds, with the aggregate cgroup counter and
-throttling measured. Memory touches at most768MiB and must be cgroup-OOM-killed.
-PID growth stops after at most160 small children and must observe both EAGAIN and
+throttling measured. Memory touches at most 768 MiB and must be cgroup-OOM-killed.
+PID growth stops after at most 160 small children and must observe both EAGAIN and
 a cgroup limit event. Every issued child is reaped. A final case holds two actual
 descendants, ignores TERM and requires bounded forced namespace shutdown.
 
-Each case has a60s result deadline; issued CLI originals remain bounded to60s,
+Each case has a 60 s result deadline; issued CLI originals remain bounded to60s,
 and cleanup can outlive that deadline. No late result passes. Outer supervision
 uses the existing check runner with600s and bounded logs. Save the owner descriptor
 before the first container; if a controller is externally killed, inspect only that
 descriptor's exact ownership label. Never prune. Cleanup failure prevents a pass.
 
-CPU reports a one-core denominator and permits one100ms cgroup period plus50ms
+CPU reports a one-core denominator and permits one100ms cgroup period plus 50 ms
 accounting tolerance. This is not a throughput minimum or the telemetry5% target.
 All container logs/errors are private; `outcome.json` contains the closed result.
 Direct kernel evidence does not establish installed-agent cause attribution,
@@ -34,7 +34,7 @@ admission/ledger recovery, resource observation accuracy, flood/soak or overhead
 Both architectures require actual native execution; no emulation claim is accepted.
 
 Each worker reads VM-scoped `/proc/meminfo` before its fault and requires at least
-1.5GiB available headroom. This is a qualification safety precondition, not a
+1.5 GiB available headroom. This is a qualification safety precondition, not a
 minimum installation tier or an inference from Docker VM total memory.
 
 For independent native CI, dispatch the registered `CI` workflow on
@@ -52,7 +52,7 @@ profiles per native runner: crashes, then cancellation. It anonymously pulls the
 six already published roles; no build or publication occurs. The default kernel
 profile keeps its15-minute job ceiling. Active recovery has25 minutes overall,
 two sequential300-second checks, and independent cleanup on failure/interruption.
-Cleanup has a120-second result deadline per descriptor; original CLI calls remain
+Cleanup has a 120-second result deadline per descriptor; original CLI calls remain
 bounded to60 seconds, and its workflow step is capped at seven minutes for both
 profiles. A late/uncertain cleanup cannot qualify a run.
 
@@ -67,7 +67,7 @@ exceptions, configuration, ownership files and database snapshots are excluded.
 The explicit `cold-recovery` profile supplies missing native AMD64 evidence while
 reusing accepted ARM proof. It anonymously pulls the six existing published roles,
 runs the300-second default-UID backup/history/resume packet, then independently
-cleans exact owned resources even after cancellation. Cleanup has a120-second
+cleans exact owned resources even after cancellation. Cleanup has a 120-second
 result deadline plus bounded original calls and a four-minute step. Only the
 closed public outcome is uploaded; failure remains fatal. No build, publication,
 release/default change or unrelated source test repetition occurs in this mode.

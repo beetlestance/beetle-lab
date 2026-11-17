@@ -4,8 +4,8 @@ authority.ts derives sole path from genuine same-Journal RuntimeAbsent and C1roo
 then rereads durable exact intent/eligibility/preparedtask. No caller paths.
 tree.ts+installation.ts own pinnedLinux DFS, marker/root/role/mount/signature checks.
 ports.ts uses procfd parent bridge, byteDir.read and bounded fdinfo. checks.ts owns
-native/path guards, reusing cleanup-control codecs. <=512/depth32/path4096/plan128KiB,
-30s, conservative71 concurrenthandles/1539cachedclose records. Closedmetadata bounded.
+native/path guards, reusing cleanup-control codecs. <=512/depth 32/path4096/plan128KiB,
+30 s, conservative71 concurrenthandles/1539cachedclose records. Closedmetadata bounded.
 OutputLifetime remains sole cachedclose owner (generic FileHandle/Dir interface).
 All auxiliaries owned, no asynciteration close. Failedclose retains scope/credit.
 observation.ts binds post-close provenance; persistence.ts owns bounded exactJournal018

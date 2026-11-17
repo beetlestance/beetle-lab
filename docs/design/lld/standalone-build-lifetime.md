@@ -10,7 +10,7 @@ startStandaloneBuild adds a caller-owned AbortSignal and fixed performance.now
 monotonic deadline to existing standalone input. Capture scalar build options and
 context before async work. Script timeout still controls the downloaded test;
 this deadline controls the build call. Reject invalid profiles before file effects.
-A deadline may be at most172,800,000ms away, matching the existing runtime bound.
+A deadline may be at most 172,800,000 ms away, matching the existing runtime bound.
 
 One original existing helper call, one timer and one abort listener, no waiting
 queue/retry. Check monotonic validity/rollback, signal, close and deadline before

@@ -4,7 +4,7 @@ Status: implemented and reviewed locally; real-agent/release qualification pendi
 Owner: metadata adapter. Port: `app/src/ports/output-finalization.ts`.
 Dependencies: [writer](output-artifact-writer.md),
 [transfer](output-transfer-owner.md), [events](event-custody.md).
-Application migration011 owns the receipt and native settlement fences.
+Application migration 011 owns the receipt and native settlement fences.
 
 ## Transaction and bounded interface
 
@@ -24,7 +24,7 @@ No result, manifest, source or native receipt supplied by the caller is trusted.
 
 ## Required evidence
 
-1. Resolve the original Offer and acknowledged generation1 physical binding from
+1. Resolve the original Offer and acknowledged generation 1 physical binding from
    retained execution records. Verify the sole adopted source using the existing
    shared envelope/seal verifier and original engine/installed identity pins.
 2. Require execution_charged=0 and a bounded result-free snapshot header with
@@ -34,7 +34,7 @@ No result, manifest, source or native receipt supplied by the caller is trusted.
    both use the agent Journal sequence. A higher header is a contradiction and
    fails before cursor/receipt/accounting writes, with an independent native
    insertion fence. Older stored snapshots remain valid; equality is unnecessary.
-3. Require exactly the manifest's artifact count, at most128 slots, every slot
+3. Require exactly the manifest's artifact count, at most 128 slots, every slot
    published at declared bytes with full native identity and writer=NULL.
    The transfer owner must have drained the producer/native original before its
    publication metadata write. SQL cannot independently infer native quiescence.
@@ -46,7 +46,7 @@ No result, manifest, source or native receipt supplied by the caller is trusted.
    For finalAgentSeq=0, create a zero cursor inside this transaction if absent.
 5. Derive retained C+M+A: C is immutable event charged bytes, M is the sole stored
    canonical manifest's UTF-8 bytes, A is the sum of declared published artifact
-   sizes. Source closure/slots/receipt use the existing65536 metadata allowance.
+   sizes. Source closure/slots/receipt use the existing 65536 metadata allowance.
    Require safe integer arithmetic and retained<=original maximum payload P.
 6. Read persisted cancellation in this same transaction. No finalization command
    carries cancellation or an outcome override.
@@ -56,7 +56,7 @@ No result, manifest, source or native receipt supplied by the caller is trusted.
 Wrapper exit evidence describes the engine wrapper; sealed result.execution
 describes child k6. Never equate those exit codes or timestamps. In particular,
 a failed/discovery child may have a nonzero exit while its successful wrapper
-exits0. Preserve the verified sealed outcome rather than treating exit0 as pass.
+exits0. Preserve the verified sealed outcome rather than treating exit 0 as pass.
 
 After all custody/release/event gates, apply this precedence:
 
@@ -70,8 +70,8 @@ After all custody/release/event gates, apply this precedence:
   missing wrapper evidence. Unavailable-exit recovery closure is separate work.
 - A known nonzero wrapper exit yields errored/inconclusive, preserving an explicit
   non-cancellation failure reason, otherwise engine_crash.
-- An explicit non-cancellation exit reason prevents ordinary success even at0.
-- Wrapper exit0, oomKilled=false, no failure reason and a completed sealed child
+- An explicit non-cancellation exit reason prevents ordinary success even at 0.
+- Wrapper exit 0, oomKilled=false, no failure reason and a completed sealed child
   yields finished with the sealed passed/failed/inconclusive outcome and no reason.
 - A sealed execution error or lost execution yields errored/inconclusive with its
   validated reason (execution_lost for lost execution).
@@ -96,7 +96,7 @@ No duplicate result carrier or mutable original allocation is needed.
 Guard insertion against mismatched evidence, unsafe credit, duplicate INSERT or
 REPLACE and terminal Run conflicts. Its insertion atomically credits P-(C+M+A)
 against the same installation_storage_usage counter used by admission, projects
-the terminal Run and closes event_pending from1 to0. Retain the full metadata
+the terminal Run and closes event_pending from 1 to0. Retain the full metadata
 allowance. Original allocation facts and output_pending=1 remain historical.
 Accounting reconstruction must subtract immutable finalization credits.
 

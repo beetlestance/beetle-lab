@@ -3,13 +3,13 @@
 Status: C2a durable metadata, C2b shared lease gate and C2c actual producer barrier
 implemented locally. No cleanup endpoint, file removal, ACK or refund.
 Parent [retirement](output-retirement.md), [namespace](staging-namespace.md) and
-[control capacity](cleanup-control.md). Root reserves agent Journal migration017.
+[control capacity](cleanup-control.md). Root reserves agent Journal migration 017.
 
 ## Request and durable authority
 
-A shared closed OutputRetirementRequest is protocol1/performance and <=3072 UTF-8
+A shared closed OutputRetirementRequest is protocol 1/performance and <=3072 UTF-8
 bytes (4096 transport frame before allocation). It carries exact organisation,
-workspace, attempt, generation1, intentDigest and physical Journal authority;
+workspace, attempt, generation 1, intentDigest and physical Journal authority;
 canonical backend Run/deletion UUIDs and deletionVersion1; and one closure:
 
 - source: sourceDigest, manifestDigest and finalAgentSeq;
@@ -30,7 +30,7 @@ the same eligibility validator as begin, so malformed/stale/active requests reje
 before fencing producers; begin revalidates atomically and never trusts preflight.
 Begin transaction requires performance purpose, original/closure/authority match,
 a definitively released admitted reservation, installed C1 namespace and control
-version1. Rejected/unadmitted originals remain outside this C2 branch.
+version 1. Rejected/unadmitted originals remain outside this C2 branch.
 Source-backed requests require a prepared task anchor, matching source output-root
 facts and claimed spec digest. Absence may snapshot no-task/preparing/prepared
 metadata, which still grants no file-removal permission.
@@ -66,7 +66,7 @@ credit. Shutdown waits actual leases; unknown cleanup refuses Journal/runtime ow
 release. A preflight reservation leaves intake open until its explicit fence. Exact
 positive confirmation rereads the immutable Journal intent before local eviction.
 
-C2c applies one fixed monotonic budget (<=30s) starts before preflight and covers begin,
+C2c applies one fixed monotonic budget (<=30 s) starts before preflight and covers begin,
 reconciliation, producer/read drain and cold inspection. Expiry is observable as
 expired/fenced; it cannot release issued originals/credits or mint a late C3 token.
 Drain/cached-close ownership continues after expiry. A new budget is possible only

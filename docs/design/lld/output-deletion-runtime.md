@@ -21,10 +21,10 @@ Files_absent remains backend-file progress, never whole-run deletion.
 
 Scan at most one pending intent per discovery call using the existing canonical
 forward cursor; wrap after a completed page. Remember at most one current intent,
-its next ordinal and the discovery cursor. At most128 files belong to an intent.
+its next ordinal and the discovery cursor. At most 128 files belong to an intent.
 Process one ordinal per turn; skip already absent rows without native work. Resume
 from durable metadata after restart, never an in-memory receipt. Each step has one
-fixed30s monotonic budget, including metadata and native work and final settlement.
+fixed 30 s monotonic budget, including metadata and native work and final settlement.
 
 Capture/bind capabilities before startup yields. Bound/snapshot replies and match
 scope/run/deletion/ordinal/version before native dispatch. The metadata RPC remains
@@ -69,7 +69,7 @@ Docker/release/browser qualification follows from this driver.
 ## Automatic producer cleanup
 
 The same sequential child alternates file and retirement turns. It admits no new
-intent and owns no gateway, worker or native pool. Each turn starts one fixed30s
+intent and owns no gateway, worker or native pool. Each turn starts one fixed 30 s
 budget before discovery. Production composition captures the actual installation
 retirement gateway before acquiring the output namespace. File-only embedding must
 explicitly opt into isolated mode; an accidentally missing gateway refuses startup.
@@ -80,17 +80,17 @@ capacity_unavailable refusal advances/defer without fencing. Already funded orig
 remain eligible even after capacity settings shrink. No allocation ceiling increases.
 
 Retirement discovery has an independent cursor: canonical installation ID, page size,
-captured maximum sequence and last physical sequence. Migration023 adds a partial
-sequence index for files_absent source/absence intents. Select at most32+1 physical
+captured maximum sequence and last physical sequence. Migration 023 adds a partial
+sequence index for files_absent source/absence intents. Select at most 32+1 physical
 rows before checking immutable ACK membership. An ACK-only page may be empty and
 still advance. Complete the captured horizon before wrapping; newly appended and
-previously deferred work is reconsidered on subsequent passes. Buffer at most32 rows.
+previously deferred work is reconsidered on subsequent passes. Buffer at most 32 rows.
 
 For each candidate, reserve control, derive the exact retained original request,
 invoke shared retireOutput with the active signal, and recapture the exact reply.
 Validated pending records no ACK. Cleaned persists that immutable reply through the
 existing guarded worker operation. Transport/timeout and scoped validated retry
-transport errors defer with1–30s bounded backoff; permanent/malformed/mismatched
+transport errors defer with1–30 s bounded backoff; permanent/malformed/mismatched
 replies fence and notify. No missing row,404, timeout or close error proves cleanup.
 
 Metadata failures join actual worker termination before rejecting deletion calls.

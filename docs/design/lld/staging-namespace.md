@@ -1,12 +1,12 @@
 # Durable staging namespace and cleanup capacity
 
 Status: C1 locally verified; no physical cleanup/ACK or refund authority.
-[Evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/staging-namespace.md). Parent: [retirement](output-retirement.md). Journal migration016 is implemented.
+[Evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/staging-namespace.md). Parent: [retirement](output-retirement.md). Journal migration 016 is implemented.
 Owners: staging native originals, Journal namespace/control rows, RuntimeOwner gate.
 
 ## Installed custody
 
-Bind protocol1 installation/Journal authority and daemon identity to the canonical
+Bind protocol 1 installation/Journal authority and daemon identity to the canonical
 bind source/target and mounted root's exact device/inode, UID/GID and mode. Native
 device/inode values stay bigint internally and canonical uint64 decimal strings
 on disk; UID/GID/mode use uint32 strings. Do not use mtime/ctime as identity.
@@ -15,7 +15,7 @@ persistent namespace identity: container recreation may legitimately change them
 
 Every startup revalidates canonical no-link ancestors through held descriptors,
 compares named and descriptor identities, closes those exact originals and checks
-the mounted root again. At most256 ancestors and two descriptors are held by one
+the mounted root again. At most 256 ancestors and two descriptors are held by one
 native owner. Existing path bounds remain. Changed device/inode after a daemon/VM
 recreation requires recovery; it is not permission to rebind to current paths.
 
@@ -24,7 +24,7 @@ root-owned and0400. Its exact native identity and content digest join the durabl
 anchor. A Journal intent generates a namespace UUID and random nonce BEFORE file
 creation. Only zero accepted history plus a genuinely empty installed staging root
 can begin a new binding. Never adopt an unknown marker or manufacture an anchor
-for retained history. Preparation/anchor/singleton caps are12/16/32KiB.
+for retained history. Preparation/anchor/singleton caps are12/16/32 KiB.
 
 A pending fresh intent can recover only its exact expected nonce marker, through
 bounded no-follow read, identity/content, file/root fsync and original-close checks.
@@ -52,12 +52,12 @@ exact bigint identities, then commit all four roles BEFORE any provider writes.
 Do not infer task ownership from names. Pending replay may attempt fresh exclusive
 mkdir; an existing or partial directory stays recovery-required and charged.
 Completed anchors never rebind; a second prepare cannot replay target work.
-Intent plus anchor plus512 logical row allowance fit8192 bytes. This observation
+Intent plus anchor plus 512 logical row allowance fit8192 bytes. This observation
 record does not establish producer/read retirement, current absence or released IO.
 
 ## Reserved control capacity
 
-Reserve196608 logical bytes/version1 atomically at admission for performance AND
+Reserve196608 logical bytes/version 1 atomically at admission for performance AND
 export originals, before reservation/event insertion. Offered/unadmitted event-only
 journaling retains its1024-byte quota path. Namespace binding is separately bounded
 singleton metadata; full physical disks may still fail writes and stay charged.

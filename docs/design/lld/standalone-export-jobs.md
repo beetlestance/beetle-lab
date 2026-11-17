@@ -26,7 +26,7 @@ terminal release require original-work/container quiescence, not a timeout recei
 
 ## Assignment boundary
 
-StandaloneExportAssignment is a closed, separately tagged version1 envelope with
+StandaloneExportAssignment is a closed, separately tagged version 1 envelope with
 purpose standalone_export, export/request UUIDs, immutable revision UUID/digest,
 existing Offer and explicit scriptTimeoutMs/maximumBuildBytes, assignmentDigest.
 Wrapping preserves Offer's installed identity/image, input pins, CPU/memory/PID,
@@ -41,23 +41,23 @@ refuse compiled secret declarations; the shared contract never interprets config
 or resolves environment/files. The immutable revision/config/pin relationship is
 proved by the metadata transaction and staged input owner, not by hashing a label.
 
-Bound outer assignment to existing Offer allowance+8KiB; separately revalidate the
+Bound outer assignment to existing Offer allowance+8 KiB; separately revalidate the
 nested Offer, its original byte allowance and config byte limit. Preserve the
 exact config data. Hash every assignment field except assignmentDigest under
 beetle-lab.standalone-export-assignment.v1 plus newline and canonical JSON.
 A different budget/source/identity/options produces a different assignment.
 The digest is content integrity, never admission or authentication proof.
 
-maximumBuildBytes is1..64MiB and includes simultaneous compiler plan/entry/script
+maximumBuildBytes is1..64 MiB and includes simultaneous compiler plan/entry/script
 scratch through the existing builder. Reserve another8KiB result and64KiB control
 inside Offer.outputBytes; no capacity is invented. Whole-job timeout bounds this
-build task. scriptTimeoutMs is separately1..172,800,000ms, matching the existing
+build task. scriptTimeoutMs is separately1..172,800,000 ms, matching the existing
 standalone runtime validator; it limits the downloaded test when run externally.
 
 ## Result boundary
 
-StandaloneExportResult is <=8KiB, version1/purpose standalone_export, exact
-export/attempt/workspace/organisation/generation1 and assignmentDigest. Status is
+StandaloneExportResult is <=8 KiB, version 1/purpose standalone_export, exact
+export/attempt/workspace/organisation/generation 1 and assignmentDigest. Status is
 succeeded, failed or cancelled. Succeeded requires reason:null, exactly one
 standalone-k6-script artifact at standalone/suite.js and known buildUsage(bytes,
 peakBytes). Failure/cancellation has artifact:null and a fixed typed reason; usage

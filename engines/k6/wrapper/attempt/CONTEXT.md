@@ -6,11 +6,11 @@ No retry/admission/refund/native fallback. Loader binds headers; fresh control
 journal precedes compile. Existing journal/result refuses another invocation.
 Rejected journal initialization has UNKNOWN quiescence; no result/target work.
 Issued IO/callback/descriptor originals are awaited despite early public failure.
-Offer partition: control clamp(total/32,64KiB,64MiB), numeric1MiB,result64KiB,
-summary1MiB,reports512KiB; history quarter remainder<=256MiB; build<=89MiB.
-Execute caps history; collect reserves summary/numeric/reports plus>=64KiB drain.
+Offer partition: control clamp(total/32,64 KiB,64 MiB), numeric1MiB,result64KiB,
+summary1MiB,reports512KiB; history quarter remainder<=256 MiB; build<=89 MiB.
+Execute caps history; collect reserves summary/numeric/reports plus>=64 KiB drain.
 Prepare caps peak build. Control has a separate reservation, never phase double-charge.
-Live opt-in carves min(8MiB,total/8,execute/8), reducing history without budget growth.
+Live opt-in carves min(8 MiB,total/8,execute/8), reducing history without budget growth.
 Approved catalogue supplies first20 eligible execute/engine series; freeze/detach
 before effects. Fresh epoch; consumers must bind scope/generation/actual owner.
 Start after measured transition, accept only measured windows, drain before collect.
@@ -18,7 +18,7 @@ Charge initial65792 extent plus actual sink charges to execute. Safe advisory fa
 leaves outcome alone; failed cleanup blocks sealing. Receipt.liveMetrics is advisory.
 Original phase/global lifetime bounds publisher, not the60s IO-operation clamp.
 Parser work ceilings64GiB/268435456records are independent of retained output;
-diagnostics64KiB,drain1000ms,collection<=30000ms; installed ceilings unqualified.
+diagnostics64KiB,drain1000ms,collection<=30000 ms; installed ceilings unqualified.
 Manifest deadlines never extend the admitted wall/monotonic fence. Valid marker
 starts execute retrospectively; no marker means no invented execute phase.
 Serial journal append/fsync precedes notification; heartbeat one flight/no backlog.

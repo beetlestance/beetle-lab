@@ -7,7 +7,7 @@ admitted container, never a backend-local build or arbitrary browser file select
 Reuse the existing standalone compiler/builder. Its owned BuildOutput carries a
 fresh fixed jobRoot/standalone/suite.js, final bytes and peak scratch bytes. Capture
 those scalars before async work. Require nonnegative current UID, canonical absolute
-job root/path, bytes<=peak<=caller allowance<=64MiB. Refuse invalid profiles before
+job root/path, bytes<=peak<=caller allowance<=64 MiB. Refuse invalid profiles before
 IO. Never overwrite, delete, walk or infer a descriptor solely from supplied hashes.
 
 Open only the fixed existing file. Shared native custody validates owned0700
@@ -19,9 +19,9 @@ The outer job-root identity must also remain the same after native work.
 
 Existing summaries, numeric/target/report artifacts retain their exact descriptor
 kinds/paths and verification. Metric archive uses the same bounded file-hash reader.
-One64KiB scratch buffer, positional reads, <=ceil(bytes/64KiB)+32 calls plus one
+One64KiB scratch buffer, positional reads, <=ceil(bytes/64 KiB)+32 calls plus one
 EOF probe per pass. Refuse short/stalled/invalid counts or non-EOF. Caller-specific
-byte limit<=256MiB preserves existing archive allowance; script limit remains64MiB.
+byte limit<=256 MiB preserves existing archive allowance; script limit remains64MiB.
 Check the owning synchronous fence before/after every issued read. Hashing alone
 proves no file ownership, publication, admission or global memory bound.
 
@@ -40,7 +40,7 @@ API or download workflow is supplied by this component. Those remain in the
 [independent export job](standalone-export-jobs.md) contract.
 
 Acceptance uses actual files and actual compiler/builder, plus synthetic bounded
-read/close holds. Cover >2MiB content with constant scratch, expected descriptor,
+read/close holds. Cover >2 MiB content with constant scratch, expected descriptor,
 size/path/mode/link/symlink/corruption refusal, stopped/read/close originals, sticky
 cleanup failure and preserved existing artifact/archive behavior. No real-user
 files, container or target workload are part of component qualification.

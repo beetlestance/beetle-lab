@@ -29,7 +29,7 @@ Whole-orchestration quiescence is required independently from child quiescence.
 Closed orchestration failure codes override native causes, retain observed facts,
 and force partial/missing inconclusive evidence; missing/malformed fields reject.
 
-Evidence is copied through the shared bounded JSON encoder (4MiB/depth64/nodes65536/
+Evidence is copied through the shared bounded JSON encoder (4 MiB/depth 64/nodes 65536/
 collection4096); accepted expanded compiler IR is reused, not copied. Result output
 is bounded to1MiB and schema checked with an internal placeholder seal which is
 stripped before return. The generic seal codec later owns content hashing.

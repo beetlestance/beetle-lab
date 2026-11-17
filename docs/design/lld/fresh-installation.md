@@ -14,7 +14,7 @@ monotonic deadline and trusted compiled agentWorkerUrl/backendWorkerUrl. The cal
 DockerTransport capability; all requests made by provisioning are read-only GETs.
 Root owns this interface, build/config files and architecture boundary amendments.
 
-Request is closed, bounded JSON data (<=256KiB): root absolute canonical path,
+Request is closed, bounded JSON data (<=256 KiB): root absolute canonical path,
 positive uid/gid, canonical externalOrigin, private agentOrigin, Docker socket path,
 agentContainer name, agentImage reference, engineImage reference, targetNetwork,
 installationValues (generated InstallationValues), agentPolicy (PoolConfiguration
@@ -45,7 +45,7 @@ private, regular/single-link and no-follow; worker URLs are trusted packaging
 arguments. Construct the existing UnixDockerTransport only from captured socket
 configuration. No host dependency install or whole environment read. SIGINT/TERM
 aborts the captured operation and waits owned cleanup. Print only ProvisionResult
-on success; fixed private code on stderr/exit1 on failure (invalid arguments exit2).
+on success; fixed private code on stderr/exit 1 on failure (invalid arguments exit 2).
 Build recipes/Compose invocation are subsequent coordinator-owned work.
 
 ## Inspection and capture
@@ -53,7 +53,7 @@ Build recipes/Compose invocation are subsequent coordinator-owned work.
 Capture/validate scalars and bounded JSON before asynchronous work. Snapshot options
 and bind supplied capability methods; caller mutation cannot change admitted work.
 The offline caller launches one operation per owned root; an exclusive receipt
-is its admission claim. No global queue/retries. Use a fixed <=30s deadline and captured
+is its admission claim. No global queue/retries. Use a fixed <=30 s deadline and captured
 abort signal. Native originals remain owned until actual settlement after abort.
 
 Inspect only named daemon/info, agent image, engine image and target network through
@@ -72,10 +72,10 @@ configuration owners rather than duplicating admission/compiler policies.
 ## Private filesystem and commit
 
 The caller supplies an existing empty root owned by uid (or an exclusive new child
-under an owned private parent), mode0700, canonical/no symlink. This component does
+under an owned private parent), mode 0700, canonical/no symlink. This component does
 not chown a foreign directory or accept shared/temp-prefix ownership as proof.
 All parents/children/files use existing bounded no-follow private IO patterns;
-files0600, directories0700, regular/single-link files and pinned parent identity.
+files 0600, directories0700, regular/single-link files and pinned parent identity.
 Run as the requested uid/gid; container wrappers may prepare ownership separately.
 
 Layout under root:
@@ -90,7 +90,7 @@ Layout under root:
 - backend/: backend data; backend/inputs/staging and backend/inputs/published
   already private, with published root reused as agent provider inputRoot.
 - agent/journal and agent/staging: separate private agent authority/runtime roots.
-- installation.json: bounded private receipt with version1, operation UUID,
+- installation.json: bounded private receipt with version 1, operation UUID,
   installation UUID, request digest and phase initializing/ready.
 
 Create exclusively; reject pre-existing foreign/partial content. Write the

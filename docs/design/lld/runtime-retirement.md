@@ -40,7 +40,7 @@ current absence; full C4 composition and public cleanup remain separately qualif
 
 ## Lifetime, bounds and result
 
-One owner per physical Journal, at most64 scoped retained attempts. Reserve before
+One owner per physical Journal, at most 64 scoped retained attempts. Reserve before
 foreign work. Capture a fixed operation deadline (maximum30seconds) and native abort
 signal before awaiting; recheck owner, producer capability and budget after reads
 and before subsequent effects. Concurrent exact requests share the original promise;

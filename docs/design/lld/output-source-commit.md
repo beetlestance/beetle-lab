@@ -55,7 +55,7 @@ exists; do not import private Journal validators or duplicate its durable decisi
 | Scalar owner | Exact additional grammar |
 | --- | --- |
 | Engine | id uses Common.token; imageDigest uses Common.imageDigest; configVersion integer1..MAX_SAFE_INTEGER |
-| Scope | Existing UUID spellings preserved; generation1; journalAuthority and collectionId canonical lowercase36-byte UUIDs |
+| Scope | Existing UUID spellings preserved; generation 1; journalAuthority and collectionId canonical lowercase36-byte UUIDs |
 | Root | Absolute normalized NUL-free directory<=4096 UTF-8 bytes; uid integer0..4294967295; device/inode canonical unsigned decimal0..18446744073709551615, <=20 digits |
 | Root timestamps | Canonical signed decimal strings<=32 characters, no plus/leading zero/-0; preserve negative pre-epoch nanoseconds and never convert to Number |
 | Private evidence text | createToken/runtimeId/startToken/evidenceId/settlementId nonempty<=128 UTF16 units, except collection evidenceId is canonical collectionId |
@@ -124,7 +124,7 @@ Throw OutputSourceError: invalid_input for malformed fields/bounds/relationships
 integrity for a validly shaped result/manifest/source digest mismatch, digest_failed
 for a throwing digest provider or non-lowercase/non-64-hex provider result. Reuse
 the result-seal verifier, mapping its errors to these codes without hiding failure.
-[Version1 vectors](../../../contracts/fixtures/output-source/v1.json) freeze complete
+[Version 1 vectors](../../../contracts/fixtures/output-source/v1.json) freeze complete
 preimages/digests and lengths for base, key order, private root changes, raw-result
 whitespace and artifact order. They are synthetic content facts, not source receipts.
 

@@ -28,7 +28,7 @@ headers fail closed; mismatch is 409 `authority_mismatch`, never a receipt404.
 Capabilities expose required `journalAuthority`; a mismatched producer is refused.
 Path attempt ID, header scope and mutation DTO identities must match. GETs fence
 stale generations before returning scoped state/events. The initial Offer always
-uses generation1; future ownership generations cannot be requested through Offer.
+uses generation 1; future ownership generations cannot be requested through Offer.
 Capabilities are installation-wide and require authentication without a namespace.
 
 Authentication/invalid-scope failures and global failures may return only an HTTP
@@ -41,15 +41,15 @@ generic/unstructured404 is not a receipt absence witness.
 
 ## Bounded JSON and operations
 
-Bodies/replies are at most 1MiB except Offer PUT bodies, bounded independently at
-2MiB with 1MiB config. Existing TWO Offer originals remain shared, not another pool. Runner validators reject unsupported fields;
+Bodies/replies are at most 1 MiB except Offer PUT bodies, bounded independently at
+2 MiB with 1 MiB config. Existing TWO Offer originals remain shared, not another pool. Runner validators reject unsupported fields;
 there is no coercion, default insertion or arbitrary schema compilation. Replies
 are encoded/snapshotted before reading fields or choosing Fastify serializers;
 only validated objects are sent. Reply scope/generation must match the request.
 Event cursors are canonical nonnegative decimals; duplicate/unknown query fields
-reject. Event batches and ACKs retain existing100-event/256KiB journal semantics.
+reject. Event batches and ACKs retain existing 100-event/256 KiB journal semantics.
 
-At most32 original service calls are retained concurrently, with64 sockets and
+At most 32 original service calls are retained concurrently, with64 sockets and
 30-second request/connection limits. Saturation returns429 without queueing work.
 Socket/client completion does not release the original service-operation owner.
 Server preClose fences new service calls and waits for every original result.

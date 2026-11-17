@@ -16,7 +16,7 @@ quiesced successfully before handing over the plan. Engine paths/UID come from t
 approved plan; engine identity and output budget come from the immutable offer.
 The public factory uses the real Node control reader. Test ports remain private.
 
-One controller owns each journal/scoped generation, with at most64 owners per
+One controller owns each journal/scoped generation, with at most 64 owners per
 journal. Duplicate ownership rejects. A successful close releases that local owner;
 failed or outstanding cleanup retains it. The durable journal remains authoritative
 across process restart. Controllers do not allocate another generation or repeat
@@ -24,7 +24,7 @@ HTTP load to recover evidence.
 
 `launch` and `tick` share one lane; concurrent calls reject busy rather than queue.
 A call snapshots its deadline/signal after reserving ownership. Its deadline is
-within five minutes and each control read within30seconds. Calls await original
+within five minutes and each control read within 30 seconds. Calls await original
 reader/collector quiescence; a stalled kernel operation can keep that private call
 pending beyond its public budget. Transport must schedule work separately from
 snapshot/cancel reads rather than await these calls in an offer handler.

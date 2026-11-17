@@ -8,13 +8,13 @@ Live metrics and wider report/compare/export scope remain in PLAN.
 
 Both authenticated GETs are under the requested organisation/workspace/run/attempt:
 `.../metrics?limit&cursor` lists series; `.../metrics/samples` selects one ordinal
-with limit1..100, optional fromTimeMs/toTimeMs and canonical cursor. Reuse
+with limit 1..100, optional fromTimeMs/toTimeMs and canonical cursor. Reuse
 RunAttemptParams, existing Host/Origin/session guards and generated JSON client.
 No file path/offset, engine image, raw config or filesystem selector is public.
 Historical requested attempts use existing scoped publication readers; never
 substitute the Run's current engine/head pins for that attempt's source.
 
-RunMetricSeriesPage carries id/scope/attempt/generation1, manifestDigest,
+RunMetricSeriesPage carries id/scope/attempt/generation 1, manifestDigest,
 availability pending/absent/unavailable/ready, reason, window count, total series,
 measurement source time, window coverage, current <=100 descriptors and nextCursor.
 Pending/absent have no manifest or measurements. Unavailable has a manifest but no
@@ -61,7 +61,7 @@ Null nextCursor means the requested source range is exhausted, not perfect captu
 
 ## Publication and byte owner
 
-Resolve existing RunArtifactsReader list/file lookups, at most128 descriptors.
+Resolve existing RunArtifactsReader list/file lookups, at most 128 descriptors.
 Require exactly one numeric-final plus one metric-windows and metric-index pair
 for recorded history. No pair means unavailable/not_recorded; a broken pair is
 storage failure. Unknown private versions are unavailable/unsupported_format.
@@ -69,12 +69,12 @@ Require numeric-final v3 complete metric processing/retained IDs, matching scope
 count/bytes and one indexed data identity. Headers/footers must bind that same scope,
 data artifact ID, complete data SHA/bytes and count; reject contradictory evidence.
 
-Reuse the actual installation publishedBytes.read view. Full numeric read <=1MiB
+Reuse the actual installation publishedBytes.read view. Full numeric read <=1 MiB
 is verified through EOF/SHA. Index size <=1024+65536*256+256 bytes; stream the whole
-index per sample query with <=64KiB buffers, complete SHA/EOF and structural proof:
+index per sample query with <=64 KiB buffers, complete SHA/EOF and structural proof:
 closed rows, sequence, monotonic times, contiguous offsets/lengths and final bounds.
-Retain at most100 candidate rows, not the full index. Selected data is one contiguous
-native range job <=8MiB; decode one <=1MiB frame at a time and validate exact indexed
+Retain at most 100 candidate rows, not the full index. Selected data is one contiguous
+native range job <=8 MiB; decode one <=1 MiB frame at a time and validate exact indexed
 length/sequence/time and catalogue dimensions. No whole-history array or per-frame
 native job. Catalogue may probe bounded headers/footers; partial data reads rely on
 native physical custody and indexed/schema binding, not a new full-file SHA claim.
@@ -85,7 +85,7 @@ Its factory accepts RunMetricServiceOptions with artifacts, optional bytes and
 createDigest (fresh incremental SHA256 update/hex instance per full read). Bootstrap
 supplies the hashing adapter; the application imports no Node crypto. Missing either
 byte/hash capability permits metadata reads but ready history reads fail503.
-Both port methods take MetricReadContext {signal,deadline}; fixed <=30s monotonic
+Both port methods take MetricReadContext {signal,deadline}; fixed <=30 s monotonic
 budget covers metadata/native/parse/final serialization. Never reset it between IO.
 Wait for native result AND settlement; original work remains owned after abort.
 No-agent configurations can report pending/absent metadata but ready byte reads
@@ -98,9 +98,9 @@ No migration, new writer, ACK, finalization, reservation refund or result mutati
 ## Browser surface
 
 Use existing app tokens/design, RunDetail, generated client and registered query
-keys. First consumer is one selectable series chart, <=1000 projected points/1MiB
+keys. First consumer is one selectable series chart, <=1000 projected points/1 MiB
 cache, one current catalogue page; other/live views remain later required work.
-Load newest pages sequentially, at most10 requests per chart action, with original
+Load newest pages sequentially, at most 10 requests per chart action, with original
 abort/selection ownership checks before every next call. Stop on error. A bounded
 partial view has an explicit limit notice and older/latest navigation; replace
 views rather than accumulate a run corpus or cursor-keyed caches. Page/series/scope/

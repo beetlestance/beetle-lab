@@ -28,7 +28,7 @@ Parent owns physical stop, native script custody, output cleanup and publication
 Focused lifecycle checks: engines/k6/test/export-lifetime/lifetime.test.ts.
 
 startExportOperation consumes an opened trusted staged session. Shared assignment
-capture plus exact canonical Offer/generation1 matching precede compile effects.
+capture plus exact canonical Offer/generation 1 matching precede compile effects.
 It narrows the original fence, compiles once, builds once and verifies native
 script custody, then closes staged input before success. Retain original work and
 close errors through logical stop. Fixed errors distinguish cancel/deadline/clock.

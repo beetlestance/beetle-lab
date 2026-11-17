@@ -5,13 +5,13 @@ Owner: docs/design/lld/standalone-export-jobs.md. Assignment/result schemas live
 runner/v1; generated wire types are never handwritten or interpreted as performance.
 
 Distinct purpose/envelope wraps existing Offer; current performance intake rejects
-it. Require dedicated capability, k6/config1 and explicit empty secret declarations.
-Script timeout differs from whole-job build timeout. Build peak+8KiB result+64KiB
+it. Require dedicated capability, k6/config 1 and explicit empty secret declarations.
+Script timeout differs from whole-job build timeout. Build peak+8 KiB result+64 KiB
 control stays inside original output reservation. Hashes prove no admission/custody.
 
-Assignment snapshot<=Offer+8KiB, nested Offer/config independently revalidated.
+Assignment snapshot<=Offer+8 KiB, nested Offer/config independently revalidated.
 Exact domain prefix/canonical digest binds every field except digest self-reference.
-Result<=8KiB, separate seal prefix, generation status and exactly one portable file
+Result<=8 KiB, separate seal prefix, generation status and exactly one portable file
 on success; failed/cancelled carries no artifact or performance outcome.
 Use captureStandaloneExportResult for full assignment/usage/file/time binding;
 verifyStandaloneExportResultSeal alone proves structural integrity only.

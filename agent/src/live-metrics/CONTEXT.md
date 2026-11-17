@@ -5,7 +5,7 @@ The read port resolves only after actual request/response close. Reader retains
 one original through cancel/close; close fences synchronously. No retry/queue.
 Hard5s budget covers preflight/read/decode/final return. Shared mailbox and frame
 codecs enforce extent/hash/shape/size/identity; revision equals publishedSequence.
-Expected scope/epoch/subset are mandatory. Capture/source/published age<=6s; no future timestamp.
+Expected scope/epoch/subset are mandatory. Capture/source/published age<=6 s; no future timestamp.
 Scalar revision/source/end/time/coalescing/digest state fences regressions and
 altered repeats/overlapping windows. Unchanged polling keeps the original producer timestamp; no age
 refresh; a monotonic expiry also protects against a frozen wall clock. No metric corpus or subscriber registry. One reader per retained owner.

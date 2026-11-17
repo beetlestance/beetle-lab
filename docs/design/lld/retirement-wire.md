@@ -4,9 +4,9 @@ Status: values and authenticated runner route implemented; backend ACK/settlemen
 Parents: [retirement](output-retirement.md), [producer](producer-retirement.md),
 [native receipt](native-receipt.md). Shared package: contracts/output-retirement.
 
-The existing closed protocol1/performance request stays <=3072 UTF-8 bytes, with
+The existing closed protocol 1/performance request stays <=3072 UTF-8 bytes, with
 canonical backend Run/deletion UUIDs, exact original/Journal authority spelling,
-generation1/deletionVersion1 and source/absence closure. Its existing domain-prefixed
+generation 1/deletionVersion1 and source/absence closure. Its existing domain-prefixed
 canonical SHA256 identity remains unchanged; do not invent another digest algorithm.
 
 OutputRetirementReply is a closed <=4096 UTF-8-byte union. Both states echo exact
@@ -18,7 +18,7 @@ request and compares every identity field and recomputed canonical digest. Prese
 exact original and physical-authority spelling; backend IDs remain canonical.
 
 Pending contains state=pending and forbids all cleaned closure fields. Cleaned adds
-exact64-lowercase-hex namespaceIdentity, preparationIdentity and cleanupReceiptDigest.
+exact 64-lowercase-hex namespaceIdentity, preparationIdentity and cleanupReceiptDigest.
 Here preparationIdentity means C1 taskNamespaceIdentity, NOT the backend's separate
 file-removal preparation commitment. The receipt digest identifies the durable agent
 NativeCleanupReceipt. No path/native facts/config/artifact list/refund or internal

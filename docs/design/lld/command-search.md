@@ -12,15 +12,15 @@ workspace patterns plus UUID validation. An invalid workspace address cannot
 fall back to another inferred namespace. Root views offer global destinations.
 
 In an organisation, include its first workspace page. In a workspace, additionally
-include its first suite/run pages. Each page is at most100 items; filter locally
-with at most128 characters and display at most40 results with the full match count.
+include its first suite/run pages. Each page is at most 100 items; filter locally
+with at most 128 characters and display at most 40 results with the full match count.
 Names are React text, IDs become URLs only through existing route builders. This
 is contextual navigation/recent-item search, not full-history/global full text.
 The first-page limit and unavailable/more-page states remain visible.
 
 ## One query owner
 
-Use the same QueryClient, generated client and exact first-page100/empty-cursor
+Use the same QueryClient, generated client and exact first-page 100/empty-cursor
 keys as ordinary list views. Central page-key helpers own suffixes. No separate
 cache, search endpoint, query-per-keystroke, background polling or automatic retry.
 Reuse loaded pages without mount refetch; explicit refresh/retry is a bounded read.

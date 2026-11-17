@@ -2,7 +2,7 @@
 
 Public index exports provisionFreshInstallation, inspectReadyConfiguration and root-owned types.
 The caller supplies complete bounded settings/policy/manifest, trusted workers,
-read-only Docker capability, signal and one fixed monotonic deadline <=30s.
+read-only Docker capability, signal and one fixed monotonic deadline <=30 s.
 No serving service calls this component or repairs missing authority implicitly.
 
 capture owns closed request validation and snapshots; inspection owns four named

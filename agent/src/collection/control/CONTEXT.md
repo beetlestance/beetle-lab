@@ -8,9 +8,9 @@ Read reserves ownership before synchronously snapshotting budget data properties
 accessors are rejected without invocation. Clock/signal setup cannot displace it.
 
 Reads own one original operation until `quiesced`; public cancellation/deadline
-can settle first. Each pass issues <=8 reads and consumes <=256KiB actual bytes.
-Retained input is one partial frame (<64KiB) plus one <=64KiB window. Exactly one
-immutable <=100-event/256KiB normalized request may await journal acknowledgement.
+can settle first. Each pass issues <=8 reads and consumes <=256 KiB actual bytes.
+Retained input is one partial frame (<64 KiB) plus one <=64 KiB window. Exactly one
+immutable <=100-event/256 KiB normalized request may await journal acknowledgement.
 Shared control-protocol copies own schema/scope/sequence/serialization admission.
 
 Canonical realpath equality precedes admission and accompanies parent postchecks.

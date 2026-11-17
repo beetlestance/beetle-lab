@@ -19,12 +19,12 @@ verifiedBytes, and adds required immutable `custody`:
 | root.device/root.inode | Exact native bigint decimal strings; no numeric conversion |
 | root.modifiedNs/root.changedNs | Exact native directory mtimeNs/ctimeNs decimal strings |
 
-The complete custody object serializes within32768 bytes. The root/file owner
+The complete custody object serializes within 32768 bytes. The root/file owner
 captures identities from the same successfully checked root descriptor; it does
 not reopen the path or infer identity from its spelling. Fields are owned scalar
 copies; both root and custody objects are frozen. They contain no open descriptor.
 
-The result file keeps its existing1MiB raw-byte limit. Valid whitespace may make
+The result file keeps its existing 1 MiB raw-byte limit. Valid whitespace may make
 its raw byte length larger than the canonical EngineResult and its control frame.
 The content seal is not a raw-file SHA256. No raw-file digest is claimed here.
 Later source delivery will persist canonical verified result content separately

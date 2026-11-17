@@ -57,7 +57,7 @@ The existing exclusive SQLite worker owns enqueue in one immediate transaction:
    omitted, prefixed by `beetle-lab.run-offer.v1\n`; never hash resolved secrets.
 5. Enforce installation control-plane pending-run bound, then insert run, first
    attempt and dispatch outbox atomically. Initial state queued/outcome pending,
-   version1, validation pending. Outbox references the attempt's exact immutable
+   version 1, validation pending. Outbox references the attempt's exact immutable
    Offer bytes; keep one copy, not two divergent payloads.
 6. Save the bounded original Run response in the same receipt transaction. Commit
    before replying. There is no HTTP, filesystem streaming or agent call in SQL.
@@ -70,11 +70,11 @@ bound, not a minimum host-machine requirement or a performance budget.
 
 ## Persisted identities and reads
 
-Migration004 is reserved to the coordinator. Do not alter applied001..003. Run
+Migration 004 is reserved to the coordinator. Do not alter applied001..003. Run
 foreign keys bind workspace/revision/suite scopes; attempt IDs are unique and
 ordinal is unique per run. One active attempt pointer belongs to its run. The
 outbox is unique per attempt and references the same immutable intent. SQL string
-limits measure UTF8 bytes; Offer<=2MiB, config<=1MiB, Run snapshot<=64KiB.
+limits measure UTF8 bytes; Offer<=2 MiB, config<=1 MiB, Run snapshot<=64 KiB.
 Only two Offer-sized original commands/replies may be retained at worker ingress;
 ordinary metadata commands retain their existing smaller allowance. A timeout or
 caller abort does not free a still-running original operation's byte capacity.
@@ -95,14 +95,14 @@ client consistency checks do not replace backend exit/seal/artifact verification
 
 `openMetadata` accepts optional private `runs: {profiles,pendingLimit}`. Profiles
 are <=32 unique names/selectors, with exact image/manifest/profile/schema digests
-and required capabilities; the total registry is <=32KiB within existing64KiB
+and required capabilities; the total registry is <=32 KiB within existing 64 KiB
 bootstrap intake. Schema pins must match the shipped k6 config adapter. The default
 registry is empty, refusing new enqueue while allowing receipt replay and reads.
 This is programmatic configuration; executable installed-profile loading and the
 agent capacity/identity bridge still need integration.
 
 The one worker builds an Offer synchronously from bounded saved configuration;
-create/get commands stay64KiB and pages remain within existing1MiB replies. No full
+create/get commands stay64KiB and pages remain within existing 1 MiB replies. No full
 Offer is returned to the parent yet. A future outbox read must reserve the declared
 two large-original slots before exposing2MiB replies. Enqueue does not imply that
 this unimplemented dispatch transport has been qualified.
@@ -138,7 +138,7 @@ under one logical run. No transport retry authorizes a new attempt.
 
 ## Acceptance
 
-A02/V02/V03/V19/V21: exact receipt replay after reopen/settings/profile/capacity
+A 02/V02/V03/V19/V21: exact receipt replay after reopen/settings/profile/capacity
 change; conflicting requestId and cross-operation reuse; wrong workspace/revision/
 input pin; invalid budget/profile; stale capacity; no mutation on refusal; atomic
 late-insert failure; queue bound under races; scoped detail/page/cursor; immutable
@@ -154,7 +154,7 @@ Application public functions: `enqueueRun({operation,digest,store}):Promise<Run>
 Types come from the existing run ports; digest is the shared IntentDigest.
 Capture bounded immutable expected input before awaiting a foreign repository.
 Validate bounded replies and bind scope/identity. Enqueue binds the historical
-queued/version1 response to request revision/profile/budget/policy, not newly
+queued/version 1 response to request revision/profile/budget/policy, not newly
 allocated IDs/time. A detail reply binds its requested ID. A page binds every item,
 contains no duplicate UUIDs and never exceeds the requested limit. History uses\nRunListQuery and the query-bound time/UUID cursor in [history](run-history-query.md). Invalid replies
 fail; do not normalize them into successful snapshots or retry a mutation.

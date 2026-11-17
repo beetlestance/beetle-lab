@@ -1,5 +1,5 @@
 # Immutable runtime/mailbox association metadata
-One additive schema021 row per retired original. Immediate transaction reuses
+One additive schema 021 row per retired original. Immediate transaction reuses
 actual retirement eligibility, released original and C1 control. SQL guards bind
 runtime/spec, installed daemon and prepared task mailbox; replacement/update/delete
 refuse. Read bounds canonical JSON/scalars and revalidates retained parents.

@@ -5,7 +5,7 @@ rN/aN label sets; it never learns a series from native output. Metric declaratio
 precede points, each declaration is unique. Only finite nonnegative points, timestamps and approved phase/request/assertion tags leave the parser.
 Raw metadata, URLs, groups, errors and arbitrary tags are never forwarded or logged.
 Input is stock k6 NDJSON, one LF-terminated record per line; CRLF is JSON whitespace.
-Each push snapshots <=1MiB, retains <=64KiB partial frame, and serially awaits one
+Each push snapshots <=1 MiB, retains <=64 KiB partial frame, and serially awaits one
 required projected-point sink. Total byte/record work is explicitly capped. A busy
 push is refused without poisoning the current one. Parse/sink/abort failure poisons
 future eligibility; close fences late success and awaits the original issued sink.
@@ -35,6 +35,6 @@ Shared @beetle/contracts/metrics owns immutable exponential-v1 ms distributions,
 scale4 down to -10. DurationHistogram records in place; mergeDistributions validates
 external snapshots before bounded work. distributionPercentile returns conservative
 nearest-rank histogram-estimate intervals, never native threshold verdicts.
-External standalone distributions require <=2KiB JSON admission before parsing;
+External standalone distributions require <=2 KiB JSON admission before parsing;
 in-process validation expects bounded data objects, not hostile reflective proxies.
 Check: npx vitest run engines/k6/test/aggregation --maxWorkers=2.

@@ -15,7 +15,7 @@ ResultDigest) accepts exactly PublicManifest, rechecks its complete result seal
 and public manifest digest, and returns an owned frozen PublicManifest. Both use
 the existing lower-hex SHA256 domain prefix, canonical JSON, exact public/result/
 node/depth/count limits and OutputSourceError codes. Capture before foreign digest
-callbacks; preserve original UUID spelling and generation1. Neither proves files,
+callbacks; preserve original UUID spelling and generation 1. Neither proves files,
 physical Journal custody, engine outcome or backend original/runtime-plan authority.
 
 Private agent prepare/verify reuse these public functions and shared field/count/

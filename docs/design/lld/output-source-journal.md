@@ -43,10 +43,10 @@ No new worker pool or source enumeration/history scan is introduced.
 
 ## Migration and accounting
 
-Coordinator reserves agent migration012 for this boundary. Preserve migrations001
-through011 and their historical guard definitions; new guards that reference new
+Coordinator reserves agent migration 012 for this boundary. Preserve migrations001
+through 011 and their historical guard definitions; new guards that reference new
 columns must be installed by012, not retrofitted into011's standalone SQL.
-Migration012 creates the previously declared intent/source tables and adds
+Migration 012 creates the previously declared intent/source tables and adds
 accepted_attempts.collection_bytes/source_bytes, both integer0 for existing rows.
 Do not manufacture intents, sources or receipts for old active/released attempts.
 DDL, guards, fields, version and FK checks commit or roll back as one initialization
@@ -60,7 +60,7 @@ digests/charges and accepted counters reject UPDATE/DELETE/REPLACE forgery. Init
 source/intent insertion is active-only and FK-bound to the exact admitted original.
 No current setting, catalogue or free-space sample replaces original promises.
 
-Keep historical metadataColumns compatible with migration011's bounded validation
+Keep historical metadataColumns compatible with migration 011's bounded validation
 reads. Add new quota fields to current full owner queries where they are actually
 used; do not default missing/invalid counter values to zero. Standalone historical
 migration proof is separate from executing current operations against old schemas.

@@ -24,8 +24,8 @@ optional `beetle token` helper. Normal status/log/up output does not print token
 
 `--directory` defaults to `$HOME/.beetle-lab`. Its parent must already exist. Use a
 persistent, canonical absolute path with no symlink components, owned by your
-current positive UID/GID. Existing deployment directories must be mode0700 and
-files mode0600. The launcher never changes ownership or repairs permissions.
+current positive UID/GID. Existing deployment directories must be mode 0700 and
+files mode 0600. The launcher never changes ownership or repairs permissions.
 Spaces are supported. Commas, colons, quotes, dollar signs, backslashes, hash marks
 and control characters in deployment/socket paths are rejected.
 
@@ -98,7 +98,7 @@ This passes `--builder` only to source builds and never changes the default buil
 Only the frontend publishes a loopback port. Backend/agent remain private; do not
 publish the agent or Docker socket. Starter defaults describe policy ceilings,
 not detected machine capacity or measured stack overhead. Initial defaults allow
-a2CPU/1GiB execution pool and manual retention; see
+a 2CPU/1 GiB execution pool and manual retention; see
 [starter policy](../../docs/design/lld/installation-starter.md).
 
 This opt-in rewrite path is separate from released legacy Compose. Published image

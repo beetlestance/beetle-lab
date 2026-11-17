@@ -8,7 +8,7 @@ filesystem scanner through its constructor seam.
 control protocol helper, and retains immutable RuntimePlan handles. `watch.ts`
 owns each initial result, stop original and cached draining close.
 
-The service owns at most64 registrations and two original scans. A completion
+The service owns at most 64 registrations and two original scans. A completion
 pump rotates over registrations without a pending queue; busy retries back off.
 The independent watchdog uses registration time until the first complete sample,
 then successful scan start time. Unknown samples never renew freshness.

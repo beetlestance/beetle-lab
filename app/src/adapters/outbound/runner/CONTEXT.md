@@ -15,16 +15,16 @@ Complete valid EOF is retained through abort/deadline and cleanup errors while
 resources drain; schema/identity/status validation must still succeed before a
 positive reply escapes. Incomplete/malformed evidence never becomes positive.
 Close fences calls, aborts active requests, and retains one drain promise.
-Requests: Offer <=2MiB, ordinary <=64KiB. Replies <=1MiB/4096 fragments.
+Requests: Offer <=2 MiB, ordinary <=64 KiB. Replies <=1 MiB/4096 fragments.
 Source chunk requests <=1024 bytes. Source envelope/chunk native replies allocate
-and admit at most75776/90112 bytes respectively, before parse. Shared source codecs
+and admit at most 75776/90112 bytes respectively, before parse. Shared source codecs
 verify manifest/result integrity, exact original binding/receipt and declared ranges.
 The caller supplies one verified artifact's byte length; no manifest cache is held.
-Headers <=16KiB/32 fields. Logical deadline: 5000ms; it never releases credit.
+Headers <=16 KiB/32 fields. Logical deadline: 5000 ms; it never releases credit.
 Failures expose fixed typed categories; native exceptions/configuration stay private.
 Capacity mapping and freshness remain the capacity adapter's responsibility.
 Focused checks: `npx vitest run app/test/runner --maxWorkers=1`.
 Internal `gateway`/`native` seams exist for controlled original-custody tests only.
 
 Live reads use two of the same ordinary credits, separate from source transfer;
-fixed path,64KiB frame/freshness and late-abort checks follow actual native close.
+fixed path,64 KiB frame/freshness and late-abort checks follow actual native close.

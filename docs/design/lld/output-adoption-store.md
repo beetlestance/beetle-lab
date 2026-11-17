@@ -2,7 +2,7 @@
 
 Status: implemented and independently reviewed; [local evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/output-adoption.md)
 records SQLite and compiled-worker limits. [Output adoption](output-adoption.md) owns accounting; [payload storage](output-payload.md)
-owns the single result/manifest body. Application migration009 implements this
+owns the single result/manifest body. Application migration 009 implements this
 store; agent Journal migration numbers are independent. No artifact writer,
 finalization or deletion authority is granted by this prerequisite.
 
@@ -11,15 +11,15 @@ finalization or deletion authority is granted by this prerequisite.
 The private OutputCustodyStore port owns scan/load/readSource/adopt in the existing
 metadata worker. It creates no new connection, background loop or network pool.
 Adoption request<=79872 bytes; state/page<=65536; source<=75776; cursor<=1024;
-scan limit1..32. Capture closed bounded input before hashing/cloning. Request and
+scan limit 1..32. Capture closed bounded input before hashing/cloning. Request and
 reply limits apply on both sides of worker RPC. adopt/readSource share the existing
 two-large-original worker allowance, reserved before capture and held through the
 actual original; do not add a pool.
 Bound native SELECT text before materialization. Do not persist an RPC receipt
 containing another complete source/result copy.
 
-Use the retained EventBinding: namespace/run/attempt/intent/generation1 and exact
-physical Journal UUID. Read the immutable original Offer with its existing2MiB
+Use the retained EventBinding: namespace/run/attempt/intent/generation 1 and exact
+physical Journal UUID. Read the immutable original Offer with its existing 2 MiB
 native CASE bound, then match manifest engine and installed identity. Verify the
 shared source envelope/result seal/digests and exact scope/intent/physical binding.
 Treat authenticated specDigest as opaque original agent evidence. Reject artifact
@@ -49,7 +49,7 @@ carrier charge and continues to enforce one original P.
 
 Each stored artifact slot is closed {v,t,o,p,i,w}: safe version, UUID token, safe
 offset, phase, nullable64hex native identity and nullable UUID writer. Worst-case
-canonical219 bytes plus128 row allowance<=384. Store ordinal0..127 with parent FK;
+canonical219 bytes plus 128 row allowance<=384. Store ordinal0..127 with parent FK;
 derive artifact ID/expected size/SHA from the manifest when returning state.
 Initial phase=transferring, offset=0, identity/writer=null. Native guards reject
 replacement/deletion/invalid scope or slot bounds; subsequent writer transitions

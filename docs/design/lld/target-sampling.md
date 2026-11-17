@@ -31,15 +31,15 @@ Calls are idempotent; no nested ownership release on caller timeout alone.
 
 One original HTTP request at a time, no queue or overlap. Use redirect:error,
 credentials:omit and an abort timeout for fetch plus response stream consumption.
-Read incrementally, at most65536 response bytes; cancel/drain oversized/error bodies.
-Keep at most256 samples and at most1MiB of serialized report. Bound serialization
+Read incrementally, at most 65536 response bytes; cancel/drain oversized/error bodies.
+Keep at most 256 samples and at most 1 MiB of serialized report. Bound serialization
 before retention. At capacity stop future sampling and explicitly mark limited;
 never manufacture missing readings or zero values. Fixed keys only; no raw body,
 URL, arbitrary labels, exception messages or headers in retained samples.
 
 ## Report
 
-Report format beetle-target-runtime, version1, scope target-reported, samples,
+Report format beetle-target-runtime, version 1, scope target-reported, samples,
 limited:boolean, missed:number. Each sample carries observedAt UTC, phase
 before/during/after, status ready/unavailable, reason null or fixed code
 http/invalid_json/body_limit/timeout/transport/cancelled, and values with fixed
@@ -54,7 +54,7 @@ conversions. Missing source timestamp and unsupported fields remain unknown.
 phase before is a point observation, not a qualified steady-state baseline.
 
 The wrapper publishes target-runtime.json as a target-runtime artifact alongside
-existing summary/numeric/history artifacts. Retained report<=1MiB is carved from
+existing summary/numeric/history artifacts. Retained report<=1 MiB is carved from
 the existing admitted output/collection allowance; final byte accounting includes
 it. Collector failure leaves unavailable observations and does not change test
 assertions. Artifact custody/write/seal failure remains an execution failure.

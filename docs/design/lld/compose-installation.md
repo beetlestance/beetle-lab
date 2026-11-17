@@ -54,9 +54,9 @@ No automatic recursive chown/repair or deletion of existing state.
 
 All service rootfs read-only; cap_drop ALL; no-new-privileges; finite /tmp/PID/CPU/
 memory/log limits; graceful stop bounds. Backend/agent each CPU0.25,memory256MiB,
-PID64; frontend CPU0.1,memory64MiB,PID32. These hard caps sum to starter control
-reserve CPU600/memory576MiB/PID160. They are not measured stack overhead claims.
-Installer is offline, bounded CPU1,memory256MiB,PID64. Native engine limits remain
+PID 64; frontend CPU0.1,memory64MiB,PID 32. These hard caps sum to starter control
+reserve CPU600/memory576MiB/PID 160. They are not measured stack overhead claims.
+Installer is offline, bounded CPU1,memory256MiB,PID 64. Native engine limits remain
 owned by admission/profile and per-attempt Docker spec, not Compose engine service.
 No automatic process backend fallback or sensor availability claim.
 
@@ -90,7 +90,7 @@ and directory/data, setup/options.json, request.json and compose.env using exist
 starter/capture semantics. Default instance is a stable hash of the canonical
 directory. All caller-owned paths/IDs/URLs/images are derived once consistently.
 No credentials or installation authority are created by this configuration step.
-New files0600/directories0700, current positive owner, canonical/no-follow identities,
+New files 0600/directories0700, current positive owner, canonical/no-follow identities,
 exclusive creation; no overwrite/chown/recursive repair/delete on failures. Existing
 complete matching configuration returns unchanged; partial/conflicting state fails
 explicitly and remains preserved. Never ignore native close/rename/sync errors.

@@ -10,7 +10,7 @@ owned directory/UID, explicit limits, trusted sinks and optional parent signal/c
 Launch options, callbacks, attempt, limits and clock methods are captured before use.
 The public native adapter is Linux-only; private test ports add no product fallback.
 
-Invocation reservation covers maximumBuildBytes plus the fixed1MiB native summary;
+Invocation reservation covers maximumBuildBytes plus the fixed 1 MiB native summary;
 build peak includes scratch. Caller separately reserves control/window/result files.
 Logical bytes only; no physical quota or installation-wide capacity authority.
 

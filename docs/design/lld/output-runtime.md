@@ -67,7 +67,7 @@ dataRoot/outputs/published; permanent lease is dataRoot/outputs/namespace.sqlite
 Use the existing private-directory initialization responsibility: factor its
 generic implementation behind the input wrapper if needed, preserving input
 behavior and stranded-close ownership. Do not copy its native validation/sync code.
-Directory identity, ownership, mode0700 and symlink refusal remain enforced.
+Directory identity, ownership, mode 0700 and symlink refusal remain enforced.
 No engine-relative/public path influences these roots.
 
 Fresh output namespace creation permits createLease=true. Reopen uses the retained

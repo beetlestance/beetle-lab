@@ -13,7 +13,7 @@ triggers. Add one attempt_output_allocations row per claimed original. No second
 usage counter and no subtraction of the same reservation twice. Atomic reserve and
 input creation serialize in the same immediate worker transaction owner.
 
-The output allocation charge remains immutable Offer.budget.outputBytes plus65536
+The output allocation charge remains immutable Offer.budget.outputBytes plus 65536
 bytes of output metadata allowance. New performance claims additionally reserve the
 separate [cleanup control allowance](backend-cleanup-control.md) of65536 before delivery. Charge the declared maximum before possible delivery. Check safe
 arithmetic and current usage + new charge +effective reserve <= effective allocation.
@@ -43,7 +43,7 @@ an unaccounted second copy. All output/control/report writes stay within declare
 budgets and bounded artifact metadata; staging and interrupted transfer stay charged.
 
 [Event custody](event-custody.md) owns a retained-control payload subledger:
-canonical event bytes+128 per unique row, <=min(original payload allowance,64MiB)
+canonical event bytes+128 per unique row, <=min(original payload allowance,64 MiB)
 and<=65536 rows. It consumes this same allowance; no second installation charge or
 ACK refund is created. Future artifact/report adoption must subtract retained
 control usage and account for copies before accepting bytes. The metadata64KiB

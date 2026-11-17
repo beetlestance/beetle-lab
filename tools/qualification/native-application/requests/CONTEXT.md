@@ -8,5 +8,5 @@ Inline random/JSON byVU/CSV random/range byVU rows validated independently by ta
 Ten required assertion operators per request, readiness503→200 then later200.
 No secrets, external targets, image builds or user resources. Source target script
 transpiled once to a bounded owned readonly mount; observer published loopback only.
-Outer600s, finite target/body/API bounds; normal and independent cleanup required.
+Outer 600 s, finite target/body/API bounds; normal and independent cleanup required.
 Does not qualify statistical weighting/jitter distribution, secret providers or allplatforms.

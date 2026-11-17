@@ -12,15 +12,15 @@ telemetry-enabled/disabled comparison. Always remove exact owned resources.
 
 Public run.ts accepts verified native bundle/output/local context. candidate.ts
 binds role config/manifest IDs; measure.ts/observe.ts own bounded measurements.
-Use the shipped Node24 line and record exact harness runtime before attributing
-client latency to a server. Node26 global-fetch observations are separate evidence.
+Use the shipped Node 24 line and record exact harness runtime before attributing
+client latency to a server. Node 26 global-fetch observations are separate evidence.
 Completed one-off RPC/proxy diagnostics live only in private frozen evidence;
 the maintained qualifier does not patch Worker prototypes or runtime services.
 
 stage.ts selects one architecture from an existing first-attempt successful
 source CI run, reusing all12gate/scans/roundtrip/ZIP/content checks before loading
 only declared nonce tags. No build/registry publication. public.ts is CI-only:
-clean matching Git head, Node24, successful execution and independent cleanup are
+clean matching Git head, Node 24, successful execution and independent cleanup are
 required; fixed scope/counts/timings/VM facts only, never private source outputs.
 Failure projection retains only fixed diagnosis/phase and bounded call/sample
 facts; failed or invalid success input always reports failed and exits nonzero.

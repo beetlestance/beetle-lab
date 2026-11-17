@@ -2,10 +2,10 @@
 
 run.ts accepts verified native source bundle/output/local Docker context. It never
 builds/pulls images, runs an engine or selects a user installation. Public packaged
-provisioner/backend serve a fresh synthetic installation in a64MiB local tmpfs
+provisioner/backend serve a fresh synthetic installation in a 64 MiB local tmpfs
 volume. Only advanced free-space reserve becomes0 before provisioning; factory
-policy, attempt caps/pools and production code remain unchanged. Require1.5GiB
-VM available memory first; filler memory is bounded64KiB, actual writes<=64MiB.
+policy, attempt caps/pools and production code remain unchanged. Require1.5 GiB
+VM available memory first; filler memory is bounded64KiB, actual writes<=64 MiB.
 
 The filler must observe real ENOSPC and validate native tmpfs type/size. Public
 HTTP input append must refuse full storage with unchanged staging prefix/offset;
@@ -18,7 +18,7 @@ All byte-client originals drain before teardown; no mutation is silently retried
 Owner and exact volume plan precede effects. Independent cleanup.ts OUTPUT CONTEXT
 validates owner/source labels and exact tmpfs options before removing containers,
 network and volume. No bind of the host data filesystem, prune or global fill.
-Outer600s; individual Docker originals60s, cleanup120s result deadline. Raw logs,
+Outer 600 s; individual Docker originals60s, cleanup120s result deadline. Raw logs,
 policy/IDs/errors stay private. This does not prove every publication/deletion
 crash point, power-loss behavior or an underlying write ENOSPC when statfs refused
 first. Preserve actual failure branch rather than inferring a stronger claim.

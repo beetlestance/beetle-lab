@@ -17,7 +17,7 @@ original scope/generation/intent, retirement request digest, installation and pr
 task namespace identities, verified daemon ID, runtime ID, spec digest and mailbox
 name. Journal reuses current retirement eligibility and released reservation; SQL
 guards also bind installed daemon and prepared task mailbox. Exact replay is free;
-replacement/update/delete and changed identities refuse. Migration021 adds no records,
+replacement/update/delete and changed identities refuse. Migration 021 adds no records,
 rebinds no namespace and changes no existing charges.
 
 An unknown commit permits no DELETE. Retain the actual worker carrier through its
@@ -54,7 +54,7 @@ All UUIDs/digests, daemon<=128 and mailbox<=128 have closed syntax. Escaped comm
 frames<=4096 and reply wrapper<=2048; one original-keyed row, no history scan.
 The maximal-field test proves the complete encoded value fits.
 
-C1's full196608 reservation is unchanged. Named buckets now total169984 and explicit
+C1's full196608 reservation is unchanged. Named buckets now total 169984 and explicit
 slack26624. The2048 cell is allocated from prior28672 slack, documented in the single
 control-budget owner; no hidden consumer, ceiling increase or second quota charge.
 Original source/event/retention bytes and cleanup reserve remain charged. C5 separately

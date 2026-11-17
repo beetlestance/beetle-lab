@@ -36,9 +36,9 @@ Keep one projection authority, with shared/frozen definitions where SQL guards n
 ## Control reservation
 
 The [dedicated backend control reserve](backend-cleanup-control.md) owns one ACK cell:
-<=4096 canonical body bytes plus512 logical row bytes, inside the separately charged
-policy1 allowance. Actual logical_bytes equals encoded body length+512. Record/replay
-never adds another charge or borrows an agent/old-output allowance. Missing policy1
+<=4096 canonical body bytes plus 512 logical row bytes, inside the separately charged
+policy 1 allowance. Actual logical_bytes equals encoded body length+512. Record/replay
+never adds another charge or borrows an agent/old-output allowance. Missing policy 1
 reservation refuses; legacy top-up must commit before any further effects.
 
 Phase A preserves every existing allocation, payload, finalization, event and replay
@@ -55,7 +55,7 @@ callback, await or external permit setter extends this window.
 
 A nondeterministic SQLite function returns integer1 only for that exact deletion ID,
 body, digest and logical cost; otherwise0. Missing registration fails closed. The
-constant version1 and parent/control/file-custody constraints cover remaining inserted
+constant version 1 and parent/control/file-custody constraints cover remaining inserted
 fields. SQL rejects raw insertion, replacement, updates and deletion. Rollback and a
 failed COMMIT leave no permit. One sequential worker owns at most one <=4096-byte body.
 

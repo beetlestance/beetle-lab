@@ -10,9 +10,9 @@ native descriptors until close settles. `setup.ts` creates or verifies matching
 setup files and reads ready receipt/config integrity without opening Journal or
 acquiring installation authority. It never updates runtime settings or credentials.
 
-Directories0700/files0600 must belong to the current positive UID/GID. Reads and
-writes are capped at256KiB/64 calls; directory reads use exact finite name limits.
-A30s monotonic deadline and captured signal fence operations. Native originals
+Directories0700/files 0600 must belong to the current positive UID/GID. Reads and
+writes are capped at 256 KiB/64 calls; directory reads use exact finite name limits.
+A 30 s monotonic deadline and captured signal fence operations. Native originals
 settle/close before success; close/sync errors fail visibly. Partial/conflicting
 state is preserved for explicit recovery, never repaired or deleted.
 

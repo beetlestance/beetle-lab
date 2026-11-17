@@ -23,7 +23,7 @@ This adapter supplies byte custody, not an application upload/metadata/authoriza
 
 Input acquisition returns a lazy single-consumer iterator. Do not open a descriptor
 until its first next: staging may fail before it obtains an iterator. Each stream
-uses fixed <=64KiB read/copy buffers, checks AbortSignal between original calls and
+uses fixed <=64 KiB read/copy buffers, checks AbortSignal between original calls and
 compares declared size with the named/open file. It never materializes the input.
 End-of-stream and return close the original once. Return before first next performs
 no file I/O. Concurrent next is rejected; return/close are cached and retain active
@@ -44,7 +44,7 @@ quiescent after failed close: retain its original pending so Stager quiescence c
 release an uncertain secret read. Service close refuses clean completion on failure.
 No detached timeout or retry of unknown native operations is permitted.
 
-At most256 configured secret bindings are indexed by organisation/workspace/name/
+At most 256 configured secret bindings are indexed by organisation/workspace/name/
 provider/reference/version. Duplicate exact identities reject. UUID identities are
 case normalized; secret names/references/versions remain case sensitive. Match the
 complete admitted reference; never use a request's alias as an environment key or
@@ -53,8 +53,8 @@ are operator assertions, not authenticated content identities.
 
 Providers are env or mounted, matching the existing wire contract. Environment
 sources are explicit valid variable names; read only the matching own data property
-at resolution time, measure UTF-8 before allocating, and reject missing or >64KiB
-values. Mounted sources use the same private-file intake capped at64KiB. Never trim
+at resolution time, measure UTF-8 before allocating, and reject missing or >64 KiB
+values. Mounted sources use the same private-file intake capped at 64 KiB. Never trim
 or normalize secret bytes, resolve shell substitutions, persist values or log them.
 Request and config capture selects bounded fixed fields without invoking accessors
 or enumerating unrelated caller keys. Known accessors/non-JSON values reject.

@@ -1,6 +1,6 @@
 # Suite authoring and immutable revisions
 
-Status: implemented and independently reviewed; application migration002 applied.
+Status: implemented and independently reviewed; application migration 002 applied.
 Local functional evidence: [suite authoring](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/suite-authoring.md).
 Owner seams: `app/src/ports/suites.ts`, generated API suite DTOs/operations.
 This adds real persisted authoring; execution/input publication follow separately.
@@ -15,7 +15,7 @@ Every lookup, mutation, receipt, cursor and response binds the complete workspac
 scope. Wrong ownership yields scoped404. UUID identity is case insensitive and
 persisted lowercase. Name normalization/folding matches existing namespace rules.
 
-Creating a suite allocates its UUID and starts version1/currentRevisionId:null.
+Creating a suite allocates its UUID and starts version 1/currentRevisionId:null.
 An omitted folder uses the workspace's actual rootFolderId; explicit folders must
 belong to that workspace. Name uniqueness is per folder using the established fold.
 PATCH changes name/folder with expectedVersion. No arbitrary root identity or
@@ -40,7 +40,7 @@ declared version; do not resolve, substitute or hash environment/mounted bytes.
 
 ## Bounds and worker protocol
 
-Config JSON retains the existing1MiB allowance, including non-ASCII byte accounting.
+Config JSON retains the existing 1 MiB allowance, including non-ASCII byte accounting.
 Canonical config serialization and shared schema validation precede persistence.
 API revision mutation/detail and worker envelopes allow2MiB for config plus identity,
 pins and receipts; other command inputs retain64KiB. Existing nonrevision replies
@@ -54,16 +54,16 @@ existing total queue bound. Close keeps its reserved slot. The worker remains th
 sole SQLite writer; deadlines/unknown commits preserve identical-intent replay.
 Do not raise the worker heap limit or widen unrelated command limits.
 
-Migration002 adds suites, suite_revisions and input_blobs. Composite ownership FKs
+Migration 002 adds suites, suite_revisions and input_blobs. Composite ownership FKs
 bind suites to workspace/folder, revisions to suite/workspace and current pointer
 back to that exact suite revision (deferred for the atomic append). Unique suite
 ordinal and immutable revision rows prevent replacement; enforce immutability at
-SQL level. Index scoped suite/revision pages. Config bytes<=1MiB; input manifest<=64KiB.
+SQL level. Index scoped suite/revision pages. Config bytes<=1 MiB; input manifest<=64 KiB.
 Replacement guards must cover INSERT OR REPLACE, including when recursive triggers
 are disabled; UPDATE/DELETE triggers alone are insufficient.
 The input_blobs table records scoped id/hash/bytes and staging/published state
 for future byte-publication ownership; no generic metadata-register writer is exposed.
-Rebuild the existing receipts table with result_json<=2MiB, preserving its rows
+Rebuild the existing receipts table with result_json<=2 MiB, preserving its rows
 and shared(scope_key,request_id) identity; namespace/settings commands remain64KiB.
 Fresh/v1 reopen must preserve existing organisations, settings and receipts.
 

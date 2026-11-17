@@ -16,7 +16,7 @@ return scoped not-found for wrong owners, and namespace cursor/cache keys by sco
 They MUST validate same-workspace ancestry, root identity, sibling folded-name uniqueness,
 depth <=8, acyclic moves, active/pinned dependencies and transactional optimistic versions.
 Version increments and safe arithmetic, uniqueness, requestId idempotency/intent conflicts and UUID equality
-are semantic checks. Structural validation does not establish A01/V19/V20/V21 behavior.
+are semantic checks. Structural validation does not establish A 01/V19/V20/V21 behavior.
 Installation values are complete; supplied PATCH groups replace complete values and omitted
 groups are unchanged. Organisation/workspace persist only present overrides (no nulls).
 Their PATCH omissions are unchanged; null leaf/group removes overrides to inherit.

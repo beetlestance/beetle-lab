@@ -10,7 +10,7 @@ The [publication contract](input-publication.md) owns durable progress and recei
 contracts API export alongside the JSON ApiClient. Its [types](../../../contracts/src/api/input-transfer-types.ts)
 define file preparation, append, full download and close. No range client, SDK publication or generic
 JSON transport changes. Configure only a trusted same-origin service URL, fixed
-session headers, optional fetch seam and timeout1..30000ms (default30000).
+session headers, optional fetch seam and timeout1..30000 ms (default30000).
 Snapshot configuration once; reject credentials/query/hash/path in base URLs,
 unsafe header names and invalid options before creating an owner. Never redirect
 credential-bearing requests: fetch uses redirect:error and same-origin credentials.
@@ -56,7 +56,7 @@ Never hide cleanup failure as success. Abort listeners and timers retire exactly
 `{sha256,content:Uint8Array}`. It never issues fetch, so all its failures have
 issued:false. Capture a strict plain request without invoking accessors; use native
 Blob brand/size and Blob.prototype.arrayBuffer, not replaceable instance methods.
-Reject size>8MiB before reading. Retain the original buffer read and native digest
+Reject size>8 MiB before reading. Retain the original buffer read and native digest
 through cancellation/close, check exact actual length and abort between originals.
 Return the bounded bytes only after digest success. Do not cache prepared content.
 
@@ -76,9 +76,9 @@ offset+chunk.length<=record.bytes. Append requires staging with no failure reaso
 The record is a status snapshot, not authority to skip backend validation.
 
 PUT the derived workspace/input chunks URL with application/octet-stream. Read
-response bytes incrementally through EOF, max65536, then strict UTF8/JSON/ApiError
+response bytes incrementally through EOF, max 65536, then strict UTF8/JSON/ApiError
 or InputRecord validation. Never use unbounded response.json/text/arrayBuffer.
-Only200 acknowledges append, with state:staging and reason:null. Bind all immutable fields to the captured record
+Only 200 acknowledges append, with state:staging and reason:null. Bind all immutable fields to the captured record
 (UUIDs/scope/folder/name/hash/size). A fresh append at current offset must acknowledge
 offset+length and version+1. A retry wholly before the committed offset preserves
 offset/version; partial overlap is invalid locally. These checks detect response
@@ -86,7 +86,7 @@ corruption; a stale snapshot may require a fresh status query before another att
 
 ## Full download
 
-Require a published record and GET its derived content URL without Range. Only200
+Require a published record and GET its derived content URL without Range. Only 200
 with application/octet-stream, the strong quoted expected SHA256 ETag and no
 Content-Encoding other than identity is valid. No caller-supplied Range or
 conditional headers. Validate Content-Length if present: zero for empty input;
@@ -96,10 +96,10 @@ Truncation, excess, stream failure after all expected bytes or aborted completio
 is failure. A count alone never proves success. Validate the complete SHA256 with
 native Web Crypto after EOF and return the bytes only after digest settlement.
 
-Preallocate at most the expected0..8MiB and copy incoming chunks only while within
-that bound. JSON replies use at most64KiB per operation. No whole-response helper,
+Preallocate at most the expected0..8 MiB and copy incoming chunks only while within
+that bound. JSON replies use at most 64 KiB per operation. No whole-response helper,
 unbounded chunk list or persistent payload cache. Two full downloads retain at most
-16MiB of client output buffers (preparation and download share the two slots);
+16 MiB of client output buffers (preparation and download share the two slots);
 browser network/file chunks, crypto copies and caller
 retention are additional and must not be advertised as measured process RSS.
 Native crypto is required; unavailable crypto fails, never skips integrity checks.

@@ -34,7 +34,7 @@ persistent copies uses control-process buffer budgets instead.
 
 Partition the65536 metadata allowance:128 artifact slots*384=49152; owner/binding/
 closure/event cursor8192; bounded diagnostics4096; fixed auxiliary allowance4096.
-Each artifact slot permits canonical state<=256 bytes plus128 row allowance, with
+Each artifact slot permits canonical state<=256 bytes plus 128 row allowance, with
 bounded UUID tokens/index/offset/phase/version. Derive expected length/hash/path
 from the one manifest and scope from parent FKs. Exact fields and worst-case
 canonical lengths still require calculation before port/migration acceptance;

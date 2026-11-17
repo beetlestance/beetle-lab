@@ -65,7 +65,7 @@ Do not add a duplicate full-Offer cache or skip fresh reservation/stop checks.
 Controller and actor keep their existing single-flight owners, cancellation drains,
 phase/control/output ownership and bounds. A refusal cannot restage input, drop a
 plan/watch, uncharge an attempt or advance control cursors. Pending intent is one
-bounded flag within the existing64-owner ceiling, not a retained caller object.
+bounded flag within the existing 64-owner ceiling, not a retained caller object.
 Crash/restart does not create a new implicit launch intent for recovered owners.
 
 Tests must hold two actual Journal large requests at EACH initial controller and

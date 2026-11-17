@@ -17,8 +17,8 @@ physical delivery authority; application dispatch for the immutable binding.
 
 A backend claim commits before network issue. A missing agent receipt can mean
 that the original PUT never arrived, or that receipt history was reset/restored.
-Logical installation identity, Docker daemon identity and generation1 do not
-prove journal continuity. A404 alone never permits release, replacement or retry
+Logical installation identity, Docker daemon identity and generation 1 do not
+prove journal continuity. A 404 alone never permits release, replacement or retry
 under a different original. The authority and supported-recovery contract below
 define that distinction; manual rewind remains unsupported.
 
@@ -104,7 +104,7 @@ all runtime owners drain; missing/corrupt/nonready state never becomes fresh sta
 
 The separate control SQLite database stays outside every replaced backup path.
 It uses one retained process owner and an EXCLUSIVE connection, a singleton state,
-16 pages of 4096 bytes, 64KiB cache and no mmap. SQLite documents that EXCLUSIVE locks
+16 pages of 4096 bytes, 64 KiB cache and no mmap. SQLite documents that EXCLUSIVE locks
 remain until close; EXTRA adds rollback-journal commit durability. See the
 [SQLite PRAGMA reference](https://www.sqlite.org/pragma.html#pragma_locking_mode).
 The store verifies those settings. Native handles remain retained on failed close;
@@ -113,8 +113,8 @@ Hardware power-loss and actual restore-stage qualification remain required.
 
 ## Contract ownership and acceptance
 
-Coordinator reserves the checked next unused application migration006 and agent
-migration009. Runner schema generation, private
+Coordinator reserves the checked next unused application migration 006 and agent
+migration 009. Runner schema generation, private
 transport headers, capability publication and capacity source binding have one
 coordinator owner. Do not add physical authority to the engine Offer or public Run
 DTO. The backup command, bounded manifest and restore-stage contract remain required

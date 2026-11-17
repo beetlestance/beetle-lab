@@ -12,7 +12,7 @@ renderPerformanceReports consumes a mapped, unsealed K6ResultBody and the admitt
 MetricSnapshot or null. Schema-check the result through a private witness seal;
 that witness is never published. Copy/capture numeric series through shared metric
 codecs and project values through the existing histogram percentile owner. At
-most4600 unique observed series; reject duplicate identity and invalid evidence.
+most 4600 unique observed series; reject duplicate identity and invalid evidence.
 No configuration, target URL, request body, headers, dataset or secrets enter the
 report input. Request/assertion labels remain the bounded numeric aliases.
 
@@ -33,7 +33,7 @@ numeric cells remain numeric. Output includes a final LF.
 
 ## Budget and custody
 
-Each output is capped at256KiB including UTF-8 separators/newlines. Generation has
+Each output is capped at 256 KiB including UTF-8 separators/newlines. Generation has
 bounded input counts and bounded byte writers. Overflow rejects the whole report
 with output_limit; invalid input has a fixed safe code. No truncation or partial
 success. The two outputs and their bounded projection buffers are transient work,
@@ -46,19 +46,19 @@ No configured total/phase budget is automatically increased. An insufficient
 partition rejects before native load. Actual report bytes count once in collect.
 
 Artifacts.report writes only performance-report.txt and metrics.csv, using the
-existing exclusive/no-follow mode0600 files, exact hashes, repeated file identity
+existing exclusive/no-follow mode 0600 files, exact hashes, repeated file identity
 checks, fsync and original descriptor-close custody. Cancellation fences each
 operation. Partial/unknown files stay retained and charged; no speculative unlink
 or sealed manifest references an unverified file. Report failure cannot rerun load.
 
 The final engine result lists both artifacts with their byte lengths and hashes.
 Backend adoption/download uses its existing verified artifact pipeline. The fixed
-256KiB per-output ceiling can reject large reports even with a larger total budget;
+256 KiB per-output ceiling can reject large reports even with a larger total budget;
 this explicit first-release limit does not permit silently omitting series. RunResultRead selects exactly one scoped published performance-report descriptor;
-multiple reports show an explicit ambiguity error. The browser verifies <=256KiB,
+multiple reports show an explicit ambiguity error. The browser verifies <=256 KiB,
 exact file length/SHA256 and fatal UTF-8 before rendering plain text. No report
 HTML, second metric renderer or browser-side outcome inference is used. The shared
-artifact reader owns two originals across target/performance kinds and a5s whole
+artifact reader owns two originals across target/performance kinds and a 5 s whole
 read. A session/scope/attempt/artifact display lease and independent5s UI watchdog
 retire stale results without releasing unsettled originals. Retry is explicit.
 Safe fixed-UUID text/CSV/JSON attachment links reuse the existing artifact routes.

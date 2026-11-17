@@ -1,6 +1,6 @@
 # Backend output payload carrier
 
-Status: implemented and independently reviewed as application migration008;
+Status: implemented and independently reviewed as application migration 008;
 [local evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/output-adoption.md) records its scope. Source
 adoption and terminal settlement have separate owners.
 This refines [output adoption](output-adoption.md), without changing public wire
@@ -15,7 +15,7 @@ result with its containing canonical manifest. There is no intermediate persiste
 second body or dangling reference. A manifest is immutable once adopted; equal
 replay is permitted. A different result or manifest conflicts.
 
-The execution snapshot becomes a closed result-free header, at most2048 UTF-8
+The execution snapshot becomes a closed result-free header, at most 2048 UTF-8
 bytes. Keep a monotonic result_observed flag separately. Carrier existence alone
 does not imply that an agent snapshot observed a result: adoption may arrive first.
 Before mergeAttemptObservation, reconstruct the old complete snapshot iff the
@@ -39,7 +39,7 @@ preflight and native SQL; neither operation can independently spend the same P.
 The carrier FK binds to the existing execution. Native insert/update guards bind
 its result identity to that execution, enforce integer-safe bytes and declared
 artifact sum, combined charge and immutable body transitions. A manifest insert
-requires acknowledged generation1. A provisional result insert may precede the
+requires acknowledged generation 1. A provisional result insert may precede the
 first ACK inside its owned observation transaction; the existing original record,
 allocation and physical Journal binding must already exist. Retain rows until a
 separate accepted deletion protocol authorizes removal.
@@ -53,7 +53,7 @@ fence or invent an authority for it. Bound native SELECT text with CASE
 before returning bodies, and validate reconstructed snapshots through existing
 contracts before merge or response serialization.
 
-## Migration008
+## Migration 008
 
 Apply the conversion atomically. Preflight every old header/body and combined
 charge before changing authoritative state. Fail the migration intact on invalid

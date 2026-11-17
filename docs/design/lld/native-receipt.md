@@ -1,6 +1,6 @@
 # Durable native cleanup receipt
 
-Status: C3f private native/metadata boundary locally implemented. Agent Journal020.
+Status: C3f private native/metadata boundary locally implemented. Agent Journal 020.
 Parents: [native removal](native-removal.md), [plan storage](cleanup-plan-store.md)
 and [retirement](output-retirement.md). No runner/backend ACK, refund or public route.
 
@@ -42,7 +42,7 @@ plan identity and canonical digest. Exact reply scope/digest must match the orig
 
 ## Atomic durable state
 
-Journal020 adds one immutable receipt row per exact stored plan/original. Require
+Journal 020 adds one immutable receipt row per exact stored plan/original. Require
 current eligible released retirement and files_absent progress; validate the exact
 receipt codec against that plan and progress, canonical body/digest and actual byte
 count. Exact replay returns the same record; changed binding/shape conflicts/refuses.
@@ -62,7 +62,7 @@ as current IO authority or a shortcut to backend acknowledgement.
 Actual cleanup then receipt/replay; final metadata without physical absence;
 reappeared root despite stored receipt; forged/foreign/revoked proof; failed fresh
 close after earlier final proof; held/cancelled/failed commit and actual termination;
-compiled worker lost reply/reopen; schema19 preservation, charge/digest/closure and
+compiled worker lost reply/reopen; schema 19 preservation, charge/digest/closure and
 immutable raw SQL guards. A native Linux leaf and portable real-Journal composition
 remain distinct from full compiled runner/backend cleanup qualification.
 

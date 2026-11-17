@@ -5,7 +5,7 @@ captures; `values.ts` registers the deterministic native canonical proof validat
 at schema initialization. `migration012.ts` installs sibling proof/receipt tables.
 `operations.ts` is the effect-free RPC type entrypoint for the worker protocol;
 it cannot import storage, schema or wire-capture implementations.
-All ordinary requests and replies are capped at4096 bytes, proofs at2048.
+All ordinary requests and replies are capped at 4096 bytes, proofs at 2048.
 
 Adoption matches the retained physical original and excludes source/manifest/slot
 custody. Finalization replays its immutable receipt before checking current Run

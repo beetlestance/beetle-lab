@@ -82,9 +82,9 @@ alone does not authorize creating or declaring an empty artifact.
 app/src/ports/output-bytes.ts owns the private byte-store interface. Composition
 opens existing canonical sibling staging/published roots and the permanent lease
 in their common private parent. Explicit fresh provisioning alone creates the
-sidecar. Validate all record/context values and capture at most4096 record bytes;
+sidecar. Validate all record/context values and capture at most 4096 record bytes;
 reserve two jobs/one original per token before capture, callbacks or IO. Fresh
-per-operation monotonic deadline<=300000ms is independent of the expired engine
+per-operation monotonic deadline<=300000 ms is independent of the expired engine
 budget. Cancellation/deadline fences work but retains issued originals/sinks.
 
 Derive the same relative UUID components under both roots:
@@ -94,7 +94,7 @@ writer UUID and transferring/publishing eligibility; reads require published sta
 with no writer. Validate versions, ordinals, offsets, expected length and SHA256.
 
 prepare reconciles the same existing token, or creates an absent empty staging
-file only for fresh transferring state with offset0/identity=null. An existing file
+file only for fresh transferring state with offset 0/identity=null. An existing file
 under that initial state must also be empty; do not adopt an unexplained payload.
 A known identity with missing native custody refuses rather than replacing it.
 Native length must be between durable offset and expected bytes. Flush before a

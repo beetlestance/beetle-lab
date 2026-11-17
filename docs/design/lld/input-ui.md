@@ -19,7 +19,7 @@ own controller and ignores late results; it does not close the shared byte clien
 
 ## One prepared upload intent
 
-Choose one file<=8MiB, name and same-workspace folder. Root folder is the default.
+Choose one file<=8 MiB, name and same-workspace folder. Root folder is the default.
 Folder selection uses explicit pages<=100 and history<=20, with one selected label
 retained across pages. Do not fetch an entire tree or allow another workspace ID.
 One mounted workspace retains one file/prepared payload, one create identity and at
@@ -34,7 +34,7 @@ Normal acknowledged workflow: create -> current GET -> chunks -> seal -> current
 The create response is its original staging snapshot, so status is always re-read.
 Bind every observed record to the original input/scope/name/folder/hash/size before
 dependent byte work. A different immutable identity stops the workflow without issue.
-For staging, append synchronous<=64KiB slices from the committed offset, advancing
+For staging, append synchronous<=64 KiB slices from the committed offset, advancing
 only on validated acknowledgements. Empty input skips append. Successful progress
 may continue to the next chunk; no failed request is automatically retried.
 

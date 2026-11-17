@@ -26,7 +26,7 @@ All input routes run the existing session/origin/CSRF guard in onRequest before 
 consumption. Validate route UUIDs and binary query/header shape at this same boundary.
 Do not register a global parser or widen the generic JSON transport. Scope the
 octet-stream parser to the input plugin; it passes through the unconsumed payload
-stream. The service must acquire its global2/per-input1 owner before the lazy source
+stream. The service must acquire its global 2/per-input1 owner before the lazy source
 reads any bytes. A parser bodyLimit alone does not bound a pass-through stream.
 
 ## Chunk upload
@@ -35,7 +35,7 @@ PUT `/inputs/{inputId}/chunks?offset=N` accepts only application/octet-stream.
 Offset is one canonical unsigned decimal safe integer <=8388608; duplicates,
 unknown query keys, exponent/negative/leading-zero forms reject before body reads.
 If present, Content-Length is one decimal1..65536; reject declared excess before
-consumption. Chunked transfer is allowed. Read into at most64KiB, reject actual
+consumption. Chunked transfer is allowed. Read into at most 64 KiB, reject actual
 excess/empty body, and keep original stream/callback ownership until settlement.
 Neither a body parse error nor response close advances offset or releases native work.
 The successful200 JSON acknowledgement is the latest validated InputRecord from
@@ -77,8 +77,8 @@ remain in metadata and Content-Range; the completion marker stays under this own
 
 ## Request originals and close
 
-The server factory bounds64 sockets,30s request/socket timeouts,5s headers/keepalive.
-The input transport additionally owns at most64 active request contexts, no waiters.
+The server factory bounds64 sockets,30 s request/socket timeouts,5 s headers/keepalive.
+The input transport additionally owns at most 64 active request contexts, no waiters.
 Each captures one30s deadline and abort controller before parsing. A context owns
 its source/sink and issued service promise independently of response completion.
 Timeout/disconnect fences future work and interrupts its owned network stream;

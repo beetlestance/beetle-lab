@@ -7,14 +7,14 @@ The entrypoint is `agent/src/bootstrap/main.ts`; build ships main.js and worker.
 together. The released application's entrypoint remains separate.
 
 Only BEETLE_AGENT_CONFIG_FILE selects configuration. It names an absolute canonical
-private regular file, at most256KiB, decoded as fatal UTF-8 then bounded JSON. No
-environment interpolation or remote schema/image resolution. Configuration version1
+private regular file, at most 256 KiB, decoded as fatal UTF-8 then bounded JSON. No
+environment interpolation or remote schema/image resolution. Configuration version 1
 has installation, dockerSocket, journalDirectory, credentialFile, minimumFreeBytes,
 configuration, providers, engines and optional listen. Unknown envelope keys reject.
 The installed runtime/journal validates admission policy semantics before execution.
 
 Installation contains the existing verified installation/daemon/agent-image/user/
-staging pins. Each of at most32 engines supplies manifest, profile, configVersion,
+staging pins. Each of at most 32 engines supplies manifest, profile, configVersion,
 manifestId, profileId and catalogVersion. The executable currently registers the
 shipped k6 configVersion1 schema, deriving its actual shared-schema digest. Arbitrary
 schema/code loading and other engine adapters are unsupported by this executable;
@@ -22,14 +22,14 @@ the runtime composition remains engine-independent and extensible through instal
 catalogue registrations. No image tag or newer pin is silently selected on restart.
 Startup qualifies the actual local engine image IDs/environment/platform/runtime
 through read-only inspection before advertising that catalogue. Profiles pin local
-image IDs returned by the pinned Docker API1.47 after pulling/building the required
+image IDs returned by the pinned Docker API 1.47 after pulling/building the required
 platform. Do not infer that ID from registry metadata or build-log config hashes;
 the daemon must resolve and return the pinned ID. Images declaring volumes reject.
 
 The existing private canonical journalDirectory must belong to the process UID
-and have mode0700. Journal filename is journal.sqlite. Mounted credential bytes
+and have mode 0700. Journal filename is journal.sqlite. Mounted credential bytes
 must be exactly43..128 URL-safe base64 characters; newline/whitespace rejects.
-Read at most128 bytes with the shared private-file custody rules. Do not print it.
+Read at most 128 bytes with the shared private-file custody rules. Do not print it.
 Provider configuration is the [installed provider contract](installed-providers.md):
 one scoped immutable input tree and explicit env/mounted aliases, with no values in
 config, offers or default logs. Providers have an externally owned draining close.
@@ -47,7 +47,7 @@ Startup/listen failure uses the same path and exits with failure, with fixed tex
 that contains no private path or secret. Uncertain runtime/cleanup may prevent clean
 shutdown; Docker's eventual process termination is not certified remote quiescence.
 
-The agent image bundles trusted JavaScript on BUILDPLATFORM and runs Node24 on the
+The agent image bundles trusted JavaScript on BUILDPLATFORM and runs Node 24 on the
 target platform. No host node_modules, native build-host artifacts, sample configs,
 credentials, inputs or outputs are copied into it. The default nonroot image user
 must be overridden consistently when host staging ownership uses another UID:GID.

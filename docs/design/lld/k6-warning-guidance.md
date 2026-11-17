@@ -9,7 +9,7 @@ extra polling, public API route, metadata projection or new storage grant.
 
 Pinned k6 writes JSON diagnostics to stderr. Existing total diagnostic-byte limits,
 process outcomes and original close/drain ownership remain enforced. An incremental
-classifier retains at most4096 bytes per line and processes chunks up to65536 bytes.
+classifier retains at most 4096 bytes per line and processes chunks up to65536 bytes.
 Oversized chunks/lines are discarded without classifying a truncated prefix. Unknown,
 malformed, interrupted and discarded evidence makes coverage partial. Classified
 counters count observed log records, not unique incidents or dropped iterations.
@@ -24,9 +24,9 @@ execution/assertion/threshold verdicts remain with the existing result mapper.
 
 ## Publication and budget
 
-After actual stdio settlement, publish one version1 scoped k6-warnings artifact.
+After actual stdio settlement, publish one version 1 scoped k6-warnings artifact.
 If native observation never existed, omit it rather than inventing zero warnings.
-Its4096-byte ceiling is carved from the existing1MiB numeric reservation before
+Its4096-byte ceiling is carved from the existing 1 MiB numeric reservation before
 execution; build/history/total ceilings do not increase. Collection retains that
 slice and counts actual published bytes. Existing result/output metadata allowances
 and descriptor ceilings remain; qualify the actual fixed k6 artifact count and
@@ -38,7 +38,7 @@ Use the existing canonical duration policy over compiled scenario options, witho
 changing emitted load or adding another compiler. Multiple/other scenarios produce
 no automatic arrival hint. Median must identify the execute-global iteration series;
 request latency, incomplete distributions and duplicate/ambiguous series cannot
-substitute. Payload and semantic validation are shared and capped at4096 bytes.
+substitute. Payload and semantic validation are shared and capped at 4096 bytes.
 
 ## Browser behavior
 

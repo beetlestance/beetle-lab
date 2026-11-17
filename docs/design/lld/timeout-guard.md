@@ -9,8 +9,8 @@ staging, filesystem scans, scheduling and original Docker operations. It neither
 owns lifecycle transitions nor certifies termination, release or result validity.
 The supervisor's existing dispatch-time checks remain authoritative launch fences.
 
-One service owns at most64 scoped generation watches and one interval (default
-100ms, configured integer 10..1000ms). No pending queue or per-poll journal writes.
+One service owns at most 64 scoped generation watches and one interval (default
+100 ms, configured integer 10..1000 ms). No pending queue or per-poll journal writes.
 Start is explicit. Readiness requires a running service, valid clocks and an
 unexpired watch. Each watch retains its original stop callback until settlement.
 Clock failure may issue one bounded emergency escalation after timeout, without

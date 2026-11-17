@@ -9,7 +9,7 @@ This page owns finite reads; SSE and metric-window emission are separate work.
 `GET /api/v2/organizations/:organizationId/workspaces/:workspaceId/runs/:runId/events`
 uses the existing local session guard and generated `listRunEvents` operation.
 Query is PageQuery: required limit 1..100 and optional opaque cursor <=512 bytes.
-Response RunEventPage contains the scoped run/active attempt, generation1,
+Response RunEventPage contains the scoped run/active attempt, generation 1,
 afterSeq, durableThrough, coverage, blockedReason, retainedStartSeq, items,
 resumeCursor and nextCursor. The complete encoded page is <=262,144 bytes.
 Items reuse AgentEvent schema; do not invent another lifecycle union.

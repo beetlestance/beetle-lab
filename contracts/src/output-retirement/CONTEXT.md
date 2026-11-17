@@ -1,6 +1,6 @@
 # Output retirement wire values
 Public index.ts owns the closed performance retirement request and canonical digest.
-3072 UTF8 bytes, generation1/deletionVersion1; exact original and physical authority,
+3072 UTF8 bytes, generation 1/deletionVersion1; exact original and physical authority,
 canonical backend Run/deletion UUIDs, source digests or absence proof digest/final end.
 reply.ts owns closed4096byte pending/cleaned reply, exactbinding+samecanonicaldigest.
 CleanedpreparationIdentity=C1taskNamespaceIdentity, notbackendfilecommitment.

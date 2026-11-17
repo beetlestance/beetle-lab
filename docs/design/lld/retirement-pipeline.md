@@ -18,7 +18,7 @@ inventory prepare, finish original quiescence/cached close and persist its opaqu
 observation. Never build a fresh plan from a partially removed task. Existing plan
 recovery follows the same persisted identities/progress.
 
-Perform at most16 reverse-plan steps per tick (trusted composition may choose1..16).
+Perform at most 16 reverse-plan steps per tick (trusted composition may choose1..16).
 A completed bounded batch with remaining work yields a request-bound pending reply.
 Only after files_absent may trusted receipt finalization run and produce cleaned.
 Finalization still checks current native absence on replay; no raw row/counter shortcut.

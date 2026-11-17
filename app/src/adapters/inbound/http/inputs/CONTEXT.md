@@ -5,8 +5,8 @@ and verified content reads behind the supplied local-session guard.
 The service, ID allocator and authorization are required; no storage is created here.
 
 The scoped parser leaves bytes untouched until service admission invokes the source.
-Chunks are one nonempty <=64KiB body. The transport owns <=64 contexts, each with
-one 30s deadline, and retains issued original promises through cancellation/response
+Chunks are one nonempty <=64 KiB body. The transport owns <=64 contexts, each with
+one 30 s deadline, and retains issued original promises through cancellation/response
 completion. Normal completed request-body close does not cancel service work.
 Close fences intake, aborts/destroys network streams and drains service promises;
 bootstrap must start service close independently. HTTP never closes metadata/service.

@@ -3,7 +3,7 @@ Public capture/decode/encodeTargetRuntimeReport and immutable report/sample/type
 JSONSchema runner/v1/target-runtime-report owns fixed names, bounds and statuses;
 generated types supply engine and browser views. Do not duplicate metric-name lists.
 Target-reported readings are not engine cgroup measurements or hard-control proof.
-One report<=1MiB/256 samples, 32 required metric keys plus optional active-handle/GC-millisecond readings; missing/invalid readings are null.
+One report<=1 MiB/256 samples, 32 required metric keys plus optional active-handle/GC-millisecond readings; missing/invalid readings are null.
 Unavailable sample requires fixed reason and all-null values; ready reason is null.
 Missed counts unavailable attempts plus at most one retention refusal if limited.
 Capture rejects getters/prototype tricks, unknown keys, invalid/nonfinite/negative

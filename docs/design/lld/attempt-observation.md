@@ -8,14 +8,14 @@ Owner: app/domain/runs. [Execution](execution-protocol.md) owns agent event fact
 
 mergeAttemptObservation({expected,previous,incoming}) returns a deeply frozen
 {snapshot,runState}. expected is the original attempt/scope/digest identity and
-generation1; previous is the last accepted remote snapshot or null. Both snapshots
+generation 1; previous is the last accepted remote snapshot or null. Both snapshots
 are captured with the shared bounded serializer (<=73728 UTF8 bytes, existing
 node/depth/collection caps) and schema checked before use. Identity copies <=1024
 bytes. The closed three-field input envelope is captured first (<=148608 bytes
 and the shared node/depth/collection caps). Accessors/non-JSON data fail without
 invocation, including on the envelope. No I/O, clock or retry.
 
-Match exact attempt/organisation/workspace/intent strings and generation1, including
+Match exact attempt/organisation/workspace/intent strings and generation 1, including
 nested result attempt/scope/generation. The initial release never advances to an
 arbitrary larger generation. Validate retainedStartSeq <= lastSeq+1 without unsafe
 addition. Shape validity alone does not establish either semantic relation.

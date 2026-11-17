@@ -33,7 +33,7 @@ must match before/after open. This bridge pins the parent, not an atomic snapsho
 Compare live descriptor fdinfo mnt_id to the installed root for the task and every
 child, including files. Same-device nested bind mounts therefore refuse. These IDs
 are current-operation observations, not persisted namespace identity. Auxiliary
-fdinfo reads loop to EOF within4096 bytes; marker reads within1024. Both are owned
+fdinfo reads loop to EOF within 4096 bytes; marker reads within 1024. Both are owned
 and cached-closed through the same lifetime.
 
 Enumerate each pinned directory manually with Dir.read(), bufferSize1 and byte names.
@@ -45,12 +45,12 @@ controls, links, duplicate native identity, specials, foreign ownership and mode
 Directories require0700; regular single-link files allow0400 staged input or0600
 output. Require all four original role anchors, and inventory the complete task.
 
-Keep at most512 entries including task root, depth32,4096 UTF-8 bytes per relative
+Keep at most 512 entries including task root, depth 32,4096 UTF-8 bytes per relative
 path and128KiB complete canonical plan. Check limits before overflowing child opens.
 DFS retains both FileHandle and Dir per ancestor: conservative maximum71 simultaneous
 handles including auxiliaries, and1539 retained cached-close records per operation.
 Closed metadata/path storage stays bounded by those counts; four owner slots alone
-are not a descriptor/RSS bound. Fixed operation budget is at most30seconds.
+are not a descriptor/RSS bound. Fixed operation budget is at most 30 seconds.
 
 ## Checked observation
 

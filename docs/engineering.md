@@ -42,6 +42,11 @@ the [exception registry](engineering-exceptions.md). No blanket exclusions or ba
 Prefer changing the design before accepting an exception; never lower a threshold
 just to pass. The first rewrite release starts with no unreviewed exceptions.
 
+Prose must separate words, numeric measurements and units. `check:docs` rejects
+known glued forms outside code, URLs and Markdown destinations. Keep identifiers
+and command examples in inline or fenced code; do not compress context notes into
+unreadable task shorthand.
+
 ## Contracts and correctness
 
 Strict TypeScript, no implicit any, exhaustive tagged unions, explicit unknown

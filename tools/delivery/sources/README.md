@@ -28,11 +28,11 @@ the installed APK database commit, retain the complete Git tree and all original
 source checksums, and independently review new pins. Never evaluate APKBUILD to
 construct the catalog. One source symlink selects a verified regular sibling.
 
-Downloads are sequential and counted within 512MiB total. Individual upstream
-archives are capped at 200MiB, recipes at 2MiB and npm tarballs at 20MiB. Reports
-use no-follow regular-file reads, exclusive writes, 5MiB per-file and 32MiB total.
-The project Git archive is capped at 64MiB. The final source gzip is capped at
-640MiB and 120 seconds. Partial output may coexist with unpacked inputs.
+Downloads are sequential and counted within 512 MiB total. Individual upstream
+archives are capped at 200 MiB, recipes at 2 MiB and npm tarballs at 20 MiB. Reports
+use no-follow regular-file reads, exclusive writes, 5 MiB per-file and 32 MiB total.
+The project Git archive is capped at 64 MiB. The final source gzip is capped at
+640 MiB and 120 seconds. Partial output may coexist with unpacked inputs.
 
 Packing uses bounded enumeration and normalizes owners, times and read modes;
 executable recipe modes and safe sibling links remain. It writes neither host

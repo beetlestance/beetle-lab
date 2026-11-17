@@ -3,7 +3,7 @@
 Public entrypoint: `openLocalOutputBytes` in `index.ts`; implements `OutputByteStore` and separate `OutputDeletionStore` capabilities.
 Existing private sibling roots share the permanent namespace lease's parent.
 The factory reserves process ownership before capture and acquires the lease first.
-Jobs reserve global2/token1 credits synchronously; no callback queue exists.
+Jobs reserve global 2/token1 credits synchronously; no callback queue exists.
 Closed records are <=4096 bytes; append snapshots only intrinsic 1..65536-byte views.
 Intrinsic signal checks and fresh monotonic deadlines fence subsequent work.
 The shared custody owner supplies original IO, physical verification and SHA checks;

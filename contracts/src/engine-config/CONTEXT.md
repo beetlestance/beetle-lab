@@ -1,7 +1,7 @@
 # Installed engine configuration contracts
 
 Public entrypoint index.ts creates branded ConfigSchema from <=16 trusted schemas
-and <=256KiB bundle, with synchronous <=1MiB config validation and content identity.
+and <=256 KiB bundle, with synchronous <=1 MiB config validation and content identity.
 No remote schema loads, custom callbacks or admitted semantic compilation.
 k6.ts uses shipped language-neutral sources, without engine implementation imports.
 Its prepareK6SecretReferences translates <=64 declared aliases through the runner

@@ -1,5 +1,5 @@
 # Private retirement composition
-index.ts owns<=2origins beforecapture, scopedigestcoalescing, fixed30s budget andclose.
+index.ts owns<=2origins beforecapture, scopedigestcoalescing, fixed 30 s budget andclose.
 execute.ts namesproducer/runtime, plan andboundednativebatch phases. AwaitC2settled
 beforeC3; inventoryactualquiesced/cachedclose beforepersist. UpTo16steps thenpending;
 Prepared C1 uses NativeReceipt.finalize. Optional no-task owner uses positive worker

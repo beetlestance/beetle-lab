@@ -24,19 +24,19 @@ source timestamps are correlation, not a monotonic elapsed-time measurement.
 
 ## Reads and lifetime
 
-Initial read uses limit1 to discover durableThrough. If other events remain, make
+Initial read uses limit 1 to discover durableThrough. If other events remain, make
 at most one further request: for history longer than100, seek to
 max(0,durableThrough-100) using the shared cursor helper; otherwise resume normally.
 This starts at recent activity without scanning an entire journal. Explain when
 earlier activity is omitted.
 
-For subsequent reads use the confirmed resumeCursor with limit100. Deduplicate
+For subsequent reads use the confirmed resumeCursor with limit 100. Deduplicate
 sequences; never join scopes or attempts. At most one query operation is issued;
 manual refresh must not cancel and overlap an already-issued original. Use AbortSignal
 and lifetime checks before/after both possible bootstrap calls. Late callbacks may
 settle but cannot issue another request, mutate retired cache or render new scope.
 
-Poll active runs every2s, suspended while hidden; errors stop automatic polling and
+Poll active runs every 2 s, suspended while hidden; errors stop automatic polling and
 show explicit retry. A page with nextCursor is backlog, not a reason for a tight
 fetch loop. Continue bounded polling until caught up; preserve recent-history notice
 when eviction occurs. Empty caught-up polls preserve rows and progress facts.

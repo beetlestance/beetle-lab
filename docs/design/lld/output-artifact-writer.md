@@ -1,6 +1,6 @@
 # Artifact writer and progress metadata
 
-Status: implemented and reviewed locally with application migration010.
+Status: implemented and reviewed locally with application migration 010.
 Extends [source adoption](output-adoption-store.md) and [native bytes](output-files.md).
 No terminal projection, quota refund, deletion or network/file IO occurs in SQL.
 
@@ -47,7 +47,7 @@ flushes and successful cached closes remain byte-adapter responsibilities.
 
 ## Native constraints and reads
 
-Replace only migration009's deliberately immutable slot UPDATE trigger. Keep
+Replace only migration 009's deliberately immutable slot UPDATE trigger. Keep
 initial insertion strict v1/o0/transferring/i=NULL/w=NULL, token uniqueness, source
 immutability, retained rows, event ceiling and all payload allowance guards.
 Validate the closed bounded duplicate-free slot tree before JSON path extraction;
@@ -59,7 +59,7 @@ outside publication, version-only advances, unsafe arithmetic and delete/REPLACE
 Expected size comes from the sole manifest. Native guards enforce these transitions
 as well as the application preflight. No new byte/counter reservation is created.
 
-Source parent's version remains its immutable adoption version1. Slot versions
+Source parent's version remains its immutable adoption version 1. Slot versions
 carry progress independently. Broaden the existing shared slot decoder to the
 already-declared phase/identity/writer vocabulary; do not create another decoder.
 Base load/equal adoption replay must keep returning the current derived slots.

@@ -9,7 +9,7 @@ Own data fields and bounded JSON are captured synchronously; accessors reject.
 Private ports support deterministic faults; production always uses Node FS/clock.
 
 Contracts verify both reported and fixed engine-result.json seals and scope/engine.
-Full sealed identity must agree. Result actual bytes are capped at 1MiB.
+Full sealed identity must agree. Result actual bytes are capped at 1 MiB.
 Artifacts have unique case-normalized UUID IDs and paths; reserved root names,
 case/path aliases and ancestor/descendant conflicts reject before file admission.
 
@@ -19,7 +19,7 @@ paths and descriptors. Nested ancestors remain pinned while each file is read.
 All previously observed paths receive a final metadata/canonical-path check,
 then another owned named-path check after every original descriptor close settles.
 The latter retains identity snapshots and never reopens or stats closed descriptors.
-One artifact uses <=64KiB read windows. Only bounded metadata and the <=1MiB
+One artifact uses <=64 KiB read windows. Only bounded metadata and the <=1 MiB
 result body are retained; artifact/path counts come from the shared schema.
 Overflow-safe accounting covers actual result + declared artifacts + control bytes.
 

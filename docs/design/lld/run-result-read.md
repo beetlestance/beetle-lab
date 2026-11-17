@@ -24,7 +24,7 @@ provisional label. Reading never marks artifact publication or terminal outcome.
 
 Metadata exposes readonly results:RunResultReader using the existing worker.
 getRunResult uses the shared two-large-original lane because its reply can exceed
-64KiB. Capture/validate request and reply on both sides before original release;
+64 KiB. Capture/validate request and reply on both sides before original release;
 map wrong scope/run to404. Queue/unavailable failures remain explicit errors.
 
 Evidence must cover pending/null and adopted source, original ownership and bad

@@ -1,6 +1,6 @@
 # Immutable cleanup-plan storage
 
-Status: C3d metadata and observed-plan bridge implemented locally. Journal018.
+Status: C3d metadata and observed-plan bridge implemented locally. Journal 018.
 Parents: [native inventory](task-inventory.md), [plan values](cleanup-control.md),
 [retirement](output-retirement.md), [producer](producer-retirement.md).
 No unlink, mutable removal progress, native receipt, ACK or refund.
@@ -15,7 +15,7 @@ manufacture that provenance. Revoked producer/runtime/inventory owners invalidat
 Publicly returned plan mutation cannot change its captured canonical observation.
 
 The private inventory.persist port requires that observation. Capture one fixed
-operation budget (at most30seconds); authenticate it again before dispatch and after
+operation budget (at most 30 seconds); authenticate it again before dispatch and after
 reply. No caller path, receipt flag or raw plan replaces the observation. Raw Journal
 store/read ports remain metadata validation, explicitly not native IO proof. The
 worker cannot establish complete inventory from four role anchors alone.
@@ -54,7 +54,7 @@ null replies. Scope or reply-kind mismatch fails the actual Journal carrier.
 Private input command frames allow2×planBytes+4096 bytes for JSON-string escaping.
 Read/reply frames bound the plan wrapper separately. Admission precedes capture;
 validations occur before copying unbounded input. Quote/Unicode near-limit fixtures
-exercise carrier bounds without granting native permission. Migration018 is additive;
+exercise carrier bounds without granting native permission. Migration 018 is additive;
 predecessor rows, roots, spool/hold charges and foreign keys must survive unchanged.
 
 ## Subsequent destructive replay
@@ -68,5 +68,5 @@ Current raw store/read receipts do not advance backend cleanup or release disk h
 Acceptance: observed-token provenance/revocation, immutable replay/conflict, wrong
 scope/namespace/request/role/control, raw SQL digest/charge/update/delete guards,
 compiled worker lost reply/termination/reopen, quote/Unicode carrier bounds, held
-shutdown and additive schema17/accounting preservation. Native destructive and full
+shutdown and additive schema 17/accounting preservation. Native destructive and full
 runner/backend qualification remain separate.

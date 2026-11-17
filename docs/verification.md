@@ -23,15 +23,15 @@ time caps. Use temporary directories, ports, network fixtures and fake clocks.
 
 | Test group | Inventory IDs | Required proof |
 | --- | --- | --- |
-| A01 namespaces/inputs/settings | F01-F04 | Organisation/workspace/folders CRUD, scoped queries, upload paths, revision/settings validation and retention preview |
-| A02 run/result lifecycle | F05-F07,F11-F12 | Queue/launch/cancel/replay/reconnect, correct terminal outcome, historical pagination |
-| A03 metrics/warnings | F08-F10,F30 | Known synthetic latency/errors, bounded labels, dropped load and advisory hints |
-| A04 reports/compare/export | F13-F15 | Four-run cap, environment differences, JSON/CSV/text, compiler parity, no silent omission |
-| A05 UI/docs/install | F16-F19 | Keyboard/themes/viewports, generated reference, clean install, immutable image identity |
-| A06 load scenarios | F20-F24 | All seven executors, delayed parallel scenarios, discovery and per-VU semantics |
-| A07 requests/data/assertions | F25-F29 | Methods, payloads/templates, datasets, coherent CSV rows, secret refs, checks/readiness |
-| A08 target observations | F31-F33 | Target versus engine scope, missing metrics, baseline/final/cooldown, heuristic labels |
-| A09 retired hooks | F34 | Shell strings rejected; docs explain replacement scope and explicit tool capabilities |
+| A 01 namespaces/inputs/settings | F01-F04 | Organisation/workspace/folders CRUD, scoped queries, upload paths, revision/settings validation and retention preview |
+| A 02 run/result lifecycle | F05-F07,F11-F12 | Queue/launch/cancel/replay/reconnect, correct terminal outcome, historical pagination |
+| A 03 metrics/warnings | F08-F10,F30 | Known synthetic latency/errors, bounded labels, dropped load and advisory hints |
+| A 04 reports/compare/export | F13-F15 | Four-run cap, environment differences, JSON/CSV/text, compiler parity, no silent omission |
+| A 05 UI/docs/install | F16-F19 | Keyboard/themes/viewports, generated reference, clean install, immutable image identity |
+| A 06 load scenarios | F20-F24 | All seven executors, delayed parallel scenarios, discovery and per-VU semantics |
+| A 07 requests/data/assertions | F25-F29 | Methods, payloads/templates, datasets, coherent CSV rows, secret refs, checks/readiness |
+| A 08 target observations | F31-F33 | Target versus engine scope, missing metrics, baseline/final/cooldown, heuristic labels |
+| A 09 retired hooks | F34 | Shell strings rejected; docs explain replacement scope and explicit tool capabilities |
 
 A feature is releasable only when its required proof is attached to the tested
 source. F34 is a deliberate retirement, not a claim to preserve unsafe behavior.

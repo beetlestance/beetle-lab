@@ -17,7 +17,7 @@ SQL counts may scan organisation metadata; constant-size replies do not promise
 constant-time counts. No time-series/resource observation writes are introduced.
 
 GET /api/v2/organizations/{organizationId}/overview uses the trusted server clock,
-returns at most32768 bytes and validates scope/time/count/list consistency at worker,
+returns at most 32768 bytes and validates scope/time/count/list consistency at worker,
 HTTP/client boundaries. Missing/foreign organisation refuses. Malformed timestamps
 make the snapshot unavailable, not invented zeroes. Client keys include organisation;
 retired scope/session reads cannot render. Errors hide cached figures, with explicit

@@ -74,8 +74,8 @@ Paired profile refuses this exchange; automatic profile refuses
 bootstrap pairing. Normal automatic startup never prints a pairing token.
 
 Persist one private session (cookie secret, CSRF token, issued/expiry UTC) through
-the existing exclusive metadata worker, with a monotonic record version and <=2KiB
-request/reply. Session absolute lifetime stays8h; cookie Max-Age stays28,800seconds.
+the existing exclusive metadata worker, with a monotonic record version and <=2 KiB
+request/reply. Session absolute lifetime stays8h; cookie Max-Age stays28,800 seconds.
 Reopen restores only the remaining lifetime; it never extends an old credential.
 Expired sessions renew through the automatic POST without a manual token/restart.
 Future issued times, invalid clocks or malformed persistent state fence startup.

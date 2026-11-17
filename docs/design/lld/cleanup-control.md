@@ -6,13 +6,13 @@ Physical lifecycle remains in [retirement](output-retirement.md).
 
 ## Native plan
 
-Closed protocol1/performance purpose binds exact original scope, generation1 and
+Closed protocol 1/performance purpose binds exact original scope, generation 1 and
 intent digest, installed/task namespace identities, retirement request digest and
 retirementVersion1. The request digest binds the complete future retirement request.
 No caller path becomes native permission. Export cleanup needs a separate purpose
 contract; reserving its capacity does not enable these performance operations.
 
-At most512 entries include the root. At most32 relative path levels,4096 UTF-8 bytes
+At most 512 entries include the root. At most 32 relative path levels,4096 UTF-8 bytes
 per path and128KiB complete canonical JSON. Root is the empty path, first and a
 directory. Paths are unique, strictly lexically ordered by JS code units; each
 parent must already be a directory. No absolute/empty component, dot/dotdot,
@@ -36,8 +36,8 @@ these same bounds; never silently enlarge them after admission.
 ## Progress and receipt
 
 One mutable progress value binds plan identity, entry count, removed count,
-version and prepared|cleaning|files_absent state, <=8192 bytes. Prepared has count0,
-version1; cleaning starts at count0/version2. Each next version removes exactly
+version and prepared|cleaning|files_absent state, <=8192 bytes. Prepared has count 0,
+version 1; cleaning starts at count 0/version 2. Each next version removes exactly
 one entry in reverse plan order, including actual parent sync and original close.
 Cleaning count is below entry count. files_absent has the full count and
 version=count+2; maximum514 for512 entries. Exact replay is idempotent; skips,

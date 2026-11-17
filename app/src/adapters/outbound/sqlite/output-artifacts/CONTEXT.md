@@ -12,7 +12,7 @@ only after the caller fences production and awaits result and settlement.
 
 Changing writes require exact CAS. Equal replay preserves version; older matching
 progress returns the current higher offset. Publication clears writer atomically.
-Migration010 guards the same transitions against raw SQL; failed transactions roll
+Migration 010 guards the same transitions against raw SQL; failed transactions roll
 back. Base reads and adoption replay derive current slots through one decoder.
 
 Focused tests: `vitest run app/test/storage/output-artifacts*.test.ts`.

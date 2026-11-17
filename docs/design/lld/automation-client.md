@@ -16,7 +16,7 @@ credentials, paths/query/fragments on endpoint, redirects or environment expansi
 Host/Origin bind the configured external origin, including private Compose access.
 Node fetch does not preserve an overridden Host. A closed Node HTTP(S) adapter
 therefore preserves that authority, refuses redirects/upgrades, caps headers16KiB
-and bodies4KiB, and uses a64KiB byte-sized response queue under existing bounded
+and bodies4KiB, and uses a 64 KiB byte-sized response queue under existing bounded
 wire validation. Abort destroys the request/body. Endpoint and origin are captured in credentials and must match subsequent commands.
 
 | Command | Additional input | Behavior |
@@ -47,16 +47,16 @@ automatic installations instead use connect, without a startup token. Do not pas
 Connect and pair share one Set-Cookie capture under its owned fetch adapter; validate the exact
 session cookie and existing BrowserSession before writing. No cookie jar/library.
 The credential file holds version, endpoint, origin, session cookie and BrowserSession.
-It is <=4KiB, closed/strictly validated, regular, current-UID-owned, single-link and
+It is <=4 KiB, closed/strictly validated, regular, current-UID-owned, single-link and
 0600; use O_NOFOLLOW and check stable opened-file identity/size. Token <=64 bytes.
-Request files <=4KiB; read at most limit+1 with stable identity checks. Credential
+Request files <=4 KiB; read at most limit+1 with stable identity checks. Credential
 creation is exclusive0600 with fsync, in a current-UID private directory, never
 overwrites an existing file. Failed grant or unknown file outcome must not print
 secrets or automatically retry the exchange. An explicit connect retry with no
 file created recovers the server's same retained grant; no resource write is replayed. No global stores, credential copying or real data
 in tests. Fixed public diagnostics never contain paths, URLs, config or exceptions.
 
-Successful records use bounded encoded JSON (<=1MiB) on stdout. Pair prints only
+Successful records use bounded encoded JSON (<=1 MiB) on stdout. Pair prints only
 {paired:true}; connect prints only {connected:true}; credentials never appear there. Error JSON is bounded/fixed on stderr.
 Write output once with a separate1s output budget; handle backpressure/failure
 explicitly and retain stream error ownership through failed-write callback/error
@@ -67,14 +67,14 @@ an already-admitted run. No daemon/background tasks or persistent caches.
 ## Waiting and exit status
 
 --wait-ms is1..3,600,000, uses a monotonic HTTP/wait deadline and one sequential
-status read every2s, at most1,801 reads. All issued requests share the remaining
+status read every 2 s, at most 1,801 reads. All issued requests share the remaining
 signal/deadline; no concurrent polling, event corpus or unbounded output. Poll only
 while nonterminal; final Run state/outcome remains authoritative. Timeout/unavailable
 is not cancellation or test failure. Waiting does not extend an execution budget.
 Run without waiting exits0 for an acknowledged submission, explicitly labelled
-submitted; it does not claim test success. Connect/pair/cancel/result/compare exit0 for a
+submitted; it does not claim test success. Connect/pair/cancel/result/compare exit 0 for a
 successful command/read. Status and run-with-wait map the authoritative terminal
-Run: passed0, failed1, inconclusive3, cancelled4. Pending or unavailable deadline
+Run: passed 0, failed1, inconclusive3, cancelled4. Pending or unavailable deadline
 is5. Invalid input2; transport/invalid reply or unknown mutation outcome3;
 unpaired/forbidden/unavailable prerequisites5. No metric or engine result recomputes
 application outcome; discovery semantics remain in the backend.

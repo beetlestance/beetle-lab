@@ -53,17 +53,17 @@ and that profile invalidates its session on restart.
 
 All commands require endpoint, origin and session-file. Request JSON uses the
 [generated API schemas](../contracts/api/v2/http-operations.json); run/cancel include
-an explicit stable requestId. Request files are at most4KiB. Suite/revision creation
+an explicit stable requestId. Request files are at most 4 KiB. Suite/revision creation
 and large input upload remain existing API/UI operations. This client does not yet
 claim a validate or script-export command. Engine preflight still occurs under
 execution admission; a submitted queue entry is not a validated or passed test.
 
 Use run --wait-ms for CI test outcome. Waiting is bounded to one hour and checks
-status every2s. It never cancels the underlying run on timeout or client interruption.
+status every 2 s. It never cancels the underlying run on timeout or client interruption.
 Use explicit cancel when desired. All records are JSON; --json is accepted too.
 
-Exit0 means successful command/read; run without waiting labels only submitted.
-For status/run-with-wait, declared terminal outcomes map to passed0, failed1,
+Exit 0 means successful command/read; run without waiting labels only submitted.
+For status/run-with-wait, declared terminal outcomes map to passed 0, failed1,
 inconclusive3 and cancelled4. Pending/deadline/unavailable is5; invalid input2;
 transport/invalid reply/unknown mutation outcome3. No metric recomputes outcome.
 

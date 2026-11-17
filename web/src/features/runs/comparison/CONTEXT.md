@@ -17,7 +17,7 @@ admission until they settle. The generated transport can return before an
 ignored underlying fetch settles; this is not a physical-fetch custody guarantee.
 Errors stop automatic reads; refresh, catalogue and chart retries are manual.
 Metrics public SamplesView reuses bounded projection/UTC chart behavior. At most
-four independent charts retain up to1,000 points/1MiB each, ten pages per action.
+four independent charts retain up to1,000 points/1 MiB each, ten pages per action.
 Sample replies must match source manifest and full selected metric identity.
 Each chart has its own source timestamps and scale; timelines are not aligned.
 No polling, cumulative run corpus, new outcome/percentile math or mutation.

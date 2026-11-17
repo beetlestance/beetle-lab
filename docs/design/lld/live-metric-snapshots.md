@@ -16,7 +16,7 @@ prepare/control scope, unsupported labels and nonconsecutive ordinals are reject
 Subset identity is SHA256 of the shared canonical subset text; hash implementation
 is supplied by trusted native callers, never an invented digest or browser path.
 
-LiveMetricSnapshot version1 binds organisation/workspace/attempt/generation,
+LiveMetricSnapshot version 1 binds organisation/workspace/attempt/generation,
 producerEpoch UUID, subsetDigest, subset, sourceSequence1..65536,
 publishedSequence1..65536, coalescedWindows, capturedAtMs/publishedAtMs,
 startTimeMs/endTimeMs and series<=20 existing RunMetricSeries values. Source windows
@@ -44,15 +44,15 @@ fixed scope/epoch/digest, monotonic/wall clocks and sink.write(frame,signal), si
 Private source windows come from the existing accumulator; arbitrary JS is not a
 trusted window. Public frame decode remains the hostile-data boundary.
 
-accept(window) synchronously projects at most20 selected values while traversing at
-most4096 approved rows, replaces one pending slot and returns without awaiting sink
+accept(window) synchronously projects at most 20 selected values while traversing at
+most 4096 approved rows, replaces one pending slot and returns without awaiting sink
 IO. No native metric parsing, archive mutation, file/network call or subscriber work
 occurs inside the callback. Hold only one current original plus one latest pending
 projection; replacement increments exact coalesced count. Duplicate/out-of-order or
 overlapping source windows and counter/clock overflow disable this advisory producer
 with fixed status; do not throw into the authoritative metric callback.
 
-Publish at most once per2000ms monotonic interval, beginning with the first admitted
+Publish at most once per 2000 ms monotonic interval, beginning with the first admitted
 window. One original write only; no wait queue/retry/restart. A timer wake cannot
 publish before the previous original settles or after stop. The pending projection
 carries its own sequence/coalescing counters; later replacements cannot mutate the
@@ -68,7 +68,7 @@ original is drained, independent of run length. Cleanup failure remains failed a
 retained; a timeout/abort signal is not physical quiescence. close returns the same
 owned promise. Status exposes accepted/source/published/coalesced counts, active/
 pending/closed/failed state and fixed failure reason; no raw data/errors/paths.
-Projected current+pending state<=128KiB; serializer/output temporary<=64KiB, plus
+Projected current+pending state<=128 KiB; serializer/output temporary<=64 KiB, plus
 bounded shared validation scratch. No retained source-window or point corpus.
 
 ## Core public interface and admission
@@ -77,7 +77,7 @@ Root-reserved engines/k6/wrapper/live/types.ts fixes the interface; index.ts exp
 createLiveMetricPublisher(options), types and fixed error. Factory captures options
 and trusted capability methods before async work; invalid options throw fixed
 invalid_options before sink effects. Scope/subset are detached using existing
-schema/semantic owners. Timeout uses existing validateAttempt limits (<=172800000ms).
+schema/semantic owners. Timeout uses existing validateAttempt limits (<=172800000 ms).
 maximumProducedBytes is a required integer1..4294967296 caller-owned lifetime charge;
 max writes is min(65536,1+floor(timeoutMs/2000)). Neither grants new output authority.
 Use existing shared descriptor/value math and frame codec; no duplicate unit rules.
@@ -85,7 +85,7 @@ Use existing shared descriptor/value math and frame codec; no duplicate unit rul
 Clock defaults Date.now/performance.now; trusted supplied clocks are captured once.
 First acceptance establishes source order and cadence without awaiting the sink.
 Optional signal fences on abort; already-aborted input starts no write. Sink receives
-canonical encoded bytes<=64KiB and captured abort signal; chargedBytes conservatively
+canonical encoded bytes<=64 KiB and captured abort signal; chargedBytes conservatively
 reserves the whole buffer before issuing IO, including failed/partial uncertainty.
 It is not reported as actual bytes written. Stop discards at most one pending window
 and exposes discardedOnStop separately from coalesced replacement counts.
@@ -104,7 +104,7 @@ unbounded publishers. No process-global job scheduler belongs in this component.
 
 The [custody decision](../../decisions/013-live-metric-mailbox-custody.md) replaces
 the shared-root rename/unlink adapter. Use a dedicated initially empty `/beetle/live`
-local-driver tmpfs volume capped at128KiB/four inodes, carved from the existing temporary allocation and
+local-driver tmpfs volume capped at 128 KiB/four inodes, carved from the existing temporary allocation and
 memory budget. No Offer or phase ceiling increase. Mount with NoCopy=true and an exact per-plan
 name. Verify local driver, tmpfs options and installation/attempt/generation/spec
 labels before adoption, start or deletion. Never attach a pre-existing orphan as
@@ -115,9 +115,9 @@ unlink its children; guarded volume teardown after physical stop owns mount clea
 No per-window fsync, append log, new process or lifecycle journal event.
 
 The shared `@beetle/contracts/live-mailbox` format has128-byte envelopes at offsets
-0 and65664 with a65,536-byte payload area between them; total65792 bytes. Envelopes
-contain ASCII BLIVE001 at0, committed flag0/1 at8, big-endian revision at16, length
-at20, SHA256 bytes24..55 and zeroes elsewhere. Revision1..65536 never wraps; body
+0 and65664 with a 65,536-byte payload area between them; total 65792 bytes. Envelopes
+contain ASCII BLIVE001 at 0, committed flag0/1 at 8, big-endian revision at 16, length
+at 20, SHA256 bytes24..55 and zeroes elsewhere. Revision1..65536 never wraps; body
 length1..65536. Write busy head/footer, body, then committed footer/head, awaiting
 each actual original and bounding partial writes. Charge body+512 envelope bytes
 before IO against finite admitted lifetime output; never retry uncertain effects.
@@ -147,9 +147,9 @@ parse one expected regular entry without extraction/links, and drain originals.
 Reuse existing ordinary transport credits: globally<=2 telemetry originals, no queue,
 control/cancel priority preserved. Volume verification cannot block stop/kill of an independently matched container.
 Root/name replacement or scope/epoch mismatch fails closed; normal atomic replacement races return explicit unavailable. Reads,
-decode, encode and response share a fixed<=5s deadline and original lifetime.
+decode, encode and response share a fixed<=5 s deadline and original lifetime.
 Backend resolves scoped run/attempt first, retains no corpus/subscriber registry,
-and returns<=64KiB. Browser polls visible selected active attempt every2s only after
+and returns<=64 KiB. Browser polls visible selected active attempt every 2 s only after
 prior original settles; stops/retires ownership on scope/session/attempt change.
 Errors/staleness are explicit; terminal state switches to published sealed history.
 SSE, arbitrary live series selection and replay are not implied by this component.
@@ -163,7 +163,7 @@ Validated raw config and compiled input use the same catalogue rules. Capture/fr
 before effects. Assign UUID from canonical scope/generation, intent and runtime spec
 digests. One logical producer per launch; replacements need a new launch identity.
 
-Carve at most8MiB and one eighth of total output, further capped at one eighth of
+Carve at most 8 MiB and one eighth of total output, further capped at one eighth of
 execute output. Reduce history allocation; never extend admission. Charge the
 initial65792-byte extent plus sink body/envelope writes conservatively. Publication
 starts after measured-phase transition and drains before collect starts; report
@@ -181,19 +181,19 @@ caps, failure fencing, cancellation/late settlement, no final flush, close failu
 Use synthetic clocks and controlled sink; no Docker/native build/full-suite repeat.
 First core packet must not claim filesystem safety, runtime integration or live UI.
 Physical producer/agent tests and runner/public/browser connection follow before
-A03/V08/V09 feature acceptance; measured overhead remains separate qualification.
+A 03/V08/V09 feature acceptance; measured overhead remains separate qualification.
 
 ## V2 private wire encoding
 
 The V2 trusted image marker `BEETLE_K6_LIVE_METRICS_V2=1` identifies gzip mailbox
 payloads. Public HTTP snapshots retain their existing JSON DTO/schema. Encode the
-complete validated snapshot, then gzip at fixed fast level with a64KiB compressed
+complete validated snapshot, then gzip at fixed fast level with a 64 KiB compressed
 output cap. Lifetime billing uses those actual wire bytes; the sink separately
-charges all four header writes. The existing8MiB allocation/cadence/series caps
+charges all four header writes. The existing 8 MiB allocation/cadence/series caps
 remain. This preserves metric coverage while reducing repeated descriptor bytes.
 
 After fixed mailbox/envelope hash validation, the agent gunzips with a separate
-64KiB decoded maximum, then applies existing strict snapshot/approval/order/age
+64 KiB decoded maximum, then applies existing strict snapshot/approval/order/age
 checks. Malformed, oversized or plaintext payloads refuse; no old-wire fallback.
 Matching engine/agent images are required. Bounded zlib scratch is part of existing
 process caps; native CPU/memory and long-stream proof are required after this change.

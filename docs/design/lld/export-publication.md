@@ -1,7 +1,7 @@
 # Public export job publication
 
 Status: implementation contract; extends standalone-export-jobs.md.
-Metadata migration015 owns these rows; agent Journal015 is a separate DB.
+Metadata migration 015 owns these rows; agent Journal 015 is a separate DB.
 
 ## Ownership
 

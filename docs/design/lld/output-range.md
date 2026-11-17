@@ -17,7 +17,7 @@ performance.now time, bounded to OUTPUT_COLLECTION_MAX_MS; caller signal is a st
 hint. Root/path/descriptor numbers retain their original bigint/string precision.
 
 A positive result contains exactly min(length,artifact.bytes-offset) bytes in an
-owned Uint8Array, at most65536. Offset at EOF, including an empty artifact, returns
+owned Uint8Array, at most 65536. Offset at EOF, including an empty artifact, returns
 empty bytes only after actual root/ancestor/file open/check/close. It must not call
 OutputFiles.read's nonzero-read path at EOF. File size must equal declared bytes.
 No full artifact/result/control re-read or unrelated artifact hashing. Range bytes

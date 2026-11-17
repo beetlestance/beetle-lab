@@ -8,7 +8,7 @@ child identity checks and rename/unlink conditional. Review identified a foreign
 file race; the unintegrated adapter draft was retained privately and retired.
 
 Use one fixed mailbox in a dedicated, initially empty per-attempt local-driver
-tmpfs volume at `/beetle/live`, capped at 128KiB and four inodes. Container-local
+tmpfs volume at `/beetle/live`, capped at 128 KiB and four inodes. Container-local
 HostConfig.Tmpfs is not archive-readable; real proof and Docker's documented copy
 limitation rejected that combination. The local-driver volume was proved readable
 through the bounded archive endpoint. Carve its allocation from existing

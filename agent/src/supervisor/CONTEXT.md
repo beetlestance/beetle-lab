@@ -23,9 +23,9 @@ append and one coalesced latest summary. Unknown append replays frozen intent.
 Lifecycle has priority; exit follows final drained summary. Pending facts block
 settlement. Completed requires known local create/start; recovery cannot infer it.
 
-Composition ticks every100ms, including after failures. Backend calls cap30s and
+Composition ticks every 100 ms, including after failures. Backend calls cap 30 s and
 launch consumes remaining execution time. Resource/live telemetry share two
-original slots. Resource cadence is1s reads/5s publication; live reads cap5s.
+original slots. Resource cadence is1s reads/5 s publication; live reads cap 5 s.
 Installed bootstrap requires resource capability and drains before Journal close.
 readLiveMetrics uses an existing running actor only, never creates or launches.
 Installed policy approves once after Offer/reservation validation; rejection is

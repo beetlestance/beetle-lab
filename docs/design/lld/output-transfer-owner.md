@@ -10,7 +10,7 @@ One parent service per injected byte-store instance owns at most two run transfe
 one per exact captured EventBinding. Reserve before foreign capture/callbacks; pass
 the reserved job directly, never look it up again from mutable caller input. Capture
 complete fixed identities before deriving the key. Refuse busy without a queue.
-Each run handles at most128 artifacts serially, so source/native windows remain2.
+Each run handles at most 128 artifacts serially, so source/native windows remain2.
 Retain only active bounded source/state/chunk values, no growing history or timers.
 
 Each job owns an internal abort controller and every issued gateway/metadata/file
@@ -19,7 +19,7 @@ may reject the result earlier while unknown settlement stays pending and owned.
 A failed original close keeps settlement and job/token credit pending, fences the
 service, and makes cached service close reject cleanup while retaining ownership.
 Caller cancellation requests stop; it never drops an original or proves quiescence.
-Fresh native deadlines<=300000ms are independent of execution time. Validate reserve,
+Fresh native deadlines<=300000 ms are independent of execution time. Validate reserve,
 clock and UUID-generator values; invalid or backwards time fails closed.
 
 Service close synchronously fences producers, aborts jobs and drains its actual

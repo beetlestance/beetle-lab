@@ -3,14 +3,14 @@
 Entrypoint `index.ts`: `openJournal({path, queueLimit?, spoolQuotaBytes?, workerUrl?})`.
 Node 24 packaging compiles sibling `worker.js`; retain `node:sqlite` in bundling.
 Tests compile with pinned tsup into task-owned temporary directories.
-`immutableOffer(unknown)` bounds/validates/copies Offer JSON (2 MiB; config1 MiB), preserving
+`immutableOffer(unknown)` bounds/validates/copies Offer JSON (2 MiB; config 1 MiB), preserving
 original identity text and canonical duplicate equality. Scoped get/read/cancel
 and listOpen (100 lightweight snapshots) return current projected state. Listing
 omits result payloads; scoped get owns the full-result read. Terminal rows remain
 listed until collection/release/retention authority exists. Cancel persists intent.
 `cancelOriginal({offer:unknown,now})` shares the two large-original credits. One
 immediate transaction equality-checks/inserts the original and persists supervision.
-Migration010 marks only a receipt inserted by that cancellation as a fresh refusal:
+Migration 010 marks only a receipt inserted by that cancellation as a fresh refusal:
 rejected/cancelled, without queue/reservation/events. Marker contradictions fail closed;
 existing unknown or charged receipts keep their actual evidence and original custody.
 Private `scanRunnable({lane:'charged'|'queued',limit,cursor?})` returns <=100 scoped
@@ -18,7 +18,7 @@ generation keys using charged/pending indexes before joining identity metadata.
 It excludes released reservations, retired queue rows and compatibility-only offers;
 cancelled charged attempts remain discoverable. No config/result/event payload is read.
 Cursors belong to each lane's row IDs. Pages are current observations, not a frozen
-snapshot: startup scans charged first, and subsequent passes restart each lane at0.
+snapshot: startup scans charged first, and subsequent passes restart each lane at 0.
 Discovery confers no dispatch/release authority; the controller rechecks durable state.
 `admission(command)` is the trusted production admission/ownership entrypoint;
 see [admission contract](../admission/CONTEXT.md). Compatibility `immutableOffer`
@@ -27,7 +27,7 @@ Snapshots project optional `admission` from original queue/reservation rows, ind
 of event state/lastSeq/ACK. No tracked facts leaves it absent. Queued/rejected requires
 no reservation; charged/released requires exact original queue/scope/generation and
 matching private status. SQL caps candidate/decision/reservation bytes before loading
-(16KiB/512B/32KiB); malformed, inconsistent or oversized tracked facts fail the read.
+(16 KiB/512B/32 KiB); malformed, inconsistent or oversized tracked facts fail the read.
 Ordinary get/list/cancel never load Offer/config to project admission. Release reuses
 the ownership predicates: unstarted abort has no escaped create/start/runtime;
 settled release needs a definitive current launch and matching later runtime/collection
@@ -52,13 +52,13 @@ phase is not measurement evidence. A result cannot prove container exit, seal
 authenticity, artifact custody, application finalization or reservation release.
 Lost/exited resist delayed nonterminal events; actual exit can resolve lost.
 Repeated exits accept newer timestamps/unknown refinements but retain the first
-witness. A separate private known-facts frontier (<=1KiB) durably remembers every
+witness. A separate private known-facts frontier (<=1 KiB) durably remembers every
 confirmed field across later unknowns and restart; known contradictions conflict.
 Cancellation events require
 already-durable intent and never reset cancellation time.
 
-Control frames max64KiB including LF; supervisor input max64KiB. Stored agent
-envelopes allow512 extra bytes for enrichment. readEvents yields<=100/256KiB,
+Control frames max 64 KiB including LF; supervisor input max 64 KiB. Stored agent
+envelopes allow512 extra bytes for enrichment. readEvents yields<=100/256 KiB,
 including batch envelope. Lengths are selected before bounded payload loading.
 Default quota 64 MiB per attempt (override 1024..67108864 bytes for new offers only),
 charging encoded event + canonical source JSON +256-byte row/index allowance;
@@ -69,13 +69,13 @@ SQLite enforces the combined bound. Pruning refunds event charges only. Overflow
 returns quota_exceeded without event, cursor or projection growth.
 
 Private readWrapperCheckpoint(key)/commitWrapperBatch({key,expected,next,events})
-own incremental file intake. Batch1..100events and whole normalized input<=256KiB;
+own incremental file intake. Batch1..100events and whole normalized input<=256 KiB;
 scoped contiguous wrapper sequences, same exact bigint file identity, growing cursor.
 The journal computes canonical SHA256 batch identity. Checkpoint/events/projection/
 charges commit together; identical ambiguous replay works after pruning/restart.
 Changed replay/stale CAS conflicts. Claim requires no prior legacy wrapper stream;
 legacy appendWrapper is blocked after a checkpoint exists. Supervisor is independent.
-Checkpoint JSON<=1KiB stays charged after pruning. Migration006 preserves existing
+Checkpoint JSON<=1 KiB stays charged after pruning. Migration 006 preserves existing
 rows, adds checkpoint columns, and widens agent envelopes without shrinking producer
 frames. A checkpoint asserts reader observations, never proves filesystem custody.
 
@@ -86,10 +86,10 @@ per-source expiry watermarks. cursor_expired includes a valid snapshot in the
 JournalError.recovery property; missing history must remain incomplete.
 
 Single worker/connection owns EXCLUSIVE SQLite locking, WAL/FULL, foreign keys,
-100ms busy timeout and 2 MiB cache. Transactional migrations002/003 preserve
-offers, IDs, cancel, events, ACK and pruned-source markers; migration003 rebuilds
+100 ms busy timeout and 2 MiB cache. Transactional migrations002/003 preserve
+offers, IDs, cancel, events, ACK and pruned-source markers; migration 003 rebuilds
 parent/child tables with foreign keys enabled and adds private admission metadata.
-Migration004 adds a per-attempt supervision clock. Additive migration005 stores
+Migration 004 adds a per-attempt supervision clock. Additive migration 005 stores
 bounded optional projections without replaying history during startup. Unpublished
 pre-v5 rows retain original events/cursors/charges; unbackfilled phase/exit/result
 are UNKNOWN, never proof of absence or complete historical coverage. New installs
@@ -109,7 +109,7 @@ runtime quiescence. Actors must combine absolute deadlines with local monotonic 
 fenced clocks forbid new dispatch. On clock-integrity failure, emergency termination
 is distinct from normal five-second cancellation grace; never claim normal timing.
 Future versions refuse open. Startup is bounded to5s; the serial worker then has
-a5s no-completion watchdog. Healthy queued bursts may take longer overall;
+a 5 s no-completion watchdog. Healthy queued bursts may take longer overall;
 queue includes in-flight (default 32/max 64) plus close slot. Unknown commit outcome
 requires reconcile after reopen. close awaits exit; abort terminates pending work.
 Two original Offer/cancelOriginal writes/admissions/reads share a separate large-operation allowance,
@@ -117,9 +117,9 @@ reserved before snapshots or worker messages. Capacity refusal is queue_full, be
 issuance; settlement retains slots through the original reply or failed-worker shutdown.
 Only readOffer's known refusal becomes staging busy or installation deferred; it does
 not abort an unstarted charged attempt. Engine concurrency retains its admission policy.
-Migration008 preserves the parent/four-child FK graph and all three identity high waters
-while widening only Offer/canonical storage. Staging policy1 keeps exact existing charges.
-Private supervision reason and migration007 preserve first stop attribution plus
+Migration 008 preserves the parent/four-child FK graph and all three identity high waters
+while widening only Offer/canonical storage. Staging policy 1 keeps exact existing charges.
+Private supervision reason and migration 007 preserve first stop attribution plus
 sticky immediate escalation independently. See [durable stops](../../../docs/design/lld/agent-stop.md).
 Historical cancellations with unknown cause stay unknown/fenced, never relabelled.
 Scoped checks (NODE_OPTIONS=--max-old-space-size=1024):

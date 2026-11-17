@@ -1,6 +1,6 @@
 # Input byte publication
 
-Status: metadata/migration003, application service and native byte publication are
+Status: metadata/migration 003, application service and native byte publication are
 implemented and independently reviewed; see [local publication evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/input-publication.md).
 Guarded HTTP/startup is locally verified; browser transfer and input UI remain.
 Owners: application input service, sole metadata worker, local byte adapter.
@@ -10,7 +10,7 @@ The [installed provider](installed-providers.md) owns agent reads; the
 ## Identity and transport
 
 Every operation binds organisation/workspace/input UUIDs, normalized lowercase.
-An input has immutable expected SHA256 and bytes (0..8MiB), an opaque server ID,
+An input has immutable expected SHA256 and bytes (0..8 MiB), an opaque server ID,
 name and same-workspace folder (omission chooses the actual root folder).
 Names use namespace normalization; a display name never becomes a file path.
 Public records contain identity, scope, name, folderId, expected hash/bytes,
@@ -56,7 +56,7 @@ begin from staging/publishing/published/failed; deleted/deleting reject a new ke
 | deleted | Retained tombstone only | Durable absence established |
 | failed | Explicit deletion | Unknown custody remains charged |
 
-The row itself is the create intent. For offset0 staging, recovery may create the
+The row itself is the create intent. For offset 0 staging, recovery may create the
 missing exclusive staging file; never recreate a missing committed prefix.
 Before promotion persist publishing intent. File operations occur outside SQLite
 transactions. Publication metadata commits only after exact size/hash verification,
@@ -65,7 +65,7 @@ Persist newly created ancestor directories before acknowledging durable custody.
 Successful reads/pins do not certify against later changes by the installation administrator;
 provider/Stager recheck real byte identity and integrity before execution.
 
-Chunk length is1..64KiB, except no chunks are required for an empty input. Acquire
+Chunk length is1..64 KiB, except no chunks are required for an empty input. Acquire
 capacity before consuming a body. Append starts exactly at committed offset and
 cannot exceed expected size. Earlier retries must lie wholly inside the committed
 prefix and compare identical bytes; gaps, changed bytes and partial overlaps fail.
@@ -74,7 +74,7 @@ Crash with excess file bytes: truncate to committed offset and flush before appe
 Shorter/mismatched custody fails closed; offset never advances from client claims.
 
 Create is metadata-only, including receipt replay; it never creates or repairs files.
-Append or staging recovery may create missing offset0 custody. Seal/delete acquire
+Append or staging recovery may create missing offset 0 custody. Seal/delete acquire
 canonical route-key ownership before control, without preceding state/version checks.
 After known acceptance, re-get the current row before optional inline reconciliation;
 return the original receipt even when work remains pending. An old seal replay cannot
@@ -109,7 +109,7 @@ deleting retains its state, deleted rejects changes. No failed->staging/publishe
 
 ## Quota, metadata and file ownership
 
-The sole SQLite worker reserves expected payload bytes plus64KiB metadata charge
+The sole SQLite worker reserves expected payload bytes plus 64 KiB metadata charge
 per input in one installation usage counter: charged+payload+metadata+configured
 freeSpaceReserveBytes<=pool.storageBytes, using checked safe integer arithmetic.
 The fixed charge bounds zero-byte objects, directories, lifecycle rows and control
@@ -121,7 +121,7 @@ or revoke admitted custody silently. Physical free-space reserve checks suppleme
 logical accounting before writes; ENOSPC is an explicit failure, never publication.
 No claim of a hard filesystem quota follows from a logical counter/statfs sample.
 
-Migration003 extends/rebuilds input_blobs as the single lifecycle owner, with
+Migration 003 extends/rebuilds input_blobs as the single lifecycle owner, with
 offset/version/expectation checks, scoped workspace/folder FKs and recovery/list
 indexes. Add indexed revision_input_pins with scoped input/revision FKs and exact
 hash/size. Append pins in the same transaction as immutable revision creation;
@@ -129,9 +129,9 @@ require authoritative published state. All retained revisions protect their pins
 Backfill bounded rows from existing manifests; inconsistent pins stop migration.
 Preserve receipts/revisions/IDs; applied002 remains unchanged. Existing published
 rows enter publishing for byte verification before accepting new pins. Existing
-staging rows enter failed/unverified_legacy; offset0 recovery cannot create them.
-Use version1, actual workspace root and name `input-<id>` for old rows, with offset
-bytes for old published/offset0 for old staging. Initialize usage from every old
+staging rows enter failed/unverified_legacy; offset 0 recovery cannot create them.
+Use version 1, actual workspace root and name `input-<id>` for old rows, with offset
+bytes for old published/offset 0 for old staging. Initialize usage from every old
 payload+metadata charge; keep over-allocation charged and block new reservations.
 Retained historical pins survive the publishing fence. Never fabricate files.
 Namespace deletion must reject retained input dependencies; recursive cleanup and
@@ -145,7 +145,7 @@ the same numeric UID. Staging is a sibling on the same filesystem, outside that
 mount. Engines receive only their existing per-attempt staged subset.
 
 At most two original byte operations globally and one per input, including reads,
-recovery and cleanup; no waiting queue. Streaming uses <=64KiB buffers. Abort or
+recovery and cleanup; no waiting queue. Streaming uses <=64 KiB buffers. Abort or
 timeout fences subsequent work but retains original open/read/write/flush/close
 ownership until settled; uncertain cleanup cannot free a slot or storage charge.
 Close fences intake and drains originals. Metadata remains one bounded worker.
@@ -156,7 +156,7 @@ mid-response. Content uses safe attachment/octet-stream headers and bounded rang
 
 Private [byte jobs](../../../app/src/ports/input-bytes.ts) separate result from proven
 custody settlement; [the service](../../../app/src/ports/input-service.ts) alone owns
-global2/per-input1 admission. Capture canonical keys/requests/ranges before awaits.
+global 2/per-input1 admission. Capture canonical keys/requests/ranges before awaits.
 Reserve the original-result holder before foreign invocation, including metadata-only
 calls; reentrant shutdown cannot observe that holder as already drained.
 Invoke lazy chunk/sink callbacks only after owning capacity and current-state checks.
@@ -205,4 +205,4 @@ Test restart at every flush/offset/publishing/rename/commit/unlink boundary; wro
 scope/folder/hash/size, duplicate/overlapping chunks, zero-byte quota exhaustion,
 ENOSPC, symlink/hardlink/special files, pinned deletion, cancelled/held originals,
 close failure, two-slot saturation and unknown-control replay. Source-only reviews
-do not establish native filesystem latency, Node24/image or release qualification.
+do not establish native filesystem latency, Node 24/image or release qualification.

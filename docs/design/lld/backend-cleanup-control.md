@@ -1,10 +1,10 @@
 # Backend cleanup control reservation
 
-Status: policy1 locally verified; whole-chain cleanup qualification remains separate.
+Status: policy 1 locally verified; whole-chain cleanup qualification remains separate.
 Parents: [output allocation](output-allocation.md), [backend ACK](backend-retirement-ack.md).
 Owner: backend cleanup-control metadata adapter; independent of agent Journal control.
 
-Policy1 reserves65,536 logical bytes per exact performance original. It uses one
+Policy 1 reserves65,536 logical bytes per exact performance original. It uses one
 immutable original-keyed ledger row and the existing installation_storage_usage counter.
 This is an additional explicit charge, not spare space borrowed from the existing
 65,536 output metadata allowance. No physical SQLite/WAL or host disk quota is claimed. This backend policy does not
@@ -15,15 +15,15 @@ for both purposes; missing export backend proof never means zero cleanup debt.
 | --- | ---: |
 | Deletion intent, including logical row allowance | 4096 |
 | Up to128 compact file progress cells, each384 | 49152 |
-| One canonical ACK<=4096 plus512 row allowance | 4608 |
-| Future compact tombstone<=2048 plus512 | 2560 |
+| One canonical ACK<=4096 plus 512 row allowance | 4608 |
+| Future compact tombstone<=2048 plus 512 | 2560 |
 | Control ledger row | 1024 |
 | Reserved slack | 4096 |
 | Total | 65536 |
 
 A file cell is the canonical array of persisted deletion UUID, attempt UUID, ordinal,
 original version, progress version, namespace/preparation hashes and absent flag.
-Worst-case UTF-8 array size is238 with safe integer versions, plus128 logical row
+Worst-case UTF-8 array size is238 with safe integer versions, plus 128 logical row
 bytes =366<=384. No filename, artifact body, free-form error or config belongs here.
 Tombstone use must independently prove its fixed bucket before C5 implementation.
 Do not add a logical consumer by silently consuming slack or hiding it in event payloads.
@@ -63,5 +63,5 @@ this reserve. Agent control capacity remains in its own separately charged owner
 
 Acceptance: exact combined-capacity boundary/overflow, rollback, competing input claim,
 immutable replay, wrong original/scope, direct SQL overcharge/REPLACE/mutation/deletion,
-actual compiled worker/reopen, schema20 preservation and explicit legacy top-up before
+actual compiled worker/reopen, schema 20 preservation and explicit legacy top-up before
 resumed native work. Budget vectors independently check all bucket arithmetic.

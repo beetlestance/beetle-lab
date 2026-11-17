@@ -23,7 +23,7 @@ lease. No per-request, job, function or sample writes use either control.
 ## Storage and operations
 
 One private no-follow file with canonical private parent, checked native identity,
-one hardlink and fixed installation ID; at most16pages of4096bytes,64KiB cache,
+one hardlink and fixed installation ID; at most 16pages of4096bytes,64 KiB cache,
 no mmap, DELETE journaling and EXTRA synchronization. Native settings are checked.
 Successful initialization syncs the parent; an exclusive creation conflict preserves
 existing data. Process ownership retains native handles even on failed cleanup.

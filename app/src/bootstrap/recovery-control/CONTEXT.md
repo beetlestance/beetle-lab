@@ -1,6 +1,6 @@
 # Backend offline/startup exclusion
 
-Explicit initialization creates a private <=64KiB control database. Serving startup
+Explicit initialization creates a private <=64 KiB control database. Serving startup
 acquires ready state before metadata/input/runtime IO and holds an EXCLUSIVE lease
 through original cleanup. Loader-configured production applications require this
 control; direct injected applications may omit it for isolated component fixtures.

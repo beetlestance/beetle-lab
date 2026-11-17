@@ -35,7 +35,7 @@ send `X-Beetle-CSRF` on subsequent mutations. Send JSON Content-Type on exchange
 Cookies and CSRF values must not enter output, URLs or source files.
 
 A paired installation needs its explicit pairing flow; do not repeatedly mint or
-guess tokens. A401/403 is an access failure. Host aliases can fail the exact-origin
+guess tokens. A 401/403 is an access failure. Host aliases can fail the exact-origin
 check. Follow the supplied origin and do not probe other hosts or bypass guards.
 
 ## Configure and execute
@@ -56,7 +56,7 @@ lost reply, replay that same command; never create a second run with a fresh UUI
 Limit automatic replay to one retry, then report the unresolved original.
 
 After enqueue, retain the returned run/attempt IDs. Poll bounded reads with at
-least250ms between polls; stop at the user's waiting deadline or100 reads. Report
+least 250 ms between polls; stop at the user's waiting deadline or100 reads. Report
 pending/unknown honestly. Reaching a waiting deadline does not itself cancel the
 job. Use explicit cancellation only when authorized by the current task.
 

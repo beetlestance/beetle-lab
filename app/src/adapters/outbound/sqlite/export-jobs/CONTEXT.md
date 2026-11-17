@@ -1,7 +1,7 @@
 # Export job metadata
 
 Public index exposes jobs/claim/observation/output owners. Wire-only parent entry
-is ../export-wire.ts. Metadata migration015 is separate from agent Journal015.
+is ../export-wire.ts. Metadata migration 015 is separate from agent Journal 015.
 Store owns receipt-first transactions; export intent/full original/input pins are
 immutable and separate from Run rows. Shared order and resource/storage accounting
 reserve3MiB metadata and payload before possible delivery. Unknown stays charged.

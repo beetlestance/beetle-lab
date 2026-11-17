@@ -20,7 +20,7 @@ A later producer/export pin must extend eligibility before being introduced.
 The existing global scope/request receipt owns Begin replay before current-version
 checks. New allocation ID/time are excluded from logical command intent. Different
 request content conflicts. One intent per run prevents concurrent cleanup identities.
-Progress versions are separate from immutable native deletion generation1.
+Progress versions are separate from immutable native deletion generation 1.
 
 Preserve ALL existing allocation, execution, source, event, payload and receipt rows.
 No installation_storage_usage change, refund, tombstone or SQL data purge occurs.
@@ -33,12 +33,12 @@ It never means the whole run is deleted or storage charges were released.
 
 ## Private operations and bounds
 
-Begin/get return a <=4KiB summary: scoped intent/run/request identities, immutable
+Begin/get return a <=4 KiB summary: scoped intent/run/request identities, immutable
 run/deletion generation, kind(source/absence/unsent), artifact/prepared/absent counts,
 progress version, requested time and retained logical allowance components. Status
-is pending or files_absent. Per-file get returns <=8KiB with the original owned
+is pending or files_absent. Per-file get returns <=8 KiB with the original owned
 OutputFileRecord, progress version and optional stored namespace/preparation identity.
-Never return all file records as one response. Requests <=12KiB; discovery <=64KiB.
+Never return all file records as one response. Requests <=12 KiB; discovery <=64 KiB.
 
 File preparation/absence writes require exact scope/intent/ordinal and expected
 file progress version. Parent must supply the ACTUAL returned native plan or absence
@@ -55,7 +55,7 @@ precede stored preparation. Each first preparation and absence advances file and
 intent progress once; repeated replies do not duplicate work or credit. A missing
 acknowledgement is recovered from that same intent, not a replacement native token.
 
-Discovery pages at most32 pending intents in monotonic sequence order with a closed
+Discovery pages at most 32 pending intents in monotonic sequence order with a closed
 canonical cursor; completed backend-file progress leaves that lane. Each operation
 owns one immediate worker transaction; no filesystem/network/engine work inside it.
 Use the existing bounded worker queue and repeat capture on both sides of RPC.
@@ -85,6 +85,6 @@ source/absence/unsent distinction, all captured slots, plan/receipt exactness,
 namespace immutability, premature/stale/corrupt writes, bounded discovery, rollback,
 reopen/lost reply and unchanged usage/source/events/allocations. Compose at least
 one actual native prepared removal with stored progress. Existing source/absence
-settlement and artifact-read scopes remain covered. Migration013 adds only this
+settlement and artifact-read scopes remain covered. Migration 013 adds only this
 owner; no old delete guards, accounting gates or tests are relaxed. Preserve failed
 checks. No real data deletion, release image, Docker or native k6 claim.

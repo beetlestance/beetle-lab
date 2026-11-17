@@ -4,7 +4,7 @@ A rejected/fresh-cancel original has no admitted C1 or disk hold. The worker pro
 its actual absence closure, bound installation and mutually exclusive durable rows.
 The private fixed frame reserves16384 bytes and writes the exact no-task retirement
 intent atomically. New funding requires original quota and fresh global/native space;
-exact committed replay revalidates identity without fresh admission. At most64 controls.
+exact committed replay revalidates identity without fresh admission. At most 64 controls.
 Successful funding records a monotonic clock mark; a new original after rollback refuses.
 
 The process-local frame joins settlement isolation. Every other original/global write

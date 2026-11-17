@@ -35,7 +35,7 @@ still owns the final atomic admission decision and its sensor-policy checks.
 policyDigest is lowercase SHA256 of UTF8 prefix `beetle-lab.capacity-policy.v1`
 followed by LF and bounded canonical JSON of `{configuration, installedIdentities}`.
 Configuration is the captured complete PoolConfiguration; identities follow the
-installed catalogue order. Canonical input is <=128KiB. Derive this once from actual
+installed catalogue order. Canonical input is <=128 KiB. Derive this once from actual
 private snapshots, never a supplied digest label. It exposes no raw profile paths,
 provider locations or credentials and authenticates nothing.
 

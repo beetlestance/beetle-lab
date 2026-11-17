@@ -23,15 +23,15 @@ Source metadata and permanent mutation/deletion receipts remain unchanged.
 
 Canonical NDJSON records use strict relative paths, parent-before-child order,
 unique entries, SHA-256 lengths/digests and an exact terminal count. The manifest is
-at most32MiB, each line8KiB,100000 entries,8MiB aggregate path text and depth32.
+at most 32 MiB, each line8KiB,100000 entries,8 MiB aggregate path text and depth 32.
 Caller limits can be smaller. The byte limit covers logical archive payload,
-manifest and a64KiB control allowance; restore reserves another8KiB for its claim.
+manifest and a 64 KiB control allowance; restore reserves another8KiB for its claim.
 It is not a filesystem-wide disk quota. SQLite normalization/compaction needs
 additional temporary disk, bounded by the copied database size and its native
 journal/work space. Insufficient space fails the operation; it never reports a
 complete archive or refunds execution storage.
 
-File I/O uses64KiB buffers, bounded partial writes and at most16 original resources
+File I/O uses64KiB buffers, bounded partial writes and at most 16 original resources
 per maintenance operation. Discovery charges pending sibling names and paths before
 recursion. Deadline/abort stops further work after an issued original settles.
 An uncertain original close is sticky, retains its owner and fences new operations;
@@ -41,8 +41,8 @@ The exclusive SQLite destination descriptor stays owned through backup,
 normalization, fsync and actual closes. Held/named native identities are checked
 synchronously immediately before both SQLite opens, then checked after the work.
 This relies on the supported Node runtime opening the backup destination before
-scheduling copy work; see [Node24.12 BackupJob](https://github.com/nodejs/node/blob/v24.12.0/src/node_sqlite.cc#L436).
-The same ordering is present in [Node24.22.2](https://github.com/nodejs/node/blob/v24.22.2/src/node_sqlite.cc#L525), used by the local images. Changing the runtime requires checking this dependency. The boundary assumes private
+scheduling copy work; see [Node 24.12 BackupJob](https://github.com/nodejs/node/blob/v24.12.0/src/node_sqlite.cc#L436).
+The same ordering is present in [Node 24.22.2](https://github.com/nodejs/node/blob/v24.22.2/src/node_sqlite.cc#L525), used by the local images. Changing the runtime requires checking this dependency. The boundary assumes private
 same-UID directories; it does not sandbox a hostile operating-system owner.
 
 All ordinary copy owners must drain before source leases release and a permanent

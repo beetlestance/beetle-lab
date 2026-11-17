@@ -27,7 +27,7 @@ The owning document below must be updated before its implementation changes.
 | Application run enqueue | [Run intake](lld/run-intake.md) | Receipt-first enqueue, pinned execution/settings and bounded run reads |
 | Dispatcher, agent or engine | [Execution protocol](lld/execution-protocol.md) | APIs, envelopes, idempotency, fencing, cancellation, recovery |
 | Installed execution binding | [Installed identity](lld/installed-identity.md) | Canonical content pins, required Offer binding and replay/recovery authority |
-| Full-size runner intake | [Offer envelopes](lld/runner-envelopes.md) | Independent config/envelope bounds, ingress ownership and journal migration008 |
+| Full-size runner intake | [Offer envelopes](lld/runner-envelopes.md) | Independent config/envelope bounds, ingress ownership and journal migration 008 |
 | Launch read saturation | [Launch contention](lld/launch-contention.md) | Retained explicit intent, known refusal, compact authority and unknown-outcome fences |
 | Collected output facts | [Collection custody](lld/output-collection-custody.md) | Private bounded root/result facts after original closes; not source/publication authority |
 | Agent disk retention | [Disk retention](lld/disk-retention.md) | Required active/retained disk accounting contract, journal quota and atomic migration policy |
@@ -37,7 +37,7 @@ The owning document below must be updated before its implementation changes.
 | Source collection recovery | [Collection intent](lld/output-collection-intent.md) | Implemented preparation gate and conservative absent-source recovery |
 | Source Journal contract | [Source transactions](lld/output-source-journal.md) | Implemented/reviewed local storage and controller components |
 | Output transport direction | [Output transfer](lld/output-transfer.md) | Integrated source wire/service/HTTP; backend adoption pending |
-| Source event-stream end | [Delivery closure](lld/output-delivery-closure.md) | Integrated Journal013, producer drain and indexed discovery |
+| Source event-stream end | [Delivery closure](lld/output-delivery-closure.md) | Integrated Journal 013, producer drain and indexed discovery |
 | Backend payload storage | [Payload carrier](lld/output-payload.md) | Integrated single result/manifest body, snapshot replay and shared event allowance |
 | Published output deletion | [Deletion](lld/output-deletion.md), [durable progress](lld/output-deletion-store.md) | Native prepared absence and scoped metadata progress; lifecycle, producer retirement and refund pending |
 | Agent staging identity | [Namespace](lld/staging-namespace.md), [control values](lld/cleanup-control.md) | Durable installed/task anchors and reserved capacity; actual retirement/removal remains separate |

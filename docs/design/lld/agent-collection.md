@@ -6,9 +6,9 @@ Scope: private single-agent single-host profile; public lifecycle remains in
 
 ## Durable control intake (single-host profile)
 
-`control.ndjson` contains UTF-8 `ControlEvent` frames with LF, at most64KiB per
+`control.ndjson` contains UTF-8 `ControlEvent` frames with LF, at most 64 KiB per
 frame, 65536 records and64MiB total. Agent enrichment has512 additional bytes;
-public event batches remain at most100 records/256KiB including their envelope.
+public event batches remain at most 100 records/256 KiB including their envelope.
 The agent reader must bound each pass to256KiB actual reads/eight read calls,
 one frame/read window and one pending immutable batch. It must not rescan the
 entire journal on every poll. Live torn tails wait; stopped torn tails fail.
@@ -31,9 +31,9 @@ checkpoints do not authorize capacity release or application finalization.
 
 Final output verification is agent-owned and engine-independent. Its trusted
 caller first establishes stopped runtime, settled launch and `stopped_verified`
-control intake. The collector verifies fixed `engine-result.json` (at most1MiB)
+control intake. The collector verifies fixed `engine-result.json` (at most 1 MiB)
 against its content seal, scoped generation, installed engine and journaled result;
-it then streams every declared artifact through at most64KiB read windows. Artifact
+it then streams every declared artifact through at most 64 KiB read windows. Artifact
 IDs/paths are unique; reserved result/control names and aliases reject. Canonical
 root/ancestors, owner, modes, single-link files and stable named/descriptor identity
 are checked before and after reads. Hash and length must match each declaration.

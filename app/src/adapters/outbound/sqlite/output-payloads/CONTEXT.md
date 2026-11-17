@@ -10,7 +10,7 @@ Manifest artifact sizes also reserve that payload; no second installation counte
 or refund is introduced. Native guards retain identities, monotonic presence,
 immutable result/manifest transitions and combined integer-safe bounds.
 
-Migration008 preflights bounded original rows, converts without a second durable
+Migration 008 preflights bounded original rows, converts without a second durable
 body and preserves historical authority/admission/release guards. Unknown physical
 bindings requiring conversion fail intact. Header/payload SELECTs bound returned
 text in SQLite before parsing. This is storage only: no authenticated source

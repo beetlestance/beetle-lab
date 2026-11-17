@@ -18,14 +18,14 @@ Each pass rotates its first lane among charged, delivery and queued. Discovery
 uses indexed active/debt lanes, never full historical snapshots. Charged recovery
 is handed to the existing controller, which reconstructs pins and reconciles rather
 than restaging or redispatching claimed work. All charged attempts fit one100-row
-page under admission limit64; unexpected continuation fails that pass before
+page under admission limit 64; unexpected continuation fails that pass before
 later lanes dispatch. The [delivery closure contract](output-delivery-closure.md)
 owns finite-upper debt discovery and three-lane fairness requirements.
 Charged iteration rotates by one identity per pass so transient journal queue
 saturation cannot repeatedly exclude the same tail. Rotation changes scheduling
 order only, never durable admission FIFO or recovery/dispatch authority.
 
-At most64 original drive calls are outstanding, one per exact scoped generation.
+At most 64 original drive calls are outstanding, one per exact scoped generation.
 No shadow pending-job queue is created. A blocked original keeps its slot after
 timeout/abort until it settles. Each call has an absolute monotonic deadline and an abort timer;
 aborting never counts as original completion. Two-preparation and two-collection
@@ -39,7 +39,7 @@ and capacity authority; a deferral is not failure. Already-outstanding identitie
 are skipped, not invoked concurrently. A whole bounded page is validated/copied
 before dispatch; malformed/refused discovery does not consume its position.
 
-Default interval250ms (allowed50..5000); operation budget30s (allowed100..300000).
+Default interval 250 ms (allowed50..5000); operation budget 30 s (allowed100..300000).
 No resource observations or guard freshness are invented by the scheduler. Bootstrap
 must supply actual observations through admission; unknown/stale observations retain
 their existing rejection/deferral behavior. Optional idle/thermal facts stay unknown
@@ -50,7 +50,7 @@ Status contains running/closed, outstanding count and a bounded last-error categ
 Background failures remain visible and future passes reconcile durable state; they
 must not be presented as passed runs or clean runtime shutdown.
 Fair rotation under transient saturation proves eventual service, not a qualified
-timeout/output stop latency. A64-job pool sharing a32-command journal can delay
+timeout/output stop latency. A 64-job pool sharing a 32-command journal can delay
 the tail over multiple passes; bootstrap guard freshness/latency must be measured
 and may require a separate reserved guard lane before advertising enforcement.
 

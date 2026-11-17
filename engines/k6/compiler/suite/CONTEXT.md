@@ -27,11 +27,11 @@ assertion failure classes. JSONPath is `$` followed by `.identifier` or `[index]
 no predicates/wildcards/quoted keys, prototype keys, >32 segments or index >1e9.
 Readiness is GET, permits secret but no iteration dataset substitutions, and fails
 preparation on exhaustion. Bound = attempts*timeout +(attempts-1)*interval <=budget.
-Bounds: config 1MiB/shared JSON limits (inline arrays <=4096); 64 requests/datasets/
-columns, 10000 external rows/dataset, 250000 materialized cells; 8MiB/input and
-32MiB loaded/expanded uses (repeated refs count again), body value nodes65536 (roots
+Bounds: config 1 MiB/shared JSON limits (inline arrays <=4096); 64 requests/datasets/
+columns, 10000 external rows/dataset, 250000 materialized cells; 8 MiB/input and
+32 MiB loaded/expanded uses (repeated refs count again), body value nodes 65536 (roots
 included, keys excluded); external JSON preflight admits against remaining nodes;
-cells/templates <=4096 chars, <=128 tokens; JSON depth32. Request serialization
+cells/templates <=4096 chars, <=128 tokens; JSON depth 32. Request serialization
 limits: URL/header64KiB, body8MiB; runtime must enforce before allocation.
 Secret refs contain name/provider/locator/optional opaque version; no value/hash.
 Unversioned secret identity marks reproducibility unknown. Compiler identity pins

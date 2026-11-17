@@ -11,12 +11,12 @@ from verified installation identity/runtimeName; exact user, scope labels and mo
 must match. Arbitrary caller directory strings never provide filesystem authority.
 Capture inputs before reading getters; forged handles/plans must fail safely.
 
-One scan owns at most256 entries,8 directory levels,2048 filesystem calls and512
+One scan owns at most 256 entries,8 directory levels,2048 filesystem calls and512
 relative-path bytes. opendir uses bufferSize1, never unbounded readdir. Pinned root,
 canonical names, directory/file ownership/modes and identities are checked. Reject
 symlink/special files, multiply linked regular files and duplicate identities.
 Growing/truncated live files are allowed; this is not stopped-content verification.
-Temporary dotfiles count too. Directories0700 and files0600 match the engine profile.
+Temporary dotfiles count too. Directories0700 and files 0600 match the engine profile.
 
 Bigint arithmetic retains logical and allocated totals separately, and charges each
 entry's max(size,blocks*512), including directories. Exceeding the output budget is a
@@ -36,11 +36,11 @@ same-UID writer. This is a soft stop guard, not a portable hard disk quota.
 
 ## Watch service
 
-One installation guard has explicit start/close, at most64 watches, one original
+One installation guard has explicit start/close, at most 64 watches, one original
 scan/watch and no shadow job queue. Public factory binds the real scanner; a private
 constructor seam may supply a scanner for controlled tests. Options contain the
 verified root, disk reserve, timing, trusted clock and typed installation stop port.
-Default interval250ms, TTL2000ms, sample timeout1000ms; interval50..5000,
+Default interval 250 ms, TTL2000ms, sample timeout1000ms; interval 50..5000,
 TTL100..300000 and sample timeout100..30000 are validated, with TTL>interval.
 
 watch returns initial ready/failed, current status and cached close. Reserve ownership

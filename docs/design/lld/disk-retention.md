@@ -11,7 +11,7 @@ This is not a source manifest, deletion API or physical filesystem quota.
 stagingBytes. Bytes count retained originals only; count includes active and retained
 holds. Values are exact nonnegative safe integers, count<=4096. Zero count requires
 zero retained bytes. Capture closed original data fields before encoding; never
-infer zero for unavailable state. The compact reply is at most256 JSON bytes.
+infer zero for unavailable state. The compact reply is at most 256 JSON bytes.
 
 The root-approved policy amendment is exactly
 `decideAdmission(candidate, snapshot, retention: DiskRetention): Decision`.
@@ -22,18 +22,18 @@ The current two-argument implementation changes only with its actual callers.
 
 One hold is reserved per actual admitted original, not per queued Offer. Hold count
 4096 is a control-service outstanding-native-custody ceiling, not a backend history
-limit. Fixed512-byte metadata reservation covers the bounded hold identity/amount/
+limit. Fixed 512-byte metadata reservation covers the bounded hold identity/amount/
 phase row and logical row allowance. No source-record charge is reserved yet;
 that later contract must declare its exact bytes and quota failure behavior.
 
 ## Immutable hold and counters
 
-Coordinator reserves agent journal migration011 for this boundary only. No backend
+Coordinator reserves agent journal migration 011 for this boundary only. No backend
 migration or generated HTTP schema changes are authorized by this page.
 
 | Owner | Exact stored facts |
 | --- | --- |
-| disk_holds | attempt_id PK/FK reservation; organisation/workspace, generation1, original intent digest; output_bytes, staging_bytes; metadata_bytes=512; phase active or retained |
+| disk_holds | attempt_id PK/FK reservation; organisation/workspace, generation 1, original intent digest; output_bytes, staging_bytes; metadata_bytes=512; phase active or retained |
 | disk_retention_stats | singleton id1; held_count; held_output_bytes, held_staging_bytes across ALL holds; retained_output_bytes, retained_staging_bytes across retained holds only |
 | accepted_attempts | hold_bytes=0 or512, exactly matching presence of its hold |
 
@@ -64,7 +64,7 @@ over-limit files may exceed logical promises; this is not a hard output quota.
 
 No refund/deletion/settlement method exists in this first accounting step. Later
 cleanup must prove scoped file absence and reader/writer quiescence before releasing
-holds. Event ACK/prune, terminal state, retention preview or missing generic404 are
+holds. Event ACK/prune, terminal state, retention preview or missing generic 404 are
 not that proof. Backend output allocation remains independently charged.
 
 ## Admission arithmetic

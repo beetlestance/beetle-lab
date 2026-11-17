@@ -8,7 +8,7 @@ JSON is bounded, copied and frozen; opaque ConfigSchema instances must carry the
 shared adapter's runtime brand. Selectors and persisted validation pins are exact.
 All registrations share one installation, staging root and UID policy.
 
-Preflight snapshots at most 2MiB with an independent 1MiB config limit, validates
+Preflight snapshots at most 2 MiB with an independent 1 MiB config limit, validates
 the runner envelope and installed
 configuration structure, and probes runtime/profile feasibility with a temporary
 copy raising only budget fields below manifest minima and omitting config, inputs

@@ -7,7 +7,7 @@ and mounted secrets. The public index is maintained by the composition owner.
 `capture.ts` selects fixed own data descriptors without reading unrelated keys.
 `root.ts` pins canonical ancestry and bigint metadata; `lease.ts` owns original
 filesystem calls and the process-wide two-file capacity. `stream.ts` owns lazy,
-single-consumer input lifetime and fixed 64KiB reads. Staging owns input hash
+single-consumer input lifetime and fixed 64 KiB reads. Staging owns input hash
 verification and publication; these adapters never write or delete input files.
 
 Cancellation retains issued calls through original close. Failed close keeps its

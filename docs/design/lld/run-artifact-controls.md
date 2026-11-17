@@ -8,7 +8,7 @@ Status: accepted UI implementation contract. Consumes
 RunDetail composes RunArtifacts for the requested Run's scoped active attempt,
 keyed by organisation/workspace/run/attempt. Use the generated listRunArtifacts
 client and a single registered TanStack Query key beneath the run/attempt.
-One current page, limit100, is retained; do not append pages or payloads to cache.
+One current page, limit 100, is retained; do not append pages or payloads to cache.
 A bounded next-page control uses the returned canonical cursor. Refresh returns to
 the first page. Never combine pages from different attempts/manifests. The existing
 client's semantic binding checks remain required, including pending/absent states.
@@ -17,9 +17,9 @@ Display loading, pending publication, source-free absence, ready inventory and
 read failure distinctly. An empty ready page is not source-free absence. Show
 kind, bounded relative filename as text, byte size and SHA for ready descriptors;
 relative paths never become a URL or download filename. React escapes all text.
-A single page holds at most100 descriptors/73,728 wire bytes; no full run corpus.
+A single page holds at most 100 descriptors/73,728 wire bytes; no full run corpus.
 
-Poll pending publication every2s only while visible. Stop automatic polling on
+Poll pending publication every 2 s only while visible. Stop automatic polling on
 ready, absent or error; error recovery is explicit. Do not infer readiness from
 terminal Run state. A terminal transition waits for any outstanding original read
 and then refreshes once if still pending. Page/refresh actions never overlap an

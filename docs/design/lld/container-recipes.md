@@ -6,7 +6,7 @@ qualification remain separate. See [evidence](https://github.com/beetlestance/be
 ## Ownership and build
 
 app/Dockerfile builds only the existing compiled backend/metadata worker, then
-copies bundles into a separate Node24 runtime image. web/Dockerfile builds Vite
+copies bundles into a separate Node 24 runtime image. web/Dockerfile builds Vite
 assets and copies only dist into an unprivileged NGINX runtime. Neither runtime
 image contains the other service. Agent and per-attempt engine images stay separate.
 Use the already pinned Node base from agent/Dockerfile. No runtime npm install,
@@ -28,21 +28,21 @@ describes the unprivileged port8080 and /tmp PID/temp layout used here.
 
 ## Runtime and proxy
 
-Backend entrypoint node /beetle/backend/main.js, uid/gid1000, private port4311.
+Backend entrypoint node /beetle/backend/main.js, uid/gid 1000, private port4311.
 Existing private configuration/data loader and serving authority govern startup;
 no initializer or synthetic fallback is added. Deployment may override to a common
 non-root installation uid/gid. Set BEETLE_LISTEN_HOST=0.0.0.0 only on the private
 container network, with canonical loopback BEETLE_EXTERNAL_ORIGIN.
 
-Frontend runs uid/gid101 and one NGINX worker on8080, with read-only rootfs and
+Frontend runs uid/gid 101 and one NGINX worker on8080, with read-only rootfs and
 bounded writable /tmp supplied by deployment. Only frontend publishes a loopback
 host port. Static /healthz proves only frontend process reachability.
 
 Only /api/v2/ forwards to private service alias backend:4311 via Docker DNS.
 Preserve original Host/Origin/cookie/CSRF headers; backend remains the authorization
 owner. Proxy buffering/request buffering and upstream retries are disabled. No
-proxy-issued mutation retry may follow unknown commit. Backend<=30s request budgets
-remain authoritative; proxy connect/read/write limits are bounded. Body limit2MiB
+proxy-issued mutation retry may follow unknown commit. Backend<=30 s request budgets
+remain authoritative; proxy connect/read/write limits are bounded. Body limit 2 MiB
 matches the public maximum while backend per-operation limits remain stricter.
 
 SPA navigation falls back to index.html. Assets/scripts/connections stay local;

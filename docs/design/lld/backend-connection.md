@@ -10,14 +10,14 @@ owns source evidence; [run intake](run-intake.md) owns immutable execution inten
 Keep BEETLE_CONFIG_FILE as the installation settings record. Add a separate required
 BEETLE_AGENT_CONFIG_FILE for normal executable operation; programmatic authoring
 fixtures may omit the connection and retain unknown capacity. The new closed JSON
-object contains version1, origin, tokenFile, expectedInstallationId, profiles,
+object contains version 1, origin, tokenFile, expectedInstallationId, profiles,
 storageAllocationBytes and freeSpaceReserveBytes. profiles uses existing
 RunProfilePin objects, 1..32 unique browser profile aliases and installed identities.
 Expected installation must equal the installation record. Aliases do not substitute
 for installed engine/image/configVersion or any of the six identity fields.
 Configuration carries references only, never resolved engine secrets.
 
-Private JSON <=64KiB and token <=129 bytes use no-follow, nonblocking regular-file
+Private JSON <=64 KiB and token <=129 bytes use no-follow, nonblocking regular-file
 handles, one link, owned UID and no group/world access. Bound read calls and bytes;
 reject changed file identity/size/metadata across reading. Token syntax is the
 existing agent bearer syntax, with at most one terminal LF. Token path is absolute,
@@ -78,7 +78,7 @@ Use the Node HTTP adapter with no redirects, automatic retries, proxies, cookies
 keepalive pool or response decompression. Bound headers to16KiB/32 fields. Reuse
 shared bounded JSON encoding and generated validators rather than a second schema
 implementation. Offer request maximum is the shared2MiB envelope; ordinary requests
-<=64KiB and responses <=1MiB, with <=4096 received fragments. Refuse conflicting or
+<=64 KiB and responses <=1 MiB, with <=4096 received fragments. Refuse conflicting or
 invalid lengths/encoding, excess bytes, incomplete EOF and unexpected status.
 
 Retain at most two original Offer calls and eight ordinary calls, with no waiting
@@ -107,7 +107,7 @@ staging limits from the same validated frame and lease. Both are positive safe
 integers <=floor(MAX_SAFE_INTEGER/256), with per-run <=total; no extra keys.
 These are separate from backend storage and are not advertised free disk.
 RuntimeCapacity.currentObservation returns the immutable complete fresh fact;
-snapshot uses that same freshness check for display ceilings. Shared policy1
+snapshot uses that same freshness check for display ceilings. Shared policy 1
 estimateStaging includes Offer JSON, inputs, secrets, manifest and metadata.
 One source sample at a time, no waiting queue. Keep one bounded fingerprint and
 scalar ordering/revocation fences for the original capability frame: identical
@@ -130,8 +130,8 @@ Never use the agent staging filesystem as backend metadata/input/artifact space.
 Combine agent CPU/RAM/PID/output/concurrency and per-run limits with that backend
 storage policy. Supported profile aliases come only from matched configured pins.
 The source time is the earliest start among required reads; expiry is the earliest
-original agent expiry and earliest required source start+1000ms.
-This conservative aggregate lease is <=1s from its oldest source. Identical
+original agent expiry and earliest required source start+1000 ms.
+This conservative aggregate lease is <=1 s from its oldest source. Identical
 cached-agent samples retain identical source time and expiry across disk reads;
 changed same-time ceilings revoke, and disk polling cannot renew an old source. Every source remains valid
 at completion; cached agent observations retain their original time/expiry.

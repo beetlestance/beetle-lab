@@ -33,7 +33,7 @@ Runtime UID/GID are1000:1000. Installer/agent packaging may begin as root solely
 for fresh directory preparation and Unix-socket supplementary-group setup. Inspect
 the actual socket, set only the needed group, drop UID/GID, and verify effective
 identity/capability removal before existing non-root startup code executes.
-The agent/setup process is PID1 without a persistent root init parent.
+The agent/setup process is PID 1 without a persistent root init parent.
 Failure at any step refuses startup. Never chmod the socket or run engine jobs as
 root. Declare the preparation and identity-drop capabilities separately in Compose.
 
@@ -41,7 +41,7 @@ Compose explicitly installs agentIdentity socket-group-drop-v1. Staging verifies
 the pinned agent image/name and the exact packaging entrypoint, empty command,
 private PID namespace, disabled init/privileged mode, only SETUID/SETGID, dropped
 other capabilities and no-new-privileges. It also verifies the current process is
-PID1 with actual UID/GID1000 and zero effective/permitted/ambient capabilities.
+PID 1 with actual UID/GID 1000 and zero effective/permitted/ambient capabilities.
 Docker's configured startup user remains root for this recipe. Other installed
 agents retain the existing non-root configured-user check; no root exemption is
 inferred from a running container. Build and validate the starter request after

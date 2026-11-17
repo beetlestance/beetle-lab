@@ -3,14 +3,14 @@
 Status: integrated; native rejection and an affected real-k6 control are
 [locally verified](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/output-absence.md). Complements
 [source settlement](output-finalization.md); it never manufactures a source receipt.
-Journal migration014 and application migration012 implement the storage contract.
+Journal migration 014 and application migration 012 implement the storage contract.
 
 ## Wire and ownership
 
-`OutputAbsence` is runner JSON Schema: version1, exact org/workspace/attempt/
-generation1, intent digest, physical Journal UUID, finalAgentSeq, definitive
+`OutputAbsence` is runner JSON Schema: version 1, exact org/workspace/attempt/
+generation 1, intent digest, physical Journal UUID, finalAgentSeq, definitive
 AttemptAdmission (rejected or released), and typed failure reason. The shared
-capture function admits at most2048 UTF-8 bytes and preserves exact physical UUID.
+capture function admits at most 2048 UTF-8 bytes and preserves exact physical UUID.
 The value grants no authority merely by passing schema validation.
 
 Trusted Journal methods closeOutputAbsence/readOutputAbsence take only Scope.
@@ -23,7 +23,7 @@ Authenticated GET /runner/v1/attempts/{attemptId}/source/absence returns the pro
 only after durable closure. Before that, known originals return409 source_pending
 with retry transport. The ordinary source GET returns409 source_absent/retry never
 only when this exact durable closure exists. That marker authorizes fetching the
-proof, never credit or terminal projection. Other errors/404s do not imply absence.
+proof, never credit or terminal projection. Other errors/404 s do not imply absence.
 The getter shares the existing installation source credits/native I/O owner, caps
 its body2048 before native materialization and verifies all original binding fields.
 
@@ -53,9 +53,9 @@ uncommitted. Cold recovery must establish the actual native ownership/barrier.
 Persist bounded indexed absence debt when definitive rejection/release arises;
 clear it only with closure. Extend existing scheduler fairness/slots, without a
 new pool or repeated history scan. Migration can mark debt with a bounded4097-row
-preflight under the existing4096 retained ceiling; it backfills no closure authority.
+preflight under the existing 4096 retained ceiling; it backfills no closure authority.
 
-Migration014 adds a separate immutable closure and explicit absence-byte charge
+Migration 014 adds a separate immutable closure and explicit absence-byte charge
 (proof canonical bytes+256). Preserve existing source counters and013 definitions.
 Update current quota guards to include that charge. Native guards protect duplicate
 INSERT/REPLACE/UPDATE/DELETE, match physical scope/admission, enforce source mutual
@@ -105,7 +105,7 @@ event above it. Seed an exact zero cursor if needed before closing discovery.
 Retained payload is C+R: immutable charged event bytes plus actual canonical
 provisional-result bytes (or zero). Credit P-(C+R) once, retaining C+R+65536. Do
 not hide result bytes in metadata, mutate original allocation or delete files.
-Migration012 adds sibling proof/receipt tables with scoped original/allocation FKs;
+Migration 012 adds sibling proof/receipt tables with scoped original/allocation FKs;
 preserve011's source FK, without rebuilding cyclic tables. Proofs and both receipt
 families mutually exclude each other. Native receipt insertion validates derived
 facts and atomically credits the same admission counter, projects Run and closes

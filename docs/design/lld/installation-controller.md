@@ -14,7 +14,7 @@ admission.offer. Accepted means its immutable intent was durably queued or alrea
 accepted, not that tests validated or passed. A queue/capability rejection must not
 be returned as accepted. Identical replay does not launch a second execution.
 
-`drive` owns one scoped generation lane, with at most64 retained owners. It snapshots
+`drive` owns one scoped generation lane, with at most 64 retained owners. It snapshots
 scope/budget, loads the immutable offer and reservation, and atomically admits queued
 work before any preparation. Admission deferrals remain uncharged; an admitted
 reservation is always retained while original preparation/runtime work is uncertain.

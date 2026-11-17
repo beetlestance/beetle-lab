@@ -9,7 +9,7 @@ The stored claim authority supplies the client identity. Replay always GETs befo
 same-original PUT; only a validated scoped attempt_not_found404 authorizes reoffer.
 Acknowledged404 stays charged. Scoped validated Run reads fence cancellation,
 terminal state and active-attempt mismatch before PUT; they cannot serialize later
-cancellation commits. Existing receipts can receive generation1 cancellation.
+cancellation commits. Existing receipts can receive generation 1 cancellation.
 
 Every positive response reaches store.observe, including during close. Store owns
 merge/ACK/release. The event helper owns durable ingest before remote ACK and

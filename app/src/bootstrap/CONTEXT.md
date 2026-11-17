@@ -17,7 +17,7 @@ and retains its original promise. Closing the returned server also closes storag
 Startup failure retires authority and awaits cleanup; no successful partial handle.
 No generic service container, fake capacity or legacy app dependency is introduced.
 `configuration.ts` reads settings plus required BEETLE_AGENT_CONFIG_FILE and its private token;
-it requires a canonical owned mode0700 data root and validated installed-profile pins.
+it requires a canonical owned mode 0700 data root and validated installed-profile pins.
 BEETLE_EXTERNAL_ORIGIN is required; normal listener defaults127.0.0.1:4311.
 `main.ts` prints the one-time token only after binding, handles INT/TERM, and
 uses private umask. Explicit0.0.0.0 is for the private backend container network.

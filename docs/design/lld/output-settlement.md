@@ -58,7 +58,7 @@ replays its exact tombstone reply. Conflicting request/Offer identities are refu
 | Owner | Existing current debt | Permanent floor |
 | --- | --- | --- |
 | Backend source/absence | retained payload +65536 output metadata +65536 cleanup control | 2560 |
-| Backend positive unsent | existing65536 cleanup control; no output allocation | 2560 |
+| Backend positive unsent | existing 65536 cleanup control; no output allocation | 2560 |
 | Admitted agent | exact retained disk hold and nine recorded metadata charge fields | 4096 |
 
 Backend source/absence finalization already credited maximum minus retained payload.
@@ -82,8 +82,8 @@ logical settlement and preserves failed/pending work honestly.
 
 ## Compact values
 
-Settlement request: version1, original RetirementRequest, canonical cleaned-reply
-SHA256. Settlement reply: version1, state settled, request digest, cleaned-reply
+Settlement request: version 1, original RetirementRequest, canonical cleaned-reply
+SHA256. Settlement reply: version 1, state settled, request digest, cleaned-reply
 digest, tombstone digest, chargedBytes4096. Closed finite schemas reject unknown
 fields, malformed identities, alternate purposes and unsafe numeric values.
 Digest prefixes separate settlement values from other protocols. Reply binding is
@@ -103,7 +103,7 @@ within agent4096 and backend2560 before authoring their persistence migrations.
 
 ## Implemented private agent owner
 
-Journal022 owns immutable replay rows and O(1) replay counters. Its client holds a
+Journal 022 owns immutable replay rows and O(1) replay counters. Its client holds a
 carrier against the local fence through actual completion; failed termination does
 not release it. Worker eligibility reuses existing retirement/receipt interpretation.
 A private transaction frame matches exact original, table, canonical tombstone and
@@ -143,7 +143,7 @@ Evidence: [backend settlement](https://github.com/beetlestance/beetle-lab/blob/4
 ## Automatic reconciliation and derivative readers
 
 The existing serial cleanup runtime rotates file, retirement and settlement turns.
-Settlement discovery captures a physical sequence horizon and reads at most32+1 rows
+Settlement discovery captures a physical sequence horizon and reads at most 32+1 rows
 before readiness/ACK filtering. Its cursor binds installation, page size and semantic
 lane. Released absence includes admitted never-started work. Rejected absence participates in both discovery lanes; its actual agent funding,
 no-task receipt and exact settlement remain mandatory before credit. Source/absence use exact ACK-bound agent replies; unsent sends
@@ -151,7 +151,7 @@ no agent call. Cancellation joins issued originals and preserves uncertain backe
 
 A history job can outlive deletion. Its private metadata capability returns exact
 scope/Run/attempt `deleting` or validated permanent `retired` state. Deleting jobs defer
-30s without new metric reads, advancing the existing due index; retired jobs skip.
+30 s without new metric reads, advancing the existing due index; retired jobs skip.
 Held projection errors recheck that positive capability. Stale commit/defer returns a
 retired marker only for the exact validated tombstone. Other missing/conflicting/unknown
 records remain errors. Neither marker grants native cleanup or accounting authority.
@@ -173,11 +173,11 @@ retirement intent in the same immediate transaction. It requires the actual reje
 closure, final ACK, bound installation, absent producer ownership and original quota.
 New funding counts all held staging, replay and existing temporary controls against a
 fresh known pool; native free capacity covers existing future cleanup writes too.
-O(1) counters cap funded originals at64 and preserve the successful funding clock.
+O(1) counters cap funded originals at 64 and preserve the successful funding clock.
 All normal execution admission counts temporary debt. Exact funded replay bypasses
 fresh space checks; conflicting identity and quota reduction remain fenced. No C1 or
 hold is invented. Old1024-byte originals without enough quota stay protected.
-Journal024 separately stores the no-task native receipt. Its owner validates the real
+Journal 024 separately stores the no-task native receipt. Its owner validates the real
 root/marker, deterministic task/container/mailbox absence and producer drain, repeats
 named checks after native closes, and holds exclusion through opaque worker dispatch.
 Receipt replay repeats native proof. The receipt grants no refund; rejected HTTP
@@ -199,7 +199,7 @@ Preserve close ownership and failure evidence; do not repeat unrelated green lan
 
 The v2 tombstone records explicit16384 no-task control funding, actual old metadata
 charges and zero original disk/hold/C1 allocation. Its hash domain is separate; v1
-canonical bodies/hashes stay unchanged. Journal025 revalidates the funded exact intent
+canonical bodies/hashes stay unchanged. Journal 025 revalidates the funded exact intent
 and no-task receipt, then inserts4096 replay debt and purges exact original rows.
 The temporary counter drops16384 once; all hold counters and funding clock remain
 unchanged. Shared cleanup drain and actual carrier ownership still precede settlement.
@@ -207,7 +207,7 @@ Historical022 trigger SQL is frozen; new receipt/control guards permit only exac
 private phases. Scope, stale proof, missing records and unknown ownership refuse.
 
 Admitted abort-before-staging instead proves exact paid C1, released/aborted never_started
-reservation and real retained hold with task.none. Journal026 preserves/renames the
+reservation and real retained hold with task.none. Journal 026 preserves/renames the
 no-task receipt table. Native proof remains mandatory; settlement uses the unchanged
 v1 real-hold transfer and never decrements rejected-control debt. Prepared and unknown
 tasks cannot use this no-task authority.

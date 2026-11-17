@@ -1,7 +1,7 @@
 # History indexing lifetime
 
 startRunHistoryIndexer owns one HistoryTurn, no detached queue. Each turn's fixed
-45s monotonic budget begins before scan and includes metadata/native/projection/
+45 s monotonic budget begins before scan and includes metadata/native/projection/
 commit. Independent expiry immediately fences/aborts, records sticky failure and
 notifies; held originals still occupy admission and close waits for settlement.
 All phases check the same owner after awaits and before another effect. Existing

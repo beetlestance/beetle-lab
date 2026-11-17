@@ -17,12 +17,12 @@ URL, timestamp, file path or parser error enters the artifact or UI.
 The existing WarningClassifier owns the one4096-byte transient line buffer and
 warning projection; DiagnosticHistory retains safe enum records only. No second
 parser, raw spool, per-function telemetry or unbounded final materialization.
-Native stderr transport ceiling remains65536 bytes. At most256 ordered records
+Native stderr transport ceiling remains65536 bytes. At most 256 ordered records
 are retained, then capture drains/counts without retaining later records.
 
 ## Evidence semantics
 
-NativeDiagnosticArtifact version1 binds org/workspace/attempt/generation1 and has
+NativeDiagnosticArtifact version 1 binds org/workspace/attempt/generation 1 and has
 observedBytes, observedRecords, invalidSegments, redactedRecords, droppedRecords,
 records and complete/partial coverage. Observed bytes include all admitted parser
 chunks; record/segment counters describe parser units, not unique incidents.
@@ -44,7 +44,7 @@ the actual serialized32768-byte limit including envelope/newline. Fixed enums an
 
 ## Publication and display
 
-Reserve32KiB before execution from the existing1MiB numeric/warning partition:
+Reserve32KiB before execution from the existing 1 MiB numeric/warning partition:
 numeric1011712 + warnings4096 + diagnostics32768. Minimum admitted output, build,
 history/control/result reservations remain unchanged. Collection reserves both
 artifacts and deducts produced bytes once before numeric allowance. No raw files

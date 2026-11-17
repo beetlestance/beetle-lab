@@ -1,6 +1,6 @@
 # Durable output delivery closure
 
-Status: Journal storage, migration013 and indexed discovery are implemented and
+Status: Journal storage, migration 013 and indexed discovery are implemented and
 independently reviewed. Scheduler and Manager producer barriers are implemented
 and independently reviewed for the source-backed component. See [component evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/output-delivery-closure.md).
 Refines the producer
@@ -12,7 +12,7 @@ barrier in [output transfer](output-transfer.md), using the existing immutable
 agent/src/journal/output-delivery-protocol.ts declares OutputDeliveryClosure and
 JournalOutputDelivery. Closure is closed {version:1, receipt:SourceReceipt,
 finalAgentSeq}. Receipt must equal the verified durable source receipt under this
-physical Journal UUID and original generation1 scope. finalAgentSeq is integer
+physical Journal UUID and original generation 1 scope. finalAgentSeq is integer
 0..MAX_SAFE_INTEGER, captured from accepted_attempts.last_seq by the worker inside
 the closure transaction. Caller supplies no final sequence, timestamp, epoch or
 new UUID. No HTTP request may submit or manufacture this trusted closure.
@@ -40,7 +40,7 @@ Add delivery_bytes (integer0 initially) and output_delivery_closures FK to the
 original source. All seven live charges include delivery in preflight/SQL quota;
 ACK/prune/physical release cannot refund it. Preserve001..012 definitions and their
 historical guard templates. A new migration installs the current replacement parent
-quota guard in migration013. No undefined-counter defaults.
+quota guard in migration 013. No undefined-counter defaults.
 Immutable child INSERT/REPLACE/UPDATE/DELETE and parent counter forging refuse.
 Migration data/DDL/version/FKs commit or roll back together without source backfill.
 
@@ -58,14 +58,14 @@ Physical release removes the original from the charged lane. Persist an indexed
 accepted_attempts.delivery_pending boolean in the same source insertion/charge
 transaction, clearing it only with the matching durable closure/charge. No history
 scan or backend request is needed to discover a released source lacking closure.
-Existing schema12 source rows receive only this obligation marker during migration,
+Existing schema 12 source rows receive only this obligation marker during migration,
 not a source/closure authority backfill. Bound the source-ID preflight to4097 and
-refuse above the existing4096 retained-hold ceiling before any unbounded transfer.
+refuse above the existing 4096 retained-hold ceiling before any unbounded transfer.
 Use the source table's existing key/index; never parse all source JSON to mark debt.
 
 Extend private scanRunnable with lane=delivery and optional through safe integer.
 charged/queued retain their exact existing request/reply behavior and reject
-through. Delivery limit1..32, cursor nonnegative numeric; first page captures
+through. Delivery limit 1..32, cursor nonnegative numeric; first page captures
 through=max eligible accepted ID (0 if none), later pages preserve that upper.
 Reply is existing bounded attempts/cursor plus through; every SQL query filters
 an indexed delivery_pending=1 and cursor<id<=through before LIMIT+1. No source or
@@ -73,19 +73,19 @@ Offer body is returned. Native source insertion must replace its current AFTER
 trigger in the new migration to update source_bytes and delivery_pending together;
 a separate trigger cannot transiently violate the exact child-charge guard.
 
-Scheduler shares its existing64 original drive slots, no additional pool/queue.
+Scheduler shares its existing 64 original drive slots, no additional pool/queue.
 Rotate first lane each pass among charged/delivery/queued; each noncharged page
 uses at most min(32,remaining slots). Charged retains its existing rotating order.
 Advance only a considered page, reset a completed delivery pass to capture a new
 upper, and retain cursor/through independently from queued. A full old work map
 prevents new dispatch until originals settle; no timeout releases native custody.
-This keeps delivery and queued work from permanent starvation under64 charged
+This keeps delivery and queued work from permanent starvation under 64 charged
 attempts, without lowering engine admission concurrency. Discovery grants only
 normal source-first drive/reconciliation, never a launch or deletion permission.
 
 ## Concrete manager producer ownership
 
-The installation manager has at most64 entries and64 public originals. Each
+The installation manager has at most 64 entries and64 public originals. Each
 entry-affecting public drive/cancel/stop/cancelOriginal operation must acquire an
 owned completion lease synchronously before its first foreign await. Keep the
 actual lease promise until its finally/cleanup completes, not just entry.users or
@@ -118,7 +118,7 @@ from the metadata closure attempt: a metadata error does not undo successful dra
 ## Reconciliation, late calls and restart
 
 A retiring entry admits at most one serialized reconciliation-only drive after its
-previous active drive settles, sharing the same global64 originals. It never
+previous active drive settles, sharing the same global 64 originals. It never
 reopens producer admission or creates staging/watch/controller/native work. Reuse
 cached native closes and the immutable source receipt. Wait any earlier issued
 close original/Journal FIFO quiescence before reading closure; exact stored closure

@@ -8,7 +8,7 @@ refusal advances/defer. File discovery owns one intent/ordinal. Retirement disco
 buffers<=32 physical candidates with independent installation/upper/after cursor;
 ACK-only pages advance and completed horizons wrap. Pending/transient replies defer;
 cleaned persists the exact immutable ACK. Permanent/unknown failures fence+notify.
-Each turn's fixed30s budget includes discovery. Actual native result+settled,
+Each turn's fixed 30 s budget includes discovery. Actual native result+settled,
 gateway and metadata carrier originals remain owned through close. Failed worker
 termination keeps deletion calls pending and prevents parent namespace release.
 No selector, intent creation, settlement, tombstone or public API.

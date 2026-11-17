@@ -1,6 +1,6 @@
 # Shared process-local producer/read gate
 Public index.ts owns one explicit gate per Journal retirement port and namespace.
-At most64 scoped entries/leases; reserve before foreign calls, check durable open and
+At most 64 scoped entries/leases; reserve before foreign calls, check durable open and
 local fence before IO. A fence grants no native cleanup capability. Confirming exact
 intent permits eventual eviction only after actual leases drain; restart reads still
 check the immutable durable fence. Uncertain fences retain a bounded owner slot.

@@ -6,8 +6,8 @@ Consumes the shared `useInputTransfers` context; absent context hides the contro
 One in-flight read retains its abort controller until the original promise settles.
 Cancel, full record identity/version changes, context replacement and unmount fence
 late replies. Component departure never closes the shared client.
-Only verified success with exact expected 0..8MiB bytes creates a bounded Blob and
-one object URL. A temporary standalone buffer is also at most 8MiB. No bytes are
+Only verified success with exact expected 0..8 MiB bytes creates a bounded Blob and
+one object URL. A temporary standalone buffer is also at most 8 MiB. No bytes are
 cached; URL ownership ends on replacement, record/context departure or unmount.
 Download input prepares the verified file; Save file requires explicit activation
 and uses an ASCII input-UUID.bin name. Failures expose safe client messages or

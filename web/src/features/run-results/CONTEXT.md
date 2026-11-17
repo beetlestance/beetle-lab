@@ -9,7 +9,7 @@ Every render derives current visibility; no previous value survives a scope swit
 Application outcome stays separate from engine-reported evidence. Nonterminal engine
 evidence is provisional until application finalization; cancellation/error is never
 upgraded to pass. Missing data stays unavailable. Arbitrary summaries are not read.
-At most128 artifact declarations and256 thresholds render, with escaped long-token
+At most 128 artifact declarations and256 thresholds render, with escaped long-token
 wrapping and semantic labels. Declarations grant no publication/download authority.
 
 Project light/dark tokens and existing run-detail styling own the visual system.

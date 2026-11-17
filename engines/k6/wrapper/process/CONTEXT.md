@@ -7,7 +7,7 @@ no failed/late/unknown invocation is retried. `close` fences future launch. Call
 returns recheck cancellation; issued work is published before reentrant hooks.
 
 Before launch, canonical absolute non-symlink regular files are checked: executable,
-<=16-byte empty JSON config, <=64MiB owned `suite.js`, private output directory,
+<=16-byte empty JSON config, <=64 MiB owned `suite.js`, private output directory,
 and absent `beetle-evidence.json`. The root/image and output must be trusted against
 concurrent same-UID replacement. No staged secret or summary content is read.
 Launch is detached POSIX, shell:false, fixed argv and three fixed environment keys.
@@ -24,7 +24,7 @@ and OS cleanup require separate qualification.
 
 Metrics read available bytes up to64KiB with one awaited sink and no queue.
 The pipe retains its Node high-water buffer; excessive injected buffering fails at
-8MiB. The required trusted sink must project/schema-check raw metric bytes, retain
+8 MiB. The required trusted sink must project/schema-check raw metric bytes, retain
 bounded data and honor its AbortSignal/deadline. Node pipe backpressure does not
 bound k6's Go SampleBuffer: native hard RAM containment/OOM qualification is needed.
 `metricBytes` counts admitted reads; stderr has one bounded transient parser; only fixed diagnostic enums/counters are

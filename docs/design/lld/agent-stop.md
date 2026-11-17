@@ -20,7 +20,7 @@ output_limit, artifact_incomplete, timeout or clock_integrity and is never expos
 Attempt control-intake/checkpoint failures request artifact_incomplete; their
 fail-closed termination is a system failure rather than user cancellation.
 
-Migration007 adds nullable cancel_reason and a monotonic stop_immediate flag. Existing rows
+Migration 007 adds nullable cancel_reason and a monotonic stop_immediate flag. Existing rows
 are preserved without inventing a cause. Previously cancelled rows without a cause
 are clock-fenced on observation; they cannot acquire a fresh grace period. No queue,
 reservation, launch claim, result or artifact is deleted or released by this change.
@@ -42,7 +42,7 @@ The common runner reason enum includes clock_integrity. A source-free closure an
 backend final projection preserve that actual durable cause; they cannot substitute
 setup_failed to satisfy a stale validator. Generated runner/API registries must
 match. Older strict consumers may reject the added value, so qualify matching
-components together. [Migration020](clock-reason-migration.md) extends the stored
+components together. [Migration 020](clock-reason-migration.md) extends the stored
 Run reason constraint; no new route is introduced.
 
 This transaction proves intent, not stop success, irreversibly retired remote

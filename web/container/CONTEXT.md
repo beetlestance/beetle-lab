@@ -1,7 +1,7 @@
 # Static frontend container
 
 web/Dockerfile bundles the current React application and serves it with a pinned
-unprivileged NGINX image. Port8080, uid/gid101, read-only rootfs and bounded writable
+unprivileged NGINX image. Port8080, uid/gid 101, read-only rootfs and bounded writable
 /tmp belong to deployment. No Node/backend/agent runtime shares this container.
 
 Only /api/v2/ proxies to private backend:4311 through Docker DNS. Original Host,

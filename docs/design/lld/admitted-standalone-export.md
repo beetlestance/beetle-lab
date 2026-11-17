@@ -2,7 +2,7 @@
 
 Status: private slice implemented and locally verified; [native evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/admitted-standalone-export.md). Public jobs remain pending.
 Owner: coordinator across shared purpose values, agent admission/staging/collection
-and fixed k6 image dispatch. Root reserves agent migration015 and root generation.
+and fixed k6 image dispatch. Root reserves agent migration 015 and root generation.
 Extends standalone-export-jobs.md; does not add a second execution supervisor.
 
 ## Durable purpose and accounting
@@ -18,7 +18,7 @@ this durable record, never a request-selected codec. No post-admission attachmen
 Reuse shared reservation, capacity, queue policy and physical supervisor. Staging
 reserves both exact offer.json and assignment.json bytes, fixed manifest/metadata,
 all pinned inputs and original output allowance. That allowance already includes
-compiler scratch/script plus8KiB result and64KiB control. No secret resolution for
+compiler scratch/script plus 8 KiB result and64KiB control. No secret resolution for
 export; reject declarations before admission effects. Failed/unknown work stays
 charged until original physical stop and native collection/retirement proof.
 

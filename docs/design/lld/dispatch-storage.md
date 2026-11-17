@@ -2,7 +2,7 @@
 
 Status: SQL, metadata RPC and bounded delivery runtime locally verified;
 events/results and native qualification remain pending.
-Owner: application SQLite worker. Migration006 pins physical delivery authority;
+Owner: application SQLite worker. Migration 006 pins physical delivery authority;
 prior migrations are immutable.
 [Run intake](run-intake.md) owns immutable intent/receipt acceptance;
 [observation merge](attempt-observation.md) and [agent facts](agent-admission-evidence.md)
@@ -20,11 +20,11 @@ execution_records before possible delivery. Claimed/replay/acknowledged replies
 carry this stored UUID; capacity refresh never rebinds it. Observe additionally
 requires journalAuthority, matched before merge, ACK or charge release. UUIDs stay
 private transport/storage metadata, separate from DispatchKey and engine Offer.
-Migration006 leaves existing records NULL and immutable; they cannot adopt a new
+Migration 006 leaves existing records NULL and immutable; they cannot adopt a new
 UUID or be observed/released automatically. Charged unbound ownership blocks fresh
 claims installation-wide and remains visible as ownership_unknown diagnostics.
 
-scan({lane,limit,cursor?}) returns <=limit items, allowed 1..32, reply <=64KiB.
+scan({lane,limit,cursor?}) returns <=limit items, allowed 1..32, reply <=64 KiB.
 Each item has key, stable order, after continuation and advisory eligibility.
 Cursors <=1024 bytes bind lane/installation and an inclusive captured upper order;
 new arrivals wait for the next pass. after resumes after that item; nextCursor
@@ -33,7 +33,7 @@ prevent revisiting an older blocked prefix. Queue order is a durable safe monoto
 integer allocated on insertion, not wall-clock requestedAt or mutable retry time.
 Untracked unpublished rows use diagnostic order 0; cursors include attemptId to
 break that tie. They supply no charge or delivery authority.
-Reconcile scans retain charged unknown/acknowledged attempts, at most64 originals;
+Reconcile scans retain charged unknown/acknowledged attempts, at most 64 originals;
 capacity/settings/profile changes never hide them. Queued scans use compact facts.
 
 readOffer(key) returns {key,offer} with the original parsed Offer, not an escaped
@@ -51,9 +51,9 @@ cap to those carriers or widen the generic codec. Two original slots bound count
 stored text, encoder parts/string, parsed copies and native clones need their own
 bounded accounting and qualification; they are not exactly2MiB resident memory.
 
-claim(key) has a compact request/reply <=64KiB. claimed and replay permit PUT of
+claim(key) has a compact request/reply <=64 KiB. claimed and replay permit PUT of
 that same original; acknowledged forbids a new PUT; blocked carries a typed reason.
-observe({key,snapshot,journalAuthority}) request <=75776 bytes; reply <=1MiB. Snapshot itself is
+observe({key,snapshot,journalAuthority}) request <=75776 bytes; reply <=1 MiB. Snapshot itself is
 bounded by the existing 73728-byte merge owner. Keys never become remote evidence.
 All original requests/replies remain owned through completion or worker termination;
 parent timeout fences that Metadata owner, not proof of rollback or cancellation.
@@ -67,17 +67,17 @@ arbitrary worker code or an independently bounded native structured-clone stream
 
 Add execution_intents with a unique monotone order, attempt/run/scoped identity,
 canonical original registry digest, profile alias, numeric budget, mode and exact
-policy1 staging breakdown. Use the shared estimator once while the existing enqueue
+policy 1 staging breakdown. Use the shared estimator once while the existing enqueue
 transaction already holds the bounded Offer. Insert summary, run, attempt, outbox
 and original receipt atomically. Cost/identity/order are immutable, including REPLACE.
 Store scalar eligibility fields; never parse Offer/config while scanning queues.
 
-Migration005 preserves existing rows without full-Offer/history backfill. Missing
+Migration 005 preserves existing rows without full-Offer/history backfill. Missing
 summary is explicitly untracked_intent, not permission to deliver or recreate it.
 Any untracked possible-delivery or acknowledged identity without authoritative
 release blocks new claims with ownership_unknown, regardless of public Run state.
 Terminal/lost/exited is not release proof. Bound this separately from the pending
-isolation query: migration005 must provide indexed untracked-evidence lookup for
+isolation query: migration 005 must provide indexed untracked-evidence lookup for
 possible outbox entries and generation-bearing attempts without an outbox. Markers
 may reflect owned summary presence, never infer execution release or require a
 history/Offer payload scan. Reads/receipt replay stay available; no silent deletion,
@@ -154,7 +154,7 @@ Metadata termination. Acknowledged attempts remain in active reconciliation stor
 
 ports/delivery.ts freezes the private startDeliveryRuntime options/state/close contract.
 Implementation belongs to outbound runner/delivery; bootstrap owns its composition.
-Capture methods/options before any await. Default interval250ms, integer25..60000;
+Capture methods/options before any await. Default interval 250 ms, integer25..60000;
 one active turn, no overlapping timer work, <=one original Offer and two <=1024-byte
 lane cursors. Scan <=32; alternate queued/reconcile turns and advance past blocked
 items within each captured upper order, using selected item.after so unread page
@@ -188,7 +188,7 @@ Initial wiring does not qualify cancellation absence, events, artifacts or resul
 
 Require a prior possible-delivery record and full immutable key. Invoke the pure
 merge on the captured attempt identity, stored previous snapshot and incoming one.
-Generation1, merged snapshot, current attempt state, public Run projection and outbox
+Generation 1, merged snapshot, current attempt state, public Run projection and outbox
 deletion commit atomically. Store generation BEFORE deleting uncertain outbox.
 Cancellation is existing Run intent OR merged remote cancellation, never erased.
 Snapshot high-water and locally durable event cursor remain distinct; no event ACK.

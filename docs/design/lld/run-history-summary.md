@@ -1,7 +1,7 @@
 # Verified history summary projection
 
 Status: reviewed H2 implementation; [evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/run-history-summary.md).
-Metadata migration018 and native arm64 production/restart are locally verified;
+Metadata migration 018 and native arm64 production/restart are locally verified;
 release/platform/browser qualification remains separate.
 Parent: [history queries](run-history-query.md). H3 text search remains separate.
 
@@ -18,9 +18,9 @@ testDurationMs, requestCount, requestsPerSecond, httpFailures, httpSamples,
 httpFailureRatio, httpP95, publishedArtifactBytes, retainedLogicalBytes and
 metadataAllowanceBytes. Every field is required; unavailable scalar facts are null.
 Availability is pending|ready|not_recorded|unsupported_format|unavailable.
-A summary encodes within2048 bytes; the complete existing RunPage stays <=1MiB.
+A summary encodes within 2048 bytes; the complete existing RunPage stays <=1 MiB.
 
-Source is null unless metrics were verified. Otherwise it binds generation1,
+Source is null unless metrics were verified. Otherwise it binds generation 1,
 manifestDigest, numericArtifactId, numericSha256, numericVersion3|4,
 measurementSourceTimeMs and existing RunMetricCoverage. httpP95 reuses
 RunMetricPercentile, retaining histogram estimate/interval/scale, never an exact
@@ -34,10 +34,10 @@ Published bytes require a verified published catalogue.
 
 testDurationMs is k6's measured state.testRunDurationMs ([native summary](https://grafana.com/docs/k6/latest/results-output/end-of-test/custom-summary/)), collected by the existing
 sole summary collector. Label it k6 test duration, not requested-to-stop, configured
-duration, queue time or an execute-phase-only timer. Version4 numeric-final adds
+duration, queue time or an execute-phase-only timer. Version 4 numeric-final adds
 timing:{testRunDurationMs:number|null}, emitted only from complete native collection.
 Existing v3 remains readable with unknown duration and rate. No migration invents
-duration for prior evidence. Native duration0 has unknown RPS, not infinity.
+duration for prior evidence. Native duration 0 has unknown RPS, not infinity.
 
 RPS is the observed execute HTTP request count divided by k6-reported test seconds.
 Expose that denominator in the UI. It is not configured arrival rate or peak RPS.
@@ -63,7 +63,7 @@ stays unknown. Never include readiness/prepare, engine, assertion or duplicate
 series, or infer unobserved metrics as zero. Full numeric capture still verifies
 the complete unique series set and source coverage before projection.
 
-One indexing read can verify the <=1MiB numeric artifact and fixed archive edges
+One indexing read can verify the <=1 MiB numeric artifact and fixed archive edges
 using the existing retained native owner. It does not reread the whole metric
 window archive or fetch configuration per history row. Capture source identity
 before awaits; wrong digest/scope/attempt/manifest fails without a usable summary.
@@ -72,7 +72,7 @@ are complete. Unsupported formats are explicit, not coerced into the current one
 
 ## Durable metadata and accounting
 
-Migration018 adds bounded derivative columns to runs: history_summary_json<=2048,
+Migration 018 adds bounded derivative columns to runs: history_summary_json<=2048,
 history_summary_due_ms (safe epoch integer, default0). A partial due index selects
 terminal runs lacking a stored summary in due-time/UUID order. Scan <=16 keys,
 default one; no all-runs discovery or unbounded queue/backfill on startup.
@@ -106,7 +106,7 @@ a false freed-byte claim; this slice grants no new cleanup/refund authority.
 ## Indexing lifetime and installation
 
 One background original, no detached tasks or waiting queue. Each indexing turn
-has one fixed45s monotonic deadline covering discovery, metadata/source capture,
+has one fixed 45 s monotonic deadline covering discovery, metadata/source capture,
 native read, projection and commit/defer. An independent timer immediately fences
 new phases, aborts native work and records a sticky deadline failure even when an
 external metadata promise remains held. Check that same owner after every await
@@ -123,7 +123,7 @@ log-only or swallowed fatal status. Bootstrap fences/drains the indexer before
 closing shared byte/metadata owners. Held-scan, held-commit and late-success tests
 must prove independent expiry plus retained custody, not only a metric timeout.
 
-Default interval1s;
+Default interval 1 s;
 skip overlap. Start only with installed published byte custody. Use its own metric
 read service with one admitted native original, separate from foreground history
 chart admission. Aggregate new physical concurrency is explicitly one extra
@@ -149,7 +149,7 @@ No independent GET per row, summary polling loop or automatic execution retry.
   partial coverage and no prepare/assertion leakage.
 - Sole producer v4 measured timing propagation; v3 duration/rate unknown.
 - Existing metric catalogue/sample behavior remains valid for both versions.
-- Actual compiled worker migration from17, bounded due query plan, compact list
+- Actual compiled worker migration from 17, bounded due query plan, compact list
   join, CAS/replay/lost-reply/reopen and wrong source/attempt/generation rejection.
 - Held scan/commit/read, independent whole-turn expiry, late success and close\n  retain actual originals/worker termination and shared file custody.
 - Actual published native file digest -> projection -> worker -> authenticated

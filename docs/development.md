@@ -4,7 +4,7 @@ The released app still uses `npm start`. The rewrite includes namespace/settings
 suite/input authoring, authenticated run control, agent execution, durable results,
 event replay and sealed metric charts. Native backend/agent/k6 execution has local
 evidence; complete Docker/Compose installation and release qualification remain pending.
-Use Node24.12+ and the locked development dependencies (`npm ci`).
+Use Node 24.12+ and the locked development dependencies (`npm ci`).
 
 ## Create a private development installation
 
@@ -25,7 +25,7 @@ node --import tsx tools/install/cli.ts \
 ```
 
 This is an advanced source-development path, not a finished Compose installer.
-Run as the request's non-root uid/gid. New directories use0700 and files0600.
+Run as the request's non-root uid/gid. New directories use0700 and files 0600.
 An interrupted receipt requires explicit recovery; no automatic data reset exists.
 Ready replay is offline and requires unchanged request/image pins and exclusive
 authority. Subsequent serving startup retains its normal missing/restore fences.
@@ -48,7 +48,7 @@ loopback UI opens automatically; no token is printed or pasted. Its HttpOnly
 session persists across backend restarts for its remaining8h lifetime. Expiry
 renews through a same-origin exchange; logout stays signed out until reconnect.
 `BEETLE_LOCAL_ACCESS=paired` selects the advanced one-time-token profile for
-automation/developer workflows. It retains the existing15min token and8h session
+automation/developer workflows. It retains the existing 15min token and8h session
 limits; that profile requires restart after token consumption/expiry.
 
 Only a fresh, trusted agent observation can resolve effective resource settings.
@@ -102,7 +102,7 @@ It is a developer qualification command, separate from normal product installati
 
 The command uses fresh private temporary files, an internal HTTP target, bounded
 containers and the real installed agent path. It checks pass/fail, seals, artifacts,
-durable reservation release, clean agent exit and owned-resource removal. Exit0
+durable reservation release, clean agent exit and owned-resource removal. Exit 0
 means the qualification passed, including the expected failed-test outcome for500.
 It prints the private evidence directory and retains it for inspection; it never
 publishes images or removes unrelated resources. It does not establish resource

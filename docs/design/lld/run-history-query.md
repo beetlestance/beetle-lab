@@ -24,7 +24,7 @@ unrelated organisations or fetch every workspace to filter in the browser.
 Use keyset ordering on requestedAt plus canonical Run UUID as a deterministic tie
 breaker, both in the selected direction. The cursor binds schema version, exact
 organisation/workspace, limit, filters, direction and last time/UUID. Capture at
-most4096 encoded bytes before decoding. Reject changed scope/query/limit, malformed
+most 4096 encoded bytes before decoding. Reject changed scope/query/limit, malformed
 or noncanonical cursor and duplicate/out-of-order results. Reject the current
 UUID-only cursor format; do not reinterpret it or silently restart pagination.
 An explicit Refresh obtains a first page under the new query contract. Bind SQL parameters;
@@ -51,7 +51,7 @@ comparison limit and request count. H1 alone does not close F06 summary/search.
 
 ### H1 exact query/cursor amendment
 
-RunListQuery has required integer limit1..100; optional state and outcome use the
+RunListQuery has required integer limit 1..100; optional state and outcome use the
 existing Run enums; optional order is newest|oldest with application default newest.
 No defaults/coercion are inserted by schema validation. HTTP decodes only canonical
 decimal limit. Unknown, duplicate, array or malformed fields reject. Cursor retains
@@ -70,7 +70,7 @@ strict requestedAt/UUID order after the requested cursor, at most limit rows and
 an exact next cursor for the last row when continuation exists. A short page has
 no next cursor; a final full page may also have none. SQL scalar selection plus Run projection occurs in one read transaction.
 Missing workspace is not an empty result. SQL selects a fixed covering index for
-each filter combination; migration017 adds outcome and state+outcome access paths. Current producer timestamps are canonical;
+each filter combination; migration 017 adds outcome and state+outcome access paths. Current producer timestamps are canonical;
 malformed returned row times fail instead of being silently normalised.
 
 ## H2: verified summary projection
@@ -92,7 +92,7 @@ percentile averaging or rate inferred from a configured request rate.
 Size must distinguish verified artifact bytes and retained logical reservation
 from measured filesystem allocation. Metadata allowances or source declarations
 do not establish physical freed/used blocks. Join compact metadata in one read
-snapshot; avoid100 native reads or result bodies for a100-row page. Define the
+snapshot; avoid100 native reads or result bodies for a 100-row page. Define the
 complete reply byte limit before enabling the projection.
 
 ## H3: bounded text/name search

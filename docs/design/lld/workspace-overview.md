@@ -23,7 +23,7 @@ counts remain distinct. Future timestamps do not enter the activity window.
 Counts aggregate all records in the exact workspace, independently of list-page
 size. SQLite returns scalar/group counts and bounded summaries; no JavaScript
 all-history materialization. Requested-time and state indexes support the bounded
-lists. Migration016 adds those indexes only; it retains all existing tables/data.
+lists. Migration 016 adds those indexes only; it retains all existing tables/data.
 The serialized metadata owner uses one read transaction for consistent counts,
 buckets and links. Missing workspace yields not_found, never an empty dashboard.
 Responses are validated and capped at 32 KiB. Inputs are fixed scope plus trusted
@@ -47,7 +47,7 @@ navigation stays visible; visual redesign is deferred.
 Test workspace isolation, missing identity, more than list limits, all state/outcome
 counts, exact hourly boundaries/future timestamps, deterministic ties and a real
 read snapshot. Check generated client foreign/invalid response rejection, actual
-HTTP authorization/response and SQLite worker transfer, migration15→16 preservation
+HTTP authorization/response and SQLite worker transfer, migration 15→16 preservation
 and query indexes. UI fixtures cover loading/error/empty/refresh, scoped late replies,
 links and bounded requests. Run affected types/lint/generation/docs/architecture,
 one web/API build at freeze; no Docker or native browser qualification is implied.

@@ -1,6 +1,6 @@
 # Actual producer retirement coordinator
 Public index.ts owns <=64 exact scoped retirement originals; same Journal/Gate/Manager.
-One <=30s monotonic budget begins before preflight. Reserve first, fence immediately
+One <=30 s monotonic budget begins before preflight. Reserve first, fence immediately
 before admitted atomic begin. Optional private funding selection proves rejected mode;
 its atomic funded intent precedes local fencing. Known no-commit refusal releases the
 unfenced slot; unknown writes retain actual carrier settlement; only then may

@@ -3,7 +3,7 @@
 Status: engine composition only; physical admission and public job lifecycle pending.
 Consumes one already opened trusted StagedInput and caller-owned AttemptFence.
 Before compilation, capture the complete export assignment with shared integrity
-validation, require generation1 and exact canonical Offer equality with staged
+validation, require generation 1 and exact canonical Offer equality with staged
 headers. Reject invalid output-root/UID profiles before compile or build effects.
 Narrow the fence to staged authority without extending an existing parent ceiling.
 The metadata owner still proves immutable revision/config relationship;

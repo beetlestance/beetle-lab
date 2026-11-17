@@ -8,8 +8,8 @@ Browser download controls are a subsequent consumer batch.
 
 Generated listRunArtifacts reads
 `/organizations/:org/workspaces/:ws/runs/:run/attempts/:attempt/artifacts` beneath
-/api/v2 with PageQuery limit1..100 and optional canonical opaque cursor.
-RunArtifactPage carries run/scope/attempt/generation1, availability, manifestDigest,
+/api/v2 with PageQuery limit 1..100 and optional canonical opaque cursor.
+RunArtifactPage carries run/scope/attempt/generation 1, availability, manifestDigest,
 items and nextCursor; the full reply is <=73,728 bytes. Items are existing artifact
 descriptors. They are publication metadata, not a current filesystem health probe.
 
@@ -26,9 +26,9 @@ Otherwise return pending with no items/manifestDigest. Contradictory/corrupt evi
 fails unavailable. Native file access still validates physical custody independently.
 
 List cursors are closed canonical base64url, <=512 bytes, bound to a distinct
-artifact lane, namespace/run/requested attempt/generation1/manifest digest and next
+artifact lane, namespace/run/requested attempt/generation 1/manifest digest and next
 ordinal. Reject foreign, stale, unsafe or noncanonical positions. Read at most the
-existing128 descriptors/slots through their bounded shared owner, then select the
+existing 128 descriptors/slots through their bounded shared owner, then select the
 requested <=100 descriptors; never materialize raw history or file contents.
 
 Private RunArtifactsReader has listRunArtifacts(RunArtifactListQuery) and
@@ -64,10 +64,10 @@ supports existing owner fixtures without inventing a successful byte adapter.
 
 Allow at most one active HTTP download, including metadata/native originals, with
 no waiting queue. This shares the native store's existing two-job/token credits,
-leaving publication capacity. Capture a fixed30s monotonic deadline and AbortSignal;
+leaving publication capacity. Capture a fixed 30 s monotonic deadline and AbortSignal;
 reads use zero free-space write reserve. A read issues one native job over the
 selected range, not separate unpinned per-chunk jobs. Its sink awaits actual socket
-callback/drain, retaining bounded <=64KiB chunks. Extract common HTTP range/write
+callback/drain, retaining bounded <=64 KiB chunks. Extract common HTTP range/write
 helpers from input content rather than duplicating them; preserve input semantics.
 
 Use chunked framing for nonempty content and send its terminating EOF only after
