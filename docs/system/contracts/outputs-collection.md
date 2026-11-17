@@ -1,12 +1,10 @@
 # Output collection and transfer
 
-Run outputs cross three boundaries: engine staging to the agent Journal (collection and durable
-source), agent to backend (runner source transfer) and backend storage to the browser (artifact
-downloads). The agent owns guarding, collection, source commit and the source routes
-(`agent/src/collection`, `agent/src/output-source`, `agent/src/journal`, `agent/src/output-transfer`);
-the backend owns transfer, native artifact files, publication metadata and downloads (`app/`).
-Source values, delivery closure, adoption, finalisation, deletion and settlement are in
-[output settlement](outputs-settlement.md).
+Run outputs cross three boundaries: engine staging to the agent Journal, agent to backend (source
+transfer) and backend to browser (downloads). The agent owns guarding, collection, source commit and
+source routes (`agent/src/{collection,output-source,journal,output-transfer}`); the backend owns transfer,
+artifact files, publication metadata and downloads (`app/`). Source values, closure, adoption,
+finalisation, deletion and settlement are in [output settlement](outputs-settlement.md).
 
 ## Pipeline
 
@@ -28,12 +26,13 @@ container, an event ACK, CPU release or a timeout never substitutes for a step.
 ## Live output guard
 
 A soft stop, not a hard quota: enumeration is not linearizable and cannot contain a hostile same-UID
-writer. Scan and timing limits are in `agent/src/guard/CONTEXT.md`. Each entry charges max(size,
-blocks × 512). Exceeding the attempt budget stops that watch; free space at or below the reserve
-requests `output_limit` for every watch; staleness, clock failure or rollback requests
-`artifact_incomplete`. An incomplete scan is unknown, never a partial total. One stop request per
-watch, never retried. A fresh launch waits for the first complete scan; recovered work attaches before
-reconciliation and never restages. A watch close never certifies that the runtime exited.
+writer. Limits are in `agent/src/guard/CONTEXT.md`; the path comes from the verified installation. Scans
+refuse symlinks, special files, multiply linked files and duplicate identities; dotfiles and directories
+count, each entry charging max(size, blocks × 512). Exceeding the attempt budget stops that watch;
+non-root free space at or below the reserve requests `output_limit` for every watch; staleness, clock
+failure or rollback requests `artifact_incomplete`. An incomplete scan is unknown, never a partial
+total. One stop request per watch, never retried. A fresh launch waits for the first complete scan;
+recovered work attaches before reconciliation and never restages. A watch close proves no exit.
 
 ## Control intake and collection
 
@@ -42,7 +41,6 @@ per file (`agent/src/control-protocol/types.ts`); agent enrichment adds 512 byte
 stay at 100 records / 256 KiB. A live torn tail waits; a stopped torn tail fails. The checkpoint
 (device/inode strings, offset, wrapper sequence, prefix SHA-256, batch digest) commits with its batch,
 projections and quota charges in one transaction. Stopped collection rehashes the full prefix.
-
 Collection (`collectOutputs`) starts only after stopped runtime, settled launch, `stopped_verified`
 intake and a committed collection intent.
 
@@ -53,11 +51,12 @@ intake and a committed collection intent.
   ancestors, owner, 0700 directories, 0600 single-link files and stable identities are checked
   before and after reads, and by name again after every descriptor close.
 - `verifiedBytes` = raw result + `controlBytes` + declared artifact bytes ≤ admitted output budget;
-  undeclared files are the guard's concern. One call gets ≤ 5 min (`OUTPUT_COLLECTION_MAX_MS`), no retry.
-- Success adds immutable `custody`: `resultFileBytes` (1–1048576), `controlBytes` (0–67108864) and the
-  root identity (directory ≤ 4096 bytes, uid, device, inode, `modifiedNs`, `changedNs`, native values
-  as decimal strings) within 32 KiB, published only after every read and close succeeds and the
-  final cancellation and deadline fences pass. It is an observation, not authentication.
+  undeclared files are the guard's concern. One call gets ≤ 5 min (`OUTPUT_COLLECTION_MAX_MS`),
+  no retry.
+- Success adds immutable `custody` (≤ 32 KiB): `resultFileBytes` (1–1048576), `controlBytes`
+  (0–67108864) and root identity (directory ≤ 4096 bytes, uid; device, inode, `modifiedNs`,
+  `changedNs` as decimal strings), only after every read and close succeeds and the final
+  cancellation and deadline fences pass. It is an observation, not authentication.
 - `k6-diagnostics.json` is an ordinary declared artifact: ≤ 256 enum records in 32768 bytes, no native text.
 
 ## Native output custody
@@ -72,9 +71,8 @@ intake and a committed collection intent.
 
 - Capacity is reserved before input capture; refusal issues no filesystem call. Readers overlap;
   cleanup excludes any owner bound to an equal, ancestor or descendant directory and any unbound one.
-- Cancellation and deadlines are stop hints: every issued open, read, write, sync and close stays
-  owned until it settles. A failed close is sticky: owner, scope, slot and credit stay held until
-  process exit and no positive result follows.
+- Cancellation and deadlines are stop hints: every issued open, read, write, sync and close stays owned
+  until it settles. A failed close holds owner, scope, slot and credit until exit, with no positive result.
 
 ## Collection intent and source commit
 
@@ -88,49 +86,44 @@ are controller-only, share two large-original credits and do no file or network 
 | `outputCollectionRead`, `outputSourceRead` | owned Scope; reply value or null |
 | `outputSourceCommit` | `PrivateSource` prepared by the parent, 131072 bytes; the worker re-verifies it |
 | `outputSourceRelease` / `outputCollectionFailed` | `SourceReceipt`, 1024 bytes / `FailedOutputCollection`, 8192 bytes |
+| Errors | null: tracked original without a record, never absent files; `not_found` unknown attempt, `stale_generation` wrong generation, `invalid_input` malformed, `conflict` replay or state disagreement, `quota_exceeded`, `unavailable` corrupt state |
 
 Charges: intent canonical bytes + 256 (≤ 33024, `collection_bytes`) and source canonical bytes + 256
-(≤ 131328, `source_bytes`). Each is zero exactly when its row is absent, counts in every quota
-preflight and SQL sum, and is never refunded by ACK or pruning. Rows, digests and charges reject
-UPDATE, REPLACE and DELETE, including with recursive triggers off.
+(≤ 131328, `source_bytes`); each is zero exactly when its row is absent, counts in every quota preflight
+and SQL sum, and is never refunded by ACK or pruning. Rows, digests and charges reject UPDATE, REPLACE
+and DELETE, even with recursive triggers off.
 
-- The intent binds a stable `collectionId`, `SourceBinding`, the checked root identity, the exact
-  wrapper checkpoint, the definitive launch settlement and the stopped runtime evidence, with
-  `begunAt` ≥ runtime observation > launch settlement.
-- Commit requires the matching pending intent, `collectionId` = `release.collection.evidenceId`,
-  identical root, checkpoint, launch and runtime, checkpoint offset = `controlBytes`, wrapper sequence
-  = accepted high-water and the full result equal to the journaled one. The source row and pending →
-  sourced commit together. A first source needs an active charged reservation.
-- Finished release requires the exact receipt; it reuses the stored release observation and moves the
-  disk hold active → retained in the same transaction. Ordinary release rejects finished collection,
-  and rejects failed release while an intent exists.
+- The intent binds a stable `collectionId`, `SourceBinding`, checked root identity, exact wrapper
+  checkpoint, definitive launch settlement and stopped runtime, with `begunAt` ≥ runtime > launch.
+- Commit needs the pending intent, `collectionId` = `release.collection.evidenceId`, identical root,
+  checkpoint, launch and runtime, offset = `controlBytes`, wrapper sequence = high-water and the journaled
+  result. Source row and pending → sourced commit together; a first source needs a charged reservation.
+- Finished release needs the exact receipt, reuses the stored release observation and moves the disk hold
+  active → retained at once; ordinary release rejects finished collection, and failed release with an intent.
 - Only the uninterrupted controller may mark an intent failed: after all originals quiesce, before any
   success or commit attempt, in the same worker epoch (random per open, not Journal authority). A
   recreated controller is always in recovered mode. A commit or quota failure is never relabelled failed.
-- Lost replies replay the captured request and return the same record without a second charge.
+- Lost replies replay the captured request and return the same record without a second charge. Restart
+  reads source, then intent, before any recovery, restaging or launch; no TTL, 404 or deadline releases.
 
 | Source | Intent | Meaning and permitted action |
 | --- | --- | --- |
 | present | sourced | Committed: reuse its receipt and release; never recollect |
-| absent | pending | Unresolved. After old owners quiesce, one artifact-only recovery collection under a fresh ≤ 5 min budget reuses the intent; failure stays pending, charged and visibly errored |
+| absent | pending | Unresolved. After old owners quiesce, one artifact-only recovery collection under a fresh ≤ 5 min budget reuses the intent, never restaging or relaunching; a missing pinned root or profile, or an unknown runtime stop, makes it unavailable and never substitutes current values; failure stays pending, charged and visibly errored |
 | absent | failed | Committed failed release; replay only |
 | absent | absent | Never began (new-protocol rows only); failed release needs stopped and quiescence proofs |
 | any contradiction | any | Unavailable and charged |
 
-Restart reads the source, then the intent, before any recovery, restaging or launch. No TTL, 404 or
-elapsed execution deadline grants release.
-
 ## Source transfer
 
-`GET /runner/v1/attempts/:id/source` (reply ≤ 75776 bytes), `POST …/source/chunk` (body ≤ 1024,
-reply ≤ 90112 bytes) and `GET …/source/absence` (reply ≤ 2048 bytes) use bearer authentication, scoped
-headers, exact attempt and physical authority and `Connection: close`. Values are defined in
-[settlement](outputs-settlement.md#public-source-values).
+`GET /runner/v1/attempts/:id/source` (reply ≤ 75776 bytes), `POST …/source/chunk` (body ≤ 1024, reply
+≤ 90112) and `GET …/source/absence` (reply ≤ 2048) use bearer authentication, scoped headers, exact
+attempt and physical authority and `Connection: close`; [values](outputs-settlement.md#public-source-values).
 
 | Condition | Status, reason, retry |
 | --- | --- |
 | Known original whose source or closure is not yet durable | 409 `source_pending`, transport |
-| Durable source-free closure | 409 `source_absent`, never |
+| Durable source-free closure | 409 `source_absent`, never. Only this reply to the initial source GET hands off to source-free closure, once both transfer originals settle; a later chunk error never means absence |
 | Missing, mutated or unusable native file; other unavailable source | 409 `source_unavailable`, never |
 | Wrong source, manifest or artifact selector / malformed or beyond-end range | 409 `conflicting_digest` / 400 `invalid_protocol` |
 | Unknown original / physical mismatch | 404 `attempt_not_found` / 409 `authority_mismatch` |
@@ -145,12 +138,15 @@ headers, exact attempt and physical authority and `Connection: close`. Values ar
 ## Backend artifact files
 
 The output runtime (`app/src/bootstrap/output-runtime`) opens before capacity is advertised and owns
-`dataRoot/outputs/{staging,published}` plus the SQLite lease `namespace.sqlite`, created only fresh.
+`dataRoot/outputs/{staging,published}` and the lease `namespace.sqlite`, created only fresh: a missing,
+replaced or misconfigured lease fences output work and is never recreated, no other handle may open it,
+and an interrupted first initialisation fails startup unless it proves no output was held.
 
 - Paths derive only from organisation/workspace/run/attempt/upload-token UUIDs, never engine paths.
   Expected length and SHA-256 come from the adopted manifest.
-- `prepare` reconciles the existing token or creates an empty staging file for fresh state only; it
-  never truncates an unexplained tail. `append` takes 1–65536 bytes at exactly the durable offset,
+- `prepare` reconciles the token or creates an empty staging file for fresh state only; it never
+  truncates an unexplained tail, replaces a missing known file, turns absence into an empty artifact or
+  allocates a file for a lost reply. `append` takes 1–65536 bytes at exactly the durable offset,
   compares any overlap and writes the suffix. Per-operation deadline ≤ 300000 ms.
 - Publication is a no-overwrite hard link, verified two-alias custody, then staging unlink: one inode
   charged once. Receipts need full length and SHA-256, file and parent flushes, successful closes and
@@ -164,12 +160,16 @@ The output runtime (`app/src/bootstrap/output-runtime`) opens before capacity is
 | `recordPublication` | publishing, published native receipt | published identity, writer null |
 
 Each write needs the exact slot version and advances it by one; equal replay returns current state.
-Guards (backend migration 010) reject phase regression, offset reduction, writer replacement and
-DELETE/REPLACE; elapsed time never steals a writer. The transfer owner fences an artifact's producer
-before publication, awaits native result and settlement before recording it, and reports published
-only when every declared artifact is published with no writer. The runtime then finalises
-([settlement](outputs-settlement.md#source-backed-finalisation)); pending or a version conflict leaves
-the attempt discoverable for a later pass, with no new test effects.
+Migration 010 guards reject phase regression, offset reduction, writer replacement and DELETE/REPLACE;
+elapsed time never steals a writer. The transfer owner fences an artifact's producer before publication,
+records it only after native result and settlement, and reports published once every declared artifact
+is published with no writer. The runtime then
+[finalises](outputs-settlement.md#source-backed-finalisation); pending or a version conflict leaves the
+attempt discoverable for a later pass without new test effects, and a binding that no longer matches the
+active Run fails. Transport and `source_unavailable` failures stay visible and retry once originals
+settle; `source_pending` is ordinary pending. Invalid input, integrity, cleanup or unexpected storage
+failures and malformed positive replies fence the runtime and notify once. Discovery passes busy
+candidates, so later work is never starved.
 
 ## Artifact downloads
 
@@ -178,25 +178,27 @@ the attempt discoverable for a later pass, with no new test effects.
 with no items after source-free finalisation, otherwise `pending`. The requested attempt is used even
 when another is active. GET has no write, ACK or accounting effect.
 
-The content route (`…/artifacts/:artifact/content`) needs the local session guard, five UUID
-parameters, no query or body and at most one byte range (416 if unsatisfiable).
-`contracts/src/artifact-download.ts` fixes the attachment name and media type by kind. One native range
-job, 30 s deadline; EOF follows the native result, settlement and post-close checks, and full reads
-also match the SHA-256. Midstream errors destroy the response. Busy defers publication, never fails it.
+The content route (`…/artifacts/:artifact/content`) needs the local session guard, five UUID parameters,
+no query or body and at most one byte range (416 if unsatisfiable); a wrong scope or ID is 404 and
+pending publication a conflict. `contracts/src/artifact-download.ts` fixes attachment name and media type
+by kind; other headers follow [input content](inputs.md#transport-rules) (`nosniff`, `no-store`, SHA-256
+`ETag`, `If-Range`), with no implicit HEAD. One native range job, 30 s deadline; EOF follows the native
+result, settlement and post-close checks, and full reads also match the SHA-256. Midstream errors
+destroy the response. Busy defers publication, never fails it.
 
 ## Storage accounting
 
 Backend allocation (`app/src/adapters/outbound/sqlite/output-reservations.ts`) charges each claimed
-original `Offer.budget.outputBytes` + 65536 metadata (+ 65536 cleanup control, see
-[retirement](retirement.md#capacity)) to `installation_storage_usage`, requiring usage + charge +
-reserve ≤ min(installation storage, source ceiling). Physical release and lower settings keep it.
+original `Offer.budget.outputBytes` + 65536 metadata (+ 65536 [cleanup control](retirement.md#capacity))
+to `installation_storage_usage`, requiring usage + charge + max(installation, source free-space reserve)
+≤ min(installation storage, source ceiling). Physical release and lower settings keep it.
 
 Agent disk holds (`agent/src/journal/disk-retention`, Journal 011): one immutable hold per admitted
 original records output and staging bytes plus 512 metadata bytes. Release and abort move both into
-retained totals once; only [settlement](outputs-settlement.md#settlement) removes a hold.
-`DiskRetention` reports held count (≤ 4096) and output, staging, replay and cleanup bytes. Admission
-fits active + candidate + retained disk; only active work counts for CPU, RAM, PIDs and isolation. A
-full hold count defers with `retention_capacity`, disk pressure with `budget_unavailable`.
+retained totals once; only [settlement](outputs-settlement.md#settlement) removes a hold. `DiskRetention`
+reports held count (≤ 4096) and output, staging, replay and cleanup bytes. Admission fits active +
+candidate + retained disk; only active work counts for CPU, RAM, PIDs and isolation. A full hold count
+defers with `retention_capacity`, disk pressure with `budget_unavailable`.
 
 The staging namespace (`agent/src/staging-namespace`, Journal 016) binds root identity and a nonce
 marker (change requires recovery); task directories are committed before any provider writes.

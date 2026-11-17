@@ -124,8 +124,14 @@ metadata worker persists it (`local-session/`, migration 014). Shapes are in
   `Sec-Fetch-Site: cross-site` is `403 forbidden`. Mutations need exact Origin and
   `X-Beetle-CSRF`. No CORS.
 - Automatic profile (`POST /api/v2/auth/local`, `{}` with `X-Beetle-Local: 1`)
-  refuses pairing and prints no token; paired profile refuses the automatic
-  exchange. Invalid, consumed or expired pairing tokens are `401 unpaired`.
+  refuses pairing (`403 forbidden`) and prints no token; paired profile refuses
+  the automatic exchange (`401 unpaired`). Invalid, consumed or expired pairing
+  tokens are `401 unpaired`. A closed or fenced automatic authority returns
+  `503 storage_unavailable`; an exchange during another auth write is
+  `429 rate_limited`. The browser gate tells 401 (token form) from 503 (reconnect).
+- A paired session is held in memory only: restart ends it and prints a fresh
+  startup token, and no endpoint recovers a lost token. Normal reads do no
+  session database IO; close denies late grant publication.
 - Persistence uses CAS with exact one-step replay. While a write outcome is
   unknown, protected authorization is fenced with `503 storage_unavailable`.
   Grants and logout reply only after confirmed persistence; logout clears the

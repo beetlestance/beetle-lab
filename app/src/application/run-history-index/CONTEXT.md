@@ -11,5 +11,5 @@ metric read failures persist unavailable; unexpected storage/lifetime failures
 stop the indexer with observable state. No target/engine/cleanup effects.
 Private metadata originals retain failed worker termination. Shared metadata,
 metric service and namespace remain bootstrap-owned. Bootstrap must drain this
-indexer before closing those owners. Contract: run-history-summary.md.
+indexer before closing those owners. Contract: docs/system/contracts/public-api.md#run-history.
 Focused tests: app/test/run-history-index; fake clocks test held originals.

@@ -16,6 +16,8 @@ host capacity. Offline capacity changes are owned by `tools/install/capacity/`.
 | FIFO within a class; smaller jobs may bypass for 30 s, then the queue drains for the oldest feasible job | `agent/src/admission/` |
 | Timeout never sums across attempts; lowering a pool preserves retained debt and drains | `agent/src/admission/` |
 | Raising a default never raises an installation cap; each accepted run stores its effective budget | settings resolver, `agent/src/admission/` |
+| `isolated` runs wait until nothing else is charged, then hold the whole pool across organisations until release; `parallel` runs never start beside a charged isolated run | `agent/src/admission/policy.ts` |
+| An idle or thermal preference may defer a new start (`idle_unknown`, `thermal_busy`, `thermal_unknown`) but never alters an active run; an unknown sensor never counts as idle or cool | `agent/src/admission/policy.ts` |
 
 Run budget means per-attempt CPU, memory, PID, timeout and output maxima. Pool
 budget means the installation-wide concurrent sum. CPU ceilings throttle, memory
@@ -73,7 +75,10 @@ lease is half-open, `observedAtMs ≤ now < min(expiresAtMs, observedAtMs +
 runtimeTtlMs)`, checked at caller ingress and worker dequeue. `runtimeTtlMs`
 defaults to 5000 ms (bounds 1–60000 ms). Queueing never refreshes age. Clock
 rollback revokes; a persistent source-time high-water fence requires a strictly
-later observation to restore capacity. Malformed ingress never replaces a valid
+later observation to restore capacity. An older observation, or a different one
+with the same source time, revokes; an identical replay keeps the original lease
+and never extends it; nothing sampled at or before the revocation point restores
+capacity (`sqlite/runtime.ts`). Malformed ingress never replaces a valid
 observation. Receivers compare installation and installed engine identities and
 retain original Offer pins; a later capability response never selects a newer
 profile.
@@ -146,7 +151,9 @@ engine, backend and browser; percentiles are never averaged across windows.
 Zero is counted separately; an empty population returns null; a missing sample
 never becomes a measured zero. Estimates carry source `histogram-estimate` and
 are not native k6 final quantiles; native summary mapping keeps threshold
-authority.
+authority. A rejected record or merge leaves the previous distribution unchanged;
+extreme samples are kept by downscaling, never clamped or dropped, and every
+count, increment and merge sum is overflow-checked.
 
 ## Offline capacity change
 
@@ -156,6 +163,8 @@ stopped installation. Operator steps are in the guide.
 - `config/installation.json` stays immutable provisioning evidence;
   `config/configuration-state.json` (≤ 128 KiB,
   `contracts/src/installation-generation/`) is the sole mutable selector.
+  Services must see it through the shared read-only `config` directory mount; a
+  single-file bind keeps the replaced inode and serves a stale selector.
 - Both serving loaders require a `ready` selector, check unchanged baseline bytes
   and recheck the selector after taking their serving leases. Missing, malformed
   or `reconfiguring` selectors refuse serving.

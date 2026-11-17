@@ -27,7 +27,7 @@ InstallationController must close separately before bootstrap closes the journal
 
 HTTP metadata evidence is separate from engine execution and result finalization.
 Offer and cancelOriginal share two pre-body slots and identical Offer bounds.
-Fresh cancellation does not fall back to enqueue. Contract: cancellation.md.
+Fresh cancellation does not fall back to enqueue. Contract: docs/system/contracts/run-lifecycle.md#cancellation.
 An explicit OutputSourceReader owns durable source/closure/native range checks;
 absent wiring returns503. Transport never manufactures closure or publication.
 Explicit finalization ACK endpoints remain separate work.

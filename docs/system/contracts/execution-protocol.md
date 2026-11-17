@@ -55,9 +55,9 @@ ownership generations cannot be requested through an Offer.
 | Check | Rule | Failure |
 | --- | --- | --- |
 | Credential | Exactly one `Authorization: Bearer <token>`, 43–128 base64url characters, SHA-256 digest comparison | 401, empty body, before body parsing |
-| Browser markers | `Origin`, `Cookie` and site headers present | 403 |
+| Browser markers, raw headers | `Origin`, `Cookie` or site headers present; header count, size or non-ASCII over limit | 403 |
 | Scope headers | `x-beetle-organization-id`, `x-beetle-workspace-id` (UUID), `x-beetle-generation` (canonical positive decimal) | 400 |
-| Journal authority | `x-beetle-journal-authority` equals the agent's opened journal UUID, checked before receipt lookup or effects | 409 `authority_mismatch` |
+| Journal authority | `x-beetle-journal-authority` equals the agent's opened journal UUID, checked before receipt lookup or effects | 400 if malformed, 409 `authority_mismatch` |
 | Identity | Path attempt ID, header scope and body DTO identities agree; replies match request scope | 409 or response failure |
 
 Failures before scope is established return only a status: there is no namespace
@@ -75,26 +75,29 @@ reasons and no exception text, configuration or URL. Only a schema-valid scoped
 | Deadline | 30 s request and connection | 5000 ms logical; credit held until native close |
 | Responses | Encoded and validated before send | ≤ 1 MiB, ≤ 4096 fragments |
 
-Saturation is a typed failure without a queue (429 on the agent). Neither side
-retries, follows redirects, uses proxies, keep-alive or decompression. The client
-resolves DNS once (≤ 8 addresses), uses one, and never falls back to another
-address for a mutation. Aborting or a deadline never releases credit before the
-original socket closes; a complete valid reply received before abort stays a
-positive result after full validation.
+Saturation is a typed failure without a queue (429 on the agent). Neither side retries, follows
+redirects, uses proxies, keep-alive or decompression. The client resolves DNS once (≤ 8
+addresses), uses one, and never falls back to another address for a mutation. Aborting or a
+deadline never releases credit before the original socket closes; a complete valid reply
+received before abort stays a positive result after full validation. An Offer slot is taken
+after authentication and scope checks, before the body is read, and kept until enqueue finishes
+even if the socket aborts; a failure before enqueue releases it once. Raw and normalised JSON
+sizes are checked separately; a pre-issue `queue_full` makes the Stager report busy before any
+file or provider work.
 
 ## Backend connection
 
-`BEETLE_AGENT_CONFIG_FILE` is a closed private JSON object (≤ 64 KiB): origin,
-token file (≤ 129 bytes), expected installation ID, 1–32 profile pins and backend
-storage allocation and reserve. Both files must be canonical, UID-owned,
-single-link regular files without group or world access. The expected installation
-must equal the installation record; profile aliases never substitute for installed
-engine, image and config-version identity. Changed files take effect only on restart.
-Capabilities must match the expected installation and exact configured pins before
-capacity is used. The backend capacity source combines agent ceilings with backend
-disk policy into one lease expiring ≤ 1000 ms after its oldest source; replayed
-agent samples cannot renew it, and agent staging space never counts as backend
-storage. Agent admission remains the final physical authority.
+`BEETLE_AGENT_CONFIG_FILE` is a closed private JSON object (≤ 64 KiB): origin (an explicit HTTP
+origin ≤ 2048 characters, no credentials, path, query or fragment), token file (≤ 129 bytes),
+expected installation ID, 1–32 profile pins and backend storage allocation and reserve. Both
+files must be canonical, UID-owned, single-link regular files without group or world access. The
+expected installation must equal the installation record; profile aliases never substitute for
+installed engine, image and config-version identity. Changed files take effect only on restart.
+Capabilities must match the expected installation and exact configured pins before capacity is
+used. The backend capacity source combines agent ceilings with backend disk policy into one
+lease expiring ≤ 1000 ms after its oldest source; replayed agent samples cannot renew it, and
+agent staging space never counts as backend storage. Agent admission remains the final physical
+authority.
 
 ## Attempt states
 
@@ -105,15 +108,16 @@ storage. Agent admission remains the final physical authority.
 | --- | --- |
 | Offer accepted | `offered` |
 | `admitted` | `admitted` |
-| `runtime.started`, wrapper phase `validate`/`prepare` | `preparing` |
+| `runtime.started` with no phase yet | `running` |
+| Wrapper phase `validate`/`prepare` | `preparing` |
 | Wrapper phase `execute` | `running` |
 | Wrapper phase `collect`/`seal` | `collecting` |
 | `cancellation.requested` | `stopping` |
 | `runtime.exited` | `exited` (terminal) |
 | `execution.lost` | `lost`, or `exited` if exit evidence exists (terminal) |
 
-Phases only advance; terminal and `stopping` states are sticky against wrapper
-events. The first exit witness is immutable and confirmed exit facts survive later
+Phases only advance; terminal and `stopping` states keep their state, but a later
+wrapper phase and engine or export result are still recorded. The first exit witness is immutable and confirmed exit facts survive later
 unknowns. A second, different engine result for one attempt rejects as a conflict.
 A wrapper seal never proves that the container exited.
 
@@ -134,27 +138,31 @@ A wrapper seal never proves that the container exited.
 
 ## Launch and control intake
 
-- The controller (`agent/src/controller/attempt.ts`) owns one journal and generation;
-  at most 64 owners per journal; `launch` and `tick` share one lane and concurrent
-  calls reject busy. Each call budget is ≤ 300 s.
-- Supervisor: create claim precedes create; durable clock and cancel reread precede
-  the single start claim; replay inspects, never restarts. Backend calls cap at 30 s.
-- A known journal `queue_full` refusal on the first Offer read is a `journal_busy`
-  deferral (`agent/src/controller/launch-contention.ts`): the pending explicit launch
-  is retained for a later tick with no extension of the admitted timeout. Unknown
-  commits, binding failures and ambiguous create/start retire the launch permanently.
-- After the first full Offer read, owners cache only scope, intent digest, engine
-  identity and the five budget fields; fresh reservations are still checked every step.
-- The wrapper appends control events to `control.ndjson` in the attempt output
-  (≤ 64 MiB, ≤ 65 536 records, ≤ 64 KiB per line including LF) and fsyncs before
-  any stdout notification. The agent reads that file, not stdout. Malformed or
-  oversized data stops the attempt with a typed error.
-- Each wrapper batch commits to the journal before the reader acknowledges it.
-  Stopped control intake requires a definitive launch settlement; the full
-  committed prefix is rehashed before collection.
-- Release needs a later supervisor observation plus a settled collection result.
-  It records collection finished or failed; it is not a pass, finalization ACK
-  or deletion permission. A failed original close blocks release permanently.
+- The controller (`agent/src/controller/attempt.ts`) owns one journal and generation; at most 64
+  owners per journal; `launch` and `tick` share one lane and concurrent calls reject busy. Each
+  call budget is ≤ 300 s.
+- Supervisor: create claim precedes create; durable clock and cancel reread precede the single
+  start claim; replay inspects, never restarts. Backend calls cap at 30 s.
+- A known journal `queue_full` refusal on the first Offer read is a `journal_busy` deferral
+  (`agent/src/controller/launch-contention.ts`): the pending explicit launch is retained for a
+  later tick with no extension of the admitted timeout. Unknown commits, binding failures and
+  ambiguous create/start retire the launch permanently.
+- After the first full Offer read, owners cache only scope, intent digest, engine identity and
+  the five budget fields; fresh reservations are still checked every step.
+- The wrapper appends control events to `control.ndjson` in the attempt output (≤ 64 MiB, ≤ 65
+  536 records, ≤ 64 KiB per line including LF) and fsyncs before any stdout notification. The
+  agent reads that file, not stdout. Malformed or oversized data stops the attempt with a typed
+  error.
+- Each wrapper batch commits to the journal before the reader acknowledges it. Stopped control
+  intake requires a definitive launch settlement; the full committed prefix is rehashed before
+  collection.
+- Release needs a later supervisor observation plus a settled collection result. It records
+  collection finished or failed; it is not a pass, finalization ACK or deletion permission. A
+  failed original close blocks release permanently.
+- An empty stopped control stream fails collection and creates no cursor. Output verification
+  uses the admitted deadline, never extended; collector saturation waits within it and is not a
+  failure. A never-claimed cancelled launch is aborted as unstarted only after preparation has
+  quiesced.
 
 ## Events
 
@@ -191,29 +199,18 @@ Typed reasons and retry classes are in `common.schema.json` and `error.schema.js
 retry applies only to transport or setup, and a new execution needs explicit intent.
 Container removal requires a stopped, sealed and application-acknowledged attempt.
 
-## Retired runtime association
-
-Before container deletion the journal commits one immutable record of the inspected
-stopped runtime, spec and mailbox volume (≤ 1536 bytes in the 2048-byte bucket of
-`agent/src/cleanup-control/limits.ts`); an unknown commit permits no delete. Cold
-recovery reuses only an exactly matching record and still proves absence first.
-
 ## Related
 
 - Contracts: [engines](engines.md), [run delivery](run-delivery.md),
   [resources](resources.md), [retirement](retirement.md), [recovery](recovery.md).
-- Decisions: [006 staging](../../decisions/006-agent-staging.md),
-  [007 admitted validation](../../decisions/007-admitted-validation.md),
-  [008 measurement](../../decisions/008-measurement-boundary.md), [009 seal](../../decisions/009-result-seal.md),
-  [018 Docker host trust](../../decisions/018-docker-host-trust-boundary.md),
-  [024 journal-busy deferral](../../decisions/024-journal-busy-deferral.md).
+- Decisions: [006](../../decisions/006-agent-staging.md), [007](../../decisions/007-admitted-validation.md), [008](../../decisions/008-measurement-boundary.md), [009](../../decisions/009-result-seal.md), [018](../../decisions/018-docker-host-trust-boundary.md), [024](../../decisions/024-journal-busy-deferral.md).
 
 ## Anchors
 
 | Code | Reviewed |
 | --- | --- |
 | `contracts/runner/v1/` | `7487c41d088a` |
-| `agent/src/transport/` | `9b9daf270123` |
+| `agent/src/transport/` | `865afb5ba88a` |
 | `agent/src/journal/projection.ts` | `5c3654934a6a` |
 | `agent/src/controller/` | `557c5fde1f37` |
 | `agent/src/supervisor/time.ts` | `33d5537583b5` |

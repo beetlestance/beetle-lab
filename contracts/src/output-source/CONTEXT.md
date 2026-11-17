@@ -18,5 +18,6 @@ preimages and independent manifest/result byte caps. Envelope verification match
 its complete receipt tuple but callers must still bind their retained original.
 Chunk verification requires the manifest-declared byte length, validates canonical
 base64 without decoding, and proves only provisional range values.
-Contract: docs/system/contracts/outputs-settlement.md and output-transfer.md.
+Contracts: docs/system/contracts/outputs-settlement.md#public-source-values and
+outputs-collection.md#source-transfer.
 Focused check: vitest run contracts/test/output-source.test.ts agent/test/output-source.

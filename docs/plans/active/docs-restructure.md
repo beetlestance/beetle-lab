@@ -4,8 +4,9 @@ Status: active. Phases 0–6 delivered on `docs/restructure` (not yet integrated
 The site in `site/` builds with valid links, is served at `/docs/` by the frontend
 image and is themed from the Penpot "Docs" page (home, guide, concept, reference,
 in-app and phone boards) using the Darkroom tokens. Phase 7 (quality pass) is done
-except the full image build. A coverage audit of Phase 2 is in progress. The triage
-below is kept as the record of where each former LLD went.
+except the full image build. A coverage audit of Phase 2 compared every deleted LLD
+with the contracts and code and restored the lost rules (namespace deletion now has
+its own `namespaces.md`). The triage below is kept as the record of where each former LLD went.
 Decision: [017](../../decisions/017-documentation-structure-and-delivery.md).
 
 ## Phases
@@ -37,7 +38,7 @@ automation client and the HTTP API (operations read from `http-operations.json`
 at build time); an interactive run walkthrough and load-shape builder; `llms.txt`;
 and a manual GitHub Pages workflow. Each page has a section breadcrumb and a lede.
 
-Phase 2 outcome: 16 contracts in `system/contracts/` (run lifecycle split into
+Phase 2 outcome: 17 contracts in `system/contracts/` (run lifecycle split into
 lifecycle and delivery; UI LLDs became the web UI contract), module map moved to
 `engineering/architecture.md`, decisions 019–028 recorded, and every `system/`
 page carries reviewed anchor stamps checked by `check:docs`.

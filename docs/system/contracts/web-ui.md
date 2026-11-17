@@ -34,12 +34,19 @@ feature's `CONTEXT.md`; the stack choice is [decision 019](../../decisions/019-f
 
 - Loading, empty, unavailable, stale, error and ready are distinct messages. An
   error hides cached figures or marks them unknown; missing values are never zero.
+  Exception: the run timeline keeps its rows on a read error and labels them
+  retained, not current (`runs/timeline/index.tsx`).
+- Artifact states are pending, absent, ready-empty and ready; an empty ready page
+  is not source-free absence.
 - Run state and outcome come from the application. An engine-reported result is
   labelled provisional until the run is terminal; cancellation requested is not
   stopped, runtime exit is not passed, and a terminal run does not imply that the
   event stream or publication is complete.
 - No synthetic progress, percentage with an unknown total, success badge after a
   browser hand-off, or download link before bytes are verified.
+- Event rows show plain labels only: never raw event JSON, private runtime
+  identifiers or filesystem paths. Event timestamps are for correlation, not
+  elapsed time.
 - Dynamic text is rendered as React text. Relative paths, IDs and names never
   become URLs except through route builders or the shared content-path helpers.
 
@@ -75,6 +82,11 @@ cursor is backlog to drain at the normal cadence, not a tight loop.
   unknown outcome needs an explicit status read, and replay reuses the identical
   request ID and body. Cancel aborts but claims no rollback; a partial input may
   remain on the server and the UI says so.
+- While an upload intent exists its file, name and folder are locked and one
+  in-flight guard refuses a second submission. A `deleting`, `deleted` or
+  `failed` record stops byte work with an explanation; the UI never recreates,
+  compensates or deletes on its own. Download controls are hidden while the
+  record is refreshing or pending deletion.
 - Download waits for the complete verified result before creating a Blob, with a
   generated `input-<UUID>.bin` name; a Save link needs explicit activation.
 - Run artifacts use a same-origin anchor from `runArtifactContentPath` with a fixed
@@ -89,6 +101,17 @@ modal dialog owns focus (Tab wraps, arrows move, Enter activates, Escape closes)
 captures the invoker and restores it on cancel, or focuses the main landmark after
 navigation. It closes on route change before another scope's queries run, uses the
 same query keys as list views, and closing it never cancels another observer.
+Control or Command+K opens it. An organisation scope searches its first page of
+workspaces; a workspace scope also searches its first pages of suites and runs. It
+ignores composition and repeated keystrokes, never takes focus from another modal
+and never resets an editor draft.
+
+## Editors
+
+The suite form and JSON views share one lossless draft; switching never drops
+unknown fields. Invalid JSON stays editable but blocks conversion and saving. A
+failed save keeps the draft; an unknown outcome offers replay of the identical
+request; a stale version offers a reload and never overwrites the newer revision.
 
 ## Overviews
 
@@ -105,7 +128,8 @@ The selected suite shows configuration summaries parsed from its immutable
 revision (target origin without credentials or path, at most 8 scenarios, literal
 durations only) and its latest retained run via a `suiteId` history filter. That
 filter is resolved under the workspace before any run read, and its cursors are
-bound to the suite; no retained runs does not mean never run.
+bound to the suite; no retained runs does not mean never run. Resetting ordinary
+filters keeps the suite context; an explicit workspace-history link clears it.
 
 ## Related
 

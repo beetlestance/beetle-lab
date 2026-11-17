@@ -89,7 +89,10 @@ finite before they are ordered.
 
 Queue, capacity, reservation and the physical supervisor are shared with
 performance runs. Failed or unknown work stays charged until physical stop and
-native collection or retirement proof.
+native collection or retirement proof. Export originals reserve cleanup control at
+admission, but no export retirement exists yet: performance retirement refuses export
+purpose and backend policy 1 funds only performance Runs, so export agent output stays
+retained and charged. Export cleanup must never present itself as a Run.
 
 ## Engine generation
 
@@ -103,6 +106,8 @@ native collection or retirement proof.
 
 A timeout or cancel never fabricates file absence or a refund; cleanup failure stays
 explicit until physical stop. Only verified native custody publishes the file.
+The script embeds the revision's inline datasets and request bodies, so it is as
+sensitive as the suite itself.
 
 ## Metadata, accounting and publication
 

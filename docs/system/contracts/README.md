@@ -19,7 +19,8 @@ rereads the contract, corrects it and runs `npm run docs:stamp -- <file>`.
 | Dispatch claims, delivery, event custody, scheduling | [Run delivery](run-delivery.md) |
 | Producing, staging, transferring and downloading outputs | [Outputs collection](outputs-collection.md) |
 | Finalising, settling, adopting and deleting outputs | [Outputs settlement](outputs-settlement.md) |
-| Removing retained output, namespaces and workspaces | [Retirement](retirement.md) |
+| Removing retained output | [Retirement](retirement.md) |
+| Deleting organisations and folders, retiring workspaces | [Namespaces](namespaces.md) |
 | Cold backup, historical restore and recovery control | [Recovery](recovery.md) |
 | Capacity, reservations, resource observations, timeouts | [Resources](resources.md) |
 | Installing, packaging, starting and identity binding | [Installation](installation.md) |

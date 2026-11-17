@@ -15,10 +15,9 @@ are in [output collection](outputs-collection.md); agent native cleanup is in [r
 | Source-free | `OutputAbsence` (Journal 014) | absence proof and receipt (backend 012) | C + R + 65536 metadata + 65536 control | backend 2560, agent 4096 |
 | Positive unsent | none | unsent witness only | 65536 control | backend 2560 |
 
-C is charged event bytes (canonical + 128 per row), M the canonical manifest, A the declared artifact
-bytes, R the provisional result (or zero), P the original `Offer.budget.outputBytes`. Proofs, receipts
-and both receipt families mutually exclude. A missing source is never a verified absence, and missing
-evidence never becomes a fabricated passed Run.
+C is charged event bytes (canonical + 128 per row), M the manifest, A declared artifact bytes, R the
+provisional result (or zero), P the original `Offer.budget.outputBytes`. Receipt families and their proofs
+mutually exclude. A missing source never proves absence, and missing evidence never yields a passed Run.
 
 ## Public source values
 
@@ -56,9 +55,8 @@ Source commit and physical release do not close the event stream. `closeOutputDe
   (`delivery_bytes`, never refunded). Equal replay returns the stored closure without a second charge.
 - A closure fences unseen event inserts and changes to sequence, high-waters, result and checkpoint.
   Exact duplicate replay, ACK, pruning and non-event cancellation metadata stay available.
-- Indexed `delivery_pending` is set with the source and cleared only with the closure. The scheduler's
-  delivery lane pages 1–32 below a captured upper ID; it rotates charged, delivery and queued lanes
-  over the same 64 drive slots.
+- Indexed `delivery_pending` is set with the source, cleared only by closure. The scheduler's delivery
+  lane pages 1–32 below a captured upper ID, sharing 64 drive slots with the charged and queued lanes.
 - The Manager closes only after it marks the entry retiring, drains every public lease except the
   closing drive, drains preparation and watch/timeout closes, then rereads and drains the final
   cancellation chain and closes controller and supervisor. An ambiguous or quota-failed close keeps
@@ -68,12 +66,14 @@ Source commit and physical release do not close the event stream. `closeOutputDe
 ## Adoption
 
 `OutputCustodyStore` (`app/src/ports/output-custody.ts`) runs in the metadata worker, serialised with
-event ingest. Before adoption C + S + D ≤ P (S: provisional result carrier); afterwards
-C + M + A + D ≤ P (D: any extra persisted copy). The manifest, including its result, counts once as
-payload. Both the application preflight and native SQL enforce these sums; no adoption changes the
-installation charge. One `execution_output_payloads` row holds a result (≤ 65536 bytes) or the manifest
-(≤ 73728); an atomic update replaces the result with its manifest, which is then immutable. The
-execution snapshot is a result-free header ≤ 2048 bytes with a monotonic `result_observed` flag.
+event ingest. Before adoption C + S + D ≤ P (S: provisional result carrier); afterwards C + M + A + D ≤ P
+(D: any extra persisted copy). The manifest, including its result, counts once as payload. Both the
+application preflight and native SQL enforce these sums; no adoption changes the installation charge. One
+`execution_output_payloads` row holds a result (≤ 65536 bytes) or the manifest (≤ 73728); an atomic update
+replaces the result with its manifest, which is then immutable. The execution snapshot is a result-free
+header ≤ 2048 bytes with a monotonic `result_observed` flag. Header-only admission and release updates use
+the metadata allowance and succeed even when P cannot hold a result; a result that does not fit refuses
+its own transaction without being dropped, enlarging P or acknowledging events.
 
 - Request ≤ 79872, state ≤ 65536, cursor ≤ 1024 bytes, scan 1–32. Adoption validates the envelope
   digest, seal and physical UUID, scope, intent, engine and installed identity against the retained
@@ -119,29 +119,31 @@ the Run, closes `event_pending` and then fences events, cursors, slots, snapshot
 
 ## Source-free closure
 
-Journal `closeOutputAbsence(scope)` runs only after the Manager's native retirement barrier and derives
-every fact from stored owners. `OutputAbsence` (≤ 2048 bytes) binds scope, intent, physical Journal
-UUID, `finalAgentSeq`, rejected or released admission and a reason. Eligible: rejected with no
-reservation; never started (no create or start token, reservation aborted); settled with failed
-collection. Never eligible with a committed source, a pending intent, unknown launch or release, or a
-timeout. Closure charges proof bytes + 256, fences later launch, collection and source work, and is
-cleared from indexed absence debt only by closure.
-
-`OUTPUT_REJECTION_REASONS` maps: cancellation → `cancelled`; `staging_policy` → `setup_failed`;
-unsupported, unapproved or controls unavailable → `unsupported_capability`; minimum, ceiling or
-impossible request → `budget_unavailable`. Outcomes are cancelled or errored/inconclusive, never
-finished: a system cause wins, then persisted user cancellation. The backend (`app/src/ports/output-absence.ts`,
-≤ 4096 bytes) adopts one canonical proof only when no source, manifest or slot exists, then finalises
-with header `lastSeq` = `finalAgentSeq`, full ACK, and credits P − (C + R) once.
+Journal `closeOutputAbsence(scope)` runs only after the Manager's native retirement barrier and reads
+every fact from stored owners. `OutputAbsence` (≤ 2048 bytes) binds scope, intent, physical Journal UUID,
+`finalAgentSeq`, rejected or released admission and a reason. Eligible: rejected with no reservation;
+never started (no create or start token, reservation aborted); settled with failed collection. Never with
+a committed source, pending intent, unknown launch or release, or timeout. Closure charges proof bytes
++ 256, fences later launch, collection and source work, and alone clears indexed absence debt.
+`OUTPUT_REJECTION_REASONS` maps cancellation → `cancelled`, `staging_policy` → `setup_failed`,
+unsupported, unapproved or unavailable controls → `unsupported_capability` and minimum, ceiling or
+impossible request → `budget_unavailable`. A never-started original reports its durable stop reason, else
+`setup_failed`; a settled one with failed collection its typed stop or exit reason, else
+`artifact_incomplete`. Outcomes are cancelled or errored/inconclusive, never finished: a system cause
+wins, then persisted user cancellation. A proof whose only reason is `cancelled` (a runner stop, not user
+intent) waits for the backend's persisted cancellation. The backend (`app/src/ports/output-absence.ts`,
+≤ 4096 bytes) adopts one canonical proof only if no source, manifest or slot exists, then finalises with
+header `lastSeq` = `finalAgentSeq` and full ACK, crediting P − (C + R) once.
 
 ## Deletion
 
 `beginOutputDeletion` (`app/src/adapters/outbound/sqlite/output-deletion`, migration 013) admits one
-intent per Run: terminal with a matching source or absence receipt, released execution and closed
-events, or a positively unsent attempt (no execution, outbox or allocation). Begin replay by request
-receipt precedes version checks. Source intents pin every published slot (≤ 128). No row, charge or
-usage changes; the intent excludes new artifact reads. `files_absent` means only that every captured
-backend file has an exact receipt.
+intent per Run: terminal with a matching source or absence receipt, released execution and closed events,
+or a positively unsent attempt (no execution, outbox or allocation; missing or legacy rows never prove
+it). Begin replay by request receipt precedes version checks. Source intents pin every published slot
+(≤ 128). No row, charge or usage changes; the intent excludes new artifact reads, and a reader already
+holding a file's token blocks its preparation and removal until the read physically settles.
+`files_absent` means only that every captured backend file has an exact receipt.
 
 | File phase | Next step | Rule |
 | --- | --- | --- |
@@ -164,10 +166,13 @@ rules form a union; unknown completed bytes poison storage selection only. Activ
 or cleaning work is excluded. A preview reads at most 100 Run headers per page with a stored prefix.
 
 - A page reserves 131072 logical bytes, at most 8 live pages; the first preview in a workspace pays a
-  permanent 512-byte epoch row. Pages are immutable and replay for 15 min.
-- A workspace epoch advances on selection-relevant changes; continuation and Apply reject a changed
-  epoch or settings version. Apply begins all captured candidates (≤ 100) atomically through the
-  receipt-first Begin owner, or none.
+  permanent 512-byte epoch row. Pages are immutable; a preview replays for 15 min. Full slots refuse a new
+  page and never evict an applied one (`app/src/adapters/outbound/sqlite/retention-accounting`).
+- Apply refuses missing, consumed or expired pages. An expired unapplied preview may be swept, refunding
+  only its charge. An applied page stays charged until all members settle permanently, then expires 15 min
+  after that is first observed or on acknowledgement; a Run vanishing unsettled is an error.
+- A workspace epoch advances on selection-relevant change; continuation and Apply reject epoch or
+  settings-version drift. Apply begins all ≤ 100 captured candidates or none via receipt-first Begin.
 - Parent previews walk one workspace per turn with a captured horizon and never combine budgets.
 
 ## Settlement
@@ -180,11 +185,12 @@ grant a refund; uncertainty keeps all debt.
    canonical cleaned reply (`contracts/src/output-settlement`).
 2. The agent fences new retirement, inventory, removal and receipt work on that original
    (`agent/src/cleanup-access`: 64 originals, 256 leases, 2 fences) and drains their originals.
-3. Journal 022 atomically inserts a permanent tombstone (≤ 3584 + 512 bytes), purges the original's
-   rows, removes its disk hold and moves 4096 bytes into replay debt. The reply binds request,
-   cleaned-reply and tombstone digests.
-4. Backend migration 024 inserts its 2560-byte tombstone, purges per-Run rows and credits the remaining
-   retained payload, metadata and control once. Global receipts, revisions, input pins and blobs stay.
+3. Journal 022 atomically writes a tombstone (≤ 3584 + 512 bytes), purges the original's rows and disk
+   hold and moves 4096 bytes to replay debt; replies bind request, cleaned-reply and tombstone digests.
+4. Backend migration 024 requires the terminal one-attempt original with no dispatch outbox row, no export
+   job linked to the attempt or its queue order, every backend file receipt, the retained closure and
+   events and the cleaned ACK. It inserts its 2560-byte tombstone, purges per-Run rows and credits the
+   remaining payload, metadata and control once. Global receipts, revisions, input pins and blobs stay.
 
 Each store has its own transaction; neither infers the other's commit. Recovery finishes from
 agent-tombstoned, backend-charged state; lost replies replay from the tombstone, and the retirement
@@ -205,9 +211,9 @@ settles in the backend alone. Rejected never-admitted originals use a 16384-byte
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/src/output-source/` | `ac1ff4ffaf38` |
+| `contracts/src/output-source/` | `d32797703a20` |
 | `agent/src/journal/output-delivery-protocol.ts` | `23234170ace9` |
 | `app/src/adapters/outbound/sqlite/output-finalization/` | `df83afd04c18` |
-| `app/src/adapters/outbound/sqlite/output-absence/` | `2a097be159bb` |
+| `app/src/adapters/outbound/sqlite/output-absence/` | `bd7025b7daeb` |
 | `app/src/adapters/outbound/sqlite/output-deletion/` | `eebe77ff17c8` |
 | `app/src/adapters/outbound/sqlite/backend-settlement/` | `bdbe22e13010` |

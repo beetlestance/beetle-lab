@@ -11,4 +11,4 @@ Progress prepared1→cleaning2→one step per removed entry→files_absent. Rece
 that final progress plus original/request/namespace/plan identity. Native owner,
 Journal persistence and replay-safe settlement remain separate required proofs.
 Export controls reserve capacity; these performance codecs grant no export cleanup.
-Owner docs/system/contracts/outputs-collection.md and output-retirement.md.
+Owner docs/system/contracts/outputs-collection.md and retirement.md.

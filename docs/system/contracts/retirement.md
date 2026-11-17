@@ -1,8 +1,8 @@
 # Retirement
 
 Retirement removes a performance Run's retained agent output after the backend has
-removed its own published files, and retires empty namespaces or used workspaces.
-The backend owns deletion intent, request projection, dispatch and ACK storage
+removed its own published files; namespace deletion and workspace retirement are in
+[namespaces](namespaces.md). The backend owns deletion intent, request projection, dispatch and ACK storage
 (`app/`); the agent owns producer fencing, runtime removal, native inventory, removal
 and the cleanup receipt (`agent/`). The wire values live in `contracts/src/output-retirement`.
 
@@ -111,6 +111,12 @@ entries, then closes receipt, removal, inventory, runtime and producer owners.
   Never-started originals need positive no-token/no-runtime facts and issue no mutation.
   A mailbox volume is removed only with a persisted runtime association; a cold
   missing container with an unassociated volume stays unresolved.
+- Retirement intent (`agent/src/journal/retirement/eligibility.ts`): begin needs
+  performance purpose, the current Journal authority, control version 1, a released
+  admission reservation, a bound installed namespace and a matching closure whose last
+  sequence equals `finalAgentSeq` and is acknowledged; a changed source root or task
+  anchor is `recovery_required`. Preflight and begin share one validator; begin never
+  relies on preflight.
 - Durable SQL guards fence admission, preparation, launch, collection and source
   publication after the intent; read-only replay and observation stay available.
 
@@ -153,6 +159,9 @@ The ledger row is immutable; exact replay never charges again. Originals without
 ledger row are positively unreserved and need explicit `reserveControl` top-up under
 current storage policy before deletion preparation, removal or agent retirement.
 Insufficient capacity rolls enqueue back or defers cleanup; data and charges stay.
+At delivery the claim adds only the control an original still lacks (nothing for a
+funded Run, 65 536 bytes for a legacy one); a failed claim rolls back its new output
+charges and keeps any earlier enqueue reservation.
 
 ## Backend projection, dispatch and ACK
 
@@ -163,8 +172,9 @@ Insufficient capacity rolls enqueue back or defers cleanup; data and charges sta
 - The driver (`app/src/application/output-deletion-runtime`) is one sequential child
   alternating file progress, retirement and settlement turns, each with a fixed 30 s
   budget including discovery. Retirement discovery buffers ≤32 candidates with a
-  finite cursor. `pending` and transient replies defer; permanent or unknown failures
-  fence and notify.
+  finite cursor. `pending` defers. Transport failures, timeouts and `retry: transport`
+  errors back off from 1 s, doubling to 30 s, reuse the same request and reset after a
+  validated reply; any other refusal fails the turn.
 - The ACK transaction re-derives the expected request (never a caller snapshot),
   captures the cleaned reply and stores one canonical body ≤4096 bytes per deletion
   (cost body + 512) through a statement-scoped permit checked by an SQL function; raw
@@ -179,33 +189,16 @@ never-started originals use separately funded branches (`agent/src/no-task-recei
 `agent/src/rejected-cleanup-policy`, Journal 023–024) that verify absence without
 unlinking and never borrow the other branch's funding.
 
-## Namespace deletion and workspace retirement
+## Retired runtime association
 
-Owned by `app/src/adapters/outbound/sqlite/namespace-deletion` and `workspace-retirement`.
-
-| Target | Rule |
-| --- | --- |
-| Organisation | Empty only: no workspace, including retired ones |
-| Folder (non-root) | Empty only: no child, suite or input; root folder refuses |
-| Workspace | Retired: hidden but retained with name, root, settings, history, receipts, pins and paid storage |
-
-- One `BEGIN IMMEDIATE` reads the receipt first, then scope (wrong owner is
-  `not_found`), expected version and quiescence. Exact replay returns the original
-  acknowledgement; changed reuse conflicts; a fresh request for a retired one is `not_found`.
-- Migration 026 writes a permanent marker ≤2048 bytes charged against installation
-  storage; full capacity refuses atomically. Deleted entity, root and settings IDs,
-  including case aliases, can never be reused. No marker expiry or refund.
-- Migration 028 adds an irreversible retired flag and moves the private unique name
-  key to a reserved value, so a new workspace UUID may reuse the visible name.
-- Active or unresolved Run/export work and unfinished input intake refuse retirement;
-  already-issued private work keeps its authority, new mutation and unissued Apply do not.
-- Workspace-scoped HTTP routes check visibility after authorisation, before body
-  work (`app/src/adapters/inbound/http/workspace-visibility.ts`); SQL is the final
-  guard. "Cleanup complete" means visibility or metadata retirement, never freed bytes.
+Before container deletion the journal commits one immutable record of the inspected
+stopped runtime, spec and mailbox volume (≤ 1536 bytes in the 2048-byte bucket of
+`agent/src/cleanup-control/limits.ts`); an unknown commit permits no delete. Cold
+recovery reuses only an exactly matching record and still proves absence first.
 
 ## Related
 
-- [Recovery](recovery.md), [outputs settlement](outputs-settlement.md), [decision 020](../../decisions/020-workspace-retirement.md)
+- [Recovery](recovery.md), [outputs settlement](outputs-settlement.md), [namespaces](namespaces.md)
 - [Decision 018: Docker host trust boundary](../../decisions/018-docker-host-trust-boundary.md)
 
 ## Anchors
@@ -213,8 +206,7 @@ Owned by `app/src/adapters/outbound/sqlite/namespace-deletion` and `workspace-re
 | Code | Reviewed |
 | --- | --- |
 | `contracts/src/output-retirement/` | `c1bc68c41dce` |
-| `agent/src/cleanup-control/` | `536408e719ae` |
+| `agent/src/cleanup-control/` | `49ca57b746aa` |
 | `agent/src/retirement-pipeline/` | `21c98245ff15` |
 | `agent/src/transport/retirement.ts` | `85e8075fb6ed` |
 | `app/src/adapters/outbound/sqlite/output-deletion/` | `eebe77ff17c8` |
-| `app/src/adapters/outbound/sqlite/namespace-deletion/` | `9a2881fbfa8e` |

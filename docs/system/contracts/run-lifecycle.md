@@ -76,8 +76,12 @@ input envelope at most 148608 bytes, exact identity and generation 1.
   At equal `lastSeq` snapshots must be canonically equal; a difference fails.
 - Across sequences the later projection wins, validated for forward consistency
   in either arrival order. Result and exit never change or disappear; phase never
-  rewinds; `offered` follows nothing; `stopping` → `lost` | `exited`; `lost` →
-  `exited`. Active states are not ranked: `running` → `preparing` is legitimate.
+  rewinds; `offered` follows nothing; `admitted` follows only `offered` or
+  `admitted`; `stopping` → `lost` | `exited`; `lost` → `exited`. Active states are
+  not ranked: `running` → `preparing` is legitimate. Wrapper phase and result may
+  still arrive after a terminal state.
+- Each snapshot needs `retainedStartSeq ≤ lastSeq + 1`, checked without overflow. An
+  older reply never adds a witness that the retained higher-sequence snapshot lacks.
 - Independent facts: remote cancel flag ORs inside the snapshot; retained-start
   cursor takes the maximum; admission merges by its partial order below.
 - Public `cancellationRequested` stays backend user intent; the remote flag (also
@@ -136,11 +140,18 @@ inserted the receipt, an immutable `cancelled_originals` marker projecting admis
 `rejected`/`cancelled` with no queue, reservation or launch. A later identical PUT
 returns that receipt. If PUT won first, execution may exist and stays charged until
 release. Unknown-route responses from older agents retain uncertainty; no PUT fallback.
+A marker found alongside any queue entry, reservation, event or native evidence means
+the journal is corrupt, and the read fails closed (`agent/src/journal/fresh-refusal.ts`).
+The marker lives as long as its receipt, so pruning never lets the Offer be admitted
+later; an older receipt without admission facts stays unknown and never gains one.
 
 ## Stop reasons
 
 The agent supervision transaction stores the first stop cause: `cancelled`,
-`timeout`, `output_limit`, `artifact_incomplete` or `clock_integrity`. First cause
+`timeout`, `output_limit`, `artifact_incomplete` or `clock_integrity`. A command may
+name a reason only with `cancel: true` (otherwise `invalid_input`); without one the
+cause is `cancelled`. A control-intake or checkpoint failure requests
+`artifact_incomplete`, never a user cancellation. First cause
 wins across repeats, races and restart. `stop_immediate` is sticky and can escalate
 a graceful user cancel without changing attribution. `cancelRequested` means any
 stop was requested, not user cancellation. Runner HTTP cancel supplies only

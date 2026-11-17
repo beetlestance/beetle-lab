@@ -28,3 +28,9 @@ Private live HTTP is wired to existing Supervisor ownership, never actor creatio
 
 Startup/shutdown diagnostics expose at most four allow-listed cause codes, never
 error text, stack, paths or credentials. Diagnostic failure cannot block cleanup.
+
+Startup order: reserve the single process owner, then check installation root,
+daemon binding, installed images and the ready authority gate against the journal
+UUID before opening the journal; then start guards, the publisher, then the
+scheduler. Ready to admit only after the publisher commits an observation. At most
+one failed runtime owner is kept.

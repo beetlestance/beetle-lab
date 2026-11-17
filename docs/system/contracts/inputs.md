@@ -59,8 +59,11 @@ secret or content.
   transitions increment `version`; an identical replay does not.
 - Progress requires `staging` and a strictly increasing offset no larger than
   `bytes`. Seal consumes its intent only from `staging` with `offset == bytes`.
-- Failure fences `staging`, `publishing` and `published` as `failed`. No
-  transition leaves `failed` except deletion. `deleting` keeps its state and
+- Only a conclusive custody failure (`custody_missing`, `integrity`), recorded
+  after every original has settled, fences `staging`, `publishing` or `published`
+  as `failed` (`app/src/application/inputs/reconcile.ts`). Transient IO and
+  cancellation leave state and charge unchanged; `io` is recorded only on a
+  `deleting` row. No transition leaves `failed` except deletion. `deleting` keeps its state and
   intent on cleanup failure, with a fixed safe reason; recovery finishes it
   without another delete key. `deleted` rejects every change.
 - Failure reasons: `custody_missing`, `integrity`, `io`, `unverified_legacy`.
@@ -209,7 +212,7 @@ use published inputs rather than inline configuration.
 | --- | --- |
 | `app/src/ports/inputs.ts` | `ddcd023c1de1` |
 | `app/src/application/inputs/` | `f76f53c33d78` |
-| `app/src/adapters/inbound/http/inputs/` | `df861515601c` |
+| `app/src/adapters/inbound/http/inputs/` | `5f11cd4f171e` |
 | `contracts/src/api/input-content.ts` | `400faeeef3df` |
-| `contracts/src/api/input-transfer/` | `1bd710c6b3d0` |
+| `contracts/src/api/input-transfer/` | `08031bccad73` |
 | `engines/k6/compiler/suite/limits.ts` | `9ad3f563ce87` |

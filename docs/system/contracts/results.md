@@ -23,9 +23,11 @@ Every ceiling is carved from the accepted Offer output budget by
 ceiling. Order of carving: control clamp(total/32, 64 KiB, 64 MiB), numeric 1 MiB
 (including 4096 B warnings and 32 KiB diagnostics), result 64 KiB, summary 1 MiB,
 reports 512 KiB, target 1 MiB if enabled, live min(8 MiB, total/8) if enabled; of the
-remainder, history takes ≤ min(256 MiB, quarter) and build ≤ 89 MiB. History or build
-below 64 KiB, or a collect phase with less than 64 KiB drain room, fails
-`output_limit` before native load. Charged bytes count once, in the phase that wrote them.
+remainder, history takes ≤ min(256 MiB, quarter) and build ≤ 89 MiB. History is
+further capped at the execute-phase allowance less the 1 MiB summary reserve and the
+live allowance. History or build below 64 KiB, or a collect phase with less than
+64 KiB drain room, fails `output_limit` before native load; history is never
+silently disabled or thinned. Charged bytes count once, in the phase that wrote them.
 
 All artefacts share one custody rule (`engines/k6/wrapper/artifact-custody`):
 exclusive no-follow create, mode 0600, expected UID, one link, streaming SHA-256
@@ -48,7 +50,9 @@ and no speculative unlink runs. Only the atomic published manifest authorises re
 Unoccupied intervals are never written as zero observations. Readiness-scoped values
 never enter history. Every frame, header and footer byte is charged before its write;
 an excess is `output_limit`, never silently truncated history. Footer room is reserved
-before records are accepted. Crash prefixes are not evidence. Enforced by
+before records are accepted. Crash prefixes are not evidence. A partial archive never
+gets a sealed descriptor or `windowsRetained: true`, and a failed archive cleanup
+fails the attempt. Enforced by
 `engines/k6/wrapper/attempt/archive`.
 
 ## Run result read
@@ -65,6 +69,8 @@ marks publication or outcome (`app/src/adapters/inbound/http/runs/result.ts`).
 ## Historical metric reads
 
 `…/attempts/{attemptId}/metrics` lists series; `…/metrics/samples` reads one ordinal.
+A read for an earlier attempt uses that attempt's own published artefacts, never the
+Run's current engine or head pins.
 
 | Limit | Value |
 | --- | --- |
@@ -106,7 +112,7 @@ Advisory only; never a verdict input and never a substitute for sealed history.
 | Mailbox | dedicated tmpfs volume at `/beetle/live`, 128 KiB and 4 inodes, carved from the temporary allocation ([decision 013](../../decisions/013-live-metric-mailbox-custody.md)) |
 | Envelope | `BLIVE001`, 128 B head and footer around a 65536 B payload (65792 B total); revision 1..65536 equals `publishedSequence`; payload is gzip, decoded ≤ 64 KiB |
 | Budget | ≤ min(8 MiB, total/8, execute/8), taken from history; the 65792 B extent and every write are charged to execute |
-| Agent read | ≤ 5 s, two of the 32 shared transport credits; capture, window end and publication ≤ 6 s old, never future; returns `X-Beetle-Live-Fresh-For-Ms` ≤ 6000 |
+| Agent read | ≤ 5 s, two of the 32 shared transport credits; capture, window end and publication ≤ 6 s old, never future; returns `X-Beetle-Live-Fresh-For-Ms` ≤ 6000; a missing, malformed or exhausted header makes the snapshot unavailable |
 | Backend | `…/metrics/live`, resolves scope, run and active attempt before and after IO; ≤ 64 KiB reply; 5 s lifetime |
 | Browser | polls the visible selected active attempt every 2 s after the previous read settles; switches to sealed history at terminal state |
 
@@ -115,16 +121,20 @@ monotonic elapsed time, so clock offsets between services never extend the 6 s a
 Unchanged revisions keep their original timestamps and expiry. A truncated, mixed or
 mis-hashed mailbox image, plaintext payload, regression or overlap is `unavailable`
 without retry. A safe producer failure leaves the outcome alone; failed producer
-cleanup prevents sealing. The image marker `BEETLE_K6_LIVE_METRICS_V2=1` enables the
+cleanup prevents sealing. Advisory producers never throw into the native drain or
+the authoritative metric callback. A duplicate, overlapping or out-of-order window,
+or a counter or clock overflow, permanently disables the live producer with a fixed
+status. Publication starts after the measured-phase transition and drains before
+collect begins. The image marker `BEETLE_K6_LIVE_METRICS_V2=1` enables the
 profile; a suite or Offer cannot.
 
 ## Derived presentation
 
 | Producer | Rules |
 | --- | --- |
-| Performance report (`engines/k6/report`) | text and CSV derived from the mapped result and admitted numeric snapshot; ≤ 4600 series; overflow rejects the whole report with `output_limit`; blank CSV cells mean unavailable; leading formula characters neutralised; no rate recomputation or percentile averaging |
-| k6 warnings (`engines/k6/wrapper/process/warnings.ts`) | classifier keeps ≤ 4096 B per line, ≤ 65536 B per chunk; counts insufficient VUs, high cardinality, max duration and other; unknown or discarded input makes coverage `partial`; no raw message, URL or request data persisted |
-| Target runtime (`engines/k6/wrapper/target-sampling`) | one fetch at a time, `redirect: error`, no credentials, ≤ 64 KiB per body; interval 1000..60000 ms, timeout 100..5000 ms (≤ interval), cooldown 0..60000 ms inside execute; stops and marks `limited` at 256 samples or 1 MiB |
+| Performance report (`engines/k6/report`) | text and CSV derived from the mapped result and admitted numeric snapshot, never from configuration, target URLs, headers, request bodies, datasets or secrets; ≤ 4600 series; overflow rejects the whole report with `output_limit`; blank CSV cells mean unavailable; leading formula characters neutralised; no rate recomputation or percentile averaging |
+| k6 warnings (`engines/k6/wrapper/process/warnings.ts`) | classifier keeps ≤ 4096 B per line, ≤ 65536 B per chunk; counts insufficient VUs, high cardinality, max duration and other; unknown or discarded input makes coverage `partial`; counters count log records, not incidents or dropped iterations, and a zero under partial coverage proves nothing; an arrival hint appears only for a single arrival-rate scenario, and its median comes only from the execute-scoped global `iteration_duration` trend, never request latency; no raw message, URL or request data persisted |
+| Target runtime (`engines/k6/wrapper/target-sampling`) | one fetch at a time, `redirect: error`, no credentials, ≤ 64 KiB per body; interval 1000..60000 ms, timeout 100..5000 ms (≤ interval), cooldown 0..60000 ms inside execute; stops and marks `limited` at 256 samples or 1 MiB; the path is relative under the compiled target, with no query or fragment and no segment that changes the origin; a failed reading only marks that sample unavailable, but failing to write, verify or seal `target-runtime.json` fails the execution |
 | Load advice (`web/src/features/runs/load-advice`) | dropped load needs one execute `dropped_iterations` counter with empty tags; planning needs complete coverage and one execute `iteration_duration` trend; VUs = ceil(median s × rate × (1 + headroom/100)); inputs ≤ 16 characters, rate ≤ 1000000, headroom 0..500 % (default 20 %) |
 
 Warnings and target readings are advisory; they never change assertions or
@@ -150,7 +160,11 @@ on session, scope, attempt or artefact change without releasing unsettled origin
 Identity, version, active attempt and pinned revision are rechecked after source
 reads. Differences are facts with fixed warnings (unknown secret version, target
 revision or contention, sampler disabled, missing or partial result, limited diff,
-metric unavailable or partial); they never claim runs are comparable. Owner:
+metric unavailable or partial); they never claim runs are comparable. Engine result
+summaries never override a Run's application outcome. Without a metric selection no
+metric bytes are read, and a series ordinal is never a cross-run identity. Equal
+revision pins skip the diff only after their content is proven equal; equal pins
+with different content fail. Owner:
 `app/src/application/run-comparison`.
 
 ## Resource observation publisher
@@ -160,9 +174,10 @@ observation that admission reads. Interval 250 ms (10..5000), sample timeout
 1000 ms (10..30000), freshness TTL 2000 ms (100..300000, greater than both); one
 sample and one write original, one pending observation, snapshots ≤ 16 KiB.
 Readiness needs a fresh acknowledged known sample while both output and timeout
-guards are ready. Guard loss, expiry, clock failure or a rejected write publishes a
-full unknown observation with zero capacity, and only a strictly newer complete
-sample restores readiness. `snapshot()` returns the acknowledged frame with its
+guards are ready. Guard loss, expiry or clock failure publishes a full unknown
+observation with zero capacity, and only a strictly newer complete sample restores
+readiness. A `stored: false` reply only revokes readiness; a rejected or failed
+journal write stops the publisher permanently, with no retry, and close then fails. `snapshot()` returns the acknowledged frame with its
 original expiry; reads never renew it. Close publishes a final unknown revocation;
 a failed revocation keeps ownership and rejects close.
 

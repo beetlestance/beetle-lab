@@ -149,6 +149,8 @@ stop cause must never be remapped to satisfy an older constraint.
 - Failure rolls back and closes the startup connection; schema 19 stays for retry.
   `user_version` 20 commits with the edit. Unknown reason values remain invalid.
 - Schema 20 does not promise downgrade to an older image once new reasons persist.
+  The downgrade helper exists only for synthetic tests and never touches user data.
+- Serving connections always run with SQLite defensive mode on.
 
 Test: `app/test/storage/clock-reason/migration.test.ts`.
 

@@ -16,5 +16,5 @@ Close synchronously fences intake, aborts carriers and returns a cached drain.
 Failed cleanup prevents operation success and rejects close after all drains.
 No automatic retries. An adapter ignoring abort can keep the operation pending.
 
-Owning design: `docs/system/contracts/inputs.md` and `input-http.md`.
+Owning design: `docs/system/contracts/inputs.md#transport-rules`.
 Focused check: `node_modules/.bin/vitest run contracts/src/api/input-transfer --maxWorkers=1`.
