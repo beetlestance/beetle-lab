@@ -1,3 +1,4 @@
+import { sqlTextColumn, sqlIntegerColumn } from './sql-columns.js';
 import { validateApi } from '@beetle/contracts/api';
 import type { Organization, Workspace, WorkspaceScope } from '@beetle/contracts/api';
 import { sameScope } from '../../../domain/namespaces/index.js';
@@ -27,18 +28,13 @@ export function namespaceColumns(kind: 'organization' | 'workspace' | 'folder', 
   }[kind];
   return [
     ...fields.map((name) => {
-      const column = alias + name;
       const maximum = name === 'name' ? 512 : name === 'slug' ? 128 : 45;
-      const nullable = name === 'parent_id';
-      return `CASE ${nullable ? `WHEN ${column} IS NULL THEN NULL` : ''}
-      WHEN typeof(${column})='text' AND length(CAST(${column} AS BLOB))<=${maximum}
-      THEN ${column} ELSE ${nullable ? "''" : 'NULL'} END AS ${name}`;
+      return sqlTextColumn(name, maximum, name === 'parent_id', alias);
     }),
-    alias + 'version',
+    sqlIntegerColumn('version', false, alias),
   ].join(',');
 }
-export const namespaceIdColumn =
-  "CASE WHEN typeof(id)='text' AND length(CAST(id AS BLOB))<=45 THEN id ELSE NULL END AS id";
+export const namespaceIdColumn = sqlTextColumn('id', 45);
 export function captureNamespaceId(input: unknown): { id: string } {
   const parsed = validateApi('Uuid', record(input).id);
   if (!parsed.ok || parsed.value !== parsed.value.toLowerCase()) return unavailable();

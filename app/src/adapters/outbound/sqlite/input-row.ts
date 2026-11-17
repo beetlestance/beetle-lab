@@ -1,3 +1,4 @@
+import { sqlTextColumn, sqlIntegerColumn } from './sql-columns.js';
 import { validateApi } from '@beetle/contracts/api';
 import type { WorkspaceScope } from '@beetle/contracts/api';
 import type { InputRecord } from '../../../ports/inputs.js';
@@ -16,14 +17,10 @@ const textColumns: [string, number, boolean][] = [
 ];
 /** Fixed owner-defined projection; invalid nullable values cannot become null. */
 export const inputColumns = [
-  ...textColumns.map(
-    ([name, maximum, nullable]) => `CASE ${nullable ? `WHEN ${name} IS NULL THEN NULL` : ''}
-  WHEN typeof(${name})='text' AND length(CAST(${name} AS BLOB))<=${maximum} THEN ${name}
-  ELSE ${nullable ? "''" : 'NULL'} END AS ${name}`,
-  ),
-  'bytes',
-  'offset',
-  'version',
+  ...textColumns.map(([name, maximum, nullable]) => sqlTextColumn(name, maximum, nullable)),
+  sqlIntegerColumn('bytes'),
+  sqlIntegerColumn('offset'),
+  sqlIntegerColumn('version'),
 ].join(',');
 export function inputRecord(input: unknown, expected?: WorkspaceScope): InputRecord {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new StorageError('unavailable');
