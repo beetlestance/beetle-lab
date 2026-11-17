@@ -50,13 +50,19 @@ and that profile invalidates its session on restart.
 | result | --organization, --workspace, --run | Result snapshot; absent result stays null |
 | cancel | Same scope/run flags and --request-file | Cancellation receipt; not proof of physical stop |
 | compare | --request-file | Two through four terminal runs, baseline first |
+| export | --request-file; optional --wait-ms | Acknowledged export job, or final/pending job |
+| export-status | --organization, --workspace, --export; optional --wait-ms | Authoritative export job and waiting flag |
+| export-download | Same scope/export flags and --out | Ready script written to a new file, size and SHA-256 checked |
 
 All commands require endpoint, origin and session-file. Request JSON uses the
 [generated API schemas](../contracts/api/v2/http-operations.json); run/cancel include
-an explicit stable requestId. Request files are at most 4 KiB. Suite/revision creation
-and large input upload remain existing API/UI operations. This client does not yet
-claim a validate or script-export command. Engine preflight still occurs under
-execution admission; a submitted queue entry is not a validated or passed test.
+an explicit stable requestId (export too). Request files are at most 4 KiB.
+Suite/revision creation and large input upload remain existing API/UI operations.
+Export exits 0 ready, 3 failed or unknown, 4 cancelled, 5 still pending. Download
+needs a ready job, creates the --out file exclusively (0600, never overwritten) and
+removes it if the bytes or SHA-256 differ from the job. There is no validate command:
+engine preflight occurs only under execution admission, so a submitted queue entry
+is not a validated or passed test.
 
 Use run --wait-ms for CI test outcome. Waiting is bounded to one hour and checks
 status every 2 s. It never cancels the underlying run on timeout or client interruption.

@@ -20,6 +20,8 @@ Late replies cannot upgrade timeout to passed. Output is one bounded JSON record
 separate1s stdio budget owns callback/error/close and backpressure cancellation.
 Run without wait acknowledges submission; status/run-with-wait use authoritative
 Run facts, including distinct cancelled/inconclusive/pending exits. Result may null.
+Export/export-status mirror run/status over ExportJob; export-download writes a
+ready script to a new exclusive file and deletes it on size/SHA-256 mismatch.
 Signals abort client work, not admitted engine jobs. No persistent cache/daemon.
 Focused tests: app/test/client/cli. Native HTTP uses synthetic isolated backend,
 files, credentials and worker; no load target or actual Docker engine invocation.

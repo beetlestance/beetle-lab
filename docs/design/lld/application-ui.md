@@ -131,7 +131,7 @@ API. A small client inside the backend image may expose `validate`, `run`, `stat
 `cancel`, `compare`, `export`; it never opens a second SQLite writer or bypasses
 backend ownership. Run defaults/retention are UI settings, not CLI-only policy.
 Implemented client commands and exact submission/read/terminal exit semantics:
-[automation client](automation-client.md). Validate/export await admitted APIs.
+[automation client](automation-client.md), including export. Validate awaits an admitted API.
 Proposed optional client exit codes:
 0 passed; 1 assertion/threshold failed; 2 invalid input; 3 execution/lost/artifact
 error; 4 cancelled; 5 unavailable prerequisite. Discovery outcome rules are shared

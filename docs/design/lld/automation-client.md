@@ -28,6 +28,9 @@ wire validation. Abort destroys the request/body. Endpoint and origin are captur
 | result | --organization, --workspace, --run | Read authoritative result snapshot; missing stays null |
 | cancel | --organization, --workspace, --run, --request-file | Validate CancelRunRequest, issue exactly once |
 | compare | --request-file | Validate RunComparisonRequest, issue one read with at most four ordered runs |
+| export | --request-file, optional --wait-ms | Validate CreateExportRequest, create once on its revision route; optional bounded wait |
+| export-status | --organization, --workspace, --export, optional --wait-ms | Read authoritative ExportJob; optionally wait |
+| export-download | --organization, --workspace, --export, --out | Require a ready job; stream its script into a new file, verify size and SHA-256 |
 
 Request files contain the existing closed wire schema, including caller-owned
 requestId/scope/budget. No defaults, settings reimplementation, config compiler,
@@ -35,8 +38,10 @@ secret resolution or automatic mutation retries. Scope/route mismatch fails befo
 HTTP. A transport/response failure after a mutation may have committed: output a
 fixed unknown-outcome diagnostic and retain the supplied requestId for explicit
 replay of the same request file. Never create a replacement UUID or repeat load.
-No validate/export command is claimed until their admitted API exists. Standalone
-engine generation remains outside the backend and this client's responsibility.
+Export uses the admitted export API; exits: ready 0, failed/unknown 3, cancelled 4,
+pending 5. Download opens --out with O_EXCL|O_NOFOLLOW 0600, streams through the
+same closed adapter, and removes only its own file on size/digest/IO failure. No
+validate command is claimed until an admitted validation API exists.
 
 ## Credentials and IO
 
