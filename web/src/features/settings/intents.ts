@@ -9,7 +9,6 @@ import type {
   WorkspaceSettings,
 } from '@beetle/contracts/api';
 import { validateApi } from '@beetle/contracts/api';
-import type { EditorField, EditorIntent } from '../../components/Editor.js';
 
 export type SettingsData = InstallationSettings | OrganizationSettings | WorkspaceSettings;
 export function settingsRead(
@@ -23,7 +22,8 @@ export function settingsRead(
     ? api.getOrganizationSettings({ params, signal })
     : api.getWorkspaceSettings({ params: { ...params, workspaceId: scope.workspaceId }, signal });
 }
-function write(
+/** One versioned settings PATCH; the caller owns the request ID so a replay is identical. */
+export function writeSettings(
   api: ApiClient,
   data: SettingsData,
   patch: InstallationPatch | ScopedOverridePatch,
@@ -46,27 +46,4 @@ function write(
     params: { organizationId: data.scope.organizationId, workspaceId: data.scope.workspaceId },
     body: { ...body, scope: data.scope },
   });
-}
-export function settingsIntent(input: {
-  api: ApiClient;
-  data: SettingsData;
-  path: string;
-  title: string;
-  fields: EditorField[];
-  parse: (values: Readonly<Record<string, string>>) => InstallationPatch | ScopedOverridePatch;
-  refresh: () => Promise<unknown>;
-}): EditorIntent {
-  return {
-    title: input.title,
-    path: input.path,
-    fields: input.fields,
-    refresh: input.refresh,
-    submit: (values, requestId) => {
-      try {
-        return write(input.api, input.data, input.parse(values), requestId);
-      } catch {
-        return Promise.resolve({ ok: false, error: { kind: 'request' } });
-      }
-    },
-  };
 }

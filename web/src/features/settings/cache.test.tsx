@@ -23,8 +23,8 @@ it.each(['installation', 'organization'] as const)('%s save invalidates affected
   render(<MemoryRouter><ApiContext.Provider value={api.client}><QueryClientProvider client={client}>
     <EditorProvider><Settings scope={scope} /></EditorProvider>
   </QueryClientProvider></ApiContext.Provider></MemoryRouter>);
-  fireEvent.click(await screen.findByRole('button', { name: 'Edit retention policy' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  fireEvent.change(await screen.findByLabelText('Remove finished runs older than'), { target: { value: '30' } });
+  fireEvent.click(screen.getByRole('button', { name: kind === 'installation' ? 'Save installation' : 'Save this organization' }));
   await screen.findByText('Changes saved.');
   expect(client.getQueryState(descendant)?.isInvalidated).toBe(true);
   expect(client.getQueryState(foreign)?.isInvalidated).toBe(kind === 'installation');
