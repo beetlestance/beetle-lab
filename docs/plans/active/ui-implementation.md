@@ -6,6 +6,21 @@ current UI and layout do not constrain it. Rules in
 bounded reads, generated client only). Work runs in parallel worktrees and is
 integrated into `rewrite/integration` by the coordinating session.
 
+## Status (2026-11-18)
+
+Waves 0 and 1 are merged into `rewrite/integration` (all six packages, A–F).
+Every gate passes on the merged head, including lint, `build:web` and the
+full web test set. Open:
+
+- Wave 0 follow-ups: editor view sub-routes; shared query keys (installation
+  status, browser session, run queue, latency attribution, pinned runs page);
+  session read-only and restored-backup state through context; Newer/Older pager labels.
+- Package F: retention preview and progress restyle.
+- Wave 2: browser comparison against the board exports, phone and ultrawide,
+  keyboard and reduced motion. No package has been checked in a browser yet.
+- Data gaps each package hid rather than faked are listed in its CONTEXT.md and
+  in the packets.
+
 ## Waves
 
 | Wave | Package | Penpot boards | Depends on |
@@ -18,7 +33,7 @@ integrated into `rewrite/integration` by the coordinating session.
 | 1 | E. Runs, results, compare | Runs (+Empty, Loading), Run result and its 14 variants, Overlay / Artifact viewer, Overlay / Delete run, Compare (+Empty) | 0 |
 | 1 | F. Inputs, engines, settings | Inputs (+Empty), Engines, Settings (+Loading), Installation (+Capacity), Workspace (+Retention preview, progress), Overlay / Delete workspace, organization, folder, input | 0 |
 | 2 | Responsive and QA | Phone boards, ultrawide, keyboard and reduced motion; visual comparison against board exports | 1 |
-| gated | Pinning, upgrade, folder summaries | Pinning / States, Upgrade / States, folder counts on Suites | backend proposals in `proposed/` |
+| gated | Upgrade | Upgrade / States | backend proposal in `proposed/` (pinning and folder summaries shipped in 033 and 034) |
 
 ## Rules for every package
 
