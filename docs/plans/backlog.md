@@ -12,7 +12,8 @@ inventory, not a release certificate. Historical reports are indexed in
 | Release acceptance | Sampler confinement and the other corrections listed in [observations at a646d39a](../evidence/release-readiness-a646d39a.md) still need release acceptance on the integrated build. |
 | Conformance | The original hosted conformance failure is unexplained; later passes do not establish its cause. |
 | Storage faults | Native filesystem-stall injection has not been exercised; only real-worker and simulated stalls are covered. |
-| Row validation | Settings rows are validated; other SQLite row families and whole-repository formatting are not certified. |
+| Row validation | Settings rows were validated before the `40c4a5c1` qualification (`947b62e7`). Implemented in source since then: namespace, input metadata, recovery, run, suite, journal, dispatch and history rows, and bounded SQLite cells (`a47c6e22` to `42d96e12`). These are not yet qualified on an integrated build, and no audit shows every row family is covered. |
+| Formatting | Implemented in source: authored-source formatting and line limits are enforced by `format:check` and lint in CI (`74a87dbc`, `049c4d5b`). CI at `5b8e016c` (run 44108058789) failed in checks, test shard 3 and the amd64 container, so no green run covers it yet. |
 | Publishing | No replacement image is published; publication needs explicit authorisation after integration. |
 | Design assets | The shared asset release declares GPL-3.0-only; distribution terms must be settled before bundling ([decision 019](../decisions/019-frontend-stack-and-engine-sdk.md)). |
 | Presentation | Long report lines overflow the page horizontally; responsive visual quality is uncertified and belongs to the UI redesign. |
