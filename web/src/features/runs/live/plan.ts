@@ -86,52 +86,60 @@ function stagesFrom(
   return stages;
 }
 
+type ToRate = (n: number) => number;
+
+/** One fixed-length stage; null when the length or level cannot be read. */
+function single(length: number | null, level: number | null, label: (n: number) => string) {
+  if (length === null || level === null) return null;
+  return [{ label: label(level), startMs: 0, durationMs: length, drain: false }];
+}
+
+function constantArrival(value: Data, toRate: ToRate): Scenario | null {
+  const stages = single(
+    durationMs(value.duration),
+    integer(value.rate),
+    (n) => `Steady at ${count(toRate(n))} a second`,
+  );
+  return stages && { stages, lengthMs: sum(stages), unit: 'rate', maxVus: integer(value.maxVUs) };
+}
+
+function rampingArrival(value: Data, toRate: ToRate): Scenario | null {
+  const stages = stagesFrom(value.stages, toRate(integer(value.startRate) ?? 0), 'rate', toRate);
+  return stages && { stages, lengthMs: sum(stages), unit: 'rate', maxVus: integer(value.maxVUs) };
+}
+
+function rampingVus(value: Data): Scenario | null {
+  const start = integer(value.startVUs) ?? 0;
+  const stages = stagesFrom(value.stages, start, 'vus', (n) => n);
+  if (!stages) return null;
+  const peak = Math.max(start, ...(value.stages as Data[]).map((s) => integer(s.target) ?? 0));
+  return { stages, lengthMs: sum(stages), unit: 'vus', maxVus: peak };
+}
+
+function constantVus(value: Data): Scenario | null {
+  const vus = integer(value.vus);
+  const stages = single(durationMs(value.duration), vus, (n) => `Hold ${count(n)} virtual users`);
+  return stages && { stages, lengthMs: sum(stages), unit: 'vus', maxVus: vus };
+}
+
 function scenarioPlan(value: Data): Scenario | null {
   const unitMs = durationMs(value.timeUnit) ?? 1000;
   const toRate = (n: number) => perSecond(n, Math.max(1, unitMs));
   switch (value.executor) {
-    case 'constant-arrival-rate': {
-      const length = durationMs(value.duration);
-      const rate = integer(value.rate);
-      if (length === null || rate === null) return null;
-      const label = `Steady at ${count(toRate(rate))} a second`;
-      return {
-        stages: [{ label, startMs: 0, durationMs: length, drain: false }],
-        lengthMs: length,
-        unit: 'rate',
-        maxVus: integer(value.maxVUs),
-      };
-    }
-    case 'ramping-arrival-rate': {
-      const stages = stagesFrom(value.stages, toRate(integer(value.startRate) ?? 0), 'rate', toRate);
-      if (!stages) return null;
-      return { stages, lengthMs: sum(stages), unit: 'rate', maxVus: integer(value.maxVUs) };
-    }
-    case 'ramping-vus': {
-      const stages = stagesFrom(value.stages, integer(value.startVUs) ?? 0, 'vus', (n) => n);
-      if (!stages) return null;
-      const peak = Math.max(
-        integer(value.startVUs) ?? 0,
-        ...(value.stages as Data[]).map((s) => integer(s.target) ?? 0),
-      );
-      return { stages, lengthMs: sum(stages), unit: 'vus', maxVus: peak };
-    }
-    case 'constant-vus': {
-      const length = durationMs(value.duration);
-      const vus = integer(value.vus);
-      if (length === null || vus === null) return null;
-      return {
-        stages: [{ label: `Hold ${count(vus)} virtual users`, startMs: 0, durationMs: length, drain: false }],
-        lengthMs: length,
-        unit: 'vus',
-        maxVus: vus,
-      };
-    }
+    case 'constant-arrival-rate':
+      return constantArrival(value, toRate);
+    case 'ramping-arrival-rate':
+      return rampingArrival(value, toRate);
+    case 'ramping-vus':
+      return rampingVus(value);
+    case 'constant-vus':
+      return constantVus(value);
     default:
       // Iteration and ramp-until executors stop on their own terms: no fixed length.
       return { stages: [], lengthMs: null, unit: null, maxVus: integer(value.maxVUs) ?? integer(value.vus) };
   }
 }
+
 const sum = (stages: readonly PlanStage[]) => stages.reduce((total, stage) => total + stage.durationMs, 0);
 
 function scenariosOf(config: Data): Data[] | null {

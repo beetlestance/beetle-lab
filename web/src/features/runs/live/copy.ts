@@ -1,8 +1,8 @@
 import type { Run } from '@beetle/contracts/api';
 import type { StatusTone } from '../../../components/Badge.js';
 import type { RuleReading } from './model.js';
-import type { PlanStage } from './plan.js';
-import { ms } from './format.js';
+import type { PlanStage, RunPlan } from './plan.js';
+import { clock, ms } from './format.js';
 
 export type Phase = 'waiting' | 'starting' | 'running' | 'cancelling' | 'finalizing' | 'ended';
 
@@ -77,4 +77,41 @@ export function thresholdSentence(readings: readonly RuleReading[]): string {
   if (holding.length)
     return `${holding.length} of ${readings.length} thresholds are holding; the rest are checked when the run is sealed.${p95Text}`;
   return 'Thresholds are checked when the run is sealed.';
+}
+
+/** "Stopped sending at 05:16 of 10:00. " — empty when the stop point is unknown. */
+function stoppedText(prefix: string, stoppedAtMs: number | null, plan: RunPlan): string {
+  if (stoppedAtMs === null) return '';
+  const total = plan.totalMs === null ? '' : ` of ${clock(plan.totalMs)}`;
+  return `${prefix} ${clock(stoppedAtMs)}${total}. `;
+}
+
+const phaseSentence: Record<'waiting' | 'starting', string> = {
+  waiting: 'The run starts as soon as a slot frees up.',
+  starting: 'Preparing the load generator. Live figures appear with the first metrics window.',
+};
+
+/** The sentence under the headline for each phase; never a verdict before the result is sealed. */
+export function sentenceOf(
+  phase: Phase,
+  readings: readonly RuleReading[],
+  stoppedAtMs: number | null,
+  plan: RunPlan,
+  run: Run,
+): string {
+  switch (phase) {
+    case 'waiting':
+    case 'starting':
+      return phaseSentence[phase];
+    case 'running':
+      return thresholdSentence(readings);
+    case 'cancelling':
+      return `${stoppedText('Stopped sending at', stoppedAtMs, plan)}Waiting for in-flight requests to finish before the results are sealed.`;
+    case 'finalizing': {
+      const after = run.cancellationRequested ? ' after the cancel' : '';
+      return `${stoppedText('Run stopped at', stoppedAtMs, plan)}Sealing results${after}; the verdict appears when sealing finishes.`;
+    }
+    case 'ended':
+      return run.outcome === 'pending' ? 'The outcome is still pending.' : `Outcome: ${run.outcome}.`;
+  }
 }

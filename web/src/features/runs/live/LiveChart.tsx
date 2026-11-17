@@ -48,85 +48,140 @@ export function nearestIndex(xs: readonly number[], t: number): number {
   return best;
 }
 
+interface Scale {
+  readonly H: number;
+  readonly yMax: number;
+  readonly x: (t: number) => number;
+  readonly y: (v: number) => number;
+}
+
+function scaleOf(props: ChartProps): Scale {
+  const H = props.tall ? 220 : 150;
+  const measured = props.series.flatMap((s) => s.values.filter((v): v is number => v !== null));
+  const yMax = niceCeiling(Math.max(props.limit?.value ?? 0, ...measured, 0) * 1.1);
+  const [x0, x1] = props.domain;
+  return {
+    H,
+    yMax,
+    x: (t: number) => ((t - x0) / Math.max(1, x1 - x0)) * W,
+    y: (v: number) => H - (v / yMax) * (H - 8),
+  };
+}
+
+type LegendEntry = { s: ChartSeries; value: number | null };
+
+function Legend({ entries, format }: { entries: readonly LegendEntry[]; format: ChartProps['format'] }) {
+  return (
+    <span className="live-legend">
+      {entries.map(({ s, value }) => (
+        <span key={s.key} className={`live-key tone-${s.tone}`}>
+          {s.label} <strong>{value === null ? '–' : format(value)}</strong>
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function SeriesPaths({ props, scale }: { props: ChartProps; scale: Scale }) {
+  return props.series.map((s) =>
+    linePath(props.xs, s.values, props.breaks, scale.x, scale.y).map((d, j) => (
+      <g key={`${s.key}-${j}`} className={`live-series tone-${s.tone}${s.dashed ? ' dashed' : ''}`}>
+        {s.area && <path className="live-area" d={`${d.line} L${d.lastX},${scale.H} L${d.firstX},${scale.H} Z`} />}
+        <path className="live-line" d={d.line} vectorEffect="non-scaling-stroke" />
+      </g>
+    )),
+  );
+}
+
+function Guides({ props, scale }: { props: ChartProps; scale: Scale }) {
+  const { x, y, H, yMax } = scale;
+  return (
+    <>
+      {props.bands?.map((band) => (
+        <rect
+          key={`${band.from}`}
+          className="live-band"
+          x={x(band.from)}
+          y={0}
+          width={Math.max(0, x(band.to) - x(band.from))}
+          height={H}
+        />
+      ))}
+      <line className="live-grid" x1={0} x2={W} y1={y(yMax / 2)} y2={y(yMax / 2)} />
+      {props.limit && (
+        <line className="live-limit" x1={0} x2={W} y1={y(props.limit.value)} y2={y(props.limit.value)}>
+          <title>{props.limit.label}</title>
+        </line>
+      )}
+    </>
+  );
+}
+
+function Ticks({ props, scale }: { props: ChartProps; scale: Scale }) {
+  return (
+    <span className="live-ticks" aria-hidden="true">
+      {(props.ticks ?? defaultTicks(props.domain)).map((tick) => (
+        <span key={tick.label + tick.at} style={{ left: `${(scale.x(tick.at) / W) * 100}%` }}>
+          {tick.label}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function hoverHandlers(props: ChartProps) {
+  const onHover = props.onHover;
+  if (!onHover) return {};
+  const [x0, x1] = props.domain;
+  return {
+    onPointerMove: (event: PointerEvent<SVGSVGElement>) => {
+      const box = event.currentTarget.getBoundingClientRect();
+      if (box.width <= 0) return;
+      onHover(x0 + ((event.clientX - box.left) / box.width) * (x1 - x0));
+    },
+    onPointerLeave: () => onHover(null),
+  };
+}
+
+function legendOf(props: ChartProps): { entries: LegendEntry[]; index: number } {
+  const { xs, hoverT } = props;
+  const index = hoverT == null ? xs.length - 1 : nearestIndex(xs, hoverT);
+  const entries = props.series.map((s) => ({ s, value: index >= 0 ? (s.values[index] ?? null) : null }));
+  return { entries, index };
+}
+
 /**
  * Line chart for live readings over a fixed run timeline. Missing values break
  * the line; nothing is interpolated across a gap. The legend shows the latest
  * reading, or the reading at the pointed-at second when a chart is hovered.
  */
 export function LiveChart(props: ChartProps) {
-  const { xs, series, domain, format } = props;
-  const H = props.tall ? 220 : 150;
-  const measured = series.flatMap((s) => s.values.filter((v): v is number => v !== null));
-  const yMax = niceCeiling(Math.max(props.limit?.value ?? 0, ...measured, 0) * 1.1);
-  const [x0, x1] = domain;
-  const x = (t: number) => ((t - x0) / Math.max(1, x1 - x0)) * W;
-  const y = (v: number) => H - (v / yMax) * (H - 8);
-  const index = props.hoverT == null ? xs.length - 1 : nearestIndex(xs, props.hoverT);
-  const move = (event: PointerEvent<SVGSVGElement>) => {
-    const box = event.currentTarget.getBoundingClientRect();
-    if (box.width <= 0) return;
-    props.onHover?.(x0 + ((event.clientX - box.left) / box.width) * (x1 - x0));
-  };
-  const paths = series.map((s) => linePath(xs, s.values, props.breaks, x, y));
-  const legend = series.map((s) => ({ s, value: index >= 0 ? (s.values[index] ?? null) : null }));
-  const label = legend.map(({ s, value }) => `${s.label} ${value === null ? 'no reading' : format(value)}`).join(', ');
+  const { xs, format } = props;
+  const scale = scaleOf(props);
+  const { entries, index } = legendOf(props);
+  const label = entries.map(({ s, value }) => `${s.label} ${value === null ? 'no reading' : format(value)}`).join(', ');
+  const title = typeof props.title === 'string' ? props.title : 'Chart';
+  const cursor = props.hoverT != null && index >= 0 ? scale.x(xs[index]!) : null;
   return (
     <figure className={['live-chart', props.className].filter(Boolean).join(' ')}>
       <figcaption className="live-chart-head">
         <span className="live-chart-title">{props.title}</span>
-        <span className="live-legend">
-          {legend.map(({ s, value }) => (
-            <span key={s.key} className={`live-key tone-${s.tone}`}>
-              {s.label} <strong>{value === null ? '–' : format(value)}</strong>
-            </span>
-          ))}
-        </span>
+        <Legend entries={entries} format={format} />
       </figcaption>
-      <span className="live-chart-max">{format(yMax)}</span>
+      <span className="live-chart-max">{format(scale.yMax)}</span>
       <svg
-        viewBox={`0 0 ${W} ${H}`}
+        viewBox={`0 0 ${W} ${scale.H}`}
         preserveAspectRatio="none"
         role="img"
-        aria-label={`${typeof props.title === 'string' ? props.title : 'Chart'}: ${label}`}
-        onPointerMove={props.onHover ? move : undefined}
-        onPointerLeave={props.onHover ? () => props.onHover?.(null) : undefined}
-        style={{ height: H }}
+        aria-label={`${title}: ${label}`}
+        {...hoverHandlers(props)}
+        style={{ height: scale.H }}
       >
-        {props.bands?.map((band) => (
-          <rect
-            key={`${band.from}`}
-            className="live-band"
-            x={x(band.from)}
-            y={0}
-            width={Math.max(0, x(band.to) - x(band.from))}
-            height={H}
-          />
-        ))}
-        <line className="live-grid" x1={0} x2={W} y1={y(yMax / 2)} y2={y(yMax / 2)} />
-        {props.limit && (
-          <line className="live-limit" x1={0} x2={W} y1={y(props.limit.value)} y2={y(props.limit.value)}>
-            <title>{props.limit.label}</title>
-          </line>
-        )}
-        {series.map((s, i) =>
-          paths[i]!.map((d, j) => (
-            <g key={`${s.key}-${j}`} className={`live-series tone-${s.tone}${s.dashed ? ' dashed' : ''}`}>
-              {s.area && <path className="live-area" d={`${d.line} L${d.lastX},${H} L${d.firstX},${H} Z`} />}
-              <path className="live-line" d={d.line} vectorEffect="non-scaling-stroke" />
-            </g>
-          )),
-        )}
-        {props.hoverT != null && index >= 0 && (
-          <line className="live-cursor" x1={x(xs[index]!)} x2={x(xs[index]!)} y1={0} y2={H} />
-        )}
+        <Guides props={props} scale={scale} />
+        <SeriesPaths props={props} scale={scale} />
+        {cursor !== null && <line className="live-cursor" x1={cursor} x2={cursor} y1={0} y2={scale.H} />}
       </svg>
-      <span className="live-ticks" aria-hidden="true">
-        {(props.ticks ?? defaultTicks(domain)).map((tick) => (
-          <span key={tick.label + tick.at} style={{ left: `${(x(tick.at) / W) * 100}%` }}>
-            {tick.label}
-          </span>
-        ))}
-      </span>
+      <Ticks props={props} scale={scale} />
     </figure>
   );
 }

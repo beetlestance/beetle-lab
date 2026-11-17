@@ -64,55 +64,109 @@ function percentile(values: readonly (number | null)[]): Percentile | null {
   return { value: Math.max(...known), slowest: known.length > 1, fastest: Math.min(...known) };
 }
 
+interface Failures {
+  readonly numerator: number;
+  readonly samples: number;
+}
+interface RawRow extends EndpointRow {
+  readonly failures: Failures | null;
+}
+
+/** Planned request labels plus any execute-phase request in the live subset. */
+function requestLabels(frame: LiveMetricSnapshot, plan: RunPlan): string[] {
+  const labels = new Set<string>(plan.requests.map((r) => r.label));
+  for (const s of frame.subset.selected) if (s.tags.request && s.tags.phase === 'execute') labels.add(s.tags.request);
+  return [...labels];
+}
+
+function trendOf(frame: LiveMetricSnapshot, label: string): Trend | null {
+  const total = frame.series.find((s) => executeRequest(s, 'http_req_duration', label))?.total;
+  return total?.kind === 'trend' ? (total as Trend) : null;
+}
+
+function failuresOf(frame: LiveMetricSnapshot, label: string): { ratio: number | null; counts: Failures | null } {
+  const total = frame.series.find((s) => executeRequest(s, 'http_req_failed', label))?.total;
+  if (total?.kind !== 'rate') return { ratio: null, counts: null };
+  return { ratio: total.ratio, counts: { numerator: total.numerator, samples: total.sampleCount } };
+}
+
+/** A selected series without a value had no samples in this window: zero requests. */
+function requestCount(trend: Trend | null, live: boolean): number | null {
+  if (trend) return trend.count;
+  return live ? 0 : null;
+}
+
+function percentilesOf(trend: Trend | null): Pick<EndpointRow, 'p50' | 'p95' | 'p99'> {
+  if (!trend) return { p50: null, p95: null, p99: null };
+  const { p50, p95, p99 } = trend.percentiles;
+  return { p50: p50.estimate, p95: p95.estimate, p99: p99.estimate };
+}
+
+function endpointRow(frame: LiveMetricSnapshot, plan: RunPlan, label: string, seconds: number): RawRow {
+  const trend = trendOf(frame, label);
+  const failure = failuresOf(frame, label);
+  const live = frame.subset.selected.some(
+    (s) => s.metric === 'http_req_duration' && s.tags.request === label && !s.tags.assertion,
+  );
+  const requests = requestCount(trend, live);
+  return {
+    label,
+    request: plan.requests.find((r) => r.label === label) ?? null,
+    requests,
+    rps: requests === null ? null : requests / seconds,
+    share: null,
+    ...percentilesOf(trend),
+    failed: failure.ratio,
+    failures: failure.counts,
+    live,
+  };
+}
+
+/** Pooled failures (sum of numerators over sum of samples), only when every endpoint reports them. */
+function pooledFailures(rows: readonly RawRow[]): Failures | null {
+  if (!rows.length || rows.some((row) => row.failures === null)) return null;
+  return rows.reduce<Failures>(
+    (sum, row) => ({
+      numerator: sum.numerator + row.failures!.numerator,
+      samples: sum.samples + row.failures!.samples,
+    }),
+    { numerator: 0, samples: 0 },
+  );
+}
+
+function withShares(rows: readonly RawRow[], total: number | null): EndpointRow[] {
+  return rows
+    .map((row): EndpointRow => ({
+      label: row.label,
+      request: row.request,
+      requests: row.requests,
+      rps: row.rps,
+      share: total && row.requests !== null ? row.requests / total : null,
+      p50: row.p50,
+      p95: row.p95,
+      p99: row.p99,
+      failed: row.failed,
+      live: row.live,
+    }))
+    .sort((a, b) => (b.p95 ?? -1) - (a.p95 ?? -1));
+}
+
 export function liveFigures(frame: LiveMetricSnapshot, plan: RunPlan): LiveFigures {
   const windowMs = Math.max(1, frame.endTimeMs - frame.startTimeMs);
   const seconds = windowMs / 1000;
-  const labels = new Set<string>(plan.requests.map((r) => r.label));
-  for (const s of frame.subset.selected) if (s.tags.request && s.tags.phase === 'execute') labels.add(s.tags.request);
-  const selected = (metric: string, label: string) =>
-    frame.subset.selected.some((s) => s.metric === metric && s.tags.request === label && !s.tags.assertion);
-  const rows = [...labels].map((label) => {
-    const request = plan.requests.find((r) => r.label === label) ?? null;
-    const duration = frame.series.find((s) => executeRequest(s, 'http_req_duration', label))?.total;
-    const failure = frame.series.find((s) => executeRequest(s, 'http_req_failed', label))?.total;
-    const trend = duration?.kind === 'trend' ? (duration as Trend) : null;
-    const live = selected('http_req_duration', label);
-    // A selected series without a value had no samples in this window: zero requests, no percentiles.
-    const requests = trend ? trend.count : live ? 0 : null;
-    return {
-      label,
-      request,
-      requests,
-      rps: requests === null ? null : requests / seconds,
-      share: null as number | null,
-      p50: trend?.percentiles.p50.estimate ?? null,
-      p95: trend?.percentiles.p95.estimate ?? null,
-      p99: trend?.percentiles.p99.estimate ?? null,
-      failed: failure?.kind === 'rate' ? failure.ratio : null,
-      failures: failure?.kind === 'rate' ? { numerator: failure.numerator, samples: failure.sampleCount } : null,
-      live,
-    };
-  });
+  const rows = requestLabels(frame, plan).map((label) => endpointRow(frame, plan, label, seconds));
   const complete = rows.length > 0 && rows.every((row) => row.requests !== null);
   const total = complete ? rows.reduce((sum, row) => sum + row.requests!, 0) : null;
-  const failures = rows.map((row) => row.failures);
-  const pooled = failures.every((f) => f !== null) && failures.length > 0;
-  const numerator = pooled ? failures.reduce((sum, f) => sum + f!.numerator, 0) : 0;
-  const samples = pooled ? failures.reduce((sum, f) => sum + f!.samples, 0) : 0;
-  const endpoints: EndpointRow[] = rows
-    .map(({ failures: _failures, ...row }) => ({
-      ...row,
-      share: total && row.requests !== null ? row.requests / total : null,
-    }))
-    .sort((a, b) => (b.p95 ?? -1) - (a.p95 ?? -1));
+  const pooled = pooledFailures(rows);
+  const endpoints = withShares(rows, total);
   return {
     windowMs,
     rps: total === null ? null : total / seconds,
     p50: percentile(endpoints.map((row) => row.p50)),
     p95: percentile(endpoints.map((row) => row.p95)),
     p99: percentile(endpoints.map((row) => row.p99)),
-    failedRatio: pooled && samples > 0 ? numerator / samples : null,
-    failedPerSecond: pooled ? numerator / seconds : null,
+    failedRatio: pooled && pooled.samples > 0 ? pooled.numerator / pooled.samples : null,
+    failedPerSecond: pooled ? pooled.numerator / seconds : null,
     vus: gauge(frame, 'vus'),
     vusMax: gauge(frame, 'vus_max'),
     endpoints,
@@ -144,23 +198,36 @@ const passes = (value: number, rule: PlanRule) => {
   }
 };
 
+const unknown = (rule: PlanRule, unit: RuleReading['unit']): RuleReading => ({
+  rule,
+  state: 'unknown',
+  value: null,
+  bound: 'exact',
+  unit,
+});
+
+function readPercentileRule(rule: PlanRule, figures: LiveFigures): RuleReading {
+  const p = figures[rule.stat as 'p50' | 'p95' | 'p99'];
+  if (!p || !figures.complete) return unknown(rule, 'ms');
+  // The pooled percentile lies between the fastest and slowest endpoint percentile.
+  const high = passes(p.value, rule);
+  const low = passes(p.fastest, rule);
+  const state: RuleState = high !== low ? 'unknown' : high ? 'holding' : 'over';
+  return { rule, state, value: p.value, bound: p.slowest ? 'at-most' : 'exact', unit: 'ms' };
+}
+
+function readFailedRule(rule: PlanRule, figures: LiveFigures): RuleReading {
+  const value = figures.failedRatio;
+  if (value === null) return unknown(rule, 'ratio');
+  return { rule, state: passes(value, rule) ? 'holding' : 'over', value, bound: 'exact', unit: 'ratio' };
+}
+
 /** Latest-window reading of one threshold. The verdict still comes from the sealed result. */
 export function readRule(rule: PlanRule, figures: LiveFigures): RuleReading {
-  if (rule.metric === 'http_req_duration' && ['p50', 'p95', 'p99'].includes(rule.stat)) {
-    const p = figures[rule.stat as 'p50' | 'p95' | 'p99'];
-    if (!p || !figures.complete) return { rule, state: 'unknown', value: null, bound: 'exact', unit: 'ms' };
-    // The pooled percentile lies between the fastest and slowest endpoint percentile.
-    const high = passes(p.value, rule);
-    const low = passes(p.fastest, rule);
-    const state: RuleState = high === low ? (high ? 'holding' : 'over') : 'unknown';
-    return { rule, state, value: p.value, bound: p.slowest ? 'at-most' : 'exact', unit: 'ms' };
-  }
-  if (rule.metric === 'http_req_failed' && rule.stat === 'rate') {
-    const value = figures.failedRatio;
-    if (value === null) return { rule, state: 'unknown', value: null, bound: 'exact', unit: 'ratio' };
-    return { rule, state: passes(value, rule) ? 'holding' : 'over', value, bound: 'exact', unit: 'ratio' };
-  }
-  return { rule, state: 'unknown', value: null, bound: 'exact', unit: 'ms' };
+  if (rule.metric === 'http_req_duration' && ['p50', 'p95', 'p99'].includes(rule.stat))
+    return readPercentileRule(rule, figures);
+  if (rule.metric === 'http_req_failed' && rule.stat === 'rate') return readFailedRule(rule, figures);
+  return unknown(rule, 'ms');
 }
 
 export function ruleName(rule: PlanRule): string {

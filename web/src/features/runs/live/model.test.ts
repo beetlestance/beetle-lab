@@ -102,8 +102,7 @@ it('keeps a bounded, de-duplicated history and marks omitted target samples as g
   expect(history.fromStart).toBe(true);
   let many = emptyHistory(null);
   for (let i = 1; i <= HISTORY_LIMIT + 5; i++) {
-    const { target: _target, ...rest } = first;
-    const next = { ...rest, publishedSequence: i };
+    const next = liveFrame(current, i, { target: false }).frame;
     many = appendFrame(many, next, liveFigures(next, plan));
   }
   expect(many.points).toHaveLength(HISTORY_LIMIT);

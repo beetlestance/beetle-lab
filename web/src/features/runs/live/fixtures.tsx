@@ -90,80 +90,78 @@ const trend = (count: number, p50: number, p95: number, p99: number): Series['to
   };
 };
 const tags = (request: string) => ({ phase: 'execute' as const, request });
+type Row = Omit<Series, 'ordinal' | 'unit' | 'total'>;
+const endpoint = (request: string, metric: 'http_req_duration' | 'http_req_failed'): Row => ({
+  metric,
+  kind: metric === 'http_req_duration' ? 'trend' : 'rate',
+  scope: 'execute',
+  tags: tags(request),
+});
+const engine = (metric: 'vus' | 'vus_max'): Row => ({ metric, kind: 'gauge', scope: 'engine', tags: {} });
+const rate = (numerator: number, sampleCount: number): Series['total'] => ({
+  kind: 'rate',
+  numerator,
+  sampleCount,
+  ratio: numerator / sampleCount,
+});
+const gauge = (latest: number, now: number, min: number, max: number): Series['total'] => ({
+  kind: 'gauge',
+  latest,
+  sourceTimeMs: now,
+  min,
+  max,
+});
+
+/** r0 and r1 trends and failure rates, then VUs, in subset order. */
+function liveSeries(now: number): { rows: (Row & { ordinal: number })[]; series: Series[] } {
+  const parts: [Row, Series['unit'], Series['total']][] = [
+    [endpoint('r0', 'http_req_duration'), 'ms', trend(900, 57, 236, 281)],
+    [endpoint('r0', 'http_req_failed'), 'ratio', rate(2, 900)],
+    [endpoint('r1', 'http_req_duration'), 'ms', trend(300, 4, 12, 20)],
+    [endpoint('r1', 'http_req_failed'), 'ratio', rate(0, 300)],
+    [engine('vus'), 'count', gauge(142, now, 140, 150)],
+    [engine('vus_max'), 'count', gauge(300, now, 300, 300)],
+  ];
+  const rows = parts.map(([row], ordinal) => ({ ...row, ordinal }));
+  const series = parts.map(([row, unit, total], ordinal) => ({ ...row, ordinal, unit, total }) as Series);
+  return { rows, series };
+}
+
+const targetValues = {
+  rss: 567,
+  heapAlloc: null,
+  heapInuse: null,
+  usedHeapSize: 399,
+  totalHeapSize: 500,
+  cpuPercent: 64,
+  systemCpuPercent: 38,
+  'eventLoopDelay.mean': 9.5,
+  'eventLoopDelay.p99': 22,
+  'eventLoopDelay.max': 32.4,
+  activeHandles: 168,
+  goroutines: null,
+};
+
+/** Two ready target samples one second apart; RSS moves from 567 to 570. */
+function targetBlock(now: number, omittedSamples: number) {
+  const sample = (observedAtMs: number, rss: number) => ({
+    observedAtMs,
+    phase: 'during' as const,
+    status: 'ready' as const,
+    values: { ...targetValues, rss },
+  });
+  return {
+    scope: 'target-reported' as const,
+    intervalMs: 1000,
+    omittedSamples,
+    samples: [sample(now - 1000, 567), sample(now - 10, 570)],
+  };
+}
 
 /** One live window: 1 s wide, two endpoints, VUs, and target samples. */
 export function liveFrame(current: Run, sequence = 1, options: { omitted?: number; target?: boolean } = {}) {
   const now = Date.now();
-  const series: Series[] = [
-    {
-      ordinal: 0,
-      metric: 'http_req_duration',
-      kind: 'trend',
-      scope: 'execute',
-      tags: tags('r0'),
-      unit: 'ms',
-      total: trend(900, 57, 236, 281),
-    },
-    {
-      ordinal: 1,
-      metric: 'http_req_failed',
-      kind: 'rate',
-      scope: 'execute',
-      tags: tags('r0'),
-      unit: 'ratio',
-      total: { kind: 'rate', numerator: 2, sampleCount: 900, ratio: 2 / 900 },
-    },
-    {
-      ordinal: 2,
-      metric: 'http_req_duration',
-      kind: 'trend',
-      scope: 'execute',
-      tags: tags('r1'),
-      unit: 'ms',
-      total: trend(300, 4, 12, 20),
-    },
-    {
-      ordinal: 3,
-      metric: 'http_req_failed',
-      kind: 'rate',
-      scope: 'execute',
-      tags: tags('r1'),
-      unit: 'ratio',
-      total: { kind: 'rate', numerator: 0, sampleCount: 300, ratio: 0 },
-    },
-    {
-      ordinal: 4,
-      metric: 'vus',
-      kind: 'gauge',
-      scope: 'engine',
-      tags: {},
-      unit: 'count',
-      total: { kind: 'gauge', latest: 142, sourceTimeMs: now, min: 140, max: 150 },
-    },
-    {
-      ordinal: 5,
-      metric: 'vus_max',
-      kind: 'gauge',
-      scope: 'engine',
-      tags: {},
-      unit: 'count',
-      total: { kind: 'gauge', latest: 300, sourceTimeMs: now, min: 300, max: 300 },
-    },
-  ];
-  const values = {
-    rss: 567,
-    heapAlloc: null,
-    heapInuse: null,
-    usedHeapSize: 399,
-    totalHeapSize: 500,
-    cpuPercent: 64,
-    systemCpuPercent: 38,
-    'eventLoopDelay.mean': 9.5,
-    'eventLoopDelay.p99': 22,
-    'eventLoopDelay.max': 32.4,
-    activeHandles: 168,
-    goroutines: null,
-  };
+  const { rows, series } = liveSeries(now);
   const snapshot = baseFrame({
     scope: {
       organizationId: current.scope.organizationId,
@@ -171,10 +169,7 @@ export function liveFrame(current: Run, sequence = 1, options: { omitted?: numbe
       attemptId: current.activeAttemptId,
       generation: 1,
     },
-    subset: {
-      selected: series.map(({ unit: _unit, total: _total, ...row }) => ({ ...row, ordinal: row.ordinal })),
-      excludedSeries: 3,
-    },
+    subset: { selected: rows, excludedSeries: 3 },
     publishedSequence: sequence,
     sourceSequence: sequence,
     capturedAtMs: now,
@@ -182,26 +177,26 @@ export function liveFrame(current: Run, sequence = 1, options: { omitted?: numbe
     startTimeMs: now - 1000,
     endTimeMs: now,
     series,
-    ...(options.target === false
-      ? {}
-      : {
-          target: {
-            scope: 'target-reported' as const,
-            intervalMs: 1000,
-            omittedSamples: options.omitted ?? 0,
-            samples: [
-              { observedAtMs: now - 1000, phase: 'during' as const, status: 'ready' as const, values },
-              {
-                observedAtMs: now - 10,
-                phase: 'during' as const,
-                status: 'ready' as const,
-                values: { ...values, rss: 570 },
-              },
-            ],
-          },
-        }),
+    ...(options.target === false ? {} : { target: targetBlock(now, options.omitted ?? 0) }),
   });
   return { ...latest(snapshot, performance.now(), now), fingerprint: sequence.toString(16).padStart(64, '0') };
+}
+
+/** The revision as a list summary: the page omits config and the input manifest. */
+function revisionSummary() {
+  const full = revision();
+  return {
+    id: full.id,
+    scope: full.scope,
+    suiteId: full.suiteId,
+    ordinal: full.ordinal,
+    engineId: full.engineId,
+    configVersion: full.configVersion,
+    digest: full.digest,
+    preflightStatus: full.preflightStatus,
+    savedBy: 'Meera',
+    runCount: 3,
+  };
 }
 
 export function routesFor(current: () => Run, extra?: (request: RequestRecord) => Response | undefined) {
@@ -211,13 +206,8 @@ export function routesFor(current: () => Run, extra?: (request: RequestRecord) =
     if (request.path.endsWith(`/revisions/${revisionId}`)) return json(revision());
     if (request.path.endsWith(`/suites/${suiteId}`)) return json(suite());
     if (/\/revisions(\?|$)/.test(request.path)) {
-      const { config: _config, inputManifest: _manifest, ...summary } = revision();
-      return json({
-        scope: summary.scope,
-        suiteId,
-        items: [{ ...summary, savedBy: 'Meera', runCount: 3 }],
-        nextCursor: null,
-      });
+      const summary = revisionSummary();
+      return json({ scope: summary.scope, suiteId, items: [summary], nextCursor: null });
     }
     if (request.path.endsWith('/auth/session'))
       return json({ scope: 'local-admin', expiresAt: '2026-11-20T12:00:00.000Z', csrfToken: 'B'.repeat(43) });
