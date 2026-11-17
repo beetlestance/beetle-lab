@@ -13,8 +13,10 @@ artifact reads keep exact-length verification through their thin adapter.
 Poll only after the prior original settles, then wait 2 s. Waiting visibility resumes
 have a five-second display watchdog and one replaceable wake callback, not a queue.
 Scalar position checks ordering and altered repeats; unchanged frames cannot renew
-monotonic expiry if wall time freezes. Only the latest20-series window is displayed;
-missing values, exclusions, coalescing and upstream coverage remain explicit.
+monotonic expiry if wall time freezes. Figures come from the latest 20-series
+window; the live view (runs/live) also keeps a bounded client-side history of
+at most 900 received frames for its charts. Missing values, exclusions,
+coalescing and upstream coverage remain explicit.
 
 Tests: live-metrics read/position/lifecycle/detail and target-observation read cases.
 Real browser qualification and packaged native activation are separate evidence.
