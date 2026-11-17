@@ -453,6 +453,17 @@
     "implementation": "implemented"
   },
   {
+    "name": "setRunNote",
+    "method": "PATCH",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/note",
+    "response": "Run",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunParams",
+    "request": "SetRunNoteRequest",
+    "implementation": "implemented"
+  },
+  {
     "name": "listRunEvents",
     "method": "GET",
     "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/events",

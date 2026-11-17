@@ -15,3 +15,5 @@ Finite event reads use the optional RunEventReader (required in bootstrap), exis
 durable storage and a <=100-event/262144-byte page, with scoped canonical resume
 cursors and semantic validation. No SSE/ACK effects. Contract: public-api.md#run-event-reads;
 checks: app/test/run-events and contracts/test/api/client/run-events.test.ts.
+setRunNote (PATCH runs/{runId}/note, body<=64 KiB) checks route/body scope, then calls
+RunNoteStore once with expectedNoteVersion; Run.version and lifecycle never change.

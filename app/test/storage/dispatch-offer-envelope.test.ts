@@ -33,7 +33,7 @@ function withBody(offer: Offer, value: unknown): void {
 }
 function acceptedOriginal(template: Offer) {
   const revision = request(2); revision.config = template.config;
-  f.store.execute({ kind: 'suite', command: suiteCommand({ kind: 'createSuiteRevision', id: uuid(61), suiteId: uuid(50), request: revision }) });
+  f.store.execute({ kind: 'suite', command: suiteCommand({ kind: 'createSuiteRevision',savedAt:'2026-11-10T00:00:00.000Z', id: uuid(61), suiteId: uuid(50), request: revision }) });
   const run = f.store.execute({ kind: 'run', command: runCommand(uuid(61), 71) }) as Run;
   const text = String(f.db.prepare('SELECT offer_json FROM attempts WHERE id=?').get(run.activeAttemptId)!.offer_json);
   const offer = JSON.parse(text) as Offer;

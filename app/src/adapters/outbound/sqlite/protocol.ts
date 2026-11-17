@@ -34,7 +34,14 @@ import type {
   EventAckRequest,
   EventProblemRequest,
 } from '../../../ports/events.js';
-import type { RunConfiguration, RunCommand, CancelRunCommand, RunKey, RunList } from '../../../ports/runs.js';
+import type {
+  RunConfiguration,
+  RunCommand,
+  CancelRunCommand,
+  SetRunNoteCommand,
+  RunKey,
+  RunList,
+} from '../../../ports/runs.js';
 import type {
   DispatchKey,
   DispatchScan,
@@ -128,6 +135,7 @@ export type Operation =
   | { kind: 'dispatchObserve'; request: DispatchObservationRequest }
   | { kind: 'run'; command: RunCommand }
   | { kind: 'cancelRun'; command: CancelRunCommand }
+  | { kind: 'runNote'; command: SetRunNoteCommand }
   | { kind: 'getRun'; key: RunKey }
   | { kind: 'getRunResult'; key: RunKey }
   | { kind: 'getRunExecution'; key: RunKey }

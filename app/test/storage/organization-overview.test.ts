@@ -11,7 +11,7 @@ it('aggregates all workspaces within one organisation and preserves scoped links
  const first=await append(metadata,await createSuite(metadata));
  const secondScope={...scope,workspaceId:uuid(21)};
  await metadata.suites.execute(suiteCommand({kind:'createSuite',id:uuid(51),request:{scope:secondScope,requestId:requestId(),name:'Second suite'}}));
- const second=await metadata.suites.execute(suiteCommand({kind:'createSuiteRevision',id:uuid(61),suiteId:uuid(51),request:{...revisionRequest(),scope:secondScope}}));
+ const second=await metadata.suites.execute(suiteCommand({kind:'createSuiteRevision',savedAt:'2026-11-10T00:00:00.000Z',id:uuid(61),suiteId:uuid(51),request:{...revisionRequest(),scope:secondScope}}));
  expect('config' in second).toBe(true);
  for(let n=0;n<33;n++){
   const owner=n%2===0?scope:secondScope;const revisionId=n%2===0?first.id:uuid(61);

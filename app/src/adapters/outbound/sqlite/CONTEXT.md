@@ -36,5 +36,5 @@ attempt_output_allocations: scoped immutable maximum+65536/version 1; no settlem
 Deferred claim links require record/output/possible delivery together; shared usage
 charges input/output once. Private reserveRunOutput requires a caller transaction.
 hasUntrackedOwnership uses partial indices, independent of Run state/Offer bytes.
-Contracts: docs/system/contracts/storage.md#metadata-worker, run-delivery.md#dispatch-storage
-and outputs-collection.md#storage-accounting (output allocation).
+Authoring (031): run_notes own noteVersion+same-transaction note grams; Run reads add note and durable runtime start/exit via run_events_runtime (<=4 rows); revisions stamp savedAt/savedBy.
+Contracts: docs/system/contracts/storage.md#metadata-worker, run-delivery.md#dispatch-storage, outputs-collection.md#storage-accounting (output allocation), authoring.md.

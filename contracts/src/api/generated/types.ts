@@ -133,6 +133,7 @@ export type RunMetricSamplesQuery = FromSchema<typeof S16.RunMetricSamplesQuery>
 export type RunMetricSamplesPage = FromSchema<typeof S16.RunMetricSamplesPage>;
 export type CreateRunRequest = FromSchema<typeof S17.CreateRunRequest>;
 export type CancelRunRequest = FromSchema<typeof S17.CancelRunRequest>;
+export type SetRunNoteRequest = FromSchema<typeof S17.SetRunNoteRequest>;
 export type RunListQuery = FromSchema<typeof S17.RunListQuery>;
 export type RunResultSnapshot = FromSchema<typeof S18.RunResultSnapshot>;
 export type RunExecutionPolicy = FromSchema<typeof S19.RunExecutionPolicy>;
@@ -141,6 +142,7 @@ export type RunSettingsVersions = FromSchema<typeof S19.RunSettingsVersions>;
 export type Run = FromSchema<typeof S19.Run>;
 export type RunPage = FromSchema<typeof S19.RunPage>;
 export type RunTimestamp = FromSchema<typeof S19.RunTimestamp>;
+export type RunNote = FromSchema<typeof S19.RunNote>;
 export type PairBrowserRequest = FromSchema<typeof S20.PairBrowserRequest>;
 export type BrowserSession = FromSchema<typeof S20.BrowserSession>;
 export type LogoutBrowserRequest = FromSchema<typeof S20.LogoutBrowserRequest>;
@@ -157,6 +159,7 @@ export type EngineProfile = FromSchema<typeof S22.EngineProfile>;
 export type RunDefaults = FromSchema<typeof S22.RunDefaults>;
 export type PoolCapacity = FromSchema<typeof S22.PoolCapacity>;
 export type RetentionPolicy = FromSchema<typeof S22.RetentionPolicy>;
+export type AdministratorName = FromSchema<typeof S22.AdministratorName>;
 export type InstallationValues = FromSchema<typeof S22.InstallationValues>;
 export type NumericEffectiveLeaf = FromSchema<typeof S22.NumericEffectiveLeaf>;
 export type EffectiveBudget = FromSchema<typeof S22.EffectiveBudget>;
@@ -175,6 +178,8 @@ export type SuiteRevisionSummary = FromSchema<typeof S25.SuiteRevisionSummary>;
 export type SuiteRevision = FromSchema<typeof S25.SuiteRevision>;
 export type SuitePage = FromSchema<typeof S25.SuitePage>;
 export type SuiteRevisionPage = FromSchema<typeof S25.SuiteRevisionPage>;
+export type SuiteDescription = FromSchema<typeof S25.SuiteDescription>;
+export type RevisionMessage = FromSchema<typeof S25.RevisionMessage>;
 export interface ApiTypes {
   Uuid: Uuid;
   Budget: Budget;
@@ -283,6 +288,7 @@ export interface ApiTypes {
   RunMetricSamplesPage: RunMetricSamplesPage;
   CreateRunRequest: CreateRunRequest;
   CancelRunRequest: CancelRunRequest;
+  SetRunNoteRequest: SetRunNoteRequest;
   RunListQuery: RunListQuery;
   RunResultSnapshot: RunResultSnapshot;
   RunExecutionPolicy: RunExecutionPolicy;
@@ -291,6 +297,7 @@ export interface ApiTypes {
   Run: Run;
   RunPage: RunPage;
   RunTimestamp: RunTimestamp;
+  RunNote: RunNote;
   PairBrowserRequest: PairBrowserRequest;
   BrowserSession: BrowserSession;
   LogoutBrowserRequest: LogoutBrowserRequest;
@@ -307,6 +314,7 @@ export interface ApiTypes {
   RunDefaults: RunDefaults;
   PoolCapacity: PoolCapacity;
   RetentionPolicy: RetentionPolicy;
+  AdministratorName: AdministratorName;
   InstallationValues: InstallationValues;
   NumericEffectiveLeaf: NumericEffectiveLeaf;
   EffectiveBudget: EffectiveBudget;
@@ -325,4 +333,6 @@ export interface ApiTypes {
   SuiteRevision: SuiteRevision;
   SuitePage: SuitePage;
   SuiteRevisionPage: SuiteRevisionPage;
+  SuiteDescription: SuiteDescription;
+  RevisionMessage: RevisionMessage;
 }

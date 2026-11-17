@@ -17,11 +17,26 @@ const identityColumns: readonly [string, number, boolean][] = [
   ['workspace_id', 45, false],
 ];
 export const suiteColumns =
-  columns([...identityColumns, ['folder_id', 45, false], ['name', 512, false], ['current_revision_id', 45, true]]) +
+  columns([
+    ...identityColumns,
+    ['folder_id', 45, false],
+    ['name', 512, false],
+    ['current_revision_id', 45, true],
+    ['description', 1120, true],
+  ]) +
   ',' +
   sqlIntegerColumn('version');
 export const revisionSummaryColumns =
-  columns([...identityColumns, ['suite_id', 45, false], ['digest', 64, false]]) + ',' + sqlIntegerColumn('ordinal');
+  columns([
+    ...identityColumns,
+    ['suite_id', 45, false],
+    ['digest', 64, false],
+    ['saved_at', 64, true],
+    ['message', 1120, true],
+    ['saved_by', 512, true],
+  ]) +
+  ',' +
+  sqlIntegerColumn('ordinal');
 export const revisionColumns =
   revisionSummaryColumns +
   ',' +
@@ -45,6 +60,7 @@ export function captureSuiteRow(input: unknown, key: SuiteKey): Suite {
     folderId: row.folder_id,
     version: row.version,
     currentRevisionId: row.current_revision_id,
+    description: row.description,
   });
   if (!parsed.ok || !sameScope(parsed.value.scope, key.scope) || parsed.value.id !== key.id.toLowerCase())
     throw new StorageError('unavailable');
@@ -61,6 +77,9 @@ export function captureRevisionSummary(input: unknown, scope: WorkspaceScope, su
     engineId: 'k6',
     configVersion: 1,
     preflightStatus: 'passed',
+    savedAt: row.saved_at,
+    message: row.message,
+    savedBy: row.saved_by,
   });
   if (!parsed.ok || !sameScope(parsed.value.scope, scope)) throw new StorageError('unavailable');
   if (suiteId !== undefined && parsed.value.suiteId !== suiteId.toLowerCase()) throw new StorageError('unavailable');

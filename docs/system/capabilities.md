@@ -4,7 +4,8 @@ What the rewrite provides today. Open gaps live in the [backlog](../plans/backlo
 measurements live in [evidence](../evidence/README.md).
 
 - Docker Compose starts separate frontend, backend, agent and k6 engine containers.
-- Administrator browser sessions, organisations/workspaces, suites and immutable inputs.
+- Administrator browser sessions, organisations/workspaces, suites and immutable inputs;
+  suite descriptions, stamped revisions and editable run notes.
 - Run/cancel, persisted results, metric history, comparison, reports and exports.
 - Public HTTP API, generated schemas and downloadable AI-agent instructions under
   `/reference`. An MCP server is not shipped.
@@ -23,4 +24,4 @@ The Docker host trust boundary is recorded in
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `a850381cb0fd` |
+| `contracts/api/v2/` | `9b3572da8614` |

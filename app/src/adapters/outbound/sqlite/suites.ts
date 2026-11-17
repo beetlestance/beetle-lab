@@ -12,10 +12,17 @@ import type { Entities } from './entities.js';
 import { lower, sha256 } from './input.js';
 
 export { normalizedScope } from './input-values.js';
+/** Omitted keeps the current description, null clears it, text follows name rules. */
+function nextDescription(supplied: string | null | undefined, previous: Suite | undefined): string | null {
+  if (supplied === undefined) return previous?.description ?? null;
+  return supplied === null ? null : normalizedName(supplied, 280);
+}
 export class Suites {
   constructor(
     private readonly db: DatabaseSync,
     private readonly entities: Entities,
+    /** Installation administrator display name, read inside the caller's transaction. */
+    private readonly administrator: () => string = () => 'Administrator',
   ) {}
   workspace(scope: WorkspaceScope) {
     return this.entities.workspace({ kind: 'organization', organizationId: scope.organizationId }, scope.workspaceId);
@@ -46,17 +53,18 @@ export class Suites {
     const folder = lower(command.request.folderId ?? previous?.folderId ?? workspace.rootFolderId);
     this.entities.folderRow(scope, folder);
     const name = normalizedName(command.request.name ?? previous!.name);
+    const description = nextDescription(command.request.description, previous);
     if (previous)
       this.db
-        .prepare('UPDATE suites SET folder_id=?,name=?,folded_name=?,version=? WHERE id=?')
-        .run(folder, name, foldedName(name), nextVersion(previous.version), previous.id);
+        .prepare('UPDATE suites SET folder_id=?,name=?,folded_name=?,description=?,version=? WHERE id=?')
+        .run(folder, name, foldedName(name), description, nextVersion(previous.version), previous.id);
     else
       this.db
         .prepare(
-          `INSERT INTO suites(id,organization_id,workspace_id,folder_id,name,folded_name,version)
-      VALUES (?,?,?,?,?,?,1)`,
+          `INSERT INTO suites(id,organization_id,workspace_id,folder_id,name,folded_name,description,version)
+      VALUES (?,?,?,?,?,?,?,1)`,
         )
-        .run(lower(command.id), scope.organizationId, scope.workspaceId, folder, name, foldedName(name));
+        .run(lower(command.id), scope.organizationId, scope.workspaceId, folder, name, foldedName(name), description);
     return this.getSuite({ scope, id: command.id });
   }
   private append(command: Extract<SuiteCommand, { kind: 'createSuiteRevision' }>): SuiteRevision {
@@ -86,10 +94,11 @@ export class Suites {
       return sha256(text);
     });
     const digest = digestMutationIntent({ engineId: 'k6', configVersion: 1, config, inputManifest: manifest }, sha256);
+    const message = command.request.message === undefined ? null : normalizedName(command.request.message, 280);
     this.db
       .prepare(
-        `INSERT INTO suite_revisions(id,suite_id,organization_id,workspace_id,ordinal,digest,config_json,input_manifest_json)
-      VALUES (?,?,?,?,?,?,?,?)`,
+        `INSERT INTO suite_revisions(id,suite_id,organization_id,workspace_id,ordinal,digest,config_json,input_manifest_json,
+      saved_at,message,saved_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
       )
       .run(
         lower(command.id),
@@ -100,6 +109,9 @@ export class Suites {
         digest,
         canonicalConfig,
         encodeJson(manifest, 65536),
+        command.savedAt,
+        message,
+        normalizedName(this.administrator()),
       );
     const insertPin = this.db.prepare('INSERT INTO revision_input_pins VALUES(?,?,?,?,?,?)');
     for (const pin of manifest)

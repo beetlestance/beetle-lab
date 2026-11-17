@@ -17,6 +17,9 @@
         },
         "folderId": {
           "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "description": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteDescription"
         }
       },
       "required": [
@@ -43,6 +46,16 @@
         },
         "folderId": {
           "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteDescription"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -74,6 +87,9 @@
         "config": {
           "type": "object",
           "additionalProperties": true
+        },
+        "message": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/suite#/$defs/RevisionMessage"
         }
       },
       "required": [

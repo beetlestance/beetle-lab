@@ -1,7 +1,7 @@
 import { checkedOrganizationOverviewQuery } from '../../../application/organization-overview/index.js';
 import { checkedOverviewQuery } from '../../../application/overview/index.js';
 import { runListPosition, validateApi } from '@beetle/contracts/api';
-import { prepareRunCommand, prepareCancelRunCommand } from '../../../application/runs/index.js';
+import { prepareRunCommand, prepareCancelRunCommand, prepareRunNoteCommand } from '../../../application/runs/index.js';
 import { requireRule } from '../../../domain/namespaces/index.js';
 import type { Operation } from './protocol.js';
 import { sha256 } from './input-values.js';
@@ -19,6 +19,9 @@ export function checkedRunOperation(operation: Operation): boolean {
       return true;
     case 'cancelRun':
       requireRule(prepareCancelRunCommand(operation.command, sha256).intentDigest === operation.command.intentDigest);
+      return true;
+    case 'runNote':
+      requireRule(prepareRunNoteCommand(operation.command, sha256).intentDigest === operation.command.intentDigest);
       return true;
     case 'getRun':
       requireRule(Object.keys(operation.key).every((key) => ['scope', 'id'].includes(key)));

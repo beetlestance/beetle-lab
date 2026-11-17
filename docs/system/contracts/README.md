@@ -29,6 +29,7 @@ rereads the contract, corrects it and runs `npm run docs:stamp -- <file>`.
 | Standalone k6 script export | [Exports](exports.md) |
 | Uploaded inputs and request bodies | [Inputs](inputs.md) |
 | Public `/api/v2` rules, authorisation, history and suites | [Public API](public-api.md) |
+| Suite descriptions, revision stamps, run notes and run times | [Authoring metadata](authoring.md) |
 | Browser scope, polling, bounds and truthful state | [Web UI](web-ui.md) |
 
 Layout, owners and dependency edges: [architecture](../../engineering/architecture.md).

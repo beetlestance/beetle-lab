@@ -12,7 +12,7 @@ export function request(version = 1): CreateSuiteRevisionRequest {
   return { ...structuredClone(revisionRequest), scope, requestId: requestId(), expectedVersion: version } as CreateSuiteRevisionRequest;
 }
 export async function append(metadata: Metadata, suite: Suite, id = 60, value = request(suite.version)): Promise<SuiteRevision> {
-  return await metadata.suites.execute(suiteCommand({ kind: 'createSuiteRevision', id: uuid(id), suiteId: suite.id, request: value })) as SuiteRevision;
+  return await metadata.suites.execute(suiteCommand({ kind: 'createSuiteRevision',savedAt:'2026-11-10T00:00:00.000Z', id: uuid(id), suiteId: suite.id, request: value })) as SuiteRevision;
 }
 export function largeConfig(bytes = 1048576): CreateSuiteRevisionRequest['config'] {
   const config = request().config;
