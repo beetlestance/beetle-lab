@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import type { InstallationSettings, InstallationStatus } from '@beetle/contracts/api';
@@ -6,17 +7,17 @@ import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
 import { Badge, Status } from '../../components/Badge.js';
-import { Banner } from '../../components/Banner.js';
 import { buttonClass } from '../../components/Button.js';
 import { QueryState } from '../../components/QueryState.js';
 import { LoadingState } from '../../components/States.js';
-import { agentText, agentUnavailable, formatTime, useInstallationStatus } from './status.js';
+import { EngineFacts, PlannedEngines } from './planned.js';
+import { agentUnavailable, unavailableText, useInstallationStatus } from './status.js';
 import './engines.css';
 
 /**
  * Engines (Penpot "Engines" and "Engines / Unavailable"). Installed engines are the
  * installation's supported profiles; image facts and agent state come from the
- * installation status read. Nothing is listed that the API does not report.
+ * installation status read. Planned engines are labelled product copy.
  */
 export function Engines() {
   const settings = useInstallationSettings();
@@ -25,12 +26,19 @@ export function Engines() {
     <section className="content-section engines-page">
       <header className="engines-header">
         <h1>Engines</h1>
-        <p>Engines run your suites. Each one is a container image the agent starts for every run.</p>
+        <p>
+          An engine is what actually runs a suite. k6 is installed today. The others are planned, and they plug into the
+          same suites, revisions, runs, comparison, retention and inputs, so a lint check and a load test sit in one
+          history.
+        </p>
       </header>
-      {status.data && <AgentBanner status={status.data} />}
-      <QueryState query={settings} loading={<LoadingState label="Loading engines…" variant="cards" rows={2} />}>
-        {(data) => <InstalledEngines settings={data} status={status.data} statusFailed={status.isError} />}
-      </QueryState>
+      <section aria-labelledby="engines-installed" className="engines-section">
+        <h2 id="engines-installed">Installed</h2>
+        <QueryState query={settings} loading={<LoadingState label="Loading engines…" variant="cards" rows={1} />}>
+          {(data) => <InstalledEngines settings={data} status={status.data} statusFailed={status.isError} />}
+        </QueryState>
+      </section>
+      <PlannedEngines />
     </section>
   );
 }
@@ -53,27 +61,11 @@ function useInstallationSettings() {
   return query;
 }
 
-function AgentBanner({ status }: { status: InstallationStatus }) {
-  const { state, lastSeenAt } = status.agent;
-  if (!agentUnavailable(state) && state !== 'disabled') return null;
-  const seen = formatTime(lastSeenAt);
-  return (
-    <Banner
-      tone={state === 'disabled' ? 'neutral' : 'warning'}
-      title={`Engine agent: ${agentText[state].label.toLowerCase()}`}
-      actions={
-        <Link className={buttonClass('secondary', 'sm')} to={routes.settings}>
-          Open installation status
-        </Link>
-      }
-    >
-      <p>
-        {agentText[state].detail}
-        {seen && ` Last seen ${seen}.`}
-      </p>
-    </Banner>
-  );
-}
+const k6Facts = {
+  runs: 'HTTP traffic against a running service, at the rate the suite plans.',
+  passOrFail: 'Latency, failure-rate and check thresholds.',
+  resultShows: 'Live metrics, a whole-run chart, endpoints, target samples.',
+};
 
 function InstalledEngines({
   settings,
@@ -85,38 +77,82 @@ function InstalledEngines({
   statusFailed: boolean;
 }) {
   const profiles = settings.values.supportedProfiles;
-  const defaultProfile = settings.values.runDefaults.engineProfile;
+  const k6 = profiles.filter((profile) => /^k6([._-]|$)/.test(profile));
+  const others = profiles.filter((profile) => !k6.includes(profile));
   const unavailable = status ? agentUnavailable(status.agent.state) : false;
   return (
-    <section aria-labelledby="engines-installed">
-      <h2 id="engines-installed">Installed · {profiles.length}</h2>
-      {statusFailed && <p className="muted">Image and agent status could not be read. Profiles are still listed.</p>}
-      <ul className="engine-cards">
-        {profiles.map((profile) => {
-          const image = status?.engines.find((engine) => engine.profileId === profile);
-          return (
-            <li key={profile} className="engine-card">
-              <div className="engine-card-head">
-                <h3>{profile}</h3>
-                {profile === defaultProfile && <Badge tone="strong">Default for new runs</Badge>}
-              </div>
-              <Status tone={unavailable ? 'fail' : 'pass'}>{unavailable ? 'Unavailable' : 'Installed'}</Status>
-              {image && (
-                <dl className="engine-facts">
-                  <dt>Image</dt>
-                  <dd className="mono" title={image.imageDigest}>
-                    {image.imageDigest.slice(0, 19)}…
-                  </dd>
-                  <dt>Checked</dt>
-                  <dd>
-                    {image.image === 'verified_at_agent_start' ? 'Verified when the agent started' : 'Not verified'}
-                  </dd>
-                </dl>
-              )}
-            </li>
-          );
-        })}
+    <>
+      <ul className="engine-cards engine-cards-installed">
+        {k6.length > 0 && (
+          <EngineCard title="k6 load tests" unavailable={unavailable}>
+            <EngineFacts {...k6Facts} />
+            <Profiles profiles={k6} settings={settings} status={status} />
+          </EngineCard>
+        )}
+        {others.map((profile) => (
+          <EngineCard key={profile} title={profile} unavailable={unavailable}>
+            <Profiles profiles={[profile]} settings={settings} status={status} />
+          </EngineCard>
+        ))}
       </ul>
-    </section>
+      {status && (unavailable || status.agent.state === 'disabled') && <UnavailableNotice status={status} />}
+      {statusFailed && <p className="engines-note">Agent and image status could not be read.</p>}
+    </>
+  );
+}
+
+function EngineCard({ title, unavailable, children }: { title: string; unavailable: boolean; children: ReactNode }) {
+  return (
+    <li className={unavailable ? 'engine-card engine-card-unavailable' : 'engine-card'}>
+      <div className="engine-card-head">
+        <h3>{title}</h3>
+        <Status tone={unavailable ? 'running' : 'pass'}>{unavailable ? 'Unavailable' : 'Installed'}</Status>
+      </div>
+      {children}
+    </li>
+  );
+}
+
+/** Profile names with the image facts the agent reported at start; unreported images stay unlabelled. */
+function Profiles({
+  profiles,
+  settings,
+  status,
+}: {
+  profiles: readonly string[];
+  settings: InstallationSettings;
+  status: InstallationStatus | undefined;
+}) {
+  return (
+    <ul className="engine-profiles" aria-label="Profiles">
+      {profiles.map((profile) => {
+        const image = status?.engines.find((engine) => engine.profileId === profile);
+        return (
+          <li key={profile}>
+            <span className="mono">{profile}</span>
+            {profile === settings.values.runDefaults.engineProfile && <Badge>Default</Badge>}
+            {image && (
+              <span className="engine-image" title={image.imageDigest}>
+                {image.imageDigest.slice(7, 19)} ·{' '}
+                {image.image === 'verified_at_agent_start'
+                  ? 'image verified when the agent started'
+                  : 'image not verified'}
+              </span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function UnavailableNotice({ status }: { status: InstallationStatus }) {
+  return (
+    <div className="engine-unavailable" role="status">
+      <p>{unavailableText(status)}</p>
+      <Link className={buttonClass('secondary', 'sm')} to={routes.settings}>
+        Installation status
+      </Link>
+    </div>
   );
 }

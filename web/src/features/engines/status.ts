@@ -46,3 +46,31 @@ export function formatTime(value: string | null): string | undefined {
   if (Number.isNaN(date.getTime())) return undefined;
   return date.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
+
+/** Notice copy for Engines / Unavailable; "for 4 min" only when the last report time is known. */
+export function unavailableText(status: InstallationStatus): string {
+  const after = "New runs and exports can't start until it reports again.";
+  switch (status.agent.state) {
+    case 'stale': {
+      const since = minutesSince(status.agent.lastSeenAt, status.generatedAt);
+      return since === undefined
+        ? `Beetle hasn't heard from the runner agent recently. ${after}`
+        : `Beetle hasn't heard from the runner agent for ${since} min. ${after}`;
+    }
+    case 'unreachable':
+      return `Beetle can't reach the runner agent. ${after}`;
+    case 'unavailable':
+      return `The runner agent reports that it can't run engines. ${after}`;
+    case 'disabled':
+      return 'Running engines is turned off on this installation. New runs and exports wait until it is turned on.';
+    default:
+      return agentText[status.agent.state].detail;
+  }
+}
+
+function minutesSince(from: string | null, to: string): number | undefined {
+  if (!from) return undefined;
+  const elapsed = new Date(to).getTime() - new Date(from).getTime();
+  if (!Number.isFinite(elapsed) || elapsed < 0) return undefined;
+  return Math.max(1, Math.round(elapsed / 60_000));
+}
