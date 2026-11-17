@@ -5,6 +5,8 @@ With no suite it shows `SuiteIndex`: top-level folders with FolderPage summaries
 workspace-wide name search. `?folder=<id>` shows `FolderView`, one folder's suites from a
 server-filtered listSuites (group, engine, name and order), 20 per page. With a suite ID
 it shows `SuiteDetail`, whose tabs are set by `?tab=edit|revisions`. `?start=1` opens Start run.
+The editor view is `&view=run-setup|json` and one request `&request=<id>` (useSuitePage;
+build links with `routes.suitePage`/`routes.suitesFolder`, never by hand).
 Uses the paired generated API client and the shared route and query registry. Reads are
 bounded: 100 folders or revisions, and 20 suites per folder page. Scope retirement aborts
 reads and writes and removes scoped caches.

@@ -110,7 +110,9 @@ and never resets an editor draft.
 ## Editors
 
 The suite form and JSON views share one lossless draft; switching never drops
-unknown fields. Invalid JSON stays editable but blocks conversion and saving. A
+unknown fields. The suite page tab, editor view (form, Run setup, JSON) and open
+request are URL state built by `routes.suitePage`, so deep links and back/forward
+switch views without touching the draft. Invalid JSON stays editable but blocks conversion and saving. A
 failed save keeps the draft; an unknown outcome offers replay of the identical
 request; a stale version offers a reload and never overwrites the newer revision.
 
@@ -142,7 +144,7 @@ filters keeps the suite context; an explicit workspace-history link clears it.
 
 | Code | Reviewed |
 | --- | --- |
-| `web/src/app/routes.ts` | `53e5232400d5` |
+| `web/src/app/routes.ts` | `28d257eb0f11` |
 | `web/src/app/queries.ts` | `31296c59bb64` |
 | `web/src/features/runs/timeline/read.ts` | `cbd57b66d9b4` |
 | `web/src/features/runs/timeline/projection.ts` | `e7e83db9f347` |

@@ -23,7 +23,7 @@ export function childrenOf(page: FolderPage, folderId: string): Folder[] {
   return page.items.filter((folder) => folder.parentFolderId?.toLowerCase() === folderId.toLowerCase());
 }
 export const folderLink = (workspace: Workspace, folderId: string) =>
-  `${routes.suites(workspace.scope.organizationId, workspace.id)}?folder=${encodeURIComponent(folderId)}`;
+  routes.suitesFolder(workspace.scope.organizationId, workspace.id, folderId);
 export function folderName(folder: Folder, workspace: Workspace): string {
   return folder.id.toLowerCase() === workspace.rootFolderId.toLowerCase() ? 'Workspace root' : folder.name;
 }

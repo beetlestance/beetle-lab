@@ -30,6 +30,24 @@ export function uniqueId(base: string, taken: Iterable<string>): string {
   for (let index = 2; ; index++) if (!used.has(`${stem}_${index}`)) return `${stem}_${index}`;
 }
 
+/**
+ * The URL key of request `index` (routes.suitePage `request`): its identifier when
+ * valid and unique, else its 1-based position. Identifiers never start with a digit.
+ */
+export function requestKey(config: Config, index: number): string {
+  const ids = objects(config.requests).map((request) => text(request.id));
+  const id = ids[index] ?? '';
+  return identifierPattern.test(id) && ids.indexOf(id) === ids.lastIndexOf(id) ? id : String(index + 1);
+}
+/** The request a URL key names, or null when no request matches. */
+export function requestIndex(config: Config, key: string | null): number | null {
+  if (!key) return null;
+  const requests = objects(config.requests);
+  if (/^[1-9][0-9]{0,5}$/.test(key)) return Number(key) <= requests.length ? Number(key) - 1 : null;
+  const index = requests.findIndex((request) => request.id === key);
+  return index < 0 ? null : index;
+}
+
 export function at<T extends Obj>(items: unknown, index: number, patch: Partial<T>): Obj[] {
   return list(items).map((item, position) =>
     position === index && isObj(item) ? { ...item, ...patch } : item,

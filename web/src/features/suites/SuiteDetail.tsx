@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryResult } from '@tanstack/react-query';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import type { Suite, SuiteRevision, SuiteRevisionPage, Workspace } from '@beetle/contracts/api';
 import { ApiFailure, useApi, readResult } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
+import type { SuiteTab as Tab } from '../../app/routes.js';
 import { Button } from '../../components/Button.js';
 import { NotFound } from '../../components/NotFound.js';
 import { QueryState } from '../../components/QueryState.js';
@@ -17,9 +18,8 @@ import { findFolder, folderLink, folderName, useFolders } from './folders.js';
 import { History, useRevisionPage } from './History.js';
 import { MetadataEditor } from './MetadataEditor.js';
 import { RevisionEditor } from './RevisionEditor.js';
+import { useSuitePage } from './useSuitePage.js';
 
-type Tab = 'overview' | 'edit' | 'revisions';
-const tabs: readonly Tab[] = ['overview', 'edit', 'revisions'];
 function notFound(query: UseQueryResult<unknown>) {
   return query.error instanceof ApiFailure && query.error.failure.protocol?.code === 'not_found';
 }
@@ -52,26 +52,8 @@ export function SuiteDetail({ workspace, suiteId }: { workspace: Workspace; suit
   );
 }
 function useTab(): [Tab, (tab: Tab) => void, boolean, (open: boolean) => void] {
-  const [search, setSearch] = useSearchParams();
-  const raw = search.get('tab');
-  const tab = tabs.includes(raw as Tab) ? (raw as Tab) : 'overview';
-  const update = (changes: Record<string, string | null>) =>
-    setSearch(
-      (current) => {
-        const next = new URLSearchParams(current);
-        for (const [name, value] of Object.entries(changes))
-          if (value === null) next.delete(name);
-          else next.set(name, value);
-        return next;
-      },
-      { replace: true },
-    );
-  return [
-    tab,
-    (value) => update({ tab: value === 'overview' ? null : value }),
-    search.get('start') === '1',
-    (open) => update({ start: open ? '1' : null }),
-  ];
+  const { page, update } = useSuitePage();
+  return [page.tab, (tab) => update({ tab }), page.start, (start) => update({ start })];
 }
 /** Tabs opened so far; the Edit tab stays mounted once visited so its draft survives tab switches. */
 function useVisited(tab: Tab): ReadonlySet<Tab> {

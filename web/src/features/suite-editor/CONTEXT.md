@@ -4,8 +4,10 @@ Boards "Suite / Edit" (with its Request, Run setup and JSON views), "Panel / Sav
 revision" with its Errors state, "Overlay / Save conflict" and "Tablet / Suite /
 Edit". `suites/RevisionEditor` mounts it on the suite page's Edit tab
 (`?tab=edit`, owned by `suites/SuiteDetail`); `suites/ConfigFields` switches between
-the form, Run setup and complete JSON. Those views have no sub-route yet, so the
-selected view lives in component state.
+the form, Run setup and complete JSON. The view and open request live in the URL
+(`routes.suitePage`: `&view=run-setup|json`, `&request=<request id>`, or a 1-based
+position for a request without a unique id). View changes push history entries, so
+deep links and back/forward work; the draft survives them.
 
 The draft text is the only source of truth. Each form edit re-encodes the whole
 config through `suites/draft` (1 MiB and JSON limits). An edit that would overflow
