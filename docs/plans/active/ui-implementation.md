@@ -51,3 +51,21 @@ Agent time, not calendar time, assuming the current API covers most boards.
 
 Total about 40–60 agent hours. With six wave-1 lanes in parallel, roughly two to
 three working days end to end. Gated features add backend work first.
+
+## File ownership in wave 1
+
+Per-board data, reuse and gaps are in [part 1](ui-packets.md) and [part 2](ui-packets-2.md).
+
+| Package | Owns |
+| --- | --- |
+| A | `organization-overview`, `workspace-overview`, `organizations`, `workspaces`, `command-search` |
+| B | `features/suites/index.tsx`, `History.tsx`, `MetadataEditor.tsx`, `suite-overview` |
+| C | `features/suites/RevisionEditor.tsx`, `ConfigFields.tsx`, `draft.ts`, `useWrite.tsx`, `exports` |
+| D | `features/runs/live/` and the live-metrics, timeline and cancellation views it composes |
+| E | `features/runs/result/`, run history, artifacts, comparison; composes `retention` for run deletion |
+| F | `inputs`, `input-*`, `settings`, `retention`, `namespace-deletion`, engines |
+
+Wave 0 makes `RunDetail` a state dispatcher into `live/` and `result/` and owns
+the shared not-found component. Shared app tests (`suites.test.tsx`,
+`settings*.test.tsx`, `inputs*.test.tsx`) belong to the package that owns the
+feature; B and C coordinate `suites.test.tsx` through the coordinator.
