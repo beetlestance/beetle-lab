@@ -13,4 +13,4 @@ Outputs are immutable canonical event records with UTF-8+128 logical byte charge
 EventBatchError exposes bounded codes, no peer data. No SQL/network/Run projection,
 output settlement or remote ACK occurs here. Stored durability must be checked by
 the metadata transaction before replay comparison/inserts and ACK authorization.
-Contract: docs/design/lld/event-custody.md. Tests: app/test/domain/events.
+Contract: docs/system/contracts/run-delivery.md. Tests: app/test/domain/events.

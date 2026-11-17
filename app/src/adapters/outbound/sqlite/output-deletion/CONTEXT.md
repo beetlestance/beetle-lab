@@ -1,7 +1,7 @@
 # Output deletion metadata
 
 Public entry: OutputDeletions through Store and Metadata.outputDeletions.
-Owner contract: docs/design/lld/output-deletion-store.md; private port
+Owner contract: docs/system/contracts/outputs-settlement.md; private port
 app/src/ports/output-deletion-metadata.ts. Migration 013 owns additive guards.
 
 Begin participates in the shared receipt-first Store transaction. Other operations

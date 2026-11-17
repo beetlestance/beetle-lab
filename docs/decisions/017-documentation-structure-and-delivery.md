@@ -1,6 +1,6 @@
 # Decision 017: documentation structure and delivery
 
-Status: proposed, 17 November 2026. Awaiting user approval.
+Status: accepted, 17 November 2026.
 
 ## Decision
 

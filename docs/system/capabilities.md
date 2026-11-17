@@ -18,3 +18,9 @@ No replacement default image was promoted. Use source Compose; the old single-im
 
 The Docker host trust boundary is recorded in
 [decision 018](../decisions/018-docker-host-trust-boundary.md).
+
+## Anchors
+
+| Code | Reviewed |
+| --- | --- |
+| `contracts/api/v2/` | `c4d55ae80f49` |

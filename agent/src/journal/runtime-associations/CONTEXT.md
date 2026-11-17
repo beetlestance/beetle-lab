@@ -7,4 +7,4 @@ Client captures opaque Docker observation before issuing worker operation, binds
 all original/retirement/namespace context, and retains actual failed worker carrier.
 Metadata proves historical association only; current native absence remains Docker's
 responsibility. No double charge, refunds, producer purge or tombstone.
-Contract docs/design/lld/runtime-association.md; tests agent/test/runtime-association.
+Contract docs/system/contracts/execution-protocol.md; tests agent/test/runtime-association.

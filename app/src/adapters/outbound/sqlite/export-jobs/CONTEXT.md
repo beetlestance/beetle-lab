@@ -13,4 +13,4 @@ require stopped/released matching evidence before source adoption/credit release
 Input pins, metadata and agent producer/source lifetime remain retained. No native
 paths, IO, remote ACK or producer-purge authority are exposed by these operations.
 
-Checks: app/test/exports. Spec: docs/design/lld/export-publication.md.
+Checks: app/test/exports. Spec: docs/system/contracts/exports.md.

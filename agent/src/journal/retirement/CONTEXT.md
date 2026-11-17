@@ -6,4 +6,4 @@ version 1; preflight grants no write/native permission and begin revalidates ato
 Read checks scope without materializing Offer/result bodies; stored records match
 canonical payload/indexed keys. No native drain, cleanup, ACK, purge or refunds here.
 Pure deterministic SQLite JSON validators supplement raw guards, never query/reenter DB.
-Owner docs/design/lld/producer-retirement.md; agent Journal 017 reserved.
+Owner docs/system/contracts/retirement.md; agent Journal 017 reserved.

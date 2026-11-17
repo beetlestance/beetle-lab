@@ -1,7 +1,7 @@
 # Standalone export protocol values
 
 Public entry: index.ts, reexported by @beetle/contracts.
-Owner: docs/design/lld/standalone-export-jobs.md. Assignment/result schemas live in
+Owner: docs/system/contracts/exports.md. Assignment/result schemas live in
 runner/v1; generated wire types are never handwritten or interpreted as performance.
 
 Distinct purpose/envelope wraps existing Offer; current performance intake rejects

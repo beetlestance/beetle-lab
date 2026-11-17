@@ -4,7 +4,7 @@ Entrypoint: `index.ts`; JSON Schema 2020-12 sources: `../../api/v2`.
 `apiSchemas` is a deeply frozen complete closure: API modules and runner common once.
 `apiMessageSchemas` maps public schema names; `ApiTypes` is schema-derived.
 `apiOperations` describes routes, UUID parameters, queries and status/schema names.
-Run DTOs are defined; routes remain separate. Run-intake LLD owns receipt replay and queue bounds.
+Run DTOs are defined; routes remain separate. run-lifecycle contract owns receipt replay and queue bounds.
 `createApiClient`/`createApiHttpTransport` bind descriptors; see `client/CONTEXT.md` for effects/limits.
 `validateApi` validates already-parsed JSON without coercion, defaults or field removal;
 success preserves the reference. Failure exposes <=16 frozen structural path/code issues.

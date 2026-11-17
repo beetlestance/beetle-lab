@@ -9,4 +9,4 @@ latency) plus user rate/headroom for a labelled heuristic. Inputs at most 16 cha
 rate<=1m/headroom<=500%, safe integer output; zero/partial/missing yields no estimate.
 It never edits configuration/budget or infers which executor caused a drop.
 Parent run/attempt/page/freshness owners retire data. F10 log classification remains.
-Contract: docs/design/lld/load-advice.md; scoped load-advice/live/metrics tests.
+Contract: docs/system/contracts/results.md; scoped load-advice/live/metrics tests.

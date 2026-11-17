@@ -16,7 +16,7 @@ containers use a fixed specification with no binds, all capabilities dropped,
 a read-only root filesystem and finite CPU, memory and PID limits. Backend and
 agent listen only on private networks; the UI publishes on loopback.
 
-The [compose installation contract](../design/lld/compose-installation.md) and
+The [compose installation contract](../system/contracts/installation.md#trust-boundary-and-topology) and
 the root README state the boundary for operators.
 
 ## Why

@@ -1,8 +1,8 @@
 # Plan: documentation restructure
 
-Status: active. Phases 0 and 1 delivered on `docs/restructure`; phase 2 awaits
-approval of the triage below. Phase 2 also rewrites backlog rows that record
-measurements as remaining work, moving the measurements to `evidence/`.
+Status: active. Phases 0–2 delivered on `docs/restructure` (not yet integrated);
+phases 3–7 await decisions on generator, diagrams, hosting and scope. The triage
+below is kept as the record of where each former LLD went.
 Decision: [017](../../decisions/017-documentation-structure-and-delivery.md).
 
 ## Phases
@@ -14,8 +14,10 @@ Decision: [017](../../decisions/017-documentation-structure-and-delivery.md).
 | 2 | LLDs consolidated into contracts, `CONTEXT.md` and decisions; anchor stamps on `system/` | `check:docs`, typecheck unchanged |
 | 3–7 | User-facing site, designed first in Penpot | Separate approval |
 
-Phase 1 moves files without changing their content, so it does not depend on
-this triage. Phase 2 deletes and merges LLDs, so it waits for approval.
+Phase 2 outcome: 16 contracts in `system/contracts/` (run lifecycle split into
+lifecycle and delivery; UI LLDs became the web UI contract), module map moved to
+`engineering/architecture.md`, decisions 019–028 recorded, and every `system/`
+page carries reviewed anchor stamps checked by `check:docs`.
 
 ## Phase 1 moves
 
@@ -34,7 +36,7 @@ this triage. Phase 2 deletes and merges LLDs, so it waits for approval.
 | `verification.md` | `engineering/verification.md` |
 | `execution/README.md` | `engineering/workflow.md` |
 | `release-approval.md` | `engineering/release.md` |
-| `design/LLD.md`, `design/lld/`, `design/frontend-decisions.md` | Unchanged until phase 2 |
+| `design/LLD.md`, `design/lld/`, `design/frontend-decisions.md` | Phase 2: `system/contracts/`, decision 019 |
 
 ## Phase 2 triage
 

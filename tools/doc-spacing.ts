@@ -87,7 +87,8 @@ function spaceProse(text: string): string {
     .replace(/\b(\d{1,2}(?:\.\d+)?|\d[\d,]*\.\d+)(s)\b/g, '$1 $2');
 }
 function lineSpacing(line: string): string {
-  const protectedSpan = /(`+).*?\1|\]\([^)]*\)|https?:\/\/[^\s<>]+/g;
+  // Code, link destinations, URLs and whole commit hashes (which may start with a prose word such as "a").
+  const protectedSpan = /(`+).*?\1|\]\([^)]*\)|https?:\/\/[^\s<>]+|\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b/g;
   let cursor = 0;
   let result = '';
   for (const match of line.matchAll(protectedSpan)) {

@@ -85,8 +85,8 @@ or a TypeScript extension alone does not resolve them.
 
 | ID | Capability | Owner |
 | --- | --- | --- |
-| N01 | Organisation -> workspace -> optional folders; scoped views and queries | [Organisation/settings LLD](../design/lld/organization-settings.md) |
-| N02 | UI-editable run defaults, capacity and retention with safe inheritance | [Organisation/settings LLD](../design/lld/organization-settings.md) |
+| N01 | Organisation -> workspace -> optional folders; scoped views and queries | [Public API contract](../system/contracts/public-api.md#hierarchy-and-scoping) |
+| N02 | UI-editable run defaults, capacity and retention with safe inheritance | [Public API contract](../system/contracts/public-api.md#hierarchy-and-scoping) |
 
 These are new requirements, not capabilities found in the current source. A second
 user-proposed feature is deliberately unspecified until discussion after the rewrite.

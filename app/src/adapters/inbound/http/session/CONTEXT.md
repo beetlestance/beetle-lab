@@ -1,7 +1,7 @@
 # Local session adapter
 
 Public entry: createLocalSession and captureLocalExternalOrigin in index.ts.
-Contract: docs/design/lld/local-session.md. Programmatic default is paired;
+Contract: docs/system/contracts/storage.md. Programmatic default is paired;
 normal executable selects automatic through bootstrap/local-access.
 Exact canonical loopback Host/Origin, no forwarded trust/CORS; mutations require
 CSRF except fixed JSON/custom-header pair/local exchanges. GET never grants access.

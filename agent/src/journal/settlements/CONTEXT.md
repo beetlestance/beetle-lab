@@ -5,4 +5,4 @@ replay independent of purged rows. purge-order.ts is the fixed FK child-first li
 4096 permanent floor transferred from actual removed hold; replay counter O(1).
 Never-admitted/export have no authority here. SQL guard owns fixed transaction;
 Journal client requires shared local drained observation and retains carrier/fence.
-Contract:docs/design/lld/output-settlement.md. Public endpoint/controller pending.
+Contract:docs/system/contracts/outputs-settlement.md. Public endpoint/controller pending.

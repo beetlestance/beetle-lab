@@ -1,5 +1,6 @@
 import { proseSpacingIssues } from './doc-spacing.js';
 import { folderIssues } from './doc-folders.js';
+import { anchorIssues } from './doc-anchors.js';
 import { readFile, access } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { sourceFiles } from './source-files.js';
@@ -15,11 +16,12 @@ for (const file of files) {
   for (const issue of proseSpacingIssues(text))
     failures.push(`${file}:${issue.line}: missing space in prose word/number or unit`);
   failures.push(...folderIssues(file, text));
+  failures.push(...(await anchorIssues(file, text)));
   const limit = file.includes('/decisions/')
     ? 80
     : file.endsWith('/CONTEXT.md')
       ? 40
-      : file.includes('/lld/')
+      : file.includes('/system/contracts/')
         ? 220
         : 180;
   if (text.split('\n').length > limit + 1) failures.push(`${file}: over ${limit} lines`);

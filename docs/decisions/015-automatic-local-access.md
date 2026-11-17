@@ -19,4 +19,4 @@ rewrite Compose configuration select automatic mode and print no bootstrap token
 One installation administrator can run this on a workstation or VPS using SSH
 forwarding. Multi-user accounts and organisation roles require a separate IAM
 design; they are not prerequisites for hosting an installation. The contract and remaining packaged
-qualification are in [administrator sessions](../design/lld/local-session.md).
+qualification are in [administrator sessions](../system/contracts/storage.md#administrator-session).

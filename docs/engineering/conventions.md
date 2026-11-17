@@ -27,7 +27,7 @@ No import cycles, deep private imports, parallel implementations or generic
 | Function/method | 80 physical lines; cyclomatic complexity <= 10 | AST lint, excluding declared generated code |
 | Function parameters | <= 5; use named input object when richer | AST lint; no hidden context bag |
 | Test module | 500 lines | Split by behavior/fixture owner |
-| Authored document | 180 lines; focused LLD <= 220 | Documentation check |
+| Authored document | 180 lines; system contract <= 220 | Documentation check |
 | Decision record | 80 lines, one decision | Documentation check |
 | Feature context note | 40 lines | Own contracts and pointers only |
 
@@ -71,7 +71,7 @@ comes from isolation; shared-process function measurements must state limitation
 Every collection, cache, serializer and tail buffer has an explicit limit and
 failure/backpressure behavior. Test finalization and export as carefully as the
 steady-state stream; a bounded read followed by full materialization is unbounded.
-See the [resource contract](../design/lld/resources-observability.md).
+See the [resource contract](../system/contracts/resources.md).
 
 ## Agent-sized work
 

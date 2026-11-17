@@ -20,7 +20,7 @@ Each folder answers one question and owns its facts once
 | What works today | [Capabilities](system/capabilities.md) |
 | Open gaps and release state | [Backlog](plans/backlog.md) |
 | Phases and direction | [Roadmap](plans/roadmap.md) |
-| Architecture | [System overview](system/overview.md), then the [LLD map](design/LLD.md) |
+| Architecture | [System overview](system/overview.md), then the [contracts](system/contracts/README.md) |
 | Code conventions | [Conventions](engineering/conventions.md), local CONTEXT.md |
 | Required checks and platform scope | [Verification](engineering/verification.md) |
 | Task execution and handoff | [Workflow](engineering/workflow.md) |
@@ -29,8 +29,5 @@ Each folder answers one question and owns its facts once
 | Capacity and backups | [Change capacity](guides/change-capacity.md), [backup and restore](guides/backup-and-restore.md) |
 | Acceptance and historical proofs | [Acceptance ledger](evidence/acceptance-ledger.md), [evidence index](evidence/README.md) |
 
-`design/` holds the LLDs until they are consolidated into `system/contracts/`
-([plan](plans/active/docs-restructure.md)).
-
-Authored pages stay within 180 lines, LLDs within 220, decisions within 80 and
+Authored pages stay within 180 lines, contracts within 220, decisions within 80 and
 CONTEXT.md within 40. Load only the contract your task needs.

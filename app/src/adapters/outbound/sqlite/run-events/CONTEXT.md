@@ -9,4 +9,4 @@ each admitted body <=65536 bytes. No history scan, second journal, cursor insert
 ACK update, refund, lifecycle transition, files or network work occurs here.
 Wrong scoped run is not_found; invalid position is invalid_input; storage damage
 is unavailable. Worker original ownership includes bounded semantic reply capture.
-Contract: docs/design/lld/run-event-reads.md. Tests: app/test/run-events.
+Contract: docs/system/contracts/public-api.md. Tests: app/test/run-events.

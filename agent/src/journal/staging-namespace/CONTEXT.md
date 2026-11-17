@@ -8,5 +8,5 @@ Installed singleton 32 KiB; task intent+anchor+512row allowance 8 KiB; admission
 196608 logical bytes/version 1 for performance and export before reservation/event.
 Actual native observations and startup token belong to staging, not these codecs.
 Storage failures retain their errors; no cleanup removal, ACK, refund or purge here.
-Owner docs/design/lld/staging-namespace.md; future cleanup-control.md/output-retirement.md.
+Owner docs/system/contracts/outputs-collection.md; future cleanup-control.md/output-retirement.md.
 Focused checks: agent/test/staging-namespace and affected Journal/admission tests.

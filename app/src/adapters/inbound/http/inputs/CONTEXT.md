@@ -16,6 +16,6 @@ only successful service read/final verification/descriptor close permits raw.end
 Failures after headers destroy the incomplete message. Empty headers wait for read
 success. Single ranges and strong If-Range are supported; content has no auto HEAD.
 
-Owner contract: docs/design/lld/input-http.md and input-publication.md.
+Owner contract: docs/system/contracts/inputs.md and input-publication.md.
 Focused checks: Vitest app/test/http/inputs (socket files require authorized loopback).
 Tests distinguish actual native file/SQLite composition from modeled finalization.

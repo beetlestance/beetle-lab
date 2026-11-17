@@ -27,6 +27,6 @@ verifies actual authority. The optional fixed export profile uses the same catal
 
 CLI accepts exactly three private packaging arguments, reads no environment,
 and prints only bounded result JSON or fixed private error codes.
-Contract: docs/design/lld/fresh-installation.md.
+Contract: docs/system/contracts/installation.md.
 Scoped checks: vitest run tools/install/test --maxWorkers=1; eslint tools/install;
 tsc -p tsconfig.node.json --noEmit; check:architecture; check:docs.

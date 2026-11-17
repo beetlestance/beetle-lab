@@ -13,4 +13,4 @@ Binary guide shares real client/server route owners; k6 schema download shares
 the existing structural source catalogue. Native image HTTP has separate tooling. Source
 skill is web/integrations/beetle-lab/SKILL.md; MIT notice is appended to downloads.
 Shared URLs belong to app/reference-downloads.ts, re-exported by routes. No test/installation mutation is performed.
-Contract: docs/design/lld/embedded-reference.md.
+Contract: docs/system/contracts/public-api.md.

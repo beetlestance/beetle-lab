@@ -8,7 +8,7 @@ Use Node 24.12+ and the locked development dependencies (`npm ci`).
 
 ## Create a private development installation
 
-The explicit [fresh provisioner](../design/lld/fresh-installation.md) creates coherent
+The explicit [fresh provisioner](../system/contracts/installation.md#offline-provisioning) creates coherent
 private backend/agent configuration, token, Journal and authority gate. Supply an
 owned private request file matching [ProvisionRequest](../../tools/install/types.ts):
 settings/policy/manifest are explicit, and the named images/network must already

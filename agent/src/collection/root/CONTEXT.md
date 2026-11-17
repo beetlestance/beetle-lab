@@ -7,7 +7,7 @@ Callers retain all original custody, modes, post-close and quiescence checks.
 
 Never Number-convert native device/inode/nanosecond values. The returned scalar
 snapshot is frozen. A snapshot is not a durable source receipt or release proof.
-Producer contract: docs/design/lld/output-collection-intent.md.
+Producer contract: docs/system/contracts/outputs-collection.md.
 
 captureCollectionRootIdentity owns the existing stored-root scalar grammar. It
 copies exact own data properties without accessors and freezes the bounded tuple;

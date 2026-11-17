@@ -18,6 +18,8 @@ are verified. If a required workflow filters irrelevant work, its gate must stil
 report a truthful success/inapplicable result rather than disappear and block PRs.
 No production targets/secrets in PR runs. Synthetic targets have explicit rate and
 time caps. Use temporary directories, ports, network fixtures and fake clocks.
+Every new SQLite or journal migration carries its own version guard and an upgrade
+test from the previous version.
 
 ## Feature acceptance inventory
 
@@ -72,7 +74,7 @@ establish real Docker, platform or k6 behavior.
 
 ## Resource qualification
 
-Use the fixture and proposed targets in [resources](../design/lld/resources-observability.md).
+Use the fixture and proposed targets in [resources](../system/contracts/resources.md).
 Measure frontend/backend/agent/attempt scopes independently, including idle/loaded
 stack overhead, user-selected pool sizes, parallel and isolated modes, telemetry off/on,
 repeated runs, final drain, export, cancellation and post-run idle memory. Exercise

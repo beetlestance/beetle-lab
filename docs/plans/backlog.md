@@ -9,15 +9,34 @@ inventory, not a release certificate. Historical reports are indexed in
 
 | Area | Gap |
 | --- | --- |
-| Report parity | Readable memory/CPU/GC reports pass source and packaged ARM64 checks. Independent comparisons matched 36 numeric points and three GC calculations. Isolated Playwright verifies actual displayed values, downloads and reloads. |
-| Target metrics | The real packaged workload published all 121 target samples, including GC total/average/maximum millisecond fields. Older artifact compatibility and explicit missing values remain covered. |
-| Capacity changes | Supported memory/output increases are applied locally at 1 GiB/512 MiB inside the unchanged 2 GiB storage allocation. History and held reservations were preserved; an actual engine run passed at the 1 GiB limit. |
-| Storage and diagnostics | Real-worker slow-burst, overload, stall and uncertain-write tests pass for the no-progress watchdog and redacted diagnostics. Current packaged workload and hosted stream/conformance checks pass. Native filesystem-stall injection is not claimed. |
-| Sampler confinement | Corrected by appending sampling paths under the configured target and checking origin before fetch. Regression tests cover scheme-looking paths; release acceptance remains open. |
-| Migration extension | Migration 026 now has its own version guard. Prior-025 upgrade coverage passes; adding a later migration still requires its own upgrade tests. Migration 015 already has a caller guard. |
-| Publishing | Release protections are applied and the read-only guard passes: default workflow token read-only, no Actions PR approvals, and akshay253101 review required for the integration-only beetle-release environment. No replacement image was published; legacy registry images remain available. |
-| Qualification | Source CI and both native image jobs pass at 40c4a5c1. Hosted conformance, 30-minute stream and four-run memory/latency evidence pass within their finite scopes; see [measurements](../evidence/audit-corrections.md). The original conformance failure remains unexplained. |
-| Maintainability | Targeted settings rows validate identity/scope/version/value schemas; malformed-row and original-receipt replay cases pass. This does not certify all SQLite rows or whole-repository formatting. |
+| Release acceptance | Sampler confinement and the other corrections listed in [observations at a646d39a](../evidence/release-readiness-a646d39a.md) still need release acceptance on the integrated build. |
+| Conformance | The original hosted conformance failure is unexplained; later passes do not establish its cause. |
+| Storage faults | Native filesystem-stall injection has not been exercised; only real-worker and simulated stalls are covered. |
+| Row validation | Settings rows are validated; other SQLite row families and whole-repository formatting are not certified. |
+| Publishing | No replacement image is published; publication needs explicit authorisation after integration. |
+| Design assets | The shared asset release declares GPL-3.0-only; distribution terms must be settled before bundling ([decision 019](../decisions/019-frontend-stack-and-engine-sdk.md)). |
+| Presentation | Long report lines overflow the page horizontally; responsive visual quality is uncertified and belongs to the UI redesign. |
+
+Each new migration needs its own upgrade test; that is a rule in
+[verification](../engineering/verification.md), not a gap.
+
+## Described but not built
+
+Behaviour the retired low-level designs described and the code does not have.
+None is committed work; each needs its own plan before it starts.
+
+| Area | Not built |
+| --- | --- |
+| Public API | SSE live event stream with cursor resume; installed engine catalogue routes; explicit run retry (a new attempt under one run; generation is fixed at 1); public `/capacity` and `/health/ready`; automation client `validate` and `export`; `POST /runs/{id}/exports` |
+| Namespaces | Recursive organisation and workspace cleanup beyond empty-only deletion; logical organisation retirement |
+| Execution | Process (non-Docker) backend; browser and mutation engine profiles; per-profile cancellation grace; checkpointed work units; explicit finalisation ACK endpoints; a container retention sweeper |
+| Events | Rebuilding event coverage marked `partial`; recovery authority for blocked event problems (`quota_exhausted`, `missing_receipt`, `replay_conflict`) |
+| Resources | Backend data-root disk observation with its own reserve; qualified idle and thermal producers; a reserved guard lane in the agent scheduler if guard freshness needs it; OpenTelemetry export |
+| Outputs | A durable run pin for retention; closure for attempts without wrapper exit evidence (they stay pending `exit_evidence`); tombstone expiry behind a non-replay fence; a retention rule for global mutation receipts; the cold mailbox-volume association gap |
+| Exports | External-secret export modes; cleanup, retirement and settlement of standalone-export output |
+| Results | Arbitrary live series selection and replay; retention of raw k6 diagnostics |
+| Storage and deployment | S3 artefact store, optional PostgreSQL and multi-instance shared mode; remote TLS and multi-agent ownership; writable or in-place restore ([decision 016](../decisions/016-historical-restore.md)); a constrained Docker broker ([decision 018](../decisions/018-docker-host-trust-boundary.md)) |
+| Release | Published pull installation, SBOM and image scans, measured stack overhead |
 
 ## Evidence boundaries
 
@@ -32,6 +51,4 @@ protections are applied; publication still requires explicit authorisation.
 
 A full UI redesign, additional engines, generated test cases, shared PostgreSQL/S3
 storage and multi-user IAM are later phases. Report content and basic configuration
-usability are functional work, not deferred visual polish. Long report lines can
-produce horizontal page overflow; that known presentation defect remains in the
-deferred UI work, and responsive visual quality is not certified by these checks.
+usability are functional work, not deferred visual polish.

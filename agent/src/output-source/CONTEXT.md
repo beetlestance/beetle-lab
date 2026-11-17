@@ -12,7 +12,7 @@ facts before foreign digest callbacks. Native path/checkpoint/runtime/release
 validation stays here; public contracts import no agent or Node filesystem code.
 
 Pure value boundary for a verified source manifest, private file custody and
-durable collection intent. Contracts: docs/design/lld/output-source-commit.md and
+durable collection intent. Contracts: docs/system/contracts/outputs-collection.md and
 output-collection-intent.md. The four pure codecs capture closed owned inputs,
 validate local identity/chronology/custody relationships and verify content seals.
 Journal transactions, controller producers and transport remain separate work.

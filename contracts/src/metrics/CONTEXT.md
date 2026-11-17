@@ -18,7 +18,7 @@ must be bounded data, not reflective hostile proxies. Validation bounds bucket
 iteration before work. Domain errors are explicit, never a measured zero.
 
 Moved byte-for-byte from the independently reviewed engine implementation; do not
-fork engine/backend/chart copies. Owning spec: docs/design/lld/k6-distributions.md.
+fork engine/backend/chart copies. Owning spec: docs/system/contracts/resources.md.
 Focused checks: vitest run contracts/test/metrics plus affected engine aggregation.
 
 projectMetricValue projects validated NumericTotal into the existing API value shape.

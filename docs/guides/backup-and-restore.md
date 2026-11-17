@@ -97,6 +97,6 @@ limits and startup timeout have corresponding `BEETLE_HISTORY_MAXIMUM_BYTES`,
 `BEETLE_HISTORY_MAXIMUM_ENTRIES` and `BEETLE_HISTORY_TIMEOUT_MS` settings.
 Stop it with the same environment and `docker compose -f compose.history.yml down`.
 Do not move a completed historical root: restore its portable archive afresh at
-its intended final path/environment. [The LLD](../design/lld/cold-recovery.md) explains
+its intended final path/environment. [The recovery contract](../system/contracts/recovery.md) explains
 native custody and failure fences. Broader release/platform qualification remains
 separate from this candidate workflow.

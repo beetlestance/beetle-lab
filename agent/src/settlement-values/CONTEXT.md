@@ -1,5 +1,5 @@
 # Agent settlement values
-Entry:index.ts. Contract:docs/design/lld/output-settlement.md.
+Entry:index.ts. Contract:docs/system/contracts/outputs-settlement.md.
 Canonical tombstone<=3584 plus 512 logical row allowance;4096 permanent charged floor.
 V1 admitted codec is byte-identical after symbol renames, preserving canonical/hash
 behavior. V2 has a separate domain and explicit16384 rejected-control funding, zero

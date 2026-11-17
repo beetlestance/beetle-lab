@@ -1,7 +1,7 @@
 # Offline recovery composition
 
 Owner: cold backup, fresh historical restoration and its read-only viewer.
-Contract: docs/design/lld/cold-recovery.md and ADR016. CLI is packaged with the
+Contract: docs/system/contracts/recovery.md and ADR016. CLI is packaged with the
 installer, with matching metadata/agent workers. Normal installation stays Compose.
 
 Source and destination operations are explicit, bounded and private. Never start,

@@ -1,7 +1,7 @@
 # Private output transfer port
 
 createOutputSourceReader implements the private service boundary for source envelopes
-and declared artifact chunks. Executable wiring and actual native composition are pending.
+and declared artifact chunks; agent bootstrap (`bootstrap/runtime.ts`) wires it to HTTP.
 It consumes Journal-owned source/closure and the collection file owner's range
 entrypoint. It never runs engines, creates closure, publishes application results,
 deletes source files or refunds retention. HTTP retains its own original credits.
@@ -15,5 +15,5 @@ An absent source followed by a released/rejected snapshot is re-read once after
 that terminal fact before unavailable is allowed. Existing-source and pending
 paths add no query; source/closure proofs and request budget fences still apply.
 
-Contract: docs/design/lld/output-transfer.md. Public value validation lives in
+Contract: docs/system/contracts/outputs-collection.md. Public value validation lives in
 @beetle/contracts/output-source; root/checkpoint/runtime remain agent-private.

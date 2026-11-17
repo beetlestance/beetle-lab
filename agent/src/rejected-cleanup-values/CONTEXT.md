@@ -5,4 +5,4 @@ binding and domain-separated digest. It grants no native or accounting permissio
 The13312 peak covers explicit intent, receipt, funding-row, counter and tombstone cells.
 No prepared-role plan/progress is part of the rejected no-task branch.
 Journal 023 funding/guards and actual opaque native proof are separate pending owners.
-Contract: docs/design/lld/output-settlement.md; task packet holds the reviewed amendment.
+Contract: docs/system/contracts/outputs-settlement.md; task packet holds the reviewed amendment.

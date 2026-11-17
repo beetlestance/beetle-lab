@@ -1,7 +1,7 @@
 # System overview
 
 Scope and sequence: [roadmap](../plans/roadmap.md).
-Wire behavior is owned by the [LLD](../design/LLD.md), not repeated here.
+Wire behaviour is owned by the [contracts](contracts/README.md), not repeated here.
 
 ## Product boundary
 
@@ -133,13 +133,13 @@ Unknown totals, unsupported sensors and sampled peaks remain labeled.
 Fresh v2 data root and major-version image tags; no legacy data migration is needed.
 Organisation -> workspace -> optional folders scopes every suite, input and result.
 These are installation namespaces, not user membership or security-tenancy claims. See
-[organisation/settings](../design/lld/organization-settings.md) for isolation and inheritance. Store redacted configuration and secret-version references,
+[organisation/settings](contracts/public-api.md#hierarchy-and-scoping) for isolation and inheritance. Store redacted configuration and secret-version references,
 not resolved credentials. Engines receive only run-scoped inputs/outputs. The UI
 has no Docker socket. No private infrastructure dependency enters public images.
 
 Retain files by declared quotas/retention. Publish artifact references only after
 checksum verification. Artifact and metadata updates are reconciled explicitly;
-there is no cross-store transaction. See [storage LLD](../design/lld/domain-storage.md).
+there is no cross-store transaction. See [storage contract](contracts/storage.md).
 
 ## Extension and deployment profiles
 
@@ -170,3 +170,10 @@ its execution and result contract is clear.
 [React build-tool guidance](https://react.dev/learn/build-a-react-app-from-scratch),
 [React Router](https://reactrouter.com/start/declarative/installation),
 [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview).
+
+## Anchors
+
+| Code | Reviewed |
+| --- | --- |
+| `compose.rewrite.yml` | `a59e8fdf0d91` |
+| `package.json` | `1d886457f9c0` |

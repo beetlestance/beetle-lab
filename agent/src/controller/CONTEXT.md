@@ -32,5 +32,8 @@ same-Journal recreation; recovered failure stays charged. Artifact-only recovery
 uses pinned native root/checkpoint and a fresh bounded budget, never target launch.
 Installation source-first catalogue/staging recovery is a separate composition step.
 
+Only a pre-issue JournalError(queue_full) on the first Offer read returns
+`deferred/journal_busy`; one Boolean keeps the explicit launch for a later tick.
+Afterwards only compact scope/intent/engine/budget authority stays cached.
 Focused checks: agent/test/controller, Node TypeScript, changed ESLint and structural
 gates. Synthetic Docker/collector tests prove wiring, not actual Linux execution.

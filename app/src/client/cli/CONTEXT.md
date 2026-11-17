@@ -2,7 +2,7 @@
 
 Public entry: runClient(argv,streams,optionalFetch) in main.ts; executable
 app/dist/automation.js from build:api, already copied by the backend image recipe.
-See docs/design/lld/automation-client.md for the closed commands and exit contract.
+See docs/system/contracts/public-api.md for the closed commands and exit contract.
 Optional container client; installation remains Compose-first. HTTP only, no
 SQLite, agent, engine compiler, target requests or separate outcome calculation.
 Connect uses the normal automatic local exchange without a token; pair consumes

@@ -5,4 +5,4 @@ No callback runs while its per-DB permit exists. Eligibility is derived before p
 Exact frame permissions have one owner here; SQL alone cannot mint authorization.
 Any rollback/restoration uncertainty poisons the connection before attempting close.
 The Store checks poison before later commands. Foreign keys stay enabled throughout.
-Contract: docs/design/lld/output-settlement.md.
+Contract: docs/system/contracts/outputs-settlement.md.

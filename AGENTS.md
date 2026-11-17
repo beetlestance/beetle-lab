@@ -1,7 +1,7 @@
 # beetle-lab implementation rules
 
 Read the repository documentation map (docs/README.md) and assigned task packet
-first. Architecture lives in docs/system/ and the remaining LLDs; open gaps live in
+first. Architecture lives in docs/system/ (overview and contracts); open gaps live in
 docs/plans/backlog.md. A plan never describes current behaviour; legacy
 source and execution reports are preserved in Git, not maintained runnable paths.
 

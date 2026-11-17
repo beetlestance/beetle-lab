@@ -12,7 +12,7 @@ A pending selector retains expected settings, UUID, kind/amount and proposed gen
 matching replay resolves an old or exactly committed CAS without duplicate writes.
 Serving loaders recheck selector custody under their original startup leases.
 No startup bypass, host-capacity inference or historical identity rewrite is allowed.
-Contract: docs/design/lld/installed-memory-change.md.
+Contract: docs/system/contracts/resources.md.
 Focused checks: tools/install/test/capacity-policy.test.ts.
 
 Output-pool changes share the coordinator and settings CAS. They grow only aggregate

@@ -17,7 +17,7 @@ and observer closes. Journal closes only after all cleanup succeeds. Failure ret
 the process owner/journal; another runtime cannot hide uncertain ownership.
 Executable still owns listening and transport lifetime; no artifact deletion ACK.
 
-Contract: docs/design/lld/agent-runtime.md.
+Contract: docs/system/contracts/execution-protocol.md.
 Checks: npx --no-install vitest run agent/test/bootstrap --maxWorkers=1;
 npx --no-install eslint agent/src/bootstrap agent/test/bootstrap.
 

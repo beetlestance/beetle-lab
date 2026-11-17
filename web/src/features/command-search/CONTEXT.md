@@ -10,4 +10,4 @@ second cache or automatic retry. Existing public client enforces response scopes
 Close removes only this observer; existing scope owners retain resource cleanup.
 Query128chars/results40/pages100 are explicit. Error groups hide failed cached
 items. No engine, mutation, global/full-history search or redesign is added.
-Contract: docs/design/lld/command-search.md.
+Contract: docs/system/contracts/web-ui.md.

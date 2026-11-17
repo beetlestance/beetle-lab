@@ -7,4 +7,4 @@ Per-suite reads<=limit+1 then bounded top-K merge; no historical-match cap.
 Prefix reads<=257; >256 fails before filters/cursor, never partial success.
 Missing readiness returns search_indexing, broad search search_too_broad.
 No native/config/metric IO, credentials or engine imports.
-Owner: docs/design/lld/run-history-search.md. Tests: app/test/storage/run-search/.
+Owner: docs/system/contracts/public-api.md. Tests: app/test/storage/run-search/.

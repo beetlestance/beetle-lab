@@ -15,5 +15,5 @@ lease and handle globally reachable forever; materialized reads remain pending
 and service close reports cleanup failure. There is no reset or close retry.
 Private fault ports are test seams; the public factory uses native filesystem I/O.
 
-Contract: `docs/design/lld/installed-providers.md`.
+Contract: `docs/system/contracts/installation.md`.
 Scoped check: `npx --no-install vitest run agent/test/providers --maxWorkers=1`.

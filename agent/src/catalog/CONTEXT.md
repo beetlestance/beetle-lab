@@ -26,4 +26,4 @@ persisted pin and current config bytes, rejecting missing historical installatio
 identity rather than selecting a replacement.
 
 Focused check: `npx vitest run agent/test/catalog --maxWorkers=2`.
-Owner spec: `docs/design/lld/engine-catalog.md`.
+Owner spec: `docs/system/contracts/engines.md`.
