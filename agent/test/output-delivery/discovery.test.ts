@@ -48,6 +48,6 @@ it('uses the partial pending index/range before LIMIT and never prepares history
   }
   const bounded = queries.find(query => query.includes('LIMIT ?'))!;
   expect(bounded.match(/a\.id>\? AND a\.id<=\?/g)).toHaveLength(2);
-  expect(bounded).toMatch(/UNION SELECT .*output_absence_pending[\s\S]*a\.id>\? AND a\.id<=\? ORDER BY id LIMIT \?/);
+  expect(bounded.replace(/\s+/g, ' ')).toMatch(/UNION SELECT .*output_absence_pending[\s\S]*a\.id>\? AND a\.id<=\? ORDER BY id LIMIT \?/);
   expect(() => scan.read({ lane: 'delivery', limit: 100 })).toThrow(expect.objectContaining({ code: 'invalid_input' }));
 });

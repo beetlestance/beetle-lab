@@ -14,7 +14,7 @@ import {
   captureSourceReplay,
 } from '../../src/journal/event-row.js';
 import { EVENT_ROW_OVERHEAD_BYTES, eventInput } from '../../src/journal/event-input.js';
-import { offerInput } from '../../src/journal/input.js';
+import { canonical, offerInput } from '../../src/journal/input.js';
 import { journalFixture } from './fixtures.js';
 const f = journalFixture();
 let base: Row;
@@ -175,4 +175,21 @@ it('accepts accumulated exit facts without a timestamp while retaining the immut
     expect(() => captureAttemptRow({...row, exit_facts_json: JSON.stringify(corrupt)})).toThrowError();
   }
   expect(() => captureAttemptRow({...row, exit_json: null})).toThrowError();
+});
+
+it.each(['bound', 'unbound'] as const)('quarantines only validated missing-binding records with %s canonical identity', mode => {
+  const offer = f.offer(); const raw = { ...offer } as Record<string, unknown>;
+  delete raw.installedIdentity;
+  const original = mode === 'bound' ? offer : raw;
+  const bytes = JSON.stringify(raw); const saved = canonical(original);
+  expect(() => captureStoredOffer(bytes, saved, base)).toThrowError(expect.objectContaining({ code: 'installed_identity' }));
+  for (const changed of [
+    { ...raw, config: { changed: true } }, { ...raw, budget: {} },
+    { ...raw, installedIdentity: null }, { ...raw, extra: true },
+    { ...raw, organizationId: 'ffffffff-ffff-4fff-8fff-ffffffffffff' },
+  ]) {
+    expect(() => captureStoredOffer(JSON.stringify(changed), saved, base)).toThrowError(expect.objectContaining({ code: 'unavailable' }));
+  }
+  expect(() => captureStoredOffer(bytes, JSON.stringify(original, null, 2), base))
+    .toThrowError(expect.objectContaining({ code: 'unavailable' }));
 });

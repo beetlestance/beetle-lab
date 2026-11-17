@@ -137,3 +137,5 @@ export class RecoveryManifest {
     });
   }
 }
+
+export { isUnboundStoredOffer } from './unbound-offer.js';

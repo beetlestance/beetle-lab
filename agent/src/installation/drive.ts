@@ -178,14 +178,30 @@ async function controllerStep(
   if (progress.kind === 'released') await context.retire(entry, progress);
   return progress;
 }
-async function availableOffer(context: DriveContext, entry: Entry, budget: Operation): Promise<Offer | null> {
+async function availableOffer(
+  context: DriveContext,
+  entry: Entry,
+  budget: Operation,
+): Promise<{ offer: Offer | undefined } | { progress: DriveProgress }> {
+  if (entry.controller) return { offer: undefined };
   try {
-    return await context.options.journal.readOffer(entry.key);
+    return { offer: await context.options.journal.readOffer(entry.key) };
   } catch (error) {
     context.guard(entry, budget);
-    if (error instanceof JournalError && error.code === 'queue_full') return null;
+    if (error instanceof JournalError && error.code === 'queue_full')
+      return { progress: { kind: 'deferred', reason: 'journal_busy' } };
+    if (error instanceof JournalError && error.code === 'installed_identity') {
+      const progress = { kind: 'rejected' as const, reason: 'installed_identity' };
+      await context.retire(entry, progress);
+      return { progress };
+    }
     throw error;
   }
+}
+function readProgress(context: DriveContext, entry: Entry, budget: Operation, progress: DriveProgress): DriveProgress {
+  // Quarantine has already retired the entry; ordinary deferral still checks close/deadline.
+  if (progress.kind === 'deferred') context.guard(entry, budget);
+  return progress;
 }
 export async function drive(context: DriveContext, entry: Entry, budget: Operation): Promise<DriveProgress> {
   if (entry.cleanupFailed) throw new InstallationError('cleanup');
@@ -201,9 +217,10 @@ export async function drive(context: DriveContext, entry: Entry, budget: Operati
     retire: (owner, value) => context.retire(owner, value),
   });
   if (absence) return absence;
-  const offer = entry.controller ? undefined : await availableOffer(context, entry, budget);
+  const saved = await availableOffer(context, entry, budget);
+  if ('progress' in saved) return readProgress(context, entry, budget, saved.progress);
   context.guard(entry, budget);
-  if (offer === null) return { kind: 'deferred', reason: 'journal_busy' };
+  const offer = saved.offer;
   const current = await reservationFor(context, entry, offer, budget, recovery.intent);
   if (!('status' in current)) return current;
   const released = await retireReleased(context, entry, current);

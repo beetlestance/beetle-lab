@@ -51,7 +51,10 @@ it.each(['unbound', 'changed'] as const)('preserves inherited %s charge when clo
   const e = await inherited(binding); const entered = deferred<void>(); const release = deferred<void>();
   const original = e.journal.readOffer.bind(e.journal);
   const read = vi.spyOn(e.journal, 'readOffer').mockImplementationOnce(async key => {
-    const value = await original(key); entered.resolve(); await release.promise; return value;
+    const outcome = await original(key).then(value => ({ value }), error => ({ error }));
+    entered.resolve(); await release.promise;
+    if ('error' in outcome) throw outcome.error;
+    return outcome.value;
   });
   let driveDone = false; let closeDone = false;
   const driving = e.manager.drive(scope(e.offer), operation());

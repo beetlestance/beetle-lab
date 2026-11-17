@@ -67,21 +67,21 @@ describe('independent metadata review regressions', () => {
       const queries: string[] = [];
       const instrument = vi.spyOn(db, 'prepare').mockImplementation(sql => {
         queries.push(sql);
-        return prepare(sql.replace('SELECT f.id,s.depth+1', 'SELECT visit(f.id),s.depth+1')
-          .replace('SELECT id FROM folders', 'SELECT id,visit(id) AS enumeration_probe FROM folders'));
+        return prepare(sql.includes('FROM folders INDEXED BY folders_children')
+          ? sql.replace('SELECT ', 'SELECT visit(id) AS enumeration_probe,') : sql);
       });
       try {
         expect(() => new Entities(db).subtreeHeight(scope, uuid(4))).toThrow();
         expect(visits).toBeLessThanOrEqual(10000);
         expect(visits).toBe(10000);
       } finally { instrument.mockRestore(); }
-      const enumeration = queries.find(sql => sql.includes('AND parent_id=? ORDER BY id LIMIT ?'));
+      const enumeration = queries.find(sql => sql.includes('AND parent_id=? ORDER BY folders.id LIMIT ?'));
       expect(enumeration).toContain('INDEXED BY folders_children');
       const plan = prepare(`EXPLAIN QUERY PLAN ${enumeration}`).all(uuid(1), uuid(2), uuid(4), 10000);
       expect(plan.map(row => row.detail).join(' ')).toContain('folders_children');
       expect(plan.map(row => row.detail).join(' ')).not.toContain('TEMP B-TREE');
     } finally { db.close(); }
-  });
+  }, 60_000); // Includes constructing 100,000 native SQLite rows; the enumeration bound remains exact.
   it('retains exact bounded subtree height and rejects corrupt depth/cycles', async () => {
     const path = fixture.path(); const metadata = await fixture.open(path); await seed(metadata);
     await createFolder(metadata, 4); await createFolder(metadata, 5, uuid(4)); await createFolder(metadata, 6, uuid(5));

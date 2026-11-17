@@ -25,6 +25,7 @@ import type { OutputAbsence } from '@beetle/contracts/output-source';
 import type { OutputAbsenceOperation } from './output-absence-protocol.js';
 
 export type ErrorCode =
+  | 'installed_identity'
   | 'invalid_input'
   | 'conflict'
   | 'not_found'

@@ -8,6 +8,8 @@ const fixture = storageFixture();
 const apps: App[] = [];
 afterEach(async () => { for (const app of apps.splice(0)) await app.close(); });
 
+// This checks durable maximum-size transfer, not a 10-second disk-latency SLA.
+// Each of the 128 sequential chunks still asserts its committed offset/version.
 it('uploads 128 bounded chunks and reads the literal 8MiB maximum through actual HTTP/SQLite/native files', async () => {
   const app = await setup(fixture); apps.push(app);
   const expected = Buffer.alloc(8_388_608);
@@ -36,4 +38,4 @@ it('uploads 128 bounded chunks and reads the literal 8MiB maximum through actual
   expect(content.headers['transfer-encoding']).toBe('chunked');
   expect(content.rawPayload.byteLength).toBe(8_388_608); expect(content.rawPayload.equals(expected)).toBe(true);
   expect(createHash('sha256').update(content.rawPayload).digest('hex')).toBe(sha256);
-});
+}, 60_000);
