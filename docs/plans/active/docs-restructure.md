@@ -1,8 +1,9 @@
 # Plan: documentation restructure
 
 Status: active. Phases 0–2 delivered on `docs/restructure` (not yet integrated);
-phase 4 started: a Starlight site in `site/` builds with valid links. Phase 3
-(Penpot design) and phases 5–7 are open. The triage
+phases 4–6 started: a Starlight site in `site/` builds with valid links, is
+served at `/docs/` by the frontend image, has limits and troubleshooting pages and
+its first animated diagram. Phase 3 (Penpot design) and phase 7 are open. The triage
 below is kept as the record of where each former LLD went.
 Decision: [017](../../decisions/017-documentation-structure-and-delivery.md).
 
@@ -22,7 +23,12 @@ Decision: [017](../../decisions/017-documentation-structure-and-delivery.md).
 Phase 4 so far: `site/` has its own `package.json` and lockfile outside the root
 workspace. User guides for automation, capacity and backup moved from
 `docs/guides/` into the site and were rewritten for users; `docs/guides/` keeps
-the development guide. Serving it from the frontend image is not done yet.
+the development guide. The frontend image builds the site in a `docs` stage;
+nginx serves it at `/docs/`, and each page carries a hash-based CSP meta tag for
+its inline scripts. Checked with the nginx config against a local container and a
+headless browser (no CSP violations, search works); the full image build has not
+been run. Diagrams are inline SVG themed by Starlight tokens, with motion removed
+under reduced-motion.
 
 Phase 2 outcome: 16 contracts in `system/contracts/` (run lifecycle split into
 lifecycle and delivery; UI LLDs became the web UI contract), module map moved to

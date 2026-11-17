@@ -25,6 +25,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'Beetle Lab',
+      customCss: ['./src/styles/custom.css'],
       description: 'Self-hosted k6 performance testing with isolated execution and trustworthy results.',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/beetlestance/beetle-lab' }],
       plugins: [starlightLinksValidator({ errorOnLocalLinks: false, errorOnRelativeLinks: false })],
@@ -32,6 +33,7 @@ export default defineConfig({
         { label: 'Start', items: [{ autogenerate: { directory: 'start' } }] },
         { label: 'Concepts', items: [{ autogenerate: { directory: 'concepts' } }] },
         { label: 'Guides', items: [{ autogenerate: { directory: 'guides' } }] },
+        { label: 'Reference', items: [{ autogenerate: { directory: 'reference' } }] },
       ],
       lastUpdated: false,
       pagination: true,

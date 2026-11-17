@@ -1,0 +1,26 @@
+/* Diagrams drawn inline in pages. They use Starlight colour tokens so they follow
+   the light and dark theme toggle. */
+.bl-flow { margin-block: 1.5rem; }
+.bl-flow svg { display: block; width: 100%; height: auto; overflow: visible; }
+.bl-flow .tall { display: none; max-width: 22rem; margin-inline: auto; }
+@media (max-width: 40rem) {
+  .bl-flow .wide { display: none; }
+  .bl-flow .tall { display: block; }
+}
+.bl-flow .node rect { fill: var(--sl-color-bg-nav); stroke: var(--sl-color-gray-4); stroke-width: 1.25; }
+.bl-flow .node.edge rect { fill: none; stroke-dasharray: 4 3; }
+.bl-flow text { text-anchor: middle; fill: var(--sl-color-white); font-family: var(--sl-font); }
+.bl-flow .name { font-size: 14px; font-weight: 600; }
+.bl-flow .sub { font-size: 11.5px; fill: var(--sl-color-gray-2); }
+.bl-flow .link { stroke: var(--sl-color-gray-3); stroke-width: 1.5; fill: none; }
+.bl-flow marker path { fill: var(--sl-color-gray-3); }
+.bl-flow .node rect { animation: bl-step 7.2s ease-in-out infinite; animation-delay: calc(var(--step) * 0.9s); }
+/* A run's request lights each part in turn, left to right. */
+@keyframes bl-step {
+  0%, 18%, 100% { stroke: var(--sl-color-gray-4); stroke-width: 1.25; }
+  5%, 12% { stroke: var(--sl-color-accent); stroke-width: 2.5; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bl-flow .node rect { animation: none; }
+}
+.bl-flow figcaption { margin-top: .75rem; font-size: var(--sl-text-sm); color: var(--sl-color-gray-2); }
