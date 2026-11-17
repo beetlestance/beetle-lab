@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest';
 import {act,cleanup,fireEvent,screen,waitFor,within} from '@testing-library/react';
 import {afterEach,expect,it} from 'vitest';
-import {read,ids,json,testClient,mount,deferred,suite,workspace,apiError} from './fixtures.js';
+import {read,ids,json,testClient,mount,deferred,suite,fullSuitePage,workspace,apiError} from './fixtures.js';
 import {historyPage} from '../runs/test-fixtures.js';
 import {routes} from '../../app/routes.js';
 afterEach(cleanup);
@@ -31,7 +31,7 @@ it('retires immediately on scope switch and never adopts a late old-scope same-n
  expect(within(second).getByRole('link',{name:/Shared suite/})).toHaveAttribute('href',routes.suite(ids.b,ids.workspace,suite().id));expect(f.records.every(row=>row.method==='GET')).toBe(true);
 });
 it('shows more-page and unavailable groups without turning failed reads into empty success',async()=>{
- const f=testClient(request=>request.path.includes('/suites?')?json({scope:suite().scope,items:[suite()],nextCursor:'more_suites'}):request.path.includes('/runs?')?json(apiError('storage_unavailable'),503):read(request));
+ const f=testClient(request=>request.path.includes('/suites?')?json(fullSuitePage()):request.path.includes('/runs?')?json(apiError('storage_unavailable'),503):read(request));
  mount(f.client,routes.workspace(ids.a,ids.workspace));await screen.findByRole('heading',{name:'Folders'});const dialog=await open();
  expect(await within(dialog).findByText('More suites are available in the list view.')).toBeVisible();expect(await within(dialog).findByText('Recent runs could not be loaded.')).toBeVisible();
  const reads=f.records.length;fireEvent.change(within(dialog).getByRole('searchbox'),{target:{value:'Shared'}});await waitFor(()=>expect(within(dialog).getAllByRole('link')).toHaveLength(1));expect(f.records).toHaveLength(reads);
