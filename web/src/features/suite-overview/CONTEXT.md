@@ -1,6 +1,11 @@
-# Suite configuration/history context
-ConfigurationSummary uses an already-loaded saved revision; bounded literal schedule
-projection, origin only, no compiler/secrets/body access or new config reads/storage.
-SuiteLatestRun reads one indexed suite-filtered Run and links the full history context.
-Errors are unknown; no polling; query key includes scope, suite and all filters.
-Tests: configuration and UI/latest/scope; backend/client suite-filter tests.
+# Suite overview context
+Overview, LoadShape and StartRun render an already-loaded saved revision. `plan.ts`,
+`details.ts` and `changes.ts` are bounded literal projections of the k6 config: no
+compiler, secrets or request bodies. The target shows its origin only, and input names
+come from at most 16 cached getInput reads.
+RecentRuns makes one indexed suite-filtered listRuns read (limit 5). Errors stay unknown
+and nothing polls. StartRun reads workspace settings and submits createRun through
+execution-request and runs/useSubmission. A budget field changes only for this run, and
+untouched fields keep their exact API values. The dialog has no note field because
+CreateRunRequest has none.
+Tests: plan.test.ts (projection, budget, time copy) and ui.test.tsx (recent runs, scope).

@@ -1,18 +1,31 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { InputRecord, Workspace } from '@beetle/contracts/api';
+import type { InputPage, InputRecord, Workspace } from '@beetle/contracts/api';
 import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
+import { Button } from '../../components/Button.js';
 import { Pagination, usePage } from '../../components/Pagination.js';
 import { QueryState } from '../../components/QueryState.js';
+import { EmptyState, LoadingState } from '../../components/States.js';
 import { InputStatus } from './InputStatus.js';
+import { InputTable } from './InputTable.js';
+import { formatBytes, plural } from './format.js';
 import './inputs.css';
+
+/** What the listed page tells header actions, such as the sample file's name check. */
+export interface InventoryContext {
+  readonly items: readonly InputRecord[];
+  /** True only when the first page is also the last, so totals and name checks are exact. */
+  readonly complete: boolean;
+}
 
 /** One mounted workspace owns one page and one current-status/deletion panel. */
 interface InventoryProps {
   workspace: Workspace;
   renderActions?: (record: InputRecord) => ReactNode;
+  /** Header actions (Upload files, Add a sample file); also offered by the empty state. */
+  actions?: (context: InventoryContext) => ReactNode;
   children?: ReactNode;
 }
 export function InputInventory(props: InventoryProps) {
@@ -21,7 +34,7 @@ export function InputInventory(props: InventoryProps) {
   return <InventoryScope key={identity} {...props} />;
 }
 
-function InventoryScope({ workspace, children, ...actions }: InventoryProps) {
+function InventoryScope({ workspace, children, actions, renderActions }: InventoryProps) {
   const api = useApi();
   const client = useQueryClient();
   const params = { organizationId: workspace.scope.organizationId, workspaceId: workspace.id };
@@ -42,78 +55,68 @@ function InventoryScope({ workspace, children, ...actions }: InventoryProps) {
     },
     [client, identity],
   );
+  const context = contextOf(query.data, page.hasBack);
   return (
     <section className="content-section input-inventory" aria-label="Input inventory">
-      <header className="section-header">
+      <header className="inputs-header">
         <div>
           <h1>Inputs</h1>
-          <p>Inspect input metadata and current status. Deletion is explicit and may require cleanup.</p>
+          <p className="inputs-summary">{summary(context, query.data !== undefined)}</p>
         </div>
-        <button disabled={query.isFetching} onClick={() => void query.refetch()}>
-          Refresh input list
-        </button>
+        <div className="inputs-actions">
+          {actions?.(context)}
+          <Button variant="text" disabled={query.isFetching} onClick={() => void query.refetch()}>
+            Refresh input list
+          </Button>
+        </div>
       </header>
       {children}
-      <QueryState query={query}>
-        {(data) => (
-          <>
-            <InputTable items={data.items} selected={selected} select={select} />
-            {!data.items.length && <p className="notice">No inputs in this workspace.</p>}
-            <Pagination page={page} next={data.nextCursor} />
-          </>
-        )}
+      <QueryState query={query} loading={<LoadingState label="Loading inputs…" variant="table" rows={4} />}>
+        {(data) =>
+          data.items.length === 0 && !page.hasBack ? (
+            <EmptyState
+              title="No input files yet"
+              actions={actions?.(context)}
+              note="Up to 8 MiB a file, sent in 64 KiB pieces, so a dropped connection can resume where it stopped."
+            >
+              Inputs are the files a suite reads: CSV rows to vary each request, and JSON bodies to send. Upload them
+              once and every suite in this workspace can use them.
+            </EmptyState>
+          ) : (
+            <>
+              <InputTable
+                workspace={workspace}
+                items={data.items}
+                selected={selected}
+                select={select}
+                filterFolders={!data.nextCursor && !page.hasBack}
+              />
+              <Pagination page={page} next={data.nextCursor} />
+            </>
+          )
+        }
       </QueryState>
       {selected && (
-        <InputStatus key={selected} params={{ ...params, inputId: selected }} close={() => select(null)} {...actions} />
+        <InputStatus
+          key={selected}
+          params={{ ...params, inputId: selected }}
+          close={() => select(null)}
+          {...(renderActions ? { renderActions } : {})}
+        />
       )}
     </section>
   );
 }
 
-function InputTable({
-  items,
-  selected,
-  select,
-}: {
-  items: readonly InputRecord[];
-  selected: string | null;
-  select: (id: string) => void;
-}) {
-  return (
-    <div className="table-scroll">
-      <table>
-        <caption className="sr-only">Workspace inputs</caption>
-        <thead>
-          <tr>
-            <th>Input</th>
-            <th>Listed state</th>
-            <th>Committed bytes</th>
-            <th>Version</th>
-            <th>Inspect</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((input) => (
-            <tr key={input.id}>
-              <th scope="row">{input.name}</th>
-              <td>{input.state}</td>
-              <td className="number">
-                {input.offset} / {input.bytes}
-              </td>
-              <td className="number">{input.version}</td>
-              <td>
-                <button
-                  disabled={selected !== null}
-                  onClick={() => select(input.id)}
-                  aria-label={`Read current status for ${input.name}`}
-                >
-                  Current status
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+function contextOf(data: InputPage | undefined, hasBack: boolean): InventoryContext {
+  return { items: data?.items ?? [], complete: data !== undefined && data.nextCursor === null && !hasBack };
+}
+
+/** "5 files, 9.0 MB" only when the whole inventory is on screen; otherwise the page count. */
+function summary(context: InventoryContext, loaded: boolean): string {
+  if (!loaded) return 'Data files your suites read.';
+  const live = context.items.filter((item) => item.state !== 'deleted');
+  if (!context.complete) return `${plural(live.length, 'file')} on this page.`;
+  const bytes = live.reduce((total, item) => total + item.bytes, 0);
+  return `${plural(live.length, 'file')}, ${formatBytes(bytes)} in all. Suites read CSV rows and JSON bodies from here.`;
 }

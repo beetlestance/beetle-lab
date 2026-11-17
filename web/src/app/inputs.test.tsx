@@ -30,7 +30,7 @@ it('supports direct inventory navigation without querying the folder or suite li
   const api = testClient(request => request.path === `${base}?limit=100`
     ? json({ scope: record.scope, items: [], nextCursor: null }) : readNamespace(request));
   mount(api.client, routes.inputs(ids.a, ids.workspace));
-  expect(await screen.findByText('No inputs in this workspace.')).toBeTruthy();
+  expect(await screen.findByText('No input files yet')).toBeTruthy();
   expect(api.records.some(request => /\/(folders|suites)\?/.test(request.path))).toBe(false);
   expect(screen.getByText(workspace().name, { selector: 'strong' })).toBeTruthy();
 });

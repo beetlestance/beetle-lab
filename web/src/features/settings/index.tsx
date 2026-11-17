@@ -1,39 +1,40 @@
-import { ParentRetentionControls } from '../retention/Parent.js';
-import { RetentionControls } from '../retention/index.js';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import type { ComponentProps } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useLocation } from 'react-router-dom';
-import type { Budget, InstallationPatch, ScopedOverridePatch, SettingsScope } from '@beetle/contracts/api';
-import type { EditorField } from '../../components/Editor.js';
-import { useEditor } from '../../components/Editor.js';
+import { useLocation } from 'react-router-dom';
+import type { SettingsScope } from '@beetle/contracts/api';
 import { QueryState } from '../../components/QueryState.js';
+import { LoadingState } from '../../components/States.js';
+import { SegmentedFilter } from '../../components/SegmentedFilter.js';
 import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
-import { routes, validId } from '../../app/routes.js';
-import { settingsIntent, settingsRead } from './intents.js';
+import { validId } from '../../app/routes.js';
+import { RetireWorkspace } from '../namespace-deletion/Retire.js';
+import { ParentRetentionControls } from '../retention/Parent.js';
+import { RetentionControls } from '../retention/index.js';
+import { Capacity } from './Capacity.js';
+import { settingsRead } from './intents.js';
 import type { SettingsData } from './intents.js';
-import {
-  budgetLabels,
-  integer,
-  numericField,
-  parseRetention,
-  poolLabels,
-  retentionFields,
-  retentionText,
-} from './fields.js';
+import type { DraftValue, RowFacts } from './model.js';
+import { budgetRows, installationRows, profileRow, retentionRow } from './model.js';
+import { buildPatch } from './patch.js';
+import { SettingRow } from './Row.js';
+import { ChangedElsewhere, SaveBar, SaveFailure } from './SaveBar.js';
+import { ScopeTabs, useScopeName } from './ScopeTabs.js';
+import { useDraft, useSave } from './useSave.js';
+import type { SavePhase } from './useSave.js';
 import './settings.css';
 
-type Patch = InstallationPatch | ScopedOverridePatch;
-type Open = (title: string, fields: EditorField[], parse: (values: Readonly<Record<string, string>>) => Patch) => void;
+function settingsKey(scope: SettingsScope): readonly string[] {
+  if (scope.kind === 'installation') return queryKeys.installationSettings;
+  if (scope.kind === 'organization') return queryKeys.organizationSettings(scope.organizationId);
+  return queryKeys.workspaceSettings(scope.organizationId, scope.workspaceId);
+}
+
 export function Settings({ scope }: { scope: SettingsScope }) {
   const api = useApi();
   const client = useQueryClient();
-  const key =
-    scope.kind === 'installation'
-      ? queryKeys.installationSettings
-      : scope.kind === 'organization'
-        ? queryKeys.organizationSettings(scope.organizationId)
-        : queryKeys.workspaceSettings(scope.organizationId, scope.workspaceId);
+  const key = settingsKey(scope);
   const identity = JSON.stringify(key);
   const query = useQuery({ queryKey: key, queryFn: ({ signal }) => readResult(settingsRead(api, scope, signal)) });
   useEffect(
@@ -44,273 +45,165 @@ export function Settings({ scope }: { scope: SettingsScope }) {
     },
     [client, identity],
   );
-  return <QueryState query={query}>{(data) => <SettingsView data={data} />}</QueryState>;
+  return (
+    <QueryState query={query} loading={<LoadingState label="Loading settings…" variant="cards" rows={6} />}>
+      {(data) => <SettingsView data={data} />}
+    </QueryState>
+  );
 }
-function SettingsView({ data }: { data: SettingsData }) {
-  const editor = useEditor();
-  const api = useApi();
+
+const intro =
+  'Each setting is inherited from installation to organization to workspace. Set a value to override what comes from above, or inherit again. Each level saves on its own, and a run keeps the values it started with.';
+const capacityIntro =
+  'Capacity every run on this installation shares. A run that does not fit waits in the queue; nothing running is ever stopped to make room.';
+
+function useSettingsForm(data: SettingsData) {
   const client = useQueryClient();
+  const scope = data.scope;
+  const { draft, change, clear } = useDraft(settingsKey(scope));
+  // Parent writes refresh every descendant level that inherits from them.
+  const refresh = useCallback(() => {
+    const queryKey =
+      scope.kind === 'installation'
+        ? queryKeys.settings
+        : scope.kind === 'organization'
+          ? queryKeys.organizationSettings(scope.organizationId)
+          : queryKeys.workspaceSettings(scope.organizationId, scope.workspaceId);
+    return client.invalidateQueries({ queryKey });
+  }, [client, scope]);
+  const save = useSave(refresh, clear);
+  const built = buildPatch(data, draft);
+  const pending = save.state.phase === 'pending';
+  const rowProps = (row: RowFacts): ComponentProps<typeof SettingRow> => ({
+    row,
+    value: draft[row.id],
+    error: built.errors[row.id],
+    disabled: pending,
+    onChange: (value: DraftValue | undefined) => {
+      change(row.id, value);
+      if (!pending) save.reset();
+    },
+  });
+  const discard = () => {
+    clear();
+    save.reset();
+  };
+  return { draft, built, save, rowProps, refresh, discard };
+}
+
+function SettingsView({ data }: { data: SettingsData }) {
+  const name = useScopeName(data.scope);
+  const [view, setView] = useState<'limits' | 'capacity'>('limits');
+  const form = useSettingsForm(data);
+  const { save, built } = form;
+  const count = Object.keys(form.draft).length;
+  const installation = 'values' in data ? data : undefined;
+  const capacity = installation && view === 'capacity';
+  return (
+    <section className="content-section settings-page">
+      <header className="settings-header">
+        <h1>Settings</h1>
+        <p>{capacity ? capacityIntro : intro}</p>
+      </header>
+      <ScopeTabs scope={data.scope} />
+      {installation && <ViewSwitch view={view} onChange={setView} />}
+      <p className="settings-editing">
+        Editing <strong>{editingLabel(!!capacity, name)}</strong>.
+      </p>
+      {capacity ? (
+        <Capacity data={installation} rowProps={form.rowProps} />
+      ) : (
+        <LimitRows data={data} name={name} rowProps={form.rowProps} />
+      )}
+      <SaveFailure state={save.state} onReplay={save.replay} />
+      <SaveBar
+        name={name}
+        count={count}
+        invalid={Object.keys(built.errors).length}
+        state={save.state}
+        onDiscard={form.discard}
+        onSave={() => built.patch && save.save(data, built.patch)}
+      />
+      {isConflict(save.state) && (
+        <ChangedElsewhere
+          name={name}
+          count={count}
+          onClose={save.reset}
+          onReload={() => void form.refresh().then(save.reset)}
+        />
+      )}
+      {!capacity && <Retention data={data} />}
+    </section>
+  );
+}
+
+function editingLabel(capacity: boolean, name: string): string {
+  if (capacity) return 'shared capacity';
+  return name === 'installation' ? 'this installation' : name;
+}
+
+function isConflict(state: SavePhase): boolean {
+  return state.phase === 'failed' && state.failure.protocol?.code === 'conflict';
+}
+
+function ViewSwitch({
+  view,
+  onChange,
+}: {
+  view: 'limits' | 'capacity';
+  onChange: (view: 'limits' | 'capacity') => void;
+}) {
+  return (
+    <SegmentedFilter
+      label="Installation settings"
+      value={view}
+      onChange={onChange}
+      options={[
+        { value: 'limits', label: 'Run limits' },
+        { value: 'capacity', label: 'Shared capacity' },
+      ]}
+    />
+  );
+}
+
+function LimitRows({
+  data,
+  name,
+  rowProps,
+}: {
+  data: SettingsData;
+  name: string;
+  rowProps: (row: RowFacts) => ComponentProps<typeof SettingRow>;
+}) {
+  return (
+    <ul className="setting-rows" aria-label={`Settings for ${name}`}>
+      {'values' in data && <SettingRow {...rowProps(installationRows(data).admin)} />}
+      {budgetRows(data).map((row) => (
+        <SettingRow key={row.id} {...rowProps(row)} />
+      ))}
+      <SettingRow {...rowProps(profileRow(data))} />
+      <SettingRow {...rowProps(retentionRow(data))} />
+    </ul>
+  );
+}
+
+function Retention({ data }: { data: SettingsData }) {
   const location = useLocation();
   const scope = data.scope;
   const requestedBatch = new URLSearchParams(location.search).get('retentionBatch');
   const batch = requestedBatch && validId(requestedBatch) ? requestedBatch : undefined;
-  const refresh = () =>
-    client.invalidateQueries({
-      queryKey:
-        scope.kind === 'installation'
-          ? queryKeys.settings
-          : scope.kind === 'organization'
-            ? queryKeys.organizationSettings(scope.organizationId)
-            : queryKeys.workspaceSettings(scope.organizationId, scope.workspaceId),
-    });
-  const open: Open = (title, fields, parse) =>
-    editor.open(settingsIntent({ api, data, path: location.pathname, title, fields, parse, refresh }));
-  return (
-    <section className="settings-page">
-      <nav className="breadcrumbs" aria-label="Breadcrumb">
-        <Link to={routes.organizations}>Organizations</Link>
-        {scope.kind !== 'installation' && <Link to={routes.organization(scope.organizationId)}>Organization</Link>}
-        {scope.kind === 'workspace' && (
-          <Link to={routes.workspace(scope.organizationId, scope.workspaceId)}>Workspace</Link>
-        )}
-      </nav>
-      <div className="scope-label">
-        {scope.kind} · version {data.version}
-      </div>
-      <h1>Settings</h1>
-      <p>Defaults apply to future runs. Budget changes do not stop active work.</p>
-      {'values' in data && <InstallationGroups data={data} open={open} busy={editor.busy} />}
-      <Defaults data={data} open={open} busy={editor.busy} />
-      <Retention data={data} open={open} busy={editor.busy} />
-      {scope.kind === 'workspace' ? (
+  if (scope.kind === 'workspace')
+    return (
+      <>
         <RetentionControls
           key={`${scope.organizationId}/${scope.workspaceId}/${batch ?? ''}`}
           scope={scope}
           {...(batch ? { initialSnapshotId: batch } : {})}
         />
-      ) : (
-        <ParentRetentionControls
-          key={JSON.stringify(scope)}
-          scope={scope}
-          settingsId={data.id}
-          version={data.version}
-        />
-      )}
-    </section>
-  );
-}
-function Defaults({ data, open, busy }: { data: SettingsData; open: Open; busy: boolean }) {
-  const { effective, overrides, installation, editBudget, editProfile } = defaultEditors(data, open);
-  return (
-    <section>
-      <h2>Run defaults</h2>
-      <div className="settings-table-wrap">
-        <table>
-          <caption>Effective defaults and explicit overrides</caption>
-          <thead>
-            <tr>
-              <th>Setting</th>
-              <th>Effective / source</th>
-              <th>Actual override</th>
-              <th>Allowed</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th>Engine profile</th>
-              <td>
-                {effective.engineProfile.value} / {effective.engineProfile.source.kind}
-              </td>
-              <td>{installation ? 'Installation value' : (overrides?.engineProfile ?? 'Inherited')}</td>
-              <td>{effective.engineProfile.allowedValues.join(', ')}</td>
-              <td>
-                <button disabled={busy} onClick={editProfile}>
-                  Edit engine profile
-                </button>
-                {!installation && (
-                  <button
-                    disabled={busy}
-                    onClick={() => open('Inherit engine profile', [], () => ({ runDefaults: { engineProfile: null } }))}
-                  >
-                    Inherit engine profile
-                  </button>
-                )}
-              </td>
-            </tr>
-            {Object.entries(budgetLabels).map(([name, label]) => {
-              const key = name as keyof Budget;
-              const leaf = effective.budget[key];
-              return (
-                <tr key={key}>
-                  <th>{label}</th>
-                  <td>
-                    {leaf.value} / {leaf.source.kind}
-                  </td>
-                  <td>{installation ? 'Installation value' : (overrides?.budget?.[key] ?? 'Inherited')}</td>
-                  <td>
-                    {leaf.allowedRange.minimum}–{leaf.allowedRange.maximum}
-                  </td>
-                  <td>
-                    <button disabled={busy} onClick={() => editBudget(key)}>
-                      Edit {label}
-                    </button>
-                    {!installation && (
-                      <button
-                        disabled={busy}
-                        onClick={() =>
-                          open(`Inherit ${label}`, [], () => ({ runDefaults: { budget: { [key]: null } } }))
-                        }
-                      >
-                        Inherit {label}
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-function InstallationGroups({
-  data,
-  open,
-  busy,
-}: {
-  data: Extract<SettingsData, { values: unknown }>;
-  open: Open;
-  busy: boolean;
-}) {
-  return (
-    <section>
-      <h2>Installation capacity</h2>
-      <p>Installed profiles: {data.values.supportedProfiles.join(', ')}. Profile catalogue is read only.</p>
-      {(['pool', 'perRunCeilings'] as const).map((group) => (
-        <div className="settings-group" key={group}>
-          <h3>{group === 'pool' ? 'Shared pool limits' : 'Per-run ceilings'}</h3>
-          <dl>
-            {Object.entries(data.values[group]).map(([key, value]) => (
-              <div key={key}>
-                <dt>{poolLabels[key as keyof typeof poolLabels]}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
-          <button
-            disabled={busy}
-            onClick={() =>
-              open(
-                `Edit ${group === 'pool' ? 'pool limits' : 'per-run ceilings'}`,
-                Object.entries(data.values[group]).map(([key, value]) =>
-                  numericField(
-                    key,
-                    poolLabels[key as keyof typeof poolLabels],
-                    value,
-                    key === 'freeSpaceReserveBytes' ? 0 : 1,
-                  ),
-                ),
-                (values) => {
-                  const parsed = Object.fromEntries(
-                    Object.keys(data.values[group]).map((key) => [
-                      key,
-                      integer(values[key] ?? '', key === 'freeSpaceReserveBytes' ? 0 : 1),
-                    ]),
-                  );
-                  return { [group]: parsed } as InstallationPatch;
-                },
-              )
-            }
-          >
-            Edit {group === 'pool' ? 'pool limits' : 'per-run ceilings'}
-          </button>
-        </div>
-      ))}
-    </section>
-  );
-}
-function Retention({ data, open, busy }: { data: SettingsData; open: Open; busy: boolean }) {
-  const actual = 'values' in data ? data.values.retention : data.overrides.retention;
-  return (
-    <section>
-      <h2>Retention policy</h2>
-      <p>
-        Effective: {retentionText(data.effective.retention.value)} · source: {data.effective.retention.source.kind}
-      </p>
-      <p>
-        Actual {data.scope.kind === 'installation' ? 'value' : 'override'}:{' '}
-        {actual ? retentionText(actual) : 'Inherited'}
-      </p>
-      <p>
-        Saving a policy does not delete existing data. Preview and apply are explicit actions in workspace retention
-        controls.
-      </p>
-      <p>
-        Enabled retention requires at least one age, completed-run count or storage rule. Leave unused criteria blank.
-      </p>
-      <button
-        disabled={busy}
-        onClick={() =>
-          open('Edit retention policy', retentionFields(actual), (values) => ({ retention: parseRetention(values) }))
-        }
-      >
-        Edit retention policy
-      </button>
-      {data.scope.kind !== 'installation' && (
-        <button disabled={busy} onClick={() => open('Inherit retention policy', [], () => ({ retention: null }))}>
-          Inherit retention policy
-        </button>
-      )}
-    </section>
-  );
-}
-
-function defaultEditors(data: SettingsData, open: Open) {
-  const effective = data.effective.runDefaults;
-  const overrides = 'overrides' in data ? data.overrides.runDefaults : undefined;
-  const installation = 'values' in data;
-  const editBudget = (key: keyof Budget) => {
-    const leaf = effective.budget[key];
-    open(
-      `Edit ${budgetLabels[key]}`,
-      [
-        numericField(
-          key,
-          budgetLabels[key],
-          installation ? leaf.value : overrides?.budget?.[key],
-          leaf.allowedRange.minimum,
-          leaf.allowedRange.maximum,
-        ),
-      ],
-      (values) => {
-        const value = integer(values[key] ?? '', leaf.allowedRange.minimum, leaf.allowedRange.maximum);
-        return installation
-          ? { runDefaults: { ...data.values.runDefaults, budget: { ...data.values.runDefaults.budget, [key]: value } } }
-          : { runDefaults: { budget: { [key]: value } } };
-      },
+        <RetireWorkspace organizationId={scope.organizationId} workspaceId={scope.workspaceId} />
+      </>
     );
-  };
-  const editProfile = () =>
-    open(
-      'Edit engine profile',
-      [
-        {
-          name: 'engineProfile',
-          label: 'Engine profile',
-          value: installation ? effective.engineProfile.value : (overrides?.engineProfile ?? ''),
-          options: [
-            ...(!installation && !overrides?.engineProfile ? [''] : []),
-            ...effective.engineProfile.allowedValues,
-          ],
-          help: 'Choose an installed profile. This does not install an image.',
-        },
-      ],
-      (values) =>
-        installation
-          ? { runDefaults: { ...data.values.runDefaults, engineProfile: values.engineProfile ?? '' } }
-          : { runDefaults: { engineProfile: values.engineProfile ?? '' } },
-    );
-  return { effective, overrides, installation, editBudget, editProfile };
+  return (
+    <ParentRetentionControls key={JSON.stringify(scope)} scope={scope} settingsId={data.id} version={data.version} />
+  );
 }

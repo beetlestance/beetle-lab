@@ -1,0 +1,58 @@
+/* Run result / Artifacts and Overlay / Artifact viewer. Tokens only. */
+.run-artifacts {
+  display: grid;
+  gap: var(--s-12);
+}
+.artifacts-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-12);
+}
+.artifacts-head h2 {
+  margin: 0;
+  font-size: var(--fs-lg);
+  line-height: var(--lh-heading);
+}
+.artifact-path {
+  overflow-wrap: anywhere;
+}
+.artifact-sha {
+  display: block;
+  color: var(--mute);
+  font-size: var(--fs-xs);
+}
+.artifact-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-12);
+}
+.artifacts-foot {
+  margin: 0;
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
+.artifact-verified {
+  margin: 0 0 var(--s-12);
+  color: var(--green);
+  font-size: var(--fs-sm);
+}
+.artifact-viewer-text {
+  max-height: 60vh;
+  margin: 0;
+  padding: var(--s-12);
+  overflow: auto;
+  border: var(--border-width) solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-code);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.artifact-viewer-error p {
+  margin: 0 0 var(--s-8);
+  color: var(--error);
+}

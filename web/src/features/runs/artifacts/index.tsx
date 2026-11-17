@@ -1,10 +1,15 @@
 import { artifactDownload } from '@beetle/contracts';
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { runArtifactContentPath } from '@beetle/contracts/api';
 import type { Run, RunArtifactPage } from '@beetle/contracts/api';
+import { Button } from '../../../components/Button.js';
+import { Table, Td } from '../../../components/Table.js';
+import { formatBytes } from '../../run-results/format.js';
+import { ArtifactViewer, viewerLimit } from './ArtifactViewer.js';
 import { useArtifacts } from './useArtifacts.js';
+import './artifacts.css';
 
-type Props = { run: Run; terminal: boolean };
+type Props = { run: Run; terminal: boolean; heading?: string | undefined };
 /** The selected attempt may be historical; publication is never inferred from Run state. */
 export function RunArtifacts(props: Props) {
   const run = props.run;
@@ -15,20 +20,17 @@ export function RunArtifacts(props: Props) {
     />
   );
 }
-function Inventory({ run, terminal }: Props) {
+function Inventory({ run, terminal, heading: title = 'Published artifacts' }: Props) {
   const heading = useId();
   const { query, readPage } = useArtifacts(run, terminal);
   const page = query.data;
   return (
     <section className="run-artifacts" aria-labelledby={heading}>
-      <header className="section-header">
-        <div>
-          <h2 id={heading}>Published artifacts</h2>
-          <p>Download progress and cancellation are handled by your browser.</p>
-        </div>
-        <button disabled={query.isFetching} onClick={() => void readPage()}>
+      <header className="artifacts-head">
+        <h2 id={heading}>{title}</h2>
+        <Button size="sm" variant="text" disabled={query.isFetching} onClick={() => void readPage()}>
           Refresh artifacts
-        </button>
+        </Button>
       </header>
       {query.isPending && <p role="status">Loading artifact inventory…</p>}
       {query.isError && (
@@ -42,57 +44,103 @@ function Inventory({ run, terminal }: Props) {
           {page.availability === 'absent' && <p role="status">No artifact source was published for this attempt.</p>}
           {page.availability === 'ready' && <ArtifactList page={page} />}
           {page.nextCursor !== null && (
-            <button disabled={query.isFetching} onClick={() => void readPage(page.nextCursor ?? undefined)}>
+            <Button size="sm" disabled={query.isFetching} onClick={() => void readPage(page.nextCursor ?? undefined)}>
               Next artifact page
-            </button>
+            </Button>
           )}
         </>
       )}
+      <p className="artifacts-foot">
+        Artifacts stay until the run is removed. Pin the run to keep it out of retention. Download progress and
+        cancellation are handled by your browser.
+      </p>
     </section>
   );
 }
+
+/** Static description per declared kind; an unknown kind shows its own name. */
+const holds: Record<string, string> = {
+  'standalone-k6-script': 'The exact k6 script that ran',
+  'performance-report': 'Plain-text performance report',
+  'metrics-csv': 'Per-interval metrics as CSV',
+  'numeric-final': 'Final k6 numbers as JSON',
+  'k6-diagnostics': 'Sanitized k6 diagnostics',
+  'k6-warnings': 'k6 warnings, if any',
+  'target-runtime': 'Target runtime samples',
+};
+/** Kinds the shared download policy serves as text; only these can be opened here. */
+const textKinds = new Set([
+  'standalone-k6-script',
+  'performance-report',
+  'metrics-csv',
+  'numeric-final',
+  'k6-diagnostics',
+  'k6-warnings',
+]);
+
 function ArtifactList({ page }: { page: RunArtifactPage }) {
+  const [open, setOpen] = useState<string | null>(null);
   if (page.items.length === 0) return <p role="status">Published inventory is empty.</p>;
+  const params = {
+    organizationId: page.scope.organizationId,
+    workspaceId: page.scope.workspaceId,
+    runId: page.id,
+    attemptId: page.attemptId,
+  };
+  const viewing = page.items.find((item) => item.artifactId === open);
   return (
-    <div className="artifact-table" tabIndex={0} role="region" aria-label="Artifact descriptors">
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">Kind / filename</th>
-            <th scope="col">Bytes</th>
-            <th scope="col">SHA-256</th>
-            <th scope="col">Download</th>
-          </tr>
-        </thead>
-        <tbody>
-          {page.items.map((item) => (
+    <>
+      <Table
+        caption="Artifact descriptors"
+        columns={[
+          { key: 'file', label: 'File' },
+          { key: 'holds', label: 'What it holds' },
+          { key: 'size', label: 'Size', numeric: true },
+          { key: 'open', label: 'Verify and open' },
+        ]}
+      >
+        {page.items.map((item) => {
+          const viewable = textKinds.has(item.kind) && item.bytes > 0 && item.bytes <= viewerLimit;
+          return (
             <tr key={item.artifactId}>
-              <td>
-                <span>{item.kind}</span>
-                <br />
-                <span className="number">{item.relativePath}</span>
-              </td>
-              <td className="number">{item.bytes}</td>
-              <td className="number artifact-sha">{item.sha256}</td>
-              <td>
-                <a
-                  href={runArtifactContentPath({
-                    organizationId: page.scope.organizationId,
-                    workspaceId: page.scope.workspaceId,
-                    runId: page.id,
-                    attemptId: page.attemptId,
-                    artifactId: item.artifactId,
-                  })}
-                  download={artifactDownload(item).filename}
-                  aria-label={`Download artifact ${item.relativePath}`}
-                >
-                  Download
-                </a>
-              </td>
+              <Td>
+                <span className="number artifact-path">{item.relativePath}</span>
+              </Td>
+              <Td>
+                {holds[item.kind] ?? item.kind}
+                <span className="artifact-sha number" title={`SHA-256 ${item.sha256}`}>
+                  {item.sha256.slice(0, 12)}…
+                </span>
+              </Td>
+              <Td numeric title={`${item.bytes} bytes`}>
+                {formatBytes(item.bytes)}
+              </Td>
+              <Td>
+                <span className="artifact-actions">
+                  {viewable && (
+                    <Button
+                      size="sm"
+                      variant="text"
+                      aria-label={`Verify and open ${item.relativePath}`}
+                      onClick={() => setOpen(item.artifactId)}
+                    >
+                      Open
+                    </Button>
+                  )}
+                  <a
+                    href={runArtifactContentPath({ ...params, artifactId: item.artifactId })}
+                    download={artifactDownload(item).filename}
+                    aria-label={`Download artifact ${item.relativePath}`}
+                  >
+                    Download
+                  </a>
+                </span>
+              </Td>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          );
+        })}
+      </Table>
+      {viewing && <ArtifactViewer params={params} artifact={viewing} onClose={() => setOpen(null)} />}
+    </>
   );
 }

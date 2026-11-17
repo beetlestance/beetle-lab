@@ -1,0 +1,41 @@
+.sample-choices {
+  display: grid;
+  gap: var(--s-8);
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--s-16);
+  min-width: 0;
+}
+.sample-choice {
+  display: flex;
+  gap: var(--s-12);
+  align-items: start;
+  padding: var(--s-12) var(--s-14);
+  border-radius: var(--r-md);
+  background: var(--field);
+  cursor: pointer;
+}
+.sample-choice:has(input:checked) {
+  outline: 1px solid var(--amber);
+}
+.sample-choice input {
+  margin-top: var(--s-4);
+  accent-color: var(--amber);
+}
+.sample-title {
+  color: var(--mute);
+}
+.sample-description {
+  display: block;
+  margin-top: var(--s-4);
+  font-size: var(--fs-sm);
+  color: var(--mute);
+}
+.sample-progress {
+  display: grid;
+  gap: var(--s-10);
+  margin-top: var(--s-12);
+}
+.sample-progress p {
+  overflow-wrap: anywhere;
+}

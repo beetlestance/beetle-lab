@@ -15,8 +15,8 @@ it('owns keyboard focus, traps Tab/arrows, and restores the invoker on Escape',a
  const input=within(dialog).getByRole('searchbox');expect(input).toHaveFocus();expect(document.querySelector('.shell')!.parentElement).toHaveAttribute('inert');
  f.trigger.focus();expect(input).toHaveFocus();const links=within(dialog).getAllByRole('link');
  fireEvent.keyDown(input,{key:'ArrowDown'});expect(links[0]).toHaveFocus();fireEvent.keyDown(links[0]!,{key:'ArrowUp'});expect(links.at(-1)).toHaveFocus();
- fireEvent.keyDown(links.at(-1)!,{key:'Tab'});const close=within(dialog).getByRole('button',{name:'Close command search'});expect(close).toHaveFocus();
- fireEvent.keyDown(close,{key:'Tab',shiftKey:true});expect(links.at(-1)).toHaveFocus();fireEvent.keyDown(links.at(-1)!,{key:'Escape'});
+ fireEvent.keyDown(links.at(-1)!,{key:'Tab'});expect(input).toHaveFocus();
+ fireEvent.keyDown(input,{key:'Tab',shiftKey:true});expect(links.at(-1)).toHaveFocus();fireEvent.keyDown(links.at(-1)!,{key:'Escape'});
  await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());expect(f.trigger).toHaveFocus();expect(f.api.records).toEqual([]);
 });
 it('filters safely, activates Enter as navigation and focuses the main landmark',async()=>{

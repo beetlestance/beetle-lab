@@ -14,7 +14,8 @@ const suiteId = '11111111-1111-4111-8111-111111111111';
 const revisionId = '22222222-2222-4222-8222-222222222222';
 const usersId = '55555555-5555-4555-8555-555555555555';
 const cartId = '66666666-6666-4666-8666-666666666666';
-const path = routes.suite(ids.a, ids.workspace, suiteId);
+// The editor lives on the suite page's Edit tab.
+const path = `${routes.suite(ids.a, ids.workspace, suiteId)}?tab=edit`;
 function input(id: string, name: string, state: InputRecord['state'] = 'published'): InputRecord {
   return { id, scope, name, folderId: ids.root, sha256: 'b'.repeat(64), bytes: 120, offset: 120, version: 1, state, reason: null };
 }

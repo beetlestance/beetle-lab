@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import type { ExportJob, Suite, SuiteRevision } from '@beetle/contracts/api';
+import type { ExportJob, Suite, SuiteRevision, SuiteRevisionSummary } from '@beetle/contracts/api';
 import { ApiFailure, readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
@@ -13,6 +14,7 @@ import { ExportDialog } from '../exports/ExportDialog.js';
 import { maximumShownScriptBytes, readScript } from '../exports/scriptText.js';
 import { useRevisionExport } from '../exports/useRevisionExport.js';
 import { savedWhen } from '../suite-editor/ConflictDialog.js';
+import { StartRun } from '../suite-overview/index.js';
 import { ChangesTab } from './ChangesTab.js';
 import { ScriptTab } from './ScriptTab.js';
 import { useComparison } from './useComparison.js';
@@ -49,10 +51,12 @@ function ScriptHeader({
   revision,
   text,
   exportScript,
+  run,
 }: {
   revision: SuiteRevision;
   text: string | undefined;
   exportScript: () => void;
+  run: ReactNode;
 }) {
   const [copied, setCopied] = useState('');
   const saved = savedLine(revision);
@@ -70,6 +74,7 @@ function ScriptHeader({
           {saved && <p className="script-meta">{saved}</p>}
         </div>
         <div className="script-actions">
+          {run}
           <Button disabled={text === undefined} onClick={copy}>
             Copy script
           </Button>
@@ -82,6 +87,43 @@ function ScriptHeader({
         <p role="status" className="script-note">
           {copied}
         </p>
+      )}
+    </>
+  );
+}
+
+/**
+ * "Run this revision": the suite page's Start run dialog with this revision chosen. Hidden
+ * until the workspace name (which the dialog shows) has been read.
+ */
+function RunRevision({
+  suite,
+  revision,
+  revisions,
+}: {
+  suite: Suite;
+  revision: SuiteRevision;
+  revisions: readonly SuiteRevisionSummary[];
+}) {
+  const api = useApi();
+  const { organizationId, workspaceId } = revision.scope;
+  const [open, setOpen] = useState(false);
+  const workspace = useQuery({
+    queryKey: queryKeys.workspace(organizationId, workspaceId),
+    queryFn: ({ signal }) => readResult(api.getWorkspace({ params: { organizationId, workspaceId }, signal })),
+  });
+  if (!workspace.data) return null;
+  return (
+    <>
+      <Button onClick={() => setOpen(true)}>Run this revision</Button>
+      {open && (
+        <StartRun
+          suite={suite}
+          workspaceName={workspace.data.name}
+          revisions={revisions}
+          initialRevisionId={revision.id}
+          close={() => setOpen(false)}
+        />
       )}
     </>
   );
@@ -101,7 +143,12 @@ function ScriptPage({ suite, revision }: { suite: Suite; revision: SuiteRevision
       <nav className="script-crumbs" aria-label="Breadcrumb">
         <Link to={suiteHref}>← {suite.name}</Link>
       </nav>
-      <ScriptHeader revision={revision} text={script.data} exportScript={() => setExporting(true)} />
+      <ScriptHeader
+        revision={revision}
+        text={script.data}
+        exportScript={() => setExporting(true)}
+        run={<RunRevision suite={suite} revision={revision} revisions={comparison.choices} />}
+      />
       <Tabs<Tab>
         label="Script views"
         idBase="script"

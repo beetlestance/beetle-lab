@@ -18,6 +18,8 @@ board with its Changes and One column variants.
   saved configuration JSON of two revisions of the same suite (first page of 100
   revisions), not the generated scripts. The LCS diff declines inputs above
   4M cells; long unchanged runs fold.
-- "Run this revision" is hidden until a start-run route exists.
+- "Run this revision" opens the suite page's Start run dialog (`suite-overview`
+  `StartRun`) with this revision chosen. It is shown only after the workspace name
+  the dialog needs has been read.
 
 Checks: `diff.test.ts`, `script.test.tsx`.

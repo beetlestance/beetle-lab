@@ -1,6 +1,119 @@
-.command-mask { position: fixed; inset: 0; z-index: 100; display: flex; align-items: flex-start; justify-content: center; padding: 8vh var(--space-4); background: rgb(0 0 0 / 45%); }
-.command-dialog { width: min(46rem, 100%); max-height: 80vh; overflow: auto; padding: var(--space-6); border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink); }
-.command-dialog input { width: 100%; }
-.command-dialog ul { list-style: none; margin: 0; padding: 0; }
-.command-dialog li a { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3); border-bottom: 1px solid var(--border); }
-.command-dialog li small { color: var(--muted); }
+/* Penpot "Overlay / Search" and "Overview / Search": 620 px palette, 96 px from the top. Tokens only. */
+.command-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 96px var(--s-16) var(--s-16);
+  background: rgb(0 0 0 / 55%);
+}
+.command-dialog {
+  display: grid;
+  gap: var(--s-4);
+  width: min(620px, 100%);
+  max-height: calc(100dvh - 128px);
+  overflow: auto;
+  padding: var(--s-10);
+  border-radius: var(--r-xl);
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: var(--shadow-popover);
+}
+.command-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 var(--s-14);
+  border: 1px solid var(--amber);
+  border-radius: var(--r-lg);
+  background: var(--field);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-lg);
+}
+.command-input::placeholder {
+  color: var(--dim);
+}
+.command-input:focus-visible {
+  outline: 2px solid var(--focus-ring, var(--amber));
+  outline-offset: 1px;
+}
+.command-results {
+  display: grid;
+  margin: 0;
+  padding: var(--s-4) 0 0;
+  list-style: none;
+}
+.command-results a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-16);
+  min-height: 46px;
+  padding: 0 var(--s-12);
+  border-radius: var(--r-md);
+  color: var(--ink);
+  text-decoration: none;
+}
+.command-results a:hover,
+.command-results a:focus-visible,
+.command-results li:first-child a {
+  background: var(--control-hover);
+}
+.command-results a:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+}
+.command-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.command-label strong {
+  font-weight: 650;
+}
+.command-results small {
+  flex: none;
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
+.command-empty,
+.command-note,
+.command-groups p {
+  margin: 0;
+  padding: var(--s-8) var(--s-12);
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
+.command-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-8);
+}
+.command-retry {
+  padding: var(--s-4) var(--s-10);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--chip-strong);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.command-retry:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.command-hint {
+  margin: 0;
+  padding: var(--s-10) var(--s-12) var(--s-4);
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
+@media (max-width: 760px) {
+  .command-mask {
+    padding-top: var(--s-16);
+  }
+}

@@ -7,6 +7,7 @@ import type { ExportJob, Suite, SuiteRevision } from '@beetle/contracts/api';
 import { exportContentPath } from '@beetle/contracts/api';
 import { environment, exportJob, json, revision, testClient } from '../exports/fixtures.js';
 import type { RequestRecord } from '../../app/test-fixtures.js';
+import { workspace } from '../../app/test-fixtures.js';
 import { SuiteScript } from './index.js';
 
 afterEach(() => {
@@ -48,15 +49,20 @@ function summary(value: SuiteRevision) {
 }
 function routes(job: ExportJob | null, overrides: Partial<Record<'revision', SuiteRevision>> = {}) {
   const { second, first } = revisions();
+  const page = { scope: current.scope, suiteId: current.suiteId, items: [summary(second), summary(first)], nextCursor: null };
+  const table: [(path: string) => boolean, unknown][] = [
+    [(path) => path.endsWith(`/suites/${current.suiteId}`), suite()],
+    [(path) => path.includes(`/suites/${current.suiteId}/revisions?`), page],
+    [(path) => path.endsWith(`/revisions/${current.id}`), overrides.revision ?? second],
+    [(path) => path.endsWith(`/revisions/${earlierId}`), first],
+    [(path) => path.includes('/exports?'), { scope: current.scope, items: job ? [job] : [], nextCursor: null }],
+    [(path) => !!job && path.endsWith(`/exports/${job.id}`), job],
+    [(path) => path.endsWith(`/workspaces/${workspaceId}`), workspace(organizationId)],
+  ];
   return (request: RequestRecord) => {
-    if (request.path.endsWith(`/suites/${current.suiteId}`)) return json(suite());
-    if (request.path.includes(`/suites/${current.suiteId}/revisions?`))
-      return json({ scope: current.scope, suiteId: current.suiteId, items: [summary(second), summary(first)], nextCursor: null });
-    if (request.path.endsWith(`/revisions/${current.id}`)) return json(overrides.revision ?? second);
-    if (request.path.endsWith(`/revisions/${earlierId}`)) return json(first);
-    if (request.path.includes('/exports?')) return json({ scope: current.scope, items: job ? [job] : [], nextCursor: null });
-    if (job && request.path.endsWith(`/exports/${job.id}`)) return json(job);
-    throw new Error(`Unexpected synthetic route ${request.path}`);
+    const match = table.find(([test]) => test(request.path));
+    if (!match) throw new Error(`Unexpected synthetic route ${request.path}`);
+    return json(match[1]);
   };
 }
 function mount(handler: (request: RequestRecord) => Response) {
@@ -85,7 +91,14 @@ it('renders the header and offers to prepare a script when none exists', async (
   expect(screen.getByText('Saved by Meera; 2 runs used it.')).toBeInTheDocument();
   expect(await screen.findByText('This revision has no script yet')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Copy script' })).toBeDisabled();
-  expect(screen.queryByRole('button', { name: /Run this revision/ })).toBeNull();
+  expect(await screen.findAllByRole('button', { name: 'Run this revision' })).toHaveLength(1);
+});
+
+it('runs this revision through the suite Start run dialog without sending anything until confirmed', async () => {
+  const api = mount(routes(null));
+  fireEvent.click(await screen.findByRole('button', { name: 'Run this revision' }));
+  expect(await screen.findByRole('dialog', { name: 'Start Checkout' })).toBeInTheDocument();
+  expect(api.records.every((record) => record.method === 'GET')).toBe(true);
 });
 
 it('reads the ready script once through the content route and checks its SHA-256', async () => {

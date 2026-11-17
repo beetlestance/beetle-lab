@@ -1,157 +1,151 @@
-import { useQuery } from '@tanstack/react-query';
+import { useId, useMemo } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import type {
-  OverviewRun,
-  OrganizationOverviewRun,
-  OrganizationOverview as OrganizationSnapshot,
-  WorkspaceOverview as Snapshot,
-} from '@beetle/contracts/api';
-import { readResult, useApi } from '../../app/api.js';
-import { queryKeys } from '../../app/queries.js';
+import type { WorkspaceOverview as Snapshot } from '@beetle/contracts/api';
 import { routes } from '../../app/routes.js';
-export function WorkspaceOverview({ organizationId, workspaceId }: { organizationId: string; workspaceId: string }) {
-  const api = useApi();
-  const query = useQuery({
-    queryKey: [...queryKeys.workspace(organizationId, workspaceId), 'overview'],
-    queryFn: ({ signal }) => readResult(api.getWorkspaceOverview({ params: { organizationId, workspaceId }, signal })),
-  });
-  return (
-    <section aria-label="Workspace overview">
-      <header className="section-header">
-        <div>
-          <h1>Workspace overview</h1>
-          <p>Submission activity and current run records for this workspace.</p>
+import { Button, buttonClass } from '../../components/Button.js';
+import { EmptyState, LoadingState } from '../../components/States.js';
+import { ActivityChart } from './ActivityChart.js';
+import { AgentPanel } from './AgentPanel.js';
+import { clockTime, inProgress, plural } from './format.js';
+import { LiveRunCard } from './LiveRunCard.js';
+import { OverviewArt } from './OverviewArt.js';
+import { RecentRuns } from './RecentRuns.js';
+import { usePublishedInputs, useRunsFirstPage, useSuitesFirstPage, useWorkspaceOverview } from './reads.js';
+import './overview.css';
+
+type Props = { organizationId: string; workspaceId: string; workspaceName: string };
+
+/**
+ * Penpot "Overview" (+ Empty, Loading). The snapshot is one scoped GET with
+ * manual refresh only; suite names, p95, start time and the input count come
+ * from shared first pages and stay unknown when those reads fail.
+ */
+export function WorkspaceOverview({ organizationId, workspaceId, workspaceName }: Props) {
+  const query = useWorkspaceOverview(organizationId, workspaceId);
+  if (query.isPending) return <LoadingState variant="page" label="Loading workspace overview…" />;
+  if (query.isError)
+    return (
+      <div role="alert" className="banner banner-danger">
+        <div className="banner-body">
+          <p className="banner-title">Workspace overview unavailable. Counts are unknown.</p>
         </div>
-        <button disabled={query.isFetching} onClick={() => void query.refetch()}>
-          Refresh overview
-        </button>
-      </header>
-      {query.isPending && <p role="status">Loading workspace overview…</p>}
-      {query.isError && <p role="alert">Workspace overview unavailable. Refresh to retry; counts are unknown.</p>}
-      {!query.isError && query.data && <OverviewFacts value={query.data} />}
-    </section>
+        <div className="banner-actions">
+          <Button size="sm" disabled={query.isFetching} onClick={() => void query.refetch({ cancelRefetch: false })}>
+            Refresh overview
+          </Button>
+        </div>
+      </div>
+    );
+  const snapshot = query.data;
+  const refresh = (
+    <p className="overview-snapshot">
+      As of <time dateTime={snapshot.generatedAt}>{clockTime(snapshot.generatedAt)}</time>.{' '}
+      <button
+        type="button"
+        className="overview-refresh"
+        disabled={query.isFetching}
+        onClick={() => void query.refetch({ cancelRefetch: false })}
+      >
+        Refresh overview
+      </button>
+    </p>
   );
-}
-export function OverviewFacts({ value }: { value: Snapshot | OrganizationSnapshot }) {
-  const c = value.counts;
+  if (snapshot.counts.runs === 0)
+    return (
+      <div className="overview">
+        <EmptyState
+          headingLevel={1}
+          title={`No runs in ${workspaceName} yet`}
+          actions={
+            <Link className={buttonClass('primary')} to={routes.suites(organizationId, workspaceId)}>
+              Write your first suite
+            </Link>
+          }
+          note={refresh}
+        >
+          <p>
+            A suite describes the requests and the load. Start a run from it, and its results and the last 24 hours
+            appear here.
+          </p>
+        </EmptyState>
+      </div>
+    );
   return (
-    <>
-      <p>
-        Snapshot <time dateTime={value.generatedAt}>{value.generatedAt}</time>. Refresh for current values; active
-        records do not prove engine liveness.
-      </p>
-      <dl>
-        {'workspaces' in value && (
-          <>
-            <dt>Workspaces</dt>
-            <dd>{value.workspaces}</dd>
-          </>
-        )}
-        <dt>Folders (including workspace root)</dt>
-        <dd>{c.folders}</dd>
-        <dt>Suites</dt>
-        <dd>{c.suites}</dd>
-        <dt>All run records</dt>
-        <dd>{c.runs}</dd>
-        <dt>Submitted in last 24 hours</dt>
-        <dd>{c.submitted24h}</dd>
-        <dt>Failed outcomes among those submissions</dt>
-        <dd>{c.failed24h}</dd>
-        <dt>Queued</dt>
-        <dd>{c.queued}</dd>
-        <dt>Dispatching</dt>
-        <dd>{c.dispatching}</dd>
-        <dt>Active records</dt>
-        <dd>{c.active}</dd>
-        <dt>Finalizing</dt>
-        <dd>{c.finalizing}</dd>
-        <dt>Finished</dt>
-        <dd>{c.finished}</dd>
-        <dt>Cancelled</dt>
-        <dd>{c.cancelled}</dd>
-        <dt>Execution errors</dt>
-        <dd>{c.errored}</dd>
-      </dl>
-      <h2>Active run records</h2>
-      <RunLinks value={value} rows={value.active} empty="No active run records at this snapshot." />
-      {value.activeHasMore && (
-        <p>Showing the 20 most recently submitted active records. Open Runs for paginated history.</p>
-      )}
-      <h2>Recent submissions</h2>
-      <RunLinks
-        value={value}
-        rows={value.recent}
-        empty={
-          value.scope.kind === 'workspace'
-            ? 'No runs submitted in this workspace yet.'
-            : 'No runs submitted in this organization yet.'
-        }
-      />
-      {value.scope.kind === 'workspace' ? (
-        <p>
-          <Link to={routes.runs(value.scope.organizationId, value.scope.workspaceId)}>All runs</Link>
-        </p>
-      ) : (
-        <p>Open a workspace for its full run history.</p>
-      )}
-      <HourlyActivity value={value} />
-    </>
-  );
-}
-function RunLinks({
-  value,
-  rows,
-  empty,
-}: {
-  value: Snapshot | OrganizationSnapshot;
-  rows: readonly (OverviewRun | OrganizationOverviewRun)[];
-  empty: string;
-}) {
-  if (!rows.length) return <p>{empty}</p>;
-  return (
-    <ul>
-      {rows.map((row) => {
-        const workspaceId =
-          value.scope.kind === 'workspace' ? value.scope.workspaceId : 'workspaceId' in row ? row.workspaceId : null;
-        return (
-          <li key={row.id}>
-            {workspaceId ? (
-              <Link to={routes.run(value.scope.organizationId, workspaceId, row.id)}>{row.id}</Link>
-            ) : (
-              <span>{row.id} — workspace unknown</span>
-            )}{' '}
-            <time dateTime={row.requestedAt}>{row.requestedAt}</time> · {row.state} · {row.outcome}
-          </li>
-        );
-      })}
-    </ul>
+    <Overview
+      organizationId={organizationId}
+      workspaceId={workspaceId}
+      workspaceName={workspaceName}
+      snapshot={snapshot}
+      refresh={refresh}
+    />
   );
 }
 
-function HourlyActivity({ value }: { value: Snapshot | OrganizationSnapshot }) {
+function Overview({
+  organizationId,
+  workspaceId,
+  workspaceName,
+  snapshot,
+  refresh,
+}: Props & { snapshot: Snapshot; refresh: ReactNode }) {
+  const heading = useId();
+  const suites = useSuitesFirstPage(organizationId, workspaceId);
+  const runs = useRunsFirstPage(organizationId, workspaceId);
+  const inputs = usePublishedInputs(organizationId, workspaceId);
+  const suiteNames = useMemo(
+    () => (suites.data && !suites.isError ? new Map(suites.data.items.map((suite) => [suite.id, suite.name])) : null),
+    [suites.data, suites.isError],
+  );
+  const runPage = runs.isError ? undefined : runs.data;
+  const summaries = useMemo(
+    () => (runPage ? new Map(runPage.summaries.map((summary) => [summary.runId, summary])) : null),
+    [runPage],
+  );
+  const c = snapshot.counts;
+  const running = inProgress(c);
+  const live = snapshot.active.find((row) => row.state === 'active') ?? snapshot.active[0];
+  const facts =
+    `${plural(c.submitted24h, 'run')} submitted in the last 24 hours, ${c.failed24h.toLocaleString()} failed. ` +
+    `${plural(c.suites, 'suite')}${inputs === null ? '' : `, ${plural(inputs, 'input file')} ready`}.`;
   return (
-    <details>
-      <summary>Hourly submission activity (24 hours)</summary>
-      <p>UTC intervals include their start and exclude their end.</p>
-      <table>
-        <caption>Submissions by requested time</caption>
-        <thead>
-          <tr>
-            <th>From (UTC)</th>
-            <th>To (UTC)</th>
-            <th>Submitted</th>
-          </tr>
-        </thead>
-        <tbody>
-          {value.activity.map((bucket) => (
-            <tr key={bucket.from}>
-              <td>{bucket.from}</td>
-              <td>{bucket.to}</td>
-              <td>{bucket.count}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </details>
+    <section className="overview" aria-labelledby={heading}>
+      <div className="overview-hero">
+        <div className="overview-hero-text">
+          <p className="overview-eyebrow">{workspaceName}</p>
+          <h1 id={heading}>{running ? `${plural(running, 'run')} in progress` : 'No runs in progress'}</h1>
+          <p className="overview-lede">{facts}</p>
+          {refresh}
+          {live && (
+            <LiveRunCard
+              organizationId={organizationId}
+              workspaceId={workspaceId}
+              header={live}
+              run={runPage?.items.find((run) => run.id === live.id)}
+              suiteName={suiteNames?.get(live.suiteId)}
+            />
+          )}
+          {snapshot.active.length > 1 && (
+            <p className="overview-note">
+              {snapshot.activeHasMore
+                ? 'More runs are in progress than the overview lists; open Runs for all of them.'
+                : `${plural(snapshot.active.length - 1, 'other run')} in progress; open Runs for the rest.`}
+            </p>
+          )}
+        </div>
+        <OverviewArt />
+      </div>
+      <div className="overview-grid">
+        <ActivityChart buckets={snapshot.activity} />
+        <RecentRuns
+          organizationId={organizationId}
+          workspaceId={workspaceId}
+          rows={snapshot.recent}
+          suiteNames={suiteNames}
+          summaries={summaries}
+        />
+        <AgentPanel />
+      </div>
+    </section>
   );
 }

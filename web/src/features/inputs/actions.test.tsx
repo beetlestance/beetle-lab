@@ -38,7 +38,7 @@ it('supplies only selected successful status records and retires actions during 
   view.switchScope(workspace(ids.b));
   expect(screen.queryByText('Action version 10')).not.toBeInTheDocument();
   const callsAfterDeparture = renderActions.mock.calls.length;
-  await screen.findByText('No inputs in this workspace.');
+  await screen.findByText('No input files yet');
   expect(renderActions).toHaveBeenCalledTimes(callsAfterDeparture);
 });
 

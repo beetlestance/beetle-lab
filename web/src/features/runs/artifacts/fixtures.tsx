@@ -5,7 +5,7 @@ import { encodeRunArtifactCursor } from '@beetle/contracts/api';
 import type { ApiClient, Run, RunArtifactPage } from '@beetle/contracts/api';
 import { ApiContext } from '../../../app/api.js';
 import { createQueryClient } from '../../../app/queries.js';
-import { RunDetail } from '../RunDetail.js';
+import { SnapshotDetail } from '../snapshot-harness.js';
 import { pendingArtifacts, run } from '../test-fixtures.js';
 import { RunArtifacts } from './index.js';
 export { testClient } from '../../../app/test-fixtures.js';
@@ -47,7 +47,7 @@ export function mountArtifacts(api: ApiClient, initial = run(), terminal = false
         <ApiContext.Provider value={source}>
           <QueryClientProvider client={client}>
             {composed ? (
-              <RunDetail
+              <SnapshotDetail
                 organizationId={current.scope.organizationId}
                 workspaceId={current.scope.workspaceId}
                 runId={current.id}

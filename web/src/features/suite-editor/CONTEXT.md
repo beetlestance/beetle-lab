@@ -2,8 +2,9 @@
 
 Boards "Suite / Edit" (with its Request, Run setup and JSON views), "Panel / Save
 revision" with its Errors state, "Overlay / Save conflict" and "Tablet / Suite /
-Edit". `suites/RevisionEditor` mounts it; `suites/ConfigFields` switches between
-the form, Run setup and complete JSON. There is no edit sub-route yet, so the
+Edit". `suites/RevisionEditor` mounts it on the suite page's Edit tab
+(`?tab=edit`, owned by `suites/SuiteDetail`); `suites/ConfigFields` switches between
+the form, Run setup and complete JSON. Those views have no sub-route yet, so the
 selected view lives in component state.
 
 The draft text is the only source of truth. Each form edit re-encodes the whole

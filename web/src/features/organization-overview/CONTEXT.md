@@ -1,5 +1,7 @@
-# Organisation dashboard
-Whole-organisation read with scoped query key and manual refresh; no polling.
-Uses shared overview facts; run links carry each header’s immutable workspace ID.
-Errors hide cached counts. No config/result/native requests or policy mutations.
-Tests cover empty/failed/retired scope and capped cross-workspace navigation.
+# Organisation overview
+
+Penpot "Organization" hero: name, workspace and run counts, settings link. One
+scoped GET with manual refresh, read by `useOrganizationOverview`; WorkspaceList
+reuses the same cached snapshot for per-row "Right now" (active list) and "Last
+run" (8 recent headers). What the snapshot cannot prove is labelled unknown;
+per-workspace suites and 24-hour runs are not shown (no fan-out). Errors hide counts.

@@ -18,7 +18,8 @@ it('requests intent once and shows waiting without inventing a terminal outcome'
   mount(fixture.client, path);
   fireEvent.click(await screen.findByRole('button', { name: 'Cancel run' }));
   await screen.findByText(/Cancellation requested. Waiting/);
-  expect(screen.getAllByText('pending')).toHaveLength(2);
+  expect((await screen.findAllByText('Cancelling'))[0]).toBeVisible();
+  expect(screen.queryByText(/passed|failed|Run cancelled/)).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Cancel run' })).not.toBeInTheDocument();
   const posts = fixture.records.filter(record => record.method === 'POST');
   expect(posts).toHaveLength(1); expect(posts[0]!.path).toBe(`${path.replace('/organizations/', '/api/v2/organizations/')}/cancel`);
@@ -61,7 +62,7 @@ it('retires an outstanding cancellation without allowing its late reply to resto
 it('does not offer cancellation for completed history', async () => {
   const fixture = testClient(request => request.path.endsWith(`/runs/${runId}`)
     ? json({ ...run(), state: 'finished', outcome: 'passed', validationStatus: 'passed' }) : runRead(request));
-  mount(fixture.client, path); await screen.findByText('finished');
+  mount(fixture.client, path); await screen.findByRole('heading', { name: /passed$/ });
   expect(screen.queryByRole('button', { name: 'Cancel run' })).not.toBeInTheDocument();
   expect(fixture.records.filter(record => record.method === 'POST')).toHaveLength(0);
 });

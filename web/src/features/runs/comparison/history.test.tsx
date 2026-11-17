@@ -17,11 +17,11 @@ it('permits only four terminal runs and preserves the explicit baseline order', 
   const visible = await screen.findAllByRole('checkbox'); const boxes = [...visible].reverse(); expect(boxes[5]).toBeDisabled();
   [2, 0, 3, 1].forEach(index => fireEvent.click(boxes[index]!));
   expect(boxes[4]).toBeDisabled();
-  expect(screen.getByRole('link', {name: 'Compare selected runs'})).toHaveAttribute('href', routes.comparison(scope.organizationId, scope.workspaceId, [runs[2]!.id, runs[0]!.id, runs[3]!.id, runs[1]!.id]));
+  expect(screen.getByRole('link', {name: 'Compare 4'})).toHaveAttribute('href', routes.comparison(scope.organizationId, scope.workspaceId, [runs[2]!.id, runs[0]!.id, runs[3]!.id, runs[1]!.id]));
   fireEvent.click(boxes[0]!); expect(boxes[4]).toBeEnabled();
   fireEvent.click(screen.getByRole('button', {name: 'Clear selection'}));
-  expect(screen.queryByRole('link', {name: 'Compare selected runs'})).not.toBeInTheDocument();
+  expect(screen.queryByRole('link', {name: /^Compare \d/})).not.toBeInTheDocument();
   [2, 0].forEach(index => fireEvent.click(boxes[index]!));
-  fireEvent.click(screen.getByRole('link', {name: 'Compare selected runs'}));
+  fireEvent.click(screen.getByRole('link', {name: 'Compare 2'}));
   await screen.findByRole('heading', {name: 'Compare runs'}); await screen.findByLabelText('Baseline metric');
 });
