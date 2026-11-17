@@ -18,10 +18,10 @@ it('opens the shell reference without API calls and selects the generated exact 
 });
 it('uses the ordinary sidebar link and keeps empty search honest',async()=>{
  const api=testClient(readNamespace);mount(api.client);await screen.findByRole('heading',{name:'Organizations'});
- fireEvent.click(screen.getByRole('link',{name:'API reference'}));await screen.findByRole('heading',{name:'Public API reference'});
+ fireEvent.click(screen.getByRole('link',{name:'Docs'}));await screen.findByRole('heading',{name:'Public API reference'});
  const before=api.records.length;fireEvent.change(screen.getByRole('searchbox'),{target:{value:'not-an-operation'}});
  expect(screen.getByText('No matching operations.')).toBeVisible();expect(screen.queryByRole('region',{name:'Selected operation'})).not.toBeInTheDocument();
- expect(api.records).toHaveLength(before);expect(within(screen.getByRole('navigation',{name:'Main navigation'})).getByRole('link',{name:'Organizations'})).toBeVisible();
+ expect(api.records).toHaveLength(before);expect(within(screen.getByRole('navigation',{name:'Main navigation'})).getByRole('link',{name:'Docs'})).toHaveAttribute('aria-current','page');
 });
 it('keeps planned-only search honest when every descriptor is implemented',async()=>{
  const api=testClient(()=>{throw Error('Reference must remain offline');});mount(api.client,routes.reference);

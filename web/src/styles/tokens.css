@@ -1,28 +1,209 @@
+/* Design tokens from the Penpot file (token sets primitives, theme/darkroom,
+   theme/scarab, semantic) and the "States / Controls" board. Two dark skins:
+   Darkroom (default) and Scarab, selected by data-theme on <html>.
+   Features use these tokens only; they add no palette, fonts or motion values. */
+
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/jetbrains-mono';
+
+:root,
+:root[data-theme='darkroom'] {
+  color-scheme: dark;
+  /* Surfaces */
+  --bg: #161412;
+  --panel: #211e1a;
+  --zebra: #1c1916;
+  --line: #2b2722;
+  --field: #1a1815;
+  --field-hover-line: #3a352e;
+  --field-disabled: #1d1b18;
+  --selection: #5a4220;
+  /* Ink */
+  --ink: #ece4d6;
+  --mute: #a99f90;
+  --dim: #6f665a;
+  --faint: #5c544a;
+  /* Accent and status */
+  --amber: #f2a541;
+  --amber-hover: #f5b55e;
+  --amber-pressed: #d98f2f;
+  --amber-strong: #c9852f;
+  --amber-stronger: #a86c22;
+  --on-amber: #1d1408;
+  --red: #ff7f6b;
+  --red-hover: #ff9886;
+  --red-pressed: #e66a57;
+  --green: #9fcf8a;
+  --info: #8db4e8;
+  /* Secondary controls */
+  --control-hover: #36312b;
+  --control-pressed: #24201c;
+  --tab-hover: #1f1c19;
+  --chip-strong: #3a342d;
+  /* Inverse (toast) */
+  --inverse: #ece4d6;
+  --inverse-hover: #d5ccbe;
+  --on-inverse: #161412;
+  /* Banners */
+  --warn-bg: #2a2112;
+  --warn-line: #5a4320;
+  --danger-bg: #2c1915;
+  --danger-line: #5e2b23;
+  /* Restored history (read-only) */
+  --history-ink: #8fb8de;
+  --history-bg: #1b2430;
+  --history-line: #2e4258;
+  /* Data */
+  --data-band: #2d2823;
+  --data-area: #3b342d;
+  --data-tape: #4a4137;
+  --data-track: #2f2a25;
+  --series-1: #ece4d6;
+  --series-2: #f2a541;
+  --series-3: #8db4e8;
+  --series-4: #d79bd6;
+  /* Type */
+  --font-sans: 'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+:root[data-theme='scarab'] {
+  --bg: #0e1513;
+  --panel: #16211d;
+  --zebra: #121c19;
+  --line: #1d2b26;
+  --field: #111a17;
+  --field-hover-line: #2c3a35;
+  --field-disabled: #141e1b;
+  --selection: #1f5a41;
+  --ink: #e2ebe5;
+  --mute: #95a89d;
+  --dim: #5e7067;
+  --faint: #4b5d54;
+  --amber: #5ee0a0;
+  --amber-hover: #76e4ae;
+  --amber-pressed: #55ca90;
+  --amber-strong: #3fb47c;
+  --amber-stronger: #2e8f60;
+  --on-amber: #06180f;
+  --red: #ff8c7c;
+  --red-hover: #ff9d8f;
+  --red-pressed: #e67e70;
+  --green: #5ee0a0;
+  --info: #86b6f0;
+  --control-hover: #283630;
+  --control-pressed: #16241f;
+  --tab-hover: #131d1a;
+  --chip-strong: #253a31;
+  --inverse: #e2ebe5;
+  --inverse-hover: #c9d6ce;
+  --on-inverse: #0e1513;
+  --warn-bg: #12291e;
+  --warn-line: #1f5a41;
+  --danger-bg: #2a1a17;
+  --danger-line: #5e2f28;
+  --data-band: #1b2b25;
+  --data-area: #253a31;
+  --data-tape: #2f4a3e;
+  --data-track: #1f2f29;
+  --series-1: #e2ebe5;
+  --series-2: #5ee0a0;
+  --series-3: #86b6f0;
+  --series-4: #e7a76b;
+  /* Penpot sets Manrope for Scarab; it is not bundled, so Geist is the fallback. */
+  --font-sans: 'Manrope', 'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
 :root {
-  color-scheme: light;
-  --canvas: #f4f3ef;
-  --surface: #fffefa;
-  --surface-hover: #eae8e1;
-  --ink: #262623;
-  --muted: #66645e;
-  --border: #d5d2c9;
-  --border-strong: #858177;
-  --accent: #b64718;
-  --accent-hover: #90350f;
-  --on-accent: #ffffff;
-  --focus: #a83b0f;
-  --error: #a12925;
-  --error-surface: #fff0e9;
-  --sidebar: #252522;
-  --sidebar-ink: #f4f3ef;
-  --sidebar-muted: #c3c0b8;
-  --sidebar-hover: #3a3934;
-  --sidebar-border: #57554d;
-  --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --mono: ui-monospace, SFMono-Regular, Consolas, monospace;
-  --text-small: 0.75rem;
-  --text-body: 0.875rem;
-  --text-heading: 1.75rem;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  /* Type scale (font.size.*) */
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-control: 15px;
+  --fs-base: 16px;
+  --fs-lg: 17px;
+  --fs-xl: 20px;
+  --fs-2xl: 24px;
+  --fs-3xl: 28px;
+  --fs-4xl: 34px;
+  --fs-5xl: 38px;
+  --lh-tight: 1;
+  --lh-heading: 1.1;
+  --lh-lede: 1.45;
+  --lh-body: 1.5;
+  --lh-code: 1.55;
+  --tracking-figure: -0.95px;
+  --tracking-display: -0.85px;
+  --tracking-heading: -0.2px;
+  /* Spacing (space.*), named by pixel value */
+  --s-2: 2px;
+  --s-4: 4px;
+  --s-6: 6px;
+  --s-8: 8px;
+  --s-10: 10px;
+  --s-12: 12px;
+  --s-14: 14px;
+  --s-16: 16px;
+  --s-18: 18px;
+  --s-20: 20px;
+  --s-22: 22px;
+  --s-24: 24px;
+  --s-28: 28px;
+  --s-32: 32px;
+  --s-40: 40px;
+  --s-44: 44px;
+  --s-48: 48px;
+  --s-64: 64px;
+  --s-80: 80px;
+  /* Radii (radius.*): buttons and inputs md, cards lg, dialogs xl */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 7px;
+  --r-lg: 10px;
+  --r-xl: 12px;
+  --r-pill: 999px;
+  /* Sizes */
+  --control-sm: 32px;
+  --control-md: 36px;
+  --control-lg: 40px;
+  --dialog-max: 620px;
+  --content-max: 2000px;
+  --gutter: 80px;
+  --focus-ring: 2px solid var(--amber);
+  --focus-offset: 2px;
+  /* Elevation */
+  --shadow-popover: 0 14px 36px rgb(0 0 0 / 50%);
+  --shadow-toast: 0 8px 24px rgb(0 0 0 / 35%);
+  /* Motion; zeroed under prefers-reduced-motion */
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 280ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* Legacy aliases still used by feature stylesheets. Wave 1 packages migrate
+     their own CSS to the names above; do not use these in new code. */
+  --canvas: var(--bg);
+  --surface: var(--panel);
+  --surface-hover: var(--line);
+  --muted: var(--mute);
+  --border: var(--line);
+  --border-strong: var(--faint);
+  --accent: var(--amber);
+  --accent-hover: var(--amber-hover);
+  --on-accent: var(--on-amber);
+  --focus: var(--amber);
+  --error: var(--red);
+  --error-surface: var(--danger-bg);
+  --sidebar: var(--bg);
+  --sidebar-ink: var(--ink);
+  --sidebar-muted: var(--mute);
+  --sidebar-hover: var(--line);
+  --sidebar-border: var(--line);
+  --font: var(--font-sans);
+  --mono: var(--font-mono);
+  --text-small: var(--fs-sm);
+  --text-body: var(--fs-control);
+  --text-heading: var(--fs-4xl);
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -30,43 +211,22 @@
   --space-6: 24px;
   --space-8: 32px;
   --space-12: 48px;
-  --radius-none: 0;
-  --radius-small: 2px;
+  --radius-none: var(--r-md);
+  --radius-small: var(--r-sm);
   --border-width: 1px;
-  --motion-fast: 120ms;
-  --motion-enter: 180ms;
+  --motion-enter: var(--motion-base);
 }
-:root[data-theme='dark'] {
-  color-scheme: dark;
-  --canvas: #20201d;
-  --surface: #292925;
-  --surface-hover: #36352f;
-  --ink: #f4f1e9;
-  --muted: #c0bdb3;
-  --border: #4b4941;
-  --border-strong: #8c897f;
-  --accent: #ed946a;
-  --accent-hover: #ffae88;
-  --on-accent: #251b15;
-  --focus: #ffb18a;
-  --error: #ffb3ab;
-  --error-surface: #432c25;
+
+@media (max-width: 760px) {
+  :root {
+    --gutter: 16px;
+  }
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    color-scheme: dark;
-    --canvas: #20201d;
-    --surface: #292925;
-    --surface-hover: #36352f;
-    --ink: #f4f1e9;
-    --muted: #c0bdb3;
-    --border: #4b4941;
-    --border-strong: #8c897f;
-    --accent: #ed946a;
-    --accent-hover: #ffae88;
-    --on-accent: #251b15;
-    --focus: #ffb18a;
-    --error: #ffb3ab;
-    --error-surface: #432c25;
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-base: 0ms;
+    --motion-slow: 0ms;
   }
 }
