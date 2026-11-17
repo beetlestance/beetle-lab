@@ -2,9 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import type { ApiClientFailure, ApiClientResult } from '@beetle/contracts/api';
 import { errorMessage, unknownOutcome } from '../../app/api.js';
 
-/** A mounted scope owns one frozen attempt; retiring it aborts and ignores late replies. */
-export function useWrite<T>(
-  send: (body: T, signal: AbortSignal) => Promise<ApiClientResult<unknown>>,
+/**
+ * A mounted scope owns one frozen attempt; retiring it aborts and ignores late replies.
+ * `value` is the last acknowledged reply (cleared by the next submit).
+ */
+export function useWrite<T, R = unknown>(
+  send: (body: T, signal: AbortSignal) => Promise<ApiClientResult<R>>,
   refresh: () => Promise<unknown>,
 ) {
   const controller = useRef(new AbortController());
@@ -12,6 +15,7 @@ export function useWrite<T>(
   const [failure, setFailure] = useState<ApiClientFailure | null>(null);
   const [pending, setPending] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [value, setValue] = useState<R | null>(null);
   const busy = useRef(false);
   useEffect(() => {
     const active = new AbortController();
@@ -25,8 +29,9 @@ export function useWrite<T>(
     setPending(true);
     setFailure(null);
     setSaved(false);
+    setValue(null);
     setAttempt(body);
-    let reply: ApiClientResult<unknown>;
+    let reply: ApiClientResult<R>;
     try {
       reply = await send(body, active.signal);
     } catch {
@@ -40,6 +45,7 @@ export function useWrite<T>(
       return;
     }
     setAttempt(null);
+    setValue(reply.value);
     setSaved(true);
     await refresh();
   }
@@ -48,6 +54,7 @@ export function useWrite<T>(
     submit,
     pending,
     saved,
+    value,
     failure,
     unknown,
     locked: pending || unknown,

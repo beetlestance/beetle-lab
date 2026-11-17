@@ -1,283 +1,161 @@
 import { useEffect, useState } from 'react';
 import { SUITE_MAXIMUM_CONFIG_BYTES } from '@beetle/contracts/api';
-import { draftText, parseDraft, updatePart } from './draft.js';
+import { SegmentedFilter } from '../../components/SegmentedFilter.js';
+import type { InputCatalog } from '../suite-editor/fields.js';
+import { AboutSection, LoadSection } from '../suite-editor/LoadSection.js';
+import { DatasetsSection, ThresholdsSection } from '../suite-editor/PassAndData.js';
+import { fieldId } from '../suite-editor/problems.js';
+import { RequestDetail } from '../suite-editor/RequestDetail.js';
+import { RequestsSection } from '../suite-editor/RequestsSection.js';
+import { RunSetup } from '../suite-editor/RunSetup.js';
+import { formatDraft, parseDraft } from './draft.js';
 import type { Config } from './draft.js';
+
+export type EditorMode = 'form' | 'setup' | 'json';
+export type EditorView = { mode: EditorMode; request: number | null };
 
 type ConfigFieldsProps = {
   text: string;
   change: (text: string) => void;
   disabled: boolean;
   validity: (invalid: boolean) => void;
+  inputs: InputCatalog;
+  view: EditorView;
+  setView: (view: EditorView) => void;
 };
-export function ConfigFields({ text, change, disabled, validity }: ConfigFieldsProps) {
-  const [intakeError, setIntakeError] = useState('');
-  function editJson(next: string) {
-    if (next.length > SUITE_MAXIMUM_CONFIG_BYTES) {
-      setIntakeError('Text exceeds 1 MiB characters; previous draft retained.');
-      return;
-    }
-    setIntakeError('');
-    change(next);
-  }
-  const [invalid, setInvalid] = useState<Record<string, boolean>>({});
-  function partValidity(key: string, bad: boolean) {
-    setInvalid((previous) => ({ ...previous, [key]: bad }));
-  }
-  function commitPart(key: string, value: unknown) {
-    const next = updatePart(text, key, value);
-    change(next);
-    setIntakeError('');
-  }
-  function apply(key: string, value: unknown) {
-    if (Object.values(invalid).some(Boolean)) return;
-    try {
-      commitPart(key, value);
-    } catch (caught) {
-      setIntakeError((caught as Error).message);
-    }
-  }
-  const [mode, setMode] = useState<'form' | 'json'>('form');
-  let config: Config = {};
-  let error = '';
+
+function parse(text: string): { config: Config; error: string } {
   try {
-    config = parseDraft(text);
+    return { config: parseDraft(text), error: '' };
   } catch (caught) {
-    error = (caught as Error).message;
+    return { config: {}, error: (caught as Error).message };
   }
-  useEffect(() => {
-    validity(!!error || !!intakeError || Object.values(invalid).some(Boolean));
-  }, [error, intakeError, invalid, validity]);
-  return (
-    <div className="suite-config">
-      <div className="actions" role="group" aria-label="Configuration editor mode">
-        <button
-          type="button"
-          aria-pressed={mode === 'form'}
-          disabled={disabled || !!error || !!intakeError}
-          onClick={() => setMode('form')}
-        >
-          Form editor
-        </button>
-        <button
-          type="button"
-          aria-pressed={mode === 'json'}
-          disabled={disabled || Object.values(invalid).some(Boolean)}
-          onClick={() => setMode('json')}
-        >
-          JSON editor
-        </button>
-      </div>
-      {(error || intakeError) && <p role="alert">{error || intakeError}</p>}
-      {mode === 'json' ? (
-        <CompleteConfigJson text={text} disabled={disabled} editJson={editJson} />
-      ) : (
-        <ConfigForm
-          disabled={disabled}
-          invalid={invalid}
-          config={config}
-          apply={apply}
-          partValidity={partValidity}
-          commitPart={commitPart}
-          mode={mode}
-        />
-      )}
-    </div>
-  );
 }
-function JsonPart({
-  label,
-  value,
-  apply,
-  validity,
-}: {
-  label: string;
-  value: unknown;
-  apply: (value: unknown) => void;
-  validity: (invalid: boolean) => void;
-}) {
-  const [text, setText] = useState(() => (value === undefined ? 'null' : draftText(value)));
-  const [error, setError] = useState('');
-  const canonical = value === undefined ? 'null' : draftText(value);
-  useEffect(() => {
-    if (!error) setText(canonical);
-  }, [canonical, error]);
+
+type BodyProps = {
+  config: Config;
+  set: (next: Config) => void;
+  inputs: InputCatalog;
+  view: EditorView;
+  setView: (view: EditorView) => void;
+};
+
+/** The structured views: Run setup, one request, or every form section. */
+function StructuredView({ config, set, inputs, view, setView }: BodyProps) {
+  if (view.mode === 'setup') return <RunSetup config={config} set={set} />;
+  if (view.request !== null)
+    return (
+      <RequestDetail
+        config={config}
+        set={set}
+        index={view.request}
+        inputs={inputs}
+        close={() => setView({ mode: 'form', request: null })}
+      />
+    );
   return (
-    <label>
-      {label}
-      <textarea
-        aria-label={label}
-        value={text}
-        spellCheck={false}
-        onChange={(event) => {
-          const next = event.target.value;
-          if (next.length > SUITE_MAXIMUM_CONFIG_BYTES) {
-            setError('Text exceeds 1 MiB characters; previous field retained.');
-            validity(true);
-            return;
-          }
-          setText(next);
-          try {
-            const wrapped = parseDraft(`{"part":${next}}`);
-            apply(wrapped.part);
-            setError('');
-            validity(false);
-          } catch (caught) {
-            setError((caught as Error).message);
-            validity(true);
-          }
+    <>
+      <AboutSection config={config} set={set} />
+      <LoadSection config={config} set={set} openSetup={() => setView({ mode: 'setup', request: null })} />
+      <RequestsSection
+        config={config}
+        set={set}
+        inputs={inputs}
+        open={(request, addCheck) => {
+          if (addCheck) addBlankCheck(config, request, set);
+          setView({ mode: 'form', request });
         }}
       />
-      {error && <span role="alert">{error} Correct this field before leaving the form.</span>}
-    </label>
-  );
-}
-
-function RequestControls({ config, apply }: { config: Config; apply: (key: string, value: unknown) => void }) {
-  if (!Array.isArray(config.requests)) return null;
-  return (
-    <div>
-      {config.requests.slice(0, 100).map((request: unknown, index) => {
-        if (request === null || typeof request !== 'object' || Array.isArray(request)) return null;
-        const row = request as Record<string, unknown>;
-        function update(key: string, value: string) {
-          const requests = [...(config.requests as unknown[])];
-          requests[index] = { ...row, [key]: value };
-          apply('requests', requests);
-        }
-        return (
-          <fieldset key={index}>
-            <legend>Request {index + 1}</legend>
-            <label>
-              Method
-              <input
-                aria-label={`Request ${index + 1} method`}
-                value={typeof row.method === 'string' ? row.method : ''}
-                onChange={(event) => update('method', event.target.value)}
-              />
-            </label>
-            <label>
-              Path
-              <input
-                aria-label={`Request ${index + 1} path`}
-                value={typeof row.path === 'string' ? row.path : ''}
-                onChange={(event) => update('path', event.target.value)}
-              />
-            </label>
-          </fieldset>
-        );
-      })}
-    </div>
-  );
-}
-
-function LoadControls({ config, apply }: { config: Config; apply: (key: string, value: unknown) => void }) {
-  const plan = config.loadPlan;
-  if (!plan || typeof plan !== 'object' || Array.isArray(plan)) return null;
-  const loadPlan = plan as Record<string, unknown>;
-  if (!Array.isArray(loadPlan.scenarios)) return null;
-  return (
-    <div>
-      {loadPlan.scenarios.slice(0, 100).map((scenario: unknown, index) => {
-        if (!scenario || typeof scenario !== 'object' || Array.isArray(scenario)) return null;
-        const row = scenario as Record<string, unknown>;
-        function update(executor: string) {
-          const scenarios = [...(loadPlan.scenarios as unknown[])];
-          scenarios[index] = { ...row, executor };
-          apply('loadPlan', { ...loadPlan, scenarios });
-        }
-        return (
-          <label key={index}>
-            Scenario {index + 1} executor
-            <input
-              aria-label={`Scenario ${index + 1} executor`}
-              value={typeof row.executor === 'string' ? row.executor : ''}
-              onChange={(event) => update(event.target.value)}
-            />
-          </label>
-        );
-      })}
-      <p>
-        First 100 request/scenario controls are shown. Complete lists and executor parameters are editable in structured
-        JSON.
+      <ThresholdsSection config={config} set={set} />
+      <DatasetsSection config={config} set={set} inputs={inputs} />
+      <p className="editor-note">
+        Secrets and anything the form does not show stay in the complete JSON and are saved unchanged.
       </p>
-    </div>
+    </>
   );
 }
 
-function ConfigForm({
-  disabled,
-  invalid,
-  config,
-  apply,
-  partValidity,
-  commitPart,
-  mode,
-}: {
-  disabled: boolean;
-  invalid: Record<string, boolean>;
-  config: Config;
-  apply(key: string, value: unknown): void;
-  partValidity(key: string, bad: boolean): void;
-  commitPart(key: string, value: unknown): void;
-  mode: 'form' | 'json';
-}) {
+/** Form, Run setup and complete-JSON views over one draft text; the text is the only source of truth. */
+export function ConfigFields({ text, change, disabled, validity, inputs, view, setView }: ConfigFieldsProps) {
+  const [intakeError, setIntakeError] = useState('');
+  const { config, error } = parse(text);
+  const problem = error || intakeError;
+  useEffect(() => {
+    validity(!!problem);
+  }, [problem, validity]);
+  function set(next: Config) {
+    try {
+      change(formatDraft(next));
+      setIntakeError('');
+    } catch {
+      setIntakeError('That change would push the configuration past 1 MiB or the JSON limits; it was not applied.');
+    }
+  }
+  function editJson(next: string) {
+    if (next.length > SUITE_MAXIMUM_CONFIG_BYTES)
+      return setIntakeError('Text exceeds 1 MiB characters; previous draft retained.');
+    setIntakeError('');
+    change(next);
+  }
+  const structured = disabled || !!problem;
   return (
-    <fieldset disabled={disabled}>
-      <legend>Configuration</legend>
-      <fieldset disabled={Object.values(invalid).some(Boolean)}>
-        <legend>Structured controls</legend>
-        <label>
-          Target URL
-          <input
-            aria-label="Target URL"
-            value={typeof config.target === 'string' ? config.target : ''}
-            onChange={(event) => apply('target', event.target.value)}
-          />
-        </label>
-        <LoadControls config={config} apply={apply} />
-        <RequestControls config={config} apply={apply} />
+    <div className="suite-config">
+      <SegmentedFilter<EditorMode>
+        label="Configuration editor mode"
+        value={view.mode}
+        onChange={(mode) => setView({ mode, request: null })}
+        options={[
+          { value: 'form', label: 'Form editor', disabled: structured },
+          { value: 'setup', label: 'Run setup', disabled: structured },
+          { value: 'json', label: 'Complete configuration JSON', disabled },
+        ]}
+      />
+      {problem && (
+        <p role="alert" className="field-error">
+          {problem}
+        </p>
+      )}
+      <fieldset disabled={disabled} className="editor-sections">
+        <legend className="sr-only">Configuration</legend>
+        {view.mode === 'json' || error ? (
+          <CompleteConfigJson text={text} editJson={editJson} />
+        ) : (
+          <StructuredView config={config} set={set} inputs={inputs} view={view} setView={setView} />
+        )}
       </fieldset>
-      <JsonPart
-        key={`requests-${mode}`}
-        label="Requests JSON"
-        validity={(bad) => partValidity('requests', bad)}
-        value={config.requests}
-        apply={(value) => commitPart('requests', value)}
-      />
-      <JsonPart
-        label="Load plan JSON"
-        validity={(bad) => partValidity('loadPlan', bad)}
-        value={config.loadPlan}
-        apply={(value) => commitPart('loadPlan', value)}
-      />
-      <p>
-        Advanced fields, including selections, dataset input references and opaque secret references, remain in complete
-        JSON. Input upload and run validation are separate steps.
-      </p>
-    </fieldset>
+    </div>
   );
 }
 
-function CompleteConfigJson({
-  text,
-  disabled,
-  editJson,
-}: {
-  text: string;
-  disabled: boolean;
-  editJson(text: string): void;
-}) {
+function addBlankCheck(config: Config, index: number, set: (next: Config) => void) {
+  const requests = Array.isArray(config.requests) ? [...(config.requests as unknown[])] : [];
+  const request = requests[index];
+  if (!request || typeof request !== 'object' || Array.isArray(request)) return;
+  const row = request as Record<string, unknown>;
+  const checks = Array.isArray(row.assertions) ? row.assertions : [];
+  const taken = new Set(
+    checks.map((check) => (check && typeof check === 'object' ? (check as { id?: unknown }).id : '')),
+  );
+  let id = 'check';
+  for (let n = 2; taken.has(id); n++) id = `check_${n}`;
+  requests[index] = { ...row, assertions: [...checks, { id, required: true, kind: 'statusEq', value: 200 }] };
+  set({ ...config, requests });
+}
+
+function CompleteConfigJson({ text, editJson }: { text: string; editJson(text: string): void }) {
   return (
-    <label>
-      Complete configuration JSON
+    <div className="field">
+      <label className="field-label" htmlFor={fieldId('')}>
+        Complete configuration JSON
+      </label>
       <textarea
+        id={fieldId('')}
         autoFocus
-        aria-label="Complete configuration JSON"
-        disabled={disabled}
+        className="input code-input config-json"
         value={text}
         onChange={(event) => editJson(event.target.value)}
         spellCheck={false}
       />
-    </label>
+    </div>
   );
 }

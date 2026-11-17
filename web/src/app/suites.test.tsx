@@ -26,9 +26,10 @@ function read(request: Parameters<typeof readNamespace>[0]) {
   return readNamespace(request);
 }
 async function openJson() {
-  fireEvent.click(await screen.findByRole('button', { name: 'JSON editor' }));
+  fireEvent.click(await screen.findByRole('radio', { name: 'Complete configuration JSON' }));
   return screen.getByRole('textbox', { name: 'Complete configuration JSON' });
 }
+const saveButton = () => screen.getByRole('button', { name: 'Save revision' });
 describe('suite draft boundaries', () => {
   it('preserves advanced nested fields through target edits and JSON round trips', () => {
     const advanced = { ...parseDraft(starter()), secrets: [{ id: 'token', source: { kind: 'env', name: 'SYNTHETIC_REF' } }],
@@ -59,20 +60,23 @@ it('creates with the actual scoped root and supports paged folder selection with
 it('keeps invalid JSON editable and blocks form conversion and saving it', async () => {
   const fixture = testClient(read); mount(fixture.client, path);
   const editor = await openJson(); fireEvent.change(editor, { target: { value: '{broken' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Save new revision' }));
-  expect(screen.getByRole('button', { name: 'Form editor' })).toBeDisabled();
+  fireEvent.click(saveButton());
+  expect(screen.getByRole('radio', { name: 'Form editor' })).toBeDisabled();
+  expect(saveButton()).toBeDisabled();
   expect(editor).toHaveValue('{broken');
   expect(fixture.records.filter(record => record.method === 'POST')).toHaveLength(0);
 });
-it('retains invalid request text and blocks leaving the form or saving until corrected', async () => {
+it('names form problems with jump-to and sends nothing until they are fixed', async () => {
   const fixture = testClient(read); mount(fixture.client, path);
-  const requests = await screen.findByRole('textbox', { name: 'Requests JSON' });
-  fireEvent.change(requests, { target: { value: '[' } });
-  expect(screen.getByRole('button', { name: 'JSON editor' })).toBeDisabled();
-  expect(screen.getByRole('button', { name: 'Save new revision' })).toBeDisabled();
-  expect(requests).toHaveValue('[');
-  fireEvent.change(requests, { target: { value: '[]' } });
-  expect(screen.getByRole('button', { name: 'JSON editor' })).not.toBeDisabled();
+  const field = await screen.findByRole('textbox', { name: 'Request 1 Path' });
+  fireEvent.change(field, { target: { value: 'no-slash' } });
+  fireEvent.click(saveButton());
+  await screen.findByText('Fix 1 thing before saving');
+  fireEvent.click(screen.getByRole('button', { name: 'Request 1 path must start with /.' }));
+  await waitFor(() => expect(document.activeElement).toBe(field));
+  expect(fixture.records.filter(record => record.method === 'POST')).toHaveLength(0);
+  fireEvent.change(field, { target: { value: '/fixed' } });
+  expect(screen.queryByText('Fix 1 thing before saving')).not.toBeInTheDocument();
 });
 it('freezes an unknown write and replays identical request/version/config', async () => {
   let posts = 0;
@@ -83,26 +87,37 @@ it('freezes an unknown write and replays identical request/version/config', asyn
   mount(fixture.client, path); const editor = await openJson();
   const config = { ...parseDraft(starter()), secrets: [{ id: 'opaque', version: 'v1' }] };
   fireEvent.change(editor, { target: { value: draftText(config) } });
-  fireEvent.click(screen.getByRole('button', { name: 'Save new revision' }));
+  fireEvent.click(saveButton());
   fireEvent.click(await screen.findByRole('button', { name: 'Retry identical request' }));
-  await screen.findByText(/^Saved\.$/);
+  await screen.findByText('Saved as revision 1.');
   const writes = fixture.records.filter(record => record.method === 'POST');
   expect(writes).toHaveLength(2); expect(writes[1]?.body).toEqual(writes[0]?.body);
   expect(writes[0]?.body).toMatchObject({ config, expectedVersion: 1, engineId: 'k6', configVersion: 1 });
 });
-it('reloads a conflict version without replacing the draft', async () => {
-  let version = 1;
+it('names the conflicting revision and saves the kept draft on top of it', async () => {
+  const otherId = '44444444-4444-4444-8444-444444444444';
+  let posts = 0;
   const fixture = testClient(request => {
-    if (request.method === 'POST') { version = 2; return json(apiError('conflict'), 409); }
-    if (request.path.endsWith(`/suites/${suiteId}`)) return json(suite(version));
+    if (request.method === 'POST') return ++posts === 1 ? json(apiError('conflict'), 409) : json({ ...revision(), ordinal: 3 }, 201);
+    if (request.path.endsWith(`/suites/${suiteId}`)) return json({ ...suite(posts ? 2 : 1), currentRevisionId: posts ? otherId : null });
+    if (request.path.endsWith(`/revisions/${otherId}`))
+      return json({ ...revision(), id: otherId, ordinal: 2, savedAt: '2026-11-14T11:40:00Z', savedBy: 'Meera' });
     return read(request);
   });
   mount(fixture.client, path); const editor = await openJson();
   const text = updatePart(starter(), 'target', 'http://preserved.invalid');
   fireEvent.change(editor, { target: { value: text } });
-  fireEvent.click(screen.getByRole('button', { name: 'Save new revision' }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Reload current version' }));
-  await screen.findByText('Suite version 2'); expect(editor).toHaveValue(text);
+  fireEvent.click(saveButton());
+  const dialog = await screen.findByRole('dialog', { name: /^Revision 2 was saved on Nov 14, .* by Meera$/ });
+  expect(dialog).toHaveTextContent('Your edits are still here');
+  expect(screen.getByRole('link', { name: 'Open revision 2' })).toHaveAttribute('href', routes.suiteScript(ids.a, ids.workspace, suiteId, otherId));
+  fireEvent.click(screen.getByRole('button', { name: 'Save as revision 3' }));
+  await screen.findByText('Saved as revision 3.');
+  const writes = fixture.records.filter(record => record.method === 'POST');
+  expect(writes).toHaveLength(2);
+  expect(writes[1]?.body).toMatchObject({ expectedVersion: 2, config: writes[0]?.body?.config });
+  expect(writes[1]?.body?.requestId).not.toBe(writes[0]?.body?.requestId);
+  expect(editor).toHaveValue(text);
 });
 it('aborts retired scope reads and ignores late replies', async () => {
   const late = deferred<Response>();
@@ -133,7 +148,7 @@ it('appends history and reads an older immutable revision without writing a poin
   const saved = await screen.findByRole('textbox', { name: 'Saved configuration JSON' });
   expect(JSON.parse((saved as HTMLTextAreaElement).value)).toEqual(older.config);
   expect(fixture.records.every(record => record.method === 'GET')).toBe(true);
-  fireEvent.click(screen.getByRole('button', { name: 'JSON editor' }));
+  fireEvent.click(screen.getByRole('radio', { name: 'Complete configuration JSON' }));
   expect(JSON.parse((screen.getByRole('textbox', { name: 'Complete configuration JSON' }) as HTMLTextAreaElement).value)).toEqual(newer.config);
 });
 it('rejects wrong-scope suite replies through the generated client', async () => {
@@ -148,10 +163,10 @@ it('round-trips advanced JSON through form controls without removing nested fiel
   const editor = await openJson();
   const original = { ...parseDraft(starter()), advanced: { nested: ['東京', null, false] }, datasets: [{ input: { id: ids.folder, version: 2 } }] };
   fireEvent.change(editor, { target: { value: draftText(original) } });
-  fireEvent.click(screen.getByRole('button', { name: 'Form editor' }));
+  fireEvent.click(screen.getByRole('radio', { name: 'Form editor' }));
   fireEvent.change(screen.getByRole('textbox', { name: 'Target URL' }), { target: { value: 'http://edited.invalid' } });
-  fireEvent.change(screen.getByRole('textbox', { name: 'Request 1 path' }), { target: { value: '/edited' } });
-  fireEvent.click(screen.getByRole('button', { name: 'JSON editor' }));
+  fireEvent.change(screen.getByRole('textbox', { name: 'Request 1 Path' }), { target: { value: '/edited' } });
+  fireEvent.click(screen.getByRole('radio', { name: 'Complete configuration JSON' }));
   const complete = screen.getByRole('textbox', { name: 'Complete configuration JSON' });
   await waitFor(() => expect(document.activeElement).toBe(complete));
   const actual = parseDraft((complete as HTMLTextAreaElement).value);
@@ -163,7 +178,7 @@ it('preserves oversized UTF-8 text and rejects it before transport', async () =>
   const fixture = testClient(read); mount(fixture.client, path);
   const editor = await openJson(); const text = `{"target":"${'é'.repeat(524288)}"}`;
   fireEvent.change(editor, { target: { value: text } });
-  fireEvent.click(screen.getByRole('button', { name: 'Save new revision' }));
+  fireEvent.click(saveButton());
   expect(editor).toHaveValue(text);
   expect(fixture.records.filter(record => record.method === 'POST')).toHaveLength(0);
 });
@@ -171,7 +186,7 @@ it('aborts a pending write on scope retirement and retires its draft', async () 
   const late = deferred<Response>();
   const fixture = testClient(request => request.method === 'POST' ? late.promise : read(request));
   mount(fixture.client, path); await openJson();
-  fireEvent.click(screen.getByRole('button', { name: 'Save new revision' }));
+  fireEvent.click(saveButton());
   await waitFor(() => expect(fixture.records.some(record => record.method === 'POST')).toBe(true));
   const write = fixture.records.find(record => record.method === 'POST');
   fireEvent.click(screen.getByRole('button', { name: 'Switch workspace B' }));
@@ -180,45 +195,37 @@ it('aborts a pending write on scope retirement and retires its draft', async () 
   expect(screen.queryByRole('textbox', { name: 'Complete configuration JSON' })).not.toBeInTheDocument();
 });
 
-it('retains invalid Requests JSON while editing request controls', async () => {
-  const fixture = testClient(read); mount(fixture.client, path);
-  const requests = await screen.findByRole('textbox', { name: 'Requests JSON' });
-  fireEvent.change(requests, { target: { value: '[{"unfinished":' } });
-  fireEvent.change(screen.getByRole('textbox', { name: 'Request 1 path' }), { target: { value: '/changed' } });
-  expect(requests).toHaveValue('[{"unfinished":');
-});
-
-it('blocks save when a JSON part overflows the complete config', async () => {
+it('refuses a form edit that would overflow the complete config and blocks save', async () => {
   const fixture = testClient(read); mount(fixture.client, path);
   const editor = await openJson();
   const config: Record<string, unknown> = { ...parseDraft(starter()), padding: 'x'.repeat(1047800) };
   fireEvent.change(editor, { target: { value: draftText(config) } });
-  fireEvent.click(screen.getByRole('button', { name: 'Form editor' }));
-  const requests = screen.getByRole('textbox', { name: 'Requests JSON' });
-  const changed = [{ ...(config.requests as object[])[0], path: '/' + 'p'.repeat(2000) }];
-  fireEvent.change(requests, { target: { value: JSON.stringify(changed) } });
-  expect(requests).toHaveValue(JSON.stringify(changed));
-  expect(screen.getByRole('button', { name: 'Save new revision' })).toBeDisabled();
-  fireEvent.click(screen.getByRole('button', { name: 'Save new revision' }));
+  fireEvent.click(screen.getByRole('radio', { name: 'Form editor' }));
+  const requestPath = screen.getByRole('textbox', { name: 'Request 1 Path' });
+  fireEvent.change(requestPath, { target: { value: '/' + 'p'.repeat(2000) } });
+  await screen.findByText(/would push the configuration past 1 MiB/);
+  expect(requestPath).toHaveValue('/');
+  expect(saveButton()).toBeDisabled();
+  fireEvent.click(saveButton());
   expect(fixture.records.filter(record => record.method === 'POST')).toHaveLength(0);
 });
 
-it('preserves a draft through a failed conflict reload and recovery', async () => {
+it('preserves a draft through a failed conflict read and recovery', async () => {
   let failRead = false;
   const fixture = testClient(request => {
-    if (request.method === 'POST') return json(apiError('conflict'), 409);
+    if (request.method === 'POST') { failRead = true; return json(apiError('conflict'), 409); }
     if (request.path.endsWith(`/suites/${suiteId}`)) return failRead ? json(apiError('storage_unavailable'), 503) : json(suite(2));
     return read(request);
   });
   mount(fixture.client, path); const editor = await openJson();
   const draft = updatePart(starter(), 'target', 'http://kept-through-refresh.invalid');
   fireEvent.change(editor, { target: { value: draft } });
-  fireEvent.click(screen.getByRole('button', { name: 'Save new revision' }));
-  failRead = true; fireEvent.click(await screen.findByRole('button', { name: 'Reload current version' }));
-  await screen.findByText(/Storage unavailable/);
-  expect(screen.getByRole('textbox', { name: 'Complete configuration JSON' })).toHaveValue(draft);
-  failRead = false; fireEvent.click(screen.getByRole('button', { name: 'Retry loading' }));
-  await waitFor(() => expect(screen.queryByText(/Storage unavailable/)).not.toBeInTheDocument());
+  fireEvent.click(saveButton());
+  await screen.findByText('Could not read the latest revision. Your draft is kept.');
+  expect(screen.getByRole('button', { name: 'Save on top' })).toBeDisabled();
+  failRead = false; fireEvent.click(screen.getByRole('button', { name: 'Retry reading' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Save on top' })).not.toBeDisabled());
+  fireEvent.click(screen.getByRole('button', { name: 'Copy my edits' }));
   expect(screen.getByRole('textbox', { name: 'Complete configuration JSON' })).toHaveValue(draft);
 });
 
@@ -232,9 +239,9 @@ it('preserves an acknowledged draft when refresh fails without claiming refreshe
   mount(fixture.client, path); const editor = await openJson();
   const draft = updatePart(starter(), 'target', 'http://acknowledged.invalid');
   fireEvent.change(editor, { target: { value: draft } });
-  fireEvent.click(screen.getByRole('button', { name: 'Save new revision' }));
+  fireEvent.click(saveButton());
   await screen.findByText(/Storage unavailable/);
   expect(screen.getByRole('textbox', { name: 'Complete configuration JSON' })).toHaveValue(draft);
-  expect(screen.getByText('Saved.')).toBeInTheDocument();
+  expect(screen.getByText('Saved as revision 1.')).toBeInTheDocument();
   expect(screen.queryByText(/history are refreshed/)).not.toBeInTheDocument();
 });
