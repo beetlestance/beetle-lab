@@ -16,6 +16,7 @@ import type {Run} from '@beetle/contracts/api';
 import {configuration} from './config.js';
 import {target} from './target.js';
 import {final} from './final.js';
+import {memoryFacts} from './memory.js';
 const [bundlePath,output,context='default',extra]=process.argv.slice(2);
 assert(bundlePath&&output&&isAbsolute(bundlePath)&&isAbsolute(output)&&!extra);
 const config=await configuration();const {f,identities}=await candidate(bundlePath,context,2048);
@@ -26,9 +27,9 @@ try{
  f.compose('up','-d','--no-build');const session=await automaticSession(f.origin,undefined,1024);
  const client={...session,installation:await readReadyPublic(signal=>session.api.getInstallationSettings({signal}))};installation=client.installation.id;
  await writeFile(join(output,'installation-owner.json'),JSON.stringify({project:f.project,installationId:installation}),{flag:'wx',mode:0o600});
- results.controlReserve=controlBudget(f);
+ results.controlReserve=controlBudget(f);results.settingsBefore=client.installation;
  const peers=['frontend','backend','agent'].map(role=>{const id=f.compose('ps','-q',role);assert(/^[a-f0-9]{64}$/.test(id));
-  const row=f.docker.json<{HostConfig:{Memory:number};State:{Running:boolean}}[]>(['inspect',id])[0]!;assert(row.State.Running);return {role,id,memory:row.HostConfig.Memory};});
+  const row=f.docker.json<{HostConfig:{Memory:number};RestartCount:number;State:{Running:boolean;StartedAt:string}}[]>(['inspect',id])[0]!;assert(row.State.Running&&row.RestartCount===0);return {role,id,memory:row.HostConfig.Memory,startedAt:row.State.StartedAt};});
  const endpoint=f.docker.run(['context','inspect',context,'--format','{{.Endpoints.docker.Host}}']);assert(endpoint.startsWith('unix://'));const transport=new UnixDockerTransport(endpoint.slice(7));
  const subscribers=await Promise.all([0,1,2].map(()=>automaticSession(f.origin)));
  const saved=await saveRevision(client.api,{offer:{config}});const trials:Record<string,unknown>[]=[];results.trials=trials;
@@ -42,14 +43,20 @@ try{
    phase='final';window='final';trial.final=await final(client,queued,part=>{trial.finalDrain=part;});trial.target=await oracle.counts();
    assert.deepEqual({...trial.target as Record<string,unknown>,unique:0},{ready:index+1,work:(index+1)*400,unexpected:0,unique:0});
    assert((trial.target as {unique:number}).unique>=64);
-   phase='post-idle';window='post-idle';trial.postIdle=await idle(peers,transport,client.api,part=>{trial.postIdlePartial=part;});
+   phase='post-idle';window='post-idle';const postIdleWindows:Awaited<ReturnType<typeof idle>>[]=[];trial.postIdleWindows=postIdleWindows;
+   for(let n=0;n<4;n++)postIdleWindows.push(await idle(peers,transport,client.api,part=>{trial.postIdlePartial=part;}));
   }finally{
    try{const points=await observer.close();trial.rssPoints=points;trial.processRss=summarizeRss(points,peers);}
    catch(error){trial.rssFailure=String(error instanceof Error?error.stack:error).slice(0,1024);observerFailure={error};}
   }
   if(observerFailure)throw observerFailure.error;
  }
- phase='custody';stopForCustody(f);results.retained=runs.map(run=>ledger(f,run,installation!));status='passed';
+ results.settingsAfter=await readReadyPublic(signal=>client.api.getInstallationSettings({signal}));assert.deepEqual(results.settingsAfter,results.settingsBefore);
+ for(const peer of peers){const row=f.docker.json<{RestartCount:number;State:{Running:boolean;StartedAt:string}}[]>(['inspect',peer.id])[0]!;
+  assert(row.State.Running&&row.RestartCount===0);assert.equal(row.State.StartedAt,peer.startedAt);}
+ results.unchangedInstallation=true;results.memory=memoryFacts(trials);
+ phase='custody';stopForCustody(f);results.retained=runs.map(run=>ledger(f,run,installation!));
+ assert((results.memory as ReturnType<typeof memoryFacts>).met,'Repeated memory or latency acceptance target missed');status='passed';
 }catch(error){process.exitCode=1;await writeFile(join(output,'failure-private.txt'),String(error instanceof Error?error.stack:error).slice(0,16384),{flag:'wx',mode:0o600});}
 finally{
  let cleanupVerified=false;try{await cleanup(f,installation);if(installation)cleanupLiveVolumes({id:installation,user:'1000:1000',docker:f.docker});cleanupVerified=true;}catch{status='failed';process.exitCode=1;}

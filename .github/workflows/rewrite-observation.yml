@@ -75,7 +75,7 @@ jobs:
 
   missing-amd64:
     name: qualification/missing-amd64
-    if: ${{ contains(fromJSON('["missing-amd64","conformance-amd64","long-amd64","rss-amd64"]'), inputs.profile) && github.event_name == 'workflow_dispatch' && github.repository == 'beetlestance/beetle-lab' && github.ref == 'refs/heads/rewrite/integration' }}
+    if: ${{ contains(fromJSON('["missing-amd64","conformance-amd64","repeated-memory-amd64","long-amd64","rss-amd64"]'), inputs.profile) && github.event_name == 'workflow_dispatch' && github.repository == 'beetlestance/beetle-lab' && github.ref == 'refs/heads/rewrite/integration' }}
     permissions:
       contents: read
       actions: read

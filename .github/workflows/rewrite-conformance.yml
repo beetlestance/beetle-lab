@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        kind: ${{ fromJSON(inputs.profile == 'conformance-amd64' && '["conformance"]' || inputs.profile == 'rss-amd64' && '["rss"]' || inputs.profile == 'long-amd64' && '["long-stream"]' || '["conformance","long-stream"]') }}
+        kind: ${{ fromJSON(inputs.profile == 'repeated-memory-amd64' && '["repeated-memory"]' || inputs.profile == 'conformance-amd64' && '["conformance"]' || inputs.profile == 'rss-amd64' && '["rss"]' || inputs.profile == 'long-amd64' && '["long-stream"]' || '["conformance","long-stream"]') }}
     env:
       BEETLE_QUALIFICATION_ARCHITECTURE: amd64
     steps:
