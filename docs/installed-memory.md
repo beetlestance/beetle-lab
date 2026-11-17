@@ -1,4 +1,4 @@
-# Change installed run memory
+# Change installed capacity
 
 This maintenance operation raises per-run/default memory within the existing
 execution pool. It preserves history, credentials, retention, other settings and
@@ -11,7 +11,7 @@ operation UUID, and run:
 ```sh
 docker compose stop backend agent
 docker compose run --rm --no-deps --entrypoint node setup \
-  /beetle/install/compose-memory.js --memory-mib 1024 \
+  /beetle/install/compose-capacity.js --memory-mib 1024 \
   --operation-id YOUR_OPERATION_UUID
 docker compose up -d --no-build backend agent
 ```
@@ -20,6 +20,12 @@ Use the same Compose environment/home/images as initial setup. The command uses
 the existing Compose configuration gate. Generate the UUID once with `uuidgen`;
 keep it with the command's result. If the operation is interrupted, repeat the
 identical command and UUID. An incomplete operation keeps serving fenced.
+
+To grow the aggregate output pool, use `--output-pool-mib 512` in place of
+`--memory-mib 1024`, with a new operation UUID. Choose exactly one capacity flag.
+Output growth preserves per-run budgets, memory, history and retained reservations.
+It uses the existing storage allocation and free-space reserve; it does not allocate
+more host disk or turn on retention/deletion.
 
 An advanced installation uses its original private provision request:
 

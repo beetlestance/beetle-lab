@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { createHash } from 'node:crypto';
-import { captureGeneration, generationDigest, selectInstalledConfiguration } from '../src/installation-generation/index.js';
+import { captureGeneration, captureCapacityIncrease, generationDigest, selectInstalledConfiguration } from '../src/installation-generation/index.js';
 const digest = (text: string) => createHash('sha256').update(text).digest('hex');
 const installationId = '00000000-0000-4000-8000-000000000001';
 const operationId = '00000000-0000-4000-8000-000000000002';
@@ -43,3 +43,15 @@ it('rejects extra generation fields and oversized configurations', () => {
   const intent = { ...f.generation, configurations: { ...f.generation.configurations, 'agent.json': { padding: 'x'.repeat(131072) } } };
   expect(() => generationDigest(intent, digest)).toThrow();
 });
+
+it('binds a capacity resource and amount into the generation digest',()=>{
+ const f=fixture();const {digest:_digest,...base}=f.generation;void _digest;
+ const intent={...base,increase:{resource:'outputPool' as const,bytes:536870912}};
+ const generation={...intent,digest:generationDigest(intent,digest)};
+ expect(captureGeneration(generation,installationId,f.receipt.requestDigest,digest).increase).toEqual(intent.increase);
+ expect(()=>captureGeneration({...generation,increase:{resource:'memory',bytes:536870912}},installationId,f.receipt.requestDigest,digest)).toThrow();
+ expect(()=>captureGeneration({...generation,increase:{resource:'outputPool',bytes:1073741824}},installationId,f.receipt.requestDigest,digest)).toThrow();
+});
+it.each([null,{}, {resource:'storage',bytes:1},{resource:'memory',bytes:0},{resource:'outputPool',bytes:1.5},
+ {resource:'outputPool',bytes:Number.MAX_SAFE_INTEGER+1},{resource:'memory',bytes:1,extra:true}])(
+ 'refuses invalid capacity increase metadata',input=>{expect(()=>captureCapacityIncrease(input)).toThrow();});

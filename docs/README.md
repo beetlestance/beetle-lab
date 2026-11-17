@@ -23,4 +23,4 @@ and exact execution facts in linked evidence. Use historical documents when thei
 specific source/platform record is needed; do not load the entire archive for a task.
 Authored pages stay within 180 lines, LLDs within 220, and CONTEXT.md within 40.
 
-[Installed run memory](installed-memory.md) describes the supported offline increase.
+[Installed capacity](installed-memory.md) describes the supported offline increase.

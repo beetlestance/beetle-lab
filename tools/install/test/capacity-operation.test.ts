@@ -1,3 +1,5 @@
+import {generationDigest} from '@beetle/contracts/installation-generation';
+import {digest} from '../src/capture.js';
 import { beforeAll, afterAll, afterEach, expect, it, vi } from 'vitest';
 import { build } from 'tsup';
 import { mkdtemp, rm, chmod, readFile, writeFile } from 'node:fs/promises';
@@ -13,7 +15,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { fixture, agentId, engineId } from './fixtures.js';
 import { provisionFreshInstallation } from '../index.js';
 import { starterExport } from '../starter/export.js';
-import { changeInstalledMemory } from '../capacity/index.js';
+import { changeInstalledMemory, changeInstalledCapacity } from '../capacity/index.js';
 import { configurationStatePath } from '../src/configuration.js';
 import { native } from '../src/files.js';
 import { openMetadata } from '../../../app/src/adapters/outbound/sqlite/index.js';
@@ -147,4 +149,64 @@ it('updates and replays both normal and offline-export catalogue profiles togeth
     expect(loaded.runtime.catalog.engines[1]!.profile.network).toEqual({profile:'none',name:'none'});
   }finally{await loaded.close();}
   expect((await provisionFreshInstallation(e.request,e.context())).status).toBe('unchanged');
+});
+
+const outputOperationId='00000000-0000-4000-8000-000000000096';
+function outputInput(e:Awaited<ReturnType<typeof setup>>) {
+ return {request:e.request,operationId:outputOperationId,increase:{resource:'outputPool' as const,bytes:2147483648}};
+}
+it('grows aggregate output after1GiB memory and preserves history, baseline and per-run budgets',async()=>{
+ const e=await setup(true);await changeInstalledMemory(e.input,e.context());
+ const baseline=await readFile(e.installed.paths.receipt);const before=JSON.parse(String(e.settings()!.value_json));
+ const journalBefore=await readFile(join(e.installed.paths.agentJournal,'journal.sqlite'));
+ const input=outputInput(e);expect(await changeInstalledCapacity(input,e.context())).toMatchObject({status:'changed'});
+ const row=e.settings()!;expect(row.version).toBe(3);
+ expect(JSON.parse(String(row.value_json))).toEqual({...before,pool:{...before.pool,outputBytes:2147483648}});
+ const loaded=await loadAgentConfiguration({BEETLE_AGENT_CONFIG_FILE:e.installed.paths.agent},f.worker());
+ try{
+  expect(loaded.runtime.configuration.pool.outputBytes).toBe(2147483648);
+  expect(loaded.runtime.configuration.perRun.memoryBytes).toBe(1073741824);
+  expect(loaded.runtime.configuration.perRun.outputBytes).toBe(e.request.agentPolicy.perRun.outputBytes);
+  expect(loaded.runtime.catalog.engines.every(engine=>engine.profile.maximumBudget.memoryBytes===1073741824)).toBe(true);
+ }finally{await loaded.close();}
+ expect(await changeInstalledCapacity(input,e.context())).toMatchObject({status:'unchanged'});
+ await expect(changeInstalledCapacity({...input,increase:{resource:'memory',bytes:2147483648}},e.context())).rejects.toThrow();
+ await expect(changeInstalledCapacity({...input,increase:{resource:'outputPool',bytes:2147483649}},e.context())).rejects.toThrow();
+ expect(e.settings()).toEqual(row);expect(await readFile(e.installed.paths.receipt)).toEqual(baseline);
+ expect(await readFile(join(e.installed.paths.agentJournal,'journal.sqlite'))).toEqual(journalBefore);
+ expect(await readFile(join(e.installed.paths.backendData,'history-canary'),'utf8')).toBe('keep');
+ expect((await provisionFreshInstallation(e.request,e.context())).status).toBe('unchanged');
+});
+it('resumes an output settings commit after interrupted publication and refuses changed kind/amount',async()=>{
+ const e=await setup();await changeInstalledMemory(e.input,e.context());const input=outputInput(e);const rename=native.rename;
+ const failure=vi.spyOn(native,'rename').mockImplementation(async(from,to)=>{
+  if(String(from).includes(`${outputOperationId}-commit`))throw new Error('synthetic output publication failure');
+  return rename(from,to);
+ });
+ await expect(changeInstalledCapacity(input,e.context())).rejects.toThrow('synthetic');failure.mockRestore();
+ expect(e.settings()!.version).toBe(3);
+ await expect(loadAgentConfiguration({BEETLE_AGENT_CONFIG_FILE:e.installed.paths.agent},f.worker())).rejects.toThrow();
+ await expect(changeInstalledCapacity({...input,increase:{resource:'memory',bytes:2147483648}},e.context())).rejects.toThrow();
+ await expect(changeInstalledCapacity({...input,increase:{resource:'outputPool',bytes:2147483649}},e.context())).rejects.toThrow();
+ expect(await changeInstalledCapacity(input,e.context())).toMatchObject({status:'changed'});
+ expect(e.settings()!.version).toBe(3);expect(await changeInstalledCapacity(input,e.context())).toMatchObject({status:'unchanged'});
+});
+it('resumes the earlier memory-only pending format without rewriting its generation or incrementing settings again',async()=>{
+ const e=await setup();const rename=native.rename;
+ const failure=vi.spyOn(native,'rename').mockImplementation(async(from,to)=>{
+  if(String(from).includes(`${operationId}-commit`))throw new Error('synthetic legacy interruption');
+  return rename(from,to);
+ });
+ await expect(changeInstalledMemory(e.input,e.context())).rejects.toThrow('synthetic');failure.mockRestore();
+ const path=configurationStatePath(e.root);const state=JSON.parse(await readFile(path,'utf8'));
+ const {increase:_increase,digest:_digest,...intent}=state.pending.generation;void _increase;void _digest;
+ const generation={...intent,digest:generationDigest(intent,digest)};
+ state.pending={operationId,memoryBytes:e.input.memoryBytes,expectedSettings:state.pending.expectedSettings,generation};
+ await writeFile(path,JSON.stringify(state),{mode:0o600});
+ // Model the old crash before its final publication temporary was written.
+ await rm(join(e.root,'config',`.installation-${operationId}-commit`),{force:true});
+ expect(await changeInstalledMemory(e.input,e.context())).toMatchObject({status:'changed'});
+ expect(e.settings()!.version).toBe(2);
+ expect(JSON.parse(await readFile(path,'utf8')).generation).toEqual(generation);
+ expect(await changeInstalledMemory(e.input,e.context())).toMatchObject({status:'unchanged'});
 });

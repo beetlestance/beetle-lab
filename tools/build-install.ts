@@ -9,7 +9,7 @@ await build({ entry: {
   local: 'tools/install/local-cli.ts',
   compose:'tools/install/compose/index.ts',
   capacity:'tools/install/capacity-cli.ts',
-  'compose-memory':'tools/install/compose-memory.ts',
+  'compose-capacity':'tools/install/compose-capacity.ts',
   'agent-worker': 'agent/src/journal/worker.ts',
   'backend-worker': 'app/src/adapters/outbound/sqlite/worker.ts',
 }, outDir: 'tools/install/dist', format: ['esm'], platform: 'node', target: 'node24', bundle: true,

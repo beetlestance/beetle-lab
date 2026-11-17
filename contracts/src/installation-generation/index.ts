@@ -2,6 +2,10 @@ import { encodeCanonicalJson, validatePrimitive } from '../index.js';
 export const INSTALLATION_RECEIPT_BYTES = 131072;
 export const configurationNames = ['installation.json', 'backend-agent.json', 'agent.json'] as const;
 export type ConfigurationName = typeof configurationNames[number];
+export interface CapacityIncrease {
+  readonly resource: 'memory' | 'outputPool';
+  readonly bytes: number;
+}
 export interface ConfigurationGeneration {
   readonly version: 1;
   readonly operationId: string;
@@ -9,6 +13,7 @@ export interface ConfigurationGeneration {
   readonly previousDigest: string;
   readonly configurations: Readonly<Record<ConfigurationName, unknown>>;
   readonly digest: string;
+  readonly increase?: CapacityIncrease;
 }
 type Digest = (text: string) => string;
 const hash = (value: unknown): value is string => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
@@ -26,7 +31,7 @@ export function generationDigest(value: Omit<ConfigurationGeneration, 'digest'>,
 }
 export function captureGeneration(value: unknown, installationId: string, previousDigest: string,
   digest: Digest): ConfigurationGeneration {
-  fields(value, ['version', 'operationId', 'installationId', 'previousDigest', 'configurations', 'digest']);
+  generationEnvelope(value);
   valid(value.version === 1 && validatePrimitive('uuid', value.operationId).ok);
   valid(validatePrimitive('uuid', installationId).ok && value.installationId === installationId);
   valid(hash(previousDigest) && value.previousDigest === previousDigest && hash(value.digest));
@@ -56,4 +61,19 @@ export function selectInstalledConfiguration(receipt: unknown, name: Configurati
     record(selected.installation); valid(selected.installation.installationId === receipt.installationId);
   }
   return selected;
+}
+
+/** The requested resource and amount are part of the committed generation digest. */
+export function captureCapacityIncrease(value: unknown): CapacityIncrease {
+  fields(value, ['resource', 'bytes']);
+  valid(value.resource === 'memory' || value.resource === 'outputPool');
+  valid(typeof value.bytes === 'number' && Number.isSafeInteger(value.bytes) && value.bytes > 0);
+  return Object.freeze({resource:value.resource,bytes:value.bytes});
+}
+
+function generationEnvelope(value: unknown): asserts value is Record<string, unknown> {
+  record(value);
+  fields(value, ['version', 'operationId', 'installationId', 'previousDigest', 'configurations', 'digest',
+    ...(Object.hasOwn(value, 'increase') ? ['increase'] : [])]);
+  if (Object.hasOwn(value, 'increase')) captureCapacityIncrease(value.increase);
 }

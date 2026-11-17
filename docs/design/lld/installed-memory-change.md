@@ -1,11 +1,14 @@
-# Installed memory change
+# Installed capacity change
 
 ## Scope
 
 Grow per-run memory within the existing execution pool. The first required use is
 512 MiB to 1 GiB on an existing local installation. Preserve configurations,
 organisation/workspace overrides, immutable Offers, identities in completed history,
-artifacts, retention, credentials, pool size, control reserve and headroom.
+artifacts, retention, credentials, control reserve and headroom. Memory changes
+keep the existing pool size. Output changes grow only the aggregate backend/agent
+output pools inside the existing storage allocation and free-space reserve; per-run
+budgets, memory and disk ownership charges remain unchanged.
 A 1 GiB run can consume the whole shipped 1 GiB execution pool; two such runs
 cannot be admitted together. This operation does not infer host capacity.
 
@@ -19,7 +22,9 @@ inside services; an individual file bind would retain a stale inode.
 
 A ready selector preserves baseline installation/request/Journal authority bindings.
 Its optional generation binds an operation UUID, installation UUID, original request
-digest and all three selected configuration objects under one bounded digest.
+digest, requested capacity kind/amount and all three selected configuration objects
+under one bounded digest. Older memory generations without the request metadata
+remain readable; their completed replay is restricted to memory operations.
 The receipt limit is 128 KiB. Credentials are referenced, never copied into generations.
 Each selected configuration is validated by its owning service; installation IDs and
 backend/agent profile identities must agree. The catalogue derives new identities.
@@ -46,8 +51,8 @@ Completed history and retained files remain intact.
    request preserving other user values and installed policy. Refuse pool overflow.
 3. Build the complete generation through the existing catalogue constructors.
 4. Atomically publish a `reconfiguring` selector containing the operation UUID,
-   expected settings, requested memory and proposed generation; fsync its directory.
-5. Apply the memory-only settings change through the settings owner under one CAS
+   expected settings, requested capacity kind/amount and proposed generation; fsync its directory.
+5. Apply the chosen field change through the settings owner under one CAS
    transaction. Preserve unrelated settings; do not invent a host observation.
 6. Close the original metadata writer before publishing the ready generation.
 7. Drain original IO before releasing startup leases. Failed cleanup retains custody.
@@ -60,11 +65,12 @@ and obtain fresh resource observations before it can admit work.
 ## Failure and replay
 
 The caller supplies and retains one operation UUID. Matching replay after completion
-returns unchanged. An unfinished selector requires the same UUID and requested memory;
+returns unchanged. An unfinished selector requires the same UUID, capacity kind and amount;
 the generation is derived again and must match, rather than being silently replaced.
 Settings may be exactly old or exactly the committed next version/value. A different
 version or value is a conflict. Ambiguous commits stay fenced until matching replay
-resolves their actual state. Temporary receipt publication is operation-owned and
+resolves their actual state. Earlier memory-only pending records are normalized
+without changing their proposed generation. Temporary receipt publication is operation-owned and
 resumable; no general cleanup or baseline repair is attempted.
 
 ## Verification

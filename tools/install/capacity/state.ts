@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { validateApi } from '@beetle/contracts/api';
-import { captureGeneration, INSTALLATION_RECEIPT_BYTES } from '@beetle/contracts/installation-generation';
-import type { ConfigurationGeneration } from '@beetle/contracts/installation-generation';
+import { captureGeneration, captureCapacityIncrease, INSTALLATION_RECEIPT_BYTES } from '@beetle/contracts/installation-generation';
+import type { ConfigurationGeneration, CapacityIncrease } from '@beetle/contracts/installation-generation';
 import type { InstallationRecord } from '../../../app/src/domain/settings/index.js';
 import { validatePrimitive } from '@beetle/contracts';
 import { PrivateFiles } from '../src/files.js';
@@ -10,13 +10,13 @@ import type { Receipt } from '../src/receipt.js';
 import { configurationStatePath } from '../src/configuration.js';
 import { canonical, digest, fields, requireInput } from '../src/capture.js';
 import type { Captured } from '../src/capture.js';
-export interface PendingMemoryChange {
+export interface PendingCapacityChange {
   readonly operationId: string;
-  readonly memoryBytes: number;
+  readonly increase: CapacityIncrease;
   readonly expectedSettings: InstallationRecord;
   readonly generation: ConfigurationGeneration;
 }
-export interface State { readonly receipt: Receipt; readonly pending?: PendingMemoryChange; readonly absent: boolean }
+export interface State { readonly receipt: Receipt; readonly pending?: PendingCapacityChange; readonly absent: boolean }
 export async function filesFor(c: Captured): Promise<PrivateFiles> {
   const files = new PrivateFiles(c);
   try { await files.pin(c.request.root); await files.pin(join(c.request.root, 'config')); return files; }
@@ -40,19 +40,20 @@ export async function readState(c: Captured, files: PrivateFiles): Promise<State
   requireInput(raw.phase === 'reconfiguring');
   return {receipt, absent:false, pending:capturePending(pending, receipt)};
 }
-function capturePending(pending: unknown, receipt: Receipt): PendingMemoryChange {
-  fields(pending, ['operationId','memoryBytes','expectedSettings','generation']);
+function capturePending(pending: unknown, receipt: Receipt): PendingCapacityChange {
+  requireInput(pending !== null && typeof pending === 'object' && !Array.isArray(pending));
+  const legacy = Object.hasOwn(pending, 'memoryBytes');
+  fields(pending, ['operationId',legacy?'memoryBytes':'increase','expectedSettings','generation']);
+  const increase = captureCapacityIncrease(legacy ? {resource:'memory',bytes:pending.memoryBytes} : pending.increase);
   requireInput(validatePrimitive('uuid', pending.operationId).ok);
-  requireInput(Number.isSafeInteger(pending.memoryBytes) && Number(pending.memoryBytes) > 0);
-  fields(pending.expectedSettings, ['id','version','schemaVersion','scope','values']);
-  requireInput(pending.expectedSettings.id === receipt.installationId && pending.expectedSettings.schemaVersion === 2);
-  requireInput(Number.isSafeInteger(pending.expectedSettings.version) && Number(pending.expectedSettings.version) > 0);
-  requireInput(validateApi('InstallationScope', pending.expectedSettings.scope).ok && validateApi('InstallationValues', pending.expectedSettings.values).ok);
+  const expectedSettings = captureExpectedSettings(pending.expectedSettings, receipt.installationId);
   const generation = captureGeneration(pending.generation, receipt.installationId, receipt.requestDigest, digest);
   requireInput(generation.operationId === pending.operationId);
-  return {...pending, generation} as unknown as PendingMemoryChange;
+  if (generation.increase) requireInput(canonical(generation.increase) === canonical(increase));
+  else requireInput(increase.resource === 'memory');
+  return {operationId:pending.operationId, increase, expectedSettings, generation} as unknown as PendingCapacityChange;
 }
-export async function publishState(c: Captured, expected: State, pending: PendingMemoryChange,
+export async function publishState(c: Captured, expected: State, pending: PendingCapacityChange,
   commit: boolean): Promise<void> {
   const files = await filesFor(c);
   try {
@@ -65,4 +66,12 @@ export async function publishState(c: Captured, expected: State, pending: Pendin
     // The exact caller-supplied operation ID permits recovery of a pre-rename temporary.
     await files.ready(value, `${pending.operationId}-${commit?'commit':'prepare'}`, configurationStatePath(c.request.root), true);
   } finally { await files.close(); }
+}
+
+function captureExpectedSettings(input: unknown, installationId: string): InstallationRecord {
+  fields(input, ['id','version','schemaVersion','scope','values']);
+  requireInput(input.id === installationId && input.schemaVersion === 2);
+  requireInput(Number.isSafeInteger(input.version) && Number(input.version) > 0);
+  requireInput(validateApi('InstallationScope', input.scope).ok && validateApi('InstallationValues', input.values).ok);
+  return input as unknown as InstallationRecord;
 }

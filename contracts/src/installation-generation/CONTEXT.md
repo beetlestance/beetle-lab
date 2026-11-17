@@ -7,3 +7,7 @@ configuration objects. Invalid or unfinished receipts refuse configuration intak
 Each consumer still validates the selected configuration with its owning schema.
 No filesystem, runtime authority, settings writes or token handling lives here.
 The baseline provision request remains unchanged; generation selection is explicit.
+
+Optional increase metadata binds capacity kind and amount into new generation
+digests. Strict capture rejects unknown kinds/unsafe bytes. Old generations keep
+their existing digest; maintenance restricts metadata-free replay to memory.
