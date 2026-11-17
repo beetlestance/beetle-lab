@@ -29,8 +29,11 @@ export default defineConfig({
       title: 'Beetle Lab',
       logo: { light: './src/assets/logo-light.svg', dark: './src/assets/logo.svg', alt: '' },
       customCss: ['./src/styles/theme.css', './src/styles/custom.css'],
+      components: { PageTitle: './src/components/PageTitle.astro' },
       expressiveCode: {
         themes: ['vitesse-dark', 'vitesse-light'],
+        // Plain code cards: no terminal window chrome, copy button on hover.
+        defaultProps: { frame: 'code' },
         styleOverrides: {
           borderRadius: '10px',
           borderColor: 'transparent',

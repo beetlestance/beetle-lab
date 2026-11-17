@@ -214,3 +214,10 @@ starlight-toc a[aria-current='true'] { border-color: var(--sl-color-accent); col
 
 /* Search button matches the app's search control. */
 site-search button[data-open-modal] { background: var(--bl-surface); border: 0; border-radius: var(--bl-radius-sm); }
+
+/* Inline code never breaks at its hyphens; on narrow screens wide tables scroll instead. */
+.sl-markdown-content :not(pre) > code { white-space: nowrap; }
+@media (max-width: 50rem) {
+  .sl-markdown-content table:not(:where(.not-content *)) { display: block; overflow-x: auto; }
+  .sl-markdown-content td:not(:where(.not-content *)) { min-width: 7.5rem; }
+}
