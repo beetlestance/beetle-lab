@@ -39,6 +39,10 @@ for load shapes, datasets and self-hosting; reference pages for configuration, t
 automation client and the HTTP API (operations read from `http-operations.json`
 at build time); an interactive run walkthrough and load-shape builder; `llms.txt`;
 and a manual GitHub Pages workflow. Each page has a section breadcrumb and a lede.
+After the merge: a sample run replay on the runs page, a threshold explorer on the
+rules page and a note on app navigation on the workspaces page. Not done: D2
+diagrams (no D2 binary without a global install) and links from the app to the
+matching docs pages (the app has no `/docs` link yet).
 
 Phase 2 outcome: 17 contracts in `system/contracts/` (run lifecycle split into
 lifecycle and delivery; UI LLDs became the web UI contract), module map moved to
