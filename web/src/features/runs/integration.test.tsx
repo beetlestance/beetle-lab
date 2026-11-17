@@ -45,7 +45,7 @@ it('launches current saved revision without using edited draft text and reads th
   mount(fixture.client, path);
   fireEvent.change(await screen.findByLabelText('Target URL'), { target: { value: 'http://edited.invalid' } });
   await submitSaved();
-  await screen.findByRole('heading', { name: 'Run detail' }); await screen.findByText('active');
+  await screen.findByRole('heading', { name: 'Run detail' }); await screen.findAllByText('Starting');
   const body = fixture.records.find(record => record.method === 'POST')?.body;
   expect(body?.revisionId).toBe(revisionId); expect(body).not.toHaveProperty('config');
   expect(fixture.records.filter(record => record.path.endsWith(`/runs/${runId}`))).toHaveLength(1);
