@@ -106,7 +106,7 @@ it.each(['conflict', 'protected_dependency', 'storage_unavailable'] as const)('p
   expect(alert).toHaveTextContent(apiError(code).message);
   expect(screen.queryByText(/Deletion accepted/)).not.toBeInTheDocument();
   expect(screen.queryByText('Deleted. The backend has confirmed absence.')).not.toBeInTheDocument();
-  if (code === 'protected_dependency') expect(alert).toHaveTextContent('Retained references protect this input');
+  if (code === 'protected_dependency') expect(alert).toHaveTextContent("This file can't be deleted while any revision uses it.");
   if (code === 'conflict') expect(alert).toHaveTextContent('Refresh current status');
   if (code === 'storage_unavailable') {
     expect(alert).toHaveTextContent('outcome is unknown');

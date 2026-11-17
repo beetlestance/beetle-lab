@@ -1,0 +1,23 @@
+.retire-panel {
+  display: flex;
+  gap: var(--s-20);
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: var(--s-32);
+  padding: var(--s-20);
+  border: 1px solid var(--red);
+  border-radius: var(--r-lg);
+}
+.retire-panel > div {
+  flex: 1 1 32rem;
+}
+.retire-panel h2 {
+  font-size: var(--fs-md);
+}
+.retire-panel p {
+  margin-top: var(--s-6);
+  color: var(--mute);
+  font-size: var(--fs-sm);
+  max-width: 80ch;
+}

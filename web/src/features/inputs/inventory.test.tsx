@@ -12,7 +12,7 @@ it('reads bounded metadata and explicit authoritative status without content or 
   const api = testClient(request => request.path.includes('?') ? page() : json(current));
   mount(api.client);
   expect(await screen.findByRole('table', { name: 'Workspace inputs' })).toBeVisible();
-  expect(screen.getByRole('columnheader', { name: 'Listed state' })).toBeVisible();
+  expect(screen.getByRole('columnheader', { name: 'Status' })).toBeVisible();
   expect(api.records).toHaveLength(1);
   fireEvent.click(screen.getByRole('button', { name: 'Read current status for Synthetic dataset' }));
   const status = await screen.findByRole('region', { name: 'Current input status' });
@@ -34,9 +34,9 @@ it('presents list failure without retry loops and explicitly retries into an emp
   expect(await screen.findByRole('alert')).toHaveTextContent('Storage unavailable');
   expect(api.records).toHaveLength(1);
   fireEvent.click(screen.getByRole('button', { name: 'Retry loading' }));
-  expect(await screen.findByText('No inputs in this workspace.')).toBeVisible();
+  expect(await screen.findByText('No input files yet')).toBeVisible();
   expect(api.records).toHaveLength(2);
-  expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
+  expect(screen.queryByRole('table')).not.toBeInTheDocument();
 });
 
 it('retains only the current page and bounds cursor history at twenty pages', async () => {
