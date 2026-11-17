@@ -12,7 +12,7 @@ describe('typed browser pairing boundary', () => {
     const pending = deferred<Response>();
     const api = browser(record => record.path.endsWith('/auth/session') ? pending.promise : namespace(record));
     await waitFor(() => expect(api.records).toHaveLength(1));
-    expect(screen.getByRole('status')).toHaveTextContent('Checking local session');
+    expect(screen.getByRole('status')).toHaveTextContent('Checking session');
     expect(screen.queryByRole('button', { name: 'Create organization' })).not.toBeInTheDocument();
     await act(async () => pending.resolve(json(session)));
     expect(await screen.findByRole('button', { name: 'Create organization' })).toBeVisible();
@@ -78,7 +78,7 @@ describe('typed browser pairing boundary', () => {
     await pair();
     expect(await screen.findByLabelText('Startup token')).toHaveValue('');
     expect(screen.getByRole('status')).toHaveTextContent('one-time token may have been consumed');
-    expect(screen.getByRole('status')).toHaveTextContent('Restart the local service');
+    expect(screen.getByRole('status')).toHaveTextContent('Restart the service');
     expect(api.records).toHaveLength(3);
     await pair();
     await waitFor(() => expect(api.records).toHaveLength(5));

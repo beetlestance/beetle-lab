@@ -9,7 +9,7 @@ The backend image includes automation.js; use an explicit Node entrypoint overri
 
 Common flags: --endpoint canonical HTTP(S) root URL, --origin canonical configured
 loopback external origin, --session-file absolute private file, optional --json.
-Connect uses the normal automatic local profile; pair uses --token-file for the
+Connect uses the normal automatic single-host profile; pair uses --token-file for the
 explicit paired profile. Both create a fresh exclusive session-file.
 All options are closed, unique, bounded strings; no positional ambiguity, URL
 credentials, paths/query/fragments on endpoint, redirects or environment expansion.
@@ -21,7 +21,7 @@ wire validation. Abort destroys the request/body. Endpoint and origin are captur
 
 | Command | Additional input | Behavior |
 | --- | --- | --- |
-| connect | none | One automatic same-origin local exchange; require automatic mode and persist its private session |
+| connect | none | One automatic same-origin session exchange; require automatic mode and persist its private session |
 | pair | --token-file | One existing startup-token exchange on a fresh CI backend; persist returned session privately |
 | run | --request-file, optional --wait-ms | Validate CreateRunRequest, enqueue once; optional bounded wait |
 | status | --organization, --workspace, --run, optional --wait-ms | Read authoritative Run; optionally wait |

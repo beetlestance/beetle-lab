@@ -5,7 +5,7 @@ Wire behavior is owned by the [LLD](LLD.md), not repeated here.
 
 ## Product boundary
 
-A local-first testing workbench and headless CI client. The first rewrite release
+A self-hosted testing workbench and headless CI client. The first rewrite release
 reimplements the k6 capabilities in [the inventory](../current-features.md).
 Future engines may use any language behind a versioned runner contract.
 
@@ -38,7 +38,7 @@ Browser ---- Frontend static server / API-SSE proxy
                               |
                      private Backend API <---- container automation client
                          |           |
-                  SQLite metadata   local artifacts
+                  SQLite metadata   artifact volumes
                          |
                   private runner API
                          |
@@ -68,11 +68,11 @@ user configs are data, never compiler source. Domain and transport models differ
 
 SQLite is owned by the application through one storage worker/connection owner;
 the agent has a separate private journal, never a shared SQLite file. Database
-work must not block the HTTP event loop. Large artifacts stay on local volumes.
+work must not block the HTTP event loop. Large artifacts stay on installation volumes.
 Optional PostgreSQL/S3 adapters belong to a later distributed profile.
 
 No Redis, broker, time-series server, Kubernetes, object-store service or external
-observability server is required for a local install. A database outbox plus a
+observability server is required for an installation. A database outbox plus a
 reconciling dispatcher is sufficient for the single application/agent profile.
 
 ## Dependency boundaries
@@ -132,7 +132,7 @@ Unknown totals, unsupported sensors and sampled peaks remain labeled.
 
 Fresh v2 data root and major-version image tags; no legacy data migration is needed.
 Organisation -> workspace -> optional folders scopes every suite, input and result.
-These are local namespaces, not user membership or security-tenancy claims. See
+These are installation namespaces, not user membership or security-tenancy claims. See
 [organisation/settings](lld/organization-settings.md) for isolation and inheritance. Store redacted configuration and secret-version references,
 not resolved credentials. Engines receive only run-scoped inputs/outputs. The UI
 has no Docker socket. No private infrastructure dependency enters public images.
@@ -147,12 +147,12 @@ Built-in plugins are installed manifests plus immutable engine image digests.
 Adding an engine requires conformance tests, schemas, resource profile, exit/result
 mapping and documentation. No runtime marketplace or automatic plugin download.
 
-Local: frontend + backend + agent, local SQLite/files; only frontend loopback
+Single-host: frontend + backend + agent, SQLite/files; only frontend loopback
 ingress. Users can build from source or pull matched versioned images via Compose.
 CI starts backend + agent without frontend and uses the same HTTP contract through
 a container-run client; no host app installation. Reports export on completion.
 Shared deployments need an addendum for identity, tenancy, ownership leases,
-PostgreSQL/S3 and backup/restore; their correctness is not implied by local mode.
+PostgreSQL/S3 and backup/restore; their correctness is not implied by the single-host profile.
 
 ## Deliberate exclusions
 

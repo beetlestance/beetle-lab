@@ -9,12 +9,13 @@ Historical task estimates and execution reports are indexed in
 ## Accepted direction
 
 Ship through Docker Compose with separate frontend, backend and bounded execution
-containers. Engines are pluggable. Keep local single-user access, durable history,
+containers. Engines are pluggable. Keep single-administrator access, durable history,
 explicit budgets and retention. Linux containers on amd64 and arm64 are targets;
 native macOS/Windows and process-mode qualification are not first-release targets.
 
 Use the existing SQLite-backed metadata/journal and filesystem artifacts for the
-local profile. Shared PostgreSQL/S3 storage and hosted IAM are later design work.
+single-host profile. Shared PostgreSQL/S3 storage and multi-user IAM are later
+design work.
 No legacy application data migration is required. Preserve existing rewrite data
 when implementing supported resource or installation changes.
 

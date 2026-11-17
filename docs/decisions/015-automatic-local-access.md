@@ -1,8 +1,8 @@
-# Automatic local browser access
+# Automatic administrator browser access
 
 Status: accepted and locally implemented.
 
-One local installation has one trusted administrator. Requiring that user to find
+One installation has one trusted administrator. Requiring that user to find
 startup logs, paste a token and restart the backend after expiry adds setup friction.
 Use an automatic same-origin browser exchange when the frontend publishes only on
 loopback. Keep the current exact Host/Origin, custom-header JSON exchange, CSRF,
@@ -16,6 +16,7 @@ through their original CAS/value, without repeating user resource mutations.
 
 Retain an explicit paired profile for developer/CI clients. Normal executable and
 rewrite Compose configuration select automatic mode and print no bootstrap token.
-This is local machine trust, with no account, organisation-role or LAN/hosted IAM
-claim. Such access requires a separate design. The contract and remaining packaged
-qualification are in [local sessions](../design/lld/local-session.md).
+One installation administrator can run this on a workstation or VPS using SSH
+forwarding. Multi-user accounts and organisation roles require a separate IAM
+design; they are not prerequisites for hosting an installation. The contract and remaining packaged
+qualification are in [administrator sessions](../design/lld/local-session.md).

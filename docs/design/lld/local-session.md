@@ -1,15 +1,16 @@
-# Local browser session
+# Administrator browser session
 
 Status: paired and automatic persistent profiles locally verified; packaged browser
 qualification remains pending.
 Owner: app HTTP session adapter; composition supplies external origin and the
-private metadata store (or paired-profile startup token output). This is a single local administrator, not hosted IAM.
+private metadata store (or paired-profile startup token output). This is a single administrator, not multi-user IAM.
 
 ## Paired profile (advanced)
 
 Generated API contracts own JSON. `POST /api/v2/auth/pair` accepts only
 `bootstrapToken`; `GET /api/v2/auth/session` recovers the current session. Both
-return scope `local-admin`, UTC `expiresAt` and `csrfToken`. Session identity is
+return scope `local-admin` (the existing installation-administrator protocol ID),
+UTC `expiresAt` and `csrfToken`. Session identity is
 only an HttpOnly cookie, never JSON. `POST /api/v2/auth/logout` accepts `{}` and
 returns `loggedOut: true` after revoking it. All replies and errors are no-store.
 No credential goes in a URL, localStorage, diagnostics or committed source. The
@@ -20,7 +21,7 @@ as 43-character base64url. Store one session in memory; consume the bootstrap
 atomically on successful pairing. Its lifetime is 15 minutes, session lifetime
 8 hours, both absolute and bounded by monotonic time. Wall time formats expiry;
 invalid clocks fence authorization. Restart invalidates the session and issues a
-fresh bootstrap token through explicit local startup output. Logout/expiry requires
+fresh bootstrap token through explicit service startup output. Logout/expiry requires
 restart to pair again in this first profile; no token recovery endpoint is exposed.
 
 Cookie `beetle_session` is HttpOnly, SameSite=Strict, Path=/api/v2/, Max-Age=28800,
@@ -56,12 +57,13 @@ flags/revocation and safe no-store errors through actual Fastify. Test UI reload
 logout and lost pairing reply. Loopback publication/proxy, browser cookies and
 restart token delivery need actual packaged-install evidence separately.
 
-## Automatic local profile
+## Automatic single-host profile
 
 User-selected normal executable profile is automatic, with the same exact loopback
 frontend origin and loopback-only published Compose port. Explicit paired profile
-remains available for developer/automation workflows. Neither profile grants LAN
-or hosted access. Automatic local access trusts people/processes on that local box.
+remains available for developer/automation workflows. Either profile can serve an
+installation on a workstation or VPS through SSH forwarding. Direct browser access through a non-loopback hostname is not currently
+accepted. Automatic access trusts the people/processes that can reach the endpoint.
 
 POST /api/v2/auth/local accepts only {} and X-Beetle-Local:1, exact Origin/Host and
 JSON content type. A GET never grants a session. Foreign origins, duplicate headers,
@@ -85,7 +87,7 @@ until the same original write is reconciled. New grant and logout replies requir
 confirmed persistence; logout clears the stored session before clearing the cookie.
 Close denies late grant publication. Normal reads perform no session database IO.
 
-Browser first reads an existing session, then attempts automatic local exchange on
+Browser first reads an existing session, then attempts automatic session exchange on
 401 or an explicit storage_unavailable503 that may represent a pending auth write. Only explicit paired-profile401 falls back to the token form. Unknown exchange
 outcome first checks the cookie/session. Logout stays signed out until an explicit
 reconnect/reload; resource401 retires its epoch and never replays user mutations.

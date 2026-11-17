@@ -21,15 +21,15 @@ export function Reference(){
     <tbody>{page.items.map(row=><tr key={row.name}><td>{row.method}</td><td><code>{row.path}</code></td><td>{String(row.implementation)==='planned'?'Planned':'Implemented'}</td><td>{row.successStatus}</td>
      <td><button aria-label={`Inspect ${row.name}`} aria-pressed={row.name===operation?.name} onClick={()=>setSelected(row.name)}>Inspect</button></td></tr>)}</tbody></table></div>}
   {operation&&<section aria-label="Selected operation"><h2>{operation.name}</h2><p><code>{operation.method} {operation.path}</code> · HTTP {operation.successStatus}</p>
-   <p>{String(operation.implementation)==='planned'?'Planned: this operation has schemas but is not implemented.':'Implemented in the standard configuration; local access, configured services and engine capabilities still apply.'}</p>
-   <p>Schema references ($ref) resolve against the downloaded catalogue. Requests also need the installation’s local session and mutation CSRF headers.</p>
+   <p>{String(operation.implementation)==='planned'?'Planned: this operation has schemas but is not implemented.':'Implemented in the standard configuration; administrator access, configured services and engine capabilities still apply.'}</p>
+   <p>Schema references ($ref) resolve against the downloaded catalogue. Requests also need the installation’s administrator session and mutation CSRF headers.</p>
    {(Object.keys(labels) as (keyof SchemaFields)[]).map(field=><SchemaSection key={`${operation.name}/${field}`} label={labels[field]} name={(operation as SchemaFields)[field]} />)}
   </section>}
   <BinaryTransfers />
  </section>;
 }
 function BinaryTransfers(){
- return <section aria-label="Binary transfer reference"><h2>Binary transfers</h2><p>These routes use the local session. Mutations also need the exact Origin and CSRF headers.</p>
+ return <section aria-label="Binary transfer reference"><h2>Binary transfers</h2><p>These routes use the administrator session. Mutations also need the exact Origin and CSRF headers.</p>
   {apiBinaryOperations.map(operation=><details key={operation.name}><summary>{operation.method} {operation.path}</summary>
    <p>{operation.notes}</p><dl><dt>Operation</dt><dd>{operation.name}</dd><dt>Success</dt><dd>HTTP {operation.successStatus} · {operation.response}</dd>
     {'body' in operation&&<><dt>Body size</dt><dd>{operation.body.minimumBytes}–{operation.body.maximumBytes} bytes</dd></>}

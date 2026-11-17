@@ -67,10 +67,10 @@ function UploadProgress({ state, workflow, discard }: {
   return <div className="upload-progress" aria-live="polite">
     {state.message && <p role="status">{state.message}</p>}
     {state.record && <p className="number">Last confirmed: {state.record.state}, {state.record.offset} / {state.record.bytes} bytes</p>}
-    {state.retained && <p>A partial backend input can remain after cancellation, departure, or clearing this local draft.</p>}
+    {state.retained && <p>A partial backend input can remain after cancellation, departure, or clearing this browser draft.</p>}
     <div className="actions">
       {state.busy ? <button onClick={() => workflow?.cancel()}>Cancel upload</button> : <UploadRecoveryActions state={state} run={action => {void workflow?.run(action);}} />}
-      {state.retained && <button disabled={state.busy} onClick={discard}>{state.phase === 'complete' ? 'Clear completed draft' : 'Discard local draft'}</button>}
+      {state.retained && <button disabled={state.busy} onClick={discard}>{state.phase === 'complete' ? 'Clear completed draft' : 'Discard browser draft'}</button>}
     </div>
   </div>;
 }

@@ -34,7 +34,7 @@ no group/other permission bits, canonical non-symlink ancestry and checked named
 open identity. Capture bigint device/inode/size/mtime/ctime/mode/link/owner metadata;
 recheck around reads, original close and named lookup. Changed/replaced files fail.
 No FIFO, device, socket, directory, hard link or world-readable secret is accepted.
-Metadata checks do not claim adversarial linearizability against the local admin.
+Metadata checks do not claim adversarial linearizability against the installation administrator.
 
 Across all provider/config intake in one process, at most two original file leases
 may exist; no waiting queue. Capacity remains occupied through original cleanup.

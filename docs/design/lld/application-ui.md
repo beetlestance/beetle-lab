@@ -60,7 +60,7 @@ tokens in URLs/localStorage. Apply same-origin/Host validation and CSRF protecti
 on mutations, including localhost. CLI uses restricted installation credential
 files if the optional container client is used. Agent credentials stay backend-side.
 No anonymous Docker-controlling route.
-The [local session contract](local-session.md) owns automatic local access, the
+The [administrator session contract](local-session.md) owns automatic administrator access, the
 advanced paired profile, persistent cookie lifetime and guard ordering.
 
 A public/shared server needs a separate authentication/authorization design. The

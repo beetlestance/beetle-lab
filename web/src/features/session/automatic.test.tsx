@@ -5,7 +5,7 @@ import { afterEach, expect, it } from 'vitest';
 import { browser, calls, json, namespace, session, unpaired } from './test-fixtures.js';
 afterEach(cleanup);
 const automatic = {...session, accessMode: 'automatic' as const};
-it('opens the local administrator automatically after an unauthenticated read, without a token form or resource queries before grant', async () => {
+it('opens the administrator automatically after an unauthenticated read, without a token form or resource queries before grant', async () => {
   let opened = false;
   const api = browser(record => {
     if (record.path.endsWith('/auth/session')) return unpaired();
@@ -57,7 +57,7 @@ it('reconciles a pending credential write on explicit retry after a503 without r
     }
     return namespace(record);
   }, '/', true);
-  await screen.findByText(/Local access could not be confirmed/); expect(grants).toBe(1);
+  await screen.findByText(/Installation access could not be confirmed/); expect(grants).toBe(1);
   expect(screen.queryByLabelText('Startup token')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', {name: 'Check session status'}));
   await screen.findByRole('table', {name: 'Organizations'}); expect(grants).toBe(2);

@@ -62,7 +62,7 @@ Before promotion persist publishing intent. File operations occur outside SQLite
 transactions. Publication metadata commits only after exact size/hash verification,
 file flush, no-overwrite promotion and both source/destination parent flushes.
 Persist newly created ancestor directories before acknowledging durable custody.
-Successful reads/pins do not certify against later changes by the local admin;
+Successful reads/pins do not certify against later changes by the installation administrator;
 provider/Stager recheck real byte identity and integrity before execution.
 
 Chunk length is1..64KiB, except no chunks are required for an empty input. Acquire

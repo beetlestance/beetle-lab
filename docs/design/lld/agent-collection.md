@@ -1,10 +1,10 @@
 # Agent collection
 
 Status: control intake implemented; final output verification contract frozen for implementation.
-Scope: private single-agent local profile; public lifecycle remains in
+Scope: private single-agent single-host profile; public lifecycle remains in
 [execution protocol](execution-protocol.md).
 
-## Durable control intake (local profile)
+## Durable control intake (single-host profile)
 
 `control.ndjson` contains UTF-8 `ControlEvent` frames with LF, at most64KiB per
 frame, 65536 records and64MiB total. Agent enrichment has512 additional bytes;

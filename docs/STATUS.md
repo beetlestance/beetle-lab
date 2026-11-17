@@ -7,7 +7,7 @@ are indexed in [HISTORY](HISTORY.md) and retain their original source/platform s
 ## Available
 
 - Docker Compose starts separate frontend, backend, agent and k6 engine containers.
-- Local browser sessions, organisations/workspaces, suites and immutable inputs.
+- Administrator browser sessions, organisations/workspaces, suites and immutable inputs.
 - Run/cancel, persisted results, metric history, comparison, reports and exports.
 - Public HTTP API, generated schemas and downloadable AI-agent instructions under
   `/reference`. An MCP server is not shipped.
@@ -45,7 +45,7 @@ protections are applied; publication still requires explicit authorisation.
 ## Separate scope
 
 A full UI redesign, additional engines, generated test cases, shared PostgreSQL/S3
-storage and hosted IAM are later phases. Report content and basic configuration
+storage and multi-user IAM are later phases. Report content and basic configuration
 usability are functional work, not deferred visual polish. Long report lines can
 produce horizontal page overflow; that known presentation defect remains in the
 deferred UI work, and responsive visual quality is not certified by these checks.

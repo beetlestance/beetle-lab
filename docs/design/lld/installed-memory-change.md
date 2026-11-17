@@ -3,7 +3,7 @@
 ## Scope
 
 Grow per-run memory within the existing execution pool. The first required use is
-512 MiB to 1 GiB on an existing local installation. Preserve configurations,
+512 MiB to 1 GiB on an existing installation. Preserve configurations,
 organisation/workspace overrides, immutable Offers, identities in completed history,
 artifacts, retention, credentials, control reserve and headroom. Memory changes
 keep the existing pool size. Output changes grow only the aggregate backend/agent

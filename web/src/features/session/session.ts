@@ -9,13 +9,13 @@ export type SessionState =
   | { kind: 'unpaired' | 'unavailable'; message: string }
   | { kind: 'paired'; session: BrowserSession; client: ApiClient; transfers: InputTransferClient; generation: number };
 interface Epoch { generation: number; abort: AbortController }
-const restart = 'Restart the local service to get a fresh startup token if the previous token was used or expired.';
+const restart = 'Restart the service to get a fresh startup token if the previous token was used or expired.';
 const lostPair = 'The pairing outcome is unknown. The one-time token may have been consumed.';
 const lostWrite = 'Your session ended. An unacknowledged change may have committed; its outcome is unknown. Check the current data after pairing before making another change.';
 
 /** One session epoch owns all resource requests; retiring it also discards App state. */
 export class BrowserSessionGate {
-  private state: SessionState = { kind: 'checking', message: 'Checking local session…' };
+  private state: SessionState = { kind: 'checking', message: 'Checking session…' };
   private epoch: Epoch = { generation: 0, abort: new AbortController() };
   private listeners = new Set<() => void>();
   private active = false;
@@ -31,7 +31,7 @@ export class BrowserSessionGate {
   stop() {
     this.active = false;
     this.epoch.abort.abort();
-    this.state = { kind: 'checking', message: 'Checking local session…' };
+    this.state = { kind: 'checking', message: 'Checking session…' };
   }
   private current(epoch: Epoch) { return this.active && this.epoch === epoch && !epoch.abort.signal.aborted; }
   private publish(state: SessionState) {
@@ -93,7 +93,7 @@ export class BrowserSessionGate {
     }
   }
   check = () => {
-    const epoch = this.begin({ kind: 'checking', message: 'Checking local session…' });
+    const epoch = this.begin({ kind: 'checking', message: 'Checking session…' });
     void this.readSession(epoch);
   };
   private async readSession(epoch: Epoch, context = '', automatic = this.options.autoOpen !== false) {
@@ -104,24 +104,24 @@ export class BrowserSessionGate {
     const unpaired = result.error.status === 401;
     if (automatic && localExchangeNeeded(result.error)) {await this.openLocal(epoch); return;}
     this.publish({ kind: unpaired ? 'unpaired' : 'unavailable', message: unpaired
-      ? `${context} Pair this browser with the token printed at local startup. ${restart}`
-      : `${context} Session status could not be verified. Check that the local service is running, then check again.` });
+      ? `${context} Pair this browser with the token printed at service startup. ${restart}`
+      : `${context} Session status could not be verified. Check that the service is running, then check again.` });
   }
   private async openLocal(epoch: Epoch) {
     const result = await this.client(epoch, {'X-Beetle-Local': '1'}).openLocalBrowserSession({body: {}, signal: epoch.abort.signal});
     if (!this.current(epoch)) return;
     if (result.ok) {await this.accept(epoch, result.value); return;}
     if (result.error.status === 401) {
-      this.publish({kind: 'unpaired', message: `Pair this browser with the token printed at local startup. ${restart}`}); return;
+      this.publish({kind: 'unpaired', message: `Pair this browser with the token printed at service startup. ${restart}`}); return;
     }
     if (unknownOutcome(result.error)) {await this.recoverLocal(epoch); return;}
-    this.publish({kind: 'unavailable', message: 'Local access could not open. Check that the service is running, then check session status.'});
+    this.publish({kind: 'unavailable', message: 'Installation access could not open. Check that the service is running, then check session status.'});
   }
   private async recoverLocal(epoch: Epoch) {
     const result = await this.client(epoch).getBrowserSession({signal: epoch.abort.signal});
     if (!this.current(epoch)) return;
     if (result.ok) {await this.accept(epoch, result.value); return;}
-    this.publish({kind: 'unavailable', message: 'Local access could not be confirmed. Check session status to reconnect.'});
+    this.publish({kind: 'unavailable', message: 'Installation access could not be confirmed. Check session status to reconnect.'});
   }
   pair = (bootstrapToken: string) => {
     if (this.state.kind !== 'unpaired') return;

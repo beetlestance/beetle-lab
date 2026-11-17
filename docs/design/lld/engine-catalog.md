@@ -2,7 +2,7 @@
 
 Status: implemented and independently reviewed component; actual installation
 startup/runtime qualification remains.
-Scope: trusted local installation, not a schema-upload API or engine marketplace.
+Scope: trusted installation, not a schema-upload API or engine marketplace.
 
 An installation registers at most32 pinned engine/profile/config-version combinations.
 Registration supplies a manifest, approved Docker profile, positive config version,

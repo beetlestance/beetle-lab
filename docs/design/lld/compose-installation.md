@@ -49,7 +49,7 @@ agent attestation requires an exact staging-root mount and rejects ancestor moun
 Backend mounts config read-only/backend state read-write. Frontend mounts neither.
 Shared positive uid/gid owns private files; only installer/agent get the explicit
 socket supplemental group. Socket read-only mount still grants powerful daemon
-access; this is a trusted local installation boundary, not a hostile multiuser host.
+access; this is a trusted installation boundary, not a hostile multiuser host.
 No automatic recursive chown/repair or deletion of existing state.
 
 All service rootfs read-only; cap_drop ALL; no-new-privileges; finite /tmp/PID/CPU/
@@ -96,7 +96,7 @@ complete matching configuration returns unchanged; partial/conflicting state fai
 explicitly and remains preserved. Never ignore native close/rename/sync errors.
 
 The launcher resolves the actual local Unix socket (remote daemons unsupported in
-this local profile), probes its container-visible group with a bounded finite image,
+this single-host profile), probes its container-visible group with a bounded finite image,
 and prepares config through the packaged CLI as the common non-root owner. Compose
 uses --env-file, never shell-evals generated config. Preserve spaces safely; reject
 unsupported delimiter/control paths explicitly. Do not read an unrelated repo .env.

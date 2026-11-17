@@ -23,7 +23,7 @@ Folders group suites and inputs; they do not create execution agents or grant
 permissions. Runs belong to the suite's immutable organisation/workspace identity;
 moving a suite within its workspace does not rewrite historical run identity.
 No organisation accounts, invitation, SSO or membership roles in the local release.
-The user confirmed one local administrator may manage every organisation.
+The user confirmed one administrator may manage every organisation.
 Do not create duplicate admin/root/member accounts for this single identity.
 Future hosting needs a new IAM/role-policy design. Shared/multi-user
 access control is a later feature, not implied by filtered views.

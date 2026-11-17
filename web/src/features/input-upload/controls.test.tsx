@@ -47,7 +47,7 @@ it('retains just the selected folder across bounded explicit pages and freezes t
   fireEvent.click(screen.getByRole('button', { name: 'Cancel upload' }));
   await act(async () => pending.resolve(json(input({ folderId: ids.parent }), 201)));
   expect(await screen.findByRole('button', { name: 'Replay identical create' })).toBeEnabled();
-  fireEvent.click(screen.getByRole('button', { name: 'Discard local draft' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Discard browser draft' }));
   expect(await screen.findByRole('button', { name: 'Upload input' })).toBeDisabled();
   expect(screen.getByText(/no backend data was deleted/)).toBeVisible();
   expect(api.records.filter(request => request.method === 'DELETE')).toHaveLength(0);

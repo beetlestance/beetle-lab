@@ -4,9 +4,9 @@ The optional client uses the same authenticated API as the UI. Compose remains t
 installation entrypoint. The backend build recipe packages automation.js; this is
 locally verified source, not a claim that the published image contains the rewrite.
 
-Use connect with the normal automatic local profile. Mount a private directory
+Use connect with the normal automatic single-host profile. Mount a private directory
 owned by the client UID with0700 permissions; the command creates one fresh0600
-session file. No startup token is needed. The client sends the same exact local
+session file. No startup token is needed. The client sends the same exact configured
 Origin/Host and custom-header exchange as the browser; it never reads Docker logs.
 
 The executable is /beetle/backend/automation.js inside a source-built backend image.

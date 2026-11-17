@@ -8,7 +8,7 @@ import { freeze, offerSnapshot, selector, snapshot, validateConfig } from './off
 import { CatalogError } from './types.js';
 import type { Catalog, EngineRegistration, InstalledEngine, PreflightOffer } from './types.js';
 
-/** Trusted local installation only. No I/O or engine semantic compilation. */
+/** Trusted installation only. No I/O or engine semantic compilation. */
 export function createEngineCatalog(registrations: readonly EngineRegistration[]): Catalog {
   const engines = installedRegistrations(registrations);
   const lookup = new Map(engines.map(engine => [selector({ id: engine.manifest.engineId,

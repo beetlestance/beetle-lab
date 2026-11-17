@@ -30,7 +30,7 @@ class Paused extends Error {
   constructor(readonly phase: Phase, message: string) { super(message); }
 }
 const interrupted = 'Interrupted. The request may have taken effect; cancellation does not roll back backend data.';
-const failed = 'The operation could not be confirmed. The local draft is retained.';
+const failed = 'The operation could not be confirmed. The browser draft is retained.';
 
 /** Owns one bounded in-memory intent. Transport originals stay with the shared clients. */
 export class UploadWorkflow {
@@ -67,7 +67,7 @@ export class UploadWorkflow {
     if (this.state.busy || this.departed) return;
     this.intent = undefined;
     this.state = { phase: 'idle', busy: false, retained: false,
-      message: 'Local draft cleared. A partial backend input can remain; no backend data was deleted.' };
+      message: 'Browser draft cleared. A partial backend input can remain; no backend data was deleted.' };
     this.options.changed(this.state);
   }
   async run(action: UploadAction) {
@@ -163,7 +163,7 @@ export class UploadWorkflow {
       staging: 'Staging status confirmed. Resume sends only the remaining prepared bytes.',
       publishing: 'Publication is pending. Refresh status explicitly to check completion.',
       published: 'Upload complete. Published status is confirmed.',
-      failed: 'The backend reports failed. Upload has stopped; the local draft is retained.',
+      failed: 'The backend reports failed. Upload has stopped; the browser draft is retained.',
       deleting: 'The backend reports deleting. Upload has stopped.',
       deleted: 'The backend reports deleted. Upload has stopped.',
     };

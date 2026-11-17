@@ -63,7 +63,7 @@ Config must be regular, single-linked, 32 KiB or smaller and not group/other wri
 Startup creates private `inputs/staging` and `inputs/published` children. Existing
 unsafe roots are rejected. Pending publication/deletion is recovered in bounded
 background pages; ordinary published inputs are not periodically rehashed.
-The workspace Inputs view supports one local file up to8MiB, explicit recovery
+The workspace Inputs view supports one browser-selected file up to8MiB, explicit recovery
 after interruption, and verified download from selected current published status.
 Upload drafts remain in memory and retire on workspace/session departure; partial
 backend inputs can remain for explicit inspection/deletion.
@@ -88,13 +88,13 @@ These checks do not qualify browser cookies, container controls or either Linux 
 After building the agent and k6 recipes locally, run the isolated qualification:
 
 ```sh
-docker build -f agent/Dockerfile -t beetle-lab-agent:local .
-docker build -f engines/k6/Dockerfile -t beetle-lab-k6:local .
-npm run smoke:agent:docker -- beetle-lab-agent:local beetle-lab-k6:local 200 default
-npm run smoke:agent:docker -- beetle-lab-agent:local beetle-lab-k6:local 500 default
+docker build -f agent/Dockerfile -t beetle-lab-agent:dev .
+docker build -f engines/k6/Dockerfile -t beetle-lab-k6:dev .
+npm run smoke:agent:docker -- beetle-lab-agent:dev beetle-lab-k6:dev 200 default
+npm run smoke:agent:docker -- beetle-lab-agent:dev beetle-lab-k6:dev 500 default
 ```
 
-Use `desktop-linux` instead of `default` when that is the local Docker Desktop
+Use `desktop-linux` instead of `default` when that is the Docker Desktop
 context. The context must use a Unix endpoint; image/daemon architectures must match
 amd64 or arm64. This exercise expects the daemon socket at `/var/run/docker.sock`
 on its Linux host/VM and permission to create/remove its own containers/network.

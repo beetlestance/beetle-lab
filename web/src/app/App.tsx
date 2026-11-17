@@ -25,7 +25,7 @@ export function App({ apiClient, inputTransfers }: { apiClient: ApiClient; input
   return <ApiContext.Provider value={apiClient}><InputTransferContext.Provider value={inputTransfers ?? null}><QueryClientProvider client={client}>
     <div inert={commands.visible} aria-hidden={commands.visible||undefined}><div className="app-shell"><a className="skip-link" href="#main">Skip to content</a>
       <aside className="sidebar"><Link className="wordmark" to={routes.organizations}><span className="brand-mark" aria-hidden="true">b.</span>beetle<span className="wordmark-detail">lab</span></Link>
-        <p className="sidebar-caption">Local performance testing</p>
+        <p className="sidebar-caption">Self-hosted performance testing</p>
         <nav aria-label="Main navigation"><Link className="sidebar-link" to={routes.organizations}>Organizations <span aria-hidden="true">↗</span></Link><Link className="sidebar-link" to={routes.settings}>Installation settings</Link><Link className="sidebar-link" to={routes.reference}>API reference</Link></nav>
         <div className="sidebar-bottom"><span>Appearance</span><ThemePicker /></div>
       </aside>
