@@ -9,7 +9,7 @@ import { fixture, keyFor, uuid } from '../../../app/test/run-results/fixture.js'
 import { loaded } from '../../../app/test/runner/fixtures.js';
 import { httpFixture } from '../../../app/test/http/run-metrics/fixture.js';
 const history: RunMetricsService = {readRunHistorySummary: async () => { throw new Error('Unexpected synthetic history indexing'); }, lookupRunMetricSeries: async () => {throw new Error('Unexpected metric lookup');},reader: {listRunMetricSeries: async () => {throw new Error('unused');},
-  getRunMetricSamples: async () => {throw new Error('unused');}}, close: async () => {}};
+  getRunMetricSamples: async () => {throw new Error('unused');}, getRunLatencyAttribution: async () => {throw new Error('unused');}}, close: async () => {}};
 it.each([-30000,30000])('carries a clock-offset scoped live frame (%ims) through actual private agent HTTP, gateway, SQL binding and authenticated public TCP', async offset => {
   const f = fixture(); f.observe({state: 'running', phase: 'execute', lastSeq: 2});
   const key = keyFor(f.key.runId); const read = vi.fn(async () => {

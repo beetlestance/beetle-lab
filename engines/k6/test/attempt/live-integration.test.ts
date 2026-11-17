@@ -1,5 +1,5 @@
 import {gunzipSync} from 'node:zlib';
-import { afterEach, beforeEach, expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { setTimeout as delay } from 'node:timers/promises';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -9,9 +9,10 @@ import { decodeLiveMetricSnapshot } from '@beetle/contracts/api';
 import { fixture, native, resetNative } from './fixtures.js';
 import { MemoryMailbox } from './live-fixtures.js';
 import { reserveOutput, phaseReservation } from '../../wrapper/attempt/reservation.js';
+import type { SuiteConfig } from '../../compiler/suite/index.js';
 const cleanups: (() => Promise<void>)[] = [];
 beforeEach(resetNative);
-afterEach(async () => {await Promise.all(cleanups.splice(0).map(clean => clean()));});
+afterEach(async () => {vi.restoreAllMocks(); await Promise.all(cleanups.splice(0).map(clean => clean()));});
 async function setup() {const value = await fixture(); cleanups.push(value.cleanup); return value;}
 const hash = (bytes: Uint8Array | string) => createHash('sha256').update(bytes).digest('hex');
 it('publishes during actual measured window callbacks and drains before sealed history', async () => {
@@ -47,4 +48,15 @@ it('carves initial extent and produced bytes from total and execute ceilings', a
   expect(enabled.build + enabled.history + 1048576 + enabled.live + enabled.control + enabled.numeric + enabled.warnings + enabled.diagnostics + enabled.result + enabled.reports).toBeLessThanOrEqual(total);
   expect(enabled.history).toBeLessThan(ordinary.history);
   expect(enabled.history + 1048576 + enabled.live).toBeLessThanOrEqual(f.manifest.phases.find(phase => phase.phase === 'execute')!.outputBytes);
+});
+it('carries the running target sampler readings in live frames at the approved interval', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify({rss: 1234, cpuPercent: 5})));
+  const f = await setup(); (f.offer.config as SuiteConfig).targetSampling = {path: '/stats', intervalMs: 1000, timeoutMs: 100, cooldownMs: 0};
+  await f.save(); const file = new MemoryMailbox(); native.metricOffsets = [0, 1000, 2000, 3000];
+  const receipt = await f.run({liveMetricMailbox: true, onWindow: async () => {await delay(0);}}, {openMailbox: async () => file});
+  expect(receipt.ok).toBe(true); expect(receipt.liveMetrics).toMatchObject({status: 'closed', quiescence: 'confirmed'});
+  const frame = decodeLiveMetricSnapshot(gunzipSync(captureMailboxImage(file.bytes, hash).frame, {maxOutputLength: 65536}), hash);
+  expect(frame.target).toMatchObject({scope: 'target-reported', intervalMs: 1000});
+  expect(frame.target!.samples[0]).toMatchObject({phase: 'before', status: 'ready', values: {rss: 1234, cpuPercent: 5, heapAlloc: null}});
+  expect(frame.target!.samples.every(sample => sample.observedAtMs <= frame.publishedAtMs)).toBe(true);
 });

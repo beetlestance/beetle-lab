@@ -118,6 +118,7 @@ metadata worker persists it (`local-session/`, migration 014). Shapes are in
 | Lifetimes | bootstrap 15 min single use; session 8 h absolute, monotonic-bounded |
 | Pair admission | 5 attempts per 60 s globally, then `429 rate_limited` |
 | Persisted record | ≤ 1 KiB; requests and replies ≤ 2 KiB; one pending write, no queue |
+| Historical view | `readOnly: true` plus `restoredBackup` from the sealed manifest ([recovery](recovery.md)); serving sessions refuse both |
 
 - Request guard order: exact loopback Host, then Origin, then session, before
   body parsing. Forwarded headers are ignored; duplicates reject;
@@ -153,4 +154,4 @@ metadata worker persists it (`local-session/`, migration 014). Shapes are in
 | `app/src/adapters/outbound/sqlite/mutation-receipts.ts` | `afeddcda3d25` |
 | `app/src/domain/attempt-observation/sequence.ts` | `a8b4b42df321` |
 | `app/src/bootstrap/private-roots.ts` | `f20ea87eecc9` |
-| `app/src/adapters/inbound/http/session/` | `c0568c1eeb19` |
+| `app/src/adapters/inbound/http/session/` | `328af44f81f3` |

@@ -28,7 +28,6 @@ import { AttemptFence, Notifications, Phases } from '../lifecycle/index.js';
 import { numericAllowance, phaseReservation, reserveOutput, type OutputReservation } from './reservation.js';
 import type { AttemptPorts } from './ports.js';
 import { AttemptError, type AttemptReason, type StagedK6Options, type StagedK6Receipt } from './types.js';
-
 /** Composition root: no compiler/parser/outcome or publication implementation here. */
 class Attempt {
   private readonly state = blank();
@@ -155,6 +154,7 @@ class Attempt {
         target: compiled.suite.target,
         config: sampling,
         signal: this.fence.controller.signal,
+        wall: this.ports.clock.wall,
       });
     this.fence.check();
     const reservation = this.reservation!;
@@ -230,6 +230,7 @@ class Attempt {
         timeoutMs: Math.max(1, Math.floor(this.fence.lifetimeRemaining())),
         signal: this.fence.controller.signal,
         clock: this.ports.clock,
+        ...(this.targetSampler ? { target: this.targetSampler } : {}),
       },
       this.ports.openMailbox,
     );

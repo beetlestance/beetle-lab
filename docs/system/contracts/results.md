@@ -68,7 +68,8 @@ marks publication or outcome (`app/src/adapters/inbound/http/runs/result.ts`).
 
 ## Historical metric reads
 
-`…/attempts/{attemptId}/metrics` lists series; `…/metrics/samples` reads one ordinal.
+`…/attempts/{attemptId}/metrics` lists series; `…/metrics/samples` reads one ordinal;
+`…/metrics/latency-attribution` derives one p95 rise (see Derived presentation).
 A read for an earlier attempt uses that attempt's own published artefacts, never the
 Run's current engine or head pins.
 
@@ -105,7 +106,7 @@ Advisory only; never a verdict input and never a substitute for sealed history.
 
 | Stage | Contract |
 | --- | --- |
-| Subset | ≤ 20 execute/engine descriptors chosen by `contracts/src/k6-live` before effects (latency, errors, throughput, load first); omissions counted; prepare/control excluded |
+| Subset | ≤ 20 execute/engine descriptors chosen by `contracts/src/k6-live` before effects: first `http_req_duration` + `http_req_failed` for the first 6 requests (complete endpoint rows: count, p50/p95, failed), then the first row of each priority metric (throughput, failures, load), then the rest; omissions counted in `excludedSeries`; prepare/control excluded. A live endpoint table shows the requests present and "N of M" from the revision's request count. Agent and image must run the same selection or frames fail closed as `subset` |
 | Approval | scope, producer epoch UUID and subset digest derive from compile/launch inputs; readers never learn approval from a frame ([decision 014](../../decisions/014-live-metric-approval-authority.md)) |
 | Producer | one pending projection, one write original, ≤ one publish per 2 s; writes ≤ min(65536, 1 + timeout/2000); no queue, retry, restart or final flush |
 | Frame | version 1, ≤ 65536 B, `coalescedWindows = sourceSequence − publishedSequence`; series totals cover one source window only; `upstreamCoverage` unknown |
@@ -114,7 +115,8 @@ Advisory only; never a verdict input and never a substitute for sealed history.
 | Budget | ≤ min(8 MiB, total/8, execute/8), taken from history; the 65792 B extent and every write are charged to execute |
 | Agent read | ≤ 5 s, two of the 32 shared transport credits; capture, window end and publication ≤ 6 s old, never future; returns `X-Beetle-Live-Fresh-For-Ms` ≤ 6000; a missing, malformed or exhausted header makes the snapshot unavailable |
 | Backend | `…/metrics/live`, resolves scope, run and active attempt before and after IO; ≤ 64 KiB reply; 5 s lifetime |
-| Browser | polls the visible selected active attempt every 2 s after the previous read settles; switches to sealed history at terminal state |
+| Target readings | optional `target` only when `targetSampling` is configured: ≤ 8 newest `before`/`during` samples of 12 fixed target-reported keys (null = unknown), ascending, none after `publishedAtMs` or older than 8 × interval + 5 s; `omittedSamples` counts those dropped for that frame; the interval comes from approval (agent refuses any other as `target`); read synchronously at publication; a block that cannot be read or fit is dropped (`targetOmittedFrames`), never the metrics |
+| Browser | polls the visible selected active attempt every 2 s after the previous read settles; switches to sealed history at terminal state; may keep target samples by `observedAtMs` (≤ 256, the artifact cap) for the run chart, showing each sample's own age |
 
 Freshness is compared only on the agent's wall clock; each hop subtracts its own
 monotonic elapsed time, so clock offsets between services never extend the 6 s age.
@@ -135,6 +137,7 @@ profile; a suite or Offer cannot.
 | Performance report (`engines/k6/report`) | text and CSV derived from the mapped result and admitted numeric snapshot, never from configuration, target URLs, headers, request bodies, datasets or secrets; ≤ 4600 series; overflow rejects the whole report with `output_limit`; blank CSV cells mean unavailable; leading formula characters neutralised; no rate recomputation or percentile averaging |
 | k6 warnings (`engines/k6/wrapper/process/warnings.ts`) | classifier keeps ≤ 4096 B per line, ≤ 65536 B per chunk; counts insufficient VUs, high cardinality, max duration and other; unknown or discarded input makes coverage `partial`; counters count log records, not incidents or dropped iterations, and a zero under partial coverage proves nothing; an arrival hint appears only for a single arrival-rate scenario, and its median comes only from the execute-scoped global `iteration_duration` trend, never request latency; no raw message, URL or request data persisted |
 | Target runtime (`engines/k6/wrapper/target-sampling`) | one fetch at a time, `redirect: error`, no credentials, ≤ 64 KiB per body; interval 1000..60000 ms, timeout 100..5000 ms (≤ interval), cooldown 0..60000 ms inside execute; stops and marks `limited` at 256 samples or 1 MiB; the path is relative under the compiled target, with no query or fragment and no segment that changes the origin; a failed reading only marks that sample unavailable, but failing to write, verify or seal `target-runtime.json` fails the execution |
+| Latency attribution (`…/metrics/latency-attribution`, `app/src/application/run-metrics/rise.ts`) | from the published 1 s windows only, in one SHA-verified pass (≤ 3600 windows, data ≤ 32 MiB, ≤ 64 request labels, else `too_large`; incomplete coverage is `incomplete_coverage`); window p95 = p95 of the merged execute `http_req_duration{request=rN}` distributions, counted only with ≥ 20 samples; baseline = median of counted p95 in the first third of windows (≥ 10, and ≥ 30 windows overall, else `too_few_windows`); elevated = p95 ≥ 1.5 × baseline and above it; the rise is the longest run of time-adjacent elevated windows (≥ 5, else `no_rise`; earliest wins a tie) with its span, peak and baseline; per request, excess = Σ count × (p95 − that request's own first-third median, ≥ 3 windows)⁺, and `endpoint` names the `rN` label only when it holds more than half of the total excess; a request without its own baseline, or no majority, leaves `endpoint` null; `rN` is the k6 catalogue label (index N in the revision's request order) |
 | Load advice (`web/src/features/runs/load-advice`) | dropped load needs one execute `dropped_iterations` counter with empty tags; planning needs complete coverage and one execute `iteration_duration` trend; VUs = ceil(median s × rate × (1 + headroom/100)); inputs ≤ 16 characters, rate ≤ 1000000, headroom 0..500 % (default 20 %) |
 
 Warnings and target readings are advisory; they never change assertions or
@@ -198,7 +201,7 @@ a failed revocation keeps ownership and rejects close.
 | --- | --- |
 | `engines/k6/wrapper/attempt/reservation.ts` | `f10b08b3c4fd` |
 | `engines/k6/wrapper/attempt/archive/` | `94df1cb0c1a2` |
-| `app/src/application/run-metrics/` | `dcd16994160c` |
+| `app/src/application/run-metrics/` | `4d172ed61554` |
 | `app/src/application/run-comparison/` | `cddffebb9dee` |
-| `contracts/src/k6-live/` | `2d0d9eb2c0d8` |
-| `agent/src/live-metrics/` | `d042e8ca9260` |
+| `contracts/src/k6-live/` | `324516855159` |
+| `agent/src/live-metrics/` | `189726d263eb` |

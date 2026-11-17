@@ -41,7 +41,12 @@ export function approvalSnapshot(input: LiveMetricApproval) {
     },
     hash,
   );
-  return { scope: frame.scope, producerEpoch: frame.producerEpoch, subsetDigest };
+  return {
+    scope: frame.scope,
+    producerEpoch: frame.producerEpoch,
+    subsetDigest,
+    targetIntervalMs: input.targetIntervalMs ?? null,
+  };
 }
 export function frameSnapshot(image: Uint8Array) {
   const envelope = captureMailboxImage(image, hash);
@@ -72,6 +77,7 @@ export function frameRejection(input: {
   if (!liveMetricScopeMatches(frame.scope, approval.scope)) return 'scope';
   if (frame.producerEpoch !== approval.producerEpoch) return 'epoch';
   if (frame.subsetDigest !== approval.subsetDigest) return 'subset';
+  if (frame.target && frame.target.intervalMs !== approval.targetIntervalMs) return 'target';
   if (wall < Math.max(frame.publishedAtMs, frame.capturedAtMs, frame.endTimeMs) || wall - sourceTime(frame) > 6000)
     return 'stale';
   if (previous && ordering(position, previous)) return 'ordering';

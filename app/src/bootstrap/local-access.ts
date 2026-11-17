@@ -12,7 +12,7 @@ export async function openApplicationSession(
   externalOrigin: string,
   mode: 'paired' | 'automatic',
   store: LocalSessionStore,
-  historical?: Pick<LocalSessionOptions, 'readOnly' | 'cookieName'>,
+  historical?: Pick<LocalSessionOptions, 'readOnly' | 'cookieName' | 'restoredBackup'>,
 ) {
   const automatic = mode === 'automatic' ? { initial: await store.load(), store } : undefined;
   return createLocalSession({ ...historical, externalOrigin, ...(automatic ? { automatic } : {}) });

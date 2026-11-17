@@ -575,6 +575,16 @@
     "valid": true
   },
   {
+    "path": "valid/run-latency-attribution.json",
+    "schema": "RunLatencyAttribution",
+    "valid": true
+  },
+  {
+    "path": "invalid/run-latency-attribution-weak-share.json",
+    "schema": "RunLatencyAttribution",
+    "valid": false
+  },
+  {
     "path": "valid/run-comparison-request.json",
     "schema": "RunComparisonRequest",
     "valid": true

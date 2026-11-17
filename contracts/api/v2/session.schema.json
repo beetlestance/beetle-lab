@@ -45,12 +45,40 @@
         },
         "readOnly": {
           "const": true
+        },
+        "restoredBackup": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/session#/$defs/RestoredBackup"
         }
       },
       "required": [
         "scope",
         "expiresAt",
         "csrfToken"
+      ],
+      "dependentRequired": {
+        "restoredBackup": [
+          "readOnly"
+        ]
+      },
+      "additionalProperties": false
+    },
+    "RestoredBackup": {
+      "type": "object",
+      "properties": {
+        "backupId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "minLength": 24,
+          "maxLength": 24,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$"
+        }
+      },
+      "required": [
+        "backupId",
+        "createdAt"
       ],
       "additionalProperties": false
     },

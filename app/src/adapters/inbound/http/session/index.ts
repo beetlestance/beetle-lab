@@ -4,7 +4,7 @@ import { performance } from 'node:perf_hooks';
 import type { FastifyInstance, FastifyRequest, onRequestAsyncHookHandler } from 'fastify';
 import { encodeJson } from '@beetle/contracts';
 import { apiMessageSchemas, apiOperations } from '@beetle/contracts/api';
-import type { PairBrowserRequest } from '@beetle/contracts/api';
+import type { PairBrowserRequest, RestoredBackup } from '@beetle/contracts/api';
 import { ApiFault } from '../api-errors.js';
 import { checkOrigin, externalOrigin, requestHeaders, sessionCookie, singleHeader } from './headers.js';
 import { equalSecret, SessionAuthority } from './state.js';
@@ -15,6 +15,8 @@ export interface LocalSessionOptions {
   readonly externalOrigin: string;
   readonly readOnly?: true;
   readonly cookieName?: string;
+  /** Sealed-manifest backup identity of a historical viewer; never the restore time. */
+  readonly restoredBackup?: RestoredBackup;
   readonly automatic?: { readonly initial: LocalSessionRecord; readonly store: LocalSessionStore };
   /** Trusted test clocks only; cryptographic randomness is never injectable. */
   readonly clocks?: SessionClocks;
@@ -71,6 +73,7 @@ export function createLocalSession(options: LocalSessionOptions): LocalSession {
     jsonObject({
       ...session,
       ...(options.readOnly ? { readOnly: true } : {}),
+      ...(options.restoredBackup ? { restoredBackup: { ...options.restoredBackup } } : {}),
       ...(options.automatic ? { accessMode: 'automatic' } : {}),
     });
   const authority = new SessionAuthority(
@@ -165,6 +168,7 @@ function admitExchange(
 function cookieName(options: LocalSessionOptions): string {
   if (options.readOnly !== undefined && options.readOnly !== true) throw new TypeError('Invalid session mode');
   if (!options.readOnly && options.cookieName !== undefined) throw new TypeError('Historical cookie only');
+  if (!options.readOnly && options.restoredBackup !== undefined) throw new TypeError('Historical backup only');
   const name = options.cookieName ?? 'beetle_session';
   if (!/^[a-z0-9_]{1,64}$/.test(name)) throw new TypeError('Invalid cookie name');
   return name;

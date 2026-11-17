@@ -80,6 +80,7 @@ export async function openHistoryViewer(input: HistoryViewerOptions): Promise<Ap
       metadata,
       historical: {
         historyId: claim.historyId,
+        backup: { backupId: manifest.header.backupId, createdAt: manifest.header.createdAt },
         sessions: gate.sessions,
         bytes: reader.outputs,
         openInputs: (store) => historicalInputs(store, files, manifest.header.roles.inputs),

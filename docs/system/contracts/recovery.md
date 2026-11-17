@@ -118,6 +118,11 @@ mismatches, and never accepts a complete prefix before actual EOF.
   consumer backpressure and ancestor and file rechecks.
 - Historical reads return bytes only; they never grant execution, ACK, settlement,
   deletion, refund or replay authority.
+- `BrowserSession.restoredBackup` (`backupId`, `createdAt`) comes only from the
+  verified manifest header (digest bound by claim and attestation), never from restore
+  or open time. `createdAt` is the backup host's wall clock when the manifest header
+  was written, after copying, normalised to UTC milliseconds; an unparsable value
+  refuses the viewer. Serving sessions refuse the field.
 
 ## Failure handling
 
@@ -168,5 +173,5 @@ Test: `app/test/storage/clock-reason/migration.test.ts`.
 | `contracts/src/recovery/` | `29c0467d1e7e` |
 | `tools/recovery/src/restore.ts` | `c750dcfc2872` |
 | `tools/recovery/src/backup.ts` | `9162094ddc58` |
-| `tools/recovery/src/viewer/` | `5beee7f7f9b8` |
+| `tools/recovery/src/viewer/` | `ec367773bf47` |
 | `app/src/adapters/outbound/sqlite/migration020.ts` | `904e1235fc9a` |

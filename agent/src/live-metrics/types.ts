@@ -5,6 +5,8 @@ export interface LiveMetricApproval {
   readonly scope: LiveMetricScope;
   readonly producerEpoch: string;
   readonly subset: LiveMetricSubset;
+  /** Approved target sampling interval; null/absent means a frame carrying target readings is refused. */
+  readonly targetIntervalMs?: number | null;
 }
 export interface LiveMetricReaderOptions {
   readonly approval: LiveMetricApproval;
@@ -22,6 +24,7 @@ export type LiveMetricReadFailure =
   | 'scope'
   | 'epoch'
   | 'subset'
+  | 'target'
   | 'ordering'
   | 'stale'
   | 'clock';
