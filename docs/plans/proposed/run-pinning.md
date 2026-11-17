@@ -10,7 +10,7 @@ durable pin record exists.
 | Area | Rule |
 | --- | --- |
 | Who | The administrator, from the run result header or a Runs list row |
-| What | A completed run (passed, failed or stopped). Queued and active runs cannot be pinned; they are already protected as `active` |
+| What | A terminal run (finished, cancelled or errored). Every nonterminal run (queued, dispatching, active, finalizing) cannot be pinned; it is already protected as `active` |
 | Limit | 256 pinned runs per workspace; the 257th pin is refused with `pin_limit` |
 | Retention | A pinned run is excluded with reason `pinned`. It still counts toward the completed-count and storage figures, so pinning can make a budget unreachable; the preview says so |
 | Manual delete | Refused with `protected_dependency` (reason `pinned`); the dialog offers Unpin first |
@@ -30,8 +30,13 @@ durable pin record exists.
   `pinned=true`.
 - Pin and unpin advance the workspace retention epoch. An outstanding preview is
   then stale and Apply returns `conflict`; the user previews again.
-- A pin request that races an admitted deletion item loses: once the item is past
-  `preview` the run is not pinnable (`conflict`, reason `cleanup_in_progress`).
+- Pin and unpin serialize with removal admission in one write transaction. A
+  pin that commits first excludes the run from admission; a run already admitted
+  for removal is not pinnable (`conflict`, reason `cleanup_in_progress`). Unpin
+  never admits removal by itself.
+- Apply rechecks protection for every candidate inside its admission
+  transaction, independently of the epoch. A stale preview is feedback for the
+  user, not the safety mechanism.
 
 ## Interface states
 
@@ -43,7 +48,7 @@ durable pin record exists.
 | Unpin pending | Spinner; the badge stays until the receipt returns |
 | Limit | Inline error under the button: "256 runs are pinned in this workspace. Unpin one to pin this run." with a link to the pinned filter |
 | Conflict / unavailable | Inline error with Retry; the state shown is re-read from the server |
-| Not pinnable | Button hidden for queued/active runs; disabled with reason during cleanup |
+| Not pinnable | Button hidden for every nonterminal state, including finalizing; disabled with reason once removal is admitted |
 
 ## Evidence
 
