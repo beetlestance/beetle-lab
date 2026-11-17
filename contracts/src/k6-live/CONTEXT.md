@@ -2,8 +2,10 @@
 Public k6LiveSubset and createK6LiveApproval; caller selects this trusted engine
 policy after validating immutable configuration. Generic agents consume approval,
 not a k6 compiler. This module is for Node wrapper/control services, NOT k6-native.
-Reuse pure k6 catalogue; select <=20 eligible execute/engine descriptors, preferring
-latency/errors/throughput/load before remaining rows. Prepare/control stay excluded;
+Reuse pure k6 catalogue; select <=20 eligible execute/engine descriptors: duration and
+failed for the first K6_LIVE_ENDPOINT_ROWS (6) requests, then the first row of each
+priority metric, then remaining rows. Single-request order is unchanged (golden vector).
+Prepare/control stay excluded;
 all omitted series count explicitly. Subset/scope outputs are detached and frozen.
 Assignment uses canonical scope/generation, original intent and exact runtime spec
 digests with injected SHA256 and a v1 purpose. Format a custom assigned UUID;

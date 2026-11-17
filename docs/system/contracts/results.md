@@ -105,7 +105,7 @@ Advisory only; never a verdict input and never a substitute for sealed history.
 
 | Stage | Contract |
 | --- | --- |
-| Subset | ≤ 20 execute/engine descriptors chosen by `contracts/src/k6-live` before effects (latency, errors, throughput, load first); omissions counted; prepare/control excluded |
+| Subset | ≤ 20 execute/engine descriptors chosen by `contracts/src/k6-live` before effects: first `http_req_duration` + `http_req_failed` for the first 6 requests (complete endpoint rows: count, p50/p95, failed), then the first row of each priority metric (throughput, failures, load), then the rest; omissions counted in `excludedSeries`; prepare/control excluded. A live endpoint table shows the requests present and "N of M" from the revision's request count. Agent and image must run the same selection or frames fail closed as `subset` |
 | Approval | scope, producer epoch UUID and subset digest derive from compile/launch inputs; readers never learn approval from a frame ([decision 014](../../decisions/014-live-metric-approval-authority.md)) |
 | Producer | one pending projection, one write original, ≤ one publish per 2 s; writes ≤ min(65536, 1 + timeout/2000); no queue, retry, restart or final flush |
 | Frame | version 1, ≤ 65536 B, `coalescedWindows = sourceSequence − publishedSequence`; series totals cover one source window only; `upstreamCoverage` unknown |
@@ -201,5 +201,5 @@ a failed revocation keeps ownership and rejects close.
 | `engines/k6/wrapper/attempt/archive/` | `94df1cb0c1a2` |
 | `app/src/application/run-metrics/` | `dcd16994160c` |
 | `app/src/application/run-comparison/` | `cddffebb9dee` |
-| `contracts/src/k6-live/` | `af95720d0dff` |
+| `contracts/src/k6-live/` | `324516855159` |
 | `agent/src/live-metrics/` | `189726d263eb` |

@@ -37,16 +37,32 @@ const priorities = [
   'data_received',
   'beetle_assertion_failures',
 ];
+/** Endpoint rows a live table can show: duration (count, p50, p95) and failure rate per request. */
+export const K6_LIVE_ENDPOINT_ROWS = 6;
 /** Same catalogue as parser/runtime; prepare/control remain excluded from live selection. */
 export function k6LiveSubset(source: K6MetricShape): LiveMetricSubset {
   const approved = k6MetricCatalogue(k6MetricLayout(source));
   const eligible = approved.filter(
     (item) => (item.scope === 'execute' || item.scope === 'engine') && item.tags.phase !== 'prepare',
   );
-  const preferred = priorities.flatMap((metric) => {
-    const row = eligible.find((item) => item.metric === metric);
-    return row ? [row] : [];
-  });
+  const endpoints = [...new Set(eligible.flatMap((item) => (item.tags.request ? [item.tags.request] : [])))];
+  const rows = endpoints.slice(0, K6_LIVE_ENDPOINT_ROWS).flatMap((request) =>
+    ['http_req_duration', 'http_req_failed'].flatMap((metric) => {
+      const row = eligible.find(
+        (item) => item.metric === metric && item.tags.request === request && !item.tags.assertion,
+      );
+      return row ? [row] : [];
+    }),
+  );
+  const preferred = [
+    ...rows,
+    ...priorities.flatMap((metric) => {
+      const row = rows.some((item) => item.metric === metric)
+        ? undefined
+        : eligible.find((item) => item.metric === metric);
+      return row ? [row] : [];
+    }),
+  ];
   const selected = [...preferred, ...eligible.filter((item) => !preferred.includes(item))]
     .slice(0, 20)
     .map((item, ordinal) => ({ ...item, ordinal }));

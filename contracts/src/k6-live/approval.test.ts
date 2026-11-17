@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { expect, it } from 'vitest';
 import { captureLiveMetricSnapshot, liveMetricSubsetText } from '../api/index.js';
 import { validatePrimitive } from '../validate.js';
-import { createK6LiveApproval } from './index.js';
+import { createK6LiveApproval, k6LiveSubset } from './index.js';
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
 function input() {
   return {source: {requests: [{id: 'one', assertions: [{id: 'status'}]}]},
@@ -50,4 +50,15 @@ it('takes the target interval only from the validated source configuration', () 
   expect(createK6LiveApproval({...base, source: {...base.source, targetSampling: null}}).targetIntervalMs).toBeNull();
   for (const intervalMs of [999, 60001, 1500.5])
     expect(() => createK6LiveApproval({...base, source: {...base.source, targetSampling: {intervalMs}}})).toThrow('K6 live approval rejected');
+});
+it('fills complete endpoint rows (duration and failure) for up to six requests before global load series', () => {
+  const source = (n: number) => ({requests: Array.from({length: n}, (_, i) => ({id: `q${i}`, assertions: [{id: 'status'}]}))});
+  const label = (row: {metric: string; tags: {request?: string}}) => `${row.metric}:${row.tags.request ?? ''}`;
+  const five = k6LiveSubset(source(5)).selected.map(label);
+  for (let i = 0; i < 5; i++) expect(five).toEqual(expect.arrayContaining([`http_req_duration:r${i}`, `http_req_failed:r${i}`]));
+  expect(five).toEqual(expect.arrayContaining(['vus:', 'vus_max:', 'dropped_iterations:']));
+  const many = k6LiveSubset(source(64)); const labels = many.selected.map(label);
+  expect(new Set(many.selected.flatMap(row => row.tags.request ? [row.tags.request] : [])).size).toBe(6);
+  expect(labels).toEqual(expect.arrayContaining(['http_req_failed:r5', 'vus:', 'vus_max:'])); expect(labels).not.toContain('http_req_duration:r6');
+  expect(many.selected).toHaveLength(20); expect(many.excludedSeries).toBe(763);
 });
