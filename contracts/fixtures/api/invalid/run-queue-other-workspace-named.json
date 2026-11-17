@@ -1,0 +1,15 @@
+{
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "generatedAt": "2026-01-01T00:00:05.000Z",
+  "runId": "00000000-0000-4000-8000-000000000005",
+  "state": "queued",
+  "waiting": "backend_queue",
+  "position": 2,
+  "slots": { "used": 2, "runs": 2, "exports": 0, "configured": 2, "effective": 2 },
+  "holders": [],
+  "otherWorkspaceRuns": [{ "runId": "00000000-0000-4000-8000-000000000007", "workspaceId": "00000000-0000-4000-8000-000000000009" }]
+}

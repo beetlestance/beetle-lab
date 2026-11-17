@@ -34,9 +34,9 @@ import { RunCancellations } from './run-cancellations.js';
 import { captureCancelRunReply } from './run-cancellation-reply.js';
 import { DispatchClaims } from './dispatch-claims.js';
 import { DispatchObservations } from './dispatch-observations.js';
-import { dispatchOperation } from './dispatch-wire.js';
-import type { DispatchOperation } from './dispatch-wire.js';
+import { dispatchOperation, type DispatchOperation } from './dispatch-wire.js';
 import { RunReads } from './run-reads.js';
+import { readInstallationStatus, statusOperation } from './installation-status/index.js';
 import { Inputs } from './inputs.js';
 import { InputReads } from './input-reads.js';
 import { Suites } from './suites.js';
@@ -290,13 +290,13 @@ export class Store {
     if (operation.kind === 'deleteNamespace') return deleteNamespaceRows(this.db, operation.command, this.entities);
     if (outputOperation(operation)) return this.outputs.execute(operation);
     if (eventOperation(operation)) return this.events.execute(operation);
+    if (statusOperation(operation)) return readInstallationStatus(this.db, this.settings, this.runReads, operation);
     return this.executeLegacy(operation);
   }
   private settlement(operation: Operation): Value {
     const checked = captureSettlementOperation(operation);
-    return checked.kind === 'settleBackendOutput'
-      ? this.settlements.settle(checked.request)
-      : this.settlements.read(checked.key);
+    if (checked.kind === 'settleBackendOutput') return this.settlements.settle(checked.request);
+    return this.settlements.read(checked.key);
   }
   private runRead(operation: Operation): Value {
     switch (operation.kind) {

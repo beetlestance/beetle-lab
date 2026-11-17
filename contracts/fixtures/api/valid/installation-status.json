@@ -1,0 +1,36 @@
+{
+  "scope": { "kind": "installation" },
+  "generatedAt": "2026-01-01T00:00:05.000Z",
+  "agent": { "state": "ready", "lastSeenAt": "2026-01-01T00:00:04.000Z", "checkedAt": "2026-01-01T00:00:04.000Z" },
+  "host": {
+    "source": "docker-daemon",
+    "cpuCores": { "status": "measured", "value": 8 },
+    "memoryTotalBytes": { "status": "measured", "value": 17179869184 },
+    "cpuUsedMillis": { "status": "not_measured", "value": null },
+    "memoryAvailableBytes": { "status": "not_measured", "value": null }
+  },
+  "disk": {
+    "backendFreeBytes": { "status": "measured", "value": 50000000000 },
+    "backendTotalBytes": { "status": "measured", "value": 250000000000 },
+    "stagingFreeBytes": { "status": "unknown", "value": null },
+    "freeSpaceReserveBytes": 1073741824,
+    "storageAllocationBytes": 10737418240,
+    "storageChargedBytes": 2048
+  },
+  "engines": [
+    {
+      "profileId": "standard",
+      "imageDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "image": "verified_at_agent_start"
+    }
+  ],
+  "pool": {
+    "slots": { "used": 1, "runs": 1, "exports": 0, "configured": 4, "effective": 2 },
+    "reservedCpuMillis": 1000,
+    "reservedMemoryBytes": 536870912,
+    "poolCpuMillis": 4000,
+    "poolMemoryBytes": 8589934592,
+    "queuedRuns": 1,
+    "queuedExports": 0
+  }
+}

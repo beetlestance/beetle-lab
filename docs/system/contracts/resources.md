@@ -83,6 +83,22 @@ observation. Receivers compare installation and installed engine identities and
 retain original Offer pins; a later capability response never selects a newer
 profile.
 
+## Installation status read
+
+`getInstallationStatus` and run-scoped `getRunQueue` (`app/src/application/installation-status/`)
+are informational reads behind the session guard; neither contacts the agent nor grants dispatch.
+
+- Agent state comes from the last capacity sample held in memory (no migration). Without a runtime
+  it is `disabled`; before a sample, `unknown`. No HTTP reply is `unreachable`; a refusal or failed
+  check is `unavailable`; a ready sample older than 5000 ms, or future-dated, is `stale`.
+- Host and disk quantities are `measured` only from a fresh ready sample, else `unknown`.
+  Additive 1.0 `daemonCapacity` carries raw Docker-info totals only when both were measured, else
+  `not_measured`. CPU use and available memory are never measured. Image presence means the pinned
+  digest was verified at agent start (`verifyInstalledImages`); there is no later re-inspection.
+- Pool usage mirrors backend dispatch accounting (charged runs and exports, ≤ 64); agent admission
+  stays final. Queue position counts uncancelled queued runs and exports ahead by `queue_order`.
+  Holders are named only for the caller's workspace; other workspaces are a count.
+
 ## Timeout watchdog
 
 `agent/src/timeout/` requests typed `timeout` or `clock_integrity` stops. It
@@ -196,7 +212,7 @@ stopped installation. Operator steps are in the guide.
 | --- | --- |
 | `agent/src/admission/` | `bd455a020e45` |
 | `agent/src/observation/` | `79bfff964581` |
-| `agent/src/bootstrap/capacity-observation.ts` | `7df7bc6ad02f` |
+| `agent/src/bootstrap/capacity-observation.ts` | `27f2ea73be1f` |
 | `agent/src/timeout/` | `d08c24a94279` |
 | `agent/src/telemetry/` | `adae7a0b7973` |
 | `tools/install/capacity/` | `a5b94a418d02` |

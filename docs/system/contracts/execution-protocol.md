@@ -26,7 +26,8 @@ carry a shell command, host path, mount option, environment map or Docker flag.
 - JSON Schema 2020-12 sources in `contracts/runner/v1/`; runtime AJV validation is
   authoritative over generated TypeScript. Routes: `http-operations.json`.
 - Only protocol `1.0` exists; an unsupported major version or unknown required
-  capability fails before launch. Extensions are additive.
+  capability fails before launch. Extensions are additive, such as optional
+  `CapacityObservation.daemonCapacity` ([resources](resources.md#installation-status-read)).
 - Every message except Capabilities carries organisation and workspace IDs.
   Capabilities is the installation-wide, unscoped exception.
 - Offer is bounded at 2 MiB, its `config` independently at 1 MiB, both measured in
@@ -209,7 +210,7 @@ Container removal requires a stopped, sealed and application-acknowledged attemp
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/runner/v1/` | `7487c41d088a` |
+| `contracts/runner/v1/` | `c0d5b65442f6` |
 | `agent/src/transport/` | `344e0327f0ca` |
 | `agent/src/journal/projection.ts` | `7c77ac77f06a` |
 | `agent/src/controller/` | `230594aa2b66` |

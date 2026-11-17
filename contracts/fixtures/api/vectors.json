@@ -680,6 +680,26 @@
     "valid": true
   },
   {
+    "path": "valid/installation-status.json",
+    "schema": "InstallationStatus",
+    "valid": true
+  },
+  {
+    "path": "invalid/installation-status-fabricated-unknown.json",
+    "schema": "InstallationStatus",
+    "valid": false
+  },
+  {
+    "path": "valid/run-queue.json",
+    "schema": "RunQueueStatus",
+    "valid": true
+  },
+  {
+    "path": "invalid/run-queue-other-workspace-named.json",
+    "schema": "RunQueueStatus",
+    "valid": false
+  },
+  {
     "path": "valid/retention-batch-params.json",
     "schema": "RetentionBatchParams",
     "valid": true

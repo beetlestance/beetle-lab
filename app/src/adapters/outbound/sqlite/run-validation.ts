@@ -5,8 +5,13 @@ import { prepareRunCommand, prepareCancelRunCommand } from '../../../application
 import { requireRule } from '../../../domain/namespaces/index.js';
 import type { Operation } from './protocol.js';
 import { sha256 } from './input-values.js';
+import { statusOperation, checkStatusOperation } from './installation-status/wire.js';
 
 export function checkedRunOperation(operation: Operation): boolean {
+  if (statusOperation(operation)) {
+    checkStatusOperation(operation);
+    return true;
+  }
   switch (operation.kind) {
     case 'getOrganizationOverview':
       checkedOrganizationOverviewQuery(operation.query);

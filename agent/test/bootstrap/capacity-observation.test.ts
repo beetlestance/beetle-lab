@@ -78,3 +78,21 @@ it('binds actual policy and installed identity changes but ignores object-key in
   expect(other.engines[0]!.validation).toEqual(f.catalog.engines[0]!.validation);
   expect(capacityPolicyDigest(f.config, other)).not.toBe(original);
 });
+
+it('publishes raw daemon totals only when Docker info measured both, never from synthetic sources', async () => {
+  const f = await fixture();
+  const synthetic = await new CapabilityView(f.options).capabilities();
+  expect(synthetic.observation.daemonCapacity).toBeUndefined();
+  const frame = f.publisher.snapshot();
+  if (!frame) throw new Error('Missing fixture frame');
+  const measured = { ...frame, observation: { ...frame.observation,
+    capacity: { ...frame.observation.capacity, cpuMillis: 8000, memoryBytes: 16 * 2 ** 30 },
+    capacityProvenance: { ...frame.observation.capacityProvenance, cpuMillis: 'docker-info' as const, memoryBytes: 'docker-info' as const } } };
+  const response = await new CapabilityView({ ...f.options, published: () => measured }).capabilities();
+  expect(validate('Capabilities', response).ok).toBe(true);
+  expect(response.observation.daemonCapacity).toEqual({ cpuMillis: 8000, memoryBytes: 16 * 2 ** 30 });
+  const partial = { ...measured, observation: { ...measured.observation,
+    capacityProvenance: { ...measured.observation.capacityProvenance, memoryBytes: 'synthetic' as const } } };
+  const view = new CapabilityView({ ...f.options, published: () => partial });
+  expect((await view.capabilities()).observation.daemonCapacity).toBeUndefined();
+});
