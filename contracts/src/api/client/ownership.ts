@@ -106,6 +106,7 @@ function identityMatches(operation: ApiOperation, input: PreparedInput, reply: O
     Suite: params.suiteId,
     SuiteRevision: params.revisionId,
     Run: params.runId,
+    RunPinReceipt: params.runId,
     RunResultSnapshot: params.runId,
     ExportJob: params.exportId,
   };

@@ -82,6 +82,22 @@
       ],
       "additionalProperties": false
     },
+    "RunPinRequest": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+        },
+        "requestId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        }
+      },
+      "required": [
+        "scope",
+        "requestId"
+      ],
+      "additionalProperties": false
+    },
     "RunListQuery": {
       "type": "object",
       "properties": {
@@ -116,6 +132,9 @@
         },
         "suiteId": {
           "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "pinned": {
+          "const": true
         }
       },
       "required": [

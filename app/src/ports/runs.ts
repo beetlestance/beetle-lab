@@ -4,6 +4,8 @@ import type {
   SetRunNoteRequest,
   Run,
   RunPage,
+  RunPinReceipt,
+  RunPinRequest,
   RunListQuery,
   RunEngine,
   WorkspaceScope,
@@ -37,6 +39,17 @@ export interface SetRunNoteOperation {
 export type SetRunNoteCommand = SetRunNoteOperation & { intentDigest: string };
 export interface RunNoteStore {
   setNote(command: SetRunNoteCommand): Promise<Run>;
+}
+/** Durable pin state change; wall time is outside the replayed intent. */
+export interface RunPinOperation {
+  kind: 'pinRun' | 'unpinRun';
+  id: string;
+  requestedAt: string;
+  request: RunPinRequest;
+}
+export type RunPinCommand = RunPinOperation & { intentDigest: string };
+export interface RunPinStore {
+  pin(command: RunPinCommand): Promise<RunPinReceipt>;
 }
 export interface RunKey {
   scope: WorkspaceScope;

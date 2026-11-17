@@ -1,7 +1,7 @@
 import { runListPageMatches } from '../run-list-page.js';
 import type { RunListQuery } from '../generated/types.js';
 import type { ApiOperation } from '../generated/operations.js';
-import type { CreateRunRequest, Run, RunPage, RunResultSnapshot } from '../generated/types.js';
+import type { CreateRunRequest, Run, RunPage, RunPinReceipt, RunResultSnapshot } from '../generated/types.js';
 import type { PreparedInput } from './input.js';
 import { encodeJson } from '../../json.js';
 
@@ -35,17 +35,22 @@ function creationMatches(input: PreparedInput, run: Run): boolean {
 /** Common route/scope and schema checks run before these execution-intent bindings. */
 export function runOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
   if (operation.response === 'RunResultSnapshot') return resultMatches(value as RunResultSnapshot);
-  if (operation.response === 'RunPage')
-    return (
-      (value as RunPage).items.every(validRun) &&
-      runListPageMatches(
-        value as RunPage,
-        { kind: 'workspace', organizationId: input.params.organizationId!, workspaceId: input.params.workspaceId! },
-        input.query as RunListQuery,
-      )
-    );
+  if (operation.response === 'RunPage') return pageMatches(input, value as RunPage);
+  if (operation.response === 'RunPinReceipt') return pinMatches(operation, input, value as RunPinReceipt);
   if (operation.response !== 'Run') return true;
-  const run = value as Run;
+  return runMatches(operation, input, value as Run);
+}
+function pageMatches(input: PreparedInput, page: RunPage): boolean {
+  return (
+    page.items.every(validRun) &&
+    runListPageMatches(
+      page,
+      { kind: 'workspace', organizationId: input.params.organizationId!, workspaceId: input.params.workspaceId! },
+      input.query as RunListQuery,
+    )
+  );
+}
+function runMatches(operation: ApiOperation, input: PreparedInput, run: Run): boolean {
   const cancellationMatches =
     operation.name !== 'cancelRun' ||
     run.cancellationRequested ||
@@ -53,6 +58,15 @@ export function runOwnership(operation: ApiOperation, input: PreparedInput, valu
   return cancellationMatches && validRun(run) && (operation.name !== 'createRun' || creationMatches(input, run));
 }
 
+/** A pin receipt answers this request and states the requested pin state. */
+function pinMatches(operation: ApiOperation, input: PreparedInput, receipt: RunPinReceipt): boolean {
+  const requestId = (input.body as { requestId?: unknown } | undefined)?.requestId;
+  return (
+    typeof requestId === 'string' &&
+    receipt.requestId.toLowerCase() === requestId.toLowerCase() &&
+    receipt.pinned === (operation.name === 'pinRun')
+  );
+}
 function resultMatches(value: RunResultSnapshot): boolean {
   try {
     encodeJson(value, 73728);

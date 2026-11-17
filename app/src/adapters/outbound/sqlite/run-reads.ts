@@ -11,6 +11,7 @@ import { normalizedScope } from './suites.js';
 import type { Suites } from './suites.js';
 import { prepareHistorySearch, historyKeys } from './run-search/index.js';
 import { transaction } from './transaction.js';
+import { runPinnedAt } from './run-pins/state.js';
 
 export class RunReads {
   constructor(
@@ -24,7 +25,9 @@ export class RunReads {
       .get(scope.organizationId, scope.workspaceId, lower(key.id));
     requireRule(row !== undefined, 'not_found');
     const owner = { id: lower(key.id), scope, activeAttemptId: String(row.active_attempt_id) };
-    return captureRunRow(row, { scope, id: key.id }, readRunAnnotations(this.db, owner));
+    const run = captureRunRow(row, { scope, id: key.id }, readRunAnnotations(this.db, owner));
+    const pinnedAt = runPinnedAt(this.db, scope, run.id);
+    return pinnedAt === null ? { ...run, pinned: false } : { ...run, pinned: true, pinnedAt };
   }
   list(input: RunList): RunPage {
     const { scope: owner, ...page } = input;

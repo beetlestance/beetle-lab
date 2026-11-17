@@ -55,7 +55,8 @@ export function encodeRunListCursor(input: RunListPosition): string {
     .replaceAll('+', '-')
     .replaceAll('/', '_')
     .replace(/=+$/, '');
-  if (encoded.length > (query.suiteId === undefined ? 512 : 1024)) throw new Error('Run list cursor limit');
+  if (encoded.length > (query.suiteId === undefined && query.pinned !== true ? 512 : 1024))
+    throw new Error('Run list cursor limit');
   return encoded;
 }
 export function captureRunListCursor(input: string): RunListPosition {
@@ -85,6 +86,7 @@ function identity(owner: WorkspaceScope, query: NormalizedRunListQuery): string 
     query.name ?? null,
     query.runIdPrefix ?? null,
     query.suiteId ?? null,
+    query.pinned ?? null,
   ]);
 }
 /** Rejects legacy cursors and mismatched queries before repository/fetch work. */
@@ -109,8 +111,8 @@ export function compareRunListPosition(
 
 function positionTuple(position: RunListPosition, search: boolean): unknown[] {
   const { scope: owner, query } = position;
-  const tuple: unknown[] = [
-    query.suiteId !== undefined ? 'run-page-v3' : search ? 'run-page-v2' : 'run-page-v1',
+  return [
+    tupleVersion(query, search),
     owner.organizationId,
     owner.workspaceId,
     query.limit,
@@ -119,10 +121,20 @@ function positionTuple(position: RunListPosition, search: boolean): unknown[] {
     query.order,
     position.requestedAt,
     position.id.toLowerCase(),
+    ...tupleTail(query, search),
   ];
-  if (search || query.suiteId !== undefined) tuple.push(query.name ?? null, query.runIdPrefix ?? null);
-  if (query.suiteId !== undefined) tuple.push(query.suiteId);
-  return tuple;
+}
+function tupleVersion(query: NormalizedRunListQuery, search: boolean): string {
+  if (query.pinned === true) return 'run-page-v4';
+  if (query.suiteId !== undefined) return 'run-page-v3';
+  return search ? 'run-page-v2' : 'run-page-v1';
+}
+/** v2 adds search, v3 the exact suite, v4 the pinned filter with every optional slot. */
+function tupleTail(query: NormalizedRunListQuery, search: boolean): unknown[] {
+  const searched = [query.name ?? null, query.runIdPrefix ?? null];
+  if (query.pinned === true) return [...searched, query.suiteId ?? null, true];
+  if (query.suiteId !== undefined) return [...searched, query.suiteId];
+  return search ? searched : [];
 }
 function decodePositionTuple(input: string): unknown[] {
   const binary = atob(input.replaceAll('-', '+').replaceAll('_', '/'));
@@ -131,12 +143,15 @@ function decodePositionTuple(input: string): unknown[] {
   if (!Array.isArray(tuple) || !validTupleVersion(tuple)) throw new Error('Invalid run list cursor');
   return tuple;
 }
+const TUPLE_SHAPES = new Map<unknown, { length: number; valid(tuple: unknown[]): boolean }>([
+  ['run-page-v1', { length: 9, valid: () => true }],
+  ['run-page-v2', { length: 11, valid: (tuple) => tuple[9] !== null || tuple[10] !== null }],
+  ['run-page-v3', { length: 12, valid: (tuple) => typeof tuple[11] === 'string' }],
+  ['run-page-v4', { length: 13, valid: (tuple) => tuple[12] === true }],
+]);
 function validTupleVersion(tuple: unknown[]): boolean {
-  return (
-    (tuple.length === 9 && tuple[0] === 'run-page-v1') ||
-    (tuple.length === 11 && tuple[0] === 'run-page-v2' && (tuple[9] !== null || tuple[10] !== null)) ||
-    (tuple.length === 12 && tuple[0] === 'run-page-v3' && typeof tuple[11] === 'string')
-  );
+  const shape = TUPLE_SHAPES.get(tuple[0]);
+  return shape !== undefined && tuple.length === shape.length && shape.valid(tuple);
 }
 function tupleQuery(tuple: unknown[]): NormalizedRunListQuery {
   return normalizeRunListQuery({
@@ -147,5 +162,6 @@ function tupleQuery(tuple: unknown[]): NormalizedRunListQuery {
     ...(tuple[11] == null ? {} : { suiteId: tuple[11] }),
     ...(tuple[9] == null ? {} : { name: tuple[9] }),
     ...(tuple[10] == null ? {} : { runIdPrefix: tuple[10] }),
+    ...(tuple[12] === true ? { pinned: true } : {}),
   } as RunListQuery);
 }

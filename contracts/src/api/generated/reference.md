@@ -50,6 +50,8 @@ Schema catalogue is complete, including runner common exactly once. Implementati
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/result | implemented | RunParams | none | none | 200 | RunResultSnapshot |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/cancel | implemented | RunParams | none | CancelRunRequest | 202 | Run |
 | PATCH | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/note | implemented | RunParams | none | SetRunNoteRequest | 200 | Run |
+| POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/pin | implemented | RunParams | none | RunPinRequest | 200 | RunPinReceipt |
+| POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/unpin | implemented | RunParams | none | RunPinRequest | 200 | RunPinReceipt |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/events | implemented | RunParams | PageQuery | none | 200 | RunEventPage |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/artifacts | implemented | RunAttemptParams | PageQuery | none | 200 | RunArtifactPage |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics | implemented | RunAttemptParams | PageQuery | none | 200 | RunMetricSeriesPage |

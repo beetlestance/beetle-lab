@@ -36,7 +36,7 @@ import { registerSettingsRoutes } from '../adapters/inbound/http/settings/index.
 import { captureLocalExternalOrigin } from '../adapters/inbound/http/session/index.js';
 import { openMetadata } from '../adapters/outbound/sqlite/index.js';
 import type { Metadata, MetadataOptions, RuntimeObservation } from '../adapters/outbound/sqlite/index.js';
-import { classifyMetadataError } from './metadata-errors.js';
+import { classifyMetadataError, explainMetadataError } from './metadata-errors.js';
 import { openInputRuntime } from './input-runtime.js';
 import type { InputRuntime } from './input-runtime.js';
 import type { InputMaintenanceState } from './input-maintenance.js';
@@ -97,7 +97,7 @@ class ApplicationOwner {
     this.agent =
       requestedAgent === undefined ? undefined : captureAgentRuntime(requestedAgent, metadataOptions, inputsDirectory);
     this.configuredMetadata = agentMetadata(metadataOptions, this.agent);
-    this.server = createApiServer({ classify: classifyMetadataError });
+    this.server = createApiServer({ classify: classifyMetadataError, explain: explainMetadataError });
   }
   private closeSession() {
     return this.session?.close();

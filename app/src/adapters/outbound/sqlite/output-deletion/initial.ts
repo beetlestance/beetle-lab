@@ -1,3 +1,4 @@
+import { requireUnpinned } from '../run-pins/state.js';
 import type { DatabaseSync } from 'node:sqlite';
 import type { Run } from '@beetle/contracts/api';
 import type { RunKey } from '../../../../ports/runs.js';
@@ -18,6 +19,7 @@ export function prepareInitialDeletion(
   const run = facts.run;
   if (db.prepare('SELECT id FROM output_deletion_intents WHERE run_id=?').get(run.id))
     throw new StorageError('conflict');
+  requireUnpinned(db, run.id);
   const original = {
     runId: run.id,
     attemptId: run.activeAttemptId,

@@ -16,5 +16,7 @@ RunCancellationStore once and validates intent/terminal acceptance. No agent cal
 or physical stop/release is inferred. Store owns claim serialization and receipts.
 setRunNote (note.ts) captures a <=64 KiB scoped command (expectedNoteVersion, note or
 null), trims notes by name rules (<=1000 scalars, fold <=4096) and calls RunNoteStore once.
+pin.ts: prepareRunPinCommand digests kind/run/request (never the server clock); pinRun
+calls RunPinStore once and checkedRunPinReceipt binds scope, run, request ID and direction.
 Contracts: docs/system/contracts/run-lifecycle.md. Checks: app/test/{runs,application/runs}
 and app/test/http/runs; Node TS and scoped lint.

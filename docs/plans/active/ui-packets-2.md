@@ -91,7 +91,7 @@ Reuse level: **high** for settings and retention; medium for inputs.
 - Suites folder list and Suites / Folder: status mix, last run, search, sort
   (`proposed/suite-folders.md`).
 - Pin control, Run result / Toast, Overlay / Delete run / Pinned, Runs "Pinned"
-  badge (`proposed/run-pinning.md`).
+  badge ([run-pinning](run-pinning.md); the API has shipped, the UI has not).
 - Overview Agent panel and Empty "agent ready" line, and Installation / Capacity
   "Host reports …": `getInstallationStatus` (installation status lane). CPU use and
   available memory stay not measured.

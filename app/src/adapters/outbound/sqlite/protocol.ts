@@ -44,6 +44,8 @@ import type {
   RunKey,
   RunList,
 } from '../../../ports/runs.js';
+import type { RunPinCommand } from '../../../ports/runs.js';
+import type { RunPinReceipt } from '@beetle/contracts/api';
 import type {
   DispatchKey,
   DispatchScan,
@@ -101,6 +103,10 @@ export const STORAGE_ERROR_CODES = Object.freeze([
   'schema_newer',
   'read_only',
   'protected_dependency',
+  'pin_limit',
+  'run_active',
+  'run_pinned',
+  'cleanup_in_progress',
 ] as const);
 export type ErrorCode = (typeof STORAGE_ERROR_CODES)[number];
 export class StorageError extends Error {
@@ -142,6 +148,7 @@ export type Operation =
   | { kind: 'run'; command: RunCommand }
   | { kind: 'cancelRun'; command: CancelRunCommand }
   | { kind: 'runNote'; command: SetRunNoteCommand }
+  | { kind: 'runPin'; command: RunPinCommand }
   | { kind: 'getRun'; key: RunKey }
   | { kind: 'getRunResult'; key: RunKey }
   | { kind: 'getRunExecution'; key: RunKey }
@@ -200,6 +207,7 @@ export type Value =
   | DispatchClaim
   | DispatchObservation
   | Run
+  | RunPinReceipt
   | RunPage
   | RunResultSnapshot
   | RunEventPage

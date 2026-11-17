@@ -29,7 +29,7 @@ function expectReopenedFacts(db: DatabaseSync, before: ReturnType<typeof rows>):
     ? {...table,rows:table.rows.map(row=>({...row,created_at:null,published_at:null}))}:table));
   const empty = ['backend_cleanup_controls', 'backend_output_cleanup_acks', 'backend_retired_runs', 'history_note_grams',
     'input_shapes', 'input_usage_counts', 'namespace_deletions', 'retention_progress', 'retention_snapshots',
-    'retention_workspace_epochs', 'run_notes'];
+    'retention_workspace_epochs', 'run_notes', 'run_pins'];
   const expected = [...empty, 'backend_replay_storage', 'retention_storage'].sort();
   expect(current.filter(row => !priorNames.has(row.name)).map(row => row.name)).toEqual(expected);
   for (const table of empty) expect(db.prepare(`SELECT count(*) n FROM ${table}`).get()?.n).toBe(0);

@@ -52,6 +52,7 @@ export class ManualRunDeletionSnapshots {
     if (basis.settings.workspace.id !== request.settingsId) throw new StorageError('not_found');
     requireFact(basis.settings.workspace.version === request.expectedVersion);
     const fact = inspectRetentionFact(db, this.runs, scope, header, request.requestId);
+    if (fact.protection === 'pinned') throw new StorageError('run_pinned');
     requireFact(fact.completed && fact.protection === 'none');
     requireFact(fact.logicalBytes !== null, 'unavailable');
     const zero = { completedCount: 0, logicalBytes: 0 };

@@ -159,6 +159,7 @@ export type RunLatencyAttribution = FromSchema<typeof S17.RunLatencyAttribution>
 export type CreateRunRequest = FromSchema<typeof S18.CreateRunRequest>;
 export type CancelRunRequest = FromSchema<typeof S18.CancelRunRequest>;
 export type SetRunNoteRequest = FromSchema<typeof S18.SetRunNoteRequest>;
+export type RunPinRequest = FromSchema<typeof S18.RunPinRequest>;
 export type RunListQuery = FromSchema<typeof S18.RunListQuery>;
 export type RunResultSnapshot = FromSchema<typeof S19.RunResultSnapshot>;
 export type RunExecutionPolicy = FromSchema<typeof S20.RunExecutionPolicy>;
@@ -168,6 +169,7 @@ export type Run = FromSchema<typeof S20.Run>;
 export type RunPage = FromSchema<typeof S20.RunPage>;
 export type RunTimestamp = FromSchema<typeof S20.RunTimestamp>;
 export type RunNote = FromSchema<typeof S20.RunNote>;
+export type RunPinReceipt = FromSchema<typeof S20.RunPinReceipt>;
 export type PairBrowserRequest = FromSchema<typeof S21.PairBrowserRequest>;
 export type BrowserSession = FromSchema<typeof S21.BrowserSession>;
 export type RestoredBackup = FromSchema<typeof S21.RestoredBackup>;
@@ -339,6 +341,7 @@ export interface ApiTypes {
   CreateRunRequest: CreateRunRequest;
   CancelRunRequest: CancelRunRequest;
   SetRunNoteRequest: SetRunNoteRequest;
+  RunPinRequest: RunPinRequest;
   RunListQuery: RunListQuery;
   RunResultSnapshot: RunResultSnapshot;
   RunExecutionPolicy: RunExecutionPolicy;
@@ -348,6 +351,7 @@ export interface ApiTypes {
   RunPage: RunPage;
   RunTimestamp: RunTimestamp;
   RunNote: RunNote;
+  RunPinReceipt: RunPinReceipt;
   PairBrowserRequest: PairBrowserRequest;
   BrowserSession: BrowserSession;
   RestoredBackup: RestoredBackup;

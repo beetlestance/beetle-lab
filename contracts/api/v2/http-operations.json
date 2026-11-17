@@ -475,6 +475,28 @@
     "implementation": "implemented"
   },
   {
+    "name": "pinRun",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/pin",
+    "response": "RunPinReceipt",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunParams",
+    "request": "RunPinRequest",
+    "implementation": "implemented"
+  },
+  {
+    "name": "unpinRun",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/unpin",
+    "response": "RunPinReceipt",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunParams",
+    "request": "RunPinRequest",
+    "implementation": "implemented"
+  },
+  {
     "name": "listRunEvents",
     "method": "GET",
     "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/events",

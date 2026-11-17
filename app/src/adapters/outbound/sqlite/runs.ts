@@ -64,7 +64,7 @@ export class Runs {
     const offer = makeRunOffer(run, revision, profile);
     this.insert(run, offer, profile);
     // The persisted snapshot stays pure intent; the response carries the fresh read annotations.
-    return { ...run, note: null, noteVersion: 0, startedAt: null, finishedAt: null };
+    return { ...run, note: null, noteVersion: 0, startedAt: null, finishedAt: null, pinned: false };
   }
   private insert(run: Run, offer: string, profile: RunProfilePin): void {
     const parsedOffer = JSON.parse(offer) as Offer;

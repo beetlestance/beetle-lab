@@ -62,3 +62,21 @@ it('binds v3 history cursors and replies to the exact suite without changing unf
  const next=encodeRunListCursor({scope,query:searched,requestedAt,id});
  expect(runListPosition(scope,{...searched,cursor:next})?.query.name).toBe('checkout');
 });
+it('binds the pinned filter into a distinct cursor tuple and pinned pages accept only pinned rows', async () => {
+  const pinnedQuery = normalizeRunListQuery({ limit: 1, pinned: true });
+  const encoded = encodeRunListCursor({ scope, query: pinnedQuery, requestedAt, id });
+  expect((JSON.parse(atob(encoded)) as unknown[])[0]).toBe('run-page-v4');
+  expect(captureRunListCursor(encoded)).toEqual({ scope, query: pinnedQuery, requestedAt, id });
+  expect(runListPosition(scope, { limit: 1, pinned: true, cursor: encoded })?.id).toBe(id);
+  expect(() => runListPosition(scope, { limit: 1, cursor: encoded })).toThrow();
+  expect(() => runListPosition(scope, { limit: 2, pinned: true, cursor: cursor() })).toThrow();
+  const withSuite = normalizeRunListQuery({ limit: 1, pinned: true, suiteId: id, name: 'Checkout' });
+  const bound = encodeRunListCursor({ scope, query: withSuite, requestedAt, id });
+  expect(captureRunListCursor(bound).query).toEqual(withSuite);
+  expect(() => runListPosition(scope, { limit: 1, pinned: true, name: 'checkout', cursor: bound })).toThrow();
+  const run = await fixture('valid/run.json') as Run;
+  const page = { scope, items: [{ ...run, pinned: true, pinnedAt: requestedAt }], summaries: [pendingRunHistorySummary(run)], nextCursor: null };
+  expect(runListPageMatches(page, scope, pinnedQuery)).toBe(true);
+  expect(runListPageMatches({ ...page, items: [{ ...run, pinned: false }] }, scope, pinnedQuery)).toBe(false);
+  expect(runListPageMatches({ ...page, items: [run] }, scope, pinnedQuery)).toBe(false);
+});

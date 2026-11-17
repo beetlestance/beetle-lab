@@ -24,7 +24,8 @@ frameworkErrors handles bad URLs/oversized parameters before normal route hooks.
 The factory creates no listener; compilers/authentication still need configuration.
 `configureApiErrors` alone cannot intercept those pre-router errors.
 The mapper converts framework/domain/explicit API faults to fixed ApiError
-replies with generated correlation IDs. Bootstrap may inject concrete adapter-error
+replies with generated correlation IDs. An optional explain hook adds a whitelisted
+reason to conflict/protected_dependency only. Bootstrap may inject concrete adapter-error
 classification; exception values/URLs/client IDs never become response text.
 5xx can follow an unknown commit: mutation retries must retain original intent.
 Actual use-case wiring and authentication remain W10 responsibilities. Neither

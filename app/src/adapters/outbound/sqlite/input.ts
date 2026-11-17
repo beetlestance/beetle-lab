@@ -287,12 +287,8 @@ function checkedCommonOperation(input: Operation, runtimeTtlMs: number): Operati
 }
 
 export function suiteOperation(operation: Operation): boolean {
-  const descriptor = Object.getOwnPropertyDescriptor(operation, 'kind');
-  return (
-    !!descriptor &&
-    'value' in descriptor &&
-    ['suite', 'getSuite', 'getRevision', 'listSuites', 'listRevisions'].includes(descriptor.value as string)
-  );
+  const kind = dataProperty(operation, 'kind') as string;
+  return ['suite', 'getSuite', 'getRevision', 'listSuites', 'listRevisions'].includes(kind);
 }
 
 /** Inspect data descriptors only: boundedCopy rejects accessors without invoking them. */
@@ -306,6 +302,7 @@ const fixedMessageLimits: Partial<Record<Operation['kind'], number>> = {
   saveLocalSession: 2048,
   settleBackendOutput: 2304,
   readBackendSettlement: 2304,
+  runPin: 4096,
 };
 export function operationMessageLimit(operation: Operation): number {
   if (dataProperty(operation, 'kind') === 'deleteNamespace') return 4096;
@@ -357,6 +354,7 @@ const fixedReplyLimits: Partial<Record<Operation['kind'], number>> = {
   getRunQueue: 16384,
   settleBackendOutput: 1536,
   readBackendSettlement: 1536,
+  runPin: 2048,
 };
 export function operationReplyLimit(operation: Operation): number {
   if (retentionOperation(operation)) return retentionReplyLimit(operation);

@@ -13,6 +13,7 @@ import {registerRetentionAccounting} from '../../src/adapters/outbound/sqlite/re
 import {transaction} from '../../src/adapters/outbound/sqlite/transaction.js';
 import {migration031} from '../../src/adapters/outbound/sqlite/migration031.js';
 import {migration032} from '../../src/adapters/outbound/sqlite/migration032.js';
+import {migration033} from '../../src/adapters/outbound/sqlite/migration033.js';
 import {asSchema30} from './legacy030.js';
 function graph(db:DatabaseSync){
  return db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY type,name").all();
@@ -20,7 +21,7 @@ function graph(db:DatabaseSync){
 function shipped(version:number):DatabaseSync{
  const reference=prior023(':memory:');registerBackendSettlement(reference);registerRetentionAccounting(reference);
  transaction(reference,()=>reference.exec(migration024));transaction(reference,()=>migrate025(reference));
- const later=[migration026,migration027,migration028,migration029,migration030,migration031,migration032].slice(0,version-25);
+ const later=[migration026,migration027,migration028,migration029,migration030,migration031,migration032,migration033].slice(0,version-25);
  for(const sql of later)transaction(reference,()=>reference.exec(sql));
  return reference;
 }
@@ -32,7 +33,7 @@ function assertShipped(db:DatabaseSync,version:number):void{
 /** Test-only projection of an exact shipped synthetic schema; no retired identity may be rewound. */
 export function asSchema27(db:DatabaseSync):void{
  const initial=Number(db.prepare('PRAGMA user_version').get()?.user_version);if(initial===27)return;
- assert([28,29,30,31,32].includes(initial),'Cannot project fixture to schema27');
+ assert([28,29,30,31,32,33].includes(initial),'Cannot project fixture to schema27');
  assert(!db.prepare('SELECT 1 FROM workspaces WHERE retired!=0 LIMIT 1').get(),'Cannot project fixture with retired workspace data');
  if(initial>=30)assert(!db.prepare('SELECT 1 FROM organizations WHERE retired!=0 LIMIT 1').get(),'Cannot project fixture with retired organization data');
  if(initial>=31){assertShipped(db,initial);asSchema30(db);}

@@ -19,6 +19,12 @@ function accepts(row: Run, query: NormalizedRunListQuery): boolean {
     (query.state === undefined || row.state === query.state) &&
     (query.outcome === undefined || row.outcome === query.outcome) &&
     runListTimestamp(row.requestedAt) &&
+    narrows(row, query)
+  );
+}
+function narrows(row: Run, query: NormalizedRunListQuery): boolean {
+  return (
+    (query.pinned !== true || row.pinned === true) &&
     (query.suiteId === undefined || row.suiteId.toLowerCase() === query.suiteId) &&
     (query.runIdPrefix === undefined || row.id.toLowerCase().startsWith(query.runIdPrefix))
   );
