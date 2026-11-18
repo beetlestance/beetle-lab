@@ -156,3 +156,15 @@ it('maps a content-length mismatch to malformed request', async () => {
 it.each([0, -1, 1.5, Infinity, 1_048_577])('rejects invalid constructor body limit %s', bodyLimit => {
   expect(() => createApiServer({ bodyLimit })).toThrow('Invalid API body limit');
 });
+
+it('emits only fixed field paths with a matching classified error and contains diagnostic failures', async () => {
+  const app = server({ fieldIssue: () => 'folder_name_conflict' });
+  app.get('/name', async () => { throw new ApiFault('conflict'); });
+  app.get('/scope', async () => { throw new ApiFault('not_found'); });
+  expect((await app.inject('/name')).json().fields).toEqual([{ path: '/name', code: 'conflict' }]);
+  expect((await app.inject('/scope')).json().fields).toEqual([]);
+  const broken = server({ fieldIssue: () => { throw new Error(canary); } });
+  broken.get('/broken', async () => { throw new ApiFault('invalid_value'); });
+  const response = await broken.inject('/broken');
+  expect(check(response.statusCode, response.body, 'invalid_value').fields).toEqual([]);
+});

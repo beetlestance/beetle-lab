@@ -4,6 +4,7 @@ import { decideNamespaceChange, requireRule } from '../../../domain/namespaces/i
 import type { NamespaceCommand, NamespaceEntity, NamespaceEvidence } from '../../../ports/namespaces.js';
 import type { Entities } from './entities.js';
 import { lower } from './input.js';
+import { StorageError } from './protocol.js';
 import type { Settings } from './settings.js';
 
 export class Namespaces {
@@ -107,6 +108,7 @@ export class Namespaces {
   }
   private folder(command: NamespaceCommand, entity: NamespaceEntity, folded: string): void {
     requireRule('parentFolderId' in entity);
+    this.checkFolderName(entity, folded);
     if (command.kind === 'createFolder') this.insertFolder(entity, folded);
     else
       this.db
@@ -123,6 +125,23 @@ export class Namespaces {
           lower(entity.scope.organizationId),
           lower(entity.scope.workspaceId),
         );
+  }
+  /** Same transaction as version/placement validation and the final UNIQUE guard. */
+  private checkFolderName(folder: Folder, folded: string): void {
+    if (folder.parentFolderId === null) return;
+    const duplicate = this.db
+      .prepare(
+        `SELECT 1 FROM folders WHERE organization_id=? AND workspace_id=?
+       AND parent_id=? AND folded_name=? AND id<>? LIMIT 1`,
+      )
+      .get(
+        lower(folder.scope.organizationId),
+        lower(folder.scope.workspaceId),
+        lower(folder.parentFolderId),
+        folded,
+        lower(folder.id),
+      );
+    if (duplicate) throw new StorageError('folder_name_conflict');
   }
   change(command: NamespaceCommand): NamespaceEntity {
     const change = decideNamespaceChange(command, this.evidence(command));

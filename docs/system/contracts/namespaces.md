@@ -4,6 +4,16 @@ Organisations, folders and workspaces are deleted or retired by the backend alon
 agent work is involved. Retained Run output is removed separately by
 [retirement](retirement.md).
 
+## Mutation refusals
+
+Folder uniqueness is checked in the write transaction after scope, version and
+placement validation; SQLite UNIQUE remains the final guard. A sibling collision
+returns `conflict` with `fields: [{path: "/name", code: "conflict"}]`. Exceeding
+8 levels (including moved descendants) returns `invalid_value` with
+`fields: [{path: "/parentFolderId", code: "range"}]`. Other conflicts stay generic;
+wrong owners stay `not_found`. Receipt replay runs before these checks. Only fixed
+field paths/codes cross the worker and HTTP boundaries; no database text is echoed.
+
 ## Deletion and workspace retirement
 
 Owned by `app/src/adapters/outbound/sqlite/namespace-deletion` and `workspace-retirement`.

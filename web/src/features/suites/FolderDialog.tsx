@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { CreateFolderRequest, Folder, PatchFolderRequest, Workspace } from '@beetle/contracts/api';
+import type {
+  ApiClientFailure,
+  CreateFolderRequest,
+  Folder,
+  PatchFolderRequest,
+  Workspace,
+} from '@beetle/contracts/api';
 import { useApi } from '../../app/api.js';
 import { useSessionAccess } from '../../app/session.js';
 import { queryKeys } from '../../app/queries.js';
@@ -40,21 +46,68 @@ function useFolderWrite({ workspace, folder, close }: Props) {
   );
   return { write, refresh };
 }
-/** Folder mutations stay in Suites, with a bounded named parent picker and receipt-safe retries. */
-export function FolderDialog(props: Props) {
-  const { workspace, folder, mode, close } = props;
+function useFolderForm(props: Props) {
+  const { workspace, folder } = props;
   const [name, setName] = useState(folder?.name ?? '');
   const [parent, setParent] = useState(initialParent(props));
+  const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
   const { readOnly } = useSessionAccess();
   const { write, refresh } = useFolderWrite(props);
+  const issue = folderRefusal(write.failure);
+  const parentName =
+    parent === workspace.rootFolderId ? workspace.name : (selectedFolder?.name ?? 'The selected parent');
+  const nameError =
+    issue === 'name'
+      ? `${parentName} already has a folder called ${name.trim().normalize('NFKC').toLowerCase()}. Names ignore case.`
+      : undefined;
+  function changeName(value: string) {
+    setName(value);
+    if (issue) write.newIntent();
+  }
+  function changeParent(value: string) {
+    setParent(value);
+    if (issue) write.newIntent();
+  }
+  return {
+    name,
+    parent,
+    selectedFolder,
+    readOnly,
+    write,
+    refresh,
+    issue,
+    nameError,
+    changeName,
+    changeParent,
+    setSelectedFolder,
+  };
+}
+
+/** Folder mutations stay in Suites, with a bounded named parent picker and receipt-safe retries. */
+export function FolderDialog(props: Props) {
+  const { workspace, mode, close } = props;
+  const {
+    name,
+    parent,
+    selectedFolder,
+    readOnly,
+    write,
+    refresh,
+    issue,
+    nameError,
+    changeName,
+    changeParent,
+    setSelectedFolder,
+  } = useFolderForm(props);
   const title = folderTitle(mode, workspace.name);
+  if (issue === 'depth') return <FolderDepthDialog mode={mode} parent={selectedFolder} close={close} />;
   function submit() {
     void write.submit(folderRequest(props, name, parent));
   }
   return (
     <Dialog
       title={title}
-      description="Folders group suites. They never change how a run executes."
+      description={issue === 'name' ? undefined : 'Folders group suites. They never change how a run executes.'}
       onClose={close}
       dismissible={!write.pending}
     >
@@ -71,12 +124,20 @@ export function FolderDialog(props: Props) {
             workspace={workspace}
             mode={mode}
             name={name}
-            setName={setName}
+            setName={changeName}
             parent={parent}
-            setParent={setParent}
+            setParent={changeParent}
+            nameError={nameError}
+            onSelected={setSelectedFolder}
+            refusal={issue === 'name'}
           />
         </fieldset>
-        <WriteStatus write={write} refresh={refresh} />
+        {mode === 'move' && issue === 'name' && (
+          <p className="field-error" role="alert">
+            {nameError}
+          </p>
+        )}
+        {!issue && <WriteStatus write={write} refresh={refresh} />}
         <div className="dialog-actions">
           <Button variant="text" disabled={write.pending} onClick={close}>
             Cancel
@@ -86,7 +147,7 @@ export function FolderDialog(props: Props) {
             type="submit"
             loading={write.pending}
             loadingLabel="Saving…"
-            disabled={write.unknown || readOnly || invalidName(mode, name)}
+            disabled={write.unknown || readOnly || invalidDraft(mode, name, issue)}
           >
             {mode === 'create' ? 'Create folder' : 'Save folder'}
           </Button>
@@ -122,8 +183,8 @@ function folderTitle(mode: Props['mode'], workspaceName: string): string {
   if (mode === 'create') return `New folder in ${workspaceName}`;
   return mode === 'move' ? 'Move folder' : 'Rename folder';
 }
-function invalidName(mode: Props['mode'], name: string): boolean {
-  return mode !== 'move' && name.trim().length === 0;
+function invalidDraft(mode: Props['mode'], name: string, issue: 'name' | 'depth' | undefined): boolean {
+  return issue === 'name' || (mode !== 'move' && name.trim().length === 0);
 }
 function FolderFields({
   workspace,
@@ -132,6 +193,9 @@ function FolderFields({
   setName,
   parent,
   setParent,
+  nameError,
+  onSelected,
+  refusal,
 }: {
   workspace: Workspace;
   mode: Props['mode'];
@@ -139,6 +203,9 @@ function FolderFields({
   setName: (name: string) => void;
   parent: string;
   setParent: (id: string) => void;
+  nameError: string | undefined;
+  onSelected: (folder: Folder | null) => void;
+  refusal: boolean;
 }) {
   return (
     <>
@@ -147,6 +214,7 @@ function FolderFields({
         <div className="folder-name-field">
           <TextInput
             label="Name"
+            error={nameError}
             required
             maxLength={128}
             value={name}
@@ -161,11 +229,41 @@ function FolderFields({
         <FolderPicker
           workspace={workspace}
           label="Inside"
-          hint="Folders nest up to 8 levels."
+          hint={refusal ? '' : 'Folders nest up to 8 levels.'}
+          onSelected={onSelected}
           selected={parent}
           choose={setParent}
         />
       )}
     </>
+  );
+}
+
+function folderRefusal(failure: ApiClientFailure | null): 'name' | 'depth' | undefined {
+  const protocol = failure?.protocol;
+  if (
+    protocol?.code === 'conflict' &&
+    protocol.fields.some((field) => field.path === '/name' && field.code === 'conflict')
+  )
+    return 'name';
+  if (
+    protocol?.code === 'invalid_value' &&
+    protocol.fields.some((field) => field.path === '/parentFolderId' && field.code === 'range')
+  )
+    return 'depth';
+  return undefined;
+}
+function FolderDepthDialog({ mode, parent, close }: { mode: Props['mode']; parent: Folder | null; close: () => void }) {
+  const detail =
+    mode === 'create' && parent?.displayPath.length === 8
+      ? `${parent.displayPath.join(' / ')} is already 8 levels deep, the most Beetle allows. Create the folder higher up.`
+      : 'This placement would exceed the limit of 8 folder levels, including nested folders. Choose a parent higher up.';
+  return (
+    <Dialog
+      title="Folders can’t go deeper here"
+      description={detail}
+      onClose={close}
+      actions={<Button onClick={close}>Close</Button>}
+    />
   );
 }

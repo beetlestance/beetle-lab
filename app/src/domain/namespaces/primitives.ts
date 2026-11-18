@@ -11,7 +11,10 @@ const messages = {
 /** Static messages only: submitted values/IDs never become error text. */
 export class SemanticError extends Error {
   readonly code: ErrorCode;
-  constructor(code: ErrorCode) {
+  constructor(
+    code: ErrorCode,
+    readonly detail?: 'folder_depth',
+  ) {
     super(messages[code]);
     this.name = 'SemanticError';
     this.code = code;

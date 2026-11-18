@@ -20,7 +20,7 @@
 .folder-name-count {
   position: absolute;
   right: var(--s-12);
-  bottom: var(--s-10);
+  top: 32px;
   color: var(--dim);
   font-size: var(--fs-sm);
   pointer-events: none;
@@ -55,4 +55,10 @@
 
 .folder-action-list:popover-open {
   display: grid;
+}
+
+@media (max-width: 760px) {
+  .folder-name-count {
+    top: 38px;
+  }
 }

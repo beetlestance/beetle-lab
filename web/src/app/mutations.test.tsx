@@ -303,3 +303,17 @@ it('keeps confirmed changes closable after navigating so the next namespace can 
   expect(screen.getByRole('button', {name: 'Create workspace'})).toBeEnabled();
   expect(mutations(api.records)).toHaveLength(1);
 });
+
+it('shows a confirmed name collision when moving a folder without a name field', async () => {
+  const api = testClient(request => request.method === 'GET' ? readNamespace(request)
+    : json({ ...apiError('conflict'), fields: [{ path: '/name', code: 'conflict' }] }, 409));
+  mount(api.client, routes.suites(ids.a, ids.workspace));
+  await screen.findByLabelText('Actions for Same folder');
+  openFolderActions('Same folder');
+  fireEvent.click(screen.getByRole('button', { name: 'Move Same folder' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save folder' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('already has a folder called same folder');
+  expect(screen.getByRole('button', { name: 'Save folder' })).toBeDisabled();
+  expect(screen.getByRole('dialog', { name: 'Move folder' })).toBeVisible();
+  expect(mutations(api.records)).toHaveLength(1);
+});

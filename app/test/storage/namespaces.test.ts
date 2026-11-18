@@ -39,7 +39,7 @@ describe('scoped namespace persistence', () => {
     const folder = await createFolder(metadata, 4, uuid(3), scope, ' Test ');
     const otherScope = { ...scope, organizationId: uuid(20), workspaceId: uuid(21) };
     await createFolder(metadata, 23, uuid(22), otherScope, 'Test');
-    await expect(createFolder(metadata, 5, uuid(3), scope, 'ＴＥＳＴ')).rejects.toMatchObject({ code: 'conflict' });
+    await expect(createFolder(metadata, 5, uuid(3), scope, 'ＴＥＳＴ')).rejects.toMatchObject({ code: 'folder_name_conflict' });
     await expect(metadata.get({ kind: 'folder', scope: otherScope, id: folder.id })).rejects.toMatchObject({ code: 'not_found' });
     await expect(createFolder(metadata, 6, uuid(22))).rejects.toMatchObject({ code: 'not_found' });
     await expect(metadata.namespaces.execute(command({ kind: 'patchFolder', id: folder.id, request: {
@@ -73,10 +73,10 @@ describe('scoped namespace persistence', () => {
     const metadata = await fixture.open(); await seed(metadata);
     let parent = uuid(3);
     for (let i = 4; i <= 10; i++) parent = (await createFolder(metadata, i, parent)).id;
-    await expect(createFolder(metadata, 11, parent)).rejects.toMatchObject({ code: 'invalid_value' });
+    await expect(createFolder(metadata, 11, parent)).rejects.toMatchObject({ code: 'folder_depth' });
     const branch = await createFolder(metadata, 12); await createFolder(metadata, 13, branch.id);
     await expect(metadata.namespaces.execute(command({ kind: 'patchFolder', id: branch.id, request: {
-      requestId: requestId(), scope, expectedVersion: 1, parentFolderId: uuid(9) } }))).rejects.toMatchObject({ code: 'invalid_value' });
+      requestId: requestId(), scope, expectedVersion: 1, parentFolderId: uuid(9) } }))).rejects.toMatchObject({ code: 'folder_depth' });
     await expect(metadata.namespaces.execute(command({ kind: 'patchFolder', id: uuid(3), request: {
       requestId: requestId(), scope, expectedVersion: 1, parentFolderId: branch.id } }))).rejects.toMatchObject({ code: 'invalid_value' });
     await metadata.namespaces.execute(command({ kind: 'patchFolder', id: uuid(3), request: {

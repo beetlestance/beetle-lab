@@ -1,5 +1,6 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { Workspace } from '@beetle/contracts/api';
+import type { Folder, Workspace } from '@beetle/contracts/api';
 import { useApi, readResult } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { Button } from '../../components/Button.js';
@@ -12,12 +13,14 @@ export function FolderPicker({
   choose,
   label,
   hint,
+  onSelected,
 }: {
   workspace: Workspace;
   selected: string;
   choose: (id: string) => void;
   label: string;
   hint: string;
+  onSelected?: ((folder: Folder | null) => void) | undefined;
 }) {
   const api = useApi();
   const params = { organizationId: workspace.scope.organizationId, workspaceId: workspace.id };
@@ -29,7 +32,13 @@ export function FolderPicker({
   });
   const root = workspace.rootFolderId.toLowerCase();
   const folders = (query.data?.items ?? []).filter((folder) => folder.id.toLowerCase() !== root);
-  const known = selected.toLowerCase() === root || folders.some((folder) => folder.id === selected);
+  const selectedFolder = query.isError
+    ? undefined
+    : folders.find((folder) => folder.id.toLowerCase() === selected.toLowerCase());
+  useEffect(() => {
+    onSelected?.(selectedFolder ?? null);
+  }, [selectedFolder, onSelected]);
+  const known = selected.toLowerCase() === root || selectedFolder !== undefined;
   return (
     <div className="suite-folder-select">
       <Select
@@ -44,7 +53,7 @@ export function FolderPicker({
         {!known && <option value={selected}>Current folder</option>}
         {folders.map((folder) => (
           <option key={folder.id} value={folder.id}>
-            {workspace.name} / {folder.displayPath.join(' / ')}
+            {folder.displayPath.join(' / ')}
           </option>
         ))}
       </Select>

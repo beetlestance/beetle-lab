@@ -37,7 +37,7 @@ routes; SQLite metadata enforces scope and versions.
 `ApiError` is `{code, message, retryable, requestId, fields}` with a fixed message per code
 (`api-errors.ts`); raw exceptions, config and environment values never appear. Only `conflict` and
 `protected_dependency` add a fixed `reason` (`active`, `pinned`, `pin_limit`, `cleanup_in_progress`; [run pinning](run-lifecycle.md#pinning));
-a validated input delete refusal adds bounded `dependencies` ([input metadata](input-metadata.md)). `no-store`.
+Folder fields: [refusals](namespaces.md#mutation-refusals); input delete adds bounded `dependencies` ([input metadata](input-metadata.md)). `no-store`.
 
 | Status | Codes |
 | --- | --- |
@@ -84,7 +84,7 @@ inputs. Folders group; they never grant permissions or create agents.
   names 1 to 48), unique
   among siblings by folded name; depth is at most 8 (`domain/namespaces/`).
   Moves stay in the workspace, check acyclicity transactionally and compare
-  versions. Deletion of a namespace accepts empty scopes only.
+  versions. Folder deletion requires emptiness; workspace/organisation retirement follows [namespaces](namespaces.md).
 - Runs keep their suite's immutable scope; moving a suite never rewrites them.
 
 ## Settings
@@ -215,6 +215,6 @@ characters and shows at most 80 matches.
 | `contracts/api/v2/` | `a195bb052899` |
 | `contracts/src/api/client/` | `c80830987b6a` |
 | `contracts/src/api/run-list.ts` | `1c4b7b193309` |
-| `app/src/adapters/inbound/http/api-errors.ts` | `65b76bd7fd69` |
+| `app/src/adapters/inbound/http/api-errors.ts` | `c82ce383315c` |
 | `app/src/adapters/inbound/http/session/` | `328af44f81f3` |
 | `app/src/client/cli/` | `c7eb756df145` |

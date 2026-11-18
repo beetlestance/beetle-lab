@@ -1,5 +1,5 @@
 import type { Folder, Workspace, WorkspaceScope } from '@beetle/contracts/api';
-import { requireRule, sameScope, sameUuid } from './primitives.js';
+import { SemanticError, requireRule, sameScope, sameUuid } from './primitives.js';
 
 export const MAX_FOLDER_DEPTH = 8;
 
@@ -49,6 +49,8 @@ export function validateFolderPlacement(input: {
     requireRule(!chain.some((folder) => sameUuid(folder.id, moving.id)));
   }
   requireRule(Number.isSafeInteger(evidence.subtreeHeight) && evidence.subtreeHeight >= 0);
-  requireRule(chain.length + 1 + evidence.subtreeHeight <= MAX_FOLDER_DEPTH);
+  if (chain.length + 1 + evidence.subtreeHeight > MAX_FOLDER_DEPTH) {
+    throw new SemanticError('invalid_value', 'folder_depth');
+  }
   return chain.map((folder) => folder.name);
 }

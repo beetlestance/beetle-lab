@@ -6,7 +6,7 @@ import type { Folder, Organization, Workspace } from '@beetle/contracts/api';
 import { createApiServer, ApiFault } from './api-errors.js';
 import { configureSchemaCompilers } from './schema-compilers.js';
 import { registerNamespaceRoutes } from './namespaces/index.js';
-import { classifyMetadataError } from '../../../bootstrap/metadata-errors.js';
+import { classifyMetadataError, metadataFieldIssue } from '../../../bootstrap/metadata-errors.js';
 import { storageFixture, digest, requestId, uuid } from '../../../../test/storage/fixture.js';
 import type { NamespaceReader } from '../../../ports/namespace-reader.js';
 
@@ -17,7 +17,7 @@ const auth = { authorization: 'SYNTHETIC_PAIRED_SESSION' };
 async function setup(newId?: () => string, readerOverride?: NamespaceReader, path?: string) {
   const metadata = await fixture.open(path);
   let allocation = 40_000;
-  const server = createApiServer({ classify: classifyMetadataError }); servers.push(server);
+  const server = createApiServer({ classify: classifyMetadataError, fieldIssue: metadataFieldIssue }); servers.push(server);
   configureSchemaCompilers(server, { schemas: apiSchemas, encodeJson });
   const authorize = vi.fn(async (request: FastifyRequest) => {
     if (request.headers.authorization !== auth.authorization) throw new ApiFault('unpaired');
@@ -163,4 +163,49 @@ it('recovers a committed DELETE after TCP reply loss and compiled-worker reopen'
  const replay=await second.server.inject({method:'DELETE',url:route,headers:auth,payload});expect(replay.statusCode).toBe(200);
  expect(replay.json()).toMatchObject({id:project.id,version:2,state:'tombstoned',cleanup:'complete',requestId:payload.requestId});
  expect((await second.metadata.inputs.storage()).chargedBytes).toBe(2048);
+});
+
+it('distinguishes sibling collisions and depth overflow without relabelling version or scope conflicts', async () => {
+  const f = await setup();
+  const organization = await f.org('Fields', 'fields');
+  const workspace = await f.workspace(organization.id);
+  const original = await f.folder(workspace, 'Smoke');
+  const scope = original.scope;
+  const url = `/api/v2/organizations/${organization.id}/workspaces/${workspace.id}/folders`;
+  const create = (name: string, parentFolderId: string) => f.server.inject({ method: 'POST', url, headers: auth,
+    payload: { scope, requestId: requestId(), name, parentFolderId } });
+  const duplicate = await create('ＳＭＯＫＥ', workspace.rootFolderId);
+  expect(duplicate.statusCode).toBe(409);
+  expect(duplicate.json()).toMatchObject({ code: 'conflict', fields: [{ path: '/name', code: 'conflict' }] });
+  expect(validateApi('ApiError', duplicate.json()).ok).toBe(true);
+  const stale = await f.server.inject({ method: 'PATCH', url: `/api/v2/organizations/${organization.id}/folders/${original.id}`, headers: auth,
+    payload: { scope, requestId: requestId(), expectedVersion: 2, name: 'Smoke' } });
+  expect(stale.statusCode).toBe(409);
+  expect(stale.json()).toMatchObject({ code: 'conflict', fields: [] });
+  const other = await f.workspace(organization.id, 'Other');
+  expect((await create('Smoke', other.rootFolderId)).json()).toMatchObject({ code: 'not_found', fields: [] });
+  let parent = original.id;
+  for (let depth = 3; depth <= 8; depth++) parent = (await f.folder(workspace, `Level ${depth}`, parent)).id;
+  const deep = await create('Overflow', parent);
+  expect(deep.statusCode).toBe(422);
+  expect(deep.json()).toMatchObject({ code: 'invalid_value', fields: [{ path: '/parentFolderId', code: 'range' }] });
+  expect(validateApi('ApiError', deep.json()).ok).toBe(true);
+  expect(await f.metadata.get({ kind: 'folder', scope, id: original.id })).toMatchObject({ name: 'Smoke', version: 1 });
+});
+
+it('checks patch collisions transactionally but replays an acknowledged intent before current uniqueness', async () => {
+  const f = await setup(); const organization = await f.org('Patch', 'patch'); const workspace = await f.workspace(organization.id);
+  const a = await f.folder(workspace, 'A'); const b = await f.folder(workspace, 'B');
+  const target = await f.folder(workspace, 'Target'); await f.folder(workspace, 'A', target.id);
+  const patch = (body: object) => f.server.inject({ method: 'PATCH', url: `/api/v2/organizations/${organization.id}/folders/${a.id}`, headers: auth, payload: body });
+  const request = (extra: object) => ({ scope: a.scope, requestId: requestId(), expectedVersion: 1, ...extra });
+  for (const body of [request({ name: 'B' }), request({ parentFolderId: target.id })]) {
+    expect((await patch(body)).json()).toMatchObject({ code: 'conflict', fields: [{ path: '/name', code: 'conflict' }] });
+  }
+  const accepted = request({ name: 'Reserved' }); const response = await patch(accepted); expect(response.statusCode).toBe(200);
+  expect((await patch({ ...request({ name: 'Moved' }), expectedVersion: 2 })).statusCode).toBe(200);
+  await f.folder(workspace, 'Reserved');
+  const replay = await patch(accepted); expect(replay.statusCode).toBe(200); expect(replay.json()).toEqual(response.json());
+  expect(await f.metadata.get({ kind: 'folder', scope: a.scope, id: a.id })).toMatchObject({ name: 'Moved', version: 3 });
+  expect(await f.metadata.get({ kind: 'folder', scope: b.scope, id: b.id })).toMatchObject({ name: 'B', version: 1 });
 });

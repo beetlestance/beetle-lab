@@ -26,7 +26,8 @@ The factory creates no listener; compilers/authentication still need configurati
 The mapper converts framework/domain/explicit API faults to fixed ApiError
 replies with generated correlation IDs. An optional explain hook adds a whitelisted
 reason to conflict/protected_dependency only. Bootstrap may inject concrete adapter-error
-classification; exception values/URLs/client IDs never become response text.
+classification and closed field categories; only matching errors get fixed field paths/codes.
+Exception values/URLs/client IDs never become response text.
 5xx can follow an unknown commit: mutation retries must retain original intent.
 Actual use-case wiring and authentication remain W10 responsibilities. Neither
 registration nor safe error mapping is an authorization boundary.

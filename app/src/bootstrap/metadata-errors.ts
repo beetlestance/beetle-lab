@@ -21,6 +21,8 @@ const codes = {
   run_active: 'conflict',
   run_pinned: 'protected_dependency',
   cleanup_in_progress: 'conflict',
+  folder_name_conflict: 'conflict',
+  folder_depth: 'invalid_value',
 } as const satisfies Record<ErrorCode, ApiError['code']>;
 const reasons = {
   pin_limit: 'pin_limit',
@@ -38,4 +40,10 @@ export function classifyMetadataError(error: unknown): ApiError['code'] | undefi
 export function explainMetadataError(error: unknown): NonNullable<ApiError['reason']> | undefined {
   if (!(error instanceof StorageError) || !Object.hasOwn(reasons, error.code)) return undefined;
   return reasons[error.code as keyof typeof reasons];
+}
+
+/** Fixed field categories; no database message or submitted value crosses HTTP. */
+export function metadataFieldIssue(error: unknown): 'folder_name_conflict' | 'folder_depth' | undefined {
+  if (!(error instanceof StorageError)) return undefined;
+  return error.code === 'folder_name_conflict' || error.code === 'folder_depth' ? error.code : undefined;
 }
