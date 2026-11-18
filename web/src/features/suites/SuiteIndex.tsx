@@ -6,7 +6,7 @@ import { useApi, readResult } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
 import { Status } from '../../components/Badge.js';
-import { Button, buttonClass } from '../../components/Button.js';
+import { Button } from '../../components/Button.js';
 import { Select, TextInput } from '../../components/Fields.js';
 import { QueryState } from '../../components/QueryState.js';
 import { EmptyState, LoadingState } from '../../components/States.js';
@@ -14,6 +14,7 @@ import { Table, Td } from '../../components/Table.js';
 import { runStatus, StartRun, when } from '../suite-overview/index.js';
 import { folderLink, folderName, summaryOf, useFolders } from './folders.js';
 import { mixText, plural, searchTerm, useDebounced, WorkspaceTabs } from './listing.js';
+import { FolderActions, NewFolderButton } from './FolderActions.js';
 import { MetadataEditor } from './MetadataEditor.js';
 import { NewSuite } from './NewSuite.js';
 import { SuiteTable } from './SuiteTable.js';
@@ -52,12 +53,7 @@ export function SuiteIndex({ workspace }: { workspace: Workspace }) {
       <div className="suites-toolbar">
         <WorkspaceTabs workspace={workspace} />
         <div className="suites-actions">
-          <Link
-            className={buttonClass('secondary')}
-            to={routes.workspace(workspace.scope.organizationId, workspace.id)}
-          >
-            New folder
-          </Link>
+          <NewFolderButton workspace={workspace} />
           <Button variant="primary" onClick={() => setCreating(true)}>
             New suite
           </Button>
@@ -158,6 +154,7 @@ function FolderTable({
           { key: 'suites', label: 'Suites', numeric: true },
           { key: 'last', label: 'Last run' },
           { key: 'result', label: 'Result' },
+          { key: 'actions', label: 'Actions' },
         ]}
       >
         {sorted.map((folder) => (
@@ -212,6 +209,9 @@ function FolderRow({
       </Td>
       <Td>
         {run ? <LatestStatus workspace={workspace} run={run} folderName={name} /> : <span className="muted">—</span>}
+      </Td>
+      <Td>
+        <FolderActions workspace={workspace} folder={folder} />
       </Td>
     </tr>
   );

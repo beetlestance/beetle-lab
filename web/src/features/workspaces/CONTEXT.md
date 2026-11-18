@@ -6,9 +6,10 @@ A `not_found` organization or workspace renders the shared NotFound, never an
 empty dashboard. Departed scope queries are cancelled and removed.
 WorkspaceList is the Penpot "Organization" table (+ Empty, Loading).
 Lists use one explicit page of <=100 items; inactive prior pages are removed.
-No placeholder previous data. Public UUID semantics include case/URN parents.
-FolderList renders flat displayPath rows below the workspace overview until the
-Suites folder list (package B) replaces it; mutations send folder UUIDs and versions.
-Workspace Inputs navigation lazy-loads the scoped input inventory.
-Draft/replay owner: components/Editor.tsx. No synthetic default data.
-Check: npx --no-install vitest run web/src --maxWorkers=2.
+No placeholder previous data. Parent folders use a scoped named picker; the API
+still accepts the documented UUID representations.
+Workspace Overview contains its dashboard only. Folder create/rename/move/delete
+live in Suites (FolderDialog, FolderActions and the bounded FolderPicker).
+The global Workspaces link opens Suites when a workspace is selected; otherwise
+it opens the organisation's workspace list. Overview remains independently reachable.
+Check: npx vitest run web/src/app/mutations.test.tsx web/src/features/suites/boards.test.tsx.

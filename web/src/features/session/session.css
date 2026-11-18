@@ -31,7 +31,7 @@
   font-size: var(--fs-dialog);
   font-weight: 500;
   line-height: 27px;
-  letter-spacing: var(--tracking-heading);
+  letter-spacing: normal;
 }
 .session-message {
   color: var(--mute);

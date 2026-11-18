@@ -18,7 +18,7 @@ it('scopes navigation targets to the organisation and workspace in the path', ()
   const items = navItems(routes.runs(org, ws));
   expect(items.map((item) => [item.label, item.to])).toEqual([
     ['Overview', routes.workspace(org, ws)],
-    ['Workspaces', routes.organization(org)],
+    ['Workspaces', routes.suites(org, ws)],
     ['Engines', routes.engines],
     ['Settings', routes.workspaceSettings(org, ws)],
     ['Docs', routes.reference],

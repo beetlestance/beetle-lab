@@ -35,6 +35,11 @@ function overviewTarget({ organizationId, workspaceId }: ShellScope) {
   return routes.organizations;
 }
 
+function workspacesTarget({ organizationId, workspaceId }: ShellScope) {
+  if (organizationId && workspaceId) return routes.suites(organizationId, workspaceId);
+  return organizationId ? routes.organization(organizationId) : routes.organizations;
+}
+
 function settingsTarget({ organizationId, workspaceId }: ShellScope) {
   if (organizationId && workspaceId) return routes.workspaceSettings(organizationId, workspaceId);
   if (organizationId) return routes.organizationSettings(organizationId);
@@ -54,12 +59,7 @@ export function navItems(pathname: string): NavItem[] {
   const workspaceChild = /^\/organizations\/[^/]+\/workspaces\/[^/]+\/.+/.test(path) && !settings;
   return [
     { key: 'overview', label: 'Overview', to: overview, current: path === overview },
-    {
-      key: 'workspaces',
-      label: 'Workspaces',
-      to: scope.organizationId ? routes.organization(scope.organizationId) : routes.organizations,
-      current: workspaceChild,
-    },
+    { key: 'workspaces', label: 'Workspaces', to: workspacesTarget(scope), current: workspaceChild },
     { key: 'engines', label: 'Engines', to: routes.engines, current: path === routes.engines },
     { key: 'settings', label: 'Settings', to: settingsTarget(scope), current: settings },
     { key: 'docs', label: 'Docs', to: routes.reference, current: path === routes.reference },

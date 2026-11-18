@@ -1,14 +1,14 @@
 import { useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import type { CreateSuiteRequest, PatchSuiteRequest, Suite, Workspace } from '@beetle/contracts/api';
-import { useApi, readResult } from '../../app/api.js';
+import { useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
 import { Button } from '../../components/Button.js';
 import { Dialog } from '../../components/Dialog.js';
-import { Select, TextInput } from '../../components/Fields.js';
-import { usePage } from '../../components/Pagination.js';
+import { TextInput } from '../../components/Fields.js';
+import { SuiteFolderPicker } from './FolderPicker.js';
 import { useWrite, WriteStatus } from './useWrite.js';
 
 /** Create or patch a suite; after a create the new suite opens on its Edit tab. */
@@ -103,7 +103,7 @@ export function MetadataEditor({
             hint="One sentence on what this suite checks."
             onChange={(event) => setDescription(event.target.value)}
           />
-          <FolderSelect workspace={workspace} selected={folderId} choose={setFolderId} />
+          <SuiteFolderPicker workspace={workspace} selected={folderId} choose={setFolderId} />
         </fieldset>
         <WriteStatus write={write} refresh={refresh} />
         <div className="dialog-actions">
@@ -122,63 +122,5 @@ export function MetadataEditor({
         </div>
       </form>
     </Dialog>
-  );
-}
-function FolderSelect({
-  workspace,
-  selected,
-  choose,
-}: {
-  workspace: Workspace;
-  selected: string;
-  choose: (id: string) => void;
-}) {
-  const api = useApi();
-  const params = { organizationId: workspace.scope.organizationId, workspaceId: workspace.id };
-  const key = queryKeys.folders(params.organizationId, params.workspaceId);
-  const page = usePage(key);
-  const query = useQuery({
-    queryKey: [...key, page.cursor],
-    queryFn: ({ signal }) => readResult(api.listFolders({ params, query: page.query, signal })),
-  });
-  const root = workspace.rootFolderId.toLowerCase();
-  const folders = (query.data?.items ?? []).filter((folder) => folder.id.toLowerCase() !== root);
-  const known = selected.toLowerCase() === root || folders.some((folder) => folder.id === selected);
-  return (
-    <div className="suite-folder-select">
-      <Select
-        label="Folder"
-        value={selected}
-        loading={query.isPending}
-        error={query.isError ? 'Folders could not be read. The suite stays in the folder shown.' : undefined}
-        hint="Folders only group suites. They never change how a run executes."
-        onChange={(event) => choose(event.target.value)}
-      >
-        <option value={workspace.rootFolderId}>Workspace root</option>
-        {!known && <option value={selected}>Current folder</option>}
-        {folders.map((folder) => (
-          <option key={folder.id} value={folder.id}>
-            /{folder.displayPath.join('/')}
-          </option>
-        ))}
-      </Select>
-      {(page.hasBack || query.data?.nextCursor) && (
-        <nav className="pagination" aria-label="Folder pages">
-          <Button size="sm" variant="text" disabled={!page.hasBack} onClick={page.back}>
-            Previous folders
-          </Button>
-          <Button
-            size="sm"
-            variant="text"
-            disabled={!query.data?.nextCursor}
-            onClick={() => {
-              if (query.data?.nextCursor) page.next(query.data.nextCursor);
-            }}
-          >
-            Next folders
-          </Button>
-        </nav>
-      )}
-    </div>
   );
 }

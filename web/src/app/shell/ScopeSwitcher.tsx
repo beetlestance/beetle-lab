@@ -27,7 +27,7 @@ function useCachedOrganizationName(organizationId: string | undefined) {
  */
 export function ScopeSwitcher({ scope }: { scope: ShellScope }) {
   const name = useCachedOrganizationName(scope.organizationId);
-  const label = scope.organizationId ? (name ?? 'Organization') : 'Local install';
+  const label = scope.organizationId ? (name ?? 'Organization') : 'Organizations';
   return (
     <Link className="shell-scope" to={routes.organizations} aria-label={`${label}, switch organization`}>
       <span className="shell-scope-name">{label}</span>

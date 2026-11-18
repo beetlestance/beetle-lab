@@ -15,6 +15,7 @@ import { EmptyState, LoadingState } from '../../components/States.js';
 import { groupText, StartRun } from '../suite-overview/index.js';
 import { childrenOf, findFolder, folderLink, folderName, summaryOf, useFolders } from './folders.js';
 import { plural, searchTerm, useDebounced, WorkspaceTabs } from './listing.js';
+import { FolderActions, NewFolderButton } from './FolderActions.js';
 import { NewSuite } from './NewSuite.js';
 import { SuiteTable } from './SuiteTable.js';
 
@@ -58,6 +59,8 @@ export function FolderView({ workspace, folderId }: { workspace: Workspace; fold
             <div className="suites-toolbar">
               <WorkspaceTabs workspace={workspace} />
               <div className="suites-actions">
+                <NewFolderButton workspace={workspace} parentFolderId={folderId} />
+                <FolderActions workspace={workspace} folder={folder} />
                 <Button variant="primary" onClick={() => setCreating(true)}>
                   New suite
                 </Button>

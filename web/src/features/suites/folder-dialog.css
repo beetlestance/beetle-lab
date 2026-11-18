@@ -1,0 +1,56 @@
+.folder-dialog {
+  margin: 0;
+  display: grid;
+  gap: var(--s-16);
+}
+.folder-dialog fieldset {
+  display: grid;
+  gap: var(--s-16);
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.folder-name-field {
+  position: relative;
+}
+.folder-name-field .input {
+  padding-right: 80px;
+}
+.folder-name-count {
+  position: absolute;
+  right: var(--s-12);
+  bottom: var(--s-10);
+  color: var(--dim);
+  font-size: var(--fs-sm);
+  pointer-events: none;
+}
+
+.folder-row-actions {
+  position: relative;
+}
+.folder-row-actions summary {
+  cursor: pointer;
+  list-style: none;
+  padding: var(--s-8);
+  border-radius: var(--r-sm);
+}
+.folder-row-actions summary::-webkit-details-marker {
+  display: none;
+}
+.folder-action-list {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 10;
+  display: grid;
+  padding: var(--s-8);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-popover);
+  min-width: 140px;
+}
+.folder-action-list .btn {
+  justify-content: start;
+}

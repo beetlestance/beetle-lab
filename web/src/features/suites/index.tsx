@@ -55,11 +55,11 @@ export function Suites({
         <AuthoringState query={workspace}>
           {(data) =>
             suiteId ? (
-              <SuiteDetail key={suiteId} workspace={data} suiteId={suiteId} />
+              <SuiteDetail key={`${organizationId}/${workspaceId}/${suiteId}`} workspace={data} suiteId={suiteId} />
             ) : folderId ? (
-              <FolderView key={folderId} workspace={data} folderId={folderId} />
+              <FolderView key={`${organizationId}/${workspaceId}/${folderId}`} workspace={data} folderId={folderId} />
             ) : (
-              <SuiteIndex workspace={data} />
+              <SuiteIndex key={`${organizationId}/${workspaceId}`} workspace={data} />
             )
           }
         </AuthoringState>

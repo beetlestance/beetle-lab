@@ -141,7 +141,7 @@ it('aborts retired scope reads and ignores late replies', async () => {
   await waitFor(() => expect(fixture.records.some(record => record.path.endsWith(`/suites/${suiteId}`))).toBe(true));
   const pending = fixture.records.find(record => record.path.endsWith(`/suites/${suiteId}`));
   fireEvent.click(screen.getByRole('button', { name: 'Switch workspace B' }));
-  await screen.findByRole('heading', { name: 'Folders' });
+  await screen.findByText('Workspace overview unavailable. Counts are unknown.');
   expect(pending?.signal?.aborted).toBe(true);
   late.resolve(json(suite())); await Promise.resolve(); expect(screen.queryByRole('heading', { name: 'Checkout' })).not.toBeInTheDocument();
 });
@@ -208,7 +208,7 @@ it('aborts a pending write on scope retirement and retires its draft', async () 
   await waitFor(() => expect(fixture.records.some(record => record.method === 'POST')).toBe(true));
   const write = fixture.records.find(record => record.method === 'POST');
   fireEvent.click(screen.getByRole('button', { name: 'Switch workspace B' }));
-  await screen.findByRole('heading', { name: 'Folders' });
+  await screen.findByText('Workspace overview unavailable. Counts are unknown.');
   expect(write?.signal?.aborted).toBe(true); late.resolve(json(revision(), 201));
   expect(screen.queryByRole('textbox', { name: 'Complete configuration JSON' })).not.toBeInTheDocument();
 });

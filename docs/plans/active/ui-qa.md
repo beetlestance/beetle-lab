@@ -40,7 +40,7 @@ the reason they remain. Parent plan: [UI implementation](ui-implementation.md).
 | Create and rename | Fixed: inline panels became dialogs; stale "Changes saved" gone | 10c9811f, 31b49005 |
 | Organization | Matches layout. Remaining: Suites and Runs-24h columns | Data gap (not in the overview read) |
 | Overview (workspace) | Fixed: nested `<p>` console error | d97396de |
-| Overview (workspace) | Remaining: legacy FolderList admin table and tabs below the hero | Needs decision: folder management belongs in Suites (boards Overlay / New folder, Suites / Folder) |
+| Overview (workspace) | Legacy folder admin table and Overview tabs removed; folder create/rename/move/delete now live in Suites | Implemented; full visual acceptance remains open |
 | Overview, empty | Remaining: hero illustration missing | Needs decision (asset) |
 | Overview, Local agent | Remaining: disk reads "70,800 of 117,871 GiB" | Backend: `backendTotalBytes` is 126.6 TB on a 494 GB host |
 | Search overlay | Matches | |

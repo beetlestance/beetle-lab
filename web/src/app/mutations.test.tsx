@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
-import { apiError, folder, ids, json, mount, org, readNamespace, testClient, workspace } from './test-fixtures.js';
+import { apiError, deferred, folder, ids, json, mount, org, readNamespace, testClient, workspace } from './test-fixtures.js';
 import type { RequestRecord } from './test-fixtures.js';
 import { routes } from './routes.js';
 
@@ -202,27 +202,67 @@ describe('mutation identity and draft ownership', () => {
     expect(mutations(api.records)[1]).toMatchObject({ path: `/api/v2/organizations/${ids.a}/workspaces/${ids.workspace}`, method: 'PATCH',
       body: { expectedVersion: 3, scope: workspace().scope, name: 'Renamed workspace' } });
   });
-  it('creates, renames and moves a folder using UUID parents and versions', async () => {
-    const api = testClient(request => request.method !== 'GET'
-      ? json({ ...folder(), version: 8, name: request.body?.name ?? 'Same folder', parentFolderId: request.body?.parentFolderId ?? ids.root }, request.method === 'POST' ? 201 : 200)
-      : readNamespace(request));
-    mount(api.client, routes.workspace(ids.a, ids.workspace));
-    fireEvent.click(await screen.findByRole('button', { name: 'Create folder' }));
-    field('Folder name', 'New folder');
-    expect(screen.getByLabelText('Parent folder ID')).toHaveValue(ids.root);
-    save(); await screen.findByText('Changes saved.');
+  it('creates, renames and moves a folder from Suites with named parents and scoped versions', async () => {
+    const api = testClient(request => {
+      if (request.method !== 'GET') return json({ ...folder(), version: 8,
+        name: request.body?.name ?? 'Same folder', parentFolderId: request.body?.parentFolderId ?? ids.root }, request.method === 'POST' ? 201 : 200);
+      if (request.path.includes('/folders?')) return json({scope:folder().scope,items:[folder(),
+        {...folder(),id:ids.parent,name:'Services',parentFolderId:ids.root,displayPath:['Services']}],nextCursor:null});
+      return readNamespace(request);
+    });
+    mount(api.client, routes.suites(ids.a, ids.workspace));
+    fireEvent.click(await screen.findByRole('button', { name: 'New folder' }));
+    field('Name', 'New folder');
+    expect(screen.getByLabelText('Inside')).toHaveValue(ids.root);
+    fireEvent.click(screen.getByRole('button', {name:'Create folder'}));
+    await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(mutations(api.records)[0]?.body).toMatchObject({ scope: folder().scope, name: 'New folder', parentFolderId: ids.root });
-    fireEvent.click(screen.getByRole('button', { name: 'Close editor' }));
+    fireEvent.click(screen.getByLabelText('Actions for Same folder'));
     fireEvent.click(screen.getByRole('button', { name: 'Rename Same folder' }));
-    field('Folder name', 'Renamed folder'); save(); await screen.findByText('Changes saved.');
+    field('Name', 'Renamed folder');
+    fireEvent.click(screen.getByRole('button',{name:'Save folder'}));
+    await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(mutations(api.records)[1]?.body).toMatchObject({ expectedVersion: 7, name: 'Renamed folder', scope: folder().scope });
     expect(mutations(api.records)[1]?.body).not.toHaveProperty('parentFolderId');
-    fireEvent.click(screen.getByRole('button', { name: 'Close editor' }));
+    fireEvent.click(screen.getByLabelText('Actions for Same folder'));
     fireEvent.click(screen.getByRole('button', { name: 'Move Same folder' }));
-    field('Parent folder ID', `URN:UUID:${ids.parent.toUpperCase()}`); save(); await screen.findByText('Changes saved.');
+    fireEvent.change(screen.getByLabelText('Inside'),{target:{value:ids.parent}});
+    fireEvent.click(screen.getByRole('button',{name:'Save folder'}));
+    await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(mutations(api.records)[2]).toMatchObject({ path: `/api/v2/organizations/${ids.a}/folders/${ids.folder}`, method: 'PATCH',
-      body: { expectedVersion: 7, parentFolderId: `URN:UUID:${ids.parent.toUpperCase()}`, scope: folder().scope } });
+      body: { expectedVersion: 7, parentFolderId: ids.parent, scope: folder().scope } });
     expect(mutations(api.records)[2]?.body).not.toHaveProperty('name');
+  });
+  it('retires a pending folder write without changing the next scope dialog', async () => {
+    const pending = deferred<Response>();
+    const api = testClient(request => request.method === 'POST' ? pending.promise : readNamespace(request));
+    mount(api.client, routes.suites(ids.a, ids.workspace));
+    fireEvent.click(await screen.findByRole('button', {name:'New folder'}));
+    field('Name','Old scope draft');
+    fireEvent.click(screen.getByRole('button',{name:'Create folder'}));
+    await waitFor(()=>expect(mutations(api.records)).toHaveLength(1));
+    const original = mutations(api.records)[0]!;
+    fireEvent.click(screen.getByRole('button',{name:'Switch workspace B'}));
+    await screen.findByText('Workspace overview unavailable. Counts are unknown.');
+    expect(original.signal?.aborted).toBe(true);
+    fireEvent.click(screen.getByRole('link',{name:'Workspaces'}));
+    fireEvent.click(await screen.findByRole('button',{name:'New folder'}));
+    expect(screen.getByLabelText('Name')).toHaveValue('');
+    await act(async()=>pending.resolve(json({...folder(),name:'Old scope draft'},201)));
+    expect(screen.getByRole('dialog',{name:'New folder in Same workspace'})).toBeVisible();
+    expect(screen.getByLabelText('Name')).toHaveValue('');
+    expect(screen.queryByText('Folder saved.')).not.toBeInTheDocument();
+    expect(mutations(api.records)).toHaveLength(1);
+  });
+  it('keeps folder mutation controls disabled in restored read-only history', async () => {
+    const api = testClient(readNamespace);
+    mount(api.client, routes.suites(ids.a,ids.workspace), {readOnly:true,restoredBackup:null});
+    expect(await screen.findByRole('button',{name:'New folder'})).toBeDisabled();
+    fireEvent.click(await screen.findByLabelText('Actions for Same folder'));
+    expect(screen.getByRole('button',{name:'Rename Same folder'})).toBeDisabled();
+    expect(screen.getByRole('button',{name:'Move Same folder'})).toBeDisabled();
+    expect(screen.getByRole('button',{name:'Delete Same folder'})).toBeDisabled();
+    expect(mutations(api.records)).toHaveLength(0);
   });
   it('supports labeled fields, initial focus, keyboard submission and explicit discard', async () => {
     const user = userEvent.setup();

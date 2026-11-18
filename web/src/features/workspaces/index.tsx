@@ -14,7 +14,6 @@ import { LoadingState } from '../../components/States.js';
 import { WorkspaceTabs } from '../../app/shell/WorkspaceTabs.js';
 import { WorkspaceExports } from '../exports/ExportsTable.js';
 import { WorkspaceList } from './WorkspaceList.js';
-import { FolderList } from './FolderList.js';
 const WorkspaceInputs = lazy(() =>
   import('../input-screen/index.js').then((module) => ({ default: module.WorkspaceInputs })),
 );
@@ -124,11 +123,13 @@ function WorkspaceScope({
     >
       {(data) => (
         <div className="workspace-page">
-          <WorkspaceTabs
-            organizationId={organizationId}
-            workspaceId={workspaceId}
-            current={view === 'inputs' ? 'inputs' : view === 'exports' ? 'exports' : 'overview'}
-          />
+          {view && (
+            <WorkspaceTabs
+              organizationId={organizationId}
+              workspaceId={workspaceId}
+              current={view === 'inputs' ? 'inputs' : 'exports'}
+            />
+          )}
           {view === 'exports' ? (
             <WorkspaceExports organizationId={organizationId} workspaceId={workspaceId} />
           ) : view === 'inputs' ? (
@@ -136,7 +137,6 @@ function WorkspaceScope({
           ) : (
             <>
               <WorkspaceOverview organizationId={organizationId} workspaceId={workspaceId} workspaceName={data.name} />
-              <FolderList workspace={data} />
             </>
           )}
         </div>
