@@ -12,6 +12,7 @@ import type { Suites } from './suites.js';
 import { prepareHistorySearch, historyKeys } from './run-search/index.js';
 import { transaction } from './transaction.js';
 import { runPinnedAt } from './run-pins/state.js';
+import { readRunListContexts } from './run-list-context.js';
 
 export class RunReads {
   constructor(
@@ -50,7 +51,13 @@ export class RunReads {
           ? encodeRunListCursor({ scope, query, requestedAt: last.requested_at, id: last.id })
           : null;
       const items = selected.map((row) => this.get({ scope, id: row.id }));
-      const result = { scope, items, summaries: readHistorySummaries(this.db, scope, items), nextCursor };
+      const result = {
+        scope,
+        items,
+        summaries: readHistorySummaries(this.db, scope, items),
+        contexts: readRunListContexts(this.db, scope, items),
+        nextCursor,
+      };
       if (!runListPageMatches(result, scope, query)) throw new Error('Invalid persisted run page');
       return result;
     });

@@ -69,7 +69,23 @@ export function runListPageMatches(page: RunPage, owner: WorkspaceScope, input: 
 
 function historyMatches(page: RunPage): boolean {
   return (
+    contextsMatch(page) &&
     page.summaries.length === page.items.length &&
     page.summaries.every((summary, index) => runHistorySummaryMatches(summary, page.items[index]!))
+  );
+}
+
+function contextsMatch(page: RunPage): boolean {
+  if (page.contexts === undefined) return true;
+  return (
+    page.contexts.length === page.items.length &&
+    page.contexts.every((context, index) => {
+      const run = page.items[index]!;
+      return (
+        context.runId.toLowerCase() === run.id.toLowerCase() &&
+        context.suiteId.toLowerCase() === run.suiteId.toLowerCase() &&
+        context.revisionId.toLowerCase() === run.revisionId.toLowerCase()
+      );
+    })
   );
 }

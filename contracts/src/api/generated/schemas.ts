@@ -204,6 +204,7 @@ export const apiMessageSchemas = freezeSchema({
   RunTimestamp: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunTimestamp' },
   RunNote: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunNote' },
   RunPinReceipt: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunPinReceipt' },
+  RunListContext: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunListContext' },
   PairBrowserRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/session#/$defs/PairBrowserRequest' },
   BrowserSession: { $ref: 'https://beetle-lab.dev/contracts/api/v2/session#/$defs/BrowserSession' },
   RestoredBackup: { $ref: 'https://beetle-lab.dev/contracts/api/v2/session#/$defs/RestoredBackup' },

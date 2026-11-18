@@ -235,6 +235,13 @@
             "$ref": "https://beetle-lab.dev/contracts/api/v2/run-history#/$defs/RunHistorySummary"
           },
           "maxItems": 100
+        },
+        "contexts": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunListContext"
+          }
         }
       },
       "required": [
@@ -309,6 +316,34 @@
           "additionalProperties": false
         }
       ]
+    },
+    "RunListContext": {
+      "type": "object",
+      "properties": {
+        "runId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "suiteId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "revisionId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "suiteName": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name"
+        },
+        "revisionOrdinal": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/PositiveInteger"
+        }
+      },
+      "required": [
+        "runId",
+        "suiteId",
+        "revisionId",
+        "suiteName",
+        "revisionOrdinal"
+      ],
+      "additionalProperties": false
     }
   }
 }

@@ -7,6 +7,15 @@ const id = '00000000-0000-4000-8000-000000000005';
 const requestedAt = '2026-11-09T00:00:00.000Z';
 const query = normalizeRunListQuery({ limit: 2 });
 const cursor = () => encodeRunListCursor({ scope, query, requestedAt, id });
+it('binds optional candidate metadata to every run, suite and revision in page order',async()=>{
+ const run=await fixture('valid/run.json') as Run;
+ const context={runId:run.id,suiteId:run.suiteId,revisionId:run.revisionId,suiteName:'Checkout',revisionOrdinal:1};
+ const page={scope,items:[run],summaries:[pendingRunHistorySummary(run)],contexts:[context],nextCursor:null};
+ expect(validateApi('RunPage',page).ok).toBe(true);expect(runListPageMatches(page,scope,{limit:1})).toBe(true);
+ for(const contexts of [[],[{...context,runId:scope.workspaceId}],[{...context,suiteId:scope.workspaceId}],[{...context,revisionId:scope.workspaceId}]])
+  expect(runListPageMatches({...page,contexts},scope,{limit:1})).toBe(false);
+ expect(validateApi('RunPage',{...page,contexts:[{...context,revisionOrdinal:0}]}).ok).toBe(false);
+});
 it('normalizes the default without mutating input or schema validation', () => {
   const input = { limit: 2 };
   expect(validateApi('RunListQuery', input).ok).toBe(true); expect(input).toEqual({ limit: 2 });

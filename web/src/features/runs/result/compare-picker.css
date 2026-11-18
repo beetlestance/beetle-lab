@@ -1,0 +1,16 @@
+.result-compare-action { width: 40px; padding: 0; justify-content: center; }
+.dialog.result-compare-dialog { width: 100%; max-width: 620px; }
+.result-compare-list { list-style: none; margin: 0; padding: 0; max-height: 360px; overflow-y: auto; }
+.result-compare-list a { display: grid; gap: var(--s-4); padding: var(--s-8) var(--s-12); line-height: 20px; border-radius: var(--r-md); color: var(--ink); text-decoration: none; }
+.result-compare-list a:hover,.result-compare-list a:focus-visible { background: var(--control-hover); }
+.result-compare-row { display: flex; justify-content: space-between; gap: var(--s-12); }
+.result-compare-sub,.result-compare-revision { color: var(--mute); font-size: var(--fs-sm); }
+.result-compare-row>span { min-width: 0; overflow-wrap: anywhere; }
+.result-compare-row>span>.result-compare-sub { display: block; }
+.result-compare-row .badge { flex-shrink: 0; }
+.result-compare-sub>span:last-child { flex-shrink: 0; }
+.result-previous { display: inline-block; border-radius: var(--r-pill); background: var(--bg); padding: 2px 8px; margin-right: var(--s-6); font-size: var(--fs-xs); }
+@media (max-width: 759px) {
+  .dialog.result-compare-dialog { width: 100%; }
+  .result-compare-list { max-height: 50vh; }
+}

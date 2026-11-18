@@ -32,9 +32,9 @@ Read-only and restored-backup state comes from useSessionAccess, not a session r
   become a section list (Phone / Run result).
 - DeleteRun: dialog composing retention's RetentionControls; a pinned run offers
   Unpin first.
-
 RecordedCharts owns the once-per-entry chart query, one memoized projection and
 shared cursor. Advanced per-series browsing mounts only on explicit expansion.
 Peak binds to summary source; unknowns/gaps and native marker time stay exact.
-Still pending: previous-run delta and remaining result states.
+ResultCompare reads 20 candidates/page on open; suite/all filters, verified names/
+ordinals, no per-row revision reads. Chosen candidate is the comparison baseline.
 Checks: npx vitest run web/src/features/runs/result web/src/features/runs/detail.test.tsx

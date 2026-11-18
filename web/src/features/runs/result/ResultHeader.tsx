@@ -12,6 +12,7 @@ import { useWrite } from './useWrite.js';
 import type { Write } from './useWrite.js';
 import { ResultDownloads } from './ResultDownloads.js';
 import { ResultContext } from './ResultContext.js';
+import { ResultCompare } from './ComparePicker.js';
 
 /** Header of the Run result boards: status, verdict title, summary sentence, actions. */
 export function ResultHeader({
@@ -53,12 +54,14 @@ export function ResultHeader({
         </div>
         {readOnly ? (
           <div className="result-actions">
+            <ResultCompare run={run} suiteName={suiteName} />
             <ResultDownloads run={run} ordinal={ordinal} />
             <p className="result-readonly-note">Read-only history: changes are unavailable.</p>
           </div>
         ) : (
           <div className="result-actions">
             <RunAgain run={run} />
+            <ResultCompare run={run} suiteName={suiteName} />
             <ResultDownloads run={run} ordinal={ordinal} />
             <PinControl run={run} />
             <Button variant="text" size="sm" onClick={onDelete}>
