@@ -54,6 +54,8 @@ export type ProvisionErrorCode =
   | 'unsafe_root'
   | 'conflict'
   | 'recovery_required'
+  | 'upgrade_required'
+  | 'upgrade_blocked'
   | 'cancelled'
   | 'deadline'
   | 'io'
@@ -65,5 +67,12 @@ export class ProvisionError extends Error {
   ) {
     super('Installation provisioning failed', options);
     this.name = 'ProvisionError';
+  }
+}
+/** Upgrade refusal naming each fixed blocking category; names never carry user data. */
+export class UpgradeBlockedError extends ProvisionError {
+  constructor(readonly items: readonly string[]) {
+    super('upgrade_blocked');
+    this.name = 'UpgradeBlockedError';
   }
 }

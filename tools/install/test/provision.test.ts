@@ -339,7 +339,9 @@ it.each(['engine-tag', 'agent-tag', 'daemon'] as const)('R1 refuses changed insp
     if (change === 'daemon' && input.path.endsWith('/info')) body.ID = 'different-valid-daemon';
     return result;
   } } };
-  await expect(provisionFreshInstallation(e.request, context)).rejects.toMatchObject({ code: 'recovery_required' });
+  // Moved image identities name the explicit offline upgrade; a different daemon stays recovery.
+  const code = change === 'daemon' ? 'recovery_required' : 'upgrade_required';
+  await expect(provisionFreshInstallation(e.request, context)).rejects.toMatchObject({ code });
   expect(await readFile(join(e.root, 'config/agent-token'))).toEqual(token);
 });
 

@@ -4,6 +4,8 @@ Entry index.ts captures explicit Compose values, prepares the finite empty mount
 skeleton through retained descriptors, drops socket/runtime identity and owns a
 separate bootstrap lock. Fresh initialization delegates to the offline provisioner;
 ready checking reuses shared configuration/image-pin validation without Journal IO.
+Arguments `upgrade [action]` run the explicit offline upgrade (../upgrade/) under the
+same home and gate; the home may then also hold `upgrade/`. Moved images print the command.
 
 home.ts owns canonical private directories; gate.ts serializes only configuration
 preparation, never engine authority. Partial/conflicting state is preserved. No

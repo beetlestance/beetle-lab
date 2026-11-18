@@ -57,6 +57,25 @@ Metadata credentials are removed from the copied database with SQL guards
 registered and freed pages compacted. Source metadata and permanent receipts are
 unchanged. Archives can contain sensitive test data and remain private.
 
+## Upgrade backup and rollback
+
+The offline upgrade ([upgrade](upgrade.md)) takes its own exact
+cold copy, separate from the archive below: the whole installation root, including recovery
+control, installation state, credentials and staging, plus the Compose bootstrap gate. It is
+never normalised or scrubbed, because rollback must restore the installation byte for byte.
+
+- Preconditions are the cold-backup preconditions above, except that the predecessor
+  schemas (metadata 29, Journal 26) are accepted and every blocker is named.
+- Copies refuse symbolic links, multi-link files and files that change while copied; modes
+  are preserved. The manifest lists every entry; its SHA-256 is the seal kept in the upgrade
+  receipt. Limits: 100 000 entries, 64 GiB, manifest ≤ 32 MiB.
+- Rollback runs only before activation, verifies the seal, operation and installation, holds
+  both leases, rebuilds the root beside it, compares it entry by entry with the manifest
+  (a mismatch removes the copy and is `recovery_required`) and swaps it in. An interrupted
+  swap is completed from the recorded `rolling_back` state.
+- The backup is private (0700/0600) and contains the agent credential. It stays under
+  `<home>/upgrade/<operation>/` until the operator removes it.
+
 ## Archive format and limits
 
 Manifest records are canonical NDJSON with strict relative lower-case paths,
@@ -174,4 +193,5 @@ Test: `app/test/storage/clock-reason/migration.test.ts`.
 | `tools/recovery/src/restore.ts` | `c750dcfc2872` |
 | `tools/recovery/src/backup.ts` | `9162094ddc58` |
 | `tools/recovery/src/viewer/` | `d51c59cc6bf0` |
+| `tools/install/upgrade/backup.ts` | `c53a3ffdd8bf` |
 | `app/src/adapters/outbound/sqlite/migration020.ts` | `904e1235fc9a` |
