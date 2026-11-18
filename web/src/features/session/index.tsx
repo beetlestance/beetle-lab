@@ -1,7 +1,8 @@
 import { useEffect, useId, useState, useSyncExternalStore } from 'react';
 import { App } from '../../app/App.js';
 import { sessionAccess } from '../../app/session.js';
-import { ThemeSwitch } from '../../components/ThemeSwitch.js';
+import { Button } from '../../components/Button.js';
+import { SessionScreen } from './SessionScreen.js';
 import { BrowserSessionGate } from './session.js';
 import type { SessionOptions } from './session.js';
 import './session.css';
@@ -29,20 +30,11 @@ export function SessionApp(options: SessionOptions) {
       </>
     );
   return (
-    <main className="session-page" id="main" tabIndex={-1}>
-      <section className="session-panel" aria-labelledby="session-title">
-        <header>
-          <p>Beetle Lab · Installation access</p>
-          <h1 id="session-title">{state.kind === 'unpaired' ? 'Pair this browser' : 'Installation access'}</h1>
-        </header>
-        <p role={state.kind === 'unavailable' ? 'alert' : 'status'}>{state.message}</p>
-        {state.kind === 'unpaired' && <PairForm pair={gate.pair} />}
-        {(state.kind === 'unavailable' || state.kind === 'unpaired') && (
-          <button onClick={gate.check}>Check session status</button>
-        )}
-        <ThemeSwitch />
-      </section>
-    </main>
+    <SessionScreen state={state} address={new URL(options.baseUrl).host} check={gate.reconnect}>
+      {state.kind === 'unpaired' && state.screen !== 'signed-out' && state.screen !== 'expired' && (
+        <PairForm pair={gate.pair} />
+      )}
+    </SessionScreen>
   );
 }
 function PairForm({ pair }: { pair: (token: string) => void }) {
@@ -59,7 +51,7 @@ function PairForm({ pair }: { pair: (token: string) => void }) {
         pair(submitted);
       }}
     >
-      <label htmlFor={id}>Startup token</label>
+      <label htmlFor={id}>Pairing token</label>
       <input
         id={id}
         name="bootstrapToken"
@@ -74,10 +66,10 @@ function PairForm({ pair }: { pair: (token: string) => void }) {
         aria-describedby={`${id}-help`}
         onChange={(event) => setToken(event.target.value)}
       />
-      <small id={`${id}-help`}>Enter the one-time token from the service’s startup output.</small>
-      <button className="primary" type="submit">
-        Pair browser
-      </button>
+      <Button variant="primary" type="submit">
+        Pair
+      </Button>
+      <small id={`${id}-help`}>Lost it? The token is in Beetle’s startup output.</small>
     </form>
   );
 }

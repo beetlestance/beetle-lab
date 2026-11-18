@@ -48,7 +48,9 @@ export function namespace(record: RequestRecord) {
   return readNamespace(record);
 }
 export async function pair() {
-  fireEvent.change(await screen.findByLabelText('Startup token'), { target: { value: token } });
-  fireEvent.click(screen.getByRole('button', { name: 'Pair browser' }));
+  const reconnect = screen.queryByRole('button', { name: 'Reconnect' });
+  if (reconnect) fireEvent.click(reconnect);
+  fireEvent.change(await screen.findByLabelText('Pairing token'), { target: { value: token } });
+  fireEvent.click(screen.getByRole('button', { name: 'Pair' }));
 }
 export const calls = (records: Record[], suffix: string) => records.filter((record) => record.path.endsWith(suffix));

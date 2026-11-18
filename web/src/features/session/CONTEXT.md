@@ -1,6 +1,10 @@
 # Browser session gate
 
-Public entry: SessionApp in index.tsx; the host supplies a Router, trusted baseUrl,
+Public entry: SessionApp in index.tsx; SessionScreen owns the shared Penpot card,
+with explicit signed-out, expired, refused and recovery presentation reasons.
+Reconnect reveals pairing for paired profiles; automatic profiles explicitly recheck.
+The persisted skin is applied without credentials; the footer uses the actual host.
+SessionApp: the host supplies a Router, trusted baseUrl,
 and optional trusted fetch adapter. autoOpen defaults true; paired-profile test/
 developer hosts may explicitly disable that exchange. Session is checked before App/resource queries
 mount. BrowserSessionGate owns one abort controller per session epoch, typed API

@@ -14,14 +14,17 @@ export interface SessionOptions {
   fetch?: typeof fetch;
   autoOpen?: boolean;
 }
+export type SessionScreen = 'signed-out' | 'expired' | 'address-denied' | 'pairing-failed' | 'unreachable' | 'recovery';
 export type SessionState =
   | { kind: 'checking' | 'pairing' | 'logging-out'; message: string }
-  | { kind: 'unpaired' | 'unavailable'; message: string }
+  | { kind: 'unpaired' | 'unavailable'; message: string; screen?: SessionScreen | undefined }
   | { kind: 'paired'; session: BrowserSession; client: ApiClient; transfers: InputTransferClient; generation: number };
 interface Epoch {
   generation: number;
   abort: AbortController;
 }
+const pairIntro =
+  'This installation uses pairing. Paste the one-time token Beetle printed when it started. It works once and is never shown again.';
 const restart = 'Restart the service to get a fresh startup token if the previous token was used or expired.';
 const lostPair = 'The pairing outcome is unknown. The one-time token may have been consumed.';
 const lostWrite =
@@ -97,6 +100,7 @@ export class BrowserSessionGate {
   private ended() {
     this.begin({
       kind: this.accessMode === 'automatic' ? 'unavailable' : 'unpaired',
+      screen: 'expired',
       message:
         this.accessMode === 'automatic' ? `${lostWrite} Check session status to reconnect.` : `${lostWrite} ${restart}`,
     });
@@ -126,6 +130,13 @@ export class BrowserSessionGate {
         });
     }
   }
+  reconnect = () => {
+    if (this.state.kind === 'unpaired' && (this.state.screen === 'signed-out' || this.state.screen === 'expired')) {
+      this.publish({ ...this.state, screen: undefined });
+      return;
+    }
+    this.check();
+  };
   check = () => {
     const epoch = this.begin({ kind: 'checking', message: 'Checking session…' });
     void this.readSession(epoch);
@@ -138,17 +149,11 @@ export class BrowserSessionGate {
       await this.accept(epoch, result.value);
       return;
     }
-    const unpaired = result.error.status === 401;
     if (automatic && localExchangeNeeded(result.error)) {
       await this.openLocal(epoch);
       return;
     }
-    this.publish({
-      kind: unpaired ? 'unpaired' : 'unavailable',
-      message: unpaired
-        ? `${context} Pair this browser with the token printed at service startup. ${restart}`
-        : `${context} Session status could not be verified. Check that the service is running, then check again.`,
-    });
+    this.publish(rejectedSession(result.error, context));
   }
   private async openLocal(epoch: Epoch) {
     const result = await this.client(epoch, { 'X-Beetle-Local': '1' }).openLocalBrowserSession({
@@ -161,10 +166,7 @@ export class BrowserSessionGate {
       return;
     }
     if (result.error.status === 401) {
-      this.publish({
-        kind: 'unpaired',
-        message: `Pair this browser with the token printed at service startup. ${restart}`,
-      });
+      this.publish({ kind: 'unpaired', message: pairIntro });
       return;
     }
     if (unknownOutcome(result.error)) {
@@ -173,6 +175,7 @@ export class BrowserSessionGate {
     }
     this.publish({
       kind: 'unavailable',
+      screen: failureScreen(result.error),
       message: 'Installation access could not open. Check that the service is running, then check session status.',
     });
   }
@@ -185,6 +188,7 @@ export class BrowserSessionGate {
     }
     this.publish({
       kind: 'unavailable',
+      screen: failureScreen(result.error),
       message: 'Installation access could not be confirmed. Check session status to reconnect.',
     });
   }
@@ -212,6 +216,7 @@ export class BrowserSessionGate {
     }
     this.publish({
       kind: 'unpaired',
+      screen: 'pairing-failed',
       message: `Pairing was not accepted. Check the startup token and service status. ${restart}`,
     });
   }
@@ -235,6 +240,7 @@ export class BrowserSessionGate {
     if (result.ok || result.error.status === 401) {
       this.publish({
         kind: this.accessMode === 'automatic' ? 'unavailable' : 'unpaired',
+        screen: 'signed-out',
         message: `This browser is signed out. Unacknowledged changes may have committed; their outcome is unknown. ${this.accessMode === 'automatic' ? 'Check session status to reopen Beetle Lab.' : restart}`,
       });
       return;
@@ -248,4 +254,22 @@ export class BrowserSessionGate {
 
 function localExchangeNeeded(error: ApiClientFailure): boolean {
   return error.status === 401 || error.protocol?.code === 'storage_unavailable';
+}
+
+/** Presentation only: refusal is distinct from an unreachable service; no retry authority changes. */
+function failureScreen(error: ApiClientFailure): SessionScreen {
+  return error.status === 403 || error.protocol?.code === 'forbidden' ? 'address-denied' : 'unreachable';
+}
+
+function rejectedSession(error: ApiClientFailure, context: string): SessionState {
+  const unpaired = error.status === 401;
+  return {
+    kind: unpaired ? 'unpaired' : 'unavailable',
+    screen: unpaired ? (context ? 'recovery' : undefined) : failureScreen(error),
+    message: unpaired
+      ? context
+        ? `${context} Pair this browser with the token printed at service startup. ${restart}`
+        : pairIntro
+      : `${context} Session status could not be verified. Check that the service is running, then check again.`,
+  };
 }

@@ -13,14 +13,14 @@ it('opens the administrator automatically after an unauthenticated read, without
     expect(opened).toBe(true); return namespace(record);
   }, '/', true);
   await screen.findByRole('table', {name: 'Organizations'});
-  expect(screen.queryByLabelText('Startup token')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Pairing token')).not.toBeInTheDocument();
   expect(calls(api.records, '/auth/pair')).toHaveLength(0); const request = calls(api.records, '/auth/local')[0]!;
   expect(request.method).toBe('POST'); expect(request.body).toEqual({}); expect(request.headers.get('X-Beetle-Local')).toBe('1');
   expect(request.credentials).toBe('same-origin'); expect(JSON.stringify({...localStorage})).not.toContain(session.csrfToken);
 });
 it('falls back to manual pairing only when the automatic exchange explicitly returns401', async () => {
   const api = browser(record => record.path.includes('/auth/') ? unpaired() : namespace(record), '/', true);
-  await screen.findByLabelText('Startup token'); expect(calls(api.records, '/auth/local')).toHaveLength(1);
+  await screen.findByLabelText('Pairing token'); expect(calls(api.records, '/auth/local')).toHaveLength(1);
   expect(api.records.filter(record => !record.path.includes('/auth/'))).toHaveLength(0);
 });
 it('recovers a lost automatic exchange reply from the cookie once, without resending the grant', async () => {
@@ -43,8 +43,8 @@ it('keeps logout signed out until explicit reconnect and never shows automatic u
   }, '/', true);
   await screen.findByRole('table', {name: 'Organizations'}); fireEvent.click(screen.getByRole('button', {name: 'Sign out'}));
   await screen.findByText(/This browser is signed out/); expect(calls(api.records, '/auth/local')).toHaveLength(0);
-  expect(screen.queryByLabelText('Startup token')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', {name: 'Check session status'}));
+  expect(screen.queryByLabelText('Pairing token')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', {name: 'Reconnect'}));
   await screen.findByRole('table', {name: 'Organizations'}); await waitFor(() => expect(calls(api.records, '/auth/local')).toHaveLength(1));
 });
 it('reconciles a pending credential write on explicit retry after a503 without replaying resource mutations', async () => {
@@ -58,7 +58,7 @@ it('reconciles a pending credential write on explicit retry after a503 without r
     return namespace(record);
   }, '/', true);
   await screen.findByText(/Installation access could not be confirmed/); expect(grants).toBe(1);
-  expect(screen.queryByLabelText('Startup token')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Pairing token')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', {name: 'Check session status'}));
   await screen.findByRole('table', {name: 'Organizations'}); expect(grants).toBe(2);
   expect(api.records.filter(record => record.method === 'POST' && !record.path.includes('/auth/'))).toHaveLength(0);

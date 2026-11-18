@@ -13,8 +13,8 @@ function initialSkin(): Skin {
   return 'darkroom';
 }
 
-/** Darkroom/Scarab skin switch. The skin is the only persisted browser preference. */
-export function ThemeSwitch({ className }: { className?: string | undefined }) {
+/** Apply the persisted visual preference even on screens without a theme control. */
+export function useSkin(): [Skin, (skin: Skin) => void] {
   const [skin, setSkin] = useState<Skin>(initialSkin);
   useEffect(() => {
     document.documentElement.dataset.theme = skin;
@@ -24,6 +24,12 @@ export function ThemeSwitch({ className }: { className?: string | undefined }) {
       /* The skin remains usable in memory. */
     }
   }, [skin]);
+  return [skin, setSkin];
+}
+
+/** Darkroom/Scarab skin switch. The skin is the only persisted browser preference. */
+export function ThemeSwitch({ className }: { className?: string | undefined }) {
+  const [skin, setSkin] = useSkin();
   return (
     <SegmentedFilter
       label="Theme"

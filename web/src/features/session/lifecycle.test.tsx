@@ -29,7 +29,8 @@ describe('session lifetime and uncertain writes', () => {
     expect(request?.body).toEqual({});
     expect(screen.queryByRole('button', { name: 'Create organization' })).not.toBeInTheDocument();
     await act(async () => logout.resolve(status === 401 ? unpaired() : json({ loggedOut: true })));
-    expect(await screen.findByLabelText('Startup token')).toHaveValue('');
+    expect(await screen.findByRole('heading', { name: 'You are signed out' })).toBeVisible();
+    expect(screen.queryByLabelText('Pairing token')).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('signed out');
     await act(async () => resources.resolve(json({ scope: { kind: 'installation' }, items: [org()], nextCursor: null })));
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
@@ -76,7 +77,8 @@ describe('session lifetime and uncertain writes', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(api.records.filter(record => record.method === 'POST')).toHaveLength(1));
     await act(async () => write.resolve(unpaired()));
-    await screen.findByLabelText('Startup token');
+    await screen.findByRole('heading', { name: 'Your session ended' });
+    expect(screen.queryByLabelText('Pairing token')).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('may have committed; its outcome is unknown');
     expect(api.records.filter(record => !record.path.includes('/auth/')).every(record => record.signal?.aborted)).toBe(true);
     expect(screen.queryByLabelText('Organization name')).not.toBeInTheDocument();
@@ -109,7 +111,7 @@ describe('session lifetime and uncertain writes', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(api.records.some(record => record.method === 'POST')).toBe(true));
     await act(async () => rejection.resolve(unpaired()));
-    await screen.findByLabelText('Startup token');
+    await screen.findByRole('heading', { name: 'Your session ended' });
     const old = api.records.find(record => record.path.includes('/workspaces?'));
     expect(old?.signal?.aborted).toBe(true);
     await pair();
@@ -144,7 +146,7 @@ describe('session lifetime and uncertain writes', () => {
     api.unmount();
     expect(retained?.signal?.aborted).toBe(true);
     const fresh = browser(() => unpaired());
-    await screen.findByLabelText('Startup token');
+    await screen.findByLabelText('Pairing token');
     await act(async () => pending.resolve(json(session)));
     expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
     expect(fresh.records).toHaveLength(1);
