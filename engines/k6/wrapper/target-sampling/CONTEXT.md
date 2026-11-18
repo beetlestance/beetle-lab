@@ -13,6 +13,8 @@ Reads are capped at 64 KiB, retention at 256 observations and 1 MiB serialized.
 Abort/timeout cancel the original request and reader; lifecycle completion waits
 for their settlement, even if the injected transport delays abort completion.
 Reports/samples/values are frozen. No process result or artifact ownership here.
+Optional per-metric units are validated, detached and frozen before sampling;
+their encoded envelope bytes count against the same 1 MiB report ceiling.
 An optional trusted record callback runs serially before retaining each sample.
 There is no callback queue; start, finish and close await the actual original.
 A failed recording stops sampling and propagates; abort does not detach its work.

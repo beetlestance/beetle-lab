@@ -36,6 +36,7 @@ import type { schema as SourceChunkSchema } from './source-chunk.inference.js';
 import type { schema as SourceEnvelopeSchema } from './source-envelope.inference.js';
 import type { schema as StagedAttemptSchema } from './staged-attempt.inference.js';
 import type { schema as TargetRuntimeReportSchema } from './target-runtime-report.inference.js';
+import type { schema as TargetRuntimeUnitsSchema } from './target-runtime-units.inference.js';
 export type Uuid = FromSchema<typeof CommonSchema.$defs.uuid, { references: [...typeof schemas] }>;
 export type Timestamp = FromSchema<typeof CommonSchema.$defs.timestamp, { references: [...typeof schemas] }>;
 export type Sha256 = FromSchema<typeof CommonSchema.$defs.sha256, { references: [...typeof schemas] }>;
@@ -86,6 +87,7 @@ export type SourceChunk = FromSchema<typeof SourceChunkSchema, { references: [..
 export type SourceEnvelope = FromSchema<typeof SourceEnvelopeSchema, { references: [...typeof schemas] }>;
 export type StagedAttempt = FromSchema<typeof StagedAttemptSchema, { references: [...typeof schemas] }>;
 export type TargetRuntimeReport = FromSchema<typeof TargetRuntimeReportSchema, { references: [...typeof schemas] }>;
+export type TargetRuntimeUnits = FromSchema<typeof TargetRuntimeUnitsSchema, { references: [...typeof schemas] }>;
 export interface ProtocolTypes {
   AckReceipt: AckReceipt;
   Ack: Ack;
@@ -121,4 +123,5 @@ export interface ProtocolTypes {
   SourceEnvelope: SourceEnvelope;
   StagedAttempt: StagedAttempt;
   TargetRuntimeReport: TargetRuntimeReport;
+  TargetRuntimeUnits: TargetRuntimeUnits;
 }

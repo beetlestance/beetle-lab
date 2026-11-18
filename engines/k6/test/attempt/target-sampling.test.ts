@@ -12,7 +12,8 @@ beforeEach(resetNative);
 afterEach(async () => { vi.restoreAllMocks(); await Promise.all(cleanups.splice(0).map(clean => clean())); });
 async function setup() {
   const f = await fixture();cleanups.push(f.cleanup);
-  (f.offer.config as SuiteConfig).targetSampling = { path: '/stats', intervalMs: 1000, timeoutMs: 100, cooldownMs: 0 };
+  (f.offer.config as SuiteConfig).targetSampling = { path: '/stats', intervalMs: 1000, timeoutMs: 100, cooldownMs: 0,
+    units:{rss:'bytes',cpuPercent:'percent','gc.count':'count','gc.totalMs':'milliseconds','gc.maxMs':'milliseconds','gc.avgMs':'milliseconds'} };
   await f.save();return f;
 }
 it('publishes target observations as a separately scoped, hash-bound artifact under admitted output', async () => {
@@ -23,6 +24,7 @@ it('publishes target observations as a separately scoped, hash-bound artifact un
   expect(createHash('sha256').update(bytes).digest('hex')).toBe(artifact!.sha256);
   const report = JSON.parse(bytes.toString()) as {scope: string; samples: {phase: string; values: {rss: number; heapAlloc: null}}[]};
   expect(report.scope).toBe('target-reported');expect(report.samples[0]).toMatchObject({ phase: 'before', values: { rss: 1234, heapAlloc: null } });
+  expect(report).toMatchObject({units:{rss:'bytes','gc.totalMs':'milliseconds'}});
   expect(report.samples[0]).toMatchObject({values:{'gc.totalMs':7,'gc.maxMs':4,'gc.avgMs':3.5}});
   const performance = result.result!.artifacts.find(a => a.kind === 'performance-report')!;
   const text = await readFile(join(f.outputRoot, performance.relativePath), 'utf8');

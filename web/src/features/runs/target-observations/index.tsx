@@ -65,6 +65,7 @@ function Report({ report }: { report: TargetRuntimeReport }) {
           </option>
         ))}
       </select>
+      <p>Source unit: {report.units?.[metric] ?? 'not declared; readings are raw'}.</p>
       <p>
         {summary.known} of {report.samples.length} observations contain this metric. Recorded missed count:{' '}
         {report.missed}.

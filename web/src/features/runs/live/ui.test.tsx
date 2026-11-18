@@ -36,6 +36,15 @@ async function running(current: Run = recent()) {
   await screen.findByRole('heading', { name: 'Holding 1,200 a second' });
   return { read, fixture, view };
 }
+it('labels raw target values with their pinned declaration without inventing percent',async()=>{
+ const current=recent();vi.spyOn(LiveMetricReads.prototype,'read').mockResolvedValue(liveFrame(current,1));
+ const saved=revision();
+ const fixture=routesFor(()=>current,request=>request.path.includes('/revisions/')?json({...saved,config:{...saved.config,
+  targetSampling:{path:'/metrics',intervalMs:1000,timeoutMs:100,cooldownMs:0,units:{cpuPercent:'ratio',systemCpuPercent:'percent'}}}}):undefined);
+ mountLive(fixture.client,{run:current});
+ expect(await screen.findByRole('img',{name:/CPU: process \(ratio\)/})).toBeVisible();
+ expect(screen.getByRole('img',{name:/CPU: process \(ratio\)/})).toHaveAccessibleName(/system \(%\)/);
+});
 
 it('shows the running board: headline, threshold sentence, stage progress, figures and endpoints', async () => {
   await running();
@@ -59,7 +68,7 @@ it('shows the running board: headline, threshold sentence, stage progress, figur
   expect(screen.getByText('Live windows received since this page opened')).toBeVisible();
   expect(screen.queryByText('Since the run started')).toBeNull();
   expect(screen.getByRole('heading', { name: 'Target runtime' })).toBeVisible();
-  expect(screen.getByRole('img', { name: /Heap and RSS: heap 399, RSS 570/ })).toBeVisible();
+  expect(screen.getByRole('img', { name: /Heap and RSS: heap \(raw\) 399, RSS \(raw\) 570/ })).toBeVisible();
   // No report or metrics downloads while live.
   expect(screen.getByRole('button', { name: 'Download' })).toBeVisible();
   expect(screen.queryByRole('button', { name: /download (report|metrics)/i })).not.toBeInTheDocument();

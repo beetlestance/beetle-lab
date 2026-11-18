@@ -39,6 +39,14 @@ failure blocks execution/publication and preserves its original fixed cause
 across execution callbacks; a failed close blocks sealing. Shutdown first drains
 the sampler and archive initialization, then closes the archive's retained file.
 
+`targetSampling.units` optionally declares compatible units for each fixed metric.
+Config and sealed report reference one shared schema. Sampling freezes a detached
+declaration before baseline; its bytes remain inside the same 1 MiB report cap.
+Active samples stay raw; the verified pinned revision supplies their unit context.
+Only declared units convert for presentation. Older reports stay explicitly raw;
+missing units never imply bytes, percent or milliseconds. Incompatible dimensions
+are rejected; non-finite converted values stay unknown. No outcome changes.
+
 ## Prefix transport
 
 `LiveMetricArchivePrefix.target` optionally carries the target archive's scope,
@@ -61,8 +69,10 @@ approved actor, native custody and [active-history verification](active-history.
 | `engines/k6/wrapper/attempt/attempt.ts` | `2ab9a3755951` |
 | `engines/k6/wrapper/attempt/target.ts` | `36dc1ecb06b8` |
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
-| `engines/k6/wrapper/target-sampling/` | `93144f55e151` |
+| `engines/k6/wrapper/target-sampling/` | `c601c5e4dfb5` |
 | `engines/k6/wrapper/target-archive/` | `7bc3a5dba7c2` |
+| `contracts/runner/v1/target-runtime-units.schema.json` | `05a6a5565ff1` |
+| `contracts/src/target-runtime/` | `537749bd717f` |
 | `engines/k6/wrapper/artifact-custody/append-files.ts` | `0a83d0325b03` |
 | `contracts/api/v2/live-history-prefix.schema.json` | `995b549a49d8` |
 | `contracts/api/v2/live-metrics.schema.json` | `7595a5a70b98` |

@@ -1,0 +1,6 @@
+{
+  "rss": "bytes",
+  "cpuPercent": "ratio",
+  "eventLoopDelay.p99": "nanoseconds",
+  "gc.count": "count"
+}

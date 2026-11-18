@@ -1,7 +1,11 @@
-import { captureTargetRuntimeReport, observationSummary } from '@beetle/contracts/target-runtime';
+import {
+  captureTargetRuntimeReport,
+  observationSummary,
+  targetUnitProjection,
+  projectTargetReading,
+} from '@beetle/contracts/target-runtime';
 import type { TargetMetricName, TargetRuntimeReport } from '@beetle/contracts/target-runtime';
 import type { ReportWriter } from './writer.js';
-const MiB = 1048576;
 const memoryRows: readonly [TargetMetricName, string][] = [
   ['rss', 'RSS'],
   ['heapAlloc', 'Allocated heap'],
@@ -20,23 +24,19 @@ const memoryRows: readonly [TargetMetricName, string][] = [
   ['cppHeap.allocated_size', 'C++ heap allocated'],
   ['cppHeap.used_size', 'C++ heap used'],
 ];
-function number(value: number | null, divisor = 1): string {
-  return value === null || !Number.isFinite(value) ? 'unknown' : (value / divisor).toFixed(2);
+function number(value: number | null): string {
+  return value === null || !Number.isFinite(value) ? 'unknown' : value.toFixed(2);
 }
 function change(before: number | null, after: number | null, ordered: boolean): number | null {
   return !ordered || before === null || after === null ? null : after - before;
 }
-function row(
-  writer: ReportWriter,
-  report: TargetRuntimeReport,
-  metric: TargetMetricName,
-  label: string,
-  divisor = 1,
-): void {
+function row(writer: ReportWriter, report: TargetRuntimeReport, metric: TargetMetricName, label: string): void {
   const s = observationSummary(report, metric);
   const ordered = s.clockOrdered && s.phaseOrdered && !s.resetObserved;
+  const projection = targetUnitProjection(report.units, metric);
+  const display = (value: number | null) => number(projectTargetReading(value, projection));
   writer.line(
-    `${label}: baseline=${number(s.baseline, divisor)}; lastDuringLoad=${number(s.loadFinal, divisor)}; firstPostLoad=${number(s.postLoad, divisor)}; afterCooldown=${number(s.final, divisor)}; peakDuringLoad=${number(s.peak, divisor)}; changeAfterCooldown=${number(change(s.baseline, s.final, ordered), divisor)}`,
+    `${label} (${projection.label}): baseline=${display(s.baseline)}; lastDuringLoad=${display(s.loadFinal)}; firstPostLoad=${display(s.postLoad)}; afterCooldown=${display(s.final)}; peakDuringLoad=${display(s.peak)}; changeAfterCooldown=${display(change(s.baseline, s.final, ordered))}`,
   );
 }
 function counterDelta(report: TargetRuntimeReport, metric: 'gc.count' | 'gc.totalMs', ordered: boolean): number | null {
@@ -48,22 +48,33 @@ function gc(writer: ReportWriter, report: TargetRuntimeReport, ordered: boolean)
   writer.line('[Target garbage collection]');
   const deltaCount = counterDelta(report, 'gc.count', ordered);
   const deltaTime = counterDelta(report, 'gc.totalMs', ordered);
+  const projection = targetUnitProjection(report.units, 'gc.totalMs');
   writer.line(`Observed baseline-to-post-load GC count change: ${number(deltaCount)}`);
-  writer.line(`Observed baseline-to-post-load GC time change (ms): ${number(deltaTime)}`);
-  const average = deltaCount !== null && deltaCount > 0 && deltaTime !== null ? deltaTime / deltaCount : null;
-  writer.line(`Mean pause from those counter changes (ms): ${number(average)}`);
+  writer.line(
+    `Observed baseline-to-post-load GC time change (${projection.label}): ${number(projectTargetReading(deltaTime, projection))}`,
+  );
+  const average = meanPause(report, deltaCount, deltaTime);
+  writer.line(
+    `Mean pause from those counter changes (${projection.label}): ${number(projectTargetReading(average, projection))}`,
+  );
   row(writer, report, 'gc.count', 'Target cumulative GC count');
-  row(writer, report, 'gc.totalMs', 'Target cumulative GC time (ms)');
-  row(writer, report, 'gc.avgMs', 'Target reported cumulative average pause (ms)');
-  row(writer, report, 'gc.maxMs', 'Target reported cumulative maximum pause (ms)');
-  row(writer, report, 'gc.duration', 'Legacy gc.duration (target units; no millisecond conversion inferred)');
+  row(writer, report, 'gc.totalMs', 'Target cumulative GC time');
+  row(writer, report, 'gc.avgMs', 'Target reported cumulative average pause');
+  row(writer, report, 'gc.maxMs', 'Target reported cumulative maximum pause');
+  row(writer, report, 'gc.duration', 'Legacy gc.duration');
   writer.line(
     'Counter changes assume no unobserved reset. Cumulative average/max readings are not per-run pause statistics.',
   );
 }
+function meanPause(report: TargetRuntimeReport, count: number | null, time: number | null): number | null {
+  if (report.units?.['gc.count'] !== 'count' || count === null || count <= 0 || time === null) return null;
+  const value = time / count;
+  return time > 0 && value === 0 ? null : value;
+}
 function interpretation(writer: ReportWriter, report: TargetRuntimeReport): void {
   writer.line('[Target observations: interpretation]');
   const rss = observationSummary(report, 'rss');
+  const projection = targetUnitProjection(report.units, 'rss');
   if (rss.resetObserved)
     writer.line(
       'Target uptime decreased: a restart/reset was observed; memory and cumulative-counter comparisons are unknown.',
@@ -73,7 +84,7 @@ function interpretation(writer: ReportWriter, report: TargetRuntimeReport): void
   else if (rss.delta === null) writer.line('A final post-load RSS comparison is unavailable.');
   else if (rss.delta > 0)
     writer.line(
-      `RSS remains ${number(rss.delta, MiB)} MiB above baseline in the final observation; investigate retained memory over repeated runs.`,
+      `RSS remains ${number(projectTargetReading(rss.delta, projection))} ${projection.label} above baseline in the final observation; investigate retained memory over repeated runs.`,
     );
   else writer.line('Final observed RSS is at or below baseline.');
   writer.line(
@@ -89,12 +100,15 @@ export function appendTargetReport(writer: ReportWriter, input: TargetRuntimeRep
   const report = captureTargetRuntimeReport(input);
   const chronology = observationSummary(report, 'rss');
   targetHeader(writer, report, chronology);
-  writer.line('[Target memory (MiB)]');
-  for (const [metric, label] of memoryRows) row(writer, report, metric, label, MiB);
-  writer.line('[Target CPU (%)]');
+  writer.line('[Target memory]');
+  for (const [metric, label] of memoryRows) row(writer, report, metric, label);
+  writer.line('[Target CPU]');
   for (const metric of ['cpuPercent', 'systemCpuPercent'] as const) {
     row(writer, report, metric, metric);
-    writer.line(`${metric} sampled during-load mean: ${number(observationSummary(report, metric).mean)}`);
+    const projection = targetUnitProjection(report.units, metric);
+    writer.line(
+      `${metric} sampled during-load mean (${projection.label}): ${number(projectTargetReading(observationSummary(report, metric).mean, projection))}`,
+    );
   }
   writer.line('[Target runtime and event loop]');
   for (const metric of [
@@ -112,7 +126,7 @@ export function appendTargetReport(writer: ReportWriter, input: TargetRuntimeRep
     'eventLoopDelay.p99',
     'eventLoopDelay.max',
   ] as const)
-    row(writer, report, metric, `${metric} (target units)`);
+    row(writer, report, metric, metric);
   gc(writer, report, chronology.clockOrdered && chronology.phaseOrdered);
   interpretation(writer, report);
 }

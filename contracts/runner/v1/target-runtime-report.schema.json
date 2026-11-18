@@ -27,6 +27,9 @@
       "type": "integer",
       "minimum": 0,
       "maximum": 257
+    },
+    "units": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-units"
     }
   },
   "required": [

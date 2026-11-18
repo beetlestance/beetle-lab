@@ -180,6 +180,9 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 60000
+        },
+        "units": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-units"
         }
       }
     }

@@ -6,13 +6,14 @@ import requests from '../../engines/k6/v1/requests.schema.json' with { type: 'js
 import scenarios from '../../engines/k6/v1/scenarios.schema.json' with { type: 'json' };
 import suiteCommon from '../../engines/k6/v1/suite-common.schema.json' with { type: 'json' };
 import suite from '../../engines/k6/v1/suite.schema.json' with { type: 'json' };
+import targetUnits from '../../runner/v1/target-runtime-units.schema.json' with { type: 'json' };
 import { createConfigSchema } from './index.js';
 import type { ConfigSchema } from './index.js';
 import type { ResultDigest } from '../result-seal.js';
 import { freezeSchema } from '../freeze.js';
 export const k6ConfigReference = freezeSchema({
   schemaId: suite.$id,
-  schemas: [assertions, common, datasets, loadPlan, requests, scenarios, suiteCommon, suite],
+  schemas: [assertions, common, datasets, loadPlan, requests, scenarios, suiteCommon, suite, targetUnits],
 } as const);
 
 /** Same language-neutral sources used by engine generation; no engine implementation import. */

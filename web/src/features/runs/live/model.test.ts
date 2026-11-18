@@ -5,6 +5,13 @@ import { headlineOf, phaseOf, thresholdSentence } from './copy.js';
 import { appendFrame, emptyHistory, HISTORY_LIMIT } from './history.js';
 import { clock, ms, percent } from './format.js';
 import { config, liveFrame, liveRun, startedAt } from './fixtures.js';
+it('captures declared target units from the verified revision and leaves missing or invalid declarations raw',()=>{
+ const units={rss:'bytes'};
+ const plan=readPlan({targetSampling:{intervalMs:1000,units}});units.rss='megabytes';
+ expect(plan.targetUnits?.rss).toBe('bytes');expect(Object.isFrozen(plan.targetUnits)).toBe(true);
+ expect(readPlan({targetSampling:{units:{rss:'milliseconds'}}}).targetUnits).toBeUndefined();
+ expect(readPlan({}).targetUnits).toBeUndefined();
+});
 
 it('reads stages, drain, requests and thresholds from the saved config', () => {
   const plan = readPlan(config);

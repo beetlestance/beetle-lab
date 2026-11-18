@@ -1,4 +1,5 @@
 import { observe } from './observation.js';
+import { captureTargetRuntimeUnits } from '@beetle/contracts/target-runtime';
 import type {
   TargetSamplingOptions,
   TargetSamplingOwner,
@@ -14,6 +15,8 @@ export class Sampler implements TargetSamplingOwner {
   private limited = false;
   private missed = 0;
   private retainedBytes = 0;
+  private readonly units: TargetSamplingReport['units'];
+  private readonly envelopeBytes: number;
   private loop: Promise<void> = Promise.resolve();
   private finishing?: Promise<TargetSamplingReport>;
   private closing?: Promise<void>;
@@ -24,6 +27,9 @@ export class Sampler implements TargetSamplingOwner {
   private readonly abort = () => this.stop();
 
   constructor(private readonly options: TargetSamplingOptions) {
+    this.units = options.config.units === undefined ? undefined : captureTargetRuntimeUnits(options.config.units);
+    this.envelopeBytes =
+      1024 + (this.units ? new TextEncoder().encode(JSON.stringify({ units: this.units })).byteLength : 0);
     options.signal.addEventListener('abort', this.abort, { once: true });
     if (options.signal.aborted) this.stop();
   }
@@ -67,6 +73,7 @@ export class Sampler implements TargetSamplingOwner {
       format: 'beetle-target-runtime',
       version: 1,
       scope: 'target-reported',
+      ...(this.units === undefined ? {} : { units: this.units }),
       samples: Object.freeze([...this.samples]),
       limited: this.limited,
       missed: this.missed,
@@ -103,7 +110,7 @@ export class Sampler implements TargetSamplingOwner {
     const sample = await observe(this.options, this.phase, this.controller.signal);
     // Reserve the fixed envelope and worst-case counter before retaining each bounded sample.
     const bytes = new TextEncoder().encode(JSON.stringify(sample)).byteLength + 1;
-    if (this.samples.length >= 256 || this.retainedBytes + bytes + 1024 > 1048576) {
+    if (this.samples.length >= 256 || this.retainedBytes + bytes + this.envelopeBytes > 1048576) {
       this.limited = true;
       this.missed += 1;
       this.stop();

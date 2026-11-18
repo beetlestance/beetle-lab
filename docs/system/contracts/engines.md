@@ -178,7 +178,7 @@ evidence incomplete. Details: [decision 011](../../decisions/011-k6-outcome-evid
 | Code | Reviewed |
 | --- | --- |
 | `contracts/runner/v1/engine-manifest.schema.json` | `a3b34c6e502d` |
-| `contracts/src/engine-config/` | `70db6abc8a7e` |
+| `contracts/src/engine-config/` | `55cda70ab09e` |
 | `agent/src/catalog/` | `5a0a12cb7eb9` |
 | `agent/src/staging/prepare.ts` | `76d5b154de34` |
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |

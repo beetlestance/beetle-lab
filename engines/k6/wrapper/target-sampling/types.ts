@@ -1,8 +1,10 @@
+import type { TargetRuntimeReport, TargetRuntimeUnits } from '@beetle/contracts/target-runtime';
 export interface TargetSamplingConfig {
   readonly path: string;
   readonly intervalMs: number;
   readonly timeoutMs: number;
   readonly cooldownMs: number;
+  readonly units?: TargetRuntimeUnits;
 }
 export { targetMetricNames } from '@beetle/contracts/target-runtime';
 export type {
@@ -12,7 +14,6 @@ export type {
   TargetRuntimeSample as TargetSamplingSample,
   TargetRuntimeReport as TargetSamplingReport,
 } from '@beetle/contracts/target-runtime';
-import type { TargetRuntimeReport } from '@beetle/contracts/target-runtime';
 export interface TargetSamplingOptions {
   readonly target: string;
   readonly config: TargetSamplingConfig;

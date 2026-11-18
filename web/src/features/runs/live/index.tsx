@@ -308,7 +308,13 @@ function Board(props: {
         <Endpoints figures={props.figures} />
       </div>
       <MetricsGrid history={props.history} domain={domain} hover={hover} />
-      <TargetRuntime history={props.history} domain={domain} origin={props.plan.targetOrigin} hover={hover} />
+      <TargetRuntime
+        history={props.history}
+        domain={domain}
+        origin={props.plan.targetOrigin}
+        hover={hover}
+        units={props.plan.targetUnits}
+      />
     </div>
   );
 }

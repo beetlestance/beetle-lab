@@ -15,7 +15,8 @@ Summary keeps actual zero, explicit missing values, observed during peak and LAS
 after reading. Missing final data never falls back to an earlier known sample.
 Contradictory time/phase chronology suppresses comparison and growth hints.
 Positive memory-only point growth is a labelled follow-up signal, not a leak verdict.
-Raw source names/units/table remain visible. The chart owns finite coordinates and
+Raw source names/declared unit labels/table remain visible; undeclared units are explicit.
+The chart owns finite coordinates and
 gaps; neither view relabels target readings as engine resource measurements.
 There is no live target feed here; source is the verified published artifact.
 Checks: focused target-observations tests, affected result tests, web types/lint.

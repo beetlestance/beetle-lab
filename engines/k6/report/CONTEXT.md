@@ -3,6 +3,8 @@ Public renderPerformanceReports consumes mapped k6 result body and admitted nume
 snapshot; output is text/CSV byte arrays, each bounded by explicit1..256 KiB cap.
 Optional owned target observations add memory/CPU/GC checkpoints and advisory
 interpretation to text. Shared contract summaries own missing/reset/chronology math.
+Only declared units convert through the shared target-unit projection; old reports
+stay raw and explicitly unlabelled. No memory-byte or GC-millisecond assumption.
 CSV remains the numeric engine/workload series export; target JSON retains readings.
 No I/O, compiler, outcome inference, target sampling or secret/config resolution.
 Uses shared metric capture/projection and histogram percentile bounds. At most 4600

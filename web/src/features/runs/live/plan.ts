@@ -3,6 +3,8 @@
  * pieces the live view draws: stage plan, request labels and thresholds. Every
  * field is checked; anything unreadable becomes null and the view hides it.
  */
+import { captureTargetRuntimeUnits } from '@beetle/contracts/target-runtime';
+import type { TargetRuntimeUnits } from '@beetle/contracts/target-runtime';
 export interface PlanStage {
   readonly label: string;
   readonly startMs: number;
@@ -34,6 +36,7 @@ export interface RunPlan {
   readonly rules: readonly PlanRule[];
   readonly targetOrigin: string | null;
   readonly samplingIntervalMs: number | null;
+  readonly targetUnits?: TargetRuntimeUnits;
 }
 
 type Data = Record<string, unknown>;
@@ -233,7 +236,17 @@ export function readPlan(config: unknown): RunPlan {
     rules: rules(data),
     targetOrigin: origin(data.target),
     samplingIntervalMs: sampling,
+    ...unitDeclarations(data.targetSampling),
   };
+}
+
+function unitDeclarations(sampling: unknown): Pick<RunPlan, 'targetUnits'> {
+  if (!record(sampling) || sampling.units === undefined) return {};
+  try {
+    return { targetUnits: captureTargetRuntimeUnits(sampling.units) };
+  } catch {
+    return {};
+  }
 }
 
 /** The stage containing `elapsedMs`, or null outside the plan. */

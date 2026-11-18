@@ -13,6 +13,8 @@ import { clock, ms, reading, span, whole } from './format.js';
 type Domain = readonly [number, number];
 export type { ChartHover } from '../charts/types.js';
 import type { ChartHover } from '../charts/types.js';
+import type { TargetRuntimeUnits } from '@beetle/contracts/target-runtime';
+import { targetUnitProjection } from '@beetle/contracts/target-runtime';
 
 const lastT = (history: LiveHistory) => Math.max(history.points.at(-1)?.t ?? 0, history.target.at(-1)?.t ?? 0);
 const firstT = (history: LiveHistory) =>
@@ -158,13 +160,17 @@ interface TargetChart {
 }
 
 /** Heap and RSS, CPU, event-loop delay, handles (or goroutines); charts without any reading are left out. */
-function targetCharts(points: readonly TargetPoint[]): TargetChart[] {
+function targetCharts(points: readonly TargetPoint[], units: TargetRuntimeUnits | undefined): TargetChart[] {
   const heap: TargetKey = has(points, ['usedHeapSize']) ? 'usedHeapSize' : 'heapAlloc';
   const go = !has(points, ['activeHandles']);
   const handles: TargetKey = go ? 'goroutines' : 'activeHandles';
+  const unitLabel = (key: TargetKey) => {
+    const unit = units?.[key];
+    return unit === undefined ? 'raw' : targetUnitProjection(units, key, unit).label;
+  };
   const line = (key: TargetKey, label: string, tone: ChartSeries['tone'], area = false): ChartSeries => ({
     key,
-    label,
+    label: `${label} (${unitLabel(key)})`,
     tone,
     area,
     values: points.map((p) => value(p, key)),
@@ -174,7 +180,7 @@ function targetCharts(points: readonly TargetPoint[]): TargetChart[] {
     {
       title: 'CPU',
       keys: ['cpuPercent', 'systemCpuPercent'],
-      series: [line('cpuPercent', 'process %', 'amber'), line('systemCpuPercent', 'system %', 'mute')],
+      series: [line('cpuPercent', 'process', 'amber'), line('systemCpuPercent', 'system', 'mute')],
     },
     {
       title: 'Event-loop delay',
@@ -196,7 +202,7 @@ function targetCharts(points: readonly TargetPoint[]): TargetChart[] {
 
 function TargetNote({ history, origin }: { history: LiveHistory; origin: string | null }) {
   const unavailable = history.target.filter((point) => point.status === 'unavailable').length;
-  const source = `Sampled${origin ? ` from ${origin}` : ''}${history.intervalMs ? ` every ${span(history.intervalMs)}` : ''}. Values as the target reports them.`;
+  const source = `Sampled${origin ? ` from ${origin}` : ''}${history.intervalMs ? ` every ${span(history.intervalMs)}` : ''}. Values as the target reports them; raw means units were not declared.`;
   const coverage = history.targetCoverage
     ? `${history.targetCoverage.samples} recorded observations, plus live readings.`
     : 'Showing observations received since this page opened.';
@@ -218,15 +224,17 @@ export function TargetRuntime({
   domain,
   origin,
   hover,
+  units,
 }: {
   history: LiveHistory;
   domain: Domain;
   origin: string | null;
   hover: ChartHover;
+  units?: TargetRuntimeUnits | undefined;
 }) {
   const points = history.target;
   if (!points.length) return null;
-  const charts = targetCharts(points);
+  const charts = targetCharts(points, units);
   const shared = {
     xs: points.map((p) => p.t),
     breaks: points.map((p) => p.gapBefore),

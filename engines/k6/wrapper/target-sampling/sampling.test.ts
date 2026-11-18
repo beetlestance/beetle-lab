@@ -9,6 +9,13 @@ function options(fetch: typeof globalThis.fetch, overrides: Partial<TargetSampli
 }
 function json(value: unknown): Response { return new Response(JSON.stringify(value)); }
 afterEach(() => vi.useRealTimers());
+it('freezes the admitted unit declaration before sampling and retains it in the bounded report', async () => {
+  const units:{rss:'bytes'|'mebibytes';cpuPercent:'ratio'}={rss:'bytes',cpuPercent:'ratio'};
+  const owner=await startTargetSampling(options(async()=>json({rss:1048576,cpuPercent:0.5}),{config:{...config,cooldownMs:0,units}}));
+  units.rss='mebibytes';
+  try {const report=await owner.finish();expect(report.units).toEqual({rss:'bytes',cpuPercent:'ratio'});expect(Object.isFrozen(report.units)).toBe(true);expect(report.samples[0]?.values.rss).toBe(1048576);}
+  finally{await owner.close();}
+});
 
 describe('target sampling observations', () => {
   it('retains explicit GC millisecond fields and libuv handles without conflating them with Go goroutines', async () => {

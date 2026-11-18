@@ -8,6 +8,12 @@ function fixture() {
     samples: {observedAt: string; phase: string; status: string; reason: string | null; values: Record<string, number | null>}[];
   };
 }
+it('round-trips an immutable unit declaration and rejects dimension mismatches',()=>{
+ const units={rss:'bytes'};const source={...fixture(),units};const report=captureTargetRuntimeReport(source);
+ units.rss='megabytes';expect(report.units?.rss).toBe('bytes');expect(Object.isFrozen(report.units)).toBe(true);
+ expect(decodeTargetRuntimeReport(encodeTargetRuntimeReport(report))).toEqual(report);
+ expect(()=>captureTargetRuntimeReport({...fixture(),units:{rss:'seconds'}})).toThrow();
+});
 it('round-trips one immutable detached report with actual zero and explicit missing values', () => {
   const source = fixture(); source.samples[0]!.values.rss = 0;
   const report = captureTargetRuntimeReport(source); source.samples[0]!.values.rss = 999;

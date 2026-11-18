@@ -1,6 +1,13 @@
 import { expect, it } from 'vitest';
 import { compiled, dependencies, fixture } from './fixtures.js';
 import { validateAndCompileSuite } from '../../compiler/suite/validation.js';
+it('pins dimension-compatible units into the compiled identity and rejects invalid declarations',()=>{
+ const config=fixture();config.targetSampling={path:'/stats',intervalMs:1000,timeoutMs:100,cooldownMs:0,units:{rss:'bytes','eventLoopDelay.p99':'nanoseconds'}};
+ const first=compiled(config);expect(first.targetSampling?.units?.rss).toBe('bytes');
+ config.targetSampling.units!.rss='megabytes';expect(compiled(config).identity.digest).not.toBe(first.identity.digest);
+ const invalid={...config,targetSampling:{...config.targetSampling,units:{rss:'milliseconds'}}};
+ expect(validateAndCompileSuite(invalid,dependencies()).ok).toBe(false);
+});
 it('pins optional relative target sampling and includes it in reproducibility identity', () => {
   const config = fixture();const original = compiled(config);
   config.targetSampling = { path: '/debug/stats', intervalMs: 2000, timeoutMs: 1000, cooldownMs: 60000 };

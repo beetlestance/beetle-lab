@@ -12,7 +12,8 @@ compilation needs phase.started prepare/execute, never validate.finished alone.
 Accessible step states never invent progress, initiators or elapsed-time progress.
 Engine labels use one scoped status read with exact selector matching and retry.
 
-plan reads pinned stages/requests/rules; rN is request index N. model derives one
+plan reads pinned stages/requests/rules/target units; rN is request index N. Raw
+target legends use declared symbols or explicit raw labels. model derives one
 window, using the slowest endpoint when pooled latency is absent, never averaged
 percentiles. Unknown dimensions/values and missing/future/unparseable starts stay
 explicit; they never become zero elapsed time or invalid geometry.

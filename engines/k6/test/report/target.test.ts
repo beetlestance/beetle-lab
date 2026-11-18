@@ -5,12 +5,16 @@ import { renderPerformanceReports } from '../../report/index.js';
 import { mapK6Result } from '../../wrapper/result/index.js';
 import { fixture } from '../result/fixtures.js';
 const MiB=1048576;
+it('keeps an underflowing GC counter mean unknown instead of manufacturing zero',()=>{
+ const target=report([sample('before',0,{'gc.count':0,'gc.totalMs':0}),sample('after',1,{'gc.count':2,'gc.totalMs':Number.MIN_VALUE})]);
+ expect(text(render(target).text)).toContain('Mean pause from those counter changes (ms): unknown');
+});
 function sample(phase:TargetRuntimePhase,index:number,readings:Partial<Record<TargetMetricName,number>>={},ready=true){
  return {observedAt:new Date(1767225600000+index*1000).toISOString(),phase,status:ready?'ready':'unavailable',reason:ready?null:'timeout',
   values:Object.fromEntries(targetMetricNames.map(name=>[name,ready?(readings[name]??null):null]))};
 }
 function report(samples:ReturnType<typeof sample>[]){return captureTargetRuntimeReport({format:'beetle-target-runtime',version:1,
- scope:'target-reported',limited:false,missed:samples.filter(s=>s.status==='unavailable').length,samples});}
+ scope:'target-reported',units:{rss:'bytes',cpuPercent:'percent','gc.count':'count','gc.totalMs':'milliseconds','gc.avgMs':'milliseconds','gc.maxMs':'milliseconds'},limited:false,missed:samples.filter(s=>s.status==='unavailable').length,samples});}
 function render(target:ReturnType<typeof report>){
  const source=fixture();const mapped=mapK6Result(source);if(!mapped.ok)throw new Error('Invalid fixture');
  return renderPerformanceReports({result:mapped.body,metrics:source.metrics,maximumBytes:262144,target});
@@ -22,9 +26,9 @@ it('restores readable checkpoints, memory deltas, CPU mean and GC changes withou
   sample('after',3,{rss:120*MiB,'gc.count':14,'gc.totalMs':36,uptime:103}),
   sample('after',4,{rss:105*MiB,'gc.count':15,'gc.totalMs':40,'gc.avgMs':2.66,'gc.maxMs':6,uptime:160})]);
  const output=text(render(target).text);
- expect(output).toContain('Outcome: passed');expect(output).toContain('[Target memory (MiB)]');
- expect(output).toContain('RSS: baseline=100.00; lastDuringLoad=130.00; firstPostLoad=120.00; afterCooldown=105.00; peakDuringLoad=150.00; changeAfterCooldown=5.00');
- expect(output).toContain('cpuPercent sampled during-load mean: 50.00');
+ expect(output).toContain('Outcome: passed');expect(output).toContain('[Target memory]');
+ expect(output).toContain('RSS (MiB): baseline=100.00; lastDuringLoad=130.00; firstPostLoad=120.00; afterCooldown=105.00; peakDuringLoad=150.00; changeAfterCooldown=5.00');
+ expect(output).toContain('cpuPercent sampled during-load mean (%): 50.00');
  expect(output).toContain('GC count change: 4.00');expect(output).toContain('GC time change (ms): 16.00');
  expect(output).toContain('Mean pause from those counter changes (ms): 4.00');
  expect(output).toContain('cumulative average pause (ms)');expect(output).toContain('cumulative maximum pause (ms)');
@@ -33,7 +37,7 @@ it('restores readable checkpoints, memory deltas, CPU mean and GC changes withou
 it('keeps a missing final reading unknown instead of substituting earlier post-load data or zero',()=>{
  const target=report([sample('before',0,{rss:0}),sample('during',1,{rss:MiB}),sample('after',2,{rss:2*MiB}),sample('after',3,{},false)]);
  const output=text(render(target).text);
- expect(output).toContain('RSS: baseline=0.00; lastDuringLoad=1.00; firstPostLoad=2.00; afterCooldown=unknown; peakDuringLoad=1.00; changeAfterCooldown=unknown');
+ expect(output).toContain('RSS (MiB): baseline=0.00; lastDuringLoad=1.00; firstPostLoad=2.00; afterCooldown=unknown; peakDuringLoad=1.00; changeAfterCooldown=unknown');
  expect(output).toContain('final post-load RSS comparison is unavailable');
 });
 it('suppresses growth/counter interpretation for inconsistent chronology or observed target restart',()=>{
@@ -63,4 +67,13 @@ it('detects visible GC counter drops even when uptime and final counter values k
   sample('during',1,{uptime:101,'gc.count':11,'gc.totalMs':2}),
   sample('after',2,{uptime:102,'gc.count':12,'gc.totalMs':120})]);
  expect(text(render(timeReset).text)).toContain('GC time change (ms): unknown');
+});
+
+it('keeps old unlabelled memory readings raw instead of assuming bytes',()=>{
+ const declared=report([sample('before',0,{rss:1024}),sample('after',1,{rss:2048})]);
+ const {units,...legacy}=declared;void units;
+ const output=text(render(legacy).text);
+ expect(output).toContain('RSS (source units (not declared)): baseline=1024.00');
+ expect(output).toContain('RSS remains 1024.00 source units (not declared)');
+ expect(output).not.toContain('RSS (MiB)');
 });

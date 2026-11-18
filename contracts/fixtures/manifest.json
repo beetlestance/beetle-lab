@@ -553,5 +553,15 @@
     "path": "invalid/result-threshold-reading-source.json",
     "schema": "EngineResult",
     "valid": false
+  },
+  {
+    "path": "valid/target-runtime-units.json",
+    "schema": "TargetRuntimeUnits",
+    "valid": true
+  },
+  {
+    "path": "invalid/target-runtime-units.json",
+    "schema": "TargetRuntimeUnits",
+    "valid": false
   }
 ]

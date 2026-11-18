@@ -48,5 +48,8 @@ it('preflights the shipped k6 registry without importing compiler or pretending 
       startTime: '0s', gracefulStop: '0s', vus: 1, iterations: 1, maxDuration: '1s' }], slos: [] },
     selections: [{ scenarioId: 'main', entries: [{ requestId: 'read', weight: 1, wait: { durationMs: 0, jitterMs: 0 } }] }] };
   expect(validator.validate(valid)).toBe(true);
+  const sampling={path:'/metrics',intervalMs:1000,timeoutMs:100,cooldownMs:0};
+  expect(validator.validate({...valid,targetSampling:{...sampling,units:{rss:'bytes','eventLoopDelay.p99':'nanoseconds'}}})).toBe(true);
+  expect(validator.validate({...valid,targetSampling:{...sampling,units:{rss:'milliseconds'}}})).toBe(false);
   expect(validator.validate({ ...valid, target: 'not-a-URL' })).toBe(true);
 });

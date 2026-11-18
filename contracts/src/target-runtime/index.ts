@@ -8,6 +8,7 @@ export type {
   TargetRuntimeReason,
   TargetRuntimeSample,
   TargetRuntimeReport,
+  TargetRuntimeUnits,
 } from './types.js';
 export const TARGET_RUNTIME_REPORT_BYTES = 1048576;
 export const targetMetricNames: readonly TargetMetricName[] = Object.freeze(
@@ -34,6 +35,7 @@ export function captureTargetRuntimeReport(input: unknown): TargetRuntimeReport 
       Object.freeze(sample);
     }
     Object.freeze(report.samples);
+    if (report.units) Object.freeze(report.units);
     return Object.freeze(report);
   } catch {
     throw new TargetRuntimeError('invalid_report');
@@ -55,3 +57,5 @@ export function encodeTargetRuntimeReport(input: unknown): Uint8Array {
 }
 
 export { observationSummary, targetResetObserved, targetReading, observedMetricDecrease } from './summary.js';
+export { captureTargetRuntimeUnits, targetUnitProjection, projectTargetReading } from './units.js';
+export type { TargetUnit, TargetUnitProjection } from './units.js';
