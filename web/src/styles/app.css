@@ -176,13 +176,7 @@ input:where([type='checkbox'], [type='radio']) {
   color: var(--mute);
 }
 .scope-label,
-.workspace-label {
-  padding: var(--s-12) 0;
-  margin-bottom: var(--s-24);
-  color: var(--mute);
-}
-.scope-label span,
-.workspace-label strong {
+.scope-label span {
   margin-left: var(--s-12);
   color: var(--ink);
 }

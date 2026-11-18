@@ -132,12 +132,7 @@ function WorkspaceScope({
           {view === 'exports' ? (
             <WorkspaceExports organizationId={organizationId} workspaceId={workspaceId} />
           ) : view === 'inputs' ? (
-            <>
-              <p className="workspace-label">
-                Workspace <strong>{data.name}</strong>
-              </p>
-              <WorkspaceInputs workspace={data} />
-            </>
+            <WorkspaceInputs workspace={data} />
           ) : (
             <>
               <WorkspaceOverview organizationId={organizationId} workspaceId={workspaceId} workspaceName={data.name} />

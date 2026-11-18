@@ -56,15 +56,18 @@ function InventoryScope({ workspace, children, actions, renderActions }: Invento
     [client, identity],
   );
   const context = contextOf(query.data, page.hasBack);
+  // A known-empty list offers its actions in the empty state; the header would only repeat them.
+  const empty = query.data?.items.length === 0 && !page.hasBack;
   return (
     <section className="content-section input-inventory" aria-label="Input inventory">
       <header className="inputs-header">
         <div>
+          <p className="inputs-kicker">{workspace.name}</p>
           <h1>Inputs</h1>
           <p className="inputs-summary">{summary(context, query.data !== undefined)}</p>
         </div>
         <div className="inputs-actions">
-          {actions?.(context)}
+          {!empty && actions?.(context)}
           <Button variant="text" disabled={query.isFetching} onClick={() => void query.refetch()}>
             Refresh input list
           </Button>
