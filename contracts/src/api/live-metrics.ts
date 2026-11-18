@@ -84,6 +84,18 @@ function targetMatch(value: LiveMetricSnapshot): boolean {
       (sample.status === 'ready' || Object.values(sample.values).every((reading) => reading === null)),
   );
 }
+function archiveMatch(value: LiveMetricSnapshot): boolean {
+  const prefix = value.archivePrefix;
+  if (!prefix) return true;
+  return (
+    liveMetricScopeMatches(prefix.scope, value.scope) &&
+    prefix.data.artifactId.toLowerCase() !== prefix.index.artifactId.toLowerCase() &&
+    prefix.data.bytes + prefix.index.bytes <= 268435456 &&
+    prefix.windows >= value.sourceSequence &&
+    prefix.endTimeMs >= value.endTimeMs &&
+    prefix.endTimeMs <= value.publishedAtMs
+  );
+}
 /** Hostile JSON boundary; the caller supplies its trusted synchronous SHA256 implementation. */
 export function captureLiveMetricSnapshot(input: unknown, hash: LiveMetricHash): LiveMetricSnapshot {
   try {
@@ -98,7 +110,8 @@ export function captureLiveMetricSnapshot(input: unknown, hash: LiveMetricHash):
         value.publishedAtMs >= value.capturedAtMs &&
         value.subsetDigest === hash(liveMetricSubsetText(subset)) &&
         seriesMatch(value) &&
-        targetMatch(value),
+        targetMatch(value) &&
+        archiveMatch(value),
       'invalid_snapshot',
     );
     return { ...value, subset };

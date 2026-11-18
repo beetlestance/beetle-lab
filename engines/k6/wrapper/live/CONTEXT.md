@@ -16,3 +16,10 @@ IO; sink also charges every header write. No byte/cadence/series limit is raised
 Optional target source (target.ts): at publication, read <=8 newest before/during
 samples synchronously, filter future/stale/unordered ones and attach a fixed-key block.
 A target block that cannot be read or fit is dropped and counted; metrics still publish.
+
+Optional archivePrefix comes from the trusted archive owner at publication. It is
+scope-bound completed-prefix evidence, never sealed output or crash durability.
+A failed/invalid read or decoded/compressed/write-budget overflow omits only this
+field, preserving available target data and metric publication. Existing envelope,
+64 KiB and lifetime/cadence bounds remain. Matching release readers understand the
+optional schema extension; older closed-schema readers reject enriched frames.

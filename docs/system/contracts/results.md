@@ -58,8 +58,13 @@ fails the attempt. Enforced by
 Its internal `completedPrefix()` retains the last complete data/index pair's IDs,
 extents, hashes, scope, count and end time, without extra IO or sync. It is withdrawn
 on fencing, failure, collection or sealing. These are advisory completed bytes, not
-crash durability or sealed-result evidence. The in-process getter grants no public
-active-history access and does not change the sealed read gate.
+crash durability or sealed-result evidence. The getter and its optional
+`archivePrefix` live-frame field do not grant public active-history access or
+change the sealed read gate. The carried prefix binds the enclosing scope and
+approved epoch, fixed file names and IDs; combined extents stay ≤ 256 MiB. Counts,
+extents and end advance together; equal counts keep identical hashes. Omitted
+frames retain the agent’s last immutable prefix baseline. Enrichment never displaces
+available target readings or a metrics frame that fits the remaining write budget.
 
 ## Run result read
 
@@ -207,8 +212,8 @@ a failed revocation keeps ownership and rejects close.
 | Code | Reviewed |
 | --- | --- |
 | `engines/k6/wrapper/attempt/reservation.ts` | `f10b08b3c4fd` |
-| `engines/k6/wrapper/attempt/archive/` | `95f2c9c62eab` |
+| `engines/k6/wrapper/attempt/archive/` | `326d993c4895` |
 | `app/src/application/run-metrics/` | `4d172ed61554` |
 | `app/src/application/run-comparison/` | `cddffebb9dee` |
 | `contracts/src/k6-live/` | `324516855159` |
-| `agent/src/live-metrics/` | `189726d263eb` |
+| `agent/src/live-metrics/` | `8cea96298362` |

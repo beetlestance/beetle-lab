@@ -36,7 +36,19 @@ export function captureOptions(options: LiveMetricPublisherOptions) {
     const initial = { wall: clock.wall(), monotonic: clock.monotonic() };
     if (!validClock(initial)) throw new Error();
     const target = captureTarget(options.target);
-    return { frame, hash, sink, clock, initial, timeoutMs, maximumProducedBytes, signal: options.signal, target };
+    const archivePrefix = options.archivePrefix?.bind(options);
+    return {
+      frame,
+      hash,
+      sink,
+      clock,
+      initial,
+      timeoutMs,
+      maximumProducedBytes,
+      signal: options.signal,
+      target,
+      archivePrefix,
+    };
   } catch {
     throw new LiveMetricPublisherError('invalid_options');
   }

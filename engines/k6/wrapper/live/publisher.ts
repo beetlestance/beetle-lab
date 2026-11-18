@@ -151,15 +151,25 @@ export class Publisher implements LiveMetricPublisher {
       });
     this.original = original;
   }
-  /** Target readings are advisory: a block that cannot fit or validate is dropped, never the metrics. */
+  /** Optional archive evidence never displaces available target readings or affordable metrics. */
   private encode(frame: LiveMetricSnapshot): Uint8Array | undefined {
     const target = this.targetBlock(frame.publishedAtMs);
-    if (target) {
-      const bytes = this.compress({ ...frame, target });
-      if (bytes) return bytes;
+    let base = target ? { ...frame, target } : frame;
+    let bytes = this.compress(base);
+    if (!bytes && target) {
       this.values = { ...this.values, targetOmittedFrames: this.values.targetOmittedFrames + 1 };
+      base = frame;
+      bytes = this.compress(base);
     }
-    return this.compress(frame);
+    if (!bytes) return undefined;
+    try {
+      const archivePrefix = this.options.archivePrefix?.();
+      if (!archivePrefix) return bytes;
+      const enriched = this.compress({ ...base, archivePrefix });
+      return enriched && this.fitsLifetimeBudget(enriched.length) ? enriched : bytes;
+    } catch {
+      return bytes;
+    }
   }
   private targetBlock(publishedAtMs: number): LiveMetricSnapshot['target'] {
     if (!this.options.target) return undefined;

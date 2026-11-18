@@ -159,6 +159,9 @@
         },
         "target": {
           "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetReadings"
+        },
+        "archivePrefix": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveMetricArchivePrefix"
         }
       },
       "required": [
@@ -308,6 +311,86 @@
         "intervalMs",
         "samples",
         "omittedSamples"
+      ],
+      "additionalProperties": false
+    },
+    "LiveMetricArchivePrefix": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveMetricScope"
+        },
+        "windows": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "endTimeMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8640000000000000
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "artifactId": {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+            },
+            "relativePath": {
+              "const": "metric-windows.ndjson"
+            },
+            "bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 268435456
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          "required": [
+            "artifactId",
+            "relativePath",
+            "bytes",
+            "sha256"
+          ],
+          "additionalProperties": false
+        },
+        "index": {
+          "type": "object",
+          "properties": {
+            "artifactId": {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+            },
+            "relativePath": {
+              "const": "metric-index.ndjson"
+            },
+            "bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 268435456
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          "required": [
+            "artifactId",
+            "relativePath",
+            "bytes",
+            "sha256"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "scope",
+        "windows",
+        "endTimeMs",
+        "data",
+        "index"
       ],
       "additionalProperties": false
     }

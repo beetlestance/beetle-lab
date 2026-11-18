@@ -9,12 +9,18 @@ Expected scope/epoch/subset are mandatory. Capture/source/published age<=6 s; no
 Scalar revision/source/end/time/coalescing/digest state fences regressions and
 altered repeats/overlapping windows. Unchanged polling keeps the original producer timestamp; no age
 refresh; a monotonic expiry also protects against a frozen wall clock. No metric corpus or subscriber registry. One reader per retained owner.
-This component is not an authenticated route or runtime enablement. Supervisor now derives approval once from the validated immutable Offer via
-trusted installed policy; authenticated transport and activation remain pending;
-an approved image/digest alone does not authorize a self-declared subset/epoch.
+Supervisor derives approval once from the validated immutable Offer via trusted
+installed policy; transport/live-metrics.ts exposes authenticated reads. An approved
+image/digest alone does not authorize a self-declared subset or epoch.
 Checks: agent/test/live-metrics; Node types and changed lint.
 V2 mailbox payloads require gzip. Verify envelope extent/hash first, then gunzip
 with maxOutputLength65536 before the unchanged DTO/approval/freshness fences.
 No plaintext fallback; both compressed and decoded payloads remain hard bounded.
 A frame `target` block must match approval.targetIntervalMs (from the validated
 config), else `target`; shape/age/order checks live in the shared snapshot codec.
+
+Optional archive prefixes share the approved frame scope/epoch/subset authority.
+Retained ordering captures an independent deeply immutable prefix; returned frame
+mutation cannot change it. IDs remain fixed, count/extents/end advance together,
+and equal counts retain exact hashes/extents. Omitted frames preserve the previous
+prefix baseline. Prefix evidence grants no sealed-output or public history access.

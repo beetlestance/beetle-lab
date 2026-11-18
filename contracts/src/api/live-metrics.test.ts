@@ -121,3 +121,21 @@ it.each([
   const f = targetFrame(); mutate(f);
   expect(() => captureLiveMetricSnapshot(f, hash)).toThrow(expect.objectContaining({code: 'invalid_snapshot'}));
 });
+
+function prefix(value=fixture()): NonNullable<LiveMetricSnapshot['archivePrefix']> {
+ return {scope:value.scope,windows:3,endTimeMs:value.endTimeMs,
+ data:{artifactId:'00000000-0000-4000-8000-000000000005',relativePath:'metric-windows.ndjson',bytes:2048,sha256:'a'.repeat(64)},
+ index:{artifactId:'00000000-0000-4000-8000-000000000006',relativePath:'metric-index.ndjson',bytes:1024,sha256:'b'.repeat(64)}};
+}
+it('round-trips optional completed prefix evidence without changing the frame bound',()=>{
+ const f=fixture();f.archivePrefix=prefix(f);const captured=decodeLiveMetricSnapshot(encodeLiveMetricSnapshot(f,hash),hash);
+ expect(captured.archivePrefix).toEqual(f.archivePrefix);f.archivePrefix.data.bytes=9000;expect(captured.archivePrefix?.data.bytes).toBe(2048);
+});
+it.each(['scope','ids','bytes','count','end','future','path','hash'] as const)('refuses an invalid archive %s',kind=>{
+ const f=fixture();f.archivePrefix=prefix(f);const p=f.archivePrefix;
+ if(kind==='scope')p.scope={...p.scope,generation:2};if(kind==='ids')p.index.artifactId=p.data.artifactId;
+ if(kind==='bytes'){p.data.bytes=268435456;p.index.bytes=1;}if(kind==='count')p.windows=2;
+ if(kind==='end')p.endTimeMs=f.endTimeMs-1;if(kind==='future')p.endTimeMs=f.publishedAtMs+1;
+ if(kind==='path')Object.assign(p.data,{relativePath:'../metric-windows.ndjson'});if(kind==='hash')p.data.sha256='x'.repeat(64);
+ expect(()=>captureLiveMetricSnapshot(f,hash)).toThrow(expect.objectContaining({code:'invalid_snapshot'}));
+});

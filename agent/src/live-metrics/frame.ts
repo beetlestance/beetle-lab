@@ -7,7 +7,7 @@ import {
   liveMetricScopeMatches,
   liveMetricSubsetText,
 } from '@beetle/contracts/api';
-import type { LiveMetricSnapshot } from '@beetle/contracts/api';
+import type { LiveMetricSnapshot, LiveMetricArchivePrefix } from '@beetle/contracts/api';
 import type { LiveMetricApproval, LiveMetricReadFailure } from './types.js';
 export const hash = (bytes: string | Uint8Array): string => createHash('sha256').update(bytes).digest('hex');
 export interface Position {
@@ -19,6 +19,7 @@ export interface Position {
   readonly published: number;
   readonly coalesced: number;
   readonly digest: string;
+  readonly archivePrefix?: LiveMetricArchivePrefix;
 }
 export function approvalSnapshot(input: LiveMetricApproval) {
   const subsetDigest = hash(liveMetricSubsetText(input.subset));
@@ -63,6 +64,7 @@ export function frameSnapshot(image: Uint8Array) {
       published: frame.publishedAtMs,
       coalesced: frame.coalescedWindows,
       digest: hash(envelope.frame),
+      ...(frame.archivePrefix ? { archivePrefix: prefixPosition(frame.archivePrefix) } : {}),
     },
   };
 }
@@ -92,10 +94,47 @@ function ordering(next: Position, previous: Position): boolean {
     next.end <= previous.end ||
     next.captured < previous.captured ||
     next.published < previous.published ||
-    next.coalesced < previous.coalesced
+    next.coalesced < previous.coalesced ||
+    archiveRegresses(next.archivePrefix, previous.archivePrefix)
   );
 }
 
 export function sourceTime(frame: LiveMetricSnapshot): number {
   return Math.min(frame.publishedAtMs, frame.capturedAtMs, frame.endTimeMs);
+}
+
+function archiveRegresses(
+  next: LiveMetricArchivePrefix | undefined,
+  previous: LiveMetricArchivePrefix | undefined,
+): boolean {
+  if (!next || !previous) return false;
+  const sameIds =
+    next.data.artifactId.toLowerCase() === previous.data.artifactId.toLowerCase() &&
+    next.index.artifactId.toLowerCase() === previous.index.artifactId.toLowerCase();
+  if (!sameIds || next.windows < previous.windows) return true;
+  if (next.windows > previous.windows)
+    return (
+      next.endTimeMs <= previous.endTimeMs ||
+      next.data.bytes <= previous.data.bytes ||
+      next.index.bytes <= previous.index.bytes
+    );
+  return !sameArchivePosition(next, previous);
+}
+
+function prefixPosition(prefix: LiveMetricArchivePrefix): LiveMetricArchivePrefix {
+  return Object.freeze({
+    ...prefix,
+    scope: Object.freeze({ ...prefix.scope }),
+    data: Object.freeze({ ...prefix.data }),
+    index: Object.freeze({ ...prefix.index }),
+  });
+}
+
+function sameArchivePosition(next: LiveMetricArchivePrefix, previous: LiveMetricArchivePrefix): boolean {
+  return (
+    next.endTimeMs === previous.endTimeMs &&
+    (['data', 'index'] as const).every(
+      (lane) => next[lane].bytes === previous[lane].bytes && next[lane].sha256 === previous[lane].sha256,
+    )
+  );
 }

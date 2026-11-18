@@ -1,4 +1,4 @@
-import type { LiveMetricHash, LiveMetricScope, LiveMetricSubset } from '@beetle/contracts/api';
+import type { LiveMetricHash, LiveMetricScope, LiveMetricSubset, LiveMetricArchivePrefix } from '@beetle/contracts/api';
 import type { MetricWindow } from '@beetle/contracts/metrics';
 import type { TargetRuntimeSample } from '@beetle/contracts/target-runtime';
 
@@ -29,6 +29,8 @@ export interface LiveMetricPublisherOptions {
   readonly signal?: AbortSignal;
   /** Present only when the approved configuration samples the target. */
   readonly target?: LiveTargetSource;
+  /** Trusted synchronous archive owner; absence/failure must leave metric publication intact. */
+  readonly archivePrefix?: () => LiveMetricArchivePrefix | undefined;
 }
 export interface LiveMetricPublisherState {
   readonly status: 'open' | 'stopping' | 'closed' | 'failed';

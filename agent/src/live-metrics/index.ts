@@ -109,7 +109,8 @@ export class LiveMetricReader {
       this.previous?.revision === snapshot.position.revision ? Math.min(this.staleAt, sourceExpiry) : sourceExpiry;
     const freshForMs = Math.floor(this.staleAt - this.lastMono);
     if (freshForMs <= 0 || freshForMs > 6000) return failed('stale');
-    this.previous = snapshot.position;
+    const archivePrefix = snapshot.position.archivePrefix ?? this.previous?.archivePrefix;
+    this.previous = { ...snapshot.position, ...(archivePrefix ? { archivePrefix } : {}) };
     return { ok: true, frame: snapshot.frame, freshUntilMonotonicMs: this.staleAt };
   }
 }

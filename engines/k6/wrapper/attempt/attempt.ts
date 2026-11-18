@@ -230,6 +230,7 @@ class Attempt {
         timeoutMs: Math.max(1, Math.floor(this.fence.lifetimeRemaining())),
         signal: this.fence.controller.signal,
         clock: this.ports.clock,
+        archivePrefix: () => this.archive?.completedPrefix(),
         ...(this.targetSampler ? { target: this.targetSampler } : {}),
       },
       this.ports.openMailbox,
@@ -389,7 +390,6 @@ class Attempt {
     });
   }
 }
-
 /** Private composition seam, used only by focused tests; never staged/public configuration. */
 export async function runAttempt(options: StagedK6Options, ports: AttemptPorts): Promise<StagedK6Receipt> {
   try {

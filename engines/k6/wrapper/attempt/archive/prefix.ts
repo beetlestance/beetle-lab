@@ -1,16 +1,2 @@
-import type { JournalScope } from '../../control/index.js';
-
-interface PrefixFile {
-  readonly artifactId: string;
-  readonly relativePath: string;
-  readonly bytes: number;
-  readonly sha256: string;
-}
-/** Both hashes cover complete headers and records, excluding any later append. */
-export interface ArchivePrefix {
-  readonly scope: Readonly<JournalScope>;
-  readonly windows: number;
-  readonly endTimeMs: number;
-  readonly data: Readonly<PrefixFile>;
-  readonly index: Readonly<PrefixFile>;
-}
+/** Shared wire shape; presence never grants sealed-result or durability authority. */
+export type { LiveMetricArchivePrefix as ArchivePrefix } from '@beetle/contracts/api';

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { createK6LiveApproval, k6LiveSubset } from '@beetle/contracts/k6-live';
 import type { K6LiveAssignment } from '@beetle/contracts/k6-live';
-import type { LiveMetricScope } from '@beetle/contracts/api';
+import type { LiveMetricScope, LiveMetricArchivePrefix } from '@beetle/contracts/api';
 import { MAILBOX_BYTES } from '@beetle/contracts/live-mailbox';
 import type { MetricWindow } from '../../aggregation/index.js';
 import type { CompiledInput } from '../input/index.js';
@@ -28,6 +28,7 @@ interface Input {
   readonly clock: ExecutionClock;
   /** Running target sampler; its interval is taken from the approval, not from this source. */
   readonly target?: Pick<LiveTargetSource, 'recent'>;
+  readonly archivePrefix?: () => LiveMetricArchivePrefix | undefined;
 }
 const hash = (value: string | Uint8Array): string => createHash('sha256').update(value).digest('hex');
 /** Trusted default subset is derived from the same approved catalogue as the parser. */
@@ -87,6 +88,7 @@ export class AttemptLive {
         ...(target && targetIntervalMs !== null
           ? { target: { intervalMs: targetIntervalMs, recent: (limit: number) => target.recent(limit) } }
           : {}),
+        ...(input.archivePrefix ? { archivePrefix: input.archivePrefix } : {}),
         hash,
         timeoutMs: input.timeoutMs,
         maximumProducedBytes: input.maximumBytes - MAILBOX_BYTES,

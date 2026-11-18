@@ -96,6 +96,7 @@ export const apiMessageSchemas = freezeSchema({
   LiveTargetValues: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetValues' },
   LiveTargetSample: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetSample' },
   LiveTargetReadings: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetReadings' },
+  LiveMetricArchivePrefix: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveMetricArchivePrefix' },
   CreateOrganizationRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/namespace-requests#/$defs/CreateOrganizationRequest' },
   PatchOrganizationRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/namespace-requests#/$defs/PatchOrganizationRequest' },
   CreateWorkspaceRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/namespace-requests#/$defs/CreateWorkspaceRequest' },

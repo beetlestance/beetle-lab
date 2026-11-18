@@ -202,7 +202,7 @@ export class MetricArchive {
       await this.write('index', index);
       this.count = sequence;
       this.through = end;
-      const file = (lane: Lane) =>
+      const file = <L extends Lane>(lane: L) =>
         Object.freeze({
           artifactId: lane === 'data' ? this.dataId : this.indexId,
           relativePath: names[lane],
