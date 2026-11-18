@@ -8,7 +8,7 @@ function hasRetentionData(db:DatabaseSync){
 /** Synthetic empty-retention projection only; charged rows/epochs can never be rewound. */
 export function asSchema24(db:DatabaseSync):void{
  if(Number(db.prepare('PRAGMA user_version').get()?.user_version)>=25&&hasRetentionData(db))throw Error('Cannot project fixture with retention data');
- if([26,27,28,29,30,31,32,33,34].includes(Number(db.prepare('PRAGMA user_version').get()?.user_version)))asSchema25(db);
+ if([26,27,28,29,30,31,32,33,34,35,36].includes(Number(db.prepare('PRAGMA user_version').get()?.user_version)))asSchema25(db);
  const version=db.prepare('PRAGMA user_version').get()?.user_version;if(version===24)return;
  if(version!==25||hasRetentionData(db))throw Error('Cannot project fixture with retention data');
  const triggers=db.prepare("SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'retention_%'").all();
