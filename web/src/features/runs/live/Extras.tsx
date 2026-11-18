@@ -1,11 +1,7 @@
-import { Link } from 'react-router-dom';
-import type { Run, Suite } from '@beetle/contracts/api';
-import { routes } from '../../../app/routes.js';
-import { Badge } from '../../../components/Badge.js';
+import type { Run } from '@beetle/contracts/api';
 import { Banner } from '../../../components/Banner.js';
-import { Dialog } from '../../../components/Dialog.js';
 import { useSessionAccess } from '../../../app/session.js';
-import { useAttribution, useRevisions } from './data.js';
+import { useAttribution } from './data.js';
 import type { PlanRequest } from './plan.js';
 import { dateTime, ms, span } from './format.js';
 
@@ -28,51 +24,7 @@ export function RestoredBanner() {
   );
 }
 
-/** Saved revisions of the suite, with "This run" and "Latest"; each links to its script view. */
-export function ScriptPicker({ run, suite, onClose }: { run: Run; suite: Suite | undefined; onClose: () => void }) {
-  const query = useRevisions(run, true);
-  const items = [...(query.data?.items ?? [])].sort((a, b) => b.ordinal - a.ordinal);
-  const { organizationId, workspaceId } = run.scope;
-  return (
-    <Dialog title="Script versions" description="Open the k6 script for any saved revision." onClose={onClose}>
-      {query.isPending && <p role="status">Loading revisions…</p>}
-      {query.isError && <p role="alert">Revisions could not be loaded.</p>}
-      {items.length > 0 && (
-        <ul className="live-picker">
-          {items.map((revision) => (
-            <li key={revision.id}>
-              <Link
-                to={routes.suiteScriptFromRun(organizationId, workspaceId, run.suiteId, revision.id, run.id)}
-                onClick={onClose}
-                aria-current={revision.id === run.revisionId ? 'true' : undefined}
-              >
-                <span className="live-picker-title">
-                  Revision {revision.ordinal}
-                  {revision.id === run.revisionId && <Badge tone="amber">This run</Badge>}
-                  {revision.id === suite?.currentRevisionId && <Badge>Latest</Badge>}
-                </span>
-                <span className="live-muted">
-                  {[
-                    revision.savedAt ? dateTime(revision.savedAt) : null,
-                    revision.message ?? null,
-                    revision.runCount === undefined
-                      ? null
-                      : `${revision.runCount} ${revision.runCount === 1 ? 'run' : 'runs'}`,
-                    revision.savedBy ? `by ${revision.savedBy}` : null,
-                    `digest ${revision.digest.slice(0, 12)}`,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-      {query.data?.nextCursor && <p className="live-note">Showing the 20 most recent revisions on this page.</p>}
-    </Dialog>
-  );
-}
+export { ScriptPicker } from './ScriptPicker.js';
 
 /**
  * "p95 rose for about 30 s, mostly GET /content" from getRunLatencyAttribution.

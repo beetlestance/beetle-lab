@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { Run } from '@beetle/contracts/api';
+import type { Run, SuiteRevision } from '@beetle/contracts/api';
 import { readResult, useApi } from '../../../app/api.js';
 import { queryKeys } from '../../../app/queries.js';
 
@@ -17,6 +17,7 @@ export function useRevision(run: Run) {
   return useQuery({
     queryKey: queryKeys.suiteRevision(params.organizationId, params.workspaceId, run.revisionId),
     queryFn: ({ signal }) => readResult(api.getSuiteRevision({ params, signal })),
+    select: (value) => verifiedRunRevision(value, run),
     staleTime: Number.POSITIVE_INFINITY,
   });
 }
@@ -89,4 +90,18 @@ export function useLiveNamespace(run: Run) {
       else void current.refetch({ cancelRefetch: false });
     },
   };
+}
+
+/** Select guards fresh API replies and already-cached immutable revisions alike. */
+function verifiedRunRevision(value: SuiteRevision, run: Run): SuiteRevision {
+  const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
+  if (
+    !same(value.id, run.revisionId) ||
+    !same(value.suiteId, run.suiteId) ||
+    value.digest !== run.revisionDigest ||
+    !same(value.scope.organizationId, run.scope.organizationId) ||
+    !same(value.scope.workspaceId, run.scope.workspaceId)
+  )
+    throw new Error('Saved revision does not match this run.');
+  return value;
 }

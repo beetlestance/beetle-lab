@@ -28,6 +28,9 @@ The p95-rise line reads getRunLatencyAttribution only once terminal. The
 restored-backup banner and Cancel use useSessionAccess (app/session.tsx); no session read.
 No report or metrics downloads while live. Header icon actions use a native
 Download disclosure (Escape/outside press dismiss); the script row opens verified
-revision selection, never prepares an export automatically. Script format is
+revision selection, never prepares an export automatically. Selection reads at most
+20 summaries plus the run’s verified revision; older history links to the suite.
+Cache and fresh revision reads bind scope, suite, ID and digest before use;
+metadata failure offers retry without stopping metrics. Script format is
 JavaScript, not the older board's ZIP copy. Header/progress styles have separate
 owners, keeping modules below 400 lines. Tests: model.test.ts, ui.test.tsx.

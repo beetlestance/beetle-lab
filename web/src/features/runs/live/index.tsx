@@ -1,3 +1,5 @@
+import { Banner } from '../../../components/Banner.js';
+import { Button } from '../../../components/Button.js';
 import { useMemo, useState } from 'react';
 import type { Run, Suite, SuiteRevision } from '@beetle/contracts/api';
 import type { RunSnapshotProps } from '../RunSnapshot.js';
@@ -87,7 +89,33 @@ function LiveRun({ run, scope, runId, showResult, cancel }: LiveRunViewProps) {
         cancel={cancel}
         onScript={() => setPicker(true)}
       />
-      {picker && <ScriptPicker run={run} suite={suite.data} onClose={() => setPicker(false)} />}
+      {revision.isError && (
+        <Banner
+          tone="danger"
+          title="Saved revision unavailable"
+          actions={
+            <Button
+              size="sm"
+              disabled={revision.isFetching}
+              onClick={() => void revision.refetch({ cancelRefetch: false })}
+            >
+              Retry revision
+            </Button>
+          }
+        >
+          {revision.data
+            ? 'Last verified revision details are kept.'
+            : 'Configuration details cannot be verified. Live measurements remain bound to this attempt.'}
+        </Banner>
+      )}
+      {picker && (
+        <ScriptPicker
+          run={run}
+          suite={suite.isError ? undefined : suite.data}
+          runRevision={revision.data}
+          onClose={() => setPicker(false)}
+        />
+      )}
       <StateBanners run={run} plan={plan} stream={stream} showResult={showResult} />
       <PhaseBody phase={stream.phase} run={run} />
       <LiveBoard plan={plan} stream={stream} at={at} />

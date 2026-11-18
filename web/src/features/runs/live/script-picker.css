@@ -1,0 +1,86 @@
+.script-picker-dialog {
+  align-self: start;
+  margin-top: 104px;
+  max-width: 620px;
+  gap: 6px;
+}
+.script-picker-dialog .dialog-title {
+  overflow-wrap: anywhere;
+}
+.script-picker-dialog .dialog-description {
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 19.5px;
+}
+.script-picker-dialog .live-picker {
+  gap: 2px;
+}
+.script-picker-dialog .live-picker a {
+  gap: 2px;
+  padding: 10px 12px;
+}
+.live-picker-main,
+.live-picker-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+.script-picker-dialog .live-picker-title {
+  flex-wrap: wrap;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+}
+.script-picker-dialog .badge {
+  padding: 3px 8px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 21px;
+  color: var(--ink);
+  background: var(--chip-strong);
+}
+.live-picker-date,
+.live-picker-meta {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--mute);
+}
+.live-picker-date {
+  flex-shrink: 0;
+}
+.live-picker-message {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.live-picker-usage {
+  flex-shrink: 0;
+  max-width: 60%;
+  overflow-wrap: anywhere;
+}
+.script-picker-dialog .dialog-actions {
+  margin-top: 12px;
+}
+.script-picker-dialog .dialog-actions .btn {
+  min-height: 40px;
+  font-size: 16px;
+  line-height: 24px;
+}
+@media (max-width: 760px) {
+  .script-picker-dialog {
+    align-self: auto;
+    margin-top: 0;
+    max-width: none;
+  }
+  .live-picker-main {
+    flex-wrap: wrap;
+  }
+}
+
+.script-picker-dialog .live-picker a[aria-current='true'] {
+  background: var(--line);
+}

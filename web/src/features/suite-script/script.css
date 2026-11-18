@@ -21,7 +21,7 @@
 }
 .script-header h1 {
   margin: 0;
-  font-size: 32px;
+  font-size: var(--fs-4xl);
   line-height: 38px;
 }
 .script-note {

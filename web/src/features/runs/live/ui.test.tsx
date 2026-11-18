@@ -3,9 +3,9 @@ import '@testing-library/jest-dom/vitest';
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { queryKeys } from '../../../app/queries.js';
-import type { Run } from '@beetle/contracts/api';
+import { encodeRevisionListCursor, type Run } from '@beetle/contracts/api';
 import { LiveMetricReads } from '../live-metrics/read.js';
-import { ids, json, liveFrame, liveRun, mountLive, routesFor, suiteId } from './fixtures.js';
+import { ids, json, liveFrame, liveRun, mountLive, routesFor, suiteId, revision, suite } from './fixtures.js';
 
 /** A run that started 5 min 16 s ago: inside the steady stage. */
 const recent = (patch: Partial<Run> = {}) =>
@@ -149,9 +149,9 @@ it('keeps the compare action disabled with an explanation, and lists script vers
   expect(compare).toHaveAccessibleDescription(/once this one has finished/);
   fireEvent.click(screen.getByRole('button', { name: 'Download' }));
   fireEvent.click(screen.getByRole('button', { name: 'Script for revision 4' }));
-  const dialog = await screen.findByRole('dialog', { name: 'Script versions' });
+  const dialog = await screen.findByRole('dialog', { name: 'Scripts for steady-1.2k' });
   expect(await within(dialog).findByRole('link', { name: /Revision 4/ })).toHaveTextContent(
-    /This run.*Latest.*3 runs · by Meera/,
+    /This run.*Latest.*3 runs, by Meera/,
   );
 });
 
@@ -245,4 +245,26 @@ it('reads real namespace names once and retries metadata without retiring live m
   failed=false;fireEvent.click(screen.getByRole('button',{name:'Retry workspace name'}));
   expect(await screen.findByRole('link',{name:'Same workspace'})).toBeVisible();
   expect(fixture.records.every(request=>request.method==='GET')).toBe(true);
+});
+
+it('keeps this run’s verified revision available beyond the first twenty saved revisions',async()=>{
+ const current=recent();const saved=revision();
+ const id=(ordinal:number)=>ordinal===4?saved.id:`88880000-0000-4000-8000-${String(ordinal).padStart(12,'0')}`;
+ const items=Array.from({length:20},(_,index)=>{const ordinal=24-index;return {
+  id:id(ordinal),scope:saved.scope,suiteId:saved.suiteId,ordinal,engineId:saved.engineId,configVersion:saved.configVersion,
+  digest:saved.digest,preflightStatus:saved.preflightStatus,previousRevisionId:id(ordinal-1),
+ };});
+ vi.spyOn(LiveMetricReads.prototype,'read').mockImplementation(async()=>liveFrame(current,1));
+ const fixture=routesFor(()=>current,request=>{
+  if(/\/revisions(\?|$)/.test(request.path))return json({scope:saved.scope,suiteId,items,nextCursor:encodeRevisionListCursor({scope:saved.scope,suiteId:saved.suiteId,limit:20,ordinal:5,id:id(5)})});
+  if(request.path.endsWith('/suites/'+suiteId))return json({...suite(),currentRevisionId:id(24)});
+  return undefined;
+ });
+ mountLive(fixture.client,{run:current});await screen.findByRole('heading',{name:'Holding 1,200 a second'});
+ fireEvent.click(screen.getByRole('button',{name:'Download'}));fireEvent.click(screen.getByRole('button',{name:'Script for revision 4'}));
+ const picker=await screen.findByRole('dialog',{name:'Scripts for steady-1.2k'});
+ expect(await within(picker).findByRole('link',{name:/Revision 4This run/})).toHaveAttribute('aria-current','true');
+ expect(await within(picker).findByRole('link',{name:/Revision 24Latest/})).toBeVisible();
+ expect(within(picker).getAllByRole('listitem')).toHaveLength(21);
+ expect(fixture.records.every(request=>request.method==='GET')).toBe(true);
 });
