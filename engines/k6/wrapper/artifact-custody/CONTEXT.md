@@ -2,7 +2,10 @@
 
 Public entry index.ts. Owner docs/system/contracts/exports.md.
 Artifacts owns fixed-name summary/numeric/target/report/diagnostic/native-script descriptors;
-identity helpers and bounded hash reader are shared with the metric archive.
+Identity helpers, bounded hashing and AppendFiles are shared by metric and target
+archives. AppendFiles accepts only fixed metrics (data/index) or target (data)
+profiles, never caller-supplied relative paths; the caller owns serialization and
+byte reservation before writes. Advisory append does not sync per sample.
 No compiler, metrics interpreter, target calls, job admission or metadata here.
 
 One 64 KiB hash scratch buffer, positional progress<=ceil(bytes/64 KiB)+32+EOF;

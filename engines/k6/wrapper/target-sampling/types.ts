@@ -20,6 +20,8 @@ export interface TargetSamplingOptions {
   readonly fetch?: typeof globalThis.fetch;
   /** Wall clock shared with the attempt (and live frames); defaults to Date.now. */
   readonly wall?: () => number;
+  /** Serial recording before retention; original work must settle even after abort. */
+  readonly record?: (sample: TargetRuntimeReport['samples'][number], signal: AbortSignal) => Promise<void>;
 }
 export interface TargetSamplingOwner {
   /** Newest retained samples (at most `limit`, oldest first); frozen copies, no IO. */
