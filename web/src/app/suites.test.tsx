@@ -160,7 +160,6 @@ it('appends history and reads an older immutable revision without writing a poin
   });
   mount(fixture.client, `${routes.suite(ids.a, ids.workspace, suiteId)}?tab=revisions`);
   expect(await screen.findByRole('tab', { name: 'Revisions (2)' })).toHaveAttribute('aria-selected', 'true');
-  fireEvent.click(await screen.findByRole('button', { name: 'Changes from revision 1' }));
   const changes = await screen.findByRole('list', { name: 'Changes in revision 2' });
   expect(changes).toHaveTextContent('target: http://target.invalid to http://new.invalid');
   expect(screen.getAllByRole('link', { name: 'View script' })[0]).toHaveAttribute('href', routes.suiteScript(ids.a, ids.workspace, suiteId, newerId));

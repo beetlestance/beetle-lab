@@ -84,6 +84,8 @@ describe('plan projection', () => {
     const older = config({ loadPlan: { ...before.loadPlan, scenarios } });
     expect(changeList(older, before)).toEqual(['peak: 1,000 a second to 1,200 a second']);
     expect(changeList(before, config({ requests: [before.requests[0]] }))).toContain('removed request GET /health');
+    const larger = structuredClone(before); larger.loadPlan.scenarios[0]!.maxVUs = 300;
+    expect(changeList(before, larger)).toEqual(['maximum VUs: 240 to 300']);
     expect(changeList(before, before)).toEqual([]);
   });
 });

@@ -6,7 +6,11 @@ workspace-wide name search. `?folder=<id>` shows `FolderView`, one folder's suit
 server-filtered listSuites (group, engine, name and order). It starts with eight rows,
 then Show more re-reads an expanded window in steps of twelve, capped at 100.
 Beyond that, cursor paging keeps the same 100-row limit; changing filters resets to eight. With a suite ID
-it shows `SuiteDetail`, whose tabs are set by `?tab=edit|revisions`. `?start=1` opens Start run.
+it shows `SuiteDetail`; the Revisions tab displays eight cards per page, with immutable
+configuration differences for adjacent revisions on that page. A missing predecessor
+is named rather than inferred. The header reads up to 100 revision summaries; card
+configuration reads are bounded to eight per page and reuse the current revision.
+Tabs are set by `?tab=edit|revisions`. `?start=1` opens Start run.
 The editor view is `&view=run-setup|json` and one request `&request=<id>` (useSuitePage;
 build links with `routes.suitePage`/`routes.suitesFolder`, never by hand).
 Uses the paired generated API client and the shared route and query registry. Reads are

@@ -1,5 +1,4 @@
 import { useSessionAccess } from '../../app/session.js';
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import type { Suite, SuiteRevisionPage, SuiteRevisionSummary } from '@beetle/contracts/api';
@@ -13,9 +12,10 @@ import { QueryState } from '../../components/QueryState.js';
 import { EmptyState } from '../../components/States.js';
 import { changeList } from '../suite-overview/changes.js';
 import { when } from '../suite-overview/index.js';
+import './revision-list.css';
 
 /** First page of a suite's revisions; the Suite header and the Revisions tab share it. */
-export function useRevisionPage(suite: Suite, cursor = '') {
+export function useRevisionPage(suite: Suite, cursor = '', limit = 100) {
   const api = useApi();
   const params = {
     organizationId: suite.scope.organizationId,
@@ -23,16 +23,16 @@ export function useRevisionPage(suite: Suite, cursor = '') {
     suiteId: suite.id,
   };
   return useQuery({
-    queryKey: [...queryKeys.suiteRevisions(params.organizationId, params.workspaceId, suite.id), cursor],
+    queryKey: [...queryKeys.suiteRevisions(params.organizationId, params.workspaceId, suite.id), String(limit), cursor],
     queryFn: ({ signal }) =>
-      readResult(api.listSuiteRevisions({ params, query: { limit: 100, ...(cursor ? { cursor } : {}) }, signal })),
+      readResult(api.listSuiteRevisions({ params, query: { limit, ...(cursor ? { cursor } : {}) }, signal })),
   });
 }
-/** Suite / Revisions: newest first, with message, author, date, run count and changes on demand. */
+/** Suite / Revisions: eight at a time, with message, stamps, run count and visible changes. */
 export function History({ suite, run }: { suite: Suite; run: (revisionId: string) => void }) {
   const key = queryKeys.suiteRevisions(suite.scope.organizationId, suite.scope.workspaceId, suite.id);
   const page = usePage(key);
-  const query = useRevisionPage(suite, page.cursor);
+  const query = useRevisionPage(suite, page.cursor, 8);
   return (
     <section aria-label="Revisions">
       <QueryState query={query}>
@@ -69,7 +69,6 @@ function RevisionItem({
   page: SuiteRevisionPage;
   run: (revisionId: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const { readOnly } = useSessionAccess();
   const previous = page.items.find((item) => item.ordinal === revision.ordinal - 1);
   const latest = revision.id.toLowerCase() === suite.currentRevisionId?.toLowerCase();
@@ -77,19 +76,25 @@ function RevisionItem({
     <li className="revision-item">
       <div className="revision-head">
         <h2 className="revision-title">
-          {revision.message ?? `Revision ${revision.ordinal}`} {latest && <Badge tone="amber">Latest</Badge>}
+          Revision {revision.ordinal} {latest && <Badge>Latest</Badge>}
         </h2>
+        <p className="revision-message">{revision.message ?? 'No revision message recorded.'}</p>
         <p className="muted">{bylineOf(revision)}</p>
       </div>
-      {open && previous && <Changes suite={suite} before={previous.id} after={revision.id} />}
-      <div className="revision-actions">
-        {previous && (
-          <Button size="sm" variant="text" aria-expanded={open} onClick={() => setOpen(!open)}>
-            {open ? 'Hide changes' : `Changes from revision ${previous.ordinal}`}
-          </Button>
+      <div className="revision-delta">
+        {revision.ordinal === 1 ? (
+          <ul className="revision-changes">
+            <li>First revision</li>
+          </ul>
+        ) : previous ? (
+          <Changes suite={suite} before={previous.id} after={revision.id} />
+        ) : (
+          <p className="muted">Previous revision isn’t on this page.</p>
         )}
+      </div>
+      <div className="revision-actions">
         <Link
-          className={buttonClass('secondary', 'sm')}
+          className={buttonClass('text', 'sm')}
           to={routes.suiteScript(suite.scope.organizationId, suite.scope.workspaceId, suite.id, revision.id)}
         >
           View script
@@ -106,18 +111,16 @@ function RevisionItem({
     </li>
   );
 }
-/** "Revision 4, saved Today, 10:02, by Meera. 3 runs" */
+/** Actual save provenance and retained run count; absent historical facts stay explicit. */
 function bylineOf(revision: SuiteRevisionSummary): string {
-  const byline = [
-    `Revision ${revision.ordinal}`,
-    revision.savedAt ? `saved ${when(revision.savedAt)}` : null,
-    revision.savedBy ? `by ${revision.savedBy}` : null,
-  ]
-    .filter(Boolean)
-    .join(', ');
-  const runs = revision.runCount;
-  if (runs === undefined) return byline;
-  return `${byline}. ${runs === 1 ? '1 run' : `${runs.toLocaleString('en-US')} runs`}`;
+  const at = revision.savedAt ? when(revision.savedAt) : 'Save time not recorded';
+  const author = revision.savedBy ? `by ${revision.savedBy}` : 'author not recorded';
+  const count = revision.runCount;
+  const runs =
+    count === undefined
+      ? 'Run count unavailable.'
+      : `${count.toLocaleString('en-US')} ${count === 1 ? 'run' : 'runs'}.`;
+  return `${at} ${author}. ${runs}`;
 }
 /** Reads the two immutable configurations (cached per revision) and lists their differences. */
 function Changes({ suite, before, after }: { suite: Suite; before: string; after: string }) {

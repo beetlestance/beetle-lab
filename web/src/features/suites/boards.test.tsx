@@ -206,6 +206,17 @@ describe('Suite / Overview and Start run', () => {
     expect(screen.getByText('p95 under 250 ms')).toBeInTheDocument();
     expect(await screen.findByRole('link', { name: `Passed run ${runIdLatest}` })).toHaveTextContent('rev 4,');
   });
+  it('shows immutable revision number, message and retained count separately', async () => {
+    const fixture = testClient(handler());
+    mount(fixture.client, suitePath + '?tab=revisions');
+    const card = (await screen.findByRole('heading', { name: 'Revision 4 Latest' })).closest('li')!;
+    expect(within(card).getByText('Sale-day rate')).toBeVisible();
+    expect(card).toHaveTextContent(/by Meera\. 3 runs\./);
+    expect(within(card).getByText('Previous revision isn’t on this page.')).toBeVisible();
+    const listed = fixture.records.filter(record => record.path.includes('/revisions?'));
+    expect(listed.some(record => query(record).get('limit') === '8')).toBe(true);
+    expect(fixture.records.every(record => record.method === 'GET')).toBe(true);
+  });
   it('preserves read-only controls across Overview, Edit and Revisions', async () => {
     const fixture = testClient(handler());
     mount(fixture.client, suitePath, { readOnly: true, restoredBackup: null });

@@ -1,0 +1,67 @@
+/* Immutable revision cards. Only the eight visible revisions load configurations. */
+.suite-detail .revision-list {
+  gap: var(--s-10);
+}
+.suite-detail .revision-item {
+  display: grid;
+  grid-template-columns: minmax(0, 460px) minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--s-22);
+  min-height: 127px;
+  padding: var(--s-22);
+}
+.suite-detail .revision-title {
+  font-size: var(--fs-xl);
+  line-height: 26px;
+}
+.suite-detail .revision-title .badge {
+  font-weight: 400;
+}
+.suite-detail .revision-head .revision-message {
+  margin-top: var(--s-6);
+  font-size: var(--fs-base);
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+.suite-detail .revision-head .muted {
+  margin-top: var(--s-6);
+  font-size: var(--fs-md);
+  color: var(--mute);
+  line-height: 21px;
+}
+.suite-detail .revision-changes {
+  list-style: disc;
+  margin: 0;
+  padding-left: var(--s-14);
+  font-size: var(--fs-md);
+  line-height: 26px;
+  overflow-wrap: anywhere;
+}
+.suite-detail .revision-actions {
+  margin: 0;
+  gap: var(--s-14);
+  flex-wrap: nowrap;
+}
+.suite-detail .revision-actions .btn {
+  min-height: 40px;
+  font-size: var(--fs-base);
+  font-weight: 400;
+  padding-inline: var(--s-8);
+}
+@media (max-width: 1100px) {
+  .suite-detail .revision-item {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .suite-detail .revision-actions {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 600px) {
+  .suite-detail .revision-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .suite-detail .revision-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}

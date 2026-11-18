@@ -135,10 +135,15 @@ function pointsOf(stages: Stage[]): [number, number][] {
   }
   return points;
 }
+/** Literal open-workload VU limits, shared by the shape and immutable revision differences. */
+export function virtualUserLimits(value: Json): { allocated: number; maximum: number } | null {
+  const allocated = count(value.preAllocatedVUs);
+  const maximum = count(value.maxVUs);
+  return allocated !== null && maximum !== null && maximum >= allocated ? { allocated, maximum } : null;
+}
 function vuRange(value: Json): string | null {
-  const low = count(value.preAllocatedVUs);
-  const high = count(value.maxVUs);
-  return low !== null && high !== null ? `${figure(low)} to ${figure(high)} VUs` : null;
+  const limits = virtualUserLimits(value);
+  return limits ? `${figure(limits.allocated)} to ${figure(limits.maximum)} VUs` : null;
 }
 function flat(label: string, value: number, ms: number, unit: string): Stage[] {
   return [{ kind: 'steady', label: `${label} ${figure(value)} ${unit}`, ms, from: value, to: value }];
