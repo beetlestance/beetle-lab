@@ -95,6 +95,7 @@ export async function openAgentRuntime(options: AgentRuntimeOptions, metadata: M
   }
   const runtime = await openAgentOwners({
     liveMetrics: gateway.liveMetrics.bind(gateway),
+    liveHistory: gateway.liveHistory.bind(gateway),
     source,
     gateway: capturedGateway,
     metadata: deliveryMetadata,

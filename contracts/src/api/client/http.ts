@@ -21,6 +21,7 @@ export function createApiHttpTransport(options: ApiHttpOptions): ApiTransport {
         RetentionApplyReceipt: 2048,
         RetentionDiscardReceipt: 2048,
         LiveMetricSnapshot: 65536,
+        LiveMetricHistory: API_MAXIMUM_JSON_BYTES,
         RunComparisonSnapshot: 262144,
       },
       validate: validateApi,

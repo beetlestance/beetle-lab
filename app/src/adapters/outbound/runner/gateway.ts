@@ -1,3 +1,5 @@
+import { readLiveHistory } from './live-history.js';
+import type { RunnerLiveHistoryGateway } from '../../../ports/run-live-history.js';
 import { settleOutput } from './settlement.js';
 import type { RunnerSettlementGateway } from '../../../ports/runner-settlement.js';
 import { retireOutput } from './retirement.js';
@@ -37,13 +39,18 @@ function capture(loaded: LoadedAgentConfiguration): { origin: URL; token: string
 export function openGateway(
   loaded: LoadedAgentConfiguration,
   io: NativeIo,
-): RunnerLiveMetricGateway & RunnerExportGateway & RunnerRetirementGateway & RunnerSettlementGateway {
+): RunnerLiveMetricGateway &
+  RunnerLiveHistoryGateway &
+  RunnerExportGateway &
+  RunnerRetirementGateway &
+  RunnerSettlementGateway {
   const connection = { ...capture(loaded), credits: new CallCredits(), io };
   const client = createRunnerClient(createTransport(connection));
   return Object.freeze({
     settleOutput: (request, signal) => settleOutput(connection, request, signal),
     retireOutput: (request, signal) => retireOutput(connection, request, signal),
     exportAttempt: (identity) => createExportAttempt(connection, identity),
+    liveHistory: (identity, signal) => readLiveHistory(connection, captureIdentity(identity), signal),
     liveMetrics: (identity, signal) => readLiveMetrics(connection, captureIdentity(identity), signal),
     capabilities: (signal?: AbortSignal) => client.capabilities(signal),
     output: (identity) => createSourceClient(connection, captureIdentity(identity)),
@@ -61,5 +68,9 @@ export function openGateway(
       return Object.freeze(facade);
     },
     close: () => connection.credits.close(),
-  } satisfies RunnerLiveMetricGateway & RunnerExportGateway & RunnerRetirementGateway & RunnerSettlementGateway);
+  } satisfies RunnerLiveMetricGateway &
+    RunnerLiveHistoryGateway &
+    RunnerExportGateway &
+    RunnerRetirementGateway &
+    RunnerSettlementGateway);
 }

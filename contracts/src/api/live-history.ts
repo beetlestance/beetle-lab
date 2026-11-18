@@ -9,7 +9,8 @@ import {
 } from './live-metrics.js';
 import type { LiveMetricHash } from './live-metrics.js';
 import type { LiveMetricHistory, LiveMetricScope } from './generated/types.js';
-export const LIVE_HISTORY_BYTES = 16777216;
+import { API_MAXIMUM_JSON_BYTES } from './limits.js';
+export const LIVE_HISTORY_BYTES = API_MAXIMUM_JSON_BYTES;
 export class LiveHistoryError extends Error {
   constructor() {
     super('Live history rejected');

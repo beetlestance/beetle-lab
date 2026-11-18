@@ -34,6 +34,6 @@ Explicit finalization ACK endpoints remain separate work.
 Focused checks: agent/test/transport, Node TS and changed lint/structural gates.
 
 History GET uses one separate shared credit and 30 s SourceWork lifetime. Its reply
-is <=16 MiB and 65536 JSON nodes, <=900 actual source windows with explicit sampled
+is <=2 MiB and 65536 JSON nodes, <=900 actual source windows with explicit sampled
 coverage. Scope/subset checks precede encoding; byte/node pressure compacts actual
 windows, preserving endpoints. It grants no sealed source or publication authority.

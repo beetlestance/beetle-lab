@@ -7,7 +7,7 @@ import type {HistoryRead} from '../../src/supervisor/index.js';
 import {sourceFixture,deferred} from './source-fixture.js';
 const f=sourceFixture();
 async function setup(){
- const value=JSON.parse(await readFile('contracts/fixtures/valid/live-metric-history.json','utf8')) as LiveMetricHistory;
+ const value=JSON.parse(await readFile('contracts/fixtures/api/valid/live-metric-history.json','utf8')) as LiveMetricHistory;
  const read=vi.fn<NonNullable<AgentHttpOptions['liveHistory']>>(async()=>({ok:true,value}));
  const e=await f.server(false,undefined,read);value.scope=e.key;value.prefix.scope=e.key;
  return {...e,value,read,pathHistory:e.path.replace('/source','/live-history')};

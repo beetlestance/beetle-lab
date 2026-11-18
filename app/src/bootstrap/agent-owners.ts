@@ -1,3 +1,4 @@
+import type { RunnerLiveHistoryGateway } from '../ports/run-live-history.js';
 import type { RetentionDriverState } from '@beetle/contracts/api';
 import type { OutputBinding } from '../domain/output-owner/index.js';
 import type { RunnerLiveMetricGateway } from '../ports/run-live-metrics.js';
@@ -18,6 +19,7 @@ import { throwCloseFailures } from './application-close.js';
 
 export interface AgentRuntime {
   readonly liveMetrics?: RunnerLiveMetricGateway['liveMetrics'];
+  readonly liveHistory?: RunnerLiveHistoryGateway['liveHistory'];
   readonly publishedBytes?: Pick<OutputByteStore<OutputBinding>, 'read'>;
   /** In-memory last capacity sample outcome; informational, never dispatch authority. */
   readonly agentStatus?: () => AgentStatusView;
@@ -28,6 +30,7 @@ export interface AgentRuntime {
 }
 interface OwnerOptions {
   readonly liveMetrics?: RunnerLiveMetricGateway['liveMetrics'];
+  readonly liveHistory?: RunnerLiveHistoryGateway['liveHistory'];
   readonly source: CapacitySource;
   readonly gateway: RunnerGateway;
   readonly metadata: DeliveryMetadata;
@@ -95,6 +98,14 @@ class AgentOwners implements AgentRuntime {
   handle(): AgentRuntime {
     if (this.outputFailure) throw this.outputFailure.error;
     return Object.freeze({
+      ...(this.options.liveHistory
+        ? {
+            liveHistory: ((identity, signal) =>
+              this.closed
+                ? Promise.resolve({ ok: false, error: { kind: 'cancelled' } })
+                : this.options.liveHistory!(identity, signal)) as RunnerLiveHistoryGateway['liveHistory'],
+          }
+        : {}),
       ...(this.options.liveMetrics
         ? {
             liveMetrics: ((identity, signal) =>
@@ -206,6 +217,7 @@ export async function openAgentOwners(options: OwnerOptions): Promise<AgentRunti
   const metadata = options.metadata;
   const openOutputs = options.openOutputs;
   const liveMetrics = options.liveMetrics;
+  const liveHistory = options.liveHistory;
   const closeSource = source.close.bind(source);
   const closeGateway = gateway.close.bind(gateway);
   let owner: AgentOwners | undefined;
@@ -218,6 +230,7 @@ export async function openAgentOwners(options: OwnerOptions): Promise<AgentRunti
       metadata: capturedMetadata,
       ...(openOutputs ? { openOutputs } : {}),
       ...(liveMetrics ? { liveMetrics } : {}),
+      ...(liveHistory ? { liveHistory } : {}),
     });
     await owner.start();
     return owner.handle();

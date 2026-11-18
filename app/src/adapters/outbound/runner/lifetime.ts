@@ -17,7 +17,7 @@ interface PendingCall extends OriginalCall {
 }
 
 /** Construct internal custody without observing caller-owned registration hooks. */
-function original(offer: boolean): PendingCall {
+function original(offer: boolean, timeoutMs = 5000): PendingCall {
   const controller = new AbortController();
   let cause: 'cancelled' | 'timeout' | undefined;
   let caller: AbortSignal | undefined;
@@ -42,7 +42,7 @@ function original(offer: boolean): PendingCall {
       // Brand-check without caller hooks before retaining a cleanup target.
       if (signal !== undefined) Reflect.apply(signalAborted, signal, []);
       caller = signal;
-      timer = setTimeout(() => stop('timeout'), 5000);
+      timer = setTimeout(() => stop('timeout'), timeoutMs);
       caller?.addEventListener('abort', abort, { once: true });
       if (caller && Reflect.apply(signalAborted, caller, [])) abort();
     },
@@ -70,31 +70,45 @@ export class CallCredits {
   private ordinary = 0;
   private sources = 0;
   private live = 0;
+  private history = 0;
   private closed = false;
   private closing: Promise<void> | undefined;
 
-  private full(kind: 'offer' | 'ordinary' | 'source' | 'live'): boolean {
+  private full(kind: 'offer' | 'ordinary' | 'source' | 'live' | 'history'): boolean {
     if (this.closed) return true;
     if (kind === 'offer') return this.offers >= 2;
-    return this.ordinary >= 8 || (kind === 'source' && this.sources >= 2) || (kind === 'live' && this.live >= 2);
+    return this.ordinary >= 8 || this.subsetFull(kind);
   }
 
-  private count(kind: 'offer' | 'ordinary' | 'source' | 'live', delta: number): void {
+  private subsetFull(kind: 'ordinary' | 'source' | 'live' | 'history'): boolean {
+    switch (kind) {
+      case 'source':
+        return this.sources >= 2;
+      case 'live':
+        return this.live >= 2;
+      case 'history':
+        return this.history >= 1;
+      default:
+        return false;
+    }
+  }
+  private count(kind: 'offer' | 'ordinary' | 'source' | 'live' | 'history', delta: number): void {
     if (kind === 'offer') this.offers += delta;
     else this.ordinary += delta;
     if (kind === 'source') this.sources += delta;
     if (kind === 'live') this.live += delta;
+    if (kind === 'history') this.history += delta;
   }
 
   async run<T>(
-    kind: 'offer' | 'ordinary' | 'source' | 'live',
+    kind: 'offer' | 'ordinary' | 'source' | 'live' | 'history',
     caller: AbortSignal | undefined,
     work: (call: OriginalCall) => Promise<ClientResult<T>>,
   ): Promise<ClientResult<T>> {
     if (this.full(kind)) {
       return { ok: false, error: { kind: 'transport' } };
     }
-    const call = original(kind === 'offer');
+    const call = original(kind === 'offer', kind === 'history' ? 30000 : 5000);
     this.calls.add(call);
     this.count(kind, 1);
     try {

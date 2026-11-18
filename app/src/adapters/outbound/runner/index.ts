@@ -1,3 +1,4 @@
+import type { RunnerLiveHistoryGateway } from '../../../ports/run-live-history.js';
 import type { RunnerSettlementGateway } from '../../../ports/runner-settlement.js';
 import type { RunnerRetirementGateway } from '../../../ports/runner-retirement.js';
 import type { RunnerExportGateway } from '../../../ports/export-runner.js';
@@ -9,7 +10,11 @@ import { nativeIo } from './native.js';
 /** Installation-owned, bounded Node HTTP gateway. Closing retains original I/O. */
 export function createRunnerGateway(
   loaded: LoadedAgentConfiguration,
-): RunnerLiveMetricGateway & RunnerExportGateway & RunnerRetirementGateway & RunnerSettlementGateway {
+): RunnerLiveMetricGateway &
+  RunnerLiveHistoryGateway &
+  RunnerExportGateway &
+  RunnerRetirementGateway &
+  RunnerSettlementGateway {
   return openGateway(loaded, nativeIo);
 }
 

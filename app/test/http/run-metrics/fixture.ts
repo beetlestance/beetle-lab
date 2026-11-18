@@ -1,3 +1,5 @@
+import type { RunLiveHistoryService } from '../../../src/ports/run-live-history.js';
+import { registerRunLiveHistoryRoutes } from '../../../src/adapters/inbound/http/run-live-history/index.js';
 import type { RunLiveMetricsService } from '../../../src/ports/run-live-metrics.js';
 import { registerRunLiveMetricRoutes } from '../../../src/adapters/inbound/http/run-live-metrics/index.js';
 import { once } from 'node:events';
@@ -11,7 +13,7 @@ import { createLocalSession } from '../../../src/adapters/inbound/http/session/i
 import { registerRunMetricRoutes } from '../../../src/adapters/inbound/http/run-metrics/index.js';
 import type { RunMetricsService } from '../../../src/ports/run-metrics.js';
 import { classifyMetadataError } from '../../../src/bootstrap/metadata-errors.js';
-export async function httpFixture(service: RunMetricsService, liveService?: RunLiveMetricsService) {
+export async function httpFixture(service: RunMetricsService, liveService?: RunLiveMetricsService, liveHistoryService?: RunLiveHistoryService) {
   const probe = createServer(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
   const address = probe.address(); if (!address || typeof address === 'string') throw new Error('Missing listener');
   await new Promise<void>((resolve, reject) => probe.close(error => error ? reject(error) : resolve()));
@@ -21,9 +23,10 @@ export async function httpFixture(service: RunMetricsService, liveService?: RunL
   const session = createLocalSession({externalOrigin: origin}); session.registerRoutes(server);
   const routes = registerRunMetricRoutes(server, {service, authorize: session.authorize});
   const liveRoutes = liveService ? registerRunLiveMetricRoutes(server, {service: liveService, authorize: session.authorize}) : undefined;
+  const liveHistoryRoutes = liveHistoryService ? registerRunLiveHistoryRoutes(server,{service:liveHistoryService,authorize:session.authorize}) : undefined;
   async function cleanup() {
     session.close();
-    const results = await Promise.allSettled([routes.close(), liveRoutes?.close(), server.close()]);
+    const results = await Promise.allSettled([routes.close(), liveRoutes?.close(), liveHistoryRoutes?.close(), server.close()]);
     const errors = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected').map(r => r.reason as unknown);
     if (errors.length) throw new AggregateError(errors, 'Metric HTTP fixture cleanup failed');
   }

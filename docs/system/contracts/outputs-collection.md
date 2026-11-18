@@ -212,7 +212,7 @@ marker (change requires recovery); task directories are committed before any pro
 
 | Code | Reviewed |
 | --- | --- |
-| `agent/src/collection/` | `81f936d21f9b` |
+| `agent/src/collection/` | `e670dd584834` |
 | `agent/src/journal/output-source-protocol.ts` | `3633d477b92c` |
 | `agent/src/transport/sources.ts` | `a1e3149482d3` |
 | `app/src/ports/output-bytes.ts` | `10c5f59ca356` |

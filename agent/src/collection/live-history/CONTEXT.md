@@ -16,7 +16,7 @@ may change as the active producer creates other files; dev/inode identity may no
 Bounds: combined prefixes <=256 MiB; IO <=64 KiB; data record <=1 MiB, header<=1 KiB,
 index row<=256 B, windows<=65536. At most 900 deterministically selected source
 windows, including first/last, with explicit sampled coverage; never average p95.
-readLiveHistory owns a 30 s deadline and <=16 MiB projected response. No
+readLiveHistory owns a 30 s deadline and <=2 MiB projected response. No
 public HTTP history route exists merely because these native helpers are present.
 
 Line assembly uses one 1 MiB data record buffer and one 1 KiB index/header buffer;

@@ -1,3 +1,5 @@
+import { createRunLiveHistoryService } from '../application/run-live-history/index.js';
+import { registerRunLiveHistoryRoutes } from '../adapters/inbound/http/run-live-history/index.js';
 import { registerStorageHealth } from './storage-health.js';
 import { applicationMode } from './historical.js';
 import { protectUpgrade } from './upgrade-fence.js';
@@ -232,7 +234,7 @@ class ApplicationOwner {
   }
 }
 
-type ReadView = Partial<Pick<AgentRuntime, 'publishedBytes' | 'liveMetrics'>>;
+type ReadView = Partial<Pick<AgentRuntime, 'publishedBytes' | 'liveMetrics' | 'liveHistory'>>;
 function metricRoutes(
   server: FastifyInstance,
   store: Metadata,
@@ -276,10 +278,26 @@ function metricRoutes(
       monotonic: () => performance.now(),
     }),
   });
+  const liveHistory = registerRunLiveHistoryRoutes(server, {
+    authorize,
+    service: createRunLiveHistoryService({
+      executions: store.executions,
+      ...(agent?.liveHistory ? { gateway: { liveHistory: agent.liveHistory } } : {}),
+      hash: digest,
+    }),
+  });
   return {
     historySummaryState: index.state,
     close: async () => {
-      throwCloseFailures(await Promise.allSettled([index.close(), history.close(), live.close(), comparisons.close()]));
+      throwCloseFailures(
+        await Promise.allSettled([
+          index.close(),
+          history.close(),
+          live.close(),
+          liveHistory.close(),
+          comparisons.close(),
+        ]),
+      );
     },
   };
 }

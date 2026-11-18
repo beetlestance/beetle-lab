@@ -45,7 +45,7 @@ carry a shell command, host path, mount option, environment map or Docker flag.
 | `POST /attempts/{id}/cancel-original`, `/export/cancel-original` | Cancels an original whose delivery is uncertain without enqueueing it |
 | `GET /attempts/{id}/events?after=N` | Ordered batch of at most 100 events / 256 KiB |
 | `POST /attempts/{id}/ack` | Confirms an application-durable cursor; never a test result |
-| `GET /attempts/{id}/live-metrics`, `/live-history` | Advisory window (64 KiB, 5 s) or verified sampled prefix (16 MiB, 65536 nodes, 30 s); neither grants output custody |
+| `GET /attempts/{id}/live-metrics`, `/live-history` | Advisory window (64 KiB, 5 s) or verified sampled prefix (2 MiB, 65536 nodes, 30 s); neither grants output custody |
 | `source`, `source/chunk`, `source/absence`, `output-retirement`, `output-settlement` | Output custody routes; see [outputs collection](outputs-collection.md) and [retirement](retirement.md) |
 
 Paths are under `/runner/v1`. The initial Offer always uses generation 1; later
@@ -71,10 +71,10 @@ reasons and no exception text, configuration or URL. Only a schema-valid scoped
 | Limit | Agent server | Backend client |
 | --- | --- | --- |
 | Original Offer / cancel-original calls | 2, before body parsing | 2 |
-| Other original calls | 32 shared; source 2, live 2, history 1 | 8 shared across all facades |
+| Other original calls | 32 shared; source 2, live 2, history 1 | 8 shared; history subset 1 |
 | Sockets / headers | 64 sockets; 16 KiB / 128 fields | 16 KiB / 32 fields |
-| Deadline | 30 s request and connection | 5000 ms logical; credit held until native close |
-| Responses | Encoded and validated; history ≤ 16 MiB / 65536 nodes | ≤ 1 MiB, ≤ 4096 fragments |
+| Deadline | 30 s request and connection | 5 s; history 30 s; credit held until native close |
+| Responses | Encoded and validated; history ≤ 2 MiB / 65536 nodes | ≤ 1 MiB normally, history ≤ 2 MiB; ≤ 4096 fragments |
 
 Saturation is a typed failure without a queue (429 on the agent). Neither side retries, follows
 redirects, uses proxies, keep-alive or decompression. The client resolves DNS once (≤ 8
@@ -211,8 +211,8 @@ Container removal requires a stopped, sealed and application-acknowledged attemp
 | Code | Reviewed |
 | --- | --- |
 | `contracts/runner/v1/` | `c0d5b65442f6` |
-| `agent/src/transport/` | `d92dffa735c6` |
+| `agent/src/transport/` | `ef7b3981fc9b` |
 | `agent/src/journal/projection.ts` | `7c77ac77f06a` |
 | `agent/src/controller/` | `230594aa2b66` |
 | `agent/src/supervisor/time.ts` | `9594485cfc76` |
-| `app/src/adapters/outbound/runner/` | `b4f590c85e3c` |
+| `app/src/adapters/outbound/runner/` | `5ab2b31155a9` |

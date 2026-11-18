@@ -572,6 +572,16 @@
     "implementation": "implemented"
   },
   {
+    "name": "getRunLiveHistory",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics/live-history",
+    "response": "LiveMetricHistory",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunAttemptParams",
+    "implementation": "implemented"
+  },
+  {
     "name": "compareRuns",
     "method": "POST",
     "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/comparisons",

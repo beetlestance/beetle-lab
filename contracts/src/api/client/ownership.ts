@@ -1,3 +1,4 @@
+import { jsonNodeCount } from '../../json.js';
 import { revisionListPageMatches } from '../revision-list.js';
 import { parentRetentionMatches } from './retention-parent.js';
 import type { SuiteRevisionPage, PageQuery } from '../generated/types.js';
@@ -9,7 +10,7 @@ import { exportOwnership, exportRequestMatches } from './export-ownership.js';
 import { runComparisonRequestMatches, runComparisonSnapshotMatches } from './comparison.js';
 import type { RunComparisonRequest, RunComparisonSnapshot } from '../generated/types.js';
 import { liveMetricScopeMatches } from '../live-metrics.js';
-import type { LiveMetricSnapshot } from '../generated/types.js';
+import type { LiveMetricSnapshot, LiveMetricHistory } from '../generated/types.js';
 import { runMetricSeriesPageMatches, runMetricSamplesPageMatches } from './run-metric-ownership.js';
 import type { RunMetricSeriesPage, RunMetricSamplesPage } from '../generated/types.js';
 import type { ApiOperation } from '../generated/operations.js';
@@ -176,13 +177,8 @@ function scopedResponseOwnership(operation: ApiOperation, input: PagedInput, val
   if (overview !== undefined) return overview;
   if (operation.response === 'RunComparisonSnapshot')
     return runComparisonSnapshotMatches(value as RunComparisonSnapshot, input.body as unknown as RunComparisonRequest);
-  if (operation.response === 'LiveMetricSnapshot')
-    return liveMetricScopeMatches((value as LiveMetricSnapshot).scope, {
-      organizationId: input.params.organizationId!,
-      workspaceId: input.params.workspaceId!,
-      attemptId: input.params.attemptId!,
-      generation: 1,
-    });
+  const live = liveOwnership(operation, input, value);
+  if (live !== undefined) return live;
   if (operation.response === 'RunEventPage')
     return runEventPageMatches(value as RunEventPage, {
       id: input.params.runId!,
@@ -273,5 +269,27 @@ function columnOwnership(operation: ApiOperation, input: PreparedInput, value: u
     operation.response === 'InputColumns' &&
     equal(expectedOwner(operation, input), (value as InputColumns).scope) &&
     inputOwnership(operation, input, value)
+  );
+}
+
+function liveOwnership(operation: ApiOperation, input: PagedInput, value: unknown): boolean | undefined {
+  if (operation.response !== 'LiveMetricSnapshot' && operation.response !== 'LiveMetricHistory') return undefined;
+  if (operation.response === 'LiveMetricHistory') {
+    try {
+      jsonNodeCount(value);
+    } catch {
+      return false;
+    }
+  }
+  const expected = {
+    organizationId: input.params.organizationId!,
+    workspaceId: input.params.workspaceId!,
+    attemptId: input.params.attemptId!,
+    generation: 1,
+  };
+  if (!liveMetricScopeMatches((value as LiveMetricSnapshot | LiveMetricHistory).scope, expected)) return false;
+  return (
+    operation.response !== 'LiveMetricHistory' ||
+    liveMetricScopeMatches((value as LiveMetricHistory).prefix.scope, expected)
   );
 }
