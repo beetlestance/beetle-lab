@@ -56,6 +56,17 @@
 .btn-danger:active {
   background: var(--red-pressed);
 }
+/* Light-on-dark emphasis that is not the amber call to action (Live run / Cancel run). */
+.btn-inverse {
+  background: var(--inverse);
+  color: var(--on-inverse);
+}
+.btn-inverse:hover {
+  background: var(--inverse-hover);
+}
+.btn-inverse[aria-busy='true'] {
+  background: var(--inverse);
+}
 .btn-text {
   background: transparent;
 }
@@ -501,6 +512,7 @@ ul.tabs {
 .dialog-actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: var(--s-10);
 }
 
@@ -528,11 +540,22 @@ ul.tabs {
   color: var(--ink);
   font-weight: 500;
 }
-.data-table td {
+.data-table td,
+.data-table tbody th {
   height: 44px;
   padding: var(--s-8) var(--s-16);
+  background: none;
   color: var(--ink);
+  font-size: inherit;
+  font-weight: 400;
+  white-space: normal;
   border: 0;
+}
+.data-table tbody a {
+  text-decoration: none;
+}
+.data-table tbody a:hover {
+  text-decoration: underline;
 }
 .data-table tbody tr:nth-child(even) {
   background: var(--zebra);
