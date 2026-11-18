@@ -67,5 +67,5 @@ export function useRevisionSave(
       ...(draft.patch ? { metadata: draft.patch } : {}),
     });
   }
-  return { write, next, saved, acknowledged, conflict, closeConflict: () => setConflict(false), send };
+  return { write, acknowledged, send, status: { next, saved, conflict, closeConflict: () => setConflict(false) } };
 }

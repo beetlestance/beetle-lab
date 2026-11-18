@@ -5,7 +5,9 @@ import { Button } from '../../components/Button.js';
 import { Select } from '../../components/Fields.js';
 import { SegmentedFilter } from '../../components/SegmentedFilter.js';
 import type { Config } from '../suites/draft.js';
-import { formatDraft, parseDraft } from '../suites/draft.js';
+import { useRawJsonField } from './useRawJsonField.js';
+import { rawField } from './raw-drafts.js';
+import type { RawField } from './raw-drafts.js';
 import { Card, TextField } from './fields.js';
 import type { InputCatalog } from './fields.js';
 import { isObj, methods, objects, text, uniqueId } from './model.js';
@@ -99,9 +101,9 @@ export function RequestDetail({
         change={(headers) => change({ ...request, headers })}
       />
       <Card title="Body">
-        <Body request={request} index={index} inputs={inputs} change={change} />
+        <Body field={rawField(config, index)} request={request} index={index} inputs={inputs} change={change} />
       </Card>
-      <Checks request={request} path={path} change={change} />
+      <Checks request={request} path={path} change={change} fieldFor={(at) => rawField(config, index, at)} />
       <ValuePalette config={config} insert={insertion.insert} files={fileColumns} />
     </div>
   );
@@ -240,32 +242,39 @@ function bodyFor(mode: string, inputs: InputCatalog): Obj | undefined {
   };
 }
 
-function InlineBody({ index, body, set }: { index: number; body: Obj | undefined; set: (value: unknown) => void }) {
-  const [inline, setInline] = useState(() => (body?.kind === 'json' ? formatDraft(body.value ?? null) : '{}'));
-  const [error, setError] = useState('');
+function InlineBody({
+  index,
+  field,
+  body,
+  set,
+}: {
+  index: number;
+  field: RawField | null;
+  body: Obj | undefined;
+  set: (value: unknown) => void | boolean;
+}) {
+  const draft = useRawJsonField(field, body?.value, set);
+  const id = fieldId(`/requests/${index}/body/value`);
   return (
     <div className="field">
-      <label className="sr-only" htmlFor={`inline-body-${index}`}>
+      <label className="sr-only" htmlFor={id}>
         Inline JSON body
       </label>
       <textarea
-        id={`inline-body-${index}`}
+        id={id}
         className="input code-input"
         spellCheck={false}
-        value={inline}
-        aria-invalid={error ? true : undefined}
-        onChange={(event) => {
-          setInline(event.target.value);
-          try {
-            const value = parseDraft(`{"value":${event.target.value}}`).value;
-            setError('');
-            set(value);
-          } catch {
-            setError('Not valid JSON yet. The draft keeps the last valid body until this parses.');
-          }
-        }}
+        maxLength={1_048_576}
+        readOnly={draft.readOnly}
+        value={draft.text}
+        aria-invalid={draft.error ? true : undefined}
+        onChange={(event) => draft.change(event.target.value)}
       />
-      {error && <small className="field-error">{error}</small>}
+      {draft.error && (
+        <small className="field-error" role="alert">
+          {draft.error}
+        </small>
+      )}
     </div>
   );
 }
@@ -306,15 +315,17 @@ function InputBody({
 const bodyModes = { json: 'inline', input: 'input' } as Record<string, string>;
 
 function Body({
+  field,
   request,
   index,
   inputs,
   change,
 }: {
+  field: RawField | null;
   request: Obj;
   index: number;
   inputs: InputCatalog;
-  change: (next: Obj) => void;
+  change: (next: Obj) => void | boolean;
 }) {
   const body = isObj(request.body) ? request.body : undefined;
   const mode = bodyModes[text(body?.kind)] ?? 'none';
@@ -338,7 +349,12 @@ function Body({
         }}
       />
       {mode === 'inline' && (
-        <InlineBody index={index} body={body} set={(value) => change({ ...rest, body: { kind: 'json', value } })} />
+        <InlineBody
+          index={index}
+          field={field}
+          body={body}
+          set={(value) => change({ ...rest, body: { kind: 'json', value } })}
+        />
       )}
       {mode === 'input' && <InputBody request={request} index={index} inputs={inputs} change={change} />}
       <p className="editor-note">

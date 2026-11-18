@@ -1,8 +1,11 @@
 import { normalizedMetadata, useMetadataDraft } from './metadata.js';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
+import type { AcknowledgedRevision } from './useRevisionSave.js';
 import type { ApiClientFailure, Suite, SuiteRevision } from '@beetle/contracts/api';
 import { formatDraft, parseDraft, starter } from '../suites/draft.js';
 import type { Config } from '../suites/draft.js';
+import { useRawDrafts } from './raw-drafts.js';
 import { useRevisionSave } from './useRevisionSave.js';
 import { useInputCatalog } from './inputs.js';
 import { inputReferences } from './model.js';
@@ -48,29 +51,35 @@ export function useRevisionDraft(
   const [message, setMessage] = useState('');
   const [invalid, setInvalid] = useState(false);
   const [attempted, setAttempted] = useState(false);
+  const [resetVersion, setResetVersion] = useState(0);
   const saved = useRevisionSave(suite, initial?.ordinal ?? 0, baseVersion, refresh);
   const write = saved.write;
-  const reset = () => {
-    setMessage('');
-    setAttempted(false);
-  };
-  useEffect(() => {
-    const ack = saved.acknowledged;
-    if (!ack) return;
-    setBaseline(ack.text);
-    metadata.acknowledge(ack.metadata, ack.patch, ack.version);
-    setMessage((previous) => (previous === ack.message ? '' : previous));
-    setAttempted(false);
-  }, [saved.acknowledged]);
-  const config = tryParse(text);
+  useAcknowledgedDraft(saved.acknowledged, metadata, {
+    baseline: setBaseline,
+    message: setMessage,
+    attempted: setAttempted,
+  });
+  const config = useMemo(() => tryParse(text), [text]);
+  const raw = useRawDrafts(config);
   const catalog = useInputCatalog(suite.scope, config ? inputReferences(config) : []);
   const messageError = messageProblem(message);
-  const problems = [...metadata.problems, ...collectProblems(config, attempted, catalog.problems, write.failure)];
+  const problems = [
+    ...raw.problems,
+    ...metadata.problems,
+    ...collectProblems(config, attempted, catalog.problems, write.failure),
+  ];
   const validity = useCallback((bad: boolean) => setInvalid(bad), []);
 
   function submit(version?: number) {
     setAttempted(true);
-    if (!config || messageError || validate(config).length || catalog.problems.length || metadata.problems.length)
+    if (
+      !config ||
+      raw.dirty ||
+      messageError ||
+      validate(config).length ||
+      catalog.problems.length ||
+      metadata.problems.length
+    )
       return;
     saved.send({ text, config, message, metadata: normalizedMetadata(metadata.value), patch: metadata.patch }, version);
   }
@@ -81,23 +90,61 @@ export function useRevisionDraft(
     setMessage,
     messageError,
     metadata,
-    dirty: initial === undefined || text !== baseline || message !== '' || metadata.dirty,
-    blocked: invalid || !!messageError || metadata.problems.length > 0,
+    dirty: changedDraft({
+      fresh: initial === undefined,
+      text,
+      baseline,
+      message,
+      metadata: metadata.dirty,
+      raw: raw.dirty,
+    }),
+    blocked: invalid || !!messageError || metadata.problems.length > 0 || raw.dirty,
+    raw,
+    resetVersion,
     validity,
     catalog,
     problems,
     write,
-    next: saved.next,
-    saved: saved.saved,
-    conflict: saved.conflict,
-    closeConflict: saved.closeConflict,
+    ...saved.status,
     save: () => submit(),
     saveOver: (version: number) => submit(version),
     discard: () => {
       setText(baseline);
       metadata.discard();
-      reset();
+      raw.discard();
+      setResetVersion((version) => version + 1);
+      setMessage('');
+      setAttempted(false);
       write.newIntent();
     },
   };
+}
+
+function changedDraft(value: {
+  fresh: boolean;
+  text: string;
+  baseline: string;
+  message: string;
+  metadata: boolean;
+  raw: boolean;
+}) {
+  return value.fresh || value.text !== value.baseline || value.message !== '' || value.metadata || value.raw;
+}
+
+function useAcknowledgedDraft(
+  ack: AcknowledgedRevision | null,
+  metadata: ReturnType<typeof useMetadataDraft>,
+  setters: {
+    baseline: (value: string) => void;
+    message: Dispatch<SetStateAction<string>>;
+    attempted: (value: boolean) => void;
+  },
+) {
+  useEffect(() => {
+    if (!ack) return;
+    setters.baseline(ack.text);
+    metadata.acknowledge(ack.metadata, ack.patch, ack.version);
+    setters.message((previous) => (previous === ack.message ? '' : previous));
+    setters.attempted(false);
+  }, [ack]);
 }

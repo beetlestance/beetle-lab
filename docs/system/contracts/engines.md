@@ -48,7 +48,7 @@ Registration JSON is snapshotted and frozen; caller objects are not retained.
 The shipped k6 adapter imports the same language-neutral schema files used by the
 compiler, without importing compiler or runtime code.
 
-The editor's `validateK6DraftPart` uses the same bundled dataset and secret schemas,
+The editor's `validateK6DraftPart` uses the same bundled dataset, secret and JSON-scalar schemas,
 with a 1 MiB serialization bound. It is a structural draft check only: it supplies
 no installed-schema identity and performs no provider lookup, input parsing or
 engine compilation. The server and admitted engine retain those responsibilities.
@@ -177,7 +177,7 @@ evidence incomplete. Details: [decision 011](../../decisions/011-k6-outcome-evid
 | Code | Reviewed |
 | --- | --- |
 | `contracts/runner/v1/engine-manifest.schema.json` | `a3b34c6e502d` |
-| `contracts/src/engine-config/` | `74c0c0effb5b` |
+| `contracts/src/engine-config/` | `70db6abc8a7e` |
 | `agent/src/catalog/` | `5a0a12cb7eb9` |
 | `agent/src/staging/prepare.ts` | `76d5b154de34` |
 | `engines/k6/wrapper/attempt/reservation.ts` | `f10b08b3c4fd` |

@@ -20,6 +20,7 @@ export type EditorView = { mode: SuiteEditorView; request: string | null };
 
 type ConfigFieldsProps = {
   scope: WorkspaceScope;
+  resetVersion: number;
   metadata?: ReactNode;
   text: string;
   change: (text: string) => void;
@@ -55,6 +56,7 @@ function StructuredView({ config, set, inputs, view, setView, metadata, scope }:
   if (request !== null)
     return (
       <RequestDetail
+        key={requestKey(config, request)}
         scope={scope}
         config={config}
         set={set}
@@ -96,8 +98,10 @@ export function ConfigFields({
   setView,
   metadata,
   scope,
+  resetVersion,
 }: ConfigFieldsProps) {
   const [intakeError, setIntakeError] = useState('');
+  useEffect(() => setIntakeError(''), [resetVersion]);
   const { config, error } = parse(text);
   const problem = error || intakeError;
   useEffect(() => {
@@ -107,8 +111,10 @@ export function ConfigFields({
     try {
       change(formatDraft(next));
       setIntakeError('');
+      return true;
     } catch {
       setIntakeError('That change would push the configuration past 1 MiB or the JSON limits; it was not applied.');
+      return false;
     }
   }
   function editJson(next: string) {
@@ -117,7 +123,7 @@ export function ConfigFields({
     setIntakeError('');
     change(next);
   }
-  const structured = disabled || !!problem;
+  const structured = disabled || !!error;
   const subeditor = view.mode === 'run-setup' || view.request !== null;
   return (
     <div className="suite-config">
@@ -138,7 +144,7 @@ export function ConfigFields({
           {problem}
         </p>
       )}
-      <fieldset disabled={disabled} className="editor-sections">
+      <fieldset key={resetVersion} disabled={disabled} className="editor-sections">
         <legend className="sr-only">Configuration</legend>
         {view.mode === 'json' || error ? (
           <CompleteConfigJson text={text} editJson={editJson} />

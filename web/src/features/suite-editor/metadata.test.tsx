@@ -178,3 +178,38 @@ it('aborts a pending compound save on owner retirement without refreshing after 
   );
   expect(refreshed).toBe(0);
 });
+it('keeps later raw JSON edits after an acknowledgement and blocks a conflict override until resolved', async () => {
+  const bodyConfig = {
+    ...config,
+    requests: (config.requests as Record<string, unknown>[]).map((request) => ({
+      ...request,
+      body: { kind: 'json', value: 0 },
+    })),
+  };
+  const revision = { ...initial, config: bodyConfig };
+  const pending = deferred<Response>();
+  const api = testClient((request) =>
+    request.method === 'POST' ? pending.promise : json({ scope, items: [], nextCursor: null }),
+  );
+  const client = createQueryClient();
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <ApiContext.Provider value={api.client}>
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    </ApiContext.Provider>
+  );
+  const view = renderHook(() => useRevisionDraft(suite, revision, async () => undefined), { wrapper });
+  act(() => view.result.current.setMessage('First save'));
+  act(() => view.result.current.save());
+  await waitFor(() => expect(api.records.filter((request) => request.method === 'POST')).toHaveLength(1));
+  act(() => {
+    view.result.current.raw.keep({ requestId: 'get' }, '{later', 'invalid_json');
+  });
+  await act(async () =>
+    pending.resolve(json({ ...revision, id: '33333333-3333-4333-8333-333333333333', ordinal: 2 }, 201)),
+  );
+  await waitFor(() => expect(view.result.current.saved).toBe(2));
+  expect(view.result.current.raw.get({ requestId: 'get' })?.raw).toBe('{later');
+  expect(view.result.current.blocked).toBe(true);
+  act(() => view.result.current.saveOver(2));
+  expect(api.records.filter((request) => request.method === 'POST')).toHaveLength(1);
+});

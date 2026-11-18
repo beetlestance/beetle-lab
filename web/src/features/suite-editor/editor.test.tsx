@@ -185,7 +185,7 @@ it('discards edits back to the saved revision', async () => {
   expect(discard).toBeDisabled();
   fireEvent.change(target, { target: { value: 'http://changed.invalid' } });
   fireEvent.click(discard);
-  expect(target).toHaveValue('http://target.invalid');
+  expect(screen.getByRole('textbox', { name: 'Target URL' })).toHaveValue('http://target.invalid');
   expect(discard).toBeDisabled();
 });
 

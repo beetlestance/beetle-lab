@@ -132,7 +132,9 @@ export function ConflictDialog({
         </>
       }
     >
-      <p className="editor-note">The copy includes your configuration, suite details and revision message.</p>
+      <p className="editor-note">
+        The copy includes your configuration, suite details, revision message and any unfinished JSON text.
+      </p>
       {!ready && !failed && <LoadingState label="Reading the latest revision…" />}
       {failed && (
         <div role="alert">
@@ -144,7 +146,7 @@ export function ConflictDialog({
       )}
       {copyFailed && (
         <p className="field-error">
-          Copying failed. Your configuration and suite details are still kept in this editor.
+          Copying failed. Your configuration, suite details and unfinished text are still kept in this editor.
         </p>
       )}
     </Dialog>

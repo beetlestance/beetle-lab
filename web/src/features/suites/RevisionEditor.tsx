@@ -1,3 +1,4 @@
+import { RawDraftContext } from '../suite-editor/raw-drafts.js';
 import { encodeJson } from '@beetle/contracts';
 import { normalizedMetadata } from '../suite-editor/metadata.js';
 import { MetadataFields } from '../suite-editor/MetadataFields.js';
@@ -30,7 +31,7 @@ function jumpFor(text: string, setView: (view: EditorView) => void) {
     const setup =
       /^\/(loadPlan\/scenarios\/[1-9]|selections|readiness|targetSampling|secrets|datasets)/.test(path) ||
       /^\/loadPlan\/scenarios\/0\/(?!stages|executor|maxVUs)/.test(path);
-    const request = /^\/requests\/(\d+)\/(name|query|headers|assertions|body\/format)/.exec(path);
+    const request = /^\/requests\/(\d+)\/(name|query|headers|assertions|body)/.exec(path);
     if (!path) setView({ mode: 'json', request: null });
     else if (setup) setView({ mode: 'run-setup', request: null });
     else setView({ mode: 'form', request: request ? keyOf(text, Number(request[1])) : null });
@@ -64,7 +65,7 @@ export function RevisionEditor({
   const subeditor = view.mode === 'run-setup' || view.request !== null;
   const closePage = () => setView({ mode: 'form', request: null });
   return (
-    <>
+    <RawDraftContext.Provider value={draft.raw}>
       {subeditor && <EditorPageHeader text={draft.text} view={view} close={closePage} />}
       {subeditor && draft.problems.length > 0 && (
         <div className="editor-subpage-problems">
@@ -78,6 +79,7 @@ export function RevisionEditor({
         <div className="suite-editor-main">
           <ConfigFields
             scope={suite.scope}
+            resetVersion={draft.resetVersion}
             metadata={
               <MetadataFields
                 workspace={workspace}
@@ -115,7 +117,7 @@ export function RevisionEditor({
         )}
         {draft.conflict && <DraftConflict suite={suite} draft={draft} />}
       </section>
-    </>
+    </RawDraftContext.Provider>
   );
 }
 
@@ -127,6 +129,7 @@ function DraftConflict({ suite, draft }: { suite: Suite; draft: ReturnType<typeo
         encodeJson(
           {
             config: parseDraft(draft.text),
+            ...(draft.raw.dirty ? { unfinishedJson: draft.raw.snapshot() } : {}),
             metadata: {
               ...normalizedMetadata(draft.metadata.value),
               description: draft.metadata.value.description.trim() || null,

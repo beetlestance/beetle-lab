@@ -1,3 +1,5 @@
+import { ScalarField } from './ScalarField.js';
+import type { RawField } from './raw-drafts.js';
 import { Button } from '../../components/Button.js';
 import { Select, TextInput } from '../../components/Fields.js';
 import { Card, TextField } from './fields.js';
@@ -16,7 +18,7 @@ const countsValue = (check: Obj) => (check.required === false ? 'optional' : 're
 type Kind = NonNullable<ReturnType<typeof checkKind>>;
 function typedValue(kind: Kind, value: string): unknown {
   if (kind.value === 'status' || kind.value === 'family') return wholeOrRaw(value);
-  if (kind.value === 'number' || kind.value === 'scalar') return numberOrRaw(value);
+  if (kind.value === 'number') return numberOrRaw(value);
   return value;
 }
 
@@ -66,12 +68,14 @@ function CheckRow({
   n,
   set,
   remove,
+  field,
 }: {
   check: Obj;
   at: string;
   n: number;
-  set: (next: Obj) => void;
+  set: (next: Obj) => void | boolean;
   remove: () => void;
+  field: RawField | null;
 }) {
   const kind = checkKind(check.kind);
   return (
@@ -94,15 +98,7 @@ function CheckRow({
           <TextInput label={checkFieldLabel(n, 'path or name', 'Path or name')} disabled value="—" />
         )}
       </div>
-      {kind?.value && (
-        <TextField
-          label={checkFieldLabel(n, 'value', 'Value')}
-          path={`${at}/value`}
-          value={check.value}
-          change={(value) => set({ ...check, value: typedValue(kind, value) })}
-        />
-      )}
-      {!kind?.value && <TextInput label={checkFieldLabel(n, 'value', 'Value')} disabled value="—" />}
+      <CheckValue kind={kind} check={check} at={at} n={n} field={field} set={set} />
       <Select
         label={checkFieldLabel(n, 'counts', 'Counts')}
         value={countsValue(check)}
@@ -118,8 +114,54 @@ function CheckRow({
   );
 }
 
+function CheckValue({
+  kind,
+  check,
+  at,
+  n,
+  field,
+  set,
+}: {
+  kind: ReturnType<typeof checkKind>;
+  check: Obj;
+  at: string;
+  n: number;
+  field: RawField | null;
+  set: (next: Obj) => void | boolean;
+}) {
+  if (!kind?.value) return <TextInput label={checkFieldLabel(n, 'value', 'Value')} disabled value="—" />;
+  if (kind.value === 'scalar')
+    return (
+      <ScalarField
+        field={field}
+        n={n}
+        path={`${at}/value`}
+        value={check.value}
+        apply={(value) => set({ ...check, value })}
+      />
+    );
+  return (
+    <TextField
+      label={checkFieldLabel(n, 'value', 'Value')}
+      path={`${at}/value`}
+      value={check.value}
+      change={(value) => set({ ...check, value: typedValue(kind, value) })}
+    />
+  );
+}
+
 /** The checks (k6 assertions) of one request: kind, target, comparison and value. */
-export function Checks({ request, path, change }: { request: Obj; path: string; change: (next: Obj) => void }) {
+export function Checks({
+  request,
+  path,
+  change,
+  fieldFor,
+}: {
+  request: Obj;
+  path: string;
+  change: (next: Obj) => void | boolean;
+  fieldFor: (index: number) => RawField | null;
+}) {
   const checks = objects(request.assertions);
   const update = (position: number, next: Obj) =>
     change({ ...request, assertions: checks.map((check, at) => (at === position ? next : check)) });
@@ -152,7 +194,8 @@ export function Checks({ request, path, change }: { request: Obj; path: string; 
         <legend className="sr-only">Checks</legend>
         {checks.map((check, position) => (
           <CheckRow
-            key={position}
+            key={checkKey(checks, position)}
+            field={fieldFor(position)}
             check={check}
             at={`${path}/assertions/${position}`}
             n={position + 1}
@@ -163,4 +206,11 @@ export function Checks({ request, path, change }: { request: Obj; path: string; 
       </fieldset>
     </Card>
   );
+}
+
+function checkKey(checks: readonly Obj[], position: number): string {
+  const id = checks[position]?.id;
+  return typeof id === 'string' && checks.filter((check) => check.id === id).length === 1
+    ? `id:${id}`
+    : `position:${position}`;
 }
