@@ -1,11 +1,11 @@
 # k6 outcome mapper
 
-Public `mapK6Result` consumes accepted compiler IR, verified summary v2/numeric
-snapshot, native process observation, trusted terminal confirmation time/scope and
+Public `mapK6Result` consumes accepted compiler IR, verified summary v2/numeric snapshot, native process observation, trusted terminal confirmation time/scope and
 mandatory orchestrationFailure/orchestrationQuiescent and artifact metadata. It
-returns an immutable unsealed result body plus explicit chart
-coverage, or fixed `not_quiescent`/`invalid_input`. No I/O, clocks or retries occur.
-Wire shape is unchanged; ADR011 owns assertion units and decision semantics.
+returns an immutable unsealed result body plus explicit chart coverage, or fixed `not_quiescent`/`invalid_input`. No I/O, clocks or retries occur.
+Optional threshold readings retain the supported native statistic, never an
+estimate or a reevaluated verdict. All readings withdraw if the unsealed body
+exceeds 64,000 bytes, preserving mandatory result/envelope room. ADR011 owns decisions.
 
 Required assertions count workload definitions, excluding readiness/optional ones.
 Repeated evaluations do not increase that count. Request/evaluation/failure counts

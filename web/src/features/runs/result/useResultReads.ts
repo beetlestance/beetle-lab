@@ -1,3 +1,4 @@
+import { verifiedRunRevision } from '../run-revision.js';
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Run } from '@beetle/contracts/api';
@@ -47,6 +48,7 @@ export function useResultReads(run: Run) {
     queryKey: [...key, 'revision', run.revisionId.toLowerCase()],
     queryFn: ({ signal }) =>
       readResult(api.getSuiteRevision({ params: { ...params, revisionId: run.revisionId }, signal })),
+    select: (value) => verifiedRunRevision(value, run),
   });
   useEffect(
     () => () => {
@@ -68,7 +70,7 @@ export function useResultReads(run: Run) {
     summary: summary.data ?? null,
     summaryStatus: summary.isPending ? 'loading' : summary.isError ? 'error' : 'ready',
     suite: suite.data,
-    revision: revision.data,
+    revision: revision.isError ? undefined : revision.data,
     revisionQuery: revision,
   } as const;
 }

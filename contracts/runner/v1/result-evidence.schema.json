@@ -49,6 +49,47 @@
         },
         "passed": {
           "type": "boolean"
+        },
+        "reading": {
+          "type": "object",
+          "properties": {
+            "source": {
+              "const": "native-summary"
+            },
+            "metric": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z_][A-Za-z0-9_:]*$"
+            },
+            "stat": {
+              "enum": [
+                "avg",
+                "min",
+                "max",
+                "med",
+                "p50",
+                "p90",
+                "p95",
+                "p99",
+                "count",
+                "rate",
+                "value"
+              ]
+            },
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1.7976931348623157e+308
+            }
+          },
+          "required": [
+            "source",
+            "metric",
+            "stat",
+            "value"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [

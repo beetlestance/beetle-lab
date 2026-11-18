@@ -123,7 +123,7 @@ function ThresholdSection({
       <h2 id="result-thresholds-title" className="result-section-title">
         Thresholds
       </h2>
-      <Thresholds result={engine} status={status} variant={variant} />
+      <Thresholds result={engine} status={status} variant={variant} rules={readPlan(reads.revision?.config).rules} />
       {status === 'unavailable' && (
         <Button size="sm" variant="text" onClick={() => void reads.result.query.refetch()}>
           Check for the result again

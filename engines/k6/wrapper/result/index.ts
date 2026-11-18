@@ -56,7 +56,18 @@ function map(input: K6ResultInput): K6ResultMapping {
       ? { mode: 'discovery', expectedAbort: thresholds.expectedAbort }
       : { mode: 'ordinary' }),
   };
-  return checked(body, input);
+  return checked(boundedReadings(body), input);
+}
+/** Optional display readings never displace the mandatory result or its envelope. */
+function boundedReadings<T extends Pick<K6ResultBody, 'thresholds'>>(body: T): T {
+  if (Buffer.byteLength(encodeJson(body, 1_048_576), 'utf8') <= 64_000) return body;
+  return {
+    ...body,
+    thresholds: body.thresholds.map(({ reading, ...verdict }) => {
+      void reading;
+      return verdict;
+    }),
+  };
 }
 function decisionComplete(
   input: K6ResultInput,

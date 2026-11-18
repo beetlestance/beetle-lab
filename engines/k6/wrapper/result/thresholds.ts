@@ -3,14 +3,14 @@ import type { EvidenceMetric } from '../../plan/index.js';
 import type { K6ResultInput, ThresholdEvidence } from './types.js';
 import { countStat, counter, sum, verdict } from './numeric.js';
 
-function support(input: K6ResultInput, metric: EvidenceMetric, expression: string): boolean {
+function nativeReading(input: K6ResultInput, metric: EvidenceMetric, expression: string): number | null {
   // Compiled metadata already owns native spelling. This prefix is only a lookup,
   // never a second formatter, threshold parser or numeric rule evaluator.
   const aggregation = expression.split(/[<>=!]/, 1)[0]!;
   const value = input.summary?.metrics[metric.key]?.values[aggregation];
-  if (value === undefined) return false;
+  if (value === undefined) return null;
   if (!Number.isFinite(value) || value < 0) throw new Error('invalid_input');
-  return sampled(input, metric);
+  return sampled(input, metric) ? value : null;
 }
 function sampled(input: K6ResultInput, metric: EvidenceMetric): boolean {
   switch (metric.kind) {
@@ -34,10 +34,16 @@ export function thresholdEvidence(input: K6ResultInput): ThresholdEvidence {
   let complete = true;
   for (const rule of input.suite.loadPlan.thresholds) {
     const metric = layout.metrics.find((item) => item.key === rule.rule.metric);
-    const passed =
-      metric && support(input, metric, rule.threshold) ? verdict(input.summary, metric.key, rule.threshold) : null;
+    const value = metric ? nativeReading(input, metric, rule.threshold) : null;
+    const passed = value !== null && metric ? verdict(input.summary, metric.key, rule.threshold) : null;
     if (passed === null) complete = false;
-    else verdicts.push({ id: rule.id, purpose: rule.kind, passed });
+    else
+      verdicts.push({
+        id: rule.id,
+        purpose: rule.kind,
+        passed,
+        reading: { source: 'native-summary', metric: rule.rule.metric, stat: rule.rule.stat, value: value! },
+      });
   }
   const discovery = input.suite.loadPlan.thresholds.filter((rule) => rule.kind === 'discovery');
   const reached = discovery.find((rule) =>

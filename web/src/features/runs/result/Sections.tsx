@@ -2,7 +2,8 @@ import type { EngineResult } from '@beetle/contracts';
 import type { Run, RunHistorySummary, Suite, SuiteRevision } from '@beetle/contracts/api';
 import { Link } from 'react-router-dom';
 import { routes } from '../../../app/routes.js';
-import { Status } from '../../../components/Badge.js';
+import { ThresholdReading } from './ThresholdReading.js';
+import type { PlanRule } from '../live/plan.js';
 import { buttonClass } from '../../../components/Button.js';
 import { formatDuration, formatNumber, formatPercent, formatTime, shortId } from '../../run-results/format.js';
 import { summaryStatus } from '../HistorySummaryCells.js';
@@ -58,10 +59,12 @@ export function Thresholds({
   result,
   status,
   variant,
+  rules = [],
 }: {
   result: EngineResult | null;
   status: string;
   variant: Variant;
+  rules?: readonly PlanRule[];
 }) {
   if (!result)
     return (
@@ -82,13 +85,9 @@ export function Thresholds({
       {result.thresholds.length === 0 ? (
         <p className="result-muted">No thresholds were declared.</p>
       ) : (
-        <ul className="result-thresholds" aria-label="Thresholds">
+        <ul className="result-native-thresholds" aria-label="Thresholds">
           {result.thresholds.map((threshold, index) => (
-            <li key={`${threshold.id}/${index}`} className="result-card">
-              <Status tone={threshold.passed ? 'pass' : 'fail'}>{threshold.passed ? 'Passed' : 'Failed'}</Status>
-              <span className="result-threshold-name">{threshold.id}</span>
-              <span className="result-muted">{threshold.purpose}</span>
-            </li>
+            <ThresholdReading key={`${threshold.id}/${index}`} threshold={threshold} rules={rules} />
           ))}
         </ul>
       )}

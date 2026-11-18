@@ -543,5 +543,15 @@
     "path": "valid/k6-diagnostics.json",
     "schema": "NativeDiagnosticArtifact",
     "valid": true
+  },
+  {
+    "path": "valid/passed-result-reading.json",
+    "schema": "EngineResult",
+    "valid": true
+  },
+  {
+    "path": "invalid/result-threshold-reading-source.json",
+    "schema": "EngineResult",
+    "valid": false
   }
 ]

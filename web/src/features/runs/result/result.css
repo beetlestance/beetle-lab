@@ -119,14 +119,6 @@
   gap: var(--s-20);
   align-items: start;
 }
-.result-thresholds {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--s-12);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
 .result-card {
   display: grid;
   gap: var(--s-6);
@@ -137,11 +129,6 @@
 }
 .result-card p {
   margin: 0;
-}
-.result-threshold-name {
-  font-family: var(--font-mono);
-  font-size: var(--fs-sm);
-  overflow-wrap: anywhere;
 }
 .result-note {
   display: grid;

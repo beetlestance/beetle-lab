@@ -80,6 +80,9 @@
                           },
                           "passed": {
                             "const": true
+                          },
+                          "reading": {
+                            "$ref": "https://beetle-lab.dev/contracts/runner/v1/result-evidence#/$defs/threshold/properties/reading"
                           }
                         },
                         "required": [
@@ -118,6 +121,9 @@
                               },
                               "passed": {
                                 "const": true
+                              },
+                              "reading": {
+                                "$ref": "https://beetle-lab.dev/contracts/runner/v1/result-evidence#/$defs/threshold/properties/reading"
                               }
                             },
                             "required": [
@@ -138,6 +144,9 @@
                               },
                               "passed": {
                                 "type": "boolean"
+                              },
+                              "reading": {
+                                "$ref": "https://beetle-lab.dev/contracts/runner/v1/result-evidence#/$defs/threshold/properties/reading"
                               }
                             },
                             "required": [

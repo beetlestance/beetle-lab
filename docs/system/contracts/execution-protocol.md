@@ -174,6 +174,7 @@ events; `wrapperSeq` is kept for deduplication. Wrapper kinds: `phase.started`,
 `cancellation.requested`, `runtime.exited`, `execution.lost`. The wrapper cannot
 emit agent kinds. The backend stores a batch and its cursor atomically before ACK.
 An expired cursor returns 409 `cursor_expired`; completeness then stays partial.
+Native threshold readings are [optional display evidence](threshold-readings.md).
 
 ## Cancellation and deadlines
 
@@ -210,7 +211,7 @@ Container removal requires a stopped, sealed and application-acknowledged attemp
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/runner/v1/` | `c0d5b65442f6` |
+| `contracts/runner/v1/` | `20efdd3f8d13` |
 | `agent/src/transport/` | `ef7b3981fc9b` |
 | `agent/src/journal/projection.ts` | `7c77ac77f06a` |
 | `agent/src/controller/` | `230594aa2b66` |

@@ -209,3 +209,11 @@ it('lets an operator recheck pending measurements without automatically polling 
  expect(f.records.filter(record=>record.path.endsWith('/metrics/overview'))).toHaveLength(2);
  expect(f.records.filter(record=>record.method!=='GET')).toHaveLength(0);
 });
+
+it('refuses saved threshold metadata whose revision digest differs from the accepted run',async()=>{
+ const current=finished();const wrong={...revision(),digest:'f'.repeat(64)};
+ const f=fixture(current,request=>request.path.includes('/revisions/')?json(wrong):undefined);
+ mount(f.client,path);
+ expect(await screen.findByText('Revision details could not be loaded.')).toBeVisible();
+ expect(screen.queryByText(/saved.*by/i)).not.toBeInTheDocument();
+});

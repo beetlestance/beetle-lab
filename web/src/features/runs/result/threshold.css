@@ -1,0 +1,36 @@
+.result-native-thresholds {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.result-native-thresholds > .result-threshold-card {
+  border: 0;
+  padding: var(--s-18);
+  border-radius: var(--r-lg);
+  gap: var(--s-12);
+}
+.result-threshold-top {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-8);
+}
+.result-threshold-meter {
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--data-track);
+}
+.result-threshold-meter > span {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+  border-radius: inherit;
+}
+.result-threshold-card.is-failed .result-threshold-meter > span {
+  background: var(--red);
+}

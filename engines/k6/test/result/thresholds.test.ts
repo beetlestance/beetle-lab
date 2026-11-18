@@ -11,7 +11,7 @@ it.each([true, false, null])('maps native ordinary SLO verdict=%s without numeri
   const result = mapK6Result(input); expect(result.ok).toBe(true);
   if (!result.ok) throw new Error('Expected mapping');
   expect(result.body.outcome).toBe(ok === null ? 'inconclusive' : ok ? 'passed' : 'failed');
-  expect(result.body.thresholds).toEqual(ok === null ? [] : [{ id: 'latency', purpose: 'slo', passed: ok }]);
+  expect(result.body.thresholds).toEqual(ok === null ? [] : [{ id: 'latency', purpose: 'slo', passed: ok, reading: {source:'native-summary',metric:'http_req_duration',stat:'p95',value:input.summary!.metrics.http_req_duration!.values['p(95)']} }]);
 });
 it('retains duplicate native expressions as separately configured rule IDs', () => {
   const config = configFor();
@@ -116,4 +116,19 @@ it('uses the supported native Rate verdict without recomputing the comparison', 
   threshold(input, 'http_req_failed', 'rate<0.1', false);
   expect(mapK6Result(input)).toMatchObject({ ok: true, body: { outcome: 'failed', completeness: 'complete',
     thresholds: [{ id: 'errors', purpose: 'slo', passed: false }] } });
+});
+
+it('records an exact native zero independently of its verdict and keeps it distinct from no reading',()=>{
+ const c=configFor();c.loadPlan.slos=[{id:'zero',metric:'http_reqs',stat:'count',operator:'<=',value:0}];
+ const input=fixture(c);const mapped=mapK6Result(input);
+ expect(mapped).toMatchObject({ok:true,body:{thresholds:[{id:'zero',reading:{source:'native-summary',metric:'http_reqs',stat:'count',value:0}}]}});
+});
+it('withdraws optional readings before they crowd out the mandatory result envelope',()=>{
+ const c=configFor();c.loadPlan.slos=Array.from({length:128},(_,i)=>({id:`rule-${i}`,metric:'http_reqs',stat:'count',operator:'>' as const,value:1}));
+ const input=fixture(c);input.artifacts=Array.from({length:128},(_,i)=>({artifactId:`00000000-0000-4000-8000-${String(i+1).padStart(12,'0')}`,
+  kind:'metrics',relativePath:'a'.repeat(180)+i+'.json',bytes:0,sha256:'a'.repeat(64),sealedAt:input.terminalObservedAt}));
+ const mapped=mapK6Result(input);expect(mapped.ok).toBe(true);if(!mapped.ok)throw Error('Mapping failed');
+ expect(mapped.body.thresholds).toHaveLength(128);expect(mapped.body.thresholds.every(item=>item.reading===undefined)).toBe(true);
+ expect(Buffer.byteLength(JSON.stringify(mapped.body))).toBeLessThanOrEqual(64000);
+ expect(mapped.body.outcome).toBe('passed');
 });

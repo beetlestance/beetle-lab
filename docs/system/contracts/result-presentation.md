@@ -14,6 +14,8 @@ The result UI reads once per entry through shared read admission, never polls,
 and hides cached numeric figures after a read error. It renders pooled tiles and
 a p95-ordered endpoint table with a bounded name filter and explicit omissions.
 
+Native threshold values/limits: [reading contract](threshold-readings.md).
+
 ## Ownership
 
 The backend owns this projection. The browser consumes only the generated DTO; it must
@@ -29,4 +31,4 @@ history can read it without starting work. No mutation or current-work polling.
 | `contracts/api/v2/run-metric-overview.schema.json` | `dfde37122018` |
 | `contracts/src/api/metric-overview.ts` | `4217eaad4700` |
 | `web/src/features/runs/result/Overview.tsx` | `60ccdb6036ab` |
-| `web/src/features/runs/result/useResultReads.ts` | `e2661d0a6060` |
+| `web/src/features/runs/result/useResultReads.ts` | `474ff2bb4a8d` |

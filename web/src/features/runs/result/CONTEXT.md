@@ -23,13 +23,14 @@ Read-only and restored-backup state comes from useSessionAccess, not a session r
 - useWrite: single-flight write, identical replay only on an unknown outcome.
 - Overview: five pooled summary tiles and a <=64-row endpoint table, p95 order,
   name filter, explicit missing values/omissions. Histogram estimates stay labelled.
-- Sections: fallback history tiles, thresholds (pass/fail, id, purpose), script version.
+- Sections: fallback history tiles, exact native threshold readings with verified
+  pinned limits (no histogram substitution), native verdicts and script version.
 - ReportTabs: Report, What happened, Artifacts, Diagnostics; under 760px the tabs
   become a section list (Phone / Run result).
 - DeleteRun: dialog composing retention's RetentionControls; a pinned run offers
   Unpin first.
 
-Still pending in these screens: threshold readings/limits, peak rate, previous-run
+Still pending in these screens: peak rate, previous-run
 delta and the designed multi-chart layout. The overview route supplies p50/p99,
 checks, dropped iterations and endpoint totals.
 
