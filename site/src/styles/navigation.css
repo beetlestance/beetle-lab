@@ -1,0 +1,291 @@
+/* Page frame and navigation from the Penpot "Docs" boards: centred grid, flat
+   sidebar, "On this page" rail, the phone page bar and the Menu.
+   Desktop (1440 board): 80px gutters, sidebar 232, gap 56, article 720, gap 56, rail 216. */
+
+/* Frame: sidebar and content in a centred grid under the fixed header. */
+.bl-frame {
+  max-width: calc(1280px + 2 * var(--gutter));
+  margin-inline: auto;
+  padding: var(--sl-nav-height) var(--gutter) 0;
+}
+.bl-page .main-frame {
+  padding: 0;
+}
+.bl-page main {
+  padding: 0 0 96px;
+}
+.bl-page .content-panel {
+  padding: 0;
+  border: 0;
+}
+.bl-page .content-panel:first-child {
+  padding-top: 40px;
+}
+.bl-page .content-panel + .content-panel {
+  padding-top: 20px;
+}
+.bl-page .content-panel .sl-container {
+  max-width: none;
+  margin: 0;
+}
+.bl-page .content-panel .sl-container > * + * {
+  margin-top: 0;
+}
+.bl-page .content-panel .sl-container > footer {
+  gap: 0;
+  margin-top: 52px;
+}
+.bl-page .content-panel footer .meta:empty {
+  display: none;
+}
+.bl-page .content-panel footer .meta {
+  margin-top: 0;
+}
+
+/* Flat sidebar. */
+.bl-page .sidebar-content {
+  display: block;
+  padding: 0;
+}
+.bl-side-group + .bl-side-group {
+  margin-top: 28px;
+}
+.bl-side-group h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--mute);
+}
+.bl-side-group ul {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bl-side-group a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--bl-radius-sm);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--mute);
+  text-decoration: none;
+}
+.bl-side-group a:hover {
+  color: var(--ink);
+  background: var(--tab-hover);
+}
+.bl-side-group a[aria-current='page'] {
+  color: var(--ink);
+  background: var(--panel);
+}
+.bl-side-group a[aria-current='page']::before {
+  content: '';
+  flex: none;
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: 50%;
+  background: var(--amber);
+}
+
+/* "On this page" rail. */
+.bl-toc h2 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--mute);
+}
+.bl-toc ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bl-toc ul ul {
+  margin: 10px 0 0 14px;
+}
+.bl-toc a {
+  position: relative;
+  display: block;
+  padding: 0 0 0 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--mute);
+  text-decoration: none;
+}
+.bl-toc a::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 3px;
+  width: 2px;
+  height: 16px;
+  background: var(--data-track);
+}
+.bl-toc a:hover {
+  color: var(--ink);
+}
+.bl-toc a[aria-current='true'] {
+  color: var(--ink);
+}
+.bl-toc a[aria-current='true']::before {
+  background: var(--amber);
+}
+
+/* Page bar under the header (below 80rem): section pages and "On this page". */
+.bl-pagebar {
+  position: fixed;
+  z-index: var(--sl-z-index-toc);
+  inset-inline: 0;
+  top: var(--sl-nav-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: var(--sl-mobile-toc-height);
+  padding: 0 var(--gutter);
+  background: var(--zebra);
+}
+.bl-section-menu,
+.bl-pagebar mobile-starlight-toc details {
+  position: relative;
+}
+.bl-section-menu summary,
+.bl-pagebar mobile-starlight-toc .toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 33px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--bl-radius-sm);
+  background: transparent;
+  color: var(--mute);
+  font-size: 14px;
+  line-height: 1.5;
+  cursor: pointer;
+  list-style: none;
+}
+.bl-section-menu summary::-webkit-details-marker {
+  display: none;
+}
+.bl-section-menu summary span {
+  font-size: 12px;
+}
+.bl-section-menu[open] summary,
+.bl-pagebar mobile-starlight-toc details[open] .toggle,
+.bl-section-menu summary:hover,
+.bl-pagebar mobile-starlight-toc .toggle:hover {
+  color: var(--ink);
+  border-color: var(--faint);
+}
+.bl-section-menu ul,
+.bl-pagebar mobile-starlight-toc .dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  width: min(300px, calc(100vw - 2 * var(--gutter)));
+  max-height: calc(85vh - var(--sl-nav-height) - var(--sl-mobile-toc-height));
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--bl-radius);
+  background: var(--panel);
+  box-shadow: 0 14px 36px rgb(0 0 0 / 50%);
+}
+.bl-section-menu ul {
+  inset-inline-start: 0;
+}
+.bl-pagebar mobile-starlight-toc .dropdown {
+  inset-inline-end: 0;
+}
+.bl-section-menu a,
+.bl-pagebar mobile-starlight-toc .dropdown a {
+  display: block;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--mute);
+  text-decoration: none;
+}
+.bl-section-menu a:hover,
+.bl-pagebar mobile-starlight-toc .dropdown a:hover,
+.bl-section-menu a[aria-current='page'],
+.bl-pagebar mobile-starlight-toc .dropdown a[aria-current='true'] {
+  color: var(--ink);
+  background: var(--line);
+}
+.bl-pagebar mobile-starlight-toc .dropdown a[aria-current='true']::after {
+  display: none;
+}
+.bl-pagebar mobile-starlight-toc .dropdown ul ul a {
+  padding-inline-start: 24px;
+}
+.bl-pagebar mobile-starlight-toc nav {
+  position: static;
+  border: 0;
+  background: none;
+}
+.bl-pagebar mobile-starlight-toc summary {
+  height: auto;
+  padding: 0;
+  border: 0;
+}
+.bl-pagebar mobile-starlight-toc .display-current {
+  display: none;
+}
+.bl-pagebar mobile-starlight-toc .caret {
+  width: 14px;
+  height: 14px;
+}
+.bl-pagebar mobile-starlight-toc {
+  margin-inline-start: auto;
+}
+
+/* Menu button and menu (phones). */
+.bl-menu-button {
+  position: fixed;
+  z-index: var(--sl-z-index-navbar);
+  top: 12px;
+  inset-inline-end: var(--gutter);
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--bl-radius-sm);
+  background: var(--line);
+  color: var(--ink);
+  font: 14px/1.5 var(--font-sans);
+  cursor: pointer;
+}
+.bl-menu-button .close,
+.bl-menu-button:has(~ :popover-open) .open {
+  display: none;
+}
+.bl-menu-button:has(~ :popover-open) .close {
+  display: inline;
+}
+.bl-menu-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.bl-menu-search {
+  height: 37px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--bl-radius-sm);
+  background: var(--panel);
+  color: var(--ink);
+  font: 14px/1.5 var(--font-sans);
+  cursor: pointer;
+}

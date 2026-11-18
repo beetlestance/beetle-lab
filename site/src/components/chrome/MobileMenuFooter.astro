@@ -1,0 +1,28 @@
+---
+// Header actions that do not fit a phone header, at the top of the Menu.
+import SkinSwitch from './SkinSwitch.astro';
+
+const appUrl = import.meta.env.DOCS_APP_URL;
+---
+
+<div class="bl-menu-actions">
+  <button type="button" class="bl-menu-search" data-open-search>Search</button>
+  {
+    appUrl && (
+      <a class="bl-open-app" href={appUrl}>
+        Open the app<span aria-hidden="true">→</span>
+      </a>
+    )
+  }
+  <SkinSwitch name="skin-menu" />
+</div>
+
+<script>
+  // The search dialog lives in the header; open it from the menu after closing the menu.
+  document.querySelectorAll('[data-open-search]').forEach((button) =>
+    button.addEventListener('click', () => {
+      document.getElementById('starlight__sidebar')?.hidePopover();
+      document.querySelector<HTMLButtonElement>('site-search button[data-open-modal]')?.click();
+    }),
+  );
+</script>

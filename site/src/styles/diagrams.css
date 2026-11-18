@@ -1,0 +1,178 @@
+/* Diagrams drawn inline in pages (Penpot "Docs / Concept" board). Colours are skin
+   tokens, so both skins work. */
+
+/* The parts of an installation (PartsFlow), lit in request order. */
+.bl-flow {
+  margin-block: 20px 0;
+  padding: 28px 24px 24px;
+  border-radius: var(--bl-radius);
+  background: var(--panel);
+}
+.bl-flow ol {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sl-markdown-content .bl-flow li {
+  margin: 0;
+}
+.bl-flow .node {
+  flex: 0 1 96px;
+  min-width: 0;
+  min-height: 64px;
+  padding: 12px 4px;
+  border: 1px solid var(--data-area);
+  border-radius: 8px;
+  background: var(--line);
+  text-align: center;
+  animation: bl-node 7.2s ease-in-out infinite;
+  animation-delay: calc(var(--step) * 0.9s);
+}
+.bl-flow .node.edge {
+  border: 1px dashed var(--data-tape);
+  background: none;
+  animation: none;
+}
+.bl-flow .link {
+  flex: 1 1 16px;
+  min-width: 8px;
+  height: 2px;
+  background: var(--data-tape);
+}
+.bl-flow .name {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.bl-flow .sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--mute);
+}
+@keyframes bl-node {
+  5%,
+  12% {
+    border-color: var(--amber);
+    box-shadow: inset 0 0 0 1px var(--amber);
+    background: var(--warn-bg);
+  }
+}
+.bl-flow figcaption {
+  margin-top: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--mute);
+}
+/* Without motion, the frame of the board: the request has reached the agent. */
+@media (prefers-reduced-motion: reduce) {
+  .bl-flow .node {
+    animation: none;
+  }
+  .bl-flow .link.lit {
+    background: var(--amber);
+  }
+  .bl-flow .node.current {
+    border-color: var(--amber);
+    box-shadow: inset 0 0 0 1px var(--amber);
+    background: var(--warn-bg);
+  }
+  .bl-flow .node.current .name {
+    color: var(--amber);
+  }
+}
+@media (max-width: 40rem) {
+  .bl-flow ol {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .bl-flow .node {
+    flex: none;
+    min-height: 0;
+    padding: 8px;
+  }
+  .bl-flow .link {
+    flex: none;
+    width: 2px;
+    height: 12px;
+    min-width: 0;
+    align-self: center;
+  }
+}
+
+/* Run states: chips along the path, terminal states stacked. */
+.bl-states {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-block: 20px 0;
+  padding: 28px 24px;
+  border-radius: var(--bl-radius);
+  background: var(--panel);
+}
+.bl-states ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.bl-states ol.path li::after {
+  content: '→';
+  margin-inline-start: 6px;
+  font-size: 14px;
+  color: var(--faint);
+}
+.bl-states ol.end {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.sl-markdown-content .bl-states li {
+  margin: 0;
+}
+.bl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--line);
+  font: 13px/1.5 var(--font-mono);
+  color: var(--ink);
+}
+.bl-chip::before {
+  content: '';
+  inline-size: 7px;
+  block-size: 7px;
+  border-radius: 50%;
+  background: var(--dot, var(--mute));
+}
+.end .bl-chip {
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--data-area);
+}
+.bl-chip.active {
+  --dot: var(--amber);
+}
+.bl-chip.pass {
+  --dot: var(--green);
+}
+.bl-chip.fail {
+  --dot: var(--red);
+}
+.bl-states .note {
+  flex-basis: 100%;
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--mute);
+}

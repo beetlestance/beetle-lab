@@ -1,0 +1,35 @@
+---
+// Darkroom/Scarab switch: a native radio group (arrow keys move the choice), stored
+// as `beetle.theme` like the app's switch. Each instance needs its own name.
+interface Props {
+  name: string;
+}
+const { name } = Astro.props;
+---
+
+<fieldset class="bl-skin" data-skin-switch>
+  <legend class="sr-only">Skin</legend>
+  <label><input type="radio" name={name} value="darkroom" checked /><span>Darkroom</span></label>
+  <label><input type="radio" name={name} value="scarab" /><span>Scarab</span></label>
+</fieldset>
+
+<script>
+  const key = 'beetle.theme';
+  const inputs = () => document.querySelectorAll<HTMLInputElement>('[data-skin-switch] input');
+  const sync = () => {
+    const skin = document.documentElement.dataset.theme === 'scarab' ? 'scarab' : 'darkroom';
+    inputs().forEach((input) => (input.checked = input.value === skin));
+  };
+  sync();
+  inputs().forEach((input) =>
+    input.addEventListener('change', () => {
+      document.documentElement.dataset.theme = input.value;
+      try {
+        localStorage.setItem(key, input.value);
+      } catch {
+        /* The skin still applies to this page. */
+      }
+      sync();
+    }),
+  );
+</script>

@@ -1,0 +1,32 @@
+---
+// Home hero from the Penpot "Docs / Home" board. The engine illustration is the
+// board's own drawing, inline so its colours follow the skin.
+import illustration from '../../assets/engine-illustration.svg?raw';
+
+const { entry } = Astro.locals.starlightRoute;
+const hero = entry.data.hero;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const href = (link: string) => (/^(?:[a-z]+:|\/)/.test(link) ? link : `${base}/${link}`);
+---
+
+{
+  hero && (
+    <section class="bl-hero" aria-labelledby="bl-hero-title">
+      <div class="bl-hero-text">
+        <p class="bl-eyebrow">Documentation</p>
+        <h1 id="bl-hero-title">{hero.title ?? entry.data.title}</h1>
+        {hero.tagline && <p class="bl-hero-lede" set:html={hero.tagline} />}
+        <div class="bl-hero-actions">
+          {hero.actions.map((action) => (
+            <a class:list={['bl-button', action.variant === 'primary' ? 'primary' : 'secondary']} href={href(action.link)}>
+              {action.text}
+            </a>
+          ))}
+        </div>
+      </div>
+      <div class="bl-hero-art" role="img" aria-label="An isometric k6 engine on a platform, with a checklist and a rising chart beside it.">
+        <Fragment set:html={illustration} />
+      </div>
+    </section>
+  )
+}

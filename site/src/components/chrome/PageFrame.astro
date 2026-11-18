@@ -1,0 +1,71 @@
+---
+// Page frame from the Penpot "Docs" boards: a fixed header over a centred grid of
+// sidebar and content. Below 50rem the sidebar is the Menu popover: the page behind
+// turns inert while it is open, Tab cycles through the Menu button and the menu, and
+// Escape closes it and returns focus to the button.
+import MobileMenuToggle from 'virtual:starlight/components/MobileMenuToggle';
+
+const { hasSidebar } = Astro.locals.starlightRoute;
+---
+
+<div class="page bl-page">
+  <header class="header bl-header-bar"><slot name="header" /></header>
+  <div class="bl-frame">
+    {
+      hasSidebar && (
+        <nav class="sidebar print:hidden" aria-label={Astro.locals.t('sidebarNav.accessibleLabel')}>
+          <MobileMenuToggle />
+          <script>
+            const FOCUSABLE = 'a[href], button, summary, input:not([type="radio"]), input[type="radio"]:checked';
+
+            class StarlightSidebarPane extends HTMLElement {
+              constructor() {
+                super();
+                const desktop = matchMedia('(min-width: 50em)');
+                const reset = () => {
+                  this.popover = desktop.matches ? null : 'auto';
+                };
+                reset();
+                desktop.addEventListener('change', reset);
+                this.addEventListener('toggle', (event) => {
+                  const open = (event as ToggleEvent).newState === 'open';
+                  document.querySelectorAll<HTMLElement>('.main-frame, .sl-skip-link, .bl-header-bar').forEach((el) => {
+                    el.toggleAttribute('inert', open);
+                  });
+                  if (!open && (this.contains(document.activeElement) || document.activeElement === document.body)) {
+                    this.menuButton()?.focus();
+                  }
+                });
+                document.addEventListener('keydown', (event) => this.trapTab(event));
+              }
+
+              menuButton() {
+                return document.querySelector<HTMLElement>('.bl-menu-button');
+              }
+
+              /** Keeps Tab inside the Menu button and the open menu. */
+              trapTab(event: KeyboardEvent) {
+                if (event.key !== 'Tab' || !this.matches(':popover-open')) return;
+                const inside = [...this.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => el.getClientRects().length > 0);
+                const items = [this.menuButton(), ...inside].filter((el): el is HTMLElement => el !== null);
+                const index = items.indexOf(document.activeElement as HTMLElement);
+                const last = items.length - 1;
+                const next = event.shiftKey ? (index <= 0 ? last : index - 1) : index === -1 || index === last ? 0 : index + 1;
+                if (index !== -1 && next === index + (event.shiftKey ? -1 : 1)) return;
+                event.preventDefault();
+                items[next]?.focus();
+              }
+            }
+            customElements.define('sl-sidebar-pane', StarlightSidebarPane);
+          </script>
+          <sl-sidebar-pane popover="" id="starlight__sidebar" class="sidebar-pane">
+            <div class="sidebar-content">
+              <slot name="sidebar" />
+            </div>
+          </sl-sidebar-pane>
+        </nav>
+      )
+    }
+    <div class="main-frame"><slot /></div>
+  </div>
+</div>

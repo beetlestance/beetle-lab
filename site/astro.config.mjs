@@ -3,12 +3,16 @@ import { defineConfig } from 'astro/config';
 import { unified } from '@astrojs/markdown-remark';
 import starlight from '@astrojs/starlight';
 import starlightLinksValidator from 'starlight-links-validator';
+import { codeThemes, languageLabel } from './code-blocks.mjs';
 import { cspInlineHashes } from './csp-inline-hashes.mjs';
 import { remarkBaseLinks } from './remark-base-links.mjs';
 
 // In the app the docs are served under /docs; the public build sets DOCS_SITE and DOCS_BASE.
 // An empty DOCS_BASE (a site at the root of its domain) means '/'.
 const base = process.env.DOCS_BASE === undefined ? '/docs' : process.env.DOCS_BASE || '/';
+// "Open the app" in the header: the app root when the docs ship inside the app, and
+// DOCS_APP_URL on the public build (no link when it is unset).
+const appUrl = process.env.DOCS_APP_URL ?? (process.env.DOCS_BASE === undefined ? '/' : '');
 
 export default defineConfig({
   site: process.env.DOCS_SITE,
@@ -23,35 +27,71 @@ export default defineConfig({
     },
   },
   // Never inline assets as data: URLs; the CSP allows fonts and images from 'self' only.
-  vite: { build: { assetsInlineLimit: 0 } },
+  vite: { build: { assetsInlineLimit: 0 }, define: { 'import.meta.env.DOCS_APP_URL': JSON.stringify(appUrl) } },
   markdown: { processor: unified({ remarkPlugins: [remarkBaseLinks(base)] }) },
   integrations: [
     starlight({
       title: 'Beetle Lab',
-      logo: { light: './src/assets/logo-light.svg', dark: './src/assets/logo.svg', alt: '' },
-      customCss: ['./src/styles/theme.css', './src/styles/custom.css'],
-      components: { PageTitle: './src/components/PageTitle.astro' },
+      customCss: [
+        './src/styles/skins.css',
+        './src/styles/theme.css',
+        './src/styles/header.css',
+        './src/styles/navigation.css',
+        './src/styles/chrome.css',
+        './src/styles/custom.css',
+        './src/styles/diagrams.css',
+      ],
+      // Board chrome: section tabs, Darkroom/Scarab switch, flat sidebar, phone page bar.
+      components: {
+        Header: './src/components/chrome/Header.astro',
+        SiteTitle: './src/components/chrome/SiteTitle.astro',
+        ThemeProvider: './src/components/chrome/ThemeProvider.astro',
+        ThemeSelect: './src/components/chrome/Empty.astro',
+        SocialIcons: './src/components/chrome/Empty.astro',
+        PageFrame: './src/components/chrome/PageFrame.astro',
+        MobileMenuToggle: './src/components/chrome/MobileMenuToggle.astro',
+        MobileMenuFooter: './src/components/chrome/MobileMenuFooter.astro',
+        Sidebar: './src/components/chrome/Sidebar.astro',
+        TwoColumnContent: './src/components/chrome/TwoColumnContent.astro',
+        PageSidebar: './src/components/chrome/PageSidebar.astro',
+        PageTitle: './src/components/chrome/PageTitle.astro',
+        Pagination: './src/components/chrome/Pagination.astro',
+        Hero: './src/components/chrome/Hero.astro',
+      },
       expressiveCode: {
-        themes: ['vitesse-dark', 'vitesse-light'],
-        // Plain code cards: no terminal window chrome, copy button on hover.
+        themes: codeThemes,
+        useStarlightDarkModeSwitch: false,
+        useStarlightUiThemeColors: false,
+        minSyntaxHighlightingColorContrast: 0,
+        plugins: [languageLabel],
+        // A bar with the language and Copy above plain code; no window chrome.
         defaultProps: { frame: 'code' },
         styleOverrides: {
           borderRadius: '10px',
           borderColor: 'transparent',
-          codeFontFamily: 'var(--sl-font-mono)',
-          codeFontSize: '0.8125rem',
-          codeBackground: 'var(--bl-surface)',
-          uiFontFamily: 'var(--sl-font)',
+          borderWidth: '0px',
+          codeFontFamily: 'var(--font-mono)',
+          codeFontSize: '13px',
+          codeLineHeight: '1.6',
+          codePaddingBlock: '14px 16px',
+          codePaddingInline: '16px',
+          codeBackground: 'var(--panel)',
+          uiFontFamily: 'var(--font-sans)',
           frames: {
-            editorTabBarBackground: 'var(--bl-zebra)',
-            terminalTitlebarBackground: 'var(--bl-zebra)',
-            terminalBackground: 'var(--bl-surface)',
+            editorTabBarBackground: 'var(--zebra)',
+            editorTabBarBorderBottomColor: 'transparent',
+            editorActiveTabIndicatorTopColor: 'transparent',
             frameBoxShadowCssValue: 'none',
+            inlineButtonBackground: 'transparent',
+            inlineButtonForeground: 'var(--mute)',
+            inlineButtonBorder: 'transparent',
+            inlineButtonBackgroundIdleOpacity: '0',
+            inlineButtonBackgroundHoverOrFocusOpacity: '0',
+            inlineButtonBackgroundActiveOpacity: '0',
           },
         },
       },
       description: 'Self-hosted k6 performance testing with isolated execution and trustworthy results.',
-      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/beetlestance/beetle-lab' }],
       plugins: [starlightLinksValidator({ errorOnLocalLinks: false, errorOnRelativeLinks: false })],
       sidebar: [
         { label: 'Start', items: [{ autogenerate: { directory: 'start' } }] },

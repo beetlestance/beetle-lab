@@ -1,0 +1,22 @@
+---
+// Breadcrumb "Section / Page", the title and the page description as a lede, as in
+// the Penpot "Docs" boards. Phones drop the breadcrumb (the page bar names the section).
+import { sections } from './sections';
+
+const { entry, sidebar } = Astro.locals.starlightRoute;
+const section = sections(sidebar).find((group) => group.current);
+const page = section?.links.find((link) => link.isCurrent);
+const lede = entry.data.description;
+---
+
+{
+  section && page && (
+    <nav class="bl-crumb" aria-label="Breadcrumb">
+      <a href={section.href}>{section.label}</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{page.label}</span>
+    </nav>
+  )
+}
+<h1 id="_top">{entry.data.title}</h1>
+{lede && <p class="bl-lede">{lede}</p>}
