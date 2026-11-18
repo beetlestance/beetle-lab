@@ -37,6 +37,7 @@ import {
 } from '../observation/index.js';
 import { createScheduler, type Scheduler } from '../scheduler/index.js';
 import { createOutputSourceReader } from '../output-transfer/index.js';
+import { readLiveHistory } from '../collection/live-history/index.js';
 import { readOutputRange } from '../collection/output/index.js';
 import { AgentHttpError, createAgentServer } from '../transport/index.js';
 import type { FastifyInstance } from 'fastify';
@@ -193,6 +194,7 @@ class RuntimeOwner {
     const supervisor = (this.supervisor = new Supervisor({
       journal,
       liveMetricApproval: installedLiveMetricApproval(options.catalog),
+      liveHistoryReader: readLiveHistory,
       requireResourceTelemetry: true,
       installationId: options.installation.installationId,
       backendFactory: () => new DockerBackend(transport),

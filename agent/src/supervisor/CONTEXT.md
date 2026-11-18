@@ -32,3 +32,9 @@ Installed policy approves once after Offer/reservation validation; rejection is
 advisory. Close/retire retain mailbox originals; cancellation/exit fence replies.
 
 Tests: vitest run agent/test/supervisor; live reader: agent/test/live-metrics.
+
+readLiveHistory also requires existing running ownership and an approved mailbox
+prefix. Its native read shares sampling admission through actual quiescence/close;
+failed close retains the slot and blocks retirement. Cancel hints abort immediately
+without holding the stop lane; scope/state are rechecked after the read. Output
+path/UID come from the immutable plan. This method grants no publication authority.

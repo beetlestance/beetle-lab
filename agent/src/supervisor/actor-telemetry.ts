@@ -35,8 +35,21 @@ export class ActorTelemetry {
           : result,
       );
   }
+  readLiveHistory(operation: Operation) {
+    if (this.options.fenced()) return Promise.resolve({ ok: false as const, reason: 'closed' as const });
+    if (this.options.cancelled() || this.options.observation()?.state !== 'running')
+      return Promise.resolve({ ok: false as const, reason: 'unavailable' as const });
+    return this.options.live
+      .readHistory(operation)
+      .then((result) =>
+        this.options.fenced() || this.options.cancelled() || this.options.observation()?.state !== 'running'
+          ? { ok: false as const, reason: 'closed' as const }
+          : result,
+      );
+  }
   async closeTelemetry(): Promise<void> {
-    await Promise.all([this.options.resources?.close(), this.options.live.close()]);
+    const outcomes = await Promise.allSettled([this.options.resources?.close(), this.options.live.close()]);
+    if (outcomes.some((value) => value.status === 'rejected')) throw new SupervisorError('backend_unavailable');
     await this.options.evidence.flush();
     if (this.options.evidence.hasPending) throw new SupervisorError('journal_unavailable');
   }
@@ -79,7 +92,7 @@ export class ActorTelemetry {
     }
   }
   recordTelemetry(view: Observation, recovered: boolean): void {
-    if (view.state === 'exited' || view.state === 'missing') void this.options.live.close();
+    if (view.state === 'exited' || view.state === 'missing') void this.options.live.close().catch(() => undefined);
     if (view.state === 'running') {
       this.options.resources?.running(recovered);
       this.options.resources?.tick();

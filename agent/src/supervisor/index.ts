@@ -89,6 +89,7 @@ export class Supervisor {
       backend,
       clock,
       admission: this.sampling,
+      ...(this.options.liveHistoryReader ? { history: this.options.liveHistoryReader } : {}),
       ...(this.options.liveMetricApproval ? { approve: this.options.liveMetricApproval } : {}),
     });
     return { ...(resources ? { resources } : {}), live };
@@ -99,6 +100,14 @@ export class Supervisor {
     const actor = this.actors.get(identity(key));
     if (!actor || !sameScope(actor.input.key, key)) return Promise.resolve({ ok: false, reason: 'unavailable' });
     return actor.readLiveMetrics(operation);
+  }
+  /** Advisory reads never create ownership or launch work. */
+  readLiveHistory(key: Scope, operation: Operation) {
+    if (this.telemetryClosed) return Promise.resolve({ ok: false as const, reason: 'closed' as const });
+    const actor = this.actors.get(identity(key));
+    if (!actor || !sameScope(actor.input.key, key))
+      return Promise.resolve({ ok: false as const, reason: 'unavailable' as const });
+    return actor.readLiveHistory(operation);
   }
   private backend() {
     try {
@@ -138,3 +147,6 @@ export class Supervisor {
     this.retire(input);
   }
 }
+
+export type { HistoryRead } from './history.js';
+export type { HistoryReader } from './types.js';

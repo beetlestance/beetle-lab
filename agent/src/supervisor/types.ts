@@ -1,3 +1,5 @@
+import type { PrefixRead, PrefixReadOptions } from '../collection/live-history/index.js';
+export type HistoryReader = (options: PrefixReadOptions) => PrefixRead;
 import type { LiveMetricApproval } from '../live-metrics/index.js';
 import type { Offer } from '@beetle/contracts';
 import type { DockerBackend, Observation, RuntimePlan, ResourceReading, Operation } from '../backends/docker/index.js';
@@ -21,6 +23,7 @@ export type LiveMetricApprovalFactory = (offer: Offer, input: LaunchInput) => Li
 export interface SupervisorOptions {
   /** Trusted installed policy; never derives approval from received telemetry. */
   liveMetricApproval?: LiveMetricApprovalFactory;
+  liveHistoryReader?: HistoryReader;
   /** Concrete installation enables this; old focused backend fixtures may omit telemetry. */
   requireResourceTelemetry?: boolean;
   journal: JournalPort;

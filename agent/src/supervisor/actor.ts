@@ -94,6 +94,7 @@ export class LaunchActor {
   cancel(reason: StopReason = 'cancelled'): Promise<LaunchState> {
     if (this.fenced()) return Promise.reject(new SupervisorError('closed'));
     this.localCancel = true;
+    void this.telemetry.live.close();
     const urgent = reason === 'output_limit' || reason === 'artifact_incomplete' || reason === 'clock_integrity';
     const escalation = urgent && this.urgentReason === undefined;
     if (urgent) this.urgentReason ??= reason;
@@ -140,7 +141,9 @@ export class LaunchActor {
   readLiveMetrics(operation: Operation) {
     return this.telemetry.readLiveMetrics(operation);
   }
-
+  readLiveHistory(operation: Operation) {
+    return this.telemetry.readLiveHistory(operation);
+  }
   private state(): LaunchState {
     return {
       observation: this.observation ? { ...this.observation } : null,
@@ -197,6 +200,7 @@ export class LaunchActor {
   }
   private persistCancellation(reason: StopReason = this.cause === 'none' ? 'cancelled' : this.cause): Promise<void> {
     this.localCancel = true;
+    void this.telemetry.live.close();
     if (reason === 'output_limit' || reason === 'artifact_incomplete' || reason === 'clock_integrity')
       this.urgentReason ??= reason;
     if (this.cancellationWrite) return this.cancellationWrite;
