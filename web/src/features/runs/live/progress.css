@@ -73,10 +73,11 @@
 }
 .live-kpi {
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   gap: var(--s-6);
 }
 .live-kpi dd {
+  order: -1;
   margin: 0;
   font-family: var(--font-sans);
   font-size: var(--fs-5xl);
@@ -86,4 +87,25 @@
 .live-kpi dt {
   color: var(--mute);
   font-size: var(--fs-md);
+}
+
+.live-sealing-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-12) var(--s-24);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+}
+.live-sealing-steps li {
+  display: flex;
+  align-items: center;
+  gap: var(--s-8);
+}
+.live-sealing-steps .is-done > span {
+  color: var(--green);
+}
+.live-sealing-steps .is-pending {
+  color: var(--mute);
 }

@@ -164,34 +164,6 @@ export function Starting({
   );
 }
 
-/** Finalizing: the sealing events reported so far; only rows that exist are shown. */
-export function Finalizing({ run }: { run: Run }) {
-  const timeline = useTimeline(run, false);
-  const rows = timeline.data?.rows ?? [];
-  const sealed = rows.filter((row) => row.kind === 'artifact.sealed');
-  const exited = firstAt(rows, 'runtime.exited');
-  const result = firstAt(rows, 'engine.result');
-  const steps: Step[] = [
-    ...(exited ? [{ label: 'Load generator stopped', at: exited, done: true }] : []),
-    ...(result ? [{ label: 'Engine report written', at: result, done: true }] : []),
-    ...(sealed.length
-      ? [
-          {
-            label: `${sealed.length} ${sealed.length === 1 ? 'file' : 'files'} sealed`,
-            at: sealed.at(-1)!.at,
-            done: true,
-          },
-        ]
-      : []),
-  ];
-  return (
-    <section className="live-phase" aria-labelledby="live-phase">
-      <h2 id="live-phase">Sealing results</h2>
-      {steps.length ? <Steps steps={steps} /> : <p role="status">Waiting for the first sealing event…</p>}
-    </section>
-  );
-}
-
 function Steps({ steps, showTimes = true }: { steps: readonly Step[]; showTimes?: boolean }) {
   const pending = steps.findIndex((step) => !step.done);
   return (

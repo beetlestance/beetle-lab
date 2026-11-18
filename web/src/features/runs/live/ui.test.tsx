@@ -115,9 +115,22 @@ it('cancels from the header through the shared owner and then shows cancelling',
   expect(cancel.request).toHaveBeenCalledTimes(1);
   view.update({ run: { ...current, version: 2, cancellationRequested: true }, cancel: { ...cancel, accepted: true } });
   expect(await screen.findByRole('heading', { name: 'Cancelling steady-1.2k' })).toBeVisible();
-  expect(screen.getByText(/Stopped sending at \d\d:\d\d of 10:00/)).toBeVisible();
+  expect(screen.getByText(/Last live window at \d\d:\d\d of 10:00/)).toBeVisible();
   expect(screen.queryByRole('button', { name: 'Cancel run' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Pause stream' })).not.toBeInTheDocument();
+});
+
+it('retains the last figures in one sealing card when finalizing, without further live reads', async () => {
+  const current = recent(); const { read, view } = await running(current);
+  view.update({ run: { ...current, version: 2, state: 'finalizing' } });
+  const card = await screen.findByRole('region', { name: 'Sealing results' });
+  expect(within(card).getByText('1,200')).toBeVisible();
+  expect(screen.queryByRole('region', { name: 'Progress' })).not.toBeInTheDocument();
+  expect(screen.queryByText(/left, ends about/)).not.toBeInTheDocument();
+  const calls = read.mock.calls.length;
+  await act(async () => new Promise(resolve => setTimeout(resolve, 2200)));
+  expect(read.mock.calls.length).toBe(calls);
+  expect(screen.getByRole('heading', { name: 'p95 latency, whole run' })).toBeVisible();
 });
 
 it('waits for capacity with slot holders and queue position from getRunQueue', async () => {

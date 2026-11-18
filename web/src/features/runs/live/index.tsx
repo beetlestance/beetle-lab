@@ -22,10 +22,11 @@ import { LiveHeader, LiveCancelButton } from './Header.js';
 import type { Cancellation } from './Header.js';
 import type { LiveHistory } from './history.js';
 import type { LiveFigures, RuleReading } from './model.js';
-import { Finalizing, Starting, Waiting, queueSentence } from './Phases.js';
+import { Starting, Waiting, queueSentence } from './Phases.js';
 import { readPlan, stageAt } from './plan.js';
 import type { RunPlan } from './plan.js';
 import { Progress } from './Progress.js';
+import { Finalizing } from './Finalizing.js';
 import { positions, useLiveStream } from './stream.js';
 import type { LiveStream } from './stream.js';
 import { Endpoints, Thresholds } from './Tables.js';
@@ -133,6 +134,9 @@ function LiveRun({ run, scope, runId, showResult, cancel }: LiveRunViewProps) {
       )}
       {isEarlyPhase(stream.phase) && <EarlyArt />}
       <StateBanners run={run} plan={plan} stream={stream} showResult={showResult} />
+      {stream.phase === 'finalizing' && (
+        <Finalizing run={run} plan={plan} figures={stream.figures} lastT={at.stoppedAtMs} />
+      )}
       <PhaseBody phase={stream.phase} run={run} revision={revision.data} cancel={cancel} reads={phaseReads} />
       {isEarlyPhase(stream.phase) && <EarlyMetricsSkeleton />}
       <LiveBoard plan={plan} stream={stream} at={at} bootstrap={bootstrap} />
@@ -219,6 +223,7 @@ function LiveBoard({
       history={stream.history}
       bootstrap={bootstrap}
       historyEnabled={stream.historyEnabled}
+      finalizing={phase === 'finalizing'}
       readings={stream.readings}
       elapsedMs={moving ? at.elapsedMs : at.lastT}
       origin={at.origin}
@@ -243,7 +248,6 @@ function PhaseBody({
   cancel: Cancellation | undefined;
 }) {
   const session = useSessionAccess();
-  if (phase === 'finalizing') return <Finalizing run={run} />;
   if (phase !== 'waiting' && phase !== 'starting') return null;
   return (
     <div className="live-early-body">
@@ -262,6 +266,7 @@ function PhaseBody({
 
 function Board(props: {
   plan: RunPlan;
+  finalizing: boolean;
   figures: LiveFigures;
   history: LiveHistory;
   bootstrap: BootstrapState;
@@ -278,14 +283,16 @@ function Board(props: {
   const hover = { hoverT, onHover };
   return (
     <div className={`live-board${props.stale ? ' is-stale' : ''}`}>
-      <Progress
-        plan={props.plan}
-        elapsedMs={props.elapsedMs}
-        originMs={props.origin}
-        figures={props.figures}
-        p95Limit={props.p95Limit}
-        failedLimit={props.failedLimit}
-      />
+      {!props.finalizing && (
+        <Progress
+          plan={props.plan}
+          elapsedMs={props.elapsedMs}
+          originMs={props.origin}
+          figures={props.figures}
+          p95Limit={props.p95Limit}
+          failedLimit={props.failedLimit}
+        />
+      )}
       <WholeRun
         history={props.history}
         hover={hover}

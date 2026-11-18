@@ -40,6 +40,9 @@ feature's `CONTEXT.md`; the stack choice is [decision 019](../../decisions/019-f
   local draft/export intent through cached metadata refresh failures, with a warning.
 - Artifact states are pending, absent, ready-empty and ready; an empty ready page
   is not source-free absence.
+- Finalizing uses one indeterminate sealing/KPI card. Only recorded events mark
+  reports/files complete; event read errors label retained state and offer retry.
+  A last live window is not a confirmed execution-stop timestamp.
 - Run state and outcome come from the application. An engine-reported result is
   labelled provisional until the run is terminal; cancellation requested is not
   stopped, runtime exit is not passed, and a terminal run does not imply that the

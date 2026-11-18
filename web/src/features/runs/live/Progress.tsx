@@ -96,7 +96,7 @@ const noFigures: Pick<LiveFigures, 'rps' | 'p95' | 'failedRatio' | 'vus' | 'vusM
   complete: true,
 };
 
-function Kpis({
+export function Kpis({
   figures,
   p95Limit,
   failedLimit,

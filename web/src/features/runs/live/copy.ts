@@ -108,10 +108,10 @@ export function sentenceOf(
     case 'running':
       return thresholdSentence(readings);
     case 'cancelling':
-      return `${stoppedText('Stopped sending at', stoppedAtMs, plan)}Waiting for in-flight requests to finish before the results are sealed.`;
+      return `${stoppedText('Last live window at', stoppedAtMs, plan)}Cancellation requested; waiting for the agent to confirm that execution has stopped.`;
     case 'finalizing': {
       const after = run.cancellationRequested ? ' after the cancel' : '';
-      return `${stoppedText('Run stopped at', stoppedAtMs, plan)}Sealing results${after}; the verdict appears when sealing finishes.`;
+      return `${stoppedText('Last live window at', stoppedAtMs, plan)}Sealing results${after}; the verdict appears when sealing finishes.`;
     }
     case 'ended':
       return run.outcome === 'pending' ? 'The outcome is still pending.' : `Outcome: ${run.outcome}.`;
