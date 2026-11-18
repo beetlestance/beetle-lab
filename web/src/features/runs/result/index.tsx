@@ -65,6 +65,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
         title={title}
         sentence={sentence}
         readOnly={readOnly}
+        ordinal={reads.revision?.ordinal}
         onDelete={() => setDeleting(true)}
         refresh={refresh}
       />

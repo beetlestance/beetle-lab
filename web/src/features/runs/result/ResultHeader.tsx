@@ -10,6 +10,7 @@ import { runStatus, shortId } from '../../run-results/format.js';
 import { usePin } from './usePin.js';
 import { useWrite } from './useWrite.js';
 import type { Write } from './useWrite.js';
+import { ResultDownloads } from './ResultDownloads.js';
 
 /** Header of the Run result boards: status, verdict title, summary sentence, actions. */
 export function ResultHeader({
@@ -19,11 +20,13 @@ export function ResultHeader({
   readOnly,
   onDelete,
   refresh,
+  ordinal,
 }: {
   run: Run;
   title: string;
   sentence: string;
   readOnly: boolean;
+  ordinal?: number | undefined;
   onDelete(): void;
   /** RunDetail's run re-read; available even in read-only history. */
   refresh?: { readonly run: () => void; readonly busy: boolean } | undefined;
@@ -50,10 +53,14 @@ export function ResultHeader({
           )}
         </div>
         {readOnly ? (
-          <p className="result-readonly-note">Read-only history: actions are unavailable.</p>
+          <div className="result-actions">
+            <ResultDownloads run={run} ordinal={ordinal} />
+            <p className="result-readonly-note">Read-only history: changes are unavailable.</p>
+          </div>
         ) : (
           <div className="result-actions">
             <RunAgain run={run} />
+            <ResultDownloads run={run} ordinal={ordinal} />
             <PinControl run={run} />
             <Button variant="text" size="sm" onClick={onDelete}>
               Delete run…

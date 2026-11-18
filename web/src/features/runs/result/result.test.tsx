@@ -113,14 +113,15 @@ it.each([
   else expect(button).toBeDisabled();
 });
 
-it('hides every action in a restored read-only session and shows the history banner', async () => {
+it('hides writes in restored history and retains read-only downloads', async () => {
   const f = fixture(finished());
   mount(f.client, path, {
     readOnly: true,
     restoredBackup: { backupId: ids.request, createdAt: '2026-11-12T02:00:00.000Z' },
   });
   expect(await screen.findByText(/You are looking at a restored backup from/)).toBeVisible();
-  expect(screen.getByText('Read-only history: actions are unavailable.')).toBeVisible();
+  expect(screen.getByText('Read-only history: changes are unavailable.')).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Download' })).toBeVisible();
   expect(screen.queryByRole('button', { name: 'Run again' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Add a note' })).not.toBeInTheDocument();
   expect(f.records.some((record) => record.path.endsWith('/auth/session'))).toBe(false);
