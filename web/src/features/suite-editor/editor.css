@@ -2,9 +2,12 @@
 .suite-editor-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
-  gap: var(--s-32);
+  gap: 36px;
   align-items: start;
   margin-top: var(--s-24);
+}
+.suite-editor-main {
+  min-width: 0;
 }
 .suite-editor-side {
   position: sticky;
@@ -12,14 +15,25 @@
 }
 .suite-config {
   display: grid;
-  gap: var(--s-24);
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
+}
+.suite-editor-layout .input,
+.suite-editor-layout .select {
+  min-height: 40px;
+  font-size: var(--fs-base);
+  line-height: 24px;
+}
+.suite-editor-layout .btn:not(.btn-sm) {
+  min-height: 40px;
 }
 .suite-config > .segmented {
   justify-self: start;
 }
 .editor-sections {
   display: grid;
-  gap: var(--s-24);
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -30,7 +44,7 @@
   display: grid;
   gap: var(--s-16);
   min-width: 0;
-  padding: var(--s-20) var(--s-20) var(--s-24);
+  padding: var(--s-22);
   border-radius: var(--r-xl);
   background: var(--panel);
 }
@@ -44,12 +58,14 @@
 .save-panel h2 {
   margin: 0;
   font-size: var(--fs-xl);
+  line-height: 26px;
   font-weight: 500;
 }
 .editor-note {
   margin: 0;
   color: var(--mute);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
+  line-height: 21px;
   overflow-wrap: anywhere;
 }
 .field-row {
@@ -80,7 +96,7 @@
   border-bottom: 0;
 }
 .request-fields {
-  grid-template-columns: 96px minmax(0, 2.4fr) 76px minmax(0, 1.1fr) auto;
+  grid-template-columns: 110px minmax(0, 1fr) 90px 170px 90px;
 }
 .threshold-row {
   grid-template-columns: minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr) auto;

@@ -100,11 +100,13 @@ function CheckChips({
   index,
   change,
   add,
+  edit,
 }: {
   request: Obj;
   index: number;
   change: (next: Obj) => void;
   add: () => void;
+  edit: () => void;
 }) {
   const checks = objects(request.assertions);
   return (
@@ -123,6 +125,11 @@ function CheckChips({
           </button>
         </li>
       ))}
+      <li>
+        <Button variant="text" size="sm" aria-label={`Edit request ${index + 1}`} onClick={edit}>
+          Details
+        </Button>
+      </li>
       <li>
         <Button
           variant="text"
@@ -196,9 +203,6 @@ function RequestRow({
         )}
         <BodySelect request={request} index={index} inputs={inputs} change={change} />
         <div className="row-actions">
-          <Button variant="text" size="sm" aria-label={`Edit request ${index + 1}`} onClick={() => open(index)}>
-            Details
-          </Button>
           <Button
             variant="text"
             size="sm"
@@ -210,7 +214,13 @@ function RequestRow({
           </Button>
         </div>
       </div>
-      <CheckChips request={request} index={index} change={change} add={() => open(index, true)} />
+      <CheckChips
+        request={request}
+        index={index}
+        change={change}
+        add={() => open(index, true)}
+        edit={() => open(index)}
+      />
     </li>
   );
 }
