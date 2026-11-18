@@ -1,10 +1,9 @@
 # Output collection and transfer
 
-Run outputs cross three boundaries: engine staging to the agent Journal, agent to backend (source
-transfer) and backend to browser (downloads). The agent owns guarding, collection, source commit and
-source routes (`agent/src/{collection,output-source,journal,output-transfer}`); the backend owns transfer,
-artifact files, publication metadata and downloads (`app/`). Source values, closure, adoption,
-finalisation, deletion and settlement are in [output settlement](outputs-settlement.md).
+Outputs cross engine staging → agent Journal → backend transfer → browser downloads.
+The agent owns guarding, collection, source commit and routes (`agent/src/{collection,output-source,journal,output-transfer}`);
+the backend (`app/`) owns transfer, artifact files, publication metadata and downloads. Source values,
+closure, adoption, finalisation, deletion and settlement live in [output settlement](outputs-settlement.md).
 
 ## Pipeline
 
@@ -64,6 +63,7 @@ intake and a committed collection intent.
 | Owner | Limit |
 | --- | --- |
 | Output-native registry (`agent/src/collection/native-custody`) | 4 lifetimes: collection ≤ 2, range ≤ 2, cleanup ≤ 2 borrowed from free credits |
+| Advisory prefix history ([native owner](../../../agent/src/collection/live-history/CONTEXT.md)) | shares range credits; samples grant no source, publication or release authority |
 | Agent source routes | 2 source originals, each with one of 32 server request slots, reserved before body parse |
 | Backend runner client | source calls use at most 2 of the 8 ordinary gateway credits |
 | Backend byte store (`app/src/adapters/outbound/files/outputs`) | 2 jobs, one original per upload token |
@@ -212,7 +212,7 @@ marker (change requires recovery); task directories are committed before any pro
 
 | Code | Reviewed |
 | --- | --- |
-| `agent/src/collection/` | `3ae922d42e26` |
+| `agent/src/collection/` | `a1d1e2199e76` |
 | `agent/src/journal/output-source-protocol.ts` | `3633d477b92c` |
 | `agent/src/transport/sources.ts` | `a1e3149482d3` |
 | `app/src/ports/output-bytes.ts` | `10c5f59ca356` |
