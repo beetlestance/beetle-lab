@@ -95,10 +95,14 @@ function Overview({
     <section className="overview" aria-labelledby={heading}>
       <div className="overview-hero">
         <div className="overview-hero-text">
-          <p className="overview-eyebrow">{workspaceName}</p>
-          <h1 id={heading}>{running ? `${plural(running, 'run')} in progress` : 'No runs in progress'}</h1>
-          <p className="overview-lede">{facts}</p>
-          {refresh}
+          <header className="overview-intro">
+            <div className="overview-eyebrow-line">
+              <p className="overview-eyebrow">{workspaceName}</p>
+              {refresh}
+            </div>
+            <h1 id={heading}>{running ? `${plural(running, 'run')} in progress` : 'No runs in progress'}</h1>
+            <p className="overview-lede">{facts}</p>
+          </header>
           {live && (
             <LiveRunCard
               organizationId={organizationId}

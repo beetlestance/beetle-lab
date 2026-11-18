@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
-import { pendingRunHistorySummary } from '@beetle/contracts/api';
+import { pendingRunHistorySummary, validateApi } from '@beetle/contracts/api';
 import type { InputRecord, Run, RunHistorySummary, Suite, WorkspaceOverview as Snapshot } from '@beetle/contracts/api';
 import { ApiContext } from '../../app/api.js';
 import { createQueryClient } from '../../app/queries.js';
@@ -13,6 +13,7 @@ import { testClient, json, deferred, apiError } from '../../app/test-fixtures.js
 import type { RequestRecord } from '../../app/test-fixtures.js';
 import { config as liveConfig } from '../runs/live/fixtures.js';
 import { revision as baseRevision, run as baseRun } from '../runs/test-fixtures.js';
+import { gauges } from './AgentPanel.js';
 import { WorkspaceOverview } from './index.js';
 import valid from '../../../../contracts/fixtures/api/valid/workspace-overview.json';
 import status from '../../../../contracts/fixtures/api/valid/installation-status.json';
@@ -40,6 +41,7 @@ function busy(): Snapshot {
   });
   value.counts = { ...value.counts, suites: 3, runs: 2, submitted24h: 2, failed24h: 1, active: 1, finished: 1 };
   value.activity[23]!.count = 2;
+  value.activity[23]!.outcomes = {passed:0,failed:1,inProgress:1,other:0};
   value.recent = [header(liveId, 'active', 'pending'), header(doneId, 'finished', 'failed', unknownSuite)];
   value.active = [header(liveId, 'active', 'pending')];
   return value;
@@ -128,6 +130,7 @@ function handler(reads: Reads = {}) {
   return (request: RequestRecord): Response => {
     const path = request.path;
     if (path.endsWith('/overview')) return json((reads.overview ?? busy)());
+    if (path.endsWith(`/suites/${suiteId}`)) return json(suite());
     if (path.includes('/suites?')) return json({ scope, items: [suite()], nextCursor: null });
     const execution = runReads(path, reads);
     if (execution) return execution;
@@ -246,4 +249,15 @@ it('fences late old-scope snapshots and rejects a foreign reply', async () => {
   });
   expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
   expect(f.records).toHaveLength(2);
+});
+
+it('does not turn contradictory host measurements into infinity or zero usage',()=>{
+ const checked=validateApi('InstallationStatus',status);
+ if(!checked.ok)throw new Error('Invalid installation status fixture');
+ const invalid=structuredClone(checked.value);
+ invalid.host.cpuCores={status:'measured',value:0};invalid.host.cpuUsedMillis={status:'measured',value:1000};
+ invalid.host.memoryAvailableBytes={status:'measured',value:status.host.memoryTotalBytes.value+1};
+ const rows=gauges(invalid);
+ expect(rows[0]).toMatchObject({text:'Not measured',share:null});
+ expect(rows[1]).toMatchObject({text:'16 GiB, use not measured',share:null});
 });

@@ -1,4 +1,6 @@
 import {expect,it} from 'vitest';
+import {overviewFilter} from '../../src/adapters/outbound/sqlite/overview-filter.js';
+import {overviewActivitySql} from '../../src/adapters/outbound/sqlite/overview-activity.js';
 import {initialize} from '../../src/adapters/outbound/sqlite/schema.js';
 import {scope,seed,storageFixture,uuid,digest,createFolder} from './fixture.js';
 import {append,createSuite} from './suites-fixture.js';
@@ -16,11 +18,18 @@ it('reads whole-workspace scalar counts with bounded recent/active lists across 
  db.prepare("UPDATE runs SET state='finished',outcome='passed',validation_status='passed' WHERE id=?").run(uuid(526));
  db.prepare("UPDATE runs SET state='errored',outcome='inconclusive',reason='engine_crash' WHERE id=?").run(uuid(527));
  db.prepare("UPDATE runs SET state='cancelled',outcome='inconclusive',cancellation_requested=1,reason='cancelled' WHERE id=?").run(uuid(528));
- db.prepare("UPDATE runs SET state='dispatching' WHERE id=?").run(uuid(529));db.prepare("UPDATE runs SET state='finalizing' WHERE id=?").run(uuid(530));db.close();
+ db.prepare("UPDATE runs SET state='dispatching' WHERE id=?").run(uuid(529));db.prepare("UPDATE runs SET state='finalizing' WHERE id=?").run(uuid(530));
+ const filter=overviewFilter(scope,false);
+ const plan=db.prepare('EXPLAIN QUERY PLAN '+overviewActivitySql(filter)).all(Date.parse(now)-86400000,3600000,...filter.args,'2026-11-11T12:00:00.000Z',now);
+ expect(plan.map(row=>String(row.detail)).join(' ')).toContain('runs_overview_recent');
+ db.close();
  metadata=await fixture.open(path,runOptions());const overview=await metadata.overview.read({scope,now});
  expect(overview.counts).toEqual({folders:2,suites:1,runs:33,submitted24h:30,failed24h:1,active:25,queued:2,dispatching:1,finalizing:1,finished:2,cancelled:1,errored:1});
  expect(overview.recent).toHaveLength(8);expect(overview.recent[0]!.id).toBe(uuid(505));expect(overview.active).toHaveLength(20);expect(overview.activeHasMore).toBe(true);
  expect(overview.activity).toHaveLength(24);expect(overview.activity[0]!.count).toBe(2);expect(overview.activity[1]!.count).toBe(1);expect(overview.activity[23]!.count).toBe(27);
+ expect(overview.activity[0]!.outcomes).toEqual({passed:0,failed:0,inProgress:2,other:0});
+ expect(overview.activity[23]!.outcomes).toEqual({passed:1,failed:1,inProgress:23,other:2});
+ for(const bucket of overview.activity)expect(Object.values(bucket.outcomes).reduce((sum,count)=>sum+count,0)).toBe(bucket.count);
  const other=await metadata.overview.read({scope:{...scope,organizationId:uuid(11),workspaceId:uuid(12)},now});expect(other.counts.runs).toBe(0);expect(other.recent).toEqual([]);
  await expect(metadata.overview.read({scope:{...scope,workspaceId:uuid(99)},now})).rejects.toMatchObject({code:'not_found'});
  await expect(metadata.overview.read({scope,now:'2026-02-30T12:00:00.000Z'})).rejects.toMatchObject({code:'invalid_value'});

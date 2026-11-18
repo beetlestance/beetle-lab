@@ -35,7 +35,8 @@ interface Gauge {
 
 /** Used of total, or what is known. Unmeasured values say so; nothing is estimated. */
 export function gauges(status: InstallationStatus): Gauge[] {
-  const cores = measured(status.host.cpuCores);
+  const measuredCores = measured(status.host.cpuCores);
+  const cores = measuredCores !== null && measuredCores > 0 ? measuredCores : null;
   const usedMillis = measured(status.host.cpuUsedMillis);
   const memoryTotal = measured(status.host.memoryTotalBytes);
   const memoryFree = measured(status.host.memoryAvailableBytes);
@@ -44,7 +45,7 @@ export function gauges(status: InstallationStatus): Gauge[] {
   const cpu: Gauge =
     cores === null
       ? { label: 'CPU', text: 'Not measured', share: null }
-      : usedMillis === null
+      : usedMillis === null || usedMillis > cores * 1000
         ? { label: 'CPU', text: `${cores} CPUs, use not measured`, share: null }
         : {
             label: 'CPU',
@@ -56,7 +57,7 @@ export function gauges(status: InstallationStatus): Gauge[] {
 
 function usedOf(label: string, total: number | null, free: number | null): Gauge {
   if (total === null || total === 0) return { label, text: 'Not measured', share: null };
-  if (free === null) return { label, text: `${gibibytes(total)} GiB, use not measured`, share: null };
+  if (free === null || free > total) return { label, text: `${gibibytes(total)} GiB, use not measured`, share: null };
   const used = Math.max(0, total - free);
   return { label, text: `${gibibytes(used)} of ${gibibytes(total)} GiB`, share: used / total };
 }
@@ -95,7 +96,7 @@ function AgentFacts({ status }: { status: InstallationStatus }) {
       </p>
       <dl className="overview-gauges">
         {gauges(status).map((gauge) => (
-          <div key={gauge.label}>
+          <div key={gauge.label} className={gauge.share === null ? undefined : 'overview-gauge-group'}>
             <dt>{gauge.label}</dt>
             <dd>
               {gauge.text}

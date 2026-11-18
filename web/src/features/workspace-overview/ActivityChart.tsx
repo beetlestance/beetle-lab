@@ -1,12 +1,9 @@
 import { useId } from 'react';
 import type { OverviewBucket } from '@beetle/contracts/api';
 import { clockTime, plural } from './format.js';
+const outcomes = ['passed', 'failed', 'inProgress', 'other'] as const;
 
-/**
- * "Last 24 hours": one column per hourly bucket, newest on the right. Buckets
- * carry submission counts only, so columns are one colour (no pass/fail split).
- * The same figures are available to assistive tech as a table.
- */
+/** Current outcomes of each hour's submissions; the same exact counts have a text table. */
 export function ActivityChart({ buckets }: { buckets: readonly OverviewBucket[] }) {
   const heading = useId();
   const max = Math.max(1, ...buckets.map((bucket) => bucket.count));
@@ -24,8 +21,19 @@ export function ActivityChart({ buckets }: { buckets: readonly OverviewBucket[] 
             key={bucket.from}
             className={bucket.count ? 'overview-bar overview-bar-filled' : 'overview-bar'}
             style={bucket.count ? { height: `${Math.max(12, (bucket.count / max) * 100)}%` } : undefined}
-            title={`${clockTime(bucket.from)}–${clockTime(bucket.to)}: ${plural(bucket.count, 'run')} submitted`}
-          />
+            title={`${clockTime(bucket.from)}–${clockTime(bucket.to)}: ${plural(bucket.count, 'run')} submitted; ${bucket.outcomes.passed} passed, ${bucket.outcomes.failed} failed, ${bucket.outcomes.inProgress} in progress, ${bucket.outcomes.other} other`}
+          >
+            {outcomes.map(
+              (outcome) =>
+                bucket.outcomes[outcome] > 0 && (
+                  <span
+                    key={outcome}
+                    className={`overview-bar-${outcome}`}
+                    style={{ height: `${(bucket.outcomes[outcome] / bucket.count) * 100}%` }}
+                  />
+                ),
+            )}
+          </span>
         ))}
       </div>
       {buckets[0] && middle && (
@@ -42,6 +50,10 @@ export function ActivityChart({ buckets }: { buckets: readonly OverviewBucket[] 
             <th scope="col">From</th>
             <th scope="col">To</th>
             <th scope="col">Submitted</th>
+            <th scope="col">Passed</th>
+            <th scope="col">Failed</th>
+            <th scope="col">In progress</th>
+            <th scope="col">Other</th>
           </tr>
         </thead>
         <tbody>
@@ -54,6 +66,10 @@ export function ActivityChart({ buckets }: { buckets: readonly OverviewBucket[] 
                 <time dateTime={bucket.to}>{clockTime(bucket.to)}</time>
               </td>
               <td>{bucket.count}</td>
+              <td>{bucket.outcomes.passed}</td>
+              <td>{bucket.outcomes.failed}</td>
+              <td>{bucket.outcomes.inProgress}</td>
+              <td>{bucket.outcomes.other}</td>
             </tr>
           ))}
         </tbody>

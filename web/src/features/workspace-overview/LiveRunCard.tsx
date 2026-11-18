@@ -7,7 +7,8 @@ import { Button, buttonClass } from '../../components/Button.js';
 import { clockTime, runStatus, shortId } from './format.js';
 
 import { LiveProgress } from './LiveProgress.js';
-import { useOverviewRun } from './reads.js';
+import { useFeaturedSuite, useOverviewRun } from './reads.js';
+import './live-card.css';
 
 function useNow(enabled: boolean) {
   const [now, setNow] = useState(() => Date.now());
@@ -36,6 +37,8 @@ export function LiveRunCard({
   suiteName: string | undefined;
 }) {
   const query = useOverviewRun(organizationId, workspaceId, header.id);
+  const suite = useFeaturedSuite(organizationId, workspaceId, header.suiteId);
+  const name = suite.isError ? suiteName : (suite.data?.name ?? suiteName);
   const current = query.isError ? undefined : query.data;
   const observed = current ?? header;
   const now = useNow(current?.state === 'active');
@@ -49,7 +52,7 @@ export function LiveRunCard({
         <div>
           <Status tone={status.tone}>{status.label}</Status>
           <p className="overview-live-title">
-            {suiteName ?? <span className="overview-muted">Suite not on the first page</span>}{' '}
+            {name ?? <span className="overview-muted">Suite name unavailable</span>}{' '}
             <span className="overview-id">run {shortId(header.id)}</span>
           </p>
         </div>

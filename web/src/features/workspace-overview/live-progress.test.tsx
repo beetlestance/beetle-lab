@@ -30,7 +30,7 @@ it('shows three real latest-window figures and the saved plan without inventing 
   expect(within(progress).getByText('0.17%')).toBeVisible();
   expect(within(progress).queryByText(/virtual users busy/)).not.toBeInTheDocument();
   expect(within(progress).getByRole('list', {name:'Load stages'})).toHaveTextContent('Steady at 1,200 a second');
-  expect(progress).toHaveTextContent('52%');
+  expect(progress).toHaveTextContent('53%');
   expect(read).toHaveBeenCalledTimes(1);
 });
 it('keeps failed live reads unknown and allows an explicit fresh read', async () => {

@@ -22,10 +22,22 @@
   gap: var(--s-8);
   align-content: start;
 }
+.overview-intro {
+  display: grid;
+  gap: var(--s-10);
+}
+.overview-eyebrow-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-8);
+}
 .overview-eyebrow {
   margin: 0;
   color: var(--mute);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
+  line-height: 21px;
 }
 .overview-hero h1,
 .overview-title {
@@ -33,7 +45,7 @@
   font-size: var(--fs-4xl);
   font-weight: 500;
   letter-spacing: var(--tracking-display);
-  line-height: var(--lh-heading);
+  line-height: 38px;
 }
 .overview-lede {
   margin: 0;
@@ -47,6 +59,8 @@
   font-size: var(--fs-sm);
 }
 .overview-refresh {
+  min-height: 0;
+  line-height: 21px;
   padding: 0;
   border: 0;
   background: none;
@@ -78,38 +92,7 @@
 }
 .overview-id {
   color: var(--mute);
-  font-family: var(--font-mono, monospace);
-  font-size: 0.9em;
-}
-
-/* Live run card */
-.overview-live {
-  display: grid;
-  gap: var(--s-16);
-  margin-top: var(--s-24);
-  padding: var(--s-22);
-  border-radius: var(--r-lg);
-  background: var(--panel);
-}
-.overview-live-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--s-16);
-  flex-wrap: wrap;
-}
-.overview-live-title {
-  margin: var(--s-8) 0 0;
-  font-size: var(--fs-xl);
-}
-.overview-live-time {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-20);
-  margin: 0;
-  color: var(--mute);
-  font-size: var(--fs-md);
-  font-variant-numeric: tabular-nums;
+  font: inherit;
 }
 
 /* Lower sections: chart full width, then recent runs and agent (1440). */
@@ -163,13 +146,31 @@
   height: 60px;
 }
 .overview-bar {
+  display: flex;
+  flex-direction: column-reverse;
+  overflow: hidden;
   height: 3px;
   border-radius: 1px;
   background: var(--line);
 }
 .overview-bar-filled {
-  border-radius: 0;
-  background: var(--data-tape);
+  border-radius: 2px;
+  background: transparent;
+}
+.overview-bar-passed {
+  background: var(--green);
+}
+.overview-bar-failed {
+  background: var(--red);
+}
+.overview-bar-inProgress {
+  background: var(--mute);
+}
+.overview-bar-other {
+  background: var(--dim);
+}
+.overview-bar > span {
+  flex-shrink: 0;
 }
 .overview-axis {
   display: flex;
@@ -183,18 +184,19 @@
 /* Recent runs */
 .overview-run-list {
   display: grid;
-  gap: var(--s-8);
+  gap: var(--s-12);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 .overview-run-list a {
   display: grid;
-  grid-template-columns: 110px minmax(0, 1fr) auto 90px;
+  grid-template-columns: 110px minmax(0, 1fr) 90px;
   align-items: center;
   gap: var(--s-16);
   min-height: 44px;
   padding: 0 var(--s-14);
+  font-size: var(--fs-base);
   border-radius: var(--r-sm);
   color: var(--ink);
   text-decoration: none;
@@ -205,13 +207,23 @@
 .overview-run-list a:hover {
   background: var(--tab-hover);
 }
+.overview-run-description {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  min-width: 0;
+}
 .overview-run-name {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .overview-run-list time {
-  font-size: var(--fs-sm);
+  margin-left: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: var(--fs-md);
   font-variant-numeric: tabular-nums;
 }
 .overview-run-figure {
@@ -241,23 +253,27 @@
   margin: 0;
 }
 .overview-gauges div {
+  position: relative;
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--s-10) var(--s-12);
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s-12);
+  font-size: var(--fs-base);
+  line-height: 24px;
+}
+.overview-gauges .overview-gauge-group {
+  padding-bottom: var(--s-14);
 }
 .overview-gauges dt {
   color: var(--ink);
 }
 .overview-gauges dd {
-  display: contents;
   margin: 0;
   text-align: right;
-}
-.overview-gauges dd {
   font-variant-numeric: tabular-nums;
 }
 .overview-gauge {
-  grid-column: 1 / -1;
+  position: absolute;
+  inset: auto 0 0;
   display: block;
   height: 6px;
   border-radius: var(--r-pill);
@@ -305,73 +321,50 @@
     gap: var(--s-2);
   }
   .overview-run-list a {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: 'status figure' 'name time';
-    gap: var(--s-4) var(--s-12);
-    padding: var(--s-10) var(--s-12);
+    grid-template-columns: 76px minmax(0, 1fr) 94px;
+    gap: 15px;
+    min-height: 94px;
+    padding: var(--s-12) var(--s-14);
   }
-  .overview-run-list .status {
-    grid-area: status;
+  .overview-run-description {
+    flex-wrap: wrap;
+    align-items: start;
   }
   .overview-run-name {
-    grid-area: name;
+    flex-basis: 100%;
+    overflow: visible;
+    white-space: normal;
+    line-height: 24px;
+  }
+  .overview-run-description .overview-id {
+    line-height: 24px;
   }
   .overview-run-list time {
-    grid-area: time;
-    text-align: right;
+    flex: 1;
+    min-width: 0;
+    margin-left: 0;
+    white-space: normal;
+    line-height: 21px;
   }
-  .overview-run-figure {
-    grid-area: figure;
+  .overview-run-list time::before {
+    content: '· ';
   }
 }
 
-.overview-live .live-progress {
-  padding: 0;
-  gap: var(--s-16);
-}
-.overview-live .live-kpis {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-.overview-live .live-stage {
-  min-width: 0;
-}
-.overview-live-unavailable {
-  display: grid;
-  gap: var(--s-8);
-  justify-items: start;
-  color: var(--mute);
+.overview-hero > .overview-hero-text {
+  gap: var(--s-28);
 }
 @media (max-width: 760px) {
-  .overview-live .live-kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--s-16) var(--s-24);
+  .overview-hero h1 {
+    font-size: var(--fs-4xl);
+    line-height: 38px;
   }
-  .overview-live .live-kpi dd {
-    font-size: var(--fs-5xl);
+  .overview-hero .overview-lede {
+    font-size: var(--fs-xl);
+    line-height: 29px;
   }
   .overview-activity .overview-section-head {
     display: grid;
     gap: var(--s-4);
-  }
-  .overview-live .live-stages {
-    position: relative;
-    padding-top: var(--s-32);
-  }
-  .overview-live .live-stage-label {
-    display: none;
-  }
-  .overview-live .live-stage.is-now .live-stage-label {
-    position: absolute;
-    inset: 0 0 auto;
-    display: flex;
-    gap: var(--s-4);
-    font-size: var(--fs-md);
-  }
-  .overview-live .live-stage.is-now .live-stage-label > span:not(.number) {
-    display: inline;
-  }
-  .overview-live .live-left {
-    display: block;
-    margin: var(--s-4) 0 0;
   }
 }

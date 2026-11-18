@@ -1,5 +1,6 @@
 import type {
   WorkspaceOverview,
+  OverviewBucket,
   OverviewRun,
   WorkspaceScope,
   OrganizationOverview,
@@ -62,11 +63,59 @@ function validCounts({ counts: c }: OverviewFacts): boolean {
 }
 function validActivity(value: OverviewFacts, start: number): boolean {
   let total = 0;
+  let failed = 0;
+  let passed = 0;
+  let inProgress = 0;
+  let other = 0;
   const valid = value.activity.every((bucket, index) => {
     total += bucket.count;
-    return canonical(bucket.from) === start + index * hour && canonical(bucket.to) === start + (index + 1) * hour;
+    failed += bucket.outcomes.failed;
+    passed += bucket.outcomes.passed;
+    inProgress += bucket.outcomes.inProgress;
+    other += bucket.outcomes.other;
+    const accounted = Object.values(bucket.outcomes).reduce((sum, count) => sum + count, 0);
+    return (
+      Number.isSafeInteger(accounted) &&
+      accounted === bucket.count &&
+      canonical(bucket.from) === start + index * hour &&
+      canonical(bucket.to) === start + (index + 1) * hour
+    );
   });
-  return valid && Number.isSafeInteger(total) && total === value.counts.submitted24h;
+  return (
+    valid &&
+    Number.isSafeInteger(total) &&
+    total === value.counts.submitted24h &&
+    failed === value.counts.failed24h &&
+    passed + failed <= value.counts.finished &&
+    passed + failed + other <= value.counts.finished + value.counts.cancelled + value.counts.errored &&
+    inProgress <= value.counts.queued + value.counts.dispatching + value.counts.active + value.counts.finalizing &&
+    knownActivityMatches(value, start)
+  );
+}
+function outcomeCategory(row: OverviewRun): keyof OverviewBucket['outcomes'] {
+  if (row.state === 'finished')
+    return row.outcome === 'passed' ? 'passed' : row.outcome === 'failed' ? 'failed' : 'other';
+  return row.state === 'cancelled' || row.state === 'errored' ? 'other' : 'inProgress';
+}
+/** Recent headers are a bounded independent witness for each hour's minimum category counts. */
+function knownActivityMatches(value: OverviewFacts, start: number): boolean {
+  const known = value.activity.map(() => ({ passed: 0, failed: 0, inProgress: 0, other: 0 }));
+  const seen = new Set<string>();
+  for (const row of [...value.recent, ...value.active]) {
+    const id = row.id.toLowerCase();
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const at = canonical(row.requestedAt);
+    if (at === null) return false;
+    if (at < start || at >= start + 24 * hour) continue;
+    const counts = known[Math.floor((at - start) / hour)];
+    if (!counts) return false;
+    counts[outcomeCategory(row)]++;
+  }
+  const categories = ['passed', 'failed', 'inProgress', 'other'] as const;
+  return known.every((counts, index) =>
+    categories.every((category) => counts[category] <= value.activity[index]!.outcomes[category]),
+  );
 }
 function validLists(value: OverviewFacts): boolean {
   return (

@@ -6,7 +6,7 @@ import { Status } from '../../components/Badge.js';
 import { p95, runStatus, shortId, when } from './format.js';
 
 /**
- * Recent submissions from the overview snapshot (at most 8). Suite names and p95
+ * Recent submissions from the overview snapshot (five shown from at most eight). Suite names and p95
  * come from the shared first pages; when a run or suite is not on them the
  * label says so instead of guessing.
  */
@@ -34,7 +34,7 @@ export function RecentRuns({
         <p className="overview-muted">No runs submitted in this workspace yet.</p>
       ) : (
         <ul role="list" className="overview-run-list">
-          {rows.map((row) => {
+          {rows.slice(0, 5).map((row) => {
             const status = runStatus(row.state, row.outcome);
             const live = row.state === 'active';
             const summary = summaries?.get(row.id);
@@ -46,13 +46,15 @@ export function RecentRuns({
                   aria-label={`${status.label}, ${suiteNames?.get(row.suiteId) ?? 'unknown suite'}, run ${row.id}`}
                 >
                   <Status tone={status.tone}>{status.label}</Status>
-                  <span className="overview-run-name">
-                    {suiteNames?.get(row.suiteId) ?? <span className="overview-muted">Unknown suite</span>}{' '}
+                  <span className="overview-run-description">
+                    <span className="overview-run-name">
+                      {suiteNames?.get(row.suiteId) ?? <span className="overview-muted">Unknown suite</span>}
+                    </span>
                     <span className="overview-id">{shortId(row.id)}</span>
+                    <time dateTime={row.requestedAt} className="overview-muted">
+                      {when(row.requestedAt)}
+                    </time>
                   </span>
-                  <time dateTime={row.requestedAt} className="overview-muted">
-                    {when(row.requestedAt)}
-                  </time>
                   <span className="overview-run-figure">
                     {live
                       ? 'live'

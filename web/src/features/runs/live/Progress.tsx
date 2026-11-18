@@ -69,12 +69,13 @@ function TimeLine({
           <>
             {' '}
             <span className="live-left">
-              {clock(Math.max(0, totalMs - elapsedMs))} left, ends about {wallTime(originMs + totalMs)}
+              {clock(Math.max(0, totalMs - elapsedMs))} left
+              <span className="live-end">, ends about {wallTime(originMs + totalMs)}</span>
             </span>
           </>
         )}
       </span>
-      {known && <span className="live-percent number">{Math.floor(Math.min(1, elapsedMs / totalMs) * 100)}%</span>}
+      {known && <span className="live-percent number">{Math.round(Math.min(1, elapsedMs / totalMs) * 100)}%</span>}
     </div>
   );
 }
@@ -121,7 +122,7 @@ function Kpis({
   );
 }
 
-/** Stage bar, time left and the four headline figures for the latest window. */
+/** Stage bar and rounded planned-time percentage; figures describe the latest window. */
 export function Progress({
   plan,
   elapsedMs,

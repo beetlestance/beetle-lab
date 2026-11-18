@@ -114,6 +114,7 @@ export const apiMessageSchemas = freezeSchema({
   WorkspaceOverview: { $ref: 'https://beetle-lab.dev/contracts/api/v2/overview#/$defs/WorkspaceOverview' },
   OrganizationOverviewRun: { $ref: 'https://beetle-lab.dev/contracts/api/v2/overview#/$defs/OrganizationOverviewRun' },
   OrganizationOverview: { $ref: 'https://beetle-lab.dev/contracts/api/v2/overview#/$defs/OrganizationOverview' },
+  OverviewOutcomes: { $ref: 'https://beetle-lab.dev/contracts/api/v2/overview#/$defs/OverviewOutcomes' },
   OrganizationParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/OrganizationParams' },
   WorkspaceParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/WorkspaceParams' },
   FolderParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/parameters#/$defs/FolderParams' },

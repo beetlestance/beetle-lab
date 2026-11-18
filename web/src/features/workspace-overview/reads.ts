@@ -65,3 +65,12 @@ export function useOverviewRun(organizationId: string, workspaceId: string, runI
     refetchIntervalInBackground: false,
   });
 }
+
+/** One featured-suite read avoids deriving its name from a potentially partial list. */
+export function useFeaturedSuite(organizationId: string, workspaceId: string, suiteId: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.suite(organizationId, workspaceId, suiteId),
+    queryFn: ({ signal }) => readResult(api.getSuite({ params: { organizationId, workspaceId, suiteId }, signal })),
+  });
+}

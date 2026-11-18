@@ -18,7 +18,7 @@
     "api/v2/live-metrics.schema.json": "901425518db875389482dc998200c35c0468e23aa9161b85ad7fdb2cba398421",
     "api/v2/namespace-requests.schema.json": "6a913fb93f867d4c311d60a2613b11d712b1a70a20442ae6a9262fffcd9ece42",
     "api/v2/namespace.schema.json": "4ce1cd57b1ee27819a417a624cf81177b0998112e84712bd69e3cfb3adce8594",
-    "api/v2/overview.schema.json": "b13dd647d38d8b5fa9b04203df88131d96ac20ca10d6b485d207766627d95bb3",
+    "api/v2/overview.schema.json": "a9ecbfd5109c3d848ab03276ac750db47de41b82f5a5847d329c49d00c67345a",
     "api/v2/parameters.schema.json": "9c7bccc0c31e8fb3eeafb6a1e46662184bd7cc01f6b794c4d041a6b5f8763910",
     "api/v2/retention-status.schema.json": "045cf98eb9dc2ead740a2780bda0b63dc3564f5e5b9c0bf49302efc8b3136ae3",
     "api/v2/retention-traversal.schema.json": "05fcec431cf1dd9348105c36da8cdfbef98e2b9a62d13c67ecb08777169aa65a",

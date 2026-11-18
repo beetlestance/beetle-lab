@@ -176,9 +176,9 @@
     position: relative;
     flex-wrap: wrap;
     gap: var(--s-10);
-    min-height: 56px;
+    min-height: 64px;
     padding: var(--s-10) var(--s-16);
-    margin-top: var(--s-4);
+    margin-top: 0;
   }
   .shell-brand-name {
     display: none;
@@ -239,6 +239,6 @@
     pointer-events: none;
   }
   .shell-main {
-    padding: var(--s-16) var(--s-16) var(--s-64);
+    padding: var(--s-24) var(--s-16) var(--s-64);
   }
 }

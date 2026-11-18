@@ -1,0 +1,148 @@
+/* Live run card */
+.overview-live {
+  display: grid;
+  gap: var(--s-20);
+  margin-top: 0;
+  padding: var(--s-20);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+}
+.overview-live-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-16);
+  flex-wrap: wrap;
+}
+.overview-live-head > .btn {
+  min-height: 40px;
+  font-size: var(--fs-base);
+}
+.overview-live .status {
+  font-size: var(--fs-base);
+  line-height: 24px;
+}
+.overview-live-title {
+  margin: var(--s-12) 0 0;
+  font-size: var(--fs-xl);
+  line-height: 24px;
+  font-weight: 500;
+}
+.overview-live-time {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-20);
+  margin: 0;
+  color: var(--mute);
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+}
+
+.overview-live .live-progress {
+  padding: 0;
+  gap: 0;
+}
+.overview-live .live-stages {
+  margin-bottom: var(--s-12);
+}
+.overview-live .live-stage-label {
+  font-size: var(--fs-md);
+  line-height: 21px;
+}
+.overview-live .live-stage-track {
+  height: 12px;
+}
+.overview-live .live-time {
+  margin-bottom: var(--s-20);
+}
+.overview-live .live-percent {
+  line-height: 34px;
+}
+.overview-live .live-kpi {
+  gap: var(--s-4);
+}
+.overview-live .live-kpi dd {
+  line-height: 46px;
+}
+.overview-live .live-kpi dt {
+  font-size: var(--fs-sm);
+  line-height: 17px;
+}
+.overview-live .live-kpis {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.overview-live .live-stage {
+  min-width: 0;
+}
+.overview-live-unavailable {
+  display: grid;
+  gap: var(--s-8);
+  justify-items: start;
+  color: var(--mute);
+}
+@media (max-width: 760px) {
+  .overview-live .live-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s-16) var(--s-24);
+  }
+  .overview-live .live-kpi dd {
+    font-size: var(--fs-5xl);
+  }
+  .overview-live .live-stages {
+    position: relative;
+    padding-top: var(--s-32);
+  }
+  .overview-live .live-stage-label {
+    display: none;
+  }
+  .overview-live .live-stage.is-now .live-stage-label {
+    position: absolute;
+    inset: 0 0 auto;
+    display: flex;
+    gap: var(--s-4);
+    font-size: var(--fs-md);
+  }
+  .overview-live .live-stage.is-now .live-stage-label > span:not(.number) {
+    display: inline;
+  }
+  .overview-live-head {
+    flex-direction: column;
+    align-items: start;
+    gap: 0;
+  }
+  .overview-live .live-left {
+    display: inline;
+    margin-left: var(--s-16);
+  }
+  .overview-live .live-end {
+    display: none;
+  }
+}
+
+.overview-live .live-stage.is-now .live-stage-track {
+  overflow: visible;
+}
+.overview-live .live-stage.is-now .live-stage-track > span {
+  position: relative;
+}
+.overview-live .live-stage.is-now .live-stage-track > span::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(50%, -50%);
+  border: 4px solid var(--panel);
+  border-radius: var(--r-pill);
+  background: var(--amber);
+  box-shadow:
+    0 0 0 2px var(--amber),
+    0 0 0 6px var(--line);
+  pointer-events: none;
+}
+
+.overview-live .number {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}

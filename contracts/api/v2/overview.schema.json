@@ -141,12 +141,16 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 9007199254740991
+        },
+        "outcomes": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/overview#/$defs/OverviewOutcomes"
         }
       },
       "required": [
         "from",
         "to",
-        "count"
+        "count",
+        "outcomes"
       ],
       "additionalProperties": false
     },
@@ -308,6 +312,38 @@
         "active",
         "activeHasMore",
         "workspaces"
+      ],
+      "additionalProperties": false
+    },
+    "OverviewOutcomes": {
+      "type": "object",
+      "properties": {
+        "passed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "inProgress": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "other": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "passed",
+        "failed",
+        "inProgress",
+        "other"
       ],
       "additionalProperties": false
     }

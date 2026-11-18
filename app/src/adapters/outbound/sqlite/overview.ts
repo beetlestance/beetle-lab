@@ -12,6 +12,8 @@ import { isHistorical } from './historical.js';
 import type { Suites } from './suites.js';
 import { normalizedScope } from './suites.js';
 import { transaction } from './transaction.js';
+import { overviewFilter } from './overview-filter.js';
+import { readOverviewActivity } from './overview-activity.js';
 const hour = 3600000;
 const summary = 'id,suite_id AS suiteId,revision_id AS revisionId,requested_at AS requestedAt,state,outcome';
 export class Overviews {
@@ -30,34 +32,13 @@ export class Overviews {
   private snapshot(query: OverviewQuery | OrganizationOverviewQuery) {
     const scope = this.scope(query);
     const historical = isHistorical(this.db);
-    const args =
-      scope.kind === 'workspace'
-        ? [scope.organizationId, scope.workspaceId]
-        : historical
-          ? [scope.organizationId]
-          : [scope.organizationId, scope.organizationId];
-    const scopeWhere =
-      scope.kind === 'workspace'
-        ? 'organization_id=? AND workspace_id=?'
-        : 'organization_id=?' +
-          (historical
-            ? ''
-            : ' AND workspace_id IN (SELECT id FROM workspaces INDEXED BY workspaces_visible WHERE retired=0 AND organization_id=?)');
+    const filter = overviewFilter(scope, historical);
+    const { args, where: scopeWhere } = filter;
     const now = Date.parse(query.now);
     const start = now - 24 * hour;
     const windowStart = new Date(start).toISOString();
     const counts = this.counts(args, scopeWhere, windowStart, query.now);
-    const grouped = this.db
-      .prepare(
-        `SELECT CAST((unixepoch(requested_at,'subsec')*1000-?)/? AS INTEGER) AS bucket,COUNT(*) AS count FROM runs
-   WHERE ${scopeWhere} AND requested_at>=? AND requested_at<? GROUP BY bucket`,
-      )
-      .all(start, hour, ...args, windowStart, query.now) as unknown as { bucket: number; count: number }[];
-    const activity = Array.from({ length: 24 }, (_, index) => ({
-      from: new Date(start + index * hour).toISOString(),
-      to: new Date(start + (index + 1) * hour).toISOString(),
-      count: grouped.find((row) => row.bucket === index)?.count ?? 0,
-    }));
+    const activity = readOverviewActivity(this.db, filter, query.now);
     const recent = this.db
       .prepare(
         `SELECT ${summary}${scope.kind === 'organization' ? ',workspace_id AS workspaceId' : ''} FROM runs WHERE ${scopeWhere} ORDER BY requested_at DESC,id DESC LIMIT 8`,
@@ -100,7 +81,7 @@ export class Overviews {
     requireVisibleOrganization(this.db, organizationId);
     return { kind: 'organization' as const, organizationId };
   }
-  private counts(args: string[], scopeWhere: string, from: string, to: string): WorkspaceOverview['counts'] {
+  private counts(args: readonly string[], scopeWhere: string, from: string, to: string): WorkspaceOverview['counts'] {
     const states = ['queued', 'dispatching', 'active', 'finalizing', 'finished', 'cancelled', 'errored'] as const;
     const stateSql = states.map((state) => `COALESCE(SUM(state='${state}'),0) AS ${state}`).join(',');
     const runCounts = this.db

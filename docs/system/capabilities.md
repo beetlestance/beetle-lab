@@ -8,6 +8,7 @@ measurements live in [evidence](../evidence/README.md).
   suite descriptions, stamped revisions and editable run notes; folder-first suite
   listing by latest run, with group counts, filters and suite-name search.
 - Run/cancel, persisted results, metric history, comparison, reports and exports.
+- Scoped overviews include exact hourly submission counts and current outcomes.
 - Public HTTP API, generated schemas and downloadable AI-agent instructions under
   `/reference`. An MCP server is not shipped.
 - Configurable run budgets within installed limits and explicit retention controls;
@@ -28,4 +29,4 @@ The Docker host trust boundary is recorded in
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `c6ba1b04e503` |
+| `contracts/api/v2/` | `a195bb052899` |

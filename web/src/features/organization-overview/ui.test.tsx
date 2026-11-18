@@ -25,6 +25,7 @@ function base(organizationId = ids.a): Snapshot {
   value.workspaces = 2;
   value.counts = { ...value.counts, folders: 2 };
   value.activity[23]!.count = 2;
+  value.activity[23]!.outcomes = {passed:0,failed:1,inProgress:1,other:0};
   return value;
 }
 function snapshot(organizationId = ids.a): Snapshot {
