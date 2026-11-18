@@ -17,6 +17,7 @@ averaged; rules read "unknown" when the pooled value cannot be bounded. Configur
 limits use known metric/stat dimensions; unknown dimensions are labelled explicitly.
 Elapsed time stays unavailable for missing, browser-unparseable or future starts;
 source timestamps remain visible rather than becoming NaN or fabricated zero.
+`Feed.tsx` validates Run before access and binds route UUIDs without letter case.
 `stream.ts` (`useLiveStream`) owns feed status, pause, retry and the latest frame;
 `history.ts` keeps at most 900 frames this browser received. Chart captions always
 state this coverage; a known run origin is not evidence of earlier windows. Target runtime charts use

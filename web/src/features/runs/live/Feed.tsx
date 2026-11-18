@@ -30,10 +30,10 @@ export function LiveFeed({
 }) {
   const allowed =
     enabled &&
-    run.id === runId &&
-    run.scope.organizationId === scope.organizationId &&
-    run.scope.workspaceId === scope.workspaceId &&
-    validateApi('Run', run).ok;
+    validateApi('Run', run).ok &&
+    run.id.toLowerCase() === runId.toLowerCase() &&
+    run.scope.organizationId.toLowerCase() === scope.organizationId.toLowerCase() &&
+    run.scope.workspaceId.toLowerCase() === scope.workspaceId.toLowerCase();
   const state = useLiveMetrics(
     { organizationId: scope.organizationId, workspaceId: scope.workspaceId, runId, attemptId: run.activeAttemptId },
     allowed,
