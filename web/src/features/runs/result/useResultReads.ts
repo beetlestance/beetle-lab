@@ -6,10 +6,10 @@ import { queryKeys } from '../../../app/queries.js';
 import { resultView } from '../../run-results/index.js';
 
 /**
- * Bounded reads for one terminal run, each under the scoped run key so leaving the
+ * Bounded reads for one terminal or restored run, each under the scoped run key so leaving the
  * run removes them: engine result, the run's own history summary (one listRuns row
  * by exact ID), and suite and saved revision (names and 031 stamps). Session access
- * comes from SessionContext. None polls; the run is terminal.
+ * comes from SessionContext. These metadata reads never poll.
  */
 export function useResultReads(run: Run) {
   const api = useApi();

@@ -143,7 +143,8 @@ invented counts. Empty-state authoring opens the real engine and suite-details
 flow; authoring controls are disabled in restored read-only history. Folder rows
 use inline current names and measured durations, with one visible-tab clock for
 actual runtime elapsed. Missing/unparseable/future starts stay explicit; restored
-unfinished runs show their state at backup and never tick as current work.
+unfinished runs open recorded results, retain their state at backup and never tick
+as current work; run, pending metric/artifact and timeline polling stays off.
 
 ## Overviews
 

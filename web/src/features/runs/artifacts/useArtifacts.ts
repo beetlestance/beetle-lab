@@ -1,3 +1,4 @@
+import { useSessionAccess } from '../../../app/session.js';
 import { useEffect, useMemo, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Run } from '@beetle/contracts/api';
@@ -6,6 +7,7 @@ import { queryKeys } from '../../../app/queries.js';
 
 export function useArtifacts(run: Run, terminal: boolean) {
   const api = useApi();
+  const { readOnly } = useSessionAccess();
   const client = useQueryClient();
   const { organizationId, workspaceId } = run.scope;
   const runId = run.id;
@@ -30,7 +32,7 @@ export function useArtifacts(run: Run, terminal: boolean) {
       return page;
     },
     refetchInterval: (query) =>
-      query.state.status !== 'error' && query.state.data?.availability === 'pending' ? 2000 : false,
+      !readOnly && query.state.status !== 'error' && query.state.data?.availability === 'pending' ? 2000 : false,
     refetchIntervalInBackground: false,
   });
   useEffect(() => {

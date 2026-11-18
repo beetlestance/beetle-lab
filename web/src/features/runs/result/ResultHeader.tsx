@@ -1,3 +1,4 @@
+import { terminal } from '../terminal.js';
 import { useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { Run } from '@beetle/contracts/api';
@@ -27,7 +28,7 @@ export function ResultHeader({
   /** RunDetail's run re-read; available even in read-only history. */
   refresh?: { readonly run: () => void; readonly busy: boolean } | undefined;
 }) {
-  const status = runStatus(run);
+  const status = displayedStatus(run, readOnly);
   return (
     <header className="result-head">
       <div className="result-head-main">
@@ -152,4 +153,9 @@ function PinControl({ run }: { run: Run }) {
       )}
     </span>
   );
+}
+
+function displayedStatus(run: Run, readOnly: boolean) {
+  const status = runStatus(run);
+  return readOnly && !terminal(run) ? { label: `${status.label} at backup`, tone: 'neutral' as const } : status;
 }

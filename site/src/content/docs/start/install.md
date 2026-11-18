@@ -33,6 +33,10 @@ docker compose down
 Stopping keeps every container's data. Starting again reuses the same images,
 identity and data.
 
+After you update the checkout and rebuild, startup stops with `upgrade_required`
+instead of moving your data to the new images on its own. Follow
+[Upgrade an installation](/guides/upgrade/) to back up, migrate and activate.
+
 :::tip[Testing a service on your own computer]
 Containers cannot reach `localhost` on your machine. On Docker Desktop, point
 targets at `http://host.docker.internal:PORT` instead.

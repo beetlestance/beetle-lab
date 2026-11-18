@@ -1,7 +1,7 @@
 # Run views
 
-RunDetail owns the scoped run query and cancellation. It selects LiveRunView for
-nonterminal runs and RunResultView for terminal entries. A watched run stays in the
+RunDetail owns the scoped query/cancellation. Writable nonterminal runs select
+LiveRunView; terminal and restored records select RunResultView. A watched run stays in the
 live view after termination until Open result remounts and rereads the result.
 Headers belong to each view. Route/run/attempt changes remount phase selection.
 

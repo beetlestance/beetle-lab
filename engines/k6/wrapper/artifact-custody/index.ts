@@ -4,3 +4,5 @@ export { same, regular, directory } from './identity.js';
 export { hashArtifactFile } from './hash.js';
 export { sealExportScript } from './script.js';
 export type { ExportScriptInput, ExportScriptJob } from './script.js';
+export { AppendFiles, metricFileNames } from './append-files.js';
+export type { Lane as AppendLane } from './append-files.js';

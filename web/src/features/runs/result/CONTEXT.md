@@ -1,7 +1,9 @@
 # Run result (Penpot "Run result" boards)
 
 Public entry: `RunResultView({run, scope, runId})`, chosen once by RunDetail for a
-terminal run. It wraps its own RunReads admission and owns no polling.
+terminal run or any restored record. It wraps its own RunReads admission.
+Restored unfinished state stays labelled at backup; no current-work owners mount,
+and run/artifact/metric/timeline polling stops. Stored state and outcome stay exact.
 
 Reads (useResultReads), each under the scoped run key and removed on unmount:
 engine result for the active attempt, the run's own history summary (one listRuns

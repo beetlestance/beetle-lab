@@ -60,6 +60,17 @@ the run shows `validationStatus: pending`. A configuration the engine rejects
 ends the run as errored with the reason `invalid_config`; it does not surface as
 an error on the request that queued it.
 
+## Finding runs
+
+The workspace's **Runs** tab lists every run, newest first, with its suite,
+revision, result, start time, length, request rate, p95 and failed requests.
+Filter by **All**, **Running**, **Passed**, **Failed**, **Cancelled** or
+**Pinned**, pick a suite, or search by suite, run or note. Tick finished runs to
+[compare them](/concepts/results/#comparing-runs).
+
+Opening a run shows the live run page while it is unfinished, and its result
+once it has ended.
+
 ## Why a run waits
 
 The agent admits a run only when its whole budget fits:
@@ -71,11 +82,12 @@ The agent admits a run only when its whole budget fits:
 - **Queue limit.** The installation caps how many runs and export jobs can be
   waiting at once; beyond that, starting a run is refused with a clear reason.
 
-The run page shows the current reason while it waits.
+While it waits, the live run page says what it is waiting for, for example a
+run slot held by other runs, and that nothing has been sent to the target yet.
 
 ## Cancelling
 
-Cancel is a request, recorded immediately and safe to repeat. What happens next
+Choose **Cancel run** on the live run page. Cancel is a request, recorded immediately and safe to repeat. What happens next
 depends on how far the run got:
 
 | When you cancel | Result |
@@ -98,4 +110,5 @@ start a new run; both stay in history so you can compare them.
 Deleting a run removes its results and files from disk and returns the space to
 the installation. Space is only returned after both the backend and the agent have
 confirmed the files are gone, so a failed deletion never frees space that is still
-used. Retention settings can delete old runs for you.
+used. Retention settings can delete old runs for you. A **pinned** run is kept
+by both until you unpin it; see [Retention and deleting](/concepts/retention/#pinning-runs).

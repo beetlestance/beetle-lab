@@ -1,3 +1,4 @@
+import { useSessionAccess } from '../../../app/session.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Run } from '@beetle/contracts/api';
@@ -7,6 +8,7 @@ import { readTimeline } from './read.js';
 import type { Timeline } from './projection.js';
 export function useTimeline(run: Run, isTerminal: boolean) {
   const api = useApi();
+  const { readOnly } = useSessionAccess();
   const client = useQueryClient();
   const { organizationId, workspaceId } = run.scope;
   const runId = run.id;
@@ -21,7 +23,7 @@ export function useTimeline(run: Run, isTerminal: boolean) {
     queryKey,
     queryFn: ({ signal }) => readTimeline({ api, owner, signal, previous: client.getQueryData<Timeline>(queryKey) }),
     refetchInterval: (query) => {
-      if (query.state.status === 'error') return false;
+      if (readOnly || query.state.status === 'error') return false;
       return !isTerminal || (finalStarted && query.state.data?.backlog) ? 2000 : false;
     },
     refetchIntervalInBackground: false,

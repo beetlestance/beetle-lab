@@ -1,3 +1,4 @@
+import { terminal } from '../terminal.js';
 import type { EngineResult } from '@beetle/contracts';
 import type { Run, RunHistorySummary } from '@beetle/contracts/api';
 import { formatBytes, formatDuration, formatNumber, formatPercent, reasonLabel } from '../../run-results/format.js';
@@ -126,7 +127,13 @@ export function headline(
   suiteName: string | undefined,
   summary: RunHistorySummary | null,
   result: EngineResult | null,
+  readOnly = false,
 ): Headline {
+  if (readOnly && !terminal(run))
+    return {
+      title: `${suiteName ?? 'This run'} was ${run.state} at backup`,
+      sentence: 'This unfinished run is recorded history. Restoring a backup does not resume it.',
+    };
   return headlines[variantOf(run)]({
     run,
     name: suiteName ?? 'This run',

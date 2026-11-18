@@ -49,7 +49,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
   const { readOnly, restoredBackup: restored } = useSessionAccess();
   const view = reads.result.view;
   const engine = view.status === 'ready' ? view.result : null;
-  const { title, sentence } = headline(run, reads.suite?.name, reads.summary, engine);
+  const { title, sentence } = headline(run, reads.suite?.name, reads.summary, engine, readOnly);
   return (
     <div className="result">
       {restored && <RestoredBanner createdAt={restored.createdAt} />}
@@ -82,7 +82,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
       <section id="result-charts" className="result-section" aria-label="Charts">
         <RunMetrics run={run} terminal />
       </section>
-      <TargetRuntime run={run} engine={engine} />
+      <TargetRuntime run={run} engine={engine} status={view.status} />
       <ReportTabs run={run} view={view} />
       {deleting && !readOnly && <DeleteRun run={run} onClose={() => setDeleting(false)} />}
     </div>
@@ -123,14 +123,30 @@ function ThresholdSection({
 }
 
 /** Exactly one published target-runtime report is shown; none or several are said plainly. */
-function TargetRuntime({ run, engine }: { run: Run; engine: EngineResult | null }) {
+function TargetRuntime({
+  run,
+  engine,
+  status,
+}: {
+  run: Run;
+  engine: EngineResult | null;
+  status: ResultReads['result']['view']['status'];
+}) {
   const targets = engine ? engine.artifacts.filter((artifact) => artifact.kind === 'target-runtime') : [];
   return (
     <section id="result-target" className="result-section" aria-labelledby="result-target-title">
       <h2 id="result-target-title" className="result-section-title">
         Target runtime
       </h2>
-      {targets.length === 0 && <p className="result-muted">No target runtime was sampled during this run.</p>}
+      {targets.length === 0 && (
+        <p className="result-muted">
+          {engine
+            ? 'No target-runtime report was published for this run.'
+            : status === 'loading'
+              ? 'Reading the recorded result…'
+              : 'Target-runtime report is unavailable.'}
+        </p>
+      )}
       {targets.length > 1 && (
         <p role="alert">Multiple target observation reports were published; this view requires one report.</p>
       )}
