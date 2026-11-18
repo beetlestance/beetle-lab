@@ -17,8 +17,8 @@ completedPrefix() exposes only the last fully written pair, with immutable scope
 IDs, extents and incremental SHA256 copies; no extra IO, corpus or per-window sync.
 It is advisory completed bytes, not durability or sealed-result authority. Headers
 alone expose nothing; an in-flight append retains the prior snapshot. Failure,
-external fence, collection, direct finish and close withdraw it. Agent transport
-and active-history public reads remain unimplemented; sealed readers are unchanged.
-No lifecycle spool change, new ACK/result authority or public sample route.
+external fence, collection, direct finish and close withdraw it. Authenticated
+agent/backend history reads validate this prefix through the retained native reader;
+sealed readers, lifecycle spool and ACK/result authority remain unchanged.
 Contract: docs/system/contracts/results.md. Focused checks:
 vitest run engines/k6/test/metric-archive engines/k6/test/attempt.

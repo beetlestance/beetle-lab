@@ -302,6 +302,9 @@
   }
 }
 @media (max-width: 760px) {
+  .live-ticks > .live-tick-detail {
+    display: none;
+  }
   .live-charts {
     grid-template-columns: minmax(0, 1fr);
   }

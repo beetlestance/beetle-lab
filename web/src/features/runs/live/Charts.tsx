@@ -6,7 +6,7 @@ import { SegmentedFilter } from '../../../components/SegmentedFilter.js';
 import type { LiveHistory, TargetPoint } from './history.js';
 import type { RunPlan } from './plan.js';
 import { LiveChart } from './LiveChart.js';
-import type { ChartSeries } from './LiveChart.js';
+import type { ChartSeries, ChartTick } from './LiveChart.js';
 import { clock, ms, reading, span, whole } from './format.js';
 
 type Domain = readonly [number, number];
@@ -27,12 +27,12 @@ const warmStage = (plan: RunPlan) => (plan.stages.length > 2 ? plan.stages[0] : 
 const drainStage = (plan: RunPlan) => plan.stages.find((stage) => stage.drain);
 
 function stageTicks(plan: RunPlan, domain: Domain, nowT: number | null) {
-  const ticks = [{ at: domain[0], label: clock(domain[0]) }];
+  const ticks: ChartTick[] = [{ at: domain[0], label: clock(domain[0]) }];
   const warm = warmStage(plan);
-  if (warm) ticks.push({ at: warm.durationMs, label: `Warm up ends ${clock(warm.durationMs)}` });
+  if (warm) ticks.push({ at: warm.durationMs, label: `Warm up ends ${clock(warm.durationMs)}`, detail: true });
   if (nowT !== null) ticks.push({ at: nowT, label: `now ${clock(nowT)}` });
   const drain = drainStage(plan);
-  if (drain) ticks.push({ at: drain.startMs, label: `Drain ${clock(drain.startMs)}` });
+  if (drain) ticks.push({ at: drain.startMs, label: `Drain ${clock(drain.startMs)}`, detail: true });
   ticks.push({ at: domain[1], label: clock(domain[1]) });
   return ticks;
 }

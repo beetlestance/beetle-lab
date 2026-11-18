@@ -212,7 +212,7 @@ a failed revocation keeps ownership and rejects close.
 | Code | Reviewed |
 | --- | --- |
 | `engines/k6/wrapper/attempt/reservation.ts` | `f10b08b3c4fd` |
-| `engines/k6/wrapper/attempt/archive/` | `326d993c4895` |
+| `engines/k6/wrapper/attempt/archive/` | `bd50f083eda0` |
 | `app/src/application/run-metrics/` | `4d172ed61554` |
 | `app/src/application/run-comparison/` | `cddffebb9dee` |
 | `contracts/src/k6-live/` | `324516855159` |

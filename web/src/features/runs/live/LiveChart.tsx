@@ -10,6 +10,12 @@ export interface ChartSeries {
   readonly area?: boolean | undefined;
   readonly dashed?: boolean | undefined;
 }
+export interface ChartTick {
+  readonly at: number;
+  readonly label: string;
+  /** Desktop phase annotation; phone keeps the boundary and current-time labels. */
+  readonly detail?: boolean;
+}
 export interface ChartProps {
   readonly title: ReactNode;
   readonly xs: readonly number[];
@@ -20,7 +26,7 @@ export interface ChartProps {
   readonly format: (value: number) => string;
   readonly limit?: { readonly value: number; readonly label: string } | undefined;
   readonly bands?: readonly { readonly from: number; readonly to: number }[] | undefined;
-  readonly ticks?: readonly { readonly at: number; readonly label: string }[] | undefined;
+  readonly ticks?: readonly ChartTick[] | undefined;
   readonly hoverT?: number | null | undefined;
   readonly onHover?: ((t: number | null) => void) | undefined;
   readonly className?: string | undefined;
@@ -124,7 +130,11 @@ function Ticks({ props, scale }: { props: ChartProps; scale: Scale }) {
   return (
     <span className="live-ticks" aria-hidden="true">
       {(props.ticks ?? defaultTicks(props.domain)).map((tick) => (
-        <span key={tick.label + tick.at} style={{ left: `${(scale.x(tick.at) / W) * 100}%` }}>
+        <span
+          className={tick.detail ? 'live-tick-detail' : undefined}
+          key={tick.label + tick.at}
+          style={{ left: `${(scale.x(tick.at) / W) * 100}%` }}
+        >
           {tick.label}
         </span>
       ))}
@@ -189,7 +199,7 @@ export function LiveChart(props: ChartProps) {
   );
 }
 
-function defaultTicks([from, to]: readonly [number, number]) {
+function defaultTicks([from, to]: readonly [number, number]): ChartTick[] {
   return [
     { at: from, label: clock(from) },
     { at: (from + to) / 2, label: clock((from + to) / 2) },
