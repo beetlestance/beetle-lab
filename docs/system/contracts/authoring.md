@@ -65,6 +65,10 @@ are in [Public API](public-api.md).
 ## Run notes
 
 Route: `PATCH /runs/{runId}/note` (`setRunNote`), body ≤ 64 KiB.
+`createRun` also accepts an optional initial note: non-null notes and their search
+postings commit with admission at note version 1; omitted/null notes stay unwritten.
+The raw note participates in create receipt identity; replay preserves the original
+note even after a later edit. Neither a second POST nor an engine Offer carries it.
 
 - Request: `scope`, `requestId`, `expectedNoteVersion` and `note` (1 to 1000
   scalars, name text rules, or `null` to clear). The response is the full Run.

@@ -56,15 +56,22 @@ export function BudgetFacts({
   changing,
   change,
   target,
+  revision,
+  limitMs,
 }: {
   settings: WorkspaceSettings;
   workspaceName: string;
   changing: boolean;
   change: () => void;
   target: string | null;
+  revision: SuiteRevision | undefined;
+  limitMs: number;
 }) {
+  const total = useMemo(() => (revision ? planSummary(revision.config).totalMs : null), [revision]);
   return (
     <dl className="start-run-facts">
+      <dt>Length</dt>
+      <dd>{lengthText(total, limitMs)}</dd>
       <dt>Budget</dt>
       <dd>
         {changing ? (
@@ -117,17 +124,11 @@ function lengthText(totalMs: number | null, limitMs: number): string {
     ? `${clock(totalMs)}. Within the ${limit} limit.`
     : `${clock(totalMs)}. Longer than the ${limit} limit, so the run stops early.`;
 }
-export function Preview({ revision, limitMs }: { revision: SuiteRevision; limitMs: number }) {
+export function Preview({ revision }: { revision: SuiteRevision }) {
   const plan = useMemo(() => planSummary(revision.config), [revision.config]);
   return (
-    <>
-      <div className="start-run-preview">
-        <LoadShape plan={plan} compact />
-      </div>
-      <dl className="start-run-facts">
-        <dt>Length</dt>
-        <dd>{lengthText(plan.totalMs, limitMs)}</dd>
-      </dl>
-    </>
+    <div className="start-run-preview">
+      <LoadShape plan={plan} compact />
+    </div>
   );
 }

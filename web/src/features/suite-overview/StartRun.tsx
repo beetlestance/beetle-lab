@@ -1,3 +1,4 @@
+import './start-run.css';
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Suite, SuiteRevisionSummary, WorkspaceSettings } from '@beetle/contracts/api';
@@ -6,7 +7,7 @@ import { queryKeys } from '../../app/queries.js';
 import { Banner } from '../../components/Banner.js';
 import { Button } from '../../components/Button.js';
 import { Dialog } from '../../components/Dialog.js';
-import { Checkbox, Select } from '../../components/Fields.js';
+import { Checkbox, Select, TextInput } from '../../components/Fields.js';
 import { QueryState } from '../../components/QueryState.js';
 import type { RunValues } from '../execution-request/index.js';
 import { captureRequest, initialValues } from '../execution-request/index.js';
@@ -44,7 +45,7 @@ export function StartRun(props: StartProps) {
     [client, organizationId, workspaceId],
   );
   return (
-    <Dialog title={`Start ${suite.name}`} onClose={close}>
+    <Dialog className="start-run-dialog" title={`Start ${suite.name}`} onClose={close}>
       {settings.data ? (
         <StartForm {...props} settings={settings.data} />
       ) : (
@@ -87,6 +88,7 @@ function StartForm({
   const [values, setValues] = useState(() => initialValues(settings));
   const draft = useBudgetDraft(values);
   const [changing, setChanging] = useState(false);
+  const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
   const submit = useSubmission();
   const locked = submit.pending || submit.unknown;
@@ -98,6 +100,7 @@ function StartForm({
     try {
       const run = { ...values, budget: draft.budget };
       const body = captureRequest({ revision: revision.data, settings, values: run, requestId: crypto.randomUUID() });
+      if (note.trim()) body.note = note;
       setError(null);
       void submit.send(body);
     } catch (failure) {
@@ -115,11 +118,11 @@ function StartForm({
       <fieldset disabled={locked}>
         <legend className="sr-only">Run settings</legend>
         <RevisionSelect suite={suite} options={options} value={revisionId} onChange={setRevisionId} />
-        <QueryState query={revision}>
-          {(saved) => <Preview revision={saved} limitMs={Number(draft.budget.timeoutMs)} />}
-        </QueryState>
+        <QueryState query={revision}>{(saved) => <Preview revision={saved} />}</QueryState>
         <BudgetFacts
           settings={settings}
+          revision={revision.data}
+          limitMs={Number(draft.budget.timeoutMs)}
           workspaceName={workspaceName}
           changing={changing}
           change={() => setChanging(true)}
@@ -127,6 +130,13 @@ function StartForm({
         />
         <RunOptions settings={settings} values={values} setValues={setValues} />
         {changing && <BudgetFields settings={settings} text={draft.text} change={draft.change} />}
+        <TextInput
+          label="Note for this run (optional)"
+          value={note}
+          maxLength={1000}
+          placeholder="For example: after the connection-pool fix"
+          onChange={(event) => setNote(event.target.value)}
+        />
       </fieldset>
       <SubmitBar submit={submit} error={error} ready={Boolean(revision.data)} close={close} />
     </form>

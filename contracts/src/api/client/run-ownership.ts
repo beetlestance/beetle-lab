@@ -17,19 +17,28 @@ function validRun(run: Run): boolean {
   if (run.state === 'errored') return run.outcome === 'inconclusive' && run.reason !== null;
   return run.outcome === 'pending';
 }
-function creationMatches(input: PreparedInput, run: Run): boolean {
-  const body = input.body as CreateRunRequest;
+function initialNoteMatches(body: CreateRunRequest, run: Run): boolean {
+  return body.note == null || (run.note === body.note.trim() && run.noteVersion === 1);
+}
+function initialReceipt(run: Run): boolean {
   return (
-    run.revisionId.toLowerCase() === body.revisionId.toLowerCase() &&
-    run.engine.profileId === body.engineProfile &&
-    Object.entries(body.budget).every(([key, value]) => run.budget[key as keyof Run['budget']] === value) &&
-    run.executionPolicy.mode === body.executionPolicy.mode &&
-    run.executionPolicy.preferIdle === body.executionPolicy.preferIdle &&
     run.version === 1 &&
     run.state === 'queued' &&
     run.validationStatus === 'pending' &&
     !run.cancellationRequested &&
     run.reason === null
+  );
+}
+function creationMatches(input: PreparedInput, run: Run): boolean {
+  const body = input.body as CreateRunRequest;
+  return (
+    initialNoteMatches(body, run) &&
+    run.revisionId.toLowerCase() === body.revisionId.toLowerCase() &&
+    run.engine.profileId === body.engineProfile &&
+    Object.entries(body.budget).every(([key, value]) => run.budget[key as keyof Run['budget']] === value) &&
+    run.executionPolicy.mode === body.executionPolicy.mode &&
+    run.executionPolicy.preferIdle === body.executionPolicy.preferIdle &&
+    initialReceipt(run)
   );
 }
 /** Common route/scope and schema checks run before these execution-intent bindings. */

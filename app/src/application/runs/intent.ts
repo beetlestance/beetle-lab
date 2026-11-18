@@ -1,3 +1,4 @@
+import { normalizedRunNote } from './note.js';
 import { encodeJson } from '@beetle/contracts';
 import { validateApi } from '@beetle/contracts/api';
 import { digestMutationIntent } from '../namespaces/index.js';
@@ -15,6 +16,7 @@ export function prepareRunCommand(operation: CreateRunOperation, digest: IntentD
     validateApi('Uuid', copy.id).ok && validateApi('Uuid', copy.attemptId).ok && !sameUuid(copy.id, copy.attemptId),
   );
   requireRule(validateApi('RunTimestamp', copy.requestedAt).ok);
+  normalizedRunNote(copy.request.note ?? null);
   const intentDigest = digestMutationIntent({ kind: copy.kind, request: copy.request }, digest);
   requireRule(copy.intentDigest === undefined || copy.intentDigest === intentDigest);
   const { kind, id, attemptId, requestedAt, request } = copy;

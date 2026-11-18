@@ -34,7 +34,8 @@ export async function enqueueRun(input: {
     !budgetMatches ||
     value.executionPolicy.mode !== request.executionPolicy.mode ||
     value.executionPolicy.preferIdle !== request.executionPolicy.preferIdle ||
-    !initialReceipt(value)
+    !initialReceipt(value) ||
+    (request.note != null && (value.note !== request.note.trim() || value.noteVersion !== 1))
   )
     throw new Error('Invalid run receipt response');
   return value;

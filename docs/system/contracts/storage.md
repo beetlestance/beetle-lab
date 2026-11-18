@@ -160,7 +160,7 @@ metadata worker persists it (`local-session/`, migration 014). Shapes are in
 | Code | Reviewed |
 | --- | --- |
 | `app/src/adapters/outbound/sqlite/schema.ts` | `b692f7b7d09a` |
-| `app/src/adapters/outbound/sqlite/runs.ts` | `99df71d3c3ce` |
+| `app/src/adapters/outbound/sqlite/runs.ts` | `220f7fbfb541` |
 | `app/src/adapters/outbound/sqlite/run-pins/` | `5b6f4e05f29b` |
 | `app/src/adapters/outbound/sqlite/migration033.ts` | `fc87dbbd4a35` |
 | `app/src/adapters/outbound/sqlite/mutation-receipts.ts` | `afeddcda3d25` |

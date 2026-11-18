@@ -1,3 +1,4 @@
+import { normalizedRunNote } from '../../../application/runs/index.js';
 import { reserveCleanupControl } from './cleanup-control/index.js';
 import { checkExecutionQueue } from './execution-queue.js';
 import { checkRevisionPins } from './revision-pins.js';
@@ -63,8 +64,13 @@ export class Runs {
     requireRule(validateApi('Run', run).ok);
     const offer = makeRunOffer(run, revision, profile);
     this.insert(run, offer, profile);
+    const note = normalizedRunNote(command.request.note ?? null);
+    if (note !== null)
+      this.db
+        .prepare('INSERT INTO run_notes(run_id,organization_id,workspace_id,version,note) VALUES(?,?,?,1,?)')
+        .run(run.id, scope.organizationId, scope.workspaceId, note);
     // The persisted snapshot stays pure intent; the response carries the fresh read annotations.
-    return { ...run, note: null, noteVersion: 0, startedAt: null, finishedAt: null, pinned: false };
+    return { ...run, note, noteVersion: note === null ? 0 : 1, startedAt: null, finishedAt: null, pinned: false };
   }
   private insert(run: Run, offer: string, profile: RunProfilePin): void {
     const parsedOffer = JSON.parse(offer) as Offer;

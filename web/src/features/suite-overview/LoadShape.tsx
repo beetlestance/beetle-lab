@@ -27,7 +27,7 @@ export function LoadShape({ plan, compact = false }: { plan: PlanSummary; compac
   return (
     <div className={compact ? 'load-shape load-shape-compact' : 'load-shape'}>
       {path.length > 1 && <Chart path={path} label={headline ?? 'Load shape'} />}
-      {stages.length > 0 && span > 0 && <StageStrip stages={stages} />}
+      {stages.length > 0 && span > 0 && <StageStrip stages={stages} compact={compact} />}
       <p className="load-shape-total">{summaryText(plan, stages.length)}</p>
     </div>
   );
@@ -45,13 +45,17 @@ function Chart({ path, label }: { path: string[]; label: string }) {
     </svg>
   );
 }
-function StageStrip({ stages }: { stages: readonly Stage[] }) {
+function StageStrip({ stages, compact }: { stages: readonly Stage[]; compact: boolean }) {
   return (
     <ol className="load-shape-stages" aria-label="Stages">
       {stages.map((stage, index) => (
         <li key={index} style={{ flexGrow: stage.ms, flexBasis: 0 }}>
           <span className="load-shape-stage-text">
-            {stage.kind === 'steady' ? <span>{stage.label}</span> : <strong>{stage.label}</strong>}
+            {stage.kind === 'steady' ? (
+              <span>{stage.label}</span>
+            ) : (
+              <strong className={compact ? 'sr-only' : undefined}>{stage.label}</strong>
+            )}
             <span className="number">{clock(stage.ms)}</span>
           </span>
           <span className="load-shape-bar" aria-hidden="true" />

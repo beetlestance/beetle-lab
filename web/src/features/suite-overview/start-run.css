@@ -1,0 +1,119 @@
+/* Run admission dialog; shared overview chart styles remain in overview.css. */
+.start-run fieldset {
+  display: grid;
+  gap: var(--s-16);
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--s-16);
+  min-width: 0;
+}
+.start-run-preview {
+  padding: var(--s-20) var(--s-22);
+  background: var(--bg);
+  border-radius: var(--r-lg);
+}
+.start-run-facts {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: var(--s-10) var(--s-16);
+  margin: 0;
+}
+.start-run-facts dt {
+  color: var(--mute);
+}
+.start-run-facts dd {
+  margin: 0;
+}
+.start-run-budget {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-12);
+}
+
+.start-run-dialog {
+  align-self: start;
+  margin-top: 48px;
+  max-width: 620px;
+  gap: 18px;
+}
+.start-run-dialog .dialog-title {
+  line-height: 29px;
+}
+.start-run-dialog .start-run fieldset {
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.start-run-dialog .field-label {
+  font-size: 14px;
+  line-height: 21px;
+}
+.start-run-dialog .input,
+.start-run-dialog .select {
+  min-height: 40px;
+  font-size: 16px;
+  line-height: 24px;
+}
+.start-run-dialog .start-run-preview {
+  padding: 22px;
+  background: var(--line);
+}
+.start-run-dialog .load-shape-chart {
+  height: 90px;
+}
+.start-run-dialog .load-shape {
+  gap: 12px;
+}
+.start-run-dialog .load-shape-stages li {
+  gap: 12px;
+}
+.start-run-dialog .load-shape-stage-text {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  line-height: 21px;
+}
+.start-run-dialog .load-shape-stage-text .number {
+  flex-shrink: 0;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.start-run-dialog .load-shape-stage-text:has(.sr-only) {
+  justify-content: center;
+}
+.start-run-dialog .load-shape-total {
+  margin: 0;
+  font-size: 14px;
+  line-height: 21px;
+}
+.start-run-dialog .start-run-facts {
+  grid-template-columns: 124px minmax(0, 1fr);
+  gap: 8px 16px;
+  font-size: 16px;
+  line-height: 24px;
+}
+.start-run-dialog .start-run-facts dt {
+  color: var(--ink);
+}
+.start-run-dialog .dialog-actions .btn {
+  min-height: 40px;
+  font-size: 16px;
+  line-height: 24px;
+}
+.start-run-dialog .start-run-budget {
+  gap: 10px;
+}
+@media (max-width: 760px) {
+  .start-run-dialog {
+    align-self: auto;
+    margin-top: 0;
+    max-width: none;
+  }
+}
+@media (max-width: 560px) {
+  .start-run-dialog .start-run-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .start-run-dialog .load-shape-stage-text {
+    display: block;
+  }
+}

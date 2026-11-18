@@ -74,3 +74,11 @@ it('preserves a completed discovery run with an inconclusive outcome in detail a
   expect(await createApiClient({ baseUrl, fetch: reply(page) }).listRuns({ params, query: { limit: 10 } }))
     .toEqual({ ok: true, value: page });
 });
+
+it('binds an initial note to the creation receipt while preserving omitted-note legacy receipts', async () => {
+  const body={...await load('create-run','CreateRunRequest'),note:' After connection-pool fix '};
+  const run={...await load('run','Run'),note:'After connection-pool fix',noteVersion:1};
+  expect((await createApiClient({baseUrl,fetch:reply(run,202)}).createRun({params,body})).ok).toBe(true);
+  for(const value of [{...run,note:null},{...run,note:'Wrong'},{...run,noteVersion:2}])
+    expect((await createApiClient({baseUrl,fetch:reply(value,202)}).createRun({params,body})).ok).toBe(false);
+});

@@ -30,8 +30,8 @@ facts. Wire shapes live in `contracts/api/v2/` and `contracts/runner/v1/`.
 
 `POST …/workspaces/{workspaceId}/runs` (body at most 64 KiB, route and body scope
 must match) returns 202 only after the receipt transaction commits. The request
-names a saved revision, engine profile, budget and execution policy (`parallel` or
-`isolated`); it carries no configuration, image, capability, path, credential or
+names a saved revision, engine profile, budget, execution policy (`parallel` or
+`isolated`) and optional initial note; it carries no configuration, image, capability, path, credential or
 environment. GET detail and list are observational and never start work; a scope
 mismatch is a scoped not-found, and pages hold at most 100 items.
 
@@ -53,7 +53,9 @@ One immediate transaction in the metadata worker, receipt first:
 5. Check the installation queue bound, then insert run (`queued`, version 1),
    attempt 1, execution intent (immutable queue order and logical cost), cleanup
    control and dispatch outbox. The outbox references the attempt's single stored
-   Offer copy.
+   Offer copy. A supplied non-null note is normalized and inserted at note version 1
+   with its search postings inside this transaction; it never enters the Offer.
+   Omitted/null notes remain unwritten (version 0). Any note failure rolls back admission.
 6. Store the original Run reply in the receipt and commit. No HTTP, file or agent
    call happens inside the transaction.
 
@@ -198,7 +200,7 @@ ordering are in [run delivery](run-delivery.md).
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/adapters/outbound/sqlite/runs.ts` | `99df71d3c3ce` |
+| `app/src/adapters/outbound/sqlite/runs.ts` | `220f7fbfb541` |
 | `app/src/adapters/outbound/sqlite/run-cancellations.ts` | `60e439b897cb` |
 | `app/src/adapters/outbound/sqlite/run-pins/` | `5b6f4e05f29b` |
 | `app/src/application/runs/pin.ts` | `7883e8e6d0eb` |
