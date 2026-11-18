@@ -254,14 +254,6 @@ tbody tr:nth-child(even) {
 .error > p:first-child {
   color: var(--red);
 }
-.editor {
-  margin: 0 0 var(--s-32);
-  padding: var(--s-24);
-  background: var(--panel);
-  border-radius: var(--r-lg);
-  max-width: 720px;
-  animation: enter var(--motion-base) var(--ease-out);
-}
 .editor fieldset {
   margin: 0;
   padding: 0;
@@ -278,7 +270,8 @@ tbody tr:nth-child(even) {
   color: var(--mute);
   font-size: var(--fs-md);
 }
-.editor input {
+.editor input,
+.editor select {
   width: 100%;
 }
 .editor .field small {
@@ -316,7 +309,6 @@ tbody tr:nth-child(even) {
     flex-direction: column;
     gap: var(--s-16);
   }
-  .editor,
   .draft-banner {
     padding: var(--s-16);
   }

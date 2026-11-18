@@ -230,7 +230,7 @@ describe('mutation identity and draft ownership', () => {
     mount(api.client);
     await user.click(await screen.findByRole('button', { name: 'Create organization' }));
     expect(screen.getByLabelText('Organization name')).toHaveFocus();
-    await user.keyboard('Keyboard{Tab}keyboard{Tab}{Enter}');
+    await user.keyboard('Keyboard{Tab}keyboard{Tab}{Tab}{Enter}');
     expect(await screen.findByText('Changes saved.')).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Close editor' }));
     await user.click(screen.getByRole('button', { name: 'Create organization' }));
