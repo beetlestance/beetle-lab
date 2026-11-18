@@ -135,6 +135,7 @@ function Pairs({
   return (
     <Card
       title={title}
+      className={title === 'Headers' ? 'request-headers' : 'request-query'}
       action={
         <Button
           variant="text"

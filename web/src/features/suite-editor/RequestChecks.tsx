@@ -6,6 +6,12 @@ import type { Obj } from './model.js';
 import { fieldId } from './problems.js';
 import { blankCheck, checkKind, checkKinds, compareOperators } from './rules.js';
 
+const checkFieldLabel = (n: number, field: string, shown: string) => (
+  <>
+    <span className="sr-only">{`Check ${n} ${field}`}</span>
+    <span aria-hidden="true">{shown}</span>
+  </>
+);
 const countsValue = (check: Obj) => (check.required === false ? 'optional' : 'required');
 type Kind = NonNullable<ReturnType<typeof checkKind>>;
 function typedValue(kind: Kind, value: string): unknown {
@@ -21,7 +27,7 @@ function CheckTarget({ check, at, n, set }: { check: Obj; at: string; n: number;
     <>
       {kind?.name && (
         <TextField
-          label={`Check ${n} header`}
+          label={checkFieldLabel(n, 'header', 'Path or name')}
           path={`${at}/name`}
           value={check.name}
           maxLength={128}
@@ -30,7 +36,7 @@ function CheckTarget({ check, at, n, set }: { check: Obj; at: string; n: number;
       )}
       {kind?.path && (
         <TextField
-          label={`Check ${n} JSON path`}
+          label={checkFieldLabel(n, 'JSON path', 'Path or name')}
           path={`${at}/path`}
           value={check.path}
           maxLength={512}
@@ -71,7 +77,7 @@ function CheckRow({
   return (
     <div className="field-row check-row" id={fieldId(at)} tabIndex={-1}>
       <Select
-        label={`Check ${n} kind`}
+        label={checkFieldLabel(n, 'kind', 'Kind')}
         value={text(check.kind)}
         onChange={(event) => set(blankCheck(event.target.value, text(check.id), check.required !== false))}
       >
@@ -84,19 +90,21 @@ function CheckRow({
       </Select>
       <div className="check-target">
         <CheckTarget check={check} at={at} n={n} set={set} />
-        {!kind?.name && !kind?.path && <TextInput label={`Check ${n} path or name`} disabled value="—" />}
+        {!kind?.name && !kind?.path && (
+          <TextInput label={checkFieldLabel(n, 'path or name', 'Path or name')} disabled value="—" />
+        )}
       </div>
       {kind?.value && (
         <TextField
-          label={`Check ${n} value`}
+          label={checkFieldLabel(n, 'value', 'Value')}
           path={`${at}/value`}
           value={check.value}
           change={(value) => set({ ...check, value: typedValue(kind, value) })}
         />
       )}
-      {!kind?.value && <TextInput label={`Check ${n} value`} disabled value="—" />}
+      {!kind?.value && <TextInput label={checkFieldLabel(n, 'value', 'Value')} disabled value="—" />}
       <Select
-        label={`Check ${n} counts`}
+        label={checkFieldLabel(n, 'counts', 'Counts')}
         value={countsValue(check)}
         onChange={(event) => set({ ...check, required: event.target.value === 'required' })}
       >
@@ -132,8 +140,9 @@ export function Checks({ request, path, change }: { request: Obj; path: string; 
   return (
     <Card
       title="Checks"
+      className="request-checks"
       action={
-        <Button variant="text" disabled={checks.length >= 64} onClick={add}>
+        <Button variant="text" size="sm" disabled={checks.length >= 64} onClick={add}>
           Add check
         </Button>
       }

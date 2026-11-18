@@ -17,7 +17,7 @@ export const checkKinds: readonly CheckKind[] = [
   { kind: 'headerEquals', label: 'Header equals', name: true, value: 'optional-text' },
   { kind: 'headerContains', label: 'Header contains', name: true, value: 'text' },
   { kind: 'jsonExists', label: 'JSON path exists', path: true },
-  { kind: 'jsonEquals', label: 'JSON equals', path: true, value: 'scalar' },
+  { kind: 'jsonEquals', label: 'JSON value equals', path: true, value: 'scalar' },
   { kind: 'jsonContains', label: 'JSON contains', path: true, value: 'text' },
   { kind: 'jsonCompare', label: 'JSON compares', path: true, operator: true, value: 'number' },
 ];

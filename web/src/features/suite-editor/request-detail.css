@@ -334,3 +334,42 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Request board: preserve accessible field names while presenting column headings. */
+.request-headers .editor-rows {
+  gap: var(--s-6);
+}
+.suite-editor-subpage .request-checks,
+.suite-editor-subpage .value-palette {
+  gap: var(--s-12);
+}
+.request-checks .field {
+  gap: 0;
+}
+.suite-editor-subpage .value-palette ul {
+  margin: 0;
+}
+.value-palette button {
+  min-height: 24px;
+  font: inherit;
+  line-height: 21px;
+}
+.suite-editor-layout.suite-editor-subpage .code-input {
+  min-height: 123px;
+  padding: 10px 16px;
+  line-height: 19px;
+}
+
+.value-palette li {
+  min-width: 0;
+  max-width: 100%;
+}
+.value-palette button {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.value-palette code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
