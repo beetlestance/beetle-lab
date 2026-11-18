@@ -1,6 +1,6 @@
 ---
 title: Troubleshooting
-description: What to do when a run waits, errors, ends inconclusive, or an automation call reports an unknown outcome.
+description: What to do when a run waits, errors, ends inconclusive, an automation call reports an unknown outcome, or setup stops with an upgrade code.
 sidebar:
   order: 2
 ---
@@ -65,3 +65,37 @@ a second run. See [Automate from CI](/guides/automation/).
 You are looking at a restored history viewer. It can show runs and results but
 cannot start runs or change anything. See
 [Back up and restore history](/guides/backup-and-restore/).
+
+## Actions are refused after an upgrade
+
+If the app shows everything but refuses to start runs, save suites or change
+settings with `503 capacity_unavailable`, check whether an upgrade is awaiting
+activation: `docker compose run --rm setup upgrade status`. The fence refuses new
+work until you [activate or roll back](/guides/upgrade/#check-the-new-version).
+
+## Setup stops with a code
+
+The `setup` container prints one code on standard error and exits 1. Read it
+with `docker compose logs setup`.
+
+| Code | Meaning | What to do |
+| --- | --- | --- |
+| `upgrade_required` | The images moved since the installation was set up, for example after `docker compose up --build` on a newer checkout | [Upgrade the installation](/guides/upgrade/), or start it with the images it was set up with |
+| `upgrade_blocked ITEMS` | An upgrade command refused; each item names a reason | See below |
+| `conflict` | A running service still holds the installation | Stop the services with `docker compose down` and run the command again |
+| `recovery_required` | Something other than the images differs from what the installation expects, or an upgrade found state it cannot trust | Keep the installation directory and any upgrade backup exactly as they are |
+
+`upgrade_blocked` items:
+
+| Item | What to do |
+| --- | --- |
+| `runs`, `exports`, `input_uploads` and other work names | Something is still in progress; see [the blocker table](/guides/upgrade/#before-you-start) |
+| `engine_containers`, `agent_container` | Stop the services and wait for engine containers to exit |
+| `not_awaiting_activation` | `activate` needs a finished prepare; run prepare first |
+| `no_pending_upgrade` | There is no upgrade to roll back |
+| `activated` | The upgrade was activated; rollback is no longer possible |
+| `rollback_pending` | A rollback was interrupted; run `rollback` again to finish it |
+| `images_moved` | The images were rebuilt while an upgrade was open; roll back, then prepare again |
+
+Do not delete `.beetle/` or its `upgrade/` directory to get past one of these
+codes. They hold your data and, during an upgrade, the only way back.

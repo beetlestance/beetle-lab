@@ -1,6 +1,6 @@
 ---
-title: Automation client
-description: Every command, flag, request file, output and exit code of the automation client.
+title: Command-line tools
+description: Every command, flag, request file, output and exit code of the automation client, and the host upgrade commands.
 sidebar:
   order: 4
 ---
@@ -8,7 +8,8 @@ sidebar:
 The automation client ships in the backend image as
 `/beetle/backend/automation.js`. Run it with `docker run --entrypoint node`, as
 shown in [Automate from CI](/guides/automation/), which covers the tasks step by
-step. This page lists everything the client accepts.
+step. This page lists everything the client accepts. The host commands for
+upgrading an installation are under [Upgrade commands](#upgrade-commands).
 
 ```sh
 node /beetle/backend/automation.js COMMAND --endpoint URL --origin URL \
@@ -98,22 +99,10 @@ A `run` request:
  "executionPolicy":{"mode":"parallel","preferIdle":false}}
 ```
 
-A `cancel` request. Its `scope` must match `--organization` and `--workspace`:
-
-```json
-{"scope":{"kind":"workspace","organizationId":"0b9f3c1e-6c1a-4d5e-9f00-2a7d3c4b5e61","workspaceId":"5d2e8f40-1b3c-4a6d-8e9f-0c1d2e3f4a5b"},
- "requestId":"2f1e0d9c-8b7a-4695-a483-72615f4e3d2c"}
-```
-
-An `export` request:
-
-```json
-{"scope":{"kind":"workspace","organizationId":"0b9f3c1e-6c1a-4d5e-9f00-2a7d3c4b5e61","workspaceId":"5d2e8f40-1b3c-4a6d-8e9f-0c1d2e3f4a5b"},
- "requestId":"4a3b2c1d-0e9f-48a7-b6c5-d4e3f2a1b0c9","revisionId":"9e8d7c6b-5a49-4382-9716-0a1b2c3d4e5f",
- "engineProfile":"k6-local",
- "budget":{"cpuMillis":1000,"memoryBytes":536870912,"pids":128,"timeoutMs":300000,"outputBytes":67108864},
- "executionPolicy":{"mode":"parallel","preferIdle":false},"options":{"scriptTimeoutMs":600000,"maximumBuildBytes":16777216}}
-```
+An `export` request has the same fields as a `run` request, plus
+`"options":{"scriptTimeoutMs":600000,"maximumBuildBytes":16777216}`. A `cancel`
+request has only `scope`, which must match `--organization` and `--workspace`,
+and its own `requestId`.
 
 Choose a new `requestId` for each new run, cancellation or export, and keep it with the
 file. Sending the same file again replays the original request instead of making
@@ -167,14 +156,24 @@ The client makes each change once and never retries. If it cannot tell whether a
 | 5 | The run has not ended yet, time ran out, or the server is unavailable or refused the session |
 
 Exit codes for runs come from the run's state and declared outcome; the client
-never works out an outcome from metrics.
-
-### Exports
-
-Exit codes: 0 the script is ready (or downloaded and verified), 3 the export failed
+never works out an outcome from metrics. For exports: 0 the script is ready (or downloaded and verified), 3 the export failed
 or its state is unknown, 4 cancelled, 5 still being prepared or session refused.
 `export-download` creates `--out` as a new `0600` file and does not follow a
 symbolic link there; if the path exists, nothing is written and it exits 2. The
 script is checked against the published size (at most 64 MiB) and SHA-256 as it
 is written; on any failure the client removes the partial file it created and exits
 3, so a file left at `--out` always matches.
+
+## Upgrade commands
+
+Run on the host, from the checkout, with the services stopped; see [Upgrade an installation](/guides/upgrade/).
+
+| Command | Does |
+| --- | --- |
+| `docker compose run --rm setup upgrade [prepare]` | Backs up, fences and migrates the installation to the rebuilt images; resumes if interrupted |
+| `docker compose run --rm setup upgrade status` | Prints the open upgrade's phase and steps; changes nothing |
+| `docker compose run --rm setup upgrade activate` | Lifts the fence after you checked the new version |
+| `docker compose run --rm setup upgrade rollback` | Before activation only, restores the sealed backup |
+
+Each prints one JSON line with `status` and exits 0, or prints a code such as `upgrade_blocked runs`
+on standard error and exits 1; see [Troubleshooting](/reference/troubleshooting/#setup-stops-with-a-code).

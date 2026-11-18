@@ -118,13 +118,17 @@ checkout or more than one installation on a server.
 ## Upgrades
 
 An installation is pinned to the images it was set up with. Starting it again
-never moves it to newer images, and in-place upgrade or downgrade is not
-supported yet.
+never moves it to newer images: after `docker compose up --build` on a newer
+checkout, setup stops with `upgrade_required`. Move a Compose installation to the
+new images with the offline upgrade command; see
+[Upgrade an installation](/guides/upgrade/). Only the previous release can be
+upgraded, and downgrading is not supported.
 
 With the launcher, a rebuild needs the same source revision the installation was
-created from. After updating the checkout, set up a **new** directory with its
-own port for the new version. To keep the old history, back it up and open it as
-read-only history; see [Back up and restore history](/guides/backup-and-restore/).
+created from, and the upgrade command does not cover launcher installations.
+After updating the checkout, set up a **new** directory with its own port for the
+new version. To keep the old history, back it up and open it as read-only history;
+see [Back up and restore history](/guides/backup-and-restore/).
 
 ## Security
 
