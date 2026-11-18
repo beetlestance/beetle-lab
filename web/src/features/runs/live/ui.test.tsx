@@ -212,3 +212,12 @@ it('shows the restored-backup banner from the session and hides cancel', async (
   expect(screen.queryByRole('button', { name: 'Cancel run' })).not.toBeInTheDocument();
   expect(fixture.records.some((record) => record.path.endsWith('/auth/session'))).toBe(false);
 });
+
+it('shows unavailable elapsed time for a valid timestamp the browser cannot parse', async () => {
+  const current=liveRun({startedAt:'2026-12-31T23:59:60Z'});
+  vi.spyOn(LiveMetricReads.prototype,'read').mockImplementation(async()=>liveFrame(current,1));
+  const fixture=routesFor(()=>current);mountLive(fixture.client,{run:current});
+  expect(await screen.findByText('Elapsed time unavailable')).toBeVisible();
+  expect(screen.getByText(/started 2026-12-31T23:59:60Z/)).toBeVisible();
+  expect(screen.queryByText(/NaN/)).toBeNull();
+});

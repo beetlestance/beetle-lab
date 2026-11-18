@@ -29,7 +29,9 @@ const cancelRequested = (run: Run, cancel: Cancellation | undefined) =>
   run.cancellationRequested || cancel?.accepted === true;
 
 function ContextLine({ run, suiteName, revisionOrdinal }: Pick<HeaderProps, 'run' | 'suiteName' | 'revisionOrdinal'>) {
-  const started = run.startedAt ? `started ${wallTime(run.startedAt)}` : `requested ${wallTime(run.requestedAt)}`;
+  const started = run.startedAt
+    ? `started ${wallTime(run.startedAt) || run.startedAt}`
+    : `requested ${wallTime(run.requestedAt) || run.requestedAt}`;
   return (
     <p className="live-context">
       <Link to={routes.runs(run.scope.organizationId, run.scope.workspaceId)}>Runs</Link>

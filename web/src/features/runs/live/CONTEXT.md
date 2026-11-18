@@ -14,6 +14,8 @@ requests (rN = index in `config.requests`) and thresholds from the saved
 revision; `model.ts` derives window figures from one live frame. There is no
 pooled latency series, so percentiles show the slowest endpoint and are never
 averaged; rules read "unknown" when the pooled value cannot be bounded.
+Elapsed time stays unavailable for missing, browser-unparseable or future starts;
+source timestamps remain visible rather than becoming NaN or fabricated zero.
 `stream.ts` (`useLiveStream`) owns feed status, pause, retry and the latest frame;
 `history.ts` keeps at most 900 frames this browser received (charts say "since
 this page opened" without a start time). Target runtime charts use

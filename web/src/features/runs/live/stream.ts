@@ -94,9 +94,11 @@ export function useLiveStream(run: Run, cancelAccepted: boolean, plan: RunPlan, 
 }
 
 /** Clock positions the view reads: elapsed since start, last received window, and where it stopped. */
-export function positions(run: Run, stream: LiveStream) {
+export function positions(run: Run, stream: Pick<LiveStream, 'history' | 'now'>) {
   const { history, now } = stream;
-  const elapsedMs = run.startedAt ? Math.max(0, now - Date.parse(run.startedAt)) : null;
+  const start = run.startedAt ? Date.parse(run.startedAt) : Number.NaN;
+  const elapsed = now - start;
+  const elapsedMs = Number.isFinite(elapsed) && elapsed >= 0 ? elapsed : null;
   const lastT = history.points.at(-1)?.t ?? null;
   return {
     elapsedMs,

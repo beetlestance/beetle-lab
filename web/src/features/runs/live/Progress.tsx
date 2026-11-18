@@ -57,7 +57,7 @@ function TimeLine({
   if (elapsedMs === null)
     return (
       <div className="live-time">
-        <span>Start time not reported</span>
+        <span>Elapsed time unavailable</span>
       </div>
     );
   const known = totalMs !== null && totalMs > 0;
