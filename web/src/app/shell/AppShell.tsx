@@ -3,22 +3,21 @@ import type { KeyboardEvent, ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { routes } from '../routes.js';
 import { useSessionAccess } from '../session.js';
-import { navItems, shellScope } from '../navigation.js';
+import { badgeScope, navItems, shellScope } from '../navigation.js';
 import { ThemeSwitch } from '../../components/ThemeSwitch.js';
 import { BeetleMark } from './BeetleMark.js';
 import { ScopeSwitcher } from './ScopeSwitcher.js';
+import { ActiveRunBadge } from './ActiveRunBadge.js';
 import './shell.css';
 
 export type AppShellProps = {
   children: ReactNode;
   /** Opens command search; the shell's Search entry and ⌘K both call it. */
   onSearch: () => void;
-  /** Active runs for the Workspaces badge. Omitted when unknown: no badge, never zero. */
-  activeRuns?: number | undefined;
 };
 
 /** Header from every Penpot board plus the phone menu sheet ("Phone / Menu open"). */
-export function AppShell({ children, onSearch, activeRuns }: AppShellProps) {
+export function AppShell({ children, onSearch }: AppShellProps) {
   const { pathname } = useLocation();
   const { signOut } = useSessionAccess();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -55,7 +54,7 @@ export function AppShell({ children, onSearch, activeRuns }: AppShellProps) {
           {menuOpen ? 'Close' : 'Menu'}
         </button>
         <div className="shell-menu" id="shell-menu">
-          <ShellNav pathname={pathname} activeRuns={activeRuns} />
+          <ShellNav pathname={pathname} />
           <div className="shell-tools">
             <button
               type="button"
@@ -84,7 +83,7 @@ export function AppShell({ children, onSearch, activeRuns }: AppShellProps) {
   );
 }
 
-function ShellNav({ pathname, activeRuns }: { pathname: string; activeRuns: number | undefined }) {
+function ShellNav({ pathname }: { pathname: string }) {
   return (
     <nav aria-label="Main navigation" className="shell-nav">
       <ul role="list">
@@ -92,16 +91,7 @@ function ShellNav({ pathname, activeRuns }: { pathname: string; activeRuns: numb
           <li key={item.key}>
             <Link to={item.to} aria-current={item.current ? 'page' : undefined}>
               {item.label}
-              {item.key === 'workspaces' && activeRuns !== undefined && activeRuns > 0 && (
-                <span className="shell-nav-badge">
-                  <span className="sr-only">, </span>
-                  {activeRuns}
-                  <span className="sr-only"> running</span>
-                  <span className="shell-nav-running" aria-hidden="true">
-                    running
-                  </span>
-                </span>
-              )}
+              {item.key === 'workspaces' && <ActiveRunBadge {...badgeScope(pathname)} />}
             </Link>
           </li>
         ))}

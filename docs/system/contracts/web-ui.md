@@ -131,6 +131,9 @@ counted separately. A missing scope is not found, never an empty dashboard.
 Each hour partitions submissions by current passed, failed, in-progress and other
 outcomes. The client checks bucket sums, scalar failure/state bounds and bounded
 recent/active witnesses; colours never infer outcomes from a total submission count.
+The header observes the current scope's successful cached snapshot without owning
+another query. Its badge counts active records exactly, including beyond the
+20-header bound; absent/error snapshots and restored history show no badge.
 
 The selected suite shows configuration summaries parsed from its immutable
 revision (target origin without credentials or path, at most 8 scenarios, literal

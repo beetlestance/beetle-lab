@@ -1,3 +1,4 @@
+import { matchRoutes } from 'react-router-dom';
 import { routes, validId } from './routes.js';
 
 export type ShellScope = { organizationId?: string; workspaceId?: string };
@@ -64,4 +65,25 @@ export function navItems(pathname: string): NavItem[] {
     { key: 'settings', label: 'Settings', to: settingsTarget(scope), current: settings },
     { key: 'docs', label: 'Docs', to: routes.reference, current: path === routes.reference },
   ];
+}
+
+const badgeRoutes = [
+  routes.organizationPattern,
+  routes.workspacePattern,
+  routes.organizationSettingsPattern,
+  routes.workspaceSettingsPattern,
+  routes.runsPattern,
+  routes.runPattern,
+  routes.comparisonPattern,
+  routes.inputsPattern,
+  routes.exportsPattern,
+  routes.suitesPattern,
+  routes.suitePattern,
+  routes.suiteScriptPattern,
+].map((path) => ({ path }));
+
+/** Header reads obey the same complete route/UUID validation as the destination. */
+export function badgeScope(pathname: string): ShellScope {
+  const match = matchRoutes(badgeRoutes, pathname)?.[0];
+  return match && Object.values(match.params).every(validId) ? shellScope(pathname) : {};
 }

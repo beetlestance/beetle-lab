@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { navItems, shellScope } from './navigation.js';
+import { badgeScope, navItems, shellScope } from './navigation.js';
 import { readSuitePage, routes } from './routes.js';
 
 const org = '11111111-1111-4111-8111-111111111111';
@@ -57,4 +57,13 @@ it('builds suite page URLs that keep the existing tab scheme and read back with 
   });
   expect(routes.suitesFolder(org, ws, run)).toBe(`${routes.suites(org, ws)}?folder=${run}`);
   expect(routes.pinnedRuns(org, ws)).toBe(`${routes.runs(org, ws)}?pinned=true`);
+});
+
+it('permits badge reads only after the whole scoped route and every UUID are valid', () => {
+  expect(badgeScope(routes.run(org, ws, run))).toEqual({ organizationId: org, workspaceId: ws });
+  expect(badgeScope(routes.organization(org))).toEqual({ organizationId: org });
+  for (const path of [routes.reference, `/organizations/${org}/workspaces/invalid`,
+    `/organizations/${org}/workspaces/${ws}/runs/invalid`, `/organizations/${org}/unknown`]) {
+    expect(badgeScope(path)).toEqual({});
+  }
 });
