@@ -26,3 +26,21 @@ disagree. Recheck against the merged app, then fix the page or the app.
 | guides/export-scripts.md | Ready dialog text says "The download is checked against this SHA-256", but **Download script** is a plain link; the page tells users to check it themselves |
 | guides/upgrade.md, reference/troubleshooting.md | No upgrade screen exists ("Upgrade / States" board). How the app presents fenced refusals (`503 capacity_unavailable`) was not confirmed |
 | concepts/workspaces.md | Organization page columns (suites, runs in 24 hours, right now, last run) and **Overview** showing the current workspace |
+
+## Site chrome status (lane A)
+
+The site chrome, home and article styles follow the Penpot "Docs" boards
+(Home, Guide, Concept, Reference, Phone / Guide). Skins come from
+`site/src/styles/skins.css`, a subset of `web/src/styles/tokens.css`;
+`npm run check:site-docs` fails when they drift. The `--doc-*` tokens (inline
+code and illustration colours) are docs-only, and their Scarab values have no
+board to check against.
+
+| Item | State |
+| --- | --- |
+| Header: tabs, Search ⌘K, "Open the app", Darkroom/Scarab radio switch | Done. "Open the app" uses `DOCS_APP_URL`; it defaults to `/` and is hidden when the variable is set empty |
+| Sidebar, breadcrumb/title/lede, "On this page" rail, previous/next | Done |
+| Asides, tables, code blocks (language and Copy bar) | Done. Aside titles, ledes and backticked exit codes are page content, not chrome |
+| Phone: Menu (focus kept inside, Escape closes), page bar, stacked cards | Done |
+| "Matches this installation" note (In-app board) | Not built: no page uses it yet |
+| Scarab `--doc-*` colours | Recheck if the boards gain a Scarab frame |
