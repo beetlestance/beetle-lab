@@ -36,9 +36,9 @@ export interface ChartProps {
 const W = 600;
 const niceCeiling = (value: number) => {
   if (value <= 0) return 1;
-  const power = 10 ** Math.floor(Math.log10(value));
+  const power = 10 ** Math.floor(Math.log10(value)) || Number.MIN_VALUE;
   const step = [1, 2, 2.5, 5, 10].find((m) => m * power >= value) ?? 10;
-  return step * power;
+  return Math.min(Number.MAX_VALUE, step * power);
 };
 
 export function nearestIndex(xs: readonly number[], t: number): number {
@@ -64,7 +64,9 @@ interface Scale {
 function scaleOf(props: ChartProps): Scale {
   const H = props.tall ? 220 : 150;
   const measured = props.series.flatMap((s) => s.values.filter((v): v is number => v !== null));
-  const yMax = niceCeiling(Math.max(props.limit?.value ?? 0, ...measured, 0) * 1.1);
+  const maximum = Math.max(props.limit?.value ?? 0, ...measured, 0);
+  const padded = maximum > Number.MAX_VALUE / 1.1 ? Number.MAX_VALUE : maximum * 1.1;
+  const yMax = niceCeiling(padded);
   const [x0, x1] = props.domain;
   return {
     H,

@@ -19,9 +19,9 @@ Elapsed time stays unavailable for missing, browser-unparseable or future starts
 source timestamps remain visible rather than becoming NaN or fabricated zero.
 `Feed.tsx` validates Run before access and binds route UUIDs without letter case.
 `stream.ts` (`useLiveStream`) owns feed status, pause, retry and the latest frame;
-`history.ts` keeps at most 900 frames this browser received. Chart captions always
-state this coverage; a known origin is not evidence of earlier windows. Missing
-source time breaks metric lines; singleton readings remain visible. Target charts use
+`history.ts` merges <=900 actual live/verified recorded windows. Entry/reconnect
+bootstrap, sampling and lifetime rules live in contracts/active-history.md. Captions
+state coverage; source gaps break lines and singleton readings remain visible. Target charts use
 `LiveMetricSnapshot.target` values as reported (units are not documented).
 Direct entries resolve organisation/workspace names once through shared scoped
 query keys. Metadata errors hide stale names and offer retry while metrics continue.

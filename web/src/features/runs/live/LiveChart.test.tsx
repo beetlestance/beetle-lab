@@ -58,3 +58,28 @@ it('marks only phase annotations as detail while retaining boundaries and curren
     [...view.container.querySelectorAll('.live-ticks > span:not(.live-tick-detail)')].map((node) => node.textContent),
   ).toEqual(['00:00', 'now 05:16', '10:00']);
 });
+
+it.each([Number.MAX_VALUE, 1e308, Number.MIN_VALUE])(
+  'plots extreme finite source value %s without overflow, underflow or false zero',
+  (value) => {
+    const view = render(
+      <LiveChart
+        title="Measured windows"
+        xs={[1000]}
+        domain={[0, 5000]}
+        series={[{ key: 'actual', label: 'actual', tone: 'amber', values: [value] }]}
+        format={String}
+      />,
+    );
+    const path = view.container.querySelector('.live-line')?.getAttribute('d') ?? '';
+    expect(path).not.toMatch(/NaN|Infinity/);
+    expect(path).not.toBe('');
+    const marker = view.container.querySelector('.live-single-point')!;
+    expect(Number(marker.getAttribute('cy'))).toBeLessThan(150);
+    expect(Number(marker.getAttribute('cy'))).toBeGreaterThanOrEqual(8);
+    expect(view.getByRole('img').getAttribute('aria-label')).toContain(String(value));
+    const ceiling = Number(view.container.querySelector('.live-chart-max')?.textContent);
+    expect(Number.isFinite(ceiling)).toBe(true);
+    expect(ceiling).toBeGreaterThanOrEqual(value);
+  },
+);
