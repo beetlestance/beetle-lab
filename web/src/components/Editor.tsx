@@ -76,20 +76,7 @@ function Editor({ intent, close }: { intent: EditorIntent; close: () => void }) 
     setSaved(true);
     await intent.refresh();
   }
-  if (saved)
-    return (
-      <Dialog
-        title={intent.title}
-        onClose={close}
-        actions={
-          <button type="button" className="primary" onClick={close}>
-            Close editor
-          </button>
-        }
-      >
-        <p role="status">Changes saved.</p>
-      </Dialog>
-    );
+  if (saved) return <SavedDialog title={intent.title} close={close} />;
   if (location.pathname !== intent.path)
     return (
       <aside className="draft-banner" role="status">
@@ -118,14 +105,7 @@ function Editor({ intent, close }: { intent: EditorIntent; close: () => void }) 
               setAttempt(null);
             }}
           />
-          <div className="dialog-actions">
-            <button type="button" onClick={close}>
-              Discard draft
-            </button>
-            <button className="primary" type="submit" disabled={!!unknown}>
-              {pending ? 'Saving…' : 'Save'}
-            </button>
-          </div>
+          <EditorActions close={close} pending={pending} blocked={!!unknown} />
         </fieldset>
       </form>
       {pending && <p role="status">Sending changes…</p>}
@@ -133,6 +113,33 @@ function Editor({ intent, close }: { intent: EditorIntent; close: () => void }) 
         <EditorFailure failure={failure} unknown={!!unknown} retry={() => void send(true)} refresh={intent.refresh} />
       )}
     </Dialog>
+  );
+}
+function SavedDialog({ title, close }: { title: string; close: () => void }) {
+  return (
+    <Dialog
+      title={title}
+      onClose={close}
+      actions={
+        <button type="button" className="primary" onClick={close}>
+          Close editor
+        </button>
+      }
+    >
+      <p role="status">Changes saved.</p>
+    </Dialog>
+  );
+}
+function EditorActions({ close, pending, blocked }: { close: () => void; pending: boolean; blocked: boolean }) {
+  return (
+    <div className="dialog-actions">
+      <button type="button" onClick={close}>
+        Discard draft
+      </button>
+      <button className="primary" type="submit" disabled={blocked}>
+        {pending ? 'Saving…' : 'Save'}
+      </button>
+    </div>
   );
 }
 function EditorFailure({
