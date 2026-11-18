@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
+import type { WorkspaceScope } from '@beetle/contracts/api';
 import { SUITE_MAXIMUM_CONFIG_BYTES } from '@beetle/contracts/api';
 import type { SuiteEditorView } from '../../app/routes.js';
 import { SegmentedFilter } from '../../components/SegmentedFilter.js';
@@ -18,6 +19,7 @@ import type { Config } from './draft.js';
 export type EditorView = { mode: SuiteEditorView; request: string | null };
 
 type ConfigFieldsProps = {
+  scope: WorkspaceScope;
   metadata?: ReactNode;
   text: string;
   change: (text: string) => void;
@@ -37,6 +39,7 @@ function parse(text: string): { config: Config; error: string } {
 }
 
 type BodyProps = {
+  scope: WorkspaceScope;
   metadata?: ReactNode;
   config: Config;
   set: (next: Config) => void;
@@ -46,12 +49,13 @@ type BodyProps = {
 };
 
 /** The structured views: Run setup, one request, or every form section. */
-function StructuredView({ config, set, inputs, view, setView, metadata }: BodyProps) {
+function StructuredView({ config, set, inputs, view, setView, metadata, scope }: BodyProps) {
   if (view.mode === 'run-setup') return <RunSetup config={config} set={set} inputs={inputs} />;
   const request = requestIndex(config, view.request);
   if (request !== null)
     return (
       <RequestDetail
+        scope={scope}
         config={config}
         set={set}
         index={request}
@@ -82,7 +86,17 @@ function StructuredView({ config, set, inputs, view, setView, metadata }: BodyPr
 }
 
 /** Form, Run setup and complete-JSON views over one draft text; the text is the only source of truth. */
-export function ConfigFields({ text, change, disabled, validity, inputs, view, setView, metadata }: ConfigFieldsProps) {
+export function ConfigFields({
+  text,
+  change,
+  disabled,
+  validity,
+  inputs,
+  view,
+  setView,
+  metadata,
+  scope,
+}: ConfigFieldsProps) {
   const [intakeError, setIntakeError] = useState('');
   const { config, error } = parse(text);
   const problem = error || intakeError;
@@ -129,7 +143,15 @@ export function ConfigFields({ text, change, disabled, validity, inputs, view, s
         {view.mode === 'json' || error ? (
           <CompleteConfigJson text={text} editJson={editJson} />
         ) : (
-          <StructuredView metadata={metadata} config={config} set={set} inputs={inputs} view={view} setView={setView} />
+          <StructuredView
+            scope={scope}
+            metadata={metadata}
+            config={config}
+            set={set}
+            inputs={inputs}
+            view={view}
+            setView={setView}
+          />
         )}
       </fieldset>
     </div>

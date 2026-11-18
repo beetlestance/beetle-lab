@@ -868,5 +868,30 @@
     "path": "invalid/create-suite-revision-metadata.json",
     "schema": "CreateSuiteRevisionRequest",
     "valid": false
+  },
+  {
+    "path": "valid/input-columns.json",
+    "schema": "InputColumns",
+    "valid": true
+  },
+  {
+    "path": "invalid/input-columns-unsafe.json",
+    "schema": "InputColumns",
+    "valid": false
+  },
+  {
+    "path": "invalid/input-columns-duplicates.json",
+    "schema": "InputColumns",
+    "valid": false
+  },
+  {
+    "path": "valid/input-columns-query.json",
+    "schema": "InputColumnsQuery",
+    "valid": true
+  },
+  {
+    "path": "invalid/input-columns-query.json",
+    "schema": "InputColumnsQuery",
+    "valid": false
   }
 ]

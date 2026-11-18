@@ -9,7 +9,11 @@ import { validateApi } from '../validate.js';
 export interface PreparedInput {
   params: Record<string, string>;
   query?:
-    ApiTypes['PageQuery'] | ApiTypes['RunMetricSamplesQuery'] | ApiTypes['RunListQuery'] | ApiTypes['SuiteListQuery'];
+    | ApiTypes['InputColumnsQuery']
+    | ApiTypes['PageQuery']
+    | ApiTypes['RunMetricSamplesQuery']
+    | ApiTypes['RunListQuery']
+    | ApiTypes['SuiteListQuery'];
   body?: Record<string, unknown>;
   signal?: AbortSignal;
 }
@@ -97,6 +101,7 @@ export function operationPath(operation: ApiOperation, input: PreparedInput): st
     encodeURIComponent(input.params[name]!),
   );
   if (!input.query) return path;
+  if ('kind' in input.query) return `${path}?${new URLSearchParams({ kind: input.query.kind }).toString()}`;
   const query = new URLSearchParams({ limit: String(input.query.limit) });
   if (input.query.cursor !== undefined) query.set('cursor', input.query.cursor);
   appendRunQuery(query, input.query);

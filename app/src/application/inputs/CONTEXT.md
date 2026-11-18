@@ -24,6 +24,10 @@ verified read (`shape.ts` budget); failure leaves counts null and never undoes
 publication. A pinned-delete refusal is re-raised as `InputDependencyError` naming
 the first 10 blockers (`dependencies.ts`). Contract: docs/system/contracts/input-metadata.md.
 
+`columns.ts` discovers names through get/read under the existing byte owner. Parser
+kind is explicit; all bytes must verify before exact names can leave the service.
+No migration or cache; unknown shape is distinct from custody/cancellation errors.
+
 Focused check: `node_modules/.bin/vitest run app/test/application/inputs --maxWorkers=1`.
 The tests use real isolated metadata and controlled byte jobs. Native filesystem,
 HTTP composition and provider/Stager qualification belong to their owners.

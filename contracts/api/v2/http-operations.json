@@ -378,6 +378,17 @@
     "implementation": "implemented"
   },
   {
+    "name": "getInputColumns",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs/{inputId}/columns",
+    "response": "InputColumns",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "InputParams",
+    "query": "InputColumnsQuery",
+    "implementation": "implemented"
+  },
+  {
     "name": "listInputUsage",
     "method": "GET",
     "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/inputs/{inputId}/usage",

@@ -77,6 +77,7 @@ export function RevisionEditor({
       >
         <div className="suite-editor-main">
           <ConfigFields
+            scope={suite.scope}
             metadata={
               <MetadataFields
                 workspace={workspace}

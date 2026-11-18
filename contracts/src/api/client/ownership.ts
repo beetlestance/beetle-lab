@@ -13,7 +13,7 @@ import type { LiveMetricSnapshot } from '../generated/types.js';
 import { runMetricSeriesPageMatches, runMetricSamplesPageMatches } from './run-metric-ownership.js';
 import type { RunMetricSeriesPage, RunMetricSamplesPage } from '../generated/types.js';
 import type { ApiOperation } from '../generated/operations.js';
-import type { EffectiveSettings, SettingsScope } from '../generated/types.js';
+import type { EffectiveSettings, SettingsScope, InputColumns, InputColumnsQuery } from '../generated/types.js';
 import type { PreparedInput } from './input.js';
 import { inputOwnership } from './input-ownership.js';
 import { runArtifactPageMatches } from './run-artifact-ownership.js';
@@ -154,8 +154,22 @@ function retentionOwnership(operation: ApiOperation, input: PreparedInput, value
 }
 
 /** Structural validation precedes this route/body/result binding. Backend SQL authorization is independent. */
+type PagedInput = Omit<PreparedInput, 'query'> & {
+  query?: Exclude<NonNullable<PreparedInput['query']>, InputColumnsQuery>;
+};
 export function responseOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
   if (session(operation)) return true;
+  const query = input.query;
+  if (query && 'kind' in query) return columnOwnership(operation, input, value);
+  const paged: PagedInput = {
+    params: input.params,
+    ...(query ? { query } : {}),
+    ...(input.body ? { body: input.body } : {}),
+    ...(input.signal ? { signal: input.signal } : {}),
+  };
+  return scopedResponseOwnership(operation, paged, value);
+}
+function scopedResponseOwnership(operation: ApiOperation, input: PagedInput, value: unknown): boolean {
   const retentionMatch = retentionOwnership(operation, input, value);
   if (retentionMatch !== undefined) return retentionMatch;
   const overview = overviewOwnership(operation, input, value);
@@ -252,4 +266,12 @@ function overviewOwnership(operation: ApiOperation, input: PreparedInput, value:
       workspaceId: input.params.workspaceId!,
     });
   return undefined;
+}
+
+function columnOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
+  return (
+    operation.response === 'InputColumns' &&
+    equal(expectedOwner(operation, input), (value as InputColumns).scope) &&
+    inputOwnership(operation, input, value)
+  );
 }

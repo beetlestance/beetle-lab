@@ -8,6 +8,9 @@ measurements live in [evidence](../evidence/README.md).
   suite descriptions, stamped revisions and editable run notes; folder-first suite
   listing by latest run, with inline current names, recorded timing, group counts,
   filters and suite-name search; ordinal revision history with exact predecessors.
+- Revision authoring saves suite details and config atomically; Run setup edits
+  secret binding references and file/inline/range datasets. Verified input column
+  discovery supplies the request value palette.
 - Run/cancel, persisted results, metric history, comparison, reports and exports.
 - Scoped overviews include exact hourly submission counts and current outcomes.
 - Public HTTP API, generated schemas and downloadable AI-agent instructions under
@@ -30,4 +33,4 @@ The Docker host trust boundary is recorded in
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `24d39c98695b` |
+| `contracts/api/v2/` | `cd90a097c0a3` |

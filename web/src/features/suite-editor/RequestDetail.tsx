@@ -1,3 +1,5 @@
+import type { WorkspaceScope } from '@beetle/contracts/api';
+import { useInputColumns } from './useInputColumns.js';
 import { useState } from 'react';
 import { Button } from '../../components/Button.js';
 import { Select } from '../../components/Fields.js';
@@ -45,12 +47,14 @@ function RequestHead({ request, path, change }: { request: Obj; path: string; ch
 
 /** "Suite / Edit / Request": every field of one request. */
 export function RequestDetail({
+  scope,
   config,
   set,
   index,
   inputs,
   close,
 }: {
+  scope: WorkspaceScope;
   config: Config;
   set: SetConfig;
   index: number;
@@ -58,6 +62,7 @@ export function RequestDetail({
   close: () => void;
 }) {
   const insertion = useValueInsertion();
+  const fileColumns = useInputColumns(scope, config);
   const request = objects(config.requests)[index];
   if (!request)
     return (
@@ -97,7 +102,7 @@ export function RequestDetail({
         <Body request={request} index={index} inputs={inputs} change={change} />
       </Card>
       <Checks request={request} path={path} change={change} />
-      <ValuePalette config={config} insert={insertion.insert} />
+      <ValuePalette config={config} insert={insertion.insert} files={fileColumns} />
     </div>
   );
 }

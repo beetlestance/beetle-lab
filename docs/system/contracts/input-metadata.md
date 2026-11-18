@@ -45,6 +45,29 @@ size) and can never be updated or deleted. The counter mirrors the k6 dataset
 rules but stays in the app: the architecture boundary forbids importing the k6
 compiler.
 
+## Column discovery
+
+`GET /inputs/{id}/columns?kind=csv|json` under the workspace input route returns
+`scope`, `inputId`, `sha256`, `bytes`, `kind` and nullable `columns`. The parser kind
+is explicit: a dataset's kind can differ from the input's filename. No migration,
+re-upload or persistent cache is required for existing published inputs.
+
+- The entire read is verified through `InputService.read` before names are returned.
+  Metadata and bytes share the HTTP request lifetime, including cancellation and
+  custody settlement. Returned identity must match the captured input.
+- At most 64 unique template identifiers of at most 64 ASCII characters; unsafe
+  prototype names are refused. CSV retains header order; JSON sorts exact keys.
+  Unknown/invalid/over-budget shape returns `columns: null`, never a sanitized subset.
+- CSV captures at most 4,096 header characters and drains all bytes; JSON retains
+  its 2 MiB parse budget. Parsers allocate and finish within an admitted byte sink,
+  before custody releases; requests refused admission allocate no parser. Row values are never returned. Discovery is not engine
+  compilation: uniform JSON keys can still contain unsupported nested values.
+- Integrity, custody, storage, capacity and cancellation errors propagate rather
+  than becoming unknown shape. Existing two-byte-owner and per-input-one limits apply.
+- The request editor discovers referenced file datasets sequentially, checks exact
+  hash/size, deduplicates reads, cancels on retirement and retries failed reads only
+  after an explicit action. It does not retry overload automatically.
+
 ## Usage read
 
 `GET /api/v2/organizations/{o}/workspaces/{w}/inputs/{id}/usage?limit&cursor`
@@ -78,7 +101,10 @@ returned unchanged; the store decision stays authoritative.
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/application/inputs/shape.ts` | `6353d2a6697d` |
+| `app/src/application/inputs/columns.ts` | `cd85d8b29fe9` |
+| `app/src/adapters/inbound/http/inputs/columns.ts` | `a08ed9904d1e` |
+| `contracts/api/v2/input-columns.schema.json` | `1f40764aa5a2` |
+| `app/src/application/inputs/shape.ts` | `f3ebf9108d94` |
 | `app/src/application/inputs/dependencies.ts` | `a1572a1cd7b4` |
 | `app/src/adapters/outbound/sqlite/migration032.ts` | `dc3df90bc722` |
 | `app/src/adapters/outbound/sqlite/input-usage.ts` | `0a3924115432` |

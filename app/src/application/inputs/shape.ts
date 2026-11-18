@@ -12,6 +12,8 @@ export function shapeKind(name: string, bytes: number): ShapeKind | null {
 export interface ShapeCounter {
   write(chunk: Uint8Array): void;
   finish(): InputShape | null;
+  /** Exact addressable names, only after a successful finish; no row values. */
+  columnNames(): readonly string[] | null;
 }
 export function shapeCounter(kind: ShapeKind): ShapeCounter {
   return kind === 'csv' ? new CsvCounter() : new JsonCounter();
@@ -29,7 +31,23 @@ class CsvCounter implements ShapeCounter {
   private fields = 0;
   private columns = 0;
   private records = 0;
+  private header: string[] | null = [];
+  private headerCell = '';
+  private complete = false;
+  columnNames(): readonly string[] | null {
+    return this.complete ? eligibleColumns(this.header) : null;
+  }
+  private headerChar(char: string): void {
+    if (this.records !== 0 || this.header === null) return;
+    if (this.headerCell.length + char.length > 64) {
+      this.header = null;
+      this.headerCell = '';
+      return;
+    }
+    this.headerCell += char;
+  }
   write(chunk: Uint8Array): void {
+    this.complete = false;
     if (this.invalid) return;
     try {
       this.text(this.decoder.decode(chunk, { stream: true }));
@@ -47,7 +65,10 @@ class CsvCounter implements ShapeCounter {
     } catch {
       return null;
     }
-    return this.records === 0 ? null : { rowCount: this.records - 1, columnCount: this.columns };
+    if (this.invalid) return null;
+    const shape = this.records === 0 ? null : { rowCount: this.records - 1, columnCount: this.columns };
+    this.complete = shape !== null;
+    return shape;
   }
   private text(value: string): void {
     for (const char of value) {
@@ -63,13 +84,17 @@ class CsvCounter implements ShapeCounter {
       this.quotePending = false;
       if (char === '"') {
         this.cellChars++;
+        this.headerChar(char);
         return;
       }
       this.endQuote();
     }
     if (this.quoted) {
       if (char === '"') this.quotePending = true;
-      else this.cellChars++;
+      else {
+        this.cellChars++;
+        this.headerChar(char);
+      }
       return;
     }
     this.unquoted(char);
@@ -85,10 +110,18 @@ class CsvCounter implements ShapeCounter {
       this.afterCr = char === '\r';
     } else if (char === '"' && !this.cellChars && !this.closed) this.quoted = true;
     else if (this.closed || char === '"') this.invalid = true;
-    else this.cellChars++;
+    else {
+      this.cellChars++;
+      this.headerChar(char);
+    }
   }
   private endField(): void {
     if (++this.fields > INPUT_SHAPE_LIMITS.columns) this.invalid = true;
+    if (this.records === 0 && this.header !== null) {
+      if (this.header.length >= 64) this.header = null;
+      else this.header.push(this.headerCell);
+      this.headerCell = '';
+    }
     this.cellChars = 0;
     this.closed = false;
   }
@@ -106,7 +139,12 @@ class JsonCounter implements ShapeCounter {
   private readonly buffer = new Uint8Array(INPUT_SHAPE_LIMITS.jsonBytes);
   private size = 0;
   private invalid = false;
+  private discovered: readonly string[] | null = null;
+  columnNames(): readonly string[] | null {
+    return this.discovered;
+  }
   write(chunk: Uint8Array): void {
+    this.discovered = null;
     if (this.invalid) return;
     if (this.size + chunk.byteLength > this.buffer.byteLength) {
       this.invalid = true;
@@ -124,7 +162,10 @@ class JsonCounter implements ShapeCounter {
       return null;
     }
     if (!Array.isArray(value) || value.length > INPUT_SHAPE_LIMITS.rows) return null;
-    return { rowCount: value.length, columnCount: uniformColumns(value) };
+    const columnCount = uniformColumns(value);
+    this.discovered =
+      columnCount !== null && plainObject(value[0]) ? eligibleColumns(Object.keys(value[0]).sort()) : null;
+    return { rowCount: value.length, columnCount };
   }
 }
 function plainObject(value: unknown): value is Record<string, unknown> {
@@ -140,4 +181,17 @@ function uniformColumns(rows: readonly unknown[]): number | null {
       plainObject(row) && Object.keys(row).length === keys.length && keys.every((key) => Object.hasOwn(row, key)),
   );
   return uniform ? keys.length : null;
+}
+
+/** Matches the engine's template-addressable column names. Unknown means no names, never a sanitized subset. */
+function eligibleColumns(columns: readonly string[] | null): readonly string[] | null {
+  if (!columns || columns.length < 1 || columns.length > 64 || new Set(columns).size !== columns.length) return null;
+  if (
+    columns.some(
+      (column) =>
+        !/^[A-Za-z_][A-Za-z0-9_-]{0,63}$/.test(column) || ['__proto__', 'prototype', 'constructor'].includes(column),
+    )
+  )
+    return null;
+  return Object.freeze([...columns]);
 }

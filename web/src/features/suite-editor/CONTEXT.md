@@ -32,8 +32,8 @@ without saving. Run setup edits secret binding references and file/inline/range
 datasets; shared engine schemas block malformed rows. Timing fields convert seconds
 to exact integer milliseconds; first-scenario stages stay on the main form. The
 request palette inserts known data/secret references at the
-selected text field's cursor. CSV column names are not in the API yet and are
-explicitly unavailable; the palette never guesses them. Duplicate pair names are
+selected text field's cursor. File columns come from a kind-bound verified read, sequentially, with exact hash/size
+checks and no automatic overload retry. Unknown shape stays explicit. Duplicate pair names are
 refused without removing either value.
 
 Checks: `npx vitest run web/src/features/suite-editor web/src/app/suites.test.tsx`.

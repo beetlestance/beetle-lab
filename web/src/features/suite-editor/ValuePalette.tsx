@@ -1,8 +1,11 @@
+import type { FileColumns } from './useInputColumns.js';
+import { Button } from '../../components/Button.js';
 import { useRef, useState } from 'react';
 import type { FocusEvent } from 'react';
 import type { Config } from '../suites/draft.js';
 import { Card } from './fields.js';
 import { identifierPattern, isObj, objects, text } from './model.js';
+import type { Obj } from './model.js';
 
 type TextControl = HTMLInputElement | HTMLTextAreaElement;
 function canInsert(field: TextControl | null): field is TextControl {
@@ -39,18 +42,15 @@ export function useValueInsertion() {
     },
   };
 }
-function paletteValues(config: Config) {
+function paletteValues(config: Config, files?: FileColumns) {
   const values = new Set<string>();
   let unavailable = false;
   for (const dataset of objects(config.datasets).slice(0, 64)) {
     const id = text(dataset.id);
     if (!identifierPattern.test(id)) continue;
-    let columns: string[] = [];
-    if (dataset.kind === 'range') columns = [text(dataset.column)];
-    else if (dataset.kind === 'inline' && isObj(objects(dataset.rows)[0]))
-      columns = Object.keys(objects(dataset.rows)[0]!);
-    else unavailable = true;
-    for (const column of columns.slice(0, 64))
+    const columns = datasetColumns(dataset, files);
+    if (columns === null) unavailable = true;
+    for (const column of (columns ?? []).slice(0, 64))
       if (identifierPattern.test(column)) values.add(`{{data.${id}.${column}}}`);
   }
   for (const secret of objects(config.secrets).slice(0, 64)) {
@@ -60,8 +60,16 @@ function paletteValues(config: Config) {
   return { values: [...values].slice(0, 64), unavailable };
 }
 /** Only known columns and secret reference names; no secret values or guessed file columns. */
-export function ValuePalette({ config, insert }: { config: Config; insert: (value: string) => boolean }) {
-  const { values, unavailable } = paletteValues(config);
+export function ValuePalette({
+  config,
+  insert,
+  files,
+}: {
+  config: Config;
+  insert: (value: string) => boolean;
+  files?: FileColumns;
+}) {
+  const { values, unavailable } = paletteValues(config, files);
   const [failed, setFailed] = useState(false);
   return (
     <Card title="Values you can use" className="value-palette">
@@ -79,13 +87,47 @@ export function ValuePalette({ config, insert }: { config: Config; insert: (valu
           </li>
         ))}
       </ul>
-      {unavailable && <p className="editor-note">Column names for input files are not available here yet.</p>}
-      {!values.length && <p className="editor-note">No known data columns or secret references in this draft.</p>}
+      <ColumnStatus files={files} unavailable={unavailable} />
+      {!values.length && !files?.pending && (
+        <p className="editor-note">No known data columns or secret references in this draft.</p>
+      )}
       {failed && (
         <p className="field-error" role="alert">
           Choose a text field with enough room, then insert the value again.
         </p>
       )}
     </Card>
+  );
+}
+
+function datasetColumns(dataset: Obj, files: FileColumns | undefined): readonly string[] | null {
+  if (dataset.kind === 'range') return [text(dataset.column)];
+  if (dataset.kind === 'inline' && isObj(objects(dataset.rows)[0])) return Object.keys(objects(dataset.rows)[0]!);
+  return files?.columns.get(text(dataset.id)) ?? null;
+}
+const unknownColumns = (
+  <p className="editor-note">
+    Column names could not be determined for an input. You can still type a known reference.
+  </p>
+);
+function ColumnStatus({ files, unavailable }: { files: FileColumns | undefined; unavailable: boolean }) {
+  if (!files) return unavailable ? unknownColumns : null;
+  return (
+    <>
+      {files.pending && (
+        <p className="editor-note" role="status">
+          Reading input column names…
+        </p>
+      )}
+      {files.failed && (
+        <div role="alert">
+          <p className="field-error">Could not read input column names. Your draft is kept.</p>
+          <Button size="sm" disabled={files.pending} onClick={files.retry}>
+            Retry column names
+          </Button>
+        </div>
+      )}
+      {unavailable && !files.pending && !files.failed && unknownColumns}
+    </>
   );
 }

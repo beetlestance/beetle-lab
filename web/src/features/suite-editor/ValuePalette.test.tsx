@@ -58,5 +58,7 @@ it('names unknown file columns instead of inventing clickable values', () => {
     />,
   );
   expect(screen.queryByRole('button')).not.toBeInTheDocument();
-  expect(screen.getByText('Column names for input files are not available here yet.')).toBeInTheDocument();
+  expect(
+    screen.getByText('Column names could not be determined for an input. You can still type a known reference.'),
+  ).toBeInTheDocument();
 });

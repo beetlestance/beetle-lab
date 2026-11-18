@@ -3,6 +3,7 @@ import { encodeJson } from '@beetle/contracts';
 import type { InputReceipt, WorkspaceScope } from '@beetle/contracts/api';
 import { requireRule, sameScope } from '../../../../domain/namespaces/index.js';
 import type { InputControl, InputPage, InputUsagePage } from '../../../../ports/inputs.js';
+import { registerInputColumns } from './columns.js';
 import { registerApiOperation } from '../api-route.js';
 import { ResponseContractError } from '../schema-compilers.js';
 import type { RequestLifetimes } from './lifetime.js';
@@ -79,6 +80,7 @@ export function registerJson(server: FastifyInstance, options: InputRouteOptions
     },
     routeOptions,
   );
+  registerInputColumns(server, options, owners, routeOptions);
   const transition = async (command: InputControl, signal: AbortSignal | undefined): Promise<InputReceipt> => {
     const result = await control(command, signal);
     if (!('acceptedVersion' in result)) throw new ResponseContractError();

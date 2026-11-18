@@ -78,7 +78,7 @@ inputs. Folders group; they never grant permissions or create agents.
   route resolves scope, never ambient state. Wrong organisation, workspace or
   parent returns scoped 404. Composite foreign keys enforce parent consistency;
   the client (`contracts/src/api/client/`) also checks every item's ownership
-  (input usage rows carry no scope: the page scope and `inputId` must match the route).
+  (input usage binds page scope/ID; column discovery binds input/kind; the editor also checks hash/size).
 - Folders: UUID plus `parentId` in one workspace; the root is a real folder and
   the only one with a null parent. Names are 1 to 128 characters (organisation
   names 1 to 48), unique
@@ -212,8 +212,8 @@ characters and shows at most 80 matches.
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `24d39c98695b` |
-| `contracts/src/api/client/` | `eec344e7e383` |
+| `contracts/api/v2/` | `cd90a097c0a3` |
+| `contracts/src/api/client/` | `ac444f10a264` |
 | `contracts/src/api/run-list.ts` | `1c4b7b193309` |
 | `app/src/adapters/inbound/http/api-errors.ts` | `9a79596d0e11` |
 | `app/src/adapters/inbound/http/session/` | `328af44f81f3` |

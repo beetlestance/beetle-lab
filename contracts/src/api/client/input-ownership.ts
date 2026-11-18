@@ -1,5 +1,5 @@
 import type { ApiOperation } from '../generated/operations.js';
-import type { InputPage, InputReceipt, InputRecord } from '../generated/types.js';
+import type { InputColumns, InputPage, InputReceipt, InputRecord } from '../generated/types.js';
 import type { PreparedInput } from './input.js';
 
 function sameUuid(left: unknown, right: unknown): boolean {
@@ -44,6 +44,8 @@ function recordMatches(operation: ApiOperation, input: PreparedInput, record: In
 /** Structural validation and common route/scope checks precede this binding. */
 export function inputOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
   switch (operation.response) {
+    case 'InputColumns':
+      return columnsMatch(input, value as InputColumns);
     case 'InputPage':
       return (value as InputPage).items.every(validRecord);
     case 'InputReceipt':
@@ -53,4 +55,14 @@ export function inputOwnership(operation: ApiOperation, input: PreparedInput, va
     default:
       return true;
   }
+}
+
+function columnsMatch(input: PreparedInput, reply: InputColumns): boolean {
+  return (
+    sameUuid(reply.inputId, input.params.inputId) &&
+    reply.kind === (input.query && 'kind' in input.query ? input.query.kind : undefined) &&
+    (reply.kind !== 'json' ||
+      reply.columns === null ||
+      reply.columns.every((column, index, all) => index === 0 || all[index - 1]! < column))
+  );
 }

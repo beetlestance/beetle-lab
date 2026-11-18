@@ -74,3 +74,12 @@ function decodeLimited<N extends 'RunListQuery' | 'SuiteListQuery'>(
 }
 export const decodeRunListQuery = (input: unknown) => decodeLimited('RunListQuery', input);
 export const decodeSuiteListQuery = (input: unknown) => decodeLimited('SuiteListQuery', input);
+
+/** A closed parser-kind query; no numeric or permissive coercion. */
+export function decodeInputColumnsQuery(input: unknown) {
+  try {
+    return validateApi('InputColumnsQuery', JSON.parse(encodeJson(rawFields(input), 4096)) as unknown);
+  } catch {
+    return { ok: false as const };
+  }
+}

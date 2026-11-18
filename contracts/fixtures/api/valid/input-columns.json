@@ -1,0 +1,15 @@
+{
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "bytes": 12,
+  "inputId": "00000000-0000-4000-8000-000000000003",
+  "kind": "csv",
+  "columns": [
+    "cartId",
+    "currency"
+  ]
+}

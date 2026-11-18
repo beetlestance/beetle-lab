@@ -26,7 +26,11 @@ export function registerInputRoutes(server: FastifyInstance, options: InputRoute
       } else if (url.endsWith('/content')) {
         noQuery(request);
         contentHeaders(request);
-      } else if (!(request.method === 'GET' && (url.endsWith('/inputs') || url.endsWith('/usage')))) noQuery(request);
+      } else if (!(
+        request.method === 'GET' &&
+        (url.endsWith('/inputs') || url.endsWith('/usage') || url.endsWith('/columns'))
+      ))
+        noQuery(request);
     });
     registerJson(scoped, options, owners);
     registerUpload(scoped, options, owners);
