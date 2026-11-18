@@ -1,11 +1,12 @@
 import { Button } from '../../components/Button.js';
-import { Checkbox, Select } from '../../components/Fields.js';
-import { TextField } from './fields.js';
+import { Select, TextInput } from '../../components/Fields.js';
+import { Card, TextField } from './fields.js';
 import { numberOrRaw, objects, text, uniqueId, wholeOrRaw, without } from './model.js';
 import type { Obj } from './model.js';
 import { fieldId } from './problems.js';
 import { blankCheck, checkKind, checkKinds, compareOperators } from './rules.js';
 
+const countsValue = (check: Obj) => (check.required === false ? 'optional' : 'required');
 type Kind = NonNullable<ReturnType<typeof checkKind>>;
 function typedValue(kind: Kind, value: string): unknown {
   if (kind.value === 'status' || kind.value === 'family') return wholeOrRaw(value);
@@ -81,7 +82,10 @@ function CheckRow({
           </option>
         ))}
       </Select>
-      <CheckTarget check={check} at={at} n={n} set={set} />
+      <div className="check-target">
+        <CheckTarget check={check} at={at} n={n} set={set} />
+        {!kind?.name && !kind?.path && <TextInput label={`Check ${n} path or name`} disabled value="—" />}
+      </div>
       {kind?.value && (
         <TextField
           label={`Check ${n} value`}
@@ -90,11 +94,15 @@ function CheckRow({
           change={(value) => set({ ...check, value: typedValue(kind, value) })}
         />
       )}
-      <Checkbox
-        label="Required"
-        checked={check.required !== false}
-        onChange={(event) => set({ ...check, required: event.target.checked })}
-      />
+      {!kind?.value && <TextInput label={`Check ${n} value`} disabled value="—" />}
+      <Select
+        label={`Check ${n} counts`}
+        value={countsValue(check)}
+        onChange={(event) => set({ ...check, required: event.target.value === 'required' })}
+      >
+        <option value="required">Required</option>
+        <option value="optional">Optional</option>
+      </Select>
       <Button variant="text" size="sm" aria-label={`Remove check ${n}`} onClick={remove}>
         Remove
       </Button>
@@ -122,24 +130,28 @@ export function Checks({ request, path, change }: { request: Obj; path: string; 
       ],
     });
   return (
-    <fieldset className="editor-rows" id={fieldId(`${path}/assertions`)} tabIndex={-1}>
-      <legend>Checks</legend>
-      {checks.map((check, position) => (
-        <CheckRow
-          key={position}
-          check={check}
-          at={`${path}/assertions/${position}`}
-          n={position + 1}
-          set={(next) => update(position, next)}
-          remove={() => change({ ...request, assertions: without(request.assertions, position) })}
-        />
-      ))}
-      <p className="editor-note">
-        A failed required check fails the run. An optional check is reported but does not fail it.
-      </p>
-      <Button variant="text" size="sm" disabled={checks.length >= 64} onClick={add}>
-        Add check
-      </Button>
-    </fieldset>
+    <Card
+      title="Checks"
+      action={
+        <Button variant="text" disabled={checks.length >= 64} onClick={add}>
+          Add check
+        </Button>
+      }
+    >
+      <p className="editor-note">A failed required check fails the run. A failed optional check is only counted.</p>
+      <fieldset className="editor-rows" id={fieldId(`${path}/assertions`)} tabIndex={-1}>
+        <legend className="sr-only">Checks</legend>
+        {checks.map((check, position) => (
+          <CheckRow
+            key={position}
+            check={check}
+            at={`${path}/assertions/${position}`}
+            n={position + 1}
+            set={(next) => update(position, next)}
+            remove={() => change({ ...request, assertions: without(request.assertions, position) })}
+          />
+        ))}
+      </fieldset>
+    </Card>
   );
 }

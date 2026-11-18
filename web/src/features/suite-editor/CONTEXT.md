@@ -27,7 +27,10 @@ About metadata and config save atomically through one expectedVersion and receip
 useRevisionSave freezes the draft version; only an acknowledgement or explicit conflict
 choice advances it. metadata.ts refreshes untouched fields while preserving edits.
 Copy in the conflict overlay includes config, metadata and the revision message.
-CSV column names are not in the API, so the value palette shows only a COLUMN
-placeholder.
+Request and Run setup open full-width subpages; Back/Done return to the same draft,
+without saving. The request palette inserts known data/secret references at the
+selected text field's cursor. CSV column names are not in the API yet and are
+explicitly unavailable; the palette never guesses them. Duplicate pair names are
+refused without removing either value.
 
 Checks: `npx vitest run web/src/features/suite-editor web/src/app/suites.test.tsx`.

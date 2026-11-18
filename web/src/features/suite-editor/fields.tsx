@@ -13,10 +13,20 @@ export type InputCatalog = {
 };
 
 /** A titled form card; `action` sits at the right of the heading. */
-export function Card({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
+export function Card({
+  title,
+  action,
+  children,
+  className = '',
+}: {
+  title: string;
+  action?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
   const id = useId();
   return (
-    <section className="editor-card" aria-labelledby={id}>
+    <section className={`editor-card ${className}`.trim()} aria-labelledby={id}>
       <header className="editor-card-head">
         <h3 id={id}>{title}</h3>
         {action}

@@ -4,6 +4,8 @@ import { MetadataFields } from '../suite-editor/MetadataFields.js';
 import { useSessionAccess } from '../../app/session.js';
 import type { Suite, SuiteRevision, Workspace } from '@beetle/contracts/api';
 import { ConflictDialog } from '../suite-editor/ConflictDialog.js';
+import { EditorPageHeader } from '../suite-editor/EditorPageHeader.js';
+import '../suite-editor/request-detail.css';
 import { requestKey } from '../suite-editor/model.js';
 import { jumpTo } from '../suite-editor/problems.js';
 import { SavePanel } from '../suite-editor/SavePanel.js';
@@ -57,63 +59,77 @@ export function RevisionEditor({
   const { page, update } = useSuitePage();
   const view: EditorView = { mode: page.view, request: page.request };
   const setView = (next: EditorView) => update({ view: next.mode, request: next.request }, { push: true });
+  const subeditor = view.mode === 'run-setup' || view.request !== null;
+  const closePage = () => setView({ mode: 'form', request: null });
   return (
-    <section className="suite-editor-layout" aria-label="Edit suite configuration">
-      <div className="suite-editor-main">
-        <ConfigFields
-          metadata={
-            <MetadataFields
-              workspace={workspace}
-              value={draft.metadata.value}
-              change={draft.metadata.change}
+    <>
+      {subeditor && <EditorPageHeader text={draft.text} view={view} close={closePage} />}
+      <section
+        className={subeditor ? 'suite-editor-layout suite-editor-subpage' : 'suite-editor-layout'}
+        aria-label="Edit suite configuration"
+      >
+        <div className="suite-editor-main">
+          <ConfigFields
+            metadata={
+              <MetadataFields
+                workspace={workspace}
+                value={draft.metadata.value}
+                change={draft.metadata.change}
+                problems={draft.problems}
+              />
+            }
+            text={draft.text}
+            change={draft.setText}
+            disabled={readOnly || draft.write.locked}
+            validity={draft.validity}
+            inputs={draft.catalog}
+            view={view}
+            setView={setView}
+          />
+        </div>
+        {!subeditor && (
+          <aside className="suite-editor-side">
+            <SavePanel
+              next={draft.next}
+              message={draft.message}
+              setMessage={draft.setMessage}
+              messageError={draft.messageError}
+              dirty={draft.dirty}
+              blocked={readOnly || draft.blocked}
               problems={draft.problems}
+              write={draft.write}
+              saved={draft.saved}
+              save={draft.save}
+              discard={draft.discard}
+              jump={jumpFor(draft.text, setView)}
             />
-          }
-          text={draft.text}
-          change={draft.setText}
-          disabled={readOnly || draft.write.locked}
-          validity={draft.validity}
-          inputs={draft.catalog}
-          view={view}
-          setView={setView}
-        />
-      </div>
-      <aside className="suite-editor-side">
-        <SavePanel
-          next={draft.next}
-          message={draft.message}
-          setMessage={draft.setMessage}
-          messageError={draft.messageError}
-          dirty={draft.dirty}
-          blocked={readOnly || draft.blocked}
-          problems={draft.problems}
-          write={draft.write}
-          saved={draft.saved}
-          save={draft.save}
-          discard={draft.discard}
-          jump={jumpFor(draft.text, setView)}
-        />
-      </aside>
-      {draft.conflict && (
-        <ConflictDialog
-          suite={suite}
-          draft={() =>
-            encodeJson(
-              {
-                config: parseDraft(draft.text),
-                metadata: {
-                  ...normalizedMetadata(draft.metadata.value),
-                  description: draft.metadata.value.description.trim() || null,
-                },
-                ...(draft.message.trim() ? { message: draft.message.trim() } : {}),
-              },
-              2097152,
-            )
-          }
-          close={draft.closeConflict}
-          saveOver={draft.saveOver}
-        />
-      )}
-    </section>
+          </aside>
+        )}
+        {draft.conflict && <DraftConflict suite={suite} draft={draft} />}
+      </section>
+    </>
+  );
+}
+
+function DraftConflict({ suite, draft }: { suite: Suite; draft: ReturnType<typeof useRevisionDraft> }) {
+  return (
+    <ConflictDialog
+      suite={suite}
+      draft={() =>
+        encodeJson(
+          {
+            config: parseDraft(draft.text),
+            metadata: {
+              ...normalizedMetadata(draft.metadata.value),
+              description: draft.metadata.value.description.trim() || null,
+            },
+            ...(draft.message.trim() ? { message: draft.message.trim() } : {}),
+          },
+          2097152,
+        )
+      }
+      close={draft.closeConflict}
+      saveOver={draft.saveOver}
+    />
   );
 }

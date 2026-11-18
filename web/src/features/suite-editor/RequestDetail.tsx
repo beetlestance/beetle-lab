@@ -3,11 +3,12 @@ import { Button } from '../../components/Button.js';
 import { Select } from '../../components/Fields.js';
 import { SegmentedFilter } from '../../components/SegmentedFilter.js';
 import type { Config } from '../suites/draft.js';
-import { draftText, parseDraft } from '../suites/draft.js';
+import { formatDraft, parseDraft } from '../suites/draft.js';
 import { Card, TextField } from './fields.js';
 import type { InputCatalog } from './fields.js';
 import { isObj, methods, objects, text, uniqueId } from './model.js';
 import type { Obj, SetConfig } from './model.js';
+import { ValuePalette, useValueInsertion } from './ValuePalette.js';
 import { fieldId } from './problems.js';
 import { BodySelect, setRequest } from './RequestsSection.js';
 import { Checks } from './RequestChecks.js';
@@ -56,6 +57,7 @@ export function RequestDetail({
   inputs: InputCatalog;
   close: () => void;
 }) {
+  const insertion = useValueInsertion();
   const request = objects(config.requests)[index];
   if (!request)
     return (
@@ -73,32 +75,30 @@ export function RequestDetail({
   const path = `/requests/${index}`;
   const change = (next: Obj) => set(setRequest(config, index, next));
   return (
-    <Card
-      title={`Request ${index + 1}: ${text(request.name, 'unnamed')}`}
-      action={
-        <Button variant="text" onClick={close}>
-          Back to all requests
-        </Button>
-      }
-    >
-      <RequestHead request={request} path={path} change={change} />
+    <div className="request-editor-cards" onFocusCapture={insertion.capture}>
+      <Card title="Request" className="request-properties">
+        <RequestHead request={request} path={path} change={change} />
+      </Card>
       <Pairs
         title="Query parameters"
         path={`${path}/query`}
         value={request.query}
+        hint="Added to the URL as ?name=value. Values can use {{data.users.column}} or {{secret.name}}."
         change={(query) => change({ ...request, query })}
       />
       <Pairs
         title="Headers"
         path={`${path}/headers`}
         value={request.headers}
-        hint="Put credentials in a secret and refer to it, for example {{secret.token}}."
+        hint="Up to 64. A secret is written as {{secret.api_token}}; its value is filled in on the agent just before the run and never saved with the suite."
         change={(headers) => change({ ...request, headers })}
       />
-      <Body request={request} index={index} inputs={inputs} change={change} />
+      <Card title="Body">
+        <Body request={request} index={index} inputs={inputs} change={change} />
+      </Card>
       <Checks request={request} path={path} change={change} />
-      <Palette config={config} />
-    </Card>
+      <ValuePalette config={config} insert={insertion.insert} />
+    </div>
   );
 }
 
@@ -116,61 +116,110 @@ function Pairs({
   hint?: string;
 }) {
   const entries = Object.entries(isObj(value) ? value : {});
+  const [nameError, setNameError] = useState('');
+  const rename = (position: number, name: string) => {
+    if (entries.some(([key], at) => at !== position && key.toLowerCase() === name.toLowerCase())) {
+      setNameError('That name is already used. Choose a different name; both values are kept.');
+      return;
+    }
+    setNameError('');
+    change(Object.fromEntries(entries.map((entry, at) => (at === position ? [name, entry[1]] : entry))));
+  };
   const write = (next: [string, unknown][]) => change(Object.fromEntries(next));
-  const label = title.toLowerCase().replace(/s$/, '');
+  const label = title === 'Query parameters' ? 'parameter' : 'header';
   return (
-    <fieldset className="editor-rows" id={fieldId(path)} tabIndex={-1}>
-      <legend>{title}</legend>
-      {hint && <p className="editor-note">{hint}</p>}
-      {entries.map(([key, item], position) => (
-        <div className="field-row pair-row" key={position}>
-          <TextField
-            label={`${title} ${position + 1} name`}
-            hideLabel
-            path={`${path}/${position}/name`}
-            value={key}
-            maxLength={128}
-            placeholder="Name"
-            change={(name) => write(entries.map((entry, at) => (at === position ? [name, entry[1]] : entry)))}
+    <Card
+      title={title}
+      action={
+        <Button
+          variant="text"
+          size="sm"
+          disabled={entries.length >= 64}
+          onClick={() =>
+            write([
+              ...entries,
+              [
+                uniqueId(
+                  label === 'header' ? 'x-header' : 'name',
+                  entries.map(([key]) => key),
+                ),
+                '',
+              ],
+            ])
+          }
+        >
+          Add {label}
+        </Button>
+      }
+    >
+      <fieldset className="editor-rows" id={fieldId(path)} tabIndex={-1}>
+        <legend className="sr-only">{title}</legend>
+        {hint && <p className="editor-note">{hint}</p>}
+        {nameError && (
+          <p className="field-error" role="alert">
+            {nameError}
+          </p>
+        )}
+        {entries.map((entry, position) => (
+          <PairRow
+            key={position}
+            entry={entry}
+            position={position}
+            path={path}
+            title={title}
+            removeLabel={`Remove ${label} ${position + 1}`}
+            rename={(name) => rename(position, name)}
+            edit={(value) => write(entries.map((entry, at) => (at === position ? [entry[0], value] : entry)))}
+            remove={() => write(entries.filter((_, at) => at !== position))}
           />
-          <TextField
-            label={`${title} ${position + 1} value`}
-            hideLabel
-            path={`${path}/${position}/value`}
-            value={item}
-            placeholder="Value"
-            change={(next) => write(entries.map((entry, at) => (at === position ? [entry[0], next] : entry)))}
-          />
-          <Button
-            variant="text"
-            size="sm"
-            aria-label={`Remove ${label} ${position + 1}`}
-            onClick={() => write(entries.filter((_, at) => at !== position))}
-          >
-            Remove
-          </Button>
-        </div>
-      ))}
-      <Button
-        variant="text"
-        size="sm"
-        disabled={entries.length >= 64}
-        onClick={() =>
-          write([
-            ...entries,
-            [
-              uniqueId(
-                label === 'header' ? 'x-header' : 'name',
-                entries.map(([key]) => key),
-              ),
-              '',
-            ],
-          ])
-        }
-      >
-        Add {label}
+        ))}
+      </fieldset>
+    </Card>
+  );
+}
+
+function PairRow({
+  entry,
+  position,
+  path,
+  title,
+  removeLabel,
+  rename,
+  edit,
+  remove,
+}: {
+  entry: [string, unknown];
+  position: number;
+  path: string;
+  title: string;
+  removeLabel: string;
+  rename: (name: string) => void;
+  edit: (value: string) => void;
+  remove: () => void;
+}) {
+  return (
+    <div className="field-row pair-row">
+      <TextField
+        label={`${title} ${position + 1} name`}
+        hideLabel
+        path={`${path}/${position}/name`}
+        value={entry[0]}
+        maxLength={128}
+        placeholder="Name"
+        change={rename}
+      />
+      <TextField
+        label={`${title} ${position + 1} value`}
+        hideLabel
+        path={`${path}/${position}/value`}
+        value={entry[1]}
+        placeholder="Value"
+        change={edit}
+      />
+      <Button variant="text" size="sm" aria-label={removeLabel} onClick={remove}>
+        Remove
       </Button>
-    </fieldset>
+    </div>
   );
 }
 
@@ -186,11 +235,11 @@ function bodyFor(mode: string, inputs: InputCatalog): Obj | undefined {
 }
 
 function InlineBody({ index, body, set }: { index: number; body: Obj | undefined; set: (value: unknown) => void }) {
-  const [inline, setInline] = useState(() => (body?.kind === 'json' ? draftText(body.value ?? null) : '{}'));
+  const [inline, setInline] = useState(() => (body?.kind === 'json' ? formatDraft(body.value ?? null) : '{}'));
   const [error, setError] = useState('');
   return (
     <div className="field">
-      <label className="field-label" htmlFor={`inline-body-${index}`}>
+      <label className="sr-only" htmlFor={`inline-body-${index}`}>
         Inline JSON body
       </label>
       <textarea
@@ -267,14 +316,14 @@ function Body({
   delete rest.body;
   return (
     <fieldset className="editor-rows" id={fieldId(`/requests/${index}/body`)} tabIndex={-1}>
-      <legend>Body</legend>
+      <legend className="sr-only">Body</legend>
       <SegmentedFilter
         label="Body"
         value={mode}
         options={[
           { value: 'none', label: 'None' },
           { value: 'inline', label: 'Inline JSON' },
-          { value: 'input', label: 'From input' },
+          { value: 'input', label: 'From an input' },
         ]}
         onChange={(next) => {
           const value = bodyFor(next, inputs);
@@ -287,38 +336,9 @@ function Body({
       )}
       {mode === 'input' && <InputBody request={request} index={index} inputs={inputs} change={change} />}
       <p className="editor-note">
-        Input files can be up to 8 MiB. Inline JSON counts toward the 1 MiB limit for the whole configuration.
+        Rendered bodies may be up to 8 MiB, and one run may load at most 32 MiB of bodies and inputs. To send a large or
+        binary file, choose From an input.
       </p>
     </fieldset>
-  );
-}
-
-function Palette({ config }: { config: Config }) {
-  const values: string[] = [];
-  let fromFiles = false;
-  for (const secret of objects(config.secrets)) values.push(`{{secret.${text(secret.name)}}}`);
-  for (const dataset of objects(config.datasets)) {
-    const id = text(dataset.id);
-    if (dataset.kind === 'range') values.push(`{{data.${id}.${text(dataset.column)}}}`);
-    else if (dataset.kind === 'inline' && isObj(objects(dataset.rows)[0]))
-      for (const column of Object.keys(objects(dataset.rows)[0]!).slice(0, 16)) values.push(`{{data.${id}.${column}}}`);
-    else {
-      values.push(`{{data.${id}.COLUMN}}`);
-      fromFiles = true;
-    }
-  }
-  if (!values.length) return null;
-  return (
-    <div className="value-palette">
-      <p className="editor-note">Values you can use in the path, query, headers and checks:</p>
-      <ul>
-        {values.slice(0, 64).map((value) => (
-          <li key={value}>
-            <code>{value}</code>
-          </li>
-        ))}
-      </ul>
-      {fromFiles && <p className="editor-note">COLUMN is a column name from that input file.</p>}
-    </div>
   );
 }

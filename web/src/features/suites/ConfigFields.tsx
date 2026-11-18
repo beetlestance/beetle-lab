@@ -104,18 +104,21 @@ export function ConfigFields({ text, change, disabled, validity, inputs, view, s
     change(next);
   }
   const structured = disabled || !!problem;
+  const subeditor = view.mode === 'run-setup' || view.request !== null;
   return (
     <div className="suite-config">
-      <SegmentedFilter<SuiteEditorView>
-        label="Configuration editor mode"
-        value={view.mode}
-        onChange={(mode) => setView({ mode, request: null })}
-        options={[
-          { value: 'form', label: 'Form editor', disabled: structured },
-          { value: 'run-setup', label: 'Run setup', disabled: structured },
-          { value: 'json', label: 'Complete configuration JSON', disabled },
-        ]}
-      />
+      {!subeditor && (
+        <SegmentedFilter<SuiteEditorView>
+          label="Configuration editor mode"
+          value={view.mode}
+          onChange={(mode) => setView({ mode, request: null })}
+          options={[
+            { value: 'form', label: 'Form editor', disabled: structured },
+            { value: 'run-setup', label: 'Run setup', disabled: structured },
+            { value: 'json', label: 'Complete configuration JSON', disabled },
+          ]}
+        />
+      )}
       {problem && (
         <p role="alert" className="field-error">
           {problem}

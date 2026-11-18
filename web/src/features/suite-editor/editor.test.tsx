@@ -68,7 +68,11 @@ function reader(
 }
 const draft = () =>
   parseDraft((screen.getByRole('textbox', { name: 'Complete configuration JSON' }) as HTMLTextAreaElement).value);
-const openJson = () => fireEvent.click(screen.getByRole('radio', { name: 'Complete configuration JSON' }));
+const openJson = () => {
+  const done = screen.queryByRole('button', { name: 'Done' });
+  if (done) fireEvent.click(done);
+  fireEvent.click(screen.getByRole('radio', { name: 'Complete configuration JSON' }));
+};
 
 it('edits weight, body, checks, thresholds and datasets through the form and keeps them in the JSON', async () => {
   mount(testClient(reader()).client, path);
@@ -77,9 +81,9 @@ it('edits weight, body, checks, thresholds and datasets through the form and kee
   await within(body).findByRole('option', { name: 'cart-item.json' });
   fireEvent.change(body, { target: { value: cartId } });
   fireEvent.click(screen.getByRole('button', { name: 'Add check to request 1' }));
-  await screen.findByRole('heading', { name: 'Request 1: Get' });
+  await screen.findByRole('heading', { name: 'Request: GET /' });
   fireEvent.change(screen.getByRole('textbox', { name: 'Check 1 value' }), { target: { value: '201' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Back to all requests' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Back to requests' }));
   expect(await screen.findByText('status is 201')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Add threshold' }));
   fireEvent.change(screen.getByRole('combobox', { name: 'Threshold 1 measure' }), { target: { value: 'failed' } });
@@ -205,7 +209,7 @@ const search = () => screen.getByRole('status', { name: 'Current search' }).text
 
 it('opens the request and Run setup views from deep links', async () => {
   mountAt(routes.suitePage(ids.a, ids.workspace, suiteId, { tab: 'edit', view: 'form', request: 'get' }));
-  expect(await screen.findByRole('heading', { name: 'Request 1: Get' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'Request: GET /' })).toBeInTheDocument();
   cleanup();
   mountAt(routes.suitePage(ids.a, ids.workspace, suiteId, { tab: 'edit', view: 'run-setup' }));
   expect(
@@ -216,21 +220,25 @@ it('opens the request and Run setup views from deep links', async () => {
 it('writes the editor view to the URL so back and forward move between views', async () => {
   mountAt(path);
   fireEvent.click(await screen.findByRole('button', { name: 'Add check to request 1' }));
-  await screen.findByRole('heading', { name: 'Request 1: Get' });
+  await screen.findByRole('heading', { name: 'Request: GET /' });
   expect(search()).toBe('?tab=edit&request=get');
+  fireEvent.click(screen.getByRole('button', { name: 'Done' }));
   fireEvent.click(screen.getByRole('radio', { name: 'Run setup' }));
   await screen.findByRole('checkbox', { name: 'Wait until the target answers before starting load' });
   expect(search()).toBe('?tab=edit&view=run-setup');
   openJson();
   expect(search()).toBe('?tab=edit&view=json');
   fireEvent.click(screen.getByRole('button', { name: 'History back' }));
+  fireEvent.click(screen.getByRole('button', { name: 'History back' }));
   expect(
     await screen.findByRole('checkbox', { name: 'Wait until the target answers before starting load' }),
   ).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'History back' }));
-  expect(await screen.findByRole('heading', { name: 'Request 1: Get' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'History back' }));
+  expect(await screen.findByRole('heading', { name: 'Request: GET /' })).toBeInTheDocument();
   // The check added before navigating is still in the draft.
   expect(screen.getByRole('textbox', { name: 'Check 1 value' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'History forward' }));
   fireEvent.click(screen.getByRole('button', { name: 'History forward' }));
   expect(
     await screen.findByRole('checkbox', { name: 'Wait until the target answers before starting load' }),
@@ -295,4 +303,41 @@ it('saves Name, Folder, description and target in one revision request and refre
     config: { target: 'http://changed.invalid' },
   });
   expect(screen.getByRole('textbox', { name: 'Name' })).toHaveValue('Renamed checkout');
+});
+
+it('keeps both header values when a duplicate name is refused and Done returns without writing', async () => {
+  const config = parseDraft(starter());
+  const request = (config.requests as Record<string, unknown>[])[0]!;
+  request.headers = { authorization: 'Bearer {{secret.api_token}}', 'content-type': 'application/json' };
+  const fixture = testClient(reader(config));
+  mount(fixture.client, path);
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit request 1' }));
+  expect(await screen.findByRole('heading', { name: 'Request: GET /' })).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Save revision' })).not.toBeInTheDocument();
+  fireEvent.change(screen.getByRole('textbox', { name: 'Headers 2 name' }), { target: { value: 'AUTHORIZATION' } });
+  expect(screen.getByRole('alert')).toHaveTextContent('both values are kept');
+  expect(screen.getByRole('textbox', { name: 'Headers 2 name' })).toHaveValue('content-type');
+  fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+  openJson();
+  expect((draft().requests as Record<string, unknown>[])[0]?.headers).toEqual(request.headers);
+  expect(fixture.records.filter((item) => item.method !== 'GET')).toHaveLength(0);
+});
+
+it('keeps optional checks and request edits when returning from the full-page editor', async () => {
+  const config = parseDraft(starter());
+  (config.requests as Record<string, unknown>[])[0]!.assertions = [
+    { id: 'status', kind: 'statusEq', required: true, value: 200 },
+  ];
+  const fixture = testClient(reader(config));
+  mount(fixture.client, path);
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit request 1' }));
+  fireEvent.change(await screen.findByRole('textbox', { name: 'Path' }), { target: { value: '/new-path' } });
+  fireEvent.change(screen.getByRole('combobox', { name: 'Check 1 counts' }), { target: { value: 'optional' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Back to requests' }));
+  expect(await screen.findByRole('textbox', { name: 'Request 1 Path' })).toHaveValue('/new-path');
+  openJson();
+  expect((draft().requests as Record<string, unknown>[])[0]?.assertions).toEqual([
+    { id: 'status', kind: 'statusEq', required: false, value: 200 },
+  ]);
+  expect(fixture.records.filter((item) => item.method !== 'GET')).toHaveLength(0);
 });

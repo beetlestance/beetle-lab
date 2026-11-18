@@ -69,6 +69,10 @@ function revisionFacts(page: SuiteRevisionPage | undefined) {
     count: page ? `(${items.length}${page.nextCursor ? '+' : ''})` : undefined,
   };
 }
+function useSubeditor(tab: Tab) {
+  const { page } = useSuitePage();
+  return tab === 'edit' && (page.view === 'run-setup' || page.request !== null);
+}
 function SuiteContent({
   suite,
   workspace,
@@ -79,6 +83,7 @@ function SuiteContent({
   refresh: () => Promise<unknown>;
 }) {
   const [tab, setTab, startOpen, setStartOpen] = useTab();
+  const subeditor = useSubeditor(tab);
   const [startRevision, setStartRevision] = useState<string | null>(null);
   const visited = useVisited(tab);
   const { items, ordinals, count } = revisionFacts(useRevisionPage(suite).data);
@@ -89,19 +94,33 @@ function SuiteContent({
     setStartOpen(true);
   };
   return (
-    <section className="content-section suites-page suite-detail">
-      <SuiteHeader suite={suite} workspace={workspace} current={current.data ?? null} start={() => openStart(null)} />
-      <Tabs
-        label="Suite sections"
-        idBase="suite"
-        items={[
-          { id: 'overview', label: 'Overview' },
-          { id: 'edit', label: 'Edit' },
-          { id: 'revisions', label: 'Revisions', count },
-        ]}
-        selected={tab}
-        onSelect={setTab}
+    <section
+      className={
+        subeditor
+          ? 'content-section suites-page suite-detail suite-subeditor'
+          : 'content-section suites-page suite-detail'
+      }
+    >
+      <SuiteHeader
+        suite={suite}
+        workspace={workspace}
+        current={current.data ?? null}
+        start={() => openStart(null)}
+        subeditor={subeditor}
       />
+      {!subeditor && (
+        <Tabs
+          label="Suite sections"
+          idBase="suite"
+          items={[
+            { id: 'overview', label: 'Overview' },
+            { id: 'edit', label: 'Edit' },
+            { id: 'revisions', label: 'Revisions', count },
+          ]}
+          selected={tab}
+          onSelect={setTab}
+        />
+      )}
       {tab === 'overview' && (
         <OverviewPanel suite={suite} current={current} ordinals={ordinals} write={() => setTab('edit')} />
       )}
@@ -170,27 +189,19 @@ function SuiteHeader({
   workspace,
   current,
   start,
+  subeditor,
 }: {
   suite: Suite;
   workspace: Workspace;
   current: SuiteRevision | null;
   start: () => void;
+  subeditor: boolean;
 }) {
   const folders = useFolders(workspace);
   const { readOnly } = useSessionAccess();
   const folder = folders.data ? findFolder(folders.data, suite.folderId) : undefined;
   const org = workspace.scope.organizationId;
-  const saved = current
-    ? [
-        `Revision ${current.ordinal}`,
-        current.savedAt ? `saved ${when(current.savedAt)}` : null,
-        current.savedBy ? `by ${current.savedBy}` : null,
-      ]
-        .filter(Boolean)
-        .join(', ') + '.'
-    : suite.currentRevisionId
-      ? null
-      : 'No saved revision yet.';
+  const saved = savedFacts(suite, current);
   return (
     <>
       <nav className="suites-crumbs" aria-label="Breadcrumb">
@@ -203,16 +214,26 @@ function SuiteHeader({
             <Link to={folderLink(workspace, folder.id)}>{folderName(folder, workspace)}</Link>
           </>
         )}
+        {subeditor && (
+          <>
+            <span aria-hidden="true">/</span>
+            <Link to={routes.suite(org, workspace.id, suite.id)}>{suite.name}</Link>
+            <span aria-hidden="true">/</span>
+            <Link to={routes.suitePage(org, workspace.id, suite.id, { tab: 'edit', view: 'form' })}>Edit</Link>
+          </>
+        )}
       </nav>
-      <header className="suite-header">
-        <div>
-          <h1>{suite.name}</h1>
-          <p className="suites-lede">{[suite.description, saved].filter(Boolean).join(' ')}</p>
-        </div>
-        <Button variant="primary" disabled={readOnly || !suite.currentRevisionId} onClick={start}>
-          Start run
-        </Button>
-      </header>
+      {!subeditor && (
+        <header className="suite-header">
+          <div>
+            <h1>{suite.name}</h1>
+            <p className="suites-lede">{[suite.description, saved].filter(Boolean).join(' ')}</p>
+          </div>
+          <Button variant="primary" disabled={readOnly || !suite.currentRevisionId} onClick={start}>
+            Start run
+          </Button>
+        </header>
+      )}
     </>
   );
 }
@@ -271,4 +292,18 @@ function CurrentDraft({
       />
     );
   return <QueryState query={query}>{() => <p role="status">Preparing draft…</p>}</QueryState>;
+}
+
+function savedFacts(suite: Suite, current: SuiteRevision | null) {
+  return current
+    ? [
+        `Revision ${current.ordinal}`,
+        current.savedAt ? `saved ${when(current.savedAt)}` : null,
+        current.savedBy ? `by ${current.savedBy}` : null,
+      ]
+        .filter(Boolean)
+        .join(', ') + '.'
+    : suite.currentRevisionId
+      ? null
+      : 'No saved revision yet.';
 }
