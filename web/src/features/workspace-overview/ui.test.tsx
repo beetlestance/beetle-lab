@@ -47,7 +47,17 @@ function runRow(id: string, state: Run['state'], startedAt: string | null): Run 
   const requestedAt = id === liveId ? '2026-11-10T00:00:01.000Z' : '2026-11-10T00:00:00.000Z';
   const done = state === 'finished';
   const outcome = done ? 'failed' : 'pending';
-  return { ...baseRun(), id, scope, suiteId, state, startedAt, requestedAt, outcome, validationStatus: done ? 'passed' : 'pending' };
+  return {
+    ...baseRun(),
+    id,
+    scope,
+    suiteId,
+    state,
+    startedAt,
+    requestedAt,
+    outcome,
+    validationStatus: done ? 'passed' : 'pending',
+  };
 }
 function measured(id: string): RunHistorySummary {
   return {
@@ -65,7 +75,14 @@ function measured(id: string): RunHistorySummary {
     httpP95: { source: 'histogram-estimate', scale: 4, estimate: 188.2, lower: 180, upper: 190 },
   };
 }
-const suite = (): Suite => ({ id: suiteId, scope, name: 'steady-1.2k', version: 1, folderId: suiteId, currentRevisionId: null });
+const suite = (): Suite => ({
+  id: suiteId,
+  scope,
+  name: 'steady-1.2k',
+  version: 1,
+  folderId: suiteId,
+  currentRevisionId: null,
+});
 function input(state: InputRecord['state'], index: number): InputRecord {
   return {
     id: `00000000-0000-4000-8000-0000000001${String(index).padStart(2, '0')}`,
@@ -93,8 +110,16 @@ function handler(reads: Reads = {}) {
     if (path.includes('/suites?')) return json({ scope, items: [suite()], nextCursor: null });
     if (path.includes('/runs?')) {
       if (reads.runs === false) return json(apiError('storage_unavailable'), 503);
-      const items = [runRow(liveId, 'active', new Date(Date.now() - 316_000).toISOString()), runRow(doneId, 'finished', null)];
-      return json({ scope, items, summaries: [pendingRunHistorySummary(items[0]!), measured(doneId)], nextCursor: null });
+      const items = [
+        runRow(liveId, 'active', new Date(Date.now() - 316_000).toISOString()),
+        runRow(doneId, 'finished', null),
+      ];
+      return json({
+        scope,
+        items,
+        summaries: [pendingRunHistorySummary(items[0]!), measured(doneId)],
+        nextCursor: null,
+      });
     }
     if (path.includes('/inputs?')) {
       const items = [input('published', 1), input('published', 2), input('staging', 3)];
@@ -120,12 +145,16 @@ function mount(f: ReturnType<typeof testClient>) {
   return { ...view, change: (id: string) => view.rerender(element(id)) };
 }
 
-it('shows the empty board with one read and a link to write the first suite', async () => {
+it('shows the empty board with its authoring entry point and measured run capacity', async () => {
   const f = testClient(handler({ overview: snapshot }));
   mount(f);
   expect(await screen.findByRole('heading', { level: 1, name: 'No runs in checkout-team yet' })).toBeVisible();
-  expect(screen.getByRole('link', { name: 'Write your first suite' })).toHaveAttribute('href', routes.suites(org, ws));
-  expect(f.records).toHaveLength(1);
+  expect(screen.getByRole('link', { name: 'Write your first suite' })).toHaveAttribute(
+    'href',
+    routes.newSuite(org, ws, 'form'),
+  );
+  expect(await screen.findByText(/The agent is ready: 3 CPUs and 7.5 GiB free for runs/)).toBeVisible();
+  expect(f.records).toHaveLength(2);
 });
 
 it('shows a loading skeleton, then hides counts on a failed refresh and recovers on an explicit retry', async () => {
@@ -151,7 +180,10 @@ it('renders hero, live card, activity, recent runs and the agent from real field
     await screen.findByText('2 runs submitted in the last 24 hours, 1 failed. 3 suites, 2 input files ready.'),
   ).toBeVisible();
   const live = await screen.findByRole('article', { name: `Running run ${liveId}` });
-  expect(within(live).getByRole('link', { name: 'Open live run' })).toHaveAttribute('href', routes.run(org, ws, liveId));
+  expect(within(live).getByRole('link', { name: 'Open live run' })).toHaveAttribute(
+    'href',
+    routes.run(org, ws, liveId),
+  );
   expect(await within(live).findByText(/^05:1\d elapsed$/)).toBeVisible();
   expect(within(live).getByText('steady-1.2k')).toBeVisible();
 

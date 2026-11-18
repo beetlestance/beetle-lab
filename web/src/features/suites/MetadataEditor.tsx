@@ -12,7 +12,12 @@ import { usePage } from '../../components/Pagination.js';
 import { useWrite, WriteStatus } from './useWrite.js';
 
 /** Create or patch a suite; after a create the new suite opens on its Edit tab. */
-function useSuiteWrite(workspace: Workspace, suite: Suite | undefined, close: () => void) {
+function useSuiteWrite(
+  workspace: Workspace,
+  suite: Suite | undefined,
+  close: () => void,
+  view: 'form' | 'json' = 'form',
+) {
   const api = useApi();
   const client = useQueryClient();
   const navigate = useNavigate();
@@ -22,7 +27,9 @@ function useSuiteWrite(workspace: Workspace, suite: Suite | undefined, close: ()
     await client.invalidateQueries({ queryKey: queryKeys.suites(params.organizationId, params.workspaceId) });
     await client.invalidateQueries({ queryKey: queryKeys.folders(params.organizationId, params.workspaceId) });
     if (created.current)
-      void navigate(routes.suitePage(params.organizationId, params.workspaceId, created.current.id, { tab: 'edit' }));
+      void navigate(
+        routes.suitePage(params.organizationId, params.workspaceId, created.current.id, { tab: 'edit', view }),
+      );
     else close();
   };
   const write = useWrite<CreateSuiteRequest | PatchSuiteRequest>(async (body, signal) => {
@@ -42,17 +49,19 @@ export function MetadataEditor({
   workspace,
   suite,
   folderId: initialFolder,
+  initialView,
   close,
 }: {
   workspace: Workspace;
   suite?: Suite;
   folderId?: string;
+  initialView?: 'form' | 'json';
   close: () => void;
 }) {
   const [name, setName] = useState(suite?.name ?? '');
   const [description, setDescription] = useState(suite?.description ?? '');
   const [folderId, setFolderId] = useState(suite?.folderId ?? initialFolder ?? workspace.rootFolderId);
-  const { write, refresh } = useSuiteWrite(workspace, suite, close);
+  const { write, refresh } = useSuiteWrite(workspace, suite, close, initialView);
   const text = description.trim();
   function submit() {
     const scope = {

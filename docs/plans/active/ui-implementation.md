@@ -3,21 +3,26 @@
 Status: active (2026-11-18). The Penpot "Screens" page is the target; the
 current UI and layout do not constrain it. Rules in
 [web UI](../../system/contracts/web-ui.md) still hold (truthful state, scope,
-bounded reads, generated client only). Work runs in parallel worktrees and is
-integrated into `rewrite/integration` by the coordinating session.
+bounded reads, generated client only). The coordinator implements one screen family at a time on `rewrite/integration`.
+Independent review is required for high-risk persistence and recovery changes.
 
 ## Status (2026-11-18)
 
-Waves 0 and 1 are merged into `rewrite/integration` (all six packages, A–F),
-with the wave-0 follow-ups (shared query keys, session access context, editor
-view URLs, shared pager) and the retention restyle. Every gate passes on the
-merged head, including lint, `build:web` and the full web test set. Open:
+The first implementation and retention restyle are merged, but code gates did not
+establish visual parity. The connected Penpot Screens page has 145 boards,
+including state sheets and responsive variants. All require explicit acceptance.
+The active end-to-end Goal includes missing backend APIs and safe upgrade flows.
 
-- Wave 2: browser comparison against the board exports, phone and ultrawide,
-  keyboard and reduced motion. No screen has been checked in a browser yet; it
-  needs a running local installation.
-- Data gaps each package hid rather than faked are listed in its CONTEXT.md and
-  in the packets.
+Work starts with shared dialogs, illustrations, skeletons and session layouts,
+then Overview, Suites/editing/exports, live runs, results/history/comparison,
+inputs/settings/retention and upgrades. Blocked work stays incomplete; record its
+exact dependency and continue with the next independent ready item.
+
+Each family requires real-browser screenshots at matching board dimensions and
+state, comparison with exported Penpot images, and correction before acceptance.
+Both skins, phone/tablet/ultrawide variants, keyboard and reduced motion are part
+of the same family. Test fixtures may establish controlled visual states; end-to-end
+acceptance separately requires real backend data and effects, never fixture-only claims.
 
 ## Waves
 
@@ -30,8 +35,8 @@ merged head, including lint, `build:web` and the full web test set. Open:
 | 1 | D. Live run | Live run and its states (Starting, Waiting for capacity, Paused, Reconnecting, Cancelling, Finalizing, Animated 01–08, Compare tooltip, Script picker, Download open), Phone and Ultrawide / Live run | 0 |
 | 1 | E. Runs, results, compare | Runs (+Empty, Loading), Run result and its 14 variants, Overlay / Artifact viewer, Overlay / Delete run, Compare (+Empty) | 0 |
 | 1 | F. Inputs, engines, settings | Inputs (+Empty), Engines, Settings (+Loading), Installation (+Capacity), Workspace (+Retention preview, progress), Overlay / Delete workspace, organization, folder, input | 0 |
-| 2 | Responsive and QA | Phone boards, ultrawide, keyboard and reduced motion; visual comparison against board exports | 1 |
-| gated | Upgrade | Upgrade / States | backend proposal in `proposed/` (pinning and folder summaries shipped in 033 and 034) |
+| per family | Responsive and visual acceptance | Matching board exports, phone/tablet/ultrawide, keyboard and reduced motion | that family |
+| required | Upgrade | Upgrade / States | Safe offline tool, fence, exact backup/rollback before activation; pinning/folder APIs already shipped |
 
 ## Rules for every package
 
@@ -39,11 +44,13 @@ merged head, including lint, `build:web` and the full web test set. Open:
   shell and the route table. Wave 1 packages edit only their own feature folders
   and their route's page component; a needed primitive change is reported, not
   made locally.
-- Where an API the board needs does not exist, build against what exists, hide
-  the missing part, and list the gap. Never fake a value.
-- Checks per package: web typecheck, the package's vitest files, lint and format
-  on touched files. The coordinator runs `build:web` and the full web test set
-  once per integration.
+- Where a board needs an unavailable API, implement its contract, bounded backend
+  behavior and failure handling first. Do not hide the element or fabricate data.
+  Older packet fallback instructions are superseded by this rule.
+- Use scoped checks for each changed seam and retain logs and failures. Visual
+  comparison happens during implementation, not after all families are built.
+  Run broader integration checks at meaningful boundaries; do not repeat unrelated
+  passing checks without an invalidated input or concrete concern.
 - No push. Commits stay on the package branch until merged.
 
 ## Estimates
@@ -95,5 +102,7 @@ feature; B and C coordinate `suites.test.tsx` through the coordinator.
 | Installation status | Agent and host facts, image presence, slot holders and queue position | None (in-memory) |
 | Live extras | Live target runtime graphs (heap and RSS, CPU, event-loop delay), p95 attribution, backup date; no downloads while live | 036 if needed |
 
-Upgrade follows separately. Wave-1 UI packages build against these fields once
-each lane merges, and hide them until then.
+Upgrade is required by the current end-to-end Goal. Reconcile Claude's existing
+upgrade work before touching its files; incomplete rollback and activation remain
+incomplete functionality. Every other family builds and exposes its designed
+fields once its real backend contract is implemented.

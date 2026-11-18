@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import type { Folder, FolderPage, FolderSummary, Suite, Workspace } from '@beetle/contracts/api';
 import { useApi, readResult } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
@@ -14,6 +14,7 @@ import { Table, Td } from '../../components/Table.js';
 import { runStatus, StartRun, when } from '../suite-overview/index.js';
 import { folderLink, folderName, summaryOf, useFolders } from './folders.js';
 import { mixText, plural, searchTerm, useDebounced, WorkspaceTabs } from './listing.js';
+import { MetadataEditor } from './MetadataEditor.js';
 import { NewSuite } from './NewSuite.js';
 import { SuiteTable } from './SuiteTable.js';
 
@@ -22,7 +23,20 @@ type Order = 'recent_run' | 'name';
 /** Suites board: folders with counts and latest run, workspace-wide suite search and sort. */
 export function SuiteIndex({ workspace }: { workspace: Workspace }) {
   const folders = useFolders(workspace);
-  const [creating, setCreating] = useState(false);
+  const [search, setSearch] = useSearchParams();
+  const initialView = search.get('new') === 'json' ? 'json' : 'form';
+  const [creating, setCreating] = useState(() => ['form', 'json'].includes(search.get('new') ?? ''));
+  const closeCreation = () => {
+    setCreating(false);
+    setSearch(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        next.delete('new');
+        return next;
+      },
+      { replace: true },
+    );
+  };
   const [text, setText] = useState('');
   const [order, setOrder] = useState<Order>('recent_run');
   const term = searchTerm(useDebounced(text));
@@ -73,9 +87,12 @@ export function SuiteIndex({ workspace }: { workspace: Workspace }) {
           {(page) => <FolderTable workspace={workspace} page={page} order={order} create={() => setCreating(true)} />}
         </QueryState>
       )}
-      {creating && (
-        <NewSuite workspace={workspace} folderId={workspace.rootFolderId} close={() => setCreating(false)} />
-      )}
+      {creating &&
+        (search.has('new') ? (
+          <MetadataEditor workspace={workspace} initialView={initialView} close={closeCreation} />
+        ) : (
+          <NewSuite workspace={workspace} folderId={workspace.rootFolderId} close={closeCreation} />
+        ))}
     </section>
   );
 }

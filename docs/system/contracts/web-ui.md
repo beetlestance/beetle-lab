@@ -109,6 +109,8 @@ and never resets an editor draft.
 
 ## Editors
 
+New-suite links use `routes.newSuite` to select form or JSON authoring after the
+user creates a named suite. Dismissing creation clears that entry intent.
 The suite form and JSON views share one lossless draft; switching never drops
 unknown fields. The suite page tab, editor view (form, Run setup, JSON) and open
 request are URL state built by `routes.suitePage`, so deep links and back/forward
@@ -144,7 +146,7 @@ filters keeps the suite context; an explicit workspace-history link clears it.
 
 | Code | Reviewed |
 | --- | --- |
-| `web/src/app/routes.ts` | `28d257eb0f11` |
+| `web/src/app/routes.ts` | `d2732ea4fbdb` |
 | `web/src/app/queries.ts` | `31296c59bb64` |
 | `web/src/features/runs/timeline/read.ts` | `cbd57b66d9b4` |
 | `web/src/features/runs/timeline/projection.ts` | `e7e83db9f347` |

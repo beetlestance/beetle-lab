@@ -30,8 +30,13 @@ function isolate(host: HTMLElement) {
   const siblings = [...document.body.children].filter(
     (node): node is HTMLElement => node instanceof HTMLElement && node !== host && !node.inert,
   );
+  const overflow = document.body.style.overflow;
+  document.body.style.overflow = 'hidden';
   siblings.forEach((node) => (node.inert = true));
-  return () => siblings.forEach((node) => (node.inert = false));
+  return () => {
+    document.body.style.overflow = overflow;
+    siblings.forEach((node) => (node.inert = false));
+  };
 }
 
 function restoreFocus(invoker: Element | null) {
@@ -111,6 +116,7 @@ export function Dialog({
         className="dialog"
         onKeyDown={onKeyDown}
       >
+        <div className="dialog-handle" aria-hidden="true" />
         <h2 id={titleId} className="dialog-title">
           {title}
         </h2>

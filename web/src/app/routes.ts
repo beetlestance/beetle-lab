@@ -23,6 +23,7 @@ export const routes = {
   suitePattern: '/organizations/:organizationId/workspaces/:workspaceId/suites/:suiteId',
   suites: (org: string, workspace: string) =>
     `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/suites`,
+  newSuite: (org: string, workspace: string, view: 'form' | 'json') => `${routes.suites(org, workspace)}?new=${view}`,
   suitesFolder: (org: string, workspace: string, folderId: string) =>
     `${routes.suites(org, workspace)}?folder=${encodeURIComponent(folderId)}`,
   suite: (org: string, workspace: string, id: string) =>

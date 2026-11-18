@@ -471,7 +471,7 @@ ul.tabs {
   background: var(--history-line);
 }
 
-/* Dialog */
+/* Dialog: centered on desktop, bottom sheet on phones. */
 .dialog-backdrop {
   position: fixed;
   inset: 0;
@@ -484,7 +484,7 @@ ul.tabs {
 }
 .dialog {
   display: grid;
-  gap: var(--s-18);
+  gap: var(--s-16);
   width: 100%;
   max-width: var(--dialog-max);
   max-height: calc(100dvh - 32px);
@@ -496,12 +496,15 @@ ul.tabs {
   box-shadow: var(--shadow-popover);
   animation: rise-in var(--motion-base) var(--ease-out);
 }
+.dialog-handle {
+  display: none;
+}
 .dialog:focus-visible {
   outline: none;
 }
 .dialog-title {
   margin: 0;
-  font-size: var(--fs-2xl);
+  font-size: var(--fs-dialog);
   font-weight: 500;
   letter-spacing: var(--tracking-heading);
 }
@@ -514,6 +517,57 @@ ul.tabs {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--s-10);
+}
+
+@media (max-width: 760px) {
+  .dialog-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+  .dialog {
+    max-width: none;
+    max-height: calc(100dvh - var(--s-20));
+    padding: var(--s-20) var(--s-24) max(var(--s-20), env(safe-area-inset-bottom));
+    border: 0;
+    border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  }
+  .dialog-handle {
+    display: block;
+    width: 40px;
+    height: 4px;
+    border-radius: var(--r-pill);
+    background: var(--dim);
+  }
+  .dialog-title {
+    font-size: var(--fs-xl);
+    line-height: var(--lh-heading);
+  }
+  .dialog .field-label {
+    line-height: 17px;
+  }
+  .dialog .field-hint,
+  .dialog .field-error {
+    font-size: var(--fs-sm);
+    line-height: 16px;
+  }
+  .dialog .input,
+  .dialog .select {
+    min-height: 46px;
+    font-size: var(--fs-base);
+  }
+  .dialog-title {
+    line-height: 24px;
+  }
+  .dialog-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: var(--s-16);
+  }
+  .dialog-actions .btn {
+    width: 100%;
+    min-height: 44px;
+    font-size: var(--fs-base);
+  }
 }
 
 /* Table */

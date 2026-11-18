@@ -1,0 +1,101 @@
+/* Overview / Empty, using the exported Illustration / Ready. */
+.overview-empty {
+  display: grid;
+  grid-template-columns: minmax(0, 640px) minmax(0, 560px);
+  align-items: center;
+  gap: var(--s-40);
+  padding-top: 84px;
+}
+.overview-empty-text {
+  display: grid;
+  gap: var(--s-14);
+}
+.overview-empty h1 {
+  line-height: 38px;
+}
+.overview-empty-lede {
+  font-size: var(--fs-xl);
+  line-height: var(--lh-lede);
+}
+.overview-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-12);
+}
+.overview-empty-actions .btn {
+  min-height: 40px;
+  font-size: var(--fs-base);
+}
+.overview-empty-note {
+  color: var(--mute);
+  font-size: var(--fs-md);
+  line-height: 21px;
+}
+.overview-empty-art {
+  width: 100%;
+  height: auto;
+}
+.overview-loading {
+  display: grid;
+  gap: 44px;
+}
+.overview-loading-title {
+  display: grid;
+  gap: var(--s-14);
+}
+.overview-loading-title .skeleton-bar {
+  background: var(--panel);
+}
+.overview-loading-lede {
+  width: min(640px, 90%);
+  height: 16px;
+}
+.overview-loading-caption {
+  width: min(448px, 70%);
+  height: 16px;
+}
+.overview-loading .skeleton-cards {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.overview-loading .skeleton-card {
+  min-height: 140px;
+  gap: var(--s-14);
+  padding: var(--s-20) var(--s-22);
+}
+.overview-loading-label {
+  width: min(120px, 65%);
+}
+.overview-loading-value {
+  width: min(220px, 85%);
+  height: 22px;
+}
+.overview-loading-columns {
+  display: grid;
+  grid-template-columns: 150px 300px 200px 1fr;
+  align-items: center;
+  height: 37px;
+  padding: 0 var(--s-14);
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
+@media (max-width: 760px) {
+  .overview-empty {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: var(--s-24);
+  }
+  .overview-empty h1 {
+    font-size: var(--fs-3xl);
+  }
+  .overview-empty-lede {
+    font-size: var(--fs-lg);
+  }
+  .overview-loading .skeleton-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .overview-loading-columns {
+    grid-template-columns: 1fr 1fr;
+  }
+  .overview-loading-columns span:nth-child(n + 3) {
+    display: none;
+  }
+}

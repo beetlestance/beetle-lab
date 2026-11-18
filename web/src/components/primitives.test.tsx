@@ -95,6 +95,19 @@ it('traps focus in a dialog, closes on Escape and returns focus to the invoker',
   expect(invoker).toHaveFocus();
 });
 
+it('locks page scrolling until the dialog closes and preserves the previous overflow', () => {
+  document.body.style.overflow = 'auto';
+  const view = render(<DialogHarness />);
+  fireEvent.click(screen.getByRole('button', { name: 'Delete run' }));
+  expect(document.body.style.overflow).toBe('hidden');
+  fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+  expect(document.body.style.overflow).toBe('auto');
+  fireEvent.click(screen.getByRole('button', { name: 'Delete run' }));
+  view.unmount();
+  expect(document.body.style.overflow).toBe('auto');
+  document.body.style.overflow = '';
+});
+
 it('moves tab and segment selection with arrows and skips disabled items', () => {
   const select = vi.fn();
   const change = vi.fn();
@@ -133,7 +146,13 @@ it('moves tab and segment selection with arrows and skips disabled items', () =>
 it('right-aligns numeric cells and renders not-found copy with its back link', () => {
   render(
     <MemoryRouter>
-      <Table caption="Endpoints" columns={[{ key: 'path', label: 'Endpoint' }, { key: 'p95', label: 'p95', numeric: true, sort: 'descending' }]}>
+      <Table
+        caption="Endpoints"
+        columns={[
+          { key: 'path', label: 'Endpoint' },
+          { key: 'p95', label: 'p95', numeric: true, sort: 'descending' },
+        ]}
+      >
         <tr>
           <Td>/offers</Td>
           <Td numeric>323 ms</Td>

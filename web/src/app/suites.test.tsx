@@ -62,6 +62,16 @@ it('creates a k6 suite in the actual scoped root through the engine picker and o
   expect(body).not.toHaveProperty('description');
   expect(screen.getByRole('tab', { name: 'Edit' })).toHaveAttribute('aria-selected', 'true');
 });
+it('opens the JSON authoring entry after creating a named suite', async () => {
+  const fixture = testClient(request => request.method === 'POST' ? json(suite(), 201) : read(request));
+  mount(fixture.client, routes.newSuite(ids.a, ids.workspace, 'json'));
+  const name = await screen.findByRole('textbox', { name: 'Suite name' });
+  fireEvent.change(name, { target: { value: 'Checkout' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Create suite' }));
+  expect(await screen.findByRole('textbox', { name: 'Complete configuration JSON' })).toBeVisible();
+  expect(screen.getByRole('radio', { name: 'Complete configuration JSON' })).toBeChecked();
+  expect(fixture.records.filter(record => record.method === 'POST')).toHaveLength(1);
+});
 it('keeps invalid JSON editable and blocks form conversion and saving it', async () => {
   const fixture = testClient(read); mount(fixture.client, path);
   const editor = await openJson(); fireEvent.change(editor, { target: { value: '{broken' } });

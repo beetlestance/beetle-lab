@@ -1,10 +1,9 @@
 import { useId, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
 import type { WorkspaceOverview as Snapshot } from '@beetle/contracts/api';
-import { routes } from '../../app/routes.js';
-import { Button, buttonClass } from '../../components/Button.js';
-import { EmptyState, LoadingState } from '../../components/States.js';
+import { Button } from '../../components/Button.js';
+import { OverviewEmpty } from './OverviewEmpty.js';
+import { OverviewLoading } from './OverviewLoading.js';
 import { ActivityChart } from './ActivityChart.js';
 import { AgentPanel } from './AgentPanel.js';
 import { clockTime, inProgress, plural } from './format.js';
@@ -13,6 +12,7 @@ import { OverviewArt } from './OverviewArt.js';
 import { RecentRuns } from './RecentRuns.js';
 import { usePublishedInputs, useRunsFirstPage, useSuitesFirstPage, useWorkspaceOverview } from './reads.js';
 import './overview.css';
+import './states.css';
 
 type Props = { organizationId: string; workspaceId: string; workspaceName: string };
 
@@ -23,7 +23,7 @@ type Props = { organizationId: string; workspaceId: string; workspaceName: strin
  */
 export function WorkspaceOverview({ organizationId, workspaceId, workspaceName }: Props) {
   const query = useWorkspaceOverview(organizationId, workspaceId);
-  if (query.isPending) return <LoadingState variant="page" label="Loading workspace overview…" />;
+  if (query.isPending) return <OverviewLoading />;
   if (query.isError)
     return (
       <div role="alert" className="banner banner-danger">
@@ -53,25 +53,7 @@ export function WorkspaceOverview({ organizationId, workspaceId, workspaceName }
     </span>
   );
   if (snapshot.counts.runs === 0)
-    return (
-      <div className="overview">
-        <EmptyState
-          headingLevel={1}
-          title={`No runs in ${workspaceName} yet`}
-          actions={
-            <Link className={buttonClass('primary')} to={routes.suites(organizationId, workspaceId)}>
-              Write your first suite
-            </Link>
-          }
-          note={refresh}
-        >
-          <p>
-            A suite describes the requests and the load. Start a run from it, and its results and the last 24 hours
-            appear here.
-          </p>
-        </EmptyState>
-      </div>
-    );
+    return <OverviewEmpty organizationId={organizationId} workspaceId={workspaceId} workspaceName={workspaceName} />;
   return (
     <Overview
       organizationId={organizationId}
