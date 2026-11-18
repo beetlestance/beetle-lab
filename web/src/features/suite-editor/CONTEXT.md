@@ -23,7 +23,10 @@ blocker. The revision message goes in the 031 `message` field. On a 409, the
 conflict overlay reads the suite and its current revision fresh and saves the
 kept draft on top with a new request id.
 
-Name, folder and description are suite metadata, edited by `suites/MetadataEditor`.
+About metadata and config save atomically through one expectedVersion and receipt.
+useRevisionSave freezes the draft version; only an acknowledgement or explicit conflict
+choice advances it. metadata.ts refreshes untouched fields while preserving edits.
+Copy in the conflict overlay includes config, metadata and the revision message.
 CSV column names are not in the API, so the value palette shows only a COLUMN
 placeholder.
 

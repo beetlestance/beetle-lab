@@ -90,6 +90,9 @@
         },
         "message": {
           "$ref": "https://beetle-lab.dev/contracts/api/v2/suite#/$defs/RevisionMessage"
+        },
+        "metadata": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/suite-requests#/$defs/SuiteMetadataChanges"
         }
       },
       "required": [
@@ -135,6 +138,29 @@
       "required": [
         "limit"
       ],
+      "additionalProperties": false
+    },
+    "SuiteMetadataChanges": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name"
+        },
+        "folderId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteDescription"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "minProperties": 1,
       "additionalProperties": false
     }
   }

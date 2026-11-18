@@ -1,4 +1,4 @@
-import { formatCount, objects, text } from './model.js';
+import { objects, text } from './model.js';
 import type { Obj } from './model.js';
 
 export const executors = [
@@ -44,13 +44,6 @@ const units = { ms: 0.001, s: 1, m: 60, h: 3600 } as const;
 export function seconds(value: unknown): number | undefined {
   const match = /^(0|[1-9][0-9]{0,8})(ms|s|m|h)$/.exec(text(value));
   return match ? Number(match[1]) * units[match[2] as keyof typeof units] : undefined;
-}
-export function clock(total: number) {
-  const whole = Math.round(total);
-  const hours = Math.floor(whole / 3600);
-  const minutes = Math.floor((whole % 3600) / 60);
-  const rest = String(whole % 60).padStart(2, '0');
-  return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${rest}` : `${String(minutes).padStart(2, '0')}:${rest}`;
 }
 const count = (value: unknown, fallback: number) =>
   typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : fallback;
@@ -104,67 +97,6 @@ export function switchExecutor(scenario: Obj, executor: string): Obj {
     default:
       return { ...scenario, executor };
   }
-}
-
-export type Shape = { points: { t: number; v: number }[]; total: number; phases: { label: string; seconds: number }[] };
-const phaseLabel = (target: number, from: number) =>
-  target > from ? 'Ramp' : target < from ? 'Drain' : `Steady at ${formatCount(target)}`;
-function stagedShape(scenario: Obj): Shape | null {
-  let t = 0;
-  let v = count(scenario.executor === 'ramping-vus' ? scenario.startVUs : scenario.startRate, 0);
-  const points = [{ t, v }];
-  const phases: Shape['phases'] = [];
-  for (const stage of objects(scenario.stages).slice(0, 128)) {
-    const duration = seconds(stage.duration);
-    if (duration === undefined || typeof stage.target !== 'number') return null;
-    phases.push({ label: phaseLabel(stage.target, v), seconds: duration });
-    t += duration;
-    v = stage.target;
-    points.push({ t, v });
-  }
-  return phases.length ? { points, total: t, phases } : null;
-}
-function constantShape(scenario: Obj): Shape | null {
-  const duration = seconds(scenario.duration);
-  const value = scenario.executor === 'constant-vus' ? scenario.vus : scenario.rate;
-  if (duration === undefined || typeof value !== 'number') return null;
-  return {
-    points: [
-      { t: 0, v: value },
-      { t: duration, v: value },
-    ],
-    total: duration,
-    phases: [{ label: `Steady at ${formatCount(value)}`, seconds: duration }],
-  };
-}
-const numbers = (values: unknown[]): values is number[] => values.every((value) => typeof value === 'number');
-function rampUntilShape(scenario: Obj): Shape | null {
-  const step = seconds(scenario.stepDuration);
-  const rates = [scenario.startRate, scenario.maxRate, scenario.stepRate];
-  if (!step || !numbers(rates)) return null;
-  const [start, max, increment] = rates;
-  if (increment! < 1) return null;
-  const points: Shape['points'] = [];
-  let t = 0;
-  for (let rate = start!; points.length < 256; rate += increment!) {
-    const v = Math.min(rate, max!);
-    points.push({ t, v }, { t: t + step, v });
-    t += step;
-    if (v >= max!) break;
-  }
-  return { points, total: t, phases: [{ label: `Up to ${formatCount(max!)}, if no rule fails`, seconds: t }] };
-}
-const shapes: Record<string, (scenario: Obj) => Shape | null> = {
-  'ramping-arrival-rate': stagedShape,
-  'ramping-vus': stagedShape,
-  'constant-arrival-rate': constantShape,
-  'constant-vus': constantShape,
-  'ramp-until': rampUntilShape,
-};
-/** Planned load over time for the chart; null when the plan has no time shape (iterations). */
-export function loadShape(scenario: Obj): Shape | null {
-  const executor = text(scenario.executor);
-  return Object.hasOwn(shapes, executor) ? shapes[executor]!(scenario) : null;
 }
 
 /** The common three-stage plan: ramp to a peak, hold it, then drain. */

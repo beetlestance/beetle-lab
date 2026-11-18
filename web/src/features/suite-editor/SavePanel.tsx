@@ -117,7 +117,7 @@ export function SavePanel({
           variant="primary"
           loading={write.pending}
           loadingLabel="Saving…"
-          disabled={blocked || locked}
+          disabled={blocked || locked || !dirty}
           onClick={save}
         >
           Save revision

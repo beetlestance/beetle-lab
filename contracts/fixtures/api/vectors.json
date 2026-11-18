@@ -848,5 +848,25 @@
     "path": "invalid/suite-list-query-group.json",
     "schema": "SuiteListQuery",
     "valid": false
+  },
+  {
+    "path": "valid/suite-metadata-changes.json",
+    "schema": "SuiteMetadataChanges",
+    "valid": true
+  },
+  {
+    "path": "invalid/suite-metadata-empty.json",
+    "schema": "SuiteMetadataChanges",
+    "valid": false
+  },
+  {
+    "path": "invalid/suite-metadata-unknown.json",
+    "schema": "SuiteMetadataChanges",
+    "valid": false
+  },
+  {
+    "path": "invalid/create-suite-revision-metadata.json",
+    "schema": "CreateSuiteRevisionRequest",
+    "valid": false
   }
 ]

@@ -14,6 +14,8 @@ export function FolderPicker({
   label,
   hint,
   onSelected,
+  id,
+  relative = false,
 }: {
   workspace: Workspace;
   selected: string;
@@ -21,6 +23,8 @@ export function FolderPicker({
   label: string;
   hint: string;
   onSelected?: ((folder: Folder | null) => void) | undefined;
+  id?: string | undefined;
+  relative?: boolean | undefined;
 }) {
   const api = useApi();
   const params = { organizationId: workspace.scope.organizationId, workspaceId: workspace.id };
@@ -42,6 +46,7 @@ export function FolderPicker({
   return (
     <div className="suite-folder-select">
       <Select
+        id={id}
         label={label}
         value={selected}
         loading={query.isPending}
@@ -53,7 +58,10 @@ export function FolderPicker({
         {!known && <option value={selected}>Current folder</option>}
         {folders.map((folder) => (
           <option key={folder.id} value={folder.id}>
-            {folder.displayPath.join(' / ')}
+            {(relative && folder.displayPath[0] === workspace.name
+              ? folder.displayPath.slice(1)
+              : folder.displayPath
+            ).join(' / ')}
           </option>
         ))}
       </Select>

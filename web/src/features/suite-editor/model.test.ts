@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseDraft, starter } from '../suites/draft.js';
-import { clock, loadShape, rampHoldDrain, seconds, setRampHoldDrain, switchExecutor } from './load.js';
+import { rampHoldDrain, seconds, setRampHoldDrain, switchExecutor } from './load.js';
+import { planSummary } from '../suite-overview/plan.js';
 import { addRequest, removeRequest, uniqueId, weightOf } from './model.js';
 import { validate } from './problems.js';
 import { checkLabel, shownValue, storedValue } from './rules.js';
@@ -20,11 +21,13 @@ describe('suite editor model', () => {
   it('reads durations, shapes ramps and keeps the ramp above its drain', () => {
     expect(seconds('2m')).toBe(120);
     expect(seconds('1.5s')).toBeUndefined();
-    expect(clock(600)).toBe('10:00');
-    const scenario = switchExecutor({ id: 'main', executor: 'per-vu-iterations', iterations: 1, vus: 1 }, 'ramping-arrival-rate');
+    const scenario = switchExecutor(
+      { id: 'main', executor: 'per-vu-iterations', iterations: 1, vus: 1 },
+      'ramping-arrival-rate',
+    );
     expect(rampHoldDrain(scenario)).toEqual({ peak: 10, ramp: 60, hold: 480, drain: 60, end: 1 });
     const longer = setRampHoldDrain(scenario, 'hold', 900);
-    expect(loadShape(longer)?.total).toBe(1020);
+    expect(planSummary({ loadPlan: { scenarios: [longer] } }).totalMs).toBe(1_020_000);
   });
 
   it('stores percent thresholds as a rate and labels checks', () => {

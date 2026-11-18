@@ -1,5 +1,8 @@
+import { encodeJson } from '@beetle/contracts';
+import { normalizedMetadata } from '../suite-editor/metadata.js';
+import { MetadataFields } from '../suite-editor/MetadataFields.js';
 import { useSessionAccess } from '../../app/session.js';
-import type { Suite, SuiteRevision } from '@beetle/contracts/api';
+import type { Suite, SuiteRevision, Workspace } from '@beetle/contracts/api';
 import { ConflictDialog } from '../suite-editor/ConflictDialog.js';
 import { requestKey } from '../suite-editor/model.js';
 import { jumpTo } from '../suite-editor/problems.js';
@@ -38,14 +41,18 @@ function jumpFor(text: string, setView: (view: EditorView) => void) {
  */
 export function RevisionEditor({
   suite,
+  workspace,
   initial,
   refresh,
+  baseVersion,
 }: {
   suite: Suite;
+  workspace: Workspace;
   initial?: SuiteRevision;
   refresh: () => Promise<unknown>;
+  baseVersion?: number;
 }) {
-  const draft = useRevisionDraft(suite, initial, refresh);
+  const draft = useRevisionDraft(suite, initial, refresh, baseVersion);
   const { readOnly } = useSessionAccess();
   const { page, update } = useSuitePage();
   const view: EditorView = { mode: page.view, request: page.request };
@@ -54,6 +61,14 @@ export function RevisionEditor({
     <section className="suite-editor-layout" aria-label="Edit suite configuration">
       <div className="suite-editor-main">
         <ConfigFields
+          metadata={
+            <MetadataFields
+              workspace={workspace}
+              value={draft.metadata.value}
+              change={draft.metadata.change}
+              problems={draft.problems}
+            />
+          }
           text={draft.text}
           change={draft.setText}
           disabled={readOnly || draft.write.locked}
@@ -80,7 +95,24 @@ export function RevisionEditor({
         />
       </aside>
       {draft.conflict && (
-        <ConflictDialog suite={suite} draft={draft.text} close={draft.closeConflict} saveOver={draft.saveOver} />
+        <ConflictDialog
+          suite={suite}
+          draft={() =>
+            encodeJson(
+              {
+                config: parseDraft(draft.text),
+                metadata: {
+                  ...normalizedMetadata(draft.metadata.value),
+                  description: draft.metadata.value.description.trim() || null,
+                },
+                ...(draft.message.trim() ? { message: draft.message.trim() } : {}),
+              },
+              2097152,
+            )
+          }
+          close={draft.closeConflict}
+          saveOver={draft.saveOver}
+        />
       )}
     </section>
   );

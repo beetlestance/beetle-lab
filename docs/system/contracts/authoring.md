@@ -16,6 +16,26 @@ are in [Public API](public-api.md).
 - Suites read `description: null` when none is set, including every suite that
   existed before migration 031.
 
+## Combined revision save
+
+- `createSuiteRevision` optionally accepts a closed, nonempty `metadata` group:
+  name, same-workspace folder and nullable description, using PATCH semantics.
+  Omitted fields stay unchanged; null clears description.
+- The existing receipt transaction checks one suite version, validates destination,
+  folded sibling name and config/input pins, appends the revision, and updates
+  metadata plus its current pointer with one version increment. A late failure
+  rolls back all state, search postings and the receipt.
+- Metadata participates in the request intent, outside the config digest. Identical
+  replay returns the original full revision before checks and never reapplies old
+  metadata over newer edits. Legacy requests and full receipt shapes stay valid.
+- A name collision is 409 with `/metadata/name: conflict`; a foreign folder is
+  scoped not-found. No submitted value or raw database message is exposed.
+- Next ordinal uses a scoped indexed seek with bounded SQL integer capture;
+  corrupt ordinals fail storage, exhausted ordinals conflict, with no coercion.
+- About fields and configuration form one browser draft. Its optimistic version
+  stays frozen until acknowledgement or explicit conflict override. Refreshing
+  untouched metadata never discards edited fields or silently advances that version.
+
 ## Revision stamps
 
 - Each new revision records `savedAt`, `savedBy` and an optional `message`
@@ -108,6 +128,7 @@ unchanged and that a late failure rolls back to the exact schema 030.
 
 | Code | Reviewed |
 | --- | --- |
+| `app/src/adapters/outbound/sqlite/suites.ts` | `d70508594376` |
 | `app/src/adapters/outbound/sqlite/migration031.ts` | `b0feac9a7325` |
 | `app/src/adapters/outbound/sqlite/run-annotations.ts` | `f334af303d32` |
 | `app/src/adapters/outbound/sqlite/run-notes.ts` | `5b21f305661c` |

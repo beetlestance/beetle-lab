@@ -124,6 +124,8 @@ function requestLabel(parts: string[], config: Config) {
   return `Request ${ordinal(parts[1])}${name}${tail(parts, 2)}`;
 }
 const labelers: Record<string, Labeler> = {
+  metadata: (parts) =>
+    ({ name: 'Suite name', folderId: 'Folder', description: 'Description' })[parts[1] ?? ''] ?? 'Suite details',
   target: () => 'Target URL',
   message: () => 'What changed',
   requests: requestLabel,

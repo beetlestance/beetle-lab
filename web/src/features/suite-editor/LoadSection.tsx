@@ -1,29 +1,30 @@
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import type { Config } from '../suites/draft.js';
 import { Button } from '../../components/Button.js';
 import { Card, TextField } from './fields.js';
-import { LoadChart } from './LoadChart.js';
-import { executors, loadShape, rampHoldDrain } from './load.js';
-import { firstScenario, isObj, list, setScenario, text } from './model.js';
+import { LoadShape } from '../suite-overview/LoadShape.js';
+import { planSummary } from '../suite-overview/plan.js';
+import { executors, rampHoldDrain } from './load.js';
+import { firstScenario, isObj, list, setScenario } from './model.js';
 import type { Obj, SetConfig } from './model.js';
 import { ExecutorSelect, ScenarioFields } from './ScenarioFields.js';
 
-/** "About": the target the revision tests. Name, folder and description are suite metadata, edited separately. */
-export function AboutSection({ config, set }: { config: Config; set: SetConfig }) {
+/** About shares one draft for suite details and the revision target. */
+export function AboutSection({ config, set, metadata }: { config: Config; set: SetConfig; metadata?: ReactNode }) {
   return (
     <Card title="About">
+      {metadata}
       <TextField
         label="Target URL"
         path="/target"
         value={config.target}
-        hint="Base URL of the service under test. Request paths are added to it."
         change={(target) => set({ ...config, target })}
       />
     </Card>
   );
 }
 
-const vuExecutors = new Set(['ramping-vus', 'constant-vus']);
 const isSimple = (scenario: Obj | undefined) => !!scenario && !!rampHoldDrain(scenario);
 
 /** Whether the first scenario uses the ramp/hold/drain view, decided once per executor. */
@@ -45,16 +46,19 @@ export function LoadSection({ config, set, openSetup }: { config: Config; set: S
         <p className="editor-note">This draft has no load scenario. Add one in Run setup or the complete JSON.</p>
       </Card>
     );
-  const shape = loadShape(scenario);
+  const plan = planSummary(config);
   const hint = executors.find((item) => item.id === scenario.executor)?.hint;
-  const unit = vuExecutors.has(text(scenario.executor)) ? 'virtual users' : 'requests a second';
   const change = (next: Obj) => set(setScenario(config, 0, next));
   return (
     <Card title="How load arrives">
       <ExecutorSelect scenario={scenario} path="/loadPlan/scenarios/0" set={change} />
       {hint && <p className="editor-note">{hint}</p>}
       <ScenarioFields scenario={scenario} path="/loadPlan/scenarios/0" simple={simple} set={change} />
-      {shape && <LoadChart shape={shape} unit={unit} />}
+      {plan.first && (
+        <div className="editor-load-preview">
+          <LoadShape plan={plan} />
+        </div>
+      )}
       {count > 1 && (
         <p className="editor-note">
           This shows the first of {count} scenarios.{' '}

@@ -22,6 +22,7 @@ const codes = {
   run_pinned: 'protected_dependency',
   cleanup_in_progress: 'conflict',
   folder_name_conflict: 'conflict',
+  suite_name_conflict: 'conflict',
   folder_depth: 'invalid_value',
 } as const satisfies Record<ErrorCode, ApiError['code']>;
 const reasons = {
@@ -43,7 +44,11 @@ export function explainMetadataError(error: unknown): NonNullable<ApiError['reas
 }
 
 /** Fixed field categories; no database message or submitted value crosses HTTP. */
-export function metadataFieldIssue(error: unknown): 'folder_name_conflict' | 'folder_depth' | undefined {
+export function metadataFieldIssue(
+  error: unknown,
+): 'folder_name_conflict' | 'folder_depth' | 'suite_name_conflict' | undefined {
   if (!(error instanceof StorageError)) return undefined;
-  return error.code === 'folder_name_conflict' || error.code === 'folder_depth' ? error.code : undefined;
+  return error.code === 'folder_name_conflict' || error.code === 'folder_depth' || error.code === 'suite_name_conflict'
+    ? error.code
+    : undefined;
 }

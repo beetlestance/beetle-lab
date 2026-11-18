@@ -17,7 +17,6 @@ import { Overview, RecentRuns, StartRun, when } from '../suite-overview/index.js
 import { AuthoringState } from './AuthoringState.js';
 import { findFolder, folderLink, folderName, useFolders } from './folders.js';
 import { History, useRevisionPage } from './History.js';
-import { MetadataEditor } from './MetadataEditor.js';
 import { RevisionEditor } from './RevisionEditor.js';
 import { useSuitePage } from './useSuitePage.js';
 
@@ -80,10 +79,8 @@ function SuiteContent({
   refresh: () => Promise<unknown>;
 }) {
   const [tab, setTab, startOpen, setStartOpen] = useTab();
-  const { readOnly } = useSessionAccess();
   const [startRevision, setStartRevision] = useState<string | null>(null);
   const visited = useVisited(tab);
-  const [details, setDetails] = useState(false);
   const { items, ordinals, count } = revisionFacts(useRevisionPage(suite).data);
   const current = useCurrentRevision(suite);
   const runRevision = startRevision ?? suite.currentRevisionId;
@@ -111,13 +108,7 @@ function SuiteContent({
       {visited.has('edit') && (
         <div hidden={tab !== 'edit'}>
           <TabPanel idBase="suite" id="edit">
-            <div className="suite-edit-bar">
-              <p className="muted">Suite version {suite.version}</p>
-              <Button size="sm" disabled={readOnly} onClick={() => setDetails(true)}>
-                Edit name, folder and description
-              </Button>
-            </div>
-            <CurrentDraft suite={suite} refresh={refresh} />
+            <CurrentDraft suite={suite} workspace={workspace} refresh={refresh} />
           </TabPanel>
         </div>
       )}
@@ -126,7 +117,6 @@ function SuiteContent({
           <History suite={suite} run={openStart} />
         </TabPanel>
       )}
-      {details && <MetadataEditor workspace={workspace} suite={suite} close={() => setDetails(false)} />}
       {startOpen && runRevision && (
         <StartRun
           suite={suite}
@@ -253,15 +243,32 @@ function useCurrentRevision(suite: Suite) {
   });
 }
 /** The editor takes the revision current when the Edit tab first opens and keeps its draft after that. */
-function CurrentDraft({ suite, refresh }: { suite: Suite; refresh: () => Promise<unknown> }) {
+function CurrentDraft({
+  suite,
+  workspace,
+  refresh,
+}: {
+  suite: Suite;
+  workspace: Workspace;
+  refresh: () => Promise<unknown>;
+}) {
   const query = useCurrentRevision(suite);
-  const [initial, setInitial] = useState<SuiteRevision | null | undefined>(() =>
-    suite.currentRevisionId ? undefined : null,
+  const [initial, setInitial] = useState<{ revision: SuiteRevision | null; version: number } | undefined>(() =>
+    suite.currentRevisionId ? undefined : { revision: null, version: suite.version },
   );
   useEffect(() => {
-    if (initial === undefined && query.data) setInitial(query.data);
-  }, [initial, query.data]);
+    if (initial === undefined && query.data?.id === suite.currentRevisionId)
+      setInitial({ revision: query.data, version: suite.version });
+  }, [initial, query.data, suite.currentRevisionId, suite.version]);
   if (initial !== undefined)
-    return <RevisionEditor suite={suite} {...(initial ? { initial } : {})} refresh={refresh} />;
+    return (
+      <RevisionEditor
+        suite={suite}
+        workspace={workspace}
+        {...(initial.revision ? { initial: initial.revision } : {})}
+        baseVersion={initial.version}
+        refresh={refresh}
+      />
+    );
   return <QueryState query={query}>{() => <p role="status">Preparing draft…</p>}</QueryState>;
 }

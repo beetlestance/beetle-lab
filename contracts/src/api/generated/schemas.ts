@@ -220,6 +220,7 @@ export const apiMessageSchemas = freezeSchema({
   PatchSuiteRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite-requests#/$defs/PatchSuiteRequest' },
   CreateSuiteRevisionRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite-requests#/$defs/CreateSuiteRevisionRequest' },
   SuiteListQuery: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite-requests#/$defs/SuiteListQuery' },
+  SuiteMetadataChanges: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite-requests#/$defs/SuiteMetadataChanges' },
   Suite: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/Suite' },
   SuiteRevisionSummary: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteRevisionSummary' },
   SuiteRevision: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteRevision' },

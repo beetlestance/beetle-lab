@@ -113,8 +113,8 @@ Routes: `GET`/`POST /suites`, `GET`/`PATCH /suites/{suiteId}`,
   folded name. See [authoring](authoring.md), [suite listing](suite-listing.md) and [revision history](revision-listing.md).
 - Creating a revision requires the current suite version, `engineId: k6`,
   `configVersion: 1` and a complete config ≤ 1 MiB. It atomically appends an
-  immutable revision, increments the suite version and moves
-  `currentRevisionId`. Ordinals start at 1 per suite. SQL triggers block
+  immutable revision, optionally saves About `metadata`, increments the suite version
+  once and moves `currentRevisionId`. Ordinals start at 1 per suite. SQL triggers block
   update, delete and `INSERT OR REPLACE` on revisions.
 - `preflightStatus: passed` means shared k6 schema validation only.
 - The input manifest is derived from dataset and body references, never
@@ -212,9 +212,9 @@ characters and shows at most 80 matches.
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `0be474f5e6a5` |
+| `contracts/api/v2/` | `24d39c98695b` |
 | `contracts/src/api/client/` | `eec344e7e383` |
 | `contracts/src/api/run-list.ts` | `1c4b7b193309` |
-| `app/src/adapters/inbound/http/api-errors.ts` | `c82ce383315c` |
+| `app/src/adapters/inbound/http/api-errors.ts` | `9a79596d0e11` |
 | `app/src/adapters/inbound/http/session/` | `328af44f81f3` |
 | `app/src/client/cli/` | `c7eb756df145` |

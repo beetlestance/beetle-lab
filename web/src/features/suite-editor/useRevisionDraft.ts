@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ApiClientFailure, CreateSuiteRevisionRequest, Suite, SuiteRevision } from '@beetle/contracts/api';
-import { useApi } from '../../app/api.js';
+import { normalizedMetadata, useMetadataDraft } from './metadata.js';
+import { useCallback, useEffect, useState } from 'react';
+import type { ApiClientFailure, Suite, SuiteRevision } from '@beetle/contracts/api';
 import { formatDraft, parseDraft, starter } from '../suites/draft.js';
 import type { Config } from '../suites/draft.js';
-import { useWrite } from '../suites/useWrite.js';
+import { useRevisionSave } from './useRevisionSave.js';
 import { useInputCatalog } from './inputs.js';
 import { inputReferences } from './model.js';
 import { serverProblems, validate } from './problems.js';
@@ -22,6 +22,9 @@ const hasControlCharacter = (value: string) =>
     return code < 0x20 || code === 0x7f;
   });
 
+const messageProblem = (message: string) =>
+  hasControlCharacter(message) ? 'Use a single line without control characters.' : '';
+
 function collectProblems(
   config: Config | null,
   attempted: boolean,
@@ -32,70 +35,44 @@ function collectProblems(
   return [...(attempted ? validate(config) : []), ...missing, ...serverProblems(failure, config)];
 }
 
-/** Ordinal of the latest acknowledged revision and the one this session just saved. */
-function useAcknowledged(value: SuiteRevision | null | undefined, initial: number, saved: () => void) {
-  const [ordinal, setOrdinal] = useState(initial);
-  const [done, setDone] = useState<number | null>(null);
-  const latest = useRef(saved);
-  latest.current = saved;
-  useEffect(() => {
-    if (!value) return;
-    setOrdinal(value.ordinal);
-    setDone(value.ordinal);
-    latest.current();
-  }, [value]);
-  return { ordinal, saved: done, setSaved: setDone };
-}
-
 /** Draft text, revision message and the createSuiteRevision write behind "Suite / Edit". */
-export function useRevisionDraft(suite: Suite, initial: SuiteRevision | undefined, refresh: () => Promise<unknown>) {
-  const api = useApi();
+export function useRevisionDraft(
+  suite: Suite,
+  initial: SuiteRevision | undefined,
+  refresh: () => Promise<unknown>,
+  baseVersion = suite.version,
+) {
+  const metadata = useMetadataDraft(suite);
   const [baseline, setBaseline] = useState(() => (initial ? formatDraft(initial.config) : starter()));
   const [text, setText] = useState(baseline);
   const [message, setMessage] = useState('');
   const [invalid, setInvalid] = useState(false);
   const [attempted, setAttempted] = useState(false);
-  const [conflict, setConflict] = useState(false);
-  const submitted = useRef<string | null>(null);
+  const saved = useRevisionSave(suite, initial?.ordinal ?? 0, baseVersion, refresh);
+  const write = saved.write;
   const reset = () => {
     setMessage('');
     setAttempted(false);
   };
-  const params = {
-    organizationId: suite.scope.organizationId,
-    workspaceId: suite.scope.workspaceId,
-    suiteId: suite.id,
-  };
-  const write = useWrite<CreateSuiteRevisionRequest, SuiteRevision>(
-    (body, signal) => api.createSuiteRevision({ params, body, signal }),
-    refresh,
-  );
-  const { ordinal, saved, setSaved } = useAcknowledged(write.value, initial?.ordinal ?? 0, () => {
-    if (submitted.current !== null) setBaseline(submitted.current);
-    reset();
-  });
-  useEffect(() => setConflict(write.failure?.protocol?.code === 'conflict'), [write.failure]);
+  useEffect(() => {
+    const ack = saved.acknowledged;
+    if (!ack) return;
+    setBaseline(ack.text);
+    metadata.acknowledge(ack.metadata, ack.patch, ack.version);
+    setMessage((previous) => (previous === ack.message ? '' : previous));
+    setAttempted(false);
+  }, [saved.acknowledged]);
   const config = tryParse(text);
   const catalog = useInputCatalog(suite.scope, config ? inputReferences(config) : []);
-  const messageError = hasControlCharacter(message) ? 'Use a single line without control characters.' : '';
-  const problems = collectProblems(config, attempted, catalog.problems, write.failure);
+  const messageError = messageProblem(message);
+  const problems = [...metadata.problems, ...collectProblems(config, attempted, catalog.problems, write.failure)];
   const validity = useCallback((bad: boolean) => setInvalid(bad), []);
 
-  function submit(expectedVersion: number) {
+  function submit(version?: number) {
     setAttempted(true);
-    if (!config || messageError || validate(config).length || catalog.problems.length) return;
-    submitted.current = text;
-    setSaved(null);
-    const note = message.trim();
-    void write.submit({
-      scope: suite.scope,
-      requestId: crypto.randomUUID(),
-      expectedVersion,
-      engineId: 'k6',
-      configVersion: 1,
-      config,
-      ...(note ? { message: note } : {}),
-    });
+    if (!config || messageError || validate(config).length || catalog.problems.length || metadata.problems.length)
+      return;
+    saved.send({ text, config, message, metadata: normalizedMetadata(metadata.value), patch: metadata.patch }, version);
   }
   return {
     text,
@@ -103,24 +80,22 @@ export function useRevisionDraft(suite: Suite, initial: SuiteRevision | undefine
     message,
     setMessage,
     messageError,
-    dirty: text !== baseline || message !== '',
-    blocked: invalid || !!messageError,
+    metadata,
+    dirty: initial === undefined || text !== baseline || message !== '' || metadata.dirty,
+    blocked: invalid || !!messageError || metadata.problems.length > 0,
     validity,
     catalog,
     problems,
     write,
-    next: ordinal + 1,
-    saved,
-    conflict,
-    closeConflict: () => setConflict(false),
-    save: () => submit(suite.version),
-    saveOver: (version: number) => {
-      setConflict(false);
-      write.newIntent();
-      submit(version);
-    },
+    next: saved.next,
+    saved: saved.saved,
+    conflict: saved.conflict,
+    closeConflict: saved.closeConflict,
+    save: () => submit(),
+    saveOver: (version: number) => submit(version),
     discard: () => {
       setText(baseline);
+      metadata.discard();
       reset();
       write.newIntent();
     },

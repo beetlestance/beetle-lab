@@ -208,6 +208,7 @@ export type CreateSuiteRequest = FromSchema<typeof S26.CreateSuiteRequest>;
 export type PatchSuiteRequest = FromSchema<typeof S26.PatchSuiteRequest>;
 export type CreateSuiteRevisionRequest = FromSchema<typeof S26.CreateSuiteRevisionRequest>;
 export type SuiteListQuery = FromSchema<typeof S26.SuiteListQuery>;
+export type SuiteMetadataChanges = FromSchema<typeof S26.SuiteMetadataChanges>;
 export type Suite = FromSchema<typeof S27.Suite>;
 export type SuiteRevisionSummary = FromSchema<typeof S27.SuiteRevisionSummary>;
 export type SuiteRevision = FromSchema<typeof S27.SuiteRevision>;
@@ -261,6 +262,6 @@ export interface ApiTypes {
   OrganizationSettings: OrganizationSettings; WorkspaceSettings: WorkspaceSettings; PatchInstallationSettingsRequest: PatchInstallationSettingsRequest; PatchOrganizationSettingsRequest: PatchOrganizationSettingsRequest;
   PatchWorkspaceSettingsRequest: PatchWorkspaceSettingsRequest; SuiteGroup: SuiteGroup; SuiteLatestRun: SuiteLatestRun; SuiteListSummary: SuiteListSummary;
   CreateSuiteRequest: CreateSuiteRequest; PatchSuiteRequest: PatchSuiteRequest; CreateSuiteRevisionRequest: CreateSuiteRevisionRequest; SuiteListQuery: SuiteListQuery;
-  Suite: Suite; SuiteRevisionSummary: SuiteRevisionSummary; SuiteRevision: SuiteRevision; SuitePage: SuitePage;
-  SuiteRevisionPage: SuiteRevisionPage; SuiteDescription: SuiteDescription; RevisionMessage: RevisionMessage;
+  SuiteMetadataChanges: SuiteMetadataChanges; Suite: Suite; SuiteRevisionSummary: SuiteRevisionSummary; SuiteRevision: SuiteRevision;
+  SuitePage: SuitePage; SuiteRevisionPage: SuiteRevisionPage; SuiteDescription: SuiteDescription; RevisionMessage: RevisionMessage;
 }

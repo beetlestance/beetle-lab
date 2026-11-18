@@ -45,6 +45,8 @@ export interface RevisionList extends ScopedPage {
  * Input pins derive from the shared k6 config; exact published scope/hash/size must
  * match inside the same transaction. Metadata declarations are not published bytes.
  * Revisions snapshot `savedAt`, optional `message` and the administrator name.
+ * Optional revision metadata uses the same transaction/version increment; it is
+ * part of intent, outside config digest, and never reapplied by receipt replay.
  */
 export interface SuiteStore {
   execute(command: SuiteCommand): Promise<Suite | SuiteRevision>;

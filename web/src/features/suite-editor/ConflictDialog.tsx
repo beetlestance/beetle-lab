@@ -62,7 +62,7 @@ function useLatest(suite: Suite) {
   };
 }
 
-function CopyButton({ draft, failed }: { draft: string; failed: (value: boolean) => void }) {
+function CopyButton({ draft, failed }: { draft: () => string; failed: (value: boolean) => void }) {
   const [done, setDone] = useState(false);
   return (
     <Button
@@ -70,7 +70,13 @@ function CopyButton({ draft, failed }: { draft: string; failed: (value: boolean)
       onClick={() => {
         const clipboard = typeof navigator !== 'undefined' ? navigator.clipboard : undefined;
         if (!clipboard) return failed(true);
-        clipboard.writeText(draft).then(
+        let text: string;
+        try {
+          text = draft();
+        } catch {
+          return failed(true);
+        }
+        clipboard.writeText(text).then(
           () => setDone(true),
           () => failed(true),
         );
@@ -92,7 +98,7 @@ export function ConflictDialog({
   saveOver,
 }: {
   suite: Suite;
-  draft: string;
+  draft: () => string;
   close: () => void;
   saveOver: (version: number) => void;
 }) {
@@ -126,6 +132,7 @@ export function ConflictDialog({
         </>
       }
     >
+      <p className="editor-note">The copy includes your configuration, suite details and revision message.</p>
       {!ready && !failed && <LoadingState label="Reading the latest revision…" />}
       {failed && (
         <div role="alert">
@@ -137,7 +144,7 @@ export function ConflictDialog({
       )}
       {copyFailed && (
         <p className="field-error">
-          Copying is not available here. Switch to the complete JSON and copy it from there.
+          Copying failed. Your configuration and suite details are still kept in this editor.
         </p>
       )}
     </Dialog>

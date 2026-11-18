@@ -248,7 +248,8 @@ describe('Suite / Overview and Start run', () => {
     fireEvent.click(await screen.findByRole('tab', { name: 'Revisions (1)' }));
     expect(await screen.findByRole('button', { name: 'Run revision 4' })).toBeDisabled();
     fireEvent.click(screen.getByRole('tab', { name: 'Edit' }));
-    expect(await screen.findByRole('button', { name: 'Edit name, folder and description' })).toBeDisabled();
+    expect(await screen.findByRole('textbox', { name: 'Name' })).toBeDisabled();
+    expect(screen.getByRole('textbox', { name: 'What this suite checks' })).toBeDisabled();
     expect(await screen.findByRole('textbox', { name: 'What changed' })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Save revision/ })).toBeDisabled();
     expect(fixture.records.every(record => record.method === 'GET')).toBe(true);

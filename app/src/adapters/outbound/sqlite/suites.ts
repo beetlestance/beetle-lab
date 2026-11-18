@@ -1,10 +1,12 @@
+import { sqlIntegerColumn } from './sql-columns.js';
+import { StorageError } from './protocol.js';
 import { captureSuiteRow, captureRevisionRow, suiteColumns, revisionProjection } from './suite-row.js';
 import type { RevisionRunCount } from './suite-row.js';
 import { normalizedScope } from './input-values.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeJson } from '@beetle/contracts';
 import { k6ConfigSchema } from '../execution-profiles/index.js';
-import type { Suite, SuiteRevision, WorkspaceScope } from '@beetle/contracts/api';
+import type { Suite, SuiteRevision, WorkspaceScope, SuiteMetadataChanges } from '@beetle/contracts/api';
 import type { SuiteCommand, SuiteKey } from '../../../ports/suites.js';
 import { digestMutationIntent } from '../../../application/namespaces/index.js';
 import { inputManifest } from '../../../domain/suites/index.js';
@@ -73,6 +75,7 @@ export class Suites {
     const scope = normalizedScope(command.request.scope);
     const suite = this.getSuite({ scope, id: command.suiteId });
     requireRule(suite.version === command.request.expectedVersion, 'conflict');
+    const metadata = command.request.metadata ? this.metadata(scope, suite, command.request.metadata) : null;
     const config = command.request.config;
     requireRule(k6ConfigSchema.validate(config));
     const manifest = inputManifest(config);
@@ -85,11 +88,7 @@ export class Suites {
         .get(scope.organizationId, scope.workspaceId, pin.id, pin.sha256, pin.bytes);
       requireRule(row !== undefined, 'not_found');
     }
-    const ordinalRow = this.db
-      .prepare('SELECT coalesce(max(ordinal),0) AS ordinal FROM suite_revisions WHERE suite_id=?')
-      .get(suite.id);
-    const previousOrdinal = Number(ordinalRow?.ordinal);
-    const ordinal = previousOrdinal === 0 ? 1 : nextVersion(previousOrdinal);
+    const ordinal = this.nextOrdinal(scope, suite.id);
     let canonicalConfig = '';
     digestMutationIntent(config, (text) => {
       canonicalConfig = text;
@@ -118,9 +117,53 @@ export class Suites {
     const insertPin = this.db.prepare('INSERT INTO revision_input_pins VALUES(?,?,?,?,?,?)');
     for (const pin of manifest)
       insertPin.run(lower(command.id), scope.organizationId, scope.workspaceId, pin.id, pin.sha256, pin.bytes);
-    this.db
-      .prepare('UPDATE suites SET current_revision_id=?,version=? WHERE id=?')
-      .run(lower(command.id), nextVersion(suite.version), suite.id);
+    const version = nextVersion(suite.version);
+    if (metadata)
+      this.db
+        .prepare(
+          `UPDATE suites SET current_revision_id=?,version=?,folder_id=?,name=?,folded_name=?,description=?
+      WHERE organization_id=? AND workspace_id=? AND id=?`,
+        )
+        .run(
+          lower(command.id),
+          version,
+          metadata.folder,
+          metadata.name,
+          foldedName(metadata.name),
+          metadata.description,
+          scope.organizationId,
+          scope.workspaceId,
+          suite.id,
+        );
+    else
+      this.db
+        .prepare('UPDATE suites SET current_revision_id=?,version=? WHERE id=?')
+        .run(lower(command.id), version, suite.id);
     return this.getRevision({ scope, id: command.id }, 'new');
+  }
+  private metadata(scope: WorkspaceScope, suite: Suite, change: SuiteMetadataChanges) {
+    const folder = lower(change.folderId ?? suite.folderId);
+    this.entities.folderRow(scope, folder);
+    const name = change.name === undefined ? suite.name : normalizedName(change.name);
+    const occupied = this.db
+      .prepare(
+        `SELECT 1 AS occupied FROM suites WHERE organization_id=? AND workspace_id=?
+      AND folder_id=? AND folded_name=? AND id<>? LIMIT 1`,
+      )
+      .get(scope.organizationId, scope.workspaceId, folder, foldedName(name), suite.id);
+    if (occupied) throw new StorageError('suite_name_conflict');
+    return { folder, name, description: nextDescription(change.description, suite) };
+  }
+  private nextOrdinal(scope: WorkspaceScope, suiteId: string): number {
+    const row = this.db
+      .prepare(
+        `SELECT ${sqlIntegerColumn('ordinal')} FROM suite_revisions
+      WHERE organization_id=? AND workspace_id=? AND suite_id=? ORDER BY suite_revisions.ordinal DESC LIMIT 1`,
+      )
+      .get(scope.organizationId, scope.workspaceId, suiteId);
+    if (row === undefined) return 1;
+    if (typeof row.ordinal !== 'number' || !Number.isSafeInteger(row.ordinal) || row.ordinal < 1)
+      throw new StorageError('unavailable');
+    return nextVersion(row.ordinal);
   }
 }

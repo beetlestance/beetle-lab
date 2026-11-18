@@ -108,6 +108,7 @@ export const STORAGE_ERROR_CODES = Object.freeze([
   'run_pinned',
   'cleanup_in_progress',
   'folder_name_conflict',
+  'suite_name_conflict',
   'folder_depth',
 ] as const);
 export type ErrorCode = (typeof STORAGE_ERROR_CODES)[number];

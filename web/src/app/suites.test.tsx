@@ -56,7 +56,7 @@ it('creates a k6 suite in the actual scoped root through the engine picker and o
   await waitFor(() => expect(document.activeElement).toBe(name));
   fireEvent.change(name, { target: { value: 'Checkout' } });
   fireEvent.click(screen.getByRole('button', { name: 'Create suite' }));
-  await screen.findByText('Suite version 1');
+  expect(await screen.findByRole('textbox', { name: 'Name' })).toHaveValue('Checkout');
   const body = fixture.records.find(record => record.method === 'POST')?.body;
   expect(body).toMatchObject({ name: 'Checkout', folderId: ids.root, scope });
   expect(body).not.toHaveProperty('description');

@@ -36,7 +36,7 @@
     "api/v2/settings-values.schema.json": "d5c9c083c702041f2f7ebbbb291aa0694bf01b3cf8d07ec1696cfebd6694c269",
     "api/v2/settings.schema.json": "aaf9c415020b25b04bce515956e2077bb74f15614a04c137d6211a345c1ec2f8",
     "api/v2/suite-listing.schema.json": "2aba95e18b1ab3d205d5e2a7590ad0d73fa0c3c59cf111845e08b5585117199b",
-    "api/v2/suite-requests.schema.json": "44c6b8e7f1184309304b634830d4a1df5dd79613701f5c09d5228622242b433b",
+    "api/v2/suite-requests.schema.json": "0116fdbd31844237a17491f3cc4e2ed866aea8312d00ef49f4c7ca5a65573a5e",
     "api/v2/suite.schema.json": "5124e1b8a2c85bb5107af81743bcf1d3a153cd5d4bd0f0c4345a01b15da353b5"
   },
   "operationsSha256": "9408145defbe9bd0b880339b66f8671d4fcea672a6d84f2907ce135c3f22cd9c",

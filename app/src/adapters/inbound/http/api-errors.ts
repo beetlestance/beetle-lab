@@ -43,7 +43,7 @@ export interface ApiErrorOptions {
   /** Optional fixed protection reason; only the closed contract values are emitted. */
   explain?: (error: unknown) => Reason | undefined;
   /** Closed field categories supplied by trusted composition, never raw paths or values. */
-  fieldIssue?: (error: unknown) => 'folder_name_conflict' | 'folder_depth' | undefined;
+  fieldIssue?: (error: unknown) => 'folder_name_conflict' | 'folder_depth' | 'suite_name_conflict' | undefined;
 }
 type Reason = NonNullable<ApiError['reason']>;
 const reasons: readonly Reason[] = ['active', 'pinned', 'pin_limit', 'cleanup_in_progress'];
@@ -136,6 +136,7 @@ function dependencies(error: unknown): Pick<ApiError, 'dependencies'> {
 function fieldErrors(error: unknown, code: Code, describe: ApiErrorOptions['fieldIssue']): ApiError['fields'] {
   try {
     const issue = describe?.(error);
+    if (issue === 'suite_name_conflict' && code === 'conflict') return [{ path: '/metadata/name', code: 'conflict' }];
     if (issue === 'folder_name_conflict' && code === 'conflict') return [{ path: '/name', code: 'conflict' }];
     if (issue === 'folder_depth' && code === 'invalid_value') return [{ path: '/parentFolderId', code: 'range' }];
   } catch {
