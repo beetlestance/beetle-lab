@@ -120,3 +120,5 @@ export {
 } from './live-history.js';
 
 export { runMetricOverviewMatches } from './metric-overview.js';
+
+export { chartSampleOrdinals, runChartHistoryMatches } from './run-chart-history.js';

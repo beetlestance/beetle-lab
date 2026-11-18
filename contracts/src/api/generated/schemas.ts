@@ -27,6 +27,7 @@ import { schema as ApiRetentionStatus } from './retention-status.js';
 import { schema as ApiRetentionTraversal } from './retention-traversal.js';
 import { schema as ApiRetention } from './retention.js';
 import { schema as ApiRunArtifacts } from './run-artifacts.js';
+import { schema as ApiRunChartHistory } from './run-chart-history.js';
 import { schema as ApiRunComparison } from './run-comparison.js';
 import { schema as ApiRunEvents } from './run-events.js';
 import { schema as ApiRunHistory } from './run-history.js';
@@ -43,7 +44,7 @@ import { schema as ApiSuiteListing } from './suite-listing.js';
 import { schema as ApiSuiteRequests } from './suite-requests.js';
 import { schema as ApiSuite } from './suite.js';
 /** Complete reference closure; runner result schemas are shared, never copied. */
-export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, TargetRuntimeReport, ApiCommon, ApiExportJobs, ApiInputColumns, ApiInputRequests, ApiInput, ApiInstallationStatus, LiveHistoryPrefix, LiveHistory, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetentionStatus, ApiRetentionTraversal, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunHistory, ApiRunMetricOverview, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteListing, ApiSuiteRequests, ApiSuite] as const);
+export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, TargetRuntimeReport, ApiCommon, ApiExportJobs, ApiInputColumns, ApiInputRequests, ApiInput, ApiInstallationStatus, LiveHistoryPrefix, LiveHistory, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetentionStatus, ApiRetentionTraversal, ApiRetention, ApiRunArtifacts, ApiRunChartHistory, ApiRunComparison, ApiRunEvents, ApiRunHistory, ApiRunMetricOverview, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteListing, ApiSuiteRequests, ApiSuite] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -155,6 +156,8 @@ export const apiMessageSchemas = freezeSchema({
   RetentionApplyReceipt: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/RetentionApplyReceipt' },
   ManualRunDeletionPreviewRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/retention#/$defs/ManualRunDeletionPreviewRequest' },
   RunArtifactPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-artifacts#/$defs/RunArtifactPage' },
+  RunChartPoint: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-chart-history#/$defs/RunChartPoint' },
+  RunChartHistory: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-chart-history#/$defs/RunChartHistory' },
   RunComparisonRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonRequest' },
   RunComparisonBinding: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonBinding' },
   RunComparisonResult: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonResult' },

@@ -1,3 +1,5 @@
+import { runChartHistoryMatches } from '../run-chart-history.js';
+import type { RunChartHistory } from '../generated/types.js';
 import { runMetricOverviewMatches } from '../metric-overview.js';
 import type { RunMetricOverview } from '../generated/types.js';
 import { jsonNodeCount } from '../../json.js';
@@ -265,6 +267,12 @@ function overviewOwnership(operation: ApiOperation, input: PreparedInput, value:
     });
   if (operation.response === 'RunMetricOverview')
     return runMetricOverviewMatches(value as RunMetricOverview, {
+      id: input.params.runId!,
+      attemptId: input.params.attemptId!,
+      scope: routeOwner(input) as WorkspaceScope,
+    });
+  if (operation.response === 'RunChartHistory')
+    return runChartHistoryMatches(value as RunChartHistory, {
       id: input.params.runId!,
       attemptId: input.params.attemptId!,
       scope: routeOwner(input) as WorkspaceScope,

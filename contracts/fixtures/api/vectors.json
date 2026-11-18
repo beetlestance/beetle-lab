@@ -928,5 +928,15 @@
     "path": "valid/run-metric-endpoint.json",
     "schema": "RunMetricEndpoint",
     "valid": true
+  },
+  {
+    "path": "valid/run-chart-history.json",
+    "schema": "RunChartHistory",
+    "valid": true
+  },
+  {
+    "path": "valid/run-chart-point.json",
+    "schema": "RunChartPoint",
+    "valid": true
   }
 ]

@@ -1,0 +1,32 @@
+{
+  "sequence": 1,
+  "startTimeMs": 1800000000000,
+  "endTimeMs": 1800000001000,
+  "gapBefore": false,
+  "requestCount": 9,
+  "httpFailures": 1,
+  "httpSamples": 9,
+  "httpP50": {
+    "source": "histogram-estimate",
+    "scale": 4,
+    "lower": 1,
+    "upper": 1,
+    "estimate": 1
+  },
+  "httpP95": {
+    "source": "histogram-estimate",
+    "scale": 4,
+    "lower": 1,
+    "upper": 1,
+    "estimate": 1
+  },
+  "httpP99": {
+    "source": "histogram-estimate",
+    "scale": 4,
+    "lower": 1,
+    "upper": 1,
+    "estimate": 1
+  },
+  "vus": 0,
+  "vusMax": null
+}

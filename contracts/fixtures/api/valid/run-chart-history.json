@@ -1,0 +1,125 @@
+{
+  "id": "00000000-0000-4000-8000-000000000070",
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "attemptId": "00000000-0000-4000-8000-000000000170",
+  "source": {
+    "generation": 1,
+    "manifestDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "numericArtifactId": "f952b21b-be56-4107-93d2-92f413d20df6",
+    "numericSha256": "9e0a8facce89e5713e7d51f5592035d2df26bef448e4945026b2d0466b10be0c",
+    "numericVersion": 3,
+    "measurementSourceTimeMs": 1800000000000,
+    "coverage": {
+      "complete": true,
+      "latePoints": 0,
+      "markerDelayDroppedBuckets": 0
+    }
+  },
+  "windows": 3,
+  "sampled": false,
+  "points": [
+    {
+      "sequence": 1,
+      "startTimeMs": 1800000000000,
+      "endTimeMs": 1800000001000,
+      "gapBefore": false,
+      "requestCount": 9,
+      "httpFailures": 1,
+      "httpSamples": 9,
+      "httpP50": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 1,
+        "upper": 1,
+        "estimate": 1
+      },
+      "httpP95": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 1,
+        "upper": 1,
+        "estimate": 1
+      },
+      "httpP99": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 1,
+        "upper": 1,
+        "estimate": 1
+      },
+      "vus": 0,
+      "vusMax": null
+    },
+    {
+      "sequence": 2,
+      "startTimeMs": 1800000001000,
+      "endTimeMs": 1800000002000,
+      "gapBefore": false,
+      "requestCount": 9,
+      "httpFailures": 1,
+      "httpSamples": 9,
+      "httpP50": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 1,
+        "upper": 1,
+        "estimate": 1
+      },
+      "httpP95": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 1,
+        "upper": 1,
+        "estimate": 1
+      },
+      "httpP99": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 1,
+        "upper": 1,
+        "estimate": 1
+      },
+      "vus": 1,
+      "vusMax": null
+    },
+    {
+      "sequence": 3,
+      "startTimeMs": 1800000002000,
+      "endTimeMs": 1800000003000,
+      "gapBefore": false,
+      "requestCount": 9,
+      "httpFailures": 1,
+      "httpSamples": 9,
+      "httpP50": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 1,
+        "upper": 1,
+        "estimate": 1
+      },
+      "httpP95": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 1,
+        "upper": 1,
+        "estimate": 1
+      },
+      "httpP99": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 1,
+        "upper": 1,
+        "estimate": 1
+      },
+      "vus": 2,
+      "vusMax": null
+    }
+  ],
+  "observedPeakRequestsPerSecond": 9,
+  "knownRequestWindows": 3,
+  "reason": null
+}

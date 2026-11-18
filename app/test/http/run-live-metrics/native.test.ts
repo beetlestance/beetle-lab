@@ -17,7 +17,7 @@ const history: RunMetricsService = {
     getRunMetricSamples: async () => {
       throw new Error('unused');
     },
-    getRunMetricOverview: async () => { throw new Error('Unexpected metric overview read'); }, getRunLatencyAttribution: async () => {
+    getRunChartHistory: async () => { throw new Error('Unexpected chart-history read'); }, getRunMetricOverview: async () => { throw new Error('Unexpected metric overview read'); }, getRunLatencyAttribution: async () => {
       throw new Error('unused');
     },
   },

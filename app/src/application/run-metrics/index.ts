@@ -1,3 +1,4 @@
+import { chartHistory } from './chart-history.js';
 import { metricOverview } from './overview.js';
 import type { RunKey } from '../../ports/runs.js';
 import { captureHistoryKey, historyProjection } from './history.js';
@@ -6,6 +7,7 @@ import { MetricReadError } from '../../ports/run-metrics.js';
 import {
   captureRunMetricSeriesCursor,
   runMetricOverviewMatches,
+  runChartHistoryMatches,
   encodeRunMetricSeriesCursor,
   runMetricSeriesPageMatches,
   runMetricSamplesPageMatches,
@@ -15,6 +17,7 @@ import type { RunMetricSeriesPage } from '@beetle/contracts/api';
 import type {
   RunMetricLookupQuery,
   RunMetricsService,
+  RunMetricsReader,
   RunMetricServiceOptions,
   MetricReadContext,
   RunMetricSeriesQuery,
@@ -98,57 +101,69 @@ export function createRunMetricsService(options: RunMetricServiceOptions): RunMe
         true,
       );
     },
-    reader: Object.freeze({
-      getRunMetricOverview(q: RunKey & { attemptId: string }, c: MetricReadContext) {
-        let key;
-        try {
-          key = captureHistoryKey(q);
-        } catch (error) {
-          return Promise.reject(error);
-        }
-        return lane.run({ ...key, limit: 1 }, c, async (captured, p) => {
-          const value = metricOverview(captured, p);
-          return validateApi('RunMetricOverview', value).ok && runMetricOverviewMatches(value, captured)
-            ? value
-            : fail();
-        });
-      },
-      listRunMetricSeries(q: RunMetricSeriesQuery, c: MetricReadContext) {
-        return lane.run(q, c, async (captured, p) => {
-          const value = series(captured, p);
-          if (!validateApi('RunMetricSeriesPage', value).ok || !runMetricSeriesPageMatches(value, captured))
-            return fail();
-          return value;
-        });
-      },
-      getRunMetricSamples(q: RunMetricSamplesQuery, c: MetricReadContext) {
-        return lane.run(q, c, async (captured, p, io) => {
-          if (!io || !p.archive) throw new MetricReadError('unavailable');
-          const query = captured as RunMetricSamplesQuery;
-          if (
-            !validateApi('RunMetricSamplesQuery', {
-              limit: query.limit,
-              seriesOrdinal: query.seriesOrdinal,
-              ...(query.cursor === undefined ? {} : { cursor: query.cursor }),
-              ...(query.fromTimeMs === undefined ? {} : { fromTimeMs: query.fromTimeMs }),
-              ...(query.toTimeMs === undefined ? {} : { toTimeMs: query.toTimeMs }),
-            }).ok
-          )
-            throw new SemanticError('invalid_value');
-          const value = await samples(io, p.archive, query);
-          if (!validateApi('RunMetricSamplesPage', value).ok || !runMetricSamplesPageMatches(value, query))
-            return fail();
-          return value;
-        });
-      },
-      getRunLatencyAttribution(q: RunKey & { attemptId: string }, c: MetricReadContext) {
-        return lane.run({ ...q, limit: 1 }, c, async (captured, p, io) => {
-          const value = await latencyAttribution(captured, p, io);
-          return validateApi('RunLatencyAttribution', value).ok ? value : fail();
-        });
-      },
-    }),
+    reader: createReader(lane),
     close: () => lane.close(),
+  });
+}
+function createReader(lane: MetricReadLane): RunMetricsReader {
+  return Object.freeze({
+    getRunChartHistory(q: RunKey & { attemptId: string }, c: MetricReadContext) {
+      let key;
+      try {
+        key = captureHistoryKey(q);
+      } catch (error) {
+        return Promise.reject(error);
+      }
+      return lane.run({ ...key, limit: 1 }, c, async (captured, p, io) => {
+        const value = await chartHistory(captured, p, io);
+        return validateApi('RunChartHistory', value).ok && runChartHistoryMatches(value, captured) ? value : fail();
+      });
+    },
+    getRunMetricOverview(q: RunKey & { attemptId: string }, c: MetricReadContext) {
+      let key;
+      try {
+        key = captureHistoryKey(q);
+      } catch (error) {
+        return Promise.reject(error);
+      }
+      return lane.run({ ...key, limit: 1 }, c, async (captured, p) => {
+        const value = metricOverview(captured, p);
+        return validateApi('RunMetricOverview', value).ok && runMetricOverviewMatches(value, captured) ? value : fail();
+      });
+    },
+    listRunMetricSeries(q: RunMetricSeriesQuery, c: MetricReadContext) {
+      return lane.run(q, c, async (captured, p) => {
+        const value = series(captured, p);
+        if (!validateApi('RunMetricSeriesPage', value).ok || !runMetricSeriesPageMatches(value, captured))
+          return fail();
+        return value;
+      });
+    },
+    getRunMetricSamples(q: RunMetricSamplesQuery, c: MetricReadContext) {
+      return lane.run(q, c, async (captured, p, io) => {
+        if (!io || !p.archive) throw new MetricReadError('unavailable');
+        const query = captured as RunMetricSamplesQuery;
+        if (
+          !validateApi('RunMetricSamplesQuery', {
+            limit: query.limit,
+            seriesOrdinal: query.seriesOrdinal,
+            ...(query.cursor === undefined ? {} : { cursor: query.cursor }),
+            ...(query.fromTimeMs === undefined ? {} : { fromTimeMs: query.fromTimeMs }),
+            ...(query.toTimeMs === undefined ? {} : { toTimeMs: query.toTimeMs }),
+          }).ok
+        )
+          throw new SemanticError('invalid_value');
+        const value = await samples(io, p.archive, query);
+        if (!validateApi('RunMetricSamplesPage', value).ok || !runMetricSamplesPageMatches(value, query)) return fail();
+        return value;
+      });
+    },
+    getRunLatencyAttribution(q: RunKey & { attemptId: string }, c: MetricReadContext) {
+      return lane.run({ ...q, limit: 1 }, c, async (captured, p, io) => {
+        const value = await latencyAttribution(captured, p, io);
+        return validateApi('RunLatencyAttribution', value).ok ? value : fail();
+      });
+    },
   });
 }
 function catalogueCursor(cursor: string | undefined) {

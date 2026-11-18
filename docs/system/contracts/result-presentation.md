@@ -16,6 +16,20 @@ a p95-ordered endpoint table with a bounded name filter and explicit omissions.
 
 Native threshold values/limits: [reading contract](threshold-readings.md).
 
+## Recorded charts
+
+`getRunChartHistory` uses one full-SHA archive pass in the existing metric-read
+lane. It returns at most 900 actual source windows, evenly selected with both
+endpoints preserved, pooled HTTP percentile estimates, request/failure counts and
+actual VU gauges. Missing readings remain null; gaps remain explicit.
+Observed peak request rate and known-request-window count use every scanned
+window, including windows omitted from the plot. This is recorded one-second
+traffic, not a configured rate or an instantaneous peak guarantee.
+Limits stay 3,600 windows, 32 MiB data and 64 request labels; larger sources return
+`too_large` with no points. Replies are at most 1 MiB / 65,536 JSON nodes.
+Scope/attempt/source, deterministic ordinals, chronology, gap flags and peak bounds
+are checked on both sides. No chart UI consumes this new route yet.
+
 ## Ownership
 
 The backend owns this projection. The browser consumes only the generated DTO; it must
@@ -27,8 +41,12 @@ history can read it without starting work. No mutation or current-work polling.
 
 | Source | SHA-256 |
 | --- | --- |
-| `app/src/application/run-metrics/overview.ts` | `9a665e39c059` |
+| `app/src/application/run-metrics/overview.ts` | `d32759ade40d` |
 | `contracts/api/v2/run-metric-overview.schema.json` | `dfde37122018` |
 | `contracts/src/api/metric-overview.ts` | `4217eaad4700` |
 | `web/src/features/runs/result/Overview.tsx` | `60ccdb6036ab` |
 | `web/src/features/runs/result/useResultReads.ts` | `474ff2bb4a8d` |
+| `app/src/application/run-metrics/chart-history.ts` | `8c4d276be252` |
+| `app/src/application/run-metrics/scan.ts` | `66af9695701f` |
+| `contracts/api/v2/run-chart-history.schema.json` | `a6611d151c82` |
+| `contracts/src/api/run-chart-history.ts` | `760adceea5f8` |

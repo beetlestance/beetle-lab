@@ -51,6 +51,7 @@ export function registerRunMetricRoutes(server: FastifyInstance, options: Option
       { signalFor: (request) => owners.forRequest(request).signal },
     );
     registerOverview(routes, options, owners);
+    registerChartHistory(routes, options, owners);
     registerApiOperation(
       routes,
       'getRunLatencyAttribution',
@@ -91,6 +92,23 @@ function registerOverview(routes: FastifyInstance, options: Options, owners: Req
       const owner = owners.forSignal(signal);
       return owner.run(() =>
         options.service.reader.getRunMetricOverview(
+          { id: params.runId.toLowerCase(), scope: scope(params), attemptId: params.attemptId.toLowerCase() },
+          owner,
+        ),
+      );
+    },
+    { signalFor: (request) => owners.forRequest(request).signal },
+  );
+}
+
+function registerChartHistory(routes: FastifyInstance, options: Options, owners: RequestLifetimes) {
+  registerApiOperation(
+    routes,
+    'getRunChartHistory',
+    ({ params, signal }) => {
+      const owner = owners.forSignal(signal);
+      return owner.run(() =>
+        options.service.reader.getRunChartHistory(
           { id: params.runId.toLowerCase(), scope: scope(params), attemptId: params.attemptId.toLowerCase() },
           owner,
         ),

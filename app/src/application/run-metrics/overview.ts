@@ -42,7 +42,7 @@ function latency(totals: readonly SeriesTotal[]): RunMetricTrend | null {
   }
   return merged ? (projectMetricValue(merged) as RunMetricTrend) : null;
 }
-function traffic(totals: readonly SeriesTotal[], durationMs: number | null) {
+export function httpTraffic(totals: readonly SeriesTotal[], durationMs: number | null) {
   const summary = summarizeK6HttpTotals(totals);
   const failure =
     summary.httpSamples === null || summary.httpFailures === null
@@ -128,10 +128,10 @@ function projectOverview(key: RunKey & { attemptId: string }, p: Publication): R
   const labels = [...groups.keys()].sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)));
   const endpoints: RunMetricEndpoint[] = labels
     .slice(0, 64)
-    .map((request) => ({ request, ...traffic(groups.get(request)!, durationMs) }));
+    .map((request) => ({ request, ...httpTraffic(groups.get(request)!, durationMs) }));
   return {
     ...base,
-    ...traffic(totals, durationMs),
+    ...httpTraffic(totals, durationMs),
     checks: checks(totals),
     droppedIterations: dropped(totals),
     endpoints,

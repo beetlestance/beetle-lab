@@ -25,11 +25,17 @@ it('serves exact wrapper history through native publication, actual metadata, au
     expect(range.ok && range.value.items.map(p => p.windowOrdinal)).toEqual([2]);
     const attribution = await http.client.getRunLatencyAttribution({params});
     expect(attribution).toMatchObject({ok: true, value: {windows: 3, rise: null, reason: 'too_few_windows'}});
+    const charts = await http.client.getRunChartHistory({params});
+    expect(charts).toMatchObject({ok:true,value:{windows:3,reason:null,sampled:false,knownRequestWindows:0,observedPeakRequestsPerSecond:null}});
+    expect(charts.ok && charts.value.points.map(point=>point.sequence)).toEqual([1,2,3]);
     const overview = await http.client.getRunMetricOverview({params});
     expect(overview).toMatchObject({ok:true,value:{availability:'ready',endpoints:[{request:'r0'}],omittedEndpoints:0}});
     expect(f.facts()).toEqual(before);
     const overviewPath = `/api/v2/organizations/${params.organizationId}/workspaces/${params.workspaceId}/runs/${params.runId}/attempts/${params.attemptId}/metrics/overview`;
     expect((await fetch(http.origin+overviewPath)).status).toBe(401);
+    expect((await fetch(http.origin+overviewPath.replace('/overview','/chart-history'))).status).toBe(401);
+    const foreignCharts=await http.client.getRunChartHistory({params:{...params,organizationId:'00000000-0000-4000-8000-000000000999'}});
+    expect(foreignCharts).toMatchObject({ok:false,error:{status:404}});
     const foreignOverview=await http.client.getRunMetricOverview({params:{...params,organizationId:'00000000-0000-4000-8000-000000000999'}});
     expect(foreignOverview).toMatchObject({ok:false,error:{status:404}});
     const url = `${http.origin}/api/v2/organizations/${params.organizationId}/workspaces/${params.workspaceId}/runs/${params.runId}/attempts/${params.attemptId}/metrics`;

@@ -2,6 +2,7 @@ import type { RunHistoryMetricReader } from './run-history.js';
 import type {
   RunLatencyAttribution,
   RunMetricOverview,
+  RunChartHistory,
   RunMetricKey,
   RunMetricSeries,
   RunMetricSeriesPage,
@@ -27,6 +28,10 @@ export interface RunMetricSamplesQuery extends RunMetricSeriesQuery {
 }
 /** One original operation; callers retain cancellation/deadline ownership. */
 export interface RunMetricsReader {
+  getRunChartHistory(
+    query: RunKey & { readonly attemptId: string },
+    context: MetricReadContext,
+  ): Promise<RunChartHistory>;
   getRunMetricOverview(
     query: RunKey & { readonly attemptId: string },
     context: MetricReadContext,

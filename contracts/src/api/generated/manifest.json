@@ -28,6 +28,7 @@
     "api/v2/retention-traversal.schema.json": "05fcec431cf1dd9348105c36da8cdfbef98e2b9a62d13c67ecb08777169aa65a",
     "api/v2/retention.schema.json": "c87ee28dbf6af3218dbca12c07bc151de906624bea8072c36ea5e7702dde4b90",
     "api/v2/run-artifacts.schema.json": "093708ae3c917b759125fc08a3dffc31c0978bb122472b824a67d59f4554a59e",
+    "api/v2/run-chart-history.schema.json": "87f1727c0243876ca74edfb7b41d66a9e877f655f4cd630a55ec19f8f644d116",
     "api/v2/run-comparison.schema.json": "fecf3d989b05378210f1166b8a9e9a90f2601ac9e32e61cc3aadaca50a5a63f9",
     "api/v2/run-events.schema.json": "1e9f5d24aaac78ff7909396ef2d056c3c963891d7874e4cee45052c545b21dbf",
     "api/v2/run-history.schema.json": "82d784f10985ba7e92ad9966d9867ed2b01a660d4554839f8b11c9bdca90a526",
@@ -44,7 +45,7 @@
     "api/v2/suite-requests.schema.json": "0116fdbd31844237a17491f3cc4e2ed866aea8312d00ef49f4c7ca5a65573a5e",
     "api/v2/suite.schema.json": "5124e1b8a2c85bb5107af81743bcf1d3a153cd5d4bd0f0c4345a01b15da353b5"
   },
-  "operationsSha256": "a0a39fd41c195b416fd325c7955148cfe55c694773c77f712c477019112bc1c6",
+  "operationsSha256": "e9adfd19c183459b732e516e5269d5d632ba2ce0ee145236cdb6c7e0f6f0386b",
   "outputs": [
     "common.inference.ts",
     "common.ts",
@@ -83,6 +84,8 @@
     "retention.ts",
     "run-artifacts.inference.ts",
     "run-artifacts.ts",
+    "run-chart-history.inference.ts",
+    "run-chart-history.ts",
     "run-comparison.inference.ts",
     "run-comparison.ts",
     "run-events.inference.ts",
