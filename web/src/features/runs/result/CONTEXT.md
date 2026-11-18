@@ -7,8 +7,9 @@ and run/artifact/metric/timeline polling stops. Stored state and outcome stay ex
 
 Reads (useResultReads), each under the scoped run key and removed on unmount:
 engine result for the active attempt, the run's own history summary (one listRuns
-row by exact ID, limit 1), suite and saved revision. Read-only and restored-backup
-state come from useSessionAccess (app/session.tsx), not a session read.
+row by exact ID, limit 1), suite, saved revision and getRunMetricOverview. The
+overview shares read admission and never polls; errors retire cached figures.
+Read-only and restored-backup state comes from useSessionAccess, not a session read.
 
 - headline.ts: variant (passed, failed, not judged, cancelled, out of memory,
   output full, incomplete, errored, pending) and the title and sentence. Sentence
@@ -20,13 +21,16 @@ state come from useSessionAccess (app/session.tsx), not a session read.
   re-reads the run and history pages. pin_limit and cleanup_in_progress explained.
 - RunNote: setRunNote with expectedNoteVersion; conflict re-reads the run.
 - useWrite: single-flight write, identical replay only on an unknown outcome.
-- Sections: summary tiles, thresholds (pass/fail, id, purpose), script version.
+- Overview: five pooled summary tiles and a <=64-row endpoint table, p95 order,
+  name filter, explicit missing values/omissions. Histogram estimates stay labelled.
+- Sections: fallback history tiles, thresholds (pass/fail, id, purpose), script version.
 - ReportTabs: Report, What happened, Artifacts, Diagnostics; under 760px the tabs
   become a section list (Phone / Run result).
 - DeleteRun: dialog composing retention's RetentionControls; a pinned run offers
   Unpin first.
 
-Not shown because the API has no value: threshold values and limits, p50/p99,
-peak rate, checks %, dropped iterations, endpoint table, previous-run delta.
+Still pending in these screens: threshold readings/limits, peak rate, previous-run
+delta and the designed multi-chart layout. The overview route supplies p50/p99,
+checks, dropped iterations and endpoint totals.
 
 Checks: npx vitest run web/src/features/runs/result web/src/features/runs/detail.test.tsx

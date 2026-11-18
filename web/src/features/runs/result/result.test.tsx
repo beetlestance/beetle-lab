@@ -2,6 +2,7 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import metricOverview from '../../../../../contracts/fixtures/api/valid/run-metric-overview.json' with { type: 'json' };
 import { pendingRunHistorySummary } from '@beetle/contracts/api';
 import type { Run, RunHistorySummary } from '@beetle/contracts/api';
 import { routes } from '../../../app/routes.js';
@@ -182,4 +183,29 @@ it('offers Unpin before deletion for a pinned run and the retention preview othe
   fireEvent.click(await screen.findByRole('button', { name: 'Delete run…' }));
   expect(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete this run…' })).toBeVisible();
   expect(g.records.filter((record) => record.method !== 'GET')).toHaveLength(0);
+});
+
+it('consumes the scoped metric overview without issuing any write or per-endpoint read',async()=>{
+ const current=finished();const f=fixture(current,request=>request.path.endsWith('/metrics/overview')?json({...metricOverview,id:current.id,scope:current.scope,attemptId:current.activeAttemptId}):undefined);
+ mount(f.client,path);
+ expect(await screen.findByText('of checks passed')).toBeVisible();
+ expect(screen.getByRole('table',{name:'Whole-run endpoint measurements'})).toBeVisible();
+ expect(f.records.filter(record=>record.path.endsWith('/metrics/overview'))).toHaveLength(1);
+ expect(f.records.filter(record=>record.method!=='GET')).toHaveLength(0);
+});
+
+it('lets an operator recheck pending measurements without automatically polling or starting work',async()=>{
+ const current=finished();let ready=false;
+ const complete={...metricOverview,id:current.id,scope:current.scope,attemptId:current.activeAttemptId};
+ const pending={...complete,availability:'pending',source:null,testDurationMs:null,requestCount:null,requestsPerSecond:null,
+  failure:null,latency:null,checks:null,droppedIterations:null,endpoints:[],omittedEndpoints:0};
+ const f=fixture(current,request=>request.path.endsWith('/metrics/overview')?json(ready?complete:pending):undefined);
+ mount(f.client,path);
+ const check=await screen.findByRole('button',{name:'Check measurements'});
+ expect(screen.queryByText('of checks passed')).not.toBeInTheDocument();
+ expect(f.records.filter(record=>record.path.endsWith('/metrics/overview'))).toHaveLength(1);
+ ready=true;fireEvent.click(check);
+ expect(await screen.findByText('of checks passed')).toBeVisible();
+ expect(f.records.filter(record=>record.path.endsWith('/metrics/overview'))).toHaveLength(2);
+ expect(f.records.filter(record=>record.method!=='GET')).toHaveLength(0);
 });

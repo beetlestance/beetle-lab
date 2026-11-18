@@ -31,6 +31,14 @@ export function useResultReads(run: Run) {
       return value && value.attemptId.toLowerCase() === attempt ? value : null;
     },
   });
+  const overview = useQuery({
+    queryKey: [...key, 'overview', attempt],
+    refetchOnReconnect: false,
+    queryFn: ({ signal }) =>
+      readResult(
+        api.getRunMetricOverview({ params: { ...params, runId: run.id, attemptId: run.activeAttemptId }, signal }),
+      ),
+  });
   const suite = useQuery({
     queryKey: [...key, 'suite', run.suiteId.toLowerCase()],
     queryFn: ({ signal }) => readResult(api.getSuite({ params: { ...params, suiteId: run.suiteId }, signal })),
@@ -42,7 +50,7 @@ export function useResultReads(run: Run) {
   });
   useEffect(
     () => () => {
-      for (const part of ['result', 'summary', 'suite', 'revision']) {
+      for (const part of ['result', 'summary', 'suite', 'revision', 'overview']) {
         const queryKey = [...queryKeys.run(organizationId, workspaceId, run.id), part];
         void client.cancelQueries({ queryKey });
         client.removeQueries({ queryKey });
@@ -56,6 +64,7 @@ export function useResultReads(run: Run) {
   const view = resultView({ scope: run.scope, runId: run.id, run, result: engine, status });
   return {
     result: { query: result, status, view },
+    overview,
     summary: summary.data ?? null,
     summaryStatus: summary.isPending ? 'loading' : summary.isError ? 'error' : 'ready',
     suite: suite.data,

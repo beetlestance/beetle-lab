@@ -16,6 +16,8 @@ import { ReportTabs } from './ReportTabs.js';
 import { ResultHeader } from './ResultHeader.js';
 import { RunNote } from './RunNote.js';
 import { ScriptVersion, SummaryTiles, Thresholds } from './Sections.js';
+import { MetricSummary, ResultEndpoints, OverviewStatus, readyOverview } from './Overview.js';
+import { readPlan } from '../live/plan.js';
 import { useResultReads } from './useResultReads.js';
 import type { ResultReads } from './useResultReads.js';
 import './result.css';
@@ -38,6 +40,7 @@ export function RunResultView({ run, scope, runId, refresh }: RunSnapshotProps &
 const sections = [
   ['summary', 'Summary'],
   ['thresholds', 'Thresholds'],
+  ['endpoints', 'Endpoints'],
   ['charts', 'Charts'],
   ['target', 'Target runtime'],
   ['report', 'Report'],
@@ -48,6 +51,8 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
   const [deleting, setDeleting] = useState(false);
   const { readOnly, restoredBackup: restored } = useSessionAccess();
   const view = reads.result.view;
+  const ready = readyOverview(reads.overview);
+  const plan = readPlan(reads.revision?.config);
   const engine = view.status === 'ready' ? view.result : null;
   const { title, sentence } = headline(run, reads.suite?.name, reads.summary, engine, readOnly);
   return (
@@ -69,16 +74,22 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
         ))}
       </nav>
       <section id="result-summary" className="result-section" aria-labelledby="result-summary-title">
-        <h2 id="result-summary-title" className="result-section-title">
+        <h2 id="result-summary-title" className="sr-only">
           Summary
         </h2>
-        <SummaryTiles summary={reads.summary} status={reads.summaryStatus} />
+        <OverviewStatus query={reads.overview} />
+        {ready ? (
+          <MetricSummary overview={ready} />
+        ) : (
+          <SummaryTiles summary={reads.summary} status={reads.summaryStatus} />
+        )}
         <RunNote run={run} readOnly={readOnly} />
       </section>
       <div className="result-split">
         <ThresholdSection reads={reads} engine={engine} variant={variantOf(run)} />
         <ScriptVersion run={run} suite={reads.suite} revision={reads.revision} failed={reads.revisionQuery.isError} />
       </div>
+      <ResultEndpoints overview={ready} requests={plan.requests} />
       <section id="result-charts" className="result-section" aria-label="Charts">
         <RunMetrics run={run} terminal />
       </section>

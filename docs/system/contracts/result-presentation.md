@@ -10,11 +10,13 @@ At most 64 endpoint rows are returned, ordered by request ordinal, with an expli
 omitted count. Pooled totals include every admitted request, not just returned rows.
 It never scans windows or derives a peak from a configured load. Scope, attempt,
 source coverage, ratio/rate semantics and a 128 KiB response cap bind the reply.
-The result UI consumer remains pending; this route adds no background UI reads.
+The result UI reads once per entry through shared read admission, never polls,
+and hides cached numeric figures after a read error. It renders pooled tiles and
+a p95-ordered endpoint table with a bounded name filter and explicit omissions.
 
 ## Ownership
 
-The backend owns this read. The browser consumes only the generated DTO; it must
+The backend owns this projection. The browser consumes only the generated DTO; it must
 not pool percentile estimates or treat excluded endpoint rows as the entire run.
 Ready source identity includes the numeric artifact hash and manifest; restored
 history can read it without starting work. No mutation or current-work polling.
@@ -26,3 +28,5 @@ history can read it without starting work. No mutation or current-work polling.
 | `app/src/application/run-metrics/overview.ts` | `9a665e39c059` |
 | `contracts/api/v2/run-metric-overview.schema.json` | `dfde37122018` |
 | `contracts/src/api/metric-overview.ts` | `4217eaad4700` |
+| `web/src/features/runs/result/Overview.tsx` | `60ccdb6036ab` |
+| `web/src/features/runs/result/useResultReads.ts` | `e2661d0a6060` |
