@@ -109,6 +109,7 @@ export class Sampler implements TargetSamplingOwner {
       this.stop();
       return;
     }
+    await this.options.record?.(sample, this.controller.signal);
     this.samples.push(sample);
     this.retainedBytes += bytes;
     if (sample.status === 'unavailable') this.missed += 1;
