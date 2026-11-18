@@ -65,19 +65,29 @@ The browser validates the bounded JSON, subset SHA-256, scope, epoch and current
 archive identity before projecting at most 900 actual chart points. Archive window
 ordinals and feed publication sequences remain separate. Charts deduplicate shared
 windows, retain endpoints, label sampled coverage, and break across missing source
-time. Target samples are available from the endpoint; browser target backfill is
-not wired yet and still retains only page-received recent observations.
+time. The same bootstrap merges all captured target samples and later live readings,
+keeping at most 256 points and full fixed-key values, phases, reasons and nulls.
+Recorded ordinals preserve duplicate UTC observations; overlapping live projections
+cannot overwrite recorded values. The target UUID/interval/equal-count digest
+baseline is detached, survives omitted hints and resets on scope/epoch/subset changes.
+Unplottable timestamps reject presentation rather than yielding invalid geometry.
+Only a verified producer prefix count of 256 marks the hard observation limit;
+page-buffer capacity alone does not. Captions distinguish recorded and page-only
+observations. Request/target charts share hover without interpolated values.
+Undeclared target units stay as reported; unit-format acceptance remains separate.
 
 ## Anchors
 
 | Code | Reviewed |
 | --- | --- |
 | `web/src/features/runs/live-history/` | `92d2e3aefd8a` |
-| `web/src/features/runs/live/backfill.ts` | `a6a0edea4d2f` |
-| `web/src/features/runs/live/history.ts` | `cfa37714c424` |
+| `web/src/features/runs/live/backfill.ts` | `ff1ebd353e08` |
+| `web/src/features/runs/live/history.ts` | `2113836ba0b9` |
 | `app/src/application/live-attempt/` | `f142d17a3e6c` |
 | `app/src/application/run-live-history/` | `ddb71f298e44` |
 | `app/src/adapters/inbound/http/run-live-history/` | `5f005441d44a` |
 | `app/src/adapters/outbound/runner/live-history.ts` | `3565a7c2df1a` |
 | `agent/src/collection/live-history/` | `602b4e92daa8` |
 | `contracts/src/api/live-history.ts` | `5eb979384e3d` |
+| `web/src/features/runs/live/current.ts` | `3b7b190f7469` |
+| `web/src/features/runs/live/target-history.ts` | `bffc0d996bc2` |

@@ -2,8 +2,8 @@
 
 Owner: `engines/k6/wrapper/attempt/target.ts`, composing the target sampler and
 `engines/k6/wrapper/target-archive`. This records samples and carries their optional prefix in approved live frames.
-Native/public active history now returns the captured target samples; browser
-backfill is not wired yet. Each live reading frame still carries at most eight.
+Native/public active history returns captured target samples and the browser
+merges them on entry/reconnect. Each live frame still carries at most eight.
 
 ## Limits and authority
 

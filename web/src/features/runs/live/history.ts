@@ -1,11 +1,14 @@
-import type { LiveMetricSnapshot, LiveTargetSample } from '@beetle/contracts/api';
+import type { LiveMetricSnapshot } from '@beetle/contracts/api';
+import { targetFrame } from './target-history.js';
+import type { TargetHistory } from './target-history.js';
+export type { TargetPoint } from './target-history.js';
 import type { LiveFigures, MetricWindowView } from './model.js';
 
 /**
  * Bounded actual live and recorded source windows, never interpolated values.
  * Source sequence domains stay distinct from live publication counters. Target
- * samples are page-received values, deduplicated by observation time; omitted
- * target samples break their line.
+ * samples combine actual archive observations and live readings. Archive ordinals
+ * remain distinct even when UTC timestamps repeat; omitted live readings break lines.
  */
 export const HISTORY_LIMIT = 900;
 
@@ -24,13 +27,6 @@ export interface LivePoint {
   readonly vus: number | null;
   readonly vusMax: number | null;
 }
-export interface TargetPoint {
-  readonly t: number;
-  readonly observedAtMs: number;
-  readonly gapBefore: boolean;
-  readonly status: LiveTargetSample['status'];
-  readonly values: LiveTargetSample['values'];
-}
 export interface HistoryCoverage {
   readonly throughTimeMs: number;
   readonly windows: number;
@@ -39,17 +35,15 @@ export interface HistoryCoverage {
   readonly dataArtifactId: string;
   readonly indexArtifactId: string;
 }
-export interface LiveHistory {
+export interface LiveHistory extends TargetHistory {
   readonly lastPublishedSequence: number;
   readonly liveSampled: boolean;
   readonly coverage: HistoryCoverage | null;
   readonly points: readonly LivePoint[];
-  readonly target: readonly TargetPoint[];
   /** Wall time (ms) of the run origin used for `t`. */
   readonly originMs: number;
   /** True when the origin is the run's start; false when it is the first window this page saw. */
   readonly fromStart: boolean;
-  readonly intervalMs: number | null;
 }
 
 export function emptyHistory(startedAt: string | null | undefined): LiveHistory {
@@ -60,13 +54,13 @@ export function emptyHistory(startedAt: string | null | undefined): LiveHistory 
     liveSampled: false,
     coverage: null,
     target: [],
+    targetCoverage: null,
+    targetLimited: false,
     originMs: Number.isFinite(start) ? start : Number.NaN,
     fromStart: Number.isFinite(start),
     intervalMs: null,
   };
 }
-
-const capTarget = (items: TargetPoint[]) => (items.length > 256 ? items.slice(-256) : items);
 
 export function metricPoint(
   frame: MetricWindowView,
@@ -90,23 +84,6 @@ export function metricPoint(
   };
 }
 
-/** Target samples newer than the last kept one; omitted samples mark a gap before the first. */
-function freshTarget(history: LiveHistory, frame: LiveMetricSnapshot, originMs: number): TargetPoint[] {
-  const block = frame.target;
-  if (!block) return [];
-  const seen = history.target.at(-1)?.observedAtMs ?? -1;
-  const gap = block.omittedSamples > 0 && history.target.length > 0;
-  return block.samples
-    .filter((s) => s.observedAtMs > seen)
-    .map((sample, index) => ({
-      t: sample.observedAtMs - originMs,
-      observedAtMs: sample.observedAtMs,
-      gapBefore: index === 0 && gap,
-      status: sample.status,
-      values: sample.values,
-    }));
-}
-
 export function appendFrame(history: LiveHistory, frame: LiveMetricSnapshot, figures: LiveFigures): LiveHistory {
   if (frame.publishedSequence <= history.lastPublishedSequence) return history;
   const originMs = Number.isFinite(history.originMs) ? history.originMs : frame.startTimeMs;
@@ -121,10 +98,9 @@ export function appendFrame(history: LiveHistory, frame: LiveMetricSnapshot, fig
       frame.publishedSequence - history.lastPublishedSequence > 1 ||
       history.points.length >= HISTORY_LIMIT,
     points: mergePoints(history.points, [point]),
-    target: capTarget([...history.target, ...freshTarget(history, frame, originMs)]),
+    ...targetFrame(history, frame, originMs),
     originMs,
     fromStart: history.fromStart,
-    intervalMs: frame.target?.intervalMs ?? history.intervalMs,
   };
 }
 /** Deduplicate actual windows; any chart reduction preserves the first and final point. */

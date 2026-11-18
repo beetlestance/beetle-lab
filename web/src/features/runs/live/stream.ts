@@ -1,6 +1,6 @@
 import { historyMatches, mergeHistory } from './backfill.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { LiveMetricSnapshot, LiveMetricHistory, Run } from '@beetle/contracts/api';
+import type { LiveMetricHistory, Run } from '@beetle/contracts/api';
 import { phaseOf } from './copy.js';
 import type { Phase } from './copy.js';
 import type { FeedState } from './Feed.js';
@@ -10,10 +10,8 @@ import { liveFigures, readRule } from './model.js';
 import type { LiveFigures, RuleReading } from './model.js';
 import type { RunPlan } from './plan.js';
 
-export interface Latest {
-  readonly frame: LiveMetricSnapshot;
-  readonly receivedWall: number;
-}
+export type { Latest } from './current.js';
+import { currentFrame, rememberTarget, type Latest } from './current.js';
 
 function useNow(active: boolean) {
   const [now, setNow] = useState(() => Date.now());
@@ -81,9 +79,7 @@ export function useLiveStream(run: Run, cancelAccepted: boolean, plan: RunPlan, 
     if (state.status !== 'ready') return;
     const { frame, receivedWall } = state.value;
     const prior = latestRef.current;
-    const changed =
-      prior && (prior.frame.producerEpoch !== frame.producerEpoch || prior.frame.subsetDigest !== frame.subsetDigest);
-    const next = { frame, receivedWall };
+    const { changed, latest: next } = currentFrame(frame, receivedWall, prior);
     latestRef.current = next;
     setLatest(next);
     if (changed || previous?.status !== 'ready' || previous.owner !== state.owner) setHistoryTrigger({});
@@ -92,10 +88,12 @@ export function useLiveStream(run: Run, cancelAccepted: boolean, plan: RunPlan, 
     );
   }, []);
   const acceptHistory = useCallback((value: LiveMetricHistory) => {
-    const frame = latestRef.current?.frame;
-    if (!frame || !historyMatches(value, frame)) throw Error('Recorded history unavailable');
+    const current = latestRef.current;
+    if (!current || !historyMatches(value, current.frame, current.targetPrefix))
+      throw Error('Recorded history unavailable');
+    latestRef.current = rememberTarget(current, value.prefix.target);
     setHistory((old) =>
-      latestRef.current && historyMatches(value, latestRef.current.frame)
+      latestRef.current && historyMatches(value, latestRef.current.frame, latestRef.current.targetPrefix)
         ? mergeHistory(old, value, planRef.current, runRef.current.startedAt)
         : old,
     );

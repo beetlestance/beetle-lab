@@ -1,40 +1,37 @@
 # Run views
 
-RunDetail owns the scoped query/cancellation. Writable nonterminal runs select
-LiveRunView; terminal and restored records select RunResultView. A watched run stays in the
-live view after termination until Open result remounts and rereads the result.
-Headers belong to each view. Route/run/attempt changes remount phase selection.
-
+RunDetail owns scoped queries/cancellation. Writable nonterminal runs select live;
+terminal/restored records select results. Watched runs stay live after termination
+until Open result remounts. Route/run/attempt changes remount phase selection.
 copy.phaseOf selects waiting, starting, running, cancelling, finalizing and ended.
-Waiting/Starting match the early Penpot structure: plain steps, indeterminate bar,
-bottom cancellation, exported decorative Starting illustration and skeleton figures.
-Queue reads share one scoped query; errors hide cached capacity/holders and expose
-retry. Preflight completion needs the verified saved revision; compilation needs
-phase.started prepare/execute (validate.finished can also describe failure).
-Early steps expose completed/pending state to assistive technology without fake
-percentages, request initiators or elapsed-time progress. Installed engine labels
-use one scoped status read with exact selector matching and explicit retry.
 
-plan.ts reads the pinned revision's stages, requests and thresholds. Request rN
-means index N. model.ts derives one window's figures; pooled latency is unavailable,
-so estimates use the slowest endpoint and never average percentiles. Unknown
-metric/stat dimensions and unavailable values stay explicit. Missing/future or
-browser-unparseable starts do not become zero elapsed time or NaN.
+Early boards use plain steps, an indeterminate bar, bottom cancellation, exported
+Starting art and skeleton figures. Queue reads share a scoped query; errors hide
+cached holders/capacity and expose retry. Preflight needs the verified revision;
+compilation needs phase.started prepare/execute, never validate.finished alone.
+Accessible step states never invent progress, initiators or elapsed-time progress.
+Engine labels use one scoped status read with exact selector matching and retry.
 
-Feed validates Run and binds UUIDs case-insensitively. stream owns feed leases,
-pause/retry and latest frame. history merges <=900 actual live/verified recorded
-windows; contracts/active-history.md owns bootstrap, sampling and lifetime rules.
-Captions state coverage, source gaps break lines and singleton readings remain
-visible. Target runtime uses the <=256 page-received samples as reported; it does
-not claim full-run coverage or engine resource measurements.
+plan reads pinned stages/requests/rules; rN is request index N. model derives one
+window, using the slowest endpoint when pooled latency is absent, never averaged
+percentiles. Unknown dimensions/values and missing/future/unparseable starts stay
+explicit; they never become zero elapsed time or invalid geometry.
 
-Namespace names use scoped query keys and explicit retry independent of metrics.
-After namespace verification, one workspace snapshot fills the passive header badge;
-no polling or current-work snapshot is added to restored read-only views.
-Cancellation and restored/read-only access use the existing session context, never
-a new session read. Live downloads offer only verified JavaScript revision export;
-the picker reads20 summaries plus this run's verified revision, with older history
-linked to the suite. Cache/fresh revision reads bind scope, suite, ID and digest.
-No automatic export preparation or live report/metrics download. Terminal rise
-attribution reads sealed sources. Header/progress/early styles have separate owners.
-Tests: ui, model, Phases, backfill, LiveChart and adjacent live-metrics/live-history.
+Feed validates Run and UUIDs case-insensitively. stream owns leases/pause/retry;
+history keeps <=900 actual metric windows and <=256 recorded/live target samples.
+Archive ordinals preserve duplicate UTC times, full values, phases/reasons/nulls;
+live projections cannot overwrite recorded values. Detached target identity survives
+omitted hints and retires on owner changes. Only producer count 256 marks its
+limit; page-buffer capacity does not. Shared hover, source gaps and singleton
+points remain visible. Unknown units stay as reported, never engine measurements.
+Bootstrap/coverage/lifetime rules: docs/system/contracts/active-history.md.
+
+Namespace queries have scoped retry. After verification, one workspace snapshot
+fills the passive badge; restored read-only views add no current-work polling.
+Cancellation/read-only access use session context, never a new session read.
+Live downloads offer verified JavaScript export only. Picker reads 20 summaries
+plus this run's verified revision; older history links to the suite. Cached/fresh
+revisions bind scope/suite/ID/digest. No automatic export preparation or live
+report/metrics download. Terminal attribution reads sealed sources. Header,
+progress and early styles have separate owners.
+Checks: ui, model, Phases, backfill, target-history and live-metrics/live-history.

@@ -274,6 +274,8 @@ function Board(props: {
   stale: boolean;
 }) {
   const domain = chartDomain(props.history, props.plan);
+  const [hoverT, onHover] = useState<number | null>(null);
+  const hover = { hoverT, onHover };
   return (
     <div className={`live-board${props.stale ? ' is-stale' : ''}`}>
       <Progress
@@ -286,6 +288,7 @@ function Board(props: {
       />
       <WholeRun
         history={props.history}
+        hover={hover}
         bootstrap={props.bootstrap}
         historyEnabled={props.historyEnabled}
         plan={props.plan}
@@ -297,8 +300,8 @@ function Board(props: {
         <Thresholds readings={props.readings} />
         <Endpoints figures={props.figures} />
       </div>
-      <MetricsGrid history={props.history} domain={domain} />
-      <TargetRuntime history={props.history} domain={domain} origin={props.plan.targetOrigin} />
+      <MetricsGrid history={props.history} domain={domain} hover={hover} />
+      <TargetRuntime history={props.history} domain={domain} origin={props.plan.targetOrigin} hover={hover} />
     </div>
   );
 }

@@ -8,6 +8,8 @@ import { HistoryReads } from '../live-history/read.js';
 import { captureLiveMetricHistory } from '@beetle/contracts/api';
 import queueData from '../../../../../contracts/fixtures/api/valid/run-queue.json' with { type: 'json' };
 import historyData from '../../../../../contracts/fixtures/api/valid/live-metric-history.json' with { type: 'json' };
+import targetHistoryData from '../../../../../contracts/fixtures/api/valid/live-target-history.json' with { type: 'json' };
+import { targetMetricNames } from '@beetle/contracts/target-runtime';
 import { LiveMetricReads } from '../live-metrics/read.js';
 import { ids, json, liveFrame, liveRun, mountLive, routesFor, suiteId, revision, suite } from './fixtures.js';
 
@@ -331,7 +333,7 @@ it('keeps this run’s verified revision available beyond the first twenty saved
   expect(fixture.records.every((request) => request.method === 'GET')).toBe(true);
 });
 
-it('loads recorded windows once and keeps later live polls independent', async () => {
+it('loads recorded metric and target windows once and keeps later live polls independent', async () => {
   const current = recent();
   const frame = liveFrame(current).frame;
   const start = Date.parse(current.startedAt!);
@@ -354,13 +356,19 @@ it('loads recorded windows once and keeps later live polls independent', async (
       subsetDigest: frame.subsetDigest,
       sampled: true,
       samples,
-      prefix: { ...historyData.prefix, scope: frame.scope, windows: 300, endTimeMs: start + 300000 },
+      prefix: { ...historyData.prefix, scope: frame.scope, windows: 300, endTimeMs: start + 300000,
+        target: { ...targetHistoryData.prefix.target, scope: frame.scope, samples: 3 } },
+      targetSamples: [0, 150000, 300000].map((offset, index) => ({ ...targetHistoryData.targetSamples[0],
+        observedAt: new Date(start + offset).toISOString(),
+        values: { ...Object.fromEntries(targetMetricNames.map(key => [key, null])), rss: 100 + index * 20,
+          usedHeapSize: 80 + index * 20, cpuPercent: 20 + index, 'gc.totalMs': 20 + index } })),
     },
     () => frame.subsetDigest,
   );
   const read = vi.mocked(HistoryReads.prototype.read).mockResolvedValue(history);
   await running(current);
   expect(await screen.findByText('Recorded history through 05:00 · 3 of 300 windows shown · sampled')).toBeVisible();
+  expect(screen.getByText(/3 recorded observations, plus live readings/)).toBeVisible();
   await act(async () => new Promise((resolve) => setTimeout(resolve, 2200)));
   expect(read).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole('button', { name: 'Pause stream' }));

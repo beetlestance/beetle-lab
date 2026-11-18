@@ -10,6 +10,10 @@ import type { ChartSeries, ChartTick } from './LiveChart.js';
 import { clock, ms, reading, span, whole } from './format.js';
 
 type Domain = readonly [number, number];
+export interface ChartHover {
+  readonly hoverT: number | null;
+  readonly onHover: (t: number | null) => void;
+}
 
 const lastT = (history: LiveHistory) => Math.max(history.points.at(-1)?.t ?? 0, history.target.at(-1)?.t ?? 0);
 const firstT = (history: LiveHistory) =>
@@ -74,6 +78,7 @@ export function WholeRun({
   slowest,
   bootstrap,
   historyEnabled,
+  hover,
 }: {
   history: LiveHistory;
   plan: RunPlan;
@@ -82,6 +87,7 @@ export function WholeRun({
   slowest: boolean;
   bootstrap?: BootstrapState;
   historyEnabled?: boolean;
+  hover: ChartHover;
 }) {
   const [view, setView] = useState<WholeView>('p95');
   const xs = history.points.map((p) => p.t);
@@ -101,6 +107,7 @@ export function WholeRun({
         />
       </header>
       <LiveChart
+        {...hover}
         title={historyCaption(history, bootstrap?.status)}
         tall
         xs={xs}
@@ -136,12 +143,11 @@ function historyCaption(history: LiveHistory, status: BootstrapState['status'] |
   return `Recorded history through ${at} · ${shown} of ${coverage.windows} windows shown${shown < coverage.windows ? ' · sampled' : ''}`;
 }
 
-export function MetricsGrid({ history, domain }: { history: LiveHistory; domain: Domain }) {
-  const [hoverT, setHoverT] = useState<number | null>(null);
+export function MetricsGrid({ history, domain, hover }: { history: LiveHistory; domain: Domain; hover: ChartHover }) {
   const xs = history.points.map((p) => p.t);
   const pick = (key: 'rps' | 'p50' | 'p95' | 'p99' | 'failedPerSecond' | 'vus' | 'vusMax') =>
     history.points.map((p) => p[key]);
-  const shared = { xs, breaks: history.points.map((point) => point.gapBefore), domain, hoverT, onHover: setHoverT };
+  const shared = { xs, breaks: history.points.map((point) => point.gapBefore), domain, ...hover };
   return (
     <section className="live-grid-section" aria-labelledby="live-metrics-grid">
       <header className="live-section-head">
@@ -186,7 +192,7 @@ export function MetricsGrid({ history, domain }: { history: LiveHistory; domain:
 }
 
 type TargetKey = keyof TargetPoint['values'];
-const value = (point: TargetPoint, key: TargetKey) => (point.status === 'ready' ? point.values[key] : null);
+const value = (point: TargetPoint, key: TargetKey) => (point.status === 'ready' ? (point.values[key] ?? null) : null);
 const has = (points: readonly TargetPoint[], keys: readonly TargetKey[]) =>
   points.some((p) => keys.some((key) => value(p, key) !== null));
 
@@ -234,29 +240,35 @@ function targetCharts(points: readonly TargetPoint[]): TargetChart[] {
 }
 
 function TargetNote({ history, origin }: { history: LiveHistory; origin: string | null }) {
-  const points = history.target;
-  const unavailable = points.filter((p) => p.status === 'unavailable').length;
-  return (
-    <p className="live-note">
-      Sampled{origin ? ` from ${origin}` : ''}
-      {history.intervalMs ? ` every ${span(history.intervalMs)}` : ''}. Values as the target reports them.
-      {unavailable > 0 && ` ${unavailable} readings unavailable.`}
-      {points.some((p) => p.gapBefore) && ' Breaks in a line are readings left out of the live feed.'}
-    </p>
-  );
+  const unavailable = history.target.filter((point) => point.status === 'unavailable').length;
+  const source = `Sampled${origin ? ` from ${origin}` : ''}${history.intervalMs ? ` every ${span(history.intervalMs)}` : ''}. Values as the target reports them.`;
+  const coverage = history.targetCoverage
+    ? `${history.targetCoverage.samples} recorded observations, plus live readings.`
+    : 'Showing observations received since this page opened.';
+  const notes = [
+    source,
+    coverage,
+    unavailable ? `${unavailable} readings unavailable.` : '',
+    history.target.some((point) => point.gapBefore) ? 'Breaks mark missing readings or a source-clock change.' : '',
+    history.targetLimited
+      ? 'Target observation limit reached (256). Use a longer sampling interval for longer runs.'
+      : '',
+  ];
+  return <p className="live-note">{notes.filter(Boolean).join(' ')}</p>;
 }
 
-/** Live target graphs from LiveMetricSnapshot.target; values are as the target reported them. */
+/** Target graphs from recorded history and LiveMetricSnapshot.target; values are as the target reported them. */
 export function TargetRuntime({
   history,
   domain,
   origin,
+  hover,
 }: {
   history: LiveHistory;
   domain: Domain;
   origin: string | null;
+  hover: ChartHover;
 }) {
-  const [hoverT, setHoverT] = useState<number | null>(null);
   const points = history.target;
   if (!points.length) return null;
   const charts = targetCharts(points);
@@ -264,8 +276,7 @@ export function TargetRuntime({
     xs: points.map((p) => p.t),
     breaks: points.map((p) => p.gapBefore),
     domain,
-    hoverT,
-    onHover: setHoverT,
+    ...hover,
     format: reading,
   };
   return (

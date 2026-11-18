@@ -1,15 +1,22 @@
 import { liveMetricScopeMatches } from '@beetle/contracts/api';
-import type { LiveMetricHistory, LiveMetricSnapshot } from '@beetle/contracts/api';
+import type { LiveMetricHistory, LiveMetricSnapshot, LiveTargetArchivePrefix } from '@beetle/contracts/api';
 import { metricPoint, mergePoints } from './history.js';
 import type { LiveHistory } from './history.js';
+import { targetHistoryMatches } from './current.js';
+import { mergeTargets, recordedTargets, targetCoverage } from './target-history.js';
 import { liveFigures } from './model.js';
 import type { RunPlan } from './plan.js';
 /** Current verified lease authority, never merely the route or an archive's self-declaration. */
-export function historyMatches(value: LiveMetricHistory, frame: LiveMetricSnapshot): boolean {
+export function historyMatches(
+  value: LiveMetricHistory,
+  frame: LiveMetricSnapshot,
+  target?: LiveTargetArchivePrefix,
+): boolean {
   if (
     !liveMetricScopeMatches(value.scope, frame.scope) ||
     value.producerEpoch !== frame.producerEpoch ||
-    value.subsetDigest !== frame.subsetDigest
+    value.subsetDigest !== frame.subsetDigest ||
+    !targetHistoryMatches(value, target ?? frame.archivePrefix?.target, frame.target?.intervalMs)
   )
     return false;
   const prefix = frame.archivePrefix;
@@ -37,7 +44,13 @@ export function mergeHistory(
     originMs,
     fromStart: Number.isFinite(start),
     points: mergePoints(existing, points),
-    target: history.target.map((point) => ({ ...point, t: point.t + history.originMs - originMs })),
+    target: mergeTargets(
+      history.target.map((point) => ({ ...point, t: point.observedAtMs - originMs })),
+      recordedTargets(value, originMs),
+    ),
+    targetCoverage: targetCoverage(value.prefix.target, history.targetCoverage),
+    targetLimited: history.targetLimited || value.prefix.target?.samples === 256,
+    intervalMs: value.prefix.target?.intervalMs ?? history.intervalMs,
     coverage: {
       throughTimeMs: value.prefix.endTimeMs,
       windows: value.prefix.windows,
