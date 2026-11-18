@@ -1,6 +1,6 @@
 ---
 title: Limits
-description: Every fixed size, count and time limit a user can run into, in one table per area.
+description: Every fixed size, count and time limit you can run into. Run budgets and capacity are settings, not limits.
 sidebar:
   order: 1
 ---

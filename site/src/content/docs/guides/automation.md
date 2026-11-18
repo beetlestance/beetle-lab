@@ -1,6 +1,6 @@
 ---
 title: Automate from CI
-description: Use the automation client to start runs, wait for outcomes, read results and compare runs from a pipeline.
+description: Start runs, wait for an outcome and fail the build from a pipeline, with the same API the UI uses.
 sidebar:
   order: 2
 ---
@@ -9,9 +9,9 @@ The automation client is a small command-line program that uses the same
 authenticated HTTP API as the UI. It ships inside the backend image, so you run it
 with `docker run` and install nothing on the host.
 
-:::caution
-The client is built from source today. The published image does not yet contain
-the rewrite, so build the backend image yourself before following this guide.
+:::caution[Built from source today]
+The published image does not contain the rewrite yet. Build the backend image
+yourself before following this guide.
 :::
 
 ## Connect once
@@ -89,12 +89,12 @@ configuration when the run is admitted.
 
 | Code | Meaning |
 | --- | --- |
-| 0 | Passed, or the command succeeded (`run` without waiting only means submitted) |
-| 1 | Failed |
-| 2 | Invalid input |
-| 3 | Inconclusive, a transport error, an invalid reply or an unknown mutation outcome |
-| 4 | Cancelled |
-| 5 | Still pending, deadline reached or service unavailable |
+| `0` | Passed, or the command succeeded (`run` without waiting only means submitted) |
+| `1` | Failed |
+| `2` | Invalid input |
+| `3` | Inconclusive, a transport error, an invalid reply or an unknown mutation outcome |
+| `4` | Cancelled |
+| `5` | Still pending, deadline reached or service unavailable |
 
 Exit codes come from the run's declared outcome; the client never recomputes it
 from metrics. All output is JSON (`--json` is accepted too).
