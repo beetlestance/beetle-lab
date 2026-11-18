@@ -109,7 +109,7 @@ const rate = (numerator: number, sampleCount: number): Series['total'] => ({
 const gauge = (latest: number, now: number, min: number, max: number): Series['total'] => ({
   kind: 'gauge',
   latest,
-  sourceTimeMs: now,
+  sourceTimeMs: now - 1,
   min,
   max,
 });
@@ -172,8 +172,10 @@ export function liveFrame(current: Run, sequence = 1, options: { omitted?: numbe
       generation: 1,
     },
     subset: { selected: rows, excludedSeries: 3 },
+    subsetDigest: '5080afd6fae96eade2d5b91993a5fc6c275a1723c6398e509aa62db238ff22a5',
     publishedSequence: sequence,
     sourceSequence: sequence,
+    coalescedWindows: 0,
     capturedAtMs: now,
     publishedAtMs: now,
     startTimeMs: now - 1000,

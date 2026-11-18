@@ -45,10 +45,28 @@ The response binds scope, producer epoch, subset digest and prefix identity.
 private `/runner/v1/attempts/{id}/live-history` route shares this DTO and normal
 runner authentication. Latest-window reads retain their separate 5 s / 64 KiB limits.
 
+## Browser presentation
+
+The active-run view reads history on its first verified feed and after reconnect,
+not on each live poll. Pause, hidden documents, navigation and the 30 s deadline
+abort its presentation lease. The browser keeps one issued original admitted until
+fetch, body, hash and cleanup actually settle; an ignored abort cannot free it early.
+Failure preserves existing readings and exposes an explicit retry.
+
+The browser validates the bounded JSON, subset SHA-256, scope, epoch and current
+archive identity before projecting at most 900 actual chart points. Archive window
+ordinals and feed publication sequences remain separate. Charts deduplicate shared
+windows, retain endpoints, label sampled coverage, and break across missing source
+time. Recorded metric history does not backfill target-runtime samples: those
+remain the bounded samples received while this page is open.
+
 ## Anchors
 
 | Code | Reviewed |
 | --- | --- |
+| `web/src/features/runs/live-history/` | `92d2e3aefd8a` |
+| `web/src/features/runs/live/backfill.ts` | `a6a0edea4d2f` |
+| `web/src/features/runs/live/history.ts` | `cfa37714c424` |
 | `app/src/application/live-attempt/` | `f142d17a3e6c` |
 | `app/src/application/run-live-history/` | `ddb71f298e44` |
 | `app/src/adapters/inbound/http/run-live-history/` | `5f005441d44a` |

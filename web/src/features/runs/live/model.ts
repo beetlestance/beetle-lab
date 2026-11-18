@@ -1,6 +1,8 @@
 import { ruleUnit } from './rule-units.js';
 import type { RuleUnit } from './rule-units.js';
 import type { LiveMetricSnapshot } from '@beetle/contracts/api';
+
+export type MetricWindowView = Pick<LiveMetricSnapshot, 'series' | 'subset' | 'startTimeMs' | 'endTimeMs'>;
 import type { PlanRequest, PlanRule, RunPlan } from './plan.js';
 
 /**
@@ -55,7 +57,7 @@ const executeRequest = (series: Series, metric: string, label: string) =>
   series.tags.request === label &&
   series.tags.assertion === undefined;
 
-function gauge(frame: LiveMetricSnapshot, metric: string): number | null {
+function gauge(frame: MetricWindowView, metric: string): number | null {
   const row = frame.series.find((s) => s.metric === metric && s.total.kind === 'gauge');
   return row?.total.kind === 'gauge' ? row.total.latest : null;
 }
@@ -75,18 +77,18 @@ interface RawRow extends EndpointRow {
 }
 
 /** Planned request labels plus any execute-phase request in the live subset. */
-function requestLabels(frame: LiveMetricSnapshot, plan: RunPlan): string[] {
+function requestLabels(frame: MetricWindowView, plan: RunPlan): string[] {
   const labels = new Set<string>(plan.requests.map((r) => r.label));
   for (const s of frame.subset.selected) if (s.tags.request && s.tags.phase === 'execute') labels.add(s.tags.request);
   return [...labels];
 }
 
-function trendOf(frame: LiveMetricSnapshot, label: string): Trend | null {
+function trendOf(frame: MetricWindowView, label: string): Trend | null {
   const total = frame.series.find((s) => executeRequest(s, 'http_req_duration', label))?.total;
   return total?.kind === 'trend' ? (total as Trend) : null;
 }
 
-function failuresOf(frame: LiveMetricSnapshot, label: string): { ratio: number | null; counts: Failures | null } {
+function failuresOf(frame: MetricWindowView, label: string): { ratio: number | null; counts: Failures | null } {
   const total = frame.series.find((s) => executeRequest(s, 'http_req_failed', label))?.total;
   if (total?.kind !== 'rate') return { ratio: null, counts: null };
   return { ratio: total.ratio, counts: { numerator: total.numerator, samples: total.sampleCount } };
@@ -104,7 +106,7 @@ function percentilesOf(trend: Trend | null): Pick<EndpointRow, 'p50' | 'p95' | '
   return { p50: p50.estimate, p95: p95.estimate, p99: p99.estimate };
 }
 
-function endpointRow(frame: LiveMetricSnapshot, plan: RunPlan, label: string, seconds: number): RawRow {
+function endpointRow(frame: MetricWindowView, plan: RunPlan, label: string, seconds: number): RawRow {
   const trend = trendOf(frame, label);
   const failure = failuresOf(frame, label);
   const live = frame.subset.selected.some(
@@ -153,7 +155,7 @@ function withShares(rows: readonly RawRow[], total: number | null): EndpointRow[
     .sort((a, b) => (b.p95 ?? -1) - (a.p95 ?? -1));
 }
 
-export function liveFigures(frame: LiveMetricSnapshot, plan: RunPlan): LiveFigures {
+export function liveFigures(frame: MetricWindowView, plan: RunPlan): LiveFigures {
   const windowMs = Math.max(1, frame.endTimeMs - frame.startTimeMs);
   const seconds = windowMs / 1000;
   const rows = requestLabels(frame, plan).map((label) => endpointRow(frame, plan, label, seconds));

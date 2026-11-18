@@ -1,3 +1,5 @@
+import { useHistoryBootstrap } from '../live-history/index.js';
+import type { BootstrapState } from '../live-history/index.js';
 import { Banner } from '../../../components/Banner.js';
 import { Button } from '../../../components/Button.js';
 import { useMemo, useState } from 'react';
@@ -66,6 +68,12 @@ function LiveRun({ run, scope, runId, showResult, cancel }: LiveRunViewProps) {
   const suite = useSuite(run);
   const plan = useMemo(() => readPlan(revision.data?.config), [revision.data]);
   const stream = useLiveStream(run, cancel?.accepted === true, plan, !revision.isPending);
+  const bootstrap = useHistoryBootstrap(
+    { organizationId: scope.organizationId, workspaceId: scope.workspaceId, runId, attemptId: run.activeAttemptId },
+    stream.historyTrigger,
+    stream.historyEnabled,
+    stream.acceptHistory,
+  );
   const [picker, setPicker] = useState(false);
   const at = positions(run, stream);
   return (
@@ -118,7 +126,7 @@ function LiveRun({ run, scope, runId, showResult, cancel }: LiveRunViewProps) {
       )}
       <StateBanners run={run} plan={plan} stream={stream} showResult={showResult} />
       <PhaseBody phase={stream.phase} run={run} />
-      <LiveBoard plan={plan} stream={stream} at={at} />
+      <LiveBoard plan={plan} stream={stream} at={at} bootstrap={bootstrap} />
     </div>
   );
 }
@@ -172,7 +180,17 @@ function StateBanners({
 }
 
 /** The figures board, once a frame has arrived; dimmed whenever it is not the current running window. */
-function LiveBoard({ plan, stream, at }: { plan: RunPlan; stream: LiveStream; at: Positions }) {
+function LiveBoard({
+  plan,
+  stream,
+  at,
+  bootstrap,
+}: {
+  plan: RunPlan;
+  stream: LiveStream;
+  at: Positions;
+  bootstrap: BootstrapState;
+}) {
   const { figures, phase } = stream;
   if (!figures) return null;
   const moving = phase === 'running' || phase === 'cancelling';
@@ -181,6 +199,8 @@ function LiveBoard({ plan, stream, at }: { plan: RunPlan; stream: LiveStream; at
       plan={plan}
       figures={figures}
       history={stream.history}
+      bootstrap={bootstrap}
+      historyEnabled={stream.historyEnabled}
       readings={stream.readings}
       elapsedMs={moving ? at.elapsedMs : at.lastT}
       origin={at.origin}
@@ -202,6 +222,8 @@ function Board(props: {
   plan: RunPlan;
   figures: LiveFigures;
   history: LiveHistory;
+  bootstrap: BootstrapState;
+  historyEnabled: boolean;
   readings: RuleReading[];
   elapsedMs: number | null;
   origin: number | null;
@@ -222,6 +244,8 @@ function Board(props: {
       />
       <WholeRun
         history={props.history}
+        bootstrap={props.bootstrap}
+        historyEnabled={props.historyEnabled}
         plan={props.plan}
         domain={domain}
         p95Limit={props.p95Limit}

@@ -1,3 +1,6 @@
+import type { BootstrapState } from '../live-history/index.js';
+import { recordedCount } from './backfill.js';
+import { Button } from '../../../components/Button.js';
 import { useState } from 'react';
 import { SegmentedFilter } from '../../../components/SegmentedFilter.js';
 import type { LiveHistory, TargetPoint } from './history.js';
@@ -69,12 +72,16 @@ export function WholeRun({
   domain,
   p95Limit,
   slowest,
+  bootstrap,
+  historyEnabled,
 }: {
   history: LiveHistory;
   plan: RunPlan;
   domain: Domain;
   p95Limit: number | null;
   slowest: boolean;
+  bootstrap?: BootstrapState;
+  historyEnabled?: boolean;
 }) {
   const [view, setView] = useState<WholeView>('p95');
   const xs = history.points.map((p) => p.t);
@@ -94,7 +101,7 @@ export function WholeRun({
         />
       </header>
       <LiveChart
-        title="Live windows received since this page opened"
+        title={historyCaption(history, bootstrap?.status)}
         tall
         xs={xs}
         breaks={history.points.map((point) => point.gapBefore)}
@@ -105,8 +112,28 @@ export function WholeRun({
         bands={stageBands(history, plan)}
         ticks={history.fromStart ? stageTicks(plan, domain, xs.at(-1) ?? null) : undefined}
       />
+      {bootstrap?.status === 'unavailable' && (
+        <p className="live-note" role="status">
+          Recorded history could not refresh. Existing readings are kept.{' '}
+          <Button variant="text" size="sm" disabled={!historyEnabled} onClick={bootstrap.retry}>
+            Retry history
+          </Button>
+        </p>
+      )}
     </section>
   );
+}
+
+function historyCaption(history: LiveHistory, status: BootstrapState['status'] | undefined): string {
+  const coverage = history.coverage;
+  if (!coverage)
+    return status === 'loading'
+      ? 'Loading recorded history; showing windows received on this page'
+      : `${history.liveSampled ? 'Sampled live' : 'Live'} windows received since this page opened`;
+  const through = coverage.throughTimeMs - history.originMs;
+  const at = Number.isFinite(through) && through >= 0 ? clock(through) : 'time unavailable';
+  const shown = recordedCount(history);
+  return `Recorded history through ${at} · ${shown} of ${coverage.windows} windows shown${shown < coverage.windows ? ' · sampled' : ''}`;
 }
 
 export function MetricsGrid({ history, domain }: { history: LiveHistory; domain: Domain }) {

@@ -4,6 +4,9 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { queryKeys } from '../../../app/queries.js';
 import { encodeRevisionListCursor, type Run } from '@beetle/contracts/api';
+import { HistoryReads } from '../live-history/read.js';
+import { captureLiveMetricHistory } from '@beetle/contracts/api';
+import historyData from '../../../../../contracts/fixtures/api/valid/live-metric-history.json' with { type: 'json' };
 import { LiveMetricReads } from '../live-metrics/read.js';
 import { ids, json, liveFrame, liveRun, mountLive, routesFor, suiteId, revision, suite } from './fixtures.js';
 
@@ -11,7 +14,10 @@ import { ids, json, liveFrame, liveRun, mountLive, routesFor, suiteId, revision,
 const recent = (patch: Partial<Run> = {}) =>
   liveRun({ startedAt: new Date(Date.now() - 316_000).toISOString(), ...patch });
 
-beforeEach(() => vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible'));
+beforeEach(() => {
+  vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
+  vi.spyOn(HistoryReads.prototype, 'read').mockRejectedValue(Error('Synthetic history unavailable'));
+});
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -220,51 +226,158 @@ it('shows the restored-backup banner from the session and hides cancel', async (
 });
 
 it('shows unavailable elapsed time for a valid timestamp the browser cannot parse', async () => {
-  const current=liveRun({startedAt:'2026-12-31T23:59:60Z'});
-  vi.spyOn(LiveMetricReads.prototype,'read').mockImplementation(async()=>liveFrame(current,1));
-  const fixture=routesFor(()=>current);mountLive(fixture.client,{run:current});
+  const current = liveRun({ startedAt: '2026-12-31T23:59:60Z' });
+  vi.spyOn(LiveMetricReads.prototype, 'read').mockImplementation(async () => liveFrame(current, 1));
+  const fixture = routesFor(() => current);
+  mountLive(fixture.client, { run: current });
   expect(await screen.findByText('Elapsed time unavailable')).toBeVisible();
   expect(screen.getByText(/started 2026-12-31T23:59:60Z/)).toBeVisible();
   expect(screen.queryByText(/NaN/)).toBeNull();
 });
 
 it('reads real namespace names once and retries metadata without retiring live metrics', async () => {
-  const current=recent();let failed=false;
-  vi.spyOn(LiveMetricReads.prototype,'read').mockImplementation(async()=>liveFrame(current,1));
-  const fixture=routesFor(()=>current,request=>failed&&request.path.endsWith('/workspaces/'+current.scope.workspaceId)
-    ?new Response('',{status:503}):undefined);
-  const view=mountLive(fixture.client,{run:current});
-  expect(await screen.findByRole('link',{name:'Same workspace'})).toHaveAttribute('href',expect.stringContaining(current.scope.workspaceId));
-  expect(fixture.records.filter(request=>request.path.endsWith('/organizations/'+current.scope.organizationId))).toHaveLength(1);
-  expect(fixture.records.filter(request=>request.path.endsWith('/workspaces/'+current.scope.workspaceId))).toHaveLength(1);
-  failed=true;
-  await act(async()=>view.queryClient.invalidateQueries({queryKey:queryKeys.workspace(current.scope.organizationId,current.scope.workspaceId),exact:true}));
+  const current = recent();
+  let failed = false;
+  vi.spyOn(LiveMetricReads.prototype, 'read').mockImplementation(async () => liveFrame(current, 1));
+  const fixture = routesFor(
+    () => current,
+    (request) =>
+      failed && request.path.endsWith('/workspaces/' + current.scope.workspaceId)
+        ? new Response('', { status: 503 })
+        : undefined,
+  );
+  const view = mountLive(fixture.client, { run: current });
+  expect(await screen.findByRole('link', { name: 'Same workspace' })).toHaveAttribute(
+    'href',
+    expect.stringContaining(current.scope.workspaceId),
+  );
+  expect(
+    fixture.records.filter((request) => request.path.endsWith('/organizations/' + current.scope.organizationId)),
+  ).toHaveLength(1);
+  expect(
+    fixture.records.filter((request) => request.path.endsWith('/workspaces/' + current.scope.workspaceId)),
+  ).toHaveLength(1);
+  failed = true;
+  await act(async () =>
+    view.queryClient.invalidateQueries({
+      queryKey: queryKeys.workspace(current.scope.organizationId, current.scope.workspaceId),
+      exact: true,
+    }),
+  );
   expect(await screen.findByText('Workspace unavailable')).toBeVisible();
-  expect(screen.queryByRole('link',{name:'Same workspace'})).toBeNull();
-  expect(screen.getByRole('button',{name:'Pause stream'})).toBeEnabled();
-  failed=false;fireEvent.click(screen.getByRole('button',{name:'Retry workspace name'}));
-  expect(await screen.findByRole('link',{name:'Same workspace'})).toBeVisible();
-  expect(fixture.records.every(request=>request.method==='GET')).toBe(true);
+  expect(screen.queryByRole('link', { name: 'Same workspace' })).toBeNull();
+  expect(screen.getByRole('button', { name: 'Pause stream' })).toBeEnabled();
+  failed = false;
+  fireEvent.click(screen.getByRole('button', { name: 'Retry workspace name' }));
+  expect(await screen.findByRole('link', { name: 'Same workspace' })).toBeVisible();
+  expect(fixture.records.every((request) => request.method === 'GET')).toBe(true);
 });
 
-it('keeps this run’s verified revision available beyond the first twenty saved revisions',async()=>{
- const current=recent();const saved=revision();
- const id=(ordinal:number)=>ordinal===4?saved.id:`88880000-0000-4000-8000-${String(ordinal).padStart(12,'0')}`;
- const items=Array.from({length:20},(_,index)=>{const ordinal=24-index;return {
-  id:id(ordinal),scope:saved.scope,suiteId:saved.suiteId,ordinal,engineId:saved.engineId,configVersion:saved.configVersion,
-  digest:saved.digest,preflightStatus:saved.preflightStatus,previousRevisionId:id(ordinal-1),
- };});
- vi.spyOn(LiveMetricReads.prototype,'read').mockImplementation(async()=>liveFrame(current,1));
- const fixture=routesFor(()=>current,request=>{
-  if(/\/revisions(\?|$)/.test(request.path))return json({scope:saved.scope,suiteId,items,nextCursor:encodeRevisionListCursor({scope:saved.scope,suiteId:saved.suiteId,limit:20,ordinal:5,id:id(5)})});
-  if(request.path.endsWith('/suites/'+suiteId))return json({...suite(),currentRevisionId:id(24)});
-  return undefined;
- });
- mountLive(fixture.client,{run:current});await screen.findByRole('heading',{name:'Holding 1,200 a second'});
- fireEvent.click(screen.getByRole('button',{name:'Download'}));fireEvent.click(screen.getByRole('button',{name:'Script for revision 4'}));
- const picker=await screen.findByRole('dialog',{name:'Scripts for steady-1.2k'});
- expect(await within(picker).findByRole('link',{name:/Revision 4This run/})).toHaveAttribute('aria-current','true');
- expect(await within(picker).findByRole('link',{name:/Revision 24Latest/})).toBeVisible();
- expect(within(picker).getAllByRole('listitem')).toHaveLength(21);
- expect(fixture.records.every(request=>request.method==='GET')).toBe(true);
+it('keeps this run’s verified revision available beyond the first twenty saved revisions', async () => {
+  const current = recent();
+  const saved = revision();
+  const id = (ordinal: number) =>
+    ordinal === 4 ? saved.id : `88880000-0000-4000-8000-${String(ordinal).padStart(12, '0')}`;
+  const items = Array.from({ length: 20 }, (_, index) => {
+    const ordinal = 24 - index;
+    return {
+      id: id(ordinal),
+      scope: saved.scope,
+      suiteId: saved.suiteId,
+      ordinal,
+      engineId: saved.engineId,
+      configVersion: saved.configVersion,
+      digest: saved.digest,
+      preflightStatus: saved.preflightStatus,
+      previousRevisionId: id(ordinal - 1),
+    };
+  });
+  vi.spyOn(LiveMetricReads.prototype, 'read').mockImplementation(async () => liveFrame(current, 1));
+  const fixture = routesFor(
+    () => current,
+    (request) => {
+      if (/\/revisions(\?|$)/.test(request.path))
+        return json({
+          scope: saved.scope,
+          suiteId,
+          items,
+          nextCursor: encodeRevisionListCursor({
+            scope: saved.scope,
+            suiteId: saved.suiteId,
+            limit: 20,
+            ordinal: 5,
+            id: id(5),
+          }),
+        });
+      if (request.path.endsWith('/suites/' + suiteId)) return json({ ...suite(), currentRevisionId: id(24) });
+      return undefined;
+    },
+  );
+  mountLive(fixture.client, { run: current });
+  await screen.findByRole('heading', { name: 'Holding 1,200 a second' });
+  fireEvent.click(screen.getByRole('button', { name: 'Download' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Script for revision 4' }));
+  const picker = await screen.findByRole('dialog', { name: 'Scripts for steady-1.2k' });
+  expect(await within(picker).findByRole('link', { name: /Revision 4This run/ })).toHaveAttribute(
+    'aria-current',
+    'true',
+  );
+  expect(await within(picker).findByRole('link', { name: /Revision 24Latest/ })).toBeVisible();
+  expect(within(picker).getAllByRole('listitem')).toHaveLength(21);
+  expect(fixture.records.every((request) => request.method === 'GET')).toBe(true);
+});
+
+it('loads recorded windows once and keeps later live polls independent', async () => {
+  const current = recent();
+  const frame = liveFrame(current).frame;
+  const start = Date.parse(current.startedAt!);
+  const samples = [1, 150, 300].map((sequence) => ({
+    sequence,
+    startTimeMs: start + (sequence - 1) * 1000,
+    endTimeMs: start + sequence * 1000,
+    series: frame.series.map((series) =>
+      series.total.kind === 'gauge'
+        ? { ...series, total: { ...series.total, sourceTimeMs: start + sequence * 1000 - 1 } }
+        : series,
+    ),
+  }));
+  const history = captureLiveMetricHistory(
+    {
+      ...historyData,
+      scope: frame.scope,
+      producerEpoch: frame.producerEpoch,
+      subset: frame.subset,
+      subsetDigest: frame.subsetDigest,
+      sampled: true,
+      samples,
+      prefix: { ...historyData.prefix, scope: frame.scope, windows: 300, endTimeMs: start + 300000 },
+    },
+    () => frame.subsetDigest,
+  );
+  const read = vi.mocked(HistoryReads.prototype.read).mockResolvedValue(history);
+  await running(current);
+  expect(await screen.findByText('Recorded history through 05:00 · 3 of 300 windows shown · sampled')).toBeVisible();
+  await act(async () => new Promise((resolve) => setTimeout(resolve, 2200)));
+  expect(read).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole('button', { name: 'Pause stream' }));
+  await act(async () => new Promise((resolve) => setTimeout(resolve, 1100)));
+  fireEvent.click(screen.getByRole('button', { name: 'Resume stream' }));
+  await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
+});
+
+it('aborts history ownership when the document hides and keeps prior live readings', async () => {
+  let resolve!: (value: Awaited<ReturnType<HistoryReads['read']>>) => void;
+  const held = new Promise<Awaited<ReturnType<HistoryReads['read']>>>((done) => {
+    resolve = done;
+  });
+  const read = vi.mocked(HistoryReads.prototype.read).mockReturnValue(held);
+  await running();
+  await waitFor(() => expect(read).toHaveBeenCalledTimes(1));
+  const signal = read.mock.calls[0]![0].signal;
+  vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+  act(() => document.dispatchEvent(new Event('visibilitychange')));
+  await waitFor(() => expect(signal.aborted).toBe(true));
+  await act(async () => resolve(captureLiveMetricHistory(historyData, () => historyData.subsetDigest)));
+  expect(screen.queryByText(/^Recorded history through/)).toBeNull();
+  expect(within(screen.getByRole('region', { name: 'Progress' })).getByText('1,200')).toBeVisible();
 });

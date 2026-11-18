@@ -1,9 +1,11 @@
+import { API_MAXIMUM_JSON_BYTES } from '@beetle/contracts/api';
 interface BodyState {
   readonly buffer: Uint8Array;
   bytes: number;
   fragments: number;
 }
 interface BodyLimit {
+  readonly profile?: 'api-history';
   readonly maximum: number;
   readonly expected?: number;
 }
@@ -11,7 +13,7 @@ function bodyBuffer(limit: BodyLimit): BodyState {
   if (
     !Number.isSafeInteger(limit.maximum) ||
     limit.maximum < 1 ||
-    limit.maximum > 1048576 ||
+    limit.maximum > (limit.profile === 'api-history' ? API_MAXIMUM_JSON_BYTES : 1048576) ||
     (limit.expected !== undefined &&
       (!Number.isSafeInteger(limit.expected) || limit.expected < 1 || limit.expected > limit.maximum))
   )

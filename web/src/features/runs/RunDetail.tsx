@@ -50,6 +50,7 @@ export function RunDetail(scope: RunScope & { runId: string }) {
       <QueryState query={query}>
         {(run) => (
           <RunView
+            key={`${scope.organizationId}/${scope.workspaceId}/${scope.runId}/${run.activeAttemptId}`}
             run={run}
             scope={{ kind: 'workspace', organizationId: scope.organizationId, workspaceId: scope.workspaceId }}
             runId={scope.runId}

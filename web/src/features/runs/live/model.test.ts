@@ -65,7 +65,10 @@ it('derives window rates, pooled failure and slowest-endpoint percentiles withou
 });
 
 it('leaves totals unknown when a planned endpoint is outside the live subset', () => {
-  const plan = readPlan({ ...config, requests: [...config.requests, { ...config.requests[0], name: 'Third', path: '/third' }] });
+  const plan = readPlan({
+    ...config,
+    requests: [...config.requests, { ...config.requests[0], name: 'Third', path: '/third' }],
+  });
   const figures = liveFigures(liveFrame(liveRun()).frame, plan);
   expect(figures.complete).toBe(false);
   expect(figures.rps).toBeNull();
@@ -96,13 +99,18 @@ it('keeps a bounded, de-duplicated history and marks omitted target samples as g
   expect(appendFrame(history, first, liveFigures(first, plan))).toBe(history);
   expect(history.target).toHaveLength(2);
   const later = { ...liveFrame(current, 2, { omitted: 3 }).frame };
-  later.target = { ...later.target!, samples: later.target!.samples.map((s) => ({ ...s, observedAtMs: s.observedAtMs + 5000 })) };
+  later.target = {
+    ...later.target!,
+    samples: later.target!.samples.map((s) => ({ ...s, observedAtMs: s.observedAtMs + 5000 })),
+  };
   history = appendFrame(history, later, liveFigures(later, plan));
   expect(history.target.map((p) => p.gapBefore)).toEqual([false, false, true, false]);
   expect(history.fromStart).toBe(true);
   let many = emptyHistory(null);
   for (let i = 1; i <= HISTORY_LIMIT + 5; i++) {
     const next = liveFrame(current, i, { target: false }).frame;
+    next.startTimeMs = i * 1000;
+    next.endTimeMs = (i + 1) * 1000;
     many = appendFrame(many, next, liveFigures(next, plan));
   }
   expect(many.points).toHaveLength(HISTORY_LIMIT);
@@ -118,12 +126,24 @@ it('formats clocks, latencies and percentages', () => {
   expect(percent(0.01)).toBe('1%');
 });
 
-it('marks missing source windows rather than connecting coalesced or paused intervals',()=>{
- const plan=readPlan(config);const current=liveRun();let history=emptyHistory(startedAt);
- const base=liveFrame(current).frame;
- for(const [sequence,start] of [[1,1000],[2,2000],[3,5000]] as const){
-  const next={...base,publishedSequence:sequence,startTimeMs:start,endTimeMs:start+1000};
-  history=appendFrame(history,next,liveFigures(next,plan));
- }
- expect(history.points.map(point=>point.gapBefore)).toEqual([false,false,true]);
+it('marks missing source windows rather than connecting coalesced or paused intervals', () => {
+  const plan = readPlan(config);
+  const current = liveRun();
+  let history = emptyHistory(startedAt);
+  const base = liveFrame(current).frame;
+  for (const [sequence, start] of [
+    [1, 1000],
+    [2, 2000],
+    [3, 5000],
+  ] as const) {
+    const next = {
+      ...base,
+      publishedSequence: sequence,
+      sourceSequence: sequence,
+      startTimeMs: start,
+      endTimeMs: start + 1000,
+    };
+    history = appendFrame(history, next, liveFigures(next, plan));
+  }
+  expect(history.points.map((point) => point.gapBefore)).toEqual([false, false, true]);
 });
