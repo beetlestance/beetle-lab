@@ -36,6 +36,13 @@ SDK validate the wrapper, nested scope/revision and existing job state semantics
 The Script view uses this lookup and rejects a followed job from another revision.
 Restored history permits this read without opening mutation paths.
 
+Optional diagnostic times preserve old receipt replies: `madeAt` comes from the
+ready artifact's retained seal time; `lastAgentReportAt` is backend wall time of the
+last changed, validated snapshot (migration 036; old records stay null). Identical
+polls and state-only reconciliation do not advance it. Neither is a heartbeat,
+ordering, scheduling or cleanup authority; independent clocks may move backwards.
+Current reads override original intent fields and reject invalid stored times.
+
 ## Job states
 
 ```
@@ -148,8 +155,8 @@ path, clock timeout or current capability creates physical authority.
 | `contracts/src/export-job/` | `ee5dbee9e357` |
 | `app/src/application/exports/` | `31ac98ced322` |
 | `app/src/application/export-runtime/` | `23cbf619a3fc` |
-| `app/src/adapters/outbound/sqlite/export-jobs/` | `a8521bee8692` |
+| `app/src/adapters/outbound/sqlite/export-jobs/` | `84be6cb419bc` |
 | `app/src/adapters/outbound/sqlite/migration035.ts` | `44762d1ad5ac` |
-| `contracts/src/api/export-latest.ts` | `aed033af48fd` |
+| `contracts/src/api/export-latest.ts` | `5f08c834aac2` |
 | `engines/k6/export/` | `120bf16f289c` |
 | `agent/src/journal/migration015.ts` | `e43499b5bd89` |

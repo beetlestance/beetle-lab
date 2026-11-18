@@ -8,7 +8,7 @@ nonterminal and stop on errors; downloads select only ready native publication.
 The write hook retains one identical request across unknown outcomes. Scope/API
 retirement aborts callbacks and ignores late replies; it never infers cancellation
 of a durable job. Queries are scoped under workspace export keys and removed when
-inactive after retirement. No UI redesign or performance Run is introduced.
+inactive after retirement. No performance Run is introduced.
 
 Checks: web/src/features/exports/*.test.tsx.
 
@@ -17,10 +17,13 @@ Checks: web/src/features/exports/*.test.tsx.
 - `ExportDialog.tsx` is "Overlay / Export script": Uses secrets (any
   `config.secrets` name or an `unsupported_secrets` reason; nothing is sent),
   Preparing (steps from the job state, elapsed time since `requestedAt`), Ready
-  (file, size, SHA-256, scoped download) and Unknown (reserved output budget, never
-  a guessed result), plus start and failed/cancelled states.
-- `useRevisionExport.ts` finds the revision's newest job on one page of 100
-  exports (the API has no revision filter), polls only live jobs, and builds the
+  (file, size, SHA-256, actual artifact seal time, scoped download) and Unknown
+  (last recorded changed agent report, reserved output budget, never a guessed
+  result), plus start and failed/cancelled states. Missing times say Not recorded.
+  Both preparing and unknown dialogs preserve identical cancellation replay.
+  Desktop overlays are 620 px; phones use the shared bottom sheet.
+- `useRevisionExport.ts` reads the exact scoped latest revision export, follows
+  newly created jobs, stops polling on errors, and builds the
   create request in `prepare.ts` from workspace run defaults, the first allowed
   installed profile and the default options.
 - `scriptText.ts` reads a ready script once: one bounded GET of exactly the

@@ -197,6 +197,32 @@
         },
         "sourceProfileId": {
           "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/EngineProfile"
+        },
+        "madeAt": {
+          "description": "Agent artifact seal time, present only for a ready export; absent or null when not recorded.",
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "maxLength": 40
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lastAgentReportAt": {
+          "description": "Backend wall time when the last distinct validated agent snapshot was retained; not a heartbeat or current reachability.",
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "maxLength": 40
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [

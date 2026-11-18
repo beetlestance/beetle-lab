@@ -15,4 +15,10 @@ never UUID/time order or workspace page scans; scoped existence reads omit confi
 Input pins, metadata and agent producer/source lifetime remain retained. No native
 paths, IO, remote ACK or producer-purge authority are exposed by these operations.
 
+Migration 036 retains backend receipt time only when a validated merged snapshot
+changes. Identical polls/state-only reconciliation leave it alone. Ready reads
+project a bounded seal time from the retained source. Both optional public times
+are diagnostics, never liveness, ordering or custody authority; old receipts remain
+valid and old records are not backfilled.
+
 Checks: app/test/exports. Spec: docs/system/contracts/exports.md.

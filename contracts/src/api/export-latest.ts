@@ -21,6 +21,7 @@ export function latestRevisionExportMatches(
 }
 
 export function exportJobStateMatches(job: ExportJob): boolean {
+  if (job.madeAt != null && job.state !== 'ready') return false;
   if (job.state === 'ready') return job.artifact !== null && job.reason === null;
   if (job.state === 'cancelled') return job.cancellationRequested && job.reason === 'cancelled';
   if (job.state === 'failed' || job.state === 'unknown') return job.reason !== null;

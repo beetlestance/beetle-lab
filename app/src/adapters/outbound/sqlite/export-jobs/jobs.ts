@@ -63,6 +63,8 @@ export class ExportJobs {
       settingsVersions: resolved.versions,
       options: command.request.options,
       artifact: null,
+      madeAt: null,
+      lastAgentReportAt: null,
     };
     requireRule(validateApi('ExportJob', job).ok);
     const assignment = makeExportAssignment(job, revision, pin, command);

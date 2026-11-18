@@ -78,6 +78,41 @@ function Facts({ items }: { items: readonly [string, ReactNode][] }) {
   );
 }
 
+function ExportTime({ value }: { value: string | null | undefined }) {
+  if (!value) return <>Not recorded</>;
+  if (!Number.isFinite(Date.parse(value)))
+    return (
+      <time dateTime={value} title={value}>
+        {value}
+      </time>
+    );
+  return (
+    <time dateTime={value} title={value}>
+      {new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).format(new Date(value))}
+    </time>
+  );
+}
+
+function CancelFailure({ flow }: { flow: RevisionExport }) {
+  if (!flow.cancel.message) return null;
+  return (
+    <div role="alert" className="export-cancel-error">
+      <p className="field-error">{flow.cancel.message}</p>
+      {flow.cancel.unknown && (
+        <Button size="sm" disabled={flow.cancel.pending} onClick={() => void flow.cancel.send()}>
+          Replay export cancellation
+        </Button>
+      )}
+    </div>
+  );
+}
+
 function ReadyActions({ job }: { job: ExportJob }) {
   const [copied, setCopied] = useState<'idle' | 'done' | 'failed'>('idle');
   const artifact = job.artifact!;
@@ -119,6 +154,7 @@ export function ExportDialog({ revision, suiteName, flow, close, editHref }: Pro
   if (secrets.length || job?.reason === 'unsupported_secrets')
     return (
       <Dialog
+        className="script-export-dialog"
         title="This revision can’t be exported"
         onClose={close}
         actions={
@@ -146,6 +182,7 @@ function ReadyDialog({ job, name, close, closeButton }: Omit<StateProps, 'flow'>
   const artifact = job.artifact!;
   return (
     <Dialog
+      className="script-export-dialog"
       title={`${name} is ready as a k6 script`}
       onClose={close}
       actions={
@@ -159,7 +196,16 @@ function ReadyDialog({ job, name, close, closeButton }: Omit<StateProps, 'flow'>
         items={[
           ['File', artifact.name],
           ['Size', sizeText(artifact.bytes)],
-          ['SHA-256', <code key="sha">{artifact.sha256}</code>],
+          [
+            'SHA-256',
+            <code key="sha" title={artifact.sha256}>
+              <span aria-hidden="true">
+                {artifact.sha256.slice(0, 8)}…{artifact.sha256.slice(-5)}
+              </span>
+              <span className="sr-only">{artifact.sha256}</span>
+            </code>,
+          ],
+          ['Made', <ExportTime key="made" value={job.madeAt} />],
         ]}
       />
       <p>Run it with k6 wherever you like. The download is checked against this SHA-256.</p>
@@ -170,6 +216,7 @@ function ReadyDialog({ job, name, close, closeButton }: Omit<StateProps, 'flow'>
 function UnknownDialog({ job, flow, close, closeButton }: StateProps) {
   return (
     <Dialog
+      className="script-export-dialog"
       title="We can’t tell whether this export finished"
       onClose={close}
       actions={
@@ -183,7 +230,13 @@ function UnknownDialog({ job, flow, close, closeButton }: StateProps) {
         The agent stopped answering. The export stays Unknown and keeps its reserved space until the agent reports back;
         Beetle Lab never guesses a result.
       </p>
-      <Facts items={[['Reserved', `${sizeText(job.budget.outputBytes)} of output`]]} />
+      <Facts
+        items={[
+          ['Last recorded report', <ExportTime key="heard" value={job.lastAgentReportAt} />],
+          ['Reserved', `${sizeText(job.budget.outputBytes)} of output`],
+        ]}
+      />
+      <CancelFailure flow={flow} />
     </Dialog>
   );
 }
@@ -197,6 +250,7 @@ function PreparingDialog({
 }: Omit<StateProps, 'job'> & { job: ExportJob | undefined; ordinal: number }) {
   return (
     <Dialog
+      className="script-export-dialog"
       title={`Preparing a k6 script from revision ${ordinal}`}
       onClose={close}
       description="The agent builds a standalone script; no load is sent and nothing is run. You can close this and come back to it from the revision."
@@ -208,11 +262,7 @@ function PreparingDialog({
       }
     >
       <Steps job={job} />
-      {flow.cancel.message && (
-        <p role="alert" className="field-error">
-          {flow.cancel.message}
-        </p>
-      )}
+      <CancelFailure flow={flow} />
     </Dialog>
   );
 }
@@ -296,6 +346,7 @@ function StartState({
   const ended = endedTitle[job?.state ?? ''];
   return (
     <Dialog
+      className="script-export-dialog"
       title={ended ?? `Export revision ${revision.ordinal} as a k6 script`}
       onClose={close}
       description="The agent builds a standalone script that runs with plain k6. No load is sent."

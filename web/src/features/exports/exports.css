@@ -35,7 +35,7 @@
 }
 .export-facts > div {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
   gap: var(--s-12);
 }
 .export-facts dt {
@@ -43,6 +43,7 @@
 }
 .export-facts dd {
   margin: 0;
+  text-align: right;
   overflow-wrap: anywhere;
 }
 .export-facts code {
@@ -57,4 +58,65 @@
   display: block;
   color: var(--mute);
   font-size: var(--fs-sm);
+}
+
+.script-export-dialog {
+  max-width: 620px;
+  gap: 16px;
+  font-size: 14px;
+  line-height: 17px;
+}
+.script-export-dialog > p {
+  margin: 0;
+}
+.script-export-dialog .export-facts {
+  gap: 0;
+  margin: 0;
+  padding: 6px 16px;
+  border-radius: var(--r-lg);
+  background: var(--line);
+}
+.script-export-dialog .export-facts > div {
+  align-items: center;
+  min-height: 33px;
+}
+.script-export-dialog .export-steps {
+  gap: 16px;
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: var(--r-lg);
+  background: var(--line);
+}
+.script-export-dialog .export-step {
+  min-height: 18px;
+  grid-template-columns: 20px auto minmax(0, 1fr);
+  gap: 12px;
+}
+.script-export-dialog .export-step-time {
+  justify-self: start;
+  overflow-wrap: anywhere;
+}
+.script-export-dialog .dialog-actions .btn {
+  min-height: 36px;
+  font-size: 16px;
+  line-height: 20px;
+}
+.export-cancel-error {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+}
+.export-cancel-error p {
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .script-export-dialog {
+    max-width: none;
+  }
+  .script-export-dialog .export-step {
+    grid-template-columns: 20px minmax(0, 1fr);
+  }
+  .script-export-dialog .export-step-time {
+    grid-column: 2;
+  }
 }

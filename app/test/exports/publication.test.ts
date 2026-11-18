@@ -31,7 +31,9 @@ it('requires real native publication before ready/refund, then preserves verifie
   const final={binding:e.binding,sourceDigest:e.envelope.sourceDigest,manifestDigest:e.envelope.manifest.manifestDigest};
   expect(await e.metadata.exportExecutions.finalize(final)).toMatchObject({state:'publishing',artifact:null});
   const work=service.transfer(e.binding);expect((await work.result).kind).toBe('published');await work.settled;
-  expect(await e.metadata.exportExecutions.finalize(final)).toMatchObject({state:'ready',artifact:{bytes:e.bytes.length,sha256:hash(e.bytes)}});
+  const ready=await e.metadata.exportExecutions.finalize(final);
+  expect(ready).toMatchObject({state:'ready',madeAt:'2026-11-12T00:00:01.000Z',artifact:{bytes:e.bytes.length,sha256:hash(e.bytes)}});
+  expect(await e.metadata.exportExecutions.observe({key:e.key,snapshot:e.snapshot,journalAuthority:e.binding.journalAuthority})).toEqual(ready);
   await service.close();await f.close(e.metadata);await files.reopen();
   const db=new DatabaseSync(e.path);try{
    expect(db.prepare('SELECT charged_bytes FROM installation_storage_usage').get()?.charged_bytes).toBe(3145728+e.bytes.length);

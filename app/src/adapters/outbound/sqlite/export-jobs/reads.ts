@@ -8,7 +8,7 @@ import { normalizedScope } from '../suites.js';
 import type { Suites } from '../suites.js';
 import { StorageError } from '../protocol.js';
 export type ExportRow = Record<string, SQLOutputValue>;
-const header = `id,organization_id,workspace_id,attempt_id,version,state,cancellation_requested,reason,
+const header = `id,organization_id,workspace_id,attempt_id,version,state,cancellation_requested,reason,last_agent_report_at,
  CASE WHEN length(CAST(intent_json AS BLOB))<=32768 THEN intent_json END intent_json`;
 /** Real indexed statement, also exercised by native EXPLAIN qualification. */
 export const latestRevisionExportSql = `SELECT ${header} FROM export_jobs
@@ -17,14 +17,27 @@ export function projectExport(db: DatabaseSync, row: ExportRow): ExportJob {
   if (typeof row.intent_json !== 'string') throw new StorageError('unavailable');
   const original = JSON.parse(row.intent_json) as ExportJob;
   let artifact: ExportJob['artifact'] = null;
+  let madeAt: unknown = null;
   if (row.state === 'ready') {
     const file = db
       .prepare(
-        "SELECT artifact_id,bytes,sha256 FROM export_artifacts WHERE export_id=? AND phase='published' AND writer IS NULL AND identity IS NOT NULL AND offset=bytes",
+        `SELECT a.artifact_id,a.bytes,a.sha256,
+ CASE WHEN length(CAST(s.source_json AS BLOB))<=75776
+ AND json_type(s.source_json,'$.manifest.result.artifact.sealedAt')='text'
+ AND length(CAST(json_extract(s.source_json,'$.manifest.result.artifact.sealedAt') AS BLOB))<=40
+ THEN json_extract(s.source_json,'$.manifest.result.artifact.sealedAt') END made_at
+ FROM export_artifacts a JOIN export_sources s ON s.export_id=a.export_id
+ WHERE a.export_id=? AND a.phase='published' AND a.writer IS NULL AND a.identity IS NOT NULL AND a.offset=a.bytes`,
       )
       .get(row.id!);
-    if (typeof file?.artifact_id !== 'string' || typeof file.bytes !== 'number' || typeof file.sha256 !== 'string')
+    if (
+      typeof file?.artifact_id !== 'string' ||
+      typeof file.bytes !== 'number' ||
+      typeof file.sha256 !== 'string' ||
+      typeof file.made_at !== 'string'
+    )
       throw new StorageError('unavailable');
+    madeAt = file.made_at;
     artifact = {
       artifactId: file.artifact_id,
       bytes: file.bytes,
@@ -40,6 +53,8 @@ export function projectExport(db: DatabaseSync, row: ExportRow): ExportJob {
     cancellationRequested: row.cancellation_requested === 1,
     reason: row.reason,
     artifact,
+    madeAt,
+    lastAgentReportAt: row.last_agent_report_at,
   };
   const checked = validateApi('ExportJob', value);
   if (!checked.ok) throw new StorageError('unavailable');

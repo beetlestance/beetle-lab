@@ -24,6 +24,7 @@ export class ExportObservations {
   constructor(
     private readonly db: DatabaseSync,
     private readonly reads: ExportReads,
+    private readonly now: () => string = () => new Date().toISOString(),
   ) {}
   observe(request: Parameters<ExportExecutionStore['observe']>[0]): ExportJob {
     return transaction(this.db, () => this.matched(request));
@@ -47,9 +48,9 @@ export class ExportObservations {
     if (row?.snapshot_json === json && retained.state === next.state) return this.reads.get(retained.key);
     this.db
       .prepare(
-        `UPDATE export_jobs SET snapshot_json=?,state=?,reason=?,cancellation_requested=MAX(cancellation_requested,?),version=version+1 WHERE id=?`,
+        `UPDATE export_jobs SET last_agent_report_at=CASE WHEN snapshot_json IS NOT ? THEN ? ELSE last_agent_report_at END,snapshot_json=?,state=?,reason=?,cancellation_requested=MAX(cancellation_requested,?),version=version+1 WHERE id=?`,
       )
-      .run(json, next.state, next.reason, Number(merged.cancelRequested), retained.key.id);
+      .run(json, this.now(), json, next.state, next.reason, Number(merged.cancelRequested), retained.key.id);
     return this.reads.get(retained.key);
   }
   private requirePurpose(

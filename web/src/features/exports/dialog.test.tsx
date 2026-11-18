@@ -85,12 +85,13 @@ it('prepares a script with the default options and then shows its progress', asy
 });
 
 it('offers the ready script with its size, SHA-256 and scoped download', async () => {
-  const job = { ...exportJob(), state: 'ready', artifact } as ExportJob;
+  const job = { ...exportJob(), state: 'ready', artifact, madeAt: '2026-11-12T05:42:00.000Z' } as ExportJob;
   mount(rev, listing([job]));
   expect(
     await screen.findByRole('dialog', { name: 'Checkout, revision 2 is ready as a k6 script' }),
   ).toBeInTheDocument();
   expect(screen.getByText('84 KB')).toBeInTheDocument();
+  expect(document.querySelector('time')).toHaveAttribute('datetime', '2026-11-12T05:42:00.000Z');
   expect(screen.getByText('e'.repeat(64))).toBeInTheDocument();
   const link = screen.getByRole('link', { name: 'Download script' });
   expect(link).toHaveAttribute('href', exportContentPath({ organizationId, workspaceId, exportId: job.id }));
@@ -131,4 +132,30 @@ it('lists workspace exports with a download for ready rows and cancel for live o
   expect(within(table).getByRole('link', { name: 'Download' })).toHaveAttribute('download', 'suite.js');
   expect(within(table).getByRole('button', { name: 'Cancel' })).toBeEnabled();
   expect(within(table).getByText('Building the script')).toBeInTheDocument();
+});
+
+it('replays the identical unknown cancellation from an unknown export dialog', async () => {
+  let calls = 0;
+  const job = { ...exportJob(), state: 'unknown', reason: 'delivery_unknown' } as ExportJob;
+  const api = mount(rev, (request) => {
+    if (request.method === 'POST') {
+      calls++;
+      return calls === 1 ? new Response('', { status: 503 }) : json({ ...job, cancellationRequested: true });
+    }
+    return listing([job])(request);
+  });
+  fireEvent.click(await screen.findByRole('button', { name: 'Cancel export' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Replay export cancellation' }));
+  await screen.findByRole('button', { name: 'Cancel export' });
+  const posts = api.records.filter((record) => record.method === 'POST');
+  expect(posts).toHaveLength(2);
+  expect(posts[1]!.body).toEqual(posts[0]!.body);
+  expect(posts[1]!.path).toBe(posts[0]!.path);
+  expect(screen.getByText('Not recorded')).toBeInTheDocument();
+});
+
+it('preserves a schema-valid leap second without crashing browser date formatting', async () => {
+  const job = { ...exportJob(), state: 'ready', artifact, madeAt: '2026-12-31T23:59:60Z' } as ExportJob;
+  mount(rev, listing([job]));
+  expect(await screen.findByText('2026-12-31T23:59:60Z')).toHaveAttribute('datetime', '2026-12-31T23:59:60Z');
 });

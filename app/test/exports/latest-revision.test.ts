@@ -74,7 +74,9 @@ it('adds the index to schema 34 without changing exports and rolls back a failed
   await f.close(metadata);
   const old = new DatabaseSync(path);
   try {
-    old.exec('DROP INDEX exports_revision_latest; PRAGMA user_version=34;');
+    old.exec(
+      'ALTER TABLE export_jobs DROP COLUMN last_agent_report_at; DROP INDEX exports_revision_latest; PRAGMA user_version=34;',
+    );
   } finally {
     old.close();
   }
@@ -84,7 +86,7 @@ it('adds the index to schema 34 without changing exports and rolls back a failed
   const failed = new DatabaseSync(path);
   try {
     failed.exec(
-      'DROP INDEX exports_revision_latest; PRAGMA user_version=34; CREATE INDEX exports_revision_latest ON organizations(name);',
+      'ALTER TABLE export_jobs DROP COLUMN last_agent_report_at; DROP INDEX exports_revision_latest; PRAGMA user_version=34; CREATE INDEX exports_revision_latest ON organizations(name);',
     );
     expect(() => transaction(failed, () => failed.exec(migration035))).toThrow();
     expect(failed.prepare('PRAGMA user_version').get()?.user_version).toBe(34);

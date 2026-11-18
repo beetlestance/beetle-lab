@@ -13,6 +13,7 @@ it('binds the wrapper and nested job to the exact revision and workspace with ex
   expect(latestRevisionExportMatches(value, job.scope, job.revisionId)).toBe(true);
   expect(latestRevisionExportMatches({ ...value, job: null }, job.scope, job.revisionId)).toBe(true);
   const wrongReplies: LatestRevisionExport[] = [
+    { ...value, job: { ...job, madeAt: '2026-11-12T00:00:00.000Z' } },
     { ...value, revisionId: other },
     { ...value, scope: { ...job.scope, workspaceId: other } },
     { ...value, job: { ...job, revisionId: other } },
