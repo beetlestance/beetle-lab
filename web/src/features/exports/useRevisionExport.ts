@@ -35,7 +35,8 @@ function useJob(revision: SuiteRevision, created: string | null) {
     queryKey: [...queryKeys.exports(organizationId, workspaceId), 'latest', 'revision', revision.id.toLowerCase()],
     queryFn: ({ signal }) =>
       readResult(api.getLatestRevisionExport({ params: { ...params, revisionId: revision.id }, signal })),
-    refetchInterval: (query) => (live(query.state.data?.job ?? undefined) ? 2000 : false),
+    refetchInterval: (query) =>
+      query.state.status !== 'error' && live(query.state.data?.job ?? undefined) ? 2000 : false,
   });
   const latest = listing.data?.job ?? undefined;
   const followed = created ?? latest?.id ?? '';

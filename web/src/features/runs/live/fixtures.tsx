@@ -209,7 +209,16 @@ export function routesFor(current: () => Run, extra?: (request: RequestRecord) =
     if (request.path.endsWith(`/suites/${suiteId}`)) return json(suite());
     if (/\/revisions(\?|$)/.test(request.path)) {
       const summary = revisionSummary();
-      return json({ scope: summary.scope, suiteId, items: [summary], nextCursor: null });
+      const id = (ordinal: number) =>
+        ordinal === 4 ? summary.id : `88880000-0000-4000-8000-${String(ordinal).padStart(12, '0')}`;
+      const items = [4, 3, 2, 1].map((ordinal) => ({
+        ...summary,
+        id: id(ordinal),
+        ordinal,
+        previousRevisionId: ordinal === 1 ? null : id(ordinal - 1),
+        runCount: ordinal === 4 ? 3 : 0,
+      }));
+      return json({ scope: summary.scope, suiteId, items, nextCursor: null });
     }
     if (request.path.includes('/events?')) return json(emptyEvents(current()));
     throw new Error(`Unexpected synthetic route ${request.path}`);

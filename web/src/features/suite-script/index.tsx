@@ -1,14 +1,16 @@
+import { ScriptNamespace } from './ScriptNamespace.js';
+import { ScriptBreadcrumbs } from './ScriptBreadcrumbs.js';
+import { useSessionAccess } from '../../app/session.js';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import type { ExportJob, Suite, SuiteRevision, SuiteRevisionSummary } from '@beetle/contracts/api';
+import type { ExportJob, Suite, SuiteRevision, SuiteRevisionSummary, Workspace } from '@beetle/contracts/api';
 import { ApiFailure, readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
 import { Button } from '../../components/Button.js';
 import { NotFound } from '../../components/NotFound.js';
-import { QueryState } from '../../components/QueryState.js';
+import { AuthoringState } from '../suites/AuthoringState.js';
 import { TabPanel, Tabs } from '../../components/Tabs.js';
 import { ExportDialog } from '../exports/ExportDialog.js';
 import { maximumShownScriptBytes, readScript } from '../exports/scriptText.js';
@@ -103,33 +105,30 @@ function ScriptHeader({
 }
 
 /**
- * "Run this revision": the suite page's Start run dialog with this revision chosen. Hidden
- * until the workspace name (which the dialog shows) has been read.
+ * "Run this revision": uses the verified workspace name and is disabled in restored history.
  */
 function RunRevision({
   suite,
   revision,
   revisions,
+  workspaceName,
 }: {
   suite: Suite;
   revision: SuiteRevision;
   revisions: readonly SuiteRevisionSummary[];
+  workspaceName: string;
 }) {
-  const api = useApi();
-  const { organizationId, workspaceId } = revision.scope;
   const [open, setOpen] = useState(false);
-  const workspace = useQuery({
-    queryKey: queryKeys.workspace(organizationId, workspaceId),
-    queryFn: ({ signal }) => readResult(api.getWorkspace({ params: { organizationId, workspaceId }, signal })),
-  });
-  if (!workspace.data) return null;
+  const { readOnly } = useSessionAccess();
   return (
     <>
-      <Button onClick={() => setOpen(true)}>Run this revision</Button>
+      <Button disabled={readOnly} onClick={() => setOpen(true)}>
+        Run this revision
+      </Button>
       {open && (
         <StartRun
           suite={suite}
-          workspaceName={workspace.data.name}
+          workspaceName={workspaceName}
           revisions={revisions}
           initialRevisionId={revision.id}
           close={() => setOpen(false)}
@@ -139,7 +138,7 @@ function RunRevision({
   );
 }
 
-function ScriptPage({ suite, revision }: { suite: Suite; revision: SuiteRevision }) {
+function ScriptPage({ suite, revision, workspace }: { suite: Suite; revision: SuiteRevision; workspace: Workspace }) {
   const { organizationId, workspaceId } = revision.scope;
   const [tab, setTab] = useState<Tab>('script');
   const [exporting, setExporting] = useState(false);
@@ -150,14 +149,19 @@ function ScriptPage({ suite, revision }: { suite: Suite; revision: SuiteRevision
   const counts = comparison.diff ? `+${comparison.diff.added} −${comparison.diff.removed}` : undefined;
   return (
     <section className="content-section script-page">
-      <nav className="script-crumbs" aria-label="Breadcrumb">
-        <Link to={suiteHref}>← {suite.name}</Link>
-      </nav>
+      <ScriptBreadcrumbs suite={suite} revision={revision} workspace={workspace} choices={comparison.choices} />
       <ScriptHeader
         revision={revision}
         text={script.data}
         exportScript={() => setExporting(true)}
-        run={<RunRevision suite={suite} revision={revision} revisions={comparison.choices} />}
+        run={
+          <RunRevision
+            suite={suite}
+            revision={revision}
+            revisions={comparison.choices}
+            workspaceName={workspace.name}
+          />
+        }
       />
       <Tabs<Tab>
         label="Script views"
@@ -190,7 +194,13 @@ function ScriptPage({ suite, revision }: { suite: Suite; revision: SuiteRevision
 }
 
 /** "Script / revision N" with its Changes and One column variants, for one saved suite revision. */
-export function SuiteScript({ organizationId, workspaceId, suiteId, revisionId }: SuiteScriptScope) {
+function ScopedScript({
+  organizationId,
+  workspaceId,
+  suiteId,
+  revisionId,
+  workspace,
+}: SuiteScriptScope & { workspace: Workspace }) {
   const api = useApi();
   const suite = useQuery({
     queryKey: queryKeys.suite(organizationId, workspaceId, suiteId),
@@ -202,16 +212,32 @@ export function SuiteScript({ organizationId, workspaceId, suiteId, revisionId }
       readResult(api.getSuiteRevision({ params: { organizationId, workspaceId, revisionId }, signal })),
   });
   const back = { to: routes.suites(organizationId, workspaceId), label: 'Back to suites' };
-  if (missing(suite.error) || missing(revision.error)) return <NotFound kind="script" back={back} />;
+  if ((!suite.data && missing(suite.error)) || (!revision.data && missing(revision.error)))
+    return <NotFound kind="script" back={back} />;
   if (revision.data && revision.data.suiteId.toLowerCase() !== suiteId.toLowerCase())
     return <NotFound kind="script" back={back} />;
   return (
-    <QueryState query={suite}>
+    <AuthoringState query={suite} retainedLabel="Your script and export controls are kept.">
       {(suiteData) => (
-        <QueryState query={revision}>
-          {(revisionData) => <ScriptPage key={revisionData.id} suite={suiteData} revision={revisionData} />}
-        </QueryState>
+        <AuthoringState query={revision} retainedLabel="Your script and export controls are kept.">
+          {(revisionData) => (
+            <ScriptPage key={revisionData.id} suite={suiteData} revision={revisionData} workspace={workspace} />
+          )}
+        </AuthoringState>
       )}
-    </QueryState>
+    </AuthoringState>
+  );
+}
+
+/** Resolve the namespace before reading script owners; scope changes retire the complete feature. */
+export function SuiteScript(props: SuiteScriptScope) {
+  return (
+    <ScriptNamespace
+      key={`${props.organizationId}/${props.workspaceId}`}
+      organizationId={props.organizationId}
+      workspaceId={props.workspaceId}
+    >
+      {(workspace) => <ScopedScript {...props} workspace={workspace} />}
+    </ScriptNamespace>
   );
 }

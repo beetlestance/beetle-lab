@@ -1,13 +1,15 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import type { ExportJob, Suite, SuiteRevision } from '@beetle/contracts/api';
+import type { CreateExportRequest, ExportJob, Suite, SuiteRevision } from '@beetle/contracts/api';
 import { exportContentPath } from '@beetle/contracts/api';
-import { environment, exportJob, json, revision, testClient } from '../exports/fixtures.js';
+import { environment, exportJob, exportSettings, json, revision, testClient } from '../exports/fixtures.js';
 import type { RequestRecord } from '../../app/test-fixtures.js';
-import { apiError, workspace } from '../../app/test-fixtures.js';
+import { apiError, org, workspace } from '../../app/test-fixtures.js';
+import { queryKeys } from '../../app/queries.js';
+import { SessionContext } from '../../app/session.js';
 import { SuiteScript } from './index.js';
 
 afterEach(() => {
@@ -85,6 +87,7 @@ function routes(job: ExportJob | null, overrides: Partial<Record<'revision', Sui
     nextCursor: null,
   };
   const table: [(path: string) => boolean, unknown][] = [
+    [(path) => path.endsWith(`/organizations/${organizationId}`), org(organizationId)],
     [(path) => path.endsWith(`/suites/${current.suiteId}`), suite()],
     [(path) => path.includes(`/suites/${current.suiteId}/revisions?`), page],
     [(path) => path.endsWith(`/revisions/${current.id}`), overrides.revision ?? second],
@@ -203,4 +206,86 @@ it('shows a retryable export read failure rather than claiming the revision has 
   unavailable = false;
   fireEvent.click(screen.getByRole('button', { name: 'Retry exports' }));
   expect(await screen.findByText('This revision has no script yet')).toBeInTheDocument();
+});
+
+it.each([
+  ['organization', 'storage_unavailable'],
+  ['suite', 'storage_unavailable'],
+  ['revision', 'storage_unavailable'],
+  ['suite', 'not_found'],
+] as const)('keeps unknown export replay when %s refresh returns %s', async (owner, failureCode) => {
+  const refresh =
+    owner === 'organization'
+      ? { path: `/organizations/${organizationId}`, key: queryKeys.organization(organizationId) }
+      : owner === 'suite'
+        ? { path: `/suites/${current.suiteId}`, key: queryKeys.suite(organizationId, workspaceId, current.suiteId) }
+        : { path: `/revisions/${current.id}`, key: queryKeys.suiteRevision(organizationId, workspaceId, current.id) };
+  let unavailable = false;
+  let accepted: ExportJob | null = null;
+  let posts = 0;
+  const normal = routes(null);
+  const failureStatus = failureCode === 'not_found' ? 404 : 503;
+  const api = testClient((request) => {
+    if (request.method === 'POST') {
+      if (++posts === 1) throw new Error('Synthetic lost acceptance');
+      accepted = exportJob(request.body as unknown as CreateExportRequest);
+      return json(accepted, 202);
+    }
+    if (unavailable && request.path.endsWith(refresh.path)) return json(apiError(failureCode), failureStatus);
+    if (request.path.endsWith('/exports/profiles')) return json({ scope: current.scope, profiles: ['k6'] });
+    if (request.path.includes('/settings')) return json(exportSettings());
+    if (request.path.endsWith('/exports/latest'))
+      return json({ scope: current.scope, revisionId: current.id, job: accepted });
+    if (accepted && request.path.endsWith(`/exports/${accepted.id}`)) return json(accepted);
+    return normal(request);
+  });
+  const e = environment(api.client);
+  e.mount(
+    <MemoryRouter>
+      <SuiteScript
+        organizationId={organizationId}
+        workspaceId={workspaceId}
+        suiteId={current.suiteId}
+        revisionId={current.id}
+      />
+    </MemoryRouter>,
+  );
+  fireEvent.click(await screen.findByRole('button', { name: 'Export script' }));
+  const dialog = screen.getByRole('dialog');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Prepare script' }));
+  await screen.findByText('The outcome is unknown. Replay sends the identical request.');
+  const retainedDialog = screen.getByRole('dialog');
+  unavailable = true;
+  await act(async () => {
+    await e.client.refetchQueries({ queryKey: refresh.key, exact: true });
+  });
+  expect(await screen.findByText(/Your script and export controls are kept/)).toBeInTheDocument();
+  expect(screen.getByRole('dialog')).toBe(retainedDialog);
+  expect(screen.getByText('The outcome is unknown. Replay sends the identical request.')).toBeInTheDocument();
+  unavailable = false;
+  fireEvent.click(screen.getByRole('button', { name: 'Replay export request' }));
+  await waitFor(() => expect(api.records.filter((r) => r.method === 'POST')).toHaveLength(2));
+  const writes = api.records.filter((r) => r.method === 'POST');
+  expect(writes[1]?.body).toEqual(writes[0]?.body);
+});
+
+it('keeps Run this revision visible and disabled in restored history', async () => {
+  const api = testClient(routes(null));
+  environment(api.client).mount(
+    <SessionContext.Provider value={{ readOnly: true, restoredBackup: null }}>
+      <MemoryRouter>
+        <SuiteScript
+          organizationId={organizationId}
+          workspaceId={workspaceId}
+          suiteId={current.suiteId}
+          revisionId={current.id}
+        />
+      </MemoryRouter>
+    </SessionContext.Provider>,
+  );
+  const run = await screen.findByRole('button', { name: 'Run this revision' });
+  expect(run).toBeDisabled();
+  fireEvent.click(run);
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(api.records.every((r) => r.method === 'GET')).toBe(true);
 });

@@ -37,6 +37,8 @@ export const routes = {
     '/organizations/:organizationId/workspaces/:workspaceId/suites/:suiteId/revisions/:revisionId/script',
   suiteScript: (org: string, workspace: string, suite: string, revision: string) =>
     `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/suites/${encodeURIComponent(suite)}/revisions/${encodeURIComponent(revision)}/script`,
+  suiteScriptFromRun: (org: string, workspace: string, suite: string, revision: string, run: string) =>
+    `${routes.suiteScript(org, workspace, suite, revision)}?run=${encodeURIComponent(run)}`,
   organizations: '/',
   settings: '/settings',
   organizationSettingsPattern: '/organizations/:organizationId/settings',

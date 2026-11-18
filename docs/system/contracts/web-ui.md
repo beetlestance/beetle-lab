@@ -36,7 +36,8 @@ feature's `CONTEXT.md`; the stack choice is [decision 019](../../decisions/019-f
 - Loading, empty, unavailable, stale, error and ready are distinct messages. An
   error hides cached figures or marks them unknown; missing values are never zero.
   Exception: the run timeline keeps its rows on a read error and labels them
-  retained, not current (`runs/timeline/index.tsx`).
+  retained, not current (`runs/timeline/index.tsx`). Authoring and Script retain
+  local draft/export intent through cached metadata refresh failures, with a warning.
 - Artifact states are pending, absent, ready-empty and ready; an empty ready page
   is not source-free absence.
 - Run state and outcome come from the application. An engine-reported result is
@@ -72,6 +73,7 @@ cursor is backlog to drain at the normal cadence, not a tight loop.
 | Run timeline | 100 rows and 64 KiB of projected rows, oldest evicted with a visible notice; bootstrap uses at most 2 requests (limit 1, then a seek to `durableThrough - 100`) |
 | Artifact inventory | One current page of 100 descriptors; pages never appended across attempts or manifests |
 | Result panel | At most 128 declared artifacts, shown as declarations, never as download receipts |
+| Script source | verified text ≤ 1 MiB; at most 34 rendered rows and four index bytes per line; Copy/Export use complete source |
 | Command search | First page of 100 per scope; query up to 128 characters; 40 results with the full match count |
 | Input upload | One file up to 8 MiB; 64 KiB sequential appends; directory import 128 files, 8 MiB each, 128 MiB total, depth 8 |
 | Input download | One verified result up to 8 MiB per control; one object URL, revoked on replacement or unmount |
@@ -116,7 +118,15 @@ unknown fields. The suite page tab, editor view (form, Run setup, JSON) and open
 request are URL state built by `routes.suitePage`, so deep links and back/forward
 switch views without touching the draft. Invalid JSON stays editable but blocks conversion and saving. A
 failed save keeps the draft; an unknown outcome offers replay of the identical
-request; a stale version offers a reload and never overwrites the newer revision.
+request; a stale version reads the latest head and offers explicit save as a new
+revision, preserving earlier immutable history.
+
+Script links resolve real organisation/workspace names before reading owners.
+`routes.suiteScriptFromRun` carries one optional `run` UUID: the breadcrumb reads
+and checks that run belongs to the suite, while labelling the selected script
+revision separately. Malformed/duplicate origins issue no read. Cached namespace,
+suite or revision refresh failures keep unknown export replay mounted; initial
+not-found and foreign-suite data still refuse. Restored history disables run admission.
 
 ## Suite inventory
 
@@ -165,7 +175,7 @@ filters keeps the suite context; an explicit workspace-history link clears it.
 
 | Code | Reviewed |
 | --- | --- |
-| `web/src/app/routes.ts` | `d2732ea4fbdb` |
+| `web/src/app/routes.ts` | `e76ff2493fa2` |
 | `web/src/app/queries.ts` | `31296c59bb64` |
 | `web/src/features/runs/timeline/read.ts` | `cbd57b66d9b4` |
 | `web/src/features/runs/timeline/projection.ts` | `e7e83db9f347` |

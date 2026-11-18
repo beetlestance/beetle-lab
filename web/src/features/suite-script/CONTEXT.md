@@ -6,6 +6,13 @@ built with `routes.suiteScript(org, workspace, suite, revision)`. App validates 
 four IDs before mounting `SuiteScript`, which implements the "Script / revision N"
 board with its Changes and One column variants.
 
+- `ScriptNamespace` verifies organisation/workspace and warms their real names.
+  Retained-data guards on namespace/suite/revision keep unknown export replay alive
+  through refresh errors; initial not-found and foreign-suite data still refuse.
+- Optional `?run=<UUID>` comes from live/result links. Breadcrumbs verify the scoped
+  run belongs to this suite; selected script revision is labelled separately.
+  Duplicate/malformed origins never issue a read. Scope retirement cancels inactive
+  reads; restored history keeps Run this revision visible and disabled.
 - `index.tsx` reads the suite and revision; a missing or cross-suite revision shows
   `<NotFound kind="script" />`. The header shows the revision message and a saved
   line built only from fields the API returns (`savedAt`, `savedBy`, `runCount`).

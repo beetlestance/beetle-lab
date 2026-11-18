@@ -143,7 +143,7 @@ export function ScriptVersion({
       <div className="result-row">
         <Link
           className={buttonClass('secondary', 'sm')}
-          to={routes.suiteScript(organizationId, workspaceId, run.suiteId, run.revisionId)}
+          to={routes.suiteScriptFromRun(organizationId, workspaceId, run.suiteId, run.revisionId, run.id)}
         >
           View script
         </Link>

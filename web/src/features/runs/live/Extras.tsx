@@ -42,7 +42,7 @@ export function ScriptPicker({ run, suite, onClose }: { run: Run; suite: Suite |
           {items.map((revision) => (
             <li key={revision.id}>
               <Link
-                to={routes.suiteScript(organizationId, workspaceId, run.suiteId, revision.id)}
+                to={routes.suiteScriptFromRun(organizationId, workspaceId, run.suiteId, revision.id, run.id)}
                 onClick={onClose}
                 aria-current={revision.id === run.revisionId ? 'true' : undefined}
               >

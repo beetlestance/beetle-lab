@@ -8,10 +8,12 @@ export function AuthoringState<T>({
   query,
   children,
   loading,
+  retainedLabel = 'Your draft is kept.',
 }: {
   query: UseQueryResult<T>;
   children: (data: T) => ReactNode;
   loading?: ReactNode;
+  retainedLabel?: string;
 }) {
   if (query.data === undefined)
     return (
@@ -24,8 +26,8 @@ export function AuthoringState<T>({
       {query.isError && (
         <div role="alert" className="notice error">
           <p>
-            {query.error instanceof ApiFailure ? query.error.message : 'Could not refresh saved details.'} Your draft is
-            kept.
+            {query.error instanceof ApiFailure ? query.error.message : 'Could not refresh saved details.'}{' '}
+            {retainedLabel}
           </p>
           <button type="button" onClick={() => void query.refetch()}>
             Retry loading

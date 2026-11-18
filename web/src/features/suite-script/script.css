@@ -4,6 +4,8 @@
   min-width: 0;
 }
 .script-crumbs {
+  min-width: 0;
+  overflow-wrap: anywhere;
   margin-bottom: 12px;
   line-height: 21px;
 }
@@ -134,6 +136,7 @@
 }
 
 .script-description {
+  overflow-wrap: anywhere;
   margin: 8px 0 44px;
   font-size: 20px;
   line-height: 29px;
