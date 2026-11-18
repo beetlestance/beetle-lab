@@ -25,7 +25,13 @@ it('serves exact wrapper history through native publication, actual metadata, au
     expect(range.ok && range.value.items.map(p => p.windowOrdinal)).toEqual([2]);
     const attribution = await http.client.getRunLatencyAttribution({params});
     expect(attribution).toMatchObject({ok: true, value: {windows: 3, rise: null, reason: 'too_few_windows'}});
+    const overview = await http.client.getRunMetricOverview({params});
+    expect(overview).toMatchObject({ok:true,value:{availability:'ready',endpoints:[{request:'r0'}],omittedEndpoints:0}});
     expect(f.facts()).toEqual(before);
+    const overviewPath = `/api/v2/organizations/${params.organizationId}/workspaces/${params.workspaceId}/runs/${params.runId}/attempts/${params.attemptId}/metrics/overview`;
+    expect((await fetch(http.origin+overviewPath)).status).toBe(401);
+    const foreignOverview=await http.client.getRunMetricOverview({params:{...params,organizationId:'00000000-0000-4000-8000-000000000999'}});
+    expect(foreignOverview).toMatchObject({ok:false,error:{status:404}});
     const url = `${http.origin}/api/v2/organizations/${params.organizationId}/workspaces/${params.workspaceId}/runs/${params.runId}/attempts/${params.attemptId}/metrics`;
     expect((await fetch(url + '?limit=100')).status).toBe(401);
     const foreign = await http.client.listRunMetricSeries({params: {...params, organizationId: '00000000-0000-4000-8000-000000000999'}, query: {limit: 100}});

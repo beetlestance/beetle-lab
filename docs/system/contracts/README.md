@@ -38,3 +38,5 @@ rereads the contract, corrects it and runs `npm run docs:stamp -- <file>`.
 | Browser scope, polling, bounds and truthful state | [Web UI](web-ui.md) |
 
 Layout, owners and dependency edges: [architecture](../../engineering/architecture.md).
+
+Result summary and endpoint projection: [result presentation](result-presentation.md).

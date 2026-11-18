@@ -6,7 +6,7 @@ import data from '../../../../contracts/fixtures/api/valid/live-target-history.j
 import {hash} from '../../run-live-metrics/fixtures.js';
 import {httpFixture} from '../run-metrics/fixture.js';
 const unused=async()=>{throw Error('Unexpected synthetic sealed-history read')};
-const history:RunMetricsService={readRunHistorySummary:unused,lookupRunMetricSeries:unused,reader:{listRunMetricSeries:unused,getRunMetricSamples:unused,getRunLatencyAttribution:unused},close:async()=>{}};
+const history:RunMetricsService={readRunHistorySummary:unused,lookupRunMetricSeries:unused,reader:{listRunMetricSeries:unused,getRunMetricSamples:unused,getRunMetricOverview: async () => { throw new Error('Unexpected metric overview read'); }, getRunLatencyAttribution:unused},close:async()=>{}};
 it('serves the public descriptor through real session protection and generated client ownership',async()=>{
  const value=captureLiveMetricHistory(data,hash);const getRunLiveHistory=vi.fn<RunLiveHistoryService['reader']['getRunLiveHistory']>(async()=>value);const service={reader:{getRunLiveHistory},close:async()=>{}};
  const http=await httpFixture(history,undefined,service);const params={organizationId:value.scope.organizationId,workspaceId:value.scope.workspaceId,attemptId:value.scope.attemptId,runId:'00000000-0000-4000-8000-000000000099'};

@@ -1,6 +1,7 @@
 import type { RunHistoryMetricReader } from './run-history.js';
 import type {
   RunLatencyAttribution,
+  RunMetricOverview,
   RunMetricKey,
   RunMetricSeries,
   RunMetricSeriesPage,
@@ -26,6 +27,10 @@ export interface RunMetricSamplesQuery extends RunMetricSeriesQuery {
 }
 /** One original operation; callers retain cancellation/deadline ownership. */
 export interface RunMetricsReader {
+  getRunMetricOverview(
+    query: RunKey & { readonly attemptId: string },
+    context: MetricReadContext,
+  ): Promise<RunMetricOverview>;
   listRunMetricSeries(query: RunMetricSeriesQuery, context: MetricReadContext): Promise<RunMetricSeriesPage>;
   getRunMetricSamples(query: RunMetricSamplesQuery, context: MetricReadContext): Promise<RunMetricSamplesPage>;
   /** Derived p95-rise attribution from the whole published history; rise is null when not stated. */

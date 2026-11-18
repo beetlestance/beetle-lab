@@ -23,6 +23,7 @@ export function createApiHttpTransport(options: ApiHttpOptions): ApiTransport {
         LiveMetricSnapshot: 65536,
         LiveMetricHistory: API_MAXIMUM_JSON_BYTES,
         RunComparisonSnapshot: 262144,
+        RunMetricOverview: 131072,
       },
       validate: validateApi,
       validateError: (input) => validateApi('ApiError', input),

@@ -12,11 +12,6 @@ export function registerRunMetricRoutes(server: FastifyInstance, options: Option
   server.register(async (routes) => {
     routes.addHook('onRequest', options.authorize);
     owners.register(routes);
-    const scope = (p: { organizationId: string; workspaceId: string }) => ({
-      kind: 'workspace' as const,
-      organizationId: p.organizationId.toLowerCase(),
-      workspaceId: p.workspaceId.toLowerCase(),
-    });
     registerApiOperation(
       routes,
       'listRunMetricSeries',
@@ -55,6 +50,7 @@ export function registerRunMetricRoutes(server: FastifyInstance, options: Option
       },
       { signalFor: (request) => owners.forRequest(request).signal },
     );
+    registerOverview(routes, options, owners);
     registerApiOperation(
       routes,
       'getRunLatencyAttribution',
@@ -79,4 +75,27 @@ export function registerRunMetricRoutes(server: FastifyInstance, options: Option
       return closing;
     },
   });
+}
+
+const scope = (p: { organizationId: string; workspaceId: string }) => ({
+  kind: 'workspace' as const,
+  organizationId: p.organizationId.toLowerCase(),
+  workspaceId: p.workspaceId.toLowerCase(),
+});
+
+function registerOverview(routes: FastifyInstance, options: Options, owners: RequestLifetimes) {
+  registerApiOperation(
+    routes,
+    'getRunMetricOverview',
+    ({ params, signal }) => {
+      const owner = owners.forSignal(signal);
+      return owner.run(() =>
+        options.service.reader.getRunMetricOverview(
+          { id: params.runId.toLowerCase(), scope: scope(params), attemptId: params.attemptId.toLowerCase() },
+          owner,
+        ),
+      );
+    },
+    { signalFor: (request) => owners.forRequest(request).signal },
+  );
 }

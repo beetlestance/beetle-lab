@@ -205,15 +205,15 @@ characters and shows at most 80 matches.
 
 ## Related
 
-- [Engine metadata](engine-metadata.md), [Active history](active-history.md), [Inputs](inputs.md), [Web UI](web-ui.md), [Run lifecycle](run-lifecycle.md), [Resources](resources.md)
+- [Result presentation](result-presentation.md), [Engine metadata](engine-metadata.md), [Active history](active-history.md), [Inputs](inputs.md), [Web UI](web-ui.md), [Run lifecycle](run-lifecycle.md), [Resources](resources.md)
 - Decisions [007: admitted validation](../../decisions/007-admitted-validation.md), [015: automatic local access](../../decisions/015-automatic-local-access.md), [021: bounded history search](../../decisions/021-bounded-history-search.md)
 
 ## Anchors
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `f42bb3fc43df` |
-| `contracts/src/api/client/` | `1c80d408c4ef` |
+| `contracts/api/v2/` | `ad5b28c1d1ed` |
+| `contracts/src/api/client/` | `f34dca5841a4` |
 | `contracts/src/api/run-list.ts` | `1c4b7b193309` |
 | `app/src/adapters/inbound/http/api-errors.ts` | `9a79596d0e11` |
 | `app/src/adapters/inbound/http/session/` | `328af44f81f3` |

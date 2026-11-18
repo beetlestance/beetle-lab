@@ -552,6 +552,16 @@
     "implementation": "implemented"
   },
   {
+    "name": "getRunMetricOverview",
+    "method": "GET",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics/overview",
+    "response": "RunMetricOverview",
+    "successStatus": 200,
+    "error": "ApiError",
+    "params": "RunAttemptParams",
+    "implementation": "implemented"
+  },
+  {
     "name": "getRunLatencyAttribution",
     "method": "GET",
     "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics/latency-attribution",

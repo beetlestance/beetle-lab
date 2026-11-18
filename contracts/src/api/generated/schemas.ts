@@ -30,6 +30,7 @@ import { schema as ApiRunArtifacts } from './run-artifacts.js';
 import { schema as ApiRunComparison } from './run-comparison.js';
 import { schema as ApiRunEvents } from './run-events.js';
 import { schema as ApiRunHistory } from './run-history.js';
+import { schema as ApiRunMetricOverview } from './run-metric-overview.js';
 import { schema as ApiRunMetrics } from './run-metrics.js';
 import { schema as ApiRunRequests } from './run-requests.js';
 import { schema as ApiRunResult } from './run-result.js';
@@ -42,7 +43,7 @@ import { schema as ApiSuiteListing } from './suite-listing.js';
 import { schema as ApiSuiteRequests } from './suite-requests.js';
 import { schema as ApiSuite } from './suite.js';
 /** Complete reference closure; runner result schemas are shared, never copied. */
-export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, TargetRuntimeReport, ApiCommon, ApiExportJobs, ApiInputColumns, ApiInputRequests, ApiInput, ApiInstallationStatus, LiveHistoryPrefix, LiveHistory, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetentionStatus, ApiRetentionTraversal, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunHistory, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteListing, ApiSuiteRequests, ApiSuite] as const);
+export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, TargetRuntimeReport, ApiCommon, ApiExportJobs, ApiInputColumns, ApiInputRequests, ApiInput, ApiInstallationStatus, LiveHistoryPrefix, LiveHistory, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetentionStatus, ApiRetentionTraversal, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunHistory, ApiRunMetricOverview, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteListing, ApiSuiteRequests, ApiSuite] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -166,6 +167,8 @@ export const apiMessageSchemas = freezeSchema({
   RunEventPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-events#/$defs/RunEventPage' },
   RunHistorySource: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-history#/$defs/RunHistorySource' },
   RunHistorySummary: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-history#/$defs/RunHistorySummary' },
+  RunMetricEndpoint: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metric-overview#/$defs/RunMetricEndpoint' },
+  RunMetricOverview: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metric-overview#/$defs/RunMetricOverview' },
   RunMetricKey: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricKey' },
   RunMetricTags: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricTags' },
   RunMetricPercentile: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-metrics#/$defs/RunMetricPercentile' },

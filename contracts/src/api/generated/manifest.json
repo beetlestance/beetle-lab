@@ -31,6 +31,7 @@
     "api/v2/run-comparison.schema.json": "fecf3d989b05378210f1166b8a9e9a90f2601ac9e32e61cc3aadaca50a5a63f9",
     "api/v2/run-events.schema.json": "1e9f5d24aaac78ff7909396ef2d056c3c963891d7874e4cee45052c545b21dbf",
     "api/v2/run-history.schema.json": "82d784f10985ba7e92ad9966d9867ed2b01a660d4554839f8b11c9bdca90a526",
+    "api/v2/run-metric-overview.schema.json": "2a8ccfe648cb5bb8b6dcdc078755fd64ad3e7c73025544fb4d5d9dcc9bdd2d0e",
     "api/v2/run-metrics.schema.json": "e1a2e86a2e404007f50d6bd29591d3e09b03b4197a02921540d635d65e21ae59",
     "api/v2/run-requests.schema.json": "c6fe43dc932ba22d332c45d7b57b9b2986133f1dbb8d013bd987815039038d73",
     "api/v2/run-result.schema.json": "297cc10fe77e5ca7c2e9d11124a7e4abff461eaba85f3472d1e6a0f0f81d0829",
@@ -43,7 +44,7 @@
     "api/v2/suite-requests.schema.json": "0116fdbd31844237a17491f3cc4e2ed866aea8312d00ef49f4c7ca5a65573a5e",
     "api/v2/suite.schema.json": "5124e1b8a2c85bb5107af81743bcf1d3a153cd5d4bd0f0c4345a01b15da353b5"
   },
-  "operationsSha256": "ab9e53b81ef61a109f84179315d00bc847b526c945baf979bad9a45b6f5c2b7a",
+  "operationsSha256": "a0a39fd41c195b416fd325c7955148cfe55c694773c77f712c477019112bc1c6",
   "outputs": [
     "common.inference.ts",
     "common.ts",
@@ -88,6 +89,8 @@
     "run-events.ts",
     "run-history.inference.ts",
     "run-history.ts",
+    "run-metric-overview.inference.ts",
+    "run-metric-overview.ts",
     "run-metrics.inference.ts",
     "run-metrics.ts",
     "run-requests.inference.ts",

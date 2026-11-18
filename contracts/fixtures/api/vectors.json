@@ -918,5 +918,15 @@
     "path": "valid/live-target-history.json",
     "schema": "LiveMetricHistory",
     "valid": true
+  },
+  {
+    "path": "valid/run-metric-overview.json",
+    "schema": "RunMetricOverview",
+    "valid": true
+  },
+  {
+    "path": "valid/run-metric-endpoint.json",
+    "schema": "RunMetricEndpoint",
+    "valid": true
   }
 ]

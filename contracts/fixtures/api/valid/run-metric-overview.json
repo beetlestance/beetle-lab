@@ -1,0 +1,114 @@
+{
+  "id": "00000000-0000-4000-8000-000000000070",
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "attemptId": "00000000-0000-4000-8000-000000000170",
+  "availability": "ready",
+  "source": {
+    "generation": 1,
+    "manifestDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "numericArtifactId": "f952b21b-be56-4107-93d2-92f413d20df6",
+    "numericSha256": "b45cc001fec6b14cf84e68d63cc61d7a61af491c611740b530beb90c30025d70",
+    "numericVersion": 3,
+    "measurementSourceTimeMs": 1800000000000,
+    "coverage": {
+      "complete": true,
+      "latePoints": 0,
+      "markerDelayDroppedBuckets": 0
+    }
+  },
+  "testDurationMs": null,
+  "requestCount": null,
+  "requestsPerSecond": null,
+  "failure": null,
+  "latency": {
+    "kind": "trend",
+    "count": 3,
+    "sum": 9,
+    "min": 3,
+    "max": 3,
+    "mean": 3,
+    "percentiles": {
+      "p50": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 3,
+        "upper": 3,
+        "estimate": 3
+      },
+      "p90": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 3,
+        "upper": 3,
+        "estimate": 3
+      },
+      "p95": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 3,
+        "upper": 3,
+        "estimate": 3
+      },
+      "p99": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 3,
+        "upper": 3,
+        "estimate": 3
+      }
+    }
+  },
+  "checks": null,
+  "droppedIterations": null,
+  "endpoints": [
+    {
+      "request": "r0",
+      "requestCount": null,
+      "requestsPerSecond": null,
+      "failure": null,
+      "latency": {
+        "kind": "trend",
+        "count": 3,
+        "sum": 9,
+        "min": 3,
+        "max": 3,
+        "mean": 3,
+        "percentiles": {
+          "p50": {
+            "source": "histogram-estimate",
+            "scale": 4,
+            "lower": 3,
+            "upper": 3,
+            "estimate": 3
+          },
+          "p90": {
+            "source": "histogram-estimate",
+            "scale": 4,
+            "lower": 3,
+            "upper": 3,
+            "estimate": 3
+          },
+          "p95": {
+            "source": "histogram-estimate",
+            "scale": 4,
+            "lower": 3,
+            "upper": 3,
+            "estimate": 3
+          },
+          "p99": {
+            "source": "histogram-estimate",
+            "scale": 4,
+            "lower": 3,
+            "upper": 3,
+            "estimate": 3
+          }
+        }
+      }
+    }
+  ],
+  "omittedEndpoints": 0
+}

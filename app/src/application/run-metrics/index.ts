@@ -1,9 +1,11 @@
+import { metricOverview } from './overview.js';
 import type { RunKey } from '../../ports/runs.js';
 import { captureHistoryKey, historyProjection } from './history.js';
 import { captureLookupQuery, lookup, metricSource } from './lookup.js';
 import { MetricReadError } from '../../ports/run-metrics.js';
 import {
   captureRunMetricSeriesCursor,
+  runMetricOverviewMatches,
   encodeRunMetricSeriesCursor,
   runMetricSeriesPageMatches,
   runMetricSamplesPageMatches,
@@ -97,6 +99,20 @@ export function createRunMetricsService(options: RunMetricServiceOptions): RunMe
       );
     },
     reader: Object.freeze({
+      getRunMetricOverview(q: RunKey & { attemptId: string }, c: MetricReadContext) {
+        let key;
+        try {
+          key = captureHistoryKey(q);
+        } catch (error) {
+          return Promise.reject(error);
+        }
+        return lane.run({ ...key, limit: 1 }, c, async (captured, p) => {
+          const value = metricOverview(captured, p);
+          return validateApi('RunMetricOverview', value).ok && runMetricOverviewMatches(value, captured)
+            ? value
+            : fail();
+        });
+      },
       listRunMetricSeries(q: RunMetricSeriesQuery, c: MetricReadContext) {
         return lane.run(q, c, async (captured, p) => {
           const value = series(captured, p);

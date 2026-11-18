@@ -118,3 +118,5 @@ export {
   encodeLiveMetricHistory,
   decodeLiveMetricHistory,
 } from './live-history.js';
+
+export { runMetricOverviewMatches } from './metric-overview.js';

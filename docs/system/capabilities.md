@@ -12,6 +12,7 @@ measurements live in [evidence](../evidence/README.md).
   secret binding references and file/inline/range datasets. Verified input column
   discovery supplies the request value palette.
 - Run/cancel, persisted results, metric history, comparison, reports and exports.
+- A scoped result-metric overview supplies pooled latency, checks and bounded endpoint totals; its UI consumer is pending.
 - Scoped overviews include exact hourly submission counts and current outcomes.
 - Public HTTP API, generated schemas and downloadable AI-agent instructions under
   `/reference`. An MCP server is not shipped.
@@ -33,4 +34,4 @@ The Docker host trust boundary is recorded in
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `f42bb3fc43df` |
+| `contracts/api/v2/` | `ad5b28c1d1ed` |

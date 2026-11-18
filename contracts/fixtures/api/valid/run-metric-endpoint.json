@@ -1,0 +1,44 @@
+{
+  "request": "r0",
+  "requestCount": null,
+  "requestsPerSecond": null,
+  "failure": null,
+  "latency": {
+    "kind": "trend",
+    "count": 3,
+    "sum": 9,
+    "min": 3,
+    "max": 3,
+    "mean": 3,
+    "percentiles": {
+      "p50": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 3,
+        "upper": 3,
+        "estimate": 3
+      },
+      "p90": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 3,
+        "upper": 3,
+        "estimate": 3
+      },
+      "p95": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 3,
+        "upper": 3,
+        "estimate": 3
+      },
+      "p99": {
+        "source": "histogram-estimate",
+        "scale": 4,
+        "lower": 3,
+        "upper": 3,
+        "estimate": 3
+      }
+    }
+  }
+}

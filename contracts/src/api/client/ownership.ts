@@ -1,3 +1,5 @@
+import { runMetricOverviewMatches } from '../metric-overview.js';
+import type { RunMetricOverview } from '../generated/types.js';
 import { jsonNodeCount } from '../../json.js';
 import { revisionListPageMatches } from '../revision-list.js';
 import { parentRetentionMatches } from './retention-parent.js';
@@ -260,6 +262,12 @@ function overviewOwnership(operation: ApiOperation, input: PreparedInput, value:
     return workspaceOverviewMatches(value as WorkspaceOverview, {
       organizationId: input.params.organizationId!,
       workspaceId: input.params.workspaceId!,
+    });
+  if (operation.response === 'RunMetricOverview')
+    return runMetricOverviewMatches(value as RunMetricOverview, {
+      id: input.params.runId!,
+      attemptId: input.params.attemptId!,
+      scope: routeOwner(input) as WorkspaceScope,
     });
   return undefined;
 }
