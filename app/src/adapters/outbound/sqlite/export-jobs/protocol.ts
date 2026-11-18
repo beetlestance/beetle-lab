@@ -1,5 +1,11 @@
 import type { ExportOutputCommand, ExportOutputValue } from './output-protocol.js';
-import type { ExportJob, ExportJobPage, ExportProfiles, WorkspaceScope } from '@beetle/contracts/api';
+import type {
+  ExportJob,
+  ExportJobPage,
+  LatestRevisionExport,
+  ExportProfiles,
+  WorkspaceScope,
+} from '@beetle/contracts/api';
 import type {
   CreateExportCommand,
   CancelExportCommand,
@@ -14,6 +20,7 @@ import type {
 export type ExportOperation =
   | { kind: 'exportJob'; command: CreateExportCommand | CancelExportCommand }
   | { kind: 'getExport'; key: ExportKey }
+  | { kind: 'getLatestRevisionExport'; key: ExportKey }
   | { kind: 'listExports'; query: ExportList }
   | { kind: 'getExportProfiles'; scope: WorkspaceScope }
   | { kind: 'scanExportJobs'; query: ExportScan }
@@ -27,6 +34,7 @@ export type ExportValue =
   | ExportOutputValue
   | ExportJob
   | ExportJobPage
+  | LatestRevisionExport
   | ExportProfiles
   | ExportControl
   | ExportOriginal

@@ -16,6 +16,7 @@ and use the authoring session, origin and CSRF policy. Shapes: `contracts/api/v2
 | --- | --- | --- |
 | Submit | `POST /revisions/{revisionId}/exports` | 202 `ExportJob` |
 | List | `GET /exports` | `ExportJobPage`, ≤ 262144 B |
+| Latest for revision | `GET /revisions/{revisionId}/exports/latest` | `LatestRevisionExport`, ≤ 65536 B |
 | Read | `GET /exports/{exportId}` | `ExportJob`, ≤ 32768 B |
 | Cancel | `POST /exports/{exportId}/cancel` | `ExportJob` |
 | Profiles | `GET /exports/profiles` | installed export profiles |
@@ -25,6 +26,15 @@ The UI offers export only when an installed profile advertises the export
 capability, and downloads only a `ready` job's native publication. Submission is
 rejected before mutation when `maximumBuildBytes + 64 KiB control + 8 KiB result`
 exceeds the budget's `outputBytes` (`app/src/application/exports/intent.ts`).
+
+The latest lookup checks revision existence in the exact workspace and returns
+`{scope, revisionId, job}`; `job: null` means the revision has no export. Missing or
+foreign revisions are not-found. An index added by migration 035 reads one job by
+immutable acceptance order (`queue_order DESC`), including failed/cancelled jobs;
+it does not scan workspace pages or depend on UUID/time order. Backend wire and
+SDK validate the wrapper, nested scope/revision and existing job state semantics.
+The Script view uses this lookup and rejects a followed job from another revision.
+Restored history permits this read without opening mutation paths.
 
 ## Job states
 
@@ -136,8 +146,10 @@ path, clock timeout or current capability creates physical authority.
 | Code | Reviewed |
 | --- | --- |
 | `contracts/src/export-job/` | `ee5dbee9e357` |
-| `app/src/application/exports/` | `8b2b5f2a79e4` |
+| `app/src/application/exports/` | `31ac98ced322` |
 | `app/src/application/export-runtime/` | `23cbf619a3fc` |
-| `app/src/adapters/outbound/sqlite/export-jobs/` | `20252909c7da` |
+| `app/src/adapters/outbound/sqlite/export-jobs/` | `a8521bee8692` |
+| `app/src/adapters/outbound/sqlite/migration035.ts` | `44762d1ad5ac` |
+| `contracts/src/api/export-latest.ts` | `aed033af48fd` |
 | `engines/k6/export/` | `120bf16f289c` |
 | `agent/src/journal/migration015.ts` | `e43499b5bd89` |

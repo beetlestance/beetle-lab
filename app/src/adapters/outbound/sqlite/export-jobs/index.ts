@@ -11,3 +11,4 @@ export { chargedExportResources, pendingExportResources } from './resources.js';
 export { ExportClaims } from './claims.js';
 export { ExportObservations } from './observations.js';
 export { ExportOutputs } from './outputs.js';
+export type { ExecutionOperation } from './execution-wire.js';

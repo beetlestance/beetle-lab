@@ -4,6 +4,7 @@ import type {
   CancelExportRequest,
   ExportJob,
   ExportJobPage,
+  LatestRevisionExport,
   ExportProfiles,
   WorkspaceScope,
 } from '@beetle/contracts/api';
@@ -48,6 +49,8 @@ export interface ExportStore {
   create(command: CreateExportCommand): Promise<ExportJob>;
   cancel(command: CancelExportCommand): Promise<ExportJob>;
   get(key: ExportKey): Promise<ExportJob>;
+  /** Most recently accepted job for this revision, independent of workspace page windows. */
+  latest(key: ExportKey): Promise<LatestRevisionExport>;
   list(query: ExportList): Promise<ExportJobPage>;
   profiles(scope: WorkspaceScope): Promise<ExportProfiles>;
 }

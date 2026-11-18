@@ -108,3 +108,5 @@ export type { RunHistoryMetrics } from './run-history-summary.js';
 
 export { encodeRevisionListCursor, revisionListPosition, revisionListPageMatches } from './revision-list.js';
 export type { RevisionListPosition } from './revision-list.js';
+
+export { latestRevisionExportMatches } from './export-latest.js';

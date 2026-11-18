@@ -39,6 +39,8 @@ it('enqueues via authorized public API, replays one immutable receipt, automatic
  const transfers=createOutputTransfers({metadata:metadata.exportOutputs,gateway,files:files.store,newWriterId:randomUUID,digest:hash,freeSpaceReserveBytes:0});
  let runtime:ReturnType<typeof startExportRuntime>|undefined;
  try{
+  expect((await server.inject({url:`${url}/latest`,headers:{host,origin}})).statusCode).toBe(401);
+  expect((await server.inject({url:`${url}/latest`,headers})).json()).toEqual({scope,revisionId:revision.id,job:null});
   expect((await server.inject({method:'POST',url,headers:{host,origin},payload:input})).statusCode).toBe(401);
   expect((await server.inject({method:'POST',url,headers:{...headers,origin:'http://127.0.0.1:1'},payload:input})).statusCode).toBe(403);
   expect((await server.inject({method:'POST',url,headers,payload:{...input,revisionId:uuid(999)}})).statusCode).toBe(404);
@@ -56,6 +58,8 @@ it('enqueues via authorized public API, replays one immutable receipt, automatic
   runtime=startExportRuntime({executions:metadata.exportExecutions,outputs:metadata.exportOutputs,gateway,transfers,intervalMs:25,onFailure:async error=>{throw error;}});
   for(let n=0;n<100;n++){const value=await metadata.exports.get({scope,id:job.id});if(value.state==='ready')break;await new Promise(resolve=>setTimeout(resolve,10));}
   expect((await server.inject({url:`${base}/exports/${job.id}`,headers})).json()).toMatchObject({state:'ready',artifact:{bytes:bytes.length,sha256:hash(bytes)}});
+  expect((await server.inject({url:`${url}/latest`,headers})).json()).toMatchObject({scope,revisionId:revision.id,job:{id:job.id,state:'ready'}});
+  expect((await server.inject({url:`${url}/latest`.replace(scope.workspaceId,uuid(999)),headers})).statusCode).toBe(404);
   expect(offers).toBe(1);
   const full=await server.inject({url:content,headers});expect(full.statusCode).toBe(200);expect(full.rawPayload).toEqual(bytes);
   expect(full.headers['content-type']).toBe('text/javascript; charset=utf-8');expect(full.headers['content-disposition']).toMatch(/\.js"$/);
@@ -66,5 +70,6 @@ it('enqueues via authorized public API, replays one immutable receipt, automatic
   const next=await server.inject({method:'POST',url,headers,payload:{...input,requestId:requestId()}});const second=next.json<ExportJob>();
   const cancelled=await server.inject({method:'POST',url:`${base}/exports/${second.id}/cancel`,headers,payload:{scope,requestId:requestId()}});
   expect(cancelled.statusCode).toBe(200);expect(cancelled.json()).toMatchObject({cancellationRequested:true});
+  expect((await server.inject({url:`${url}/latest`,headers})).json()).toMatchObject({job:{id:second.id,state:'cancelled',cancellationRequested:true}});
  }finally{await runtime?.close();await transfers.close();session.close();await routes.close();await server.close();await files.dispose();}
 });

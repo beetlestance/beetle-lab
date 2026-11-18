@@ -61,6 +61,7 @@ Schema catalogue is complete, including runner common exactly once. Implementati
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/attempts/{attemptId}/metrics/live | implemented | RunAttemptParams | none | none | 200 | LiveMetricSnapshot |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/comparisons | implemented | WorkspaceParams | none | RunComparisonRequest | 200 | RunComparisonSnapshot |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/revisions/{revisionId}/exports | implemented | SuiteRevisionParams | none | CreateExportRequest | 202 | ExportJob |
+| GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/revisions/{revisionId}/exports/latest | implemented | SuiteRevisionParams | none | none | 200 | LatestRevisionExport |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/exports | implemented | WorkspaceParams | PageQuery | none | 200 | ExportJobPage |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/exports/{exportId} | implemented | ExportParams | none | none | 200 | ExportJob |
 | POST | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/exports/{exportId}/cancel | implemented | ExportParams | none | CancelExportRequest | 200 | ExportJob |

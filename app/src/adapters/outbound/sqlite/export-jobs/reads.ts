@@ -1,6 +1,6 @@
 import type { DatabaseSync, SQLOutputValue } from 'node:sqlite';
 import { validateApi } from '@beetle/contracts/api';
-import type { ExportJob, ExportJobPage } from '@beetle/contracts/api';
+import type { ExportJob, ExportJobPage, LatestRevisionExport } from '@beetle/contracts/api';
 import type { ExportKey, ExportList } from '../../../../ports/exports.js';
 import { requireRule } from '../../../../domain/namespaces/index.js';
 import { boundedCopy, lower, scopeKey, sha256, uuid } from '../input-values.js';
@@ -10,6 +10,9 @@ import { StorageError } from '../protocol.js';
 export type ExportRow = Record<string, SQLOutputValue>;
 const header = `id,organization_id,workspace_id,attempt_id,version,state,cancellation_requested,reason,
  CASE WHEN length(CAST(intent_json AS BLOB))<=32768 THEN intent_json END intent_json`;
+/** Real indexed statement, also exercised by native EXPLAIN qualification. */
+export const latestRevisionExportSql = `SELECT ${header} FROM export_jobs
+ WHERE organization_id=? AND workspace_id=? AND revision_id=? ORDER BY queue_order DESC LIMIT 1`;
 export function projectExport(db: DatabaseSync, row: ExportRow): ExportJob {
   if (typeof row.intent_json !== 'string') throw new StorageError('unavailable');
   const original = JSON.parse(row.intent_json) as ExportJob;
@@ -58,6 +61,17 @@ export class ExportReads {
   }
   get(key: ExportKey): ExportJob {
     return projectExport(this.db, this.row(key));
+  }
+  latest(key: ExportKey): LatestRevisionExport {
+    const scope = normalizedScope(key.scope);
+    this.suites.workspace(scope);
+    const revisionId = lower(key.id);
+    const revision = this.db
+      .prepare('SELECT 1 AS present FROM suite_revisions WHERE organization_id=? AND workspace_id=? AND id=?')
+      .get(scope.organizationId, scope.workspaceId, revisionId);
+    if (!revision) throw new StorageError('not_found');
+    const row = this.db.prepare(latestRevisionExportSql).get(scope.organizationId, scope.workspaceId, revisionId);
+    return { scope, revisionId, job: row ? projectExport(this.db, row) : null };
   }
   list(query: ExportList): ExportJobPage {
     const scope = normalizedScope(query.scope);

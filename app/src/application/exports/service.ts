@@ -1,6 +1,6 @@
 import { encodeJson, encodeCanonicalJson } from '@beetle/contracts';
-import { validateApi } from '@beetle/contracts/api';
-import type { ExportJob, ExportJobPage } from '@beetle/contracts/api';
+import { latestRevisionExportMatches, validateApi } from '@beetle/contracts/api';
+import type { ExportJob, ExportJobPage, LatestRevisionExport } from '@beetle/contracts/api';
 import type {
   ExportStore,
   ExportKey,
@@ -63,4 +63,11 @@ export async function listExports(query: ExportList, store: ExportStore): Promis
     ids.add(item.id);
   }
   return result.value;
+}
+
+export async function getLatestRevisionExport(key: ExportKey, store: ExportStore): Promise<LatestRevisionExport> {
+  const checked = validateApi('LatestRevisionExport', JSON.parse(encodeJson(await store.latest(key), 65536)));
+  requireRule(checked.ok);
+  requireRule(latestRevisionExportMatches(checked.value, key.scope, key.id));
+  return checked.value;
 }

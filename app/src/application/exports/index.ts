@@ -1,2 +1,2 @@
 export { prepareExportCommand, prepareExportCancellation } from './intent.js';
-export { createExport, cancelExport, getExport, listExports } from './service.js';
+export { createExport, cancelExport, getExport, getLatestRevisionExport, listExports } from './service.js';

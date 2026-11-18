@@ -32,6 +32,7 @@ const reads = new Set<Operation['kind']>([
   'listInputUsage',
   'inputStorage',
   'getExport',
+  'getLatestRevisionExport',
   'listExports',
   'getPoolUsage',
   'getRunQueue',

@@ -4,7 +4,13 @@ import type { ExportStore, ExportArtifacts } from '../../../../ports/exports.js'
 import type { OutputByteStore } from '../../../../ports/output-bytes.js';
 import type { OutputBinding } from '../../../../domain/output-owner/index.js';
 import type { IntentDigest } from '../../../../application/namespaces/index.js';
-import { createExport, cancelExport, getExport, listExports } from '../../../../application/exports/index.js';
+import {
+  createExport,
+  cancelExport,
+  getExport,
+  getLatestRevisionExport,
+  listExports,
+} from '../../../../application/exports/index.js';
 import { requireRule, sameScope, sameUuid } from '../../../../domain/namespaces/index.js';
 import { registerApiOperation } from '../api-route.js';
 import { registerExportContent } from './content.js';
@@ -63,6 +69,9 @@ export function registerExportRoutes(server: FastifyInstance, options: Options):
     );
     registerApiOperation(scoped, 'getExport', ({ params }) =>
       getExport({ scope: exportScope(params), id: params.exportId }, options.store),
+    );
+    registerApiOperation(scoped, 'getLatestRevisionExport', ({ params }) =>
+      getLatestRevisionExport({ scope: exportScope(params), id: params.revisionId }, options.store),
     );
     registerApiOperation(scoped, 'listExports', ({ params, query }) =>
       listExports({ scope: exportScope(params), ...query }, options.store),

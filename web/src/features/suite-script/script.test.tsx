@@ -89,7 +89,7 @@ function routes(job: ExportJob | null, overrides: Partial<Record<'revision', Sui
     [(path) => path.includes(`/suites/${current.suiteId}/revisions?`), page],
     [(path) => path.endsWith(`/revisions/${current.id}`), overrides.revision ?? second],
     [(path) => path.endsWith(`/revisions/${earlierId}`), first],
-    [(path) => path.includes('/exports?'), { scope: current.scope, items: job ? [job] : [], nextCursor: null }],
+    [(path) => path.endsWith('/exports/latest'), { scope: current.scope, revisionId: current.id, job }],
     [(path) => !!job && path.endsWith(`/exports/${job.id}`), job],
     [(path) => path.endsWith(`/workspaces/${workspaceId}`), workspace(organizationId)],
   ];
@@ -194,7 +194,9 @@ it('shows a retryable export read failure rather than claiming the revision has 
   let unavailable = true;
   const normal = routes(null);
   mount((request) =>
-    unavailable && request.path.includes('/exports?') ? json(apiError('storage_unavailable'), 503) : normal(request),
+    unavailable && request.path.endsWith('/exports/latest')
+      ? json(apiError('storage_unavailable'), 503)
+      : normal(request),
   );
   expect(await screen.findByText('Could not read this revision’s exports.')).toBeInTheDocument();
   expect(screen.queryByText('This revision has no script yet')).not.toBeInTheDocument();

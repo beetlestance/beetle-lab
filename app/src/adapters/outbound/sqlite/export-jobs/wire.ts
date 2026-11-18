@@ -6,7 +6,7 @@ import {
   exportOutputReplyBytes,
 } from './output-wire.js';
 import { encodeCanonicalJson } from '@beetle/contracts';
-import { validateApi } from '@beetle/contracts/api';
+import { latestRevisionExportMatches, validateApi } from '@beetle/contracts/api';
 import type { ExportJob, ExportJobPage } from '@beetle/contracts/api';
 import type { CreateExportCommand } from '../../../../ports/exports.js';
 import type { ExportOperation, ExportValue } from './protocol.js';
@@ -26,6 +26,7 @@ export function exportOperation(input: unknown): input is ExportOperation {
     [
       'exportJob',
       'getExport',
+      'getLatestRevisionExport',
       'listExports',
       'getExportProfiles',
       'scanExportJobs',
@@ -60,7 +61,7 @@ function capturePublicOperation(
     requireRule(expected.intentDigest === value.command.intentDigest);
     return { ...value, command: expected };
   }
-  if (value.kind === 'getExport') {
+  if (value.kind === 'getExport' || value.kind === 'getLatestRevisionExport') {
     closed(value.key, ['scope', 'id']);
     requireRule(validateApi('WorkspaceScope', value.key.scope).ok && validateApi('Uuid', value.key.id).ok);
   } else if (value.kind === 'listExports') {
@@ -74,6 +75,7 @@ export function exportRequestLimit(operation: ExportOperation): number {
 }
 export function exportReplyLimit(operation: ExportOperation): number {
   if (operation.kind === 'exportOutput') return exportOutputReplyBytes(operation.operation);
+  if (operation.kind === 'getLatestRevisionExport') return 65536;
   return operation.kind === 'getExportOriginal' ? 2109440 : operation.kind === 'listExports' ? 262144 : 32768;
 }
 export function captureExportReply(operation: ExportOperation, input: unknown): ExportValue {
@@ -87,6 +89,12 @@ function capturePublicReply(
   input: unknown,
 ): ExportValue {
   const value = boundedCopy(input, exportReplyLimit(operation));
+  if (operation.kind === 'getLatestRevisionExport') {
+    const latest = validateApi('LatestRevisionExport', value);
+    requireRule(latest.ok);
+    requireRule(latestRevisionExportMatches(latest.value, operation.key.scope, operation.key.id));
+    return latest.value;
+  }
   const name =
     operation.kind === 'listExports'
       ? 'ExportJobPage'
@@ -138,7 +146,7 @@ function publicHeader(value: Exclude<ExportOperation, ExecutionOperation | { kin
   const field =
     value.kind === 'exportJob'
       ? 'command'
-      : value.kind === 'getExport'
+      : value.kind === 'getExport' || value.kind === 'getLatestRevisionExport'
         ? 'key'
         : value.kind === 'listExports'
           ? 'query'

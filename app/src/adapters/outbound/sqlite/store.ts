@@ -17,7 +17,7 @@ import { HistorySummaries, historyOperation } from './run-history/index.js';
 import { Overviews } from './overview.js';
 import { exportOperation } from './export-wire.js';
 import { ExportJobs, ExportClaims, ExportObservations, ExportOutputs } from './export-jobs/index.js';
-import type { ExportOperation } from './export-jobs/index.js';
+import type { ExportOperation, ExecutionOperation } from './export-jobs/index.js';
 import { LocalSessions, localSessionOperation } from './local-session/index.js';
 import { OutputDeletions, deletionOperation, captureDeletionOperation } from './output-deletion/index.js';
 import type { OutputDeletionOperation } from '../../../ports/output-deletion-metadata.js';
@@ -312,6 +312,8 @@ export class Store {
     switch (operation.kind) {
       case 'exportJob':
         return this.mutation(operation);
+      case 'getLatestRevisionExport':
+        return this.exports.reads.latest(operation.key);
       case 'getExport':
         return this.exports.reads.get(operation.key);
       case 'listExports':
@@ -324,12 +326,7 @@ export class Store {
         return this.exportExecution(operation);
     }
   }
-  private exportExecution(
-    operation: Exclude<
-      ExportOperation,
-      { kind: 'exportJob' | 'getExport' | 'listExports' | 'getExportProfiles' | 'exportOutput' }
-    >,
-  ): Value {
+  private exportExecution(operation: ExecutionOperation): Value {
     switch (operation.kind) {
       case 'scanExportJobs':
         return this.exportClaims.scan(operation.query);

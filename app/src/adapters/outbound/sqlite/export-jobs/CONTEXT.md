@@ -10,6 +10,8 @@ Compact controls avoid loading full test configuration while polling. Exact-sour
 adoption and native publication settle backend payload only. Matching authenticated
 absence has separate custody; no fabricated source or Run. SQL guards independently
 require stopped/released matching evidence before source adoption/credit release.
+Latest revision reads use migration 035 index by immutable acceptance order,
+never UUID/time order or workspace page scans; scoped existence reads omit config.
 Input pins, metadata and agent producer/source lifetime remain retained. No native
 paths, IO, remote ACK or producer-purge authority are exposed by these operations.
 

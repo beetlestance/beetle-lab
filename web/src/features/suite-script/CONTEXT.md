@@ -12,7 +12,7 @@ board with its Changes and One column variants.
 - `ScriptSource` keeps at most 34 visible rows and a bounded Uint32 line index;
   Copy and Export use the full verified source, independent of the visible window.
   Export read errors offer retry and never claim the revision has no script.
-- `ScriptTab.tsx` shows the newest ready export's script. There is no direct script
+- `ScriptTab.tsx` shows the exact latest accepted export when ready. There is no direct script
   read: text comes only from an export job, through `exports/scriptText.ts` (one
   bounded GET of exactly the published bytes, checked against the SHA-256). Scripts
   over 1 MiB are offered as a download. Input file names come from bounded

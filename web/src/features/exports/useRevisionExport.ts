@@ -8,17 +8,6 @@ import { useExportWrite } from './useWrite.js';
 
 const live = (job: ExportJob | undefined) => !!job && !exportTerminalStates.includes(job.state);
 
-/** Newest job for the revision on one bounded page (the API has no revision filter). */
-function latestFor(items: readonly ExportJob[], revisionId: string): ExportJob | undefined {
-  const id = revisionId.toLowerCase();
-  return items
-    .filter((job) => job.revisionId.toLowerCase() === id)
-    .reduce<ExportJob | undefined>(
-      (newest, job) => (!newest || Date.parse(job.requestedAt) > Date.parse(newest.requestedAt) ? job : newest),
-      undefined,
-    );
-}
-
 /** Settings and installed export profiles, read only once someone asks to prepare a script. */
 function usePrepareInputs(revision: SuiteRevision, enabled: boolean) {
   const api = useApi();
@@ -37,22 +26,28 @@ function usePrepareInputs(revision: SuiteRevision, enabled: boolean) {
   return { profiles, settings };
 }
 
-/** The newest job for the revision on the first page, then that job (or one just created) polled. */
+/** The latest accepted job for the exact revision, then that job (or one just created) polled. */
 function useJob(revision: SuiteRevision, created: string | null) {
   const api = useApi();
   const { organizationId, workspaceId } = revision.scope;
   const params = { organizationId, workspaceId };
   const listing = useQuery({
-    queryKey: [...queryKeys.exports(organizationId, workspaceId), 'page', 'revision', revision.id.toLowerCase()],
-    queryFn: ({ signal }) => readResult(api.listExports({ params, query: { limit: 100 }, signal })),
-    refetchInterval: (query) => (live(latestFor(query.state.data?.items ?? [], revision.id)) ? 2000 : false),
+    queryKey: [...queryKeys.exports(organizationId, workspaceId), 'latest', 'revision', revision.id.toLowerCase()],
+    queryFn: ({ signal }) =>
+      readResult(api.getLatestRevisionExport({ params: { ...params, revisionId: revision.id }, signal })),
+    refetchInterval: (query) => (live(query.state.data?.job ?? undefined) ? 2000 : false),
   });
-  const latest = latestFor(listing.data?.items ?? [], revision.id);
+  const latest = listing.data?.job ?? undefined;
   const followed = created ?? latest?.id ?? '';
   const detail = useQuery({
     queryKey: queryKeys.export(organizationId, workspaceId, followed),
     enabled: followed !== '',
-    queryFn: ({ signal }) => readResult(api.getExport({ params: { ...params, exportId: followed }, signal })),
+    queryFn: async ({ signal }) => {
+      const value = await readResult(api.getExport({ params: { ...params, exportId: followed }, signal }));
+      if (value.revisionId.toLowerCase() !== revision.id.toLowerCase())
+        throw new Error('Export belongs to another revision');
+      return value;
+    },
     refetchInterval: (query) => (query.state.status !== 'error' && live(query.state.data) ? 1000 : false),
   });
   return { listing, detail, job: detail.data ?? latest };
@@ -94,8 +89,7 @@ function usePrepare(revision: SuiteRevision, create: ReturnType<typeof useExport
 }
 
 /**
- * The script export of one revision: finds the newest job for it on the first page of the
- * workspace's exports, follows a job this view creates, and polls only while it is preparing.
+ * The script export of one revision: reads its exact scoped latest accepted job, follows a job this view creates, and polls only while it is preparing.
  */
 export function useRevisionExport(revision: SuiteRevision) {
   const create = useExportWrite();

@@ -1,7 +1,7 @@
 # Public standalone exports
 
 Entry registerExportRoutes. Session-authorized JSON intake/list/detail/cancel and
-profile discovery; schema-v2 operations own DTOs. Scope and revision path/body
+profile discovery and exact-revision latest job reads; schema-v2 operations own DTOs. Scope and revision path/body
 agreement precede storage. Creating a job does not run a performance test.
 
 Content requires a ready scoped native publication. Shared attachment transport

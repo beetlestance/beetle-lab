@@ -893,5 +893,10 @@
     "path": "invalid/input-columns-query.json",
     "schema": "InputColumnsQuery",
     "valid": false
+  },
+  {
+    "path": "valid/latest-revision-export.json",
+    "schema": "LatestRevisionExport",
+    "valid": true
   }
 ]

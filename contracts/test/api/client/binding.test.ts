@@ -16,6 +16,7 @@ const files: Partial<Record<keyof ApiTypes, string>> = {
   RunQueueStatus: 'run-queue',
   ExportJob: 'export-job',
   ExportJobPage: 'export-job-page',
+  LatestRevisionExport: 'latest-revision-export',
   ExportProfiles: 'export-profiles',
   CreateExportRequest: 'create-export',
   CancelExportRequest: 'cancel-export',

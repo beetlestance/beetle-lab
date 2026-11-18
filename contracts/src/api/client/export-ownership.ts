@@ -1,3 +1,5 @@
+import { exportJobStateMatches as validJob, latestRevisionExportMatches } from '../export-latest.js';
+import type { LatestRevisionExport } from '../generated/types.js';
 import type { ApiOperation } from '../generated/operations.js';
 import type { CreateExportRequest, ExportJob, ExportJobPage } from '../generated/types.js';
 import type { PreparedInput } from './input.js';
@@ -7,12 +9,6 @@ export function exportRequestMatches(operation: ApiOperation, input: PreparedInp
     operation.name !== 'createExport' ||
     same((input.body as unknown as CreateExportRequest).revisionId, input.params.revisionId!)
   );
-}
-function validJob(job: ExportJob): boolean {
-  if (job.state === 'ready') return job.artifact !== null && job.reason === null;
-  if (job.state === 'cancelled') return job.cancellationRequested && job.reason === 'cancelled';
-  if (job.state === 'failed' || job.state === 'unknown') return job.reason !== null;
-  return job.artifact === null;
 }
 function creationMatches(input: PreparedInput, job: ExportJob): boolean {
   const request = input.body as unknown as CreateExportRequest;
@@ -37,6 +33,14 @@ function initialJob(job: ExportJob): boolean {
 }
 /** Scope and JSON schema checks precede these purpose-specific intent checks. */
 export function exportOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
+  if (operation.response === 'LatestRevisionExport') {
+    const reply = value as LatestRevisionExport;
+    return latestRevisionExportMatches(
+      reply,
+      { kind: 'workspace', organizationId: input.params.organizationId!, workspaceId: input.params.workspaceId! },
+      input.params.revisionId!,
+    );
+  }
   if (operation.response === 'ExportJobPage') return (value as ExportJobPage).items.every(validJob);
   if (operation.response !== 'ExportJob') return true;
   const job = value as ExportJob;

@@ -65,6 +65,7 @@ export const apiMessageSchemas = freezeSchema({
   ExportJobPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/export-jobs#/$defs/ExportJobPage' },
   ExportParams: { $ref: 'https://beetle-lab.dev/contracts/api/v2/export-jobs#/$defs/ExportParams' },
   ExportProfiles: { $ref: 'https://beetle-lab.dev/contracts/api/v2/export-jobs#/$defs/ExportProfiles' },
+  LatestRevisionExport: { $ref: 'https://beetle-lab.dev/contracts/api/v2/export-jobs#/$defs/LatestRevisionExport' },
   InputColumnsQuery: { $ref: 'https://beetle-lab.dev/contracts/api/v2/input-columns#/$defs/InputColumnsQuery' },
   InputColumns: { $ref: 'https://beetle-lab.dev/contracts/api/v2/input-columns#/$defs/InputColumns' },
   CreateInputRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/input-requests#/$defs/CreateInputRequest' },

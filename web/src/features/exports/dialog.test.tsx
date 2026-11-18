@@ -15,7 +15,13 @@ afterEach(cleanup);
 
 const rev = revision();
 const { organizationId, workspaceId } = rev.scope;
-const artifact = { artifactId: rev.id, bytes: 84_000, sha256: 'e'.repeat(64), name: 'suite.js', mediaType: 'text/javascript' };
+const artifact = {
+  artifactId: rev.id,
+  bytes: 84_000,
+  sha256: 'e'.repeat(64),
+  name: 'suite.js',
+  mediaType: 'text/javascript',
+};
 
 function Harness({ value }: { value: SuiteRevision }) {
   const flow = useRevisionExport(value);
@@ -32,6 +38,8 @@ function mount(value: SuiteRevision, handler: (request: RequestRecord) => Respon
 }
 function listing(jobs: readonly ExportJob[]) {
   return (request: RequestRecord) => {
+    if (request.path.endsWith('/exports/latest'))
+      return json({ scope: rev.scope, revisionId: rev.id, job: jobs[0] ?? null });
     if (request.path.includes('/exports?')) return json({ scope: rev.scope, items: jobs, nextCursor: null });
     const job = jobs.find((item) => request.path.endsWith(`/exports/${item.id}`));
     if (job) return json(job);
@@ -40,7 +48,10 @@ function listing(jobs: readonly ExportJob[]) {
 }
 
 it('explains that revisions with secrets are never exported and sends nothing', async () => {
-  const value = { ...rev, config: { ...rev.config, secrets: [{ name: 'API_TOKEN', provider: 'env', locator: 'TOKEN' }] } };
+  const value = {
+    ...rev,
+    config: { ...rev.config, secrets: [{ name: 'API_TOKEN', provider: 'env', locator: 'TOKEN' }] },
+  };
   const api = mount(value, listing([]));
   expect(await screen.findByRole('dialog', { name: 'This revision can’t be exported' })).toBeInTheDocument();
   expect(screen.getByText(/uses the secret API_TOKEN/)).toBeInTheDocument();
@@ -67,13 +78,18 @@ it('prepares a script with the default options and then shows its progress', asy
   const posts = api.records.filter((record) => record.method === 'POST');
   expect(posts).toHaveLength(1);
   expect(posts[0]!.path).toContain(`/revisions/${rev.id}/exports`);
-  expect(posts[0]!.body).toMatchObject({ revisionId: rev.id, options: { maximumBuildBytes: 1048576, scriptTimeoutMs: 180000 } });
+  expect(posts[0]!.body).toMatchObject({
+    revisionId: rev.id,
+    options: { maximumBuildBytes: 1048576, scriptTimeoutMs: 180000 },
+  });
 });
 
 it('offers the ready script with its size, SHA-256 and scoped download', async () => {
   const job = { ...exportJob(), state: 'ready', artifact } as ExportJob;
   mount(rev, listing([job]));
-  expect(await screen.findByRole('dialog', { name: 'Checkout, revision 2 is ready as a k6 script' })).toBeInTheDocument();
+  expect(
+    await screen.findByRole('dialog', { name: 'Checkout, revision 2 is ready as a k6 script' }),
+  ).toBeInTheDocument();
   expect(screen.getByText('84 KB')).toBeInTheDocument();
   expect(screen.getByText('e'.repeat(64))).toBeInTheDocument();
   const link = screen.getByRole('link', { name: 'Download script' });
@@ -92,7 +108,14 @@ it('never guesses the outcome of an unknown export', async () => {
 it('lists workspace exports with a download for ready rows and cancel for live ones', async () => {
   const ready = { ...exportJob(), state: 'ready', artifact } as ExportJob;
   const live = { ...exportJob(), id: '55555555-5555-4555-8555-555555555555', state: 'generating' } as ExportJob;
-  const suite = { id: rev.suiteId, scope: rev.scope, name: 'Checkout', version: 1, folderId: rev.id, currentRevisionId: rev.id };
+  const suite = {
+    id: rev.suiteId,
+    scope: rev.scope,
+    name: 'Checkout',
+    version: 1,
+    folderId: rev.id,
+    currentRevisionId: rev.id,
+  };
   const api = testClient((request) => {
     if (request.path.includes('/suites?')) return json({ scope: rev.scope, items: [suite], nextCursor: null });
     if (request.path.endsWith(`/revisions/${rev.id}`)) return json(rev);

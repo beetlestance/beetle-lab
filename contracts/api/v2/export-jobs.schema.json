@@ -327,6 +327,33 @@
         "scope"
       ],
       "additionalProperties": false
+    },
+    "LatestRevisionExport": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+        },
+        "revisionId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "job": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/export-jobs#/$defs/ExportJob"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "scope",
+        "revisionId",
+        "job"
+      ],
+      "additionalProperties": false
     }
   }
 }

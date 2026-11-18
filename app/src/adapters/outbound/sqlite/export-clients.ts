@@ -59,6 +59,7 @@ export function exportJobClient(send: Send): ExportStore {
     create: (command) => send({ kind: 'exportJob', command }) as ReturnType<ExportStore['create']>,
     cancel: (command) => send({ kind: 'exportJob', command }) as ReturnType<ExportStore['cancel']>,
     get: (key) => send({ kind: 'getExport', key }) as ReturnType<ExportStore['get']>,
+    latest: (key) => send({ kind: 'getLatestRevisionExport', key }) as ReturnType<ExportStore['latest']>,
     list: (query) => send({ kind: 'listExports', query }) as ReturnType<ExportStore['list']>,
     profiles: (scope) => send({ kind: 'getExportProfiles', scope }) as ReturnType<ExportStore['profiles']>,
   };
