@@ -1,4 +1,5 @@
 import type { WorkspaceScope } from '@beetle/contracts/api';
+import { JsonDraftInput } from './JsonDraftInput.js';
 import { useInputColumns } from './useInputColumns.js';
 import { useState } from 'react';
 import { Button } from '../../components/Button.js';
@@ -221,6 +222,7 @@ function PairRow({
         hideLabel
         path={`${path}/${position}/value`}
         value={entry[1]}
+        className={typeof entry[1] === 'string' && entry[1].includes('{{') ? 'template-value' : undefined}
         placeholder="Value"
         change={edit}
       />
@@ -260,10 +262,9 @@ function InlineBody({
       <label className="sr-only" htmlFor={id}>
         Inline JSON body
       </label>
-      <textarea
+      <JsonDraftInput
         id={id}
-        className="input code-input"
-        spellCheck={false}
+        accentTemplates
         maxLength={1_048_576}
         readOnly={draft.readOnly}
         value={draft.text}

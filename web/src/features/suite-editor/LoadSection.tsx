@@ -40,9 +40,14 @@ export function LoadSection({ config, set, openSetup }: { config: Config; set: S
   const scenario = firstScenario(config);
   const simple = useSimpleView(scenario);
   const count = isObj(config.loadPlan) ? list(config.loadPlan.scenarios).length : 0;
+  const setupAction = (
+    <Button variant="text" size="sm" onClick={openSetup}>
+      Run setup
+    </Button>
+  );
   if (!scenario)
     return (
-      <Card title="How load arrives">
+      <Card title="How load arrives" action={setupAction}>
         <p className="editor-note">This draft has no load scenario. Add one in Run setup or the complete JSON.</p>
       </Card>
     );
@@ -50,7 +55,7 @@ export function LoadSection({ config, set, openSetup }: { config: Config; set: S
   const hint = executors.find((item) => item.id === scenario.executor)?.hint;
   const change = (next: Obj) => set(setScenario(config, 0, next));
   return (
-    <Card title="How load arrives">
+    <Card title="How load arrives" action={setupAction}>
       <ExecutorSelect scenario={scenario} path="/loadPlan/scenarios/0" set={change} />
       {hint && <p className="editor-note">{hint}</p>}
       <ScenarioFields scenario={scenario} path="/loadPlan/scenarios/0" simple={simple} set={change} />

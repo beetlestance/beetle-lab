@@ -163,7 +163,7 @@ it('switches executor to the ramp, hold and drain view and edits run setup', asy
   fireEvent.change(screen.getByRole('textbox', { name: 'Peak requests a second' }), { target: { value: '1200' } });
   fireEvent.change(screen.getByRole('textbox', { name: 'Hold, seconds' }), { target: { value: '480' } });
   expect(screen.getByText('in total, 3 stages', { exact: false })).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('radio', { name: 'Run setup' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Run setup' }));
   fireEvent.click(await screen.findByRole('checkbox', { name: 'Wait until the target answers before starting load' }));
   fireEvent.change(screen.getByRole('textbox', { name: 'Probe path' }), { target: { value: '/ready' } });
   openJson();
@@ -226,7 +226,7 @@ it('writes the editor view to the URL so back and forward move between views', a
   await screen.findByRole('heading', { name: 'Request: GET /' });
   expect(search()).toBe('?tab=edit&request=get');
   fireEvent.click(screen.getByRole('button', { name: 'Done' }));
-  fireEvent.click(screen.getByRole('radio', { name: 'Run setup' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Run setup' }));
   await screen.findByRole('checkbox', { name: 'Wait until the target answers before starting load' });
   expect(search()).toBe('?tab=edit&view=run-setup');
   openJson();

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import type { WorkspaceScope } from '@beetle/contracts/api';
 import { SUITE_MAXIMUM_CONFIG_BYTES } from '@beetle/contracts/api';
 import type { SuiteEditorView } from '../../app/routes.js';
+import { JsonDraftInput } from '../suite-editor/JsonDraftInput.js';
 import { SegmentedFilter } from '../../components/SegmentedFilter.js';
 import type { InputCatalog } from '../suite-editor/fields.js';
 import { AboutSection, LoadSection } from '../suite-editor/LoadSection.js';
@@ -134,7 +135,6 @@ export function ConfigFields({
           onChange={(mode) => setView({ mode, request: null })}
           options={[
             { value: 'form', label: 'Form editor', disabled: structured },
-            { value: 'run-setup', label: 'Run setup', disabled: structured },
             { value: 'json', label: 'Complete configuration JSON', disabled },
           ]}
         />
@@ -147,7 +147,7 @@ export function ConfigFields({
       <fieldset key={resetVersion} disabled={disabled} className="editor-sections">
         <legend className="sr-only">Configuration</legend>
         {view.mode === 'json' || error ? (
-          <CompleteConfigJson text={text} editJson={editJson} />
+          <CompleteConfigJson text={text} editJson={editJson} parseError={error} />
         ) : (
           <StructuredView
             scope={scope}
@@ -179,20 +179,33 @@ function addBlankCheck(config: Config, index: number, set: (next: Config) => voi
   set({ ...config, requests });
 }
 
-function CompleteConfigJson({ text, editJson }: { text: string; editJson(text: string): void }) {
+function CompleteConfigJson({
+  text,
+  editJson,
+  parseError,
+}: {
+  text: string;
+  editJson(text: string): void;
+  parseError: string;
+}) {
   return (
     <div className="field">
       <label className="field-label" htmlFor={fieldId('')}>
         Complete configuration JSON
       </label>
-      <textarea
+      <JsonDraftInput
         id={fieldId('')}
         autoFocus
-        className="input code-input config-json"
+        className="config-json"
         value={text}
         onChange={(event) => editJson(event.target.value)}
-        spellCheck={false}
+        aria-describedby="complete-json-help"
       />
+      <p className="editor-note" id="complete-json-help">
+        {parseError
+          ? 'Fix the JSON to return to the form.'
+          : 'JSON is parseable. Switching back to the form keeps these values. Save checks the complete configuration and any unfinished field edits.'}
+      </p>
     </div>
   );
 }

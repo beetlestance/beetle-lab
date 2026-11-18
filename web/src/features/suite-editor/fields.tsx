@@ -78,6 +78,7 @@ export function TextField({
   hideLabel,
   maxLength = 4096,
   placeholder,
+  className,
 }: {
   label: ReactNode;
   path: string;
@@ -87,10 +88,12 @@ export function TextField({
   hideLabel?: boolean;
   maxLength?: number;
   placeholder?: string;
+  className?: string | undefined;
 }) {
   return (
     <TextInput
       id={fieldId(path)}
+      className={className}
       label={label}
       hideLabel={hideLabel}
       hint={hint}
