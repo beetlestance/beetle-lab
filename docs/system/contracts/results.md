@@ -55,6 +55,12 @@ gets a sealed descriptor or `windowsRetained: true`, and a failed archive cleanu
 fails the attempt. Enforced by
 `engines/k6/wrapper/attempt/archive`.
 
+Its internal `completedPrefix()` retains the last complete data/index pair's IDs,
+extents, hashes, scope, count and end time, without extra IO or sync. It is withdrawn
+on fencing, failure, collection or sealing. These are advisory completed bytes, not
+crash durability or sealed-result evidence. The in-process getter grants no public
+active-history access and does not change the sealed read gate.
+
 ## Run result read
 
 `GET …/runs/{runId}/result` returns the active attempt's sealed `EngineResult` or
@@ -201,7 +207,7 @@ a failed revocation keeps ownership and rejects close.
 | Code | Reviewed |
 | --- | --- |
 | `engines/k6/wrapper/attempt/reservation.ts` | `f10b08b3c4fd` |
-| `engines/k6/wrapper/attempt/archive/` | `94df1cb0c1a2` |
+| `engines/k6/wrapper/attempt/archive/` | `95f2c9c62eab` |
 | `app/src/application/run-metrics/` | `4d172ed61554` |
 | `app/src/application/run-comparison/` | `cddffebb9dee` |
 | `contracts/src/k6-live/` | `324516855159` |

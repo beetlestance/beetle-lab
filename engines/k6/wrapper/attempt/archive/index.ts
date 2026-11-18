@@ -9,6 +9,8 @@ import type { AttemptFence } from '../../lifecycle/index.js';
 import { AttemptError } from '../types.js';
 import { MetricFiles, names } from './files.js';
 import type { Lane } from './files.js';
+import type { ArchivePrefix } from './prefix.js';
+export type { ArchivePrefix } from './prefix.js';
 
 const footerReserve = 1024;
 export interface ArchiveOptions {
@@ -45,11 +47,13 @@ export class MetricArchive {
     data: { bytes: 0, hash: createHash('sha256') },
     index: { bytes: 0, hash: createHash('sha256') },
   };
+  private prefix: ArchivePrefix | undefined;
   private count = 0;
   private through = -1;
   private charged = 0;
   private ceiling: number;
   private collecting = false;
+  private finishing = false;
   private active: Promise<unknown> | undefined;
   private closing: Promise<void> | undefined;
   private fenced = false;
@@ -83,6 +87,15 @@ export class MetricArchive {
   }
   get bytes(): number {
     return this.positions.data.bytes + this.positions.index.bytes;
+  }
+  /** Advisory completed bytes, not a sealed artifact or a durability receipt. */
+  completedPrefix(): ArchivePrefix | undefined {
+    try {
+      this.check();
+      return this.collecting || this.finishing ? undefined : this.prefix;
+    } catch {
+      return undefined;
+    }
   }
   get failure(): AttemptError | undefined {
     return this.fault;
@@ -189,10 +202,26 @@ export class MetricArchive {
       await this.write('index', index);
       this.count = sequence;
       this.through = end;
+      const file = (lane: Lane) =>
+        Object.freeze({
+          artifactId: lane === 'data' ? this.dataId : this.indexId,
+          relativePath: names[lane],
+          bytes: this.positions[lane].bytes,
+          sha256: this.positions[lane].hash.copy().digest('hex'),
+        });
+      this.prefix = Object.freeze({
+        scope: this.options.scope,
+        windows: sequence,
+        endTimeMs: end,
+        data: file('data'),
+        index: file('index'),
+      });
     });
   }
   finish(): Promise<ArchiveEvidence> {
     if (this.sealed) return Promise.resolve(this.sealed);
+    if (this.active) return Promise.reject(new ArchiveBusy());
+    this.finishing = true;
     return this.run(async () => {
       await this.write('data', this.record({ kind: 'end', windows: this.count }, 256), true);
       const dataSha256 = this.positions.data.hash.copy().digest('hex');

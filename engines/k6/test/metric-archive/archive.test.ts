@@ -191,3 +191,55 @@ it('bounds the protocol record counter before another storage issue (storage moc
   await expect(f.archive.append({ startTimeMs: 65_536_000, endTimeMs: 65_537_000, series: [] })).rejects.toMatchObject({ reason: 'output_limit' });
   expect(writes).toBe(before);
 }, 10_000);
+
+it('captures immutable completed prefixes whose exact byte ranges remain verifiable after later appends', async () => {
+ const f=await fixture(); expect(f.archive.completedPrefix()).toBeUndefined();
+ await f.archive.append(window()); const first=f.archive.completedPrefix()!;
+ expect(first).toMatchObject({scope:f.options.scope, windows:1,endTimeMs:2000});
+ for (const part of [first,first.scope,first.data,first.index]) expect(Object.isFrozen(part)).toBe(true);
+ await f.archive.append(window(4000)); const second=f.archive.completedPrefix()!;
+ expect(second.windows).toBe(2); expect(second.endTimeMs).toBe(5000);
+ expect(second.data.artifactId).toBe(first.data.artifactId);
+ for(const prefix of [first,second]) for(const part of [prefix.data,prefix.index]) {
+  const bytes=await fs.readFile(join(f.root,part.relativePath));
+  expect(createHash('sha256').update(bytes.subarray(0,part.bytes)).digest('hex')).toBe(part.sha256);
+  expect(bytes[part.bytes-1]).toBe(10);
+ }
+ await f.archive.finish(); expect(f.archive.completedPrefix()).toBeUndefined();
+});
+it('keeps the old completed prefix while a data write has finished but its index is held', async () => {
+ const f=await fixture(); await f.archive.append(window()); const first=f.archive.completedPrefix();
+ const gate=deferred(); const entered=deferred(); const original=MetricFiles.prototype.append;
+ vi.spyOn(MetricFiles.prototype,'append').mockImplementation(async function(this: MetricFiles,lane,bytes){
+  if(lane==='index'){entered.resolve();await gate.promise;} return original.call(this,lane,bytes);
+ });
+ const append=f.archive.append(window(4000));
+ try {await entered.promise;expect(f.archive.completedPrefix()).toBe(first);}
+ finally {gate.resolve();await append;}
+ expect(f.archive.completedPrefix()?.windows).toBe(2);
+});
+it.each(['failed','collection','closed','cancelled'] as const)('withdraws advisory prefixes when %s',async state=>{
+ const f=await fixture();await f.archive.append(window());expect(f.archive.completedPrefix()).toBeDefined();
+ if(state==='failed')await expect(f.archive.append(window())).rejects.toMatchObject({reason:'artifact'});
+ if(state==='collection')f.archive.beginCollection(1024);
+ if(state==='closed')await f.archive.close();
+ if(state==='cancelled')f.fence.stop('cancelled');
+ expect(f.archive.completedPrefix()).toBeUndefined();
+});
+it('withdraws the prefix synchronously when a direct finish begins, before verification settles',async()=>{
+ const f=await fixture();await f.archive.append(window());
+ const gate=deferred();const entered=deferred();const verify=MetricFiles.prototype.verify;
+ vi.spyOn(MetricFiles.prototype,'verify').mockImplementation(async function(this: MetricFiles,lane,expected){entered.resolve();await gate.promise;return verify.call(this,lane,expected);});
+ const finish=f.archive.finish();expect(f.archive.completedPrefix()).toBeUndefined();
+ try{await entered.promise;expect(f.archive.completedPrefix()).toBeUndefined();}finally{gate.resolve();await finish;}
+});
+it('withdraws previous prefix evidence after a partial pair fails without syncing each append',async()=>{
+ const f=await fixture();const sync=vi.spyOn(MetricFiles.prototype,'syncParent');
+ await f.archive.append(window());expect(sync).not.toHaveBeenCalled();
+ const append=MetricFiles.prototype.append;
+ vi.spyOn(MetricFiles.prototype,'append').mockImplementation(async function(this: MetricFiles,lane,bytes){
+  if(lane==='index')throw Error('Synthetic failed index write');return append.call(this,lane,bytes);
+ });
+ await expect(f.archive.append(window(4000))).rejects.toMatchObject({reason:'artifact'});
+ expect(f.archive.completedPrefix()).toBeUndefined();expect(sync).not.toHaveBeenCalled();
+});
