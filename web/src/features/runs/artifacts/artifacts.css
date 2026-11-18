@@ -14,8 +14,9 @@
   font-size: var(--fs-lg);
   line-height: var(--lh-heading);
 }
+/* break-word, not anywhere: paths keep their min-content width, so a narrow table scrolls. */
 .artifact-path {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .artifact-sha {
   display: block;
