@@ -4,7 +4,7 @@ import type { StagedInput } from '../input/index.js';
 import type { ExecutionOperation } from '../execution/index.js';
 import type { ResultPublication } from '../publication/index.js';
 import type { Artifacts } from '../artifact-custody/index.js';
-import type { TargetSamplingOwner } from '../target-sampling/index.js';
+import type { AttemptTarget } from './target.js';
 import type { MetricArchive } from './archive/index.js';
 import type { Notifications, Phases } from '../lifecycle/index.js';
 interface CleanupOwners {
@@ -12,7 +12,7 @@ interface CleanupOwners {
   execution: ExecutionOperation | undefined;
   publication: ResultPublication | undefined;
   archive: MetricArchive | undefined;
-  targetSampler: TargetSamplingOwner | undefined;
+  target: AttemptTarget;
   notifications: Notifications;
   writer: ControlWriter | undefined;
   phases: Phases | undefined;
@@ -27,7 +27,7 @@ export async function cleanupAttempt(state: State, quiet: Quiet, owners: Cleanup
     ...(owners.execution ? [{ key: 'execution' as const, work: () => owners.execution!.close() }] : []),
     ...(owners.publication ? [{ key: 'publication' as const, work: () => owners.publication!.close() }] : []),
     ...(owners.archive ? [{ key: 'artifacts' as const, work: () => owners.archive!.close() }] : []),
-    ...(owners.targetSampler ? [{ key: 'artifacts' as const, work: () => owners.targetSampler!.close() }] : []),
+    ...(owners.target.started ? [{ key: 'artifacts' as const, work: () => owners.target.close() }] : []),
     ...(owners.liveMetricMailbox ? [{ key: 'artifacts' as const, work: () => owners.closeLive() }] : []),
     { key: 'notifications', work: () => owners.notifications.quiesce() },
     ...(owners.writer

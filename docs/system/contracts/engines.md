@@ -120,8 +120,9 @@ after the matching charged reservation exists, within the
 - The wrapper reserves the Offer output budget up front: control journal
   `clamp(total/32, 64 KiB, 64 MiB)`; numeric, warnings and diagnostics 1 MiB;
   result 64 KiB; summary 1 MiB; reports 512 KiB; optional target observations
-  1 MiB; optional live mailbox `min(8 MiB, total/8)`; history a quarter of the
-  remainder (≤ 256 MiB); build the rest (≤ 89 MiB). Either below 64 KiB fails
+  1 MiB; optional live mailbox `min(8 MiB, total/8)`; active target recording
+  1 MiB when sampling and live are enabled ([recording](target-recording.md));
+  history a quarter of the remainder (≤ 256 MiB); build the rest (≤ 89 MiB). Either below 64 KiB fails
   `output_limit` (`engines/k6/wrapper/attempt/reservation.ts`).
 - Cancellation sends TERM once, then KILL after 5 s, to the process group whose PID
   this wrapper spawned. The agent and Docker own hard RAM, PID and container kill.
@@ -180,5 +181,5 @@ evidence incomplete. Details: [decision 011](../../decisions/011-k6-outcome-evid
 | `contracts/src/engine-config/` | `70db6abc8a7e` |
 | `agent/src/catalog/` | `5a0a12cb7eb9` |
 | `agent/src/staging/prepare.ts` | `76d5b154de34` |
-| `engines/k6/wrapper/attempt/reservation.ts` | `f10b08b3c4fd` |
+| `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
 | `engines/k6/wrapper/lifecycle/` | `7b7190efcf46` |

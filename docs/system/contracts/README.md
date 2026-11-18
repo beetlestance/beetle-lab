@@ -27,6 +27,7 @@ rereads the contract, corrects it and runs `npm run docs:stamp -- <file>`.
 | Offline image upgrade, upgrade fence, pre-activation rollback | [Upgrade](upgrade.md) |
 | Metadata, journal and file stores; administrator session | [Storage](storage.md) |
 | Results, metrics, reports, comparison and live snapshots | [Results](results.md) |
+| Recording active target samples before sealed publication | [Target recording](target-recording.md) |
 | Standalone k6 script export | [Exports](exports.md) |
 | Uploaded inputs and request bodies | [Inputs](inputs.md) |
 | Input times, row/column counts, usage and delete blockers | [Input metadata](input-metadata.md) |
