@@ -1,38 +1,37 @@
 # Run views
 
-RunDetail (runs/RunDetail.tsx) owns the run query, cancellation and header, then
-picks a phase once per mount: nonterminal → `live/LiveRunView` (Wave 1 package D),
-terminal → `result/RunResultView` (package E). A run that ends while watched stays
-in the live view, which keeps its last figures and offers "Open result"
-(`showResult`); switching remounts the view and re-reads the result.
-`terminal()` lives in `runs/terminal.ts`.
+RunDetail owns the scoped run query and cancellation. It selects LiveRunView for
+nonterminal runs and RunResultView for terminal entries. A watched run stays in the
+live view after termination until Open result remounts and rereads the result.
+Headers belong to each view. Route/run/attempt changes remount phase selection.
 
-The live view (Penpot "Live run" boards) no longer wraps RunSnapshot. Phases come
-from `copy.phaseOf`: waiting (getRunQueue), starting (timeline row kinds),
-running, cancelling, finalizing (timeline rows), ended. `plan.ts` reads stages,
-requests (rN = index in `config.requests`) and thresholds from the saved
-revision; `model.ts` derives window figures from one live frame. There is no
-pooled latency series, so percentiles show the slowest endpoint and are never
-averaged; rules read "unknown" when the pooled value cannot be bounded. Configured
-limits use known metric/stat dimensions; unknown dimensions are labelled explicitly.
-Elapsed time stays unavailable for missing, browser-unparseable or future starts;
-source timestamps remain visible rather than becoming NaN or fabricated zero.
-`Feed.tsx` validates Run before access and binds route UUIDs without letter case.
-`stream.ts` (`useLiveStream`) owns feed status, pause, retry and the latest frame;
-`history.ts` merges <=900 actual live/verified recorded windows. Entry/reconnect
-bootstrap, sampling and lifetime rules live in contracts/active-history.md. Captions
-state coverage; source gaps break lines and singleton readings remain visible. Target charts use
-`LiveMetricSnapshot.target` values as reported (units are not documented).
-Direct entries resolve organisation/workspace names once through shared scoped
-query keys. Metadata errors hide stale names and offer retry while metrics continue.
-Optional `cancel` takes RunDetail's cancellation owner; there is no second owner.
-The p95-rise line reads getRunLatencyAttribution only once terminal. The
-restored-backup banner and Cancel use useSessionAccess (app/session.tsx); no session read.
-No report or metrics downloads while live. Header icon actions use a native
-Download disclosure (Escape/outside press dismiss); the script row opens verified
-revision selection, never prepares an export automatically. Selection reads at most
-20 summaries plus the run’s verified revision; older history links to the suite.
-Cache and fresh revision reads bind scope, suite, ID and digest before use;
-metadata failure offers retry without stopping metrics. Script format is
-JavaScript, not the older board's ZIP copy. Header/progress styles have separate
-owners, keeping modules below 400 lines. Tests: model.test.ts, ui.test.tsx.
+copy.phaseOf selects waiting, starting, running, cancelling, finalizing and ended.
+Waiting/Starting match the early Penpot structure: plain steps, indeterminate bar,
+bottom cancellation, exported decorative Starting illustration and skeleton figures.
+Queue reads share one scoped query; errors hide cached capacity/holders and expose
+retry. Preflight completion needs the verified saved revision; compilation needs
+phase.started prepare/execute (validate.finished can also describe failure).
+Early steps expose completed/pending state to assistive technology without fake
+percentages, engine versions, request initiators or elapsed-time progress.
+
+plan.ts reads the pinned revision's stages, requests and thresholds. Request rN
+means index N. model.ts derives one window's figures; pooled latency is unavailable,
+so estimates use the slowest endpoint and never average percentiles. Unknown
+metric/stat dimensions and unavailable values stay explicit. Missing/future or
+browser-unparseable starts do not become zero elapsed time or NaN.
+
+Feed validates Run and binds UUIDs case-insensitively. stream owns feed leases,
+pause/retry and latest frame. history merges <=900 actual live/verified recorded
+windows; contracts/active-history.md owns bootstrap, sampling and lifetime rules.
+Captions state coverage, source gaps break lines and singleton readings remain
+visible. Target runtime uses the <=256 page-received samples as reported; it does
+not claim full-run coverage or engine resource measurements.
+
+Namespace names use scoped query keys and explicit retry independent of metrics.
+Cancellation and restored/read-only access use the existing session context, never
+a new session read. Live downloads offer only verified JavaScript revision export;
+the picker reads20 summaries plus this run's verified revision, with older history
+linked to the suite. Cache/fresh revision reads bind scope, suite, ID and digest.
+No automatic export preparation or live report/metrics download. Terminal rise
+attribution reads sealed sources. Header/progress/early styles have separate owners.
+Tests: ui, model, Phases, backfill, LiveChart and adjacent live-metrics/live-history.

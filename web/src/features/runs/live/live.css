@@ -251,7 +251,7 @@
   padding: 0;
   list-style: none;
 }
-.live-steps .is-done > span {
+.live-steps .is-done > span[aria-hidden] {
   color: var(--green);
 }
 .live-steps .is-pending {

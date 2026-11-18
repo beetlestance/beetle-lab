@@ -6,6 +6,7 @@ import { queryKeys } from '../../../app/queries.js';
 import { encodeRevisionListCursor, type Run } from '@beetle/contracts/api';
 import { HistoryReads } from '../live-history/read.js';
 import { captureLiveMetricHistory } from '@beetle/contracts/api';
+import queueData from '../../../../../contracts/fixtures/api/valid/run-queue.json' with { type: 'json' };
 import historyData from '../../../../../contracts/fixtures/api/valid/live-metric-history.json' with { type: 'json' };
 import { LiveMetricReads } from '../live-metrics/read.js';
 import { ids, json, liveFrame, liveRun, mountLive, routesFor, suiteId, revision, suite } from './fixtures.js';
@@ -146,6 +147,9 @@ it('waits for capacity with slot holders and queue position from getRunQueue', a
   expect(screen.getByRole('link', { name: 'catalog-crawl 4444' })).toBeVisible();
   expect(screen.getByRole('link', { name: /suite 3333 1234/ })).toBeVisible();
   expect(screen.getByRole('heading', { name: 'steady-1.2k is waiting for capacity' })).toBeVisible();
+  expect(fixture.records.filter(request=>request.path.endsWith('/queue'))).toHaveLength(1);
+  await act(async()=>new Promise(resolve=>setTimeout(resolve,2200)));
+  expect(fixture.records.filter(request=>request.path.endsWith('/queue'))).toHaveLength(2);
 });
 
 it('keeps the compare action disabled with an explanation, and lists script versions', async () => {
@@ -380,4 +384,35 @@ it('aborts history ownership when the document hides and keeps prior live readin
   await act(async () => resolve(captureLiveMetricHistory(historyData, () => historyData.subsetDigest)));
   expect(screen.queryByText(/^Recorded history through/)).toBeNull();
   expect(within(screen.getByRole('region', { name: 'Progress' })).getByText('1,200')).toBeVisible();
+});
+
+it('hides cached queue holders after a refresh fails and keeps explicit retry', async () => {
+  const current = liveRun({ state: 'queued', startedAt: null });
+  let fail = false;
+  const fixture = routesFor(
+    () => current,
+    (request) =>
+      request.path.endsWith('/queue')
+        ? fail
+          ? new Response(null, { status: 503 })
+          : json({
+              ...queueData,
+              scope: current.scope,
+              runId: current.id,
+              holders: [{ runId: '44444444-4444-4444-8444-444444444444', suiteId, suiteName: 'cached-holder' }],
+              otherWorkspaceRuns: 0,
+            })
+        : undefined,
+  );
+  const view = mountLive(fixture.client, { run: current });
+  expect(await screen.findByRole('link', { name: /cached-holder/ })).toBeVisible();
+  fail = true;
+  await act(async () => {
+    await view.queryClient.invalidateQueries({
+      queryKey: queryKeys.runQueue(current.scope.organizationId, current.scope.workspaceId, current.id),
+    });
+  });
+  expect(await screen.findByText(/The queue could not be read/)).toBeVisible();
+  expect(screen.queryByRole('link', { name: /cached-holder/ })).toBeNull();
+  expect(screen.getByRole('button', { name: /^Retry$/ })).toBeEnabled();
 });

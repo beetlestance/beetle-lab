@@ -1,0 +1,98 @@
+.live-run.is-early {
+  position: relative;
+  gap: 18px;
+}
+.live-header.is-early {
+  width: min(680px, 100%);
+  gap: 18px;
+}
+.live-early-body {
+  width: min(680px, 100%);
+}
+.live-early-art {
+  position: absolute;
+  top: 2.5px;
+  right: 0;
+  width: 560px;
+  height: 392px;
+}
+.live-early-meter {
+  height: 12px;
+  margin-bottom: 18px;
+  border-radius: var(--r-pill);
+  background: var(--control-hover);
+  overflow: hidden;
+}
+.live-early-meter > span {
+  display: block;
+  width: 23%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--amber);
+  transform: translateX(77%);
+  animation: live-wait 2s var(--ease-out) infinite alternate;
+}
+@keyframes live-wait {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(334%);
+  }
+}
+.live-early-phase {
+  padding: 0;
+  background: none;
+  border-radius: 0;
+}
+.live-early-phase .live-steps {
+  padding: 6px 0;
+  gap: 10px;
+  font-size: var(--fs-base);
+  line-height: 24px;
+}
+.live-early-actions {
+  margin-top: 18px;
+}
+.live-early-skeleton {
+  margin-top: 26px;
+}
+.live-early-skeleton .skeleton-card {
+  min-height: 140px;
+  gap: 12px;
+  padding: 20px 22px;
+}
+@media (max-width: 1350px) {
+  .live-early-art {
+    position: static;
+    order: 2;
+    width: min(560px, 100%);
+    height: auto;
+    justify-self: center;
+  }
+  .live-early-skeleton {
+    order: 3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-early-meter > span {
+    animation: none;
+  }
+}
+
+.live-early-phase .is-current {
+  color: var(--ink);
+}
+.live-early-phase .is-current > span:first-child {
+  color: var(--amber);
+}
+
+.live-early-actions .btn {
+  min-height: 40px;
+  font-size: var(--fs-base);
+}
+.live-early-phase .live-steps > li {
+  display: grid;
+  grid-template-columns: 13px minmax(0, 1fr);
+  column-gap: 12px;
+}

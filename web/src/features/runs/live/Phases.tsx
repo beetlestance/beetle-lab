@@ -1,29 +1,31 @@
 import { Link } from 'react-router-dom';
-import type { Run, RunQueueStatus } from '@beetle/contracts/api';
+import type { ReactNode } from 'react';
+import type { Run, RunQueueStatus, SuiteRevision } from '@beetle/contracts/api';
 import { routes } from '../../../app/routes.js';
 import { Button } from '../../../components/Button.js';
 import type { Row } from '../timeline/projection.js';
 import { useTimeline } from '../timeline/useTimeline.js';
-import { useQueue } from './data.js';
+import type { QueueRead } from './data.js';
 import { shortId, wallTime } from './format.js';
 
 /** Queued: who holds the run slots and where this run stands (035 getRunQueue). */
-export function Waiting({ run }: { run: Run }) {
-  const query = useQueue(run, run.state === 'queued');
-  const queue = query.data;
+export function Waiting({ run, revision, query }: { run: Run; revision: SuiteRevision | undefined; query: QueueRead }) {
+  const queue = query.isError ? undefined : query.data;
   return (
-    <section className="live-phase" aria-labelledby="live-phase">
-      <h2 id="live-phase">Waiting for capacity</h2>
+    <section className="live-phase live-early-phase" aria-labelledby="live-phase">
+      <h2 id="live-phase" className="sr-only">
+        Waiting for capacity
+      </h2>
       {query.isPending && <p role="status">Reading the run queue…</p>}
       {query.isError && (
         <p role="alert">
           The queue could not be read.{' '}
-          <Button size="sm" onClick={() => void query.refetch()}>
+          <Button size="sm" disabled={query.isFetching} onClick={() => void query.refetch({ cancelRefetch: false })}>
             Retry
           </Button>
         </p>
       )}
-      {queue && <QueueFacts run={run} queue={queue} />}
+      {queue && <QueueFacts run={run} queue={queue} revision={revision} />}
     </section>
   );
 }
@@ -45,30 +47,58 @@ function positionText(queue: RunQueueStatus): string {
   return queue.position === 1 ? 'Queued, first in line.' : `Queued, number ${queue.position} in line.`;
 }
 
-function QueueFacts({ run, queue }: { run: Run; queue: RunQueueStatus }) {
+function QueueFacts({
+  run,
+  queue,
+  revision,
+}: {
+  run: Run;
+  queue: RunQueueStatus;
+  revision: SuiteRevision | undefined;
+}) {
   const { organizationId, workspaceId } = run.scope;
   return (
     <>
-      <p className="live-lede">
-        {slotsText(queue)}
-        {queue.holders.length > 0 && (
-          <>
-            {' '}
-            {queue.holders.map((holder, index) => (
-              <span key={holder.runId}>
-                {index > 0 && (index === queue.holders.length - 1 ? ' and ' : ', ')}
-                <Link to={routes.run(organizationId, workspaceId, holder.runId)}>
-                  {holder.suiteName ?? `suite ${shortId(holder.suiteId)}`} {shortId(holder.runId)}
-                </Link>
+      <Steps
+        showTimes={false}
+        steps={[
+          {
+            label:
+              revision?.preflightStatus === 'passed'
+                ? `Checked revision ${revision.ordinal} against the ${run.engine.id} schema`
+                : 'Saved revision validation is not available yet',
+            at: null,
+            done: revision?.preflightStatus === 'passed',
+          },
+          { label: positionText(queue), at: null, done: queue.position !== null },
+          {
+            label: (
+              <span>
+                Waiting for a run slot.
+                {queue.holders.length > 0 && (
+                  <>
+                    {' '}
+                    {queue.holders.map((holder, index) => (
+                      <span key={holder.runId}>
+                        {index > 0 && (index === queue.holders.length - 1 ? ' and ' : ', ')}
+                        <Link to={routes.run(organizationId, workspaceId, holder.runId)}>
+                          {holder.suiteName ?? `suite ${shortId(holder.suiteId)}`} {shortId(holder.runId)}
+                        </Link>
+                      </span>
+                    ))}{' '}
+                    {queue.holders.length === 1 ? 'holds one.' : 'hold them.'}
+                  </>
+                )}
+                {queue.otherWorkspaceRuns > 0 &&
+                  ` ${queue.otherWorkspaceRuns} more ${queue.otherWorkspaceRuns === 1 ? 'run' : 'runs'} from other workspaces.`}
               </span>
-            ))}{' '}
-            {queue.holders.length === 1 ? 'holds one.' : 'hold them.'}
-          </>
-        )}
-        {queue.otherWorkspaceRuns > 0 &&
-          ` ${queue.otherWorkspaceRuns} more ${queue.otherWorkspaceRuns === 1 ? 'run' : 'runs'} from other workspaces.`}
-      </p>
-      <p role="status">{positionText(queue)}</p>
+            ),
+            at: null,
+            done: false,
+          },
+          { label: `The agent accepts it and starts ${run.engine.id}`, at: null, done: false },
+        ]}
+      />
       {queue.slots.exports > 0 && (
         <p className="live-note">
           {queue.slots.exports} of the busy slots {queue.slots.exports === 1 ? 'is' : 'are'} script exports.
@@ -79,7 +109,7 @@ function QueueFacts({ run, queue }: { run: Run; queue: RunQueueStatus }) {
 }
 
 interface Step {
-  label: string;
+  label: ReactNode;
   at: string | null;
   done: boolean;
 }
@@ -89,21 +119,32 @@ function firstAt(rows: readonly Row[], kind: Row['kind']): string | null {
 }
 
 /** Dispatching or active before the first live window: the start-up steps reported so far. */
-export function Starting({ run }: { run: Run }) {
+export function Starting({ run, revision }: { run: Run; revision: SuiteRevision | undefined }) {
   const timeline = useTimeline(run, false);
   const rows = timeline.data?.rows ?? [];
   const admitted = firstAt(rows, 'admitted');
   const started = firstAt(rows, 'runtime.started');
+  const compiled =
+    rows.find((row) => row.kind === 'phase.started' && (row.phase === 'prepare' || row.phase === 'execute'))?.at ??
+    null;
   const steps: Step[] = [
-    { label: 'Accepted', at: run.requestedAt, done: true },
-    { label: 'Admitted by the agent', at: admitted, done: admitted !== null || run.state === 'active' },
-    { label: `Starting ${run.engine.id} (${run.engine.profileId})`, at: started, done: started !== null },
-    { label: 'First metrics', at: null, done: false },
+    { label: 'Accepted by the agent', at: admitted, done: admitted !== null || run.state === 'active' },
+    {
+      label: revision
+        ? `Compiled revision ${revision.ordinal} to a ${run.engine.id} plan`
+        : 'Compiling the saved revision',
+      at: compiled,
+      done: compiled !== null,
+    },
+    { label: `Starting ${run.engine.id} in its own container`, at: started, done: started !== null },
+    { label: 'First metrics arrive', at: null, done: false },
   ];
   return (
-    <section className="live-phase" aria-labelledby="live-phase">
-      <h2 id="live-phase">Starting</h2>
-      <Steps steps={steps} />
+    <section className="live-phase live-early-phase" aria-labelledby="live-phase">
+      <h2 id="live-phase" className="sr-only">
+        Starting
+      </h2>
+      <Steps steps={steps} showTimes={false} />
       {timeline.isError && <p className="live-note">Start-up events could not be read; the steps may lag.</p>}
     </section>
   );
@@ -137,14 +178,20 @@ export function Finalizing({ run }: { run: Run }) {
   );
 }
 
-function Steps({ steps }: { steps: readonly Step[] }) {
+function Steps({ steps, showTimes = true }: { steps: readonly Step[]; showTimes?: boolean }) {
+  const pending = steps.findIndex((step) => !step.done);
   return (
     <ol className="live-steps">
-      {steps.map((step) => (
-        <li key={step.label} className={step.done ? 'is-done' : 'is-pending'}>
-          <span aria-hidden="true">{step.done ? '✓' : '◌'}</span> {step.label}
-          {step.done ? '' : ' (not yet)'}
-          {step.at && (
+      {steps.map((step, index) => (
+        <li
+          key={index}
+          aria-current={index === pending ? 'step' : undefined}
+          className={step.done ? 'is-done' : 'is-pending' + (index === pending ? ' is-current' : '')}
+        >
+          <span aria-hidden="true">{step.done ? '✓' : '○'}</span>
+          <span className="sr-only">{step.done ? 'Completed: ' : 'Pending: '}</span>
+          <span className="live-step-label">{step.label}</span>
+          {showTimes && step.at && (
             <time className="live-muted" dateTime={step.at}>
               {' '}
               {wallTime(step.at)}
@@ -154,4 +201,13 @@ function Steps({ steps }: { steps: readonly Step[] }) {
       ))}
     </ol>
   );
+}
+
+export function queueSentence(queue: RunQueueStatus | undefined): string {
+  if (!queue) return 'Reading capacity and queue position…';
+  if (queue.waiting === 'not_waiting') return 'No longer queued; refreshing the run state.';
+  if (queue.waiting === 'agent_admission') return 'Sent to the agent and waiting for admission.';
+  if (queue.slots.used < (queue.slots.effective ?? queue.slots.configured))
+    return `${slotsText(queue)} This run is queued until its execution budget is available.`;
+  return `${slotsText(queue).replace(/\.$/, '')}, so this run is queued and starts by itself when one frees up. Nothing has been sent to the target yet.`;
 }

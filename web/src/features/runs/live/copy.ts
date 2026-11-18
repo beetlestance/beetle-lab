@@ -15,6 +15,8 @@ export function phaseOf(run: Run, cancelAccepted: boolean, hasFrame: boolean): P
   return 'running';
 }
 
+export const isEarlyPhase = (phase: Phase) => phase === 'waiting' || phase === 'starting';
+
 const endedLabel = { finished: 'Finished', cancelled: 'Cancelled', errored: 'Errored' } as const;
 
 export function statusOf(phase: Phase, run: Run): { label: string; tone: StatusTone } {
@@ -50,7 +52,7 @@ export function headlineOf(phase: Phase, suite: string, stage: PlanStage | null,
     case 'waiting':
       return `${suite} is waiting for capacity`;
     case 'starting':
-      return `Starting ${suite}`;
+      return `${suite} is starting`;
     case 'running':
       return stage ? stageHeadline(stage) : `${suite} is running`;
     case 'cancelling':
@@ -88,7 +90,7 @@ function stoppedText(prefix: string, stoppedAtMs: number | null, plan: RunPlan):
 
 const phaseSentence: Record<'waiting' | 'starting', string> = {
   waiting: 'The run starts as soon as a slot frees up.',
-  starting: 'Preparing the load generator. Live figures appear with the first metrics window.',
+  starting: 'Live numbers appear as soon as k6 sends its first sample, usually within a few seconds.',
 };
 
 /** The sentence under the headline for each phase; never a verdict before the result is sealed. */

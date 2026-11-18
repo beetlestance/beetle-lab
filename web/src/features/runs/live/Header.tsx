@@ -26,6 +26,7 @@ export interface HeaderProps {
   stream: { paused: boolean; toggle: () => void } | null;
   cancel: Cancellation | undefined;
   readOnly: boolean;
+  early?: boolean | undefined;
   onScript: () => void;
 }
 
@@ -52,7 +53,12 @@ function WorkspaceCrumb({ run }: { run: Run }) {
   );
 }
 
-function ContextLine({ run, suiteName, revisionOrdinal }: Pick<HeaderProps, 'run' | 'suiteName' | 'revisionOrdinal'>) {
+function ContextLine({
+  run,
+  suiteName,
+  revisionOrdinal,
+  early,
+}: Pick<HeaderProps, 'run' | 'suiteName' | 'revisionOrdinal' | 'early'>) {
   const started = run.startedAt
     ? `started ${wallTime(run.startedAt) || run.startedAt}`
     : `requested ${wallTime(run.requestedAt) || run.requestedAt}`;
@@ -62,8 +68,17 @@ function ContextLine({ run, suiteName, revisionOrdinal }: Pick<HeaderProps, 'run
       {' / '}
       <Link to={routes.runs(run.scope.organizationId, run.scope.workspaceId)}>Runs</Link>
       <span aria-hidden="true"> / </span>
-      {suiteName ?? 'Suite'} (k6 load test), run <span className="number">{shortId(run.id)}</span>
-      {revisionOrdinal !== null && `, revision ${revisionOrdinal}`}, {started}
+      {early ? (
+        <>
+          {suiteName ?? 'Suite'}
+          {revisionOrdinal !== null && ` · revision ${revisionOrdinal}`} · {started}
+        </>
+      ) : (
+        <>
+          {suiteName ?? 'Suite'} (k6 load test), run <span className="number">{shortId(run.id)}</span>
+          {revisionOrdinal !== null && `, revision ${revisionOrdinal}`}, {started}
+        </>
+      )}
     </p>
   );
 }
@@ -90,12 +105,17 @@ function CompareButton() {
 }
 
 /** Cancel run, only while the run can still be cancelled from this session. */
-function CancelButton({ run, cancel, readOnly }: Pick<HeaderProps, 'run' | 'cancel' | 'readOnly'>) {
+export function LiveCancelButton({
+  run,
+  cancel,
+  readOnly,
+  early,
+}: Pick<HeaderProps, 'run' | 'cancel' | 'readOnly' | 'early'>) {
   const terminal = ['finished', 'cancelled', 'errored'].includes(run.state);
   if (!cancel || terminal || readOnly || cancelRequested(run, cancel)) return null;
   return (
     <Button
-      variant="inverse"
+      variant={early ? 'secondary' : 'inverse'}
       loading={cancel.pending}
       loadingLabel="Sending"
       disabled={cancel.unknown}
@@ -124,24 +144,31 @@ function CancelAlert({ run, cancel }: Pick<HeaderProps, 'run' | 'cancel'>) {
 export function LiveHeader(props: HeaderProps) {
   const { status, stream } = props;
   return (
-    <header className="live-header">
-      <ContextLine run={props.run} suiteName={props.suiteName} revisionOrdinal={props.revisionOrdinal} />
+    <header className={`live-header${props.early ? ' is-early' : ''}`}>
+      <ContextLine
+        early={props.early}
+        run={props.run}
+        suiteName={props.suiteName}
+        revisionOrdinal={props.revisionOrdinal}
+      />
       <div className="live-title-row">
         <div>
           <h1>{props.headline}</h1>
         </div>
-        <div className="live-side">
-          <p className="live-status">
-            <Status tone={status.tone}>{status.label}</Status>
-            {status.note && <span className="live-muted"> · {status.note}</span>}
-          </p>
-          <div className="live-actions">
-            <CompareButton />
-            <LiveDownloads ordinal={props.revisionOrdinal} onScript={props.onScript} />
-            {stream && <Button onClick={stream.toggle}>{stream.paused ? 'Resume stream' : 'Pause stream'}</Button>}
-            <CancelButton run={props.run} cancel={props.cancel} readOnly={props.readOnly} />
+        {!props.early && (
+          <div className="live-side">
+            <p className="live-status">
+              <Status tone={status.tone}>{status.label}</Status>
+              {status.note && <span className="live-muted"> · {status.note}</span>}
+            </p>
+            <div className="live-actions">
+              <CompareButton />
+              <LiveDownloads ordinal={props.revisionOrdinal} onScript={props.onScript} />
+              {stream && <Button onClick={stream.toggle}>{stream.paused ? 'Resume stream' : 'Pause stream'}</Button>}
+              <LiveCancelButton run={props.run} cancel={props.cancel} readOnly={props.readOnly} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
       <p className="live-sentence">{props.sentence}</p>
       <CancelAlert run={props.run} cancel={props.cancel} />

@@ -1,3 +1,4 @@
+import { EarlyArt, EarlyMeter, EarlyMetricsSkeleton } from './EarlyState.js';
 import { useHistoryBootstrap } from '../live-history/index.js';
 import type { BootstrapState } from '../live-history/index.js';
 import { Banner } from '../../../components/Banner.js';
@@ -8,18 +9,19 @@ import type { RunSnapshotProps } from '../RunSnapshot.js';
 import { RunReads } from '../RunReads.js';
 import { EndedBanner, StallBanner } from './Banners.js';
 import { WholeRun, MetricsGrid, TargetRuntime, chartDomain } from './Charts.js';
-import { headlineOf, sentenceOf, statusOf } from './copy.js';
+import { headlineOf, sentenceOf, statusOf, isEarlyPhase } from './copy.js';
 import type { Phase } from './copy.js';
 import { useSessionAccess } from '../../../app/session.js';
-import { useRevision, useSuite } from './data.js';
+import { useRevision, useSuite, useQueue } from './data.js';
+import type { QueueRead } from './data.js';
 import { RestoredBanner, ScriptPicker } from './Extras.js';
 import { LiveFeed } from './Feed.js';
 import { clock, shortId } from './format.js';
-import { LiveHeader } from './Header.js';
+import { LiveHeader, LiveCancelButton } from './Header.js';
 import type { Cancellation } from './Header.js';
 import type { LiveHistory } from './history.js';
 import type { LiveFigures, RuleReading } from './model.js';
-import { Finalizing, Starting, Waiting } from './Phases.js';
+import { Finalizing, Starting, Waiting, queueSentence } from './Phases.js';
 import { readPlan, stageAt } from './plan.js';
 import type { RunPlan } from './plan.js';
 import { Progress } from './Progress.js';
@@ -74,10 +76,11 @@ function LiveRun({ run, scope, runId, showResult, cancel }: LiveRunViewProps) {
     stream.historyEnabled,
     stream.acceptHistory,
   );
+  const queue = useQueue(run, stream.phase === 'waiting');
   const [picker, setPicker] = useState(false);
   const at = positions(run, stream);
   return (
-    <div className="live-run">
+    <div className={`live-run${isEarlyPhase(stream.phase) ? ' is-early' : ''}`}>
       <RestoredBanner />
       <LiveFeed
         key={stream.feedKey}
@@ -94,6 +97,7 @@ function LiveRun({ run, scope, runId, showResult, cancel }: LiveRunViewProps) {
         at={at}
         revision={revision.data}
         suite={suite.data}
+        queue={queue}
         cancel={cancel}
         onScript={() => setPicker(true)}
       />
@@ -124,8 +128,10 @@ function LiveRun({ run, scope, runId, showResult, cancel }: LiveRunViewProps) {
           onClose={() => setPicker(false)}
         />
       )}
+      {isEarlyPhase(stream.phase) && <EarlyArt />}
       <StateBanners run={run} plan={plan} stream={stream} showResult={showResult} />
-      <PhaseBody phase={stream.phase} run={run} />
+      <PhaseBody phase={stream.phase} run={run} revision={revision.data} cancel={cancel} queue={queue} />
+      {isEarlyPhase(stream.phase) && <EarlyMetricsSkeleton />}
       <LiveBoard plan={plan} stream={stream} at={at} bootstrap={bootstrap} />
     </div>
   );
@@ -138,20 +144,24 @@ function RunHeader(props: {
   at: Positions;
   revision: SuiteRevision | undefined;
   suite: Suite | undefined;
+  queue: QueueRead;
   cancel: Cancellation | undefined;
   onScript: () => void;
 }) {
   const { run, plan, stream, at } = props;
   const session = useSessionAccess();
   const suiteName = props.suite?.name ?? null;
+  const early = isEarlyPhase(stream.phase);
+  const sentence = headerSentence(run, stream, at, plan, props.queue);
   const stage = at.elapsedMs === null ? null : stageAt(plan, at.elapsedMs);
   return (
     <LiveHeader
+      early={early}
       run={run}
       suiteName={suiteName}
       revisionOrdinal={props.revision?.ordinal ?? null}
       headline={headlineOf(stream.phase, suiteName ?? `Run ${shortId(run.id)}`, stage, run)}
-      sentence={sentenceOf(stream.phase, stream.readings, at.stoppedAtMs, plan, run)}
+      sentence={sentence}
       status={{ ...statusOf(stream.phase, run), note: pauseNote(stream.paused, at.stoppedAtMs) }}
       stream={stream.streaming && stream.latest ? { paused: stream.paused, toggle: stream.togglePause } : null}
       cancel={props.cancel}
@@ -159,6 +169,11 @@ function RunHeader(props: {
       onScript={props.onScript}
     />
   );
+}
+
+function headerSentence(run: Run, stream: LiveStream, at: Positions, plan: RunPlan, queue: QueueRead) {
+  if (stream.phase === 'waiting') return queueSentence(queue.isError ? undefined : queue.data);
+  return sentenceOf(stream.phase, stream.readings, at.stoppedAtMs, plan, run);
 }
 
 function StateBanners({
@@ -211,11 +226,35 @@ function LiveBoard({
   );
 }
 
-function PhaseBody({ phase, run }: { phase: Phase; run: Run }) {
-  if (phase === 'waiting') return <Waiting run={run} />;
-  if (phase === 'starting') return <Starting run={run} />;
+function PhaseBody({
+  phase,
+  run,
+  revision,
+  cancel,
+  queue,
+}: {
+  phase: Phase;
+  queue: QueueRead;
+  run: Run;
+  revision: SuiteRevision | undefined;
+  cancel: Cancellation | undefined;
+}) {
+  const session = useSessionAccess();
   if (phase === 'finalizing') return <Finalizing run={run} />;
-  return null;
+  if (phase !== 'waiting' && phase !== 'starting') return null;
+  return (
+    <div className="live-early-body">
+      <EarlyMeter />
+      {phase === 'waiting' ? (
+        <Waiting run={run} revision={revision} query={queue} />
+      ) : (
+        <Starting run={run} revision={revision} />
+      )}
+      <div className="live-early-actions">
+        <LiveCancelButton run={run} cancel={cancel} readOnly={session.readOnly} early />
+      </div>
+    </div>
+  );
 }
 
 function Board(props: {

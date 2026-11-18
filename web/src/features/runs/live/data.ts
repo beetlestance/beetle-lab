@@ -55,6 +55,8 @@ export function useQueue(run: Run, enabled: boolean) {
   });
 }
 
+export type QueueRead = ReturnType<typeof useQueue>;
+
 /** One read once the attempt is sealed; it streams the whole metric history server-side. */
 export function useAttribution(run: Run, enabled: boolean) {
   const api = useApi();
