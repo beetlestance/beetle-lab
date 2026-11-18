@@ -9,6 +9,9 @@ board with its Changes and One column variants.
 - `index.tsx` reads the suite and revision; a missing or cross-suite revision shows
   `<NotFound kind="script" />`. The header shows the revision message and a saved
   line built only from fields the API returns (`savedAt`, `savedBy`, `runCount`).
+- `ScriptSource` keeps at most 34 visible rows and a bounded Uint32 line index;
+  Copy and Export use the full verified source, independent of the visible window.
+  Export read errors offer retry and never claim the revision has no script.
 - `ScriptTab.tsx` shows the newest ready export's script. There is no direct script
   read: text comes only from an export job, through `exports/scriptText.ts` (one
   bounded GET of exactly the published bytes, checked against the SHA-256). Scripts

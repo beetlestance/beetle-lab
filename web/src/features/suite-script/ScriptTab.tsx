@@ -1,3 +1,4 @@
+import { ScriptSource } from './ScriptSource.js';
 import { useQueries } from '@tanstack/react-query';
 import type { ExportJob, SuiteRevision } from '@beetle/contracts/api';
 import { readResult, useApi } from '../../app/api.js';
@@ -22,24 +23,6 @@ function useInputNames(revision: SuiteRevision): string[] | undefined {
   });
   if (reads.some((read) => !read.data)) return undefined;
   return reads.map((read) => read.data!.name);
-}
-
-function ScriptLines({ text }: { text: string }) {
-  const lines = text.split('\n');
-  return (
-    <>
-      <div className="script-source" tabIndex={0} role="region" aria-label="Script source">
-        <ol className="script-lines">
-          {lines.map((line, index) => (
-            <li key={index}>
-              <code>{line || ' '}</code>
-            </li>
-          ))}
-        </ol>
-      </div>
-      <p className="script-note">Scroll the panel for all {lines.length.toLocaleString('en-US')} lines.</p>
-    </>
-  );
 }
 
 function NoScript({ job, flow, open }: { job: ExportJob | undefined; flow: RevisionExport; open: () => void }) {
@@ -80,7 +63,7 @@ function ReadyScript({ job, names, script }: { job: ExportJob; names: string[] |
           {script.error?.message ?? 'The script could not be read.'}
         </p>
       )}
-      {script.data !== undefined && <ScriptLines text={script.data} />}
+      {script.data !== undefined && <ScriptSource text={script.data} />}
     </>
   );
 }
@@ -99,6 +82,20 @@ export function ScriptTab({
 }) {
   const names = useInputNames(revision);
   const job = flow.job;
+  if (flow.listing.isError || flow.detail.isError)
+    return (
+      <div role="alert">
+        <p className="field-error">Could not read this revision’s exports.</p>
+        <Button
+          onClick={() => {
+            void flow.listing.refetch();
+            if (flow.detail.isError) void flow.detail.refetch();
+          }}
+        >
+          Retry exports
+        </Button>
+      </div>
+    );
   if (flow.listing.isPending) return <LoadingState label="Looking for this revision’s script…" />;
   if (job?.state !== 'ready' || !job.artifact) return <NoScript job={job} flow={flow} open={open} />;
   if (job.artifact.bytes > maximumShownScriptBytes)

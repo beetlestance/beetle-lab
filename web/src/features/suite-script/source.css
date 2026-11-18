@@ -1,0 +1,34 @@
+.script-source.bounded-script-source {
+  position: relative;
+  min-width: 0;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 21px;
+}
+.script-scroll-space {
+  position: relative;
+  min-width: 100%;
+}
+.script-source-window {
+  position: absolute;
+  left: 0;
+  min-width: 100%;
+  width: max-content;
+  padding-right: 16px;
+}
+.script-source-line {
+  display: grid;
+  height: 21px;
+  white-space: pre;
+}
+.script-line-number {
+  padding-right: 8px;
+  color: var(--dim);
+  text-align: right;
+  user-select: none;
+}
+.script-source-line code {
+  padding-left: 16px;
+  font: inherit;
+}
