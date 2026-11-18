@@ -51,9 +51,8 @@ function StageStrip({ stages }: { stages: readonly Stage[] }) {
       {stages.map((stage, index) => (
         <li key={index} style={{ flexGrow: stage.ms, flexBasis: 0 }}>
           <span className="load-shape-stage-text">
-            {stage.kind === 'steady' ? null : <strong>{stage.label} </strong>}
+            {stage.kind === 'steady' ? <span>{stage.label}</span> : <strong>{stage.label}</strong>}
             <span className="number">{clock(stage.ms)}</span>
-            {stage.kind === 'steady' && <> {stage.label}</>}
           </span>
           <span className="load-shape-bar" aria-hidden="true" />
         </li>

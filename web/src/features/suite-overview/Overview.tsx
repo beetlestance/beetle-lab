@@ -105,7 +105,7 @@ function datasetText(row: DatasetRow, inputName: (id: string) => string): string
 function Facts({ rules, data, inputName }: { rules: string[]; data: DatasetRow[]; inputName: (id: string) => string }) {
   return (
     <>
-      <section aria-labelledby="suite-pass-title">
+      <section className="suite-thresholds" aria-labelledby="suite-pass-title">
         <h2 id="suite-pass-title" className="suite-section-title">
           Pass only if
         </h2>
@@ -120,7 +120,7 @@ function Facts({ rules, data, inputName }: { rules: string[]; data: DatasetRow[]
         )}
       </section>
       {data.length > 0 && (
-        <section aria-labelledby="suite-data-title">
+        <section className="suite-datasets" aria-labelledby="suite-data-title">
           <h2 id="suite-data-title" className="suite-section-title">
             Data
           </h2>

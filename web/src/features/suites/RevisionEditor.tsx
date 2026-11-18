@@ -1,3 +1,4 @@
+import { useSessionAccess } from '../../app/session.js';
 import type { Suite, SuiteRevision } from '@beetle/contracts/api';
 import { ConflictDialog } from '../suite-editor/ConflictDialog.js';
 import { requestKey } from '../suite-editor/model.js';
@@ -45,6 +46,7 @@ export function RevisionEditor({
   refresh: () => Promise<unknown>;
 }) {
   const draft = useRevisionDraft(suite, initial, refresh);
+  const { readOnly } = useSessionAccess();
   const { page, update } = useSuitePage();
   const view: EditorView = { mode: page.view, request: page.request };
   const setView = (next: EditorView) => update({ view: next.mode, request: next.request }, { push: true });
@@ -54,7 +56,7 @@ export function RevisionEditor({
         <ConfigFields
           text={draft.text}
           change={draft.setText}
-          disabled={draft.write.locked}
+          disabled={readOnly || draft.write.locked}
           validity={draft.validity}
           inputs={draft.catalog}
           view={view}
@@ -68,7 +70,7 @@ export function RevisionEditor({
           setMessage={draft.setMessage}
           messageError={draft.messageError}
           dirty={draft.dirty}
-          blocked={draft.blocked}
+          blocked={readOnly || draft.blocked}
           problems={draft.problems}
           write={draft.write}
           saved={draft.saved}

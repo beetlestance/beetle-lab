@@ -1,3 +1,4 @@
+import { useSessionAccess } from '../../app/session.js';
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryResult } from '@tanstack/react-query';
@@ -79,6 +80,7 @@ function SuiteContent({
   refresh: () => Promise<unknown>;
 }) {
   const [tab, setTab, startOpen, setStartOpen] = useTab();
+  const { readOnly } = useSessionAccess();
   const [startRevision, setStartRevision] = useState<string | null>(null);
   const visited = useVisited(tab);
   const [details, setDetails] = useState(false);
@@ -90,7 +92,7 @@ function SuiteContent({
     setStartOpen(true);
   };
   return (
-    <section className="content-section suites-page">
+    <section className="content-section suites-page suite-detail">
       <SuiteHeader suite={suite} workspace={workspace} current={current.data ?? null} start={() => openStart(null)} />
       <Tabs
         label="Suite sections"
@@ -111,7 +113,7 @@ function SuiteContent({
           <TabPanel idBase="suite" id="edit">
             <div className="suite-edit-bar">
               <p className="muted">Suite version {suite.version}</p>
-              <Button size="sm" onClick={() => setDetails(true)}>
+              <Button size="sm" disabled={readOnly} onClick={() => setDetails(true)}>
                 Edit name, folder and description
               </Button>
             </div>
@@ -151,13 +153,14 @@ function OverviewPanel({
   ordinals: ReadonlyMap<string, number>;
   write: () => void;
 }) {
+  const { readOnly } = useSessionAccess();
   return (
     <TabPanel idBase="suite" id="overview">
       {!suite.currentRevisionId ? (
         <EmptyState
           title="No saved revision yet"
           actions={
-            <Button variant="primary" onClick={write}>
+            <Button variant="primary" disabled={readOnly} onClick={write}>
               Write the first revision
             </Button>
           }
@@ -184,6 +187,7 @@ function SuiteHeader({
   start: () => void;
 }) {
   const folders = useFolders(workspace);
+  const { readOnly } = useSessionAccess();
   const folder = folders.data ? findFolder(folders.data, suite.folderId) : undefined;
   const org = workspace.scope.organizationId;
   const saved = current
@@ -215,7 +219,7 @@ function SuiteHeader({
           <h1>{suite.name}</h1>
           <p className="suites-lede">{[suite.description, saved].filter(Boolean).join(' ')}</p>
         </div>
-        <Button variant="primary" disabled={!suite.currentRevisionId} onClick={start}>
+        <Button variant="primary" disabled={readOnly || !suite.currentRevisionId} onClick={start}>
           Start run
         </Button>
       </header>

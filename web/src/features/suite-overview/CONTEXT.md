@@ -8,4 +8,5 @@ and nothing polls. StartRun reads workspace settings and submits createRun throu
 execution-request and runs/useSubmission. A budget field changes only for this run, and
 untouched fields keep their exact API values. The dialog has no note field because
 CreateRunRequest has none.
+Suite controls preserve read-only access: no run, metadata or revision mutations.
 Tests: plan.test.ts (projection, budget, time copy) and ui.test.tsx (recent runs, scope).

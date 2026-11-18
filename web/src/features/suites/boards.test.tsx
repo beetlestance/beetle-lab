@@ -206,6 +206,23 @@ describe('Suite / Overview and Start run', () => {
     expect(screen.getByText('p95 under 250 ms')).toBeInTheDocument();
     expect(await screen.findByRole('link', { name: `Passed run ${runIdLatest}` })).toHaveTextContent('rev 4,');
   });
+  it('preserves read-only controls across Overview, Edit and Revisions', async () => {
+    const fixture = testClient(handler());
+    mount(fixture.client, suitePath, { readOnly: true, restoredBackup: null });
+    expect(await screen.findByRole('button', { name: 'Start run' })).toBeDisabled();
+    fireEvent.click(await screen.findByRole('tab', { name: 'Revisions (1)' }));
+    expect(await screen.findByRole('button', { name: 'Run revision 4' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('tab', { name: 'Edit' }));
+    expect(await screen.findByRole('button', { name: 'Edit name, folder and description' })).toBeDisabled();
+    expect(await screen.findByRole('textbox', { name: 'What changed' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Save revision/ })).toBeDisabled();
+    expect(fixture.records.every(record => record.method === 'GET')).toBe(true);
+  });
+  it('does not offer first-revision writes in read-only history', async () => {
+    const fixture = testClient(handler(request => request.path.endsWith('/suites/' + suiteId) ? json({ ...suite, currentRevisionId: null }) : undefined));
+    mount(fixture.client, suitePath, { readOnly: true, restoredBackup: null });
+    expect(await screen.findByRole('button', { name: 'Write the first revision' })).toBeDisabled();
+  });
   it('starts a run alone with a budget changed for this run only', async () => {
     const fixture = testClient(handler());
     mount(fixture.client, suitePath);

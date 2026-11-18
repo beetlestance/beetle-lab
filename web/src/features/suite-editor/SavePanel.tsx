@@ -1,3 +1,4 @@
+import { useSessionAccess } from '../../app/session.js';
 import { useId } from 'react';
 import type { ApiClientFailure } from '@beetle/contracts/api';
 import { errorMessage } from '../../app/api.js';
@@ -93,7 +94,8 @@ export function SavePanel({
   jump: (path: string) => void;
 }) {
   const titleId = useId();
-  const locked = write.pending || write.unknown;
+  const { readOnly } = useSessionAccess();
+  const locked = readOnly || write.pending || write.unknown;
   return (
     <section className="save-panel" aria-labelledby={titleId}>
       <h2 id={titleId}>Save as revision {next}</h2>
@@ -115,7 +117,7 @@ export function SavePanel({
           variant="primary"
           loading={write.pending}
           loadingLabel="Saving…"
-          disabled={blocked || write.unknown}
+          disabled={blocked || locked}
           onClick={save}
         >
           Save revision

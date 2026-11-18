@@ -1,3 +1,4 @@
+import { useSessionAccess } from '../../app/session.js';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -69,6 +70,7 @@ function RevisionItem({
   run: (revisionId: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const { readOnly } = useSessionAccess();
   const previous = page.items.find((item) => item.ordinal === revision.ordinal - 1);
   const latest = revision.id.toLowerCase() === suite.currentRevisionId?.toLowerCase();
   return (
@@ -92,7 +94,12 @@ function RevisionItem({
         >
           View script
         </Link>
-        <Button size="sm" onClick={() => run(revision.id)} aria-label={`Run revision ${revision.ordinal}`}>
+        <Button
+          size="sm"
+          disabled={readOnly}
+          onClick={() => run(revision.id)}
+          aria-label={`Run revision ${revision.ordinal}`}
+        >
           Run this revision
         </Button>
       </div>
