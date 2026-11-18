@@ -1,0 +1,94 @@
+/* The app's two dark skins, Darkroom (default) and Scarab, selected by data-theme
+   on <html> and stored as `beetle.theme`, as in the app. Every token below that
+   is not prefixed --doc- copies web/src/styles/tokens.css exactly; check:site-docs
+   fails when a value drifts. The docs never render a light theme. */
+
+:root,
+:root[data-theme='darkroom'] {
+  color-scheme: dark;
+  --bg: #161412;
+  --panel: #211e1a;
+  --zebra: #1c1916;
+  --line: #2b2722;
+  --field: #1a1815;
+  --selection: #5a4220;
+  --ink: #ece4d6;
+  --mute: #a99f90;
+  --dim: #6f665a;
+  --faint: #5c544a;
+  --amber: #f2a541;
+  --amber-hover: #f5b55e;
+  --amber-pressed: #d98f2f;
+  --amber-strong: #c9852f;
+  --amber-stronger: #a86c22;
+  --on-amber: #1d1408;
+  --red: #ff7f6b;
+  --green: #9fcf8a;
+  --info: #8db4e8;
+  --control-hover: #36312b;
+  --tab-hover: #1f1c19;
+  --chip-strong: #3a342d;
+  --warn-bg: #2a2112;
+  --data-area: #3b342d;
+  --data-tape: #4a4137;
+  --data-track: #2f2a25;
+  --font-sans: 'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Docs only: inline code and table code (Penpot "Docs" boards), and the neutrals
+     of the home illustration. */
+  --doc-code: #e9c68f;
+  --doc-ill-edge: #9b9081;
+  --doc-ill-top: #2e2924;
+  --doc-ill-side: #221f1b;
+  --doc-ill-base: #1a1815;
+}
+
+:root[data-theme='scarab'] {
+  --bg: #0e1513;
+  --panel: #16211d;
+  --zebra: #121c19;
+  --line: #1d2b26;
+  --field: #111a17;
+  --selection: #1f5a41;
+  --ink: #e2ebe5;
+  --mute: #95a89d;
+  --dim: #5e7067;
+  --faint: #4b5d54;
+  --amber: #5ee0a0;
+  --amber-hover: #76e4ae;
+  --amber-pressed: #55ca90;
+  --amber-strong: #3fb47c;
+  --amber-stronger: #2e8f60;
+  --on-amber: #06180f;
+  --red: #ff8c7c;
+  --green: #5ee0a0;
+  --info: #86b6f0;
+  --control-hover: #283630;
+  --tab-hover: #131d1a;
+  --chip-strong: #253a31;
+  --warn-bg: #12291e;
+  --data-area: #253a31;
+  --data-tape: #2f4a3e;
+  --data-track: #1f2f29;
+  /* Penpot sets Manrope for Scarab; it is not bundled, so Geist is the fallback. */
+  --font-sans: 'Manrope', 'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --doc-code: #a9dcc0;
+  --doc-ill-edge: #8a9d92;
+  --doc-ill-top: #1f2c27;
+  --doc-ill-side: #17221e;
+  --doc-ill-base: #111a17;
+}
+
+:root {
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  --gutter: 80px;
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  :root {
+    --gutter: 32px;
+  }
+}
+@media (max-width: 760px) {
+  :root {
+    --gutter: 16px;
+  }
+}
