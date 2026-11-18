@@ -24,6 +24,8 @@ inspectReadyConfiguration validates receipt/configuration/image pins without ope
 Journal authority. It grants configuration readiness only. compose/ owns default
 packaging bootstrap and its separate configuration gate; serving startup still
 verifies actual authority. The optional fixed export profile uses the same catalogue.
+Moved images alone make ready replay refuse with upgrade_required; upgrade/ owns the
+explicit offline re-pin, its fence, sealed backup and pre-activation rollback.
 
 CLI accepts exactly three private packaging arguments, reads no environment,
 and prints only bounded result JSON or fixed private error codes.

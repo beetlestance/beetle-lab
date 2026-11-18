@@ -158,6 +158,8 @@ async function commitCapacity(c: Captured, owners: Owners, state: State, input: 
 async function perform(c: Captured, owners: Owners, input: CapacityChangeInput): Promise<CapacityChangeResult> {
   const files = (owners.files = await filesFor(c));
   const state = await readState(c, files);
+  // A pending offline upgrade owns the selector until it is activated or rolled back.
+  if (state.receipt.upgradeFence) throw new ProvisionError('upgrade_blocked');
   await verifyBaseline(c, files, state, input.operationId);
   check(c.context);
   if (state.receipt.generation) await validateCommittedGeneration(c, state.receipt.installationId, state.receipt);

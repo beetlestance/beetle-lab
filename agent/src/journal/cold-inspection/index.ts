@@ -2,26 +2,47 @@ import type { DatabaseSync } from 'node:sqlite';
 import { JOURNAL_SCHEMA_VERSION } from '../schema.js';
 import { readJournalAuthority } from '../authority.js';
 import { Failure } from '../sql.js';
-const pending = [
-  'SELECT 1 FROM reservations WHERE charged!=0 LIMIT 1',
-  'SELECT 1 FROM admission_queue WHERE pending!=0 LIMIT 1',
-  `SELECT 1 FROM accepted_attempts a WHERE a.state!='exited' AND NOT(a.state='offered' AND EXISTS(
+const named = [
+  ['journal_reservations', 'SELECT 1 FROM reservations WHERE charged!=0 LIMIT 1'],
+  ['journal_admission_queue', 'SELECT 1 FROM admission_queue WHERE pending!=0 LIMIT 1'],
+  [
+    'journal_attempts',
+    `SELECT 1 FROM accepted_attempts a WHERE a.state!='exited' AND NOT(a.state='offered' AND EXISTS(
     SELECT 1 FROM admission_queue q WHERE q.attempt_id=a.attempt_id AND q.pending=0 AND json_extract(q.decision_json,'$.kind')='reject')) LIMIT 1`,
-  'SELECT 1 FROM accepted_attempts WHERE delivery_pending!=0 OR acknowledged_seq!=last_seq LIMIT 1',
-  "SELECT 1 FROM installed_staging_namespace WHERE state!='bound' LIMIT 1",
-  "SELECT 1 FROM task_staging_namespaces WHERE state!='prepared' LIMIT 1",
-];
+  ],
+  [
+    'journal_delivery',
+    'SELECT 1 FROM accepted_attempts WHERE delivery_pending!=0 OR acknowledged_seq!=last_seq LIMIT 1',
+  ],
+  ['journal_staging_namespace', "SELECT 1 FROM installed_staging_namespace WHERE state!='bound' LIMIT 1"],
+  ['journal_task_staging', "SELECT 1 FROM task_staging_namespaces WHERE state!='prepared' LIMIT 1"],
+] as const;
+/** Oldest journal schema an offline upgrade accepts (the declared predecessor release). */
+export const JOURNAL_UPGRADE_SOURCE_VERSION = 26;
+export { JOURNAL_SCHEMA_VERSION };
+function readOnlySchema(db: DatabaseSync): number {
+  if (db.prepare('PRAGMA query_only').get()?.query_only !== 1) throw new Failure('recovery_required');
+  return Number(db.prepare('PRAGMA user_version').get()?.user_version);
+}
 /** Offline caller retains actual startup exclusion. Unknown/lost/pending work refuses. */
 export function inspectColdJournal(db: DatabaseSync, expectedAuthority: string) {
-  if (
-    db.prepare('PRAGMA query_only').get()?.query_only !== 1 ||
-    db.prepare('PRAGMA user_version').get()?.user_version !== JOURNAL_SCHEMA_VERSION
-  )
-    throw new Failure('recovery_required');
+  if (readOnlySchema(db) !== JOURNAL_SCHEMA_VERSION) throw new Failure('recovery_required');
   const authority = readJournalAuthority(db);
   if (authority !== expectedAuthority) throw new Failure('recovery_required');
-  for (const sql of pending) if (db.prepare(sql).get()) throw new Failure('recovery_required');
+  for (const [, sql] of named) if (db.prepare(sql).get()) throw new Failure('recovery_required');
   return Object.freeze({ schema: JOURNAL_SCHEMA_VERSION, journalAuthority: authority });
+}
+/**
+ * Upgrade preflight: accepts the predecessor or current schema and names every
+ * nonterminal category instead of stopping at the first. Never repairs or adopts.
+ */
+export function inspectColdJournalForUpgrade(db: DatabaseSync, expectedAuthority: string) {
+  const schema = readOnlySchema(db);
+  if (!Number.isSafeInteger(schema) || schema < JOURNAL_UPGRADE_SOURCE_VERSION || schema > JOURNAL_SCHEMA_VERSION)
+    throw new Failure('recovery_required');
+  if (readJournalAuthority(db) !== expectedAuthority) throw new Failure('recovery_required');
+  const blockers = named.filter(([, sql]) => db.prepare(sql).get() !== undefined).map(([name]) => name);
+  return Object.freeze({ schema, journalAuthority: expectedAuthority, blockers: Object.freeze(blockers) });
 }
 
 /** Scoped journal identity for an already stopped native runtime, never a release proof. */

@@ -146,8 +146,10 @@ export class ComposeHome {
     }
     await this.assertPins(true);
     if (!this.fresh) {
-      const names = await entries(this.path, 2);
-      safe(names.length === 2 && names.includes('data') && names.includes('bootstrap.sqlite'));
+      // `upgrade` holds offline upgrade receipts and sealed backups beside the installation.
+      const names = await entries(this.path, 3);
+      safe(names.includes('data') && names.includes('bootstrap.sqlite'));
+      safe(names.length === 2 || (names.length === 3 && names.includes('upgrade')));
     }
     return this.fresh;
   }

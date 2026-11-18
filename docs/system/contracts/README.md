@@ -24,6 +24,7 @@ rereads the contract, corrects it and runs `npm run docs:stamp -- <file>`.
 | Cold backup, historical restore and recovery control | [Recovery](recovery.md) |
 | Capacity, reservations, resource observations, timeouts | [Resources](resources.md) |
 | Installing, packaging, starting and identity binding | [Installation](installation.md) |
+| Offline image upgrade, upgrade fence, pre-activation rollback | [Upgrade](upgrade.md) |
 | Metadata, journal and file stores; administrator session | [Storage](storage.md) |
 | Results, metrics, reports, comparison and live snapshots | [Results](results.md) |
 | Standalone k6 script export | [Exports](exports.md) |

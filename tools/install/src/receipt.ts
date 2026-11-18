@@ -17,7 +17,11 @@ export interface Receipt {
   authority: string | null;
   configDigests: Record<string, string>;
   generation?: ConfigurationGeneration;
+  /** Offline upgrade operation awaiting activation; only the selector carries it. */
+  upgradeFence?: string;
 }
+const optional = (value: unknown, name: string): string[] =>
+  value !== null && typeof value === 'object' && Object.hasOwn(value, name) ? [name] : [];
 export const jsonBytes = (value: unknown): Uint8Array => Buffer.from(canonical(value));
 export function parse(bytes: Uint8Array): unknown {
   return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)) as unknown;
@@ -34,9 +38,12 @@ export function captureReceipt(value: unknown, c: Captured): Receipt {
     'phase',
     'authority',
     'configDigests',
-    ...(value !== null && typeof value === 'object' && Object.hasOwn(value, 'generation') ? ['generation'] : []),
+    ...optional(value, 'generation'),
+    ...optional(value, 'upgradeFence'),
   ]);
   valid(value.version === 1 && value.phase === 'ready');
+  if (Object.hasOwn(value, 'upgradeFence'))
+    valid(validatePrimitive('uuid', value.upgradeFence).ok && Object.hasOwn(value, 'generation'));
   valid(
     validatePrimitive('uuid', value.operationId).ok &&
       validatePrimitive('uuid', value.installationId).ok &&

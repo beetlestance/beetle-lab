@@ -1,6 +1,7 @@
 import { selectInstalledConfiguration } from '@beetle/contracts/installation-generation';
 import { captureInstallationReceipt, receiptDigest } from './installation-receipt.js';
 import { loadAgentConfiguration } from './agent-configuration.js';
+import { upgradeFenced } from './upgrade-fence.js';
 import { constants } from 'node:fs';
 import { access, open, realpath, stat } from 'node:fs/promises';
 import type { FileHandle } from 'node:fs/promises';
@@ -111,6 +112,13 @@ async function agentConnection(path: string, installationId: string, receipt: un
     throw new BootstrapError('configuration', { cause: error });
   }
 }
+function fenceFor(receipt: unknown): boolean {
+  try {
+    return upgradeFenced(receipt);
+  } catch (error) {
+    throw new BootstrapError('configuration', { cause: error });
+  }
+}
 /** Installation-owned config and private existing data root only. No guessed
  * machine capacity: actual source observations are published after startup.
  */
@@ -135,9 +143,11 @@ export async function loadBackendConfiguration(
   const record = await readInstallation(config, receipt.value);
   const directory = await dataDirectory(root);
   const connection = await agentConnection(agentConfig, record.id, receipt.value);
+  const fenced = fenceFor(receipt.value);
   return Object.freeze({
     listen,
     application: {
+      ...(fenced ? { upgradeFence: true as const } : {}),
       externalOrigin,
       configurationCheck: receipt.assertCurrent,
       recoveryControl: { path: join(directory, 'recovery-control.sqlite'), installationId: record.id },

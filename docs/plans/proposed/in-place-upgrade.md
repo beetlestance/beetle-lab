@@ -1,11 +1,44 @@
 # Plan: in-place upgrade
 
-Status: proposed. Decisions taken 2026-11-17 and 2026-11-18: N−1 only; the
+Status: partly built. Decisions taken 2026-11-17 and 2026-11-18: N−1 only; the
 backend refuses a schema upgrade while nonterminal work exists; rollback is
 limited to the window before activation; general mutable restore stays out of
-this plan. Not built. Until pre-activation rollback is implemented and tested,
-an upgrade is **not automatically reversible**: a failure after the migration
-commits may need fix-forward recovery.
+this plan.
+
+## Built (2026-11-18)
+
+The host half now exists and is specified in
+[upgrade](../../system/contracts/upgrade.md) and
+[recovery](../../system/contracts/recovery.md#upgrade-backup-and-rollback):
+
+- `docker compose run --rm setup upgrade [prepare|status|activate|rollback]`;
+  normal startup with moved images refuses with `upgrade_required` and names it.
+- Offline quiescence under both startup leases, with each blocker named
+  (swap step 2's drained check, without the browser drain).
+- A durable receipt with old and new image pins and schema versions, written
+  before any change; an exact sealed cold copy of the whole root.
+- Resumable, recorded steps: one atomic selector commit of the new pins plus
+  the fence, Journal profile approval, metadata migration.
+- The fence: the backend refuses mutations other than session exchanges,
+  cancellation, comparison and previews; capacity changes refuse.
+- `activate` lifts the fence; `rollback` before activation restores the sealed
+  copy all-or-nothing, with an interrupted swap resumed. Tested with fault
+  injection at each write, a populated schema-29 fixture migrated to current,
+  and against a copy of a real schema-29/journal-26 installation.
+
+Still open, so the sections below remain the plan for them:
+
+- The in-app preflight, drain and activation interface, and the backend status
+  endpoint the host would check in swap step 1.
+- Swap step 4: starting the candidate and a bounded health check before
+  `awaiting_activation`. Today the operator starts the stack after `prepare`
+  and checks it before `activate`.
+- A contract `upgrade_pending` error code; the fence returns
+  `503 capacity_unavailable` until the closed API error set is amended.
+- Release identity in the bundle (the upgrade compares image identities, not
+  release numbers) and a recovery-control schema check.
+- Rollback after failure is operator-initiated; nothing triggers it
+  automatically. A Compose end-to-end upgrade in CI.
 
 ## Contract
 

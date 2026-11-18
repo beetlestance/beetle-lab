@@ -39,7 +39,7 @@ agent, because the daemon resolves engine bind sources. Staging is an exact priv
 | `config/backend-agent.json` | provisioner | agent origin, token path, installation UUID, profile pins, storage ceilings |
 | `config/agent.json` | provisioner | closed agent configuration with inspected daemon/image facts |
 | `config/agent-token` | provisioner | 43–128 character base64url credential, never printed |
-| `config/configuration-state.json` | capacity change | mutable selector ([resources](resources.md#offline-capacity-change)) |
+| `config/configuration-state.json` | capacity change, offline upgrade | mutable selector ([resources](resources.md#offline-capacity-change)); while an upgrade awaits activation it also carries `upgradeFence` |
 | `backend/` | backend | `metadata.sqlite`, `inputs/{staging,published}`, `outputs/` |
 | `agent/journal/journal.sqlite` | agent | journal and its authority UUID |
 | `agent/staging/` | agent | per-attempt staging |
@@ -64,13 +64,13 @@ installation ID, `created`/`unchanged` and paths; never a credential.
   approved profiles; authority gate completed with that exact authority; all handles closed;
   receipt atomically becomes `ready`.
 - Replay of a `ready` root is `unchanged` only after receipt, configuration, authority and
-  image pins match the same request. It never rotates tokens or rewrites settings and never
-  inventories runtime data. A serving lease causes `conflict`, not takeover.
+  image pins match the same request (moved images alone: `upgrade_required`). It never rotates
+  tokens or rewrites settings and never inventories runtime data; a serving lease is `conflict`.
 - `inspectReadyConfiguration` validates receipt, configuration and pins without opening the
   Journal; it grants configuration readiness only.
 - Failure codes: `invalid_input`, `inspection`, `unsafe_root`, `conflict`,
-  `recovery_required`, `cancelled`, `deadline`, `io`, `cleanup`. The CLI exits 2 for
-  argument errors and 1 otherwise, with fixed text. Partial roots are kept.
+  `recovery_required`, `upgrade_required`, `upgrade_blocked`, `cancelled`, `deadline`, `io`,
+  `cleanup`. CLI exit 2 for argument errors, else 1, with fixed text; partial roots are kept.
 - The installer may import only public entrypoints of agent bootstrap, installation-state,
   journal, catalog, admission, Docker backend and backend configuration; runtime services
   never import the installer (`npm run check:architecture`).
@@ -91,8 +91,8 @@ is `$PWD/.beetle`, with the installation in its `data` child.
   image, entrypoint, empty command, private PID namespace, no init, no privileged mode and
   only `SETUID`/`SETGID`.
 - Fresh data delegates to the offline provisioner. A ready root is checked with
-  `inspectReadyConfiguration`; serving never opens the offline authority owner. A second
-  `up` preserves credentials, settings and history; pins never move.
+  `inspectReadyConfiguration`; serving never opens the offline authority owner. A second `up`
+  keeps credentials, settings, history and pins; only [`setup upgrade`](upgrade.md) re-pins.
 
 ## Starter policy
 
@@ -212,8 +212,8 @@ request alias never becomes an environment variable name or file path
 
 | Code | Reviewed |
 | --- | --- |
-| `tools/install/src/` | `9fe4e8822de1` |
-| `tools/install/compose/` | `cbe88d78f424` |
+| `tools/install/src/` | `8ba370378d9a` |
+| `tools/install/compose/` | `20a3f76728ad` |
 | `tools/install/starter/policy.ts` | `05f116398b2b` |
 | `agent/src/bootstrap/installed-config.ts` | `1975e2348c51` |
 | `agent/src/installation-state/` | `0beedc07f9a0` |

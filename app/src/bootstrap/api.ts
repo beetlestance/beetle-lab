@@ -1,5 +1,6 @@
 import { registerStorageHealth } from './storage-health.js';
 import { applicationMode } from './historical.js';
+import { protectUpgrade } from './upgrade-fence.js';
 import type { HistoricalOptions } from './historical.js';
 import type { BackendServingLease } from './recovery-control/index.js';
 import { openBackendServing } from './recovery-control/index.js';
@@ -54,6 +55,8 @@ export interface ApplicationOptions {
   readonly agent?: AgentRuntimeOptions;
   /** Canonical installation-owned child of the private data directory. */
   readonly inputsDirectory?: string;
+  /** Set only from the installer's configuration selector while an offline upgrade awaits activation. */
+  readonly upgradeFence?: true;
 }
 export interface Application {
   readonly server: FastifyInstance;
@@ -114,6 +117,7 @@ class ApplicationOwner {
   async open(): Promise<Application> {
     try {
       this.mode.protect(this.server);
+      if (this.options.upgradeFence) protectUpgrade(this.server);
       this.recovery = await servingControl(this.options);
       configureSchemaCompilers(this.server, {
         schemas: apiSchemas,
