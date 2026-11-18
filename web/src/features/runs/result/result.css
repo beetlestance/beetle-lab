@@ -1,6 +1,7 @@
 /* Run result boards. Tokens only; phone (<760px) stacks into a section list. */
 .result {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--s-24);
 }
 .result-head {
@@ -8,6 +9,14 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--s-20);
+}
+.result-context {
+  margin: 0 0 var(--s-16);
+  color: var(--mute);
+  font-size: var(--fs-md);
+}
+.result-context a {
+  color: inherit;
 }
 .result-title {
   margin: 0;

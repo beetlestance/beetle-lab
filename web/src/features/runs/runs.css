@@ -1,4 +1,4 @@
-.runs-page { display: grid; gap: var(--space-4); }
+.runs-page { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
 .runs-page .section-header { margin-bottom: var(--space-4); }
 .run-facts { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-4); }
 .run-facts > div { border-top: var(--border-width) solid var(--border); padding-top: var(--space-3); min-width: 0; }

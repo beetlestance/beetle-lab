@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
 import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
+import { WorkspaceTabs } from '../../app/shell/WorkspaceTabs.js';
 import { routes } from '../../app/routes.js';
 import { Button, buttonClass } from '../../components/Button.js';
 import { QueryState } from '../../components/QueryState.js';
@@ -60,6 +61,7 @@ function HistoryContext({ scope, suiteId, pinned }: { scope: RunScope; suiteId?:
           )}
         </div>
       </header>
+      <WorkspaceTabs organizationId={scope.organizationId} workspaceId={scope.workspaceId} current="runs" />
       <HistoryFilters
         applied={context.filters}
         apply={apply}
