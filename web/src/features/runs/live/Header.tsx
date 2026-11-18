@@ -1,3 +1,5 @@
+import { useWorkspaceSnapshot } from '../../../app/overview.js';
+import { useSessionAccess } from '../../../app/session.js';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
@@ -35,6 +37,12 @@ const cancelRequested = (run: Run, cancel: Cancellation | undefined) =>
 
 function WorkspaceCrumb({ run }: { run: Run }) {
   const namespace = useLiveNamespace(run);
+  const { readOnly } = useSessionAccess();
+  useWorkspaceSnapshot(
+    run.scope.organizationId,
+    run.scope.workspaceId,
+    !readOnly && namespace.organization.isSuccess && namespace.workspace.isSuccess,
+  );
   const failed = namespace.organization.isError || namespace.workspace.isError;
   const name = !failed && namespace.workspace.isSuccess ? namespace.workspace.data.name : null;
   return (

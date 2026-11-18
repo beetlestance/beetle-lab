@@ -159,8 +159,8 @@ Each hour partitions submissions by current passed, failed, in-progress and othe
 outcomes. The client checks bucket sums, scalar failure/state bounds and bounded
 recent/active witnesses; colours never infer outcomes from a total submission count.
 The header observes the current scope's successful cached snapshot without owning
-another query. Suites owns a snapshot read only after its organisation/workspace
-metadata succeeds, so a direct entry also fills the badge without early or duplicate
+another query. Suites and direct live-run headers own one snapshot read only after
+organisation/workspace metadata succeeds, so a direct entry also fills the badge without early or duplicate
 reads. Its badge counts active records exactly, including beyond the
 20-header bound; absent/error snapshots and restored history show no badge.
 

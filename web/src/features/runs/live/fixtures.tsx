@@ -1,3 +1,4 @@
+import baseWorkspaceOverview from '../../../../../contracts/fixtures/api/valid/workspace-overview.json' with { type: 'json' };
 import baseInstallationStatus from '../../../../../contracts/fixtures/api/valid/installation-status.json' with { type: 'json' };
 import { render } from '@testing-library/react';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -204,24 +205,31 @@ function revisionSummary() {
   };
 }
 
+function presentationMetadata(request: RequestRecord, current: Run): Response | undefined {
+  if (request.path.endsWith('/overview')) return json({ ...baseWorkspaceOverview, scope: current.scope });
+  if (request.path.endsWith('/installation/status'))
+    return json({
+      ...baseInstallationStatus,
+      agent: { ...baseInstallationStatus.agent, state: 'ready' },
+      engines: [
+        {
+          profileId: current.engine.profileId,
+          imageDigest: current.engine.imageDigest,
+          image: 'verified_at_agent_start',
+          engine: { id: current.engine.id, version: '2.4.0', configVersion: current.engine.configVersion },
+        },
+      ],
+    });
+
+  return undefined;
+}
+
 export function routesFor(current: () => Run, extra?: (request: RequestRecord) => Response | undefined) {
   return testClient((request) => {
     const special = extra?.(request);
     if (special) return special;
-    if (request.path.endsWith('/installation/status'))
-      return json({
-        ...baseInstallationStatus,
-        agent: { ...baseInstallationStatus.agent, state: 'ready' },
-        engines: [
-          {
-            profileId: current().engine.profileId,
-            imageDigest: current().engine.imageDigest,
-            image: 'verified_at_agent_start',
-            engine: { id: current().engine.id, version: '2.4.0', configVersion: current().engine.configVersion },
-          },
-        ],
-      });
-
+    const metadata = presentationMetadata(request, current());
+    if (metadata) return metadata;
     if (request.path.endsWith(`/revisions/${revisionId}`)) return json(revision());
     if (request.path.endsWith(`/suites/${suiteId}`)) return json(suite());
     if (/\/revisions(\?|$)/.test(request.path)) {

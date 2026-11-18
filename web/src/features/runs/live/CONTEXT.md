@@ -29,6 +29,8 @@ visible. Target runtime uses the <=256 page-received samples as reported; it doe
 not claim full-run coverage or engine resource measurements.
 
 Namespace names use scoped query keys and explicit retry independent of metrics.
+After namespace verification, one workspace snapshot fills the passive header badge;
+no polling or current-work snapshot is added to restored read-only views.
 Cancellation and restored/read-only access use the existing session context, never
 a new session read. Live downloads offer only verified JavaScript revision export;
 the picker reads20 summaries plus this run's verified revision, with older history
