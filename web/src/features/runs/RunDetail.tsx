@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { readResult, useApi } from '../../app/api.js';
+import { ApiFailure, readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
+import { routes } from '../../app/routes.js';
+import { NotFound } from '../../components/NotFound.js';
 import { QueryState } from '../../components/QueryState.js';
 import type { RunScope } from './types.js';
 import { useCancellation } from './useCancellation.js';
@@ -12,6 +14,11 @@ import { RunResultView } from './result/index.js';
 import type { RefreshControl } from './result/index.js';
 
 export { terminal };
+
+/** A missing run is the run not-found page, not a retry banner. */
+const missing = (error: unknown) =>
+  error instanceof ApiFailure && (error.failure.protocol?.code === 'not_found' || error.failure.status === 404);
+
 export function RunDetail(scope: RunScope & { runId: string }) {
   const api = useApi();
   const cancellation = useCancellation(scope);
@@ -22,6 +29,10 @@ export function RunDetail(scope: RunScope & { runId: string }) {
     refetchIntervalInBackground: false,
   });
   const refresh = { run: () => void query.refetch(), busy: query.isFetching };
+  if (missing(query.error))
+    return (
+      <NotFound kind="run" back={{ to: routes.runs(scope.organizationId, scope.workspaceId), label: 'Back to runs' }} />
+    );
   return (
     <>
       {query.data === undefined && (

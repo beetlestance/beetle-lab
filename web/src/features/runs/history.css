@@ -1,7 +1,13 @@
 /* Penpot "Runs" board: header, filter row, compare toolbar, table, pager. */
 .history {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--s-20);
+}
+/* On a phone the state filter scrolls sideways instead of widening the page. */
+.history-filters .segmented {
+  max-width: 100%;
+  overflow-x: auto;
 }
 .history-header h1 {
   margin: 0;
